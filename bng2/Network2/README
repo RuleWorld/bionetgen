@@ -1,0 +1,25 @@
+run_network usage:
+   run_network [-b] [-d] [-c] [-j] [-m] [-s] [-f] [-i t0] [-o outprefix] ...
+               [-g groupfile] [-t tol] [-r rtol] [-a atol] ...
+               [-z iteration number] netfile sample_time n_sample
+   run_network [-b] [-d] [-c] [-j] [-m] [-s] [-f] [-i t0] [-o outprefix] ...
+               [-g groupfile] [-t tol] [-r rtol] [-a atol] ...
+               [-z iteration number] netfile t1 t2 ... tn
+
+- '-b' option tells network to use GMRES instead of the default direct LU
+  factorization with partial pivoting
+- '-d' option tells network to pass the Jacobian in the LU factorization case
+  and the Jacobian-vecotor multiply in the GMRES case to CVODE instead of CVODE
+  using its default finite-difference Jacobian
+- '-j' option writes extra species statistics to file [outputprefix].jdat.
+  The .jdat file contains four lumns: time, number of populated species,
+  number of species that have ever been populated, and the number of species
+  in the current network. This is useful with on-the-fly network generation. 
+- '-z ITERATION_NUMBER' tells network to output a plain text file called
+  outprefix.m. The file is a MATLAB script file which can be read into MATLAB
+  (assuming it is in MATLAB current working directory) with the command
+  outprefix. The header of the file also contains some basic MATLAB commands to
+  operate on the matrix. (outprefix in the above is the outprefix specified by
+  the user when they ran run_network.)
+
+(Options -b, -d, -z added to network added by Jeremy Kozdon)

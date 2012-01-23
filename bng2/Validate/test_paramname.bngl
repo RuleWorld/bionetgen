@@ -1,0 +1,19 @@
+version("2.0.23");
+
+begin parameters
+L0	602
+R0     1204
+1kp1	1.661129568106312e-04
+km1	  1
+end parameters
+
+begin species
+  L(r,r,r) L0
+  R(l)     R0
+end species
+begin reaction rules
+L(r,r,r) + R(l) <->  L(r,r,r!1).R(l!1) 1kp1*km1,km1
+end reaction rules
+
+generate_network({overwrite=>1});
+simulate_ode({t_end=>4,n_steps=>10});

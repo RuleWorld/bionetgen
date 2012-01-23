@@ -1,0 +1,48 @@
+# Validate state inheritance in a symmetric context
+#  At equillibrium:  A = sqrt(v/kab) = 1, B = v/(2*kb0) = 1/2
+begin model
+begin parameters
+    #poolsizes
+    PA   1
+    PB   1
+    #influx to the system
+    vu   1
+    vl   0
+    #kinetic constants
+    kab  1
+    kac  0
+    kb0	 1
+end parameters
+begin molecule types
+    A(c1~0~1)
+    B(c1~0~1,c1~0~1)
+    0()
+end molecule types
+begin species
+    A(c1~0)    0
+    $0()       1
+end species
+begin reaction rules
+    # synthesis of A
+    0 -> A(c1~0)    vu
+    0 -> A(c1~1)    vl
+    # production of B
+    A(c1%1) + A(c1%2) -> B(c1%1,c1%2)    kab
+    # degradation of B
+    B() -> 0        kb0
+end reaction rules
+begin observables
+    Molecules  A  A()
+    Molecules  B  B()
+end observables
+end model
+
+## actions ##
+generate_network({overwrite=>1});
+# equillibrate wiht unlabeled models
+simulate_ode({t_start=>0,t_end=>20,n_steps=>20});
+# add labels
+setParameter("vu",0);
+setParameter("vl",1);
+simulate_ode({t_start=>20,t_end=>40,n_steps=>20,continue=>1});
+

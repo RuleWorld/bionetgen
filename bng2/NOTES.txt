@@ -1,0 +1,69 @@
+Release Notes (OBSOLETE)
+
+Current version is 2.0.46 (see http://bionetgen.lanl.gov/BioNetWiki/index.php/Release_Notes)
+
+
+2.0.41
+
+    * Improved recognition of OS specific binaries using the $Config{myarch} variable in Perl.
+    * Fixed model naming in SBML files (path header is removed). 
+
+--Faeder 10:36, 8 November 2006 (MST)
+
+2.0.40
+
+    * Now includes RuleBuilder GUI interface to BioNetGen.
+    * Back end executables for Linux, Mac, and Windows also provided in the default distribution. 
+
+
+2.0.39
+
+    * Fixes small bugs in reading of Expressions from parameter block. 
+
+
+2.0.38
+
+    * Fixes bug that appeared starting in 2.0.36 that reading of Reactions
+from a .NET file was broken. It also marks the first version to use the new
+Expression.pm module, which allows the use of simple math expressions in the
+parameter block. This version may be somewhat unstable due to incomplete
+testing of the Expression.pm and other related changes. --Faeder 21:31, 27
+September 2006 (MDT)
+
+
+2.0.37
+
+    * Fixes deleteMolecules bug. Also introduces stricter Molecule Type
+checking. If the Molecule types block is used, only molecules matching defined
+types will be allowed as seed species, in observables, or in reaction
+rules. You will also note that Compartments are now defined in the .net
+file. There is now a partial implementation of Compartments, but the next
+release will fully implement these capabilities, and will be accompanied by
+documentation of the new syntax.
+
+--Faeder 11:13, 13 September 2006 (MDT)
+
+2.0.36
+
+    * Fixes Sat/MM bug involving reactions that use MM and Sat RateLaws in
+which reactant order was not preserved in the generated reactions.  
+
+
+2.0.35
+
+    * Fixed the Dimer dissociation bug, which resulted from improper checking
+of product connectivity when molecules were deleted in a reaction. The bug
+could only arise in a rule in which a molecule is deleted, but it is otherwise
+difficult to anticipate. Updating to this version is therefore strongly
+recommended.  
+
+--Faeder 00:53, 27 July 2006 (MDT)
+
+2.0.34
+
+    * Fixed bug in handling of include/exclude directives that allowed
+reactions that should have been excluded. A test input file that demonstrates
+the bug is here. 
+    * Added a java plotting utility called PhiBPlot for plotting CDAT and GDAT files. 
+
+--Faeder 12:11, 11 July 2006 (MDT) 

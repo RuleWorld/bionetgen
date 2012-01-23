@@ -1,0 +1,41 @@
+# Created by BioNetGen 2.0.37+
+substanceUnits("Number");
+begin parameters
+    1 kcat 1
+    2 Km 1
+end parameters
+#kcat=1
+#Km=1
+begin compartments
+  EC  3  1.0  
+  PM  2  1.0  EC
+  CP  3  1.0  PM
+  NM  2  1.0  CP
+  NU  3  1.0  NM
+end compartments
+begin molecule types
+  1 E()
+  2 P()
+  3 S()
+end molecule types 
+begin species
+    1 S()  100
+    2 E()  100
+    3 P()  0
+end species
+begin reaction rules
+    1: S() + E() -> P() + E() Sat(kcat,Km)
+end reaction rules
+begin observables
+    1 Molecules St S()
+    2 Molecules Pt P()
+    3 Molecules Et E()
+end observables
+begin reactions
+    1 1,2 3,2 Sat kcat Km
+end reactions
+begin groups
+    1 St                   1
+    2 Pt                   3
+    3 Et                   2
+end groups

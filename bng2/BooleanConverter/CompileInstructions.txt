@@ -1,0 +1,7 @@
+When compiling, only write:
+
+"g++ BoolExprParser.cpp c-api.cpp final_v0.1.1.cpp"
+
+
+
+If "BoolExpr.cpp" is included, it won't compile.

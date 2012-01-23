@@ -1,0 +1,47 @@
+This file contains instructions on how to install run_networks from source
+code.
+
+1) Download SUNDIALS (you only need cvode) from:
+   http://www.llnl.gov/CASC/sundials/download/download.html
+
+2) Follow the installation instructions for SUNDIALS. In most cases you will
+   only need to run:
+        tar -zxf sundials.tar.gz
+   On Solaris you may need to do:
+        gunzip sundials.tar.gz
+        tar -xf sundials.tar
+
+   If you have administrative access and wish to install SUNDIALS system wide
+   to the following:
+        cd sundials
+        ./configure
+        make
+        su
+        make install
+
+   If you do not have adminstrative access or do not desire to do a system
+   wide install do the following:
+        cd sundials
+        ./configure --prefix=/INSTALL_PATH/
+        mkdir /INSTALL_PATH/
+        mkdir /INSTALL_PATH/lib
+        mkdir /INSTALL_PATH/include
+        make
+        make install
+   For more SUNDIALS configuration options see the SUNDIALS documentation
+
+3) cd /BIONETGEN_PATH/Network
+
+4) Open the MakeFile. Set the SUNPREFIX directory to the correct directory for
+   your installation of sundials.
+
+5) run make:
+        make
+
+6) You can test the install by running:
+        ../bin/run_network
+   The output should be:
+        Usage:
+        run_network [-b] [-d] [-c] [-m] [-s] [-f] [-o outprefix] [-g groupfile] [-t tol] [-r rtol] [-a atol] [-z iteration number] netfile sample_time n_sample
+        or
+        run_network [-b] [-d] [-c] [-m] [-s] [-f] [-o outprefix] [-g groupfile] [-t tol] [-r rtol] [-a atol] [-z iteration number] netfile t1 t2 ... tn

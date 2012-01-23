@@ -1,0 +1,93 @@
+#  motor.bngl
+#  Example of global functions by simulating the flagellar motor
+#  and CheYp levels.  The rate of switching rotational states
+#  of the flagellar motor depends functionally on the concentration
+#  of CheYp in the total system.  Therefore, we need to define
+#  global functions to correctly evaluate the rates according to
+#  this model.  --Michael Sneddon
+#
+
+begin parameters
+   
+   #Made up rates (per second) of CheY <-> CheYp
+   #to keep CheYp in motor range
+   kpy  3.5
+   kmy  10
+   
+   #Motor switching parameters
+   Kd  3.06
+   g1  35
+   w   1.02
+   
+   #Volume and avogadro's number for converting num of 
+   #CheYp to [CheYp] in functions
+   cellVolume  1.41e-15
+   _Na         6.02e23
+   
+   #initial number of motors and molecules
+   motorCount 10000
+   CheYCount  2200
+   
+end parameters
+
+
+
+begin molecule types
+  #Declare the molecules and thier possible states
+  CheY(p~unphos~PHOS)
+  Motor(state~CW~CCW)
+end molecule types
+
+
+begin seed species
+   #Create instances of the molecules
+   CheY(p~PHOS)     CheYCount
+   Motor(state~CW)  motorCount
+end seed species
+
+
+begin observables
+  #We have to declare observables first, because they are referenced by
+  #the global functions
+  Molecules  CheYp   CheY(p~PHOS)
+  Molecules  MotCW   Motor(state~CW)
+  Molecules  MotCCW  Motor(state~CCW)
+end observables
+
+
+begin functions
+
+   #Here are the functional definitions of the switching rate as a function of the observable
+   #CheYp.  Note that the functional expression gives the rate of a SINGLE motor switching.
+   #For maximum generality, global functions as evaluated in NFsim add no other terms to the propensity,
+   #so in this case, the function must also consider the number of motors in one state or the
+   #other.  So to make the propensity proportional to the number of Motors in one state or the 
+   #other, we have to add the multiplication factor of the observables MotCW and MotCCW to the 
+   #beginning of the functional expressions as you see below.  Note that because g0 = g1, we only
+   # need to include the single parameter g1 to get this all to work.
+   kPlus()  = w*exp(  (g1/2.0)*((1.0/2.0)-( (CheYp/(cellVolume*_Na*10^-6))/(Kd+(CheYp/(cellVolume*_Na*10^-6)))) ))
+   kMinus() = w*exp( -(g1/2.0)*((1.0/2.0)-( (CheYp/(cellVolume*_Na*10^-6))/(Kd+(CheYp/(cellVolume*_Na*10^-6)))) ))
+
+end functions
+
+begin reaction rules
+
+  #Standard unimolecular state change reactions of CheY - you can turn these on if you 
+  # don't believe that the functions are actually being updated every time CheYp changes.  In
+  # general, you could put the entire signaling network upstream and simulate an entire cell's
+  # response.
+  CheY(p~unphos) <-> CheY(p~PHOS) kpy,kmy
+  
+  #Here are the functionally defined rate laws, which call the functions
+  #defined to determine the rate of the reactions.
+  Motor(state~CW) -> Motor(state~CCW) kPlus()
+  Motor(state~CCW) -> Motor(state~CW) kMinus()
+  
+end reaction rules
+
+
+generate_network({overwrite=>1});
+#simulate_ode({t_start=>0,t_end=>0.2,n_steps=>20});
+writeMfile({t_start=>0,t_end=>0.2,n_steps=>20});
+
+

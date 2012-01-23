@@ -1,0 +1,106 @@
+# Created by BioNetGen 2.1.8+
+substanceUnits("Number");
+begin parameters
+
+    1 Na        6.022e23  # Constant
+    2 V         1e-21  # Constant
+    3 k1        127.6664  # ConstantExpression
+    4 k2        2.85  # Constant
+    5 k3        1.52  # Constant
+    6 K4        114.418  # ConstantExpression
+    7 k5        4.88  # Constant
+    8 K6        710.596  # ConstantExpression
+    9 k7        1.24  # Constant
+   10 k8        19414.928  # ConstantExpression
+   11 K9        17517.998  # ConstantExpression
+   12 k10       13.58  # Constant
+   13 k11       92136.6  # ConstantExpression
+   14 K12       96.352  # ConstantExpression
+   15 Ga_0      6.022  # ConstantExpression
+   16 PLC_0     6.022  # ConstantExpression
+   17 Ca_0      6.022  # ConstantExpression
+
+end parameters
+begin molecule types
+
+  1 Null()
+  2 Ga()
+  3 Ca()
+  4 PLC()
+
+end molecule types
+begin observables
+
+    1 Molecules  G   Ga()
+    2 Molecules  P   PLC()
+    3 Molecules  C   Ca()
+    4 Molecules  NULL   Null()
+
+end observables
+begin functions
+
+    1 rateLaw1() k3/(K4+G)
+    2 rateLaw2() k5/(K6+G)
+    3 rateLaw3() k8/(K9+P)
+    4 rateLaw4() k11/(K12+C)
+
+end functions
+begin species
+
+    1 Null()  1
+    2 Ga()    Ga_0
+    3 PLC()   PLC_0
+    4 Ca()    Ca_0
+
+end species
+begin reaction rules
+
+  Rule1: \
+  Null() -> Ga() + Null()  k1
+# Add Species Ga()
+
+  Rule2: \
+  Ga() -> Ga() + Ga()  k2
+# Add Species Ga()
+
+  Rule3: \
+  Ga() + PLC() -> PLC()  rateLaw1
+# Delete Pattern Ga()
+
+  Rule4: \
+  Ga() + Ca() -> Ca()  rateLaw2
+# Delete Pattern Ga()
+
+  Rule5: \
+  Ga() -> PLC() + Ga()  k7
+# Add Species PLC()
+
+  Rule6: \
+  PLC() + Null() -> Null()  rateLaw3
+# Delete Pattern PLC()
+
+  Rule7: \
+  Ga() -> Ca() + Ga()  k10
+# Add Species Ca()
+
+  Rule8: \
+  Ca() + Null() -> Null()  rateLaw4
+# Delete Pattern Ca()
+
+end reaction rules
+begin reactions
+    1 1 1,2 k1 #Rule1
+    2 2 2,2 k2 #Rule2
+    3 2,3 3 rateLaw1 #Rule3
+    4 2,4 4 rateLaw2 #Rule4
+    5 2 2,3 k7 #Rule5
+    6 3,1 1 rateLaw3 #Rule6
+    7 2 2,4 k10 #Rule7
+    8 4,1 1 rateLaw4 #Rule8
+end reactions
+begin groups
+    1 G                    2
+    2 P                    3
+    3 C                    4
+    4 NULL                 1
+end groups

@@ -1,0 +1,21 @@
+begin parameters
+1  kp1 1
+2  km1 100
+end parameters
+
+begin molecule types
+  1 A(a)
+  2 B(b)
+end molecule types 
+
+begin species
+1 $A(a)		1
+2 B(b)          1
+end species
+
+begin reaction rules
+A(a) + B(b) -> A(a!1).B(b!1) kp1
+end reaction rules
+
+generate_network({overwrite=>1});
+simulate_ode({t_end=>10,n_steps=>20});

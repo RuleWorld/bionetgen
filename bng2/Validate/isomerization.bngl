@@ -1,0 +1,55 @@
+# Simple isomerization model
+
+# Let A be a protein with two conformations, R and T.
+# If a system contains N molecules of A, then the equillibrium distribution
+# of K = number of A moleculein conformation T is given by the binomial distribution
+#   P(k) = binom(k,N,p) = (N choose k) * p^k * (1-p)^(N-k)
+#
+# where:  p/(1-p) = kRT/kTR
+#
+# Bins: n = 0, 1, 2, ..., 7, 8, 9-20
+#
+# p(Bins):  0.02608, 0.10434, 0.19824, 0.23789, 0.20220,
+#           0.12941, 0.06471, 0.02588, 0.00841, 0.00284
+
+#
+# chi-square calculation:  SUM_b=1..B[ (Observed(b) - N*pBin(b))^2 / (N*pBin(b)) ]
+#
+# p-values: 0.200 => 12.242
+#           0.100 => 14.684
+#           0.050 => 16.919
+#           0.020 => 19.679
+#           0.010 => 21.666
+#           0.005 => 23.589
+#           0.002 => 26.056
+#           0.001 => 27.877
+ # (degrees of freedom = 9)
+
+
+begin model
+begin parameters
+    N     20      # number of proteins
+    kRT   0.20    # rate of configuration R switching to T, units /s
+    kTR   1.00    # rate of configuration T switching to R, units /s
+end parameters
+begin molecule types
+    A(conf~R~T)
+end molecule types
+begin seed species
+    A(conf~R)  N  
+end seed species
+begin observables
+    Molecules  A_confR  A(conf~R)
+    Molecules  A_confT  A(conf~T)
+    Molecules  A_total  A()
+end observables
+begin reaction rules
+    A(conf~R)  <->  A(conf~T)  kRT, kTR
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1});
+simulate_ssa({suffix=>'ssa_burnin',t_start=>0,t_end=>10000,n_steps=>1});
+simulate_ssa({suffix=>'ssa_equil',t_start=>0,t_end=>1000000,n_steps=>10000});
+

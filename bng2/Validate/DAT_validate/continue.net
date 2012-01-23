@@ -1,0 +1,69 @@
+# Created by BioNetGen 2.1.8+
+substanceUnits("Number");
+begin parameters
+
+    1 k_synth  1.0  # Constant
+    2 k_degr   0.5  # Constant
+    3 kp       1.0  # Constant
+    4 km       0.1  # Constant
+
+end parameters
+begin molecule types
+
+    1 A()
+    2 Trash()
+    3 C(b)
+    4 B(c)
+
+end molecule types
+begin observables
+
+    1 Molecules  Atot   A()
+    2 Molecules  Btot   B()
+    3 Molecules  Ctot   C()
+    4 Molecules  Bfree   B(c)
+    5 Molecules  Cfree   C(b)
+    6 Molecules  BC   B(c!1).C(b!1)
+
+end observables
+begin species
+
+    1 A()            0
+    2 B(c)           0
+    3 C(b)           1
+    4 $Trash()       0
+    5 B(c!1).C(b!1)  0
+
+end species
+begin reaction rules
+
+  Rule1: \
+  A() -> A() + B(c)  k_synth
+  # Add Species B(c)
+
+  Rule2: \
+  B(c) -> Trash()  k_degr
+  # Add Species Trash()
+  # Delete Pattern B(c)
+
+  Rule3: \
+  B(c) + C(b) <-> B(c!1).C(b!1)  kp, km
+  # Bind(0.0.0,0.1.0)
+  # Reverse
+  # Unbind(0.0.0,0.1.0)
+
+end reaction rules
+begin reactions
+    1 1 1,2 k_synth #Rule1
+    2 2 4 k_degr #Rule2
+    3 2,3 5 kp #Rule3
+    4 5 2,3 km #Rule3r
+end reactions
+begin groups
+    1 Atot                 1
+    2 Btot                 2,5
+    3 Ctot                 3,5
+    4 Bfree                2
+    5 Cfree                3
+    6 BC                   5
+end groups

@@ -1,0 +1,41 @@
+begin parameters
+
+# Kinetic constants
+
+kcat   1
+Km     1
+
+end parameters
+
+begin molecule types
+
+E()
+S() 
+P()
+
+end molecule types
+
+begin seed species
+
+S()          100
+E()          100
+P()          0
+
+end seed species
+
+begin reaction rules 
+
+S() + E() -> P() + E() MM(kcat,Km)
+
+end reaction rules 
+
+begin observables
+
+Molecules        St       S()
+Molecules        Pt       P()
+Molecules        Et       E()
+
+end observables
+
+generate_network({overwrite=>1});
+simulate_ode({t_end=>5,n_steps=>20,atol=>1e-8,rtol=>1e-8,sparse=>1});

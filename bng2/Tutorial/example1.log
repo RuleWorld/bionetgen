@@ -1,0 +1,65 @@
+/Users/faeder/shared/Projects/BioNetGen_develop/Perl2/BNG2.pl
+BioNetGen version 2.0.14+
+Reading BNGL file example1.bngl
+Read 11 parameters.
+Read 3 species.
+Read 3 observable(s).
+Read 5 reaction rule(s).
+command: generate_network();
+Iteration   0:     3 species      0 rxns 0.00e+00 CPU s 0.00e+00 (3.40e+00) Mb real (virtual) memory.
+Iteration   1:     4 species      1 rxns 1.00e-02 CPU s 3.42e+00 (2.94e+01) Mb real (virtual) memory.
+Iteration   2:     5 species      3 rxns 2.00e-02 CPU s 3.44e+00 (2.94e+01) Mb real (virtual) memory.
+Iteration   3:     6 species      5 rxns 4.00e-02 CPU s 3.46e+00 (2.94e+01) Mb real (virtual) memory.
+Iteration   4:     9 species      9 rxns 4.00e-02 CPU s 3.48e+00 (2.94e+01) Mb real (virtual) memory.
+Iteration   5:    12 species     20 rxns 1.00e-01 CPU s 3.53e+00 (2.94e+01) Mb real (virtual) memory.
+Iteration   6:    14 species     32 rxns 1.00e-01 CPU s 3.56e+00 (2.94e+01) Mb real (virtual) memory.
+Iteration   7:    14 species     36 rxns 7.00e-02 CPU s 3.57e+00 (2.94e+01) Mb real (virtual) memory.
+Cumulative CPU time for each rule
+Rule   1:     6 reactions 5.00e-02 CPU s 8.33e-03 CPU s/rxn
+Rule   2:    12 reactions 1.50e-01 CPU s 1.25e-02 CPU s/rxn
+Rule   3:     3 reactions 2.00e-02 CPU s 6.67e-03 CPU s/rxn
+Rule   4:     5 reactions 3.00e-02 CPU s 6.00e-03 CPU s/rxn
+Rule   5:    10 reactions 6.00e-02 CPU s 6.00e-03 CPU s/rxn
+Total   :    36 reactions 3.10e-01 CPU s 8.61e-03 CPU s/rxn
+Group R_dim contains 6 elements.
+Group R_phos contains 9 elements.
+Group A_R contains 5 elements.
+Wrote network to example1.net.
+CPU TIME: generate_network 0.4 s.
+command: simulate_ode({t_end=>50,n_steps=>20});
+Running run_network on ntal
+full command: "/Users/faeder/shared/Projects/BioNetGen_develop/bin/run_network" -o example1 -p cvode -a 1e-08 -r 1e-08 -g example1.net example1.net 2.5 20
+Read 11 parameters
+Read 14 species
+Read 36 reaction(s)
+36 reaction(s) have nonzero rate
+Read 3 group(s) from example1.net
+Initialization took 0.00 CPU seconds
+Propagating with cvode using dense LU
+           time          n_steps n_deriv_calls
+           2.50            76           118
+           5.00           102           146
+           7.50           117           176
+          10.00           128           187
+          12.50           136           196
+          15.00           143           203
+          17.50           149           210
+          20.00           154           215
+          22.50           158           219
+          25.00           163           224
+          27.50           167           229
+          30.00           170           232
+          32.50           173           235
+          35.00           176           238
+          37.50           179           241
+          40.00           183           246
+          42.50           186           265
+          45.00           189           268
+          47.50           192           271
+          50.00           195           274
+Time course of concentrations written to file example1.cdat.
+Time course of groups written to file example1.gdat.
+Propagation took 0.00 CPU seconds
+Program times:  0.00 CPU s 0.00 clock s 
+CPU TIME: simulate_ode 0.0 s.
+CPU TIME: total 0.7 s.

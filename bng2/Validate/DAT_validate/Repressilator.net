@@ -1,0 +1,219 @@
+# Created by BioNetGen 2.1.8+
+substanceUnits("Number");
+begin parameters
+
+    1 Na         6.022e23  # Constant
+    2 V          1.4e-15  # Constant
+    3 c0         1e9  # Constant
+    4 c1         224  # Constant
+    5 c2         9  # Constant
+    6 c3         0.5  # Constant
+    7 c4         5e-4  # Constant
+    8 c5         0.167  # Constant
+    9 c6         0.00577622650466621  # Constant
+   10 c7         0.00115524530093324  # Constant
+   11 tF         1e-4  # Constant
+   12 rF         1000  # Constant
+   13 pF         1000  # Constant
+   14 rateLaw1   1.18612705793045e-07  # ConstantExpression
+   15 rateLaw2   0.0224  # ConstantExpression
+   16 rateLaw3   1.18612705793045e-07  # ConstantExpression
+   17 rateLaw4   0.0009  # ConstantExpression
+   18 rateLaw5   500  # ConstantExpression
+   19 rateLaw6   0.5  # ConstantExpression
+   20 rateLaw7   0.167  # ConstantExpression
+   21 rateLaw8   1.18612705793045e-07  # ConstantExpression
+   22 rateLaw9   0.0224  # ConstantExpression
+   23 rateLaw10  1.18612705793045e-07  # ConstantExpression
+   24 rateLaw11  0.0009  # ConstantExpression
+   25 rateLaw12  500  # ConstantExpression
+   26 rateLaw13  0.5  # ConstantExpression
+   27 rateLaw14  0.167  # ConstantExpression
+   28 rateLaw15  1.18612705793045e-07  # ConstantExpression
+   29 rateLaw16  0.0224  # ConstantExpression
+   30 rateLaw17  1.18612705793045e-07  # ConstantExpression
+   31 rateLaw18  0.0009  # ConstantExpression
+   32 rateLaw19  500  # ConstantExpression
+   33 rateLaw20  0.5  # ConstantExpression
+   34 rateLaw21  0.167  # ConstantExpression
+
+end parameters
+begin molecule types
+
+  1 gTetR(lac,lac)
+  2 mLacI()
+  3 mCI()
+  4 gCI(tet,tet)
+  5 pCI(lac)
+  6 gLacI(cI,cI)
+  7 pTetR(cI)
+  8 pLacI(tet)
+  9 Null()
+ 10 mTetR()
+
+end molecule types
+begin observables
+
+    1 Molecules  pTetR   pTetR(cI)
+    2 Molecules  pCI   pCI(lac)
+    3 Molecules  pLacI   pLacI(tet)
+    4 Molecules  NULL   Null()
+
+end observables
+begin species
+
+    1 Null()                                        1
+    2 gTetR(lac!1,lac!2).pLacI(tet!1).pLacI(tet!2)  1
+    3 gCI(tet!1,tet!2).pTetR(cI!1).pTetR(cI!2)      1
+    4 gLacI(cI!1,cI!2).pCI(lac!1).pCI(lac!2)        1
+    5 mTetR()                                       3163
+    6 mCI()                                         6819
+    7 mLacI()                                       129
+    8 pTetR(cI)                                     183453
+    9 pCI(lac)                                      2006198
+   10 pLacI(tet)                                    165670
+   11 gTetR(lac!1,lac).pLacI(tet!1)                 0
+   12 gCI(tet!1,tet).pTetR(cI!1)                    0
+   13 gLacI(cI!1,cI).pCI(lac!1)                     0
+   14 gTetR(lac,lac)                                0
+   15 gCI(tet,tet)                                  0
+   16 gLacI(cI,cI)                                  0
+
+end species
+begin reaction rules
+
+  Rule1: \
+  gTetR(lac,lac) + pLacI(tet) <-> gTetR(lac!1,lac).pLacI(tet!1)  rateLaw1, rateLaw2
+# Bind(0.0.0,0.1.0)
+# Reverse
+# Unbind(0.0.0,0.1.0)
+
+  Rule2: \
+  gTetR(lac!+,lac) + pLacI(tet) <-> gTetR(lac!+,lac!1).pLacI(tet!1)  rateLaw3, rateLaw4
+# Bind(0.0.1,0.1.0)
+# Reverse
+# Unbind(0.0.1,0.1.0)
+
+  Rule3: \
+  gTetR(lac,lac) -> gTetR(lac,lac) + mTetR()  rateLaw5
+# Add Species mTetR()
+
+  Rule4: \
+  gTetR(lac!+) -> gTetR(lac!+) + mTetR()  rateLaw6
+# Add Species mTetR()
+
+  Rule5: \
+  mTetR() -> mTetR() + pTetR(cI)  rateLaw7
+# Add Species pTetR(cI)
+
+  Rule6: \
+  mTetR() + Null() -> Null()  c6
+# Delete Pattern mTetR()
+
+  Rule7: \
+  pTetR(cI) + Null() -> Null()  c7
+# Delete Pattern pTetR(cI)
+
+  Rule8: \
+  gCI(tet,tet) + pTetR(cI) <-> gCI(tet!1,tet).pTetR(cI!1)  rateLaw8, rateLaw9
+# Bind(0.0.0,0.1.0)
+# Reverse
+# Unbind(0.0.0,0.1.0)
+
+  Rule9: \
+  gCI(tet!+,tet) + pTetR(cI) <-> gCI(tet!+,tet!1).pTetR(cI!1)  rateLaw10, rateLaw11
+# Bind(0.0.1,0.1.0)
+# Reverse
+# Unbind(0.0.1,0.1.0)
+
+  Rule10: \
+  gCI(tet,tet) -> gCI(tet,tet) + mCI()  rateLaw12
+# Add Species mCI()
+
+  Rule11: \
+  gCI(tet!+) -> gCI(tet!+) + mCI()  rateLaw13
+# Add Species mCI()
+
+  Rule12: \
+  mCI() -> mCI() + pCI(lac)  rateLaw14
+# Add Species pCI(lac)
+
+  Rule13: \
+  mCI() + Null() -> Null()  c6
+# Delete Pattern mCI()
+
+  Rule14: \
+  pCI(lac) + Null() -> Null()  c7
+# Delete Pattern pCI(lac)
+
+  Rule15: \
+  gLacI(cI,cI) + pCI(lac) <-> gLacI(cI!1,cI).pCI(lac!1)  rateLaw15, rateLaw16
+# Bind(0.0.0,0.1.0)
+# Reverse
+# Unbind(0.0.0,0.1.0)
+
+  Rule16: \
+  gLacI(cI!+,cI) + pCI(lac) <-> gLacI(cI!+,cI!1).pCI(lac!1)  rateLaw17, rateLaw18
+# Bind(0.0.1,0.1.0)
+# Reverse
+# Unbind(0.0.1,0.1.0)
+
+  Rule17: \
+  gLacI(cI,cI) -> gLacI(cI,cI) + mLacI()  rateLaw19
+# Add Species mLacI()
+
+  Rule18: \
+  gLacI(cI!+) -> gLacI(cI!+) + mLacI()  rateLaw20
+# Add Species mLacI()
+
+  Rule19: \
+  mLacI() -> mLacI() + pLacI(tet)  rateLaw21
+# Add Species pLacI(tet)
+
+  Rule20: \
+  mLacI() + Null() -> Null()  c6
+# Delete Pattern mLacI()
+
+  Rule21: \
+  pLacI(tet) + Null() -> Null()  c7
+# Delete Pattern pLacI(tet)
+
+end reaction rules
+begin reactions
+    1 2 10,11 2*rateLaw4 #Rule2r
+    2 2 2,5 rateLaw6 #Rule4
+    3 5 5,8 rateLaw7 #Rule5
+    4 1,5 1 c6 #Rule6
+    5 1,8 1 c7 #Rule7
+    6 3 8,12 2*rateLaw11 #Rule9r
+    7 3 3,6 rateLaw13 #Rule11
+    8 6 6,9 rateLaw14 #Rule12
+    9 1,6 1 c6 #Rule13
+   10 1,9 1 c7 #Rule14
+   11 4 9,13 2*rateLaw18 #Rule16r
+   12 4 4,7 rateLaw20 #Rule18
+   13 7 7,10 rateLaw21 #Rule19
+   14 1,7 1 c6 #Rule20
+   15 1,10 1 c7 #Rule21
+   16 11 10,14 rateLaw2 #Rule1r
+   17 10,11 2 rateLaw3 #Rule2
+   18 11 5,11 rateLaw6 #Rule4
+   19 12 8,15 rateLaw9 #Rule8r
+   20 8,12 3 rateLaw10 #Rule9
+   21 12 6,12 rateLaw13 #Rule11
+   22 13 9,16 rateLaw16 #Rule15r
+   23 9,13 4 rateLaw17 #Rule16
+   24 13 7,13 rateLaw20 #Rule18
+   25 10,14 11 2*rateLaw1 #Rule1
+   26 14 5,14 rateLaw5 #Rule3
+   27 8,15 12 2*rateLaw8 #Rule8
+   28 15 6,15 rateLaw12 #Rule10
+   29 9,16 13 2*rateLaw15 #Rule15
+   30 16 7,16 rateLaw19 #Rule17
+end reactions
+begin groups
+    1 pTetR                8
+    2 pCI                  9
+    3 pLacI                10
+    4 NULL                 1
+end groups

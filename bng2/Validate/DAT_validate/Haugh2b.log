@@ -1,0 +1,58 @@
+/Users/faeder/BioNetGen_2.0.36/Perl2/BNG2.pl
+BioNetGen version 2.0.36
+Reading from file Haugh2b.bngl
+Read 12 parameters.
+Read 3 species.
+Adding P as allowed state of component Y of molecule S2
+Read 11 reaction rule(s).
+Read 5 observable(s).
+Iteration   0:     3 species      0 rxns  0.00e+00 CPU s
+Iteration   1:     5 species      2 rxns  1.00e-02 CPU s
+Iteration   2:     6 species      5 rxns  2.00e-02 CPU s
+Iteration   3:     7 species      7 rxns  1.00e-02 CPU s
+Iteration   4:    10 species     10 rxns  2.00e-02 CPU s
+Iteration   5:    12 species     21 rxns  8.00e-02 CPU s
+Iteration   6:    12 species     29 rxns  5.00e-02 CPU s
+Cumulative CPU time for each rule
+Rule   1:     4 reactions 2.00e-02 CPU s 5.00e-03 CPU s/rxn
+Rule   2:     2 reactions 3.00e-02 CPU s 1.50e-02 CPU s/rxn
+Rule   3:     6 reactions 3.00e-02 CPU s 5.00e-03 CPU s/rxn
+Rule   4:     2 reactions 2.00e-02 CPU s 1.00e-02 CPU s/rxn
+Rule   5:     2 reactions 1.00e-02 CPU s 5.00e-03 CPU s/rxn
+Rule   6:     1 reactions 0.00e+00 CPU s 0.00e+00 CPU s/rxn
+Rule   7:     2 reactions 2.00e-02 CPU s 1.00e-02 CPU s/rxn
+Rule   8:     2 reactions 1.00e-02 CPU s 5.00e-03 CPU s/rxn
+Rule   9:     2 reactions 2.00e-02 CPU s 1.00e-02 CPU s/rxn
+Rule  10:     2 reactions 1.00e-02 CPU s 5.00e-03 CPU s/rxn
+Rule  11:     4 reactions 2.00e-02 CPU s 5.00e-03 CPU s/rxn
+Total   :    29 reactions 1.90e-01 CPU s 6.55e-03 CPU s/rxn
+Wrote network to Haugh2b.net.
+CPU TIME: generate_network 0.2 s.
+Network simulation using ODEs
+Running run_network on snowy.local
+full command: "/Users/faeder/BioNetGen_2.0.36/bin/run_network" -o "Haugh2b" -p cvode -a 1e-12 -r 1e-12 -g "Haugh2b.net" "Haugh2b.net" 10 5
+Read 12 parameters
+Read 12 species
+Read 29 reaction(s)
+29 reaction(s) have nonzero rate
+Read 5 group(s) from Haugh2b.net
+Initialization took 0.00 CPU seconds
+Propagating with cvode using dense LU
+           time          n_steps n_deriv_calls
+CVode-- At t = 3.5305, mxstep steps taken before reaching tout.
+
+          10.00           681           851
+          20.00           785           982
+          30.00           840          1050
+          40.00           879          1089
+          50.00           910          1133
+Time course of concentrations written to file Haugh2b.cdat.
+Time course of groups written to file Haugh2b.gdat.
+Propagation took 0.00 CPU seconds
+Program times:  0.00 CPU s 0.00 clock s 
+Updating species concentrations from Haugh2b.cdat
+CPU TIME: simulate_ode 0.0 s.
+Wrote SBML to Haugh2b.xml.
+CPU TIME: writeSBML 0.0 s.
+Finished processing file Haugh2b.bngl
+CPU TIME: total 0.5 s.

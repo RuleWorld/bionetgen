@@ -1,0 +1,66 @@
+network 1.0
+
+A set of programs to generate and solve chemical reaction networks.
+These programs have been used to develop complex models of cell signaling
+cascades (see Refs. 1-3 below).
+
+This file contains abbreviated instructions for compiling the network program.
+
+This package has been incorporated into the BioNetGen package, which is
+available from http://cellsignaling.lanl.gov/bionetgen.
+
+This program is freely available and distributable under terms given in the LICENSE file.
+
+The COPYRIGHT notice for the CVODE code, written and maintained at Lawrence
+Livermore National Laboratory, which is also contained in this distribution is
+in the directory CVODE.
+
+4/3/2004
+James Faeder
+faeder@lanl.gov
+http://www.t10.lanl.gov/faeder
+
+**************
+
+Installation from the BioNetGen root directory
+
+1) cd to directory network_xx, where xx is the version number of the network
+distribution.
+
+2) Examine the Makefile to see if the compiler name and options and additional
+library names are appropriate to your particular system.  These may be changed
+by editing this file or preferably by creating a new file called makeincl.
+
+3) Make the run_network executable by typing "make".  A successful build will automatically
+place the executable in BioNetGenRoot/bin.  To test if build is
+successful, try running ../bin/OSTYPE.  You should see the output
+
+Usage:
+run_network [-c] [-s] [-f] [-o outprefix] [-g groupfile] [-t tol] [-r rtol] [-a atol] netfile sample_time n_sample
+or
+run_network [-c] [-s] [-f] [-o outprefix] [-g groupfile] [-t tol] [-r rtol] [-a atol] netfile t1 t2 ... tn
+
+If you encounter problems at this point, please contact your local Unix
+expert, or, when all options at your local site have been exhausted, the
+author will be happy to assist.  
+
+4) Before proceeding to verifying the run_network output for particular
+models, as described in the BioNetGen manual 
+(http://cellsignaling.lanl.gov/cgi-bin/bionetgen/install.cgi), you may wish to
+clean up the files associated with compilation by typing "make clean".
+
+
+References (Versions of all papers available at our website)
+
+[1] B. Goldstein, J. R. Faeder, W. S. Hlavacek, M. L. Blinov, A. Redondo, and
+C. Wofsy. "Modeling the early signaling events mediated by aggregation of
+FceRI." Mol. Immunol., 38, 1213-1219 (2002). 
+
+[2] J. R. Faeder,W. S. Hlavacek, I. Reischl, M. L. Blinov, H. Metzger,
+A. Redondo, C. Wofsy, and B. Goldstein, "Investigation of Early Events in
+FceRI-Mediated Signaling using a Detailed Mathematical Model."
+J. Immunol. 170, 3769-3781 (2003).
+
+[3] W. S. Hlavacek, J. R. Faeder, M. L. Blinov, A. S. Perelson, and
+B. Goldstein, "The Complexity of Complexes in Signal Transduction."
+Biotechnol. Bioeng., 84, 783-794 (2003).

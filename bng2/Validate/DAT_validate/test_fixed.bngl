@@ -1,0 +1,85 @@
+# test fixed species
+begin model
+begin parameters
+
+  k_degr       0.5
+  k_synthB     1.0
+  k_conv       0.5
+  k_synthcat   1.0
+  k_degrcat   10.0
+
+  k_bind       2.0
+  k_unbind     1.0
+  
+end parameters
+begin molecule types
+
+  A()
+  B()
+  C(n~0~1~2~3)
+  D(x,x)
+
+  Degr()
+  Trash()
+  
+end molecule types
+begin seed species
+
+  A()       1
+  Degr()    0
+  $Trash()  0
+  
+end seed species
+begin observables
+
+  Molecules  A_tot   A()
+  Molecules  B_tot   B()
+
+  Molecules  C0   C(n~0)
+  Molecules  C2   C(n~2)
+
+  Molecules  D_tot   D()
+
+  Species  D1   D(x,x)
+  Species  D2   D(x,x!0).D(x!0,x)
+  Species  D3   D(x,x!0).D(x!0,x!1).D(x!1,x)
+  Species  D3c  D(x!2,x!0).D(x!0,x!1).D(x!1,x!2)
+
+  Molecules  Degr_tot   Degr()  
+  Molecules  Trash_tot  Trash()
+  
+end observables
+begin reaction rules
+
+  # synthesis of B
+  $A()   ->  B()        k_synthB
+
+  # baseline degradation
+  B()    ->  Trash()    k_degr
+  D()    ->  Trash()    k_degr
+
+  # synthesis of C by B
+  $B()   ->  C(n~0)     k_synthcat
+
+  # delayed conversion of C to D
+  C(n~0) ->  C(n~1)     k_conv
+  C(n~1) ->  C(n~2)     k_conv
+  C(n~2) ->  C(n~3)     k_conv   
+  C(n~3) ->  D(x,x)     k_conv
+    
+  # catalytic degradation of B by D
+  B()    ->  $Degr()    k_degrcat*D3c
+ 
+  # D binding/unbinding
+  D(x,x)  +  D(x,x)             <->  D(x,x!0).D(x,x!0)                  k_bind,    k_unbind
+  D(x,x!0).D(x!0,x)  +  D(x,x)  <->  D(x,x!0).D(x!0,x!1).D(x!1,x)       k_bind,    k_unbind
+  D(x,x!0).D(x!0,x!1).D(x!1,x)  <->  D(x!2,x!0).D(x!0,x!1).D(x!1,x!2)   10*k_bind, k_unbind
+  
+end reaction rules
+end model
+
+
+## Actions ##
+
+generate_network({overwrite=>1});
+simulate_ode({t_start=>0,t_end=>60,n_steps=>240});
