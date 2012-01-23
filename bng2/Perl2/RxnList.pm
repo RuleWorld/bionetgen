@@ -1,0 +1,496 @@
+# $Id: RxnList.pm,v 1.6 2006/09/28 02:21:03 faeder Exp $
+
+package RxnList;
+
+# pragmas
+use strict;
+use warnings;
+
+# Perl Modules
+use Class::Struct;
+use FindBin;
+use lib $FindBin::Bin;
+
+# BNG Modules
+use Rxn;
+use SpeciesList;
+
+
+# This class manages a list of Rxn objects
+struct RxnList => {
+  Array       => '@',
+  Hash        => '%',
+  SpeciesList => 'SpeciesList',
+  AsProduct   => '%'             # Number of times a species appears as product,
+                                 # key is pointer to Species
+};
+
+
+###
+###
+###
+
+
+# reset the rxn hash (i.e. forget about rxns that are in the array)
+sub resetHash
+{
+    my $rlist = shift;
+    undef %{ $rlist->Hash };
+}
+
+
+###
+###
+###
+
+
+# Add a reaction to the list.
+#  Returns the number of added reactions.
+sub add
+{
+    my $rlist    = shift;
+    my $rxn      = shift;
+    my $add_zero = (@_) ? shift : 0;
+    my $plist    = (@_) ? shift : undef;
+
+    my $n_add = 0;
+
+    # Don't add reaction with RateLaw of type Zero
+    my $add_rxn;
+    if ( ( $rxn->RateLaw->Type eq 'Zero' ) and ( !$add_zero ) )
+    {   $add_rxn = 0;   }
+    else
+    {   $add_rxn = 1;   }
+
+    # Modify the string returned by this call to affect when reactions are combined.
+    my $rstring = $rxn->stringID();
+    my ( $r, $p ) = split( ' ', $rstring );
+
+
+    # Check for identical reactants and products
+    if ( $r eq $p )
+    {   
+        # don't add this null reaction to the list
+        $add_rxn = 0;
+    }
+    elsif ( exists $rlist->Hash->{$rstring} )
+    {
+        foreach my $rxn2 ( @{ $rlist->Hash->{$rstring} } )
+        {     
+            # NOTE: This algorithm guarantees that all rxns on list have same priority.
+            if ( $rxn->Priority == $rxn2->Priority )
+            {
+                # Reaction with same rate law as previous reaction is combined with it
+                if ( RateLaw::equivalent($rxn->RateLaw, $rxn2->RateLaw, $plist) )
+                {
+                    $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
+                    $add_rxn = 0;
+
+                    # Need to delete reaction and ratelaw?
+                    #  (if the ratelaws references are different and the rules are the same,
+                    #   then we can safely delete the extra Ratelaw copy.  This is useful
+                    #   for energyBNG where we derive new ratelaws from general rates, but often
+                    #   the same derived law works for many reactions. Deleting redundant derived laws
+                    #   allows us to save space.)
+                    if ( ($rxn->RateLaw != $rxn2->RateLaw) and ($rxn->RxnRule == $rxn2->RxnRule) )
+                    {                        
+                        if ( defined $plist )
+                        {
+                            # delete parameters associated with this ratelaw
+                            foreach my $const ( @{$rxn->RateLaw->Constants} )
+                            {
+                                $plist->deleteParam( $const );
+                            }
+                        }
+                        
+                        # undefine the ratelaw
+                        undef %{$rxn->RateLaw};
+                        
+                        # set this rxn ratelaw equal to rxn2 ratelaw
+                        #  (in practice, we don't need rxn anymore, so this is moot)
+                        $rxn->RateLaw( $rxn2->RateLaw );
+                    }
+                    
+                    # Exit from loop since rxn is now handled.
+                    last;
+                }
+            }
+            elsif ( $rxn->Priority < $rxn2->Priority )
+            {
+                # New reaction has lower priority so it's not added and we're done
+                $add_rxn = 0;
+                last;
+            }
+            elsif ( $rxn->Priority > $rxn2->Priority )
+            {
+                # New reaction has higher priority, causing previous reaction to be deleted
+                # NOTE: All reactions with the lower priority will be deleted by looping over $rxn2
+                # Find and delete old entry from Array
+                $rlist->remove($rxn2);
+                --$n_add;
+            }
+        } # END loop over previous reactions
+    }
+
+    # Add new entry
+    if ($add_rxn)
+    {
+        push @{ $rlist->Array }, $rxn;
+        push @{ $rlist->Hash->{$rstring} }, $rxn;
+        foreach my $spec ( @{ $rxn->Products } )
+        {
+            ++($rlist->AsProduct->{$spec});
+        }
+        ++$n_add;
+    }
+  
+    return ( $n_add );
+}
+
+
+###
+###
+###
+
+
+# remove a reaction from the list
+sub remove
+{
+    my $rlist = shift;
+    my $rxn   = shift;
+
+    # Remove entry from Array
+    foreach my $i ( 0 .. $#{$rlist->Array} )
+    {
+        if ( $rxn == $rlist->Array->[$i] )
+        {
+            printf "Deleting rxn %s\n", $rxn->toString();
+            splice( @{$rlist->Array}, $i, 1 );
+            last;
+        }
+    }
+
+    # Remove entry from Hash
+    my $harray = $rlist->Hash->{ $rxn->stringID() };
+    foreach my $i ( 0 .. $#{$harray} )
+    {
+        if ( $rxn == $harray->[$i] )
+        {
+            #printf "Deleting rxn from hash %s\n", $rxn->toString();
+            splice( @$harray, $i, 1 );
+            last;
+        }
+    }
+
+    # Delete species that depend only on this reaction for production
+    # Species with non-zero concentration must exist
+    # Species with zero concentration must appear as product in at least one reaction
+    #  *phash = $rlist->AsProduct;
+    #  for my $spec ( @{ $rxn->Products } ) {
+    #    if ( ( --$phash{$spec} ) == 0 ) {
+    #
+    #      # Remove species from SpeciesList if it has zero concentration
+    #      $rlist->SpeciesList->remove($spec);
+    #    }
+    #  }
+
+    return;
+}
+
+
+###
+###
+###
+
+
+# read a reaction from a string and add it to the list
+sub readString
+{
+    my $rlist  = shift;
+    my $string = shift;
+    my $slist  = shift;
+    my $plist  = shift;
+
+    my @tokens = split( ' ', $string );
+    my $rxn = Rxn->new();
+    my $err;
+
+    my $nspec = scalar @{$slist->Array};
+
+    # Check if token is an index
+    if ( $tokens[0] =~ /^\d+$/ ) {
+        my $index = shift @tokens;    # This index will be ignored
+    }
+
+    # Next token is list of reactant indices
+    my @ptrs;
+    if (@tokens)
+    {
+        @ptrs = ();
+        my @inds = split( ',', shift(@tokens) );
+        foreach my $index (@inds)
+        {
+            # check for bad index            
+            if ( $index < 0 || ( $index > $nspec ) )
+            {
+                return ("Index $index to species in reaction out of range");
+            }
+
+            # NOTE: zero is the null species, so ignore indices less than 1
+            unless ( $index < 1 ) 
+            {   push @ptrs, $slist->Array->[ $index - 1 ];   }
+        }
+    }
+    else
+    {
+        return ("Incomplete reactantion at reactants");
+    }
+    $rxn->Reactants( [@ptrs] );
+
+
+    # Next token is list of product indices
+    if (@tokens)
+    {
+        @ptrs = ();
+        my @inds = split( ',', shift(@tokens) );
+        for my $index (@inds)
+        {
+            # check for bad index
+            if ( $index < 0 || ( $index > $nspec ) )
+            {
+                return ("Index $index to species in reaction out of range");
+            }        
+        
+            # NOTE: zero is the null species, so ignore indices less than 1
+            unless ( $index < 1 )                     
+            {   push @ptrs, $slist->Array->[ $index - 1 ];   }
+
+        }
+    }
+    else
+    {
+        return ( "Incomplete reaction at products" );
+    }
+    $rxn->Products( [@ptrs] );
+
+    # Next token is rate law
+    # This will create a separate RateLaw object for each reaction.  When reaction
+    # rules are used to generate Rxns, only one RateLaw is used per RxnRule.
+    # Information about which rule created the reacion is lost because of this.  Also,
+    # the statistical factor gets folded into the rate law rather than being part of the
+    # reaction, since it is not possible to separate the contributions to the overall
+    # weight.
+    my $rl;
+    if (@tokens)
+    {
+        my $rlstring = join( ' ', @tokens );
+
+        #print "rlstring=$rlstring\n";
+        ( $rl, $err ) = RateLaw::newRateLawNet( \$rlstring, $plist );
+        if ($err) { return ($err); }
+    }
+    else
+    {
+        return ("Incomplete reaction at rate law");
+    }
+    $rxn->RateLaw($rl);
+
+    # Set remaining attributes of rxn
+    $rxn->StatFactor(1);
+    $rxn->Priority(0);
+
+    # Create new Rxn entry in RxnList
+    my $n_add = $rlist->add($rxn);
+
+    return ('');
+}
+
+
+###
+###
+###
+
+
+# write reaction list to a string formatted for a BNGL .NET output file
+sub writeBNGL
+{
+    my $rlist = shift;
+    my $params  = (@_) ? shift @_ : { 'TextReaction'=>0 };
+    my $plist = (@_) ? shift : '';
+    my $out   = '';
+
+    # write reactions as text?
+    my $text = $params->{TextReaction};
+
+    $out .= "begin reactions";
+    if ( $text )
+    {   $out .= "_text";   }
+    $out .= "\n";
+    
+    my $irxn = 1;
+    foreach my $rxn ( @{ $rlist->Array } )
+    {
+        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( $text, $plist );
+        ++$irxn;
+    }
+    
+    $out .= "end reactions";
+    if ($text)
+    {   $out .= "_text";   }
+    $out .= "\n";
+    
+    return $out;
+}
+
+
+###
+###
+###
+
+
+# print rxns to a file
+sub print
+{
+    my $rlist   = shift;
+    my $fh      = shift;
+    my $i_start = (@_) ? shift : 0;
+
+    print $fh "begin reactions\n";
+    my $i = $i_start;
+    while ( $i < @{$rlist->Array} )
+    {
+        my $rxn = $rlist->Array->[$i];
+        printf $fh "%5d %s\n", $i-$i_start+1, $rxn->toString();
+        ++$i;
+    }
+    print $fh "end reactions\n";
+    return ('');
+}
+
+
+###
+###
+###
+
+
+# index reactions. BNG doesn't use this, but it's useful for writing
+#  vector output
+sub updateIndex
+{
+    my $rlist = shift;
+    my $plist = (@_) ? shift : undef;
+    
+    my $err;  
+    my $n_rxns = 0;
+    foreach my $rxn ( @{$rlist->Array} )
+    {
+        $rxn->Index( $n_rxns );
+        ++$n_rxns;
+    }
+
+    return ($err);
+}
+
+
+###
+###
+###
+
+
+# return a string with CVode reaction rate defintions for
+# each reaction in the list.
+sub getCVodeRateDefs
+{
+    my $rlist = shift;
+    my $plist = (@_) ? shift : undef;
+
+    # expression definition string
+    my $rate_defs = '';
+    # to hold errors..
+    my $err;   
+    # size of the indent
+    my $indent = '    ';
+    
+    # loop through reactions and generate rate desfinitions
+    foreach my $rxn ( @{ $rlist->Array } )
+    {
+        $rate_defs .= $indent . $rxn->getCVodeName() . ' = ' .  $rxn->getCVodeRate($plist) . ";\n";
+    }
+
+    return ($rate_defs, $err);
+}
+
+
+###
+###
+###
+
+
+# return a string with Matlab reaction rate defintions for
+# each reaction in the list.
+sub getMatlabRateDefs
+{
+    my $rlist = shift;
+    my $plist = (@_) ? shift : undef;
+
+    # expression definition string
+    my $rate_defs = '';
+    # to hold errors..
+    my $err;   
+    # size of the indent
+    my $indent = '    ';
+    
+    # loop through reactions and generate rate desfinitions
+    my $i_rxn = 1;
+    foreach my $rxn ( @{ $rlist->Array } )
+    {
+        $rate_defs .= $indent . $rxn->getMatlabName() . ' = ' .  $rxn->getMatlabRate($plist) . ";\n";
+        ++$i_rxn;
+    }
+
+    return ($rate_defs, $err);
+}
+
+
+###
+###
+###
+
+
+# construct a sparsely encoded stoichiometry matrix
+sub calcStoichMatrix
+{
+    my $rlist       = shift;
+    my $stoich_hash = shift;
+
+    my $err;
+
+	my @fluxes = ();
+	my $i_rxn = 1;
+	foreach my $rxn ( @{ $rlist->Array } )
+	{
+		# Each reactant contributes a -1
+		foreach my $reactant ( @{ $rxn->Reactants } )
+		{   --( $stoich_hash->{ $reactant->Index }{$i_rxn} );   }
+
+		# Each product contributes a +1
+		foreach my $product ( @{ $rxn->Products } )
+		{   ++( $stoich_hash->{  $product->Index }{$i_rxn} );   }
+		
+		++$i_rxn;
+	}
+
+    return ($err);
+}
+
+
+###
+###
+###
+
+
+# Need join function to merge two lists.  Could make use of reaction
+# precedence here if the rate law was suppressed from the string used to
+# compare reactions
+
+1;
