@@ -242,7 +242,7 @@ sub readXML
     my $verbose         = @_ ? shift @_ : 0;
 
     # error message
-    my $err = undef;
+    my $err;
     # counters
     my $n_pars_new   = 0;
     my $n_pars_redef = 0;
@@ -250,8 +250,7 @@ sub readXML
     my $param_array = $xml->getParameters();
     foreach my $param_hash ( @$param_array )
     {
-        my $param = Param->new();
-        $err = $param->readXML($param_hash);
+        (my $param, $err) = $param->readXML($param_hash, $plist);
         if ($err) { return $err; }
 
         # lookup parameter name
@@ -291,11 +290,11 @@ sub readXML
     }
 
     if ($verbose)
-    {   
+    {   # tell user how many parameters were defined or redefined
         print sprintf( "Parameter->readXML: read %d new parameters and redefined %d parameters.\n", $n_pars_new, $n_pars_redef );
     }
 
-    return $err;
+    return undef;
 }
 
 

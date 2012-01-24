@@ -155,6 +155,34 @@ sub toString
 ###
 
 
+# Initialize Parameter from XML hash
+# ($param, $err) = Param->readXML( \%xml_hash, $plist ) 
+sub readXML
+{
+    my ($class, $xml_hash, $plist) = @_;
+
+    # Read expression
+    my $string = $xml_hash->{'-value'};
+    my $expr = Expression->new();
+    $expr->setAllowForward(1);
+    if ( my $err = $expr->readString( \$string, $plist ) ) { return undef, $err; }
+    $expr->setAllowForward(0);
+
+    # setup parameter
+    my $param = Param->new( 'Name'  => $xml_hash->{'-id'},
+                            'Type' => $xml_hash->{'-type'},
+                            'Expr' => $expr );
+
+    # return parameter
+    return $param, undef;
+}
+
+
+###
+###
+###
+
+
 # Write the parameter to XML
 sub toXML
 {
