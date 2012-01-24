@@ -11,6 +11,9 @@ use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
 
+# XML Modules
+use XMLReader;
+
 # BNG Modules
 use Param;
 use Expression;
@@ -188,9 +191,9 @@ sub evaluate
 # parse parameter from a BNGL string
 sub readString
 {
-    my $plist  = shift;
-    my $string = shift;
-    my $allow_undefined = (@_) ? shift : 0;
+    my $plist  = shift @_;
+    my $string = shift @_;
+    my $allow_undefined = @_ ? shift @_ : 0;
 
     my $sptr = \$string;
     my ($name, $val);
@@ -220,6 +223,79 @@ sub readString
     $expr->setAllowForward(0);
 
     return '';
+}
+
+
+
+###
+###
+###
+
+
+
+# parse parameters from XML file
+sub readXML
+{
+    my $plist = shift @_;
+    my $xml   = shift @_;
+    my $allow_overwrite = @_ ? shift @_ : 0;
+    my $verbose         = @_ ? shift @_ : 0;
+
+    # error message
+    my $err = undef;
+    # counters
+    my $n_pars_new   = 0;
+    my $n_pars_redef = 0;
+
+    my $param_array = $xml->getParameters();
+    foreach my $param_hash ( @$param_array )
+    {
+        my $param = Param->new();
+        $err = $param->readXML($param_hash);
+        if ($err) { return $err; }
+
+        # lookup parameter name
+        (my $old_param, $err) = $plist->lookup($param->Name);
+        if ($err) { return $err; }
+
+        # add parameter to Plist
+        if ( defined $old_param  and  $old_param->Expr )
+        {   # if a parameter with this name is already defined..
+            if ($allow_overwrite)
+            {   # ..copy new param definition over old_param
+                %$old_param = %$param;
+                undef %$param;
+                $param = $old_param;
+                ++$n_pars_redef;
+            }
+            else
+            {   # redefining parameters is not allowed
+                $err = "Parameter->readXML: attempt to redefine parameter $name is not allowed"; 
+                return $err;
+            }
+        }
+        else
+        {
+            # add to plist array, unless type is Local or RRef
+            unless ( $param->Type eq 'Local'  or  $param->Type eq 'RRef' )
+            {   # add param to Plist Array
+                push @{$plist->Array}, $param;
+                # add param to unchecked list
+                push @{$plist->Unchecked}, $param;
+            }
+            # add param to Plist hash
+            $plist->Hash->{ $param->Name } = $param;
+            # increment counter
+            ++$n_pars_new;
+        }
+    }
+
+    if ($verbose)
+    {   
+        print sprintf( "Parameter->readXML: read %d new parameters and redefined %d parameters.\n", $n_pars_new, $n_pars_redef );
+    }
+
+    return $err;
 }
 
 
