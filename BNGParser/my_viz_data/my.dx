@@ -1,8 +1,0 @@
-object "iteration_numbers" class array type unsigned int rank 1 shape 3 items 101 lsb binary data file my.iteration_numbers.bin,0
-	attribute "dreamm3mode" number 1	#DREAMM_V3_MODE#
-
-
-object "time_values" class array type double rank 0 items 101 lsb binary data file my.time_values.bin,0
-	attribute "dreamm3mode" number 1	#DREAMM_V3_MODE#
-
-

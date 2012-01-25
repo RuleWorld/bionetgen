@@ -13,7 +13,7 @@ import org.antlr.stringtemplate.language.*;
 
 import bngparser.dataType.ChangeableChannelTokenStream;
 import bngparser.grammars.*;
-import bngparser.netGrammar.*;
+//import bngparser.netGrammar.*;
 
 /*
  * TODO:
@@ -27,8 +27,8 @@ public class Tester {
 	public static void main(String[] args) throws IOException,RecognitionException{
 		
 		
-		String inputFile = "compartments.net";
-		String outputFile = "output.mdl";
+		String inputFile = "testModels/egfr_net.bngl";
+		String outputFile = "output.xml";
 		
 		if(args.length > 0){
 			inputFile = args[0];
@@ -44,13 +44,13 @@ public class Tester {
 		BNGLexer bnglexer = new BNGLexer(input);
 		 ChangeableChannelTokenStream tokens = new ChangeableChannelTokenStream(bnglexer);
 		 
-		NETGrammar parser = new NETGrammar(tokens);
-		// BNGGrammar parser = new BNGGrammar(tokens);
+		//NETGrammar parser = new NETGrammar(tokens);
+		 BNGGrammar parser = new BNGGrammar(tokens);
 			
 		
 		//parser.addOptions("DNA(a)", map);
 		
-		StringTemplateGroup template = new StringTemplateGroup(new FileReader("mcell.stg"),AngleBracketTemplateLexer.class);
+		StringTemplateGroup template = new StringTemplateGroup(new FileReader("xml.stg"),AngleBracketTemplateLexer.class);
 		parser.setTemplateLib(template);
 		RuleReturnScope r = parser.prog();
 		
