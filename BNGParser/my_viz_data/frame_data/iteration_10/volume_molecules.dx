@@ -1,0 +1,24 @@
+object 1 class array type float rank 1 shape 3 items 997 lsb binary data file volume_molecules_positions.bin,0 # A.positions #
+	attribute "dep" string "positions"
+
+object 2 class constantarray type float rank 1 shape 3 items 997 lsb binary data file volume_molecules_orientations.bin,0 # A.orientations #
+	attribute "dep" string "positions"
+
+object 3 class array type float rank 1 shape 3 items 3 lsb binary data file volume_molecules_positions.bin,11964 # B.positions #
+	attribute "dep" string "positions"
+
+object 4 class constantarray type float rank 1 shape 3 items 3 lsb binary data file volume_molecules_orientations.bin,12 # B.orientations #
+	attribute "dep" string "positions"
+
+object 5 field # A #
+	component "positions" value 1
+	component "data" value 2 # orientations #
+
+object 6 field # B #
+	component "positions" value 3
+	component "data" value 4 # orientations #
+
+object 7 group # volume molecules #
+	member "A" value 5
+	member "B" value 6
+

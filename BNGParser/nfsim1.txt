@@ -1,0 +1,65 @@
+begin model
+begin parameters
+
+   Etot 300
+   Ftot 300
+   Stot 3000
+   Etot 300*3
+   kOnE   0.7
+   kOffE  3
+   kCatE  5.0
+
+   kOnF   0.7
+   kOffF  3
+   kCatF  5.1
+
+end parameters
+
+
+begin molecule types
+   E(s)
+   F(s)
+   S(p1~U~P)
+end molecule types
+
+
+begin compartments
+  EC   3    300     # extra cellular fluid space
+    ECC  2  10 EC
+end compartments
+
+begin seed species
+   E(s)     Etot
+   E(s)@ECC     Etot
+   F(s)     Ftot
+   S(p1~U)  Stot
+end seed species
+
+
+begin reaction rules
+  
+   ###  SITE 1 ###
+   2*E + S(p1~U) <-> @ECC:E(s!1).S(p1~U!1) kOnE, kOffE
+   E(s!1).S(p1~U!1) -> E(s) + S(p1~P) kCatE
+   F(s) -> E(s) kCatE
+   F + S(p1~P) <-> F(s!1).S (p1~P!1) kOnF, kOffF
+   F(s!1).S(p1~P!1) -> F(s) + S(p1~U) kCatF
+   0 -> F(s) kOnF
+
+end reaction rules
+
+begin observables
+
+   Molecules Efree E(s)
+   Molecules Ffree F(s)
+   Molecules S1P   S(p1~P!?)
+
+end observables
+
+begin functions
+michment() = Efree/(Etot + kCatE) 
+end functions
+end model
+writeXML();
+
+

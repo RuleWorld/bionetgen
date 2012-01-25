@@ -1,0 +1,118 @@
+begin model
+begin parameters
+	a0 1000.000000
+	d0 1000.000000
+	h0 1000.000000
+	i0 100000.000000
+	k0 3000000.000000
+	l0 1000.000000
+	p0 30000.000000
+	k1 0.000010
+	k2 0.000010
+	k2b 0.100000
+	k3 0.000010
+	k4 0.000010
+	k4b 0.100000
+	k5 0.000010
+	k6 0.000010
+	k7 0.000010
+	k8 0.000010
+	Prey 0.000000
+	Predator 0.000000
+	ED7 0.000000
+	AE7 0.000000
+	Group_Prey 0.000000
+	Group_Predator 0.000000
+	Group_ED7 0.000000
+	Group_AE7 0.000000
+end parameters
+begin molecules
+	S1()
+	S2()
+	S3()
+	S4()
+	S5()
+	S6()
+	S7()
+	S8()
+	S9()
+	S10()
+	S11()
+	S12()
+	S13()
+	S14()
+	S15()
+	S16()
+	S17()
+	S18()
+	S19()
+end molecules
+begin seed species
+	S1 1000.000000
+	S2 1000.000000
+	S3 1000.000000
+	S4 100000.000000
+	S5 3000000.000000
+	S6 1000.000000
+	S7 30000.000000
+	S8 0.000000
+	S9 0.000000
+	S10 0.000000
+	S11 0.000000
+	S12 0.000000
+	S13 0.000000
+	S14 0.000000
+	S15 0.000000
+	S16 0.000000
+	S17 0.000000
+	S18 0.000000
+	S19 0.000000
+end seed species
+begin functions
+	functionRate0() = k1  
+	functionRate1() = 2 * k2  
+	functionRate2() = 2 * k4  
+	functionRate3() = k5  
+	functionRate4() = k2b 
+	functionRate5() = 4 * k3  
+	functionRate6() = k4b 
+	functionRate7() = k6  
+	functionRate8() = k7  
+	functionRate9() = 4 * k8  
+end functions
+begin observables
+	Species S1 S1()
+	Species S2 S2()
+	Species S3 S3()
+	Species S4 S4()
+	Species S5 S5()
+	Species S6 S6()
+	Species S7 S7()
+	Species S8 S8()
+	Species S9 S9()
+	Species S10 S10()
+	Species S11 S11()
+	Species S12 S12()
+	Species S13 S13()
+	Species S14 S14()
+	Species S15 S15()
+	Species S16 S16()
+	Species S17 S17()
+	Species S18 S18()
+	Species S19 S19()
+end observables
+begin rules
+	S1() + S3() -> S8() + S9() functionRate0()
+	S1() + S7() -> S10() functionRate1()
+	S2() + S7() -> S11() functionRate2()
+	S2() + S6() -> S12() + S13() functionRate3()
+	S10() -> S1() + S7() functionRate4()
+	S4() + S9() -> S1() + S1() + S14() + S15() functionRate5()
+	S11() -> S2() + S7() functionRate6()
+	S2() + S10() -> S16() + S17() functionRate7()
+	S1() + S11() -> S16() + S17() functionRate8()
+	S5() + S17() -> S2() + S2() + S18() + S19() functionRate9()
+end rules
+end model
+generate_network();
+simulate_ode({t_end=>400,n_steps=>50});

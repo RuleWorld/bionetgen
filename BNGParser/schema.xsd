@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.sbml.org/sbml/level3" xmlns:level3="http://www.sbml.org/sbml/level3">
+  <xs:element name="sbml">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="level3:Model"/>
+      </xs:sequence>
+      <xs:attribute name="level" use="required" type="xs:integer"/>
+      <xs:attribute name="version" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Model">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="level3:ListOfParameters"/>
+        <xs:element ref="level3:ListOfMoleculeTypes"/>
+        <xs:element ref="level3:ListOfSpecies"/>
+        <xs:element ref="level3:ListOfCompartments"/>
+        <xs:element ref="level3:ListOfReactionRules"/>
+        <xs:element ref="level3:ListOfObservables"/>
+        <xs:element ref="level3:ListOfFunctions"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfParameters">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:Parameter"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Parameter">
+    <xs:complexType>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="type" use="required" type="xs:NCName"/>
+      <xs:attribute name="value" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfMoleculeTypes">
+  <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:MoleculeType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="MoleculeType">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="level3:ListOfComponentTypes"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfComponentTypes">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:ComponentType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ComponentType">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="level3:ListOfAllowedStates"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfAllowedStates">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:AllowedState"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AllowedState">
+    <xs:complexType>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfSpecies">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:Species"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Species">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="level3:ListofMolecules">
+          <xs:attribute name="concentration" use="required" type="xs:NCName"/>
+          <xs:attribute name="id" use="required" type="xs:NCName"/>
+          <xs:attribute name="name" use="required"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfCompartments">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:Compartment"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Compartment">
+    <xs:complexType>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="outside" type="xs:NCName"/>
+      <xs:attribute name="size" use="required" type="xs:decimal"/>
+      <xs:attribute name="spatialDimensions" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfReactionRules">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:ReactionRule"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ReactionRule">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="level3:ListOfReactantPatterns"/>
+        <xs:element ref="level3:ListOfProductPatterns"/>
+        <xs:element ref="level3:RateLaw"/>
+        <xs:element ref="level3:Map"/>
+        <xs:element ref="level3:ListOfOperations"/>
+      </xs:sequence>
+      <xs:attribute name="expression" use="required"/>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfReactantPatterns">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:ReactantPattern"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ReactantPattern">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="level3:ListofMolecules">
+          <xs:sequence>
+            <xs:element minOccurs="0" ref="level3:ListofBonds"/>
+          </xs:sequence>
+          <xs:attribute name="id" use="required" type="xs:NCName"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfProductPatterns">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:ProductPattern"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProductPattern">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="level3:ListofMolecules">
+          <xs:sequence>
+            <xs:element minOccurs="0" ref="level3:ListofBonds"/>
+          </xs:sequence>
+          <xs:attribute name="id" use="required" type="xs:NCName"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RateLaw">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="level3:ListOfRateConstants"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfRateConstants">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="level3:RateConstant"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RateConstant">
+    <xs:complexType>
+      <xs:attribute name="value" use="required" type="xs:double"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Map">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:MapItem"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="MapItem">
+    <xs:complexType>
+      <xs:attribute name="sourceID" use="required" type="xs:NCName"/>
+      <xs:attribute name="targetID" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfOperations">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="level3:DeleteBond"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="level3:AddBond"/>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="level3:Add"/>
+          <xs:element ref="level3:Delete"/>
+        </xs:choice>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AddBond">
+    <xs:complexType>
+      <xs:attribute name="site1" use="required" type="xs:NCName"/>
+      <xs:attribute name="site2" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DeleteBond">
+    <xs:complexType>
+      <xs:attribute name="site1" use="required" type="xs:NCName"/>
+      <xs:attribute name="site2" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfObservables">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:Observable"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Observable">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="level3:ListOfPatterns"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+      <xs:attribute name="type" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfPatterns">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:Pattern"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Pattern">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="level3:ListofMolecules">
+          <xs:sequence>
+            <xs:element minOccurs="0" ref="level3:ListofBonds"/>
+          </xs:sequence>
+          <xs:attribute name="id" use="required" type="xs:NCName"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfFunctions">
+    <xs:complexType/>
+  </xs:element>
+  <xs:complexType name="ListofMolecules">
+    <xs:sequence>
+      <xs:element ref="level3:ListofMolecules"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ListofMolecules">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:Molecule"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Molecule">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="level3:ListOfComponents"/>
+      </xs:sequence>
+      <xs:attribute name="compartment" type="xs:NCName"/>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListOfComponents">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="level3:Component"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Component">
+    <xs:complexType>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+      <xs:attribute name="numberOfBonds" use="required"/>
+      <xs:attribute name="state" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ListofBonds">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="level3:Bond"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Bond">
+    <xs:complexType>
+      <xs:attribute name="id" use="required" type="xs:NCName"/>
+      <xs:attribute name="site1" use="required" type="xs:NCName"/>
+      <xs:attribute name="site2" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

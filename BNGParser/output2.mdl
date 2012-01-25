@@ -1,0 +1,68 @@
+time_step = 1.0e-4
+dt = time_step
+TIME_STEP = time_step 
+TIME_STEP_MAX = time_step 
+ITERATIONS = 1000 
+INTERACTION_RADIUS = 0.003
+rateLaw1 = 1.0
+halfbox = 0.5
+
+PARTITION_X = [[-halfbox TO halfbox STEP halfbox/5]]
+PARTITION_Y = [[-halfbox TO halfbox STEP halfbox/5]]
+PARTITION_Z = [[-halfbox TO halfbox STEP halfbox/5]]
+
+DEFINE_MOLECULES
+{
+	S1 {DIFFUSION_CONSTANT_3D = 6e-6}
+	S2 {DIFFUSION_CONSTANT_3D = 6e-6}
+	S3 {DIFFUSION_CONSTANT_3D = 6e-6}
+	
+}
+
+DEFINE_REACTIONS
+{
+	S2'  + S1' -> S3 [1e5]:my_rxn
+}
+
+my_box BOX {
+	CORNERS = [-halfbox,-halfbox,-halfbox],[halfbox,halfbox,halfbox]
+	DEFINE_SURFACE_REGIONS{
+		my_region {
+			ELEMENT_LIST = [ALL_ELEMENTS]
+			}
+	}
+}
+
+my_release_site SPHERICAL_RELEASE_SITE {
+	LOCATION = [0,0,0]
+	SITE_DIAMETER = 0.99
+	MOLECULE = S1
+	NUMBER_TO_RELEASE = 1000
+}
+
+my_release_site_2 SPHERICAL_RELEASE_SITE {
+	LOCATION = [0,0,0]
+	SITE_DIAMETER = 0.99
+	MOLECULE = S2
+	NUMBER_TO_RELEASE = 1000
+}
+
+INSTANTIATE world OBJECT 
+{
+	system OBJECT my_box { }
+	my_release_site OBJECT my_release_site { }
+	my_release_site_2 OBJECT my_release_site_2 { }
+}
+
+
+
+REACTION_DATA_OUTPUT
+{
+	STEP = dt * 1
+	
+	{COUNT[S1,WORLD]} => "./react_data/A.dat"
+	{COUNT[S2,WORLD]} => "./react_data/B.dat"
+	{COUNT[S3,WORLD]} => "./react_data/C.dat"
+	{COUNT[my_rxn,WORLD]} => "./react_data/my_rxn.dat"
+
+}
