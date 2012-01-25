@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.1.7  -->
+<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+  <model id="simple">
+    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="S1" compartment="cell" initialConcentration="100" name="D(r,r)"/>
+      <species id="S2" compartment="cell" initialConcentration="200" name="M(l)"/>
+      <species id="S3" compartment="cell" initialConcentration="0" name="D(r!1,r).M(l!1)"/>
+      <species id="S4" compartment="cell" initialConcentration="0" name="D(r!1,r!2).M(l!1).M(l!2)"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <!-- Independent variables -->
+      <parameter id="ob1" value="0"/>
+      <parameter id="ob2" value="0"/>
+      <parameter id="rateLaw1" value="10"/>
+      <!-- Dependent variables -->
+      <!-- Observables -->
+      <parameter id="Group_ob1" constant="false"/>
+      <parameter id="Group_ob2" constant="false"/>
+    </listOfParameters>
+    <listOfRules>
+      <!-- Dependent variables -->
+      <!-- Observables -->
+      <assignmentRule variable="Group_ob1">
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+                <cn> 0 </cn>
+              <ci> S3 </ci>
+            </apply>
+          </math>
+      </assignmentRule>
+      <assignmentRule variable="Group_ob2">
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+                <cn> 0 </cn>
+              <ci> S4 </ci>
+            </apply>
+          </math>
+      </assignmentRule>
+    </listOfRules>
+    <listOfReactions>
+      <reaction id="R1" reversible="false">
+        <listOfReactants>
+          <speciesReference species="S1"/>
+          <speciesReference species="S2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="S3"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <cn> 2 </cn>
+              <ci> rateLaw1 </ci>
+              <ci> S1 </ci>
+              <ci> S2 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R2" reversible="false">
+        <listOfReactants>
+          <speciesReference species="S2"/>
+          <speciesReference species="S3"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="S4"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> rateLaw1 </ci>
+              <ci> S2 </ci>
+              <ci> S3 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
