@@ -1,0 +1,193 @@
+group xml;
+
+typeInitMap ::= [
+   "Integer":  "0",
+    "long":    "1",
+    default:   "null"
+]
+
+prog2(parameters,molecules,species,reactions,observables,functions,compartments) ::= <<
+\<?xml version="1.0" encoding="UTF-8"?\>
+\<!-- Created by BioNetGen 2.1.7  --\>
+\<sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1"\>
+  \<Model\>
+    \<ListOfParameters\>
+        <parameters; separator="\n">
+    \</ListOfParameters\>
+    \<ListOfMoleculeTypes\>
+        <molecules; separator="\n">
+    \</ListOfMoleculeTypes\>
+    \<ListOfSpecies\>
+        <species; separator="\n">
+    \</ListOfSpecies\>
+    \<ListOfCompartments\>
+    <compartments; separator="\n">
+    \</ListOfCompartments\>
+    \<ListOfReactionRules\>
+        <reactions; separator="\n">
+    \</ListOfReactionRules\>
+    \<ListOfObservables\>
+        <observables; separator="\n">
+    \</ListOfObservables\>
+    \<ListOfFunctions\>
+        <functions; separator="\n">
+    \</ListOfFunctions\>
+  \</Model\>
+\</sbml\>
+>>
+
+parameter_def(id,value) ::=<<
+  \<Parameter id="<id>" type="Constant" value="<value>"/\>
+>>
+
+molecules_def(id,sites) ::= <<
+ <if(sites)>
+ \<MoleculeType id="<id>">
+   \<ListOfComponentTypes\>
+      <sites; separator="\n">  
+   \</ListOfComponentTypes\>   
+ \</MoleculeType>
+ <else>
+ \<MoleculeType id="<id>"/>
+ <endif>
+>>
+
+sites_def(id,states) ::= <<
+   <if(states)>
+     \<ComponentType id="<id>">   
+     \<ListOfAllowedStates>
+      <states: { st | \<AllowedState id="<st>"/\>}; separator="\n">
+     \</ListOfAllowedStates>
+     \</ComponentType>
+   <else>
+   \<ComponentType id="<id>"/>
+   <endif>
+>>
+
+
+
+seed_species_block(id,concentration,name,molecules,firstBonds,secondBonds) ::= <<
+  \<Species id="<id>"  concentration="<concentration>" name="<name>"\>
+     <rule_seed_species_block(id=id,molecules=molecules,firstBonds=firstBonds,secondBonds=secondBonds)>
+  \</Species\>
+>>
+
+rule_seed_species_block(id,molecules,firstBonds,secondBonds) ::= <<
+  \<ListofMolecules>
+    <molecules; separator="\n">
+  \</ListofMolecules\>
+  <if(firstBonds)>
+  \<ListofBonds>
+    <firstBonds,secondBonds:{ firstBond,secondBond | \<Bond id="<id>_B<i>" site1="<firstBond>"  site2="<secondBond>" /\>};separator="\n">
+  \</ListofBonds\>
+  <endif>
+
+>>
+
+
+bond_template(firstElement,secondElement) ::= <<
+  
+>>
+
+
+list_molecule_def(id,name,sites,compartment) ::= <<
+\<Molecule id="<id>" name="<name>" <if(compartment)>compartment="<compartment>"<endif>\>
+ \<ListOfComponents\>
+   <sites; separator="\n">
+ \</ListOfComponents\>
+\</Molecule\>
+>>
+
+component_def(id,name,state,numberOfBonds)::= <<
+\<Component id="<id>"  name="<name>" <if(state)> state= "<state>" <endif> numberOfBonds="<numberOfBonds>" /\>
+>>
+
+type_user_object(name) ::= "<name>"
+
+reaction_block(id,name,reactant,product,rate,bidirectional,birate,leftMap,rightMap,operations,operator1,operator2,expression) ::=<<
+  \<ReactionRule id="<id>" name="<name>" expression="<expression>"\>
+   \<ListOfReactantPatterns\>
+      <reactant: {react | \<ReactantPattern id="<id>_RP<i>"\>  
+       <react> 
+      \</ReactantPattern\>}; separator="\n">
+   \</ListOfReactantPatterns\>
+   \<ListOfProductPatterns\>
+    <product: {prot |\<ProductPattern id="<id>_PP<i>"\> 
+     <prot> 
+    \</ProductPattern\>}; separator="\n">
+   \</ListOfProductPatterns\>
+  \<RateLaw\>
+    \<ListOfRateConstants\>
+      \<RateConstant value="<rate>"/\>
+    \</ListOfRateConstants\>
+  \</RateLaw\>
+  \<Map\>
+     <leftMap,rightMap:{ left,right | \<MapItem sourceID="<left>" targetID="<right>"/\>};separator="\n">
+     
+  \</Map\>
+  \<ListOfOperations\>
+    <operations,operator1,operator2:{oper,op1,op2 | \<<oper> site1="<op1>" site2="<op2>"/\>};separator="\n">
+  \</ListOfOperations\>
+  \</ReactionRule\>
+
+   
+>>
+
+reaction_rules()::=<<
+
+>>
+
+
+observables_block(id,name,type,patterns)::=<<
+  \<Observable id="<id>" name="<name>" type="<type>"\>
+  \<ListOfPatterns\>
+  <patterns>
+  \</ListOfPatterns\>
+  \</Observable\>
+>>
+
+patterns_block(id,molecules)::=<<
+   <molecules:{pattern |
+   \<Pattern id="<id>_P<i>"\>  
+    <pattern> 
+  \</Pattern\>}; separator="\n">
+>>
+
+functions_block(id,referencesName,referencesType,expression)::=<<
+\<Function id="<id>"\>
+  \<ListOfReferences\>
+    <referencesName,referencesType:{ left,right | \<Reference name="<left>" type="<right>"\>};separator="\n">
+  \</ListOfReferences\>
+  \<Expression\> <expression> \</Expression\>
+\</Function\>
+>>
+
+compartments_block(id,dimensions,size,outside)::=<<
+   \<Compartment id="<id>" spatialDimensions="<dimensions>" size="<size>" <if(outside)>outside="<outside>"<endif>/\>
+>>
+
+ 
+/////////////
+
+
+actions(actions) ::= <<
+\<ListOfActions\>
+  <actions; separator="\n">
+\</ListOfActions\>
+>>
+
+
+
+action(id,optionMap)::=<<
+<if(optionMap)>
+\<Action id="<id>"\>  
+  <optionMap.keys:{k | \<option id="<k>" value="<optionMap.(k)>"/\>}; separator="\n">
+\</Action\> 
+<else>
+\<Action id="<id>"/\>  
+<endif>
+>>
+
+
+
+
