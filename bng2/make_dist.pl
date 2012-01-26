@@ -1,193 +1,275 @@
 #!/usr/bin/perl
+#
+# make_dist.pl
+#
+# SYNOPSIS:
+#   make_dist.pl [OPTION] --version VERSION
+#
+# DESCRIPTION:
+#   create a BioNetGen distribution
+#
+# OPTIONS:
+#   --bngpath PATH  : path to BioNetGen repository
+#   --outdir  PATH  : output path
+#   --archive       : create distribution archive file
+#   --help          : display help
+
+use strict;
+use warnings;
+
+# Perl Core Modules
+use FindBin;
+use File::Spec;
+# this module isn't copying the executable permission (as advertised)
+use File::Copy "cp";
+
+### PARAMETERS ###
+# BNG root directory
+my $bngpath = $FindBin::RealBin;
+# output directory
+my $outdir = File::Spec->curdir();
+ # if true, delete output files after validation
+my $archive = 1;
+# size of indent to STDOUT       
+my $version = '';
+# regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
+my $exclude_files = '(^\.|^_|~$|^make_dist\.pl$|^Installation_Guide\.html$|^WikiWelcome\.rtf$)';
+# subdirectories to include in distribution
+my @include_subdirectories = qw/ bin Perl2 Models2 Network2 Network3 PhiBPlot Validate libsource /;
+# system copy command
+my $syscopy = "cp";
 
 
-if (@ARGV)
+###                                                          ###
+###  BEGIN MAIN SCRIPT, no user options beyond this point!!  ###
+###                                                          ###
+
+# Greet the User
+print "\n>>> BioNetGen Distribution Tool\n";
+
+# Process command line arguments
+while ( @ARGV and $ARGV[0] =~ /^--/ )
 {
-    $version= shift;
+    my $arg = shift @ARGV;
+    if ( $arg eq '--bngpath' )
+    {   $bngpath = shift @ARGV;   }
+    elsif ( $arg eq '--outdir' )
+    {   $outdir  = shift @ARGV;    }
+    elsif ( $arg eq '--version' )
+    {   $version = shift @ARGV;    }
+    elsif ( $arg eq '--archive' )
+    {   $archive = 1;    }
+    elsif ( $arg eq '--help' )
+    {
+        display_help();
+        exit 0;
+    }
+    else
+    {   # unrecognized option!
+        print "make_dist.pl syntax error:\nunrecognized command line option '$arg'.\n";
+        exit -1;
+    }
 }
-else
+
+
+# check for valid version
+unless ( $version =~ /^\d+\.\d+\.\d+$/)
 {
-    $version= `cat VERSION`;
-    $version=~ s/[+]//;
-    @dat= split('\.', $version);
-    # Increment last index
-    ++$dat[$#dat];
-    $version= join('.',@dat);
-    #die "Usage: make_dist.pl version_number";
+    print "make_dist.pl error:\ninvalid version '$version'.\n";
+    exit -1;
+}
+
+my $dist_name = "BioNetGen_${version}";
+my $dist_dir     = File::Spec->catdir( ${outdir}, ${dist_name} );
+my $archive_file = File::Spec->catfile( ${outdir}, "${dist_name}.tar.gz" );
+
+
+
+# begin creating distribution
+print  "Creating distribution version $version\n";
+printf "  bngpath: %s\n", $bngpath;
+printf "  distdir: %s\n", $dist_dir;
+if ($archive)
+{
+    printf "  archive: %s\n", $archive_file;
+}
+print "\n";
+
+
+
+
+# check if output directory exists..
+unless (-d $outdir)
+{
+    # try to make output directory
+    unless ( mkdir $outdir )
+    {
+        print "make_dist.pl error:\ncannot make output directory ($!).\n";
+        exit -1;
+    }
 }
 
 
-print "Creating release $version:\n\n";
-@version_dat= split('\.',$version);
-
-$dist_top="Dist";
-$dist_name="BioNetGen";
-$dist_dir="${dist_top}/${dist_name}";
-$dist_file="${dist_name}_${version}.tgz";
-
-
--e $dist_file && die "$dist_file exists: change version number.";
-if (-d $dist_dir){
-    die "Directory $dist_dir exists.  Remove or rename before running.";
+if ($archive)
+{   # check if archive file already exists..
+    if (-e $archive_file)
+    {
+        print "make_dist.pl error:\narchive '$archive_file' already exists.\n";
+        exit -1;
+    }
 }
-mkdir $dist_dir;
+
+
+# check if distribution directory already exists..
+if (-d $dist_dir)
+{   # don't write over any exist files.. ABORT
+    print "make_dist.pl error:\ntarget distribution directory '$dist_dir' already exists.\n"; 
+    exit -1;
+}
+
+
+
+# Include root..
+my $recursive = 0;
+my $err = copy_dir( $bngpath, $dist_dir, $recursive, $exclude_files);
+if ($err)
+{
+    print "make_dist.pl error:\n$err\n";
+    exit -1;
+}
+
+# Include subdirectories..
+foreach my $dir ( @include_subdirectories )
+{   
+    my $source_dir = File::Spec->catdir( $bngpath,  $dir );
+    my $dest_dir   = File::Spec->catdir( $dist_dir, $dir );
+
+    my $recursive = 1;    
+    my $err = copy_dir( $source_dir, $dest_dir, $recursive, $exclude_files );
+    if ($err)
+    {
+        print "make_dist.pl error:\n$err\n";
+        exit -1;
+    }
+}
 
 
 # Create VERSION file for the distribution
-open(VER,">${dist_dir}/VERSION") || die "Couldn't write to $dist_dir: $!\n";
-print VER $version;
-close(VER);
-
-
-# Update development version
-open(VER,">VERSION") || die "Couldn't write to $dist_dir: $!\n";
-print VER "$version+";
-close(VER);
-
-
-if (defined $ENV{PWD}){
-    $top_dir= $ENV{PWD};
-} else {
-    $top_dir=`pwd`;
-}
-
-
-# update Mathutils archive
-#my $mathutils_dir = "Mathutils";
-#my $mathutils_archive = "libsource/Mathutils.tar.gz";
-#print "updating Mathutils archive:\ntar cvzf ${mathutils_archive} --exclude='.svn' ${mathutils_dir}\n\n";
-#`tar cvzf ${mathutils_archive} --exclude='.svn' ${mathutils_dir}`;
-
-
-
-# libraries
-@library_archives = qw(cvode-2.1.1.tar.gz cvode-2.6.0.tar.gz gsl-1.9.tar.gz muparser_v134.tar.gz Mathutils.tar.gz);
-print "Include Network2 source files:\n", join( ', ', @library_archives), "\n\n";    
-copy_files("libsource", "$dist_dir", \@library_archives, 1);
-
-
-# Network2 source code
-@network2_source = qw(LICENSE HOW_TO_INSTALL INSTALL Makefile README network.h network.c run_network.c);
-print "Include Network2 source files:\n", join( ', ', @network2_source), "\n\n";    
-copy_files("Network2", "$dist_dir", \@network2_source, 1);
-
-
-# Network3 source code
-@network3_source = qw(Makefile network.h network.cpp run_network.cpp PLA.cpp PLA.h );
-print "Include Network3 source files:\n", join( ', ', @network3_source), "\n\n";    
-copy_files("Network3_OLD", "$dist_dir", \@network3_source, 1, "Network3");
-
-
-# Network executable(s)
-#@execs="cygwin1.dll run_network_MSWin32.exe run_network_ppc-darwin run_network_i686-linux";
-@execs = qw();
-print "Include Executables: ", join( ', ', @execs), "\n\n";    
-copy_files("bin", "$dist_dir", \@execs, 1);
-
-
-# Web site
-#@web_source= ("BioNetGen\\ website");
-#&copy_files(".", "$dist_dir", \@web_source, 1);
-
-
-# Files in root directory
-@root_source = qw(BNG2.pl bngrc Makefile CREDITS.txt LICENSE.txt README_FIRST.txt VERSION);
-print "Include Root files:\n", join( ', ', @root_source), "\n\n";    
-copy_files(".", "$dist_dir", \@root_source, 1);
-
-
-
-# Version 2 files
-if ($version_dat[0]==2)
+my $vh;
+unless( open($vh, ">", File::Spec->catfile($dist_dir, "VERSION")) )
 {
-    chdir "Perl2";
-    @perl2 = <*.p[lm]>;
-    print "Include Perl2 files:\n", join(', ', @perl2), "\n\n";
-    chdir "..";
-    copy_files("Perl2", "$dist_dir", \@perl2, 1);
-
-    #chdir "GUI";
-    #@gui= <*no-source*.jar >;
-    #chdir "..";
-    #&copy_files("GUI", "$dist_dir", \@gui, 1);
+    print "make_dist.pl error:\ncould not create VERSION file ($!).\n"; 
+    exit -1;
+}
+print $vh "$version";
+close $vh;
 
 
-    if (-d "Models2")
-    {
-        @models2 = qw(run_all.pl blbr.bngl tlbr.bngl fceri_ji.bngl toy-jim.bngl egfr_path.bngl egfr_net.bngl SHP2_base_model.bngl);
-        print "Include Model2 files:\n", join( ', ', @models2), "\n\n";    
-        copy_files("Models2", "$dist_dir", \@models2, 1);
-    }
-
-    #  if (-d "Validate"){
-    #      chdir Validate;
-    #      @files= <*.pl *.bngl *.net>;
-    #      push @files, "DAT_validate";
-    #      chdir "..";
-    #      copy_files("Validate", "$dist_dir", \@files, 1);
-    #  }
-
-    #  if (-d "Tutorial"){
-    #      chdir Tutorial;
-    #      @files= <tutorial.* example1.*>;
-    #      chdir "..";
-    #      copy_files("Tutorial", "$dist_dir", \@files, 1);
-    #  }
-
-    if (-d "PhiBPlot")
-    {
-        chdir "PhiBPlot";
-        @files= <*>;
-        print "Include PhiBPlot files:\n", join(', ', @files), "\n\n";
-        chdir "..";
-        copy_files("PhiBPlot", "$dist_dir", \@files, 1);
-    }
-
-    #  if (-d "RuleBuilder"){
-    #      chdir RuleBuilder;
-    #      @files= <*>;
-    #      chdir "..";
-    #      &copy_files("RuleBuilder", "$dist_dir", \@files, 1);
-    #  }
+if ($archive)
+{
+    # create tar-archive
+    print "\nCreating distribution archive:\n";
+    print "tar cvzf ${archive_file} ${dist_dir}\n";
+    `tar cvzf ${archive_file} ${dist_dir}`;
 }
 
 
-
-# create tar-archive
-chdir "${dist_top}";
-print "creating distribution archive:\ntar cvzf ${dist_file} --exclude='.svn' ${dist_name}\n\n";
-`tar cvzf ${dist_file} --exclude='.svn' ${dist_name}`;
-`rm -rf ${dist_name}`;
-
-
-##############
-## END HERE ##
-##############
+# all done
+print "\nFinished creating distribution.\n";
+exit 0;
 
 
 
 
-# subroutine for copying files
-sub copy_files
+
+##-------------##
+## Subroutines ##
+##-------------##
+
+
+# copy directories (optionally recursive) with exclude filter
+sub copy_dir
 {
     my $source_dir = shift @_;
-    my $dist_dir = shift @_;
-    my $file_list = shift @_;
-    my $no_split = shift @_;
-    my $dest_dir = @_ ? shift @_ : $source_dir;
+    my $dest_dir   = shift @_;
+    my $recursive  = @_ ? shift @_ : 1;
+    my $exclude_files = @_ ? shift @_ : '';
 
     my @files;
-    if ($no_split){
-        @files=@{$file_list};
-    } else {
-        @files= split(' ',$file_list)
-    }
-    mkdir "$dist_dir/$dest_dir";
-    for my $file (@files){
-        if ($file=~/\/[.]svn\//){
-            print "Excluding $file\n";
-            next;
+
+    if ( -d $source_dir )
+    {   # read files in source_dir
+        my $dh;
+        unless( opendir $dh, $source_dir )
+        {
+            return "copy_dir: cannot read directory '$source_dir'.";
         }
-        my $err=`cp -r $source_dir/$file $dist_dir/$dest_dir`;
+        @files = grep {$_ !~ m/$exclude_files/} readdir($dh);
+        closedir $dh;
     }
+    else
+    {   # return error
+        return "copy_dir: source '$source_dir' is not a directory.";
+    }
+
+    unless ( mkdir $dest_dir )
+    {   # return error
+        return "copy_dir: cannot create directory ($!)";
+    }
+
+    print "including $source_dir . . .\n";
+    foreach my $file (@files)
+    {
+        # TODO: using catfile is questionable, since file may be a subdirectory
+        my $source_file = File::Spec->catfile( $source_dir, $file );
+        my $dest_file   = File::Spec->catfile( $dest_dir,   $file );
+
+        if ( -d $source_file )
+        {   
+            if ($recursive)
+            {   # copy subdirectory
+                my $err = copy_dir( $source_file, $dest_file, $recursive, $exclude_files );
+                if (defined $err)
+                {
+                    return $err;
+                }
+            }
+        }   
+        else
+        {   # copy file
+            print "  $file\n";
+            my @args = ( "cp", $source_file, $dest_file );
+            unless( system(@args)==0 )
+            {
+                return "copy_dir: cannot copy file ($?)";
+            }
+        }
+    }
+
+    return undef;
+}
+
+
+
+# display help menu
+sub display_help
+{
+print <<END_HELP
+
+make_dist.pl
+
+SYNOPSIS:
+   make_dist.pl [OPTS] --version VERSION
+
+ DESCRIPTION:
+   create a BioNetGen distribution
+
+ OPTIONS:
+   --bngpath PATH  : path to BioNetGen repository
+   --outdir  PATH  : output path
+   --archive       : create distribution archive file
+   --help          : display help
+
+END_HELP
+
 }
