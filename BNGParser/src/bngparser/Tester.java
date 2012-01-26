@@ -34,6 +34,10 @@ public class Tester {
 			inputFile = args[0];
 			outputFile = args[1];
 		}
+		else{
+			System.err.println("format: java -jar bngparser.jar <inputFile> <outputFile>");
+			return;
+		}
 		Map<String, String> map = new HashMap<String,String>();
 		map.put("D_3D", "1e-8");
 		map.put("location", "[0.1,0.1,0.1]");
