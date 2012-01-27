@@ -80,6 +80,9 @@ def findCorrespondence(reactants,products,dictionary,molecule,rawDatabase,synthe
     if species in synthesisDatabase:
         return species,synthesisDatabase[species]
     elif species in rawDatabase:
+        if product in synthesisDatabase:
+            temp = [x[0] for x in synthesisDatabase[product][product.index(species[0])]]
+            return species,(temp,)
         return species,rawDatabase[species]
     
     extended1 = (copy(dictionary[reactants[0]]))
@@ -214,7 +217,7 @@ if __name__ == "__main__":
     #database = {('S1',):(["a","b"],),("S2",):(["r"],),('S3',):(['l'],),('S1','S2'):([('a','1')],[('r','1')]),('S1','S3'):([('b','2')],[('l','2')])}
     #database = {('S1',):(["a","b"],),("S2",):(["r"],),('S3',):(['l'],),('S4',):(['t'],),('S1','S2'):([('a','1')],[('r','1')]),('S1','S3'):([('b','2')],[('l','2')]),('S1','S4'):([('c','3')],[('t','3')])}
     rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",)],),('S3',):([('l',)],),('S4',):([('t',)],)}   
-    synthesisdatabase = {('S1','S2'):([('b','1')],[('r','1')])}
+    #synthesisdatabase = {('S1','S2'):([('b','1')],[('r','1')])}
     synthesisdatabase = {}
     history = []
     labelDictionary = {}
