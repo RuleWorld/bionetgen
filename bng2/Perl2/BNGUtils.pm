@@ -7,16 +7,21 @@ use lib $FindBin::Bin;
 use File::Spec;
 use Cwd;
 
+use constant VERSION_FILENAME => "VERSION";
+use constant DEFAULT_VERSION  => "UNKNOWN";
+use constant DEFAULT_CODENAME => "";
+
 
 require Exporter;
 our @ISA = qw( Exporter );
-our @EXPORT = qw( BNGversion isReal booleanToInt BNGroot BNGpath exit_error send_warning cpu_time average_runs create_sbml 
+our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNGroot BNGpath exit_error send_warning cpu_time average_runs create_sbml 
 	              head split_obj split_comp verify_pattern process_val_string
 		          validate_rate_law MIN MAX SQR log10 );
 
 # Jim Faeder 3/13/2005.
 {
     my $BNG_VERSION;
+    my $BNG_CODENAME;
     my $BNG_ROOT;
 
     # find the BNG root directory
@@ -62,7 +67,9 @@ our @EXPORT = qw( BNGversion isReal booleanToInt BNGroot BNGpath exit_error send
         return File::Spec->catdir( ($BNG_ROOT, @_) );
     }
 
-    sub BNGversion
+    # extract BNG_VERSION and BNG_CODENAME from the version file located
+    #  at BNG_ROOT/VERSION.
+    sub readVersionFile
     {
         unless ($BNG_ROOT)
         {   # find BNG root directory
@@ -70,20 +77,77 @@ our @EXPORT = qw( BNGversion isReal booleanToInt BNGroot BNGpath exit_error send
         }
         
         # Get BioNetGen version number
-        unless ($BNG_VERSION)
+        unless (defined $BNG_VERSION)
         {
-            if ( open my $fh, '<', File::Spec->catfile($BNG_ROOT, 'VERSION') )
+            # read version info from VERSION file
+            if ( open my $fh, '<', File::Spec->catfile($BNG_ROOT, VERSION_FILENAME) )
             {
-	            $BNG_VERSION = <$fh>;
-	            chomp $BNG_VERSION;
+                # get first line of file
+                my $version_string = <$fh>;
 	            close $fh;
+
+                # extract version number
+	            $version_string =~ s/^(\d+\.\d+\.\d+)\s+//;
+                $BNG_VERSION = $1;
+                unless ( defined $BNG_VERSION )
+                {   $BNG_VERSION = DEFAULT_VERSION;   }
+
+                # extract codename (if any)
+                $version_string =~ s/^(\w+)//;
+                $BNG_CODENAME = $1;
+                unless ( defined $BNG_VERSION )
+                {   $BNG_CODENAME = DEFAULT_CODENAME;   }
             } 
             else
             {
-	            $BNG_VERSION = 'UNKNOWN';
+	            $BNG_VERSION  = DEFAULT_VERSION;
+                $BNG_CODENAME = '';
             }
         }
+        return;
+    }
+
+    # get BNG_VERSION
+    sub BNGversion
+    {
+        unless (defined $BNG_VERSION)
+        {   # find BNG root directory
+            readVersionFile();
+        }
         return $BNG_VERSION;
+    }
+
+    # get BNG_CODENAME
+    sub BNGcodename
+    {
+        unless (defined $BNG_CODENAME)
+        {   # find BNG root directory
+            readVersionFile();
+        }
+        return $BNG_CODENAME;
+    }
+
+    # compare versions: returns -1 if version1  < version2,
+    #                            1 if version1  > version2,
+    #                            0 if version1 == version2
+    sub compareVersions
+    {
+        my ($version1, $version2) = @_;
+        
+        my (@version1) = split /\./, $version1;
+        my (@version2) = split /\./, $version2;
+
+        # compare major, minor and release numbers
+        while (@version1 and @version2)
+        {
+            my $comp = ( shift @version1 <=> shift @version2 );
+            if ($comp) {  return $comp;  }
+        }
+        
+        # if versions are equal so far, the version with finer defintion
+        #  is greater than the other.
+        # (e.g.  2.1.7 is greater than 2.1)
+        return ( @version1 ? 1 : (@version2 ? -1 : 0) );
     }
 }
 

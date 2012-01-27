@@ -1306,55 +1306,97 @@ sub version
 	return '' if $NO_EXEC;
 
 	if (@_)
-    {   return "Version called with too many arguments.";   }
+    {   # complain about too many arguments
+        return "Version called with too many arguments.";
+    }
 
-	# Determine whether specified version is upper or lower bound
-	my $crit = 1;
-	if ( $vstring =~ s/([+-])$// ) {
-		$crit = $1 . "1";
-	}
+    # extract version and codename
+    my ($version, $relation, $codename) = ( $vstring =~ /^(\d+\.\d+\.\d+)([+-]?)\s*(\w*)/ );
 
-	# Process requested version
-	my @version;
-	@version = ();
-	my $sstring = $vstring;
-	while ( $sstring =~ s/^(\d+)[.]?// ) {
-		push @version, $1;
-	}
-	if ($sstring) {
-		return ("String $vstring is an invalid version number specification.");
-	}
+    unless ( defined $version )
+    {   # complain that version is invalid
+        return "version argument '$vstring' has invalid format.";
+    }
 
-	# Convert version to 15 digit number
-	my $r_number = sprintf "%05d%05d%05d", @version;
+    if ( $relation eq "" )
+    {   # default relation is "+"
+        $relation = "+";
+    }
 
-	# Determine current version of BNG
-	my $bng_string = BNGversion();
-	my ( $major, $minor, $rel ) = split( '\.', $bng_string );
+    my $bng_version = BNGversion();
+    if ( $bng_version eq 'UNKNOWN' )
+    {   # complain that BNG version is unknown
+        return "BNG version is UNKNOWN!";
+    }
 
-    # Increment release if '+' appended to increment development version to next release.
-	if ( $rel =~ s/[+]$// ) {
-		++$rel;
-	}
-	my $bng_number = sprintf "%05d%05d%05d", $major, $minor, $rel;
+    # compare versions (returns -1 if version < bng_version)
+    my $comp = compareVersions($version,$bng_version);
 
-	if ( $crit > 0 ) {
-		if ( $bng_number < $r_number ) {
-			return ( "This file requires BioNetGen version $vstring or later.  Active version is $bng_string." );
-		}
-	}
-	else {
-		if ( $bng_number > $r_number ) {
-			return ( "This file requires BioNetGen version $vstring or earlier. Active version is $bng_string." );
-		}
-	}
+    # is active BNG version suitable?
+    if    ( $relation eq '+'  and  $comp == 1 )
+    {   # BNG version is less than minimum required!
+        return "Requested BioNetGen version $version or greater. Active version is $bng_version.";
+    }
+    elsif ( $relation eq '-'  and  $comp == -1 )
+    {   # BNG version is greater than maximum allowed!
+        return "Requested BioNetGen version $version or lesser. Active version is $bng_version.";
+    }
+    
+
+    # check codename
+    unless ($codename eq "")
+    {
+        my $bng_codename = BNGcodename();
+        unless ( $codename eq $bng_codename )
+        {
+            return "Requested BioNetGen codename ${codename}. Active codename is ${bng_codename}.";
+        }
+    }
+    
 
 	# Add current version requirement to the model
-	push @{ $model->Version }, $vstring;
+	push @{$model->Version}, $vstring;
 
-	return '';
+    # everything is good
+	return undef;
 }
 
+sub codename
+{
+	my $model    = shift @_;
+	my $codename = shift @_;
+
+	return '' if $NO_EXEC;
+
+	if (@_)
+    {   # complain about too many arguments
+        return "Codename called with too many arguments.";
+    }
+
+    unless ( $codename )
+    {   # complaiin about empty codename
+        return "codename argument is empty.";
+    }
+
+    # get BNG codename
+    my $bng_codename = BNGcodename();
+    if ( $bng_codename eq 'UNKNOWN' )
+    {   # complain that BNG codename is unknown
+        return "BNG version is UNKNOWN!";
+    }
+
+    # compare codename
+    unless ($codename eq $bng_codename)
+    {   # BNG codename is not correct
+        return "Requested BioNetGen codename $codename. Active version is $bng_codename.";
+    }
+    
+	# Add current version requirement to the model
+	push @{$model->Codename}, $codename;
+
+    # everything is good
+	return undef;
+}
 
 
 ###

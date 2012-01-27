@@ -12,6 +12,8 @@
 #   --bngpath PATH  : path to BioNetGen repository
 #   --outdir  PATH  : output path
 #   --archive       : create distribution archive file
+#   --overwrite     : overwrite existing distribution
+#   --codename NAME : codename for distribution (default is 'stable')
 #   --help          : display help
 
 use strict;
@@ -28,10 +30,14 @@ use File::Copy "cp";
 my $bngpath = $FindBin::RealBin;
 # output directory
 my $outdir = File::Spec->curdir();
- # if true, delete output files after validation
-my $archive = 1;
-# size of indent to STDOUT       
+ # if true, creates a tar.gz compressed archive
+my $archive = 0;
+# if true, overwrites existing distribution
+my $overwrite = 0;
+# distribution version     
 my $version = '';
+# distribution codename   
+my $codename = 'stable';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
 my $exclude_files = '(^\.|^_|~$|^make_dist\.pl$|^Installation_Guide\.html$|^WikiWelcome\.rtf$)';
 # subdirectories to include in distribution
@@ -57,8 +63,12 @@ while ( @ARGV and $ARGV[0] =~ /^--/ )
     {   $outdir  = shift @ARGV;    }
     elsif ( $arg eq '--version' )
     {   $version = shift @ARGV;    }
+    elsif ( $arg eq '--codename' )
+    {   $codename = shift @ARGV;   }
     elsif ( $arg eq '--archive' )
-    {   $archive = 1;    }
+    {   $archive = 1;   }
+    elsif ( $arg eq '--overwrite' )
+    {   $overwrite = 1;   }
     elsif ( $arg eq '--help' )
     {
         display_help();
@@ -79,14 +89,16 @@ unless ( $version =~ /^\d+\.\d+\.\d+$/)
     exit -1;
 }
 
-my $dist_name = "BioNetGen_${version}";
+
+# define distribution name, directory and archive file
+my $dist_name    = "BioNetGen_${version}" . (($codename eq '') ? '' : "_${codename}");
 my $dist_dir     = File::Spec->catdir( ${outdir}, ${dist_name} );
 my $archive_file = File::Spec->catfile( ${outdir}, "${dist_name}.tar.gz" );
 
 
 
 # begin creating distribution
-print  "Creating distribution version $version\n";
+print  "Creating distribution version ${version} codename ${codename}\n";
 printf "  bngpath: %s\n", $bngpath;
 printf "  distdir: %s\n", $dist_dir;
 if ($archive)
@@ -156,12 +168,13 @@ foreach my $dir ( @include_subdirectories )
 
 # Create VERSION file for the distribution
 my $vh;
+my $vstring = "$version" . (($codename) eq "" ? "" : " ${codename}" );
 unless( open($vh, ">", File::Spec->catfile($dist_dir, "VERSION")) )
 {
     print "make_dist.pl error:\ncould not create VERSION file ($!).\n"; 
     exit -1;
 }
-print $vh "$version";
+print $vh $vstring;
 close $vh;
 
 
@@ -267,7 +280,9 @@ SYNOPSIS:
  OPTIONS:
    --bngpath PATH  : path to BioNetGen repository
    --outdir  PATH  : output path
+   --codename NAME : codename for distribution (e.g. "testing", default is "stable")
    --archive       : create distribution archive file
+   --overwrite     : overwrite existing distribution
    --help          : display help
 
 END_HELP
