@@ -4,15 +4,14 @@
 use strict;
 use warnings;
 
-# Perl Modules
-use FindBin;
-use lib $FindBin::Bin;
-use IO::Handle;
-use File::Spec;
 
-# add Perl2 subdirectory to Module seach path
-BEGIN
-{ unshift @INC, File::Spec->catdir( ($FindBin::Bin, 'Perl2') ); }
+# Perl Modules
+use File::Spec;
+use IO::Handle;
+use FindBin;
+
+# get Perl2 Module directory
+use lib File::Spec->catdir( (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} : $FindBin::RealBin), "Perl2" );
 
 # BNG Modules
 use BNGUtils;
