@@ -8,8 +8,6 @@ package ParamList;
 
 # Perl Modules
 use Class::Struct;
-use FindBin;
-use lib $FindBin::Bin;
 
 # XML Modules
 use XMLReader;
@@ -27,7 +25,7 @@ struct ParamList =>
     Parent    => 'ParamList',
     Array     => '@',
     Hash      => '%',
-    Unchecked => '@'	     
+    Unchecked => '@'    
 };
 
 
@@ -39,14 +37,14 @@ struct ParamList =>
 
 sub copyConstant
 {
-    my $plist = shift;
+    my $plist = shift @_;
  
     my $plist_copy = ParamList::new();
     foreach my $param ( @{$plist->Array} )
     {
         next unless ($param->Type eq 'Constant'  or  $param->Type eq 'ConstantExpression' );
         my $param_copy = $param->copyConstant( $plist );
-        $plist_copy->set( $param->Name, $param->Expr, 1, $param->Type, undef ); 
+        $plist_copy->add( $param_copy );
     }
     
     # check and sort paramlist
@@ -70,6 +68,11 @@ sub getNumParams
     return scalar @{$plist->Array};
 }
 
+sub size
+{
+    my $plist = shift;
+    return scalar @{$plist->Array};
+}
 
 
 ###
@@ -226,11 +229,9 @@ sub readString
 }
 
 
-
 ###
 ###
 ###
-
 
 
 # parse parameters from XML file
@@ -250,7 +251,7 @@ sub readXML
     my $param_array = $xml->getParameters();
     foreach my $param_hash ( @$param_array )
     {
-        (my $param, $err) = $param->readXML($param_hash, $plist);
+        (my $param, $err) = Parameter->readXML($param_hash, $plist);
         if ($err) { return $err; }
 
         # lookup parameter name
@@ -258,7 +259,7 @@ sub readXML
         if ($err) { return $err; }
 
         # add parameter to Plist
-        if ( defined $old_param  and  $old_param->Expr )
+        if ( defined $old_param  and  defined $old_param->Expr )
         {   # if a parameter with this name is already defined..
             if ($allow_overwrite)
             {   # ..copy new param definition over old_param
@@ -302,6 +303,54 @@ sub readXML
 ###
 ###
 ###
+
+
+
+# add parameter to list
+sub add
+{
+    my $plist = shift @_;
+    my $param = shift @_;
+    my $no_overwrite = @_ ? shift @_ : 0;
+    my $global       = @_ ? shift @_ : 0;
+
+    if ($global)
+    {   # try to add to parent
+        $plist->Parent->add( $param, $no_overwrite, $global );
+    }
+
+    # Find existing parameter
+    my ($old_param,$err)= $plist->lookup( $param->Name );
+    if ( defined $old_param )
+    {
+        if ( $no_overwrite )
+        {   return sprintf "Redefining existing parameter '%s' is not permitted", $param->Name;   }
+
+        # find param name in array
+        my ($array_ref) = grep { $_->Name eq $param->Name } @{$plist->Array};
+
+        # check if new param has type LOcal or RRef
+        if ( $param->Type eq 'Local'  or  $param->Type eq 'RRef' )
+        {   return sprintf "Redefining non-local parameter '%s' as a local parameter is not permitted", $param->Name;   }
+
+        # point this array element to the new param
+        $array_ref = $param;
+    }
+    else
+    {
+        unless ( $param->Type eq 'Local'  or  $param->Type eq 'RRef' )
+        {
+            push @{$plist->Array}, $param;
+            push @{$plist->Unchecked}, $param;
+        }
+    }
+
+    # add parameter to lookup table
+    $plist->Hash->{ $param->Name } = $param;
+
+    # all done
+    return undef;
+}
 
 
 
