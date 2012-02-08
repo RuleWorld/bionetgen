@@ -17,7 +17,7 @@ use SpeciesGraph;
 struct Species =>
 {
     SpeciesGraph        => 'SpeciesGraph',
-    Concentration       => '$',
+    Concentration       => '$',              # this will either be a number or a parameter name (I think)
     Index               => '$',		  
     RulesApplied        => '$',
     ObservablesApplied  => '$',

@@ -23,6 +23,7 @@ use lib $FindBin::Bin;
 use File::Spec;
 
 # BNG Modules
+use Cache;
 use BNGUtils;
 use MoleculeTypesList;
 use ParamList;
@@ -68,6 +69,8 @@ struct BNGModel =>
 	Version             => '@',  # Indicates set of version requirements- output to BNGL and NET files
 	Options             => '%',  # Options used to control behavior of model and associated methods
     Params              => '%',  # run-time parameters (not to be saved)
+    ParameterCache      => 'Cache',   
+    ConcentrationCache  => 'Cache',
 };
 
 
@@ -121,6 +124,10 @@ sub initialize
 
 	# Initialize SubstanceUnits (Number is default)
 	$model->SubstanceUnits("Number");
+
+    # Initialize Cache
+    $model->ConcentrationCache( Cache->new() );
+    $model->ParameterCache( Cache->new() );
 }
 
 
@@ -1134,6 +1141,96 @@ sub setVolume
 
 
 
+sub setParameter
+{
+	my $model = shift @_;
+	my $pname = shift @_;
+	my $value = shift @_;
+
+	return '' if $NO_EXEC;
+
+	my $plist = $model->ParamList;
+	my ($param, $err);
+
+	# Error if parameter doesn't exist
+	( $param, $err ) = $plist->lookup($pname);
+	if ($err) { return ($err) }
+
+	# Read expression
+	my $expr    = Expression->new();
+	my $estring = "$pname=$value";
+	if ( $err = $expr->readString( \$estring, $plist ) ) { return $err; }
+
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+
+	printf "Set parameter %s to value %s\n", $pname, $expr->evaluate($plist);
+	return '';
+}
+
+
+# Save the current parameter definitions.
+#  Optionally specify a label to associate with the saved parameters.
+sub saveParameters
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    # copy paramList (exclude non-constant types)
+    my $paramlist = $model->ParamList->copyConstant();
+
+    # put saved concentration into cache
+    $model->ParameterCache->cache($paramlist,$label);
+    # Send message to user
+    printf "Saved current parameters with label '%s'\n", $label;
+	return undef;
+} 
+
+
+# Reset parameters to saved defintions.
+#  Optionally specify a label used to find the saved parameters
+sub resetParameters
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    my $saved_paramlist = $model->ParameterCache->browse($label);
+
+    unless (defined $saved_paramlist)
+    {   return "resetParameters(): cannot find saved parameters";   }
+
+    unless (ref $saved_paramlist eq 'ParamList')
+    {   return "resetParameters(): problem retrieving saved parameters";   }
+
+    # copy saved parameters into main ParamList
+    my $err;
+    foreach my $param ( @{$saved_paramlist->Array} )
+    {
+        $err = $model->ParamList->add( $param );
+        if ($err) { return "resetParameters(): problem resetting parameters ($err)"; }
+    }
+
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+
+    # Send message to user
+    printf "Reloaded parameters saved with label '%s'\n", $label;
+    # all done
+	return undef;
+}
+
+
+
+###
+###
+###
+
+
+
 # Set the concentration of a species to specified value.
 # Value may be a number or a parameter.
 sub setConcentration
@@ -1186,84 +1283,61 @@ sub setConcentration
 	$model->UpdateNet(1);
 
 	printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, $conc;
-	return '';
+	return undef;
 }
 
 
-
-###
-###
-###
-
-
-
-sub setParameter
-{
-	my $model = shift @_;
-	my $pname = shift @_;
-	my $value = shift @_;
-
-	return '' if $NO_EXEC;
-
-	my $plist = $model->ParamList;
-	my ($param, $err);
-
-	# Error if parameter doesn't exist
-	( $param, $err ) = $plist->lookup($pname);
-	if ($err) { return ($err) }
-
-	# Read expression
-	my $expr    = Expression->new();
-	my $estring = "$pname=$value";
-	if ( $err = $expr->readString( \$estring, $plist ) ) { return $err; }
-
-	# Set flag to update netfile when it's used
-	$model->UpdateNet(1);
-
-	printf "Set parameter %s to value %s\n", $pname, $expr->evaluate($plist);
-	return '';
-}
-
-
-
-###
-###
-###
-
-
-
+# Save the current species concentrations.
+#  Optionally specify a label to associate with the saved state.
 sub saveConcentrations
 {
 	my $model = shift @_;
-
-	if (@{$model->Concentrations})
-    {
-    	my $i = 0;
-		foreach my $spec ( @{$model->SpeciesList->Array} )
-        {
-			$spec->Concentration( $model->Concentrations->[$i] );
-			++$i;
-		}
-	}
-	return '';
-}
-
-
-
-###
-###
-###
-
-
-
-sub resetConcentrations
-{
-	my $model = shift @_;
+    my $label = @_ ? shift @_ : undef;
 
 	return '' if $NO_EXEC;
 
-	$model->Concentrations( [] );
-	return '';
+    # create new concentration array
+    my $conc = [];
+	if (@{$model->Concentrations})
+    {   # copy concentration from primary concentration array
+        @$conc = @{$model->Concentrations};
+	}
+    else
+    {   # if that's not defined, copy directly from SpeciesList
+        @$conc = map {$_->Concentration} @{$model->SpeciesList->Array};
+    }
+    # put saved concentration into cache
+    $model->ConcentrationCache->cache($conc,$label);
+	return undef;
+}
+
+
+# Reset species concentrations to saved values.
+#  Optionally specify a label used to find the saved concentrations
+sub resetConcentrations
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    my $saved_conc = $model->ConcentrationCache->browse($label);
+
+    unless (defined $saved_conc)
+    {   return "resetConcentrations(): cannot find saved concentrations";   }
+
+    unless (ref $saved_conc eq 'ARRAY')
+    {   return "resetConcentrations(): some problem retrieving saved concentrations";   }
+
+    unless ( @{$model->SpeciesList->Array} == @$saved_conc )
+    {   return "resetConcentrations(): length of concentration array does not match the number of species";   }
+
+    # finally, set concentrations to the saved values
+    $model->Concentrations( $saved_conc );
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+    # all done
+	return undef;
 }
 
 

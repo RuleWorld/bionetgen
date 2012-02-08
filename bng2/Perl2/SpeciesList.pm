@@ -41,6 +41,11 @@ sub getNumSpecies
     return scalar @{$slist->Array};
 }
 
+sub size
+{
+    my $slist = shift @_;
+    return scalar @{$slist->Array};
+}
 
 ###
 ###
