@@ -78,15 +78,13 @@ sub copyConstant
 
     return undef unless ( $param->Type eq 'Constant'  or  $param->Type eq 'ConstantExpression' );
 
-    my $param_copy = Param::new();
-    $param_copy->Name( $param->Name );
+    my $param_copy = Param->new( 'Name' => $param->Name, 'Type' => $param->Type );
     if (defined $param->Expr)
     {
         my ($expr_copy, $err) = $param->Expr->clone($plist);
         if ($err) {  print "$err\n";  return undef;  }
         $param_copy->Expr( $expr_copy );
     }
-    $param_copy->Type( $param->Type );
     return $param_copy;
 }
 

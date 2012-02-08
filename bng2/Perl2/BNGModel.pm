@@ -1141,6 +1141,96 @@ sub setVolume
 
 
 
+sub setParameter
+{
+	my $model = shift @_;
+	my $pname = shift @_;
+	my $value = shift @_;
+
+	return '' if $NO_EXEC;
+
+	my $plist = $model->ParamList;
+	my ($param, $err);
+
+	# Error if parameter doesn't exist
+	( $param, $err ) = $plist->lookup($pname);
+	if ($err) { return ($err) }
+
+	# Read expression
+	my $expr    = Expression->new();
+	my $estring = "$pname=$value";
+	if ( $err = $expr->readString( \$estring, $plist ) ) { return $err; }
+
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+
+	printf "Set parameter %s to value %s\n", $pname, $expr->evaluate($plist);
+	return '';
+}
+
+
+# Save the current parameter definitions.
+#  Optionally specify a label to associate with the saved parameters.
+sub saveParameters
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    # copy paramList (exclude non-constant types)
+    my $paramlist = $model->ParamList->copyConstant();
+
+    # put saved concentration into cache
+    $model->ParameterCache->cache($paramlist,$label);
+    # Send message to user
+    printf "Saved current parameters with label '%s'\n", $label;
+	return undef;
+} 
+
+
+# Reset parameters to saved defintions.
+#  Optionally specify a label used to find the saved parameters
+sub resetParameters
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    my $saved_paramlist = $model->ParameterCache->browse($label);
+
+    unless (defined $saved_paramlist)
+    {   return "resetParameters(): cannot find saved parameters";   }
+
+    unless (ref $saved_paramlist eq 'ParamList')
+    {   return "resetParameters(): problem retrieving saved parameters";   }
+
+    # copy saved parameters into main ParamList
+    my $err;
+    foreach my $param ( @{$saved_paramlist->Array} )
+    {
+        $err = $model->ParamList->add( $param );
+        if ($err) { return "resetParameters(): problem resetting parameters ($err)"; }
+    }
+
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+
+    # Send message to user
+    printf "Reloaded parameters saved with label '%s'\n", $label;
+    # all done
+	return undef;
+}
+
+
+
+###
+###
+###
+
+
+
 # Set the concentration of a species to specified value.
 # Value may be a number or a parameter.
 sub setConcentration
@@ -1193,108 +1283,8 @@ sub setConcentration
 	$model->UpdateNet(1);
 
 	printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, $conc;
-	return '';
-}
-
-
-
-###
-###
-###
-
-
-
-# Save the current parameter definitions.
-#  Optionally specify a label to associate with the saved parameters.
-sub saveParameters
-{
-	my $model = shift @_;
-    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
-
-	return '' if $NO_EXEC;
-
-    # copy paramList (exclude non-constant types)
-    my $paramlist = $model->ParamList->copyConstant();
-
-    # put saved concentration into cache
-    $model->ParameterCache($paramlist,$label);
-	return undef;
-} 
-
-
-
-# Reset parameters to saved defintions.
-#  Optionally specify a label used to find the saved parameters
-sub resetParameters
-{
-	my $model = shift @_;
-    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
-
-	return '' if $NO_EXEC;
-
-    my $saved_paramlist = $model->ParameterCache->browse($label);
-
-    unless (defined $saved_paramlist)
-    {   return "resetParameters(): cannot find saved parameters";   }
-
-    unless (ref $saved_paramlist eq 'ParamList')
-    {   return "resetParameters(): some problem retrieving saved parameters";   }
-
-    # finally, set concentrations to the saved values
-    
-    my $err;
-    foreach my $param ( @{$saved_paramlist->Array} )
-    {
-        $err = $model->ParamList->add( $param->copyConstant() );
-        if ($err) { return "resetParameters(): some problem copying saved parameters ($err)"; }
-    }
-
-	# Set flag to update netfile when it's used
-	$model->UpdateNet(1);
-    # all done
 	return undef;
 }
-
-
-
-###
-###
-###
-
-
-
-sub setParameter
-{
-	my $model = shift @_;
-	my $pname = shift @_;
-	my $value = shift @_;
-
-	return '' if $NO_EXEC;
-
-	my $plist = $model->ParamList;
-	my ($param, $err);
-
-	# Error if parameter doesn't exist
-	( $param, $err ) = $plist->lookup($pname);
-	if ($err) { return ($err) }
-
-	# Read expression
-	my $expr    = Expression->new();
-	my $estring = "$pname=$value";
-	if ( $err = $expr->readString( \$estring, $plist ) ) { return $err; }
-
-	# Set flag to update netfile when it's used
-	$model->UpdateNet(1);
-
-	printf "Set parameter %s to value %s\n", $pname, $expr->evaluate($plist);
-	return '';
-}
-
-
-
-###
-###
-###
 
 
 # Save the current species concentrations.

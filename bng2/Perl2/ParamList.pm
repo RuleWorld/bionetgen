@@ -25,7 +25,7 @@ struct ParamList =>
     Parent    => 'ParamList',
     Array     => '@',
     Hash      => '%',
-    Unchecked => '@'    
+    Unchecked => '@'
 };
 
 
@@ -92,7 +92,7 @@ sub lookup
     my $param;  
     if ( exists $plist->Hash->{$name} )
     {
-        return $plist->Hash->{$name}, '';
+        return $plist->Hash->{$name}, "";
     }
     elsif ( defined $plist->Parent )
     {
@@ -306,38 +306,58 @@ sub readXML
 
 
 
-# add parameter to list
+# add parameter object to list, or overwrite exisitng parameter
 sub add
 {
+    use strict;
+    use warnings;
+
     my $plist = shift @_;
     my $param = shift @_;
     my $no_overwrite = @_ ? shift @_ : 0;
     my $global       = @_ ? shift @_ : 0;
 
+    #printf "ParamList->add( %s, %d, %d )\n", $param->Name, $no_overwrite, $global;
+
     if ($global)
     {   # try to add to parent
-        $plist->Parent->add( $param, $no_overwrite, $global );
+        if ( defined $plist->Parent )
+        {   return $plist->Parent->add( $param, $no_overwrite, $global );   }
     }
 
     # Find existing parameter
-    my ($old_param,$err)= $plist->lookup( $param->Name );
+    (my $old_param) = $plist->lookup( $param->Name );
+    
+    # Is this a new parameter definition or a redefinition?
     if ( defined $old_param )
-    {
+    {   # overwriting exisitng parameter!
         if ( $no_overwrite )
         {   return sprintf "Redefining existing parameter '%s' is not permitted", $param->Name;   }
 
-        # find param name in array
-        my ($array_ref) = grep { $_->Name eq $param->Name } @{$plist->Array};
-
-        # check if new param has type LOcal or RRef
+        # check if new param has type Local or RRef
         if ( $param->Type eq 'Local'  or  $param->Type eq 'RRef' )
-        {   return sprintf "Redefining non-local parameter '%s' as a local parameter is not permitted", $param->Name;   }
+        {
+            return sprintf( "Redefining non-local parameter '%s' as a local parameter is not permitted",
+                       $param->Name );
+        }
 
-        # point this array element to the new param
-        $array_ref = $param;
+        # find old parameter in array
+        for ( my $idx = 0; $idx < @{$plist->Array}; ++$idx )
+        {
+            my $old_param = $plist->Array->[$idx];
+            if( $old_param->Name eq $param->Name )
+            {   # replace old parameter in array with new parameter
+                $plist->Array->[$idx] = $param;
+                # add this to list of parameters to check
+                push @{$plist->Unchecked}, $param;
+                # exit loop
+                last;
+            }
+        }
     }
     else
-    {
+    {   # this is a new parameter.
+        # add to array unless the type is local
         unless ( $param->Type eq 'Local'  or  $param->Type eq 'RRef' )
         {
             push @{$plist->Array}, $param;
@@ -345,16 +365,16 @@ sub add
         }
     }
 
-    # add parameter to lookup table
+    # always add new parameter to lookup table
     $plist->Hash->{ $param->Name } = $param;
-
     # all done
     return undef;
 }
 
 
-
-# By default, allows previously defined variable to be overwritten.  Use $no_overwrite=1 to stop.
+# ParamList->set( name, expression ) creates a parameter object from a name and an expression (or reference)
+#  and then adds the parameter to the list. By default, allows previously defined variable to be overwritten.
+#  Use $no_overwrite=1 to prevent this.
 sub set
 {
     my $plist        = shift @_;
@@ -365,7 +385,6 @@ sub set
     my $ref          = @_ ? shift @_ : '';    # Reference to Function or Observable
     my $global       = @_ ? shift @_ : 0;     # add parameter to top plist
 
-    
     if ($global)
     {   # find top plist
         while (defined $plist->Parent)
