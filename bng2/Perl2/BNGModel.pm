@@ -148,14 +148,14 @@ sub readModel
 	my $user_params = @_ ? shift @_ : {};
 
     # default parameters
-	my %pass_params = (	);
+	my %params = ();
 
     # copy user_params into pass_params structures
 	while ( my ($key,$val) = each %$user_params )
-	{   $pass_params->{$key} = $val;	}
+	{   $params{$key} = $val;	}
 
     # writeFile will generate the output
-    return $model->readFile( \%pass_params );
+    return $model->readFile( \%params );
 }
 
 
@@ -170,14 +170,14 @@ sub readNetwork
 	my $user_params = @_ ? shift @_ : {};
 
     # default parameters
-	my %pass_params = (	);
+	my %params = ();
 
     # copy user_params into pass_params structures
 	while ( my ($key,$val) = each %$user_params )
-	{   $pass_params->{$key} = $val;	}
+	{   $params{$key} = $val;	}
 
     # writeFile will generate the output
-    return $model->readFile( \%pass_params );
+    return $model->readFile( \%params );
 }
 
 
@@ -1014,7 +1014,7 @@ sub writeModel
 
     # copy user_params into pass_params structures
 	while ( my ($key,$val) = each %$user_params )
-	{   $params->{$key} = $val;	}
+	{   $params{$key} = $val;	}
 
     # writeFile will generate the output
     return $model->writeFile( \%params );
@@ -1042,7 +1042,7 @@ sub writeNetwork
 
     # copy user_params into pass_params structures
 	while ( my ($key,$val) = each %$user_params )
-	{   $params->{$key} = $val;	}
+	{   $params{$key} = $val;	}
 
     # writeFile will generate the output
     return $model->writeFile( \%params );
@@ -1070,10 +1070,7 @@ sub writeNET
 
     # get any user parameters 
 	while ( my ($key,$val) = each %$user_params )
-    {
-		if ( exists $params{$key} )
-        {   $params{$key} = $val;   }
-	}
+    {   $params{$key} = $val;   }
 
     # call writeFile to output the network
     return $model->writeFile( \%params );
@@ -1082,6 +1079,23 @@ sub writeNET
 
 # This is a general method for writing the model and/or network to a file in various formats.
 #  (This method does the heavy lifting for writeModel and writeNetwork)
+#
+# $err = $model->writeFile({OPT=>VAL,..})
+#
+# OPTIONS:
+#   evaluate_expressions => 0,1 : evaluate math expressions output as numbers (default=0).
+#   format => "FORMAT"          : select output format, where FORMAT=bngl,net,xml,sbml,ssc (default=net).
+#   include_model => 0,1        : include model blocks in output file (default=1).
+#   include_network => 0,1      : include network blocks in output file (default=1).
+#   overwrite => 0,1            : allow writeFile to overwrite exisiting files (default=0).
+#   prefix => "string"          : set prefix of output file name (default=./MODELNAME).
+#   pretty_formatting => 0,1    : write output in "pretty" form (default=0).
+#   suffix => "string"          : set suffix of output file name (default=NONE).
+#   TextReaction => 0,1         : write reactions as BNGL strings (default=0).
+#   TextSpecies => 0,1          : write species as BNGL string (default=1).
+#
+# TODO: set up additional formats: XML, SBML, SSC, etc.
+# TODO: setting TextSpecies to 0 does not do anything!
 sub writeFile
 {
     use strict;
@@ -1104,7 +1118,7 @@ sub writeFile
 	);
 
     # change this to a constant?
-    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>0, 'xml'=>0, 'ssc'=>0 );
+    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>0, 'xml'=>1, 'ssc'=>0 );
 
     # copy user_params into params and pass_params structures
 	while ( my ($key,$val) = each %$user_params )
@@ -1140,7 +1154,6 @@ sub writeFile
     # do nothing if we're not executing actions
     return undef if $NO_EXEC;
 
-
     ## Execute the Action ##
     # first, build output filename
     my $file = $params{prefix};
@@ -1166,23 +1179,31 @@ sub writeFile
     {   push @outputs, "model";   }
     if ( $params{'include_network'} )
     {   push @outputs, "network";   }   
-    my $output = join " and ", @params;
+    my $output = join " and ", @outputs;
 
-    # write the file!
-    my $FH;
-    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
-
+    # get file output in string format
+    my $file_string;
     if ( $params{'format'} eq 'net' )
     {   # write NET format
-        print $FH $model->writeBNGL( \%params );
+        $file_string = $model->writeBNGL( \%params );
     }
-    if ( $params{'format'} eq 'bngl' )
+    elsif ( $params{'format'} eq 'bngl' )
     {   # write BNGL format
-        print $FH $model->writeBNGL( \%params );
-    }    
+        $file_string = $model->writeBNGL( \%params );
+    }
+    elsif ( $params{'format'} eq 'xml' )
+    {   # write BNGL format
+        $file_string = $model->toXML( \%params );
+    }
 
+    # write the string to file
+    my $FH;
+    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+    print $FH $file_string;
     close $FH;
-	print "Wrote $output to $file.\n";
+
+    # all done
+	print sprintf( "Wrote %s in %s format to %s.\n", $output, $params{'format'}, $file);
     return undef;
 }
 
@@ -1213,10 +1234,7 @@ sub writeBNGL
 
     # get any user parameters 
 	while ( my ($key,$val) = each %$user_params )
-    {
-		if ( exists $params{$key} )
-        {   $params{$key} = $val;   }
-	}
+    {   $params{$key} = $val;	}
 
 	return '' if $NO_EXEC;
 

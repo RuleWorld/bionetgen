@@ -14,45 +14,72 @@ use warnings;
 ###
 
 
-
+# write Model in XML format
+# $err = $model->writeXML({opt=>val,..}) 
 sub writeXML
 {
+    use strict;
+    use warnings;
+
+    my $model       = shift @_;
+	my $user_params = @_ ? shift @_ : {};
+
+	my %params = (
+        'evaluate_expressions' => 1,
+		'format'               => 'xml',
+        'include_model'        => 1,
+        'include_network'      => 0,
+        'overwrite'            => 1,
+	);
+
+    # copy user_params into pass_params structures
+	while ( my ($key,$val) = each %$user_params )
+	{   $params{$key} = $val;	}
+
+    # writeFile will generate the output
+    return $model->writeFile( \%params );
+}
+
+
+# generate XML string representing the BNGL model
+sub toXML
+{
 	my $model = shift @_;
-	my $params = @_ ? shift @_ : {};
+	my $user_params = @_ ? shift @_ : {};
 
 	return '' if $BNGModel::NO_EXEC;
 
     # get mopdel name
 	my $model_name = $model->Name;
 
-	# Strip prefixed path
-	my $prefix = defined $params->{prefix} ? $params->{prefix} : $model->getOutputPrefix();
-	my $suffix = defined $params->{suffix} ? $params->{suffix} : '';
+    # default parameters
+    my %params = (
+        'evaluate_expressions' => 1,
+    );
 
-    # should we evaluate expressions?
-	my $EvaluateExpressions = defined $params->{EvaluateExpressions} ? $params->{EvaluateExpressions} : 1;
-	
-    unless ( $suffix eq '' )
-    {   $prefix .= "_${suffix}";   }
+    # add user parameters
+    while ( my ($key,$val) = each %$user_params )
+    {   $params{$key} = $val;   }
 
-	my $file = "${prefix}.xml";
-
-    my $XML;
-	open($XML, '>', $file) or die "Couldn't open $file: $!\n";
+    # get BNG version	
 	my $version = BNGversion();
 
-	# HEADER
-	print $XML <<"EOF";
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen $version  -->
-<sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
-  <model id="$model_name">
-EOF
-
+    # define size of indent
 	my $indent = "    ";
 
+    # are we evaluating expressions?
+    my $evaluate_expressions = $params{'evaluate_expressions'};
+
+    # Begin writing XML #
+	# HEADER
+	my $xml =  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+              ."<!-- Created by BioNetGen $version  -->\n"
+              ."<sbml xmlns=\"http://www.sbml.org/sbml/level3\" level=\"3\" version=\"1\">\n"
+              ."  <model id=\"$model_name\">\n";
+
+
 	# Parameters
-	print $XML $indent . "<ListOfParameters>\n";
+	$xml .= $indent . "<ListOfParameters>\n";
 	my $indent2 = "  " . $indent;
 	my $plist   = $model->ParamList;
 	foreach my $param ( @{$plist->Array} )
@@ -62,29 +89,29 @@ EOF
 		my $do_print = 0;
 		if ( $param->Type =~ /^Constant/ )
 		{
-			$value = ($EvaluateExpressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toString($plist);
-			$type = ($EvaluateExpressions) ? "Constant" : $param->Type;
+			$value = ($evaluate_expressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toString($plist);
+			$type  = ($evaluate_expressions) ? "Constant" : $param->Type;
 			$do_print = 1;
 		}
 		next unless $do_print;
-		printf $XML "$indent2<Parameter id=\"%s\"", $param->Name;
-		printf $XML " type=\"%s\"",                 $type;
-		printf $XML " value=\"%s\"",                $value;
-		printf $XML "/>\n";
+		$xml .= sprintf( "$indent2<Parameter id=\"%s\"", $param->Name );
+		$xml .= " type=\"$type\"";
+		$xml .= " value=\"$value\"";
+		$xml .= "/>\n";
 	}
-	print $XML $indent . "</ListOfParameters>\n";
+	$xml .= $indent . "</ListOfParameters>\n";
 
 	# Molecule Types
-	print $XML $model->MoleculeTypesList->toXML($indent);
+	$xml .= $model->MoleculeTypesList->toXML($indent);
 
 	# Compartments
-	print $XML $model->CompartmentList->toXML($indent);
+	$xml .= $model->CompartmentList->toXML($indent);
 
 	# Species
 	if (@{$model->Concentrations}){
-	    print $XML $model->SpeciesList->toXML($indent,$model->Concentrations);
+	    $xml .= $model->SpeciesList->toXML($indent,$model->Concentrations);
 	} else {
-	    print $XML $model->SpeciesList->toXML($indent);
+	    $xml .= $model->SpeciesList->toXML($indent);
 	}
 
 	# Reaction rules
@@ -100,7 +127,7 @@ EOF
 		}
 	}
 	$string .= $indent . "</ListOfReactionRules>\n";
-	print $XML $string;
+	$xml .= $string;
 
 	# Observables
 	$string  = $indent . "<ListOfObservables>\n";
@@ -112,27 +139,23 @@ EOF
 		++$oindex;
 	}
 	$string .= $indent . "</ListOfObservables>\n";
-	print $XML $string;
+	$xml .= $string;
 
 	# Functions
-	print $XML $indent . "<ListOfFunctions>\n";
+	$xml .= $indent . "<ListOfFunctions>\n";
 	$indent2 = "  " . $indent;
 	foreach my $param ( @{$plist->Array} )
     {
 		next unless ( $param->Type eq "Function" );
-		print $XML $param->Ref->toXML( $plist, $indent2 );
+		$xml .= $param->Ref->toXML( $plist, $indent2 );
 	}
-	print $XML $indent . "</ListOfFunctions>\n";
+	$xml .= $indent . "</ListOfFunctions>\n";
 
 	# FOOTER
-	print $XML <<"EOF";
-  </model>
-</sbml>
-EOF
+	$xml .=  "  </model>\n"
+            ."</sbml>\n";
 
-    close $XML;
-	print "Wrote BNG XML to $file.\n";
-	return;
+	return $xml;
 }
 
 
