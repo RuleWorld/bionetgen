@@ -544,7 +544,7 @@ sub writeSSCcfg
 
 sub writeBNGL
 {
-    my $plist   = shift @_;
+    my $plist       = shift @_;
     my $user_params = @_ ? shift @_ : { 'pretty_formatting'=>0, 'evaluate_expressions'=>0 };
 
     # find longest parameter name
@@ -561,7 +561,7 @@ sub writeBNGL
     {
         next unless ( $param->Type =~ /^Constant/ ); 
 
-        if ( $user_params->{pretty_formatting} )
+        if ( $user_params->{'pretty_formatting'} )
         {   # no parameter index
             $out .= '  ';
         }
@@ -572,7 +572,7 @@ sub writeBNGL
 
         $out .= sprintf "%-${max_length}s  ", $param->Name;
 
-        if ( $user_params->{evaluate_expressions} )
+        if ( $user_params->{'evaluate_expressions'} )
         {   # evaluate expression (return a number)
      	    $out .= $param->evaluate([], $plist);            
         }
@@ -582,7 +582,7 @@ sub writeBNGL
 
         }
 
-        if ( $user_params->{pretty_formatting} )
+        if ( $user_params->{'pretty_formatting'} )
         {   # no parameter type
             $out .= "\n";
         }
@@ -633,7 +633,7 @@ sub writeFunctions
 		my $type= $param->Type;
         next unless ( $param->Type eq 'Function' );
         
-        if ( $user_params->{pretty_formatting} )
+        if ( $user_params->{'pretty_formatting'} )
         {   # no function index
             $out .= '  ' . $param->Ref->toString( $plist, 1, $max_length) . "\n";
         }

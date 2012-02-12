@@ -261,8 +261,7 @@ sub writeBNGL
     my $slist       = shift @_;
     my $conc        = @_ ? shift @_ : [];
     my $plist       = @_ ? shift @_ : undef;
-    my $print_names = @_ ? shift @_ : 0;
-    my $user_params = @_ ? shift @_ : { 'pretty_formatting'=>0 };
+    my $user_params = @_ ? shift @_ : { 'TextSpecies'=>0, 'pretty_formatting'=>0 };
 
     # check concentration vector
     if ( @$conc )
@@ -284,7 +283,7 @@ sub writeBNGL
     my $out .= "begin species\n";
     foreach my $spec ( @{$slist->Array} )
     {
-        if ( $user_params->{pretty_formatting} )
+        if ( $user_params->{'pretty_formatting'} )
         {   # no species index
             $out .= '  ';
         }
