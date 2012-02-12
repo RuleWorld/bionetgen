@@ -47,11 +47,6 @@ sub toXML
 	my $model = shift @_;
 	my $user_params = @_ ? shift @_ : {};
 
-	return '' if $BNGModel::NO_EXEC;
-
-    # get mopdel name
-	my $model_name = $model->Name;
-
     # default parameters
     my %params = (
         'evaluate_expressions' => 1,
@@ -61,8 +56,13 @@ sub toXML
     while ( my ($key,$val) = each %$user_params )
     {   $params{$key} = $val;   }
 
+	return '' if $BNGModel::NO_EXEC;
+
     # get BNG version	
 	my $version = BNGversion();
+
+    # get mopdel name
+	my $model_name = $model->Name;
 
     # define size of indent
 	my $indent = "    ";
