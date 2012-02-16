@@ -23,6 +23,9 @@ def parseReactions(reaction):
 def issubset(possible_sub, superset):
     return all(element in superset for element in possible_sub)
 
+
+
+
 def identifyReaction(reaction,element):
     if len(reaction) == 2: 
         if len(reaction[0]) == 2 and len(reaction[1]) == 1:
@@ -43,8 +46,6 @@ def printSpecies(label,definition):
     return ".".join(molecules)
 
 def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
-    chemicals = []
-    rawChemicals = []
     reaction = []
     #print original
     for elements in original:
@@ -59,14 +60,11 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                 tags,molecules = findCorrespondence(original[0],original[1],dictionary,molecule,rawDatabase,synthesisDatabase)
                 output = printSpecies(tags,molecules)
                 temp.append((tags,molecules))
-                rawChemicals.append((tags,molecules))
                 species.append(output)
                 translator[molecule] = output
                 if tags not in synthesisDatabase and tags not in rawDatabase:
                     synthesisDatabase[tags] = tuple(molecules)
-        chemicals.append(' + '.join(species) )
         reaction.append(temp)
-   # print rawChemicals
     #print ' -> '.join(chemicals)
     return reaction
 
@@ -81,7 +79,7 @@ def findCorrespondence(reactants,products,dictionary,molecule,rawDatabase,synthe
         return species,synthesisDatabase[species]
     elif species in rawDatabase:
         if product in synthesisDatabase:
-            temp = [x[0] for x in synthesisDatabase[product][product.index(species[0])]]
+            temp = [(x[0],) for x in synthesisDatabase[product][product.index(species[0])]]
             return species,(temp,)
         return species,rawDatabase[species]
     
@@ -202,21 +200,63 @@ def printReactants(reactants):
         temp.append(printSpecies(element[0],element[1]))
     return ' + '.join(temp)
 
-def factorize(factor,history):
-    for element in history:
-        for reactantFactor,reactantGeneral in zip(factor,element):
-            for factorMember in reactantFactor:
-                for factorGeneral in reactantGeneral:
-                    pass
+def getPairIntersection(set1,set2):
+    acc = []
+   # print set1,'+++',set2
+    for el1,el2 in zip(set1,set2):
+        temp2 = []
+        temp2.append(tuple([val for val in el1[0] if val in el2[0]]))
+        for el1x,el2x in zip(el1[1],el2[1]):
+            temp2.append(([val for val in el1x if val in el2x],))
+        acc.append(tuple(temp2))
+    return acc
 
+def getNewProduct(factor,temp):
+    newProduct = []
+    tempTag = []
+    tempComponents = []
+    for tag,components,reference in zip(factor[1][0][0],factor[1][0][1],temp):
+        tempTag.append(tag)
+        tempCompo = []
+        for component in components:
+            if component[0] in reference[1][0][0]:
+                tempCompo.append(component)
+        tempComponents.append(tempCompo)
+    return [((tuple(tempTag),tempComponents))]
     
+def factorize(factor,history):
+    finalArray = []
+    tempArray = []
+    for element in history:
+        reactantFactor,reactantGeneral = (factor[0],element[0])
+        temp = []
+        for factorMember in reactantFactor:
+            for factorGeneral in [x for x in reactantGeneral if x not in temp]:
+                if issubset(factorMember[0],factorGeneral[0]):
+                    temp.append(factorGeneral)
+                    continue
+        if len(temp) > 1:
+            #print temp,element[0],temp==element[0]
+            tempArray.append(temp)
+            finalArray.append(element)
+    #print '----'
+    #print factor[0],'---',finalArray
+    temp = factor[0]
+    for element in tempArray:
+        temp = getPairIntersection(temp,element)
+    temp =  [temp,getNewProduct(factor,temp)]
+        #temp2 = getPairIntersection(temp)
+    #print finalArray
+    
+    return temp,finalArray        
+
 if __name__ == "__main__":
 
 #    database = {('S1',):(["r","l"],),("S2",):(["s"],),}    
     #database = {('S1',):("r","l"),("S2",):("s"),('S1','S2'):([('r','1'),('l')],[('s','1')]),('S1','S2','S2'):([('r','1'),('l','2')],[('s','1')],[('s','2')])}
     #database = {('S1',):(["a","b"],),("S2",):(["r"],),('S3',):(['l'],),('S1','S2'):([('a','1')],[('r','1')]),('S1','S3'):([('b','2')],[('l','2')])}
     #database = {('S1',):(["a","b"],),("S2",):(["r"],),('S3',):(['l'],),('S4',):(['t'],),('S1','S2'):([('a','1')],[('r','1')]),('S1','S3'):([('b','2')],[('l','2')]),('S1','S4'):([('c','3')],[('t','3')])}
-    rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",)],),('S3',):([('l',)],),('S4',):([('t',)],)}   
+    rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",)],),('S3',):([("l",)],),('S4',):([('t',)],)}   
     #synthesisdatabase = {('S1','S2'):([('b','1')],[('r','1')])}
     synthesisdatabase = {}
     history = []
@@ -228,7 +268,7 @@ if __name__ == "__main__":
     parser = SBML2BNGL(model)
 #    print parser.getReactions()
     _,rules,_ = parser.getReactions()
-    print rules
+    #print rules
     for rule in rules:   
         reaction2 = list(parseReactions(rule))
         totalElements =  [item for sublist in reaction2 for item in sublist]
@@ -242,7 +282,20 @@ if __name__ == "__main__":
         reaction = synthesis(reaction2,labelDictionary,rawDatabase,synthesisdatabase,translator)
         history.append(reaction)
     printReactions(history)
-    factorize(history[0],history)
+    #print history[0]
+   # print history
+    print 'reducing...'  
+    for x in range(0,3):
+        (factor,eliminate) = factorize(history[0],history)
+        for element in eliminate:
+            history.remove(element)
+        history.append(factor)
+    
+    printReactions(history)
+    #print history
+    #for x in range(0,3)
+    #    factorize(history[0],history)
+        
     
    # print history
 #    print translator
