@@ -1,0 +1,96 @@
+# Created by BioNetGen 2.1.7
+substanceUnits("Number");
+begin parameters
+    1 RT 100 # Constant
+    2 AT 1000 # Constant
+    3 K2 0.1 # Constant
+    4 K1 5e-5 # Constant
+    5 c 1 # Constant
+    6 LT 10000 # ConstantExpression
+    7 km1 0.01 # Constant
+    8 km2 0.01 # Constant
+    9 kp1 5e-07 # ConstantExpression
+   10 kp2 0.001 # ConstantExpression
+   11 kph 1 # Constant
+   12 kdph 0.1 # Constant
+   13 KA 10 # Constant
+   14 kda 0.1 # Constant
+   15 ka 1 # ConstantExpression
+end parameters
+begin molecule types
+  1 A(r)
+  2 L(r1,r2)
+  3 R(l1~U~P)
+end molecule types 
+begin observables
+    1 Molecules phosporilated R(l1~P!?)
+end observables
+begin species
+    1 L(r1,r2)                          LT
+    2 R(l1~U)                           RT
+    3 A(r)                              AT
+    4 L(r1!1,r2).R(l1~U!1)              0
+    5 L(r1!1,r2!2).R(l1~U!1).R(l1~U!2)  0
+    6 L(r1!1,r2).R(l1~P!1)              0
+    7 R(l1~P)                           0
+    8 L(r1!1,r2!2).R(l1~P!1).R(l1~U!2)  0
+    9 L(r1!1,r2!2).R(l1~P!2).R(l1~U!1)  0
+   10 L(r1!1,r2!2).R(l1~P!1).R(l1~P!2)  0
+   11 A(r!1).R(l1~P!1)                  0
+   12 A(r!1).R(l1~U!1)                  0
+end species
+begin reaction rules
+Rule1: \
+  L(r1,r2) + R(l1) <-> R(l1!1).L(r1!1,r2) kp1, km1
+# Bind(0.0.0,0.1.0)
+# Reverse
+# Unbind(0.0.0,0.1.0)
+Rule2: \
+  L(r1!+,r2) + R(l1) <-> L(r1!+,r2!1).R(l1!1) kp2, km2
+# Bind(0.0.1,0.1.0)
+# Reverse
+# Unbind(0.0.1,0.1.0)
+Rule3: \
+  R(l1~U!+) -> R(l1~P!+) kph
+# StateChange(0.0.0,U->P)
+Rule4: \
+  R(l1~P!?) -> R(l1~U!?) kdph
+# StateChange(0.0.0,P->U)
+Rule5: \
+  R(l1~P) + A(r) <-> R(l1~P!1).A(r!1) ka, kda
+# Bind(0.0.0,0.1.0)
+# Reverse
+# Unbind(0.0.0,0.1.0)
+end reaction rules
+begin reactions
+    1 1,2 4 kp1 #Rule1
+    2 4 1,2 km1 #Rule1r
+    3 2,4 5 kp2 #Rule2
+    4 4 6 kph #Rule3
+    5 6 1,7 km1 #Rule1r
+    6 2,6 8 kp2 #Rule2
+    7 5 2,4 km2 #Rule2r
+    8 5 8 kph #Rule3
+    9 5 9 kph #Rule3
+   10 6 4 kdph #Rule4
+   11 1,7 6 kp1 #Rule1
+   12 4,7 9 kp2 #Rule2
+   13 6,7 10 kp2 #Rule2
+   14 8 2,6 km2 #Rule2r
+   15 9 4,7 km2 #Rule2r
+   16 8 10 kph #Rule3
+   17 9 10 kph #Rule3
+   18 7 2 kdph #Rule4
+   19 8 5 kdph #Rule4
+   20 9 5 kdph #Rule4
+   21 3,7 11 ka #Rule5
+   22 10 6,7 km2 #Rule2r
+   23 10 9 kdph #Rule4
+   24 10 8 kdph #Rule4
+   25 11 12 kdph #Rule4
+   26 11 3,7 kda #Rule5r
+   27 12 11 kph #Rule3
+end reactions
+begin groups
+    1 phosporilated        6,7,8,9,2*10,11
+end groups

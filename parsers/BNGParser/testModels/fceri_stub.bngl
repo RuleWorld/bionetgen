@@ -1,0 +1,124 @@
+begin model
+begin parameters	
+f  1  # Fraction of the cell to simulate
+NA 6.02e23 # Avogadro's number (molecues/mol)
+cell_dens	1e6      # Cell density in cells/ml - standard exptl. units
+Vo              f/(1000*cell_dens) # Effective extracelular volume of a cell
+Vcyt            f*3.0e-12  # Cytoplasmic volume (L)
+Vmem            Vcyt/chi 
+chi             200        # enhancement factor for membrane reactions
+                           # chi ~ (cell radius)/(3*membrane thickness)
+
+# All concentrations are converted to number per cell
+Lig_conc        2e-9 # Ligand concentration input in molar units 
+Lig_tot         Lig_conc*NA*Vo # Copy number per cell
+Rec_tot         1e5            # Copy number per cell
+Lyn_tot         1e5            # Copy number per cell
+Syk_tot         5e3            # Copy number per cell
+
+# Unimolecular rate constants in 1/s
+# Bimoelecular rate constants in 1/s 1/(number/cell)
+
+# Ligand binding
+ kp1  2.5e6/(NA*Vo)
+ km1  0.01
+
+# Receptor cross-linking
+ kp2  chi*10*kp1
+ km2  0.01
+
+# Constitutive Lyn binding
+ kpL  chi*1e5/(NA*Vcyt)
+ kmL  20
+
+# Constitutive Lyn transphosphorylation of beta and gamma
+ pLb  30
+ pLg   1
+
+# Syk binding to phosphorylated gamma
+ kpS  1e8/(NA*Vcyt)
+ kmS  0.13
+
+# Lyn binding to phosphorylated beta
+kpLs  chi*1e5/(NA*Vcyt)
+kmLs  0.12
+
+# SH2-bound Lyn transphosphorylation of beta and gamma
+pLbs  100
+pLgs    3
+
+# Syk transautophosphorylation
+ pSS  100
+
+# dephosphorylation of receptor
+ dm   20
+
+# dephosphorylation of Syk
+ dc   20
+
+end parameters
+
+begin molecule types
+Lig(l,l)
+Rec(a,b~Y~pY,g~Y~pY)
+Lyn(U,SH2)
+Syk(tSH2,a~Y~pY)
+end molecule types
+
+begin species
+Lig(l,l) Lig_tot*cell_dens
+Rec(a,b~Y,g~Y) Rec_tot*cell_dens
+Lyn(U,SH2) Lyn_tot*cell_dens
+Syk(tSH2,a~Y) Syk_tot*cell_dens
+end species
+
+
+begin reaction_rules
+
+# Ligand-receptor binding      
+Lig(l) + Rec(a) <-> Lig(l!1).Rec(a!1)		kp1, km1
+
+# Receptor-aggregation
+Lig(l!1,l).Rec(a!1) + Rec(a) <-> Lig(l!1,l!2).Rec(a!1).Rec(a!2)		kp2, km2
+
+
+# Constitutive Lyn-receptor binding
+
+# Transphosphorylation of beta by constitutive Lyn
+
+# Transphosphorylation of gamma by constitutive Lyn
+
+# Lyn-receptor binding through SH2 domain
+
+# Transphosphorylation of beta by SH2-bound Lyn
+
+# Transphosphorylation of gamma by SH2-bound Lyn
+
+# Syk-receptor binding through tSH2 domain
+
+# Transautophosphorylation of Syk
+
+# Dephosphorylation of Rec beta
+
+# Dephosphorylation of Rec gamma
+
+# Dephosphorylation of Syk at membrane
+
+# Dephosphorylation of Syk in cytosol
+
+end reaction_rules
+
+begin observables
+Species Lig_rec Lig(l!1,l).Rec(a!1)
+Species Rec_dimer Lig(l!1,l!2).Rec(a!1).Rec(a!2)
+end observables
+
+end model
+
+# generate network of all species and reactions
+#  with restrictions on iterations and complex size (aggregation)
+generate_network({overwrite=>1,max_iter=>12,max_agg=>12});
+
+# Run an ODE simulation.  Results saved to files with prefix: "simple_ode"
+saveConcentrations();             # Save concentrations (in memory) for later use.
+simulate_ode({suffix=>ode,t_start=>0,t_end=>12,n_steps=>120});

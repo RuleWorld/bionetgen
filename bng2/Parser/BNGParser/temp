@@ -1,0 +1,56 @@
+<ListOfReactionRules>
+      <ReactionRule id="RR1" name="Rule1">
+       <ListOfReactantPatterns>
+          <ReactantPattern id="RR1_RP1">  
+                   <ListofMolecules>
+                     <Molecule id="RR1_RP1_M1" name="E" >
+                      <ListOfComponents>
+                        <Component id="RR1_RP1_M1_C1"  name="s"  numberOfBonds="0" />
+                      </ListOfComponents>
+                     </Molecule>
+                   </ListofMolecules>
+           
+                </ReactantPattern>
+          <ReactantPattern id="RR1_RP2">  
+                   <ListofMolecules>
+                     <Molecule id="RR1_RP2_M1" name="S" >
+                      <ListOfComponents>
+                        <Component id="RR1_RP2_M1_C1"  name="p1"  state= "U"  numberOfBonds="0" />
+                      </ListOfComponents>
+                     </Molecule>
+                   </ListofMolecules>
+           
+                </ReactantPattern>
+       </ListOfReactantPatterns>
+       <ListOfProductPatterns>
+        <ProductPattern id="RR1_PP1"> 
+               <ListofMolecules>
+                 <Molecule id="RR1_PP1_M1" name="E" >
+                  <ListOfComponents>
+                    <Component id="RR1_PP1_M1_C1"  name="s"  numberOfBonds="1" />
+                  </ListOfComponents>
+                 </Molecule>
+                 <Molecule id="RR1_PP1_M2" name="S" >
+                  <ListOfComponents>
+                    <Component id="RR1_PP1_M2_C1"  name="p1"  state= "U"  numberOfBonds="1" />
+                  </ListOfComponents>
+                 </Molecule>
+               </ListofMolecules>
+               <ListofBonds>
+                 <Bond id="_B1" site1="RR1_PP1_M1_C1", site2="RR1_PP1_M2_C1" />
+               </ListofBonds>
+         
+            </ProductPattern>
+       </ListOfProductPatterns>
+      <RateLaw>
+        <ListOfRateConstants>
+          <RateConstant value="0.7"/>
+        </ListOfRateConstants>
+      </RateLaw>
+      <Map>
+         <MapItem sourceID="RR1_RP1_M1" targetID="RR1_PP1_M1"/>
+         <MapItem sourceID="RR1_RP2_M1" targetID="RR1_PP1_M2"/>
+         
+      </Map>
+      <ListOfOperations>
+      </ListOfOperations>

@@ -1,0 +1,52 @@
+begin model
+begin parameters
+#concentration parameters
+RT 0.01
+LT 1
+
+#binding parameters
+L 10
+KR 1.0
+KT 0.01
+koff 1
+kpR koff*KR
+kpT koff*KT
+kpL koff*L
+kmL koff
+end parameters
+
+begin molecule types
+L(r)
+R(c~R~T,l,l,l,l) # Each subunit can be in R or T form; component 
+             # state is associated with l site
+end molecule types
+
+begin seed species
+L(r)     LT  # The use of the '$' declares this as a species with constant 
+              # concentration.
+R(c~T,l,l,l,l)  RT
+end  seed species
+
+begin observables
+ Molecules Lbound L(r!+)
+ Species L4R L().L().L().L().R()
+ Molecules Lfree L(r)
+end observables
+
+begin reaction rules
+# Concerted transition between relaxed and tense states of complex
+confswitch: \
+R(c~T,l,l,l,l) <-> R(c~R,l,l,l,l) kpL, kmL
+
+# Ligand binding to R state
+R(c~R,l) + L(r) <-> R(c~R,l!1).L(r!1) kpR, koff
+# Ligand binding to T state
+R(c~T,l) + L(r) <-> R(c~T,l!1).L(r!1) kpT, koff
+
+end reaction rules
+
+end model
+
+#ACTIONS
+generate_network({overwrite=>1});
+simulate_ode({t_start=>0,t_end=>10,n_steps=>100},atol=>1e-12,rtol=>1e-12);

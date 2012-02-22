@@ -1,0 +1,261 @@
+# A rule based model for regulation of sigma-F activation
+# IN VITRO CASE:
+
+begin parameters
+k_2Nucon       0.1 # 100 # 100000000000000   # Rule "1" (The 0.1 is in agreement with the old ODE)
+k_2Nucoff      2000       # Rule "1" # ATTENTION: we make this 2000(instead of 4000) to be in aggreement with matlab model
+k_low_1Nucon   0.0012     # Rule "1"
+k_close        0.001      # Rule "2"
+k_open         0.02       # Rule "2"
+k_fclose       30         # Rule "2"
+k_vfclose      10000      # Rule "2"
+k_sopen        0.0005     # Rule "2"
+k_BBsFonATP    0.4 # 400000     # Rule "3"
+k_BBsFToffATP  0.005      # Rule "3"
+k_BBsFRoffATP  0.4        # Rule "3"
+k_BBsFonADP    0.4 # Symmetric full model 0.004 # 4000       # Rule "3"
+k_BBsFToffADP  0.005 # Symmetric full model 0.00005    # Rule "3"
+k_BBsFRoffADP  0.4 # 0.004      # Rule "3" (The 0.4 is in agreement with the old ODE)
+k_fav          30         # Rule "4"
+k_fav_hi       50000      # Rule "4"
+k_disf         2          # Rule "4"
+k_AonRT        0.8 # 800000     # Rule "5"
+k_AoffT        2.4        # Rule "5"
+k_AoffRADP     0.0074     # Rule "5"
+k_AoffRATP     0.001      # Rule "5"
+k_2xAonRT      1.6 # 1600000    # Rule "5"
+k_2xAoffT      4.8        # Rule "5"
+k_2xAoffRADP   0.0148     # Rule "5"
+k_2xAoffRATP   0.002      # Rule "5"
+k_DT           10000      # Rule "6" only in vivo : K_DT/K_TD = 10000/1000
+k_TD           1000       # Rule "6" only in vivo : K_DT/K_TD = 10000/1000
+k_phos         0.0065 # we need to lower it by half to reach the desirable minimum 0.013      # Rule "7"
+k_IIEon        0.1 # 100000     # Rule "8"
+k_IIEoff       0.58       # Rule "8"
+k_dephos       0.0087     # Rule "8" Different in vivo and in vitro
+k_spolon       1 # 1000000    # Rule "9" 
+k_sFpoloff     0.55       # Rule "9" 
+k_sApoloff     0.02       # Rule "9"
+k_dimon        0.2 # 0.1 # 100000     # Rule "10" (The 0.2 is in agreement with the old ODE, because the formulation of the rule based algorithm is different)
+k_dimoff       1          # Rule "10"
+k_degr_BB      0.00041    # Rule "12" AB Degradation only in vivo
+k_AoffT_opl    800        # much higher, because it is for non-nucleotide bound
+k_BBsFToffNonuc 4000      # much higher, because it is for non-nucleotide bound
+k_synth_BB      0.006 # (muM s-1) Rule "11" BB  "effective synthesis" only in vivo
+k_synth_A       0.006 # (muM s-1) Rule "11" A   "effective synthesis" only in vivo
+k_synth_sF      0.002 # (muM s-1) Rule "11" sF  "effective synthesis" only in vivo
+k_synth_IIE     0.002 # (muM s-1) Rule "11" IIE "effective synthesis" only in vivo
+
+# initial amounts of cellular components (in M)
+A0           0    # muM
+BB0          0    # muM 
+sF0          0    # muM
+sA0          0    # muM
+RNApol0      0    # muM
+ATP0         0    # muM
+ADP0         0    # muM
+IIE0         0    # muM
+I_dummy      1    # This value is always set to one as a dummy variable that help us with production 
+end parameters
+
+begin molecule types
+A(Modif~U~P,BB) # The BB site is also used for the formation of "A-dimers" as well as for the phosphatase binding
+BB(Lid1~O~C,Lid2~O~C,Allost~T~R,A1,A2,sF,Nuc1,Nuc2)
+sF(BB,pol)
+sA(pol)
+RNApol(sF)
+Nuc(Type~D~T,BB)
+IIE(Ap)
+TrashAB()
+I()
+end molecule types
+
+begin seed species
+A(Modif~U,BB)                                  A0
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1,Nuc2)  BB0
+sF(BB,pol)                                     sF0
+sA(pol)                                        sA0
+RNApol(sF)                                     RNApol0
+Nuc(Type~T,BB)                                 ATP0
+Nuc(Type~D,BB)                                 ADP0
+IIE(Ap)                                        IIE0
+I()                                            I_dummy
+end seed species
+
+begin reaction rules
+
+# Rule 1: Nucleotides binding to BB (ADP to ATP)
+# Nucleotide-free BB (implies also no A-bound), with 2 open lids, at the "Tensed" conformation, can bind simultaneously:
+# - 2 ATPs
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1,Nuc2) + Nuc(Type~T,BB) + Nuc(Type~T,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) k_2Nucon, k_2Nucoff  #(1,3)
+# - or 2 ADPs
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1,Nuc2) + Nuc(Type~D,BB) + Nuc(Type~D,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) k_2Nucon, k_2Nucoff  #(2,4)
+# FULL-model open-lid BB already bound to AA can get the nucleotides bound (slowly)
+BB(Lid1~O,Lid2~O,Allost~T,A1!1,A2,sF,Nuc1,Nuc2).A(Modif~U,BB!1) + Nuc(Type~T,BB) + Nuc(Type~T,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1!1,A2,sF,Nuc1!2,Nuc2!3).A(Modif~U,BB!1).Nuc(Type~T,BB!2).Nuc(Type~T,BB!3) k_2Nucon, k_2Nucoff  #(non-existent)
+BB(Lid1~O,Lid2~O,Allost~T,A1!1,A2,sF,Nuc1,Nuc2).A(Modif~U,BB!1) + Nuc(Type~D,BB) + Nuc(Type~D,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1!1,A2,sF,Nuc1!2,Nuc2!3).A(Modif~U,BB!1).Nuc(Type~D,BB!2).Nuc(Type~D,BB!3) k_2Nucon, k_2Nucoff  #(non-existent)
+# FULL-model open-lid BB already bound to sF can get the nucleotides bound (slowly)
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF!1,Nuc1,Nuc2).sF(BB!1,pol) + Nuc(Type~T,BB) + Nuc(Type~T,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF!1,Nuc1!2,Nuc2!3).sF(BB!1,pol).Nuc(Type~T,BB!2).Nuc(Type~T,BB!3) k_2Nucon, k_2Nucoff  #(non-existent)
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF!1,Nuc1,Nuc2).sF(BB!1,pol) + Nuc(Type~D,BB) + Nuc(Type~D,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF!1,Nuc1!2,Nuc2!3).sF(BB!1,pol).Nuc(Type~D,BB!2).Nuc(Type~D,BB!3) k_2Nucon, k_2Nucoff  #(non-existent)
+
+# One nucleotide switches from ADP to ATP (in a 2ADP bound BB)
+BB(Lid1~C,Lid2~C,Allost~?,A1!+,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) -> BB(Lid1~C,Lid2~C,Allost~?,A1!+,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) k_low_1Nucon #(130-131,133-135)
+# ATTENTION!!!! In order not to create end-species, we have to consider the nucleotide exchange of the A-bound lid simultaneously with the 180-y-rotation of the 2 following species:
+# BB(Lid1~C,Lid2~C,Allost~?,A1!+,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) (two such species causing the reactions 132-133)
+BB(Lid1~C,Lid2~C,Allost~T,A1!3,A2,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) -> BB(Lid1~C,Lid2~C,Allost~T,A1,A2!3,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) k_low_1Nucon #(132)
+BB(Lid1~C,Lid2~C,Allost~R,A1!3,A2,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) -> BB(Lid1~C,Lid2~C,Allost~R,A1,A2!3,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) k_low_1Nucon #(133)
+
+# Rule 2: "Lid" opening-closing
+# BB that contains 2 ATPs or 2 ADPs in the pockets - BOUND to any nucleotide (and are not A-bound or sF-bound) can open and close the 2 "lids" simultaneously
+# 2 ATPs (Attention! the sF bound independence here would create an assymetry)
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) <-> BB(Lid1~C,Lid2~C,Allost~T,A1,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) k_close, k_open #(123-124)
+# 2 ADPs
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) <-> BB(Lid1~C,Lid2~C,Allost~T,A1,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) k_close, k_open #(125-126)
+
+# "Lid" accelerated closing:
+# 2ATP-bound BB that is also eather bound by sF or A, can close faster (and open with a very slow back-reaction rate):
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF!+,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2)  <-> BB(Lid1~C,Lid2~C,Allost~T,A1,A2,sF!+,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) k_vfclose, k_sopen    #(127)
+BB(Lid1~O,Lid2~O,Allost~T,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2)     <-> BB(Lid1~C,Lid2~C,Allost~T,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2)  k_vfclose, k_sopen    #(128-129)
+# or 2ADP-bound that is also eather bound by sF or A, can close faster (and open with a very slow back-reaction rate):
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF!+,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) <-> BB(Lid1~C,Lid2~C,Allost~T,A1,A2,sF!+,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) k_fclose, k_sopen    #(sthg symmetric to 127)
+BB(Lid1~O,Lid2~O,Allost~T,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2)    <-> BB(Lid1~C,Lid2~C,Allost~T,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2)  k_fclose, k_sopen    #(sthg symmetric to 128-129)
+
+# Rule 3: BB sF interaction (sF inactivation)
+# sF Can bind to closed or open, (combination of BB nucleotides bound MATTERS!), and to eather R/T allostery, as long as there are not two other AAs bound
+
+# 2ATP-bound
+BB(Lid1~?,Lid2~?,Allost~T,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~T,A2,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).sF(BB!3,pol) k_BBsFonATP, k_BBsFToffATP #(91-92,93-94,105-106,107-108,much more)
+BB(Lid1~?,Lid2~?,Allost~R,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~R,A2,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).sF(BB!3,pol) k_BBsFonATP, k_BBsFRoffATP #(109-110,111-112,121-122,119-120,much more)
+
+# 2ADP-bound (NOT only the closed-lid ones can interact with sF now...)
+BB(Lid1~?,Lid2~?,Allost~T,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~T,A2,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).sF(BB!3,pol) k_BBsFonADP, k_BBsFToffADP #(91-92,93-94,105-106,107-108,much more)
+BB(Lid1~?,Lid2~?,Allost~R,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~R,A2,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).sF(BB!3,pol) k_BBsFonADP, k_BBsFRoffADP #(109-110,111-112,121-122,119-120,much more)
+
+# 1ADP-1ATP-bound (We assume that it behaves the same, as if it had 2ATPs)
+BB(Lid1~?,Lid2~?,Allost~T,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~T,A2,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).sF(BB!3,pol) k_BBsFonATP, k_BBsFToffATP #(99-100,101-102,103-104)
+BB(Lid1~?,Lid2~?,Allost~R,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~R,A2,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).sF(BB!3,pol) k_BBsFonATP, k_BBsFRoffATP #(113-114,115-116,117-118)
+# Attention!!! We have 2 cases where the A1 has to be free !!and A2bound!!, because of this 180-rotation that we implemented!!
+BB(Lid1~?,Lid2~?,Allost~T,A1,A2!+,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~T,A1,A2!+,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).sF(BB!3,pol) k_BBsFonATP, k_BBsFToffATP #(103-104)
+BB(Lid1~?,Lid2~?,Allost~R,A1,A2!+,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + sF(BB,pol) <-> BB(Lid1~?,Lid2~?,Allost~R,A1,A2!+,sF!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).sF(BB!3,pol) k_BBsFonATP, k_BBsFRoffATP #(117-118)
+
+# FULL-model open-lid BB non-nucleotide-bound can bind to sF
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1,Nuc2) + sF(BB,pol) <-> BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF!1,Nuc1,Nuc2).sF(BB!1,pol) k_BBsFonADP, k_BBsFToffNonuc #(non existent)
+
+# Rule 4: BB Tensed/Relaxed-state change (only number of As-bound matters)
+# If "BB" is free or "sF-bound" but NOT "A-bound" : Favoured direction R->T
+BB(Lid1~C,Lid2~C,Allost~R,A1,A2,Nuc1!+,Nuc2!+)     <-> BB(Lid1~C,Lid2~C,Allost~T,A1,A2,Nuc1!+,Nuc2!+) k_fav_hi, k_disf #(57,74,58,75,62,79,83,66,84,67)
+# If "BB" is "1-A-bound" : Favoured direction T->R
+# IF this "1-A" is bound to the ATP-nucleotide side:
+BB(Lid1~C,Lid2~C,Allost~T,A1!+,A2,Nuc1!1,Nuc2!+).Nuc(Type~T,BB!1)   <-> BB(Lid1~C,Lid2~C,Allost~R,A1!+,A2,Nuc1!1,Nuc2!+).Nuc(Type~T,BB!1) k_fav_hi, k_disf #(76,59,78,61,80,63,82,65,68-71,85-88)
+BB(Lid1~C,Lid2~C,Allost~T,A1,A2!+,Nuc1!+,Nuc2!1).Nuc(Type~T,BB!1)   <-> BB(Lid1~C,Lid2~C,Allost~R,A1,A2!+,Nuc1!+,Nuc2!1).Nuc(Type~T,BB!1) k_fav_hi, k_disf #(80,82,63,65)
+# IF this "1-A" is bound to the ADP-nucleotide side:
+BB(Lid1~C,Lid2~C,Allost~T,A1!+,A2,Nuc1!1,Nuc2!+).Nuc(Type~D,BB!1)   <-> BB(Lid1~C,Lid2~C,Allost~R,A1!+,A2,Nuc1!1,Nuc2!+).Nuc(Type~D,BB!1) k_fav, k_disf #(76,59,78,61,80,63,82,65,68-71,85-88)
+BB(Lid1~C,Lid2~C,Allost~T,A1,A2!+,Nuc1!+,Nuc2!1).Nuc(Type~D,BB!1)   <-> BB(Lid1~C,Lid2~C,Allost~R,A1,A2!+,Nuc1!+,Nuc2!1).Nuc(Type~D,BB!1) k_fav, k_disf #(80,82,63,65)
+# If "BB" is "2-A-bound" : Favoured direction T->R
+BB(Lid1~C,Lid2~C,Allost~T,A1!+,A2!+,Nuc1!+,Nuc2!+) <-> BB(Lid1~C,Lid2~C,Allost~R,A1!+,A2!+,Nuc1!+,Nuc2!+) k_fav_hi, k_disf #(81,64,72-73,89-90)
+
+# Rule 5: "BB" "A" interaction
+# "A" can bind to "BB" as long as there are not "sF" and "A" at the same time both bound to it (or else, as long as "at least" A2 is free)
+
+# For Tensed Conformation (ATP or ADP doesn't matter, it is just that for 1ADP-1ATP the rates are not doubled depending on As)
+
+# 2 A's are free
+# ATP-ATP or ADP-ADP
+# sF is not bound
+BB(Lid1~C,Lid2~C,Allost~T,sF,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).A(Modif~U,BB!3)    k_2xAonRT, k_AoffT #(9-10,23-24,41-42,43-44)
+BB(Lid1~C,Lid2~C,Allost~T,sF,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_2xAonRT, k_AoffT #(9-10,23-24,41-42,43-44)
+# sF is bound
+BB(Lid1~C,Lid2~C,Allost~T,sF!+,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF!+,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffT #(9-10,23-24,41-42,43-44)
+BB(Lid1~C,Lid2~C,Allost~T,sF!+,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF!+,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffT #(9-10,23-24,41-42,43-44)
+# ADP-ATP (A can bind in either of both sides)
+BB(Lid1~C,Lid2~C,Allost~T,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffT #(9-10,23-24,41-42,43-44)
+BB(Lid1~C,Lid2~C,Allost~T,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,A1,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffT #(9-10,23-24,41-42,43-44)
+
+# Only A1/A2 is free (of course sF has to be free too)
+# ATP-ATP or ADP-ADP
+BB(Lid1~C,Lid2~C,Allost~T,sF,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF,A1!+,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).A(Modif~U,BB!3)  k_AonRT, k_2xAoffT #(11-12,15-16*,17-18*,25-26,51-52?) *:ATP&ADP
+BB(Lid1~C,Lid2~C,Allost~T,sF,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF,A1!+,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)  k_AonRT, k_2xAoffT #(11-12,15-16*,17-18*,25-26,51-52?) *:ATP&ADP
+# ADP-ATP
+BB(Lid1~C,Lid2~C,Allost~T,sF,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF,A1!+,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)  k_AonRT, k_AoffT #(11-12,15-16*,17-18*,25-26,51-52?) *:ATP&ADP
+BB(Lid1~C,Lid2~C,Allost~T,sF,A1,A2!+,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~T,sF,A1!3,A2!+,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)  k_AonRT, k_AoffT #(11-12,15-16*,17-18*,25-26,51-52?) *:ATP&ADP
+
+# Especially when we have "open lids", "B" can bind to "A" (this also contains the 2ADP-bound BB now...) !! ATTENTION!! THIS SHOULD BE:k_2xAonRT, but if we follow the matlab-file and we make it just k_AonRT... ! Additionally this contains the case of sF-bound-open-lid2ATPBB, which should anyway have only k_AonRT
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3) k_2xAonRT, k_AoffT #(21,22, and sthg symmetric to 21,22)
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~U,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).A(Modif~U,BB!3) k_2xAonRT, k_AoffT #(21,22, and sthg symmetric to 21,22)
+#k_2xAonRT, k_2xAoffT #(21,22, and sthg symmetric to 21,22)
+# FULL MODEL: when we have "open lids", WITHOUT nucleotides bound, "B" can bind to "A" too!!
+BB(Lid1~O,Lid2~O,Allost~T,A1,A2,Nuc1,Nuc2) + A(Modif~U,BB) <-> BB(Lid1~O,Lid2~O,Allost~T,A1!1,A2,Nuc1,Nuc2).A(Modif~U,BB!1) k_2xAonRT, k_AoffT_opl #(non existent - part of the full model)
+
+
+# For Relaxed Conformation (ATP or ADP matters for the off rate)
+# 2 A's are free 
+# ATP-ATP or ADP-ADP
+# sF is not bound
+BB(Lid1~C,Lid2~C,Allost~R,sF,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).A(Modif~U,BB!3)    k_2xAonRT, k_AoffRADP #(45-46,27-28)
+BB(Lid1~C,Lid2~C,Allost~R,sF,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_2xAonRT, k_AoffRATP #(5-6,39-40,47-48*,13-14*)
+# sF is bound
+BB(Lid1~C,Lid2~C,Allost~R,sF!+,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF!+,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffRADP #(45-46,27-28)
+BB(Lid1~C,Lid2~C,Allost~R,sF!+,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF!+,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffRATP #(5-6,39-40,47-48*,13-14*)
+# ADP-ATP (We assume same rates as ATP)
+BB(Lid1~C,Lid2~C,Allost~R,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,A1!3,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffRADP #(9-10,23-24,41-42,43-44)
+BB(Lid1~C,Lid2~C,Allost~R,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,A1,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)    k_AonRT, k_AoffRATP #(9-10,23-24,41-42,43-44)
+
+# Only A1/A2 is free (of course sF has to be free too)
+# ATP-ATP or ADP-ADP
+BB(Lid1~C,Lid2~C,Allost~R,sF,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF,A1!+,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2).A(Modif~U,BB!3)  k_AonRT, k_2xAoffRADP #(29-30)
+BB(Lid1~C,Lid2~C,Allost~R,sF,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF,A1!+,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)  k_AonRT, k_2xAoffRATP #(7-8,19-20*)
+# ADP-ATP
+BB(Lid1~C,Lid2~C,Allost~R,sF,A1!+,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF,A1!+,A2!3,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)  k_AonRT, k_AoffRATP #(11-12,15-16*,17-18*,25-26,51-52?) *:ATP&ADP
+BB(Lid1~C,Lid2~C,Allost~R,sF,A1,A2!+,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~U,BB) <-> BB(Lid1~C,Lid2~C,Allost~R,sF,A1!3,A2!+,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2).A(Modif~U,BB!3)  k_AonRT, k_AoffRADP #(11-12,15-16*,17-18*,25-26,51-52?) *:ATP&ADP
+
+# Rule 6: ADP to ATP exchange
+Nuc(Type~D,BB) <-> Nuc(Type~T,BB) k_DT,k_TD #(non existent)
+
+# Rule 7: "A" Phosphorylation by "A.BB.ATP" dissosiation (BB "looses" A or As)
+# FIRST: If "BB" is 2ATP-bound
+# A) IF "BB" is loosing 1A at a time(To prevent assymetry, sF doesn't matter: bound or not)
+BB(Lid1~C,Lid2~C,Allost~?,A1!3,A2,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) -> BB(Lid1~C,Lid2~C,Allost~?,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~P,BB) k_phos #(137-138, nonexisting(with sF))
+# We exclude tis one in the model...
+#BB(Lid1~C,Lid2~C,Allost~?,A1!3,A2!4,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).A(Modif~U,BB!4).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) -> BB(Lid1~C,Lid2~C,Allost~?,A1,A2!4,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!4).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) + A(Modif~P,BB) k_phos #(nonexisting)
+# B) IF "BB" is loosing 2As simultaneously
+BB(Lid1~C,Lid2~C,Allost~?,A1!3,A2!4,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).A(Modif~U,BB!4).Nuc(Type~T,BB!1).Nuc(Type~T,BB!2) -> BB(Lid1~C,Lid2~C,Allost~?,A1,A2,sF,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~P,BB) + A(Modif~P,BB) k_phos #(141,142)
+# SECOND: If "BB" is 1ADP-1ATP-bound
+BB(Lid1~C,Lid2~C,Allost~?,A1,A2!3,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) -> BB(Lid1~C,Lid2~C,Allost~?,A1,A2,Nuc1!1,Nuc2!2).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~P,BB) k_phos #(140,143,136,139)
+BB(Lid1~C,Lid2~C,Allost~?,A1!3,A2!4,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).A(Modif~U,BB!4).Nuc(Type~D,BB!1).Nuc(Type~T,BB!2) -> BB(Lid1~C,Lid2~C,Allost~?,A1!3,A2,sF,Nuc1!1,Nuc2!2).A(Modif~U,BB!3).Nuc(Type~D,BB!1).Nuc(Type~D,BB!2) + A(Modif~P,BB) k_phos #(144,145)
+
+# Rule 8: "A" Dephosphorylation (by IIE Phosphatase) and dissociation of the "A.IIE" complex
+# Binding/Unbinding of the phosphatase
+A(Modif~P,BB) + IIE(Ap) <-> A(Modif~P,BB!1).IIE(Ap!1) k_IIEon, k_IIEoff  #(148,149)
+# Dissociation
+A(Modif~P,BB!1).IIE(Ap!1) -> A(Modif~U,BB) + IIE(Ap) k_dephos #(150)
+
+# Rule 9: Core-RNA-polymerase interaction "sF" and "sA"  (sF/A activation - sF/A holoenzyme formation)
+sF(BB,pol) + RNApol(sF) <-> sF(BB,pol!1).RNApol(sF!1) k_spolon, k_sFpoloff #(151,152)
+sA(pol) + RNApol(sF) <-> sA(pol!1).RNApol(sF!1) k_spolon, k_sApoloff #(153,154)
+
+# Rule 10: Ap dimerization
+A(Modif~P,BB) + A(Modif~P,BB) <-> A(Modif~P,BB!1).A(Modif~P,BB!1) k_dimon,k_dimoff #(146,147)
+
+# Rule 11: Production
+# The species that are produced are:BB, A, sF and IIE. RNApol & sA have almost stable concentrations for these timescales. 
+# BB
+I()-> I() + BB(Lid1~O,Lid2~O,Allost~T,A1,A2,sF,Nuc1,Nuc2) k_synth_BB # (includes degradation)
+# A
+I()-> I() + A(Modif~U,BB) k_synth_A # effective production rate (doesn't include degradation)
+# sF
+I()-> I() + sF(BB,pol) k_synth_sF # effective production rate (doesn't include degradation)
+# IIE
+I()-> I() + IIE(Ap) k_synth_IIE # effective production rate (doesn't include degradation)
+
+# Rule 12: Degradation
+# The species that get degraded is only BB, the rest are only "effectively produced" for two hours and then they are all repressed:
+BB(A2,sF) -> TrashAB() k_degr_BB DeleteMolecules
+
+end reaction rules
+
+begin observables
+end observables
+
+# generate network and output files
+generate_network({overwrite=>1});
+writeMfile({});
+

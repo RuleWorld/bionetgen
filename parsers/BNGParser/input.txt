@@ -1,0 +1,35 @@
+begin parameters
+Kr 1
+Kt 0.01
+Kaux 100
+Ka 0.1
+LT 10
+X1T 100
+end parameters
+
+begin molecule types
+X1(R1~R~T,B1,B2)
+#molecule will statistically have
+L(R)
+end molecule types
+
+begin seed species
+X1(R1~R,B1,B2!1).X1(R1~R,B1!1,B2!2).X1(R1~R,B1!2,B2!3).X1(R1~R,B1!3,B2) X1T
+E(S!1).S(p1!1) 3
+L(R) LT
+end  seed species
+
+begin observables
+	Species receptor X1(R1)
+end observables
+
+begin reaction rules
+X1(R1!?~R,B1!?,B2!?) <-> X1(R1!?~T,B1!?,B2!?) Ka,Ka
+
+X1(R1~R,B1!+,B2!+) + L(R) <-> X1(R1!1~R,B1!+,B2!+).L(R!1) Kr,Kr
+E(s) + S(p1~U) <-> E(s!1).S(p1!1~U) kOnE, kOffE
+#X1(R1~T,B1!+,B2!+) + L(R) <-> X1(R1!1~T,B1!+,B2!+).L(R!1) Kt,Kt
+#X1(R1) -> L(R) Ka
+end reaction rules
+
+writeSBML();

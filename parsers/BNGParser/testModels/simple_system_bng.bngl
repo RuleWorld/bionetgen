@@ -1,0 +1,121 @@
+# simple_system.bngl
+#
+# An example model for running NFsim to get you started.
+#
+# Comments in BNGL are always preceded with a pound (#) character, so that any text that
+# follows a pound character is ignored.  The model file below is commented to help you
+# understand the main parts of a BNGL file.  Note that some commands at the end of the
+# model file that allow you to run the model with different simulators are commented out.
+# To use these other options, simply remove the pound character before the command.
+
+
+
+
+
+# The first part of a BNGL file is the parameters block, where you can define the rates
+# of equations or the starting numbers of any of the molecular species.
+begin parameters
+   kon 10
+   koff 5
+   kcat 0.7
+   dephos 0.5
+end parameters
+
+
+
+# Next, we define the set of molecule types in the system.  This is a declaration only, so
+# we don't specify how many of each molecules there are, and we have to provide a list
+# of all possible state values for each component of each molecule with a tilda (~)
+# character.
+begin molecule types
+  X(y,p~0~1)
+  Y(x)
+end molecule types
+
+
+
+# Here is where we declare the starting molecules in our simulation.  Each component
+# must be assigned a single state value, and we have to provide how many of each
+# molecule exists in the system.  The number of starting molecules can also be
+# specified with one of the parameters defined earlier
+begin species
+   X(y,p~0)   5000
+   X(y,p~1)   0
+   Y(x)       500
+end species
+
+
+
+# Observables allow us to define simulation output.  Here we have declared a number
+# of Molecules observables with the given name and pattern.  If you look at the output
+# gdat files that are generated from simulations of this model, you will see that they
+# each have a count for every simulation time.
+begin observables
+
+   Molecules    X_free          X(p~0,y)
+   Molecules    X_p_total       X(p~1)
+   Molecules    Xp_free         X(p~1,y)
+   Molecules    XY              X(y!1).Y(x!1)
+   Molecules    Ytotal          Y()
+   Molecules    Xtotal          X()
+
+end observables
+
+
+
+# This model does not require any user-defined functions, but you would
+# declare them here if you needed to.  See the user manual for help with
+# declaring your own functions.
+begin functions
+
+end functions
+
+
+
+# This is a very simple system indeed.  The only rules that are defined
+# tell us that X can bind Y if X is dephosphorylated.  Then the XY complex
+# can either disassociate, or a phosphorylation reaction can occur.  Finally, X
+# will dephosphorylate regardless of whether or not it is bound to Y, although
+# for these rules, it will always be unbound to Y if it is phosphorylated.
+# Here are the rule definitions:
+begin reaction rules
+
+   X(y,p~0) + Y(x) -> X(y!1,p~0).Y(x!1)   kon
+   X(y!1,p~0).Y(x!1) -> X(y,p~0) + Y(x)   koff
+   X(y!1,p~0).Y(x!1) -> X(y,p~1) + Y(x)   kcat
+   
+   X(p~1) -> X(p~0)                       dephos
+
+end reaction rules
+
+
+
+
+
+# COMMAND FOR RUNNING OR PROCESSING THIS BNGL FILE
+
+
+
+# Finally, if we want to simulate this model with ordinary differential equations (ODEs)
+# of with Gillespie's stochastic simulation algorithm (SSA) in BioNetGen, we have
+# to first generate the reaction network with the following command.  The overwrite
+# option (which you can remove) is set to 1 here so that every time this is run, the
+# reaction network output file will be regenerated.
+#
+generate_network({overwrite=>1});
+#
+# Then we can call the simulate_ode or simulate_ssa methods to run the model file.  Again,
+# the suffix parameter is used to name the output of the simulations.  Note also that
+# between BioNetGen ODE and SSA simulation commands, we have to reset the molecule concentrations.
+# this is needed because BioNetGen allows you to restart a simulation from the end of
+# a previous simulation.  While this does not apply to NFsim, you can still change parameters 
+# mid-simulation by using an RNF script (see example.rnf file in the same directory as this
+# model).
+#
+simulate_ode({suffix=>ode,t_end=>100,n_steps=>50});
+resetConcentrations();
+simulate_ssa({suffix=>ssa,t_end=>100,n_steps=>50});
+
+
+
+
