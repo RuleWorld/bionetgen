@@ -8,8 +8,6 @@ package Param;
 
 # Perl Modules
 use Class::Struct;
-use FindBin;
-use lib $FindBin::Bin;
 
 # BNG Modules
 use ParamList;
@@ -73,23 +71,20 @@ sub evaluate
 ###
 
 
-
 sub copyConstant
 {
-    my $param = shift;
-    my $plist = (@_) ? shift : undef;
+    my $param = shift @_ ;
+    my $plist = (@_) ? shift @_ : undef;
 
     return undef unless ( $param->Type eq 'Constant'  or  $param->Type eq 'ConstantExpression' );
 
-    my $param_copy = Param::new();
-    $param_copy->Name( $param->Name );
+    my $param_copy = Param->new( 'Name' => $param->Name, 'Type' => $param->Type );
     if (defined $param->Expr)
     {
         my ($expr_copy, $err) = $param->Expr->clone($plist);
         if ($err) {  print "$err\n";  return undef;  }
         $param_copy->Expr( $expr_copy );
     }
-    $param_copy->Type( $param->Type );
     return $param_copy;
 }
 
@@ -159,7 +154,7 @@ sub toString
 # ($param, $err) = Param->readXML( \%xml_hash, $plist ) 
 sub readXML
 {
-    my ($class, $xml_hash, $plist) = @_;
+    my ($xml_hash, $plist) = @_;
 
     # Read expression
     my $string = $xml_hash->{'-value'};

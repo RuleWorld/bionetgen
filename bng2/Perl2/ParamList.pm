@@ -8,8 +8,6 @@ package ParamList;
 
 # Perl Modules
 use Class::Struct;
-use FindBin;
-use lib $FindBin::Bin;
 
 # XML Modules
 use XMLReader;
@@ -27,7 +25,7 @@ struct ParamList =>
     Parent    => 'ParamList',
     Array     => '@',
     Hash      => '%',
-    Unchecked => '@'	     
+    Unchecked => '@'
 };
 
 
@@ -39,14 +37,14 @@ struct ParamList =>
 
 sub copyConstant
 {
-    my $plist = shift;
+    my $plist = shift @_;
  
     my $plist_copy = ParamList::new();
     foreach my $param ( @{$plist->Array} )
     {
         next unless ($param->Type eq 'Constant'  or  $param->Type eq 'ConstantExpression' );
         my $param_copy = $param->copyConstant( $plist );
-        $plist_copy->set( $param->Name, $param->Expr, 1, $param->Type, undef ); 
+        $plist_copy->add( $param_copy );
     }
     
     # check and sort paramlist
@@ -70,6 +68,11 @@ sub getNumParams
     return scalar @{$plist->Array};
 }
 
+sub size
+{
+    my $plist = shift;
+    return scalar @{$plist->Array};
+}
 
 
 ###
@@ -89,7 +92,7 @@ sub lookup
     my $param;  
     if ( exists $plist->Hash->{$name} )
     {
-        return $plist->Hash->{$name}, '';
+        return $plist->Hash->{$name}, "";
     }
     elsif ( defined $plist->Parent )
     {
@@ -226,11 +229,9 @@ sub readString
 }
 
 
-
 ###
 ###
 ###
-
 
 
 # parse parameters from XML file
@@ -250,7 +251,7 @@ sub readXML
     my $param_array = $xml->getParameters();
     foreach my $param_hash ( @$param_array )
     {
-        (my $param, $err) = $param->readXML($param_hash, $plist);
+        (my $param, $err) = Parameter->readXML($param_hash, $plist);
         if ($err) { return $err; }
 
         # lookup parameter name
@@ -258,7 +259,7 @@ sub readXML
         if ($err) { return $err; }
 
         # add parameter to Plist
-        if ( defined $old_param  and  $old_param->Expr )
+        if ( defined $old_param  and  defined $old_param->Expr )
         {   # if a parameter with this name is already defined..
             if ($allow_overwrite)
             {   # ..copy new param definition over old_param
@@ -305,7 +306,75 @@ sub readXML
 
 
 
-# By default, allows previously defined variable to be overwritten.  Use $no_overwrite=1 to stop.
+# add parameter object to list, or overwrite exisitng parameter
+sub add
+{
+    use strict;
+    use warnings;
+
+    my $plist = shift @_;
+    my $param = shift @_;
+    my $no_overwrite = @_ ? shift @_ : 0;
+    my $global       = @_ ? shift @_ : 0;
+
+    #printf "ParamList->add( %s, %d, %d )\n", $param->Name, $no_overwrite, $global;
+
+    if ($global)
+    {   # try to add to parent
+        if ( defined $plist->Parent )
+        {   return $plist->Parent->add( $param, $no_overwrite, $global );   }
+    }
+
+    # Find existing parameter
+    (my $old_param) = $plist->lookup( $param->Name );
+    
+    # Is this a new parameter definition or a redefinition?
+    if ( defined $old_param )
+    {   # overwriting exisitng parameter!
+        if ( $no_overwrite )
+        {   return sprintf "Redefining existing parameter '%s' is not permitted", $param->Name;   }
+
+        # check if new param has type Local or RRef
+        if ( $param->Type eq 'Local'  or  $param->Type eq 'RRef' )
+        {
+            return sprintf( "Redefining non-local parameter '%s' as a local parameter is not permitted",
+                       $param->Name );
+        }
+
+        # find old parameter in array
+        for ( my $idx = 0; $idx < @{$plist->Array}; ++$idx )
+        {
+            my $old_param = $plist->Array->[$idx];
+            if( $old_param->Name eq $param->Name )
+            {   # replace old parameter in array with new parameter
+                $plist->Array->[$idx] = $param;
+                # add this to list of parameters to check
+                push @{$plist->Unchecked}, $param;
+                # exit loop
+                last;
+            }
+        }
+    }
+    else
+    {   # this is a new parameter.
+        # add to array unless the type is local
+        unless ( $param->Type eq 'Local'  or  $param->Type eq 'RRef' )
+        {
+            push @{$plist->Array}, $param;
+            push @{$plist->Unchecked}, $param;
+        }
+    }
+
+    # always add new parameter to lookup table
+    $plist->Hash->{ $param->Name } = $param;
+    # all done
+    return undef;
+}
+
+
+# ParamList->set( name, expression ) creates a parameter object from a name and an expression (or reference)
+#  and then adds the parameter to the list. By default, allows previously defined variable to be overwritten.
+#  Use $no_overwrite=1 to prevent this.
 sub set
 {
     my $plist        = shift @_;
@@ -316,7 +385,6 @@ sub set
     my $ref          = @_ ? shift @_ : '';    # Reference to Function or Observable
     my $global       = @_ ? shift @_ : 0;     # add parameter to top plist
 
-    
     if ($global)
     {   # find top plist
         while (defined $plist->Parent)
@@ -476,7 +544,7 @@ sub writeSSCcfg
 
 sub writeBNGL
 {
-    my $plist   = shift @_;
+    my $plist       = shift @_;
     my $user_params = @_ ? shift @_ : { 'pretty_formatting'=>0, 'evaluate_expressions'=>0 };
 
     # find longest parameter name
@@ -493,7 +561,7 @@ sub writeBNGL
     {
         next unless ( $param->Type =~ /^Constant/ ); 
 
-        if ( $user_params->{pretty_formatting} )
+        if ( $user_params->{'pretty_formatting'} )
         {   # no parameter index
             $out .= '  ';
         }
@@ -504,7 +572,7 @@ sub writeBNGL
 
         $out .= sprintf "%-${max_length}s  ", $param->Name;
 
-        if ( $user_params->{evaluate_expressions} )
+        if ( $user_params->{'evaluate_expressions'} )
         {   # evaluate expression (return a number)
      	    $out .= $param->evaluate([], $plist);            
         }
@@ -514,7 +582,7 @@ sub writeBNGL
 
         }
 
-        if ( $user_params->{pretty_formatting} )
+        if ( $user_params->{'pretty_formatting'} )
         {   # no parameter type
             $out .= "\n";
         }
@@ -565,7 +633,7 @@ sub writeFunctions
 		my $type= $param->Type;
         next unless ( $param->Type eq 'Function' );
         
-        if ( $user_params->{pretty_formatting} )
+        if ( $user_params->{'pretty_formatting'} )
         {   # no function index
             $out .= '  ' . $param->Ref->toString( $plist, 1, $max_length) . "\n";
         }

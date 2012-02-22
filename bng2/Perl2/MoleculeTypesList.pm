@@ -280,10 +280,9 @@ sub writeBNGL
     my $mtlist      = shift @_;
     my $user_params = @_ ? shift @_ : { 'pretty_formatting'=>0 };
 
-    # find longest molecule type
     my $max_length = 0;
     if ( $user_params->{pretty_formatting} ) 
-    {
+    {   # find longest molecule type string
         while ( my ($name, $mt) = each %{$mtlist->MolTypes} )
         {    
             my $string = $mt->toString();

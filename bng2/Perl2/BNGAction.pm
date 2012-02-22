@@ -868,7 +868,7 @@ sub simulate_nf
             return($err);
         }
         if ($verbose){
-            print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, 0);
+            print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList );
         }
     }
     else{
@@ -1295,7 +1295,8 @@ sub generate_hybrid_model
     my $FH;
     print $indent . "$step_index:Attempting to write hybrid BNGL.. "; ++$step_index;    	
 	unless ( open $FH, '>', $modelfile ) {  return "Couldn't write to $modelfile: $!\n";  }
-    print $FH $hybrid_model->writeBNGL( {'include_model'=>1,'include_network'=>0,'pretty_formatting'=>1,'evaluate_expressions'=>0} );
+    print $FH $hybrid_model->writeBNGL( {'format'=>'bngl', 'include_model'=>1,'include_network'=>0,
+                                         'pretty_formatting'=>1,'evaluate_expressions'=>0} );
     # writing actions!
     if ( @{$options->{actions}} )
     {

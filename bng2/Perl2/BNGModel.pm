@@ -23,6 +23,7 @@ use lib $FindBin::Bin;
 use File::Spec;
 
 # BNG Modules
+use Cache;
 use BNGUtils;
 use MoleculeTypesList;
 use ParamList;
@@ -68,6 +69,8 @@ struct BNGModel =>
 	Version             => '@',  # Indicates set of version requirements- output to BNGL and NET files
 	Options             => '%',  # Options used to control behavior of model and associated methods
     Params              => '%',  # run-time parameters (not to be saved)
+    ParameterCache      => 'Cache',   
+    ConcentrationCache  => 'Cache',
 };
 
 
@@ -121,6 +124,10 @@ sub initialize
 
 	# Initialize SubstanceUnits (Number is default)
 	$model->SubstanceUnits("Number");
+
+    # Initialize Cache
+    $model->ConcentrationCache( Cache->new() );
+    $model->ParameterCache( Cache->new() );
 }
 
 
@@ -128,6 +135,51 @@ sub initialize
 ###
 ###
 ###
+
+
+# write Model from file
+# $err = $model->readModel({file=>FILENAME}) 
+sub readModel
+{
+    use strict;
+    use warnings;
+
+    my $model = shift @_;
+	my $user_params = @_ ? shift @_ : {};
+
+    # default parameters
+	my %params = ();
+
+    # copy user_params into pass_params structures
+	while ( my ($key,$val) = each %$user_params )
+	{   $params{$key} = $val;	}
+
+    # writeFile will generate the output
+    return $model->readFile( \%params );
+}
+
+
+# write Network from file
+# $err = $model->readModel({file=>FILENAME}) 
+sub readNetwork
+{
+    use strict;
+    use warnings;
+
+    my $model = shift @_;
+	my $user_params = @_ ? shift @_ : {};
+
+    # default parameters
+	my %params = ();
+
+    # copy user_params into pass_params structures
+	while ( my ($key,$val) = each %$user_params )
+	{   $params{$key} = $val;	}
+
+    # writeFile will generate the output
+    return $model->readFile( \%params );
+}
+
 
 
 
@@ -941,59 +993,175 @@ sub initialize
 
 
 
-
-# This method writes the model and/or network to a file in various formats.
-sub writeFile
+# write Model to file (default is BNGL format)
+# $err = $model->writeModel({opt=>val,..}) 
+sub writeModel
 {
-	my $model = shift @_;
+    use strict;
+    use warnings;
+
+    my $model       = shift @_;
 	my $user_params = @_ ? shift @_ : {};
 
 	my %params = (
-		'format'          => 'net',
-        'overwrite'       => 0,
-	    'prefix'          => $model->getOutputPrefix(),
-	    'suffix'          => '',
+        'evaluate_expressions' => 0,
+		'format'               => 'bngl',
+        'include_model'        => 1,
+        'include_network'      => 0,
+        'overwrite'            => 0,
+		'pretty_formatting'    => 1,
 	);
 
-	my %pass_params = (
-        'evaluate_expressions' => 0,
+    # copy user_params into pass_params structures
+	while ( my ($key,$val) = each %$user_params )
+	{   $params{$key} = $val;	}
+
+    # writeFile will generate the output
+    return $model->writeFile( \%params );
+}
+
+
+# write Network in NET format
+# $err = $model->writeNetwork({opt=>val,..}) 
+sub writeNetwork
+{
+    use strict;
+    use warnings;
+
+    my $model       = shift @_;
+	my $user_params = @_ ? shift @_ : {};
+
+	my %params = (
+        'evaluate_expressions' => 1,
+		'format'               => 'net',
+        'include_model'        => 0,
+        'include_network'      => 1,
+        'overwrite'            => 0,
+		'pretty_formatting'    => 0,
+	);
+
+    # copy user_params into pass_params structures
+	while ( my ($key,$val) = each %$user_params )
+	{   $params{$key} = $val;	}
+
+    # writeFile will generate the output
+    return $model->writeFile( \%params );
+}
+
+
+# Write Reaction Network to .NET file
+# This action will be deprecated! writeModel and writeNetwork should be used instead
+sub writeNET
+{
+	my $model       = shift @_;
+	my $user_params = @_ ? shift @_ : {};
+
+    # default parameters
+	my %params = (
+        'evaluate_expressions' => 1,
+        'format'               => 'net',
         'include_model'        => 1,
         'include_network'      => 1,
-		'pretty_formatting'    => 1,
-	    'TextReaction'         => 0,
+        'overwrite'            => 1,
+        'pretty_formatting'    => 0,
+		'TextReaction'         => 0,
+        'TextSpecies'          => 1,
 	);
+
+    # get any user parameters 
+	while ( my ($key,$val) = each %$user_params )
+    {   $params{$key} = $val;   }
+
+    # call writeFile to output the network
+    return $model->writeFile( \%params );
+}
+
+
+# This is a general method for writing the model and/or network to a file in various formats.
+#  (This method does the heavy lifting for writeModel and writeNetwork)
+#
+# $err = $model->writeFile({OPT=>VAL,..})
+#
+# OPTIONS:
+#   evaluate_expressions => 0,1 : evaluate math expressions output as numbers (default=0).
+#   format => "FORMAT"          : select output format, where FORMAT=bngl,net,xml,sbml,ssc (default=net).
+#   include_model => 0,1        : include model blocks in output file (default=1).
+#   include_network => 0,1      : include network blocks in output file (default=1).
+#   overwrite => 0,1            : allow writeFile to overwrite exisiting files (default=0).
+#   prefix => "string"          : set prefix of output file name (default=./MODELNAME).
+#   pretty_formatting => 0,1    : write output in "pretty" form (default=0).
+#   suffix => "string"          : set suffix of output file name (default=NONE).
+#   TextReaction => 0,1         : write reactions as BNGL strings (default=0).
+#   TextSpecies => 0,1          : write species as BNGL string (default=1).
+#
+# TODO: set up additional formats: XML, SBML, SSC, etc.
+# TODO: setting TextSpecies to 0 does not do anything!
+sub writeFile
+{
+    use strict;
+    use warnings;
+
+	my $model       = shift @_;
+	my $user_params = @_ ? shift @_ : {};
+
+	my %params = (
+        'evaluate_expressions' => 0,
+		'format'               => 'net',
+        'include_model'        => 1,
+        'include_network'      => 1,
+        'overwrite'            => 1,
+	    'prefix'               => $model->getOutputPrefix(),
+		'pretty_formatting'    => 1,
+	    'suffix'               => '',
+	    'TextReaction'         => 0,
+        'TextSpecies'          => 1,
+	);
+
+    # change this to a constant?
+    my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>0, 'xml'=>1, 'ssc'=>0 );
 
     # copy user_params into params and pass_params structures
 	while ( my ($key,$val) = each %$user_params )
 	{
 		if ( exists $params{$key} )
-		{
-            $params{$key} = $val;
-            if ( exists $pass_params{$key} )
-            {
-                $pass_params{$key} = $val;
-            }
-        }
-        elsif ( exists $pass_params{$key} )
-        {
-            $pass_params{$key} = $val;
-        }
+		{   $params{$key} = $val;   }
 		else
-		{
-            die "writeFile(): Unrecognized parameter $key in writeFile";
-        }
+		{   die "writeFile(): Unrecognized option parameter $key.";   }
 	}
 
-    return '' if $NO_EXEC;
+    # check if format is allowed
+    unless ( $allowed_formats{ $params{'format'} } )
+    {
+        return sprintf( "writeFile() does not currently support '%s' format.", $params{'format'} );
+    }
 
+    # check if there's anything to write
+    unless ( $params{'include_model'} or $params{'include_network'} )
+    {
+        return "writeFile() has nothing to write! Include model or network and try again.";
+    }
 
-    # build output filename
+    # check for reactions if we're writing the network
+    if ( $params{include_network} )
+    {
+        if ( @{$model->RxnList->Array} == 0 )
+        {
+            return "writeFile() was asked to write the network, but no reactions were found.\n"
+                  ."Did you remember to call generate_network() before writing network output?\n";
+        }
+    }
+
+    # do nothing if we're not executing actions
+    return undef if $NO_EXEC;
+
+    ## Execute the Action ##
+    # first, build output filename
     my $file = $params{prefix};
     unless ( $params{suffix} eq '' )
     {   $file .= "_$params{suffix}";   }
     $file .= ".$params{format}";
 
-    # check for overwrite
+    # now check if we're overwriting an existing file
     if ( -e $file )
     {
 	    if ( $params{overwrite} )
@@ -1002,35 +1170,231 @@ sub writeFile
 		    unlink $file;
 	    }
 	    else
-        {
-		    return "writeFile(): file $file exists. Set option overwrite=>1 option to overwrite.";
+        {   return "writeFile(): file $file exists. Set option overwrite=>1 option to overwrite.";   }
+    }
+
+    # make a string that describes outputs to user
+    my @outputs; 
+    if ( $params{'include_model'} )
+    {   push @outputs, "model";   }
+    if ( $params{'include_network'} )
+    {   push @outputs, "network";   }   
+    my $output = join " and ", @outputs;
+
+    # get file output in string format
+    my $file_string;
+    if ( $params{'format'} eq 'net' )
+    {   # write NET format
+        $file_string = $model->writeBNGL( \%params );
+    }
+    elsif ( $params{'format'} eq 'bngl' )
+    {   # write BNGL format
+        $file_string = $model->writeBNGL( \%params );
+    }
+    elsif ( $params{'format'} eq 'xml' )
+    {   # write BNGL format
+        $file_string = $model->toXML( \%params );
+    }
+
+    # write the string to file
+    my $FH;
+    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+    print $FH $file_string;
+    close $FH;
+
+    # all done
+	print sprintf( "Wrote %s in %s format to %s.\n", $output, $params{'format'}, $file);
+    return undef;
+}
+
+
+# Write Model to a BNGL formatted string.
+# This method returns a string and does NOT write to file.
+#  (also writes reaction network, if it exists)
+sub writeBNGL
+{
+    use strict;
+    use warnings;
+
+	my $model  = shift @_;
+	my $user_params = @_ ? shift @_ : {};
+
+    # Default parameters required by this method.
+    # NOTE: since this method is not a user action, we don't need to check parameters.
+    # Instead, we assume the programmers call this method with valid options.
+	my %params = (
+        'evaluate_expressions' => 0,
+		'format'               => 'net',
+        'include_model'        => 1,
+        'include_network'      => 1,
+		'pretty_formatting'    => 1,
+	    'TextReaction'         => 0,
+        'TextSpecies'          => 1,
+	);
+
+    # get any user parameters 
+	while ( my ($key,$val) = each %$user_params )
+    {   $params{$key} = $val;	}
+
+	return '' if $NO_EXEC;
+
+
+    # !!! Begin writing file !!!
+	my $out    = '';
+
+	# Header
+	my $version = BNGversion();
+	$out .= "# Created by BioNetGen $version\n";
+
+	# Version requirements
+	foreach my $vstring ( @{$model->Version} )
+	{   $out .= "version(\"$vstring\");\n";   }
+
+	# Options
+	while ( my ($opt,$val) = each %{$model->Options} )
+	{
+        next if ( $opt eq 'prefix' ); # don't write prefix
+        next if ( $opt eq 'suffix' ); # don't write suffix
+        $out .= "setOption(\"$opt\",\"$val\");\n";
+    }
+
+	# Units
+	$out .= sprintf "substanceUnits(\"%s\");\n", $model->SubstanceUnits;
+
+    # Begin Model (BNGL only)
+    $out .= "\nbegin model\n"  if ( $params{'format'} eq 'bngl'  and  $params{'pretty_formatting'} );
+
+	# Parameters
+	$out .= $model->ParamList->writeBNGL( \%params );
+
+    # Model blocks
+    if ( $params{'include_model'} )
+    {
+    	# Compartments
+	    if ( defined $model->CompartmentList  and  @{$model->CompartmentList->Array} )
+	    {   $out .= $model->CompartmentList->toString( $model->ParamList );   }
+
+	    # MoleculeTypes
+	    $out .= $model->MoleculeTypesList->writeBNGL( \%params );
+
+	    # Observables	
+	    if ( @{$model->Observables} )
+	    {
+	        # find max length of observable name
+	        my $max_length = 0;
+		    foreach my $obs ( @{$model->Observables} )
+		    {
+		        $max_length = ( length $obs->Name > $max_length ) ? length $obs->Name : $max_length;
+		    }
+	        
+		    $out .= "begin observables\n";
+		    my $io = 1;
+		    foreach my $obs ( @{$model->Observables} )
+		    {
+		        if ( $params{'pretty_formatting'} )
+			    {   # no observable index
+			        $out .= sprintf "  %s\n", $obs->toString($max_length);
+			    }
+			    else
+		        {   # include index
+			        $out .= sprintf "%5d %s\n", $io, $obs->toString();
+			    }
+			    ++$io;
+		    }	
+		    $out .= "end observables\n";
+	    }
+
+	    # Energy Patterns
+	    if ( @{$model->EnergyPatterns} )
+	    {
+		    $out .= "begin energy patterns\n";
+		    my $io = 1;
+		    foreach my $epatt ( @{ $model->EnergyPatterns } )
+		    {
+		        if ( $params{'pretty_formatting'} )
+			    {   # no energy pattern index
+			        $out .=  sprintf "  %s\n", $epatt->toString($model->ParamList);
+			    }
+			    else
+		        {   # include index
+			        $out .=  sprintf "%5d %s\n", $io, $epatt->toString($model->ParamList);
+			    }
+
+			    ++$io;
+		    };		
+		    $out .= "end energy patterns\n";
 	    }
     }
 
+	# Functions
+	$out .= $model->ParamList->writeFunctions( \%params );
+		
+	# Species (TODO: seed species for 
+  	$out .= $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, \%params );
 
-    if ( $params{'format'} eq 'net' )
-    {   # write NET format
-        my $FH;
-	    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
-        print $FH $model->writeBNGL( \%pass_params );
-	    close $FH;
-	    print "Wrote network to $file.\n";
-    }
-    #elsif ( $params{'format'} eq 'sbml' )
-    #{
-    #    return $model->writeSBML(\%pass_params);
-    #}
-    ##elsif ( $params{'format'} eq 'xml' )
-    #{
-    #    return $model->writeXML(\%pass_params);
-    #}
-    else
+
+    # Model Blocks
+    if ( $params{include_model} )
     {
-        die sprintf "Parameter '%s' has unknown value '%s' in writeFile", 'format', $params{'format'};
+	    # Reaction rules
+	    $out .= "begin reaction rules\n";
+        {
+            my $irxn = 1;
+	        foreach my $rset ( @{$model->RxnRules} )
+	        {
+		        my $rreverse = ( @$rset > 1 ) ? $rset->[1] : undef;
+
+                # write BNGL rule
+		        $out .= sprintf "  %s\n", $rset->[0]->toString($rreverse);
+		
+		        # write actions
+		        if ( $params{'pretty_formatting'} )
+                {   # pretty, don't write actions
+                    # do nothing!
+                }
+                else
+	            {   # write actions
+		            $out .= $rset->[0]->listActions();
+		            if ( defined $rreverse )
+		            {
+		        	    $out .= "  # Reverse\n";
+		        	    $out .= $rset->[1]->listActions();
+		            }    
+		        }
+                ++$irxn;
+	        }
+        }
+	    $out .= "end reaction rules\n";
     }
 
-    return '';
+    # Network blocks
+	if ( $params{'include_network'} )
+	{
+	    # Reactions	
+	    if ( $params{'TextReaction'} )
+	    {   print "Writing full species names in reactions.\n";   }
+	    $out .= $model->RxnList->writeBNGL( \%params, $model->ParamList );
+
+	    # Groups
+	    if ( @{$model->Observables} )
+	    {
+		    $out .= "begin groups\n";
+		    my $io = 1;
+		    foreach my $obs ( @{$model->Observables} )
+		    {
+			    $out .= sprintf "%5d %s\n", $io, $obs->toGroupString( $model->SpeciesList );
+			    ++$io;
+		    }
+		    $out .= "end groups\n";
+	    }
+	}
+
+    # End Model (BNGL only)
+    $out .= "end model\n"  if ( $params{'format'} eq 'bngl' and  $params{'pretty_formatting'} );
+
+	return $out;
 }
+
 
 
 ###
@@ -1080,13 +1444,6 @@ sub setOption
 }
 
 
-
-###
-###
-###
-
-
-
 sub substanceUnits
 {
 	my $model = shift;
@@ -1109,13 +1466,6 @@ sub substanceUnits
 }
 
 
-
-###
-###
-###
-
-
-
 sub setVolume
 {
 	my $model            = shift @_;
@@ -1124,6 +1474,96 @@ sub setVolume
 
 	my $err = $model->CompartmentList->setVolume( $compartment_name, $value );
 	return ($err);
+}
+
+
+
+###
+###
+###
+
+
+
+sub setParameter
+{
+	my $model = shift @_;
+	my $pname = shift @_;
+	my $value = shift @_;
+
+	return '' if $NO_EXEC;
+
+	my $plist = $model->ParamList;
+	my ($param, $err);
+
+	# Error if parameter doesn't exist
+	( $param, $err ) = $plist->lookup($pname);
+	if ($err) { return ($err) }
+
+	# Read expression
+	my $expr    = Expression->new();
+	my $estring = "$pname=$value";
+	if ( $err = $expr->readString( \$estring, $plist ) ) { return $err; }
+
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+
+	printf "Set parameter %s to value %s\n", $pname, $expr->evaluate($plist);
+	return '';
+}
+
+
+# Save the current parameter definitions.
+#  Optionally specify a label to associate with the saved parameters.
+sub saveParameters
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    # copy paramList (exclude non-constant types)
+    my $paramlist = $model->ParamList->copyConstant();
+
+    # put saved concentration into cache
+    $model->ParameterCache->cache($paramlist,$label);
+    # Send message to user
+    printf "Saved current parameters with label '%s'\n", $label;
+	return undef;
+} 
+
+
+# Reset parameters to saved defintions.
+#  Optionally specify a label used to find the saved parameters
+sub resetParameters
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    my $saved_paramlist = $model->ParameterCache->browse($label);
+
+    unless (defined $saved_paramlist)
+    {   return "resetParameters(): cannot find saved parameters";   }
+
+    unless (ref $saved_paramlist eq 'ParamList')
+    {   return "resetParameters(): problem retrieving saved parameters";   }
+
+    # copy saved parameters into main ParamList
+    my $err;
+    foreach my $param ( @{$saved_paramlist->Array} )
+    {
+        $err = $model->ParamList->add( $param );
+        if ($err) { return "resetParameters(): problem resetting parameters ($err)"; }
+    }
+
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+
+    # Send message to user
+    printf "Reloaded parameters saved with label '%s'\n", $label;
+    # all done
+	return undef;
 }
 
 
@@ -1186,84 +1626,61 @@ sub setConcentration
 	$model->UpdateNet(1);
 
 	printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, $conc;
-	return '';
+	return undef;
 }
 
 
-
-###
-###
-###
-
-
-
-sub setParameter
-{
-	my $model = shift @_;
-	my $pname = shift @_;
-	my $value = shift @_;
-
-	return '' if $NO_EXEC;
-
-	my $plist = $model->ParamList;
-	my ($param, $err);
-
-	# Error if parameter doesn't exist
-	( $param, $err ) = $plist->lookup($pname);
-	if ($err) { return ($err) }
-
-	# Read expression
-	my $expr    = Expression->new();
-	my $estring = "$pname=$value";
-	if ( $err = $expr->readString( \$estring, $plist ) ) { return $err; }
-
-	# Set flag to update netfile when it's used
-	$model->UpdateNet(1);
-
-	printf "Set parameter %s to value %s\n", $pname, $expr->evaluate($plist);
-	return '';
-}
-
-
-
-###
-###
-###
-
-
-
+# Save the current species concentrations.
+#  Optionally specify a label to associate with the saved state.
 sub saveConcentrations
 {
 	my $model = shift @_;
-
-	if (@{$model->Concentrations})
-    {
-    	my $i = 0;
-		foreach my $spec ( @{$model->SpeciesList->Array} )
-        {
-			$spec->Concentration( $model->Concentrations->[$i] );
-			++$i;
-		}
-	}
-	return '';
-}
-
-
-
-###
-###
-###
-
-
-
-sub resetConcentrations
-{
-	my $model = shift @_;
+    my $label = @_ ? shift @_ : undef;
 
 	return '' if $NO_EXEC;
 
-	$model->Concentrations( [] );
-	return '';
+    # create new concentration array
+    my $conc = [];
+	if (@{$model->Concentrations})
+    {   # copy concentration from primary concentration array
+        @$conc = @{$model->Concentrations};
+	}
+    else
+    {   # if that's not defined, copy directly from SpeciesList
+        @$conc = map {$_->Concentration} @{$model->SpeciesList->Array};
+    }
+    # put saved concentration into cache
+    $model->ConcentrationCache->cache($conc,$label);
+	return undef;
+}
+
+
+# Reset species concentrations to saved values.
+#  Optionally specify a label used to find the saved concentrations
+sub resetConcentrations
+{
+	my $model = shift @_;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
+
+	return '' if $NO_EXEC;
+
+    my $saved_conc = $model->ConcentrationCache->browse($label);
+
+    unless (defined $saved_conc)
+    {   return "resetConcentrations(): cannot find saved concentrations";   }
+
+    unless (ref $saved_conc eq 'ARRAY')
+    {   return "resetConcentrations(): some problem retrieving saved concentrations";   }
+
+    unless ( @{$model->SpeciesList->Array} == @$saved_conc )
+    {   return "resetConcentrations(): length of concentration array does not match the number of species";   }
+
+    # finally, set concentrations to the saved values
+    $model->Concentrations( $saved_conc );
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+    # all done
+	return undef;
 }
 
 
@@ -1413,298 +1830,6 @@ sub quit
     #  comment out all those actions.
     print "quitting BioNetGen!\n";
     exit(0);
-}
-
-
-
-###
-###
-###
-
-
-
-# write Model to BNGL format
-#  (also writes reaction network, if it exists)
-sub writeBNGL
-{
-    use strict;
-
-	my $model  = shift @_;
-	my $user_params = @_ ? shift @_ : {};
-
-    # default parameters required by this method
-	my %params = (
-        'include_model'     => 1,
-        'include_network'   => 1,
-        'pretty_formatting' => 0,
-		'TextReaction'      => 0,
-	);
-    # default parameters passed to subroutines
-	my %pass_params = (
-        'evaluate_expressions' => 1,
-        'pretty_formatting'    => 0,
-		'TextReaction'         => 0,
-	);
-
-    # get any user parameters 
-	while ( my ($key,$val) = each %$user_params )
-    {
-		if ( exists $params{$key} )
-        {
-			$params{$key} = $val;
-			if ( exists $pass_params{$key} )
-            {
-				$pass_params{$key} = $val;
-			}
-		}
-		elsif ( exists $pass_params{$key} )
-        {
-			$pass_params{$key} = $val;
-		}
-		else
-        {
-			die "Unrecognized parameter $key in writeNET";
-		}
-	}
-
-	return '' if $NO_EXEC;
-
-
-    # !!! Begin writing file !!!
-	my $out    = '';
-
-	# Header
-	my $version = BNGversion();
-	$out .= "# Created by BioNetGen $version\n";
-
-	# Version requirements
-	foreach my $vstring ( @{$model->Version} )
-	{   $out .= "version(\"$vstring\");\n";   }
-
-	# Options
-	while ( my ($opt,$val) = each %{$model->Options} )
-	{
-        next if ( $opt eq 'prefix' );
-        next if ( $opt eq 'suffix' );
-        $out .= "setOption(\"$opt\",\"$val\");\n";
-    }
-
-	# Units
-	$out .= sprintf "substanceUnits(\"%s\");\n", $model->SubstanceUnits;
-
-
-    # Begin Model
-    $out .= "\nbegin model\n"  if ( $params{pretty_formatting} );
-
-
-	# Parameters
-	$out .= $model->ParamList->writeBNGL( \%pass_params );
-
-
-    if ( $params{include_model} )
-    {
-    	# Compartments
-	    if ( defined $model->CompartmentList  and  @{$model->CompartmentList->Array} )
-	    {   $out .= $model->CompartmentList->toString( $model->ParamList );   }
-
-	    # MoleculeTypes
-	    $out .= $model->MoleculeTypesList->writeBNGL( \%pass_params );
-
-	    # Observables	
-	    if ( @{$model->Observables} )
-	    {
-	        # find max length of observable name
-	        my $max_length = 0;
-		    foreach my $obs ( @{$model->Observables} )
-		    {
-		        $max_length = ( length $obs->Name > $max_length ) ? length $obs->Name : $max_length;
-		    }
-	        
-		    $out .= "begin observables\n";
-		    my $io = 1;
-		    foreach my $obs ( @{$model->Observables} )
-		    {
-		        if ( $params{pretty_formatting} )
-			    {   # no observable index
-			        $out .= sprintf "  %s\n", $obs->toString($max_length);
-			    }
-			    else
-		        {   # include index
-			        $out .= sprintf "%5d %s\n", $io, $obs->toString();
-			    }
-			    ++$io;
-		    }	
-		    $out .= "end observables\n";
-	    }
-
-	    # Energy Patterns
-	    if ( @{$model->EnergyPatterns} )
-	    {
-		    $out .= "begin energy patterns\n";
-		    my $io = 1;
-		    foreach my $epatt ( @{ $model->EnergyPatterns } )
-		    {
-		        if ( $params{pretty_formatting} )
-			    {   # no energy pattern index
-			        $out .=  sprintf "  %s\n", $epatt->toString($model->ParamList);
-			    }
-			    else
-		        {   # include index
-			        $out .=  sprintf "%5d %s\n", $io, $epatt->toString($model->ParamList);
-			    }
-
-			    ++$io;
-		    };		
-		    $out .= "end energy patterns\n";
-	    }
-    }
-
-
-	# Functions
-	$out .= $model->ParamList->writeFunctions( \%pass_params );
-	
-	
-	# Species
-  	$out .= $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, 0, \%pass_params );
-
-
-    if ( $params{include_model} )
-    {
-	    # Reaction rules
-	    $out .= "begin reaction rules\n";
-        {
-            my $irxn = 1;
-	        foreach my $rset ( @{$model->RxnRules} )
-	        {
-		        my $rreverse = ( @$rset > 1 ) ? $rset->[1] : undef;
-
-                # write BNGL rule
-		        $out .= sprintf "  %s\n", $rset->[0]->toString($rreverse);
-		
-		        # write actions
-		        if ( $params{pretty_formatting} )
-                {   # pretty, don't write actions
-                    # do nothing!
-                }
-                else
-	            {   # write actions
-		            $out .= $rset->[0]->listActions();
-		            if ( defined $rreverse )
-		            {
-		        	    $out .= "  # Reverse\n";
-		        	    $out .= $rset->[1]->listActions();
-		            }    
-		        }
-                ++$irxn;
-	        }
-        }
-	    $out .= "end reaction rules\n";
-    }
-
-
-	if ( $params{include_network} )
-	{
-	    # Reactions	
-	    if ( $params{TextReaction} )
-	    {   print "Writing full species names in reactions.\n";   }
-	    $out .= $model->RxnList->writeBNGL( \%pass_params, $model->ParamList );
-
-
-	    # Groups
-	    if ( @{$model->Observables} )
-	    {
-		    $out .= "begin groups\n";
-		    my $io = 1;
-		    foreach my $obs ( @{$model->Observables} )
-		    {
-			    $out .= sprintf "%5d %s\n", $io, $obs->toGroupString( $model->SpeciesList );
-			    ++$io;
-		    }
-		    $out .= "end groups\n";
-	    }
-	}
-
-
-    # End Model
-    $out .= "end model\n"  if ( $params{pretty_formatting} );
-
-	return $out;
-}
-
-
-
-###
-###
-###
-
-
-
-# write Reaction Network to .NET file
-sub writeNET
-{
-	my $model       = shift @_;
-	my $user_params = @_ ? shift @_ : {};
-
-    # default parameters required by this method
-	my %params = (
-		'prefix' => $model->getOutputPrefix(),
-		'suffix' => '',
-
-	);
-    # default parameters passed to subroutines
-	my %pass_params = (
-        'evaluate_expressions' => 1,
-        'include_model'        => 1,
-        'include_network'      => 1,
-        'pretty_formatting'    => 0,
-		'TextReaction'         => 0,
-	);
-
-    # get any user parameters 
-	while ( my ($key,$val) = each %$user_params )
-    {
-		if ( exists $params{$key} )
-        {
-			$params{$key} = $val;
-			if ( exists $pass_params{$key} )
-            {
-				$pass_params{$key} = $val;
-			}
-		}
-		elsif ( exists $pass_params{$key} )
-        {
-			$pass_params{$key} = $val;
-		}
-		else
-        {
-			die "Unrecognized parameter $key in writeNET";
-		}
-	}
-
-	return '' if $NO_EXEC;
-
-    # check for reactions if we're writing the network
-    if ( @{$model->RxnList->Array} == 0 )
-    {
-        print "Warning: writeNET() was asked to write the network, but no reactions were found.\n"
-             ."Did you remember to call generate_network() before writing network output?\n";
-    }
-
-    # build output filename
-    my $file = $params{prefix};
-	unless ( $params{suffix} eq '' )
-    {   $file .= "_$params{suffix}";   }
-	$file .= ".net";
-
-	# Print network to file
-    my $FH;
-	open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
-    print $FH $model->writeBNGL( \%pass_params );
-	close $FH;
-	print "Wrote network to $file.\n";
-	$model->UpdateNet(0);
-
-	return '';
 }
 
 
