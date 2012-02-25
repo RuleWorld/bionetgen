@@ -29,23 +29,34 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
     {
         unless ($BNG_ROOT)
         {   # Determine BNG root directory
+
+            # Use environment variable BNGPATH, if defined and valid
+            if ( exists $ENV{BNGPATH} ) 
+            {
+	            my $bindir = File::Spec->catdir( ($ENV{BNGPATH}) );
+                if ( -d $bin_dir )
+                {   $BNG_ROOT = $bin_dir;   }
+                else
+                {   send_warning( "While looking for BNG_ROOT: environment variable 'BNGPATH' is not a valid directory!" );   }
+            }
             # Use environment variable BioNetGenRoot, if defined and valid
-            if ( exists $ENV{BioNetGenRoot} )
+            elsif ( exists $ENV{BioNetGenRoot} )
             {
 	            my $bindir = File::Spec->catdir( ($ENV{BioNetGenRoot}) );
-                if ( -d $BNG_ROOT )
+                if ( -d $bin_dir )
                 {   $BNG_ROOT = $bin_dir;   }
                 else
                 {   send_warning( "While looking for BNG_ROOT: environment variable 'BioNetGenRoot' is not a valid directory!" );   }
             }
 
-            # Otherwise, try the same directory as perl script
+
+            # Otherwise, try the same
             unless ( defined $BNG_ROOT )
             {
-                if (-d $FindBin::Bin)
-                {   $BNG_ROOT = $FindBin::Bin;   }
+                if (-d $FindBin::RealBin)
+                {   $BNG_ROOT = $FindBin::RealBin;   }
                 else
-                {   send_warning( "While looking for BNG_ROOT: could not find script bin directory!" );   }
+                {   send_warning( "While looking for BNG_ROOT: could not RealBin directory!" );   }
             }
 
             # As last resort, try current working directory

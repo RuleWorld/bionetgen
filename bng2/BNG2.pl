@@ -10,8 +10,10 @@ use File::Spec;
 use IO::Handle;
 use FindBin;
 
-# get Perl2 Module directory
-use lib File::Spec->catdir( (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} : $FindBin::RealBin), "Perl2" );
+# get Perl2 Module directory: look for environment variables BNGPATH or BioNetGenRoot.
+# If neither are defined, use RealBin module
+use lib File::Spec->catdir( (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
+                                (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : $FindBin::RealBin)), "Perl2" );
 
 # BNG Modules
 use BNGUtils;
