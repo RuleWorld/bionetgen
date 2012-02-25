@@ -1,0 +1,2 @@
+readFile({file=>"/Users/wex14/Documents/workspace/BioDiagrams/trunk/data/fceri_ji/fceri_ji.net"});
+simulate_ode({prefix=>"testrun_check",t_end=>600,n_steps=>10,atol=>1e-8,rtol=>1e-8});

@@ -1,0 +1,75 @@
+begin parameters
+
+ka 5
+
+kd 21.5
+
+kprod 89.55
+
+kdec 0.04
+
+DNA_init 1
+
+A_init 18
+
+end parameters
+
+
+
+begin molecule types
+
+DNA(a)
+
+A(dna)
+
+P
+
+TrashP
+
+end molecule types
+
+
+
+begin seed species
+
+DNA(a) DNA_init
+
+A(dna) A_init
+
+P 0
+
+TrashP 0
+
+end seed species
+
+
+
+begin observables
+
+Molecules Protein           P
+
+end observables
+
+
+
+begin reaction rules
+
+DNA(a)+A(dna) <-> DNA(a!1).A(dna!1) ka,kd
+
+DNA(a!1).A(dna!1) -> P + DNA(a) + A(dna) kprod
+
+P -> TrashP kdec
+
+
+
+end reaction rules
+
+
+
+generate_network({overwrite=>1});
+
+simulate_ssa({t_end=>1000,n_steps=>99});
+
+writeSSC;
+
+writeSSCcfg;

@@ -1,0 +1,18 @@
+['PII() + UTP() -> PIIUMP() + PPi() functionRate0()',
+ 'PIIUMP() -> PII() + UMP() functionRate1()',
+  'PIIUMP() + UTP() -> PIIUMP2() + PPi() functionRate2()', 
+  'PIIUMP2() -> PIIUMP() + UMP() functionRate3()', 
+  'PIIUMP2() + UTP() -> PIIUMP3() + PPi() functionRate4()',
+   'PIIUMP3() -> PIIUMP2() + UMP() functionRate5()', 
+   'GS() -> AMP() functionRate6()', 
+   'AMP() -> GS() functionRate7()', 
+   'NH4() + KG() + NADPH() -> GLU() + NADP() functionRate8()',
+    'GLN() + NADPH() + KG() -> GLU() + NADP() functionRate9()',
+     'GLU() + ATP() + NH4() -> P_i() + GLN() + ADP() functionRate10()',
+      'GLU() -> AZGLU() functionRate11()', 
+      'AZGLU() -> AZglu() functionRate12()', 
+      'GLN() -> AZGLN() functionRate13()', 
+      'AZGLN() -> AZgln() functionRate14()', 
+      'ADP() -> ATP() functionRate15()']
+      
+  

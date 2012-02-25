@@ -1,0 +1,95 @@
+See the two observable blocks bellows:
+
+begin parameters
+ Sa_init 100000
+ Sb_init 100
+ k1 1.0
+ k2 0.0005
+ k3 0.5
+ k4 0.04
+end parameters
+
+begin molecule types
+ Sa(a,b~U,c)
+ Sb(p,q,r~U)
+ Sc(l~U,m~U,n)
+ A(x)
+ B(y,z)
+ C(h)
+ trash()
+ Mol1(a,b,cBinds)
+Mol2(a,c~P)
+end molecule types
+
+begin seed species
+ Sa(a,b~U,c) Sa_init
+ Sb(p,q,r~U) Sb_init #to see that just the states are shown
+ Sc(l~U,m~U!2,n!1).Sb(p!1,q,r~U!2) Sa_init #to see if bonds appear in the seed specie; both of components w/wo defined state  
+ A(x!1).B(y!1,z) Sb_init #to see that the bonds are shown, if a state is not defined
+C(h) 0
+Mol1(a,b,cBinds) 0
+Mol2(a,c~P) 0
+
+end seed species
+
+begin observables
+ 1 Species Sa_tot Sa(a!+,b~U,c)
+ 2 Molecules Sb_tot Sb(p,q,r~U)
+ 3 Molecules Sc_tot Sc(l~U,m~U,n)
+end observables
+
+begin reaction rules
+
+#Checking for two state changes in a molecule, as two states are separated by ";"
+# OK; OUTPUT -- Mol1.l="P";Mol1.m="P"
+ #Sc(l~U,m~U,n) -> Sc(l~P,m~P,n) k4
+
+#Checking trash(), delete complex should come
+Sa(a,b~U,c)->trash() k1
+
+#A simple reaction, see that + is replaced by _
+Sa(a,b~U,c) + B(y!+,z) -> Sa(a!1,b~U,c).B(y!+,z!1) k3
+
+#to see whether the same bond identify issue has been resolved or not
+C(h) + Sb(p,q,r~U) -> C(h!1).Sb(p!1,q,r~U) k4
+C(h!1).Sb(p!1,q,r~U) + C(h!1).Sb(p!1,q,r~U)<-> C(h!1).Sb(p!1,q!3,r~U).C(h!2).Sb(p!2,q!3,r~U) k2,k3 
+#also see reversible reaction
+
+#to see scope of mol 
+#state change
+#C(h!1).Sb(p!1,q,r~U) -> C(h!1).Sb(p!1,q,r~P) k1
+#scope of mol within the same molecule
+#C(h!1).Sb(p!1,q!3,r~U).C(h!2).Sb(p!2,q!3,r~U) -> C(h!1).Sb(p!1,q!3,r~P).C(h!2).Sb(p!2,q!3,r~P) k4
+
+#for MatchOnce error
+{MatchOnce}C(h!1).Sb(p!1,q,r~U) -> C(h) k1 DeleteMolecules 
+#for DeleteMolecule
+C(h!1).Sb(p!1,q,r~U) -> C(h) k1 DeleteMolecules
+#scope of mol within the same molecule
+#C(h!1).Sb(p!1,q!3,r~U).C(h!2).Sb(p!2,q!3,r~U) -> C(h) + C(h) k4 DeleteMolecues
+
+#Dangling case
+Sa(a!1,b~U,c).B(y!2,z!1) + Sb(p!1,q,r~U)-> Sa(a!1,b~U!4,c).B(y!2,z!1).Sb(p!3,q,r~U!4) k1
+
+Sa(a!1,b~U!4,c).B(y!2,z!1).Sb(p!3,q,r~U!4) -> Sa(a!1,b~U!2,c).Sb(p!3,q,r~U!2) k1
+
+#another case of delete molecule 
+A(x!1).B(y!1,z) + C(h) -> A(x!1).B(y!1,z!2).C(h!2) k2
+A(x!1).B(y!1,z!2).C(h!2) -> A(x) + C(h) k2
+A(x!1).B(y!1,z!2).C(h!2) -> trash() k2
+ 
+#to see the use of keywords
+#Mol1(a,b,cBinds) + Mol2(a,c~P)-> Mol1(a!1,b,cBinds).Mol2(a!1,c~P) k1
+#Mol1(a!1,b,cBinds).Mol2(a!1,c~P) -> Mol1(a!1,b,cBinds!2).Mol2(a!1,c~U!2) k1
+end reaction rules
+
+begin observables
+Molecules Check1 C(h!1).Sb(p!1,q!3,r~U).C(h!2).Sb(p!2,q!3,r~U) 
+Molecules Check2 trash()
+end observables
+
+#actions
+generate_network({overwrite=>1});
+simulate_ode({t_end=>100,n_steps=>10});
+writeSSC;
+writeSSCcfg;
