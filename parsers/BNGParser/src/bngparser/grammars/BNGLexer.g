@@ -44,6 +44,7 @@ PREFFIX : 'PREFFIX';
 SUFFIX : 'SUFFIX'|'suffix';
 LABEL : 'LABEL';
 PARAMETERS : ('p'|'P')('a'|'A')('r'|'R')('a'|'A')('m'|'M')('e'|'E')('t'|'T')('e'|'E')('r'|'R')('s'|'S');
+VERBOSE : ('V'|'v')('E'|'e')('R'|'r')('B'|'b')('O'|'o')('S'|'s')('E '|'e');
 
 MATCHONCE: 'MatchOnce';
 DELETEMOLECULES: 'DeleteMolecules';
@@ -79,7 +80,7 @@ SAVECONCENTRATIONS: 'saveConcentrations';
 RESETCONCENTRATIONS: 'resetConcentrations';
 GENERATENETWORK: 'generate_network';
 SUBSTANCEUNITS: 'substanceUnits';
-
+SAT: 'Sat';
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | '.' (DIGIT)+ EXPONENT?

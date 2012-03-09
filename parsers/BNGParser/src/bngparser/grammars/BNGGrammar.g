@@ -20,6 +20,7 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   import bngparser.dataType.ChangeableChannelTokenStream;
   import bngparser.dataType.ReactionRegister;
   import bngparser.methods.GenericMethods;
+  import bngparser.exceptions.VariableNotFoundException;
 }
 @members{
   public Stack<String> paraphrases = new Stack<String>();

@@ -3,7 +3,7 @@ package bngparser.exceptions;
 public class VariableNotFoundException extends Exception {
 
 	public VariableNotFoundException(String string) {
-		// TODO Auto-generated constructor stub
+		System.err.println("Variable not found: " + string);
 	}
 
 	/**

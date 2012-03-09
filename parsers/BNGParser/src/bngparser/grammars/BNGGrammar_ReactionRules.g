@@ -50,11 +50,11 @@ reactionLabel returns [String label]
         COLON 
 
 ;
-reaction_rule_def[int reactionCounter] returns [int numReactions, double secondRate]
+reaction_rule_def[int reactionCounter] returns [int numReactions, String secondRate]
 scope{
 List patternsReactants;
 List patternsProducts;
-List<Double> rateList;
+List<String> rateList;
 ReactionAction reactionAction;
 String name;
  String text;
@@ -62,7 +62,7 @@ String name;
 @init{
   $reaction_rule_def::patternsReactants = new ArrayList();
   $reaction_rule_def::patternsProducts = new ArrayList();
-  $reaction_rule_def::rateList = new ArrayList<Double>();
+  $reaction_rule_def::rateList = new ArrayList<String>();
   $reaction_rule_def::reactionAction = new ReactionAction();
   $reaction_rule_def::name = "Rule" + reactionCounter;
   $reaction_rule_def::text = "";
@@ -91,7 +91,12 @@ String name;
         ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
         } 
         WS
-        bi=rate_list[$reaction_rule_def::rateList] {$secondRate=$reaction_rule_def::rateList.get(1);$reaction_rule_def::text += " " + $rate_list.text;}
+        bi=rate_function[$reaction_rule_def::rateList] {
+        //TODO: add a try catch exception to check that if a bidirectional reaction is required it asks for two reaction rates
+            if($numReactions == 2)
+                $secondRate=$reaction_rule_def::rateList.get(1);
+            $reaction_rule_def::text += " " + $rate_function.text;
+        }
         (modif_command)* (DELETEMOLECULES)? (MOVECONNECTED)?
         
         {
@@ -101,9 +106,13 @@ String name;
 
         -> reaction_block(id={"RR" + reactionCounter},reactant={$reaction_rule_def::patternsReactants},
         product={$reaction_rule_def::patternsProducts},name={$reaction_rule_def::name},
-        rate={$reaction_rule_def::rateList.get(0)},bidirectional={bi},leftMap={$reaction_rule_def::reactionAction.getLeft()},
+        rate={$reaction_rule_def::rateList},bidirectional={bi},
+        lawType={$rate_function.functionName},
+        leftMap={$reaction_rule_def::reactionAction.getLeft()},
         rightMap={$reaction_rule_def::reactionAction.getRight()},operations={$reaction_rule_def::reactionAction.getOperations()},
-        operator1={$reaction_rule_def::reactionAction.getOperator1()},operator2={$reaction_rule_def::reactionAction.getOperator2()},expression={$reaction_rule_def::text})
+        operator1={$reaction_rule_def::reactionAction.getOperator1()},
+        operator2={$reaction_rule_def::reactionAction.getOperator2()},expression={$reaction_rule_def::text}
+        )
         ;
 match_attribute
         : LBRACKET MATCHONCE RBRACKET
@@ -139,7 +148,7 @@ int reactantPatternCounter;
            } 
   (PLUS s2=rule_species_def[upperID+"_RP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction]
             {
-            counter = $reaction_def::reactantPatternCounter;
+            int counter = $reaction_def::reactantPatternCounter;
             for(int i=0;i<s2.stoichiometry;i++){ 
               StringTemplate correctedString = GenericMethods.replace(s2.st,"RP" + counter,"RP" + $reaction_def::reactantPatternCounter);
                patternsReactants.add(correctedString);
@@ -151,7 +160,7 @@ int reactantPatternCounter;
   (s3=rule_species_def[upperID+"_PP"+ 1,$reaction_rule_def::reactionAction] 
         {
         $reaction_def::reactantPatternCounter =1;
-          counter = $reaction_def::reactantPatternCounter;
+          int counter = $reaction_def::reactantPatternCounter;
           for(int i=0;i<s3.stoichiometry;i++){ 
             StringTemplate correctedString = GenericMethods.replace(s3.st,"PP" + counter,"PP" + $reaction_def::reactantPatternCounter);
             patternsProducts.add(correctedString);
@@ -161,7 +170,7 @@ int reactantPatternCounter;
         }) 
         (PLUS s4=rule_species_def[upperID+"_PP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
         {
-            counter = $reaction_def::reactantPatternCounter;
+            int counter = $reaction_def::reactantPatternCounter;
            for(int i=0;i<s4.stoichiometry;i++){ 
                StringTemplate correctedString = GenericMethods.replace(s4.st,"PP" + counter,"PP" + $reaction_def::reactantPatternCounter);
                patternsProducts.add(correctedString);
@@ -200,9 +209,21 @@ BondList bonds;
       secondBonds={$rule_species_def::bonds.getRight()})
     ;
 
+rate_function [List<String> rateList] returns [String functionName]
+@init{
+  $functionName = "Ele";
+}:
+    (function_keyword LPAREN) => function_keyword {$functionName = $function_keyword.text;} LPAREN rate_list[rateList] RPAREN |
+    rate_list[rateList]
+    
+;
 
-rate_list[List<Double> rateList]
-        : e1=expression[gParent.memory] {rateList.add(e1.value);rateList.add(0.0);}(COMMA e2=expression[gParent.memory] {rateList.set(1,e2.value);})?
+function_keyword:
+  SAT
+;
+
+rate_list[List<String> rateList]
+        : e1=expression[gParent.memory] {rateList.add($e1.text);}(COMMA e2=expression[gParent.memory] {rateList.add($e2.text);})?
         ;
 modif_command
         : include_command
