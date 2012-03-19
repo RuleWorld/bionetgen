@@ -58,6 +58,7 @@ class SBML2BNGL:
         
         for species in self.model.getListOfSpecies():
         	rawSpecies = self.__getRawSpecies(species)
+        	print species.getAnnotationString()
         	moleculesText.append(rawSpecies[0] + '()')
         	temp = '$' if rawSpecies[2] != 0 else ''
         	speciesText.append(temp + '%s %f' % (rawSpecies[0],rawSpecies[1]))
@@ -71,7 +72,7 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-    	default='input.xml',type="string",
+    	default='XMLExamples/curated/BIOMD0000000272.xml',type="string",
     	help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
     	default='output.bngl',type="string",
