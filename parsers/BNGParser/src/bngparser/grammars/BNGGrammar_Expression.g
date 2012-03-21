@@ -67,12 +67,17 @@ number returns [Double value]: s1=INT {$value = Double.parseDouble($INT.text);}
       | s1=FLOAT { $value = Double.parseDouble($FLOAT.text);}
 ;
       
-variable returns [Double value] throws VariableNotFoundException: STRING {
-            
+variable returns [Double value]: STRING {
+                  try{
                   Register temp = $expression::lmemory.get($STRING.text);
                   //if($value == null)
                     //throw [VariableNotFoundException]
                   $value = temp.getValue();
                   $expression::references.put($STRING.text,$expression::lmemory.get($STRING.text));
+                  }
+                  catch(NullPointerException e){
+                    System.err.println("Variable not found " + $STRING.text);
+                    
+                  }
                   }
 ;

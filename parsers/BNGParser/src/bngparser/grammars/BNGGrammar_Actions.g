@@ -194,7 +194,8 @@ simulate_par_def[Map<String,String> map]
         : T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);}) 
         | T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);})
         | N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);}
-        | SAMPLE_TIMES ASSIGNS i4=array_value
+        | SAMPLE_TIMES ASSIGNS i4=array_value 
+        | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i4.text);}
         ;
         
 array_value
