@@ -22,6 +22,23 @@ use Console;
 
 
 
+# Termination signal handler: make sure any child processes are shutdown before termination
+# TODO: Figure out what termination signal is sent by RuleBender
+sub TERM_handler
+{
+    if ( ${^O} eq 'MSWin32' )
+    {   # Windows supports a subset of kill. This variant should work.
+        kill -9, $$;
+    }
+    else
+    {   # Send termination signal to process group   
+        kill SIGTERM, -$$;
+    }
+    die "termination signal";
+}
+$SIG{'TERM'} = \&TERM_handler;
+
+
 # Defaults params for File mode
 our $PARAMS_DEFAULT = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
                         allow_actions=>1, action_skip_warn=>0, logging=>0, no_exec=>0, allow_perl=>0 };
@@ -166,6 +183,6 @@ sub display_help
           ."    -check        read MODEL, but do not execute actions           \n"
           ."    -outdir PATH  change default output path                       \n"
           ."                                                                   \n"
-          ."  For more information, visit bionetget.org                        \n"
+          ."  For more information, visit bionetgen.org                        \n"
           ."-------------------------------------------------------------------\n";
 }
