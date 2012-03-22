@@ -32,7 +32,7 @@ sub TERM_handler
     }
     else
     {   # Send termination signal to process group   
-        kill SIGTERM, -$$;
+        kill "SIGTERM", -$$;
     }
     die "termination signal";
 }
