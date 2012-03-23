@@ -284,7 +284,7 @@ sub writeBNGL
     foreach my $spec ( @{$slist->Array} )
     {
         if ( $user_params->{'pretty_formatting'} )
-        {   # no species index
+        {   # no species index, ident
             $out .= '  ';
         }
         else
@@ -292,20 +292,9 @@ sub writeBNGL
             $out .= sprintf "%5d ", $spec->Index;
         }
 
-        my $sname;
+        # get species graph string
         my $sexact = $spec->SpeciesGraph->toString(0);
-        if ( my $name = $spec->SpeciesGraph->Name )
-        {
-            if ( $sexact =~ /[:]/ )
-            {   $sname .= $name . $sexact;   }
-            else
-            {   $sname .= $name . ':' . $sexact;   }
-        }
-        else
-        {
-            $sname=$sexact;
-        }
-        $out .= sprintf "%-${maxlen}s", $sname;
+        $out .= sprintf "%-${maxlen}s", $sexact;
         
         my $c;
         if ( @$conc )
