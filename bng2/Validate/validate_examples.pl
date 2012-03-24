@@ -12,6 +12,9 @@
 # A log file named MODEL.log is created for each validation model. If a test
 #  fails, check the log file for more details.
 #
+# Validation on WINDOWS:
+#  1)  set $perlbin variable to Perl executable
+#  2)  set $diffbin variable to "diff" executable, if available
 #
 # What's New?
 #   8sep2011: validation of equillibrium distribution for SSA models. --Justin
@@ -166,7 +169,7 @@ else
 
 # check that we can find the BNG2.pl executable script!
 my $bngexec = File::Spec->catfile( $bngpath, "BNG2.pl" );
-unless ( -x $bngexec )
+unless ( -e $bngexec )
 {
     print "ERROR: $0 cannot find BNG2.pl script!!\n";
     print "Aborting validation.\n";
@@ -175,7 +178,7 @@ unless ( -x $bngexec )
 # check that we can find ODE trajectory verification script
 my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 {
-    unless ( -x $verifyexec )
+    unless ( -e $verifyexec )
     {
         print "ERROR: $0 cannot find Verify script!!\n";
         print "Aborting validation.\n";

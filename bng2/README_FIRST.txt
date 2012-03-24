@@ -25,11 +25,5 @@ the Models2 directory, and type:
  > ../BNG2.pl <model>.bngl
 where <model> is one of the models found in the Models2 directory.
 
-A simple demo model is provided in this directory (egfr_demo.bng).  Consult
-RuleBuilder_GettingStarted.pdf for detailed instructions in using the program.
-If you wish to run a simulation, click on the settings menu item under the
-File menu.  You will be prompted for a path to BNG2.pl and a temporary file.
-BNG2.pl is in BioNetGen_x.y.z.  The temp file can be placed anywhere.
-
 --
-Last modified Jan 25, 2012 for release 2.1.8 beta
+Last modified Mar 23, 2012 for release 2.2.0 testing

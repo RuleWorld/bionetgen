@@ -21,12 +21,14 @@ Byron Goldstein <bxg@lanl.gov>
    * Original project PI.
 
 Justin Hogg <justinshogg@gmail.com>
-   * Wrote version 1.0 of compartmental BNGL (cBNGL)
-   * Wrote much new code that appears in version 2.1, including
-       corrected pattern matching, XML output, etc. 
+   * Compartmental BNGL (cBNGL).
+   * General maintence.
 
 Leonard Harris <lharris@pitt.edu>
-   * Testing of cBNGL.
+   * Network3 development: global functions, accelerated stochastics (PLA)
+
+Ilya Korsunsky
+   * Initial deploymnet of global functions for Network3.
 
 John Sekar <johnarul.sekar@gmail.com>
    * Development team member.
