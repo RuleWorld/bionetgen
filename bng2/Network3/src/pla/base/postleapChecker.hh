@@ -18,10 +18,10 @@ namespace network3{
 		PostleapChecker();
 		PostleapChecker(const PostleapChecker& pl);
 		virtual ~PostleapChecker();
-		virtual bool check();
-		virtual void correct(vector<double>& k, double& tau);
-		virtual void update();
-		virtual PostleapChecker* clone() const{ return new PostleapChecker(*this); }
+		virtual bool check() = 0;
+		virtual void correct(vector<double>& k, double& tau) = 0;
+		virtual void update(); // Default update is to do nothing
+//		virtual PostleapChecker* clone() const{ return new PostleapChecker(*this); }
 	};
 }
 

@@ -24,11 +24,6 @@ extern "C" {
 #include <list>
 
 #include "src/network3.hh"
-#include "src/pla/PLA.hh"
-#include "src/model/reactions/bioNetGenRxn.hh"
-#include "src/model/observable.hh"
-#include "src/pla/fEuler/fEuler.hh"
-#include "src/pla/util/negPop_PL.hh"
 
 #ifndef RUN_NETWORK_VERSION
 #define RUN_NETWORK_VERSION 1.5
@@ -107,7 +102,7 @@ int main(int argc, char *argv[]){
     //
     long maxSteps = LONG_MAX;
     long stepInterval = -1;
-    string pla_config = "fEuler|rb|tc:fg:pl|0.01,3,100,0.5"; // Default
+    string pla_config = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
 
     if (argc < 4) print_error();
 
@@ -443,10 +438,9 @@ int main(int argc, char *argv[]){
 
 		// Initialize PLA
 		Network3::init_PLA(pla_config,verbose);
+		if (seed >= 0)	Network3::PLA_SIM->setSeed(seed);
 
 		// Run simulation
-//		double t_end = t_start + (double)n_sample*sample_time;
-		if (seed >= 0)	Network3::PLA_SIM->setSeed(seed);
 //		initTime = clock();
 		Network3::run_PLA(t_start,t_end,sample_time,maxSteps,stepInterval,outpre,verbose);
 //		cout << "PLA simulation took " << (clock()-initTime)/(double)CLOCKS_PER_SEC << " CPU seconds" << endl;

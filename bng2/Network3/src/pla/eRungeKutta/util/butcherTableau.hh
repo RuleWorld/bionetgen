@@ -9,6 +9,7 @@
 #define BUTCHERTABLEAU_HH_
 
 #include "../../../std_include.hh"
+#include "../../../util/util.hh"
 
 namespace network3{
 
@@ -18,13 +19,13 @@ namespace network3{
 		vector<double> beta;
 //		ButcherTableau();
 		ButcherTableau(vector<vector<double> > alpha, vector<double> beta);
-		unsigned int size(){ return this->s; }
-		bool isExplicit(){ return this->explicit_; }
-		string toString(){ return "ButcherTableau::toString() not yet implemented."; }
+		unsigned int size(){ return this->uint_size; }
+		bool isExplicit(){ return this->is_explicit; }
+		string toString();
 	protected:
-		unsigned int s;
+		unsigned int uint_size;
 		vector<double> gamma;
-		bool explicit_;
+		bool is_explicit;
 	};
 }
 

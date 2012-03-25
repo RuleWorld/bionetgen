@@ -13,7 +13,8 @@ fEulerSB_PL::fEulerSB_PL() : sp(), rxn(){
 }
 */
 fEulerSB_PL::fEulerSB_PL(double eps, double p, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn)
-	: BinomialCorrector_PL(p,rxn), eps(eps), sp(sp), rxn(rxn){
+	: eps(eps), sp(sp), rxn(rxn){
+//: BinomialCorrector_PL(p,rxn), eps(eps), sp(sp), rxn(rxn){
 	if (debug)
 		cout << "fEulerSB_PL constructor called." << endl;
 	// Error check
@@ -35,8 +36,8 @@ fEulerSB_PL::fEulerSB_PL(double eps, double p, vector<SimpleSpecies*>& sp, vecto
 	}
 }
 
-fEulerSB_PL::fEulerSB_PL(const fEulerSB_PL& pl)
-	: BinomialCorrector_PL(pl), eps(pl.eps), oldPop(pl.oldPop), old_g(pl.old_g), sp(pl.sp), rxn(pl.rxn){
+fEulerSB_PL::fEulerSB_PL(const fEulerSB_PL& pl) : eps(pl.eps), oldPop(pl.oldPop), old_g(pl.old_g), sp(pl.sp), rxn(pl.rxn){
+//: BinomialCorrector_PL(pl), eps(pl.eps), oldPop(pl.oldPop), old_g(pl.old_g), sp(pl.sp), rxn(pl.rxn){
 	if (debug)
 		cout << "fEulerSB_PL copy constructor called." << endl;
 	this->gGet = new g_Getter(this->sp,this->rxn);

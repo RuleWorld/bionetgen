@@ -515,14 +515,15 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 			parser.SetExpr(function_string);
 			double new_val = parser.Eval();
 			functions.push_back(parser);
-/*			cout << "\t" << functions[functions.size()-1].GetExpr();
+/*
+			cout << "\t" << functions[functions.size()-1].GetExpr();
 			map<string,double*> m = functions[functions.size()-1].GetUsedVar();
 			map<string,double*>::iterator iter;
 			for (iter = m.begin();iter != m.end();iter++){
 			cout << "\t" << (*iter).first;
 			}
 			cout << endl;
-*/
+//*/
 //    		char* name_char_ptr = new char[func_name.size()];
 //   		strcpy(name_char_ptr,func_name.c_str());
 
@@ -4376,12 +4377,12 @@ void update_rxn_rates(int irxn) {
 }
 
 int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, long maxSteps) {
-
 	double t_remain;
 	double rnd;
 	int irxn;
 	int error = 0;
 	int rxn_rate_update;
+	double tau;
 
 	/* Initialize times */
 	t_remain = delta_t;
@@ -4392,7 +4393,6 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	}
 
 	while (1) {
-
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxSteps){
 			error = 1; // Step limit reached
@@ -4402,7 +4402,9 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		/* Determine time to next reaction */
 //		if (GSP.a_tot <= 0.0) break; // Don't do this, let t_remain go to -INFINITY.
 		while ((rnd = RANDOM(0.0, 1.0)) == 0.0); /* avoid taking log of zero */
-		t_remain -= -log(rnd) / GSP.a_tot;
+		tau = -log(rnd) / GSP.a_tot;
+//		cout << "tau : " << tau << endl;
+		t_remain -= tau;
 
 		// Don't fire the next reaction if it occurs past the current integration endpoint
 		if (t_remain < 0.0) break;
@@ -4419,10 +4421,9 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		if (rxn_rate_update || (GSP.n_steps % GSP.rxn_rate_update_interval == 0)){
 			update_rxn_rates(irxn);
 		}
-
 	}
 
-	/* Back up to return time*/
+	/* Back up to return time */
 	if (t_remain < 0.0){
 		*t += delta_t;
 	}

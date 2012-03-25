@@ -17,11 +17,11 @@ fEulerSB_TC_PL::fEulerSB_TC_PL(double eps, double p, double pp, double q, double
 	if (debug)
 		cout << "fEulerSB_TC_PL constructor called." << endl;
 	// Error check
-	if (this->pp < this->p){
-		cout << "Error in fEulerSB_TC_PL constructor: ";
-		cout << "pp must be >= p; you have pp = " << this->pp << ", p = " << this->p << endl;
-		exit(1);
-	}
+//	if (this->pp < this->p){
+//		cout << "Error in fEulerSB_TC_PL constructor: ";
+//		cout << "pp must be >= p; you have pp = " << this->pp << ", p = " << this->p << endl;
+//		exit(1);
+//	}
 	if (this->q < 1.0){
 		cout << "Error in fEulerSB_TC_PL constructor: ";
 		cout << "q must be >= 1.0; your q = " << this->q << endl;

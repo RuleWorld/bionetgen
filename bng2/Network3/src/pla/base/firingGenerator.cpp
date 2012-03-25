@@ -23,8 +23,9 @@ FiringGenerator::~FiringGenerator(){
 	if (debug)
 		cout << "FiringGenerator destructor called.\n";
 }
-
+/*
 void FiringGenerator::fireRxns(vector<double>& k, vector<int>& classif, double tau){
 	cout << "Error in FiringGenerator::fireRxns(): Cannot use base method, must overload. Exiting." << endl;
 	exit(1);
 }
+*/

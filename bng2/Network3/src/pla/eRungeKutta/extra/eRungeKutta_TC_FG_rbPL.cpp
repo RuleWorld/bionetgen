@@ -1,96 +1,100 @@
 /*
- * eRungeKuttaRB_TC_FG_PL.cpp
+ * eRungeKutta_TC_FG_rbPL.cpp
  *
  *  Created on: May 10, 2011
  *      Author: Leonard Harris
  */
 
-#include "eRungeKutta.hh"
+#include "eRungeKutta_EXTRA.hh"
 /*
 eRungeKuttaRB_TC_FG_PL::eRungeKuttaRB_TC_FG_PL(){
 	if (MoMMA::debug)
 		cout << "eRungeKuttaRB_TC_FG_PL constructor called." << endl;
 }
 */
-eRungeKuttaRB_TC_FG_PL::eRungeKuttaRB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
-		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc) : eRungeKutta_FG(bt,sp,rxn),
-		BinomialCorrector_PL(p,rxn), pp(pp), q(q), w(w), preCalc(true), ptc(ptc), rxn(rxn){
+eRungeKutta_TC_FG_rbPL::eRungeKutta_TC_FG_rbPL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
+		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc) : eRungeKutta_FG(bt,sp,rxn), p(p),
+		pp(pp), q(q), w(w), preCalc(true), ptc(ptc), rxn(rxn){
 	if (debug)
-		cout << "eRungeKuttaRB_TC_FG_PL constructor called." << endl;
+		cout << "eRungeKutta_TC_FG_rbPL constructor called." << endl;
 	// Error check
 	if (this->pp < this->p){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_rbPL constructor: ";
 		cout << "pp must be >= p; you have pp = " << this->pp << ", p = " << this->p << endl;
 		exit(1);
 	}
 	if (this->q < 1.0){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_rbPL constructor: ";
 		cout << "q must be >= 1.0; your q = " << this->q << endl;
 		exit(1);
 	}
 	if (this->w <= 0.0 || this->w >= 1.0){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_rbPL constructor: ";
 		cout << "w must be > 0.0 and < 1.0; your w = " << this->w << endl;
 		exit(1);
 	}
-	this->pl = new eRKrb_PL(eps,this->rxn);
+	this->ch = new RBChecker(eps,this->rxn);
+	this->bc = new BinomialCorrector_RK(p,this->rxn);
 	// Add rxns
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		this->addRxn();
 	}
 }
 
-eRungeKuttaRB_TC_FG_PL::eRungeKuttaRB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
+eRungeKutta_TC_FG_rbPL::eRungeKutta_TC_FG_rbPL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
 		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round) : eRungeKutta_FG(bt,sp,rxn,round),
-		BinomialCorrector_PL(p,rxn), pp(pp), q(q), w(w), preCalc(true), ptc(ptc), rxn(rxn){
+		p(p), pp(pp), q(q), w(w), preCalc(true), ptc(ptc), rxn(rxn){
 	if (debug)
-		cout << "eRungeKuttaRB_TC_FG_PL constructor called." << endl;
+		cout << "eRungeKutta_TC_FG_rbPL constructor called." << endl;
 	// Error check
 	if (this->pp < this->p){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_rbPL constructor: ";
 		cout << "pp must be >= p; you have pp = " << this->pp << ", p = " << this->p << endl;
 		exit(1);
 	}
 	if (this->q < 1.0){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_rbPL constructor: ";
 		cout << "q must be >= 1.0; your q = " << this->q << endl;
 		exit(1);
 	}
 	if (this->w <= 0.0 || this->w >= 1.0){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_rbPL constructor: ";
 		cout << "w must be > 0.0 and < 1.0; your w = " << this->w << endl;
 		exit(1);
 	}
-	this->pl = new eRKrb_PL(eps,this->rxn);
+	this->ch = new RBChecker(eps,this->rxn);
+	this->bc = new BinomialCorrector_RK(p,this->rxn);
 	// Add rxns
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		this->addRxn();
 	}
 }
 
-eRungeKuttaRB_TC_FG_PL::eRungeKuttaRB_TC_FG_PL(const eRungeKuttaRB_TC_FG_PL& tc_fg_pl) : eRungeKutta_FG(tc_fg_pl),
-		BinomialCorrector_PL(tc_fg_pl), pp(tc_fg_pl.pp), q(tc_fg_pl.q), w(tc_fg_pl.w), preCalc(true), ptc(tc_fg_pl.ptc),
+eRungeKutta_TC_FG_rbPL::eRungeKutta_TC_FG_rbPL(const eRungeKutta_TC_FG_rbPL& tc_fg_pl) : eRungeKutta_FG(tc_fg_pl),
+		p(tc_fg_pl.p), pp(tc_fg_pl.pp), q(tc_fg_pl.q), w(tc_fg_pl.w), preCalc(true), ptc(tc_fg_pl.ptc),
 		rxn(tc_fg_pl.rxn){
 	if (debug)
-		cout << "eRungeKuttaRB_TC_FG_PL copy constructor called." << endl;
-	this->pl = new eRKrb_PL(*tc_fg_pl.pl);
+		cout << "eRungeKutta_TC_FG_rbPL copy constructor called." << endl;
+	this->ch = new RBChecker(*tc_fg_pl.ch);
+	this->bc = new BinomialCorrector_RK(*tc_fg_pl.bc);
 	// Add rxns
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		this->addRxn();
 	}
 }
 
-eRungeKuttaRB_TC_FG_PL::~eRungeKuttaRB_TC_FG_PL(){
+eRungeKutta_TC_FG_rbPL::~eRungeKutta_TC_FG_rbPL(){
 	if (debug)
-		cout << "eRungeKuttaRB_TC_FG_PL destructor called." << endl;
-	delete this->pl;
+		cout << "eRungeKutta_TC_FG_rbPL destructor called." << endl;
+	delete this->ch;
+	delete this->bc;
 	for (unsigned int v=0;v < this->oldPop.size();v++){
 		delete[] this->oldPop[v];
 		delete[] this->projPop[v];
 	}
 }
 
-void eRungeKuttaRB_TC_FG_PL::getNewTau(double& tau){
+void eRungeKutta_TC_FG_rbPL::getNewTau(double& tau){
 	// Check for new rxns
 	while (this->oldPop.size() != this->rxn.size() && this->projPop.size() != this->rxn.size()){
 		this->addRxn();
@@ -145,39 +149,39 @@ void eRungeKuttaRB_TC_FG_PL::getNewTau(double& tau){
 			}
 		}
 		// Check against current rates
-		ok = this->pl->check(1.0,this->aCalc->a_eff,this->projPop,false);
+		ok = this->ch->check(1.0,this->aCalc->a_eff,this->projPop,false);
 		if (!ok){
 			tau *= this->p; // Reduce
 		}
 	}
 }
 
-void eRungeKuttaRB_TC_FG_PL::fireRxns(vector<double>& k, vector<int>& classif, double tau){
+void eRungeKutta_TC_FG_rbPL::fireRxns(vector<double>& k, vector<int>& classif, double tau){
 	// a_eff[] elements have already been calculated in getNewTau()
 	this->fg->fireRxns(k,classif,tau,this->aCalc->a_eff);
 }
 
-bool eRungeKuttaRB_TC_FG_PL::check(){
+bool eRungeKutta_TC_FG_rbPL::check(){
 	// Check for new rxns
 	while (this->oldPop.size() != this->rxn.size() && this->projPop.size() != this->rxn.size()){
 		this->addRxn();
 	}
 //	cout << "**Checking**" << endl;
 	bool ok;
-	this->substantially = this->pl->check(this->w,this->aCalc->a_eff,this->oldPop,true);
+	this->substantially = this->ch->check(this->w,this->aCalc->a_eff,this->oldPop,true);
 	if (this->substantially){
 		ok = true;
 //		cout << "**Substantially accepted**" << endl;
 	}
 	else{
-		ok = this->pl->check(1.0,this->aCalc->a_eff,this->oldPop,true);
+		ok = this->ch->check(1.0,this->aCalc->a_eff,this->oldPop,true);
 //		if (ok) cout << "**Barely accepted**" << endl;
 //		else cout << "**Rejected**" << endl;
 	}
 	return ok;
 }
 
-void eRungeKuttaRB_TC_FG_PL::update(){
+void eRungeKutta_TC_FG_rbPL::update(){
 	// Update oldPop[][]
 	for (unsigned int v=0;v < this->oldPop.size();v++){
 		for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
@@ -186,18 +190,18 @@ void eRungeKuttaRB_TC_FG_PL::update(){
 	}
 	// Just in case
 	if (this->oldPop.size() != this->rxn.size()){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL::update(): Sizes of 'oldPop' and 'rxn' vectors not equal. Shouldn't happen. "
-			 << "Exiting." << endl;
+		cout << "Error in eRungeKutta_TC_FG_rbPL::update(): Sizes of 'oldPop' and 'rxn' vectors not equal. "
+			 << "Shouldn't happen. Exiting." << endl;
 		exit(1);
 	}
 	if (this->projPop.size() != this->rxn.size()){
-		cout << "Error in eRungeKuttaRB_TC_FG_PL::update(): Sizes of 'projPop' and 'rxn' vectors not equal. Shouldn't happen. "
-			 << "Exiting." << endl;
+		cout << "Error in eRungeKutta_TC_FG_rbPL::update(): Sizes of 'projPop' and 'rxn' vectors not equal. "
+			 << "Shouldn't happen. Exiting." << endl;
 		exit(1);
 	}
 }
 
-void eRungeKuttaRB_TC_FG_PL::addRxn(){
+void eRungeKutta_TC_FG_rbPL::addRxn(){
 	if (this->oldPop.size() < this->rxn.size()  && this->projPop.size() < this->rxn.size()
 			&& this->oldPop.size() == this->projPop.size()){
 		unsigned int u = this->oldPop.size();
@@ -209,7 +213,7 @@ void eRungeKuttaRB_TC_FG_PL::addRxn(){
 		}
 	}
 	else{
-		cout << "Error in eRungeKuttaRB_TC_FG_PL::addRxn(): No rxns to add (oldPop.size = " << this->oldPop.size()
+		cout << "Error in eRungeKutta_TC_FG_rbPL::addRxn(): No rxns to add (oldPop.size = " << this->oldPop.size()
 			 << ", projPop.size = " << this->projPop.size() << ", rxn.size = " << this->rxn.size()
 			 << "). Shouldn't happen. Exiting." << endl;
 		exit(1);

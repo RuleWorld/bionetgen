@@ -49,6 +49,11 @@ double Reaction::getRate(){
 		}
 		else{
 			cout << "Error in Reaction::getRate(): Negative rate detected (rate = " << rate << "). Exiting." << endl;
+			cout << this->toString() << endl;
+			for (unsigned int j=0;j < this->rateSpecies.size();j++){
+				if (this->rateSpecies[j]->population < 0.0)
+					cout << this->rateSpecies[j]->name << ": " << this->rateSpecies[j]->population << endl;
+			}
 			exit(1);
 		}
 	}

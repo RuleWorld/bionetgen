@@ -1,45 +1,47 @@
 /*
- * eRungeKuttaRB_FG_PL.cpp
+ * eRungeKutta_FG_rbPL.cpp
  *
  *  Created on: Apr 26, 2011
  *      Author: Leonard Harris
  */
 
-#include "eRungeKutta.hh"
-#include "../../util/util.hh"
+#include "eRungeKutta_EXTRA.hh"
+#include "../../../util/util.hh"
 /*
 eRungeKuttaRB_FG_PL::eRungeKuttaRB_FG_PL() : rxn(){
 	if (MoMMA::debug)
 		cout << "eRungeKuttaRB_FG_PL constructor called." << endl;
 }
 */
-eRungeKuttaRB_FG_PL::eRungeKuttaRB_FG_PL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp,
-		vector<Reaction*>& rxn) : eRungeKutta_FG(bt,sp,rxn), BinomialCorrector_PL(p,rxn), rxn(rxn){
+eRungeKutta_FG_rbPL::eRungeKutta_FG_rbPL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp,
+		vector<Reaction*>& rxn) : eRungeKutta_FG(bt,sp,rxn), rxn(rxn){
 	if (debug)
-		cout << "eRungeKuttaRB_FG_PL constructor called." << endl;
-	this->pl = new eRKrb_PL(eps,this->rxn);
+		cout << "eRungeKutta_FG_rbPL constructor called." << endl;
+	this->ch = new RBChecker(eps,this->rxn);
+	this->bc = new BinomialCorrector_RK(p,this->rxn);
 	// Add rxns
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		this->addRxn();
 	}
 }
 
-eRungeKuttaRB_FG_PL::eRungeKuttaRB_FG_PL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp,
-		vector<Reaction*>& rxn, bool round) : eRungeKutta_FG(bt,sp,rxn,round), BinomialCorrector_PL(p,rxn), rxn(rxn){
+eRungeKutta_FG_rbPL::eRungeKutta_FG_rbPL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp,
+		vector<Reaction*>& rxn, bool round) : eRungeKutta_FG(bt,sp,rxn,round), rxn(rxn){
 	if (debug)
-		cout << "eRungeKuttaRB_FG_PL constructor called." << endl;
-	this->pl = new eRKrb_PL(eps,this->rxn);
+		cout << "eRungeKutta_FG_rbPL constructor called." << endl;
+	this->ch = new RBChecker(eps,this->rxn);
+	this->bc = new BinomialCorrector_RK(p,this->rxn);
 	// Add rxns
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		this->addRxn();
 	}
 }
 
-eRungeKuttaRB_FG_PL::eRungeKuttaRB_FG_PL(const eRungeKuttaRB_FG_PL& fg_pl) : eRungeKutta_FG(fg_pl),
-		BinomialCorrector_PL(fg_pl), rxn(fg_pl.rxn){
+eRungeKutta_FG_rbPL::eRungeKutta_FG_rbPL(const eRungeKutta_FG_rbPL& fg_pl) : eRungeKutta_FG(fg_pl), rxn(fg_pl.rxn){
 	if (debug)
-		cout << "eRungeKuttaRB_FG_PL copy constructor called." << endl;
-	this->pl = new eRKrb_PL(*fg_pl.pl);
+		cout << "eRungeKutta_FG_rbPL copy constructor called." << endl;
+	this->ch = new RBChecker(*fg_pl.ch);
+	this->bc = new BinomialCorrector_RK(*fg_pl.bc);
 	// Initialize oldPop[]
 	this->oldPop.resize(fg_pl.oldPop.size());
 	for (unsigned int v=0;v < this->oldPop.size();v++){
@@ -50,25 +52,26 @@ eRungeKuttaRB_FG_PL::eRungeKuttaRB_FG_PL(const eRungeKuttaRB_FG_PL& fg_pl) : eRu
 	}
 }
 
-eRungeKuttaRB_FG_PL::~eRungeKuttaRB_FG_PL(){
+eRungeKutta_FG_rbPL::~eRungeKutta_FG_rbPL(){
 	if (debug)
-		cout << "eRungeKuttaRB_FG_PL destructor called." << endl;
-	delete this->pl;
+		cout << "eRungeKutta_FG_rbPL destructor called." << endl;
+	delete this->ch;
+	delete this->bc;
 	for (unsigned int v=0;v < this->oldPop.size();v++){
 		delete[] this->oldPop[v];
 	}
 }
 
-bool eRungeKuttaRB_FG_PL::check(){
+bool eRungeKutta_FG_rbPL::check(){
 	// Check for new rxns
 	while (this->oldPop.size() != this->rxn.size()){
 		this->addRxn();
 	}
 	// a_eff[] elements have already been calculated in fireRxns()
-	return this->pl->check(1.0,this->aCalc->a_eff,this->oldPop,true);
+	return this->ch->check(1.0,this->aCalc->a_eff,this->oldPop,true);
 }
 
-void eRungeKuttaRB_FG_PL::update(){
+void eRungeKutta_FG_rbPL::update(){
 	// Update oldPop[][]
 	for (unsigned int v=0;v < this->oldPop.size();v++){
 		for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
@@ -77,13 +80,13 @@ void eRungeKuttaRB_FG_PL::update(){
 	}
 	// Just in case
 	if (this->oldPop.size() != this->rxn.size()){
-		cout << "Error in eRungeKuttaRB_FG_PL::update(): Sizes of 'oldPop' and 'rxn' vectors not equal. Shouldn't happen. "
-			 << "Exiting." << endl;
+		cout << "Error in eRungeKutta_FG_rbPL::update(): Sizes of 'oldPop' and 'rxn' vectors not equal. "
+			 <<	"Shouldn't happen. Exiting." << endl;
 		exit(1);
 	}
 }
 
-void eRungeKuttaRB_FG_PL::addRxn(){
+void eRungeKutta_FG_rbPL::addRxn(){
 	if (this->oldPop.size() < this->rxn.size()){
 		unsigned int u = this->oldPop.size();
 		this->oldPop.push_back(new double[this->rxn[u]->rateSpecies.size()]);
@@ -92,7 +95,7 @@ void eRungeKuttaRB_FG_PL::addRxn(){
 		}
 	}
 	else{
-		cout << "Error in eRungeKuttaRB_FG_PL::addRxn(): No rxns to add (oldPop.size = " << this->oldPop.size()
+		cout << "Error in eRungeKutta_FG_rbPL::addRxn(): No rxns to add (oldPop.size = " << this->oldPop.size()
 			 << ", rxn.size = " << this->rxn.size() << "). Shouldn't happen. Exiting." << endl;
 		exit(1);
 	}

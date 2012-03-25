@@ -1,11 +1,11 @@
 /*
- * eRK_Base_FG.cpp
+ * eRK_FG.cpp
  *
  *  Created on: Apr 30, 2011
  *      Author: Leonard Harris
  */
 
-#include "eRK.hh"
+#include "eRK_FG.hh"
 
 eRK_FG::eRK_FG(vector<Reaction*>& rxn) : round(true), rxn(rxn){
 	if (debug)

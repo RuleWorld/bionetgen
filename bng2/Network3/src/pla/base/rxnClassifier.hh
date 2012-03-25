@@ -19,8 +19,8 @@ namespace network3{
 		RxnClassifier();
 		RxnClassifier(const RxnClassifier& rc);
 		virtual ~RxnClassifier();
-		virtual void classifyRxns(vector<int>& classif, double tau, bool initial);
-		virtual RxnClassifier* clone() const{ return new RxnClassifier(*this); }
+		virtual void classifyRxns(vector<int>& classif, double tau, bool initial) = 0;
+//		virtual RxnClassifier* clone() const{ return new RxnClassifier(*this); }
 	};
 }
 #endif /* RXNCLASSIFIER_HH_ */

@@ -5,8 +5,8 @@
  *      Author: Leonard Harris
  */
 
-#include "eRungeKutta.hh"
-#include "../../util/util.hh"
+#include "eRungeKutta_EXTRA.hh"
+#include "../../../util/util.hh"
 /*
 eRungeKutta_FG::eRungeKutta_FG(){
 	if (MoMMA::debug)
@@ -18,7 +18,7 @@ eRungeKutta_FG::eRungeKutta_FG(ButcherTableau bt, vector<SimpleSpecies*>& sp, ve
 		cout << "eRungeKutta_FG constructor called." << endl;
 	// Error check
 	if (!bt.isExplicit()){
-		cout << "Error in eRungeKutta_FG constructor: Butcher tableu must be explicit. Exiting." << endl;
+		cout << "Error in eRungeKutta_FG constructor: Butcher tableau must be explicit. Exiting." << endl;
 		exit(1);
 	}
 	// Round species populations (default)
@@ -35,7 +35,7 @@ eRungeKutta_FG::eRungeKutta_FG(ButcherTableau bt, vector<SimpleSpecies*>& sp, ve
 		cout << "eRungeKutta_FG constructor called." << endl;
 	// Error check
 	if (!bt.isExplicit()){
-		cout << "Error in eRungeKutta_FG constructor: Butcher tableu must be explicit. Exiting." << endl;
+		cout << "Error in eRungeKutta_FG constructor: Butcher tableau must be explicit. Exiting." << endl;
 		exit(1);
 	}
 	// Round species populations is round = true

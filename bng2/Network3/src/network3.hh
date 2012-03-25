@@ -13,7 +13,6 @@
 #include "model/reactions/bioNetGenRxn.hh"
 #include "model/observable.hh"
 #include "pla/fEuler/fEuler.hh"
-#include "pla/util/negPop_PL.hh"
 #include "pla/eRungeKutta/eRungeKutta.hh"
 #include "pla/PLA.hh"
 
@@ -22,8 +21,8 @@ namespace network3{
 	class Network3{
 	public:
 		static vector<SimpleSpecies*> SPECIES;
-		static vector<pair<Observable*,double> > OBSERVABLE;
-		static vector<pair<Function*,double> > FUNCTION;
+		static vector<pair<Observable*,double>*> OBSERVABLE;
+		static vector<pair<Function*,double>*> FUNCTION;
 		static vector<Reaction*> REACTION;
 		static PLA* PLA_SIM;
 		static void init_Network3(bool verbose);

@@ -17,9 +17,9 @@ namespace network3{
 	public:
 	//	Preleap_TC(){}
 		Preleap_TC(double eps);
-		Preleap_TC(const Preleap_TC& tc);
+		Preleap_TC(const Preleap_TC& ptc);
 		~Preleap_TC();
-		virtual TauCalculator* clone() const{ return new Preleap_TC(*this); }
+		virtual Preleap_TC* clone() const = 0; //{ return new Preleap_TC(*this); }
 	protected:
 		double eps;
 	};

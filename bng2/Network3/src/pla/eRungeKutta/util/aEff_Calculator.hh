@@ -26,11 +26,17 @@ namespace network3{
 		aEff_Calculator(const aEff_Calculator& aCalc);
 		~aEff_Calculator();
 		void calc_aEff(double tau);
+		void update();
+		unsigned int nSpecies(){ return this->sp.size(); }
+		unsigned int nRxns(){ return this->rxn.size(); }
+	protected:
+		vector<double> x_curr;
+		vector<double> a_curr;
+		void addSpecies();
+		void addRxn();
 	private:
 		vector<SimpleSpecies*>& sp;
 		vector<Reaction*>& rxn;
-		void addRxn();
-		void addSpecies();
 	};
 }
 

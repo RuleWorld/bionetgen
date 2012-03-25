@@ -9,8 +9,8 @@
 #include "util/util.hh"
 
 vector<SimpleSpecies*> Network3::SPECIES;
-vector<pair<Observable*,double> > Network3::OBSERVABLE;
-vector<pair<Function*,double> > Network3::FUNCTION;
+vector<pair<Observable*,double>*> Network3::OBSERVABLE;
+vector<pair<Function*,double>*> Network3::FUNCTION;
 vector<Reaction*> Network3::REACTION;
 PLA* Network3::PLA_SIM = NULL;
 
@@ -29,7 +29,7 @@ void Network3::init_Network3(bool verbose){
 		for (int i=0;i < network.species->n_elt;i++){
 			SPECIES.push_back(new SimpleSpecies(elt->name,floor(elt->val+0.5)));
 			fixed.push_back(elt->fixed);
-			if (verbose) cout << SPECIES[i]->name << "\t" << SPECIES[i]->population << endl;
+			if (verbose) cout << i << ". " << SPECIES[i]->name << "\t" << SPECIES[i]->population << endl;
 			elt = elt->next;
 		}
     }
@@ -49,10 +49,10 @@ void Network3::init_Network3(bool verbose){
 				sp.push_back(SPECIES.at(grp->elt_index[j]-off));
 				mult.push_back(grp->elt_factor[j]);
 			}
-			OBSERVABLE.push_back(pair<Observable*,double>(new Observable(grp->name,sp,mult),0.0));
-			OBSERVABLE[i].second = OBSERVABLE[i].first->getValue();
+			OBSERVABLE.push_back(new pair<Observable*,double>(new Observable(grp->name,sp,mult),0.0));
+			OBSERVABLE[i]->second = OBSERVABLE[i]->first->getValue();
 			//
-			if (verbose) cout << OBSERVABLE[i].first->toString() << endl;
+			if (verbose) cout << i << ". " << OBSERVABLE[i]->first->toString() << endl;
 			//
 			grp = grp->next;
 		}
@@ -67,19 +67,22 @@ void Network3::init_Network3(bool verbose){
 		for (unsigned int i=0;i < network.functions.size();i++){
 //			cout << network.functions[i].GetExpr() << "= " << network.functions[i].Eval() << "\t";
 			//
-			FUNCTION.push_back(pair<Function*,double>(new Function(network.rates->elt[network.var_parameters[i]-off]->name),0.0));
+			FUNCTION.push_back(new pair<Function*,double>(
+					new Function(network.rates->elt[network.var_parameters[i]-off]->name),0.0));
 			//
 			map<string,double*> var = network.functions[i].GetUsedVar();
+/*
 			map<string,double*>::iterator iter;
-//			for (iter = var.begin();iter != var.end();iter++){
-//				cout << "{" << (*iter).first << " = " << *(*iter).second << "}\t";
-//			}
-//			cout << endl;
+			for (iter = var.begin();iter != var.end();iter++){
+				cout << "{" << (*iter).first << " = " << *(*iter).second << "}\t";
+			}
+			cout << endl;
+//*/
 			// Search observables
 			for (unsigned int j=0;j < OBSERVABLE.size();j++){
-				if (var.find(OBSERVABLE[j].first->name) != var.end()){
-//					cout << "\t" << OBSERVABLE[j].first->name << " = " << OBSERVABLE[j].second << endl;
-					FUNCTION[i].first->p->DefineVar(OBSERVABLE[j].first->name,&OBSERVABLE[j].second);
+				if (var.find(OBSERVABLE[j]->first->name) != var.end()){
+//					cout << "\t" << OBSERVABLE[j]->first->name << " = " << OBSERVABLE[j]->second << endl;
+					FUNCTION[i]->first->p->DefineVar(OBSERVABLE[j]->first->name,&OBSERVABLE[j]->second);
 				}
 			}
 			// Search parameters
@@ -96,9 +99,9 @@ void Network3::init_Network3(bool verbose){
 							bool found = false;
 							// Which one?
 							for (unsigned int k=0;k < FUNCTION.size() && !found;k++){
-								if (network.functions[j].GetExpr() == FUNCTION[k].first->GetExpr()){
+								if (network.functions[j].GetExpr() == FUNCTION[k]->first->GetExpr()){
 									found = true;
-									FUNCTION[i].first->p->DefineVar(elt->name,&FUNCTION[k].second);
+									FUNCTION[i]->first->p->DefineVar(elt->name,&FUNCTION[k]->second);
 								}
 							}
 							// Error check
@@ -112,17 +115,22 @@ void Network3::init_Network3(bool verbose){
 					// NO, it's a constant
 					if (!func){
 //						cout << "constant)" << endl;
-						FUNCTION[i].first->p->DefineConst(elt->name,elt->val);
+						FUNCTION[i]->first->p->DefineConst(elt->name,elt->val);
 					}
 				}
 			}
 			// Set expression
 			string expr = network.functions[i].GetExpr();
 			expr.erase(expr.size()-1); // Trim last character (muParser adds a null to the end)
-			FUNCTION[i].first->p->SetExpr(expr);
-			FUNCTION[i].second = FUNCTION[i].first->Eval();
-			if (verbose) cout << FUNCTION[i].first->GetExpr() << "= " << FUNCTION[i].second << endl;
+			FUNCTION[i]->first->p->SetExpr(expr);
+			FUNCTION[i]->second = FUNCTION[i]->first->Eval();
+			if (verbose) cout << i << ". " << FUNCTION[i]->first->GetExpr() << "= " << FUNCTION[i]->second << endl;
 		}
+//cout << endl;
+//for (unsigned int j=0;j < FUNCTION.size();j++){
+//	cout << j << ". " << FUNCTION[j]->first->GetExpr() << "= ";
+//	cout << FUNCTION[j]->first->Eval() << endl;
+//}
 	}
 //	if (verbose) cout << endl;
 	//
@@ -136,6 +144,7 @@ void Network3::init_Network3(bool verbose){
 		//
 		// Loop over reactions
 		for (int i=0;i < network.reactions->n_rxn;i++){
+			if (verbose) cout << i << ". ";
 			double fixed_factor = 1.0; // Populations of any fixed species (incorporate into rate constant)
 			//
 			// Collect reactants
@@ -215,7 +224,7 @@ void Network3::init_Network3(bool verbose){
 				//
 				double c = fixed_factor*path_factor*rxn->rateLaw_params[0];
 				REACTION.at(i) = new ElementaryRxn(c,re,reS,pr,prS);
-				if (verbose) cout << REACTION.at(i)->toString() << endl << endl;
+				if (verbose) cout << REACTION.at(i)->toString() << endl;
 			}
 			else if (rxn->rateLaw_type == SATURATION){
 				if (verbose) cout << "]]] Saturation rxn type [[[" << endl;
@@ -232,7 +241,7 @@ void Network3::init_Network3(bool verbose){
 					Km.push_back(rxn->rateLaw_params[j]);
 				}
 				REACTION.at(i) = new SaturationRxn(kcat,Km,re,reS,pr,prS);
-				if (verbose) cout << REACTION.at(i)->toString() << endl << endl;
+				if (verbose) cout << REACTION.at(i)->toString() << endl;
 			}
 			else if (rxn->rateLaw_type == MICHAELIS_MENTEN){
 				if (verbose) cout << "]]] Michaelis-Menten rxn type [[[" << endl;
@@ -246,7 +255,7 @@ void Network3::init_Network3(bool verbose){
 				double kcat = fixed_factor*path_factor*rxn->rateLaw_params[0];
 				double Km = rxn->rateLaw_params[1];
 				REACTION.at(i) = new MichaelisMentenRxn(kcat,Km,re,reS,pr,prS);
-				if (verbose) cout << REACTION.at(i)->toString() << endl << endl;
+				if (verbose) cout << REACTION.at(i)->toString() << endl;
 			}
 			else if (rxn->rateLaw_type == HILL){
 				if (verbose) cout << "]]] Hill rxn type [[[" << endl;
@@ -261,7 +270,7 @@ void Network3::init_Network3(bool verbose){
 				double Kh = rxn->rateLaw_params[1];
 				double h = rxn->rateLaw_params[2];
 				REACTION.at(i) = new HillRxn(k,Kh,h,re,reS,pr,prS);
-				if (verbose) cout << REACTION.at(i)->toString() << endl << endl;
+				if (verbose) cout << REACTION.at(i)->toString() << endl;
 			}
 			else if (rxn->rateLaw_type == FUNCTIONAL){
 				if (verbose) cout << "]]] Function rxn type [[[" << endl;
@@ -274,13 +283,18 @@ void Network3::init_Network3(bool verbose){
 					}
 				}
 				// Prepend path_factor to parser expression and reset expression
+//cout << FUNCTION[func_index]->first->GetExpr() << endl;
+//cout << FUNCTION[func_index]->second << endl;
+//cout << FUNCTION[func_index]->first->Eval() << endl;;
 				string new_expr = Util::toString(fixed_factor) + "*" + Util::toString(path_factor) + "*"
-						+ FUNCTION[func_index].first->GetExpr();
+						+ FUNCTION[func_index]->first->GetExpr();
 				new_expr.erase(new_expr.size()-1); // Erase Null character appended to expression by muParser
-				FUNCTION[func_index].first->p->SetExpr(new_expr);
-				FUNCTION[func_index].second = FUNCTION[func_index].first->Eval();
-				REACTION.at(i) = new FunctionalRxn(FUNCTION[func_index].first,re,reS,pr,prS);
-				if (verbose) cout << REACTION.at(i)->toString() << endl << endl;
+				FUNCTION[func_index]->first->p->SetExpr(new_expr);
+				FUNCTION[func_index]->second = FUNCTION[func_index]->first->Eval();
+				REACTION.at(i) = new FunctionalRxn(FUNCTION[func_index]->first,re,reS,pr,prS);
+				if (verbose) cout << REACTION.at(i)->toString() << endl;
+//cout << "rate = " << REACTION.at(i)->getRate() << endl << endl;
+//exit(1);
 			}
 			else{
 				cout << "Error in Network3::init_Network3(): Rate law type for reaction " << rxn->index
@@ -288,6 +302,7 @@ void Network3::init_Network3(bool verbose){
 				exit(1);
 			}
 			//
+			if (verbose) cout << "rate = " << REACTION.at(i)->getRate() << endl << endl;
 			rxn = rxn->next;
 		}
     }
@@ -297,7 +312,7 @@ void Network3::init_PLA(string config, bool verbose){
 
 	// 1st argument: Method type (fEuler, midpt, rk4, grk).
 	// 2nd argument: Rxn-based (rb) or species-based (sb).
-	// 3rd argument: PLA config (tc:fg:pl, tc:fg_pl, tc_fg_pl).
+	// 3rd argument: PLA config (pre:neg, pre:post, post:post).
 	// 4th argument: PLA parameters:
 	//				 Minimum of 4 (eps,approx1,gg1,p).
 	//				 Optional 3 additional (pp,q,w).
@@ -307,24 +322,15 @@ void Network3::init_PLA(string config, bool verbose){
 
 	// Error check
 	if (config[0] == '|'){
-		cout << "Error in Network3::init_PLA(): A '|' cannot be the first character of the configuration string. Exiting." << endl;
+		cout << "Oops, a '|' cannot be the first character of the configuration string. Please try again." << endl;
 		cout << "\t" << "PLA_config: " + config << endl;
 		exit(1);
 	}
 	if (config[config.size()-1] == '|'){
-		cout << "Error in Network3::init_PLA(): A '|' cannot be the last character of the configuration string. Exiting." << endl;
+		cout << "Oops, a '|' cannot be the last character of the configuration string. Please try again." << endl;
 		cout << "\t" << "PLA_config: " + config << endl;
 		exit(1);
 	}
-
-	// Elements
-	vector<vector<double> > alpha; 	// Butcher tableau
-	vector<double> beta;			// Butcher tableau
-	vector<double> param;			// PLA parameters (eps,approx1,gg1,etc.)
-	TauCalculator* tc = NULL;
-	RxnClassifier* rc = NULL;
-	FiringGenerator* fg = NULL;
-	PostleapChecker* pl = NULL;
 
 	// Collect arguments
 	vector<string> arg;
@@ -340,14 +346,17 @@ void Network3::init_PLA(string config, bool verbose){
 
 	// Error check
 	if (arg.size() != 4 && arg.size() != 5){
-		cout << "Error in Network3::init_PLA(): A minimum of 4 arguments are required, and a maximum of 5 are allowed. ";
-		cout << "You have " << arg.size() << ". Exiting." << endl;
+		cout << "Oops, a minimum of 4 arguments are required, a maximum of 5 are allowed. ";
+		cout << "You've specified " << arg.size() << ". Please try again." << endl;
 		exit(1);
 	}
 	cout << "Read " << arg.size() << " arguments." << endl;
 
 	// Process arguments
 	if (verbose) cout << "Processing..." << endl;
+	vector<vector<double> > alpha; 	// Butcher tableau
+	vector<double> beta;			// Butcher tableau
+	vector<double> param;			// PLA parameters (eps,approx1,gg1,etc.)
 
 	// Argument 1: Method type
 	if (arg[0] == "fEuler"){
@@ -381,58 +390,54 @@ void Network3::init_PLA(string config, bool verbose){
 	else if (arg[0] == "grk"){
 		// Error check
 		if (arg.size() != 5){
-			cout << "Error in Network3::init_PLA(): You've chosen the general Runge-Kutta option ('grk') but you haven't" << endl;
-			cout << "provided the path and name of the file containing your Butcher tableau. Please try again. Exiting." << endl;
+			cout << "Oops, you've chosen 'grk' but you haven't specified a Butcher tableau input file." << endl;
+			cout << "It should be the 5th argument but I only see 4. Please try again." << endl;
 			exit(1);
 		}
+		//
 		if (verbose) cout << "1: You've chosen 'grk', the adventurous type I see." << endl;
-		if (arg.size() < 5){
-			cout << "Uh oh, you've chosen 'grk' but I can't identify your Butcher tableau input file. It should be the" << endl;
-			cout << "5th argument but I only see " << arg.size() << " arguments. Please try again. Exiting." << endl;
-		}
 	}
 	else{
-		cout << "Error in Network3::init_PLA(): Didn't recognize your choice of method. Currently supported methods are " << endl;
-		cout << "'fEuler', 'midpt', 'rk4' and 'grk' (general Runge-Kutta). Please try again. Exiting." << endl;
+		cout << "Uh oh, I don't recognize your choice of method. Currently supported methods are" << endl;
+		cout << "'fEuler', 'midpt', 'rk4' and 'grk' (general Runge-Kutta). Please try again." << endl;
 		exit(1);
 	}
 
 	// Argument 2: RB or SB
 	if (arg[1] == "rb" || arg[1] == "RB"){
-		if (verbose) cout << "2: You've chosen a reaction-based approach. Oh to be young again." << endl;
+		if (verbose) cout << "2: You've chosen a reaction-based approach. I like it, I like it a lot." << endl;
 	}
 	else if (arg[1] == "sb" || arg[1] == "SB"){
 		if (verbose) cout << "2: You've chosen a species-based approach. Excellent choice sir." << endl;
 	}
 	else{
-		cout << "Error in Network3::init_PLA(): The 2nd argument must specify rxn-based ('rb' or 'RB') ";
-		cout << "or species-based ('sb' or 'SB')." << endl;
-		cout << "You entered '" << arg[1] << "'. Please try again. Exiting." << endl;
+		cout << "Oops, the 2nd argument must specify rxn-based ('rb' or 'RB') or species-based ('sb' or 'SB')." << endl;
+		cout << "You entered '" << arg[1] << "'. Please try again." << endl;
 		exit(1);
 	}
 
 	// Argument 3: PLA configuration
-	if (arg[2] == "tc:fg:pl"){
+	if (arg[2] == "pre:neg"){
 		if (verbose){
 			cout << "3: You've chosen to use a preleap tau calculator and a negative-population postleap checker." << endl;
 			cout << "   Very good, a straightforward but effective choice." << endl;
 		}
 	}
-	else if (arg[2] == "tc:fg_pl"){
+	else if (arg[2] == "pre:post"){
 		if (verbose){
-			cout << "3: You've chosen to use a preleap tau calculator along with a combined firing generator/postleap checker.\n";
-			cout << "   Very interesting, this should improve the accuracy of your results." << endl;
+			cout << "3: You've chosen to use a preleap tau calculator and an epsilon-based postleap checker." << endl;
+			cout << "   Excellent, this should improve the accuracy of your results." << endl;
 		}
 	}
-	else if (arg[2] == "tc_fg_pl"){
+	else if (arg[2] == "post:post"){
 		if (verbose){
-			cout << "3: Ahh, you must be hungry, you've chosen the combo meal: the combined" << endl;
-			cout << "   tau calculator/firing generator/postleap checker. I like how you think." << endl;
+			cout << "3: Ahh, you must be hungry, you've chosen the combo meal: an Anderson-style combined" << endl;
+			cout << "   tau calculator/postleap checker. I like how you think." << endl;
 		}
 	}
 	else{
-		cout << "Error in Network3::init_PLA(): Can't understand the combination of PLA elements that you've entered (";
-		cout << arg[2] << "). Exiting." << endl;
+		cout << "Uh oh, I don't recognize your preleap:postleap configuration. Supported configurations are" << endl;
+		cout << "'pre:neg', 'pre:post' and 'post:post'. You entered '" << arg[2] << "'. Please try again." << endl;
 		exit(1);
 	}
 
@@ -460,16 +465,16 @@ void Network3::init_PLA(string config, bool verbose){
 	// Error check
 	if (param.size() < 4 || param.size() > 7){
 		cout << "Oops, minimum number of parameters is 4 and maximum is 7. You've specified " << param.size() << "." << endl;
-		cout << "Please try again. Exiting." << endl;
+		cout << "Please try again." << endl;
 		exit(1);
 	}
-	if (arg[2] == "tc_fg_pl" && param.size() < 7){
-		cout << "Oops, you've selected the '" << arg[2] << "' configuration which requires 7 parameters." << endl;
-		cout << "You've specified " << param.size() << ". Please try again. Exiting." << endl;
+	if (arg[2] == "post:post" && param.size() < 7){
+		cout << "Oops, you've selected the 'post:post' configuration which requires 7 parameters." << endl;
+		cout << "You've specified " << param.size() << ". Please try again." << endl;
 		exit(1);
 	}
 
-	// Argument 5 (optional): Path to Butcher tableau file
+	// Argument 5 (optional): Path to Butcher tableau input file
 	FILE* bt_file = NULL;
 	if (arg.size() == 5){
 		if (verbose) cout << "5: You've specified a Butcher tableau input file: " << arg[4] << endl;
@@ -479,14 +484,12 @@ void Network3::init_PLA(string config, bool verbose){
 			if (verbose) cout << "   You haven't chosen 'grk', so I'll ignore it." << endl;
 		}
 		else{
-
 			// Try to open the file
 			if ((bt_file = fopen(arg[4].c_str(),"r"))){
 				if (verbose) cout << "   Ok, I see it." << endl;
 			}
 			else{
-				cout << "   Sorry , I can't find your Butcher tableau input file \"" << arg[4].c_str()
-				     << "\". Please try again. Exiting." << endl;
+				cout << "   Sorry , I can't find it: \"" << arg[4].c_str() << "\". Please try again." << endl;
 				exit(1);
 			}
 
@@ -536,9 +539,10 @@ void Network3::init_PLA(string config, bool verbose){
 					if (c == '\n' || c == EOF){
 //						cout << "\n";
 						if (foundDim && nColumns != dim){
-							cout << "Error in Network3::initPLA(): Line " << (nRows+1) << " of " << arg[4] << " has " << nColumns
+							cout << "Uh oh, line " << (nRows+1) << " of " << arg[4] << " has " << nColumns
 								 << " columns." << endl;
-							cout << "Already read " << dim << " entries in line 1. Butcher tableau must be square. Exiting." << endl;
+							cout << "Already read " << dim << " entries in line 1. Butcher tableau must be square. "
+								 << "Please try again." << endl;
 							exit(1);
 						}
 						nRows++;
@@ -548,9 +552,9 @@ void Network3::init_PLA(string config, bool verbose){
 							alpha.push_back(vector<double>());
 						}
 					}
-					else{
+//					else{
 //						cout << "\t";
-					}
+//					}
 				}
 			}
 			// Print to screen
@@ -577,6 +581,11 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 
 	// Build the PLA simulator
+	TauCalculator* tc = 0;
+	RxnClassifier* rc = 0;
+	FiringGenerator* fg = 0;
+	PostleapChecker* pl = 0;
+	//
 	ButcherTableau bt(alpha,beta);
 	double eps = param[0];
 	double approx1 = param[1];
@@ -594,44 +603,33 @@ void Network3::init_PLA(string config, bool verbose){
 		ptc = &fe_ptc;
 	}
 	//
-	// Configuration 1: Preleap TC, Runge-Kutta RC_FG, NegPop PL
-	if (arg[2] == "tc:fg:pl"){
-		// TC
-		tc = ptc;
-		// RC_FG
-		static eRungeKutta_RC_FG erk_rc_fg(bt,approx1,gg1,SPECIES,REACTION);
-		rc = &erk_rc_fg; fg = &erk_rc_fg;
-		// PL
-		static NegPop_PL neg_pl(p,SPECIES,REACTION);
-		pl = &neg_pl;
+	// Configuration 1: preTC_RC_FG_negPL
+	if (arg[2] == "pre:neg"){
+		static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,approx1,gg1,p,ptc,SPECIES,REACTION);
+		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 	}
-	//
-	// Configuration 2: Preleap TC, Runge-Kutta RC_FG_PL
-	if (arg[2] == "tc:fg_pl"){
-		// TC
-		tc = ptc;
-		// RC_FG_PL
+	// Configuration 2: preTC_RC_FG_postPL
+	if (arg[2] == "pre:post"){
 		if (arg[1] == "rb" || arg[1] == "RB"){
-			static eRungeKuttaRB_RC_FG_PL erk_rc_fg_pl(bt,eps,p,approx1,gg1,SPECIES,REACTION);
-			rc = &erk_rc_fg_pl;	fg = &erk_rc_fg_pl;	pl = &erk_rc_fg_pl;
+			static eRungeKutta_preTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
+			tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 		}
 		else{
-			static eRungeKuttaSB_RC_FG_PL erk_rc_fg_pl(bt,eps,p,approx1,gg1,SPECIES,REACTION);
-			rc = &erk_rc_fg_pl;	fg = &erk_rc_fg_pl;	pl = &erk_rc_fg_pl;
+			static eRungeKutta_preTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
+			tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 		}
 	}
-	//
-	// Configuration 3: Combined Runge-Kutta TC_RC_FG_PL
-	if (arg[2] == "tc_fg_pl"){
+	// Configuration 3: postTC_RC_FG_postPL
+	if (arg[2] == "post:post"){
 		double pp = param[4];
 		double q = param[5];
 		double w = param[6];
 		if (arg[1] == "rb" || arg[1] == "RB"){
-			static eRungeKuttaRB_TC_RC_FG_PL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,pp,q,w,SPECIES,REACTION,*ptc);
+			static eRungeKutta_postTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
 			tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
 		}
 		else{
-			static eRungeKuttaSB_TC_RC_FG_PL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,pp,q,w,SPECIES,REACTION,*ptc);
+			static eRungeKutta_postTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
 			tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
 		}
 	}
@@ -653,7 +651,7 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 		exit(1);
 	}
 	if (maxSteps < 0){
-		cout << "Warning in Network3::run_PLA(): 'maxSteps' is negative (" << maxSteps << "). Simulation won't run." << endl;
+		cout << "Error in Network3::run_PLA(): 'maxSteps' cannot be negative (" << maxSteps << "). Exiting."<< endl;
 	}
 
 	// Species file (must exist)
@@ -702,9 +700,9 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 	// Identify observables involved in functions
 	vector<unsigned int> funcObs;
 	for (unsigned int i=0;i < FUNCTION.size();i++){
-		map<string,double*> var = FUNCTION[i].first->p->GetUsedVar();
+		map<string,double*> var = FUNCTION[i]->first->p->GetUsedVar();
 		for (unsigned int j=0;j < OBSERVABLE.size();j++){
-			if (var.find(OBSERVABLE[j].first->name) != var.end()){
+			if (var.find(OBSERVABLE[j]->first->name) != var.end()){
 				bool already = false;
 				for (unsigned int k=0;k < funcObs.size() && !already;k++){
 					if (funcObs[k] == j){
@@ -729,12 +727,12 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 	if (verbose){
 		cout << "#" << "\t" << setw(8) << left << "time" << "\t" << "step";
 		for (unsigned int i=0;i < OBSERVABLE.size();i++){
-			cout << "\t" << OBSERVABLE[i].first->name;
+			cout << "\t" << OBSERVABLE[i]->first->name;
 		}
 		cout << endl;
 		cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
 		for (unsigned int i=0;i < OBSERVABLE.size();i++){
-			cout << "\t" << OBSERVABLE[i].second;
+			cout << "\t" << OBSERVABLE[i]->second;
 		}
 		cout << endl;
 	}
@@ -745,19 +743,21 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 
 		// Next step
 		step++;
+//		cout << time << endl;
 		PLA_SIM->nextStep();
 		time += PLA_SIM->tau;
+//		cout << PLA_SIM->tau << endl;
 
 		// Is it time to output?
 		lastOut = false;
 		if (time >= nextOutput || (step % stepInterval) == 0){ // YES
 			// Update all observables
 			for (unsigned int i=0;i < OBSERVABLE.size();i++){
-				OBSERVABLE[i].second = OBSERVABLE[i].first->getValue();
+				OBSERVABLE[i]->second = OBSERVABLE[i]->first->getValue();
 			}
 			// Update all functions
 			for (unsigned int i=0;i < FUNCTION.size();i++){
-				FUNCTION[i].second = FUNCTION[i].first->Eval();
+				FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 			}
 			//
 			// Output to file
@@ -769,7 +769,7 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 			if (verbose){
 				cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
 				for (unsigned int i=0;i < OBSERVABLE.size();i++){
-					cout << "\t" << OBSERVABLE[i].second;
+					cout << "\t" << OBSERVABLE[i]->second;
 				}
 				cout << endl;
 			}
@@ -779,11 +779,11 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 		else{ // NO
 			// Only update observables that are involved in functions
 			for (unsigned int i=0;i < funcObs.size();i++){
-				OBSERVABLE[funcObs[i]].second = OBSERVABLE[funcObs[i]].first->getValue();
+				OBSERVABLE[funcObs[i]]->second = OBSERVABLE[funcObs[i]]->first->getValue();
 			}
 			// Update all functions
 			for (unsigned int i=0;i < FUNCTION.size();i++){
-				FUNCTION[i].second = FUNCTION[i].first->Eval();
+				FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 			}
 		}
 	}
@@ -792,11 +792,11 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 	if (!lastOut){
 		// Update all observables
 		for (unsigned int i=0;i < OBSERVABLE.size();i++){
-			OBSERVABLE[i].second = OBSERVABLE[i].first->getValue();
+			OBSERVABLE[i]->second = OBSERVABLE[i]->first->getValue();
 		}
 		// Update all functions
 		for (unsigned int i=0;i < FUNCTION.size();i++){
-			FUNCTION[i].second = FUNCTION[i].first->Eval();
+			FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 		}
 		//
 		// Output to file
@@ -808,7 +808,7 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 		if (verbose){
 			cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
 			for (unsigned int i=0;i < OBSERVABLE.size();i++){
-				cout << "\t" << OBSERVABLE[i].second;
+				cout << "\t" << OBSERVABLE[i]->second;
 			}
 			cout << endl;
 		}
@@ -848,7 +848,7 @@ void Network3::print_observable_concentrations(FILE* out, double t){
 	fprintf(out, fmt, t);
 	for (unsigned int i=0;i < OBSERVABLE.size();i++){
 		fprintf(out, " ");
-		fprintf(out, fmt, OBSERVABLE[i].second);
+		fprintf(out, fmt, OBSERVABLE[i]->second);
 	}
 	fprintf(out, "\n");
 	fflush(out);
@@ -865,7 +865,7 @@ void Network3::print_function_values(FILE* out, double t){
 	fprintf(out, fmt, t);
 	for (unsigned int i=0;i < FUNCTION.size();i++){
 		fprintf(out, " ");
-		fprintf(out, fmt, FUNCTION[i].second);
+		fprintf(out, fmt, FUNCTION[i]->second);
 	}
 	fprintf(out, "\n");
 	fflush(out);
@@ -877,13 +877,15 @@ void Network3::close_Network3(bool verbose){
     	delete SPECIES[i];
     }
     for (unsigned int i=0;i < OBSERVABLE.size();i++){
-    	if (verbose) cout << "Deleting Network3::OBSERVABLE[" << i << "]: " << OBSERVABLE[i].first->name << endl;
-    	delete OBSERVABLE[i].first;
+    	if (verbose) cout << "Deleting Network3::OBSERVABLE[" << i << "]: " << OBSERVABLE[i]->first->name << endl;
+    	delete OBSERVABLE[i]->first;
+    	delete OBSERVABLE[i];
     }
     for (unsigned int i=0;i < FUNCTION.size();i++){
-    	if (verbose) cout << "Deleting Network3::FUNCTION[" << i << "]: " << FUNCTION[i].first->name << " = "
-						  << FUNCTION[i].first->GetExpr() << endl;
-    	delete FUNCTION[i].first;
+    	if (verbose) cout << "Deleting Network3::FUNCTION[" << i << "]: " << FUNCTION[i]->first->name << " = "
+						  << FUNCTION[i]->first->GetExpr() << endl;
+    	delete FUNCTION[i]->first;
+    	delete FUNCTION[i];
     }
     for (unsigned int i=0;i < REACTION.size();i++){
     	if (verbose) cout << "Deleting Network3::REACTION[" << i << "]: " << REACTION[i]->toString() << endl;
