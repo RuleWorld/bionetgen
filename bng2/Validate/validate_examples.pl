@@ -56,7 +56,7 @@
 # NOTE: make sure BNG knows where to find NFsim, otherwise NFsim validation will fail!
 
 # TODO: Add validations for the following
-#   non-equillibrium stochastic validation (multirun validation)
+#   non-equilibrium stochastic validation (multirun validation)
 #   Syntax errors
 #   Canonical labeling
 #   On-the-fly simulation
@@ -83,7 +83,8 @@ my $bngpath;
         my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
         my @dirs = File::Spec->splitdir( $directories );
         pop @dirs;  # go down one directory level
-        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ) ); 
+#        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ) ); 
+        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ), "" ); 
     }
 }
 # directory containing validation reference files

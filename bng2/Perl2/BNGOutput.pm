@@ -543,7 +543,6 @@ sub writeMfile
 	my $mscript_path     = File::Spec->catpath($vol,$path,$mscript_filename);
     my $mscript_filebase_caps = uc $mscript_filebase;
 
-
     # configure options (see Matlab documentation of functions ODESET and ODE15S)
     my $odeset_abstol = 1e-4;
     if ( exists $params->{'atol'} )
@@ -990,7 +989,7 @@ sub writeMexfile
 	
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
-    
+
 	# define mexfile name
     my $mex_filebase = "${filebase}_cvode";
 	my $mex_filename = "${mex_filebase}.c";
@@ -1001,7 +1000,6 @@ sub writeMexfile
     my $mscript_filename = "${mscript_filebase}.m";
 	my $mscript_path     = File::Spec->catpath($vol,$path,$mscript_filename);
     my $mscript_filebase_caps = uc $mscript_filebase;
-
 
     # configure options
     my $cvode_abstol = 1e-6;
