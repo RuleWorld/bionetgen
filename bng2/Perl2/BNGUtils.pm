@@ -98,8 +98,7 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
 	            close $fh;
 	            
                 # extract version number
-#	            $version_string =~ s/^(\d+\.\d+\.\d+)\s+//;
-   				$version_string =~ /^\s*(\d+\.\d+\.\d+)\S*\s*$/;
+   				$version_string =~ s/^\s*(\d+\.\d+\.\d+)\s*//;
 	            
                 $BNG_VERSION = $1;
                 unless ( defined $BNG_VERSION )
