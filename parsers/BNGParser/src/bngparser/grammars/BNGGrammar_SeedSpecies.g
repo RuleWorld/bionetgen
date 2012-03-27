@@ -42,7 +42,7 @@ scope{
 }
 
 :
- pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
+(STRING COLON)? pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
  //There needs to need a space between species and the expression token, so we go back and make sure there was one
 ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
 } 

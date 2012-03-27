@@ -60,30 +60,14 @@ scope
 }
 
         : (s1=obs_species_def[upperID + "_P" + $pattern_list::patternCounter, $observables_block::reactionAction] 
-        {$pattern_list::patterns.add(s1.st);
-        $pattern_list::patternCounter++;
-   
-        }
-       
         {
-        //code used to handle whitespace between patterns. Very hacky. Change for something better. 
-        String previous = ((ChangeableChannelTokenStream)input).get(((ChangeableChannelTokenStream)input).index()-1).getText();
-        String current = ((ChangeableChannelTokenStream)input).get(((ChangeableChannelTokenStream)input).index()).getText();
-        
-        if((previous.contains("\\\n") || !previous.contains("\n")) && !current.equals(",")){
-           System.out.println(((ChangeableChannelTokenStream)input).get(((ChangeableChannelTokenStream)input).index()-1).getText());
-          ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
+	        $pattern_list::patterns.add(s1.st);
+	        $pattern_list::patternCounter++;
         }
-        }
-        
-        (
-        
-        (COMMA|WS)
-        
-        
-        s2=obs_species_def[upperID + "_P" + $pattern_list::patternCounter, $observables_block::reactionAction] 
-        {$pattern_list::patterns.add(s2.st);
-        $pattern_list::patternCounter++; 
+        ((COMMA) s2=obs_species_def[upperID + "_P" + $pattern_list::patternCounter, $observables_block::reactionAction] 
+        {
+	        $pattern_list::patterns.add(s2.st);
+	        $pattern_list::patternCounter++; 
         })*)
        -> patterns_block(id={upperID + "_P" + $pattern_list::patternCounter},molecules={$pattern_list::patterns})
         ;

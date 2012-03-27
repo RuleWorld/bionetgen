@@ -41,7 +41,7 @@ scope{
   (s1=site_def {$molecule_def::sites.add($s1.st);}
   (COMMA s2=site_def {$molecule_def::sites.add($s2.st);})*) 
   | //nothing 
-  ) RPAREN)? 
+  ) RPAREN) //? adding optional parenthesis require more work
  
   
   -> molecules_def(id={$STRING.text},sites={$molecule_def::sites});
@@ -56,5 +56,5 @@ scope{
 }
 : STRING (TILDE state_label {$site_def::states.add($state_label.text);})* -> sites_def(id={$STRING.text},states={$site_def::states});
 
-state_label: STRING | INT;
+state_label: (STRING | INT | QMARK)+;
 

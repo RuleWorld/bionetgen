@@ -42,10 +42,15 @@ adding_expression returns [Double value]
 ;
 
 multiplying_expression returns [Double value]
-: s1=sign_expression {$value = s1.value;} 
-( TIMES s2=sign_expression {$value *= s2.value;}
-| DIV s3=sign_expression {$value /= s3.value;}
-| MOD s4=sign_expression {$value \%= s4.value;})*
+: s1=power_expression {$value = s1.value;} 
+( TIMES s2=power_expression {$value *= s2.value;}
+| DIV s3=power_expression {$value /= s3.value;}
+| MOD s4=power_expression {$value \%= s4.value;})*
+;
+
+power_expression returns [Double value]
+: s1= sign_expression {$value = s1.value;}
+(POWER s2=sign_expression {$value = Math.pow($value,s2.value);})*
 ;
 
 sign_expression returns [Double value]
@@ -59,8 +64,10 @@ boolean_negation_expression returns [Double value]
 
 primitive_element returns [Double value]: 
         number {$value = $number.value;} 
-        | variable {$value = $variable.value;}
+        | (STRING LPAREN RPAREN) => function {$value = $function.value;}
+        |  variable {$value = $variable.value;}
         | LPAREN expression2 RPAREN {$value = $expression2.value;}
+        
         ;
 
 number returns [Double value]: s1=INT {$value = Double.parseDouble($INT.text);}
@@ -69,15 +76,47 @@ number returns [Double value]: s1=INT {$value = Double.parseDouble($INT.text);}
       
 variable returns [Double value]: STRING {
                   try{
-                  Register temp = $expression::lmemory.get($STRING.text);
+                  
                   //if($value == null)
                     //throw [VariableNotFoundException]
-                  $value = temp.getValue();
+                  if($expression::lmemory.containsKey($STRING.text)){
+                    Register temp = $expression::lmemory.get($STRING.text);
+                    $value = temp.getValue();
+	                  if(!temp.getType().equals("parameter") && !temp.getType().equals("observable")){
+	                    System.err.println($STRING.text + " is in memory but it is not a variable or observable. Check syntax");
+	                  }
+                  }
+                  else{
+                    $value = 1.0;
+                    System.err.println("variable not found: " + $STRING.text);
+                  }
                   $expression::references.put($STRING.text,$expression::lmemory.get($STRING.text));
                   }
                   catch(NullPointerException e){
-                    System.err.println("Variable not found " + $STRING.text);
+                    System.err.println("Variable not found: " + $STRING.text);
                     
                   }
                   }
+;
+
+function returns [Double value]:
+  STRING LPAREN RPAREN {
+    try{
+      if($expression::lmemory.containsKey($STRING.text)){
+                    Register temp = $expression::lmemory.get($STRING.text);
+                    $value = temp.getValue();
+                    if(!temp.getType().equals("function")){
+                      System.err.println($STRING.text + "is in memory but it is not a function. Check syntax");
+                    }
+       }
+       else{
+                    $value = 1.0;
+                    System.err.println("function not found: " + $STRING.text);
+       }
+        $expression::references.put($STRING.text,$expression::lmemory.get($STRING.text));
+    }
+    catch(NullPointerException e){
+    
+    }
+  }
 ;
