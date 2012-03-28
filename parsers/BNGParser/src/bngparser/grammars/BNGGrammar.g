@@ -112,9 +112,34 @@ functions_block
 ;
 
 function_def:
-    s1=STRING LPAREN (STRING)? RPAREN (BECOMES)?  expression[memory] ->  functions_block(id={$s1.text},
-                            referencesName={$expression.reference.keySet()},referencesType={Register.getTypes($expression.reference)},expression={$expression.text})
+    s1=STRING LPAREN (STRING)? RPAREN (BECOMES)?  
+    (expression[memory] | if_expression)
+    {
+    memory.put($s1.text,new Register($expression.value,"function"));
+    }
+    
+    ->  functions_block(id={$s1.text},
+                            referencesName={$expression.reference.keySet()},referencesType={Register.getTypes($expression.reference)},
+                            expression={$expression.text})
 ;
+
+if_expression
+scope{
+  Map<String,Register> references;
+  Map<String,Register> lmemory;
+}
+@init{
+  $if_expression::references = new HashMap<String,Register>();
+  $if_expression::lmemory = memory;
+}:
+  
+  IF LPAREN STRING 
+  {
+    
+  }
+  EQUALS INT COMMA expression[memory] COMMA expression[memory] RPAREN
+;
+
 //http://bionetgen.org/index.php/Compartments_in_BNGL
 compartments_block:
 
