@@ -639,7 +639,7 @@ void Network3::init_PLA(string config, bool verbose){
 }
 
 void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long maxSteps, long stepInterval,
-		char* prefix, bool verbose){
+		char* prefix, bool print_cdat, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -761,7 +761,7 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 			}
 			//
 			// Output to file
-			Network3::print_species_concentrations(cdat,time);
+			if (print_cdat) Network3::print_species_concentrations(cdat,time);
 			if (gdat) Network3::print_observable_concentrations(gdat,time);
 			if (fdat) Network3::print_function_values(fdat,time);
 			//
@@ -800,7 +800,7 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 		}
 		//
 		// Output to file
-		Network3::print_species_concentrations(cdat,time);
+		Network3::print_species_concentrations(cdat,time); // Even if .cdat printing is suppressed, print the last step
 		if (gdat) Network3::print_observable_concentrations(gdat,time);
 		if (fdat) Network3::print_function_values(fdat,time);
 		//
@@ -812,6 +812,10 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 			}
 			cout << endl;
 		}
+	}
+	else{
+		// Even if .cdat printing is suppressed, print the last step
+		if (!print_cdat) Network3::print_species_concentrations(cdat,time);
 	}
 	if (!verbose) cout << "Done" << endl;
 	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
@@ -829,11 +833,13 @@ void Network3::print_species_concentrations(FILE* out, double t){
 		exit(1);
 	}
 	//
-	fprintf(out, "%19.12e", t);
-	for (unsigned int i = 0;i < SPECIES.size();i++) {
-		fprintf(out, " %19.12e", SPECIES[i]->population);
+	const char *fmt = "%19.12e";
+	fprintf(out, fmt, t);
+	for (unsigned int i=0;i < SPECIES.size();i++) {
+		fprintf(out, " ");
+		fprintf(out, fmt, SPECIES[i]->population);
 	}
-	fprintf(out, "\n");
+	fprintf(out,"\n");
 	fflush(out);
 }
 
@@ -844,13 +850,13 @@ void Network3::print_observable_concentrations(FILE* out, double t){
 		exit(1);
 	}
 	//
-	const char *fmt = "%15.8e";
+	const char *fmt = "%19.12e";
 	fprintf(out, fmt, t);
 	for (unsigned int i=0;i < OBSERVABLE.size();i++){
 		fprintf(out, " ");
 		fprintf(out, fmt, OBSERVABLE[i]->second);
 	}
-	fprintf(out, "\n");
+	fprintf(out,"\n");
 	fflush(out);
 }
 
@@ -861,13 +867,13 @@ void Network3::print_function_values(FILE* out, double t){
 		exit(1);
 	}
 	//
-	const char *fmt = "%15.8e";
+	const char *fmt = "%19.12e";
 	fprintf(out, fmt, t);
 	for (unsigned int i=0;i < FUNCTION.size();i++){
 		fprintf(out, " ");
 		fprintf(out, fmt, FUNCTION[i]->second);
 	}
-	fprintf(out, "\n");
+	fprintf(out,"\n");
 	fflush(out);
 }
 

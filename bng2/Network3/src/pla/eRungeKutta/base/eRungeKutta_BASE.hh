@@ -17,7 +17,7 @@
 #include "../../util/g_Getter.hh"
 #include "../util/butcherTableau.hh"
 #include "../util/aEff_Calculator.hh"
-#include "../util/BinomialCorrector_RK.hh"
+#include "../util/binomialCorrector_RK.hh"
 
 namespace network3{
 

@@ -37,6 +37,7 @@ using namespace std;
 #include "gsl/gsl_randist.h"
 #include "muParser.h"
 #include "muParserInt.h"
+#include "util/util.hh"
 
 #include <cmath>
 
@@ -205,12 +206,19 @@ extern int   propagate_cvode_network(double* t, double delta_t, long int* n_step
 									 long maxSteps);
 extern int   propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, long maxSteps);
 extern int   propagate_rkcs_network (double* t, double delta_t, long int* n_steps, double tol, long maxSteps);
-extern FILE* init_print_concentrations_network(char* filename, int append);
+
+extern FILE* init_print_concentrations_network(char* prefix, int append);
 extern int   print_concentrations_network(FILE* out, double t);
 extern int   finish_print_concentrations_network(FILE* out);
-extern FILE* init_print_group_concentrations_network(char* filename, int append);
+
+extern FILE* init_print_group_concentrations_network(char* prefix, int append);
 extern int   print_group_concentrations_network(FILE* out, double t);
 extern int   finish_print_group_concentrations_network(FILE* out);
+
+extern FILE* init_print_function_values_network(char* prefix, int append);
+extern int   print_function_values_network(FILE* out, double t);
+extern int   finish_print_function_values_network(FILE* out);
+
 extern int   print_network(FILE* out);
 extern void  print_species_network(FILE* out);
 

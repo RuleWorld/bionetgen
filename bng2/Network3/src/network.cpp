@@ -3002,10 +3002,8 @@ FILE *init_print_concentrations_network(char* prefix, int append){
 	//    char* fmt = "%19s", *specname;
 	//char *mode = (append) ? "a" : "w";
 	char* mode;
-	if (append)
-		mode = "a";
-	else
-		mode = "w";
+	if (append) mode = "a";
+	else mode = "w";
 
 	sprintf(buf, "%s.cdat", prefix);
 	if (!(out = fopen(buf, mode))) {
@@ -3025,7 +3023,8 @@ FILE *init_print_concentrations_network(char* prefix, int append){
 	fprintf(out, "#");
 	fprintf(out, "%18s", "time");
 	for (i = 0; i < n_species_network(); ++i) {
-		fprintf(out, " %19d", i + 1);
+//		fprintf(out, " %19d", i+1);
+		fprintf(out, " %19s", ("S"+Util::toString(i+1)).c_str());
 	}
 	fprintf(out, "\n");
 
@@ -3079,13 +3078,12 @@ FILE* init_print_group_concentrations_network(char* prefix, int append) {
 	Group* group;
 	int /*i,*/error = 0;
 	char buf[1000];
-	char* fmt = "%15s";
+//	char* fmt = "%15s";
+	char* fmt = "%19s";
 	//char *mode= (append) ? "a" : "w";
 	char* mode;
-	if (append)
-		mode = "a";
-	else
-		mode = "w";
+	if (append) mode = "a";
+	else mode = "w";
 
 	if (!n_groups_network()) {
 		out = NULL;
@@ -3102,13 +3100,12 @@ FILE* init_print_group_concentrations_network(char* prefix, int append) {
 	}
 
 	/* Skip header if this file is a continuation */
-	if (append){
-//		goto exit;
-		return (out);
-	}
+	if (append)	return (out);
 
 	/* Write group header  */
-	fprintf(out, fmt, "#      time    ");
+//	fprintf(out, fmt, "#      time    ");
+	fprintf(out, "#");
+	fprintf(out, "%18s", "time");
 	for (group = network.spec_groups; group != NULL; group = group->next) {
 		fprintf(out, " ");
 		fprintf(out, fmt, group->name);
@@ -3125,7 +3122,8 @@ int print_group_concentrations_network(FILE* out, double t) {
 	int i, error = 0, n_species, offset, index;
 	Group* group;
 	double *X = NULL, conc, factor;
-	const char *fmt = "%15.8e";
+//	const char *fmt = "%15.8e";
+	const char *fmt = "%19.12e";
 
 	if (!out) {
 		++error;
@@ -3178,6 +3176,67 @@ int finish_print_group_concentrations_network(FILE* out) {
 
 //	exit:
 	return (error);
+}
+
+FILE* init_print_function_values_network(char* prefix, int append){
+	FILE* out;
+	int error = 0;
+	char buf[1000];
+	char* mode;
+	if (append) mode = "a";
+	else mode = "w";
+
+	sprintf(buf, "%s.fdat", prefix);
+	if (!(out = fopen(buf, mode))) {
+		++error;
+		fprintf(stderr, "Couldn't open file %s.\n", buf);
+		return out;
+	}
+
+	// Skip header if this trajectory is a continuation
+	if (append)	return out;
+
+	// Write header
+	fprintf(out, "#");
+	fprintf(out, "%18s", "time");
+	for (unsigned int i = 0; i < network.functions.size(); ++i) {
+//		fprintf(out, " %19d", i+1);
+		fprintf(out, " %19s", ("F"+Util::toString((int)i+1)).c_str());
+	}
+	fprintf(out, "\n");
+
+	return out;
+}
+
+int print_function_values_network(FILE* out, double t){
+	int error = 0;
+
+	// Error check
+	if (!out) {
+		++error;
+		return error;
+	}
+
+	fprintf(out, "%19.12e", t);
+	for (unsigned int i = 0; i < network.functions.size(); i++) {
+		fprintf(out, " %19.12e", network.functions[i].Eval());
+	}
+	fprintf(out, "\n");
+	fflush(out);
+
+	return error;
+}
+
+int finish_print_function_values_network(FILE* out){
+	int error = 0;
+
+	if (!out) {
+		++error;
+		return error;
+	}
+	fclose(out);
+
+	return error;
 }
 
 double* get_group_concentrations_network() {

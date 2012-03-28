@@ -51,6 +51,23 @@ sub simulate_ssa
 
 
 
+sub simulate_pla
+{
+    my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+
+    $params->{method} = 'pla';
+    my $err = $model->simulate( $params );
+    return $err;
+}
+
+
+
+###
+###
+###
+
+
 # all purpose simulation method (does not yet support NFsim)
 sub simulate
 {
@@ -83,6 +100,8 @@ sub simulate
     my $continue     = defined $params->{'continue'} ? $params->{'continue'} : 0;	
     my $method       = defined $params->{method}     ? $params->{method}     : undef;
     my $print_active = defined $params->{print_n_species_active} ? $params->{print_n_species_active} : 0;
+    my $print_cdat   = defined $params->{print_CDAT} ? $params->{print_CDAT} : 1; # Default is to print .cdat
+    my $print_fdat   = defined $params->{print_functions} ? $params->{print_functions} : 0; # Default is to NOT print .fdat
 
     # continuous options
 	my $atol         = defined $params->{atol}         ? $params->{atol}         : 1e-8;
@@ -96,7 +115,7 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "Simulate requires method parameter (cvode, ssa, nf, etc).";  }
+    {  return "Simulate requires method parameter (cvode, ssa, pla, nf, etc).";  }
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method $method is not a valid.";  }
 
@@ -143,8 +162,17 @@ sub simulate
 
     # add output prefix
     $command .= " -o \"$prefix\"";
+    
     # add method to command
     $command .= " -p $method";
+    
+    # pla configuration
+    if ($method =~ /^pla$/){
+    	if (exists $params->{pla_config}){
+    		$command .= " \"$params->{pla_config}\"";
+    	}
+    }
+    
     # add method options
     {
         my $opts = $METHODS->{$method}->{options};
@@ -186,6 +214,12 @@ sub simulate
     # define output step interval
     if (defined $params->{output_step_interval})
     {  $command .= sprintf " -I %f", $params->{output_step_interval};  }
+    
+    # output concentrations data
+    $command .= sprintf " --cdat %s", $print_cdat;
+    
+    # output function values
+    $command .= sprintf " --fdat %s", $print_fdat;
 
     # define print_net
 	if ($print_net) { $command .= " -n"; }
@@ -495,257 +529,265 @@ sub simulate
 
 
 
-sub simulate_pla
-{
-	use IPC::Open3;
-
-	my $model  = shift;
-	my $params = shift;
-	my $err;
-
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
-	my $verbose = ( defined $params->{verbose} ) ? $params->{verbose} : 0;
-	my $print_end = ( defined $params->{print_end} ) ? $params->{print_end} : 0;
-	my $print_net = ( defined $params->{print_net} ) ? $params->{print_net} : 0;
-	my $seed = ( defined( $params->{seed} ) ) ? $params->{seed} : int( rand( (2**31)-1 ) );
-    # Added explicit argument for simulation continuation.  --Justin
-    my $continue = (defined $params->{continue} ) ? $params->{continue} : 0;
-
-	return '' if $BNGModel::NO_EXEC;
-
-	if (exists $params->{suffix}){
-		$prefix .= "_$params->{suffix}";
-	}
-
-	print "Network simulation using PLA\n";
-	
-	my $program;
-	if ( !( $program = findExec("run_network") ) ) {
-		return ("Could not find executable run_network");
-	}
-	my $command = "\"" . $program . "\"";
-	if (exists $params->{prefix} || exists $params->{suffix}){
-		$command .= " -o \"$prefix\"";
-	}
-
-	# Default netfile based on prefix
-	my $netfile;
-	my $netpre;
-	if (!(exists $params->{netfile})){
-		$netfile = $prefix . ".net";
-		$netpre  = $prefix;
-		# Generate net file if not already created or if prefix is set in params
-		if ( ( !-e $netfile ) || $model->UpdateNet || ( defined( $params->{prefix} ) ) || ( defined( $params->{suffix} ) ) ){
-			if ( $err = $model->writeNET( { prefix => "$netpre" } ) ) {
-				return ($err);
-			}		
-		}
-	}
-	else {
-		$netfile = $params->{netfile};
-		# Make sure NET file has proper suffix
-		$netpre = $netfile;
-		$netpre =~ s/[.]([^.]+)$//;
-		if ( !( $1 =~ /net/i ) ) {
-			return ("File $netfile does not have .net suffix");
-		}
-	}
-
-	my $expand = defined $params->{expand} ? $params->{expand} : "lazy";
-	if ($expand ne "lazy" && $expand ne "layered") 
-    {
-		return "Unrecognized expand method $expand";
-	}
-
-	$command .= " -p pla";
-    if (exists $params->{sim_config}){ # PLA configuration (string)
-    	$command .= " \"$params->{sim_config}\"";
-    }
-
-	$command .= " -h $seed";
-
-	if ($print_net) { $command .= " -n"; }
-	if ($print_end) { $command .= " -e"; }
-	
-	# Added arguments for maximum # of sim steps and output step interval --Leonard
-    if (exists $params->{max_sim_steps}){
-    	$command .= " -M $params->{max_sim_steps}";
-    } 
-    if (exists $params->{output_step_interval}){
-    	$command .= " -I $params->{output_step_interval}";
-    }
-
-	# More detailed output
-	if ($verbose) { $command .= " -v"; }
-	
-	# Continuation
-	# NOTE: continuation must now be specified explicitly!
-	if ($continue) { $command .= " -x"; }	
-
-	# Print number of active species
-    #if ($print_n_species_active) {
-    #    $command .= " -j";
-    #}
-
-	# Set start time for trajectory
-	my $t_start;
-	# t_start argument is defined
-	if ( defined( $params->{t_start} ) ) {
-		$t_start = $params->{t_start};		
-		# if this is a continuation, check that model time equals t_start
-		if ( $continue ) {
-		    unless ( defined($model->Time)  and  ($model->Time == $t_start) ) {
-		        return ("t_start must equal current model time for continuation.");
-		    }
-		}
-	}
-	# t_start argument not defined
-	else {
-	    if ( $continue   and   defined($model->Time) ) {   
-	    	$t_start = $model->Time;   
-	    }
- 		else {   
- 			$t_start = 0.0;   
- 		}
-	}
-
-    # set the model time to t_start
-    $model->Time($t_start);
-
-  	# To preserve backward compatibility: only output start time if != 0
-	unless ( $t_start == 0.0 ) {   
-		$command .= " -i $t_start"; 	
-	}
-
-	# Use program to compute observables
-	$command .= " -g \"$netfile\"";
-
-	# Read network from $netfile
-	$command .= " \"$netfile\"";
-
-    my ($n_steps, $t_end);
-	if ( defined $params->{n_steps} )
-    {
-		
-		if ( defined $params->{t_end} ) {
-			$t_end = $params->{t_end};
-		}
-		else {
-			return "Parameter t_end must be defined";
-		}
-		# Extend interval for backward compatibility. Previous versions default assumption was $t_start=0.
-		if ( ($t_end-$t_start) <= 0.0 )
-        {
-		    return "t_end must be greater than t_start.";
-        }
-		$n_steps = ( defined( $params->{n_steps} ) ) ? $params->{n_steps} : 1;
-		my $step_size = ( $t_end - $t_start ) / $n_steps;
-		$command .= " ${step_size} ${n_steps}";
-	}
-	elsif ( defined $params->{sample_times} )
-    {   # Not implemented yet, but will be caught by Network3!
-		# Two sample points are given.
-		my $sample_times = $params->{sample_times};
-		if ( @$sample_times > 2 )
-        {
-			$command .= " " . join( " ", @$sample_times );
-			$t_end = $sample_times->[ $#$sample_times ];
-		}
-		else
-        {
-			return "sample_times array must contain 3 or more points";
-		}
-	}
-
-	# Determine index of last rule iteration
-	if ( $model->SpeciesList )
-    {
-		my $n_iter = 0;
-		foreach my $spec ( @{ $model->SpeciesList->Array } )
-        {
-			my $iter = $spec->RulesApplied;
-			$n_iter = ( $iter > $n_iter ) ? $iter : $n_iter;
-		}
-	}
-	print "Running run_network on ", `hostname`;
-	print "full command: $command\n";
-
-	# Compute timecourses using run_network
-    my $pid;
-	local ( *Reader, *Writer, *Err );
-	unless ( $pid = open3(\*Writer, \*Reader, \*Err, "$command") )
-    {   return "$command failed: $?";   }
-
-	my $last = '';
-	my $edgepop = 0;
-	while ( my $message = <Reader>)
-    {
-        # If network generation is on-the-fly, look for signal that
-        # species at the edge of the network is newly populated
-		if ( $message =~ s/^edgepop:\s*// )
-        {
-            # NOT IMPLEMENTED YET
-		}
-		else
-        {
-			print $message;
-			$last = $message;
-		}
-	}
-	my @err = <Err>;
-	close Writer;
-	close Reader;
-	close Err;
-	waitpid( $pid, 0 );
-
-	# Report number of times edge species became populated without network expansion
-    #if ($edgepop){
-    #    printf "Edge species became populated %d times.\n", $edgepop;
-    #}
-
-	# Check for errors in running the simulation command
-	if (@err)
-    {
-		print @err;
-		return "$command\n  did not run successfully.";
-	}
-	unless ( $last =~ /^Program times:/ )
-    {
-		return "$command\n  did not run successfully.";
-	}
-
-	# Process output concentrations
-	unless ( $model->RxnList )
-    {
-		send_warning("Not updating species concnetrations because no model has been read");
-	}
-	elsif ( -e "$prefix.cdat" )
-    {
-		print "Updating species concentrations from $prefix.cdat\n";
-		open( CDAT, "$prefix.cdat" );
-		my $last = "";
-		while (<CDAT>) { $last = $_; }
-		close CDAT;
-
-		# Update Concentrations with concentrations from last line of CDAT file
-        my ($time, $conc);
-		($time, @$conc) = split ' ', $last;
-		my $species = $model->SpeciesList->Array;
-		if ( $#$conc != $#$species ) {
-			$err = sprintf "Number of species in model (%d) and CDAT file (%d) differ", scalar(@$species), scalar(@$conc);
-			return ($err);
-		}
-		$model->Concentrations($conc);
-		$model->UpdateNet(1);
-	}
-	else
-    {
-		return "CDAT file is missing";
-	}
-	$model->Time($t_end);
-
-	return '';
-}
+#sub simulate_pla
+#{
+#	use IPC::Open3;
+#
+#	my $model  = shift;
+#	my $params = shift;
+#	my $err;
+#
+#	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+#	my $verbose = ( defined $params->{verbose} ) ? $params->{verbose} : 0;
+#	my $print_end = ( defined $params->{print_end} ) ? $params->{print_end} : 0;
+#	my $print_net = ( defined $params->{print_net} ) ? $params->{print_net} : 0;
+#	my $seed = ( defined( $params->{seed} ) ) ? $params->{seed} : int( rand( (2**31)-1 ) );
+#    # Added explicit argument for simulation continuation.  --Justin
+#    my $continue = (defined $params->{continue} ) ? $params->{continue} : 0;
+#    my $print_cdat   = defined $params->{print_CDAT} ? $params->{print_CDAT} : 1; # Default is to print .cdat
+#    my $print_fdat   = defined $params->{print_functions} ? $params->{print_functions} : 0; # Default is to NOT print .fdat
+#
+#	return '' if $BNGModel::NO_EXEC;
+#
+#	if (exists $params->{suffix}){
+#		$prefix .= "_$params->{suffix}";
+#	}
+#
+#	print "Network simulation using PLA\n";
+#	
+#	my $program;
+#	if ( !( $program = findExec("run_network") ) ) {
+#		return ("Could not find executable run_network");
+#	}
+#	my $command = "\"" . $program . "\"";
+#	if (exists $params->{prefix} || exists $params->{suffix}){
+#		$command .= " -o \"$prefix\"";
+#	}
+#
+#	# Default netfile based on prefix
+#	my $netfile;
+#	my $netpre;
+#	if (!(exists $params->{netfile})){
+#		$netfile = $prefix . ".net";
+#		$netpre  = $prefix;
+#		# Generate net file if not already created or if prefix is set in params
+#		if ( ( !-e $netfile ) || $model->UpdateNet || ( defined( $params->{prefix} ) ) || ( defined( $params->{suffix} ) ) ){
+#			if ( $err = $model->writeNET( { prefix => "$netpre" } ) ) {
+#				return ($err);
+#			}		
+#		}
+#	}
+#	else {
+#		$netfile = $params->{netfile};
+#		# Make sure NET file has proper suffix
+#		$netpre = $netfile;
+#		$netpre =~ s/[.]([^.]+)$//;
+#		if ( !( $1 =~ /net/i ) ) {
+#			return ("File $netfile does not have .net suffix");
+#		}
+#	}
+#
+#	my $expand = defined $params->{expand} ? $params->{expand} : "lazy";
+#	if ($expand ne "lazy" && $expand ne "layered") 
+#    {
+#		return "Unrecognized expand method $expand";
+#	}
+#
+#	$command .= " -p pla";
+#    if (exists $params->{pla_config}){ # PLA configuration (string)
+#    	$command .= " \"$params->{pla_config}\"";
+#    }
+#
+#	$command .= " -h $seed";
+#
+#	if ($print_net) { $command .= " -n"; }
+#	if ($print_end) { $command .= " -e"; }
+#	
+#	# Added arguments for maximum # of sim steps and output step interval --Leonard
+#    if (exists $params->{max_sim_steps}){
+#    	$command .= " -M $params->{max_sim_steps}";
+#    } 
+#    if (exists $params->{output_step_interval}){
+#    	$command .= " -I $params->{output_step_interval}";
+#    }
+#    
+#    # output concentrations data
+#    $command .= sprintf " --cdat %s", $print_cdat;
+#    
+#    # output function values
+#    $command .= sprintf " --fdat %s", $print_fdat;
+#
+#	# More detailed output
+#	if ($verbose) { $command .= " -v"; }
+#	
+#	# Continuation
+#	# NOTE: continuation must now be specified explicitly!
+#	if ($continue) { $command .= " -x"; }	
+#
+#	# Print number of active species
+#    #if ($print_n_species_active) {
+#    #    $command .= " -j";
+#    #}
+#
+#	# Set start time for trajectory
+#	my $t_start;
+#	# t_start argument is defined
+#	if ( defined( $params->{t_start} ) ) {
+#		$t_start = $params->{t_start};		
+#		# if this is a continuation, check that model time equals t_start
+#		if ( $continue ) {
+#		    unless ( defined($model->Time)  and  ($model->Time == $t_start) ) {
+#		        return ("t_start must equal current model time for continuation.");
+#		    }
+#		}
+#	}
+#	# t_start argument not defined
+#	else {
+#	    if ( $continue   and   defined($model->Time) ) {   
+#	    	$t_start = $model->Time;   
+#	    }
+# 		else {   
+# 			$t_start = 0.0;   
+# 		}
+#	}
+#
+#    # set the model time to t_start
+#    $model->Time($t_start);
+#
+#  	# To preserve backward compatibility: only output start time if != 0
+#	unless ( $t_start == 0.0 ) {   
+#		$command .= " -i $t_start"; 	
+#	}
+#
+#	# Use program to compute observables
+#	$command .= " -g \"$netfile\"";
+#
+#	# Read network from $netfile
+#	$command .= " \"$netfile\"";
+#
+#    my ($n_steps, $t_end);
+#	if ( defined $params->{n_steps} )
+#    {
+#		
+#		if ( defined $params->{t_end} ) {
+#			$t_end = $params->{t_end};
+#		}
+#		else {
+#			return "Parameter t_end must be defined";
+#		}
+#		# Extend interval for backward compatibility. Previous versions default assumption was $t_start=0.
+#		if ( ($t_end-$t_start) <= 0.0 )
+#        {
+#		    return "t_end must be greater than t_start.";
+#        }
+#		$n_steps = ( defined( $params->{n_steps} ) ) ? $params->{n_steps} : 1;
+#		my $step_size = ( $t_end - $t_start ) / $n_steps;
+#		$command .= " ${step_size} ${n_steps}";
+#	}
+#	elsif ( defined $params->{sample_times} )
+#    {   # Not implemented yet, but will be caught by Network3!
+#		# Two sample points are given.
+#		my $sample_times = $params->{sample_times};
+#		if ( @$sample_times > 2 )
+#        {
+#			$command .= " " . join( " ", @$sample_times );
+#			$t_end = $sample_times->[ $#$sample_times ];
+#		}
+#		else
+#        {
+#			return "sample_times array must contain 3 or more points";
+#		}
+#	}
+#
+#	# Determine index of last rule iteration
+#	if ( $model->SpeciesList )
+#    {
+#		my $n_iter = 0;
+#		foreach my $spec ( @{ $model->SpeciesList->Array } )
+#        {
+#			my $iter = $spec->RulesApplied;
+#			$n_iter = ( $iter > $n_iter ) ? $iter : $n_iter;
+#		}
+#	}
+#	print "Running run_network on ", `hostname`;
+#	print "full command: $command\n";
+#
+#	# Compute timecourses using run_network
+#    my $pid;
+#	local ( *Reader, *Writer, *Err );
+#	unless ( $pid = open3(\*Writer, \*Reader, \*Err, "$command") )
+#    {   return "$command failed: $?";   }
+#
+#	my $last = '';
+#	my $edgepop = 0;
+#	while ( my $message = <Reader>)
+#    {
+#        # If network generation is on-the-fly, look for signal that
+#        # species at the edge of the network is newly populated
+#		if ( $message =~ s/^edgepop:\s*// )
+#        {
+#            # NOT IMPLEMENTED YET
+#		}
+#		else
+#        {
+#			print $message;
+#			$last = $message;
+#		}
+#	}
+#	my @err = <Err>;
+#	close Writer;
+#	close Reader;
+#	close Err;
+#	waitpid( $pid, 0 );
+#
+#	# Report number of times edge species became populated without network expansion
+#    #if ($edgepop){
+#    #    printf "Edge species became populated %d times.\n", $edgepop;
+#    #}
+#
+#	# Check for errors in running the simulation command
+#	if (@err)
+#    {
+#		print @err;
+#		return "$command\n  did not run successfully.";
+#	}
+#	unless ( $last =~ /^Program times:/ )
+#    {
+#		return "$command\n  did not run successfully.";
+#	}
+#
+#	# Process output concentrations
+#	unless ( $model->RxnList )
+#    {
+#		send_warning("Not updating species concnetrations because no model has been read");
+#	}
+#	elsif ( -e "$prefix.cdat" )
+#    {
+#		print "Updating species concentrations from $prefix.cdat\n";
+#		open( CDAT, "$prefix.cdat" );
+#		my $last = "";
+#		while (<CDAT>) { $last = $_; }
+#		close CDAT;
+#
+#		# Update Concentrations with concentrations from last line of CDAT file
+#        my ($time, $conc);
+#		($time, @$conc) = split ' ', $last;
+#		my $species = $model->SpeciesList->Array;
+#		if ( $#$conc != $#$species ) {
+#			$err = sprintf "Number of species in model (%d) and CDAT file (%d) differ", scalar(@$species), scalar(@$conc);
+#			return ($err);
+#		}
+#		$model->Concentrations($conc);
+#		$model->UpdateNet(1);
+#	}
+#	else
+#    {
+#		return "CDAT file is missing";
+#	}
+#	$model->Time($t_end);
+#
+#	return '';
+#}
 
 
 

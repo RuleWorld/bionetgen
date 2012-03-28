@@ -11,7 +11,6 @@ eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double appro
 		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), approx1(approx1), gg1(gg1), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
-	//
 	// Error check
 	if (!bt.isExplicit()){
 		cout << "Error in eRungeKutta_TC_RC_FG_PL constructor: Butcher tableau must be explicit. Exiting." << endl;
@@ -32,7 +31,6 @@ eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double appro
 		rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
-	//
 	// Error check
 	if (!bt.isExplicit()){
 		cout << "Error in eRungeKutta_TC_RC_FG_PL constructor: Butcher tableau must be explicit. Exiting." << endl;
@@ -70,6 +68,7 @@ eRungeKutta_TC_RC_FG_PL::~eRungeKutta_TC_RC_FG_PL(){
 }
 
 void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, bool initial){
+
 	// Error check
 	if (classif.size() != this->aCalc->a_eff.size()){
 		cout << "Error in eRungeKutta_TC_RC_FG_PL::classifyRxns(): 'classif' and 'a_eff' vectors must be equal size. "
@@ -97,6 +96,7 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 		}
 	}
 }
+
 void eRungeKutta_TC_RC_FG_PL::fireRxns(vector<double>& k, vector<int>& classif, double tau){
 
 	// Error check
