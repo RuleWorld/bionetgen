@@ -1,0 +1,178 @@
+# Cell Cycle is from Tyson 93 [Xenopus Oocyte]
+# ERG/DRG is from Tyson 2004
+begin parameters
+NA 6.02e23
+hnano 1e-9
+Vcell 1e-12 #1e-9
+k1 .5*(NA*hnano*Vcell)
+V21 .005/(NA*hnano*Vcell)
+V22 .25/(NA*hnano*Vcell)
+k3 .005/(NA*hnano*Vcell)
+V251 .017/(NA*hnano*Vcell)
+V252 .17/(NA*hnano*Vcell)
+Vwee1 .01/(NA*hnano*Vcell)
+Vwee2 1/(NA*hnano*Vcell)
+ka .02
+Ka .1*(NA*hnano*Vcell)
+kb .1
+Kb 1*(NA*hnano*Vcell)
+kc .13
+Kc .01*(NA*hnano*Vcell)
+kd .13
+Kd 1*(NA*hnano*Vcell)
+ke .02
+Ke .1*(NA*hnano*Vcell)
+kf .1
+Kf 1*(NA*hnano*Vcell)
+kg .02
+Kg .01*(NA*hnano*Vcell)
+kh .15
+Kh .01*(NA*hnano*Vcell)
+
+TotCdk 100*(NA*hnano*Vcell)
+TotCdc25 1*(NA*hnano*Vcell)
+TotWee1 1*(NA*hnano*Vcell)
+TotIE 1*(NA*hnano*Vcell)
+TotAPC 1*(NA*hnano*Vcell)
+init_PPase 1*(NA*hnano*Vcell)
+init_cyclin 0
+init_MPF 0
+init_preMPF 0
+init_cdc25p 0
+init_wee1p 0
+init_iep 1*(NA*hnano*Vcell)
+init_APCon 1*(NA*hnano*Vcell)
+zero 0
+
+init_ERG 0
+init_DRG 0
+init_Erk 12*hnano*NA*Vcell
+k9 (2.5)*hnano*NA*Vcell
+k15 (.25)*hnano*NA*Vcell
+J15 .1
+k17 10*hnano*NA*Vcell
+kp17 (.35)*hnano*NA*Vcell
+k16 (.25)*hnano*NA*Vcell
+k18 (10)*hnano*NA*Vcell
+J17 .3
+end parameters
+
+begin molecule types
+1 I()
+2 Cyclin(deg~y~n)
+3 APC(c~OFF~ON)
+4 Cdk()
+5 MPF(cyclin,cdk~U~1P~2P)
+6 Wee1(c~P~U)
+7 Cdc25(c~P~U)
+8 PPase()
+9 IE(c~P~U)
+10 ERG()
+11 DRG()
+12 Erk()
+13 Trash()
+end molecule types
+
+begin seed species
+Cyclin(deg~n) init_cyclin
+MPF(cyclin,cdk~1P) init_MPF
+MPF(cyclin,cdk~2P) init_preMPF
+Cdc25(c~P) init_cdc25p
+Cdc25(c~U) TotCdc25-init_cdc25p
+PPase() init_PPase
+Wee1(c~P) init_wee1p
+Wee1(c~U) TotWee1-init_wee1p
+IE(c~P) init_iep
+IE(c~U) TotIE-init_iep
+APC(c~ON) init_APCon
+APC(c~OFF)  TotAPC-init_APCon
+I() 1
+Cdk() TotCdk
+ERG() init_ERG
+DRG() init_DRG
+Erk() init_Erk
+end seed species
+
+begin observables
+Molecules Tot_Cyclin Cyclin(deg~n) MPF(cyclin,cdk~1P) MPF(cyclin,cdk~2P) 
+Molecules Cyclin Cyclin(deg~n)
+Molecules Wee1P Wee1(c~P) 
+Molecules Wee1U Wee1(c~U)
+Molecules Cdc25P Cdc25(c~P)
+Molecules Cdc25U Cdc25(c~U)
+Molecules IEP IE(c~P)
+Molecules IEU IE(c~U)
+Molecules APCon APC(c~ON)
+Molecules APCoff APC(c~OFF)
+Molecules MPF MPF(cyclin,cdk~1P)
+Molecules preMPF MPF(cyclin,cdk~2P)
+Molecules PPase PPase()
+Molecules Act_Erk Erk()
+Molecules DRG_tot DRG()
+Molecules ERG_tot ERG()
+end observables
+
+begin functions
+	#eps()=(Act_Erk + 5)/(Act_Erk+DRG_tot+ERG_tot)
+	#ergerksnththing() = k15/(1+((DRG_tot/J15)^2))
+	#ergerksnth() = eps()*ergerksnththing()
+	#drgergsnth() = eps()*kp17
+	#drgdrgsnththing() = kp17*(DRG_tot/(J17^2))/(1+((DRG_tot/J17)^2))
+	#drgdrgsnth() = eps()*drgdrgsnththing()
+	#cycdrgsnth() = eps()*k9
+
+	ergerksnth() = if(Act_Erk == 0, 0, (k15/(1+((DRG_tot/J15)^2)))*((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot)) )
+	drgergsnth() = if(Act_Erk == 0, 0, ((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot))*kp17 )
+	drgdrgsnth() = if(Act_Erk == 0, 0, (k17*(DRG_tot/(J17^2))/(1+((DRG_tot/J17)^2)))*((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot)) )
+	cycdrgsnth() = if(Act_Erk == 0, 0, ((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot))*k9 )
+	
+	Sat1() = (ka)/((Ka+Cdc25U))
+	Sat2() = (kb)/((Kb+Cdc25P))
+	Sat3() = (ke)/((Ke+Wee1U))
+	Sat4() = (kf)/((Kf+Wee1P))
+	Sat5() = (kg)/((Kg+IEU))
+	Sat6() = (kh)/((Kh+IEP))
+	Sat7() = (kc)/((Kc+APCoff))
+	Sat8() = (kd)/((Kd+APCon))
+end functions
+
+begin reaction rules
+RuleAG: I() -> I() + Erk() k1
+RuleAD: Erk() -> Trash() (.5*(NA*hnano*Vcell)*0.0001)
+#A Rules come from Novak/Tyson 2004 and involve Early Response/delayed response genes
+RuleA0: Erk() -> Erk() + ERG() ergerksnth()
+RuleA1: ERG() -> ERG() + DRG() drgergsnth()
+RuleA2: DRG() -> DRG() + DRG() drgdrgsnth()
+RuleA3: ERG() -> Trash() k16
+RuleA4: DRG() -> Trash() k18
+#B Rules connect Early Response genes to Cyclins:
+RuleB0: DRG() -> DRG() + Cyclin(deg~n) cycdrgsnth()
+#Rule0: I()->I()+Cyclin(deg~n) k1 #<-------------This rule generates Cyclin. We dont need it now.
+Rule1: Cyclin(deg~n)+APC(c~OFF)->Cyclin(deg~y)+APC(c~OFF) V21 
+Rule2: Cyclin(deg~n)+APC(c~ON)->Cyclin(deg~y)+APC(c~ON) V22 
+Rule3: Cyclin(deg~n)+Cdk()->MPF(cyclin,cdk~1P) k3 
+Rule4: MPF(cyclin,cdk~?)+APC(c~OFF)->Cyclin(deg~y)+APC(c~OFF)+Cdk() V21 
+Rule5: MPF(cyclin,cdk~?)+APC(c~ON)->Cyclin(deg~y)+APC(c~ON)+Cdk() V22 
+Rule6: MPF(cyclin,cdk~1P)+Wee1(c~P)->MPF(cyclin,cdk~2P)+Wee1(c~P) Vwee1 
+Rule7: MPF(cyclin,cdk~1P)+Wee1(c~U)->MPF(cyclin,cdk~2P)+Wee1(c~U) Vwee2 
+Rule8: MPF(cyclin,cdk~2P)+Cdc25(c~P)->MPF(cyclin,cdk~1P)+Cdc25(c~P) V252 
+Rule9: MPF(cyclin,cdk~2P)+Cdc25(c~U)->MPF(cyclin,cdk~1P)+Cdc25(c~U) V251 
+Rule10: Cdc25(c~U)+MPF(cyclin,cdk~1P)->Cdc25(c~P)+MPF(cyclin,cdk~1P) Sat1()
+Rule11: Cdc25(c~P)+PPase()->Cdc25(c~U)+PPase() Sat2() 
+Rule12: Wee1(c~U)+MPF(cyclin,cdk~1P)->Wee1(c~P)+MPF(cyclin,cdk~1P) Sat3() 
+Rule13: Wee1(c~P)+PPase()->Wee1(c~U)+PPase() Sat4() 
+Rule14: IE(c~U)+MPF(cyclin,cdk~1P)->IE(c~P)+MPF(cyclin,cdk~1P) Sat5() 
+Rule15: IE(c~P)+PPase()->IE(c~U)+PPase() Sat6() 
+Rule16: APC(c~OFF)+IE(c~P)->APC(c~ON)+IE(c~P) Sat7() 
+Rule17: APC(c~ON)+PPase()->APC(c~OFF)+PPase() Sat8() 
+end reaction rules
+
+generate_network({overwrite=>1});
+#writeMfile({atol=>1e-4,t_start=>0,t_end=>400,n_steps=>200,sparse=>1});
+#simulate_ode({t_end=>500,n_steps=>250,atol=>1e-12,rtol=>1e-12,verbose=>1});
+#simulate_nf({suffix=>nf,t_end=>400,n_steps=>200, param=> "-gml 1000000000"});
+simulate_pla({t_end=>500,n_steps=>250,verbose=>1,pla_config=>"fEuler|sb|pre:neg|0.03,3,100,0.5,0.8,10,0.75"});
+#simulate_ssa({t_end=>500,n_steps=>250,verbose=>1});
+# The SSA gives correct results; takes 118.3 seconds to simulate
+# The PLA takes 2.2 seconds but gives the wrong result. [different from both ODE & SSA]
+# The ODE takes .8 seconds; gives 'correct' results.
