@@ -13,11 +13,11 @@ set(SUB_DIRS
     src/model/rateExpressions 
     src/model/reactions 
     src/pla/base 
+    src/pla/eRungeKutta 
     src/pla/fEuler 
     src/pla/util 
-    src/pla/eRungeKutta 
-    src/pla/midpoint 
-    src/pla/eRungeKutta/core 
+    src/pla/eRungeKutta/base
+    src/pla/eRungeKutta/util 
     src/util/MTrand 
     src/util/rand2
 )
@@ -32,11 +32,11 @@ aux_source_directory(src/util src_util_files)
 aux_source_directory(src/model/rateExpressions rexp_files)
 aux_source_directory(src/model/reactions rxn_files)
 aux_source_directory(src/pla/base pla_base_files)
+aux_source_directory(src/pla/eRungeKutta eRK_files)
 aux_source_directory(src/pla/fEuler fEuler_files)
 aux_source_directory(src/pla/util pla_util_files)
-aux_source_directory(src/pla/eRungeKutta eRK_files)
-aux_source_directory(src/pla/midpoint midpt_files)
-aux_source_directory(src/pla/eRungeKutta/core eRK_core_files)
+aux_source_directory(src/pla/eRungeKutta/base eRK_base_files)
+aux_source_directory(src/pla/eRungeKutta/util eRK_util_files)
 aux_source_directory(src/util/MTrand mtrand_files)
 aux_source_directory(src/util/rand2 rand2_files)
 
@@ -50,11 +50,11 @@ set(SRC_FILES
     ${rexp_files} 
     ${rxn_files} 
     ${pla_base_files} 
+    ${eRK_files} 
     ${fEuler_files} 
     ${pla_util_files} 
-    ${eRK_files} 
-    ${midpt_files} 
-    ${eRK_core_files} 
+    ${eRK_base_files} 
+    ${eRK_util_files} 
     ${mtrand_files} 
     ${rand2_files}
 )

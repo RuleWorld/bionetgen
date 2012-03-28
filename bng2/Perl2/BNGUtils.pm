@@ -86,7 +86,7 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
         {   # find BNG root directory
             BNGroot();
         }
-        
+
         # Get BioNetGen version number
         unless (defined $BNG_VERSION)
         {
@@ -96,9 +96,10 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
                 # get first line of file
                 my $version_string = <$fh>;
 	            close $fh;
-
+	            
                 # extract version number
-	            $version_string =~ s/^(\d+\.\d+\.\d+)\s+//;
+   				$version_string =~ s/^\s*(\d+\.\d+\.\d+)\s*//;
+	            
                 $BNG_VERSION = $1;
                 unless ( defined $BNG_VERSION )
                 {   $BNG_VERSION = DEFAULT_VERSION;   }

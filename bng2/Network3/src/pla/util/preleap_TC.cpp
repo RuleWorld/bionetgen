@@ -12,7 +12,7 @@ Preleap_TC::Preleap_TC(double eps) : eps(eps){
 		cout << "Preleap_TC constructor called." << endl;
 }
 
-Preleap_TC::Preleap_TC(const Preleap_TC& tc) : TauCalculator(tc), eps(tc.eps){
+Preleap_TC::Preleap_TC(const Preleap_TC& ptc) : TauCalculator(ptc), eps(ptc.eps){
 	if (debug)
 		cout << "Preleap_TC copy constructor called." << endl;
 }

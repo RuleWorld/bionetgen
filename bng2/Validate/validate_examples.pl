@@ -12,9 +12,12 @@
 # A log file named MODEL.log is created for each validation model. If a test
 #  fails, check the log file for more details.
 #
+# Validation on WINDOWS:
+#  1)  set $perlbin variable to Perl executable
+#  2)  set $diffbin variable to "diff" executable, if available
 #
 # What's New?
-#   8sep2011: validation of equillibrium distribution for SSA models. --Justin
+#   8sep2011: validation of equilibrium distribution for SSA models. --Justin
 #
 #
 # More Details:
@@ -27,8 +30,8 @@
 #   MODEL.xml             : MODEL.xml              : XML specification
 #   MODEL.gdat            : MODEL.gdat             : ODE observables trajectory
 #   MODEL.cdat            : MODEL.cdat             : ODE species trajectory
-#   MODEL_ssa_equil.gdat  : MODEL_ssa_equil.stats  : SSA equillibrium samples   
-#   MODEL_nf_equil.gdat   : MODEL_nf_equil.stats   : NFsim equillibrium samples
+#   MODEL_ssa_equil.gdat  : MODEL_ssa_equil.stats  : SSA equilibrium samples   
+#   MODEL_nf_equil.gdat   : MODEL_nf_equil.stats   : NFsim equilibrium samples
 #
 #
 # To add new validation MODEL:
@@ -39,9 +42,9 @@
 #
 #  ** for most validations, the reference file shares the same format and name as the
 #    output file.  However, special reference files are required for validating
-#    stochastic equillibrium samples. These reference files have a .stat extension and
-#    describe a binned equillibrium distribution of a model observable.
-#    See $datdir/gene_expr_ssa_equil.stats for an example. Equillibrium samples
+#    stochastic equilibrium samples. These reference files have a .stat extension and
+#    describe a binned equilibrium distribution of a model observable.
+#    See $datdir/gene_expr_ssa_equil.stats for an example. Equilibrium samples
 #    are compared to the reference distribution by a Chi-square goodness of fit test.
 #    The stats file defines the obsevable of interest, bin widths and probabilities,
 #    and the Chi-square values corresponding to various significance levels.
@@ -53,7 +56,7 @@
 # NOTE: make sure BNG knows where to find NFsim, otherwise NFsim validation will fail!
 
 # TODO: Add validations for the following
-#   non-equillibrium stochastic validation (multirun validation)
+#   non-equilibrium stochastic validation (multirun validation)
 #   Syntax errors
 #   Canonical labeling
 #   On-the-fly simulation
@@ -80,7 +83,8 @@ my $bngpath;
         my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
         my @dirs = File::Spec->splitdir( $directories );
         pop @dirs;  # go down one directory level
-        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ) ); 
+#        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ) ); 
+        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ), "" ); 
     }
 }
 # directory containing validation reference files
@@ -166,7 +170,7 @@ else
 
 # check that we can find the BNG2.pl executable script!
 my $bngexec = File::Spec->catfile( $bngpath, "BNG2.pl" );
-unless ( -x $bngexec )
+unless ( -e $bngexec )
 {
     print "ERROR: $0 cannot find BNG2.pl script!!\n";
     print "Aborting validation.\n";
@@ -175,7 +179,7 @@ unless ( -x $bngexec )
 # check that we can find ODE trajectory verification script
 my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 {
-    unless ( -x $verifyexec )
+    unless ( -e $verifyexec )
     {
         print "ERROR: $0 cannot find Verify script!!\n";
         print "Aborting validation.\n";
@@ -411,16 +415,16 @@ foreach my $model (@models)
         print "passed.\n";
     }
 
-    # check SSA equillibrium distribution (observables)
+    # check SSA equilibrium distribution (observables)
     {
         my $datfile  = "${outprefix}_ssa_equil.gdat";
         my $statfile = "${datprefix}_ssa_equil.stats";
         if ( -e $datfile  and  -e $statfile )
         {
-            print $INDENT . "Comparing SSA equillibrium distributions.. ";
+            print $INDENT . "Comparing SSA equilibrium distributions.. ";
             
             # validate data
-            my $err = validate_equillibrium_data( $datfile, $statfile, $pvalue );
+            my $err = validate_equilibrium_data( $datfile, $statfile, $pvalue );
             if ( defined $err )
             {
                 print "FAILED!!\n";
@@ -433,17 +437,17 @@ foreach my $model (@models)
         }
     }
 
-    # check NFsim equillibrium distribution (observables)
+    # check NFsim equilibrium distribution (observables)
     if ($check_nfsim)
     {
         my $datfile  = "${outprefix}_nf_equil.gdat";
         my $statfile = "${datprefix}_nf_equil.stats";
         if ( -e $datfile  and  -e $statfile )
         {
-            print $INDENT . "Comparing NFsim equillibrium distributions.. ";
+            print $INDENT . "Comparing NFsim equilibrium distributions.. ";
             
             # validate data
-            my $err = validate_equillibrium_data( $datfile, $statfile, $pvalue );
+            my $err = validate_equilibrium_data( $datfile, $statfile, $pvalue );
             if ( defined $err )
             {
                 print "FAILED!!\n";
@@ -596,8 +600,8 @@ sub read_stats
 
 
 
-# validate stochastic equillibrium distribution
-sub validate_equillibrium_data
+# validate stochastic equilibrium distribution
+sub validate_equilibrium_data
 {
     my $datfile  = shift;   # file containing sample data
     my $statfile = shift;   # file containing true distribution stats

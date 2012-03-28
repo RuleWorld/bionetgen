@@ -8,11 +8,11 @@
 #ifndef FEULER_HH_
 #define FEULER_HH_
 
+#include "../../util/util.hh"
 #include "../base/firingGenerator.hh"
 #include "../base/rxnClassifier.hh"
 #include "../base/postleapChecker.hh"
 #include "../base/tauCalculator.hh"
-#include "../util/binomialCorrector_PL.hh"
 #include "../util/g_Getter.hh"
 #include "../util/preleap_TC.hh"
 
@@ -28,7 +28,7 @@ namespace network3{
 		void setRounding(bool round){ this->round = round; }
 		double fireRxn(unsigned int u, int classif, double tau);
 		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau);
-		virtual FiringGenerator* clone() const{ return new fEuler_FG(*this); }
+//		virtual FiringGenerator* clone() const{ return new fEuler_FG(*this); }
 	protected:
 		bool round;
 	private:
@@ -42,7 +42,7 @@ namespace network3{
 		fEuler_RC(const fEuler_RC& tc);
 		virtual ~fEuler_RC();
 		virtual void classifyRxns(vector<int>& classif, double tau, bool initial);
-		virtual RxnClassifier* clone() const{ return new fEuler_RC(*this); }
+//		virtual RxnClassifier* clone() const{ return new fEuler_RC(*this); }
 	protected:
 		double approx1;
 		double gg1;
@@ -50,7 +50,7 @@ namespace network3{
 		vector<Reaction*>& rxn;
 	};
 
-	class fEulerRB_PL : public BinomialCorrector_PL{
+	class fEulerRB_PL : public PostleapChecker{ //: public BinomialCorrector_PL{
 	public:
 	//	fEulerRB_PL();
 		fEulerRB_PL(double eps, double p, vector<Reaction*>& rxn);
@@ -59,7 +59,7 @@ namespace network3{
 		bool wCheck(double w);
 		virtual bool check(){ return this->wCheck(1.0); }
 		virtual void update();
-		virtual PostleapChecker* clone() const{ return new fEulerRB_PL(*this); }
+//		virtual PostleapChecker* clone() const{ return new fEulerRB_PL(*this); }
 	protected:
 		double eps;
 		vector<double>  oldRate;
@@ -68,7 +68,7 @@ namespace network3{
 		vector<Reaction*>& rxn;
 	};
 
-	class fEulerSB_PL : public BinomialCorrector_PL{
+	class fEulerSB_PL : public PostleapChecker{ //: public BinomialCorrector_PL{
 	public:
 	//	fEulerSB_PL();
 		fEulerSB_PL(double eps, double p, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
@@ -77,7 +77,7 @@ namespace network3{
 		bool wCheck(double w);
 		virtual bool check(){ return this->wCheck(1.0); }
 		virtual void update();
-		virtual PostleapChecker* clone() const{ return new fEulerSB_PL(*this); }
+//		virtual PostleapChecker* clone() const{ return new fEulerSB_PL(*this); }
 	protected:
 		double eps;
 		g_Getter* gGet;
@@ -124,7 +124,7 @@ namespace network3{
 		fEulerPreleapRB_TC(const fEulerPreleapRB_TC& tc);
 		virtual ~fEulerPreleapRB_TC();
 		virtual void getNewTau(double& tau);
-		virtual TauCalculator* clone() const{ return new fEulerPreleapRB_TC(*this); }
+		virtual Preleap_TC* clone() const{ return new fEulerPreleapRB_TC(*this); }
 	private:
 		vector<Reaction*>& rxn;
 	};
@@ -136,7 +136,7 @@ namespace network3{
 		fEulerPreleapSB_TC(const fEulerPreleapSB_TC& tc);
 		virtual ~fEulerPreleapSB_TC();
 		virtual void getNewTau(double& tau);
-		virtual TauCalculator* clone() const{ return new fEulerPreleapSB_TC(*this); }
+		virtual Preleap_TC* clone() const{ return new fEulerPreleapSB_TC(*this); }
 	protected:
 		g_Getter* gGet;
 	private:

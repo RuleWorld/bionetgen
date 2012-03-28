@@ -1,11 +1,11 @@
 /*
- * eRK_Base_RC.cpp
+ * eRK_RC.cpp
  *
  *  Created on: May 1, 2011
  *      Author: Leonard Harris
  */
 
-#include "eRK.hh"
+#include "eRK_RC.hh"
 
 eRK_RC::eRK_RC(double approx1, double gg1) : approx1(approx1), gg1(gg1){
 	if (debug)

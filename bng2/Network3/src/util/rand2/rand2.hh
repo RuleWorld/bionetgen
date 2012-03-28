@@ -13,7 +13,8 @@
 namespace Util{
 
 	double RANDOM_POISSON(double xm);
-	double RANDOM_BINOMIAL(double pp, int n);
+//	double RANDOM_BINOMIAL(double pp, int n);
+	double RANDOM_BINOMIAL(double pp, double n);
 
 }
 

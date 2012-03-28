@@ -290,7 +290,6 @@ void PLA::nextStep(){
 				this->pl.correct(this->k, this->tau);
 				this->fire_ES = false; // tau is reduced, so don't fire ES rxn anymore
 			}
-
 			// Now fire ES rxn if tau = tau_ES
 //			if (this->tau == tau_ES){
 			if (this->fire_ES){

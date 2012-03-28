@@ -2139,32 +2139,29 @@ sub generate_network
 
 
 
+# given a generic program name, returns the specific executable binary.
+#  returns empty string if binary can't be found
 sub findExec
 {
 	use Config;
 	my $prog = shift @_;
 
-	my $exec = BNGpath( "bin", $prog );
-
-	# First look for generic binary in BNGpath
-	if ( -x $exec )
-    {   return ($exec);   }
-
-	my $arch = $Config{myarchname};
-
+	my $base = BNGpath( "bin", $prog );
 	# Currently recognized values of $arch are
 	# i686-linux, ppc-darwin, MSWin32
+	my $arch = $Config{myarchname};
+
+    my $exec = $base;
+    if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
+    
+	# First look for generic binary in BNGpath
+	if (-x $exec) { return $exec; }
 
 	# Then look for os specific binary
-	$exec .= "_${arch}";
+	$exec = "${base}_${arch}";
+	if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
 
-	if ( $arch =~ /MSWin32/ )
-    {   $exec .= ".exe";   }
-
-	if ( -x $exec )
-    {
-		return ($exec);
-	}
+	if (-x $exec) { return $exec; }
 	else
     {
 		print "findExec: $exec not found.\n";

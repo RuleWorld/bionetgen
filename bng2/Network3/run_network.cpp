@@ -24,11 +24,6 @@ extern "C" {
 #include <list>
 
 #include "src/network3.hh"
-#include "src/pla/PLA.hh"
-#include "src/model/reactions/bioNetGenRxn.hh"
-#include "src/model/observable.hh"
-#include "src/pla/fEuler/fEuler.hh"
-#include "src/pla/util/negPop_PL.hh"
 
 #ifndef RUN_NETWORK_VERSION
 #define RUN_NETWORK_VERSION 1.5
@@ -77,7 +72,7 @@ int main(int argc, char *argv[]){
     char *netfile_name, *network_name;
     char *group_input_file_name = NULL;
     char *save_file_name;
-    FILE *netfile, *conc_file, *group_file, *out, *flux_file, *species_stats_file;
+    FILE *netfile, *conc_file, *group_file, *func_file, *out, *flux_file, *species_stats_file;
     int line_number, n_read;
     Elt_array *species, *rates/*, *parameters*/;
     Group *spec_groups = NULL;
@@ -92,6 +87,7 @@ int main(int argc, char *argv[]){
     int seed = -1;
     int remove_zero = 1;
     int print_flux = 0, print_end_net = 0, print_net = 0, enable_species_stats = 0;
+    bool print_cdat = true, print_fdat = false;
     int gillespie_update_interval = 1;
     int verbose=0;
     int continuation=0;
@@ -107,7 +103,7 @@ int main(int argc, char *argv[]){
     //
     long maxSteps = LONG_MAX;
     long stepInterval = -1;
-    string pla_config = "fEuler|rb|tc:fg:pl|0.01,3,100,0.5"; // Default
+    string pla_config = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
 
     if (argc < 4) print_error();
 
@@ -218,6 +214,35 @@ int main(int argc, char *argv[]){
     		break;
     	case 'I':
     		stepInterval = std::atol(argv[iarg++]);
+    		break;
+    	case '-': // Process long options
+    		//
+//			cout << argv[iarg-1] << " ";
+			string long_opt(argv[iarg-1]);
+			long_opt = long_opt.substr(2);
+			//
+			// Output to .cdat
+			if (long_opt == "cdat"){
+//				cout << Util::convertToInt(argv[iarg]) << endl;
+				if (Util::convertToInt(argv[iarg]) <= 0){
+					print_cdat = false;
+//					cout << "Suppressing concentrations output." << endl;
+				}
+			}
+			// Output to .fdat
+			else if (long_opt == "fdat"){
+//				cout << Util::convertToInt(argv[iarg]) << endl;
+				if (Util::convertToInt(argv[iarg]) > 0){
+					print_fdat = true;
+//					cout << "Activating functions output." << endl;
+				}
+			}
+			else{
+//				cout << endl;
+				cout << "Sorry, don't recognize your long option " << argv[iarg-1] << ". Please try again." << endl;
+			}
+			iarg++;
+    		//
     		break;
     	}
     }
@@ -358,10 +383,17 @@ int main(int argc, char *argv[]){
 	}
 
 	/* Initialize reaction network */
-	init_network(reactions, rates, species, spec_groups, network_name, functions, variable_parameters, func_observ_depend,
-			func_param_depend, is_func_map_temp);
+	init_network(reactions, rates, species, spec_groups, network_name, functions, variable_parameters,
+			func_observ_depend, func_param_depend, is_func_map_temp);
 
-	// Initialize SSA
+	// Round species populations if propagator is SSA or PLA
+	if (propagator == SSA || propagator == PLA){
+		for (int i=0;i < network.species->n_elt;i++) {
+			network.species->elt[i]->val = floor(network.species->elt[i]->val + 0.5);
+		}
+	}
+
+	/* Initialize SSA */
 	if (propagator == SSA){
 		init_gillespie_direct_network(gillespie_update_interval, seed);
 	}
@@ -382,6 +414,14 @@ int main(int argc, char *argv[]){
 		}
 	}
 	fflush(stdout);
+
+	// Print info
+	if (!print_cdat){
+		cout << "Suppressing concentrations (.cdat) output" << endl;
+	}
+	if (print_fdat){
+		cout << "Activating functions (.fdat) output" << endl;
+	}
 
 	/* timing for initialization */
 	ptimes = t_elapsed();
@@ -408,6 +448,13 @@ int main(int argc, char *argv[]){
 	if (spec_groups){
 		group_file = init_print_group_concentrations_network(outpre, continuation);
 		if (!continuation) print_group_concentrations_network(group_file, t);
+	}
+
+	// Initialize and print initial function values
+	func_file = NULL;
+	if (network.functions.size() > 0 && print_fdat){
+		func_file = init_print_function_values_network(outpre, continuation);
+		if (!continuation) print_function_values_network(func_file, t);
 	}
 
 	/* Initialize and print species stats (if enabled) */
@@ -443,12 +490,11 @@ int main(int argc, char *argv[]){
 
 		// Initialize PLA
 		Network3::init_PLA(pla_config,verbose);
+		if (seed >= 0)	Network3::PLA_SIM->setSeed(seed);
 
 		// Run simulation
-//		double t_end = t_start + (double)n_sample*sample_time;
-		if (seed >= 0)	Network3::PLA_SIM->setSeed(seed);
 //		initTime = clock();
-		Network3::run_PLA(t_start,t_end,sample_time,maxSteps,stepInterval,outpre,verbose);
+		Network3::run_PLA(t_start,t_end,sample_time,maxSteps,stepInterval,outpre,print_cdat,verbose);
 //		cout << "PLA simulation took " << (clock()-initTime)/(double)CLOCKS_PER_SEC << " CPU seconds" << endl;
 
 		// Clean up
@@ -586,9 +632,13 @@ int main(int argc, char *argv[]){
 			} // End propagation
 
 			// Print current properties of the system
-			print_concentrations_network(conc_file, t);
+			if (print_cdat)
+				print_concentrations_network(conc_file, t);
 			if (spec_groups)
 				print_group_concentrations_network(group_file, t);
+			if (network.functions.size() > 0 && print_fdat){
+				print_function_values_network(func_file, t);
+			}
 		    if (enable_species_stats)
 			    print_species_stats(species_stats_file, t);
 			if (print_flux)
@@ -640,10 +690,16 @@ int main(int argc, char *argv[]){
 		} // end for 
 	} // end else
 
-	// Final prints
+	// Final print outs
+	if (!print_cdat && propagator != PLA){ // Even if .cdat printing is suppressed, print the last step
+		print_concentrations_network(conc_file, t);
+	}
 	finish_print_concentrations_network(conc_file);
 	if (spec_groups)
 		finish_print_group_concentrations_network(group_file);
+	if (network.functions.size() > 0 && print_fdat){
+		finish_print_function_values_network(func_file);
+	}
 	if (enable_species_stats)
 		finish_print_species_stats(species_stats_file);
 

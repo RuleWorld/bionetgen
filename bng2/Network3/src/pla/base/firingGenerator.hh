@@ -18,8 +18,8 @@ namespace network3{
 		FiringGenerator();
 		FiringGenerator(const FiringGenerator& fg);
 		virtual ~FiringGenerator();
-		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau);
-		virtual FiringGenerator* clone() const{ return new FiringGenerator(*this); }
+		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau) = 0;
+//		virtual FiringGenerator* clone() const{ return new FiringGenerator(*this); }
 	};
 }
 

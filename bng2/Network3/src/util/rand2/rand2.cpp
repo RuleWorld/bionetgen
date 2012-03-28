@@ -75,11 +75,13 @@ double Util::RANDOM_POISSON(double xm){
 
 // Returns as a floating-point number an integer value that is a random deviate drawn from a binomial distribution of n trials
 // each of probability pp, using ran1(idum) as a source of uniform random deviates.
-double Util::RANDOM_BINOMIAL(double pp, int n){
+//double Util::RANDOM_BINOMIAL(double pp, int n){
+double Util::RANDOM_BINOMIAL(double pp, double n){
 	double gammln(double xx);
 	//float ran1(long *idum);
 	int j;
-	static int nold=(-1);
+//	static int nold=(-1);
+	static double nold=(-1);
 	double am,em,g,angle,p,bnl,sq,t,y;
 	static double pold=(-1.0),pc,plog,pclog,en,oldg;
 	p=(pp <= 0.5 ? pp : 1.0-pp);
@@ -91,8 +93,9 @@ double Util::RANDOM_BINOMIAL(double pp, int n){
 		for (j=1;j<=n;j++)
 //			if (ran1(idum) < p) ++bnl;
 			if (Util::RANDOM_CLOSED() < p) ++bnl;
-	} else if (am < 1.0) { // If fewer than one event is expected out of 25 or more trials, then the distribution is quite
-						   // accurately Poisson. Use direct Poisson method.
+	}
+	else if (am < 1.0) { // If fewer than one event is expected out of 25 or more trials, then the
+						 // distribution is quite accurately Poisson. Use direct Poisson method.
 		g=exp(-am);
 		t=1.0;
 		for (j=0;j<=n;j++) {
@@ -101,18 +104,21 @@ double Util::RANDOM_BINOMIAL(double pp, int n){
 			if (t < g) break;
 		}
 		bnl=(j <= n ? j : n);
-	} else { // Use the rejection method.
+	}
+	else { // Use the rejection method.
 		if (n != nold) { // If n has changed, then compute useful quantities.
 			en=n;
 			oldg=gammln(en+1.0);
 			nold=n;
-		} if (p != pold) { // If p has changed, then compute useful quantities.
+		}
+		if (p != pold) { // If p has changed, then compute useful quantities.
 			pc=1.0-p;
 			plog=log(p);
 			pclog=log(pc);
 			pold=p;
 		}
-		sq=sqrt(2.0*am*pc); // The following code should by now seem familiar: rejection method with a Lorentzian comparison function.
+		sq=sqrt(2.0*am*pc); // The following code should by now seem familiar:
+							// Rejection method with a Lorentzian comparison function.
 		do {
 			do {
 //				angle=PI*ran1(idum);

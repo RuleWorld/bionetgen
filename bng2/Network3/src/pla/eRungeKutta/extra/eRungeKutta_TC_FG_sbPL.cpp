@@ -1,34 +1,35 @@
 /*
- * eRungeKuttaSB_TC_FG_PL.cpp
+ * eRungeKutta_TC_FG_sbPL.cpp
  *
  *  Created on: May 10, 2011
  *      Author: Leonard Harris
  */
 
-#include "eRungeKutta.hh"
+#include "eRungeKutta_EXTRA.hh"
 
-eRungeKuttaSB_TC_FG_PL::eRungeKuttaSB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
-		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc): eRungeKutta_FG(bt,sp,rxn),
-		BinomialCorrector_PL(p,rxn), pp(pp), q(q), w(w), preCalc(true), ptc(ptc), sp(sp){
+eRungeKutta_TC_FG_sbPL::eRungeKutta_TC_FG_sbPL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
+		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc): eRungeKutta_FG(bt,sp,rxn), p(p), pp(pp),
+		q(q), w(w), preCalc(true), ptc(ptc), sp(sp){
 	if (debug)
-		cout << "eRungeKuttaSB_TC_FG_PL constructor called." << endl;
+		cout << "eRungeKutta_TC_FG_sbPL constructor called." << endl;
 	// Error check
 	if (this->pp < this->p){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_sbPL constructor: ";
 		cout << "pp must be >= p; you have pp = " << this->pp << ", p = " << this->p << endl;
 		exit(1);
 	}
 	if (this->q < 1.0){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_sbPL constructor: ";
 		cout << "q must be >= 1.0; your q = " << this->q << endl;
 		exit(1);
 	}
 	if (this->w <= 0.0 || this->w >= 1.0){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_sbPL constructor: ";
 		cout << "w must be > 0.0 and < 1.0; your w = " << this->w << endl;
 		exit(1);
 	}
-	this->pl = new eRKsb_PL(eps,this->sp);
+	this->ch = new SBChecker(eps,this->sp);
+	this->bc = new BinomialCorrector_RK(p,rxn);
 	this->gGet = new g_Getter(this->sp,rxn);
 	// Add species
 	for (unsigned int j=0;j < this->sp.size();j++){
@@ -36,28 +37,29 @@ eRungeKuttaSB_TC_FG_PL::eRungeKuttaSB_TC_FG_PL(ButcherTableau bt, double eps, do
 	}
 }
 
-eRungeKuttaSB_TC_FG_PL::eRungeKuttaSB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
+eRungeKutta_TC_FG_sbPL::eRungeKutta_TC_FG_sbPL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
 		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round): eRungeKutta_FG(bt,sp,rxn,round),
-		BinomialCorrector_PL(p,rxn), pp(pp), q(q), w(w), preCalc(true), ptc(ptc), sp(sp){
+		p(p), pp(pp), q(q), w(w), preCalc(true), ptc(ptc), sp(sp){
 	if (debug)
-		cout << "eRungeKuttaSB_TC_FG_PL constructor called." << endl;
+		cout << "eRungeKutta_TC_FG_sbPL constructor called." << endl;
 	// Error check
 	if (this->pp < this->p){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_sbPL constructor: ";
 		cout << "pp must be >= p; you have pp = " << this->pp << ", p = " << this->p << endl;
 		exit(1);
 	}
 	if (this->q < 1.0){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_sbPL constructor: ";
 		cout << "q must be >= 1.0; your q = " << this->q << endl;
 		exit(1);
 	}
 	if (this->w <= 0.0 || this->w >= 1.0){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL constructor: ";
+		cout << "Error in eRungeKutta_TC_FG_sbPL constructor: ";
 		cout << "w must be > 0.0 and < 1.0; your w = " << this->w << endl;
 		exit(1);
 	}
-	this->pl = new eRKsb_PL(eps,this->sp);
+	this->ch = new SBChecker(eps,this->sp);
+	this->bc = new BinomialCorrector_RK(p,rxn);
 	this->gGet = new g_Getter(this->sp,rxn);
 	// Add species
 	for (unsigned int j=0;j < this->sp.size();j++){
@@ -65,12 +67,13 @@ eRungeKuttaSB_TC_FG_PL::eRungeKuttaSB_TC_FG_PL(ButcherTableau bt, double eps, do
 	}
 }
 
-eRungeKuttaSB_TC_FG_PL::eRungeKuttaSB_TC_FG_PL(const eRungeKuttaSB_TC_FG_PL& tc_fg_pl): eRungeKutta_FG(tc_fg_pl),
-		BinomialCorrector_PL(tc_fg_pl), pp(tc_fg_pl.pp), q(tc_fg_pl.q), w(tc_fg_pl.w), preCalc(true), ptc(tc_fg_pl.ptc),
+eRungeKutta_TC_FG_sbPL::eRungeKutta_TC_FG_sbPL(const eRungeKutta_TC_FG_sbPL& tc_fg_pl): eRungeKutta_FG(tc_fg_pl),
+		p(tc_fg_pl.p), pp(tc_fg_pl.pp), q(tc_fg_pl.q), w(tc_fg_pl.w), preCalc(true), ptc(tc_fg_pl.ptc),
 		sp(tc_fg_pl.sp){
 	if (debug)
-		cout << "eRungeKuttaSB_TC_FG_PL copy constructor called." << endl;
-	this->pl = new eRKsb_PL(*tc_fg_pl.pl);
+		cout << "eRungeKutta_TC_FG_sbPL copy constructor called." << endl;
+	this->ch = new SBChecker(*tc_fg_pl.ch);
+	this->bc = new BinomialCorrector_RK(*tc_fg_pl.bc);
 	this->gGet = new g_Getter(*tc_fg_pl.gGet);
 	// Add species
 	for (unsigned int j=0;j < this->sp.size();j++){
@@ -78,14 +81,15 @@ eRungeKuttaSB_TC_FG_PL::eRungeKuttaSB_TC_FG_PL(const eRungeKuttaSB_TC_FG_PL& tc_
 	}
 }
 
-eRungeKuttaSB_TC_FG_PL::~eRungeKuttaSB_TC_FG_PL(){
+eRungeKutta_TC_FG_sbPL::~eRungeKutta_TC_FG_sbPL(){
 	if (debug)
-		cout << "eRungeKuttaSB_TC_FG_PL destructor called." << endl;
-	delete this->pl;
+		cout << "eRungeKutta_TC_FG_sbPL destructor called." << endl;
+	delete this->ch;
+	delete this->bc;
 	delete this->gGet;
 }
 
-void eRungeKuttaSB_TC_FG_PL::getNewTau(double& tau){
+void eRungeKutta_TC_FG_sbPL::getNewTau(double& tau){
 	// Check for new species
 	while (this->oldPop.size() != this->sp.size() && this->old_g.size() != this->sp.size()
 			&& this->projPop.size() != this->sp.size()){
@@ -139,19 +143,19 @@ void eRungeKuttaSB_TC_FG_PL::getNewTau(double& tau){
 		}
 		// Check against current rates
 		vector<double>* curr_g = &this->old_g; // Since we haven't leapt yet, old_g[] is actually curr_g[]
-		ok = this->pl->check(1.0,this->aCalc->X_eff,this->projPop,*curr_g,false);
+		ok = this->ch->check(1.0,this->aCalc->X_eff,this->projPop,*curr_g,false);
 		if (!ok){
 			tau *= this->p; // Reduce
 		}
 	}
 }
 
-void eRungeKuttaSB_TC_FG_PL::fireRxns(vector<double>& k, vector<int>& classif, double tau){
+void eRungeKutta_TC_FG_sbPL::fireRxns(vector<double>& k, vector<int>& classif, double tau){
 	// a_eff[] elements have already been calculated in getNewTau()
 	this->fg->fireRxns(k,classif,tau,this->aCalc->a_eff);
 }
 
-bool eRungeKuttaSB_TC_FG_PL::check(){
+bool eRungeKutta_TC_FG_sbPL::check(){
 	// Check for new species
 	while (this->oldPop.size() != this->sp.size() && this->old_g.size() != this->sp.size()
 			&& this->projPop.size() != this->sp.size()){
@@ -159,20 +163,20 @@ bool eRungeKuttaSB_TC_FG_PL::check(){
 	}
 //	cout << "**Checking**" << endl;
 	bool ok;
-	this->substantially = this->pl->check(this->w,this->aCalc->X_eff,this->oldPop,this->old_g,true);
+	this->substantially = this->ch->check(this->w,this->aCalc->X_eff,this->oldPop,this->old_g,true);
 	if (this->substantially){
 		ok = true;
 //		cout << "**Substantially accepted**" << endl;
 	}
 	else{
-		ok = this->pl->check(1.0,this->aCalc->X_eff,this->oldPop,this->old_g,true);
+		ok = this->ch->check(1.0,this->aCalc->X_eff,this->oldPop,this->old_g,true);
 //		if (ok) cout << "**Barely accepted**" << endl;
 //		else cout << "**Rejected**" << endl;
 	}
 	return ok;
 }
 
-void eRungeKuttaSB_TC_FG_PL::update(){
+void eRungeKutta_TC_FG_sbPL::update(){
 	// Update oldPop[] and old_g[]
 	for (unsigned int j=0;j < this->oldPop.size();j++){
 		this->oldPop[j] = this->sp[j]->population;
@@ -180,23 +184,23 @@ void eRungeKuttaSB_TC_FG_PL::update(){
 	}
 	// Just in case
 	if (this->oldPop.size() != this->sp.size()){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL::update(): Sizes of 'oldPop' and 'sp' vectors not equal. Shouldn't happen. "
-			 << "Exiting." << endl;
+		cout << "Error in eRungeKutta_TC_FG_sbPL::update(): Sizes of 'oldPop' and 'sp' vectors not equal. "
+			 << "Shouldn't happen. Exiting." << endl;
 		exit(1);
 	}
 	if (this->old_g.size() != this->sp.size()){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL::update(): Sizes of 'old_g' and 'sp' vectors not equal. Shouldn't happen. "
-			 << "Exiting." << endl;
+		cout << "Error in eRungeKutta_TC_FG_sbPL::update(): Sizes of 'old_g' and 'sp' vectors not equal. "
+			 << "Shouldn't happen. Exiting." << endl;
 		exit(1);
 	}
 	if (this->projPop.size() != this->sp.size()){
-		cout << "Error in eRungeKuttaSB_TC_FG_PL::update(): Sizes of 'projPop' and 'sp' vectors not equal. Shouldn't happen. "
-			 << "Exiting." << endl;
+		cout << "Error in eRungeKutta_TC_FG_sbPL::update(): Sizes of 'projPop' and 'sp' vectors not equal. "
+			 << "Shouldn't happen. Exiting." << endl;
 		exit(1);
 	}
 }
 
-void eRungeKuttaSB_TC_FG_PL::addSpecies(){
+void eRungeKutta_TC_FG_sbPL::addSpecies(){
 	if (this->oldPop.size() < this->sp.size() && this->oldPop.size() == this->old_g.size()
 			&& this->oldPop.size() == this->projPop.size()){
 		unsigned int i = this->oldPop.size();
@@ -205,7 +209,7 @@ void eRungeKuttaSB_TC_FG_PL::addSpecies(){
 		this->projPop.push_back(0.0);
 	}
 	else{
-		cout << "Error in eRungeKuttaSB_TC_FG_PL::addSpecies(): No species to add (oldPop.size = " << this->oldPop.size()
+		cout << "Error in eRungeKutta_TC_FG_sbPL::addSpecies(): No species to add (oldPop.size = " << this->oldPop.size()
 			 << ", old_g.size = " << this->old_g.size() << ", projPop.size = " << this->projPop.size() << ", sp.size = "
 			 << this->sp.size() << "). Shouldn't happen. Exiting." << endl;
 		exit(1);

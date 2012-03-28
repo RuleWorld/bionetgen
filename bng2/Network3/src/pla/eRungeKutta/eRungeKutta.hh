@@ -8,205 +8,216 @@
 #ifndef ERUNGEKUTTA_HH_
 #define ERUNGEKUTTA_HH_
 
-#include "../base/firingGenerator.hh"
-#include "../base/rxnClassifier.hh"
-#include "../base/postleapChecker.hh"
-#include "../base/tauCalculator.hh"
-#include "../util/binomialCorrector_PL.hh"
-#include "../util/preleap_TC.hh"
-#include "../util/g_Getter.hh"
-#include "core/butcherTableau.hh"
-#include "core/aEff_Calculator.hh"
-#include "core/eRK.hh"
+#include "base/eRungeKutta_BASE.hh"
 
 namespace network3{
 
-	class eRungeKutta_FG : public FiringGenerator{
-	public:
-//		eRungeKutta_FG();
-		eRungeKutta_FG(ButcherTableau bt, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
-		eRungeKutta_FG(ButcherTableau bt, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
-		eRungeKutta_FG(const eRungeKutta_FG& fg);
-		virtual ~eRungeKutta_FG();
-		void setRounding(bool round){ this->fg->setRounding(round); }
-		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau);
-		virtual FiringGenerator* clone() const{ return new eRungeKutta_FG(*this); }
+	// Order of operations:
+	// 1. Calculate tau
+	// 2. Classify rxns
+	// 3. Fire rxns
+	// 4. Postleap check/correct
+
+	class eRungeKutta_preTC_RC_FG_negPL : public eRungeKutta_TC_RC_FG_PL{
+		public:
+//		eRungeKutta_preTC_RC_FG_negPL();
+		eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
+									  vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
+		eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
+									  vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
+		eRungeKutta_preTC_RC_FG_negPL(const eRungeKutta_preTC_RC_FG_negPL& tc_rc_fg_pl);
+		virtual ~eRungeKutta_preTC_RC_FG_negPL();
+		virtual void getNewTau(double& tau){
+			this->ptc->getNewTau(tau); // No preleap check
+			this->aCalc->calc_aEff(tau);
+		}
+		virtual bool check(){ return this->ch->check(); }
+		virtual void update(){ this->aCalc->update(); } // Overloaded
 	protected:
-		eRK_FG* fg;
-		aEff_Calculator* aCalc;
+		NegPopChecker* ch;
 	};
 
-	class eRungeKutta_RC_FG : public RxnClassifier, public eRungeKutta_FG{
+	class eRungeKutta_preTC_RC_FG_rbPL : public eRungeKutta_TC_RC_FG_rbPL{
 	public:
-//		eRungeKutta_RC_FG();
-		eRungeKutta_RC_FG(ButcherTableau bt, double approx1, double gg1, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
-		eRungeKutta_RC_FG(ButcherTableau bt, double approx1, double gg1, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn,
-						  bool round);
-		eRungeKutta_RC_FG(const eRungeKutta_RC_FG& rc_fg);
-		virtual ~eRungeKutta_RC_FG();
-		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau);
-		virtual void classifyRxns(vector<int>& classif, double tau, bool initial);
-	protected:
-		eRK_RC* rc;
-	};
-
-	class eRungeKuttaRB_FG_PL : public eRungeKutta_FG, public BinomialCorrector_PL{
-	public:
-//		eRungeKuttaRB_FG_PL();
-		eRungeKuttaRB_FG_PL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
-		eRungeKuttaRB_FG_PL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn,
-							bool round);
-		eRungeKuttaRB_FG_PL(const eRungeKuttaRB_FG_PL& fg_pl);
-		virtual ~eRungeKuttaRB_FG_PL();
-		virtual bool check();
-		virtual void update();
-	protected:
-		eRKrb_PL* pl;
-		vector<double*> oldPop;
-		void addRxn();
-	private:
-		vector<Reaction*>& rxn;
-	};
-
-	class eRungeKuttaSB_FG_PL : public eRungeKutta_FG, public BinomialCorrector_PL{
-	public:
-//		eRungeKuttaSB_FG_PL();
-		eRungeKuttaSB_FG_PL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
-		eRungeKuttaSB_FG_PL(ButcherTableau bt, double eps, double p, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn,
-							bool round);
-		eRungeKuttaSB_FG_PL(const eRungeKuttaSB_FG_PL& fg_pl);
-		virtual ~eRungeKuttaSB_FG_PL();
-		virtual bool check();
-		virtual void update();
-	protected:
-		eRKsb_PL* pl;
-		g_Getter* gGet;
-		vector<double> oldPop;
-		vector<double> old_g;
-		void addSpecies();
-	private:
-		vector<SimpleSpecies*>& sp;
-	};
-
-	class eRungeKuttaRB_RC_FG_PL : public eRungeKutta_RC_FG, public BinomialCorrector_PL{
-	public:
-//		eRungeKuttaRB_RC_FG_PL();
-		eRungeKuttaRB_RC_FG_PL(ButcherTableau bt, double eps, double p, double approx1, double gg1, vector<SimpleSpecies*>& sp,
-							   vector<Reaction*>& rxn);
-		eRungeKuttaRB_RC_FG_PL(ButcherTableau bt, double eps, double p, double approx1, double gg1, vector<SimpleSpecies*>& sp,
-							   vector<Reaction*>& rxn, bool round);
-		eRungeKuttaRB_RC_FG_PL(const eRungeKuttaRB_RC_FG_PL& rc_fg_pl);
-		virtual ~eRungeKuttaRB_RC_FG_PL();
-		virtual bool check();
-		virtual void update();
-	protected:
-		eRKrb_PL* pl;
-		vector<double*> oldPop;
-		void addRxn();
-	private:
-		vector<Reaction*>& rxn;
-	};
-
-	class eRungeKuttaSB_RC_FG_PL : public eRungeKutta_RC_FG, public BinomialCorrector_PL{
-	public:
-//		eRungeKuttaSB_RC_FG_PL();
-		eRungeKuttaSB_RC_FG_PL(ButcherTableau bt, double eps, double p, double approx1, double gg1, vector<SimpleSpecies*>& sp,
-							   vector<Reaction*>& rxn);
-		eRungeKuttaSB_RC_FG_PL(ButcherTableau bt, double eps, double p, double approx1, double gg1, vector<SimpleSpecies*>& sp,
-							   vector<Reaction*>& rxn, bool round);
-		eRungeKuttaSB_RC_FG_PL(const eRungeKuttaSB_RC_FG_PL& rc_fg_pl);
-		virtual ~eRungeKuttaSB_RC_FG_PL();
-		virtual bool check();
-		virtual void update();
-	protected:
-		eRKsb_PL* pl;
-		g_Getter* gGet;
-		vector<double> oldPop;
-		vector<double> old_g;
-		void addSpecies();
-	private:
-		vector<SimpleSpecies*>& sp;
-	};
-
-	class eRungeKuttaRB_TC_FG_PL : public TauCalculator, public eRungeKutta_FG, public BinomialCorrector_PL{
-	public:
-//		eRungeKuttaRB_TC_FG_PL();
-		eRungeKuttaRB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
-							   vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc);
-		eRungeKuttaRB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
-							   vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round);
-		eRungeKuttaRB_TC_FG_PL(const eRungeKuttaRB_TC_FG_PL& tc_fg_pl);
-		virtual ~eRungeKuttaRB_TC_FG_PL();
+//		eRungeKutta_preTC_RC_FG_rbPL();
+		eRungeKutta_preTC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
+									 vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
+		eRungeKutta_preTC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
+							  	     vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
+		eRungeKutta_preTC_RC_FG_rbPL(const eRungeKutta_preTC_RC_FG_rbPL& tc_rc_fg_pl);
+		virtual ~eRungeKutta_preTC_RC_FG_rbPL();
+		//
 		virtual void getNewTau(double& tau);
-		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau);
+		virtual bool check(){ return this->ch->check(1.0,this->aCalc->a_eff,this->oldPop,true); }
+	};
+
+	class eRungeKutta_preTC_RC_FG_sbPL : public eRungeKutta_TC_RC_FG_sbPL{
+	public:
+//		eRungeKutta_preTC_RC_FG_sbPL();
+		eRungeKutta_preTC_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
+									 vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
+		eRungeKutta_preTC_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
+							  	     vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
+		eRungeKutta_preTC_RC_FG_sbPL(const eRungeKutta_preTC_RC_FG_sbPL& tc_rc_fg_pl);
+		virtual ~eRungeKutta_preTC_RC_FG_sbPL();
+		//
+		virtual void getNewTau(double& tau);
+		virtual bool check(){ return this->ch->check(1.0,this->aCalc->X_eff,this->oldPop,this->old_g,true); }
+	};
+
+	class eRungeKutta_postTC_RC_FG_rbPL : public eRungeKutta_TC_RC_FG_rbPL{
+	public:
+//		eRungeKutta_postTC_RC_FG_rbPL();
+		eRungeKutta_postTC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp,
+									  double q, double w, Preleap_TC* ptc, vector<SimpleSpecies*>& sp,
+									  vector<Reaction*>& rxn);
+		eRungeKutta_postTC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp,
+									  double q, double w, Preleap_TC* ptc, vector<SimpleSpecies*>& sp,
+									  vector<Reaction*>& rxn, bool round);
+		eRungeKutta_postTC_RC_FG_rbPL(const eRungeKutta_postTC_RC_FG_rbPL& tc_rc_fg_pl);
+		~eRungeKutta_postTC_RC_FG_rbPL();
+		virtual void getNewTau(double& tau);
 		virtual bool check();
-		virtual void update();
 	protected:
-		eRKrb_PL* pl;
+		bool preCalc;
+		double pp, q, w;  // p < pp < 1, q > 1, 0 < w < 1
+		bool substantially; // TRUE: substantially accepted (tau *= q); FALSE: barely accepted (tau *= pp)
+	};
+
+	class eRungeKutta_postTC_RC_FG_sbPL : public eRungeKutta_TC_RC_FG_sbPL{
+	public:
+//		eRungeKutta_postTC_RC_FG_sbPL();
+		eRungeKutta_postTC_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp,
+									  double q, double w, Preleap_TC* ptc, vector<SimpleSpecies*>& sp,
+									  vector<Reaction*>& rxn);
+		eRungeKutta_postTC_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp,
+									  double q, double w, Preleap_TC* ptc, vector<SimpleSpecies*>& sp,
+									  vector<Reaction*>& rxn, bool round);
+		eRungeKutta_postTC_RC_FG_sbPL(const eRungeKutta_postTC_RC_FG_sbPL& tc_rc_fg_pl);
+		~eRungeKutta_postTC_RC_FG_sbPL();
+		virtual void getNewTau(double& tau);
+		virtual bool check();
+	protected:
+		bool preCalc;
+		double pp, q, w;  // p < pp < 1, q > 1, 0 < w < 1
+		bool substantially; // TRUE: substantially accepted (tau *= q); FALSE: barely accepted (tau *= pp)
+	};
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+	class eRungeKutta_RC_FG_negPL : public eRungeKutta_RC_FG_PL{
+	public:
+//		eRungeKutta_RC_FG_negPL();
+		eRungeKutta_RC_FG_negPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+				vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
+		eRungeKutta_RC_FG_negPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+				vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
+		eRungeKutta_RC_FG_negPL(const eRungeKutta_RC_FG_negPL& rc_fg_pl);
+		virtual ~eRungeKutta_RC_FG_negPL();
+		virtual bool check(){
+			// a_eff[] elements already calculated in classifyRxns()
+			return this->ch->check();
+		}
+		virtual void update(){ this->aCalc->update(); } // Overloaded
+	protected:
+		NegPopChecker* ch;
+	};
+
+	class eRungeKutta_RC_FG_rbPL : public eRungeKutta_RC_FG_PL{
+	public:
+//		eRungeKutta_RC_FG_rbPL();
+		eRungeKutta_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+				vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
+		eRungeKutta_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+				vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
+		eRungeKutta_RC_FG_rbPL(const eRungeKutta_RC_FG_rbPL& rc_fg_pl);
+		virtual ~eRungeKutta_RC_FG_rbPL();
+		virtual bool check();
+		virtual void update(); // Overloaded
+	protected:
+		RBChecker* ch;
 		vector<double*> oldPop;
+		void addRxn();
+	private:
+		vector<Reaction*>& rxn;
+	};
+
+	class eRungeKutta_RC_FG_sbPL : public eRungeKutta_RC_FG_PL{
+	public:
+//		eRungeKutta_RC_FG_sbPL();
+		eRungeKutta_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+				vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
+		eRungeKutta_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+				vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
+		eRungeKutta_RC_FG_sbPL(const eRungeKutta_RC_FG_sbPL& rc_fg_pl);
+		virtual ~eRungeKutta_RC_FG_sbPL();
+		virtual bool check();
+		virtual void update(); // Overloaded
+	protected:
+		SBChecker* ch;
+		g_Getter* gGet;
+		vector<double> oldPop;
+		vector<double> old_g;
+		void addSpecies();
+	private:
+		vector<SimpleSpecies*>& sp;
+	};
+
+	class eRungeKutta_TC_RC_FG_rbPL : public TauCalculator, public eRungeKutta_RC_FG_rbPL{
+	public:
+//		eRungeKutta_TC_RC_FG_rbPL();
+		eRungeKutta_TC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
+				double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc);
+		eRungeKutta_TC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
+				double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round);
+		eRungeKutta_TC_RC_FG_rbPL(const eRungeKutta_TC_RC_FG_rbPL& tc_rc_fg_pl);
+		~eRungeKutta_TC_RC_FG_rbPL();
+		virtual void getNewTau(double& tau);
+		virtual void classifyRxns(vector<int>& classif, double tau, bool initial){ // Overloaded
+			// a_eff[] elements calculated in getNewTau()
+			this->rc->classifyRxns(classif,tau,initial,this->aCalc->a_eff);
+		}
+		virtual bool check(); // Overloaded
+		virtual void update(); // Overloaded
+	protected:
+		Preleap_TC& ptc;
+		bool preCalc;
+		double p, pp, q, w;  // p < pp < 1, q > 1, 0 < w < 1
+		bool substantially; // TRUE: substantially accepted (tau *= pp); FALSE: barely accepted (tau *= q)
 		vector<double*> projPop; // Projected species populations: For pre-checking
-		double pp, q, w;  // p < pp < 1, q > 1, 0 < w < 1
-		bool substantially; // TRUE: substantially accepted (tau *= pp); FALSE: barely accepted (tau *= q)
-		bool preCalc;
-		Preleap_TC& ptc;
 		void addRxn();
 	private:
 		vector<Reaction*>& rxn;
 	};
 
-	class eRungeKuttaSB_TC_FG_PL : public TauCalculator, public eRungeKutta_FG, public BinomialCorrector_PL{
+	class eRungeKutta_TC_RC_FG_sbPL : public TauCalculator, public eRungeKutta_RC_FG_sbPL{
 	public:
-//		eRungeKuttaSB_TC_FG_PL();
-		eRungeKuttaSB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
-							   vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc);
-		eRungeKuttaSB_TC_FG_PL(ButcherTableau bt, double eps, double p, double pp, double q, double w,
-							   vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round);
-		eRungeKuttaSB_TC_FG_PL(const eRungeKuttaSB_TC_FG_PL& tc_fg_pl);
-		virtual ~eRungeKuttaSB_TC_FG_PL();
+//		eRungeKutta_TC_RC_FG_sbPL();
+		eRungeKutta_TC_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
+				double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc);
+		eRungeKutta_TC_RC_FG_sbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
+				double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round);
+		eRungeKutta_TC_RC_FG_sbPL(const eRungeKutta_TC_RC_FG_sbPL& tc_rc_fg_pl);
+		~eRungeKutta_TC_RC_FG_sbPL();
 		virtual void getNewTau(double& tau);
-		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau);
-		virtual bool check();
-		virtual void update();
+		virtual void classifyRxns(vector<int>& classif, double tau, bool initial){ // overloaded
+			// a_eff[] elements calculated in getNewTau()
+			this->rc->classifyRxns(classif,tau,initial,this->aCalc->a_eff);
+		}
+		virtual bool check(); // Overloaded
+		virtual void update(); // Overloaded
 	protected:
-		eRKsb_PL* pl;
-		g_Getter* gGet;
-		vector<double> oldPop;
-		vector<double> projPop;
-		vector<double> old_g;
-		double pp, q, w;  // p < pp < 1, q > 1, 0 < w < 1
-		bool substantially; // TRUE: substantially accepted (tau *= pp); FALSE: barely accepted (tau *= q)
-		bool preCalc;
 		Preleap_TC& ptc;
+		bool preCalc;
+		double p, pp, q, w;  // p < pp < 1, q > 1, 0 < w < 1
+		bool substantially; // TRUE: substantially accepted (tau *= pp); FALSE: barely accepted (tau *= q)
+		vector<double> projPop;
 		void addSpecies();
 	private:
 		vector<SimpleSpecies*>& sp;
 	};
-
-	class eRungeKuttaRB_TC_RC_FG_PL : public eRungeKuttaRB_TC_FG_PL, public RxnClassifier{
-	public:
-		eRungeKuttaRB_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
-								  double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc);
-		eRungeKuttaRB_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
-								  double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round);
-		eRungeKuttaRB_TC_RC_FG_PL(const eRungeKuttaRB_TC_RC_FG_PL& tc_rc_fg_pl);
-		~eRungeKuttaRB_TC_RC_FG_PL();
-		virtual void classifyRxns(vector<int>& classif, double tau, bool initial);
-	protected:
-		eRK_RC* rc;
-	};
-
-	class eRungeKuttaSB_TC_RC_FG_PL : public eRungeKuttaSB_TC_FG_PL, public RxnClassifier{
-	public:
-		eRungeKuttaSB_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
-								  double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc);
-		eRungeKuttaSB_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p, double pp, double q,
-								  double w, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, Preleap_TC& ptc, bool round);
-		eRungeKuttaSB_TC_RC_FG_PL(const eRungeKuttaSB_TC_RC_FG_PL& tc_rc_fg_pl);
-		~eRungeKuttaSB_TC_RC_FG_PL();
-		virtual void classifyRxns(vector<int>& classif, double tau, bool initial);
-	protected:
-		eRK_RC* rc;
-	};
+*/
 }
-
 #endif /* ERUNGEKUTTA_HH_ */

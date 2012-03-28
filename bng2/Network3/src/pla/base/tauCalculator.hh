@@ -18,8 +18,8 @@ namespace network3{
 		TauCalculator();
 		TauCalculator(const TauCalculator& tc);
 		virtual ~TauCalculator();
-		virtual void getNewTau(double& tau);
-		virtual TauCalculator* clone() const{ return new TauCalculator(*this); }
+		virtual void getNewTau(double& tau) = 0;
+//		virtual TauCalculator* clone() const{ return new TauCalculator(*this); }
 	};
 }
 

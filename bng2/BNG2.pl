@@ -9,6 +9,7 @@ use warnings;
 use File::Spec;
 use IO::Handle;
 use FindBin;
+use Config;
 
 # get Perl2 Module directory: look for environment variables BNGPATH or BioNetGenRoot.
 # If neither are defined, use RealBin module
@@ -21,12 +22,33 @@ use BNGModel;
 use Console;
 
 
+# Get signals
+my $i = 0;
+my %SIGNO=();
+defined($Config{sig_name}) or die "No signals defined";
+foreach my $signame ( split " ", $Config{sig_name} )
+{
+    $SIGNO{$signame} = $i;
+    $i++;
+}
+
+# Termination signal handler: make sure any child processes are shutdown before termination
+$SIG{'TERM'} = sub
+{
+    my ($signal,$pgrp) = (${^O} eq "MSWin32") ? (-$SIGNO{"KILL"}, $$) : (-$SIGNO{"TERM"}, getpgrp 0);
+    print "Process $$ Got termination signal.. killing children first..\n";
+    print "Sending signal $signal to process group $pgrp\n";
+    kill $signal, $pgrp;
+    die "termination signal";
+};
+
+
 
 # Defaults params for File mode
-our $PARAMS_DEFAULT = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
+my $PARAMS_DEFAULT = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
                         allow_actions=>1, action_skip_warn=>0, logging=>0, no_exec=>0, allow_perl=>0 };
 # Default params for Console mode
-our $PARAMS_CONSOLE = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
+my $PARAMS_CONSOLE = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
                         allow_actions=>0, action_skip_warn=>1, logging=>0, no_exec=>0, allow_perl=>0 };
 
 # Read command line options
@@ -109,7 +131,6 @@ unless ( -w $params->{outdir} )
 if ( $params->{console} )
 {
     # Start BioNetGen console!!
-
     # use default params for the console (ignore most command line arguments!)
     my $local_params = {%$PARAMS_CONSOLE};
     # but do get the output_dir argument
@@ -166,6 +187,7 @@ sub display_help
           ."    -check        read MODEL, but do not execute actions           \n"
           ."    -outdir PATH  change default output path                       \n"
           ."                                                                   \n"
-          ."  For more information, visit bionetget.org                        \n"
+          ."  For more information, visit bionetgen.org                        \n"
           ."-------------------------------------------------------------------\n";
 }
+

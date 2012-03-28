@@ -12,8 +12,8 @@ fEulerRB_PL::fEulerRB_PL() : rxn(){
 		cout << "fEulerRB_PL constructor called." << endl;
 }
 */
-fEulerRB_PL::fEulerRB_PL(double eps, double p, vector<Reaction*>& rxn)
-: BinomialCorrector_PL(p,rxn), eps(eps), rxn(rxn){
+fEulerRB_PL::fEulerRB_PL(double eps, double p, vector<Reaction*>& rxn) : eps(eps), rxn(rxn){
+//: BinomialCorrector_PL(p,rxn), eps(eps), rxn(rxn){
 	if (debug)
 		cout << "fEulerRB_PL constructor called." << endl;
 	// Error check
@@ -37,8 +37,8 @@ fEulerRB_PL::fEulerRB_PL(double eps, double p, vector<Reaction*>& rxn)
 	}
 }
 
-fEulerRB_PL::fEulerRB_PL(const fEulerRB_PL& pl)
-: BinomialCorrector_PL(pl), eps(pl.eps), oldRate(pl.oldRate), rxn(pl.rxn){
+fEulerRB_PL::fEulerRB_PL(const fEulerRB_PL& pl) : eps(pl.eps), oldRate(pl.oldRate), rxn(pl.rxn){
+//: BinomialCorrector_PL(pl), eps(pl.eps), oldRate(pl.oldRate), rxn(pl.rxn){
 	if (debug)
 		cout << "fEulerRB_PL copy constructor called." << endl;
 	// Copy oldPop[]
