@@ -66,6 +66,7 @@ SPARSE: 'sparse';
 T_END: 't_end';
 T_START: 't_start';
 N_STEPS: 'n_steps';
+PLA_CONFIG: 'pla_config';
 SAMPLE_TIMES: 'sample_times';
 SIMULATE_ODE: 'simulate_ode';
 SIMULATE_SSA: 'simulate_ssa';
@@ -83,6 +84,7 @@ SAVECONCENTRATIONS: 'saveConcentrations';
 RESETCONCENTRATIONS: 'resetConcentrations';
 GENERATENETWORK: 'generate_network';
 SUBSTANCEUNITS: 'substanceUnits';
+PARAM: 'param';
 SAT: 'Sat';
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
@@ -120,6 +122,7 @@ MINUS : '-';
 PLUS : '+';
 POWER: '^';
 MOD : '%';
+PIPE : '|';
 QMARK : '?';
 EMARK: '!';
 DBQUOTES : '"';

@@ -42,6 +42,8 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
     return msg;
   }
   
+  
+  
 }
 
 //prog separates bngl into methods and actions
@@ -72,17 +74,17 @@ scope {
 }
 @after{
   paraphrases.pop();
+ 
 }
 :
 ((BEGIN MODEL (program_block)* END MODEL) | (program_block)*)
-(a1=actions_block {$actionsTemplate = $a1.st;}| (BEGIN ACTIONS a2=actions_block END ACTIONS {$actionsTemplate = $a2.st;}) )? 
+(a1=actions_block {$actionsTemplate = $a1.st;}| (BEGIN ACTIONS a2=actions_block END ACTIONS {$actionsTemplate = $a2.st;;}) )? 
 EOF  -> prog2(parameters={$prog::parameters},molecules={molecules},species={$prog::seedSpecies},reactions={$prog::reactionRules},
                             observables={$prog::observables},functions={$prog::functions}, compartments={$prog::compartments});
 
 
 
 version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN SEMI;
-
 
 // a list of the different sections a bngl file may have. Order is not enforced.
 program_block

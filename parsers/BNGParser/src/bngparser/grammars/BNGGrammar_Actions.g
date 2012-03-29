@@ -72,7 +72,10 @@ scope{
 }
 
         : (simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";}
-        | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";})
+        | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";}
+        | write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";}
+        | simulate_pla[$simulate_method::actions] {$simulate_method::method = "write_pla";}
+        | simulate_nf[$simulate_method::actions] {$simulate_method::method = "write_nf";})
         -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
         ;
 simulate_ode[Map<String,String> map]
@@ -85,6 +88,26 @@ simulate_ssa[Map<String,String> map]
         : SIMULATE_SSA LPAREN LBRACKET
           ((ps_par_def[map]|simulate_par_def[map]) (COMMA (ps_par_def[map]|simulate_par_def[map]))*)?
           RBRACKET RPAREN SEMI ;
+
+simulate_nf[Map<String,String> map]
+        : SIMULATE_NF LPAREN LBRACKET
+         ((ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map])
+          (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map]))*)? 
+          RBRACKET RPAREN SEMI
+         ;
+
+write_m_file[Map<String,String> map]
+        : WRITEMFILE LPAREN LBRACKET
+        ((write_m_par_def[map]) (COMMA write_m_par_def[map])*)?
+        RBRACKET RPAREN SEMI;
+      
+simulate_pla[Map<String,String> map]
+    : SIMULATE_PLA LPAREN LBRACKET
+             ((ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map])
+          (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map]))*)? 
+          RBRACKET RPAREN SEMI
+     ;
+
 read_file
 scope{
   Map<String,String> actions;
@@ -110,7 +133,6 @@ scope{
 write_type
         : WRITENET
         | WRITESBML
-        | WRITEMFILE
         | WRITEXML
         ;
 set_concentration 
@@ -190,12 +212,37 @@ simulate_ode_par_def[Map<String,String> map]
         | STEADY_STATE ASSIGNS i1=INT {map.put($STEADY_STATE.text,$i1.text);}
         | SPARSE ASSIGNS i2=INT {map.put($SPARSE.text,$i2.text);}
         ;
+        
+simulate_pla_par_def[Map<String,String> map]
+scope{
+  String temp;
+}
+@init{
+  $simulate_pla_par_def::temp = "";
+}
+        : PLA_CONFIG ASSIGNS DBQUOTES (s1=~(DBQUOTES ){$simulate_pla_par_def::temp += $s1.text;})* DBQUOTES {map.put($PLA_CONFIG.text,$simulate_pla_par_def::temp);}
+        ;    
+ 
+simulate_nf_par_def[Map<String,String> map]
+        : PARAM ASSIGNS DBQUOTES (MINUS s1=STRING s2=(STRING|INT|DOUBLE))* DBQUOTES  {map.put($PARAM.text,"-" + $s1.text + " " + $s2.text);}
+        ;    
+         
+write_m_par_def[Map<String,String> map]
+  : ATOL ASSIGNS f1=FLOAT {map.put($ATOL.text,$f1.text);}
+  | RTOL ASSIGNS f2=FLOAT {map.put($RTOL.text,$f2.text);}
+  | T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);}) 
+  | T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);})
+  | N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);}
+  | SPARSE ASSIGNS i4=INT {map.put($SPARSE.text,$i4.text);}
+  ;
+
+  
 simulate_par_def[Map<String,String> map]
         : T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);}) 
         | T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);})
         | N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);}
         | SAMPLE_TIMES ASSIGNS i4=array_value 
-        | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i4.text);}
+        | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i5.text);}
         ;
         
 array_value
