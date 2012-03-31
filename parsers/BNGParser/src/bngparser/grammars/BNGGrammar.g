@@ -115,17 +115,21 @@ functions_block
 
 function_def:
     s1=STRING LPAREN (STRING)? RPAREN (BECOMES)?  
-    (expression[memory] | if_expression)
+    (expression[memory] 
     {
-    memory.put($s1.text,new Register($expression.value,"function"));
+     memory.put($s1.text,new Register($expression.value,"function"));
     }
-    
     ->  functions_block(id={$s1.text},
                             referencesName={$expression.reference.keySet()},referencesType={Register.getTypes($expression.reference)},
                             expression={$expression.text})
+    | if_expression
+    {
+      memory.put($s1.text,new Register($if_expression.value,"function"));
+    }
+    )
 ;
 
-if_expression
+if_expression  returns [Double value]
 scope{
   Map<String,Register> references;
   Map<String,Register> lmemory;
@@ -136,10 +140,11 @@ scope{
 }:
   
   IF LPAREN STRING 
+  
+  EQUALS INT COMMA e1=expression[memory] COMMA expression[memory] RPAREN
   {
-    
+    $value = $e1.value;
   }
-  EQUALS INT COMMA expression[memory] COMMA expression[memory] RPAREN
 ;
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL
@@ -153,6 +158,7 @@ compartment:
    s1=STRING INT s3=expression[memory] (s2=STRING)? -> compartments_block(id={$s1.text},dimensions={$INT.text},size={$s3.value},outside={$s2.text}) 
 ;
   
+ 
 label returns [String label]:
   MOD STRING{$label = $STRING.text;};
   

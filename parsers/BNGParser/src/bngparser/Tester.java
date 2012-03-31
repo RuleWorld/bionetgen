@@ -26,8 +26,10 @@ public class Tester {
 	
 	public static void main(String[] args) throws IOException,RecognitionException{
 		
+		String inputFile = "testModels/cellcycle.bngl";
+		//String inputFile = "testModels/FullModelBurstSeconds.bngl";
 		
-		String inputFile = "testModels/egfr_net.bngl";
+		
 		String outputFile = "output.xml";
 		
 		if(args.length > 0){
@@ -35,8 +37,8 @@ public class Tester {
 			outputFile = args[1];
 		}
 		else{
-			System.err.println("format: java -jar bngparser.jar <inputFile> <outputFile>");
-			return;
+			//System.err.println("format: java -jar bngparser.jar <inputFile> <outputFile>");
+			//return;
 		}
 		Map<String, String> map = new HashMap<String,String>();
 		map.put("D_3D", "1e-8");
@@ -57,9 +59,12 @@ public class Tester {
 		StringTemplateGroup template = new StringTemplateGroup(new FileReader("xml.stg"),AngleBracketTemplateLexer.class);
 		parser.setTemplateLib(template);
 		RuleReturnScope r = parser.prog();
-		
+		RuleReturnScope r2 = parser.actions_prog();
+		System.out.println(r2.getTemplate().toString());
 		FileWriter writer = new FileWriter(outputFile);
 		writer.write(r.getTemplate().toString());
+		
+		//r.g
 		writer.close();
 		
 	}

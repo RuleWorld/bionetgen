@@ -57,7 +57,7 @@ sign_expression returns [Double value]
 
 : {$value = new Double(1);} ((MINUS {$value *= -1;}))* boolean_negation_expression {$value *= $boolean_negation_expression.value;}
 ;
-
+//recover primite for functions
 boolean_negation_expression returns [Double value]
 : (n=NOT)? e=primitive_element {$value = e.value * (n == null ? 1 : -1);} 
 ;
@@ -67,7 +67,6 @@ primitive_element returns [Double value]:
         | (STRING LPAREN RPAREN) => function {$value = $function.value;}
         |  variable {$value = $variable.value;}
         | LPAREN expression2 RPAREN {$value = $expression2.value;}
-        
         ;
 
 number returns [Double value]: s1=INT {$value = Double.parseDouble($INT.text);}

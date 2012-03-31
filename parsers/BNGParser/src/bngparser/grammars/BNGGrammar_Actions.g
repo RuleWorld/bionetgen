@@ -74,8 +74,8 @@ scope{
         : (simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";}
         | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";}
         | write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";}
-        | simulate_pla[$simulate_method::actions] {$simulate_method::method = "write_pla";}
-        | simulate_nf[$simulate_method::actions] {$simulate_method::method = "write_nf";})
+        | simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";}
+        | simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";})
         -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
         ;
 simulate_ode[Map<String,String> map]
