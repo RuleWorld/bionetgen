@@ -638,8 +638,8 @@ void Network3::init_PLA(string config, bool verbose){
 	if (verbose) cout << "...Ok done, let's go for it." << endl;
 }
 
-void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long maxSteps, long stepInterval,
-		char* prefix, bool print_cdat, bool verbose){
+pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, long startStep, long maxSteps,
+		long stepInterval, char* prefix, bool print_cdat, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -718,13 +718,13 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 
 	// Prepare for simulation
 	double time = tStart;
-	long step = 0;
-	double nextOutput = tStart + sampleTime;
+	long step = startStep;
+	double nextOutput = time + sampleTime;
 	bool lastOut = true;
 	if (stepInterval <= 0) stepInterval = LONG_MAX; // A negative stepInterval means infinity
 
 	// Initial output to stdout
-	if (verbose){
+/*	if (verbose){
 		cout << "#" << "\t" << setw(8) << left << "time" << "\t" << "step";
 		for (unsigned int i=0;i < OBSERVABLE.size();i++){
 			cout << "\t" << OBSERVABLE[i]->first->name;
@@ -735,11 +735,11 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 			cout << "\t" << OBSERVABLE[i]->second;
 		}
 		cout << endl;
-	}
+	}*/
 
 	// Simulation loop
 	if (!verbose) cout << "Running..." << flush;
-	while (time < maxTime && step < maxSteps && PLA_SIM->tau < INFINITY){
+	while (time < maxTime && step < startStep+maxSteps && PLA_SIM->tau < INFINITY){
 
 		// Next step
 		step++;
@@ -768,9 +768,9 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 			// Output to stdout
 			if (verbose){
 				cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
-				for (unsigned int i=0;i < OBSERVABLE.size();i++){
-					cout << "\t" << OBSERVABLE[i]->second;
-				}
+//				for (unsigned int i=0;i < OBSERVABLE.size();i++){
+//					cout << "\t" << OBSERVABLE[i]->second;
+//				}
 				cout << endl;
 			}
 			if (time >= nextOutput) nextOutput += sampleTime;
@@ -800,30 +800,32 @@ void Network3::run_PLA(double tStart, double maxTime, double sampleTime, long ma
 		}
 		//
 		// Output to file
-		Network3::print_species_concentrations(cdat,time); // Even if .cdat printing is suppressed, print the last step
+		if (print_cdat) Network3::print_species_concentrations(cdat,time);
 		if (gdat) Network3::print_observable_concentrations(gdat,time);
 		if (fdat) Network3::print_function_values(fdat,time);
 		//
 		// Output to stdout
 		if (verbose){
 			cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
-			for (unsigned int i=0;i < OBSERVABLE.size();i++){
-				cout << "\t" << OBSERVABLE[i]->second;
-			}
+//			for (unsigned int i=0;i < OBSERVABLE.size();i++){
+//				cout << "\t" << OBSERVABLE[i]->second;
+//			}
 			cout << endl;
 		}
 	}
-	else{
+//	else{
 		// Even if .cdat printing is suppressed, print the last step
-		if (!print_cdat) Network3::print_species_concentrations(cdat,time);
-	}
+//		if (!print_cdat) Network3::print_species_concentrations(cdat,time);
+//	}
 	if (!verbose) cout << "Done" << endl;
-	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
+//	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
 
 	// Close files
 	fclose(cdat);
 	if (gdat) fclose(gdat);
 	if (fdat) fclose(fdat);
+
+	return pair<long,double>(step-startStep,time-tStart);
 }
 
 void Network3::print_species_concentrations(FILE* out, double t){
