@@ -25,6 +25,9 @@ my $log=0;
 my $t_end= 20;
 my $n_steps=20;
 my $steady_state=0;
+#
+my $path;
+#
 my $prefix;
 
 while ($ARGV[0] =~ /^-/){
@@ -61,10 +64,20 @@ my $n_pts= shift(@ARGV);
 
 # Automatic assignment of prefix if unset
 if (!$prefix){
-  $prefix=$file;
-  # strip suffix
-  $prefix=~ s/[.][^.]*$//;
-  $prefix.="_${var}";
+#printf "file: $file\n";
+	$file =~ /^(.*\/)(\S+)\.bngl$/;
+	if (!$1 || !$2){
+		print STDERR "Error in scan_var.pl: Cannot find path and/or filename prefix from $file.\n";
+		exit 1;
+	}
+	$path = $1;
+	$prefix = $2;
+#	$prefix=$file;
+	# strip suffix
+#	$prefix=~ s/[.][^.]*$//;
+	$prefix.="_${var}";
+#printf "path: $path\n";
+#printf "prefix: $prefix\n";
 }
 
 if ($log){
@@ -88,14 +101,18 @@ if (-d $prefix){
 #  die "Directory $prefix exists.  Remove before running this script.";
 }
 
+chdir $path;
 mkdir $prefix;
 chdir $prefix;
 
 # Create input file scanning variable
-$fname= sprintf "${prefix}.bngl", $run;
+$fname= sprintf "${prefix}.bngl";#, $run;
 open(BNGL,">$fname") || die "Couldn't write to $fname";
 print BNGL $script;
 print BNGL "generate_network({overwrite=>1});\n";
+#
+print BNGL "saveConcentrations()\n";
+#
 my $val= $var_min;
 for my $run (1..$n_pts){
   my $srun= sprintf "%05d", $run;
@@ -104,7 +121,7 @@ for my $run (1..$n_pts){
   }
   my $x= $val;
   if ($log){ $x= exp($val);}
-  printf BNGL "setParameter($var,$x);\n";
+  printf BNGL "setParameter(\"$var\",$x);\n";
   
   my $opt= "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
   if ($steady_state){
@@ -116,18 +133,19 @@ for my $run (1..$n_pts){
 close(BNGL);
 
 # Run BioNetGen on file
-print "Running BioNetGen on $fname\n";
+print "Running BioNetGen on $path$prefix/$fname\n";
 my $exec= "${BNGPATH}/BNG2.pl";
 system("$exec $fname > $prefix.log");
 
 # Process output
-$ofile="../$prefix.scan";
+$ofile="$prefix.scan";
 open(OUT,">$ofile") || die "Couldn't open $ofile";
-my $val= $var_min;
+#my $val= $var_min;
+$val = $var_min;
 for my $run (1..$n_pts){
   # Get data from gdat file
   $file= sprintf "${prefix}_%05d.gdat", $run;
-  print "Extracting data from $file\n";
+  print "Extracting data from $path$prefix/$file\n";
   open(IN,"$file") || die "Couldn't open $file";
   if ($run==1){
      my $head= <IN>;
@@ -147,5 +165,6 @@ for my $run (1..$n_pts){
   printf OUT "%16.8e %s\n", $x, join(' ',@dat);
   close(IN);
   $val+=$delta;
-}  
+}
+print "Final state data printed to $path$prefix/$ofile\n";  
 close(OUT);
