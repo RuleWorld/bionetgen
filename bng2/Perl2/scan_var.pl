@@ -5,166 +5,182 @@
 #
 # Written by Jim Faeder, Los Alamos National Laboratory, 3/6/2007 
 
+# Updated on 2 April 2012 by J.Hogg
+# + now looks at environment variables BNGPATH and BioNetGenRoot for the BNG root folder
+# + now using File::Spec for platform independent path handling
+# + output now written in current directory (not the model directory!)
+# + This version requires BioNetGen version 2.2.0 testing
+
 
 # Perl Modules
 use FindBin;
-use lib $FindBin::Bin;
+use lib $FindBin::RealBin;
 use File::Spec;
 
 # get BNG path
 my $BNGPATH;
+my $BNGEXEC;
 {
-    my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::Bin );
-    my @dirs = File::Spec->splitdir( $directories );
-    pop @dirs;
-    $BNGPATH = File::Spec->catdir( $volume, File::Spec->catdir( @dirs ) );
+    # try to find path in environment variables
+    $BNGPATH = (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
+                                (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : undef) );
+    unless (defined $BNGPATH)
+    {   # use FindBin to locate BNG
+        my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
+        my @dirs = File::Spec->splitdir( $directories );
+        pop @dirs;   # BNG executable script should be down one directory from here
+        $BNGPATH = File::Spec->catdir( $volume, File::Spec->catdir(@dirs) );
+    }
+    # define executable
+    $BNGEXEC = File::Spec->catfile( $BNGPATH, "BNG2.pl" );
 }
 
+# some default parameters
+my $log     = 0;
+my $t_end   = 20;
+my $n_steps = 20;
+my $steady_state = 0;
 
-my $log=0;
-my $t_end= 20;
-my $n_steps=20;
-my $steady_state=0;
-#
-my $path;
-#
 my $prefix;
-
-while ($ARGV[0] =~ /^-/){
-  $_ = shift;
-  if (/^-log$/){
-    $log=1;
-  }
-  elsif(/^-n_steps/){
-    $n_steps= shift(@ARGV);
-  }
-  elsif(/^-prefix/){
-    $prefix= shift(@ARGV);
-  }
-  elsif(/^-steady_state/){
-    $steady_state=1;
-  }
-  elsif(/^-t_end/){
-    $t_end= shift(@ARGV);
-  }
-  else{
-    exit_error("Unrecognized command line option $_");
-  }
+while ($ARGV[0] =~ /^-/)
+{
+    $_ = shift;
+    if (/^-log$/){
+        $log=1;
+    }
+    elsif(/^-n_steps/){
+        $n_steps = shift @ARGV;
+    }
+    elsif(/^-prefix/){
+        $prefix = shift @ARGV;
+    }
+    elsif(/^-steady_state/){
+        $steady_state = 1;
+    }
+    elsif(/^-t_end/){
+        $t_end = shift @ARGV;
+    }
+    else{
+        exit_error("Unrecognized command line option $_");
+    }
 }
 
 if ($#ARGV != 4) {
-  die "Usage $0 file.bngl varname var_min var_max n_pts";
+    die "Usage:[ $0 file.bngl varname var_min var_max n_pts ]";
 }
 
-my $file= shift(@ARGV);
-my $var= shift(@ARGV);
-my $var_min= shift(@ARGV);
-my $var_max= shift(@ARGV);
-my $n_pts= shift(@ARGV);
+# get mandatory arguments
+my $file    = shift @ARGV;
+my $var     = shift @ARGV;
+my $var_min = shift @ARGV;
+my $var_max = shift @ARGV;
+my $n_pts   = shift @ARGV;
 
 # Automatic assignment of prefix if unset
-if (!$prefix){
-#printf "file: $file\n";
-	$file =~ /^(.*\/)(\S+)\.bngl$/;
-	if (!$1 || !$2){
-		print STDERR "Error in scan_var.pl: Cannot find path and/or filename prefix from $file.\n";
-		exit 1;
-	}
-	$path = $1;
-	$prefix = $2;
-#	$prefix=$file;
-	# strip suffix
-#	$prefix=~ s/[.][^.]*$//;
+unless ($prefix)
+{
+	# separate directories from filename (if any)
+    my ($volume,$directories,$file) = File::Spec->splitpath( $file );
+	unless ( $file =~ /\.bngl$/ )
+	{   die "Cannot extract prefix from filename $file";   }
+	# trim bngl extension to define prefix
+	($prefix = $file) =~ s/\.bngl$//;
+	# add variable name to prefix
 	$prefix.="_${var}";
-#printf "path: $path\n";
-#printf "prefix: $prefix\n";
 }
 
 if ($log){
-  $var_min= log($var_min);
-  $var_max= log($var_max);
+    $var_min = log($var_min);
+    $var_max = log($var_max);
 }
 
-my $delta= ($var_max-$var_min)/($n_pts-1);
+my $delta = ($var_max-$var_min)/($n_pts-1);
 
 # Read file 
 open(IN,$file) || die "Couldn't open file $file: $?\n";
 my $script="";
-while(<IN>){
-  $script.=$_;
-  # Skip actions
-  last if (/^\s*end\s*model\s*$/);
+while ( my $line = <IN> )
+{
+    $script .= $line;
+    # Skip actions
+    last if (/^\s*end\s*model\s*$/);
 }
 
 if (-d $prefix){
-  system("rm -r $prefix");
-#  die "Directory $prefix exists.  Remove before running this script.";
+    # delete output directory
+    system("rm -r $prefix");
+    # die "Directory $prefix exists.  Remove before running this script.";
 }
 
-chdir $path;
+# make directory for output files
 mkdir $prefix;
-chdir $prefix;
 
 # Create input file scanning variable
-$fname= sprintf "${prefix}.bngl";#, $run;
-open(BNGL,">$fname") || die "Couldn't write to $fname";
+my $scanmodel = File::Spec->catfile( ${prefix}, "${prefix}.bngl" );
+my $logfile   = File::Spec->catfile( ${prefix}, "${prefix}.log" );
+
+open(BNGL,">", $scanmodel) or die "Couldn't write to $scanmodel";
 print BNGL $script;
 print BNGL "generate_network({overwrite=>1});\n";
-#
 print BNGL "saveConcentrations()\n";
-#
-my $val= $var_min;
-for my $run (1..$n_pts){
-  my $srun= sprintf "%05d", $run;
-  if ($run>1){
-    print BNGL "resetConcentrations()\n";
-  }
-  my $x= $val;
-  if ($log){ $x= exp($val);}
-  printf BNGL "setParameter(\"$var\",$x);\n";
-  
-  my $opt= "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
-  if ($steady_state){
-    $opt.=",steady_state=>1";
-  }
-  printf BNGL "simulate_ode({$opt});\n";
-  $val+=$delta;
+
+my $val = $var_min;
+foreach my $run (1..$n_pts)
+{
+    my $srun = sprintf "%05d", $run;
+    if ($run>1){
+        print BNGL "resetConcentrations()\n";
+    }
+    my $x= $val;
+    if ($log){ $x = exp($val);}
+    printf BNGL "setParameter(\"$var\",$x);\n";
+
+    my $opt= "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
+    if ($steady_state){
+        $opt.=",steady_state=>1";
+    }
+    printf BNGL "simulate_ode({$opt});\n";
+    $val+=$delta;
 }  
 close(BNGL);
 
 # Run BioNetGen on file
-print "Running BioNetGen on $path$prefix/$fname\n";
-my $exec= "${BNGPATH}/BNG2.pl";
-system("$exec $fname > $prefix.log");
+print "Running BioNetGen on $scanmodel\n";
+my $BNGARGS = "-outdir \"${prefix}\"";
+system("$BNGEXEC $BNGARGS $scanmodel > $logfile");
 
 # Process output
-$ofile="$prefix.scan";
-open(OUT,">$ofile") || die "Couldn't open $ofile";
+my $outfile = "${prefix}.scan";
+open(OUT,">", $outfile) or die "Couldn't open $outfile";
 #my $val= $var_min;
 $val = $var_min;
-for my $run (1..$n_pts){
-  # Get data from gdat file
-  $file= sprintf "${prefix}_%05d.gdat", $run;
-  print "Extracting data from $path$prefix/$file\n";
-  open(IN,"$file") || die "Couldn't open $file";
-  if ($run==1){
-     my $head= <IN>;
-     $head=~ s/^\s*\#//;
-     my @heads= split(' ',$head);
-     shift(@heads);
-     printf OUT "# %+14s", $var;
-     for my $head (@heads){
-       printf OUT " %+14s", $head;
-     }
-     print OUT "\n";
-  }
-  while(<IN>){$last=$_};
-  my @dat= split(' ',$last);
-  my $time= shift(@dat);
-  my $x= ($log)? exp($val) : $val;
-  printf OUT "%16.8e %s\n", $x, join(' ',@dat);
-  close(IN);
-  $val+=$delta;
+foreach my $run (1..$n_pts)
+{
+    # Get data from gdat file
+    my $gdat_file = File::Spec->catfile( $prefix, sprintf("${prefix}_%05d.gdat", $run) );
+    print "Extracting data from $gdat_file\n";
+    open(IN, "<", $gdat_file) or die "Couldn't open $gdat_file";
+    if ($run==1)
+    {
+        my $head= <IN>;
+        $head=~ s/^\s*\#//;
+        my @heads= split(' ',$head);
+        shift(@heads);
+        printf OUT "# %+14s", $var;
+        foreach my $head (@heads){
+            printf OUT " %+14s", $head;
+        }
+        print OUT "\n";
+    }
+    while (my $line = <IN>) { $last = $line };
+    my @dat = split(' ',$last);
+    my $time = shift @dat;
+    my $x = ($log)? exp($val) : $val;
+    printf OUT "%16.8e %s\n", $x, join(' ',@dat);
+    close(IN);
+    $val += $delta;
 }
-print "Final state data printed to $path$prefix/$ofile\n";  
 close(OUT);
+print "Final state data printed to $outfile\n";
+
+
