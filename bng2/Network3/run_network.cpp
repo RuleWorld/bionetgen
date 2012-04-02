@@ -79,7 +79,7 @@ int main(int argc, char *argv[]){
     Rxn_array *reactions;
     int n, n_sample;
     double t_start=0.0, t, dt, atol = 1.0e-8, rtol = 1.0e-8;
-    double sample_time, *sample_times = 0x0, *st, t0;
+    double sample_time, *sample_times = 0x0, *st, t1;
     char c, buf[1000], *outpre = NULL;
     int argleft, iarg = 1, error = 0;
     int save_file = 0;
@@ -269,20 +269,27 @@ int main(int argc, char *argv[]){
 	else {
 		/* input is t1 t2 ... tn */
 		n_sample = argleft;
-		t0 = atof(argv[iarg++]);
-		if (t0 == t_start) --n_sample;
+		t1 = atof(argv[iarg++]);
+		if (t1 == t_start){
+			n_sample--;
+			t1 = atof(argv[iarg++]);
+		}
 		sample_times = ALLOC_VECTOR(n_sample + 1);
 		sample_times[0] = t_start;
-		if (t0 != t_start){
-			sample_times[1] = t0;
-			st = &sample_times[2];
+		sample_times[1] = t1;
+		for (int j=2;j < n_sample+1;j++){ // t_start is the extra sample
+			sample_times[j] = atof(argv[iarg++]);
 		}
-		else {
-			st = &sample_times[1];
-		}
-		for (iarg = iarg; iarg < argc; ++iarg, ++st) {
-			*st = atof(argv[iarg]);
-		}
+//		if (t0 != t_start){
+//			sample_times[1] = t0;
+//			st = &sample_times[2];
+//		}
+//		else {
+//			st = &sample_times[1];
+//		}
+//		for (iarg = iarg; iarg < argc; ++iarg, ++st) {
+//			*st = atof(argv[iarg]);
+//		}
 		/* Check that final array is in ascending order with no negative elements */
 		for (i = 0; i <= n_sample; ++i) {
 			if (sample_times[i] < 0.0) {
@@ -384,7 +391,7 @@ int main(int argc, char *argv[]){
 
 	/* Initialize reaction network */
 	init_network(reactions, rates, species, spec_groups, network_name, functions, variable_parameters,
-			func_observ_depend, func_param_depend, is_func_map_temp);
+				 func_observ_depend, func_param_depend, is_func_map_temp);
 
 	// Round species populations if propagator is SSA or PLA
 	if (propagator == SSA || propagator == PLA){
@@ -415,14 +422,6 @@ int main(int argc, char *argv[]){
 	}
 	fflush(stdout);
 
-	// Print info
-	if (!print_cdat){
-		cout << "Suppressing concentrations (.cdat) output" << endl;
-	}
-	if (print_fdat){
-		cout << "Activating functions (.fdat) output" << endl;
-	}
-
 	/* timing for initialization */
 	ptimes = t_elapsed();
 	fprintf(stdout, "Initialization took %.2f CPU seconds\n", ptimes.total_cpu);
@@ -439,9 +438,10 @@ int main(int argc, char *argv[]){
 	outpre = chop_suffix(outpre, ".net");
 
 	/* Initialize and print initial concentrations */
-	conc_file = NULL; // just to be safe
+	conc_file = NULL; // Just to be safe
 	conc_file = init_print_concentrations_network(outpre, continuation);
 	if (!continuation) print_concentrations_network(conc_file, t);
+	if (!print_cdat) cout << "Suppressing concentrations (.cdat) output" << endl;
 
 	/* Initialize and print initial group concentrations */
 	group_file = NULL;
@@ -452,9 +452,10 @@ int main(int argc, char *argv[]){
 
 	// Initialize and print initial function values
 	func_file = NULL;
-	if (network.functions.size() > 0 && print_fdat){
+	if (print_fdat && network.functions.size() > 0){
 		func_file = init_print_function_values_network(outpre, continuation);
 		if (!continuation) print_function_values_network(func_file, t);
+		cout << "Activating functions (.fdat) output" << endl;
 	}
 
 	/* Initialize and print species stats (if enabled) */
@@ -474,16 +475,13 @@ int main(int argc, char *argv[]){
 	fflush(stdout);
 
 	// *** Simulate ***
-	double t_end = t_start + (double)n_sample*sample_time;
+	double t_end;
+	if (sample_times) t_end = sample_times[n_sample];
+	else t_end = t_start + (double)n_sample*sample_time;
+
+	// PLA simulator
 	if (propagator == PLA){
 		cout << "Accelerated stochastic simulation using PLA" << endl;
-
-		// Error check
-		if (sample_times){ // Don't allow this
-			cout << "Error in run_network: PLA does not currently support user-specified sampling times. "
-				 << "Must provide a sampling interval. Exiting." << endl;
-			exit(1);
-		}
 
 		// Initialize Network3
 		Network3::init_Network3(false);
@@ -492,14 +490,70 @@ int main(int argc, char *argv[]){
 		Network3::init_PLA(pla_config,verbose);
 		if (seed >= 0)	Network3::PLA_SIM->setSeed(seed);
 
+		// Initial output to stdout
+		if (verbose){
+			cout << "#" << "\t" << setw(8) << left << "time" << "\t" << "step" << endl;
+			cout << "\t" << fixed << t_start; cout.unsetf(ios::fixed); cout << "\t" << 0 << endl;
+		}
+
 		// Run simulation
 //		initTime = clock();
-		Network3::run_PLA(t_start,t_end,sample_time,maxSteps,stepInterval,outpre,print_cdat,verbose);
+		long step = 0;
+//		double time = t_start;
+		pair<long,double> nSteps_dt;
+		// Sample times
+		if (sample_times){
+			for (int i=1;i < n_sample+1 && maxSteps > 0;i++){ // t_start is the extra sample (already output)
+//
+				// Simulate to next output *step*
+				if ((step % stepInterval) != 0){
+					long stepsLeft = stepInterval - (step % stepInterval);
+//					cout << "(run: " << time << " --> " << sample_times[i] << ")" << endl;
+//					cout << "(maxSteps: " << maxSteps << ")" << endl;
+//					cout << "(step: " << step << ")" << endl;
+//					cout << "(" << stepsLeft << " steps left until next output)" << endl;
+					nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,min(stepsLeft,maxSteps),
+												  stepInterval,outpre,print_cdat,verbose);
+					step += nSteps_dt.first;
+					maxSteps -= nSteps_dt.first;
+					t += nSteps_dt.second;
+				}
+
+				// Simulate to next output *time*
+//				cout << "(run: " << time << " --> " << sample_times[i] << ")" << endl;
+//				cout << "(maxSteps: " << maxSteps << ")" << endl;
+//				cout << "(step: " << step << ")" << endl;
+				nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,maxSteps,stepInterval,outpre,
+											  print_cdat,verbose);
+				step += nSteps_dt.first;
+				maxSteps -= nSteps_dt.first;
+				t += nSteps_dt.second;
+			}
+		}
+		// Sample interval
+		else{
+			nSteps_dt = Network3::run_PLA(t_start,t_end,sample_time,step,maxSteps,stepInterval,outpre,print_cdat,
+										  verbose);
+			step += nSteps_dt.first;
+			t += nSteps_dt.second;
+		}
 //		cout << "PLA simulation took " << (clock()-initTime)/(double)CLOCKS_PER_SEC << " CPU seconds" << endl;
+
+		// Even if .cdat printing is suppressed, must output the last step
+		if (!print_cdat){
+			string filename(outpre);
+			filename += ".cdat";
+			FILE* cdatFile = fopen(filename.c_str(),"a");
+			Network3::print_species_concentrations(cdatFile,t);
+		}
+
+		// Print total steps to stdout
+		fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
 
 		// Clean up
 		Network3::close_Network3(false);
 	}
+	// ODE & SSA simulators
 	else{
 		/* Compute time course */
 		long int n_steps = 0;
@@ -512,12 +566,12 @@ int main(int argc, char *argv[]){
 		if (stepInterval > 0){
 			stepLimit = 0;
 		}
-		bool stop = false;
+		bool maxStepsReached = false;
 		double t_out = t_start;
 		//
 		bool first = true;
 		int n_old = 0;
-		for (n = 1; n <= n_sample && !stop; ++n){
+		for (n = 1; n <= n_sample && !maxStepsReached; ++n){
 			if (n != n_old){
 				if (sample_times) t_out = sample_times[n];
 				else t_out += sample_time;
@@ -525,7 +579,6 @@ int main(int argc, char *argv[]){
 			}
 			dt = t_out-t;
 			dt = min(dt,t_end-t); // Don't go past end time
-
 //			if (n == 1) {
 			if (first){
 				first = false;
@@ -585,7 +638,7 @@ int main(int argc, char *argv[]){
 				}
 				n_steps_last = gillespie_n_steps();
 				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (gillespie_n_steps() >= maxSteps) stop = true;
+				if (gillespie_n_steps() >= maxSteps) maxStepsReached = true;
 				break;
 			case CVODE:
 				if (stepInterval > 0){
@@ -597,7 +650,7 @@ int main(int argc, char *argv[]){
 				if (verbose)
 					fprintf(stdout, "%15.2f %13ld %13d", t, n_steps, n_deriv_calls_network());
 				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (n_steps >= maxSteps) stop = true;
+				if (n_steps >= maxSteps) maxStepsReached = true;
 				break;
 			case EULER:
 				if (stepInterval > 0){
@@ -609,7 +662,7 @@ int main(int argc, char *argv[]){
 				if (verbose)
 					fprintf(stdout, "%15.2f %13ld %13d", t, n_steps, n_deriv_calls_network());
 				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (n_steps >= maxSteps) stop = true;
+				if (n_steps >= maxSteps) maxStepsReached = true;
 				break;
 			case RKCS:
 				if (stepInterval > 0){
@@ -621,7 +674,7 @@ int main(int argc, char *argv[]){
 				if (verbose)
 					fprintf(stdout, "%15.2f %13ld %13d", t, n_steps, n_deriv_calls_network());
 				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (n_steps >= maxSteps) stop = true;
+				if (n_steps >= maxSteps) maxStepsReached = true;
 				break;
 			}
 			n_rate_calls_last = n_rate_calls_network();
@@ -691,7 +744,7 @@ int main(int argc, char *argv[]){
 	} // end else
 
 	// Final print outs
-	if (!print_cdat && propagator != PLA){ // Even if .cdat printing is suppressed, print the last step
+	if (!print_cdat && propagator != PLA){ // Even if .cdat is suppressed, must print the last step (PLA handles this internally)
 		print_concentrations_network(conc_file, t);
 	}
 	finish_print_concentrations_network(conc_file);

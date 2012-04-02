@@ -456,8 +456,7 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 			// Just to be safe
 			if (func_name[func_name.length() - 1] != ')') {
 				cout << "Error in network::read_functions_array(): Not sure what's going on with function "
-					 << func_name
-					 << ", but it should end with a ')' character. Exiting."
+					 << func_name << ", but it should end with a ')' character. Exiting."
 					 << endl;
 				exit(1);
 			}
@@ -479,9 +478,8 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 
 			for (unsigned int i = 0; i < variable_names.size(); i++) {
 				if (param_map.find(variable_names[i]) == param_map.end()) {
-					cout << "Error in parsing function " << func_name
-							<< ". Could not find variable "
-							<< variable_names[i] << ". Exiting.\n";
+					cout << "Error in parsing function " << func_name << ". Could not find variable "
+						 << variable_names[i] << ". Exiting.\n";
 					exit(1);
 				}
 				else {
@@ -493,10 +491,8 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 						param_depend.push_back(param_index_map[variable_names[i]]);
 					}
 					else {
-						cout << "Ummm, variable " << variable_names[i]
-								<< " in function " << func_name
-								<< " is not a parameter or an observable. That's a problem. Exiting."
-								<< endl;
+						cout << "Ummm, variable " << variable_names[i] << " in function " << func_name
+							 << " is not a parameter or an observable. That's a problem. Exiting." << endl;
 						exit(1);
 					}
 				}
@@ -3201,7 +3197,8 @@ FILE* init_print_function_values_network(char* prefix, int append){
 	fprintf(out, "%18s", "time");
 	for (unsigned int i = 0; i < network.functions.size(); ++i) {
 //		fprintf(out, " %19d", i+1);
-		fprintf(out, " %19s", ("F"+Util::toString((int)i+1)).c_str());
+//		fprintf(out, " %19s", ("F"+Util::toString((int)i+1)).c_str());
+		fprintf(out, " %19s", network.rates->elt[network.var_parameters[i]-network.rates->offset]->name);
 	}
 	fprintf(out, "\n");
 
@@ -3216,10 +3213,23 @@ int print_function_values_network(FILE* out, double t){
 		++error;
 		return error;
 	}
-
+/////
+/*	int offset = network.rates->offset;
+	cout << endl;
+	for (unsigned int i=0;i < network.var_parameters.size();i++){
+		cout << "functions[" << i << "]: " << network.functions[i].GetExpr() << "= "
+				<< network.functions[i].Eval() << endl;
+		cout << "rates[" << network.var_parameters[i]-offset << "]: " <<
+				network.rates->elt[network.var_parameters[i]-offset]->name << " = "
+				<< network.rates->elt[network.var_parameters[i]-offset]->val << endl;
+		cout << endl;
+	}
+	exit(1);
+////*/
 	fprintf(out, "%19.12e", t);
 	for (unsigned int i = 0; i < network.functions.size(); i++) {
-		fprintf(out, " %19.12e", network.functions[i].Eval());
+//		fprintf(out, " %19.12e", network.functions[i].Eval());
+		fprintf(out, " %19.12e", network.rates->elt[network.var_parameters[i]-network.rates->offset]->val);
 	}
 	fprintf(out, "\n");
 	fflush(out);

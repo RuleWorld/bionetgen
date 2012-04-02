@@ -27,8 +27,8 @@ namespace network3{
 		static PLA* PLA_SIM;
 		static void init_Network3(bool verbose);
 		static void init_PLA(string config, bool verbose);
-		static void run_PLA(double tStart, double maxTime, double sampleTime, long maxSteps, long stepInterval,
-				char* prefix, bool print_cdat, bool verbose);
+		static pair<long,double> run_PLA(double tStart, double maxTime, double sampleTime, long startStep,
+				long maxSteps, long stepInterval, char* prefix, bool print_cdat, bool verbose);
 		static void print_species_concentrations(FILE* out, double t);
 		static void print_observable_concentrations(FILE* out, double t);
 		static void print_function_values(FILE* out, double t);

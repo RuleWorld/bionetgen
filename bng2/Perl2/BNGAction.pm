@@ -268,39 +268,75 @@ sub simulate
 
     # define t_end and n_steps
     my ($n_steps, $t_end);
-	if ( defined $params->{n_steps} )
-    {	
-		if ( defined $params->{t_end} )
-        {
+	if ( (defined $params->{n_steps} || defined $params->{n_output_steps}) && defined $params->{sample_times}){
+		# Throw warning if both n_steps and sample_times are defined
+		my $x = ( defined $params->{n_steps} ) ? "n_steps" : "n_output_steps";
+		printf "WARNING: $x and sample_times both defined. $x takes precedence.\n";
+	}
+	if ( defined $params->{n_steps} || defined $params->{n_output_steps} || !defined $params->{sample_times} )
+   	{
+    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} ){ # Don't let them both be defined
+    		return "Cannot define both n_steps and n_output_steps. Please only define one (n_output_steps is preferred).";
+    	}
+
+		if ( defined $params->{t_end} ){
             $t_end = $params->{t_end};
         }
-		else
-        {
-            return "Parameter t_end must be defined";
+		else{
+            return "Parameter t_end must be defined.";
         }
 		
         if ( ($t_end - $t_start) <= 0.0 )
         {   return "t_end must be greater than t_start.";   }
 
-		$n_steps = ( defined $params->{n_steps} ) ? $params->{n_steps} : 1;
+#		$n_steps = ( defined $params->{n_steps} ) ? $params->{n_steps} : 1;
+		
+		if (defined $params->{n_steps}){
+			$n_steps = $params->{n_steps};
+		}
+		elsif (defined $params->{n_output_steps}){
+			$n_steps = $params->{n_output_steps};
+		}
+		else{
+			$n_steps = 1;
+		}
+		
 		my $step_size = ($t_end - $t_start) / $n_steps;
 		$command .= " ${step_size} ${n_steps}";
 	}
 	elsif ( defined $params->{sample_times} )
     {
-		# Two sample points are given.
-		my $sample_times = $params->{sample_times};
-		if ( @$sample_times > 2 )
-        {
-			$command .= " " . join( " ", @$sample_times );
-			$t_end = $sample_times->[ $#$sample_times ];
+    	my $sample_times = $params->{sample_times};
+    	@$sample_times = sort {$a <=> $b} @$sample_times; # numeric sort
+    	if ( @$sample_times > 2 ){
+    		if ( defined $params->{t_end} ){ 
+    			$t_end = $params->{t_end};
+    			while ($sample_times->[ $#$sample_times ] >= $t_end){ # remove all sample times >= t_end
+    				pop @$sample_times;
+    			}
+    			push @$sample_times, $t_end; # push t_end as final sample time
+    		}
+    		else{
+    			$t_end = $sample_times->[ $#$sample_times ];
+    		}
+    		$command .= " " . join( " ", @$sample_times ); # add sample times to argument list
+    	}
+    	else{
+    		return "'sample_times' array must contain 3 or more points.";
 		}
-		else
-        {
-            return "sample_times array must contain 3 or more points";
-		}
+#
+#		my $sample_times = $params->{sample_times};
+#		if ( @$sample_times > 2 )
+#        {
+#			$command .= " " . join( " ", @$sample_times );
+#			$t_end = $sample_times->[ $#$sample_times ];
+#		}
+#		else
+#        {
+#            return "sample_times array must contain 3 or more points";
+#		}
 	}
-
+	
 	# Determine index of last rule iteration
     my $n_iter = 0;
 	if ( $model->SpeciesList )
@@ -311,7 +347,6 @@ sub simulate
 			$n_iter = ( $iter > $n_iter ) ? $iter : $n_iter;
 		}
 	}
-
 
 
 

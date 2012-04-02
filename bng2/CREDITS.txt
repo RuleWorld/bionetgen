@@ -22,13 +22,13 @@ Byron Goldstein <bxg@lanl.gov>
 
 Justin Hogg <justinshogg@gmail.com>
    * Compartmental BNGL (cBNGL).
-   * General maintence.
+   * General maintenance.
 
-Leonard Harris <lharris@pitt.edu>
+Leonard Harris <lh64@cornell.edu>
    * Network3 development: global functions, accelerated stochastics (PLA)
 
 Ilya Korsunsky
-   * Initial deploymnet of global functions for Network3.
+   * Initial deployment of global functions for Network3.
 
 John Sekar <johnarul.sekar@gmail.com>
    * Development team member.
