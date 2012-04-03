@@ -1329,7 +1329,7 @@ sub writeBNGL
 	# Functions
 	$out .= $model->ParamList->writeFunctions( \%params );
 		
-	# Species (TODO: seed species for 
+	# Species
   	$out .= $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, \%params );
 
 
@@ -1635,7 +1635,7 @@ sub setConcentration
 sub saveConcentrations
 {
 	my $model = shift @_;
-    my $label = @_ ? shift @_ : undef;
+    my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
 
 	return '' if $NO_EXEC;
 
@@ -1651,6 +1651,7 @@ sub saveConcentrations
     }
     # put saved concentration into cache
     $model->ConcentrationCache->cache($conc,$label);
+	print "Saved current species concentrations with label \"$label\"\n";
 	return undef;
 }
 
@@ -1664,22 +1665,46 @@ sub resetConcentrations
 
 	return '' if $NO_EXEC;
 
+    # lookup up concentrations in the cashe
     my $saved_conc = $model->ConcentrationCache->browse($label);
 
-    unless (defined $saved_conc)
-    {   return "resetConcentrations(): cannot find saved concentrations";   }
+    my $conc;
+    if ( (defined $saved_conc) and (ref $saved_conc eq 'ARRAY') )
+    {   # get a copy of the values (don't want to mess with originals)
+        @$conc = @$saved_conc;
+    }
+    elsif ( !(defined $saved_conc) )
+    {   # didn't find anything in the cache ...
+        if ( $label eq Cache::DEFAULT_LABEL )
+        {   # if we were looking for default values, get them directly from the species objects ...
+            @$conc = map {$_->Concentration} @{$model->SpeciesList->Array};
+        }
+        else
+        {   # otherwise return an error
+            return "resetConcentrations(): cannot find saved concentrations with label \"$label\"";
+        }
+    }
+    else
+    {   # cache returned unexpected reference type
+        return "resetConcentrations(): some problem retrieving saved concentrations";
+    }
 
-    unless (ref $saved_conc eq 'ARRAY')
-    {   return "resetConcentrations(): some problem retrieving saved concentrations";   }
-
-    unless ( @{$model->SpeciesList->Array} == @$saved_conc )
-    {   return "resetConcentrations(): length of concentration array does not match the number of species";   }
+    if ( @$conc > @{$model->SpeciesList->Array} )
+    {   # this case is not well-defined
+        return "resetConcentrations(): length of concentration vector is larger than the number of species";
+    }
+    elsif ( @$conc < @{$model->SpeciesList->Array} )
+    {   # pad with zeros
+        my $n_zeros = @{$model->SpeciesList->Array} - @$conc;
+        push @$conc, (0) x $n_zeros;
+    }
 
     # finally, set concentrations to the saved values
-    $model->Concentrations( $saved_conc );
+    $model->Concentrations($conc);
 	# Set flag to update netfile when it's used
 	$model->UpdateNet(1);
     # all done
+	print "Reset species concentrations to \"$label\" saved values.\n";
 	return undef;
 }
 

@@ -89,22 +89,25 @@ unless ($prefix)
 	$prefix.="_${var}";
 }
 
-if ($log){
+if ($log)
+{   # convert min and max into log values
     $var_min = log($var_min);
     $var_max = log($var_max);
 }
 
+# calculate parameter step
 my $delta = ($var_max-$var_min)/($n_pts-1);
 
 # Read file 
-open(IN,$file) || die "Couldn't open file $file: $?\n";
-my $script="";
+open(IN, $file) or die "Couldn't open file $file: $?\n";
+my $script = "";
 while ( my $line = <IN> )
 {
     $script .= $line;
     # Skip actions
-    last if (/^\s*end\s*model\s*$/);
+    last if ($line =~ /^\s*end\s+model/);
 }
+close(IN);
 
 if (-d $prefix){
     # delete output directory
@@ -121,8 +124,7 @@ my $logfile   = File::Spec->catfile( ${prefix}, "${prefix}.log" );
 
 open(BNGL,">", $scanmodel) or die "Couldn't write to $scanmodel";
 print BNGL $script;
-print BNGL "generate_network({overwrite=>1});\n";
-print BNGL "saveConcentrations()\n";
+print BNGL "generate_network({overwrite=>1})\n";
 
 my $val = $var_min;
 foreach my $run (1..$n_pts)
@@ -133,13 +135,13 @@ foreach my $run (1..$n_pts)
     }
     my $x= $val;
     if ($log){ $x = exp($val);}
-    printf BNGL "setParameter(\"$var\",$x);\n";
+    printf BNGL "setParameter(\"$var\",%.12g)\n", $x;
 
-    my $opt= "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
+    my $opt = "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
     if ($steady_state){
         $opt.=",steady_state=>1";
     }
-    printf BNGL "simulate_ode({$opt});\n";
+    printf BNGL "simulate_ode({$opt})\n";
     $val+=$delta;
 }  
 close(BNGL);
