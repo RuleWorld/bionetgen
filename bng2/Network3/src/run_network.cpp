@@ -23,7 +23,7 @@ extern "C" {
 #include <map>
 #include <list>
 
-#include "src/network3.hh"
+#include "network3.hh"
 
 #ifndef RUN_NETWORK_VERSION
 #define RUN_NETWORK_VERSION 1.5
