@@ -5,7 +5,7 @@ NETDIR3 = ./Network3
 .PHONY: install network2 network3 clean distclean
 
 install: 
-	cd $(NETDIR2); $(MAKE)
+	cd $(NETDIR3); $(MAKE)
 
 network2:
 	cd $(NETDIR2); $(MAKE)

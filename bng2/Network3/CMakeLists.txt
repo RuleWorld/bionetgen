@@ -41,7 +41,6 @@ aux_source_directory(src/util/MTrand mtrand_files)
 aux_source_directory(src/util/rand2 rand2_files)
 
 set(SRC_FILES 
-    run_network.cpp 
     ${src_files} 
     ${model_files} 
     ${pla_files} 
