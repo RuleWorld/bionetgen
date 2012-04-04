@@ -21,9 +21,9 @@ namespace network3{
 	class eRungeKutta_preTC_RC_FG_negPL : public eRungeKutta_TC_RC_FG_PL{
 		public:
 //		eRungeKutta_preTC_RC_FG_negPL();
-		eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
+		eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
 									  vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
-		eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
+		eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
 									  vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
 		eRungeKutta_preTC_RC_FG_negPL(const eRungeKutta_preTC_RC_FG_negPL& tc_rc_fg_pl);
 		virtual ~eRungeKutta_preTC_RC_FG_negPL();

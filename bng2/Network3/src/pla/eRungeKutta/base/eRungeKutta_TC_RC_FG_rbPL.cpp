@@ -14,7 +14,7 @@ eRungeKutta_TC_RC_FG_rbPL::eRungeKutta_TC_RC_FG_rbPL() : p(){
 */
 eRungeKutta_TC_RC_FG_rbPL::eRungeKutta_TC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
 		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn)
-		: eRungeKutta_TC_RC_FG_PL(bt,approx1,gg1,p,ptc,sp,rxn), p(p), rxn(rxn){
+		: eRungeKutta_TC_RC_FG_PL(bt,eps,approx1,gg1,p,ptc,sp,rxn), p(p), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_rbPL constructor called." << endl;
 	this->ch = new RBChecker(eps,this->rxn);
@@ -26,7 +26,7 @@ eRungeKutta_TC_RC_FG_rbPL::eRungeKutta_TC_RC_FG_rbPL(ButcherTableau bt, double e
 
 eRungeKutta_TC_RC_FG_rbPL::eRungeKutta_TC_RC_FG_rbPL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
 		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round)
-		: eRungeKutta_TC_RC_FG_PL(bt,approx1,gg1,p,ptc,sp,rxn,round), p(p), rxn(rxn){
+		: eRungeKutta_TC_RC_FG_PL(bt,eps,approx1,gg1,p,ptc,sp,rxn,round), p(p), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_rbPL constructor called." << endl;
 	this->ch = new RBChecker(eps,this->rxn);

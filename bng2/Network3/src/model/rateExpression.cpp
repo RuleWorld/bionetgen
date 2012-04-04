@@ -31,7 +31,7 @@ double RateExpression::get_dRate_dX(unsigned int which, vector<double> X){
 	}
 	// In the absence of an overloaded method, call the static numerical_deriv() method
 	if (debug)
-		cout << "Warning: Using default RateExpression::numerical_deriv() method to calculate derivative." << endl;
+		cout << "Using default RateExpression::numerical_deriv() method to calculate derivative." << endl;
 	return RateExpression::numerical_deriv(which,X,this);
 }
 
