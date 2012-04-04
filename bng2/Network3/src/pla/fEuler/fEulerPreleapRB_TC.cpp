@@ -71,12 +71,12 @@ void fEulerPreleapRB_TC::getNewTau(double& tau){
 		beta_u = 0.0;
 		for (unsigned int j=0;j < dau_dX.size();j++){
 //			if (dau_dX[j] != 0.0 && (beta_u == 0.0 || dau_dX[j] < beta_u)){
-			if (dau_dX[j] > TOL && (beta_u < TOL || dau_dX[j] < beta_u)){
-				beta_u = dau_dX[j];
+			if (fabs(dau_dX[j]) > network3::TOL && (beta_u < network3::TOL || fabs(dau_dX[j]) < beta_u)){
+				beta_u = fabs(dau_dX[j]);
 			}
 		}
-//		if (dau_dX.size() != 0 && beta_u == 0.0){ // Set beta_u = a_u^MIN
-		if (dau_dX.size() != 0 && beta_u < TOL){
+//		if (dau_dX.size() != 0 && beta_u == 0.0){
+		if (dau_dX.size() != 0 && beta_u < network3::TOL){
 			vector<double> X;
 			for (unsigned int j=0;j < this->rxn[u]->rateSpecies.size();j++){
 				X.push_back(1.0); // a_u^MIN is rate when all reactant pops = 1

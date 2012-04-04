@@ -16,7 +16,7 @@ extern "C" {
 #include <time.h>
 #include <sys/times.h>
 #include <limits.h>
-#include "mathutils.h"
+#include "util/mathutils/mathutils.h"
 }
 
 #include <vector>
@@ -26,7 +26,7 @@ extern "C" {
 #include "network3.hh"
 
 #ifndef RUN_NETWORK_VERSION
-#define RUN_NETWORK_VERSION 1.5
+#define RUN_NETWORK_VERSION 3.0
 #endif
 
 struct program_times{
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]){
     Rxn_array *reactions;
     int n, n_sample;
     double t_start=0.0, t, dt, atol = 1.0e-8, rtol = 1.0e-8;
-    double sample_time, *sample_times = 0x0, *st, t1;
+    double sample_time, *sample_times = 0x0, /* *st,*/ t1;
     char c, buf[1000], *outpre = NULL;
     int argleft, iarg = 1, error = 0;
     int save_file = 0;

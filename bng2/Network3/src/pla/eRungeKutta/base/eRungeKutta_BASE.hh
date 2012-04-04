@@ -29,9 +29,9 @@ namespace network3{
 									public PostleapChecker{
 	public:
 //		eRungeKutta_TC_RC_FG_PL();
-		eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
+		eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
 								vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
-		eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
+		eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p, Preleap_TC* ptc,
 								vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round);
 		eRungeKutta_TC_RC_FG_PL(const eRungeKutta_TC_RC_FG_PL& tc_rc_fg_pl);
 		virtual ~eRungeKutta_TC_RC_FG_PL();
@@ -52,6 +52,7 @@ namespace network3{
 		void setRounding(bool round){ this->round = round; }
 	protected:
 		bool round;
+		double eps;
 		double approx1;
 		double gg1;
 		Preleap_TC* ptc;

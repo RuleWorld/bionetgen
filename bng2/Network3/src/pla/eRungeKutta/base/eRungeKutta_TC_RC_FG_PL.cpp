@@ -7,8 +7,9 @@
 
 #include "../eRungeKutta.hh"
 
-eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
-		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), approx1(approx1), gg1(gg1), rxn(rxn){
+eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), eps(eps), approx1(approx1),
+		gg1(gg1), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
 	// Error check
@@ -26,9 +27,9 @@ eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double appro
 	this->bc = new BinomialCorrector_RK(p,rxn);
 }
 
-eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double approx1, double gg1, double p, Preleap_TC* ptc,
-		vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round) : round(round), approx1(approx1), gg1(gg1),
-		rxn(rxn){
+eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round) : round(round), eps(eps),
+		approx1(approx1), gg1(gg1), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
 	// Error check
@@ -49,8 +50,8 @@ eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double appro
 }
 
 eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(const eRungeKutta_TC_RC_FG_PL& tc_rc_fg_pl) : TauCalculator(tc_rc_fg_pl),
-		RxnClassifier(tc_rc_fg_pl), FiringGenerator(tc_rc_fg_pl), PostleapChecker(tc_rc_fg_pl),
-		approx1(tc_rc_fg_pl.approx1), gg1(tc_rc_fg_pl.gg1), rxn(tc_rc_fg_pl.rxn){
+		RxnClassifier(tc_rc_fg_pl), FiringGenerator(tc_rc_fg_pl), PostleapChecker(tc_rc_fg_pl), round(tc_rc_fg_pl.round),
+		eps(tc_rc_fg_pl.eps), approx1(tc_rc_fg_pl.approx1), gg1(tc_rc_fg_pl.gg1), rxn(tc_rc_fg_pl.rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL copy constructor called." << endl;
 	//
@@ -91,7 +92,35 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 				classif[v] = RxnClassifier::POISSON;
 			}
 			else{
-				classif[v] = RxnClassifier::EXACT_STOCHASTIC;
+				// Calculate derivatives dav/dXj
+				vector<double> dav_dX;
+				for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
+					dav_dX.push_back(this->rxn[v]->get_dRate_dX(j));
+				}
+				// Get beta_v
+				double beta_v = 0.0;
+				for (unsigned int j=0;j < dav_dX.size();j++){
+//					if (dav_dX[j] != 0.0 && (beta_v == 0.0 || dav_dX[j] < beta_v)){
+					if (fabs(dav_dX[j]) > network3::TOL && (beta_v < network3::TOL || fabs(dav_dX[j]) < beta_v)){
+						beta_v = fabs(dav_dX[j]);
+					}
+				}
+//				if (dav_dX.size() != 0 && beta_v == 0.0){
+				if (dav_dX.size() != 0 && beta_v < network3::TOL){
+					vector<double> X;
+					for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
+						X.push_back(1.0); // a_v^MIN is rate when all reactant pops = 1
+					}
+					beta_v = this->rxn[v]->re->getRate(X);
+				}
+				// If  eps*rate[v] > beta_v --> POISSON...
+				if (this->eps*this->rxn[v]->getRate() > beta_v){
+					classif[v] = RxnClassifier::POISSON;
+				}
+				// ...else, EXACT_STOCHASTIC
+				else{
+					classif[v] = RxnClassifier::EXACT_STOCHASTIC;
+				}
 			}
 		}
 	}

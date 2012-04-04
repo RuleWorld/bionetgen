@@ -283,9 +283,6 @@ void Network3::init_Network3(bool verbose){
 					}
 				}
 				// Prepend path_factor to parser expression and reset expression
-//cout << FUNCTION[func_index]->first->GetExpr() << endl;
-//cout << FUNCTION[func_index]->second << endl;
-//cout << FUNCTION[func_index]->first->Eval() << endl;;
 				string new_expr = Util::toString(fixed_factor) + "*" + Util::toString(path_factor) + "*"
 						+ FUNCTION[func_index]->first->GetExpr();
 				new_expr.erase(new_expr.size()-1); // Erase Null character appended to expression by muParser
@@ -293,8 +290,6 @@ void Network3::init_Network3(bool verbose){
 				FUNCTION[func_index]->second = FUNCTION[func_index]->first->Eval();
 				REACTION.at(i) = new FunctionalRxn(FUNCTION[func_index]->first,re,reS,pr,prS);
 				if (verbose) cout << REACTION.at(i)->toString() << endl;
-//cout << "rate = " << REACTION.at(i)->getRate() << endl << endl;
-//exit(1);
 			}
 			else{
 				cout << "Error in Network3::init_Network3(): Rate law type for reaction " << rxn->index
@@ -605,7 +600,7 @@ void Network3::init_PLA(string config, bool verbose){
 	//
 	// Configuration 1: preTC_RC_FG_negPL
 	if (arg[2] == "pre:neg"){
-		static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,approx1,gg1,p,ptc,SPECIES,REACTION);
+		static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
 		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 	}
 	// Configuration 2: preTC_RC_FG_postPL

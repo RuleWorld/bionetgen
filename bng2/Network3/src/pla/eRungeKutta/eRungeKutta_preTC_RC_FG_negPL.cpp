@@ -12,17 +12,17 @@ eRungeKutta_preTC_RC_FG_negPL::eRungeKutta_preTC_RC_FG_negPL(){
 		cout << "eRungeKutta_preTC_RC_FG_negPL constructor called." << endl;
 }
 */
-eRungeKutta_preTC_RC_FG_negPL::eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double approx1, double gg1, double p,
-		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn)
-		: eRungeKutta_TC_RC_FG_PL(bt,approx1,gg1,p,ptc,sp,rxn){
+eRungeKutta_preTC_RC_FG_negPL::eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double eps, double approx1, double gg1,
+		double p, Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn)
+		: eRungeKutta_TC_RC_FG_PL(bt,eps,approx1,gg1,p,ptc,sp,rxn){
 	if (debug)
 		cout << "eRungeKutta_preTC_RC_FG_negPL constructor called." << endl;
 	this->ch = new NegPopChecker(sp);
 }
 
-eRungeKutta_preTC_RC_FG_negPL::eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double approx1, double gg1, double p,
-		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round)
-		: eRungeKutta_TC_RC_FG_PL(bt,approx1,gg1,p,ptc,sp,rxn,round){
+eRungeKutta_preTC_RC_FG_negPL::eRungeKutta_preTC_RC_FG_negPL(ButcherTableau bt, double eps, double approx1, double gg1,
+		double p, Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round)
+		: eRungeKutta_TC_RC_FG_PL(bt,eps,approx1,gg1,p,ptc,sp,rxn,round){
 	if (debug)
 		cout << "eRungeKutta_preTC_RC_FG_negPL constructor called." << endl;
 	this->ch = new NegPopChecker(sp);
