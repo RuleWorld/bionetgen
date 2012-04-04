@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <link rel="stylesheet" type="text/css" href="style/formate.css"/>
+  <meta name="author" content="Ingo Berg"/>
+  <!-- $META -->	
+  <meta name="keywords" content="muparser, example, sample, benchmarks, benchmark, performance, comparison, release notes, changes, history"/>
+  <meta name="description" content="Sample code for using muParser"/>
+  <title>muParser - A basic axample and benchmarks</title>
+
+  <script src="script/functions.js" language="javascript" type="text/javascript"></script>
+  <script type="text/javascript">
+  imgHome=new Image();
+  imgHome.src="images/home.png";
+  imgHomeDark=new Image();
+  imgHomeDark.src="images/home_dark.png";
+
+  imgApi=new Image();
+  imgApi.src="images/api.png"; 
+  imgApiDark=new Image();
+  imgApiDark.src="images/api_dark.png";
+
+  function ChangeButtonImage(num,obj)
+  {
+    window.document.images[num].src=obj.src;
+  }
+  </script>
+</head>
+
+<body>
+    <div class="gradient" id="top">
+      <div class="header">
+        muParser - a fast math parser library
+        <br/>
+        <div style="font-size:14pt;">Version 1.32</div>
+      </div>
+
+      <div style="position:absolute; width:250px; height:100px; top:20px; text-align:center">
+        <a href="http://sourceforge.net/projects/muparser">
+          <img src="http://sflogo.sourceforge.net/sflogo.php?group_id=137191&amp;type=15" 
+               width="150" 
+               height="40" 
+               border="0"
+               alt="Get muParser - A fast math parser library at SourceForge.net. Fast, secure and Free Open Source software downloads" />
+        </a>
+      </div>	
+
+      <div style="position:absolute; width:100px; right:110px; text-align:center; line-height: 1em;">
+        <a class="white" 
+           href="http://www.beltoforion.de"  
+           onmouseover="ChangeButtonImage(1,imgHome)" 
+           onmouseout="ChangeButtonImage(1,imgHomeDark)">
+          <img src="images/home_dark.png" border="0" height="40" alt="My home page"/>
+          <br/>
+          <span class="tiny_text">My home<br/>page</span>
+        </a>
+     </div>
+
+     <div  style="position:absolute; width:100px; right:10px; text-align:center; line-height: 1em;">
+       <a class="white" 
+          href="http://muparser.sourceforge.net/classdocu/index.html"
+          onmouseover="ChangeButtonImage(2,imgApi)" 
+          onmouseout="ChangeButtonImage(2,imgApiDark)">
+         <img src="images/api_dark.png" border="0" alt="class documentation" height="40"/>
+         <br/>
+         <span class="tiny_text">muParser<br/>API-doc</span>
+       </a>
+    </div>
+  <!--
+    <div  style="position:absolute; width:100px; right:10px; text-align:center; line-height: 1em;">
+      <a class="white" 
+         href="http://sourceforge.net/project/showfiles.php?group_id=137191"
+         onmouseover="ChangeButtonImage(3,imgDown)" 
+         onmouseout="ChangeButtonImage(3,imgDownDark)">
+        <img src="images/download_dark.png" height="40" border="0" alt="muParser download"/>
+        <br/>
+        <span class="tiny_text">muParser<br/>Download</span>
+      </a>
+    </div>
+-->
+  </div> <!-- class="gradient" -->
+
+    <!-- Tabelle mit Hauptinhalt der Seite -->
+    <table id="MainTable" border="0" cellpadding="5" cellspacing="0" style="width:100%; height:100%;">
+      <tbody>
+        <tr>
+          <td style="vertical-align: top; text-align: center" width="230">
+            <h3 class="navi_heading navi_info">Introduction</h3>
+            <div class="sidebarlink">
+                <a href="index.html">About the parser</a><br/>
+                <a href="http://sourceforge.net/news/?group_id=137191">News</a><br/>
+                <a href="mup_links.html">Software using muParser</a><br/>
+                <a href="mup_licence.html">Licence</a><br/>
+            </div>
+
+            <h3 class="navi_heading navi_blocks">Features</h3>
+            <div class="sidebarlink">
+              <a href="mup_features.html">Features</a><br/>
+              <a href="mup_features.html#idFeatureOverview">Overview</a><br/>
+              <a href="mup_features.html#idDef2">Built in functions</a><br/>
+              <a href="mup_features.html#idDef3">Built in binary operators</a><br/>
+            </div>
+
+            <h3 class="navi_heading navi_build">Build instructions</h3>
+            <div class="sidebarlink">
+              <a href="mup_usage.html#idInstWin">Building on Win32</a><br/>
+              <a href="mup_usage.html#idInstLinux">Building on BSD/Linux</a><br/>
+              <a href="mup_usage.html#idInstMisc">Misc build instructions</a><br/>
+              <a href="mup_usage.html#idInstInc">Including the files</a><br/>
+              <a href="mup_usage.html#idInstInc">Where to ask for help</a><br/>
+            </div>
+
+            <h3 class="navi_heading navi_list">Math parser interface</h3>
+            <div class="sidebarlink">
+              <a href="mup_interface.html#idInit">Parser (de)initialization</a><br/>
+              <a href="mup_interface.html#idEval">Evaluating an expression</a><br/>
+              <a href="mup_interface.html#idSetExpr">Setting the expression</a><br/>
+              <a href="mup_interface.html#idDefCharset">Defining identifier charsets</a><br/>
+              <a href="mup_interface.html#idDefVar">Defining parser variables</a><br/>
+              <a href="mup_interface.html#idDefVarEx">Explicit variable definition</a><br/>
+              <a href="mup_interface.html#idDefVarIm">Implicit variable definition</a><br/>
+              <a href="mup_interface.html#idDefConst">Defining constants</a><br/>
+              <a href="mup_interface.html#idDefFun">Defining functions</a><br/>
+              <a href="mup_interface.html#idDefOprt">Defining operators</a><br/>
+              <a href="mup_interface.html#idUnOp">Unary operators</a><br/>
+              <a href="mup_interface.html#idBinOp">Binary operators</a><br/>
+              <a href="mup_interface.html#idQueryVar">Querying variables</a><br/>
+              <a href="mup_interface.html#idQueryConst">Querying constants</a><br/>
+              <a href="mup_interface.html#idDefConst2">Value recognition callbacks</a><br/>
+              <a href="mup_interface.html#idDefConst2">Removing variables/constants</a><br/>
+              <a href="mup_locale.html#idLoc">Localization</a><br/>
+              <a href="mup_interface.html#idErrors">Error handling</a><br/>
+              <a href="mup_version.html#idExample">Example code</a><br/>
+            </div>
+
+            <h3 class="navi_heading navi_question">Current version</h3>
+            <div class="sidebarlink">
+              <a href="mup_version.html#idRelNote">Release notes</a><br/>
+              <a href="mup_version.html#idBench">Benchmarks</a><br/>
+            </div>
+
+            <br/>
+            <div align="center">
+              <a href="http://www.opensource.org/"><img style="border:0;" src="images/osi.jpg" alt="Open source initiative logo"/></a>
+              <br/>
+              <br/>
+              <a href="http://validator.w3.org/check?uri=referer">
+                <img src="http://www.w3.org/Icons/valid-xhtml10-blue" alt="Valid XHTML 1.0 Transitional" style="border:0;width:88px;height:31px"/>
+              </a>
+              <br/>
+              <br/>
+	      <a href="http://jigsaw.w3.org/css-validator/check/referer">
+                <img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss-blue" alt="CSS ist valide!" />
+	      </a>
+
+            </div>
+          </td>
+
+          <td style="height: 100%; padding: 1em; vertical-align: top;">
+            <!-- 
+              This section contains the real page content. 
+              pages are created automatically by using the script "build_page.sh"
+              which combines section templated with the navigation bar.
+
+	      This creates webpages that do not rely on php3 or Javascript for 
+              serverside or client side html inclusion.
+            //-->
+            <!-- $PLACEHOLDER -->
+<!-- 
+//
+//
+//  
+//   Example code
+//
+//
+//
+-->
+
+<h2><a id="idExample"></a>Example code</h2>
+
+<p>
+If you put all this together, you get the source code for a small application. The application defines a parser variables ("<code>a</code>") and adds 
+a user defined functions named "<code>MyFunc</code>". When using the parser make sure that you don't forget to catch the <code>Parser::exception_type</code> in your application. It contains detailed information helping you to find syntax errors in your formula.
+</p>
+
+<pre>
+#include &lt;iostream&gt;
+#include "muParser.h"
+
+// Function callback
+double MyFunction(double a_fVal) 
+{ 
+  return a_fVal*a_fVal; 
+}
+
+// main program
+int main(int argc, char* argv[])
+{
+  using namespace mu;
+
+  try
+  {
+    double fVal = 1;
+    Parser p;
+    p.DefineVar("a", &amp;fVal); 
+    p.DefineFun("MyFunc", MyFunction); 
+    p.SetExpr("MyFunc(a)*_pi+min(10,a)");
+    std::cout &lt;&lt; p.Eval() &lt;&lt; std::endl;
+  }
+  catch (Parser::exception_type &amp;e)
+  {
+    std::cout &lt;&lt; e.GetMsg() &lt;&lt; std::endl;
+  }
+  return 0;
+}
+</pre>
+
+
+<!-- 
+//
+//
+//
+//  Benchmarks
+//
+//
+//
+-->
+
+<hr/>
+<h2><a id="idBench"></a>Benchmarks</h2>
+
+<p>
+Finally, I'd like to give you some benchmarks. The benchmarking was done on an Intel 
+Pentium P-4 with 2.6 GHz, with a version compiled by using MSVC++ 7.1 (Standard edition).
+The diagram shows number of <b>evaluations per seconds vs. expression length</b>. 
+I compared both the static lib and the dll version with two other parsers that are freely available 
+on the net, very fast and have a similar set of features. One of them is a commercial product.
+</p>
+
+<p>
+  <img src="images/bench2.jpg" alt="parser benchmarks" border="0" height="489" width="560"/>
+</p>
+
+<p>
+A higher curve means better performance. Expressions were created randomly. They used only <code>sin</code> and <code>cos</code> functions and contained 
+multiple variables and constants. In order to smoothen the curves each point represents the value of a
+running average over 10 sample expressions. 
+</p>
+
+
+<!-- 
+//
+//
+//  
+//   History
+//
+//
+//
+-->
+
+<hr/>
+<h2><a name="idRelNote"></a>Release Notes</h2>
+
+<h4>Rev 1.32: 30.01.2010</h4>
+This is a service release to fix problems with modern compilers.
+<ul>
+  <li><b>Changes</b>
+    <ul>
+      <li>Added a function for retrieving the Version number of muparser.</li>
+      <li>example3 renamed to example2</li>
+      <li>Project files for bcb and msvc6 removed (include the source directly into your projects)</li>
+      <li>Project files for msvc2003, msvc2005 and msvc2008 added</li>
+    </ul>
+  </li>
+
+  <li><b>Bugfixes</b>
+    <ul>
+      <li>Deprecated feature warnings removed for gcc</li>
+      <li>example1 changed to get rid of memory leaks. Added code for memory leak detection (VisualStudio only)</li>
+      <li>Changes to allow compilation with msvc10 beta2</li>
+      <li>gcc versions >4.0 were not able to run with a customized locale (resulted in std::bad_cast exception)</li>
+    </ul>
+  </li>
+</ul>
+<hr/>
+<h4>Rev 1.30: 09.06.2008</h4>
+This is a service release with minor extensions and bugfixes.
+
+<ul>
+  <li><b>Changes</b>
+    <ul>
+      <li>Epsilon of the numerical differentiation algorithm changed to allow greater accuracy.</li>
+    </ul>
+  </li>
+
+  <li><b>New features</b>
+    <ul>
+      <li>Setting thousands separator and decimal separator is now possible</li>
+    </ul>
+  </li>
+
+  <li><b>Bugfixes</b>
+    <ul>
+      <li>The dll interface did not provide a callback for functions without any arguments.</li>
+    </ul>
+  </li>
+</ul>
+<hr/>
+<h4>Rev 1.28: 02.07.2007</h4>
+
+<ul>
+  <li><b>Library changes</b>
+    <ul>
+      <li>Interface for the dynamic library changed and extended to create an interface using pure C functions only.</li>
+      <li>mupInit() removed</li>
+    </ul>
+  </li>
+
+  <li><b>New features</b>
+    <ul>
+      <li>Functions without parameters added</li>
+    </ul>
+  </li>
+
+  <li><b>Build system</b>
+    <ul>
+      <li>MSVC7 Project files removed in favor of MSVC8.</li>
+    </ul>
+  </li>
+
+  <li><b>Bugfixes</b>
+    <ul>
+      <li>The dynamic library did not build on other systems than linux due to a misplaced
+           preprocessor definition. This is fixed now.</li>
+    </ul>
+  </li>
+
+</ul>
+
+<hr/>
+<h4>Rev 1.2: 14.04.2005</h4>
+First of all the interface has changed so this version is not backwards compatible. 
+After receiving a couple of questions about it, this version features support for user defined binary operators. Consequently the built in operators can now be turned off, thus you can deactivate them and write complete customized parser subclasses that only contain the functionality you want. Other new feature is the introduction of callback functions taking string arguments, implicit generation of 
+variables and the Assignement operator. 
+
+<ul>
+  <li> <b>Functionality</b>
+  <ul>
+    <li><a href="mup_features.html#idDef3">New built in operator</a>: <code>xor</code>; Logical xor.</li>
+    <li>New built in operator: Assignement operator; Defining variables in terms of other 			       variables/constants</li> 
+    <li>New feature: <a href="mup_interface.html#idDefFun">Strings as arguments for callback functions</a></li>
+    <li>New feature: <a href="mup_interface.html#idDefOprt">User defined binary operators</a></li>
+    <li>New feature: <code>ParserInt</code> a class with a sample implementation for
+                     integer numbers.</li> 
+    <li>New feature: <a href="mup_interface.html#idDefConst2">Callbacks to value regognition functions.</a></li> 
+
+    <li>Removed:  all predefined postfix operators have been removed.</li> 
+    <li>New project file:  Now comes with a ready to use windows DLL.</li> 
+    <li>New project file:  Makefile for cygwin now included.</li> 
+    <li>New example:  Example3 shows usage of the DLL.</li> 
+  </ul>
+  </li>
+
+  <li> <b>Interface changes</b>
+  <ul>
+    <li><a href="mup_interface.html#idBinOp">New member function</a>: <code>DefineOprt</code> For 
+                                                    adding user defined binary operators.</li>
+    <li>New member function: <code>EnableBuiltInOprt(bool)</code>  Enables/Disables <a href="mup_features.html#idDef3">
+                             built in binary operators</a>.</li>
+    <li>New member function: <code>AddValIdent(...)</code> to add callbacks for custom value recognition functions.</li>
+    <li>Removed: <code>SetVar()</code>, <code>SetConst()</code>.</li> 
+    <li>Renamed: Most interface functions have been renamed</li>
+    <li>Changed:  The <a href="mup_interface.html#idDefFun">type for multiargument callbacks</a> <code>multfun_type</code> has changed. 
+                  It no longer takes a std::vector as input.</li>
+  </ul>
+  </li>
+  
+  <li> <b>Internal changes</b>
+  <ul>
+     <li>new class <i>muParserTokenReader.h</i> encapsulates the token identification and token assignement.</li>
+     <li>Internal handling of function callbacks unified as a result the performance of the bytecode evaluation 
+         increased.</li>
+  </ul>
+  </li>
+</ul>
+
+            <hr/>
+            <table border="0" style="width:100%">
+            <tr>
+              <td>&copy; 2005-2010 <a href="http://beltoforion.de">Ingo Berg</a> | 
+                  <a href="http://beltoforion.de/privacy_policy/privacy_policy_en.html">Privacy policy</a></td>
+              <td style="text-align:right; padding-right: 3em;">
+                <a href="#top">^ TOP</a>
+              </td>
+            </tr>
+          </table>
+          <br/>
+          <br/>
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+<!--
+    <script type="text/javascript">
+    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+    try 
+    {
+      var pageTracker = _gat._getTracker("UA-1019178-1");
+      pageTracker._trackPageview();
+    } 
+    catch(err) {}
+    </script>
+-->
+</body>
+</html>

@@ -16,7 +16,7 @@ extern "C" {
 #include <time.h>
 #include <sys/times.h>
 #include <limits.h>
-#include "mathutils.h"
+#include "util/mathutils/mathutils.h"
 }
 
 #include <vector>
@@ -26,7 +26,7 @@ extern "C" {
 #include "network3.hh"
 
 #ifndef RUN_NETWORK_VERSION
-#define RUN_NETWORK_VERSION 1.5
+#define RUN_NETWORK_VERSION 3.0
 #endif
 
 struct program_times{

@@ -1,0 +1,15 @@
+Installation procedure for Network3:
+
+If configure script does not exist (developers only):
+0) autoreconf --no-recursive --install
+
+To configure compile and install Network3:
+1) ./configure --prefix=BNGPATH --disable-shared
+2) make
+3) make install
+
+The run_network binary will be placed at BNGPATH/bin/
+
+--
+LAST UPDATE: Justin Hogg, 3 April 2012
+

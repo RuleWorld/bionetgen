@@ -9,7 +9,7 @@
 #define FUNCTION_HH_
 
 #include "../std_include.hh"
-#include "../../include/muParser.h"
+#include "muParser.h"
 
 namespace network3{
 

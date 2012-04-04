@@ -1,3 +1,0 @@
-# Default configuration file for BioNetGen
-$XMGRACE="xmgrace";
-#$DEBUG=1;

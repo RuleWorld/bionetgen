@@ -1,19 +1,19 @@
 #!/usr/bin/perl
 #
-# make_dist.pl
-#
 # SYNOPSIS:
-#   make_dist.pl [OPTION] --version VERSION
+#   make_dist.pl [OPTS] 
 #
 # DESCRIPTION:
-#   create a BioNetGen distribution
+#   Create a BioNetGen distribution from the reposity. By default, attempts
+#   to extract version number and codename from VERSION file in BNG root.
 #
 # OPTIONS:
-#   --bngpath PATH  : path to BioNetGen repository
-#   --outdir  PATH  : output path
+#   --bngpath PATH  : path to BioNetGen repository (default: script directory)
+#   --outdir  PATH  : output path (default: current directory)
+#    --version VERS : version number (overrides VERSION file)
+#   --codename NAME : distribution codename (overrides VERSION file)
 #   --archive       : create distribution archive file
-#   --overwrite     : overwrite existing distribution
-#   --codename NAME : codename for distribution (default is 'stable')
+#   --overwrite     : overwrite any existing distribution
 #   --help          : display help
 
 use strict;
@@ -22,8 +22,6 @@ use warnings;
 # Perl Core Modules
 use FindBin;
 use File::Spec;
-# this module isn't copying the executable permission (as advertised)
-use File::Copy "cp";
 
 ### PARAMETERS ###
 # BNG root directory
@@ -34,14 +32,14 @@ my $outdir = File::Spec->curdir();
 my $archive = 0;
 # if true, overwrites existing distribution
 my $overwrite = 0;
-# distribution version     
-my $version = '';
+# distribution version (default undefined)
+my $version;
 # distribution codename   
 my $codename = 'stable';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
-my $exclude_files = '(^\.|^_|~$|^make_dist\.pl$|^Installation_Guide\.html$|^WikiWelcome\.rtf$|^\.bngrc$|^NOTES\.txt$)';
+my $exclude_files = '(^\.|^_|~$|^make_dist\.pl$|^Installation_Guide\.html$|^WikiWelcome\.rtf$|^NOTES\.txt$)';
 # subdirectories to include in distribution
-my @include_subdirectories = qw/ bin Perl2 Models2 Network2 Network3 PhiBPlot Validate libsource /;
+my @include_subdirectories = qw/ bin Perl2 Models2 Network3 PhiBPlot Validate /;
 # system copy command
 my $syscopy = "cp";
 
@@ -82,16 +80,50 @@ while ( @ARGV and $ARGV[0] =~ /^--/ )
 }
 
 
-# check for valid version
-unless ( $version =~ /^\d+\.\d+\.\d+$/)
-{
-    print "make_dist.pl error:\ninvalid version '$version'.\n";
-    exit -1;
+
+if (defined $version )
+{   # check for proper version format
+    unless ($version =~ /^\d+\.\d+\.\d+$/)
+    {   # invalid format
+        print "make_dist.pl error:\ninvalid version '$version'.\n";
+        exit -1;
+    }
+}
+else
+{   # try to read version file
+    print "..attempting to extract version info from VERSION file.\n";
+    my $version_file = File::Spec->catfile( $bngpath, "VERSION" );
+    my $vfh;
+    unless (open $vfh, '<', $version_file)
+    {   # some problem opening version file
+        print "make_dist.pl error:\ncannot open VERSION file'.\n";
+        exit -1;
+    }
+    # get version line
+    my $vline = <$vfh>;
+    close $vfh;
+    # strip leading space
+    $vline =~ s/^\s+//;
+
+    # extract version
+    if ( $vline =~ s/^(\d+\.\d+\.\d+)\s*// )
+    {   $version = $1;   }
+    else
+    {   # some problem reading version information
+        print "make_dist.pl error:\nversion information has unrecognized format.\n";
+        exit -1;
+    }
+
+    # extract codename, if any
+    if ( $vline =~ s/^(\w+)// )
+    {   $codename = $1;   }
+
+    print "version: $version  codename: $codename\n";
 }
 
 
 # define distribution name, directory and archive file
-my $dist_name    = "BioNetGen_${version}" . (($codename eq '') ? '' : "_${codename}");
+my $dist_name    = "BioNetGen-${version}" . (($codename eq '') ? '' : "-${codename}");
 my $dist_dir     = File::Spec->catdir( ${outdir}, ${dist_name} );
 my $archive_file = File::Spec->catfile( ${outdir}, "${dist_name}.tar.gz" );
 
@@ -126,17 +158,34 @@ if ($archive)
 {   # check if archive file already exists..
     if (-e $archive_file)
     {
-        print "make_dist.pl error:\narchive '$archive_file' already exists.\n";
-        exit -1;
+        if ($overwrite)
+        {   # warn using about overwrite
+            print "make_dist.pl warning:\noverwriting archive file '$archive_file'\n";
+        }
+        else
+        {   # overwrite not allowed! exit with error.
+            print "make_dist.pl error:\narchive '$archive_file' already exists.\n";
+            exit -1;
+        }
     }
 }
 
 
 # check if distribution directory already exists..
 if (-d $dist_dir)
-{   # don't write over any exist files.. ABORT
-    print "make_dist.pl error:\ntarget distribution directory '$dist_dir' already exists.\n"; 
-    exit -1;
+{
+    if (-e $archive_file)
+    {
+        if ($overwrite)
+        {   # warn using about overwrite
+            print "make_dist.pl warning:\noverwriting distribution directory '$dist_dir'\n";
+        }
+        else
+        {   # overwrite not allowed! exit with error.
+            print "make_dist.pl error:\ntarget distribution directory '$dist_dir' already exists.\n"; 
+            exit -1;
+        }
+    }
 }
 
 
@@ -225,9 +274,13 @@ sub copy_dir
         return "copy_dir: source '$source_dir' is not a directory.";
     }
 
-    unless ( mkdir $dest_dir )
-    {   # return error
-        return "copy_dir: cannot create directory ($!)";
+    # create directory, unless it exists
+    unless ( -d $dest_dir )
+    {   
+        unless ( mkdir $dest_dir )
+        {   # return error
+            return "copy_dir: cannot create directory '$dest_dir' ($!)";
+        }
     }
 
     print "including $source_dir . . .\n";
@@ -272,17 +325,19 @@ print <<END_HELP
 make_dist.pl
 
 SYNOPSIS:
-   make_dist.pl [OPTS] --version VERSION
+   make_dist.pl [OPTS] 
 
- DESCRIPTION:
-   create a BioNetGen distribution
+DESCRIPTION:
+   Create a BioNetGen distribution from the reposity. By default, attempts
+   to extract version number and codename from VERSION file in BNG root.
 
- OPTIONS:
-   --bngpath PATH  : path to BioNetGen repository
-   --outdir  PATH  : output path
-   --codename NAME : codename for distribution (e.g. "testing", default is "stable")
+OPTIONS:
+   --bngpath PATH  : path to BioNetGen repository (default: script directory)
+   --outdir  PATH  : output path (default: current directory)
+   --version VERS  : version number (overrides VERSION file)
+   --codename NAME : distribution codename (overrides VERSION file)
    --archive       : create distribution archive file
-   --overwrite     : overwrite existing distribution
+   --overwrite     : overwrite any existing distribution
    --help          : display help
 
 END_HELP
