@@ -9,7 +9,7 @@
 # + now looks at environment variables BNGPATH and BioNetGenRoot for the BNG root folder
 # + now using File::Spec for platform independent path handling
 # + output now written in current directory (not the model directory!)
-# + This version requires BioNetGen version 2.2.0 testing
+# + This version requires BioNetGen version 2.2.0-testing
 
 
 # Perl Modules
@@ -17,22 +17,25 @@ use FindBin;
 use lib $FindBin::RealBin;
 use File::Spec;
 
+# get perl binary
+my $perlbin = $^X;
+
 # get BNG path
-my $BNGPATH;
-my $BNGEXEC;
+my $bngpath;
+my $bngexec;
 {
     # try to find path in environment variables
-    $BNGPATH = (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
+    $bngpath = (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
                                 (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : undef) );
-    unless (defined $BNGPATH)
+    unless (defined $bngpath)
     {   # use FindBin to locate BNG
         my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
         my @dirs = File::Spec->splitdir( $directories );
         pop @dirs;   # BNG executable script should be down one directory from here
-        $BNGPATH = File::Spec->catdir( $volume, File::Spec->catdir(@dirs) );
+        $bngpath = File::Spec->catpath( $volume, File::Spec->catdir(@dirs) );
     }
     # define executable
-    $BNGEXEC = File::Spec->catfile( $BNGPATH, "BNG2.pl" );
+    $bngexec = File::Spec->catfile( $bngpath, "BNG2.pl" );
 }
 
 # some default parameters
@@ -42,39 +45,55 @@ my $n_steps = 20;
 my $steady_state = 0;
 
 my $prefix;
-while ($ARGV[0] =~ /^-/)
+my @mandatory_args = ();
+while ( @ARGV )
 {
-    $_ = shift;
-    if (/^-log$/){
-        $log=1;
+    my $arg = shift @ARGV;
+    if ( $arg =~ s/^(-{1,2})// )
+    {  
+        if ( $arg eq 'log' ){
+            $log = 1;
+        }
+        elsif($arg eq 'n_steps'){
+            unless (@ARGV) { die "Syntax error: $arg requires value"; }
+            $n_steps = shift @ARGV;
+        }
+        elsif($arg eq 'prefix'){
+            unless (@ARGV) { die "Syntax error: $arg requires value"; }
+            $prefix = shift @ARGV;
+        }
+        elsif($arg eq 'steady_state'){
+            $steady_state = 1;
+        }
+        elsif($arg eq 't_end'){
+            unless (@ARGV) { exit_error("Syntax error: $arg requires value"); }
+            $t_end = shift @ARGV;
+        }
+        elsif($arg eq 'help'){
+            display_help();
+            exit 0;
+        }
+        else{
+            die "Syntax error: unrecognized command line option $arg";
+        }
     }
-    elsif(/^-n_steps/){
-        $n_steps = shift @ARGV;
-    }
-    elsif(/^-prefix/){
-        $prefix = shift @ARGV;
-    }
-    elsif(/^-steady_state/){
-        $steady_state = 1;
-    }
-    elsif(/^-t_end/){
-        $t_end = shift @ARGV;
-    }
-    else{
-        exit_error("Unrecognized command line option $_");
+    else
+    {   # assume this is a mandatory argument
+        push @mandatory_args, $arg;
     }
 }
 
-if ($#ARGV != 4) {
-    die "Usage:[ $0 file.bngl varname var_min var_max n_pts ]";
+#print "args: ", join(',', @mandatory_args), "\n";
+unless (@mandatory_args==5)
+{   # complain about too few arguments
+    die "Syntax error: 4 arguments required (Try scan_var.pl --help)";
 }
+
+
 
 # get mandatory arguments
-my $file    = shift @ARGV;
-my $var     = shift @ARGV;
-my $var_min = shift @ARGV;
-my $var_max = shift @ARGV;
-my $n_pts   = shift @ARGV;
+my ($file, $var, $var_min, $var_max, $n_pts) = @mandatory_args;
+
 
 # Automatic assignment of prefix if unset
 unless ($prefix)
@@ -148,8 +167,8 @@ close(BNGL);
 
 # Run BioNetGen on file
 print "Running BioNetGen on $scanmodel\n";
-my $BNGARGS = "-outdir \"${prefix}\"";
-system("$BNGEXEC $BNGARGS $scanmodel > $logfile");
+my $BNGARGS = "--outdir \"${prefix}\"";
+system( "\"$perlbin\" \"$bngexec\" $BNGARGS \"$scanmodel\" > \"$logfile\"" );
 
 # Process output
 my $outfile = "${prefix}.scan";
@@ -184,5 +203,37 @@ foreach my $run (1..$n_pts)
 }
 close(OUT);
 print "Final state data printed to $outfile\n";
+exit 0;
 
+
+
+
+# display help
+sub display_help
+{
+
+print <<END_HELP
+
+scan_var.pl, a simple parameter scan utility for BioNetGen.
+
+SYNOPSIS:
+  scan_var.pl [OPTS] MODEL VAR MIN MAX NPTS     : perform parameter scan
+  scan_var.pl --help                            : display help
+
+OPTIONS:
+  --log           : select parameter values on a log scale
+  --n_steps N     : number of output time steps per simulation
+  --t_end VAL     : end time for each simulation 
+  --prefix PREFIX : prefix for output file (default: MODEL basename)
+  --steady-state  : check for steady state at end of each simulation
+
+Runs ODE simulations of MODEL with a range of values ofr parameter VAR.
+Simulation data is placed in a directory folder named PREFIX_VAR. A data file
+called PREFIX_VAR.scan contains the final smulation state for each 
+parameter value. The scan file may be visualized with a plotting tool, such
+as PhiBPlot.
+
+END_HELP
+
+}
 

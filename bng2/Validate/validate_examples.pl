@@ -13,8 +13,7 @@
 #  fails, check the log file for more details.
 #
 # Validation on WINDOWS:
-#  1)  set $perlbin variable to Perl executable
-#  2)  set $diffbin variable to "diff" executable, if available
+#    User should point the $perlbin variable to the Perl executable
 #
 # What's New?
 #   8sep2011: validation of equilibrium distribution for SSA models. --Justin
@@ -68,25 +67,33 @@ use warnings;
 use FindBin;
 use File::Spec;
 use Scalar::Util qw( looks_like_number );
+use Config;
+
 
 
 ### PARAMETERS ###
+
+# perl binary
+my $perlbin = $^X;
+
 # BNG root directory
 my $bngpath;
+my $bngexec;
 {
-    if (exists $ENV{'BNGPATH'})
-    {
-        $bngpath = $ENV{'BNGPATH'};
-    }
-    else
-    {
+    # try to find path in environment variables
+    $bngpath = (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
+                                (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : undef) );
+    unless (defined $bngpath)
+    {   # use FindBin to locate BNG
         my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
         my @dirs = File::Spec->splitdir( $directories );
-        pop @dirs;  # go down one directory level
-#        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ) ); 
-        $bngpath  = File::Spec->catpath( $volume, File::Spec->catdir( @dirs ), "" ); 
+        pop @dirs;   # BNG executable script should be down one directory from here
+        $bngpath = File::Spec->catpath( $volume, File::Spec->catdir(@dirs) );
     }
+    # define executable
+    $bngexec = File::Spec->catfile( $bngpath, "BNG2.pl" );
 }
+
 # directory containing validation reference files
 my $datdir   = File::Spec->catdir( $bngpath, 'Validate', 'DAT_validate' );
 # directory containing models
@@ -99,7 +106,7 @@ my $compare_rxn = File::Spec->catfile( $modeldir, 'compare_rxn.pl' );
  # if true, delete output files after validation
 my $delete_working_files = 1;   
 # size of indent to STDOUT       
-my $INDENT = '  ';      
+my $INDENT = '  ';
 # p-value for statistical validation (recommend 0.01)
 #   Options are 0.05, 0.02, 0.01, 0.005, 0.002, 0.001.
 #   Keep in mind that validation will fail (100*p) percent of the time, even
@@ -107,10 +114,9 @@ my $INDENT = '  ';
 my $pvalue = 0.01;
 # try to validate NFsim?                  
 my $check_nfsim = 1;
-# perl binary
-my $perlbin = 'perl';
-# diff binary
-my $diffbin = 'diff';
+# arguments for BNG
+my @bngargs = ();
+
 
 
 ###                                                          ###
@@ -135,11 +141,11 @@ while ( @ARGV and $ARGV[0] =~ /^--/ )
     elsif ( $arg eq '--pvalue' )
     {   $pvalue = shift @ARGV;    }
     elsif ( $arg eq '--no-nfsim' )
-    {   $check_nfsim = 0;         }
+    {   $check_nfsim = 0;   }
     elsif ( $arg eq '--no-delete-files' )
     {   $delete_working_files = 0;   }
     elsif ( $arg eq '--help' )
-    {   display_help();  exit 0;  }
+    {   display_help();  exit 0;   }
     else
     {   # unrecognized option!
         print "$0 syntax error: unrecognized command line option '$arg'.\n";
@@ -169,7 +175,6 @@ else
 
 
 # check that we can find the BNG2.pl executable script!
-my $bngexec = File::Spec->catfile( $bngpath, "BNG2.pl" );
 unless ( -e $bngexec )
 {
     print "ERROR: $0 cannot find BNG2.pl script!!\n";
@@ -189,13 +194,19 @@ my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 # check if BioNetGen can find NFsim binary
 if ($check_nfsim)
 {
-    my $command = "\"$perlbin\" \"$bngexec\" -findbin NFsim"; 
+
+    my $command = "\"$perlbin\" \"$bngexec\" --findbin NFsim"; 
     my $err = system($command);
     if ($err)
     {
         print "WARNING: $0 cannot find NFsim binary!\n";
         print "Continuing, but will not validate NFsim.\n";
+        push @bngargs, '--no-nfsim';
     }
+}
+else
+{   # tell BNG to not run NFsim
+    push @bngargs, '--no-nfsim';
 }
     
 
@@ -239,7 +250,8 @@ foreach my $model (@models)
     }
 
     # execute BNGL model
-    my $command = "$perlbin \"$bngexec\" -outdir \"$outdir\" \"$model_file\" > \"$log_file\"";
+    my $bngargs = join( ' ', @bngargs );
+    my $command = "\"$perlbin\" \"$bngexec\" $bngargs --outdir \"$outdir\" \"$model_file\" > \"$log_file\"";
     $err = system( $command );
     if ( $err )
     {
@@ -255,7 +267,7 @@ foreach my $model (@models)
     if ( -e "${datprefix}.net"  and  -e "${outprefix}.net" )
     {
         print $INDENT . "Checking species in .NET file.. ";
-        my $command = "\"$compare_species\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
+        my $command = "\"$perlbin\" \"$compare_species\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
         $err = system( $command );
         if ( $err )
         {
@@ -267,7 +279,7 @@ foreach my $model (@models)
         print "passed.\n";
 
         print $INDENT . "Checking reactions in .NET file.. ";
-        $command = "\"$compare_rxn\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
+        $command = "\"$perlbin\" \"$compare_rxn\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
         $err = system( $command );
         if ( $err )
         {
@@ -283,10 +295,11 @@ foreach my $model (@models)
     if ( -e "${datprefix}.xml"  and  -e "${outprefix}.xml" )
     {
         print $INDENT . "Checking XML specification.. ";
-        my $command = "\"$diffbin\" -bB -I \"<!-- Created by BioNetGen .* -->\" \"${outprefix}.xml\" \"${datprefix}.xml\" >> \"$log_file\"";
-        $err = system( $command );
-        if ( $err )
-        {
+        my $skipline = '<!-- Created by BioNetGen .* -->';
+        my $diff = diff_files( "${outprefix}.xml", "${datprefix}.xml", $skipline );
+        if ($diff ne "")
+        {   
+            system( "echo \"$diff\" >> \"$log_file\"" );
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -299,9 +312,11 @@ foreach my $model (@models)
     if ( -e "${datprefix}_sbml.xml"  and  -e "${outprefix}_sbml.xml" )
     {
         print $INDENT . "Checking SBML specification.. ";
-        $err = system "diff -bB -I '<!-- .* -->' ${outprefix}_sbml.xml ${datprefix}_sbml.xml >> $log_file";
-        if ( $err )
-        {
+        my $skipline = '<!-- .* -->';
+        my $diff = diff_files( "${outprefix}_sbml.xml", "${datprefix}_sbml.xml", $skipline );
+        if ($diff ne "")
+        {   
+            system( "echo \"$diff\" >> \"$log_file\"" );
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -314,9 +329,11 @@ foreach my $model (@models)
     if ( -e "${datprefix}_hybrid.bngl"  and  -e "${outprefix}_hybrid.bngl" )
     {
         print $INDENT . "Checking hybrid model generation.. ";
-        $err = system "diff -bB -I '^#' ${outprefix}_hybrid.bngl ${datprefix}_hybrid.bngl >> $log_file";
-        if ( $err )
-        {
+        my $skipline = '^#';
+        my $diff = diff_files( "${outprefix}_hybrid.bngl", "${datprefix}_hybrid.bngl", $skipline );
+        if ($diff ne "")
+        {   
+            system( "echo \"$diff\" >> \"$log_file\"" );
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -329,9 +346,11 @@ foreach my $model (@models)
     if ( -e "${datprefix}_hybrid.xml"  and  -e "${outprefix}_hybrid.xml" )
     {
         print $INDENT . "Checking hybrid model XML generation.. ";
-        $err = system "diff -bB -I '<!-- Created by BioNetGen .* -->' ${outprefix}_hybrid.xml ${datprefix}_hybrid.xml >> $log_file";
-        if ( $err )
-        {
+        my $skipline = '<!-- Created by BioNetGen .* -->';
+        my $diff = diff_files( "${outprefix}_hybrid.xml", "${datprefix}_hybrid.xml", $skipline );
+        if ($diff ne "")
+        {   
+            system( "echo \"$diff\" >> \"$log_file\"" );
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -344,9 +363,11 @@ foreach my $model (@models)
     if ( -e "${datprefix}.m"  and  -e "${outprefix}.m" )
     {
         print $INDENT . "Checking M-file specification.. ";
-        $err = system "diff -bB -I '^%' ${outprefix}.m ${datprefix}.m >> $log_file";
-        if ( $err )
-        {
+        my $skipline = '^%';
+        my $diff = diff_files( "${outprefix}.m", "${datprefix}.m", $skipline );
+        if ($diff ne "")
+        {   
+            system( "echo \"$diff\" >> \"$log_file\"" );
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -359,9 +380,11 @@ foreach my $model (@models)
     if ( -e "${datprefix}_mex_cvode.c"  and  -e "${outprefix}_mex_cvode.c" )
     {
         print $INDENT . "Checking CVode output specification.. ";
-        $err = system "diff -bB -I '^%' ${outprefix}_mex_cvode.c ${datprefix}_mex_cvode.c >> $log_file";
-        if ( $err )
-        {
+        my $skipline = '^\/\*.*\*\/';
+        my $diff = diff_files( "${outprefix}_mex_cvode.c", "${datprefix}_mex_cvode.c", $skipline );
+        if ($diff ne "")
+        {   
+            system( "echo \"$diff\" >> \"$log_file\"" );
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -374,9 +397,11 @@ foreach my $model (@models)
     if ( -e "${datprefix}_mex.m"  and  -e "${outprefix}_mex.m" )
     {
         print $INDENT . "Checking CVode companion M-file specification.. ";
-        $err = system "diff -bB -I '^%' ${outprefix}_mex.m ${datprefix}_mex.m >> $log_file";
-        if ( $err )
-        {
+        my $skipline = '^%';
+        my $diff = diff_files( "${outprefix}_mex.m", "${datprefix}_mex.m", $skipline );
+        if ($diff ne "")
+        {   
+            system( "echo \"$diff\" >> \"$log_file\"" );
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -389,7 +414,7 @@ foreach my $model (@models)
     if ( -e "${datprefix}.cdat"  and  -e "${outprefix}.cdat" )
     {
         print $INDENT . "Checking species trajectories.. ";
-        $err = system "$verifyexec ${outprefix}.cdat ${datprefix}.cdat >> $log_file";
+        $err = system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.cdat\" \"${datprefix}.cdat\" >> \"$log_file\"";
         if ( $err )
         {
             print "FAILED!!\n";
@@ -404,7 +429,7 @@ foreach my $model (@models)
     if ( -e "${datprefix}.gdat"  and  -e "${outprefix}.gdat" )
     {
         print $INDENT . "Checking observable trajectories.. ";
-        $err = system "$verifyexec ${outprefix}.gdat ${datprefix}.gdat >> $log_file";
+        $err = system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.gdat\" \"${datprefix}.gdat\" >> \"$log_file\"";
         if ( $err )
         {
             print "FAILED!!\n";
@@ -756,6 +781,111 @@ sub chi_square
 
     # return chi_square value
     return $chisq;
+}
+
+
+
+# A simple method for file difference detection
+# returns emtpy string if files are the same,
+# otherwise returns string describing the first differnce.
+# Ignores blank lines and differences in whitespace
+#
+sub diff_files
+{
+    my $file1 = shift @_;
+    my $file2 = shift @_;
+    my $skipline = @_ ? shift @_ : '';
+
+    my $lno1=0;
+    my $lno2=0;
+
+    # open file1
+    my $fh1;
+    unless ( open $fh1, '<', $file1 )
+    {   return "diff_files($file1,$file2): ERROR!! some problem opening file1.";   }
+
+    # read file2
+    my $fh2;
+    unless ( open $fh2, '<', $file2 )
+    {   return "diff_files($file1,$file2): ERROR!! some problem opening file2.";   }
+
+    my $diff = "";
+    # loop through file1
+    while ( my $line1 = <$fh1> )
+    {
+        ++$lno1;
+        # skip blank lines
+        next unless ( $line1 =~ /\S/ );
+        # check skipline regex
+        unless ( $skipline eq '' )
+        {   next if ( $line1 =~ /$skipline/ );   }
+        
+        # get next valid line of file2
+        my $line2;
+        while ($line2 = <$fh2> )
+        {
+            ++$lno2;
+            # skip blank line
+            next unless ( $line2 =~ /\S/ );
+            # check skipline regex
+            unless ( $skipline eq '' )
+            {   next if ( $line2 =~ /$skipline/ );   }
+            # ok, this line2 will be compared to line1
+            last;
+        }
+    
+        # check if line2 is defined
+        unless (defined $line2)
+        {   # found difference
+            $diff = "diff_files($file1,$file2): found difference at lines $lno1 and $lno2.";
+            last;
+        }
+
+        # eliminate leading whitespace
+        $line1 =~ s/^\s+//;
+        $line2 =~ s/^\s+//;
+        # eliminate repeated whitespace
+        $line1 =~ s/\s+/ /g;
+        $line2 =~ s/\s+/ /g;
+        # remove trailing whitespace
+        $line1 =~ s/\s+$//;
+        $line2 =~ s/\s+$//;
+
+        # Special fix for MSWin32
+        # ..exponents are written with 3 digits in Windows rather than the standard 2.
+        if ( $Config{archname} eq "MSWin32" )
+        {   # convert 3 digit exponents to 2 digits
+            $line1 =~ s/(\d[Ee][+\-])0(\d\d)/$1$2/g;
+            $line2 =~ s/(\d[Ee][+\-])0(\d\d)/$1$2/g;
+        }        
+
+        unless ( $line1 eq $line2 )
+        {   # found difference
+            $diff = "diff_files($file1,$file2): found difference at lines $lno1 and $lno2.";
+            last;
+        }
+    }
+
+    if ($diff eq "")
+    {
+        # check if valid lines remain in file2
+        while ( my $line2 = <$fh2> )
+        {
+            ++$lno2;
+            # skip blank line
+            next unless ( $line2 =~ /\S/ );
+            unless ( $skipline eq '' )
+            {   next if ( $line2 =~ /$skipline/ );   }
+
+            # ok, this is a valid line. report difference.
+            $diff = "diff_files($file1,$file2): found difference at lines $lno1 and $lno2.";
+            last;
+        }
+    }
+
+    close $fh1;
+    close $fh2;
+    return $diff;
 }
 
 

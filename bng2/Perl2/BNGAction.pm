@@ -840,8 +840,8 @@ sub simulate_nf
 	my $params = shift;
 	my $err;
 
-	my $prefix  = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
-	my $suffix  = ( defined $params->{suffix} )  ? $params->{suffix} : '';
+	my $prefix  = ( defined $params->{prefix} )  ? $params->{prefix}  : $model->getOutputPrefix();
+	my $suffix  = ( defined $params->{suffix} )  ? $params->{suffix}  : '';
 	my $verbose = ( defined $params->{verbose} ) ? $params->{verbose} : 0;
 	my $complex = ( defined $params->{complex} ) ? $params->{complex} : 0;
     my $get_final_state = ( defined $params->{get_final_state} ) ? $params->{get_final_state} : 0;
@@ -849,6 +849,12 @@ sub simulate_nf
 	my $otherCommandLineParameters = ( defined $params->{param} ) ? $params->{param} : '';
 
 	return '' if $BNGModel::NO_EXEC;
+
+    if ( $model->Params->{no_nfsim} )
+    {   # don't execute NFsim if nf_nfsim parameter is true
+        send_warning( "simulate_nf(): skipping simulation, 'no-nfsim' flag is true.");
+        return '';
+    }
 
 	if ( $suffix ne '' ) {
 		$prefix .= "_${suffix}";

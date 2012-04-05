@@ -46,46 +46,48 @@ $SIG{'TERM'} = sub
 
 # Defaults params for File mode
 my $PARAMS_DEFAULT = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
-                        allow_actions=>1, action_skip_warn=>0, logging=>0, no_exec=>0, allow_perl=>0 };
+                       allow_actions=>1, action_skip_warn=>0, logging=>0, no_exec=>0, allow_perl=>0,
+                       no_nfsim=>0 };
 # Default params for Console mode
 my $PARAMS_CONSOLE = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
-                        allow_actions=>0, action_skip_warn=>1, logging=>0, no_exec=>0, allow_perl=>0 };
+                       allow_actions=>0, action_skip_warn=>1, logging=>0, no_exec=>0, allow_perl=>0,
+                       no_nfsim=>0 };
 
 # Read command line options
 my $params = {%$PARAMS_DEFAULT};
-while ( @ARGV  and  $ARGV[0] =~ /^-/ )
+while ( @ARGV  and  $ARGV[0] =~ s/^(-{1,2})// )
 {
     my $arg = shift @ARGV;
-    if ( $arg eq '-check' ) {
+    if ( $arg eq 'check' ) {
         $params->{no_exec} = 1;
     }
-    elsif ( $arg eq '-log' ) {
+    elsif ( $arg eq 'log' ) {
         $params->{logging} = 1;
     }
-    elsif ( $arg eq '-v' ){
+    elsif ( $arg eq 'v' ){
         printf "BioNetGen version %s\n", BNGversion();
         exit(0);    
     }
-    elsif ( $arg eq '-xml' ) {
+    elsif ( $arg eq 'xml' ) {
         $params->{write_xml} = 1;
     }
-    elsif ( $arg eq '-mfile' ) {
+    elsif ( $arg eq 'mfile' ) {
         $params->{write_mfile} = 1;
     }
-    elsif ( $arg eq '-sbml' ) {
+    elsif ( $arg eq 'sbml' ) {
         $params->{write_sbml} = 1;
     }
-    elsif ( $arg eq '-outdir' )
+    elsif ( $arg eq 'outdir' )
     {   # specify output directory (default is CWD)
         if (@ARGV) 
         {   $params->{output_dir} = shift @ARGV;   }
         else
-        {   exit_error("expected directory name following option -outdir.");  }
+        {   exit_error("expected directory name following option 'outdir'.");  }
     }
-    elsif ( $arg eq '-console' ) {
+    elsif ( $arg eq 'console' ) {
         $params->{console} = 1;
     }
-    elsif ( $arg eq '-findbin' )
+    elsif ( $arg eq 'findbin' )
     {   # ask if BNG can find binary
         if (@ARGV) 
         {   # next argument is binary name
@@ -98,7 +100,10 @@ while ( @ARGV  and  $ARGV[0] =~ /^-/ )
         else
         {   exit_error("expected binary name following option -findbin.");  }
     }
-    elsif ( $arg eq '-h' )
+    elsif ( $arg eq 'no-nfsim' ) {
+        $params->{no_nfsim} = 1;
+    }
+    elsif ( $arg eq 'h' )
     {   # show help menu and exit
         display_help();
         exit(0);
@@ -172,22 +177,22 @@ exit(0);
 sub display_help
 {
     printf "\nBioNetGen version %s\n", BNGversion();
-    print  "--------------------------------------------------/ HELP MENU /----\n"
-          ."  SYNOPSIS                                                         \n"
-          ."    process MODEL:      BNG2.pl [OPTION]... MODEL...               \n"
-          ."    start BNG console:  BNG2.pl -console                           \n"
-          ."    display help:       BNG2.pl -h                                 \n" 
-          ."    display version:    BNG2.pl -v                                 \n"           
-          ."                                                                   \n"
-          ."  OPTIONS                                                          \n"
-          ."    -log          write log to file MODEL.log (default is STDOUT)  \n"
-          ."    -xml          write XML output after processing MODEL          \n"
-          ."    -mfile        write MATLAB M-file output after processing MODEL\n"
-          ."    -sbml         write SBML output after processing MODEL         \n"
-          ."    -check        read MODEL, but do not execute actions           \n"
-          ."    -outdir PATH  change default output path                       \n"
-          ."                                                                   \n"
-          ."  For more information, visit bionetgen.org                        \n"
-          ."-------------------------------------------------------------------\n";
+    print  "--------------------------------------------------/ HELP MENU /-----\n"
+          ."  SYNOPSIS                                                          \n"
+          ."    process MODEL:      BNG2.pl [OPTION]... MODEL...                \n"
+          ."    start BNG console:  BNG2.pl --console                           \n"
+          ."    display help:       BNG2.pl -h                                  \n" 
+          ."    display version:    BNG2.pl -v                                  \n"           
+          ."                                                                    \n"
+          ."  OPTIONS                                                           \n"
+          ."    --log          write log to file MODEL.log (default is STDOUT)  \n"
+          ."    --xml          write XML output after processing MODEL          \n"
+          ."    --mfile        write MATLAB M-file output after processing MODEL\n"
+          ."    --sbml         write SBML output after processing MODEL         \n"
+          ."    --check        read MODEL, but do not execute actions           \n"
+          ."    --outdir PATH  change default output path                       \n"
+          ."                                                                    \n"
+          ."  For more information, visit bionetgen.org                         \n"
+          ."--------------------------------------------------------------------\n";
 }
 
