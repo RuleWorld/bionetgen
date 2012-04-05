@@ -2,12 +2,12 @@
 # Validation script for BioNetGen suite.
 # 
 # SYNOPSIS:
-#   validate_examples.pl [OPTIONS]              : execute validation script on standard model set
-#   validate_examples.pl [OPTIONS] MODEL...     : execute validation script on MODEL
+#   validate_examples.pl [OPTIONS]              : validate all models
+#   validate_examples.pl [OPTIONS] MODEL...     : validate MODEL
 #
 # Exits with value 0 if all validation tests are passed, otherwise exits
-#  with a positive value equal to the number of failed tests, or -1 if there
-#  was a problem running the script.
+#  with a positive value equal to the number of failed tests, or -1 (=255) if
+#  there was some problem executing the validation.
 #
 # A log file named MODEL.log is created for each validation model. If a test
 #  fails, check the log file for more details.
@@ -20,11 +20,11 @@
 #
 #
 # More Details:
-#   This script will automatically recognize and validate the following output files for
-#    each MODEL in the models directory:
+#   This script will automatically recognize and validate the following output
+#    files for each MODEL in the models directory:
 #
 #   output file             reference file         : description                                 
-#  -----------------------------------------------------------------------------
+#  ----------------------------------------------------------------------------
 #   MODEL.net             : MODEL.net              : reaction network
 #   MODEL.xml             : MODEL.xml              : XML specification
 #   MODEL.gdat            : MODEL.gdat             : ODE observables trajectory
@@ -37,22 +37,25 @@
 #  1) Create MODEL.bngl, including actions that generates some or all of
 #       the recognized output files.
 #  2) Put the validation model in $modeldir directory.
-#  3) Generate reference output files and place them in the $datdir subdirectory. **
+#  3) Generate reference output files and place in the $datdir subdirectory.**
 #
-#  ** for most validations, the reference file shares the same format and name as the
-#    output file.  However, special reference files are required for validating
-#    stochastic equilibrium samples. These reference files have a .stat extension and
-#    describe a binned equilibrium distribution of a model observable.
-#    See $datdir/gene_expr_ssa_equil.stats for an example. Equilibrium samples
-#    are compared to the reference distribution by a Chi-square goodness of fit test.
-#    The stats file defines the obsevable of interest, bin widths and probabilities,
-#    and the Chi-square values corresponding to various significance levels.
+#  ** for most validations, the reference file shares the same format and name
+#    as the output file. However, special reference files are required for
+#    validating stochastic equilibrium samples. These reference files have a
+#    .stat extension and describe a binned equilibrium distribution of a model
+#    observable. See $datdir/gene_expr_ssa_equil.stats for an example.
+#    Equilibrium samples are compared to the reference distribution by a
+#    Chi-square goodness of fit test. The stats file defines the obsevable of
+#    interest, bin widths and probabilities, and the Chi-square values
+#    corresponding to various significance levels.
 #
-#  ** It is the Modeler's responsibility to validate the reference trajectory. It is
-#    advisable to compare the reference to analytic results, simulations reported
-#    in the literature, or simulations generated from independent platforms (e.g. MATLAB).
+#  ** It is the Modeler's responsibility to validate the reference trajectory.
+#    It is advisable to compare the reference to analytic results, simulations
+#    reported in the literature, or simulations generated from independent
+#    platforms (e.g. MATLAB).
 #
-# NOTE: make sure BNG knows where to find NFsim, otherwise NFsim validation will fail!
+# NOTE: make sure BNG knows where to find NFsim, otherwise NFsim validation
+#  will fail!
 
 # TODO: Add validations for the following
 #   non-equilibrium stochastic validation (multirun validation)
@@ -164,7 +167,7 @@ else
     my $dh;
     unless( opendir $dh, $modeldir )
     {
-        print "Error: $0 can't open directory $modeldir: $!\n";
+        print "Error: scan_var can't open directory $modeldir: $!\n";
         exit(-1);
     }
     @models = map { /^(.+)\.bngl$/ } ( grep {/^.+\.bngl$/} readdir($dh) );
@@ -177,7 +180,7 @@ else
 # check that we can find the BNG2.pl executable script!
 unless ( -e $bngexec )
 {
-    print "ERROR: $0 cannot find BNG2.pl script!!\n";
+    print "ERROR: scan_var cannot find BNG2.pl script!!\n";
     print "Aborting validation.\n";
     exit(-1);
 }
@@ -186,7 +189,7 @@ my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 {
     unless ( -e $verifyexec )
     {
-        print "ERROR: $0 cannot find Verify script!!\n";
+        print "ERROR: scan_var cannot find Verify script!!\n";
         print "Aborting validation.\n";
         exit(-1);
     }
@@ -194,12 +197,18 @@ my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 # check if BioNetGen can find NFsim binary
 if ($check_nfsim)
 {
-
-    my $command = "\"$perlbin\" \"$bngexec\" --findbin NFsim"; 
-    my $err = system($command);
-    if ($err)
+    print "Checking for NFsim executable..\n";
+    my @args = ( $perlbin, $bngexec, '--findbin', 'NFsim' ); 
+    system(@args);
+    if ($? == -1) { die "failed to execute: $!\n"; }
+    # check return value: 0 means NFsim was found successfully
+    if ( ($?>>8)==0 )
     {
-        print "WARNING: $0 cannot find NFsim binary!\n";
+        print "..found NFsim\n";
+    }
+    else
+    {  
+        print "WARNING: scan_var cannot find NFsim binary!\n";
         print "Continuing, but will not validate NFsim.\n";
         push @bngargs, '--no-nfsim';
     }
@@ -237,25 +246,21 @@ foreach my $model (@models)
     # delete any old files (to avoid validating against old files)
     delete_files($outprefix,$model);
 
-
     # first check that model exists
     unless ( -e $model_file )
     {
-        print "!! Could not find validation model $model_file !!\n";
-        ++$fail_count;
-        if ($delete_working_files)
-        {   delete_files($outprefix);   }
-        next;
-
+        print "!! Can't find validation model $model_file !!\n";
+        exit(-1);
     }
 
     # execute BNGL model
     my $bngargs = join( ' ', @bngargs );
     my $command = "\"$perlbin\" \"$bngexec\" $bngargs --outdir \"$outdir\" \"$model_file\" > \"$log_file\"";
-    $err = system( $command );
-    if ( $err )
-    {
-        print "!! Execution of BNGL model $model' FAILED!! ($?)\n"
+    system( $command );
+    if ($? == -1) { die "failed to execute: $!"; }
+    unless ( ($?>>8)==0 )
+    {   # BNG encountered some problem..
+        print "!! Execution of BNGL model $model' FAILED!!\n"
              ."   see $log_file form more details.\n";
         ++$fail_count;
         if ($delete_working_files)
@@ -263,15 +268,17 @@ foreach my $model (@models)
         next;
     }
 
+
     # check reaction network
     if ( -e "${datprefix}.net"  and  -e "${outprefix}.net" )
     {
         print $INDENT . "Checking species in .NET file.. ";
         my $command = "\"$perlbin\" \"$compare_species\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
-        $err = system( $command );
-        if ( $err )
-        {
-            print "FAILED!!\n";
+        system( $command );
+        if ($? == -1) { die "failed to execute: $!"; }
+        unless ( ($?>>8)==0 )
+        {   # compare_species encountered some problem
+            print "FAILED!!\n", $?>>8, "\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
             next;
@@ -280,10 +287,11 @@ foreach my $model (@models)
 
         print $INDENT . "Checking reactions in .NET file.. ";
         $command = "\"$perlbin\" \"$compare_rxn\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
-        $err = system( $command );
-        if ( $err )
-        {
-            print "FAILED!!\n";
+        system( $command );
+        if ($? == -1) { die "failed to execute: $!"; }
+        unless ( ($?>>8)==0 )
+        {   # compare_rxn encountered some problem
+            print "FAILED!!\n", $?>>8, "\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
             next;
@@ -299,7 +307,8 @@ foreach my $model (@models)
         my $diff = diff_files( "${outprefix}.xml", "${datprefix}.xml", $skipline );
         if ($diff ne "")
         {   
-            system( "echo \"$diff\" >> \"$log_file\"" );
+            my $command = "echo \"$diff\" >> \"$log_file\"";
+            system( $command )==0 or die "system $command failed: $?\n";
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -316,7 +325,8 @@ foreach my $model (@models)
         my $diff = diff_files( "${outprefix}_sbml.xml", "${datprefix}_sbml.xml", $skipline );
         if ($diff ne "")
         {   
-            system( "echo \"$diff\" >> \"$log_file\"" );
+            my $command = "echo \"$diff\" >> \"$log_file\"";
+            system( $command )==0 or die "System $command failed: $?\n";
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -333,7 +343,8 @@ foreach my $model (@models)
         my $diff = diff_files( "${outprefix}_hybrid.bngl", "${datprefix}_hybrid.bngl", $skipline );
         if ($diff ne "")
         {   
-            system( "echo \"$diff\" >> \"$log_file\"" );
+            my $command = "echo \"$diff\" >> \"$log_file\"";
+            system( $command )==0 or die "System $command failed: $?\n";
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -350,7 +361,8 @@ foreach my $model (@models)
         my $diff = diff_files( "${outprefix}_hybrid.xml", "${datprefix}_hybrid.xml", $skipline );
         if ($diff ne "")
         {   
-            system( "echo \"$diff\" >> \"$log_file\"" );
+            my $command = "echo \"$diff\" >> \"$log_file\"";
+            system( $command )==0 or die "System $command failed: $?\n";
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -367,7 +379,8 @@ foreach my $model (@models)
         my $diff = diff_files( "${outprefix}.m", "${datprefix}.m", $skipline );
         if ($diff ne "")
         {   
-            system( "echo \"$diff\" >> \"$log_file\"" );
+            my $command = "echo \"$diff\" >> \"$log_file\"";
+            system( $command )==0 or die "System $command failed: $?\n";
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -384,7 +397,8 @@ foreach my $model (@models)
         my $diff = diff_files( "${outprefix}_mex_cvode.c", "${datprefix}_mex_cvode.c", $skipline );
         if ($diff ne "")
         {   
-            system( "echo \"$diff\" >> \"$log_file\"" );
+            my $command = "echo \"$diff\" >> \"$log_file\"";
+            system( $command )==0 or die "System $command failed: $?\n";
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -401,7 +415,8 @@ foreach my $model (@models)
         my $diff = diff_files( "${outprefix}_mex.m", "${datprefix}_mex.m", $skipline );
         if ($diff ne "")
         {   
-            system( "echo \"$diff\" >> \"$log_file\"" );
+            my $command = "echo \"$diff\" >> \"$log_file\"";
+            system( $command )==0 or die "System $command failed: $?\n";
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
             ++$fail_count;
@@ -414,8 +429,9 @@ foreach my $model (@models)
     if ( -e "${datprefix}.cdat"  and  -e "${outprefix}.cdat" )
     {
         print $INDENT . "Checking species trajectories.. ";
-        $err = system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.cdat\" \"${datprefix}.cdat\" >> \"$log_file\"";
-        if ( $err )
+        system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.cdat\" \"${datprefix}.cdat\" >> \"$log_file\"";
+        if ($? == -1) { die "failed to execute: $!"; }
+        unless ( ($?>>8)==0 )
         {
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
@@ -429,8 +445,9 @@ foreach my $model (@models)
     if ( -e "${datprefix}.gdat"  and  -e "${outprefix}.gdat" )
     {
         print $INDENT . "Checking observable trajectories.. ";
-        $err = system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.gdat\" \"${datprefix}.gdat\" >> \"$log_file\"";
-        if ( $err )
+        system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.gdat\" \"${datprefix}.gdat\" >> \"$log_file\"";
+        if ($? == -1) { die "failed to execute: $!"; }
+        unless ( ($?>>8)==0 )
         {
             print "FAILED!!\n";
             print $INDENT . "see $log_file form more details.\n";
@@ -495,9 +512,9 @@ foreach my $model (@models)
 
 ## Print summary results and exit
 if ($fail_count)
-{   print "\n!! $0 failed $fail_count of $test_count validation tests !!\n";   }
+{   print "\n!! scan_var failed $fail_count of $test_count validation tests !!\n";   }
 else
-{   print "\n$0 passed all tests.\n";   }
+{   print "\nscan_var passed all $test_count test(s).\n";   }
 exit($fail_count);
 
 
@@ -907,7 +924,6 @@ OPTIONS:
   --modelpath PATH    : model path ([BNGPATH]\\Validate)
   --datpath PATH      : database path ([BNGPATH]\\Validate\\DAT_validate)
   --outpath PATH      : output path (cwd)
-  --nfbin BIN         : NFsim binary location ([BNGPATH]\\bin\\NFsim)
   --pvalue VAL        : pvalue for distribution tests (0.01)
   --no-nfsim          : skip NFsim validation
   --no-delete-files   : keep output files after validation

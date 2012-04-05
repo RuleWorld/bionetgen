@@ -93,12 +93,12 @@ while ( @ARGV  and  $ARGV[0] =~ s/^(-{1,2})// )
         {   # next argument is binary name
             my $bin = shift @ARGV;
             if ( BNGModel::findExec($bin) )
-            {   exit(0);  }
+            {   exit 0;  }
             else
-            {   exit(1);  }
+            {   exit 1;  }
         }
         else
-        {   exit_error("expected binary name following option -findbin.");  }
+        {   exit_error("expected binary name following option 'findbin'.");  }
     }
     elsif ( $arg eq 'no-nfsim' ) {
         $params->{no_nfsim} = 1;

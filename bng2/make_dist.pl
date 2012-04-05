@@ -34,12 +34,12 @@ my $archive = 0;
 my $overwrite = 0;
 # distribution version (default undefined)
 my $version;
-# distribution codename   
+# distribution codename (default)
 my $codename = 'stable';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
-my $exclude_files = '(^\.|^_|~$|^make_dist\.pl$|^Installation_Guide\.html$|^WikiWelcome\.rtf$|^NOTES\.txt$)';
+my $exclude_files = '(^\.|^_|~$|\.old$|^make_dist\.pl$)';
 # subdirectories to include in distribution
-my @include_subdirectories = qw/ bin Perl2 Models2 Network3 PhiBPlot Validate /;
+my @include_subdirectories = qw/ Perl2 Models2 Network3 PhiBPlot Validate /;
 # system copy command
 my $syscopy = "cp";
 

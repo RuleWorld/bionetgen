@@ -6,16 +6,19 @@
 # Written by Jim Faeder, Los Alamos National Laboratory, 3/6/2007 
 
 # Updated on 2 April 2012 by J.Hogg
-# + now looks at environment variables BNGPATH and BioNetGenRoot for the BNG root folder
+# + checks environment variables BNGPATH and BioNetGenRoot for the BNG folder
 # + now using File::Spec for platform independent path handling
 # + output now written in current directory (not the model directory!)
 # + This version requires BioNetGen version 2.2.0-testing
 
+use strict;
+use warnings;
 
 # Perl Modules
 use FindBin;
 use lib $FindBin::RealBin;
 use File::Spec;
+use File::Path qw(remove_tree);
 
 # get perl binary
 my $perlbin = $^X;
@@ -86,10 +89,8 @@ while ( @ARGV )
 #print "args: ", join(',', @mandatory_args), "\n";
 unless (@mandatory_args==5)
 {   # complain about too few arguments
-    die "Syntax error: 4 arguments required (Try scan_var.pl --help)";
+    die "Syntax error: 5 required arguments (Try scan_var.pl --help)";
 }
-
-
 
 # get mandatory arguments
 my ($file, $var, $var_min, $var_max, $n_pts) = @mandatory_args;
@@ -104,9 +105,10 @@ unless ($prefix)
 	{   die "Cannot extract prefix from filename $file";   }
 	# trim bngl extension to define prefix
 	($prefix = $file) =~ s/\.bngl$//;
-	# add variable name to prefix
-	$prefix.="_${var}";
 }
+# add variable name to prefix
+$prefix.="_${var}";
+
 
 if ($log)
 {   # convert min and max into log values
@@ -128,78 +130,91 @@ while ( my $line = <IN> )
 }
 close(IN);
 
-if (-d $prefix){
-    # delete output directory
-    system("rm -r $prefix");
-    # die "Directory $prefix exists.  Remove before running this script.";
+# prepare working directory
+if (-d $prefix)
+{   # delete output directory
+    print "WARNING: overwriting existing work directory $prefix.\n";
+    my $err;
+    remove_tree( $prefix, {'safe'=>1, 'keep_root'=>1, 'error'=> \$err} );
+    if (@$err)
+    {   die "Unable to delete files in work directory $prefix";   }
+}
+else
+{   # make directory for output files
+    mkdir $prefix;
 }
 
-# make directory for output files
-mkdir $prefix;
-
-# Create input file scanning variable
+# Create model file with scan actions
 my $scanmodel = File::Spec->catfile( ${prefix}, "${prefix}.bngl" );
 my $logfile   = File::Spec->catfile( ${prefix}, "${prefix}.log" );
 
-open(BNGL,">", $scanmodel) or die "Couldn't write to $scanmodel";
+open(BNGL,">", $scanmodel) or die "Couldn't open $scanmodel for output";
 print BNGL $script;
 print BNGL "generate_network({overwrite=>1})\n";
 
-my $val = $var_min;
-foreach my $run (1..$n_pts)
 {
-    my $srun = sprintf "%05d", $run;
-    if ($run>1){
-        print BNGL "resetConcentrations()\n";
-    }
-    my $x= $val;
-    if ($log){ $x = exp($val);}
-    printf BNGL "setParameter(\"$var\",%.12g)\n", $x;
+    my $val = $var_min;
+    foreach my $run (1..$n_pts)
+    {
+        my $srun = sprintf "%05d", $run;
+        if ($run>1){
+            print BNGL "resetConcentrations()\n";
+        }
+        my $x= $val;
+        if ($log){ $x = exp($val);}
+        printf BNGL "setParameter(\"$var\",%.12g)\n", $x;
 
-    my $opt = "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
-    if ($steady_state){
-        $opt.=",steady_state=>1";
-    }
-    printf BNGL "simulate_ode({$opt})\n";
-    $val+=$delta;
-}  
+        my $opt = "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
+        if ($steady_state){
+            $opt .= ",steady_state=>1";
+        }
+        printf BNGL "simulate_ode({$opt})\n";
+        $val += $delta;
+    }  
+}
 close(BNGL);
 
 # Run BioNetGen on file
 print "Running BioNetGen on $scanmodel\n";
 my $BNGARGS = "--outdir \"${prefix}\"";
-system( "\"$perlbin\" \"$bngexec\" $BNGARGS \"$scanmodel\" > \"$logfile\"" );
+my $command = "\"$perlbin\" \"$bngexec\" $BNGARGS \"$scanmodel\" > \"$logfile\"";
+system( $command )==0
+    or die "System $command failed: $?\n";
 
 # Process output
 my $outfile = "${prefix}.scan";
-open(OUT,">", $outfile) or die "Couldn't open $outfile";
-#my $val= $var_min;
-$val = $var_min;
-foreach my $run (1..$n_pts)
+open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
+
 {
-    # Get data from gdat file
-    my $gdat_file = File::Spec->catfile( $prefix, sprintf("${prefix}_%05d.gdat", $run) );
-    print "Extracting data from $gdat_file\n";
-    open(IN, "<", $gdat_file) or die "Couldn't open $gdat_file";
-    if ($run==1)
+    my $val = $var_min;
+    foreach my $run (1..$n_pts)
     {
-        my $head= <IN>;
-        $head=~ s/^\s*\#//;
-        my @heads= split(' ',$head);
-        shift(@heads);
-        printf OUT "# %+14s", $var;
-        foreach my $head (@heads){
-            printf OUT " %+14s", $head;
+        # Get data from gdat file
+        my $gdat_file = File::Spec->catfile( $prefix, sprintf("${prefix}_%05d.gdat", $run) );
+        print "Extracting data from $gdat_file\n";
+        open(IN, "<", $gdat_file) or die "Couldn't open $gdat_file for input ($!)";
+        if ($run==1)
+        {
+            my $head = <IN>;
+            $head =~ s/^\s*\#//;
+            my @heads = split(' ',$head);
+            shift @heads;
+            printf OUT "# %+14s", $var;
+            foreach my $head (@heads)
+            {
+                printf OUT " %+14s", $head;
+            }
+            print OUT "\n";
         }
-        print OUT "\n";
+        my $last;
+        while (my $line = <IN>) { $last = $line };
+        my @dat = split(' ',$last);
+        my $time = shift @dat;
+        my $x = $log ? exp($val) : $val;
+        printf OUT "%16.8e %s\n", $x, join(' ',@dat);
+        close(IN);
+        $val += $delta;
     }
-    while (my $line = <IN>) { $last = $line };
-    my @dat = split(' ',$last);
-    my $time = shift @dat;
-    my $x = ($log)? exp($val) : $val;
-    printf OUT "%16.8e %s\n", $x, join(' ',@dat);
-    close(IN);
-    $val += $delta;
 }
 close(OUT);
 print "Final state data printed to $outfile\n";
@@ -212,7 +227,7 @@ exit 0;
 sub display_help
 {
 
-print <<END_HELP
+    print <<END_HELP
 
 scan_var.pl, a simple parameter scan utility for BioNetGen.
 
