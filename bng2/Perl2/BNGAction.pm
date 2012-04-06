@@ -340,7 +340,7 @@ sub simulate
 	print "full command: $command\n";
 
     # disable dospath warnings for Windows OS.
-    if ( $Config{'archname'} eq 'MSWin32' )
+    if ( $Config{'osname'} eq 'MSWin32' )
     {   $ENV{'nodosfilewarning'}=1;   }
 
 	# start simulator as child process with communication pipes

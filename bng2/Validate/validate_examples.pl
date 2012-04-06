@@ -870,7 +870,7 @@ sub diff_files
 
         # Special fix for MSWin32
         # ..exponents are written with 3 digits in Windows rather than the standard 2.
-        if ( $Config{archname} eq "MSWin32" )
+        if ( $Config{osname} eq "MSWin32" )
         {   # convert 3 digit exponents to 2 digits
             $line1 =~ s/(\d[Ee][+\-])0(\d\d)/$1$2/g;
             $line2 =~ s/(\d[Ee][+\-])0(\d\d)/$1$2/g;
