@@ -341,7 +341,7 @@ sub simulate
 
     # disable dospath warnings for Windows OS.
     if ( $Config{'osname'} eq 'MSWin32' )
-    {   $ENV{'nodosfilewarning'}=1;   }
+    {   $ENV{'CYGWIN'}='nodosfilewarning';   }
 
 	# start simulator as child process with communication pipes
     my $pid;
