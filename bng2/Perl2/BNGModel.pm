@@ -4,7 +4,13 @@ package BNGModel;
 #use strict;
 #use warnings;
 
-
+# Perl Modules
+use Class::Struct;
+use FindBin;
+use lib $FindBin::Bin;
+use File::Spec;
+use POSIX qw( floor ceil );
+use Config;
 
 # BNGOutput contains BNGModel methods related to third-party output
 #  e.g. writeXML, writeSBML, writeMfile, writeMexfile, toSSC...
@@ -15,12 +21,6 @@ use BNGOutput;
 #  e.g. simulate, simulate_pla, simulate_nf, parameter_scan, generate_hybrid_model...
 #  Note that some core actions are contained here: generate_network, setParameter, etc.
 use BNGAction;
-
-# Perl Modules
-use Class::Struct;
-use FindBin;
-use lib $FindBin::Bin;
-use File::Spec;
 
 # BNG Modules
 use Cache;
