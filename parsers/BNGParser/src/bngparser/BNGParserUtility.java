@@ -31,7 +31,6 @@ public class BNGParserUtility
 	
 	public static bngparser.grammars.BNGGrammar.prog_return produceASTForBNGLText(String text) throws RecognitionException
 	{
-
 		BNGGrammar parser = produceBNGGrammarForBNGLText(text);
 		
 		// Parse the tokens, which produces the ast, and then return the ast.

@@ -12,6 +12,8 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
 @header{
   package bngparser.grammars;
   import org.antlr.stringtemplate.*;
+  
+  import bngparser.exceptions.BNGSemanticException;
   import bngparser.dataType.BondList;
   import java.util.Map;
   import bngparser.methods.ReactionAction;
@@ -61,7 +63,6 @@ scope {
 }
 @init {
   $prog::parameters = new ArrayList();
- 
   $prog::seedSpecies = new ArrayList();
   $prog::reactionRules = new ArrayList();
   $prog::observables = new ArrayList();

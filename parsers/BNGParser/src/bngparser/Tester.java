@@ -12,6 +12,7 @@ import org.antlr.stringtemplate.language.*;
 
 
 import bngparser.dataType.ChangeableChannelTokenStream;
+import bngparser.exceptions.BNGSemanticException;
 import bngparser.grammars.*;
 //import bngparser.netGrammar.*;
 
@@ -26,7 +27,7 @@ public class Tester {
 	
 	public static void main(String[] args) throws IOException,RecognitionException{
 		
-		String inputFile = "testModels/cellcycle.bngl";
+		String inputFile = "testModels/egfr_simple.bngl";
 		//String inputFile = "testModels/FullModelBurstSeconds.bngl";
 		
 		
@@ -58,8 +59,17 @@ public class Tester {
 		
 		StringTemplateGroup template = new StringTemplateGroup(new FileReader("xml.stg"),AngleBracketTemplateLexer.class);
 		parser.setTemplateLib(template);
-		RuleReturnScope r = parser.prog();
-		RuleReturnScope r2 = parser.actions_prog();
+		RuleReturnScope r=null,r2=null;
+		try {
+			
+		
+		r = parser.prog();
+		r2 = parser.actions_prog();
+		} catch (RuntimeException e) {
+			BNGSemanticException er = (BNGSemanticException)e.getCause();
+			System.out.println(er.getErrorMessage());
+			System.out.println(er.getLine());
+		}
 		System.out.println(r2.getTemplate().toString());
 		FileWriter writer = new FileWriter(outputFile);
 		writer.write(r.getTemplate().toString());

@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.List;
 
+import antlr.SemanticException;
+
 /**
  * This class serves as a data structure listing the bonds a molecule contains
  * @author proto
@@ -100,6 +102,15 @@ public class BondList {
 		}
 		return list;
 		
+	}
+	
+	public boolean validateBonds(int line, int column){
+		for(Map.Entry<String,StringPair> entry: map.entrySet()){
+			if(entry.getValue().getRight().equals(""))
+				return false;
+			
+		}
+		return true;
 	}
 	
 	public int getNumBonds(){

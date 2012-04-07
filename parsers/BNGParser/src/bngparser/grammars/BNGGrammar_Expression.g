@@ -99,18 +99,18 @@ variable returns [Double value]: STRING {
 ;
 
 function returns [Double value]:
-  STRING LPAREN RPAREN {
+  s1=STRING LPAREN RPAREN {
     try{
       if($expression::lmemory.containsKey($STRING.text)){
                     Register temp = $expression::lmemory.get($STRING.text);
                     $value = temp.getValue();
                     if(!temp.getType().equals("function")){
-                      System.err.println($STRING.text + "is in memory but it is not a function. Check syntax");
+                      throw new RuntimeException($STRING.text + "is in memory but it is not a function. Check syntax", new BNGSemanticException($STRING.text + " is in memory but it is not a function. Check syntax",s1.getLine()));
                     }
        }
        else{
                     $value = 1.0;
-                    System.err.println("function not found: " + $STRING.text);
+                    throw new RuntimeException("function not found: " + $STRING.text, new BNGSemanticException("function not found: " + $STRING.text,s1.getLine()));
        }
         $expression::references.put($STRING.text,$expression::lmemory.get($STRING.text));
     }

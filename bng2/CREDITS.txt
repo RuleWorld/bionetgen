@@ -32,7 +32,14 @@ Ilya Korsunsky
 
 John Sekar <johnarul.sekar@gmail.com>
    * Development team member.
-   
+
+Jose Juan Tapia <jjtapia@pitt.edu>
+   * BioNetGen grammars development and implementation
+   * SBML2BNGL developer
+
+Adam Smith
+   * RuleBender developer
+      
 Michael Sneddon <michael.sneddon@yale.edu>
    * Author and maintainer of NFsim.
    * Contributor to BNGXML and maintainer of BNG-NFsim interface.      
