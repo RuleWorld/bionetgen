@@ -2082,8 +2082,8 @@ sub pointer_to_ID
 #  and parse out transformations.
 sub findMap
 {
-	my $rr     = shift;    # reaction rule
-	my $mtlist = shift;    # molecule-types list
+	my $rr     = shift @_;    # reaction rule
+	my $mtlist = shift @_;    # molecule-types list
 
     # clear out transformations
     @{$rr->MolDel} = ();
@@ -2249,7 +2249,6 @@ sub findMap
 	}
 
 
-
     # Edges added : Need to convert pointers to products back to pointers to reactants
     # There is a problem for molecules that appear in products but not in reactants.
     # For these, the only way to add the edge is to assign the mapping of product molecules
@@ -2258,7 +2257,7 @@ sub findMap
 	{
 		next unless ( $eused[$iedgeP] == 0 );
 		my @ps = split / /, $pg->Edges->[$iedgeP];
-		next unless ( $#ps == 1 );
+		next unless ( @ps==2 );
 		my $p1P = $ps[0];
 		my $p2P = $ps[1];
 		my ( $im1, $ic1 ) = split /\./, $p1P;
@@ -2271,6 +2270,28 @@ sub findMap
 	}
 
 
+    # Check for invalid half-bonds
+    while ( my ($ptr_P,$adj_P) = each %{$pg->Adjacency} )
+    {
+        unless ( ref $adj_P eq 'HASH' )
+        {   # ptr_P has a half-bond. Find corresponding reactant, if any.
+            my $ptr_R = $map->MapR->{$ptr_P};
+
+            # get molecule and component index
+            my ($im,$ic) = split /\./, $ptr_P;
+            # convert to p.m.c format
+            my $comp = $aggMapP[$im] . ".$ic";
+
+            if ( $ptr_R == -1 )
+            {   # product component is newly synthesized; half-bond is invalid.
+                exit_error( "New product component $comp has invalid half-bond in rule:", $rr->toString() );
+            }
+            if ( ref $rg->Adjacency->{$ptr_R} eq 'HASH' )
+            {   # corresponding reactant component has a full-bond; half-bond is invalid
+                exit_error( "Product component $comp has new or redefined half-bond in rule:", $rr->toString() );
+            }
+        }
+    }
 
 
 	# Parse component state changes
