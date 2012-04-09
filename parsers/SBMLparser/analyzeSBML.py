@@ -8,7 +8,7 @@ Created on Thu Mar 22 13:11:38 2012
 from libsbml2bngl import SBML2BNGL
 from pyparsing import Word, Suppress,Optional,alphanums,Group
 import libsbml
-from numpy import sort
+from numpy import sort,zeros
 import json
 
 def identifyReaction(reaction,element):
@@ -104,47 +104,67 @@ def loadConfigFiles():
         reactionDefinition = json.load(fp)
     return reactionDefinition
 
-def identifyReactions2():
+def identifyReactions2(rule,reactionDefinition):
     '''
     This method goes through the list of common reactions listed in ruleDictionary
-    and tries to find how are they related according to the information on reactionDefinition
-    '''    
-
-def getDescription(species,rules):
-    #rawDatabase = {}
-    #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",)],),('S3',):([("l",)],),('S4',):([('t',)],)}  
-    rawDatabase = {}
-    synthesisDatabase = {}
-    labelDictionary = {}
-    catalysisDatabase = {}
+    and tries to find how are they related according to the information in reactionDefinition
+    '''  
+    #print reactionDefinition
+    result = []
+    for idx,element in enumerate(reactionDefinition['reactions']):
+        if(len(rule[0]) == len(element[0]) and len(rule[1]) == len(element[1])):
+            result.append(1)           
+#            for (el1,el2) in (element[0],rule[0]):
+#                if element[0].count(el1) == element[]
+        else:
+            result.append(0)
     
+    return result
+
+  
+    
+def species2Rules(rules):
+    '''
+    This method goes through the rule list and classifies species tuples in a dictionary
+    according to the reactions they appear in.
+    '''
     ruleDictionary = {}
-    reactionDefinition = loadConfigFiles()
-    for rule in rules:   
+    for rule in rules:
         reaction2 = list(parseReactions(rule))
         #print reaction2
         totalElements =  [item for sublist in reaction2 for item in sublist]
-        if tuple(totalElements) in ruleDictionary:
-            ruleDictionary[tuple(totalElements)].append(rules.index(rule))
+        if frozenset(totalElements) in ruleDictionary:
+            ruleDictionary[frozenset(totalElements)].append(rules.index(rule))
         else:
-            ruleDictionary[tuple(totalElements)] = [rules.index(rule)]
-        totalElements = list(set(totalElements))
-        #labelDictionary = defineCorrespondence(reaction2,totalElements,labelDictionary,rawDatabase,synthesisDatabase,catalysisDatabase)
-        #print labelDictionary        
-        #labelDictionary = resolveCorrespondence(labelDictionary)
+            ruleDictionary[frozenset(totalElements)] = [rules.index(rule)]
+    return ruleDictionary
 
-    print ruleDictionary    
+def getDescription(species,rules):
+    '''
+    This method will go through the list of rules and the list of rule definitions
+    and tell us which rules it can classify according to the rule definitions list
+    provided
+    '''
+    ruleDictionary = species2Rules(rules)
+    reactionDefinition = loadConfigFiles()
+    ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
+    for (idx,rule) in enumerate(rules):
+        reaction2 = list(parseReactions(rule))
+        ruleComplianceMatrix[idx] = identifyReactions2(reaction2,reactionDefinition)
+    
+    tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
+    for element in ruleDictionary:
+        for rule in ruleDictionary[element]:
+            tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
     #labelDictionary = resolveCorrespondence(labelDictionary)
     #print labelDictionary
-    print json.dumps(labelDictionary)
+    print tupleComplianceMatrix
     
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
     #BIOMD0000000272
-    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
-    document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
-    reactionDefinition = loadConfigFiles()
-    print reactionDefinition
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     model = document.getModel()        
     parser = SBML2BNGL(model)
 #    print parser.getReactions()
