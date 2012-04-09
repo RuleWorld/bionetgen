@@ -1,0 +1,1 @@
+{"reactions": [[["S0", "S1"], ["S2"]], [["S2"], ["S0", "S1"]], [[],["S0"]],[["S0"],[]]], "definitions": {"Binding": [0, 1],"Generation":[2],"Decay":[3]}}
