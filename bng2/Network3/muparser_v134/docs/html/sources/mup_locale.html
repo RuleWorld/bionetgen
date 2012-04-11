@@ -1,0 +1,39 @@
+<!-- 
+//
+//
+//  
+//   Localization
+//
+//
+//
+-->
+
+<h2><a id="idLoc"></a>Localization</h2>
+<p>
+Sometimes it is necessary to change decimal separator, argument separator or thousands separator 
+to match a certain locale. The following functions can be used for this purpose:
+</p>
+
+<h3>[DLL interface]</h3>
+<pre>
+// german localization
+mupSetArgSep(hParser, ';');
+mupSetDecSep(hParser, ',');
+mupSetThousandsSep(hParser, '.');
+
+// reset to defaults
+mupResetLocale();
+</pre>
+<small>See also: <i>example2/example2.c</i>.</small>
+
+<h3>[Parser class interface]</h3>
+<pre>
+// german localization
+parser.SetArgSep(';');
+parser.SetDecSep(',');
+parser.SetThousandsSep('.');
+
+// reset to defaults
+parser.ResetLocale();
+</pre>
+<small>See also: <i>example1/example1.cpp</i>.</small>

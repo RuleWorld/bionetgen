@@ -1,0 +1,16 @@
+These are basic instructions for recreating the project files:
+
+Clearing olf project and makefiles:
+bakefile_gen -c
+
+Remaking Projects and Makefiles:
+bakefile_gen
+
+In addition to that automake must be started to create the new configure script:
+rm -rf autoconf/autom4te.cache autoconf/aclocal.m4
+../autoconf/acregen.sh
+
+!!! IMPORTANT !!! 
+When building bakefile from the tar.gz archive make sure to 
+use the option --prefix=/usr wit the config file since its 
+path will default to /usr/local. This would cause strange errors!
