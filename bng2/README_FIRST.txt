@@ -1,29 +1,54 @@
-QUICK INSTALLATION INSTRUCTIONS 
+QUICK START GUIDE
 
-The latest distributions, release notes, installation guides, etc. are avaiable
-at http://bionetgen.org.
+The latest BioNetGen distributions, release notes, installation guides, 
+tutorials, etc. are avaiable at http://bionetgen.org.
 
-To install, simply unzip the BioNetGen distribution file BioNetGen_x.y.z.tar.gz
-in the directory where you would like BioNetGen installed.
+RuleBender, a Java-based graphical front end for BioNetGen, is available at
+http://rulebender.org. RuleBender is supported on Linux, Mac OS/X, and Windows
+platforms. A compatible version of BioNetGen is included in the RuleBender
+distribution. If you are not sure if your version of BNG is compatible with
+RuleBender, please use the version distributed with RuleBender.
 
-Pre-compiled binaries for the simulation back end are NOT provided, but may be
-availble for download at the BioNetGen website or as part of a RuleBender
-distribution. Users of GNU/Linux and Mac OS/X can compile the binaries by
-opening a shell to the BioNetGen root directory and executing 'make'.
+QUESTIONS?
+Email the developers at bionetgen.help@gmail.com
 
-Running BNG2.pl requires the perl interpreter to be installed on your
-machine.  If you have Linux or Mac OS X, an adequate perl is already
-installed.  If you have Windows, Perl can be installed in your Cygwin
-environment (if you have it), or it ActivePerl can be installed (see
-http://aspn.activestate.com/ASPN/Downloads/ActivePerl/).
+To install BioNetGen, unzip the BioNetGen distribution file, 
+e.g. BioNetGen-2.2.0-stable.tar.gz, in the directory where you would like
+BioNetGen installed:
 
-RuleBender, the graphical front-end for BioNetGen is available at
-http://rulebender.org.  Rulebender requires Java Runtime 1.5.0+.
+    cd <installdir>
+    tar -zxvf BioNetGen-2.2.0-stable.tar.gz
 
-Some example model files are provided in Models2.  To run them, simply cd to
+Running BNG2.pl requires a Perl interpreter. If you have Linux or Mac OS/X,
+an adequate perl is already installed. If you have Windows, try ActivePerl
+(see http://aspn.activestate.com/ASPN/Downloads/ActivePerl/). Perl is also
+available for Windows users within the Cygwin environment.
+
+Pre-compiled binaries (executables) for the ODE, SSA and PLA engines are
+provided for Linux, OS/X, and Windows. If your system is equipped with suitable
+compilation tools, you may compile your own binaries from a console as follows:
+
+    cd <bngpath>\Network3
+    ./configure --disable-shared --prefix=<bngpath>
+    make
+    make install
+
+Example models are provided in the Models2 folder. To run them, go to
 the Models2 directory, and type:
- > ../BNG2.pl <model>.bngl
+
+    ../BNG2.pl <model>.bngl
+
 where <model> is one of the models found in the Models2 directory.
 
+To validate BioNetGen installation:
+1) run the Perl script BNGPATH/Validate/validate_examples.pl.
+2) if any tests fail, look at the log files for more information.
+
+PLEASE NOTE!! stochastic simulation tests rely on statistical validation.
+Occasionally a validation will fail due to outliers. Run the validation
+script a few times. If a test passes most of the time, it is probably OK.
+Single tests may be run by passing the model basename as argument.
+
+
 --
-Last modified Mar 23, 2012 for release 2.2.0 testing
+Last modified 6 April 2012 for release 2.2.0-testing
