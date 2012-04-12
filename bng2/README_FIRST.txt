@@ -1,7 +1,7 @@
 QUICK START GUIDE
 
 The latest BioNetGen distributions, release notes, installation guides, 
-tutorials, etc. are avaiable at http://bionetgen.org.
+tutorials, etc. are available at http://bionetgen.org.
 
 RuleBender, a Java-based graphical front end for BioNetGen, is available at
 http://rulebender.org. RuleBender is supported on Linux, Mac OS/X, and Windows
@@ -44,7 +44,7 @@ To validate BioNetGen installation:
 1) run the Perl script BNGPATH/Validate/validate_examples.pl.
 2) if any tests fail, look at the log files for more information.
 
-PLEASE NOTE!! stochastic simulation tests rely on statistical validation.
+PLEASE NOTE!! Stochastic simulation tests rely on statistical validation.
 Occasionally a validation will fail due to outliers. Run the validation
 script a few times. If a test passes most of the time, it is probably OK.
 Single tests may be run by passing the model basename as argument.
