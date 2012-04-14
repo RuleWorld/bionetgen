@@ -678,7 +678,7 @@ sub writeMfile
     # get list of species names and initial value expressions for matlab
 	my $mscript_species_names;
 	my $mscript_species_init;
-	($mscript_species_names, $mscript_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $plist );
+	($mscript_species_names, $mscript_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $model );
     if ($err) { return $err }; 
 
 
@@ -1159,7 +1159,7 @@ sub writeMexfile
     # get list of species names and initial value expressions for matlab
 	my $mscript_species_names;
 	my $mscript_species_init;
-	($mscript_species_names, $mscript_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $plist );
+	($mscript_species_names, $mscript_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $model );
     if ($err) { return $err };
 
 

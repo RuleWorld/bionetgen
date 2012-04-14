@@ -33,15 +33,16 @@ struct Species =>
 sub toXML
 {
     my $spec = shift @_;
-    my $indent = shift @_;
-    my $id = @_ ? shift : "S".$spec->Index;
+    my $indent = @_ ? shift @_ : "";
+    my $conc   = @_ ? shift @_ : $spec->Concentration;
+    my $id = @_ ? shift : "S".$spec->Index;  # what's this for??
 
     my $type = 'Species';
     my $attributes = '';
 
     # Attributes
     # concentration
-    $attributes .= " concentration=\"" . $spec->Concentration . "\"";
+    $attributes .= " concentration=\"" . $conc . "\"";
     # name
     $attributes .= " name=\"" . $spec->SpeciesGraph->toString() . "\"";
 
