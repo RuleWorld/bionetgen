@@ -58,7 +58,7 @@ set(SRC_FILES
     ${rand2_files}
 )
 
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../lib)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 link_libraries(libmathutils.a libmuparser.a libsundials_cvode.a libsundials_nvecserial.a)
 
