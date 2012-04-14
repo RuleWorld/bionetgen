@@ -10,7 +10,7 @@
 
 #define PI 3.141592654
 
-using namespace Util;
+//using namespace Util;
 
 // Returns the value ln[Gamma(xx)] for xx > 0.
 double gammln(double xx){
