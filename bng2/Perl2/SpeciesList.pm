@@ -263,12 +263,9 @@ sub writeBNGL
     my $plist       = @_ ? shift @_ : undef;
     my $user_params = @_ ? shift @_ : { 'TextSpecies'=>0, 'pretty_formatting'=>0 };
 
-    # check concentration vector
-    if ( @$conc )
-    {
-        unless ( @$conc == @{$slist->Array} )
-        {   exit_error( "SpeciesList->writeBNGL(): concentration vector has wrong length" );   }
-    }
+    # this method loads @$conc with initial conditions (if @$conc is empty)
+    #  OR checks that @$conc is okay (if @$conc has elements)
+    $slist->checkOrInitConcentrations($conc);
 
     # Determine length of longest species string
     my $maxlen = 0;
@@ -296,15 +293,7 @@ sub writeBNGL
         my $sexact = $spec->SpeciesGraph->toString(0);
         $out .= sprintf "%-${maxlen}s", $sexact;
         
-        my $c;
-        if ( @$conc )
-        {   # write values from concentration vector
-            $c = $conc->[ $spec->Index - 1 ];
-        }
-        else
-        {   # write model-defined initial concentrations
-            $c = $spec->Concentration;
-        }
+        my $c = $conc->[ $spec->Index - 1 ];
         $out .= sprintf " %s\n", $c;
     }  
     $out .= "end species\n";
@@ -323,19 +312,17 @@ sub writeBNGL
 sub writeSSC
 {
     my $slist = shift @_;
-    my $conc  = (@_) ? shift : '';
-    my $plist = (@_) ? shift : '';
-    my $print_names = (@_) ? shift : 0;
+    my $conc  = @_ ? shift @_ : [];
+    my $plist = @_ ? shift @_ : undef;
+    my $print_names = @_ ? shift : 0;
+
     my $string = '';
 
-    # Determine length of longest species string. Not sure, what it does
-    my $maxlen=0;
-    foreach my $spec (@{$slist->Array})
-    {
-        my $len= length($spec->SpeciesGraph->Name.$spec->SpeciesGraph->StringExact)+1;
-        $maxlen= ($len> $maxlen) ? $len : $maxlen;
-    }
+    # this method loads @$conc with initial conditions (if @$conc is empty)
+    #  OR checks that @$conc is okay (if @$conc has elements)
+    $slist->checkOrInitConcentrations($conc);
 
+    my $idx=0;
     foreach my $spec (@{$slist->Array})
     {
         my $sname;
@@ -343,9 +330,10 @@ sub writeSSC
         $sname=$sexact;
         $string .= "new $sname at ";
         my $c;
-        $c = $spec->Concentration;
+        $c = $conc->[$idx];
         $string .= $c;
         $string.= "\n";
+        ++$idx;
     }
 
     return $string;
@@ -371,26 +359,20 @@ sub print
 sub toXML
 {
     my $slist  = shift @_;
-    my $indent = shift @_;
+    my $indent = @_ ? shift @_ : "";
     # Use concentration array if provided
-    my $conc = @_ ? shift @_ : undef;
+    my $conc   = @_ ? shift @_ : [];
+
+    # this method loads @$conc with initial conditions (if @$conc is empty)
+    #  OR checks that @$conc is okay (if @$conc has elements)
+    $slist->checkOrInitConcentrations($conc);
 
     my $string = $indent . "<ListOfSpecies>\n";
 
     my $i=0;
     foreach my $spec (@{$slist->Array})
     {
-        my $saved_conc;
-        if ($conc)
-        {
-            $saved_conc = $spec->Concentration;
-            $spec->Concentration($conc->[$i]);
-        }
-        $string.= $spec->toXML("  ".$indent);
-        if ($conc)
-        {
-            $spec->Concentration($saved_conc);
-        }
+        $string.= $spec->toXML("  ".$indent, $conc->[$i]);
         ++$i;
     }
 
@@ -541,11 +523,15 @@ sub toMatlabString
 
 
 # get names of species and formulas for initial concentrations for matlab
+#  NOTE: this method ALWAYS writes the original initial concentration definitions
+#   and ignores any changes made by setConcentrations
 sub getMatlabSpeciesNames
 {
-    my $slist = shift;
-    my $plist = (@_) ? shift : undef;
+    my $slist = shift @_;
+    my $model = shift @_;
     
+    my $plist = $model->ParamList;
+
     my $err;
     my $species_names = '';
     my $species_init = '';
@@ -556,7 +542,7 @@ sub getMatlabSpeciesNames
     # generate a map from param names to matlab references
     my $ref_map = {};
     my $m_idx = 1;
-    foreach my $param ( @{ $plist->Array } )
+    foreach my $param ( @{$plist->Array} )
     {
         if ( $param->Type eq 'Constant' )
         {
@@ -608,6 +594,34 @@ sub getMatlabSpeciesNamesOnly
     
     return (  join(', ', @species_names), $err );
 
+}
+
+# Put copy of initial concentrations (as defined in model at @$conc
+# If @$conc is non-empty, then check if @$conc is okay (pad with zeros if too short)
+#
+# $slist->checkOrInitConcentrations( $conc )
+sub checkOrInitConcentrations
+{
+    my $slist = shift @_;
+    my $conc  = shift @_;
+
+    # decide to use concentration vector or direct values from species
+    if ( @$conc )
+    {   # check concentration vector
+        if ( @$conc > @{$slist->Array} )
+        {   # this case is not well-defined
+            exit_error( "SpeciesList->initConcentrations(): concentration array is longer than species array" );
+        }
+        elsif ( @$conc < @{$slist->Array} )
+        {   # pad with zeros
+            my $n_zeros = @{$slist->Array} - @$conc;
+            push @$conc, (0) x $n_zeros;
+        }
+    }
+    else
+    {   # get concentrations from species
+        @$conc = map {$_->Concentration} @{$slist->Array};
+    }
 }
 
 
