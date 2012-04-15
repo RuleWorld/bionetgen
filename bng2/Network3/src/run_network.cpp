@@ -26,7 +26,7 @@ extern "C" {
 #include "network3.hh"
 
 #ifndef RUN_NETWORK_VERSION
-#define RUN_NETWORK_VERSION 3.0
+#define RUN_NETWORK_VERSION "3.0"
 #endif
 
 struct program_times{

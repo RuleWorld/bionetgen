@@ -22,7 +22,7 @@ set(SUB_DIRS
     src/util/rand2
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} include SUB_DIRS)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} cvode-2.6.0/include muparser_v134/include SUB_DIRS)
 
 aux_source_directory(src src_files)
 aux_source_directory(src/model model_files)
@@ -60,6 +60,6 @@ set(SRC_FILES
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
-link_libraries(libgsl.a libgslcblas.a libmathutils.a libmuparser.a libsundials_cvode.a libsundials_nvecserial.a)
+link_libraries(libmathutils.a libmuparser.a libsundials_cvode.a libsundials_nvecserial.a)
 
 add_executable(run_network ${SRC_FILES})

@@ -167,7 +167,7 @@ else
     my $dh;
     unless( opendir $dh, $modeldir )
     {
-        print "Error: scan_var can't open directory $modeldir: $!\n";
+        print "Error: validate_examples can't open directory $modeldir: $!\n";
         exit(-1);
     }
     @models = map { /^(.+)\.bngl$/ } ( grep {/^.+\.bngl$/} readdir($dh) );
@@ -180,7 +180,7 @@ else
 # check that we can find the BNG2.pl executable script!
 unless ( -e $bngexec )
 {
-    print "ERROR: scan_var cannot find BNG2.pl script!!\n";
+    print "ERROR: validate_examples cannot find BNG2.pl script!!\n";
     print "Aborting validation.\n";
     exit(-1);
 }
@@ -189,7 +189,7 @@ my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 {
     unless ( -e $verifyexec )
     {
-        print "ERROR: scan_var cannot find Verify script!!\n";
+        print "ERROR: validate_examples cannot find Verify script!!\n";
         print "Aborting validation.\n";
         exit(-1);
     }
@@ -208,7 +208,7 @@ if ($check_nfsim)
     }
     else
     {  
-        print "WARNING: scan_var cannot find NFsim binary!\n";
+        print "WARNING: validate_examples cannot find NFsim binary!\n";
         print "Continuing, but will not validate NFsim.\n";
         push @bngargs, '--no-nfsim';
     }
@@ -512,9 +512,9 @@ foreach my $model (@models)
 
 ## Print summary results and exit
 if ($fail_count)
-{   print "\n!! scan_var failed $fail_count of $test_count validation tests !!\n";   }
+{   print "\n!! validate_examples failed $fail_count of $test_count validation tests !!\n";   }
 else
-{   print "\nscan_var passed all $test_count test(s).\n";   }
+{   print "\nvalidate_examples passed all $test_count test(s).\n";   }
 exit($fail_count);
 
 

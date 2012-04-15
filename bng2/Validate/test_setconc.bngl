@@ -1,0 +1,44 @@
+begin model
+begin parameters
+    NA  6.0221e23   # Avogadro's Number
+    V   1e-9        # Reactor volume
+    L0  1e-9        # ligand, counts
+    R0  1e-9        # receptor, counts
+    kp  1e6/NA/V    # binding, /s
+    km  0.1         # unbinding, /s
+end parameters
+begin molecule types
+    L(r)
+    R(l)
+end molecule types
+begin seed species
+    L(r)  L0*NA*V
+    R(l)  R0*NA*V
+end seed species
+begin observables
+    Species   LR    R(l!0).L(r!0)
+end observables
+begin reaction rules
+    R(l) + L(r) <-> R(l!0).L(r!0)  kp, km
+end reaction rules
+end model
+
+# actions #
+generate_network({overwrite=>1})
+setConcentration("L(r)", "2e-9*NA*V")
+resetConcentrations()
+simulate_ode({t_start=>0,t_end=>100,n_steps=>40})
+saveConcentrations("post1")
+resetConcentrations()
+simulate_ode({t_start=>100,t_end=>200,n_steps=>40,continue=>1})
+addConcentration("L(r)", "1e-9*NA*V")
+simulate_ode({t_start=>200,t_end=>300,n_steps=>40,continue=>1})
+saveConcentrations("post2")
+resetConcentrations()
+simulate_ode({t_start=>300,t_end=>400,n_steps=>40,continue=>1})
+resetConcentrations("post2")
+simulate_ode({t_start=>400,t_end=>500,n_steps=>40,continue=>1})
+resetConcentrations("post1")
+simulate_ode({t_start=>500,t_end=>600,n_steps=>40,continue=>1})
+writeMfile()
+writeXML()

@@ -24,13 +24,13 @@ BNG_BINDIR = ../bin
 # library prefixes
 MATHUTILS = Mathutils
 CVODE = cvode-2.6.0
-GSL = gsl-1.9
+#GSL = gsl-1.9
 MUPARSER = muparser_v134
 
 # library files
 MATHUTILS_LIB = ${LIBDIR}/libmathutils.a 
 CVODE_LIB = ${LIBDIR}/libsundials_cvode.a ${LIBDIR}/libsundials_nvecserial.a
-GSL_LIB = ${LIBDIR}/libgsl.a ${LIBDIR}/libgslcblas.a
+#GSL_LIB = ${LIBDIR}/libgsl.a ${LIBDIR}/libgslcblas.a
 MUPARSER_LIB = ${LIBDIR}/libmuparser.a
 
 # Optional include file to override default variables
@@ -40,7 +40,8 @@ MUPARSER_LIB = ${LIBDIR}/libmuparser.a
 .PHONY: clean distclean
 
 # run_network executable
-run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(GSL_LIB) $(MUPARSER_LIB)
+#run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(GSL_LIB) $(MUPARSER_LIB)
+run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(NETWORK_BINDIR)
 	cd $(NETWORK_BINDIR); cmake $(CMAKELISTS_DIR); make;
 	mkdir -p $(CURDIR)/$(BNG_BINDIR)
@@ -53,11 +54,11 @@ $(CVODE_LIB):  $(LIBSOURCE)/$(CVODE).tar.gz
 	tar -xzf $(LIBSOURCE)/$(CVODE).tar.gz
 	cd $(CVODE);  ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
 
-$(GSL_LIB):  $(LIBSOURCE)/$(GSL).tar.gz
-	mkdir -p $(LIBDIR) $(INCDIR)
-	rm -rf $(GSL)
-	tar -xzf $(LIBSOURCE)/$(GSL).tar.gz
-	cd $(GSL);  ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
+#$(GSL_LIB):  $(LIBSOURCE)/$(GSL).tar.gz
+#	mkdir -p $(LIBDIR) $(INCDIR)
+#	rm -rf $(GSL)
+#	tar -xzf $(LIBSOURCE)/$(GSL).tar.gz
+#	cd $(GSL);  ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
 
 $(MUPARSER_LIB):  $(LIBSOURCE)/$(MUPARSER).tar.gz
 	mkdir -p $(LIBDIR) $(INCDIR)
