@@ -9,7 +9,7 @@ use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
 use File::Spec;
-use POSIX qw( floor ceil );
+use POSIX ("floor", "ceil");
 use Config;
 
 # BNGOutput contains BNGModel methods related to third-party output
@@ -1612,20 +1612,77 @@ sub setConcentration
 	}
 	my $conc = $expr->evaluate($plist);
 
+    # load Concentration array (if not already done)
+    $model->SpeciesList->checkOrInitConcentrations( $model->Concentrations );
 
-	# Set concentration in Species object
-	$spec->Concentration($conc);
-
-	# Set concentration in Concentrations array if defined
-	if ( @{$model->Concentrations} )
-	{
-		$model->Concentrations->[$spec->Index - 1] = $conc;
-	}
+    # set concentration
+	$model->Concentrations->[$spec->Index - 1] = $conc;
 
 	# Set flag to update netfile when it's used
 	$model->UpdateNet(1);
 
 	printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, $conc;
+	return undef;
+}
+
+
+# Add concentration to a species.
+# Value may be a number or a parameter.
+sub addConcentration
+{
+	my $model = shift @_;
+	my $sname = shift @_;
+	my $value = shift @_;
+    
+	return '' if $NO_EXEC;
+
+	my $plist = $model->ParamList;
+	my $err;
+
+	# SpeciesGraph specified by $sname
+	my $sg = SpeciesGraph->new;
+	$err = $sg->readString( \$sname, $model->CompartmentList, 1, '', $model->MoleculeTypesList );
+	if ($err) { return $err; }
+
+	# Should check that this SG specifies a complete species, otherwise
+	# may match a number of species.
+
+	# Find matching species
+	my $spec;
+	unless ( $spec = $model->SpeciesList->lookup($sg) )
+	{
+		$err = sprintf "Species %s not found in SpeciesList", $sg->toString();
+		return $err;
+	}
+
+	# Read expression
+	my $expr    = Expression->new();
+	my $estring = $value;
+	if ( my $err = $expr->readString( \$estring, $plist ) )
+	{
+		return ( '', $err );
+	}
+	my $add_conc = $expr->evaluate($plist);
+
+    # load Concentration array (if not already done)
+    $model->SpeciesList->checkOrInitConcentrations( $model->Concentrations );
+
+    # Add original concentration 
+    my $orig_conc = $model->Concentrations->[$spec->Index - 1];
+    unless ( isReal($orig_conc) )
+    {   # evaluate parameter
+        $orig_conc = $plist->evaluate($spec->Concentration);
+    }        
+    $conc = $add_conc + $orig_conc;
+
+    # set new concentration
+	$model->Concentrations->[$spec->Index - 1] = $conc;
+
+	# Set flag to update netfile when it's used
+	$model->UpdateNet(1);
+
+	printf "Add %s counts (or concentration units) to species %s for total of %s\n",
+         $add_conc, $spec->SpeciesGraph->StringExact, $conc;
 	return undef;
 }
 
