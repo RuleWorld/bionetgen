@@ -103,7 +103,7 @@ int main(int argc, char *argv[]){
     //
     long maxSteps = LONG_MAX;
     long stepInterval = -1;
-    string pla_config = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
+    string pla_config;// = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
 
     if (argc < 4) print_error();
 
@@ -177,6 +177,10 @@ int main(int argc, char *argv[]){
     			propagator= PLA;
     			if (argv[iarg+1][0] != '-'){
     				pla_config = argv[++iarg];
+    			}
+    			else{
+    				cout << "ERROR: To use the pla you must specify a simulation configuration. Please try again." << endl;
+    				exit(1);
     			}
     		}
     		else{

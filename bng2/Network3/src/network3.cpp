@@ -675,7 +675,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 		gdat = fopen(gFile.c_str(),"a");
 	}
 	else{
-		cout << "Warning: Groups file \"" << gFile << "\" doesn't exist." << endl;
+//		cout << "Warning: Groups file \"" << gFile << "\" doesn't exist." << endl;
 	}
 	//
 	// Functions file (optional)
@@ -689,7 +689,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 		fdat = fopen(fFile.c_str(),"a");
 	}
 	else{
-		cout << "Warning: Functions file \"" << fFile << "\" doesn't exist." << endl;
+//		cout << "Warning: Functions file \"" << fFile << "\" doesn't exist." << endl;
 	}
 
 	// Identify observables involved in functions

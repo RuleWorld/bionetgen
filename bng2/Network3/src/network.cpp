@@ -2130,6 +2130,36 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 		break;
 	}
 
+	// Exit if running SSA and negative rate detected
+	if (discrete && rate < 0.0){
+		cout << "Error: Negative rate detected in rxn_rate() (rate = " << rate << "). Exiting." << endl;
+		// Print rxn string
+		cout << "R" << rxn->index << ": ";
+		for (int j=0;j < rxn->n_reactants;j++){
+			if (j > 0) cout << " + ";
+			cout << network.species->elt[rxn->r_index[j]-network.species->offset]->name;
+		}
+		cout << " -> ";
+		for (int j=0;j < rxn->n_products;j++){
+			if (j > 0) cout << " + ";
+			cout << network.species->elt[rxn->p_index[j]-network.species->offset]->name;
+		}
+		if (rxn->rateLaw_type == ELEMENTARY) cout << " (ELEMENTARY)" << endl;
+		else if (rxn->rateLaw_type == MICHAELIS_MENTEN) cout << " (MICHAELIS_MENTEN)" << endl;
+		else if (rxn->rateLaw_type == SATURATION) cout << " (SATURATION)" << endl;
+		else if (rxn->rateLaw_type == HILL) cout << " (HILL)" << endl;
+		else if (rxn->rateLaw_type == FUNCTIONAL) cout << " (FUNCTIONAL)" << endl;
+		else cout << " (UNKNOWN)" << endl;
+		// Print reactant populations
+		for (int j=0;j < rxn->n_reactants;j++){
+			cout << "S" << rxn->r_index[j]-network.species->offset << ": " <<
+					network.species->elt[rxn->r_index[j]-network.species->offset]->name << ": " <<
+					X[rxn->r_index[j]] << endl;
+		}
+		cout << endl;
+		exit(1);
+	}
+	//
 	return (rate);
 }
 
@@ -2159,16 +2189,15 @@ int rxn_rates_network(double* rxn_rates) {
 }
 
 void derivs_network(double t, double* conc, double* derivs) {
-	//cout << "TIME: " << t << endl;
 	int i;
-	int ig;
-	//	int error=0;
+//	int ig;
+//	int error=0;
 	int n_reactions, n_species, *index, *iarr;
 	Rxn **rarray, *rxn;
 	Elt** rates;
-	double x, xn, kn, *X, *dX, rate, /*rate0,*/*param;
-	int q, n_denom;
-	double St, Et, kcat, Km, S, b;
+	double /*x, xn, kn,*/ *X, *dX, rate/*, rate0, *param*/;
+//	int q, n_denom;
+//	double St, Et, kcat, Km, S, b;
 
 	++network.n_deriv_calls;
 
@@ -2191,8 +2220,6 @@ void derivs_network(double t, double* conc, double* derivs) {
 		network.rates->elt[network.var_parameters[j] - 1]->val = network.functions[j].Eval();
 	}
 
-	string eqns[network.species->n_elt];
-
 	/* Compute derivatives of each species by looping over reactions. */
 	rarray = network.reactions->rxn;
 	rates = network.rates->elt - network.rates->offset;
@@ -2205,45 +2232,43 @@ void derivs_network(double t, double* conc, double* derivs) {
 		++network.n_rate_calls;
 		int rateLaw_type = rxn->rateLaw_type;
 
-		switch (rateLaw_type) {
+		// Calculate rate here using rxn_rate() (no need to repeat the calculation). --Leonard (4/16/12)
+		rate = rxn_rate(rxn,X,0);
+		iarr = rxn->r_index;
+
+		switch (rateLaw_type){
 
 		case ELEMENTARY:
 			// v= k1*X1...Xn
-			rate = rxn->stat_factor * rxn->rateLaw_params[0];
-			iarr = rxn->r_index;
-			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
-				rate *= X[*index];
-			}
+//			rate = rxn->stat_factor * rxn->rateLaw_params[0];
+//			iarr = rxn->r_index;
+//			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+//				rate *= X[*index];
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
-				//	stringstream buf;
-				//	buf << " -" << i;
-				//	eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			iarr = rxn->p_index;
 			for (index = iarr; index < iarr + rxn->n_products; ++index) {
 				dX[*index] += rate;
-				//	stringstream buf;
-				//	buf << " +" << i;
-				//	eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			break;
 
 		case MICHAELIS_MENTEN:
 			/* Second rate, if present, is Michaelis-Menten Km */
-			St = X[rxn->r_index[0]];
-			kcat = rxn->rateLaw_params[0];
-			Km = rxn->rateLaw_params[1];
+//			St = X[rxn->r_index[0]];
+//			kcat = rxn->rateLaw_params[0];
+//			Km = rxn->rateLaw_params[1];
 			/* S + E ... -> P + E + .. */
-			for (q = 1, Et = 0; q < rxn->n_reactants; ++q) {
-				Et += X[rxn->r_index[q]];
-			}
-			b = St - Km - Et;
-			S = 0.5 * (b + sqrt(b * b + 4 * St * Km));
-			rate = rxn->stat_factor * kcat * Et * S / (Km + S);
+//			for (q = 1, Et = 0; q < rxn->n_reactants; ++q) {
+//				Et += X[rxn->r_index[q]];
+//			}
+//			b = St - Km - Et;
+//			S = 0.5 * (b + sqrt(b * b + 4 * St * Km));
+//			rate = rxn->stat_factor * kcat * Et * S / (Km + S);
 			// Compute contribution to rate of change of each participant
-			iarr = rxn->r_index;
+//			iarr = rxn->r_index;
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
 			}
@@ -2254,30 +2279,29 @@ void derivs_network(double t, double* conc, double* derivs) {
 			break;
 
 		case SATURATION:
-			param = rxn->rateLaw_params;
+//			param = rxn->rateLaw_params;
 			/* if dim(param)==1
 			 rate= stat_factor*param[0], a zeroth order rate law
 			 else
 			 rate = stat_factor*param[0]*R1...Rn/((R1+param[1])*(R2+param[2])...
 			 where terms in denominator are only calculated if param[n] is defined
 			 */
-			rate = rxn->stat_factor * param[0];
-			iarr = rxn->r_index;
-			++param;
-			n_denom = rxn->n_rateLaw_params - 1;
-			if (n_denom > 0) {
+//			rate = rxn->stat_factor * param[0];
+//			iarr = rxn->r_index;
+//			++param;
+//			n_denom = rxn->n_rateLaw_params - 1;
+//			if (n_denom > 0) {
 				/* Compute contributions to rate from species appearing in both numerator and denominator */
-				for (ig = 0; ig < n_denom; ++ig) {
-					x = X[iarr[ig]];
-					rate *= x / (param[ig] + x);
-				}
+//				for (ig = 0; ig < n_denom; ++ig) {
+//					x = X[iarr[ig]];
+//					rate *= x / (param[ig] + x);
+//				}
 
 				/* Compute contributions to rate from species appearing only in numerator */
-				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
-					rate *= X[iarr[ig]];
-				}
-			}
-
+//				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
+//					rate *= X[iarr[ig]];
+//				}
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
@@ -2289,16 +2313,16 @@ void derivs_network(double t, double* conc, double* derivs) {
 			break;
 
 		case HILL:
-			param = rxn->rateLaw_params;
-			iarr = rxn->r_index;
-			x = X[iarr[0]];
-			xn = pow(x, param[2]);
-			kn = pow(param[1], param[2]);
-			rate = rxn->stat_factor * param[0] * xn / (kn + xn);
+//			param = rxn->rateLaw_params;
+//			iarr = rxn->r_index;
+//			x = X[iarr[0]];
+//			xn = pow(x, param[2]);
+//			kn = pow(param[1], param[2]);
+//			rate = rxn->stat_factor * param[0] * xn / (kn + xn);
 			/* Compute contributions to rate from species appearing only in numerator */
-			for (ig = 1; ig < rxn->n_reactants; ++ig) {
-				rate *= X[iarr[ig]];
-			}
+//			for (ig = 1; ig < rxn->n_reactants; ++ig) {
+//				rate *= X[iarr[ig]];
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
@@ -2308,53 +2332,27 @@ void derivs_network(double t, double* conc, double* derivs) {
 				dX[*index] += rate;
 			}
 			break;
-			/*
-			 // v= k1*X1...Xn
-			 rate= rxn->stat_factor*rxn->rateLaw_params[0];
-			 iarr=rxn->r_index;
-			 for (index=iarr; index<iarr+rxn->n_reactants; ++index){
-			 rate*= X[*index];
-			 }
-			 // Compute contribution to rate of change of each participant
-			 for (index=iarr; index<iarr+rxn->n_reactants; ++index){
-			 dX[*index]-= rate;
-			 }
-			 iarr=rxn->p_index;
-			 for (index=iarr; index<iarr+rxn->n_products; ++index){
-			 dX[*index]+= rate;
-			 }
-			 */
+
 		case FUNCTIONAL:
-			//  _out << "rxn " << i+1 << endl;
-			// update reaction rate in case rate depends on function
-			//  _out << "rate law param " << rxn->rateLaw_params[0] << endl;
-			rxn->rateLaw_params[0] = network.rates->elt[rxn->rateLaw_indices[0]-1]->val;
-			//  _out << "rate law param " << rxn->rateLaw_params[0] << endl;
-
+//			rxn->rateLaw_params[0] = network.rates->elt[rxn->rateLaw_indices[0]-1]->val;
 			// v= k1*X1...Xn
-			rate = rxn->stat_factor * rxn->rateLaw_params[0];
-			iarr = rxn->r_index;
-			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
-				rate *= X[*index];
-			}
-
+//			rate = rxn->stat_factor * rxn->rateLaw_params[0];
+//			iarr = rxn->r_index;
+//			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+//				rate *= X[*index];
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
-				stringstream buf;
-				buf << " -" << i;
-				eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			iarr = rxn->p_index;
 			for (index = iarr; index < iarr + rxn->n_products; ++index) {
 				dX[*index] += rate;
-				stringstream buf;
-				buf << " +" << i;
-				eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			break;
 		}
 	}
+
 	// Set derivatives to zero for fixed species
 	if (network.species->fixed_elts) {
 		int *fixed_elts = network.species->fixed_elts;
@@ -2768,8 +2766,7 @@ static int CVjtimes(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector fy
 
 static int cvode_derivs(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
 	/* printf("t=%.15e\n", t); */
-	(*network.derivs)((double) t, (double*) NV_DATA_S(y),
-			(double*) NV_DATA_S(ydot));
+	(*network.derivs)((double) t, (double*) NV_DATA_S(y), (double*) NV_DATA_S(ydot));
 	return 0;
 }
 
