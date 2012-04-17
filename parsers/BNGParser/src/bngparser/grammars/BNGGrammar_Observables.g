@@ -9,7 +9,12 @@ options {
  public void getParentTemplate(){
  
   this.setTemplateLib(gParent.getTemplateLib());
+
  }
+     @Override
+  public String getErrorMessage(RecognitionException e,String[] tokenNames){
+    return gParent.getErrorMessage(e,tokenNames);
+  }
 }
 
 observables_block[List observables]

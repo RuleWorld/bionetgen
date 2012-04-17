@@ -10,6 +10,12 @@ options {
  
   this.setTemplateLib(gParent.getTemplateLib());
  }
+      @Override
+  public String getErrorMessage(RecognitionException e,String[] tokenNames){
+    return gParent.getErrorMessage(e,tokenNames);
+  }
+  
+
 }
 
 reaction_rules_block[List reactionRules]
@@ -202,8 +208,11 @@ BondList bonds;
   }
   {
    
-       if(!$rule_species_def::bonds.validateBonds(0,0))
-        throw new RuntimeException("Invalid Bond", new BNGSemanticException("Dangling Bond",s1.start.getLine()));
+       if(!$rule_species_def::bonds.validateBonds(0,0)){
+          String err = String.format("\%s line \%d:\%d \%s\n",input.getSourceName(),s1.start.getLine(),s1.start.getCharPositionInLine(),"dangling bond");
+  
+          System.err.println(err);
+        }
   }
 
   | i2=INT {
