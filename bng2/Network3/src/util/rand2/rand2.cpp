@@ -1,5 +1,5 @@
 /*
- * poisson.cpp
+ * rand2.cpp
  *
  *  Created on: Feb 14, 2011
  *      Author: Leonard Harris

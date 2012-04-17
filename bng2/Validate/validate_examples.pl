@@ -91,7 +91,7 @@ my $bngexec;
         my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
         my @dirs = File::Spec->splitdir( $directories );
         pop @dirs;   # BNG executable script should be down one directory from here
-        $bngpath = File::Spec->catpath( $volume, File::Spec->catdir(@dirs) );
+        $bngpath = File::Spec->catpath( $volume, File::Spec->catdir(@dirs), "" );
     }
     # define executable
     $bngexec = File::Spec->catfile( $bngpath, "BNG2.pl" );

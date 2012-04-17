@@ -103,7 +103,7 @@ int main(int argc, char *argv[]){
     //
     long maxSteps = LONG_MAX;
     long stepInterval = -1;
-    string pla_config = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
+    string pla_config;// = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
 
     if (argc < 4) print_error();
 
@@ -177,6 +177,10 @@ int main(int argc, char *argv[]){
     			propagator= PLA;
     			if (argv[iarg+1][0] != '-'){
     				pla_config = argv[++iarg];
+    			}
+    			else{
+    				cout << "ERROR: To use the pla you must specify a simulation configuration. Please try again." << endl;
+    				exit(1);
     			}
     		}
     		else{
@@ -513,7 +517,7 @@ int main(int argc, char *argv[]){
 //					cout << "(step: " << step << ")" << endl;
 //					cout << "(" << stepsLeft << " steps left until next output)" << endl;
 					nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,min(stepsLeft,maxSteps),
-												  stepInterval,outpre,print_cdat,verbose);
+												  stepInterval,outpre,print_cdat,print_net,print_end_net,verbose);
 					step += nSteps_dt.first;
 					maxSteps -= nSteps_dt.first;
 					t += nSteps_dt.second;
@@ -524,7 +528,7 @@ int main(int argc, char *argv[]){
 //				cout << "(maxSteps: " << maxSteps << ")" << endl;
 //				cout << "(step: " << step << ")" << endl;
 				nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,maxSteps,stepInterval,outpre,
-											  print_cdat,verbose);
+											  print_cdat,print_net,print_end_net,verbose);
 				step += nSteps_dt.first;
 				maxSteps -= nSteps_dt.first;
 				t += nSteps_dt.second;
@@ -533,7 +537,7 @@ int main(int argc, char *argv[]){
 		// Sample interval
 		else{
 			nSteps_dt = Network3::run_PLA(t_start,t_end,sample_time,step,maxSteps,stepInterval,outpre,print_cdat,
-										  verbose);
+										  print_net,print_end_net,verbose);
 			step += nSteps_dt.first;
 			t += nSteps_dt.second;
 		}
