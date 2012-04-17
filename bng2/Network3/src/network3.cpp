@@ -634,7 +634,7 @@ void Network3::init_PLA(string config, bool verbose){
 }
 
 pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, long startStep, long maxSteps,
-		long stepInterval, char* prefix, bool print_cdat, bool verbose){
+		long stepInterval, char* prefix, bool print_cdat, bool print_net, bool print_end_net, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -759,6 +759,24 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 			if (print_cdat) Network3::print_species_concentrations(cdat,time);
 			if (gdat) Network3::print_observable_concentrations(gdat,time);
 			if (fdat) Network3::print_function_values(fdat,time);
+			string print_net_message;
+			if (print_net){ // Write current system state to .net file
+				// Collect species populations and update network concentrations vector
+				double* pops = new double[SPECIES.size()];
+				for (unsigned int j=0;j < SPECIES.size();j++){
+					pops[j] = SPECIES[j]->population;
+				}
+				set_conc_network(pops);
+				delete pops;
+				// Print network w/ current species populations using network::print_network()
+				char buf[1000];
+				sprintf(buf, "%s.net", prefix);
+				FILE* out = fopen(buf, "w");
+				print_network(out);
+				fclose(out);
+				print_net_message = " Wrote NET file to " + (string)buf;
+//				fprintf(stdout, " Wrote NET file to %s", buf);
+			}
 			//
 			// Output to stdout
 			if (verbose){
@@ -766,6 +784,9 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 //				for (unsigned int i=0;i < OBSERVABLE.size();i++){
 //					cout << "\t" << OBSERVABLE[i]->second;
 //				}
+				if (print_net){
+					fprintf(stdout, "%s", print_net_message.c_str());
+				}
 				cout << endl;
 			}
 			if (time >= nextOutput) nextOutput += sampleTime;
@@ -798,6 +819,24 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 		if (print_cdat) Network3::print_species_concentrations(cdat,time);
 		if (gdat) Network3::print_observable_concentrations(gdat,time);
 		if (fdat) Network3::print_function_values(fdat,time);
+		string print_net_message;
+		if (print_net){ // Write current system state to .net file
+			// Collect species populations and update network concentrations vector
+			double* pops = new double[SPECIES.size()];
+			for (unsigned int j=0;j < SPECIES.size();j++){
+				pops[j] = SPECIES[j]->population;
+			}
+			set_conc_network(pops);
+			delete pops;
+			// Print network w/ current species populations using network::print_network()
+			char buf[1000];
+			sprintf(buf, "%s.net", prefix);
+			FILE* out = fopen(buf, "w");
+			print_network(out);
+			fclose(out);
+			print_net_message = " Wrote NET file to " + (string)buf;
+//			fprintf(stdout, " Wrote NET file to %s", buf);
+		}
 		//
 		// Output to stdout
 		if (verbose){
@@ -805,6 +844,9 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 //			for (unsigned int i=0;i < OBSERVABLE.size();i++){
 //				cout << "\t" << OBSERVABLE[i]->second;
 //			}
+			if (print_net){
+				fprintf(stdout, "%s", print_net_message.c_str());
+			}
 			cout << endl;
 		}
 	}
@@ -814,6 +856,15 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 //	}
 	if (!verbose) cout << "Done" << endl;
 //	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
+
+	// If print_end_net = true, collect species populations and update network concentrations vector
+	if (print_end_net){
+		double* pops = new double[SPECIES.size()];
+		for (unsigned int j=0;j < SPECIES.size();j++){
+			pops[j] = SPECIES[j]->population;
+		}
+		set_conc_network(pops);
+	}
 
 	// Close files
 	fclose(cdat);

@@ -517,7 +517,7 @@ int main(int argc, char *argv[]){
 //					cout << "(step: " << step << ")" << endl;
 //					cout << "(" << stepsLeft << " steps left until next output)" << endl;
 					nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,min(stepsLeft,maxSteps),
-												  stepInterval,outpre,print_cdat,verbose);
+												  stepInterval,outpre,print_cdat,print_net,print_end_net,verbose);
 					step += nSteps_dt.first;
 					maxSteps -= nSteps_dt.first;
 					t += nSteps_dt.second;
@@ -528,7 +528,7 @@ int main(int argc, char *argv[]){
 //				cout << "(maxSteps: " << maxSteps << ")" << endl;
 //				cout << "(step: " << step << ")" << endl;
 				nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,maxSteps,stepInterval,outpre,
-											  print_cdat,verbose);
+											  print_cdat,print_net,print_end_net,verbose);
 				step += nSteps_dt.first;
 				maxSteps -= nSteps_dt.first;
 				t += nSteps_dt.second;
@@ -537,7 +537,7 @@ int main(int argc, char *argv[]){
 		// Sample interval
 		else{
 			nSteps_dt = Network3::run_PLA(t_start,t_end,sample_time,step,maxSteps,stepInterval,outpre,print_cdat,
-										  verbose);
+										  print_net,print_end_net,verbose);
 			step += nSteps_dt.first;
 			t += nSteps_dt.second;
 		}
