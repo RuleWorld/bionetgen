@@ -19,6 +19,46 @@ use FindBin;
 use lib $FindBin::RealBin;
 use File::Spec;
 use File::Path qw(remove_tree);
+use Config;
+use IO::Handle;
+use IO::Select;
+use IPC::Open3;
+
+
+# Set up Signal Handlers..
+# define global variable to store PID of child process.
+$::CHILD_PID = undef;
+# Get signal names
+my $i = 0;
+my %SIGNO=();
+defined($Config{sig_name}) or die "No signals defined";
+foreach my $signame ( split " ", $Config{sig_name} )
+{
+    $SIGNO{$signame} = $i;
+    $i++;
+}
+# TERM signal handler: make sure any child processes are shutdown before termination
+$SIG{'TERM'} = sub
+{
+    if (defined $::CHILD_PID)
+    {   # kill off child process
+        print "\n>>>relaying TERM signal to child with PID: ", $::CHILD_PID, " <<<\n";
+        kill $SIGNO{"TERM"}, $::CHILD_PID;
+    }
+    die "BioNetGen received TERM signal";
+};
+# INT signal handler: make sure any child processes are shutdown before termination
+$SIG{'INT'} = sub
+{
+    if (defined $::CHILD_PID)
+    {   # kill off child process
+        print "\n>>> relaying INT signal to child with PID: ", $::CHILD_PID, " <<<\n";
+        kill $SIGNO{"INT"}, $::CHILD_PID;
+    }
+    die "scan_var received INT signal";
+};
+
+
 
 # get perl binary
 my $perlbin = $^X;
@@ -174,17 +214,72 @@ print BNGL "generate_network({overwrite=>1})\n";
 }
 close(BNGL);
 
-# Run BioNetGen on file
+
+
+
+
+# Run BioNetGen on ScanModel file
 print "Running BioNetGen on $scanmodel\n";
-my $BNGARGS = "--outdir \"${prefix}\"";
-my $command = "\"$perlbin\" \"$bngexec\" $BNGARGS \"$scanmodel\" > \"$logfile\"";
-system( $command )==0
-    or die "System $command failed: $?\n";
+my @command = ($perlbin, $bngexec, "--outdir", $prefix, $scanmodel);
+
+# open logfile
+open( my $logFH, ">", $logfile ) or die $!;
+$logFH->autoflush(1);
+
+# start simulator as child process with communication pipes
+my ($stdin, $stdout, $stderr); 
+my $pid = eval{ open3( $stdin, $stdout, $stderr, @command ) };
+if ($@) { die $@; }
+
+# remember child PID
+$::CHILD_PID = $pid;
+print ">>> child process ID is: $pid <<<\n";
+
+# create a select object to notify us on reads on our FHs
+my $sel = new IO::Select;
+$sel->add($stdout,$stderr);
+
+# monitor output of child process
+while( my @ready = $sel->can_read() )
+{
+    # read ready
+    foreach my $fh (@ready)
+    { 
+        # get line
+        my $line = <$fh>;
+
+        # examine line
+        if (not defined $line)
+        {   # found EOF
+            $sel->remove($fh);
+        }      
+        elsif ( $line =~ /^ABORT/ )
+        {   # some problem
+            print $logFH $line;
+            print $logFH "Problem running BioNetGen on ${scanmodel}.";
+            # also write message to STDOUT
+            print $line;
+            die "Problem running BioNetGen on $scanmodel";
+        }
+        else
+        {   # write message to log
+            print $logFH $line;
+        }
+    }
+}
+
+# make sure child process has completed
+waitpid($pid,0);
+
+# clear child pid
+$::CHILD_PID = undef;
+
+
+
 
 # Process output
 my $outfile = "${prefix}.scan";
 open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
-
 {
     my $val = $var_min;
     foreach my $run (1..$n_pts)
