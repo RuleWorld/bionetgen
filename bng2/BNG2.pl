@@ -22,7 +22,10 @@ use BNGModel;
 use Console;
 
 
-# Get signals
+# Set up Signal Handlers..
+# Define global variable to store PID of child process.
+$::CHILD_PID = undef;
+# Get signal names
 my $i = 0;
 my %SIGNO=();
 defined($Config{sig_name}) or die "No signals defined";
@@ -31,15 +34,25 @@ foreach my $signame ( split " ", $Config{sig_name} )
     $SIGNO{$signame} = $i;
     $i++;
 }
-
-# Termination signal handler: make sure any child processes are shutdown before termination
+# TERM signal handler: make sure any child processes are shutdown before termination
 $SIG{'TERM'} = sub
 {
-    my ($signal,$pgrp) = (${^O} eq "MSWin32") ? (-$SIGNO{"KILL"}, $$) : (-$SIGNO{"TERM"}, getpgrp 0);
-    print "Process $$ Got termination signal.. killing children first..\n";
-    print "Sending signal $signal to process group $pgrp\n";
-    kill $signal, $pgrp;
-    die "termination signal";
+    if (defined $::CHILD_PID)
+    {   # kill off child process
+        print "\n>>> relaying TERM signal to child with PID: ", $::CHILD_PID, " <<<\n";
+        kill $SIGNO{"TERM"}, $::CHILD_PID;
+    }
+    die "BioNetGen received TERM signal";
+};
+# INT signal handler: make sure any child processes are shutdown before termination
+$SIG{'INT'} = sub
+{
+    if (defined $::CHILD_PID)
+    {   # kill off child process
+        print "\n>>> relaying INT signal to child with PID: ", $::CHILD_PID, " <<<\n";
+        kill $SIGNO{"INT"}, $::CHILD_PID;
+    }
+    die "BioNetGen received INT signal";
 };
 
 
