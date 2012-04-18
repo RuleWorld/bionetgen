@@ -74,9 +74,9 @@ $(MATHUTILS_LIB):  $(LIBSOURCE)/$(MATHUTILS).tar.gz
 
 # clean scripts
 clean:
-	rm -f *.o *.a
-    rm $(NETWORK_BINDIR)/run_network $(NETWORK_BINDIR)/CMakeCache.txt $(NETWORK_BINDIR)/cmake_install.cmake $(NETWORK_BINDIR)/Makefile
-    rm -r $(NETWORK_BINDIR)/CMakeFiles
+	rm -f *.o *.a ;
+	rm $(NETWORK_BINDIR)/run_network $(NETWORK_BINDIR)/CMakeCache.txt $(NETWORK_BINDIR)/cmake_install.cmake $(NETWORK_BINDIR)/Makefile ;
+	rm -r $(NETWORK_BINDIR)/CMakeFiles ;
 	if test -d ${CVODE} ; then \
 	    cd ${CVODE} ;          \
 	    ${MAKE} clean ;        \
