@@ -1448,52 +1448,52 @@ static int* read_indices_Rxn(char* string, int* n_indices, Elt_array* species,
 }
 
 /*
- static int *read_indices_Rxn( char *string, int *n_indices, Elt_array *species, int line_number){
- register int i;
- int *index_list, index;
- int n_tokens, error=0;
- char *line, **tokens;
- int check, offset, n_spec;
- Elt *elt;
+static int *read_indices_Rxn( char *string, int *n_indices, Elt_array *species, int line_number){
+	register int i;
+	int *index_list, index;
+	int n_tokens, error=0;
+	char *line, **tokens;
+	int check, offset, n_spec;
+	Elt *elt;
 
- line= strdup(string);
- tokens= parse_line( line, &n_tokens, NULL, ",");
- index_list= (int *) malloc( n_tokens*sizeof(int));
- *n_indices= n_tokens;
- offset= species->offset;
- n_spec= species->n_elt;
- for(i=0; i<n_tokens; ++i){
- if (sscanf(tokens[i], "%d", &index)==1){
- // Check that species index is valid
- int check= index-offset;
- if (check<0 || check>=n_spec){
- fprintf(stderr,"Species index %d out of range at line %d.\n", index, line_number);
- ++error;
- goto cleanup;
- }
- index_list[i]=index;
- }
- else if (elt=lookup_Elt(tokens[i], species->list)){ // Lookup species name
- index_list[i]= elt->index;
- }
- else {
- fprintf(stderr, "Invalid species named %s at line %d.\n", tokens[i], line_number);
- ++error;
- goto cleanup;
- }
- }
+	line= strdup(string);
+	tokens= parse_line( line, &n_tokens, NULL, ",");
+	index_list= (int *) malloc( n_tokens*sizeof(int));
+	*n_indices= n_tokens;
+	offset= species->offset;
+	n_spec= species->n_elt;
+	for(i=0; i<n_tokens; ++i){
+		if (sscanf(tokens[i], "%d", &index)==1){
+			// Check that species index is valid
+			int check= index-offset;
+			if (check<0 || check>=n_spec){
+				fprintf(stderr,"Species index %d out of range at line %d.\n", index, line_number);
+				++error;
+				goto cleanup;
+			}
+			index_list[i]=index;
+		}
+		else if (elt=lookup_Elt(tokens[i], species->list)){ // Lookup species name
+			index_list[i]= elt->index;
+		}
+		else {
+			fprintf(stderr, "Invalid species named %s at line %d.\n", tokens[i], line_number);
+			++error;
+			goto cleanup;
+		}
+	}
 
- cleanup:
- if (error){
- free(index_list);
- index_list=NULL;
- *n_indices=0;
- }
- if (line) free(line);
- if (tokens) free(tokens);
- return(index_list);
- }
- */
+	cleanup:
+	if (error){
+		free(index_list);
+		index_list=NULL;
+		*n_indices=0;
+	}
+	if (line) free(line);
+	if (tokens) free(tokens);
+	return(index_list);
+}
+*/
 
 /* Type of reaction determined by number of rate constants:
 
@@ -1743,8 +1743,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 	return (rarray);
 }
 
-void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species,
-		Elt_array* rates) {
+void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species, Elt_array* rates) {
 	register int i;
 	Rxn* rxn;
 	Elt **sarr, **rarr;
@@ -1804,15 +1803,12 @@ void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species,
 void print_Rxn_text(FILE* out, Rxn* rxn, Elt_array* species, Elt_array* rates) {
 	int i;
 	Elt **spec_arr, **rate_arr;
-
 	spec_arr = species->elt - species->offset;
 	rate_arr = rates->elt - rates->offset;
-
 	fprintf(out, "%5d", rxn->index);
 
 	/* print rate name */
 	fprintf(out, " %s ", rate_arr[rxn->rateLaw_indices[0]]->name);
-
 	/* print reactants */
 	fprintf(out, "%s", spec_arr[rxn->r_index[0]]->name);
 	for (i = 1; i < rxn->n_reactants; ++i) {
@@ -1836,14 +1832,12 @@ struct NETWORK network;
 //Method modified to take into account variable rates that depend on global functions 
 void derivs_network(double t, double* conc, double* derivs);
 
-int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species,
-		Group* spec_groups, char* name, vector<mu::Parser> new_functions,
-		vector<int> new_var_parameters,
-		vector<vector<int> > new_func_observ_depend,
-		vector<vector<int> > new_func_param_depend,
-		map<string, bool> new_is_func_map) {
-
-	//	int i;
+int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name,
+				 vector<mu::Parser> new_functions, vector<int> new_var_parameters,
+				 vector<vector<int> > new_func_observ_depend, vector<vector<int> > new_func_param_depend,
+				 map<string, bool> new_is_func_map)
+	{
+//	int i;
 	Group* group;
 
 	network.name = strdup(name);
@@ -1875,21 +1869,13 @@ int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species,
 	return (0);
 }
 
-int n_rate_calls_network() {
-	return (network.n_rate_calls);
-}
+int n_rate_calls_network() { return (network.n_rate_calls); }
 
-int n_deriv_calls_network() {
-	return (network.n_deriv_calls);
-}
+int n_deriv_calls_network() { return (network.n_deriv_calls); }
 
-int n_rxns_network() {
-	return (network.reactions->n_rxn);
-}
+int n_rxns_network() { return (network.reactions->n_rxn); }
 
-int n_species_network() {
-	return (network.species->n_elt);
-}
+int n_species_network() { return (network.species->n_elt); }
 
 int n_species_active() {
 	register int i;
@@ -1906,13 +1892,9 @@ int n_species_active() {
 	return (n_act);
 }
 
-int n_rate_constants_network() {
-	return (network.rates->n_elt);
-}
+int n_rate_constants_network() { return (network.rates->n_elt); }
 
-int n_groups_network() {
-	return (network.n_groups);
-}
+int n_groups_network() { return (network.n_groups); }
 
 /* Returns concentrations in network.species to conc array */
 int get_conc_network(double* conc) {
@@ -2130,45 +2112,99 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 		break;
 	}
 
+	// Exit if running SSA and negative rate detected
+	if (discrete && rate < 0.0){
+		cout << "Error: Negative rate detected in rxn_rate() (rate = " << rate << "). Exiting." << endl;
+		// Print rxn string
+		cout << "R" << rxn->index << ": ";
+		for (int j=0;j < rxn->n_reactants;j++){
+			if (j > 0) cout << " + ";
+			cout << network.species->elt[rxn->r_index[j]-network.species->offset]->name;
+		}
+		cout << " -> ";
+		for (int j=0;j < rxn->n_products;j++){
+			if (j > 0) cout << " + ";
+			cout << network.species->elt[rxn->p_index[j]-network.species->offset]->name;
+		}
+		if (rxn->rateLaw_type == ELEMENTARY) cout << " (ELEMENTARY)" << endl;
+		else if (rxn->rateLaw_type == MICHAELIS_MENTEN) cout << " (MICHAELIS_MENTEN)" << endl;
+		else if (rxn->rateLaw_type == SATURATION) cout << " (SATURATION)" << endl;
+		else if (rxn->rateLaw_type == HILL) cout << " (HILL)" << endl;
+		else if (rxn->rateLaw_type == FUNCTIONAL) cout << " (FUNCTIONAL)" << endl;
+		else cout << " (UNKNOWN)" << endl;
+		// Print reactant populations
+		for (int j=0;j < rxn->n_reactants;j++){
+			cout << "S" << rxn->r_index[j]-network.species->offset << ": " <<
+					network.species->elt[rxn->r_index[j]-network.species->offset]->name << ": " <<
+					X[rxn->r_index[j]] << endl;
+		}
+		cout << endl;
+		exit(1);
+	}
+	//
 	return (rate);
 }
 
 /* Returns the rate of each reaction in the network in #/unit time. */
 int rxn_rates_network(double* rxn_rates) {
+
 	register int i;
-	int error = 0, /*coffset,*/n_reactions, n_species;
+	int error = 0, n_reactions, n_species;
 	Rxn** rarray;
-	double /*rate,*/*X, *conc = NULL;
+	double *X;
+	double *conc = NULL;
 
 	n_reactions = n_rxns_network();
 	n_species = n_species_network();
 
 	conc = ALLOC_VECTOR(n_species);
-	get_conc_network(conc);
-	INIT_VECTOR(rxn_rates, 0.0, n_reactions);
 
-	rarray = network.reactions->rxn;
-	X = conc - network.species->offset;
-	for (i = 0; i < n_reactions; ++i) {
-		rxn_rates[i] = rxn_rate(rarray[i], X, 0);
-	}
+//	if (get_conc_network(conc)){
+//		cout << "Error in network::rxn_rates_network(): 'conc' vector could not be populated. Exiting." << endl;
+//		exit(1);
+//	}
+//	INIT_VECTOR(rxn_rates, 0.0, n_reactions);
 
+//	rarray = network.reactions->rxn;
+//	X = conc;// - network.species->offset;
+
+//	for (i = 0; i < n_reactions; ++i) {
+//		rxn_rates[i] = rxn_rate(rarray[i], X, 0);
+//	}
+/*
+cout << "\n__before FREE_VECTOR(conc)__" << endl;
+cout << "n_elt: " << network.rates->n_elt << endl;
+for (int j=0;j < network.rates->n_elt;j++){
+	cout << "[" << j << "]: " << flush;
+	cout << (const char*)network.rates->elt[j]->name << flush;
+	cout << " = " << network.rates->elt[j]->val << endl;
+}
+*/
 //  exit:
-	if (conc) FREE_VECTOR(conc);
+	if (conc)
+		FREE_VECTOR(conc);
+
+cout << "\n__after FREE_VECTOR(conc)__" << endl;
+cout << "n_elt: " << network.rates->n_elt << endl;
+for (int j=network.rates->n_elt-1;j >=0 ;j--){
+	cout << "[" << j << "]: " << flush;
+	cout << (const char*)network.rates->elt[j]->name << flush;
+	cout << " = " << network.rates->elt[j]->val << endl;
+}
+
 	return (error);
 }
 
 void derivs_network(double t, double* conc, double* derivs) {
-	//cout << "TIME: " << t << endl;
 	int i;
-	int ig;
-	//	int error=0;
+//	int ig;
+//	int error=0;
 	int n_reactions, n_species, *index, *iarr;
 	Rxn **rarray, *rxn;
 	Elt** rates;
-	double x, xn, kn, *X, *dX, rate, /*rate0,*/*param;
-	int q, n_denom;
-	double St, Et, kcat, Km, S, b;
+	double /*x, xn, kn,*/ *X, *dX, rate/*, rate0, *param*/;
+//	int q, n_denom;
+//	double St, Et, kcat, Km, S, b;
 
 	++network.n_deriv_calls;
 
@@ -2191,8 +2227,6 @@ void derivs_network(double t, double* conc, double* derivs) {
 		network.rates->elt[network.var_parameters[j] - 1]->val = network.functions[j].Eval();
 	}
 
-	string eqns[network.species->n_elt];
-
 	/* Compute derivatives of each species by looping over reactions. */
 	rarray = network.reactions->rxn;
 	rates = network.rates->elt - network.rates->offset;
@@ -2205,45 +2239,43 @@ void derivs_network(double t, double* conc, double* derivs) {
 		++network.n_rate_calls;
 		int rateLaw_type = rxn->rateLaw_type;
 
-		switch (rateLaw_type) {
+		// Calculate rate here using rxn_rate() (no need to repeat the calculation). --Leonard (4/16/12)
+		rate = rxn_rate(rxn,X,0);
+		iarr = rxn->r_index;
+
+		switch (rateLaw_type){
 
 		case ELEMENTARY:
 			// v= k1*X1...Xn
-			rate = rxn->stat_factor * rxn->rateLaw_params[0];
-			iarr = rxn->r_index;
-			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
-				rate *= X[*index];
-			}
+//			rate = rxn->stat_factor * rxn->rateLaw_params[0];
+//			iarr = rxn->r_index;
+//			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+//				rate *= X[*index];
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
-				//	stringstream buf;
-				//	buf << " -" << i;
-				//	eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			iarr = rxn->p_index;
 			for (index = iarr; index < iarr + rxn->n_products; ++index) {
 				dX[*index] += rate;
-				//	stringstream buf;
-				//	buf << " +" << i;
-				//	eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			break;
 
 		case MICHAELIS_MENTEN:
 			/* Second rate, if present, is Michaelis-Menten Km */
-			St = X[rxn->r_index[0]];
-			kcat = rxn->rateLaw_params[0];
-			Km = rxn->rateLaw_params[1];
+//			St = X[rxn->r_index[0]];
+//			kcat = rxn->rateLaw_params[0];
+//			Km = rxn->rateLaw_params[1];
 			/* S + E ... -> P + E + .. */
-			for (q = 1, Et = 0; q < rxn->n_reactants; ++q) {
-				Et += X[rxn->r_index[q]];
-			}
-			b = St - Km - Et;
-			S = 0.5 * (b + sqrt(b * b + 4 * St * Km));
-			rate = rxn->stat_factor * kcat * Et * S / (Km + S);
+//			for (q = 1, Et = 0; q < rxn->n_reactants; ++q) {
+//				Et += X[rxn->r_index[q]];
+//			}
+//			b = St - Km - Et;
+//			S = 0.5 * (b + sqrt(b * b + 4 * St * Km));
+//			rate = rxn->stat_factor * kcat * Et * S / (Km + S);
 			// Compute contribution to rate of change of each participant
-			iarr = rxn->r_index;
+//			iarr = rxn->r_index;
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
 			}
@@ -2254,30 +2286,29 @@ void derivs_network(double t, double* conc, double* derivs) {
 			break;
 
 		case SATURATION:
-			param = rxn->rateLaw_params;
+//			param = rxn->rateLaw_params;
 			/* if dim(param)==1
 			 rate= stat_factor*param[0], a zeroth order rate law
 			 else
 			 rate = stat_factor*param[0]*R1...Rn/((R1+param[1])*(R2+param[2])...
 			 where terms in denominator are only calculated if param[n] is defined
 			 */
-			rate = rxn->stat_factor * param[0];
-			iarr = rxn->r_index;
-			++param;
-			n_denom = rxn->n_rateLaw_params - 1;
-			if (n_denom > 0) {
+//			rate = rxn->stat_factor * param[0];
+//			iarr = rxn->r_index;
+//			++param;
+//			n_denom = rxn->n_rateLaw_params - 1;
+//			if (n_denom > 0) {
 				/* Compute contributions to rate from species appearing in both numerator and denominator */
-				for (ig = 0; ig < n_denom; ++ig) {
-					x = X[iarr[ig]];
-					rate *= x / (param[ig] + x);
-				}
+//				for (ig = 0; ig < n_denom; ++ig) {
+//					x = X[iarr[ig]];
+//					rate *= x / (param[ig] + x);
+//				}
 
 				/* Compute contributions to rate from species appearing only in numerator */
-				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
-					rate *= X[iarr[ig]];
-				}
-			}
-
+//				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
+//					rate *= X[iarr[ig]];
+//				}
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
@@ -2289,16 +2320,16 @@ void derivs_network(double t, double* conc, double* derivs) {
 			break;
 
 		case HILL:
-			param = rxn->rateLaw_params;
-			iarr = rxn->r_index;
-			x = X[iarr[0]];
-			xn = pow(x, param[2]);
-			kn = pow(param[1], param[2]);
-			rate = rxn->stat_factor * param[0] * xn / (kn + xn);
+//			param = rxn->rateLaw_params;
+//			iarr = rxn->r_index;
+//			x = X[iarr[0]];
+//			xn = pow(x, param[2]);
+//			kn = pow(param[1], param[2]);
+//			rate = rxn->stat_factor * param[0] * xn / (kn + xn);
 			/* Compute contributions to rate from species appearing only in numerator */
-			for (ig = 1; ig < rxn->n_reactants; ++ig) {
-				rate *= X[iarr[ig]];
-			}
+//			for (ig = 1; ig < rxn->n_reactants; ++ig) {
+//				rate *= X[iarr[ig]];
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
@@ -2308,53 +2339,27 @@ void derivs_network(double t, double* conc, double* derivs) {
 				dX[*index] += rate;
 			}
 			break;
-			/*
-			 // v= k1*X1...Xn
-			 rate= rxn->stat_factor*rxn->rateLaw_params[0];
-			 iarr=rxn->r_index;
-			 for (index=iarr; index<iarr+rxn->n_reactants; ++index){
-			 rate*= X[*index];
-			 }
-			 // Compute contribution to rate of change of each participant
-			 for (index=iarr; index<iarr+rxn->n_reactants; ++index){
-			 dX[*index]-= rate;
-			 }
-			 iarr=rxn->p_index;
-			 for (index=iarr; index<iarr+rxn->n_products; ++index){
-			 dX[*index]+= rate;
-			 }
-			 */
+
 		case FUNCTIONAL:
-			//  _out << "rxn " << i+1 << endl;
-			// update reaction rate in case rate depends on function
-			//  _out << "rate law param " << rxn->rateLaw_params[0] << endl;
-			rxn->rateLaw_params[0] = network.rates->elt[rxn->rateLaw_indices[0]-1]->val;
-			//  _out << "rate law param " << rxn->rateLaw_params[0] << endl;
-
+//			rxn->rateLaw_params[0] = network.rates->elt[rxn->rateLaw_indices[0]-1]->val;
 			// v= k1*X1...Xn
-			rate = rxn->stat_factor * rxn->rateLaw_params[0];
-			iarr = rxn->r_index;
-			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
-				rate *= X[*index];
-			}
-
+//			rate = rxn->stat_factor * rxn->rateLaw_params[0];
+//			iarr = rxn->r_index;
+//			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+//				rate *= X[*index];
+//			}
 			// Compute contribution to rate of change of each participant
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				dX[*index] -= rate;
-				stringstream buf;
-				buf << " -" << i;
-				eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			iarr = rxn->p_index;
 			for (index = iarr; index < iarr + rxn->n_products; ++index) {
 				dX[*index] += rate;
-				stringstream buf;
-				buf << " +" << i;
-				eqns[*index - 1].insert(eqns[*index - 1].size(), buf.str());
 			}
 			break;
 		}
 	}
+
 	// Set derivatives to zero for fixed species
 	if (network.species->fixed_elts) {
 		int *fixed_elts = network.species->fixed_elts;
@@ -2424,11 +2429,11 @@ int print_derivs_species_network(FILE* out) {
 }
 
 int print_rates_network(FILE* out) {
+
 	register int i;
 	int error = 0, /*n_species,*/n_reactions;
 	double* rates_rxn = NULL;
 	Rxn** rxns;
-
 	n_reactions = n_rxns_network();
 	rates_rxn = ALLOC_VECTOR(n_reactions);
 
@@ -2445,7 +2450,6 @@ int print_rates_network(FILE* out) {
 		}
 	}
 	fprintf(out, "end reaction_rates\n");
-
 //	exit:
 	if (rates_rxn) FREE_VECTOR(rates_rxn);
 	return (error);
@@ -2768,8 +2772,7 @@ static int CVjtimes(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector fy
 
 static int cvode_derivs(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
 	/* printf("t=%.15e\n", t); */
-	(*network.derivs)((double) t, (double*) NV_DATA_S(y),
-			(double*) NV_DATA_S(ydot));
+	(*network.derivs)((double) t, (double*) NV_DATA_S(y), (double*) NV_DATA_S(ydot));
 	return 0;
 }
 
@@ -3373,6 +3376,7 @@ FILE* init_print_flux_network(char* prefix) {
 }
 
 int print_flux_network(FILE* out, double t) {
+
 	register int i;
 	int error = 0, n_reactions;
 	double* rates_rxn = NULL;
@@ -3401,22 +3405,51 @@ int print_flux_network(FILE* out, double t) {
 int print_network(FILE* out) {
 	int error = 0;
 
+	if (network.rates) {
+		fprintf(out, "begin parameters\n");
+		Elt* elt;
+		char* str;
+		for (elt = network.rates->list; elt != NULL; elt = elt->next) {
+			//      str= (elt->fixed) ? "$" : "";
+			if (elt->fixed)
+				str = "$";
+			else
+				str = "";
+			// Don't print functions
+			bool print = true;
+			for (unsigned int i=0;i < network.functions.size() && print;i++){
+				if (elt->name == network.rates->elt[network.var_parameters[i]-1]->name){
+					print = false;
+				}
+			}
+			if (print)
+				fprintf(out, "%5d %s%-20s %22.15e\n", elt->index, str, elt->name, elt->val);
+		}
+//		print_Elt_list(out, network.rates->list);
+		fprintf(out, "end parameters\n");
+	}
+
+	if (network.has_functions){
+		fprintf(out, "begin functions\n");
+		char* funcName; string funcExpr;
+		for (unsigned int i=0;i < network.functions.size();i++){
+			funcName = network.rates->elt[network.var_parameters[i]-1]->name;
+			funcExpr = network.functions[i].GetExpr();
+			fprintf(out, "%5d %s() %s\n", i+1, funcName, funcExpr.c_str());
+		}
+		fprintf(out, "end functions\n");
+	}
+
 	if (network.species) {
 		fprintf(out, "begin species\n");
 		print_Elt_list(out, network.species->list);
 		fprintf(out, "end species\n");
 	}
 
-	if (network.rates) {
-		fprintf(out, "begin rates\n");
-		print_Elt_list(out, network.rates->list);
-		fprintf(out, "end rates\n");
-	}
-
 	if (network.reactions) {
-		/* 	print_derivs_network(out); */
+		// 	print_derivs_network(out);
 		print_Rxn_array(out, network.reactions, network.species, network.rates);
-		print_rates_network(out);
+//		print_rates_network(out);
 	}
 
 	if (network.spec_groups) {

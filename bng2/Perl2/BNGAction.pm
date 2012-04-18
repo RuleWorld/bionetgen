@@ -56,6 +56,7 @@ sub simulate_pla
 sub simulate
 {
 	use IPC::Open3;
+    use IO::Select;
 
 	my $model  = shift @_;
 	my $params = (@_) ? shift @_ : {};
@@ -142,19 +143,20 @@ sub simulate
 
 	
     # Begin writing command: start with program
-    my $command = "\"$program\"";
+    my @command = ($program);
 
     # add output prefix
-    $command .= " -o \"$prefix\"";
+    push @command, "-o", "$prefix";
     
     # add method to command
-    $command .= " -p $method";
+    push @command, "-p", "$method";
     
     # pla configuration
     if ($method eq 'pla')
     {
-    	if (exists $params->{pla_config}){
-    		$command .= " \"$params->{pla_config}\"";
+    	if (exists $params->{pla_config})
+        {
+    		push @command, split(' ', $params->{pla_config});
     	}
     }
     
@@ -163,23 +165,23 @@ sub simulate
         my $opts = $METHODS->{$method}->{options};
         if ( exists $opts->{seed} )
         {   # random seed
-	        $command .= " -h $seed";
+	        push @command, "-h", $seed;
         }
         if ( exists $opts->{atol} )
         {   # absolute tolerance
-		    $command .= " -a $atol";
+		    push @command, "-a", $atol;
         }
         if ( exists $opts->{rtol} )
         {   # absolute tolerance
-		    $command .= " -r $rtol";
+		    push @command, "-r",  $rtol;
         }
         if ( exists $opts->{sparse} )
         {   # sparse methods
-		    if ($sparse) { $command .= " -b"; }
+		    if ($sparse) { push @command, "-b"; }
         }
         if ( exists $opts->{steady_state} )
         {   # check for steady state
-            if ($steady_state) { $command .= " -c"; }
+            if ($steady_state) { push @command, "-c"; }
         }
     }
 
@@ -194,28 +196,27 @@ sub simulate
 
 	# define maximum # of sim steps
     if (defined $params->{max_sim_steps})
-    {  $command .= sprintf " -M %s", $params->{max_sim_steps};  } 
+    {   push @command, "-M", $params->{max_sim_steps};   }
 
     # define output step interval
     if (defined $params->{output_step_interval})
-    {  $command .= sprintf " -I %f", $params->{output_step_interval};  }
+    {   push @command, "-I", $params->{output_step_interval};   }
     
     # output concentrations data
-    $command .= sprintf " --cdat %s", $print_cdat;
-    
+    push @command, "--cdat", $print_cdat;
     # output function values
-    $command .= sprintf " --fdat %s", $print_fdat;
+    push @command, "--fdat", $print_fdat;
 
     # define print_net
-	if ($print_net) { $command .= " -n"; }
+	if ($print_net) { push @command, "-n"; }
     # define print_end
-	if ($print_end) { $command .= " -e"; }
+	if ($print_end) { push @command, "-e"; }
 	# More detailed output
-	if ($verbose)   { $command .= " -v"; }
+	if ($verbose)   { push @command, "-v"; }
 	# Continuation
-	if ($continue)  { $command .= " -x"; }	
+	if ($continue)  { push @command, "-x"; }	
 	# Print number of active species
-	if ($print_active) { $command .= " -j"; }
+	if ($print_active) { push @command, "-j"; }
 
 
 	# Set start time for trajectory
@@ -243,13 +244,13 @@ sub simulate
 
   	# To preserve backward compatibility: only output start time if != 0
 	unless ( $t_start == 0.0 )
-    {  $command .= " -i $t_start";  }
+    {  push @command, "-i", "$t_start";  }
 
 	# Use program to compute observables
-	$command .= " -g \"$netfile\"";
+	push @command, "-g", $netfile;
 
 	# Read network from $netfile
-	$command .= " \"$netfile\"";
+	push @command, $netfile;
 
     # define t_end and n_steps
     my ($n_steps, $t_end);
@@ -260,7 +261,8 @@ sub simulate
 	}
 	if ( defined $params->{n_steps} || defined $params->{n_output_steps} || !defined $params->{sample_times} )
    	{
-    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} ){ # Don't let them both be defined
+    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} )
+        {   # Don't let them both be defined
     		return "Cannot define both n_steps and n_output_steps. Please only define one (n_output_steps is preferred).";
     	}
 
@@ -274,7 +276,6 @@ sub simulate
         if ( ($t_end - $t_start) <= 0.0 )
         {   return "t_end must be greater than t_start.";   }
 
-#		$n_steps = ( defined $params->{n_steps} ) ? $params->{n_steps} : 1;
 		
 		if (defined $params->{n_steps}){
 			$n_steps = $params->{n_steps};
@@ -287,7 +288,7 @@ sub simulate
 		}
 		
 		my $step_size = ($t_end - $t_start) / $n_steps;
-		$command .= " ${step_size} ${n_steps}";
+		push @command, $step_size, $n_steps;
 	}
 	elsif ( defined $params->{sample_times} )
     {
@@ -304,22 +305,11 @@ sub simulate
     		else{
     			$t_end = $sample_times->[ $#$sample_times ];
     		}
-    		$command .= " " . join( " ", @$sample_times ); # add sample times to argument list
+    		push @command, @$sample_times; # add sample times to argument list
     	}
     	else{
     		return "'sample_times' array must contain 3 or more points.";
 		}
-
-#		my $sample_times = $params->{sample_times};
-#		if ( @$sample_times > 2 )
-#        {
-#			$command .= " " . join( " ", @$sample_times );
-#			$t_end = $sample_times->[ $#$sample_times ];
-#		}
-#		else
-#        {
-#            return "sample_times array must contain 3 or more points";
-#		}
 	}
 	
 	# Determine index of last rule iteration
@@ -335,19 +325,23 @@ sub simulate
 
 
 
+
     ### RUN SIMULATION ###
-	print "Running run_network on ", `hostname`;
-	print "full command: $command\n";
+	print  "Running run_network on ", `hostname`;
+	printf "full command: %s\n", join(" ", @command);
 
     # disable dospath warnings for Windows OS.
     if ( $Config{'osname'} eq 'MSWin32' )
     {   $ENV{'CYGWIN'}='nodosfilewarning';   }
 
 	# start simulator as child process with communication pipes
-    my $pid;
 	local ( *Reader, *Writer, *Err );
-	unless ( $pid = open3( \*Writer, \*Reader, \*Err, "$command" ) )
-    {   return "$command failed: $?";   }
+	my $pid = eval{ open3( \*Writer, \*Reader, \*Err, @command ) };
+    if ($@) { return sprintf("%s failed: $@", join(" ", @command)); }
+
+    # remember child PID
+    $::CHILD_PID = $pid;
+    print ">>> child process ID is: $pid <<<\n";
 
     # Wait for messages from the Simulator
 	my $last_msg = '';
@@ -477,6 +471,8 @@ sub simulate
 	close Err;
 	waitpid( $pid, 0 );
 
+    # clear child pid
+    $::CHILD_PID = undef;
 
 	# Report number of times edge species became populated without network expansion
 	if ($edge_warning)
@@ -485,11 +481,13 @@ sub simulate
 	if (@err)
     {   # print any errors received from 
 		print @err;
-		return "$command\n  did not run successfully.";
+		return sprintf("%s\n  did not run successfully.", join(" ", @command));
 	}
 
 	unless ( $last_msg =~ /^Program times:/ )
-    {   return "$command\n  did not run successfully.";  }
+    {   return sprintf("%s\n  did not run successfully.", join(" ", @command));  }
+
+
 
     
     # At this point, the simulation seems to be ok.
@@ -586,15 +584,15 @@ sub simulate_nf
 	unless ( $program = findExec("NFsim") ) {
 		return "Could not find executable NFsim";
 	}
-	my $command = "\"" . $program . "\"";
+    my @command = ($program);
 
 	# Write BNG xml file
 	$model->writeXML( { prefix => $prefix } );
 
 	# Defined command line
-	$command .= " -xml \"${prefix}.xml\" -o \"${prefix}.gdat\"";
+    push @command, "-xml", "${prefix}.xml", "-o", "${prefix}.gdat";
     if ( $get_final_state ){
-        $command .= " -ss \"${prefix}.species\"";
+        push @command, "-ss", "${prefix}.species";
     }
 
 	# Append the run time and output intervals
@@ -620,7 +618,7 @@ sub simulate_nf
 		else
         {   return "Parameter t_end must be defined";   }
 
-		$command .= " -sim ${t_end} -oSteps ${n_steps}";
+        push @command, "-sim", $t_end, "-oSteps", $n_steps;
 	}
 	elsif ( defined $params->{sample_times} )
     {
@@ -632,21 +630,25 @@ sub simulate_nf
 	}
 
 	# Append the other command line arguments
-	$command .= " " . $otherCommandLineParameters;
+    push @command, split(" ", $otherCommandLineParameters);
 
 	# Turn on complex bookkeeping if requested
 	# TODO: Automatic check for turning this on
-	if ($complex) { $command .= " -cb"; }
-	if ($verbose) { $command .= " -v"; }
+	if ($complex) { push @command, "-cb"; }
+	if ($verbose) { push @command, "-v";  }
 
 	print "Running NFsim on ", `hostname`;
-	print "full command: $command\n";
+	printf "full command: %s\n", join(" ", @command);
 
 	# Compute timecourses using nfsim
-    my $pid;
+	# start simulator as child process with communication pipes
 	local ( *Reader, *Writer, *Err );
-	unless ( $pid = open3(\*Writer, \*Reader, \*Err, "$command") )
-    {   return "$command failed: $?";   }
+	my $pid = eval{ open3( \*Writer, \*Reader, \*Err, @command ) };
+    if ($@) { return sprintf("%s failed: $@", join(" ", @command)); }
+
+    # remember child PID
+    $::CHILD_PID = $pid;
+    print ">>> child process ID is: $pid <<<\n";
 
 	my $last = '';
 	while ( <Reader> )
@@ -661,9 +663,12 @@ sub simulate_nf
 	close Err;
 	waitpid( $pid, 0 );
 
+    # clear child pid
+    $::CHILD_PID = undef;
+
 	if (@err) {
 		print "Error log:\n", @err;
-		return ("$command\n  did not run successfully.");
+		return sprintf("%s did not run successfully.", join(" ", @command));
 	}
 
     if ( $get_final_state ){
