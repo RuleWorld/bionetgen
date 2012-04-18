@@ -12,6 +12,10 @@ options {
   this.setTemplateLib(gParent.getTemplateLib());
  }
  List<StringTemplate> actions = new ArrayList<StringTemplate>();
+       @Override
+  public String getErrorMessage(RecognitionException e,String[] tokenNames){
+    return gParent.getErrorMessage(e,tokenNames);
+  }
 }
 
 actions_prog:

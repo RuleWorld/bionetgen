@@ -524,7 +524,7 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 //   		strcpy(name_char_ptr,func_name.c_str());
 
 			// create a new parameter with the name var_par_<function_name>
-			Elt* new_elt = new_Elt((char*) func_name.c_str(), new_val,rates->n_elt+1);
+			Elt* new_elt = new_Elt((char*) func_name.c_str(), new_val,rates->n_elt+1); // THERE'S SOMETHING WRONG HERE
 			new_elt->next = NULL;
 			is_func_map_p[func_name] = true;
 
@@ -557,7 +557,7 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 			num_free_spaces--;
 
 			// push new parameter into parameter map
-			param_map[new_elt->name] = &new_elt->val;
+			param_map[new_elt->name] = &new_elt->val; // I THINK THIS MIGHT BE A PROBLEM --Leonard
 			param_index_map[new_elt->name] = new_elt->index;
 
 			// push variables indices into vectors
@@ -1499,19 +1499,19 @@ static int *read_indices_Rxn( char *string, int *n_indices, Elt_array *species, 
 
  1.   Elementary reaction:  v= k1*r1*...*rn
  2.   Michaelis-Menton catalytic reaction:
- S + E -> P + E, v= k1*[S][E]/([S]+k2)
- Note: substrate should be listed first.  Remaining reactants are
- considered enzymes and their concentration is summed to get the
- total enzyme concentration. [S] is
- computed self-consistently, i.e. [S]= S_total-[ES], where
- [ES]= E_total [S]/([S]+k2).  If S is substrate in only one
- reaction, then [S] is computed from quadratic formula (see
- implementation below).
+	  S + E -> P + E, v= k1*[S][E]/([S]+k2)
+	  Note: substrate should be listed first.  Remaining reactants are
+	  considered enzymes and their concentration is summed to get the
+	  total enzyme concentration. [S] is
+	  computed self-consistently, i.e. [S]= S_total-[ES], where
+	  [ES]= E_total [S]/([S]+k2).  If S is substrate in only one
+	  reaction, then [S] is computed from quadratic formula (see
+	  implementation below).
  3.   Rate law that saturates with respect to first reactant
- R1 + R2 + ... -> P1 + ...
- v= k1*R1*R2*.../(k2 + [R1]), k1 has units conc.s^-1, k2 has units
- conc.  Effect of complexation on concentration of S is NOT
- considered, since enzyme concentration is not known.
+	  R1 + R2 + ... -> P1 + ...
+	  v= k1*R1*R2*.../(k2 + [R1]), k1 has units conc.s^-1, k2 has units
+	  conc.  Effect of complexation on concentration of S is NOT
+	  considered, since enzyme concentration is not known.
  4.   Hill rate law (k, K, q) : v= k1*(r1)^q*...*rn/(K^n + r1^n) (Generalization of Sat)
 
  */
@@ -1767,7 +1767,6 @@ void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species, Elt_ar
 		for (i = 1; i < rxn->n_products; ++i) {
 			fprintf(out, ",%d", rxn->p_index[i]);
 		}
-
 		fprintf(out, " ");
 
 		// print optional statistical factor if necessary
@@ -1776,18 +1775,13 @@ void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species, Elt_ar
 		}
 
 		// print rateLaw_type if not elementary
-		if (rxn->rateLaw_type == SATURATION) {
-			fprintf(out, "Sat ");
-		} else if (rxn->rateLaw_type == MICHAELIS_MENTEN) {
-			fprintf(out, "MM ");
-		} else if (rxn->rateLaw_type == HILL) {
-			fprintf(out, "Hill ");
-		}
+		if (rxn->rateLaw_type == SATURATION) fprintf(out, "Sat ");
+		else if (rxn->rateLaw_type == MICHAELIS_MENTEN) fprintf(out, "MM ");
+		else if (rxn->rateLaw_type == HILL) fprintf(out, "Hill ");
 
 		/* Loop over rate constants */
 		for (i = 0; i < rxn->n_rateLaw_params; ++i) {
-			if (i != 0)
-				fprintf(out, " ");
+			if (i != 0) fprintf(out, " ");
 			fprintf(out, "%s", rarr[rxn->rateLaw_indices[i]]->name);
 		}
 		fprintf(out, "\n");
@@ -2152,25 +2146,26 @@ int rxn_rates_network(double* rxn_rates) {
 	int error = 0, n_reactions, n_species;
 	Rxn** rarray;
 	double *X;
-	double *conc = NULL;
+//	double *conc = NULL;
 
 	n_reactions = n_rxns_network();
 	n_species = n_species_network();
 
-	conc = ALLOC_VECTOR(n_species);
+//	conc = ALLOC_VECTOR(n_species);
+	double conc[n_species];
 
-//	if (get_conc_network(conc)){
-//		cout << "Error in network::rxn_rates_network(): 'conc' vector could not be populated. Exiting." << endl;
-//		exit(1);
-//	}
-//	INIT_VECTOR(rxn_rates, 0.0, n_reactions);
+	if (get_conc_network(conc)){
+		cout << "Error in network::rxn_rates_network(): 'conc' vector could not be populated. Exiting." << endl;
+		exit(1);
+	}
+	INIT_VECTOR(rxn_rates, 0.0, n_reactions);
 
-//	rarray = network.reactions->rxn;
-//	X = conc;// - network.species->offset;
+	rarray = network.reactions->rxn;
+	X = conc - network.species->offset;
 
-//	for (i = 0; i < n_reactions; ++i) {
-//		rxn_rates[i] = rxn_rate(rarray[i], X, 0);
-//	}
+	for (i = 0; i < n_reactions; ++i) {
+		rxn_rates[i] = rxn_rate(rarray[i], X, 0);
+	}
 /*
 cout << "\n__before FREE_VECTOR(conc)__" << endl;
 cout << "n_elt: " << network.rates->n_elt << endl;
@@ -2181,9 +2176,9 @@ for (int j=0;j < network.rates->n_elt;j++){
 }
 */
 //  exit:
-	if (conc)
-		FREE_VECTOR(conc);
-
+//	if (conc)
+//		FREE_VECTOR(conc);
+/*
 cout << "\n__after FREE_VECTOR(conc)__" << endl;
 cout << "n_elt: " << network.rates->n_elt << endl;
 for (int j=network.rates->n_elt-1;j >=0 ;j--){
@@ -2191,7 +2186,7 @@ for (int j=network.rates->n_elt-1;j >=0 ;j--){
 	cout << (const char*)network.rates->elt[j]->name << flush;
 	cout << " = " << network.rates->elt[j]->val << endl;
 }
-
+*/
 	return (error);
 }
 
@@ -2375,17 +2370,22 @@ void derivs_network(double t, double* conc, double* derivs) {
 int print_derivs_network(FILE* out) {
 	register int i/*,j*/;
 	int error = 0, n_species;
-	double *X = NULL, *dX = NULL;
+//	double *X = NULL, *dX = NULL;
 
 	n_species = n_species_network();
-	X = ALLOC_VECTOR(n_species);
-	dX = ALLOC_VECTOR(n_species);
+//	X = ALLOC_VECTOR(n_species);
+	double X[n_species];
+//	dX = ALLOC_VECTOR(n_species);
+	double dX[n_species];
 
-	/* Compute time derivs of species concentration by reaction */
-	get_conc_network(X);
+	// Compute time derivs of species concentration by reaction
+	if (get_conc_network(X)){
+		cout << "Error in network::print_derivs_network(): 'conc' vector could not be populated. Exiting." << endl;
+		exit(1);
+	}
 	derivs_network(0.0, X, dX);
 
-	/* Print reaction rates */
+	// Print reaction rates
 	fprintf(out, "begin derivs\n");
 	for (i = 0; i < n_species; ++i) {
 		fprintf(out, "%5d", i + 1);
@@ -2395,8 +2395,8 @@ int print_derivs_network(FILE* out) {
 	fprintf(out, "end derivs\n");
 
 //	exit:
-	if (X) FREE_VECTOR(X);
-	if (dX) FREE_VECTOR(dX);
+//	if (X) FREE_VECTOR(X);
+//	if (dX) FREE_VECTOR(dX);
 	return (error);
 }
 
@@ -2545,32 +2545,64 @@ void jacprintlist(jacnode_ref* jacobian, FILE* outfile, char* matname) {
 }
 
 /*
- * Sets up some comments to help the user understand what
- * Matlab is capable of
+ * Sets up some comments to help the user understand what Matlab is capable of.
  */
 void init_sparse_matlab_file(FILE* outfile) {
-	fprintf(
-			outfile,
+	fprintf(outfile,
 			"%s",
-			"% Comments about MATLAB capabilities:\n%\n% Information about eigenvalues and vector:\n%\n% The matrix "
-				"in this file is in sparse form, this means\n% that you can only use sparse MATLAB functions with it\n% to convert it "
-				"to a full matrix use the command full,\n% i.e. if your sparse matrix was called jac and you\n% wanted to make a full "
-				"matrix called A then do:\n%            A = full(jac)\n% To compute eigenvalues of a sparse matrix use eigs.\n% "
-				"The call:\n%            E = eigs(jac)\n%            [V D] = eigs(jac)\n% The first stores the 6 largest in magnitude "
-				"eigenvalues\n% in the column vector E, whereas the second stores the\n% eigenvectors of the 6 largest in magnitude "
-				"eigenvalues\n% in the columns of V and the corresponding values along\n% along the diagonal of the matrix D.\n% "
-				"The call:\n%            E = eigs(jac, k)\n%            [V D] = eigs(jac, k)\n% Does the same except for the kth largest "
-				"in magnitude\n% eigenvalues. NOTE: that for nonsymmetric problems k < n-1\n% where n corresponds to the size of the "
-				"matrix, n-by-n.\n%\n% For full matrices use the call:\n%            E = eig(A)\n%            [V, D] = eig(A)\n% which "
-				"will return all the eigenvalues and vectors of the\n% matrix A.\n%\n% For more options on both these commands use the "
-				"call:\n%            help eigs\n%            help eig\n%\n% NOTE: to suppress the value of the variable after "
-				"assignment\n% a semicolon:\n%            E = eig(A)\n%            E = eig(A);\n% the first will list the value of E "
-				"after assignment and\n% the second will not.\n%\n% Useful graphing functions:\n%\n% a convient way to view these "
-				"eigenvalues are the functions\n% plot and semilogx. Suppose that the eigenvalues are stored in\n% a vector E. To view "
-				"the real and imaginary parts the command:\n%            plot(E, '*')\n% will plot the real part and imaginary parts of "
-				"each component\n% of E on the x and y axis, respectively, each marked with an *.\n% "
-				"The command:\n%            semilogx(abs(E), 0, 'b*')\n% will produce a semilog plot of the magnitude of E where each\n% "
-				"component of E is denoted by a blue *.\n%\n% Use the help function for more info on these functions.\n\n\n");
+			"% Comments about MATLAB capabilities:\n%\n% Information about eigenvalues and vector:\n%"
+			"\n%"
+			" The matrix in this file is in sparse form, this means\n%"
+			" that you can only use sparse MATLAB functions with it\n%"
+			" to convert it to a full matrix use the command full,\n%"
+			" i.e. if your sparse matrix was called jac and you\n%"
+			" wanted to make a full matrix called A then do:\n%"
+			"            A = full(jac)\n% To compute eigenvalues of a sparse matrix use eigs.\n%"
+			" The call:\n%"
+			"            E = eigs(jac)\n%"
+			"            [V D] = eigs(jac)\n%"
+			" The first stores the 6 largest in magnitude eigenvalues\n%"
+			" in the column vector E, whereas the second stores the\n%"
+			" eigenvectors of the 6 largest in magnitude eigenvalues\n%"
+			" in the columns of V and the corresponding values along\n%"
+			" along the diagonal of the matrix D.\n%"
+			" The call:\n%"
+			"            E = eigs(jac, k)\n%"
+			"            [V D] = eigs(jac, k)\n%"
+			" Does the same except for the kth largest in magnitude\n%"
+			" eigenvalues. NOTE: that for nonsymmetric problems k < n-1\n%"
+			" where n corresponds to the size of the matrix, n-by-n.\n%"
+			"\n%"
+			" For full matrices use the call:\n%"
+			"            E = eig(A)\n%"
+			"            [V, D] = eig(A)\n%"
+			" which will return all the eigenvalues and vectors of the\n%"
+			" matrix A.\n%"
+			"\n%"
+			" For more options on both these commands use the call:\n%"
+			"            help eigs\n%"
+			"            help eig\n%"
+			"\n%"
+			" NOTE: to suppress the value of the variable after assignment\n%"
+			" a semicolon:\n%"
+			"            E = eig(A)\n%"
+			"            E = eig(A);\n%"
+			" the first will list the value of E after assignment and\n% the second will not.\n%"
+			"\n%"
+			" Useful graphing functions:\n%"
+			"\n%"
+			" a convient way to view these eigenvalues are the functions\n%"
+			" plot and semilogx. Suppose that the eigenvalues are stored in\n%"
+			" a vector E. To view the real and imaginary parts the command:\n%"
+			"            plot(E, '*')\n%"
+			" will plot the real part and imaginary parts of each component\n%"
+			" of E on the x and y axis, respectively, each marked with an *.\n%"
+			" The command:\n%"
+			"            semilogx(abs(E), 0, 'b*')\n%"
+			" will produce a semilog plot of the magnitude of E where each\n%"
+			" component of E is denoted by a blue *.\n%"
+			"\n%"
+			" Use the help function for more info on these functions.\n\n\n");
 }
 
 /*
@@ -3410,11 +3442,9 @@ int print_network(FILE* out) {
 		Elt* elt;
 		char* str;
 		for (elt = network.rates->list; elt != NULL; elt = elt->next) {
-			//      str= (elt->fixed) ? "$" : "";
-			if (elt->fixed)
-				str = "$";
-			else
-				str = "";
+			//str= (elt->fixed) ? "$" : "";
+			if (elt->fixed) str = "$";
+			else str = "";
 			// Don't print functions
 			bool print = true;
 			for (unsigned int i=0;i < network.functions.size() && print;i++){
@@ -3447,9 +3477,9 @@ int print_network(FILE* out) {
 	}
 
 	if (network.reactions) {
-		// 	print_derivs_network(out);
+		//print_derivs_network(out);
 		print_Rxn_array(out, network.reactions, network.species, network.rates);
-//		print_rates_network(out);
+		//print_rates_network(out);
 	}
 
 	if (network.spec_groups) {

@@ -12,8 +12,6 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
 @header{
   package bngparser.grammars;
   import org.antlr.stringtemplate.*;
-  
-  import bngparser.exceptions.BNGSemanticException;
   import bngparser.dataType.BondList;
   import java.util.Map;
   import bngparser.methods.ReactionAction;
@@ -43,9 +41,7 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
     }
     return msg;
   }
-  
-  
-  
+    
 }
 
 //prog separates bngl into methods and actions
@@ -139,7 +135,6 @@ scope{
   $if_expression::references = new HashMap<String,Register>();
   $if_expression::lmemory = memory;
 }:
-  
   IF LPAREN STRING 
   
   EQUALS INT COMMA e1=expression[memory] COMMA expression[memory] RPAREN
