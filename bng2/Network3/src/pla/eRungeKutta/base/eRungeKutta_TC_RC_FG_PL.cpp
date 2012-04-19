@@ -68,7 +68,7 @@ eRungeKutta_TC_RC_FG_PL::~eRungeKutta_TC_RC_FG_PL(){
 	delete this->bc;
 }
 
-void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, bool initial){
+void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, bool reclassify_all){
 
 	// Error check
 	if (classif.size() != this->aCalc->a_eff.size()){
@@ -79,7 +79,7 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 	// Classify rxns
 	double a_tau;
 	for (unsigned int v=0;v < classif.size();v++){
-		if (initial || !initial && classif[v] != RxnClassifier::EXACT_STOCHASTIC){
+		if (reclassify_all || !reclassify_all && classif[v] != RxnClassifier::EXACT_STOCHASTIC){
 			a_tau = this->aCalc->a_eff[v]*tau;
 			//
 			if (sqrt(a_tau) > this->gg1){
