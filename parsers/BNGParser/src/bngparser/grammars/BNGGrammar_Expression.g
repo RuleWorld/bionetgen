@@ -6,8 +6,24 @@ options {
 
   
 }
-
-
+@members{
+ public void getParentTemplate(){
+ 
+  this.setTemplateLib(gParent.getTemplateLib());
+ }
+      @Override
+  public String getErrorMessage(RecognitionException e,String[] tokenNames){
+    return gParent.getErrorMessage(e,tokenNames);
+  }
+  
+  public String getErrorMessage(Token s1,String error){
+      return String.format("\%s line \%d:\%d \%s: \%s\n",input.getSourceName(),s1.getLine(),s1.getCharPositionInLine(),error,s1.getText());
+  
+  }
+}
+@init{
+getParentTemplate();
+}
 /*
 Expression rules for BioNetGen. These grammars include the expression rules (arithmetic operations using variables an integers) used in BioNetGen)
 
@@ -73,7 +89,7 @@ number returns [Double value]: s1=INT {$value = Double.parseDouble($INT.text);}
       | s1=FLOAT { $value = Double.parseDouble($FLOAT.text);}
 ;
       
-variable returns [Double value]: STRING {
+variable returns [Double value]: s1=STRING {
                   try{
                   
                   //if($value == null)
@@ -82,36 +98,46 @@ variable returns [Double value]: STRING {
                     Register temp = $expression::lmemory.get($STRING.text);
                     $value = temp.getValue();
 	                  if(!temp.getType().equals("parameter") && !temp.getType().equals("observable")){
-	                    System.err.println($STRING.text + " is in memory but it is not a variable or observable. Check syntax");
+	                    String msg = getErrorMessage(s1,"the following token is in memory but is not a variable or an observable");
+	                    System.err.println(msg);
 	                  }
                   }
                   else{
                     $value = 1.0;
-                    System.err.println("variable not found: " + $STRING.text);
+                    String msg = getErrorMessage(s1,"variable not found");
+                    System.err.println(msg);
                   }
                   $expression::references.put($STRING.text,$expression::lmemory.get($STRING.text));
                   }
                   catch(NullPointerException e){
-                    System.err.println("Variable not found: " + $STRING.text);
+                    String msg = getErrorMessage(s1,"variable not found");
+                    System.err.println(msg);
                     
                   }
                   }
 ;
 
 function returns [Double value]:
-  STRING LPAREN RPAREN {
+  s1=STRING LPAREN RPAREN {
     try{
       if($expression::lmemory.containsKey($STRING.text)){
                     Register temp = $expression::lmemory.get($STRING.text);
                     $value = temp.getValue();
                     if(!temp.getType().equals("function")){
-                      System.err.println($STRING.text + "is in memory but it is not a function. Check syntax");
+                      //throw new RuntimeException($STRING.text + "is in memory but it is not a function. Check syntax", new BNGSemanticException($STRING.text + " is in memory but it is not a function. Check syntax",s1.getLine()));
+                      $value = 1.0;
+                       String msg = getErrorMessage(s1,"the following token is in memory but is not a function");
+                      
+                      System.err.println(msg);
                     }
        }
        else{
                     $value = 1.0;
-                    System.err.println("function not found: " + $STRING.text);
+                    //throw new RuntimeException("function not found: " + $STRING.text, new BNGSemanticException("function not found: " + $STRING.text,s1.getLine()));
+                    String msg = getErrorMessage(s1,"function not found");
+                    System.err.println(msg);
        }
+       
         $expression::references.put($STRING.text,$expression::lmemory.get($STRING.text));
     }
     catch(NullPointerException e){

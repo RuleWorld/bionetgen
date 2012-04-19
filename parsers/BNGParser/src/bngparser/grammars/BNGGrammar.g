@@ -41,9 +41,7 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
     }
     return msg;
   }
-  
-  
-  
+    
 }
 
 //prog separates bngl into methods and actions
@@ -61,7 +59,6 @@ scope {
 }
 @init {
   $prog::parameters = new ArrayList();
- 
   $prog::seedSpecies = new ArrayList();
   $prog::reactionRules = new ArrayList();
   $prog::observables = new ArrayList();
@@ -138,7 +135,6 @@ scope{
   $if_expression::references = new HashMap<String,Register>();
   $if_expression::lmemory = memory;
 }:
-  
   IF LPAREN STRING 
   
   EQUALS INT COMMA e1=expression[memory] COMMA expression[memory] RPAREN

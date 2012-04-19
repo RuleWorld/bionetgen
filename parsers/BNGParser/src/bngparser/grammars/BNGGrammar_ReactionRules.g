@@ -10,6 +10,12 @@ options {
  
   this.setTemplateLib(gParent.getTemplateLib());
  }
+      @Override
+  public String getErrorMessage(RecognitionException e,String[] tokenNames){
+    return gParent.getErrorMessage(e,tokenNames);
+  }
+  
+
 }
 
 reaction_rules_block[List reactionRules]
@@ -181,7 +187,7 @@ int reactantPatternCounter;
         
  ;
         
-rule_species_def[String upperID,ReactionAction reactionAction] returns [int stoichiometry,Map <String,List<ReactionRegister>> map]
+rule_species_def[String upperID,ReactionAction reactionAction] returns [int stoichiometry,Map <String,List<ReactionRegister>> map] throws SemanticException
 scope{
 List reactants;
 BondList bonds;
@@ -194,10 +200,21 @@ BondList bonds;
 : 
 (
 (i1=INT {$stoichiometry = Integer.parseInt($i1.text);} TIMES)? 
- (s1=(species_def[$rule_species_def::reactants,$rule_species_def::bonds,upperID] {
+ s1=species_def[$rule_species_def::reactants,$rule_species_def::bonds,upperID] {
        reactionAction.addMolecule(upperID,$species_def.text,$rule_species_def::bonds);
        $map = $species_def.listOfMolecules;
-  })) 
+       
+      
+  }
+  {
+   
+       if(!$rule_species_def::bonds.validateBonds(0,0)){
+          String err = String.format("\%s line \%d:\%d \%s\n",input.getSourceName(),s1.start.getLine(),s1.start.getCharPositionInLine(),"dangling bond");
+  
+          System.err.println(err);
+        }
+  }
+
   | i2=INT {
         $map  = new HashMap<String,List<ReactionRegister>>();
         if(!$i2.text.equals("0")){
@@ -205,6 +222,8 @@ BondList bonds;
         }
       }
     )
+
+
     ->rule_seed_species_block(id={upperID},molecules={$rule_species_def::reactants},firstBonds={$rule_species_def::bonds.getLeft()},
       secondBonds={$rule_species_def::bonds.getRight()})
     ;
