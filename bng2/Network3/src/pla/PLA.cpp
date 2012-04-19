@@ -219,7 +219,6 @@ void PLA::nextStep(){
 	this->ES_rxn = NULL; // Don't know if there are any ES rxns yet
 	this->fire_ES = false;
 	double tau_ES = INFINITY;
-
 /*
 	// If all rxns are ES, do a simple ES step
 	bool allES = true;
@@ -235,7 +234,7 @@ void PLA::nextStep(){
 	else{
 */
 		// Step 3: Iterate until a consistent tau and set of classifications are found
-		vector<bool> alreadyES(this->rxn.size(),false); // Tracks whether a rxn has already been flagged as ES
+		vector<bool> already_ES(this->rxn.size(),false); // Tracks whether a rxn has already been flagged as ES
 		bool done = false;
 		bool allES = false;
 		//
@@ -247,12 +246,12 @@ void PLA::nextStep(){
 				// Consider ES rxns
 				if (this->classif[v] == RxnClassifier::EXACT_STOCHASTIC){
 					// Is it newly ES?
-					if (!alreadyES[v]){ // Yes
-						alreadyES[v] = true;
-						double tau_ES_v = this->get_tau_ES(v);
-						if (tau_ES_v < tau_ES){ // Initially tau_ES = INFINITY
+					if (!already_ES[v]){ // Yes
+						already_ES[v] = true;
+						double tau_ESv = this->get_tau_ES(v);
+						if (tau_ESv < tau_ES){ // Remember that tau_ES = INFINITY initially
 							this->ES_rxn = this->rxn[v];
-							tau_ES = tau_ES_v;
+							tau_ES = tau_ESv;
 						}
 					}
 				}
@@ -261,11 +260,11 @@ void PLA::nextStep(){
 				}
 			}
 
-			// If tau_ES < tau **OR** allES = true: Set tau = tau_ES and fire_ES = true
+			// If tau_ES < tau or allES = true, set tau = tau_ES and fire_ES = true
 			if (tau_ES < this->tau || allES){
 				this->tau = tau_ES;
 				this->fire_ES = true;
-				// If allES = false: Set done = false and reclassify all non-ES rxns
+				// If allES = false, set done = false and reclassify all non-ES rxns
 				if (!allES){
 					done = false;
 					// Reclassify non-ES rxns
@@ -277,7 +276,8 @@ void PLA::nextStep(){
 		// Step 4: Fire reactions
 		// If all rxns are ES, just fire the one with min{tau_ES_v} and move on (no need to postleap check)
 		if (allES){
-			this->ES_rxn->fire(1.0);
+			if (this->ES_rxn) // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
+				this->ES_rxn->fire(1.0);
 //			cout << "All ES step" << endl;
 		}
 		// Otherwise...
@@ -290,20 +290,19 @@ void PLA::nextStep(){
 				this->pl.correct(this->k, this->tau);
 				this->fire_ES = false; // tau is reduced, so don't fire ES rxn anymore
 			}
+
 			// Now fire ES rxn if tau = tau_ES
 //			if (this->tau == tau_ES){
 			if (this->fire_ES){
 				if (this->ES_rxn->getRate() > 0.0){ // Make sure rxn is still active (not always caught in PL check)
 					this->ES_rxn->fire(1.0);
 //					cout << "Firing ES rxn" << endl;
-//					cout << "tau = " << tau << ", tau_ES = " << tau_ES;
-					if (this->tau == tau_ES);// cout << " (true)" << endl;
-					else cout << " (false)" << endl;
+//					cout << "tau = " << tau << ", tau_ES = " << tau_ES << endl;
 				}
-				else{
-					cout << "Warning: Rxn " << this->ES_rxn->toString() << " was scheduled to fire once but didn't ";
-					cout << "due to rate becoming <= 0.0." << endl;
-				}
+				/*else{
+					cout << "Warning: Rxn " << this->ES_rxn->toString() << " was scheduled to fire (once) but didn't ";
+					cout << "due to rate becoming " << this->ES_rxn->getRate() << "." << endl;
+				}*/
 			}
 		}
 //	}
@@ -318,7 +317,11 @@ double PLA::get_tau_ES(unsigned int v){
 double PLA::get_tau_FRM(unsigned int v){
 	return (-log(Util::RANDOM_CLOSED())/this->rxn[v]->getRate());
 }
+/*
+double PLA::get_tau_Gibson(unsigned int v){
 
+}
+*/
 void PLA::perform_allES_step(){
 	// Calculate sumRates
 	double sumRates = 0.0;

@@ -49,10 +49,10 @@ bool RBChecker::check(double w, vector<double>& a_check, vector<double*>& x_ref,
 		for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){ // Loop over all rateSpecies to check for neg pops
 			X_vj = this->rxn[v]->rateSpecies[j]->population;
 			if (X_vj < 0.0 || x_ref[v][j] < 0.0){
-				if (X_vj < 0.0){
+/*				if (X_vj < 0.0){
 					cout << "Uh oh, species " << this->rxn[v]->rateSpecies[j]->name
 						 << " has a negative population (" << X_vj << ")." << endl;
-				}
+				}*/
 				return false;
 			}
 			// If species population change <= 1.0, skip
