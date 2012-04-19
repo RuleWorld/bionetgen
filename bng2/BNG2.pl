@@ -77,7 +77,7 @@ while ( @ARGV  and  $ARGV[0] =~ s/^(-{1,2})// )
     elsif ( $arg eq 'log' ) {
         $params->{logging} = 1;
     }
-    elsif ( $arg eq 'v' ){
+    elsif ( $arg =~ /^(v|version)$/ ){
         printf "BioNetGen version %s\n", BNGversion();
         exit(0);    
     }
@@ -116,7 +116,7 @@ while ( @ARGV  and  $ARGV[0] =~ s/^(-{1,2})// )
     elsif ( $arg eq 'no-nfsim' ) {
         $params->{no_nfsim} = 1;
     }
-    elsif ( $arg eq 'h' )
+    elsif ( $arg =~ /^(h|help)$/ )
     {   # show help menu and exit
         display_help();
         exit(0);
