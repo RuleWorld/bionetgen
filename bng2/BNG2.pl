@@ -42,7 +42,7 @@ $SIG{'TERM'} = sub
         print "\n>>> relaying TERM signal to child with PID: ", $::CHILD_PID, " <<<\n";
         kill $SIGNO{"TERM"}, $::CHILD_PID;
     }
-    die "BioNetGen received TERM signal";
+    exit_error( sprintf "BioNetGen received TERM signal (%d)", $SIGNO{"TERM"} );
 };
 # INT signal handler: make sure any child processes are shutdown before termination
 $SIG{'INT'} = sub
@@ -52,7 +52,7 @@ $SIG{'INT'} = sub
         print "\n>>> relaying INT signal to child with PID: ", $::CHILD_PID, " <<<\n";
         kill $SIGNO{"INT"}, $::CHILD_PID;
     }
-    die "BioNetGen received INT signal";
+    exit_error( sprintf "BioNetGen received TERM signal (%d)", $SIGNO{"INT"} );
 };
 
 
