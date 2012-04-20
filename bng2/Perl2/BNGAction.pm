@@ -82,6 +82,7 @@ sub simulate
 	my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
 	my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
 	my $print_net    = defined $params->{print_net}  ? $params->{print_net}  : 0;
+	my $save_progress = defined $params->{save_progress} ? $params->{save_progress} : 0;
     my $continue     = defined $params->{'continue'} ? $params->{'continue'} : 0;	
     my $method       = defined $params->{method}     ? $params->{method}     : undef;
     my $print_active = defined $params->{print_n_species_active} ? $params->{print_n_species_active} : 0;
@@ -96,7 +97,6 @@ sub simulate
 
     # stochastic options
 	my $seed         = defined $params->{seed} ? $params->{seed} : floor(rand 2**31);
-
 
     # check method
     unless ( $method )
@@ -207,8 +207,12 @@ sub simulate
     # output function values
     push @command, "--fdat", $print_fdat;
 
-    # define print_net
-	if ($print_net) { push @command, "-n"; }
+    # define print_net (save_progress)
+    if (defined $params->{print_net} && defined $params->{save_progress}){ # Don't let them both be defined
+		return "'print_net' and 'save_progress' are the same thing, cannot define both. " 
+				. "Please only define one ('save_progress' is preferred).";
+	}	
+	if ($print_net || $save_progress) { push @command, "-n"; }
     # define print_end
 	if ($print_end) { push @command, "-e"; }
 	# More detailed output
@@ -261,9 +265,9 @@ sub simulate
 	}
 	if ( defined $params->{n_steps} || defined $params->{n_output_steps} || !defined $params->{sample_times} )
    	{
-    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} )
-        {   # Don't let them both be defined
-    		return "Cannot define both n_steps and n_output_steps. Please only define one (n_output_steps is preferred).";
+    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} ){ # Don't let them both be defined
+    		return "'n_steps' and 'n_output_steps' are the same thing, cannot define both. "
+    				. "Please only define one ('n_output_steps' is preferred).";
     	}
 
 		if ( defined $params->{t_end} ){
