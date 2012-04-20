@@ -231,14 +231,14 @@ sub readString
         foreach my $index (@inds)
         {
             # check for bad index            
-            if ( $index < 0 || ( $index > $nspec ) )
+            if ( $index < 0 || ($index > $nspec) )
             {
                 return ("Index $index to species in reaction out of range");
             }
 
             # NOTE: zero is the null species, so ignore indices less than 1
-            unless ( $index < 1 ) 
-            {   push @ptrs, $slist->Array->[ $index - 1 ];   }
+            unless ( $index==0 ) 
+            {   push @ptrs, $slist->Array->[$index - 1];   }
         }
     }
     else
@@ -253,17 +253,17 @@ sub readString
     {
         @ptrs = ();
         my @inds = split( ',', shift(@tokens) );
-        for my $index (@inds)
+        foreach my $index (@inds)
         {
             # check for bad index
-            if ( $index < 0 || ( $index > $nspec ) )
+            if ( $index < 0 || ($index > $nspec) )
             {
                 return ("Index $index to species in reaction out of range");
             }        
         
             # NOTE: zero is the null species, so ignore indices less than 1
-            unless ( $index < 1 )                     
-            {   push @ptrs, $slist->Array->[ $index - 1 ];   }
+            unless ( $index==0 )                     
+            {   push @ptrs, $slist->Array->[$index - 1];   }
 
         }
     }

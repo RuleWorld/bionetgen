@@ -258,8 +258,11 @@ sub readString
 
     # Read expression defining function.  Function arguments are "local" variables
     my $expr = Expression->new();
+    $expr->setAllowForward(1);  # don't complain if expression refers to undefined parameters
     if ( my $err = $expr->readString( \$string, $plist ) ) {  return ($err);  }
     if ($string) {  return ("Syntax error at $string");  }
+    $expr->setAllowForward(0);
+
     $fun->Expr($expr);
 
     # Define parameter with name of the Function

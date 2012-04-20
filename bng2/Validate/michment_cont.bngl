@@ -1,0 +1,12 @@
+# "michment_cont.bngl" is part of a pair of models that tests the
+# read/write features of BNG. See "michment.bngl" for more details.
+# --J.Hogg, 19 Apr 2012
+
+readFile({file=>"michment_cont.net"})
+
+setConcentration("S(a~0,c~R)","S0")
+simulate_ode({t_start=>0,t_end=>10,n_steps=>50,sparse=>1})
+
+addConcentration("S(a~0,c~R)","S0")
+simulate_ode({t_start=>10,t_end=>20,n_steps=>50,continue=>1,sparse=>1})
+

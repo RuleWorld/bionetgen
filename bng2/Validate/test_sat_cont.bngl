@@ -1,0 +1,2 @@
+readFile({file=>"test_sat_cont.net"})
+simulate_ode({t_end=>1,n_steps=>10})

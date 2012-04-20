@@ -262,31 +262,6 @@ sub readString
 ###
 
 
-
-#sub toString
-#{
-#    my $obs = shift;
-#    # used to align columns nicely
-#    my $max_length = (@_) ? shift : 0;
-#
-#    # write name
-#    my $string .= sprintf "%-10s ", $obs->Type;
-#    $string    .= $obs->Name . ' ';
-#    if ($max_length)
-#    {
-#        my $name_length = length $obs->Name;
-#        if ( $max_length >= $name_length )
-#        {   $string .= ' ' x ($max_length - $name_length);   } 
-#    }
-#    # write patterns
-#    foreach my $patt ( @{$obs->Patterns} )
-#    {
-#        $string .= '  ' . $patt->toString();
-#    }
-#
-#    return $string;
-#}
-
 sub toString
 {
     my $obs    = shift;
@@ -297,10 +272,6 @@ sub toString
     }
     return $string;
 }
-
-###
-###
-###
 
 
 sub toStringSSC
@@ -314,12 +285,6 @@ sub toStringSSC
     }
     return $string;
 }
-
-
-
-###
-###
-###
 
 
 sub toCVodeString
@@ -514,12 +479,10 @@ sub update
 
     my $err = '';
   
-    # This appears to be a little speed tweak..
+    # This appears to be a little speed tweak (force PERL to allocate space for array)..
     #   Make sure full size of array is allocated, but don't risk overwritting the last element.
-    unless ($#$species < 0)
-    {
-        $obs->Weights->[$#$species] = $obs->Weights->[$#$species];
-    }
+    unless (@$species == 0)
+    {   $obs->Weights->[@$species] = $obs->Weights->[@$species];   }
 
     # Loop over patterns to generate matches; update weight at index of each match.
     foreach my $patt (@{$obs->Patterns})
@@ -533,7 +496,7 @@ sub update
             my @matches = $patt->isomorphicToSubgraph( $sp->SpeciesGraph );
             
             # add correction for symmetry!
-            my $n_match = (scalar @matches);
+            my $n_match = scalar @matches;
             # SYMMETRY CORRECTION is disabled for the time being!
             #  Uncommend the following block to enable the correction.  --Justin 15mar2010
             #if ( $obs->Type eq 'Molecules' )
@@ -550,7 +513,7 @@ sub update
 	            #print "($test) $result\n";
 	            next unless $result;
             }
-
+            # NOTE: quantifiers are Species observables, so this logic works
             if ($obs->Type eq 'Species') {  $n_match = 1;  }
             $obs->Weights->[$sp->Index] += $n_match;
         }
@@ -588,7 +551,7 @@ sub getWeightVector
             push @wv, 0;
         }
     }
-    return (@wv);
+    return @wv;
 }
 
 

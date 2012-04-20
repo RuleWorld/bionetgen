@@ -10,6 +10,7 @@ package RateLaw;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
+use Scalar::Util ("looks_like_number");
 
 # BNG Modules
 use BNGUtils;
@@ -87,7 +88,7 @@ sub newRateLaw
 
     # if totalRate, we need to force expression into a function,
     #  even if it's a constant function.
-    my $force_fcn = $totalRate ? 1 : 0;        
+    my $force_fcn = $totalRate ? 1 : 0;  
 
 
     # Handle legacy Sat and MM RateLaw types
@@ -232,7 +233,7 @@ sub newRateLawNet
     #print "rf=$rate_fac\n";
 
     # Get rate law type or name
-    if ( $string_left =~ s/^([A-Za-z0-9_]+)\s*// )
+    if ( $string_left =~ s/^(\w+)\s*// )
     {
         $name = $1;
         #print "name=$name|$string_left\n";
@@ -260,20 +261,33 @@ sub newRateLawNet
     }
     else 
     {
-        # Handle single rate constant for elementary reaction
-        $rate_law_type = "Ele";
-
-        # Rate constant
-        if ( $name eq '0' )
-        {
-            # Allow reactions with zero rate for purpose of deleting
-            # existing reaction
-            $rate_law_type = "Zero";
+        if ( looks_like_number($name) )
+        {   # treat as a raw number
+            $rate_law_type = "Ele";
+            if ( $name eq '0' )
+            {
+                # Allow reactions with zero rate for purpose of deleting
+                # existing reaction
+                $rate_law_type = "Zero";
+            }
+            push @rate_constants, $name;
         }
         else
-        {
-            ( $param, $err ) = $plist->lookup($name);
-            if ($err) {  return ( '', $err );  }
+        {   # look up parameter
+            ($param, $err) = $plist->lookup($name);
+            if ($err) {  return '', $err;  }
+
+            # determine ratelaw type
+            if ( $param->Type =~ /^Constant/ )
+            {  # this is an elementary expression
+                $rate_law_type = "Ele";
+            }
+            else
+            {   # this is a function
+                $rate_law_type = "Function";
+            }
+            
+            # put name of rate parameter (or fcn) on the constants array
             push @rate_constants, $name;
         }
     }
@@ -293,13 +307,10 @@ sub newRateLawNet
     $rl->Factor($rate_fac);
 
     # Validate rate law type
-    if ( $err = $rl->validate )
-    {
-        return ( '', $err );
-    }
+    if ( $err = $rl->validate ) {  return '', $err;  }
 
     ++$n_RateLaw;
-    return ($rl);
+    return $rl;
 }
 
 
@@ -817,7 +828,7 @@ sub validate
 
                 if ( defined $model )
                 {
-		            my $err = $model->MoleculeTypesList->checkSpeciesGraph( $reactants->[0],
+                    my $err = $model->MoleculeTypesList->checkSpeciesGraph( $reactants->[0],
                                                                             { IsSpecies            => 1,
                                                                               AllowNewTypes        => 0  } );
                     if ( $err )
@@ -825,7 +836,7 @@ sub validate
                         send_warning( "In rule with Michaelis-Menton type ratelaw:\n"
                                      ."  substrate reactant pattern may match more than one species.\n"
                                      ."  This may yield unexpected results in Network simulations.");
-	                }
+                    }
                 }
             }
         }

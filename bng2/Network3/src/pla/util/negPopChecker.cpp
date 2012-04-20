@@ -29,10 +29,8 @@ NegPopChecker::~NegPopChecker(){
 bool NegPopChecker::check(){
 	for (unsigned int j=0;j < this->sp.size();j++){
 		if (this->sp[j]->population < 0.0){
-///*
-			cout << "Uh oh, species " << this->sp[j]->name << " has a negative population ("
-				 << this->sp[j]->population << ").\n";
-//*/
+/*			cout << "Uh oh, species " << this->sp[j]->name << " has a negative population ("
+				 << this->sp[j]->population << ").\n";*/
 			return false;
 		}
 	}

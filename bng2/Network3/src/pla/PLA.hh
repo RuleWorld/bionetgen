@@ -32,13 +32,13 @@ namespace network3{
 		vector<int> classif; 		// Classifications
 
 //		PLA();
-		PLA(TauCalculator& tc, RxnClassifier& rc, FiringGenerator& fg, PostleapChecker& pl, vector<SimpleSpecies*>& sp,
-				vector<Reaction*>& rxn);
+		PLA(TauCalculator& tc, RxnClassifier& rc, FiringGenerator& fg, PostleapChecker& pl,
+				vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn);
 		~PLA();
 
 //		void addDependencyMap(map<Reaction*,vector<Reaction*> > dependency);
 //		void addDependencyMap(vector<vector<Reaction*> > dependency);
-		//
+
 		void addOutputFile(string directory, string filename){
 			if ( directory.substr(directory.size()-1,directory.size()-1) != "/" ){ directory.append("/"); }
 			this->addOutputFile((directory+filename));
@@ -48,7 +48,7 @@ namespace network3{
 		void setSeed(unsigned long seed){ Util::SEED_RANDOM(seed); }
 		void setSeed(long seed){ this->setSeed((unsigned long)seed); }
 		void setSeed(int seed){ this->setSeed((unsigned long)seed); }
-		//
+
 //		double calcSumRates();
 
 //		virtual void initialize();
@@ -60,6 +60,7 @@ namespace network3{
 //		double nextStep(double maxTau);
 
 		double get_tau_ES(unsigned int v);
+//		double get_tau_Gibson(unsigned int v);
 		void perform_allES_step();
 
 	protected:
