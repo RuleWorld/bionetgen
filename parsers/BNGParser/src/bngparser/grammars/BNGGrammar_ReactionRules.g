@@ -36,6 +36,7 @@ getParentTemplate();
                   {
                   reactionRules.add($reaction_rule_def.st);
                   StringTemplate sInvert = null;
+                  //TODO: crashes when handling an error in a bidirectional reaction
                   if($reaction_rule_def.numReactions == 2)
                     sInvert = InvertBidirectional.invert($reaction_rule_def.st.toString(),$reaction_rules_block::reactionCounter+1);
                   reactionRules.add(sInvert);
@@ -56,6 +57,11 @@ reactionLabel returns [String label]
         COLON 
 
 ;
+
+reactionReference:
+  STRING COLON COLON
+;
+
 reaction_rule_def[int reactionCounter] returns [int numReactions, String secondRate]
 scope{
 List patternsReactants;

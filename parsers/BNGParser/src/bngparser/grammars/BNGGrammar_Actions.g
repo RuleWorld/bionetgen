@@ -32,7 +32,7 @@ actions_block
 @after{
   gParent.paraphrases.pop();
 }
-        : (action)+ 
+        : (action)+
 ;
 action  : generate_network {actions.add($generate_network.st);}
         | simulate_method {actions.add($simulate_method.st);}

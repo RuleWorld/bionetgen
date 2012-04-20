@@ -10,7 +10,7 @@ package bngparser.grammars;
 }
 
 LINE_COMMENT : '#' ~('\n'|'\r')* '\r'? '\n' {skip();} ;
-WS : (' '|'\t'|'\n'|'\r'|'\\\n')+ { $channel=HIDDEN;};
+WS : (' '|'\t'|'\n'|'\r'|'\\\n'|'\\\r\n')+ { $channel=HIDDEN;};
 VERSION : ('v'|'V')('e'|'E')('r'|'R')('s'|'S')('i'|'I')('o'|'O')('n'|'N');
 END : ('e'|'E')('n'|'N')('d'|'D');
 BEGIN : ('b'|'B')('e'|'E')('g'|'G')('i'|'I')('n'|'N');
@@ -86,6 +86,8 @@ GENERATENETWORK: 'generate_network';
 SUBSTANCEUNITS: 'substanceUnits';
 PARAM: 'param';
 SAT: 'Sat';
+EXP: 'exp';
+
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | '.' (DIGIT)+ EXPONENT?
