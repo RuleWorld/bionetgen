@@ -305,39 +305,32 @@ void Network3::init_Network3(bool verbose){
 
 void Network3::init_PLA(string config, bool verbose){
 
-	// 1st argument: Method type (fEuler, midpt, rk4, grk).
+	// 1st argument: Method type (fEuler, midpt, rk4, custom).
 	// 2nd argument: Rxn-based (rb) or species-based (sb).
-	// 3rd argument: PLA config (pre:neg, pre:post, post:post).
+	// 3rd argument: TauCalculator:PostleapChecker type (pre:neg, pre:post, post:post).
 	// 4th argument: PLA parameters:
-	//				 Minimum of 4 (eps,approx1,gg1,p).
+	//				 Minimum of 4 (eps,apx1,gg1,p).
 	//				 Optional 3 additional (pp,q,w).
-	// 5th argument (optional): Path to butcher tableau file (required if 'grk' chosen in arg 1).
+	// 5th argument (optional): Path to butcher tableau file (required if 'custom' chosen in arg 1).
 
 	cout << "Initializing PLA simulation. Configuration = " << config << endl;
 
-	// Error check
-	if (config[0] == '|'){
-		cout << "Oops, a '|' cannot be the first character of the configuration string. Please try again." << endl;
-		cout << "\t" << "PLA_config: " + config << endl;
-		exit(1);
-	}
-	if (config[config.size()-1] == '|'){
-		cout << "Oops, a '|' cannot be the last character of the configuration string. Please try again." << endl;
-		cout << "\t" << "PLA_config: " + config << endl;
-		exit(1);
-	}
+	// Remove '|' from beginning of string, if present
+	if (config.at(0) == '|') config.erase(0,1);
+
+	// Add '|' to end of string, if not present
+	if (config.at(config.size()-1) != '|') config.append("|");
 
 	// Collect arguments
 	vector<string> arg;
-	int last = -1;
-	int next;
+	int last = -1, next;
 	while ((next = config.find('|',last+1)) != (int)string::npos){
-		arg.push_back(config.substr(last+1,next-(last+1)));
+		string s = config.substr(last+1,next-(last+1));
+		Util::remove_whitespace(s);
+		arg.push_back(s);
 		last = next;
 //		cout << arg[arg.size()-1] << endl;
 	}
-	arg.push_back(config.substr(last+1,config.size()-(last+1))); // Get last argument
-//	cout << arg[arg.size()-1] << endl;
 
 	// Error check
 	if (arg.size() != 4 && arg.size() != 5){
@@ -354,8 +347,9 @@ void Network3::init_PLA(string config, bool verbose){
 	vector<double> param;			// PLA parameters (eps,approx1,gg1,etc.)
 
 	// Argument 1: Method type
+	if (verbose) cout << "1: ";
 	if (arg[0] == "fEuler"){
-		if (verbose) cout << "1: You've chosen 'fEuler', very good." << endl;
+		if (verbose) cout << "You've chosen 'fEuler', very good." << endl;
 		// alpha
 		alpha.resize(1);
 		alpha[0].push_back(0.0);
@@ -363,7 +357,7 @@ void Network3::init_PLA(string config, bool verbose){
 		beta.push_back(1.0);
 	}
 	else if (arg[0] == "midpt"){
-		if (verbose) cout << "1: You've chosen 'midpt', this should be interesting." << endl;
+		if (verbose) cout << "You've chosen 'midpt', this should be interesting." << endl;
 		// alpha
 		alpha.resize(2);
 		alpha[0].push_back(0.0); alpha[0].push_back(0.0);
@@ -372,7 +366,7 @@ void Network3::init_PLA(string config, bool verbose){
 		beta.push_back(0.0); beta.push_back(1.0);
 	}
 	else if (arg[0] == "rk4"){
-		if (verbose) cout << "1: You've chosen 'rk4', go get 'em cowboy." << endl;
+		if (verbose) cout << "You've chosen 'rk4', go get 'em cowboy." << endl;
 		// alpha
 		alpha.resize(4);
 		alpha[0].push_back(0.0); alpha[0].push_back(0.0); alpha[0].push_back(0.0); alpha[0].push_back(0.0);
@@ -382,28 +376,29 @@ void Network3::init_PLA(string config, bool verbose){
 		// beta
 		beta.push_back(1.0/6.0); beta.push_back(1.0/3.0); beta.push_back(1.0/3.0); beta.push_back(1.0/6.0);
 	}
-	else if (arg[0] == "grk"){
+	else if (arg[0] == "custom"){
 		// Error check
 		if (arg.size() != 5){
-			cout << "Oops, you've chosen 'grk' but you haven't specified a Butcher tableau input file." << endl;
+			cout << "Oops, you've chosen 'custom' but you haven't specified a Butcher tableau input file." << endl;
 			cout << "It should be the 5th argument but I only see 4. Please try again." << endl;
 			exit(1);
 		}
 		//
-		if (verbose) cout << "1: You've chosen 'grk', the adventurous type I see." << endl;
+		if (verbose) cout << "You've chosen 'custom', the adventurous type I see." << endl;
 	}
 	else{
 		cout << "Uh oh, I don't recognize your choice of method. Currently supported methods are" << endl;
-		cout << "'fEuler', 'midpt', 'rk4' and 'grk' (general Runge-Kutta). Please try again." << endl;
+		cout << "'fEuler', 'midpt', 'rk4' and 'custom'. Please try again." << endl;
 		exit(1);
 	}
 
 	// Argument 2: RB or SB
+	if (verbose) cout << "2: ";
 	if (arg[1] == "rb" || arg[1] == "RB"){
-		if (verbose) cout << "2: You've chosen a reaction-based approach. I like it, I like it a lot." << endl;
+		if (verbose) cout << "You've chosen a reaction-based approach. I like it, I like it a lot." << endl;
 	}
 	else if (arg[1] == "sb" || arg[1] == "SB"){
-		if (verbose) cout << "2: You've chosen a species-based approach. Excellent choice sir." << endl;
+		if (verbose) cout << "You've chosen a species-based approach. Excellent choice sir." << endl;
 	}
 	else{
 		cout << "Oops, the 2nd argument must specify rxn-based ('rb' or 'RB') or species-based ('sb' or 'SB')." << endl;
@@ -412,21 +407,22 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 
 	// Argument 3: PLA configuration
+	if (verbose) cout << "3: ";
 	if (arg[2] == "pre:neg"){
 		if (verbose){
-			cout << "3: You've chosen to use a preleap tau calculator and a negative-population postleap checker." << endl;
+			cout << "You've chosen to use a preleap tau calculator and a negative-population postleap checker." << endl;
 			cout << "   Very good, a straightforward but effective choice." << endl;
 		}
 	}
 	else if (arg[2] == "pre:post"){
 		if (verbose){
-			cout << "3: You've chosen to use a preleap tau calculator and an epsilon-based postleap checker." << endl;
+			cout << "You've chosen to use a preleap tau calculator and an epsilon-based postleap checker." << endl;
 			cout << "   Excellent, this should improve the accuracy of your results." << endl;
 		}
 	}
 	else if (arg[2] == "post:post"){
 		if (verbose){
-			cout << "3: Ahh, you must be hungry, you've chosen the combo meal: an Anderson-style combined" << endl;
+			cout << "Ahh, you must be hungry, you've chosen the combo meal: an Anderson-style combined" << endl;
 			cout << "   tau calculator/postleap checker. I like how you think." << endl;
 		}
 	}
@@ -437,141 +433,99 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 
 	// Argument 4: PLA parameters
+	if (verbose) cout << "4: ";
 	last = -1;
+	arg[3].append(",");
+	string s, name, val;
+	param.resize(7,NAN);
+	unsigned int nParam = 0;
 	while ((next = arg[3].find(',',last+1)) != (int)string::npos){
-		param.push_back(atof(arg[3].substr(last+1,next-(last+1)).c_str()));
-		last = next;
-//		cout << param[param.size()-1] << endl;
-	}
-	param.push_back(atof(arg[3].substr(last+1,arg[3].size()-(last+1)).c_str())); // Get last parameter
-//	cout << param[param.size()-1] << endl;
-	if (verbose){
-		cout << "4: You've specified " << param.size() << " parameters:" << endl;
-		for (unsigned int i=0;i < param.size();i++){
-			if (i==0) cout << "   eps = "		<< param[0] << endl;
-			if (i==1) cout << "   approx1 = " 	<< param[1] << endl;
-			if (i==2) cout << "   gg1 = " 	 	<< param[2] << endl;
-			if (i==3) cout << "   p = " 	 	<< param[3] << endl;
-			if (i==4) cout << "   pp = " 	 	<< param[4] << endl;
-			if (i==5) cout << "   q = " 	 	<< param[5] << endl;
-			if (i==6) cout << "   w = " 		<< param[6] << endl;
+		nParam++;
+		s = arg[3].substr(last+1,next-(last+1));
+		unsigned int equal = s.find("=");
+		if (equal == string::npos){ // Error check
+			cout << "Oops, PLA parameters must be input in the form 'param=val'. "
+					"You input " << s << ". Please try again." << endl;
 		}
+		name = s.substr(0,equal);
+		Util::remove_whitespace(name);
+		val = s.substr(equal+1,string::npos);
+		if (name == "eps")       param[0] = atof(val.c_str());
+		else if (name == "apx1") param[1] = atof(val.c_str());
+		else if (name == "gg1")  param[2] = atof(val.c_str());
+		else if (name == "p")    param[3] = atof(val.c_str());
+		else if (name == "pp")   param[4] = atof(val.c_str());
+		else if (name == "q")    param[5] = atof(val.c_str());
+		else if (name == "w")    param[6] = atof(val.c_str());
+		else{ // Error check
+			cout << "Oops, I don't recognize the parameter " << name << " in argument 4: \"" << arg[3] << "\". "
+				 << "Please try again." << endl;
+			exit(1);
+		}
+		last = next;
 	}
+
 	// Error check
-	if (param.size() < 4 || param.size() > 7){
+	if (nParam < 4 || nParam > 7){
 		cout << "Oops, minimum number of parameters is 4 and maximum is 7. You've specified " << param.size() << "." << endl;
 		cout << "Please try again." << endl;
 		exit(1);
 	}
-	if (arg[2] == "post:post" && param.size() < 7){
+	if (arg[2] == "post:post" && nParam < 7){
 		cout << "Oops, you've selected the 'post:post' configuration which requires 7 parameters." << endl;
 		cout << "You've specified " << param.size() << ". Please try again." << endl;
 		exit(1);
 	}
+	for (unsigned int i=0;i < nParam;i++){
+		if (Util::isNAN(param[i])){
+			cout << "Uh oh, wasn't able to read a value for parameter ";
+			if (i==0) cout << "'eps'. ";
+			if (i==1) cout << "'apx1'. ";
+			if (i==2) cout << "'gg1'. ";
+			if (i==3) cout << "'p'. ";
+			if (arg[2] == "post:post"){
+				if (i==4) cout << "'pp'. ";
+				if (i==5) cout << "'q'. ";
+				if (i==6) cout << "'w'. ";
+			}
+			cout << "Please try again." << endl;
+		}
+	}
+
+	if (verbose){
+		cout << "You've specified " << param.size() << " parameters:" << endl;
+		for (unsigned int i=0;i < param.size();i++){
+			if (i==0) cout << "   eps = "	<< param[0] << endl;
+			if (i==1) cout << "   apx1 = "	<< param[1] << endl;
+			if (i==2) cout << "   gg1 = " 	<< param[2] << endl;
+			if (i==3) cout << "   p = " 	<< param[3] << endl;
+			if (i==4) cout << "   pp = " 	<< param[4] << endl;
+			if (i==5) cout << "   q = " 	<< param[5] << endl;
+			if (i==6) cout << "   w = " 	<< param[6] << endl;
+		}
+	}
 
 	// Argument 5 (optional): Path to Butcher tableau input file
-	FILE* bt_file = NULL;
 	if (arg.size() == 5){
-		if (verbose) cout << "5: You've specified a Butcher tableau input file: " << arg[4] << endl;
+		if (verbose) cout << "5: ";
+		if (verbose) cout << "You've specified a Butcher tableau input file: " << arg[4] << endl;
 
 		// Continue
-		if (arg[0] != "grk"){ // skip
-			if (verbose) cout << "   You haven't chosen 'grk', so I'll ignore it." << endl;
+		if (arg[0] != "custom"){ // skip
+			if (verbose) cout << "   You haven't chosen 'custom', so I'll ignore it." << endl;
 		}
-		else{
+		else
+		{
 			// Try to open the file
-			if ((bt_file = fopen(arg[4].c_str(),"r"))){
+			if (fopen(arg[4].c_str(),"r")){
 				if (verbose) cout << "   Ok, I see it." << endl;
 			}
 			else{
 				cout << "   Sorry , I can't find it: \"" << arg[4].c_str() << "\". Please try again." << endl;
 				exit(1);
 			}
-
-			// Add a row to alpha matrix (Butcher tableau)
-			alpha.push_back(vector<double>());
-
-			// Read from file
-			ifstream strm(arg[4].c_str(),ifstream::in);
-			string s;
-			double x;
-			char c;
-			unsigned int dim = 0;
-			unsigned int nColumns = 0;
-			unsigned int nRows = 0;
-			bool foundDim = false;
-			while (!strm.eof()){
-				s.clear();
-				strm >> s;
-				if (s.size() != 0){ // skip blank lines
-					int div = s.find('/');
-					if (div != (int)string::npos){
-						double num = atof(s.substr(0,div).c_str());
-						double denom = atof(s.substr(div+1,s.size()-(div+1)).c_str());
-						x = num/denom;
-//						cout << "(=" << (num/denom) << ")";
-//						cout << "(=" << num << "/" << denom << ")";
-//						cout << "(=" << x.substr(0,found) << "/" << x.substr(found+1,x.size()-(found+1)) << ")";
-					}
-					else{
-						x = atof(s.c_str());
-					}
-//					cout << x << ",";
-					if (foundDim && nRows == dim){ // beta value (nRows is # of *completed* rows, not current row)
-						beta.push_back(x);
-					}
-					else{ // alpha value
-						alpha[alpha.size()-1].push_back(x);
-					}
-					//
-					nColumns++;
-					if (!foundDim) dim++;
-					c = strm.peek();
-					while (c == ' ' || c == '\t'){
-						strm.get();
-						c = strm.peek();
-					}
-					if (c == '\n' || c == EOF){
-//						cout << "\n";
-						if (foundDim && nColumns != dim){
-							cout << "Uh oh, line " << (nRows+1) << " of " << arg[4] << " has " << nColumns
-								 << " columns." << endl;
-							cout << "Already read " << dim << " entries in line 1. Butcher tableau must be square. "
-								 << "Please try again." << endl;
-							exit(1);
-						}
-						nRows++;
-						nColumns = 0;
-						foundDim = true;
-						if (c == '\n' && nRows < dim){
-							alpha.push_back(vector<double>());
-						}
-					}
-//					else{
-//						cout << "\t";
-//					}
-				}
-			}
-			// Print to screen
-			if (verbose){
-				cout << "   -----" << endl;
-				cout << "   Columns:\t" << dim << endl;
-				cout << "   Rows:\t" << nRows << endl;
-				cout << "   -----" << endl;
-				for (unsigned int i=0;i < alpha.size();i++){
-					cout << "   ";
-					for (unsigned int j=0;j < alpha[i].size();j++){
-						cout << alpha[i][j] << "\t";
-					}
-					cout << endl;
-				}
-				cout << "   -----" << endl;
-				cout << "   ";
-				for (unsigned int i=0;i < beta.size();i++){
-					cout << beta[i] << "\t";
-				}
-				cout << endl;
-			}
+			// Read file
+			read_Butcher_tableau(arg[4],alpha,beta,verbose);
 		}
 	}
 
@@ -887,6 +841,89 @@ bool Network3::all_inactive(){
 	return true;
 }
 */
+void Network3::read_Butcher_tableau(string filename, vector<vector<double> >& alpha, vector<double>& beta, bool verbose){
+
+	// Make sure alpha and beta are empty
+	alpha.clear();
+	beta.clear();
+
+	// Add a row to alpha matrix (Butcher tableau)
+	alpha.push_back(vector<double>());
+
+	// Read from file
+	ifstream strm(filename.c_str(),ifstream::in);
+	string s; double x; char c;
+	unsigned int dim = 0, nColumns = 0, nRows = 0;
+	bool foundDim = false;
+	while (!strm.eof()){
+		s.clear();
+		strm >> s;
+		if (s.size() != 0){ // skip blank lines
+			int div = s.find('/');
+			if (div != (int)string::npos){
+				double num = atof(s.substr(0,div).c_str());
+				double denom = atof(s.substr(div+1,s.size()-(div+1)).c_str());
+				x = num/denom;
+//				cout << "(=" << (num/denom) << ")";
+//				cout << "(=" << num << "/" << denom << ")";
+//				cout << "(=" << x.substr(0,found) << "/" << x.substr(found+1,x.size()-(found+1)) << ")";
+			}
+			else{
+				x = atof(s.c_str());
+			}
+//			cout << x << ",";
+			if (foundDim && nRows == dim){ // beta value (nRows is # of *completed* rows, not current row)
+				beta.push_back(x);
+			}
+			else{ // alpha value
+				alpha[alpha.size()-1].push_back(x);
+			}
+			//
+			nColumns++;
+			if (!foundDim) dim++;
+			c = strm.peek();
+			while (c == ' ' || c == '\t'){
+				strm.get();
+				c = strm.peek();
+			}
+			if (c == '\n' || c == EOF){
+//				cout << "\n";
+				if (foundDim && nColumns != dim){
+					cout << "Uh oh, line " << (nRows+1) << " of " << filename << " has " << nColumns << " columns." << endl;
+					cout << "Already read " << dim << " entries in line 1. Butcher tableau must be square. "
+						 << "Please try again." << endl;
+					exit(1);
+				}
+				nRows++;
+				nColumns = 0;
+				foundDim = true;
+				if (c == '\n' && nRows < dim) alpha.push_back(vector<double>());
+			}
+//			else cout << "\t";
+		}
+	}
+	// Print to screen
+	if (verbose){
+		cout << "   -----" << endl;
+		cout << "   Columns:\t" << dim << endl;
+		cout << "   Rows:\t" << nRows << endl;
+		cout << "   -----" << endl;
+		for (unsigned int i=0;i < alpha.size();i++){
+			cout << "   ";
+			for (unsigned int j=0;j < alpha[i].size();j++){
+				cout << alpha[i][j] << "\t";
+			}
+			cout << endl;
+		}
+		cout << "   -----" << endl;
+		cout << "   ";
+		for (unsigned int i=0;i < beta.size();i++){
+			cout << beta[i] << "\t";
+		}
+		cout << endl;
+	}
+}
+
 void Network3::print_species_concentrations(FILE* out, double t){
 	// Error check
 	if (!out){

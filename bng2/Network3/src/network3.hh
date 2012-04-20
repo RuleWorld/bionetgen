@@ -30,6 +30,7 @@ namespace network3{
 		static pair<long,double> run_PLA(double tStart, double maxTime, double sampleTime, long startStep, long maxSteps,
 				long stepInterval, char* prefix, bool print_cdat, bool print_net, bool print_end_net, bool verbose);
 //		static bool all_inactive();
+		static void read_Butcher_tableau(string filename, vector<vector<double> >& alpha, vector<double>& beta, bool verbose);
 		static void print_species_concentrations(FILE* out, double t);
 		static void print_observable_concentrations(FILE* out, double t);
 		static void print_function_values(FILE* out, double t);
