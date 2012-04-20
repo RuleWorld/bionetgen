@@ -1,2 +1,0 @@
-readFile({file=>'read_sat.net'});
-simulate_ode({prefix=>"test_read_sat",t_end=>1,n_steps=>10});

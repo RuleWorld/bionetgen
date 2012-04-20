@@ -1,0 +1,64 @@
+# "michment.bngl" is designed to test the read/write network feature of BNG.
+# This model works in conjunction with "michment_cont.bngl". This model
+# file defines the rule model, generates the network, runs simulations, and
+# then saves the network to "michment_cont.net". "michment_cont.bngl" then
+# reaads the saved network file and repeats the simulations. This model should
+# be processed PRIOR to "michment_cont.bngl". This can be accomplished by
+# calling BNG with both model files in order:
+#
+#   > BNG2.pl michment.bngl michment_cont.bngl
+#
+# If this model pair is part of an automated validation script, be sure of the
+# execution order and take care that "michment_cont.net" is not deleted before
+#"michment_cont.bngl" has a chance to read it.
+# --J.Hogg, 19 Apr 2012
+
+begin model
+begin parameters
+    S0     100
+    E0     10
+    # Kinetic constants
+    kcat   2.0
+    Km     40.0
+    kRT    2.0
+    kTR    1.0
+end parameters
+begin molecule types
+    E()
+    S(a~0~P,c~R~T)
+end molecule types
+begin seed species
+    S(a~0,c~R)  S0
+    E()         E0
+end seed species
+begin observables
+    Molecules  Sa0    S(a~0)
+    Molecules  SaP    S(a~P)
+    Molecules  ScR    S(c~R)
+    Molecules  ScT    S(c~T)
+    Molecules  S_tot  S()
+    Molecules  E_tot  E()
+end observables
+begin functions
+    michment() = kcat/(Km + Sa0)
+end functions
+begin reaction rules 
+    # michaelis-menten enzymatic reaction
+    S(a~0) + E() -> S(a~P) + E()   michment()
+    # conformation switch
+    S(c~R) <-> S(c~T)  kRT, kTR
+end reaction rules 
+end model
+
+# construct reaction network
+generate_network({overwrite=>1})
+
+setConcentration("S(a~0,c~R)","S0")
+simulate_ode({t_start=>0,t_end=>10,n_steps=>50,sparse=>1})
+
+addConcentration("S(a~0,c~R)","S0")
+simulate_ode({t_start=>10,t_end=>20,n_steps=>50,continue=>1,sparse=>1})
+
+resetConcentrations()
+writeNetwork({suffix=>"cont",evaluate_expressions=>0,overwrite=>1})
+

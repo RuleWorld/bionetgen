@@ -51,7 +51,7 @@ sub toString
     }
     else
     { 
-        $string= $rxn->stringID(); 
+        $string = $rxn->stringID(); 
     }
 
     $string .= ' ';
@@ -217,14 +217,14 @@ sub stringID
   
     # get reactant indices
     my @rstrings=();
-    if ( scalar @{$rxn->Reactants} )
+    if ( @{$rxn->Reactants} )
     {   foreach my $r (@{$rxn->Reactants}) { push @rstrings, $r->Index; }   }
     else
     {   push @rstrings, "0";   }
   
     # get product indices       
     my @pstrings=();
-    if ( scalar @{$rxn->Products} )
+    if ( @{$rxn->Products} )
     {   foreach my $p (@{$rxn->Products}) { push @pstrings, $p->Index; };   }
     else
     {   push @pstrings, "0";   }
@@ -238,7 +238,6 @@ sub stringID
     }
     
     $string .= join(',', @rstrings) . " " . join(',', @pstrings);
-
     return ($string);
 }
 

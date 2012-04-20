@@ -46,9 +46,9 @@ bool SBChecker::check(double w, vector<double>& x_check, vector<double>& x_ref, 
 	for (unsigned int j=0;j < this->sp.size();j++){
 		X_j = this->sp[j]->population;
 		if (X_j < 0.0 || x_ref[j] < 0.0){
-			if (X_j < 0.0){
+/*			if (X_j < 0.0){
 				cout << "Uh oh, species " << this->sp[j]->name << " has a negative population (" << X_j << ").\n";
-			}
+			}*/
 			return false;
 		}
 		dX_j = fabs(X_j - x_ref[j]);

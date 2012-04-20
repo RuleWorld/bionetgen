@@ -341,7 +341,7 @@ sub simulate
 
     # remember child PID
     $::CHILD_PID = $pid;
-    print ">>> child process ID is: $pid <<<\n";
+    print "[simulation PID is: $pid]\n";
 
     # Wait for messages from the Simulator
 	my $last_msg = '';
@@ -648,7 +648,7 @@ sub simulate_nf
 
     # remember child PID
     $::CHILD_PID = $pid;
-    print ">>> child process ID is: $pid <<<\n";
+    print "[simulation PID is: $pid]\n";
 
 	my $last = '';
 	while ( <Reader> )

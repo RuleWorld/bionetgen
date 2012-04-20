@@ -37,7 +37,7 @@ namespace network3{
 		virtual ~eRungeKutta_TC_RC_FG_PL();
 		//
 //		virtual void getNewTau(double& tau) = 0;
-		virtual void classifyRxns(vector<int>& classif, double tau, bool initial);
+		virtual void classifyRxns(vector<int>& classif, double tau, bool reclassify_all);
 		virtual void fireRxns(vector<double>& k, vector<int>& classif, double tau);
 //		virtual bool check() = 0;
 		virtual void correct(vector<double>& k, double& tau){

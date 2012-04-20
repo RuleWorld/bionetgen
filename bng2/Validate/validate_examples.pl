@@ -4,6 +4,7 @@
 # SYNOPSIS:
 #   validate_examples.pl [OPTIONS]              : validate all models
 #   validate_examples.pl [OPTIONS] MODEL...     : validate MODEL
+#   validate_Examples.pl --help                 : display help menu
 #
 # Exits with value 0 if all validation tests are passed, otherwise exits
 #  with a positive value equal to the number of failed tests, or -1 (=255) if
@@ -12,11 +13,10 @@
 # A log file named MODEL.log is created for each validation model. If a test
 #  fails, check the log file for more details.
 #
-# Validation on WINDOWS:
-#    User should point the $perlbin variable to the Perl executable
-#
 # What's New?
-#   8sep2011: validation of equilibrium distribution for SSA models. --Justin
+#   8sep2011: validation of equilibrium distribution for SSA models
+#  19apr2012: better support under Windows OS
+#  19apr2012: improved logfiles and new console "look"
 #
 #
 # More Details:
@@ -34,7 +34,7 @@
 #
 #
 # To add new validation MODEL:
-#  1) Create MODEL.bngl, including actions that generates some or all of
+#  1) Create MODEL.bngl, including actions that generate some or all of
 #       the recognized output files.
 #  2) Put the validation model in $modeldir directory.
 #  3) Generate reference output files and place in the $datdir subdirectory.**
@@ -42,26 +42,24 @@
 #  ** for most validations, the reference file shares the same format and name
 #    as the output file. However, special reference files are required for
 #    validating stochastic equilibrium samples. These reference files have a
-#    .stat extension and describe a binned equilibrium distribution of a model
-#    observable. See $datdir/gene_expr_ssa_equil.stats for an example.
+#    ".stat" extension and describe a binned equilibrium distribution of a
+#    model observable. See $datdir/gene_expr_ssa_equil.stats for an example.
 #    Equilibrium samples are compared to the reference distribution by a
 #    Chi-square goodness of fit test. The stats file defines the obsevable of
 #    interest, bin widths and probabilities, and the Chi-square values
 #    corresponding to various significance levels.
 #
 #  ** It is the Modeler's responsibility to validate the reference trajectory.
-#    It is advisable to compare the reference to analytic results, simulations
+#    It's advisable to compare the reference to analytic results, simulations
 #    reported in the literature, or simulations generated from independent
 #    platforms (e.g. MATLAB).
 #
-# NOTE: make sure BNG knows where to find NFsim, otherwise NFsim validation
-#  will fail!
-
 # TODO: Add validations for the following
 #   non-equilibrium stochastic validation (multirun validation)
-#   Syntax errors
+#   Syntax error checking
 #   Canonical labeling
 #   On-the-fly simulation
+
 
 use strict;
 use warnings;
@@ -71,6 +69,9 @@ use FindBin;
 use File::Spec;
 use Scalar::Util qw( looks_like_number );
 use Config;
+use IO::Handle;
+use IO::Select;
+use IPC::Open3;
 
 
 
@@ -110,6 +111,8 @@ my $compare_rxn = File::Spec->catfile( $modeldir, 'compare_rxn.pl' );
 my $delete_working_files = 1;   
 # size of indent to STDOUT       
 my $INDENT = '  ';
+# seperator 
+our $SEPARATOR = "-" x 79 . "\n";
 # p-value for statistical validation (recommend 0.01)
 #   Options are 0.05, 0.02, 0.01, 0.005, 0.002, 0.001.
 #   Keep in mind that validation will fail (100*p) percent of the time, even
@@ -127,7 +130,7 @@ my @bngargs = ();
 ###                                                          ###
 
 # Greet the User
-print ">>> BioNetGen Validation Utility\n";
+print "\n---[ BioNetGen Validation Utility ]---\n\n";
 
 # Process command line arguments
 while ( @ARGV and $ARGV[0] =~ /^--/ )
@@ -170,7 +173,11 @@ else
         print "Error: validate_examples can't open directory $modeldir: $!\n";
         exit(-1);
     }
+    # strip ".bngl" extension
     @models = map { /^(.+)\.bngl$/ } ( grep {/^.+\.bngl$/} readdir($dh) );
+    # sort models alphabetically
+    @models = sort {$a cmp $b} @models;
+    # done with directory
     closedir $dh;
 }
 
@@ -179,32 +186,24 @@ else
 
 # check that we can find the BNG2.pl executable script!
 unless ( -e $bngexec )
-{
-    print "ERROR: validate_examples cannot find BNG2.pl script!!\n";
-    print "Aborting validation.\n";
-    exit(-1);
-}
+{   exit_error( "Cannot find BNG2.pl script" );   }
 # check that we can find ODE trajectory verification script
 my $verifyexec = File::Spec->catfile( $bngpath, "Perl2", "verify.pl" );
 {
     unless ( -e $verifyexec )
-    {
-        print "ERROR: validate_examples cannot find Verify script!!\n";
-        print "Aborting validation.\n";
-        exit(-1);
-    }
+    {   exit_error("cannot find verify.pl script\n");   }
 }
 # check if BioNetGen can find NFsim binary
 if ($check_nfsim)
 {
-    print "Checking for NFsim executable..\n";
+    print " -> checking for NFsim executable\n";
     my @args = ( $perlbin, $bngexec, '--findbin', 'NFsim' ); 
     system(@args);
-    if ($? == -1) { die "failed to execute: $!\n"; }
+    if ($? == -1) {  exit_error("failed to execute ($!)");  }
     # check return value: 0 means NFsim was found successfully
     if ( ($?>>8)==0 )
     {
-        print "..found NFsim\n";
+        print "    ..found NFsim\n";
     }
     else
     {  
@@ -226,235 +225,229 @@ my $test_count = 0;
 
 
 ## Validate Models
+MODEL:
 foreach my $model (@models)
 {
-    print "\nValidating model '$model'..\n";
-
     my $err;
     ++$test_count;
 
     # define model path
     my $model_file = File::Spec->catfile( $modeldir, "${model}.bngl" );
     my $log_file   = File::Spec->catfile( $outdir, "${model}.log" );
-
     # define output file prefix
     my $outprefix = File::Spec->catfile( $outdir, $model );
-
     # define datfile prefix
     my $datprefix = File::Spec->catfile( $datdir, $model );
 
-    # delete any old files (to avoid validating against old files)
-    delete_files($outprefix,$model);
-
     # first check that model exists
     unless ( -e $model_file )
-    {
-        print "!! Can't find validation model $model_file !!\n";
-        exit(-1);
-    }
+    {   exit_error("Can't find validation model $model_file");   }
 
-    # execute BNGL model
-    my $bngargs = join( ' ', @bngargs );
-    my $command = "\"$perlbin\" \"$bngexec\" $bngargs --outdir \"$outdir\" \"$model_file\" > \"$log_file\"";
-    system( $command );
-    if ($? == -1) { die "failed to execute: $!"; }
-    unless ( ($?>>8)==0 )
+    # open logfile
+    open( my $log, ">", $log_file ) or exit_error("Can't open logfile $log_file ($!)");
+    $log->autoflush(1);
+
+    # list all output filehandles
+    my @allFH = ($log, \*STDOUT);
+
+    # write header
+    print "\n";   # add blank line to console output
+    multi_print( "[validate ${model}]\n", @allFH );
+    multi_print( " -> processing model file with BioNetGen\n", @allFH );
+
+    # execute BNGL model;
+    my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file );
+    my $exit_status = run_command( $log, \*STDOUT, @command );
+    unless ( $exit_status==0 )
     {   # BNG encountered some problem..
-        print "!! Execution of BNGL model $model' FAILED!!\n"
-             ."   see $log_file form more details.\n";
+        print "!! BioNetGen failed to process $model !!\n"; 
+        print "exit status = $exit_status.\n"; 
+        print "see $log_file form more details.\n";
         ++$fail_count;
-        if ($delete_working_files)
-        {   delete_files($outprefix);   }
-        next;
+        close $log;
+        next MODEL;
     }
 
-
-    # check reaction network
+    # check species in reaction network
     if ( -e "${datprefix}.net"  and  -e "${outprefix}.net" )
     {
-        print $INDENT . "Checking species in .NET file.. ";
-        my $command = "\"$perlbin\" \"$compare_species\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
-        system( $command );
-        if ($? == -1) { die "failed to execute: $!"; }
-        unless ( ($?>>8)==0 )
+        multi_print( " -> checking species in .NET file\n", @allFH );
+        my @command = ( $perlbin, $compare_species, "${outprefix}.net", "${datprefix}.net" );
+        my $exit_status = run_command( $log, \*STDOUT, @command );
+        unless ( $exit_status==0)
         {   # compare_species encountered some problem
-            print "FAILED!!\n", $?>>8, "\n";
-            print $INDENT . "see $log_file form more details.\n";
+            print "FAILED!! exit status = $exit_status.\n";
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+    }
 
-        print $INDENT . "Checking reactions in .NET file.. ";
-        $command = "\"$perlbin\" \"$compare_rxn\" \"${outprefix}.net\" \"${datprefix}.net\" >> \"$log_file\"";
-        system( $command );
-        if ($? == -1) { die "failed to execute: $!"; }
-        unless ( ($?>>8)==0 )
+    if ( -e "${datprefix}.net"  and  -e "${outprefix}.net" )
+    {   # check reactions in reaction network
+        multi_print( " -> checking reactions in .NET file\n", @allFH );
+        my @command = ( $perlbin, $compare_rxn, "${outprefix}.net", "${datprefix}.net" );
+        my $exit_status = run_command( $log, \*STDOUT, @command );
+        unless ( $exit_status==0)
         {   # compare_rxn encountered some problem
-            print "FAILED!!\n", $?>>8, "\n";
-            print $INDENT . "see $log_file form more details.\n";
+            print "FAILED!! exit status = $exit_status.\n"; 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
     }
 
     # check XML specification
     if ( -e "${datprefix}.xml"  and  -e "${outprefix}.xml" )
     {
-        print $INDENT . "Checking XML specification.. ";
+        multi_print( " -> checking XML specification\n", @allFH );
         my $skipline = '<!-- Created by BioNetGen .* -->';
-        my $diff = diff_files( "${outprefix}.xml", "${datprefix}.xml", $skipline );
-        if ($diff ne "")
+        my $exit_status = diff_files( "${outprefix}.xml", "${datprefix}.xml", $skipline );
+        if ($exit_status ne "")
         {   
-            my $command = "echo \"$diff\" >> \"$log_file\"";
-            system( $command )==0 or die "system $command failed: $?\n";
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+            multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+        print $log $SEPARATOR;
     }
 
     # check SBML specification
     if ( -e "${datprefix}_sbml.xml"  and  -e "${outprefix}_sbml.xml" )
     {
-        print $INDENT . "Checking SBML specification.. ";
+        multi_print( " -> checking SBML specification\n", @allFH );
         my $skipline = '<!-- .* -->';
-        my $diff = diff_files( "${outprefix}_sbml.xml", "${datprefix}_sbml.xml", $skipline );
-        if ($diff ne "")
+        my $exit_status = diff_files( "${outprefix}_sbml.xml", "${datprefix}_sbml.xml", $skipline );
+        if ($exit_status ne "")
         {   
-            my $command = "echo \"$diff\" >> \"$log_file\"";
-            system( $command )==0 or die "System $command failed: $?\n";
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+            multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+        print $log $SEPARATOR;
     }
 
     # check hybrid model generation
     if ( -e "${datprefix}_hybrid.bngl"  and  -e "${outprefix}_hybrid.bngl" )
     {
-        print $INDENT . "Checking hybrid model generation.. ";
+        multi_print( " -> checking hybrid model generator\n", @allFH );
         my $skipline = '^#';
-        my $diff = diff_files( "${outprefix}_hybrid.bngl", "${datprefix}_hybrid.bngl", $skipline );
-        if ($diff ne "")
+        my $exit_status = diff_files( "${outprefix}_hybrid.bngl", "${datprefix}_hybrid.bngl", $skipline );
+        if ($exit_status ne "")
         {   
-            my $command = "echo \"$diff\" >> \"$log_file\"";
-            system( $command )==0 or die "System $command failed: $?\n";
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+            multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+        print $log $SEPARATOR;
     }
 
     # check hybrid model XML generation
     if ( -e "${datprefix}_hybrid.xml"  and  -e "${outprefix}_hybrid.xml" )
     {
-        print $INDENT . "Checking hybrid model XML generation.. ";
+        multi_print( " -> checking hybrid model XML specification\n", @allFH );
         my $skipline = '<!-- Created by BioNetGen .* -->';
-        my $diff = diff_files( "${outprefix}_hybrid.xml", "${datprefix}_hybrid.xml", $skipline );
-        if ($diff ne "")
+        my $exit_status = diff_files( "${outprefix}_hybrid.xml", "${datprefix}_hybrid.xml", $skipline );
+        if ($exit_status ne "")
         {   
-            my $command = "echo \"$diff\" >> \"$log_file\"";
-            system( $command )==0 or die "System $command failed: $?\n";
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+            multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+        print $log $SEPARATOR;
     }
 
     # check M-file specification
     if ( -e "${datprefix}.m"  and  -e "${outprefix}.m" )
     {
-        print $INDENT . "Checking M-file specification.. ";
+        multi_print( " -> checking M-file generator\n", @allFH );
         my $skipline = '^%';
-        my $diff = diff_files( "${outprefix}.m", "${datprefix}.m", $skipline );
-        if ($diff ne "")
+        my $exit_status = diff_files( "${outprefix}.m", "${datprefix}.m", $skipline );
+        if ($exit_status ne "")
         {   
-            my $command = "echo \"$diff\" >> \"$log_file\"";
-            system( $command )==0 or die "System $command failed: $?\n";
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+            multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+        print $log $SEPARATOR;
     }
 
     # check CVode specification
     if ( -e "${datprefix}_mex_cvode.c"  and  -e "${outprefix}_mex_cvode.c" )
     {
-        print $INDENT . "Checking CVode output specification.. ";
+        multi_print( " -> checking MEX/CVode generator\n", @allFH );
         my $skipline = '^\/\*.*\*\/';
-        my $diff = diff_files( "${outprefix}_mex_cvode.c", "${datprefix}_mex_cvode.c", $skipline );
-        if ($diff ne "")
+        my $exit_status = diff_files( "${outprefix}_mex_cvode.c", "${datprefix}_mex_cvode.c", $skipline );
+        if ($exit_status ne "")
         {   
-            my $command = "echo \"$diff\" >> \"$log_file\"";
-            system( $command )==0 or die "System $command failed: $?\n";
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+            multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+        print $log $SEPARATOR;
     }
 
     # check CVode companion M-file specification
     if ( -e "${datprefix}_mex.m"  and  -e "${outprefix}_mex.m" )
     {
-        print $INDENT . "Checking CVode companion M-file specification.. ";
+        multi_print( " -> checking Mex/CVode companion M-file specification\n", @allFH );
         my $skipline = '^%';
-        my $diff = diff_files( "${outprefix}_mex.m", "${datprefix}_mex.m", $skipline );
-        if ($diff ne "")
+        my $exit_status = diff_files( "${outprefix}_mex.m", "${datprefix}_mex.m", $skipline );
+        if ($exit_status ne "")
         {   
-            my $command = "echo \"$diff\" >> \"$log_file\"";
-            system( $command )==0 or die "System $command failed: $?\n";
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+            multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
+        print $log $SEPARATOR;
     }
 
     # check ODE species trajectories
     if ( -e "${datprefix}.cdat"  and  -e "${outprefix}.cdat" )
     {
-        print $INDENT . "Checking species trajectories.. ";
-        system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.cdat\" \"${datprefix}.cdat\" >> \"$log_file\"";
-        if ($? == -1) { die "failed to execute: $!"; }
-        unless ( ($?>>8)==0 )
-        {
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+        multi_print( " -> checking species trajectory\n", @allFH );
+        my @command = ( $perlbin, $verifyexec, "${outprefix}.cdat", "${datprefix}.cdat" );
+        my $exit_status = run_command( $log, \*STDOUT, @command );
+        unless ( $exit_status==0)
+        {   # compare_species encountered some problem
+            print "..FAILED!! exit_status = $exit_status\n"; 
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
     }
 
     # check ODE observable trajectories
     if ( -e "${datprefix}.gdat"  and  -e "${outprefix}.gdat" )
     {
-        print $INDENT . "Checking observable trajectories.. ";
-        system "\"$perlbin\" \"$verifyexec\" \"${outprefix}.gdat\" \"${datprefix}.gdat\" >> \"$log_file\"";
-        if ($? == -1) { die "failed to execute: $!"; }
-        unless ( ($?>>8)==0 )
-        {
-            print "FAILED!!\n";
-            print $INDENT . "see $log_file form more details.\n";
+        multi_print( " -> checking observable trajectory\n", @allFH );
+        my @command = ( $perlbin, $verifyexec, "${outprefix}.gdat", "${datprefix}.gdat" );
+        my $exit_status = run_command( $log, \*STDOUT, @command );
+        unless ( $exit_status==0)
+        {   # compare_species encountered some problem
+            print "..FAILED!! exit_status = $exit_status\n";
+            print "see $log_file form more details.\n";
+            close $log;
             ++$fail_count;
-            next;
+            next MODEL;
         }
-        print "passed.\n";
     }
 
     # check SSA equilibrium distribution (observables)
@@ -463,19 +456,17 @@ foreach my $model (@models)
         my $statfile = "${datprefix}_ssa_equil.stats";
         if ( -e $datfile  and  -e $statfile )
         {
-            print $INDENT . "Comparing SSA equilibrium distributions.. ";
-            
-            # validate data
-            my $err = validate_equilibrium_data( $datfile, $statfile, $pvalue );
-            if ( defined $err )
+            multi_print( " -> checking SSA equillibirum distribution\n", @allFH );
+            my $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
+            if ( defined $exit_status )
             {
-                print "FAILED!!\n";
-                print $INDENT . "$err\n";
-                print $INDENT . "See $log_file form more details.\n";
+                multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+                print "see $log_file form more details.\n";
+                close $log;
                 ++$fail_count;
-                next;
+                next MODEL;
             }
-            print sprintf "passed (p>=%.3f)\n", $pvalue;
+            print $log $SEPARATOR;
         }
     }
 
@@ -486,24 +477,26 @@ foreach my $model (@models)
         my $statfile = "${datprefix}_nf_equil.stats";
         if ( -e $datfile  and  -e $statfile )
         {
-            print $INDENT . "Comparing NFsim equilibrium distributions.. ";
-            
-            # validate data
-            my $err = validate_equilibrium_data( $datfile, $statfile, $pvalue );
-            if ( defined $err )
+            multi_print( " -> checking NFsim equilibrium distribution\n", @allFH );     
+            my $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
+            if ( defined $exit_status )
             {
-                print "FAILED!!\n";
-                print $INDENT . "$err\n";
-                print $INDENT . "See $log_file form more details.\n";
+                multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+                print "see $log_file form more details.\n";
+                close $log;
                 ++$fail_count;
-                next;
+                next MODEL;
             }
-            print sprintf "passed (p>=%.3f)\n", $pvalue;
+            print $log $SEPARATOR;
         }
     }
 
     if ($delete_working_files)
     {   delete_files($outprefix);   }
+
+    # write log trailer
+    multi_print( "$model passed all validation tests.\n", @allFH );  
+    close $log;
 }
 
 
@@ -512,9 +505,9 @@ foreach my $model (@models)
 
 ## Print summary results and exit
 if ($fail_count)
-{   print "\n!! validate_examples failed $fail_count of $test_count validation tests !!\n";   }
+{   print "\n!! validate_examples failed to validate $fail_count of $test_count test models !!\n\n";   }
 else
-{   print "\nvalidate_examples passed all $test_count test(s).\n";   }
+{   print "\nvalidate_examples passed $test_count test model(s).\n\n";   }
 exit($fail_count);
 
 
@@ -906,6 +899,78 @@ sub diff_files
 }
 
 
+# run external command
+sub run_command
+{
+    my ($parent_out, $parent_err, @command) = @_;
+
+    # start simulator as child process with communication pipes
+    my ($child_in, $child_out, $child_err); 
+    my $pid = eval{ open3( $child_in, $child_out, $child_err, @command ) };
+    if ($@) {  print $parent_err "Problem running command: $@";  return -1;  }
+
+    # remember child PID
+    print $parent_out "running command:\n", join(" ", @command), "\n";
+    print $parent_out "[child process ID is: $pid]\n";
+
+    # create a select object to notify us on reads on our FHs
+    my $sel = new IO::Select;
+    $sel->add($child_out,$child_err);
+
+    # monitor output of child process
+    while( my @ready_FH = $sel->can_read() )
+    {
+        # read ready
+        foreach my $FH (@ready_FH)
+        { 
+            # get line
+            my $line = <$FH>;
+
+            # examine line
+            if (not defined $line)
+            {   # found EOF
+                $sel->remove($FH);
+            }
+            elsif ( $FH == $child_out )
+            {   # write message to log
+                print $parent_out $line;
+            }
+            elsif ( $FH == $child_err )
+            {   # write message to $stderr and $stderr
+                print $parent_out $line;
+                # also alert user
+                print $parent_err $line;
+            }
+        }
+    }
+
+    # make sure child process has completed
+    waitpid($pid,0);
+    my $exit_status = ($? >> 8);
+    # write line to delinate end of command
+    print $parent_out $::SEPARATOR;
+    # return exit status
+    return $exit_status;
+}
+
+
+# print to multiple filehandles
+sub multi_print
+{
+    my ($line, @fhs) = @_;
+    foreach my $fh (@fhs)
+    {   print $fh $line;   }
+}
+
+
+# print error and exit
+sub exit_error
+{
+    my $err = shift @_;
+    print "ABORT: $err\n";
+    exit -1;
+}
+
 
 # display help
 sub display_help
@@ -918,11 +983,12 @@ Validation script for BioNetGen suite.
 SYNOPSIS:
   validate_examples.pl [OPTS]       : run validation script on standard models
   validate_examples.pl [OPTS] MODEL : run validation script on MODEL
+                                        (omit ".bngl" extension from MODEL)
 
 OPTIONS:
   --bngpath PATH      : BioNetGen path (..)
-  --modelpath PATH    : model path ([BNGPATH]\\Validate)
-  --datpath PATH      : database path ([BNGPATH]\\Validate\\DAT_validate)
+  --modelpath PATH    : model path ([BNGPATH\\Validate)
+  --datpath PATH      : database path (BNGPATH]\\Validate\\DAT_validate)
   --outpath PATH      : output path (cwd)
   --pvalue VAL        : pvalue for distribution tests (0.01)
   --no-nfsim          : skip NFsim validation

@@ -51,17 +51,14 @@ namespace Util {
 	 * @param x the double number to act on
 	 * @author Michael Sneddon
 	*/
-	std::string toString(double x);
+	string toString(double x);
 
 	//!  Converts integer values to their string representations
 	/*!
 	 * @param x the integer number to act on
 	 * @author Michael Sneddon
 	*/
-	std::string toString(int x);
-
-
-
+	string toString(int x);
 
 };
 
