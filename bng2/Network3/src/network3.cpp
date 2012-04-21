@@ -387,8 +387,8 @@ void Network3::init_PLA(string config, bool verbose){
 		if (verbose) cout << "You've chosen 'custom', the adventurous type I see." << endl;
 	}
 	else{
-		cout << "Uh oh, I don't recognize your choice of method. Currently supported methods are" << endl;
-		cout << "'fEuler', 'midpt', 'rk4' and 'custom'. Please try again." << endl;
+		cout << "Uh oh, I don't recognize your choice of method (" << arg[0] << "). Currently supported methods are" << endl;
+		cout << "  'fEuler', 'midpt', 'rk4' and 'custom'. Please try again." << endl;
 		exit(1);
 	}
 

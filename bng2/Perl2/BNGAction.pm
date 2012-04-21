@@ -76,6 +76,38 @@ sub simulate
 
 	return '' if $BNGModel::NO_EXEC;
 
+	# Read simulation arguments from file
+	my $argfile = defined $params->{argfile} ? $params->{argfile} : undef;
+	if ($argfile){
+		printf "Reading simulation arguments from $argfile.\n";
+		open ARGS, $argfile or die "Could not open $argfile.\n";
+		my $lineCounter = 0;
+		while (my $line = <ARGS>){
+			$lineCounter++;
+			chomp $line;
+#			printf "line $lineCounter: '$line'\n";
+			my @args = split " ", $line;
+			if (exists $args[0] && !($args[0] =~ /^#/)){ # Ignore blank and comment lines
+				if (exists $args[0] && exists $args[1]){
+					printf "Processing argument: ";
+					if (!(defined $params->{$args[0]})){ # Args in the command line take precedence
+						$params->{$args[0]} = $args[1];
+						printf "$args[0]=>$params->{$args[0]}\n";
+					}
+					else{
+						printf "'$args[0]' already defined as '$params->{$args[0]}', moving on...\n";
+					}
+				}
+				else{
+					return "Could not process line $lineCounter in $argfile. "
+						 . "Line is not blank nor commented out with #.\n";
+				}
+			}
+		}
+		close ARGS;
+		printf "Finished.\n";
+	}
+
     # general options
 	my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
 	my $netfile      = defined $params->{netfile}    ? $params->{netfile}    : undef;
@@ -100,9 +132,11 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "Simulate requires method parameter (cvode, ssa, pla, nf, etc).";  }
+    {  return "Simulate requires method parameter (ode, cvode, ssa, pla, nf).";  }
+    if ($method =~ /^ode$/) # Support 'ode' as a valid method
+    {  $method = 'cvode';  } 
     unless ( exists $METHODS->{$method} )
-    {  return "Simulation method $method is not a valid.";  }
+    {  return "Simulation method '$method' is not a valid option.";  }
 
 
     # add optional suffix to output prefix
