@@ -77,6 +77,7 @@ sub simulate
 	return '' if $BNGModel::NO_EXEC;
 
 	# Read simulation arguments from file
+	my @sample_times;
 	my $argfile = defined $params->{argfile} ? $params->{argfile} : undef;
 	if ($argfile){
 		printf "Reading simulation arguments from $argfile.\n";
@@ -91,11 +92,24 @@ sub simulate
 				if (exists $args[0] && exists $args[1]){
 					printf "Processing argument: ";
 					if (!(defined $params->{$args[0]})){ # Args in the command line take precedence
-						$params->{$args[0]} = $args[1];
-						printf "$args[0]=>$params->{$args[0]}\n";
+						if ( $args[0] ne 'sample_times' ){
+							$params->{$args[0]} = $args[1];
+							printf "$args[0]=>$params->{$args[0]}\n";
+						}
+						else { # Special handling for sample_times
+							printf "$args[0]=>$args[1]\n";
+							unless ( $args[1] =~ /^\[(([\deE+-.]+,)+[\deE+-.]+)\]$/ ){
+								return "Sample times must be comma-separated (no spaces) ints or floats "
+									 . "(exponential format ok) enclosed in square brackets, e.g., [5e-1,1,5.0,1E1].\n";
+							}
+							@sample_times = split ",", $1;
+						}
 					}
 					else{
-						printf "'$args[0]' already defined as '$params->{$args[0]}', moving on...\n";
+						if ( $args[0] ne 'sample_times' )
+						{ printf "'$args[0]' already defined as '$params->{$args[0]}', moving on...\n"; }
+						else
+						{ printf "'$args[0]' already defined as '@{$params->{$args[0]}}', moving on...\n"; }
 					}
 				}
 				else{
@@ -114,7 +128,7 @@ sub simulate
 	my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
 	my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
 	my $print_net    = defined $params->{print_net}  ? $params->{print_net}  : 0;
-	my $save_progress = defined $params->{save_progress} ? $params->{save_progress} : 0;
+	my $save_progress = defined $params->{save_progress} ? $params->{save_progress} : 0; # Same as 'print_net'
     my $continue     = defined $params->{'continue'} ? $params->{'continue'} : 0;	
     my $method       = defined $params->{method}     ? $params->{method}     : undef;
     my $print_active = defined $params->{print_n_species_active} ? $params->{print_n_species_active} : 0;
@@ -132,7 +146,7 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "Simulate requires method parameter (ode, cvode, ssa, pla, nf).";  }
+    {  return "Simulate requires method parameter (ode, cvode, ssa, pla).";  }
     if ($method =~ /^ode$/) # Support 'ode' as a valid method
     {  $method = 'cvode';  } 
     unless ( exists $METHODS->{$method} )
@@ -230,11 +244,11 @@ sub simulate
 
 	# define maximum # of sim steps
     if (defined $params->{max_sim_steps})
-    {   push @command, "-M", $params->{max_sim_steps};   }
+    {   push @command, "-M", $params->{max_sim_steps};  }
 
     # define output step interval
     if (defined $params->{output_step_interval})
-    {   push @command, "-I", $params->{output_step_interval};   }
+    {   push @command, "-I", $params->{output_step_interval};  }
     
     # output concentrations data
     push @command, "--cdat", $print_cdat;
@@ -292,12 +306,14 @@ sub simulate
 
     # define t_end and n_steps
     my ($n_steps, $t_end);
-	if ( (defined $params->{n_steps} || defined $params->{n_output_steps}) && defined $params->{sample_times}){
+	if ( (defined $params->{n_steps} || defined $params->{n_output_steps}) && 
+		 (defined $params->{sample_times} || @sample_times) ){
 		# Throw warning if both n_steps and sample_times are defined
 		my $x = ( defined $params->{n_steps} ) ? "n_steps" : "n_output_steps";
 		printf "WARNING: $x and sample_times both defined. $x takes precedence.\n";
 	}
-	if ( defined $params->{n_steps} || defined $params->{n_output_steps} || !defined $params->{sample_times} )
+	if ( defined $params->{n_steps} || defined $params->{n_output_steps} || 
+	   ( !defined $params->{sample_times} && !@sample_times) )
    	{
     	if ( defined $params->{n_steps} && defined $params->{n_output_steps} ){ # Don't let them both be defined
     		return "'n_steps' and 'n_output_steps' are the same thing, cannot define both. "
@@ -328,22 +344,24 @@ sub simulate
 		my $step_size = ($t_end - $t_start) / $n_steps;
 		push @command, $step_size, $n_steps;
 	}
-	elsif ( defined $params->{sample_times} )
+#	elsif ( defined $params->{sample_times} || @sample_times )
+	else
     {
-    	my $sample_times = $params->{sample_times};
-    	@$sample_times = sort {$a <=> $b} @$sample_times; # numeric sort
-    	if ( @$sample_times > 2 ){
+		if (defined $params->{sample_times})
+		{ @sample_times = @{$params->{sample_times}}; }
+    	@sample_times = sort {$a <=> $b} @sample_times; # numeric sort
+    	if ( @sample_times > 2 ){
     		if ( defined $params->{t_end} ){ 
     			$t_end = $params->{t_end};
-    			while ($sample_times->[ $#$sample_times ] >= $t_end){ # remove all sample times >= t_end
-    				pop @$sample_times;
+    			while ($sample_times[ $#sample_times ] >= $t_end){ # remove all sample times >= t_end
+    				pop @sample_times;
     			}
-    			push @$sample_times, $t_end; # push t_end as final sample time
+    			push @sample_times, $t_end; # push t_end as final sample time
     		}
     		else{
-    			$t_end = $sample_times->[ $#$sample_times ];
+    			$t_end = $sample_times[ $#sample_times ];
     		}
-    		push @command, @$sample_times; # add sample times to argument list
+    		push @command, @sample_times; # add sample times to argument list
     	}
     	else{
     		return "'sample_times' array must contain 3 or more points.";
