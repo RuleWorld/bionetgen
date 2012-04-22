@@ -76,12 +76,45 @@ sub simulate
 
 	return '' if $BNGModel::NO_EXEC;
 
+	# Read simulation arguments from file
+	my $argfile = defined $params->{argfile} ? $params->{argfile} : undef;
+	if ($argfile){
+		printf "Reading simulation arguments from $argfile.\n";
+		open ARGS, $argfile or die "Could not open $argfile.\n";
+		my $lineCounter = 0;
+		while (my $line = <ARGS>){
+			$lineCounter++;
+			chomp $line;
+#			printf "line $lineCounter: '$line'\n";
+			my @args = split " ", $line;
+			if (exists $args[0] && !($args[0] =~ /^#/)){ # Ignore blank and comment lines
+				if (exists $args[0] && exists $args[1]){
+					printf "Processing argument: ";
+					if (!(defined $params->{$args[0]})){ # Args in the command line take precedence
+						$params->{$args[0]} = $args[1];
+						printf "$args[0]=>$params->{$args[0]}\n";
+					}
+					else{
+						printf "'$args[0]' already defined as '$params->{$args[0]}', moving on...\n";
+					}
+				}
+				else{
+					return "Could not process line $lineCounter in $argfile. "
+						 . "Line is not blank nor commented out with #.\n";
+				}
+			}
+		}
+		close ARGS;
+		printf "Finished.\n";
+	}
+
     # general options
 	my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
 	my $netfile      = defined $params->{netfile}    ? $params->{netfile}    : undef;
 	my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
 	my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
 	my $print_net    = defined $params->{print_net}  ? $params->{print_net}  : 0;
+	my $save_progress = defined $params->{save_progress} ? $params->{save_progress} : 0;
     my $continue     = defined $params->{'continue'} ? $params->{'continue'} : 0;	
     my $method       = defined $params->{method}     ? $params->{method}     : undef;
     my $print_active = defined $params->{print_n_species_active} ? $params->{print_n_species_active} : 0;
@@ -97,12 +130,13 @@ sub simulate
     # stochastic options
 	my $seed         = defined $params->{seed} ? $params->{seed} : floor(rand 2**31);
 
-
     # check method
     unless ( $method )
-    {  return "Simulate requires method parameter (cvode, ssa, pla, nf, etc).";  }
+    {  return "Simulate requires method parameter (ode, cvode, ssa, pla, nf).";  }
+    if ($method =~ /^ode$/) # Support 'ode' as a valid method
+    {  $method = 'cvode';  } 
     unless ( exists $METHODS->{$method} )
-    {  return "Simulation method $method is not a valid.";  }
+    {  return "Simulation method '$method' is not a valid option.";  }
 
 
     # add optional suffix to output prefix
@@ -207,8 +241,12 @@ sub simulate
     # output function values
     push @command, "--fdat", $print_fdat;
 
-    # define print_net
-	if ($print_net) { push @command, "-n"; }
+    # define print_net (save_progress)
+    if (defined $params->{print_net} && defined $params->{save_progress}){ # Don't let them both be defined
+		return "'print_net' and 'save_progress' are the same thing, cannot define both. " 
+				. "Please only define one ('save_progress' is preferred).";
+	}	
+	if ($print_net || $save_progress) { push @command, "-n"; }
     # define print_end
 	if ($print_end) { push @command, "-e"; }
 	# More detailed output
@@ -261,9 +299,9 @@ sub simulate
 	}
 	if ( defined $params->{n_steps} || defined $params->{n_output_steps} || !defined $params->{sample_times} )
    	{
-    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} )
-        {   # Don't let them both be defined
-    		return "Cannot define both n_steps and n_output_steps. Please only define one (n_output_steps is preferred).";
+    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} ){ # Don't let them both be defined
+    		return "'n_steps' and 'n_output_steps' are the same thing, cannot define both. "
+    				. "Please only define one ('n_output_steps' is preferred).";
     	}
 
 		if ( defined $params->{t_end} ){

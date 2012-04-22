@@ -387,8 +387,8 @@ void Network3::init_PLA(string config, bool verbose){
 		if (verbose) cout << "You've chosen 'custom', the adventurous type I see." << endl;
 	}
 	else{
-		cout << "Uh oh, I don't recognize your choice of method. Currently supported methods are" << endl;
-		cout << "'fEuler', 'midpt', 'rk4' and 'custom'. Please try again." << endl;
+		cout << "Uh oh, I don't recognize your choice of method (" << arg[0] << "). Currently supported methods are" << endl;
+		cout << "  'fEuler', 'midpt', 'rk4' and 'custom'. Please try again." << endl;
 		exit(1);
 	}
 
@@ -588,7 +588,7 @@ void Network3::init_PLA(string config, bool verbose){
 }
 
 pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, long startStep, long maxSteps,
-		long stepInterval, char* prefix, bool print_cdat, bool print_net, bool print_end_net, bool verbose){
+		long stepInterval, char* prefix, bool print_cdat, bool print_save_net, bool print_end_net, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -720,7 +720,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 			if (print_cdat) Network3::print_species_concentrations(cdat,time);
 			if (gdat) Network3::print_observable_concentrations(gdat,time);
 			if (fdat) Network3::print_function_values(fdat,time);
-			if (print_net){ // Write current system state to .net file
+			if (print_save_net){ // Write current system state to .net file
 				// Collect species populations and update network concentrations vector
 				double* pops = new double[SPECIES.size()];
 				for (unsigned int j=0;j < SPECIES.size();j++){
@@ -730,7 +730,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 				delete pops;
 				// Print network w/ current species populations using network::print_network()
 				char buf[1000];
-				sprintf(buf, "%s.net", prefix);
+				sprintf(buf, "%s_save.net", prefix);
 				FILE* out = fopen(buf, "w");
 				print_network(out);
 				fclose(out);
@@ -744,7 +744,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 //				for (unsigned int i=0;i < OBSERVABLE.size();i++){
 //					cout << "\t" << OBSERVABLE[i]->second;
 //				}
-				if (print_net){
+				if (print_save_net){
 					fprintf(stdout, "%s", print_net_message.c_str());
 				}
 				cout << endl;
@@ -784,7 +784,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 		if (gdat) Network3::print_observable_concentrations(gdat,time);
 		if (fdat) Network3::print_function_values(fdat,time);
 		string print_net_message;
-		if (print_net){ // Write current system state to .net file
+		if (print_save_net){ // Write current system state to .net file
 			// Collect species populations and update network concentrations vector
 			double pops[SPECIES.size()];
 			for (unsigned int j=0;j < SPECIES.size();j++){
@@ -793,7 +793,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 			set_conc_network(pops);
 			// Print network w/ current species populations using network::print_network()
 			char buf[1000];
-			sprintf(buf, "%s.net", prefix);
+			sprintf(buf, "%s_save.net", prefix);
 			FILE* out = fopen(buf, "w");
 			print_network(out);
 			fclose(out);
@@ -804,7 +804,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 		if (verbose){
 			cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
 //			for (unsigned int i=0;i < OBSERVABLE.size();i++) cout << "\t" << OBSERVABLE[i]->second;
-			if (print_net) fprintf(stdout, "%s", print_net_message.c_str());
+			if (print_save_net) fprintf(stdout, "%s", print_net_message.c_str());
 			cout << endl;
 		}
 	}

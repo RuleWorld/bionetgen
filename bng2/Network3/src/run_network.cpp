@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
     int check_steady_state = 0;
     int seed = -1;
     int remove_zero = 1;
-    int print_flux = 0, print_end_net = 0, print_net = 0, enable_species_stats = 0;
+    int print_flux = 0, print_end_net = 0, print_save_net = 0, enable_species_stats = 0;
     bool print_cdat = true, print_fdat = false;
     int gillespie_update_interval = 1;
     int verbose=0;
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]){
     		propagator = SSA;
     		break;
     	case 'n':
-    		print_net = 1;
+    		print_save_net = 1;
     		break;
     	case 'o':
     		outpre = argv[iarg++];
@@ -517,7 +517,7 @@ int main(int argc, char *argv[]){
 //					cout << "(step: " << step << ")" << endl;
 //					cout << "(" << stepsLeft << " steps left until next output)" << endl;
 					nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,min(stepsLeft,maxSteps),
-												  stepInterval,outpre,print_cdat,print_net,print_end_net,verbose);
+												  stepInterval,outpre,print_cdat,print_save_net,print_end_net,verbose);
 					step += nSteps_dt.first;
 					maxSteps -= nSteps_dt.first;
 					t += nSteps_dt.second;
@@ -528,7 +528,7 @@ int main(int argc, char *argv[]){
 //				cout << "(maxSteps: " << maxSteps << ")" << endl;
 //				cout << "(step: " << step << ")" << endl;
 				nSteps_dt = Network3::run_PLA(t,sample_times[i],INFINITY,step,maxSteps,stepInterval,outpre,
-											  print_cdat,print_net,print_end_net,verbose);
+											  print_cdat,print_save_net,print_end_net,verbose);
 				step += nSteps_dt.first;
 				maxSteps -= nSteps_dt.first;
 				t += nSteps_dt.second;
@@ -537,7 +537,7 @@ int main(int argc, char *argv[]){
 		// Sample interval
 		else{
 			nSteps_dt = Network3::run_PLA(t_start,t_end,sample_time,step,maxSteps,stepInterval,outpre,print_cdat,
-										  print_net,print_end_net,verbose);
+										  print_save_net,print_end_net,verbose);
 			step += nSteps_dt.first;
 			t += nSteps_dt.second;
 		}
@@ -700,11 +700,11 @@ int main(int argc, char *argv[]){
 			    print_species_stats(species_stats_file, t);
 			if (print_flux)
 				print_flux_network(flux_file, t);
-			if (print_net){
+			if (print_save_net){
 				if (outpre)
-					sprintf(buf, "%s.net", outpre);
+					sprintf(buf, "%s_save.net", outpre);
 				else
-					sprintf(buf, "tmp.net");
+					sprintf(buf, "save.net");
 				out = fopen(buf, "w");
 				print_network(out);
 				fclose(out);
