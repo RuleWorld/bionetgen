@@ -10,6 +10,14 @@ options {
  
   this.setTemplateLib(gParent.getTemplateLib());
  }
+ 
+ private void addHidden(){
+  ((ChangeableChannelTokenStream)input).addChannel(Token.DEFAULT_CHANNEL);
+ }
+ 
+ private void deleteHidden(){
+ 
+ }
 }
 
 parameters_block [ Map<String,Register> memory, List parameters]
@@ -22,10 +30,10 @@ scope{
  // System.out.println(gParent.netGrammar);
 }
 
-: BEGIN PARAMETERS 
-(parameter_def[$memory] {$parameters.add($parameter_def.st);})*  
+: BEGIN PARAMETERS LB+
+(parameter_def[$memory] {$parameters.add($parameter_def.st);} LB+)*  
 
-END PARAMETERS;
+END PARAMETERS LB+;
 
 
 parameter_def[Map<String,Register> lmemory]

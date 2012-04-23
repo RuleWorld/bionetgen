@@ -20,7 +20,7 @@ options {
 
 actions_prog:
 .*
-(actions_block  | (BEGIN ACTIONS actions_block END ACTIONS))? 
+(actions_block  | (BEGIN ACTIONS LB+ actions_block END ACTIONS LB+))? 
 EOF -> actions(actions = {actions})
 ;
 actions_block
@@ -32,7 +32,7 @@ actions_block
 @after{
   gParent.paraphrases.pop();
 }
-        : (action)+
+        : (action LB*)+
 ;
 action  : generate_network {actions.add($generate_network.st);}
         | simulate_method {actions.add($simulate_method.st);}

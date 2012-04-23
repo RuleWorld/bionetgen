@@ -64,7 +64,7 @@ begin reaction rules
   # Grb2 binding to Sos1
   Grb2(SH3) + Sos1(PxxP) <-> Grb2(SH3!1).Sos1(PxxP!1) kp5,km5
   # Receptor dimer internalization/degradation
-#  EGF(R!1).EGF(R!2).EGFR(L!1,CR1!3).EGFR(L!2,CR1!3) -> Null() deg DeleteMolecules
+#  7 EGF(R!1).EGF(R!2).EGFR(L!1,CR1!3).EGFR(L!2,CR1!3) -> Null() deg DeleteMolecules
 end reaction rules
 
 #ACTIONS

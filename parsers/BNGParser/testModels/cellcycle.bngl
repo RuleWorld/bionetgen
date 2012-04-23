@@ -121,12 +121,12 @@ begin functions
 	#drgdrgsnth() = eps()*drgdrgsnththing()
 	#cycdrgsnth() = eps()*k9
 
-	#ergerksnth() = if(Act_Erk == 0, 0, (k15/(1+((DRG_tot/J15)^2)))*((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot)) )
+	ergerksnth() = if(Act_Erk == 0, 0, (k15/(1+((DRG_tot/J15)^2)))*((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot)) )
 	#drgergsnth() = if(Act_Erk == 0, 0, ((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot))*kp17 )
 	#drgdrgsnth() = if(Act_Erk == 0, 0, (k17*(DRG_tot/(J17^2))/(1+((DRG_tot/J17)^2)))*((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot)) )
 	#cycdrgsnth() = if(Act_Erk == 0, 0, ((.15*Act_Erk)/(Act_Erk+DRG_tot+ERG_tot))*k9 )
 	
-	ergerksnth() = k9
+	#ergerksnth() = k9
 	drgergsnth() = k9
 	drgdrgsnth() = k9
 	cycdrgsnth() = k9

@@ -21,14 +21,14 @@ getParentTemplate();
   gParent.paraphrases.pop();
 }
 :
- BEGIN MOLECULE TYPES (molecule_def 
+ BEGIN MOLECULE TYPES LB+(molecule_def 
  
  {
  gParent.molecules.add($molecule_def.st);
  //gParent.variableName.add($molecule_def.text);
  }
- 
- )* END MOLECULE TYPES;
+ LB+
+ )* END MOLECULE TYPES LB+;
 
 molecule_def
 scope{

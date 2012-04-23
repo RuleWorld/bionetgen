@@ -32,7 +32,7 @@ getParentTemplate();
 @after{
   gParent.paraphrases.pop();
 }
-        : BEGIN REACTION RULES (reaction_rule_def[$reaction_rules_block::reactionCounter] 
+        : BEGIN REACTION RULES LB+(reaction_rule_def[$reaction_rules_block::reactionCounter] 
                   {
                   reactionRules.add($reaction_rule_def.st);
                   StringTemplate sInvert = null;
@@ -42,7 +42,7 @@ getParentTemplate();
                   reactionRules.add(sInvert);
                   $reaction_rules_block::reactionCounter+= $reaction_rule_def.numReactions;
                   
-                  })* END REACTION RULES
+                  }LB+)* END REACTION RULES LB+
         ;
 
 
@@ -248,7 +248,7 @@ function_keyword:
 ;
 
 rate_list[List<String> rateList]
-        : e1=expression[gParent.memory] {rateList.add($e1.text);}(COMMA e2=expression[gParent.memory] {rateList.add($e2.text);})?
+        : e1=expression[gParent.memory] {rateList.add($e1.text);}(COMMA? e2=expression[gParent.memory] {rateList.add($e2.text);})?
         ;
 modif_command
         : include_command
