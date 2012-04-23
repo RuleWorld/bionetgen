@@ -1,7 +1,0 @@
-# SIMULATION ARGUMENTS
-
- method			ode
- t_end			100
- n_output_steps	1000
- verbose		1
- 
