@@ -49,6 +49,11 @@ Occasionally a validation will fail due to outliers. Run the validation
 script a few times. If a test passes most of the time, it is probably OK.
 Single tests may be run by passing the model basename as argument.
 
+TROUBLESHOOTING:
+If you see the message "ABORT: Could not find executable run_network". Try
+setting the environment variable "BNGPATH" to the root directory of your 
+BioNetGen installation. Under bash-like shells, this is done by typing:
+"export BNGPATH=<bngpath>", where <bngpath> is the root directory of BNG.
 
 --
-Last modified 6 April 2012 for release 2.2.0-testing
+Last modified 24 April 2012 for release 2.2.0-testing

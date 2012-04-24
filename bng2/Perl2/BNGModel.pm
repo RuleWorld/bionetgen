@@ -10,7 +10,9 @@ use FindBin;
 use lib $FindBin::Bin;
 use File::Spec;
 use POSIX ("floor", "ceil");
+use Scalar::Util ("looks_like_number");
 use Config;
+
 
 # BNGOutput contains BNGModel methods related to third-party output
 #  e.g. writeXML, writeSBML, writeMfile, writeMexfile, toSSC...
