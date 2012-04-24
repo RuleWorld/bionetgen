@@ -12,15 +12,11 @@ options {
   this.setTemplateLib(gParent.getTemplateLib());
  }
  List<StringTemplate> actions = new ArrayList<StringTemplate>();
-       @Override
-  public String getErrorMessage(RecognitionException e,String[] tokenNames){
-    return gParent.getErrorMessage(e,tokenNames);
-  }
 }
 
 actions_prog:
 .*
-(actions_block  | (BEGIN ACTIONS LB+ actions_block END ACTIONS LB+))? 
+(actions_block  | (BEGIN ACTIONS actions_block END ACTIONS))? 
 EOF -> actions(actions = {actions})
 ;
 actions_block
@@ -32,7 +28,7 @@ actions_block
 @after{
   gParent.paraphrases.pop();
 }
-        : (action LB*)+
+        : (action)+ 
 ;
 action  : generate_network {actions.add($generate_network.st);}
         | simulate_method {actions.add($simulate_method.st);}
@@ -78,8 +74,8 @@ scope{
         : (simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";}
         | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";}
         | write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";}
-        | simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";}
-        | simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";})
+        | simulate_pla[$simulate_method::actions] {$simulate_method::method = "write_pla";}
+        | simulate_nf[$simulate_method::actions] {$simulate_method::method = "write_nf";})
         -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
         ;
 simulate_ode[Map<String,String> map]
@@ -218,13 +214,7 @@ simulate_ode_par_def[Map<String,String> map]
         ;
         
 simulate_pla_par_def[Map<String,String> map]
-scope{
-  String temp;
-}
-@init{
-  $simulate_pla_par_def::temp = "";
-}
-        : PLA_CONFIG ASSIGNS DBQUOTES (s1=~(DBQUOTES ){$simulate_pla_par_def::temp += $s1.text;})* DBQUOTES {map.put($PLA_CONFIG.text,$simulate_pla_par_def::temp);}
+        : PLA_CONFIG ASSIGNS DBQUOTES s1=.* DBQUOTES {map.put($PLA_CONFIG.text,$s1.text);}
         ;    
  
 simulate_nf_par_def[Map<String,String> map]
@@ -246,7 +236,7 @@ simulate_par_def[Map<String,String> map]
         | T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);})
         | N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);}
         | SAMPLE_TIMES ASSIGNS i4=array_value 
-        | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i5.text);}
+        | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i4.text);}
         ;
         
 array_value

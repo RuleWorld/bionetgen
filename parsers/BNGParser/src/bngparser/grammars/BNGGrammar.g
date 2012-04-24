@@ -71,15 +71,13 @@ scope {
 }
 @after{
   paraphrases.pop();
- 
 }
 :
-((BEGIN MODEL (program_block)* END MODEL) | (program_block)*)
+LB*
+((BEGIN MODEL LB+ (program_block)* END MODEL LB+) | (program_block)*)
 (a1=actions_block {$actionsTemplate = $a1.st;}| (BEGIN ACTIONS a2=actions_block END ACTIONS {$actionsTemplate = $a2.st;;}) )? 
 EOF  -> prog2(parameters={$prog::parameters},molecules={molecules},species={$prog::seedSpecies},reactions={$prog::reactionRules},
                             observables={$prog::observables},functions={$prog::functions}, compartments={$prog::compartments});
-
-
 
 version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN SEMI;
 
@@ -105,13 +103,19 @@ functions_block
   paraphrases.pop();
 }
 :
-      BEGIN FUNCTIONS 
-       (function_def {$prog::functions.add($function_def.st);})*     
-      END FUNCTIONS
+      BEGIN FUNCTIONS LB+
+       (function_def {$prog::functions.add($function_def.st);} LB+)*     
+      END FUNCTIONS LB+
 ;
 
 function_def:
-    s1=STRING LPAREN (STRING)? RPAREN (BECOMES)?  
+    s1=STRING LPAREN 
+    parameter=(s2=STRING
+    {
+      memory.put($s2.text,new Register(1.0,"parameter"));
+    }
+    )? RPAREN (BECOMES)?  
+
     (expression[memory] 
     {
      memory.put($s1.text,new Register($expression.value,"function"));
@@ -124,6 +128,13 @@ function_def:
       memory.put($s1.text,new Register($if_expression.value,"function"));
     }
     )
+    {
+      if(memory.containsKey($s2.text)){
+        memory.remove($s2.text);
+        
+      }
+    }
+    
 ;
 
 if_expression  returns [Double value]
@@ -137,7 +148,7 @@ scope{
 }:
   IF LPAREN STRING 
   
-  EQUALS INT COMMA e1=expression[memory] COMMA expression[memory] RPAREN
+  (EQUALS|GT|GTE|LT|LTE) (STRING|INT) COMMA e1=expression[memory] COMMA expression[memory] RPAREN
   {
     $value = $e1.value;
   }

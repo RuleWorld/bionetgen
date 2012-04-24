@@ -24,12 +24,12 @@ scope{
 @after{
   gParent.paraphrases.pop();
 }
-: BEGIN (SEED)? SPECIES 
+: BEGIN (SEED)? SPECIES LB+
 (seed_species_def[$seed_species_block::numSpecies]{
                                       $seedSpecies.add($seed_species_def.st); 
                                       $seed_species_block::numSpecies++;
-                                      })* 
-END (SEED)? SPECIES;
+                                      } LB+)* 
+END (SEED)? SPECIES LB+;
 
 seed_species_def[int counter]
 scope{

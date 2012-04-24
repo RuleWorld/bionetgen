@@ -491,6 +491,26 @@ foreach my $model (@models)
         }
     }
 
+    # check PLA equilibrium distribution (observables)
+    {
+        my $datfile  = "${outprefix}_pla_equil.gdat";
+        my $statfile = "${datprefix}_pla_equil.stats";
+        if ( -e $datfile  and  -e $statfile )
+        {
+            multi_print( " -> checking PLA equillibirum distribution\n", @allFH );
+            my $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
+            if ( defined $exit_status )
+            {
+                multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+                print "see $log_file form more details.\n";
+                close $log;
+                ++$fail_count;
+                next MODEL;
+            }
+            print $log $SEPARATOR;
+        }
+    }
+
     if ($delete_working_files)
     {   delete_files($outprefix);   }
 
@@ -526,8 +546,8 @@ sub delete_files
     my @suffixes = qw( .net .xml _sbml.xml _cvode.c .cdat .gdat
                        _burnin.net     _burnin.cdat     _burnin.gdat
                        _equil.net      _equil.cdat      _equil.gdat
-                       _ssa_burnin.net _ssa_burnin.cdat _ssa_burnin.gdat
                        _ssa_equil.net  _ssa_equil.cdat  _ssa_equil.gdat 
+                       _pla_equil.net  _ssa_pla.cdat    _pla_equil.gdat
                        _nf_equil.xml   _nf_equil.gdat                    
                        .m              _mex.m           _mex_cvode.c 
                        _hybrid.bngl    _hybrid.xml                        );

@@ -55,12 +55,12 @@ sub simulate_pla
 # all purpose simulation method (does not yet support NFsim)
 sub simulate
 {
-	use IPC::Open3;
+    use IPC::Open3;
     use IO::Select;
 
-	my $model  = shift @_;
-	my $params = (@_) ? shift @_ : {};
-	my $err;
+    my $model  = shift @_;
+    my $params = (@_) ? shift @_ : {};
+    my $err;
 
     my $METHODS =
     {
@@ -74,74 +74,138 @@ sub simulate
                    options=>{ seed=>1 }                                      }
     };
 
-	return '' if $BNGModel::NO_EXEC;
+    return '' if $BNGModel::NO_EXEC;
+
+    # Read simulation arguments from file
+    my @sample_times;
+    my $argfile = defined $params->{argfile} ? $params->{argfile} : undef;
+    if ($argfile)
+    {
+        print "Reading simulation arguments from $argfile.\n";
+        open(ARGS, "<", $argfile) or return "Could not open argfile '$argfile'.";
+        my $lineCounter = 0;
+        while (my $line = <ARGS>)
+        {
+            ++$lineCounter;
+            # trim comments
+            $line =~ s/#.*$//;
+            # skip empty lines
+            next unless ( $line =~ /\S/ );
+            # split tokens
+            my @args = split " ", $line; 
+
+            unless (@args == 2)
+            {   return "Could not process line $lineCounter in $argfile: wrong number of arguments.";   }
+
+            print "Processing argument: ";
+            # Check if Arg is already defined in action call
+            if ( !(defined $params->{$args[0]}) )
+            {   
+                if ( $args[0] ne 'sample_times' ){
+                    $params->{$args[0]} = $args[1];
+                    printf "$args[0] => %s\n", (looks_like_number($args[1]) ? $args[1] : "'$args[1]'");
+                }
+                else
+                {   # Special handling for sample_times array
+                    print "$args[0] => $args[1]\n";
+                    # evaluate sample_times string to get array ref (hopefully)
+                    my $sample_times = eval $args[1];
+                    if ($@)
+                    {    return "Problem parsing 'sample_times': Sample times must be comma-separated (no spaces) ints or floats "
+                             . "(exponential format ok) enclosed in square brackets, e.g., [5e-1,1,5.0,1E1].";
+                    }
+                    @sample_times = @$sample_times;
+                    foreach my $sample (@sample_times)
+                    {   # check that sample time is a number
+                        unless ( looks_like_number($sample) )
+                        {    return "Problem parsing 'sample_times': Sample times must be comma-separated (no spaces) ints or floats "
+                             . "(exponential format ok) enclosed in square brackets, e.g., [5e-1,1,5.0,1E1].";
+                        }
+                    }
+                }
+            }
+            else
+            {   # Args in the action call take precedence
+                if ( $args[0] ne 'sample_times' )
+                {   printf "'$args[0]' already defined with value %s, moving on...\n",
+                           (looks_like_number($params->{$args[0]}) ? "$params->{$args[0]}" : "'$params->{$args[0]}'");
+                }
+                else
+                {   printf "'$args[0]' already defined in action call, moving on...\n";   }
+            }
+        }
+        close ARGS;
+        printf "Finished.\n";
+    }
 
     # general options
-	my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
-	my $netfile      = defined $params->{netfile}    ? $params->{netfile}    : undef;
-	my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
-	my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
-	my $print_net    = defined $params->{print_net}  ? $params->{print_net}  : 0;
-    my $continue     = defined $params->{'continue'} ? $params->{'continue'} : 0;	
+    my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
+    my $netfile      = defined $params->{netfile}    ? $params->{netfile}    : undef;
+    my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
+    my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
+    my $print_net    = defined $params->{print_net}  ? $params->{print_net}  : 0;
+    my $save_progress = defined $params->{save_progress} ? $params->{save_progress} : 0; # Same as 'print_net'
+    my $continue     = defined $params->{'continue'} ? $params->{'continue'} : 0;    
     my $method       = defined $params->{method}     ? $params->{method}     : undef;
     my $print_active = defined $params->{print_n_species_active} ? $params->{print_n_species_active} : 0;
     my $print_cdat   = defined $params->{print_CDAT} ? $params->{print_CDAT} : 1; # Default is to print .cdat
     my $print_fdat   = defined $params->{print_functions} ? $params->{print_functions} : 0; # Default is to NOT print .fdat
 
     # continuous options
-	my $atol         = defined $params->{atol}         ? $params->{atol}         : 1e-8;
-	my $rtol         = defined $params->{rtol}         ? $params->{rtol}         : 1e-8;
-	my $sparse       = defined $params->{sparse}       ? $params->{sparse}       : 0;
-	my $steady_state = defined $params->{steady_state} ? $params->{steady_state} : 0;
+    my $atol         = defined $params->{atol}         ? $params->{atol}         : 1e-8;
+    my $rtol         = defined $params->{rtol}         ? $params->{rtol}         : 1e-8;
+    my $sparse       = defined $params->{sparse}       ? $params->{sparse}       : 0;
+    my $steady_state = defined $params->{steady_state} ? $params->{steady_state} : 0;
 
     # stochastic options
-	my $seed         = defined $params->{seed} ? $params->{seed} : floor(rand 2**31);
-
+    my $seed         = defined $params->{seed} ? $params->{seed} : floor(rand 2**31);
 
     # check method
     unless ( $method )
-    {  return "Simulate requires method parameter (cvode, ssa, pla, nf, etc).";  }
+    {  return "Simulate requires method parameter (ode, cvode, ssa, pla).";  }
+    if ($method =~ /^ode$/) # Support 'ode' as a valid method
+    {  $method = 'cvode';  } 
     unless ( exists $METHODS->{$method} )
-    {  return "Simulation method $method is not a valid.";  }
+    {  return "Simulation method '$method' is not a valid option.";  }
 
 
     # add optional suffix to output prefix
-	if ( $params->{suffix} )
+    if ( $params->{suffix} )
     {  $prefix .= "_" . $params->{suffix};  }
 
-	# Find or Create netfile
-	my $netpre;
-	if ($netfile)
+    # Find or Create netfile
+    my $netpre;
+    if ($netfile)
     {
         # user defined netfile
-		# Make sure NET file has proper suffix
-		($netpre = $netfile) =~ s/[.]([^.]+)$//;
-		unless ( $1 =~ /net/i )
+        # Make sure NET file has proper suffix
+        ($netpre = $netfile) =~ s/[.]([^.]+)$//;
+        unless ( $1 =~ /net/i )
         {   return "File $netfile does not have net suffix";   }
-	}
-	else
+    }
+    else
     {
         # default to [prefix].net
-		$netfile = "${prefix}.net";
-		$netpre  = $prefix;
+        $netfile = "${prefix}.net";
+        $netpre  = $prefix;
 
-		# Generatese NET file if not already created or if updateNet flag is set
-		if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
-		{
-			$err = $model->writeNET( {prefix=>"$netpre"} );
+        # Generatese NET file if not already created or if updateNet flag is set
+        if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
+        {
+            $err = $model->writeNET( {prefix=>"$netpre"} );
             if ($err) {  return $err;  }
-		}
-	}
+        }
+    }
 
 
     # Find binary
     my $binary = $METHODS->{$method}->{binary}; 
-	printf "%s simulation using %s\n", $METHODS->{$method}->{type}, $method;
-	my $program;
-	unless ( $program = findExec($binary) )
+    printf "%s simulation using %s\n", $METHODS->{$method}->{type}, $method;
+    my $program;
+    unless ( $program = findExec($binary) )
     {   return "Could not find executable $binary";   }
 
-	
+    
     # Begin writing command: start with program
     my @command = ($program);
 
@@ -154,10 +218,10 @@ sub simulate
     # pla configuration
     if ($method eq 'pla')
     {
-    	if (exists $params->{pla_config})
+        if (exists $params->{pla_config})
         {
-    		push @command, split(' ', $params->{pla_config});
-    	}
+            push @command, split(' ', $params->{pla_config});
+        }
     }
     
     # add method options
@@ -165,19 +229,19 @@ sub simulate
         my $opts = $METHODS->{$method}->{options};
         if ( exists $opts->{seed} )
         {   # random seed
-	        push @command, "-h", $seed;
+            push @command, "-h", $seed;
         }
         if ( exists $opts->{atol} )
         {   # absolute tolerance
-		    push @command, "-a", $atol;
+            push @command, "-a", $atol;
         }
         if ( exists $opts->{rtol} )
         {   # absolute tolerance
-		    push @command, "-r",  $rtol;
+            push @command, "-r",  $rtol;
         }
         if ( exists $opts->{sparse} )
         {   # sparse methods
-		    if ($sparse) { push @command, "-b"; }
+            if ($sparse) { push @command, "-b"; }
         }
         if ( exists $opts->{steady_state} )
         {   # check for steady state
@@ -186,157 +250,165 @@ sub simulate
     }
 
     # define update_interval
-	my $update_interval = defined $params->{update_interval} ? $params->{update_interval} : 1.0;
+    my $update_interval = defined $params->{update_interval} ? $params->{update_interval} : 1.0;
 
     # define expand
-	my $expand =  defined $params->{expand} ? $params->{expand} : 'lazy';
-	if ( $expand eq 'lazy' ) { }
-	elsif ( $expand eq 'layered' ) { }
-	else { return "Unrecognized expand method $expand";	}
+    my $expand =  defined $params->{expand} ? $params->{expand} : 'lazy';
+    if ( $expand eq 'lazy' ) { }
+    elsif ( $expand eq 'layered' ) { }
+    else { return "Unrecognized expand method $expand";    }
 
-	# define maximum # of sim steps
+    # define maximum # of sim steps
     if (defined $params->{max_sim_steps})
-    {   push @command, "-M", $params->{max_sim_steps};   }
+    {   push @command, "-M", $params->{max_sim_steps};  }
 
     # define output step interval
     if (defined $params->{output_step_interval})
-    {   push @command, "-I", $params->{output_step_interval};   }
+    {   push @command, "-I", $params->{output_step_interval};  }
     
     # output concentrations data
     push @command, "--cdat", $print_cdat;
     # output function values
     push @command, "--fdat", $print_fdat;
 
-    # define print_net
-	if ($print_net) { push @command, "-n"; }
+    # define print_net (save_progress)
+    if (defined $params->{print_net} && defined $params->{save_progress}){ # Don't let them both be defined
+        return "'print_net' and 'save_progress' are the same thing, cannot define both. " 
+                . "Please only define one ('save_progress' is preferred).";
+    }    
+    if ($print_net || $save_progress) { push @command, "-n"; }
     # define print_end
-	if ($print_end) { push @command, "-e"; }
-	# More detailed output
-	if ($verbose)   { push @command, "-v"; }
-	# Continuation
-	if ($continue)  { push @command, "-x"; }	
-	# Print number of active species
-	if ($print_active) { push @command, "-j"; }
+    if ($print_end) { push @command, "-e"; }
+    # More detailed output
+    if ($verbose)   { push @command, "-v"; }
+    # Continuation
+    if ($continue)  { push @command, "-x"; }    
+    # Print number of active species
+    if ($print_active) { push @command, "-j"; }
 
 
-	# Set start time for trajectory
-	my $t_start;
-	if ( defined $params->{t_start} )
+    # Set start time for trajectory
+    my $t_start;
+    if ( defined $params->{t_start} )
     {
-		$t_start = $params->{t_start};		
-		# if this is a continuation, check that model time equals t_start
-		if ($continue)
+        $t_start = $params->{t_start};        
+        # if this is a continuation, check that model time equals t_start
+        if ($continue)
         {
-		    unless ( defined($model->Time)  and  ($model->Time == $t_start) )
+            unless ( defined($model->Time)  and  ($model->Time == $t_start) )
             {  return "t_start must equal current model time for continuation.";  }
-		}
-	}
-	else
+        }
+    }
+    else
     {   # t_start defaults to 0
-	    if ( $continue   and   defined($model->Time) )
+        if ( $continue   and   defined($model->Time) )
         {  $t_start = $model->Time;  }
- 		else
+         else
         {  $t_start = 0.0;  }
-	}
+    }
 
     # Set the model time to t_start
     $model->Time($t_start);
 
-  	# To preserve backward compatibility: only output start time if != 0
-	unless ( $t_start == 0.0 )
+      # To preserve backward compatibility: only output start time if != 0
+    unless ( $t_start == 0.0 )
     {  push @command, "-i", "$t_start";  }
 
-	# Use program to compute observables
-	push @command, "-g", $netfile;
+    # Use program to compute observables
+    push @command, "-g", $netfile;
 
-	# Read network from $netfile
-	push @command, $netfile;
+    # Read network from $netfile
+    push @command, $netfile;
 
     # define t_end and n_steps
     my ($n_steps, $t_end);
-	if ( (defined $params->{n_steps} || defined $params->{n_output_steps}) && defined $params->{sample_times}){
-		# Throw warning if both n_steps and sample_times are defined
-		my $x = ( defined $params->{n_steps} ) ? "n_steps" : "n_output_steps";
-		printf "WARNING: $x and sample_times both defined. $x takes precedence.\n";
-	}
-	if ( defined $params->{n_steps} || defined $params->{n_output_steps} || !defined $params->{sample_times} )
-   	{
-    	if ( defined $params->{n_steps} && defined $params->{n_output_steps} )
-        {   # Don't let them both be defined
-    		return "Cannot define both n_steps and n_output_steps. Please only define one (n_output_steps is preferred).";
-    	}
+    if ( (defined $params->{n_steps} || defined $params->{n_output_steps}) && 
+         (defined $params->{sample_times} || @sample_times) ){
+        # Throw warning if both n_steps and sample_times are defined
+        my $x = ( defined $params->{n_steps} ) ? "n_steps" : "n_output_steps";
+        printf "WARNING: $x and sample_times both defined. $x takes precedence.\n";
+    }
+    if ( defined $params->{n_steps} || defined $params->{n_output_steps} || 
+       ( !defined $params->{sample_times} && !@sample_times) )
+       {
+        if ( defined $params->{n_steps} && defined $params->{n_output_steps} ){ # Don't let them both be defined
+            return "'n_steps' and 'n_output_steps' are the same thing, cannot define both. "
+                    . "Please only define one ('n_output_steps' is preferred).";
+        }
 
-		if ( defined $params->{t_end} ){
+        if ( defined $params->{t_end} ){
             $t_end = $params->{t_end};
         }
-		else{
+        else{
             return "Parameter t_end must be defined.";
         }
-		
+        
         if ( ($t_end - $t_start) <= 0.0 )
         {   return "t_end must be greater than t_start.";   }
 
-		
-		if (defined $params->{n_steps}){
-			$n_steps = $params->{n_steps};
-		}
-		elsif (defined $params->{n_output_steps}){
-			$n_steps = $params->{n_output_steps};
-		}
-		else{
-			$n_steps = 1;
-		}
-		
-		my $step_size = ($t_end - $t_start) / $n_steps;
-		push @command, $step_size, $n_steps;
-	}
-	elsif ( defined $params->{sample_times} )
+        
+        if (defined $params->{n_steps}){
+            $n_steps = $params->{n_steps};
+        }
+        elsif (defined $params->{n_output_steps}){
+            $n_steps = $params->{n_output_steps};
+        }
+        else{
+            $n_steps = 1;
+        }
+        
+        my $step_size = ($t_end - $t_start) / $n_steps;
+        push @command, $step_size, $n_steps;
+    }
+#    elsif ( defined $params->{sample_times} || @sample_times )
+    else
     {
-    	my $sample_times = $params->{sample_times};
-    	@$sample_times = sort {$a <=> $b} @$sample_times; # numeric sort
-    	if ( @$sample_times > 2 ){
-    		if ( defined $params->{t_end} ){ 
-    			$t_end = $params->{t_end};
-    			while ($sample_times->[ $#$sample_times ] >= $t_end){ # remove all sample times >= t_end
-    				pop @$sample_times;
-    			}
-    			push @$sample_times, $t_end; # push t_end as final sample time
-    		}
-    		else{
-    			$t_end = $sample_times->[ $#$sample_times ];
-    		}
-    		push @command, @$sample_times; # add sample times to argument list
-    	}
-    	else{
-    		return "'sample_times' array must contain 3 or more points.";
-		}
-	}
-	
-	# Determine index of last rule iteration
+        if (defined $params->{sample_times})
+        { @sample_times = @{$params->{sample_times}}; }
+        @sample_times = sort {$a <=> $b} @sample_times; # numeric sort
+        if ( @sample_times > 2 ){
+            if ( defined $params->{t_end} ){ 
+                $t_end = $params->{t_end};
+                while ($sample_times[ $#sample_times ] >= $t_end){ # remove all sample times >= t_end
+                    pop @sample_times;
+                }
+                push @sample_times, $t_end; # push t_end as final sample time
+            }
+            else{
+                $t_end = $sample_times[ $#sample_times ];
+            }
+            push @command, @sample_times; # add sample times to argument list
+        }
+        else{
+            return "'sample_times' array must contain 3 or more points.";
+        }
+    }
+    
+    # Determine index of last rule iteration
     my $n_iter = 0;
-	if ( $model->SpeciesList )
+    if ( $model->SpeciesList )
     {
-		foreach my $spec ( @{$model->SpeciesList->Array} )
+        foreach my $spec ( @{$model->SpeciesList->Array} )
         {
-			my $iter = $spec->RulesApplied;
-			$n_iter = ( $iter > $n_iter ) ? $iter : $n_iter;
-		}
-	}
+            my $iter = $spec->RulesApplied;
+            $n_iter = ( $iter > $n_iter ) ? $iter : $n_iter;
+        }
+    }
 
 
 
 
     ### RUN SIMULATION ###
-	print  "Running run_network on ", `hostname`;
-	printf "full command: %s\n", join(" ", @command);
+    print  "Running run_network on ", `hostname`;
+    printf "full command: %s\n", join(" ", @command);
 
     # disable dospath warnings for Windows OS.
     if ( $Config{'osname'} eq 'MSWin32' )
     {   $ENV{'CYGWIN'}='nodosfilewarning';   }
 
-	# start simulator as child process with communication pipes
-	local ( *Reader, *Writer, *Err );
-	my $pid = eval{ open3( \*Writer, \*Reader, \*Err, @command ) };
+    # start simulator as child process with communication pipes
+    local ( *Reader, *Writer, *Err );
+    my $pid = eval{ open3( \*Writer, \*Reader, \*Err, @command ) };
     if ($@) { return sprintf("%s failed: $@", join(" ", @command)); }
 
     # remember child PID
@@ -344,87 +416,87 @@ sub simulate
     print "[simulation PID is: $pid]\n";
 
     # Wait for messages from the Simulator
-	my $last_msg = '';
+    my $last_msg = '';
     my $steady_state_reached;
-	my $edge_warning = 0;
+    my $edge_warning = 0;
     my $otf = 0;
-	while ( my $message = <Reader> )
+    while ( my $message = <Reader> )
     {
-		# If network generation is on-the-fly, look for signal that
-		# species at the edge of the network is newly populated
+        # If network generation is on-the-fly, look for signal that
+        # species at the edge of the network is newly populated
         if ( $message =~ /Steady state reached/ )
         {   # steady state message
             $steady_state_reached = 1;
-		}
-		elsif ( $message =~ s/^edgepop:\s*// )
+        }
+        elsif ( $message =~ s/^edgepop:\s*// )
         {
             # remember that we've attempted On-the-fly!
             $otf = 1;
 
-			unless ( $model->SpeciesList )
+            unless ( $model->SpeciesList )
             {   # Can't generate new species if running from netfile
                 # TODO: I don'think it's sufficient to check is SpeciesList is defined.
                 #  It's possible that it exists but the Network generation infrastructure is missing --Justin
-    			++$edge_warning;
-				print Writer "continue\n";
-				next;
-			}
+                ++$edge_warning;
+                print Writer "continue\n";
+                next;
+            }
 
             # parse edgepop message
-			my (@newspec) = split /\s+/, $message;
+            my (@newspec) = split /\s+/, $message;
 
-			my $species;
-			++$n_iter;
-			if ( $expand eq 'lazy' )
+            my $species;
+            ++$n_iter;
+            if ( $expand eq 'lazy' )
             {
-				my (@sarray, $spec);
-				foreach my $sname (@newspec)
+                my (@sarray, $spec);
+                foreach my $sname (@newspec)
                 {
-					unless ( $spec = $model->SpeciesList->lookup_bystring($sname) )
+                    unless ( $spec = $model->SpeciesList->lookup_bystring($sname) )
                     {  return "Couldn't find species $sname.";  }
-					push @sarray, $spec;
-				}
-				if ($verbose)
+                    push @sarray, $spec;
+                }
+                if ($verbose)
                 {  printf "Applying rules to %d species\n", scalar @sarray;  }
-				$species = \@sarray;
-			}
-			else
+                $species = \@sarray;
+            }
+            else
             {   # Do full next iteration of rule application
-				$species = $model->SpeciesList->Array;
-			}
+                $species = $model->SpeciesList->Array;
+            }
 
-			# Apply reaction rules
-			my $nspec = scalar @{$model->SpeciesList->Array};
-			my $nrxn  = scalar @{$model->RxnList->Array};
-			my $irule = 1;
-			my ($n_new, $t_off);
-			foreach my $rset ( @{$model->RxnRules} )
+            # Apply reaction rules
+            my $nspec = scalar @{$model->SpeciesList->Array};
+            my $nrxn  = scalar @{$model->RxnList->Array};
+            my $irule = 1;
+            my ($n_new, $t_off);
+            foreach my $rset ( @{$model->RxnRules} )
             {
-				if ($verbose) {  $t_off = cpu_time(0);  }
-				$n_new = 0;
-				foreach my $rr (@$rset)
+                if ($verbose) {  $t_off = cpu_time(0);  }
+                $n_new = 0;
+                foreach my $rr (@$rset)
                 {
-					$n_new += $rr->applyRule( $model->SpeciesList, $model->RxnList, $model->ParamList, $species, $params );
-				}
-				if ($verbose)
+                    $n_new += $rr->applyRule( $model->SpeciesList, $model->RxnList, $model->ParamList, $species, $params );
+                }
+                if ($verbose)
                 {
-					printf "Rule %3d: %3d new reactions %.2e s CPU time\n",
-					  $irule,
-					  $n_new, cpu_time(0) - $t_off;
-				}
-				++$irule;
-			}
+                    printf "Rule %3d: %3d new reactions %.2e s CPU time\n",
+                      $irule,
+                      $n_new, cpu_time(0) - $t_off;
+                }
+                ++$irule;
+            }
 
-			# Set RulesApplied attribute to everything in @$species
-			foreach my $spec (@$species)
+            # Set RulesApplied attribute to everything in @$species
+            foreach my $spec (@$species)
             {
-				$spec->RulesApplied($n_iter) unless ($spec->RulesApplied);
-			}
-			# Update observables
-	        foreach my $obs (@{$model->Observables})
+                $spec->RulesApplied($n_iter) unless ($spec->RulesApplied);
+            }
+            # Update observables
+            foreach my $obs (@{$model->Observables})
             {
-		        $obs->update( $model->SpeciesList->Array, $nspec );
-			}
+                $obs->update( $model->SpeciesList->Array, $nspec );
+            }
             # Set ObservablesApplied attribute to everything in SpeciesList
             my $new_species = [];
             foreach my $spec ( @{$model->SpeciesList->Array} )
@@ -436,55 +508,55 @@ sub simulate
                 }
             }
 
-			# Print new species, reactions, and observable entries
-			if ( scalar @{$model->RxnList->Array} > $nrxn )
+            # Print new species, reactions, and observable entries
+            if ( scalar @{$model->RxnList->Array} > $nrxn )
             {
-				print Writer "read\n";
-				$model->SpeciesList->print( *Writer, $nspec );
-				$model->RxnList->print( *Writer, $nrxn );
-				print Writer "begin groups\n";
-				my $i = 1;
-				foreach my $obs ( @{$model->Observables} )
+                print Writer "read\n";
+                $model->SpeciesList->print( *Writer, $nspec );
+                $model->RxnList->print( *Writer, $nrxn );
+                print Writer "begin groups\n";
+                my $i = 1;
+                foreach my $obs ( @{$model->Observables} )
                 {
-					print Writer "$i ";
-					$obs->printGroup( *Writer, $model->SpeciesList->Array, $nspec );
-					++$i;
-				}
-				print Writer "end groups\n";
-			}
-			else
+                    print Writer "$i ";
+                    $obs->printGroup( *Writer, $model->SpeciesList->Array, $nspec );
+                    ++$i;
+                }
+                print Writer "end groups\n";
+            }
+            else
             {
-				print Writer "continue\n";
-			}
-		}
-		else
+                print Writer "continue\n";
+            }
+        }
+        else
         {
-			print $message;
-			$last_msg = $message;
-		}
-	}
+            print $message;
+            $last_msg = $message;
+        }
+    }
 
     # Simulator is finished
-	my @err = <Err>;
-	close Writer;
-	close Reader;
-	close Err;
-	waitpid( $pid, 0 );
+    my @err = <Err>;
+    close Writer;
+    close Reader;
+    close Err;
+    waitpid( $pid, 0 );
 
     # clear child pid
     $::CHILD_PID = undef;
 
-	# Report number of times edge species became populated without network expansion
-	if ($edge_warning)
+    # Report number of times edge species became populated without network expansion
+    if ($edge_warning)
     {   send_warning("Edge species of truncated network became populated $edge_warning times");   }
 
-	if (@err)
+    if (@err)
     {   # print any errors received from 
-		print @err;
-		return sprintf("%s\n  did not run successfully.", join(" ", @command));
-	}
+        print @err;
+        return sprintf("%s\n  did not run successfully.", join(" ", @command));
+    }
 
-	unless ( $last_msg =~ /^Program times:/ )
+    unless ( $last_msg =~ /^Program times:/ )
     {   return sprintf("%s\n  did not run successfully.", join(" ", @command));  }
 
 
@@ -495,52 +567,52 @@ sub simulate
     if ( $otf  and  $model->SpeciesList )
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
-	    $err = $model->writeNET( {prefix => "$netpre"} );
+        $err = $model->writeNET( {prefix => "$netpre"} );
         if ($err) { return $err; }
     }
 
 
     # Report steady state
-	if ($steady_state)
+    if ($steady_state)
     {
-		send_warning("Steady_state status = $steady_state_reached");
-		unless ( $steady_state_reached )
+        send_warning("Steady_state status = $steady_state_reached");
+        unless ( $steady_state_reached )
         {   return "Simulation did not reach steady state by t_end=$t_end";   }
-	}
+    }
 
-	# If there are no errors or flags so far, let's load output concentrations
-	if ( !($model->RxnList) )
+    # If there are no errors or flags so far, let's load output concentrations
+    if ( !($model->RxnList) )
     {   # TODO: what does this accomplish? --Justin
-		send_warning("Not updating species concentrations because no model has been read");
-	}
-	elsif ( -e "$prefix.cdat" )
+        send_warning("Not updating species concentrations because no model has been read");
+    }
+    elsif ( -e "$prefix.cdat" )
     {
-		print "Updating species concentrations from $prefix.cdat\n";
-		open CDAT, '<', "$prefix.cdat" ;
-		my $last_line = '';
-		while (my $line = <CDAT>) {  $last_line = $line;  }
-		close CDAT;
+        print "Updating species concentrations from $prefix.cdat\n";
+        open CDAT, '<', "$prefix.cdat" ;
+        my $last_line = '';
+        while (my $line = <CDAT>) {  $last_line = $line;  }
+        close CDAT;
 
-		# Update Concentrations with concentrations from last line of CDAT file
+        # Update Concentrations with concentrations from last line of CDAT file
         my ($time, $conc);
-		($time, @$conc) = split ' ', $last_line;
-		my $species = $model->SpeciesList->Array;
-		unless ( $#$conc == $#$species )
+        ($time, @$conc) = split ' ', $last_line;
+        my $species = $model->SpeciesList->Array;
+        unless ( $#$conc == $#$species )
         {
-			$err = sprintf "Number of species in model (%d) and CDAT file (%d) differ", scalar @$species, scalar @$conc;
-			return $err;
-		}
-		$model->Concentrations( $conc );
-		$model->UpdateNet(1);
-	}
-	else
-    {	return "CDAT file is missing";   }
+            $err = sprintf "Number of species in model (%d) and CDAT file (%d) differ", scalar @$species, scalar @$conc;
+            return $err;
+        }
+        $model->Concentrations( $conc );
+        $model->UpdateNet(1);
+    }
+    else
+    {    return "CDAT file is missing";   }
 
     # Set model time to t_end
-	$model->Time($t_end);
+    $model->Time($t_end);
 
     # all finished!
-	return '';
+    return '';
 }
 
 
@@ -553,21 +625,21 @@ sub simulate
 
 sub simulate_nf
 {
-	use IPC::Open3;
+    use IPC::Open3;
 
-	my $model  = shift;
-	my $params = shift;
-	my $err;
+    my $model  = shift;
+    my $params = shift;
+    my $err;
 
-	my $prefix  = ( defined $params->{prefix} )  ? $params->{prefix}  : $model->getOutputPrefix();
-	my $suffix  = ( defined $params->{suffix} )  ? $params->{suffix}  : '';
-	my $verbose = ( defined $params->{verbose} ) ? $params->{verbose} : 0;
-	my $complex = ( defined $params->{complex} ) ? $params->{complex} : 0;
+    my $prefix  = ( defined $params->{prefix} )  ? $params->{prefix}  : $model->getOutputPrefix();
+    my $suffix  = ( defined $params->{suffix} )  ? $params->{suffix}  : '';
+    my $verbose = ( defined $params->{verbose} ) ? $params->{verbose} : 0;
+    my $complex = ( defined $params->{complex} ) ? $params->{complex} : 0;
     my $get_final_state = ( defined $params->{get_final_state} ) ? $params->{get_final_state} : 0;
-	# Handle other command line args.
-	my $otherCommandLineParameters = ( defined $params->{param} ) ? $params->{param} : '';
+    # Handle other command line args.
+    my $otherCommandLineParameters = ( defined $params->{param} ) ? $params->{param} : '';
 
-	return '' if $BNGModel::NO_EXEC;
+    return '' if $BNGModel::NO_EXEC;
 
     if ( $model->Params->{no_nfsim} )
     {   # don't execute NFsim if nf_nfsim parameter is true
@@ -575,101 +647,101 @@ sub simulate_nf
         return '';
     }
 
-	if ( $suffix ne '' ) {
-		$prefix .= "_${suffix}";
-	}
+    if ( $suffix ne '' ) {
+        $prefix .= "_${suffix}";
+    }
 
-	print "Netfree simulation using NFsim\n";
-	my $program;
-	unless ( $program = findExec("NFsim") ) {
-		return "Could not find executable NFsim";
-	}
+    print "Netfree simulation using NFsim\n";
+    my $program;
+    unless ( $program = findExec("NFsim") ) {
+        return "Could not find executable NFsim";
+    }
     my @command = ($program);
 
-	# Write BNG xml file
-	$model->writeXML( { prefix => $prefix } );
+    # Write BNG xml file
+    $model->writeXML( { prefix => $prefix } );
 
-	# Defined command line
+    # Defined command line
     push @command, "-xml", "${prefix}.xml", "-o", "${prefix}.gdat";
     if ( $get_final_state ){
         push @command, "-ss", "${prefix}.species";
     }
 
-	# Append the run time and output intervals
-	my $t_start;
-	if ( defined( $params->{t_start} ) ) {
-		$t_start = $params->{t_start};
-		$model->Time($t_start);
-	}
-	else {
-		$t_start = ( defined( $model->Time ) ) ? $model->Time : 0;
-	}
+    # Append the run time and output intervals
+    my $t_start;
+    if ( defined( $params->{t_start} ) ) {
+        $t_start = $params->{t_start};
+        $model->Time($t_start);
+    }
+    else {
+        $t_start = ( defined( $model->Time ) ) ? $model->Time : 0;
+    }
 
     my $t_end;
-	if ( defined $params->{n_steps} )
+    if ( defined $params->{n_steps} )
     {
-		my ($n_steps, $t_end);
-		$n_steps = $params->{n_steps};
-		if ( $n_steps < 1 )
+        my ($n_steps, $t_end);
+        $n_steps = $params->{n_steps};
+        if ( $n_steps < 1 )
         {   return "No simulation output requested: set n_steps>0";   }
 
-		if ( defined $params->{t_end} )
+        if ( defined $params->{t_end} )
         {   $t_end = $params->{t_end};   }
-		else
+        else
         {   return "Parameter t_end must be defined";   }
 
         push @command, "-sim", $t_end, "-oSteps", $n_steps;
-	}
-	elsif ( defined $params->{sample_times} )
+    }
+    elsif ( defined $params->{sample_times} )
     {
-		return "sample_times not supported in this version of NFsim";
-	}
-	else
+        return "sample_times not supported in this version of NFsim";
+    }
+    else
     {
-		return "No simulation output requested: set n_steps>0";
-	}
+        return "No simulation output requested: set n_steps>0";
+    }
 
-	# Append the other command line arguments
+    # Append the other command line arguments
     push @command, split(" ", $otherCommandLineParameters);
 
-	# Turn on complex bookkeeping if requested
-	# TODO: Automatic check for turning this on
-	if ($complex) { push @command, "-cb"; }
-	if ($verbose) { push @command, "-v";  }
+    # Turn on complex bookkeeping if requested
+    # TODO: Automatic check for turning this on
+    if ($complex) { push @command, "-cb"; }
+    if ($verbose) { push @command, "-v";  }
 
-	print "Running NFsim on ", `hostname`;
-	printf "full command: %s\n", join(" ", @command);
+    print "Running NFsim on ", `hostname`;
+    printf "full command: %s\n", join(" ", @command);
 
-	# Compute timecourses using nfsim
-	# start simulator as child process with communication pipes
-	local ( *Reader, *Writer, *Err );
-	my $pid = eval{ open3( \*Writer, \*Reader, \*Err, @command ) };
+    # Compute timecourses using nfsim
+    # start simulator as child process with communication pipes
+    local ( *Reader, *Writer, *Err );
+    my $pid = eval{ open3( \*Writer, \*Reader, \*Err, @command ) };
     if ($@) { return sprintf("%s failed: $@", join(" ", @command)); }
 
     # remember child PID
     $::CHILD_PID = $pid;
     print "[simulation PID is: $pid]\n";
 
-	my $last = '';
-	while ( <Reader> )
+    my $last = '';
+    while ( <Reader> )
     {
-		print;
-		$last = $_;
-	}
-	( my @err = <Err> );
+        print;
+        $last = $_;
+    }
+    ( my @err = <Err> );
 
-	close Writer;
-	close Reader;
-	close Err;
-	waitpid( $pid, 0 );
+    close Writer;
+    close Reader;
+    close Err;
+    waitpid( $pid, 0 );
 
     # clear child pid
     $::CHILD_PID = undef;
 
-	if (@err) {
-		print "Error log:\n", @err;
-		return sprintf("%s did not run successfully.", join(" ", @command));
-	}
+    if (@err) {
+        print "Error log:\n", @err;
+        return sprintf("%s did not run successfully.", join(" ", @command));
+    }
 
     if ( $get_final_state ){
         # Update final species concentrations to allow trajectory continuation
@@ -686,7 +758,7 @@ sub simulate_nf
     }
 
     $model->Time($t_end);
-	return '';
+    return '';
 }
 
 
@@ -705,35 +777,35 @@ sub readNFspecies
     my $model = shift @_;
     my $fname = shift @_;
 
-	my $conc;
-	if ($model->SpeciesList)
+    my $conc;
+    if ($model->SpeciesList)
     {
-	    $conc = [ (0) x scalar @{$model->SpeciesList->Array} ];
-	}
+        $conc = [ (0) x scalar @{$model->SpeciesList->Array} ];
+    }
     else
     {        
         $conc = [];
         # create species list
-	    $model->SpeciesList( SpeciesList->new );
-	}
+        $model->SpeciesList( SpeciesList->new );
+    }
     my $slist = $model->SpeciesList;
 
-	# Read NFsim species file
-	print "readNFspecies::Reading from file $fname\n";
+    # Read NFsim species file
+    print "readNFspecies::Reading from file $fname\n";
     my $FH;
-	unless ( open my $FH, '<', $fname )
+    unless ( open my $FH, '<', $fname )
     {   return "Couldn't read from file $fname: $!";   }
 
     my $n_spec_read = 0;
     my $n_spec_new = 0;
     my $line_num = 0;
-	while ( my $string = <$FH> )
-	{
+    while ( my $string = <$FH> )
+    {
         ++$line_num;
-		chomp $string;                 # remove line return
+        chomp $string;                 # remove line return
         $string =~ s/^\s+//;           # remove leading whitespace
-		$string =~ s/\#.*$//;          # remove comments
-		next unless $string =~ /\S+/;  # skip blank lines
+        $string =~ s/\#.*$//;          # remove comments
+        next unless $string =~ /\S+/;  # skip blank lines
 
         # Read species string
         my $sg = SpeciesGraph->new();
@@ -771,9 +843,9 @@ sub readNFspecies
     
     close $FH;
 
-	$model->Concentrations( $conc );
+    $model->Concentrations( $conc );
     printf "Read %d unique species of %d total.\n", $n_spec_new, $n_spec_read;
-	return '';
+    return '';
 }
 
 
@@ -788,8 +860,8 @@ sub readNFspecies
 #  --Justin, 21mar2001
 sub generate_hybrid_model
 {
-	my $model        = shift;
-	my $user_options = shift;
+    my $model        = shift;
+    my $user_options = shift;
 
 
     my $indent = '    ';
@@ -798,14 +870,14 @@ sub generate_hybrid_model
 
 
     # default options
-	my $options =
+    my $options =
     {   'prefix'     => '',
         'suffix'     => 'hybrid',
-		'overwrite'  => 0,
-		'verbose'    => 0,
-		'actions'    => ['writeXML()'],
-		'execute'    => 0
-	};
+        'overwrite'  => 0,
+        'verbose'    => 0,
+        'actions'    => ['writeXML()'],
+        'execute'    => 0
+    };
     # get user options
     while ( my ($opt,$val) = each %$user_options )
     {
@@ -817,61 +889,61 @@ sub generate_hybrid_model
     }
 
     # do nothing if $NO_EXEC is true
-	return '' if $BNGModel::NO_EXEC;
+    return '' if $BNGModel::NO_EXEC;
 
 
     # determine prefix, modelname and filename
     my $prefix = ( $options->{prefix} ) ? $options->{prefix} : $model->getOutputPrefix() .'_'. $options->{suffix};
     my $modelname = $model->Name .'_'. $options->{suffix};
-	my $modelfile = $prefix . '.bngl';
+    my $modelfile = $prefix . '.bngl';
 
-	if ( -e $modelfile )
-	{
-		if ($options->{overwrite})
-		{
-			send_warning( "Overwriting older model file: $modelfile" );
-			unlink $modelfile;
-		}
-		else
-		{
-			return "Model file $modelfile already exists. Set overwrite=>1 option to force overwrite.";
-		}
-	}
+    if ( -e $modelfile )
+    {
+        if ($options->{overwrite})
+        {
+            send_warning( "Overwriting older model file: $modelfile" );
+            unlink $modelfile;
+        }
+        else
+        {
+            return "Model file $modelfile already exists. Set overwrite=>1 option to force overwrite.";
+        }
+    }
 
 
     # check if a ParamList exists
-	unless ( defined $model->ParamList )
-	{   return sprintf "Cannot continue! Model %s does not have a parameter list.", $model->Name;   }
+    unless ( defined $model->ParamList )
+    {   return sprintf "Cannot continue! Model %s does not have a parameter list.", $model->Name;   }
 
     # Check for MoleculeTypes
-	unless ( defined $model->MoleculeTypesList  and  %{$model->MoleculeTypesList->MolTypes} )
-	{   return sprintf "Nothing to do! Model %s has zero molecule type definitions.", $model->Name;   } 	
+    unless ( defined $model->MoleculeTypesList  and  %{$model->MoleculeTypesList->MolTypes} )
+    {   return sprintf "Nothing to do! Model %s has zero molecule type definitions.", $model->Name;   }     
 
     # check if a SpeciesList exists
-	unless ( defined $model->SpeciesList  and  @{$model->SpeciesList->Array} )
-	{   return sprintf "Nothing to do! Model %s has zero seed species definitions.", $model->Name;   }
+    unless ( defined $model->SpeciesList  and  @{$model->SpeciesList->Array} )
+    {   return sprintf "Nothing to do! Model %s has zero seed species definitions.", $model->Name;   }
 
     # Check for RxnRules
     unless ( defined $model->RxnRules  and  @{$model->RxnRules} )
-	{   return sprintf "Nothing to do! Model %s has zero reaction rule definitions.", $model->Name;   } 
+    {   return sprintf "Nothing to do! Model %s has zero reaction rule definitions.", $model->Name;   } 
 
     # check if PopulationTypesList exists
-	unless ( defined $model->PopulationTypesList  and  %{$model->PopulationTypesList->MolTypes} )
-	{   return sprintf "Nothing to do! Model %s has zero population type definitions.", $model->Name;   }
+    unless ( defined $model->PopulationTypesList  and  %{$model->PopulationTypesList->MolTypes} )
+    {   return sprintf "Nothing to do! Model %s has zero population type definitions.", $model->Name;   }
 
     # check if PopulationList exists
-	unless ( defined $model->PopulationList  and  @{$model->PopulationList->List} )
-	{   return sprintf "Nothing to do! Model %s has zero population map definitions.", $model->Name;   }
+    unless ( defined $model->PopulationList  and  @{$model->PopulationList->List} )
+    {   return sprintf "Nothing to do! Model %s has zero population map definitions.", $model->Name;   }
    
     
     # create new model!
     my $hybrid_model = BNGModel::new();
-	
-	$hybrid_model->Name( $modelname );
-	$hybrid_model->Version( $model->Version );
-	$hybrid_model->SubstanceUnits( $model->SubstanceUnits );
+    
+    $hybrid_model->Name( $modelname );
+    $hybrid_model->Version( $model->Version );
+    $hybrid_model->SubstanceUnits( $model->SubstanceUnits );
 
-    # copy options	
+    # copy options    
     %{$hybrid_model->Options} = %{$model->Options};
     # set prefix
     $hybrid_model->Options->{prefix} = $prefix;
@@ -930,8 +1002,8 @@ sub generate_hybrid_model
         
             # check if this is isomorphic to any of our populations
             my $is_pop = 0;
-	        foreach my $pop ( @{$model->PopulationList->List} )
-	        {
+            foreach my $pop ( @{$model->PopulationList->List} )
+            {
                 if ( SpeciesGraph::isomorphicTo($species->SpeciesGraph, $pop->Species) )
                 {   # add the population instead of the speciesGraph
                     my $sg_copy = $pop->Population->copy();
@@ -961,8 +1033,8 @@ sub generate_hybrid_model
     {
         print $indent . "$step_index:Adding populations with zero counts to seed species..\n"; ++$step_index;     
         my $zero_pops = 0;
-    	foreach my $pop ( @{$model->PopulationList->List} )
-    	{
+        foreach my $pop ( @{$model->PopulationList->List} )
+        {
             my ($sp) = $slist_new->lookup( $pop->Population );
             unless ( $sp )
             {
@@ -991,14 +1063,14 @@ sub generate_hybrid_model
             # get a parameter that points to this observable
             if ( $plist_new->set( $obs_copy->Name, '0', 1, "Observable", $obs_copy) )
             {
-      	        my $name = $obs_copy->Name;
+                  my $name = $obs_copy->Name;
                 return "Observable name $name clashes with previously defined Observable or Parameter";
             }
       
             # find populations to add to observable
             my @add_patterns = ();
             foreach my $pop ( @{$model->PopulationList->List} )
-	        {
+            {
                 my $matches = $obs_copy->match( $pop->Species );
             
                 if ($matches)
@@ -1039,30 +1111,30 @@ sub generate_hybrid_model
     $hybrid_model->RxnRules( $rxnrules_new );
     {
         print $indent . "$step_index:Refining rules with respect to population objects..\n"; ++$step_index;   
-	
+    
         # get the species graphs corresponding to each population
         my $pop_species = [];
         foreach my $pop ( @{$model->PopulationList->List} )
         {   push @$pop_species, $pop->Species;   }
         my $n_popspec = scalar @$pop_species;
-	
-	    # loop over rules
-	    my $rule_count = 0;
-	    foreach my $rset ( @{$model->RxnRules} )
-	    {
-	        # NOTE: each element of @RxnRules is an array of reactions.
-	        #  If a rule is unidirectional, then the array has a single element.
-	        #  If a rule is bidirectional, then the array has two elements (forward and reverse)	
-		    foreach my $rr (@$rset)
-		    {    
-		        # first copy the rule so we don't mess with the orginal model
-		        my $rr_copy = $rr->copy();
-		        $rr_copy->resetLabels();
-		    
+    
+        # loop over rules
+        my $rule_count = 0;
+        foreach my $rset ( @{$model->RxnRules} )
+        {
+            # NOTE: each element of @RxnRules is an array of reactions.
+            #  If a rule is unidirectional, then the array has a single element.
+            #  If a rule is bidirectional, then the array has two elements (forward and reverse)    
+            foreach my $rr (@$rset)
+            {    
+                # first copy the rule so we don't mess with the orginal model
+                my $rr_copy = $rr->copy();
+                $rr_copy->resetLabels();
+            
                 # apply rule to species
-			    my $refinements = $rr_copy->refineRule(  $pop_species, $model, $hybrid_model, {verbose => $options->{verbose}} );
-			    foreach my $refinement ( @$refinements )
-			    {
+                my $refinements = $rr_copy->refineRule(  $pop_species, $model, $hybrid_model, {verbose => $options->{verbose}} );
+                foreach my $refinement ( @$refinements )
+                {
                     push @$rxnrules_new, [$refinement];
                 }
                 if ( $options->{verbose} )
@@ -1070,9 +1142,9 @@ sub generate_hybrid_model
                     print $indent.$indent . sprintf "Rule %s: created %d refinement%s.\n",
                                                     $rr_copy->Name, scalar @$refinements, ((scalar @$refinements > 1)?'s':'');
                 }
-			    ++$rule_count;
-	        }
-	    }
+                ++$rule_count;
+            }
+        }
         print $indent . sprintf "  ..finished processing %d reaction rules.\n", $rule_count;
     }
 
@@ -1081,8 +1153,8 @@ sub generate_hybrid_model
     {
         print $indent . "$step_index:Fetching population maps.. "; ++$step_index;
         foreach my $pop ( @{$model->PopulationList->List} )
-	    {
-	        # write rule as string
+        {
+            # write rule as string
             my $rr_string = $pop->MappingRule->toString();
             # remove the linebreak
             $rr_string =~ s/\\\s//;
@@ -1100,10 +1172,10 @@ sub generate_hybrid_model
     $hybrid_model->RxnList( $rxnlist_new );
     
 
-	# Print hybrid model to file
+    # Print hybrid model to file
     my $FH;
-    print $indent . "$step_index:Attempting to write hybrid BNGL.. "; ++$step_index;    	
-	unless ( open $FH, '>', $modelfile ) {  return "Couldn't write to $modelfile: $!\n";  }
+    print $indent . "$step_index:Attempting to write hybrid BNGL.. "; ++$step_index;        
+    unless ( open $FH, '>', $modelfile ) {  return "Couldn't write to $modelfile: $!\n";  }
     print $FH $hybrid_model->writeBNGL( {'format'=>'bngl', 'include_model'=>1,'include_network'=>0,
                                          'pretty_formatting'=>1,'evaluate_expressions'=>0} );
     # writing actions!
@@ -1117,26 +1189,26 @@ sub generate_hybrid_model
         $action_string .= "\n";
         print $FH $action_string;
     }
-	close $FH;
-	
-	
-	print "done.\n";
-	print "Wrote hybrid model to file $modelfile.\n";
-	
-	if ( $options->{execute} )
-	{   # execute actions
-	    my $errors = [];
+    close $FH;
+    
+    
+    print "done.\n";
+    print "Wrote hybrid model to file $modelfile.\n";
+    
+    if ( $options->{execute} )
+    {   # execute actions
+        my $errors = [];
         foreach my $action ( @{$options->{actions}} )
         {
             my $action_string = "\$hybrid_model->$action";
             my $err = eval "$action_string";
             if ($@)   {  warn $@;  }
             if ($err) {  push @$errors, $err;  }
-        }	
+        }    
         if (@$errors) {  return join "\n", $errors;  }
-	}
-	
-	return '';
+    }
+    
+    return '';
 }
 
 
@@ -1339,18 +1411,18 @@ sub LinearParameterSensitivity
     #'netfile_paramname_suffix.(c)(g)dat', where netfile is the .net model file
     #and paramname is the bumped parameter name, and c/gdat files have meaning as normal
 
-	######################
-	# TODO: NOT IMPLEMENTED YET!!
-	#Additional files are written containing the raw sensitivity coefficients
-	#for each parameter bump
-	#format: 'netfile_paramname_suffix.(c)(g)sc'
-	#going across rows is increasing time
-	#going down columns is increasing species/observable index
-	#first row is time
-	#first column is species/observable index
-	######################
+    ######################
+    # TODO: NOT IMPLEMENTED YET!!
+    #Additional files are written containing the raw sensitivity coefficients
+    #for each parameter bump
+    #format: 'netfile_paramname_suffix.(c)(g)sc'
+    #going across rows is increasing time
+    #going down columns is increasing species/observable index
+    #first row is time
+    #first column is species/observable index
+    ######################
 
-	#Starting time assumed to be 0
+    #Starting time assumed to be 0
 
     #Input Hash Elements:
     #REQUIRED PARAMETERS
@@ -1373,188 +1445,188 @@ sub LinearParameterSensitivity
     #default 50
     #suffix:  added to end of filename before extension; string; default ""
 
-	#Variable Declaration and Initialization
-	use strict;
-	my $model;     #the BNG model
-	my %params;    #the input parameter hash table
-	my $net_file = "";
-	my %inp_pert;
-	my $t_end;
-	my %readFileinputs;
-	my %simodeinputs;
-	my $simname;
-	my $basemodel = BNGModel->new();
-	my $plist;
-	my $param_name;
-	my $param_value;
-	my $new_param_value;
-	my $pperts;
-	my $cperts;
-	my $pert_names;
-	my $pert_values;
-#	my $pert_names;
-#	my $pert_values;
-	my $newbumpmodel = BNGModel->new();
-	my $foo;
-	my $i;
+    #Variable Declaration and Initialization
+    use strict;
+    my $model;     #the BNG model
+    my %params;    #the input parameter hash table
+    my $net_file = "";
+    my %inp_pert;
+    my $t_end;
+    my %readFileinputs;
+    my %simodeinputs;
+    my $simname;
+    my $basemodel = BNGModel->new();
+    my $plist;
+    my $param_name;
+    my $param_value;
+    my $new_param_value;
+    my $pperts;
+    my $cperts;
+    my $pert_names;
+    my $pert_values;
+#    my $pert_names;
+#    my $pert_values;
+    my $newbumpmodel = BNGModel->new();
+    my $foo;
+    my $i;
 
-	#Initialize model and input parameters
+    #Initialize model and input parameters
 
-	$model  = shift;
-	my $params = shift;
+    $model  = shift;
+    my $params = shift;
 
-	#Required params
-	if ( defined( $params->{net_file} ) ) {
-		$net_file = $params->{net_file};
-	}
-	else {
-		$net_file = $model->getOutputPrefix();
-	}
-	if ( defined( $params->{t_end} ) ) {
-		$t_end = $params->{t_end};
-	}
-	else {
-		return ("t_end not defined");
-	}
+    #Required params
+    if ( defined( $params->{net_file} ) ) {
+        $net_file = $params->{net_file};
+    }
+    else {
+        $net_file = $model->getOutputPrefix();
+    }
+    if ( defined( $params->{t_end} ) ) {
+        $t_end = $params->{t_end};
+    }
+    else {
+        return ("t_end not defined");
+    }
 
-	#Optional params
-	my $bump     = ( defined( $params->{bump} ) )     ? $params->{bump}     : 5;
-	my $stochast = ( defined( $params->{stochast} ) ) ? $params->{stochast} : 0;
-	my $sparse   = ( defined( $params->{sparse} ) )   ? $params->{sparse}   : 1;
-	my $atol = ( defined( $params->{atol} ) ) ? $params->{atol} : 1e-8;
-	my $rtol = ( defined( $params->{rtol} ) ) ? $params->{rtol} : 1e-8;
-	my $init_equil =
-	  ( defined( $params->{init_equil} ) ) ? $params->{init_equil} : 1;
-	my $t_equil = ( defined( $params->{t_equil} ) ) ? $params->{t_equil} : 1e6;
-	my $re_equil = ( defined( $params->{re_equil} ) ) ? $params->{re_equil} : 1;
-	my $n_steps = ( defined( $params->{n_steps} ) ) ? $params->{n_steps} : 50;
-	my $suffix  = ( defined( $params->{suffix} ) )  ? $params->{suffix}  : "";
+    #Optional params
+    my $bump     = ( defined( $params->{bump} ) )     ? $params->{bump}     : 5;
+    my $stochast = ( defined( $params->{stochast} ) ) ? $params->{stochast} : 0;
+    my $sparse   = ( defined( $params->{sparse} ) )   ? $params->{sparse}   : 1;
+    my $atol = ( defined( $params->{atol} ) ) ? $params->{atol} : 1e-8;
+    my $rtol = ( defined( $params->{rtol} ) ) ? $params->{rtol} : 1e-8;
+    my $init_equil =
+      ( defined( $params->{init_equil} ) ) ? $params->{init_equil} : 1;
+    my $t_equil = ( defined( $params->{t_equil} ) ) ? $params->{t_equil} : 1e6;
+    my $re_equil = ( defined( $params->{re_equil} ) ) ? $params->{re_equil} : 1;
+    my $n_steps = ( defined( $params->{n_steps} ) ) ? $params->{n_steps} : 50;
+    my $suffix  = ( defined( $params->{suffix} ) )  ? $params->{suffix}  : "";
 
-	#Run base case simulation
-	%readFileinputs = ( file => "$net_file.net" );
-	$basemodel->readFile( \%readFileinputs );
+    #Run base case simulation
+    %readFileinputs = ( file => "$net_file.net" );
+    $basemodel->readFile( \%readFileinputs );
 
-	#if initial equilibration is required
-	if ($init_equil) {
-		$simname      = "_baseequil_";
-		%simodeinputs = (
-			prefix       => "$net_file$simname$suffix",
-			t_end        => $t_equil,
-			sparse       => $sparse,
-			n_steps      => $n_steps,
-			steady_state => 1,
-			atol         => $atol,
-			rtol         => $rtol
-		);
-		$basemodel->simulate_ode( \%simodeinputs );
-	}
-	$simname      = "_basecase_";
-	%simodeinputs = (
-		prefix       => "$net_file$simname$suffix",
-		t_end        => $t_end,
-		sparse       => $sparse,
-		n_steps      => $n_steps,
-		steady_state => 0,
-		atol         => $atol,
-		rtol         => $rtol
-	);
+    #if initial equilibration is required
+    if ($init_equil) {
+        $simname      = "_baseequil_";
+        %simodeinputs = (
+            prefix       => "$net_file$simname$suffix",
+            t_end        => $t_equil,
+            sparse       => $sparse,
+            n_steps      => $n_steps,
+            steady_state => 1,
+            atol         => $atol,
+            rtol         => $rtol
+        );
+        $basemodel->simulate_ode( \%simodeinputs );
+    }
+    $simname      = "_basecase_";
+    %simodeinputs = (
+        prefix       => "$net_file$simname$suffix",
+        t_end        => $t_end,
+        sparse       => $sparse,
+        n_steps      => $n_steps,
+        steady_state => 0,
+        atol         => $atol,
+        rtol         => $rtol
+    );
 
-	#Implement input perturbations
-	if ( defined( $params->{inp_ppert} ) ) {
-		$pperts      = $params->{inp_ppert};
-		$pert_names  = $pperts->{pnames};
-		$pert_values = $pperts->{pvalues};
-		$i           = 0;
-		while ( $pert_names->[$i] ) {
-			$param_name  = $pert_names->[$i];
-			$param_value = $pert_values->[$i];
-			$basemodel->setParameter( $param_name, $param_value );
-			$i = $i + 1;
-		}
-	}
-	if ( defined( $params->{inp_cpert} ) ) {
-		$cperts      = $params->{inp_cpert};
-		$pert_names  = $cperts->{cnames};
-		$pert_values = $cperts->{cvalues};
-		$i           = 0;
-		while ( $pert_names->[$i] ) {
-			$param_name  = $pert_names->[$i];
-			$param_value = $pert_values->[$i];
-			$basemodel->setConcentration( $param_name, $param_value );
-			$i = $i + 1;
-		}
-	}
-	$basemodel->simulate_ode( \%simodeinputs );
+    #Implement input perturbations
+    if ( defined( $params->{inp_ppert} ) ) {
+        $pperts      = $params->{inp_ppert};
+        $pert_names  = $pperts->{pnames};
+        $pert_values = $pperts->{pvalues};
+        $i           = 0;
+        while ( $pert_names->[$i] ) {
+            $param_name  = $pert_names->[$i];
+            $param_value = $pert_values->[$i];
+            $basemodel->setParameter( $param_name, $param_value );
+            $i = $i + 1;
+        }
+    }
+    if ( defined( $params->{inp_cpert} ) ) {
+        $cperts      = $params->{inp_cpert};
+        $pert_names  = $cperts->{cnames};
+        $pert_values = $cperts->{cvalues};
+        $i           = 0;
+        while ( $pert_names->[$i] ) {
+            $param_name  = $pert_names->[$i];
+            $param_value = $pert_values->[$i];
+            $basemodel->setConcentration( $param_name, $param_value );
+            $i = $i + 1;
+        }
+    }
+    $basemodel->simulate_ode( \%simodeinputs );
 
-	$plist = $basemodel->ParamList;
+    $plist = $basemodel->ParamList;
 
-	#For every parameter in the model
-	foreach my $model_param ( @{ $plist->Array } )
+    #For every parameter in the model
+    foreach my $model_param ( @{ $plist->Array } )
     {
-		$param_name      = $model_param->Name;
-		$param_value     = $model_param->evaluate();
-		$new_param_value = $param_value * ( 1 + $bump / 100 );
+        $param_name      = $model_param->Name;
+        $param_value     = $model_param->evaluate();
+        $new_param_value = $param_value * ( 1 + $bump / 100 );
 
-		#Get fresh model and bump parameter
-		$newbumpmodel->readFile( \%readFileinputs );
-		$newbumpmodel->setParameter( $param_name, $new_param_value );
+        #Get fresh model and bump parameter
+        $newbumpmodel->readFile( \%readFileinputs );
+        $newbumpmodel->setParameter( $param_name, $new_param_value );
 
-		#Reequilibrate
-		if ($re_equil) {
-			$simname = "equil_${param_name}";
-			%simodeinputs = ( prefix       => "${net_file}_${simname}_${suffix}",
-				              t_end        => $t_equil,
-				              sparse       => $sparse,
-				              n_steps      => $n_steps,
-				              steady_state => 1,
-				              atol         => $atol,
-				              rtol         => $rtol
-			                );
-			$newbumpmodel->simulate_ode( \%simodeinputs );
-		}
+        #Reequilibrate
+        if ($re_equil) {
+            $simname = "equil_${param_name}";
+            %simodeinputs = ( prefix       => "${net_file}_${simname}_${suffix}",
+                              t_end        => $t_equil,
+                              sparse       => $sparse,
+                              n_steps      => $n_steps,
+                              steady_state => 1,
+                              atol         => $atol,
+                              rtol         => $rtol
+                            );
+            $newbumpmodel->simulate_ode( \%simodeinputs );
+        }
 
-		#Implement input and run simulation
-		$simname = $param_name;
-		%simodeinputs = (
-			prefix       => "${net_file}_${simname}_${suffix}",
-			t_end        => $t_end,
-			sparse       => $sparse,
-			n_steps      => $n_steps,
-			steady_state => 0,
-			atol         => $atol,
-			rtol         => $rtol
-		);
-		if ( defined( $params->{inp_ppert} ) ) {
-			$pperts      = $params->{inp_ppert};
-			$pert_names  = $pperts->{pnames};
-			$pert_values = $pperts->{pvalues};
-			$i           = 0;
-			while ( $pert_names->[$i] ) {
-				$param_name  = $pert_names->[$i];
-				$param_value = $pert_values->[$i];
-				$newbumpmodel->setParameter( $param_name, $param_value );
-				$i = $i + 1;
-			}
-		}
-		if ( defined( $params->{inp_cpert} ) ) {
-			$cperts      = $params->{inp_cpert};
-			$pert_names  = $cperts->{cnames};
-			$pert_values = $cperts->{cvalues};
-			$i           = 0;
-			while ( $pert_names->[$i] ) {
-				$param_name  = $pert_names->[$i];
-				$param_value = $pert_values->[$i];
-				$newbumpmodel->setConcentration( $param_name, $param_value );
-				$i = $i + 1;
-			}
-		}
-		$newbumpmodel->simulate_ode( \%simodeinputs );
+        #Implement input and run simulation
+        $simname = $param_name;
+        %simodeinputs = (
+            prefix       => "${net_file}_${simname}_${suffix}",
+            t_end        => $t_end,
+            sparse       => $sparse,
+            n_steps      => $n_steps,
+            steady_state => 0,
+            atol         => $atol,
+            rtol         => $rtol
+        );
+        if ( defined( $params->{inp_ppert} ) ) {
+            $pperts      = $params->{inp_ppert};
+            $pert_names  = $pperts->{pnames};
+            $pert_values = $pperts->{pvalues};
+            $i           = 0;
+            while ( $pert_names->[$i] ) {
+                $param_name  = $pert_names->[$i];
+                $param_value = $pert_values->[$i];
+                $newbumpmodel->setParameter( $param_name, $param_value );
+                $i = $i + 1;
+            }
+        }
+        if ( defined( $params->{inp_cpert} ) ) {
+            $cperts      = $params->{inp_cpert};
+            $pert_names  = $cperts->{cnames};
+            $pert_values = $cperts->{cvalues};
+            $i           = 0;
+            while ( $pert_names->[$i] ) {
+                $param_name  = $pert_names->[$i];
+                $param_value = $pert_values->[$i];
+                $newbumpmodel->setConcentration( $param_name, $param_value );
+                $i = $i + 1;
+            }
+        }
+        $newbumpmodel->simulate_ode( \%simodeinputs );
 
-		#Evaluate sensitivities and write to file
+        #Evaluate sensitivities and write to file
 
-		#Get ready for next bump
-		$newbumpmodel = BNGModel->new();
-	}
+        #Get ready for next bump
+        $newbumpmodel = BNGModel->new();
+    }
 
   
 }

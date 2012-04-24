@@ -2808,7 +2808,8 @@ static int cvode_derivs(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
 	return 0;
 }
 
-int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER, long maxSteps){
+int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER,
+		long maxStep){
 	int error = 0;
 	double t_end;
 	static int n_species;
@@ -2876,9 +2877,9 @@ int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double
 	t_end = (*t) + delta_t;
 	while (1){
 		// Integrate one step at a time
-		if ( (maxSteps-*n_steps) < cvode_maxnumsteps ){
+		if ( (maxStep-*n_steps) < cvode_maxnumsteps ){
 			CVodeSetStopTime(cvode_mem, t_end);
-			while (!error && *n_steps < maxSteps){
+			while (!error && *n_steps < maxStep){
 				error = CVode(cvode_mem, t_end, y, t, CV_ONE_STEP);
 				CVodeGetNumSteps(cvode_mem, n_steps);
 			}
@@ -2890,7 +2891,7 @@ int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double
 		}
 		// Check error status
 		if (error == CV_SUCCESS){
-			if (*n_steps >= maxSteps) error = 1;
+			if (*n_steps >= maxStep) error = 1;
 			break;
 		}
 		else if (error == CV_TSTOP_RETURN){
@@ -2918,7 +2919,7 @@ int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double
 
 #define TINY 1e-8
 
-int propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, long maxSteps){
+int propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, long maxStep){
 	int error = 0;
 	int /*i,*/n;
 	int n_species;
@@ -2938,7 +2939,7 @@ int propagate_euler_network(double* t, double delta_t, long int* n_steps, double
 	while (1) {
 
 		// Don't exceed maxStep limit
-		if (*n_steps >= maxSteps){
+		if (*n_steps >= maxStep){
 			error = 1; // Step limit reached
 			break;
 		}
@@ -2976,7 +2977,7 @@ int propagate_euler_network(double* t, double delta_t, long int* n_steps, double
 	return (error);
 }
 
-int propagate_rkcs_network(double* t, double delta_t, long int* n_steps, double tol, long maxSteps) {
+int propagate_rkcs_network(double* t, double delta_t, long int* n_steps, double tol, long maxStep) {
 	int error = 0, n_species;
 	double *X = NULL, *dX = NULL;
 	double t_end, t_left, htry, hdid, dt_inv;
@@ -2999,7 +3000,7 @@ int propagate_rkcs_network(double* t, double delta_t, long int* n_steps, double 
 	while (1) {
 
 		// Don't exceed maxStep limit
-		if (*n_steps >= maxSteps){
+		if (*n_steps >= maxStep){
 			error = 1; // Step limit reached
 			break;
 		}
@@ -4508,7 +4509,7 @@ void update_rxn_rates(int irxn) {
 	return;
 }
 
-int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, long maxSteps) {
+int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, long maxStep) {
 	double t_remain;
 	double rnd;
 	int irxn;
@@ -4526,7 +4527,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 
 	while (1) {
 		// Don't exceed maxStep limit
-		if (GSP.n_steps >= maxSteps){
+		if (GSP.n_steps >= maxStep){
 			error = 1; // Step limit reached
 			break;
 		}

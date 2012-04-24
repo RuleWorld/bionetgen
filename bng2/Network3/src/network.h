@@ -200,10 +200,10 @@ extern int   print_derivs_network(FILE* out);
 extern int   print_derivs_species_network(FILE* out);
 extern int   print_rates_network(FILE* out);
 extern int   print_derivs_byrxn_network(FILE* out);
-extern int   propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER_TYPE,
-									 long maxSteps);
-extern int   propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, long maxSteps);
-extern int   propagate_rkcs_network (double* t, double delta_t, long int* n_steps, double tol, long maxSteps);
+extern int   propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol,
+									 int SOLVER_TYPE, long maxStep);
+extern int   propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, long maxStep);
+extern int   propagate_rkcs_network (double* t, double delta_t, long int* n_steps, double tol, long maxStep);
 
 extern FILE* init_print_concentrations_network(char* prefix, int append);
 extern int   print_concentrations_network(FILE* out, double t);
@@ -236,7 +236,7 @@ extern int   print_pca_network(FILE* out, double t);
 
 /* Gillespie Monte Carlo functions */
 extern int      init_gillespie_direct_network(int update_interval, int seed);
-extern int      gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, long maxSteps);
+extern int      gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, long maxStep);
 extern long int gillespie_n_steps();
 extern double   gillespie_frac_species_active();
 extern double   gillespie_frac_rxns_active();
