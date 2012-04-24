@@ -1,5 +1,30 @@
 package BNGModel;
 
+#    BioNetGen : rule-based modeling language and simulation platform
+#
+#                  Copyright (C) 2006,2009,2012 by
+#
+#      James R. Faeder    (faeder at pitt dot edu)
+#      Justin S. Hogg     (justinshogg at gmail dot com)
+#      Leonard A. Harris
+#      John A. P. Sekar
+#      Jose Juan Tapia
+#      Arshi Arora
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 # pragmas
 #use strict;
 #use warnings;
