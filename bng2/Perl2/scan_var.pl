@@ -233,7 +233,7 @@ if ($@) { die $@; }
 
 # remember child PID
 $::CHILD_PID = $pid;
-print ">>> child process ID is: $pid <<<\n";
+print "[child process ID is: $pid]\n";
 
 # create a select object to notify us on reads on our FHs
 my $sel = new IO::Select;
