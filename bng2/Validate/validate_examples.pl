@@ -70,7 +70,6 @@ use File::Spec;
 use Scalar::Util qw( looks_like_number );
 use Config;
 use IO::Handle;
-use IO::Select;
 use IPC::Open3;
 
 
@@ -491,6 +490,26 @@ foreach my $model (@models)
         }
     }
 
+    # check PLA equilibrium distribution (observables)
+    {
+        my $datfile  = "${outprefix}_pla_equil.gdat";
+        my $statfile = "${datprefix}_pla_equil.stats";
+        if ( -e $datfile  and  -e $statfile )
+        {
+            multi_print( " -> checking PLA equillibirum distribution\n", @allFH );
+            my $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
+            if ( defined $exit_status )
+            {
+                multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+                print "see $log_file form more details.\n";
+                close $log;
+                ++$fail_count;
+                next MODEL;
+            }
+            print $log $SEPARATOR;
+        }
+    }
+
     if ($delete_working_files)
     {   delete_files($outprefix);   }
 
@@ -526,8 +545,8 @@ sub delete_files
     my @suffixes = qw( .net .xml _sbml.xml _cvode.c .cdat .gdat
                        _burnin.net     _burnin.cdat     _burnin.gdat
                        _equil.net      _equil.cdat      _equil.gdat
-                       _ssa_burnin.net _ssa_burnin.cdat _ssa_burnin.gdat
                        _ssa_equil.net  _ssa_equil.cdat  _ssa_equil.gdat 
+                       _pla_equil.net  _ssa_pla.cdat    _pla_equil.gdat
                        _nf_equil.xml   _nf_equil.gdat                    
                        .m              _mex.m           _mex_cvode.c 
                        _hybrid.bngl    _hybrid.xml                        );
@@ -905,43 +924,18 @@ sub run_command
     my ($parent_out, $parent_err, @command) = @_;
 
     # start simulator as child process with communication pipes
-    my ($child_in, $child_out, $child_err); 
-    my $pid = eval{ open3( $child_in, $child_out, $child_err, @command ) };
+    my ($child_in, $child_out); 
+    my $pid = eval{ open3( $child_in, $child_out, $child_out, @command ) };
     if ($@) {  print $parent_err "Problem running command: $@";  return -1;  }
 
     # remember child PID
     print $parent_out "running command:\n", join(" ", @command), "\n";
     print $parent_out "[child process ID is: $pid]\n";
 
-    # create a select object to notify us on reads on our FHs
-    my $sel = new IO::Select;
-    $sel->add($child_out,$child_err);
-
     # monitor output of child process
-    while( my @ready_FH = $sel->can_read() )
-    {
-        # read ready
-        foreach my $FH (@ready_FH)
-        { 
-            # get line
-            my $line = <$FH>;
-
-            # examine line
-            if (not defined $line)
-            {   # found EOF
-                $sel->remove($FH);
-            }
-            elsif ( $FH == $child_out )
-            {   # write message to log
-                print $parent_out $line;
-            }
-            elsif ( $FH == $child_err )
-            {   # write message to $stderr and $stderr
-                print $parent_out $line;
-                # also alert user
-                print $parent_err $line;
-            }
-        }
+    while (my $line = <$child_out> )
+    {   # relay to parent
+        print $parent_out $line;
     }
 
     # make sure child process has completed
