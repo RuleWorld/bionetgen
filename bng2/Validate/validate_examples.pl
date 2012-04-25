@@ -70,7 +70,6 @@ use File::Spec;
 use Scalar::Util qw( looks_like_number );
 use Config;
 use IO::Handle;
-use IO::Select;
 use IPC::Open3;
 
 
@@ -925,43 +924,18 @@ sub run_command
     my ($parent_out, $parent_err, @command) = @_;
 
     # start simulator as child process with communication pipes
-    my ($child_in, $child_out, $child_err); 
-    my $pid = eval{ open3( $child_in, $child_out, $child_err, @command ) };
+    my ($child_in, $child_out); 
+    my $pid = eval{ open3( $child_in, $child_out, $child_out, @command ) };
     if ($@) {  print $parent_err "Problem running command: $@";  return -1;  }
 
     # remember child PID
     print $parent_out "running command:\n", join(" ", @command), "\n";
     print $parent_out "[child process ID is: $pid]\n";
 
-    # create a select object to notify us on reads on our FHs
-    my $sel = new IO::Select;
-    $sel->add($child_out,$child_err);
-
     # monitor output of child process
-    while( my @ready_FH = $sel->can_read() )
-    {
-        # read ready
-        foreach my $FH (@ready_FH)
-        { 
-            # get line
-            my $line = <$FH>;
-
-            # examine line
-            if (not defined $line)
-            {   # found EOF
-                $sel->remove($FH);
-            }
-            elsif ( $FH == $child_out )
-            {   # write message to log
-                print $parent_out $line;
-            }
-            elsif ( $FH == $child_err )
-            {   # write message to $stderr and $stderr
-                print $parent_out $line;
-                # also alert user
-                print $parent_err $line;
-            }
-        }
+    while (my $line = <$child_out> )
+    {   # relay to parent
+        print $parent_out $line;
     }
 
     # make sure child process has completed
