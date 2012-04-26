@@ -8,7 +8,7 @@ options {
 }
 import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGrammar_MoleculeDef,BNGGrammar_Observables,BNGGrammar_ReactionRules;
 @header{
-  package bngparser.netGrammar;
+  package bngparser.grammars;
   import bngparser.grammars.BNGLexer;
   import org.antlr.stringtemplate.*;
   import bngparser.dataType.BondList;
