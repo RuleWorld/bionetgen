@@ -21,7 +21,6 @@ use File::Spec;
 use File::Path qw(remove_tree);
 use Config;
 use IO::Handle;
-use IO::Select;
 use IPC::Open3;
 
 
@@ -227,44 +226,28 @@ open( my $logFH, ">", $logfile ) or die $!;
 $logFH->autoflush(1);
 
 # start simulator as child process with communication pipes
-my ($stdin, $stdout, $stderr); 
-my $pid = eval{ open3( $stdin, $stdout, $stderr, @command ) };
+my ($child_in, $child_out); 
+my $pid = eval{ open3( $child_in, $child_out, $child_out, @command ) };
 if ($@) { die $@; }
 
 # remember child PID
 $::CHILD_PID = $pid;
-print ">>> child process ID is: $pid <<<\n";
-
-# create a select object to notify us on reads on our FHs
-my $sel = new IO::Select;
-$sel->add($stdout,$stderr);
+print "[child process ID is: $pid]\n";
 
 # monitor output of child process
-while( my @ready = $sel->can_read() )
-{
-    # read ready
-    foreach my $fh (@ready)
-    { 
-        # get line
-        my $line = <$fh>;
-
-        # examine line
-        if (not defined $line)
-        {   # found EOF
-            $sel->remove($fh);
-        }      
-        elsif ( $line =~ /^ABORT/ )
-        {   # some problem
-            print $logFH $line;
-            print $logFH "Problem running BioNetGen on ${scanmodel}.";
-            # also write message to STDOUT
-            print $line;
-            die "Problem running BioNetGen on $scanmodel";
-        }
-        else
-        {   # write message to log
-            print $logFH $line;
-        }
+while( my $line = <$child_out> )
+{     
+    if ( $line =~ /^ABORT/ )
+    {   # some problem
+        print $logFH $line;
+        print $logFH "Problem running BioNetGen on ${scanmodel}.";
+        # also write message to STDOUT
+        print $line;
+        die "Problem running BioNetGen on $scanmodel";
+    }
+    else
+    {   # write message to log
+        print $logFH $line;
     }
 }
 

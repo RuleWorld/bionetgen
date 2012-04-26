@@ -21,10 +21,21 @@ public class ChangeableChannelTokenStream extends CommonTokenStream
             t = super.tokenSource.nextToken();
             t.setTokenIndex(t.getTokenIndex()+1);
             //t.setTokenIndex(tokenIndex++);
-            
+            System.out.println(t.getTokenIndex());
             if(channels.contains(t.getChannel())) break;
         }
         return t;
+    }
+    
+    @Override
+    public void consume() {
+	     if ( p == -1 ) setup();
+	     	p++;
+	     	sync(p);
+	     while ( !channels.contains(tokens.get(p).getChannel()) ) {
+	         p++;
+	         sync(p);
+	     }
     }
 
     public void setChannel(int ch) {

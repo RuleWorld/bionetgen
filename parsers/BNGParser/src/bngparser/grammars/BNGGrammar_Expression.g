@@ -61,12 +61,16 @@ multiplying_expression returns [Double value]
 : s1=power_expression {$value = s1.value;} 
 ( TIMES s2=power_expression {$value *= s2.value;}
 | DIV s3=power_expression {$value /= s3.value;}
-| MOD s4=power_expression {$value \%= s4.value;})*
+//| MOD s4=power_expression {$value \%= s4.value;}
+)*
 ;
 
 power_expression returns [Double value]
-: s1= sign_expression {$value = s1.value;}
-(POWER s2=sign_expression {$value = Math.pow($value,s2.value);})*
+: 
+(s1= sign_expression {$value = s1.value;}
+(POWER s2=sign_expression {$value = Math.pow($value,s2.value);})*)
+
+
 ;
 
 sign_expression returns [Double value]
@@ -78,11 +82,14 @@ boolean_negation_expression returns [Double value]
 : (n=NOT)? e=primitive_element {$value = e.value * (n == null ? 1 : -1);} 
 ;
 
-primitive_element returns [Double value]: 
+primitive_element returns [Double value]
+: 
         number {$value = $number.value;} 
-        | (STRING LPAREN RPAREN) => function {$value = $function.value;}
+        | (STRING LPAREN (expression2)? RPAREN) => function {$value = $function.value;}
         |  variable {$value = $variable.value;}
-        | LPAREN expression2 RPAREN {$value = $expression2.value;}
+        | EXP LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
+        | LPAREN e2=expression2 RPAREN {$value = $e2.value;}
+        
         ;
 
 number returns [Double value]: s1=INT {$value = Double.parseDouble($INT.text);}
@@ -118,15 +125,17 @@ variable returns [Double value]: s1=STRING {
 ;
 
 function returns [Double value]:
-  s1=STRING LPAREN RPAREN {
+  s1=STRING LPAREN e1=
+  
+  (expression2)? RPAREN {
     try{
       if($expression::lmemory.containsKey($STRING.text)){
                     Register temp = $expression::lmemory.get($STRING.text);
                     $value = temp.getValue();
-                    if(!temp.getType().equals("function")){
+                    if(!temp.getType().equals("function") && !temp.getType().equals("observable")){
                       //throw new RuntimeException($STRING.text + "is in memory but it is not a function. Check syntax", new BNGSemanticException($STRING.text + " is in memory but it is not a function. Check syntax",s1.getLine()));
                       $value = 1.0;
-                       String msg = getErrorMessage(s1,"the following token is in memory but is not a function");
+                       String msg = getErrorMessage(s1,"the following token is in memory but is not a function or an observable");
                       
                       System.err.println(msg);
                     }

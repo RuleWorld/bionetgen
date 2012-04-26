@@ -12,15 +12,11 @@ options {
   this.setTemplateLib(gParent.getTemplateLib());
  }
  List<StringTemplate> actions = new ArrayList<StringTemplate>();
-       @Override
-  public String getErrorMessage(RecognitionException e,String[] tokenNames){
-    return gParent.getErrorMessage(e,tokenNames);
-  }
 }
 
 actions_prog:
 .*
-(actions_block  | (BEGIN ACTIONS LB+ actions_block END ACTIONS LB+))? 
+(actions_block  | (BEGIN ACTIONS actions_block END ACTIONS))? 
 EOF -> actions(actions = {actions})
 ;
 actions_block
@@ -32,7 +28,7 @@ actions_block
 @after{
   gParent.paraphrases.pop();
 }
-        : (action LB*)+
+        : (action)+ 
 ;
 action  : generate_network {actions.add($generate_network.st);}
         | simulate_method {actions.add($simulate_method.st);}
@@ -42,7 +38,6 @@ action  : generate_network {actions.add($generate_network.st);}
         | set_parameter {actions.add($set_parameter.st);}
         | save_concentrations {actions.add($save_concentrations.st);}
         | reset_concentrations {actions.add($reset_concentrations.st);}
-        | add_concentration {actions.add($add_concentration.st);}
         ;
 generate_network
 scope{
@@ -54,7 +49,7 @@ scope{
         : GENERATENETWORK LPAREN (LBRACKET
         ((gn_action_par_def[$generate_network::actions]) 
         (COMMA gn_action_par_def[$generate_network::actions])*)?
-        RBRACKET)? RPAREN SEMI? -> action(id={$GENERATENETWORK.text},optionMap={$generate_network::actions})
+        RBRACKET)? RPAREN SEMI -> action(id={$GENERATENETWORK.text},optionMap={$generate_network::actions})
         ;
         
 gn_action_par_def[Map<String,String> map]
@@ -79,53 +74,38 @@ scope{
         : (simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";}
         | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";}
         | write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";}
-        | write_mex_file[$simulate_method::actions] {$simulate_method::method = "writeMexfile";}
-        | simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";}
-        | simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";}
-        | simulate[$simulate_method::actions] {$simulate_method::method = "simulate";})
+        | simulate_pla[$simulate_method::actions] {$simulate_method::method = "write_pla";}
+        | simulate_nf[$simulate_method::actions] {$simulate_method::method = "write_nf";})
         -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
         ;
-
-
-simulate[Map<String,String> map]:
-        SIMULATE LPAREN (LBRACKET 
-        ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
-          (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
-        RBRACKET)? RPAREN SEMI?
-        ;
 simulate_ode[Map<String,String> map]
-        : SIMULATE_ODE LPAREN (LBRACKET
+        : SIMULATE_ODE LPAREN LBRACKET
          ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
-          RBRACKET)? RPAREN SEMI?
+          RBRACKET RPAREN SEMI
          ;
 simulate_ssa[Map<String,String> map]
-        : SIMULATE_SSA LPAREN (LBRACKET
+        : SIMULATE_SSA LPAREN LBRACKET
           ((ps_par_def[map]|simulate_par_def[map]) (COMMA (ps_par_def[map]|simulate_par_def[map]))*)?
-          RBRACKET)? RPAREN SEMI? ;
+          RBRACKET RPAREN SEMI ;
 
 simulate_nf[Map<String,String> map]
-        : SIMULATE_NF LPAREN (LBRACKET
+        : SIMULATE_NF LPAREN LBRACKET
          ((ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map]))*)? 
-          RBRACKET)? RPAREN SEMI?
+          RBRACKET RPAREN SEMI
          ;
 
 write_m_file[Map<String,String> map]
-        : WRITEMFILE LPAREN (LBRACKET
+        : WRITEMFILE LPAREN LBRACKET
         ((write_m_par_def[map]) (COMMA write_m_par_def[map])*)?
-        RBRACKET)? RPAREN SEMI?;
-
-write_mex_file[Map<String,String> map]
-        : WRITEMEXFILE LPAREN LBRACKET
-        ((write_m_par_def[map]) (COMMA write_m_par_def[map])*)?
-        RBRACKET RPAREN SEMI?;
+        RBRACKET RPAREN SEMI;
       
 simulate_pla[Map<String,String> map]
-    : SIMULATE_PLA LPAREN (LBRACKET
+    : SIMULATE_PLA LPAREN LBRACKET
              ((ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map]))*)? 
-          RBRACKET)? RPAREN SEMI?
+          RBRACKET RPAREN SEMI
      ;
 
 read_file
@@ -137,9 +117,8 @@ scope{
 }
         : READFILE LPAREN 
         (LBRACKET (FILE ASSIGNS STRING {$read_file::actions.put($FILE.text,$STRING.text);})? RBRACKET)? 
-        RPAREN SEMI? -> action(id={$READFILE.text},optionMap={$read_file::actions})
+        RPAREN SEMI -> action(id={$READFILE.text},optionMap={$read_file::actions})
         ;
-//TODO: this is just a stub right now
 write_file
 scope{
   Map<String,String> actions;
@@ -149,7 +128,7 @@ scope{
 }
         : write_type
           LPAREN (LBRACKET RBRACKET)?
-           RPAREN SEMI? -> action(id={$write_type.text})
+           RPAREN SEMI -> action(id={$write_type.text})
         ;
 write_type
         : WRITENET
@@ -165,21 +144,8 @@ scope{
 }
         : SETCONCENTRATION LPAREN variable_definition 
         {$set_concentration::options.put($variable_definition.variableName,$variable_definition.variableValue);}
-        RPAREN SEMI? -> action(id={$SETCONCENTRATION.text},optionMap={$set_concentration::options})
+        RPAREN SEMI -> action(id={$SETCONCENTRATION.text},optionMap={$set_concentration::options})
         ; 
-        
-add_concentration 
-scope{
-  Map<String,String> options;
-}
-@init{
-  $add_concentration::options = new HashMap<String,String>();
-}
-        : ADDCONCENTRATION LPAREN variable_definition 
-        {$add_concentration::options.put($variable_definition.variableName,$variable_definition.variableValue);}
-        RPAREN SEMI? -> action(id={$ADDCONCENTRATION.text},optionMap={$add_concentration::options})
-        ; 
-        
 set_parameter
 scope{
   Map<String,String> options;
@@ -189,7 +155,7 @@ scope{
 }
         :  SETPARAMETER LPAREN parameter_definition 
           {$set_parameter::options.put($parameter_definition.parameterName,$parameter_definition.parameterValue);}
-        RPAREN SEMI? -> action(id={$SETPARAMETER.text},optionMap={$set_parameter::options})
+        RPAREN SEMI -> action(id={$SETPARAMETER.text},optionMap={$set_parameter::options})
         ;
 
 parameter_definition returns [String parameterName,String parameterValue]
@@ -248,20 +214,11 @@ simulate_ode_par_def[Map<String,String> map]
         ;
         
 simulate_pla_par_def[Map<String,String> map]
-scope{
-  String temp;
-}
-@init{
-  $simulate_pla_par_def::temp = "";
-}
-        : PLA_CONFIG ASSIGNS DBQUOTES (s1=~(DBQUOTES ){$simulate_pla_par_def::temp += $s1.text;})* DBQUOTES {map.put($PLA_CONFIG.text,$simulate_pla_par_def::temp);}
+        : PLA_CONFIG ASSIGNS DBQUOTES s1=.* DBQUOTES {map.put($PLA_CONFIG.text,$s1.text);}
         ;    
  
 simulate_nf_par_def[Map<String,String> map]
         : PARAM ASSIGNS DBQUOTES (MINUS s1=STRING s2=(STRING|INT|DOUBLE))* DBQUOTES  {map.put($PARAM.text,"-" + $s1.text + " " + $s2.text);}
-        | COMPLEX ASSIGNS i1=INT {map.put($COMPLEX.text,$i1.text);}
-        | GET_FINAL_STATE ASSIGNS i2=INT {map.put($GET_FINAL_STATE.text,$i2.text);}
-      
         ;    
          
 write_m_par_def[Map<String,String> map]
@@ -273,39 +230,15 @@ write_m_par_def[Map<String,String> map]
   | SPARSE ASSIGNS i4=INT {map.put($SPARSE.text,$i4.text);}
   ;
 
-//TODO: error or warning?????
+  
 simulate_par_def[Map<String,String> map]
         : T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);}) 
         | T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);})
         | N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);}
         | SAMPLE_TIMES ASSIGNS i4=array_value 
-        | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i5.text);}
-        | PRINT_CDAT ASSIGNS i6=INT {map.put($PRINT_CDAT.text,$i6.text);}
-        | PRINT_FUNCTIONS ASSIGNS i7=INT {map.put($PRINT_FUNCTIONS.text,$i7.text);}
-        | N_OUTPUT_STEPS ASSIGNS multiple_definition {map.put($N_OUTPUT_STEPS.text,$multiple_definition.value);}
-        | MAX_SIM_STEPS ASSIGNS multiple_definition {map.put($MAX_SIM_STEPS.text,$multiple_definition.value);}
-        | ARGFILE ASSIGNS s3=STRING {map.put($ARGFILE.text,$s3.text);}
-        | SAVE_PROGRESS ASSIGNS i10=INT {map.put($SAVE_PROGRESS.text,$i10.text);}
-        | PRINT_NET ASSIGNS i11=INT {map.put($PRINT_NET.text,$i11.text);}
-        | PRINT_END ASSIGNS i12=INT {map.put($PRINT_END.text,$i12.text);}    
-        | NETFILE ASSIGNS s4=STRING {map.put($NETFILE.text,$s4.text);}
-        | METHOD ASSIGNS method_definition {map.put($METHOD.text,$method_definition.text);}
-      
+        | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i4.text);}
         ;
         
-multiple_definition returns [String value]:
-  INT {$value=$INT.text;}| FLOAT {$value=$FLOAT.text;}| 
-  STRING {
-    if($STRING.text.equals("INT_MAX") || $STRING.text.equals("FLOAT_MAX"))
-      $value=$STRING.text;
-     else{
-      String err = String.format("\%s line \%d:\%d \%s\n",input.getSourceName(),$STRING.getLine(),$STRING.getCharPositionInLine(),"Input should be an INT,FLOAT, 'FLOAT_MAX' or 'INT_MAX'");
-     } 
-     };
-     
-method_definition :
-  ODE|SSA|PLA|NF;
-
 array_value
         : LSBRACKET STRING (COMMA STRING)* RSBRACKET
         ;

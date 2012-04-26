@@ -23,8 +23,7 @@
 #           0.005 => 23.589
 #           0.002 => 26.056
 #           0.001 => 27.877
- # (degrees of freedom = 9)
-
+# (degrees of freedom = 9)
 
 begin model
 begin parameters
@@ -49,7 +48,7 @@ end reaction rules
 end model
 
 ## actions ##
-generate_network({overwrite=>1});
-simulate_ssa({suffix=>'ssa_burnin',t_start=>0,t_end=>10000,n_steps=>1});
-simulate_ssa({suffix=>'ssa_equil',t_start=>0,t_end=>1000000,n_steps=>10000});
+generate_network({overwrite=>1})
+simulate_ssa({suffix=>'burnin',t_start=>0,t_end=>10000,n_steps=>1})
+simulate_ssa({suffix=>'ssa_equil',t_start=>0,t_end=>1000000,n_steps=>10000})
 

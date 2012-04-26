@@ -9,6 +9,7 @@ from libsbml2bngl import SBML2BNGL
 from pyparsing import Word, Suppress,Optional,alphanums,Group
 import libsbml
 from numpy import sort,zeros
+import numpy as np
 import json
 
 def identifyReaction(reaction,element):
@@ -100,6 +101,11 @@ def resolveCorrespondence(labelDictionary):
     return labelDictionary
 
 def loadConfigFiles():
+    '''
+    the reactionDefinition file must contain the definitions of the basic reaction types 
+    we wnat to parse and what are the requirements of a given reaction type to be considered
+    as such
+    '''
     with open('reactionDefinition.json','r') as fp:
         reactionDefinition = json.load(fp)
     return reactionDefinition
@@ -147,18 +153,40 @@ def getDescription(species,rules):
     '''
     ruleDictionary = species2Rules(rules)
     reactionDefinition = loadConfigFiles()
+    #containts which rules are equal to reactions defined in reactionDefiniotion['reactions]    
     ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
     for (idx,rule) in enumerate(rules):
         reaction2 = list(parseReactions(rule))
         ruleComplianceMatrix[idx] = identifyReactions2(reaction2,reactionDefinition)
-    
+    #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
+    print ruleComplianceMatrix
+    print ruleDictionary
     tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
+    #check which reaction conditions each tuple satisfies
     for element in ruleDictionary:
         for rule in ruleDictionary[element]:
             tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
     #labelDictionary = resolveCorrespondence(labelDictionary)
     #print labelDictionary
     print tupleComplianceMatrix
+    tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
+    for key,element in tupleComplianceMatrix.items():
+        for idx,member in enumerate(reactionDefinition['definitions']):
+            tupleDefinitionMatrix[key][idx] = np.all([element[reaction] for reaction in member])
+    print tupleDefinitionMatrix
+    #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
+    
+    ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
+    #TODO: finish the getting rule classification scheme
+    for key,element in ruleDictionary.items():
+        for rule in element:
+            print ruleComplianceMatrix[rule]
+            print tupleDefinitionMatrix[key]
+            ruleDefinitionMatrix[rule] = tupleDefinitionMatrix[key]
+    print ruleDefinitionMatrix
+    #based on the satisfied reaction conditions we will proceed to clasify our tuples
+    
+    
     
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()

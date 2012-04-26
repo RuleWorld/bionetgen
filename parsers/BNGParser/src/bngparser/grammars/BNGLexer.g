@@ -9,8 +9,9 @@ options {
 package bngparser.grammars;
 }
 
-LINE_COMMENT : '#' ~('\n'|'\r')* '\r'? '\n' {skip();} ;
-WS : (' '|'\t'|'\n'|'\r'|'\\\n')+ { $channel=HIDDEN;};
+LINE_COMMENT : '#' ~('\n'|'\r')* {skip();} ;
+LB : ('\n'|'\r')+; 
+WS : (' '|'\t'|'\\\n'|'\\\r\n')+ { $channel=HIDDEN;};
 VERSION : ('v'|'V')('e'|'E')('r'|'R')('s'|'S')('i'|'I')('o'|'O')('n'|'N');
 END : ('e'|'E')('n'|'N')('d'|'D');
 BEGIN : ('b'|'B')('e'|'E')('g'|'G')('i'|'I')('n'|'N');
@@ -66,26 +67,51 @@ SPARSE: 'sparse';
 T_END: 't_end';
 T_START: 't_start';
 N_STEPS: 'n_steps';
+N_OUTPUT_STEPS: 'n_output_steps';
+MAX_SIM_STEPS: 'max_sim_steps';
+OUTPUT_STEP_INTERVAL: 'output_step_interval';
 PLA_CONFIG: 'pla_config';
 SAMPLE_TIMES: 'sample_times';
 SIMULATE_ODE: 'simulate_ode';
 SIMULATE_SSA: 'simulate_ssa';
 SIMULATE_NF: 'simulate_nf';
 SIMULATE_PLA: 'simulate_pla';
+SIMULATE: 'simulate';
 READFILE: 'readFile';
 FILE: 'file';
 WRITENET: 'writeNET';
 WRITESBML: 'writeSBML';
 WRITEMFILE: 'writeMfile';
 WRITEXML: 'writeXML';
+WRITEMEXFILE: 'writeMexFile';
+
+PRINT_CDAT: 'print_CDAT';
+PRINT_FUNCTIONS: 'print_functions';
 SETCONCENTRATION: 'setConcentration';
+METHOD: 'method';
 SETPARAMETER: 'setParameter';
 SAVECONCENTRATIONS: 'saveConcentrations';
 RESETCONCENTRATIONS: 'resetConcentrations';
+ADDCONCENTRATION: 'addConcentration';
 GENERATENETWORK: 'generate_network';
+GENERATEHYBRIDMODEL: 'generate_hybrid_model';
 SUBSTANCEUNITS: 'substanceUnits';
 PARAM: 'param';
+COMPLEX: 'complex';
+GET_FINAL_STATE: 'get_final_state';
 SAT: 'Sat';
+EXP: 'exp';
+ARGFILE: 'argfile';
+SAVE_PROGRESS: 'save_progress';
+NETFILE: 'netfile';
+PRINT_NET: 'print_net';
+PRINT_END: 'print_end';
+ODE: 'ode';
+SSA: 'ssa';
+NF: 'nf';
+PLA: 'pla';
+
+
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | '.' (DIGIT)+ EXPONENT?
