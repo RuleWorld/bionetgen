@@ -13,7 +13,7 @@ import org.antlr.stringtemplate.language.*;
 
 import bngparser.dataType.ChangeableChannelTokenStream;
 import bngparser.grammars.*;
-import bngparser.netGrammar.*;
+//import bngparser.netGrammar.*;
 
 /*
  * TODO:
