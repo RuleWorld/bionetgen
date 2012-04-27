@@ -224,10 +224,10 @@ DBQUOTES COMMA
 
 
 save_concentrations
-        : SAVECONCENTRATIONS LPAREN RPAREN SEMI -> action(id={$SAVECONCENTRATIONS.text})
+        : SAVECONCENTRATIONS LPAREN RPAREN SEMI? -> action(id={$SAVECONCENTRATIONS.text})
         ;
 reset_concentrations
-        : RESETCONCENTRATIONS LPAREN RPAREN SEMI -> action(id={$RESETCONCENTRATIONS.text})
+        : RESETCONCENTRATIONS LPAREN RPAREN SEMI? -> action(id={$RESETCONCENTRATIONS.text})
         ;
 hash_value
         : STRING ASSIGNS LBRACKET assignment_list RBRACKET
