@@ -20,12 +20,12 @@ begin parameters
 	Ca_0	0.01*Na*V 	# [M]
 end parameters
 
-begin molecule types
+begin molecule_types
 	Null()
 	Ga() 
 	PLC()
 	Ca() 
-end molecule types
+end molecule_types
 
 begin species
 	Null()		1
@@ -41,18 +41,20 @@ begin observables
 	Molecules 	NULL	Null()
 end observables
 
-begin reaction rules
+begin reaction_rules
 	Null() -> Ga() + Null()		k1
 	Ga() -> Ga() + Ga()			k2
 	Ga() + PLC() -> PLC()		Sat(k3,K4)
 	Ga() + Ca() -> Ca()			Sat(k5,K6)
 	Ga() -> PLC() + Ga()		k7
 	PLC() + Null() -> Null()	Sat(k8,K9)
-	Ga -> Ca() + Ga()			k10
+	Ga() -> Ca() + Ga()			k10
 	Ca() + Null() -> Null()		Sat(k11,K12)
-end reaction rules
+end reaction_rules
 
-generate_network({overwrite=>1});
-#simulate_ode({t_end=>20,n_steps=>200,atol=>1e-12,rtol=>1e-12,verbose=>1});
-#simulate_ssa({t_end=>20,n_steps=>200,verbose=>1});
-simulate_pla({t_end=>20,n_steps=>200,verbose=>1,pla_config=>"rk4|sb|pre:post|0.05,3,100,0.5,0.8,10,0.75|Network3/ButcherTableau.bt"});
+generate_network({overwrite=>1})
+
+#simulate_ode({t_end=>20,n_output_steps=>200,atol=>1e-12,rtol=>1e-12,verbose=>1})
+#simulate_ssa({t_end=>20,n_output_steps=>200,verbose=>1})
+#simulate_pla({t_end=>20,n_output_steps=>200,verbose=>1,pla_config=>"rk4|sb|post:post|eps=0.03,apx1=3,gg1=100,p=0.5,pp=0.8,q=1.5,w=0.75|Network3/ButcherTableau.bt"})
+#simulate({argfile=>"Models2/simargs.txt"})

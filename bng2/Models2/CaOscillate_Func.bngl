@@ -1,31 +1,31 @@
 begin parameters
-	Na	6.022e23	# Avogadro's # [mol^-1]
-	V	1e-15		# Volume [L]
+	Na	6.022e23		# Avogadro's # [mol^-1]
+	V	1e-15			# Volume [L]
 	#	
-	k1	0.212*Na*V 	# [M s^-1]
-	k2	2.85		# [s^-1]
-	k3	1.52		# [s^-1]
-	K4	0.19*Na*V	# [M]
-	k5	4.88		# [s^-1]
-	K6	1.18*Na*V	# [M]
-	k7	1.24		# [s^-1]
-	k8	32.24*Na*V	# [M s^-1]
-	K9	29.09*Na*V	# [M]
-	k10	13.58		# [s^-1]
-	k11	153.0*Na*V	# [M s^-1]
-	K12	0.16*Na*V	# [M]
+	k1	0.212*Na*V 		# [M s^-1]
+	k2	2.85			# [s^-1]
+	k3	1.52			# [s^-1]
+	K4	0.19*Na*V		# [M]
+	k5	4.88			# [s^-1]
+	K6	1.18*Na*V		# [M]
+	k7	1.24			# [s^-1]
+	k8	32.24*Na*V		# [M s^-1]
+	K9	29.09*Na*V		# [M]
+	k10	13.58			# [s^-1]
+	k11	153.0*Na*V		# [M s^-1]
+	K12	0.16*Na*V		# [M]
 	#
 	Ga_0	0.01*Na*V 	# [M]
 	PLC_0	0.01*Na*V 	# [M]
 	Ca_0	0.01*Na*V 	# [M]
 end parameters
 
-begin molecule types
+begin molecule_types
 	Null()
 	Ga() 
 	PLC()
 	Ca() 
-end molecule types
+end molecule_types
 
 begin species
 	Null()		1
@@ -41,18 +41,20 @@ begin observables
 	Molecules 	NULL	Null()
 end observables
 
-begin reaction rules
+begin reaction_rules
 	Null() -> Ga() + Null()		k1
 	Ga() -> Ga() + Ga()			k2
 	Ga() + PLC() -> PLC()		k3/(K4+G)	#Sat(k3,K4)
 	Ga() + Ca() -> Ca()			k5/(K6+G)	#Sat(k5,K6)
 	Ga() -> PLC() + Ga()		k7
 	PLC() + Null() -> Null()	k8/(K9+P)	#Sat(k8,K9)
-	Ga -> Ca() + Ga()			k10
+	Ga() -> Ca() + Ga()			k10
 	Ca() + Null() -> Null()		k11/(K12+C)	#Sat(k11,K12)
-end reaction rules
+end reaction_rules
 
-generate_network({overwrite=>1});
-#simulate_ode({t_end=>20,n_steps=>200,atol=>1e-12,rtol=>1e-12,verbose=>1});
-#simulate_ssa({t_end=>20,n_steps=>200,verbose=>1});
-simulate_pla({t_end=>20,n_steps=>200,verbose=>1,pla_config=>"rk4|sb|post:post|0.03,3,100,0.5,0.8,10,0.75|Network3/ButcherTableau.bt"});
+generate_network({overwrite=>1})
+
+#simulate_ode({t_end=>20,n_output_steps=>200,atol=>1e-12,rtol=>1e-12,verbose=>1})
+#simulate_ssa({t_end=>20,n_output_steps=>200,verbose=>1})
+simulate_pla({t_end=>20,n_output_steps=>200,verbose=>1,pla_config=>"custom|sb|pre:post|eps=0.03,apx1=3,gg1=100,p=0.5,pp=0.8,q=1.5,w=0.75|Network3/ButcherTableau.bt"})
+#simulate({argfile=>"Models2/simargs.txt"})
