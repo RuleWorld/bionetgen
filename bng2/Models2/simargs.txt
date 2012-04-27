@@ -3,12 +3,8 @@
 # prefix                 test            # Default is BNGL filename
 # suffix                 equil           # Default is '' (nothing)
 # netfile                test.net        # Default is {BNGL_filename}.net
- method                 ode             # Currently supported methods are 'ode', 'pla', 'ssa' (use simulate_nf() for NFsim)
+ method                 pla             # Currently supported methods are 'ode', 'pla', 'ssa' (use simulate_nf() for NFsim)
  verbose                1               # Default is 0
- print_end              0               # Default is 0
- save_progress          0               # Default is 0 (formerly 'print_net')
- print_CDAT             1               # Default is 1
- print_functions        0               # Default is 0
  t_start                0               # Default is 0
  t_end                  20              # No default (required if 'sample_times' not defined)
  n_output_steps         200             # Default is 1 (formerly 'n_steps')
@@ -21,3 +17,7 @@
  steady_state           0               # Default is 0
 # seed                  10               # Default is floor(rand(2**31))
  pla_config             rk4|sb|post:post|eps=0.03,apx1=3,gg1=100,p=0.5,pp=0.8,q=1.5,w=0.75|Network3/ButcherTableau.bt  # No default (required if method is 'pla')
+ print_CDAT             1               # Default is 1
+ print_functions        0               # Default is 0
+ print_end              0               # Default is 0
+ save_progress          0               # Default is 0 (formerly 'print_net')
