@@ -126,11 +126,6 @@ void Network3::init_Network3(bool verbose){
 			FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 			if (verbose) cout << i << ". " << FUNCTION[i]->first->GetExpr() << "= " << FUNCTION[i]->second << endl;
 		}
-//cout << endl;
-//for (unsigned int j=0;j < FUNCTION.size();j++){
-//	cout << j << ". " << FUNCTION[j]->first->GetExpr() << "= ";
-//	cout << FUNCTION[j]->first->Eval() << endl;
-//}
 	}
 //	if (verbose) cout << endl;
 	//
@@ -495,13 +490,17 @@ void Network3::init_PLA(string config, bool verbose){
 	if (verbose){
 		cout << "You've specified " << param.size() << " parameters:" << endl;
 		for (unsigned int i=0;i < param.size();i++){
-			if (i==0) cout << "   eps = "	<< param[0] << endl;
-			if (i==1) cout << "   apx1 = "	<< param[1] << endl;
-			if (i==2) cout << "   gg1 = " 	<< param[2] << endl;
-			if (i==3) cout << "   p = " 	<< param[3] << endl;
-			if (i==4) cout << "   pp = " 	<< param[4] << endl;
-			if (i==5) cout << "   q = " 	<< param[5] << endl;
-			if (i==6) cout << "   w = " 	<< param[6] << endl;
+			if (i==0) cout << "   eps = "	<< param[0];
+			if (i==1) cout << "   apx1 = "	<< param[1];
+			if (i==2) cout << "   gg1 = " 	<< param[2];
+			if (i==3) cout << "   p = " 	<< param[3];
+			if (i==4) cout << "   pp = " 	<< param[4];
+			if (i==5) cout << "   q = " 	<< param[5];
+			if (i==6) cout << "   w = " 	<< param[6];
+			if ( (i==4 || i==5 || i==6) && (arg[2] != "post:post")){
+				cout << "   >>ignored<< (" << arg[2] << ")";
+			}
+			cout << endl;
 		}
 	}
 
@@ -859,6 +858,16 @@ void Network3::read_Butcher_tableau(string filename, vector<vector<double> >& al
 		s.clear();
 		strm >> s;
 		if (s.size() != 0){ // skip blank lines
+			// skip commented (#) lines
+			while (s.at(0) == '#'){
+				strm.get();
+				while (strm.peek() != '\n'){
+					strm.get();
+				}
+				strm.get();
+				strm >> s;
+			}
+			// Continue
 			int div = s.find('/');
 			if (div != (int)string::npos){
 				double num = atof(s.substr(0,div).c_str());
