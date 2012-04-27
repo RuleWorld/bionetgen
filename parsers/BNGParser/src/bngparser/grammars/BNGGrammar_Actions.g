@@ -63,6 +63,7 @@ gn_action_par_def[Map<String,String> map]
         | (MAX_STOICH ASSIGNS hash_value)
         | (OVERWRITE ASSIGNS i3=INT {map.put($OVERWRITE.text,$i3.text);})
         | (PRINT_ITER ASSIGNS i4=INT {map.put($PRINT_ITER.text,$i4.text);})
+        | (TEXTREACTION ASSIGNS i5=INT {map.put($TEXTREACTION.text,$i5.text);})
         | ps_par_def[map]
         ;
         
