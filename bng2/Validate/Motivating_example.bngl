@@ -225,8 +225,8 @@ begin observables
   Species    L_Dimers_EN   L(r,loc~EN).L(r,loc~EN)
   Species    L_Dimers_EM   L.L.R(loc~EM)
   
-  Species    L_Bound_PM    L(d).R(loc~PM) L.L.R(loc~PM) L.L.R(loc~PM)
-  Species    L_Bound_EM    L(d).R(loc~EM) L.L.R(loc~EM) L.L.R(loc~EM)
+  Species    L_Bound_PM    L(d).R(loc~PM), L.L.R(loc~PM), L.L.R(loc~PM)
+  Species    L_Bound_EM    L(d).R(loc~EM), L.L.R(loc~EM), L.L.R(loc~EM)
 
   Species    R_Dimers_PM   R(loc~PM).R(loc~PM)
   Species    R_Dimers_EM   R(loc~EM).R(loc~EM)
@@ -257,6 +257,6 @@ end observables
 end model
 
 # actions #
-generate_network({overwrite=>1,TextReaction=>0});
-simulate_ode({t_start=>0,t_end=>40,n_steps=>100});
+generate_network({overwrite=>1,TextReaction=>0})
+simulate_ode({t_start=>0,t_end=>40,n_steps=>100})
 
