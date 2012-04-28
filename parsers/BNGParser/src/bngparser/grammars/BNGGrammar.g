@@ -20,7 +20,6 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   import bngparser.dataType.ChangeableChannelTokenStream;
   import bngparser.dataType.ReactionRegister;
   import bngparser.methods.GenericMethods;
-  import bngparser.exceptions.VariableNotFoundException;
 }
 @members{
   public Stack<String> paraphrases = new Stack<String>();
@@ -157,9 +156,9 @@ scope{
 //http://bionetgen.org/index.php/Compartments_in_BNGL
 compartments_block:
 
-  BEGIN COMPARTMENTS
-      (compartment {$prog::compartments.add($compartment.st);})*
-  END COMPARTMENTS;
+  BEGIN COMPARTMENTS LB+
+      (compartment LB+{$prog::compartments.add($compartment.st);})*
+  END COMPARTMENTS LB+;
   
 compartment:
    s1=STRING INT s3=expression[memory] (s2=STRING)? -> compartments_block(id={$s1.text},dimensions={$INT.text},size={$s3.value},outside={$s2.text}) 

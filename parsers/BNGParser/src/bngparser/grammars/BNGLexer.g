@@ -106,6 +106,7 @@ SAVE_PROGRESS: 'save_progress';
 NETFILE: 'netfile';
 PRINT_NET: 'print_net';
 PRINT_END: 'print_end';
+TEXTREACTION: 'TextReaction';
 ODE: 'ode';
 SSA: 'ssa';
 NF: 'nf';

@@ -91,7 +91,8 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 			else if (a_tau > this->approx1){
 				classif[v] = RxnClassifier::POISSON;
 			}
-			else{
+			else
+			{
 				// Calculate derivatives dav/dXj
 				vector<double> dav_dX;
 				for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
@@ -105,7 +106,6 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 						beta_v = fabs(dav_dX[j]);
 					}
 				}
-//				if (dav_dX.size() != 0 && beta_v == 0.0){
 				if (dav_dX.size() != 0 && beta_v < network3::TOL){
 					vector<double> X;
 					for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
@@ -113,11 +113,12 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 					}
 					beta_v = this->rxn[v]->re->getRate(X);
 				}
-				// If  eps*rate[v] > beta_v --> POISSON...
+				// Classify:
+				// 	  If eps*rate[v] > beta_v --> POISSON...
 				if (this->eps*this->rxn[v]->getRate() > beta_v){
 					classif[v] = RxnClassifier::POISSON;
 				}
-				// ...else, EXACT_STOCHASTIC
+				// ...else --> EXACT_STOCHASTIC
 				else{
 					classif[v] = RxnClassifier::EXACT_STOCHASTIC;
 				}
