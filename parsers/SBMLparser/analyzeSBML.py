@@ -12,25 +12,10 @@ from numpy import sort,zeros
 import numpy as np
 import json
 
-def identifyReaction(reaction,element):
-    if len(reaction) == 2: 
-        if len(reaction[0]) == 2 and len(reaction[1]) == 1:
-            return 1
-        elif len(reaction[0]) == 2 and len(reaction[1]) == 2:
-            return 2
-        elif len(reaction[0])==1 and len(reaction[1])==2:
-            return 3
-        elif len(reaction[0])==0 and len(reaction[1])==1:
-            return 4
-        elif len(reaction[0])==1 and len(reaction[1])==0:
-            return 5
-        elif len(reaction[0])==1 and len(reaction[1]) == 1:
-            return 6
-        else:
-            return -1
-
-
-
+'''
+This file in general classifies rules according to the information contained in
+the json config file for classyfying rules according to their reactants/products
+'''
 
 def parseReactions(reaction):
     
@@ -44,61 +29,7 @@ def parseReactions(reaction):
         result = [result,[]]
     return result
 
-        
-def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase, synthesisDatabase,catalysisDatabase):
-    for element in totalElements:
-        if (element,) in rawDatabase:
-            #labelDictionary[element] = []
-            labelDictionary[element] = (element,)
-        else:
-            typeOfReaction = identifyReaction(reaction2,element)
-            if typeOfReaction == 1:
-                if element in reaction2[1]:
-                    labelDictionary[element] = tuple([k for k in reaction2[0]])
 
-            elif typeOfReaction == 2:
-                labelDictionary[element] = (tuple([k for k in reaction2[0] if k in reaction2[1]]),
-                    tuple([k for k in reaction2[0] if k in reaction2[1]]))
-            #if element in reaction2[0] and reaction[1] then theres a state change reaction
-            elif typeOfReaction == 3:
-                #print reaction2,element
-                #print labelDictionary
-                print 'hola'
-            elif typeOfReaction == 4 or typeOfReaction == 5:
-                pass
-            elif typeOfReaction == 6:
-                #print reaction2
-                if tuple(reaction2[1]) in rawDatabase:
-                    print 'decay'
-                else:
-                    print 'conversion'
-            else:
-                print 'Ive no idea what youre talking about'
-    return labelDictionary
-
-def inferReactants():
-    pass
-
-
-def classifyRules(rules):
-    '''
-    This method is designed to go through all rules and get them together in a 
-    dictonary depending on which elements are involved.
-    '''
-    ruleDictionary = {}
-    
-    
-##TODO: i introduced arrays in the labelDictionary, have to resolve correspondences                  
-def resolveCorrespondence(labelDictionary):
-    temp = labelDictionary.copy()
-    for element in [x for x in labelDictionary if len(labelDictionary[x]) > 1]:
-        for member in [x for x in labelDictionary[element] if len(labelDictionary[x]) > 1]:
-            temp[element] = list(temp[element])
-            temp[element].extend(labelDictionary[member])
-            temp[element].remove(member)
-            temp[element] = tuple(sort(temp[element]))
-    labelDictionary = temp.copy()
-    return labelDictionary
 
 def loadConfigFiles():
     '''
@@ -124,7 +55,6 @@ def identifyReactions2(rule,reactionDefinition):
 #                if element[0].count(el1) == element[]
         else:
             result.append(0)
-    
     return result
 
   
@@ -145,48 +75,57 @@ def species2Rules(rules):
             ruleDictionary[frozenset(totalElements)] = [rules.index(rule)]
     return ruleDictionary
 
-def getDescription(species,rules):
+def checkCompliance(ruleCompliance,tupleCompliance,ruleBook):
+    '''
+    This method is mainly useful when a single rule can be possibly classified
+    in different ways, but in the context of its tuple partners it can only be classified
+    as one
+    '''
+    ruleResult = np.zeros(len(ruleBook))
+    for validTupleIndex in np.nonzero(tupleCompliance):
+        for index in validTupleIndex:
+            if np.any([ruleCompliance[temp] for temp in ruleBook[index]]):
+                ruleResult[index] = 1
+    return ruleResult
+        
+            
+        
+def getReactionClassification(reactionDefinition,rules):
     '''
     This method will go through the list of rules and the list of rule definitions
     and tell us which rules it can classify according to the rule definitions list
     provided
     '''
     ruleDictionary = species2Rules(rules)
-    reactionDefinition = loadConfigFiles()
     #containts which rules are equal to reactions defined in reactionDefiniotion['reactions]    
     ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
     for (idx,rule) in enumerate(rules):
         reaction2 = list(parseReactions(rule))
         ruleComplianceMatrix[idx] = identifyReactions2(reaction2,reactionDefinition)
     #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
-    print ruleComplianceMatrix
-    print ruleDictionary
     tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
     #check which reaction conditions each tuple satisfies
     for element in ruleDictionary:
         for rule in ruleDictionary[element]:
             tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
-    #labelDictionary = resolveCorrespondence(labelDictionary)
-    #print labelDictionary
-    print tupleComplianceMatrix
+    
+    #check if the reaction conditions each tuple satisfies are enough to get classified
+    #as an specific named reaction type
     tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
     for key,element in tupleComplianceMatrix.items():
         for idx,member in enumerate(reactionDefinition['definitions']):
             tupleDefinitionMatrix[key][idx] = np.all([element[reaction] for reaction in member])
-    print tupleDefinitionMatrix
     #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
     
+    #use the per tuple classification to obtain a per reaction classification
     ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
-    #TODO: finish the getting rule classification scheme
     for key,element in ruleDictionary.items():
         for rule in element:
-            print ruleComplianceMatrix[rule]
-            print tupleDefinitionMatrix[key]
-            ruleDefinitionMatrix[rule] = tupleDefinitionMatrix[key]
-    print ruleDefinitionMatrix
-    #based on the satisfied reaction conditions we will proceed to clasify our tuples
+            ruleDefinitionMatrix[rule] = checkCompliance(ruleComplianceMatrix[rule],tupleDefinitionMatrix[key],reactionDefinition['definitions'])
+    return  ruleDefinitionMatrix
     
-    
+def writeReactionClassification(species,rules):
+    pass    
     
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
@@ -198,5 +137,7 @@ if __name__ == "__main__":
 #    print parser.getReactions()
     #parser.processFile('flat.bngl')
     _,rules,_ = parser.getReactions()
-    print rules    
-    getDescription([],rules)
+    #print rules    
+    reactionDefinition = loadConfigFiles()
+    reactionClassification = getReactionClassification(reactionDefinition,rules)
+    print reactionClassification

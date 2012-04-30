@@ -8,8 +8,14 @@ from libsbml2bngl import SBML2BNGL
 from pyparsing import Word, Suppress,Optional,alphanums,Group
 import libsbml
 from numpy import sort
-
+from copy import deepcopy
 import reactionTransformations
+import analyzeSBML as aSBML
+
+class translationDatabases:
+    def __init__(self,synthesisDatabase,catalysisDatabase):
+        self.synthesisDatabase = synthesisDatabase
+        self.catalysisDatabase = catalysisDatabase
     
 def parseReactions(reaction):
     
@@ -24,6 +30,10 @@ def parseReactions(reaction):
     return result
 
 def identifyReaction(reaction,element):
+    '''
+    this method only uses immediate context information to determine
+    the type a reaction belongs to
+    '''
     if len(reaction) == 2: 
         if len(reaction[0]) == 2 and len(reaction[1]) == 1:
             return 1
@@ -39,7 +49,11 @@ def identifyReaction(reaction,element):
             return 6
         else:
             return -1
-            
+
+def identifyReaction2(reaction,reactionClassification):
+    pass
+    
+           
 def issubset(possible_sub, superset):
     return all(element in superset for element in possible_sub)
 
@@ -59,6 +73,7 @@ def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase, s
             #labelDictionary[element] = []
             labelDictionary[element] = (element,)
         else:
+            
             typeOfReaction = identifyReaction(reaction2,element)
             if typeOfReaction == 1:
                 if element in reaction2[1]:
@@ -107,9 +122,14 @@ def printReactions(history):
 
 def printReactants(reactants):
     temp = []
-    for element in reactants:
-        temp.append(reactionTransformations.printSpecies(element[0],element[1]))
-    return ' + '.join(temp)
+    if isinstance(reactants[0],int):
+        return str(reactants[0])
+    elif isinstance(reactants[0],str):
+        return reactants[0] + '()'
+    else:
+        for element in reactants:
+            temp.append(reactionTransformations.printSpecies(element[0],element[1]))
+        return ' + '.join(temp)
 
 def getPairIntersection(set1,set2):
     acc = []
@@ -123,6 +143,8 @@ def getPairIntersection(set1,set2):
     return acc
 
 def getNewProduct(factor,temp):
+    if temp == [0]:
+        return factor[1]
     tempTag = []
     tempComponents = []
     for tag,components,reference in zip(factor[1][0][0],factor[1][0][1],temp):
@@ -141,6 +163,8 @@ def factorize(factor,history):
         reactantFactor,reactantGeneral = (factor[0],element[0])
         temp = []
         for factorMember in reactantFactor:
+            if factorMember == 0:
+                continue
             for factorGeneral in [x for x in reactantGeneral if x not in temp]:
                 if issubset(factorMember[0],factorGeneral[0]):
                     temp.append(factorGeneral)
@@ -150,16 +174,24 @@ def factorize(factor,history):
             tempArray.append(temp)
             finalArray.append(element)
     #print '----'
-    #print factor[0],'---',finalArray
     temp = factor[0]
     for element in tempArray:
         temp = getPairIntersection(temp,element)
-    temp =  [temp,getNewProduct(factor,temp)]
+    newFactor =  [temp,getNewProduct(factor,temp)]
         #temp2 = getPairIntersection(temp)
-    #print finalArray
-    
-    return temp,finalArray        
+    return newFactor,finalArray        
 
+def transformRawType(originalRule):
+    '''
+    this method grabs a rule that has a standard sbml data type and transforms
+    it to the data type we use internally, with no components
+    '''
+    newRule = []
+    print 'zzzzz',originalRule
+    for element in originalRule:
+        newRule.append([((element[0],),([],),)])
+    print newRule
+    return newRule
 
 def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator):
     print (identifyReaction(original,0))
@@ -169,9 +201,18 @@ def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator):
         return reactionTransformations.creation(original,dictionary,rawDatabase,translator)
     elif identifyReaction(original,0) == 5:
         return reactionTransformations.decay(original,dictionary,rawDatabase,translator)
-    
+    else:
+        return transformRawType(original)
         
-
+def reduceReactions(history):
+    newHistory = deepcopy(history)
+    for x in range(0,3):
+        (factor,eliminate) = factorize(newHistory[0],newHistory)
+        for element in eliminate:
+            newHistory.remove(element)
+        newHistory.append(factor)
+    return newHistory
+        
 if __name__ == "__main__":
 
 #    database = {('S1',):(["r","l"],),("S2",):(["s"],),}    
@@ -197,10 +238,14 @@ if __name__ == "__main__":
 #    print parser.getReactions()
     _,rules,_ = parser.getReactions()
     
-    print rules
     #print rules
+    #print rules
+    reactionDefinition = aSBML.loadConfigFiles()
+    classifications = aSBML.getReactionClassification(reactionDefinition,rules)
+    print classifications
+    print reactionDefinition
     print 'preparing database...'
-    for rule in rules:   
+    for rule,classification in zip(rules,classifications):   
         #print rule
         reaction2 = list(parseReactions(rule))
         #print reaction2
@@ -211,7 +256,7 @@ if __name__ == "__main__":
         labelDictionary = resolveCorrespondence(labelDictionary)
 
     labelDictionary = resolveCorrespondence(labelDictionary)
-    print labelDictionary
+    #print labelDictionary
     #print labelDictionary
     print 'translating...'
     for rule in rules:
@@ -221,16 +266,12 @@ if __name__ == "__main__":
         print reaction
         history.append(reaction)
     printReactions(history)
+    print synthesisdatabase
     #print history[0]
-   # print history
-    print 'reducing...'  
-    for x in range(0,3):
-        (factor,eliminate) = factorize(history[0],history)
-        for element in eliminate:
-            history.remove(element)
-        history.append(factor)
-    #print synthesisdatabase
-    printReactions(history)
+    #print history
+    #print 'reducing...'  
+    #newHistory = reduceReactions(history)
+    #printReactions(newHistory)
     #print history
     #for x in range(0,3)
     #    factorize(history[0],history)

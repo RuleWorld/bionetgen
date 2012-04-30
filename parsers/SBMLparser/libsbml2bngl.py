@@ -9,7 +9,7 @@ class SBML2BNGL:
 
     
     def __init__(self,model):
-        self.model = model        
+        self.model = model
     def __getRawSpecies(self,species):
         id = species.getId()
         initialConcentration = species.getInitialConcentration()
@@ -28,7 +28,7 @@ class SBML2BNGL:
         math = kineticLaw.getMath()
         rate = formulaToString(math)
         for element in reactant:
-        	rate = rate.replace('* %s' % element,'',1)
+            rate = rate.replace('* %s' % element,'',1)
         return (reactant,product,parameters,rate)
             
     def getReactions(self):
@@ -37,18 +37,19 @@ class SBML2BNGL:
         functions = []
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
-        	rawRules =  self.__getRawRules(reaction)
-        	functionName = '%s%d()' % (functionTitle,index)
-        	rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName))
-        	if len(rawRules[2]) >0:
-        		parameters.append('%s %f' % (rawRules[2][0][0],rawRules[2][0][1]))
-        	functions.append(writer.bnglFunction(rawRules[3],functionName))
+            rawRules =  self.__getRawRules(reaction)
+            #print rawRules
+            functionName = '%s%d()' % (functionTitle,index)
+            rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName))
+            if len(rawRules[2]) >0:
+                parameters.append('%s %f' % (rawRules[2][0][0],rawRules[2][0][1]))
+            functions.append(writer.bnglFunction(rawRules[3],functionName))
             
         return parameters, rules,functions
             
     def getParameters(self):
         return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters()]
-	
+    
         
     def getSpecies(self):
     
@@ -57,26 +58,37 @@ class SBML2BNGL:
         observablesText = []
         
         for species in self.model.getListOfSpecies():
-        	rawSpecies = self.__getRawSpecies(species)
-        	print species.getAnnotationString()
-        	moleculesText.append(rawSpecies[0] + '()')
-        	temp = '$' if rawSpecies[2] != 0 else ''
-        	speciesText.append(temp + '%s %f' % (rawSpecies[0],rawSpecies[1]))
-        	observablesText.append('Species %s %s()' % (rawSpecies[0], rawSpecies[0]))
+            rawSpecies = self.__getRawSpecies(species)
+            moleculesText.append(rawSpecies[0] + '()')
+            temp = '$' if rawSpecies[2] != 0 else ''
+            speciesText.append(temp + '%s %f' % (rawSpecies[0],rawSpecies[1]))
+            observablesText.append('Species %s %s()' % (rawSpecies[0], rawSpecies[0]))
             
         return moleculesText,speciesText,observablesText
-	
-       
+    
+    def getSpeciesAnnotation(self):
+        speciesAnnotation = {}
+        
+        for species in self.model.getListOfSpecies():
+            rawSpecies = self.__getRawSpecies(species)
+            annotationXML = species.getAnnotation()
+            lista = CVTermList()
+            RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
+            if lista.getSize() == 0:
+                speciesAnnotation[rawSpecies[0]] =  None
+            else:
+                speciesAnnotation[rawSpecies[0]] = lista.get(0).getResources()
+        return speciesAnnotation
 
 def main():
-	
+    
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-    	default='XMLExamples/curated/BIOMD0000000272.xml',type="string",
-    	help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
+        default='XMLExamples/curated/BIOMD0000000272.xml',type="string",
+        help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
-    	default='output.bngl',type="string",
-    	help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
+        default='output.bngl',type="string",
+        help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
           
     (options, args) = parser.parse_args()
     reader = SBMLReader()
@@ -93,6 +105,6 @@ def main():
     print rules
          
     writer.finalText(param,molecules,species,observables,rules,functions,options.output)
-		
+        
 if __name__ == "__main__":
-	main()
+    main()
