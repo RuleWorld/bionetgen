@@ -9,6 +9,7 @@ from copy import copy,deepcopy
 import random
 import sys
 
+
 def printSpecies(label,definition):
     molecules = []
     for tag,species in zip(label,definition):
@@ -144,7 +145,7 @@ def creation(original,dictionary,rawDatabase,translator):
     This method deals with reactions of the type 0 -> A
     """
     reaction = [[0],[]]
-    reaction[1] = [tuple(original[1]),rawDatabase[tuple(original[1])]]
+    reaction[1] = [(tuple(original[1]),rawDatabase[tuple(original[1])],)]
     return reaction
 
 def decay(original,dictionary,rawDatabase,translator):
@@ -152,7 +153,7 @@ def decay(original,dictionary,rawDatabase,translator):
     This method deals with reactions of the type A -> 0
     """
     reaction = [[],[0]]
-    reaction[0] = [tuple(original[0]),rawDatabase[tuple(original[0])]]
+    reaction[0] = [(tuple(original[0]),rawDatabase[tuple(original[0])],)]
     return reaction   
     
     
