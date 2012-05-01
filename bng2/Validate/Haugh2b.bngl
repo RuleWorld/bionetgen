@@ -25,10 +25,6 @@ begin reaction rules
     R(Y1~P) + S1(SH2) <-> R(Y1~P!1).S1(SH2!1)  kon_S1, koff_S1 \
               exclude_reactants(2,R) 
 
-    # Binding of S1(SH2) from cytosol
-    R(Y1~P) + S1(SH2) <-> R(Y1~P!1).S1(SH2!1)  kon_S1, koff_S1 \
-              exclude_reactants(2,R) 
-
     # Binding of S1(SH2) from membrane
     R(Y1~P) + S1(SH2) <-> R(Y1~P!1).S1(SH2!1)  chi_m*kon_S1, koff_S1 \
               include_reactants(2,R) 
