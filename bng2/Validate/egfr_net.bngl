@@ -1,14 +1,14 @@
-# EGF Receptor assembly and Sos activation model
+begin model
 begin parameters
-    egf_tot       1.2e6   
+    egf_tot       1.2e6    # molecule counts
     egfr_tot      1.8e5   
     Grb2_tot      1.0e5   
     Shc_tot       2.7e5 
     Sos_tot       1.3e4 
     Grb2_Sos_tot  4.9e4  
 
-    kp1      1.667e-06 # ligand-monomer binding  (scaled)
-    km1           0.06 # ligand-monomer dissociation
+    kp1      1.667e-06 # ligand-monomer binding (scaled), units: /molecule/s
+    km1           0.06 # ligand-monomer dissociation, units: /s
 
     kp2      5.556e-06 # aggregation of bound monomers (scaled)
     km2            0.1 # dissociation of bound monomers
@@ -21,34 +21,34 @@ begin parameters
 
     km16         0.005 # Shc cytosolic dephosphorylation     
 
-    kp9      8.333e-07 # binding of Grb2 to receptor     (scaled)
+    kp9      8.333e-07 # binding of Grb2 to receptor (scaled)
     km9           0.05 # dissociation of Grb2 from receptor
 
-    kp10     5.556e-06 # binding of Sos to receptor    (scaled)
+    kp10     5.556e-06 # binding of Sos to receptor (scaled)
     km10          0.06 # dissociation of Sos from receptor
 
-    kp11      1.25e-06 # binding of Grb2-Sos to receptor     (scaled)
+    kp11      1.25e-06 # binding of Grb2-Sos to receptor (scaled)
     km11          0.03 # diss. of Grb2-Sos from receptor
 
-    kp13       2.5e-05 # binding of Shc to  receptor    (scaled)
-    km13           0.6 # diss. of Shc from  receptor
+    kp13       2.5e-05 # binding of Shc to receptor (scaled)
+    km13           0.6 # diss. of Shc from receptor
 
-    kp15       2.5e-07 # binding of ShcP to  receptor     (scaled)
-    km15           0.3 # diss. of ShcP from  receptor
+    kp15       2.5e-07 # binding of ShcP to receptor (scaled)
+    km15           0.3 # diss. of ShcP from receptor
 
-    kp17     1.667e-06 # binding of Grb2 to RP-ShcP  (scaled)
+    kp17     1.667e-06 # binding of Grb2 to RP-ShcP (scaled)
     km17           0.1 # diss. of Grb2 from RP-ShcP  
 
-    kp18       2.5e-07 # binding of ShcP-Grb2 to receptor    (scaled)
-    km18           0.3 # diss. of ShcP-Grb2 from  receptor
+    kp18       2.5e-07 # binding of ShcP-Grb2 to receptor (scaled)
+    km18           0.3 # diss. of ShcP-Grb2 from receptor
 
-    kp19     5.556e-06 # binding of Sos to RP-ShcP-Grb2  (scaled)
+    kp19     5.556e-06 # binding of Sos to RP-ShcP-Grb2 (scaled)
     km19        0.0214 # diss. of Sos from RP-ShcP-Grb2 
 
-    kp20     6.667e-08 # binding of ShcP-Grb2-Sos to receptor    (scaled)
+    kp20     6.667e-08 # binding of ShcP-Grb2-Sos to receptor (scaled)
     km20          0.12 # diss. of ShcP-Grb2-Sos from receptor
 
-    kp24         5e-06 # binding of Grb2-Sos to RP-ShcP    (scaled)
+    kp24         5e-06 # binding of Grb2-Sos to RP-ShcP (scaled)
     km24        0.0429 # diss. of Grb2-Sos from RP-ShcP
 
     kp21     1.667e-06 # binding of ShcP to Grb2 in cytosol (scaled)
@@ -62,7 +62,22 @@ begin parameters
 
     kp22     1.667e-05 # binding of ShcP-Grb2 to Sos in cytosol (scaled)
     km22         0.064 # diss. of ShcP-Grb2 and Sos in cytosol
+
+    # check detailed balanced
+    loop1 = (kp9/km9)*(kp10/km10)/((kp11/km11)*(kp12/km12))
+    loop2 = (kp15/km15)*(kp17/km17)/((kp21/km21)*(kp18/km18))
+    loop3 = (kp18/km18)*(kp19/km19)/((kp22/km22)*(kp20/km20))
+    loop4 = (kp12/km12)*(kp23/km23)/((kp22/km22)*(kp21/km21))
+    loop5 = (kp15/km15)*(kp24/km24)/((kp20/km20)*(kp23/km23))
 end parameters
+
+begin molecule types
+    egf(r)
+    egfr(l,r,Y1068~Y~pY,Y1148~Y~pY)
+    Shc(PTB,Y317~Y~pY)
+    Grb2(SH2,SH3)
+    Sos(dom)
+end molecule types
 
 begin seed species
     egf(r)                        egf_tot
@@ -143,6 +158,7 @@ begin observables
     Molecules    Sos_total    Sos
     Molecules    Grb2_total   Grb2
 end observables
+end model
 
 ## actions ##
 generate_network({overwrite=>1})

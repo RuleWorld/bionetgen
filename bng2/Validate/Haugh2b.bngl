@@ -14,13 +14,17 @@ begin parameters
 end parameters
 
 begin seed species
-    #R(KD,Y1~U,Y2~U)  1.00
-    R(KD,Y1~P)       R_tot
-    S1(PTP,SH2)      1.00
-    S2(SH2,Y~U)      0.25
+    #R(KD,Y1~U,Y2~U) 1.00
+    R(KD,Y1~P)     R_tot
+    S1(PTP,SH2)    1.00
+    S2(SH2,Y~U)    0.25
 end seed species
 
 begin reaction rules
+    # Binding of S1(SH2) from cytosol
+    R(Y1~P) + S1(SH2) <-> R(Y1~P!1).S1(SH2!1)  kon_S1, koff_S1 \
+              exclude_reactants(2,R) 
+
     # Binding of S1(SH2) from cytosol
     R(Y1~P) + S1(SH2) <-> R(Y1~P!1).S1(SH2!1)  kon_S1, koff_S1 \
               exclude_reactants(2,R) 
@@ -39,7 +43,7 @@ begin reaction rules
 
     # Binding of R(KD) to S2(Y~U) intracomplex and phosphorylation
     R(KD,Y1~P!1).S2(SH2!1,Y~U) <-> R(KD!2,Y1~P!1).S2(SH2!1,Y~U!2)  kp1_KD, km1_KD
-    R(KD!2,Y1~P!1).S2(SH2!1,Y~U!2) -> R(KD,Y1~P!1).S2(SH2!1,Y~P)  kcat_KD
+    R(KD!2,Y1~P!1).S2(SH2!1,Y~U!2) -> R(KD,Y1~P!1).S2(SH2!1,Y~P)   kcat_KD
 
     # Binding of S2(Y~P) in cytosol to S1(PTP) in cytosol
     S2(Y~P) + S1(PTP) <-> S2(Y~P!1).S1(PTP!1)  kp1_PTP, km1_PTP \

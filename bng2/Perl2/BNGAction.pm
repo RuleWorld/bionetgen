@@ -417,7 +417,7 @@ sub simulate
 
     # Wait for messages from the Simulator
     my $last_msg = '';
-    my $steady_state_reached;
+    my $steady_state_reached = 0;
     my $edge_warning = 0;
     my $otf = 0;
     while ( my $message = <Reader> )
@@ -575,9 +575,15 @@ sub simulate
     # Report steady state
     if ($steady_state)
     {
-        send_warning("Steady_state status = $steady_state_reached");
-        unless ( $steady_state_reached )
-        {   return "Simulation did not reach steady state by t_end=$t_end";   }
+        if ($steady_state_reached)
+        {   # let user know simulation reached steady state
+            print "Simulation reached steady state by t_end=${t_end}\n";
+        }
+        else
+        {   # warn user about failure to acheive steady state
+            send_warning("Steady_state status = $steady_state_reached");
+            return "Simulation did not reach steady state by t_end=${t_end}";
+        }
     }
 
     # If there are no errors or flags so far, let's load output concentrations

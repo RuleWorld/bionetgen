@@ -9,18 +9,14 @@
 # To use these other options, simply remove the pound character before the command.
 
 
-
-
-
 # The first part of a BNGL file is the parameters block, where you can define the rates
 # of equations or the starting numbers of any of the molecular species.
 begin parameters
-   kon     10
-   koff    5
-   kcat    0.7
-   dephos  0.5
+    kon 10
+    koff 5
+    kcat 0.7
+    dephos 0.5
 end parameters
-
 
 
 # Next, we define the set of molecule types in the system.  This is a declaration only, so
@@ -31,7 +27,6 @@ begin molecule types
     X(y,p~0~1)
     Y(x)
 end molecule types
-
 
 
 # Here is where we declare the starting molecules in our simulation.  Each component
@@ -45,22 +40,18 @@ begin seed species
 end seed species
 
 
-
 # Observables allow us to define simulation output.  Here we have declared a number
 # of Molecules observables with the given name and pattern.  If you look at the output
 # gdat files that are generated from simulations of this model, you will see that they
 # each have a count for every simulation time.
 begin observables
-
     Molecules    X_free          X(p~0,y)
     Molecules    X_p_total       X(p~1)
     Molecules    Xp_free         X(p~1,y)
     Molecules    XY              X(y!1).Y(x!1)
     Molecules    Ytotal          Y()
     Molecules    Xtotal          X()
-
 end observables
-
 
 
 # This model does not require any user-defined functions, but you would
@@ -71,7 +62,6 @@ begin functions
 end functions
 
 
-
 # This is a very simple system indeed.  The only rules that are defined
 # tell us that X can bind Y if X is dephosphorylated.  Then the XY complex
 # can either disassociate, or a phosphorylation reaction can occur.  Finally, X
@@ -79,17 +69,12 @@ end functions
 # for these rules, it will always be unbound to Y if it is phosphorylated.
 # Here are the rule definitions:
 begin reaction rules
-
     X(y,p~0) + Y(x) -> X(y!1,p~0).Y(x!1)   kon
     X(y!1,p~0).Y(x!1) -> X(y,p~0) + Y(x)   koff
     X(y!1,p~0).Y(x!1) -> X(y,p~1) + Y(x)   kcat
 
     X(p~1) -> X(p~0)                       dephos
-
 end reaction rules
-
-
-
 
 
 # COMMAND FOR RUNNING OR PROCESSING THIS BNGL FILE
@@ -140,8 +125,8 @@ generate_network({overwrite=>1})
 
 simulate_ode({t_end=>100,n_steps=>50})
 
-# resetConcentrations();
-# simulate_ssa({suffix=>ssa,t_end=>100,n_steps=>50});
+# resetConcentrations()
+# simulate_ssa({suffix=>ssa,t_end=>100,n_steps=>50})
 
 
 

@@ -8,46 +8,46 @@
 # transphosphorylate the second kinase. 
 
 begin parameters
-    L_tot   1
-    R_tot   1
-    A_tot   1
-    K_tot   1
+    L_tot  1
+    R_tot  1
+    A_tot  1
+    K_tot  1
 
-    kpL     0.1
-    kmL     0.1
+    kpL    0.1
+    kmL    0.1
     # kpD and kmD were divided by two from their values in toy.in
     # give the right symmetry factor.
-    kpD     1.0
-    kmD     0.1
-    kpA     0.1
-    kmA     0.1
-    kpK     0.1
-    kmK     0.1
-    pK      1
-    pKs     10
-    dM      1
-    dC      10
+    kpD    1.0
+    kmD    0.1
+    kpA    0.1
+    kmA    0.1
+    kpK    0.1
+    kmK    0.1
+    pK     1
+    pKs    10
+    dM     1
+    dC     10
 end parameters
 
 begin seed species
-    # Set to zero for equilibration    
-    L(r)             0 
+    # Set to zero for equilibration
+    L(r)        0 
     # r binds to l of R
 
-    R(l,r,a)         R_tot 
+    R(l,r,a)    R_tot 
     # l binds to r of L
     # r binds to r of R
 
-    A(r,k)             A_tot
+    A(r,k)      A_tot
     # r binds to a of R
     # k binds to a of K
 
-    K(a,Y~U)         K_tot    
+    K(a,Y~U)    K_tot
     # a binds to k of A
     # Y is phosphorylation site that is either unphosphorylated (U) or
     #   phosphorylated (P)
-
-    Null 0
+    
+    Null()     0
 end seed species
 
 begin reaction rules
