@@ -1,29 +1,25 @@
-version("2.0.23");
-
 # Test whether reaction multiplicities are handled correctly by
 # running verify.pl on tlmr_spec.cdat and the CDAT file produced
 # by this file.
-
 begin parameters
-L0	602
-R0     1204
-kp1	1.661129568106312e-04
-km1	  1
-kp2     1.661129568106312e-03
-km2	  1
-kp3     1.661129568106312e-03
-km3	  1
+    L0     602
+    R0     1204
+    kp1    1.661129568106312e-04
+    km1    1
+    kp2    1.661129568106312e-03
+    km2    1
+    kp3    1.661129568106312e-03
+    km3    1
 end parameters
-begin species
-  L(r,r,r) L0
-  R(l)     R0
-end species
+begin seed species
+    L(r,r,r)  L0
+    R(l)      R0
+end seed species
 begin reaction rules
-L(r,r,r) + R(l) <->  L(r,r,r!1).R(l!1) kp1,km1
-L(r!+,r,r) + R(l) <->  L(r!+,r,r!1).R(l!1) kp2,km2
-L(r!+,r!+,r) + R(l) <->  L(r!+,r!+,r!1).R(l!1) kp3,km3
-
+    L(r,r,r)     + R(l) <->  L(r,r,r!1).R(l!1)      kp1, km1
+    L(r!+,r,r)   + R(l) <->  L(r!+,r,r!1).R(l!1)    kp2, km2
+    L(r!+,r!+,r) + R(l) <->  L(r!+,r!+,r!1).R(l!1)  kp3, km3
 end reaction rules
 
-generate_network({overwrite=>1});
-simulate_ode({t_end=>10,n_steps=>10});
+generate_network({overwrite=>1})
+simulate_ode({t_end=>10,n_steps=>10})

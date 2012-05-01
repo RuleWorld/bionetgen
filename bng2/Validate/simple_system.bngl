@@ -15,10 +15,10 @@
 # The first part of a BNGL file is the parameters block, where you can define the rates
 # of equations or the starting numbers of any of the molecular species.
 begin parameters
-   kon 10
-   koff 5
-   kcat 0.7
-   dephos 0.5
+   kon     10
+   koff    5
+   kcat    0.7
+   dephos  0.5
 end parameters
 
 
@@ -28,8 +28,8 @@ end parameters
 # of all possible state values for each component of each molecule with a tilda (~)
 # character.
 begin molecule types
-  X(y,p~0~1)
-  Y(x)
+    X(y,p~0~1)
+    Y(x)
 end molecule types
 
 
@@ -38,11 +38,11 @@ end molecule types
 # must be assigned a single state value, and we have to provide how many of each
 # molecule exists in the system.  The number of starting molecules can also be
 # specified with one of the parameters defined earlier
-begin species
-   X(y,p~0)   5000
-   X(y,p~1)   0
-   Y(x)       500
-end species
+begin seed species
+    X(y,p~0)   5000
+    X(y,p~1)   0
+    Y(x)       500
+end seed species
 
 
 
@@ -52,12 +52,12 @@ end species
 # each have a count for every simulation time.
 begin observables
 
-   Molecules    X_free          X(p~0,y)
-   Molecules    X_p_total       X(p~1)
-   Molecules    Xp_free         X(p~1,y)
-   Molecules    XY              X(y!1).Y(x!1)
-   Molecules    Ytotal          Y()
-   Molecules    Xtotal          X()
+    Molecules    X_free          X(p~0,y)
+    Molecules    X_p_total       X(p~1)
+    Molecules    Xp_free         X(p~1,y)
+    Molecules    XY              X(y!1).Y(x!1)
+    Molecules    Ytotal          Y()
+    Molecules    Xtotal          X()
 
 end observables
 
@@ -80,11 +80,11 @@ end functions
 # Here are the rule definitions:
 begin reaction rules
 
-   X(y,p~0) + Y(x) -> X(y!1,p~0).Y(x!1)   kon
-   X(y!1,p~0).Y(x!1) -> X(y,p~0) + Y(x)   koff
-   X(y!1,p~0).Y(x!1) -> X(y,p~1) + Y(x)   kcat
-   
-   X(p~1) -> X(p~0)                       dephos
+    X(y,p~0) + Y(x) -> X(y!1,p~0).Y(x!1)   kon
+    X(y!1,p~0).Y(x!1) -> X(y,p~0) + Y(x)   koff
+    X(y!1,p~0).Y(x!1) -> X(y,p~1) + Y(x)   kcat
+
+    X(p~1) -> X(p~0)                       dephos
 
 end reaction rules
 
@@ -115,7 +115,7 @@ end reaction rules
 # This will write out your model to "simple_system.xml".  In general, the XML file
 # name will match the BNGL file name, with an XML extension instead of .bngl.
 
-writeXML();
+writeXML()
 
 # If you uncomment and use this command here, then you can run NFsim directly by
 # calling the NFsim_[version] executable from the command-line, where [version] is
@@ -128,7 +128,7 @@ writeXML();
 # option (which you can remove) is set to 1 here so that every time this is run, the
 # reaction network output file will be regenerated.
 
-generate_network({overwrite=>1});
+generate_network({overwrite=>1})
 
 # Then we can call the simulate_ode or simulate_ssa methods to run the model file.  Again,
 # the suffix parameter is used to name the output of the simulations.  Note also that
@@ -138,7 +138,7 @@ generate_network({overwrite=>1});
 # mid-simulation by using an RNF script (see example.rnf file in the same directory as this
 # model).
 
-simulate_ode({t_end=>100,n_steps=>50});
+simulate_ode({t_end=>100,n_steps=>50})
 
 # resetConcentrations();
 # simulate_ssa({suffix=>ssa,t_end=>100,n_steps=>50});

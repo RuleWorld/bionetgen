@@ -86,8 +86,6 @@ begin reaction rules
 end reaction rules
 
 
-generate_network({overwrite=>1});
-simulate_ode({t_start=>0,t_end=>0.2,n_steps=>20});
-#writeMfile({t_start=>0,t_end=>0.2,n_steps=>20});
-
+generate_network({overwrite=>1})
+simulate_ode({t_start=>0,t_end=>0.2,n_steps=>20})
 

@@ -6,7 +6,7 @@ begin parameters
   km             0.1
   k_synthC       0.5
   k_degrC        0.5
-  
+
 end parameters
 begin molecule types
 
@@ -26,13 +26,13 @@ begin seed species
 end seed species
 begin observables
 
-  Molecules  Atot A()
-  Molecules  Btot B()
-  Molecules  Ctot C()
-  Species    AB0  A(b,b,b)
-  Species    AB1  A(b!0,b,b).B(a!0) 
-  Species    AB2  A(b!0,b!1,b).B(a!0).B(a!1)
-  Species    AB3  A(b!0,b!1,b!2).B(a!0).B(a!1).B(a!2)
+  Molecules  Atot      A()
+  Molecules  Btot      B()
+  Molecules  Ctot      C()
+  Species    AB0       A(b,b,b)
+  Species    AB1       A(b!0,b,b).B(a!0) 
+  Species    AB2       A(b!0,b!1,b).B(a!0).B(a!1)
+  Species    AB3       A(b!0,b!1,b!2).B(a!0).B(a!1).B(a!2)
   Molecules  AB_motif  A(b!0).B(a!0)
 
 end observables
@@ -58,8 +58,8 @@ end model
 
 ## actions ##
 
-generate_network({overwrite=>1});
-writeMfile({t_start=>0,t_end=>10,n_steps=>40,bdf=>1,atol=>1e-6,rtol=>1e-6});
-writeMexfile({suffix=>'mex',t_start=>0,t_end=>10,n_steps=>40,sparse=>0,atol=>1e-6,rtol=>1e-6});
-simulate_ode({t_start=>0,t_end=>10,n_steps=>40});
+generate_network({overwrite=>1})
+writeMfile({t_start=>0,t_end=>10,n_steps=>40,bdf=>1,atol=>1e-6,rtol=>1e-6})
+writeMexfile({suffix=>"mex",t_start=>0,t_end=>10,n_steps=>40,sparse=>0,atol=>1e-6,rtol=>1e-6})
+simulate_ode({t_start=>0,t_end=>10,n_steps=>40})
 

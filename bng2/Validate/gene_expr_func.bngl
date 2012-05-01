@@ -85,9 +85,9 @@ end model
 
 ## actions ##
 generate_network({overwrite=>1})
-simulate_ssa({suffix=>'burnin',t_start=>0,t_end=>10000000,n_steps=>1})
+simulate_ssa({suffix=>"burnin",t_start=>0,t_end=>10000000,n_steps=>1})
 saveConcentrations()
-simulate_ssa({suffix=>'ssa_equil',t_start=>0,t_end=>100000000,n_steps=>10000})
+simulate_ssa({suffix=>"ssa_equil",t_start=>0,t_end=>100000000,n_steps=>10000})
 resetConcentrations()
-simulate_nf({suffix=>'nf_equil',t_start=>0,t_end=>50000000,n_steps=>5000,param=>'-gml 1000000'})
+simulate_nf({suffix=>"nf_equil",t_start=>0,t_end=>50000000,n_steps=>5000,param=>"-gml 1000000"})
 

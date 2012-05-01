@@ -38,10 +38,9 @@ end model
 
 
 ## actions ##
-
-generate_network({overwrite=>1});
-setConcentration("A()",1.0);
-simulate_ode({t_start=>0,t_end=>10,n_steps=>20});
-setConcentration("A()",0.0);
-simulate_ode({t_start=>10,t_end=>40,n_steps=>60,continue=>1});
+generate_network({overwrite=>1})
+setConcentration("A()",1.0)
+simulate_ode({t_start=>0,t_end=>10,n_steps=>20})
+setConcentration("A()",0.0)
+simulate_ode({t_start=>10,t_end=>40,n_steps=>60,continue=>1})
 

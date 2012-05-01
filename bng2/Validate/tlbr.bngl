@@ -1,37 +1,37 @@
 # trivalent ligand, bivalent receptor
 begin model
 begin parameters
-  # arbitrary parameters
-  kp1  0.001
-  kp2  0.010
-  koff 0.100
+    # arbitrary parameters
+    kp1   0.001
+    kp2   0.010
+    koff  0.100
 end parameters
 begin molecule types
-  R(l,l)
-  L(r,r,r)
+    R(l,l)
+    L(r,r,r)
 end molecule types
 begin seed species
-  R(l,l)     300
-  L(r,r,r)  1200
+    R(l,l)     300
+    L(r,r,r)  1200
 end seed species
 begin observables
-  Molecules  Ltot  L()  
-  Molecules  L0    L(r,r,r)
-  Molecules  L1    L(r!+,r,r)
-  Molecules  L2    L(r!+,r!+,r)
-  Molecules  L3    L(r!+,r!+,r!+)
-  Molecules  Rtot  R()  
-  Molecules  R0    R(l,l)
-  Molecules  R1    R(l!+,l)
-  Molecules  R2    R(l!+,l!+)
+    Molecules  Ltot  L()  
+    Molecules  L0    L(r,r,r)
+    Molecules  L1    L(r!+,r,r)
+    Molecules  L2    L(r!+,r!+,r)
+    Molecules  L3    L(r!+,r!+,r!+)
+    Molecules  Rtot  R()  
+    Molecules  R0    R(l,l)
+    Molecules  R1    R(l!+,l)
+    Molecules  R2    R(l!+,l!+)
 end observables
 begin reaction rules
-  R(l) + L(r,r,r)     <-> R(l!1).L(r!1,r,r)      kp1, koff
-  R(l) + L(r,r,r!+)   <-> R(l!1).L(r!1,r,r!+)    kp2, koff
-  R(l) + L(r,r!+,r!+) <-> R(l!1).L(r!1,r!+,r!+)  kp2, koff
+    R(l) + L(r,r,r)     <-> R(l!1).L(r!1,r,r)      kp1, koff
+    R(l) + L(r,r,r!+)   <-> R(l!1).L(r!1,r,r!+)    kp2, koff
+    R(l) + L(r,r!+,r!+) <-> R(l!1).L(r!1,r!+,r!+)  kp2, koff
 end reaction rules
 end model
 
 # actions #
-generate_network({overwrite=>1,max_iter=>3});
-simulate_ode({t_end=>2,n_steps=>50});
+generate_network({overwrite=>1,max_iter=>3})
+simulate_ode({t_end=>2,n_steps=>50})

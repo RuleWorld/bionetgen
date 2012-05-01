@@ -86,7 +86,7 @@ begin molecule types
   Sink()               # a place for deleted molecules.
 end molecule types
 
-begin species
+begin seed species
   L(r,d)@EC            L0
   R(l,tf~Y)@PM         R0
   TF(r,d~Y,dna,im)@CP  TF0
@@ -96,7 +96,7 @@ begin species
   
   # Arbitrarily assign compartment CP to the abstract molecule "Sink".  
   $Sink()@CP           0
-end species
+end seed species
 
 begin reaction rules
   # receptor-ligand binding.
