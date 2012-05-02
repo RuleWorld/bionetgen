@@ -521,6 +521,7 @@ int main(int argc, char *argv[]){
 
 		// Run simulation
 //		initTime = clock();
+		if (!verbose) cout << "Running..." << flush;
 		double step = 0, outputCounter = 0;
 		pair<double,double> nSteps_Tau;
 		if (sample_times){ // Sample times
@@ -570,6 +571,7 @@ int main(int argc, char *argv[]){
 			step += nSteps_Tau.first;
 			t += nSteps_Tau.second;
 		}
+		if (!verbose) cout << "Done" << endl;
 //		cout << "PLA simulation took " << (clock()-initTime)/(double)CLOCKS_PER_SEC << " CPU seconds" << endl;
 
 		// Even if .cdat printing is suppressed, must output the last step

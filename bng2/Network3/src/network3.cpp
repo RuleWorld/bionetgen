@@ -687,7 +687,6 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	}*/
 
 	// Simulation loop
-	if (!verbose) cout << "Running..." << flush;
 	string print_net_message;
 //	while (time < maxTime && step < startStep+maxSteps && PLA_SIM->tau < INFINITY){
 //	while (time < maxTime && step < startStep+maxSteps && !Network3::all_inactive()){
@@ -815,7 +814,6 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		// Even if .cdat printing is suppressed, print the last step
 //		if (!print_cdat) Network3::print_species_concentrations(cdat,time);
 //	}
-	if (!verbose) cout << "Done" << endl;
 //	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
 
 	// If print_end_net = true, collect species populations and update network concentrations vector
