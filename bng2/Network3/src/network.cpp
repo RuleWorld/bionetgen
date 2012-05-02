@@ -2808,8 +2808,10 @@ static int cvode_derivs(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
 	return 0;
 }
 
-int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER,
-		long maxStep){
+//int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER,
+//		double maxStep){
+int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* rtol, double* atol, int SOLVER,
+		double maxStep){
 	int error = 0;
 	double t_end;
 	static int n_species;
@@ -2822,10 +2824,8 @@ int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double
 	if (initflag == 0) {
 
 		/* Free previously allocated space */
-		if (y)
-			N_VDestroy_Serial(y);
-		if (cvode_mem)
-			CVodeFree(&cvode_mem);
+		if (y) N_VDestroy_Serial(y);
+		if (cvode_mem) CVodeFree(&cvode_mem);
 
 		n_species = n_species_network();
 
@@ -2876,18 +2876,23 @@ int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double
 	/* Propagation */
 	t_end = (*t) + delta_t;
 	while (1){
+		long n_old, n_new;
 		// Integrate one step at a time
-		if ( (maxStep-*n_steps) < cvode_maxnumsteps ){
+		if ( (maxStep - *n_steps) < (double)cvode_maxnumsteps ){
 			CVodeSetStopTime(cvode_mem, t_end);
 			while (!error && *n_steps < maxStep){
-				error = CVode(cvode_mem, t_end, y, t, CV_ONE_STEP);
-				CVodeGetNumSteps(cvode_mem, n_steps);
+				CVodeGetNumSteps(cvode_mem, &n_old); // Get old # of steps
+				error = CVode(cvode_mem, t_end, y, t, CV_ONE_STEP); // Propagate
+				CVodeGetNumSteps(cvode_mem, &n_new); // Get new # of steps
+				*n_steps += (double)(n_new - n_old); // Increment total # of steps
 			}
 		}
 		// Normal integration
 		else{
-			error = CVode(cvode_mem, t_end, y, t, CV_NORMAL);
-			CVodeGetNumSteps(cvode_mem, n_steps);
+			CVodeGetNumSteps(cvode_mem, &n_old); // Get old # of steps
+			error = CVode(cvode_mem, t_end, y, t, CV_NORMAL); // Propagate
+			CVodeGetNumSteps(cvode_mem, &n_new); // Get new # of steps
+			*n_steps += (double)(n_new - n_old); // Increment total # of steps
 		}
 		// Check error status
 		if (error == CV_SUCCESS){
@@ -2919,7 +2924,8 @@ int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double
 
 #define TINY 1e-8
 
-int propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, long maxStep){
+//int propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, double maxStep){
+int propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep){
 	int error = 0;
 	int /*i,*/n;
 	int n_species;
@@ -2977,7 +2983,8 @@ int propagate_euler_network(double* t, double delta_t, long int* n_steps, double
 	return (error);
 }
 
-int propagate_rkcs_network(double* t, double delta_t, long int* n_steps, double tol, long maxStep) {
+//int propagate_rkcs_network(double* t, double delta_t, long int* n_steps, double tol, double maxStep){
+int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double tol, double maxStep) {
 	int error = 0, n_species;
 	double *X = NULL, *dX = NULL;
 	double t_end, t_left, htry, hdid, dt_inv;
@@ -3657,7 +3664,8 @@ static struct {
 	iarray* as_reactant_list; /* gives the array of reactions in which a species appears as a reactant */
 	iarray* as_product_list; /* gives the array of reactions in which a species appears as a product*/
 	iarray* rxn_update_list; /* array of reactions that must be updated after reaction of given index fires */
-	long int n_steps;
+//	long int n_steps;
+	double n_steps;
 	int rxn_update_size;
 	int rxn_rate_update_interval;
 	// species -> observables
@@ -4366,11 +4374,11 @@ int update_concentrations(int irxn) {
 	/* loop over reactants */
 	spec = network.species->elt;
 	for (i = 0; i < rxn->n_reactants; ++i) {
-		if (!spec[i]->fixed) {
-			int ri = rxn->r_index[i];
-			double newpop = --GSP.c_offset[ri];
+		int ri = rxn->r_index[i] - offset;
+		if (!spec[ri]->fixed) {
+			double newpop = --GSP.c[ri];
 			if (newpop < 1.0)
-				GSP.c_offset[ri] = 0; /* This must be done to avoid negative concentrations! */
+				GSP.c[ri] = 0; // This must be done to avoid negative concentrations!
 			if (newpop < thresh_occ)
 				force_update = 1;
 		}
@@ -4442,7 +4450,9 @@ int update_concentrations(int irxn) {
 			/* Read group updates */
 			read_Groups(network.spec_groups, stdin, network.species, &line_number, "groups", &n_groups_updated);
 
-			printf( "At step %ld added %d new species (%d total %d active) %d new reactions (%d total)\n",
+//			printf( "At step %ld added %d new species (%d total %d active) %d new reactions (%d total)\n",
+//					GSP.n_steps, n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
+			printf( "At step %-16.0f added %d new species (%d total %d active) %d new reactions (%d total)\n",
 					GSP.n_steps, n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
 			/* 	if (n_groups_updated) */
 			/* 	  printf("  and updated %d groups.", n_groups_updated); */
@@ -4509,7 +4519,7 @@ void update_rxn_rates(int irxn) {
 	return;
 }
 
-int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, long maxStep) {
+int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep) {
 	double t_remain;
 	double rnd;
 	int irxn;
@@ -4551,9 +4561,20 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		++GSP.n_steps;
 
 		/* update rxn rates */
-		if (rxn_rate_update || (GSP.n_steps % GSP.rxn_rate_update_interval == 0)){
+		double GSP_interval = (double)GSP.rxn_rate_update_interval;
+		double fmod = GSP.n_steps - (double)((long)(GSP.n_steps/GSP_interval))*GSP_interval;
+//		if (rxn_rate_update || ((long)GSP.n_steps % GSP.rxn_rate_update_interval == 0)){
+		if (rxn_rate_update || fmod <= 1e-12){ // Use 1e-12 as a tolerance
 			update_rxn_rates(irxn);
 		}
+		/* Floating-point modulus
+		double a = 200000.0;
+		double b = 100000.0;
+		double fmod = a - (double)((long)(a/b))*b;
+		cout << a << " % " << b << " = " << fmod << endl;
+		if (fmod == 0.0) cout << "yup" << endl;
+		else cout << "nope" << endl;
+		exit(1);*/
 	}
 
 	/* Back up to return time */
@@ -4597,7 +4618,8 @@ double gillespie_frac_rxns_active() {
 	return ((double) n_act / GSP.na);
 }
 
-long int gillespie_n_steps() {
+//long int gillespie_n_steps() {
+double gillespie_n_steps() {
 	return (GSP.n_steps);
 }
 

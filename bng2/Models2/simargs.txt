@@ -9,8 +9,8 @@
  t_end                  20              # No default (required if 'sample_times' not defined)
  n_output_steps         200             # Default is 1 (formerly 'n_steps')
 # sample_times           [2,7,11,14,19]  # No default ('n_output_steps' takes precedence if both defined)
- output_step_interval   LONG_MAX        # Default is LONG_MAX (INT_MAX also supported)
- max_sim_steps          LONG_MAX        # Default is LONG_MAX (INT_MAX also supported)
+ output_step_interval   INFINITY        # Default is INFINITY (LONG_MAX and INT_MAX are also supported)
+ max_sim_steps          INFINITY        # Default is INFINITY (LONG_MAX and INT_MAX are also supported)
  atol                   1e-8            # Default is 1e-8
  rtol                   1e-8            # Default is 1e-8
  sparse                 0               # Default is 0
