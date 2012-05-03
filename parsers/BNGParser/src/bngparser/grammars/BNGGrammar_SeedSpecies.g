@@ -73,7 +73,7 @@ scope{
 ;
 
 
-species_def[List molecules,BondList bonds,String speciesCounter] returns [Map<String,List<ReactionRegister>> listOfMolecules, boolean constant]
+species_def[List molecules,BondList bonds,String speciesCounter] returns [Map<String,List<ReactionRegister>> listOfMolecules, boolean constant, String compartment=""]
 scope{
  int numMolecules; 
  String variableName;
@@ -91,7 +91,12 @@ scope{
  
 }
 :
-   (AT scomp=STRING COLON ({gParent.netGrammar}? COLON | ))?  (DOLLAR {$constant = true;})?
+   (AT scomp=STRING 
+   
+   {
+    $compartment = $scomp.text;
+   }
+   COLON ({gParent.netGrammar}? COLON | ))?  (DOLLAR {$constant = true;})?
    
    (s1=species_element[bonds,speciesCounter + "_M" + $species_def::numMolecules,$scomp.text] 
    {

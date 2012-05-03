@@ -18,6 +18,7 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   import bngparser.methods.InvertBidirectional;
   import bngparser.dataType.ChangeableChannelTokenStream;
   import bngparser.dataType.ReactionRegister;
+  import bngparser.dataType.Compartments;
   import bngparser.methods.GenericMethods;
 }
 @members{
@@ -27,12 +28,17 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   private Map<String, Map<String,String>> options = new HashMap<String, Map<String,String>>();
 
   public boolean netGrammar = true;
- 
+  public boolean compartmentToSurface = true;
   public List<StringTemplate> molecules = new ArrayList<StringTemplate>();
   public List<StringTemplate> reactions = new ArrayList<StringTemplate>();
   public List<StringTemplate> groups = new ArrayList<StringTemplate>();
   public Map<String,String> speciesMap = new HashMap<String,String>();
   
+  //this object contains a list of all comparments and their characteristics.
+  public Compartments compartmentList = new Compartments();
+  //this map contains a list of the surface compartments and which species are associated with them
+  public Map<String, List<StringTemplate>> compartmentSurfaces = new HashMap<String,List<StringTemplate>>();
+  public List<String> surfaces = new ArrayList<String>();
   @Override
   public String getErrorMessage(RecognitionException e,String[] tokenNames){
     String msg = super.getErrorMessage(e,tokenNames);
@@ -60,11 +66,47 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
     }
   }
   
+  public void addSurfaceToCompartment(String surfaceName,StringTemplate template ){
+     //String parent = compartmentList.getParentCompartment(surfaceName);
+     if(!compartmentSurfaces.containsKey(surfaceName)){
+        compartmentSurfaces.put(surfaceName,new ArrayList<StringTemplate>());
+     }
+     compartmentSurfaces.get(surfaceName).add(template);
+     
+  
+  }
+  
 }
 
+seed_species_block[List seedSpecies]
+scope{
+ int numSpecies;
+ }
+@init{
+ $seed_species_block::numSpecies = 1;
+   paraphrases.push("in seed species section");
+
+}
+@after{
+  paraphrases.pop();
+}
+: BEGIN (SEED)? SPECIES LB+
+(seed_species_def[$seed_species_block::numSpecies]{
+                                      //System.out.println($seed_species_def.compartment);
+                                      if(!$seed_species_def.concentration.equals("0")){
+	                                      if(compartmentList.isVolume($seed_species_def.compartment) || compartmentToSurface == false)
+	                                        $seedSpecies.add($seed_species_def.st);
+	                                      else
+	                                        addSurfaceToCompartment($seed_species_def.compartment,$seed_species_def.st);
+                                      }
+                                      $seed_species_block::numSpecies++;
+                                      //}
+                                      } LB+)* 
+END (SEED)? SPECIES LB+;
 
 
-seed_species_def[int counter]
+
+seed_species_def[int counter] returns [String compartment, String concentration]
 scope{
   List molecules;
   BondList bonds;
@@ -75,18 +117,22 @@ scope{
 }
 
 :
- pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
+ pre=pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
  //There needs to need a space between species and the expression token, so we go back and make sure there was one
 ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
+$compartment = $pre.compartment;
 // System.out.println(input);
 } 
       WS 
      expression[memory] 
-     
+     {
+      $concentration = $expression.text;
+     }
      -> 
     seed_species_block(id={counter},concentration={$expression.text},name={$pre_species_def.text},molecules={$seed_species_def::molecules},
-      firstBonds={$seed_species_def::bonds.getLeft()},secondBonds={$seed_species_def::bonds.getRight()});
-
+      firstBonds={$seed_species_def::bonds.getLeft()},secondBonds={$seed_species_def::bonds.getRight()},isVolume={compartmentList.isVolume(pre.compartment) || !compartmentToSurface})
+      ;
+     
 
 
 pre_species_def[List molecules,BondList bonds, int speciesCounter] returns [String compartment]
@@ -102,10 +148,11 @@ INT
  {
     $pre_species_def::constant = $species_def.constant;
      speciesMap.put($species_def.text,$INT.text);
+     $compartment = $species_def.compartment;
  }
  ;
   
-  
+ 
         
 groups_block:
 BEGIN GROUPS LB+
@@ -146,6 +193,7 @@ scope {
   List compartments;
  // Map<String,Register> memory;
   Stack elements;
+  Map<String,List<StringTemplate>> surfaces;
 }
 @init {
   $prog::parameters = new ArrayList();
@@ -157,7 +205,7 @@ scope {
   $prog::compartments = new ArrayList();
  // memory = new HashMap<String,Register>();
   $prog::elements = new Stack();
-  
+  $prog::surfaces = new HashMap<String,List<StringTemplate>>();
   paraphrases.push("in model");
 }
 @after{
@@ -166,11 +214,29 @@ scope {
 :
 LB*
 SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+
-(program_block)* EOF 
+(program_block)* 
 
+{
+  for(String element: compartmentSurfaces.keySet()){
+    StringTemplate temp;
+    //temp = template("create_surface_region");
+    STAttrMap options = new STAttrMap();
+    options.put("name", element);
+    options.put("molecules",compartmentSurfaces.get(element));
+    temp = templateLib.getInstanceOf("create_surface_region",options);
+    if(!$prog::surfaces.containsKey(compartmentList.getParentCompartment(element))){
+      $prog::surfaces.put(compartmentList.getParentCompartment(element),new ArrayList<StringTemplate>());
+    }
+    $prog::surfaces.get(compartmentList.getParentCompartment(element)).add(temp);
+   // System.out.println(temp);
+  }
+}
+
+EOF 
 
  -> prog2(parameters={$prog::parameters},molecules={speciesMap},species={$prog::seedSpecies},reactions={reactions},
-                            observables={groups},functions={$prog::functions}, compartments={$prog::compartments});
+                            observables={groups},functions={$prog::functions}, compartments={$prog::compartments},
+                            boxes={$prog::surfaces},compartmentsSurface={compartmentToSurface});
 
 version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN SEMI;
 
@@ -215,7 +281,16 @@ compartments_block:
   END COMPARTMENTS LB+;
   
 compartment:
-   s1=STRING INT s3=expression[memory] (s2=STRING)? -> compartments_block(id={$s1.text},dimensions={$INT.text},size={$s3.value},outside={$s2.text}) 
+   s1=STRING INT s3=expression[memory] 
+   {
+      compartmentList.addCompartment($s1.text,$INT.text,$s3.text);
+   }
+   (s2=STRING
+   {
+      compartmentList.addContainer($s1.text,$s2.text);
+   }
+   )? 
+   -> compartments_block(id={$s1.text},dimensions={$INT.text},size={$s3.value},outside={$s2.text}) 
 ;
   
 label returns [String label]:

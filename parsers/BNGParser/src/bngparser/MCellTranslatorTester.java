@@ -27,17 +27,17 @@ public class MCellTranslatorTester {
 	public static void main(String[] args) throws IOException,RecognitionException{
 		
 		
-		String inputFile = "compartments.net";
+		String inputFile = "testModels/egfr_compartments.net";
 		String outputFile = "output.mdl";
 		
 		if(args.length > 0){
 			inputFile = args[0];
 			outputFile = args[1];
 		}
-		else{
+		/*else{
 			System.err.println("format: java -jar bngparser.jar <inputFile> <outputFile>");
 			return;
-		}
+		}*/
 		Map<String, String> map = new HashMap<String,String>();
 		map.put("D_3D", "1e-8");
 		map.put("location", "[0.1,0.1,0.1]");
@@ -49,8 +49,8 @@ public class MCellTranslatorTester {
 		 ChangeableChannelTokenStream tokens = new ChangeableChannelTokenStream(bnglexer);
 		 
 		NETGrammar parser = new NETGrammar(tokens);
-			
-		
+		parser.surfaces.add("B");	
+		//System.out.println(parser.surfaces.size());
 		//parser.addOptions("DNA(a)", map);
 		
 		StringTemplateGroup template = new StringTemplateGroup(new FileReader("mcell.stg"),AngleBracketTemplateLexer.class);
