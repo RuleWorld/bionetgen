@@ -80,7 +80,7 @@ struct program_times t_elapsed(){
 }
 
 void print_error(){
-	char *usage="run_network  [-bcdefkmsvx] [-a atol] [-g groupfile] [-h seed] [-i start_time] [-o outprefix] [-r rtol] [-t tol] [-z iteration number]";
+	char *usage=(char*)"run_network  [-bcdefkmsvx] [-a atol] [-g groupfile] [-h seed] [-i start_time] [-o outprefix] [-r rtol] [-t tol] [-z iteration number]";
 	fprintf(stderr,	"Usage:\n%s netfile sample_time n_sample\n",usage);
 	fprintf(stderr, "or\n");
 	fprintf(stderr,	"%s netfile t1 t2 ... tn\n", usage);
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]){
 	line_number = 0;
 
 	/* Rate constants and concentration parameters should now be placed in the parameters block. */
-	rates = read_Elt_array(netfile, &line_number, "parameters", &n_read, 0x0);
+	rates = read_Elt_array(netfile, &line_number, (char*)"parameters", &n_read, 0x0);
 	fprintf(stdout, "Read %d parameters\n", n_read);
 	if (n_read < 1) {
 		fprintf(stderr,"ERROR: Reaction network must have parameters defined to be used as rate constants.\n");
@@ -354,7 +354,7 @@ int main(int argc, char *argv[]){
 	line_number = 0;
 
     /* Read species */
-    if (!(species = read_Elt_array(netfile, &line_number, "species", &n_read, rates))){
+    if (!(species = read_Elt_array(netfile, &line_number, (char*)"species", &n_read, rates))){
     	fprintf(stderr,"ERROR: Couldn't read rates array.\n");
     	exit(1);
     }
@@ -367,7 +367,7 @@ int main(int argc, char *argv[]){
 			exit(1);
 		}
 		line_number = 0;
-		spec_groups = read_Groups(0x0, group_file, species, &line_number, "groups", &n_read);
+		spec_groups = read_Groups(0x0, group_file, species, &line_number, (char*)"groups", &n_read);
 		fprintf(stdout, "Read %d group(s) from %s\n", n_read, group_input_file_name);
 		fclose(group_file);
     }
@@ -521,7 +521,7 @@ int main(int argc, char *argv[]){
 
 		// Run simulation
 //		initTime = clock();
-		if (!verbose) cout << "Running..." << flush;
+		if (!verbose) cout << "Running..." << endl;
 		double step = 0, outputCounter = 0;
 		pair<double,double> nSteps_Tau;
 		if (sample_times){ // Sample times

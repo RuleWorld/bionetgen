@@ -163,9 +163,9 @@ void print_Elt_list(FILE* outfile, Elt* elist) {
 	for (elt = elist; elt != NULL; elt = elt->next) {
 		//      str= (elt->fixed) ? "$" : "";
 		if (elt->fixed)
-			str = "$";
+			str = (char*)"$";
 		else
-			str = "";
+			str = (char*)"";
 		fprintf(outfile, "%5d %s%-20s %22.15e\n", elt->index, str, elt->name,
 				elt->val);
 	}
@@ -590,7 +590,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 	while ((line = get_line(datfile))) {
 		fflush(stdout);
 		++(*line_number);
-		tokens = parse_line(line, &n_tokens, "#", " \t\r\n");
+		tokens = parse_line(line, &n_tokens, (char*)"#", (char*)" \t\r\n");
 		if (n_tokens == 0)
 			goto cleanup;
 
@@ -823,7 +823,7 @@ Group* read_Groups(Group* glist, FILE* datfile, Elt_array* earray,
 	*n_read = 0;
 	while ((line = get_line(datfile))) {
 		++(*line_number);
-		tokens = parse_line(line, &n_tokens, "#", ", \t\r\n");
+		tokens = parse_line(line, &n_tokens, (char*)"#", (char*)", \t\r\n");
 		if (n_tokens == 0)
 			goto cleanup;
 
@@ -1393,7 +1393,7 @@ static int* read_indices_Rxn(char* string, int* n_indices, Elt_array* species,
 	int null_count = 0;
 
 	line = strdup(string);
-	tokens = parse_line(line, &n_tokens, NULL, ",");
+	tokens = parse_line(line, &n_tokens, NULL, (char*)",");
 	index_list = (int *) malloc(n_tokens * sizeof(int));
 	*n_indices = n_tokens;
 	offset = species->offset;
@@ -1542,7 +1542,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 	*n_read = 0;
 	while ((line = get_line(datfile))) {
 		++(*line_number);
-		tokens = parse_line(line, &n_tokens, "#", " \t\r\n");
+		tokens = parse_line(line, &n_tokens, (char*)"#", (char*)" \t\r\n");
 		if (n_tokens == 0)
 			continue;
 
@@ -3041,8 +3041,8 @@ FILE *init_print_concentrations_network(char* prefix, int append){
 	//    char* fmt = "%19s", *specname;
 	//char *mode = (append) ? "a" : "w";
 	char* mode;
-	if (append) mode = "a";
-	else mode = "w";
+	if (append) mode = (char*)"a";
+	else mode = (char*)"w";
 
 	sprintf(buf, "%s.cdat", prefix);
 	if (!(out = fopen(buf, mode))) {
@@ -3118,11 +3118,11 @@ FILE* init_print_group_concentrations_network(char* prefix, int append) {
 	int /*i,*/error = 0;
 	char buf[1000];
 //	char* fmt = "%15s";
-	char* fmt = "%19s";
+	char* fmt = (char*)"%19s";
 	//char *mode= (append) ? "a" : "w";
 	char* mode;
-	if (append) mode = "a";
-	else mode = "w";
+	if (append) mode = (char*)"a";
+	else mode = (char*)"w";
 
 	if (!n_groups_network()) {
 		out = NULL;
@@ -3222,8 +3222,8 @@ FILE* init_print_function_values_network(char* prefix, int append){
 	int error = 0;
 	char buf[1000];
 	char* mode;
-	if (append) mode = "a";
-	else mode = "w";
+	if (append) mode = (char*)"a";
+	else mode = (char*)"w";
 
 	sprintf(buf, "%s.fdat", prefix);
 	if (!(out = fopen(buf, mode))) {
@@ -3333,9 +3333,9 @@ FILE* init_print_species_stats(char* prefix, int append) {
 	//char *mode = (append) ? "a" : "w";
 	char* mode;
 	if (append)
-		mode = "a";
+		mode = (char*)"a";
 	else
-		mode = "w";
+		mode = (char*)"w";
 
 	sprintf(buf, "%s.jdat", prefix);
 	if (!(out = fopen(buf, mode))) {
@@ -3451,8 +3451,8 @@ int print_network(FILE* out) {
 		char* str;
 		for (elt = network.rates->list; elt != NULL; elt = elt->next) {
 			//str= (elt->fixed) ? "$" : "";
-			if (elt->fixed) str = "$";
-			else str = "";
+			if (elt->fixed) str = (char*)"$";
+			else str = (char*)"";
 			// Don't print functions
 			bool print = true;
 			for (unsigned int i=0;i < network.functions.size() && print;i++){
@@ -4434,7 +4434,7 @@ int update_concentrations(int irxn) {
 		/* Only read data preceeded by read command, otherwise continue */
 		if (strncmp("read", line, 4) == 0) {
 			/* Read new species */
-			spec_new = read_Elt_array(stdin, &line_number, "species", &n_spec_new, 0x0);
+			spec_new = read_Elt_array(stdin, &line_number, (char*)"species", &n_spec_new, 0x0);
 			append_Elt_array(network.species, spec_new);
 
 			/* Read new reactions */
@@ -4448,7 +4448,7 @@ int update_concentrations(int irxn) {
 				update_gillespie_direct_network(n_spec_new, n_rxns_new);
 
 			/* Read group updates */
-			read_Groups(network.spec_groups, stdin, network.species, &line_number, "groups", &n_groups_updated);
+			read_Groups(network.spec_groups, stdin, network.species, &line_number, (char*)"groups", &n_groups_updated);
 
 //			printf( "At step %ld added %d new species (%d total %d active) %d new reactions (%d total)\n",
 //					GSP.n_steps, n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
