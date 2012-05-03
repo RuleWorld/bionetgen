@@ -1186,7 +1186,7 @@ sub writeNET
 #   TextReaction => 0,1         : write reactions as BNGL strings (default=0).
 #   TextSpecies => 0,1          : write species as BNGL string (default=1).
 #
-# TODO: set up additional formats: XML, SBML, SSC, etc.
+# TODO: set up additional formats: SBML, SSC, etc.
 # TODO: setting TextSpecies to 0 does not do anything!
 sub writeFile
 {
@@ -1367,7 +1367,8 @@ sub writeBNGL
         {   $out .= $model->CompartmentList->toString( $model->ParamList );   }
 
         # MoleculeTypes
-        $out .= $model->MoleculeTypesList->writeBNGL( \%params );
+        if ( $model->MoleculeTypesList->StrictTyping )
+        {   $out .= $model->MoleculeTypesList->writeBNGL( \%params );   }
 
         # Observables    
         if ( @{$model->Observables} )
@@ -1510,8 +1511,8 @@ sub setOption
         @_ || return ("No value specified for option $arg");
         my $val = shift @_;
 
-        if ( $arg eq "SpeciesLabel" ) {
-
+        if ( $arg eq "SpeciesLabel" )
+        {
             # SpeciesLabel method can only be changed prior to reading species.
             # Otherwise, inconsistent behavior could arise from changing the
             # labeling method.
