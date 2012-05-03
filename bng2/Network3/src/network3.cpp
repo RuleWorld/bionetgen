@@ -586,8 +586,8 @@ void Network3::init_PLA(string config, bool verbose){
 	if (verbose) cout << "...Ok done, let's go for it." << endl;
 }
 
-pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, long startStep, long maxSteps,
-		long stepInterval, char* prefix, bool print_cdat, bool print_save_net, bool print_end_net, bool verbose){
+pair<double,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
+		double stepInterval, char* prefix, bool print_cdat, bool print_save_net, bool print_end_net, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -666,10 +666,11 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 
 	// Prepare for simulation
 	double time = tStart;
-	long step = startStep;
+	double step = startStep;
+	double outputCounter = startStep;
 	double nextOutput = time + sampleTime;
 	bool lastOut = true;
-	if (stepInterval <= 0) stepInterval = LONG_MAX; // A negative stepInterval means infinity
+//	if (stepInterval <= 0) stepInterval = LONG_MAX; // A negative stepInterval means infinity
 
 	// Initial output to stdout
 /*	if (verbose){
@@ -686,14 +687,14 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 	}*/
 
 	// Simulation loop
-	if (!verbose) cout << "Running..." << flush;
 	string print_net_message;
 //	while (time < maxTime && step < startStep+maxSteps && PLA_SIM->tau < INFINITY){
 //	while (time < maxTime && step < startStep+maxSteps && !Network3::all_inactive()){
-	while (time < maxTime && step < startStep+maxSteps)
+	while (time < maxTime && step < startStep + maxSteps)
 	{
 		// Next step
 		step++;
+		outputCounter++;
 //		cout << time << endl;
 		PLA_SIM->nextStep();
 		if (PLA_SIM->tau < INFINITY)
@@ -703,7 +704,8 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 
 		// Is it time to output?
 		lastOut = false;
-		if (time >= nextOutput || (step % stepInterval) == 0) // YES
+//		if (time >= nextOutput || (step % stepInterval) == 0) // YES
+		if (time >= nextOutput || outputCounter >= stepInterval - network3::TOL) // YES
 		{
 			// Update all observables
 			for (unsigned int i=0;i < OBSERVABLE.size();i++){
@@ -751,6 +753,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 
 			// Get next output time
 			if (time >= nextOutput) nextOutput += sampleTime;
+			if (outputCounter > stepInterval - network3::TOL) outputCounter = 0;
 			lastOut = true;
 		}
 		else{ // NO
@@ -811,7 +814,6 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 		// Even if .cdat printing is suppressed, print the last step
 //		if (!print_cdat) Network3::print_species_concentrations(cdat,time);
 //	}
-	if (!verbose) cout << "Done" << endl;
 //	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
 
 	// If print_end_net = true, collect species populations and update network concentrations vector
@@ -828,7 +830,7 @@ pair<long,double> Network3::run_PLA(double tStart, double maxTime, double sample
 	if (gdat) fclose(gdat);
 	if (fdat) fclose(fdat);
 
-	return pair<long,double>(step-startStep,time-tStart);
+	return pair<double,double>(step-startStep,time-tStart);
 }
 /*
 bool Network3::all_inactive(){

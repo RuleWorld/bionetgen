@@ -81,10 +81,10 @@ clean:
 	    cd ${CVODE} ;          \
 	    ${MAKE} clean ;        \
 	fi;
-	if test -d ${GSL} ; then \
-	    cd ${GSL} ;          \
-	    ${MAKE} clean ;      \
-	fi;
+#	if test -d ${GSL} ; then \
+#	    cd ${GSL} ;          \
+#	    ${MAKE} clean ;      \
+#	fi;
 	if test -d ${MUPARSER} ; then \
 	    cd ${MUPARSER} ;          \
 	    ${MAKE} clean ;           \
