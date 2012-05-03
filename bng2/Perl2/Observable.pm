@@ -134,9 +134,19 @@ sub evaluate
     }
     else
     {   # global observable
-        foreach my $weight ( @{$obs->Weights} )
+        unless ( defined $BNGModel::GLOBAL_MODEL )
+        {  die "Observable->evaluate(): Error! Can't find current Model to evaluate global observable!";  }
+
+        my $conc  = $BNGModel::GLOBAL_MODEL->Concentrations();
+        my $slist = $BNGModel::GLOBAL_MODEL->SpeciesList();
+
+        # make sure oncentrations are initialized
+        $slist->checkOrInitConcentrations($conc);
+        # calculate global observables
+        for ( my $sidx = 1; $sidx < @{$obs->Weights}; ++$sidx )
         {
-            $val += (defined $weight) ? $weight : 0;
+            next unless ( defined $obs->Weights->[$sidx] );
+            $val += $obs->Weights->[$sidx] * $conc->[$sidx-1];
         }
     }
     return $val;
@@ -510,7 +520,6 @@ sub update
             {
 	            my $test = $n_match.$patt->Quantifier;
 	            my $result = eval $test;
-	            #print "($test) $result\n";
 	            next unless $result;
             }
             # NOTE: quantifiers are Species observables, so this logic works

@@ -82,11 +82,13 @@ sub BNGconsole
 
                 # create BNGModel object
                 $model = BNGModel->new();
+                $BNGModel::GLOBAL_MODEL = $model;
                 {   # read model file
                     my $err = $model->readFile($local_params);
                     if ($err)
                     {   # undefine model and send warning
                         %$model = ();  undef %$model;  $model = undef;
+                        $BNGModel::GLOBAL_MODEL = undef;
                         send_warning( "Some problem processing '$filename': $err" );
                         last PROCESS_INPUT;
                     }
@@ -163,6 +165,7 @@ sub BNGconsole
                 %$model = ();
                 undef %$model;
                 $model = undef;
+                $BNGModel::GLOBAL_MODEL = undef;
             }
 
             # DONE

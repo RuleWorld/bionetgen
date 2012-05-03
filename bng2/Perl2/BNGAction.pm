@@ -1203,6 +1203,7 @@ sub generate_hybrid_model
     
     if ( $options->{execute} )
     {   # execute actions
+        $BNGModel::GLOBAL_MODEL = $hybrid_model;
         my $errors = [];
         foreach my $action ( @{$options->{actions}} )
         {
@@ -1210,7 +1211,8 @@ sub generate_hybrid_model
             my $err = eval "$action_string";
             if ($@)   {  warn $@;  }
             if ($err) {  push @$errors, $err;  }
-        }    
+        }
+        $BNGModel::GLOBAL_MODEL = undef;
         if (@$errors) {  return join "\n", $errors;  }
     }
     

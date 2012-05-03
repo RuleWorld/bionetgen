@@ -63,16 +63,14 @@ use EnergyPattern;
 use Observable;
 use PopulationList;
 
-
-
+# A place to store a reference to the current active model.
+# Useful when other classes need to find the model.
+$BNGModel::GLOBAL_MODEL = undef;
 
 # Global package variables
 my $NO_EXEC = 0;  # Prevents execution of functions to allow file syntax checking
 my $HAVE_PS = 0;  # Set to 0 for MS Windows systems with no ps command - disables
                   #  reporting of memory usage at each iteration of network generation
-
-
-
 
 # Structure containing BioNetGen model data
 struct BNGModel =>
@@ -157,6 +155,12 @@ sub initialize
     $model->ParameterCache( Cache->new() );
 }
 
+
+sub setAsGlobalModel
+{
+    my $model = shift @_;
+    $BNGModel::GlobalModel = $model;
+}
 
 
 ###
