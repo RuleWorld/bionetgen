@@ -741,7 +741,7 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 
 			// Output to stdout
 			if (verbose){
-				cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
+				cout << "\t" << fixed << setprecision(6) << time << "\t" << setprecision(0) << step;
 //				for (unsigned int i=0;i < OBSERVABLE.size();i++){
 //					cout << "\t" << OBSERVABLE[i]->second;
 //				}

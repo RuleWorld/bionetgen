@@ -516,7 +516,7 @@ int main(int argc, char *argv[]){
 		// Initial output to stdout
 		if (verbose){
 			cout << "#" << "\t" << setw(8) << left << "time" << "\t" << "step" << endl;
-			cout << "\t" << fixed << t_start; cout.unsetf(ios::fixed); cout << "\t" << 0 << endl;
+			cout << "\t" << fixed << setprecision(6) << t_start << "\t" << 0 << endl;
 		}
 
 		// Run simulation
