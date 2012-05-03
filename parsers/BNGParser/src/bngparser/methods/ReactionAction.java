@@ -152,26 +152,29 @@ public class ReactionAction {
 										if(species1.getComponents()[i].contains("!") && 
 												!species2.getComponents()[j].contains("!")){
 											
-											String label = species1.getComponents()[i].replaceAll("(.+)(![A-Za-z0-9]+)", "$2");
-											
-											if(tempBonds.get(label) == null){
-												tempBonds.put(label, new ArrayList<String>());
-												tempBonds.get(label).add("DeleteBond");
+											//String label = species1.getComponents()[i].replaceAll("(.+)(![A-Za-z0-9]+)", "$2");
+											String[] label = species1.getComponents()[j].split("!");
+											for(int counter=1;counter<label.length;counter++){
+												if(tempBonds.get(label[counter]) == null){
+													tempBonds.put(label[counter], new ArrayList<String>());
+													tempBonds.get(label[counter]).add("DeleteBond");
+												}
+													tempBonds.get(label[counter]).add(species2.getName() + "_C" + (j+1));
 											}
-												tempBonds.get(label).add(species2.getName() + "_C" + (j+1));
-											
-											
+												
 										}
 										else if(species2.getComponents()[j].contains("!") && 
 												!species1.getComponents()[i].contains("!")){
 											
-											
-											String label = species2.getComponents()[j].replaceAll("(.+)!([A-Za-z0-9]+)", "$2");
-											if(tempBonds.get(label) == null){
-												tempBonds.put(label, new ArrayList<String>());
-												tempBonds.get(label).add("AddBond");
+											//this step checks how many molecules a single components is bound to and adds them to the add bond operation
+											String[] label = species2.getComponents()[j].split("!");
+											for(int counter=1;counter<label.length;counter++){
+												if(tempBonds.get(label[counter]) == null){
+													tempBonds.put(label[counter], new ArrayList<String>());
+													tempBonds.get(label[counter]).add("AddBond");
+												}
+												tempBonds.get(label[counter]).add(species1.getName() + "_C" + (i+1));
 											}
-												tempBonds.get(label).add(species1.getName() + "_C" + (i+1));
 										}
 										species2.getComponents()[j] = "";	
 											
@@ -223,8 +226,10 @@ public class ReactionAction {
 				}
 			}
 		}
+		//this adds the sites fields in the add/delete actions
 		for(String label: tempBonds.keySet()){
 			operations.add(tempBonds.get(label).get(0));
+			//System.out.println(tempBonds.get(label).get(1));
 			operator1.add(tempBonds.get(label).get(1));
 			if(tempBonds.get(label).size()>2)
 				operator2.add(tempBonds.get(label).get(2));

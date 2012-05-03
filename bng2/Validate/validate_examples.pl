@@ -526,7 +526,7 @@ foreach my $model (@models)
 if ($fail_count)
 {   print "\n!! validate_examples failed to validate $fail_count of $test_count test models !!\n\n";   }
 else
-{   print "\nvalidate_examples passed $test_count test model(s).\n\n";   }
+{   print "\nvalidate_examples passed all $test_count test model(s).\n\n";   }
 exit($fail_count);
 
 

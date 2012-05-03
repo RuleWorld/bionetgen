@@ -43,7 +43,7 @@ scope{
         : 
         ({gParent.netGrammar}? INT | )
         (s1=observable_type)? STRING {gParent.memory.put($STRING.text,new Register(0.0,"observable"));} 
-        (pattern_list[upperID] { $observable_def_line::pattern.add($pattern_list.st);})
+        ({gParent.netGrammar}? LBRACKET MATCHONCE RBRACKET | ) (pattern_list[upperID] { $observable_def_line::pattern.add($pattern_list.st);})
         -> observables_block(id={upperID},type={$observable_type.text},patterns={$observable_def_line::pattern},name={$STRING.text})
         ;
 observable_type
