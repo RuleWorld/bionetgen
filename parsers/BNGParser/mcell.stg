@@ -1,24 +1,47 @@
 group mcell;
 
-prog2(parameters,molecules,species,reactions,observables,functions,compartments)::=<<
+prog2(parameters,molecules,species,reactions,observables,functions,compartments,boxes,compartmentsSurface)::=<<
 time_step = 1.0
 TIME_STEP = time_step 
 TIME_STEP_MAX = time_step 
 ITERATIONS = 1000 
 EFFECTOR_GRID_DENSITY = 10000 
 INTERACTION_RADIUS = 0.001
+VACANCY_SEARCH_DISTANCE=1
+PARTITION_X = [ [-0.2 TO 0.2 STEP 0.01] ]
+PARTITION_Y = [ [-0.2 TO 0.2 STEP 0.01] ]
+PARTITION_Z = [ [-0.2 TO 0.2 STEP 0.01] ]
+
 <parameters; separator="\n">
 DEFINE_MOLECULES{
-  <molecules.keys:{k| S<molecules.(k)> { D_3D = 100e-8 } /*<k>*/}; separator="\n">
+  <molecules; separator="\n">
 }
+
+<if(compartmentsSurface)>
+<boxes.keys:{b|
+<b> BOX
+{
+  CORNERS = [-0.1,-0.1,-0.1] , [0.1,0.1,0.1]
+  DEFINE_SURFACE_REGIONS
+  {
+    <boxes.(b)>
+  }
+  
+}
+}; separator="\n">
+<else>
 small_box BOX
 {
 CORNERS = [-0.1,-0.1,-0.1] , [0.1,0.1,0.1]
 }
+<endif>
+
 INSTANTIATE my_world OBJECT 
 {
   <species; separator = "\n">
-my_box OBJECT small_box {}
+  
+  <boxes.keys:{b|my_box OBJECT <b> {}}; separator="\n">
+  
 }
 DEFINE_REACTIONS
 {
@@ -31,6 +54,10 @@ STEP = 1e-5
   <observables; separator = "\n">
 }
 
+>>
+
+define_molecules(index,name,dimension,difussion)::=<<
+  S<index> { D_<dimension>D = <difussion> } /*<name>*/
 >>
 
 
@@ -47,15 +74,35 @@ sites_def(id,states) ::= <<
 
 
 
-seed_species_block(id,concentration) ::= <<
-
+seed_species_block(id,concentration,isVolume,location) ::= <<
+<if(isVolume)>
 S<id>_release SPHERICAL_RELEASE_SITE {
-  LOCATION = [0,0,0]
+  LOCATION = [<location>]
   SITE_DIAMETER = 0.196
   MOLECULE = S<id>
   NUMBER_TO_RELEASE = <concentration>
-  
-}
+  }
+<else>
+ <id>' = <concentration>
+<endif>
+
+>>
+
+seed_surface_species(id,concentration)::=<<
+  <id>' = concentration
+>>
+
+create_surface_region(name,molecules)::=<<
+
+    <name> 
+    {
+      ELEMENT_LIST = [ALL_ELEMENTS] 
+      MOLECULE_NUMBER
+      {
+        <molecules: {m | S<m>};separator="\n">
+      }
+    }
+
 >>
 
 rule_seed_species_block(id,molecules,firstBonds,secondBonds) ::= <<
@@ -87,12 +134,17 @@ reaction_rules()::=<<
 
 >>
 
-reactions(reactant, product, rate)::=<<
-  <reactant: {r | S<r>}; separator="+"> -\> <product: {p | S<p>} ; separator="+"> [<rate>]
+reactions(reactant, product, rate,surfaceCompartment,reactantOrientation,productOrientation)::=<<
+  <if(surfaceCompartment)><reactant,reactantOrientation: {r,ro | S<r><ro>}; separator="+"> -\> <product,productOrientation: {p ,po| S<p><po>} ; separator="+"> [<rate>]
+  <else><reactant: {r | S<r>}; separator="+"> -\> <product: {p | S<p>} ; separator="+"> [<rate>]
+  <endif>
 >>
 
-groups_block(id,name,type,patterns)::=<<
-{COUNT [S<id>,WORLD]} => "eq_<name>.dat"
+groups_groups(groupList,name)::=<<
+{<groupList; separator=" + ">}  => "eq_<name>.dat"
+>>
+groups_block(id,name,type,patterns,times)::=<<
+COUNT [S<id>,WORLD]<if(times)>*<times><endif>
 >>
 
 patterns_block(id,molecules)::=<<
@@ -102,6 +154,13 @@ functions_block(id,referencesName,referencesType,expression)::=<<
 >>
 
 compartments_block(id,dimensions,size,outside)::=<<
+>>
+
+compartments_volume_block(id,size,outside)::=<<
+>>
+
+compartments_surface_block(id,size,outside)::=<<
+  <id>{REFLECTIVE = A REFLECTIVE = B}  
 >>
 
 observables_block()::=<<
