@@ -22,8 +22,8 @@ begin seed species
     L(r,r,r)   Lig_tot
 end seed species
 begin observables
-	Molecules  Rfree  R(l,l)
-	Molecules  Lfree  L(r,r,r)
+	Molecules  Rfree    R(l,l)
+	Molecules  Lfree    L(r,r,r)
 	Molecules  Rtot     R()
 	Molecules  Ltot     L()
 	Molecules  LRmotif  L(r!0).R(l!0)
@@ -39,10 +39,11 @@ begin reaction rules
 	L(r,r!+,r!+)  +  R(l)  ->  L(r!1,r!+,r!+).R(l!1)  kp2
 end reaction rules
 begin population maps
-    L(r,r,r)                                     ->  L_pop()     k_gather
-    R(l,l)                                       ->  R_pop()     k_gather
+    L(r,r,r)  ->  L_pop()    k_gather
+    R(l,l)    ->  R_pop()    k_gather
 end population maps
 end model
 
 ## actions ##
-generate_hybrid_model({ overwrite=>1, execute=>1, verbose=>1, actions=>['writeXML()'] });
+generate_hybrid_model({overwrite=>1, execute=>1, verbose=>1, actions=>["writeXML()"]})
+

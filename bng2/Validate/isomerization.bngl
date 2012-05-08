@@ -49,6 +49,6 @@ end model
 
 ## actions ##
 generate_network({overwrite=>1})
-simulate_ssa({suffix=>'burnin',t_start=>0,t_end=>10000,n_steps=>1})
-simulate_ssa({suffix=>'ssa_equil',t_start=>0,t_end=>1000000,n_steps=>10000})
+simulate_ssa({suffix=>"burnin",t_start=>0,t_end=>10000,n_steps=>1})
+simulate_ssa({suffix=>"ssa_equil",t_start=>0,t_end=>1000000,n_steps=>10000})
 

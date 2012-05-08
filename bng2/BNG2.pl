@@ -189,6 +189,7 @@ else
     {
         # create BNGMOdel object
         my $model = BNGModel->new();
+        $BNGModel::GLOBAL_MODEL = $model;
         # make local copy of params
         my $local_params = { %$params };
         # add filename to params
@@ -199,6 +200,7 @@ else
         if ($err) {  exit_error($err);  }
         # undefine model
         %$model = ();  undef %$model;
+        $BNGModel::GLOBAL_MODEL = undef;
     }
 }
 

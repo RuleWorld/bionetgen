@@ -2748,7 +2748,7 @@ sub findMap
     if ($err) { exit_error( "Some problem finding reaction center: $err", $rr->toString() ); }
 
 	## DETERMINE CORRECTION FACTOR FOR SYMMETRY ##
-    #  |AutR| = number of matches to a set of components (that match at least once)
+    #  |AutR| = number of automorphisms of the reactant patterns
     #  |AutR| = [AutR:RG]*|RG| = [AutR:RG]*|Stab(RxnCntr)|*|CG|
     #
     #  where  RG = RuleGroup (see below)
@@ -2773,7 +2773,7 @@ sub findMap
 	# For each R automorphism we're checking the existence
 	# of a P automorphism.  Specifically, find autoP s.t for all r
 	# in the domain of map:
-	#    autoR o map == map o autoP
+	#    map o autoR == autoP o map
 	#
 	# If we can do this, then we have a symmetry and autoR is an element
 	# of the Rule Group, RG.  If not, the automorphism corresponds to a new
@@ -2854,16 +2854,50 @@ sub findMap
         push @StabRxnCntr, $auto;
     }
 
-	my $multScale = 1 / (@RuleGroup/@StabRxnCntr);
+
+    # determine is any reactant graphs are pure context
+    my @context_rgs = ();
+    for (my $iR = 0; $iR < @{$rr->Reactants}; ++$iR )
+    {
+        if ( @{$rr->ReactionCenter->[$iR]}==0 )
+        {   # this reactant pattern has no reaction center!
+            push @context_rgs, $rr->Reactants->[$iR];
+        }
+    }
+
+    # count the instances of each unqiue context graph (up-to-isomorphism)
+    #  and calculuate the permutations of the context graph set
+    my $crg_permutations = 1;
+    while ( my $crg = shift @context_rgs )
+    {
+        my $instances = 1;
+        my $iR = 0;
+        while ( $iR < @context_rgs )
+        {
+            # TODO: make sure isomorphicTo works correctly on patterns!
+            if ( $crg->isomorphicTo($context_rgs[$iR]) )
+            {   # toss out this graph and increment instances
+                splice @context_rgs, $iR, 1;
+                ++$instances;
+            }
+            else
+            {   ++$iR;   }
+        }
+        $crg_permutations *= RxnRule::factorial($instances);
+    }
+
+
+	my $multScale = 1 / (@RuleGroup/@StabRxnCntr) / $crg_permutations;
 	$rr->MultScale($multScale);
 	
 	## debug symmetry output
     #print $rr->toString(), "\n";
-	#print STDERR "|autR|    = ", scalar(@r_auto), "\n";
-	#print STDERR "|autP|    = ", scalar(@p_auto), "\n";
-	#print STDERR "|RG|      = ", scalar(@RuleGroup), "\n";
-	#print STDERR "|StabRC|  = ", scalar(@StabRxnCntr), "\n";
-	#print STDERR "multScale = ", $multScale, "\n";
+    #print STDERR "|autR|    = ", scalar(@r_auto), "\n";
+    #print STDERR "|autP|    = ", scalar(@p_auto), "\n";
+    #print STDERR "|RG|      = ", scalar(@RuleGroup), "\n";
+    #print STDERR "|StabRC|  = ", scalar(@StabRxnCntr), "\n";
+    #print STDERR "CRG perms = ", $crg_permutations, "\n";
+    #print STDERR "multScale = ", $multScale, "\n";
 
 
 	# save maps

@@ -10,9 +10,12 @@
 # OPTIONS:
 #   --bngpath PATH  : path to BioNetGen repository (default: script directory)
 #   --outdir  PATH  : output path (default: current directory)
-#    --version VERS : version number (overrides VERSION file)
+#   --bindir  PATH  : path to pre-compiled binaries (default: undef)
+#   --version VERS  : version number (overrides VERSION file)
 #   --codename NAME : distribution codename (overrides VERSION file)
 #   --archive       : create distribution archive file
+#   --build         : compile and install binaries (default: 0)
+#   --validate      : validate installation (default: 0)
 #   --overwrite     : overwrite any existing distribution
 #   --help          : display help
 
@@ -22,27 +25,69 @@ use warnings;
 # Perl Core Modules
 use FindBin;
 use File::Spec;
+use Cwd ("getcwd");
+use Config;
 
 ### PARAMETERS ###
 # BNG root directory
 my $bngpath = $FindBin::RealBin;
 # output directory
 my $outdir = File::Spec->curdir();
+# binary subdirectory (default=undef)
+my $bindir;
  # if true, creates a tar.gz compressed archive
 my $archive = 0;
-# if true, overwrites existing distribution
+# if true, compiles and installs the binaries
+my $build = 0;
+# if true, validates installation
+my $validate = 0;
+# if true, overwrites existing distribution (default 0)
 my $overwrite = 0;
 # distribution version (default undefined)
 my $version;
-# distribution codename (default)
+# distribution codename (default="stable")
 my $codename = 'stable';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
 my $exclude_files = '(^\.|^_|~$|\.old$|^make_dist\.pl$)';
+# file extensions that should get executable flag
+my $executable_suffix = '(pl|py|dll|exe)';
 # subdirectories to include in distribution
 my @include_subdirectories = qw/ Perl2 Models2 Network3 PhiBPlot Validate /;
-# system copy command
-my $syscopy = "cp";
+# directory containing library archives
+my $libarc_subdir = "libsource";
+# include libraries
+my @include_libraries = ("cvode-2.6.0.tar.gz","muparser_v134.tar.gz");
+# run_network binary
+my $run_network = "run_network";
 
+### System specific commands and flags ###
+# copy
+my $sys_copy = "cp";
+my @copybin_flags = ("-d");
+# chmod
+my $sys_chmod = "chmod";
+my $chmod_flags = "+x";
+# system shell 
+my $sys_shell = "sh";
+# autoreconf
+my $build_subdir = "Network3";
+my $sys_autoconf = "autoreconf";
+my @autoconf_flags = ("--no-recursive","--install");
+# configure
+my $sys_configure = "configure";
+my @configure_flags = ("--disable-shared");
+# make
+my $sys_make = "make";
+my @make_flags = ();
+# tarzip
+my $sys_tarzip = "tar";
+my @tarzip_flags = ("-zxf");
+# perl
+my $sys_perl = "perl";
+# validation
+my $validate_subdir = "Validate";
+my $validate_script = "validate_examples.pl";
+my @validate_flags  = ();
 
 ###                                                          ###
 ###  BEGIN MAIN SCRIPT, no user options beyond this point!!  ###
@@ -59,12 +104,18 @@ while ( @ARGV and $ARGV[0] =~ /^--/ )
     {   $bngpath = shift @ARGV;   }
     elsif ( $arg eq '--outdir' )
     {   $outdir  = shift @ARGV;    }
+    elsif ( $arg eq '--bindir' )
+    {   $bindir  = shift @ARGV;    }
     elsif ( $arg eq '--version' )
     {   $version = shift @ARGV;    }
     elsif ( $arg eq '--codename' )
     {   $codename = shift @ARGV;   }
     elsif ( $arg eq '--archive' )
     {   $archive = 1;   }
+    elsif ( $arg eq '--build' )
+    {   $build = 1;   }
+    elsif ( $arg eq '--validate' )
+    {   $validate = 1;   }
     elsif ( $arg eq '--overwrite' )
     {   $overwrite = 1;   }
     elsif ( $arg eq '--help' )
@@ -124,8 +175,11 @@ else
 
 # define distribution name, directory and archive file
 my $dist_name    = "BioNetGen-${version}" . (($codename eq '') ? '' : "-${codename}");
-my $dist_dir     = File::Spec->catdir( ${outdir}, ${dist_name} );
-my $archive_file = File::Spec->catfile( ${outdir}, "${dist_name}.tar.gz" );
+my $dist_dir     = File::Spec->catdir( $outdir, $dist_name );
+my $abs_dist_dir = File::Spec->rel2abs( $dist_dir );
+my $dist_bindir  = File::Spec->catdir( $dist_dir, "bin" );
+my $build_dir    = File::Spec->catdir( $dist_dir, $build_subdir );
+my $archive_file = File::Spec->catfile( $outdir, "${dist_name}.tar.gz" );
 
 
 
@@ -138,8 +192,6 @@ if ($archive)
     printf "  archive: %s\n", $archive_file;
 }
 print "\n";
-
-
 
 
 # check if output directory exists..
@@ -160,11 +212,11 @@ if ($archive)
     {
         if ($overwrite)
         {   # warn using about overwrite
-            print "make_dist.pl warning:\noverwriting archive file '$archive_file'\n";
+            print "make_dist.pl warning:\noverwriting archive file '${archive_file}'\n";
         }
         else
         {   # overwrite not allowed! exit with error.
-            print "make_dist.pl error:\narchive '$archive_file' already exists.\n";
+            print "make_dist.pl error:\narchive '${archive_file}' already exists.\n";
             exit -1;
         }
     }
@@ -174,17 +226,14 @@ if ($archive)
 # check if distribution directory already exists..
 if (-d $dist_dir)
 {
-    if (-e $archive_file)
-    {
-        if ($overwrite)
-        {   # warn using about overwrite
-            print "make_dist.pl warning:\noverwriting distribution directory '$dist_dir'\n";
-        }
-        else
-        {   # overwrite not allowed! exit with error.
-            print "make_dist.pl error:\ntarget distribution directory '$dist_dir' already exists.\n"; 
-            exit -1;
-        }
+    if ($overwrite)
+    {   # warn using about overwrite
+        print "make_dist.pl warning:\noverwritting distribution directory '${dist_dir}'\n";
+    }
+    else
+    {   # overwrite not allowed! exit with error.
+        print "make_dist.pl error:\ntarget distribution directory '${dist_dir}' already exists.\n"; 
+        exit -1;
     }
 }
 
@@ -227,6 +276,182 @@ print $vh $vstring;
 close $vh;
 
 
+# get pre-compiled binaries
+if (defined $bindir)
+{
+    print "fetching pre-compiled binaries from $bindir . . .\n";
+
+    unless (-d $bindir)
+    {   # bindir doesn't exist!
+        print "make_dist.pl error:\nbindir '$bindir' does not exist.\n";
+        exit -1;
+    }
+
+    # create subdirectory for binaries
+    unless (-d $dist_bindir)
+    {
+        # try to make output directory
+        unless ( mkdir $dist_bindir )
+        {
+            print "make_dist.pl error:\ncannot make bin directory ($!).\n";
+            exit -1;
+        }
+    }
+
+    # copy all files in bindir to distbindir
+    my $recursive = 0;
+    my $err = copy_dir( $bindir, $dist_bindir, $recursive, $exclude_files, @copybin_flags );
+    if ($err)
+    {
+        print "make_dist.pl error:\n$err\n";
+        exit -1;
+    }
+}
+
+
+# gather libraries, build configure scripts, and (optionally) compile/install
+{
+    unless (-d $build_dir)
+    {   # bindir doesn't exist!
+        print "make_dist.pl error:\nbuild directory '${build_dir}' does not exist.\n";
+        exit -1;
+    }
+
+    # get current directory
+    my $cwd = getcwd();
+
+    # change to build_dir
+    unless( chdir $build_dir )
+    {   print "make_dist.pl error:\nunable to chdir to build directory '${build_dir}'.\n";
+        exit -1;
+    }
+    
+    print "preparing libaries . . .\n";
+    foreach my $libfile (@include_libraries)
+    {
+        # get absolute path of libfile
+        my $abs_libfile = File::Spec->catfile( ($bngpath, $libarc_subdir), $libfile );
+        # check if libfile is readable
+        unless (-r $abs_libfile)
+        {   print "make_dist.pl error:\ncan't access library archive '${libfile}'.\n";
+            exit -1;
+        }
+
+        # get directory where libdir will be extracted
+        (my $extract_libdir = $libfile) =~ s/\.tar\.gz$//;
+
+        my $new_install = 1;
+        #if (-d $extract_libdir)
+        #{   # check if libfile is newer than 
+        #    my $modtime_libfile = (stat $abs_libfile)[9];
+        #    my $modtime_libdir  = (stat $extract_libdir)[9];
+        #    $new_install = ($modtime_libdir > $modtime_libdir) ? 1 : 0;
+        #}
+
+        if ($new_install)
+        {
+            print "extracting ${libfile} . . .\n";
+            my @args = ($sys_tarzip, @tarzip_flags, $abs_libfile);
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\ncannot extract library archive file ($?)";  exit -1;  }
+        }
+    }
+
+    # run autoconf
+    print "generating $build_subdir configuration scripts . . .\n";
+    my @args = ($sys_autoconf, @autoconf_flags);
+    print "command: ", join(" ", @args), "\n";
+    unless( system(@args)==0 )
+    {  print "make_dist.pl error:\nsome problem running autoconf ($?)";  exit -1; }
+
+    if ($build)
+    {
+        {
+            print "configuring $build_subdir . . .\n";
+            my @args = ($sys_shell, $sys_configure, @configure_flags, "--prefix=${abs_dist_dir}");
+            print "command: ", join(" ", @args), "\n";
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\nsome problem configuring ${build_subdir} ($?)";  exit -1; }
+        }
+
+        {
+            print "making $build_subdir . . .\n";
+            my @args = ($sys_make, @make_flags);
+            print "command: ", join(" ", @args), "\n";
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\nsome problem making ${build_subdir} ($?)";  exit -1; }
+        }
+
+        {
+            print "installing $build_subdir . . .\n";
+            my @args = ($sys_make, "install" );
+            print "command: ", join(" ", @args), "\n";
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\nsome problem installing ${build_subdir} ($?)";  exit -1;  }
+        }
+
+
+        {
+            print "appending arch/OS signature to ${run_network} binary . . .\n";
+            my $arch = $Config{myarchname};
+            my $abs_run_network = File::Spec->catfile(($abs_dist_dir, "bin"), $run_network);
+            
+            unless (-e $abs_run_network)
+            {  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
+
+            # append architecture name
+            my $abs_run_network_arch = $abs_run_network . "_${arch}";
+            # rename as architecture specific
+            unless ( rename $abs_run_network, $abs_run_network_arch )
+            {  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
+
+        }
+    }
+
+    # go back to original directory
+    unless( chdir $cwd )
+    {   print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+        exit -1;
+    }
+
+    if ($validate)
+    {
+        #  make and change to validate workdir
+        my $validate_workdir = "validate_${dist_name}";
+
+        # check if output directory exists..
+        unless (-d $validate_workdir)
+        {
+            # try to make output directory
+            unless ( mkdir $validate_workdir )
+            {
+                print "make_dist.pl error:\ncannot make validation working directory ($!).\n";
+                exit -1;
+            }
+        }
+
+        # change to build_dir
+        unless( chdir $validate_workdir )
+        {   print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
+            exit -1;
+        }
+
+        # run validation script
+        my $abs_validate_script = File::Spec->catfile( ($abs_dist_dir, $validate_subdir), $validate_script );
+        print "validating ${dist_name} . . .\n";
+        my @args = ($sys_perl, $abs_validate_script, @validate_flags );
+        print "command: ", join(" ", @args), "\n";
+        unless( system(@args)==0 )
+        {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)";  }
+    }
+}
+
+
+# compile
+
+
+
+
 if ($archive)
 {
     # create tar-archive
@@ -256,6 +481,7 @@ sub copy_dir
     my $dest_dir   = shift @_;
     my $recursive  = @_ ? shift @_ : 1;
     my $exclude_files = @_ ? shift @_ : '';
+    my @copy_flags = @_;
 
     my @files;
 
@@ -294,20 +520,22 @@ sub copy_dir
         {   
             if ($recursive)
             {   # copy subdirectory
-                my $err = copy_dir( $source_file, $dest_file, $recursive, $exclude_files );
-                if (defined $err)
-                {
-                    return $err;
-                }
+                my $err = copy_dir( $source_file, $dest_file, $recursive, $exclude_files, @copy_flags );
+                if (defined $err) {  return $err;  }
             }
         }   
         else
         {   # copy file
-            print "  $file\n";
-            my @args = ( "cp", $source_file, $dest_file );
+            #print "  $file\n";
+            my @args = ( $sys_copy, @copy_flags, $source_file, $dest_file );
             unless( system(@args)==0 )
-            {
-                return "copy_dir: cannot copy file ($?)";
+            {  return "copy_dir: cannot copy file ($?)";  }
+
+            if ($dest_file =~ /\.${executable_suffix}$/)
+            {   # try to set executable flag
+                my @args = ( $sys_chmod, $chmod_flags, $dest_file );
+                unless( system(@args)==0 )
+                {  return "copy_dir: cannot set executable flag ($?)";  }
             }
         }
     }
@@ -328,15 +556,18 @@ SYNOPSIS:
    make_dist.pl [OPTS] 
 
 DESCRIPTION:
-   Create a BioNetGen distribution from the reposity. By default, attempts
+   Create a BioNetGen distribution from the repository. By default, attempts
    to extract version number and codename from VERSION file in BNG root.
 
 OPTIONS:
    --bngpath PATH  : path to BioNetGen repository (default: script directory)
    --outdir  PATH  : output path (default: current directory)
+   --bindir  PATH  : path to pre-compiled binaries (default: undef)
    --version VERS  : version number (overrides VERSION file)
    --codename NAME : distribution codename (overrides VERSION file)
    --archive       : create distribution archive file
+   --build         : compile and install binaries (default: 0)
+   --validate      : validate installation (default: 0)
    --overwrite     : overwrite any existing distribution
    --help          : display help
 

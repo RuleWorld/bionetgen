@@ -63,16 +63,14 @@ use EnergyPattern;
 use Observable;
 use PopulationList;
 
-
-
+# A place to store a reference to the current active model.
+# Useful when other classes need to find the model.
+$BNGModel::GLOBAL_MODEL = undef;
 
 # Global package variables
 my $NO_EXEC = 0;  # Prevents execution of functions to allow file syntax checking
 my $HAVE_PS = 0;  # Set to 0 for MS Windows systems with no ps command - disables
                   #  reporting of memory usage at each iteration of network generation
-
-
-
 
 # Structure containing BioNetGen model data
 struct BNGModel =>
@@ -157,6 +155,12 @@ sub initialize
     $model->ParameterCache( Cache->new() );
 }
 
+
+sub setAsGlobalModel
+{
+    my $model = shift @_;
+    $BNGModel::GlobalModel = $model;
+}
 
 
 ###
@@ -1182,7 +1186,7 @@ sub writeNET
 #   TextReaction => 0,1         : write reactions as BNGL strings (default=0).
 #   TextSpecies => 0,1          : write species as BNGL string (default=1).
 #
-# TODO: set up additional formats: XML, SBML, SSC, etc.
+# TODO: set up additional formats: SBML, SSC, etc.
 # TODO: setting TextSpecies to 0 does not do anything!
 sub writeFile
 {
@@ -1363,7 +1367,8 @@ sub writeBNGL
         {   $out .= $model->CompartmentList->toString( $model->ParamList );   }
 
         # MoleculeTypes
-        $out .= $model->MoleculeTypesList->writeBNGL( \%params );
+        if ( $model->MoleculeTypesList->StrictTyping )
+        {   $out .= $model->MoleculeTypesList->writeBNGL( \%params );   }
 
         # Observables    
         if ( @{$model->Observables} )
@@ -1506,8 +1511,8 @@ sub setOption
         @_ || return ("No value specified for option $arg");
         my $val = shift @_;
 
-        if ( $arg eq "SpeciesLabel" ) {
-
+        if ( $arg eq "SpeciesLabel" )
+        {
             # SpeciesLabel method can only be changed prior to reading species.
             # Otherwise, inconsistent behavior could arise from changing the
             # labeling method.

@@ -108,9 +108,9 @@ INT
   
         
 groups_block:
-BEGIN GROUPS
-  group_line*
-END GROUPS
+BEGIN GROUPS LB+
+  (group_line LB+)*
+END GROUPS LB+
 
 ;
 
@@ -164,7 +164,8 @@ scope {
   paraphrases.pop();
 }
 :
-SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI
+LB*
+SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+
 (program_block)* EOF 
 
 
@@ -197,9 +198,9 @@ functions_block
   paraphrases.pop();
 }
 :
-      BEGIN FUNCTIONS 
-       (function_def {$prog::functions.add($function_def.st);})*     
-      END FUNCTIONS
+      BEGIN FUNCTIONS LB+
+       (function_def LB+{$prog::functions.add($function_def.st);})*     
+      END FUNCTIONS LB+
 ;
 
 function_def:
@@ -209,9 +210,9 @@ function_def:
 //http://bionetgen.org/index.php/Compartments_in_BNGL
 compartments_block:
 
-  BEGIN COMPARTMENTS
-      (compartment {$prog::compartments.add($compartment.st);})*
-  END COMPARTMENTS;
+  BEGIN COMPARTMENTS LB+
+      (compartment LB+{$prog::compartments.add($compartment.st);})*
+  END COMPARTMENTS LB+;
   
 compartment:
    s1=STRING INT s3=expression[memory] (s2=STRING)? -> compartments_block(id={$s1.text},dimensions={$INT.text},size={$s3.value},outside={$s2.text}) 
@@ -226,12 +227,12 @@ dereference returns [String label]:
   
 
  reactions_block[List<StringTemplate> templates]:
-BEGIN REACTIONS
-  (INT reaction
+BEGIN REACTIONS LB+
+  (INT reaction LB+
   {
     $templates.add($reaction.st);
   })*
-END REACTIONS
+END REACTIONS LB+
 ;
 
 reaction

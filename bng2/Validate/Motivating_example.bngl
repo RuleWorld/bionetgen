@@ -36,19 +36,19 @@ begin parameters
   k_recycle       0.1
   k_R_transphos   1.0
   k_R_dephos      0.1
-  kp_R_TF        	0.1
-  km_R_TF      	0.1
-  kp_R_TFp       	0.1
-  km_R_TFp     	10.0
+  kp_R_TF         0.1
+  km_R_TF         0.1
+  kp_R_TFp        0.1
+  km_R_TFp        10.0
   k_TF_transphos  1.0
   k_TF_dephos     1.0
   kp_TF_TF        0.1
   km_TF_TF        1.0
-  kp_TF_p1       	0.1
-  km_TF_p1     	1.0
+  kp_TF_p1        0.1
+  km_TF_p1        1.0
   k_transcribe    1.0
   k_translate     1.0
-  k_mRNA_to_CP    1.0	 # volume to volume species transport.
+  k_mRNA_to_CP    1.0     # volume to volume species transport.
   k_mRNA_deg      1.0
   k_P_deg         0.1
   k_Im_bind_CP    0.1
@@ -61,7 +61,7 @@ begin parameters
   kp_P1_p2        0.1
   km_P1_p2        1.0
   
-  eVol_PM         sa_PM * eff_width		# effective surface volumes
+  eVol_PM         sa_PM * eff_width        # effective surface volumes
   eVol_NM         sa_NM * eff_width
   eVol_EM         sa_EM * eff_width
 end parameters
@@ -80,7 +80,7 @@ begin molecule types
   Sink()                         # a place for deleted molecules.  
 end molecule types
 
-begin species
+begin seed species
   L(r,d,loc~EC)            L0
   R(l,tf~Y,loc~PM)         R0
   TF(r,d~Y,dna,im,loc~CP)  TF0
@@ -88,52 +88,52 @@ begin species
   Im(fg,cargo,loc~CP)      Im0
   NP(fg)                   NP0
   $Sink()                  0
-end species
+end seed species
 
 begin reaction rules
   # ligand dimerization (1 -> 6 rules)
   #
   # @EC: neither ligand bound to PM through Rec
   Rule1_1:  L(d,r,loc~EC) + L(d,r,loc~EC)  \
-    		<->  L(d!1,r,loc~EC).L(d!1,r,loc~EC)	  kp_LL/vol_EC,  km_LL
+            <->  L(d!1,r,loc~EC).L(d!1,r,loc~EC)      kp_LL/vol_EC,  km_LL
 
   # @EN: neither ligand bound to EM through Rec
   Rule1_2:  L(d,r,loc~EN) + L(d,r,loc~EN)  \
-      	<->  L(d!1,r,loc~EN).L(d!1,r,loc~EN)          kp_LL/vol_EN,  km_LL  
+          <->  L(d!1,r,loc~EN).L(d!1,r,loc~EN)          kp_LL/vol_EN,  km_LL  
 
   # @EC: one ligand bound to PM through Rec
   Rule1_3:  L(d,r!+,loc~EC) + L(d,r,loc~EC)  \
-    		<->  L(d!1,r!+,loc~EC).L(d!1,r,loc~EC)    kp_LL/vol_EC,  km_LL
+            <->  L(d!1,r!+,loc~EC).L(d!1,r,loc~EC)    kp_LL/vol_EC,  km_LL
 
   # @EN: one ligand bound to EM through Rec
   Rule1_4:  L(d,r!+,loc~EN) + L(d,r,loc~EN)  \
-    		<->  L(d!1,r!+,loc~EN).L(d!1,r,loc~EN)    kp_LL/vol_EN,  km_LL
+            <->  L(d!1,r!+,loc~EN).L(d!1,r,loc~EN)    kp_LL/vol_EN,  km_LL
 
   # @PM: both ligands bound to PM through Rec  
   Rule1_5:  L(d,r!+,loc~EC) + L(d,r!+,loc~EC)  \
-    		<->  L(d!1,r!+,loc~EC).L(d!1,r!+,loc~EC)  kp_LL/eVol_PM, km_LL
+            <->  L(d!1,r!+,loc~EC).L(d!1,r!+,loc~EC)  kp_LL/eVol_PM, km_LL
 
   # @EM: both ligands bound to EM through Rec
   Rule1_6:  L(d,r!+,loc~EN) + L(d,r!+,loc~EN)  \
-    		<->  L(d!1,r!+,loc~EN).L(d!1,r!+,loc~EN)  kp_LL/eVol_EM, km_LL
+            <->  L(d!1,r!+,loc~EN).L(d!1,r!+,loc~EN)  kp_LL/eVol_EM, km_LL
   
   # receptor-ligand binding
-  Rule2_1:  L(r,loc~EC) + R(l,loc~PM)  <->  L(r!1,loc~EC).R(l!1,loc~PM)	kp_LR/vol_EC,  km_LR  exclude_reactants(1,R)
+  Rule2_1:  L(r,loc~EC) + R(l,loc~PM)  <->  L(r!1,loc~EC).R(l!1,loc~PM)    kp_LR/vol_EC,  km_LR  exclude_reactants(1,R)
   Rule2_2:  L(r,loc~EN) + R(l,loc~EM)  <->  L(r!1,loc~EN).R(l!1,loc~EM) kp_LR/vol_EN,  km_LR  exclude_reactants(1,R)
-  Rule2_3:  L(r,loc~EC) + R(l,loc~PM)  <->  L(r!1,loc~EC).R(l!1,loc~PM)	kp_LR/eVol_PM, km_LR  include_reactants(1,R)
+  Rule2_3:  L(r,loc~EC) + R(l,loc~PM)  <->  L(r!1,loc~EC).R(l!1,loc~PM)    kp_LR/eVol_PM, km_LR  include_reactants(1,R)
   Rule2_4:  L(r,loc~EN) + R(l,loc~EM)  <->  L(r!1,loc~EN).R(l!1,loc~EM) kp_LR/eVol_EM, km_LR  include_reactants(1,R)
   
   # receptor-dimer internalization
   Rule3:  R(loc~PM).L(loc~EC).L(loc~EC).R(loc~PM) -> R(loc~EM).L(loc~EN).L(loc~EN).R(loc~EM)  k_R_endo 
 
   # receptor,ligand recycling
-  Rule4_1:  R(l,loc~EM)  ->  R(l,loc~PM)  						  k_recycle
-  Rule4_2:  R(l!1,loc~EM).L(r!1,d,loc~EN) ->  R(l!1,loc~PM).L(r!1,d,loc~EC)  	  k_recycle
+  Rule4_1:  R(l,loc~EM)  ->  R(l,loc~PM)                            k_recycle
+  Rule4_2:  R(l!1,loc~EM).L(r!1,d,loc~EN) ->  R(l!1,loc~PM).L(r!1,d,loc~EC)        k_recycle
   Rule4_3:  R(l!1,loc~EM).L(r!1,d!2,loc~EN).L(r,d!2,loc~EN) -> R(l!1,loc~PM).L(r!1,d!2,loc~EC).L(r,d!2,loc~EC)  k_recycle
   Rule4_4:  R(l!1,loc~EM).L(r!1,d!2,loc~EN).L(r!3,d!2,loc~EN).R(l!3,loc~EM)  \
-        	-> R(l!1,loc~PM).L(r!1,d!2,loc~EC).L(r!3,d!2,loc~EC).R(l!3,loc~PM)  k_recycle   
+            -> R(l!1,loc~PM).L(r!1,d!2,loc~EC).L(r!3,d!2,loc~EC).R(l!3,loc~PM)  k_recycle   
 
-  Rule5_1:  L(r,d,loc~EN)  ->  L(r,d,loc~EC)                   			  k_recycle
+  Rule5_1:  L(r,d,loc~EN)  ->  L(r,d,loc~EC)                                 k_recycle
   Rule5_2:  L(r,d!1,loc~EN).L(r,d!1,loc~EN) -> L(r,d!1,loc~EC).L(r,d!1,loc~EC)  k_recycle
  
   # receptor transphosphorylation
@@ -156,9 +156,9 @@ begin reaction rules
   
   # transcription factor dimerization
   Rule12_1:  TF(r,d~pY,dna,loc~CP) + TF(r,d~pY,dna,loc~CP)  \
-        	 <->  TF(r,d~pY!1,dna,loc~CP).TF(r,d~pY!1,dna,loc~CP)    kp_TF_TF/vol_CP, km_TF_TF
+             <->  TF(r,d~pY!1,dna,loc~CP).TF(r,d~pY!1,dna,loc~CP)    kp_TF_TF/vol_CP, km_TF_TF
   Rule12_2:  TF(r,d~pY,dna,loc~NU) + TF(r,d~pY,dna,loc~NU)  \
-        	 <->  TF(r,d~pY!1,dna,loc~NU).TF(r,d~pY!1,dna,loc~NU)    kp_TF_TF/vol_NU, km_TF_TF
+             <->  TF(r,d~pY!1,dna,loc~NU).TF(r,d~pY!1,dna,loc~NU)    kp_TF_TF/vol_NU, km_TF_TF
 
   # TF dimer binds promoters
   Rule13:  TF(dna,im,loc~NU).TF(dna,im,loc~NU) + DNA(p1)  \
@@ -186,10 +186,10 @@ begin reaction rules
 
   # importin binds TF dimer (tends to pick up in CP, drop off in NU).
   Rule24:  TF(im,dna,r,loc~CP).TF(im,dna,r,loc~CP) + Im(cargo,loc~CP)  \
-      	<-> TF(im!1,dna,r,loc~CP).TF(im!2,dna,r,loc~CP).Im(cargo!1!2,loc~CP)  k_Im_bind_CP/vol_CP, k_Im_unbind_CP
+          <-> TF(im!1,dna,r,loc~CP).TF(im!2,dna,r,loc~CP).Im(cargo!1!2,loc~CP)  k_Im_bind_CP/vol_CP, k_Im_unbind_CP
 
   Rule25:  TF(im,dna,r,loc~NU).TF(im,dna,r,loc~NU) + Im(cargo,loc~NU)  \
-      	<-> TF(im!1,dna,r,loc~NU).TF(im!2,dna,r,loc~NU).Im(cargo!1!2,loc~NU)  k_Im_bind_NU/vol_NU, k_Im_unbind_NU
+          <-> TF(im!1,dna,r,loc~NU).TF(im!2,dna,r,loc~NU).Im(cargo!1!2,loc~NU)  k_Im_bind_NU/vol_NU, k_Im_unbind_NU
 
   # importin binds P1 (tends to pick up in CP, drop off in NU).
   Rule26:  P1(im,dna,loc~CP) + Im(cargo,loc~CP) <-> P1(im!1,dna,loc~CP).Im(cargo!1,loc~CP)  k_Im_bind_CP/vol_CP, k_Im_unbind_CP
@@ -225,8 +225,8 @@ begin observables
   Species    L_Dimers_EN   L(r,loc~EN).L(r,loc~EN)
   Species    L_Dimers_EM   L.L.R(loc~EM)
   
-  Species    L_Bound_PM    L(d).R(loc~PM) L.L.R(loc~PM) L.L.R(loc~PM)
-  Species    L_Bound_EM    L(d).R(loc~EM) L.L.R(loc~EM) L.L.R(loc~EM)
+  Species    L_Bound_PM    L(d).R(loc~PM), L.L.R(loc~PM), L.L.R(loc~PM)
+  Species    L_Bound_EM    L(d).R(loc~EM), L.L.R(loc~EM), L.L.R(loc~EM)
 
   Species    R_Dimers_PM   R(loc~PM).R(loc~PM)
   Species    R_Dimers_EM   R(loc~EM).R(loc~EM)
@@ -257,6 +257,6 @@ end observables
 end model
 
 # actions #
-generate_network({overwrite=>1,TextReaction=>0});
-simulate_ode({t_start=>0,t_end=>40,n_steps=>100});
+generate_network({overwrite=>1,TextReaction=>0})
+simulate_ode({t_start=>0,t_end=>40,n_steps=>100})
 
