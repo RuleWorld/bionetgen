@@ -2104,6 +2104,8 @@ sub depthFirstMoleculeSearch
 # Determine if SpeciesGraph is isomorphic to another SpeciesGraph
 # Assume that molecules have already been sorted by molecule name and component state
 # using cmp_molecule and cmp_component and cmp_edge
+#
+# TODO: make sure isomorphicTo works correctly on patterns!
 sub isomorphicTo
 {
 	my ($sg1, $sg2) = @_;
@@ -2160,7 +2162,7 @@ sub isomorphicTo
 		for ( $im2 = $mptr[$im1];  $im2 <= $nmol;  ++$im2 )
 		{
 			next if $mused[$im2];    # Continue if this molecule already mapped
-			next if ( $molecules1->[$im1]->Name        cmp  $molecules2->[$im2]->Name );
+			next if ( $molecules1->[$im1]->Name  cmp  $molecules2->[$im2]->Name );
             if ( defined $molecules1->[$im1]->Compartment )
             {   # compartment defined for mol1, now compare to mol2
                 next unless ( defined $molecules2->[$im2]->Compartment );
@@ -2170,6 +2172,9 @@ sub isomorphicTo
             {   # compartment defined for mol2, but not mol1
                 next;
             }
+
+            # skip if different number of components (this can happen when comparing patterns)
+            next unless ( @{$molecules1->[$im1]->Components} == @{$molecules2->[$im2]->Components} );
 
 			# Initialize data for component match at this level
 			$mptr[$im1]   = $im2;
@@ -2199,83 +2204,90 @@ sub isomorphicTo
 			$components2 = $molecules2->[$im2]->Components;
 		}
 
-		# Do depth first search over components of molecule 2
-		my $cptr  = $cptrs[$im1];
-		my $cused = $cuseds[$im1];
-	  CITER:
-		while (1)
-		{
-			my $cmatch = 0;
-			for ( $ic2 = $cptr->[$ic1];  $ic2 <= $ncomp;  ++$ic2 )
-            {
-				next if $cused->[$ic2];
-				if ( $components1->[$ic1]->compare_local( $components2->[$ic2] ) )
-                {   next;   }
+        # The CITER loop tries to access undefined values if there are 0 components..
+        #  in which case we can just skip CITER.
+        
+        unless ( @{$molecules1->[$im1]->Components} == 0 )
+        {
+	        # Do depth first search over components of molecule 2
+	        my $cptr  = $cptrs[$im1];
+	        my $cused = $cuseds[$im1];
+          CITER:
+	        while (1)
+	        {
+		        my $cmatch = 0;
 
-				#Check component edges
-				my $ematch = 1;
-				my $p1 = "$im1.$ic1";
-				my $p2 = "$im2.$ic2";
-			  EDGE:
-				foreach my $q1 ( keys %{$adj1->{$p1}} )
+		        for ( $ic2 = $cptr->[$ic1];  $ic2 <= $ncomp;  ++$ic2 )
                 {
-					my ($jm1, $jc1) = split '\.', $q1;
-					next if ( $jm1 > $im1 );
-					if ( $jm1 == $im1 )
+			        next if $cused->[$ic2];
+			        if ( $components1->[$ic1]->compare_local( $components2->[$ic2] ) )
+                    {   next;   }
+
+			        #Check component edges
+			        my $ematch = 1;
+			        my $p1 = "$im1.$ic1";
+			        my $p2 = "$im2.$ic2";
+		          EDGE:
+			        foreach my $q1 ( keys %{$adj1->{$p1}} )
                     {
-						next if ( $jc1 >= $ic1 );
-                        #	  exit_error("isomorphicTo can't handle bonds among components of same molecule");
-					}
-					my $q2 = "$mptr[$jm1].$cptrs[$jm1][$jc1]";
-					unless ( defined $adj2->{$p2}{$q2} )
-                    {
-						$ematch = 0;
-						last EDGE;
-					}
-				}
-				next unless ($ematch);
+				        my ($jm1, $jc1) = split '\.', $q1;
+				        next if ( $jm1 > $im1 );
+				        if ( $jm1 == $im1 )
+                        {
+					        next if ( $jc1 >= $ic1 );
+                            #	  exit_error("isomorphicTo can't handle bonds among components of same molecule");
+				        }
+				        my $q2 = "$mptr[$jm1].$cptrs[$jm1][$jc1]";
+				        unless ( defined $adj2->{$p2}{$q2} )
+                        {
+					        $ematch = 0;
+					        last EDGE;
+				        }
+			        }
+			        next unless ($ematch);
 
-				$cptr->[$ic1] = $ic2;
+			        $cptr->[$ic1] = $ic2;
 
-				# Complete mapping of this molecule if $ic1==$ncomp
-				if ( $ic1 == $ncomp )
-				{
-					$cmatch = 1;
-					last;
-				}
-				else
-				{
-					# descend to next component
-					$cused->[$ic2] = 1;
-					++$ic1;
-					#	print "ic1=$ic1 cptr=$cptr[$ic1] ncomp=$ncomp\n";
-					next CITER;
-				}
-			}
+			        # Complete mapping of this molecule if $ic1==$ncomp
+			        if ( $ic1 == $ncomp )
+			        {
+				        $cmatch = 1;
+				        last;
+			        }
+			        else
+			        {
+				        # descend to next component
+				        $cused->[$ic2] = 1;
+				        ++$ic1;
+				        #	print "ic1=$ic1 cptr=$cptr[$ic1] ncomp=$ncomp\n";
+				        next CITER;
+			        }
+		        }
 
-			# Move up a component level if no match found
-			if ( $cmatch == 0 )
-			{
-				# Move to next molecule at current level if up exhausted
-				# component search
-				if ( $ic1 == 0 )
-				{
-					# Increment molecule pointer at current level
-					++$mptr[$im1];
-					next MITER;
-				}
+		        # Move up a component level if no match found
+		        if ( $cmatch == 0 )
+		        {
+			        # Move to next molecule at current level if up exhausted
+			        # component search
+			        if ( $ic1 == 0 )
+			        {
+				        # Increment molecule pointer at current level
+				        ++$mptr[$im1];
+				        next MITER;
+			        }
 
-				# Reset component pointer at current level
-				$cptr->[$ic1] = 0;
-				--$ic1;
-				$cused->[ $cptr->[$ic1] ] = 0;    # Reset pointers at new level
-				++$cptr->[$ic1];
+			        # Reset component pointer at current level
+			        $cptr->[$ic1] = 0;
+			        --$ic1;
+			        $cused->[ $cptr->[$ic1] ] = 0;    # Reset pointers at new level
+			        ++$cptr->[$ic1];
 
-				#      print "set ic1 to $ic1 cptr is $cptr[$ic1]\n";
-				next CITER;
-			}
-			last CITER;
-		}
+			        #      print "set ic1 to $ic1 cptr is $cptr[$ic1]\n";
+			        next CITER;
+		        }
+		        last CITER;
+	        }
+        }
 
 		# If $im1==$nmol, then graphs are isomorhpic and we can return
 		if ( $im1 == $nmol ) { return 1; }
