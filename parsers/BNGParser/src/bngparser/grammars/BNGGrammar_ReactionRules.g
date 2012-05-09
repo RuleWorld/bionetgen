@@ -70,6 +70,7 @@ List<String> rateList;
 ReactionAction reactionAction;
 String name;
  String text;
+ Map<String,Register> lmemory;
 }
 @init{
   $reaction_rule_def::patternsReactants = new ArrayList();
@@ -78,6 +79,7 @@ String name;
   $reaction_rule_def::reactionAction = new ReactionAction();
   $reaction_rule_def::name = "Rule" + reactionCounter;
   $reaction_rule_def::text = "";
+  $reaction_rule_def::lmemory = new HashMap<String,Register>();
 }
         :  ((match_attribute)? (
           
@@ -209,7 +211,7 @@ BondList bonds;
  s1=species_def[$rule_species_def::reactants,$rule_species_def::bonds,upperID] {
        reactionAction.addMolecule(upperID,$species_def.text,$rule_species_def::bonds);
        $map = $species_def.listOfMolecules;
-       
+       $reaction_rule_def::lmemory.putAll($species_def.lmemory);
       
   }
   {
@@ -244,11 +246,19 @@ rate_function [List<String> rateList] returns [String functionName]
 ;
 
 function_keyword:
-  SAT
+  SAT 
 ;
 
 rate_list[List<String> rateList]
-        : e1=expression[gParent.memory] {rateList.add($e1.text);}(COMMA? e2=expression[gParent.memory] {rateList.add($e2.text);})?
+scope{
+  Map<String,Register> memoryWithLocal;
+}
+@init{
+  $rate_list::memoryWithLocal = new HashMap<String,Register>();
+  $rate_list::memoryWithLocal.putAll(gParent.memory);
+  $rate_list::memoryWithLocal.putAll($reaction_rule_def::lmemory);
+}
+        : e1=expression[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA? e2=expression[$rate_list::memoryWithLocal] {rateList.add($e2.text);})?
         ;
 modif_command
         : include_command

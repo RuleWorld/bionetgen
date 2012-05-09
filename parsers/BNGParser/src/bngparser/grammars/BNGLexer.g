@@ -83,7 +83,7 @@ WRITENET: 'writeNET';
 WRITESBML: 'writeSBML';
 WRITEMFILE: 'writeMfile';
 WRITEXML: 'writeXML';
-WRITEMEXFILE: 'writeMexFile';
+WRITEMEXFILE: 'writeMex'('F'|'f')'ile';
 PRINT_CDAT: 'print_CDAT';
 PRINT_FUNCTIONS: 'print_functions';
 SETCONCENTRATION: 'setConcentration';
@@ -113,15 +113,14 @@ ODE: 'ode';
 SSA: 'ssa';
 NF: 'nf';
 PLA: 'pla';
-
-
+EVALUATE_EXPRESSIONS: 'evaluate_expressions';
+BDF: 'bdf';
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | '.' (DIGIT)+ EXPONENT?
 | (DIGIT)+ EXPONENT;
 INT: DIGIT+;
-STRING: (LETTER | '_') (LETTER | DIGIT | '_')*;
-
+STRING: (LETTER | '_'| DIGIT) (LETTER | DIGIT | '_')*;
 
 SEMI : ';';
 COLON: ':';

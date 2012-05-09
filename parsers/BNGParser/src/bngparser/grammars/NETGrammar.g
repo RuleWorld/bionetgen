@@ -42,6 +42,11 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   //molecule names
   public Map<String, List<String>> compartmentMolecules = new HashMap<String,List<String>>();
   public List<String> surfaces = new ArrayList<String>();
+  public String cyto_volume = "3.0e-12";
+  public String ecm_volume = "1.0e-10";
+  public double cyto_volume_value = 3.0e12;
+  public double ecm_volume_value = 1.0e-10;
+  public double avogadro_constant = 6.02e23;
   @Override
   public String getErrorMessage(RecognitionException e,String[] tokenNames){
     String msg = super.getErrorMessage(e,tokenNames);
@@ -374,18 +379,45 @@ reaction
 scope{
   List<String> reactant;
   List<String> product;
+  double volume;
 }
 @init{
   $reaction::reactant = new ArrayList<String>();
   $reaction::product = new ArrayList<String>();
+  $reaction::volume = 0.0;
 }
 :
  r1=reactant[$reaction::reactant] r2=reactant[$reaction::product] expression[memory]
- -> reactions(reactant={$reaction::reactant},product={$reaction::product}, rate={$expression.text},
-  surfaceCompartment={$r1.surfaceCompartment||$r2.surfaceCompartment},reactantOrientation = {$r1.orientation},productOrientation={$r2.orientation})
+ {
+  if($r1.size>1){
+	  if(!compartmentToSurface){
+	    $reaction::volume =memory.get(compartmentList.getECMVolume()).getValue() *avogadro_constant;
+	    //$reaction::volume = ecm_volume_value *avogadro_constant;
+	  } 
+	  else if($r1.volume.equals(ecm_volume) || $r2.volume.equals(ecm_volume)){
+	  $reaction::volume = memory.get(compartmentList.getECMVolume()).getValue() *avogadro_constant;
+	    //$reaction::volume = ecm_volume_value *avogadro_constant;
+	  }
+	  else if($r1.volume.equals(cyto_volume) || $r2.volume.equals(cyto_volume)){
+	    $reaction::volume =memory.get(compartmentList.getCytoplasmicVolume()).getValue() *avogadro_constant;
+	    //$reaction::volume = cyto_volume_value *avogadro_constant;
+	  }
+	  else{
+	  $reaction::volume = 1*0.01/memory.get(compartmentList.getMembraneVolume()).getValue()*1e15;
+	    //$reaction::volume = cyto_volume_value /1.0e-4;
+	  }
+  }
+  else{
+    $reaction::volume = 1;
+  }
+ 
+ }
+ -> reactions(reactant={$reaction::reactant},product={$reaction::product}, rate={$expression.value*$reaction::volume},
+  surfaceCompartment={$r1.surfaceCompartment||$r2.surfaceCompartment},reactantOrientation = {$r1.orientation},productOrientation={$r2.orientation},
+  factor={""})
 ;
 
-reactant[List<String> elements] returns [boolean surfaceCompartment=false, List<String> orientation]
+reactant[List<String> elements] returns [boolean surfaceCompartment=false, String volume="1", List<String> orientation, int size=0]
 @init{
   $orientation = new ArrayList<String>();
 }
@@ -394,21 +426,32 @@ reactant[List<String> elements] returns [boolean surfaceCompartment=false, List<
   i1=INT
   {
     $elements.add($i1.text);
+    $size++;
   }
    
   (COMMA i2=INT
   {
     $elements.add($i2.text);
+    $size++;
   }
   )*
   {
-  
-    for(String molecules: $elements){
-      if(compartmentToSurface && compartmentList.isSurface(getCompartment("S" + molecules))){
-        $surfaceCompartment =  true;
-        break;
-      }
+    if(compartmentToSurface){
+	    for(String molecules: $elements){
+	      if(compartmentList.isSurface(getCompartment("S" + molecules))){
+	        $surfaceCompartment =  true;
+	      }
+	      else if(compartmentList.isOuterCompartment(getCompartment("S" + molecules))){
+	        $volume = ecm_volume;
+	      }
+	      else{
+	        $volume = cyto_volume;
+	      }
+	    }
     }
+    
+    
+
     if(compartmentToSurface){
 	    for(String molecules: $elements){
 	        if(compartmentList.isOuterCompartment(getCompartment("S" + molecules)) || compartmentList.isSurface(getCompartment("S" + molecules))){

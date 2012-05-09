@@ -46,9 +46,9 @@ public class Tester {
 		String inputFile2 = "testModels/NFSim/actin/actin_simple.bngl";
 		//String inputFile = "testModels/FullModelBurstSeconds.bngl";
 		
-		//List<String> inputFileList = getFileNames("testModels/NFSim");
-		List<String> inputFileList = new ArrayList<String>();
-		inputFileList.add("testModels/Motivating.bngl");
+		List<String> inputFileList = getFileNames("testModels/Validate");
+		//List<String> inputFileList = new ArrayList<String>();
+		//inputFileList.add("testModels/Validate/ANx.bngl");
 		String outputFile = "output.xml";
 		
 		if(args.length > 0){

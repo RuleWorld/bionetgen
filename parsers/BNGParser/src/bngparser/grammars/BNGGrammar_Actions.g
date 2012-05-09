@@ -81,6 +81,7 @@ scope{
         | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";}
         | write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";}
         | write_mex_file[$simulate_method::actions] {$simulate_method::method = "writeMexfile";}
+        | write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";}
         | simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";}
         | simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";}
         | simulate[$simulate_method::actions] {$simulate_method::method = "simulate";})
@@ -119,9 +120,17 @@ write_m_file[Map<String,String> map]
 
 write_mex_file[Map<String,String> map]
         : WRITEMEXFILE LPAREN LBRACKET
-        ((write_m_par_def[map]) (COMMA write_m_par_def[map])*)?
+        ((write_m_par_def[map]| ps_par_def[map]) (COMMA write_m_par_def[map]| ps_par_def[map])*)?
         RBRACKET RPAREN SEMI?;
+
+write_network[Map<String,String> map]
+      : WRITENETWORK LPAREN (LBRACKET 
+      ((ps_par_def[map]|simulate_par_def[map])
+          (COMMA (ps_par_def[map]|simulate_par_def[map]))*)? 
+      RBRACKET)? 
+      RPAREN
       
+      ;
 simulate_pla[Map<String,String> map]
     : SIMULATE_PLA LPAREN (LBRACKET
              ((ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map])
@@ -137,7 +146,7 @@ scope{
   $read_file::actions = new HashMap<String,String>();
 }
         : READFILE LPAREN 
-        (LBRACKET (FILE ASSIGNS STRING {$read_file::actions.put($FILE.text,$STRING.text);})? RBRACKET)? 
+        (LBRACKET (FILE ASSIGNS DBQUOTES? s1=(STRING|DOT)+ DBQUOTES? {$read_file::actions.put($FILE.text,$s1.text);})? RBRACKET)? 
         RPAREN SEMI? -> action(id={$READFILE.text},optionMap={$read_file::actions})
         ;
 //TODO: this is just a stub right now
@@ -149,7 +158,7 @@ scope{
   $write_file::actions = new HashMap<String,String>();
 }
         : write_type
-          LPAREN (LBRACKET RBRACKET)?
+          LPAREN (LBRACKET (write_par_def (COMMA write_par_def)*)? RBRACKET)?
            RPAREN SEMI? -> action(id={$write_type.text})
         ;
 write_type
@@ -227,7 +236,7 @@ save_concentrations
         : SAVECONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? -> action(id={$SAVECONCENTRATIONS.text})
         ;
 reset_concentrations
-        : RESETCONCENTRATIONS LPAREN RPAREN SEMI? -> action(id={$RESETCONCENTRATIONS.text})
+        : RESETCONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? -> action(id={$RESETCONCENTRATIONS.text})
         ;
 hash_value
         : STRING ASSIGNS LBRACKET assignment_list RBRACKET
@@ -264,6 +273,10 @@ simulate_nf_par_def[Map<String,String> map]
         | GET_FINAL_STATE ASSIGNS i2=INT {map.put($GET_FINAL_STATE.text,$i2.text);}
       
         ;    
+        
+write_par_def:
+  SUFFIX ASSIGNS DBQUOTES STRING DBQUOTES
+;
          
 write_m_par_def[Map<String,String> map]
   : ATOL ASSIGNS f1=FLOAT {map.put($ATOL.text,$f1.text);}
@@ -272,13 +285,14 @@ write_m_par_def[Map<String,String> map]
   | T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);})
   | N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);}
   | SPARSE ASSIGNS i4=INT {map.put($SPARSE.text,$i4.text);}
+  | BDF ASSIGNS i5=INT {map.put($BDF.text,$i5.text);}
   ;
 
 //TODO: error or warning?????
 simulate_par_def[Map<String,String> map]
         : T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);}) 
         | T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);})
-        | N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);}
+        | N_STEPS ASSIGNS i3=(INT|FLOAT) {map.put($N_STEPS.text,$i3.text);}
         | SAMPLE_TIMES ASSIGNS i4=array_value 
         | VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i5.text);}
         | PRINT_CDAT ASSIGNS i6=INT {map.put($PRINT_CDAT.text,$i6.text);}
@@ -291,7 +305,9 @@ simulate_par_def[Map<String,String> map]
         | PRINT_END ASSIGNS i12=INT {map.put($PRINT_END.text,$i12.text);}    
         | NETFILE ASSIGNS s4=STRING {map.put($NETFILE.text,$s4.text);}
         | METHOD ASSIGNS method_definition {map.put($METHOD.text,$method_definition.text);}
-        | CONTINUE ASSIGNS i13=INT {map.put($CONTINUE.text,$i13.text);}    
+        | CONTINUE ASSIGNS i13=INT {map.put($CONTINUE.text,$i13.text);}
+        | EVALUATE_EXPRESSIONS ASSIGNS i14=INT {map.put($EVALUATE_EXPRESSIONS.text,$i14.text);}
+        | OVERWRITE ASSIGNS i15=INT {map.put($OVERWRITE.text,$i15.text);}
         ;
         
 multiple_definition returns [String value]:

@@ -73,6 +73,7 @@ scope {
 }
 :
 LB*
+(SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+)?
 ((BEGIN MODEL LB+ (program_block)* END MODEL LB+) | (program_block)*)
 (a1=actions_block {$actionsTemplate = $a1.st;}| (BEGIN ACTIONS a2=actions_block END ACTIONS {$actionsTemplate = $a2.st;;}) )? 
 EOF  -> prog2(parameters={$prog::parameters},molecules={molecules},species={$prog::seedSpecies},reactions={$prog::reactionRules},
@@ -130,7 +131,8 @@ function_def:
     {
       if(memory.containsKey($s2.text)){
         memory.remove($s2.text);
-        
+ 
+       
       }
     }
     
@@ -166,7 +168,7 @@ compartment:
   
  
 label returns [String label]:
-  MOD STRING{$label = $STRING.text;};
+  MOD l1=(STRING| INT) {$label = $l1.text;};
   
 dereference returns [String label]:
   AMPERSAND STRING{$label = $STRING.text;};  
