@@ -268,7 +268,7 @@ exclude_command
 
 
 
-pattern :       ;
+pattern :   STRING|INT    ;
 
 
 

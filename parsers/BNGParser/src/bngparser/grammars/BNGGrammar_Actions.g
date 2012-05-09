@@ -224,7 +224,7 @@ DBQUOTES COMMA
 
 
 save_concentrations
-        : SAVECONCENTRATIONS LPAREN RPAREN SEMI? -> action(id={$SAVECONCENTRATIONS.text})
+        : SAVECONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? -> action(id={$SAVECONCENTRATIONS.text})
         ;
 reset_concentrations
         : RESETCONCENTRATIONS LPAREN RPAREN SEMI? -> action(id={$RESETCONCENTRATIONS.text})
@@ -291,7 +291,7 @@ simulate_par_def[Map<String,String> map]
         | PRINT_END ASSIGNS i12=INT {map.put($PRINT_END.text,$i12.text);}    
         | NETFILE ASSIGNS s4=STRING {map.put($NETFILE.text,$s4.text);}
         | METHOD ASSIGNS method_definition {map.put($METHOD.text,$method_definition.text);}
-      
+        | CONTINUE ASSIGNS i13=INT {map.put($CONTINUE.text,$i13.text);}    
         ;
         
 multiple_definition returns [String value]:

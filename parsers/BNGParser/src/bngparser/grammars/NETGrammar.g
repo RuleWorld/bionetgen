@@ -113,7 +113,7 @@ scope{
 (seed_species_def[$seed_species_block::numSpecies]{
                                       //System.out.println($seed_species_def.compartment);
                                       if(!$seed_species_def.concentration.equals("0")){
-	                                      if(compartmentList.isVolume($seed_species_def.compartment) || compartmentToSurface == false)
+	                                      if(!compartmentToSurface || compartmentList.isVolume($seed_species_def.compartment))
 	                                        $seedSpecies.add($seed_species_def.st);
 	                                      else
 	                                        addSurfaceToCompartment($seed_species_def.compartment,$seed_species_def.st);
@@ -132,6 +132,7 @@ scope{
   List molecules;
   BondList bonds;
   String location;
+  boolean isVolume;
 }
 @init{
   $seed_species_def::molecules = new ArrayList();
@@ -143,13 +144,15 @@ scope{
  //There needs to need a space between species and the expression token, so we go back and make sure there was one
 ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
 $compartment = $pre.compartment;
+$seed_species_def::isVolume = !compartmentToSurface || compartmentList.isVolume(pre.compartment);
 // System.out.println(input);
 } 
       WS 
      expression[memory] 
      {
       $concentration = $expression.text;
-      if(compartmentList.isOuterCompartment($compartment)){
+      
+      if(compartmentToSurface &&  compartmentList.isOuterCompartment($compartment)){
         $seed_species_def::location = "-0.15,-0.15,-0.15";
       }
       else{
@@ -159,7 +162,7 @@ $compartment = $pre.compartment;
      -> 
     seed_species_block(id={counter},concentration={$expression.text},name={$pre_species_def.text},molecules={$seed_species_def::molecules},
       firstBonds={$seed_species_def::bonds.getLeft()},secondBonds={$seed_species_def::bonds.getRight()},
-      isVolume={compartmentList.isVolume(pre.compartment) || !compartmentToSurface},location={$seed_species_def::location})
+      isVolume={$seed_species_def::isVolume},location={$seed_species_def::location})
       ;
      
 
@@ -268,16 +271,16 @@ SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+
   }
   for(String tag: speciesMap.keySet()){
     String compartment = getCompartment("S" + speciesMap.get(tag));
-    String dimension = compartmentList.getDimension(compartment);
-    if(!compartmentToSurface)
-      dimension = "3";
+    String dimension = "3";
+    if(compartmentToSurface)
+      dimension = compartmentList.getDimension(compartment);;
     String difussion;
     STAttrMap options = new STAttrMap();
     options.put("index",speciesMap.get(tag));
     options.put("name",tag);
     options.put("dimension",dimension);
     if(dimension.equals("2") && compartmentToSurface){
-      difussion = "0";
+      difussion = "1e-6";
     }
     else{
       difussion="1e-6";
@@ -401,14 +404,14 @@ reactant[List<String> elements] returns [boolean surfaceCompartment=false, List<
   {
   
     for(String molecules: $elements){
-      if(compartmentList.isSurface(getCompartment("S" + molecules))){
+      if(compartmentToSurface && compartmentList.isSurface(getCompartment("S" + molecules))){
         $surfaceCompartment =  true;
         break;
       }
     }
     if(compartmentToSurface){
 	    for(String molecules: $elements){
-	        if(compartmentList.isOuterCompartment(getCompartment("S" + molecules))){
+	        if(compartmentList.isOuterCompartment(getCompartment("S" + molecules)) || compartmentList.isSurface(getCompartment("S" + molecules))){
 	          $orientation.add("'");
 	        }
 	        else{

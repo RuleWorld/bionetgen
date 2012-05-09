@@ -84,7 +84,6 @@ WRITESBML: 'writeSBML';
 WRITEMFILE: 'writeMfile';
 WRITEXML: 'writeXML';
 WRITEMEXFILE: 'writeMexFile';
-
 PRINT_CDAT: 'print_CDAT';
 PRINT_FUNCTIONS: 'print_functions';
 SETCONCENTRATION: 'setConcentration';
@@ -94,6 +93,7 @@ SAVECONCENTRATIONS: 'saveConcentrations';
 RESETCONCENTRATIONS: 'resetConcentrations';
 ADDCONCENTRATION: 'addConcentration';
 GENERATENETWORK: 'generate_network';
+WRITENETWORK: 'writeNetwork';
 GENERATEHYBRIDMODEL: 'generate_hybrid_model';
 SUBSTANCEUNITS: 'substanceUnits';
 PARAM: 'param';
@@ -101,12 +101,14 @@ COMPLEX: 'complex';
 GET_FINAL_STATE: 'get_final_state';
 SAT: 'Sat';
 EXP: 'exp';
+LOG: 'log';
 ARGFILE: 'argfile';
 SAVE_PROGRESS: 'save_progress';
 NETFILE: 'netfile';
 PRINT_NET: 'print_net';
 PRINT_END: 'print_end';
 TEXTREACTION: 'TextReaction';
+CONTINUE: 'continue';
 ODE: 'ode';
 SSA: 'ssa';
 NF: 'nf';
@@ -118,7 +120,7 @@ FLOAT:
 | '.' (DIGIT)+ EXPONENT?
 | (DIGIT)+ EXPONENT;
 INT: DIGIT+;
-STRING: LETTER (LETTER | DIGIT | '_')*;
+STRING: (LETTER | '_') (LETTER | DIGIT | '_')*;
 
 
 SEMI : ';';
