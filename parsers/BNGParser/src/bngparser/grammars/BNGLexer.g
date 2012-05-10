@@ -83,8 +83,7 @@ WRITENET: 'writeNET';
 WRITESBML: 'writeSBML';
 WRITEMFILE: 'writeMfile';
 WRITEXML: 'writeXML';
-WRITEMEXFILE: 'writeMexFile';
-
+WRITEMEXFILE: 'writeMex'('F'|'f')'ile';
 PRINT_CDAT: 'print_CDAT';
 PRINT_FUNCTIONS: 'print_functions';
 SETCONCENTRATION: 'setConcentration';
@@ -94,6 +93,7 @@ SAVECONCENTRATIONS: 'saveConcentrations';
 RESETCONCENTRATIONS: 'resetConcentrations';
 ADDCONCENTRATION: 'addConcentration';
 GENERATENETWORK: 'generate_network';
+WRITENETWORK: 'writeNetwork';
 GENERATEHYBRIDMODEL: 'generate_hybrid_model';
 SUBSTANCEUNITS: 'substanceUnits';
 PARAM: 'param';
@@ -101,25 +101,26 @@ COMPLEX: 'complex';
 GET_FINAL_STATE: 'get_final_state';
 SAT: 'Sat';
 EXP: 'exp';
+LOG: 'log';
 ARGFILE: 'argfile';
 SAVE_PROGRESS: 'save_progress';
 NETFILE: 'netfile';
 PRINT_NET: 'print_net';
 PRINT_END: 'print_end';
 TEXTREACTION: 'TextReaction';
+CONTINUE: 'continue';
 ODE: 'ode';
 SSA: 'ssa';
 NF: 'nf';
 PLA: 'pla';
-
-
+EVALUATE_EXPRESSIONS: 'evaluate_expressions';
+BDF: 'bdf';
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | '.' (DIGIT)+ EXPONENT?
 | (DIGIT)+ EXPONENT;
 INT: DIGIT+;
-STRING: LETTER (LETTER | DIGIT | '_')*;
-
+STRING: (LETTER | '_'| DIGIT) (LETTER | DIGIT | '_')*;
 
 SEMI : ';';
 COLON: ':';

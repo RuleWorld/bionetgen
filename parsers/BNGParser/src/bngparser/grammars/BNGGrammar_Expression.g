@@ -85,9 +85,9 @@ boolean_negation_expression returns [Double value]
 primitive_element returns [Double value]
 : 
         number {$value = $number.value;} 
-        | (STRING LPAREN (expression2)? RPAREN) => function {$value = $function.value;}
+        | (STRING LPAREN (expression2 (COMMA expression2)*)? RPAREN) => function {$value = $function.value;}
         |  variable {$value = $variable.value;}
-        | EXP LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
+        | (EXP | LOG) LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
         | LPAREN e2=expression2 RPAREN {$value = $e2.value;}
         
         ;
@@ -117,6 +117,7 @@ variable returns [Double value]: s1=STRING {
                   $expression::references.put($STRING.text,$expression::lmemory.get($STRING.text));
                   }
                   catch(NullPointerException e){
+                    $value = 1.0;
                     String msg = getErrorMessage(s1,"variable not found");
                     System.err.println(msg);
                     
@@ -127,7 +128,7 @@ variable returns [Double value]: s1=STRING {
 function returns [Double value]:
   s1=STRING LPAREN e1=
   
-  (expression2)? RPAREN {
+  (expression2 (COMMA expression2)*)? RPAREN {
     try{
       if($expression::lmemory.containsKey($STRING.text)){
                     Register temp = $expression::lmemory.get($STRING.text);
@@ -139,6 +140,9 @@ function returns [Double value]:
                       
                       System.err.println(msg);
                     }
+       }
+       else if($STRING.text.equals("MM")){
+        $value=1.0;
        }
        else{
                     $value = 1.0;
@@ -153,4 +157,5 @@ function returns [Double value]:
     
     }
   }
+  
 ;

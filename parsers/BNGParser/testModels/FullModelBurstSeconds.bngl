@@ -1,517 +1,226 @@
-## Whole Cell Cell Cycle Model 
-## Shankaran-Kholodenko-Stites-Fujioka-Tyson
-## Rate constants in molecules/seconds
+# Signal transduction with receptor internalization and transcriptional reg.  #
+# cBNGL code: justin.s.hogg@gmail.com                                         #
+# conception: Leonard A. Harris, Justin S. Hogg, James R. Faeder              #
+# 6 June 2009                                                                 #
+#                                                                             #
+# Demonstrates features of cBNGL in a biologically relevant scenario.         #
+# A motivating example for Winter Simulation Conference 2009 invited paper.   #
 
+begin model
 begin parameters
+  nEndo           5      # mean number of endosomes
 
-	# molecules/sec
-	NA 			6.02e23 					# Avogadro's Number
-	hnano 		1e-9 						# Nano scaling
-	Vcell 		1e-12 						# Cell Volume
-	#k1 		0.5*(NA*hnano*Vcell) 		# Artificial Cyclin Generation (not in model now)
-	V21 		0.005/(NA*hnano*Vcell)/60 	# APCoff Degrades Cyclin
-	V22 		0.25/(NA*hnano*Vcell)/60 	# APCon Degrades Cyclin
-	k3 			0.005/(NA*hnano*Vcell)/60 	# Cyclin and CDK Dimerize to form MPF
-	V251 		0.017/(NA*hnano*Vcell)/60 	# Cdc25U Dephosphorylates MPF
-	V252 		0.17/(NA*hnano*Vcell)/60 	# Cdc25P Dephosphorylates MPF
-	Vwee1 		0.01/(NA*hnano*Vcell)/60 	# Wee1P Phosphorylates MPF
-	Vwee2 		1.0/(NA*hnano*Vcell)/60 	# Wee1U Phosphorylates MPF
-	ka 			0.02/60 					# Sat Constant for MPF Phosphorylating Cdc25
-	Ka 			0.1*(NA*hnano*Vcell) 		# Sat Constant for MPF Phosphorylating Cdc25
-	kb 			0.1/60 						# Cdc25 Dephosphorylated by PPase 
-	Kb 			1.0*(NA*hnano*Vcell) 		# Cdc25 Dephosphorylated by PPase
-	kc 			0.13/60	 					# IEP Deactivates APC
-	Kc 			0.01*(NA*hnano*Vcell) 		# IEP Deactivates APC
-	kd 			0.13/60 					# PPase Activates APC
-	Kd 			1.0*(NA*hnano*Vcell) 		# PPase Activates APC
-	ke 			0.02/60 					# Wee1 Phosphorylated by MPF
-	Ke 			0.1*(NA*hnano*Vcell) 		# Wee1 Phosphorylated by MPF
-	ukf 		0.1/60 						# Wee1 Dephosphorylated by PPase
-	Kf 			1.0*(NA*hnano*Vcell) 		# Wee1 Dephosphorylated by PPase
-	kg 			0.02/60 					# MPF Phosphorylates IE
-	Kg 			0.01*(NA*hnano*Vcell) 		# MPF Phosphorylates IE
-	kh 			0.15/60 					# PPase Phosphorylates IE
-	Kh 			0.01*(NA*hnano*Vcell) 		# PPase Phosphorylates IE
+  vol_EC   		  20.0   # volumes
+  vol_CP          4.0
+  vol_NU          1.0
+  vol_EN          0.1*nEndo
 
-# 	Initial concentrations for Cell Cycle (molecules)
-	TotCdk 		100*(NA*hnano*Vcell)
-	TotCdc25 	1*(NA*hnano*Vcell)
-	TotWee1 	1*(NA*hnano*Vcell)
-	TotIE 		1*(NA*hnano*Vcell)
-	TotAPC 		1*(NA*hnano*Vcell)
-	init_PPase 	1*(NA*hnano*Vcell)
-	init_cyclin 0
-	init_MPF 	0
-	init_preMPF 0
-	init_cdc25p 0
-	init_wee1p 	0
-	init_iep 	1*(NA*hnano*Vcell)
-	init_APCon 	1*(NA*hnano*Vcell)
-	zero 		0
-	init_ERG 	0
-	init_DRG 	0
+  sa_PM           0.4    # membrane surface areas
+  sa_NM           0.1
+  sa_EM           0.01*nEndo
+  
+  eff_width       1.0    # effective surface width
 
-	k9 			2.5*hnano*NA*Vcell/60 	# Cyclin Synthesized by DRG (Scaled in functions)
-	k15 		0.25*hnano*NA*Vcell/60 	# In rate law for Active ERK synthesizing ERG
-	J15 		0.1 					# In rate law for Active ERK synthesizing ERG
-	k17 		10*hnano*NA*Vcell/60 	# In rate law for DRG positive feedback
-	kp17 		0.35*hnano*NA*Vcell/60 	# ERG synthesizing DRG (Scaled in functions)
-	k16 		0.25*hnano*NA*Vcell/60 	# ERG Degradation
-	k18 		10*hnano*NA*Vcell/60 	# DRG Degradation
-	J17 		0.3 					# In rate law for DRG Positive feedback
+  L0              1000   # initial species counts (extensive units: quantity, not concentration)
+  R0              200     
+  TF0             200
+  DNA0            2
+  Im0             40
+  NP0             4
 
-# 	From Ras-Erk model:
-	# molecules/seconds
-	# Membrane localization 
-	D			250
-	m4 			0						# Mutant Ras present 
-	# Concentrations
-	GTP			1.8e-4*NA*Vcell
-	GDP 		1.8e-5*NA*Vcell
-	Ras			(2.0-m4)*2e-7*NA*Vcell
-	G12V		m4*2e-7*NA*Vcell
-	Effector	4e-7*NA*Vcell
-	#GAP 		6e-11*NA*Vcell
-	GEF			2e-10*NA*Vcell
-	Raf			1.2e-7*NA*Vcell
-	MEK 		0.18e-6*NA*Vcell #Fujioka
-	ERK 		0.36e-6*NA*Vcell #Fujioka
-	#Ras parameters
-	khyd		3.5e-4 					# Ras intrinsic GTPase 
-	kdgdp		1.1e-4 					# unbinding rate Ras-GDP
-	kdgtp		2.5e-4 					# unbinding rate Ras-GTP
-	kagdp		2.3e6/NA/Vcell*GDP 		# binding Ras and GDP
-	kagtp		2.2e6/NA/Vcell*GTP 		# binding Ras and GTP
-	#GEF parameters
-	kcatgdp		3.9 					# GEF catalysis switch Ras-GDP to Ras-GTP
-	kcatgtp		0.72 					# GEF catalysis switch Ras-GTP to Ras-GDP
-	Kmgdp		3.86e-4*NA*Vcell 		# MM GEF catalysis Ras-GDP unbinding
-	Kmgtp		3e-4*NA*Vcell 			# MM Gef catalysis Ras-GTP 
-	kfgdp		1e8/NA/Vcell*D 			# Forward Ras-GDP-GEF binding
-	kfgtp		1e7/NA/Vcell*D 			# Forward Ras-GTP-GEF binding
-	krgdp		kfgdp*Kmgdp/D-kcatgdp 	# Reverse Ras-GTP-GEF
-	krgtp		kfgtp*Kmgtp/D-kcatgtp 	# Reverse Ras-GTP-GEF
-	#GAP parameters
-	kcat		5.40 					# GAP catalysis Ras-GTP unbinding
-	Km			2.3e-7*NA*Vcell 		# MM 
-	kf			5e7/NA/Vcell*D 			# Forward Ras-GTP-GAP binding
-	kr			kf*Km/D-kcat 			# Reverse Ras-GTP-GAP
-	# Boolean parameters
-	m1			0						# Reduced GTPase activity
-	m2			0						# GAP insensitivity 
-	m3			0						# Increased Effector Affinity
-	
-	#Effector parameters
-	karaf		4.5e7/NA/Vcell  		# Ras-Raf binding forward
-	kdraf		3.6 					# Ras-Raf reverse 
-	#Mutant Parameters
-	f1			0.39/2.6
-	khydmut	    ((1-m1)+f1*m1)*khyd
-	kdgdpmut	1.3*kdgdp/4.2
-	kdgtpmut	.8*kdgtp
-	kagdpmut	1.16*kagdp/.51
-	kagtpmut	5.8*kagtp/1.4
-	f3			1/2.25
-	kdrafmut	((1-m3)+m3*f3)*kdraf
-	#Mutant GAP
-	kcatmut		(1-m2)*kcat+m2*khyd
-	krmut		kf*Km/D-kcatmut
-	#Mutant GEF
-	kcatgtpmut	1.022
-	krgtpmut	kfgtp*Kmgtp/D-kcatgtpmut
-
-	#Raf parameters########################################?///??????????????
-	Km2			90*NA*Vcell*1e-6
-	Km3			11*NA*Vcell*1e-6
-	Km4			136.88*NA*Vcell*1e-6
-	Km5			90*NA*Vcell*1e-6
-	Km97		1.0*NA*Vcell*1e-6
-	kcat2		144/60*Km2/NA/Vcell/1e-6/60
-	kcat3		144/60*Km3/NA/Vcell/1e-6/60
-	kcat4		53.52/60*Km4/NA/Vcell/1e-6/60
-	kcat5		144/60*Km5/NA/Vcell/1e-6/60
-	kcat97		144/60*Km97/NA/Vcell/1e-6/60
-	ka2			1e8/NA/Vcell*D/60
-	ka3			1e8/NA/Vcell*D/60
-	ka4			1e8/NA/Vcell*D/60
-	ka5 		1e8/NA/Vcell*D/60
-	ka97		1e8/NA/Vcell*D/60
-	kd2			ka2*Km2/D-kcat2
-	kd3			ka3*Km3/D-kcat3
-	kd4			ka4*Km4/D-kcat4
-	kd5			ka5*Km5/D-kcat5
-	kd97		ka97*Km97/D-kcat97
-	kmdp1		95
-	dp1			7.56/kmdp1
-	kmdp2		95
-	dp2			7.56/kmdp2
-	kmdp3		95
-	dp3			20.11/kmdp3
-	kmdp4		95
-	dp4 		28.8/kmdp4
-	
-# 	From Fujioka
-	# Rate Parameters
-	# 'kf' are in /molecules /s
-	# 'kb' are in /s
-
-	kfs2 		3.3e6/NA/Vcell 	# Ras.Raf binds MEK
-	kbs2 		0.4 			# Ras.Raf unbinds MEK
-	kfs3 		16.3e6/NA/Vcell #Used for 3, 4, 13, 14 ---MEK ERK Binding
-	kbs3 		0.6 			#Used for 3, 4, 13, 14 ---MEK.ERK Unbinding
-
-	# Below are all in /min
-	Vms6 		0.105 	# Ras.Raf.MEK unbinds MEK
-	Vms5 		0.15 	# Used for 5, 15 ---MEK.ERK unbinds
-	kf16 		0.086 	# Used for 16, 18 ---MEK dephosphorylation
-	kf17 		0.014 	# Used for 17, 19 ---ERK Dephosphorylation ()()
-	kex7 		0.61 	# MEK Nucleus-> Cytoplasm
-	kin7 		0.046 	# MEK Cytoplasm -> Nucleus
-	kex10 		0.54 	# MEKP Nucleus -> Cytoplasm
-	kin10 		0.040 	# MEKP Cytoplasm -> Nucleus
-	kex9 		0.018 	# ERK Nucleus -> Cytoplasm
-	kin9 		0.0086 	# ERK Cytoplasm -> Nucleus
-	kex8 		0.26 	# Used for 8, 12 ---MEK.ERK Nucleus -> Cytoplasm
-	kin8 		0.035 	# Used for 8, 12 ---MEK.ERK Cytoplasm -> Nucleus
-	kex11 		0.013 	# ERKP Nucleus -> Cytoplasm
-	kin11 		0.0070 	# ERKP Cytoplasm -> Nucleus
-
-# 	From EGFR Section
-	# molecules/s
-	nM 			6.02e14 # One nanomole is this many molecules/liter
-	init_EGFR 	1.8e5 #2e5*nM*Vcell #Use Kholodenko Concentrations
-	init_EGF 	1e4 #5.9477e3*nM*Vcell #Initial EGFR
-	ktEGF 		3.3e-4 #EGFR recycling to cell membrane from internal pocket
-	konEGF   	6.72e-9 # EGF binds to EGFR
-	koffEGF 	4e-3 # EGF unbinds from EGFR
-	keEGF 		2.5e-3 # EGF.EGFR Exocytosis/Separation
-	keEGFx 		0 #EGF.EGFR Degradation leaving dEGF outside of the cell
-	kdiEGF 		7.2e-4 #EGF.EGFR Degradation leaving dEGF within the cell
-
-# 	Kholodenko Concentrations
-	Shc			270e-9*NA*Vcell
-	SOS			28e-9*NA*Vcell
-	Grb2		220e-9*NA*Vcell
-	GAP			12e-8*NA*Vcell
-	TP3			500e-9*NA*Vcell
-	TP6			10e-9*NA*Vcell
-
-# 	Kholodenko Rates	
-	kk6a		9.8e7/NA/Vcell/60	# Grb2-GEF binding
-	kk6d		9.8e7*10e-9/60 		# Grb2-GEF unbinding 
-	kk7a		5e4/NA/Vcell/60 	# EGFR-EGF Grb2 binding
-	kk7d		5e4*175e-9/60 
-	kk8a		1.4e6/NA/Vcell/60 	# EGFR-EGF and Grb2-GEF binding
-	kk8d		1.4e6*70e-9/60
-	kk9a		1e5/NA/Vcell/60 	# EGFR-EGF-Grb2 and GEF binding
-	kk9d		1e5*26e-9/60 
-	kk10a		1e8/NA/Vcell/60 	# EGFR-EGF and GAP~U binding
-	kk10d		1e8*150e-9/60
-	kk11a		0.04/60 			# EGFR-EGF-GAP phosphorylation
-	kk11d		0.04/.05/60 
-	kk12a		1e4/NA/Vcell/60 	# EGFR-EGF-GAP~P unbinding 
-	kk12d		1e4*10e-9/60
-	kk13a		9e7/NA/Vcell/60 	# GAP and TP6 binding
-	kk13d		9e7*120e-9/60
-	kk14		3.6/60 				# GAP-TP6 dephosphorylation and unbinding 
-	
+  kp_LR           0.1    # kinetic parameters (2nd order reaction params in vol/time units)
+  km_LR           1.0    
+  kp_LL           0.1
+  km_LL           1.0
+  k_R_endo        1.0
+  k_recycle       0.1
+  k_R_transphos   1.0
+  k_R_dephos      0.1
+  kp_R_TF         0.1
+  km_R_TF         0.1
+  kp_R_TFp        0.1
+  km_R_TFp        10.0
+  k_TF_transphos  1.0
+  k_TF_dephos     1.0
+  kp_TF_TF        0.1
+  km_TF_TF        1.0
+  kp_TF_p1        0.1
+  km_TF_p1     	  1.0
+  k_transcribe    1.0
+  k_translate     1.0
+  k_mRNA_to_CP    1.0
+  k_mRNA_deg      1.0
+  k_P_deg         0.1
+  k_Im_bind_CP    0.1
+  k_Im_unbind_CP  0.1
+  k_Im_bind_NU    0.1
+  k_Im_unbind_NU  10.0
+  k_Im_enters_NP  0.1
+  k_Im_exits_NP   1.0
+  k_Im_cross_NP   1.0
+  kp_P1_p2        0.1
+  km_P1_p2        1.0
 end parameters
 
+begin compartments
+  EC  3  vol_EC 
+  PM  2  sa_PM * eff_width          EC
+  CP  3  vol_CP                     PM
+  NM  2  sa_NM * eff_width          CP
+  NU  3  vol_NU                     NM
+  EM  2  sa_EM * eff_width  	    CP
+  EN  3  vol_EN             		EM
+end compartments
+
 begin molecule types
-
-	I()
-	Cyclin(deg~y~n)
-	APC(c~OFF~ON)
-	Cdk()
-	MPF(cyclin,cdk~U~1P~2P)
-	Wee1(c~P~U)
-	Cdc25(c~P~U)
-	PPase()
-	IE(c~P~U)
-	ERG()
-	DRG()
-	Trash()
-
-# 	From Ras-Erk Model:
-	Ras(mut~g12v~wt,nuc~U~GDP~GTP,raf,cat)
-	GAP(phos~U~P,bind,ras)
-	GEF(grb,ras,phos~U~P)
-	Raf(ras,bind,phos~P~U) 			#ADD
-	MEK(bind,phos~U~P,loc~cyt~nuc) 	#ADD
-	ERK(bind,phos~U~P,loc~cyt~nuc)  #ADD
-
-# 	From EGFR:
-	EGFR(r,loc~cyt~mem,bind)
-	EGF(r,loc~cyt~mem,deg~n~y)
- 	
-# 	Kholodenko molecules
-	Grb2(bind,sos) #Bind: EGFR and Shc
-	TP6(gap) 
-
+  L(r,d)               # Ligand w/ receptor binding and dimerization sites.
+  R(l,tf~Y~pY)         # Receptor with ligand and TF binding sites.
+  TF(r,d~Y~pY,dna,im)  # Transcription factor (monomer) with receptor, DNA, and importin binding sites; and dimerization domain.
+  DNA(p1,p2)           # DNA molecule with two promoter sites. 
+  mRNA1()              # mRNA transcript for Protein 1.
+  mRNA2()              # mRNA transcript for Protein 2.
+  P1(im,dna)           # Protein 1 with importin and DNA binding domains.
+  P2()                 # Protein 2.
+  Im(fg,cargo)         # nuclear importin molecule with hydrophobic domain (fg) that interacts with nuclear pore. 
+  NP(fg)               # nuclear pore complex w/ hydrophobic FG repeat domain.
+  Sink()               # a place for deleted molecules.
 end molecule types
 
-begin seed species
-
-	Cyclin(deg~n) 				init_cyclin
-	MPF(cyclin,cdk~1P) 			init_MPF
-	MPF(cyclin,cdk~2P) 			init_preMPF
-	Cdc25(c~P) 					init_cdc25p
-	Cdc25(c~U) 					TotCdc25-init_cdc25p
-	PPase() 					init_PPase
-	Wee1(c~P) 					init_wee1p
-	Wee1(c~U) 					TotWee1-init_wee1p
-	IE(c~P) 					init_iep
-	IE(c~U) 					TotIE-init_iep
-	APC(c~ON) 					init_APCon
-	APC(c~OFF) 		 			TotAPC-init_APCon
-	Cdk() 						TotCdk
-	ERG() 						init_ERG
-	DRG() 						init_DRG
-	#Erk() 						init_Erk
-
-# 	From Ras-Erk model
-	Ras(mut~wt,nuc~U,raf,cat) 	Ras
-	Ras(mut~g12v,nuc~U,raf,cat) G12V
-	Raf(ras,bind,phos~U)		Raf 
-	MEK(bind,phos~U,loc~cyt) 	MEK
-	ERK(bind,phos~U,loc~cyt) 	ERK
-
-# 	From EGFR Portion
-	EGFR(r,loc~mem,bind)		init_EGFR
-	EGF(r,loc~mem,deg~n)		0 #init_EGF
-	I() 						1
-
-# 	Kholodenko seed species
-	GEF(grb,ras,phos~U)			SOS
-	Grb2(bind,sos)				Grb2
-	GAP(phos~U,bind,ras) 		GAP 
-	TP6(gap)  					TP6
-
-end seed species
-
-begin observables
-
-	Molecules 	Tot_Cyclin 		Cyclin(deg~n), MPF(cyclin,cdk~1P), MPF(cyclin,cdk~2P) 
-	Molecules 	Cyclin 			Cyclin(deg~n)
-	Molecules 	Wee1P 			Wee1(c~P) 
-	Molecules 	Wee1U 			Wee1(c~U)
-	Molecules 	Cdc25P 			Cdc25(c~P)
-	Molecules 	Cdc25U 			Cdc25(c~U)
-	Molecules 	IEP 			IE(c~P)
-	Molecules 	IEU 			IE(c~U)
-	Molecules 	APCon 			APC(c~ON)
-	Molecules 	APCoff 			APC(c~OFF)
-	Molecules 	MPF 			MPF(cyclin,cdk~1P)
-	Molecules 	preMPF 			MPF(cyclin,cdk~2P)
-	Molecules 	PPase 			PPase()
-	Molecules 	DRG_tot 		DRG()
-	Molecules 	ERG_tot 		ERG()
-
-# 	From Ras-erk model:
-	Molecules 	Rastot			Ras()
-	Molecules 	WTact			Ras(mut~wt,nuc~GTP)
-	Molecules 	G12Vact			Ras(mut~g12v,nuc~GTP) 
-	Molecules 	Rasact			Ras(nuc~GTP) 
-	Molecules 	Rasgdp			Ras(nuc~GDP)
-	Molecules 	Raftot			Raf()
-	Molecules 	Rafact			Raf(phos~P)
-	Molecules 	Mektot			MEK()
-	Molecules 	MEKact			MEK(phos~P)
-	Molecules 	ERKtot			ERK()
-	Molecules 	ERKactot		ERK(phos~P)
-	Molecules 	ERKnnuc   		ERK(loc~nuc)
-	Molecules 	ERKacnuc		ERK(phos~P,loc~nuc)
-	Molecules 	GEFtot			GEF()
-	Molecules 	GEFinac			GEF(phos~P)
-	Molecules 	GEFbnd			GEF(grb!3)
-	Molecules 	rasGEF			GEF(ras!1)
-	Molecules 	GEFGrbRas		GEF(grb!3,ras!1)
-	Molecules 	GAPP			GAP(phos~P)
-	Molecules 	GAPU			GAP(phos~U)
-	Molecules 	Unb_EGFR  		EGFR(r,loc~mem)
-
-# 	Medium Unbound EGF
-	Molecules 	Free_EGF 		EGF(r,loc~mem,deg~n)
-
-# 	Membrane Complex
-	Molecules 	Comp_Mem 		EGFR(r!1,loc~mem).EGF(r!1,loc~mem,deg~n)
-
-# 	Cytoplasm Complex
-	Molecules 	Comp_Cyt 		EGFR(r!1,loc~cyt).EGF(r!1,loc~cyt,deg~n)
-	Molecules 	GEFact 			EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,phos~U)
-	Molecules 	GEFEGFR 		EGFR(r!1,loc~cyt,bind!2).EGF(r!1,loc~cyt,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,phos~U)
-	Molecules 	RasRaf 			Raf(ras!4,bind,phos~P).Ras(mut~wt,nuc~GTP,raf!4,cat) 
-	Molecules 	GAPTP6 			GAP(phos~P,bind!1,ras).TP6(gap!1)
-	Molecules 	UNBTP6 			TP6(gap)
-	Molecules 	GAPEGFEGFRmem 	EGF(deg!n,loc~mem,r!1).EGFR(bind!2,loc~mem,r!1).GAP(bind!2,phos~P,ras)
-	Molecules 	GAPPunb 		GAP(phos~P,bind,ras)
-	Molecules 	GAPEGFEGFRcyt 	EGF(deg~n,loc~cyt,r!1).EGFR(bind!2,loc~cyt,r!1).GAP(bind!2,phos~P,ras)
-	Molecules 	RasGAPwt 		GAP(bind,phos~P,ras!1).Ras(cat!1,mut~wt,nuc~GTP,raf)
-	Molecules 	RasGAPg12v 		GAP(bind,phos~P,ras!1).Ras(cat!1,mut~g12v,nuc~GTP,raf)
-	
-end observables
-
-begin functions
-
-	ergerksnth() = if( ERKacnuc == 0, 0, k15/(1+(DRG_tot/J15)^2)*ERKacnuc^2/ERKnnuc^2 )
-	drgergsnth() = if( ERKacnuc == 0, 0, ERKacnuc^2/ERKnnuc^2*kp17 )
-	drgdrgsnth() = if( ERKacnuc == 0, 0, k17*DRG_tot/J17^2/(1+(DRG_tot/J17)^2)*ERKacnuc^2/ERKnnuc^2 )
-	cycdrgsnth() = if( ERKacnuc == 0, 0, ERKacnuc^2/ERKnnuc^2*k9 )
-	
-	Sat1() = ka/(Ka+Cdc25U)
-	Sat2() = kb/(Kb+Cdc25P)
-	Sat3() = ke/(Ke+Wee1U)
-	Sat4() = ukf/(Kf+Wee1P)
-	Sat5() = kg/(Kg+IEU)
-	Sat6() = kh/(Kh+IEP)
-	Sat7() = kc/(Kc+APCoff)
-	Sat8() = kd/(Kd+APCon)
-	
-end functions
+begin species
+  L(r,d)@EC            L0
+  R(l,tf~Y)@PM         R0
+  TF(r,d~Y,dna,im)@CP  TF0
+  DNA(p1,p2)@NU        DNA0
+  Im(fg,cargo)@CP      Im0
+  NP(fg)@NM            NP0
+  
+  # Arbitrarily assign compartment CP to the abstract molecule "Sink".  
+  $Sink()@CP           0
+end species
 
 begin reaction rules
+  # receptor-ligand binding.
+  Rule1:  L(r) + R(l)  <->  L(r!1).R(l!1)            kp_LR, km_LR
 
-#	These Rules come from Novak/Tyson 2004 and involve Early Response/delayed response genes:
-	ERK(bind,phos~P,loc~nuc) -> ERK(bind,phos~P,loc~nuc) + ERG() ergerksnth()
-	ERG() -> ERG() + DRG() 	drgergsnth()
-	DRG() -> DRG() + DRG() 	drgdrgsnth()
-	ERG() -> Trash() 		k16
-	DRG() -> Trash() 		k18
+  # ligand dimerization.
+  Rule2:  L(d) + L(d)  <->  L(d!1).L(d!1)            kp_LL, km_LL  
 
-#	These Rules connect Early Response genes to Cyclins:
-	DRG() -> DRG() + Cyclin(deg~n) cycdrgsnth()
-	#Rule0: I()->I()+Cyclin(deg~n) k1 #<-------------This rule generates Cyclin. We dont need it now.
+  # Rule3: receptor-dimer internalization.
+  Rule3:  @PM:R.R       ->  @EM:R.R                  k_R_endo
 
-# 	These rules are from Tyson 1993
-	Cyclin(deg~n)+APC(c~OFF)->Cyclin(deg~y)+APC(c~OFF) 					V21 
-	Cyclin(deg~n)+APC(c~ON)->Cyclin(deg~y)+APC(c~ON) 					V22 
-	Cyclin(deg~n)+Cdk()->MPF(cyclin,cdk~1P) 							k3 
-	MPF(cyclin,cdk)+APC(c~OFF)->Cyclin(deg~y)+APC(c~OFF)+Cdk() 			V21 
-	MPF(cyclin,cdk)+APC(c~ON)->Cyclin(deg~y)+APC(c~ON)+Cdk() 			V22 
-	MPF(cyclin,cdk~1P)+Wee1(c~P)->MPF(cyclin,cdk~2P)+Wee1(c~P) 			Vwee1 
-	MPF(cyclin,cdk~1P)+Wee1(c~U)->MPF(cyclin,cdk~2P)+Wee1(c~U) 			Vwee2 
-	MPF(cyclin,cdk~2P)+Cdc25(c~P)->MPF(cyclin,cdk~1P)+Cdc25(c~P) 		V252 
-	MPF(cyclin,cdk~2P)+Cdc25(c~U)->MPF(cyclin,cdk~1P)+Cdc25(c~U) 		V251 
-	Cdc25(c~U)+MPF(cyclin,cdk~1P)->Cdc25(c~P)+MPF(cyclin,cdk~1P) 		Sat1()
-	Cdc25(c~P)+PPase()->Cdc25(c~U)+PPase() 								Sat2() 
-	Wee1(c~U)+MPF(cyclin,cdk~1P)->Wee1(c~P)+MPF(cyclin,cdk~1P) 			Sat3() 
-	Wee1(c~P)+PPase()->Wee1(c~U)+PPase() 								Sat4()
-	IE(c~U)+MPF(cyclin,cdk~1P)->IE(c~P)+MPF(cyclin,cdk~1P) 				Sat5() 
-	IE(c~P)+PPase()->IE(c~U)+PPase() 									Sat6() 
-	APC(c~OFF)+IE(c~P)->APC(c~ON)+IE(c~P) 								Sat7() 
-	APC(c~ON)+PPase()->APC(c~OFF)+PPase() 								Sat8() 
+  # receptor, ligand recycling.
+  Rule4:  @EM:R  ->  @PM:R                           k_recycle
+  Rule5:  @EN:L  ->  @EC:L                           k_recycle
 
-#	Kholodenko rules
-	Grb2(bind,sos) + GEF(grb,ras,phos~U) <-> Grb2(bind,sos!3).GEF(grb!3,ras,phos~U) kk6a,kk6d
-	EGFR(r!1,loc~mem,bind).EGF(r!1,loc~mem,deg~n) + Grb2(bind,sos) <-> EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos) kk7a,kk7d
-	EGFR(r!1,loc~mem,bind).EGF(r!1,loc~mem,deg~n) + Grb2(bind,sos!3).GEF(grb!3,ras,phos~U) <-> EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras,phos~U) kk8a,kk8d
-	EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos) + GEF(grb,ras,phos~U) <-> EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras,phos~U) kk9a,kk9d
-	EGFR(r!1,bind).EGF(r!1,deg~n) + GAP(phos~U,bind,ras) <-> EGFR(r!1,bind!2).EGF(r!1,deg~n).GAP(phos~U,bind!2,ras) 	kk10a,kk10d
-	EGFR(r!1,bind!2).EGF(r!1,deg~n).GAP(phos~U,bind!2,ras) <-> EGFR(r!1,bind!2).EGF(r!1,deg~n).GAP(phos~P,bind!2,ras) 	kk11a,kk11d
-	EGFR(r!1,bind).EGF(r!1,deg~n) + GAP(phos~P,bind,ras) <-> EGFR(r!1,bind!2).EGF(r!1,deg~n).GAP(phos~P,bind!2,ras) 	kk12a,kk12d
-	GAP(phos~P,bind,ras) + TP6(gap) <-> GAP(phos~P,bind!1,ras).TP6(gap!1) kk13a,kk13d
-	GAP(phos~P,bind!1,ras).TP6(gap!1) -> GAP(phos~U,bind,ras) + TP6(gap) kk14
+  # receptor transphosphorylation.
+  Rule6:  R.R(tf~Y)  ->  R.R(tf~pY)                  k_R_transphos
+  
+  # receptor dephosphorylation.
+  Rule7:  R(tf~pY)   ->  R(tf~Y)                     k_R_dephos
+  
+  # receptor-TF binding.  favor binding if TF(dim~Y), unbinding if TF(dim~pY).
+  Rule8:  R(tf~pY) + TF(d~Y,r)   <->  R(tf~pY!1).TF(d~Y,r!1)	   kp_R_TF,  km_R_TF
+  Rule9:  R(tf~pY) + TF(d~pY,r)  <->  R(tf~pY!1).TF(d~pY,r!1)      kp_R_TFp, km_R_TFp
 
-# 	From Ras-Erk Model:
-	# 1. Free GDP exchange 
-	Ras(mut~wt,nuc~U,raf,cat) <-> Ras(mut~wt,nuc~GDP,raf,cat) kagdp,kdgdp
-	# 2. Free GTP exchange
-	Ras(mut~wt,nuc~U,raf,cat) <-> Ras(mut~wt,nuc~GTP,raf,cat) kagtp,kdgtp
-	# 3. Ras.GDP binding GEF
-	Ras(nuc~GDP,raf,cat) + EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras,phos~U) <-> Ras(nuc~GDP,raf,cat!4).EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4,phos~U) kfgdp,krgdp
-	# 4. Ras.GTP binding GEF
-	Ras(mut~wt,nuc~GTP,raf,cat) + EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras,phos~U) <-> Ras(mut~wt,nuc~GTP,raf,cat!4).EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4,phos~U) kfgtp,krgtp
-	# 5. Ras.GEF nucleotide exchange
-	Ras(mut~wt,nuc~GDP,raf,cat!4).EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4,phos~U) <-> Ras(mut~wt,nuc~GTP,raf,cat!4).EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4,phos~U) kcatgdp,kcatgtp
-	# 6. Ras GTPase activity
-	Ras(mut~wt,nuc~GTP,raf,cat) -> Ras(mut~wt,nuc~GDP,raf,cat) khyd
-	# 7. Ras.GTP binding GAP
-	Ras(mut~wt,nuc~GTP,raf,cat) + GAP(phos~P,bind,ras) <-> Ras(mut~wt,nuc~GTP,raf,cat!3).GAP(phos~P,bind,ras!3) kf,kr
-	# 8. Ras.GTP.GAP dephosphorylation
-	Ras(mut~wt,nuc~GTP,raf,cat!3).GAP(phos~P,bind,ras!3) -> Ras(mut~wt,nuc~GDP,raf,cat) + GAP(phos~P,bind,ras) kcat
+  # transcription factor trans-phosphorylation.
+  Rule10:  TF.R.R.TF(d~Y)   ->  TF.R.R.TF(d~pY)      k_TF_transphos
 
-	#Ras Raf Interaction
-	Ras(mut~wt,nuc~GTP,raf,cat) + Raf(ras,bind,phos~U) <-> Raf(ras!4,bind,phos~P).Ras(mut~wt,nuc~GTP,raf!4,cat) karaf,kdraf
-	#GTPase activity in Raf
-	Raf(ras!4,bind).Ras(mut~wt,nuc~GTP,raf!4) -> Ras(mut~wt,nuc~GDP,raf) + Raf(ras,bind) khyd
-	# Raf phosphorylation
-	Raf(bind!4,phos~P).Ras(mut~wt,nuc~GTP,raf!4,cat) -> Raf(bind,phos~P) + Ras(mut~wt,nuc~GTP,raf,cat) kcat2
-	# Raf dephosphorylation
-	Raf(bind,phos~P) -> Raf(bind,phos~U) kdraf/10000 # Ex Anum
+  # transcription factor dephosphorylation (CP only).
+  Rule11:  TF(d~pY)@CP      ->  TF(d~Y)@CP           k_TF_dephos
+  
+  # transcription factor dimerization.
+  Rule12:  TF(r,d~pY,dna) + TF(r,d~pY,dna) <-> TF(r,d~pY!1,dna).TF(r,d~pY!1,dna)  	  kp_TF_TF, km_TF_TF
 
-#----------------g12v
-	# 11. Free GDP exchange 
-	Ras(mut~g12v,nuc~U,raf,cat) <-> Ras(mut~g12v,nuc~GDP,raf,cat) kagdpmut,kdgdpmut
-	# 12. Free GTP exchange
-	Ras(mut~g12v,nuc~U,raf,cat) <-> Ras(mut~g12v,nuc~GTP,raf,cat) kagtpmut,kdgtpmut
-	# 13. Ras.GTP binding GEF
-	Ras(mut~g12v,nuc~GTP,raf,cat) + EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras,phos~U) <-> Ras(mut~g12v,nuc~GTP,raf,cat!4).EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4,phos~U) kfgtp,krgtpmut 
-	# 14. Ras.GEF nucleotide exchange
-	Ras(mut~g12v,nuc~GDP,raf,cat!4).EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4,phos~U) <-> Ras(mut~g12v,nuc~GTP,raf,cat!4).EGFR(r!1,loc~mem,bind!2).EGF(r!1,loc~mem,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4,phos~U) kcatgdp,kcatgtpmut
-	# 15. Ras GTPase activity
-	Ras(mut~g12v,nuc~GTP,raf,cat) -> Ras(mut~g12v,nuc~GDP,raf,cat) khydmut
-	# 16. Ras.GTP binding GAP
-	Ras(mut~g12v,nuc~GTP,raf,cat) + GAP(phos~P,bind,ras) <-> Ras(mut~g12v,nuc~GTP,raf,cat!3).GAP(phos~P,bind,ras!3) kf,krmut
-	# 17. Ras.GTP.GAP dephosphorylation
-	Ras(mut~g12v,nuc~GTP,raf,cat!3).GAP(phos~P,bind,ras!3) -> Ras(mut~g12v,nuc~GDP,raf,cat) + GAP(phos~P,bind,ras) kcatmut
-	
-	#Ras Raf Interaction
-	Ras(mut~g12v,nuc~GTP,raf,cat) + Raf(ras,bind,phos~U) <-> Raf(ras!4,bind,phos~P).Ras(mut~g12v,nuc~GTP,raf!4,cat) karaf,kdrafmut
-	#GTPase activity in Raf
-	Raf(ras!4,bind).Ras(mut~g12v,nuc~GTP,raf!4) -> Ras(mut~g12v,nuc~GDP,raf) + Raf(ras,bind) khyd
-	# Raf phosphorylation
-	Raf(bind!4,phos~P).Ras(mut~g12v,nuc~GTP,raf!4,cat) -> Raf(bind,phos~P) + Ras(mut~g12v,nuc~GTP,raf,cat) kcat2
+  # TF dimer binds promoter 1.
+  Rule13:  TF(dna,im).TF(dna,im) + DNA(p1) <-> TF(dna!1,im).TF(dna!2,im).DNA(p1!1!2)  kp_TF_p1, km_TF_p1
+  
+  # transcription.
+  Rule14:  DNA(p1!+) ->  DNA(p1!+) + mRNA1()@NU      k_transcribe
+  Rule15:  DNA(p2!+) ->  DNA(p2!+) + mRNA2()@NU      k_transcribe
+  
+  # mRNA transport to cytoplams.
+  Rule16:  mRNA1@NU  ->  mRNA1@CP                    k_mRNA_to_CP
+  Rule17:  mRNA2@NU  ->  mRNA2@CP                    k_mRNA_to_CP
+  
+  # mRNA translation to protein.
+  Rule18:  mRNA1@CP  ->  mRNA1@CP  +  P1(im,dna)@CP  k_translate
+  Rule19:  mRNA2@CP  ->  mRNA2@CP  +  P2()@CP        k_translate
+  
+  # mRNA degradation.
+  Rule20:  mRNA1     ->  Sink()@CP                  k_mRNA_deg  DeleteMolecules
+  Rule21:  mRNA2     ->  Sink()@CP                  k_mRNA_deg  DeleteMolecules
+  
+  # protein degradation.
+  Rule22:  P1        ->  Sink()@CP                  k_P_deg  DeleteMolecules
+  Rule23:  P2        ->  Sink()@CP                  k_P_deg  DeleteMolecules
+  
+  # importin binds TF dimer (tends to pick up in CP, drop off in NU).
+  Rule24:  TF(im,dna,r).TF(im,dna,r) + Im(cargo)@CP <-> TF(im!1,dna,r).TF(im!2,dna,r).Im(cargo!1!2)@CP	k_Im_bind_CP, k_Im_unbind_CP
+  Rule25:  TF(im,dna,r).TF(im,dna,r) + Im(cargo)@NU <-> TF(im!1,dna,r).TF(im!2,dna,r).Im(cargo!1!2)@NU	k_Im_bind_NU, k_Im_unbind_NU
 
-#----------------------
-#	Fujioka stuff below:
-	#1  Ras(nuc~GTP,raf,cat) + Raf(ras,bind,phos~U) <-> Ras(nuc~GTP,raf!1,cat).Raf(ras!1,bind,phos~P) kfs1, kbs1
-	#1  Ras(mut~g12v,nuc~GTP,raf,cat) + Raf(ras,bind,phos~U) <-> Ras(mut~g12v,nuc~GTP,raf!1,cat).Raf(ras!1,bind,phos~P) kfs1, kbs1*((1-m3)+m3*f3)
-	#20 Ras(mut~wt,nuc~GTP,raf,cat) + Raf(ras,bind,phos~U) <-> Ras(mut~wt,nuc~GTP,raf!1,cat).Raf(ras!1,bind,phos~P) kfs1, kbs1
-	# Above is commented out because it is in the ras model
-	Ras(nuc~GTP,raf!1,cat).Raf(ras!1,bind,phos~P) + MEK(bind,phos~U,loc~cyt) <-> Ras(nuc~GTP,raf!1,cat).Raf(ras!1,bind!2,phos~P).MEK(bind!2,phos~U,loc~cyt) kfs2,kbs2
-	MEK(bind,phos~P,loc~cyt) + ERK(bind,phos~U,loc~cyt) <-> MEK(bind!1,phos~P,loc~cyt).ERK(bind!1,phos~U,loc~cyt) 	kfs3, kbs3
-	MEK(bind,phos~U,loc~cyt) + ERK(bind,phos~U,loc~cyt) <-> MEK(bind!1,phos~U,loc~cyt).ERK(bind!1,phos~U,loc~cyt) 	kfs3, kbs3
-	MEK(bind!1,phos~P,loc~cyt).ERK(bind!1,phos~U,loc~cyt) -> MEK(bind,phos~P,loc~cyt) + ERK(bind,phos~P,loc~cyt) 	Vms5
-	Ras(nuc~GTP,raf!1,cat).Raf(ras!1,bind!2,phos~P).MEK(bind!2,phos~U,loc~cyt) -> Ras(nuc~GTP,raf!1,cat).Raf(ras!1,bind,phos~P) + MEK(bind,phos~P,loc~cyt) Vms6
-	MEK(bind,phos~U,loc~nuc) <-> MEK(bind,phos~U,loc~cyt) kex7,kin7
-	MEK(bind!1,phos~U,loc~nuc).ERK(bind!1,loc~nuc) <-> MEK(bind!1,phos~U,loc~cyt).ERK(bind!1,loc~cyt) kex8,kin8
-	ERK(bind,phos~U,loc~nuc) <-> ERK(bind,phos~U,loc~cyt) kex9,kin9
-	MEK(bind,phos~P,loc~nuc) <-> MEK(bind,phos~P,loc~cyt) kex10,kin10
-	ERK(bind,phos~P,loc~nuc) <-> ERK(bind,phos~P,loc~cyt) kex11,kin11
-	MEK(bind!1,phos~P,loc~nuc).ERK(bind!1,loc~nuc) <-> MEK(bind!1,phos~P,loc~cyt).ERK(bind!1,loc~cyt) kex8,kin8
-	MEK(bind,phos~P,loc~nuc) + ERK(bind,phos~U,loc~nuc) <-> MEK(bind!1,phos~P,loc~nuc).ERK(bind!1,phos~U,loc~nuc) 	kfs3,kbs3
-	MEK(bind,phos~U,loc~nuc) + ERK(bind,phos~U,loc~nuc) <-> MEK(bind!1,phos~U,loc~nuc).ERK(bind!1,phos~U,loc~nuc) 	kfs3,kbs3
-	MEK(bind!1,phos~P,loc~nuc).ERK(bind!1,phos~U,loc~nuc) -> MEK(bind,phos~P,loc~nuc) + ERK(bind,phos~P,loc~nuc) 	Vms5
-	MEK(bind,phos~P,loc~cyt) -> MEK(bind,phos~U,loc~cyt) kf16
-	ERK(bind,phos~P,loc~cyt) -> ERK(bind,phos~U,loc~cyt) kf17
-	MEK(bind,phos~P,loc~nuc) -> MEK(bind,phos~U,loc~nuc) kf16
-	ERK(bind,phos~P,loc~nuc) -> ERK(bind,phos~U,loc~nuc) kf17
+  # importin binds P1 (tends to pick up in CP, drop off in NU).
+  Rule26:  P1(im,dna) + Im(cargo)@CP    <->  P1(im!1,dna).Im(cargo!1)@CP	  k_Im_bind_CP, k_Im_unbind_CP
+  Rule27:  P1(im,dna) + Im(cargo)@NU    <->  P1(im!1,dna).Im(cargo!1)@NU      k_Im_bind_NU, k_Im_unbind_NU
+  
+  # importin enters nuclear pore.
+  Rule28:  Im(fg) + NP(fg)  <->  Im(fg!1).NP(fg!1)            k_Im_enters_NP, k_Im_exits_NP
+  
+  # importin traverses nuclear pore (with any cargo).
+  Rule29:  Im(fg!1)@CP.NP(fg!1)  <->  Im(fg!1)@NU.NP(fg!1)    k_Im_cross_NP,  k_Im_cross_NP  MoveConnected
 
-#From EGFR
-	# EGFR 'turnover'##################
-	EGFR(r,loc~mem) -> Trash() ktEGF
-	# EGFR synthesis
-	I() -> I() + EGFR(r,loc~mem,bind) ktEGF*init_EGFR
-	# EGFR EGF complex formation on cell membrane
-	EGFR(r,loc~mem,bind) + EGF(r,loc~mem,deg~n) <-> EGFR(r!1,loc~mem,bind).EGF(r!1,loc~mem,deg~n) konEGF,koffEGF
-	# EGFR/EGF complex endocytosis
-	EGFR(r!1,loc~mem).EGF(r!1,loc~mem,deg~n) -> EGFR(r!1,loc~cyt).EGF(r!1,loc~cyt,deg~n) keEGF
-	# EGFR/EGF complex degradation with dEGF in cell
-	EGFR(r!1,loc~cyt,bind).EGF(r!1,loc~cyt,deg~n) -> EGF(r,loc~cyt,deg~y) kdiEGF
-	# EGFR/EGF complex degradation while attached to GEF
-	EGFR(r!1,loc~cyt,bind!2).EGF(r!1,loc~cyt,deg~n).Grb2(bind!2,sos)  -> EGF(r,loc~cyt,deg~y) + Grb2(bind,sos) kdiEGF
-	EGFR(r!1,loc~cyt,bind!2).EGF(r!1,loc~cyt,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras)  -> EGF(r,loc~cyt,deg~y) + Grb2(bind,sos) + GEF(grb,ras) kdiEGF
-	EGFR(r!1,loc~cyt,bind!2).EGF(r!1,loc~cyt,deg~n).Grb2(bind!2,sos!3).GEF(grb!3,ras!4).Ras(cat!4)  -> EGF(r,loc~cyt,deg~y) + Grb2(bind,sos) + GEF(grb,ras) + Ras(cat) kdiEGF
+  # P1 binds promoter 2.
+  Rule30:  P1(im,dna) + DNA(p2)  <->  P1(im,dna!1).DNA(p2!1)  kp_P1_p2, km_P1_p2  
+end reaction rules  
+       
+begin observables
+  Molecules  Tot_L         L
+  Molecules  Tot_R         R
+  Molecules  Tot_TF        TF
+  Molecules  Tot_DNA       DNA
+  Molecules  Tot_mRNA1     mRNA1
+  Molecules  Tot_mRNA2     mRNA2
+  Molecules  Tot_P1        P1
+  Molecules  Tot_P2        P2
+  Molecules  Tot_NP        NP
+  Molecules  Tot_Im        Im
+  
+  Species    L_Dimers_EC   @EC:L.L
+  Species    L_Dimers_PM   @PM:L.L
+  Species    L_Dimers_EN   @EN:L.L
+  Species    L_Dimers_EM   @EM:L.L
+  
+  Molecules  L_Bound_PM    @PM:L
+  Molecules  L_Bound_EM    @EM:L
 
-end reaction rules
-writeXML();
-generate_network({overwrite=>1});
-simulate_ode({t_end=>90000,n_steps=>1000,atol=>1e-12,rtol=>1e-12,sparse=>0,verbose=>1});
-#simulate_ssa({t_end=>90000,n_steps=>1000,verbose=>1});
-#simulate_pla({t_end=>90000,n_steps=>1000,verbose=>1});
-#setConcentration("EGF(r,loc~mem,deg~n)","init_EGF");
-#saveConcentrations();
-#simulate_ode({continue=>1,t_start=>90000,t_end=>300000,n_steps=>1000,atol=>1e-12,rtol=>1e-12,sparse=>0,verbose=>1});
-#simulate_ssa({continue=>1,t_start=>90000,t_end=>400000,n_steps=>1000,verbose=>1});
+  Species    R_Dimers_PM   @PM:R.R
+  Species    R_Dimers_EM   @EM:R.R
 
-#simulate_nf({suffix=>nf,t_end=>400,n_steps=>200,param=> "-ogf -v -gml 1000000000"});
+  Molecules  Catalytic_R   R(tf~pY!?)
+  Molecules  Catalytic_TF  R(tf~pY!1).TF(r!1)
+  Molecules  Phos_TF       TF(d~pY!?)
+  
+  Species    TF_Dimer_CP   TF(d~pY!1)@CP.TF(d~pY!1)@CP
+  Species    TF_Dimer_NU   TF(d~pY!1)@NU.TF(d~pY!1)@NU
+
+  Species    Bound_prom1   DNA(p1!+)
+  Species    Bound_prom2   DNA(p2!+)
+  
+  Species    P1_NU         P1@NU
+  Species    P1_CP         P1@CP
+  
+  Species    Im_NU         Im@NU
+  Species    Im_CP         Im@CP
+  
+  Species    Im_Cargo_NP   Im(fg!+,cargo!+) 
+
+  Species    P1_NU_free    P1(im,dna)@NU
+  Species    P1_NU_dna     P1(im,dna!+)@NU
+  
+  Species    CountSink     Sink()@CP
+end observables
+end model
+
+# actions #
+generate_network({overwrite=>1,TextReaction=>0});
+simulate_ode({t_start=>0,t_end=>40,n_steps=>100});
+ saveConcentrations();
