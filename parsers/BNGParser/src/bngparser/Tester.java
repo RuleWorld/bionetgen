@@ -46,8 +46,9 @@ public class Tester {
 		String inputFile2 = "testModels/NFSim/actin/actin_simple.bngl";
 		//String inputFile = "testModels/FullModelBurstSeconds.bngl";
 		
-		List<String> inputFileList = getFileNames("testModels/NFSim");
-		
+		List<String> inputFileList = getFileNames("testModels/Validate");
+		//List<String> inputFileList = new ArrayList<String>();
+		//inputFileList.add("testModels/Validate/ANx.bngl");
 		String outputFile = "output.xml";
 		
 		if(args.length > 0){
@@ -85,11 +86,11 @@ public class Tester {
 			r2 = parser.actions_prog();
 			
 			//System.out.println(r2.getTemplate().toString());
-			//FileWriter writer = new FileWriter(outputFile);
-			//writer.write(r.getTemplate().toString());
+			FileWriter writer = new FileWriter(outputFile);
+			writer.write(r.getTemplate().toString());
 			
 			//r.g
-			//writer.close();
+			writer.close();
 			System.out.println("pass");
 			}
 			catch(Exception e){
@@ -97,6 +98,5 @@ public class Tester {
 				e.printStackTrace();
 			}
 		}
-		
 	}
 }

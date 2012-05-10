@@ -21,12 +21,12 @@ Species total A(a!1).B(b!1)
 end observables
 
 begin reaction rules
-A(a) + B(b) -> A(a!1).B(b!1) 1
+A(a) + B(b) -> A(a!1).B(b!1) 100
 end reaction rules
 
 end model
 
 generate_network({overwrite=>1});
-#simulate_ode({t_end=>0.1,n_steps=>1000});
+simulate_ode({t_end=>0.001,n_steps=>1000});
 writeSBML();
 #ACTIONS

@@ -39,6 +39,7 @@ scope{
 @init{
   $seed_species_def::molecules = new ArrayList();
   $seed_species_def::bonds = new BondList();
+
 }
 
 :
@@ -52,7 +53,7 @@ scope{
       firstBonds={$seed_species_def::bonds.getLeft()},secondBonds={$seed_species_def::bonds.getRight()});
 
 
-pre_species_def[List molecules,BondList bonds, int speciesCounter] returns [String compartment]
+pre_species_def[List molecules,BondList bonds, int speciesCounter] returns [String compartment,Map<String,Register> lmemory]
 scope{
   boolean constant;
   
@@ -64,6 +65,7 @@ scope{
  species_def[molecules,bonds,"S" + speciesCounter]
  {
     $pre_species_def::constant = $species_def.constant;
+    $lmemory = $species_def.lmemory;
  }
 
   
@@ -73,11 +75,11 @@ scope{
 ;
 
 
-species_def[List molecules,BondList bonds,String speciesCounter] returns [Map<String,List<ReactionRegister>> listOfMolecules, boolean constant]
+species_def[List molecules,BondList bonds,String speciesCounter] returns [Map<String,List<ReactionRegister>> listOfMolecules, String glabel, boolean constant,String compartment="",Map<String, Register> lmemory]
 scope{
  int numMolecules; 
  String variableName;
-
+ 
 
 }
 @init{
@@ -88,10 +90,23 @@ scope{
  //  ((ChangeableChannelTokenStream)input).setChannel(Token.DEFAULT_CHANNEL|HIDDEN);
   $species_def::variableName = "";
   $constant = false;
- 
+  $lmemory = new HashMap<String,Register>();
 }
 :
-   (AT scomp=STRING COLON ({gParent.netGrammar}? COLON | ))?  (DOLLAR {$constant = true;})?
+   (AT scomp=STRING 
+   
+   {
+    $compartment = $scomp.text;
+   }
+   COLON ({gParent.netGrammar}? COLON | ))?  
+   
+   (MOD slabel=STRING COLON COLON
+   {
+    $lmemory.put($slabel.text,new Register(1.0,"observable"));
+    $glabel = $slabel.text;
+   }
+   )? 
+   (DOLLAR {$constant = true;})?
    
    (s1=species_element[bonds,speciesCounter + "_M" + $species_def::numMolecules,$scomp.text] 
    {
@@ -99,11 +114,19 @@ scope{
     $species_def::numMolecules++;
     ReactionRegister.addElement($listOfMolecules,$s1.name,$s1.information);
     $species_def::variableName += $s1.text;
+    //in this step we are adding the label to local memory so that the expression grammar doesn't throw a variable not found error
+    //i don't think it needs to make numerical sense.
+    if($s1.myLabel != null){
+      $lmemory.put($s1.myLabel,new Register(1.0,"observable"));
+    }
    }
   (DOT s2=species_element[bonds,speciesCounter + "_M" + $species_def::numMolecules,$scomp.text] 
         {molecules.add(s2.st);
         $species_def::numMolecules++;
          $species_def::variableName += "."+ $s2.text;
+         if($s2.myLabel != null){
+          $lmemory.put($s2.myLabel,new Register(1.0,"observable"));
+         }
         })*
    {
    //We are done with space recognition so we turn it off and get the next token that is not a space
@@ -147,14 +170,14 @@ getParentTemplate();
 }
 
 :
-  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.text;})? (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)?
+  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)?
   (AT s2=STRING 
   {
     $species_element::lcompartment = $s2.text; 
     $information.setCompartment($s2.text);
     $information.setBondList(bonds);
   })? 
-  -> list_molecule_def(id={upperID},name={$s1.text},sites={$species_element::sites},compartment = {$species_element::lcompartment});
+  -> list_molecule_def(id={upperID},name={$s1.text},sites={$species_element::sites},compartment = {$species_element::lcompartment},label={$myLabel});
   
 site_list[List sites,BondList bonds,String upperID]
 scope{

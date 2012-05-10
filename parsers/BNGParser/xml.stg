@@ -90,8 +90,8 @@ bond_template(firstElement,secondElement) ::= <<
 >>
 
 
-list_molecule_def(id,name,sites,compartment) ::= <<
-\<Molecule id="<id>" name="<name>" <if(compartment)>compartment="<compartment>"<endif>\>
+list_molecule_def(id,name,sites,compartment,label) ::= <<
+\<Molecule id="<id>" name="<name>"<if(compartment)> compartment="<compartment>"<endif><if(label)> label="<label>"<endif>\>
  \<ListOfComponents\>
    <sites; separator="\n">
  \</ListOfComponents\>
@@ -103,7 +103,7 @@ component_def(id,name,state,numberOfBonds)::= <<
 >>
 
 type_user_object(name) ::= "<name>"
-
+//TODO: need to add labels to ReactantPatterns
 reaction_block(id,name,reactant,product,rate,bidirectional,birate,leftMap,rightMap,operations,operator1,operator2,expression) ::=<<
   \<ReactionRule id="<id>" name="<name>" expression="<expression>"\>
    \<ListOfReactantPatterns\>
