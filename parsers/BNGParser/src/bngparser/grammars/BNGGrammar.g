@@ -108,52 +108,37 @@ functions_block
       END FUNCTIONS LB+
 ;
 
-function_def:
+function_def
+scope{
+  Map<String,Register> lmemory;
+}
+@init{
+  $function_def::lmemory =  new HashMap<String,Register>();
+  $function_def::lmemory.putAll(memory);
+}:
     s1=STRING LPAREN 
     parameter=(s2=STRING
     {
-      memory.put($s2.text,new Register(1.0,"parameter"));
+      $function_def::lmemory.put($s2.text,new Register(1.0,"parameter"));
+    }
+    (COMMA s3=STRING)*
+    {
+      $function_def::lmemory.put($s3.text,new Register(1.0,"parameter"));
     }
     )? RPAREN (BECOMES)?  
 
-    (expression[memory] 
+    expression[$function_def::lmemory] 
     {
      memory.put($s1.text,new Register($expression.value,"function"));
     }
     ->  functions_block(id={$s1.text},
                             referencesName={$expression.reference.keySet()},referencesType={Register.getTypes($expression.reference)},
                             expression={$expression.text})
-    | if_expression
-    {
-      memory.put($s1.text,new Register($if_expression.value,"function"));
-    }
-    )
-    {
-      if(memory.containsKey($s2.text)){
-        memory.remove($s2.text);
- 
-       
-      }
-    }
+  
     
 ;
 
-if_expression  returns [Double value]
-scope{
-  Map<String,Register> references;
-  Map<String,Register> lmemory;
-}
-@init{
-  $if_expression::references = new HashMap<String,Register>();
-  $if_expression::lmemory = memory;
-}:
-  IF LPAREN STRING 
-  
-  (EQUALS|GT|GTE|LT|LTE) (STRING|INT) COMMA e1=expression[memory] COMMA expression[memory] RPAREN
-  {
-    $value = $e1.value;
-  }
-;
+
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL
 compartments_block:

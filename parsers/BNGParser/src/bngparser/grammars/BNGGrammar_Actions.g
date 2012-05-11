@@ -146,7 +146,7 @@ scope{
   $read_file::actions = new HashMap<String,String>();
 }
         : READFILE LPAREN 
-        (LBRACKET (FILE ASSIGNS DBQUOTES? s1=(STRING|DOT)+ DBQUOTES? {$read_file::actions.put($FILE.text,$s1.text);})? RBRACKET)? 
+        (LBRACKET (FILE ASSIGNS DBQUOTES s1=(filename) DBQUOTES {$read_file::actions.put($FILE.text,$s1.text);})? RBRACKET)? 
         RPAREN SEMI? -> action(id={$READFILE.text},optionMap={$read_file::actions})
         ;
 //TODO: this is just a stub right now
@@ -247,8 +247,8 @@ assignment_list
 value   : INT | FLOAT | STRING
         ;
 ps_par_def[Map<String,String> map]
-        : PREFFIX ASSIGNS ((DBQUOTES  STRING DBQUOTES) | STRING)
-        | SUFFIX ASSIGNS ((DBQUOTES  STRING DBQUOTES) | STRING)
+        : PREFFIX ASSIGNS ((DBQUOTES  STRING DBQUOTES))
+        | SUFFIX ASSIGNS ((DBQUOTES  STRING DBQUOTES))
         ;
 simulate_ode_par_def[Map<String,String> map]
         : ATOL ASSIGNS f1=FLOAT {map.put($ATOL.text,$f1.text);}
@@ -299,11 +299,11 @@ simulate_par_def[Map<String,String> map]
         | PRINT_FUNCTIONS ASSIGNS i7=INT {map.put($PRINT_FUNCTIONS.text,$i7.text);}
         | N_OUTPUT_STEPS ASSIGNS multiple_definition {map.put($N_OUTPUT_STEPS.text,$multiple_definition.value);}
         | MAX_SIM_STEPS ASSIGNS multiple_definition {map.put($MAX_SIM_STEPS.text,$multiple_definition.value);}
-        | ARGFILE ASSIGNS s3=STRING {map.put($ARGFILE.text,$s3.text);}
+        | ARGFILE ASSIGNS DBQUOTES s3=filename DBQUOTES {map.put($ARGFILE.text,$s3.text);}
         | SAVE_PROGRESS ASSIGNS i10=INT {map.put($SAVE_PROGRESS.text,$i10.text);}
         | PRINT_NET ASSIGNS i11=INT {map.put($PRINT_NET.text,$i11.text);}
         | PRINT_END ASSIGNS i12=INT {map.put($PRINT_END.text,$i12.text);}    
-        | NETFILE ASSIGNS s4=STRING {map.put($NETFILE.text,$s4.text);}
+        | NETFILE ASSIGNS DBQUOTES s4=filename DBQUOTES {map.put($NETFILE.text,$s4.text);}
         | METHOD ASSIGNS method_definition {map.put($METHOD.text,$method_definition.text);}
         | CONTINUE ASSIGNS i13=INT {map.put($CONTINUE.text,$i13.text);}
         | EVALUATE_EXPRESSIONS ASSIGNS i14=INT {map.put($EVALUATE_EXPRESSIONS.text,$i14.text);}
@@ -327,3 +327,6 @@ array_value
         : LSBRACKET STRING (COMMA STRING)* RSBRACKET
         ;
 
+filename:
+(STRING|DOT|DIV|MINUS)+
+;

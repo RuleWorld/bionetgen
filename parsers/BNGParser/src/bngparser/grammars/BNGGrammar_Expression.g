@@ -85,6 +85,7 @@ boolean_negation_expression returns [Double value]
 primitive_element returns [Double value]
 : 
         number {$value = $number.value;} 
+        | (IF LPAREN (~RPAREN)+ RPAREN) => if_expression {$value = $if_expression.value;}
         | (STRING LPAREN (expression2 (COMMA expression2)*)? RPAREN) => function {$value = $function.value;}
         |  variable {$value = $variable.value;}
         | (EXP | LOG) LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
@@ -123,6 +124,13 @@ variable returns [Double value]: s1=STRING {
                     
                   }
                   }
+;
+
+if_expression  returns [Double value]:
+  IF LPAREN expression2 COMMA e1=expression2 COMMA expression2 RPAREN
+  {
+    $value = $e1.value;
+  }
 ;
 
 function returns [Double value]:
