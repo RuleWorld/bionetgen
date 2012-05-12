@@ -69,7 +69,7 @@ scope
 	        $pattern_list::patterns.add(s1.st);
 	        $pattern_list::patternCounter++;
         }
-        ((COMMA) s2=obs_species_def[upperID + "_P" + $pattern_list::patternCounter, $observables_block::reactionAction] 
+        ((COMMA)? s2=obs_species_def[upperID + "_P" + $pattern_list::patternCounter, $observables_block::reactionAction] 
         {
 	        $pattern_list::patterns.add(s2.st);
 	        $pattern_list::patternCounter++; 

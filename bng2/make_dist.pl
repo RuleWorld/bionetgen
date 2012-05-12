@@ -63,7 +63,7 @@ my $run_network = "run_network";
 ### System specific commands and flags ###
 # copy
 my $sys_copy = "cp";
-my @copybin_flags = ("-d");
+my @copybin_flags = (); #("-d");
 # chmod
 my $sys_chmod = "chmod";
 my $chmod_flags = "+x";
