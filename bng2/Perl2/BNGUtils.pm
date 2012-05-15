@@ -33,20 +33,20 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
             # Use environment variable BNGPATH, if defined and valid
             if ( exists $ENV{BNGPATH} ) 
             {
-	            my $bindir = File::Spec->catdir( ($ENV{BNGPATH}) );
+	            my $bin_dir = File::Spec->catdir( ($ENV{BNGPATH}) );
                 if ( -d $bin_dir )
                 {   $BNG_ROOT = $bin_dir;   }
                 else
-                {   send_warning( "While looking for BNG_ROOT: environment variable 'BNGPATH' is not a valid directory!" );   }
+                {   send_warning( "While looking for BNG root: environment variable 'BNGPATH' does not point to a valid directory!" );   }
             }
             # Use environment variable BioNetGenRoot, if defined and valid
             elsif ( exists $ENV{BioNetGenRoot} )
             {
-	            my $bindir = File::Spec->catdir( ($ENV{BioNetGenRoot}) );
+	            my $bin_dir = File::Spec->catdir( ($ENV{BioNetGenRoot}) );
                 if ( -d $bin_dir )
                 {   $BNG_ROOT = $bin_dir;   }
                 else
-                {   send_warning( "While looking for BNG_ROOT: environment variable 'BioNetGenRoot' is not a valid directory!" );   }
+                {   send_warning( "While looking for BNG rooy: environment variable 'BioNetGenRoot' does not point to a valid directory!" );   }
             }
 
 
@@ -56,7 +56,7 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
                 if (-d $FindBin::RealBin)
                 {   $BNG_ROOT = $FindBin::RealBin;   }
                 else
-                {   send_warning( "While looking for BNG_ROOT: could not RealBin directory!" );   }
+                {   send_warning( "While looking for BNG root: could not get RealBin directory!" );   }
             }
 
             # As last resort, try current working directory
