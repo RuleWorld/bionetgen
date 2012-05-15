@@ -46,7 +46,7 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
                 if ( -d $bin_dir )
                 {   $BNG_ROOT = $bin_dir;   }
                 else
-                {   send_warning( "While looking for BNG rooy: environment variable 'BioNetGenRoot' does not point to a valid directory!" );   }
+                {   send_warning( "While looking for BNG root: environment variable 'BioNetGenRoot' does not point to a valid directory!" );   }
             }
 
 
