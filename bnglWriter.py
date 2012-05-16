@@ -1,20 +1,39 @@
 #!/usr/bin/env python
 
-def bnglReaction(reactant,product,rate):
+def bnglReaction(reactant,product,rate,translator=[]):
 	finalString = ''
 	for index in range(0,len(reactant)):
-		finalString += reactant[index] + '()'
+		finalString += printTranslate(reactant[index],translator)
 		if index < len(reactant) -1:
 			finalString += ' + '
 	finalString += ' -> '
 	for index in range(0,len(product)):
-		finalString += product[index] + '()'
+		finalString += printTranslate(product[index],translator) 
 		if index < len(product) -1:
 			finalString += ' + '
 	finalString += ' ' + rate
 	return finalString
 	
 
+def printTranslate(chemical,translator=[]):
+    if chemical not in translator:
+        return chemical + '()'
+    else:
+        return printSpecies(translator[chemical][0],translator[chemical][1])
+
+
+def printSpecies(label,definition):
+    molecules = []
+    for tag, species in zip(label,definition):
+        components = []
+        for member in species:
+            if len(member) == 2:
+                components.append('{0}!{1}'.format(member[0], member[1]))
+            else:
+                components.append('{0}'.format(member[0]))
+        molecules.append('{0}({1})'.format(tag,",".join(components)))
+    return ".".join(molecules)
+    
 def bnglFunction(rule,functionTitle):
 	
 	finalString = '%s = %s' % (functionTitle,rule)

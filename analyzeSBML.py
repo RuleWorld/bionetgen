@@ -8,10 +8,10 @@ Created on Thu Mar 22 13:11:38 2012
 from libsbml2bngl import SBML2BNGL
 from pyparsing import Word, Suppress,Optional,alphanums,Group
 import libsbml
-from numpy import sort,zeros
+from numpy import sort,zeros,nonzero
 import numpy as np
 import json
-
+import analyzeRDF
 '''
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
@@ -92,12 +92,14 @@ def checkCompliance(ruleCompliance,tupleCompliance,ruleBook):
         
 def getReactionClassification(reactionDefinition,rules):
     '''
+    *reactionDefinition* is ....
+    *rules*
     This method will go through the list of rules and the list of rule definitions
     and tell us which rules it can classify according to the rule definitions list
     provided
     '''
     ruleDictionary = species2Rules(rules)
-    #containts which rules are equal to reactions defined in reactionDefiniotion['reactions]    
+    #contains which rules are equal to reactions defined in reactionDefiniotion['reactions]    
     ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
     for (idx,rule) in enumerate(rules):
         reaction2 = list(parseReactions(rule))
@@ -122,10 +124,22 @@ def getReactionClassification(reactionDefinition,rules):
     for key,element in ruleDictionary.items():
         for rule in element:
             ruleDefinitionMatrix[rule] = checkCompliance(ruleComplianceMatrix[rule],tupleDefinitionMatrix[key],reactionDefinition['definitions'])
-    return  ruleDefinitionMatrix
+    #use reactionDefinitions reactionNames field to actually tell us what reaction
+    #type each reaction is
+    results = []    
+    for element in ruleDefinitionMatrix:
+        nonZero = nonzero(element)[0]
+        if(len(nonZero) == 0):
+            results.append('None')
+        #todo: need to do something if it matches more than one reaction
+        else:
+            results.append(reactionDefinition['reactionsNames'][nonZero[0]])
+    return  results
     
-def writeReactionClassification(species,rules):
-    pass    
+def classifyReactions(reactions):
+    reactionDefinition = loadConfigFiles()
+    reactionClassification = getReactionClassification(reactionDefinition,reactions)
+    return reactionClassification
     
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
@@ -138,6 +152,4 @@ if __name__ == "__main__":
     #parser.processFile('flat.bngl')
     _,rules,_ = parser.getReactions()
     #print rules    
-    reactionDefinition = loadConfigFiles()
-    reactionClassification = getReactionClassification(reactionDefinition,rules)
-    print reactionClassification
+    print classifyReactions(rules)

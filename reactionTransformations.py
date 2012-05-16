@@ -12,11 +12,11 @@ import sys
 
 def printSpecies(label,definition):
     molecules = []
-    for tag,species in zip(label,definition):
+    for tag, species in zip(label,definition):
         components = []
         for member in species:
             if len(member) == 2:
-                components.append('{0}!{1}'.format(member[0],member[1]))
+                components.append('{0}!{1}'.format(member[0], member[1]))
             else:
                 components.append('{0}'.format(member[0]))
         molecules.append('{0}({1})'.format(tag,",".join(components)))
@@ -62,48 +62,36 @@ def findIntersection(set1,set2,database):
     return intersections
     
 def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
-    reaction = []
+    #reaction = []
     for elements in original:
-        species = []
-        temp = []
-        for molecule in elements:
+        #temp = []
+        for sbml_name in elements:
             ## If we have translated it before and its in mem   ory
  #           if molecule in translator:
  #               species.append(translator[molecule])
  #           else:
-                output = ''
-                tags,molecules = findCorrespondence(original[0],original[1],dictionary,molecule,rawDatabase,synthesisDatabase)
-                output = printSpecies(tags,molecules)
-                temp.append((tags,molecules))
-                species.append(output)
-                translator[molecule] = output
+                tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase)
+                #temp.append((tags,molecules))
+                #TODO: probably we will need to add a check if there are several ways of defining a reaction
+                translator[sbml_name] = (tags,molecules)
                 if tags not in synthesisDatabase and tags not in rawDatabase:
                     synthesisDatabase[tags] = tuple(molecules)
-        reaction.append(temp)
-    return reaction
+        #reaction.append(temp)
+   ## print reaction
+    #return reaction
 
-
-
-def findCorrespondence(reactants,products,dictionary,molecule,rawDatabase,synthesisDatabase):
-    """
-    this method reconstructs the component structure for a sbml molecule
-    using context and history information    
-    """    
-    species = dictionary[molecule]
-    product = dictionary[products[0]]
-    #for species in speciesArray:
-    if species in synthesisDatabase:
-        return species,synthesisDatabase[species]
-    elif species in rawDatabase:
-        #for product in productArray:
-        if product in synthesisDatabase:
-            temp = [(x[0],) for x in synthesisDatabase[product][product.index(species[0])]]
-            return species,(temp,)
-        return species,rawDatabase[species]
-
+def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
+    '''
+    this method goes through a parameter lists and tries to check how they
+    get together to create a product (e.g. how their components link)
+    either using previous knowledge or by creating a new complex
+    '''
     extended1 = (copy(dictionary[reactants[0]]))
     extended2 = (copy(dictionary[reactants[1]]))
+    #if we can find an element in the database that is a subset of 
+    #union(extended1,extended2) we take it
     intersection = findIntersection(extended1,extended2,synthesisDatabase)
+    #otherwise we create it from scratch
     if not intersection:
         r1 = getFreeRadical(extended1,rawDatabase,synthesisDatabase,product)
         r2 = getFreeRadical(extended2,rawDatabase,synthesisDatabase,product)
@@ -124,6 +112,31 @@ def findCorrespondence(reactants,products,dictionary,molecule,rawDatabase,synthe
         intersection = (tuple(extended1),)
         extended1 = extended2 = []
         
+    return extended1,extended2,intersection
+
+def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase):
+    """
+    this method reconstructs the component structure for a set of sbml
+    molecules that undergo synthesis using context and history information    
+    """    
+    #print 'zzz',reactants,products
+    species = dictionary[sbml_name]
+    
+    product = dictionary[products[0]]
+    #if the element is already in the synthesisDatabase
+    if species in synthesisDatabase:
+        return species,synthesisDatabase[species]
+    
+    elif species in rawDatabase:
+        #for product in productArray:
+        if product in synthesisDatabase:
+            temp = [(x[0],) for x in synthesisDatabase[product][product.index(species[0])]]
+            return species,(temp,)
+        return species,rawDatabase[species]
+
+    extended1,extended2,intersection = getIntersection(reactants,product,
+                                                       dictionary,rawDatabase,
+                                                       synthesisDatabase)
     constructed = [[] for element in species]
     for element in [intersection[0],extended1,extended2]:
         if len(element) > 1:

@@ -3,14 +3,14 @@
 from libsbml import *
 import bnglWriter as writer
 from optparse import OptionParser
-
+import molecules2complexes as m2c
 
 class SBML2BNGL:
 
     
     def __init__(self,model):
         self.model = model
-    def __getRawSpecies(self,species):
+    def getRawSpecies(self,species):
         id = species.getId()
         initialConcentration = species.getInitialConcentration()
         isConstant = species.getConstant()
@@ -30,8 +30,17 @@ class SBML2BNGL:
         for element in reactant:
             rate = rate.replace('* %s' % element,'',1)
         return (reactant,product,parameters,rate)
+        
+    def __getRawCompartments(self,compartment):
+        name = compartment.getName()
+        size = compartment.getSize()
+        return name,3,size
+    
+    def getCompartments(self):
+        for index,compartment in enumerate(self.model.getListOfCompartments()):
+            self.__getRawCompartments(compartment)
             
-    def getReactions(self):
+    def getReactions(self,translator=[]):
         rules = []
         parameters = []
         functions = []
@@ -40,7 +49,7 @@ class SBML2BNGL:
             rawRules =  self.__getRawRules(reaction)
             #print rawRules
             functionName = '%s%d()' % (functionTitle,index)
-            rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName))
+            rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,translator))
             if len(rawRules[2]) >0:
                 parameters.append('%s %f' % (rawRules[2][0][0],rawRules[2][0][1]))
             functions.append(writer.bnglFunction(rawRules[3],functionName))
@@ -51,18 +60,22 @@ class SBML2BNGL:
         return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters()]
     
         
-    def getSpecies(self):
+    def getSpecies(self,translator = []):
     
         moleculesText  = []
         speciesText = [] 
         observablesText = []
         
         for species in self.model.getListOfSpecies():
-            rawSpecies = self.__getRawSpecies(species)
-            moleculesText.append(rawSpecies[0] + '()')
+            rawSpecies = self.getRawSpecies(species)
+            if(rawSpecies[0] in translator):
+                if len(translator[rawSpecies[0]][0])==1:
+                    moleculesText.append(writer.printTranslate(rawSpecies[0],translator))
+            else:
+                moleculesText.append(rawSpecies[0] + '()')
             temp = '$' if rawSpecies[2] != 0 else ''
-            speciesText.append(temp + '%s %f' % (rawSpecies[0],rawSpecies[1]))
-            observablesText.append('Species %s %s()' % (rawSpecies[0], rawSpecies[0]))
+            speciesText.append(temp + '%s %f' % (writer.printTranslate(rawSpecies[0],translator),rawSpecies[1]))
+            observablesText.append('Species %s %s' % (rawSpecies[0], writer.printTranslate(rawSpecies[0],translator)))
             
         return moleculesText,speciesText,observablesText
     
@@ -70,7 +83,7 @@ class SBML2BNGL:
         speciesAnnotation = {}
         
         for species in self.model.getListOfSpecies():
-            rawSpecies = self.__getRawSpecies(species)
+            rawSpecies = self.getRawSpecies(species)
             annotationXML = species.getAnnotation()
             lista = CVTermList()
             RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
@@ -79,6 +92,10 @@ class SBML2BNGL:
             else:
                 speciesAnnotation[rawSpecies[0]] = lista.get(0).getResources()
         return speciesAnnotation
+        
+    def getSpeciesInfo(self,name):
+        return self.getRawSpecies(self.model.getSpecies(name))
+        
 
 def main():
     
@@ -95,11 +112,14 @@ def main():
     document = reader.readSBMLFromFile(options.input)
     print options.input
     parser =SBML2BNGL(document.getModel())
+    rawDatabase = {('EpoR',):(['r','U','I'],),('SAv',):(['l'],)}
+    translator = m2c.transformMolecules(parser,rawDatabase)
+    print translator
     param2 = parser.getParameters()
-    param,rules,functions = parser.getReactions()
+    param,rules,functions = parser.getReactions(translator)
+    parser.getCompartments()
     
-    
-    molecules,species,observables = parser.getSpecies()
+    molecules,species,observables = parser.getSpecies(translator)
     
     param += param2
     print rules

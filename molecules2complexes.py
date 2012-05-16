@@ -216,7 +216,7 @@ def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator,cla
     #print (identifyReaction(original,0))
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,dictionary,
-        rawDatabase,synthesisdatabase,translator)
+        rawDatabase,synthesisDatabase,translator)
     elif identifyReaction(original,0) == 4:
         #return reactionTransformations.creation(original,dictionary,
         #rawDatabase,translator)
@@ -237,7 +237,36 @@ def reduceReactions(history):
             newHistory.remove(element)
         newHistory.append(factor)
     return newHistory
-        
+    
+def transformMolecules(parser,rawDatabase):
+    labelDictionary = {}
+    _,rules,_ = parser.getReactions()
+    synthesisdatabase = {}
+    translator = {}
+    
+    classifications = analyzeSBML.classifyReactions(rules)
+    rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
+    for rule,classification in zip(rules,classifications):   
+        #print rule 
+        reaction2 = list(parseReactions(rule))
+        #print reaction2
+        totalElements =  [item for sublist in reaction2 for item in sublist]
+        totalElements = list(set(totalElements))
+        labelDictionary = defineCorrespondence(reaction2,totalElements,
+                                               labelDictionary,rawDatabase,
+                                               classification,rdfAnnotations)
+        #print labelDictionary        
+        labelDictionary = resolveCorrespondence(labelDictionary)
+    labelDictionary = resolveCorrespondence(labelDictionary)
+    for rule,classification in zip(rules,classifications):
+        reaction2 = list(parseReactions(rule))
+        processRule(reaction2,labelDictionary,rawDatabase,
+                               synthesisdatabase,translator,classification)
+    for element in labelDictionary:
+        if not isinstance(labelDictionary[element],tuple):
+            translator[element] = translator[labelDictionary[element]]
+    return translator
+
 if __name__ == "__main__":
 
 #    database = {('S1',):(["r","l"],),("S2",):(["s"],),}    
@@ -254,7 +283,6 @@ if __name__ == "__main__":
     #synthesisdatabase = {('S1','S2'):([('b','1')],[('r','1')])}
     synthesisdatabase = {}
     history = []
-    labelDictionary = {}
     translator = {}
     reader = libsbml.SBMLReader()
     #BIOMD0000000272
@@ -263,42 +291,11 @@ if __name__ == "__main__":
     
     model = document.getModel()        
     parser = SBML2BNGL(model)
-#    print parser.getReactions()
     _,rules,_ = parser.getReactions()
     
-    #print rules
-    #print rules
-    classifications = analyzeSBML.classifyReactions(rules)
-    print classifications
-    print 'preparing database...'
-    rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
-    for rule,classification in zip(rules,classifications):   
-        #print rule 
-        reaction2 = list(parseReactions(rule))
-        #print reaction2
-        totalElements =  [item for sublist in reaction2 for item in sublist]
-        totalElements = list(set(totalElements))
-        labelDictionary = defineCorrespondence(reaction2,totalElements,
-                                               labelDictionary,rawDatabase,
-                                               classification,rdfAnnotations)
-        #print labelDictionary        
-        labelDictionary = resolveCorrespondence(labelDictionary)
-    labelDictionary = resolveCorrespondence(labelDictionary)
-    print 'label',labelDictionary
-    #print labelDictionary
-    #print labelDictionary
-    print 'translating...'
-    for rule,classification in zip(rules,classifications):
-        #print rule
-        reaction2 = list(parseReactions(rule))
-        processRule(reaction2,labelDictionary,rawDatabase,
-                               synthesisdatabase,translator,classification)
-        #history.append(reaction)
-    for element in labelDictionary:
-        if not isinstance(labelDictionary[element],tuple):
-            translator[element] = translator[labelDictionary[element]]
+    translator = transformMolecules(rules,rawDatabase)
     print translator
-    #printReactionsWithDictionary(rules,translator)
+    printReactionsWithDictionary(rules,translator)
     #print 'reducing...'  
     #newHistory = reduceReactions(history)
     #printReactions(newHistory)
