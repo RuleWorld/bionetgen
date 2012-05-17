@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from libsbml import *
+import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
 import molecules2complexes as m2c
@@ -10,6 +10,7 @@ class SBML2BNGL:
     
     def __init__(self,model):
         self.model = model
+        self.tags= {}
     def getRawSpecies(self,species):
         id = species.getId()
         initialConcentration = species.getInitialConcentration()
@@ -19,28 +20,32 @@ class SBML2BNGL:
         
         return (id,initialConcentration,isConstant,isBoundary,compartment)
         
-    def __getRawRules(self,reaction):
+    def __getRawRules(self, reaction):
         reactant = [reactant.getSpecies() for reactant in reaction.getListOfReactants()]
         product = [product.getSpecies() for product in reaction.getListOfProducts()]
         
         kineticLaw = reaction.getKineticLaw()
         parameters = [(parameter.getId(),parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
         math = kineticLaw.getMath()
-        rate = formulaToString(math)
+        rate = libsbml.formulaToString(math)
         for element in reactant:
             rate = rate.replace('* %s' % element,'',1)
         return (reactant,product,parameters,rate)
         
-    def __getRawCompartments(self,compartment):
+    def __getRawCompartments(self, compartment):
         name = compartment.getName()
         size = compartment.getSize()
         return name,3,size
     
     def getCompartments(self):
+        compartments = []
         for index,compartment in enumerate(self.model.getListOfCompartments()):
-            self.__getRawCompartments(compartment)
+            compartmentInfo = self.__getRawCompartments(compartment)
+            compartments.append("%s  %d  %s" % (compartmentInfo[0],compartmentInfo[1],compartmentInfo[2]))
+        return compartments
+        
             
-    def getReactions(self,translator=[]):
+    def getReactions(self, translator=[]):
         rules = []
         parameters = []
         functions = []
@@ -49,7 +54,7 @@ class SBML2BNGL:
             rawRules =  self.__getRawRules(reaction)
             #print rawRules
             functionName = '%s%d()' % (functionTitle,index)
-            rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,translator))
+            rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator))
             if len(rawRules[2]) >0:
                 parameters.append('%s %f' % (rawRules[2][0][0],rawRules[2][0][1]))
             functions.append(writer.bnglFunction(rawRules[3],functionName))
@@ -68,15 +73,18 @@ class SBML2BNGL:
         
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
+            if (rawSpecies[4] != ''):
+                self.tags[rawSpecies[0]] = '@%s:' % (rawSpecies[4])
             if(rawSpecies[0] in translator):
                 if len(translator[rawSpecies[0]][0])==1:
                     moleculesText.append(writer.printTranslate(rawSpecies[0],translator))
             else:
                 moleculesText.append(rawSpecies[0] + '()')
             temp = '$' if rawSpecies[2] != 0 else ''
-            speciesText.append(temp + '%s %f' % (writer.printTranslate(rawSpecies[0],translator),rawSpecies[1]))
-            observablesText.append('Species %s %s' % (rawSpecies[0], writer.printTranslate(rawSpecies[0],translator)))
             
+            if rawSpecies[1]>0:
+                speciesText.append(temp + '%s %f' % (self.tags[rawSpecies[0]] + writer.printTranslate(rawSpecies[0],translator),rawSpecies[1]))
+            observablesText.append('Species %s %s' % (rawSpecies[0], self.tags[rawSpecies[0]] +  writer.printTranslate(rawSpecies[0],translator)))
         return moleculesText,speciesText,observablesText
     
     def getSpeciesAnnotation(self):
@@ -85,8 +93,8 @@ class SBML2BNGL:
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
             annotationXML = species.getAnnotation()
-            lista = CVTermList()
-            RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
+            lista = libsbml.CVTermList()
+            libsbml.RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
             if lista.getSize() == 0:
                 speciesAnnotation[rawSpecies[0]] =  None
             else:
@@ -108,7 +116,7 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
           
     (options, args) = parser.parse_args()
-    reader = SBMLReader()
+    reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(options.input)
     print options.input
     parser =SBML2BNGL(document.getModel())
@@ -116,15 +124,18 @@ def main():
     translator = m2c.transformMolecules(parser,rawDatabase)
     print translator
     param2 = parser.getParameters()
-    param,rules,functions = parser.getReactions(translator)
-    parser.getCompartments()
+    
     
     molecules,species,observables = parser.getSpecies(translator)
+    param,rules,functions = parser.getReactions(translator)
+    compartments = parser.getCompartments()
+    
+    
     
     param += param2
     print rules
          
-    writer.finalText(param,molecules,species,observables,rules,functions,options.output)
+    writer.finalText(param,molecules,species,observables,rules,functions,compartments,options.output)
         
 if __name__ == "__main__":
     main()

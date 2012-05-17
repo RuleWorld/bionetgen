@@ -120,6 +120,7 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
     molecules that undergo synthesis using context and history information    
     """    
     #print 'zzz',reactants,products
+    
     species = dictionary[sbml_name]
     
     product = dictionary[products[0]]

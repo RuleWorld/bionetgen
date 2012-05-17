@@ -262,6 +262,7 @@ def transformMolecules(parser,rawDatabase):
         reaction2 = list(parseReactions(rule))
         processRule(reaction2,labelDictionary,rawDatabase,
                                synthesisdatabase,translator,classification)
+    #update all equivalences
     for element in labelDictionary:
         if not isinstance(labelDictionary[element],tuple):
             translator[element] = translator[labelDictionary[element]]
