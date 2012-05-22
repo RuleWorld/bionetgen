@@ -44,8 +44,8 @@ MUPARSER_LIB = ${LIBDIR}/libmuparser.a
 run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(NETWORK_BINDIR)
 	cd $(NETWORK_BINDIR); cmake $(CMAKELISTS_DIR); make;
-	mkdir -p $(CURDIR)/$(BNG_BINDIR)
-	cp -f $(NETWORK_BINDIR)/run_network $(CURDIR)/$(BNG_BINDIR)
+	mkdir -p $(BNG_BINDIR)
+	cp -f $(NETWORK_BINDIR)/run_network $(BNG_BINDIR)
 
 # libraries
 $(CVODE_LIB):  $(LIBSOURCE)/$(CVODE).tar.gz
