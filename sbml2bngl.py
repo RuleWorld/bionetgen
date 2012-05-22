@@ -26,7 +26,7 @@ def parseReactions(reaction):
         result = [result,[]]
     return result
 
-def identifyReaction(reaction,element):
+def identifyReaction(reaction, element):
     '''
     this method only uses immediate context information to determine
     the type a reaction belongs to
