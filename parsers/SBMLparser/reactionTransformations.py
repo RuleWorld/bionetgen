@@ -8,7 +8,7 @@ Created on Tue Mar 13 15:45:25 2012
 from copy import copy,deepcopy
 import random
 import sys
-
+import libsbml2bngl
 
 def printSpecies(label,definition):
     molecules = []
@@ -33,14 +33,17 @@ def getFreeRadical(element,rawDatabase,synthesisDatabase,product):
     it searches a molecule for a component that has not been used before in another reaction
     in case it cannot find one it returns an empty list
     """
+    if element not in rawDatabase:
+        return []
     components = copy(rawDatabase[element][0])
+    
     for member in synthesisDatabase:
         ##the last condition issubset is in there because knowing that S1 + s2 -> s1.s2 
         #does not preclude s2 from using the same bnding site in s1.s3 + s2 -> s1.s2.s3
         if element[0] in member and not issubset(member,product):
             index = member.index(element[0])
             for temp in [x for x in synthesisDatabase[member][index] if len(x) > 1]:
-                components.remove(tuple(temp[0]))
+                components.remove((temp[0],))
                 
     if not components:
         return []
@@ -71,23 +74,30 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
  #               species.append(translator[molecule])
  #           else:
                 tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase)
-                #temp.append((tags,molecules))
+                if (tags,molecules) == (None,None):
+                    translator[sbml_name] = (sbml_name,)
                 #TODO: probably we will need to add a check if there are several ways of defining a reaction
-                translator[sbml_name] = (tags,molecules)
-                if tags not in synthesisDatabase and tags not in rawDatabase:
-                    synthesisDatabase[tags] = tuple(molecules)
+                else:                
+                    translator[sbml_name] = (tags,molecules)
+                    if tags not in synthesisDatabase and tags not in rawDatabase:
+                        synthesisDatabase[tags] = tuple(molecules)
         #reaction.append(temp)
    ## print reaction
     #return reaction
 
+def addSiteComponent():
+    pass
+
 def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
     '''
-    this method goes through a parameter lists and tries to check how they
+    this method goes through two complexes and tries to check how they
     get together to create a product (e.g. how their components link)
-    either using previous knowledge or by creating a new complex
+    either by using previous knowledge or by creating a new complex
     '''
+    #global log
     extended1 = (copy(dictionary[reactants[0]]))
     extended2 = (copy(dictionary[reactants[1]]))
+    
     #if we can find an element in the database that is a subset of 
     #union(extended1,extended2) we take it
     intersection = findIntersection(extended1,extended2,synthesisDatabase)
@@ -96,8 +106,12 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
         r1 = getFreeRadical(extended1,rawDatabase,synthesisDatabase,product)
         r2 = getFreeRadical(extended2,rawDatabase,synthesisDatabase,product)
         if not r1 or not r2:
-            print 'Cannot infer how',extended1,'binds to',extended2
-            sys.exit(1)
+            #print 'Cannot infer how',extended1,'binds to',extended2
+            #log['reactions'].append((reactants,product))
+            #return None,None,None
+            createIntersection(reactants,rawDatabase)
+            r1 = getFreeRadical(extended1,rawDatabase,synthesisDatabase,product)
+            r2 = getFreeRadical(extended2,rawDatabase,synthesisDatabase,product)
         ##todo: modify code to allow for carry over free radicals
         d1 = copy(rawDatabase[extended1][0]) if extended1 in rawDatabase else copy(synthesisDatabase[extended1][0])
         d2 = copy(rawDatabase[extended2][0]) if extended2 in rawDatabase else copy(synthesisDatabase[extended2][0])
@@ -114,6 +128,25 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
         
     return extended1,extended2,intersection
 
+def createIntersection(reactants,rawDatabase):
+    '''
+    if there are no components in record that allow for two species to merge
+    we will create those components instead
+    '''
+    if (reactants[0],) not in rawDatabase:
+        rawDatabase[(reactants[0],)] = ([(reactants[1].lower(),)],)
+    else:
+        #Cannot infer how ('SAv',) binds to ('EpoR',)
+        temp = rawDatabase[(reactants[0],)][0]
+        temp.append((reactants[1].lower(),))
+        rawDatabase[(reactants[0],)] = (temp,)
+    if (reactants[1],) not in rawDatabase:
+        rawDatabase[(reactants[1],)] = ([(reactants[0].lower(),)],)
+    else:
+        temp = rawDatabase[(reactants[1],)][0]
+        temp.append((reactants[0].lower(),))
+        rawDatabase[(reactants[1],)] = (temp,)
+        
 def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase):
     """
     this method reconstructs the component structure for a set of sbml
@@ -134,10 +167,16 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
             temp = [(x[0],) for x in synthesisDatabase[product][product.index(species[0])]]
             return species,(temp,)
         return species,rawDatabase[species]
+    #this means we are dealing with the basic components rather than the
+    #synthetized product
 
     extended1,extended2,intersection = getIntersection(reactants,product,
                                                        dictionary,rawDatabase,
                                                        synthesisDatabase)
+    if len(species) <2:
+        return species,rawDatabase[species]
+    if (extended1,extended2,intersection) == (None,None,None):
+        return None,None
     constructed = [[] for element in species]
     for element in [intersection[0],extended1,extended2]:
         if len(element) > 1:

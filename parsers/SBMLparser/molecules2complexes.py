@@ -57,7 +57,6 @@ def issubset(possible_sub, superset):
 def updateState(original):
     pass
 
-
 def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
     classification,rdfAnnotations):
     '''
@@ -75,18 +74,23 @@ def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
             #labelDictionary[element] = []
             labelDictionary[element] = (element,)
         #if we can obtain what it is according to what appears in the annotations
-        elif classification == 'Binding':
-                if len(reaction2[0]) == 2:
+        elif classification == 'Binding' and element not in labelDictionary:
+                if len(reaction2[0]) == 2 and element not in reaction2[0]:
                     labelDictionary[element] = tuple([k for k in reaction2[0]])
-                else:
+                elif len(reaction2[1]) == 2 and element not in reaction2[1]:
                     labelDictionary[element] = tuple([k for k in reaction2[1]])
-        else:
-            
-            equivalence = analyzeRDF.getEquivalence(element,rdfAnnotations)            
-            for equivalentElement in equivalence:
-                if equivalentElement in labelDictionary:
-                    labelDictionary[element] = equivalentElement
+                else:
+                    labelDictionary[element] = (element,)
                 
+        else:
+            equivalence = analyzeRDF.getEquivalence(element,rdfAnnotations)
+            
+            if equivalence != []:
+                for equivalentElement in equivalence:
+                    if equivalentElement in labelDictionary:
+                        labelDictionary[element] = equivalentElement
+            else:
+                labelDictionary[element] = (element,)
             
     return labelDictionary
 
@@ -249,14 +253,13 @@ def transformMolecules(parser,rawDatabase):
     for rule,classification in zip(rules,classifications):   
         #print rule 
         reaction2 = list(parseReactions(rule))
-        #print reaction2
         totalElements =  [item for sublist in reaction2 for item in sublist]
         totalElements = list(set(totalElements))
         labelDictionary = defineCorrespondence(reaction2,totalElements,
                                                labelDictionary,rawDatabase,
                                                classification,rdfAnnotations)
-        #print labelDictionary        
         labelDictionary = resolveCorrespondence(labelDictionary)
+        
     labelDictionary = resolveCorrespondence(labelDictionary)
     for rule,classification in zip(rules,classifications):
         reaction2 = list(parseReactions(rule))
@@ -280,7 +283,8 @@ if __name__ == "__main__":
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
     #catalysisDatabase = {(('S1',),'P'):(([("a",'','U')]),([("a",'','P')]))}
     catalysisDatabase = {}    
-    rawDatabase = {('EpoR',):(['r','U','I'],),('SAv',):(['l'],)}    
+    #rawDatabase = {('EpoR',):(['r','U','I'],),('SAv',):(['l'],)}    
+    rawDatabase={}    
     #synthesisdatabase = {('S1','S2'):([('b','1')],[('r','1')])}
     synthesisdatabase = {}
     history = []
@@ -289,7 +293,6 @@ if __name__ == "__main__":
     #BIOMD0000000272
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
-    
     model = document.getModel()        
     parser = SBML2BNGL(model)
     _,rules,_ = parser.getReactions()

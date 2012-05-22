@@ -5,12 +5,15 @@ import bnglWriter as writer
 from optparse import OptionParser
 import molecules2complexes as m2c
 
+log = {'species':[],'reactions':[]}
 class SBML2BNGL:
 
     
     def __init__(self,model):
         self.model = model
         self.tags= {}
+        
+        
     def getRawSpecies(self,species):
         id = species.getId()
         initialConcentration = species.getInitialConcentration()
@@ -73,6 +76,8 @@ class SBML2BNGL:
         
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
+            if rawSpecies[0] not in translator:
+                log['species'].append(rawSpecies[0])
             if (rawSpecies[4] != ''):
                 self.tags[rawSpecies[0]] = '@%s:' % (rawSpecies[4])
             if(rawSpecies[0] in translator):
@@ -104,6 +109,18 @@ class SBML2BNGL:
     def getSpeciesInfo(self,name):
         return self.getRawSpecies(self.model.getSpecies(name))
         
+    def writeLog(self):
+        logString = ''
+        #species stuff
+        logString += "Species we couldn't recognize:\n"
+        for element in log['species']:
+            logString += '\t%s\n' % element
+        logString += "Reactions we couldn't infer more about due to insufficient information:"
+        for element in log['reactions']:
+            logString += '\t%s + %s -> %s\n' % (element[0][0],element[0][1],element[1])
+        return logString
+                
+        
 
 def main():
     
@@ -117,10 +134,16 @@ def main():
           
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
-    document = reader.readSBMLFromFile(options.input)
+    #document = reader.readSBMLFromFile(options.input)
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
+    document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
     parser =SBML2BNGL(document.getModel())
-    rawDatabase = {('EpoR',):(['r','U','I'],),('SAv',):(['l'],)}
+    #rawDatabase = {('EpoR',):([('ra',),('U',),('I',)],),('SAv',):([('l',)],)}
+    rawDatabase = {}    
+    #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",),("k")],),
+    #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
+
     translator = m2c.transformMolecules(parser,rawDatabase)
     print translator
     param2 = parser.getParameters()
@@ -136,6 +159,7 @@ def main():
     print rules
          
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,options.output)
-        
+    print parser.writeLog()    
+    
 if __name__ == "__main__":
     main()

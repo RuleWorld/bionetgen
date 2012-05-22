@@ -22,6 +22,8 @@ def bnglReaction(reactant,product,rate,tags,translator=[]):
 def printTranslate(chemical,translator=[]):
     if chemical not in translator:
         return chemical + '()'
+    elif len(translator[chemical]) == 1:
+        return chemical + '()'
     else:
         return printSpecies(translator[chemical][0],translator[chemical][1])
 
