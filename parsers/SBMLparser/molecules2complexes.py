@@ -81,7 +81,9 @@ def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
                     labelDictionary[element] = tuple([k for k in reaction2[1]])
                 else:
                     labelDictionary[element] = (element,)
-                
+        elif classification == 'Phosporylation':
+            #print element
+            pass
         else:
             equivalence = analyzeRDF.getEquivalence(element,rdfAnnotations)
             
@@ -214,13 +216,17 @@ def transformRawType(originalRule,translator):
         newRule.append(acc)
     return newRule
 
-def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator,classification):
+def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator,
+                classification,equivalenceTranslator):
     '''
     '''
     #print (identifyReaction(original,0))
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,dictionary,
         rawDatabase,synthesisDatabase,translator)
+    elif classification == 'Phosporylation':
+        return '' #reactionTransformations.catalysis
+    
     elif identifyReaction(original,0) == 4:
         #return reactionTransformations.creation(original,dictionary,
         #rawDatabase,translator)
@@ -245,10 +251,12 @@ def reduceReactions(history):
 def transformMolecules(parser,rawDatabase):
     labelDictionary = {}
     _,rules,_ = parser.getReactions()
+    molecules,_,_ = parser.getSpecies()
     synthesisdatabase = {}
     translator = {}
     
-    classifications = analyzeSBML.classifyReactions(rules)
+    classifications,equivalenceTranslator = analyzeSBML.classifyReactions(rules,molecules)
+    #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
     for rule,classification in zip(rules,classifications):   
         #print rule 
@@ -264,7 +272,7 @@ def transformMolecules(parser,rawDatabase):
     for rule,classification in zip(rules,classifications):
         reaction2 = list(parseReactions(rule))
         processRule(reaction2,labelDictionary,rawDatabase,
-                               synthesisdatabase,translator,classification)
+                               synthesisdatabase,translator,classification,equivalenceTranslator)
     #update all equivalences
     for element in labelDictionary:
         if not isinstance(labelDictionary[element],tuple):

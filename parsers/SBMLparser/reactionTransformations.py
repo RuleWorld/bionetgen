@@ -109,6 +109,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
             #print 'Cannot infer how',extended1,'binds to',extended2
             #log['reactions'].append((reactants,product))
             #return None,None,None
+            #TODO this section should be activated by a flag instead
+            #of being accessed by default
             createIntersection(reactants,rawDatabase)
             r1 = getFreeRadical(extended1,rawDatabase,synthesisDatabase,product)
             r2 = getFreeRadical(extended2,rawDatabase,synthesisDatabase,product)
@@ -136,7 +138,6 @@ def createIntersection(reactants,rawDatabase):
     if (reactants[0],) not in rawDatabase:
         rawDatabase[(reactants[0],)] = ([(reactants[1].lower(),)],)
     else:
-        #Cannot infer how ('SAv',) binds to ('EpoR',)
         temp = rawDatabase[(reactants[0],)][0]
         temp.append((reactants[1].lower(),))
         rawDatabase[(reactants[0],)] = (temp,)
@@ -209,28 +210,36 @@ def decay(original,dictionary,rawDatabase,translator):
     reaction[0] = [(tuple(original[0]),rawDatabase[tuple(original[0])],)]
     return reaction   
     
-    
+def getStateName(namingConvention):
+    if namingConvention == 'Phosporylation':
+        return 'P'
 
-def catalysis(original,dictionary,rawDatabase,synthesisDatabase,translator):
+def catalyze(original,modified,namingConvention,rawDatabase,translator):
+    if original not in translator:
+        rawDatabase[(original,)] = ([(modified.lower(),)],('u',))
+    else:
+        pass
+    if modified not in translator:
+        rawDatabase[(modified,)] = ([(modified.lower(),)],(getStateName(namingConvention),))
+    else:
+        pass
+    
+def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,namingConvention):
     """
     This method is for reactions of the form A+ B -> A' + B
     """
-    reaction = []   
     for elements in original:
-        species = []
-        temp = []
-        for molecule in elements:
+        #temp = []
+        for sbml_name in elements:
             ## If we have translated it before and its in mem   ory
  #           if molecule in translator:
  #               species.append(translator[molecule])
  #           else:
-                output = ''
-                tags,molecules = findCorrespondence(original[0],original[1],dictionary,molecule,rawDatabase,synthesisDatabase)
-                output = printSpecies(tags,molecules)
-                temp.append((tags,molecules))
-                species.append(output)
-                translator[molecule] = output
-                if tags not in synthesisDatabase and tags not in rawDatabase:
-                    synthesisDatabase[tags] = tuple(molecules)
-        reaction.append(temp)
-    return reaction
+                tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase)
+                if (tags,molecules) == (None,None):
+                    translator[sbml_name] = (sbml_name,)
+                #TODO: probably we will need to add a check if there are several ways of defining a reaction
+                else:                
+                    translator[sbml_name] = (tags,molecules)
+                    if tags not in catalysisDatabase and tags not in rawDatabase:
+                        catalysisDatabase[tags] = tuple(molecules)

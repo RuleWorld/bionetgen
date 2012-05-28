@@ -12,6 +12,7 @@ from numpy import sort,zeros,nonzero
 import numpy as np
 import json
 import analyzeRDF
+import re
 '''
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
@@ -84,13 +85,51 @@ def checkCompliance(ruleCompliance,tupleCompliance,ruleBook):
     ruleResult = np.zeros(len(ruleBook))
     for validTupleIndex in np.nonzero(tupleCompliance):
         for index in validTupleIndex:
-            if np.any([ruleCompliance[temp] for temp in ruleBook[index]]):
+            if 'r' in ruleBook[index] and np.any([ruleCompliance[temp] for temp in ruleBook[index]['r']]):
                 ruleResult[index] = 1
+            #check if just this is enough
+            if 'n' in ruleBook[index]:
+                ruleResult[index] = 1
+
     return ruleResult
         
+ 
+def analyzeNamingConventions(molecules,originalPattern='',modifiedPattern=''):
+    '''
+    *originalPattern* and *modifiedPattern* are regular expressions containing
+    the patterns we wish to compare and see if they are the same.
+    We will go through the list of molecules and check for names that match those
+    patterns
+    '''
+    original = r'(?P<key>[^p]\w*)\(\)'
+    modified = r'p(?P<key>\w*)\(\)'
+    pOriginal = re.compile(original)
+    pModified = re.compile(modified)
+    oMolecules = []
+    
+    results = []    
+    
+    for molecule in molecules:
+        omatch = pOriginal.match(molecule)        
+        if omatch:
+            oMolecules.append(omatch.group('key'))
             
-        
-def getReactionClassification(reactionDefinition,rules):
+    for molecule in molecules:
+        mmatch = pModified.match(molecule)        
+        if mmatch and mmatch.group('key') in oMolecules:
+            results.append((mmatch.group('key'),molecule[0:-2]))
+           
+
+    return results
+ 
+def processNamingConventions(molecules,namingConventions):
+    equivalenceTranslator = {}
+    for idx,convention in enumerate(namingConventions):
+        temp = analyzeNamingConventions(molecules,convention[0],convention[1])
+        equivalenceTranslator[idx] = temp 
+    return equivalenceTranslator
+
+def getReactionClassification(reactionDefinition,rules,equivalenceTranslator):
     '''
     *reactionDefinition* is ....
     *rules*
@@ -110,20 +149,38 @@ def getReactionClassification(reactionDefinition,rules):
     for element in ruleDictionary:
         for rule in ruleDictionary[element]:
             tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
+    #print tupleC
+    #now we will check for the nameConventionMatrix
+    
+    tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
+    
+    for rule in ruleDictionary:
+        for namingConvention in equivalenceTranslator:
+            for equivalence in equivalenceTranslator[namingConvention]:
+                if all(element in rule for element in equivalence):
+                    tupleNameComplianceMatrix[rule][namingConvention] +=1
+            
     
     #check if the reaction conditions each tuple satisfies are enough to get classified
     #as an specific named reaction type
     tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
     for key,element in tupleComplianceMatrix.items():
         for idx,member in enumerate(reactionDefinition['definitions']):
-            tupleDefinitionMatrix[key][idx] = np.all([element[reaction] for reaction in member])
+            #tupleDefinitionMatrix[key][idx] = True
+            if 'r' in member:            
+                tupleDefinitionMatrix[key][idx] = np.all([element[reaction] for reaction in member[u'r']])
+            if 'n' in member:
+                tupleDefinitionMatrix[key][idx] = np.all([tupleNameComplianceMatrix[key][reaction] for reaction in member[u'n']])
+           # if 'n' in member:
+            #    tupleDefinitionMatrix[key][idx] = tupleDefinitionMatrix[key][idx]  and ruleNameComplianceMatrix
+            #if 'n' in member:
     #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
-    
     #use the per tuple classification to obtain a per reaction classification
     ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
     for key,element in ruleDictionary.items():
         for rule in element:
-            ruleDefinitionMatrix[rule] = checkCompliance(ruleComplianceMatrix[rule],tupleDefinitionMatrix[key],reactionDefinition['definitions'])
+            ruleDefinitionMatrix[rule] = checkCompliance(ruleComplianceMatrix[rule],
+tupleDefinitionMatrix[key],reactionDefinition['definitions'])
     #use reactionDefinitions reactionNames field to actually tell us what reaction
     #type each reaction is
     results = []    
@@ -134,12 +191,21 @@ def getReactionClassification(reactionDefinition,rules):
         #todo: need to do something if it matches more than one reaction
         else:
             results.append(reactionDefinition['reactionsNames'][nonZero[0]])
+            
+    #now we will process the naming conventions section
+    print results
     return  results
     
-def classifyReactions(reactions):
+def classifyReactions(reactions,molecules):
+    '''
+    classifies a group of reaction according to the information in the json
+    config file
+    '''
     reactionDefinition = loadConfigFiles()
-    reactionClassification = getReactionClassification(reactionDefinition,reactions)
-    return reactionClassification
+    #determines if two molecules have a relationship according to the naming convention section
+    equivalenceTranslator = processNamingConventions(molecules,reactionDefinition['namingConvention'])
+    reactionClassification = getReactionClassification(reactionDefinition,reactions,equivalenceTranslator)
+    return reactionClassification,equivalenceTranslator
     
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
@@ -151,5 +217,7 @@ if __name__ == "__main__":
 #    print parser.getReactions()
     #parser.processFile('flat.bngl')
     _,rules,_ = parser.getReactions()
+    molecules,_,_ = parser.getSpecies(translator)
     #print rules    
     print classifyReactions(rules)
+    analyzeNamingConventions(molecules)
