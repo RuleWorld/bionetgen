@@ -14,7 +14,14 @@ class SBML2BNGL:
         self.tags= {}
         
         
-    def getRawSpecies(self,species):
+    def getRawSpecies(self, species):
+        '''
+        *species* is the element whose SBML information we will extract
+        this method gets information directly
+        from an SBML related to a particular species.
+        It returns id,initialConcentration,(bool)isconstant and isboundary,
+        and the compartment
+        '''
         id = species.getId()
         initialConcentration = species.getInitialConcentration()
         isConstant = species.getConstant()
@@ -135,8 +142,8 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
-    document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
     parser =SBML2BNGL(document.getModel())
     #rawDatabase = {('EpoR',):([('ra',),('U',),('I',)],),('SAv',):([('l',)],)}
@@ -145,7 +152,7 @@ def main():
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
 
     translator = m2c.transformMolecules(parser,rawDatabase)
-    print translator
+    #print translator
     param2 = parser.getParameters()
     
     
@@ -156,7 +163,7 @@ def main():
     
     
     param += param2
-    print rules
+    #print rules
          
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,options.output)
     print parser.writeLog()    
