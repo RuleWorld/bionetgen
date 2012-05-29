@@ -166,7 +166,8 @@ def main():
     #print rules
          
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,options.output)
-    print parser.writeLog()    
+    print parser.writeLog()
+    print rawDatabase
     
 if __name__ == "__main__":
     main()

@@ -205,7 +205,10 @@ def classifyReactions(reactions,molecules):
     #determines if two molecules have a relationship according to the naming convention section
     equivalenceTranslator = processNamingConventions(molecules,reactionDefinition['namingConvention'])
     reactionClassification = getReactionClassification(reactionDefinition,reactions,equivalenceTranslator)
-    return reactionClassification,equivalenceTranslator
+    listOfEquivalences = []
+    for element in equivalenceTranslator:
+        listOfEquivalences.extend(equivalenceTranslator[element])
+    return reactionClassification,listOfEquivalences
     
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
