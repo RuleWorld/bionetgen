@@ -25,18 +25,20 @@ def printTranslate(chemical,translator=[]):
     elif len(translator[chemical]) == 1:
         return chemical + '()'
     else:
-        return printSpecies(translator[chemical][0],translator[chemical][1])
+        return printSpecies(translator[chemical],translator[chemical][1])
 
 
 def printSpecies(label,definition):
     molecules = []
+   
     for tag, species in zip(label,definition):
         components = []
         for member in species:
+            tmp = '~'.join(member[0])
             if len(member) == 2:
-                components.append('{0}!{1}'.format(member[0], member[1]))
+                components.append('{0}!{1}'.format(tmp, member[1]))
             else:
-                components.append('{0}'.format(member[0]))
+                components.append('{0}'.format(tmp))
         molecules.append('{0}({1})'.format(tag,",".join(components)))
     return ".".join(molecules)
     

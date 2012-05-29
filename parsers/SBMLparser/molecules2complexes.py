@@ -216,6 +216,12 @@ def transformRawType(originalRule,translator):
         newRule.append(acc)
     return newRule
 
+def getPertinentNamingEquivalence(original, equivalenceTranslator):
+    temp = [item for element in original for item in element]
+    for element in equivalenceTranslator:
+        if element[0] in temp and element[1] in temp:
+            return element
+
 def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator,
                 classification,equivalenceTranslator):
     '''
@@ -225,7 +231,12 @@ def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator,
         return reactionTransformations.synthesis(original,dictionary,
         rawDatabase,synthesisDatabase,translator)
     elif classification == 'Phosporylation':
-        return '' #reactionTransformations.catalysis
+        pertinentEquivalence = getPertinentNamingEquivalence(original,equivalenceTranslator)
+        return reactionTransformations.catalysis(original,dictionary,rawDatabase,
+                                                  None,
+                                                  translator,pertinentEquivalence,
+                                                  classification)
+
     
     elif identifyReaction(original,0) == 4:
         #return reactionTransformations.creation(original,dictionary,
@@ -277,6 +288,7 @@ def transformMolecules(parser,rawDatabase):
     for element in labelDictionary:
         if not isinstance(labelDictionary[element],tuple):
             translator[element] = translator[labelDictionary[element]]
+    print translator
     return translator
 
 if __name__ == "__main__":
