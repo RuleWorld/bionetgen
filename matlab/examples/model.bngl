@@ -1,0 +1,50 @@
+begin parameters
+	A0	100
+	B0	100
+	C0	100
+	D0	100
+	
+	kf1	1
+	kf2	1
+	kf3	1
+	
+	kr1	1
+	kr2	1
+	kr3	1
+end parameters
+
+begin molecule types
+	A(b)
+	B(a,c)
+	C(b,d)
+	D(c)
+end molecule types
+
+begin seed species
+	A(b)	A0
+	B(a,c)	B0
+	C(b,d)	C0
+	D(c)	D0
+end seed species
+
+begin reaction rules
+	A(b) + B(a) <-> A(b!0).B(a!0)	kf1,kr1
+	B(c) + C(b) <-> B(c!0).C(b!0)	kf2,kr2
+	C(d) + D(c) <-> C(d!0).D(c!0)	kf3,kr3
+end reaction rules
+
+begin observables
+	Molecules	A_B	A().B()
+	Molecules	A_C	A().C()
+	Molecules	A_D	A().D()
+end observables
+
+# ACTIONS
+generate_network({overwrite=>1})
+simulate_ssa({suffix=>'1',t_end=>0.2,n_steps=>10});
+resetConcentrations();
+simulate_ssa({suffix=>'2',t_end=>0.2,n_steps=>10});
+resetConcentrations();
+simulate_ssa({suffix=>'3',t_end=>0.2,n_steps=>10});
+
+writeMfile({t_end=>0.2,n_steps=>10})
