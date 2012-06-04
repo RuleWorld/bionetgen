@@ -15,8 +15,8 @@ import analyzeRDF
 
     
 def parseReactions(reaction):
-    
     species = Optional(Word(alphanums+"_") + Suppress('()')) +  \
+    Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()"))
     rate = Word(alphanums + "()")
     grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
@@ -81,7 +81,7 @@ def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
                     labelDictionary[element] = tuple([k for k in reaction2[1]])
                 else:
                     labelDictionary[element] = (element,)
-        elif classification == 'Phosporylation':
+        elif classification == 'Phosporylation' or classification == 'Double-Phosporylation':
             #print element
             pass
         else:
@@ -90,7 +90,7 @@ def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
             if equivalence != []:
                 for equivalentElement in equivalence:
                     if equivalentElement in labelDictionary:
-                        labelDictionary[element] = equivalentElement
+                        labelDictionary[element] = (equivalentElement,)
             else:
                 labelDictionary[element] = (element,)
             
@@ -99,14 +99,18 @@ def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
 ##TODO: i introduced arrays in the labelDictionary, have to resolve correspondences                  
 def resolveCorrespondence(labelDictionary):
     temp = labelDictionary.copy()
-    for element in [x for x in labelDictionary if len(labelDictionary[x]) > 1 and
-    isinstance(labelDictionary[x],tuple)]:
-        for member in [x for x in labelDictionary[element] if 
-        len(labelDictionary[x]) > 1]:
-            temp[element] = list(temp[element])
-            temp[element].extend(labelDictionary[member])
-            temp[element].remove(member)
-            temp[element] = tuple(sort(temp[element]))
+    for element in labelDictionary:
+        for member in [x for x in labelDictionary[element]]:
+            tmpLabel= member
+            while True:
+                oldTemp = deepcopy(temp[element])
+                temp[element] = list(temp[element])
+                temp[element].extend(labelDictionary[tmpLabel])
+                temp[element].remove(tmpLabel)
+                temp[element] = tuple(sort(temp[element]))
+                tmpLabel = labelDictionary[tmpLabel][0]
+                if oldTemp == temp[element]:
+                    break
     labelDictionary = temp.copy()
     return labelDictionary
                
@@ -230,7 +234,7 @@ def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator,
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,dictionary,
         rawDatabase,synthesisDatabase,translator)
-    elif classification == 'Phosporylation':
+    elif classification == 'Phosporylation' or classification == 'Double-Phosporylation':
         pertinentEquivalence = getPertinentNamingEquivalence(original,equivalenceTranslator)
         return reactionTransformations.catalysis(original,dictionary,rawDatabase,
                                                   None,
@@ -278,7 +282,7 @@ def transformMolecules(parser,rawDatabase):
                                                labelDictionary,rawDatabase,
                                                classification,rdfAnnotations)
         labelDictionary = resolveCorrespondence(labelDictionary)
-        
+      
     labelDictionary = resolveCorrespondence(labelDictionary)
     for rule,classification in zip(rules,classifications):
         reaction2 = list(parseReactions(rule))
@@ -288,7 +292,8 @@ def transformMolecules(parser,rawDatabase):
     for element in labelDictionary:
         if not isinstance(labelDictionary[element],tuple):
             translator[element] = translator[labelDictionary[element]]
-    print translator
+    #print translator
+   # print labelDictionary
     return translator
 
 if __name__ == "__main__":
@@ -318,7 +323,7 @@ if __name__ == "__main__":
     _,rules,_ = parser.getReactions()
     
     translator = transformMolecules(rules,rawDatabase)
-    print translator
+    #print translator
     printReactionsWithDictionary(rules,translator)
     #print 'reducing...'  
     #newHistory = reduceReactions(history)

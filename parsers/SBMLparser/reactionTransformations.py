@@ -9,10 +9,11 @@ from copy import copy,deepcopy
 import random
 import sys
 import libsbml2bngl
+import structures as st
+
 
 def printSpecies(label,definition):
     molecules = []
-    print label,definition
     for tag, species in zip(label,definition):
         components = []
         for member in species:
@@ -37,7 +38,6 @@ def getFreeRadical(element,rawDatabase,synthesisDatabase,product):
     if element not in rawDatabase:
         return []
     components = copy(rawDatabase[element][0])
-    
     for member in synthesisDatabase:
         ##the last condition issubset is in there because knowing that S1 + s2 -> s1.s2 
         #does not preclude s2 from using the same bnding site in s1.s3 + s2 -> s1.s2.s3
@@ -74,12 +74,14 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
  #           if molecule in translator:
  #               species.append(translator[molecule])
  #           else:
-                tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase)
+                tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator)
                 if (tags,molecules) == (None,None):
-                    translator[sbml_name] = (sbml_name,)
+                    translator[sbml_name] = st.Species(sbml_name)
                 #TODO: probably we will need to add a check if there are several ways of defining a reaction
-                else:                
-                    translator[sbml_name] = (tags,molecules)
+                else:
+                    species = st.Species()
+                    species.addChunk(tags,molecules)
+                    translator[sbml_name] = species
                     if tags not in synthesisDatabase and tags not in rawDatabase:
                         synthesisDatabase[tags] = tuple(molecules)
         #reaction.append(temp)
@@ -98,7 +100,10 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
     #global log
     extended1 = (copy(dictionary[reactants[0]]))
     extended2 = (copy(dictionary[reactants[1]]))
-    
+    if isinstance(extended1,str):
+        extended1 = (extended1,)
+    if isinstance(extended2,str):
+        extended2 = (extended2,)
     #if we can find an element in the database that is a subset of 
     #union(extended1,extended2) we take it
     intersection = findIntersection(extended1,extended2,synthesisDatabase)
@@ -112,7 +117,7 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
             #return None,None,None
             #TODO this section should be activated by a flag instead
             #of being accessed by default
-            createIntersection(reactants,rawDatabase)
+            createIntersection((extended1[0],extended2[0]),rawDatabase,dictionary)
             r1 = getFreeRadical(extended1,rawDatabase,synthesisDatabase,product)
             r2 = getFreeRadical(extended2,rawDatabase,synthesisDatabase,product)
         ##todo: modify code to allow for carry over free radicals
@@ -125,23 +130,27 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
         d2.remove(r2)
         d1.append((r1[0],rnd))
         d2.append((r2[0],rnd))
+        extended1 = tuple([dictionary[x][0] for x in extended1])
         synthesisDatabase[tuple(extended1)] = (d1,d2)
         intersection = (tuple(extended1),)
         extended1 = extended2 = []
         
     return extended1,extended2,intersection
 
-def createIntersection(reactants,rawDatabase):
+def createIntersection(reactants,rawDatabase,dictionary):
     '''
     if there are no components in record that allow for two species to merge
     we will create those components instead
     '''
+    #print 'kakakakakaka',reactants[0],dictionary[reactants[0]]
+    #label = dictionary[reactants[0]] if isinstance(dictionary[reactants[0],str) else reactants[0]
     if (reactants[0],) not in rawDatabase:
         rawDatabase[(reactants[0],)] = ([([reactants[1].lower()],)],)
     else:
         temp = rawDatabase[(reactants[0],)][0]
         temp.append(([reactants[1].lower()],))
         rawDatabase[(reactants[0],)] = (temp,)
+    #label = dictionary[reactants[1]] if isinstance(dictionary[reactants[1],str) else reactants[1]
     if (reactants[1],) not in rawDatabase:
         rawDatabase[(reactants[1],)] = ([([reactants[0].lower()],)],)
     else:
@@ -149,24 +158,26 @@ def createIntersection(reactants,rawDatabase):
         temp.append(([reactants[0].lower()],))
         rawDatabase[(reactants[1],)] = (temp,)
         
-def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase):
+def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase,translator):
     """
     this method reconstructs the component structure for a set of sbml
     molecules that undergo synthesis using context and history information    
-    """    
+    """   
+    #print reactants,products,dictionary,sbml_name
     #print 'zzz',reactants,products
-    
     species = dictionary[sbml_name]
-    
+    if isinstance(species,str):
+        species = dictionary[species]
     product = dictionary[products[0]]
     #if the element is already in the synthesisDatabase
     if species in synthesisDatabase:
         return species,synthesisDatabase[species]
     
     elif species in rawDatabase:
+        
         #for product in productArray:
         if product in synthesisDatabase:
-            temp = [(x[0],) for x in synthesisDatabase[product][product.index(species[0])]]
+            temp = [(x[0],) for x in synthesisDatabase[product][product.index(dictionary[species[0]][0])]]
             return species,(temp,)
         return species,rawDatabase[species]
     #this means we are dealing with the basic components rather than the
@@ -183,16 +194,18 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
     for element in [intersection[0],extended1,extended2]:
         if len(element) > 1:
             for tag,molecule in zip(element,synthesisDatabase[element]):
-                for member in [x for x in molecule if x not in constructed[species.index(tag)]]:
+                #in case we know that one element name is actually another in a special form
+                realTag = dictionary[tag][0]
+                for member in [x for x in molecule if x not in constructed[species.index(realTag)]]:
                     flag = True
-                    for temp in deepcopy(constructed[species.index(tag)]):
+                    for temp in deepcopy(constructed[species.index(realTag)]):
                         if member[0] in temp:
                             if len(member) == 1:
                                 flag = False
                             else:
-                                constructed[species.index(tag)].remove(temp)
+                                constructed[species.index(realTag)].remove(temp)
                     if flag:
-                        constructed[species.index(tag)].append(tuple(member))
+                        constructed[species.index(realTag)].append(tuple(member))
     return species,constructed
 
 def creation(original,dictionary,rawDatabase,translator):
@@ -214,47 +227,63 @@ def decay(original,dictionary,rawDatabase,translator):
 def getStateName(namingConvention):
     if namingConvention == 'Phosporylation':
         return 'P'
+    if namingConvention == 'Double-Phosporylation':
+        return 'PP'
 
 def getCatalysisSiteName(namingConvention):
-    if namingConvention == 'Phosporylation':
+    if namingConvention == 'Phosporylation' or namingConvention == 'Double-Phosporylation':
         return 'phospo'
+    
 
 def catalyze(original,modified,namingConvention,rawDatabase,translator):
+    result = [0,0]
     if (original,) not in translator:
-        rawDatabase[(original,)] = ([([getCatalysisSiteName(namingConvention),'U'],)],)
+        result[0] = ([([getCatalysisSiteName(namingConvention),'U'],)],)
+        #rawDatabase[(original,)] = ([([getCatalysisSiteName(namingConvention),'U'],)],)
     else:
         if (getCatalysisSiteName(namingConvention),) in rawDatabase[(original,)][0]:
             if not 'U' in rawDatabase[(original,)][1]:
                 temp = list(rawDatabase[(original,)])
                 #todoL we ave to actually get an index, not blindly append
                 temp[1].append(['U'])
-                rawDatabase[(original,)] = tuple(temp)
+                result[0] = tuple(temp)
+                #rawDatabase[(original,)] = tuple(temp)
         else:
             temp = list(rawDatabase[(original,)])
             temp[0].append((getCatalysisSiteName(namingConvention),))
             temp[1].append(['U'])
-            rawDatabase[(original,)] = tuple(temp)
+            #rawDatabase[(original,)] = tuple(temp)
+            result[0] = tuple(temp)
     if (modified,) not in translator:
-        rawDatabase[(modified,)] = ([([getCatalysisSiteName(namingConvention),getStateName(namingConvention)],)],)
+        #rawDatabase[(modified,)] = ([([getCatalysisSiteName(namingConvention),getStateName(namingConvention)],)],)
+        result[1] = ([([getCatalysisSiteName(namingConvention),getStateName(namingConvention)],)],)
     else:
         if (getCatalysisSiteName(namingConvention),) in rawDatabase[(modified,)][0]:
             if not getStateName(namingConvention) in rawDatabase[(modified,)][1]:
                 temp = list(rawDatabase[(modified,)])
                 temp[1].append([getStateName(namingConvention)])
-                rawDatabase[(modified,)] = tuple(temp)
+                #rawDatabase[(modified,)] = tuple(temp)
+                result[1] = tuple(temp)
         else:
             temp = list(rawDatabase[(modified,)]) 
             temp[0].append((getCatalysisSiteName(namingConvention),))
             temp[1].append([getStateName(namingConvention)])
-            rawDatabase[(modified,)] = tuple(temp)
+            #rawDatabase[(modified,)] = tuple(temp)
+            result[1] = temp
+    return result
             
 def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
               namingConvention,classification):
     """
     This method is for reactions of the form A+ B -> A' + B
     """
-    catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
+    result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
     ,translator)
    # print rawDatabase
-    translator[namingConvention[0]] = (namingConvention[0],rawDatabase[(namingConvention[0],)])
-    translator[namingConvention[1]] = (namingConvention[1],rawDatabase[(namingConvention[1],)])
+    if namingConvention[0] not in translator:
+        species = st.Species()
+        species.addChunk([namingConvention[0]],result[0])
+        translator[namingConvention[0]] = species
+    species = st.Species()
+    species.addChunk([namingConvention[0]],result[1])
+    translator[namingConvention[1]] = species
