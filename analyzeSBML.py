@@ -19,15 +19,16 @@ the json config file for classyfying rules according to their reactants/products
 '''
 
 def parseReactions(reaction):
-    
     species = Optional(Word(alphanums+"_") + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()"))
     rate = Word(alphanums + "()")
     grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
     ^ (species + Suppress("->") + Suppress(rate))  
     result =  grammar.parseString(reaction).asList()
-    if len(result) < 2:
-        result = [result,[]]
+    if len(result) < 2:    
+        result = [result,[]] 
+        
     return result
 
 
@@ -90,7 +91,6 @@ def checkCompliance(ruleCompliance,tupleCompliance,ruleBook):
             #check if just this is enough
             if 'n' in ruleBook[index]:
                 ruleResult[index] = 1
-
     return ruleResult
         
  
@@ -103,6 +103,8 @@ def analyzeNamingConventions(molecules,originalPattern='',modifiedPattern=''):
     '''
     original = r'(?P<key>[^p]\w*)\(\)'
     modified = r'p(?P<key>\w*)\(\)'
+    original = originalPattern[0].replace('\\\\', '\\')
+    modified = modifiedPattern[0].replace('\\\\', '\\')
     pOriginal = re.compile(original)
     pModified = re.compile(modified)
     oMolecules = []
@@ -126,7 +128,8 @@ def processNamingConventions(molecules,namingConventions):
     equivalenceTranslator = {}
     for idx,convention in enumerate(namingConventions):
         temp = analyzeNamingConventions(molecules,convention[0],convention[1])
-        equivalenceTranslator[idx] = temp 
+        equivalenceTranslator[idx] = temp
+    #print equivalenceTranslator
     return equivalenceTranslator
 
 def getReactionClassification(reactionDefinition,rules,equivalenceTranslator):
@@ -160,7 +163,6 @@ def getReactionClassification(reactionDefinition,rules,equivalenceTranslator):
                 if all(element in rule for element in equivalence):
                     tupleNameComplianceMatrix[rule][namingConvention] +=1
             
-    
     #check if the reaction conditions each tuple satisfies are enough to get classified
     #as an specific named reaction type
     tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
@@ -193,7 +195,7 @@ tupleDefinitionMatrix[key],reactionDefinition['definitions'])
             results.append(reactionDefinition['reactionsNames'][nonZero[0]])
             
     #now we will process the naming conventions section
-    print results
+    #print results
     return  results
     
 def classifyReactions(reactions,molecules):
