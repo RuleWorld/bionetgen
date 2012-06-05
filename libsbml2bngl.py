@@ -5,6 +5,7 @@ import bnglWriter as writer
 from optparse import OptionParser
 import molecules2complexes as m2c
 import sys
+import structures
 
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
@@ -124,12 +125,14 @@ class SBML2BNGL:
         log['species'].extend([x[0] for x in rawSpecies if x[0] not in translator])
         logString = ''
         #species stuff
-        logString += "Species we couldn't recognize:\n"
-        for element in log['species']:
-            logString += '\t%s\n' % element
-        logString += "Reactions we couldn't infer more about due to insufficient information:"
-        for element in log['reactions']:
-            logString += '\t%s + %s -> %s\n' % (element[0][0],element[0][1],element[1])
+        if(len(log['species']) > 0):
+            logString += "Species we couldn't recognize:\n"
+            for element in log['species']:
+                logString += '\t%s\n' % element
+        if(len(log['reactions'])>0):
+            logString += "Reactions we couldn't infer more about due to insufficient information:"
+            for element in log['reactions']:
+                logString += '\t%s + %s -> %s\n' % (element[0][0],element[0][1],element[1])
         return logString
                 
 def processDatabase():
@@ -139,8 +142,9 @@ def processDatabase():
             nameStr = 'BIOMD0000000%03d' % (index)
             document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
             parser = SBML2BNGL(document.getModel())
+            database = structures.Databases()
             print nameStr + '.xml'
-            translator = m2c.transformMolecules(parser,{})
+            translator = m2c.transformMolecules(parser,database)
             param2 = parser.getParameters()
             molecules,species,observables = parser.getSpecies(translator)
             #print molecules,species,observables
@@ -170,16 +174,17 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000091.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000392.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
     parser =SBML2BNGL(document.getModel())
     #rawDatabase = {('EpoR',):([('ra',),('U',),('I',)],),('SAv',):([('l',)],)}
-    rawDatabase = {}    
+    database = structures.Databases()
+    #rawDatabase = {}    
     #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",),("k")],),
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
 
-    translator = m2c.transformMolecules(parser,rawDatabase)
+    translator = m2c.transformMolecules(parser,database)
     #print translator
     param2 = parser.getParameters()
     
