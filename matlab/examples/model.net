@@ -1,0 +1,78 @@
+# Created by BioNetGen 2.2.0
+substanceUnits("Number");
+begin parameters
+    1 A0   100  # Constant
+    2 B0   100  # Constant
+    3 C0   100  # Constant
+    4 D0   100  # Constant
+    5 kf1  1  # Constant
+    6 kf2  1  # Constant
+    7 kf3  1  # Constant
+    8 kr1  1  # Constant
+    9 kr2  1  # Constant
+   10 kr3  1  # Constant
+end parameters
+begin molecule types
+    1 A(b)
+    2 D(c)
+    3 C(b,d)
+    4 B(a,c)
+end molecule types
+begin observables
+    1 Molecules A_B A().B()
+    2 Molecules A_C A().C()
+    3 Molecules A_D A().D()
+end observables
+begin species
+    1 A(b)                                 A0
+    2 B(a,c)                               B0
+    3 C(b,d)                               C0
+    4 D(c)                                 D0
+    5 A(b!1).B(a!1,c)                      0
+    6 B(a,c!1).C(b!1,d)                    0
+    7 C(b,d!1).D(c!1)                      0
+    8 A(b!1).B(a!1,c!2).C(b!2,d)           0
+    9 B(a,c!1).C(b!1,d!2).D(c!2)           0
+   10 A(b!1).B(a!1,c!2).C(b!2,d!3).D(c!3)  0
+end species
+begin reaction rules
+  Rule1:  A(b) + B(a) <-> A(b!1).B(a!1)  kf1, kr1
+  # Bind(0.0.0,0.1.0)
+  # Reverse
+  # Unbind(0.0.0,0.1.0)
+  Rule2:  B(c) + C(b) <-> B(c!1).C(b!1)  kf2, kr2
+  # Bind(0.0.0,0.1.0)
+  # Reverse
+  # Unbind(0.0.0,0.1.0)
+  Rule3:  C(d) + D(c) <-> C(d!1).D(c!1)  kf3, kr3
+  # Bind(0.0.0,0.1.0)
+  # Reverse
+  # Unbind(0.0.0,0.1.0)
+end reaction rules
+begin reactions
+    1 1,2 5 kf1 #Rule1
+    2 2,3 6 kf2 #Rule2
+    3 3,4 7 kf3 #Rule3
+    4 1,6 8 kf1 #Rule1
+    5 5 1,2 kr1 #Rule1r
+    6 2,7 9 kf2 #Rule2
+    7 3,5 8 kf2 #Rule2
+    8 5,7 10 kf2 #Rule2
+    9 6 2,3 kr2 #Rule2r
+   10 4,6 9 kf3 #Rule3
+   11 7 3,4 kr3 #Rule3r
+   12 1,9 10 kf1 #Rule1
+   13 8 1,6 kr1 #Rule1r
+   14 10 1,9 kr1 #Rule1r
+   15 8 3,5 kr2 #Rule2r
+   16 9 2,7 kr2 #Rule2r
+   17 10 5,7 kr2 #Rule2r
+   18 4,8 10 kf3 #Rule3
+   19 9 4,6 kr3 #Rule3r
+   20 10 4,8 kr3 #Rule3r
+end reactions
+begin groups
+    1 A_B                  5,8,10
+    2 A_C                  8,10
+    3 A_D                  10
+end groups
