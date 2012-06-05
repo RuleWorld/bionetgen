@@ -96,3 +96,30 @@ class Component:
         
     def __str__(self):
         return self.getRuleStr()
+        
+        
+class Databases:
+    def __init__(self):
+        self.translator ={}
+        self.synthesisDatabase = {}
+        self.catalysisDatabase = {}
+        self.rawDatabase = {}
+        self.labelDictionary = {}
+        
+    def getRawDatabase(self):
+        return self.rawDatabase
+        
+    def getLabelDictionary(self):
+        return self.labelDictionary
+        
+    def add2LabelDictionary(self,key,value):
+        temp = tuple(key)
+        temp = temp.sort()
+        self.labelDictionary[temp] = value
+
+    def add2RawDatabase(self,rawDatabase):
+        pass
+    
+    def getTranslator(self):
+        return self.translator
+    

@@ -44,8 +44,8 @@ def getFreeRadical(element,rawDatabase,synthesisDatabase,product):
         if element[0] in member and not issubset(member,product):
             index = member.index(element[0])
             for temp in [x for x in synthesisDatabase[member][index] if len(x) > 1]:
-                components.remove((temp[0],))
-                
+                if (temp[0],) in components:
+                    components.remove((temp[0],))
     if not components:
         return []
     return components[0]
@@ -75,17 +75,25 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
  #               species.append(translator[molecule])
  #           else:
                 tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator)
+                
                 if (tags,molecules) == (None,None):
-                    translator[sbml_name] = st.Species(sbml_name)
+                    tmp = st.Species()
+                    tmp.addMolecule(st.Molecule(sbml_name))
+                    translator[sbml_name] = tmp
+                    libsbml2bngl.log['reactions'].append(original)
+                    print "couldn't process reaction:",original
                 #TODO: probably we will need to add a check if there are several ways of defining a reaction
                 else:
+                    tags = list(tags)
+                    tags.sort()
+                    tags = tuple(tags)
+                    
                     species = st.Species()
                     species.addChunk(tags,molecules)
                     translator[sbml_name] = species
                     if tags not in synthesisDatabase and tags not in rawDatabase:
                         synthesisDatabase[tags] = tuple(molecules)
         #reaction.append(temp)
-   ## print reaction
     #return reaction
 
 def addSiteComponent():
@@ -120,6 +128,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
             createIntersection((extended1[0],extended2[0]),rawDatabase,dictionary)
             r1 = getFreeRadical(extended1,rawDatabase,synthesisDatabase,product)
             r2 = getFreeRadical(extended2,rawDatabase,synthesisDatabase,product)
+            if not r1 or not r2:
+                return (None,None,None)
         ##todo: modify code to allow for carry over free radicals
         d1 = copy(rawDatabase[extended1][0]) if extended1 in rawDatabase else copy(synthesisDatabase[extended1][0])
         d2 = copy(rawDatabase[extended2][0]) if extended2 in rawDatabase else copy(synthesisDatabase[extended2][0])
@@ -130,7 +140,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
         d2.remove(r2)
         d1.append((r1[0],rnd))
         d2.append((r2[0],rnd))
-        extended1 = tuple([dictionary[x][0] for x in extended1])
+        extended1 = [dictionary[x][0] for x in extended1]
+        extended1.sort()
         synthesisDatabase[tuple(extended1)] = (d1,d2)
         intersection = (tuple(extended1),)
         extended1 = extended2 = []
@@ -279,7 +290,6 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     """
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
     ,translator)
-   # print rawDatabase
     if namingConvention[0] not in translator:
         species = st.Species()
         species.addChunk([namingConvention[0]],result[0])
