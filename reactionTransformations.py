@@ -81,7 +81,7 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                     tmp.addMolecule(st.Molecule(sbml_name))
                     translator[sbml_name] = tmp
                     libsbml2bngl.log['reactions'].append(original)
-                    print "couldn't process reaction:",original
+                    #print "couldn't process reaction:",original
                 #TODO: probably we will need to add a check if there are several ways of defining a reaction
                 else:
                     tags = list(tags)
@@ -196,7 +196,7 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
 
     extended1,extended2,intersection = getIntersection(reactants,product,
                                                        dictionary,rawDatabase,
-                                                       synthesisDatabase)
+                                                      synthesisDatabase)
     if len(species) <2:
         return species,rawDatabase[species]
     if (extended1,extended2,intersection) == (None,None,None):
@@ -207,6 +207,7 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
             for tag,molecule in zip(element,synthesisDatabase[element]):
                 #in case we know that one element name is actually another in a special form
                 realTag = dictionary[tag][0]
+                print realTag,tag,species
                 for member in [x for x in molecule if x not in constructed[species.index(realTag)]]:
                     flag = True
                     for temp in deepcopy(constructed[species.index(realTag)]):
@@ -240,10 +241,14 @@ def getStateName(namingConvention):
         return 'P'
     if namingConvention == 'Double-Phosporylation':
         return 'PP'
+    if namingConvention == 'Generic-Catalysis':
+        return 'M'
 
 def getCatalysisSiteName(namingConvention):
     if namingConvention == 'Phosporylation' or namingConvention == 'Double-Phosporylation':
         return 'phospo'
+    elif namingConvention == 'Generic-Catalysis':
+        return 'cata'
     
 
 def catalyze(original,modified,namingConvention,rawDatabase,translator):
