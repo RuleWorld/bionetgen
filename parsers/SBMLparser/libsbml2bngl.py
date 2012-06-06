@@ -137,7 +137,7 @@ class SBML2BNGL:
                 
 def processDatabase():
     reader = libsbml.SBMLReader()
-    for index in range(1,410):
+    for index in range(8,410):
         try:
             nameStr = 'BIOMD0000000%03d' % (index)
             document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
@@ -174,7 +174,8 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000392.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000009.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
     parser =SBML2BNGL(document.getModel())
