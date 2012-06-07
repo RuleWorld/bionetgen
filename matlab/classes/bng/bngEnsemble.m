@@ -100,6 +100,23 @@ classdef bngEnsemble
             [outs,new_labels] = getSubset(obj,conditionvec,featurevec);
             obj1 = bngEnsemble(outs,new_labels);
         end
+        
+        function outs = scatter_3d(obj,labels)
+            assert(iscellstr(labels) && size(labels,1)==1 && size(labels,2)==3,'Labels provided should be a 1x3 cell array');
+            x = obj.getFeatures(labels(1));
+            y = obj.getFeatures(labels(2));
+            z = obj.getFeatures(labels(3));
+            scatter3(x,y,z);
+            outs = 0;
+        end
+        
+        function outs = plotQuantiles(obj,label,N)
+            assert(ischar(label));
+            vals = obj.getFeatures({label});
+            outs = [min(vals) quantile(vals,N-1) max(vals)];
+            plot(0:1:N,outs);
+        end
+            
     end
     
 end
