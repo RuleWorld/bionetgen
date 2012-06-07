@@ -4,6 +4,8 @@ import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
 import molecules2complexes as m2c
+import sys
+import structures
 
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
@@ -75,7 +77,7 @@ class SBML2BNGL:
         return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters()]
     
         
-    def getSpecies(self,translator = []):
+    def getSpecies(self,translator = {}):
     
         moleculesText  = []
         speciesText = [] 
@@ -83,20 +85,22 @@ class SBML2BNGL:
         
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
-            if rawSpecies[0] not in translator:
-                log['species'].append(rawSpecies[0])
+            
             if (rawSpecies[4] != ''):
                 self.tags[rawSpecies[0]] = '@%s:' % (rawSpecies[4])
             if(rawSpecies[0] in translator):
-                if len(translator[rawSpecies[0]][0])==1:
-                    moleculesText.append(writer.printTranslate(rawSpecies[0],translator))
+                if translator[rawSpecies[0]].getSize()==1:
+                    moleculesText.append(translator[rawSpecies[0]].toString())
             else:
                 moleculesText.append(rawSpecies[0] + '()')
             temp = '$' if rawSpecies[2] != 0 else ''
-            
+            tmp = translator[rawSpecies[0]].toString() if rawSpecies[0] in translator \
+                else rawSpecies[0] + '()'
             if rawSpecies[1]>0:
-                speciesText.append(temp + '%s %f' % (self.tags[rawSpecies[0]] + writer.printTranslate(rawSpecies[0],translator),rawSpecies[1]))
-            observablesText.append('Species %s %s' % (rawSpecies[0], self.tags[rawSpecies[0]] +  writer.printTranslate(rawSpecies[0],translator)))
+                #tmp= translator[rawSpecies[0]].toString()
+                #print translator[rawSpecies[0]].toString()
+                speciesText.append(temp + '%s %f' % (tmp,rawSpecies[1]))
+            observablesText.append('Species %s %s' % (rawSpecies[0], tmp))
         return moleculesText,speciesText,observablesText
     
     def getSpeciesAnnotation(self):
@@ -116,19 +120,47 @@ class SBML2BNGL:
     def getSpeciesInfo(self,name):
         return self.getRawSpecies(self.model.getSpecies(name))
         
-    def writeLog(self):
+    def writeLog(self,translator):
+        rawSpecies = [self.getRawSpecies(x) for x in self.model.getListOfSpecies()]
+        log['species'].extend([x[0] for x in rawSpecies if x[0] not in translator])
         logString = ''
         #species stuff
-        logString += "Species we couldn't recognize:\n"
-        for element in log['species']:
-            logString += '\t%s\n' % element
-        logString += "Reactions we couldn't infer more about due to insufficient information:"
-        for element in log['reactions']:
-            logString += '\t%s + %s -> %s\n' % (element[0][0],element[0][1],element[1])
+        if(len(log['species']) > 0):
+            logString += "Species we couldn't recognize:\n"
+            for element in log['species']:
+                logString += '\t%s\n' % element
+        if(len(log['reactions'])>0):
+            logString += "Reactions we couldn't infer more about due to insufficient information:"
+            for element in log['reactions']:
+                logString += '\t%s + %s -> %s\n' % (element[0][0],element[0][1],element[1])
         return logString
                 
-        
-
+def processDatabase():
+    reader = libsbml.SBMLReader()
+    for index in range(8,410):
+        try:
+            nameStr = 'BIOMD0000000%03d' % (index)
+            document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
+            parser = SBML2BNGL(document.getModel())
+            database = structures.Databases()
+            print nameStr + '.xml'
+            translator = m2c.transformMolecules(parser,database)
+            param2 = parser.getParameters()
+            molecules,species,observables = parser.getSpecies(translator)
+            #print molecules,species,observables
+            param,rules,functions = parser.getReactions(translator)
+            compartments = parser.getCompartments()
+            param += param2
+            writer.finalText(param,molecules,species,observables,rules,functions,compartments,'output/' + nameStr + '.bngl')
+            with open('output/' + nameStr + '.log', 'w') as f:
+                f.write(parser.writeLog(translator))
+        except:
+            print 'ERROR',sys.exc_info()[0] 
+            continue
+            
+            
+    #print rules
+         
 def main():
     
     parser = OptionParser()
@@ -142,21 +174,24 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000009.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
     parser =SBML2BNGL(document.getModel())
     #rawDatabase = {('EpoR',):([('ra',),('U',),('I',)],),('SAv',):([('l',)],)}
-    rawDatabase = {}    
+    database = structures.Databases()
+    #rawDatabase = {}    
     #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",),("k")],),
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
 
-    translator = m2c.transformMolecules(parser,rawDatabase)
+    translator = m2c.transformMolecules(parser,database)
     #print translator
     param2 = parser.getParameters()
     
     
     molecules,species,observables = parser.getSpecies(translator)
+    #print molecules,species,observables
     param,rules,functions = parser.getReactions(translator)
     compartments = parser.getCompartments()
     
@@ -166,8 +201,10 @@ def main():
     #print rules
          
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,options.output)
-    print parser.writeLog()
-    print rawDatabase
+
+    print parser.writeLog(translator)
+    #print rawDatabase
     
 if __name__ == "__main__":
+    #processDatabase()
     main()

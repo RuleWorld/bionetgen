@@ -15,8 +15,8 @@ import analyzeRDF
 
     
 def parseReactions(reaction):
-    
     species = Optional(Word(alphanums+"_") + Suppress('()')) +  \
+    Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()"))
     rate = Word(alphanums + "()")
     grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
@@ -57,7 +57,14 @@ def issubset(possible_sub, superset):
 def updateState(original):
     pass
 
-def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
+def addToLabelDictionary(dictionary,label,value):
+    #dictionary[label] = value
+    if label not in dictionary:
+        dictionary[label] = [value]
+    else:
+        dictionary[label].append(value)
+       # dictionary[label].sort()
+def defineCorrespondence(reaction2, totalElements,database,
     classification,rdfAnnotations):
     '''
     this method goes through the list of reactions and determines what kind of 
@@ -67,46 +74,58 @@ def defineCorrespondence(reaction2, totalElements,labelDictionary,rawDatabase,
     '''
     for element in totalElements:
         #if it's already in the database
-        if element in labelDictionary:
-            continue
+        #if element in database.labelDictionary:
+        #    continue
         #if it's in the list of elements provided by the user
-        if (element,) in rawDatabase:
+        if (element,) in database.rawDatabase:
             #labelDictionary[element] = []
-            labelDictionary[element] = (element,)
+            #database.labelDictionary[element] = (element,)
+            addToLabelDictionary(database.labelDictionary,element,(element,))
         #if we can obtain what it is according to what appears in the annotations
-        elif classification == 'Binding' and element not in labelDictionary:
+        elif classification == 'Binding' and (element not in database.labelDictionary
+        or (len(database.labelDictionary[element]) < 2)):
                 if len(reaction2[0]) == 2 and element not in reaction2[0]:
-                    labelDictionary[element] = tuple([k for k in reaction2[0]])
+                    addToLabelDictionary(database.labelDictionary,element,tuple([k for k in reaction2[0]]))
+                    #database.labelDictionary[element] = tuple([k for k in reaction2[0]])
                 elif len(reaction2[1]) == 2 and element not in reaction2[1]:
-                    labelDictionary[element] = tuple([k for k in reaction2[1]])
+                    addToLabelDictionary(database.labelDictionary,element,tuple([k for k in reaction2[1]]))
+                    #database.labelDictionary[element] = tuple([k for k in reaction2[1]])
                 else:
-                    labelDictionary[element] = (element,)
-        elif classification == 'Phosporylation':
+                    addToLabelDictionary(database.labelDictionary,element,(element,))
+                    #database.labelDictionary[element] = (element,)
+        elif classification == 'Phosporylation' or classification == 'Double-Phosporylation':
             #print element
+            #addToLabelDictionary(database.labelDictionary,element,(element,))
             pass
         else:
             equivalence = analyzeRDF.getEquivalence(element,rdfAnnotations)
-            
             if equivalence != []:
                 for equivalentElement in equivalence:
-                    if equivalentElement in labelDictionary:
-                        labelDictionary[element] = equivalentElement
+                    if equivalentElement in database.labelDictionary:
+                        addToLabelDictionary(database.labelDictionary,element,(equivalentElement,))
+                        #database.labelDictionary[element] = (equivalentElement,)
             else:
-                labelDictionary[element] = (element,)
-            
-    return labelDictionary
+                addToLabelDictionary(database.labelDictionary,element,(element,))
+    return database.labelDictionary
 
 ##TODO: i introduced arrays in the labelDictionary, have to resolve correspondences                  
-def resolveCorrespondence(labelDictionary):
-    temp = labelDictionary.copy()
-    for element in [x for x in labelDictionary if len(labelDictionary[x]) > 1 and
-    isinstance(labelDictionary[x],tuple)]:
-        for member in [x for x in labelDictionary[element] if 
-        len(labelDictionary[x]) > 1]:
-            temp[element] = list(temp[element])
-            temp[element].extend(labelDictionary[member])
-            temp[element].remove(member)
-            temp[element] = tuple(sort(temp[element]))
+def resolveCorrespondence(database):
+    temp = database.labelDictionary.copy()
+    for element in database.labelDictionary:
+       # for idx,alternative in enumerate(database.labelDictionary[element]):
+        for member in [x for x in database.labelDictionary[element]]:
+            tmpLabel= member
+            while True:
+                oldTemp = deepcopy(temp[element])
+                temp[element] = list(temp[element])
+                temp[element].extend(database.labelDictionary[tmpLabel])
+                temp[element].remove(tmpLabel)
+                temp[element] = tuple(sort(temp[element]))
+                tmpLabel = database.labelDictionary[tmpLabel][0]
+                if oldTemp == temp[element]:
+                    break
+                
+        #temp[element] = list(set(temp[element]))
     labelDictionary = temp.copy()
     return labelDictionary
                
@@ -216,25 +235,28 @@ def transformRawType(originalRule,translator):
         newRule.append(acc)
     return newRule
 
-def getPertinentNamingEquivalence(original, equivalenceTranslator):
+def getPertinentNamingEquivalence(original, database):
     temp = [item for element in original for item in element]
-    for element in equivalenceTranslator:
-        if element[0] in temp and element[1] in temp:
-            return element
+    temp2 = [database.labelDictionary[x] for x in temp]
+    temp3 = [x for x in temp2 if temp2.count(x) == 1]
+    temp4 = [x for x in temp if (x,) not in temp3]
+    temp4.sort(lambda x,y: cmp(len(x), len(y)))
+    return temp4
 
-def processRule(original,dictionary,rawDatabase,synthesisDatabase,translator,
+def processRule(original,database,
                 classification,equivalenceTranslator):
     '''
     '''
     #print (identifyReaction(original,0))
     if identifyReaction(original,0) == 1 and classification == 'Binding':
-        return reactionTransformations.synthesis(original,dictionary,
-        rawDatabase,synthesisDatabase,translator)
-    elif classification == 'Phosporylation':
-        pertinentEquivalence = getPertinentNamingEquivalence(original,equivalenceTranslator)
-        return reactionTransformations.catalysis(original,dictionary,rawDatabase,
+        return reactionTransformations.synthesis(original,database.labelDictionary,
+        database.rawDatabase,database.synthesisDatabase,database.translator)
+    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis']:
+        pertinentEquivalence = getPertinentNamingEquivalence(original,database)
+        print 'aaaaaa',pertinentEquivalence
+        return reactionTransformations.catalysis(original,database.labelDictionary,database.rawDatabase,
                                                   None,
-                                                  translator,pertinentEquivalence,
+                                                  database.translator,pertinentEquivalence,
                                                   classification)
 
     
@@ -259,37 +281,72 @@ def reduceReactions(history):
         newHistory.append(factor)
     return newHistory
     
-def transformMolecules(parser,rawDatabase):
-    labelDictionary = {}
+def simplify(labelDatabase):
+    for element in labelDatabase:
+        if len(labelDatabase[element]) == 1:
+            labelDatabase[element] = labelDatabase[element][0]
+        #placeholder
+        else:
+             labelDatabase[element] = max(labelDatabase[element],key=len)
+        #else:
+        #    labelDatabase[element] = labelDatabase[element][0]
+
+#TODO: not all the reactions im defining as catalysis are actually catalysis
+def correctClassifications(rules,classifications,labelDatabase):
+    print labelDatabase
+    for idx in range(0,len(rules)):
+        if classifications[idx] == 'Binding':
+            reaction2 = list(parseReactions(rules[idx]))
+            if len(labelDatabase[reaction2[1][0]]) >1:
+                #if we found that a binding is actually a catalysis
+                classifications[idx] = 'Generic-Catalysis'
+                # we will assume that they smallest element
+                print reaction2
+                print labelDatabase[reaction2[1][0]]
+                labelDatabase[reaction2[1][0]] = [min(labelDatabase[reaction2[1][0]],key=len)]
+                
+            
+            
+def transformMolecules(parser,database):
+    #labelDictionary = {}
     _,rules,_ = parser.getReactions()
     molecules,_,_ = parser.getSpecies()
-    synthesisdatabase = {}
-    translator = {}
+    #synthesisdatabase = {}
+    #translator = {}
     
     classifications,equivalenceTranslator = analyzeSBML.classifyReactions(rules,molecules)
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
-    for rule,classification in zip(rules,classifications):   
+    #print rdfAnnotations
+    print 'starting'
+    
+    for element in equivalenceTranslator:
+        database.labelDictionary[element[0]] = [(min(element,key=len),)]
+        database.labelDictionary[element[1]] = [(min(element,key=len),)]
+    for rule,classification in zip(rules,classifications): 
         #print rule 
         reaction2 = list(parseReactions(rule))
         totalElements =  [item for sublist in reaction2 for item in sublist]
         totalElements = list(set(totalElements))
-        labelDictionary = defineCorrespondence(reaction2,totalElements,
-                                               labelDictionary,rawDatabase,
+        database.labelDictionary = defineCorrespondence(reaction2,totalElements,
+                                               database,
                                                classification,rdfAnnotations)
-        labelDictionary = resolveCorrespondence(labelDictionary)
-        
-    labelDictionary = resolveCorrespondence(labelDictionary)
+        #database.labelDictionary = resolveCorrespondence(database)
+    correctClassifications(rules,classifications,database.labelDictionary)
+    simplify(database.labelDictionary)
+    for _ in range(0,5):
+        database.labelDictionary = resolveCorrespondence(database)
+    #print database.labelDictionary
     for rule,classification in zip(rules,classifications):
         reaction2 = list(parseReactions(rule))
-        processRule(reaction2,labelDictionary,rawDatabase,
-                               synthesisdatabase,translator,classification,equivalenceTranslator)
+        processRule(reaction2,database,classification,equivalenceTranslator)
     #update all equivalences
-    for element in labelDictionary:
-        if not isinstance(labelDictionary[element],tuple):
-            translator[element] = translator[labelDictionary[element]]
-    print translator
-    return translator
+    for element in database.labelDictionary:
+        if not isinstance(database.labelDictionary[element],tuple):
+            database.translator[element] = database.translator[database.labelDictionary[element]]
+    #print translator
+   # print labelDictionary
+    return database.translator
 
 if __name__ == "__main__":
 
@@ -318,7 +375,7 @@ if __name__ == "__main__":
     _,rules,_ = parser.getReactions()
     
     translator = transformMolecules(rules,rawDatabase)
-    print translator
+    #print translator
     printReactionsWithDictionary(rules,translator)
     #print 'reducing...'  
     #newHistory = reduceReactions(history)

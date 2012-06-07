@@ -23,8 +23,11 @@ def getAnnotations(parser,stringKey):
             for index in range(0,annotation[key].getNumAttributes()):
                 if stringKey in annotation[key].getValue(index):
                     annotationList.append(annotation[key].getValue(index))
+            if annotationList == []:
+                continue
             if frozenset(annotationList) in annotationDictionary:
                 annotationDictionary[frozenset(annotationList)].append(key)
+                annotationDictionary[frozenset(annotationList)].sort(lambda x,y: cmp(len(x), len(y)))
             else:
                 annotationDictionary[frozenset(annotationList)] = [key]
     return annotationDictionary
@@ -38,7 +41,12 @@ def getEquivalence(species,rdf_database):
     
     for element in rdf_database:
         if species in rdf_database[element]:
-            return [x for x in rdf_database[element] if x != species]
+            if rdf_database[element].index(species) == 0:
+                return []
+            #return [x for x in rdf_database[element] if x != species]
+            
+            #well only return the first one by default
+            return [rdf_database[element][0]]
     return []
 
 if __name__ == "__main__":
