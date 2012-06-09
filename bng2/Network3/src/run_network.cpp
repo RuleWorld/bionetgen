@@ -801,7 +801,7 @@ int main(int argc, char *argv[]){
 	if (propagator == SSA) fprintf(stdout, "TOTAL STEPS: %-16.0f\n", gillespie_n_steps());
 	fprintf(stdout, "Time course of concentrations written to file %s.cdat.\n", outpre);
 	if (n_groups_network()) fprintf(stdout, "Time course of groups written to file %s.gdat.\n", outpre);
-	if (network.functions.size() > 0) fprintf(stdout, "Time course of functions written to file %s.gdat.\n", outpre);
+	if (print_func && network.functions.size() > 0) fprintf(stdout, "Time course of functions written to file %s.gdat.\n", outpre);
 	ptimes = t_elapsed();
 	fprintf(stdout, "Propagation took %.2e CPU seconds\n", ptimes.cpu);
 
