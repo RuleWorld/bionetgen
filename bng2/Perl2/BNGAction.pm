@@ -435,7 +435,7 @@ sub simulate
 
             unless ( $model->SpeciesList )
             {   # Can't generate new species if running from netfile
-                # TODO: I don'think it's sufficient to check is SpeciesList is defined.
+                # TODO: I don't think it's sufficient to check if SpeciesList is defined.
                 #  It's possible that it exists but the Network generation infrastructure is missing --Justin
                 ++$edge_warning;
                 print Writer "continue\n";

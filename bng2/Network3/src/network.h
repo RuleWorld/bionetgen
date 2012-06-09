@@ -213,11 +213,11 @@ extern FILE* init_print_concentrations_network(char* prefix, int append);
 extern int   print_concentrations_network(FILE* out, double t);
 extern int   finish_print_concentrations_network(FILE* out);
 
-extern FILE* init_print_group_concentrations_network(char* prefix, int append);
-extern int   print_group_concentrations_network(FILE* out, double t);
-extern int   finish_print_group_concentrations_network(FILE* out);
+extern FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline);
+extern int   print_group_concentrations_network(FILE* out, double t, bool no_newline);
+extern int   finish_print_group_concentrations_network(FILE* out, bool leave_open);
 
-extern FILE* init_print_function_values_network(char* prefix, int append);
+extern int 	 init_print_function_values_network(FILE* out);
 extern int   print_function_values_network(FILE* out, double t);
 extern int   finish_print_function_values_network(FILE* out);
 

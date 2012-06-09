@@ -587,7 +587,7 @@ void Network3::init_PLA(string config, bool verbose){
 }
 
 pair<double,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
-		double stepInterval, char* prefix, bool print_cdat, bool print_save_net, bool print_end_net, bool verbose){
+		double stepInterval, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -632,7 +632,7 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	}
 	//
 	// Functions file (optional)
-	FILE* fdat = NULL;
+/*	FILE* fdat = NULL;
 	string fFile(prefix);
 	fFile += ".fdat";
 //	cout << fFile;
@@ -644,7 +644,7 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	else{
 //		cout << "Warning: Functions file \"" << fFile << "\" doesn't exist." << endl;
 	}
-
+*/
 	// Identify observables involved in functions
 	vector<unsigned int> funcObs;
 	for (unsigned int i=0;i < FUNCTION.size();i++){
@@ -719,8 +719,8 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 
 			// Output to file
 			if (print_cdat) Network3::print_species_concentrations(cdat,time);
-			if (gdat) Network3::print_observable_concentrations(gdat,time);
-			if (fdat) Network3::print_function_values(fdat,time);
+			if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
+			if (print_func) Network3::print_function_values(gdat,time);
 			if (print_save_net){ // Write current system state to .net file
 				// Collect species populations and update network concentrations vector
 				double* pops = new double[SPECIES.size()];
@@ -783,8 +783,8 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 
 		// Output to file
 		if (print_cdat) Network3::print_species_concentrations(cdat,time);
-		if (gdat) Network3::print_observable_concentrations(gdat,time);
-		if (fdat) Network3::print_function_values(fdat,time);
+		if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
+		if (print_func) Network3::print_function_values(gdat,time);
 		string print_net_message;
 		if (print_save_net){ // Write current system state to .net file
 			// Collect species populations and update network concentrations vector
@@ -828,7 +828,7 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	// Close files
 	fclose(cdat);
 	if (gdat) fclose(gdat);
-	if (fdat) fclose(fdat);
+//	if (fdat) fclose(fdat);
 
 	return pair<double,double>(step-startStep,time-tStart);
 }
@@ -952,7 +952,7 @@ void Network3::print_species_concentrations(FILE* out, double t){
 	fflush(out);
 }
 
-void Network3::print_observable_concentrations(FILE* out, double t){
+void Network3::print_observable_concentrations(FILE* out, double t, bool no_newline){
 	// Error check
 	if (!out){
 		cout << "Error in Network3::print_observable_concentrations(): 'out' file does not exist. Exiting." << endl;
@@ -965,7 +965,7 @@ void Network3::print_observable_concentrations(FILE* out, double t){
 		fprintf(out, " ");
 		fprintf(out, fmt, OBSERVABLE[i]->second);
 	}
-	fprintf(out,"\n");
+	if (!no_newline) fprintf(out,"\n"); // Yes, a double negative
 	fflush(out);
 }
 
@@ -977,7 +977,7 @@ void Network3::print_function_values(FILE* out, double t){
 	}
 	//
 	const char *fmt = "%19.12e";
-	fprintf(out, fmt, t);
+//	fprintf(out, fmt, t);
 	for (unsigned int i=0;i < FUNCTION.size();i++){
 		fprintf(out, " ");
 		fprintf(out, fmt, FUNCTION[i]->second);
