@@ -125,6 +125,7 @@ int main(int argc, char *argv[]){
     double maxSteps = INFINITY;//LONG_MAX;//-1;
     double stepInterval = INFINITY;//LONG_MAX;// -1;
     string pla_config;// = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
+    bool additional_pla_output = false; // Print PLA-specific data (e.g., rxn classifications)
 
     if (argc < 4) print_error();
 
@@ -247,18 +248,25 @@ int main(int argc, char *argv[]){
 			string long_opt(argv[iarg-1]);
 			long_opt = long_opt.substr(2); // remove '--'
 			//
-			// Output to .cdat
+			// Print to .cdat
 			if (long_opt == "cdat"){
 				if (Util::convertToInt(argv[iarg]) <= 0){
 					print_cdat = false;
 				}
 			}
-			// Output to .fdat
+			// Print to .fdat
 			else if (long_opt == "fdat"){
 				if (Util::convertToInt(argv[iarg]) > 0){
 					print_func = true;
 				}
 			}
+			// Print additional PLA data (e.g., rxn classifications)
+			else if (long_opt == "pla_output"){
+				if (Util::convertToInt(argv[iarg]) > 0){
+					additional_pla_output = true;
+				}
+			}
+			//...
 			else{
 //				cout << endl;
 				cout << "Sorry, don't recognize your long option " << argv[iarg-1] << ". Please try again." << endl;
@@ -512,6 +520,21 @@ int main(int argc, char *argv[]){
 		// Initialize Network3
 		Network3::init_Network3(false);
 
+		// PLA-specific output
+		if (additional_pla_output){
+			cout << "Activating classifications output (to _classif.pla)" << endl;
+			FILE* outfile = NULL;
+			outfile = fopen(((string)outpre+"_classif.pla").c_str(),"w");
+			// Print header
+			fprintf(outfile, "#");
+			fprintf(outfile, "%18s", "time");
+			for (unsigned int v=0;v < Network3::REACTION.size();v++){
+				fprintf(outfile," %10s",("R_"+Util::toString((int)v+1)).c_str());
+			}
+			fprintf(outfile,"\n");
+			fclose(outfile);
+		}
+
 		// Initialize PLA
 		Network3::init_PLA(pla_config,verbose);
 		if (seed >= 0)	Network3::PLA_SIM->setSeed(seed);
@@ -540,7 +563,8 @@ int main(int argc, char *argv[]){
 //					cout << "(step: " << step << ")" << endl;
 //					cout << "(" << stepsLeft << " steps left until next output)" << endl;
 					nSteps_Tau = Network3::run_PLA(t,sample_times[i],INFINITY,step,min(stepsLeft,maxSteps),
-									 			   stepInterval,outpre,print_cdat,print_func,print_save_net,print_end_net,verbose);
+									 			   stepInterval,outpre,print_cdat,print_func,print_save_net,
+									 			   print_end_net,additional_pla_output,verbose);
 					step += nSteps_Tau.first;
 					t += nSteps_Tau.second;
 					//
@@ -559,7 +583,9 @@ int main(int argc, char *argv[]){
 //					cout << "(maxSteps: " << maxSteps << ")" << endl;
 //					cout << "(step: " << step << ")" << endl;
 					nSteps_Tau = Network3::run_PLA(t,sample_times[i],INFINITY,step,maxSteps,
-												   stepInterval,outpre,print_cdat,print_func,print_save_net,print_end_net,verbose);
+												   stepInterval,outpre,print_cdat,print_func,
+												   print_save_net,print_end_net,additional_pla_output,
+												   verbose);
 					step += nSteps_Tau.first;
 					t += nSteps_Tau.second;
 					//
@@ -570,7 +596,9 @@ int main(int argc, char *argv[]){
 		}
 		else{ // Sample interval
 			nSteps_Tau = Network3::run_PLA(t_start,t_end,sample_time,step,maxSteps,
-										   stepInterval,outpre,print_cdat,print_func,print_save_net,print_end_net,verbose);
+										   stepInterval,outpre,print_cdat,print_func,
+										   print_save_net,print_end_net,additional_pla_output,
+										   verbose);
 			step += nSteps_Tau.first;
 			t += nSteps_Tau.second;
 		}
