@@ -523,16 +523,17 @@ int main(int argc, char *argv[]){
 		// PLA-specific output
 		if (additional_pla_output){
 			cout << "Activating classifications output (to _classif.pla)" << endl;
-			FILE* outfile = NULL;
-			outfile = fopen(((string)outpre+"_classif.pla").c_str(),"w");
-			// Print header
-			fprintf(outfile, "#");
-			fprintf(outfile, "%18s", "time");
-			for (unsigned int v=0;v < Network3::REACTION.size();v++){
-				fprintf(outfile," %10s",("R_"+Util::toString((int)v+1)).c_str());
+			if (!continuation){ // Print header
+				FILE* outfile = NULL;
+				outfile = fopen(((string)outpre+"_classif.pla").c_str(),"w");
+				fprintf(outfile, "#");
+				fprintf(outfile, "%18s", "time");
+				for (unsigned int v=0;v < Network3::REACTION.size();v++){
+					fprintf(outfile," %10s",("R_"+Util::toString((int)v+1)).c_str());
+				}
+				fprintf(outfile,"\n");
+				fclose(outfile);
 			}
-			fprintf(outfile,"\n");
-			fclose(outfile);
 		}
 
 		// Initialize PLA
