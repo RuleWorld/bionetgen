@@ -84,12 +84,21 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                     #print "couldn't process reaction:",original
                 #TODO: probably we will need to add a check if there are several ways of defining a reaction
                 else:
-                    tags = list(tags)
-                    tags.sort()
-                    tags = tuple(tags)
-                    
-                    species = st.Species()
-                    species.addChunk(tags,molecules)
+                    #tags = list(tags)
+                    #tags.sort()
+                    #tags = tuple(tags)
+                    precursors = []
+                    if sbml_name not in translator:
+                        species = st.Species()
+                        #here we check if the new species is made of already existing molecules
+                        for tag in [x for x in tags if x in translator]:
+                            precursors.append(translator[tag])
+                    else:
+                        species = translator[sbml_name]
+
+                            
+                    print 'TAGS',tags,precursors
+                    species.addChunk(tags,molecules,precursors)
                     translator[sbml_name] = species
                     if tags not in synthesisDatabase and tags not in rawDatabase:
                         synthesisDatabase[tags] = tuple(molecules)
@@ -182,7 +191,10 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
     product = dictionary[products[0]]
     #if the element is already in the synthesisDatabase
     if species in synthesisDatabase:
-        return species,synthesisDatabase[species]
+        species2 = list(species)
+        species2.reverse()
+        species2 = tuple(species2)
+        return species2,synthesisDatabase[species]
     
     elif species in rawDatabase:
         
@@ -193,7 +205,6 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
         return species,rawDatabase[species]
     #this means we are dealing with the basic components rather than the
     #synthetized product
-
     extended1,extended2,intersection = getIntersection(reactants,product,
                                                        dictionary,rawDatabase,
                                                       synthesisDatabase)
@@ -207,7 +218,6 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
             for tag,molecule in zip(element,synthesisDatabase[element]):
                 #in case we know that one element name is actually another in a special form
                 realTag = dictionary[tag][0]
-                print realTag,tag,species
                 for member in [x for x in molecule if x not in constructed[species.index(realTag)]]:
                     flag = True
                     for temp in deepcopy(constructed[species.index(realTag)]):
@@ -218,7 +228,7 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
                                 constructed[species.index(realTag)].remove(temp)
                     if flag:
                         constructed[species.index(realTag)].append(tuple(member))
-    return species,constructed
+    return list(species).reverse(),constructed
 
 def creation(original,dictionary,rawDatabase,translator):
     """
@@ -277,7 +287,14 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator):
         if (getCatalysisSiteName(namingConvention),) in rawDatabase[(modified,)][0]:
             if not getStateName(namingConvention) in rawDatabase[(modified,)][1]:
                 temp = list(rawDatabase[(modified,)])
-                temp[1].append([getStateName(namingConvention)])
+                #TODO: in the special case for generic-catalysis, we do it so that any additional modification to an already
+                #modified state is done via an additional M. ['M','MM' etc]. Check if it makes sense for other modifications
+                stateName = getStateName(namingConvention)
+                if namingConvention == 'Generic-Catalysis':
+                    longestStateName = max(temp[1],key=len)
+                    temp[1].append(stateName+longestStateName)
+                else:
+                    temp[1].append([stateName])
                 #rawDatabase[(modified,)] = tuple(temp)
                 result[1] = tuple(temp)
         else:
@@ -286,6 +303,7 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator):
             temp[1].append([getStateName(namingConvention)])
             #rawDatabase[(modified,)] = tuple(temp)
             result[1] = temp
+    
     return result
             
 def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
@@ -295,10 +313,24 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     """
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
     ,translator)
-    if namingConvention[0] not in translator:
-        species = st.Species()
-        species.addChunk([namingConvention[0]],result[0])
-        translator[namingConvention[0]] = species
-    species = st.Species()
-    species.addChunk([namingConvention[0]],result[1])
-    translator[namingConvention[1]] = species
+    
+    for reactantGroup in original:
+        for reactant in reactantGroup:
+            species = st.Species()
+            tmp = dictionary[reactant]
+            for element in tmp:
+                molecule = st.Molecule(element)
+                if element in namingConvention:
+                    chunk = result[0] if reactant == min(namingConvention,key=len) else result[1]
+                    molecule.addChunk(chunk)
+                species.addMolecule(molecule)
+            if reactant not in translator:
+                translator[reactant] = species
+        
+    #if namingConvention[0] not in translator:
+    #    species = st.Species()
+    #    species.addChunk([dictionary[namingConvention[0]][0]],result[0])
+    #    translator[namingConvention[0]] = species
+    #species = st.Species()
+    #species.addChunk([dictionary[namingConvention[1]][0]],result[1])
+    #translator[namingConvention[1]] = species

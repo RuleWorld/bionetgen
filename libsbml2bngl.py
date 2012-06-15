@@ -137,7 +137,7 @@ class SBML2BNGL:
                 
 def processDatabase():
     reader = libsbml.SBMLReader()
-    for index in range(8,410):
+    for index in range(1,410):
         try:
             nameStr = 'BIOMD0000000%03d' % (index)
             document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
@@ -145,6 +145,7 @@ def processDatabase():
             database = structures.Databases()
             print nameStr + '.xml'
             translator = m2c.transformMolecules(parser,database)
+            #translator = {}
             param2 = parser.getParameters()
             molecules,species,observables = parser.getSpecies(translator)
             #print molecules,species,observables
@@ -154,6 +155,7 @@ def processDatabase():
             writer.finalText(param,molecules,species,observables,rules,functions,compartments,'output/' + nameStr + '.bngl')
             with open('output/' + nameStr + '.log', 'w') as f:
                 f.write(parser.writeLog(translator))
+            print database.labelDictionary
         except:
             print 'ERROR',sys.exc_info()[0] 
             continue
@@ -186,7 +188,8 @@ def main():
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
 
     translator = m2c.transformMolecules(parser,database)
-    #print translator
+    #translator= {}
+    
     param2 = parser.getParameters()
     
     
@@ -203,6 +206,7 @@ def main():
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,options.output)
 
     print parser.writeLog(translator)
+    print database.labelDictionary
     #print rawDatabase
     
 if __name__ == "__main__":

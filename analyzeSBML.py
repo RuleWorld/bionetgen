@@ -39,7 +39,7 @@ def loadConfigFiles():
     we wnat to parse and what are the requirements of a given reaction type to be considered
     as such
     '''
-    with open('reactionDefinition.json','r') as fp:
+    with open('reactionDefinition2.json','r') as fp:
         reactionDefinition = json.load(fp)
     return reactionDefinition
 
@@ -68,7 +68,7 @@ def species2Rules(rules):
     '''
     ruleDictionary = {}
     for rule in rules:
-        reaction2 = list(parseReactions(rule))
+        reaction2 = rule #list(parseReactions(rule))
         #print reaction2
         totalElements =  [item for sublist in reaction2 for item in sublist]
         if frozenset(totalElements) in ruleDictionary:
@@ -101,8 +101,6 @@ def analyzeNamingConventions(molecules,originalPattern='',modifiedPattern=''):
     We will go through the list of molecules and check for names that match those
     patterns
     '''
-    original = r'(?P<key>[^p]\w*)\(\)'
-    modified = r'p(?P<key>\w*)\(\)'
     original = originalPattern[0].replace('\\\\', '\\')
     modified = modifiedPattern[0].replace('\\\\', '\\')
     pOriginal = re.compile(original)
@@ -121,7 +119,6 @@ def analyzeNamingConventions(molecules,originalPattern='',modifiedPattern=''):
         if mmatch and mmatch.group('key') in oMolecules:
             results.append((mmatch.group('key'),molecule[0:-2]))
            
-
     return results
  
 def processNamingConventions(molecules,namingConventions):
@@ -129,10 +126,9 @@ def processNamingConventions(molecules,namingConventions):
     for idx,convention in enumerate(namingConventions):
         temp = analyzeNamingConventions(molecules,convention[0],convention[1])
         equivalenceTranslator[idx] = temp
-    #print equivalenceTranslator
     return equivalenceTranslator
 
-def getReactionClassification(reactionDefinition,rules,equivalenceTranslator):
+def getReactionClassification(reactionDefinition,rules,equivalenceTranslator,useNamingConventions=True):
     '''
     *reactionDefinition* is ....
     *rules*
@@ -144,7 +140,7 @@ def getReactionClassification(reactionDefinition,rules,equivalenceTranslator):
     #contains which rules are equal to reactions defined in reactionDefiniotion['reactions]    
     ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
     for (idx,rule) in enumerate(rules):
-        reaction2 = list(parseReactions(rule))
+        reaction2 = rule #list(parseReactions(rule))
         ruleComplianceMatrix[idx] = identifyReactions2(reaction2,reactionDefinition)
     #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
     tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
@@ -156,13 +152,11 @@ def getReactionClassification(reactionDefinition,rules,equivalenceTranslator):
     #now we will check for the nameConventionMatrix
     
     tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
-    
     for rule in ruleDictionary:
         for namingConvention in equivalenceTranslator:
             for equivalence in equivalenceTranslator[namingConvention]:
                 if all(element in rule for element in equivalence):
                     tupleNameComplianceMatrix[rule][namingConvention] +=1
-            
     #check if the reaction conditions each tuple satisfies are enough to get classified
     #as an specific named reaction type
     tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
@@ -204,14 +198,33 @@ def classifyReactions(reactions,molecules):
     config file
     '''
     reactionDefinition = loadConfigFiles()
+    equivalenceTranslator = {}
     #determines if two molecules have a relationship according to the naming convention section
     equivalenceTranslator = processNamingConventions(molecules,reactionDefinition['namingConvention'])
-    reactionClassification = getReactionClassification(reactionDefinition,reactions,equivalenceTranslator)
+    rawReactions = [parseReactions(x) for x in reactions]
+    reactionClassification = getReactionClassification(reactionDefinition,rawReactions,equivalenceTranslator)
     listOfEquivalences = []
     for element in equivalenceTranslator:
         listOfEquivalences.extend(equivalenceTranslator[element])
     return reactionClassification,listOfEquivalences
-    
+
+
+def reclassifyReactions(reactions,molecules,labelDictionary):
+    reactionDefinition = loadConfigFiles()
+
+    rawReactions = [parseReactions(x) for x in reactions]
+    #print labelDictionary
+    reactionDefinition = loadConfigFiles()
+    equivalenceTranslator = processNamingConventions(molecules,reactionDefinition['namingConvention'])
+    for reactionIndex in range(0,len(rawReactions)):
+        for reactantIndex in range(0,len(rawReactions[reactionIndex])):
+            tmp = []
+            for chemicalIndex in range(0,len(rawReactions[reactionIndex][reactantIndex])):
+                tmp.extend(list(labelDictionary[rawReactions[reactionIndex][reactantIndex][chemicalIndex]]))
+            rawReactions[reactionIndex][reactantIndex] = tmp
+    reactionClassification = getReactionClassification(reactionDefinition,rawReactions,equivalenceTranslator)
+    return reactionClassification           
+
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
     #BIOMD0000000272
@@ -224,5 +237,5 @@ if __name__ == "__main__":
     _,rules,_ = parser.getReactions()
     molecules,_,_ = parser.getSpecies(translator)
     #print rules    
-    print classifyReactions(rules)
+    #print classifyReactions(rules)
     analyzeNamingConventions(molecules)
