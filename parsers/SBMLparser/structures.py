@@ -12,15 +12,33 @@ class Species:
     def addMolecule(self,molecule):
         self.molecules.append(molecule)
         
+    def getMolecule(self,moleculeName):
+        for molecule in self.molecules:
+            if moleculeName == molecule.name:
+                return molecule
+        return None
     def getSize(self):
         return len(self.molecules)
+    
+    def contains(self,moleculeName):
+        for molecule in self.molecules:
+            if moleculeName == molecule.name:
+                return True
+        return False
         
-    def addChunk(self,tags,moleculesComponents):
+    def addChunk(self,tags,moleculesComponents,precursors):
         '''
         temporary transitional method
         '''
+        print moleculesComponents
         for (tag,components) in zip (tags,moleculesComponents):
-            tmp = Molecule(tag)
+            if self.contains(tag):
+                tmp = self.getMolecule(tag)
+            else:
+                tmp = Molecule(tag)
+                #for element in precursors:
+                #    if element.getMolecule(tag) != None:
+                #        tmp = element.getMolecule(tag)
             for component in components:
                 tmpCompo = Component(component[0][0])
                 for index in range(1,len(component[0])):
@@ -28,7 +46,8 @@ class Species:
                 if len(component) > 1:
                     tmpCompo.addBond(component[1])
                 tmp.addComponent(tmpCompo)
-            self.molecules.append(tmp)
+            if not self.contains(tag):
+                self.molecules.append(tmp)
     def __str__(self):
         return '.'.join([x.toString() for x in self.molecules])
         
@@ -40,6 +59,11 @@ class Molecule:
     def __init__(self,name):
         self.components = []
         self.name = name
+        
+    def addChunk(self,chunk):
+        component = Component(chunk[0][0][0][0])
+        component.addState(chunk[0][0][0][1])
+        self.addComponent(component)
         
     def addComponent(self,component):
         self.components.append(component)
