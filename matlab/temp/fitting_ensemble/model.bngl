@@ -41,10 +41,10 @@ end observables
 
 # ACTIONS
 generate_network({overwrite=>1})
-simulate_ssa({suffix=>'1',t_end=>0.2,n_steps=>10});
+simulate_ssa({suffix=>'1',t_end=>0.2,n_steps=>10,print_CDAT=>0});
 resetConcentrations();
-simulate_ssa({suffix=>'2',t_end=>0.2,n_steps=>10});
+simulate_ssa({suffix=>'2',t_end=>0.2,n_steps=>10,print_CDAT=>0});
 resetConcentrations();
-simulate_ssa({suffix=>'3',t_end=>0.2,n_steps=>10});
+simulate_ssa({suffix=>'3',t_end=>0.2,n_steps=>10,print_CDAT=>0});
 
 writeMfile_all()

@@ -3112,70 +3112,62 @@ int finish_print_concentrations_network(FILE* out) {
 	return (error);
 }
 
-FILE* init_print_group_concentrations_network(char* prefix, int append) {
+FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline) {
+
 	FILE* out;
 	Group* group;
-	int /*i,*/error = 0;
+	int error = 0;
 	char buf[1000];
-//	char* fmt = "%15s";
 	char* fmt = (char*)"%19s";
-	//char *mode= (append) ? "a" : "w";
 	char* mode;
 	if (append) mode = (char*)"a";
 	else mode = (char*)"w";
-
+/*
 	if (!n_groups_network()) {
 		out = NULL;
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
-
+*/
 	sprintf(buf, "%s.gdat", prefix);
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
 
 	/* Skip header if this file is a continuation */
 	if (append)	return (out);
 
 	/* Write group header  */
-//	fprintf(out, fmt, "#      time    ");
 	fprintf(out, "#");
 	fprintf(out, "%18s", "time");
 	for (group = network.spec_groups; group != NULL; group = group->next) {
 		fprintf(out, " ");
 		fprintf(out, fmt, group->name);
 	}
-	//for (int i = 0; i < network.var_parameters.size(); i++)
-	//fprintf(out, fmt, network.rates->elt[network.var_parameters[i]-1]->name);
-	fprintf(out, "\n");
+	if (!no_newline) fprintf(out, "\n"); // Yes, a double negative
 
 //	exit:
 	return (out);
 }
 
-int print_group_concentrations_network(FILE* out, double t) {
+int print_group_concentrations_network(FILE* out, double t, bool no_newline) {
+
 	int i, error = 0, n_species, offset, index;
 	Group* group;
 	double *X = NULL, conc, factor;
-//	const char *fmt = "%15.8e";
 	const char *fmt = "%19.12e";
 
 	if (!out) {
 		++error;
-//		goto exit;
 		if (X) FREE_VECTOR(X);
-		return (error);
+		return (error); // exit
 	}
-	if (!n_groups_network()){
-//		goto exit;
+/*	if (!n_groups_network()){
 		if (X) FREE_VECTOR(X);
-		return (error);
+		return (error); // exit
 	}
-
+*/
 	n_species = n_species_network();
 	X = ALLOC_VECTOR(n_species);
 	get_conc_network(X);
@@ -3192,10 +3184,7 @@ int print_group_concentrations_network(FILE* out, double t) {
 		fprintf(out, " ");
 		fprintf(out, fmt, conc);
 	}
-	// print variable parameters to the gdat file
-	//for (int i = 0; i < network.var_parameters.size(); i++)
-	//fprintf(out, fmt, network.rates->elt[network.var_parameters[i]-1]->val);
-	fprintf(out, "\n");
+	if (!no_newline) fprintf(out, "\n");
 	fflush(out);
 
 //	exit:
@@ -3203,54 +3192,42 @@ int print_group_concentrations_network(FILE* out, double t) {
 	return (error);
 }
 
-int finish_print_group_concentrations_network(FILE* out) {
-	int error = 0;
+int finish_print_group_concentrations_network(FILE* out, bool leave_open) {
 
+	int error = 0;
 	if (!out) {
 		++error;
-//		goto exit;
-		return (error);
+		return (error); // exit
 	}
-	fclose(out);
+	if (!leave_open) fclose(out);
 
 //	exit:
 	return (error);
 }
 
-FILE* init_print_function_values_network(char* prefix, int append){
-	FILE* out;
-	int error = 0;
-	char buf[1000];
-	char* mode;
-	if (append) mode = (char*)"a";
-	else mode = (char*)"w";
+int init_print_function_values_network(FILE* out){
 
-	sprintf(buf, "%s.fdat", prefix);
-	if (!(out = fopen(buf, mode))) {
+	int error = 0;
+	// Error check
+	if (!out) {
 		++error;
-		fprintf(stderr, "Couldn't open file %s.\n", buf);
-		return out;
+		return error;
 	}
 
-	// Skip header if this trajectory is a continuation
-	if (append)	return out;
-
 	// Write header
-	fprintf(out, "#");
-	fprintf(out, "%18s", "time");
+//	fprintf(out, "#");
+//	fprintf(out, "%18s", "time");
 	for (unsigned int i = 0; i < network.functions.size(); ++i) {
-//		fprintf(out, " %19d", i+1);
-//		fprintf(out, " %19s", ("F"+Util::toString((int)i+1)).c_str());
 		fprintf(out, " %19s", network.rates->elt[network.var_parameters[i]-network.rates->offset]->name);
 	}
 	fprintf(out, "\n");
 
-	return out;
+	return error;
 }
 
 int print_function_values_network(FILE* out, double t){
-	int error = 0;
 
+	int error = 0;
 	// Error check
 	if (!out) {
 		++error;
@@ -3269,9 +3246,8 @@ int print_function_values_network(FILE* out, double t){
 	}
 	exit(1);
 ////*/
-	fprintf(out, "%19.12e", t);
+//	fprintf(out, "%19.12e", t);
 	for (unsigned int i = 0; i < network.functions.size(); i++) {
-//		fprintf(out, " %19.12e", network.functions[i].Eval());
 		fprintf(out, " %19.12e", network.rates->elt[network.var_parameters[i]-network.rates->offset]->val);
 	}
 	fprintf(out, "\n");
@@ -3281,8 +3257,8 @@ int print_function_values_network(FILE* out, double t){
 }
 
 int finish_print_function_values_network(FILE* out){
-	int error = 0;
 
+	int error = 0;
 	if (!out) {
 		++error;
 		return error;
@@ -3293,14 +3269,13 @@ int finish_print_function_values_network(FILE* out){
 }
 
 double* get_group_concentrations_network() {
-	int i, /*error=0,*/n_species, n_groups, offset, index;
+	int i, n_species, n_groups, offset, index;
 	Group* group;
 	double *X = NULL, *gconc = NULL, *gc, conc, factor;
 
 	if (!(n_groups = n_groups_network())){
-//		goto exit;
 		if (X) FREE_VECTOR(X);
-		return (gconc);
+		return (gconc); // exit
 	}
 
 	gconc = ALLOC_VECTOR(n_groups);
@@ -3330,7 +3305,6 @@ FILE* init_print_species_stats(char* prefix, int append) {
 	FILE* out;
 	int error = 0;
 	char buf[1000];
-	//char *mode = (append) ? "a" : "w";
 	char* mode;
 	if (append)
 		mode = (char*)"a";
@@ -3341,14 +3315,12 @@ FILE* init_print_species_stats(char* prefix, int append) {
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
 
 	/* Skip header if this trajectory is a continuation */
 	if (append){
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
 
 	/* Write header  */
@@ -3398,8 +3370,8 @@ int finish_print_species_stats(FILE* out) {
 
 FILE* init_print_flux_network(char* prefix) {
 	FILE* out;
-	//	Group* group;
-	int /*i,*/error = 0;
+//	Group* group;
+	int error = 0;
 	char buf[1000];
 
 	sprintf(buf, "%s.fdat", prefix);

@@ -587,7 +587,8 @@ void Network3::init_PLA(string config, bool verbose){
 }
 
 pair<double,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
-		double stepInterval, char* prefix, bool print_cdat, bool print_save_net, bool print_end_net, bool verbose){
+		double stepInterval, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
+		bool additional_pla_output, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -602,13 +603,15 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		cout << "Error in Network3::run_PLA(): 'maxSteps' cannot be negative (" << maxSteps << "). Exiting."<< endl;
 	}
 
+	// Output files
+	string outpre(prefix);
+	bool print_classif = additional_pla_output;
+	// ...
+
 	// Species file (must exist)
 	FILE* cdat = NULL;
-	string cFile(prefix);
-	cFile += ".cdat";
-//	cout << cFile;
+	string cFile = outpre + ".cdat";
 	if ((cdat = fopen(cFile.c_str(),"r"))){
-//		cout << " exists." << endl;
 		fclose(cdat);
 		cdat = fopen(cFile.c_str(),"a");
 	}
@@ -616,34 +619,43 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		cout << "Error in Network3::run_PLA(): Concentrations file \"" << cFile << "\" doesn't exist. Exiting." << endl;
 		exit(1);
 	}
-	//
+
 	// Observables file (optional)
 	FILE* gdat = NULL;
-	string gFile(prefix);
-	gFile += ".gdat";
-//	cout << gFile;
+	string gFile = outpre + ".gdat";
 	if ((gdat = fopen(gFile.c_str(),"r"))){
-//		cout << " exists." << endl;
 		fclose(gdat);
 		gdat = fopen(gFile.c_str(),"a");
 	}
 	else{
 //		cout << "Warning: Groups file \"" << gFile << "\" doesn't exist." << endl;
 	}
-	//
+
 	// Functions file (optional)
-	FILE* fdat = NULL;
-	string fFile(prefix);
-	fFile += ".fdat";
-//	cout << fFile;
+/*	FILE* fdat = NULL;
+	string fFile = outpre + ".fdat";
 	if ((fdat = fopen(fFile.c_str(),"r"))){
-//		cout << " exists." << endl;
 		fclose(fdat);
 		fdat = fopen(fFile.c_str(),"a");
 	}
 	else{
 //		cout << "Warning: Functions file \"" << fFile << "\" doesn't exist." << endl;
 	}
+*/
+	// PLA-specific output files
+	FILE* classif = NULL;
+	if (print_classif){
+		if ((classif = fopen((outpre+"_classif.pla").c_str(),"r"))){
+			fclose(classif);
+			classif = fopen((outpre+"_classif.pla").c_str(),"a");
+		}
+		else{
+			cout << "Error in Network3::run_PLA(): 'print_classif' flag set but classifications file \""
+				 << (outpre+"_classif.pla") << "\" doesn't exist. Exiting." << endl;
+			exit(1);
+		}
+	}
+	// ...
 
 	// Identify observables involved in functions
 	vector<unsigned int> funcObs;
@@ -711,16 +723,14 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 			for (unsigned int i=0;i < OBSERVABLE.size();i++){
 				OBSERVABLE[i]->second = OBSERVABLE[i]->first->getValue();
 			}
-
 			// Update all functions
 			for (unsigned int i=0;i < FUNCTION.size();i++){
 				FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 			}
-
 			// Output to file
 			if (print_cdat) Network3::print_species_concentrations(cdat,time);
-			if (gdat) Network3::print_observable_concentrations(gdat,time);
-			if (fdat) Network3::print_function_values(fdat,time);
+			if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
+			if (print_func) Network3::print_function_values(gdat,time);
 			if (print_save_net){ // Write current system state to .net file
 				// Collect species populations and update network concentrations vector
 				double* pops = new double[SPECIES.size()];
@@ -738,7 +748,14 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 				print_net_message = " Wrote NET file to " + (string)buf;
 //				fprintf(stdout, " Wrote NET file to %s", buf);
 			}
-
+			if (print_classif){
+				fprintf(classif,"%19.12e",time);
+				for (unsigned int v=0;v < PLA_SIM->classif.size();v++){
+					fprintf(classif, " %10d", PLA_SIM->classif[v]);
+				}
+				fprintf(classif,"\n");
+				fflush(classif);
+			}
 			// Output to stdout
 			if (verbose){
 				cout << "\t" << fixed << setprecision(6) << time << "\t" << setprecision(0) << step;
@@ -750,7 +767,6 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 				}
 				cout << endl;
 			}
-
 			// Get next output time
 			if (time >= nextOutput) nextOutput += sampleTime;
 			if (outputCounter > stepInterval - network3::TOL) outputCounter = 0;
@@ -775,16 +791,14 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		for (unsigned int i=0;i < OBSERVABLE.size();i++){
 			OBSERVABLE[i]->second = OBSERVABLE[i]->first->getValue();
 		}
-
 		// Update all functions
 		for (unsigned int i=0;i < FUNCTION.size();i++){
 			FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 		}
-
 		// Output to file
 		if (print_cdat) Network3::print_species_concentrations(cdat,time);
-		if (gdat) Network3::print_observable_concentrations(gdat,time);
-		if (fdat) Network3::print_function_values(fdat,time);
+		if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
+		if (print_func) Network3::print_function_values(gdat,time);
 		string print_net_message;
 		if (print_save_net){ // Write current system state to .net file
 			// Collect species populations and update network concentrations vector
@@ -801,7 +815,14 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 			fclose(out);
 			print_net_message = " Wrote NET file to " + (string)buf;
 		}
-
+		if (print_classif){
+			fprintf(classif,"%19.12e",time);
+			for (unsigned int v=0;v < PLA_SIM->classif.size();v++){
+				fprintf(classif, " %10d", PLA_SIM->classif[v]);
+			}
+			fprintf(classif,"\n");
+			fflush(classif);
+		}
 		// Output to stdout
 		if (verbose){
 			cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
@@ -828,7 +849,8 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	// Close files
 	fclose(cdat);
 	if (gdat) fclose(gdat);
-	if (fdat) fclose(fdat);
+//	if (fdat) fclose(fdat);
+	if (classif) fclose(classif);
 
 	return pair<double,double>(step-startStep,time-tStart);
 }
@@ -952,7 +974,7 @@ void Network3::print_species_concentrations(FILE* out, double t){
 	fflush(out);
 }
 
-void Network3::print_observable_concentrations(FILE* out, double t){
+void Network3::print_observable_concentrations(FILE* out, double t, bool no_newline){
 	// Error check
 	if (!out){
 		cout << "Error in Network3::print_observable_concentrations(): 'out' file does not exist. Exiting." << endl;
@@ -965,7 +987,7 @@ void Network3::print_observable_concentrations(FILE* out, double t){
 		fprintf(out, " ");
 		fprintf(out, fmt, OBSERVABLE[i]->second);
 	}
-	fprintf(out,"\n");
+	if (!no_newline) fprintf(out,"\n"); // Yes, a double negative
 	fflush(out);
 }
 
@@ -977,7 +999,7 @@ void Network3::print_function_values(FILE* out, double t){
 	}
 	//
 	const char *fmt = "%19.12e";
-	fprintf(out, fmt, t);
+//	fprintf(out, fmt, t);
 	for (unsigned int i=0;i < FUNCTION.size();i++){
 		fprintf(out, " ");
 		fprintf(out, fmt, FUNCTION[i]->second);
