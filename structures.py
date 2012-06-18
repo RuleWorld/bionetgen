@@ -30,7 +30,7 @@ class Species:
         '''
         temporary transitional method
         '''
-        print moleculesComponents
+        print 'lllllllllllllllllllll',moleculesComponents
         for (tag,components) in zip (tags,moleculesComponents):
             if self.contains(tag):
                 tmp = self.getMolecule(tag)
@@ -40,7 +40,10 @@ class Species:
                 #    if element.getMolecule(tag) != None:
                 #        tmp = element.getMolecule(tag)
             for component in components:
+                if tmp.contains(component[0][0]):
+                    continue
                 tmpCompo = Component(component[0][0])
+                
                 for index in range(1,len(component[0])):
                     tmpCompo.addState(component[0][index])
                 if len(component) > 1:
@@ -77,7 +80,9 @@ class Molecule:
         component = self.getComponent(componentName)
         component.addBond(bondName)
         
-            
+    def contains(self,componentName):
+        return componentName in [x.name for x in self.components]
+        
     def __str__(self):
         return self.name + '(' + ','.join([str(x) for x in self.components]) + ')'
         
