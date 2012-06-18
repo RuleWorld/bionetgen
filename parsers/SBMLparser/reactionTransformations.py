@@ -66,6 +66,7 @@ def findIntersection(set1,set2,database):
     return intersections
     
 def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
+    print original
     #reaction = []
     for elements in original:
         #temp = []
@@ -75,7 +76,6 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
  #               species.append(translator[molecule])
  #           else:
                 tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator)
-                
                 if (tags,molecules) == (None,None):
                     tmp = st.Species()
                     tmp.addMolecule(st.Molecule(sbml_name))
@@ -97,7 +97,6 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                         species = translator[sbml_name]
 
                             
-                    print 'TAGS',tags,precursors
                     species.addChunk(tags,molecules,precursors)
                     translator[sbml_name] = species
                     if tags not in synthesisDatabase and tags not in rawDatabase:
@@ -151,10 +150,10 @@ def getIntersection(reactants,product,dictionary,rawDatabase,synthesisDatabase):
         d2.append((r2[0],rnd))
         extended1 = [dictionary[x][0] for x in extended1]
         extended1.sort()
-        synthesisDatabase[tuple(extended1)] = (d1,d2)
+        synthesisDatabase[tuple(extended1)] = (d2,d1)
         intersection = (tuple(extended1),)
         extended1 = extended2 = []
-        
+    print '"""',extended1,extended2,intersection
     return extended1,extended2,intersection
 
 def createIntersection(reactants,rawDatabase,dictionary):
@@ -162,7 +161,7 @@ def createIntersection(reactants,rawDatabase,dictionary):
     if there are no components in record that allow for two species to merge
     we will create those components instead
     '''
-    #print 'kakakakakaka',reactants[0],dictionary[reactants[0]]
+    print 'kakakakakaka',reactants[0],dictionary[reactants[0]],reactants[1]
     #label = dictionary[reactants[0]] if isinstance(dictionary[reactants[0],str) else reactants[0]
     if (reactants[0],) not in rawDatabase:
         rawDatabase[(reactants[0],)] = ([([reactants[1].lower()],)],)
@@ -177,6 +176,7 @@ def createIntersection(reactants,rawDatabase,dictionary):
         temp = rawDatabase[(reactants[1],)][0]
         temp.append(([reactants[0].lower()],))
         rawDatabase[(reactants[1],)] = (temp,)
+    print '##########',rawDatabase
         
 def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase,translator):
     """
@@ -191,24 +191,23 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
     product = dictionary[products[0]]
     #if the element is already in the synthesisDatabase
     if species in synthesisDatabase:
-        species2 = list(species)
-        species2.reverse()
-        species2 = tuple(species2)
-        return species2,synthesisDatabase[species]
-    
-    elif species in rawDatabase:
         
+        return species,synthesisDatabase[species]
+    
+    #elif species in rawDatabase:
         #for product in productArray:
-        if product in synthesisDatabase:
-            temp = [(x[0],) for x in synthesisDatabase[product][product.index(dictionary[species[0]][0])]]
-            return species,(temp,)
-        return species,rawDatabase[species]
+        #if product in synthesisDatabase:
+        #    temp = [(x[0],) for x in synthesisDatabase[product][product.index(dictionary[species[0]][0])]]
+        #    return species,(temp,)
+        #print '::::::::::',species,rawDatabase[species]
+        #return species,rawDatabase[species]
     #this means we are dealing with the basic components rather than the
     #synthetized product
     extended1,extended2,intersection = getIntersection(reactants,product,
                                                        dictionary,rawDatabase,
                                                       synthesisDatabase)
     if len(species) <2:
+        print ';;;;;;;;;;',species,rawDatabase[species]
         return species,rawDatabase[species]
     if (extended1,extended2,intersection) == (None,None,None):
         return None,None
@@ -228,7 +227,8 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
                                 constructed[species.index(realTag)].remove(temp)
                     if flag:
                         constructed[species.index(realTag)].append(tuple(member))
-    return list(species).reverse(),constructed
+    print '""""""',species,constructed
+    return list(species),constructed
 
 def creation(original,dictionary,rawDatabase,translator):
     """
@@ -326,6 +326,7 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                 species.addMolecule(molecule)
             if reactant not in translator:
                 translator[reactant] = species
+                print 'lalalalale',str(species)
         
     #if namingConvention[0] not in translator:
     #    species = st.Species()
