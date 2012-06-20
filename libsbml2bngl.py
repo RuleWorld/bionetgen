@@ -67,9 +67,10 @@ class SBML2BNGL:
             #print rawRules
             functionName = '%s%d()' % (functionTitle,index)
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator))
+            
             if len(rawRules[2]) >0:
                 parameters.append('%s %f' % (rawRules[2][0][0],rawRules[2][0][1]))
-            functions.append(writer.bnglFunction(rawRules[3],functionName))
+            functions.append(writer.bnglFunction(rawRules[3],functionName) )
             
         return parameters, rules,functions
             
@@ -155,14 +156,14 @@ def processDatabase():
             writer.finalText(param,molecules,species,observables,rules,functions,compartments,'output/' + nameStr + '.bngl')
             with open('output/' + nameStr + '.log', 'w') as f:
                 f.write(parser.writeLog(translator))
-            print database.labelDictionary
         except:
             print 'ERROR',sys.exc_info()[0] 
             continue
             
             
     #print rules
-         
+#14,18,56,19,49.87.88.107,109,111,120,139,140,145,151,153,171,175,182,202,205
+#230,253,255,256,268,269,288,313,332,333,334,335,336,362,396,397,399,406
 def main():
     
     parser = OptionParser()
@@ -176,7 +177,7 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000009.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000406.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
@@ -205,10 +206,10 @@ def main():
          
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,options.output)
 
-    print parser.writeLog(translator)
-    print database.labelDictionary
+    #print parser.writeLog(translator)
+    #print database.labelDictionary
     #print rawDatabase
     
 if __name__ == "__main__":
-    #processDatabase()
-    main()
+    processDatabase()
+    #main()
