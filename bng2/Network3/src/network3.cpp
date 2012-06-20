@@ -750,6 +750,7 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 			}
 			if (print_classif){
 				fprintf(classif,"%19.12e",time);
+				fprintf(classif," %19.19g",step);
 				for (unsigned int v=0;v < PLA_SIM->classif.size();v++){
 					fprintf(classif, " %10d", PLA_SIM->classif[v]);
 				}

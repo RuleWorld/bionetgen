@@ -528,6 +528,7 @@ int main(int argc, char *argv[]){
 				outfile = fopen(((string)outpre+"_classif.pla").c_str(),"w");
 				fprintf(outfile, "#");
 				fprintf(outfile, "%18s", "time");
+				fprintf(outfile, " %19s", "step");
 				for (unsigned int v=0;v < Network3::REACTION.size();v++){
 					fprintf(outfile," %10s",("R_"+Util::toString((int)v+1)).c_str());
 				}
