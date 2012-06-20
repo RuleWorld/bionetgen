@@ -30,7 +30,6 @@ class Species:
         '''
         temporary transitional method
         '''
-        print 'lllllllllllllllllllll',moleculesComponents
         for (tag,components) in zip (tags,moleculesComponents):
             if self.contains(tag):
                 tmp = self.getMolecule(tag)

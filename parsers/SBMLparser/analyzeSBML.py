@@ -21,6 +21,7 @@ the json config file for classyfying rules according to their reactants/products
 def parseReactions(reaction):
     species = Optional(Word(alphanums+"_") + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()"))
     rate = Word(alphanums + "()")
     grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
