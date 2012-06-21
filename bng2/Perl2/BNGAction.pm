@@ -651,6 +651,7 @@ sub simulate_nf
     (   # option name        NFsim flag       arguments?      default (used if user_args is 0)
         verbose         => { flag => "-v",    user_args => 0, default_arg => undef },
         complex         => { flag => "-cb",   user_args => 0, default_arg => undef },
+        cslf            => { flag => "-cslf", user_args => 0, default_arg => undef },
         notf            => { flag => "-notf", user_args => 0, default_arg => undef },
         print_functions => { flag => "-ogf",  user_args => 0, default_arg => undef },
         binary_output   => { flag => "-b",    user_args => 0, default_arg => undef },
