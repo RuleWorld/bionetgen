@@ -119,6 +119,50 @@ sub newRateLaw
             return ( undef, "RateLaw not terminated at $string_left" );
         }
     }
+    elsif ( $string_left =~ s/^FunctionProduct\(\s*// )
+    {
+        # Ratelaw is defined by a product of two local functions:
+        #  each local function in the product may depend on (at most) one reactant.
+
+        $string_left =~ s/^"([^"]+)"\s*,\s*//;
+        my $expr_string_1 = $1;
+
+        $string_left =~ s/^"([^"]+)"\s*\)\s*//;
+        my $expr_string_2 = $1;
+
+        # Read function 1
+        my $expr1 = Expression->new();
+        my $err = $expr1->readString( \$expr_string_1, $plist );
+        if ($err) { return '', $err }
+        # get name for ratelaw
+        my $name1 = $expr1->getName( $plist, "localFuncL", $force_fcn );
+        # retreive param with this name
+        ( my $param1, my $err ) = $plist->lookup( $name1 );
+
+        # Read function 2
+        my $expr2 = Expression->new();
+        my $err = $expr2->readString( \$expr_string_2, $plist );
+        if ($err) { return '', $err }
+        # get name for ratelaw
+        my $name2 = $expr2->getName( $plist, "localFuncR", $force_fcn );
+        # retreive param with this name
+        ( my $param2, my $err ) = $plist->lookup( $name2 );
+
+        # set ratelaw type
+        $rate_law_type = 'FunctionProduct';
+        # add both functions to the list of "constants"
+        push @rate_constants, ($name1, $name2);
+
+        #print STDERR "param1: ", $param1->Name, "\n";
+        #print STDERR "expr1:  ", $param1->Expr->toString(), "\n";
+        #print STDERR "func1:  ", $param1->Ref->Name, "\n";
+        #print STDERR "args1:  ", join( ", ", @{$param1->Ref->Args} ), "\n";
+
+        #print STDERR "param2: ", $param2->Name, "\n";
+        #print STDERR "expr2:  ", $param2->Expr->toString(), "\n";
+        #print STDERR "func2:  ", $param2->Ref->Name, "\n";
+        #print STDERR "args2:  ", join( ", ", @{$param2->Ref->Args} ), "\n";
+    }
     elsif ( $string_left =~ /\S+/ )
     {
         # Handle expression for rate constant of elementary reaction
@@ -155,8 +199,7 @@ sub newRateLaw
         push @rate_constants, $name;
     }
     else
-    {
-        # REMOVED IMPLICIT RATELAWS!!  --Justin
+    {   # REMOVED IMPLICIT RATELAWS!!  --Justin
         return ( undef, "No RateLaw supplied for Reaction Rule." );
     }
 
@@ -286,7 +329,9 @@ sub newRateLawNet
             {   # this is a function
                 $rate_law_type = "Function";
             }
-            
+            # TODO: handling for type "FunctionProduct"
+    
+
             # put name of rate parameter (or fcn) on the constants array
             push @rate_constants, $name;
         }
@@ -361,7 +406,8 @@ sub equivalent
             return 0  unless ( $rl1->Constants->[$i] eq $rl2->Constants->[$i] );
         }
     }
-    
+    # TODO: handling for FunctionProduct    
+
     # no difference found, the ratelaws are equivalent
     return 1;
 }
@@ -660,6 +706,12 @@ sub toXML
         return ( $rl->toXMLFunction( $indent, $rr_id, $plist, $rrefs ) );
     }
 
+    # separate handling for function product ratelaws
+    if ( $rl->Type eq "FunctionProduct" )
+    {
+        return ( $rl->toXMLFunctionProduct( $indent, $rr_id, $plist, $rrefs ) );
+    }
+
     # handle other ratelaw types
     
     # define ratelaw id
@@ -781,6 +833,84 @@ sub toXMLFunction
 ###
 
 
+sub toXMLFunctionProduct
+{
+    my $rl      = shift @_;
+    my $indent  = shift @_;
+    my $rr_id   = @_ ? shift @_ : '';       # rxn rule id
+    my $plist   = @_ ? shift @_ : undef;    # parameter list
+    my $rrefs   = @_ ? shift @_ : undef;    # rxnrule reference hash
+
+    # define ratelaw id
+    my $id;
+    if ( $rr_id ) 
+    {   $id = $rr_id . "_RateLaw";   }
+    else
+    {   $id = "RateLaw" . $RateLaw::n_RateLaw;   }
+
+
+    # Write ratelaw header and attributes:
+    my $string = $indent . "<RateLaw";
+    #  id
+    $string .= " id=\"" . $id . "\"";
+    #  type
+    $string .= " type=\"" . $rl->Type . "\"";
+    #  references
+    $string .= " name1=\"" . $rl->Constants->[0] . "\"";
+    $string .= " name2=\"" . $rl->Constants->[1] . "\"";
+    #  total rate attribute
+    $string .= " totalrate=\"" . $rl->TotalRate . "\"";
+    # end of attributes
+    $string .= ">\n";
+
+    # Write References
+    my $indent2 = $indent.'  ';
+    my ( $param1, $err ) = $plist->lookup( $rl->Constants->[0] );
+    my $fun1 = $param1->Ref;
+    $string .= $indent2 . "<ListOfArguments1>\n";
+    foreach my $arg ( @{$fun1->Args} )
+    {
+        my $indent3 = $indent2.'  ';
+        my $ptr = $rrefs->{$arg};
+        my $oid = RxnRule::pointer_to_ID( $rr_id . "_R", $ptr );
+        $string .= $indent3 . "<Argument";
+        $string .= " id=\"" . $arg . "\"";
+        $string .= " type=\"ObjectReference\"";
+        $string .= " value=\"" . $oid . "\"";
+        $string .= "/>\n";
+    }
+    $string .= $indent2 . "</ListOfArguments1>\n";
+
+    # Write References
+    my $indent2 = $indent.'  ';
+    my ( $param2, $err ) = $plist->lookup( $rl->Constants->[1] );
+    my $fun2 = $param2->Ref;
+    $string .= $indent2 . "<ListOfArguments2>\n";
+    foreach my $arg ( @{$fun2->Args} )
+    {
+        my $indent3 = $indent2.'  ';
+        my $ptr = $rrefs->{$arg};
+        my $oid = RxnRule::pointer_to_ID( $rr_id . "_R", $ptr );
+        $string .= $indent3 . "<Argument";
+        $string .= " id=\"" . $arg . "\"";
+        $string .= " type=\"ObjectReference\"";
+        $string .= " value=\"" . $oid . "\"";
+        $string .= "/>\n";
+    }
+    $string .= $indent2 . "</ListOfArguments2>\n";
+
+    # Termination
+    $string .= $indent . "</RateLaw>\n";
+
+    return ($string);
+}
+
+
+###
+###
+###
+
+
 # WARNING: Checking here is minimal
 sub validate
 {
@@ -856,6 +986,10 @@ sub validate
         }
     }
     elsif ( $rl->Type eq 'Function' )
+    {
+        # Validate local arguments here ?
+    }
+    elsif ( $rl->Type eq 'FunctionProduct' )
     {
         # Validate local arguments here ?
     }

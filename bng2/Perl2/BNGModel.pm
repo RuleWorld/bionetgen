@@ -948,7 +948,7 @@ sub readNetwork
             # if we're back at level 0, perform any required actions
             if ($level == 0)
             {
-                  if ( $model->Params->{write_xml} )
+                if ( $model->Params->{write_xml} )
                 {  $model->writeXML();   }
 
                 if ( $model->Params->{generate_network} )
