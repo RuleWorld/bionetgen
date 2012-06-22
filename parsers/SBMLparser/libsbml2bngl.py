@@ -53,7 +53,8 @@ class SBML2BNGL:
         compartments = []
         for index,compartment in enumerate(self.model.getListOfCompartments()):
             compartmentInfo = self.__getRawCompartments(compartment)
-            compartments.append("%s  %d  %s" % (compartmentInfo[0],compartmentInfo[1],compartmentInfo[2]))
+            name = 'cell' if compartmentInfo[0] == '' else compartmentInfo[0]
+            compartments.append("%s  %d  %s" % (name,compartmentInfo[1],compartmentInfo[2]))
         return compartments
         
             
@@ -70,8 +71,9 @@ class SBML2BNGL:
             
             if len(rawRules[2]) >0:
                 parameters.append('%s %f' % (rawRules[2][0][0],rawRules[2][0][1]))
-            functions.append(writer.bnglFunction(rawRules[3],functionName) )
-            
+            compartmentList = ['cell']
+            compartmentList.extend([x.getName() for x in self.model.getListOfCompartments() if x.getName() is not ''])
+            functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList) )
         return parameters, rules,functions
             
     def getParameters(self):
@@ -87,7 +89,7 @@ class SBML2BNGL:
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
             
-            if (rawSpecies[4] != ''):
+            if (rawSpecies[4] != ''):   
                 self.tags[rawSpecies[0]] = '@%s:' % (rawSpecies[4])
             if(rawSpecies[0] in translator):
                 if translator[rawSpecies[0]].getSize()==1:
@@ -177,7 +179,7 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000406.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000033.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
@@ -195,9 +197,11 @@ def main():
     
     
     molecules,species,observables = parser.getSpecies(translator)
+    #print species
     #print molecules,species,observables
-    param,rules,functions = parser.getReactions(translator)
     compartments = parser.getCompartments()
+    param,rules,functions = parser.getReactions(translator)
+    
     
     
     
@@ -211,5 +215,5 @@ def main():
     #print rawDatabase
     
 if __name__ == "__main__":
-    processDatabase()
-    #main()
+    #processDatabase()
+    main()
