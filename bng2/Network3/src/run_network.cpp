@@ -122,6 +122,8 @@ int main(int argc, char *argv[]){
     int SOLVER = DENSE;
     int outtime = -1;
     //
+    string stop_string = "0";
+    mu::Parser stop_condition;
     double maxSteps = INFINITY;//LONG_MAX;//-1;
     double stepInterval = INFINITY;//LONG_MAX;// -1;
     string pla_config;// = "fEuler|sb|pre:neg|0.03,3,100,0.5"; // Default
@@ -243,7 +245,6 @@ int main(int argc, char *argv[]){
     		iarg++;
     		break;
     	case '-': // Process long options
-    		//
 //			cout << argv[iarg-1] << " ";
 			string long_opt(argv[iarg-1]);
 			long_opt = long_opt.substr(2); // remove '--'
@@ -265,6 +266,10 @@ int main(int argc, char *argv[]){
 				if (Util::convertToInt(argv[iarg]) > 0){
 					additional_pla_output = true;
 				}
+			}
+			else if (long_opt == "stop_cond"){
+				stop_string = (string)argv[iarg];
+//				cout << stop_string << endl;
 			}
 			//...
 			else{
@@ -394,6 +399,30 @@ int main(int argc, char *argv[]){
 				param_index_map, observ_index_map, func_observ_depend, func_param_depend, is_func_map_temp);
     cout << "Read " << functions.size() << " function(s)" << endl;
 
+    // Create stop condition
+	process_function_names(stop_string); // Remove parentheses from variable names
+	vector<string> variable_names = find_variables(stop_string); // Extract variable names
+	size_t found;
+	while ((found = stop_string.find("&&")) != string::npos) stop_string.replace(found,2,"and"); // Replace && with 'and'
+	while ((found = stop_string.find("||")) != string::npos) stop_string.replace(found,2,"or");  // Replace || with 'or'
+	for (unsigned int i=0;i < variable_names.size();i++){
+		// Error check
+		if (param_map.find(variable_names[i]) == param_map.end()) {
+			cout << "Error in parsing stop condition: \"" << stop_string << "\". Could not find variable "
+				 << variable_names[i] << ". Exiting." << endl;
+			exit(1);
+		}
+		// Define variable
+		else {
+//			cout << variable_names[i] << " = " << *param_map[variable_names[i]] << endl;
+			stop_condition.DefineVar(_T(variable_names[i]),param_map[variable_names[i]]);
+		}
+	}
+	stop_condition.SetExpr(stop_string);
+//	cout << stop_condition.GetExpr() << endl;
+//	cout << stop_condition.Eval() << endl;
+//	exit(1);
+
     /* Read reactions */
 	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
@@ -520,6 +549,57 @@ int main(int argc, char *argv[]){
 		// Initialize Network3
 		Network3::init_Network3(false);
 
+		// Stop condition
+		mu::Parser pla_stop_condition;
+		map<string,double*> var = stop_condition.GetUsedVar();
+		// Search observables
+		for (unsigned int j=0;j < Network3::OBSERVABLE.size();j++){
+			if (var.find(Network3::OBSERVABLE[j]->first->name) != var.end()){
+				cout << "\t" << Network3::OBSERVABLE[j]->first->name << " = " << Network3::OBSERVABLE[j]->second << endl;
+				pla_stop_condition.DefineVar(Network3::OBSERVABLE[j]->first->name,&Network3::OBSERVABLE[j]->second);
+			}
+		}
+		// Search parameters
+		for (Elt* elt=network.rates->list;elt != NULL;elt=elt->next){
+			if (var.find(elt->name) != var.end()){
+//				cout << "\t" << "rates[" << elt->index << "] = " << elt->name << " (";
+				bool func = false;
+				// Is it a function?
+				for (unsigned int j=0;j < network.var_parameters.size() && !func;j++){
+					if (elt->index == network.var_parameters[j]){
+						// YES
+//						cout << "function[" << j <<"] = " << network.functions[j].GetExpr() << ")" << endl;
+						func = true;
+						bool found = false;
+						// Which one?
+						for (unsigned int k=0;k < Network3::FUNCTION.size() && !found;k++){
+							if (network.functions[j].GetExpr() == Network3::FUNCTION[k]->first->GetExpr()){
+								found = true;
+								pla_stop_condition.DefineVar(elt->name,&Network3::FUNCTION[k]->second);
+							}
+						}
+						// Error check
+						if (!found){
+							cout << "Error constructing PLA stop condition in run_network: "
+								 << "Couldn't find function " << network.functions[j].GetExpr()
+								 << ". Exiting." << endl;
+							exit(1);
+						}
+					}
+				}
+				// NO, it's a constant
+				if (!func){
+//					cout << "constant)" << endl;
+					pla_stop_condition.DefineConst(elt->name,elt->val);
+				}
+			}
+		}
+		// Set expression
+		string expr = stop_condition.GetExpr();
+		expr.erase(expr.size()-1); // Trim last character (muParser adds a null to the end)
+		pla_stop_condition.SetExpr(expr);
+//		cout << pla_stop_condition.GetExpr() << "= " << pla_stop_condition.Eval() << endl;
+
 		// PLA-specific output
 		if (additional_pla_output){
 			cout << "Activating classifications output (to _classif.pla)" << endl;
@@ -565,8 +645,9 @@ int main(int argc, char *argv[]){
 //					cout << "(step: " << step << ")" << endl;
 //					cout << "(" << stepsLeft << " steps left until next output)" << endl;
 					nSteps_Tau = Network3::run_PLA(t,sample_times[i],INFINITY,step,min(stepsLeft,maxSteps),
-									 			   stepInterval,outpre,print_cdat,print_func,print_save_net,
-									 			   print_end_net,additional_pla_output,verbose);
+									 			   stepInterval,pla_stop_condition,outpre,print_cdat,print_func,
+									 			   print_save_net,print_end_net,additional_pla_output,
+									 			   verbose);
 					step += nSteps_Tau.first;
 					t += nSteps_Tau.second;
 					//
@@ -585,7 +666,7 @@ int main(int argc, char *argv[]){
 //					cout << "(maxSteps: " << maxSteps << ")" << endl;
 //					cout << "(step: " << step << ")" << endl;
 					nSteps_Tau = Network3::run_PLA(t,sample_times[i],INFINITY,step,maxSteps,
-												   stepInterval,outpre,print_cdat,print_func,
+												   stepInterval,pla_stop_condition,outpre,print_cdat,print_func,
 												   print_save_net,print_end_net,additional_pla_output,
 												   verbose);
 					step += nSteps_Tau.first;
@@ -598,7 +679,7 @@ int main(int argc, char *argv[]){
 		}
 		else{ // Sample interval
 			nSteps_Tau = Network3::run_PLA(t_start,t_end,sample_time,step,maxSteps,
-										   stepInterval,outpre,print_cdat,print_func,
+										   stepInterval,pla_stop_condition,outpre,print_cdat,print_func,
 										   print_save_net,print_end_net,additional_pla_output,
 										   verbose);
 			step += nSteps_Tau.first;
@@ -628,12 +709,12 @@ int main(int argc, char *argv[]){
 		double n_steps = 0, n_steps_last = 0;//, n_rate_calls_last = 0, n_deriv_calls_last = 0;
 		//
 		double stepLimit = min(stepInterval,maxSteps);
-		bool maxStepsReached = false;
+		bool forceQuit = false;
 		double t_out = t_start;
 		//
 		bool first_step = true;
 		int n_old = 0;
-		for (n = 1; n <= n_sample && !maxStepsReached; ++n){
+		for (n = 1; n <= n_sample && !forceQuit; ++n){
 			if (n != n_old){
 				if (sample_times) t_out = sample_times[n];
 				else t_out += sample_time;
@@ -646,8 +727,19 @@ int main(int argc, char *argv[]){
 				switch (propagator) {
 				case SSA:
 					fprintf(stdout, "Stochastic simulation using direct Gillespie algorithm\n");
-					if (verbose) fprintf(stdout, "%15s %8s %12s %7s %7s %10s %7s\n", "time", "n_steps", "n_rate_calls",
-												 "% spec", "% rxn", "n_species", "n_rxns");
+					if (verbose){
+						fprintf(stdout, "%15s %8s %12s %7s %7s %10s %7s\n", "time", "n_steps", "n_rate_calls",
+										 "% spec", "% rxn", "n_species", "n_rxns");
+						fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d\n",
+								t,
+								gillespie_n_steps() - n_steps_last,
+								n_rate_calls_network() - (int)n_rate_calls_last,
+								100 * gillespie_frac_species_active(),
+								100 * gillespie_frac_rxns_active(),
+								n_species_network(),
+								n_rxns_network()
+								);
+					}
 					break;
 				case CVODE:
 					fprintf(stdout, "Propagating with cvode");
@@ -655,18 +747,34 @@ int main(int argc, char *argv[]){
 					else if (SOLVER == GMRES_J) fprintf(stdout, " using GMRES with specified Jacobian multiply\n");
 					else if (SOLVER == DENSE_J) fprintf(stdout, " using dense LU with specified Jacobian\n");
 					else fprintf(stdout, " using dense LU\n");
-					if (verbose) fprintf(stdout, "%15s %16s %13s\n", "time", "n_steps", "n_deriv_calls");
+					if (verbose){
+						fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+						fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
+					}
 					break;
 				case EULER:
 					fprintf(stdout,"Propagating with Euler method using fixed time step of %.15g\n",rtol);
-					if (verbose) fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+					if (verbose){
+						fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+						fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
+					}
 					break;
 				case RKCS:
 					fprintf(stdout, "Propagating with rkcs\n");
-					if (verbose) fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+					if (verbose){
+						fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+						fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
+					}
 					break;
 				}
 				if (verbose) fflush(stdout);
+
+				// Initial check of stopping condition before starting propagation
+				if (stop_condition.Eval()){
+					cout << "Stopping condition " << stop_condition.GetExpr() << "already met prior "
+						 <<	"to simulation. Quitting." << endl;
+					break;
+				}
 			}
 
 			/* Do propagation */
@@ -682,7 +790,7 @@ int main(int argc, char *argv[]){
 					// Continue
 					stepLimit = min(stepLimit+stepInterval,maxSteps);
 				}
-				error = gillespie_direct_network(&t, dt, 0x0, 0x0, stepLimit-network3::TOL);
+				error = gillespie_direct_network(&t, dt, 0x0, 0x0, stepLimit-network3::TOL,stop_condition);
 				if (verbose){
 //					fprintf(stdout, "%15.6f %8ld %12d %7.3f %7.3f %10d %7d",
 					fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d",
@@ -696,8 +804,17 @@ int main(int argc, char *argv[]){
 							);
 				}
 				n_steps_last = gillespie_n_steps();
-				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (gillespie_n_steps() >= maxSteps - network3::TOL) maxStepsReached = true;
+				if (error == -1) n -= 1; // stepLimit reached in propagation
+				if (error == -2){ // Stop condition satisfied
+					forceQuit = true;
+					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
+						 <<	"Gillespie simulation.";
+				}
+				if (gillespie_n_steps() >= maxSteps - network3::TOL){ // maxSteps limit reached
+					forceQuit = true;
+					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
+						 << "Gillespie simulation.";
+				}
 				break;
 			case CVODE:
 				if (n_steps >= stepLimit - network3::TOL){
@@ -710,11 +827,20 @@ int main(int argc, char *argv[]){
 					// Continue
 					stepLimit = min(stepLimit+stepInterval,maxSteps);
 				}
-				error = propagate_cvode_network(&t, dt, &n_steps, &rtol, &atol, SOLVER, stepLimit-network3::TOL);
+				error = propagate_cvode_network(&t, dt, &n_steps, &rtol, &atol, SOLVER, stepLimit-network3::TOL,stop_condition);
 //				if (verbose) fprintf(stdout, "%15.2f %13ld %13d", t, n_steps, n_deriv_calls_network());
 				if (verbose) fprintf(stdout, "%15.2f %13.0f %13d", t, n_steps, n_deriv_calls_network());
-				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (n_steps >= maxSteps - network3::TOL) maxStepsReached = true;
+				if (error == -1) n -= 1; // stepLimit reached in propagation
+				if (error == -2){ // Stop condition satisfied
+					forceQuit = true;
+					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
+						 <<	"CVODE simulation.";
+				}
+				if (n_steps >= maxSteps - network3::TOL){ // maxSteps limit reached
+					forceQuit = true;
+					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
+						 << "CVODE simulation.";
+				}
 				break;
 			case EULER:
 				if (n_steps >= stepLimit - network3::TOL){
@@ -727,11 +853,20 @@ int main(int argc, char *argv[]){
 					// Continue
 					stepLimit = min(stepLimit+stepInterval,maxSteps);
 				}
-				error = propagate_euler_network(&t, dt, &n_steps, rtol, stepLimit-network3::TOL);
+				error = propagate_euler_network(&t, dt, &n_steps, rtol, stepLimit-network3::TOL, stop_condition);
 //				if (verbose) fprintf(stdout, "%15.2f %13ld %13d", t, n_steps, n_deriv_calls_network());
 				if (verbose) fprintf(stdout, "%15.2f %13.0f %13d", t, n_steps, n_deriv_calls_network());
-				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (n_steps >= maxSteps - network3::TOL) maxStepsReached = true;
+				if (error == -1) n -= 1; // stepLimit reached in propagation
+				if (error == -2){ // Stop condition satisfied
+					forceQuit = true;
+					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
+						 <<	"EULER simulation.";
+				}
+				if (n_steps >= maxSteps - network3::TOL){ // maxSteps limit reached
+					forceQuit = true;
+					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
+						 << "EULER simulation.";
+				}
 				break;
 			case RKCS:
 				if (n_steps >= stepLimit - network3::TOL){
@@ -744,16 +879,25 @@ int main(int argc, char *argv[]){
 					// Continue
 					stepLimit = min(stepLimit+stepInterval,maxSteps);
 				}
-				error = propagate_rkcs_network(&t, dt, &n_steps, rtol, stepLimit-network3::TOL);
+				error = propagate_rkcs_network(&t, dt, &n_steps, rtol, stepLimit-network3::TOL, stop_condition);
 //				if (verbose) fprintf(stdout, "%15.2f %13ld %13d", t, n_steps, n_deriv_calls_network());
 				if (verbose) fprintf(stdout, "%15.2f %13.0f %13d", t, n_steps, n_deriv_calls_network());
-				if (error == 1) n -= 1; // stepLimit reached in propagation
-				if (n_steps >= maxSteps - network3::TOL) maxStepsReached = true;
+				if (error == -1) n -= 1; // stepLimit reached in propagation
+				if (error == -2){ // Stop condition satisfied
+					forceQuit = true;
+					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
+						 <<	"RKCS simulation.";
+				}
+				if (n_steps >= maxSteps - network3::TOL){ // maxSteps limit reached
+					forceQuit = true;
+					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
+						 << "RKCS simulation.";
+				}
 				break;
 			}
 			n_rate_calls_last = n_rate_calls_network();
 			n_deriv_calls_last = n_deriv_calls_network();
-			if (error > 1) { // error = 1 means stepLimit was reached in propagation (not really an error)
+			if (error > 0) { // error codes < 0 (e.g., stepLimit reached = -1) are not really errors
 				fprintf(stderr, "Stopping due to error in integration.\n");
 				exit(1);
 			} // End propagation
@@ -809,7 +953,7 @@ int main(int argc, char *argv[]){
 		} // end for
 	} // end else
 
-	// Final print outs
+	// Final printouts
 	if (!print_cdat && propagator != PLA){ // Even if .cdat is suppressed, must print the last step (PLA handles this internally)
 		print_concentrations_network(conc_file, t);
 	}

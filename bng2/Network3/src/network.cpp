@@ -291,37 +291,37 @@ map<string, int> init_observ_index_map(Group*& spec_groups) {
 
 // Returns true if the string matches a built in function keyword in MuParser.
 // For complete list, go to http://muparser.sourceforge.net/mup_features.html#idDef2
-bool isMuParserFunction(string curr_string) {
-	if (curr_string == "sin"	||
-		curr_string == "cos" 	||
-		curr_string == "tan" 	||
-		curr_string == "asin" 	||
-		curr_string == "acos" 	||
-		curr_string == "atan" 	||
-		curr_string == "sinh" 	||
-		curr_string == "cosh" 	||
-		curr_string == "tanh" 	||
-		curr_string == "asinh" 	||
-		curr_string == "acosh" 	||
-		curr_string == "atanh" 	||
-		curr_string == "log2" 	||
-		curr_string == "log10" 	||
-		curr_string == "log" 	||
-		curr_string == "ln" 	||
-		curr_string == "exp" 	||
-		curr_string == "sqrt" 	||
-		curr_string == "sign" 	||
-		curr_string == "rint" 	||
-		curr_string == "abs" 	||
-		curr_string == "if" 	||
-		curr_string == "min" 	||
-		curr_string == "max" 	||
-		curr_string == "sum" 	||
-		curr_string == "e" 		||
-		curr_string == "avg" 	||
-		curr_string == "or" 	||
-		curr_string == "and" 	||
-		curr_string == "xor"
+bool isMuParserFunction(string in_string) {
+	if (in_string == "sin"   ||
+		in_string == "cos"   ||
+		in_string == "tan"   ||
+		in_string == "asin"  ||
+		in_string == "acos"  ||
+		in_string == "atan"  ||
+		in_string == "sinh"  ||
+		in_string == "cosh"  ||
+		in_string == "tanh"  ||
+		in_string == "asinh" ||
+		in_string == "acosh" ||
+		in_string == "atanh" ||
+		in_string == "log2"  ||
+		in_string == "log10" ||
+		in_string == "log"   ||
+		in_string == "ln"    ||
+		in_string == "exp"   ||
+		in_string == "sqrt"  ||
+		in_string == "sign"  ||
+		in_string == "rint"  ||
+		in_string == "abs"   ||
+		in_string == "if"    ||
+		in_string == "min"   ||
+		in_string == "max"   ||
+		in_string == "sum"   ||
+		in_string == "e"     ||
+		in_string == "avg"   ||
+		in_string == "or"    ||
+		in_string == "and"   ||
+		in_string == "xor"
 		)
 		return true;
 	else
@@ -2811,7 +2811,7 @@ static int cvode_derivs(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
 //int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER,
 //		double maxStep){
 int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* rtol, double* atol, int SOLVER,
-		double maxStep){
+		double maxStep, mu::Parser& stop_condition){
 	int error = 0;
 	double t_end;
 	static int n_species;
@@ -2856,13 +2856,15 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 				cout << "ERROR: Jacobian no longer supported for GMRES solver" << endl;
 				exit(1);
 			}
-		} else if (SOLVER == DENSE || SOLVER == DENSE_J) {
+		}
+		else if (SOLVER == DENSE || SOLVER == DENSE_J) {
 			CVDense(cvode_mem, n_species);
 			if (SOLVER == DENSE_J) {
 				cout << "ERROR: Jacobian no longer supported for dense solver" << endl;
 				exit(1);
 			}
-		} else {
+		}
+		else {
 			fprintf(stderr, "ERROR: Invalid CVODE solver.\n");
 			return (1);
 		}
@@ -2877,6 +2879,7 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 	t_end = (*t) + delta_t;
 	while (1){
 		long n_old, n_new;
+		//
 		// Integrate one step at a time
 		if ( (maxStep - *n_steps) < (double)cvode_maxnumsteps ){
 			CVodeSetStopTime(cvode_mem, t_end);
@@ -2894,9 +2897,11 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 			CVodeGetNumSteps(cvode_mem, &n_new); // Get new # of steps
 			*n_steps += (double)(n_new - n_old); // Increment total # of steps
 		}
+
 		// Check error status
 		if (error == CV_SUCCESS){
-			if (*n_steps >= maxStep) error = 1;
+			if (*n_steps >= maxStep) error = -1; // Max steps reached
+			else if (stop_condition.Eval()) error = -2; // Stopping condition met
 			break;
 		}
 		else if (error == CV_TSTOP_RETURN){
@@ -2925,7 +2930,8 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 #define TINY 1e-8
 
 //int propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, double maxStep){
-int propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep){
+int propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep,
+		mu::Parser& stop_condition){
 	int error = 0;
 	int /*i,*/n;
 	int n_species;
@@ -2946,7 +2952,7 @@ int propagate_euler_network(double* t, double delta_t, double* n_steps, double h
 
 		// Don't exceed maxStep limit
 		if (*n_steps >= maxStep){
-			error = 1; // Step limit reached
+			error = -1; // Step limit reached
 			break;
 		}
 
@@ -2964,6 +2970,12 @@ int propagate_euler_network(double* t, double delta_t, double* n_steps, double h
 		++(*n_steps);
 		/* Avoid underflow */
 		if (fabs(t_left * dt_inv) < TINY) break;
+
+		// Check for stopping condition
+		if (stop_condition.Eval()){
+			error = -2;
+			break;
+		}
 	}
 
 	/* Check for overflow */
@@ -2984,7 +2996,8 @@ int propagate_euler_network(double* t, double delta_t, double* n_steps, double h
 }
 
 //int propagate_rkcs_network(double* t, double delta_t, long int* n_steps, double tol, double maxStep){
-int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double tol, double maxStep) {
+int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double tol, double maxStep,
+		mu::Parser& stop_condition) {
 	int error = 0, n_species;
 	double *X = NULL, *dX = NULL;
 	double t_end, t_left, htry, hdid, dt_inv;
@@ -3008,7 +3021,7 @@ int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double to
 
 		// Don't exceed maxStep limit
 		if (*n_steps >= maxStep){
-			error = 1; // Step limit reached
+			error = -1; // Step limit reached
 			break;
 		}
 
@@ -3022,6 +3035,12 @@ int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double to
 		/* printf("hdid=%e\n", hdid); */
 		++(*n_steps);
 		if (hdid == t_left) break;
+
+		// Check for stopping condition
+		if (stop_condition.Eval()){
+			error = -2;
+			break;
+		}
 	}
 
 	/* Set network concentrations to values returned in X */
@@ -4491,7 +4510,8 @@ void update_rxn_rates(int irxn) {
 	return;
 }
 
-int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep) {
+int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep,
+		mu::Parser& stop_condition) {
 	double t_remain;
 	double rnd;
 	int irxn;
@@ -4508,9 +4528,10 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	}
 
 	while (1) {
+
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxStep){
-			error = 1; // Step limit reached
+			error = -1; // Step limit reached
 			break;
 		}
 
@@ -4547,6 +4568,12 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		if (fmod == 0.0) cout << "yup" << endl;
 		else cout << "nope" << endl;
 		exit(1);*/
+
+		// Check stopping condition
+		if (stop_condition.Eval()){
+			error = -2; // Stop condition satisfied
+			break;
+		}
 	}
 
 	/* Back up to return time */
