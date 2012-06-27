@@ -600,8 +600,8 @@ sub simulate
         close CDAT;
 
         # Update Concentrations with concentrations from last line of CDAT file
-        my ($time, $conc);
-        ($time, @$conc) = split ' ', $last_line;
+        my $conc;
+        ($t_end, @$conc) = split ' ', $last_line;
         my $species = $model->SpeciesList->Array;
         unless ( $#$conc == $#$species )
         {
