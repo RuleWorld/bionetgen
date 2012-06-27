@@ -455,7 +455,7 @@ foreach my $model (@models)
         my $statfile = "${datprefix}_ssa_equil.stats";
         if ( -e $datfile  and  -e $statfile )
         {
-            multi_print( " -> checking SSA equillibirum distribution\n", @allFH );
+            multi_print( " -> checking SSA equilibrium distribution\n", @allFH );
             my $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
             if ( defined $exit_status )
             {
@@ -496,7 +496,7 @@ foreach my $model (@models)
         my $statfile = "${datprefix}_pla_equil.stats";
         if ( -e $datfile  and  -e $statfile )
         {
-            multi_print( " -> checking PLA equillibirum distribution\n", @allFH );
+            multi_print( " -> checking PLA equilibrium distribution\n", @allFH );
             my $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
             if ( defined $exit_status )
             {

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import re
+
 def bnglReaction(reactant,product,rate,tags,translator=[]):
     finalString = ''
     for index in range(0,len(reactant)):
@@ -29,9 +31,12 @@ def printTranslate(chemical,translator={}):
 
 
     
-def bnglFunction(rule,functionTitle):
-    
-    finalString = '%s = %s' % (functionTitle,rule)
+def bnglFunction(rule,functionTitle,compartments=[]):
+    tmp = rule
+    for compartment in compartments:
+        tmp = re.sub('{0}\\s*\\*'.format(compartment),'',tmp)
+        tmp = re.sub('\\*\\s*{0}'.format(compartment),'',tmp)
+    finalString = '%s = %s' % (functionTitle,tmp)
     return finalString
 
     

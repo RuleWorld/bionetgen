@@ -129,6 +129,8 @@ extern void print_Groups(FILE* out, Group* list, Elt_array* earray);
 extern map<string, double*> init_param_map(Elt_array*& rates, Group*& spec_groups);
 extern map<string, int> init_param_index_map(Elt_array*& rates);
 extern map<string, int> init_observ_index_map(Group*& spec_groups);
+extern bool isMuParserFunction(string in_string);
+extern vector<string> find_variables(string a);
 extern void process_function_names(string& a);
 extern vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
 		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
@@ -205,9 +207,11 @@ extern int   print_derivs_byrxn_network(FILE* out);
 //extern int   propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, double maxStep);
 //extern int   propagate_rkcs_network (double* t, double delta_t, long int* n_steps, double tol, double maxStep);
 extern int   propagate_cvode_network(double* t, double delta_t, double* n_steps, double* rtol, double* atol,
-									 int SOLVER_TYPE, double maxStep);
-extern int   propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep);
-extern int   propagate_rkcs_network (double* t, double delta_t, double* n_steps, double tol, double maxStep);
+									 int SOLVER_TYPE, double maxStep, mu::Parser& stop_condition);
+extern int   propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep,
+									 mu::Parser& stop_condition);
+extern int   propagate_rkcs_network (double* t, double delta_t, double* n_steps, double tol, double maxStep,
+									 mu::Parser& stop_condition);
 
 extern FILE* init_print_concentrations_network(char* prefix, int append);
 extern int   print_concentrations_network(FILE* out, double t);
@@ -239,10 +243,11 @@ extern FILE* init_print_pca_network(char* filename);
 extern int   print_pca_network(FILE* out, double t);
 
 /* Gillespie Monte Carlo functions */
-extern int      init_gillespie_direct_network(int update_interval, int seed);
-extern int      gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep);
+extern int    init_gillespie_direct_network(int update_interval, int seed);
+extern int    gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig,
+									   double maxStep, mu::Parser& stop_condition);
 //extern long int gillespie_n_steps();
 extern double gillespie_n_steps();
-extern double   gillespie_frac_species_active();
-extern double   gillespie_frac_rxns_active();
-extern void		delete_GSP_included();
+extern double gillespie_frac_species_active();
+extern double gillespie_frac_rxns_active();
+extern void	  delete_GSP_included();

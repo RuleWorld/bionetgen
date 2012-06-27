@@ -587,7 +587,7 @@ void Network3::init_PLA(string config, bool verbose){
 }
 
 pair<double,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
-		double stepInterval, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
+		double stepInterval, mu::Parser& stop_condition, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
 		bool additional_pla_output, bool verbose){
 
 	// Error check
@@ -702,7 +702,7 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	string print_net_message;
 //	while (time < maxTime && step < startStep+maxSteps && PLA_SIM->tau < INFINITY){
 //	while (time < maxTime && step < startStep+maxSteps && !Network3::all_inactive()){
-	while (time < maxTime && step < startStep + maxSteps)
+	while (time < maxTime && step < startStep + maxSteps && !stop_condition.Eval())
 	{
 		// Next step
 		step++;
@@ -826,17 +826,20 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		}
 		// Output to stdout
 		if (verbose){
-			cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
+			cout << "\t" << fixed << setprecision(6) << time << "\t" << setprecision(0) << step;
 //			for (unsigned int i=0;i < OBSERVABLE.size();i++) cout << "\t" << OBSERVABLE[i]->second;
 			if (print_save_net) fprintf(stdout, "%s", print_net_message.c_str());
 			cout << endl;
 		}
 	}
-//	else{
-		// Even if .cdat printing is suppressed, print the last step
-//		if (!print_cdat) Network3::print_species_concentrations(cdat,time);
-//	}
-//	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
+
+	// Messages if stopping conditions met
+	if (stop_condition.Eval()){ // Stop condition satisfied
+		cout << "Stopping condition " << stop_condition.GetExpr() << "met in PLA simulation." << endl;
+	}
+	else if (step >= startStep + maxSteps){ // maxSteps limit reached
+		cout << "Maximum step limit (" << maxSteps << ") reached in PLA simulation." << endl;
+	}
 
 	// If print_end_net = true, collect species populations and update network concentrations vector
 	if (print_end_net){

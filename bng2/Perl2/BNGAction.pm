@@ -266,6 +266,10 @@ sub simulate
     if (defined $params->{output_step_interval})
     {   push @command, "-I", $params->{output_step_interval};  }
     
+    # stop condition
+    if (defined $params->{stop_if})
+    {   push @command, "--stop_cond", $params->{stop_if};  }
+    
     # output concentrations data
     push @command, "--cdat", $print_cdat;
     # output function values

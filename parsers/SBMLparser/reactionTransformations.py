@@ -66,7 +66,6 @@ def findIntersection(set1,set2,database):
     return intersections
     
 def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
-    #print original
     #reaction = []
     for elements in original:
         #temp = []
@@ -155,8 +154,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
         extended1 = [dictionary[x][0] for x in extended1]
         extended1.sort()
         extendedComponent = [d1,d2]
-        extendedComponent.sort()
-        extendedComponent.reverse()
+        #extendedComponent.sort()
+        #extendedComponent.reverse()
         extendedComponent = tuple(extendedComponent)
         synthesisDatabase[tuple(extended1)] = extendedComponent
         intersection = (tuple(extended1),)
