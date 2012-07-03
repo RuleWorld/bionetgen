@@ -1,6 +1,7 @@
 package bngparser.methods;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,14 +138,10 @@ public class ReactionAction {
 							//TODO: addbond and delete bond have to be done on a per component level. 
 							
 							//if 2 molecules map two each other we need to check how the components map too
-							
 							for(int i = 0; i< species1.getComponents().length;i++){
 								for(int j = 0; j< species2.getComponents().length;j++){
-								
-									
-									String component1 = species1.getComponents()[i].replaceAll("([A-Za-z0-9_]+).*","$1");
-									String component2 = species2.getComponents()[j].replaceAll("([A-Za-z0-9_]+).*","$1");;
-									
+									String component1 = species1.getComponents()[i].replaceAll("([A-Za-z0-9_]+).*","$1").replaceAll("\\s","");
+									String component2 = species2.getComponents()[j].replaceAll("([A-Za-z0-9_]+).*","$1").replaceAll("\\s","");
 									if(component1.equals(component2)){
 										leftMap.add(species1.getName() + "_C" + (i+1));
 										rightMap.add(species2.getName() + "_C" + (j+1));
@@ -167,7 +164,6 @@ public class ReactionAction {
 										}
 										else if(species2.getComponents()[j].contains("!") && 
 												!species1.getComponents()[i].contains("!")){
-											
 											//this step checks how many molecules a single components is bound to and adds them to the add bond operation
 											String[] label = species2.getComponents()[j].split("!");
 											for(int counter=1;counter<label.length;counter++){
