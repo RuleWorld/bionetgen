@@ -126,10 +126,10 @@ reaction_block(id,name,reactant,product,rate,bidirectional,birate,leftMap,rightM
      
   \</Map\>
   \<ListOfOperations\>
-    <operations,operator1,operator2:{oper,op1,op2 | \<<oper> site1="<op1>" site2="<op2>"/\>};separator="\n">
+    <operations,operator1,operator2:{oper,op1,op2 | \<<oper> <op1> <op2>/\>};separator="\n">
   \</ListOfOperations\>
   \</ReactionRule\>
-
+//TEMPORARY FIXME: the output definition for op1 and op2 is located for now in ReactionAction.java
    
 >>
 

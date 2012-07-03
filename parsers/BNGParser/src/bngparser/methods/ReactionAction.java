@@ -17,6 +17,7 @@ class MoleculeBonds{
 	String name;
 	BondList bonds;
 	String[] components;
+	
 	public String[] getComponents() {
 		return components;
 	}
@@ -58,6 +59,7 @@ public class ReactionAction {
 	List<String> id;
 	List<String> leftMap;
 	List<String> rightMap;
+	boolean flag = false;
 
 	public List<String> getOperator1() {
 		return operator1;
@@ -219,7 +221,7 @@ public class ReactionAction {
 					}
 					else if(species.getName().contains("PP")){
 						operations.add("Add");
-						operator1.add(species.getName());
+						operator1.add("id=\"" +species.getName()+ "\"");
 						operator2.add("");
 					}
 						
@@ -228,13 +230,12 @@ public class ReactionAction {
 		}
 		//this adds the sites fields in the add/delete actions
 		for(String label: tempBonds.keySet()){
-			operations.add(tempBonds.get(label).get(0));
-			//System.out.println(tempBonds.get(label).get(1));
-			operator1.add(tempBonds.get(label).get(1));
-			if(tempBonds.get(label).size()>2)
-				operator2.add(tempBonds.get(label).get(2));
-			else
-				operator2.add("BONKERS");
+			if(tempBonds.get(label).size()>2){
+				operations.add(tempBonds.get(label).get(0));
+				//System.out.println(tempBonds.get(label).get(1));
+				operator1.add("site1=\"" + tempBonds.get(label).get(1) + "\"");
+				operator2.add("site2=\"" + tempBonds.get(label).get(2) + "\"");
+			}
 		}
 		
 	}
