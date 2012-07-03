@@ -129,10 +129,10 @@ reaction_block(id,name,reactant,product,rate,bidirectional,birate,leftMap,rightM
     <operations,operator1,operator2:{oper,op1,op2 | \<<oper> <op1> <op2>/\>};separator="\n">
   \</ListOfOperations\>
   \</ReactionRule\>
-//TEMPORARY FIXME: the output definition for op1 and op2 is located for now in ReactionAction.java
+
    
 >>
-
+//TEMPORARY FIXME: the output definition for op1 and op2 is located for now in ReactionAction.java
 reaction_rules()::=<<
 
 >>
