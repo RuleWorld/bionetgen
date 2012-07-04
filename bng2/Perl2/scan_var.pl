@@ -74,7 +74,7 @@ my $bngexec;
         my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
         my @dirs = File::Spec->splitdir( $directories );
         pop @dirs;   # BNG executable script should be down one directory from here
-        $bngpath = File::Spec->catpath( $volume, File::Spec->catdir(@dirs) );
+        $bngpath = File::Spec->catpath( $volume, File::Spec->catdir(@dirs), '' );
     }
     # define executable
     $bngexec = File::Spec->catfile( $bngpath, "BNG2.pl" );
@@ -85,6 +85,7 @@ my $log     = 0;
 my $t_end   = 20;
 my $n_steps = 20;
 my $steady_state = 0;
+my $method = 'ode';
 
 my $prefix;
 my @mandatory_args = ();
@@ -97,19 +98,36 @@ while ( @ARGV )
             $log = 1;
         }
         elsif($arg eq 'n_steps'){
-            unless (@ARGV) { die "Syntax error: $arg requires value"; }
+#            unless (@ARGV) { die "Syntax error: $arg requires value"; }
             $n_steps = shift @ARGV;
+            if ($n_steps =~ /^-{1,2}/ || $n_steps =~ /\.bngl$/)
+            { die "Syntax error: '$arg' requires value"; }
         }
         elsif($arg eq 'prefix'){
-            unless (@ARGV) { die "Syntax error: $arg requires value"; }
+#            unless (@ARGV) { die "Syntax error: $arg requires value"; }
             $prefix = shift @ARGV;
+            if ($prefix =~ /^-{1,2}/ || $prefix =~ /\.bngl$/)
+            { die "Syntax error: '$arg' requires value"; }
         }
         elsif($arg eq 'steady_state'){
             $steady_state = 1;
         }
         elsif($arg eq 't_end'){
-            unless (@ARGV) { exit_error("Syntax error: $arg requires value"); }
+#            unless (@ARGV) { exit_error("Syntax error: $arg requires value"); }
             $t_end = shift @ARGV;
+            if ($t_end =~ /^-{1,2}/ || $t_end =~ /\.bngl$/)
+            { die "Syntax error: '$arg' requires value"; }
+        }
+        elsif($arg eq 'method'){
+            $method = shift @ARGV;
+            if ($method =~ /^-{1,2}/ || $method =~ /\.bngl$/)
+            { die "Syntax error: '$arg' requires value"; }
+            if ($method eq 'pla'){
+            	my $pla_config = shift @ARGV;
+            	if ($pla_config =~ /^-{1,2}/ || $pla_config =~ /\.bngl$/)
+            	{ die "Syntax error: PLA simulator requires a simulation configuration"; }
+            	$method .= ",pla_config=>\"$pla_config\"";
+            }
         }
         elsif($arg eq 'help'){
             display_help();
@@ -203,11 +221,11 @@ print BNGL "generate_network({overwrite=>1})\n";
         if ($log){ $x = exp($val);}
         printf BNGL "setParameter(\"$var\",%.12g)\n", $x;
 
-        my $opt = "suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
+        my $opt = "method=>$method,suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
         if ($steady_state){
             $opt .= ",steady_state=>1";
         }
-        printf BNGL "simulate_ode({$opt})\n";
+        printf BNGL "simulate({$opt})\n";#"simulate_ode({$opt})\n";
         $val += $delta;
     }  
 }
@@ -320,11 +338,10 @@ OPTIONS:
   --prefix PREFIX : prefix for output file (default: MODEL basename)
   --steady-state  : check for steady state at end of each simulation
 
-Runs ODE simulations of MODEL with a range of values ofr parameter VAR.
+Runs ODE simulations of MODEL with a range of values of parameter VAR.
 Simulation data is placed in a directory folder named PREFIX_VAR. A data file
-called PREFIX_VAR.scan contains the final smulation state for each 
-parameter value. The scan file may be visualized with a plotting tool, such
-as PhiBPlot.
+called PREFIX_VAR.scan contains the final smulation state for each parameter 
+value. The scan file may be visualized with a plotting tool, such as PhiBPlot.
 
 END_HELP
 
