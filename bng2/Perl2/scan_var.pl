@@ -126,7 +126,10 @@ while ( @ARGV )
             	my $pla_config = shift @ARGV;
             	if ($pla_config =~ /^-{1,2}/ || $pla_config =~ /\.bngl$/)
             	{ die "Syntax error: PLA simulator requires a simulation configuration"; }
-            	$method .= ",pla_config=>\"$pla_config\"";
+            	$method = "\"$method\",pla_config=>\"$pla_config\"";
+            }
+            else{
+            	$method = "\"$method\"";
             }
         }
         elsif($arg eq 'help'){
