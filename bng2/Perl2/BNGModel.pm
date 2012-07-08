@@ -44,6 +44,7 @@ use Config;
 #  Note that .NET and .BNGL writer methods are contained in THIS file.
 use BNGOutput;
 
+
 # BNGAction contains BNGModel action methods
 #  e.g. simulate, simulate_pla, simulate_nf, parameter_scan, generate_hybrid_model...
 #  Note that some core actions are contained here: generate_network, setParameter, etc.
@@ -947,7 +948,7 @@ sub readNetwork
             # if we're back at level 0, perform any required actions
             if ($level == 0)
             {
-                  if ( $model->Params->{write_xml} )
+                if ( $model->Params->{write_xml} )
                 {  $model->writeXML();   }
 
                 if ( $model->Params->{generate_network} )

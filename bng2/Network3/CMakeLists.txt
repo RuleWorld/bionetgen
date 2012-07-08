@@ -22,7 +22,7 @@ set(SUB_DIRS
     src/util/rand2
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} cvode-2.6.0/include muparser_v134/include SUB_DIRS)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} include include/cvode include/nvector include/sundials SUB_DIRS)
 
 aux_source_directory(src src_files)
 aux_source_directory(src/model model_files)

@@ -215,13 +215,13 @@ sub simulate
     # add method to command
     push @command, "-p", "$method";
     
-    # pla configuration
+    # pla-specific arguments
     if ($method eq 'pla')
     {
         if (exists $params->{pla_config})
-        {
-            push @command, split(' ', $params->{pla_config});
-        }
+        {   push @command, split(' ', $params->{pla_config});  }
+        if (defined $params->{pla_output})
+    	{   push @command, "--pla_output", $params->{pla_output};  }
     }
     
     # add method options
@@ -265,6 +265,10 @@ sub simulate
     # define output step interval
     if (defined $params->{output_step_interval})
     {   push @command, "-I", $params->{output_step_interval};  }
+    
+    # stop condition
+    if (defined $params->{stop_if})
+    {   push @command, "--stop_cond", $params->{stop_if};  }
     
     # output concentrations data
     push @command, "--cdat", $print_cdat;
@@ -435,7 +439,7 @@ sub simulate
 
             unless ( $model->SpeciesList )
             {   # Can't generate new species if running from netfile
-                # TODO: I don'think it's sufficient to check is SpeciesList is defined.
+                # TODO: I don't think it's sufficient to check if SpeciesList is defined.
                 #  It's possible that it exists but the Network generation infrastructure is missing --Justin
                 ++$edge_warning;
                 print Writer "continue\n";
@@ -600,8 +604,8 @@ sub simulate
         close CDAT;
 
         # Update Concentrations with concentrations from last line of CDAT file
-        my ($time, $conc);
-        ($time, @$conc) = split ' ', $last_line;
+        my $conc;
+        ($t_end, @$conc) = split ' ', $last_line;
         my $species = $model->SpeciesList->Array;
         unless ( $#$conc == $#$species )
         {
@@ -633,54 +637,106 @@ sub simulate_nf
 {
     use IPC::Open3;
 
-    my $model  = shift;
-    my $params = shift;
+    my $model  = shift @_;
+    my $params = shift @_;
     my $err;
 
-    my $prefix  = ( defined $params->{prefix} )  ? $params->{prefix}  : $model->getOutputPrefix();
-    my $suffix  = ( defined $params->{suffix} )  ? $params->{suffix}  : '';
-    my $verbose = ( defined $params->{verbose} ) ? $params->{verbose} : 0;
-    my $complex = ( defined $params->{complex} ) ? $params->{complex} : 0;
-    my $get_final_state = ( defined $params->{get_final_state} ) ? $params->{get_final_state} : 0;
-    # Handle other command line args.
-    my $otherCommandLineParameters = ( defined $params->{param} ) ? $params->{param} : '';
+    # get simulation output prefix
+    my $prefix  = defined $params->{prefix} ? $params->{prefix} : $model->getOutputPrefix();
+    my $suffix  = defined $params->{suffix} ? $params->{suffix} : "";
 
+    unless ($suffix eq "")
+    {  $prefix .= "_${suffix}";  }
+
+    # TODO: detect unrecognized parameters
+
+    # map BNG options to NFsim flags
+    my %optional_args =
+    (   # option name        NFsim flag       arguments?      default (used if user_args is 0)
+        verbose         => { flag => "-v",    user_args => 0, default_arg => undef },
+        complex         => { flag => "-cb",   user_args => 0, default_arg => undef },
+        cslf            => { flag => "-cslf", user_args => 0, default_arg => undef },
+        notf            => { flag => "-notf", user_args => 0, default_arg => undef },
+        print_functions => { flag => "-ogf",  user_args => 0, default_arg => undef },
+        binary_output   => { flag => "-b",    user_args => 0, default_arg => undef },
+        get_final_state => { flag => "-ss",   user_args => 0, default_arg => "${prefix}.species" },
+        utl             => { flag => "-utl",  user_args => 1, default_arg => undef },
+        gml             => { flag => "-gml",  user_args => 1, default_arg => undef },
+        seed            => { flag => "-seed", user_args => 1, default_arg => undef },
+        equil           => { flag => "-eq",   user_args => 1, default_arg => undef },
+    );
+
+
+
+    my @args = ();
+    # get options
+    while ( my ($option,$option_hash) = each %optional_args )
+    {
+        if (defined $params->{$option})
+        {   # option is defined by user
+            if ($option_hash->{user_args})
+            {   # this option has an argument:
+                #  supply flag and user defined argument
+                push @args, $option_hash->{flag}, $params->{$option};
+            }
+            elsif ($params->{$option})
+            {   # this option is a switch (true=include)
+                push @args, $option_hash->{flag};
+                if (defined $option_hash->{default_arg})
+                {  push @args, $option_hash->{default_arg};  }
+            }
+        }
+    }
+
+    # append other command line arguments not recognized by BNG
+    if ( defined $params->{param} )
+    {  push @args, split " ", $params->{param};  }
+
+
+    # exit here if we're not executing
     return '' if $BNGModel::NO_EXEC;
 
     if ( $model->Params->{no_nfsim} )
-    {   # don't execute NFsim if nf_nfsim parameter is true
+    {   # don't execute NFsim if no_nfsim parameter is true
         send_warning( "simulate_nf(): skipping simulation, 'no-nfsim' flag is true.");
         return '';
     }
 
-    if ( $suffix ne '' ) {
-        $prefix .= "_${suffix}";
-    }
 
+    # continue with simulation...
     print "Netfree simulation using NFsim\n";
     my $program;
-    unless ( $program = findExec("NFsim") ) {
-        return "Could not find executable NFsim";
-    }
+    unless ( $program = findExec("NFsim") )
+    {  return "Could not find executable NFsim";  }
     my @command = ($program);
 
     # Write BNG xml file
-    $model->writeXML( { prefix => $prefix } );
+    $model->writeXML( {'prefix'=>$prefix} );
 
-    # Defined command line
+    # Define command line
     push @command, "-xml", "${prefix}.xml", "-o", "${prefix}.gdat";
-    if ( $get_final_state ){
-        push @command, "-ss", "${prefix}.species";
-    }
 
     # Append the run time and output intervals
     my $t_start;
-    if ( defined( $params->{t_start} ) ) {
+    if (defined $params->{t_start})
+    {
         $t_start = $params->{t_start};
         $model->Time($t_start);
     }
-    else {
-        $t_start = ( defined( $model->Time ) ) ? $model->Time : 0;
+    else
+    {
+        $t_start = defined $model->Time ? $model->Time : 0;
+    }
+
+
+    unless ($t_start == 0)
+    {   # warn user if t_start > 0
+        send_warning("simulate_nf(): NFsim timepoints are reported as time elapsed since t_start=$t_start.");
+    }
+
+    if ($params->{continue})
+    {   # warn user that continue is not support
+        send_warning("simulate_nf(): NFsim does not support 'continue' option. NFsim will overwrite any existing trajectories.");
     }
 
     my $t_end;
@@ -696,7 +752,10 @@ sub simulate_nf
         else
         {   return "Parameter t_end must be defined";   }
 
-        push @command, "-sim", $t_end, "-oSteps", $n_steps;
+        unless ( $t_end > $t_start )
+        {   return "t_end must be greater than t_start.";   }
+
+        push @command, "-sim", ($t_end-$t_start), "-oSteps", $n_steps;
     }
     elsif ( defined $params->{sample_times} )
     {
@@ -707,14 +766,12 @@ sub simulate_nf
         return "No simulation output requested: set n_steps>0";
     }
 
+
     # Append the other command line arguments
-    push @command, split(" ", $otherCommandLineParameters);
+    push @command, @args;
 
-    # Turn on complex bookkeeping if requested
-    # TODO: Automatic check for turning this on
-    if ($complex) { push @command, "-cb"; }
-    if ($verbose) { push @command, "-v";  }
 
+    # Run NFsim
     print "Running NFsim on ", `hostname`;
     printf "full command: %s\n", join(" ", @command);
 
@@ -749,16 +806,15 @@ sub simulate_nf
         return sprintf("%s did not run successfully.", join(" ", @command));
     }
 
-    if ( $get_final_state ){
-        # Update final species concentrations to allow trajectory continuation
-        if (my $err= $model->readNFspecies("${prefix}.species")){ 
-            return($err);
-        }
-        if ($verbose){
-            print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList );
-        }
+    if ( $params->{get_final_state} )
+    {   # Update final species concentrations to allow trajectory continuation
+        if (my $err = $model->readNFspecies("${prefix}.species"))
+        {  return $err;  }
+        if ( $params->{verbose} )
+        {  print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList );  }
     }
-    else{
+    else
+    {
         print  "Warning: final system state was not retrieved following simulate_nf.\n"
               ."  To retreive final state, call simulate_nf with option: get_final_state=>1.\n";
     }
@@ -783,14 +839,14 @@ sub readNFspecies
     my $model = shift @_;
     my $fname = shift @_;
 
-    my $conc;
+    my $conc_vec;
     if ($model->SpeciesList)
     {
-        $conc = [ (0) x scalar @{$model->SpeciesList->Array} ];
+        $conc_vec = [ (0) x scalar @{$model->SpeciesList->Array} ];
     }
     else
     {        
-        $conc = [];
+        $conc_vec = [];
         # create species list
         $model->SpeciesList( SpeciesList->new );
     }
@@ -798,9 +854,9 @@ sub readNFspecies
 
     # Read NFsim species file
     print "readNFspecies::Reading from file $fname\n";
-    my $FH;
-    unless ( open my $FH, '<', $fname )
-    {   return "Couldn't read from file $fname: $!";   }
+    #my $FH;
+    open(my $FH, "<", $fname)
+        or return "Couldn't read from file $fname: $!";
 
     my $n_spec_read = 0;
     my $n_spec_new = 0;
@@ -822,34 +878,29 @@ sub readNFspecies
         # Read species concentration - may only be integer value
         my $conc;
         if ( $string=~ /^\s*(\d+)\s*$/ )
-        {
-            $conc = $1;
-        }
+        {   $conc = $1;   }
         else
-        {
-            return "species concentration must be single integer at line $line_num of file $fname";
-        }
+        {   return "species concentration must be single integer at line $line_num of file $fname";   }
 
         # Check if isomorphic to existing species 
         my $existing_sg = $model->SpeciesList->lookup( $sg );
         if ($existing_sg)
         { 
             # Add concentration to concentration of existing species
-            $conc->[ $existing_sg->Index - 1 ] += $conc;
+            $conc_vec->[$existing_sg->Index - 1] += $conc;
         }
         else
         {
             # Create new Species entry in SpeciesList with zero default concentration
             my $newspec = $model->SpeciesList->add( $sg, 0 );
-            $conc->[ $newspec->Index - 1 ] = $conc;
+            $conc_vec->[ $newspec->Index - 1 ] = $conc;
             ++$n_spec_new;
         }
         ++$n_spec_read;
     }
-    
     close $FH;
 
-    $model->Concentrations( $conc );
+    $model->Concentrations( $conc_vec );
     printf "Read %d unique species of %d total.\n", $n_spec_new, $n_spec_read;
     return '';
 }
@@ -1638,8 +1689,6 @@ sub LinearParameterSensitivity
 
   
 }
-
-
 
 ###
 ###

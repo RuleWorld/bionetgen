@@ -291,37 +291,37 @@ map<string, int> init_observ_index_map(Group*& spec_groups) {
 
 // Returns true if the string matches a built in function keyword in MuParser.
 // For complete list, go to http://muparser.sourceforge.net/mup_features.html#idDef2
-bool isMuParserFunction(string curr_string) {
-	if (curr_string == "sin"	||
-		curr_string == "cos" 	||
-		curr_string == "tan" 	||
-		curr_string == "asin" 	||
-		curr_string == "acos" 	||
-		curr_string == "atan" 	||
-		curr_string == "sinh" 	||
-		curr_string == "cosh" 	||
-		curr_string == "tanh" 	||
-		curr_string == "asinh" 	||
-		curr_string == "acosh" 	||
-		curr_string == "atanh" 	||
-		curr_string == "log2" 	||
-		curr_string == "log10" 	||
-		curr_string == "log" 	||
-		curr_string == "ln" 	||
-		curr_string == "exp" 	||
-		curr_string == "sqrt" 	||
-		curr_string == "sign" 	||
-		curr_string == "rint" 	||
-		curr_string == "abs" 	||
-		curr_string == "if" 	||
-		curr_string == "min" 	||
-		curr_string == "max" 	||
-		curr_string == "sum" 	||
-		curr_string == "e" 		||
-		curr_string == "avg" 	||
-		curr_string == "or" 	||
-		curr_string == "and" 	||
-		curr_string == "xor"
+bool isMuParserFunction(string in_string) {
+	if (in_string == "sin"   ||
+		in_string == "cos"   ||
+		in_string == "tan"   ||
+		in_string == "asin"  ||
+		in_string == "acos"  ||
+		in_string == "atan"  ||
+		in_string == "sinh"  ||
+		in_string == "cosh"  ||
+		in_string == "tanh"  ||
+		in_string == "asinh" ||
+		in_string == "acosh" ||
+		in_string == "atanh" ||
+		in_string == "log2"  ||
+		in_string == "log10" ||
+		in_string == "log"   ||
+		in_string == "ln"    ||
+		in_string == "exp"   ||
+		in_string == "sqrt"  ||
+		in_string == "sign"  ||
+		in_string == "rint"  ||
+		in_string == "abs"   ||
+		in_string == "if"    ||
+		in_string == "min"   ||
+		in_string == "max"   ||
+		in_string == "sum"   ||
+		in_string == "e"     ||
+		in_string == "avg"   ||
+		in_string == "or"    ||
+		in_string == "and"   ||
+		in_string == "xor"
 		)
 		return true;
 	else
@@ -2811,7 +2811,7 @@ static int cvode_derivs(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
 //int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER,
 //		double maxStep){
 int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* rtol, double* atol, int SOLVER,
-		double maxStep){
+		double maxStep, mu::Parser& stop_condition){
 	int error = 0;
 	double t_end;
 	static int n_species;
@@ -2856,13 +2856,15 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 				cout << "ERROR: Jacobian no longer supported for GMRES solver" << endl;
 				exit(1);
 			}
-		} else if (SOLVER == DENSE || SOLVER == DENSE_J) {
+		}
+		else if (SOLVER == DENSE || SOLVER == DENSE_J) {
 			CVDense(cvode_mem, n_species);
 			if (SOLVER == DENSE_J) {
 				cout << "ERROR: Jacobian no longer supported for dense solver" << endl;
 				exit(1);
 			}
-		} else {
+		}
+		else {
 			fprintf(stderr, "ERROR: Invalid CVODE solver.\n");
 			return (1);
 		}
@@ -2877,6 +2879,7 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 	t_end = (*t) + delta_t;
 	while (1){
 		long n_old, n_new;
+		//
 		// Integrate one step at a time
 		if ( (maxStep - *n_steps) < (double)cvode_maxnumsteps ){
 			CVodeSetStopTime(cvode_mem, t_end);
@@ -2894,9 +2897,11 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 			CVodeGetNumSteps(cvode_mem, &n_new); // Get new # of steps
 			*n_steps += (double)(n_new - n_old); // Increment total # of steps
 		}
+
 		// Check error status
 		if (error == CV_SUCCESS){
-			if (*n_steps >= maxStep) error = 1;
+			if (*n_steps >= maxStep) error = -1; // Max steps reached
+			else if (stop_condition.Eval()) error = -2; // Stopping condition met
 			break;
 		}
 		else if (error == CV_TSTOP_RETURN){
@@ -2925,7 +2930,8 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 #define TINY 1e-8
 
 //int propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, double maxStep){
-int propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep){
+int propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep,
+		mu::Parser& stop_condition){
 	int error = 0;
 	int /*i,*/n;
 	int n_species;
@@ -2946,7 +2952,7 @@ int propagate_euler_network(double* t, double delta_t, double* n_steps, double h
 
 		// Don't exceed maxStep limit
 		if (*n_steps >= maxStep){
-			error = 1; // Step limit reached
+			error = -1; // Step limit reached
 			break;
 		}
 
@@ -2964,6 +2970,12 @@ int propagate_euler_network(double* t, double delta_t, double* n_steps, double h
 		++(*n_steps);
 		/* Avoid underflow */
 		if (fabs(t_left * dt_inv) < TINY) break;
+
+		// Check for stopping condition
+		if (stop_condition.Eval()){
+			error = -2;
+			break;
+		}
 	}
 
 	/* Check for overflow */
@@ -2984,7 +2996,8 @@ int propagate_euler_network(double* t, double delta_t, double* n_steps, double h
 }
 
 //int propagate_rkcs_network(double* t, double delta_t, long int* n_steps, double tol, double maxStep){
-int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double tol, double maxStep) {
+int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double tol, double maxStep,
+		mu::Parser& stop_condition) {
 	int error = 0, n_species;
 	double *X = NULL, *dX = NULL;
 	double t_end, t_left, htry, hdid, dt_inv;
@@ -3008,7 +3021,7 @@ int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double to
 
 		// Don't exceed maxStep limit
 		if (*n_steps >= maxStep){
-			error = 1; // Step limit reached
+			error = -1; // Step limit reached
 			break;
 		}
 
@@ -3022,6 +3035,12 @@ int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double to
 		/* printf("hdid=%e\n", hdid); */
 		++(*n_steps);
 		if (hdid == t_left) break;
+
+		// Check for stopping condition
+		if (stop_condition.Eval()){
+			error = -2;
+			break;
+		}
 	}
 
 	/* Set network concentrations to values returned in X */
@@ -3112,70 +3131,62 @@ int finish_print_concentrations_network(FILE* out) {
 	return (error);
 }
 
-FILE* init_print_group_concentrations_network(char* prefix, int append) {
+FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline) {
+
 	FILE* out;
 	Group* group;
-	int /*i,*/error = 0;
+	int error = 0;
 	char buf[1000];
-//	char* fmt = "%15s";
 	char* fmt = (char*)"%19s";
-	//char *mode= (append) ? "a" : "w";
 	char* mode;
 	if (append) mode = (char*)"a";
 	else mode = (char*)"w";
-
+/*
 	if (!n_groups_network()) {
 		out = NULL;
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
-
+*/
 	sprintf(buf, "%s.gdat", prefix);
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
 
 	/* Skip header if this file is a continuation */
 	if (append)	return (out);
 
 	/* Write group header  */
-//	fprintf(out, fmt, "#      time    ");
 	fprintf(out, "#");
 	fprintf(out, "%18s", "time");
 	for (group = network.spec_groups; group != NULL; group = group->next) {
 		fprintf(out, " ");
 		fprintf(out, fmt, group->name);
 	}
-	//for (int i = 0; i < network.var_parameters.size(); i++)
-	//fprintf(out, fmt, network.rates->elt[network.var_parameters[i]-1]->name);
-	fprintf(out, "\n");
+	if (!no_newline) fprintf(out, "\n"); // Yes, a double negative
 
 //	exit:
 	return (out);
 }
 
-int print_group_concentrations_network(FILE* out, double t) {
+int print_group_concentrations_network(FILE* out, double t, bool no_newline) {
+
 	int i, error = 0, n_species, offset, index;
 	Group* group;
 	double *X = NULL, conc, factor;
-//	const char *fmt = "%15.8e";
 	const char *fmt = "%19.12e";
 
 	if (!out) {
 		++error;
-//		goto exit;
 		if (X) FREE_VECTOR(X);
-		return (error);
+		return (error); // exit
 	}
-	if (!n_groups_network()){
-//		goto exit;
+/*	if (!n_groups_network()){
 		if (X) FREE_VECTOR(X);
-		return (error);
+		return (error); // exit
 	}
-
+*/
 	n_species = n_species_network();
 	X = ALLOC_VECTOR(n_species);
 	get_conc_network(X);
@@ -3192,10 +3203,7 @@ int print_group_concentrations_network(FILE* out, double t) {
 		fprintf(out, " ");
 		fprintf(out, fmt, conc);
 	}
-	// print variable parameters to the gdat file
-	//for (int i = 0; i < network.var_parameters.size(); i++)
-	//fprintf(out, fmt, network.rates->elt[network.var_parameters[i]-1]->val);
-	fprintf(out, "\n");
+	if (!no_newline) fprintf(out, "\n");
 	fflush(out);
 
 //	exit:
@@ -3203,54 +3211,42 @@ int print_group_concentrations_network(FILE* out, double t) {
 	return (error);
 }
 
-int finish_print_group_concentrations_network(FILE* out) {
-	int error = 0;
+int finish_print_group_concentrations_network(FILE* out, bool leave_open) {
 
+	int error = 0;
 	if (!out) {
 		++error;
-//		goto exit;
-		return (error);
+		return (error); // exit
 	}
-	fclose(out);
+	if (!leave_open) fclose(out);
 
 //	exit:
 	return (error);
 }
 
-FILE* init_print_function_values_network(char* prefix, int append){
-	FILE* out;
-	int error = 0;
-	char buf[1000];
-	char* mode;
-	if (append) mode = (char*)"a";
-	else mode = (char*)"w";
+int init_print_function_values_network(FILE* out){
 
-	sprintf(buf, "%s.fdat", prefix);
-	if (!(out = fopen(buf, mode))) {
+	int error = 0;
+	// Error check
+	if (!out) {
 		++error;
-		fprintf(stderr, "Couldn't open file %s.\n", buf);
-		return out;
+		return error;
 	}
 
-	// Skip header if this trajectory is a continuation
-	if (append)	return out;
-
 	// Write header
-	fprintf(out, "#");
-	fprintf(out, "%18s", "time");
+//	fprintf(out, "#");
+//	fprintf(out, "%18s", "time");
 	for (unsigned int i = 0; i < network.functions.size(); ++i) {
-//		fprintf(out, " %19d", i+1);
-//		fprintf(out, " %19s", ("F"+Util::toString((int)i+1)).c_str());
 		fprintf(out, " %19s", network.rates->elt[network.var_parameters[i]-network.rates->offset]->name);
 	}
 	fprintf(out, "\n");
 
-	return out;
+	return error;
 }
 
 int print_function_values_network(FILE* out, double t){
-	int error = 0;
 
+	int error = 0;
 	// Error check
 	if (!out) {
 		++error;
@@ -3269,9 +3265,8 @@ int print_function_values_network(FILE* out, double t){
 	}
 	exit(1);
 ////*/
-	fprintf(out, "%19.12e", t);
+//	fprintf(out, "%19.12e", t);
 	for (unsigned int i = 0; i < network.functions.size(); i++) {
-//		fprintf(out, " %19.12e", network.functions[i].Eval());
 		fprintf(out, " %19.12e", network.rates->elt[network.var_parameters[i]-network.rates->offset]->val);
 	}
 	fprintf(out, "\n");
@@ -3281,8 +3276,8 @@ int print_function_values_network(FILE* out, double t){
 }
 
 int finish_print_function_values_network(FILE* out){
-	int error = 0;
 
+	int error = 0;
 	if (!out) {
 		++error;
 		return error;
@@ -3293,14 +3288,13 @@ int finish_print_function_values_network(FILE* out){
 }
 
 double* get_group_concentrations_network() {
-	int i, /*error=0,*/n_species, n_groups, offset, index;
+	int i, n_species, n_groups, offset, index;
 	Group* group;
 	double *X = NULL, *gconc = NULL, *gc, conc, factor;
 
 	if (!(n_groups = n_groups_network())){
-//		goto exit;
 		if (X) FREE_VECTOR(X);
-		return (gconc);
+		return (gconc); // exit
 	}
 
 	gconc = ALLOC_VECTOR(n_groups);
@@ -3330,7 +3324,6 @@ FILE* init_print_species_stats(char* prefix, int append) {
 	FILE* out;
 	int error = 0;
 	char buf[1000];
-	//char *mode = (append) ? "a" : "w";
 	char* mode;
 	if (append)
 		mode = (char*)"a";
@@ -3341,14 +3334,12 @@ FILE* init_print_species_stats(char* prefix, int append) {
 	if (!(out = fopen(buf, mode))) {
 		++error;
 		fprintf(stderr, "Couldn't open file %s.\n", buf);
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
 
 	/* Skip header if this trajectory is a continuation */
 	if (append){
-//		goto exit;
-		return (out);
+		return (out); // exit
 	}
 
 	/* Write header  */
@@ -3398,8 +3389,8 @@ int finish_print_species_stats(FILE* out) {
 
 FILE* init_print_flux_network(char* prefix) {
 	FILE* out;
-	//	Group* group;
-	int /*i,*/error = 0;
+//	Group* group;
+	int error = 0;
 	char buf[1000];
 
 	sprintf(buf, "%s.fdat", prefix);
@@ -4519,7 +4510,8 @@ void update_rxn_rates(int irxn) {
 	return;
 }
 
-int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep) {
+int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep,
+		mu::Parser& stop_condition) {
 	double t_remain;
 	double rnd;
 	int irxn;
@@ -4536,9 +4528,10 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	}
 
 	while (1) {
+
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxStep){
-			error = 1; // Step limit reached
+			error = -1; // Step limit reached
 			break;
 		}
 
@@ -4575,6 +4568,12 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		if (fmod == 0.0) cout << "yup" << endl;
 		else cout << "nope" << endl;
 		exit(1);*/
+
+		// Check stopping condition
+		if (stop_condition.Eval()){
+			error = -2; // Stop condition satisfied
+			break;
+		}
 	}
 
 	/* Back up to return time */

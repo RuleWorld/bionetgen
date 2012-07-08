@@ -23,11 +23,31 @@ def getAnnotations(parser,stringKey):
             for index in range(0,annotation[key].getNumAttributes()):
                 if stringKey in annotation[key].getValue(index):
                     annotationList.append(annotation[key].getValue(index))
+            if annotationList == []:
+                continue
             if frozenset(annotationList) in annotationDictionary:
                 annotationDictionary[frozenset(annotationList)].append(key)
+                annotationDictionary[frozenset(annotationList)].sort(lambda x,y: cmp(len(x), len(y)))
             else:
                 annotationDictionary[frozenset(annotationList)] = [key]
     return annotationDictionary
+
+def getEquivalence(species,rdf_database):
+    '''
+    *species* is the species whose equivalence we will go and search
+    This method will search through the RDF database and look if param 'species'
+    is equal to any other element in the species database
+    '''
+    
+    for element in rdf_database:
+        if species in rdf_database[element]:
+            if rdf_database[element].index(species) == 0:
+                return []
+            #return [x for x in rdf_database[element] if x != species]
+            
+            #well only return the first one by default
+            return [rdf_database[element][0]]
+    return []
 
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
@@ -36,6 +56,8 @@ if __name__ == "__main__":
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     model = document.getModel()        
     parser = SBML2BNGL(model)
-    print getAnnotations(parser,'uniprot')
+    annotationDictionary =  getAnnotations(parser,'uniprot')
+    print annotationDictionary
+    print getEquivalence('SAv_EpoR',annotationDictionary)
     #print annotation
     #print rules    

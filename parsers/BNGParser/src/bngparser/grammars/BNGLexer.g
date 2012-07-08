@@ -11,7 +11,7 @@ package bngparser.grammars;
 
 LINE_COMMENT : '#' ~('\n'|'\r')* {skip();} ;
 LB : ('\n'|'\r')+; 
-WS : (' '|'\t'|'\\\n'|'\\\r\n')+ { $channel=HIDDEN;};
+WS : (' '|'\t'|('\\')(' ')*('\r')?('\n'))+ { $channel=HIDDEN;};
 VERSION : ('v'|'V')('e'|'E')('r'|'R')('s'|'S')('i'|'I')('o'|'O')('n'|'N');
 END : ('e'|'E')('n'|'N')('d'|'D');
 BEGIN : ('b'|'B')('e'|'E')('g'|'G')('i'|'I')('n'|'N');

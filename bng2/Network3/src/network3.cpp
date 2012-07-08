@@ -433,9 +433,16 @@ void Network3::init_PLA(string config, bool verbose){
 	arg[3].append(",");
 	string s, name, val;
 	param.resize(7,NAN);
-	unsigned int nParam = 0;
+	// Default values
+	param[1] = 3.0;   // apx1
+	param[2] = 100.0; // gg1
+	param[3] = 0.5;   // p
+	param[4] = 0.8;   // pp
+	param[5] = 1.5;   // q
+	param[6] = 0.75;  // w
+	vector<bool> definedParam;
+	definedParam.resize(7,false);
 	while ((next = arg[3].find(',',last+1)) != (int)string::npos){
-		nParam++;
 		s = arg[3].substr(last+1,next-(last+1));
 		unsigned int equal = s.find("=");
 		if (equal == string::npos){ // Error check
@@ -445,13 +452,34 @@ void Network3::init_PLA(string config, bool verbose){
 		name = s.substr(0,equal);
 		Util::remove_whitespace(name);
 		val = s.substr(equal+1,string::npos);
-		if (name == "eps")       param[0] = atof(val.c_str());
-		else if (name == "apx1") param[1] = atof(val.c_str());
-		else if (name == "gg1")  param[2] = atof(val.c_str());
-		else if (name == "p")    param[3] = atof(val.c_str());
-		else if (name == "pp")   param[4] = atof(val.c_str());
-		else if (name == "q")    param[5] = atof(val.c_str());
-		else if (name == "w")    param[6] = atof(val.c_str());
+		if (name == "eps"){
+			param[0] = atof(val.c_str());
+			definedParam[0] = true;
+		}
+		else if (name == "apx1"){
+			param[1] = atof(val.c_str());
+			definedParam[1] = true;
+		}
+		else if (name == "gg1"){
+			param[2] = atof(val.c_str());
+			definedParam[2] = true;
+		}
+		else if (name == "p"){
+			param[3] = atof(val.c_str());
+			definedParam[3] = true;
+		}
+		else if (name == "pp"){
+			param[4] = atof(val.c_str());
+			definedParam[4] = true;
+		}
+		else if (name == "q"){
+			param[5] = atof(val.c_str());
+			definedParam[5] = true;
+		}
+		else if (name == "w"){
+			param[6] = atof(val.c_str());
+			definedParam[6] = true;
+		}
 		else{ // Error check
 			cout << "Oops, I don't recognize the parameter " << name << " in argument 4: \"" << arg[3] << "\". "
 				 << "Please try again." << endl;
@@ -461,46 +489,27 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 
 	// Error check
-	if (nParam < 4 || nParam > 7){
-		cout << "Oops, minimum number of parameters is 4 and maximum is 7. You've specified " << param.size() << "." << endl;
-		cout << "Please try again." << endl;
+	if (!definedParam[0]){ // User required to define 'eps'. All other parameters have default values.
+		cout << "Oops, must provide a value for 'eps' (<< 1). Please try again." << endl;
 		exit(1);
-	}
-	if (arg[2] == "post:post" && nParam < 7){
-		cout << "Oops, you've selected the 'post:post' configuration which requires 7 parameters." << endl;
-		cout << "You've specified " << param.size() << ". Please try again." << endl;
-		exit(1);
-	}
-	for (unsigned int i=0;i < nParam;i++){
-		if (Util::isNAN(param[i])){
-			cout << "Uh oh, wasn't able to read a value for parameter ";
-			if (i==0) cout << "'eps'. ";
-			if (i==1) cout << "'apx1'. ";
-			if (i==2) cout << "'gg1'. ";
-			if (i==3) cout << "'p'. ";
-			if (arg[2] == "post:post"){
-				if (i==4) cout << "'pp'. ";
-				if (i==5) cout << "'q'. ";
-				if (i==6) cout << "'w'. ";
-			}
-			cout << "Please try again." << endl;
-		}
 	}
 
 	if (verbose){
-		cout << "You've specified " << param.size() << " parameters:" << endl;
+		cout << "Your simulation parameters for this run are:" << endl;
 		for (unsigned int i=0;i < param.size();i++){
 			if (i==0) cout << "   eps = "	<< param[0];
 			if (i==1) cout << "   apx1 = "	<< param[1];
 			if (i==2) cout << "   gg1 = " 	<< param[2];
 			if (i==3) cout << "   p = " 	<< param[3];
-			if (i==4) cout << "   pp = " 	<< param[4];
-			if (i==5) cout << "   q = " 	<< param[5];
-			if (i==6) cout << "   w = " 	<< param[6];
-			if ( (i==4 || i==5 || i==6) && (arg[2] != "post:post")){
-				cout << "   >>ignored<< (" << arg[2] << ")";
+			if (arg[2] == "post:post"){
+				if (i==4) cout << "   pp = " 	<< param[4];
+				if (i==5) cout << "   q = " 	<< param[5];
+				if (i==6) cout << "   w = " 	<< param[6];
 			}
-			cout << endl;
+			if (i < 4 || arg[2] == "post:post"){
+				if (!definedParam[i]) cout << " (default)";
+				cout << endl;
+			}
 		}
 	}
 
@@ -587,7 +596,8 @@ void Network3::init_PLA(string config, bool verbose){
 }
 
 pair<double,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
-		double stepInterval, char* prefix, bool print_cdat, bool print_save_net, bool print_end_net, bool verbose){
+		double stepInterval, mu::Parser& stop_condition, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
+		bool additional_pla_output, bool verbose){
 
 	// Error check
 	if ((maxTime-tStart) < 0.0){
@@ -602,13 +612,15 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		cout << "Error in Network3::run_PLA(): 'maxSteps' cannot be negative (" << maxSteps << "). Exiting."<< endl;
 	}
 
+	// Output files
+	string outpre(prefix);
+	bool print_classif = additional_pla_output;
+	// ...
+
 	// Species file (must exist)
 	FILE* cdat = NULL;
-	string cFile(prefix);
-	cFile += ".cdat";
-//	cout << cFile;
+	string cFile = outpre + ".cdat";
 	if ((cdat = fopen(cFile.c_str(),"r"))){
-//		cout << " exists." << endl;
 		fclose(cdat);
 		cdat = fopen(cFile.c_str(),"a");
 	}
@@ -616,34 +628,43 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		cout << "Error in Network3::run_PLA(): Concentrations file \"" << cFile << "\" doesn't exist. Exiting." << endl;
 		exit(1);
 	}
-	//
+
 	// Observables file (optional)
 	FILE* gdat = NULL;
-	string gFile(prefix);
-	gFile += ".gdat";
-//	cout << gFile;
+	string gFile = outpre + ".gdat";
 	if ((gdat = fopen(gFile.c_str(),"r"))){
-//		cout << " exists." << endl;
 		fclose(gdat);
 		gdat = fopen(gFile.c_str(),"a");
 	}
 	else{
 //		cout << "Warning: Groups file \"" << gFile << "\" doesn't exist." << endl;
 	}
-	//
+
 	// Functions file (optional)
-	FILE* fdat = NULL;
-	string fFile(prefix);
-	fFile += ".fdat";
-//	cout << fFile;
+/*	FILE* fdat = NULL;
+	string fFile = outpre + ".fdat";
 	if ((fdat = fopen(fFile.c_str(),"r"))){
-//		cout << " exists." << endl;
 		fclose(fdat);
 		fdat = fopen(fFile.c_str(),"a");
 	}
 	else{
 //		cout << "Warning: Functions file \"" << fFile << "\" doesn't exist." << endl;
 	}
+*/
+	// PLA-specific output files
+	FILE* classif = NULL;
+	if (print_classif){
+		if ((classif = fopen((outpre+"_classif.pla").c_str(),"r"))){
+			fclose(classif);
+			classif = fopen((outpre+"_classif.pla").c_str(),"a");
+		}
+		else{
+			cout << "Error in Network3::run_PLA(): 'print_classif' flag set but classifications file \""
+				 << (outpre+"_classif.pla") << "\" doesn't exist. Exiting." << endl;
+			exit(1);
+		}
+	}
+	// ...
 
 	// Identify observables involved in functions
 	vector<unsigned int> funcObs;
@@ -690,7 +711,7 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	string print_net_message;
 //	while (time < maxTime && step < startStep+maxSteps && PLA_SIM->tau < INFINITY){
 //	while (time < maxTime && step < startStep+maxSteps && !Network3::all_inactive()){
-	while (time < maxTime && step < startStep + maxSteps)
+	while (time < maxTime && step < startStep + maxSteps && !stop_condition.Eval())
 	{
 		// Next step
 		step++;
@@ -711,16 +732,14 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 			for (unsigned int i=0;i < OBSERVABLE.size();i++){
 				OBSERVABLE[i]->second = OBSERVABLE[i]->first->getValue();
 			}
-
 			// Update all functions
 			for (unsigned int i=0;i < FUNCTION.size();i++){
 				FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 			}
-
 			// Output to file
 			if (print_cdat) Network3::print_species_concentrations(cdat,time);
-			if (gdat) Network3::print_observable_concentrations(gdat,time);
-			if (fdat) Network3::print_function_values(fdat,time);
+			if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
+			if (print_func) Network3::print_function_values(gdat,time);
 			if (print_save_net){ // Write current system state to .net file
 				// Collect species populations and update network concentrations vector
 				double* pops = new double[SPECIES.size()];
@@ -738,7 +757,15 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 				print_net_message = " Wrote NET file to " + (string)buf;
 //				fprintf(stdout, " Wrote NET file to %s", buf);
 			}
-
+			if (print_classif){
+				fprintf(classif,"%19.12e",time);
+				fprintf(classif," %19.19g",step);
+				for (unsigned int v=0;v < PLA_SIM->classif.size();v++){
+					fprintf(classif, " %10d", PLA_SIM->classif[v]);
+				}
+				fprintf(classif,"\n");
+				fflush(classif);
+			}
 			// Output to stdout
 			if (verbose){
 				cout << "\t" << fixed << setprecision(6) << time << "\t" << setprecision(0) << step;
@@ -750,7 +777,6 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 				}
 				cout << endl;
 			}
-
 			// Get next output time
 			if (time >= nextOutput) nextOutput += sampleTime;
 			if (outputCounter > stepInterval - network3::TOL) outputCounter = 0;
@@ -775,16 +801,14 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		for (unsigned int i=0;i < OBSERVABLE.size();i++){
 			OBSERVABLE[i]->second = OBSERVABLE[i]->first->getValue();
 		}
-
 		// Update all functions
 		for (unsigned int i=0;i < FUNCTION.size();i++){
 			FUNCTION[i]->second = FUNCTION[i]->first->Eval();
 		}
-
 		// Output to file
 		if (print_cdat) Network3::print_species_concentrations(cdat,time);
-		if (gdat) Network3::print_observable_concentrations(gdat,time);
-		if (fdat) Network3::print_function_values(fdat,time);
+		if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
+		if (print_func) Network3::print_function_values(gdat,time);
 		string print_net_message;
 		if (print_save_net){ // Write current system state to .net file
 			// Collect species populations and update network concentrations vector
@@ -801,20 +825,30 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 			fclose(out);
 			print_net_message = " Wrote NET file to " + (string)buf;
 		}
-
+		if (print_classif){
+			fprintf(classif,"%19.12e",time);
+			for (unsigned int v=0;v < PLA_SIM->classif.size();v++){
+				fprintf(classif, " %10d", PLA_SIM->classif[v]);
+			}
+			fprintf(classif,"\n");
+			fflush(classif);
+		}
 		// Output to stdout
 		if (verbose){
-			cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
+			cout << "\t" << fixed << setprecision(6) << time << "\t" << setprecision(0) << step;
 //			for (unsigned int i=0;i < OBSERVABLE.size();i++) cout << "\t" << OBSERVABLE[i]->second;
 			if (print_save_net) fprintf(stdout, "%s", print_net_message.c_str());
 			cout << endl;
 		}
 	}
-//	else{
-		// Even if .cdat printing is suppressed, print the last step
-//		if (!print_cdat) Network3::print_species_concentrations(cdat,time);
-//	}
-//	fprintf(stdout, "TOTAL STEPS: %d\n", (int)step);
+
+	// Messages if stopping conditions met
+	if (stop_condition.Eval()){ // Stop condition satisfied
+		cout << "Stopping condition " << stop_condition.GetExpr() << "met in PLA simulation." << endl;
+	}
+	else if (step >= startStep + maxSteps){ // maxSteps limit reached
+		cout << "Maximum step limit (" << maxSteps << ") reached in PLA simulation." << endl;
+	}
 
 	// If print_end_net = true, collect species populations and update network concentrations vector
 	if (print_end_net){
@@ -828,7 +862,8 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	// Close files
 	fclose(cdat);
 	if (gdat) fclose(gdat);
-	if (fdat) fclose(fdat);
+//	if (fdat) fclose(fdat);
+	if (classif) fclose(classif);
 
 	return pair<double,double>(step-startStep,time-tStart);
 }
@@ -952,7 +987,7 @@ void Network3::print_species_concentrations(FILE* out, double t){
 	fflush(out);
 }
 
-void Network3::print_observable_concentrations(FILE* out, double t){
+void Network3::print_observable_concentrations(FILE* out, double t, bool no_newline){
 	// Error check
 	if (!out){
 		cout << "Error in Network3::print_observable_concentrations(): 'out' file does not exist. Exiting." << endl;
@@ -965,7 +1000,7 @@ void Network3::print_observable_concentrations(FILE* out, double t){
 		fprintf(out, " ");
 		fprintf(out, fmt, OBSERVABLE[i]->second);
 	}
-	fprintf(out,"\n");
+	if (!no_newline) fprintf(out,"\n"); // Yes, a double negative
 	fflush(out);
 }
 
@@ -977,7 +1012,7 @@ void Network3::print_function_values(FILE* out, double t){
 	}
 	//
 	const char *fmt = "%19.12e";
-	fprintf(out, fmt, t);
+//	fprintf(out, fmt, t);
 	for (unsigned int i=0;i < FUNCTION.size();i++){
 		fprintf(out, " ");
 		fprintf(out, fmt, FUNCTION[i]->second);

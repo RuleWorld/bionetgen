@@ -36,7 +36,7 @@ void fEuler_RC::classifyRxns(vector<int>& classif, double tau, bool initial){
 	//
 	double a_tau;
 	for (unsigned int v=0;v < this->rxn.size();v++){
-		if (initial || !initial && classif[v] != RxnClassifier::EXACT_STOCHASTIC){
+		if (initial || (!initial && classif[v] != RxnClassifier::EXACT_STOCHASTIC)){
 			a_tau = this->rxn[v]->getRate()*tau;
 			if (sqrt(a_tau) > this->gg1){
 				classif[v] = RxnClassifier::DETERMINISTIC;

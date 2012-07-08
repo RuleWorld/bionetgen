@@ -31,7 +31,7 @@ double gammln(double xx){
 // Poisson distribution of mean xm, using ran1(idum) as a source of uniform random deviates.
 //double poidev(double xm, long *idum){
 double Util::RANDOM_POISSON(double xm){
-	double gammln(double xx);
+//	double gammln(double xx);
 	//float ran1(long *idum);
 	static double sq,alxm,g,oldm=(-1.0); /// oldm is a flag for whether xm has changed since last call.
 	double em,t,y;
@@ -77,7 +77,7 @@ double Util::RANDOM_POISSON(double xm){
 // each of probability pp, using ran1(idum) as a source of uniform random deviates.
 //double Util::RANDOM_BINOMIAL(double pp, int n){
 double Util::RANDOM_BINOMIAL(double pp, double n){
-	double gammln(double xx);
+//	double gammln(double xx);
 	//float ran1(long *idum);
 	int j;
 //	static int nold=(-1);

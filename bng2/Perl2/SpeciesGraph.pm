@@ -1366,10 +1366,12 @@ sub updateEdges
 
 {
 	my $sg = shift;
-	# should updateEdges return Fan error if a dangling edge is found?  default = YES
+	# should updateEdges return an error if a dangling edge is found?  default = YES
 	my $dangling_error = (@_) ? shift : 1;
 	# should updateEdges trim dangling edges or leave them intact?  default = NO
 	my $trim_dangling  = (@_) ? shift : 0;
+
+    #printf STDERR "SpeciesGraph->updateEdges( %s, $dangling_error, $trim_dangling ).. ", $sg->toString();
 
     # holds error value for return
     my $err = undef;
@@ -1468,6 +1470,7 @@ sub updateEdges
 		}
 	}
 
+    #print STDERR "done\n";
 	return $err;
 }
 
@@ -2922,20 +2925,20 @@ sub by_component
 
 sub cmp_edge
 {
-	my $a = shift;
-	my $b = shift;
+	my ($a,$b) = @_;
 	
 	my $cmp;
-
-	my (@a_p) = split( '[ \.]', $a );
-	my (@b_p) = split( '[ \.]', $b );
-
+    # split pointers
+	my (@a_p) = split /[ \.]/, $a;
+	my (@b_p) = split /[ \.]/, $b;
+    # dangling edges (2 elements in array) should be "greater than" true edges (4 elements in array)
+    if ($cmp = (@b_p <=> @a_p)) { return $cmp; }
+    # if both edges are the same true, compare element by element..
 	foreach my $i ( 0 .. $#a_p )
 	{
-		if ( $cmp = ( $a_p[$i] <=> $b_p[$i] ) )
+		if ( $cmp = ($a_p[$i] <=> $b_p[$i]) )
 		{   return $cmp;   }
 	}
-
 	# Getting here means edges are identical, which shouldn't happen.
 	return 0;
 }
@@ -2960,20 +2963,22 @@ sub by_edge
 
 # This sub assumes edges are stored in array references like this:
 #   true edges = [m1, c1, m2, c2]
-#   dangling edges = [m1, c2]
+#   dangling edges = [m1, c1]
 #  --Justin, 17 dec 2010
 #
 # Should be a little faster since there's no splitting here!
 
 sub edge_sort
 {
-	# $a, $b should be array references
+	# $a, $b arguments should be array references
 	my $cmp;
+    # dangling edges (2 elements in array) should be "greater than" true edges (4 elements in array)
+    if ($cmp = (@$b <=> @$a)) { return $cmp; }
+    # if both edges are the same true, compare element by element..
 	for ( my $i=0;  $i < @$a;  ++$i )
 	{
-		if ( $cmp = ( $a->[$i] <=> $b->[$i] ) ) {  return $cmp;  }
+		if ( $cmp = ($a->[$i] <=> $b->[$i]) ) { return $cmp; }
 	}
-
 	# Getting here means edges are identical (which shouldn't happen?).
 	return 0;
 }

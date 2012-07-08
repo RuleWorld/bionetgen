@@ -1,6 +1,7 @@
 package bngparser.methods;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ class MoleculeBonds{
 	String name;
 	BondList bonds;
 	String[] components;
+	
 	public String[] getComponents() {
 		return components;
 	}
@@ -58,6 +60,7 @@ public class ReactionAction {
 	List<String> id;
 	List<String> leftMap;
 	List<String> rightMap;
+	boolean flag = false;
 
 	public List<String> getOperator1() {
 		return operator1;
@@ -135,14 +138,10 @@ public class ReactionAction {
 							//TODO: addbond and delete bond have to be done on a per component level. 
 							
 							//if 2 molecules map two each other we need to check how the components map too
-							
 							for(int i = 0; i< species1.getComponents().length;i++){
 								for(int j = 0; j< species2.getComponents().length;j++){
-								
-									
-									String component1 = species1.getComponents()[i].replaceAll("([A-Za-z0-9_]+).*","$1");
-									String component2 = species2.getComponents()[j].replaceAll("([A-Za-z0-9_]+).*","$1");;
-									
+									String component1 = species1.getComponents()[i].replaceAll("([A-Za-z0-9_]+).*","$1").replaceAll("\\s","");
+									String component2 = species2.getComponents()[j].replaceAll("([A-Za-z0-9_]+).*","$1").replaceAll("\\s","");
 									if(component1.equals(component2)){
 										leftMap.add(species1.getName() + "_C" + (i+1));
 										rightMap.add(species2.getName() + "_C" + (j+1));
@@ -165,7 +164,6 @@ public class ReactionAction {
 										}
 										else if(species2.getComponents()[j].contains("!") && 
 												!species1.getComponents()[i].contains("!")){
-											
 											//this step checks how many molecules a single components is bound to and adds them to the add bond operation
 											String[] label = species2.getComponents()[j].split("!");
 											for(int counter=1;counter<label.length;counter++){
@@ -219,7 +217,7 @@ public class ReactionAction {
 					}
 					else if(species.getName().contains("PP")){
 						operations.add("Add");
-						operator1.add(species.getName());
+						operator1.add("id=\"" +species.getName()+ "\"");
 						operator2.add("");
 					}
 						
@@ -228,13 +226,12 @@ public class ReactionAction {
 		}
 		//this adds the sites fields in the add/delete actions
 		for(String label: tempBonds.keySet()){
-			operations.add(tempBonds.get(label).get(0));
-			//System.out.println(tempBonds.get(label).get(1));
-			operator1.add(tempBonds.get(label).get(1));
-			if(tempBonds.get(label).size()>2)
-				operator2.add(tempBonds.get(label).get(2));
-			else
-				operator2.add("BONKERS");
+			if(tempBonds.get(label).size()>2){
+				operations.add(tempBonds.get(label).get(0));
+				//System.out.println(tempBonds.get(label).get(1));
+				operator1.add("site1=\"" + tempBonds.get(label).get(1) + "\"");
+				operator2.add("site2=\"" + tempBonds.get(label).get(2) + "\"");
+			}
 		}
 		
 	}
