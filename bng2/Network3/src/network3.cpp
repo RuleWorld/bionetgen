@@ -599,19 +599,6 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		double stepInterval, mu::Parser& stop_condition, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
 		bool additional_pla_output, bool verbose){
 
-	// Error check
-	if ((maxTime-tStart) < 0.0){
-		cout << "Error in Network3::run_PLA(): Simulation time cannot be negative. Exiting." << endl;
-		exit(1);
-	}
-	if (sampleTime < 0.0){
-		cout << "Error in Network3::run_PLA(): Sampling time cannot be negative. Exiting." << endl;
-		exit(1);
-	}
-	if (maxSteps < 0){
-		cout << "Error in Network3::run_PLA(): 'maxSteps' cannot be negative (" << maxSteps << "). Exiting."<< endl;
-	}
-
 	// Output files
 	string outpre(prefix);
 	bool print_classif = additional_pla_output;

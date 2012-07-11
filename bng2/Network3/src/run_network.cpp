@@ -704,17 +704,69 @@ int main(int argc, char *argv[]){
 	}
 	// ODE & SSA simulators
 	else{
-		/* Compute time course */
 		long int /*n_steps = 0, n_steps_last = 0,*/ n_rate_calls_last = 0, n_deriv_calls_last = 0;
 		double n_steps = 0, n_steps_last = 0;//, n_rate_calls_last = 0, n_deriv_calls_last = 0;
 		//
 		double stepLimit = min(stepInterval,maxSteps);
 		bool forceQuit = false;
 		double t_out = t_start;
-		//
-		bool first_step = true;
+
+		// Initial screen outputs
+		switch (propagator) {
+		case SSA:
+			fprintf(stdout, "Stochastic simulation using direct Gillespie algorithm\n");
+			if (verbose){
+				fprintf(stdout, "%15s %8s %12s %7s %7s %10s %7s\n", "time", "n_steps", "n_rate_calls",
+								 "% spec", "% rxn", "n_species", "n_rxns");
+				fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d\n",
+						t,
+						gillespie_n_steps() - n_steps_last,
+						n_rate_calls_network() - (int)n_rate_calls_last,
+						100 * gillespie_frac_species_active(),
+						100 * gillespie_frac_rxns_active(),
+						n_species_network(),
+						n_rxns_network()
+						);
+			}
+			break;
+		case CVODE:
+			fprintf(stdout, "Propagating with cvode");
+			if (SOLVER == GMRES) fprintf(stdout, " using GMRES\n");
+			else if (SOLVER == GMRES_J) fprintf(stdout, " using GMRES with specified Jacobian multiply\n");
+			else if (SOLVER == DENSE_J) fprintf(stdout, " using dense LU with specified Jacobian\n");
+			else fprintf(stdout, " using dense LU\n");
+			if (verbose){
+				fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+				fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
+			}
+			break;
+		case EULER:
+			fprintf(stdout,"Propagating with Euler method using fixed time step of %.15g\n",rtol);
+			if (verbose){
+				fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+				fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
+			}
+			break;
+		case RKCS:
+			fprintf(stdout, "Propagating with rkcs\n");
+			if (verbose){
+				fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
+				fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
+			}
+			break;
+		}
+		if (verbose) fflush(stdout);
+
+		// Initial check of stopping condition before starting propagation
+		if (stop_condition.Eval()){
+			cout << "Stopping condition " << stop_condition.GetExpr() << "already met prior "
+				 <<	"to simulation. Quitting." << endl;
+			forceQuit = true;
+		}
+
+		// Do propagation
 		int n_old = 0;
-		for (n = 1; n <= n_sample && !forceQuit; ++n){
+		for (n = 1; n <= n_sample && t < t_end && !forceQuit; ++n){
 			if (n != n_old){
 				if (sample_times) t_out = sample_times[n];
 				else t_out += sample_time;
@@ -722,62 +774,6 @@ int main(int argc, char *argv[]){
 			}
 			dt = t_out-t;
 			dt = min(dt,t_end-t); // Don't go past end time
-			if (first_step){
-				first_step = false;
-				switch (propagator) {
-				case SSA:
-					fprintf(stdout, "Stochastic simulation using direct Gillespie algorithm\n");
-					if (verbose){
-						fprintf(stdout, "%15s %8s %12s %7s %7s %10s %7s\n", "time", "n_steps", "n_rate_calls",
-										 "% spec", "% rxn", "n_species", "n_rxns");
-						fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d\n",
-								t,
-								gillespie_n_steps() - n_steps_last,
-								n_rate_calls_network() - (int)n_rate_calls_last,
-								100 * gillespie_frac_species_active(),
-								100 * gillespie_frac_rxns_active(),
-								n_species_network(),
-								n_rxns_network()
-								);
-					}
-					break;
-				case CVODE:
-					fprintf(stdout, "Propagating with cvode");
-					if (SOLVER == GMRES) fprintf(stdout, " using GMRES\n");
-					else if (SOLVER == GMRES_J) fprintf(stdout, " using GMRES with specified Jacobian multiply\n");
-					else if (SOLVER == DENSE_J) fprintf(stdout, " using dense LU with specified Jacobian\n");
-					else fprintf(stdout, " using dense LU\n");
-					if (verbose){
-						fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
-						fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
-					}
-					break;
-				case EULER:
-					fprintf(stdout,"Propagating with Euler method using fixed time step of %.15g\n",rtol);
-					if (verbose){
-						fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
-						fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
-					}
-					break;
-				case RKCS:
-					fprintf(stdout, "Propagating with rkcs\n");
-					if (verbose){
-						fprintf(stdout, "%15s %13s %13s\n", "time", "n_steps", "n_deriv_calls");
-						fprintf(stdout, "%15.2f %13.0f %13d\n", t, n_steps, n_deriv_calls_network());
-					}
-					break;
-				}
-				if (verbose) fflush(stdout);
-
-				// Initial check of stopping condition before starting propagation
-				if (stop_condition.Eval()){
-					cout << "Stopping condition " << stop_condition.GetExpr() << "already met prior "
-						 <<	"to simulation. Quitting." << endl;
-					break;
-				}
-			}
-
-			/* Do propagation */
 			switch (propagator){
 			case SSA:
 				if (gillespie_n_steps() >= stepLimit - network3::TOL){
