@@ -348,7 +348,11 @@ sub simulate
         }
         
         if ( ($t_end - $t_start) <= 0.0 )
-        {   return "t_end must be greater than t_start.";   }
+        {
+#        	return "t_end must be greater than t_start.";
+        	print "WARNING: t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
+                  "Simulation won't run.\n";
+        }
 
         
         if (defined $params->{n_steps}){
