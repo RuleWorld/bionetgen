@@ -212,7 +212,7 @@ public class ReactionAction {
 				for(MoleculeBonds species: copyMolecules.get(reactant)){
 					if(species.getName().contains("RP")){
 						operations.add("Delete");
-						operator1.add(species.getName());
+						operator1.add("id=\"" + species.getName() + "\"");
 						operator2.add("");
 					}
 					else if(species.getName().contains("PP")){
