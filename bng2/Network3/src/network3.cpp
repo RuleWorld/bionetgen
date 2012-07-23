@@ -433,9 +433,16 @@ void Network3::init_PLA(string config, bool verbose){
 	arg[3].append(",");
 	string s, name, val;
 	param.resize(7,NAN);
-	unsigned int nParam = 0;
+	// Default values
+	param[1] = 3.0;   // apx1
+	param[2] = 100.0; // gg1
+	param[3] = 0.5;   // p
+	param[4] = 0.8;   // pp
+	param[5] = 1.5;   // q
+	param[6] = 0.75;  // w
+	vector<bool> definedParam;
+	definedParam.resize(7,false);
 	while ((next = arg[3].find(',',last+1)) != (int)string::npos){
-		nParam++;
 		s = arg[3].substr(last+1,next-(last+1));
 		unsigned int equal = s.find("=");
 		if (equal == string::npos){ // Error check
@@ -445,13 +452,34 @@ void Network3::init_PLA(string config, bool verbose){
 		name = s.substr(0,equal);
 		Util::remove_whitespace(name);
 		val = s.substr(equal+1,string::npos);
-		if (name == "eps")       param[0] = atof(val.c_str());
-		else if (name == "apx1") param[1] = atof(val.c_str());
-		else if (name == "gg1")  param[2] = atof(val.c_str());
-		else if (name == "p")    param[3] = atof(val.c_str());
-		else if (name == "pp")   param[4] = atof(val.c_str());
-		else if (name == "q")    param[5] = atof(val.c_str());
-		else if (name == "w")    param[6] = atof(val.c_str());
+		if (name == "eps"){
+			param[0] = atof(val.c_str());
+			definedParam[0] = true;
+		}
+		else if (name == "apx1"){
+			param[1] = atof(val.c_str());
+			definedParam[1] = true;
+		}
+		else if (name == "gg1"){
+			param[2] = atof(val.c_str());
+			definedParam[2] = true;
+		}
+		else if (name == "p"){
+			param[3] = atof(val.c_str());
+			definedParam[3] = true;
+		}
+		else if (name == "pp"){
+			param[4] = atof(val.c_str());
+			definedParam[4] = true;
+		}
+		else if (name == "q"){
+			param[5] = atof(val.c_str());
+			definedParam[5] = true;
+		}
+		else if (name == "w"){
+			param[6] = atof(val.c_str());
+			definedParam[6] = true;
+		}
 		else{ // Error check
 			cout << "Oops, I don't recognize the parameter " << name << " in argument 4: \"" << arg[3] << "\". "
 				 << "Please try again." << endl;
@@ -461,46 +489,27 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 
 	// Error check
-	if (nParam < 4 || nParam > 7){
-		cout << "Oops, minimum number of parameters is 4 and maximum is 7. You've specified " << param.size() << "." << endl;
-		cout << "Please try again." << endl;
+	if (!definedParam[0]){ // User required to define 'eps'. All other parameters have default values.
+		cout << "Oops, must provide a value for 'eps' (<< 1). Please try again." << endl;
 		exit(1);
-	}
-	if (arg[2] == "post:post" && nParam < 7){
-		cout << "Oops, you've selected the 'post:post' configuration which requires 7 parameters." << endl;
-		cout << "You've specified " << param.size() << ". Please try again." << endl;
-		exit(1);
-	}
-	for (unsigned int i=0;i < nParam;i++){
-		if (Util::isNAN(param[i])){
-			cout << "Uh oh, wasn't able to read a value for parameter ";
-			if (i==0) cout << "'eps'. ";
-			if (i==1) cout << "'apx1'. ";
-			if (i==2) cout << "'gg1'. ";
-			if (i==3) cout << "'p'. ";
-			if (arg[2] == "post:post"){
-				if (i==4) cout << "'pp'. ";
-				if (i==5) cout << "'q'. ";
-				if (i==6) cout << "'w'. ";
-			}
-			cout << "Please try again." << endl;
-		}
 	}
 
 	if (verbose){
-		cout << "You've specified " << param.size() << " parameters:" << endl;
+		cout << "Your simulation parameters for this run are:" << endl;
 		for (unsigned int i=0;i < param.size();i++){
 			if (i==0) cout << "   eps = "	<< param[0];
 			if (i==1) cout << "   apx1 = "	<< param[1];
 			if (i==2) cout << "   gg1 = " 	<< param[2];
 			if (i==3) cout << "   p = " 	<< param[3];
-			if (i==4) cout << "   pp = " 	<< param[4];
-			if (i==5) cout << "   q = " 	<< param[5];
-			if (i==6) cout << "   w = " 	<< param[6];
-			if ( (i==4 || i==5 || i==6) && (arg[2] != "post:post")){
-				cout << "   >>ignored<< (" << arg[2] << ")";
+			if (arg[2] == "post:post"){
+				if (i==4) cout << "   pp = " 	<< param[4];
+				if (i==5) cout << "   q = " 	<< param[5];
+				if (i==6) cout << "   w = " 	<< param[6];
 			}
-			cout << endl;
+			if (i < 4 || arg[2] == "post:post"){
+				if (!definedParam[i]) cout << " (default)";
+				cout << endl;
+			}
 		}
 	}
 
@@ -589,19 +598,6 @@ void Network3::init_PLA(string config, bool verbose){
 pair<double,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
 		double stepInterval, mu::Parser& stop_condition, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
 		bool additional_pla_output, bool verbose){
-
-	// Error check
-	if ((maxTime-tStart) < 0.0){
-		cout << "Error in Network3::run_PLA(): Simulation time cannot be negative. Exiting." << endl;
-		exit(1);
-	}
-	if (sampleTime < 0.0){
-		cout << "Error in Network3::run_PLA(): Sampling time cannot be negative. Exiting." << endl;
-		exit(1);
-	}
-	if (maxSteps < 0){
-		cout << "Error in Network3::run_PLA(): 'maxSteps' cannot be negative (" << maxSteps << "). Exiting."<< endl;
-	}
 
 	// Output files
 	string outpre(prefix);
