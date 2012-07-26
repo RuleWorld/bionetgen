@@ -306,7 +306,7 @@ sub simulate
     else
     {   # t_start defaults to 0
         if ( $continue   and   defined($model->Time) )
-        {  $t_start = $model->Time;  }
+        {  $t_start = $model->Time; }
          else
         {  $t_start = 0.0;  }
     }
@@ -375,12 +375,18 @@ sub simulate
         { @sample_times = @{$params->{sample_times}}; }
         @sample_times = sort {$a <=> $b} @sample_times; # numeric sort
         if ( @sample_times > 2 ){
-            if ( defined $params->{t_end} ){ 
+        	# remove all sample times <= t_start
+        	while ($sample_times[0] <= $t_start){ 
+        		shift @sample_times;
+            }
+            if ( defined $params->{t_end} ){
                 $t_end = $params->{t_end};
-                while ($sample_times[ $#sample_times ] >= $t_end){ # remove all sample times >= t_end
+                # remove all sample times >= t_end
+                while ($sample_times[ $#sample_times ] >= $t_end){ 
                     pop @sample_times;
                 }
-                push @sample_times, $t_end; # push t_end as final sample time
+                # push t_end as final sample time
+                push @sample_times, $t_end; 
             }
             else{
                 $t_end = $sample_times[ $#sample_times ];
