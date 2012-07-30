@@ -88,7 +88,6 @@ void print_error(){
 }
 
 int main(int argc, char *argv[]){
-
 	register int i/*, j*/;
     char *netfile_name, *network_name;
     char *group_input_file_name = NULL;
@@ -100,7 +99,7 @@ int main(int argc, char *argv[]){
     Rxn_array *reactions;
     int n, n_sample;
     double t_start=0.0, t, dt, atol = 1.0e-8, rtol = 1.0e-8;
-    double sample_time, *sample_times = 0x0, /* *st,*/ t1;
+    double sample_time, *sample_times = 0x0/*, *st, t1*/;
     char c, buf[1000], *outpre = NULL;
     int argleft, iarg = 1, error = 0;
     int save_file = 0;
@@ -304,25 +303,35 @@ int main(int argc, char *argv[]){
 	else {
 		/* input is t1 t2 ... tn */
 		n_sample = argleft;
-		t1 = atof(argv[iarg++]);
-		if (t1 == t_start){
-			n_sample--;
-			t1 = atof(argv[iarg++]);
+		vector<double> st;
+		st.push_back(t_start);
+
+		// Collect all sample times
+		for (int j=0;j < n_sample;j++){
+			st.push_back(atof(argv[iarg++]));
 		}
-		sample_times = ALLOC_VECTOR(n_sample + 1);
-		sample_times[0] = t_start;
-		sample_times[1] = t1;
-		for (int j=2;j < n_sample+1;j++){ // t_start is the extra sample
-			sample_times[j] = atof(argv[iarg++]);
+		double t_end = st[st.size()-1]; // BNG appends t_end to the sample_times array
+
+		// Remove sample times <= t_start and >= t_end
+		vector<double>::iterator it;
+		for (it=st.begin()+1;it != st.end()-1;){
+//			cout << *it;
+			if (*it <= t_start || *it >= t_end){
+//				cout << ": ERASE";
+				st.erase(it);
+				n_sample--;
+			}
+			else{ it++; }
+//			cout << endl;
 		}
-		/*if (t0 != t_start){
-			sample_times[1] = t0;
-			st = &sample_times[2];
+
+		// Fill up sample_times array
+		sample_times = ALLOC_VECTOR(n_sample+1); // t_start is the extra sample
+		for (int j=0;j <= n_sample;j++){
+			sample_times[j] = st[j];
 		}
-		else st = &sample_times[1];
-		for (iarg = iarg; iarg < argc; ++iarg, ++st) *st = atof(argv[iarg]);
-		*/
-		/* Check that final array is in ascending order with no negative elements */
+
+		// Check that final array is in ascending order with no negative elements
 		for (i = 0; i <= n_sample; ++i) {
 			if (sample_times[i] < 0.0) {
 				fprintf(stderr,"ERROR: Negative sample times are not allowed.\n");
@@ -419,9 +428,6 @@ int main(int argc, char *argv[]){
 		}
 	}
 	stop_condition.SetExpr(stop_string);
-//	cout << stop_condition.GetExpr() << endl;
-//	cout << stop_condition.Eval() << endl;
-//	exit(1);
 
     /* Read reactions */
 	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
@@ -633,7 +639,7 @@ int main(int argc, char *argv[]){
 		double step = 0, outputCounter = 0;
 		pair<double,double> nSteps_Tau;
 		if (sample_times){ // Sample times
-			for (int i=1;i < n_sample+1 && step < maxSteps - network3::TOL;i++) // t_start is the extra sample (already output)
+			for (int i=1;i <= n_sample && step < maxSteps - network3::TOL;i++) // t_start is the extra sample (already output)
 			{
 				// Simulate to next output >>step<<
 //				if ((step % stepInterval) != 0){
@@ -772,8 +778,8 @@ int main(int argc, char *argv[]){
 				else t_out += sample_time;
 				n_old = n;
 			}
+			if (t_end < t_out) t_out = t_end; // Don't go past end time
 			dt = t_out-t;
-			dt = min(dt,t_end-t); // Don't go past end time
 			switch (propagator){
 			case SSA:
 				if (gillespie_n_steps() >= stepLimit - network3::TOL){
@@ -900,18 +906,22 @@ int main(int argc, char *argv[]){
 
 			// Print current properties of the system
 			if (print_cdat) print_concentrations_network(conc_file,t);
-			if (group_file) print_group_concentrations_network(group_file,t,print_func);
-			if (group_file && print_func) print_function_values_network(group_file,t);
-		    if (enable_species_stats) print_species_stats(species_stats_file,t);
-			if (print_flux) print_flux_network(flux_file,t);
-			if (print_save_net){
-				if (outpre) sprintf(buf, "%s_save.net", outpre);
-				else sprintf(buf, "save.net");
-				out = fopen(buf, "w");
-				print_network(out);
-				fclose(out);
-				fprintf(stdout, " Wrote NET file to %s", buf);
-			}
+			//  Don't print if stopping condition met before t_end (must print to CDAT)
+//			if (!forceQuit || t >= t_out-network3::TOL){ // Sometimes forceQuit happens at an output step
+				if (group_file) print_group_concentrations_network(group_file,t,print_func);
+				if (group_file && print_func) print_function_values_network(group_file,t);
+				if (enable_species_stats) print_species_stats(species_stats_file,t);
+				if (print_flux) print_flux_network(flux_file,t);
+				if (print_save_net){
+					if (outpre) sprintf(buf, "%s_save.net", outpre);
+					else sprintf(buf, "save.net");
+					out = fopen(buf, "w");
+					print_network(out);
+					fclose(out);
+					fprintf(stdout, " Wrote NET file to %s", buf);
+				}
+//			}
+
 			/* Check if steady state reached */
 			if (check_steady_state) {
 				double *a, delta, dx;

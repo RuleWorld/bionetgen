@@ -375,16 +375,16 @@ sub simulate
         { @sample_times = @{$params->{sample_times}}; }
         @sample_times = sort {$a <=> $b} @sample_times; # numeric sort
         if ( @sample_times > 2 ){
-        	# remove all sample times <= t_start
-        	while ($sample_times[0] <= $t_start){ 
-        		shift @sample_times;
-            }
+        	# remove all sample times <= t_start --Do this in run_network (LAH)
+#        	while ($sample_times[0] <= $t_start){ 
+#        		shift @sample_times;
+#            }
             if ( defined $params->{t_end} ){
                 $t_end = $params->{t_end};
-                # remove all sample times >= t_end
-                while ($sample_times[ $#sample_times ] >= $t_end){ 
-                    pop @sample_times;
-                }
+                # remove all sample times >= t_end --Do this in run_network (LAH)
+#                while ($sample_times[ $#sample_times ] >= $t_end){ 
+#                    pop @sample_times;
+#                }
                 # push t_end as final sample time
                 push @sample_times, $t_end; 
             }
@@ -434,6 +434,7 @@ sub simulate
     my $steady_state_reached = 0;
     my $edge_warning = 0;
     my $otf = 0;
+
     while ( my $message = <Reader> )
     {
         # If network generation is on-the-fly, look for signal that
