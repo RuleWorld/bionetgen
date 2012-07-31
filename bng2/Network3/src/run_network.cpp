@@ -683,7 +683,7 @@ int main(int argc, char *argv[]){
 //		cout << "PLA simulation took " << (clock()-initTime)/(double)CLOCKS_PER_SEC << " CPU seconds" << endl;
 
 		// Even if .cdat printing is suppressed, must output the last step
-		if (!print_cdat){
+		if (step > 0.5 && !print_cdat){ // Only print if the simulation ran (i.e., step > 0)
 			string filename(outpre);
 			filename += ".cdat";
 			FILE* cdatFile = fopen(filename.c_str(),"a");
@@ -949,7 +949,8 @@ int main(int argc, char *argv[]){
 	} // end else
 
 	// Final printouts
-	if (!print_cdat && propagator != PLA){ // Even if .cdat is suppressed, must print the last step (PLA handles this internally)
+	if (t > t_start+network3::TOL && !print_cdat && propagator != PLA){ // If simulation ran t > t_start
+		// Even if .cdat is suppressed, must print the last step (PLA handles this internally)
 		print_concentrations_network(conc_file, t);
 	}
 	finish_print_concentrations_network(conc_file);
