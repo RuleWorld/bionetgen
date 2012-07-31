@@ -331,6 +331,12 @@ int main(int argc, char *argv[]){
 			sample_times[j] = st[j];
 		}
 
+		// Make sure there are at least 2 elements (t_start and t_end)
+		if (n_sample < 1){
+			fprintf(stderr,"ERROR: There must be at least one sample time (t_end).\n");
+			exit(1);
+		}
+
 		// Check that final array is in ascending order with no negative elements
 		for (i = 0; i <= n_sample; ++i) {
 			if (sample_times[i] < 0.0) {
@@ -338,7 +344,8 @@ int main(int argc, char *argv[]){
 				exit(1);
 			}
 			if (i == 0)	continue;
-			if (sample_times[i] <= sample_times[i-1]) {
+//			if (sample_times[i] <= sample_times[i-1]) {
+			if (sample_times[i] < sample_times[i-1]) { // Handle case where n_sample=2 and t_start=t_end
 				fprintf(stderr,"ERROR: Sample times must be in ascending order.\n");
 				exit(1);
 			}
