@@ -23,6 +23,17 @@ g_Getter::g_Getter(vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : nRxns(0
 	for (unsigned int j=0;j < this->sp.size();j++){
 		this->addSpecies();
 	}
+/*
+for (unsigned int i=0;i < this->g.size();i++){
+	cout << "g[" << i << "][0]: " << this->g[i][0];
+	if (this->g[i].size() > 1){
+		for (unsigned int j=1;j < this->g[i].size();j++){
+			cout << " ; g[" << i << "][" << j << "]: " << this->g[i][j];
+		}
+	}
+	cout << endl;
+}
+//*/
 	// Set elements of g[]
 /*	this->g.resize(this->sp.size());
 	double var_gi;
@@ -78,7 +89,7 @@ double g_Getter::get_g(unsigned int i){
 double g_Getter::get_const_g(unsigned int i){
 	double g_const_i = 0.0; // Constant part of g_i
 	// Loop over reactions
-	for (unsigned int v=0;v < this->rxn.size();v++){
+	for (unsigned int v=0;v < this->nRxns;v++){
 		g_const_i = max(g_const_i,this->get_const_g(v,i));
 	}
 	return g_const_i;
@@ -91,22 +102,25 @@ double g_Getter::get_const_g(unsigned int u, unsigned int i){
 	// Loop over reactant species in reaction R_u
 	bool found = false;
 	for (unsigned int j=0;j < R_u->rateSpecies.size() && !found;j++){
+//cout << "S_" << i << ": " << S_i->name << "; R_" << u << "->rateSpecies[" << j << "]: " << R_u->rateSpecies[j]->name << endl;
 		if (S_i == R_u->rateSpecies[j]){ // Species S_i is a reactant in reaction R_u
+/*cout << "MATCH" << endl;
+cout << R_u->toString() << endl;*/
 			found = true;
 			// Constant cases
-			if (R_u->type == "ELEMENTARY:UNIMOLECULAR"){
+			if (R_u->type.find("ELEMENTARY:UNIMOLECULAR") != string::npos){
 				g_ui = 1.0;
 			}
-			else if (R_u->type == "ELEMENTARY:BIMOLECULAR_AA"){
+			else if (R_u->type.find("ELEMENTARY:BIMOLECULAR_AA") != string::npos){
 				g_ui = 3.0;
 			}
-			else if (R_u->type == "ELEMENTARY:BIMOLECULAR_AB"){
+			else if (R_u->type.find("ELEMENTARY:BIMOLECULAR_AB") != string::npos){
 				g_ui = 2.0;
 			}
-			else if (R_u->type == "ELEMENTARY:TRIMOLECULAR_AAA"){
+			else if (R_u->type.find("ELEMENTARY:TRIMOLECULAR_AAA") != string::npos){
 				g_ui = 5.5;
 			}
-			else if (R_u->type == "ELEMENTARY:TRIMOLECULAR_AAB"){
+			else if (R_u->type.find("ELEMENTARY:TRIMOLECULAR_AAB") != string::npos){
 				if (j == 0){	  // 2S_i + S_j -> products
 					g_ui = 4.5;
 				}
@@ -119,7 +133,7 @@ double g_Getter::get_const_g(unsigned int u, unsigned int i){
 					exit(1);
 				}
 			}
-			else if (R_u->type == "ELEMENTARY:TRIMOLECULAR_ABC"){
+			else if (R_u->type.find("ELEMENTARY:TRIMOLECULAR_ABC") != string::npos){
 				g_ui = 3.0;
 			}
 /*				else if (R_u->type == "SATURATION"){
@@ -143,7 +157,7 @@ double g_Getter::get_const_g(unsigned int u, unsigned int i){
 double g_Getter::get_var_g(unsigned int i){
 	double g_var_i = 0.0; // Variable part of g_i
 	// Loop over reactions
-	for (unsigned int v=0;v < this->rxn.size();v++){
+	for (unsigned int v=0;v < this->nRxns;v++){
 		g_var_i = max(g_var_i,this->get_var_g(v,i));
 	}
 	return g_var_i;
@@ -159,13 +173,13 @@ double g_Getter::get_var_g(unsigned int u, unsigned int i){
 		if (S_i == R_u->rateSpecies[j]){ // Species S_i is a reactant in reaction R_v
 			found = true;
 			// Skip over known reaction types
-			if (R_u->type != "ELEMENTARY:SYNTHESIS"			&&
-				R_u->type != "ELEMENTARY:UNIMOLECULAR"   	&&
-				R_u->type != "ELEMENTARY:BIMOLECULAR_AA" 	&&
-				R_u->type != "ELEMENTARY:BIMOLECULAR_AB"	&&
-				R_u->type != "ELEMENTARY:TRIMOLECULAR_AAA"	&&
-				R_u->type != "ELEMENTARY:TRIMOLECULAR_AAB"	&&
-				R_u->type != "ELEMENTARY:TRIMOLECULAR_ABC"	//&&
+			if (R_u->type.find("ELEMENTARY:SYNTHESIS")        == string::npos &&
+				R_u->type.find("ELEMENTARY:UNIMOLECULAR")     == string::npos &&
+				R_u->type.find("ELEMENTARY:BIMOLECULAR_AA")   == string::npos &&
+				R_u->type.find("ELEMENTARY:BIMOLECULAR_AB")   == string::npos &&
+				R_u->type.find("ELEMENTARY:TRIMOLECULAR_AAA") == string::npos &&
+				R_u->type.find("ELEMENTARY:TRIMOLECULAR_AAB") == string::npos &&
+				R_u->type.find("ELEMENTARY:TRIMOLECULAR_ABC") == string::npos //&&
 //				R_u->type != "SATURATION"					//&&
 // 				R_u->type != "..."
 				)
@@ -175,21 +189,24 @@ double g_Getter::get_var_g(unsigned int u, unsigned int i){
 				double X_i = S_i->population;
 				double a_u = R_u->getRate();
 				double zeta_ui = static_cast<double>(R_u->rateSpecies.size()); // Give equal weights to each term
-				double alpha_ui = dau_dXi*X_i/a_u;
+				double alpha_ui;
+				if (dau_dXi*X_i < network3::TOL) alpha_ui = 0.0;
+				else alpha_ui = dau_dXi*X_i/a_u;
 				g_ui = zeta_ui*alpha_ui;
 				//
-				// Example: S1 + S2 -> products; av = f(X1,X2)
-				// Delta_av/av = (dav_dX1*X1/av)*[Delta_X1/X1] + (dav_dX2*X2/av)*[Delta_X2/X2] = eps
-				// *** g_vi = zeta_vi*alpha_vi ***
-				// zeta_v1 = zeta_v2 = 2
-				// alpha_v1 = dav_dX1*X1/av
-				// alpha_v2 = dav_dX2*X2/av
+				// Example: S1 + S2 -> products; a_u = c*X1*X2
+				// Delta_a_u/a_u = (dau_dX1*X1/a_u)*[Delta_X1/X1] + (dau_dX2*X2/a_u)*[Delta_X2/X2] = eps
+				// *** g_ui = zeta_ui*alpha_ui ***
+				// zeta_u1 = zeta_u2 = 2
+				// alpha_u1 = dau_dX1*X1/a_u = (c*X2)*X1/(c*X1*X2) = 1
+				// alpha_u2 = dau_dX2*X2/a_u = (c*X1)*X2/(c*X1*X2) = 1
+				// g_u1 = g_u2 = 2
 /*
-				cout << "Species: " << S_i->name << ", Rxn: " << R_u->toString() << endl;
-				cout << "----------------------------------------------" << endl;
-				cout << "dau_dXi = " << dav_dXi << ", X_i = " << X_i << ", a_v = " << a_v << ", zeta_vi = " << zeta_vi
-					 << ", alpha_vi = " << alpha_vi << endl << endl;;
-*/
+				cout << "-----" << endl;
+				cout << "Species " << i << ": " << S_i->name << ", Rxn " << u << ": " << R_u->toString() << endl;
+				cout << "dau_dXi = " << dau_dXi << ", X_i = " << X_i << ", a_u = " << a_u << ", zeta_ui = " << zeta_ui
+					 << ", alpha_ui = " << alpha_ui << ", g_ui = " << g_ui << endl;
+//*/
 			}
 		}
 	}

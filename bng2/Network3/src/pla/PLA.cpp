@@ -282,8 +282,14 @@ void PLA::nextStep(){
 		}
 		// Otherwise...
 		else{
+/*
+for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;
+cout << endl;*/
 			// Fire all non-ES rxns
 			this->fg.fireRxns(this->k,this->classif,this->tau);
+/*for (unsigned int i=0;i < this->k.size();i++) cout << "k[" << i << "]: " << this->k[i] << endl;
+cout << endl;
+for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;*/
 
 			// Step 5: Perform postleap check (before firing ES rxn)
 			if (!this->pl.check()){

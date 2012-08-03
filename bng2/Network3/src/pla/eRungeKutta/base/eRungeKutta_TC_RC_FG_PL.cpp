@@ -148,6 +148,10 @@ void eRungeKutta_TC_RC_FG_PL::fireRxns(vector<double>& k, vector<int>& classif, 
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		if (classif[v] != RxnClassifier::EXACT_STOCHASTIC){ // ES rxn is fired in PLA::nextStep() after postleap check
 			double a_tau = this->aCalc->a_eff[v]*tau;
+/*
+cout << "a_tau[" << v << "]: " << a_tau << endl;
+cout << endl;
+*/
 			if (classif[v] == RxnClassifier::POISSON){
 				k[v] = Util::RANDOM_POISSON(a_tau);
 			}
