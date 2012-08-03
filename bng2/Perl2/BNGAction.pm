@@ -181,7 +181,7 @@ sub simulate
         # Make sure NET file has proper suffix
         ($netpre = $netfile) =~ s/[.]([^.]+)$//;
         unless ( $1 =~ /net/i )
-        {   return "File $netfile does not have net suffix";   }
+        {   return "File $netfile does not have .net suffix";   }
     }
     else
     {
@@ -189,10 +189,11 @@ sub simulate
         $netfile = "${prefix}.net";
         $netpre  = $prefix;
 
-        # Generatese NET file if not already created or if updateNet flag is set
+        # Generate NET file if not already created or if updateNet flag is set
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
             $err = $model->writeNET( {prefix=>"$netpre"} );
+#            $err = $model->writeNetwork( {prefix=>"$netpre"} );
             if ($err) {  return $err;  }
         }
     }
@@ -590,6 +591,7 @@ sub simulate
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
         $err = $model->writeNET( {prefix => "$netpre"} );
+#        $err = $model->writeNetwork( {prefix => "$netpre"} );
         if ($err) { return $err; }
     }
 
