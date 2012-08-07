@@ -688,12 +688,12 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 	{
 		// Next step
 		step++;
-		//cout << time << endl;
+//		cout << endl << "time: " << fixed << setprecision(6) << time << endl;
 		PLA_SIM->nextStep();
-		if (PLA_SIM->tau < INFINITY)
+//		cout << "tau: " << PLA_SIM->tau << endl;
+		if (PLA_SIM->tau < INFINITY && PLA_SIM->tau > -INFINITY)
 			time += PLA_SIM->tau;
 		else break;
-		//cout << PLA_SIM->tau << endl;
 
 		// Is it time to output?
 		lastOut = false;

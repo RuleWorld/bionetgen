@@ -308,7 +308,7 @@ int main(int argc, char *argv[]){
 	if ((argleft = argc - iarg) == 2) {
 		/* input is sample_time n_sample */
 		sample_time = atof(argv[iarg++]);
-		n_sample = atoi(argv[iarg++]);
+		n_sample = (int)atof(argv[iarg++]); // Read as float and cast to int to allow for exponential format
 	}
 	else {
 		/* input is t1 t2 ... tn */

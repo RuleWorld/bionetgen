@@ -211,7 +211,6 @@ void PLA::nextStep(){
 
 	// Step 1: Calculate initial tau
 	this->tc.getNewTau(this->tau);
-
 	// Step 2: Get initial reaction classifications
 	this->rc.classifyRxns(this->classif,this->tau,true);
 
@@ -276,20 +275,24 @@ void PLA::nextStep(){
 		// Step 4: Fire reactions
 		// If all rxns are ES, just fire the one with min{tau_ES_v} and move on (no need to postleap check)
 		if (allES){
-			if (this->ES_rxn) // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
+//			cout << "allES" << endl;
+			if (this->ES_rxn){ // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
+//				cout << "firing rxn " << this->ES_rxn->toString() << endl;
+//				printf("rate: %26.18f\n",this->ES_rxn->getRate());
 				this->ES_rxn->fire(1.0);
+			}
 //			cout << "All ES step" << endl;
 		}
 		// Otherwise...
 		else{
-/*
-for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;
-cout << endl;*/
+			/*
+			for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;
+			cout << endl;*/
 			// Fire all non-ES rxns
 			this->fg.fireRxns(this->k,this->classif,this->tau);
-/*for (unsigned int i=0;i < this->k.size();i++) cout << "k[" << i << "]: " << this->k[i] << endl;
-cout << endl;
-for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;*/
+			/*for (unsigned int i=0;i < this->k.size();i++) cout << "k[" << i << "]: " << this->k[i] << endl;
+			cout << endl;
+			for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;*/
 
 			// Step 5: Perform postleap check (before firing ES rxn)
 			if (!this->pl.check()){
@@ -321,7 +324,9 @@ double PLA::get_tau_ES(unsigned int v){
 }
 
 double PLA::get_tau_FRM(unsigned int v){
-	return (-log(Util::RANDOM_CLOSED())/this->rxn[v]->getRate());
+	double rate_v = this->rxn[v]->getRate();
+	if (rate_v == 0.0) return INFINITY; // Do this to prevent getting -INFINITY if rate_v = -0.0 (yes, negative zero)
+	else return (-log(Util::RANDOM_CLOSED())/this->rxn[v]->getRate());
 }
 /*
 double PLA::get_tau_Gibson(unsigned int v){
