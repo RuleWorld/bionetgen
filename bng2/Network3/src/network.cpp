@@ -4507,11 +4507,24 @@ void update_rxn_rates(int irxn) {
 		a[jrxn] = anew;
 	}
 
+	// Error check
+	if (GSP.a_tot < 0.0){
+		GSP.a_tot = 0.0;
+		for (int i = 0; i < GSP.na; ++i) {
+			GSP.a_tot += GSP.a[i];
+		}
+		if (GSP.a_tot < 0.0){ // Throw an error if it's still negative
+			cout << "Error in update_rxn_rates(): GSP.a_tot < 0 (" << GSP.a_tot << "). Shouldn't happen. Exiting." << endl;
+			exit(1);
+		}
+	}
+
 	return;
 }
 
 int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep,
 		mu::Parser& stop_condition) {
+
 	double t_remain;
 	double rnd;
 	int irxn;
@@ -4527,7 +4540,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		exit(1);
 	}
 
-	while (1) {
+	while (1){
 
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxStep){
