@@ -6,6 +6,8 @@ from optparse import OptionParser
 import molecules2complexes as m2c
 import sys
 import structures
+from os import listdir
+import re
 
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
@@ -140,18 +142,34 @@ class SBML2BNGL:
                 
 def processDatabase():
     reader = libsbml.SBMLReader()
+    jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
     for index in range(1,410):
         try:
             nameStr = 'BIOMD0000000%03d' % (index)
             document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
             parser = SBML2BNGL(document.getModel())
             database = structures.Databases()
-            print nameStr + '.xml'
-            translator = m2c.transformMolecules(parser,database)
+            
+            print nameStr + '.xml',
+                        
+            for jsonFile in jsonFiles:
+                try:
+                    print jsonFile,           
+                    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile)
+                    break
+                except:
+                    print 'ERROR',sys.exc_info()[0]  
+                    continue
+                #translator = m2c.transformMolecules(parser,database,'reactionDefinition2.json')
+            #print len(parser.getSpecies()),len(translator),
+            evaluation(len(parser.getSpecies()),translator)
+            
             #translator = {}
             param2 = parser.getParameters()
             molecules,species,observables = parser.getSpecies(translator)
             #print molecules,species,observables
+            print 'translated: {0}/{1}'.format(len(translator),len(observables)),
+            print evaluation(len(observables),translator)
             param,rules,functions = parser.getReactions(translator)
             compartments = parser.getCompartments()
             param += param2
@@ -162,12 +180,18 @@ def processDatabase():
             print 'ERROR',sys.exc_info()[0] 
             continue
             
-            
+def evaluation(numMolecules,translator):
+    originalElements = (numMolecules)
+    ruleElements = len([str(translator[x]) for x in translator if '.' not in str(translator[x])])
+    return 'compression: {0}/{1}'.format(ruleElements,originalElements)
+
+           
     #print rules
 #14,18,56,19,49.87.88.107,109,111,120,139,140,145,151,153,171,175,182,202,205
 #230,253,255,256,268,269,288,313,332,333,334,335,336,362,396,397,399,406
 def main():
-    
+    jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
+    jsonFiles.sort()
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
         default='XMLExamples/curated/BIOMD0000000272.xml',type="string",
@@ -179,8 +203,11 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000033.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000011.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000048.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000019.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     print options.input
     parser =SBML2BNGL(document.getModel())
@@ -189,10 +216,9 @@ def main():
     #rawDatabase = {}    
     #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",),("k")],),
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
-
-    translator = m2c.transformMolecules(parser,database)
+    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition5.json')            
     #translator= {}
-    
+    evaluation(len(parser.getSpecies()),translator)
     param2 = parser.getParameters()
     
     

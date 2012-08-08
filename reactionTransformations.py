@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Tue Mar 13 15:45:25 2012
 
@@ -37,6 +36,7 @@ def getFreeRadical(element,rawDatabase,translator,synthesisDatabase,product):
     """
     if element not in rawDatabase:
         return []
+    
     components = copy(rawDatabase[element][0])
     for member in synthesisDatabase:
         ##the last condition issubset is in there because knowing that S1 + s2 -> s1.s2 
@@ -90,13 +90,17 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                     if sbml_name not in translator:
                         species = st.Species()
                         #here we check if the new species is made of already existing molecules
-                        for tag in [x for x in tags if x in translator]:
-                            precursors.append(translator[tag])
+                                                
+
                     else:
                         species = translator[sbml_name]
 
                             
                     species.addChunk(tags,molecules,precursors)
+                    if sbml_name not in translator:
+                        other = original[0] if original[0] != elements else original[1]
+                        for tag in [x for x in other if x in translator]:
+                            species.extend(translator[tag])
                     translator[sbml_name] = species
                     if tags not in synthesisDatabase and tags not in rawDatabase:
                         synthesisDatabase[tags] = tuple(molecules)
@@ -116,9 +120,9 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
     extended1 = (copy(dictionary[reactants[0]]))
     extended2 = (copy(dictionary[reactants[1]]))
     if isinstance(extended1,str):
-        extended1 = (extended1,)
+        extended1 = [extended1]
     if isinstance(extended2,str):
-        extended2 = (extended2,)
+        extended2 = [extended2]
     #if we can find an element in the database that is a subset of 
     #union(extended1,extended2) we take it
     intersection = findIntersection(extended1,extended2,synthesisDatabase)
@@ -135,12 +139,12 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
             #print rawDatabase
             #print extended1,extended2
             createIntersection((extended1[0],extended2[0]),rawDatabase,translator,dictionary)
-            #print rawDatabase
             r1 = getFreeRadical(extended1,rawDatabase,translator,synthesisDatabase,product)
             r2 = getFreeRadical(extended2,rawDatabase,translator,synthesisDatabase,product)
             #print 'rrrrrrrrrrr',r1,r2
             if not r1 or not r2:
                 return (None,None,None)
+        
         ##todo: modify code to allow for carry over free radicals
         d1 = copy(rawDatabase[extended1][0]) if extended1 in rawDatabase else copy(synthesisDatabase[extended1][0])
         d2 = copy(rawDatabase[extended2][0]) if extended2 in rawDatabase else copy(synthesisDatabase[extended2][0])
@@ -153,7 +157,12 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
         d2.append((r2[0],rnd))
         extended1 = [dictionary[x][0] for x in extended1]
         extended1.sort()
-        extendedComponent = [d1,d2]
+        #FIXME: im not too sure about this way of assigning things. 
+        if extended1[0].lower() == r1[0][0] or extended1[1].lower() == r2[0][0]:
+            extendedComponent = [d2,d1]
+        else:
+            extendedComponent = [d1,d2]
+        #extendedComponent.sort()
         #extendedComponent.sort()
         #extendedComponent.reverse()
         extendedComponent = tuple(extendedComponent)
@@ -211,12 +220,12 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
     extended1,extended2,intersection = getIntersection(reactants,product,
                                                        dictionary,rawDatabase,translator,
                                                       synthesisDatabase)
-    #print reactants,products,species,rawDatabase
     #print 'aaaaa',dictionary
-    if len(species) <2:
+    if len(species) <2 and species in rawDatabase:
         return species,rawDatabase[species]
     if (extended1,extended2,intersection) == (None,None,None):
         return None,None
+    
     constructed = [[] for element in species]
     #print 'bbbb',extended1,extended2,intersection[0]
     for element in [intersection[0],extended1,extended2]:
@@ -336,21 +345,41 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     """
     This method is for reactions of the form A+ B -> A' + B
     """
+    print original,namingConvention
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
     ,translator)
-    
-    for reactantGroup in original:
+    k = [x  == min(namingConvention,key=len) for x in original[0]]
+    k2 = [x == max(namingConvention,key=len)  for x in original[1]]
+    k =  k and k2
+    sortedResult = [result[0],result[1]] if any(k) else [result[1],result[0]]
+    sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]] 
+    for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:
             species = st.Species()
             tmp = dictionary[reactant]
+            
             for element in tmp:
                 molecule = st.Molecule(element)
-                if element in namingConvention:
-                    chunk = result[0] if reactant == min(namingConvention,key=len) else result[1]
-                    molecule.addChunk(chunk)
+                if element in conv:
+                    #print 'lelelele',element,reactant
+                    #chunk = result[1] if reactant == max(namingConvention,key=len) else result[0]
+                    molecule.addChunk(res)
+                else:
+                    if conv in reactant:
+                        molecule.addChunk(res)
+                        break
+                    
+                    #FIXME: the comparison should be done a lil more carefully
+                    #to avoid overlap
+            
+ 
+                    
                 species.addMolecule(molecule)
             if reactant not in translator:
                 translator[reactant] = species
+            else:
+                translator[reactant].extend(species)
+            print translator[reactant]
         
     #if namingConvention[0] not in translator:
     #    species = st.Species()
