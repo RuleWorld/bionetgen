@@ -125,7 +125,8 @@ while ( @ARGV )
             if ($method eq 'pla'){
             	my $pla_config = shift @ARGV;
             	if ($pla_config =~ /^-{1,2}/ || $pla_config =~ /\.bngl$/)
-            	{ die "Syntax error: PLA simulator requires a simulation configuration"; }
+            	{ die "Syntax error: PLA simulator requires a simulation configuration: --method pla \"string_config\" " . 
+            	      "(don't forget the quotes). Please try again."; }
             	$method = "\"$method\",pla_config=>\"$pla_config\"";
             }
             else{
@@ -177,7 +178,13 @@ if ($log)
 }
 
 # calculate parameter step
-my $delta = ($var_max-$var_min)/($n_pts-1);
+my $delta;
+if ($var_max==$var_min){
+	$delta = 0;
+}
+else{  
+	$delta = ($var_max-$var_min)/($n_pts-1);
+}
 
 # Read file 
 open(IN, $file) or die "Couldn't open file $file: $?\n";
@@ -340,8 +347,9 @@ OPTIONS:
   --t_end VAL     : end time for each simulation 
   --prefix PREFIX : prefix for output file (default: MODEL basename)
   --steady-state  : check for steady state at end of each simulation
+  --method        : simulation method (default: ode)
 
-Runs ODE simulations of MODEL with a range of values of parameter VAR.
+Runs simulations of MODEL with a range of values of parameter VAR using the specified method.
 Simulation data is placed in a directory folder named PREFIX_VAR. A data file
 called PREFIX_VAR.scan contains the final smulation state for each parameter 
 value. The scan file may be visualized with a plotting tool, such as PhiBPlot.
