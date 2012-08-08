@@ -4,7 +4,7 @@ Created on Wed May 30 11:44:17 2012
 
 @author: proto
 """
-
+from copy import deepcopy
 class Species:
     def __init__(self):
         self.molecules = []
@@ -40,16 +40,45 @@ class Species:
                 #        tmp = element.getMolecule(tag)
             for component in components:
                 if tmp.contains(component[0][0]):
-                    continue
-                tmpCompo = Component(component[0][0])
+                    tmpCompo = tmp.getComponent(component[0][0])
+                    #continue
+                else:
+                    tmpCompo = Component(component[0][0])
                 
                 for index in range(1,len(component[0])):
                     tmpCompo.addState(component[0][index])
                 if len(component) > 1:
                     tmpCompo.addBond(component[1])
-                tmp.addComponent(tmpCompo)
+                if not tmp.contains(component[0][0]):   
+                    tmp.addComponent(tmpCompo)
             if not self.contains(tag):
                 self.molecules.append(tmp)
+                
+    def extend(self,species):
+        if(len(self.molecules) == len(species.molecules)):
+            for (selement,oelement) in zip(self.molecules,species.molecules):
+                for component in oelement.components:
+                    if component.name not in [x.name for x in selement.components]:
+                        selement.components.append(component)
+                    else:
+                        for element in selement.components:
+                            if element.name == component.name:
+                                element.states.append(component.states)
+        else:
+            for element in species.molecules:
+                #pass
+                if element.name not in [x.name for x in self.molecules]:
+                    #print 'kkkkkkkkkkkkk',str(element),str(self)
+                    self.addMolecule(deepcopy(element))
+                else:
+                    for molecule in self.molecules:
+                        if molecule.name == element.name:
+                            for component in element.components:
+                                if component.name not in [x.name for x in molecule.components]:
+                                    molecule.addComponent(deepcopy(component))
+                    
+                    
+        
     def __str__(self):
         return '.'.join([x.toString() for x in self.molecules])
         
@@ -75,6 +104,16 @@ class Molecule:
             if componentName == component.getName():
                 return component
                 
+    def removeComponent(self,componentName):
+        x = [x for x in self.components if x.name == componentName]
+        if x != []:
+            self.components.remove(x[0])
+            
+    def removeComponents(self,components):
+        for element in components:
+            if element in self.components:
+                self.components.remove(element)
+                
     def addBond(self,componentName,bondName):
         component = self.getComponent(componentName)
         component.addBond(bondName)
@@ -83,6 +122,7 @@ class Molecule:
         return componentName in [x.name for x in self.components]
         
     def __str__(self):
+        self.components.sort()
         return self.name + '(' + ','.join([str(x) for x in self.components]) + ')'
         
     def toString(self):
@@ -124,6 +164,9 @@ class Component:
         
     def __str__(self):
         return self.getRuleStr()
+        
+    def __hash__(self):
+        return self.name
         
         
 class Databases:

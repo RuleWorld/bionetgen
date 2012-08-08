@@ -36,6 +36,16 @@ double Observable::getValue(){
 		m = this->sp[i].second;
 		val += m*s->population;
 	}
+	// Error check
+	if (Util::isNAN(val)){
+		cout << "Error in Observable::getValue(): Return value is NaN. Shouldn't happen. Exiting." << endl;
+		cout << "  " << this->name << ":" << endl;
+		for (unsigned int i=0;i < this->sp.size();i++){
+			cout << "    [" << i << "] " << this->sp[i].first->name << ": pop = " << this->sp[i].first->population
+				 << ", mult = " << this->sp[i].second << endl;
+		}
+		exit(1);
+	}
 	return val;
 }
 
