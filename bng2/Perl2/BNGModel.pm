@@ -616,9 +616,10 @@ sub readNetwork
                 ### Read Groups Block
                 elsif ( $name eq 'groups' )
                 {
+                	my $iobs = 0;
                     if ( @{$model->Observables} )
                     {   # Associate groups with exisiting observables
-                        my $iobs   = 0;
+#                        my $iobs   = 0;
                         foreach my $line ( @$block_dat )
                         {
                             my ($entry, $lno) = @$line;
@@ -681,7 +682,7 @@ sub readNetwork
                         # get the number of species
                         my $n_species = $model->SpeciesList->getNumSpecies();
 
-                        my $iobs   = 0;
+ #                       my $iobs   = 0;
                         foreach my $line ( @$block_dat )
                         {
                             my ($entry, $lno) = @$line;
@@ -1263,7 +1264,7 @@ sub writeFile
             unlink $file;
         }
         else
-        {   return "writeFile(): file $file exists. Set option overwrite=>1 option to overwrite.";   }
+        {   return "writeFile(): file $file exists. Set option overwrite=>1 to overwrite.";   }
     }
 
     # make a string that describes outputs to user
@@ -2253,6 +2254,7 @@ sub generate_network
         {
             $vars_pass{prefix} = "${prefix}_${niter}";
             if ( my $err = $model->writeNET(\%vars_pass) ) { return $err; }
+#            if ( my $err = $model->writeNetwork(\%vars_pass) ) { return $err; }
             $vars_pass{prefix} = $prefix;
         }
     }
@@ -2275,6 +2277,7 @@ sub generate_network
 
     # Print result to netfile
     if ( my $err = $model->writeNET(\%vars_pass) ) { return $err; }
+#    if ( my $err = $model->writeNetwork(\%vars_pass) ) { return $err; }
 
     return '';
 

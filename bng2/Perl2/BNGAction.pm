@@ -181,7 +181,7 @@ sub simulate
         # Make sure NET file has proper suffix
         ($netpre = $netfile) =~ s/[.]([^.]+)$//;
         unless ( $1 =~ /net/i )
-        {   return "File $netfile does not have net suffix";   }
+        {   return "File $netfile does not have .net suffix";   }
     }
     else
     {
@@ -189,10 +189,11 @@ sub simulate
         $netfile = "${prefix}.net";
         $netpre  = $prefix;
 
-        # Generatese NET file if not already created or if updateNet flag is set
+        # Generate NET file if not already created or if updateNet flag is set
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
             $err = $model->writeNET( {prefix=>"$netpre"} );
+#            $err = $model->writeNetwork( {prefix=>"$netpre"} );
             if ($err) {  return $err;  }
         }
     }
@@ -267,8 +268,15 @@ sub simulate
     {   push @command, "-I", $params->{output_step_interval};  }
     
     # stop condition
-    if (defined $params->{stop_if})
-    {   push @command, "--stop_cond", $params->{stop_if};  }
+    if (defined $params->{stop_if}){   
+    	push @command, "--stop_cond", $params->{stop_if};
+    	if (defined $params->{print_on_stop}){
+    		push @command, $params->{print_on_stop};
+    	}
+    	else{
+    		push @command, "1"; # Default is to print on stop
+    	}
+    }
     
     # output concentrations data
     push @command, "--cdat", $print_cdat;
@@ -306,7 +314,7 @@ sub simulate
     else
     {   # t_start defaults to 0
         if ( $continue   and   defined($model->Time) )
-        {  $t_start = $model->Time;  }
+        {  $t_start = $model->Time; }
          else
         {  $t_start = 0.0;  }
     }
@@ -375,12 +383,18 @@ sub simulate
         { @sample_times = @{$params->{sample_times}}; }
         @sample_times = sort {$a <=> $b} @sample_times; # numeric sort
         if ( @sample_times > 2 ){
-            if ( defined $params->{t_end} ){ 
+        	# remove all sample times <= t_start --Do this in run_network (LAH)
+#        	while ($sample_times[0] <= $t_start){ 
+#        		shift @sample_times;
+#            }
+            if ( defined $params->{t_end} ){
                 $t_end = $params->{t_end};
-                while ($sample_times[ $#sample_times ] >= $t_end){ # remove all sample times >= t_end
-                    pop @sample_times;
-                }
-                push @sample_times, $t_end; # push t_end as final sample time
+                # remove all sample times >= t_end --Do this in run_network (LAH)
+#                while ($sample_times[ $#sample_times ] >= $t_end){ 
+#                    pop @sample_times;
+#                }
+                # push t_end as final sample time
+                push @sample_times, $t_end; 
             }
             else{
                 $t_end = $sample_times[ $#sample_times ];
@@ -428,6 +442,7 @@ sub simulate
     my $steady_state_reached = 0;
     my $edge_warning = 0;
     my $otf = 0;
+
     while ( my $message = <Reader> )
     {
         # If network generation is on-the-fly, look for signal that
@@ -576,6 +591,7 @@ sub simulate
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
         $err = $model->writeNET( {prefix => "$netpre"} );
+#        $err = $model->writeNetwork( {prefix => "$netpre"} );
         if ($err) { return $err; }
     }
 

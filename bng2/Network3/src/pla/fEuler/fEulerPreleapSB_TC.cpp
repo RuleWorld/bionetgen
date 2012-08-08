@@ -56,7 +56,7 @@ void fEulerPreleapSB_TC::getNewTau(double& tau){
 
 //	double tauLeap; // Return value
 	double e_i, m_i, sig_i2, tee_m, tee_sig;
-	double tee[this->rxn.size()];  // One for each species
+	double tee[this->sp.size()];  // One for each species
 
 	// Collect rates for all reactions at the outset
 	double rate[this->rxn.size()];
@@ -68,9 +68,12 @@ void fEulerPreleapSB_TC::getNewTau(double& tau){
 	for (unsigned int i=0;i < this->sp.size();i++){
 
 		// Get e_i
-		e_i = max(this->eps*this->sp[i]->population/this->gGet->get_g(i),1.0);
-//		e_i = max(this->eps*this->sp[i]->population/this->g[i].first,1.0);
-
+		if (this->sp[i]->population < network3::TOL) e_i = 1.0;
+		else e_i = max(this->eps*this->sp[i]->population/this->gGet->get_g(i),1.0);
+/*
+cout << "g_" << i << ": " << this->gGet->get_g(i) << endl;
+cout << "e_" << i << ": " << e_i << endl;
+//*/
 		// Calculate m_i and sig_i2
 		m_i = 0.0;
 		sig_i2 = 0.0;
@@ -84,23 +87,35 @@ void fEulerPreleapSB_TC::getNewTau(double& tau){
 				sig_i2 += z_vi*z_vi*rate[v];
 			}
 		}
-
+/*
+cout << "m_" << i << ": " << m_i << endl;
+cout << "sig2_" << i << ": " << sig_i2 << endl;
+//*/
 		// Calculate tee_m and tee_sig
 		tee_m = 0.5*e_i/fabs(m_i);
 		tee_sig = 0.25*e_i*e_i/sig_i2;
 //		tee_m = e_i/fabs(m_i);
 //		tee_sig = e_i*e_i/sig_i2;
-
+/*
+cout << "tee_m_" << i << ": " << tee_m << endl;
+cout << "tee_sig_" << i << ": " << tee_sig << endl;
+//*/
 		// Set tee[i] = min{tee_m,tee_sig}
 		tee[i] = min(tee_m,tee_sig);
+//cout << "tee[" << i << "]: " << tee[i] << endl;
 	}
 
 	// Find min{tee[j]}
 	tau = INFINITY;
 	for (unsigned int j=0;j < this->sp.size();j++){
-//		cout << "tee[" << j << "] = " << tee[j] << endl;
 		if (tee[j] < tau){
 			tau = tee[j];
 		}
+	}
+
+	// Error check
+	if (tau == INFINITY){
+		cout << "Error in fEulerPreleapSB_TC::getNewTau(): tau = INFINITY. Shouldn't happen. Exiting." << endl;
+		exit(1);
 	}
 }

@@ -93,7 +93,11 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 			}
 			else
 			{
-				// Calculate derivatives dav/dXj
+				// OLD classification scheme
+//				classif[v] = RxnClassifier::EXACT_STOCHASTIC;
+				//
+				// NEW classification scheme
+///*			// Calculate derivatives dav/dXj
 				vector<double> dav_dX;
 				for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
 					dav_dX.push_back(this->rxn[v]->get_dRate_dX(j));
@@ -114,14 +118,14 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 					beta_v = this->rxn[v]->re->getRate(X);
 				}
 				// Classify:
-				// 	  If eps*rate[v] > beta_v --> POISSON...
-				if (this->eps*this->rxn[v]->getRate() > beta_v){
+				// If eps*rate[v] > beta_v --> POISSON...
+				if (this->eps*this->rxn[v]->getRate() > 1.0*beta_v){
 					classif[v] = RxnClassifier::POISSON;
 				}
 				// ...else --> EXACT_STOCHASTIC
 				else{
 					classif[v] = RxnClassifier::EXACT_STOCHASTIC;
-				}
+				}//*/
 			}
 		}
 	}
@@ -144,6 +148,10 @@ void eRungeKutta_TC_RC_FG_PL::fireRxns(vector<double>& k, vector<int>& classif, 
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		if (classif[v] != RxnClassifier::EXACT_STOCHASTIC){ // ES rxn is fired in PLA::nextStep() after postleap check
 			double a_tau = this->aCalc->a_eff[v]*tau;
+/*
+cout << "a_tau[" << v << "]: " << a_tau << endl;
+cout << endl;
+*/
 			if (classif[v] == RxnClassifier::POISSON){
 				k[v] = Util::RANDOM_POISSON(a_tau);
 			}
