@@ -4509,6 +4509,7 @@ void update_rxn_rates(int irxn) {
 
 	// Error check
 	if (GSP.a_tot < 0.0){
+//		cout << "WARNING: a_tot = " << GSP.a_tot << ". Recalculating a_tot to see if it is really negative." << endl;
 		GSP.a_tot = 0.0;
 		for (int i = 0; i < GSP.na; ++i) {
 			GSP.a_tot += GSP.a[i];
@@ -4516,6 +4517,9 @@ void update_rxn_rates(int irxn) {
 		if (GSP.a_tot < 0.0){ // Throw an error if it's still negative
 			cout << "Error in update_rxn_rates(): GSP.a_tot < 0 (" << GSP.a_tot << "). Shouldn't happen. Exiting." << endl;
 			exit(1);
+		}
+		else{
+//			cout << "Problem resolved. Recalculated a_tot = " << GSP.a_tot << "." << endl;
 		}
 	}
 
@@ -4550,7 +4554,10 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 
 		/* Determine time to next reaction */
 //		if (GSP.a_tot <= 0.0) break; // Don't do this, let t_remain go to -INFINITY.
-		while ((rnd = RANDOM(0.0, 1.0)) == 0.0); /* avoid taking log of zero */
+		rnd = RANDOM(0.0, 1.0);
+		while (rnd == 0.0 || rnd == 1.0){ // avoid taking log of 0.0 or 1.0
+			rnd = RANDOM(0.0, 1.0);
+		}
 		tau = -log(rnd) / GSP.a_tot;
 //		cout << "tau : " << tau << endl;
 		t_remain -= tau;

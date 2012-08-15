@@ -211,6 +211,7 @@ void PLA::nextStep(){
 
 	// Step 1: Calculate initial tau
 	this->tc.getNewTau(this->tau);
+
 	// Step 2: Get initial reaction classifications
 	this->rc.classifyRxns(this->classif,this->tau,true);
 
@@ -320,13 +321,34 @@ void PLA::nextStep(){
 }
 
 double PLA::get_tau_ES(unsigned int v){
-	return this->get_tau_FRM(v);
+	double tau_ESv = this->get_tau_FRM(v);
+	// Error check
+	if (tau_ESv <= 0.0){
+		cout << "Error in PLA::get_tau_ES(): tauES_" << v << " = " << tau_ESv << ". Shouldn't happen. Exiting." << endl;
+		cout << this->rxn[v]->toString() << endl;
+		for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
+			cout << this->rxn[v]->rateSpecies[j]->name << ": " << this->rxn[v]->rateSpecies[j]->population << endl;
+		}
+		exit(1);
+	}
+	return tau_ESv;
 }
 
 double PLA::get_tau_FRM(unsigned int v){
 	double rate_v = this->rxn[v]->getRate();
 	if (rate_v == 0.0) return INFINITY; // Do this to prevent getting -INFINITY if rate_v = -0.0 (yes, negative zero)
-	else return (-log(Util::RANDOM_CLOSED())/this->rxn[v]->getRate());
+	else{
+		double r = Util::RANDOM_CLOSED();
+		while (r == 0.0 || r == 1.0) r = Util::RANDOM_CLOSED();
+		double tau = -log(r)/rate_v;
+		// Error check
+		if (tau <= 0.0){
+			cout << "Error in PLA::get_tau_FRM(): tau_" << v << " = " << tau << ". Shouldn't happen. Exiting." << endl;
+			cout << "(r = " << r << ", log(" << r << ") = " << log(r) << ", rate_" << v << " = " << rate_v << " )" << endl;
+			exit(1);
+		}
+		return tau;
+	}
 }
 /*
 double PLA::get_tau_Gibson(unsigned int v){
