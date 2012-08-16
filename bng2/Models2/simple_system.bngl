@@ -8,6 +8,7 @@
 # model file that allow you to run the model with different simulators are commented out.
 # To use these other options, simply remove the pound character before the command.
 
+begin model
 
 # The first part of a BNGL file is the parameters block, where you can define the rates
 # of equations or the starting numbers of any of the molecular species.
@@ -76,6 +77,7 @@ begin reaction rules
     X(p~1) -> X(p~0)                       dephos
 end reaction rules
 
+end model
 
 # COMMAND FOR RUNNING OR PROCESSING THIS BNGL FILE
 
@@ -123,10 +125,10 @@ generate_network({overwrite=>1})
 # mid-simulation by using an RNF script (see example.rnf file in the same directory as this
 # model).
 
-simulate_ode({t_end=>100,n_steps=>50})
+simulate({method=>ode,t_end=>100,n_steps=>50})
 
 # resetConcentrations()
-# simulate_ssa({suffix=>ssa,t_end=>100,n_steps=>50})
+# simulate({method=>ssa,suffix=>ssa,t_end=>100,n_steps=>50})
 
 
 

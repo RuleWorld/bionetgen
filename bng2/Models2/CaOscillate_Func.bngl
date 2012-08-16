@@ -1,3 +1,4 @@
+begin model
 begin parameters
     Na    6.022e23      # Avogadro's # [mol^-1]
     V     1e-21         # Volume [L]
@@ -51,13 +52,11 @@ begin reaction rules
     Ga() -> Ca() + Ga()         k10
     Ca() + Null() -> Null()     k11/(K12+C)    #Sat(k11,K12)
 end reaction rules
-
+end model
 
 ## actions ##
 generate_network({overwrite=>1})
-simulate_ode({t_end=>50,n_steps=>500,atol=>1e-12,rtol=>1e-12})
-
-#simulate_ode({t_end=>20,n_steps=>200,atol=>1e-12,rtol=>1e-12,verbose=>1})
-#simulate_ssa({t_end=>20,n_output_steps=>200,verbose=>1})
-#simulate_pla({t_end=>20,n_output_steps=>200,verbose=>1,pla_config=>"custom|sb|pre:post|eps=0.03,apx1=3,gg1=100,p=0.5,pp=0.8,q=1.5,w=0.75|Network3/ButcherTableau.bt"})
+simulate({method=>ode,t_end=>20,n_output_steps=>200,verbose=>1,atol=>1e-12,rtol=>1e-12})
+#simulate({method=>ssa,t_end=>20,n_output_steps=>200,verbose=>1})
+#simulate({method=>pla,t_end=>20,n_output_steps=>200,verbose=>1,pla_config=>"fEuler|sb|pre:post|eps=0.03"})
 #simulate({argfile=>"Models2/simargs.txt"})

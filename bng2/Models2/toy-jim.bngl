@@ -7,6 +7,7 @@
 # receptor-associated adapter proteins, one of the kinases can 
 # transphosphorylate the second kinase. 
 
+begin model
 begin parameters
     L_tot  1
     R_tot  1
@@ -98,18 +99,19 @@ begin observables
     Molecules    K_total    K
     Molecules    R_total    R
 end observables
+end model
 
 ## actions ##
 generate_network({overwrite=>1})
 
 # Equilibration
-simulate_ode({suffix=>"equil",t_end=>1000,n_steps=>10,atol=>1e-10,rtol=>1e-8,sparse=>1,steady_state=>1})
+simulate({method=>ode,suffix=>"equil",t_end=>1000,n_steps=>10,atol=>1e-10,rtol=>1e-8,sparse=>1,steady_state=>1})
 writeSBML()
 
 # Kinetics
 setConcentration("L(r)","L_tot")
-simulate_ode({t_end=>120,n_steps=>120,atol=>1e-10,rtol=>1e-8})
+simulate({method=>ode,t_end=>120,n_steps=>120,atol=>1e-10,rtol=>1e-8})
 
 # Modified Kinetics, starts from end point of previous simulate_ode command
 #setParameter("pKs",0)
-#simulate_ode({suffix=>"kinetics2",t_end=>100,n_steps=>10,atol=>1e-10,rtol=>1e-8})
+#simulate({method=>ode,suffix=>"kinetics2",t_end=>100,n_steps=>10,atol=>1e-10,rtol=>1e-8})
