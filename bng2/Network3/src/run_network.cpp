@@ -366,6 +366,23 @@ int main(int argc, char *argv[]){
 		}
 	}
 
+	// Initialize time
+	t = t_start;
+/////
+//	mu::Parser _time_;
+//	_time_.DefineVar("_time_",&t);
+//	_time_.SetExpr("_time_");
+//	cout << "time = " << _time_.Eval() << endl;
+/*	network.functions.push_back(_time_);
+	// create a new parameter
+	Elt* new_elt = new_Elt((char*)"_time_",_time_.Eval(),network.rates->n_elt+1); // THERE'S SOMETHING WRONG HERE
+	new_elt->next = NULL;
+	network.is_func_map["_time_"] = true;
+	// push index of new parameter into var_parameters vector
+	network.var_parameters.push_back(rates->n_elt+1);*/
+//	exit(1);
+/////
+	// Find NET file
 	if (!(netfile = fopen(netfile_name, "r"))) {
 		fprintf(stderr, "ERROR: Couldn't open file %s.\n", netfile_name);
 		exit(1);
@@ -409,21 +426,22 @@ int main(int argc, char *argv[]){
     }
 
 	/** Ilya Korsunsky 6/2/10: Global Functions */
-    map<string, double*> param_map = init_param_map(rates, spec_groups);
+    map<string, double*> param_map = init_param_map(rates,spec_groups);
     map<string, int> observ_index_map = init_observ_index_map(spec_groups);
     map<string, int> param_index_map = init_param_index_map(rates);
-    vector<vector<int> > func_observ_depend; 
-    vector<vector<int> > func_param_depend; 
+//    vector<vector<int> > func_observ_depend;
+//    vector<vector<int> > func_param_depend;
 
-    vector<mu::Parser> functions; 
-    vector<int> variable_parameters;
+//    vector<mu::Parser> functions;
+//    vector<int> variable_parameters;
     char* netfile_name_tmp = netfile_name; 
     sprintf(netfile_name_tmp, "%s%s", netfile_name_tmp, ".net");
 
-    map<string, bool> is_func_map_temp; 
-    functions = read_functions_array(netfile_name_tmp, spec_groups, rates, species, variable_parameters, param_map,
-				param_index_map, observ_index_map, func_observ_depend, func_param_depend, is_func_map_temp);
-    cout << "Read " << functions.size() << " function(s)" << endl;
+//    map<string, bool> is_func_map_temp;
+    /*functions = read_functions_array(netfile_name_tmp, spec_groups, rates, species, variable_parameters, param_map,
+				param_index_map, observ_index_map, func_observ_depend, func_param_depend, is_func_map_temp);*/
+    read_functions_array(netfile_name_tmp,spec_groups,rates,species,param_map,param_index_map,observ_index_map);
+    cout << "Read " << network.functions.size() << " function(s)" << endl;
 
     // Create stop condition
 	process_function_names(stop_string); // Remove parentheses from variable names
@@ -447,7 +465,9 @@ int main(int argc, char *argv[]){
 	stop_condition.SetExpr(stop_string);
 
     /* Read reactions */
-	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
+//	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
+	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
+
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
 		exit(1);
 	}
@@ -470,8 +490,9 @@ int main(int argc, char *argv[]){
 	}
 
 	/* Initialize reaction network */
-	init_network(reactions, rates, species, spec_groups, network_name, functions, variable_parameters,
-				 func_observ_depend, func_param_depend, is_func_map_temp);
+//	init_network(reactions, rates, species, spec_groups, network_name, functions, variable_parameters,
+//				 func_observ_depend, func_param_depend, is_func_map_temp);
+	init_network(reactions, rates, species, spec_groups, network_name);
 
 	// Round species populations if propagator is SSA or PLA
 	if (propagator == SSA || propagator == PLA){
@@ -506,7 +527,7 @@ int main(int argc, char *argv[]){
 	ptimes = t_elapsed();
 	fprintf(stdout, "Initialization took %.2f CPU seconds\n", ptimes.total_cpu);
 
-	t = t_start;
+//	t = t_start;
 
 	/* space for concentration vector */
 	if (check_steady_state) {
@@ -544,7 +565,9 @@ int main(int argc, char *argv[]){
 	flux_file = NULL;
 	if (print_flux){
 		flux_file = init_print_flux_network(outpre);
-		print_flux_network(flux_file, t);
+		int discrete = 0;
+		if (propagator == SSA || propagator == PLA) discrete = 1;
+		print_flux_network(flux_file,t,discrete);
 	}
 
 	fflush(stdout);
@@ -662,8 +685,8 @@ int main(int argc, char *argv[]){
 				}
 				if (error == -2){ // Stop condition satisfied
 					forceQuit = true;
-//						cout << "\nStopping condition " << pla_stop_condition.GetExpr() << "met in "
-//							 <<	"PLA simulation." << endl;
+//					cout << "\nStopping condition " << pla_stop_condition.GetExpr() << "met in "
+//						 <<	"PLA simulation." << endl;
 				}
 			}
 		}
@@ -900,7 +923,11 @@ int main(int argc, char *argv[]){
 				if (group_file) print_group_concentrations_network(group_file,t,print_func);
 				if (group_file && print_func) print_function_values_network(group_file,t);
 				if (enable_species_stats) print_species_stats(species_stats_file,t);
-				if (print_flux) print_flux_network(flux_file,t);
+				if (print_flux){
+					int discrete = 0;
+					if (propagator == SSA || propagator == PLA) discrete = 1;
+					print_flux_network(flux_file,t,discrete);
+				}
 				if (print_save_net){
 					if (outpre) sprintf(buf, "%s_save.net", outpre);
 					else sprintf(buf, "save.net");

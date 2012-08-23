@@ -44,11 +44,11 @@ RateElementary::RateElementary(double c, vector<SimpleSpecies*> r, vector<int> r
 		else if (rS.size() == 2 && rS[0] == -1 && rS[1] == -1) this->type += "BIMOLECULAR_AB{";
 		else if (rS.size() == 2 && rS[0] == -1 && rS[1] == -2) this->type += "TRIMOLECULAR_AAB{";
 		else if (rS.size() == 2 && rS[0] == -2 && rS[1] == -1) this->type += "TRIMOLECULAR_AAB{";
-		else if (rS.size() == 3 && rS[0] == -1 && rS[1] == -1 && rS[2] == -1) this->type += "TRIMOLECULAR_AAA{";
+		else if (rS.size() == 3 && rS[0] == -1 && rS[1] == -1 && rS[2] == -1) this->type += "TRIMOLECULAR_ABC{";
 		else this->type += "HIGHER_ORDER{";
 		for (unsigned int i=0;i < r.size();i++){
 			if (i != 0) this->type += " + ";
-			if (rS[i] < -1) this->type += Util::toString(-rS[i]);
+			if (rS[i] < -1) this->type += Util::toString(-rS[i]) + "*";
 			this->type += r[i]->name;
 		}
 		this->type += " ->}{";

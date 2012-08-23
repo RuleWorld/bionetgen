@@ -15,6 +15,8 @@
 #include "pla/fEuler/fEuler.hh"
 #include "pla/eRungeKutta/eRungeKutta.hh"
 #include "pla/PLA.hh"
+#include "ssa/GillespieDM.hh"
+#include "ssa/simpleEuler.hh"
 
 namespace network3{
 

@@ -8,8 +8,8 @@
 #include "../eRungeKutta.hh"
 
 eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
-		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), eps(eps), approx1(approx1),
-		gg1(gg1), rxn(rxn){
+		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), eps(eps),
+		approx1(approx1), gg1(gg1), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
 	// Error check
@@ -79,9 +79,11 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 	// Classify rxns
 	double a_tau;
 	for (unsigned int v=0;v < classif.size();v++){
-		if (reclassify_all || (!reclassify_all && classif[v] != RxnClassifier::EXACT_STOCHASTIC)){
+		if (this->force >= 0){
+			classif[v] = this->force;
+		}
+		else if (classif[v] != RxnClassifier::EXACT_STOCHASTIC || reclassify_all){
 			a_tau = this->aCalc->a_eff[v]*tau;
-			//
 			if (sqrt(a_tau) > this->gg1){
 				classif[v] = RxnClassifier::DETERMINISTIC;
 			}
@@ -91,8 +93,7 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 			else if (a_tau > this->approx1){
 				classif[v] = RxnClassifier::POISSON;
 			}
-			else
-			{
+			else{
 				// OLD classification scheme
 //				classif[v] = RxnClassifier::EXACT_STOCHASTIC;
 				//
@@ -148,10 +149,6 @@ void eRungeKutta_TC_RC_FG_PL::fireRxns(vector<double>& k, vector<int>& classif, 
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		if (classif[v] != RxnClassifier::EXACT_STOCHASTIC){ // ES rxn is fired in PLA::nextStep() after postleap check
 			double a_tau = this->aCalc->a_eff[v]*tau;
-/*
-cout << "a_tau[" << v << "]: " << a_tau << endl;
-cout << endl;
-*/
 			if (classif[v] == RxnClassifier::POISSON){
 				k[v] = Util::RANDOM_POISSON(a_tau);
 			}

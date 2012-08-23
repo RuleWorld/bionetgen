@@ -137,6 +137,10 @@ void Network3::init_Network3(bool verbose){
 		Rxn* rxn = network.reactions->list;
 		REACTION.resize(network.reactions->n_rxn);
 		//
+		// Original rates (for comparison)
+		double orig_rates[n_rxns_network()];
+		rxn_rates_network(orig_rates,1);
+		//
 		// Loop over reactions
 		for (int i=0;i < network.reactions->n_rxn;i++){
 			if (verbose) cout << i << ". ";
@@ -205,7 +209,7 @@ void Network3::init_Network3(bool verbose){
 				}
 				path_factor *= n;
 			}
-//			cout << "\t" << "stat_factor = " << rxn->stat_factor << "\t" <<  "path_factor = " << path_factor << endl;
+			if (verbose) cout << "stat_factor = " << rxn->stat_factor << ", path_factor = " << path_factor << endl;
 			//
 			// Build reaction
 			if (rxn->rateLaw_type == ELEMENTARY){
@@ -292,7 +296,8 @@ void Network3::init_Network3(bool verbose){
 				exit(1);
 			}
 			//
-			if (verbose) cout << "rate = " << REACTION.at(i)->getRate() << endl << endl;
+			if (verbose) cout << "rate = " << REACTION.at(i)->getRate()
+					          << " (orig: " << orig_rates[i] << ")" << endl << endl;
 			rxn = rxn->next;
 		}
     }
@@ -452,32 +457,35 @@ void Network3::init_PLA(string config, bool verbose){
 		name = s.substr(0,equal);
 		Util::remove_whitespace(name);
 		val = s.substr(equal+1,string::npos);
+		double valDbl;
+		if (val == "INFINITY") valDbl = INFINITY;
+		else valDbl = atof(val.c_str());
 		if (name == "eps"){
-			param[0] = atof(val.c_str());
+			param[0] = valDbl;
 			definedParam[0] = true;
 		}
 		else if (name == "apx1"){
-			param[1] = atof(val.c_str());
+			param[1] = valDbl;
 			definedParam[1] = true;
 		}
 		else if (name == "gg1"){
-			param[2] = atof(val.c_str());
+			param[2] = valDbl;
 			definedParam[2] = true;
 		}
 		else if (name == "p"){
-			param[3] = atof(val.c_str());
+			param[3] = valDbl;
 			definedParam[3] = true;
 		}
 		else if (name == "pp"){
-			param[4] = atof(val.c_str());
+			param[4] = valDbl;
 			definedParam[4] = true;
 		}
 		else if (name == "q"){
-			param[5] = atof(val.c_str());
+			param[5] = valDbl;
 			definedParam[5] = true;
 		}
 		else if (name == "w"){
-			param[6] = atof(val.c_str());
+			param[6] = valDbl;
 			definedParam[6] = true;
 		}
 		else{ // Error check
@@ -683,6 +691,7 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 	bool lastOut = true;
 
 	// Simulation loop
+//	PLA_SIM->rc.forceClassifications(RxnClassifier::EXACT_STOCHASTIC);
 	string print_net_message;
 	while (time < maxTime && step < maxStep && !stop_condition.Eval())
 	{
@@ -690,7 +699,9 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 		step++;
 		PLA_SIM->nextStep();
 
-		if (PLA_SIM->tau < INFINITY && PLA_SIM->tau > -INFINITY) time += PLA_SIM->tau;
+		if (PLA_SIM->tau < INFINITY && PLA_SIM->tau > -INFINITY){
+			time += PLA_SIM->tau;
+		}
 		else break;
 
 		// Error check

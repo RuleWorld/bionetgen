@@ -242,7 +242,6 @@ void PLA::nextStep(){
 			done = true;
 			allES = true;
 			for (unsigned int v=0;v < this->classif.size();v++){
-
 				// Consider ES rxns
 				if (this->classif[v] == RxnClassifier::EXACT_STOCHASTIC){
 					// Is it newly ES?
@@ -278,7 +277,7 @@ void PLA::nextStep(){
 		if (allES){
 //			cout << "allES" << endl;
 			if (this->ES_rxn){ // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
-//				cout << "firing rxn " << this->ES_rxn->toString() << endl;
+//				cout << "Firing rxn: " << this->ES_rxn->toString() << endl;
 //				printf("rate: %26.18f\n",this->ES_rxn->getRate());
 				this->ES_rxn->fire(1.0);
 			}
@@ -286,8 +285,7 @@ void PLA::nextStep(){
 		}
 		// Otherwise...
 		else{
-			/*
-			for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;
+			/*for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;
 			cout << endl;*/
 			// Fire all non-ES rxns
 			this->fg.fireRxns(this->k,this->classif,this->tau);

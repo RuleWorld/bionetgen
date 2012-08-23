@@ -392,10 +392,13 @@ void process_function_names(string& a) {
  * Indices of variable parameters vector and functions vector should match
  *
  */
-vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
-		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
-		map<string, int> observ_index_map, vector<vector<int> >& func_observ_depend, vector<vector<int> >& func_param_depend,
-		map<string, bool>& is_func_map_p) {
+//vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
+//		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
+//		map<string, int> observ_index_map, vector<vector<int> >& func_observ_depend, vector<vector<int> >& func_param_depend,
+//		map<string, bool>& is_func_map_p) {
+void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
+		map<string,double*>& param_map, map<string,int> param_index_map, map<string,int> observ_index_map) {
+
 	// find beginning of block
 	// go to next line
 	// if next line is end, return 
@@ -409,7 +412,7 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 	// check that parameter index (in var_parameters) matches function index
 	// push and link parameter into elt_array
 
-	vector<mu::Parser> functions;
+//	vector<mu::Parser> functions;
 	char line[512];
 	ifstream infile(netfile);
 	bool foundBegin = false;
@@ -473,9 +476,9 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 //    			cout << "\t" << variable_names[i];
 //    		}
 
+			// Identify dependencies
 			vector<int> observ_depend;
 			vector<int> param_depend;
-
 			for (unsigned int i = 0; i < variable_names.size(); i++) {
 				if (param_map.find(variable_names[i]) == param_map.end()) {
 					cout << "Error in parsing function " << func_name << ". Could not find variable "
@@ -510,7 +513,7 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 //			cout << function_string << endl;
 			parser.SetExpr(function_string);
 			double new_val = parser.Eval();
-			functions.push_back(parser);
+			network.functions.push_back(parser);
 /*
 			cout << "\t" << functions[functions.size()-1].GetExpr();
 			map<string,double*> m = functions[functions.size()-1].GetUsedVar();
@@ -524,14 +527,14 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 //   		strcpy(name_char_ptr,func_name.c_str());
 
 			// create a new parameter with the name var_par_<function_name>
-			Elt* new_elt = new_Elt((char*) func_name.c_str(), new_val,rates->n_elt+1); // THERE'S SOMETHING WRONG HERE
+			Elt* new_elt = new_Elt((char*)func_name.c_str(),new_val,rates->n_elt+1); // THERE'S SOMETHING WRONG HERE
 			new_elt->next = NULL;
-			is_func_map_p[func_name] = true;
+			network.is_func_map[func_name] = true;
 
 			// push index of new parameter into var_parameters vector
 			// check that parameter index (in var_parameters) matches function index
-			var_parameters.push_back(rates->n_elt + 1);
-			if (functions.size() != var_parameters.size()){
+			network.var_parameters.push_back(rates->n_elt+1);
+			if (network.functions.size() != network.var_parameters.size()){
 				cout << "ERROR: Function and variable parameter index do not match and will not update correctly." << endl;
 				exit(1);
 			}
@@ -561,15 +564,15 @@ vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups,
 			param_index_map[new_elt->name] = new_elt->index;
 
 			// push variables indices into vectors
-			func_observ_depend.push_back(observ_depend);
-			func_param_depend.push_back(param_depend);
+			network.func_observ_depend.push_back(observ_depend);
+			network.func_param_depend.push_back(param_depend);
 		}
 /*   	else if (foundBegin){
 			cout << "ERROR: FOUND INVALID LINE IN ATTEMPTING TO READ FUNCTIONS BLOCK" << endl;
 			break;
 		}*/
 	}
-	return functions;
+//	return functions;
 }
 
 Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
@@ -1826,10 +1829,11 @@ struct NETWORK network;
 //Method modified to take into account variable rates that depend on global functions 
 void derivs_network(double t, double* conc, double* derivs);
 
-int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name,
-				 vector<mu::Parser> new_functions, vector<int> new_var_parameters,
-				 vector<vector<int> > new_func_observ_depend, vector<vector<int> > new_func_param_depend,
-				 map<string, bool> new_is_func_map)
+//int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name,
+//				 vector<mu::Parser> new_functions, vector<int> new_var_parameters,
+//				 vector<vector<int> > new_func_observ_depend, vector<vector<int> > new_func_param_depend,
+//				 map<string, bool> new_is_func_map)
+int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name)
 	{
 //	int i;
 	Group* group;
@@ -1839,16 +1843,16 @@ int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Gro
 	network.rates = rates;
 	network.species = species;
 	network.spec_groups = spec_groups;
-	network.is_func_map = new_is_func_map;
+//	network.is_func_map = new_is_func_map;
 	network.n_groups = 0;
-	network.functions = new_functions;
+//	network.functions = new_functions;
 	if (network.functions.size() > 0)
 		network.has_functions = true;
 	else
 		network.has_functions = false;
-	network.var_parameters = new_var_parameters;
-	network.func_observ_depend = new_func_observ_depend;
-	network.func_param_depend = new_func_param_depend;
+//	network.var_parameters = new_var_parameters;
+//	network.func_observ_depend = new_func_observ_depend;
+//	network.func_param_depend = new_func_param_depend;
 	for (group = spec_groups; group != NULL; group = group->next) {
 		++network.n_groups;
 		network.spec_groups_vec.push_back(group);
@@ -1954,8 +1958,8 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 		//       automatically by BNG).
 		if (discrete) {
 			double n = 0.0;
-			//	    	rate*= X[*iarr]; // NOTE: This assumes at least one reactant species (no zeroth-order rxns)
-			//	        for (index=iarr+1; index<iarr+rxn->n_reactants; ++index){
+			//rate*= X[*iarr]; // NOTE: This assumes at least one reactant species (no zeroth-order rxns)
+			//for (index=iarr+1; index<iarr+rxn->n_reactants; ++index){
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				if (index > iarr) {
 					if (*index == *(index - 1)) {
@@ -2140,7 +2144,7 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 }
 
 /* Returns the rate of each reaction in the network in #/unit time. */
-int rxn_rates_network(double* rxn_rates) {
+int rxn_rates_network(double* rxn_rates, int discrete) {
 
 	register int i;
 	int error = 0, n_reactions, n_species;
@@ -2164,7 +2168,7 @@ int rxn_rates_network(double* rxn_rates) {
 	X = conc - network.species->offset;
 
 	for (i = 0; i < n_reactions; ++i) {
-		rxn_rates[i] = rxn_rate(rarray[i], X, 0);
+		rxn_rates[i] = rxn_rate(rarray[i], X, discrete);
 	}
 /*
 cout << "\n__before FREE_VECTOR(conc)__" << endl;
@@ -2428,7 +2432,7 @@ int print_derivs_species_network(FILE* out) {
 	return (error);
 }
 
-int print_rates_network(FILE* out) {
+int print_rates_network(FILE* out, int discrete) {
 
 	register int i;
 	int error = 0, /*n_species,*/n_reactions;
@@ -2438,7 +2442,7 @@ int print_rates_network(FILE* out) {
 	rates_rxn = ALLOC_VECTOR(n_reactions);
 
 	/* Calculate reaction rates */
-	rxn_rates_network(rates_rxn);
+	rxn_rates_network(rates_rxn,discrete);
 
 	/* Print reaction rates */
 	fprintf(out, "begin reaction_rates\n");
@@ -3406,7 +3410,7 @@ FILE* init_print_flux_network(char* prefix) {
 	return (out);
 }
 
-int print_flux_network(FILE* out, double t) {
+int print_flux_network(FILE* out, double t, int discrete) {
 
 	register int i;
 	int error = 0, n_reactions;
@@ -3417,7 +3421,7 @@ int print_flux_network(FILE* out, double t) {
 	rates_rxn = ALLOC_VECTOR(n_reactions);
 
 	/* Calculate reaction rates from current concentrations */
-	rxn_rates_network(rates_rxn);
+	rxn_rates_network(rates_rxn,discrete);
 
 	/* Print reaction fluxes */
 	fprintf(out, fmt, t);
@@ -4341,6 +4345,10 @@ int select_next_rxn() {
             return( GSP.prop[irxn] );
         }
     }
+    // Error check
+    cout << "Uh oh, got to the end of select_next_rxn(). This should never happen. Exiting." << endl;
+    exit(1);
+    return NULL; // Should never get here
 }
 
 int update_concentrations(int irxn) {
