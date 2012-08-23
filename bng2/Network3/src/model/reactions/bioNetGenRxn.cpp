@@ -99,7 +99,7 @@ BioNetGenRxn::BioNetGenRxn(vector<SimpleSpecies*> r, vector<int> rS, vector<Simp
 	//
 */	// Identify stoichSpecies
 	vector<pair<SimpleSpecies*,int> > stoichTemp;
-	skip.resize((reactants.size()+products.size()),false);
+	skip.clear(); skip.resize((reactants.size()+products.size()),false);
 	for (unsigned int i=0;i != reactants.size();i++){
 		stoichTemp.push_back(reactants[i]);
 	}
@@ -107,6 +107,7 @@ BioNetGenRxn::BioNetGenRxn(vector<SimpleSpecies*> r, vector<int> rS, vector<Simp
 		stoichTemp.push_back(products[i]);
 	}
 	for (unsigned int i=0;i < stoichTemp.size();i++){
+//		cout << stoichTemp[i].first->name << ": " << stoichTemp[i].second << endl;
 		if (!skip[i]){
 			for (unsigned int j=i+1;j < stoichTemp.size();j++){
 				if (stoichTemp[i].first == stoichTemp[j].first){
@@ -128,7 +129,7 @@ BioNetGenRxn::BioNetGenRxn(vector<SimpleSpecies*> r, vector<int> rS, vector<Simp
 		cout << "\t" << (*iter).first->name << ": " << (*iter).second << endl;
 	}
 	cout << "\t" << "-----------------------" << endl;
-*/
+//*/
 }
 
 BioNetGenRxn::~BioNetGenRxn(){
