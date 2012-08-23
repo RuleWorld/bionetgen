@@ -83,7 +83,7 @@ my $bngexec;
 # some default parameters
 my $log     = 0;
 my $t_end   = 20;
-my $n_steps = 20;
+my $n_steps = 1;
 my $steady_state = 0;
 my $method = 'ode';
 my $pla_output = 0;
@@ -316,7 +316,7 @@ open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
             printf OUT "# %+14s", $var;
             foreach my $head (@heads)
             {
-                printf OUT " %+14s", $head;
+                printf OUT "%+19s", $head;
             }
             print OUT "\n";
         }
