@@ -6,7 +6,7 @@ Created on Thu Mar 22 13:11:38 2012
 """
 
 from libsbml2bngl import SBML2BNGL
-from pyparsing import Word, Suppress,Optional,alphanums,Group
+from pyparsing import Word, Suppress,Optional,alphanums,Group,nums
 import libsbml
 from numpy import sort,zeros,nonzero
 import numpy as np
@@ -25,7 +25,8 @@ class SBMLAnalyzer:
         self.configurationFile = configurationFile
         
     def parseReactions(self,reaction):
-        species = Optional(Word(alphanums+"_") + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
+        species =  (Word(alphanums+"_") 
+        + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
         + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
         + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
         + Suppress("()"))
@@ -78,10 +79,10 @@ class SBMLAnalyzer:
             reaction2 = rule #list(parseReactions(rule))
             #print reaction2
             totalElements =  [item for sublist in reaction2 for item in sublist]
-            if frozenset(totalElements) in ruleDictionary:
-                ruleDictionary[frozenset(totalElements)].append(rules.index(rule))
+            if tuple(totalElements) in ruleDictionary:
+                ruleDictionary[tuple(totalElements)].append(rules.index(rule))
             else:
-                ruleDictionary[frozenset(totalElements)] = [rules.index(rule)]
+                ruleDictionary[tuple(totalElements)] = [rules.index(rule)]
         return ruleDictionary
     
     def checkCompliance(self,ruleCompliance,tupleCompliance,ruleBook):
@@ -149,7 +150,6 @@ class SBMLAnalyzer:
         #now we want to fill in all intermediate relationships
         
         newTranslator = equivalenceTranslator.copy()
-        
         for (key,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
             if key == key2:
                 continue
@@ -158,8 +158,8 @@ class SBMLAnalyzer:
             intersectionPoints = [(int(x/len(equivalenceTranslator[key])),int(x%len(equivalenceTranslator[key]))) for x in 
                 range(0,len(intersection)) if len(intersection[x]) > 0]
             for (point) in (intersectionPoints):
-                temp = list(equivalenceTranslator[key2][point[1]])
-                temp.extend(list(equivalenceTranslator[key][point[0]]))
+                temp = list(equivalenceTranslator[key2][point[0]])
+                temp.extend(list(equivalenceTranslator[key][point[1]]))
                 temp2 = [x for x in temp if temp.count(x) == 1]
                 temp2.sort(key=len)
                 #FIXME: THIS IS TOTALLU JUST A HACK. FIX SO THAT THE INDIRECT 
@@ -191,7 +191,6 @@ class SBMLAnalyzer:
         #print tupleC
         #now we will check for the nameConventionMatrix
         tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
-        
         for rule in ruleDictionary:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
@@ -214,12 +213,11 @@ class SBMLAnalyzer:
         #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
         #use the per tuple classification to obtain a per reaction classification
         ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
-        
         for key,element in ruleDictionary.items():
             for rule in element:
                 #FIXME: This is totally a hack. fix so that it doesn't mistakingly classify something as binding
-                if 'R2' in key and ('R' in key or 'Ra' in key):
-                    ruleComplianceMatrix[rule] = [0,0,0,0]
+                #if 'R2' in key and ('R' in key or 'Ra' in key):
+                    #ruleComplianceMatrix[rule] = [0,0,0,0]
                     #pass
                 ruleDefinitionMatrix[rule] = self.checkCompliance(ruleComplianceMatrix[rule],
     tupleDefinitionMatrix[key],reactionDefinition['definitions'])
@@ -233,7 +231,6 @@ class SBMLAnalyzer:
             #todo: need to do something if it matches more than one reaction
             else:
                 results.append(reactionDefinition['reactionsNames'][nonZero[0]])
-                
         #now we will process the naming conventions section
         return  results
     

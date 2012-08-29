@@ -9,8 +9,17 @@ class Species:
     def __init__(self):
         self.molecules = []
         
-    def addMolecule(self,molecule):
-        self.molecules.append(molecule)
+    def addMolecule(self,molecule,concatenate=False,iteration = 1):
+        if not concatenate:
+            self.molecules.append(molecule)
+        else:
+            counter = 1
+            for element in self.molecules:
+                if element.name == molecule.name:
+                    element.extend(molecule)
+            #self.molecules.append(molecule)
+            #for element in self.molecules:
+            #    if element.name == molecule.name:
         
     def getMolecule(self,moleculeName):
         for molecule in self.molecules:
@@ -19,6 +28,9 @@ class Species:
         return None
     def getSize(self):
         return len(self.molecules)
+        
+    def getMoleculeNames(self):
+        return [x.name for x in self.molecules]
     
     def contains(self,moleculeName):
         for molecule in self.molecules:
@@ -38,6 +50,7 @@ class Species:
                 #for element in precursors:
                 #    if element.getMolecule(tag) != None:
                 #        tmp = element.getMolecule(tag)
+            
             for component in components:
                 if tmp.contains(component[0][0]):
                     tmpCompo = tmp.getComponent(component[0][0])
@@ -77,7 +90,10 @@ class Species:
                                 if component.name not in [x.name for x in molecule.components]:
                                     molecule.addComponent(deepcopy(component))
                     
-                    
+    
+    def append(self,species):
+        for element in species.molecules:
+            self.molecules.append(deepcopy(element))              
         
     def __str__(self):
         return '.'.join([x.toString() for x in self.molecules])
@@ -118,6 +134,9 @@ class Molecule:
         component = self.getComponent(componentName)
         component.addBond(bondName)
         
+    def getComponentWithBonds(self):
+        return [x.name for x in self.components if x.bonds != []]
+        
     def contains(self,componentName):
         return componentName in [x.name for x in self.components]
         
@@ -127,6 +146,15 @@ class Molecule:
         
     def toString(self):
         return self.__str__()
+        
+    def extend(self,molecule):
+        for element in molecule.components:
+            comp = [x for x in self.components if x.name == element.name]
+            if len(comp) == 0:
+                self.components.append(deepcopy(element))
+            else:
+                for bond in element.bonds:
+                    comp[0].addBond(bond)
     
 class Component:
     def __init__(self,name,bonds = [],states=[]):
@@ -140,7 +168,8 @@ class Component:
         self.setActiveState(state)
         
     def addBond(self,bondName):
-        self.bonds.append(bondName)
+        if not bondName in self.bonds:
+            self.bonds.append(bondName)
         
     def setActiveState(self,state):
         if state not in self.states:
@@ -176,6 +205,7 @@ class Databases:
         self.catalysisDatabase = {}
         self.rawDatabase = {}
         self.labelDictionary = {}
+        self.synthesisDatabase2 = {}
         
     def getRawDatabase(self):
         return self.rawDatabase

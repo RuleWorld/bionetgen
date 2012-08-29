@@ -5,9 +5,8 @@ from copy import deepcopy
 
 def bnglReaction(reactant,product,rate,tags,translator=[]):
     finalString = ''
-    if translator != []:
-        translator = balanceTranslator(reactant,product,translator)
-    
+    #if translator != []:
+    #    translator = balanceTranslator(reactant,product,translator)
     for index in range(0,len(reactant)):
         if reactant[index] in tags:
             finalString += tags[reactant[index]]
@@ -27,21 +26,29 @@ def bnglReaction(reactant,product,rate,tags,translator=[]):
 
 
 def printTranslate(chemical,translator={}):
-    if chemical not in translator:
-        return chemical + '()'
+    tmp = []
+    
+
+    if chemical[0] not in translator:
+        app = chemical[0] + '()'
     else:
-        return str(translator[chemical])
+        app = str(translator[chemical[0]])
+    for item in range(0,int(chemical[1])):
+        tmp.append(app)
+    return ' + '.join(tmp)
 
 def balanceTranslator(reactant,product,translator):
     rMolecules = []
     pMolecules = []
     newTranslator = {}
     for species in reactant:
-        newTranslator[species] = deepcopy(translator[species])
-        rMolecules.extend(newTranslator[species].molecules)
+        if species[0] in translator:
+            newTranslator[species[0]] = deepcopy(translator[species[0]]) 
+            rMolecules.extend(newTranslator[species[0]].molecules)
     for species in product:
-        newTranslator[species] = deepcopy(translator[species])
-        pMolecules.extend(newTranslator[species].molecules)
+        if species[0] in translator:
+            newTranslator[species[0]] = deepcopy(translator[species[0]])
+            pMolecules.extend(newTranslator[species[0]].molecules)
         
     for rMolecule in rMolecules:
         for pMolecule in pMolecules:
