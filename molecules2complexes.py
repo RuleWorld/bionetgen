@@ -5,7 +5,7 @@ Created on Tue Dec  6 17:42:31 2011
 @author: proto
 """
 from libsbml2bngl import SBML2BNGL
-from pyparsing import Word, Suppress, Optional, alphanums, Group
+from pyparsing import Word, Suppress, Optional, alphanums, Group,nums
 import libsbml
 from numpy import sort
 from copy import deepcopy
@@ -15,7 +15,7 @@ import analyzeRDF
 from collections import Counter
     
 def parseReactions(reaction):
-    species = Optional(Word(alphanums+"_") + Suppress('()')) +  \
+    species = Optional(Suppress(Word(nums+"*"))) +  Optional(Word(alphanums+"_") + Suppress('()')) +  \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()"))
@@ -501,18 +501,23 @@ def transformMolecules(parser,database,configurationFile):
     #correctClassifications(rules,classifications,database.labelDictionary)
     #print 'step1',database.labelDictionary    
     simplify(database.labelDictionary)
-    #TODO: uncomment this section when we solve the bug on reclassifying    
+    #TODO: uncomment this section when we solve the bug on reclassifying
+    
+        
     classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
     
-    for index in range(0,len(classifications)):
-        if classifications[index] == 'None':
-            classifications[index] = classifications2[index]
     #print database.labelDictionary 
     cycles = resolveCycles(database,equivalenceTranslator)
     database.rawLabelDictionary = deepcopy(database.labelDictionary)
     for _ in range(0,5):
         database.labelDictionary = resolveCorrespondence(database,cycles)
     #print 'after resolving correspondences'
+    classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
+    for index in range(0,len(classifications)):
+        if classifications[index] == 'None':
+            classifications[index] = classifications2[index]
+
+
     tmp = {x:[database.labelDictionary[x]] for x in database.labelDictionary}
     database.labelDictionary = tmp
     #print 'step1.5',database.labelDictionary    
@@ -542,12 +547,17 @@ def transformMolecules(parser,database,configurationFile):
          
     correctClassificationsWithCycleInformation(rules,classifications,cycles)
     #print database.labelDictionary
-    #print classifications
+    counter = 0 
     for rule,classification in zip(rules,classifications):
         #print rule,classification
+        
+        
+        counter += 1
+        #if counter == 4:
+        #    break
+        
         reaction2 = list(parseReactions(rule))
         processRule(reaction2,database,classification,eequivalenceTranslator)
-        
     #update all equivalences
     for element in database.labelDictionary:
         if not isinstance(database.labelDictionary[element],tuple):

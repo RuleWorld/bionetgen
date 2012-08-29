@@ -35,15 +35,14 @@ class SBML2BNGL:
         return (id,initialConcentration,isConstant,isBoundary,compartment)
         
     def __getRawRules(self, reaction):
-        reactant = [reactant.getSpecies() for reactant in reaction.getListOfReactants()]
-        product = [product.getSpecies() for product in reaction.getListOfProducts()]
-        
+        reactant = [(reactant.getSpecies(),reactant.getStoichiometry()) for reactant in reaction.getListOfReactants()]
+        product = [(product.getSpecies(),product.getStoichiometry()) for product in reaction.getListOfProducts()]
         kineticLaw = reaction.getKineticLaw()
         parameters = [(parameter.getId(),parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
         math = kineticLaw.getMath()
         rate = libsbml.formulaToString(math)
         for element in reactant:
-            rate = rate.replace('* %s' % element,'',1)
+            rate = rate.replace('* %s' % element[0],'',1)
         return (reactant,product,parameters,rate)
         
     def __getRawCompartments(self, compartment):
@@ -203,21 +202,21 @@ def main():
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000011.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000011.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000048.xml')
-    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000019.xml')
-    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000009.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
-    print options.input
     parser =SBML2BNGL(document.getModel())
     #rawDatabase = {('EpoR',):([('ra',),('U',),('I',)],),('SAv',):([('l',)],)}
     database = structures.Databases()
     #rawDatabase = {}    
     #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",),("k")],),
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
-    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition5.json')            
+    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition1.json')            
     #translator= {}
+    #print {x:str(translator[x]) for x in translator}
     evaluation(len(parser.getSpecies()),translator)
     param2 = parser.getParameters()
     
