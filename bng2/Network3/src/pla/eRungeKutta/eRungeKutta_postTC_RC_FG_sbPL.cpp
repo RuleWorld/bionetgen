@@ -73,12 +73,12 @@ void eRungeKutta_postTC_RC_FG_sbPL::getNewTau(double& tau){
 	}
 
 	// Get new tau
-	if (this->preCalc){
+	if (this->preCalc){ // First step
 		this->ptc->getNewTau(tau);
-//cout << "tau: " << tau << endl;
+		//cout << "tau: " << tau << endl;
 		this->preCalc = false;
 	}
-	else{
+	else{ // All subsequent steps
 		if (this->substantially){ // Step was substantially accepted, increase tau
 			tau *= this->q;
 		}

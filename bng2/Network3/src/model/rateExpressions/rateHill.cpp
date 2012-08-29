@@ -40,7 +40,7 @@ RateHill::RateHill(double Vmax, double Kh, double h, vector<SimpleSpecies*> r, v
 	else{
 		for (unsigned int i=0;i < r.size();i++){
 			if (i != 0) this->type += " + ";
-			if (rS[i] < -1) this->type += Util::toString(-rS[i]);
+			if (rS[i] < -1) this->type += Util::toString(-rS[i]) + "*";
 			this->type += r[i]->name;
 		}
 		this->type += " ->}{";

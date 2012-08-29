@@ -1,4 +1,5 @@
 setOption(SpeciesLabel,HNauty)
+begin model
 begin parameters
     kp1  1
     km1  1
@@ -25,6 +26,7 @@ begin reaction rules
     # Ring closure
     R(r).L(l) <-> R(r!1).L(l!1) kp3,km3
 end reaction rules
+end model
 
 ## actions ##
 generate_network({overwrite=>1,max_stoich=>{R=>5,L=>5}})

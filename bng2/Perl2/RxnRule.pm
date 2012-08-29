@@ -2286,7 +2286,7 @@ sub findMap
             {   # product component is newly synthesized; half-bond is invalid.
                 exit_error( "New product component $comp has invalid half-bond in rule:", $rr->toString() );
             }
-            if ( ref $rg->Adjacency->{$ptr_R} eq 'HASH' )
+            elsif ( ! exists $rg->Adjacency->{$ptr_R}  or  ref $rg->Adjacency->{$ptr_R} eq 'HASH' )
             {   # corresponding reactant component has a full-bond; half-bond is invalid
                 exit_error( "Product component $comp has new or redefined half-bond in rule:", $rr->toString() );
             }

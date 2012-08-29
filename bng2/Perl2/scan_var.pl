@@ -83,9 +83,10 @@ my $bngexec;
 # some default parameters
 my $log     = 0;
 my $t_end   = 20;
-my $n_steps = 20;
+my $n_steps = 1;
 my $steady_state = 0;
 my $method = 'ode';
+my $pla_output = 0;
 
 my $prefix;
 my @mandatory_args = ();
@@ -125,12 +126,16 @@ while ( @ARGV )
             if ($method eq 'pla'){
             	my $pla_config = shift @ARGV;
             	if ($pla_config =~ /^-{1,2}/ || $pla_config =~ /\.bngl$/)
-            	{ die "Syntax error: PLA simulator requires a simulation configuration"; }
+            	{ die "Syntax error: PLA simulator requires a simulation configuration: --method pla \"string_config\" " . 
+            	      "(don't forget the quotes). Please try again."; }
             	$method = "\"$method\",pla_config=>\"$pla_config\"";
             }
             else{
             	$method = "\"$method\"";
             }
+        }
+        elsif($arg eq 'pla_output'){
+        	$pla_output = 1;
         }
         elsif($arg eq 'help'){
             display_help();
@@ -177,7 +182,13 @@ if ($log)
 }
 
 # calculate parameter step
-my $delta = ($var_max-$var_min)/($n_pts-1);
+my $delta;
+if ($var_max==$var_min){
+	$delta = 0;
+}
+else{  
+	$delta = ($var_max-$var_min)/($n_pts-1);
+}
 
 # Read file 
 open(IN, $file) or die "Couldn't open file $file: $?\n";
@@ -217,18 +228,22 @@ print BNGL "generate_network({overwrite=>1})\n";
     foreach my $run (1..$n_pts)
     {
         my $srun = sprintf "%05d", $run;
-        if ($run>1){
+        if ($run > 1){
             print BNGL "resetConcentrations()\n";
         }
         my $x= $val;
         if ($log){ $x = exp($val);}
         printf BNGL "setParameter(\"$var\",%.12g)\n", $x;
-
-        my $opt = "method=>$method,suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
+        
+        my $opt = "method=>$method";
+        if ($pla_output){
+        	$opt .= ",pla_output=>1";
+        }
+        $opt .= ",suffix=>\"$srun\",t_end=>$t_end,n_steps=>$n_steps";
         if ($steady_state){
             $opt .= ",steady_state=>1";
         }
-        printf BNGL "simulate({$opt})\n";#"simulate_ode({$opt})\n";
+        printf BNGL "simulate({$opt})\n"; #"simulate_ode({$opt})\n";
         $val += $delta;
     }  
 }
@@ -301,7 +316,7 @@ open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
             printf OUT "# %+14s", $var;
             foreach my $head (@heads)
             {
-                printf OUT " %+14s", $head;
+                printf OUT "%+19s", $head;
             }
             print OUT "\n";
         }
@@ -339,11 +354,14 @@ OPTIONS:
   --n_steps N     : number of output time steps per simulation
   --t_end VAL     : end time for each simulation 
   --prefix PREFIX : prefix for output file (default: MODEL basename)
-  --steady-state  : check for steady state at end of each simulation
+  --steady-state  : check for steady state at end of each simulation 
+                    (ignored if method not 'ode')
+  --method        : simulation method (default: ode)
+  --pla_output    : print PLA-specific output (ignored if method not 'pla')
 
-Runs ODE simulations of MODEL with a range of values of parameter VAR.
+Runs simulations of MODEL with a range of values of parameter VAR using the specified method.
 Simulation data is placed in a directory folder named PREFIX_VAR. A data file
-called PREFIX_VAR.scan contains the final smulation state for each parameter 
+called PREFIX_VAR.scan contains the final simulation state for each parameter 
 value. The scan file may be visualized with a plotting tool, such as PhiBPlot.
 
 END_HELP

@@ -132,10 +132,12 @@ extern map<string, int> init_observ_index_map(Group*& spec_groups);
 extern bool isMuParserFunction(string in_string);
 extern vector<string> find_variables(string a);
 extern void process_function_names(string& a);
-extern vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
-		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
-		map<string, int> observ_index_map, vector<vector<int> >& func_observ_depend, vector<vector<int> >& func_param_depend,
-		map<string, bool>& is_func_map);
+//extern vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
+//		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
+//		map<string, int> observ_index_map, vector<vector<int> >& func_observ_depend, vector<vector<int> >& func_param_depend,
+//		map<string, bool>& is_func_map);
+extern void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
+		map<string,double*>& param_map, map<string,int> param_index_map,map<string,int> observ_index_map);
 extern void remove_redundancies(vector<int>& vec);
 
 /* Rxn handling routines */
@@ -180,9 +182,10 @@ extern struct NETWORK network;
 enum {DENSE, GMRES, DENSE_J, GMRES_J};
 extern void  sparse_jac_matlab(FILE* outfile);
 extern void  init_sparse_matlab_file(FILE* outfile);
-extern int   init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name,
-						  vector<mu::Parser> new_functions, vector<int> new_var_parameters, vector<vector<int> > func_observ_depend,
-						  vector<vector<int> > func_param_depend, map<string, bool>);
+//extern int   init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name,
+//						  vector<mu::Parser> new_functions, vector<int> new_var_parameters, vector<vector<int> > func_observ_depend,
+//						  vector<vector<int> > func_param_depend, map<string, bool>);
+extern int   init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name);
 extern int   n_rate_calls_network();
 extern int   n_deriv_calls_network();
 extern int   n_rxns_network();
@@ -196,11 +199,11 @@ extern int   get_conc_network(double* conc);
 extern int   set_conc_network(double* conc);
 extern double* get_group_concentrations_network();
 extern void  derivs_network(double t, double* conc, double* derivs);
-extern int   rxn_rates_network(double* rxn_rates);
+extern int   rxn_rates_network(double* rxn_rates, int discrete);
 extern int   derivs_byrxn_network(double* conc, double** derivs);
 extern int   print_derivs_network(FILE* out);
 extern int   print_derivs_species_network(FILE* out);
-extern int   print_rates_network(FILE* out);
+extern int   print_rates_network(FILE* out, int discrete);
 extern int   print_derivs_byrxn_network(FILE* out);
 //extern int   propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol,
 //									 int SOLVER_TYPE, double maxStep);
@@ -234,7 +237,7 @@ extern int   finish_print_species_stats(FILE* out);
 
 extern void  connectivity_Rxn_array(Rxn_array* reactions, Elt_array* species, int** as_reactant, int** as_product);
 extern FILE* init_print_flux_network(char* filename);
-extern int   print_flux_network(FILE* out, double t);
+extern int   print_flux_network(FILE* out, double t, int discrete);
 extern FILE* init_print_pc_network(char* filename);
 extern int   print_pc_network(FILE* out, double t);
 extern FILE* init_print_jac_network(char* filename);

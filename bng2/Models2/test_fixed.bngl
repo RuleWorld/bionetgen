@@ -1,3 +1,4 @@
+begin model
 begin parameters
     kp1  1
     km1  100
@@ -16,7 +17,8 @@ end seed species
 begin reaction rules
     A(a) + B(b) -> A(a!1).B(b!1)  kp1
 end reaction rules
+end model
 
 ## actions ##
 generate_network({overwrite=>1})
-simulate_ode({t_end=>10,n_steps=>20})
+simulate({method=>ode,t_end=>10,n_steps=>20})
