@@ -702,7 +702,7 @@ int main(int argc, char *argv[]){
 		if (step >= maxSteps){ // maxSteps limit reached
 			cout << "Maximum step limit (" << maxSteps << ") reached in PLA simulation." << endl;
 		}
-		if (!verbose) cout << "Done" << endl;
+		if (!verbose) cout << "Done." << endl;
 //		cout << "PLA simulation took " << (clock()-initTime)/(double)CLOCKS_PER_SEC << " CPU seconds" << endl;
 
 		// Even if .cdat printing is suppressed, must output the last step
@@ -726,6 +726,7 @@ int main(int argc, char *argv[]){
 		//
 		double stepLimit = min(stepInterval,maxSteps);
 		bool forceQuit = false;
+		string forceQuit_message;
 		double t_out = t_start;
 
 		// Initial screen outputs
@@ -820,13 +821,13 @@ int main(int argc, char *argv[]){
 				if (error == -1) n -= 1; // stepLimit reached in propagation
 				if (error == -2){ // Stop condition satisfied
 					forceQuit = true;
-					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
-						 <<	"Gillespie simulation.";
+					forceQuit_message = "Stopping condition " + stop_condition.GetExpr() +
+							"met in Gillespie simulation.";
 				}
 				if (gillespie_n_steps() >= maxSteps - network3::TOL){ // maxSteps limit reached
 					forceQuit = true;
-					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
-						 << "Gillespie simulation.";
+					forceQuit_message = "Maximum step limit (" + Util::toString(maxSteps) +
+							") reached in Gillespie simulation.";
 				}
 				break;
 			case CVODE:
@@ -846,13 +847,13 @@ int main(int argc, char *argv[]){
 				if (error == -1) n -= 1; // stepLimit reached in propagation
 				if (error == -2){ // Stop condition satisfied
 					forceQuit = true;
-					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
-						 <<	"CVODE simulation.";
+					forceQuit_message = "Stopping condition " + stop_condition.GetExpr() +
+							"met in CVODE simulation.";
 				}
 				if (n_steps >= maxSteps - network3::TOL){ // maxSteps limit reached
 					forceQuit = true;
-					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
-						 << "CVODE simulation.";
+					forceQuit_message = "Maximum step limit (" + Util::toString(maxSteps) +
+							") reached in CVODE simulation.";
 				}
 				break;
 			case EULER:
@@ -872,13 +873,13 @@ int main(int argc, char *argv[]){
 				if (error == -1) n -= 1; // stepLimit reached in propagation
 				if (error == -2){ // Stop condition satisfied
 					forceQuit = true;
-					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
-						 <<	"EULER simulation.";
+					forceQuit_message = "Stopping condition " + stop_condition.GetExpr() +
+							"met in EULER simulation.";
 				}
 				if (n_steps >= maxSteps - network3::TOL){ // maxSteps limit reached
 					forceQuit = true;
-					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
-						 << "EULER simulation.";
+					forceQuit_message = "Maximum step limit (" + Util::toString(maxSteps) +
+							") reached in EULER simulation.";
 				}
 				break;
 			case RKCS:
@@ -898,13 +899,13 @@ int main(int argc, char *argv[]){
 				if (error == -1) n -= 1; // stepLimit reached in propagation
 				if (error == -2){ // Stop condition satisfied
 					forceQuit = true;
-					cout << "\nStopping condition " << stop_condition.GetExpr() << "met in "
-						 <<	"RKCS simulation.";
+					forceQuit_message = "Stopping condition " + stop_condition.GetExpr() +
+							"met in RKCS simulation.";
 				}
 				if (n_steps >= maxSteps - network3::TOL){ // maxSteps limit reached
 					forceQuit = true;
-					cout << "\nMaximum step limit (" << maxSteps << ") reached in "
-						 << "RKCS simulation.";
+					forceQuit_message = "Maximum step limit (" + Util::toString(maxSteps) +
+							") reached in RKCS simulation.";
 				}
 				break;
 			}
@@ -934,7 +935,7 @@ int main(int argc, char *argv[]){
 					out = fopen(buf, "w");
 					print_network(out);
 					fclose(out);
-					fprintf(stdout, " Wrote NET file to %s", buf);
+					if (verbose) fprintf(stdout, " Wrote NET file to %s", buf);
 				}
 			}
 
@@ -960,7 +961,9 @@ int main(int argc, char *argv[]){
 				conc_last = conc;
 				conc = a;
 			}
+
 			if (verbose) printf("\n");
+
 			if (n == outtime) {
 				char buf[1000];
 				FILE *outfile;
@@ -971,7 +974,12 @@ int main(int argc, char *argv[]){
 				fclose(outfile);
 				fprintf(stdout, "Jacobian written to %s after iteration %d\n", buf, outtime);
 			}
+
 			if (verbose) fflush(stdout);
+
+			// Screen output if forceQuit = true
+			if (forceQuit) cout << forceQuit_message << endl;
+
 		} // end for
 	} // end else
 
