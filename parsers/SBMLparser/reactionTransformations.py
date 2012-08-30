@@ -236,7 +236,6 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
         component2.addBond(str(rnd))
         molecule1.addComponent(component1)
         molecule2.addComponent(component2)
-
         species.addMolecule(molecule1,True,1)
         counter = 2 if binding1 == binding2 else 1 
         species.addMolecule(molecule2,True,counter)
@@ -357,9 +356,6 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
                 
                 #in case we know that one element name is actually another in a special form
                 realTag = dictionary[tag][0]
-                #print dictionary
-                #print tag,molecule
-                #print species,tag,dictionary[tag]
                 for member in [x for x in molecule if x not in constructed[species.index(realTag)]]:
                     flag = True
                     for temp in deepcopy(constructed[species.index(realTag)]):
