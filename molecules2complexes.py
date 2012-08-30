@@ -553,13 +553,13 @@ def transformMolecules(parser,database,configurationFile):
         
         
         counter += 1
-        print '-------------------------------------',counter,'---------'
         #print {x:str(database.translator[x]) for x in database.translator}
         #if counter == 4:
         #    break
         
         reaction2 = list(parseReactions(rule))
         processRule(reaction2,database,classification,eequivalenceTranslator)
+        #print {x:str(database.translator[x]) for x in database.translator}
     #update all equivalences
     for element in database.labelDictionary:
         if not isinstance(database.labelDictionary[element],tuple):

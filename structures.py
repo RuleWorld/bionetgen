@@ -8,6 +8,7 @@ from copy import deepcopy
 class Species:
     def __init__(self):
         self.molecules = []
+        self.bondNumbers = []
     
     def copy(self):
         species = Species()
@@ -31,7 +32,7 @@ class Species:
             #self.molecules.append(molecule)
             #for element in self.molecules:
             #    if element.name == molecule.name:
-        
+    
     def getMolecule(self,moleculeName):
         for molecule in self.molecules:
             if moleculeName == molecule.name:
@@ -191,7 +192,7 @@ class Molecule:
 class Component:
     def __init__(self,name,bonds = [],states=[]):
         self.name = name
-        self.states = states
+        self.states = []
         self.bonds = []
         self.activeState = ''
         
