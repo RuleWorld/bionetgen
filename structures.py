@@ -8,15 +8,26 @@ from copy import deepcopy
 class Species:
     def __init__(self):
         self.molecules = []
-        
+    
+    def copy(self):
+        species = Species()
+        for molecule in self.molecules:
+            species.molecules.append(molecule.copy())
+        return species
+    
     def addMolecule(self,molecule,concatenate=False,iteration = 1):
         if not concatenate:
             self.molecules.append(molecule)
         else:
             counter = 1
             for element in self.molecules:
+                
                 if element.name == molecule.name:
-                    element.extend(molecule)
+                    if iteration == counter:
+                        element.extend(molecule)
+                        break
+                    else:
+                        counter +=1
             #self.molecules.append(molecule)
             #for element in self.molecules:
             #    if element.name == molecule.name:
@@ -89,6 +100,10 @@ class Species:
                             for component in element.components:
                                 if component.name not in [x.name for x in molecule.components]:
                                     molecule.addComponent(deepcopy(component))
+                                else:
+                                    comp = molecule.getComponent(component.name)
+                                    for state in component.states:
+                                        comp.addState(state)
                     
     
     def append(self,species):
@@ -107,13 +122,27 @@ class Molecule:
         self.components = []
         self.name = name
         
+    def copy(self):
+        molecule = Molecule(self.name)
+        for element in self.components:
+            molecule.components.append(element.copy())
+        return molecule 
+        
     def addChunk(self,chunk):
         component = Component(chunk[0][0][0][0])
         component.addState(chunk[0][0][0][1])
         self.addComponent(component)
         
-    def addComponent(self,component):
-        self.components.append(component)
+    def addComponent(self,component,overlap=0):
+        if not overlap:
+            self.components.append(component)
+        else:
+            if not component.name in [x.name for x in self.components]:
+                self.components.append(component)
+            else:
+                compo = self.getComponent(component.name)
+                for state in component.states:
+                    compo.addState(state)
         
     def getComponent(self,componentName):
         for component in self.components:
@@ -155,6 +184,9 @@ class Molecule:
             else:
                 for bond in element.bonds:
                     comp[0].addBond(bond)
+                for state in element.states:
+                    comp[0].addState(state)
+                
     
 class Component:
     def __init__(self,name,bonds = [],states=[]):
@@ -163,8 +195,14 @@ class Component:
         self.bonds = []
         self.activeState = ''
         
+    def copy(self):
+        component = Component(self.name,deepcopy(self.bonds),deepcopy(self.states))
+        component.activeState = deepcopy(self.activeState)     
+        return component
+        
     def addState(self,state):
-        self.states.append(state)
+        if not state in self.states:
+            self.states.append(state)
         self.setActiveState(state)
         
     def addBond(self,bondName):

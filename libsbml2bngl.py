@@ -203,9 +203,9 @@ def main():
     reader = libsbml.SBMLReader()
     #document = reader.readSBMLFromFile(options.input)
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000011.xml')
-    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000048.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000048.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000009.xml')
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     parser =SBML2BNGL(document.getModel())
@@ -214,7 +214,7 @@ def main():
     #rawDatabase = {}    
     #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",),("k")],),
     #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
-    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition1.json')            
+    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition4.json')            
     #translator= {}
     #print {x:str(translator[x]) for x in translator}
     evaluation(len(parser.getSpecies()),translator)
