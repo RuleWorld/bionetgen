@@ -100,7 +100,7 @@ scope{
    }
    COLON ({gParent.netGrammar}? COLON | ))?  
    
-   (MOD slabel=STRING COLON COLON
+   (MOD slabel=STRING COLON COLON?
    {
     $lmemory.put($slabel.text,new Register(1.0,"observable"));
     $glabel = $slabel.text;
@@ -167,18 +167,20 @@ getParentTemplate();
 }
 @after{
   $information.setNumBonds($bonds.getNumBonds()-$information.getNumBonds());
+ 
 }
 
 :
-  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)?
+  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? 
+  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)?
   (AT s2=STRING 
   {
     $species_element::lcompartment = $s2.text; 
     $information.setCompartment($s2.text);
     $information.setBondList(bonds);
-  })? 
+  })?
   -> list_molecule_def(id={upperID},name={$s1.text},sites={$species_element::sites},compartment = {$species_element::lcompartment},label={$myLabel});
-  
+
 site_list[List sites,BondList bonds,String upperID]
 scope{
    int numSites

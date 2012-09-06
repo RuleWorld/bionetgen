@@ -43,7 +43,7 @@ scope{
  
 expression2 returns [Double value]
 :
-  e1=relational_expression {$value = e1.value; } ((AND | OR) relational_expression)*
+  e1=relational_expression {$value = e1.value; } (((AMPERSAND AMPERSAND)| (PIPE PIPE)) relational_expression)*
  ; 
 
  

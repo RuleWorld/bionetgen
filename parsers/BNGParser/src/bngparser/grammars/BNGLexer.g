@@ -33,7 +33,7 @@ OBSERVABLES: 'observables';
 SET_OPTION : 'SETOPTION';
 SPECIES_LABEL : 'SPECIESLABEL';
 GENERATE_NETWORK : 'GENERATENETWORK';
-MAX_AGG : 'MAXAGG';
+MAX_AGG : 'max_agg';
 MAX_ITER : ('M'|'m')('A'|'a')('X'|'x')'_'('I'|'i')('T'|'t')('E'|'e')('R'|'r');
 MAX_STOICH : 'MAXSTOICH';
 OVERWRITE: 'overwrite';
