@@ -74,7 +74,7 @@ scope {
 :
 LB*
 (SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+)?
-((BEGIN MODEL LB+ (program_block)* END MODEL LB+) | (program_block)*)
+((BEGIN MODEL LB+ (program_block)* END MODEL LB*) | (program_block)*)
 (a1=actions_block {$actionsTemplate = $a1.st;} )? 
 EOF  -> prog2(parameters={$prog::parameters},molecules={molecules},species={$prog::seedSpecies},reactions={$prog::reactionRules},
                             observables={$prog::observables},functions={$prog::functions}, compartments={$prog::compartments});
@@ -105,7 +105,7 @@ functions_block
 :
       BEGIN FUNCTIONS LB+
        (function_def {$prog::functions.add($function_def.st);} LB+)*     
-      END FUNCTIONS LB+
+      END FUNCTIONS LB*
 ;
 
 function_def
