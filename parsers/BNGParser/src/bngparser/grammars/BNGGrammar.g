@@ -75,7 +75,7 @@ scope {
 LB*
 (SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+)?
 ((BEGIN MODEL LB+ (program_block)* END MODEL LB+) | (program_block)*)
-(a1=actions_block {$actionsTemplate = $a1.st;}| (BEGIN ACTIONS a2=actions_block END ACTIONS {$actionsTemplate = $a2.st;;}) )? 
+(a1=actions_block {$actionsTemplate = $a1.st;} )? 
 EOF  -> prog2(parameters={$prog::parameters},molecules={molecules},species={$prog::seedSpecies},reactions={$prog::reactionRules},
                             observables={$prog::observables},functions={$prog::functions}, compartments={$prog::compartments});
 
@@ -121,6 +121,7 @@ scope{
     {
       $function_def::lmemory.put($s2.text,new Register(1.0,"parameter"));
     }
+    
     (COMMA s3=STRING)*
     {
       $function_def::lmemory.put($s3.text,new Register(1.0,"parameter"));
