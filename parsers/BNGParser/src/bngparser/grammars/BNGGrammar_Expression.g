@@ -105,7 +105,7 @@ variable returns [Double value]: s1=STRING {
                   if($expression::lmemory.containsKey($STRING.text)){
                     Register temp = $expression::lmemory.get($STRING.text);
                     $value = temp.getValue();
-	                  if(!temp.getType().equals("parameter") && !temp.getType().equals("observable")){
+	                  if(!temp.getType().equals("ConstantExpression") && !temp.getType().equals("observable")){
 	                    String msg = getErrorMessage(s1,"the following token is in memory but is not a variable or an observable");
 	                    System.err.println(msg);
 	                  }

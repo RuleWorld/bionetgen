@@ -25,8 +25,12 @@ scope
 }
 @init{
 getParentTemplate();
+gParent.paraphrases.push("in the observables section");
   $observables_block::observableCounter = 1;
   $observables_block::reactionAction = new ReactionAction();
+}
+@after{
+  gParent.paraphrases.pop();
 }
         : BEGIN OBSERVABLES LB+(s1=observable_def_line["O" + $observables_block::observableCounter] 
              {observables.add(s1.st);$observables_block::observableCounter++;} LB+)* END OBSERVABLES LB*

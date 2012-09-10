@@ -91,6 +91,10 @@ scope{
   $species_def::variableName = "";
   $constant = false;
   $lmemory = new HashMap<String,Register>();
+  //gParent.paraphrases.push("in species def section");
+}
+@after{
+  //gParent.paraphrases.pop();
 }
 :
    (AT scomp=STRING 

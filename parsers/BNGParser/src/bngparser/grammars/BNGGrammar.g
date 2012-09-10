@@ -119,12 +119,12 @@ scope{
     s1=STRING LPAREN 
     parameter=(s2=STRING
     {
-      $function_def::lmemory.put($s2.text,new Register(1.0,"parameter"));
+      $function_def::lmemory.put($s2.text,new Register(1.0,"ConstantExpression"));
     }
     
     (COMMA s3=STRING)*
     {
-      $function_def::lmemory.put($s3.text,new Register(1.0,"parameter"));
+      $function_def::lmemory.put($s3.text,new Register(1.0,"ConstantExpression"));
     }
     )? RPAREN (BECOMES)?  
 
@@ -138,8 +138,6 @@ scope{
   
     
 ;
-
-
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL
 compartments_block:
