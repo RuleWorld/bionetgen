@@ -29,7 +29,8 @@ use ParamList;
 
 # safer to use 'floor' and 'ceil' instead of 'int'
 use POSIX qw/floor ceil/;
-
+use Math::Trig qw(tan asin acos atan sinh cosh tanh asinh acosh atanh pi); 
+use List::Util qw(min max sum);
 
 struct Expression =>
 {
@@ -43,18 +44,37 @@ struct Expression =>
 # NOTE: it's weird that some built-in functions with names (like exp, cos, etc) are handled
 #  differently thant built-ins with operator symbols (like +, -, etc).  We could really simplify this.
 #  --Justin
+# Supported most muParser built-in functions. --Leonard 
+# See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
 my %functions =
 (
-  "exp"  => { FPTR => sub { exp( $_[0] ) },   NARGS => 1 },
-  "cos"  => { FPTR => sub { cos( $_[0] ) },   NARGS => 1 },
-  "sin"  => { FPTR => sub { sin( $_[0] ) },   NARGS => 1 },
-  "log"  => { FPTR => sub { log( $_[0] ) },   NARGS => 1 },
-  "abs"  => { FPTR => sub { abs( $_[0] ) },   NARGS => 1 },
-  "int"  => { FPTR => sub { int( $_[0] ) },   NARGS => 1 },  # deprecated!
-  "floor"=> { FPTR => sub { floor( $_[0] ) }, NARGS => 1 },
-  "ceil" => { FPTR => sub { ceil( $_[0] ) },  NARGS => 1 },
-  "sqrt" => { FPTR => sub { sqrt( $_[0] ) },  NARGS => 1 },
-  "if"   => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
+  "exp"   => { FPTR => sub { exp( $_[0] ) },       NARGS => 1 },
+  "ln"    => { FPTR => sub { log( $_[0] ) },       NARGS => 1 },
+  "log10" => { FPTR => sub { log($_[0])/log(10) }, NARGS => 1 },
+  "log2"  => { FPTR => sub { log($_[0])/log(2) },  NARGS => 1 },
+  "abs"   => { FPTR => sub { abs( $_[0] ) },       NARGS => 1 },
+#  "int"   => { FPTR => sub { int( $_[0] ) },       NARGS => 1 },  # deprecated!
+  "floor" => { FPTR => sub { floor( $_[0] ) },     NARGS => 1 },
+  "ceil"  => { FPTR => sub { ceil( $_[0] ) },      NARGS => 1 },
+  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },      NARGS => 1 },
+  "cos"   => { FPTR => sub { cos( $_[0] ) },       NARGS => 1 },
+  "sin"   => { FPTR => sub { sin( $_[0] ) },       NARGS => 1 },
+  "tan"   => { FPTR => sub { tan( $_[0] ) },       NARGS => 1 },
+  "asin"  => { FPTR => sub { asin( $_[0] ) },      NARGS => 1 },
+  "acos"  => { FPTR => sub { acos( $_[0] ) },      NARGS => 1 },
+  "atan"  => { FPTR => sub { atan( $_[0] ) },      NARGS => 1 },
+  "sinh"  => { FPTR => sub { sinh( $_[0] ) },      NARGS => 1 },
+  "cosh"  => { FPTR => sub { cosh( $_[0] ) },      NARGS => 1 },
+  "tanh"  => { FPTR => sub { tanh( $_[0] ) },      NARGS => 1 },
+  "asinh" => { FPTR => sub { asinh( $_[0] ) },     NARGS => 1 },
+  "acosh" => { FPTR => sub { acosh( $_[0] ) },     NARGS => 1 },
+  "atanh" => { FPTR => sub { atanh( $_[0] ) },     NARGS => 1 },
+  "pi"    => { FPTR => sub { pi },                 NARGS => 0 },
+  "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
+  "min"   => { FPTR => sub { min(@_) },            NARGS => scalar(@_) },
+  "max"   => { FPTR => sub { max(@_) },            NARGS => scalar(@_) },
+  "sum"   => { FPTR => sub { sum(@_) },            NARGS => scalar(@_) },
+  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) }, NARGS => scalar(@_) },
 );
 
 
