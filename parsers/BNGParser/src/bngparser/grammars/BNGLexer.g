@@ -8,6 +8,24 @@ options {
 @header{
 package bngparser.grammars;
 }
+@members{
+ public boolean floatLA(){
+    int counter = 1;
+    while(true){
+      int LA8_0 = input.LT(counter);
+      if ((LA8_0>='0' && LA8_0<='9')){
+        counter++;
+      }
+      else{
+        break;
+      }
+    }
+    int LA14_0 = input.LT(counter);
+    if((LA14_0>='A' && LA14_0<='Z')||LA14_0=='_'||(LA14_0>='a' && LA14_0<='z'))
+      return false;
+    return true;
+ }
+}
 
 LINE_COMMENT : '#' ~('\n'|'\r')* {skip();} ;
 LB : ('\n'|'\r')+; 
@@ -117,11 +135,10 @@ EVALUATE_EXPRESSIONS: 'evaluate_expressions';
 BDF: 'bdf';
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
-| '.' (DIGIT)+ EXPONENT?
 | (DIGIT)+ EXPONENT;
 INT: DIGIT+;
-STRING: (LETTER | '_'| DIGIT) (LETTER | DIGIT | '_')*;
-
+STRING: (LETTER | DIGIT | '_')+
+;
 SEMI : ';';
 COLON: ':';
 LSBRACKET : '[';
@@ -129,7 +146,7 @@ RSBRACKET : ']';
 LBRACKET : '{';
 RBRACKET : '}';
 COMMA : ',';
-DOT : '.';
+DOT : '.'   ({floatLA()}? => ((DIGIT)+ EXPONENT?  {$type=FLOAT;}) | {$type=DOT;});
 LPAREN : '(';
 RPAREN : ')';
 UNI_REACTION_SIGN : '->';

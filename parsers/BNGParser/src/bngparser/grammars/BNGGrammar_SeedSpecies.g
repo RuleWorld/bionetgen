@@ -91,16 +91,22 @@ scope{
   $species_def::variableName = "";
   $constant = false;
   $lmemory = new HashMap<String,Register>();
-  //gParent.paraphrases.push("in species def section");
+((ChangeableChannelTokenStream)input).addChannel(HIDDEN);
+  gParent.paraphrases.push("in species def section");
 }
 @after{
-  //gParent.paraphrases.pop();
+((ChangeableChannelTokenStream)input).delChannel(HIDDEN);
+((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1);
+((ChangeableChannelTokenStream)input).consume();
+
+  gParent.paraphrases.pop();
 }
 :
    (AT scomp=STRING 
    
    {
     $compartment = $scomp.text;
+   //((ChangeableChannelTokenStream)input).addChannel(HIDDEN);
    }
    COLON ({gParent.netGrammar}? COLON | ))?  
    
@@ -141,6 +147,7 @@ scope{
    )
    
     {
+    //((ChangeableChannelTokenStream)input).delChannel(HIDDEN);
     //if(!gParent.variableName.contains($species_def::variableName) && gParent.conserveNewMolecules){
       //gParent.variableName.add($species_def::variableName);
      // gParent.molecules.add(new StringTemplate($species_def::variableName));
