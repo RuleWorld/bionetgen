@@ -6,11 +6,14 @@ options {
 
   
 }
+
 @members{
  public void getParentTemplate(){
  
   this.setTemplateLib(gParent.getTemplateLib());
+ 
  }
+  String[] list = {"sin", "cos", "tan","exp","ln","log10","log2","abs","floor","ceil","sqrt","asin","acos","atan","sinh","cosh","tanh","asinh","acosh","atanh"};
       @Override
   public String getErrorMessage(RecognitionException e,String[] tokenNames){
     return gParent.getErrorMessage(e,tokenNames);
@@ -20,6 +23,14 @@ options {
       return String.format("\%s line \%d:\%d \%s: \%s\n",input.getSourceName(),s1.getLine(),s1.getCharPositionInLine(),error,s1.getText());
   
   }
+  
+  public boolean isSpecialFunction(String text){
+    if(Arrays.asList(list).contains(text))
+      return true;
+     return false;
+  }
+  
+  
 }
 @init{
 getParentTemplate();
@@ -148,6 +159,10 @@ function returns [Double value]:
                       
                       System.err.println(msg);
                     }
+       }
+       else if(isSpecialFunction($STRING.text)){
+       //add xml code in here
+        $value=1.0;
        }
        else if($STRING.text.equals("MM")){
         $value=1.0;
