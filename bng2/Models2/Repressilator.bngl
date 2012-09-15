@@ -9,8 +9,8 @@ begin parameters
     c3    0.5         # s^-1
     c4    5e-4        # s^-1
     c5    0.167       # s^-1
-    c6    log(2)/120  # s^-1
-    c7    log(2)/600  # s^-1
+    c6    ln(2)/120  # s^-1
+    c7    ln(2)/600  # s^-1
     #
     tF    1e-4        # telegraph factor
     rF    1000        # rna factor
