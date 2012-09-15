@@ -79,7 +79,7 @@ class Species:
             if not self.contains(tag):
                 self.molecules.append(tmp)
                 
-    def extend(self,species):
+    def extend(self,species,update=True):
         if(len(self.molecules) == len(species.molecules)):
             for (selement,oelement) in zip(self.molecules,species.molecules):
                 for component in oelement.components:
@@ -88,25 +88,26 @@ class Species:
                     else:
                         for element in selement.components:
                             if element.name == component.name:
-                                element.states.append(component.states)
+                                element.addStates(component.states,update)
+                                
         else:
             for element in species.molecules:
-                #pass
                 if element.name not in [x.name for x in self.molecules]:
-                    #print 'kkkkkkkkkkkkk',str(element),str(self)
-                    self.addMolecule(deepcopy(element))
+                    
+                    self.addMolecule(deepcopy(element),update)
                 else:
                     for molecule in self.molecules:
                         if molecule.name == element.name:
                             for component in element.components:
                                 if component.name not in [x.name for x in molecule.components]:
-                                    molecule.addComponent(deepcopy(component))
+                                    molecule.addComponent(deepcopy(component),update)
                                 else:
                                     comp = molecule.getComponent(component.name)
                                     for state in component.states:
-                                        comp.addState(state)
+                                        comp.addState(state,update)
                     
     
+        
     def append(self,species):
         for element in species.molecules:
             self.molecules.append(deepcopy(element))              
@@ -114,6 +115,10 @@ class Species:
     def __str__(self):
         return '.'.join([x.toString() for x in self.molecules])
         
+    def reset(self):
+        for element in self.molecules:
+            element.reset()
+            
     def toString(self):
         return self.__str__()
         
@@ -187,6 +192,15 @@ class Molecule:
                     comp[0].addBond(bond)
                 for state in element.states:
                     comp[0].addState(state)
+                    
+    def reset(self):
+        for element in self.components:
+            element.reset()
+            
+    def update(self,molecule):
+        for comp in molecule.components:
+            if comp.name not in [x.name for x in self.components]:
+                self.components.append(deepcopy(comp))
                 
     
 class Component:
@@ -201,10 +215,16 @@ class Component:
         component.activeState = deepcopy(self.activeState)     
         return component
         
-    def addState(self,state):
+    def addState(self,state,update=True):
         if not state in self.states:
             self.states.append(state)
-        self.setActiveState(state)
+        if update:
+            self.setActiveState(state)
+        #print 'LALALA',state
+    def addStates(self,states,update=True):
+        for state in states:
+            if state not in self.states:
+                self.addState(state,update)
         
     def addBond(self,bondName):
         if not bondName in self.bonds:
@@ -235,6 +255,11 @@ class Component:
         
     def __hash__(self):
         return self.name
+        
+    def reset(self):
+        self.bonds = []
+        if 'U' in self.states:
+            self.activeState = 'U'
         
         
 class Databases:

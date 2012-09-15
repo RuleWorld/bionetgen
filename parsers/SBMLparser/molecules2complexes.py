@@ -15,10 +15,17 @@ import analyzeRDF
 from collections import Counter
     
 def parseReactions(reaction):
+    species =   (Word(alphanums+"_") 
+    + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()"))
+    '''
     species = Optional(Suppress(Word(nums+"*"))) +  Optional(Word(alphanums+"_") + Suppress('()')) +  \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()"))
+    '''
     rate = Word(alphanums + "()")
     grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
     ^ (species + Suppress("->") + Suppress(rate))  
@@ -502,7 +509,6 @@ def transformMolecules(parser,database,configurationFile):
     #print 'step1',database.labelDictionary    
     simplify(database.labelDictionary)
     #TODO: uncomment this section when we solve the bug on reclassifying
-    
         
     classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
     
@@ -533,6 +539,7 @@ def transformMolecules(parser,database,configurationFile):
     
 #    correctClassifications(rules,classifications,database.labelDictionary)
     #STEP3: Use annotations
+
     for element in set(x for rule in rules for tmp in parseReactions(rule) for x in tmp):
         annotation = [rdfAnnotations[x] for x in rdfAnnotations if element in rdfAnnotations[x]]
         if annotation != []:
@@ -542,15 +549,16 @@ def transformMolecules(parser,database,configurationFile):
     #print 'step3',database.labelDictionary    
     #analyzeSBML.reclassifyReactions(reactions,molecules,labelDictionary,classifications,equivalenceTranslator)
     cycles = resolveCycles(database,equivalenceTranslator)
+
     for _ in range(0,5):
         database.labelDictionary = resolveCorrespondence(database,cycles)
          
     correctClassificationsWithCycleInformation(rules,classifications,cycles)
     #print database.labelDictionary
     counter = 0 
+
     for rule,classification in zip(rules,classifications):
         #print rule,classification
-        
         
         counter += 1
         #print {x:str(database.translator[x]) for x in database.translator}
@@ -559,6 +567,7 @@ def transformMolecules(parser,database,configurationFile):
         
         reaction2 = list(parseReactions(rule))
         processRule(reaction2,database,classification,eequivalenceTranslator)
+        #print counter,rule,classification        
         #print {x:str(database.translator[x]) for x in database.translator}
     #update all equivalences
     for element in database.labelDictionary:
@@ -566,5 +575,12 @@ def transformMolecules(parser,database,configurationFile):
             database.translator[element] = database.translator[database.labelDictionary[element]]
     #print translator
    # print labelDictionary
+   ###now balance all our components
+    raw =  [x[0] for x in database.rawDatabase]
+    for element in database.translator:
+        if element in raw:
+            continue
+        for mol in database.translator[element].molecules:
+            mol.update(database.translator[mol.name].molecules[0])
     return database.translator
 

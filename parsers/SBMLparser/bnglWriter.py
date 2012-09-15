@@ -7,6 +7,9 @@ def bnglReaction(reactant,product,rate,tags,translator=[]):
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
+    
+    if len(reactant) == 0:
+        finalString += '0() '
     for index in range(0,len(reactant)):
         if reactant[index] in tags:
             finalString += tags[reactant[index]]
@@ -14,6 +17,8 @@ def bnglReaction(reactant,product,rate,tags,translator=[]):
         if index < len(reactant) -1:
             finalString += ' + '
     finalString += ' -> '
+    if len(product) == 0:
+        finalString += '0() '
     for index in range(0,len(product)):
         if product[index] in tags:
             finalString += tags[product[index]]    
@@ -78,7 +83,7 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('seed species',species))
     output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('observables',observables))
-    output.write(sectionTemplate('rules',rules))
+    output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
     output.write('generate_network();\n')
     output.write('simulate_ode({t_end=>400,n_steps=>50});')

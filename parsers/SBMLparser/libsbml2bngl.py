@@ -8,6 +8,7 @@ import sys
 import structures
 from os import listdir
 import re
+import numpy as np
 
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
@@ -138,6 +139,43 @@ class SBML2BNGL:
             for element in log['reactions']:
                 logString += '\t%s + %s -> %s\n' % (element[0][0],element[0][1],element[1])
         return logString
+
+
+def identifyNamingConvetion():
+    reader = libsbml.SBMLReader()
+    jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
+    translationLevel = []
+    maxi = 0
+    for index in range(1,410):
+        try:
+            nameStr = 'BIOMD0000000%03d' % (index)
+            document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
+            parser = SBML2BNGL(document.getModel())
+            database = structures.Databases()
+            
+            print nameStr + '.xml',
+            maxi = 0
+            for jsonFile in jsonFiles:
+                try:
+                    parser = SBML2BNGL(document.getModel())
+                    database = structures.Databases()
+                    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile)
+                    maxi = max(maxi,evaluation(len(parser.getSpecies()),translator))
+                except:
+                    print 'ERROR',sys.exc_info()[0]  
+                    continue
+                #translator = m2c.transformMolecules(parser,database,'reactionDefinition2.json')
+            #print len(parser.getSpecies()),len(translator),
+            #evaluation(len(parser.getSpecies()),translator)
+            
+            #translator = {}
+            _,_,obs = parser.getSpecies()
+            print maxi,maxi*1.0/len(obs)
+            translationLevel.append(maxi*1.0/len(obs))
+        except:
+            print 'ERROR',sys.exc_info()[0] 
+            continue
+        np.save('stats2.npy',translationLevel)
                 
 def processDatabase():
     reader = libsbml.SBMLReader()
@@ -149,11 +187,11 @@ def processDatabase():
             parser = SBML2BNGL(document.getModel())
             database = structures.Databases()
             
-            print nameStr + '.xml',
+            print nameStr + '.xml'
                         
             for jsonFile in jsonFiles:
                 try:
-                    print jsonFile,           
+                    #print jsonFile,           
                     translator = m2c.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile)
                     break
                 except:
@@ -182,7 +220,7 @@ def processDatabase():
 def evaluation(numMolecules,translator):
     originalElements = (numMolecules)
     ruleElements = len([str(translator[x]) for x in translator if '.' not in str(translator[x])])
-    return 'compression: {0}/{1}'.format(ruleElements,originalElements)
+    return ruleElements
 
            
     #print rules
@@ -204,6 +242,8 @@ def main():
     #document = reader.readSBMLFromFile(options.input)
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000011.xml')
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000048.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000188.xml')
+    #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000018.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000009.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000270.xml')
     #document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
@@ -217,7 +257,7 @@ def main():
     translator = m2c.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition4.json')            
     #translator= {}
     #print {x:str(translator[x]) for x in translator}
-    evaluation(len(parser.getSpecies()),translator)
+    print evaluation(len(parser.getSpecies()[0]),translator)
     param2 = parser.getParameters()
     
     
@@ -240,5 +280,6 @@ def main():
     #print rawDatabase
     
 if __name__ == "__main__":
+    #identifyNamingConvetion()
     #processDatabase()
     main()
