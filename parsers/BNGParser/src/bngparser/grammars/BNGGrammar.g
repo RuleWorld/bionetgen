@@ -74,8 +74,8 @@ scope {
 :
 LB*
 (SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+)?
-((BEGIN MODEL LB+ (program_block)* END MODEL LB+) | (program_block)*)
-(a1=actions_block {$actionsTemplate = $a1.st;}| (BEGIN ACTIONS a2=actions_block END ACTIONS {$actionsTemplate = $a2.st;;}) )? 
+((BEGIN MODEL LB+ (program_block)* END MODEL LB*) | (program_block)*)
+(a1=actions_block {$actionsTemplate = $a1.st;} )? 
 EOF  -> prog2(parameters={$prog::parameters},molecules={molecules},species={$prog::seedSpecies},reactions={$prog::reactionRules},
                             observables={$prog::observables},functions={$prog::functions}, compartments={$prog::compartments});
 
@@ -105,7 +105,7 @@ functions_block
 :
       BEGIN FUNCTIONS LB+
        (function_def {$prog::functions.add($function_def.st);} LB+)*     
-      END FUNCTIONS LB+
+      END FUNCTIONS LB*
 ;
 
 function_def
@@ -119,11 +119,12 @@ scope{
     s1=STRING LPAREN 
     parameter=(s2=STRING
     {
-      $function_def::lmemory.put($s2.text,new Register(1.0,"parameter"));
+      $function_def::lmemory.put($s2.text,new Register(1.0,"ConstantExpression"));
     }
+    
     (COMMA s3=STRING)*
     {
-      $function_def::lmemory.put($s3.text,new Register(1.0,"parameter"));
+      $function_def::lmemory.put($s3.text,new Register(1.0,"ConstantExpression"));
     }
     )? RPAREN (BECOMES)?  
 
@@ -137,8 +138,6 @@ scope{
   
     
 ;
-
-
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL
 compartments_block:

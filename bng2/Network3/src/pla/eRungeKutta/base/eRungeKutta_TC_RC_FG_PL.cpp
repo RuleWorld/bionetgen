@@ -8,8 +8,8 @@
 #include "../eRungeKutta.hh"
 
 eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
-		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), eps(eps), approx1(approx1),
-		gg1(gg1), rxn(rxn){
+		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), eps(eps),
+		approx1(approx1), gg1(gg1), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
 	// Error check
@@ -79,9 +79,11 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 	// Classify rxns
 	double a_tau;
 	for (unsigned int v=0;v < classif.size();v++){
-		if (reclassify_all || (!reclassify_all && classif[v] != RxnClassifier::EXACT_STOCHASTIC)){
+		if (this->force >= 0){
+			classif[v] = this->force;
+		}
+		else if (classif[v] != RxnClassifier::EXACT_STOCHASTIC || reclassify_all){
 			a_tau = this->aCalc->a_eff[v]*tau;
-			//
 			if (sqrt(a_tau) > this->gg1){
 				classif[v] = RxnClassifier::DETERMINISTIC;
 			}
@@ -91,9 +93,12 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 			else if (a_tau > this->approx1){
 				classif[v] = RxnClassifier::POISSON;
 			}
-			else
-			{
-				// Calculate derivatives dav/dXj
+			else{
+				// OLD classification scheme
+//				classif[v] = RxnClassifier::EXACT_STOCHASTIC;
+				//
+				// NEW classification scheme
+///*			// Calculate derivatives dav/dXj
 				vector<double> dav_dX;
 				for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
 					dav_dX.push_back(this->rxn[v]->get_dRate_dX(j));
@@ -114,14 +119,14 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 					beta_v = this->rxn[v]->re->getRate(X);
 				}
 				// Classify:
-				// 	  If eps*rate[v] > beta_v --> POISSON...
-				if (this->eps*this->rxn[v]->getRate() > beta_v){
+				// If eps*rate[v] > beta_v --> POISSON...
+				if (this->eps*this->rxn[v]->getRate() > 1.0*beta_v){
 					classif[v] = RxnClassifier::POISSON;
 				}
 				// ...else --> EXACT_STOCHASTIC
 				else{
 					classif[v] = RxnClassifier::EXACT_STOCHASTIC;
-				}
+				}//*/
 			}
 		}
 	}

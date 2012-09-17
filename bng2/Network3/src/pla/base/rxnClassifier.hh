@@ -21,6 +21,9 @@ namespace network3{
 		virtual ~RxnClassifier();
 		virtual void classifyRxns(vector<int>& classif, double tau, bool reclassify_all) = 0;
 //		virtual RxnClassifier* clone() const{ return new RxnClassifier(*this); }
+		void forceClassifications(int force){ this->force = force; }
+	protected:
+		int force;
 	};
 }
 #endif /* RXNCLASSIFIER_HH_ */

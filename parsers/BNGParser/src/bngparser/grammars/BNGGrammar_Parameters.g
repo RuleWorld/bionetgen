@@ -39,6 +39,6 @@ END PARAMETERS LB+;
 parameter_def[Map<String,Register> lmemory]
 :
 ({gParent.netGrammar}? INT |  ) STRING (BECOMES)? expression[lmemory]  {
-        lmemory.put($STRING.text,new Register($expression.value,"parameter"));
+        lmemory.put($STRING.text,new Register($expression.value,"ConstantExpression"));
         }   -> parameter_def(id={$STRING.text},value={$expression.text})
 ;

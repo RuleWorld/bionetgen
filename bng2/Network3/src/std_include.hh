@@ -19,7 +19,7 @@ using namespace std;
 
 namespace network3{
 	const bool debug = false;
-	const double TOL = 1e-12;
+	const double TOL = 1e-8;
 }
 
 using namespace network3;

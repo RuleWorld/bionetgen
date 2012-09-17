@@ -82,7 +82,7 @@ sub size
 
 
 # Lookup a parameter by name.
-#  Returns referenc to parameter, if found.
+#  Returns reference to parameter, if found.
 #  Otherwise returns undefined.
 sub lookup
 {

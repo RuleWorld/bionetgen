@@ -29,7 +29,8 @@ use ParamList;
 
 # safer to use 'floor' and 'ceil' instead of 'int'
 use POSIX qw/floor ceil/;
-
+use Math::Trig qw(tan asin acos atan sinh cosh tanh asinh acosh atanh pi); 
+use List::Util qw(min max sum);
 
 struct Expression =>
 {
@@ -43,18 +44,37 @@ struct Expression =>
 # NOTE: it's weird that some built-in functions with names (like exp, cos, etc) are handled
 #  differently thant built-ins with operator symbols (like +, -, etc).  We could really simplify this.
 #  --Justin
+# Supported most muParser built-in functions. --Leonard 
+# See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
 my %functions =
 (
-  "exp"  => { FPTR => sub { exp( $_[0] ) },   NARGS => 1 },
-  "cos"  => { FPTR => sub { cos( $_[0] ) },   NARGS => 1 },
-  "sin"  => { FPTR => sub { sin( $_[0] ) },   NARGS => 1 },
-  "log"  => { FPTR => sub { log( $_[0] ) },   NARGS => 1 },
-  "abs"  => { FPTR => sub { abs( $_[0] ) },   NARGS => 1 },
-  "int"  => { FPTR => sub { int( $_[0] ) },   NARGS => 1 },  # deprecated!
-  "floor"=> { FPTR => sub { floor( $_[0] ) }, NARGS => 1 },
-  "ceil" => { FPTR => sub { ceil( $_[0] ) },  NARGS => 1 },
-  "sqrt" => { FPTR => sub { sqrt( $_[0] ) },  NARGS => 1 },
-  "if"   => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
+  "exp"   => { FPTR => sub { exp( $_[0] ) },       NARGS => 1 },
+  "ln"    => { FPTR => sub { log( $_[0] ) },       NARGS => 1 },
+  "log10" => { FPTR => sub { log($_[0])/log(10) }, NARGS => 1 },
+  "log2"  => { FPTR => sub { log($_[0])/log(2) },  NARGS => 1 },
+  "abs"   => { FPTR => sub { abs( $_[0] ) },       NARGS => 1 },
+#  "int"   => { FPTR => sub { int( $_[0] ) },       NARGS => 1 },  # deprecated!
+  "floor" => { FPTR => sub { floor( $_[0] ) },     NARGS => 1 },
+  "ceil"  => { FPTR => sub { ceil( $_[0] ) },      NARGS => 1 },
+  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },      NARGS => 1 },
+  "cos"   => { FPTR => sub { cos( $_[0] ) },       NARGS => 1 },
+  "sin"   => { FPTR => sub { sin( $_[0] ) },       NARGS => 1 },
+  "tan"   => { FPTR => sub { tan( $_[0] ) },       NARGS => 1 },
+  "asin"  => { FPTR => sub { asin( $_[0] ) },      NARGS => 1 },
+  "acos"  => { FPTR => sub { acos( $_[0] ) },      NARGS => 1 },
+  "atan"  => { FPTR => sub { atan( $_[0] ) },      NARGS => 1 },
+  "sinh"  => { FPTR => sub { sinh( $_[0] ) },      NARGS => 1 },
+  "cosh"  => { FPTR => sub { cosh( $_[0] ) },      NARGS => 1 },
+  "tanh"  => { FPTR => sub { tanh( $_[0] ) },      NARGS => 1 },
+  "asinh" => { FPTR => sub { asinh( $_[0] ) },     NARGS => 1 },
+  "acosh" => { FPTR => sub { acosh( $_[0] ) },     NARGS => 1 },
+  "atanh" => { FPTR => sub { atanh( $_[0] ) },     NARGS => 1 },
+  "pi"    => { FPTR => sub { pi },                 NARGS => 0 },
+  "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
+  "min"   => { FPTR => sub { min(@_) },            NARGS => scalar(@_) },
+  "max"   => { FPTR => sub { max(@_) },            NARGS => scalar(@_) },
+  "sum"   => { FPTR => sub { sum(@_) },            NARGS => scalar(@_) },
+  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) }, NARGS => scalar(@_) },
 );
 
 
@@ -81,12 +101,40 @@ my %NARGS = ( '+'  => { 'min'=>2           },
               '~'  => { 'min'=>1, 'max'=>1 }
             );
 
+# muParser operators
+# ------------------
+# +   addition	 
+# -   subtraction	 
+# *   multiplication	 
+# /   division	 
+# ^   raise x to the power of y	 
+# &&  logical and	 
+# ||  logical or	 
+# <   less than	 
+# >   greater than	 
+# <=  less or equal	 
+# >=  greater or equal	 
+# !=  not equal	 
+# ==  equal	 
 
 # this regex matches numbers (regular and scientific notation
 my $NUMBER_REGEX = '^[\+\-]?(\d+\.?\d*|\.\d+)(|[Ee][\+\-]?\d+|\*10\^[\+\-]?\d+)$';
 # this regex matches param names (letter followed optional by word characters)
 my $PARAM_REGEX  = '^[A-Za-z]\w*$';
 
+
+###
+###
+###
+
+sub isBuiltIn
+{
+	my $name = shift;
+	if ( exists $functions{ $name } ){
+		return 1;
+	}
+	return 0;
+}
 
 ###
 ###
@@ -167,7 +215,7 @@ sub newNumOrVar
     # or possibly a parameter name?
     elsif ( $value =~ /$PARAM_REGEX/ )
     {
-        # we need a paramllist to continue
+        # we need a paramlist to continue
         if ( ref $plist  eq  'ParamList' )
         {
             # check that parameter exists
@@ -370,7 +418,7 @@ sub operate
                     next;
                 }
     
-                # Assignment using '='.  Valid syntax is PARAM = EXPRSSION
+                # Assignment using '='.  Valid syntax is PARAM = EXPRESSION
                 # NOTE: this really stops the current expression (which should be a PARAM) and
                 #  starts parsing a RHS expression which will be assigned to PARAM.
                 elsif ( $$sptr =~ s/^\s*=// )
@@ -382,7 +430,12 @@ sub operate
 
                     my $param      = $list[0];
                     my $param_name = $param->Arglist->[0];
-
+                    
+					# Make sure parameter name not the same as built-in functions --Leonard
+					if ( exists $functions{ $param_name } ){
+						return "Cannot use built-in function name '$param_name' as a parameter name.";
+					}
+					
                     unless ( $param->Type eq 'VAR' )
                     {   return "Attempted assignment to non-variable type in $string_sav at $$sptr.";   }
 
@@ -504,7 +557,7 @@ sub operate
                     }
                     elsif ($nargs==1)
                     {
-                        # Arugument must be VAR
+                        # Argument must be VAR
                         if ($fargs[0]->Type ne "VAR"){
                             return("Argument to observable must be a variable");
                         }
@@ -1758,7 +1811,7 @@ sub getVariables
         my ( $param, $err ) = $plist->lookup( $expr->Arglist->[0] );
         if ($err)
         {
-            # function is a built-in      
+            #printf "function is a built-in\n";      
         }
         else
         {

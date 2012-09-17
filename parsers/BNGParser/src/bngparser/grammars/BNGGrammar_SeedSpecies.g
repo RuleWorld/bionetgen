@@ -91,16 +91,26 @@ scope{
   $species_def::variableName = "";
   $constant = false;
   $lmemory = new HashMap<String,Register>();
+((ChangeableChannelTokenStream)input).addChannel(HIDDEN);
+  gParent.paraphrases.push("in species def section");
+}
+@after{
+((ChangeableChannelTokenStream)input).delChannel(HIDDEN);
+((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1);
+((ChangeableChannelTokenStream)input).consume();
+
+  gParent.paraphrases.pop();
 }
 :
    (AT scomp=STRING 
    
    {
     $compartment = $scomp.text;
+   //((ChangeableChannelTokenStream)input).addChannel(HIDDEN);
    }
    COLON ({gParent.netGrammar}? COLON | ))?  
    
-   (MOD slabel=STRING COLON COLON
+   (MOD slabel=STRING COLON COLON?
    {
     $lmemory.put($slabel.text,new Register(1.0,"observable"));
     $glabel = $slabel.text;
@@ -137,6 +147,7 @@ scope{
    )
    
     {
+    //((ChangeableChannelTokenStream)input).delChannel(HIDDEN);
     //if(!gParent.variableName.contains($species_def::variableName) && gParent.conserveNewMolecules){
       //gParent.variableName.add($species_def::variableName);
      // gParent.molecules.add(new StringTemplate($species_def::variableName));
@@ -167,18 +178,20 @@ getParentTemplate();
 }
 @after{
   $information.setNumBonds($bonds.getNumBonds()-$information.getNumBonds());
+ 
 }
 
 :
-  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)?
+  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? 
+  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)?
   (AT s2=STRING 
   {
     $species_element::lcompartment = $s2.text; 
     $information.setCompartment($s2.text);
     $information.setBondList(bonds);
-  })? 
+  })?
   -> list_molecule_def(id={upperID},name={$s1.text},sites={$species_element::sites},compartment = {$species_element::lcompartment},label={$myLabel});
-  
+
 site_list[List sites,BondList bonds,String upperID]
 scope{
    int numSites

@@ -242,7 +242,6 @@ void PLA::nextStep(){
 			done = true;
 			allES = true;
 			for (unsigned int v=0;v < this->classif.size();v++){
-
 				// Consider ES rxns
 				if (this->classif[v] == RxnClassifier::EXACT_STOCHASTIC){
 					// Is it newly ES?
@@ -276,14 +275,23 @@ void PLA::nextStep(){
 		// Step 4: Fire reactions
 		// If all rxns are ES, just fire the one with min{tau_ES_v} and move on (no need to postleap check)
 		if (allES){
-			if (this->ES_rxn) // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
+//			cout << "allES" << endl;
+			if (this->ES_rxn){ // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
+//				cout << "Firing rxn: " << this->ES_rxn->toString() << endl;
+//				printf("rate: %26.18f\n",this->ES_rxn->getRate());
 				this->ES_rxn->fire(1.0);
+			}
 //			cout << "All ES step" << endl;
 		}
 		// Otherwise...
 		else{
+			/*for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;
+			cout << endl;*/
 			// Fire all non-ES rxns
 			this->fg.fireRxns(this->k,this->classif,this->tau);
+			/*for (unsigned int i=0;i < this->k.size();i++) cout << "k[" << i << "]: " << this->k[i] << endl;
+			cout << endl;
+			for (unsigned int i=0;i < this->sp.size();i++) cout << this->sp[i]->name << ": " << this->sp[i]->population << endl;*/
 
 			// Step 5: Perform postleap check (before firing ES rxn)
 			if (!this->pl.check()){
@@ -311,11 +319,34 @@ void PLA::nextStep(){
 }
 
 double PLA::get_tau_ES(unsigned int v){
-	return this->get_tau_FRM(v);
+	double tau_ESv = this->get_tau_FRM(v);
+	// Error check
+	if (tau_ESv <= 0.0){
+		cout << "Error in PLA::get_tau_ES(): tauES_" << v << " = " << tau_ESv << ". Shouldn't happen. Exiting." << endl;
+		cout << this->rxn[v]->toString() << endl;
+		for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
+			cout << this->rxn[v]->rateSpecies[j]->name << ": " << this->rxn[v]->rateSpecies[j]->population << endl;
+		}
+		exit(1);
+	}
+	return tau_ESv;
 }
 
 double PLA::get_tau_FRM(unsigned int v){
-	return (-log(Util::RANDOM_CLOSED())/this->rxn[v]->getRate());
+	double rate_v = this->rxn[v]->getRate();
+	if (rate_v == 0.0) return INFINITY; // Do this to prevent getting -INFINITY if rate_v = -0.0 (yes, negative zero)
+	else{
+		double r = Util::RANDOM_CLOSED();
+		while (r == 0.0 || r == 1.0) r = Util::RANDOM_CLOSED();
+		double tau = -log(r)/rate_v;
+		// Error check
+		if (tau <= 0.0){
+			cout << "Error in PLA::get_tau_FRM(): tau_" << v << " = " << tau << ". Shouldn't happen. Exiting." << endl;
+			cout << "(r = " << r << ", log(" << r << ") = " << log(r) << ", rate_" << v << " = " << rate_v << " )" << endl;
+			exit(1);
+		}
+		return tau;
+	}
 }
 /*
 double PLA::get_tau_Gibson(unsigned int v){

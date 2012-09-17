@@ -1,8 +1,8 @@
 # Simple isomerization model
 
 # Let A be a protein with two conformations, R and T.
-# If a system contains N molecules of A, then the equillibrium distribution
-# of K = number of A moleculein conformation T is given by the binomial distribution
+# If a system contains N molecules of A, then the equilibrium distribution
+# of K = number of A molecules in conformation T is given by the binomial distribution
 #   P(k) = binom(k,N,p) = (N choose k) * p^k * (1-p)^(N-k)
 #
 # where:  p/(1-p) = kRT/kTR

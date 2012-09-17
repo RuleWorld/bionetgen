@@ -1,3 +1,4 @@
+begin model
 begin parameters
     Lig_tot  6.0e3
     Rec_tot  4.0e2
@@ -93,6 +94,7 @@ begin reaction rules
     Syk(tSH2,l~pY) -> Syk(tSH2,l~Y)  dc
     Syk(tSH2,a~pY) -> Syk(tSH2,a~Y)  dc
 end reaction rules
+end model
 
 ## actions ##
 generate_network({overwrite=>1,max_iter=>100})

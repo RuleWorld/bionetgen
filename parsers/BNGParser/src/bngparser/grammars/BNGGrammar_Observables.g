@@ -25,11 +25,15 @@ scope
 }
 @init{
 getParentTemplate();
+gParent.paraphrases.push("in the observables section");
   $observables_block::observableCounter = 1;
   $observables_block::reactionAction = new ReactionAction();
 }
+@after{
+  gParent.paraphrases.pop();
+}
         : BEGIN OBSERVABLES LB+(s1=observable_def_line["O" + $observables_block::observableCounter] 
-             {observables.add(s1.st);$observables_block::observableCounter++;} LB+)* END OBSERVABLES LB+
+             {observables.add(s1.st);$observables_block::observableCounter++;} LB+)* END OBSERVABLES LB*
         ;
 observable_def_line[String upperID]
 scope{
@@ -99,4 +103,4 @@ BondList bonds;
     ->rule_seed_species_block(id={upperID},molecules={$obs_species_def::reactants},firstBonds={$obs_species_def::bonds.getLeft()},
       secondBonds={$obs_species_def::bonds.getRight()})
     ;
-        
+         

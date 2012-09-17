@@ -137,6 +137,10 @@ void Network3::init_Network3(bool verbose){
 		Rxn* rxn = network.reactions->list;
 		REACTION.resize(network.reactions->n_rxn);
 		//
+		// Original rates (for comparison)
+		double orig_rates[n_rxns_network()];
+		rxn_rates_network(orig_rates,1);
+		//
 		// Loop over reactions
 		for (int i=0;i < network.reactions->n_rxn;i++){
 			if (verbose) cout << i << ". ";
@@ -205,7 +209,7 @@ void Network3::init_Network3(bool verbose){
 				}
 				path_factor *= n;
 			}
-//			cout << "\t" << "stat_factor = " << rxn->stat_factor << "\t" <<  "path_factor = " << path_factor << endl;
+			if (verbose) cout << "stat_factor = " << rxn->stat_factor << ", path_factor = " << path_factor << endl;
 			//
 			// Build reaction
 			if (rxn->rateLaw_type == ELEMENTARY){
@@ -292,7 +296,8 @@ void Network3::init_Network3(bool verbose){
 				exit(1);
 			}
 			//
-			if (verbose) cout << "rate = " << REACTION.at(i)->getRate() << endl << endl;
+			if (verbose) cout << "rate = " << REACTION.at(i)->getRate()
+					          << " (orig: " << orig_rates[i] << ")" << endl << endl;
 			rxn = rxn->next;
 		}
     }
@@ -452,32 +457,35 @@ void Network3::init_PLA(string config, bool verbose){
 		name = s.substr(0,equal);
 		Util::remove_whitespace(name);
 		val = s.substr(equal+1,string::npos);
+		double valDbl;
+		if (val == "INFINITY") valDbl = INFINITY;
+		else valDbl = atof(val.c_str());
 		if (name == "eps"){
-			param[0] = atof(val.c_str());
+			param[0] = valDbl;
 			definedParam[0] = true;
 		}
 		else if (name == "apx1"){
-			param[1] = atof(val.c_str());
+			param[1] = valDbl;
 			definedParam[1] = true;
 		}
 		else if (name == "gg1"){
-			param[2] = atof(val.c_str());
+			param[2] = valDbl;
 			definedParam[2] = true;
 		}
 		else if (name == "p"){
-			param[3] = atof(val.c_str());
+			param[3] = valDbl;
 			definedParam[3] = true;
 		}
 		else if (name == "pp"){
-			param[4] = atof(val.c_str());
+			param[4] = valDbl;
 			definedParam[4] = true;
 		}
 		else if (name == "q"){
-			param[5] = atof(val.c_str());
+			param[5] = valDbl;
 			definedParam[5] = true;
 		}
 		else if (name == "w"){
-			param[6] = atof(val.c_str());
+			param[6] = valDbl;
 			definedParam[6] = true;
 		}
 		else{ // Error check
@@ -595,9 +603,13 @@ void Network3::init_PLA(string config, bool verbose){
 	if (verbose) cout << "...Ok done, let's go for it." << endl;
 }
 
-pair<double,double> Network3::run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
-		double stepInterval, mu::Parser& stop_condition, char* prefix, bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
-		bool additional_pla_output, bool verbose){
+int Network3::run_PLA(double& time, double maxTime, double sampleTime,
+					  double& step, double maxStep, double stepInterval,
+					  mu::Parser& stop_condition, bool print_on_stop,
+					  char* prefix,
+					  bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
+					  bool additional_pla_output,
+					  bool verbose){
 
 	// Output files
 	string outpre(prefix);
@@ -636,8 +648,8 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	}
 	else{
 //		cout << "Warning: Functions file \"" << fFile << "\" doesn't exist." << endl;
-	}
-*/
+	}*/
+
 	// PLA-specific output files
 	FILE* classif = NULL;
 	if (print_classif){
@@ -673,47 +685,34 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	}
 
 	// Prepare for simulation
-	double time = tStart;
-	double step = startStep;
-	double outputCounter = startStep;
-	double nextOutput = time + sampleTime;
+	double nextOutputTime = time + sampleTime;
+	double nextOutputStep = stepInterval;
+	while (nextOutputStep <= step) nextOutputStep += stepInterval;
 	bool lastOut = true;
-//	if (stepInterval <= 0) stepInterval = LONG_MAX; // A negative stepInterval means infinity
-
-	// Initial output to stdout
-/*	if (verbose){
-		cout << "#" << "\t" << setw(8) << left << "time" << "\t" << "step";
-		for (unsigned int i=0;i < OBSERVABLE.size();i++){
-			cout << "\t" << OBSERVABLE[i]->first->name;
-		}
-		cout << endl;
-		cout << "\t" << fixed << time; cout.unsetf(ios::fixed); cout << "\t" << step;
-		for (unsigned int i=0;i < OBSERVABLE.size();i++){
-			cout << "\t" << OBSERVABLE[i]->second;
-		}
-		cout << endl;
-	}*/
 
 	// Simulation loop
+//	PLA_SIM->rc.forceClassifications(RxnClassifier::EXACT_STOCHASTIC);
 	string print_net_message;
-//	while (time < maxTime && step < startStep+maxSteps && PLA_SIM->tau < INFINITY){
-//	while (time < maxTime && step < startStep+maxSteps && !Network3::all_inactive()){
-	while (time < maxTime && step < startStep + maxSteps && !stop_condition.Eval())
+	while (time < maxTime && step < maxStep && !stop_condition.Eval())
 	{
 		// Next step
 		step++;
-		outputCounter++;
-//		cout << time << endl;
 		PLA_SIM->nextStep();
-		if (PLA_SIM->tau < INFINITY)
+
+		if (PLA_SIM->tau < INFINITY && PLA_SIM->tau > -INFINITY){
 			time += PLA_SIM->tau;
+		}
 		else break;
-		//cout << PLA_SIM->tau << endl;
+
+		// Error check
+		if (PLA_SIM->tau <= 0.0){
+			cout << "Error in Network3::run_PLA(): tau = " << PLA_SIM->tau << ". Shouldn't happen. Exiting." << endl;
+			exit(1);
+		}
 
 		// Is it time to output?
 		lastOut = false;
-//		if (time >= nextOutput || (step % stepInterval) == 0) // YES
-		if (time >= nextOutput || outputCounter >= stepInterval - network3::TOL) // YES
+		if (time >= nextOutputTime || step >= nextOutputStep) // YES
 		{
 			// Update all observables
 			for (unsigned int i=0;i < OBSERVABLE.size();i++){
@@ -764,9 +763,9 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 				}
 				cout << endl;
 			}
-			// Get next output time
-			if (time >= nextOutput) nextOutput += sampleTime;
-			if (outputCounter > stepInterval - network3::TOL) outputCounter = 0;
+			// Get next output time and step
+			if (time >= nextOutputTime) nextOutputTime += sampleTime;
+			if (step >= nextOutputStep) nextOutputStep += stepInterval;
 			lastOut = true;
 		}
 		else{ // NO
@@ -794,31 +793,34 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 		}
 		// Output to file
 		if (print_cdat) Network3::print_species_concentrations(cdat,time);
-		if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
-		if (print_func) Network3::print_function_values(gdat,time);
-		string print_net_message;
-		if (print_save_net){ // Write current system state to .net file
-			// Collect species populations and update network concentrations vector
-			double pops[SPECIES.size()];
-			for (unsigned int j=0;j < SPECIES.size();j++){
-				pops[j] = SPECIES[j]->population;
+		// Don't print if stopping condition met and !print_on_stop (must print to CDAT)
+		if (!(stop_condition.Eval() && !print_on_stop)){
+			if (gdat) Network3::print_observable_concentrations(gdat,time,print_func);
+			if (print_func) Network3::print_function_values(gdat,time);
+			string print_net_message;
+			if (print_save_net){ // Write current system state to .net file
+				// Collect species populations and update network concentrations vector
+				double pops[SPECIES.size()];
+				for (unsigned int j=0;j < SPECIES.size();j++){
+					pops[j] = SPECIES[j]->population;
+				}
+				set_conc_network(pops);
+				// Print network w/ current species populations using network::print_network()
+				char buf[1000];
+				sprintf(buf, "%s_save.net", prefix);
+				FILE* out = fopen(buf, "w");
+				print_network(out);
+				fclose(out);
+				print_net_message = " Wrote NET file to " + (string)buf;
 			}
-			set_conc_network(pops);
-			// Print network w/ current species populations using network::print_network()
-			char buf[1000];
-			sprintf(buf, "%s_save.net", prefix);
-			FILE* out = fopen(buf, "w");
-			print_network(out);
-			fclose(out);
-			print_net_message = " Wrote NET file to " + (string)buf;
-		}
-		if (print_classif){
-			fprintf(classif,"%19.12e",time);
-			for (unsigned int v=0;v < PLA_SIM->classif.size();v++){
-				fprintf(classif, " %10d", PLA_SIM->classif[v]);
+			if (print_classif){
+				fprintf(classif,"%19.12e",time);
+				for (unsigned int v=0;v < PLA_SIM->classif.size();v++){
+					fprintf(classif, " %10d", PLA_SIM->classif[v]);
+				}
+				fprintf(classif,"\n");
+				fflush(classif);
 			}
-			fprintf(classif,"\n");
-			fflush(classif);
 		}
 		// Output to stdout
 		if (verbose){
@@ -833,9 +835,9 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 	if (stop_condition.Eval()){ // Stop condition satisfied
 		cout << "Stopping condition " << stop_condition.GetExpr() << "met in PLA simulation." << endl;
 	}
-	else if (step >= startStep + maxSteps){ // maxSteps limit reached
-		cout << "Maximum step limit (" << maxSteps << ") reached in PLA simulation." << endl;
-	}
+//	else if (step >= startStep + maxSteps){ // maxSteps limit reached
+//		cout << "Maximum step limit (" << maxSteps << ") reached in PLA simulation." << endl;
+//	}
 
 	// If print_end_net = true, collect species populations and update network concentrations vector
 	if (print_end_net){
@@ -852,7 +854,10 @@ pair<double,double> Network3::run_PLA(double tStart, double maxTime, double samp
 //	if (fdat) fclose(fdat);
 	if (classif) fclose(classif);
 
-	return pair<double,double>(step-startStep,time-tStart);
+	// Return value
+	if (time >= maxTime) return 0;
+	else if (step >= maxStep) return -1;
+	else return -2; // stop condition met
 }
 /*
 bool Network3::all_inactive(){

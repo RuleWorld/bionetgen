@@ -42,7 +42,7 @@ getParentTemplate();
                   reactionRules.add(sInvert);
                   $reaction_rules_block::reactionCounter+= $reaction_rule_def.numReactions;
                   
-                  }LB+)* END REACTION RULES LB+
+                  }LB+)* END REACTION RULES LB*
         ;
 
 

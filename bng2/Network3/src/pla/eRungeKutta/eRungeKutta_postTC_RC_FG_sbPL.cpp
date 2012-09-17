@@ -73,11 +73,12 @@ void eRungeKutta_postTC_RC_FG_sbPL::getNewTau(double& tau){
 	}
 
 	// Get new tau
-	if (this->preCalc){
+	if (this->preCalc){ // First step
 		this->ptc->getNewTau(tau);
+		//cout << "tau: " << tau << endl;
 		this->preCalc = false;
 	}
-	else{
+	else{ // All subsequent steps
 		if (this->substantially){ // Step was substantially accepted, increase tau
 			tau *= this->q;
 		}
@@ -89,10 +90,12 @@ void eRungeKutta_postTC_RC_FG_sbPL::getNewTau(double& tau){
 	// Perform preleap check
 	bool ok = false;
 	while (!ok){
-
+/*for (unsigned int i=0;i < this->aCalc->a_eff.size();i++) cout << "a_eff[" << i << "]: " << this->aCalc->a_eff[i] << endl;
+cout << endl;*/
 		// Calculate a_eff[]
 		this->aCalc->calc_aEff(tau);
-
+/*for (unsigned int i=0;i < this->aCalc->a_eff.size();i++) cout << "a_eff[" << i << "]: " << this->aCalc->a_eff[i] << endl;
+cout << endl;*/
 		// Calculate projected species population changes
 		this->calc_projPop(tau);
 /*		double delta_X[this->aCalc->X_eff.size()];

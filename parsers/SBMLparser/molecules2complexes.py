@@ -5,20 +5,27 @@ Created on Tue Dec  6 17:42:31 2011
 @author: proto
 """
 from libsbml2bngl import SBML2BNGL
-from pyparsing import Word, Suppress, Optional, alphanums, Group
+from pyparsing import Word, Suppress, Optional, alphanums, Group,nums
 import libsbml
 from numpy import sort
 from copy import deepcopy
 import reactionTransformations
 import analyzeSBML
 import analyzeRDF
-
+from collections import Counter
     
 def parseReactions(reaction):
-    species = Optional(Word(alphanums+"_") + Suppress('()')) +  \
+    species =   (Word(alphanums+"_") 
+    + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress("()"))
+    '''
+    species = Optional(Suppress(Word(nums+"*"))) +  Optional(Word(alphanums+"_") + Suppress('()')) +  \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + \
     Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()"))
+    '''
     rate = Word(alphanums + "()")
     grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
     ^ (species + Suppress("->") + Suppress(rate))  
@@ -65,6 +72,15 @@ def addToLabelDictionary(dictionary,label,value):
     else:
         dictionary[label].append(value)
        # dictionary[label].sort()
+       
+def correctClassificationsWithCycleInformation(rules,classifications,cycles):
+    for index  in range(0,len(rules)):
+        reaction2 = list(parseReactions(rules[index]))
+        if (len([x for x in reaction2[0] if x in [y for x in cycles for y in x]]) > 0 and
+            len([x for x in reaction2[1] if x in [y for x in cycles for y in x]]) > 0):
+                classifications[index] = 'Generic-Catalysis'
+                
+
 def defineCorrespondence(reaction2, totalElements,database,
     classification,rdfAnnotations):
     '''
@@ -126,11 +142,68 @@ def defineCorrespondenceWithAnnotations(reactant,annotations,database):
         tmp = [x for x in annotations[0] if x in database.labelDictionary]
         database.labelDictionary[reactant] = [(min(tmp,key=len),)]
     
-##TODO: i introduced arrays in the labelDictionary, have to resolve correspondences                  
-def resolveCorrespondence(database):
+##TODO: i introduced arrays in the labelDictionary, have to resolve correspondences
+
+def resolveCycles(database,equivalenceTranslator):
+    #print database.labelDictionary
+    cycleCandidates = {}
+    cycleMembers = []
+    cycles = []
+    #detect all those elements that are involved in a reaction cycle
+    for element in database.labelDictionary:
+        temp = []
+        #print element,
+        recursiveChecking(database.labelDictionary,element,temp)
+        if 'CYCLEPROBLEM' in temp:
+            temp.remove('CYCLEPROBLEM')
+            cycleCandidates[element] = temp
+    #detect the mebers that are crucial to the cycle
+    for element in cycleCandidates:
+        if cycleCandidates[element].count(element) >1:
+            cycleMembers.append(element)
+    #take away elements that are not strictly part of the cycles
+    updatedCycleCandidates = {x:[y for y in set(cycleCandidates[x]) 
+        if y in cycleMembers] for x in cycleCandidates if x in cycleMembers}  
+    #get the minimum cycles
+    for element in updatedCycleCandidates:
+        for counterElement in updatedCycleCandidates:
+            if element == counterElement:
+                pass
+            intersection = [x for x in updatedCycleCandidates[element] 
+                if x in updatedCycleCandidates[counterElement]]
+            if len(intersection) > 2 and intersection not in cycles:
+                cycles.append(intersection)
+    ##fill in the equivalence translator thing      
+    for cycle in cycles:
+        shortestTerm = min(cycle,key=len)
+        for element in [x for x in cycle if x != shortestTerm]:
+            if tuple([shortestTerm,element]) not in equivalenceTranslator:
+                equivalenceTranslator.append(tuple([shortestTerm,element]))
+    return cycles
+        
+        
+def recursiveChecking(labelDictionary,root,acc,):
+    if root in acc:
+        acc.extend(['CYCLEPROBLEM',root])
+    elif root in labelDictionary[root]:
+        acc.append(root)
+    else:
+        #temp = deepcopy(acc)
+        acc.append(root)
+        
+        for element in labelDictionary[root]:
+            #print 'bbbbbbbbbbbb',element,acc
+            recursiveChecking(labelDictionary,element,acc)
+        
+        return acc
+            
+            
+def resolveCorrespondence(database,cycles):
+    
     temp = database.labelDictionary.copy()
     #print temp
-    for element in database.labelDictionary:
+    #print database.labelDictionary
+    for element in [x for x in database.labelDictionary if x not in [j for i in cycles for j in i]]:
        # for idx,alternative in enumerate(database.labelDictionary[element]):
         history = [element]
         history.extend(database.labelDictionary[element])
@@ -149,6 +222,8 @@ def resolveCorrespondence(database):
                 temp[element] = list(temp[element])
                 
                # print member,counter,history,[x for x in database.labelDictionary[tmpLabel]]
+                if tmpLabel in [j for i in cycles for j in i]:
+                    break
                 temp[element].extend(database.labelDictionary[tmpLabel])
                 temp[element].remove(tmpLabel)
                 temp[element] = tuple(sort(temp[element]))
@@ -159,9 +234,12 @@ def resolveCorrespondence(database):
                 #print database.labelDictionary[tmpLabel]
                 if oldTemp == temp[element]:
                     break
-                
+    
+    #for element in cycles:
+    #    temp[element] = database.labelDictionary[element]          
         #temp[element] = list(set(temp[element]))
     labelDictionary = temp.copy()
+    #print labelDictionary
     return labelDictionary
                
                     
@@ -279,22 +357,49 @@ def getPertinentNamingEquivalence(original, database):
     return temp4
     
 def getPertinentNamingEquivalence2(original,labelDatabase, equivalenceTranslator):
-    for element in original[1]:
-        temp = [x for x in equivalenceTranslator if max(x,key=len) == element]
-        if temp != []:
-            return temp[0]
-    for element in original[0]:
-        temp = [x for x in equivalenceTranslator if max(x,key=len) == element]
-        if temp != []:
-            return temp[0]
-    for element in original[1]:
-        temp = [x for x in equivalenceTranslator if max(x,key=len) in labelDatabase[element]]
-        if temp != []:
-            return temp[0]
-    for element in original[0]:
-        temp = [x for x in equivalenceTranslator if min(x,key=len) in labelDatabase[element]]
-        if temp != []:
-            return temp[0]
+    
+    #FIXME: labelDatabase is resolving all the way to the bottom when 
+    #classifying binding relationships, which is counterProductive in the case of
+    #checking for phosporilationpatterns
+    functions = [(max,min),(min,max)]
+    temp = []
+    for functionSet in functions:    
+        temp = []
+        for element in original[1]:
+            temp.extend([x for x in equivalenceTranslator if functionSet[0](x,key=len) == element ])
+            if(len(temp) == 1):
+                return temp[0]
+            elif temp != []:
+                 z = Counter(temp).most_common(2)
+                 if(z[0][1] > z[1][1]):
+                     return z[0][0]
+        for element in original[0]:
+            temp.extend([x for x in equivalenceTranslator if functionSet[1](x,key=len) == element ])
+            if(len(temp) == 1):
+                return temp[0]
+            elif temp != []:
+                 z = Counter(temp).most_common(2)
+                 if(z[0][1] > z[1][1]):
+                     return z[0][0]
+        for element in original[1]:
+            temp.extend([x for x in equivalenceTranslator if functionSet[0](x,key=len) in labelDatabase[element] ])
+            if(len(temp) == 1):
+                return temp[0]
+            elif temp != []:
+                 z = Counter(temp).most_common(2)
+                 if(z[0][1] > z[1][1] ):
+                     return z[0][0]
+        for element in original[0]:
+            temp.extend([x for x in equivalenceTranslator if functionSet[1](x,key=len) in labelDatabase[element] ])
+            if(len(temp) == 1):
+                return temp[0]
+            elif temp != []:
+                 z = Counter(temp).most_common(2)
+                 if(z[0][1] > z[1][1]):
+                     return z[0][0]
+    return temp[1]
+    
+
 
 def processRule(original,database,
                 classification,equivalenceTranslator):
@@ -305,7 +410,11 @@ def processRule(original,database,
         return reactionTransformations.synthesis(original,database.labelDictionary,
         database.rawDatabase,database.synthesisDatabase,database.translator)
     elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis']:
-        pertinentEquivalence = getPertinentNamingEquivalence2(original,database.labelDictionary,equivalenceTranslator)
+        if classification == 'Phosporylation':
+            equ = equivalenceTranslator[0]
+        else:
+            equ = equivalenceTranslator[1]
+        pertinentEquivalence = getPertinentNamingEquivalence2(original,database.rawLabelDictionary,equ)
         return reactionTransformations.catalysis(original,database.labelDictionary,database.rawDatabase,
                                                   None,
                                                   database.translator,pertinentEquivalence,
@@ -321,6 +430,7 @@ def processRule(original,database,
         #rawDatabase,translator)
         return ''
     else:
+        #print 'none',original
         #return transformRawType(original,translator)
         return ''
         
@@ -359,14 +469,15 @@ def correctClassifications(rules,classifications,labelDatabase,equivalenceTransl
                 
             
             
-def transformMolecules(parser,database):
+def transformMolecules(parser,database,configurationFile):
     #labelDictionary = {}
     _,rules,_ = parser.getReactions()
     molecules,_,_ = parser.getSpecies()
     #synthesisdatabase = {}
     #translator = {}
+    sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile)
+    classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     
-    classifications,equivalenceTranslator = analyzeSBML.classifyReactions(rules,molecules)
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
     #print rdfAnnotations
@@ -379,7 +490,7 @@ def transformMolecules(parser,database):
     #for element in database.labelDictionary:
     #    database.labelDictionary[element] = [(min(database.labelDictionary[element],key=len),)] 
     
-    #STEP1: Use reaction information to infer which label corresponds to which
+    #STEP1: Use reaction information to infer w print zip(rules,classifications)
     for rule,classification in zip(rules,classifications): 
         #print rule 
         reaction2 = list(parseReactions(rule))
@@ -397,18 +508,27 @@ def transformMolecules(parser,database):
     #correctClassifications(rules,classifications,database.labelDictionary)
     #print 'step1',database.labelDictionary    
     simplify(database.labelDictionary)
-    classifications2 = analyzeSBML.reclassifyReactions(rules,molecules,database.labelDictionary)
+    #TODO: uncomment this section when we solve the bug on reclassifying
+        
+    classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
+    
+    #print database.labelDictionary 
+    cycles = resolveCycles(database,equivalenceTranslator)
+    database.rawLabelDictionary = deepcopy(database.labelDictionary)
+    for _ in range(0,5):
+        database.labelDictionary = resolveCorrespondence(database,cycles)
+    #print 'after resolving correspondences'
+    classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
     for index in range(0,len(classifications)):
         if classifications[index] == 'None':
             classifications[index] = classifications2[index]
-    #print database.labelDictionary 
-    for _ in range(0,5):
-        database.labelDictionary = resolveCorrespondence(database)
-    #print 'after resolving correspondences'
+
+
     tmp = {x:[database.labelDictionary[x]] for x in database.labelDictionary}
     database.labelDictionary = tmp
     #print 'step1.5',database.labelDictionary    
     #STEP2: Use naming conventions
+    
     for element in set(x for rule in rules for tmp in parseReactions(rule) for x in tmp):
         equivalence = [x for x in equivalenceTranslator if element == max(x,key=len)]
         if equivalence != []:
@@ -419,6 +539,7 @@ def transformMolecules(parser,database):
     
 #    correctClassifications(rules,classifications,database.labelDictionary)
     #STEP3: Use annotations
+
     for element in set(x for rule in rules for tmp in parseReactions(rule) for x in tmp):
         annotation = [rdfAnnotations[x] for x in rdfAnnotations if element in rdfAnnotations[x]]
         if annotation != []:
@@ -427,64 +548,39 @@ def transformMolecules(parser,database):
     simplify(database.labelDictionary)
     #print 'step3',database.labelDictionary    
     #analyzeSBML.reclassifyReactions(reactions,molecules,labelDictionary,classifications,equivalenceTranslator)
+    cycles = resolveCycles(database,equivalenceTranslator)
+
     for _ in range(0,5):
-        database.labelDictionary = resolveCorrespondence(database)
+        database.labelDictionary = resolveCorrespondence(database,cycles)
+         
+    correctClassificationsWithCycleInformation(rules,classifications,cycles)
     #print database.labelDictionary
-    #print classifications
+    counter = 0 
+
     for rule,classification in zip(rules,classifications):
-        reaction2 = list(parseReactions(rule))
-        processRule(reaction2,database,classification,equivalenceTranslator)
+        #print rule,classification
         
+        counter += 1
+        #print {x:str(database.translator[x]) for x in database.translator}
+        #if counter == 4:
+        #    break
+        
+        reaction2 = list(parseReactions(rule))
+        processRule(reaction2,database,classification,eequivalenceTranslator)
+        #print counter,rule,classification        
+        #print {x:str(database.translator[x]) for x in database.translator}
     #update all equivalences
     for element in database.labelDictionary:
         if not isinstance(database.labelDictionary[element],tuple):
             database.translator[element] = database.translator[database.labelDictionary[element]]
     #print translator
    # print labelDictionary
+   ###now balance all our components
+    raw =  [x[0] for x in database.rawDatabase]
+    for element in database.translator:
+        if element in raw:
+            continue
+        for mol in database.translator[element].molecules:
+            mol.update(database.translator[mol.name].molecules[0])
     return database.translator
 
-if __name__ == "__main__":
-
-#    database = {('S1',):(["r","l"],),("S2",):(["s"],),}    
-    #database = {('S1',):("r","l"),("S2",):("s"),
-                 #('S1','S2'):([('r','1'),('l')],[('s','1')]),
-                #('S1','S2','S2'):([('r','1'),('l','2')],[('s','1')],[('s','2')])}
-    #database = {('S1',):(["a","b"],),("S2",):(["r"],),('S3',):(['l'],),('S1','S2'):([('a','1')],[('r','1')]),('S1','S3'):([('b','2')],[('l','2')])}
-    #database = {('S1',):(["a","b"],),("S2",):(["r"],),('S3',):(['l'],),('S4',):(['t'],),('S1','S2'):([('a','1')],[('r','1')]),('S1','S3'):([('b','2')],[('l','2')]),('S1','S4'):([('c','3')],[('t','3')])}
-    #rawDatabase = {('S1',):([("a",),("b",),("c",)],),("S2",):([("r",)],),
-    #              ('S3',):([("l",)],),('S4',):([('t',)],)}  
-    #catalysisDatabase = {(('S1',),'P'):(([("a",'','U')]),([("a",'','P')]))}
-    catalysisDatabase = {}    
-    #rawDatabase = {('EpoR',):(['r','U','I'],),('SAv',):(['l'],)}    
-    rawDatabase={}    
-    #synthesisdatabase = {('S1','S2'):([('b','1')],[('r','1')])}
-    synthesisdatabase = {}
-    history = []
-    translator = {}
-    reader = libsbml.SBMLReader()
-    #BIOMD0000000272
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
-    #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
-    model = document.getModel()        
-    parser = SBML2BNGL(model)
-    _,rules,_ = parser.getReactions()
-    
-    translator = transformMolecules(rules,rawDatabase)
-    #print translator
-    printReactionsWithDictionary(rules,translator)
-    #print 'reducing...'  
-    #newHistory = reduceReactions(history)
-    #printReactions(newHistory)
-    #print history
-    #for x in range(0,3)
-    #    factorize(history[0],history)
-        
-    
-   # print history
-#    print translator
-    #for rule in rules:
-    #    print parseReactions(reaction)
-    
-        
-
-    

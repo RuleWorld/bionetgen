@@ -156,7 +156,7 @@ patterns_block(id,molecules)::=<<
 functions_block(id,referencesName,referencesType,expression)::=<<
 \<Function id="<id>"\>
   \<ListOfReferences\>
-    <referencesName,referencesType:{ left,right | \<Reference name="<left>" type="<right>"\>};separator="\n">
+    <referencesName,referencesType:{ left,right | \<Reference name="<left>" type="<right>"/\>};separator="\n">
   \</ListOfReferences\>
   \<Expression\> <expression> \</Expression\>
 \</Function\>

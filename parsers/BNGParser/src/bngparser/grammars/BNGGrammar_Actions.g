@@ -20,7 +20,9 @@ options {
 
 actions_prog:
 .*
-(actions_block  | (BEGIN ACTIONS LB+ actions_block END ACTIONS LB+))? 
+
+actions_block  
+ 
 EOF -> actions(actions = {actions})
 ;
 actions_block
@@ -32,7 +34,10 @@ actions_block
 @after{
   gParent.paraphrases.pop();
 }
-        : (action LB*)+
+        : 
+        (BEGIN ACTIONS LB+)?
+        (action LB*)+
+        (END ACTIONS LB*)?
 ;
 action  : generate_network {actions.add($generate_network.st);}
         | simulate_method {actions.add($simulate_method.st);}
@@ -66,7 +71,7 @@ gn_action_par_def[Map<String,String> map]
         | (TEXTREACTION ASSIGNS i5=INT {map.put($TEXTREACTION.text,$i5.text);})
         | ps_par_def[map]
         ;
-        
+
 simulate_method
 scope{
   Map<String,String> actions;
@@ -87,8 +92,6 @@ scope{
         | simulate[$simulate_method::actions] {$simulate_method::method = "simulate";})
         -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
         ;
-
-
 simulate[Map<String,String> map]:
         SIMULATE LPAREN (LBRACKET 
         ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
@@ -247,8 +250,8 @@ assignment_list
 value   : INT | FLOAT | STRING
         ;
 ps_par_def[Map<String,String> map]
-        : PREFFIX ASSIGNS ((DBQUOTES  STRING DBQUOTES))
-        | SUFFIX ASSIGNS ((DBQUOTES  STRING DBQUOTES))
+        : PREFFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES))
+        | SUFFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES))
         ;
 simulate_ode_par_def[Map<String,String> map]
         : ATOL ASSIGNS f1=FLOAT {map.put($ATOL.text,$f1.text);}
@@ -275,7 +278,7 @@ simulate_nf_par_def[Map<String,String> map]
         ;    
         
 write_par_def:
-  SUFFIX ASSIGNS DBQUOTES STRING DBQUOTES
+  SUFFIX ASSIGNS DBQUOTES ~(DBQUOTES )* DBQUOTES
 ;
          
 write_m_par_def[Map<String,String> map]

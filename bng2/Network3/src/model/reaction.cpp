@@ -66,6 +66,7 @@ double Reaction::get_dRate_dX(int which){
 		X.push_back(this->rateSpecies[i]->population);
 	}
 	return this->re->get_dRate_dX(which,X);
+//	return RateExpression::numerical_deriv(which,X,this->re);
 }
 
 void Reaction::fire(double K){
@@ -77,7 +78,7 @@ void Reaction::fire(double K){
 		species = (*it).first;
 		stoich = static_cast<double>((*it).second);
 		species->changePopulation(K*stoich);
-//		cout << species->name << " " << K*stoich;
+//		cout << species->name << ": " << K*stoich << endl;
 	}
 //	cout << endl;
 }
@@ -144,13 +145,13 @@ string Reaction::getStringID(vector<SimpleSpecies*> r, vector<int> rS, vector<Si
 	string name = "";
 	if (r.size() > 0){
 		if (rS.at(0) < -1) {
-			name += Util::toString(-rS.at(0));
+			name += Util::toString(-rS.at(0)) + "*";
 		}
 		name += r.at(0)->name;
 		for (unsigned int i=1;i < r.size();i++){
 			name += " + ";
 			if (rS.at(i) < -1){
-				name += Util::toString(-rS.at(i));
+				name += Util::toString(-rS.at(i)) + "*";
 			}
 			name += r.at(i)->name;
 		}
@@ -163,13 +164,13 @@ string Reaction::getStringID(vector<SimpleSpecies*> r, vector<int> rS, vector<Si
 	//
 	if (p.size() > 0){
 		if (pS.at(0) > 1){
-			name += Util::toString(pS.at(0));
+			name += Util::toString(pS.at(0)) + "*";
 		}
 		name += p.at(0)->name;
 		for (unsigned int i=1;i < p.size();i++){
 			name += " + ";
 			if (pS.at(i) > 1){
-				name += Util::toString(pS.at(i));
+				name += Util::toString(pS.at(i)) + "*";
 			}
 			name += p.at(i)->name;
 		}

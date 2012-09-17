@@ -6,11 +6,14 @@ options {
 
   
 }
+
 @members{
  public void getParentTemplate(){
  
   this.setTemplateLib(gParent.getTemplateLib());
+ 
  }
+  String[] list = {"sin", "cos", "tan","exp","ln","log10","log2","abs","floor","ceil","sqrt","asin","acos","atan","sinh","cosh","tanh","asinh","acosh","atanh"};
       @Override
   public String getErrorMessage(RecognitionException e,String[] tokenNames){
     return gParent.getErrorMessage(e,tokenNames);
@@ -20,6 +23,14 @@ options {
       return String.format("\%s line \%d:\%d \%s: \%s\n",input.getSourceName(),s1.getLine(),s1.getCharPositionInLine(),error,s1.getText());
   
   }
+  
+  public boolean isSpecialFunction(String text){
+    if(Arrays.asList(list).contains(text))
+      return true;
+     return false;
+  }
+  
+  
 }
 @init{
 getParentTemplate();
@@ -43,7 +54,7 @@ scope{
  
 expression2 returns [Double value]
 :
-  e1=relational_expression {$value = e1.value; } ((AND | OR) relational_expression)*
+  e1=relational_expression {$value = e1.value; } (((AMPERSAND AMPERSAND)| (PIPE PIPE)) relational_expression)*
  ; 
 
  
@@ -105,7 +116,7 @@ variable returns [Double value]: s1=STRING {
                   if($expression::lmemory.containsKey($STRING.text)){
                     Register temp = $expression::lmemory.get($STRING.text);
                     $value = temp.getValue();
-	                  if(!temp.getType().equals("parameter") && !temp.getType().equals("observable")){
+	                  if(!temp.getType().equals("ConstantExpression") && !temp.getType().equals("observable")){
 	                    String msg = getErrorMessage(s1,"the following token is in memory but is not a variable or an observable");
 	                    System.err.println(msg);
 	                  }
@@ -148,6 +159,10 @@ function returns [Double value]:
                       
                       System.err.println(msg);
                     }
+       }
+       else if(isSpecialFunction($STRING.text)){
+       //add xml code in here
+        $value=1.0;
        }
        else if($STRING.text.equals("MM")){
         $value=1.0;

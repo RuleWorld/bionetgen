@@ -162,7 +162,7 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "Simulate requires method parameter (ode, cvode, ssa, pla).";  }
+    {  return "simulate() requires 'method' parameter (ode, ssa, pla).";  }
     if ($method =~ /^ode$/) # Support 'ode' as a valid method
     {  $method = 'cvode';  } 
     unless ( exists $METHODS->{$method} )
@@ -181,7 +181,7 @@ sub simulate
         # Make sure NET file has proper suffix
         ($netpre = $netfile) =~ s/[.]([^.]+)$//;
         unless ( $1 =~ /net/i )
-        {   return "File $netfile does not have net suffix";   }
+        {   return "File $netfile does not have .net suffix";   }
     }
     else
     {
@@ -189,10 +189,11 @@ sub simulate
         $netfile = "${prefix}.net";
         $netpre  = $prefix;
 
-        # Generatese NET file if not already created or if updateNet flag is set
+        # Generate NET file if not already created or if updateNet flag is set
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
             $err = $model->writeNET( {prefix=>"$netpre"} );
+#            $err = $model->writeNetwork( {prefix=>"$netpre"} );
             if ($err) {  return $err;  }
         }
     }
@@ -267,8 +268,15 @@ sub simulate
     {   push @command, "-I", $params->{output_step_interval};  }
     
     # stop condition
-    if (defined $params->{stop_if})
-    {   push @command, "--stop_cond", $params->{stop_if};  }
+    if (defined $params->{stop_if}){   
+    	push @command, "--stop_cond", $params->{stop_if};
+    	if (defined $params->{print_on_stop}){
+    		push @command, $params->{print_on_stop};
+    	}
+    	else{
+    		push @command, "1"; # Default is to print on stop
+    	}
+    }
     
     # output concentrations data
     push @command, "--cdat", $print_cdat;
@@ -306,7 +314,7 @@ sub simulate
     else
     {   # t_start defaults to 0
         if ( $continue   and   defined($model->Time) )
-        {  $t_start = $model->Time;  }
+        {  $t_start = $model->Time; }
          else
         {  $t_start = 0.0;  }
     }
@@ -375,12 +383,18 @@ sub simulate
         { @sample_times = @{$params->{sample_times}}; }
         @sample_times = sort {$a <=> $b} @sample_times; # numeric sort
         if ( @sample_times > 2 ){
-            if ( defined $params->{t_end} ){ 
+        	# remove all sample times <= t_start --Do this in run_network (LAH)
+#        	while ($sample_times[0] <= $t_start){ 
+#        		shift @sample_times;
+#            }
+            if ( defined $params->{t_end} ){
                 $t_end = $params->{t_end};
-                while ($sample_times[ $#sample_times ] >= $t_end){ # remove all sample times >= t_end
-                    pop @sample_times;
-                }
-                push @sample_times, $t_end; # push t_end as final sample time
+                # remove all sample times >= t_end --Do this in run_network (LAH)
+#                while ($sample_times[ $#sample_times ] >= $t_end){ 
+#                    pop @sample_times;
+#                }
+                # push t_end as final sample time
+                push @sample_times, $t_end; 
             }
             else{
                 $t_end = $sample_times[ $#sample_times ];
@@ -428,6 +442,7 @@ sub simulate
     my $steady_state_reached = 0;
     my $edge_warning = 0;
     my $otf = 0;
+
     while ( my $message = <Reader> )
     {
         # If network generation is on-the-fly, look for signal that
@@ -576,6 +591,7 @@ sub simulate
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
         $err = $model->writeNET( {prefix => "$netpre"} );
+#        $err = $model->writeNetwork( {prefix => "$netpre"} );
         if ($err) { return $err; }
     }
 
@@ -659,7 +675,7 @@ sub simulate_nf
     (   # option name        NFsim flag       arguments?      default (used if user_args is 0)
         verbose         => { flag => "-v",    user_args => 0, default_arg => undef },
         complex         => { flag => "-cb",   user_args => 0, default_arg => undef },
-        cslf            => { flag => "-cslf", user_args => 0, default_arg => undef },
+        nocslf          => { flag => "-nocslf", user_args => 0, default_arg => undef },
         notf            => { flag => "-notf", user_args => 0, default_arg => undef },
         print_functions => { flag => "-ogf",  user_args => 0, default_arg => undef },
         binary_output   => { flag => "-b",    user_args => 0, default_arg => undef },
@@ -1289,11 +1305,7 @@ sub parameter_scan
 
     # define default params
     my $default_params = {  'prefix'   => $model->getOutputPrefix(),
-                            'log'      => 0,
-                            't_start'  => 0,
-                            't_end'    => 20,
-                            'n_steps'  => 20,
-                            'steady_state' => 0
+                            'log_scale'      => 0
                          };
 
     # copy default values for undefined keys
@@ -1304,30 +1316,22 @@ sub parameter_scan
     }
 
     # check for required parameters
-    unless ( defined $params->{var} )
-    {   return "parameter_scan error: 'var' is not defined.";   }
+    unless ( defined $params->{parameter} )
+    {   return "parameter_scan error: 'parameter' is not defined.";   }
 
-    unless ( defined $params->{var_min} )
-    {   return "parameter_scan error: 'var_min' is not defined.";   }
+    unless ( defined $params->{par_min} )
+    {   return "parameter_scan error: 'par_min' is not defined.";   }
 
-    unless ( defined $params->{var_max} )
-    {   return "parameter_scan error: 'var_max' is not defined.";   }
+    unless ( defined $params->{par_max} )
+    {   return "parameter_scan error: 'par_max' is not defined.";   }
     
-    unless ( defined $params->{n_pts} )
-    {   return "parameter_scan error: 'n_pts' is not defined.";   }
-
-    unless ( defined $params->{method} )
-    {   return "parameter_scan error: 'method' is not defined.";   }
-
-
-    # substitute cvode for ode
-    if ( $params->{method} eq 'ode' )
-    {   $params->{method} = 'cvode';   }
+    unless ( defined $params->{n_scan_pts} )
+    {   return "parameter_scan error: 'n_scan_pts' is not defined.";   }
 
 
     # update user
-    printf "ACTION: parameter_scan (var: %s, min: %.3e, max: %.3e, n_pts: %d, log: %d)\n",
-           $params->{var}, $params->{var_min}, $params->{var_max}, $params->{'log'};
+    printf "ACTION: parameter_scan(par: %s, min: %.3e, max: %.3e, n_pts: %d, log: %d)\n",
+           $params->{parameter}, $params->{par_min}, $params->{par_max}, $params->{n_scan_pts}, $params->{log_scale};
 
 
     # define basename for scan results
@@ -1335,7 +1339,7 @@ sub parameter_scan
     if ( $params->{suffix} )
     {   $basename .= "_" . $params->{suffix};   }
     else
-    {   $basename .= "_" . $params->{var};      }
+    {   $basename .= "_" . $params->{parameter};      }
 
     # define working directory for simulation data
     my $workdir = $basename;
@@ -1355,29 +1359,39 @@ sub parameter_scan
 
 
     # define parameter scan range
-    my $var_min = $params->{'log'} ? log $params->{var_min} : $params->{var_min};
-    my $var_max = $params->{'log'} ? log $params->{var_max} : $params->{var_max};
-    my $delta   =($var_max - $var_min) / ($params->{n_pts} - 1);
-
-
+    my $par_min = $params->{log_scale} ? log $params->{par_min} : $params->{par_min};
+    my $par_max = $params->{log_scale} ? log $params->{par_max} : $params->{par_max};
+    my $delta;
+    if ($par_max == $par_min){
+    	if ($params->{n_scan_pts} < 1){
+    		return "parameter_scan error: 'n_scan_pts' must be >= 1 if 'par_max' = 'par_min'.";
+    	}
+    	$delta = 0.0;
+    }
+    elsif ($params->{n_scan_pts} <= 1){
+    	return "parameter_scan error: 'n_scan_pts' must be > 1 if 'par_max' != 'par_min'.";
+    }
+    else{
+    	$delta = ($par_max - $par_min) / ($params->{n_scan_pts} - 1); # note that this may be negative if par_max < par_min (not a problem)
+    }   
 
 
     # remember concentrations!
     $model->saveConcentrations();
 
     # loop over timepoints
-    for ( my $k = 0;  $k < $params->{n_pts};  ++$k )
+    for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k )
     {
         # define parameter value
-        my $par_value = $var_min + $k*$delta;
-        if ( $params->{'log'} )
+        my $par_value = $par_min + $k*$delta;
+        if ( $params->{log_scale} )
         {   $par_value = exp $par_value;   }
 
         # set parameter
-        $model->setParameter( $params->{var}, $par_value );
+        $model->setParameter( $params->{parameter}, $par_value );
 
         # define prefix
-        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d", $params->{var}, $k) );
+        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d", $params->{parameter}, $k+1) );
 
         # reset concentrations
         $model->resetConcentrations();
@@ -1392,7 +1406,7 @@ sub parameter_scan
         my $err = $model->simulate( $local_params );
         if ( $err )
         {   # return error message
-            $err = "parameter_scan error (step $k): $err";
+            $err = "parameter_scan error (step " . ($k+1) . "): $err";
             return $err;
         }   
     }
@@ -1406,14 +1420,14 @@ sub parameter_scan
     unless ( open $ofh, '>', $outfile )
     {   return "parameter_scan error: problem opening parameter scan output file $outfile";   }
 
-    for ( my $k = 0;  $k < $params->{n_pts};  ++$k )
+    for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k )
     {
-        my $par_value = $var_min + $k*$delta;
-        if ( $params->{'log'} )
+        my $par_value = $par_min + $k*$delta;
+        if ( $params->{log_scale} )
         {   $par_value = exp $par_value;   }
 
         # Get data from gdat file
-        my $data_file = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d.gdat", $params->{var}, $k) );
+        my $data_file = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d.gdat", $params->{parameter}, $k+1) );
         print "Extracting observable trajectory from $data_file\n";
         my $ifh;
         unless ( open $ifh,'<', $data_file )
@@ -1426,7 +1440,7 @@ sub parameter_scan
             $headline =~ s/^\s*\#//;
             my @headers = split ' ', $headline;
             shift @headers;
-            printf $ofh "# %+14s", $params->{var};
+            printf $ofh "# %+14s", $params->{parameter};
             foreach my $header (@headers)
             {
                 printf $ofh "%+16s", $header;

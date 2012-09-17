@@ -9,12 +9,12 @@
 
 using namespace std;
 
-RxnClassifier::RxnClassifier(){
+RxnClassifier::RxnClassifier() : force(-1){
 	if (debug)
 		cout << "RxnClassifier constructor called.\n";
 }
 
-RxnClassifier::RxnClassifier(const RxnClassifier& rc){
+RxnClassifier::RxnClassifier(const RxnClassifier& rc) : force(rc.force){
 	if (debug)
 		cout << "RxnClassifier copy constructor called.\n";
 }

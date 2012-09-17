@@ -1,6 +1,7 @@
 # This is a demo model of EGFR signaling.
 # The parameters and rules have been modified to keep things
 # as simple as possible.
+begin model
 begin parameters
     NA  6.02e23    # Avogadro's number (molecues/mol)
     f   0.01       # Fraction of the cell to simulate
@@ -66,30 +67,31 @@ begin reaction rules
     # Receptor dimer internalization/degradation
     #R7: EGF(R!1).EGF(R!2).EGFR(L!1,CR1!3).EGFR(L!2,CR1!3) -> Null() deg DeleteMolecules
 end reaction rules
+end model
 
 begin actions
     #writeXML({suffix=>"bngxml"})
     generate_network({overwrite=>1})
 
     # Equilibration
-    #simulate_ode({suffix=>equil,t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1})
+    #simulate({method=>ode,suffix=>equil,t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1})
 
     # Kinetics 
     setConcentration("EGF(R)","EGF_init")
-    simulate_ode({t_start=>0,t_end=>100,n_steps=>40})
+    simulate({method=>ode,t_start=>0,t_end=>100,n_steps=>40})
     setConcentration("EGF(R)", "10*EGF_init")
-    simulate_ode({t_end=>200,n_steps=>40,continue=>1})
+    simulate({method=>ode,t_end=>200,n_steps=>40,continue=>1})
     setConcentration("EGF(R)", "0.1*EGF_init")
-    simulate_ode({t_end=>300,n_steps=>40,continue=>1})
+    simulate({method=>ode,t_end=>300,n_steps=>40,continue=>1})
 
     resetConcentrations(); # reverts to saved Concentrations
     # Stochastic simulation
     setConcentration("EGF(R)","EGF_init")
-    simulate_ssa({suffix=>"ssa",t_start=>0,t_end=>100,n_steps=>40})
+    simulate({method=>ssa,suffix=>"ssa",t_start=>0,t_end=>100,n_steps=>40})
     setConcentration("EGF(R)", "10*EGF_init")
-    simulate_ssa({suffix=>"ssa",t_end=>200,n_steps=>40,continue=>1})
+    simulate({method=>ssa,suffix=>"ssa",t_end=>200,n_steps=>40,continue=>1})
     setConcentration("EGF(R)", "0.1*EGF_init")
-    simulate_ssa({suffix=>"ssa",t_end=>300,n_steps=>40,continue=>1})
+    simulate({method=>ssa,suffix=>"ssa",t_end=>300,n_steps=>40,continue=>1})
 
 end actions
 

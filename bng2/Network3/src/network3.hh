@@ -15,6 +15,8 @@
 #include "pla/fEuler/fEuler.hh"
 #include "pla/eRungeKutta/eRungeKutta.hh"
 #include "pla/PLA.hh"
+//#include "ssa/GillespieDM.hh"
+//#include "ssa/simpleEuler.hh"
 
 namespace network3{
 
@@ -27,9 +29,13 @@ namespace network3{
 		static PLA* PLA_SIM;
 		static void init_Network3(bool verbose);
 		static void init_PLA(string config, bool verbose);
-		static pair<double,double> run_PLA(double tStart, double maxTime, double sampleTime, double startStep, double maxSteps,
-				double stepInterval, mu::Parser& stop_condition, char* prefix, bool print_cdat, bool print_func, bool print_save_net,
-				bool print_end_net, bool additional_pla_output, bool verbose);
+		static int run_PLA(double& time, double maxTime, double sampleTime,
+						   double& step, double maxStep, double stepInterval,
+						   mu::Parser& stop_condition, bool print_on_stop,
+						   char* prefix,
+						   bool print_cdat, bool print_func, bool print_save_net, bool print_end_net,
+						   bool additional_pla_output,
+						   bool verbose);
 //		static bool all_inactive();
 		static void read_Butcher_tableau(string filename, vector<vector<double> >& alpha, vector<double>& beta, bool verbose);
 		static void print_species_concentrations(FILE* out, double t);
