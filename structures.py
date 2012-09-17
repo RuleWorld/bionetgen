@@ -10,6 +10,12 @@ class Species:
         self.molecules = []
         self.bondNumbers = []
     
+    def getBondNumbers(self):
+        bondNumbers = [0]
+        for element in self.molecules:
+            bondNumbers.extend(element.getBondNumbers())
+        return bondNumbers        
+        
     def copy(self):
         species = Species()
         for molecule in self.molecules:
@@ -107,9 +113,27 @@ class Species:
                                         comp.addState(state,update)
                     
     
-        
+    def updateBonds(self,bondNumbers):
+        newBondNumbers = deepcopy(bondNumbers)
+        correspondence = {}
+        intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
+        for element in self.molecules:
+            for component in element.components:
+                for index in range(0,len(component.bonds)):
+                    if int(component.bonds[index]) in intersection:
+                        
+                        if component.bonds[index] in correspondence:
+                            component.bonds[index] = correspondence[component.bonds[index]]
+                        else:
+                            correspondence[component.bonds[index]] = max(intersection) + 1
+                            component.bonds[index] = max(intersection) + 1
+                        #intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
+    
     def append(self,species):
-        for element in species.molecules:
+        newSpecies = (deepcopy(species))
+        newSpecies.updateBonds(self.getBondNumbers())
+        
+        for element in newSpecies.molecules:
             self.molecules.append(deepcopy(element))              
         
     def __str__(self):
@@ -149,6 +173,12 @@ class Molecule:
                 compo = self.getComponent(component.name)
                 for state in component.states:
                     compo.addState(state)
+                    
+    def getBondNumbers(self):
+        bondNumbers = []
+        for element in self.components:
+                bondNumbers.extend([int(x) for x in element.bonds])
+        return bondNumbers
         
     def getComponent(self,componentName):
         for component in self.components:
@@ -166,6 +196,9 @@ class Molecule:
                 self.components.remove(element)
                 
     def addBond(self,componentName,bondName):
+        bondNumbers = self.getBondNumbers()
+        while bondName in bondNumbers:
+            bondName += 1
         component = self.getComponent(componentName)
         component.addBond(bondName)
         
