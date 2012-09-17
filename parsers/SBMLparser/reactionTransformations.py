@@ -227,7 +227,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
             species.append(translator[reactants[0]])
         if reactants[1] in translator:
             species.append(translator[reactants[1]])
-        rnd = random.randint(0,1000)
+            
+        rnd = max(species.getBondNumbers()) + 1
         molecule1 = st.Molecule(binding1)
         molecule2 = st.Molecule(binding2)
         component1 = st.Component(r1)
