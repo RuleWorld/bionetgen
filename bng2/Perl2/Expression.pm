@@ -101,12 +101,40 @@ my %NARGS = ( '+'  => { 'min'=>2           },
               '~'  => { 'min'=>1, 'max'=>1 }
             );
 
+# muParser operators
+# ------------------
+# +   addition	 
+# -   subtraction	 
+# *   multiplication	 
+# /   division	 
+# ^   raise x to the power of y	 
+# &&  logical and	 
+# ||  logical or	 
+# <   less than	 
+# >   greater than	 
+# <=  less or equal	 
+# >=  greater or equal	 
+# !=  not equal	 
+# ==  equal	 
 
 # this regex matches numbers (regular and scientific notation
 my $NUMBER_REGEX = '^[\+\-]?(\d+\.?\d*|\.\d+)(|[Ee][\+\-]?\d+|\*10\^[\+\-]?\d+)$';
 # this regex matches param names (letter followed optional by word characters)
 my $PARAM_REGEX  = '^[A-Za-z]\w*$';
 
+
+###
+###
+###
+
+sub isBuiltIn
+{
+	my $name = shift;
+	if ( exists $functions{ $name } ){
+		return 1;
+	}
+	return 0;
+}
 
 ###
 ###
@@ -187,7 +215,7 @@ sub newNumOrVar
     # or possibly a parameter name?
     elsif ( $value =~ /$PARAM_REGEX/ )
     {
-        # we need a paramllist to continue
+        # we need a paramlist to continue
         if ( ref $plist  eq  'ParamList' )
         {
             # check that parameter exists
@@ -390,7 +418,7 @@ sub operate
                     next;
                 }
     
-                # Assignment using '='.  Valid syntax is PARAM = EXPRSSION
+                # Assignment using '='.  Valid syntax is PARAM = EXPRESSION
                 # NOTE: this really stops the current expression (which should be a PARAM) and
                 #  starts parsing a RHS expression which will be assigned to PARAM.
                 elsif ( $$sptr =~ s/^\s*=// )
@@ -402,7 +430,12 @@ sub operate
 
                     my $param      = $list[0];
                     my $param_name = $param->Arglist->[0];
-
+                    
+					# Make sure parameter name not the same as built-in functions --Leonard
+					if ( exists $functions{ $param_name } ){
+						return "Cannot use built-in function name '$param_name' as a parameter name.";
+					}
+					
                     unless ( $param->Type eq 'VAR' )
                     {   return "Attempted assignment to non-variable type in $string_sav at $$sptr.";   }
 
@@ -524,7 +557,7 @@ sub operate
                     }
                     elsif ($nargs==1)
                     {
-                        # Arugument must be VAR
+                        # Argument must be VAR
                         if ($fargs[0]->Type ne "VAR"){
                             return("Argument to observable must be a variable");
                         }
@@ -1778,7 +1811,7 @@ sub getVariables
         my ( $param, $err ) = $plist->lookup( $expr->Arglist->[0] );
         if ($err)
         {
-            # function is a built-in      
+            #printf "function is a built-in\n";      
         }
         else
         {
