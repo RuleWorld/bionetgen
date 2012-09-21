@@ -24,11 +24,8 @@ use lib $FindBin::Bin;
 use Param;
 use ParamList;
 
-
-
-
-# safer to use 'floor' and 'ceil' instead of 'int'
-use POSIX qw/floor ceil/;
+#use POSIX qw/floor ceil/; # safer to use 'floor' and 'ceil' instead of 'int'
+use POSIX qw/floor/; # 'floor' and 'ceil' not supported by muParser. Use 'floor' for 'rint'.
 use Math::Trig qw(tan asin acos atan sinh cosh tanh asinh acosh atanh pi); 
 use List::Util qw(min max sum);
 
@@ -48,33 +45,34 @@ struct Expression =>
 # See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
 my %functions =
 (
-  "exp"   => { FPTR => sub { exp( $_[0] ) },       NARGS => 1 },
-  "ln"    => { FPTR => sub { log( $_[0] ) },       NARGS => 1 },
-  "log10" => { FPTR => sub { log($_[0])/log(10) }, NARGS => 1 },
-  "log2"  => { FPTR => sub { log($_[0])/log(2) },  NARGS => 1 },
-  "abs"   => { FPTR => sub { abs( $_[0] ) },       NARGS => 1 },
-#  "int"   => { FPTR => sub { int( $_[0] ) },       NARGS => 1 },  # deprecated!
-  "floor" => { FPTR => sub { floor( $_[0] ) },     NARGS => 1 },
-  "ceil"  => { FPTR => sub { ceil( $_[0] ) },      NARGS => 1 },
-  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },      NARGS => 1 },
-  "cos"   => { FPTR => sub { cos( $_[0] ) },       NARGS => 1 },
-  "sin"   => { FPTR => sub { sin( $_[0] ) },       NARGS => 1 },
-  "tan"   => { FPTR => sub { tan( $_[0] ) },       NARGS => 1 },
-  "asin"  => { FPTR => sub { asin( $_[0] ) },      NARGS => 1 },
-  "acos"  => { FPTR => sub { acos( $_[0] ) },      NARGS => 1 },
-  "atan"  => { FPTR => sub { atan( $_[0] ) },      NARGS => 1 },
-  "sinh"  => { FPTR => sub { sinh( $_[0] ) },      NARGS => 1 },
-  "cosh"  => { FPTR => sub { cosh( $_[0] ) },      NARGS => 1 },
-  "tanh"  => { FPTR => sub { tanh( $_[0] ) },      NARGS => 1 },
-  "asinh" => { FPTR => sub { asinh( $_[0] ) },     NARGS => 1 },
-  "acosh" => { FPTR => sub { acosh( $_[0] ) },     NARGS => 1 },
-  "atanh" => { FPTR => sub { atanh( $_[0] ) },     NARGS => 1 },
-  "pi"    => { FPTR => sub { pi },                 NARGS => 0 },
+  "exp"   => { FPTR => sub { exp( $_[0] ) },         NARGS => 1 },
+  "ln"    => { FPTR => sub { log( $_[0] ) },         NARGS => 1 },
+  "log10" => { FPTR => sub { log($_[0])/log(10) },   NARGS => 1 },
+  "log2"  => { FPTR => sub { log($_[0])/log(2) },    NARGS => 1 },
+  "abs"   => { FPTR => sub { abs( $_[0] ) },         NARGS => 1 },
+# "int"   => { FPTR => sub { int( $_[0] ) },         NARGS => 1 }, # deprecated!
+# "floor" => { FPTR => sub { floor( $_[0] ) },       NARGS => 1 }, # not supported by muParser
+# "ceil"  => { FPTR => sub { ceil( $_[0] ) },        NARGS => 1 }, # not supported by muParser
+  "rint"  => { FPTR => sub { floor( $_[0] + 0.5 ) }, NARGS => 1 },
+  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },        NARGS => 1 },
+  "cos"   => { FPTR => sub { cos( $_[0] ) },         NARGS => 1 },
+  "sin"   => { FPTR => sub { sin( $_[0] ) },         NARGS => 1 },
+  "tan"   => { FPTR => sub { tan( $_[0] ) },         NARGS => 1 },
+  "asin"  => { FPTR => sub { asin( $_[0] ) },        NARGS => 1 },
+  "acos"  => { FPTR => sub { acos( $_[0] ) },        NARGS => 1 },
+  "atan"  => { FPTR => sub { atan( $_[0] ) },        NARGS => 1 },
+  "sinh"  => { FPTR => sub { sinh( $_[0] ) },        NARGS => 1 },
+  "cosh"  => { FPTR => sub { cosh( $_[0] ) },        NARGS => 1 },
+  "tanh"  => { FPTR => sub { tanh( $_[0] ) },        NARGS => 1 },
+  "asinh" => { FPTR => sub { asinh( $_[0] ) },       NARGS => 1 },
+  "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 },
+  "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 },
+  "pi"    => { FPTR => sub { pi },                   NARGS => 0 },
   "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
-  "min"   => { FPTR => sub { min(@_) },            NARGS => scalar(@_) },
-  "max"   => { FPTR => sub { max(@_) },            NARGS => scalar(@_) },
-  "sum"   => { FPTR => sub { sum(@_) },            NARGS => scalar(@_) },
-  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) }, NARGS => scalar(@_) },
+  "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) },
+  "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) },
+  "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) },
+  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) },
 );
 
 
@@ -87,7 +85,7 @@ my %NARGS = ( '+'  => { 'min'=>2           },
               '*'  => { 'min'=>2           },
               '/'  => { 'min'=>2           },
               '^'  => { 'min'=>2, 'max'=>2 },
-              '**' => { 'min'=>2, 'max'=>2 },
+              '**' => { 'min'=>2, 'max'=>2 }, # Not supported by muParser
               '&&' => { 'min'=>2           },
               '||' => { 'min'=>2           }, 
               '<'  => { 'min'=>2, 'max'=>2 },
@@ -95,10 +93,10 @@ my %NARGS = ( '+'  => { 'min'=>2           },
               '<=' => { 'min'=>2, 'max'=>2 },
               '>=' => { 'min'=>2, 'max'=>2 },
               '!=' => { 'min'=>2, 'max'=>2 },
-              '~=' => { 'min'=>2, 'max'=>2 },              
+              '~=' => { 'min'=>2, 'max'=>2 }, # Not supported by muParser
               '==' => { 'min'=>2, 'max'=>2 },
-              '!'  => { 'min'=>1, 'max'=>1 },
-              '~'  => { 'min'=>1, 'max'=>1 }
+              '!'  => { 'min'=>1, 'max'=>1 }, # Not supported by muParser
+              '~'  => { 'min'=>1, 'max'=>1 }  # Not supported by muParser
             );
 
 # muParser operators

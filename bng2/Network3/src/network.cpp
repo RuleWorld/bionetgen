@@ -452,14 +452,14 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 			readLine >> func_name >> function_string;
 			// Check for function arguments -- exit if they exist
 			if (func_name[func_name.length() - 2] != '(') {
-				cout << "Error in network::read_functions_array(): Functions cannot contain arguments ("
-					 << func_name << "). Exiting." << endl;
+				cout << "Error in network::read_functions_array(): Functions cannot contain arguments ('"
+					 << func_name << "'). Exiting." << endl;
 				exit(1);
 			}
 			// Just to be safe
 			if (func_name[func_name.length() - 1] != ')') {
-				cout << "Error in network::read_functions_array(): Not sure what's going on with function "
-					 << func_name << ", but it should end with a ')' character. Exiting."
+				cout << "Error in network::read_functions_array(): Not sure what's going on with function '"
+					 << func_name << "', but it should end with a ')' character. Exiting."
 					 << endl;
 				exit(1);
 			}
@@ -481,8 +481,8 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 			vector<int> param_depend;
 			for (unsigned int i = 0; i < variable_names.size(); i++) {
 				if (param_map.find(variable_names[i]) == param_map.end()) {
-					cout << "Error in parsing function " << func_name << ". Could not find variable "
-						 << variable_names[i] << ". Exiting.\n";
+					cout << "Error in parsing function '" << func_name << "'. Could not find variable '"
+						 << variable_names[i] << "'. Exiting.\n";
 					exit(1);
 				}
 				else {
@@ -494,8 +494,8 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 						param_depend.push_back(param_index_map[variable_names[i]]);
 					}
 					else {
-						cout << "Ummm, variable " << variable_names[i] << " in function " << func_name
-							 << " is not a parameter or an observable. That's a problem. Exiting." << endl;
+						cout << "Ummm, variable '" << variable_names[i] << "' in function '" << func_name
+							 << "' is not a parameter or an observable. That's a problem. Exiting." << endl;
 						exit(1);
 					}
 				}
