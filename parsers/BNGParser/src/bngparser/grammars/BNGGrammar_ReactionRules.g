@@ -3,7 +3,6 @@ parser grammar BNGGrammar_ReactionRules;
 options {
   language = Java;
   output = template;
- 
 }
 @members{
  public void getParentTemplate(){
@@ -80,6 +79,7 @@ String name;
   $reaction_rule_def::name = "Rule" + reactionCounter;
   $reaction_rule_def::text = "";
   $reaction_rule_def::lmemory = new HashMap<String,Register>();
+  
 }
         :  ((match_attribute)? (
           
@@ -88,7 +88,7 @@ String name;
 	                  })?)
         
         
-      
+
         reaction_def[$reaction_rule_def::patternsReactants,$reaction_rule_def::patternsProducts,"RR" + reactionCounter]{
           $reaction_rule_def::reactionAction.execute();
           if($reaction_def.bidirectional)
@@ -99,12 +99,15 @@ String name;
           $reaction_rule_def::text += $reaction_def.text;
         
         }
+        
         {
         //Whitespaces are normally skipped but they are still in the stream. In this case if this rule is valid
         //a valid WS would be located on the previous token
-        ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
+        ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1);
         } 
         WS
+        
+      //  (rate_function modif_command* DELETEMOLECULES? MOVECONNECTED? LB) => 
         bi=rate_function[$reaction_rule_def::rateList] {
         //TODO: add a try catch exception to check that if a bidirectional reaction is required it asks for two reaction rates
             if($numReactions == 2)
@@ -116,6 +119,7 @@ String name;
         {
           $reaction_rule_def::text = $reaction_rule_def::text.replaceAll("<","&lt;");
           $reaction_rule_def::text = $reaction_rule_def::text.replaceAll(">","&gt;");
+          $reaction_rule_def::text = $reaction_rule_def::text.replaceAll("\\$","&#36;");
         }
 
         -> reaction_block(id={"RR" + reactionCounter},reactant={$reaction_rule_def::patternsReactants},
@@ -125,7 +129,8 @@ String name;
         leftMap={$reaction_rule_def::reactionAction.getLeft()},
         rightMap={$reaction_rule_def::reactionAction.getRight()},operations={$reaction_rule_def::reactionAction.getOperations()},
         operator1={$reaction_rule_def::reactionAction.getOperator1()},
-        operator2={$reaction_rule_def::reactionAction.getOperator2()},expression={$reaction_rule_def::text}
+        operator2={$reaction_rule_def::reactionAction.getOperator2()}
+        ,expression={$reaction_rule_def::text}
         )
         ;
 match_attribute
@@ -195,7 +200,7 @@ int reactantPatternCounter;
         
  ;
         
-rule_species_def[String upperID,ReactionAction reactionAction] returns [int stoichiometry,Map <String,List<ReactionRegister>> map] throws SemanticException
+rule_species_def[String upperID,ReactionAction reactionAction] returns [int stoichiometry,Map <String,List<ReactionRegister>> map,boolean fixed] throws SemanticException
 scope{
 List reactants;
 BondList bonds;
@@ -204,15 +209,19 @@ BondList bonds;
   $rule_species_def::reactants = new ArrayList();
   $rule_species_def::bonds = new BondList();
   $stoichiometry = 1;
+  $fixed = false;
 }
 : 
 (
 (i1=INT {$stoichiometry = Integer.parseInt($i1.text);} TIMES)? 
  s1=species_def[$rule_species_def::reactants,$rule_species_def::bonds,upperID] {
-       reactionAction.addMolecule(upperID,$species_def.text,$rule_species_def::bonds);
+       String trimmedName = $species_def.text;
+       trimmedName = trimmedName.replaceAll("\\$","");
+       reactionAction.addMolecule(upperID,trimmedName,$rule_species_def::bonds);
        $map = $species_def.listOfMolecules;
        $reaction_rule_def::lmemory.putAll($species_def.lmemory);
-      
+       if($s1.constant)
+          $fixed = true;
   }
   {
    
