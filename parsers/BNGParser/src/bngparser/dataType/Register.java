@@ -28,7 +28,8 @@ public class Register {
 	public static List<String> getTypes(Map<String,Register> map){
 		List<String> list = new ArrayList<String>();
 		for(String key: map.keySet()){
-			list.add(map.get(key).getType());
+			if(map.get(key) != null)
+				list.add(map.get(key).getType());
 			
 		}
 		
