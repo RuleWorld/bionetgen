@@ -815,7 +815,7 @@ sub toString
 	    }
 	    else
 	    {
-		    $string .= sprintf "%5d ", $rr->Name;
+		    $string .= sprintf "%5d: ", $rr->Name;
 	    }
 	}
 	
