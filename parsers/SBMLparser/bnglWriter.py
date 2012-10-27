@@ -3,25 +3,27 @@
 import re
 from copy import deepcopy
 
-def bnglReaction(reactant,product,rate,tags,translator=[]):
+def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True):
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
-    
     if len(reactant) == 0:
         finalString += '0() '
     for index in range(0,len(reactant)):
-        if reactant[index] in tags:
-            finalString += tags[reactant[index]]
+        if reactant[index][0] in tags and isCompartments:
+            finalString += tags[reactant[index][0]]
         finalString += printTranslate(reactant[index],translator)
         if index < len(reactant) -1:
             finalString += ' + '
-    finalString += ' -> '
+    if reversible:
+        finalString += ' <-> '
+    else:
+        finalString += ' -> '
     if len(product) == 0:
         finalString += '0() '
     for index in range(0,len(product)):
-        if product[index] in tags:
-            finalString += tags[product[index]]    
+        if product[index][0] in tags and isCompartments:
+            finalString += tags[product[index][0]]    
         finalString +=  printTranslate(product[index],translator) 
         if index < len(product) -1:
             finalString += ' + '
@@ -81,8 +83,8 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('compartments',compartments))          
     output.write(sectionTemplate('molecule types',molecules))
     output.write(sectionTemplate('seed species',species))
-    output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('observables',observables))
+    output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
     output.write('generate_network();\n')

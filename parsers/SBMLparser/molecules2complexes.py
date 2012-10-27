@@ -4,9 +4,7 @@ Created on Tue Dec  6 17:42:31 2011
 
 @author: proto
 """
-from libsbml2bngl import SBML2BNGL
-from pyparsing import Word, Suppress, Optional, alphanums, Group,nums
-import libsbml
+from pyparsing import Word, Suppress, Optional, alphanums, Group
 from numpy import sort
 from copy import deepcopy
 import reactionTransformations
@@ -27,8 +25,8 @@ def parseReactions(reaction):
     + Suppress("()"))
     '''
     rate = Word(alphanums + "()")
-    grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
-    ^ (species + Suppress("->") + Suppress(rate))  
+    grammar = (Group(species) + Suppress(Optional("<") + "->") + Group(species) + Suppress(rate)) \
+    ^ (species + Suppress(Optional("<") + "->") + Suppress(rate))  
     result =  grammar.parseString(reaction).asList()
     if len(result) < 2:
         result = [result,[]]
@@ -397,7 +395,10 @@ def getPertinentNamingEquivalence2(original,labelDatabase, equivalenceTranslator
                  z = Counter(temp).most_common(2)
                  if(z[0][1] > z[1][1]):
                      return z[0][0]
-    return temp[1]
+    if len(temp ) >=2:
+        return temp[1]
+    else:
+        return None
     
 
 
@@ -491,6 +492,7 @@ def transformMolecules(parser,database,configurationFile):
     #    database.labelDictionary[element] = [(min(database.labelDictionary[element],key=len),)] 
     
     #STEP1: Use reaction information to infer w print zip(rules,classifications)
+    
     for rule,classification in zip(rules,classifications): 
         #print rule 
         reaction2 = list(parseReactions(rule))
@@ -539,37 +541,64 @@ def transformMolecules(parser,database,configurationFile):
     
 #    correctClassifications(rules,classifications,database.labelDictionary)
     #STEP3: Use annotations
-
-    for element in set(x for rule in rules for tmp in parseReactions(rule) for x in tmp):
-        annotation = [rdfAnnotations[x] for x in rdfAnnotations if element in rdfAnnotations[x]]
-        if annotation != []:
-            defineCorrespondenceWithAnnotations(element,annotation,database)
+    sbmlAnalyzer.classifyReactionsWithAnnotations(rules,molecules,rdfAnnotations,database.labelDictionary)
+    #for element in set(x for rule in rules for tmp in parseReactions(rule) for x in tmp):
+    #    annotation = [rdfAnnotations[x] for x in rdfAnnotations if element in rdfAnnotations[x]]
+    #    if annotation != []:
+    #        defineCorrespondenceWithAnnotations(element,annotation,database)
     
     simplify(database.labelDictionary)
+
     #print 'step3',database.labelDictionary    
     #analyzeSBML.reclassifyReactions(reactions,molecules,labelDictionary,classifications,equivalenceTranslator)
     cycles = resolveCycles(database,equivalenceTranslator)
-
+    
     for _ in range(0,5):
         database.labelDictionary = resolveCorrespondence(database,cycles)
          
     correctClassificationsWithCycleInformation(rules,classifications,cycles)
     #print database.labelDictionary
-    counter = 0 
-
-    for rule,classification in zip(rules,classifications):
-        #print rule,classification
+    counter = 0
+    nonProcessedRules = zip(rules,classifications)
+    #TODO:multipass stuff.
+    #while len(nonProcessedRules) > 0:
+    #tmp = []
+    ruleWeightTable = []
+    for rule in rules:
+        weight = 0
+        reaction2 = list(parseReactions(rule))
+        for element in reaction2[0]:
+            if element not in database.labelDictionary:
+                weight += 1
+            else:
+                weight += len(database.labelDictionary[element])
+        for element in reaction2[1]:
+            if element not in database.labelDictionary:
+                weight += 1
+            else:
+                weight += len(database.labelDictionary[element])    
+        ruleWeightTable.append(weight)
+    print ruleWeightTable
+    nonProcessedRules = sorted(zip(ruleWeightTable,rules,classifications))
+    for _,rule,classification in nonProcessedRules:
         
+        #print rule,classification
         counter += 1
         #print {x:str(database.translator[x]) for x in database.translator}
         #if counter == 4:
         #    break
-        
         reaction2 = list(parseReactions(rule))
+        #try:
         processRule(reaction2,database,classification,eequivalenceTranslator)
+        #except reactionTransformations.InsufficientInformationError: 
+        #    tmp.append((rule,classification))
         #print counter,rule,classification        
         #print {x:str(database.translator[x]) for x in database.translator}
-    #update all equivalences
+        #update all equivalences
+        #if len(nonProcessedRules) == len(tmp):
+        #    break
+        #nonProcessedRules = tmp
+        #print len(tmp),tmp
     for element in database.labelDictionary:
         if not isinstance(database.labelDictionary[element],tuple):
             database.translator[element] = database.translator[database.labelDictionary[element]]
@@ -581,6 +610,7 @@ def transformMolecules(parser,database,configurationFile):
         if element in raw:
             continue
         for mol in database.translator[element].molecules:
-            mol.update(database.translator[mol.name].molecules[0])
+            if mol.name in database.translator:
+                mol.update(database.translator[mol.name].molecules[0])
     return database.translator
 

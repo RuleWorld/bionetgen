@@ -11,7 +11,6 @@ us information on which reactants are the same, and how do they differ
 (compartment etc)
 '''
 
-from libsbml2bngl import SBML2BNGL
 import libsbml
 
 def getAnnotations(parser,stringKey):

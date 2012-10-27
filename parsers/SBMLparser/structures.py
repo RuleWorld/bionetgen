@@ -38,6 +38,20 @@ class Species:
             #self.molecules.append(molecule)
             #for element in self.molecules:
             #    if element.name == molecule.name:
+    def deleteMolecule(self,moleculeName):
+        deadMolecule = None
+        for element in self.molecules:
+            if element.name == moleculeName:
+                deadMolecule = element
+        if deadMolecule == None:
+            return
+        bondNumbers = deadMolecule.getBondNumbers()
+        self.molecules.remove(deadMolecule)
+        for element in self.molecules:
+            for component in element.components:
+                for number in bondNumbers:
+                    if str(number) in component.bonds:
+                        component.bonds.remove(str(number))
     
     def getMolecule(self,moleculeName):
         for molecule in self.molecules:
@@ -139,6 +153,9 @@ class Species:
     def __str__(self):
         return '.'.join([x.toString() for x in self.molecules])
         
+    def str2(self):
+        return '.'.join([x.str2() for x in self.molecules])
+        
     def reset(self):
         for element in self.molecules:
             element.reset()
@@ -215,6 +232,10 @@ class Molecule:
     def toString(self):
         return self.__str__()
         
+    def str2(self):
+        self.components.sort()
+        return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
+        
     def extend(self,molecule):
         for element in molecule.components:
             comp = [x for x in self.components if x.name == element.name]
@@ -285,6 +306,14 @@ class Component:
         
     def __str__(self):
         return self.getRuleStr()
+        
+    def str2(self):
+        tmp = self.name
+        if len(self.bonds) > 0:
+            tmp += '!' + '!'.join([str(x) for x in self.bonds])
+        if len(self.states) > 0:
+            tmp += '~' + '~'.join([str(x) for x in self.states])
+        return tmp        
         
     def __hash__(self):
         return self.name
