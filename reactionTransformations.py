@@ -3,7 +3,12 @@ import random
 import sys
 import libsbml2bngl
 import structures as st
+import itertools
 
+
+class InsufficientInformationError(Exception):
+     def __init__(self):
+         pass
 
 def printSpecies(label,definition):
     molecules = []
@@ -117,6 +122,7 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                 tmp.addMolecule(st.Molecule(sbml_name))
                 if sbml_name not in translator:
                     translator[sbml_name] = tmp
+                    #raise InsufficientInformationError
                 libsbml2bngl.log['reactions'].append(original)
             #TODO: probably we will need to add a check if there are several ways of defining a reaction
             elif isinstance(molecules,st.Species):
@@ -143,7 +149,7 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                 translator[sbml_name] = species
                 if tags not in synthesisDatabase and tags not in rawDatabase:
                     synthesisDatabase[tags] = tuple(molecules)
-
+    return 0
         #reaction.append(temp)
     #return reaction
 
@@ -256,7 +262,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
         #print reactants,product,str(species)
         #print name1,name2,extended1,extended2
         #print {x:str(translator[x]) for x in translator}, translator
-
+        if len(species.molecules) == 0:
+            return (None,None,None,None)
         return species,[],[],[]
     return extended1,extended2,intersection,[]
 
@@ -438,7 +445,24 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator):
     
     return result
 
-
+def rebalance(original,sortedResult,translator):
+    
+    print original
+    reactantsCount = {}
+    for element in translator[original[0][0]].molecules:
+        if element.name not in reactantsCount:
+            reactantsCount[element.name] = 0
+        reactantsCount[element.name] += 1
+    for product in original[1]:
+        for element in translator[product].molecules:
+            if element.name not in reactantsCount:
+                reactantsCount[element.name] = 0
+            reactantsCount[element.name] -= 1         
+    for element in reactantsCount:
+        if reactantsCount[element] < 0:
+            translator[sortedResult[1]].deleteMolecule(element)
+            
+    
             
 def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
               namingConvention,classification):
@@ -464,7 +488,6 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
             for element in tmp:
                 molecule = st.Molecule(element)
                 if element in conv:
-                        #print 'lelelele',element,reactant
                     #chunk = result[1] if reactant == max(namingConvention,key=len) else result[0]
                     component = st.Component(res[0])
                     component.addState(res[1])
@@ -487,19 +510,28 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
  
                     
                 species.addMolecule(molecule,True)
+                if str(species) == '':
+                    species.addMolecule(molecule)
             if flag:
+                
                 if reactant not in translator:
                     translator[reactant] = species
                 else:
                     translator[reactant].extend(species,False)
+                if molecule.name in translator:
+                    if len(translator[molecule.name].molecules) == 1:
+                        sp = st.Species()
+                        sp.addMolecule(molecule)
+                        translator[molecule.name].extend(sp,False)
+                        translator[molecule.name].reset()
+                else:
+                        sp = st.Species()
+                        sp.addMolecule(molecule)
+                        translator[molecule.name] = sp
                 
-                if len(translator[molecule.name].molecules) == 1:
-                    sp = st.Species()
-                    sp.addMolecule(molecule)
-                    translator[molecule.name].extend(sp,False)
-                    translator[molecule.name].reset()
-                
-                #if len(translator[reactant].molecules) > 1 and molecule.name in translator:
+    if len(original[0]) < len(original[1]):
+        rebalance(original,sortedConvention,translator)
+               #if len(translator[reactant].molecules) > 1 and molecule.name in translator:
                 #    sp = st.Species()
                 #    sp.addMolecule(molecule,)
                 #    translator[molecule.name].extend(sp)

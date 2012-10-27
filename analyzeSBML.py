@@ -5,14 +5,10 @@ Created on Thu Mar 22 13:11:38 2012
 @author: proto
 """
 
-from libsbml2bngl import SBML2BNGL
-from pyparsing import Word, Suppress,Optional,alphanums,Group,nums
-import libsbml
-from numpy import sort,zeros,nonzero
+from pyparsing import Word, Suppress,Optional,alphanums,Group
+from numpy import zeros,nonzero
 import numpy as np
 import json
-import analyzeRDF
-import re
 import itertools
 '''
 This file in general classifies rules according to the information contained in
@@ -31,12 +27,11 @@ class SBMLAnalyzer:
         + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
         + Suppress("()"))
         rate = Word(alphanums + "()")
-        grammar = (Group(species) + Suppress("->") + Group(species) + Suppress(rate)) \
+        grammar = (Group(species) + Suppress(Optional("<") + "->") + Group(species) + Suppress(rate)) \
         ^ (species + Suppress("->") + Suppress(rate))  
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
             result = [result,[]] 
-            
         return result
     
     
@@ -265,20 +260,38 @@ class SBMLAnalyzer:
                 for chemicalIndex in range(0,len(rawReactions[reactionIndex][reactantIndex])):
                     tmp.extend(list(labelDictionary[rawReactions[reactionIndex][reactantIndex][chemicalIndex]]))
                 rawReactions[reactionIndex][reactantIndex] = tmp
+        
         reactionClassification = self.getReactionClassification(reactionDefinition,rawReactions,equivalenceTranslator)
         return reactionClassification,[],equivalenceTranslator          
 
-if __name__ == "__main__":
-    reader = libsbml.SBMLReader()
-    #BIOMD0000000272
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
-    #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
-    model = document.getModel()        
-    parser = SBML2BNGL(model)
-#    print parser.getReactions()
-    #parser.processFile('flat.bngl')
-    _,rules,_ = parser.getReactions()
-    molecules,_,_ = parser.getSpecies(translator)
-    #print rules    
-    #print classifyReactions(rules)
-    analyzeNamingConventions(molecules)
+    
+    def processAnnotations(self,molecules,annotations):
+        processedAnnotations = []
+        for element in annotations:
+            if len(annotations[element]) > 1:
+                pro = [list(x) for x in itertools.combinations([y for y in annotations[element]],2)]
+                processedAnnotations.extend(pro)
+            
+        return {-1:processedAnnotations}
+    
+    def annotationClassificationHelper(self,reactions,annotations):
+        for reaction in reactions:
+           for annotation in annotations:
+               
+               if ((annotation[0],) in reaction[0] and (annotation[1],) in reaction[1]) or ((annotation[0],) in reaction[1] and (annotation[1],) in reaction[0]):
+                       print reaction,annotation
+    
+    def classifyReactionsWithAnnotations(self,reactions,molecules,annotations,labelDictionary):        
+        '''
+        this model will go through the list of reactions and assign a 'modification' tag to those reactions where
+        some kind of modification goes on aided through annotation information
+        '''
+        rawReactions = [self.parseReactions(x) for x in reactions]
+        equivalenceTranslator = self.processAnnotations(molecules,annotations)     
+        for reactionIndex in range(0,len(rawReactions)):
+            for reactantIndex in range(0,len(rawReactions[reactionIndex])):
+                tmp = []
+                for chemicalIndex in range(0,len(rawReactions[reactionIndex][reactantIndex])):
+                    tmp.extend(list(labelDictionary[rawReactions[reactionIndex][reactantIndex][chemicalIndex]]))
+                rawReactions[reactionIndex][reactantIndex] = tmp
+        #self.annotationClassificationHelper(rawReactions,equivalenceTranslator[-1])         
