@@ -426,7 +426,7 @@ def processRule(original,database,
         #return reactionTransformations.creation(original,dictionary,
         #rawDatabase,translator)
         return ''
-    elif identifyReaction(original,0) == 5:
+    elif identifyReaction(original,0) == 5: 
         #return reactionTransformations.decay(original,dictionary,
         #rawDatabase,translator)
         return ''
@@ -563,49 +563,43 @@ def transformMolecules(parser,database,configurationFile):
     #TODO:multipass stuff.
     #while len(nonProcessedRules) > 0:
     #tmp = []
+    
+    ##sort. Primary key: number of predependencies a rule has
+    #secondary key: length of the names of the elements involved    
     ruleWeightTable = []
+    ruleWeight2Table= []
     for rule in rules:
         weight = 0
+        weight2 = 0
         reaction2 = list(parseReactions(rule))
         for element in reaction2[0]:
             if element not in database.labelDictionary:
                 weight += 1
             else:
                 weight += len(database.labelDictionary[element])
+            weight2 += len(element)
         for element in reaction2[1]:
             if element not in database.labelDictionary:
                 weight += 1
             else:
-                weight += len(database.labelDictionary[element])    
+                weight += len(database.labelDictionary[element])
+            weight2 += len(element)
+        ruleWeight2Table.append(weight2)
         ruleWeightTable.append(weight)
-    print ruleWeightTable
-    nonProcessedRules = sorted(zip(ruleWeightTable,rules,classifications))
-    for _,rule,classification in nonProcessedRules:
-        
-        #print rule,classification
+    nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
+    nonProcessedRules = sorted(nonProcessedRules,key=lambda rule :rule[1])
+    nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
+    
+    for _,_,rule,classification in nonProcessedRules:
         counter += 1
-        #print {x:str(database.translator[x]) for x in database.translator}
-        #if counter == 4:
-        #    break
         reaction2 = list(parseReactions(rule))
-        #try:
         processRule(reaction2,database,classification,eequivalenceTranslator)
-        #except reactionTransformations.InsufficientInformationError: 
-        #    tmp.append((rule,classification))
-        #print counter,rule,classification        
-        #print {x:str(database.translator[x]) for x in database.translator}
-        #update all equivalences
-        #if len(nonProcessedRules) == len(tmp):
-        #    break
-        #nonProcessedRules = tmp
-        #print len(tmp),tmp
+
     for element in database.labelDictionary:
         if not isinstance(database.labelDictionary[element],tuple):
             database.translator[element] = database.translator[database.labelDictionary[element]]
-    #print translator
-   # print labelDictionary
-   ###now balance all our components
     raw =  [x[0] for x in database.rawDatabase]
+
     for element in database.translator:
         if element in raw:
             continue

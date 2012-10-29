@@ -61,8 +61,9 @@ class SBML2BNGL:
             rate = self.convertToName(rate)
         if reversible:
             pass
-            #print rate
-            #TODO: I need to do a transformation here in the case of reversible reactions
+            
+        #this removes any reactants that appear in the reaction from the formula
+        #because of the way BNG handles functions
         for element in reactant:
             rate = rate.replace('* %s' % element[0],'',1)
         return (reactant,product,parameters,rate,reversible)
@@ -95,7 +96,7 @@ class SBML2BNGL:
 
     def getReactions(self, translator=[],isCompartments=False):
         '''
-        returns a triple containing
+        returns a triple containing the parameters,rules,functions
         '''
         rules = []
         parameters = []
@@ -103,14 +104,27 @@ class SBML2BNGL:
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
             rawRules =  self.__getRawRules(reaction)
-            functionName = '%s%d()' % (functionTitle,index)
-            rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
                     parameters.append('%s %f' % (parameter[0],parameter[1]))
             compartmentList = ['cell']
             compartmentList.extend([x.getName() for x in self.model.getListOfCompartments() if x.getName() is not ''])
-            functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
+            functionName = '%s%d()' % (functionTitle,index)          
+            if rawRules[4]:            
+                tmp = rawRules[3].split('-')
+                if len(tmp) == 2:
+                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
+                    functionName2 = '%s%dm()' % (functionTitle,index)
+                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
+                else:
+                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
+                    functionName2 = '%s%dm()' % (functionTitle,index)
+                    functions.append(writer.bnglFunction(tmp[0],functionName2,compartmentList))
+                functionName +=', %s' % (functionName2)
+            else:        
+                functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
+            rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
+
         return parameters, rules,functions
 
     def getParameters(self):
@@ -380,8 +394,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile):
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     
-    #translator = m2c.transformMolecules(parser,database,reactionDefinitions)
-    translator = {}    
+    translator = m2c.transformMolecules(parser,database,reactionDefinitions)
+    #translator = {}    
     print evaluation(len(parser.getSpecies()[0]),translator)
     param2 = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)

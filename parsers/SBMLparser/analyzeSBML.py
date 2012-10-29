@@ -143,7 +143,6 @@ class SBMLAnalyzer:
             equivalenceTranslator[idx] = temp
         
         #now we want to fill in all intermediate relationships
-        
         newTranslator = equivalenceTranslator.copy()
         for (key,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
             if key == key2:
