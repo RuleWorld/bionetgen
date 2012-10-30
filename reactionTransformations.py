@@ -107,7 +107,7 @@ def findIntersection(set1,set2,database):
     return intersections
 
     
-def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
+def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator,outputFlag=False):
     #reaction = []
     for elements in original:
         #temp = []  
@@ -116,7 +116,9 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
  #           if molecule in translator:
  #               species.append(translator[molecule])
  #           else:
-            tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator)
+            if outputFlag:
+                print '-',sbml_name
+            tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag)
             if (tags,molecules) == (None,None):
                 tmp = st.Species()
                 tmp.addMolecule(st.Molecule(sbml_name))
@@ -189,7 +191,7 @@ def reverseFind(name,dictionary):
         if dictionary[element] == name:
             return element
         
-def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesisDatabase,originalProductName):
+def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesisDatabase,originalProductName,outputFlag=False):
     '''
     this method goes through two complexes and tries to check how they
     get together to create a product (e.g. how their components link)
@@ -233,32 +235,44 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
             species.append(translator[reactants[0]])
         if reactants[1] in translator:
             species.append(translator[reactants[1]])
+        if outputFlag:
+            print '-----------',species,reactants[0],reactants[1],reactants[1] in translator
+            print '+++',binding1,binding2,r1,r2
             
-        rnd = max(species.getBondNumbers()) + 1
+        bondName = max(species.getBondNumbers()) + 1
         molecule1 = st.Molecule(binding1)
         molecule2 = st.Molecule(binding2)
         component1 = st.Component(r1)
         component2 = st.Component(r2)
-        component1.addBond(str(rnd))
-        component2.addBond(str(rnd))
+        component1.addBond(str(bondName))
+        component2.addBond(str(bondName))
         molecule1.addComponent(component1)
         molecule2.addComponent(component2)
+        
+        if outputFlag:
+            print '////////',molecule1,molecule2
         species.addMolecule(molecule1,True,1)
         counter = 2 if binding1 == binding2 else 1 
         species.addMolecule(molecule2,True,counter)
-        
+        if outputFlag:
+            print '\\\\\\',species
         ####TODO: update the rawDAtabase with the m1m2 information
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule1))
         if molecule1.name in translator:
-            sp = st.Species()
-            sp.addMolecule(deepcopy(molecule1))
             translator[molecule1.name].extend(sp)
-            translator[molecule1.name].reset()
-        
+        else:
+            translator[molecule1.name] = sp
+        translator[molecule1.name].reset()
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule2))
         if molecule2.name in translator:
-            sp = st.Species()
-            sp.addMolecule(deepcopy(molecule2))
             translator[molecule2.name].extend(sp)
-            translator[molecule2.name].reset()
+        else:
+            translator[molecule2.name] = sp
+        translator[molecule2.name].reset()
+        if outputFlag:
+            print '||||||||||||||||||||||',translator[molecule2.name]
         #print reactants,product,str(species)
         #print name1,name2,extended1,extended2
         #print {x:str(translator[x]) for x in translator}, translator
@@ -267,6 +281,45 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
         return species,[],[],[]
     return extended1,extended2,intersection,[]
 
+def merge(reactant1,reactant2,r1,r2,translator,outputFlag=False):
+    '''
+    Receives two species reactant1 and reactant1, and their intersection points 
+    r1 and r2 and creates a new complex that is the union
+    '''
+    species = st.Species()
+    if reactant1 in translator:
+        species.append(translator[reactant1])
+    if reactant2 in translator:
+        species.append(translator[reactant2])
+    if outputFlag:
+        print '-----------',species,reactant1,reactant2,reactant2 in translator
+    rnd = max(species.getBondNumbers()) + 1
+    molecule1 = st.Molecule(binding1)
+    molecule2 = st.Molecule(binding2)
+    component1 = st.Component(r1)
+    component2 = st.Component(r2)
+    component1.addBond(str(rnd))
+    component2.addBond(str(rnd))
+    molecule1.addComponent(component1)
+    molecule2.addComponent(component2)
+    species.addMolecule(molecule1,True,1)
+    counter = 2 if binding1 == binding2 else 1 
+    species.addMolecule(molecule2,True,counter)
+    
+    ####TODO: update the rawDAtabase with the m1m2 information
+    if molecule1.name in translator:
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule1))
+        translator[molecule1.name].extend(sp)
+        translator[molecule1.name].reset()
+    
+    if molecule2.name in translator:
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule2))
+        translator[molecule2.name].extend(sp)
+        translator[molecule2.name].reset()
+
+    
 def createIntersection(reactants,rawDatabase,translator,dictionary):
     '''
     if there are no components in record that allow for two species to merge
@@ -290,7 +343,7 @@ def createIntersection(reactants,rawDatabase,translator,dictionary):
         temp.append(([reactants[0].lower()],))
         rawDatabase[(reactants[1],)] = (temp,)
         
-def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase,translator):
+def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag=False):
     """
     this method reconstructs the component structure for a set of sbml
     molecules that undergo synthesis using context and history information    
@@ -316,8 +369,11 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
     #synthetized product
     extended1,extended2,intersection,extendedComponent = getIntersection(reactants,product,
                                                        dictionary,rawDatabase,translator,
-                                                      synthesisDatabase,products)
+                                                      synthesisDatabase,products,outputFlag)
+                                                     
     #print 'aaaaa',dictionary
+    if outputFlag:
+        print '---',extended1,extended2,intersection,extendedComponent
     if len(species) <2 and species in rawDatabase:
         return species,rawDatabase[species]
     if (extended1,extended2,intersection) == (None,None,None):
