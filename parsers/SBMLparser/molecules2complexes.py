@@ -403,13 +403,13 @@ def getPertinentNamingEquivalence2(original,labelDatabase, equivalenceTranslator
 
 
 def processRule(original,database,
-                classification,equivalenceTranslator):
+                classification,equivalenceTranslator,outputFlag = False):
     '''
     '''
     #print (identifyReaction(original,0))
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,database.labelDictionary,
-        database.rawDatabase,database.synthesisDatabase,database.translator)
+        database.rawDatabase,database.synthesisDatabase,database.translator,outputFlag)
     elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis']:
         if classification == 'Phosporylation':
             equ = equivalenceTranslator[0]
@@ -569,9 +569,11 @@ def transformMolecules(parser,database,configurationFile):
     ruleWeightTable = []
     ruleWeight2Table= []
     for rule in rules:
+        flag = False
         weight = 0
         weight2 = 0
         reaction2 = list(parseReactions(rule))
+
         for element in reaction2[0]:
             if element not in database.labelDictionary:
                 weight += 1
@@ -587,13 +589,22 @@ def transformMolecules(parser,database,configurationFile):
         ruleWeight2Table.append(weight2)
         ruleWeightTable.append(weight)
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
-    nonProcessedRules = sorted(nonProcessedRules,key=lambda rule :rule[1])
+    nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[1])
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
     
     for _,_,rule,classification in nonProcessedRules:
+        outputFlag = False
+        if '29' in rule:
+            outputFlag = True
+
         counter += 1
         reaction2 = list(parseReactions(rule))
-        processRule(reaction2,database,classification,eequivalenceTranslator)
+        if outputFlag:
+            tmp = deepcopy(database.translator)
+            print reaction2
+        processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
+        if outputFlag:
+            print {x:str(database.translator[x]) for x in database.translator if x not in tmp}
 
     for element in database.labelDictionary:
         if not isinstance(database.labelDictionary[element],tuple):

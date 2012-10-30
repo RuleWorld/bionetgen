@@ -32,9 +32,10 @@ class Species:
                 if element.name == molecule.name:
                     if iteration == counter:
                         element.extend(molecule)
-                        break
+                        return
                     else:
                         counter +=1
+            self.molecules.append(molecule)
             #self.molecules.append(molecule)
             #for element in self.molecules:
             #    if element.name == molecule.name:
