@@ -61,11 +61,10 @@ class SBML2BNGL:
             rate = self.convertToName(rate)
         if reversible:
             pass
-            
         #this removes any reactants that appear in the reaction from the formula
         #because of the way BNG handles functions
-        for element in reactant:
-            rate = rate.replace('* %s' % element[0],'',1)
+        #for element in reactant:
+        #    rate = rate.replace('* %s' % element[0],'',1)
         return (reactant,product,parameters,rate,reversible)
         
     def convertToName(self,rate):
@@ -140,7 +139,7 @@ class SBML2BNGL:
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
             if (rawSpecies[4] != ''):
-                self.tags[rawSpecies[0]] = '@%s:' % (rawSpecies[4])
+                self.tags[rawSpecies[0]] = '@%s' % (rawSpecies[4])
             if(rawSpecies[0] in translator):
                 if translator[rawSpecies[0]].getSize()==1 and translator[rawSpecies[0]].molecules[0].name not in names:
                     names.append(translator[rawSpecies[0]].molecules[0].name)
@@ -156,10 +155,7 @@ class SBML2BNGL:
                 tmp2 = temp
                 if rawSpecies[0] in self.tags:
                     tmp2 += (self.tags[rawSpecies[0]])
-                if rawSpecies[0] in translator:
-                    speciesText.append(tmp2 + '%s %f' % (tmp,rawSpecies[1]))
-                else:
-                    speciesText.append(tmp2 + '%s %f' % (tmp,rawSpecies[1]))
+                speciesText.append('%s %f' % (tmp2 + ":" + str(tmp),rawSpecies[1])) 
             observablesText.append('Species %s %s #%s' % (rawSpecies[0], tmp,rawSpecies[5]))
         return moleculesText,speciesText,observablesText
 

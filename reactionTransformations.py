@@ -435,12 +435,16 @@ def getStateName(namingConvention):
         return 'PP'
     if namingConvention == 'Generic-Catalysis':
         return 'M'
+    if namingConvention == 'Modification':
+        return 'M'
 
 def getCatalysisSiteName(namingConvention):
     if namingConvention == 'Phosporylation' or namingConvention == 'Double-Phosporylation':
         return 'phospo'
     elif namingConvention == 'Generic-Catalysis':
         return 'cata'
+    elif namingConvention == 'Modification':
+        return 'modification'
     
 def addRawDatabaseState(reactant,state,rawDatabase):
     if (reactant,) not in rawDatabase:

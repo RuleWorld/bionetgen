@@ -31,7 +31,10 @@ class SBMLAnalyzer:
         ^ (species + Suppress("->") + Suppress(rate))  
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
-            result = [result,[]] 
+            result = [result,[]]
+        if '<->' in reaction and len(result[0]) == 1 and len(result[1]) == 2:
+            result2 = [result[1],result[0]]
+            result = result2
         return result
     
     
@@ -115,6 +118,13 @@ class SBMLAnalyzer:
         pattern = modifiedPattern
         oMolecules = []
         results = []
+        if patternType == 'prefix':
+            comparisonMethod = str.startswith
+        elif patternType == 'suffix':
+            comparisonMethod = str.endswith
+        elif patternType == 'infix':
+            comparisonMethod = str.count
+            
         comparisonMethod = str.startswith if patternType == 'prefix' else str.endswith
         for molecule in [x.strip('()') for x in molecules]:
             if comparisonMethod(molecule,pattern):
@@ -125,8 +135,10 @@ class SBMLAnalyzer:
             for superMolecule in oMolecules:
                 if patternType == 'prefix':
                     comparison = superMolecule[len(pattern):]
-                else:
+                elif patternType == 'suffix':
                     comparison = superMolecule[:len(superMolecule)- len(pattern)]
+                elif patternType == 'infix':
+                    pass
                 if comparison == molecule:
                     results.append((molecule,superMolecule))
                 
@@ -134,6 +146,7 @@ class SBMLAnalyzer:
 #            mmatch = pModified.match(molecule)        
 #            if mmatch and mmatch.group('key') in oMolecules:
 #                results.append((mmatch.group('key'),molecule[0:-2]))
+    
         return results
      
     def processNamingConventions(self,molecules,namingConventions):
@@ -245,6 +258,7 @@ class SBMLAnalyzer:
         listOfEquivalences = []
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
+            
         return reactionClassification,listOfEquivalences,equivalenceTranslator
     
     
