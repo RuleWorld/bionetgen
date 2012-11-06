@@ -30,6 +30,9 @@ def parseReactions(reaction):
     result =  grammar.parseString(reaction).asList()
     if len(result) < 2:
         result = [result,[]]
+    if '<->' in reaction and len(result[0]) == 1 and len(result[1]) == 2:
+        result2 = [result[1],result[0]]
+        result = result2
     return result
 
 def identifyReaction(reaction,element):
@@ -215,8 +218,9 @@ def resolveCorrespondence(database,cycles):
             while True:
                 counter +=1
                 oldTemp = deepcopy(temp[element])
-                if len([x for x in database.labelDictionary[tmpLabel] if x in history]) > 0:
-                    temp[element] = backup
+                #TODO: I dont remember what was this for, probably for avoiding cycles
+                #if len([x for x in database.labelDictionary[tmpLabel] if x in history]) > 0:
+                #    temp[element] = backup
                 temp[element] = list(temp[element])
                 
                # print member,counter,history,[x for x in database.labelDictionary[tmpLabel]]
@@ -410,9 +414,11 @@ def processRule(original,database,
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,database.labelDictionary,
         database.rawDatabase,database.synthesisDatabase,database.translator,outputFlag)
-    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis']:
-        if classification == 'Phosporylation':
+    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification']:
+        if classification in ['Phosporylation']:
             equ = equivalenceTranslator[0]
+        elif classification in ['Modification']:
+            equ = equivalenceTranslator[2]
         else:
             equ = equivalenceTranslator[1]
         pertinentEquivalence = getPertinentNamingEquivalence2(original,database.rawLabelDictionary,equ)
@@ -546,13 +552,13 @@ def transformMolecules(parser,database,configurationFile):
     #    annotation = [rdfAnnotations[x] for x in rdfAnnotations if element in rdfAnnotations[x]]
     #    if annotation != []:
     #        defineCorrespondenceWithAnnotations(element,annotation,database)
-    
     simplify(database.labelDictionary)
 
     #print 'step3',database.labelDictionary    
     #analyzeSBML.reclassifyReactions(reactions,molecules,labelDictionary,classifications,equivalenceTranslator)
     cycles = resolveCycles(database,equivalenceTranslator)
-    
+
+    #TODO: this is causing errors, check
     for _ in range(0,5):
         database.labelDictionary = resolveCorrespondence(database,cycles)
          
@@ -591,11 +597,11 @@ def transformMolecules(parser,database,configurationFile):
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[1])
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
-    
     for _,_,rule,classification in nonProcessedRules:
         outputFlag = False
-        if '29' in rule:
+        if classification == 'Modification':
             outputFlag = True
+            print '--------------------',classification
 
         counter += 1
         reaction2 = list(parseReactions(rule))
