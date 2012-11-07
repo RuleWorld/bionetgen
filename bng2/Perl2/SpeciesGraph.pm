@@ -1211,7 +1211,8 @@ sub removeRedundantLabels
 		    # Component labels have syntax mlabel|cname
 		    for ( my $ic = 0 ; $ic < @comps ; $ic++ )
 		    {
-				my $clabel = $mlabel . '_' . scalar @{$autolabels1->{$mlabel}} . '|' . $comps[$ic];
+				#my $clabel = $mlabel . '_' . scalar @{$autolabels1->{$mlabel}} . '|' . $comps[$ic];
+                my $clabel = $mlabel . '|' . $comps[$ic];
                 $autolabels1->{$clabel} = []  unless (exists $autolabels1->{$clabel});
 		        push @{$autolabels1->{$clabel}}, "$i_sg.$im.$ic";
 		    }
@@ -1239,38 +1240,90 @@ sub removeRedundantLabels
 		    # Component labels have syntax mlabel|cname
 		    for ( my $ic = 0 ; $ic < @comps ; $ic++ )
 		    {
-				my $clabel = $mlabel . '_' . scalar @{$autolabels2->{$mlabel}} . '|' . $comps[$ic];
+				#my $clabel = $mlabel . '_' . scalar @{$autolabels2->{$mlabel}} . '|' . $comps[$ic];
+				my $clabel = $mlabel . '|' . $comps[$ic];
                 $autolabels2->{$clabel} = []  unless (exists $autolabels2->{$clabel});
 		        push @{$autolabels2->{$clabel}}, "$i_sg.$im.$ic";
 		    }
 		}
     }
     
+    #print STDERR "reactants: ", join(",", map { "$_=>".scalar @{$autolabels1->{$_}} } keys %$autolabels1 ), "\n";
+    #print STDERR "products:  ", join(",", map { "$_=>".scalar @{$autolabels2->{$_}} } keys %$autolabels2 ), "\n";
 
     # remove temporary labels, if mapping is unambiguous
     foreach my $key ( keys %$autolabels1 )
     {   
-        # label must appear in both sets
-        next unless ( exists $autolabels2->{$key} );
-        
-        my $set1 = $autolabels1->{$key};
-        my $set2 = $autolabels2->{$key};
-        # there must be exactly one item corresponding to this label
-        next unless ( @$set1 == 1  and  @$set2 == 1 );
-        
-        # get pointer to object in set1 and remove its label
-        my ($p1,$m1,$c1) = split /\./, $set1->[0];
-        my $obj1 = (defined $c1) ? $sgs1->[$p1]->Molecules->[$m1]->Components->[$c1] : $sgs1->[$p1]->Molecules->[$m1];   
-        # label must be temporary
-        next unless ( exists $temp_labels->{$obj1->Label} );
-        $obj1->Label(undef);
+        if ( exists $autolabels2->{$key} )
+        {   # corresponding objects found in both products and reactants,
+            # so check if there's a possibility for multiple correspondence maps
+            my $set1 = $autolabels1->{$key};
+            my $set2 = $autolabels2->{$key};
 
-        # get pointer to object in set2 and remove its label
-        my ($p2,$m2,$c2) = split /\./, $set2->[0];
-        my $obj2 = (defined $c2) ? $sgs2->[$p2]->Molecules->[$m2]->Components->[$c2] : $sgs2->[$p2]->Molecules->[$m2];
-        # label must be temporary
-        next unless ( exists $temp_labels->{$obj2->Label} );
-        $obj2->Label(undef);
+            # check how many objects in reactants and products have this autolabel
+            next unless ( @$set1 == 1  and  @$set2 == 1 );
+            
+            # There's a 1-1 correspondence between objects with this autolabel.
+            # Let's get the objects and remove temporary tags
+
+            # get pointer to object in set1 
+            my ($p1,$m1,$c1) = split /\./, $set1->[0];
+            my $obj1 = (defined $c1) ? $sgs1->[$p1]->Molecules->[$m1]->Components->[$c1] : $sgs1->[$p1]->Molecules->[$m1];   
+
+            # get pointer to object in set2
+            my ($p2,$m2,$c2) = split /\./, $set2->[0];
+            my $obj2 = (defined $c2) ? $sgs2->[$p2]->Molecules->[$m2]->Components->[$c2] : $sgs2->[$p2]->Molecules->[$m2];
+
+            # are Labels (i.e. "tags") the same?  If not, then these are non-corresponding objects!
+            next unless ( $obj1->Label eq $obj2->Label );
+
+            # labels must be temporary (only need to check obj1 since the labels are equal
+            next unless ( exists $temp_labels->{$obj1->Label} );
+            
+            # remove label from obj1 and obj2
+            $obj1->Label(undef);
+            $obj2->Label(undef);
+        }
+        else
+        {   # No corresponding objects found in products.
+            # We can go ahead and remove temporary labels.
+            my $set1 = $autolabels1->{$key};
+            foreach my $ptr1 (@$set1)
+            {   # get pointer to object in set1
+                my ($p1,$m1,$c1) = split /\./, $ptr1;
+                my $obj1 = (defined $c1) ? $sgs1->[$p1]->Molecules->[$m1]->Components->[$c1] : $sgs1->[$p1]->Molecules->[$m1];
+                next unless ( defined $obj1->Label );
+                next unless ( exists $temp_labels->{$obj1->Label} );
+                # there's no possible ambiguity here; remove label from obj1
+                $obj1->Label(undef);
+            }
+        }
+    }
+
+    # remove temporary labels from products, if mapping is unambiguous
+    foreach my $key ( keys %$autolabels2 )
+    {
+        # label must appear in both sets
+        if ( exists $autolabels1->{$key} )
+        {   # Corresponding objects found in both products and reactants.
+            # Already handled this case.
+            next;
+        }
+        else
+        {   # No corresponding objects found in reactants.
+            # We can go ahead and remove temporary labels.
+            my $set2 = $autolabels2->{$key};
+            foreach my $ptr2 (@$set2)
+            {   # get pointer to object in set2
+                my ($p2,$m2,$c2) = split /\./, $ptr2;
+                my $obj2 = (defined $c2) ? $sgs2->[$p2]->Molecules->[$m2]->Components->[$c2] : $sgs2->[$p2]->Molecules->[$m2];
+                # only remove temporary labels
+                next unless ( defined $obj2->Label );
+                next unless ( exists $temp_labels->{$obj2->Label} );
+                # there's no possible ambiguity here; remove label from obj1
+                $obj2->Label(undef);
+            }
+        }
     }
 }
 

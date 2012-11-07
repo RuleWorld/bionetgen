@@ -15,8 +15,8 @@ use warnings;
 sub newPopulationMappingRule
 {
     # get input arguments
-	my $string = shift;
-	my $model  = shift;
+	my $string = shift @_;
+	my $model  = shift @_;
 
 	# define return arguments
 	my $err = undef;
@@ -432,10 +432,10 @@ sub refineRule
 #  Store maps in $rr->Rmatches.  Returns the number of matches.
 sub find_reactant_matches
 {
-    my $rr      = shift;
-    my $ipatt   = shift;
-    my $sg_list = shift;
-    my $model   = shift;
+    my $rr      = shift @_;
+    my $ipatt   = shift @_;
+    my $sg_list = shift @_;
+    my $model   = shift @_;
 
     # include by default?  (yes, if there are no include patterns)
     my $include_default = @{$rr->Rinclude->[$ipatt]} ? 0 : 1;
@@ -478,7 +478,7 @@ sub find_reactant_matches
 	    	if ($include)
 	    	{
 	    	    push @{$rr->Rmatches->[$ipatt]}, @matches;
-                ++$n_matches;
+                $n_matches += @matches;
             }
         }
 	}
@@ -701,39 +701,40 @@ sub apply_to_reactants
     #  observables
     
     # filter out tags that no longer map from R to P.
-    {
-        # gather labels in reactants
-        my $labelsR = {};
-        foreach my $reactant ( @$reactants )
-        {   $reactant->gatherLabels( $labelsR );   }
-        
-        # also gather labels in products
-        my $labelsP = {};
-        foreach my $product ( @$products )
-        {   $product->gatherLabels( $labelsP );    }      
-        
-        # find labels that do not have a partner
-        my $deleteLabels = {};
-        foreach my $label ( keys %$labelsR )
-        {
-            next unless ( exists $temp_labels->{$label} );
-            unless ( exists $labelsP->{$label} )
-            {   $deleteLabels->{$label} = 1;   }
-        }
-        foreach my $label ( keys %$labelsP )
-        {
-            next unless ( exists $temp_labels->{$label} );
-            unless ( exists $labelsR->{$label} )
-            {   $deleteLabels->{$label} = 1;   }
-        }
-        
-        # remove unpartnered labels
-        foreach my $reactant ( @$reactants )
-        {   $reactant->removeLabels( $deleteLabels );   }
-        
-        foreach my $product ( @$products )
-        {   $product->removeLabels( $deleteLabels );    }        
-    }        
+    # TODO: determine if deleting unmatched labels may lead to problems in rare cases
+#    {
+#        # gather labels in reactants
+#        my $labelsR = {};
+#        foreach my $reactant ( @$reactants )
+#        {   $reactant->gatherLabels( $labelsR );   }
+#        
+#        # also gather labels in products
+#        my $labelsP = {};
+#        foreach my $product ( @$products )
+#        {   $product->gatherLabels( $labelsP );    }      
+#        
+#        # find labels that do not have a partner
+#        my $deleteLabels = {};
+#        foreach my $label ( keys %$labelsR )
+#        {
+#            next unless ( exists $temp_labels->{$label} );
+#            unless ( exists $labelsP->{$label} )
+#            {   $deleteLabels->{$label} = 1;   }
+#        }
+#        foreach my $label ( keys %$labelsP )
+#        {
+#            next unless ( exists $temp_labels->{$label} );
+#            unless ( exists $labelsR->{$label} )
+#            {   $deleteLabels->{$label} = 1;   }
+#        }
+#        
+#        # remove unpartnered labels
+#        foreach my $reactant ( @$reactants )
+#        {   $reactant->removeLabels( $deleteLabels );   }
+#        
+#        foreach my $product ( @$products )
+#        {   $product->removeLabels( $deleteLabels );    }        
+#    }        
     # finally, we can remove unnecessary temporary labels
     SpeciesGraph::removeRedundantLabels( $reactants, $products, $temp_labels );
 

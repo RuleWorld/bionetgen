@@ -3704,7 +3704,7 @@ void print_rxn_update_list(FILE* out) {
 	iarray* iarr;
 	int irxn/*, jrxn, rindex*/;
 	Rxn **rarray, *rxn;
-	int n_update_avg = 0;
+	long int n_update_avg = 0;
 
 	iarr = GSP.rxn_update_list;
 	rarray = network.reactions->rxn;
@@ -3716,7 +3716,7 @@ void print_rxn_update_list(FILE* out) {
 		 print_Rxn_text(out, rxn, network.species, network.rates);
 		 fprintf(out, "  %d\n", iarr->l_arr[irxn]);
 		 */
-		n_update_avg += iarr->l_arr[irxn];
+		n_update_avg += (long int)(iarr->l_arr[irxn]);
 		/*
 		 for(jrxn=0; jrxn<iarr->l_arr[irxn]; ++jrxn){
 			 rindex= iarr->arr[irxn][jrxn];
@@ -3729,7 +3729,7 @@ void print_rxn_update_list(FILE* out) {
 		 }
 		 */
 	}
-	fprintf(out, "Average number of update rxns is %.1f\n", (double) n_update_avg / GSP.na);
+	fprintf(out, "Average number of update rxns is %.2f\n", (double)n_update_avg / (double)GSP.na );
 	return;
 }
 
