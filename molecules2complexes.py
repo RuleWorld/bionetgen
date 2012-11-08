@@ -415,17 +415,12 @@ def processRule(original,database,
         return reactionTransformations.synthesis(original,database.labelDictionary,
         database.rawDatabase,database.synthesisDatabase,database.translator,outputFlag)
     elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification']:
-        if classification in ['Phosporylation']:
-            equ = equivalenceTranslator[0]
-        elif classification in ['Modification']:
-            equ = equivalenceTranslator[2]
-        else:
-            equ = equivalenceTranslator[1]
+        equ = equivalenceTranslator[classification]
         pertinentEquivalence = getPertinentNamingEquivalence2(original,database.rawLabelDictionary,equ)
         return reactionTransformations.catalysis(original,database.labelDictionary,database.rawDatabase,
                                                   None,
                                                   database.translator,pertinentEquivalence,
-                                                  classification)
+                                                  classification,database.reactionProperties)
 
     
     elif identifyReaction(original,0) == 4:
@@ -484,7 +479,7 @@ def transformMolecules(parser,database,configurationFile):
     #translator = {}
     sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile)
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
-    
+    database.reactionProperties = sbmlAnalyzer.getReactionProperties()
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
     #print rdfAnnotations
@@ -518,8 +513,6 @@ def transformMolecules(parser,database,configurationFile):
     simplify(database.labelDictionary)
     #TODO: uncomment this section when we solve the bug on reclassifying
         
-    classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
-    
     #print database.labelDictionary 
     cycles = resolveCycles(database,equivalenceTranslator)
     database.rawLabelDictionary = deepcopy(database.labelDictionary)
@@ -528,10 +521,8 @@ def transformMolecules(parser,database,configurationFile):
     #print 'after resolving correspondences'
     classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
     for index in range(0,len(classifications)):
-        if classifications[index] == 'None':
+        if classifications[index] in ['None','Binding'] and classifications2[index] != 'None':
             classifications[index] = classifications2[index]
-
-
     tmp = {x:[database.labelDictionary[x]] for x in database.labelDictionary}
     database.labelDictionary = tmp
     #print 'step1.5',database.labelDictionary    
@@ -599,16 +590,18 @@ def transformMolecules(parser,database,configurationFile):
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
     for _,_,rule,classification in nonProcessedRules:
         outputFlag = False
-        if classification == 'Modification':
-            outputFlag = True
-            print '--------------------',classification
+        #if classification == 'Modification':
+        #    outputFlag = True
 
         counter += 1
         reaction2 = list(parseReactions(rule))
+
         if outputFlag:
             tmp = deepcopy(database.translator)
             print reaction2
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
+        if 'MEK_P' in rule and 'MEK_P' in database.translator:
+            print database.translator['MEK'],'pppp',database.translator['MEK_P'],reaction2
         if outputFlag:
             print {x:str(database.translator[x]) for x in database.translator if x not in tmp}
 
