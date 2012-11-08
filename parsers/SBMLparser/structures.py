@@ -39,6 +39,11 @@ class Species:
             #self.molecules.append(molecule)
             #for element in self.molecules:
             #    if element.name == molecule.name:
+                
+    def addCompartment(self,tags):
+        for molecule in self.molecules:
+            molecule.setCompartment(tags)
+    
     def deleteMolecule(self,moleculeName):
         deadMolecule = None
         for element in self.molecules:
@@ -169,6 +174,7 @@ class Molecule:
     def __init__(self,name):
         self.components = []
         self.name = name
+        self.compartment = ''
         
     def copy(self):
         molecule = Molecule(self.name)
@@ -191,7 +197,10 @@ class Molecule:
                 compo = self.getComponent(component.name)
                 for state in component.states:
                     compo.addState(state)
-                    
+    
+    def setCompartment(self,compartment):
+        self.compartment = compartment   
+             
     def getBondNumbers(self):
         bondNumbers = []
         for element in self.components:
@@ -228,7 +237,7 @@ class Molecule:
         
     def __str__(self):
         self.components.sort()
-        return self.name + '(' + ','.join([str(x) for x in self.components]) + ')'
+        return self.name + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
         
     def toString(self):
         return self.__str__()

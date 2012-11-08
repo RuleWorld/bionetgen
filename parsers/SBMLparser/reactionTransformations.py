@@ -428,19 +428,6 @@ def decay(original,dictionary,rawDatabase,translator):
     reaction[0] = [(tuple(original[0]),rawDatabase[tuple(original[0])],)]
     return reaction   
     
-def getStateName(namingConvention):
-    if namingConvention == 'Phosporylation':
-        return 'P'
-    if namingConvention == 'Double-Phosporylation':
-        return 'PP'
-    if namingConvention == 'Generic-Catalysis':
-        return 'M'
-
-def getCatalysisSiteName(namingConvention):
-    if namingConvention == 'Phosporylation' or namingConvention == 'Double-Phosporylation':
-        return 'phospo'
-    elif namingConvention == 'Generic-Catalysis':
-        return 'cata'
     
 def addRawDatabaseState(reactant,state,rawDatabase):
     if (reactant,) not in rawDatabase:
@@ -451,13 +438,16 @@ def addRawDatabaseState(reactant,state,rawDatabase):
         rawDatabase[(reactant,)] = (temp,)
         
         
-def catalyze(original,modified,namingConvention,rawDatabase,translator):
+def catalyze(original,modified,namingConvention,rawDatabase,translator,reactionProperties):
     result = [0,0]
+    siteName = reactionProperties[namingConvention][0]
+    stateName = reactionProperties[namingConvention][1]
     if (original,) not in translator:
-        result[0] = [getCatalysisSiteName(namingConvention),'U']
+        result[0] = [siteName,'U']
         #rawDatabase[(original,)] = ([([getCatalysisSiteName(namingConvention),'U'],)],)
     else:
-        if (getCatalysisSiteName(namingConvention),) in rawDatabase[(original,)][0]:
+        siteName = reactionProperties[namingConvention][0]
+        if siteName in rawDatabase[(original,)][0]:
             if not 'U' in rawDatabase[(original,)][1]:
                 temp = list(rawDatabase[(original,)])
                 #todoL we ave to actually get an index, not blindly append
@@ -467,22 +457,22 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator):
                 #rawDatabase[(original,)] = tuple(temp)
         else:
             temp = list(rawDatabase[(original,)])
-            temp[0].append(getCatalysisSiteName(namingConvention))
+            temp[0].append(siteName)
             temp[1].append('U')
             #addRawDatabaseState(original,tuple(temp),rawDatabase)
             #rawDatabase[(original,)] = tuple(temp)
             result[0] = temp
     if (modified,) not in translator:
+        
         #rawDatabase[(modified,)] = ([([getCatalysisSiteName(namingConvention),getStateName(namingConvention)],)],)
-        result[1] = [getCatalysisSiteName(namingConvention),getStateName(namingConvention)]
+        result[1] = [siteName,stateName]
         #addRawDatabaseState(modified,([getCatalysisSiteName(namingConvention),getStateName(namingConvention)],),rawDatabase)
     else:
-        if (getCatalysisSiteName(namingConvention),) in rawDatabase[(modified,)][0]:
-            if not getStateName(namingConvention) in rawDatabase[(modified,)][1]:
+        if siteName in rawDatabase[(modified,)][0]:
+            if not stateName in rawDatabase[(modified,)][1]:
                 temp = list(rawDatabase[(modified,)])
                 #TODO: in the special case for generic-catalysis, we do it so that any additional modification to an already
                 #modified state is done via an additional M. ['M','MM' etc]. Check if it makes sense for other modifications
-                stateName = getStateName(namingConvention)
                 if namingConvention == 'Generic-Catalysis':
                     longestStateName = max(temp[1],key=len)
                     temp[1].append(stateName+longestStateName)
@@ -493,8 +483,8 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator):
                 result[1] = tuple(temp)
         else:
             temp = list(rawDatabase[(modified,)]) 
-            temp[0].append(getCatalysisSiteName(namingConvention))
-            temp[1].append(getStateName(namingConvention))
+            temp[0].append(siteName)
+            temp[1].append(stateName)
             #addRawDatabaseState(modified,tuple(temp),rawDatabase)
             #rawDatabase[(modified,)] = tuple(temp)
             result[1] = temp
@@ -521,19 +511,22 @@ def rebalance(original,sortedResult,translator):
     
             
 def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
-              namingConvention,classification):
+              namingConvention,classification,reactionProperties):
     """
     This method is for reactions of the form A+ B -> A' + B
     """
     
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
-    ,translator)
+    ,translator,reactionProperties)
     k = [x  == min(namingConvention,key=len) for x in original[0]]
     k2 = [x == max(namingConvention,key=len)  for x in original[1]]
     k =  k and k2
     sortedResult = [result[0],result[1]] if any(k) else [result[1],result[0]]
     sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]]
     flag = False
+    
+    if 'MEK_P' in original[0] or 'MEK_P' in original[1]:
+        print '---',sortedResult,sortedConvention,original
     for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:
             flag = False
@@ -549,6 +542,7 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                     component.addState(res[1])
                     molecule.addComponent(component,1)
                     flag = True
+                    finalMolecule = molecule
                 '''
                 else:
                     if conv in reactant:
@@ -572,15 +566,22 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                 
                 if reactant not in translator:
                     translator[reactant] = species
+
                 else:
                     translator[reactant].extend(species,False)
-                if molecule.name in translator:
-                    if len(translator[molecule.name].molecules) == 1:
+                    if reactant == 'MEK_P':
+                        print 'MEK!!!!',str(species),translator[reactant]                   
+                if finalMolecule.name in translator:
+                    if len(translator[finalMolecule.name].molecules) == 1:
                         sp = st.Species()
-                        sp.addMolecule(molecule)
-                        translator[molecule.name].extend(sp,False)
-                        translator[molecule.name].reset()
+                        sp.addMolecule(deepcopy(finalMolecule))
+                        translator[finalMolecule.name].extend(sp,False)
+                        translator[finalMolecule.name].reset()
+                        if reactant == 'MEK_P':
+                            print '~~~~~',sp,str(finalMolecule),str(species)
+                            print '```````',translator[finalMolecule.name]
                 else:
+                        print 'noMEK'
                         sp = st.Species()
                         sp.addMolecule(molecule)
                         translator[molecule.name] = sp

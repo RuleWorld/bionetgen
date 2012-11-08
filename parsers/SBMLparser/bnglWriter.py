@@ -10,9 +10,10 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     if len(reactant) == 0:
         finalString += '0() '
     for index in range(0,len(reactant)):
+        tag = ''
         if reactant[index][0] in tags and isCompartments:
-            finalString += tags[reactant[index][0]]
-        finalString += printTranslate(reactant[index],translator)
+            tag = tags[reactant[index][0]]
+        finalString += printTranslate(reactant[index],tag,translator)
         if index < len(reactant) -1:
             finalString += ' + '
     if reversible:
@@ -22,9 +23,10 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     if len(product) == 0:
         finalString += '0() '
     for index in range(0,len(product)):
+        tag = ''
         if product[index][0] in tags and isCompartments:
-            finalString += tags[product[index][0]]    
-        finalString +=  printTranslate(product[index],translator) 
+            tag = tags[product[index][0]]
+        finalString +=  printTranslate(product[index],tag,translator) 
         if index < len(product) -1:
             finalString += ' + '
     finalString += ' ' + rate
@@ -32,13 +34,12 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     
 
 
-def printTranslate(chemical,translator={}):
+def printTranslate(chemical,tags,translator={}):
     tmp = []
-    
-
     if chemical[0] not in translator:
-        app = chemical[0] + '()'
+        app = chemical[0] + '()' + tags
     else:
+        translator[chemical[0]].addCompartment(tags)
         app = str(translator[chemical[0]])
     for item in range(0,int(chemical[1])):
         tmp.append(app)
