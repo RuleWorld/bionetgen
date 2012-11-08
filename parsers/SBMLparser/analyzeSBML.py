@@ -89,7 +89,6 @@ class SBMLAnalyzer:
         in different ways, but in the context of its tuple partners it can only be classified
         as one
         '''
-        
         ruleResult = np.zeros(len(ruleBook))
         for validTupleIndex in np.nonzero(tupleCompliance):
             for index in validTupleIndex:
@@ -149,33 +148,39 @@ class SBMLAnalyzer:
     
         return results
      
-    def processNamingConventions(self,molecules,namingConventions):
+    def processNamingConventions(self,molecules,reactionDefinition):
         equivalenceTranslator = {}
-        for idx,convention in enumerate(namingConventions):
-            temp = self.analyzeNamingConventions(molecules,convention[0],convention[1])
-            equivalenceTranslator[idx] = temp
+        reactionIndex = {}
+        index = 0
+        for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
+            if 'n' in prop.keys():
+                convention = reactionDefinition['namingConvention'][prop['n'][0]]
+                temp = self.analyzeNamingConventions(molecules,convention[0],convention[1])
+                equivalenceTranslator[name] = temp
+                reactionIndex[name] = index
+                index += 1
         
         #now we want to fill in all intermediate relationships
         newTranslator = equivalenceTranslator.copy()
-        for (key,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
-            if key == key2:
+        for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
+            if key1 == key2:
                 continue
             intersection = [[x for x in set.intersection(set(sublist),set(sublist2))] 
-                for sublist in equivalenceTranslator[key2] for sublist2 in equivalenceTranslator[key]]
-            intersectionPoints = [(int(x/len(equivalenceTranslator[key])),int(x%len(equivalenceTranslator[key]))) for x in 
+                for sublist in equivalenceTranslator[key2] for sublist2 in equivalenceTranslator[key1]]
+            intersectionPoints = [(int(x/len(equivalenceTranslator[key1])),int(x%len(equivalenceTranslator[key1]))) for x in 
                 range(0,len(intersection)) if len(intersection[x]) > 0]
             for (point) in (intersectionPoints):
                 temp = list(equivalenceTranslator[key2][point[0]])
-                temp.extend(list(equivalenceTranslator[key][point[1]]))
+                temp.extend(list(equivalenceTranslator[key1][point[1]]))
                 temp2 = [x for x in temp if temp.count(x) == 1]
                 temp2.sort(key=len)
                 #FIXME: THIS IS TOTALLU JUST A HACK. FIX SO THAT THE INDIRECT 
                 #RELATIONSHIP IS ASSIGNED CORRECTLY
                 if len(temp2) == 2:
-                    newTranslator[key2].append(tuple(temp2))
-        return newTranslator
+                    newTranslator[max(key1,key2,key=len)].append(tuple(temp2))
+        return reactionIndex,newTranslator
     
-    def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,useNamingConventions=True):
+    def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,reactionIndex,useNamingConventions=True):
         '''
         *reactionDefinition* is ....
         *rules*
@@ -202,8 +207,9 @@ class SBMLAnalyzer:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
                     if all(element in rule for element in equivalence):
-                        tupleNameComplianceMatrix[rule][namingConvention] +=1
+                        tupleNameComplianceMatrix[rule][reactionIndex[namingConvention]] +=1
                         break
+                    
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
         tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
@@ -244,6 +250,27 @@ class SBMLAnalyzer:
     def setConfigurationFile(self,configurationFile):
         self.configurationFile = configurationFile
         
+    def getReactionProperties(self):
+        '''
+        if we are using a naming convention definition in the json file
+        this method will return the component and state names that this 
+        reaction uses
+        '''
+        reactionTypeProperties = {}
+        reactionDefinition = self.loadConfigFiles(self.configurationFile)
+        for reactionType,properties in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
+            #if its a reaction defined by its naming convention            
+            if 'n' in properties.keys():
+                try:
+                    site = reactionDefinition['reactionSite'][properties['rsi']]
+                    state = reactionDefinition['reactionState'][properties['rst']]
+                except:
+                    print 'malformed json file in the definitions section, using defaults'
+                    site = reactionType
+                    state = reactionType[0]
+                reactionTypeProperties[reactionType] = [site,state]
+        return reactionTypeProperties
+
     def classifyReactions(self,reactions,molecules):
         '''
         classifies a group of reaction according to the information in the json
@@ -252,9 +279,11 @@ class SBMLAnalyzer:
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
         equivalenceTranslator = {}
         #determines if two molecules have a relationship according to the naming convention section
-        equivalenceTranslator = self.processNamingConventions(molecules,reactionDefinition['namingConvention'])
+        reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
+                    reactionDefinition)
         rawReactions = [self.parseReactions(x) for x in reactions]
-        reactionClassification = self.getReactionClassification(reactionDefinition,rawReactions,equivalenceTranslator)
+        reactionClassification = self.getReactionClassification(reactionDefinition,
+                                            rawReactions,equivalenceTranslator,reactionDict)
         listOfEquivalences = []
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
@@ -266,7 +295,8 @@ class SBMLAnalyzer:
         rawReactions = [self.parseReactions(x) for x in reactions]
         #reactionDefinition = loadConfigFiles()
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
-        equivalenceTranslator = self.processNamingConventions(molecules,reactionDefinition['namingConvention'])
+        reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
+                    reactionDefinition)
         for reactionIndex in range(0,len(rawReactions)):
             for reactantIndex in range(0,len(rawReactions[reactionIndex])):
                 tmp = []
@@ -274,7 +304,8 @@ class SBMLAnalyzer:
                     tmp.extend(list(labelDictionary[rawReactions[reactionIndex][reactantIndex][chemicalIndex]]))
                 rawReactions[reactionIndex][reactantIndex] = tmp
         
-        reactionClassification = self.getReactionClassification(reactionDefinition,rawReactions,equivalenceTranslator)
+        reactionClassification = self.getReactionClassification(reactionDefinition,
+                                            rawReactions,equivalenceTranslator,reactionDict)
         return reactionClassification,[],equivalenceTranslator          
 
     

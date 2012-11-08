@@ -331,8 +331,6 @@ def processDatabase():
                     index2+=1
             print history[index2][0],index
             if (history[index2][0]==index) and history[index2][1] != 0:
-
-            
                 print str( int(history[index2][1]))
                 translator = m2c.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition' + str( int(history[index2][1])) + '.json')            
             else:
