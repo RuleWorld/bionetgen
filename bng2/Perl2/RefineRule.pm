@@ -698,46 +698,10 @@ sub apply_to_reactants
     }
     # TODO: if population obscures a molecule rooted local function, we'll need to
     #  pre-compile the local function. But this can wait until we handle molecule rooted
-    #  observables
-    
-    # filter out tags that no longer map from R to P.
-    # TODO: determine if deleting unmatched labels may lead to problems in rare cases
-#    {
-#        # gather labels in reactants
-#        my $labelsR = {};
-#        foreach my $reactant ( @$reactants )
-#        {   $reactant->gatherLabels( $labelsR );   }
-#        
-#        # also gather labels in products
-#        my $labelsP = {};
-#        foreach my $product ( @$products )
-#        {   $product->gatherLabels( $labelsP );    }      
-#        
-#        # find labels that do not have a partner
-#        my $deleteLabels = {};
-#        foreach my $label ( keys %$labelsR )
-#        {
-#            next unless ( exists $temp_labels->{$label} );
-#            unless ( exists $labelsP->{$label} )
-#            {   $deleteLabels->{$label} = 1;   }
-#        }
-#        foreach my $label ( keys %$labelsP )
-#        {
-#            next unless ( exists $temp_labels->{$label} );
-#            unless ( exists $labelsR->{$label} )
-#            {   $deleteLabels->{$label} = 1;   }
-#        }
-#        
-#        # remove unpartnered labels
-#        foreach my $reactant ( @$reactants )
-#        {   $reactant->removeLabels( $deleteLabels );   }
-#        
-#        foreach my $product ( @$products )
-#        {   $product->removeLabels( $deleteLabels );    }        
-#    }        
-    # finally, we can remove unnecessary temporary labels
+    #  observables are implemented in BNG
+         
+    # remove unnecessary temporary labels
     SpeciesGraph::removeRedundantLabels( $reactants, $products, $temp_labels );
-
 
     # We can create the refinement now, but first remember that we encountered
     #  this reaction already
@@ -820,22 +784,6 @@ sub apply_to_reactants
     $refined_rule->RRefs( $rrefs );
     $refined_rule->PRefs( $prefs );
 
-    # construct an ID for this rule
-    my $stringID = join '+', (map {$_->StringExact} @$reactants);
-    $stringID .= '->';
-    $stringID .= join '+', (map {$_->StringExact} @$products[0..$n_products-1]);
-    if ( @$products > $n_products )
-    {
-        $stringID .= '+' . join( '+', sort (map {$_->StringExact} @$products[$n_products..$#$products]) );
-    }
-    $refined_rule->StringID( $stringID );
-            
-            
-    # Find mapping of reactants onto products (is this necessary? ..eh, why not)
-    # TODO: if this fails, it's an error
-    if ( my $err = $refined_rule->findMap( $hybrid_model->MoleculeTypesList ) )
-    {   return undef;   }
-    	
     	
     # Does refined rule include a delete molecule transform?
     my $delmol_refined = grep {$_ =~ /\./} @{$refined_rule->MolDel};
@@ -854,6 +802,27 @@ sub apply_to_reactants
     
     # add multiplicity
     $refined_rule->RateLaw->Factor( scalar keys %$rxn_labels ); 
+
+
+    # Find mapping of reactants onto products (is this necessary? ..eh, why not)
+    # TODO: if this fails, it's an error
+    if ( my $err = $refined_rule->findMap( $hybrid_model->MoleculeTypesList ) )
+    {   return undef;   }
+
+
+    # construct refinement class ID for this rule
+    my $stringID = join '+', (map {$_->StringExact} @$reactants);
+    $stringID .= '->';
+    $stringID .= join '+', (map {$_->StringExact} @$products[0..$n_products-1]);
+    if ( @$products > $n_products )
+    {
+        $stringID .= '+' . join( '+', sort (map {$_->StringExact} @$products[$n_products..$#$products]) );
+    }
+    $refined_rule->StringID( $stringID );
+            
+            
+
+
 	
 	# all done!
     return $refined_rule;

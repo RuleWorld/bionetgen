@@ -120,7 +120,7 @@ sub get_induced_permutation
 # given maps:
 #
 #     autoR: R  -> R (automorphism of R)
-#      map:  R* -> P (restricted mapping of R into P)
+#      map:  R* -> P (partial mapping of R into P)
 #
 # where R* is the subset of R for which map is defined
 #  (members of R which are deleted in a rxn will not be in R*),
@@ -275,6 +275,7 @@ sub transferLabels
         }
     }
 }
+
 
 
 ###

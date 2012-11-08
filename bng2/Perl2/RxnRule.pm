@@ -182,6 +182,9 @@ sub newRxnRule
 	# Remove leading whitespace
 	$string =~ s/^\s*//;
 
+    # save original text of rule for displaying warnings
+    (my $rule_text = $string) =~ s/\s+/ /g;
+
     # Check for a ReactionRule label or index at the beginning of the string
 	if ( $string =~ s/^([\w\s]+):\s*// )
 	{
@@ -265,7 +268,7 @@ sub newRxnRule
 		$sep = '^\s*[+]\s*|^\s*([<]?-[>])\s*';    #  "+"  or "->"  or "<->"
 		my $g;
 		my $ipatt = -1;
-		
+
 		# Parse Reactant Patterns
 		while ($string)
 		{
@@ -281,24 +284,26 @@ sub newRxnRule
 			++$ipatt;
 
             # Check Labels for this Reactant:
-			if ( defined $g->Label  and  $g->Label ne '' )
+            my $label = $g->Label;
+			if ( defined $label  and  $label ne '' )
 			{
-				$rrefs{ $g->Label } = $ipatt;
+                if ( exists $labels{ $label } )
+                {   return [], "Repeated label '$label' in reactants of reaction rule";  }
+                $labels{ $label } = "RP";
+				$rrefs{ $label } = $ipatt;
 			}
 
 			# Checking Molecules...
 			my $imol = -1;
-			foreach my $mol ( @{ $g->Molecules } )
+			foreach my $mol ( @{$g->Molecules} )
 			{
 				++$imol;
 				my $label = $mol->Label;
-				if ( defined $label  and  $label ne '' )
+				if ( defined $label )
 				{
-					if ( $labels{$label} ) {
-						return ( [], "Repeated label $label in reactants of reactant rule" );
-					}
-					$labels{$label} = "M";
-					$rrefs{$label} = join( '.', ( $ipatt, $imol ) );
+					if ( exists $labels{ $label } ) {  return [], "Repeated label '$label' in reactants of reactant rule";  }
+					$labels{ $label } = "RM";
+					$rrefs{ $label }  = join '.', ($ipatt, $imol);
 				}
 				my $icomp = -1;
 				
@@ -307,13 +312,11 @@ sub newRxnRule
 				{
 					++$icomp;
 					$label = $comp->Label;
-					if ( defined $label  and  $label ne '' )
+					if ( defined $label )
 					{				
-						if ( $labels{$label} ) {
-							return ( [], "Repeated label $label in reactants of reaction rule" );
-						}
-						$labels{$label} = "C";
-						$rrefs{$label} = join( '.', ( $ipatt, $imol, $icomp ) );
+						if ( exists $labels{ $label } ) {  return [], "Repeated label '$label' in reactants of reaction rule";  }
+						$labels{ $label } = "RC";
+						$rrefs{ $label }  = join '.', ($ipatt, $imol, $icomp);
 					}
 				}
 			}
@@ -354,9 +357,29 @@ sub newRxnRule
 			++$ipatt;
 
             # Checking Labels for this Species..
-			if ( defined $g->Label  and  $g->Label ne '' )
+            my $label = $g->Label;
+			if ( defined  $label  and   $label ne '' )
 			{
-				$prefs{ $g->Label } = $ipatt;
+                if ( exists $labels{ $label } )
+                {
+                    if ( $labels{ $label } eq 'RP' )
+                    {   # found matching label in reactants
+                        $labels{ $label } = "found";
+                    }
+                    elsif  ( $labels{ $label } =~ /^(RM|RC)$/ )
+                    {   # found matching label in reactants, but wrong object type
+                        return [], "Label '$label' refers to incompatible objects in the reactants and products of rule";
+                    }
+                    elsif (  $labels{ $g->Label } =~ /^(found|PP|PM|PC)$/ )
+                    {   # label was already matched, this must be a duplicate!
+                        return [], "Repeated label '$label' in products of reaction rule";
+                    }
+                }
+                else
+                {   # this label was not found among the reactants
+                    $labels{ $label } = 'PP'
+                }
+				$prefs{ $label } = $ipatt;
 			}
 
 			# Checking Molecules... (verify correspondence and uniqueness!)
@@ -367,17 +390,26 @@ sub newRxnRule
 				my $label = $mol->Label;
 				if ( defined $label  and  $label ne '' )
 				{
-					if ( $labels{$label} eq 'M' )
-					{
-						$labels{$label} = 'found';
-					}
-					elsif ( $labels{$label} eq 'found' ) {
-						return ( [], "Repeated label $label in products of reaction rule $name"	);
-					}
-					else {
-						return ( [], "Mis- or un-matched label $label in products of reaction rule $name" );
-					}
-					$prefs{$label} = join( '.', ( $ipatt, $imol ) );
+                    if ( exists $labels{ $label } )
+                    {
+                        if ( $labels{ $label  } eq 'RM' )
+                        {   # found matching label in reactants
+                            $labels{ $label } = "found";
+                        }
+                        elsif  ( $labels{ $g->Label } =~ /^(RP|RC)$/ )
+                        {   # found matching label in reactants, but wrong object type
+                            return [], "Label '$label' refers to incompatible objects in the reactants and products of rule";
+                        }
+                        elsif (  $labels{ $g->Label } =~ /^(found|PP|PM|PC)$/ )
+                        {   # label was already matched, this must be a duplicate!
+                            return [], "Repeated label '$label' in products of reaction rule";
+                        }
+                    }
+                    else
+                    {   # this label was not found among the reactants
+                        $labels{ $label } = 'PM'
+                    }
+					$prefs{$label} = join '.', ($ipatt, $imol);
 				}
 				
 				# Checking Components...
@@ -390,17 +422,26 @@ sub newRxnRule
 					#print "label=$label\n";
 					if ( defined $label  and  $label ne '' )
 					{
-						if ( $labels{$label} eq 'C' )
-						{
-							$labels{$label} = "found";
-						}
-						elsif ( $labels{$label} eq "found" ) {
-							return ( [], "Repeated label $label in products of reaction rule $name" );
-						}
-						else {
-							return ( [], "Mis- or un-matched label $label in products of reaction rule $name" );
-						}
-						$prefs{$label} = join( '.', ( $ipatt, $imol, $icomp ) );
+                        if ( exists $labels{ $label } )
+                        {
+                            if ( $labels{ $label  } eq 'RC' )
+                            {   # found matching label in reactants
+                                $labels{ $label } = "found";
+                            }
+                            elsif  ( $labels{ $g->Label } =~ /^(RP|RM)$/ )
+                            {   # found matching label in reactants, but wrong object type
+                                return [], "Label '$label' refers to incompatible objects in the reactants and products of rule";
+                            }
+                            elsif (  $labels{ $g->Label } =~ /^(found|PP|PM|PC)$/ )
+                            {   # label was already matched, this must be a duplicate!
+                                return [], "Repeated label '$label' in products of reaction rule";
+                            }
+                        }
+                        else
+                        {   # this label was not found among the reactants
+                            $labels{ $g->Label } = 'PC'
+                        }
+						$prefs{$label} = join '.', ($ipatt, $imol, $icomp);
 					}
 				}
 			}
@@ -415,8 +456,22 @@ sub newRxnRule
 		}
 		
 		
-		# TODO
 		# Check for labels found in Reactants but not Products and vice versa...
+        while ( my ($label, $resolution) = each %labels )
+        {
+            if ($resolution =~ /^(RM|RC)$/ )
+            {
+                send_warning( "Label '$label' appears in the reactants but not the products of rule: $rule_text. "
+                             ."The molecule corresponding to labeled object will be deleted when the rule fires. "
+                             ."Please double-check rule if this is not your intention." );
+            }
+            elsif ( $resolution =~ /^(PM|PC)$/ )
+            {
+                send_warning( "Label '$label' appears in the products but not the reactants of rule: $rule_text. "
+                             ."The molecule corresponding to labeled object will be synthesized when the rule fires. "
+                             ."Please double-check rule if this is not your intention." );
+            }
+        }
 
 
 		# Read rateLaw
@@ -2914,6 +2969,15 @@ sub findMap
 	# {
 	#    print $key, " -> ", $rr->MapR->{$key}, "\n";
 	# }
+
+    # send warning if no transformations were detected
+    unless ( @{$rr->MolDel} or @{$rr->MolAdd} or @{$rr->EdgeDel} or @{$rr->EdgeAdd}
+                             or @{$rr->CompStateChange} or @{$rr->ChangeCompartment} )
+    {
+        send_warning(sprintf("No transformations detected in reaction rule (%s). Please verify that this was your intent.",
+                               $rr->toString));        
+    }
+
 
 	return '';
 }

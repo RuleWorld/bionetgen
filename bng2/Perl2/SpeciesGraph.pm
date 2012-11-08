@@ -1181,156 +1181,272 @@ sub removeLabels
 ###
 
 
-
-# try to map molecules and components in sgs1 into sgs2 without looking at labels.
-#  When this can be done without confusion, delete temporary labels
+# remove labels
 sub removeRedundantLabels
 {
-    my $sgs1 = shift;
-    my $sgs2 = shift;
-    my $temp_labels = shift;
+    my ($sgs1, $sgs2, $temp_labels) = @_;
     
+    # build auto-labels for reactant molecules
     my $autolabels1 = {};
-    for ( my $i_sg = 0;  $i_sg < @$sgs1;  ++$i_sg )
+    for ( my $ip = 0;  $ip < @$sgs1;  ++$ip )
     {
-        my $sg = $sgs1->[$i_sg];
-	    
-	    # label molecules
-	    for ( my $im = 0 ; $im < @{$sg->Molecules} ; ++$im )
+        my $patt = $sgs1->[$ip];
+	    for ( my $im = 0 ; $im < @{$patt->Molecules} ; ++$im )
 	    {
-		    my $mol   = $sg->Molecules->[$im];                  # molecule to be labeled
-		    my @comps = (map {$_->Name} @{$mol->Components});   # list of component names
-		    my $mlabel = $mol->Name;                            # molecule label
-            # now add component names
+		    my $mol   = $patt->Molecules->[$im];
+            my @comps = ();
+            foreach my $comp ( @{$mol->Components} )
+            {
+                if ( defined $comp->Label and (not exists $temp_labels->{$comp->Label}) )
+                {   push @comps, "%" . $comp->Label;   }
+                else
+                {   push @comps, $comp->Name;   }
+            }
+            my $mlabel = ((defined $mol->Label) and (not exists $temp_labels->{$mol->Label})) ?
+                          ("%" . $mol->Label)  :  $mol->Name;
+            # add component names so we can distinguish molecules of the same type w/ different listed components.
 			$mlabel .= '_' . join( '_', sort @comps )  if (@comps);
-
-    		# write map:  molecule label -> (ptr)
             $autolabels1->{$mlabel} = []  unless (exists $autolabels1->{$mlabel});
-		    push @{$autolabels1->{$mlabel}}, "$i_sg.$im";
-
-		    # Component labels have syntax mlabel|cname
-		    for ( my $ic = 0 ; $ic < @comps ; $ic++ )
-		    {
-				#my $clabel = $mlabel . '_' . scalar @{$autolabels1->{$mlabel}} . '|' . $comps[$ic];
-                my $clabel = $mlabel . '|' . $comps[$ic];
-                $autolabels1->{$clabel} = []  unless (exists $autolabels1->{$clabel});
-		        push @{$autolabels1->{$clabel}}, "$i_sg.$im.$ic";
-		    }
+		    push @{$autolabels1->{$mlabel}}, "$ip.$im";
 		}
     }
 
+    # build auto-labels for product molecules
     my $autolabels2 = {};
-    for ( my $i_sg = 0;  $i_sg < @$sgs2;  ++$i_sg )
+    for ( my $ip = 0;  $ip < @$sgs2;  ++$ip )
     {
-        my $sg = $sgs2->[$i_sg];
-	    
-	    # label molecules
-	    for ( my $im = 0 ; $im < @{$sg->Molecules} ; ++$im )
+        my $patt = $sgs2->[$ip];
+	    for ( my $im = 0 ; $im < @{$patt->Molecules} ; ++$im )
 	    {
-		    my $mol   = $sg->Molecules->[$im];                  # molecule to be labeled
-		    my @comps = (map {$_->Name} @{$mol->Components});   # list of component names
-		    my $mlabel = $mol->Name;                            # molecule label
-            # now add component names
+		    my $mol   = $patt->Molecules->[$im];
+            my @comps = ();
+            foreach my $comp ( @{$mol->Components} )
+            {
+                if ( defined $comp->Label and (not exists $temp_labels->{$comp->Label}) )
+                {   push @comps, "%" . $comp->Label;   }
+                else
+                {   push @comps, $comp->Name;   }
+            }
+            my $mlabel = ((defined $mol->Label) and (not exists $temp_labels->{$mol->Label})) ?
+                          ("%" . $mol->Label)  :  $mol->Name;
+            # add component names so we can distinguish molecules of the same type w/ different listed components.
 			$mlabel .= '_' . join( '_', sort @comps )  if (@comps);
-
-    		# write map:  molecule label -> (ptr)
+    		# add to list of molecules with this label
             $autolabels2->{$mlabel} = []  unless (exists $autolabels2->{$mlabel});
-		    push @{$autolabels2->{$mlabel}}, "$i_sg.$im";
-
-		    # Component labels have syntax mlabel|cname
-		    for ( my $ic = 0 ; $ic < @comps ; $ic++ )
-		    {
-				#my $clabel = $mlabel . '_' . scalar @{$autolabels2->{$mlabel}} . '|' . $comps[$ic];
-				my $clabel = $mlabel . '|' . $comps[$ic];
-                $autolabels2->{$clabel} = []  unless (exists $autolabels2->{$clabel});
-		        push @{$autolabels2->{$clabel}}, "$i_sg.$im.$ic";
-		    }
+		    push @{$autolabels2->{$mlabel}}, "$ip.$im";
 		}
     }
-    
-    #print STDERR "reactants: ", join(",", map { "$_=>".scalar @{$autolabels1->{$_}} } keys %$autolabels1 ), "\n";
-    #print STDERR "products:  ", join(",", map { "$_=>".scalar @{$autolabels2->{$_}} } keys %$autolabels2 ), "\n";
 
-    # remove temporary labels, if mapping is unambiguous
+    # remove temporary molecule labels that are not required for the correspondence mapping
     foreach my $key ( keys %$autolabels1 )
     {   
-        if ( exists $autolabels2->{$key} )
-        {   # corresponding objects found in both products and reactants,
-            # so check if there's a possibility for multiple correspondence maps
-            my $set1 = $autolabels1->{$key};
-            my $set2 = $autolabels2->{$key};
+        my @set1 = @{$autolabels1->{$key}};
+        my @set2 = exists $autolabels2->{$key} ? @{$autolabels2->{$key}} : ();
 
-            # check how many objects in reactants and products have this autolabel
-            next unless ( @$set1 == 1  and  @$set2 == 1 );
-            
-            # There's a 1-1 correspondence between objects with this autolabel.
-            # Let's get the objects and remove temporary tags
+        while ( @set1 )
+        {   # get molecule 1
+            my ($ip1,$im1) = split /\./, shift @set1;
+            my $mol1 = $sgs1->[$ip1]->Molecules->[$im1];
 
-            # get pointer to object in set1 
-            my ($p1,$m1,$c1) = split /\./, $set1->[0];
-            my $obj1 = (defined $c1) ? $sgs1->[$p1]->Molecules->[$m1]->Components->[$c1] : $sgs1->[$p1]->Molecules->[$m1];   
+            my $found_match = 0;  # true if we found a map for obj1
+            my $ambiguous = 0;    # true if the mapping may be ambiguous
+            # look for the first object in set2 that matches
+            my $idx2 = 0;
+            while ( $idx2 < @set2 )
+            {   # get molecule 2
+                my ($ip2,$im2) = split /\./, $set2[$idx2];
+                my $mol2 = $sgs2->[$ip2]->Molecules->[$im2];
 
-            # get pointer to object in set2
-            my ($p2,$m2,$c2) = split /\./, $set2->[0];
-            my $obj2 = (defined $c2) ? $sgs2->[$p2]->Molecules->[$m2]->Components->[$c2] : $sgs2->[$p2]->Molecules->[$m2];
+                if ( defined $mol1->Label  and  defined $mol2->Label )
+                {
+                    if ( $mol1->Label eq $mol2->Label )
+                    {
+                        if ( not $ambiguous  and  exists $temp_labels->{$mol1->Label}  )
+                        {   # labels are the same and temporary, so we can remove them!
+                            $mol1->Label(undef);  $mol2->Label(undef);
+                        }
+                        remove_redundant_component_labels( $mol1, $mol2, $temp_labels );
+                        splice @set2, $idx2, 1;
+                        $found_match = 1;
+                    }
+                    else
+                    {   # labels are different. keep looking for a match
+                        if ( exists $temp_labels->{$mol1->Label}  and  exists $temp_labels->{$mol2->Label} )
+                        {   # things could get ambiguous since neither label is non-temporary!
+                            $ambiguous = 1;
+                        }
+                        ++$idx2;
+                    }
+                }
+                elsif ( not defined $mol1->Label  and  not defined $mol2->Label )
+                {   # neither object is labeled. this is a good match
+                    remove_redundant_component_labels( $mol1, $mol2, $temp_labels );
+                    splice @set2, $idx2, 1;
+                    $found_match = 1;
+                }
+                elsif ( defined $mol1->Label )
+                {   # one label defined, the other not. keep looking for a match
+                     $ambiguous = 1  if ( exists $temp_labels->{$mol1->Label} );
+                    ++$idx2;
+                }
+                elsif ( defined $mol2->Label )
+                {   # one label defined, the other not. keep looking for a match
+                    $ambiguous = 1  if ( exists $temp_labels->{$mol2->Label} );
+                    ++$idx2;
+                }
 
-            # are Labels (i.e. "tags") the same?  If not, then these are non-corresponding objects!
-            next unless ( $obj1->Label eq $obj2->Label );
+                last if ($found_match);
+            }
 
-            # labels must be temporary (only need to check obj1 since the labels are equal
-            next unless ( exists $temp_labels->{$obj1->Label} );
-            
-            # remove label from obj1 and obj2
-            $obj1->Label(undef);
-            $obj2->Label(undef);
-        }
-        else
-        {   # No corresponding objects found in products.
-            # We can go ahead and remove temporary labels.
-            my $set1 = $autolabels1->{$key};
-            foreach my $ptr1 (@$set1)
-            {   # get pointer to object in set1
-                my ($p1,$m1,$c1) = split /\./, $ptr1;
-                my $obj1 = (defined $c1) ? $sgs1->[$p1]->Molecules->[$m1]->Components->[$c1] : $sgs1->[$p1]->Molecules->[$m1];
-                next unless ( defined $obj1->Label );
-                next unless ( exists $temp_labels->{$obj1->Label} );
-                # there's no possible ambiguity here; remove label from obj1
-                $obj1->Label(undef);
+            unless ($found_match)
+            {   # can't find any good matches for mol1
+                $mol1->Label(undef) if ( not $ambiguous and defined $mol1->Label and exists $temp_labels->{$mol1->Label} );
+                foreach my $comp ( @{$mol1->Components} )
+                {   # remove temporary component labels
+                    $comp->Label(undef) if ( defined $comp->Label and exists $temp_labels->{$comp->Label} );
+                }
             }
         }
     }
 
-    # remove temporary labels from products, if mapping is unambiguous
+    # handle product molecules with autolabels not found in reactants
     foreach my $key ( keys %$autolabels2 )
-    {
-        # label must appear in both sets
-        if ( exists $autolabels1->{$key} )
-        {   # Corresponding objects found in both products and reactants.
-            # Already handled this case.
-            next;
-        }
-        else
-        {   # No corresponding objects found in reactants.
-            # We can go ahead and remove temporary labels.
-            my $set2 = $autolabels2->{$key};
-            foreach my $ptr2 (@$set2)
-            {   # get pointer to object in set2
-                my ($p2,$m2,$c2) = split /\./, $ptr2;
-                my $obj2 = (defined $c2) ? $sgs2->[$p2]->Molecules->[$m2]->Components->[$c2] : $sgs2->[$p2]->Molecules->[$m2];
-                # only remove temporary labels
-                next unless ( defined $obj2->Label );
-                next unless ( exists $temp_labels->{$obj2->Label} );
-                # there's no possible ambiguity here; remove label from obj1
-                $obj2->Label(undef);
+    {   
+        unless ( exists $autolabels1->{$key} )
+        {   
+            my @set = @{$autolabels2->{$key}};
+            foreach my $ptr (@set)
+            {
+                my ($ip,$im) = split /\./, $ptr;
+                my $mol = $sgs2->[$ip]->Molecules->[$im];
+                $mol->Label(undef)  if ( defined $mol->Label  and  exists $temp_labels->{$mol->Label} );
+                foreach my $comp ( @{$mol->Components} )
+                {   # remove temporary component labels
+                    $comp->Label(undef)  if ( defined $comp->Label  and  exists $temp_labels->{$comp->Label} );
+                }
             }
         }
     }
+
+    return;
+
+    #----------------------------------------------------#
+    # subroutine that removes redundant component labels #
+    #----------------------------------------------------#
+    sub remove_redundant_component_labels
+    {
+        my ($mol1, $mol2, $temp_labels) = @_;
+
+        # build auto-labels for mol1 components
+        my $autolabels1 = {};
+	    for ( my $ic = 0 ; $ic < @{$mol1->Components} ; ++$ic )
+        {
+            my $comp = $mol1->Components->[$ic];
+            my $clabel = ((defined $comp->Label)  and  (not exists $temp_labels->{$comp->Label})) ?
+                          ("%" . $comp->Label)  :  $comp->Name;
+            $autolabels1->{$clabel} = []  unless (exists $autolabels1->{$clabel});
+            push @{$autolabels1->{$clabel}}, "$ic";
+        }
+        # build auto-labels for mol2 components
+        my $autolabels2 = {};
+	    for ( my $ic = 0 ; $ic < @{$mol2->Components} ; ++$ic )
+        {
+            my $comp = $mol2->Components->[$ic];
+            my $clabel = ((defined $comp->Label) and (not exists $temp_labels->{$comp->Label})) ?
+                          ("%" . $comp->Label)  :  $comp->Name;
+    		# add to list of molecules with this label
+            $autolabels2->{$clabel} = []  unless (exists $autolabels2->{$clabel});
+            push @{$autolabels2->{$clabel}}, "$ic";
+        }
+        # remove temporary molecule labels that are not required for the correspondence mapping
+        foreach my $key ( keys %$autolabels1 )
+        {   
+            my @set1 = @{$autolabels1->{$key}};
+            my @set2 = exists $autolabels2->{$key} ? @{$autolabels2->{$key}} : ();
+
+            while ( @set1 )
+            {   # get component 1
+                my $comp1 = $mol1->Components->[ shift @set1 ];
+
+                my $found_match = 0;  # true if we found a map for obj1
+                my $ambiguous = 0;    # true if the mapping may be ambiguous
+                # look for the first object in set2 that matches
+                my $idx2 = 0;
+                while ( $idx2 < @set2 )
+                {   # get component 2
+                    my $ic2 = $set2[$idx2];
+                    my $comp2 = $mol2->Components->[$ic2];
+
+                    if ( defined $comp1->Label  and  defined $comp2->Label )
+                    {
+                        if ( $comp1->Label eq $comp2->Label )
+                        {
+                            if ( not $ambiguous  and  exists $temp_labels->{$comp1->Label}  )
+                            {   # labels are the same and temporary, so we can remove them!
+                                $comp1->Label(undef);  $comp2->Label(undef);
+                            }
+                            splice @set2, $idx2, 1;
+                            $found_match = 1;
+                        }
+                        else
+                        {   # labels are different. keep looking for a match
+                            if ( exists $temp_labels->{$comp1->Label}  and  exists $temp_labels->{$comp2->Label} )
+                            {   # things could get ambiguous since neither label is non-temporary!
+                                $ambiguous = 1;
+                            }
+                            ++$idx2;
+                        }
+                    }
+                    elsif ( not defined $comp1->Label  and  not defined $comp2->Label )
+                    {   # neither object is labeled. this is a good match
+                        splice @set2, $idx2, 1;
+                        $found_match = 1;
+                    }
+                    elsif ( defined $comp1->Label )
+                    {   # one label defined, the other not. keep looking for a match
+                        $ambiguous = 1  if ( exists $temp_labels->{$comp1->Label} );
+                        ++$idx2;
+                    }
+                    elsif ( defined $comp2->Label )
+                    {   # one label defined, the other not. keep looking for a match
+                        $ambiguous = 1  if ( exists $temp_labels->{$comp2->Label} );
+                        ++$idx2;
+                    }
+                    # did we find a match?
+                    last if ($found_match);
+                }
+
+                unless ($found_match)
+                {   # can't find any good matches for comp1
+                    $comp1->Label(undef) if ( not $ambiguous and defined $comp1->Label and exists $temp_labels->{$comp1->Label} );
+                }
+            }
+        }
+        # handle product components with autolabels not found in reactants
+        foreach my $key ( keys %$autolabels2 )
+        {   
+            unless ( exists $autolabels1->{$key} )
+            {   
+                my @set = @{$autolabels2->{$key}};
+                foreach my $ic (@set)
+                {
+                    my $comp = $mol2->Components->[$ic];
+                    $comp->Label(undef)  if ( defined $comp->Label and exists $temp_labels->{$comp->Label} );
+                }
+            }
+        }
+        return;
+    }
+    # end sub-sub
 }
 
 
 ###
 ###
 ###
+
+
+
 
 
 sub copySubgraph
@@ -2729,7 +2845,7 @@ sub findMaps
 # (Map) = SpeciesGraph1->findMaps(SpeciesGraph2)
 #
 # NOTE:  This method was originally called "findMaps2".  Since findMaps was
-#  deprecated, it was removed from the code based and findMaps2 was promoted to
+#  deprecated, it was removed from the code base and findMaps2 was promoted to
 #  findMaps!
 #
 # A simplified replacement for findMaps. Finds mapping by first labeling the
@@ -2741,13 +2857,13 @@ sub findMaps
 # REVISED by justinshogg@gmail.com 19feb2009
 # TODO: findMaps respects molecule and component tags, but does not attempt to reconile Pattern tags.
 {
-
 	# get species graphs
-	my ( $sg1, $sg2 ) = @_;
+	my $sg1 = shift @_;
+    my $sg2 = shift @_;
 
 	# for each speciesGraph, build a map from object labels to object indices
-	my $labelmap1 = $sg1->buildLabelMap;
-	my $labelmap2 = $sg2->buildLabelMap;
+	my $labelmap1 = $sg1->buildLabelMap();
+	my $labelmap2 = $sg2->buildLabelMap();
 
 	# create and setup a new Map object
 	my $map = Map->new;
@@ -2768,9 +2884,8 @@ sub findMaps
 	{
 		my ( $lmap1, $lmap2 ) = @_;
 		my $pmap = {};
-		foreach my $label ( keys %$lmap1 )
-		{
-			# map label index1 to label index2, or -1 if index2 is not defined
+        foreach my $label ( keys %$lmap1 )
+		{   # map label index1 to label index2, or -1 if index2 is not defined
 			$pmap->{ $lmap1->{$label} } =
 			  ( exists $lmap2->{$label} ) ? $lmap2->{$label} : -1;
 		}
@@ -2803,7 +2918,7 @@ sub buildLabelMap
   # this outsources the labeling loop from findMaps
   # returns a map from labels to indices
 {
-	my $sg       = shift;    # species graph
+	my $sg       = shift @_;                    # species graph
 	my $labelmap = {};       # initialize map from labels to indices
 	my %labels   = ();       # a map of labels  (up to replicate index)
 	                         #  to the number of objects with that label.
@@ -2818,14 +2933,18 @@ sub buildLabelMap
 		# Get component labels (substitute name, if no label)
 		foreach my $comp ( @{ $mol->Components } )
 		{
-			if   ( my $clabel = $comp->Label ) { push @clabels, '%' . $clabel; }
-			else                               { push @clabels, $comp->Name; }
+            if ( defined $comp->Label )
+			{   push @clabels, '%' . $comp->Label;   }
+			else
+            {   push @clabels, $comp->Name;   }
 		}
 
 		# User provided label supercedes other labeling
-		# It must be unique for each molecule and
-		# each componentl
-		if ( $mlabel = $mol->Label ) { $mlabel = '%' . $mlabel; }
+		# It must be unique for each molecule and each component
+        if ( defined $mol->Label )
+	    {
+            $mlabel = '%' . $mol->Label;
+        }
 		else
 		{   # Automatic mol label starts with molname
 			$mlabel = $mol->Name;
@@ -2842,6 +2961,17 @@ sub buildLabelMap
 		# occurence of identical components
 		for ( my $ic = 0 ; $ic < @clabels ; $ic++ )
 		{
+            # NEW CODE. TODO: Figure this out!
+            # the old code leaves out user tags, which seems sketchy.
+            # but adding the tags breaks the state inheritance mechanism.
+    		#my $clabel = $clabels[$ic];
+    		## prefix component label with molecule label to ensure that
+            ##  molecule and component maps are compatible
+            #$clabel = $mlabel . '|' . $clabel . '_';
+            #$clabel .= ++$labels{$clabel};
+            #$labelmap->{$clabel} = "$im.$ic";
+
+            # OLD CODE:
 			my $clabel = $clabels[$ic];
 			unless ( $clabel =~ /^\%/ )
 			{
