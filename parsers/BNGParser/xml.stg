@@ -146,9 +146,9 @@ observables_block(id,name,type,patterns)::=<<
   \</Observable\>
 >>
 
-patterns_block(id,molecules)::=<<
-   <molecules:{pattern |
-   \<Pattern id="<id>_P<i>"\>  
+patterns_block(id,molecules,relationship,quantity)::=<<
+   <molecules,relationship,quantity:{pattern ,rel,quan|
+   \<Pattern id="<id>_P<i>" <if(rel)> relation="<rel>" quantity="<quan>"<endif>\>  
     <pattern> 
   \</Pattern\>}; separator="\n">
 >>
