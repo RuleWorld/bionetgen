@@ -20,6 +20,7 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   import bngparser.dataType.ChangeableChannelTokenStream;
   import bngparser.dataType.ReactionRegister;
   import bngparser.methods.GenericMethods;
+  import java.util.Arrays;
 }
 @members{
   public Stack<String> paraphrases = new Stack<String>();
@@ -136,7 +137,6 @@ scope{
                             referencesName={$expression.reference.keySet()},referencesType={Register.getTypes($expression.reference)},
                             expression={$expression.text})
   
-    
 ;
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL

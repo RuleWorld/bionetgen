@@ -116,7 +116,7 @@ scope{
 }
 : BEGIN (SEED)? SPECIES LB+
 (seed_species_def[$seed_species_block::numSpecies]{
-                                      //System.out.println($seed_species_def.compartment);
+                                      //System.out.println("aaaaa " + $seed_species_def.compartment);
                                       if(!$seed_species_def.concentration.equals("0")){
 	                                      if(!compartmentToSurface || compartmentList.isVolume($seed_species_def.compartment))
 	                                        $seedSpecies.add($seed_species_def.st);
@@ -147,12 +147,13 @@ scope{
 :
  pre=pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
  //There needs to need a space between species and the expression token, so we go back and make sure there was one
-((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
+//((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
 $compartment = $pre.compartment;
 $seed_species_def::isVolume = !compartmentToSurface || compartmentList.isVolume(pre.compartment);
-// System.out.println(input);
+ //System.out.println("aaaa " +input);
+ //((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
 } 
-      WS 
+       
      expression[memory] 
      {
       $concentration = $expression.text;
@@ -348,7 +349,7 @@ compartments_block:
 compartment:
    s1=STRING INT s3=expression[memory] 
    {
-      compartmentList.addCompartment($s1.text,$INT.text,$s3.text);
+      compartmentList.addCompartment($s1.text,$INT.text,($s3.value).toString());
    }
    (s2=STRING
    {
@@ -391,20 +392,21 @@ scope{
  {
   if($r1.size>1){
 	  if(!compartmentToSurface){
-	    $reaction::volume =memory.get(compartmentList.getECMVolume()).getValue() *avogadro_constant;
+	    $reaction::volume =new Double(compartmentList.getECMVolume()) *avogadro_constant;
 	    //$reaction::volume = ecm_volume_value *avogadro_constant;
 	  } 
 	  else if($r1.volume.equals(ecm_volume) || $r2.volume.equals(ecm_volume)){
-	  $reaction::volume = memory.get(compartmentList.getECMVolume()).getValue() *avogadro_constant;
-	    //$reaction::volume = ecm_volume_value *avogadro_constant;
+	  //System.out.println(compartmentList.getECMVolume());
+	  $reaction::volume = new Double(compartmentList.getECMVolume()) *avogadro_constant/1e4;
+	  //  $reaction::volume = ecm_volume_value *avogadro_constant;
 	  }
 	  else if($r1.volume.equals(cyto_volume) || $r2.volume.equals(cyto_volume)){
-	    $reaction::volume =memory.get(compartmentList.getCytoplasmicVolume()).getValue() *avogadro_constant;
+	    $reaction::volume =new Double(compartmentList.getCytoplasmicVolume()) *avogadro_constant/1e4;
 	    //$reaction::volume = cyto_volume_value *avogadro_constant;
 	  }
 	  else{
-	  $reaction::volume = 1*0.01/memory.get(compartmentList.getMembraneVolume()).getValue()*1e15;
-	    //$reaction::volume = cyto_volume_value /1.0e-4;
+	  //$reaction::volume = 1*0.01/new Double(compartmentList.getMembraneVolume())*1e15;
+	    $reaction::volume = 4*3.141592*5*5;
 	  }
   }
   else{
