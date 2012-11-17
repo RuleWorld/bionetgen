@@ -90,6 +90,7 @@ program_block
 | observables_block[$prog::observables]
 | reaction_rules_block[$prog::reactionRules]
 | functions_block
+| population_maps_block
 | compartments_block
 //| set_option
 ;

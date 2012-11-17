@@ -142,8 +142,8 @@ s1 = (EQUALS | GT | GTE | LT| LTE)
 {
 $relationship = $s1.text;
 }
- s2 = (STRING | INT)
+ s2 = (expression2)
  {
- $quantity = $s2.text;
+ $quantity = $expression2.text;
  }
 ;

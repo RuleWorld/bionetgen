@@ -17,6 +17,17 @@ options {
 
 }
 
+
+population_maps_block:
+BEGIN POPULATION MAPS LB+
+  (reaction_rule_def[1] LB+)* 
+END POPULATION MAPS LB+
+;
+
+
+
+
+
 reaction_rules_block[List reactionRules]
 scope{
   int reactionCounter;
