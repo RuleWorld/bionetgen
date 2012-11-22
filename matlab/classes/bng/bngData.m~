@@ -112,13 +112,7 @@ classdef bngData
       
     end
     
-    methods (Static)
-        function obj = computeMean(obj2)
-            obj = bngData();
-            obj = obj.addDataObject(obj2);
-        end
-        
-    end
+    methods (
     
 end
 

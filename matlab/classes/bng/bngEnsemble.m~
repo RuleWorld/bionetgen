@@ -112,11 +112,15 @@ classdef bngEnsemble
             outs = 0;
         end
         
-        function outs = plotQuantiles(obj,label,N)
+        function outs = plotQuantiles(obj,label,N,keyword)
             assert(ischar(label));
             vals = obj.getFeatures({label});
             outs = [min(vals) quantile(vals,(1/N):(1/N):(N-1)/N) max(vals)];
-            plot(0:1:N,outs);         
+            if nargin < 4
+                plot(0:1:N,outs);
+            else
+                switch keyword
+                    case {''}
         end
             
     end
