@@ -113,9 +113,23 @@ classdef bngData
     end
     
     methods (Static)
-        function obj = computeMean(obj2)
+        function obj = computeMean(bngDataCellArray,conditionvec)
+            assert(iscell(bngDataCellArray), 'Provide a cell array of bngData objects');
+            assert(length(conditionvec)==length(bngDataCellArray));
+            
+            inds = find(conditionvec);
+            N_dataobj = length(bngDataCellArray);
+            N_points = bngDataCellArray{1}.N;
+            val_new = zeros(length(inds),N_points);
+            for j=1:1:length(inds)
+                i = inds(j);
+                val_new(j,:) = bngDataCellArray{i}.val;
+            end
+            vals1 = mean(val_new,1);
+            stds1 = std(val_new,0,1);
+            annotate1 = bngDataCellArray{1}.annotate;
             obj = bngData();
-            obj = obj.addDataObject(obj2);
+            obj = obj.addData(vals1,stds1,annotate1,[]);
         end
         
     end
