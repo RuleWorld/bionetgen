@@ -5,10 +5,16 @@ Created on Wed May 30 11:44:17 2012
 @author: proto
 """
 from copy import deepcopy
+from lxml import etree
+import pygraphviz as pgv
+
 class Species:
     def __init__(self):
         self.molecules = []
         self.bondNumbers = []
+        self.bonds = []
+        
+    
     
     def getBondNumbers(self):
         bondNumbers = [0]
@@ -169,12 +175,39 @@ class Species:
     def toString(self):
         return self.__str__()
         
+    def createGraph(self):
+        speciesGraph = nx.Graph()
+        for molecule in self.molecules():
+            speciesGraph.add_node(molecule.createGraph())
+        return speciesGraph
+        
+    def graphVizGraph(self,graph,identifier):
+        speciesDictionary = {}
+
+        s1 = graph.subgraph(name = "cluster%s" % identifier)
+        for idx,molecule in enumerate(self.molecules):
+            ident = "%s_m%i" %(identifier,idx)
+            speciesDictionary[molecule.idx] = ident
+            compDictionary = molecule.graphVizGraph(s1,ident)
+            speciesDictionary.update(compDictionary)
+        for bond in self.bonds:
+            s1.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],directed=False)
+        return speciesDictionary
+        
+    def containsComponentIdx(self,idx,dictionary):
+        for molecule in self.molecules:
+            for component in molecule.components:
+                if component.idx == idx:
+                    return dictionary[idx]
+        return None
+        
 
 class Molecule:
-    def __init__(self,name):
+    def __init__(self,name,idx):
         self.components = []
         self.name = name
         self.compartment = ''
+        self.idx = idx
         
     def copy(self):
         molecule = Molecule(self.name)
@@ -230,7 +263,7 @@ class Molecule:
         component.addBond(bondName)
         
     def getComponentWithBonds(self):
-        return [x.name for x in self.components if x.bonds != []]
+        return [x for x in self.components if x.bonds != []]
         
     def contains(self,componentName):
         return componentName in [x.name for x in self.components]
@@ -266,13 +299,57 @@ class Molecule:
             if comp.name not in [x.name for x in self.components]:
                 self.components.append(deepcopy(comp))
                 
+    def graphVizGraph(self,graph,identifier,components=None):
+        moleculeDictionary = {}
+        if len(self.components) == 0:
+            graph.add_node(identifier,label=self.name)
+            moleculeDictionary[self.idx] = identifier
+        else:
+            s1 = graph.subgraph(name = "cluster%s" % identifier,label=self.name)
+            if components == None:
+                tmpComponents = self.components
+            else:
+                tmpComponents = components
+            for idx,component in enumerate(tmpComponents):
+                ident = "%s_c%i" %(identifier,idx)
+                moleculeDictionary[component.idx] = ident
+                compDictionary = component.graphVizGraph(s1,ident)
+                moleculeDictionary.update(compDictionary)
+        return moleculeDictionary
+                
+    def createGraph(self,identifier):
+        molDictionary = {}
+        molecule = etree.Element("graph")
+        molecule.set("id","m%s:" % identifier)
+        molecule.set("name",self.name)
+        for idx,component in enumerate(self.components):
+            gcomponent = etree.Element("node")
+            gcomponent.set("id","m%s::c%s" % (identifier,idx))
+            print component.createGraph("m%s::c%s" % (identifier,idx))
+            compGraph,compDictionary = component.createGraph("m%s::c%s" % (identifier,idx))
+            molDictionary.update(compDictionary)
+            molDictionary[component.idx] = gcomponent.get("id")
+            if compGraph != None:
+                gcomponent.append(compGraph)
+            else:
+                gcomponent.set("name",component.name)
+            molecule.append(gcomponent)
+        
+        '''
+        moleculeGraph = nx.Graph(name = self.name)
+        for component in self.components:
+            moleculeGraph.add_node(component.createGraph())
+        return moleculeGraph
+        '''
+        return molecule,molDictionary       
     
 class Component:
-    def __init__(self,name,bonds = [],states=[]):
+    def __init__(self,name,idx,bonds = [],states=[]):
         self.name = name
         self.states = []
         self.bonds = []
         self.activeState = ''
+        self.idx = idx
         
     def copy(self):
         component = Component(self.name,deepcopy(self.bonds),deepcopy(self.states))
@@ -332,6 +409,46 @@ class Component:
         self.bonds = []
         if 'U' in self.states:
             self.activeState = 'U'
+    
+    def graphVizGraph(self,graph,identifier):
+        compDictionary = {}
+        if len(self.states) == 0:
+            graph.add_node(identifier,label=self.name)
+        else:
+            s1 = graph.subgraph(name="cluster%s" % identifier,label=self.name)
+            if self.activeState != '':
+                ident = "%s_s%i" % (identifier,0)
+                compDictionary[self.activeState] = ident
+                s1.add_node(ident,label = self.activeState)
+            else:
+                for idx,state in enumerate(self.state):
+                    ident = "%s_s%i" % (identifier,idx)
+                    s1.add_node(ident,label = state)
+                    compDictionary[state] = ident
+        return compDictionary
+            
+    def createGraph(self,identifier):
+        '''
+        componentGraph = nx.Graph(name = 'self.name')
+        for state in self.states:        
+            componentGraph.add_node(state)
+        '''
+        compDictionary = {}
+        if len(self.states) == 0:
+            return None,{}
+        component = etree.Element("graph")
+        component.set("id","%s:" % identifier)
+        component.set("name",self.name)
+        for idx,element in enumerate(self.states):
+            state = etree.Element("node")
+            state.set("id",("%s::s%i") % (identifier,idx))
+            state.set("name",element)
+            #TODO: adjust so that you can handle simmetry
+            compDictionary[state.get("id")] = element 
+            component.append(state)
+        
+        
+        return component,compDictionary
         
 class Action:
     def __init__(self):
