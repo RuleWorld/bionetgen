@@ -201,6 +201,14 @@ class Species:
                     return dictionary[idx]
         return None
         
+    def notContainsComponentIdx(self,idx):
+        context = []
+        for molecule in self.molecules:
+            for component in molecule.components:
+                if component.idx not in idx:
+                    context.append(component)
+        return context
+        
 
 class Molecule:
     def __init__(self,name,idx):

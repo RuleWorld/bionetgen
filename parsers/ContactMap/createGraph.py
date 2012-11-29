@@ -12,12 +12,7 @@ from lxml import etree
 
 import pygraphviz as pgv
 
-def graphVizGraph(molecules):
-    graph = pgv.AGraph()
-    for idx,molecule in enumerate(molecules):
-        print molecule.graphVizGraph(graph,"m%i" % idx)
-    return graph
-    
+'''   
 def createNodes(molecules):
     graph = etree.Element("graph")
     graphDictionary = {}
@@ -31,6 +26,7 @@ def createNodes(molecules):
         graph.append(mol)
     print graphDictionary
     return graph,graphDictionary
+
     
 def updateEdges(graph,graphDictionary,rules):
     for react,product,act,mapp,nameDict in rules:
@@ -41,6 +37,9 @@ def updateEdges(graph,graphDictionary,rules):
                 mol1 = re.sub('_C[^_]*$', '', element.site1)
                 mol2 = re.sub('_C[^_]*$', '', element.site2)
                 getActionNodes(mol1,mol2,)
+'''
+
+
 
 def createGraph(array,dictionary,nameDictionary,subarray,cindex):
     for element in array:
@@ -52,18 +51,40 @@ def createGraph(array,dictionary,nameDictionary,subarray,cindex):
 
         nameDictionary.update(element.graphVizGraph(sbr1,sbr1.get_name()))
 
+
+def reactionCenter(graph,dictionaries,reactants,products,action,mapps,nameDict,idx):
+    #add the reactant edges
+    graph.add_edge(dictionaries[0][action.site1],"R%i" %idx,directed=True)
+    graph.add_edge(dictionaries[0][action.site2],"R%i" %idx,directed=True)
+    #add the product edges
+    for mapp in mapps:
+        if action.site1 in mapp:
+            compSite1 = [x for x in mapp if x!= action.site1][0]
+            graph.add_edge("R%i"%idx,dictionaries[1][compSite1],directed=True)
+        if action.site2 in mapp:
+            compSite2 = [x for x in mapp if x!= action.site2][0]
+            graph.add_edge("R%i"%idx,dictionaries[1][compSite2],directed=True)
+
+def context(graph,dictionaries,reactants,products,action,mapps,nameDict,idx):
+    context = []
+    for reactant in reactants:
+        context.extend(reactant.notContainsComponentIdx([action.site1,action.site2]))
+    for component in context:
+        if len(component.bonds) == 0:
+            graph.add_edge(dictionaries[0][component.idx],"R%i" %idx,directed=True,color="red")
+
+    print [str(x) for x in context]
+    
 def biPartiteEdges(graph,dictionaries,reactants,products,actions,mapps,nameDict,idx):
+    
+    
     for action in actions:
-        #if action.action == 'AddBond':
-            graph.add_edge(dictionaries[0][action.site1],"R%i" %idx,directed=True)
-            graph.add_edge(dictionaries[0][action.site2],"R%i" %idx,directed=True)
-            for mapp in mapps:
-                if action.site1 in mapp:
-                    compSite1 = [x for x in mapp if x!= action.site1][0]
-                    graph.add_edge("R%i"%idx,dictionaries[1][compSite1],directed=True)
-                if action.site2 in mapp:
-                    compSite2 = [x for x in mapp if x!= action.site2][0]
-                    graph.add_edge("R%i"%idx,dictionaries[1][compSite2],directed=True)
+        #reaction center edges
+        reactionCenter(graph,dictionaries,reactants,products,action,mapps,nameDict,idx)
+        context(graph,dictionaries,reactants,products,action,mapps,nameDict,idx)
+                
+                    
+    
     
 def createBiPartite(rules):
     graph = pgv.AGraph(directed=True)
