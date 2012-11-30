@@ -92,15 +92,34 @@ begin species
     Sos(dom)               Sos_tot
 end species
 
+begin observables
+    Molecules  Dimers       egfr_1(r!1).egfr_2(r!1)
+    Molecules  Sos_act      Shc(PTB!+,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3), egfr_2(Y1068~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)
+    Molecules  RP           egfr_2(Y1068~pY!?), egfr_3(Y1148~pY!?)
+    Molecules  Shc_Grb      Shc(Y317~pY!1).Grb2(SH2!1)
+    Molecules  Shc_Grb_Sos  Shc(Y317~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)
+    Molecules  R_Grb2       egfr_2(Y1068~pY!1).Grb2(SH2!1)
+    Molecules  R_Shc        egfr_3(Y1148~pY!1).Shc(PTB!1,Y317~Y)
+    Molecules  R_ShcP       egfr_3(Y1148~pY!1).Shc(PTB!1,Y317~pY!?)
+    Molecules  ShcP         Shc(Y317~pY!?)
+    Molecules  R_G_S        egfr_2(Y1068~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)
+    # Strong differences are seen for R_G_S in comparison with path model
+    Molecules  R_S_G_S      egfr_3(Y1148~pY!1).Shc(PTB!1,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)
+    Molecules  EGF_tot      egf(r), egf(r!1).egfr_1(l!1)
+    #
+    Molecules  EGF_free     egf(r)
+    Molecules  EGF_EGFR_1   egfr_1(l!+,r)
+end observables
+
 begin reaction rules
     # Ligand-receptor binding      
-    egfr_1(l,r)   +  egf(r) <-> egfr_1(l!1,r).egf(r!1)   kp1, km1   #ligand-monomer
-    egfr_2(l,r)   + $egf(r) <-> egfr_2(l!1,r).egf(r!1)   kp1, km1   #ligand-monomer
-    egfr_3(l,r)   + $egf(r) <-> egfr_3(l!1,r).egf(r!1)   kp1, km1   #ligand-monomer
+    egfr_1(l,r) + egf(r) <-> egfr_1(l!1,r).egf(r!1)   kp1, km1   #ligand-monomer
+    egfr_2(l,r)          <-> egfr_2(l!1,r).egf(r!1)   kp1*EGF_free, km1   #ligand-monomer
+    egfr_3(l,r)          <-> egfr_3(l!1,r).egf(r!1)   kp1*EGF_free, km1   #ligand-monomer
 
     # Receptor-aggregation 
-    egfr_1(l!+,r) +  egfr_2(l!+,r) <-> egfr_1(l!+,r!3).egfr_2(l!+,r!3)   kp2, km2
-    egfr_3(l!+,r) + $egfr_1(l!+,r) <-> egfr_1(l!+,r!3).egfr_3(l!+,r!3)  kp2, km2
+    egfr_1(l!+,r) +  egfr_2(l!+,r) <-> egfr_1(l!+,r!3).egfr_2(l!+,r!3)  kp2, km2
+    egfr_3(l!+,r)                  <-> egf(r!1).egfr_1(l!1,r!3).egfr_3(l!+,r!3)  kp2*EGF_EGFR_1, km2
 
     # Transphosphorylation of egfr by RTK
     egfr_2(r!+,Y1068~Y) -> egfr_2(r!+,Y1068~pY)  kp3
@@ -145,29 +164,17 @@ begin reaction rules
     Shc(PTB,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)  kp22, km22
 end reaction rules
 
-begin observables
-    Molecules  Dimers       egfr_1(r!1).egfr_2(r!1)
-    Molecules  Sos_act      Shc(PTB!+,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3), egfr_2(Y1068~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)
-    Molecules  RP           egfr_2(Y1068~pY!?), egfr_3(Y1148~pY!?)
-    Molecules  Shc_Grb      Shc(Y317~pY!1).Grb2(SH2!1)
-    Molecules  Shc_Grb_Sos  Shc(Y317~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)
-    Molecules  R_Grb2       egfr_2(Y1068~pY!1).Grb2(SH2!1)
-    Molecules  R_Shc        egfr_3(Y1148~pY!1).Shc(PTB!1,Y317~Y)
-    Molecules  R_ShcP       egfr_3(Y1148~pY!1).Shc(PTB!1,Y317~pY!?)
-    Molecules  ShcP         Shc(Y317~pY!?)
-    Molecules  R_G_S        egfr_2(Y1068~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)
-    # Strong differences are seen for R_G_S in comparison with path model
-    Molecules  R_S_G_S      egfr_3(Y1148~pY!1).Shc(PTB!1,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)
-    Molecules  EGF_tot      egf(r), egf(r!1).egfr_1(l!1)
-end observables
 end model
 
 ## actions ##
+# construct reaction network
 generate_network({overwrite=>1,TextReaction=>1})
+
 # Equilibration
 setConcentration("egf(r)",0);
-simulate({method=>ode,t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1})
+simulate_ode({t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1})
+
 # Kinetics
 setConcentration("egf(r)","egf_tot")
-simulate({method=>ode,t_end=>120,n_steps=>120,atol=>1e-8,rtol=>1e-8,sparse=>1})
+simulate_ode({t_end=>120,n_steps=>120,atol=>1e-8,rtol=>1e-8,sparse=>1})
 
