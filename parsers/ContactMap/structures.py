@@ -7,15 +7,22 @@ Created on Wed May 30 11:44:17 2012
 from copy import deepcopy
 from lxml import etree
 import pygraphviz as pgv
+import re
+from random import randint
 
 class Species:
     def __init__(self):
         self.molecules = []
         self.bondNumbers = []
         self.bonds = []
-        
+        self.identifier = randint(0,100000)
     
-    
+    def randomizeIds(self):
+        for molecule in self.molecules:
+            molecule.idx = '%s_%i' % (molecule.idx,randint(0,100000))
+            for component in molecule.components:
+                component.idx = '%s_c%i' % (molecule.idx,randint(0,100000))
+            self.identifier = randint(0,100000)
     def getBondNumbers(self):
         bondNumbers = [0]
         for element in self.molecules:
@@ -24,9 +31,15 @@ class Species:
         
     def copy(self):
         species = Species()
+        species.identifier = randint(0,1000000)
         for molecule in self.molecules:
             species.molecules.append(molecule.copy())
         return species
+        
+    def getMoleculeById(self,idx):
+        for molecule in self.molecules:
+            if molecule.idx == idx:
+                return molecule
     
     def addMolecule(self,molecule,concatenate=False,iteration = 1):
         if not concatenate:
@@ -184,9 +197,9 @@ class Species:
     def graphVizGraph(self,graph,identifier):
         speciesDictionary = {}
 
-        s1 = graph.subgraph(name = "cluster%s" % identifier)
+        s1 = graph.subgraph(name = "%s_species" % identifier)
         for idx,molecule in enumerate(self.molecules):
-            ident = "%s_m%i" %(identifier,idx)
+            ident = "%s_m%i" %(self.identifier,idx)
             speciesDictionary[molecule.idx] = ident
             compDictionary = molecule.graphVizGraph(s1,ident)
             speciesDictionary.update(compDictionary)
@@ -209,6 +222,26 @@ class Species:
                     context.append(component)
         return context
         
+    def hasWildCardBonds(self):
+        for molecule in self.molecules:
+            if molecule.hasWildcardBonds():
+                return True
+        return False
+            
+    def listOfBonds(self,nameDict):
+        listofbonds = {}
+        print nameDict
+        for bond in self.bonds:
+            mol1 = re.sub('_C[^_]*$', '', bond[0])
+            mol2 = re.sub('_C[^_]*$', '', bond[1])
+            if nameDict[mol1] not in listofbonds:
+                listofbonds[nameDict[mol1]] = {}
+            listofbonds[nameDict[mol1]][nameDict[bond[0]]] = [(nameDict[mol2],nameDict[bond[1]])]
+            if nameDict[mol2] not in listofbonds:
+                listofbonds[nameDict[mol2]] = {}
+            listofbonds[nameDict[mol2]][nameDict[bond[1]]] = [(nameDict[mol1],nameDict[bond[0]])]
+
+        return listofbonds
 
 class Molecule:
     def __init__(self,name,idx):
@@ -216,9 +249,10 @@ class Molecule:
         self.name = name
         self.compartment = ''
         self.idx = idx
+        self.uniqueIdentifier = randint(0,100000)
         
     def copy(self):
-        molecule = Molecule(self.name)
+        molecule = Molecule(self.name,self.idx)
         for element in self.components:
             molecule.components.append(element.copy())
         return molecule 
@@ -240,12 +274,17 @@ class Molecule:
                     compo.addState(state)
     
     def setCompartment(self,compartment):
-        self.compartment = compartment   
+        self.compartment = compartment
+    
+    def getComponentById(self,idx):
+        for component in self.components:
+            if component.idx == idx:
+                return component
              
     def getBondNumbers(self):
         bondNumbers = []
         for element in self.components:
-                bondNumbers.extend([int(x) for x in element.bonds])
+                bondNumbers.extend([int(x) for x in element.bonds if x != '+'])
         return bondNumbers
         
     def getComponent(self,componentName):
@@ -313,7 +352,7 @@ class Molecule:
             graph.add_node(identifier,label=self.name)
             moleculeDictionary[self.idx] = identifier
         else:
-            s1 = graph.subgraph(name = "cluster%s" % identifier,label=self.name)
+            s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
             if components == None:
                 tmpComponents = self.components
             else:
@@ -342,14 +381,21 @@ class Molecule:
             else:
                 gcomponent.set("name",component.name)
             molecule.append(gcomponent)
-        
+            
         '''
         moleculeGraph = nx.Graph(name = self.name)
         for component in self.components:
             moleculeGraph.add_node(component.createGraph())
         return moleculeGraph
         '''
-        return molecule,molDictionary       
+        return molecule,molDictionary   
+        
+    def hasWildcardBonds(self):
+        for component in self.components:
+            if component.hasWilcardBonds():
+                return True
+        return False
+            
     
 class Component:
     def __init__(self,name,idx,bonds = [],states=[]):
@@ -360,7 +406,7 @@ class Component:
         self.idx = idx
         
     def copy(self):
-        component = Component(self.name,deepcopy(self.bonds),deepcopy(self.states))
+        component = Component(self.name,self.idx,deepcopy(self.bonds),deepcopy(self.states))
         component.activeState = deepcopy(self.activeState)     
         return component
         
@@ -417,13 +463,18 @@ class Component:
         self.bonds = []
         if 'U' in self.states:
             self.activeState = 'U'
+            
+    def hasWilcardBonds(self):
+        if '+' in self.bonds:
+            return True
+        return False
     
     def graphVizGraph(self,graph,identifier):
         compDictionary = {}
         if len(self.states) == 0:
             graph.add_node(identifier,label=self.name)
         else:
-            s1 = graph.subgraph(name="cluster%s" % identifier,label=self.name)
+            s1 = graph.subgraph(name="cluster%s_%s" % (identifier,self.idx),label=self.name)
             if self.activeState != '':
                 ident = "%s_s%i" % (identifier,0)
                 compDictionary[self.activeState] = ident
@@ -457,6 +508,12 @@ class Component:
         
         
         return component,compDictionary
+ 
+
+class States:
+    def __init__(self,name='',idx=''):
+        self.name = name
+        self.idx = idx
         
 class Action:
     def __init__(self):

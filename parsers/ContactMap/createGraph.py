@@ -9,9 +9,10 @@ Created on Wed Nov 21 16:56:19 2012
 from readBNGXML import parseXML
 import re
 from lxml import etree
-
+import structures as st
+from copy import deepcopy
 import pygraphviz as pgv
-
+from random import randint
 '''   
 def createNodes(molecules):
     graph = etree.Element("graph")
@@ -41,16 +42,92 @@ def updateEdges(graph,graphDictionary,rules):
 
 
 
-def createGraph(array,dictionary,nameDictionary,subarray,cindex):
-    for element in array:
+def createGraph(chemicals,dictionary,clusterDictionary,subarray,cindex,nameDict):
+    processedElements = []
+    leftoverElements = []
+    listOfBonds = {}
+    for element in chemicals:
+        if element.hasWildCardBonds():
+            leftoverElements.append(element)
+            continue
         if tuple([x.name for x in element.molecules]) in dictionary:
             sbr1 = dictionary[tuple([x.name for x in element.molecules])]
         else:
             sbr1 = subarray.subgraph(name = 'cluster%i_%s'% (len(subarray.nodes()),cindex))
             dictionary[tuple([x.name for x in element.molecules])] = sbr1
+        clusterDictionary.update(element.graphVizGraph(sbr1,sbr1.get_name()))
+        processedElements.append(element)
+        listOfBonds.update(element.listOfBonds(nameDict))
+    return processedElements,leftoverElements,listOfBonds
 
+       
+    
+def findIsomorphisms(element,knowledgeDatabase):
+    counter = 0
+    isomorphs = []
+    newSpecies = None
+    for molecule in element.molecules:
+        for component in molecule.components:
+            if '+' in component.bonds:
+                relationDatabase = knowledgeDatabase[molecule.name][component.name]
+                counter += 1
+                for  relation in relationDatabase:
+                    if newSpecies == None:
+                        newSpecies = deepcopy(element)
+                    #TODO: i may need to generate new ids for this stuff
+                    newMolecule = newSpecies.getMoleculeById(molecule.idx)
+                    newComponent = newMolecule.getComponentById(component.idx)
+                    #newMolecule.idx = '%s_m%i' % (newMolecule.idx,randint(0,10000))
+                    #newComponent.idx = '%s_c%i' % (newMolecule.idx,randint(0,10000))
+                    newSpecies.identifier = randint(0,10000)
+                    newComponent.bonds.remove('+')
+                    newBondNumber = max(newSpecies.getBondNumbers())+1
+                    newComponent.addBond(newBondNumber)
+                    newMoleculePartner = st.Molecule(relation[0],molecule.idx + '_%i' % randint(0,100000))
+                    newComponentPartner = st.Component(relation[1],component.idx + '_%i' % randint(0,100000))
+                    newComponentPartner.addBond(newBondNumber)
+                    newMoleculePartner.addComponent(newComponentPartner)
+                    newSpecies.addMolecule(newMoleculePartner)
+                    #newSpecies.randomizeIds()
+                    isomorphs.append(newSpecies)
+                    newSpecies.bonds.append((newComponentPartner.idx,newComponent.idx))
+                #for element in componentList
+    return isomorphs
+
+def createGraphWithKnowledge(chemicals,dictionary,clusterDictionary,subarray,cindex,knowledgeDatabase,leftOvers):
+    processedElements = []
+    leftoverElements = []
+    if leftOvers == []:
+        return leftoverElements
+    print '\\\\',leftOvers
+    
+    for element in leftOvers:
+        if tuple([x.name for x in element.molecules]) in dictionary:
+            sbr1 = dictionary[tuple([x.name for x in element.molecules])]
+        else:
+            sbr1 = subarray.subgraph(name = clusterName)
+            dictionary[tuple([x.name for x in element.molecules])] = sbr1
+        isomorphArray = findIsomorphisms(element,knowledgeDatabase)
+        for isomorph in isomorphArray:
+            clusterDictionary.update(isomorph.graphVizGraph(sbr1,'%s_%i' %(sbr1.get_name(),isomorph.identifier)))
+            #listOfBonds.update(element.listOfBonds(nameDict))
+        
+    
+    '''
+    for element in chemicals:
+        if element.hasWildCardBonds():
+            leftoverElements.append(element)
+        if tuple([x.name for x in element.molecules]) in dictionary:
+            sbr1 = dictionary[tuple([x.name for x in element.molecules])]
+        else:
+            sbr1 = subarray.subgraph(name = 'cluster%i_%s'% (len(subarray.nodes()),cindex))
+            dictionary[tuple([x.name for x in element.molecules])] = sbr1
+        
         nameDictionary.update(element.graphVizGraph(sbr1,sbr1.get_name()))
-
+        processedElements.append(element)
+    
+    return processedElements,leftoverElements
+    '''
 
 def reactionCenter(graph,dictionaries,reactants,products,action,mapps,nameDict,idx):
     #add the reactant edges
@@ -70,8 +147,7 @@ def context(graph,dictionaries,reactants,products,action,mapps,nameDict,idx):
     for reactant in reactants:
         context.extend(reactant.notContainsComponentIdx([action.site1,action.site2]))
     for component in context:
-        if len(component.bonds) == 0:
-            graph.add_edge(dictionaries[0][component.idx],"R%i" %idx,directed=True,color="red")
+        graph.add_edge(dictionaries[0][component.idx],"R%i" %idx,directed=True,color="red")
 
     print [str(x) for x in context]
     
@@ -93,18 +169,36 @@ def createBiPartite(rules):
     gProducts = graph.subgraph(name='clusterProducts')
     
     reactantDictionary = {}
-    reactantNameDictionary = {}
+    nameDictionary = {}
     productDictionary = {}
     productNameDictionary = {}
+    processed = []
+    leftover = {}
+    listofbonds = {}
     idx = 1
-    for react,product,_,_,_ in rules:
-        createGraph(react,reactantDictionary,reactantNameDictionary,gReactants,'r%i' %idx)
-        createGraph(product,productDictionary,productNameDictionary,gProducts,'p%i' % idx)
+    for react,product,_,_,nameDict in rules:
+        print nameDict
+        tp,tl,LoB = createGraph(react,reactantDictionary,nameDictionary,gReactants,'r%i' %idx,nameDict)
+        processed.extend(tp)
+        leftover['r%i' %idx] = tl
+        listofbonds.update(LoB)
+        tp,tl,LoB = createGraph(product,productDictionary,nameDictionary,gProducts,'p%i' % idx,nameDict)
+        listofbonds.update(LoB)
+        processed.extend(tp)
+        leftover['p%i' %idx] = tl
         gRules.add_node("R%i" % idx)
         idx += 1
+    print '======',listofbonds
+    while len(leftover) > 0:
+        idx = 1
+        for react,product,_,_,_ in rules:
+            createGraphWithKnowledge(react,reactantDictionary,nameDictionary,gReactants,'r%i' % idx,listofbonds,leftover['r%i' % idx])
+            createGraphWithKnowledge(product,productDictionary,nameDictionary,gProducts,'p%i' % idx,listofbonds,leftover['p%i' % idx])
+            idx += 1  
+        leftover = []
     idx = 1
     for react,product,act,mapp,nameDict in rules:
-        biPartiteEdges(graph,[reactantNameDictionary,productNameDictionary],react,product,act,mapp,nameDict,idx)
+        biPartiteEdges(graph,[nameDictionary,nameDictionary],react,product,act,mapp,nameDict,idx)
         idx+=1
         
     graph.write('simple.dot')

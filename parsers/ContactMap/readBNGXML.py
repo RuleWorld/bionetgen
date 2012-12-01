@@ -44,6 +44,7 @@ def createSpecies(pattern):
     bonds = pattern.find('.//{http://www.sbml.org/sbml/level3}ListOfBonds')
     for molecule in mol.getchildren():
         molecule, nameDict = createMolecule(molecule, bonds)
+        tmpDict.update(nameDict)
         species.addMolecule(molecule)
         if bonds != None:
             species.bonds = [(bond.get('site1'),bond.get('site2')) for bond in bonds]
