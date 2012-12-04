@@ -215,7 +215,10 @@ class Species:
                 if len(component.bonds) == 0:
                     atomicPatterns[str(speciesStructure)] = speciesStructure
                 else:
-                    componentStructure.addBond(component.bonds[0])
+                    if component.bonds[0] != '+':
+                        componentStructure.addBond(1)
+                    else:
+                        componentStructure.addBond('+')
                     if component.bonds[0] not in bondedPatterns:
                         bondedPatterns[component.bonds[0]] = speciesStructure
                     elif '+' not in component.bonds[0] or len(bondedPatterns[component.bonds[0]].molecules) == 0: 
@@ -246,7 +249,7 @@ class Species:
             
         for bond in self.bonds:
             if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                s1.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],directed=False)
+                s1.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none')
         return speciesDictionary
         
     
