@@ -118,8 +118,8 @@ begin reaction rules
     egfr_3(l,r)          <-> egfr_3(l!1,r).egf(r!1)   kp1*EGF_free, km1   #ligand-monomer
 
     # Receptor-aggregation 
-    egfr_1(l!+,r) +  egfr_2(l!+,r) <-> egfr_1(l!+,r!3).egfr_2(l!+,r!3)  kp2, km2
-    egfr_3(l!+,r)                  <-> egf(r!1).egfr_1(l!1,r!3).egfr_3(l!+,r!3)  kp2*EGF_EGFR_1, km2
+    egfr_2(l!+,r) + egfr_1(l!+,r) <-> egfr_2(l!+,r!3).egfr_1(l!+,r!3)  kp2, km2
+    egfr_3(l!+,r)                 <-> egfr_3(l!+,r!3).egfr_1(l!1,r!3).egf(r!1)  kp2*EGF_EGFR_1, km2
 
     # Transphosphorylation of egfr by RTK
     egfr_2(r!+,Y1068~Y) -> egfr_2(r!+,Y1068~pY)  kp3
@@ -168,7 +168,7 @@ end model
 
 ## actions ##
 # construct reaction network
-generate_network({overwrite=>1,TextReaction=>1})
+generate_network({overwrite=>1})
 
 # Equilibration
 setConcentration("egf(r)",0);
