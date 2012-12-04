@@ -31,8 +31,10 @@ def createMolecule(molecule, bonds):
             component.addBond(element.get('numberOfBonds'))
         elif element.get('numberOfBonds') != '0':
             component.addBond(findBond(bonds, element.get('id')))
+        state = element.get('state') if element.get('state') != None else ''
+        component.states.append(state)
+        component.activeState = state
         mol.addComponent(component)
-    
     return mol, nameDict
     
 
@@ -40,6 +42,7 @@ def createMolecule(molecule, bonds):
 def createSpecies(pattern):
     tmpDict = {}
     species = st.Species()
+    species.idx = pattern.get('id')
     mol = pattern.find('.//{http://www.sbml.org/sbml/level3}ListOfMolecules')
     bonds = pattern.find('.//{http://www.sbml.org/sbml/level3}ListOfBonds')
     for molecule in mol.getchildren():
@@ -80,7 +83,10 @@ def parseRule(rule):
         action = st.Action()
         tag = operation.tag
         tag = tag.replace('{http://www.sbml.org/sbml/level3}','')
-        action.setAction(tag, operation.get('site1'), operation.get('site2'))
+        if operation.get('site1') != None:
+            action.setAction(tag, operation.get('site1'), operation.get('site2'))
+        else:
+            action.setAction(tag, operation.get('site'), None)
         actions.append(action)
     for mapping in mp:
         tmpMap = (mapping.get('sourceID'), mapping.get('targetID'))
@@ -117,4 +123,4 @@ def parseXML(xmlFile):
     return moleculeList, ruleDescription
         
 if __name__ == "__main__":
-    parseXML("BM48.xml")
+    parseXML("fceri.xml")

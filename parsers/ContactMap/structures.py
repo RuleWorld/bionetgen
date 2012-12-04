@@ -16,13 +16,9 @@ class Species:
         self.bondNumbers = []
         self.bonds = []
         self.identifier = randint(0,100000)
+        self.idx = ''
     
-    def randomizeIds(self):
-        for molecule in self.molecules:
-            molecule.idx = '%s_%i' % (molecule.idx,randint(0,100000))
-            for component in molecule.components:
-                component.idx = '%s_c%i' % (molecule.idx,randint(0,100000))
-            self.identifier = randint(0,100000)
+
     def getBondNumbers(self):
         bondNumbers = [0]
         for element in self.molecules:
@@ -176,7 +172,17 @@ class Species:
             self.molecules.append(deepcopy(element))              
         
     def __str__(self):
-        return '.'.join([x.toString() for x in self.molecules])
+        self.molecules.sort(key= lambda molecule: molecule.name)
+        name= '.'.join([x.toString() for x in self.molecules])
+        '''
+        name = name.replace('~','')
+        name = name.replace(',','')
+        name = name.replace('.','')
+        name = name.replace('(','')
+        name = name.replace(')','')
+        name = name.replace('!','')
+        '''
+        return name
         
     def str2(self):
         return '.'.join([x.str2() for x in self.molecules])
@@ -187,25 +193,63 @@ class Species:
             
     def toString(self):
         return self.__str__()
+
+    def extractAtomicPatterns(self,site1,site2):
+        atomicPatterns = {}
+        bondedPatterns = {}
+        reactionCenter = []
+        context = []
         
-    def createGraph(self):
-        speciesGraph = nx.Graph()
-        for molecule in self.molecules():
-            speciesGraph.add_node(molecule.createGraph())
-        return speciesGraph
+        for molecule in self.molecules:
+            for component in molecule.components:
+                speciesStructure = Species()
+                #TODO: placeholder, in fact we only want the bond of the components we are copying over
+                speciesStructure.bonds = self.bonds
+                moleculeStructure = Molecule(molecule.name,molecule.idx)
+                componentStructure = Component(component.name,component.idx)
+                if component.activeState != '':
+                    componentStructure.addState(component.activeState)
+                    componentStructure.activeState = component.activeState
+                moleculeStructure.addComponent(componentStructure)
+                speciesStructure.addMolecule(moleculeStructure)
+                if len(component.bonds) == 0:
+                    atomicPatterns[str(speciesStructure)] = speciesStructure
+                else:
+                    componentStructure.addBond(component.bonds[0])
+                    if component.bonds[0] not in bondedPatterns:
+                        bondedPatterns[component.bonds[0]] = speciesStructure
+                    elif '+' not in component.bonds[0] or len(bondedPatterns[component.bonds[0]].molecules) == 0: 
+                        bondedPatterns[component.bonds[0]].addMolecule(moleculeStructure)
+                if componentStructure.idx in [site1,site2]:
+                    reactionCenter.append((speciesStructure))
+                else:
+                    context.append((speciesStructure))      
+        for element in bondedPatterns:
+            atomicPatterns[str(bondedPatterns[element])] = bondedPatterns[element]
+            
+        reactionCenter = [str(x) for x in reactionCenter if str(x) in atomicPatterns]
+        context =  [str(x) for x in context if str(x) in atomicPatterns]
+        return atomicPatterns,reactionCenter,context
+                
+                    
+                    
         
     def graphVizGraph(self,graph,identifier):
         speciesDictionary = {}
-
-        s1 = graph.subgraph(name = "%s_species" % identifier)
+        graphName = "%s_%s" % (identifier,str(self))
+        s1 = graph.subgraph(name = graphName)
         for idx,molecule in enumerate(self.molecules):
-            ident = "%s_m%i" %(self.identifier,idx)
+            ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
             compDictionary = molecule.graphVizGraph(s1,ident)
             speciesDictionary.update(compDictionary)
+            
         for bond in self.bonds:
-            s1.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],directed=False)
+            if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
+                s1.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],directed=False)
         return speciesDictionary
+        
+    
         
     def containsComponentIdx(self,idx,dictionary):
         for molecule in self.molecules:
@@ -230,7 +274,6 @@ class Species:
             
     def listOfBonds(self,nameDict):
         listofbonds = {}
-        print nameDict
         for bond in self.bonds:
             mol1 = re.sub('_C[^_]*$', '', bond[0])
             mol2 = re.sub('_C[^_]*$', '', bond[1])
@@ -242,6 +285,7 @@ class Species:
             listofbonds[nameDict[mol2]][nameDict[bond[1]]] = [(nameDict[mol1],nameDict[bond[0]])]
 
         return listofbonds
+        
 
 class Molecule:
     def __init__(self,name,idx):
@@ -364,31 +408,6 @@ class Molecule:
                 moleculeDictionary.update(compDictionary)
         return moleculeDictionary
                 
-    def createGraph(self,identifier):
-        molDictionary = {}
-        molecule = etree.Element("graph")
-        molecule.set("id","m%s:" % identifier)
-        molecule.set("name",self.name)
-        for idx,component in enumerate(self.components):
-            gcomponent = etree.Element("node")
-            gcomponent.set("id","m%s::c%s" % (identifier,idx))
-            print component.createGraph("m%s::c%s" % (identifier,idx))
-            compGraph,compDictionary = component.createGraph("m%s::c%s" % (identifier,idx))
-            molDictionary.update(compDictionary)
-            molDictionary[component.idx] = gcomponent.get("id")
-            if compGraph != None:
-                gcomponent.append(compGraph)
-            else:
-                gcomponent.set("name",component.name)
-            molecule.append(gcomponent)
-            
-        '''
-        moleculeGraph = nx.Graph(name = self.name)
-        for component in self.components:
-            moleculeGraph.add_node(component.createGraph())
-        return moleculeGraph
-        '''
-        return molecule,molDictionary   
         
     def hasWildcardBonds(self):
         for component in self.components:
@@ -476,7 +495,7 @@ class Component:
         else:
             s1 = graph.subgraph(name="cluster%s_%s" % (identifier,self.idx),label=self.name)
             if self.activeState != '':
-                ident = "%s_s%i" % (identifier,0)
+                ident = "%s" % (identifier)
                 compDictionary[self.activeState] = ident
                 s1.add_node(ident,label = self.activeState)
             else:
@@ -487,25 +506,7 @@ class Component:
         return compDictionary
             
     def createGraph(self,identifier):
-        '''
-        componentGraph = nx.Graph(name = 'self.name')
-        for state in self.states:        
-            componentGraph.add_node(state)
-        '''
-        compDictionary = {}
-        if len(self.states) == 0:
-            return None,{}
-        component = etree.Element("graph")
-        component.set("id","%s:" % identifier)
-        component.set("name",self.name)
-        for idx,element in enumerate(self.states):
-            state = etree.Element("node")
-            state.set("id",("%s::s%i") % (identifier,idx))
-            state.set("name",element)
-            #TODO: adjust so that you can handle simmetry
-            compDictionary[state.get("id")] = element 
-            component.append(state)
-        
+
         
         return component,compDictionary
  
@@ -554,4 +555,4 @@ class Databases:
     
     def getTranslator(self):
         return self.translator
-    
+     
