@@ -50,7 +50,7 @@ OBSERVABLES: 'observables';
 POPULATION: 'population';
 MAPS: 'maps';
 
-SET_OPTION : 'SETOPTION';
+SET_OPTION : 'setOption';
 SPECIES_LABEL : 'SPECIESLABEL';
 GENERATE_NETWORK : 'GENERATENETWORK';
 MAX_AGG : 'max_agg';
@@ -183,7 +183,7 @@ fragment UPPER: 'A'..'Z';
 fragment EXPONENT : ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
 
-VERSION_NUMBER : (DIGIT) | (DIGIT'.'DIGIT) | (DIGIT'.'DIGIT'.'DIGIT) ;
+VERSION_NUMBER : (INT) | (INT'.'INT) | (INT'.'INT'.'INT) ;
 
 
 
