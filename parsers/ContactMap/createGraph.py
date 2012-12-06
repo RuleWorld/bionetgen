@@ -69,7 +69,9 @@ def extractTransformations(rules):
     transformationCenter = []
     transformationContext = []
     productElements = []
+    idx = 1
     for react,product,act,mapp,nameDict in rules:
+        idx+=1
         for action in act:
             atomic,reactionCenter,context = extractMolecules(action.site1,action.site2,react)
             transformationCenter.append(reactionCenter)
@@ -83,26 +85,31 @@ def extractTransformations(rules):
     return atomicArray,transformationCenter,transformationContext,productElements
             
 
-def createNode(atomicArray,chemical,chemicalDictionary,subgraph,nameHeader):
+def createNode(atomicArray,chemical,chemicalDictionary,subgraph,nameHeader,builtList):
     '''
     creates a child node for 'chemical' on the 'subgraph' graph 
     '''
     clusterName = ''
     #if its not a complex
-    if '+' not in str(chemical) and len(atomicArray[chemical].molecules) == 1:
-        clusterName = '%s_%s' % (nameHeader,atomicArray[chemical].molecules[0].name)
-        if  clusterName not in chemicalDictionary:
-            chemicalDictionary[chemical] = subgraph.subgraph(name = clusterName)
-        sbr1 = chemicalDictionary[chemical]
-        chemicalDictionary.update(atomicArray[chemical].graphVizGraph(sbr1,sbr1.get_name()))
+    if not str(chemical) in builtList:
+        if '+' not in str(chemical) and len(atomicArray[chemical].molecules) == 1:
+            clusterName = '%s_%s' % (nameHeader,atomicArray[chemical].molecules[0].name)
+            if  clusterName not in chemicalDictionary:
+                chemicalDictionary[chemical] = subgraph.subgraph(name = clusterName)
+            sbr1 = chemicalDictionary[chemical]
+            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(sbr1,sbr1.get_name()))
+        else:
+            #if it's a complex
+            if '+' not in str(chemical):
+                clusterName = nameHeader
+                chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,nameHeader))
+        
+        if clusterName != '':
+            clusterName = '%s_%s' % (clusterName,str(atomicArray[chemical]))
+        builtList[str(chemical)] = clusterName
+        return clusterName
     else:
-        #if it's a complex
-        if '+' not in str(chemical):
-            clusterName = nameHeader
-            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,nameHeader))
-    if clusterName != '':
-        clusterName = '%s_%s' % (clusterName,str(atomicArray[chemical]))
-    return clusterName
+        return builtList[str(chemical)]
     
 def createBiPartite(rules,transformations,fileName,reactionCenter=True,context=True,products=True):
     
@@ -110,16 +117,22 @@ def createBiPartite(rules,transformations,fileName,reactionCenter=True,context=T
     atomicArray,transformationCenter,transformationContext,productElements = extractTransformations(rules)
     
     #create the graph structure and the three main subgraphs
-    graph = pgv.AGraph(directed=True,strict=False)
-    gReactants = graph.subgraph(name='clusterReactants')
-    gRules = graph.subgraph(name='clusterRules')
-    gProducts = graph.subgraph(name='clusterProducts')
+    if len(transformations) == 1:
+        react= '+'.join([str(x) for x in rules[transformations[0]-1][0]])
+        prod = '+'.join([str(x) for x in rules[transformations[0]-1][1]])
+        action = rules[transformations[0]-1][2][0].action
+        graph = pgv.AGraph(directed=True,strict=False,label='->'.join([react,prod,action]))    
+    else:
+        graph = pgv.AGraph(directed=True,strict=False)
+    gReactants = graph.subgraph(name='clusterReactants',label='Reactants')
+    gRules = graph.subgraph(name='clusterRules',label='Transformations')
+    gProducts = graph.subgraph(name='clusterProducts',label='Products')
     
     reactantDictionary = {}
     productDictionary = {}
     edgeIdx = 1
-    
-    
+    reactantbuiltlist = {}
+    productbuildlist ={}
     for idx,_ in enumerate(transformationCenter):
         if idx+1 in transformations:
             gRules.add_node("T%i" % (idx + 1))
@@ -128,7 +141,7 @@ def createBiPartite(rules,transformations,fileName,reactionCenter=True,context=T
         for idx,element in enumerate(transformationCenter):
             if idx+1 in transformations:
                 for reactant in element:
-                    clusterName = createNode(atomicArray,reactant,reactantDictionary,gReactants,'clusterr')
+                    clusterName = createNode(atomicArray,reactant,reactantDictionary,gReactants,'clusterr',reactantbuiltlist)
                     graph.add_edge(clusterName,"T%i"%(idx+1),key = 'key%i' % edgeIdx,dir='forward')
                     edgeIdx+=1
     #create context nodes
@@ -136,13 +149,13 @@ def createBiPartite(rules,transformations,fileName,reactionCenter=True,context=T
         for idx,element in enumerate(transformationContext):
             if idx+1 in transformations:
                 for reactant in element:
-                    clusterName = createNode(atomicArray,reactant,reactantDictionary,gReactants,'clusterr')
+                    clusterName = createNode(atomicArray,reactant,reactantDictionary,gReactants,'clusterr',reactantbuiltlist)
                     if clusterName != '':
                         graph.add_edge(clusterName,"T%i"%(idx+1),key = 'key%i' % edgeIdx,dir='forward',color='red')
-                        edgeIdx+=1
+                        edgeIdx+=1  
                     else:
                         for atom in atomicArray[reactant]:
-                            clusterName = createNode(atomicArray,str(atom),reactantDictionary,gReactants,'clusterr')
+                            clusterName = createNode(atomicArray,str(atom),reactantDictionary,gReactants,'clusterr',reactantbuiltlist)
                             graph.add_edge(clusterName,"T%i"%(idx+1),key = 'key%i' % edgeIdx,dir='forward',color='red')
                             edgeIdx+=1
     #create product nodes
@@ -150,24 +163,27 @@ def createBiPartite(rules,transformations,fileName,reactionCenter=True,context=T
         for idx,element in enumerate(productElements):
             if idx+1 in transformations:
                 for product in element:
-                    clusterName =createNode(atomicArray,product,productDictionary,gProducts,'clusterp')
+                    clusterName =createNode(atomicArray,product,productDictionary,gProducts,'clusterp',productbuildlist)
                     graph.add_edge("T%i"%(idx+1),clusterName,key = 'key%i' % edgeIdx,dir='foward')
                     edgeIdx+=1
     
     #output        
     graph.write('%s.dot' % fileName)
     graph.layout(prog='fdp')
+    gRules.layout(prog='neato')
     graph.draw('%s.png' % fileName)
 
 def main(fileName):
     mol,rules = parseXML(fileName)
+    createBiPartite(rules,[x for x in range(1,10)],'simple',reactionCenter=True,context=True,products=True)
+    '''
     for element in [1]:
         print element
-        #try:
-        createBiPartite(rules,[element],'simple%i' % element,reactionCenter=True,context=True,products=True)
-        #except:
-        #print 'xxx'
-        #continue
-
+        try:
+            createBiPartite(rules,[element],'simple%i' % element,reactionCenter=True,context=True,products=True)
+        except:
+            print 'xxx'
+            continue
+    '''
 if __name__ == "__main__":
     main("fceri.xml")

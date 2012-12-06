@@ -240,7 +240,7 @@ class Species:
     def graphVizGraph(self,graph,identifier):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
-        s1 = graph.subgraph(name = graphName)
+        s1 = graph.subgraph(name = graphName,label=' ')
         for idx,molecule in enumerate(self.molecules):
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
