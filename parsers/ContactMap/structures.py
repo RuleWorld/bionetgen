@@ -174,14 +174,15 @@ class Species:
     def __str__(self):
         self.molecules.sort(key= lambda molecule: molecule.name)
         name= '.'.join([x.toString() for x in self.molecules])
-        '''
+        name = name.replace('~','')
+        
         name = name.replace('~','')
         name = name.replace(',','')
         name = name.replace('.','')
         name = name.replace('(','')
         name = name.replace(')','')
         name = name.replace('!','')
-        '''
+        name = name.replace('_','')
         return name
         
     def str2(self):
@@ -240,11 +241,15 @@ class Species:
     def graphVizGraph(self,graph,identifier):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
-        s1 = graph.subgraph(name = graphName,label=' ')
+        
         for idx,molecule in enumerate(self.molecules):
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
-            compDictionary = molecule.graphVizGraph(s1,ident)
+            if len(self.molecules) == 1:
+                compDictionary = molecule.graphVizGraph(graph,graphName,flag=True)
+            else:
+                s1 = graph.subgraph(name = graphName,label=' ')
+                compDictionary = molecule.graphVizGraph(s1,ident,flag=False)
             speciesDictionary.update(compDictionary)
             
         for bond in self.bonds:
@@ -393,13 +398,17 @@ class Molecule:
             if comp.name not in [x.name for x in self.components]:
                 self.components.append(deepcopy(comp))
                 
-    def graphVizGraph(self,graph,identifier,components=None):
+    def graphVizGraph(self,graph,identifier,components=None,flag=False):
         moleculeDictionary = {}
         if len(self.components) == 0:
             graph.add_node(identifier,label=self.name)
             moleculeDictionary[self.idx] = identifier
         else:
-            s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
+            if not flag:
+                s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
+            else:
+                s1 = graph.subgraph(name = identifier,label=self.name)
+
             if components == None:
                 tmpComponents = self.components
             else:

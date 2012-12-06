@@ -95,7 +95,7 @@ def createNode(atomicArray,chemical,chemicalDictionary,subgraph,nameHeader,built
         if '+' not in str(chemical) and len(atomicArray[chemical].molecules) == 1:
             clusterName = '%s_%s' % (nameHeader,atomicArray[chemical].molecules[0].name)
             if  clusterName not in chemicalDictionary:
-                chemicalDictionary[chemical] = subgraph.subgraph(name = clusterName)
+                chemicalDictionary[chemical] = subgraph.subgraph(name = clusterName,label=atomicArray[chemical].molecules[0].name)
             sbr1 = chemicalDictionary[chemical]
             chemicalDictionary.update(atomicArray[chemical].graphVizGraph(sbr1,sbr1.get_name()))
         else:
@@ -107,9 +107,11 @@ def createNode(atomicArray,chemical,chemicalDictionary,subgraph,nameHeader,built
         if clusterName != '':
             clusterName = '%s_%s' % (clusterName,str(atomicArray[chemical]))
         builtList[str(chemical)] = clusterName
+        
         return clusterName
     else:
         return builtList[str(chemical)]
+
     
 def createBiPartite(rules,transformations,fileName,reactionCenter=True,context=True,products=True):
     
@@ -169,21 +171,21 @@ def createBiPartite(rules,transformations,fileName,reactionCenter=True,context=T
     
     #output        
     graph.write('%s.dot' % fileName)
+    graph = pgv.AGraph('%s.dot' % fileName)
     graph.layout(prog='fdp')
-    gRules.layout(prog='neato')
     graph.draw('%s.png' % fileName)
 
 def main(fileName):
     mol,rules = parseXML(fileName)
-    createBiPartite(rules,[x for x in range(1,10)],'simple',reactionCenter=True,context=True,products=True)
-    '''
-    for element in [1]:
+    #createBiPartite(rules,[x for x in range(6,10)],'simple',reactionCenter=True,context=True,products=True)
+    
+    for element in [6,9]:
         print element
         try:
             createBiPartite(rules,[element],'simple%i' % element,reactionCenter=True,context=True,products=True)
         except:
             print 'xxx'
             continue
-    '''
+    
 if __name__ == "__main__":
     main("fceri.xml")
