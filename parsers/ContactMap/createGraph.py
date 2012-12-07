@@ -94,10 +94,10 @@ def createNode(atomicArray,chemical,chemicalDictionary,subgraph,nameHeader,built
     if not str(chemical) in builtList:
         if '+' not in str(chemical) and len(atomicArray[chemical].molecules) == 1:
             clusterName = '%s_%s' % (nameHeader,atomicArray[chemical].molecules[0].name)
-            if  clusterName not in chemicalDictionary:
-                chemicalDictionary[chemical] = subgraph.subgraph(name = clusterName,label=atomicArray[chemical].molecules[0].name)
-            sbr1 = chemicalDictionary[chemical]
-            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(sbr1,sbr1.get_name()))
+            #if  clusterName not in chemicalDictionary:
+            #    chemicalDictionary[chemical] = subgraph.subgraph(name = clusterName,label=atomicArray[chemical].molecules[0].name)
+            #sbr1 = chemicalDictionary[chemical]
+            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,clusterName))
         else:
             #if it's a complex
             if '+' not in str(chemical):
@@ -179,7 +179,7 @@ def main(fileName):
     mol,rules = parseXML(fileName)
     #createBiPartite(rules,[x for x in range(6,10)],'simple',reactionCenter=True,context=True,products=True)
     
-    for element in [6,9]:
+    for element in [6]:
         print element
         try:
             createBiPartite(rules,[element],'simple%i' % element,reactionCenter=True,context=True,products=True)
