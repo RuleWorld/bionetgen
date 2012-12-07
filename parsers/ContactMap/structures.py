@@ -174,6 +174,7 @@ class Species:
     def __str__(self):
         self.molecules.sort(key= lambda molecule: molecule.name)
         name= '.'.join([x.toString() for x in self.molecules])
+        '''
         name = name.replace('~','')
         
         name = name.replace('~','')
@@ -183,6 +184,7 @@ class Species:
         name = name.replace(')','')
         name = name.replace('!','')
         name = name.replace('_','')
+        '''
         return name
         
     def str2(self):
@@ -222,7 +224,8 @@ class Species:
                         componentStructure.addBond('+')
                     if component.bonds[0] not in bondedPatterns:
                         bondedPatterns[component.bonds[0]] = speciesStructure
-                    elif '+' not in component.bonds[0] or len(bondedPatterns[component.bonds[0]].molecules) == 0: 
+                    elif '+' not in component.bonds[0] or \
+                      len(bondedPatterns[component.bonds[0]].molecules) == 0: 
                         bondedPatterns[component.bonds[0]].addMolecule(moleculeStructure)
                 if componentStructure.idx in [site1,site2]:
                     reactionCenter.append((speciesStructure))
@@ -231,7 +234,8 @@ class Species:
         for element in bondedPatterns:
             atomicPatterns[str(bondedPatterns[element])] = bondedPatterns[element]
             
-        reactionCenter = [str(x) for x in reactionCenter if str(x) in atomicPatterns]
+        reactionCenter = [str(x) for x in reactionCenter 
+            if str(x) in atomicPatterns]
         context =  [str(x) for x in context if str(x) in atomicPatterns]
         return atomicPatterns,reactionCenter,context
                 
@@ -246,15 +250,15 @@ class Species:
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
             if len(self.molecules) == 1:
-                compDictionary = molecule.graphVizGraph(graph,graphName,flag=True)
+                compDictionary = molecule.graphVizGraph(graph,ident,flag=False)
             else:
-                s1 = graph.subgraph(name = graphName,label=' ')
-                compDictionary = molecule.graphVizGraph(s1,ident,flag=False)
+                #s1 = graph.subgraph(name = graphName,label=' ')
+                compDictionary = molecule.graphVizGraph(graph,ident,flag=False)
             speciesDictionary.update(compDictionary)
             
         for bond in self.bonds:
             if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                s1.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none')
+                graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none')
         return speciesDictionary
         
     
