@@ -14,6 +14,12 @@ options {
     return gParent.getErrorMessage(e,tokenNames);
   }
   
+ 
+  public String getErrorMessage2(Token s1,String error){
+      return String.format("\%s line \%d:\%d \%s: \%s\n",input.getSourceName(),s1.getLine(),s1.getCharPositionInLine(),error,s1.getText());
+  
+  }
+  
 
 }
 
@@ -119,10 +125,12 @@ String name;
         WS
         
       //  (rate_function modif_command* DELETEMOLECULES? MOVECONNECTED? LB) => 
-        bi=rate_function[$reaction_rule_def::rateList] {
+        bi=rate_function[$reaction_rule_def::rateList,$reaction_def.bidirectional] {
         //TODO: add a try catch exception to check that if a bidirectional reaction is required it asks for two reaction rates
-            if($numReactions == 2)
+            if($numReactions == 2 && $reaction_rule_def::rateList.size() > 1)
                 $secondRate=$reaction_rule_def::rateList.get(1);
+            else
+                $secondRate="0";
             $reaction_rule_def::text += " " + $rate_function.text;
         }
         (modif_command)* (DELETEMOLECULES)? (MOVECONNECTED)?
@@ -256,12 +264,12 @@ BondList bonds;
       secondBonds={$rule_species_def::bonds.getRight()})
     ;
 
-rate_function [List<String> rateList] returns [String functionName]
+rate_function [List<String> rateList,boolean bidirectional] returns [String functionName]
 @init{
   $functionName = "Ele";
 }:
-    (function_keyword LPAREN) => function_keyword {$functionName = $function_keyword.text;} LPAREN rate_list[rateList] RPAREN |
-    rate_list[rateList]
+    (function_keyword LPAREN) => function_keyword {$functionName = $function_keyword.text;} LPAREN rate_list[rateList,bidirectional] RPAREN |
+    rate_list[rateList,bidirectional]
     
 ;
 
@@ -269,16 +277,28 @@ function_keyword:
   SAT 
 ;
 
-rate_list[List<String> rateList]
+rate_list[List<String> rateList,boolean bidirectional]
 scope{
   Map<String,Register> memoryWithLocal;
+  int numberRateLaws
 }
 @init{
   $rate_list::memoryWithLocal = new HashMap<String,Register>();
   $rate_list::memoryWithLocal.putAll(gParent.memory);
   $rate_list::memoryWithLocal.putAll($reaction_rule_def::lmemory);
+  $rate_list::numberRateLaws = 1;
 }
-        : e1=expression[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA? e2=expression[$rate_list::memoryWithLocal] {rateList.add($e2.text);})?
+        : e1=expression[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA? e2=expression[$rate_list::memoryWithLocal] 
+        {rateList.add($e2.text);
+        $rate_list::numberRateLaws = 2;
+        })?
+        {
+        if ((bidirectional && $rate_list::numberRateLaws == 1) || (!bidirectional && $rate_list::numberRateLaws == 2)){
+                    String msg = getErrorMessage2((Token)e1.getStart(),"Incorrect number of rate laws");
+                    System.err.println(msg);
+        }
+        
+        }
         ;
 modif_command
         : include_command
