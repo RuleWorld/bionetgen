@@ -73,12 +73,11 @@ sub getNumCompartments
 # lookup a compartment by name.  Returns reference or empty string
 sub lookup
 {
-    my $clist= shift;
-    my $name= shift;
+    my $clist = shift;
+    my $name  = shift;
   
     if ( exists $clist->Hash->{$name} )
     {
-        $clist->Used(1);
         return $clist->Hash->{$name};
     }
     else

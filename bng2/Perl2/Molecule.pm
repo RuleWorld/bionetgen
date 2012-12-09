@@ -61,20 +61,11 @@ sub readString
 
 	my $string_left = $$strptr;
 
-	# Get molecule name
-    # NOTE: for now we allow molecule type to be any alpha-numeric string (possibly numeric)
-    #  but in the future we will disallow numeric identifiers.  The 0 symbol will be reserved
-    #  for the null species (useful in 0 order synthesis reactions and unimolecular deletions)	
-	if ( $string_left =~ s/^(\w+)// )
-	#if ( $string_left =~ s/^([A-z]\w*)// )
+	# Get molecule name (alphanumeric ID, must contain at least one letter!)
+	if ( $string_left =~ s/^(\w*[A-Za-z]\w*)// )
 	{
 		$mol->Name($1);
 	}
-	#elsif ( $string_left =~ s/^(['"][^'"]+['"])// )
-	#{   # TODO: is this supported anymore?  deprecate.  --Justin
-	#	# read a quoted string, preserving the quotes
-	#	$mol->Name($1);
-	#}
 	else
 	{
 		return undef, "Invalid molecule name in $string_left";

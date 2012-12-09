@@ -43,7 +43,7 @@ sub readString
     if ($entry=~ s/^\s*(\d+)\s+//)
     {
         # This index will be ignored
-        my $index= $1;
+        my $index = $1;
     }
   
     # Next token is string for species graph

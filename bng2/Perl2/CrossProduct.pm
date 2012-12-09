@@ -59,7 +59,7 @@ sub initialize
     my $first_idx   = [];
     my $last_idx    = [];
     
-    my $elem_exist = $cp->NumLists ? 1 : 0;
+    my $elem_exist = 1;
     my $ii = 0;
     while ( $ii < $cp->NumLists )
     {
@@ -122,6 +122,7 @@ sub getNext
 # After iterating through all elements of the cross-product,
 #  add @$new_items to the list at index $list_idx.
 #  Continue calling getNext to generate new cross product elements
+#  NOTE: must iterate through all new elements before calling update again
 sub update
 {
     my $cp = shift;

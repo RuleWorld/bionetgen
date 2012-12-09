@@ -75,7 +75,7 @@ sub setSpeciesLabel
 	else {
 		return ("Invalid value for SpeciesLabel function: $label");
 	}
-	return ("");
+	return "";
 }
 
 
@@ -88,12 +88,15 @@ sub setSpeciesLabel
 # check if this is a null speciesGraph
 sub isNull
 {
-    my $sg = shift;
-    
-    if ( @{$sg->Molecules} == 0 )
-    {   return 1;  }
-    else
-    {   return 0;  }
+    my $sg = shift @_;
+    return @{$sg->Molecules} ? 0 : 1;
+}
+
+
+# get string for the null pattern
+sub getNullString
+{
+    return "0";
 }
 
 
@@ -131,6 +134,14 @@ sub readString
     {   return ( "Expecting SpeciesGraph but found termination characters instead\n"
                 ."  in string '$string_left'." );
 	}
+
+    # check for the null pattern
+    if ( $string_left =~ /^0($|\s|\+|<->|->|,)/ )
+    {   # This is the null pattern. Strip pattern and return.
+        $string_left =~ s/^0//;
+        $$strptr = $string_left;
+        return $err;
+    }
 
     # Header (all characters up to ":")
     # Fixed bug here  --Justin
@@ -2500,22 +2511,33 @@ sub isomorphicToSubgraph
     {
 		my $molecules2 = $sg2->Molecules;
 
-		# Number of molecules
+        ## First do some quick checks to see if it's possible to find a subgraph isomorphism
+		# compare number of molecules
 		if ( scalar @$molecules1 > scalar @$molecules2 )
         {   next;   }
 
-		# Check that number of edges is same
+		# compare number of edges
 		my $edges2 = $sg2->Edges;
 		if ( scalar @$edges1 > scalar @$edges2 )
         {   next;   }
 
-		# If sg1 has species compartment, check that sg2 matches
+		# compare species compartment
 		if ( defined $sg1->Compartment )
         {
             next unless ( defined $sg2->Compartment );
             next unless ( $sg1->Compartment == $sg2->Compartment );
         }
 
+        if ( @$molecules1 == 0 )
+        {   # if this is the null graph, then return a trivial subgraph isomorphism
+            my $map = Map->new;
+		    $map->Source($sg1);
+			$map->Target($sg2);
+			push @maps, $map;
+            return @maps;
+        }
+
+        ## Now look for a non-trivial subgraph isomorphism
 
 		# Nested depth first search, first molecules, then components to find match
 		my $nmol1  = $#$molecules1;
