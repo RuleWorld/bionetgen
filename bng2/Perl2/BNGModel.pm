@@ -465,7 +465,7 @@ sub readNetwork
                 
     
                 ### Read Molecule Types block
-                elsif ( $name =~ /^molecule[ _]types$/ )
+                elsif ( $name eq 'molecule types' )
                 {
                     # read MoleculeTypes
                     $model->MoleculeTypesList->StrictTyping(1);
@@ -542,7 +542,7 @@ sub readNetwork
                 
                     
                 ### Read Species/Seed Species Block
-                elsif ( ($name eq 'species') or ($name =~ /^seed[ _]species$/) )
+                elsif ( ($name eq 'species') or ($name eq 'seed species') )
                 {
                     # read Species
                     foreach my $line ( @$block_dat )
@@ -559,7 +559,7 @@ sub readNetwork
                 
 
                 ### Read Reaction Rules Block
-                elsif ( $name =~ /reaction[ _]rules/ )
+                elsif ( $name eq 'reaction rules' )
                 {
                     # Read reaction rules
                     my $nerr = 0;
@@ -568,7 +568,7 @@ sub readNetwork
                     foreach my $line ( @$block_dat )
                     {
                         my ($entry, $lno) = @$line;
-                        (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model );
+                        (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
                         if ($err)
                         {   # some error encountered
                             $err = errgen( $err, $lno );

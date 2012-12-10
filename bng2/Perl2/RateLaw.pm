@@ -11,11 +11,118 @@ use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
 use Scalar::Util ("looks_like_number");
+use Carp qw(cluck);
 
 # BNG Modules
 use BNGUtils;
 use SpeciesGraph;
 
+
+### THE COMMENTED CODE IS AN EXPERIMENT IN REPLACING THE STRUCT MODULE 
+###  WITH OUR OWN CUSTOM CLASSES!!!
+
+# Constants
+#use constant TYPE=>0, CONSTANTS=>1, FACTOR=>2, TOTALRATE=>3, ENERGYHASH=>4;
+
+## $rl = RateLaw::new( )
+## $rl = RateLaw::new( $init )
+#sub new
+#{
+#    my $class = shift @_;
+#    my $init  = @_ ? shift @_ : {};
+
+#    my $rl => [ undef, [], undef, undef, {} ];
+#    bless $rl, $class;
+#           
+#    unless (ref $init eq "HASH")
+#    {   confess("expecting hash reference for INIT argument.");  }
+
+#    while ( my ($key, $value) = each %$init )
+#    {
+#        if    ($key eq "Type")       { $rl->setTotalRate( $value );  }
+#        elsif ($key eq "Constants")  { $rl->setConstants( $value );  }
+#        elsif ($key eq "Factor")     { $rl->setFactor( $value );     }
+#        elsif ($key eq "TotalRate")  { $rl->setTotalRate( $value );  }
+#        elsif ($key eq "EnergyHash") { $rl->setEnergyHash( $value ); }
+#        else {   carp("unrecognized member '$key'.");   }
+#    }
+
+#    ++$n_RateLaw;
+#    return $rl;
+#}
+
+
+###################
+### get/set methods
+#sub setType
+#{
+#    my ($rl, $value) = @_;
+#    unless (ref \$value eq 'SCALAR')
+#    {   confess("expecting scalar value.");   }
+#    $rl->[TYPE] = $value;
+#}
+#sub getType
+#{
+#    my ($rl) = @_;
+#    return $rl->[TYPE];
+#}
+##
+#sub setConstants
+#{
+#    my ($rl, $value) = @_;
+#    unless (ref $value eq 'ARRAY')
+#    {   confess("expecting array reference.");   }
+#    $rl->[CONSTANTS] = $value;
+#}
+#sub getConstants
+#{
+#    my ($rl) = @_;
+#    return $rl->[CONSTANTS];
+#}
+##
+#sub setFactor
+#{
+#    my ($rl, $value) = @_;
+#    unless (ref \$value eq 'SCALAR')
+#    {   confess("expecting scalar value.");   }
+#    $rl->[FACTOR] = $value;
+#    return undef;
+#}
+#sub getFactor
+#{
+#    my ($rl) = @_;
+#    return $rl->[FACTOR];
+#}
+##
+#sub setTotalRate
+#{
+#    my ($rl, $value) = @_;
+#    unless (ref \$value eq 'SCALAR')
+#    {   confess("expecting scalar value.");   }
+#    $rl->[TOTALRATE] = $value;
+#    return undef;
+#}
+#sub getTotalRate
+#{
+#    my ($rl) = @_;
+#    return $rl->[TOTALRATE];
+#}
+##
+#sub setEnergyHash
+#{
+#    my ($rl, $value) = @_;
+#    unless (ref \$value eq 'HASH')
+#    {   confess("expecting hash reference.");   }
+#    $rl->[ENERGYHASH] = $value;
+#}
+#sub getEnergyHash
+#{
+#    my ($rl) = @_;
+#    return $rl->[ENERGYHASH];
+#}
+
+### END OF EXPERIMENT
+###
 
 
 struct RateLaw =>
@@ -44,7 +151,7 @@ my $n_RateLaw = 0;
 
 sub copy
 {
-    my $rl = shift;
+    my $rl = shift @_;
     
     $rl_copy = RateLaw::new();
     $rl_copy->Type( $rl->Type );
@@ -79,9 +186,9 @@ sub newRateLaw
     my $basename  = (@_) ? shift : 'rateLaw';
 
     my $string_left = $$strptr;
-    my ( $name, $rate_law_type, $rate_fac );
+    my ($name, $rate_law_type, $rate_fac);
     my @rate_constants = ();
-    my ( $param, $err );
+    my ($param, $err);
 
     my $plist = $model->ParamList;
     $rate_fac = 1;
@@ -89,7 +196,6 @@ sub newRateLaw
     # if totalRate, we need to force expression into a function,
     #  even if it's a constant function.
     my $force_fcn = $totalRate ? 1 : 0;  
-
 
     # Handle legacy Sat and MM RateLaw types
     # TODO: convert Sat, MM and Hill into regular functions?
@@ -152,16 +258,6 @@ sub newRateLaw
         $rate_law_type = 'FunctionProduct';
         # add both functions to the list of "constants"
         push @rate_constants, ($name1, $name2);
-
-        #print STDERR "param1: ", $param1->Name, "\n";
-        #print STDERR "expr1:  ", $param1->Expr->toString(), "\n";
-        #print STDERR "func1:  ", $param1->Ref->Name, "\n";
-        #print STDERR "args1:  ", join( ", ", @{$param1->Ref->Args} ), "\n";
-
-        #print STDERR "param2: ", $param2->Name, "\n";
-        #print STDERR "expr2:  ", $param2->Expr->toString(), "\n";
-        #print STDERR "func2:  ", $param2->Ref->Name, "\n";
-        #print STDERR "args2:  ", join( ", ", @{$param2->Ref->Args} ), "\n";
     }
     elsif ( $string_left =~ /\S+/ )
     {
@@ -178,13 +274,11 @@ sub newRateLaw
 
         # determine ratelaw type
         if ( $param->Type =~ /^Constant/ )
-        {
-            # this is an elementary expression
+        {   # this is an elementary expression
             $rate_law_type = "Ele";
         }
         else
-        {            
-            #  return error if we're in EnergyBNG mode
+        {   #  return error if we're in EnergyBNG mode
             if ( $model->Options->{energyBNG} )
             {   return ( undef, "Functional ratelaws not supported in energyBNG mode." );   }
             
@@ -200,30 +294,23 @@ sub newRateLaw
     }
     else
     {   # REMOVED IMPLICIT RATELAWS!!  --Justin
-        return ( undef, "No RateLaw supplied for Reaction Rule." );
+        return undef, "No RateLaw supplied for Reaction Rule.";
     }
 
     # Remove leading whitespace
     $string_left =~ s/^\s*//;
-
     # Done processing input string
     $$strptr = $string_left;
 
     # Create new RateLaw object
-    my $rl;
-    $rl = RateLaw->new();
-    $rl->Type($rate_law_type);
-    $rl->Constants( [@rate_constants] );
-    $rl->TotalRate($totalRate);
-    $rl->Factor($rate_fac);
+    my $rl = RateLaw->new( Type=>$rate_law_type, Constants=>[@rate_constants], TotalRate=>$totalRate, Factor=>$rate_fac );
 
-    
     # Validate rate law type
     if ( $err = $rl->validate($reactants,$model) )
-    {   return ( '', $err );   }
+    {   return undef, $err;   }
 
     ++$n_RateLaw;
-    return ($rl);
+    return $rl;
 }
 
 
@@ -282,7 +369,7 @@ sub newRateLawNet
         #print "name=$name|$string_left\n";
     }
     else
-    {   return ( '', "Invalid rate law specification in $string_left" );   }
+    {   return '', "Invalid rate law specification in $string_left";   }
 
     if ( $string_left =~ /^\S+/ )
     {
@@ -307,12 +394,6 @@ sub newRateLawNet
         if ( looks_like_number($name) )
         {   # treat as a raw number
             $rate_law_type = "Ele";
-            if ( $name eq '0' )
-            {
-                # Allow reactions with zero rate for purpose of deleting
-                # existing reaction
-                $rate_law_type = "Zero";
-            }
             push @rate_constants, $name;
         }
         else
@@ -978,13 +1059,6 @@ sub validate
             return "Hill type ratelaws require exactly 3 rate constants";
         }
     }
-    elsif ( $rl->Type eq 'Zero' )
-    {
-        if ( @{$rl->Constants} != 0 )
-        {
-            return "Zero type ratelaws do not accept rate constants";
-        }
-    }
     elsif ( $rl->Type eq 'Function' )
     {
         # Validate local arguments here ?
@@ -1042,9 +1116,9 @@ sub toLatexString
     }
     else
     {
-        return ( "", "Unrecogized RateLaw type $type" );
+        return "", "Unrecogized RateLaw type $type";
     }
-    return ( $string, '' );
+    return $string, '';
 }
 
 
@@ -1161,9 +1235,9 @@ sub toMathMLString
 }
 
 
-###
-###
-###
 
+###
+###
+###
 
 1;

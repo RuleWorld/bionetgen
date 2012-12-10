@@ -26,14 +26,40 @@ struct CartesianProduct =>
 ### Methods:
 ###
 ### (public)
-###   $cp  = CartesianProduct::new(); 
-###   bool = $cp->initialize( \@lists )
-###   bool = $cp->getNext( \@elem )
-###   bool = $cp->update( \@new_items, $list_idx )
-###   bool = $cp->validate( )
+###   $cp  = CartesianProduct::new();
+###   $cp_copy = $cp->copy();
+###   bool = $cp->initialize( \@lists );
+###   bool = $cp->getNext( \@elem );
+###   bool = $cp->update( \@new_items, $list_idx );
+###   bool = $cp->validate( );
 ###
 ### (private)
-###   void = $cp->advance( )
+###   void = $cp->advance( );
+###
+
+
+
+# Copy the Cartesian Product
+sub copy
+{
+    my $cp = shift @_;
+
+    my $cp_copy = CartesianProduct::new();
+    $cp_copy->Lists( [@{$cp->Lists}] );
+    $cp_copy->NumLists( $cp->NumLists );
+    $cp_copy->ListPosition( $cp->ListPosition );
+    $cp_copy->FirstIdx( [@{$cp->FirstIdx}] );
+    $cp_copy->CurrentIdx( [@{$cp->CurrentIdx}] );
+    $cp_copy->LastIdx( [@{$cp->LastIdx}] );
+    $cp_copy->MoreElements( $cp->MoreElements );
+
+    return $cp_copy;
+}
+
+
+
+###
+###
 ###
 
 
@@ -78,6 +104,7 @@ sub initialize
     
     return 1;
 }
+
 
 
 ###

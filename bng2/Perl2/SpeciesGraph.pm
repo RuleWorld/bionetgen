@@ -255,14 +255,22 @@ sub readString
 	{
 	    # a real species cannot be null!
 	    unless ( @{$sg->Molecules} )
-	    {
-	        return "The null species is not a valid species in $$strptr";
-	    }
+	    {   return "The empty graph is not a valid species in $$strptr";   }
 	
-		# get Species Compartment (undefined is possible). --justin
-		# FUTURE: check for well-defined compartment in "strict" mode.  --justin
-		$err = $sg->assignCompartment();
-		return $err if ($err);
+        if ($clist->Used)
+        {
+		    # assign species compartment (if possible)
+		    $err = $sg->assignCompartment();
+		    return $err if ($err);
+
+            # Check for defined compartment assignment
+            unless ( defined $sg->Compartment )
+            {   return "Species does not have a compartment attribute!";   }
+
+            # Check for valid bonds
+            unless ( $sg->verifyTopology(1) )
+            {   return "Species has invalid bonds with respect to Compartment topology.";   }
+        }
 
 		# NOTE: sortLabel sorts the molecules in a canonical or semi-canonical fashion,
 		#  in the process the edges are updated (so no need to call updateEdges here!)
@@ -271,9 +279,7 @@ sub readString
 		# Check for correct number of subgraphs
 		my ($nsub) = $sg->findConnected();
 	    unless ( $nsub == 1 )
-		{
-			return "Species $$strptr is not connected";
-		}
+		{   return "Species $$strptr is not connected";   }
 	}
 	else
 	{
@@ -601,8 +607,6 @@ sub assignCompartment
  #
  # If $force_comp is supplied, the SpeciesGraph is forced to that compartment,
  #  unless it is incompatible with any molecule compartments.
- #
- # Note (Justin): separated assign and infer Compartment into two methods.
 {
 	my $sg = shift;                                # SpeciesGraph
 	my $force_comp  = scalar(@_) ? shift : undef;
@@ -763,7 +767,49 @@ sub inferSpeciesCompartment
 
 
 
-sub interactingSet
+sub verifyTopology
+# $valid = $sg->verifyTopology( $strict )
+#
+# Verifies the topology of a species graph w.r.t. bonds and compartments.
+{
+	my $sg = shift @_;
+    my $strict = @_ ? shift @_ : 0;
+
+    # gather pairs of bonded components
+    my %bonds = ();
+	foreach my $mol ( @{$sg->Molecules} )
+	{
+		foreach my $component ( @{$mol->Components} )
+		{
+			foreach my $edge_idx ( @{$component->Edges} )
+			{   push @{ $bonds{$edge_idx} }, $mol;   }
+		}
+	}
+
+    # check that bound components belong to molecules in same or adjacent compartments
+	foreach my $bond ( values %bonds )
+	{
+		# fail if there's fewer or greater than 2 components in this bond
+		return 0 if (@$bond != 2);
+
+        my $comp0 = $bond->[0]->Compartment;
+        my $comp1 = $bond->[1]->Compartment;
+        if (defined $comp0  and  defined $comp1)
+		{   # Both compartments are defined, check that compartments are the same or adjacent
+			return 0 unless ( $comp0==$comp1 or $comp0->adjacent($comp1) );
+		}
+        else
+        {   return 0 if ($strict);   }
+	}
+    return 1;
+}
+
+
+###
+###
+###
+
+
 
 # bool = interactingSet ( $sg1, $sg2, .. )
 #
@@ -773,6 +819,7 @@ sub interactingSet
 # NOTE: if all species have undefined compartment, then Return 1.  But return 0
 # if only some of the species have undefined compartment.  This lets us run
 # compartmentBNG in a "sloppy" mode where compartments may or may not be defined.
+sub interactingSet
 {
 	my @sgs = @_;
 
@@ -830,20 +877,15 @@ sub interactingSet
 
 
 
-###
-###
-###
 
-
-
-sub find_compartment_connected
 # @compartment_connected = $sg->find_compartment_connected( $i_mol )
 #
 # find the set of molecules in $sg that are connected to the molecule $i_mol by
 # a path contained in the same compartment as $i_mol.  Returns a list of
 # indexes corresponding to the molecules in the set.
+sub find_compartment_connected
 {
-	my ( $sg, $i_mol ) = @_;
+    my ($sg, $i_mol) = @_;
 
 	# get compartment of reference molecule
 	my $comp = $sg->Molecules->[$i_mol]->Compartment;
