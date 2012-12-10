@@ -215,9 +215,9 @@
             <ListOfMolecules>
               <Molecule id="RR4_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR4_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR4_RP1_M1_C2" name="r" label="T2" numberOfBonds="0"/>
-                  <Component id="RR4_RP1_M1_C3" name="r" label="T3" numberOfBonds="0"/>
+                  <Component id="RR4_RP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR4_RP1_M1_C2" name="r" numberOfBonds="0"/>
+                  <Component id="RR4_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
             </ListOfMolecules>
@@ -237,9 +237,9 @@
             <ListOfMolecules>
               <Molecule id="RR4_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR4_PP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR4_PP1_M1_C2" name="r" label="T2" numberOfBonds="1"/>
-                  <Component id="RR4_PP1_M1_C3" name="r" label="T3" numberOfBonds="0"/>
+                  <Component id="RR4_PP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR4_PP1_M1_C2" name="r" numberOfBonds="1"/>
+                  <Component id="RR4_PP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
               <Molecule id="RR4_PP1_M2" name="R">
@@ -276,9 +276,9 @@
             <ListOfMolecules>
               <Molecule id="RR5_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR5_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR5_RP1_M1_C2" name="r" label="T2" numberOfBonds="0"/>
-                  <Component id="RR5_RP1_M1_C3" name="r" label="T3" numberOfBonds="0"/>
+                  <Component id="RR5_RP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR5_RP1_M1_C2" name="r" numberOfBonds="0"/>
+                  <Component id="RR5_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
             </ListOfMolecules>
@@ -294,9 +294,9 @@
             <ListOfMolecules>
               <Molecule id="RR5_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR5_PP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR5_PP1_M1_C2" name="r" label="T2" numberOfBonds="1"/>
-                  <Component id="RR5_PP1_M1_C3" name="r" label="T3" numberOfBonds="0"/>
+                  <Component id="RR5_PP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR5_PP1_M1_C2" name="r" numberOfBonds="1"/>
+                  <Component id="RR5_PP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
               <Molecule id="RR5_PP1_M2" name="R">
@@ -335,9 +335,9 @@
             <ListOfMolecules>
               <Molecule id="RR6_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR6_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR6_RP1_M1_C2" name="r" label="T2" numberOfBonds="+"/>
-                  <Component id="RR6_RP1_M1_C3" name="r" label="T3" numberOfBonds="0"/>
+                  <Component id="RR6_RP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR6_RP1_M1_C2" name="r" numberOfBonds="+"/>
+                  <Component id="RR6_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
             </ListOfMolecules>
@@ -357,9 +357,9 @@
             <ListOfMolecules>
               <Molecule id="RR6_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR6_PP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR6_PP1_M1_C2" name="r" label="T2" numberOfBonds="+"/>
-                  <Component id="RR6_PP1_M1_C3" name="r" label="T3" numberOfBonds="1"/>
+                  <Component id="RR6_PP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR6_PP1_M1_C2" name="r" numberOfBonds="+"/>
+                  <Component id="RR6_PP1_M1_C3" name="r" numberOfBonds="1"/>
                 </ListOfComponents>
               </Molecule>
               <Molecule id="RR6_PP1_M2" name="R">
@@ -396,9 +396,9 @@
             <ListOfMolecules>
               <Molecule id="RR7_RP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR7_RP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR7_RP1_M1_C2" name="r" label="T2" numberOfBonds="+"/>
-                  <Component id="RR7_RP1_M1_C3" name="r" label="T3" numberOfBonds="0"/>
+                  <Component id="RR7_RP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR7_RP1_M1_C2" name="r" numberOfBonds="+"/>
+                  <Component id="RR7_RP1_M1_C3" name="r" numberOfBonds="0"/>
                 </ListOfComponents>
               </Molecule>
             </ListOfMolecules>
@@ -414,9 +414,9 @@
             <ListOfMolecules>
               <Molecule id="RR7_PP1_M1" name="L">
                 <ListOfComponents>
-                  <Component id="RR7_PP1_M1_C1" name="r" label="T1" numberOfBonds="+"/>
-                  <Component id="RR7_PP1_M1_C2" name="r" label="T2" numberOfBonds="+"/>
-                  <Component id="RR7_PP1_M1_C3" name="r" label="T3" numberOfBonds="1"/>
+                  <Component id="RR7_PP1_M1_C1" name="r" numberOfBonds="+"/>
+                  <Component id="RR7_PP1_M1_C2" name="r" numberOfBonds="+"/>
+                  <Component id="RR7_PP1_M1_C3" name="r" numberOfBonds="1"/>
                 </ListOfComponents>
               </Molecule>
               <Molecule id="RR7_PP1_M2" name="R">

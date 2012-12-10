@@ -51,12 +51,10 @@ end parameters
 begin molecule types
     mRNA()
     Protein()
-    0()
 end molecule types
 begin seed species
     mRNA()     0
     Protein()  0
-    $0()       1
 end seed species
 begin observables
     Molecules  mRNA_Total     mRNA()

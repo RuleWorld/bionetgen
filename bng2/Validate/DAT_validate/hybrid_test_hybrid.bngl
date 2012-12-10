@@ -41,10 +41,10 @@ begin reaction rules
   Rule1_v1:  L(r!1).R(l!1) -> R(l) + L(r)  koff
   Rule2_v1:  L_pop() + R(l) -> L(r!1,r,r).R(l!1)  kp1_1
   Rule2_v2:  L_pop() + R_pop() -> L(r!1,r,r).R(l!1,l)  kp1_2
-  Rule3_v1:  L(r%T1!+,r%T2,r%T3) + R(l) -> L(r%T1!+,r%T2!1,r%T3).R(l!1)  kp2
-  Rule3_v2:  L(r%T1!+,r%T2,r%T3) + R_pop() -> L(r%T1!+,r%T2!1,r%T3).R(l!1,l)  kp2_1
-  Rule4_v1:  L(r%T1!+,r%T2!+,r%T3) + R(l) -> L(r%T1!+,r%T2!+,r%T3!1).R(l!1)  kp2
-  Rule4_v2:  L(r%T1!+,r%T2!+,r%T3) + R_pop() -> L(r%T1!+,r%T2!+,r%T3!1).R(l!1,l)  kp2_2
+  Rule3_v1:  L(r!+,r,r) + R(l) -> L(r!+,r!1,r).R(l!1)  kp2
+  Rule3_v2:  L(r!+,r,r) + R_pop() -> L(r!+,r!1,r).R(l!1,l)  kp2_1
+  Rule4_v1:  L(r!+,r!+,r) + R(l) -> L(r!+,r!+,r!1).R(l!1)  kp2
+  Rule4_v2:  L(r!+,r!+,r) + R_pop() -> L(r!+,r!+,r!1).R(l!1,l)  kp2_2
   MapRule0:  L(r,r,r) -> L_pop()  k_gather
   MapRule1:  R(l,l) -> R_pop()  k_gather
 end reaction rules

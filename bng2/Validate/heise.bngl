@@ -16,11 +16,9 @@ end parameters
 begin molecule types
     A(c1~0~1)
     B(c1~0~1,c1~0~1)
-    0()
 end molecule types
 begin seed species
     A(c1~0)    0
-    $0()       1
 end seed species
 begin reaction rules
     # synthesis of A
