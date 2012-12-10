@@ -1,8 +1,8 @@
 # Validate state inheritance in a symmetric context
-#  At equillibrium:  A = sqrt(v/kab) = 1, B = v/(2*kb0) = 1/2
+#  At equilibrium:  A = sqrt(v/kab) = 1, B = v/(2*kb0) = 1/2
 begin model
 begin parameters
-    #poolsizes
+    #pool sizes
     PA   1
     PB   1
     #influx to the system
@@ -37,10 +37,10 @@ end model
 
 ## actions ##
 generate_network({overwrite=>1})
-# equillibrate wiht unlabeled models
+# equilibrate wiht unlabeled models
 simulate_ode({t_start=>0,t_end=>20,n_steps=>20})
 # add labels
 setParameter("vu",0)
 setParameter("vl",1)
-simulate_ode({t_start=>20,t_end=>40,n_steps=>20,continue=>1})
+simulate_ode({t_end=>40,n_steps=>20,continue=>1})
 

@@ -97,7 +97,7 @@ int main(int argc, char *argv[]){
     char *group_input_file_name = NULL;
     char *save_file_name;
     FILE *netfile, *conc_file, *group_file/*, *func_file*/, *out, *flux_file, *species_stats_file;
-    int line_number, n_read;
+    int net_line_number, group_line_number, n_read;
     Elt_array *species, *rates/*, *parameters*/;
     Group *spec_groups = NULL;
     Rxn_array *reactions;
@@ -394,20 +394,19 @@ int main(int argc, char *argv[]){
 		outpre = network_name;
 	}
 
-	line_number = 0;
-
 	/* Rate constants and concentration parameters should now be placed in the parameters block. */
-	rates = read_Elt_array(netfile, &line_number, (char*)"parameters", &n_read, 0x0);
+	net_line_number = 0;
+	rates = read_Elt_array(netfile, &net_line_number, (char*)"parameters", &n_read, 0x0);
 	fprintf(stdout, "Read %d parameters\n", n_read);
 	if (n_read < 1) {
 		fprintf(stderr,"ERROR: Reaction network must have parameters defined to be used as rate constants.\n");
 		exit(1);
 	}
 	rewind(netfile);
-	line_number = 0;
+	net_line_number = 0;
 
     /* Read species */
-    if (!(species = read_Elt_array(netfile, &line_number, (char*)"species", &n_read, rates))){
+    if (!(species = read_Elt_array(netfile, &net_line_number, (char*)"species", &n_read, rates))){
     	fprintf(stderr,"ERROR: Couldn't read rates array.\n");
     	exit(1);
     }
@@ -419,8 +418,8 @@ int main(int argc, char *argv[]){
 			fprintf(stderr, "ERROR: Couldn't open file %s.\n", group_input_file_name);
 			exit(1);
 		}
-		line_number = 0;
-		spec_groups = read_Groups(0x0, group_file, species, &line_number, (char*)"groups", &n_read);
+		group_line_number = 0;
+		spec_groups = read_Groups(0x0, group_file, species, &group_line_number, (char*)"groups", &n_read);
 		fprintf(stdout, "Read %d group(s) from %s\n", n_read, group_input_file_name);
 		fclose(group_file);
     }
@@ -466,7 +465,7 @@ int main(int argc, char *argv[]){
 
     /* Read reactions */
 //	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
-	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
+	if (!(reactions = read_Rxn_array(netfile, &net_line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
 
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
 		exit(1);
