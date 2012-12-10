@@ -21,7 +21,7 @@ use EnergyPattern;
 use SpeciesList;
 use MoleculeTypesList;
 use RxnList;
-use CrossProduct;
+use CartesianProduct;
 use RefineRule;
 
 
@@ -54,7 +54,7 @@ struct RxnRule =>
 	Priority  => '$',
 	MultScale => '$',    # Factor by which to scale multiplicity to account for symmetry in rule
     
-    RuleInstances => 'CrossProduct',   # object that iterates through instances of the reaction rule
+    RuleInstances => 'CartesianProduct',   # object that iterates through instances of the reaction rule
 
 	# The operations performed by the rule
 	EdgeAdd           => '@',
@@ -2946,10 +2946,10 @@ sub initializeRule
         ++$ipatt;
     }
 
-    # create crossproduct object to manage rule instances
-    my $crossprod_reactants = CrossProduct::new();
-    $crossprod_reactants->initialize( $rr->Rmatches );
-    $rr->RuleInstances( $crossprod_reactants );
+    # create CartesianProduct object to manage rule instances
+    my $cartprod_reactants = CartesianProduct::new();
+    $cartprod_reactants->initialize( $rr->Rmatches );
+    $rr->RuleInstances( $cartprod_reactants );
 
     return;
 }

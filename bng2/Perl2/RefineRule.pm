@@ -374,13 +374,13 @@ sub refineRule
 	}
 
 
-    # create crossproduct object to iterate over all reactant sets
-    my $crossprod_reactants = CrossProduct::new();
-    $crossprod_reactants->initialize( $rr->Rmatches );
+    # create CartesianProduct object to iterate over all reactant sets
+    my $cartprod_reactants = CartesianProduct::new();
+    $cartprod_reactants->initialize( $rr->Rmatches );
     
     # loop over every reactant set
     my $reactant_set = [];
-    while ( $crossprod_reactants->getNext($reactant_set) )
+    while ( $cartprod_reactants->getNext($reactant_set) )
     {
         # apply rule to reactant set and get the resulting refined rule
         my $refined_rule = $rr->apply_to_reactants( $reactant_set, $model, $hybrid_model, $params );
