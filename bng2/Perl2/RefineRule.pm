@@ -1,5 +1,3 @@
-# $Id: RxnRule.pm,v 1.20 2007/07/06 06:09:48 faeder Exp $
-
 package RxnRule;
 
 use strict;
@@ -57,7 +55,7 @@ sub newPopulationMappingRule
 	{
 		$g = SpeciesGraph->new();
 		# use the MoleculeTypes list for reactant validation
-		$err = $g->readString( \$string, $model->CompartmentList, $SpeciesGraph::IS_SPECIES,
+		$err = $g->readString( \$string, $model->CompartmentList, SpeciesGraph::IS_SPECIES,
 		                         $sep, $model->MoleculeTypesList );
 		if ($err) {  return ($err, $rr);  }
 		++$ipatt;
@@ -133,7 +131,7 @@ sub newPopulationMappingRule
 	{
 		my $g = SpeciesGraph->new();	
 		# Validate product graphs using population types
-		$err = $g->readString( \$string, $model->CompartmentList, $SpeciesGraph::IS_SPECIES,
+		$err = $g->readString( \$string, $model->CompartmentList, SpeciesGraph::IS_SPECIES,
 		                       $sep, $model->PopulationTypesList );
 		if ($err) {  return ($err, $rr);  }
 		++$ipatt;

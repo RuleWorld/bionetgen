@@ -233,22 +233,22 @@ sub checkSpeciesGraph
 
 sub checkMolecule
 {
-    my $mtl = shift;
-    my $mol = shift;
-    my $params = (@_) ? shift : '';
+    my $mtl = shift @_;
+    my $mol = shift @_;
+    my $params = @_ ? shift @_ : {};
 
-    my $IsSpecies     = (defined $params->{IsSpecies}    ) ? $params->{IsSpecies}     : 1;
-    my $AllowNewTypes = (defined $params->{AllowNewTypes}) ? $params->{AllowNewTypes} : 0;
+    my $IsSpecies     = exists $params->{IsSpecies}     ? $params->{IsSpecies}     : 1;
+    my $AllowNewTypes = exists $params->{AllowNewTypes} ? $params->{AllowNewTypes} : 0;
 
     my $mtype;
     if ( $mtype = $mtl->MolTypes->{$mol->Name} )
     {
         # Validate against declared type
         if ( my $err = $mtype->check($mol,$params) )
-        {
-            return $err;
-        }
-    } else {
+        {   return $err;   }
+    }
+    else
+    {
         # Type not found.  
         if ($AllowNewTypes)
         {

@@ -296,7 +296,7 @@ sub writeBNGL
         }
 
         # get species graph string
-        my $sexact = $spec->SpeciesGraph->toString(0);
+        my $sexact = $spec->SpeciesGraph->toString();
         $out .= sprintf "%-${maxlen}s", $sexact;
         
         my $c = $conc->[ $spec->Index - 1 ];

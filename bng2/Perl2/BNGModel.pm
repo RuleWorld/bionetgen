@@ -1428,7 +1428,7 @@ sub writeBNGL
     $out .= $model->ParamList->writeFunctions( \%params );
         
     # Species
-      $out .= $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, \%params );
+    $out .= $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, \%params );
 
 
     # Model Blocks

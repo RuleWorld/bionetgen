@@ -2019,17 +2019,17 @@ sub findMap
 	my $mtlist = shift @_;    # molecule-types list
 
     # clear out transformations
-    @{$rr->MolDel} = ();
-	@{$rr->MolAdd} = ();    
+    @{$rr->MolDel}  = ();
+	@{$rr->MolAdd}  = ();    
 	@{$rr->EdgeDel} = ();
     @{$rr->EdgeAdd} = ();
-	@{$rr->CompStateChange} = ();
+	@{$rr->CompStateChange}   = ();
     @{$rr->ChangeCompartment} = ();	   
 
 
 	# Aggregate reactant and product pattern graphs
 	my ($rg) = SpeciesGraph::copymerge( @{$rr->Reactants} );
-	my ($pg) = SpeciesGraph::copymerge( @{$rr->Products} );
+	my ($pg) = SpeciesGraph::copymerge( @{$rr->Products}  );
 
 
     # Set up mapping between molecules of aggregate graphs and molecules of patterns
@@ -2099,13 +2099,13 @@ sub findMap
 
         # Check that this molecule is fully specified, i.e. all components and component states
 		my $ref = $aggMapP[$imP];
-		my ( $p, $m ) = split /\./, $ref;
+		my ($p, $m) = split /\./, $ref;
 		my $mol = $rr->Products->[$p]->Molecules->[$m];
 
         # List of pointers to reactant components from which to inherit attributes of each component
 		my $ic    = 0;
 		my @ilist = ();
-		foreach my $comp ( @{ $mol->Components } )
+		foreach my $comp ( @{$mol->Components} )
 		{
 			if ( ( my $cref = $map->MapR->{"$imP.$ic"} ) ne "-1" )
 			{
@@ -2120,11 +2120,10 @@ sub findMap
 			}
 			++$ic;
 		}
-		if ( my $err =
-		         $mtlist->checkMolecule($mol, { IsSpecies => 1, InheritList => \@ilist }) )
-		{
-			return ( "Molecule created in reaction rule: " . $err );
-		}
+
+		if ( my $err = $mtlist->checkMolecule($mol, { IsSpecies => 1, InheritList => \@ilist }) )
+		{   return "Molecule created in reaction rule: $err";   }
+
 		push @{$rr->MolAdd}, [ ($ref, @ilist) ];
 	}
 
@@ -2185,25 +2184,40 @@ sub findMap
 	}
 
 
-    # Check for invalid half-bonds
-    while ( my ($ptr_P,$adj_P) = each %{$pg->Adjacency} )
-    {
-        unless ( ref $adj_P eq 'HASH' )
-        {   # ptr_P has a half-bond. Find corresponding reactant, if any.
-            my $ptr_R = $map->MapR->{$ptr_P};
+    # Check for invalid bond wildcards in products
+    foreach my $imP ( 0 .. @{$pg->Molecules}-1 )
+	{
+        my $mol = $pg->Molecules->[$imP];
+        foreach my $icP ( 0 .. @{$mol->Components}-1 )
+        {
+            my $comp = $mol->Components->[$icP];
+            next unless (@{$comp->Edges});
+            
+            my ($imR, $icR) = split /\./, $map->MapR("$imP.$icP");
+            # we already checked synthesized molecules, so we only need to check those with
+            #  a correspondence in the reactants
+            next if ( $imR == -1 );
 
-            # get molecule and component index
-            my ($im,$ic) = split /\./, $ptr_P;
-            # convert to p.m.c format
-            my $comp = $aggMapP[$im] . ".$ic";
-
-            if ( $ptr_R == -1 )
-            {   # product component is newly synthesized; half-bond is invalid.
-                exit_error( "New product component $comp has invalid half-bond in rule:", $rr->toString() );
+            # assume that if there's a wildcard, it's the only element of Edges
+            #  (This should be enforced elsewhere)
+            my $edge = $comp->Edges->[0];
+            if ($edge eq "+" )
+            {   
+                unless ( grep {$_ eq "+"} @{$rg->Molecules->[$imR]->Components->[$icR]->Edges} )
+                {
+                    my $err = sprintf("In reaction rule: product component %s has a bond wildcard, ", $comp->toString() )
+                             ."but the corresponding reactant component does not.";
+                    return $err;
+                }
             }
-            elsif ( ! exists $rg->Adjacency->{$ptr_R}  or  ref $rg->Adjacency->{$ptr_R} eq 'HASH' )
-            {   # corresponding reactant component has a full-bond; half-bond is invalid
-                exit_error( "Product component $comp has new or redefined half-bond in rule:", $rr->toString() );
+            elsif ($edge eq "?")
+            {
+                unless ( grep {$_ eq "?"} @{$rg->Molecules->[$imR]->Components->[$icR]->Edges} )
+                {
+                    my $err = sprintf("In reaction rule: product component %s has a bond wildcard, ", $comp->toString() )
+                             ."but the corresponding reactant component does not.";
+                    return $err;
+                }
             }
         }
     }
@@ -3988,9 +4002,7 @@ sub apply_operations
 
 
     # Remove dangling edges and rebuild Adjacency hash and Edge array
-    my $dangling_error = 0;
-    my $trim_dangling  = 1;
-	$g->updateEdges($dangling_error, $trim_dangling);
+	$g->updateEdges( SpeciesGraph::ALLOW_DANGLING_BONDS, SpeciesGraph::TRIM_DANGLING_BONDS);
 
 
 	# Build map of molecules in supergraph to the product patterns they should belong to
