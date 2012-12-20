@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created by BioNetGen 2.1.8+  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
-  <model id="hybrid_test_hybrid">
+  <model id="hybrid_test_hpp">
     <ListOfParameters>
       <Parameter id="Lig_tot" type="Constant" value="50000"/>
       <Parameter id="Rec_tot" type="Constant" value="3000"/>

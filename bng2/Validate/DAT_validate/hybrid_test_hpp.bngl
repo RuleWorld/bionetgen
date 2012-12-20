@@ -1,5 +1,5 @@
 # Created by BioNetGen 2.1.8+
-substanceUnits("Number");
+substanceUnits("Number")
 
 begin model
 begin parameters
@@ -51,7 +51,6 @@ end reaction rules
 end model
 
 
-###  model actions  ###
-
-writeXML();
+##  model actions ##
+writeXML()
 

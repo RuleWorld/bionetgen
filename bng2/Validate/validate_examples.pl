@@ -333,11 +333,11 @@ foreach my $model (@models)
     }
 
     # check hybrid model generation
-    if ( -e "${datprefix}_hybrid.bngl"  and  -e "${outprefix}_hybrid.bngl" )
+    if ( -e "${datprefix}_hpp.bngl"  and  -e "${outprefix}_hpp.bngl" )
     {
         multi_print( " -> checking hybrid model generator\n", @allFH );
         my $skipline = '^#';
-        my $exit_status = diff_files( "${outprefix}_hybrid.bngl", "${datprefix}_hybrid.bngl", $skipline );
+        my $exit_status = diff_files( "${outprefix}_hpp.bngl", "${datprefix}_hpp.bngl", $skipline );
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
@@ -350,11 +350,11 @@ foreach my $model (@models)
     }
 
     # check hybrid model XML generation
-    if ( -e "${datprefix}_hybrid.xml"  and  -e "${outprefix}_hybrid.xml" )
+    if ( -e "${datprefix}_hpp.xml"  and  -e "${outprefix}_hpp.xml" )
     {
         multi_print( " -> checking hybrid model XML specification\n", @allFH );
         my $skipline = '<!-- Created by BioNetGen .* -->';
-        my $exit_status = diff_files( "${outprefix}_hybrid.xml", "${datprefix}_hybrid.xml", $skipline );
+        my $exit_status = diff_files( "${outprefix}_hpp.xml", "${datprefix}_hpp.xml", $skipline );
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
@@ -549,7 +549,7 @@ sub delete_files
                        _pla_equil.net  _ssa_pla.cdat    _pla_equil.gdat
                        _nf_equil.xml   _nf_equil.gdat                    
                        .m              _mex.m           _mex_cvode.c 
-                       _hybrid.bngl    _hybrid.xml                        );
+                       _hpp.bngl       _hpp.xml                        );
     my @files = ();
     foreach my $suffix (@suffixes)
     {   push @files, ${outprefix}.${suffix};   }
