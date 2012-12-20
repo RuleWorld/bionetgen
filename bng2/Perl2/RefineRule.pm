@@ -257,7 +257,7 @@ sub newPopulationMappingRule
         
     # Construct RxnRule
 	$rr = RxnRule->new();
-	if ($name) {  $rr->Name( $name );  }
+	if ($name) {  $rr->Name($name);  }
 	$rr->Reactants( $reac );
 	$rr->Products(  $prod );
 	$rr->Priority( 0 );
@@ -283,20 +283,20 @@ sub newPopulationMappingRule
 
 
 
-###   /--\  /-\ /-- o \/-\ /-\
-###   |--/  |-/ |-  | |  | |-/
-###   |  \_ \__ |   | |  | \__
+###
+###
+###
 
 
 
-##-----------------##
-## Rule refinement ##
-##-----------------##
-sub refineRule
+##------------##
+## expandRule ##
+##------------##
+sub expandRule
 {
     # get input arguments
 	my $rr       = shift @_;      # this reaction rule
-	my $sg_list  = shift @_;      # refine rules w.r.t. these species graphs
+	my $sg_list  = shift @_;      # expand rules w.r.t. these species graphs
 	my $model    = shift @_;      # model
 	my $hybrid_model = shift @_;  # new hybrid model
     my $user_params = (@_) ? shift : {};
@@ -304,7 +304,8 @@ sub refineRule
 
     # Specify default params
 	my $params = {   verbose => 0,
-	                 indent  => ' ' x 8
+	                 indent  => ' ' x 8,
+                     exact   => 1
 	             };
 	# overwrite defaults with user params
 	while ( my ($opt,$val) = each %$user_params )
@@ -313,13 +314,11 @@ sub refineRule
 
     # define return values
     my $err = undef;
-    my $refinements = [];
-    my $refinement_map = {};
+    my $child_rule_list = [];
+    my $child_rule_map = {};
 
-    
     # clear out the RxnLabels hash
     %{$rr->RxnLabels} = ();
-
     
     # remember number of reactants
     my $n_reactants = scalar @{$rr->Reactants};
@@ -327,80 +326,86 @@ sub refineRule
 
     # Map Reactant Patterns into SpeciesGraphs in @$patterns
 	my $ipatt = 0;
-	foreach my $rpatt ( @{$rr->Reactants} )
+	foreach my $patt ( @{$rr->Reactants} )
 	{
 	    # make sure rmatches is empty!
 		$rr->Rmatches->[$ipatt] = [];
-        
-        # check if reactant is isomorphic to anything in sg_list
-        my $is_isomorph = 0;
-        foreach my $sg (@$sg_list)
+        if ( $params->{exact} )
         {
-            # NOTE: since $sg is a fully specified species, looking for a subgraph isomorphism in $rpatt
-            #  is sufficient for establishing isomorphism. This is slower than the method 'isomorphicTo'
-            #  but does not require sorting molecules (which is problematic for reactant patterns).
-            if ( $sg->isomorphicToSubgraph($rpatt) )
-            {
-                $is_isomorph = 1;
-                last;
-            }
-        }
-
-        # if not, then create a copy and self-map and add it to the list of matches
-        # (add only one automorphism, even if many exist!)
-        unless ($is_isomorph)
-        {
-            # copy reactant pattern and label canonically
-            my $copy_rpatt = $rpatt->copy(0);
-        
-            # get self-match
-            (my $copy_match) = $rpatt->isomorphicToSubgraph($copy_rpatt);
+            # add self-embedding of reactant pattern its match list
+            my $copy_patt = $patt->copy( !SpeciesGraph::COPY_LABEL, SpeciesGraph::GET_LABEL );        
+            (my $copy_match) = $patt->isomorphicToSubgraph($copy_patt);
             push @{$rr->Rmatches->[$ipatt]}, $copy_match;
+
         }
-	
+        else
+        {
+            # check if reactant is isomorphic to anything in sg_list
+            my $is_isomorph = 0;
+            foreach my $sg (@$sg_list)
+            {
+                # NOTE: since $sg is a fully specified species, looking for a subgraph isomorphism in $rpatt
+                #  is sufficient for establishing isomorphism. This is slower than the method 'isomorphicTo'
+                #  but does not require sorting molecules (which is problematic for reactant patterns).
+                if ( $sg->isomorphicToSubgraph($patt) )
+                {
+                    $is_isomorph = 1;
+                    last;
+                }
+            }
+            unless ($is_isomorph)
+            {
+                # add self-embedding of reactant pattern its match list
+                my $copy_patt = $patt->copy( !SpeciesGraph::COPY_LABEL, SpeciesGraph::GET_LABEL );
+                (my $copy_match) = $patt->isomorphicToSubgraph($copy_patt);
+                push @{$rr->Rmatches->[$ipatt]}, $copy_match;
+            }
+	    }
 
 	    # find all matches in $sg_list. load maps into Rmatches.
-	    my $n_matches = $rr->find_reactant_matches( $ipatt, $sg_list, $model );
+	    #my $n_matches = $rr->find_reactant_matches( $ipatt, $sg_list, $model );
+		my $new_matches = $rr->find_embeddings( $ipatt, $sg_list, $model );
+        push @{$rr->Rmatches->[$ipatt]}, @$new_matches;
 
 		if ( $params->{verbose} )
 		{
 		    my $tot_matches = @{$rr->Rmatches->[$ipatt]};
-		    printf $params->{indent} . "  ..found %d match%s to reactant %d\n",
+		    printf $params->{indent} . "  ..found %d match%s to reactant pattern %d\n",
 		        $tot_matches, ($tot_matches==1 ? '' : 'es'), $ipatt+1;
 		}
 		++$ipatt;
 	}
 
 
-    # create CartesianProduct object to iterate over all reactant sets
-    my $cartprod_reactants = CartesianProduct::new();
-    $cartprod_reactants->initialize( $rr->Rmatches );
+    # create CartesianProduct object to iterate over all rule instances
+    my $rule_instances = CartesianProduct::new();
+    $rule_instances->initialize( $rr->Rmatches );
     
     # loop over every reactant set
-    my $reactant_set = [];
-    while ( $cartprod_reactants->getNext($reactant_set) )
+    my $rule_instance = [];
+    while ( $rule_instances->getNext($rule_instance) )
     {
-        # apply rule to reactant set and get the resulting refined rule
-        my $refined_rule = $rr->apply_to_reactants( $reactant_set, $model, $hybrid_model, $params );
-        next unless ( defined $refined_rule );
+        # get child rule by restricting rule to the rule_instance
+        my $child_rule = $rr->restrict_rule( $rule_instance, $model, $hybrid_model, $params );
+        next unless ( defined $child_rule );
 
-        if ( exists $refinement_map->{$refined_rule->StringID} )
+        if ( exists $child_rule_map->{$child_rule->StringID} )
         {
-            my $multiplicity = $refined_rule->RateLaw->Factor;
-            my $prior_refinement = $refinement_map->{$refined_rule->StringID};
-            $prior_refinement->RateLaw->Factor( $prior_refinement->RateLaw->Factor + $multiplicity );
+            my $multiplicity = $child_rule->RateLaw->Factor;
+            my $prior_child_rule = $child_rule_map->{$child_rule->StringID};
+            $prior_child_rule->RateLaw->Factor( $prior_child_rule->RateLaw->Factor + $multiplicity );
         }
         else
         {           
-            $refinement_map->{$refined_rule->StringID} = $refined_rule;
-            push @$refinements, $refined_rule;
+            $child_rule_map->{$child_rule->StringID} = $child_rule;
+            push @$child_rule_list, $child_rule;
         }
     }
 
-    foreach my $refinement ( @$refinements )
+    foreach my $child_rule ( @$child_rule_list )
     {
         # add statFactor into the RateLaw constant
-        my $ratelaw = $refinement->RateLaw;
+        my $ratelaw = $child_rule->RateLaw;
         unless ( $ratelaw->Factor == 1.0 )
         {
             # get rate parameter
@@ -415,8 +420,8 @@ sub refineRule
 	    }
 	}
 
-    %{$refinement_map} = ();
-    return ($err, $refinements);
+    %{$child_rule_map} = ();
+    return ($err, $child_rule_list);
 }	
 
 
@@ -426,78 +431,13 @@ sub refineRule
 ###
 
 
-# Find matches to reactant pattern $ipatt in the list $sg_list.
-#  Store maps in $rr->Rmatches.  Returns the number of matches.
-sub find_reactant_matches
-{
-    my $rr      = shift @_;
-    my $ipatt   = shift @_;
-    my $sg_list = shift @_;
-    my $model   = shift @_;
 
-    # include by default?  (yes, if there are no include patterns)
-    my $include_default = @{$rr->Rinclude->[$ipatt]} ? 0 : 1;
-
-    my $n_matches = 0;
-    # loop over species-graphs
-    foreach my $sg ( @$sg_list )
-    {
-        # check for subgraph isomorphisms
-        my @matches = $rr->Reactants->[$ipatt]->isomorphicToSubgraph($sg);
-        
-        if (@matches)
-        {   
-            # check for inclusion
-            my $include = $include_default;
-            foreach my $patt_incl ( @{$rr->Rinclude->[$ipatt]} )
-	        {
-		        unless ( $patt_incl->isomorphicToSubgraph($sg) )
-		        {   # Include this match from list since graph matches included graph
-	    		    $include = 1;
-	    		    last;
-	       		}
-			}
-
-            # check for exclusion
-            if ($include)
-            {
-			    foreach my $patt_excl ( @{ $rr->Rexclude->[$ipatt] } )
-			    {
-			        if ( $patt_excl->isomorphicToSubgraph($sg) )
-				    {
-                        # Exclude this match from list since graph matches excluded graph
-	      		        $include = 0;
-				        last;
-				    }
-				}
-	    	}
-	    	
-	    	# add to matches
-	    	if ($include)
-	    	{
-	    	    push @{$rr->Rmatches->[$ipatt]}, @matches;
-                $n_matches += @matches;
-            }
-        }
-	}
-
-	return $n_matches;
-}
-
-
-###
-###
-###
-
-
-
-# apply rule to a set of reactants in @$reactant_set
-#  returns refined rule if everything is ok, otherwise returns undefined.
-sub apply_to_reactants
+# $child_rule = $rule->restrict_rule( \@rule_instance, $model, $hpp_model, \%params )
+sub restrict_rule
 {
     # get input arguments
     my $rr = shift @_;
-    my $reactant_set = shift @_;
+    my $rule_instance = shift @_;
     my $model = shift @_;
     my $hybrid_model = shift @_;
     my $user_params = (@_) ? shift : {};
@@ -521,7 +461,7 @@ sub apply_to_reactants
     # copy the target reactants and transfer labels from patterns to the copied reactants.
     my $matches   = [];   # holds maps from reactant patterns to (copies of) target SpeciesGraphs
     my $reactants = [];   # holds (copies of) target SpeciesGraphs
-    foreach my $match ( @$reactant_set )
+    foreach my $match ( @$rule_instance )
     {
         # copy the map and target graph (map copy points to the target copy)
         my $match_copy = $match->copy_map_and_target();
@@ -557,26 +497,8 @@ sub apply_to_reactants
     # supported in NFsim.  So we'll cross this bridge later.  --Justin
 
 
-
-	# create permutations of identical reactants and process each variant
-	my $reactant_permutations = $rr->permute_identical_reactants( $reactants, $model, 1 );
-
-    # Apply rule transformations and calculate labels.
-    my $products   = undef;
-    my $rxn_labels = {};
-	foreach my $permute (@$reactant_permutations)
-    {
-		my ( $products_perm, $rxn_label ) = $rr->apply_operations( $matches, $permute );
-        unless ( defined $products )
-        {
-            return undef  unless ( defined $products_perm );
-            return undef  if ( exists $rr->RxnLabels->{$rxn_label} );
-            $products = $products_perm;
-        }
-	    # add to the label hash
-	    $rxn_labels->{$rxn_label} = 1;
-    }
-
+	my ( $products ) = $rr->apply_operations( $matches );
+    return undef  unless ( defined $products );
 
     # Check for correct number of product graphs
     if ( @$products != $n_products )
@@ -595,7 +517,6 @@ sub apply_to_reactants
   	        return undef;
         }
     }
-
 
 	# Check and Process Product Graphs
     for ( my $ip = 0; $ip < @$products; ++$ip )
@@ -666,11 +587,13 @@ sub apply_to_reactants
         # first replace reactants
         foreach my $reactant ( @$reactants )
         {
+            # skip reactant if it's not a species!
+            next unless ( defined $reactant->Species );
             foreach my $pop ( @{$model->PopulationList->List} )
             {
-                if ( $pop->Species->isomorphicToSubgraph($reactant) )
+                if ( $pop->SpeciesGraph->isomorphicToSubgraph($reactant) )
                 {
-                    # replace reactant with population and transfer pattern label
+                    # replace reactant with population and transfer pattern label (the "Ref", not the "ID")
                     my $label = $reactant->Label();
                     $reactant = $pop->Population->copy();
                     $reactant->Label( $label );
@@ -683,9 +606,9 @@ sub apply_to_reactants
         {
             foreach my $pop ( @{$model->PopulationList->List} )
             {
-                if ( $pop->Species->isomorphicToSubgraph($product) )
+                if ( $pop->SpeciesGraph->isomorphicToSubgraph($product) )
                 {       
-                    # replace product with population and transfer pattern label
+                    # replace product with population and transfer pattern label (the "Ref", not the "ID")
                     my $label = $product->Label();   
                     $product = $pop->Population->copy();
                     $product->Label( $label );
@@ -700,29 +623,22 @@ sub apply_to_reactants
          
     # remove unnecessary temporary labels
     SpeciesGraph::removeRedundantLabels( $reactants, $products, $temp_labels );
-
-    # We can create the refinement now, but first remember that we encountered
-    #  this reaction already
-    foreach my $rxn_label (keys %$rxn_labels)
-    {
-        $rr->RxnLabels->{$rxn_label} = 1;
-    }
  
-    # Create rule-refinement
-    my $refined_rule = RxnRule::new();
+    # Create expanded rule
+    my $child_rule = RxnRule::new();
 
     # write rule name (remove parantheses around "reverse")
-    my $name = $rr->Name . '_v' . scalar (keys %{$rr->RxnLabels});
+    my $name = $rr->Name . '_v' . ((scalar (keys %{$rr->RxnLabels})) + 1);
     $name =~ s/\(reverse\)/_rev/g;
 	    
-    $refined_rule->Name( $name );
-    $refined_rule->Reactants( $reactants );
-    $refined_rule->Products( $products );
-    $refined_rule->RateLaw( $rr->RateLaw->copy() );
-    $refined_rule->TotalRate( $rr->TotalRate );
-    $refined_rule->Priority( $rr->Priority );	    
-    $refined_rule->DeleteMolecules( $rr->DeleteMolecules );
-    $refined_rule->MoveConnected( $rr->MoveConnected );
+    $child_rule->Name( $name );
+    $child_rule->Reactants( $reactants );
+    $child_rule->Products( $products );
+    $child_rule->RateLaw( $rr->RateLaw->copy() );
+    $child_rule->TotalRate( $rr->TotalRate );
+    $child_rule->Priority( $rr->Priority );	    
+    $child_rule->DeleteMolecules( $rr->DeleteMolecules );
+    $child_rule->MoveConnected( $rr->MoveConnected );
         	    
     my $rinclude = [];
     my $rexclude = [];
@@ -757,12 +673,12 @@ sub apply_to_reactants
             push @$pinclude, [ map {$_->copy()->relinkCompartments($hybrid_model->CompartmentList)} @{$rr->Pinclude->[$ip]} ];
             push @$pexclude, [ map {$_->copy()->relinkCompartments($hybrid_model->CompartmentList)} @{$rr->Pexclude->[$ip]} ];
         }
-    }	    
-	    
-    $refined_rule->Rinclude( $rinclude );
-    $refined_rule->Pinclude( $rexclude );
-    $refined_rule->Rexclude( $pinclude );
-    $refined_rule->Pexclude( $pexclude );
+    }	 
+   
+    $child_rule->Rinclude( $rinclude );
+    $child_rule->Pinclude( $rexclude );
+    $child_rule->Rexclude( $pinclude );
+    $child_rule->Pexclude( $pexclude );
    
 
     # gather references
@@ -778,196 +694,55 @@ sub apply_to_reactants
         my $sg = $products->[$i_sg];
         $sg->gatherLabels( $prefs, $i_sg );
     }
-
-    $refined_rule->RRefs( $rrefs );
-    $refined_rule->PRefs( $prefs );
-
-    	
-    # Does refined rule include a delete molecule transform?
-    my $delmol_refined = grep {$_ =~ /\./} @{$refined_rule->MolDel};
-    if ( $delmol_refined )
-    {
-        unless ( $refined_rule->DeleteMolecules )
-        {
-            # set delete molecules flag (NFsim requires this)
-            $refined_rule->DeleteMolecules(1);
-            if ( @{$rr->MolDel} )
-            {   # warn user since this may produce conflics with delete species transforms
-                send_warning( sprintf "DeleteMolecules flag added to rule %s.", $refined_rule->Name );
-            }
-        }
-    }  	
-    
-    # add multiplicity
-    $refined_rule->RateLaw->Factor( scalar keys %$rxn_labels ); 
+    $child_rule->RRefs( $rrefs );
+    $child_rule->PRefs( $prefs );
 
 
-    # Find mapping of reactants onto products (is this necessary? ..eh, why not)
-    # TODO: if this fails, it's an error
-    if ( my $err = $refined_rule->findMap( $hybrid_model->MoleculeTypesList ) )
-    {   return undef;   }
-
-
-    # construct refinement class ID for this rule
-    my $stringID = join '+', (map {$_->StringExact} @$reactants);
+    # construct class ID for this child rule
+    # (et's be a little safe here and use the StringID instead of StringExact)
+    my $stringID = join '+', (map {$_->toString()} @$reactants);
     $stringID .= '->';
-    $stringID .= join '+', (map {$_->StringExact} @$products[0..$n_products-1]);
+    $stringID .= join '+', (map {$_->toString()} @$products[0..$n_products-1]);
     if ( @$products > $n_products )
     {
-        $stringID .= '+' . join( '+', sort (map {$_->StringExact} @$products[$n_products..$#$products]) );
+        $stringID .= '+' . join( '+', sort (map {$_->toString()} @$products[$n_products..$#$products]) );
     }
-    $refined_rule->StringID( $stringID );
-            
-            
+    $child_rule->StringID( $stringID );
 
 
-	
+    # Find mapping of reactants onto products
+    if ( my $err = $child_rule->findMap( $hybrid_model->MoleculeTypesList ) )
+    {
+        send_warning( sprintf "Could not find reactant-product correspondence map for exapnded rule %s.", $child_rule->Name );
+        return undef;
+    }
+
+
+    # Does child rule include a delete molecule transform?
+    my $delmol = grep {$_ =~ /\./} @{$child_rule->MolDel};
+    if ( $delmol )
+    {
+        unless ( $child_rule->DeleteMolecules )
+        {
+            # set delete molecules flag (NFsim requires this)
+            $child_rule->DeleteMolecules(1);
+            if ( @{$rr->MolDel} )
+            {   # warn user since this may produce conflicts with delete species transforms
+                send_warning( sprintf "DeleteMolecules flag added to rule %s.", $child_rule->Name );
+            }
+        }
+    }
+
+
+    # TODO: determine if we need to make any changes to handle MultScale
+    $child_rule->RateLaw->Factor( 1 );
+      
+    # add this child rule to RxnLabels
+    $rr->RxnLabels->{$stringID} = $child_rule;
+    
 	# all done!
-    return $refined_rule;
+    return $child_rule;
 }
-
-
-
-###
-###
-###
-
-
-
-sub permute_identical_reactants
-# $reactant_permutations = $rr->permute_identical_reactants(\@targets)
-{
-	my $rr      = shift;
-	my $targets = shift;
-	my $model   = (@_) ? shift : undef;
-	# if true, check targets to see if they are patterns or species.
-	#  If Patterns, do not permute!
-	my $fixPatterns = (@_) ? shift : 0;
-	
-	my $n_targets = scalar @$targets;
-
-	# group reactants by StringExact
-	my $identical_reactants = {};
-	my $ir                  = 0;
-	foreach my $targ (@$targets)
-	{
-	    if ( $fixPatterns  and  !($targ->checkSpecies($model)) )
-	    {   # Don't permute patterns
-   	        push @{ $identical_reactants->{"|$ir|"} }, $ir;
-	    }
-	    else
-	    {
-		    push @{ $identical_reactants->{$targ->StringExact} }, $ir;
-		}
-		++$ir;
-	}
-
-	# create permuations of all identical reactants
-	my $ii                  = 0;
-	my $map_reactants       = [];
-	my $permutation_subsets = [];
-	foreach my $rset ( values %$identical_reactants )
-	{
-		# construct the map from a reactant's index
-		# to its identical reactant set and index in that set.
-		my $kk = 0;
-		foreach my $jj (@$rset) 
-        {
-			$map_reactants->[$jj] = [ $ii, $kk ];
-			$kk++;
-		}
-
-		# get all permutations of these identical reactants
-		$permutation_subsets->[$ii] = generate_permutations($rset);
-		$ii++;
-	}
-
-	# get crossproduct of permutation sets
-	my $permutation_sets = generate_crossproduct($permutation_subsets);
-
-	# reformat permutation sets into a single vector
-	my $reactant_permutations = [];
-	foreach my $perm (@$permutation_sets)
-	{
-		my $perm_vec = [];
-		my $kk       = 0;
-		foreach my $map (@$map_reactants)
-		{
-			push @$perm_vec, $perm->[ $map->[0] ]->[ $map->[1] ];
-			$kk++;
-		}
-		push @$reactant_permutations, $perm_vec;
-	}
-
-	return $reactant_permutations;
-
-	##
-	##
-
-	# generate permutations
-	sub generate_permutations
-	{
-		my $elements     = shift;
-		my $permutations = [];
-
-		foreach my $ii ( 0 .. $#{$elements} )
-		{
-			my $elements_ii = [];
-			push @$elements_ii, @{$elements}[ 0 .. $ii - 1 ];
-			push @$elements_ii, @{$elements}[ $ii + 1 .. $#{$elements} ];
-
-			my $perm_ii;
-			if ( @$elements_ii > 1 )
-            {
-				$perm_ii = generate_permutations($elements_ii);
-			}
-			else
-            {
-                $perm_ii = [$elements_ii];
-            }
-
-			foreach my $perm (@$perm_ii)
-            {
-				unshift @$perm, $elements->[$ii];
-				push @$permutations, $perm;
-			}
-		}
-		return $permutations;
-	}
-
-	##
-	##
-
-	sub generate_crossproduct
-	{
-		my $sets          = shift;
-		my $cross_product = [];
-
-		unless (@$sets) { return $cross_product; }
-
-		my $curr_set        = shift @$sets;
-		my $cross_remaining = generate_crossproduct($sets);
-
-		foreach my $elem (@$curr_set)
-        {
-			if (@$cross_remaining)
-            {
-				foreach my $subcross (@$cross_remaining)
-                {
-                    push @$cross_product, [ $elem, @$subcross ];
-                }
-			}
-			else
-            {
-                push @$cross_product, [$elem];
-            }
-		}
-
-		return $cross_product;
-	}
-
-}
-
 
 
 

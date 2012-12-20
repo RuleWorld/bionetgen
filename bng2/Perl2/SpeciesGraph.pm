@@ -25,8 +25,10 @@ use constant { PRINT_EDGES          => 1,
                ALLOW_DANGLING_BONDS => 1,
                TRIM_DANGLING_BONDS  => 1,
                IS_SPECIES           => 1,
+               COPY_LABEL           => 1,
+               GET_LABEL            => 1,
                TRUE                 => 1,
-               FALSE                => 0
+               FALSE                => 0,
              };
 
 
@@ -999,7 +1001,7 @@ sub copymerge
 
 
 # Make an exact copy of a SpeciesGraph, including all labels, IDs, etc
-#  NOTE: associated Species object, if exists, will not be copied!
+#  NOTE: associated Species object, if exists, will not be copied (but we'll preserve the reference)
 sub copy
 {
     # get speciesGraph to copy
@@ -1067,6 +1069,12 @@ sub copy
 		}
     }
 	
+    if (defined $sg->Species)
+    {   # pass the Species reference to the copy (but don't copy the Species!)
+        $sg_copy->Species( $sg->Species );
+    }
+
+
 	# return copy
 	return $sg_copy;
 }

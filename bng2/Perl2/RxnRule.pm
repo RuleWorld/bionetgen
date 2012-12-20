@@ -14,6 +14,7 @@ use lib $FindBin::Bin;
 # BNG Modules
 use BNGUtils;
 use SpeciesGraph;
+use Species;
 use RateLaw;
 use EnergyPattern;
 use SpeciesList;

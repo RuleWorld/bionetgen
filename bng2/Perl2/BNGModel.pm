@@ -1345,18 +1345,18 @@ sub writeBNGL
 
     # Version requirements
     foreach my $vstring ( @{$model->Version} )
-    {   $out .= "version(\"$vstring\");\n";   }
+    {   $out .= "version(\"$vstring\")\n";   }
 
     # Options
     while ( my ($opt,$val) = each %{$model->Options} )
     {
         next if ( $opt eq 'prefix' ); # don't write prefix
         next if ( $opt eq 'suffix' ); # don't write suffix
-        $out .= "setOption(\"$opt\",\"$val\");\n";
+        $out .= "setOption(\"$opt\",\"$val\")\n";
     }
 
     # Units
-    $out .= sprintf "substanceUnits(\"%s\");\n", $model->SubstanceUnits;
+    $out .= sprintf "substanceUnits(\"%s\")\n", $model->SubstanceUnits;
 
     # Begin Model (BNGL only)
     $out .= "\nbegin model\n"  if ( $params{'format'} eq 'bngl'  and  $params{'pretty_formatting'} );
