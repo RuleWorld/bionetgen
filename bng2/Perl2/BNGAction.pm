@@ -954,7 +954,7 @@ sub generate_hybrid_model
         'verbose'    => 0,
         'actions'    => ['writeXML()'],
         'execute'    => 0,
-        'exact'      => 1
+        'exact'      => 0
     };
     # get user options
     while ( my ($opt,$val) = each %$user_options )
