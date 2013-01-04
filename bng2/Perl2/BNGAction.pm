@@ -499,7 +499,12 @@ sub simulate
                 $n_new = 0;
                 foreach my $rr (@$rset)
                 {
-                    $n_new += $rr->applyRule( $model->SpeciesList, $model->RxnList, $model->ParamList, $species, $params );
+                    # expand rule
+                    my ($err, $nr) = $rr->expand_rule( $species, $model, $params );
+                    if (defined $err)
+                    {   return "Some problem expanding rule (OTF): $err";   }                    
+                    $n_new += $nr;
+
                 }
                 if ($verbose)
                 {
