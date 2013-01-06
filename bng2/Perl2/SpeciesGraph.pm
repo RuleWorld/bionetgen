@@ -2334,6 +2334,10 @@ sub isomorphicTo
 		return 1;
 	}
 
+    # quick check: do the speciesGraphs have the same number of molecules?
+    unless (@{$sg1->Molecules} == @{$sg2->Molecules})
+    {   return 0;  }
+
 	# Nested depth first search, first molecules, then components to find match
 	my $molecules1 = $sg1->Molecules;
 	my $molecules2 = $sg2->Molecules;
