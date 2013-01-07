@@ -3257,7 +3257,23 @@ sub build_reaction
             # get local values for function evaluation
             my @local_refs = ($fcn->Name);
             for ( my $ii=0; $ii < @{$fcn->Args}; ++$ii )
-            {   push @local_refs, $reactant_species->[ $rr->RRefs->{$fcn->Args->[$ii]} ]->Index;   }                   
+            {   
+                my $ptr1 = $rr->RRefs->{ $fcn->Args->[$ii] };
+                my ($patt_idx,$mol_idx,$comp_idx) = split( /\./, $ptr1 );
+                # first remap pattern pointer to a species
+                my $ptr2 = $reactant_species->[$patt_idx]->Index;
+                if (defined $mol_idx)
+                {   # next remap the molecule
+                    my ($mol2_idx) = split( /\./, $matches->[$patt_idx]->mapF($mol_idx) );
+                    $ptr2 .= ".$mol2_idx";
+                    if (defined $comp_idx)
+                    {   # finally remap the component
+                        my ($mol2_idx, $comp2_idx) = split( /\./, $matches->[$patt_idx]->mapF("$mol_idx.$comp_idx") );
+                        $ptr2 .= ".$comp2_idx";
+                    }
+                }
+                push @local_refs, $ptr2;
+            }                   
         
             # evaluate function with local values to get local function
             (my $local_fcn) = $fcn->evaluate_local( \@local_refs, $model->ParamList );

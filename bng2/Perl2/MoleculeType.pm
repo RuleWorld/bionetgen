@@ -153,11 +153,10 @@ sub add
     my @ctarray = ();
     foreach my $comp (@{$mol->Components})
     {
-        my $ctype=ComponentType->new;
-        $ctype->Name($comp->Name);
+        my $ctype=ComponentType->new( Name=>$comp->Name );
         # The first entry in the States array becomes the default state value
-        my $state= $comp->State;
-        if ($state ne '')
+        my $state = $comp->State;
+        if (defined $state and  $state ne '')
         {
             $ctype->States(0, $state);
         }

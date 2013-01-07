@@ -2524,314 +2524,317 @@ sub isomorphicTo
 # to a portion of another SpeciesGraph
 sub isomorphicToSubgraph
 {   
-	my $sg1       = shift @_;
 
-	my $MatchOnce  = $sg1->MatchOnce;
+	my $sg1 = shift @_;
+    my $sg2 = shift @_;
+    my $root_src  = @_ ? shift @_ : -1;
+    my $root_targ = @_ ? shift @_ : -1;
+
 	my $molecules1 = $sg1->Molecules;
  	my $edges1     = $sg1->Edges;
 	my $adj1       = $sg1->Adjacency;
 
+	my $molecules2 = $sg2->Molecules;
+    my $edges2     = $sg2->Edges;
+	my $adj2       = $sg2->Adjacency;
+
 	my @maps = ();
 
-  GRAPH:
-    while ( my $sg2 = shift @_ )
+    # First do some quick checks to see if it's possible to find a subgraph isomorphism
+	# 1) compare number of molecules
+	if ( @$molecules1 > @$molecules2 ) { return @maps; }
+
+	# 2) compare number of edges
+	if ( @$edges1 > @$edges2 ) { return @maps; }
+
+	# 3) compare species compartment
+	if ( defined $sg1->Compartment )
     {
-		my $molecules2 = $sg2->Molecules;
+        return @maps unless ( defined $sg2->Compartment );
+        return @maps unless ( $sg1->Compartment == $sg2->Compartment );
+    }
 
-        ## First do some quick checks to see if it's possible to find a subgraph isomorphism
-		# compare number of molecules
-		if ( scalar @$molecules1 > scalar @$molecules2 )
-        {   next;   }
+    # if this is the null graph, then return a trivial subgraph isomorphism
+    if ( $sg1->isNull() )
+    {   
+        my $map = Map->new( Source=>$sg1, Target=>$sg2 );
+		push @maps, $map;
+        return @maps;
+    }
 
-		# compare number of edges
-		my $edges2 = $sg2->Edges;
-		if ( scalar @$edges1 > scalar @$edges2 )
-        {   next;   }
+    ## Now look for a non-trivial subgraph isomorphism
+	# Nested depth first search, first molecules, then components to find match
 
-		# compare species compartment
-		if ( defined $sg1->Compartment )
+
+    # the last index for molecules in sg1 and sg2
+	my $mol1_last  = $#$molecules1;
+	my $mol2_last  = $#$molecules2;
+
+    my @mol1_begin = (0) x @$molecules1;                     # first index of mol2 that mol1 can match
+    my @mol1_ptr   = (0) x @$molecules1;                     # current index of mol2 that mol1 is trying to match
+    my @mol1_end   = (scalar @$molecules2) x @$molecules1;   # end index of mol2 that mol1 can match 
+	my @mol2_used  = (0) x @$molecules2;
+
+    if ($root_src >= 0)
+    {
+        $mol1_begin[$root_src] = $root_targ;
+        $mol1_ptr[$root_src]   = $root_targ;
+        $mol1_end[$root_src]   = $root_targ + 1;
+        $mol2_used[$root_targ] = 1;
+    }
+
+	my @comp1_ptrs  = (undef) x @$molecules1;
+	my @comp2_useds = (undef) x @$molecules2;
+
+	my $im1 = 0;
+    my $im2;
+
+	my $components1 = $molecules1->[$im1]->Components;
+    my $components2;
+
+    my $comp1_last = $#$components1;
+    my $comp2_last;
+
+	my ($ic1, $ic2);
+
+	# depth first search over Molecules
+  MITER:
+	while (1)
+    {
+	    # find a match at the current level
+	    # Currently loop is done over all possible molecules, but this could be
+	    # changed to loop over molecules adjacent to molecules higher level to limit search.
+		my $mmatch = 0;
+		for ( $im2 = $mol1_ptr[$im1]; $im2 < $mol1_end[$im1]; ++$im2 )
         {
-            next unless ( defined $sg2->Compartment );
-            next unless ( $sg1->Compartment == $sg2->Compartment );
-        }
+            # Continue if this molecule already mapped
+            unless ($im1==$root_src)
+            {   next if $mol2_used[$im2];   } 
 
-        if ( @$molecules1 == 0 )
-        {   # if this is the null graph, then return a trivial subgraph isomorphism
-            my $map = Map->new;
-		    $map->Source($sg1);
-			$map->Target($sg2);
-			push @maps, $map;
-            return @maps;
-        }
+            # compare molecule types
+            next unless ( $molecules1->[$im1]->Name eq $molecules2->[$im2]->Name );
 
-        ## Now look for a non-trivial subgraph isomorphism
+            # compare number of components
+            next if ( @$components1 > @{$molecules2->[$im2]->Components} );
 
-		# Nested depth first search, first molecules, then components to find match
-		my $nmol1  = $#$molecules1;
-		my $nmol2  = $#$molecules2;
+            # compare compartments
+			if ( defined $molecules1->[$im1]->Compartment )
+            {   
+                next unless ( defined $molecules2->[$im2]->Compartment );
+				next unless ( $molecules1->[$im1]->Compartment == $molecules2->[$im2]->Compartment );
+			}
 
-		my @mptr   = (0) x @$molecules1;
-		my @mused  = (0) x @$molecules2;
+             # Initialize data for component match at this level
+            $mol1_ptr[$im1] = $im2;
+			$components2  = $molecules2->[$im2]->Components;
+			$comp1_ptrs[$im1]  = [ (0) x @$components1 ];
+			$comp2_useds[$im1] = [ (0) x @$components2 ];
+			$ic1 = ( $comp1_last >= 0 ) ? 0 : -1;
+			$mmatch = 1;
+			last;
+		}
 
-		my @cptrs  = ();
-		my @cuseds = ();
+		# if no match found to this molecule, move back to previous molecule and try again
+		unless ($mmatch)
+        {
+			last MITER if ( $im1==0 );
 
-		my $im1 = 0;
-        my $im2;
+			# Reset molecule pointer at current level
+            $mol1_ptr[$im1] = $mol1_begin[$im1];
 
-		my $components1 = $molecules1->[$im1]->Components;
-        my $components2;
+            # go back to previous molecule
+			--$im1;
+			$components1 = $molecules1->[$im1]->Components;
+			$comp1_last  = $#$components1;
+			$ic1 = $comp1_last;
+			$im2 = $mol1_ptr[$im1];
+            unless ($im1==$root_src)
+            {   $mol2_used[ $mol1_ptr[$im1] ] = 0;  }
+			if ( $ic1 >= 0 )
+            {
+                ++$comp1_ptrs[$im1][$ic1];
+            }
+			else
+            {
+                ++$mol1_ptr[$im1];
+                next MITER;
+			}
+			$components2 = $molecules2->[$im2]->Components;
+		}
 
-        my $ncomp1 = $#$components1;
-        my $ncomp2;
-
-		my ($ic1, $ic2);
-
-		my $adj2 = $sg2->Adjacency;
-
-		# depth first search over Molecules
-	  MITER:
+		# Do depth first search over components of molecule 2
+		my $comp1_ptr  = $comp1_ptrs[$im1];
+		my $comp2_used = $comp2_useds[$im1];
+	  CITER:
 		while (1)
         {
-		    # find a match at the current level
-		    # Currently loop is done over all possible molecules, but this could be
-		    # changed to loop over molecules adjacent to molecules higher level to
-		    # limit search.
-			my $mmatch = 0;
-			for ( $im2 = $mptr[$im1] ; $im2 <= $nmol2 ; ++$im2 )
+            my $cmatch = 0;
+			if ( $comp1_last >= 0 )
             {
-				next if $mused[$im2]; # Continue if this molecule already mapped
-				my $namestring = $molecules1->[$im1]->Name;
-				$namestring =~ s/\*$/.*/;
-
-				#print "namestring=$namestring\n";
-				next unless ( $molecules2->[$im2]->Name =~ /^${namestring}$/ );
-
-				#next if ($molecules1[$im1]->Name cmp $molecules2[$im2]->Name);
-				if ( $molecules1->[$im1]->Compartment )
+                my ($ci1, $ci2);
+				$ci1 = $components1->[$ic1];
+				$comp2_last = $#$components2;
+				for ( $ic2 = $comp1_ptr->[$ic1];  $ic2 <= $comp2_last;  ++$ic2 )
                 {
-					next unless ( $molecules1->[$im1]->Compartment == $molecules2->[$im2]->Compartment );
-				}
+					next if $comp2_used->[$ic2];
+					$ci2 = $components2->[$ic2];
 
-	            #print "$im1 $im2: $molecules1[$im1]->Name -> $molecules2[$im2]->Name\n";;
-	             # Initialize data for component match at this level
-				$mptr[$im1]   = $im2;
-				$components2  = $molecules2->[$im2]->Components;
-				$cptrs[$im1]  = [ (0) x @$components1 ];
-				$cuseds[$im1] = [ (0) x @$components2 ];
-				$ic1 = ( $ncomp1 >= 0 ) ? 0 : -1;
-				$mmatch = 1;
-				last;
-			}
+					# Component name
+					next unless ( $ci1->Name eq $ci2->Name );
 
-			# Move up a level (to last component of molecule at previous level)
-			# if no match molecules found
-			if ( $mmatch==0 )
-            {
-				last MITER if ( $im1 == 0 );
-
-				# Reset molecule pointer at current level
-				$mptr[$im1] = 0;
-				--$im1;
-				$components1          = $molecules1->[$im1]->Components;
-				$ncomp1               = $#$components1;
-				$ic1                  = $ncomp1;
-				$im2                  = $mptr[$im1];
-				$mused[ $mptr[$im1] ] = 0;
-				if ( $ic1 >= 0 )
-                {
-                    ++$cptrs[$im1][$ic1];
-                }
-				else
-                {
-                    ++$mptr[$im1];
-                    next MITER;
-				}
-				$components2 = $molecules2->[$im2]->Components;
-			}
-
-			# Do depth first search over components of molecule 2
-			my $cptr  = $cptrs[$im1];
-			my $cused = $cuseds[$im1];
-		  CITER:
-			while (1)
-            {
-                my $cmatch;
-				if ( $ncomp1 >= 0 )
-                {
-                    my ($ci1, $ci2);
-					$ci1    = $components1->[$ic1];
-					$ncomp2 = $#$components2;
-					$cmatch = 0;
-					for ( $ic2 = $cptr->[$ic1];  $ic2 <= $ncomp2;  ++$ic2 )
+					# Component state only if present in sg1
+					if ( defined $ci1->State )
                     {
-						next if $cused->[$ic2];
-						$ci2 = $components2->[$ic2];
-
-						# Component name
-						next if ( $ci1->Name cmp $ci2->Name );
-
-						# Component state only if present in sg1
-						if ( defined $ci1->State )
+						unless ( $ci1->State eq "?" )
                         {
-							if ( $ci1->State =~ /[*+?]/ )
-                            {
-								if ( $ci1->State eq '+' )
-                                {
-									next if ( $ci2->State eq '' );
-								}
-							}
-							else
-                            {
-								next if ( $ci1->State cmp $ci2->State );
-							}
+							next unless ( $ci1->State eq $ci2->State );
 						}
-                        # compare compartments
-						if ( defined $ci1->Compartment )
+					}
+                    # compare compartments
+					if ( defined $ci1->Compartment )
+                    {
+                        next unless ( defined $ci2->Compartment );
+						next unless ( $ci1->Compartment == $ci2->Compartment );
+					}
+
+	                # Number of component edges must match (primarily used to look for free
+	                # binding sites
+	                # Number of edges
+					my $diff = @{$ci2->Edges} - @{$ci1->Edges};
+					if ($diff)
+                    {
+						# Mismatch unless first Edge is wildcard
+                        if ( @{$ci1->Edges} )
                         {
-                            next unless ( defined $ci2->Compartment );
-							next unless ( $ci1->Compartment == $ci2->Compartment );
-						}
+						    my $wild = $ci1->Edges->[0];
+						    next unless ( $wild =~ /^[+?]$/ );
 
-		                # Number of component edges must match (primarily used to look for free
-		                # binding sites
-		                # Number of edges
-						my $diff = @{$ci2->Edges} - @{$ci1->Edges};
-						if ($diff)
-                        {
-							# Mismatch unless first Edge is wildcard
-                            if ( @{$ci1->Edges} )
+					        # + wildcard requires $diff>=0 (= case handled above)
+						    if ( $wild eq '+' )
                             {
-							    my $wild = $ci1->Edges->[0];
-							    next unless ( $wild =~ /^[*+?]$/ );
-
-						        # + wildcard requires $diff>=0 (= case handled above)
-							    if ( $wild eq '+' )
-                                {
-								    next unless ( $diff > 0 );
-							    }
-							    else
-                                {   # *? (equivalent) wildcard requires $diff>-1, #c2 edges >= #c1 edges - 1 (for wildcard)
-								    next unless ( $diff >= -1 );
-							    }
-                            }
-                            else
-                            {
-                                next;
-                            }
-						}
-
-						#Check component edges
-						my $ematch = 1;
-						my $p1 = "$im1.$ic1";
-						my $p2 = "$im2.$ic2";
-                        if (ref $adj1->{$p1} eq 'HASH')
-    					{
-                          EDGE:
-                            foreach my $q1 ( keys %{$adj1->{$p1}} )
-                            {
-							    my ($jm1, $jc1) = split /\./, $q1;
-							    next if ( $jm1 > $im1 );
-							    if ( $jm1 == $im1 )
-                                {
-								    next if ( $jc1 >= $ic1 );
-							    }
-							    my $q2 = "$mptr[$jm1].$cptrs[$jm1][$jc1]";
-							    unless ( (ref $adj2->{$p2} eq 'HASH') and (defined $adj2->{$p2}{$q2}) )
-                                {
-								    $ematch = 0;
-								    last EDGE;
-							    }
+							    next unless ( $diff > 0 );
+						    }
+						    else
+                            {   # *? (equivalent) wildcard requires $diff>-1, #c2 edges >= #c1 edges - 1 (for wildcard)
+							    next unless ( $diff >= -1 );
 						    }
                         }
-						next if ($ematch==0);
-
-						$cptr->[$ic1] = $ic2;
-
-						# Complete mapping of this molecule if $ic1==$ncomp1
-						if ( $ic1 == $ncomp1 )
+                        else
                         {
-							$cmatch = 1;
-							last;
-						}
-						else
-                        {   # descend to next component
-							$cused->[$ic2] = 1;
-							++$ic1;
-							next CITER;
-						}
-					}
-				}
-				else
-                {   # No components in pattern
-					$cmatch = 1;
-				}
-
-				# Move up a component level if no match found
-				if ( $cmatch==0 )
-                {   # Move to next molecule at current level if up exhausted
-					# component search
-					if ( $ic1 <= 0 )
-                    {
-						# Increment molecule pointer at current level
-						++$mptr[$im1];
-						next MITER;
+                            next;
+                        }
 					}
 
-					# Reset component pointer at current level
-					$cptr->[$ic1] = 0;
-					--$ic1;
-					$cused->[ $cptr->[$ic1] ] = 0;    # Reset pointers at new level
-					++($cptr->[$ic1]);
-					next CITER;
-				}
-
-				# If $im1==$nmol, then graphs are isomorhpic and we can return
-				# Modify to save map for subgraph isomorphism case
-				if ( $im1 == $nmol1 )
-                {
-					my $map = Map->new;
-					$map->Source($sg1);
-					$map->Target($sg2);
-					my %mapf = ();
-					foreach my $im ( 0 .. $nmol1 )
-                    {
-						my $im2 = $mptr[$im];
-						$mapf{$im} = $im2;
-						my $cptr = $cptrs[$im];
-
-						foreach my $ic ( 0 .. $#$cptr )
+					#Check component edges
+					my $ematch = 1;
+					my $p1 = "$im1.$ic1";
+					my $p2 = "$im2.$ic2";
+                    if (ref $adj1->{$p1} eq 'HASH')
+					{
+                      EDGE:
+                        foreach my $q1 ( keys %{$adj1->{$p1}} )
                         {
-							$mapf{"$im.$ic"} = sprintf "%d.%d", $im2, $cptr->[$ic];
-						}
-					}
-					$map->MapF( {%mapf} );
-					push @maps, $map;
+						    my ($jm1, $jc1) = split /\./, $q1;
+						    next if ( $jm1 > $im1 );
+						    if ( $jm1 == $im1 )
+                            {
+							    next if ( $jc1 >= $ic1 );
+						    }
+                            my $q2 = "$mol1_ptr[$jm1].$comp1_ptrs[$jm1][$jc1]";
+						    unless ( (ref $adj2->{$p2} eq 'HASH') and (exists $adj2->{$p2}{$q2}) )
+                            {
+							    $ematch = 0;
+							    last EDGE;
+						    }
+					    }
+                    }
+					next unless ($ematch);
 
-					if ($MatchOnce)
-                    {   next GRAPH;   }
+					$comp1_ptr->[$ic1] = $ic2;
 
-					if ( $ncomp1 >= 0 )
+					# Complete mapping of this molecule if $ic1==$comp1_last
+					if ( $ic1 == $comp1_last )
                     {
-						++($cptr->[$ic1]);
-						next CITER;
+						$cmatch = 1;
+						last;
 					}
 					else
-                    {
-				        # Go to next molecule if no components in the current molecule
-						++$mptr[$im1];
-						next MITER;
+                    {   # move to next component
+						$comp2_used->[$ic2] = 1;
+						++$ic1;
+						next CITER;
 					}
 				}
-				last CITER;
+			}
+			else
+            {   # No components in pattern
+				$cmatch = 1;
 			}
 
-			# Move down a level in molecules (increment $im1)
-			$mused[$im2] = 1;
-			++$im1;
-			$components1 = $molecules1->[$im1]->Components;
-			$ncomp1      = $#$components1;
+			# Move back to previous component if no match found
+			unless ( $cmatch )
+            {   # Move to next molecule at current level if up exhausted
+				# component search
+				if ( $ic1 <= 0 )
+                {
+					# Increment molecule pointer at current level
+                    ++$mol1_ptr[$im1];
+					next MITER;
+				}
+
+				# Reset component pointer at current level
+				$comp1_ptr->[$ic1] = 0;
+				--$ic1;
+				$comp2_used->[ $comp1_ptr->[$ic1] ] = 0;    # Reset pointers at new level
+				++($comp1_ptr->[$ic1]);
+				next CITER;
+			}
+
+			# If $im1==$mol1_last, then graphs are isomorhpic and we can return
+			# Modify to save map for subgraph isomorphism case
+			if ( $im1 == $mol1_last )
+            {
+				my $map = Map->new;
+				$map->Source($sg1);
+				$map->Target($sg2);
+				my %mapf = ();
+				foreach my $im ( 0 .. $mol1_last )
+                {
+                    my $im2 = $mol1_ptr[$im];
+					$mapf{$im} = $im2;
+					my $comp1_ptr = $comp1_ptrs[$im];
+
+					foreach my $ic ( 0 .. $#$comp1_ptr )
+                    {
+						$mapf{"$im.$ic"} = sprintf "%d.%d", $im2, $comp1_ptr->[$ic];
+					}
+				}
+				$map->MapF( {%mapf} );
+				push @maps, $map;
+
+				if ($sg1->MatchOnce)
+                {   last MITER;   }
+
+				if ( $comp1_last >= 0 )
+                {
+					++($comp1_ptr->[$ic1]);
+					next CITER;
+				}
+				else
+                {
+			        # Go to next molecule if no components in the current molecule
+                    ++$mol1_ptr[$im1];
+					next MITER;
+				}
+			}
+			last CITER;
 		}
+
+		# Move to the next molecule in $sg1
+		$mol2_used[$im2] = 1;
+		++$im1;
+		$components1 = $molecules1->[$im1]->Components;
+		$comp1_last  = $#$components1;
 	}
 	
 	return @maps;

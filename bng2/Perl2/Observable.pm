@@ -107,7 +107,7 @@ sub clearWeights
 
 sub evaluate
 {
-    my $obs = shift;
+    my $obs = shift @_;
     my $args  = (@_) ? shift : [];        
     my $plist = (@_) ? shift : undef;
     my $level = (@_) ? shift : 0;
@@ -120,16 +120,29 @@ sub evaluate
     {
         push @$eval_args, $args->[$ii]->evaluate( $plist, $level+1 );
         ++$ii;
-    }             
+    }
     
     my $val = 0;
     if (@$eval_args)
     {   # this is a local observable
-        foreach my $species_idx ( @$eval_args )
+        foreach my $ptr ( @$eval_args )
         {
-            unless ( $species_idx =~ /^\d+$/  and  $species_idx >= 0 )
-            {  die "Observable->evaluate(): Error! Observable argument was not a species Index!";  }
-            $val += (defined $obs->Weights->[$species_idx]) ? $obs->Weights->[$species_idx] : 0;
+            my ($species_idx,$mol_idx) = split( /\./, $ptr );
+            if ( defined $mol_idx )
+            {   # molecule-scopes observable
+                unless ( defined $BNGModel::GLOBAL_MODEL )
+                {  die "Observable->evaluate(): Error! Can't find current Model to evaluate global observable!";  }
+
+                my $sg = $BNGModel::GLOBAL_MODEL->SpeciesList->Array->[$species_idx-1]->SpeciesGraph;
+                $val += $obs->match( $sg, $mol_idx );
+            }   
+            elsif ( $species_idx >= 0 )
+            {   # complex-scoped (i.e. species-scoped) observable
+                $val += (defined $obs->Weights->[$species_idx]) ? $obs->Weights->[$species_idx] : 0;
+            }
+            else
+            {  die "Observable->evaluate(): Error! Observable argument was not a pointer to a species or a molecule!";  }
+
         }
     }
     else
@@ -444,20 +457,25 @@ sub toXML
 # try to match observable to a speciesGraph and return the number of matches
 sub match
 {
-    my $obs  = shift;
-    my $sg   = shift;
+    my $obs  = shift @_;
+    my $sg   = shift @_;
+    my $rootmol = @_ ? shift @_ : undef;
 
     # Loop over patterns and find matches
     my $total_matches = 0;    
     foreach my $patt (@{$obs->Patterns})
     {
         # find matches of this pattern in species graph
-        my @matches = $patt->isomorphicToSubgraph($sg);
-            
+        my @matches;
+        if (defined $rootmol)
+        {   @matches = $patt->isomorphicToSubgraph($sg, 0, $rootmol);   }
+        else
+        {   @matches = $patt->isomorphicToSubgraph($sg);   }
+
         # add correction for symmetry!
         my $n_match = scalar @matches;
         # SYMMETRY CORRECTION is disabled for the time being!
-        #  Uncommend the following block to enable the correction.  --Justin 15mar2010
+        #  Uncomment the following block to enable the correction.  --Justin 15mar2010
         #if ( $obs->Type eq 'Molecules' )
         #{
         #    $n_match /= $patt->Automorphisms;
