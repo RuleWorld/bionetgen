@@ -1413,8 +1413,7 @@ static int* read_indices_Rxn(char* string, int* n_indices, Elt_array* species,
 				++error;
 				goto cleanup;
 			} else if (check == -1) { /* Assume that index=0 corresponds to a Null species --Justin */
-				fprintf(
-						stdout,
+				fprintf(stdout,
 						"Found species with index %d at line %d: assuming this is the null species.\n",
 						index, line_number);
 				fflush(stdout);

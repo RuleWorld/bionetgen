@@ -228,10 +228,16 @@ sub readString
 
             my $count_autos = $obs->Type eq 'Molecules' ? 1 : 0;
             $err = $g->readString( \$string, $clist, 0, $sep, $mtlist, $count_autos );
-
             if ($err) {  return "While reading observable " . $obs->Name . ": $err";  }
 
-            $string=~ s/$sep//;
+            $string =~ s/$sep//;
+
+            if ( $g->isNull() )
+            {   # this is the null pattern
+                send_warning( sprintf("Found useless instance of null pattern in observable %s.", $obs->Name) );
+                next;
+            }
+
             if ( ($obs->Type eq 'Species') and (!defined($g->Quantifier) or $g->Quantifier eq ''))
             { 
                 $g->MatchOnce(1);

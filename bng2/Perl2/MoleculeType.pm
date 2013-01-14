@@ -1,6 +1,10 @@
 # Objects for typing and checking Molecules
 package MoleculeType;
 
+# pragmas
+use strict;
+use warnings;
+
 # Perl Modules
 use Class::Struct;
 use FindBin;
@@ -14,8 +18,8 @@ use ComponentType;
 
 struct MoleculeType =>
 {
-    Name       => '$',
-    Components => '@',     # Array of ComponentTypes
+    Name           => '$',
+    Components     => '@',     # Array of ComponentTypes
     PopulationType => '$', # Is this a population type molecule?
 };
 
@@ -28,17 +32,13 @@ struct MoleculeType =>
 # read a molecule type from the Molecle Types block
 sub readString
 {
-    my $mtype  = shift;
-    my $strptr = shift;
+    my $mtype  = shift @_;
+    my $strptr = shift @_;
 
     my $string_left = $$strptr;
 
-    # Get molecule name
-    # NOTE: for now we allow molecule type to be any alpha-numeric string (possibly numeric)
-    #  but in the future we will disallow numeric identifiers.  The 0 symbol will be reserved
-    #  for the null species (useful in 0 order synthesis reactions and unimolecular deletions)
-    if ( $string_left =~ s/^(\w+)// )
-    #if ( $string_left=~ s/^(\w*[A-Za-z]\w*)// )
+    # Get molecule name (alphanumeric ID, must contain at least one letter!)
+    if ( $string_left =~ s/^(\w*[A-Za-z]\w*)// )
     {
         my $name= $1;
         $mtype->Name($1);
@@ -146,12 +146,11 @@ sub copy
 
 sub add
 {
-    my $mtype = shift;
-    my $mol   = shift;
+    my $mtype = shift @_;
+    my $mol   = shift @_;
 
     $mtype->Name($mol->Name);
-    my @ctarray;
-    @ctarray = ();
+    my @ctarray = ();
     foreach my $comp (@{$mol->Components})
     {
         my $ctype=ComponentType->new;
@@ -178,18 +177,18 @@ sub add
 
 sub check
 {
-    my $mtype  = shift;
-    my $mol    = shift;
-    my $params = shift;
+    my $mtype  = shift @_;
+    my $mol    = shift @_;
+    my $params = @_ ? shift @_ : {};
 
-    my $IsSpecies            = (defined $params->{IsSpecies})     ? $params->{IsSpecies}     : 1;
-    my $AllowNewStates       = (defined $params->{AllowNewTypes}) ? $params->{AllowNewTypes} : !$IsSpecies;
+    my $IsSpecies            = exists $params->{IsSpecies}     ? $params->{IsSpecies}     : 1;
+    my $AllowNewStates       = exists $params->{AllowNewTypes} ? $params->{AllowNewTypes} : !$IsSpecies;
     my $AllowPartial         = !$IsSpecies;
     my $AllowWildcard        = !$IsSpecies;
     my $AllowUndefinedStates = !$IsSpecies;
-    my $InheritList          = (defined $params->{InheritList})   ? $params->{InheritList}   : 0;
+    my $InheritList          = exists $params->{InheritList}   ? $params->{InheritList}   : 0;
 
-    @ctypes = @{$mtype->Components};
+    my @ctypes = @{$mtype->Components};
     foreach my $comp (@{$mol->Components})
     {
         my $found=0;
@@ -199,8 +198,8 @@ sub check
         {
             if ($comp->Name eq $comp_type->Name)
             {
-    	        my $state= $comp->State;
-    	        if ($state eq '')
+    	        my $state = $comp->State;
+    	        if ( !defined $state )
                 {
     	            # If component state is undefined, check whether component states have been declared, meaning this 
     	            # component should not be stateless, unless AllowUndefinedStates is true
@@ -213,7 +212,7 @@ sub check
     	                return($err);
     	            }
 	            } 
-	            elsif ($state=~/^[*?+]$/)
+	            elsif ($state=~/^[?]$/)
                 {
 	                unless ($AllowWildcard)
                     {
@@ -259,6 +258,17 @@ sub check
 	                    }
 	                } 
 	            }
+
+                if ( $IsSpecies )
+                {   # check for bond wildcards
+                    if ( grep {$_ =~ /^[+?]$/} @{$comp->Edges} )
+                    {
+                        my $err = sprintf "Component %s of molecule %s has an illegal bond wildcard.",
+                                             $comp->Name, $mol->toString(); 
+	                    return $err;
+                    }
+                }
+                
 	            # Delete component type from search array
 	            splice @ctypes, $index, 1;
 	            $found = 1;
@@ -266,7 +276,7 @@ sub check
             } 
             ++$index;
         }
-        if (!$found)
+        unless ($found)
         {
             my $err = sprintf "Component %s of molecule %s not found in molecule declaration", $comp->Name, $mol->toString();
             return $err;
@@ -274,14 +284,14 @@ sub check
     }
 
     # Incomplete specification of molecule components
-    if (!$AllowPartial && @ctypes)
+    if (!$AllowPartial and @ctypes)
     {
-        $names="";
+        my $names = "";
         foreach my $ct (@ctypes)
         {
-            $names.= " ".$ct->Name;
+            $names .= " ".$ct->Name;
         }
-        my $err= sprintf "Component(s)${names} missing from molecule %s", $mol->toString();
+        my $err = sprintf "Component(s)${names} missing from molecule %s", $mol->toString();
         return $err;
     }
 

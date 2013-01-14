@@ -131,7 +131,7 @@ sub initialize
     $model->PopulationList( PopulationList->new() );
 
     # Initialize CompartmentList
-    my $clist = CompartmentList->new();
+    my $clist = CompartmentList->new( Used=>0 );
     $model->CompartmentList($clist);
 
     # Initialize SpeciesList
@@ -465,7 +465,7 @@ sub readNetwork
                 
     
                 ### Read Molecule Types block
-                elsif ( $name =~ /^molecule[ _]types$/ )
+                elsif ( $name eq 'molecule types' )
                 {
                     # read MoleculeTypes
                     $model->MoleculeTypesList->StrictTyping(1);
@@ -519,12 +519,15 @@ sub readNetwork
                 ### Read Compartments Block
                 elsif ( $name eq 'compartments' )
                 {
+                    # set flag to indicate compartments are being used
+                    $model->CompartmentList->Used(1);
+
                     # Read Compartments
                     my ($entry, $lno);
                     foreach my $line ( @$block_dat )
                     {
                         ($entry, $lno) = @$line;
-                          $model->CompartmentList->readString( $entry, $model->ParamList );
+                        $err = $model->CompartmentList->readString( $entry, $model->ParamList );
                         if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
                     }
                     # validate compartments
@@ -539,7 +542,7 @@ sub readNetwork
                 
                     
                 ### Read Species/Seed Species Block
-                elsif ( ($name eq 'species') or ($name =~ /^seed[ _]species$/) )
+                elsif ( ($name eq 'species') or ($name eq 'seed species') )
                 {
                     # read Species
                     foreach my $line ( @$block_dat )
@@ -556,7 +559,7 @@ sub readNetwork
                 
 
                 ### Read Reaction Rules Block
-                elsif ( $name =~ /reaction[ _]rules/ )
+                elsif ( $name eq 'reaction rules' )
                 {
                     # Read reaction rules
                     my $nerr = 0;
@@ -565,7 +568,7 @@ sub readNetwork
                     foreach my $line ( @$block_dat )
                     {
                         my ($entry, $lno) = @$line;
-                        (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model );
+                        (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
                         if ($err)
                         {   # some error encountered
                             $err = errgen( $err, $lno );
@@ -1342,18 +1345,18 @@ sub writeBNGL
 
     # Version requirements
     foreach my $vstring ( @{$model->Version} )
-    {   $out .= "version(\"$vstring\");\n";   }
+    {   $out .= "version(\"$vstring\")\n";   }
 
     # Options
     while ( my ($opt,$val) = each %{$model->Options} )
     {
         next if ( $opt eq 'prefix' ); # don't write prefix
         next if ( $opt eq 'suffix' ); # don't write suffix
-        $out .= "setOption(\"$opt\",\"$val\");\n";
+        $out .= "setOption(\"$opt\",\"$val\")\n";
     }
 
     # Units
-    $out .= sprintf "substanceUnits(\"%s\");\n", $model->SubstanceUnits;
+    $out .= sprintf "substanceUnits(\"%s\")\n", $model->SubstanceUnits;
 
     # Begin Model (BNGL only)
     $out .= "\nbegin model\n"  if ( $params{'format'} eq 'bngl'  and  $params{'pretty_formatting'} );
@@ -1425,7 +1428,7 @@ sub writeBNGL
     $out .= $model->ParamList->writeFunctions( \%params );
         
     # Species
-      $out .= $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, \%params );
+    $out .= $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList, \%params );
 
 
     # Model Blocks
@@ -2031,10 +2034,10 @@ sub generate_network
 
     # default parameters
     my %vars = (
-        'max_iter'   => '100',
-        'max_agg'    => '1e99',
-        'max_stoich' => '',
-        'check_iso'  => '1',
+        'max_iter'   => 100,
+        'max_agg'    => 1e9,
+        'max_stoich' => {},
+        'check_iso'  => 1,
         'prefix'     => $model->getOutputPrefix(),
         'overwrite'  => 0,
         'print_iter' => 0,
@@ -2135,6 +2138,14 @@ sub generate_network
     unless ( defined $model->RxnRules )
     {   return "No reaction_rules defined in call to generate_network";   }
 
+    # initialize rules
+    foreach my $rset ( @{$model->RxnRules} )
+    {
+        foreach my $rr (@$rset)
+        {   $rr->initializeRule();   }
+    }
+
+
     my $nspec       = scalar @{$slist->Array};
     my $nrxn        = scalar @{$rlist->Array};
     my @rule_timing = ();
@@ -2166,24 +2177,25 @@ sub generate_network
 
             foreach my $rr (@$rset)
             {
-
                 if ($verbose)
                 {
                     if ($dir == 0) { print "  forward:\n"; }
                     else           { print "  reverse:\n"; }
                 }
              
-                # change by Justin for compartments
-                # added plist
-                $n_new += $rr->applyRule( $slist, $rlist,
-                                          $model->ParamList,
-                                          \@species,
-                                          {  max_agg    => $vars{max_agg},
-                                             check_iso  => $vars{check_iso},
-                                             max_stoich => $vars{max_stoich},
-                                             verbose    => $vars{verbose},
-                                          }
-                                        );
+                # default params
+                my $params = { 'max_agg'    => $vars{max_agg},
+                               'check_iso'  => $vars{check_iso},
+                               'max_stoich' => $vars{max_stoich},
+                               'verbose'    => $vars{verbose},
+                             };
+
+                # expand rule
+                my ($err, $nr) = $rr->expand_rule( \@species, $model, $params );
+                if (defined $err)
+                {   return "Some problem expanding rule: $err";   }
+                
+                $n_new += $nr;
                 ++$dir;
             }
         
@@ -2202,7 +2214,7 @@ sub generate_network
         # update RulesApplied for species processed in this interation
         foreach my $spec (@species)
         {
-            $spec->RulesApplied($niter)  unless ( $spec->RulesApplied );
+            $spec->RulesApplied($niter) unless ( $spec->RulesApplied );
         }
 
         # Update observables

@@ -65,12 +65,6 @@ sub getCVodeName
     return 'NV_Ith_S(species,' . ($species->Index + $offset). ')';
 }
 
-
-###
-###
-###
-
-
 sub getCVodeDerivName
 {
     my $species = shift;
@@ -90,12 +84,6 @@ sub getMatlabName
     my $offset  = 0;
     return 'species(' . ($species->Index + $offset). ')';
 }
-
-
-###
-###
-###
-
 
 sub getMatlabDerivName
 {

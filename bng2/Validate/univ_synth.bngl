@@ -1,0 +1,48 @@
+# example of universal synthesis
+begin model
+begin parameters
+    k1    1.0
+    k2    0.1
+    volEC 10.
+    volPM 0.1
+    volCP 1.0
+end parameters
+begin compartments
+    EC  3  volEC
+    PM  2  volPM  EC
+    CP  3  volCP  PM
+end compartments
+begin molecule types
+    A()
+    B()
+    C()
+end molecule types
+begin seed species
+    A()@EC  volEC
+    A()@PM  volPM
+    A()@CP  volCP
+end seed species
+begin observables
+    Molecules  B_EC  B@EC()
+    Molecules  B_PM  B@PM()
+    Molecules  B_CP  B@CP()
+    Molecules  C_EC  C@EC()
+    Molecules  C_PM  C@PM()
+    Molecules  C_CP  C@CP()
+end observables
+begin reaction rules
+    # local synthesis of B (zero-order)
+    0 -> B@EC()  k1
+    0 -> B@PM()  k1
+    0 -> B@CP()  k1
+    # universal synthesis of C (depends on A)
+    A -> A + C()  k1
+    # decay
+    B -> 0  k2
+    C -> 0  k2
+end reaction rules
+end model
+
+generate_network({overwrite=>1})
+simulate_ode({t_start=>0,t_end=>10,n_steps=>20})
+

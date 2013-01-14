@@ -243,7 +243,7 @@ sub getRateExpression
  
     # get stoichiometry of this pattern w.r.t. this rxn
     ($stoich, $err) = $epatt->getStoich( $rxn );
-    if ( $err ) {  return ( undef, $err );  }
+    if ( $err ) {  return undef, $err;  }
     
     # construct a rate constant expression
     my $rate_expr = undef;
@@ -281,7 +281,7 @@ sub getRateExpression
         if ( $err ) { return ( undef, $err ); }
     }
     
-    return ( $rate_expr, $err );
+    return $rate_expr, $err;
 }
 
 

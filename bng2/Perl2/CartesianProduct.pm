@@ -1,5 +1,5 @@
-package CrossProduct;
-### A class for generating elements of a cross-product
+package CartesianProduct;
+### A class for iterating over elements of a cartesian product
 
 
 use Class::Struct;
@@ -11,35 +11,61 @@ use strict;
 
 
 ### Members
-struct CrossProduct =>
+struct CartesianProduct =>
 {
     Lists        => '@',    # a list of references to lists
-    NumLists     => '$',    # the number of lists participating in this crossproduct
+    NumLists     => '$',    # the number of lists participating in this CartesianProduct
     ListPosition => '$',    # minimum of list indices that were changed in last advance
     FirstIdx     => '@',    # a list of indices corresponding to the minimum element to iterate over
-    CurrentIdx   => '@',    # a list of indices corresponding to the current element of the cross product
+    CurrentIdx   => '@',    # a list of indices corresponding to the current element of the Cartesian product
     LastIdx      => '@',    # a list of indices corresponding to the end of each list
-    MoreElements => '$'     # a boolean value: 1 if there are more elements in the crossproduct, 0 otherwise.
+    MoreElements => '$'     # a boolean value: 1 if there are more elements in the Cartesian product, 0 otherwise.
 };
 
 
 ### Methods:
 ###
 ### (public)
-###   $cp  = CrossProduct::new(); 
-###   bool = $cp->initialize( \@lists )
-###   bool = $cp->getNext( \@elem )
-###   bool = $cp->update( \@new_items, $list_idx )
-###   bool = $cp->validate( )
+###   $cp  = CartesianProduct::new();
+###   $cp_copy = $cp->copy();
+###   bool = $cp->initialize( \@lists );
+###   bool = $cp->getNext( \@elem );
+###   bool = $cp->update( \@new_items, $list_idx );
+###   bool = $cp->validate( );
 ###
 ### (private)
-###   void = $cp->advance( )
+###   void = $cp->advance( );
 ###
 
 
 
-# Call this method to initialize a new cross-product with a reference
-#  to a set of lists provided as the first argument.  Returns true if the cross-product
+# Copy the Cartesian Product
+sub copy
+{
+    my $cp = shift @_;
+
+    my $cp_copy = CartesianProduct::new();
+    $cp_copy->Lists( [@{$cp->Lists}] );
+    $cp_copy->NumLists( $cp->NumLists );
+    $cp_copy->ListPosition( $cp->ListPosition );
+    $cp_copy->FirstIdx( [@{$cp->FirstIdx}] );
+    $cp_copy->CurrentIdx( [@{$cp->CurrentIdx}] );
+    $cp_copy->LastIdx( [@{$cp->LastIdx}] );
+    $cp_copy->MoreElements( $cp->MoreElements );
+
+    return $cp_copy;
+}
+
+
+
+###
+###
+###
+
+
+
+# Call this method to initialize a new CartesianProduct with a reference
+#  to a set of lists provided as the first argument.  Returns true if the CartesianProduct
 #  is initialized correctly.
 sub initialize
 {
@@ -59,7 +85,7 @@ sub initialize
     my $first_idx   = [];
     my $last_idx    = [];
     
-    my $elem_exist = $cp->NumLists ? 1 : 0;
+    my $elem_exist = 1;
     my $ii = 0;
     while ( $ii < $cp->NumLists )
     {
@@ -80,19 +106,20 @@ sub initialize
 }
 
 
+
 ###
 ###
 ###
 
 
 
-# call this method to load the next element of the cross-product
+# call this method to load the next element of the CartesianProduct
 #  into the reference provided as the first argument. Returns true if next
 #  element was loaded into array at pointer $elem; returns false if no more elements
 #  are available.
 sub getNext
 {
-    my $cp   = shift;    # this cross-product object
+    my $cp   = shift;    # this CartesianProduct object
     my $elem = shift;    # pointer to array that store elements
     
     if ( $cp->MoreElements )
@@ -119,9 +146,10 @@ sub getNext
 
 
 
-# After iterating through all elements of the cross-product,
+# After iterating through all elements of the CartesianProduct,
 #  add @$new_items to the list at index $list_idx.
-#  Continue calling getNext to generate new cross product elements
+#  Continue calling getNext to iterate over new elements of the cartesian product
+#  NOTE: must iterate through all new elements before calling update again
 sub update
 {
     my $cp = shift;
@@ -208,7 +236,7 @@ sub advance
 
 
 
-# This method validates the cross-product state.
+# This method validates the CartesianProduct state.
 #  Returns true if everything looks good, false otherwise.
 sub validate
 {

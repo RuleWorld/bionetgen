@@ -25,7 +25,6 @@ struct Rxn => {
   StatFactor     => '$',	       
   Priority       => '$',
   RxnRule        => '$',
-  Compartments   => '@',          # List of reaction compartments (usually one)
   Index          => '$',          # Reaction Index for writing network output
 };
 
@@ -271,23 +270,26 @@ sub volume_scale
 #   S + S + V              /S/V
 #   S + V + V              /V/V
 #   V + V + V              /V/V            etc...
+#   0 -> S                 S  ??
+#   0 -> V                 V  ??
 
 {
     my $rxn = shift;
     my $plist = (@_) ? shift : undef;
 
     my $err;
-    my $vol_expr;
+    my $vol_expr = undef;
 
     # get all the defined compartments
-    my @defined_compartments = ( grep {defined $_} @{$rxn->Compartments} );
+    my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
+    my @product_compartments  = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Products});
    
     # return undefined volume expr if there are no compartments
-    if ( @defined_compartments )
-    {
+    if ( @reactant_compartments )
+    { 
         # divide into surfaces and volumes
-        my @surfaces = ( grep {$_->SpatialDimensions==2} @defined_compartments );
-        my @volumes  = ( grep {$_->SpatialDimensions==3} @defined_compartments );
+        my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
+        my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
 
         # Pick and toss an anchor reactant.  If there's a surface reactant, toss it.
         # Otherwise toss a volume.
@@ -300,15 +302,37 @@ sub volume_scale
             my @vol_factors = (1.0);
             push @vol_factors, ( map {$_->Size} (@surfaces, @volumes) );
             $vol_expr = Expression::operate( '/', \@vol_factors, $plist );
-    
             unless ( defined $vol_expr )
-            {   $err = "Error in Rxn::volume_scale(): Some problem defined compartment volume expression.";  }
+            {   $err = "Error in Rxn::volume_scale(): Some problem defing compartment volume expression.";  }
         }
+    }
+    elsif ( @product_compartments>0 )
+    {
+        # check if products are in the same compartment
+        my $consistent = 1;
+        my $comp1 = $product_compartments[0];
+        foreach my $comp2 ( @product_compartments[1..$#product_compartments] )
+        {
+            unless ($comp1 == $comp2)
+            {
+                $consistent = 0;
+                last;
+            }
+        }
+
+        if ($consistent)
+        {   # construct the volume expression
+            $vol_expr = $comp1->Size;
+        }
+        else
+        {   send_warning("compartmental BioNetGen doesn't know how to handle zero-order synthesis of products in multiple compartments.");  }
     }
     
     # return the expression (possibly undefined) and the error msg (if any).
     return ($vol_expr, $err);
 }
+
+
 
 # For energyBNG only!!  --Justin, 9nov2010
 # When a rxn is created, it inherits a generic elementary rateLaw from its parent RxnRule.

@@ -212,6 +212,12 @@ sub readString
     $err = $sg->readString( \$string, $clist, 1, '^\s+', $mtlist );
     if ($err) { return $err; }
 
+    if ( $sg->isNull() )
+    {   # this is the null pattern
+        send_warning( "Found useless instance of null pattern in SpeciesList" );
+        return '';
+    }
+
     # Check if isomorphic to existing species
     my $existing= $slist->lookup($sg);
     if ($existing)
@@ -290,7 +296,7 @@ sub writeBNGL
         }
 
         # get species graph string
-        my $sexact = $spec->SpeciesGraph->toString(0);
+        my $sexact = $spec->SpeciesGraph->toString();
         $out .= sprintf "%-${maxlen}s", $sexact;
         
         my $c = $conc->[ $spec->Index - 1 ];

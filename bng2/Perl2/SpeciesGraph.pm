@@ -19,11 +19,17 @@ use Map;
 use MoleculeTypesList;
 use HNauty;
 
-
-
-# give names to some options that we pass to SpeciesGraph methods
-$SpeciesGraph::IS_SPECIES     = 1;
-$SpeciesGraph::IS_NOT_SPECIES = 0;
+# constants
+use constant { PRINT_EDGES          => 1,
+               PRINT_ATTRIBUTES     => 1,
+               ALLOW_DANGLING_BONDS => 1,
+               TRIM_DANGLING_BONDS  => 1,
+               IS_SPECIES           => 1,
+               COPY_LABEL           => 1,
+               GET_LABEL            => 1,
+               TRUE                 => 1,
+               FALSE                => 0,
+             };
 
 
 struct SpeciesGraph =>
@@ -75,7 +81,7 @@ sub setSpeciesLabel
 	else {
 		return ("Invalid value for SpeciesLabel function: $label");
 	}
-	return ("");
+	return "";
 }
 
 
@@ -88,12 +94,15 @@ sub setSpeciesLabel
 # check if this is a null speciesGraph
 sub isNull
 {
-    my $sg = shift;
-    
-    if ( @{$sg->Molecules} == 0 )
-    {   return 1;  }
-    else
-    {   return 0;  }
+    my $sg = shift @_;
+    return @{$sg->Molecules} ? 0 : 1;
+}
+
+
+# get string for the null pattern
+sub getNullString
+{
+    return "0";
 }
 
 
@@ -106,34 +115,37 @@ sub isNull
 
 sub readString
 {
-	my $sg            = shift;
-	my $strptr        = shift;
-	my $clist         = shift;
-	my $is_species    = shift;
-	my $stop          = shift;
-	my $mtlist        = shift;
+	my $sg            = shift @_;
+	my $strptr        = shift @_;
+	my $clist         = shift @_;
+	my $is_species    = shift @_;
+	my $stop          = shift @_;
+	my $mtlist        = shift @_;
     # should we count the number of automorphisms?  (do this for molecule observables!)
-	my $CountAutos = (@_) ? shift : 0;
-
-    # Allow new molecule types?
-	my $AllowNewTypes = $mtlist->StrictTyping ? 0 : 1;
+	my $CountAutos = (@_) ? shift : FALSE;
 
     # holds error for return value
     my $err = undef;
 
+    # get string and remove leading whitespace
 	my $string_left = $$strptr;
-
-	# remove leading whitespace
 	$string_left =~ s/^\s+//;
 
     # check for premature termination
     if ( !$string_left  or  ($stop  and  $string_left =~ /$stop/) )
-    {   return ( "Expecting SpeciesGraph but found termination characters instead\n"
-                ."  in string '$string_left'." );
+    {   return "Expecting SpeciesGraph but found termination characters instead\n"
+                ."  in string '$string_left'.";
 	}
 
+    # check for the null pattern
+    if ( $string_left =~ /^0($|\s|\+|<->|->|,)/ )
+    {   # This is the null pattern. Strip pattern and return.
+        $string_left =~ s/^0//;
+        $$strptr = $string_left;
+        return $err;
+    }
+
     # Header (all characters up to ":")
-    # Fixed bug here  --Justin
     # restrict pre ":" characters to word characters, whitespace, "%", "*" and "@",
     # QUESTION: should white space be disallowed since it is the stop character after product patterns?
 	if ( $string_left =~ s/^([\w\s%@*]+)(::|:)\s*// )
@@ -230,7 +242,7 @@ sub readString
 		else
 		{
 			# Read molecule
-			my ( $mol, $err ) = Molecule::newMolecule( \$string_left, $clist );
+			my ($mol, $err) = Molecule::newMolecule( \$string_left, $clist );
             if ( $err ) {  return $err;  }
 
 		    push @{$sg->Molecules}, $mol;
@@ -244,14 +256,22 @@ sub readString
 	{
 	    # a real species cannot be null!
 	    unless ( @{$sg->Molecules} )
-	    {
-	        return "The null species is not a valid species in $$strptr";
-	    }
-	
-		# get Species Compartment (undefined is possible). --justin
-		# FUTURE: check for well-defined compartment in "strict" mode.  --justin
-		$err = $sg->assignCompartment();
-		return $err if ($err);
+	    {   return "The empty graph is not a valid species in $$strptr";   }
+
+        if ($clist->Used)
+        {
+		    # assign species compartment (if possible)
+		    $err = $sg->assignCompartment();
+		    return $err if ($err);
+
+            # Check for defined compartment assignment
+            unless ( defined $sg->Compartment )
+            {   return "Species does not have a compartment attribute!";   }
+
+            # Check for valid bonds
+            unless ( $sg->verifyTopology(1) )
+            {   return "Species has invalid bonds with respect to Compartment topology.";   }
+        }
 
 		# NOTE: sortLabel sorts the molecules in a canonical or semi-canonical fashion,
 		#  in the process the edges are updated (so no need to call updateEdges here!)
@@ -260,14 +280,11 @@ sub readString
 		# Check for correct number of subgraphs
 		my ($nsub) = $sg->findConnected();
 	    unless ( $nsub == 1 )
-		{
-			return "Species $$strptr is not connected";
-		}
+		{   return "Species $$strptr is not connected";   }
 	}
 	else
 	{
-	    my $dangling_error = 0;
-	    $err = $sg->updateEdges( $dangling_error ); 
+	    $err = $sg->updateEdges( ALLOW_DANGLING_BONDS ); 
 		if ($err) {  return $err;  }
 	}
 
@@ -275,8 +292,8 @@ sub readString
 	if ($mtlist)
 	{
 		$err = $mtlist->checkSpeciesGraph( $sg, { IsSpecies     => $is_species,
-                                                  AllowNewTypes => $AllowNewTypes } );
-		if ($err) {  return ($err);  }
+                                                  AllowNewTypes => !$mtlist->StrictTyping } );
+		if ($err) { return $err; }
 	}
 
     # count automorphisms
@@ -302,13 +319,13 @@ sub readString
 # TODO: need to check that compartments are specified, if we're using compartments!
 sub checkSpecies
 {
-    my $sg = shift;
-    my $model = shift;
+    my $sg    = shift @_;
+    my $model = shift @_;
 
     my $err;
     my $comp;
-    my $params = { IsSpecies            => 1,
-                   AllowNewTypes        => 0  };
+    my $params = { IsSpecies     => 1,
+                   AllowNewTypes => 0  };
     
     # check that components are fully specified
     $err = $model->MoleculeTypesList->checkSpeciesGraph( $sg, $params );                           
@@ -365,7 +382,7 @@ sub labelHNauty
 	use Data::Dumper;
 	
 	my $sg = shift;
-	my $dangling_error = (@_) ? shift : 1;
+	my $allow_dangling = (@_) ? shift : 0;
 	my $trim_dangling  = (@_) ? shift : 0;
 	
 	# holds error value for return
@@ -477,17 +494,16 @@ sub labelHNauty
 	$sg->Molecules( [ map { $_->[1] } @mol_perm ] );
 
     # update edges
-	$err = $sg->updateEdges( $dangling_error, $trim_dangling );
+	$err = $sg->updateEdges( $allow_dangling, $trim_dangling );
 	if ( $err ) {  return $err  };
 
 	# Create exact string representation:  include edge labels and strip attributes
 	#  first argument tells "toString" whether to ignore edge labels (true) or not (false)
 	#  second argument tells "toString" whether to strip attributes (true) or not (false)
-	my $string = $sg->toString( 0, 1 );
-
+	my $string = $sg->toString( PRINT_EDGES, !PRINT_ATTRIBUTES );
 	$sg->StringExact($string);
 	$sg->StringID($string);
-	$sg->IsCanonical(1);
+	$sg->IsCanonical(TRUE);
 
 	return $err;
 }
@@ -504,35 +520,30 @@ sub labelQuasi
 {
 	my $sg = shift;
 	my $isCanonical = (@_) ? shift : 0;
-	my $dangling_error = (@_) ? shift : 1;
+	my $allow_dangling = (@_) ? shift : 0;
 	my $trim_dangling  = (@_) ? shift : 0;
 
     my $err = undef;
 
 	# Sort components of each molecule
 	foreach my $mol (@{$sg->Molecules})
-	{
-		@{$mol->Components} = sort by_component @{$mol->Components};
-	}
+	{   @{$mol->Components} = sort by_component @{$mol->Components};   }
 
 	# Sort molecules
 	@{$sg->Molecules} = sort by_molecule @{$sg->Molecules};
 
     # update edges after sort!
-	$err = $sg->updateEdges( $dangling_error, $trim_dangling );
-	if ( $err ) {  return $err;  }
+	$err = $sg->updateEdges( $allow_dangling, $trim_dangling );
+	if ( $err ) { return $err; }
 
 
 	# Create quasi-canonical string representation
-	my $string = $sg->toString( 1, 1 );
-	$sg->StringID($string);
+	$sg->StringID( $sg->toString(!PRINT_EDGES, !PRINT_ATTRIBUTES ) );
 
 	# Create exact string representation:  include edge labels and strip attributes
 	#  first argument tells "toString" whether to ignore edge labels (true) or not (false)
 	#  second argument tells "toString" whether to strip attributes (true) or not (false)
-	$string = $sg->toString( 0, 1 );
-	
-	$sg->StringExact($string);
+	$sg->StringExact( $sg->toString(PRINT_EDGES, !PRINT_ATTRIBUTES) );
 	$sg->IsCanonical($isCanonical);
 
 	return $err;
@@ -550,23 +561,23 @@ sub labelQuasi
 sub sortLabel
 { 
 	my $sg = shift;
-	my $dangling_error = (@_) ? shift : 1;
-	my $trim_dangling  = (@_) ? shift : 0;
+	my $allow_dangling = (@_) ? shift : FALSE;
+	my $trim_dangling  = (@_) ? shift : FALSE;
 
     my $err = undef;
 	if    ( $SpeciesLabel eq 'Auto' )
 	{
-	    my $is_canonical = 0;
-		$err = $sg->labelQuasi( $is_canonical, $dangling_error, $trim_dangling );
+	    my $is_canonical = FALSE;
+		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
 	}
 	elsif ( $SpeciesLabel eq 'Quasi' )
 	{   # Equivalent to setting check_iso=>0
-	    my $is_canonical = 1;
-		$err = $sg->labelQuasi( $is_canonical, $dangling_error, $trim_dangling );
+	    my $is_canonical = TRUE;
+		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
 	}
 	elsif ( $SpeciesLabel eq 'HNauty' )
 	{
-		$err = $sg->labelHNauty( $dangling_error, $trim_dangling );
+		$err = $sg->labelHNauty( $allow_dangling, $trim_dangling );
 	}
 	
 	return $err;
@@ -590,8 +601,6 @@ sub assignCompartment
  #
  # If $force_comp is supplied, the SpeciesGraph is forced to that compartment,
  #  unless it is incompatible with any molecule compartments.
- #
- # Note (Justin): separated assign and infer Compartment into two methods.
 {
 	my $sg = shift;                                # SpeciesGraph
 	my $force_comp  = scalar(@_) ? shift : undef;
@@ -752,7 +761,49 @@ sub inferSpeciesCompartment
 
 
 
-sub interactingSet
+sub verifyTopology
+# $valid = $sg->verifyTopology( $strict )
+#
+# Verifies the topology of a species graph w.r.t. bonds and compartments.
+{
+	my $sg = shift @_;
+    my $strict = @_ ? shift @_ : 0;
+
+    # gather pairs of bonded components
+    my %bonds = ();
+	foreach my $mol ( @{$sg->Molecules} )
+	{
+		foreach my $component ( @{$mol->Components} )
+		{
+			foreach my $edge_idx ( @{$component->Edges} )
+			{   push @{ $bonds{$edge_idx} }, $mol;   }
+		}
+	}
+
+    # check that bound components belong to molecules in same or adjacent compartments
+	foreach my $bond ( values %bonds )
+	{
+		# fail if there's fewer or greater than 2 components in this bond
+		return 0 if (@$bond != 2);
+
+        my $comp0 = $bond->[0]->Compartment;
+        my $comp1 = $bond->[1]->Compartment;
+        if (defined $comp0  and  defined $comp1)
+		{   # Both compartments are defined, check that compartments are the same or adjacent
+			return 0 unless ( $comp0==$comp1 or $comp0->adjacent($comp1) );
+		}
+        else
+        {   return 0 if ($strict);   }
+	}
+    return 1;
+}
+
+
+###
+###
+###
+
+
 
 # bool = interactingSet ( $sg1, $sg2, .. )
 #
@@ -762,6 +813,7 @@ sub interactingSet
 # NOTE: if all species have undefined compartment, then Return 1.  But return 0
 # if only some of the species have undefined compartment.  This lets us run
 # compartmentBNG in a "sloppy" mode where compartments may or may not be defined.
+sub interactingSet
 {
 	my @sgs = @_;
 
@@ -819,20 +871,15 @@ sub interactingSet
 
 
 
-###
-###
-###
 
-
-
-sub find_compartment_connected
 # @compartment_connected = $sg->find_compartment_connected( $i_mol )
 #
 # find the set of molecules in $sg that are connected to the molecule $i_mol by
 # a path contained in the same compartment as $i_mol.  Returns a list of
 # indexes corresponding to the molecules in the set.
+sub find_compartment_connected
 {
-	my ( $sg, $i_mol ) = @_;
+    my ($sg, $i_mol) = @_;
 
 	# get compartment of reference molecule
 	my $comp = $sg->Molecules->[$i_mol]->Compartment;
@@ -913,7 +960,7 @@ sub copymerge
 	$sg_copy->Molecules($mol_copy);
 	
 	# loop over subgraphs and copy
-	my $dangling_error = 1;	
+	my $allow_dangling = FALSE;	
 	my $offset = 0;
 	for ( my $i_sg = 0;  $i_sg < @sgs;  ++$i_sg )
 	{
@@ -925,7 +972,7 @@ sub copymerge
 	    
 	    # if we find a non-species graph, then allow dangling!
 	    unless ( defined $sg->Species  and  ref $sg->Species eq 'SPECIES' )
-	    {   $dangling_error = 0;  }
+	    {   $allow_dangling = TRUE;  }
 	
 	    # copy molecules
 		foreach my $mol ( @{$sg->Molecules} )
@@ -938,7 +985,7 @@ sub copymerge
 
 		
 	# update graph edges
-	my $err = $sg_copy->updateEdges( $dangling_error );
+	my $err = $sg_copy->updateEdges( $allow_dangling );
 	if ( $err ) {  print "SpeciesGraph::copymerge(): updateEdges failed with error:\n  $err\n";  }
 	
 	# return copy
@@ -954,15 +1001,15 @@ sub copymerge
 
 
 # Make an exact copy of a SpeciesGraph, including all labels, IDs, etc
-#  NOTE: associated Species object, if exists, will not be copied!
+#  NOTE: associated Species object, if exists, will not be copied (but we'll preserve the reference)
 sub copy
 {
     # get speciesGraph to copy
 	my $sg = shift;
     # copy labels?
-    my $copy_labels = (@_) ? shift : 1;
+    my $copy_labels = @_ ? shift @_ : TRUE;
     # should we generate a label if we're not copying one?
-    my $get_label = (@_) ? shift : 1;
+    my $get_label   = @_ ? shift @_ : TRUE;
 
 	# create new speciesgraph to hold copy
 	my $sg_copy = SpeciesGraph->new();
@@ -1008,22 +1055,26 @@ sub copy
 	}
 	else
 	{    
-		my $dangling_error = 0;
-		my $trim_dangling = 0;
 	    if ($get_label)
 	    {
 	        # generate label and, as side-effect, build Edges and Adjacencies
-		    my $err = $sg_copy->sortLabel( $dangling_error, $trim_dangling );
+		    my $err = $sg_copy->sortLabel( ALLOW_DANGLING_BONDS, TRIM_DANGLING_BONDS );
 		    if ($err) {  print "SpeciesGraph::copy(): sortLabel failed with error:\n  $err\n";  }
 		}
 		else
 		{
 	        # Build Edges and Adjacencies, but don't get label
-		    my $err = $sg_copy->updateEdges( $dangling_error, $trim_dangling );
+		    my $err = $sg_copy->updateEdges( ALLOW_DANGLING_BONDS, TRIM_DANGLING_BONDS );
 		    if ($err) {  print "SpeciesGraph::copy(): updateEdges failed with error:\n  $err\n";  }		
 		}
     }
 	
+    if (defined $sg->Species)
+    {   # pass the Species reference to the copy (but don't copy the Species!)
+        $sg_copy->Species( $sg->Species );
+    }
+
+
 	# return copy
 	return $sg_copy;
 }
@@ -1456,11 +1507,9 @@ sub copySubgraph
 #  the corresponding species graph.
 #
 # NOTE: it is assumed the components have no dangling-edges!!  If updateEdges
-#   fails a warning is printing to the default output.
+#   fails a warning is printed to the default output.
 {
-	my $sg       = shift;
-	my $subgraph = shift;
-	my $nsub     = shift;
+	my ($sg, $subgraph, $nsub) = @_;
 	
 	# holds error value
 	my $err;
@@ -1478,8 +1527,7 @@ sub copySubgraph
 	}
 	
 	# update graph edges
-	my $dangling_error = 1;
-	$err = $sg_copy->updateEdges( $dangling_error );
+	$err = $sg_copy->updateEdges( !ALLOW_DANGLING_BONDS );
 	if ( $err ) {   print "WARNING: $err.\n";   }
 	
 	return $sg_copy;
@@ -1534,13 +1582,11 @@ sub updateEdges
 # Q: why are edges sorted? For quasi-canonical labeling?
 
 {
-	my $sg = shift;
-	# should updateEdges return an error if a dangling edge is found?  default = YES
-	my $dangling_error = (@_) ? shift : 1;
-	# should updateEdges trim dangling edges or leave them intact?  default = NO
-	my $trim_dangling  = (@_) ? shift : 0;
-
-    #printf STDERR "SpeciesGraph->updateEdges( %s, $dangling_error, $trim_dangling ).. ", $sg->toString();
+	my $sg = shift @_;
+	# should updateEdges allow dangling edges?
+	my $allow_dangling = @_ ? shift @_ : FALSE;
+	# should updateEdges trim dangling edges?
+	my $trim_dangling  = @_ ? shift @_ : FALSE;
 
     # holds error value for return
     my $err = undef;
@@ -1560,13 +1606,13 @@ sub updateEdges
 		    # loop over edge labels at this component			
 			foreach my $elabel ( @{$comp->Edges} )
 			{
-				if ( $elabel =~ /^[*+?]$/ )
+				if ( $elabel =~ /^[+?]$/ )
 				{   # keep wildcard to put on component edge list
 				    push @wildcards, $elabel;
 				}
 				else
 				{   # handle labeled edge
-				    push @{$labeled_edges{$elabel}}, $i_mol, $i_comp;
+				    push @{$labeled_edges{$elabel}}, [$i_mol, $i_comp];
 				}
 			}
 
@@ -1588,22 +1634,16 @@ sub updateEdges
 
     # sort edges and reindex from 0
 	my $iedge = 0;
+    my ($p1, $m1, $c1, $p2, $m2, $c2);
 	foreach my $edge ( sort edge_sort values %labeled_edges )
 	{
-		my ($p1, $p2);
-		# get molecule and component indices
-		my ($m1, $c1, $m2, $c2) = @$edge;
-		# create pointer to bond end1
-		$p1 = "$m1.$c1";
-
-	    # check for too many components!
-	    if ( @$edge > 4 ) 
-	    {
-	        $err = "SpeciesGraph::updateEdges(): edge binds more than 2 components!";
-	    }
-		elsif ( @$edge == 4 )
+		if ( @$edge == 2 )
 		{
+            # get molecule and component indices
+            ($m1, $c1) = @{$edge->[0]};
+            ($m2, $c2) = @{$edge->[1]};
 		    # create pointer to bond end2
+    		$p1 = "$m1.$c1";
 			$p2 = "$m2.$c2";
 			# update adjacency hash
 			$adjacency->{$p1}{$p2} = $iedge;
@@ -1615,31 +1655,27 @@ sub updateEdges
 			push @$edges, "$p1 $p2";
 		    ++$iedge;			
 		}
-		elsif ( @$edge == 2  and  !$dangling_error )
+		elsif ( @$edge==1  and  $allow_dangling )
 		{
 		    if ($trim_dangling)
 		    {   # trim dangling edge
 		        # don't increment $iedge counter
 		    }
 		    else
-		    {   # keep dangling edges
-			    $adjacency->{$p1} = $iedge;
-			    push @{ $sg->Molecules->[$m1]->Components->[$c1]->Edges }, $iedge;
-			    push @$edges, "$p1";
-		        ++$iedge;			    
+		    {   # keep dangling edges, but convert to "+" wildcard
+                # get molecule and component indices
+                ($m1, $c1) = @{$edge->[0]};
+			    push @{$sg->Molecules->[$m1]->Components->[$c1]->Edges}, "+";
 		    }
 		}
-		elsif ( @$edge == 2  and  $dangling_error )
-		{
-		    $err = "SpeciesGraph::updateEdges(): illegal dangling edge in species graph!";
-		}
+		elsif ( @$edge==1  and  !$allow_dangling )
+		{   $err = "SpeciesGraph::updateEdges(): dangling edge not allowed in species graph!";   }
+	    elsif ( @$edge > 2 ) 
+	    {   $err = "SpeciesGraph::updateEdges(): edge binds more than 2 components!";   }
 		else
-	    {
-		    $err = "SpeciesGraph::updateEdges(): unknown error!";
-		}
+	    {   $err = "SpeciesGraph::updateEdges(): unknown error!";   }
 	}
 
-    #print STDERR "done\n";
 	return $err;
 }
 
@@ -1654,23 +1690,22 @@ sub updateEdges
 sub toString
 {
 	# get this species graph
-	my $sg = shift;
+	my $sg = shift @_;
 	# get arguments
-	my $suppress_edge_names = (@_) ? shift : 0;   # if true, egde labels and species attributes are omitted from the string
-	my $suppress_attributes = (@_) ? shift : 0;   # if true, species attributes are omitted (use this for Canonical labeling!!)
-	
-	
+	my $print_edges      = @_ ? shift @_ : TRUE;   # if true, egde labels are printed
+	my $print_attributes = @_ ? shift @_ : TRUE;   # if true, species attributes are printed (don't use this for Canonical labeling!!)
+
 	# initialize string
 	my $string = '';
 
 	# header
 	# NOTE: printing name messes up use of StringExact for hashing species
-	unless ($suppress_attributes)
+	if ($print_attributes)
 	{
 	    if ($sg->Name)
-	    {   $string.=$sg->Name;   }
+	    {   $string .= $sg->Name;   }
 	    
-	    if ( $sg->Label )
+	    if ($sg->Label)
 	    {   $string .= '%' . $sg->Label;   }
     }
 	
@@ -1681,8 +1716,7 @@ sub toString
 	{   $string .= "::";   }
 
 	# attributes
-	# (suppression is required for generating canonical labels!)
-	unless ( $suppress_edge_names  or  $suppress_attributes )
+	if ($print_attributes)
 	{
 	    # gather attributes
 		my @attr = ();
@@ -1704,19 +1738,19 @@ sub toString
 	my $imol = 0;
 	foreach my $mol ( @{$sg->Molecules} )
 	{
-		if ($imol) {   $string .= '.';   }
-		$string .= $mol->toString( $suppress_edge_names, $sg->Compartment, $suppress_attributes );
+		if ($imol > 0) { $string .= '.'; }
+		$string .= $mol->toString( $print_edges, $print_attributes, $sg->Compartment );
 		++$imol;
 	}
 
-    # write quantifier (if any), unless we're suppressing attributes
-	unless ($suppress_attributes)
-	{
+
+	if ($print_attributes)
+	{   # write quantifier (if any
         if ( $sg->Quantifier )
         {   $string .= $sg->Quantifier;   }
 	}
 	
-	return ($string);
+	return $string;
 }
 
 
@@ -1768,8 +1802,8 @@ sub toStringSSC {
 # Or molecules with bonds.
 sub toStringSSCMol
 {
-	my $sg                  = shift @_;
-	my $suppress_edge_names = (@_) ? shift @_ : 0;
+	my $sg          = shift @_;
+	my $print_edges = (@_) ? shift @_ : TRUE;
 
 	my $string = '';
 	my $imol = 0;
@@ -1777,7 +1811,7 @@ sub toStringSSCMol
     {
 		if ($imol) { $string .= ''; }
 		$string .= $mol->Name;
-		$string .= $mol->toStringSSCMol($suppress_edge_names); #Calls toStringSSCMol of Molecule.pm
+		$string .= $mol->toStringSSCMol( $print_edges ); #Calls toStringSSCMol of Molecule.pm
 
 		++$imol;
 	}
@@ -2300,6 +2334,10 @@ sub isomorphicTo
 		return 1;
 	}
 
+    # quick check: do the speciesGraphs have the same number of molecules?
+    unless (@{$sg1->Molecules} == @{$sg2->Molecules})
+    {   return 0;  }
+
 	# Nested depth first search, first molecules, then components to find match
 	my $molecules1 = $sg1->Molecules;
 	my $molecules2 = $sg2->Molecules;
@@ -2500,22 +2538,33 @@ sub isomorphicToSubgraph
     {
 		my $molecules2 = $sg2->Molecules;
 
-		# Number of molecules
+        ## First do some quick checks to see if it's possible to find a subgraph isomorphism
+		# compare number of molecules
 		if ( scalar @$molecules1 > scalar @$molecules2 )
         {   next;   }
 
-		# Check that number of edges is same
+		# compare number of edges
 		my $edges2 = $sg2->Edges;
 		if ( scalar @$edges1 > scalar @$edges2 )
         {   next;   }
 
-		# If sg1 has species compartment, check that sg2 matches
+		# compare species compartment
 		if ( defined $sg1->Compartment )
         {
             next unless ( defined $sg2->Compartment );
             next unless ( $sg1->Compartment == $sg2->Compartment );
         }
 
+        if ( @$molecules1 == 0 )
+        {   # if this is the null graph, then return a trivial subgraph isomorphism
+            my $map = Map->new;
+		    $map->Source($sg1);
+			$map->Target($sg2);
+			push @maps, $map;
+            return @maps;
+        }
+
+        ## Now look for a non-trivial subgraph isomorphism
 
 		# Nested depth first search, first molecules, then components to find match
 		my $nmol1  = $#$molecules1;
@@ -3051,8 +3100,7 @@ sub by_molecule
 # Canonical order for components of molecules
 sub cmp_component
 {
-	my $a = shift;
-	my $b = shift;
+	my ($a,$b) = @_;
 
 	my $cmp;
 
@@ -3145,22 +3193,24 @@ sub by_edge
 
 
 # This sub assumes edges are stored in array references like this:
-#   true edges = [m1, c1, m2, c2]
-#   dangling edges = [m1, c1]
-#  --Justin, 17 dec 2010
+#   true edges = ((m1, c1), (m2, c2))
+#   dangling edges = ((m1, c1))
 #
-# Should be a little faster since there's no splitting here!
+# Dangling edges are "greater than" True edges.
+#
+# This is only used by the updateEdges method.
 
 sub edge_sort
 {
 	# $a, $b arguments should be array references
 	my $cmp;
-    # dangling edges (2 elements in array) should be "greater than" true edges (4 elements in array)
+    # dangling edges (1 elements in array) should be "greater than" true edges (4 elements in array)
     if ($cmp = (@$b <=> @$a)) { return $cmp; }
-    # if both edges are the same true, compare element by element..
+    # if both edges are the same true, otherwise compare element by element..
 	for ( my $i=0;  $i < @$a;  ++$i )
 	{
-		if ( $cmp = ($a->[$i] <=> $b->[$i]) ) { return $cmp; }
+		if ( $cmp = ($a->[$i]->[0] <=> $b->[$i]->[0]) ) { return $cmp; }
+		if ( $cmp = ($a->[$i]->[1] <=> $b->[$i]->[1]) ) { return $cmp; }
 	}
 	# Getting here means edges are identical (which shouldn't happen?).
 	return 0;

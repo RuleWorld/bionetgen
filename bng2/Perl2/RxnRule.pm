@@ -1,5 +1,3 @@
-# $Id: RxnRule.pm,v 1.20 2007/07/06 06:09:48 faeder Exp $
-
 package RxnRule;
 
 # pragmas
@@ -16,12 +14,13 @@ use lib $FindBin::Bin;
 # BNG Modules
 use BNGUtils;
 use SpeciesGraph;
+use Species;
 use RateLaw;
 use EnergyPattern;
 use SpeciesList;
 use MoleculeTypesList;
 use RxnList;
-use CrossProduct;
+use CartesianProduct;
 use RefineRule;
 
 
@@ -32,7 +31,7 @@ use RefineRule;
 
 struct RxnRule =>
 {
-	Name      => '$',
+	Name      => '$',    # Name of rule
 
 	Reactants => '@',    # Arrays of SpeciesGraphs
 	Products  => '@',    # Arrays of SpeciesGraphs
@@ -54,6 +53,8 @@ struct RxnRule =>
 	Priority  => '$',
 	MultScale => '$',    # Factor by which to scale multiplicity to account for symmetry in rule
     
+    RuleInstances => 'CartesianProduct',   # object that iterates through instances of the reaction rule
+
 	# The operations performed by the rule
 	EdgeAdd           => '@',
 	EdgeDel           => '@',
@@ -85,7 +86,7 @@ struct RxnRule =>
 # create copy of a reaction rule
 sub copy
 {
-    my $rr = shift;
+    my $rr = shift @_;
     
     my $rr_copy = RxnRule::new();
     $rr_copy->Name( $rr->Name );
@@ -109,6 +110,8 @@ sub copy
         ++$ip;
     }
 
+    @{$rr_copy->Rmatches} = map { [@{$_}] } @{$rr->Rmatches};
+
     %{$rr_copy->MapF} = %{$rr->MapF};
     %{$rr_copy->MapR} = %{$rr->MapR};
 
@@ -118,6 +121,12 @@ sub copy
     $rr_copy->Priority( $rr->Priority );
     $rr_copy->MultScale( $rr->MultScale );
     
+    if ( defined $rr->RuleInstances )
+    {
+        $rr_copy->RuleInstances( $rr_copy->RuleInstances->copy() );
+        $rr_copy->RuleInstances->Lists( [@{$rr_copy->Rmatches}] );
+    }
+
     @{$rr_copy->EdgeAdd} = map { [@$_] } @{$rr->EdgeAdd};
     @{$rr_copy->EdgeDel} = map { [@$_] } @{$rr->EdgeDel};       
     @{$rr_copy->MolAdd}  = map { [@$_] } @{$rr->MolAdd};            
@@ -164,8 +173,9 @@ sub resetLabels
 
 sub newRxnRule
 {
-	my $string = shift;
-	my $model  = shift;
+	my $string = shift @_;
+	my $model  = shift @_;
+    my $linenum = @_ ? shift @_ : "?";
 	
 	my ( $err, $sep, $reversible );
 	my $name = '';
@@ -188,178 +198,136 @@ sub newRxnRule
     # Check for a ReactionRule label or index at the beginning of the string
 	if ( $string =~ s/^([\w\s]+):\s*// )
 	{
+        if ( $1 =~ /\s/ )
+        {  BNGUtils::line_warning(
+               "Reaction rule label '$name' contains white space. This is deprecated (BioNetGen >= 2.2.3).", $linenum);  }
 	    # We found an alphanumeric label
 		$name = $1;
 	}
-	elsif ( $string =~ m/^\d+\s+(\+|->|<->)/ )
-	{
-        # We found a numerical token that appears to be a species pattern (perhaps the null species).
+	elsif ( $string =~ /^0\s*(\+|->|<->)/ )
+	{   # We found a numerical token that appears to be a species pattern (perhaps the null pattern?).
         #  Don't strip this token!
 	}
     elsif ( $string =~ s/^(\d+)\s+// )
-    {   
-        # We found a numerical token that appears to be a Reaction Rule index.
+    {   # We found a numerical token that appears to be a Reaction Rule index.
         #  Strip the index and assign it as the name.
         $name = $1;
     }
 
-	if ( $string =~ s/CreateSpecies\s*\(\s*//i )
+
+	# read reactant patterns
+	my @reac   = ();
+	my %labels = ();
+	my %rrefs  = ();
+	my %prefs  = ();
+	$sep = '^\s*[+]\s*|^\s*(<?->)\s*';    #  "+"  or "->"  or "<->"
+	my $g;
+	my $ipatt = -1;
+
+	# Parse Reactant Patterns
+	while ($string)
 	{
-		# Syntax CreateSpecies(SpeciesGraph, RateLaw)
-		# Read SpeciesGraph- checking that it represents a valid species
-		my $g = SpeciesGraph->new();
-		my $err = $g->readString( \$string, $clist, 1, '^\s*[,]\s*', $mtlist );
-		if ($err) { return ( [], $err ) }
+		$g = SpeciesGraph->new();
+		$err = $g->readString( \$string, $clist, 0, $sep, $mtlist );
+		if ($err) {  return [], $err;  }
 
-		unless ( $string =~ s/^\s*[,]\s*// ) {
-			return ( [],
-				"Arguments must be separated by , in CreateSpecies: $string" );
-		}
-
-		# Read RateLaw
-		my $rl;
-		( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, 0, [] );
-		if ($err) { return ( [], $err ); }
-
-		unless ( $string =~ s/^\s*\)\s*// ) {
-			return ( [], "No end parenthesis in CreateSpecies: $string" );
-		}
-
-		if ($string) {
-			return ( [], "Syntax error in CreateSpecies: $string" );
-		}
-
-		return ( [], "CreateSpecies not yet implemented." );
-
-		# What's this?  $rr does not exist yet.  --Justin
-		# Create mapping
-		# Problem here arising from null Reactant list
-		#if ( my $err = $rr->findMap($mtlist) )
-		#{  return ( [], $err );  }
-
-		# Construct RxnRule
-		my $rr = RxnRule->new();
-		$rr->Name($name);
-		$rr->Reactants( [] );
-		$rr->Products(  [$g] );
-		$rr->RateLaw($rl);
-
-		return ( [$rr], '' );
-	}
-	elsif ( $string =~ s/DeleteSpecies\s*\(\s*//i ) {
-		return ( [], "DeleteSpecies not yet implemented." );
-	}
-	elsif ( $string =~ s/DeleteMolecules\s*\(\s*//i ) {
-		return ( [], "DeleteMolecules not yet implemented." );
-	}
-
-	# READ REACTION IN STANDARD SYNTAX
-	else
-	{
-		# NOTE: a small parsing bug here when compartments are specified for
-		# some, but not all species in the rxn rule.  --Justin.  22feb2009
-		# DId I ever fix this??  --Justin  3nov2010.
-
-		# read reactant patterns
-		my @reac   = ();
-		my %labels = ();
-		my %rrefs  = ();
-		my %prefs  = ();
-		$sep = '^\s*[+]\s*|^\s*([<]?-[>])\s*';    #  "+"  or "->"  or "<->"
-		my $g;
-		my $ipatt = -1;
-
-		# Parse Reactant Patterns
-		while ($string)
-		{
-			# print STDERR " $ipatt : $string\n";
-			$g = SpeciesGraph->new();
-			$err = $g->readString( \$string, $clist, 0, $sep, $mtlist );
-			if ($err) {  return ( [], $err );  }
-			
-			# check for null species
-			#next if ( $g->isNull() );
-			
-			# increment pattern count!
-			++$ipatt;
+        # warn about deprecated '$'
+        if ($g->Fixed)
+        {
+            my $msg = "Fixing reactant quantity in reaction rule with '\$' syntax is deprecated (BioNetGen >= 2.2.3).";
+            BNGUtils::line_warning($msg, $linenum);
+        }
+		
+        unless ( $g->isNull() )
+        {
+		    # increment pattern count!
+		    ++$ipatt;
 
             # Check Labels for this Reactant:
             my $label = $g->Label;
-			if ( defined $label  and  $label ne '' )
-			{
+		    if ( defined $label  and  $label ne '' )
+		    {
                 if ( exists $labels{ $label } )
                 {   return [], "Repeated label '$label' in reactants of reaction rule";  }
                 $labels{ $label } = "RP";
-				$rrefs{ $label } = $ipatt;
-			}
+			    $rrefs{ $label } = $ipatt;
+		    }
 
-			# Checking Molecules...
-			my $imol = -1;
-			foreach my $mol ( @{$g->Molecules} )
-			{
-				++$imol;
-				my $label = $mol->Label;
-				if ( defined $label )
-				{
-					if ( exists $labels{ $label } ) {  return [], "Repeated label '$label' in reactants of reactant rule";  }
-					$labels{ $label } = "RM";
-					$rrefs{ $label }  = join '.', ($ipatt, $imol);
-				}
-				my $icomp = -1;
-				
-				# Checking Components...
-				for my $comp ( @{ $mol->Components } )
-				{
-					++$icomp;
-					$label = $comp->Label;
-					if ( defined $label )
-					{				
-						if ( exists $labels{ $label } ) {  return [], "Repeated label '$label' in reactants of reaction rule";  }
-						$labels{ $label } = "RC";
-						$rrefs{ $label }  = join '.', ($ipatt, $imol, $icomp);
-					}
-				}
-			}
+		    # Checking Molecules...
+		    my $imol = -1;
+		    foreach my $mol ( @{$g->Molecules} )
+		    {
+			    ++$imol;
+			    my $label = $mol->Label;
+			    if ( defined $label )
+			    {
+				    if ( exists $labels{ $label } ) {  return [], "Repeated label '$label' in reactants of reactant rule";  }
+				    $labels{ $label } = "RM";
+				    $rrefs{ $label }  = join '.', ($ipatt, $imol);
+			    }
+			    my $icomp = -1;
 			
-			# Save this reactant
-			push @reac, $g;
-			
-			# Find next separator (some problem with string if there is no separator)
-			unless ( $string =~ s/$sep// ) {
-				return ( [], "Invalid syntax in reaction rule: $string" );
-			}
-			
-			# If the arrow operator was the next separator, then it's captured in $1
-			if ($1)
-			{   # Check if this reaction is reversible
-				$reversible = ( $1 eq "<->" ) ? 1 : 0;
-			    # check reversibility in energyBNG mode.  Does this matter?  Maybe issue warning?  --Justin, 9nov2010
-			    #if ( !$reversible  and  ($model->Options->{EnergyBNG}) )
-			    #{
-			    #    return ( [], "All rules must be reversible in energyBNG mode.  Reaction rule $name is not reversible." );
-			    #}
-				# We're done with Reactants, so exit this loop
-				last;
-			}
+			    # Checking Components...
+			    for my $comp ( @{ $mol->Components } )
+			    {
+				    ++$icomp;
+				    $label = $comp->Label;
+				    if ( defined $label )
+				    {				
+					    if ( exists $labels{ $label } ) {  return [], "Repeated label '$label' in reactants of reaction rule";  }
+					    $labels{ $label } = "RC";
+					    $rrefs{ $label }  = join '.', ($ipatt, $imol, $icomp);
+				    }
+			    }
+		    }
+		
+		    # Save this reactant
+		    push @reac, $g;
+        }
+		
+		# Find next separator (some problem with string if there is no separator)
+		unless ( $string =~ s/$sep// ) {
+			return ( [], "Invalid syntax in reaction rule: $string" );
 		}
+		
+		# If the arrow operator was the next separator, then it's captured in $1
+		if ($1)
+		{   # Check if this reaction is reversible
+			$reversible = ( $1 eq "<->" ) ? 1 : 0;
+		    # check reversibility in energyBNG mode.  Does this matter?  Maybe issue warning?  --Justin, 9nov2010
+		    #if ( !$reversible  and  ($model->Options->{EnergyBNG}) )
+		    #{
+		    #    return ( [], "All rules must be reversible in energyBNG mode.  Reaction rule $name is not reversible." );
+		    #}
+			# We're done with Reactants, so exit this loop
+			last;
+		}
+	}
 
+	# Read Product Patterns
+	my @prod = ();
+	$sep   = '^\s*([+])\s*|^\s+';    # "+" or "  "
+	$ipatt = -1;
+	while ($string)
+    {
+		my $g = SpeciesGraph->new();	
+		$err = $g->readString( \$string, $clist, 0, $sep, $mtlist );
+		if ($err) { return [], $err; }
 
-		# Read Product Patterns
-		my @prod = ();
-		$sep   = '^\s*([+])\s*|^\s+';    # "+" or "  "
-		$ipatt = -1;
-		while ($string) {
+        # warn about deprecated '$'
+        if ($g->Fixed)
+        {
+            my $msg = "Fixing product quantity in reaction rule with '\$' syntax is deprecated (BioNetGen >= 2.2.3).";
+            BNGUtils::line_warning($msg, $linenum);
+        }
 
-			# print STDERR " $ipatt : $string\n";
-			my $g = SpeciesGraph->new();	
-			$err = $g->readString( \$string, $clist, 0, $sep, $mtlist );
-			if ($err) { return ( [], $err ) }
-			++$ipatt;
-
+		unless ( $g->isNull() )
+        {
+		    ++$ipatt;
             # Checking Labels for this Species..
             my $label = $g->Label;
-			if ( defined  $label  and   $label ne '' )
-			{
+		    if ( defined  $label  and   $label ne '' )
+		    {
                 if ( exists $labels{ $label } )
                 {
                     if ( $labels{ $label } eq 'RP' )
@@ -379,17 +347,17 @@ sub newRxnRule
                 {   # this label was not found among the reactants
                     $labels{ $label } = 'PP'
                 }
-				$prefs{ $label } = $ipatt;
-			}
+			    $prefs{ $label } = $ipatt;
+		    }
 
-			# Checking Molecules... (verify correspondence and uniqueness!)
-			my $imol = -1;
-			foreach my $mol ( @{ $g->Molecules } )
-			{
-				++$imol;
-				my $label = $mol->Label;
-				if ( defined $label  and  $label ne '' )
-				{
+		    # Checking Molecules... (verify correspondence and uniqueness!)
+		    my $imol = -1;
+		    foreach my $mol ( @{ $g->Molecules } )
+		    {
+			    ++$imol;
+			    my $label = $mol->Label;
+			    if ( defined $label  and  $label ne '' )
+			    {
                     if ( exists $labels{ $label } )
                     {
                         if ( $labels{ $label  } eq 'RM' )
@@ -409,19 +377,19 @@ sub newRxnRule
                     {   # this label was not found among the reactants
                         $labels{ $label } = 'PM'
                     }
-					$prefs{$label} = join '.', ($ipatt, $imol);
-				}
-				
-				# Checking Components...
-				my $icomp = -1;
-				for my $comp ( @{ $mol->Components } )
-				{
-					++$icomp;
-					$label = $comp->Label;
+				    $prefs{$label} = join '.', ($ipatt, $imol);
+			    }
+			
+			    # Checking Components...
+			    my $icomp = -1;
+			    for my $comp ( @{ $mol->Components } )
+			    {
+				    ++$icomp;
+				    $label = $comp->Label;
 
-					#print "label=$label\n";
-					if ( defined $label  and  $label ne '' )
-					{
+				    #print "label=$label\n";
+				    if ( defined $label  and  $label ne '' )
+				    {
                         if ( exists $labels{ $label } )
                         {
                             if ( $labels{ $label  } eq 'RC' )
@@ -441,313 +409,282 @@ sub newRxnRule
                         {   # this label was not found among the reactants
                             $labels{ $g->Label } = 'PC'
                         }
-						$prefs{$label} = join '.', ($ipatt, $imol, $icomp);
-					}
-				}
-			}
-			
-			# Save this Product pattern
-			push @prod, $g;
-			
-			# Check for next separator (store a "+" separator in $1)
-			$string =~ s/$sep//;
-			# See if there's more Products to parse..
-			last unless $1;
-		}
+					    $prefs{$label} = join '.', ($ipatt, $imol, $icomp);
+				    }
+			    }
+		    }
 		
-		
-		# Check for labels found in Reactants but not Products and vice versa...
-        while ( my ($label, $resolution) = each %labels )
-        {
-            if ($resolution =~ /^(RM|RC)$/ )
-            {
-                send_warning( "Label '$label' appears in the reactants but not the products of rule: $rule_text. "
-                             ."The molecule corresponding to labeled object will be deleted when the rule fires. "
-                             ."Please double-check rule if this is not your intention." );
-            }
-            elsif ( $resolution =~ /^(PM|PC)$/ )
-            {
-                send_warning( "Label '$label' appears in the products but not the reactants of rule: $rule_text. "
-                             ."The molecule corresponding to labeled object will be synthesized when the rule fires. "
-                             ."Please double-check rule if this is not your intention." );
-            }
+		    # Save this Product pattern
+		    push @prod, $g;
         }
-
-
-		# Read rateLaw
-		my $rl;
-		my @rate_laws = ();
-
-
-        # Look for TotalRate attribute
-        # (default behavior is PerSite rate)
-        if ( $string =~ s/(^|\s)TotalRate(\s|$)/$2/ )
-        {   $TotalRate = 1;   }
+		
+		# Check for next separator (store a "+" separator in $1)
+		$string =~ s/$sep//;
+		# See if there's more Products to parse..
+		last unless $1;
+	}
 
 	
-		# temporarily add Reference tags as names in the ParamList
-		if (%rrefs) {  setRefs( \%rrefs, '', $plist );  }
-        # Parse and Create the ratelaw
-		( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@reac );
-		if ($err) {  return ( [], $err );  }
-        # unset temporary names of Reference tags
-		if (%rrefs) {  unsetRefs( \%rrefs, $plist );  } 
-		# Save the ratelaw
+	# Check for labels found in Reactants but not Products and vice versa...
+    while ( my ($label, $resolution) = each %labels )
+    {
+        if ($resolution =~ /^(RM|RC)$/ )
+        {
+            my $msg = "Label '$label' appears in the reactants but not the products of rule: $rule_text. "
+                     ."The molecule corresponding to labeled object will be deleted when the rule fires. "
+                     ."Please double-check rule if this is not your intention.";
+            BNGUtils::line_warning($msg, $linenum);
+
+        }
+        elsif ( $resolution =~ /^(PM|PC)$/ )
+        {
+            my $msg = "Label '$label' appears in the products but not the reactants of rule: $rule_text. "
+                     ."The molecule corresponding to labeled object will be synthesized when the rule fires. "
+                     ."Please double-check rule if this is not your intention.";
+            BNGUtils::line_warning($msg, $linenum);
+        }
+    }
+
+
+	# Read rateLaw
+	my $rl;
+	my @rate_laws = ();
+
+
+    # Look for TotalRate attribute
+    # (default behavior is PerSite rate)
+    if ( $string =~ s/(^|\s)TotalRate(\s|$)/$2/ )
+    {   $TotalRate = 1;   }
+
+
+	# temporarily add Reference tags as names in the ParamList
+	if (%rrefs) {  setRefs( \%rrefs, '', $plist );  }
+    # Parse and Create the ratelaw
+	( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@reac );
+	if ($err) {  return [], $err;  }
+    # unset temporary names of Reference tags
+	if (%rrefs) {  unsetRefs(\%rrefs, $plist);  } 
+	# Save the ratelaw
+	push @rate_laws, $rl;
+
+
+	# Reversible reaction requires two valid rate laws
+	if ($reversible)
+	{
+		# Remove separator for backward compatibility
+		$string =~ s/^\s*[,]\s*//;
+		if (%prefs) { setRefs( \%prefs, '', $plist ); }
+		( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@prod );
+		if ($err) { return ( [], $err ); }
+		if (%prefs) { unsetRefs( \%prefs, $plist ); }
 		push @rate_laws, $rl;
-
-
-		# Reversible reaction requires two valid rate laws
-		if ($reversible)
-		{
-			# Remove separator for backward compatibility
-			$string =~ s/^\s*[,]\s*//;
-			if (%prefs) { setRefs( \%prefs, '', $plist ); }
-			( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@prod );
-			if ($err) { return ( [], $err ); }
-			if (%prefs) { unsetRefs( \%prefs, $plist ); }
-			push @rate_laws, $rl;
+	}
+	else
+	{
+		if ( $string =~ /^\s*[,]/ ) {
+			return ( [], "Unidirection reaction may have only one rate law" );
 		}
-		else
-		{
-			if ( $string =~ /^\s*[,]/ ) {
-				return ( [], "Unidirection reaction may have only one rate law" );
-			}
+	}
+
+
+    # NOTE1: keywords can be in any order following the ratelaws.
+
+    # NOTE2: made keyword extraction safer by checking for white space characters
+    #   or end of string around the keyword.  Also, if keyword is extracted midstring
+    #   a space is left in place of keyword.  --Justin 
+
+	# Set optional priority of rule
+	my $priority = 0;
+	if ( $string =~ s/(^|\s)priority\s*=\s*(\S+)(\s|$)/$3/ ) { $priority = $2; }
+
+	# Set DeleteMolecules attribute
+	if ( $string =~ s/(^|\s)DeleteMolecules(\s|$)/$2/ ) { $DeleteMolecules = 1; }
+
+    # Set MoveConnected attribute
+    # This flag controls the behavior of a molecule transport rule.
+    # If true, then a molecule transport will carry all molecules in the species
+    # connected to the first molecule through a path in the same compartment which
+    # are NOT named in the pattern.
+	if ( $string =~ s/(^|\s)MoveConnected(\s|$)/$2/ ) { $MoveConnected = 1; }
+
+
+	# Process exclude_reactants/products
+	my @Rexclude = ();
+	foreach my $reac (@reac)
+	{   push @Rexclude, [];   }
+	
+	my @Pexclude = ();
+	foreach my $prod (@prod)
+	{   push @Pexclude, [];   }
+	
+	while ( $string =~ s/exclude_(\w+)(\S+)// )
+	{
+		my $type = $1;
+		my $arg  = $2;
+		if ( !( $arg =~ s/^\(// ) ) {
+			return ( [],
+				"Arguments to exclude_$type must be enclosed in parenthesis"
+			);
 		}
-
-
-        # NOTE1: keywords can be in any order following the ratelaws.
-
-        # NOTE2: made keyword extraction safer by checking for white space characters
-        #   or end of string around the keyword.  Also, if keyword is extracted midstring
-        #   a space is left in place of keyword.  --Justin 
-
-		# Set optional priority of rule
-		my $priority = 0;
-		if ( $string =~ s/(^|\s)priority\s*=\s*(\S+)(\s|$)/$3/ ) { $priority = $2; }
-
-		# Set DeleteMolecules attribute
-		if ( $string =~ s/(^|\s)DeleteMolecules(\s|$)/$2/ ) { $DeleteMolecules = 1; }
-
-        # Set MoveConnected attribute
-        # This flag controls the behavior of a molecule transport rule.
-        # If true, then a molecule transport will carry all molecules in the species
-        # connected to the first molecule through a path in the same compartment which
-        # are NOT named in the pattern.
-		if ( $string =~ s/(^|\s)MoveConnected(\s|$)/$2/ ) { $MoveConnected = 1; }
-
-
-		# Process exclude_reactants/products
-		my @Rexclude = ();
-		foreach my $reac (@reac)
-		{   push @Rexclude, [];   }
-		
-		my @Pexclude = ();
-		foreach my $prod (@prod)
-		{   push @Pexclude, [];   }
-		
-		while ( $string =~ s/exclude_(\w+)(\S+)// )
-		{
-			my $type = $1;
-			my $arg  = $2;
-			if ( !( $arg =~ s/^\(// ) ) {
-				return ( [],
-					"Arguments to exclude_$type must be enclosed in parenthesis"
-				);
-			}
-			if ( !( $arg =~ s/\)$// ) ) {
-				return ( [], "exclude_$type missing close parenthesis" );
-			}
-
-			# First argument is number of reactant or product
-			if ( !( $arg =~ s/^\s*(\d+)\s*[,]// ) ) {
-				return ( [],
-					"exclude_$type first argument must be index of $type" );
-			}
-			my $index = $1 - 1;
-
-			if ( $type eq "reactants" ) {
-				my $max_index = $#reac;
-				if ( $index < 0 || $index > $max_index ) {
-					return ( [], "exclude_$type index $index out of range" );
-				}
-				my $sep = '^,';
-				while ($arg) {
-					$g = SpeciesGraph->new();
-					$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
-					$arg =~ s/$sep//;
-					if ($err) { return ( [], $err ) }
-					push @{ $Rexclude[$index] }, $g;
-				}
-			}
-			elsif ( $type eq "products" ) {
-				my $max_index = $#prod;
-				if ( $index < 0 || $index > $max_index ) {
-					return ( [], "exclude_$type index $index out of range" );
-				}
-				my $sep = '^,';
-				while ($arg) {
-					$g = SpeciesGraph->new();
-					$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
-					$arg =~ s/$sep//;
-					if ($err) { return ( [], $err ) }
-					push @{ $Pexclude[$index] }, $g;
-				}
-			}
-			else {
-				return ( [], "Unrecognized function exclude_$type" );
-			}
+		if ( !( $arg =~ s/\)$// ) ) {
+			return ( [], "exclude_$type missing close parenthesis" );
 		}
 
+		# First argument is number of reactant or product
+		if ( !( $arg =~ s/^\s*(\d+)\s*[,]// ) ) {
+			return ( [],
+				"exclude_$type first argument must be index of $type" );
+		}
+		my $index = $1 - 1;
 
-		# Process include_reactants/products
-		my @Rinclude = ();
-		foreach my $reac (@reac)
-		{   push @Rinclude, [];   }
-		
-		my @Pinclude = ();
-		foreach my $prod (@prod)
-		{   push @Pinclude, [];   }
-		
-		while ( $string =~ s/include_(\w+)(\S+)// )
-		{
-			my $type = $1;
-			my $arg  = $2;
-			if ( !( $arg =~ s/^\(// ) ) {
-				return ( [],
-					"Arguments to include_$type must be enclosed in parenthesis"
-				);
+		if ( $type eq "reactants" ) {
+			my $max_index = $#reac;
+			if ( $index < 0 || $index > $max_index ) {
+				return ( [], "exclude_$type index $index out of range" );
 			}
-			if ( !( $arg =~ s/\)$// ) ) {
-				return ( [], "include_$type missing close parenthesis" );
-			}
-
-			# First argument is number of reactant or product
-			if ( !( $arg =~ s/^\s*(\d+)\s*[,]// ) ) {
-				return ( [],
-					"include_$type first argument must be index of $type" );
-			}
-			my $index = $1 - 1;
-
-			if ( $type eq "reactants" ) {
-				my $max_index = $#reac;
-				if ( $index < 0 || $index > $max_index ) {
-					return ( [], "include_$type index $index out of range" );
-				}
-				my $sep = '^,';
-				while ($arg) {
-					$g = SpeciesGraph->new();
-					$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
-					$arg =~ s/$sep//;
-					if ($err) { return ( [], $err ) }
-					push @{$Rinclude[$index]}, $g;
-				}
-			}
-			elsif ( $type eq "products" ) {
-				my $max_index = $#prod;
-				if ( $index < 0 || $index > $max_index ) {
-					return ( [], "include_$type index $index out of range" );
-				}
-				my $sep = '^,';
-				while ($arg) {
-					$g = SpeciesGraph->new();
-					$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
-					$arg =~ s/$sep//;
-					if ($err) { return ( [], $err ) }
-					push @{ $Pinclude[$index] }, $g;
-				}
-			}
-			else {
-				return ( [], "Unrecognized function include_$type" );
+			my $sep = '^,';
+			while ($arg) {
+				$g = SpeciesGraph->new();
+				$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
+				$arg =~ s/$sep//;
+				if ($err) { return ( [], $err ) }
+				push @{ $Rexclude[$index] }, $g;
 			}
 		}
-
-        # String should be empty now, otherwise there may be a problem.
-		if ( $string =~ /\S+/ ) {
-			my $err = sprintf "Syntax error in reaction rule at $string";
-			return ( [], $err );
+		elsif ( $type eq "products" ) {
+			my $max_index = $#prod;
+			if ( $index < 0 || $index > $max_index ) {
+				return ( [], "exclude_$type index $index out of range" );
+			}
+			my $sep = '^,';
+			while ($arg) {
+				$g = SpeciesGraph->new();
+				$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
+				$arg =~ s/$sep//;
+				if ($err) { return ( [], $err ) }
+				push @{ $Pexclude[$index] }, $g;
+			}
 		}
-        
+		else {
+			return ( [], "Unrecognized function exclude_$type" );
+		}
+	}
 
-        
-        # Construct Forward RxnRule
-		my @rrs = ();
-		my $rr  = RxnRule->new();
-		if ( $name ne '' ) {  $rr->Name($name);  }
-		$rr->Reactants( [@reac] );
-		$rr->Products(  [@prod] );
+
+	# Process include_reactants/products
+	my @Rinclude = ();
+	foreach my $reac (@reac)
+	{   push @Rinclude, [];   }
+	
+	my @Pinclude = ();
+	foreach my $prod (@prod)
+	{   push @Pinclude, [];   }
+	
+	while ( $string =~ s/include_(\w+)(\S+)// )
+	{
+		my $type = $1;
+		my $arg  = $2;
+		if ( !( $arg =~ s/^\(// ) ) {
+			return [], "Arguments to include_$type must be enclosed in parenthesis";
+		}
+		if ( !( $arg =~ s/\)$// ) ) {
+			return [], "include_$type missing close parenthesis";
+		}
+
+		# First argument is number of reactant or product
+		if ( !( $arg =~ s/^\s*(\d+)\s*[,]// ) ) {
+			return [], "include_$type first argument must be index of $type";
+		}
+		my $index = $1 - 1;
+
+		if ( $type eq "reactants" ) {
+			my $max_index = $#reac;
+			if ( $index < 0 || $index > $max_index ) {
+				return [], "include_$type index $index out of range";
+			}
+			my $sep = '^,';
+			while ($arg) {
+				$g = SpeciesGraph->new();
+				$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
+				$arg =~ s/$sep//;
+				if ($err) { return ( [], $err ) }
+				push @{$Rinclude[$index]}, $g;
+			}
+		}
+		elsif ( $type eq "products" ) {
+			my $max_index = $#prod;
+			if ( $index < 0 || $index > $max_index ) {
+				return ( [], "include_$type index $index out of range" );
+			}
+			my $sep = '^,';
+			while ($arg) {
+				$g = SpeciesGraph->new();
+				$err = $g->readString( \$arg, $clist, 0, $sep, $mtlist );
+				$arg =~ s/$sep//;
+				if ($err) { return ( [], $err ) }
+				push @{ $Pinclude[$index] }, $g;
+			}
+		}
+		else {
+			return [], "Unrecognized function include_$type";
+		}
+	}
+
+    # String should be empty now, otherwise there may be a problem.
+	if ( $string =~ /\S+/ ) {
+		my $err = sprintf "Syntax error in reaction rule at $string";
+		return [], $err;
+	}
+    
+    
+	my $rrs = [];
+    # Construct Forward RxnRule
+	my $rr  = RxnRule->new();
+	if ( $name ne '' ) {  $rr->Name($name);  }
+	$rr->Reactants( [@reac] );
+	$rr->Products(  [@prod] );
+	$rr->Priority($priority);
+	$rr->RateLaw( $rate_laws[0] );
+	$rr->Rexclude( [@Rexclude] );
+	$rr->Pexclude( [@Pexclude] );
+	$rr->Rinclude( [@Rinclude] );
+	$rr->Pinclude( [@Pinclude] );
+	$rr->TotalRate($TotalRate);
+	$rr->DeleteMolecules($DeleteMolecules);
+	$rr->MoveConnected($MoveConnected);
+	$rr->RRefs( {%rrefs} );
+	$rr->PRefs( {%prefs} );
+
+
+	# Find mapping of reactants onto products
+	if ( $err = $rr->findMap($mtlist) ) { return [], $err; }
+	push @$rrs, $rr;
+
+
+	if ($reversible)
+	{
+		$rr = RxnRule->new();
+		if ( $name ne '' ) { $rr->Name("${name}(reverse)"); }
+		$rr->Reactants( [@prod] );
+		$rr->Products(  [@reac] );
 		$rr->Priority($priority);
-		$rr->RateLaw( $rate_laws[0] );
-		$rr->Rexclude( [@Rexclude] );
-		$rr->Pexclude( [@Pexclude] );
-		$rr->Rinclude( [@Rinclude] );
-		$rr->Pinclude( [@Pinclude] );
+		$rr->RateLaw( $rate_laws[1] );
+		$rr->Pexclude( [@Rexclude] );
+		$rr->Rexclude( [@Pexclude] );
+		$rr->Pinclude( [@Rinclude] );
+		$rr->Rinclude( [@Pinclude] );
 		$rr->TotalRate($TotalRate);
 		$rr->DeleteMolecules($DeleteMolecules);
-		$rr->MoveConnected($MoveConnected);
-		$rr->RRefs( {%rrefs} );
-		$rr->PRefs( {%prefs} );
-
-
-		# debug code: show reactants, products and compartments (if any)
-		#print STDERR "\n\nRxn Rule:  ", $rr->toString(), "\n";
-		#print STDERR "## Reactants ##\n";
-		#foreach my $sg ( @{$rr->Reactants} )
-		#{
-		#   print STDERR $sg->toString();
-		#   if ( defined $sg->Compartment )
-		#   {  print STDERR "  Compartment: ", $sg->Compartment->Name, "\n";  }
-		#   else
-		#   {  print STDERR "  No Compartment\n";  }
-		#}
-		#print STDERR "## Products ##\n";
-		#foreach my $sg ( @{$rr->Products} )
-		#{
-		#   print STDERR $sg->toString();
-		#   if ( defined $sg->Compartment )
-		#   {  print STDERR "  Compartment: ", $sg->Compartment->Name, "\n";  }
-		#   else
-		#   {  print STDERR "  No Compartment\n";  }
-		#}
+		$rr->MoveConnected($MoveConnected);		
+		$rr->RRefs( {%prefs} );
+		$rr->PRefs( {%rrefs} );
 
 		# Find mapping of reactants onto products
-		if ( $err = $rr->findMap($mtlist) ) {
-			return ( [], $err );
-		}
-		push @rrs, $rr;
+		if ( $err = $rr->findMap($mtlist) ) { return [], $err; }
+		push @$rrs, $rr;
+	}
 
-		#print "rrule: ",$rr->toString(),"\n";
-
-		if ($reversible)
-		{
-			$rr = RxnRule->new();
-			if ( $name ne '' ) { $rr->Name("${name}(reverse)"); }
-			$rr->Reactants( [@prod] );
-			$rr->Products(  [@reac] );
-			$rr->Priority($priority);
-			$rr->RateLaw( $rate_laws[1] );
-			$rr->Pexclude( [@Rexclude] );
-			$rr->Rexclude( [@Pexclude] );
-			$rr->Pinclude( [@Rinclude] );
-			$rr->Rinclude( [@Pinclude] );
-			$rr->TotalRate($TotalRate);
-			$rr->DeleteMolecules($DeleteMolecules);
-			$rr->MoveConnected($MoveConnected);		
-			$rr->RRefs( {%prefs} );
-			$rr->PRefs( {%rrefs} );
-
-			# Find mapping of reactants onto products
-			if ( $err = $rr->findMap($mtlist) ) {
-				return ( [], $err );
-			}
-			push @rrs, $rr;
-
-			#print "rrule: ",$rr->toString(),"\n";
-		}
-		return [@rrs];
-	}    # END OF STANDARD REACTION SYNTAX
-
-	# Should not get here
-	return ( [], "Unknown error in RxnRule::readString" );
+	return $rrs;
 }
 
 
@@ -762,12 +699,6 @@ sub listActions
 {
 	my $rr  = shift;
 	my $out = '';
-
-	#  my %map_reverse=();
-	#  for my $s (keys %{$rr->MapF}){
-	#    my $t= $rr->MapF->{$s};
-	#    $map_reverse{$t}= $s;
-	#  }
 
 	# Species Creation
 	foreach my $molAddRef ( @{ $rr->MolAdd } )
@@ -790,12 +721,8 @@ sub listActions
 		$out .= "  # StateChange($p,$sR->$sP)\n";
 	}
 
-    # changes by justinshogg@gmail.com
-    # 14 Feb 2009
-    # notes:
-    # Compartment changes
-    # format
-    # ------
+    # Compartment changes format:
+    #
     #  species:    ["ipatt", origin_compartment, destination_compartment, cytosis]
     #  molecule:   ["ipatt.imol", origin_compartment, destination_compartment, cytosis]
     #  component:  ["ipatt.imol.icomp", origin_compartment, destination_compartment, cytosis]
@@ -810,17 +737,11 @@ sub listActions
 		$out .= "  # ChangeCompartment($ref,$compartR,$compartP,$cytosis)\n";
 	}
 
-	# end changes by Justin
-
 	# Binding
 	foreach my $ea ( @{ $rr->EdgeAdd } )
 	{
 		( my $p1, my $p2 ) = @{$ea};
 		$out .= "  # Bind($p1,$p2)\n";
-
-		#    $p1= $map_reverse{$p1};
-		#    $p2= $map_reverse{$p2};
-		#    $out.= "# Bind($p1,$p2) (reactants)\n";
 	}
 
 	# Dissociation
@@ -864,32 +785,42 @@ sub toString
 	# Name is an index unless it contains non-digit character
 	if ( defined $rr->Name  and  $rr->Name ne '' )
 	{
-	    if ( $rr->Name =~ /\D/ )
-	    {
-		    $string .= $rr->Name . ":  ";
-	    }
-	    else
-	    {
-		    $string .= sprintf "%5d: ", $rr->Name;
-	    }
+        $string .= $rr->Name . ":  ";
 	}
 	
-	my $i = 0;
-	foreach my $g ( @{$rr->Reactants} )
-	{
-		if ( $i != 0 ) { $string .= " + "; }
-		$string .= $g->toString();
-		++$i;
-	}
+
+    if ( @{$rr->Reactants} )
+    {
+	    my $i = 0;
+	    foreach my $g ( @{$rr->Reactants} )
+	    {
+		    if ( $i != 0 ) { $string .= " + "; }
+		    $string .= $g->toString();
+		    ++$i;
+	    }
+    }
+    else
+    {   # null pattern
+        $string .= SpeciesGraph::getNullString();
+    }
+
 	$string .= ($rr_rev) ? " <-> " : " -> ";
 
-	$i = 0;
-	foreach my $g ( @{$rr->Products} )
-	{
-		if ( $i != 0 ) { $string .= " + "; }
-		$string .= $g->toString();
-		++$i;
-	}
+    if ( @{$rr->Products} )
+    {
+	    my $i = 0;
+	    foreach my $g ( @{$rr->Products} )
+	    {
+		    if ( $i != 0 ) { $string .= " + "; }
+		    $string .= $g->toString();
+		    ++$i;
+	    }
+    }
+    else
+    {   # null pattern
+        $string .= SpeciesGraph::getNullString();
+    }
+
 
 	$string .= "  " . $rr->RateLaw->toString();
 	if ($rr_rev)
@@ -950,20 +881,10 @@ sub toString
 		$string .= ")";
 	}
 
-	if ( $rr->TotalRate )
-	{
-		$string .= " TotalRate";
-	}
-
-	if ( $rr->DeleteMolecules )
-	{
-		$string .= " DeleteMolecules";
-	}
-
-	if ( $rr->MoveConnected )
-	{
-		$string .= " MoveConnected";
-	}
+    # modifier flags
+	$string .= " TotalRate" if ( $rr->TotalRate );
+    $string .= " DeleteMolecules" if ( $rr->DeleteMolecules );
+    $string .= " MoveConnected"	if ( $rr->MoveConnected );
 
 	return $string;
 }
@@ -1983,11 +1904,7 @@ sub toXML
 		$ostring .= "/>\n";
 	}
 
-    # Compartment Changes
-    # changes by justinshogg@gmail.com
-    # 14 Apr 2009
-    # notes:
-    # ChangeCompartment, three types:
+    # Compartment Changes format:
     #
     #  species transport:
     #  <ChangeCompartment id="RR#_RP#" source="Comp" destination="Comp" flipOrientation="#" moveConnected="#"/>
@@ -2019,7 +1936,6 @@ sub toXML
 		$ostring .= "/>\n";
 	}
 
-	# end changes by Justin
 
 	# Edge Deletion
 	foreach my $ed ( @{ $rr->EdgeDel } )
@@ -2032,8 +1948,6 @@ sub toXML
 	}
 
 	# Molecule Addition
-	# Fixed bug (always returned ID to first molecule of first product pattern)
-	# --justin 29may2009
 	foreach my $molAddRef ( @{ $rr->MolAdd } )
 	{
 		$ostring .= $indent3 . "<Add";
@@ -2047,11 +1961,6 @@ sub toXML
 	{
 		( my $p1, my $p2 ) = @{$ea};
 		
-		# Bug (reported by Michael): no reference to component if the target is
-		# on a new molecule.
-		# Fix: if bond connects to a component of a new molecule, then point into the 
-		# product pattern.  Otherwise, get pointer into the reactant patterns.
-		# --Justin, 11 oct 2010.
 		if ( exists $map_reverse{$p1} )
 		{   $p1 = pointer_to_ID( $id . "_R", $map_reverse{$p1} );   }
 		else
@@ -2069,8 +1978,6 @@ sub toXML
 	}
 
 	# Molecule/Pattern Deletion
-	# update: export DeleteMolecules keyword.
-	# --justin 29may2009
 	foreach my $molRef ( @{ $rr->MolDel } )
 	{
 		my $delMolFlag = $rr->DeleteMolecules;
@@ -2098,42 +2005,14 @@ sub toXML
 
 
 
-###
-###
-###
-
-
-
-sub pointer_to_ID
-{
-	# converts pointer format (e.g. 0.0.0) to ID format (e.g. "P1_M1_C1" )
-	my $id      = shift;                            # Use first string as header
-	my $pointer = shift;
-	my @names   = ( "P", "M", "C" );
-
-	my @arr = split /\./, $pointer;
-	if ( $arr[0] == -1 ) {
-		$id = "Null";
-	}
-	else {
-		$id .= sprintf "%s%d", $names[0], $arr[0] + 1;
-		for my $i ( 1 .. $#arr ) {
-			$id .= sprintf "_%s%d", $names[$i], $arr[$i] + 1;
-		}
-	}
-	return ($id);
-}
-
-
-
 ##   __
 ##  |   o  _    |       _
 ##  |_  | | | /\| |\/| / | |/\
 ##  |   | | | \/| |  | \/| |\/
 ##                         |
 
-
-# find mapping from reactant patterns to product patterns
+# $err = $rr->findMap( $mtlist );
+# Build correspondence map of reactant patterns and product patterns
 #  and parse out transformations.
 sub findMap
 {
@@ -2141,18 +2020,17 @@ sub findMap
 	my $mtlist = shift @_;    # molecule-types list
 
     # clear out transformations
-    @{$rr->MolDel} = ();
-	@{$rr->MolAdd} = ();    
+    @{$rr->MolDel}  = ();
+	@{$rr->MolAdd}  = ();    
 	@{$rr->EdgeDel} = ();
     @{$rr->EdgeAdd} = ();
-	@{$rr->CompStateChange} = ();
+	@{$rr->CompStateChange}   = ();
     @{$rr->ChangeCompartment} = ();	   
 
 
 	# Aggregate reactant and product pattern graphs
 	my ($rg) = SpeciesGraph::copymerge( @{$rr->Reactants} );
-	my ($pg) = SpeciesGraph::copymerge( @{$rr->Products} );
-	#printf "%s -> %s\n", $rg->toString(), $pg->toString();
+	my ($pg) = SpeciesGraph::copymerge( @{$rr->Products}  );
 
 
     # Set up mapping between molecules of aggregate graphs and molecules of patterns
@@ -2162,7 +2040,6 @@ sub findMap
 		foreach my $imol ( 0 .. $#{$rr->Reactants->[$ipatt]->Molecules} )
 		{
 			push @aggMapR, "$ipatt.$imol";
-			#print "$#aggMapR -> $ipatt.$imol\n";
 		}
 	}
 
@@ -2172,7 +2049,6 @@ sub findMap
 		foreach my $imol ( 0 .. $#{$rr->Products->[$ipatt]->Molecules} )
 		{
 			push @aggMapP, "$ipatt.$imol";
-			#print "$#aggMapP -> $ipatt.$imol\n";
 		}
 	}
 
@@ -2180,9 +2056,6 @@ sub findMap
 	# Find map between reactant and product graphs
 	my $map = $rg->findMaps($pg);
 	unless (defined $map) {  return "No valid mapping could be found for this rule.";  }
-	# print "Found mapping: ", $maps[0]->toString(), "\n";
-
-
 
 
 	# Molecules that are destroyed
@@ -2210,20 +2083,14 @@ sub findMap
 		{
 			# Delete only molecules by placing pointer to each on deletion list
 			foreach my $m_r (@mol_delete)
-			{
-				push @{$rr->MolDel}, "${p_r}.${m_r}";
-                #printf "Rule %s: Reactant molecule %s is deleted\n", 
-                #       $rr->Name, $rr->Reactants->[$p_r]->Molecules->[$m_r]->toString();
-			}
+			{	push @{$rr->MolDel}, "${p_r}.${m_r}";	}
 		}
 		else
 		{
             # Delete whole species matching pattern
-            #printf "Rule %s: Reactant pattern %s is deleted\n", $rr->Name, $rr->Reactants->[$p_r]->toString();
 			push @{$rr->MolDel}, $p_r;
 		}
 	}
-
 
 
 	# Molecules that are created
@@ -2233,22 +2100,19 @@ sub findMap
 
         # Check that this molecule is fully specified, i.e. all components and component states
 		my $ref = $aggMapP[$imP];
-		my ( $p, $m ) = split /\./, $ref;
+		my ($p, $m) = split /\./, $ref;
 		my $mol = $rr->Products->[$p]->Molecules->[$m];
 
-        #printf "Rule %s: Product molecule %s is created\n", $rr->Name,$mol->toString();
         # List of pointers to reactant components from which to inherit attributes of each component
 		my $ic    = 0;
 		my @ilist = ();
-		foreach my $comp ( @{ $mol->Components } )
+		foreach my $comp ( @{$mol->Components} )
 		{
 			if ( ( my $cref = $map->MapR->{"$imP.$ic"} ) ne "-1" )
 			{
-				#print "cref=$cref\n";
 				my ( $imR, $icR ) = split /\./, $cref;
 				$cref = $aggMapR[$imR] . ".$icR";
 				push @ilist, $cref;
-			    #printf "   Component $ic inherits from reactant pointer $cref\n";
 			}
 			else
 			{
@@ -2257,15 +2121,12 @@ sub findMap
 			}
 			++$ic;
 		}
-		if ( my $err =
-		         $mtlist->checkMolecule($mol, { IsSpecies => 1, InheritList => \@ilist }) )
-		{
-			return ( "Molecule created in reaction rule: " . $err );
-		}
+
+		if ( my $err = $mtlist->checkMolecule($mol, { IsSpecies => 1, InheritList => \@ilist }) )
+		{   return "Molecule created in reaction rule: $err";   }
+
 		push @{$rr->MolAdd}, [ ($ref, @ilist) ];
 	}
-	#printf "%d edges reac %d edges prod\n", scalar(@edgesR), scalar(@edgesP);
-
 
 
 	# Edges deleted
@@ -2320,30 +2181,44 @@ sub findMap
 		$p1P = $aggMapP[$im1] . ".$ic1";
 		$p2P = $aggMapP[$im2] . ".$ic2";
 
-        #printf "Rule %s: Edge %s %s is added (product side)\n", $rr->Name,$p1P, $p2P;
 		push @{$rr->EdgeAdd}, [ $p1P, $p2P ];
 	}
 
 
-    # Check for invalid half-bonds
-    while ( my ($ptr_P,$adj_P) = each %{$pg->Adjacency} )
-    {
-        unless ( ref $adj_P eq 'HASH' )
-        {   # ptr_P has a half-bond. Find corresponding reactant, if any.
-            my $ptr_R = $map->MapR->{$ptr_P};
+    # Check for invalid bond wildcards in products
+    foreach my $imP ( 0 .. @{$pg->Molecules}-1 )
+	{
+        my $mol = $pg->Molecules->[$imP];
+        foreach my $icP ( 0 .. @{$mol->Components}-1 )
+        {
+            my $comp = $mol->Components->[$icP];
+            next unless (@{$comp->Edges});
+            
+            my ($imR, $icR) = split /\./, $map->MapR("$imP.$icP");
+            # we already checked synthesized molecules, so we only need to check those with
+            #  a correspondence in the reactants
+            next if ( $imR == -1 );
 
-            # get molecule and component index
-            my ($im,$ic) = split /\./, $ptr_P;
-            # convert to p.m.c format
-            my $comp = $aggMapP[$im] . ".$ic";
-
-            if ( $ptr_R == -1 )
-            {   # product component is newly synthesized; half-bond is invalid.
-                exit_error( "New product component $comp has invalid half-bond in rule:", $rr->toString() );
+            # assume that if there's a wildcard, it's the only element of Edges
+            #  (This should be enforced elsewhere)
+            my $edge = $comp->Edges->[0];
+            if ($edge eq "+" )
+            {   
+                unless ( grep {$_ eq "+"} @{$rg->Molecules->[$imR]->Components->[$icR]->Edges} )
+                {
+                    my $err = sprintf("In reaction rule: product component %s has a bond wildcard, ", $comp->toString() )
+                             ."but the corresponding reactant component does not.";
+                    return $err;
+                }
             }
-            elsif ( ! exists $rg->Adjacency->{$ptr_R}  or  ref $rg->Adjacency->{$ptr_R} eq 'HASH' )
-            {   # corresponding reactant component has a full-bond; half-bond is invalid
-                exit_error( "Product component $comp has new or redefined half-bond in rule:", $rr->toString() );
+            elsif ($edge eq "?")
+            {
+                unless ( grep {$_ eq "?"} @{$rg->Molecules->[$imR]->Components->[$icR]->Edges} )
+                {
+                    my $err = sprintf("In reaction rule: product component %s has a bond wildcard, ", $comp->toString() )
+                             ."but the corresponding reactant component does not.";
+                    return $err;
+                }
             }
         }
     }
@@ -2353,7 +2228,6 @@ sub findMap
 	foreach my $imR ( 0 .. $#{$rg->Molecules} )
 	{
 		my $imP = $map->MapF->{$imR};
-		#print "$imR->$map->MapF->{$imR}\n";
 		next unless ( $imP >= 0 );
 		
 		# grab components
@@ -2391,10 +2265,7 @@ sub findMap
 	}
 
 
-
-    # Compartment changes
-    # code implemented by: justinshogg@gmail.com
-    # 21 feb 2009
+    # Compartment changes:
     #
     # There are two types of compartment changes.
     # (1) Species transport:  The entire speces is transported.
@@ -2580,11 +2451,6 @@ sub findMap
 			}
 		}
 
-		# debug: print out Pattern Map
-		#for (my $i=0; $i < @mapPattR; $i++)
-		#{
-		#   print STDERR "mapPattR  $i  $mapPattR[$i]\n";
-		#}
 
 		##  Pattern Mapping completed
 		##   ..now looking for transport reactions.
@@ -2782,21 +2648,8 @@ sub findMap
 		#}
 	}    # end loop through reactant molecules
 
-    ## debug: show compartment change operations
-    #foreach my $op (@{$rr->ChangeCompartment})
-    #{
-    #    print STDERR "\n", $rr->toString(), "\n";
-    #    print STDERR "ptr: ", $op->[0], "  comp_origin: ", $op->[1]->Name,
-    #                 "  comp_dest: ", $op->[2]->Name, "  cytosis: ", $op->[3], "\n";
-    #}
-
 	## finished compartment changes.
 
-
-
-	### NOTE: replaced symmetry handler with canonical reaction labeling ###
-	# However, this is still useful for NFsim!  So we'll calculate the MultScale
-	#  and pass it to NFsim through the XML file.
 
     # Determine the reaction center of this rule
     my $err = $rr->find_reaction_center( $mapr_new );
@@ -2818,7 +2671,6 @@ sub findMap
 	my @r_auto   = $rg->isomorphicToSubgraph($rg);
 	# Find product graph automorphisms
 	my @p_auto   = $pg->isomorphicToSubgraph($pg);
-	
 
 	# Set up product automorphism hash (includes identity - trivial autmorphism)
 	my %p_auto_hash = ();
@@ -2864,7 +2716,6 @@ sub findMap
             $patt_map{$src_patt} = $targ_patt;
         }
     
-        #print join( ', ', map { "$_ -> $patt_map{$_}" } (keys %patt_map) ), "\n";
     
         # loop over reaction patterns (one array for each reactant pattern)
         foreach my $Rpatt (@{$rr->ReactionCenter})
@@ -2941,7 +2792,6 @@ sub findMap
         $crg_permutations *= RxnRule::factorial($instances);
     }
 
-
 	my $multScale = 1 / (@RuleGroup/@StabRxnCntr) / $crg_permutations;
 	$rr->MultScale($multScale);
 	
@@ -2984,770 +2834,112 @@ sub findMap
 
 
 
-
-
-##-----------------------##
-## Rule application loop ##
-##-----------------------##
+# void = $rr->initializeRule()
+# Prepare rule for network generation.
+sub initializeRule
 {
-	my $pattDepth = -1;
-	my $maxDepth;
-	my $check_iso  = 1;
-	my $max_agg    = 1e99;
-	my $max_stoich = '';
-	my $verbose;
-	my ( $rr, @sgs, @matches, @isnew, $new_level, @targets, @reactant_species );
-	my $n_new_rxns;
-	my @rxns;
-	my ( $slist, $rlist );    # RxnList and SpeciesList
-	my ( $rtype, $dlist );
-	my $plist;
-    my $rmatches;
+    my $rr = shift @_;
+
+    # clear out the RxnLabels hash
+    %{$rr->RxnLabels} = ();
+
+    # clear out Rmatches
+    my $ipatt = 0;
+    foreach my $rpatt ( @{$rr->Reactants} )
+    {
+        # make sure rmatches is empty!
+        $rr->Rmatches->[$ipatt] = [];
+        ++$ipatt;
+    }
+
+    # create CartesianProduct object to manage rule instances
+    my $cartprod_reactants = CartesianProduct::new();
+    $cartprod_reactants->initialize( $rr->Rmatches );
+    $rr->RuleInstances( $cartprod_reactants );
+
+    return;
+}
 
 
-	# $rr->applyRule(SpeciesList, RxnList, (Species))
-	sub applyRule
-	{
-        # Execute this block on entry to applyRule.  i.e.
-        # Only need to read arguments when $pattDepth is negative
-        #
-        # GOAL:  find matches to reactant patterns in species list
-        # store matches in @rmatches, where $rmatches[i] is an array of matches to pattern i.
-		if ( $pattDepth == -1 )
+
+##----------------##
+## Rule Expansion ##
+##----------------##
+{
+
+    my $params = {  
+        check_iso  => 1,
+        max_agg    => 1e9,
+        verbose    => 0,
+        max_stoich => {},
+        indent     => ' ' x 4
+    };
+
+    sub expand_rule
+    {
+        # get input arguments
+	    my $rr           = shift @_;          # this reaction rule
+	    my $species_list = shift @_;          # apply rules with these new species
+	    my $model        = shift @_;          # model
+        my $user_params  = (@_) ? shift : {};
+
+	    # overwrite defaults with user params
+	    while ( my ($opt,$val) = each %$user_params )
+	    {   $params->{$opt} = $val;   }
+
+        # define return values
+        my $err = undef;
+        my $n_new_rxns = 0;
+
+		# only look for matches in species that we haven't applied the rules to yet.
+		my $new_species = [];
+		foreach my $s (@$species_list)
 		{
-			$rr    = shift @_;    # reaction rule
-			$slist = shift @_;    # species list
-			$rlist = shift @_;    # reaction list (to be filled?)
-			$plist = shift @_;    # parameter list
-
-            # DEBUG
-            #print STDERR $rr->toString(), "\n";
-
-			unless ( ref $plist eq 'ParamList' )
-			{
-				exit_error( "plist argument is not type ParamList.",
-					        $rr->toString );
-			}
-
-			$maxDepth   = $#{$rr->Reactants};
-			$n_new_rxns = 0;
-
-			# Handle deletion rules
-			$rtype = $rr->RateLaw->Type;
-			if   ( $rtype eq "Zero" ) { $dlist = RxnList->new; }
-			else                      { $dlist = ''; }
-
-			# Determine to which species rules are to be applied
-			my $species;
-			if (@_)
-			{   # User-provided array
-				$species = shift;
-			}
-			else
-			{   # Array in species list
-				$species = $slist->Array;
-			}
-
-
-			# only look for matches in species that we haven't
-			# applied the rules to yet.
-			my @sgs = ();
-			foreach my $spec (@$species)
-			{
-				unless ( $spec->RulesApplied )
-				{
-					push @sgs, $spec->SpeciesGraph;
-				}
-			}
-
-
-	        # Next argument is optional parameter hash
-	        # Any parameters that don't have defaults set here will inherit values set
-	        # by previous calls to this function
-	        # SAFER would be to make these attributes of BNGModel and automatically
-	        # pass them to this function if they are defined
-			if (@_)
-			{
-				my $params = shift;
-				if ( defined $params->{max_agg} ) 
-				{
-					$max_agg = $params->{max_agg};
-				}
-				else
-				{
-					#$max_agg=1e99;
-				}
-				if ( defined $params->{check_iso} )
-				{
-					$check_iso = $params->{check_iso};
-				}
-				else
-				{
-					#$check_iso=1;
-				}
-				if ( defined $params->{max_stoich} )
-				{
-					$max_stoich = $params->{max_stoich};
-				}
-				else
-				{
-					#$max_stoich="";
-				}
-				if ( defined $params->{verbose} )
-				{
-					$verbose = $params->{verbose};
-				}
-				else
-				{
-					#$verbose=0;
-				}
-
-                # initialize Rmatches with empty array references
-                foreach my $reac ( @{$rr->Reactants} )
-                {
-                    push @{$rr->Rmatches}, [];
-                }
-			}
-
-			@rxns = ();
-
-			# Map rule patterns onto SpeciesGraphs
-			my $ipatt = 0;
-			$rmatches = $rr->Rmatches;
-			my $new_matches_found = 0;
-			$new_level = -1;
-			my $nsets = 1;
-
-			foreach my $patt ( @{$rr->Reactants} )
-			{
-				my @matches         = ();
-				my $include_default = scalar @{$rr->Rinclude->[$ipatt]} ? 0 : 1;
-				my $targ_last       = undef;
-				my $include_last    = '';
-
-                # Check if $match->Target has subgraph isomorphic to excluded graph
-                # keep matches if included and not excluded
-				foreach my $match ( $patt->isomorphicToSubgraph(@sgs) )
-				{
-					my $targ    = $match->Target;
-					my $include = $include_default;
-
-					# Only do new isomorphism check if $targ has changed
-			        if ( !defined($targ_last)  or  $targ != $targ_last )
-			        {
-						foreach my $patt_incl ( @{ $rr->Rinclude->[$ipatt] } )
-						{
-							if ( $patt_incl->isomorphicToSubgraph($targ) )
-							{
-                                # Include this match from list since graph matches included graph
-                                #print "Reactant ", $targ->toString()," matches included pattern\n";
-								$include = 1;
-								last;
-							}
-						}
-						foreach my $patt_excl ( @{ $rr->Rexclude->[$ipatt] } )
-						{
-							if ( $patt_excl->isomorphicToSubgraph($targ) )
-							{
-                                # Exclude this match from list since graph matches excluded graph
-                                #print "Reactant ", $targ->toString()," matches excluded pattern\n";
-								$include = 0;
-								last;
-							}
-						}
-					}
-					else { $include = $include_last; }
-					# done checking include and exclude graphs
-
-
-					if ($include)
-					{
-						push @matches, $match;
-						#print "Included ", $targ->toString(),"\n";
-					}
-					else
-					{
-						#print "Excluded ", $targ->toString(),"\n";
-					}
-					$targ_last    = $targ;
-					$include_last = $include;
-				}
-                # end match loop
-
-
-                # group matches by target
-                my %matches = ();
-                my @target_order = ();                
-                while (my $match = shift @matches)
-                {
-                    unless ( exists $matches{$match->Target} )
-                    {
-                        $matches{$match->Target} = [];
-                        push @target_order, $match->Target;
-                    }
-                    push @{$matches{$match->Target}}, $match;
-                }
-
-                # compare matches to the same target species to see if
-                # the reaction center is identical.
-                #
-                # specifically, let f[i] be the map from reactant pattern into
-                # a species induced by match[i].  Let f[i]|rxn_center be the
-                # restriction of f[i] to the subset of nodes in the rxn_center
-                # of the reactant pattern.
-                #
-                # If match[i]->Target == match[j]->Target
-                #  and
-                # f[i]|rxn_center == f[j]|rxn_center
-                #
-                # then the match[j] is the same up to the reaction center as match[i]
-                # and we can, wlog, filter match[j].
-                foreach my $match_set (values %matches)
-                {
-                    my $err = $rr->filter_identical_by_rxn_center( $match_set, $ipatt );
-                    if ($err) {  exit_error( "Some error comparing matches by reaction center: $err.", $rr->toString );  }
-                }
-
-				# count matches
-				# add matches to rmatches->[$ipatt]
-				my $n_new = 0;
-                foreach my $target ( @target_order )
-                {
-                    my $match_set = $matches{$target};
-				    $n_new += scalar @$match_set;
-				    push @{$rmatches->[$ipatt]}, @$match_set;
-				}
-
-				#my $n_new = scalar @matches;  # count of matches to this pattern
-				$new_matches_found += $n_new;    # cumulative count of new matches to all patterns
-
-				# save new matches to "rmatches" structure
-				#push @{$rmatches->[$ipatt]}, @matches;
-
-				# what's this for?  --justin
-				if ($n_new) {  $new_level = $ipatt;  }
-
-				# total matches to this pattern
-                my $n_tot = scalar @{$rmatches->[$ipatt]};
-
-			    # calculate number of sets (crossproduct of matches to each pattern)
-				$nsets *= $n_tot;
-
-				if ($verbose)
-				{
-					printf " %4d new (%4d total) matches for reactant %d\n",
-					  $n_new, $n_tot, $ipatt + 1;
-				}
-
-				++$ipatt;
-			}
-
-			# done looking for matches to reactant patterns
-			#print "new_level=$new_level max_level= $maxDepth\n";
-
-			# Don't do any more work unless $matches_found
-			unless ($new_matches_found)
-			{
-				#print "No new matches found.\n";
-				return (0);
-			}
-
-			# Don't do any more work unless at least one possible reactant set
-			# ($nsets) is found
-			unless ($nsets)
-			{
-				#print "No complete match sets.\n";
-				return (0);
-			}
-
-			++$pattDepth;
-			@matches   = ();
-			@isnew     = ();
-			@targets   = ();
-			@reactant_species = ();
+			unless ( $s->RulesApplied )
+			{    push @$new_species, $s->SpeciesGraph;   }
 		}
-		# END applyRule entry block
 
+        # loop over new rule instances (this is required here for 0th order reactions
+        my $rule_instance = [];
+        while ( $rr->RuleInstances->getNext($rule_instance) )
+        {
+            # apply rule to reactant set and get the resulting reaction
+            my $rxn = $rr->build_reaction( $rule_instance, $model, $params );
+            if (defined $rxn)
+            {   $n_new_rxns += $model->RxnList->add( $rxn, 0, $model->ParamList );   }
+        }
 
-		# BEGIN handling matches
-		# GOAL: apply rule to crossproduct of PI_i{ $rmatches[i] }
+	    # loop through reactants in reverse order so that the order of reactions is the
+        # same as the old applyRule method
+	    for (my $ipatt = @{$rr->Reactants}-1; $ipatt >= 0; --$ipatt )
+	    {
+	        # find embeddings of reacant pattern $rpatt in @$new_species.
+	        my $new_matches = $rr->find_embeddings( $ipatt, $new_species, $model );
 
-		# Loop over matches at current level
-	  MATCH:
-		foreach my $match ( @{$rmatches->[$pattDepth]} )
-		{
-			$matches[$pattDepth]          = $match;                   # a map
-			$targets[$pattDepth]          = $match->Target;           # a species graph
-			$reactant_species[$pattDepth] = $match->Target->Species;  # a species
-			$isnew[$pattDepth]            = !( $match->Target->Species->RulesApplied );
+            # tell RuleInstances about new matches
+            $rr->RuleInstances->update( $ipatt, $new_matches );
 
-			#printf "isnew=%d\n", $match->Target->Species->RulesApplied;
+		    if ( $params->{verbose} )
+		    {
+		        my $n_new_matches = @{$rr->Rmatches->[$ipatt]};
+		        printf $params->{indent} . "  ..found %d new match%s to reactant pattern %d\n",
+		            $n_new_matches, ($n_new_matches==1 ? '' : 'es'), $ipatt+1;
+		    }
 
-            # Only use current set if it contains a match to a new species or there are new
-            # matches below the current level
-			my $new_set = 0;
-			foreach my $depth ( 0 .. $pattDepth )
-			{
-				if ( $isnew[$depth] )
-				{
-					$new_set = 1;
-					last;
-				}
-			}
-
-			# Skip set if no new matches below the current level
-			unless ($new_set)
-			{
-				if ( $new_level <= $pattDepth )
-				{
-					#print "skip\n";
-					next MATCH;
-				}
-			}
-
-
-			# We need to find a match to every reactant, if not at maxDepth,
-			# call applyRule recursively to get a match to the next reactant.
-			# Descend to next level:
-			if ( $pattDepth < $maxDepth )
-			{
-				++$pattDepth;
-				&applyRule;
-				next MATCH;    # next MATCH?
-			}
-
-			##----------------------------------------------##
-			##  END of RECURSIVE search for a reactant set  ##
-			##----------------------------------------------##
-                
-
-
-			if ( @targets > 1 )
-            {   # check that reactants form an interacting Set (compartment check)
-				next MATCH unless ( $targets[0]->interactingSet( @targets[1 .. $#targets] ) );
-			}
-
-
-            # Determine if we are using compartments.
-            # (it's sufficient to see if the first reactant has a compartment assignment)
-			my $using_compartments = defined $targets[0]->Compartment ? 1 : 0;
-
-			# gather compartments to pass to Rxn
-			# NOTE: this really isn't necessary?
-			my $compartments = [];
-			if ($using_compartments)
-			{
-				foreach my $targ (@targets)
-				{
-					push @{$compartments}, $targ->Compartment;
-				}
-			}
-
-
-			## Apply transformations
-			my $products = undef;
-		    ($products) = $rr->apply_operations( \@matches );
-		    # if undefined products are returned, it probably means we violated the "+" or "." operator
-		    next MATCH unless (defined $products);
-
-
-            # Check for correct number of product graphs
-	        my $nprod_patterns = scalar @{$rr->Products};
-	        if ( @$products != $nprod_patterns )
-	        {
-                # If Molecules are being deleted, it is allowed to have more subgraphs than product patterns
-                if ( $rr->DeleteMolecules  and  @$products > $nprod_patterns )
-		        {
-			        if ($verbose)
-   		            {   printf "Deleting molecules in rule %s\n", $rr->Name();  }
-		        }   
-		        # Otherwise, the reaction shouldn't happen
-		        else
-		        {
-			        if ($verbose)
-			        {   printf "Rule %s: n_sub (%d)!= n_prod (%d)\n", $rr->Name, @$products, $nprod_patterns;   }
-			        next MATCH;
-		        }
-	        }            
-            
-
-			# Check and Process Product Graphs
-			my $new_prod = 0;
-			my $product_species = [];
-		    for ( my $ip = 0; $ip < @$products; ++$ip )
-			{
-			    my $p = $products->[$ip];
-			    my $iprod = ($ip >= @{$rr->Products}) ? -1 : $ip;
-
-                # check that the product is connected
-                # NOTE: molecules are placed into products according to (1) a mapping from product molecules
-                #  to product product patterns and (2) connectivity. Therefore it's possible the disconnected
-                #  components have been lumped into the same graph.  So at this point we want to check for connectivity.
-                next MATCH  unless ( $p->isConnected() );
-
-                # check for Max Aggregation violations
-				if ( @{$p->Molecules} > $max_agg )
-				{
-                    #printf "%d molecules exceeds max_agg of %d\n", $#{$p->Molecules}+1, $max_agg;
-					next MATCH;
-				}
-				
-				# check for Max Stoichiometry violations
-				if ($max_stoich)
-				{
-					foreach my $key ( keys %{$max_stoich} )
-					{
-						my $max = $max_stoich->{$key};
-						next if $max =~ /^unlimited/;
-						if ( $p->stoich($key) > $max )
-						{
-                            #printf "Stoichometry of $key in %s exceeds max of %d\n", $p->toString(), $max;
-							next MATCH;
-						}
-					}
-				}
-
-				# verify compartments here
-				# justinshogg@gmail.com 18feb2009
-				# updated to handle auto assignment of new molecules  2dec2009
-
-                # check is here because we have a complete product speciesGraph available
-                # and problems occur during canonical ordering if compartment is not valid.
-
-				## TASKS ##
-				# (1) Verify that all bonded molecules are in the same or adjacent compartments.
-				#      If verification fails, skip this MATCH.  A compartment is inferred for
-				#      unassigned molecules if bound to an assigned molecule (otherwise left unassigned).
-				# (2) Infer, assign and verify Species Compartment.
-
-                # (1a) Find molecules that share a common edge.
-                #      For molecules without compartments, make a list of its binding
-                #       partners' compartments.
-				my %edges                = ();
-				my %partner_compartments = ();
-
-				foreach my $mol ( @{$p->Molecules} )
-				{   # if molecule has edge "index", then put molecule ref into array at $edges[index]
-					foreach my $component ( @{$mol->Components} )
-					{
-						foreach my $edge_idx ( @{$component->Edges} )
-						{
-							push @{ $edges{$edge_idx} }, $mol;
-						}
-					}
-				}
-
-                # (1b) check that bound molecules are in same or adjacent compartments
-				foreach my $binding_set ( values %edges )
-				{
-					# how should I handle warnings?  ABORT?
-					if ( @$binding_set > 2 )
-					{
-						print "WARNING: more than two molecules bound to edge.\n"
-						    . ">>", $rr->toString(), "\n";
-						next MATCH;
-					}
-
-					my $mol0  = $binding_set->[0];
-					my $comp0 = $mol0->Compartment;
-					my $mol1  = $binding_set->[1];
-					my $comp1 = $mol1->Compartment;
-
-					if ( defined $comp0  and  !(defined $comp1) )
-					{
-						$partner_compartments{$mol1}{$comp0} = $comp0;
-					}
-					elsif ( !(defined $comp0)  and  defined $comp1  )
-					{
-						$partner_compartments{$mol0}{$comp1} = $comp1;
-					}
-					elsif ( defined $comp0  and  defined $comp1 )
-					{   # Both compartments are defined,
-						# this is the usual case when comaprtments are defined.
-						unless (  $comp0 == $comp1  or $comp0->adjacent($comp1) )
-						{
-							print "WARNING: rule application generated a species with edges between"
-							    . " molecules in non-adjacent compartments. Removing ill-formed"
-							    . " species from network. This isn't necessarily a problem, but it's"
-							    . " a good idea to check your rules.\n"
-							    . "RxnRule>", $rr->toString(), "\n" . "Species> ", $p->toString(), "\n";
-							next MATCH;
-						}
-					}
-				}
-
-				# infer compartments for unassigned molecules, if possible
-				foreach my $mol ( @{$p->Molecules} )
-				{
-					next unless ( exists $partner_compartments{$mol} );
-
-					my @surfaces = ( grep {$_->SpatialDimensions == 2} ( values %{$partner_compartments{$mol}} ) );
-					my @volumes  = ( grep {$_->SpatialDimensions == 3} ( values %{$partner_compartments{$mol}} ) );
-
-                    # if neighbors are in a single volume, assign molecule to that volume
-					if ( @volumes == 1  and  @surfaces == 0 )
-					{
-						$mol->Compartment( $volumes[0] );
-					}
-                    # if neighbors are in a single surface, assign molecule to that surface
-					elsif ( @volumes == 0  and  @surfaces == 1 )
-					{
-						$mol->Compartment( $surfaces[0] );
-					}
-                    # if neighbors are in a single volume and an adjacent surface,
-                    # assign molecule to that volume.
-					elsif ( @volumes == 1  and  @surfaces == 1  and  $volumes[0]->adjacent($surfaces[0]) )
-					{
-						$mol->Compartment( $volumes[0] );
-					}
-                    # if neighbors are in a single surface and two adjacent volumes,
-                    # assign molecule to that surface.
-					elsif (     @volumes == 2  and  @surfaces == 1
-						    and $volumes[0]->adjacent($surfaces[0])
-						    and $volumes[1]->adjacent($surfaces[0]) )
-					{
-						$mol->Compartment( $surfaces[0] );
-					}
-					# neighbors are in some disallowed configuration
-					else
-					{
-						print "WARNING: rule application created a species containing invalid "
-						    . "compartment connectivity.\n"
-						    . "RxnRule> ", $rr->toString(), "\n" . "Species> ", $p->toString(), "\n";
-						next MATCH;
-					}
-				}
-
-				# (2) infer species compartment, assign, and verify validity.
-				my ( $infer_comp, $err ) = $p->inferSpeciesCompartment();
-
-                # if a compartment cannot be inferred and the reactants are using compartments,
-                # then we must pick a compartment for the product species.  By convention, if
-                # all reactants are in the same compartment, assign product to that compartment.
-                # But if the reactants are divided between a volume and a surface, choose the surface.
-				if ( !defined($infer_comp)  and  $using_compartments )
-				{
-                    # find the surface, if any (just take the first one, there should only be one),
-					foreach my $comp ( (map { $_->Compartment } @targets) )
-					{
-						next unless ( defined $comp );
-						if ( $comp->SpatialDimensions == 2 )
-						{
-							$infer_comp = $comp;
-							last;
-						}
-					}
-
-                    # if no surface, choose the volume (should be only one)
-                    # NOTE: we previous checked that these reactants are an interacting set
-					unless ( defined $infer_comp )
-					{
-						$infer_comp = $targets[0]->Compartment;
-					}
-				}
-
-                # Assign product species to inferred compartment (possibly undefined).  Note that
-                #  this will force all unassigned molecules to the inferred compartment.
-				$err = $p->assignCompartment($infer_comp);
-				if ($err)
-				{
-					print "WARNING: product has invalid Species Compartment.\n"
-					    . ">> $err\n"
-					    . ">>", $rr->toString(), "\n";
-					next MATCH;
-				}
-
-                # at this point, we've verified that the product SpeciesGraph is valid w.r.t. compartments
-                # done with Justin's changes
-
-				# Check that product species is in the correct compartment!
-				if ( $iprod >= 0 ) 
-				{   # notesure if iprod check is needed, but it's used below, so I'll follow.
-					if ( defined $rr->Products->[$iprod]->Compartment )
-					{
-						next MATCH unless ( $infer_comp == $rr->Products->[$iprod]->Compartment );
-					}
-				}
-
-
-
-	            # Put product graph in canonical order (quasi-canonical for the time being)
-				if ( my $err = $p->sortLabel() )
-				{   # mysterious problem
-					print "WARNING: some problem in sortLabels.\n"
-					    . ">> $err\n"
-					    . ">>", $rr->toString(), "\n";
-					next MATCH;
-				}
-
-				# Does product match excluded pattern?
-				if ( $iprod >= 0 )
-				{
-					foreach my $patt_excl ( @{$rr->Pexclude->[$iprod]} )
-					{
-						if ( $patt_excl->isomorphicToSubgraph($p) )
-						{
-				            # Abort this reaction
-				            #print "Product ", $p->toString()," matches excluded pattern\n";
-							next MATCH;
-						}
-					}
-
-                    # Does product match included pattern?  Must do so if include patterns are specified.
-                    if (@{$rr->Pinclude->[$iprod]})
-                    { 
-					    my $include = 0;
-					    foreach my $patt_incl ( @{$rr->Pinclude->[$iprod]} )
-					    {
-						    if ( $patt_incl->isomorphicToSubgraph($p) )
-						    {
-						    	$include = 1;
-						    	last;
-						    }
-					    }
-					    next MATCH unless $include;
-					}
-				}
-
-
-				# Update species list; add checks whether this sg isomorphic to
-				# existing species and creates new species if not.  It returns
-				# a pointer to new or existing species with isomorphic sg.
-				# If we want mapping for this reaction need to update to
-				# account for reordering of molecules and components
-				my $spec;
-				unless ( $spec = $slist->lookup( $p, $check_iso ) )
-				{
-					$spec = $slist->add( $p, 0 );
-					++$new_prod;
-				}
-				# Add the product Species
-			    if ($iprod >= 0)
-			    {
-			        unless ($rr->Products->[$iprod]->Fixed)
-			        {
-			            push @$product_species, $spec;
-			        }
-			    }
-			    else
-			    {
-			        push @$product_species, $spec;
-			    }
-			}
-
-            
-
-			# Add any reactants with Fixed attribute to products list
-			# to insure concentration does not change
-			my $ri = 0;
-			foreach my $rpatt ( @{$rr->Reactants} )
-			{
-				if ( $rpatt->Fixed )
-				{
-				    push @$product_species, $reactant_species[$ri];
-				}
-				++$ri;
-			}
-                
-
-            # get rateLaw for this reaction
-            # By default, use the same ratelaw as the rule
-            my $rl = $rr->RateLaw;
-            
-            # If this rule has reactant tags and the ratelaw has type function,
-            #  then we may need to create a local ratelaw . . .
-            if ( %{$rr->RRefs}  and  $rr->RateLaw->Type eq 'Function' )
+            # loop over new rule instances
+            my $rule_instance = [];
+            while ( $rr->RuleInstances->getNext($rule_instance) )
             {
-                my $err = '';
-
-                # get parameter corresponding to ratelaw function
-                (my $rl_param) = $plist->lookup( $rr->RateLaw->Constants->[0] );
-                
-                unless ( $rl_param->Type eq 'Function' )
-                {   die "Error in RxnRule->ApplyRule(): cannot find parameter for RateLaw!";   }
-                               
-                # get function object
-                my $fcn = $rl_param->Ref;                     
-                
-
-                # check for local dependency
-                if ( $fcn->checkLocalDependency($plist) )
-                {
-                    # need to create a new ratelaw with locally evaluated observables
-                    
-                    # get local values for the function
-                    my @local_refs = ($fcn->Name);
-                    for ( my $ii=0; $ii < @{$fcn->Args}; ++$ii )
-                    {   
-                        push @local_refs, $reactant_species[ $rr->RRefs->{$fcn->Args->[$ii]} ]->Index;
-                    }                   
-                
-                    # get local function
-                    (my $local_fcn) = $fcn->evaluate_local( \@local_refs, $plist );
-
-                    # add local_fcn to the parameter list
-                    #  (so we can lookup the local function in the future!)
-                    $plist->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );                  
-               
-                    my $lf_name = $local_fcn->Name;
-                    (my $lf_param) = $plist->lookup($lf_name); 
-                    
-                    # replace fcn name with new local funct name
-                    $local_refs[0] = $local_fcn->Name;
-                    
-                    # create param for local function
-                    $rl = RateLaw->new();
-                    $rl->Type('Function');
-                    $rl->Constants( [@local_refs] );
-                    $rl->Factor( $rr->RateLaw->Factor );
-                
-                    # increment number of ratelaws (in the RateLaw class)
-                    ++$RateLaw::n_Ratelaw;
-                }
+                # apply rule to reactant set and get the resulting reaction
+                my $rxn = $rr->build_reaction( $rule_instance, $model, $params );
+                if (defined $rxn)
+                {   $n_new_rxns += $model->RxnList->add( $rxn, 0, $model->ParamList );   }
             }
+	    }
 
+        return ($err, $n_new_rxns);
+    }	
 
-			# Create reaction
-			my $rxn = Rxn->new();
-			$rxn->Reactants( [@reactant_species] );
-			$rxn->Products(  $product_species );
-			$rxn->RateLaw( $rl );
-			$rxn->Priority( $rr->Priority );
-			$rxn->RxnRule( $rr );
-            $rxn->StatFactor( $rr->MultScale );
-			$rxn->Compartments( $compartments );
-
-
-			# Add reaction to reaction list
-			if ($dlist) { $dlist->add( $rxn, 1, $plist ); }
-			else
-			{   # NOTE: is there a way to warn about reactions that are ommitted
-			    #  due to priority?  --Justin                                  
-				$n_new_rxns += $rlist->add($rxn, 0, $plist );				
-			}
-            
-		} # end MATCH loop
-
-
-		# Ascend if not at top
-		if ( $pattDepth > 0 )
-		{
-			--$pattDepth;
-			return;
-		}
-
-		# Delete reactions if this rule has RateLaw->Type = Zero
-		if ($dlist)
-		{
-			foreach my $rxn ( @{$dlist->Array} )
-			{
-				$n_new_rxns += $rlist->add($rxn, 0, $plist);
-			}
-		}
-
-		$pattDepth = -1;
-		return ($n_new_rxns);
-	}
 }
 
 
@@ -3758,15 +2950,360 @@ sub findMap
 
 
 
-# THIS MAY BE DEPRICATED under the new canonical rule labeling scheme
+# Find embeddings of reactant pattern $ipatt in the list $sg_list.
+sub find_embeddings
+{
+    my $rr      = shift @_;
+    my $ipatt   = shift @_;
+    my $sg_list = shift @_;
+    my $model   = shift @_;
+
+    my $all_new_matches = [];
+    SGLOOP:
+    foreach my $sg ( @$sg_list )
+    {
+        # check for inclusion of potential target
+        if (@{$rr->Rinclude->[$ipatt]})
+        {
+            my $include = 0;
+            foreach my $patt_incl ( @{$rr->Rinclude->[$ipatt]} )
+            {
+                if ( $patt_incl->isomorphicToSubgraph($sg) )
+                {
+                    $include = 1;
+                    last;
+                }
+            } 
+            next unless ($include);
+        }
+
+        # check for exclusion of potential target
+	    foreach my $patt_excl ( @{$rr->Rexclude->[$ipatt]} )
+	    {   next SGLOOP if ( $patt_excl->isomorphicToSubgraph($sg) );   }
+
+        # find subgraph isomorphisms
+        my @new_matches = $rr->Reactants->[$ipatt]->isomorphicToSubgraph($sg);
+          
+        # compare matches to see if the reaction center is identical:
+        # Llet f[i] be the map from reactant pattern into
+        # a species induced by match[i].  Let f[i]|rxn_center be the
+        # restriction of f[i] to the subset of nodes in the rxn_center
+        # of the reactant pattern.
+        #
+        # If f[i]|rxn_center == f[j]|rxn_center
+        #
+        # then the match[j] is the same up to the reaction center as match[i]
+        # and we can, wlog, filter match[j].
+
+        my $err = $rr->filter_identical_by_rxn_center( \@new_matches, $ipatt );
+        if ($err) {  exit_error( "Some error comparing matches by reaction center: $err.", $rr->toString );  }
+    	
+    	push @$all_new_matches, @new_matches;
+	}
+
+	return $all_new_matches;
+}
+
+
+
+###
+###
+###
+
+
+
+# given a reaction rule and a set of reactant pattern matches, this
+#  method constructs a reaction and returns the number of new reactions and new species
+sub build_reaction
+{
+    my ($rr, $matches, $model, $params) = @_;
+
+    my $verbose = $params->{verbose};
+
+    # check that reactant targets form an interacting Set (compartment check)
+    my $targets = [ map {$_->Target} @$matches ];
+	if ( @$targets > 1 )
+    {   return undef unless ( SpeciesGraph::interactingSet(@$targets) );   }
+
+    # get reactant species
+    my $reactant_species = [ map {$_->Target->Species} @$matches ];
+
+    # Determine if we are using compartments.
+	my $using_compartments = $model->CompartmentList->Used();
+
+	# gather compartments to pass to Rxn
+	my $compartments = [];
+	if ($using_compartments)
+	{   $compartments = [ map {$_->Compartment} @$targets ];   }
+
+
+	## Apply transformations
+	my $products = undef;
+    ($products) = $rr->apply_operations( $matches );
+    # if undefined products are returned, it probably means we violated the "+" or "." operator
+    return undef unless (defined $products);
+
+
+    # Check for correct number of product graphs
+    my $nprod_patterns = scalar @{$rr->Products};
+    if ( @$products != $nprod_patterns )
+    {
+        # If Molecules are being deleted, it is allowed to have more subgraphs than product patterns
+        if ( $rr->DeleteMolecules  and  @$products > $nprod_patterns )
+        {
+	        if ($verbose)
+            {   printf "Deleting molecules in rule %s\n", $rr->Name();  }
+        }   
+        # Otherwise, the reaction shouldn't happen
+        else
+        {
+	        if ($verbose)
+	        {   printf "Rule %s: n_sub (%d)!= n_prod (%d)\n", $rr->Name, @$products, $nprod_patterns;   }
+	        return undef;
+        }
+    }            
+    
+
+	# Check and Process Product Graphs
+	my $n_new_species = 0;
+	my $product_species = [];
+    for ( my $ip = 0; $ip < @$products; ++$ip )
+	{
+	    my $p = $products->[$ip];
+	    my $iprod = ($ip >= @{$rr->Products}) ? -1 : $ip;
+
+        # check that the product is connected
+        # NOTE: molecules are placed into products according to (1) a mapping from product molecules
+        #  to product product patterns and (2) connectivity. Therefore it's possible the disconnected
+        #  components have been lumped into the same graph.  So at this point we want to check for connectivity.
+        return undef unless ( $p->isConnected() );
+
+        # check for Max Aggregation violations
+		return undef if ( @{$p->Molecules} > $params->{max_agg} );
+		
+		# check for Max Stoichiometry violations
+		while ( my ($mol, $max) = each %{$params->{max_stoich}} )
+		{
+			next if ($max eq "unlimited");
+			return undef if ( $p->stoich($mol) > $max );
+		}
+
+
+        if ($using_compartments)
+        {
+		    # verify compartments here:
+            # (1a) try to infer the species compartment from the product graph.
+            # (1b) if we cannot infer from the graph, try to pick a compartment by analyzing the reactants
+            # (2) put any unassigned molecules in the species compartment (useful for universal synthesis rules)
+            # (3) check the topology of the final graph for invalid bonds
+            # (4) check that product species compartment is the same as the product pattern
+            
+		    # (1a) try to infer species compartment from product graph
+		    my ($infer_comp, $err) = $p->inferSpeciesCompartment();
+
+            # (1b) try to infer species compartment from reactants
+		    if ( $using_compartments  and  !defined($infer_comp) )
+		    {
+                # if there are no reactants, we're in trouble
+                unless (@$compartments)
+                {
+			        print "ERROR: unable to assign reaction product to a compartment!\n"
+			            . ">>", $rr->toString(), "\n";
+			        return undef;
+                }
+                # find the surface, if any, and assign product to that surface
+			    foreach my $comp (@$compartments)
+			    {
+				    next unless ( defined $comp );
+				    if ( $comp->SpatialDimensions == 2 )
+				    {   $infer_comp = $comp;  last;   }
+			    }
+                # if no surface, choose the volume
+			    unless ( defined $infer_comp )
+			    {   
+			        foreach my $comp (@$compartments)
+			        {
+				        next unless ( defined $comp );
+				        if ( $comp->SpatialDimensions == 3 )
+				        {   $infer_comp = $comp;  last;   }
+                    }
+                }
+		    }
+            unless ( defined $infer_comp )
+            {
+		        print "ERROR: unable to assign reaction product to a compartment!\n"
+		            . "RxnRule>", $rr->toString(), "\n";
+		        return undef;
+            }
+
+            # (2) Assign product species to inferred compartment (possibly undefined).  Note that
+            #  this will force all unassigned molecules to the inferred compartment.
+		    $err = $p->assignCompartment($infer_comp);
+		    if ($err)
+		    {
+			    print "ERROR: $err\n"
+			        . "RxnRule>", $rr->toString(), "\n";
+			    return undef;
+		    }
+
+            # (3) Check topology of bonds wwith 
+		    unless ( $p->verifyTopology(1) )
+		    {
+			    print "WARNING: Reaction rule generated a product with invalid bonds with respect"
+				     ." to compartment topology. The invalid reaction is being rejected. This isn't"
+                     ." necessarily a problem, but it's a good idea to double-check your rules. \n"
+				     ."RxnRule>", $rr->toString(), "\n"
+                     ."Product> ", $p->toString(), "\n";
+			    return undef;
+		    }
+
+		    # Check that product species is same compartment as the product pattern!
+		    unless ( $iprod == -1 ) 
+		    {
+			    if ( defined $rr->Products->[$iprod]->Compartment )
+			    {	return undef unless ( $infer_comp == $rr->Products->[$iprod]->Compartment );   }
+		    }
+        }
+
+
+        # Put product graph in canonical order (quasi-canonical for the time being)
+		if ( my $err = $p->sortLabel() )
+		{   # mysterious problem
+			print "ERROR: $err\n"
+			    . "RxnRule>", $rr->toString(), "\n";
+			return undef;
+		}
+
+		# Does product match excluded pattern?
+		unless ( $iprod == -1 )
+		{
+			foreach my $patt_excl ( @{$rr->Pexclude->[$iprod]} )
+			{	return undef if ( $patt_excl->isomorphicToSubgraph($p) );   }
+
+            # Does product match included pattern?  Must do so if include patterns are specified.
+            if (@{$rr->Pinclude->[$iprod]})
+            {
+			    my $include = 0;
+			    foreach my $patt_incl ( @{$rr->Pinclude->[$iprod]} )
+			    {
+				    if ( $patt_incl->isomorphicToSubgraph($p) )
+				    {
+				    	$include = 1;
+				    	last;
+				    }
+			    }
+			    return undef unless ($include);
+			}
+		}
+
+
+		# Update species list; add checks whether this sg is isomorphic to
+		# an existing species and creates new species if not.  It returns
+		# a pointer to new or existing species with isomorphic sg.
+		# If we want mapping for this reaction need to update to
+		# account for reordering of molecules and components
+		my $spec;
+		unless ( $spec = $model->SpeciesList->lookup($p, $params->{check_iso}) )
+		{
+			$spec = $model->SpeciesList->add($p, 0);
+			++$n_new_species;
+		}
+
+		# Add the product Species
+	    unless ($iprod == -1)
+	    {   # TODO: the Fixed product feature will be depreacted in a future release
+	        unless ($rr->Products->[$iprod]->Fixed)
+	        {   push @$product_species, $spec;   }
+	    }
+	    else
+	    {   push @$product_species, $spec;   }
+
+	}
+
+    
+	# Add any reactants with Fixed attribute to products list
+	# to insure concentration does not change
+    # TODO: the Fixed reactant feature will be depreacted in a future release
+	my $ri = 0;
+	foreach my $rpatt ( @{$rr->Reactants} )
+	{
+		if ( $rpatt->Fixed )
+		{   push @$product_species, $reactant_species->[$ri];   }
+		++$ri;
+	}
+        
+
+    # get rateLaw for this reaction
+    # By default, use the same ratelaw as the rule
+    my $rl = $rr->RateLaw;
+
+    # If this rule has reactant tags and the ratelaw has type function,
+    #  then we may need to create a local ratelaw . . .
+    if ( %{$rr->RRefs}  and  $rr->RateLaw->Type eq 'Function' )
+    {
+        # get parameter corresponding to ratelaw function
+        (my $rl_param) = $model->ParamList->lookup( $rr->RateLaw->Constants->[0] );       
+        unless ( $rl_param->Type eq 'Function' )
+        {   die "Error in RxnRule->ApplyRule(): cannot find parameter for RateLaw!";   }
+                       
+        # get function object
+        my $fcn = $rl_param->Ref;                     
+        
+        # check for local dependency
+        if ( $fcn->checkLocalDependency($model->ParamList) )
+        {
+            # need to create a new ratelaw with locally evaluated observables
+            
+            # get local values for function evaluation
+            my @local_refs = ($fcn->Name);
+            for ( my $ii=0; $ii < @{$fcn->Args}; ++$ii )
+            {   push @local_refs, $reactant_species->[ $rr->RRefs->{$fcn->Args->[$ii]} ]->Index;   }                   
+        
+            # evaluate function with local values to get local function
+            (my $local_fcn) = $fcn->evaluate_local( \@local_refs, $model->ParamList );
+
+            # add local_fcn to the parameter list
+            #  (so we can lookup the local function in the future!)
+            $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );                  
+       
+            my $lf_name = $local_fcn->Name;
+            (my $lf_param) = $model->ParamList->lookup($lf_name); 
+            
+            # replace fcn name with new local funct name
+            $local_refs[0] = $local_fcn->Name;
+            
+            # create param for local function
+            $rl = RateLaw->new( Type=>'Function', Constants=>[@local_refs], Factor=>$rr->RateLaw->Factor );
+        
+            # increment number of ratelaws (in the RateLaw class)
+            ++$RateLaw::n_Ratelaw;
+        }
+    }
+
+	# Create reaction
+	my $rxn = Rxn->new( Reactants=>$reactant_species, Products=>$product_species,
+                        RateLaw=>$rl, Priority=>$rr->Priority, RxnRule=>$rr,
+                        StatFactor=>$rr->MultScale );
+    # return rxn
+    return $rxn;
+}
+
+
+
+###
+###
+###
+
+
+
 sub find_reaction_center
-# err = $rr->find_reaction_center( \%mapr )
+# $err = $rr->find_reaction_center( \%mapr )
 #
 # Finds the reaction center of each reactant pattern in a reaction rule.
 # Results are stored at the array "RxnRule->ReactionCenter", which has
 # length #Patterns.  Element [i] of the array is a list
 # of reaction center elements for pattern[i].  Rxn_center elements are indexed
-# using Jim's pointer notation "iPatt.iMol.iComp"  (Mac ripoff)
+# using Jim's pointer notation "iPatt.iMol.iComp"
 #
 # Rxn_center includes:
 #   (1) all components whose state, compartment or bond is changed by the rule.
@@ -3782,11 +3319,9 @@ sub find_reaction_center
 	my ( $rr, $mapr ) = @_;    # get RxnRule and reverse map (product->reactant)
 	my $err = '';
 
-	# initialize create a hash dictionary for each reactant pattern
-	foreach my $iR ( 0 .. $#{$rr->Reactants} )
-	{
-		$rr->ReactionCenter->[$iR] = {};
-	}
+	# initialize a hash dictionary for each reactant pattern
+	foreach my $iR ( 0 .. @{$rr->Reactants}-1 )
+	{	$rr->ReactionCenter->[$iR] = {};   }
 
 	foreach my $action ( @{$rr->EdgeAdd} )
 	{   # edge additions are referenced to product space
@@ -3823,44 +3358,30 @@ sub find_reaction_center
 	{   # molecule deletions are referenced to reactant space
 		my ($iPatt) = ( $targ_pointer =~ /^(\d+)/ );
 		$rr->ReactionCenter->[$iPatt]->{$targ_pointer} = 1;
-
         # NOTE1: a Species delete rule will add Species as "Rxn Center"
         # NOTE2: edges implicitly deleted by molecule delete are not reaction center.
 	}
 
 	foreach my $action ( @{ $rr->CompStateChange } )
-	{       # components with state changes are rxn center
-		    # component changes are referenced to reactant space
+	{   # components with state changes are rxn center
+        # component changes are referenced to reactant space
 		my ($targ_pointer) = @$action;
 		my ($iPatt) = ( $targ_pointer =~ /^(\d+)/ );
 		$rr->ReactionCenter->[$iPatt]->{$targ_pointer} = 1;
 	}
 
 	foreach my $action ( @{ $rr->ChangeCompartment } )
-	{       # molecules with compartment changes are rxn center
-		    # compartment changes are referenced to reactant space
+	{   # molecules with compartment changes are rxn center
+		# compartment changes are referenced to reactant space
 		my ($targ_pointer) = @$action;
 		my ($iPatt) = ( $targ_pointer =~ /^(\d+)/ );
 		$rr->ReactionCenter->[$iPatt]->{$targ_pointer} = 1;
-
 		# NOTE: a Species transport will add Species as "Rxn Center"
 	}
 
 	# rewrite each hash dictionary as an array
-	foreach my $iR ( 0 .. $#{ $rr->ReactionCenter } ) {
-		$rr->ReactionCenter->[$iR] = [ keys %{ $rr->ReactionCenter->[$iR] } ];
-	}
-
-	# debug
-	#print "## Reaction Center: ", $rr->toString(), "\n";
-	#foreach my $iR ( 0..$#{$rr->ReactionCenter} )
-	#{
-	#   print "# $iR\n";
-	#   foreach my $item ( @{$rr->ReactionCenter->[$iR]} )
-	#   {
-	#      print "$item\n";
-	#   }
-	#}
+	foreach my $iR ( 0 .. @{$rr->ReactionCenter}-1 )
+    {   $rr->ReactionCenter->[$iR] = [ keys %{$rr->ReactionCenter->[$iR]} ];  }
 
 	return $err;
 }
@@ -3871,10 +3392,9 @@ sub find_reaction_center
 ###
 
 
-# THIS IS DEPRICATED under the new canonical rule labeling scheme
-#  .. ACTUALLY .. may be useful for efficiency?
+
 sub filter_identical_by_rxn_center
-# err = $rr->filter_identical_by_rxn_center( \@matches, $iPatt )
+# $err = $rr->filter_identical_by_rxn_center( \@matches, $iPatt )
 #
 # Let @matches be a set of matches from Reactant[$iPatt] to a single target
 # species.  This routine removes extra matches which are identical up to
@@ -3901,12 +3421,6 @@ sub filter_identical_by_rxn_center
 	# array to store images of reaction center under match maps.
 	my @images = ();
 
-	# debug
-	#print "RULE >> ", $rr->toString(), "\n";
-	#print "Src  >> ", $match_set->[0]->Source->toString(), "\n";
-	#print "Targ >> ", $match_set->[0]->Target->toString(), "\n";
-	#print "initial match set: ", scalar(@$match_set), "\n";
-
 	# (1) build image of reaction center under each match map.
 	foreach my $match (@$match_set)
     {
@@ -3918,24 +3432,16 @@ sub filter_identical_by_rxn_center
         {
 			my ( $iP, $iMC ) = ( $node_pointer =~ /(\d+)\.?(.*)/ );
 
-			#print " # $node_pointer : $iP . $iMC \n";
-			#print " #  -> ", $match->MapF->{$iMC}, "\n";
-
-			if ( $iMC ne '' ) {    # molecule or component node
+			if ( $iMC ne '' )
+            {   # molecule or component node
 				push @$image, "${iPatt}." . $match->MapF->{$iMC};
 			}
-			else {                 # species node
+			else
+            {   # species node
 				push @$image, "${iPatt}";
 			}
 		}
 	}
-
-    # debug
-    #print "IMAGES >>\n";
-    #for ( my $iMatch = 0;  $iMatch < @images;  $iMatch++ )
-    #{  # print out the mapping from reaction center to matching species
-    #   print join( ', ', @{$rr->ReactionCenter->[$iPatt]}), " -> ", join( ', ', @{$images[$iMatch]} ), "\n";
-    #}
 
 	# (2) Compare images and filter identical.
 	# All against all comparison:  N*(N-1) compares, where N=#matches.
@@ -3945,7 +3451,6 @@ sub filter_identical_by_rxn_center
 		my $template = $images[$iMatch];
 
 	  JMATCH:
-
 		# compare template to all images with higher index
 		for ( my $jMatch = $iMatch + 1 ; $jMatch < @images ; $jMatch++ )
 		{    # get image for comparison
@@ -3965,54 +3470,18 @@ sub filter_identical_by_rxn_center
 		}
 	}
 
-	# debug
-	#print "final match set: ", scalar(@$match_set), "\n\n";
-
-	# all done.  yay!
 	return $err;
 }
 
 
-##
-##
-
-
-sub setRefs
-{
-	my $refs  = shift;
-	my $id    = shift;
-	my $plist = shift;
-
-	# what is $id???  -justin
-	for my $arg ( keys %{$refs} ) {
-		my $oid = pointer_to_ID( $id . "_R", $refs->{$arg} );
-		$plist->set( $arg, $oid, 1, "Local" );
-	}
-	return '';
-}
-
-
-##
-##
-
-
-sub unsetRefs
-{
-	my $refs  = shift;    # added by justin..  why not here?
-	my $plist = shift;
-
-	foreach my $arg ( keys %{$refs} ) { $plist->deleteLocal($arg); }
-	return '';
-}
-
 
 ###
 ###
 ###
+
 
 
 sub apply_operations
-
 # ($products, $label) = $rr->apply_operations(\@matches,\@permute)
 #
 # Apply rule operations to the reactant set in @matches and return
@@ -4022,11 +3491,9 @@ sub apply_operations
 # @matches is an array with elements that are maps from the nth pattern to the nth reactant
 # @permute is an array that defines a permutation of the reactants
 {
-
-	#print STDERR "enter apply ops :";
-	my $rr      = shift;
-	my $matches = shift;
-	my $permute = @_ ? shift : undef;
+	my $rr      = shift @_;
+	my $matches = shift @_;
+	my $permute = @_ ? shift @_ : undef;
 
     # get number of reactants
     my $n_reactants = @$matches;
@@ -4073,7 +3540,6 @@ sub apply_operations
     }
 
 
-
 	# Canonical Labeling, part 1:
 	#  order reactants by canonical label,
 	#   remap offsets to the canonical order.
@@ -4109,13 +3575,12 @@ sub apply_operations
 	}
 
 
-	# Apply molecule additions
+    # Apply molecule additions
 	{
 		my $stack = [];
 
 		foreach my $molAddRef ( @{$rr->MolAdd} )
 		{
-			#print STDERR "molAdd\n";
 			my @compInhRefs = @$molAddRef;
 			my $molRef      = shift @compInhRefs;
 			my ( $ip, $im ) = split /\./, $molRef;
@@ -4221,17 +3686,11 @@ sub apply_operations
 			# permute reactants
 			if ( defined $permute ) { $ip = $permute->[$ip]; }
 
-		    # debug:
-		    #print STDERR "P: $ip  M: $im  C: $ic  cytosis: $cytosis\n";
-		    #print STDERR "Origin Compartment: ", $compartR->Name, "\n";
-		    #print STDERR "Dest Compartment: ", $compartP->Name, "\n";
-
 	        # note:$matches($i_patt) is the map from pattern (with index $idx_pattern)
 	        # to instances in a species graph
 			if ( defined($ic)  and  ($ic ne '') )
 			{   # component compartment chanfge
 				# implementation of component compartments is not completed (here and elsewhere)
-				#print STDERR ">> Component Transport <<\n";
 				my ( $im_targ, $ic_targ ) =
 				        split /\./, $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] );
 				
@@ -4257,13 +3716,10 @@ sub apply_operations
 					{
 						# skip $i_mol
 						next if ( $jm == $im );
-
 						# map $j_mol into target
 						my $jm_targ = $matches->[$ip]->mapF( "$jm", $offsets->[$ip] );
-
 						# nothing to do if this molecule is deleted
 						next if ( $jm_targ < 0 );
-
 						# otherwise, add $j_molT to exclude molecules
 						push @exclude_molecules, $jm_targ;
 					}
@@ -4276,7 +3732,6 @@ sub apply_operations
 					{
 						# skip if $j_molT is excluded
 						next if ( grep { $_ == $jm_targ } @exclude_molecules );
-
 						# otherwise transport molecule
 						$mol->[$jm_targ]->Compartment($compartP);
 					}
@@ -4300,7 +3755,6 @@ sub apply_operations
 			}
 			else
 			{   # species compartment change
-			    #print STDERR ">> Species Transport <<\n";
 
 				# save compartment change for canonical ordering
 				push @$stack, $canonical_reactant_order->[$ip] . ',' . $compartP->Name;
@@ -4328,9 +3782,7 @@ sub apply_operations
 					my $insideP  = $compartP->Inside->[0];
 
 					if ( $cytosis == 1 )
-					{
-						( $insideP, $outsideP ) = ( $outsideP, $insideP );
-					}
+					{   ($insideP, $outsideP) = ($outsideP, $insideP);   }
 
 					for (  my $im = $offsets->[$ip];
 						   $im < $offsets->[$ip] + @{ $matches->[$ip]->Target->Molecules };
@@ -4338,19 +3790,13 @@ sub apply_operations
 					    )
 					{
 						if ( $g->Molecules->[$im]->Compartment == $compartR )
-						{
-						 	 $g->Molecules->[$im]->Compartment($compartP);
-						}
+						{   $g->Molecules->[$im]->Compartment($compartP);   }
 
 						elsif ( $g->Molecules->[$im]->Compartment == $outsideR )
-						{
-							$g->Molecules->[$im]->Compartment($outsideP);
-						}
+						{   $g->Molecules->[$im]->Compartment($outsideP);   }
 
 						elsif ( $g->Molecules->[$im]->Compartment == $insideR )
-						{
-							$g->Molecules->[$im]->Compartment($insideP);
-						}
+						{   $g->Molecules->[$im]->Compartment($insideP);   }
 
 						else
 						{
@@ -4392,7 +3838,7 @@ sub apply_operations
 
                 # Find pointer to molecule and component in $g corresponding to $im.$ic in pattern
 				push @targs,
-				  $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] );
+				    $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] );
 
 				# get pointer in canonical form
 				my $ref_canonical = $canonical_reactant_order->[$ip] . '.'
@@ -4433,7 +3879,7 @@ sub apply_operations
             #    use the pointers into the supergraph)
 			my $ref1 = undef;
 			my $ip1  = 0;
-		  EDGE_ADD_LOOP1:
+		    EDGE_ADD_LOOP1:
 			foreach my $map (@$matches)
 			{
 				foreach my $ptr ( keys %{$map->MapF} )
@@ -4453,7 +3899,7 @@ sub apply_operations
 			# now for the other end of the edge...
 			my $ref2 = undef;
 			my $ip2  = 0;
-		  EDGE_ADD_LOOP2:
+		    EDGE_ADD_LOOP2:
 			foreach my $map (@$matches)
 			{
 				foreach my $ptr ( keys %{$map->MapF} )
@@ -4470,10 +3916,7 @@ sub apply_operations
 			}
 			unless ( defined $ref2 ) {  $ref2 = $g_ref2;  }
 
-			#print "EDGE: $ref1 $ref2\n"
-
 			# APPLY edge addition now
-			#printf "Adding edge p1=$p1(%s) p2=$p2(%s)\n", $refs[0],$refs[1];
 			$g->addEdge( "ne${nedge}", $g_ref1, $g_ref2 );
 			++$nedge;
 
@@ -4506,13 +3949,11 @@ sub apply_operations
 			# permute reactants
 			if ( defined $permute ) {  $ip = $permute->[$ip];  }
 
-			#print STDERR "ip: $ip  im: $im\n";
 			if ( defined $im )
 			{
 				# Delete molecule
 				my $im_targ = $matches->[$ip]->mapF( "$im", $offsets->[$ip] );
 
-                #print "Deleting molecule ", $g->Molecules->[$im_targ]->toString(),"\n";
 				$g->Molecules->[$im_targ] = undef;
 				push @$del_list, $im_targ;
 
@@ -4524,14 +3965,11 @@ sub apply_operations
 			}
 			else
 			{
-				#print STDERR "delete whole pattern\n";
 				# Delete whole pattern
 				my $im_targ_max =
 				    $offsets->[$ip] + $#{ $matches->[$ip]->Target->Molecules };
 				foreach my $im_targ ( $offsets->[$ip] .. $im_targ_max )
 				{
-                    #print STDERR "mol_delete: $im_targ\n";
-                    #print "Deleting molecule ", $g->Molecules->[$im_targ]->toString(),"\n";
 					$g->Molecules->[$im_targ] = undef;
 					push @$del_list, $im_targ;
 				}
@@ -4565,9 +4003,7 @@ sub apply_operations
 
 
     # Remove dangling edges and rebuild Adjacency hash and Edge array
-    my $dangling_error = 0;
-    my $trim_dangling  = 1;
-	$g->updateEdges($dangling_error, $trim_dangling);
+	$g->updateEdges( SpeciesGraph::ALLOW_DANGLING_BONDS, SpeciesGraph::TRIM_DANGLING_BONDS);
 
 
 	# Build map of molecules in supergraph to the product patterns they should belong to
@@ -4614,8 +4050,8 @@ sub apply_operations
 
 
 
+# compare two pointers (input arguments are special variables $a and $b)
 sub cmp_pointer
-# compare two pointers
 {
     # split pointers into elements
 	my @a = split /\./, $a;
@@ -4640,16 +4076,9 @@ sub cmp_pointer
 }
 
 
-
-###
-###
-###
-
-
-
-sub cmp_edge
 # compare two edges, where an edge has format:  "p1.m1.c1,p2.m2.c2"
 #  note, edge pointers must be sorted prior to comparison!
+sub cmp_edge
 {
     # split edges into pointer arrays
 	my @a = split /,/, $a;
@@ -4688,6 +4117,55 @@ sub cmp_edge
 
     # return comparison
 	return $cmp;
+}
+
+
+##
+##
+
+
+# converts pointer format (e.g. 0.0.0) to ID format (e.g. "P1_M1_C1" )
+sub pointer_to_ID
+{
+	my ($id, $pointer) = @_;
+
+	my @names   = ( "P", "M", "C" );
+	my @arr = split /\./, $pointer;
+	if ( $arr[0] == -1 )
+    {
+        $id = "Null";
+    }
+	else
+    {
+		$id .= sprintf "%s%d", $names[0], $arr[0] + 1;
+		foreach my $i ( 1 .. $#arr )
+        {   $id .= sprintf "_%s%d", $names[$i], $arr[$i] + 1;   }
+	}
+	return $id;
+}
+
+
+##
+##
+
+
+sub setRefs
+{
+	my ($refs, $id, $plist) = @_;
+    while ( my ($arg,$val) = each %{$refs} )
+    {
+		my $oid = pointer_to_ID( $id . "_R", $val );
+		$plist->set( $arg, $oid, 1, "Local" );
+	}
+	return '';
+}
+
+
+sub unsetRefs
+{
+	my ($refs, $plist) = @_;
+	foreach my $arg ( keys %{$refs} ) { $plist->deleteLocal($arg); }
+	return '';
 }
 
 

@@ -48,29 +48,21 @@ sub resetHash
 #  Returns the number of added reactions.
 sub add
 {
-    my $rlist    = shift;
-    my $rxn      = shift;
-    my $add_zero = (@_) ? shift : 0;
-    my $plist    = (@_) ? shift : undef;
+    my $rlist    = shift @_;
+    my $rxn      = shift @_;
+    my $add_zero = @_ ? shift @_ : 0;
+    my $plist    = @_ ? shift @_ : undef;
 
-    my $n_add = 0;
-
-    # Don't add reaction with RateLaw of type Zero
-    my $add_rxn;
-    if ( ( $rxn->RateLaw->Type eq 'Zero' ) and ( !$add_zero ) )
-    {   $add_rxn = 0;   }
-    else
-    {   $add_rxn = 1;   }
+    my $n_add   = 0;
+    my $add_rxn = 1;
 
     # Modify the string returned by this call to affect when reactions are combined.
     my $rstring = $rxn->stringID();
-    my ( $r, $p ) = split( ' ', $rstring );
-
+    my ($r, $p) = split ' ', $rstring;
 
     # Check for identical reactants and products
     if ( $r eq $p )
-    {   
-        # don't add this null reaction to the list
+    {   # null rxn, don't add to the list
         $add_rxn = 0;
     }
     elsif ( exists $rlist->Hash->{$rstring} )
@@ -93,14 +85,12 @@ sub add
                     #   the same derived law works for many reactions. Deleting redundant derived laws
                     #   allows us to save space.)
                     if ( ($rxn->RateLaw != $rxn2->RateLaw) and ($rxn->RxnRule == $rxn2->RxnRule) )
-                    {                        
+                    {
                         if ( defined $plist )
                         {
                             # delete parameters associated with this ratelaw
                             foreach my $const ( @{$rxn->RateLaw->Constants} )
-                            {
-                                $plist->deleteParam( $const );
-                            }
+                            {   $plist->deleteParam( $const );   }
                         }
                         
                         # undefine the ratelaw
@@ -137,14 +127,12 @@ sub add
     {
         push @{ $rlist->Array }, $rxn;
         push @{ $rlist->Hash->{$rstring} }, $rxn;
-        foreach my $spec ( @{ $rxn->Products } )
-        {
-            ++($rlist->AsProduct->{$spec});
-        }
+        foreach my $spec ( @{$rxn->Products} )
+        {   ++($rlist->AsProduct->{$spec});   }
         ++$n_add;
     }
   
-    return ( $n_add );
+    return ($n_add);
 }
 
 

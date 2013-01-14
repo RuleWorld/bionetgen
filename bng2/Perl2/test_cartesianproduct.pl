@@ -3,7 +3,7 @@
 use FindBin;
 use lib $FindBin::Bin;
 use IO::Handle;
-use CrossProduct;
+use CartesianProduct;
 
 use strict;
 use warnings;
@@ -36,25 +36,25 @@ print STDERR "all_items: ", join( ',', @$all_items ), "\n";
 
 
 
-print STDERR "initialize crossproduct..\n";
-my $crossprod = CrossProduct::new();
-$crossprod->initialize( $lists );
+print STDERR "initialize CartesianProduct..\n";
+my $cartprod = CartesianProduct::new();
+$cartprod->initialize( $lists );
 
 
 
 print STDERR "iterate over elements..\n";
 my $elem = [];
-while ( $crossprod->getNext($elem) )
+while ( $cartprod->getNext($elem) )
 {
     print STDERR "elem: ", join( ',', @$elem ), "\n";
 }
 
 print STDERR "add more numbers..\n";
-if ( $crossprod->update(0,[5,6]) )
+if ( $cartprod->update(0,[5,6]) )
 {
-    print STDERR "valid? ", $crossprod->validate(), "\n";
+    print STDERR "valid? ", $cartprod->validate(), "\n";
     print STDERR "successful update! continue iteration..\n";
-    while ( $crossprod->getNext($elem) )
+    while ( $cartprod->getNext($elem) )
     {
         print STDERR "elem: ", join( ',', @$elem ), "\n";
     }
@@ -62,11 +62,11 @@ if ( $crossprod->update(0,[5,6]) )
 
 
 print STDERR "add more marshes..\n";
-if ( $crossprod->update(2,['Lisa','Poochie']) )
+if ( $cartprod->update(2,['Lisa','Poochie']) )
 {
-    print STDERR "valid? ", $crossprod->validate(), "\n";
+    print STDERR "valid? ", $cartprod->validate(), "\n";
     print STDERR "successful update! continue iteration..\n";
-    while ( $crossprod->getNext($elem) )
+    while ( $cartprod->getNext($elem) )
     {
         print STDERR "elem: ", join( ',', @$elem ), "\n";
     }
