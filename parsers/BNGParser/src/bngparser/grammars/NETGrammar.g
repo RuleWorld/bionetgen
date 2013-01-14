@@ -28,6 +28,11 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   private Map<String, Map<String,String>> options = new HashMap<String, Map<String,String>>();
 
   public boolean netGrammar = true;
+  
+  //This is a pretty complex flag. 
+  //Surface compartments require pretty special treatment as opposed to volume compartments
+  //If this flag is not activated, it will treat all compartments the same, however if it is activated
+  // it will generate the corresponding surface syntax. This is still experimental
   public boolean compartmentToSurface = true;
   public List<StringTemplate> molecules = new ArrayList<StringTemplate>();
   public List<StringTemplate> reactions = new ArrayList<StringTemplate>();
@@ -102,6 +107,10 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   }
 }
 
+/**
+Rewriting the seed species blook for netfiles. This is a modified version that includes some helper methods
+for the generation of the mdl structure
+**/
 seed_species_block[List seedSpecies]
 scope{
  int numSpecies;
@@ -131,7 +140,10 @@ END (SEED)? SPECIES LB+
 ;
 
 
+/**
+This method reads a line in the seed species section and creates the corresponding generator in the mdl file
 
+**/
 seed_species_def[int counter] returns [String compartment, String concentration]
 scope{
   List molecules;
@@ -157,7 +169,7 @@ $seed_species_def::isVolume = !compartmentToSurface || compartmentList.isVolume(
      expression[memory] 
      {
       $concentration = $expression.text;
-      
+      //fixme: using static coordinates for now. Fix for something better
       if(compartmentToSurface &&  compartmentList.isOuterCompartment($compartment)){
         $seed_species_def::location = "-0.15,-0.15,-0.15";
       }
@@ -191,13 +203,16 @@ INT
  ;
   
  
-        
+/**
+Syntax definition for the net file only groups section
+**/
 groups_block:
 BEGIN GROUPS LB+
   (group_line LB+)*
 END GROUPS LB+
 
 ;
+
 
 group_line:
 INT STRING group_list[$STRING.text] {groups.add($group_list.st);}
@@ -222,7 +237,9 @@ group_element[String name,int counter]:
   | (i2=INT TIMES i3=INT) -> groups_block(id = {$i3.text},times = {$i2.text});
   
 
-
+/**
+entry point
+**/
 prog
 scope {
   List parameters;
@@ -260,11 +277,17 @@ SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+
 (program_block)* 
 
 {
+
+//generating the code for surfaces and volumes
   for(String element: compartmentSurfaces.keySet()){
     if(!compartmentList.isSurface(element))
       continue;
     StringTemplate temp;
     //temp = template("create_surface_region");
+    
+    //this is the equivalent of manually calling a template from a stg file
+    //where the options aray contains the parameters, and the templateLib calls the method
+    //This is necessary because of the stark differences in mdl syntax between a surface and a volume
     STAttrMap options = new STAttrMap();
     options.put("name", element);
     options.put("molecules",compartmentSurfaces.get(element));
@@ -307,6 +330,8 @@ EOF
 version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN SEMI;
 
 //program_body:  ;
+
+
 
 program_block
 : parameters_block[memory,$prog::parameters]
@@ -406,6 +431,8 @@ scope{
 	  }
 	  else{
 	  //$reaction::volume = 1*0.01/new Double(compartmentList.getMembraneVolume())*1e15;
+	  
+	  //fixme: this should be automatically calculated
 	    $reaction::volume = 4*3.141592*5*5;
 	  }
   }
@@ -419,6 +446,10 @@ scope{
   factor={""})
 ;
 
+
+/**
+reactant section
+**/
 reactant[List<String> elements] returns [boolean surfaceCompartment=false, String volume="1", List<String> orientation, int size=0]
 @init{
   $orientation = new ArrayList<String>();
@@ -443,6 +474,8 @@ reactant[List<String> elements] returns [boolean surfaceCompartment=false, Strin
 	      if(compartmentList.isSurface(getCompartment("S" + molecules))){
 	        $surfaceCompartment =  true;
 	      }
+	      
+	      //here we are assiginging a preset volume to a compartment depending if its the cytoplasm or the ecm
 	      else if(compartmentList.isOuterCompartment(getCompartment("S" + molecules))){
 	        $volume = ecm_volume;
 	      }
