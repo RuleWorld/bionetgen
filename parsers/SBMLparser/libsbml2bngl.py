@@ -382,14 +382,14 @@ def selectReactionDefinitions(bioNumber):
             break
     return fileName,useID
 
-def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile):
+def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     
-    translator = m2c.transformMolecules(parser,database,reactionDefinitions)
-    #translator = {}    
+    translator = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #translator = {}
     print evaluation(len(parser.getSpecies()[0]),translator)
     param2 = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
@@ -397,7 +397,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile):
     param,rules,functions = parser.getReactions(translator,True)
     param += param2
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
-
+    print outputFile
 
 
 def processFile(translator,parser,outputFile):
@@ -426,9 +426,10 @@ def main():
     #for bioNumber in [19,33,48,49,84,161,175,205,223,250,251,255,262,263,264]:  
     for bioNumber in [19]:  
     #bioNumber = 175
-        definitions,useID = selectReactionDefinitions(bioNumber)
-        print useID
-        analyzeFile(bioNumber,definitions,useID,'egfr/output' + str(bioNumber) + '.bngl')
+        reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
+        print reactionDefinitions,useID
+        spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        analyzeFile(bioNumber,reactionDefinitions,useID,'egfr/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
 
 if __name__ == "__main__":
     #identifyNamingConvention()
