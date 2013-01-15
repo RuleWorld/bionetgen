@@ -515,7 +515,6 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     """
     This method is for reactions of the form A+ B -> A' + B
     """
-    
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
     ,translator,reactionProperties)
     k = [x  == min(namingConvention,key=len) for x in original[0]]
@@ -525,7 +524,7 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]]
     flag = False
     
-    if 'MEK_P' in original[0] or 'MEK_P' in original[1]:
+    if 'EGF_EGFRm2' in original[0] or 'EGF_EGFRm2' in original[1]:
         print '---',sortedResult,sortedConvention,original
     for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:
@@ -569,19 +568,13 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
 
                 else:
                     translator[reactant].extend(species,False)
-                    if reactant == 'MEK_P':
-                        print 'MEK!!!!',str(species),translator[reactant]                   
                 if finalMolecule.name in translator:
                     if len(translator[finalMolecule.name].molecules) == 1:
                         sp = st.Species()
                         sp.addMolecule(deepcopy(finalMolecule))
                         translator[finalMolecule.name].extend(sp,False)
                         translator[finalMolecule.name].reset()
-                        if reactant == 'MEK_P':
-                            print '~~~~~',sp,str(finalMolecule),str(species)
-                            print '```````',translator[finalMolecule.name]
                 else:
-                        print 'noMEK'
                         sp = st.Species()
                         sp.addMolecule(molecule)
                         translator[molecule.name] = sp

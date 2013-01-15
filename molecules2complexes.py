@@ -414,7 +414,7 @@ def processRule(original,database,
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,database.labelDictionary,
         database.rawDatabase,database.synthesisDatabase,database.translator,outputFlag)
-    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification']:
+    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification','mMod','iMod']:
         equ = equivalenceTranslator[classification]
         pertinentEquivalence = getPertinentNamingEquivalence2(original,database.rawLabelDictionary,equ)
         return reactionTransformations.catalysis(original,database.labelDictionary,database.rawDatabase,
@@ -471,13 +471,13 @@ def correctClassifications(rules,classifications,labelDatabase,equivalenceTransl
                 
             
             
-def transformMolecules(parser,database,configurationFile):
+def transformMolecules(parser,database,configurationFile,speciesEquivalences=None):
     #labelDictionary = {}
     _,rules,_ = parser.getReactions()
     molecules,_,_ = parser.getSpecies()
     #synthesisdatabase = {}
     #translator = {}
-    sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile)
+    sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile,speciesEquivalences)
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
     #analyzeSBML.analyzeNamingConventions(molecules)
@@ -495,7 +495,7 @@ def transformMolecules(parser,database,configurationFile):
     #STEP1: Use reaction information to infer w print zip(rules,classifications)
     
     for rule,classification in zip(rules,classifications): 
-        #print rule 
+        print rule,classification
         reaction2 = list(parseReactions(rule))
         totalElements =  [item for sublist in reaction2 for item in sublist]
         totalElements = list(set(totalElements))
@@ -588,11 +588,11 @@ def transformMolecules(parser,database,configurationFile):
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[1])
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
+    print '-------------------'
     for _,_,rule,classification in nonProcessedRules:
         outputFlag = False
         #if classification == 'Modification':
         #    outputFlag = True
-
         counter += 1
         reaction2 = list(parseReactions(rule))
 
@@ -600,8 +600,6 @@ def transformMolecules(parser,database,configurationFile):
             tmp = deepcopy(database.translator)
             print reaction2
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
-        if 'MEK_P' in rule and 'MEK_P' in database.translator:
-            print database.translator['MEK'],'pppp',database.translator['MEK_P'],reaction2
         if outputFlag:
             print {x:str(database.translator[x]) for x in database.translator if x not in tmp}
 
