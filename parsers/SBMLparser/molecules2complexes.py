@@ -571,25 +571,21 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         weight2 = 0
         reaction2 = list(parseReactions(rule))
 
+        #sort rules according to the complexity of the reactants (not the products)
         for element in reaction2[0]:
             if element not in database.labelDictionary:
-                weight += 1
+                weight =50
             else:
-                weight += len(database.labelDictionary[element])
+                weight = max(weight,len(database.labelDictionary[element]))
             weight2 += len(element)
-        for element in reaction2[1]:
-            if element not in database.labelDictionary:
-                weight += 1
-            else:
-                weight += len(database.labelDictionary[element])
-            weight2 += len(element)
+
         ruleWeight2Table.append(weight2)
         ruleWeightTable.append(weight)
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[1])
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
     print '-------------------'
-    for _,_,rule,classification in nonProcessedRules:
+    for w0,w1,rule,classification in nonProcessedRules:
         outputFlag = False
         #if classification == 'Modification':
         #    outputFlag = True
@@ -600,6 +596,8 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             tmp = deepcopy(database.translator)
             print reaction2
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
+        if 'EGF_EGFR2' in rule:
+            print str(database.translator['EGF_EGFR2']),rule,w0,w1
         if outputFlag:
             print {x:str(database.translator[x]) for x in database.translator if x not in tmp}
 

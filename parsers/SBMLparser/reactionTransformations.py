@@ -515,6 +515,8 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     """
     This method is for reactions of the form A+ B -> A' + B
     """
+    #if 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in original[0] or 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in original[1]:
+    #    print original,'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in translator
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
     ,translator,reactionProperties)
     k = [x  == min(namingConvention,key=len) for x in original[0]]
@@ -524,8 +526,6 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]]
     flag = False
     
-    if 'EGF_EGFRm2' in original[0] or 'EGF_EGFRm2' in original[1]:
-        print '---',sortedResult,sortedConvention,original
     for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:
             flag = False

@@ -254,11 +254,6 @@ def identifyNamingConvention():
                     except:
                         print 'ERROR',sys.exc_info()[0]
                         continue
-                #translator = m2c.transformMolecules(parser,database,'reactionDefinition2.json')
-            #print len(parser.getSpecies()),len(translator),
-            #evaluation(len(parser.getSpecies()),translator)
-
-            #translator = {}
         except:
             print 'ERROR',sys.exc_info()[0]
             continue
@@ -409,6 +404,9 @@ def processFile(translator,parser,outputFile):
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
 
    
+def BNGL2XML():
+    pass
+
 def main():
     jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
     jsonFiles.sort()
@@ -421,9 +419,6 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    #[19,48,188,18,9,270,272,336,407]
-    #[18,107,108,149-153193,194,199,201,226,227,228,232,238-248]
-    #for bioNumber in [19,33,48,49,84,161,175,205,223,250,251,255,262,263,264]:  
     for bioNumber in [19]:  
     #bioNumber = 175
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)

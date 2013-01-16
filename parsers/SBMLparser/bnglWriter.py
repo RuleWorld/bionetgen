@@ -88,8 +88,9 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('generate_network();\n')
-    output.write('simulate_ode({t_end=>400,n_steps=>50});')
+    #output.write('generate_network();\n')
+    #output.write('simulate_ode({t_end=>400,n_steps=>50});')
+    output.write('writeXML()\n')
     
 def sectionTemplate(name,content):
     section = 'begin %s\n' % name
