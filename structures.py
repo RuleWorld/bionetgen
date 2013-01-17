@@ -107,7 +107,7 @@ class Species:
                 
     def extend(self,species,update=True):
         if(len(self.molecules) == len(species.molecules)):
-            for (selement,oelement) in zip(self.molecules,species.molecules):
+            for (selement,oelement) in zip(sorted(self.molecules,key=lambda x:x.name),sorted(species.molecules,key=lambda x:x.name)):
                 for component in oelement.components:
                     if component.name not in [x.name for x in selement.components]:
                         selement.components.append(component)

@@ -119,7 +119,8 @@ class SBMLAnalyzer:
             
     def analyzeUserDefinedEquivalences(self,molecules,conventions):
         equivalences = {}
-        smolecules = [x.strip('()') for x in molecules] 
+        smolecules = [x.strip('()') for x in molecules]
+        modifiedElement = {}
         for convention in conventions:
             baseMol = []
             modMol = []
@@ -129,13 +130,15 @@ class SBMLAnalyzer:
                 elif convention[1] in molecule:
                     modMol.append(molecule)
             equivalences[convention[2]] = []
+            modifiedElement[convention[0]] = []
             for mol1 in baseMol:
                 for mol2 in modMol:
                     score = self.levenshtein(mol1,mol2)
                     if score == 1:
                         equivalences[convention[2]].append((mol1,mol2))
+                        modifiedElement[convention[0]].append((mol1,mol2))
                         break
-        return equivalences           
+        return equivalences,modifiedElement        
      
     def analyzeNamingConventions(self,molecules,originalPattern='',modifiedPattern=''):
         '''
@@ -193,7 +196,7 @@ class SBMLAnalyzer:
         reactionIndex = {}
         index = 0
         if self.userEquivalencesDict == None:
-            self.userEquivalencesDict = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
+            self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             if 'n' in prop.keys():
                 convention = reactionDefinition['namingConvention'][prop['n'][0]]
