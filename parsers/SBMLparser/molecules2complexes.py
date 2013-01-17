@@ -191,7 +191,6 @@ def recursiveChecking(labelDictionary,root,acc,):
     else:
         #temp = deepcopy(acc)
         acc.append(root)
-        
         for element in labelDictionary[root]:
             #print 'bbbbbbbbbbbb',element,acc
             recursiveChecking(labelDictionary,element,acc)
@@ -495,7 +494,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     #STEP1: Use reaction information to infer w print zip(rules,classifications)
     
     for rule,classification in zip(rules,classifications): 
-        print rule,classification
         reaction2 = list(parseReactions(rule))
         totalElements =  [item for sublist in reaction2 for item in sublist]
         totalElements = list(set(totalElements))
@@ -596,11 +594,11 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             tmp = deepcopy(database.translator)
             print reaction2
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
-        if 'EGF_EGFR2' in rule:
-            print str(database.translator['EGF_EGFR2']),rule,w0,w1
+        if 'EGF_EGFRm2_GAP_Grb2_Prot' in database.translator:
+            print database.translator['EGF_EGFRm2_GAP_Grb2_Prot'],rule
         if outputFlag:
             print {x:str(database.translator[x]) for x in database.translator if x not in tmp}
-
+        
     for element in database.labelDictionary:
         if not isinstance(database.labelDictionary[element],tuple):
             database.translator[element] = database.translator[database.labelDictionary[element]]

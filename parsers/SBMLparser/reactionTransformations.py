@@ -519,22 +519,32 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     #    print original,'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in translator
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
     ,translator,reactionProperties)
-    k = [x  == min(namingConvention,key=len) for x in original[0]]
-    k2 = [x == max(namingConvention,key=len)  for x in original[1]]
+    k = [min(namingConvention,key=len) in x for x in original[0]]
+    k2 = [max(namingConvention,key=len) in x for x in original[1]]
     k =  k and k2
     sortedResult = [result[0],result[1]] if any(k) else [result[1],result[0]]
     sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]]
     flag = False
     
+    if 'EGF_EGFRim2_GAP_Grb2' in original[1]:
+        print original
     for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:
             flag = False
             species = st.Species()
-            if original[0][0] in translator:
-                species = deepcopy(translator[original[0][0]])
+            #if original[0][0] in translator:
+            #    species = deepcopy(translator[original[0][0]])
+            
+            #make a copy of the original element we are going to modify
+            if sortedConvention[0] in translator:
+                species = deepcopy(translator[sortedConvention[0]])
             tmp = dictionary[reactant]
             for element in tmp:
                 molecule = st.Molecule(element)
+                
+                #here it would be much more precise to have the molecule
+                #that is going to be modified instead of just modifying the 
+                #first thing you find
                 if element in conv:
                     #chunk = result[1] if reactant == max(namingConvention,key=len) else result[0]
                     component = st.Component(res[0])
@@ -542,25 +552,27 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                     molecule.addComponent(component,1)
                     flag = True
                     finalMolecule = molecule
-                '''
-                else:
-                    if conv in reactant:
-                        
-                        component = st.Component(res[0])
-                        component.addState(res[1])
-                        molecule.addComponent(component,1)
-                        print conv,molecule,element
-                        flag = True
-                        #continue
-                '''                    
-                    #FIXME: the comparison should be done a lil more carefully
-                    #to avoid overlap
-            
- 
                     
-                species.addMolecule(molecule,True)
-                if str(species) == '':
-                    species.addMolecule(molecule)
+                    '''
+                    else:
+                        if conv in reactant:
+                            
+                            component = st.Component(res[0])
+                            component.addState(res[1])
+                            molecule.addComponent(component,1)
+                            print conv,molecule,element
+                            flag = True
+                            #continue
+                    '''                    
+                        #FIXME: the comparison should be done a lil more carefully
+                        #to avoid overlap
+                
+     
+                    
+                    species.addMolecule(molecule,True)
+                    if str(species) == '':
+                        species.addMolecule(molecule)
+                    break
             if flag:
                 
                 if reactant not in translator:
@@ -578,7 +590,7 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                         sp = st.Species()
                         sp.addMolecule(molecule)
                         translator[molecule.name] = sp
-                
+               
     if len(original[0]) < len(original[1]):
         rebalance(original,sortedConvention,translator)
                #if len(translator[reactant].molecules) > 1 and molecule.name in translator:
