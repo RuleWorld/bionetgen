@@ -5,6 +5,8 @@ Created on Wed May 30 11:44:17 2012
 @author: proto
 """
 from copy import deepcopy
+import difflib
+
 class Species:
     def __init__(self):
         self.molecules = []
@@ -107,7 +109,13 @@ class Species:
                 
     def extend(self,species,update=True):
         if(len(self.molecules) == len(species.molecules)):
-            for (selement,oelement) in zip(sorted(self.molecules,key=lambda x:x.name),sorted(species.molecules,key=lambda x:x.name)):
+            
+            list1 = sorted(self.molecules,key=lambda x:len(x.components))
+            list1 = sorted(list1,key=lambda x:x.name)
+            list2 = sorted(species.molecules,key=lambda x:len(x.components))
+            list2 = sorted(list2,key=lambda x:x.name)
+            
+            for (selement,oelement) in zip(list1,list2):
                 for component in oelement.components:
                     if component.name not in [x.name for x in selement.components]:
                         selement.components.append(component)
@@ -122,15 +130,31 @@ class Species:
                     
                     self.addMolecule(deepcopy(element),update)
                 else:
-                    for molecule in self.molecules:
-                        if molecule.name == element.name:
-                            for component in element.components:
-                                if component.name not in [x.name for x in molecule.components]:
-                                    molecule.addComponent(deepcopy(component),update)
-                                else:
-                                    comp = molecule.getComponent(component.name)
-                                    for state in component.states:
-                                        comp.addState(state,update)
+                     
+                    bond1 = sum([x.bonds for x in element.components],[])
+                    bondList = []
+                    for x in [z for z in self.molecules if z.name == element.name]:
+                        bondList.append((x,sum([y.bonds for y in x.components],[])))
+                    print bond1
+                    print bondList
+                    score = 0
+                    for x in bondList:
+                        if difflib.SequenceMatcher(None,x[1],bond1).ratio() >= score:
+                            score = difflib.SequenceMatcher(None,x[1],bond1).ratio()
+                            molecule = x[0]
+                    #sortedArray = sorted(bondList,
+                    #    key=lambda y:difflib.SequenceMatcher(None,y[1],bond1),reverse=True)
+                    #molecule = sortedArray[0][0]
+                    if len(bondList) > 1:
+                        print '-----------',[str(x[0]) for x in bondList], str(element)
+                        
+                    for component in element.components:
+                        if component.name not in [x.name for x in molecule.components]:
+                            molecule.addComponent(deepcopy(component),update)
+                        else:
+                            comp = molecule.getComponent(component.name)
+                            for state in component.states:
+                                comp.addState(state,update)
                     
     
     def updateBonds(self,bondNumbers):
@@ -197,6 +221,7 @@ class Molecule:
                 compo = self.getComponent(component.name)
                 for state in component.states:
                     compo.addState(state)
+        self.components = sorted(self.components,key=lambda x:x.name)
     
     def setCompartment(self,compartment):
         self.compartment = compartment   
@@ -236,14 +261,14 @@ class Molecule:
         return componentName in [x.name for x in self.components]
         
     def __str__(self):
-        self.components.sort()
+        self.components = sorted(self.components,key=lambda x:x.name)
         return self.name + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
         
     def toString(self):
         return self.__str__()
         
     def str2(self):
-        self.components.sort()
+        self.components = sorted(self.components,key=lambda x:x.name)
         return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
         
     def extend(self,molecule):

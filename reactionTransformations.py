@@ -526,8 +526,7 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]]
     flag = False
     
-    if 'EGF_EGFRim2_GAP_Grb2' in original[1]:
-        print original
+
     for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:
             flag = False
@@ -579,6 +578,8 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                     translator[reactant] = species
 
                 else:
+                    if reactant == 'EGF_EGFRm2_GAP_Grb2_Prot':
+                        print original
                     translator[reactant].extend(species,False)
                 if finalMolecule.name in translator:
                     if len(translator[finalMolecule.name].molecules) == 1:
