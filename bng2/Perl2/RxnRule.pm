@@ -3282,8 +3282,7 @@ sub build_reaction
             #  (so we can lookup the local function in the future!)
             $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );                  
        
-            my $lf_name = $local_fcn->Name;
-            (my $lf_param) = $model->ParamList->lookup($lf_name); 
+            #(my $lf_param) = $model->ParamList->lookup($local_fcn->Name); 
             
             # replace fcn name with new local funct name
             $local_refs[0] = $local_fcn->Name;

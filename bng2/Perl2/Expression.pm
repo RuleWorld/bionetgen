@@ -383,7 +383,7 @@ sub operate
         my $level     = @_ ? shift @_ : 0;
         
         my $err       = '';
-        my $ops_bi    = '\*\*|[+\-*/^]|>=|<=|[<>]|==|!=|~=|&&|\|\|';  #edited, msneddon
+        my $ops_bi    = '\*\*|[+\-*/^]|>=|<=|[<>]|==|!=|~=|&&|\|\|';
         my $ops_un    = '[+\-!~]';
 
         if ( $level==0 )
@@ -528,7 +528,7 @@ sub operate
                     }
                     else
                     {
-                        return ( "Function $name is not a built-in function, Observable, or defined Function" );
+                        return "Function $name is not a built-in function, Observable, or defined Function";
                     }
                 }
     

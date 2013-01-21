@@ -265,12 +265,12 @@ sub newRateLaw
         # Read expression
         my $expr = Expression->new();
         my $err = $expr->readString( \$string_left, $plist, "," );
-        if ($err) { return ( '', $err ) }
-       
+        if ($err) { return '', $err; }
+
         # get name for ratelaw
         my $name = $expr->getName( $plist, $basename, $force_fcn );
         # retreive param with this name
-        ( my $param, my $err ) = $plist->lookup( $name );
+        (my $param, $err) = $plist->lookup($name);
 
         # determine ratelaw type
         if ( $param->Type =~ /^Constant/ )
@@ -278,13 +278,10 @@ sub newRateLaw
             $rate_law_type = "Ele";
         }
         else
-        {   #  return error if we're in EnergyBNG mode
-            if ( $model->Options->{energyBNG} )
-            {   return ( undef, "Functional ratelaws not supported in energyBNG mode." );   }
-            
+        {   # this is a function expression..            
             # check for local functions
             if ( $totalRate   and  $expr->checkLocalDependency($plist) )
-            {   return ( undef, "TotalRate keyword is not compatible with local functions." );   }
+            {   return undef, "TotalRate keyword is not compatible with local functions.";   }
             
             $rate_law_type = 'Function';
         }
