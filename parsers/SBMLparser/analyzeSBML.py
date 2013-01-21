@@ -17,8 +17,11 @@ the json config file for classyfying rules according to their reactants/products
 
 class SBMLAnalyzer:
     
-    def __init__(self,configurationFile):
+    def __init__(self,configurationFile,speciesEquivalences=None):
         self.configurationFile = configurationFile
+        self.speciesEquivalences= speciesEquivalences
+        self.userEquivalencesDict = None
+        
         
     def parseReactions(self,reaction):
         species =  (Word(alphanums+"_") 
@@ -98,7 +101,44 @@ class SBMLAnalyzer:
                 if 'n' in ruleBook[index]:
                     ruleResult[index] = 1
         return ruleResult
+        
+    def levenshtein(self,s1, s2):
+            l1 = len(s1)
+            l2 = len(s2)
+        
+            matrix = [range(l1 + 1)] * (l2 + 1)
+            for zz in range(l2 + 1):
+              matrix[zz] = range(zz,zz + l1 + 1)
+            for zz in range(0,l2):
+              for sz in range(0,l1):
+                if s1[sz] == s2[zz]:
+                  matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, matrix[zz][sz])
+                else:
+                  matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, matrix[zz][sz] + 1)
+            return matrix[l2][l1]
             
+    def analyzeUserDefinedEquivalences(self,molecules,conventions):
+        equivalences = {}
+        smolecules = [x.strip('()') for x in molecules]
+        modifiedElement = {}
+        for convention in conventions:
+            baseMol = []
+            modMol = []
+            for molecule in smolecules:
+                if convention[0] in molecule:
+                    baseMol.append(molecule)
+                elif convention[1] in molecule:
+                    modMol.append(molecule)
+            equivalences[convention[2]] = []
+            modifiedElement[convention[0]] = []
+            for mol1 in baseMol:
+                for mol2 in modMol:
+                    score = self.levenshtein(mol1,mol2)
+                    if score == 1:
+                        equivalences[convention[2]].append((mol1,mol2))
+                        modifiedElement[convention[0]].append((mol1,mol2))
+                        break
+        return equivalences,modifiedElement        
      
     def analyzeNamingConventions(self,molecules,originalPattern='',modifiedPattern=''):
         '''
@@ -121,13 +161,14 @@ class SBMLAnalyzer:
             comparisonMethod = str.startswith
         elif patternType == 'suffix':
             comparisonMethod = str.endswith
-        elif patternType == 'infix':
-            comparisonMethod = str.count
+        #elif patternType == 'infix':
+        #    comparisonMethod = str.count
             
         comparisonMethod = str.startswith if patternType == 'prefix' else str.endswith
         for molecule in [x.strip('()') for x in molecules]:
             if comparisonMethod(molecule,pattern):
                 oMolecules.append(molecule)
+        
         for molecule in [x.strip('()') for x in molecules]:
             if molecule in oMolecules:
                 continue
@@ -137,7 +178,9 @@ class SBMLAnalyzer:
                 elif patternType == 'suffix':
                     comparison = superMolecule[:len(superMolecule)- len(pattern)]
                 elif patternType == 'infix':
-                    pass
+                    comparison = superMolecule.replace(pattern,'',1)
+                    #if 'EGF_EGFR2' in comparison:
+                    #    print comparison,molecule
                 if comparison == molecule:
                     results.append((molecule,superMolecule))
                 
@@ -152,13 +195,19 @@ class SBMLAnalyzer:
         equivalenceTranslator = {}
         reactionIndex = {}
         index = 0
+        if self.userEquivalencesDict == None:
+            self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             if 'n' in prop.keys():
                 convention = reactionDefinition['namingConvention'][prop['n'][0]]
                 temp = self.analyzeNamingConventions(molecules,convention[0],convention[1])
+                if name in self.userEquivalencesDict:
+                    temp.extend(self.userEquivalencesDict[name])
                 equivalenceTranslator[name] = temp
                 reactionIndex[name] = index
                 index += 1
+            
+                
         
         #now we want to fill in all intermediate relationships
         newTranslator = equivalenceTranslator.copy()
@@ -189,6 +238,7 @@ class SBMLAnalyzer:
         provided
         '''
         ruleDictionary = self.species2Rules(rules)
+        #TODO: recognize bidirectional rules
         #contains which rules are equal to reactions defined in reactionDefiniotion['reactions]    
         ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
         for (idx,rule) in enumerate(rules):
@@ -209,7 +259,6 @@ class SBMLAnalyzer:
                     if all(element in rule for element in equivalence):
                         tupleNameComplianceMatrix[rule][reactionIndex[namingConvention]] +=1
                         break
-                    
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
         tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
@@ -258,6 +307,8 @@ class SBMLAnalyzer:
         '''
         reactionTypeProperties = {}
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
+        if self.speciesEquivalences != None:
+            self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
         for reactionType,properties in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #if its a reaction defined by its naming convention            
             if 'n' in properties.keys():
@@ -277,6 +328,9 @@ class SBMLAnalyzer:
         config file
         '''
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
+        if self.speciesEquivalences != None:
+            self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
+
         equivalenceTranslator = {}
         #determines if two molecules have a relationship according to the naming convention section
         reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,

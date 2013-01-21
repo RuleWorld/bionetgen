@@ -254,11 +254,6 @@ def identifyNamingConvention():
                     except:
                         print 'ERROR',sys.exc_info()[0]
                         continue
-                #translator = m2c.transformMolecules(parser,database,'reactionDefinition2.json')
-            #print len(parser.getSpecies()),len(translator),
-            #evaluation(len(parser.getSpecies()),translator)
-
-            #translator = {}
         except:
             print 'ERROR',sys.exc_info()[0]
             continue
@@ -382,14 +377,14 @@ def selectReactionDefinitions(bioNumber):
             break
     return fileName,useID
 
-def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile):
+def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     
-    translator = m2c.transformMolecules(parser,database,reactionDefinitions)
-    #translator = {}    
+    translator = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #translator = {}
     print evaluation(len(parser.getSpecies()[0]),translator)
     param2 = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
@@ -397,7 +392,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile):
     param,rules,functions = parser.getReactions(translator,True)
     param += param2
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
-
+    print outputFile
 
 
 def processFile(translator,parser,outputFile):
@@ -409,6 +404,9 @@ def processFile(translator,parser,outputFile):
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
 
    
+def BNGL2XML():
+    pass
+
 def main():
     jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
     jsonFiles.sort()
@@ -421,14 +419,12 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    #[19,48,188,18,9,270,272,336,407]
-    #[18,107,108,149-153193,194,199,201,226,227,228,232,238-248]
-    #for bioNumber in [19,33,48,49,84,161,175,205,223,250,251,255,262,263,264]:  
     for bioNumber in [19]:  
     #bioNumber = 175
-        definitions,useID = selectReactionDefinitions(bioNumber)
-        print useID
-        analyzeFile(bioNumber,definitions,useID,'egfr/output' + str(bioNumber) + '.bngl')
+        reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
+        print reactionDefinitions,useID
+        spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        analyzeFile(bioNumber,reactionDefinitions,useID,'egfr/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
 
 if __name__ == "__main__":
     #identifyNamingConvention()
