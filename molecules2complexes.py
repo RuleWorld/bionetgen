@@ -11,6 +11,7 @@ import reactionTransformations
 import analyzeSBML
 import analyzeRDF
 from collections import Counter
+import difflib
     
 def parseReactions(reaction):
     species =   (Word(alphanums+"_") 
@@ -594,8 +595,8 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             tmp = deepcopy(database.translator)
             print reaction2
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
-        if 'EGF_EGFRm2_GAP_Grb2_Prot' in database.translator:
-            print database.translator['EGF_EGFRm2_GAP_Grb2_Prot'],rule
+        #if 'EGF_EGFRm2_GAP_Grb2_Prot' in database.translator:
+        #    print '++++',rule,difflib.SequenceMatcher(None, 'Grb2(egfr,shc!10,sos).EGF(egfr!5,modI~U,modM~M).EGFR(egf!5,egfr!8,gap!9,grb2!11,modI~U,prot,ras_gdp,shc!10).EGF(egfr!7,modI~U,modM~U).EGFR(egf!7,egfr!8,gap!8,grb2,modI~U,prot,ras_gdp,shc!9).GAP(egfr!9).Prot(egfr!11,modI~U,ras_gdp,ras_gtp)' , str(database.translator['EGF_EGFRm2_GAP_Grb2_Prot'])).ratio()
         if outputFlag:
             print {x:str(database.translator[x]) for x in database.translator if x not in tmp}
         

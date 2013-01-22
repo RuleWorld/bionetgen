@@ -135,8 +135,6 @@ class Species:
                     bondList = []
                     for x in [z for z in self.molecules if z.name == element.name]:
                         bondList.append((x,sum([y.bonds for y in x.components],[])))
-                    print bond1
-                    print bondList
                     score = 0
                     for x in bondList:
                         if difflib.SequenceMatcher(None,x[1],bond1).ratio() >= score:
@@ -145,8 +143,6 @@ class Species:
                     #sortedArray = sorted(bondList,
                     #    key=lambda y:difflib.SequenceMatcher(None,y[1],bond1),reverse=True)
                     #molecule = sortedArray[0][0]
-                    if len(bondList) > 1:
-                        print '-----------',[str(x[0]) for x in bondList], str(element)
                         
                     for component in element.components:
                         if component.name not in [x.name for x in molecule.components]:
@@ -161,8 +157,11 @@ class Species:
         newBondNumbers = deepcopy(bondNumbers)
         correspondence = {}
         intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
+        newBase = max(bondNumbers) +1
         for element in self.molecules:
             for component in element.components:
+                component.bonds = [int(x)+newBase for x in component.bonds]
+                '''
                 for index in range(0,len(component.bonds)):
                     if int(component.bonds[index]) in intersection:
                         
@@ -171,6 +170,7 @@ class Species:
                         else:
                             correspondence[component.bonds[index]] = max(intersection) + 1
                             component.bonds[index] = max(intersection) + 1
+                '''
                         #intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
     
     def append(self,species):
