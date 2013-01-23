@@ -179,23 +179,25 @@ sub copy
 # create a new ratelaw from a BNGL string
 sub newRateLaw
 {
-    my $strptr    = shift;
-    my $model     = shift;
-    my $totalRate = (@_) ? shift : 0;
-    my $reactants = (@_) ? shift : undef;
-    my $basename  = (@_) ? shift : 'rateLaw';
+    my $strptr    = shift @_;
+    my $model     = shift @_;
+    my $totalRate = @_ ? shift @_ : 0;
+    my $reactants = @_ ? shift @_ : undef;
+    my $basename  = @_ ? shift @_ : "rateLaw";
 
     my $string_left = $$strptr;
     my ($name, $rate_law_type, $rate_fac);
     my @rate_constants = ();
     my ($param, $err);
 
-    my $plist = $model->ParamList;
     $rate_fac = 1;
 
     # if totalRate, we need to force expression into a function,
     #  even if it's a constant function.
     my $force_fcn = $totalRate ? 1 : 0;  
+
+    # are we in energy BNG mode?
+    my $energyBNG = exists $model->Options->{energyBNG} ? $model->Options->{energyBNG} : 0;
 
     # Handle legacy Sat and MM RateLaw types
     # TODO: convert Sat, MM and Hill into regular functions?
@@ -208,13 +210,11 @@ sub newRateLaw
         
         # Validate remaining rate constants
         my $found_end = 0;
-        while ( $string_left =~ s/^([A-Za-z0-9_]+)\s*// )
+        while ( $string_left =~ s/^(\w+)\s*// )
         {
             my $rc = $1;
-
-            #print "rc=$rc\n";
-            ( $param, $err ) = $plist->lookup($rc);
-            if ($err) {  return ( '', $err );  }
+            ($param, $err) = $model->ParamList->lookup($rc);
+            if ($err) {  return '', $err;  }
             push @rate_constants, $rc;
             next if ($string_left =~ s/^,\s*//);
             if ($string_left =~ s/\)//){
@@ -222,7 +222,7 @@ sub newRateLaw
             }
         }
         unless ($found_end) {
-            return ( undef, "RateLaw not terminated at $string_left" );
+            return undef, "RateLaw not terminated at $string_left";
         }
     }
     elsif ( $string_left =~ s/^FunctionProduct\(\s*// )
@@ -238,24 +238,24 @@ sub newRateLaw
 
         # Read function 1
         my $expr1 = Expression->new();
-        my $err = $expr1->readString( \$expr_string_1, $plist );
+        my $err = $expr1->readString( \$expr_string_1, $model->ParamList );
         if ($err) { return '', $err }
         # get name for ratelaw
-        my $name1 = $expr1->getName( $plist, "localFuncL", $force_fcn );
+        my $name1 = $expr1->getName( $model->ParamList, "localFuncL", $force_fcn );
         # retreive param with this name
-        ( my $param1, my $err ) = $plist->lookup( $name1 );
+        (my $param1, my $err) = $model->ParamList->lookup($name1);
 
         # Read function 2
         my $expr2 = Expression->new();
-        my $err = $expr2->readString( \$expr_string_2, $plist );
+        my $err = $expr2->readString( \$expr_string_2, $model->ParamList );
         if ($err) { return '', $err }
         # get name for ratelaw
-        my $name2 = $expr2->getName( $plist, "localFuncR", $force_fcn );
+        my $name2 = $expr2->getName( $model->ParamList, "localFuncR", $force_fcn );
         # retreive param with this name
-        ( my $param2, my $err ) = $plist->lookup( $name2 );
+        (my $param2, my $err) = $model->ParamList->lookup($name2);
 
         # set ratelaw type
-        $rate_law_type = 'FunctionProduct';
+        $rate_law_type = "FunctionProduct";
         # add both functions to the list of "constants"
         push @rate_constants, ($name1, $name2);
     }
@@ -264,26 +264,26 @@ sub newRateLaw
         # Handle expression for rate constant of elementary reaction
         # Read expression
         my $expr = Expression->new();
-        my $err = $expr->readString( \$string_left, $plist, "," );
+        my $err = $expr->readString( \$string_left, $model->ParamList, "," );
         if ($err) { return '', $err; }
 
         # get name for ratelaw
-        my $name = $expr->getName( $plist, $basename, $force_fcn );
+        my $name = $expr->getName( $model->ParamList, $basename, $force_fcn );
         # retreive param with this name
-        (my $param, $err) = $plist->lookup($name);
+        (my $param, $err) = $model->ParamList->lookup($name);
 
         # determine ratelaw type
-        if ( $param->Type =~ /^Constant/ )
+        if ( $param->Type eq "Constant"  or  $param->Type eq "ConstantExpression" )
         {   # this is an elementary expression
             $rate_law_type = "Ele";
         }
         else
         {   # this is a function expression..            
             # check for local functions
-            if ( $totalRate   and  $expr->checkLocalDependency($plist) )
+            if ( $totalRate   and  $expr->checkLocalDependency($model->ParamList) )
             {   return undef, "TotalRate keyword is not compatible with local functions.";   }
             
-            $rate_law_type = 'Function';
+            $rate_law_type = "Function";
         }
         
         # put name of rate parameter (or fcn) on the constants array
@@ -442,6 +442,53 @@ sub newRateLawNet
 ###
 
 
+sub evaluate_local
+{
+    my ($rl, $ref_map, $model) = @_;
+
+    # If this rule has reactant tags and the ratelaw has type function,
+    #  then we may need to create a local ratelaw . . .
+    if ( %{$ref_map}  and  $rl->Type eq 'Function' )
+    {
+        # get parameter corresponding to ratelaw function
+        (my $rl_param) = $model->ParamList->lookup( $rl->Constants->[0] );
+        unless ( $rl_param->Type eq 'Function' )
+        {   die "Error in RateLaw->evaluate_local(): cannot find parameter for functional RateLaw!";   }
+                       
+        # get function object
+        my $fcn = $rl_param->Ref;                     
+        
+        # check for local dependency
+        if ( $fcn->checkLocalDependency($model->ParamList) )
+        {
+            # need to create a new ratelaw with locally evaluated observables
+            # get local values for function evaluation
+            my @local_refs = ($fcn->Name);
+            push @local_refs, map {$ref_map->{$_}} @{$fcn->Args};
+
+            # evaluate function with local values to get local function
+            (my $local_fcn) = $fcn->evaluate_local( \@local_refs, $model->ParamList );
+
+            # add local_fcn to the parameter list
+            #  (so we can lookup the local function in the future!)
+            $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );
+            
+            # create new ratelaw
+            my $local_rl = RateLaw->new( Type=>'Function', Constants=>[$local_fcn->Name], Factor=>$rl->Factor );
+            ++$RateLaw::n_Ratelaw;
+            return $local_rl;
+        }
+    }
+
+    return $rl;
+}
+
+
+###
+###
+###
+
+
 sub equivalent
 {
     my $rl1   = shift;
@@ -499,10 +546,10 @@ sub equivalent
 # write ratelaw as a string
 sub toString
 {
-    my $rl        = shift;
-    my $rxn_mult  = (@_) ? shift : undef;
-    my $netfile   = (@_) ? shift : 0;
-    my $plist     = (@_) ? shift : undef;
+    my $rl        = shift @_;
+    my $rxn_mult  = @_ ? shift @_ : undef;
+    my $netfile   = @_ ? shift @_ : 0;
+    my $plist     = @_ ? shift @_ : undef;
 
     my $string = '';
 
@@ -540,9 +587,9 @@ sub toString
         my $last = @{$rl->Constants}-1;
         my @local_refs = @{$rl->Constants}[1..$last]; 
         
-        #TODO: this is correct, but NET files can't parse it.
-        #$string .= $rcs . '(' . join(',', @local_refs) . ')';
         $string .= $rcs;
+        unless ($netfile)
+        {   $string .= '(' . join(",", @local_refs) . ')';   }
     }
     else
     {

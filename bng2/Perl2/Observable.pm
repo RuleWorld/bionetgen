@@ -64,6 +64,21 @@ sub copy
 
 
 
+# reset the observable weights to zero
+sub reset_weights
+{
+    my $obs   = shift @_;
+    my $alloc = @_ ? shift @_ : 0;
+    $obs->Weights( [(0) x $alloc] );
+}
+
+
+###
+###
+###
+
+
+
 # call this method to link Compartments to a new CompartmentList
 sub relinkCompartments
 {
@@ -81,20 +96,6 @@ sub relinkCompartments
     }
     
     return undef;
-}
-
-
-
-###
-###
-###
-
-
-
-sub clearWeights
-{
-    my $obs = shift;
-    @{$obs->Weights} = ();
 }
 
 
@@ -329,7 +330,7 @@ sub toCVodeString
         for ( my $idx1=1; $idx1 < @{$obs->Weights}; $idx1++ )
         {  
             my $idx0 = $idx1 - 1;
-            if ( defined $obs->Weights->[$idx1] )
+            if ( defined $obs->Weights->[$idx1] and $obs->Weights->[$idx1]!=0 )
             {
                 my $term;
                 if ( $obs->Weights->[$idx1] == 1 )
@@ -370,7 +371,7 @@ sub toMatlabString
         my @terms = ();
         for ( my $idx1=1; $idx1 < @{$obs->Weights}; $idx1++ )
         {  
-            if ( defined $obs->Weights->[$idx1] )
+            if ( defined $obs->Weights->[$idx1] and $obs->Weights->[$idx1]!=0 )
             {
                 my $term;
                 if ( $obs->Weights->[$idx1] == 1 )
@@ -507,16 +508,16 @@ sub match
 
 sub update
 {
-    my $obs = shift;
-    my $species = shift;
+    my $obs = shift @_;
+    my $species = shift @_;
     my $idx_start = (@_) ? shift : 0;
 
     my $err = '';
   
-    # This appears to be a little speed tweak (force PERL to allocate space for array)..
-    #   Make sure full size of array is allocated, but don't risk overwritting the last element.
-    unless (@$species == 0)
-    {   $obs->Weights->[@$species] = $obs->Weights->[@$species];   }
+    ## This appears to be a little speed tweak (force PERL to allocate space for array)..
+    ##   Make sure full size of array is allocated, but don't risk overwritting the last element.
+    #unless (@$species == 0)
+    #{   $obs->Weights->[@$species] = $obs->Weights->[@$species];   }
 
     # Loop over patterns to generate matches; update weight at index of each match.
     foreach my $patt (@{$obs->Patterns})
@@ -525,6 +526,9 @@ sub update
         {
             my $sp = $species->[$ii];
             next if ( $sp->ObservablesApplied );
+
+            unless (exists $obs->Weights->[$sp->Index])
+            {   $obs->Weights->[$sp->Index] = 0;   }
 
             # find matches of this pattern in species graph
             my @matches = $patt->isomorphicToSubgraph( $sp->SpeciesGraph );

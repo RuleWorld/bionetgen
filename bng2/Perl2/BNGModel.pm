@@ -112,46 +112,14 @@ sub initialize
 {
     my $model = shift @_;
 
-    # Initialize ParameterList
-    my $plist = ParamList->new;
-    $model->ParamList($plist);
-
-    # Initialize MoleculeTypesList
-    my $mtlist = MoleculeTypesList->new( StrictTyping=>0 );
-    $model->MoleculeTypesList($mtlist);
-
-    # Create the null type "0"
-    #my $nulltype = MoleculeType->new( Name=>'0', PopulationType=>0 );
-    #$mtlist->add($nulltype);
-            
-    # Initialize PopulationTypesList
-    $model->PopulationTypesList( MoleculeTypesList->new( StrictTyping=>0 ) );
-            
-    # Initialize PopulationList
+    $model->ParamList( ParamList->new() );
+    $model->MoleculeTypesList( MoleculeTypesList->new('StrictTyping'=>0) );
+    $model->PopulationTypesList( MoleculeTypesList->new('StrictTyping'=>0) );
     $model->PopulationList( PopulationList->new() );
-
-    # Initialize CompartmentList
-    my $clist = CompartmentList->new( Used=>0 );
-    $model->CompartmentList($clist);
-
-    # Initialize SpeciesList
-    my $slist = SpeciesList->new();
-    $model->SpeciesList($slist);
-
-    # Create NullSpecies
-    #my $null_string = '$0()';
-    #my $null_species = SpeciesGraph->new();
-    #$null_species->readString( \$null_string, $clist, 1, '', $mtlist);
-    #$slist->add( $null_species, 1.0 );
-
-    # Initialize RxnList
-    my $rlist = RxnList->new();
-    $model->RxnList($rlist);
-
-    # Initialize SubstanceUnits (Number is default)
+    $model->CompartmentList( CompartmentList->new('Used'=>0) );
+    $model->SpeciesList( SpeciesList->new() );
+    $model->RxnList( RxnList->new('SpeciesList'=>$model->SpeciesList) );
     $model->SubstanceUnits("Number");
-
-    # Initialize Cache
     $model->ConcentrationCache( Cache->new() );
     $model->ParameterCache( Cache->new() );
 }
@@ -234,7 +202,6 @@ sub readNetwork
     my %bngdata;
     my $t_start;
     my $stdout_handle;
-
 
     sub readFile
     {
@@ -333,8 +300,6 @@ sub readNetwork
             # Say Hello to the user
             printf "BioNetGen version %s\n", BNGversion();   
         }
-
-
 
 
         # Read BNG model data        
@@ -685,7 +650,7 @@ sub readNetwork
                         # get the number of species
                         my $n_species = $model->SpeciesList->getNumSpecies();
 
- #                       my $iobs   = 0;
+                        #my $iobs   = 0;
                         foreach my $line ( @$block_dat )
                         {
                             my ($entry, $lno) = @$line;
@@ -942,8 +907,6 @@ sub readNetwork
                 }
             }
         }
-
-
 
 
       EXIT:
@@ -2029,62 +1992,57 @@ sub quit
 
 sub generate_network
 {
-    my $model  = shift @_;
-    my $params = shift @_;
+    my $model       = shift @_;
+    my $user_params = @_ ? shift @_ : {};
 
-    # default parameters
-    my %vars = (
-        'max_iter'   => 100,
-        'max_agg'    => 1e9,
-        'max_stoich' => {},
-        'check_iso'  => 1,
-        'prefix'     => $model->getOutputPrefix(),
-        'overwrite'  => 0,
-        'print_iter' => 0,
-        'verbose'    => 0
+    # default params
+    my %params = (
+        'continue'     => 0,
+        'max_iter'     => 100,
+        'max_agg'      => 1e9,
+        'max_stoich'   => {},
+        'check_iso'    => 1,
+        'prefix'       => $model->getOutputPrefix(),
+        'overwrite'    => 0,
+        'print_iter'   => 0,
+        'TextReaction' => 0,
+        'verbose'      => 0
     );
 
-    
-    # default parameters passed to called methods
-    my %vars_pass = (
-        'TextReaction' => '',
-        'prefix'       => $model->getOutputPrefix()
-    );
-
-
-    # get user parameters
-    foreach my $key ( keys %$params )
+    # overwrite default params with user params
+    while ( my ($key,$val) = each %$user_params )
     {
-        if ( exists $vars{$key} )
-        {
-            $vars{$key} = $params->{$key};
-            if ( exists $vars_pass{$key} )
-            {
-                $vars_pass{$key} = $params->{$key};
-            }
-        }
-        elsif ( exists $vars_pass{$key} )
-        {
-            $vars_pass{$key} = $params->{$key};
-        }
-        else
-        {
-            return "Unrecognized parameter $key in generate_network";
-        }
+        unless ( exists $params{$key} )
+        {   return "Unrecognized parameter $key in generate_network";   }
+
+        $params{$key} = $val;
     }
 
     return '' if $NO_EXEC;
 
 
+    # default params for calling writeNET
+    my $params_writeNET = {
+        'TextReaction' => $params{TextReaction},
+        'prefix'       => $params{prefix}
+    };
+
+    # default params for calling expand_rule
+    my $params_expand_rule = {
+        'max_agg'    => $params{max_agg},
+        'check_iso'  => $params{check_iso},
+        'max_stoich' => $params{max_stoich},
+        'verbose'    => $parans{verbose},
+    };
+
     # check verbose option
-    my $verbose = $vars{verbose};
+    my $verbose = $params{verbose};
 
     # Check if existing net file has been created since last modification time of .bngl file
-    my $prefix    = $vars{prefix};
-    my $overwrite = $vars{overwrite};
+    my $prefix = $params{prefix};
     if ( -e "$prefix.net"  and  -e "$prefix.bngl" )
     {
-        if ($overwrite)
+        if ($params{overwrite})
         {
             send_warning("Removing old network file $prefix.net.");
             unlink "$prefix.net";
@@ -2092,7 +2050,7 @@ sub generate_network
         elsif ( -M "$prefix.net" < -M "$prefix.bngl" )
         {
             send_warning("$prefix.net is newer than $prefix.bngl so reading NET file.");
-            my $err = $model->readFile( { file => "$prefix.net" } );
+            my $err = $model->readFile( {file => "$prefix.net"} );
             return $err;
         }
         else
@@ -2101,64 +2059,63 @@ sub generate_network
         }
     }
 
-    unless ( defined $model->SpeciesList )
+
+    # nothing to do if no species are defined
+    if ( $model->SpeciesList->size() == 0 )
     {   return "No species defined in call to generate_network";   }
-    my $slist = $model->SpeciesList;
 
-    unless ( defined $model->RxnList )
-    {
-        $model->RxnList( RxnList->new );
-        $model->RxnList->SpeciesList($slist);
-    }
-    my $rlist = $model->RxnList;
-
-    
-    # Initialize observables
-    foreach my $obs ( @{$model->Observables} )
-    {
-        $obs->update( $slist->Array );
-    }    
-    # Set ObservablesApplied attribute to everything in SpeciesList
-    foreach my $spec ( @{$slist->Array} )
-    {
-        $spec->ObservablesApplied(1);
-    }
-
-
-    # Initialize energy patterns (for energyBNG only)
-    if ( $model->Options->{energyBNG} )
-    {
-        foreach my $epatt ( @{$model->EnergyPatterns} )
-        {
-            (my $err) = $epatt->updateSpecies( $slist->Array );
-        }
-    }
-    
-
-    unless ( defined $model->RxnRules )
+    # nothing to do if no rules are defined
+    if ( @{$model->RxnRules} == 0 )
     {   return "No reaction_rules defined in call to generate_network";   }
 
-    # initialize rules
-    foreach my $rset ( @{$model->RxnRules} )
+    # if no reactions have been generated previosuly, then we have to initize some things..
+    if ( $model->RxnList->size()==0 or $params{continue}==0 )
     {
-        foreach my $rr (@$rset)
-        {   $rr->initializeRule();   }
+        # initialize rules
+        foreach my $rset ( @{$model->RxnRules} )
+        {
+            foreach my $rr (@$rset)
+            {   $rr->initializeRule();   }
+        }
+
+        # Initialize observables
+        foreach my $obs ( @{$model->Observables} )
+        {   
+            $obs->reset_weights( $model->SpeciesList->size() );
+            $obs->update( $model->SpeciesList->Array );
+        }
+
+        # Set ObservablesApplied attribute to everything in SpeciesList
+        foreach my $spec ( @{$model->SpeciesList->Array} )
+        {   $spec->ObservablesApplied(1);   }
+  
+        # Initialize energy patterns (for energyBNG only)
+        if ( $model->Options->{energyBNG} )
+        {
+            foreach my $epatt ( @{$model->EnergyPatterns} )
+            {
+                $epatt->reset_weights($model->SpeciesList->size());
+                $epatt->update($model->SpeciesList->Array);
+            }
+        }
+    }
+    else
+    {   # friendly warning that we're continuing network generation 
+        send_warning("Reaction list is already populated. Continuing network generation from where we last left off.");
     }
 
 
-    my $nspec       = scalar @{$slist->Array};
-    my $nrxn        = scalar @{$rlist->Array};
     my @rule_timing = ();
     my @rule_nrxn   = ();
     
     # update user with initial report
-    report_iter( 0, $nspec, $nrxn );
+    report_iter( 0, $model->SpeciesList->size(), $model->RxnList->size() );
 
     # now perform network generation steps
-    foreach my $niter ( 1 .. $vars{max_iter} )
+    foreach my $niter ( 1 .. $params{max_iter} )
     {
         my $t_start_iter = cpu_time(0);
-        my @species = @{$slist->Array};
+        my @species = @{$model->SpeciesList->Array};
 
         # Apply reaction rules
         my $irule = 0;
@@ -2167,14 +2124,12 @@ sub generate_network
         # NOTE: each element of @{$model->RxnRules} is an array of reactions.
         #  If a rule is unidirectional, then the array has a single element.
         #  If a rule is bidirectional, then the array has two elements (forward and reverse)
-
         foreach my $rset ( @{$model->RxnRules} )
         {
             if ($verbose) { printf "Rule %d:\n", $irule + 1; }
             $n_new = 0;
             $t_off = cpu_time(0);
             my $dir = 0;
-
             foreach my $rr (@$rset)
             {
                 if ($verbose)
@@ -2182,19 +2137,9 @@ sub generate_network
                     if ($dir == 0) { print "  forward:\n"; }
                     else           { print "  reverse:\n"; }
                 }
-             
-                # default params
-                my $params = { 'max_agg'    => $vars{max_agg},
-                               'check_iso'  => $vars{check_iso},
-                               'max_stoich' => $vars{max_stoich},
-                               'verbose'    => $vars{verbose},
-                             };
-
                 # expand rule
-                my ($err, $nr) = $rr->expand_rule( \@species, $model, $params );
-                if (defined $err)
-                {   return "Some problem expanding rule: $err";   }
-                
+                my ($err, $nr) = $rr->expand_rule( \@species, $model, $params_expand_rule );
+                if (defined $err) { return "Some problem expanding rule: $err"; }
                 $n_new += $nr;
                 ++$dir;
             }
@@ -2210,64 +2155,26 @@ sub generate_network
             ++$irule;
         }
 
-
         # update RulesApplied for species processed in this interation
         foreach my $spec (@species)
-        {
-            $spec->RulesApplied($niter) unless ( $spec->RulesApplied );
-        }
+        {   $spec->RulesApplied($niter) unless ($spec->RulesApplied);   }
 
-        # Update observables
-        foreach my $obs ( @{$model->Observables} )
-        {
-            $obs->update( $slist->Array );
-        }
-        # Set ObservablesApplied attribute to everything in SpeciesList
-        foreach my $spec ( @{$slist->Array} )
-        {
-            $spec->ObservablesApplied(1);
-        }
-
-        # update energy patterns (for energyBNG only)
-        if ( $model->Options->{energyBNG} )
-        {
-            foreach my $epatt ( @{$model->EnergyPatterns} )
-            {
-                (my $err) = $epatt->updateSpecies( $slist->Array );
-            }
-        }
-    
-        # Finalize ratelaws for each new Rxn (energyBNG only)
-        if ( $model->Options->{energyBNG} )
-        {
-            foreach my $rxn_set ( keys %{$rlist->Hash} )
-            {
-                foreach my $rxn ( @{$rlist->Hash->{$rxn_set}} )
-                {
-                    (my $err) = $rxn->updateEnergyRatelaw( $model );
-                }
-            }
-        }
-
-        $nspec = scalar @{$slist->Array};
-        $nrxn  = scalar @{$rlist->Array};
-        report_iter( $niter, $nspec, $nrxn, $t_start_iter );
-
+        # report iteration to user
+        report_iter( $niter, $model->SpeciesList->size(), $model->RxnList->size(), $t_start_iter );
 
         # Free memory associated with RxnList hash
-        $rlist->resetHash;
+        $model->RxnList->resetHash();
 
         # Stop iteration if no new species were generated
-        #printf "nspec=$nspec last= %d\n", scalar(@species);
-        last if ( $nspec == scalar @species );
+        last if ( $model->SpeciesList->size() == scalar @species );
 
         # Print network after current iteration to netfile
-        if ( $vars{print_iter} )
+        if ( $params{print_iter} )
         {
-            $vars_pass{prefix} = "${prefix}_${niter}";
-            if ( my $err = $model->writeNET(\%vars_pass) ) { return $err; }
-#            if ( my $err = $model->writeNetwork(\%vars_pass) ) { return $err; }
-            $vars_pass{prefix} = $prefix;
+            $params_writeNET->{prefix} = "${prefix}_${niter}";
+            $err = $model->writeNET($params_writeNET);
+            if ($err) { return $err; }
+            $params_writeNET->{prefix} = $prefix;
         }
     }
         
@@ -2288,13 +2195,12 @@ sub generate_network
     printf "Total   : %5d reactions %.2e CPU s %.2e CPU s/rxn\n", $n_tot, $t_tot, $eff;
 
     # Print result to netfile
-    if ( my $err = $model->writeNET(\%vars_pass) ) { return $err; }
-#    if ( my $err = $model->writeNetwork(\%vars_pass) ) { return $err; }
+    $err = $model->writeNET($params_writeNET);
+    if ($err) { return $err; }
 
     return '';
 
 
-    ###
     ###
     ###
 
@@ -2315,10 +2221,7 @@ sub generate_network
                     $t_cpu, $rmem / 1000, $vmem / 1000;
         }
         printf "\n";
-        return;
     }
-
-    # end generate network
 
 }
 

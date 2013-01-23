@@ -99,7 +99,7 @@ sub readString
     $epatt->SpecMatches( [] );
     
     # return with error 
-    return ($err);
+    return $err;
 }
 
 
@@ -126,7 +126,7 @@ sub toMatlabString
    
    # TODO
      
-   return ( $string, '' );
+   return $string, '';
 }
 
 
@@ -138,7 +138,7 @@ sub toMexString
    
     # TODO
    
-    return ( $string, '' );
+    return $string, '';
 }
 
 
@@ -153,7 +153,7 @@ sub toXML
     
     # TODO
     
-    return ( $string, '' );
+    return $string, '';
 }
 
 
@@ -165,38 +165,33 @@ sub toMathMLString
 
     # TODO
 
-    return ( $string, '' );
+    return $string, '';
+}
+
+
+# reset the observable weights to zero
+sub reset_weights
+{
+    my $epatt   = shift @_;
+    my $alloc = @_ ? shift @_ : 0;
+    $epatt->Weights( [(0) x $alloc] );
 }
 
 
 
-sub updateSpecies
+sub update
 {
-    my $epatt   = shift;
-    my $species  = shift;
+    my $epatt   = shift @_;
+    my $species = shift @_;
 
-    my $err = '';
-  
-    # gather unprocessed species
-    my @sgs = ();
+    my $err = undef;
+    # generate matches to species
     foreach my $spec (@$species)
     {
-        push @sgs, $spec->SpeciesGraph  unless ( $spec->RulesApplied )
+        my @matches = $epatt->Pattern->isomorphicToSubgraph($spec->SpeciesGraph);
+        $epatt->SpecMatches->[ $spec->Index ] = scalar @matches;
     }
-    
-    # tweak efficiency:  make sure full array is allocated
-    my $max_idx = @$species;
-    unless ( exists $epatt->SpecMatches->[$max_idx] )
-    {   $epatt->SpecMatches->[$max_idx] = undef;  }
-
-    # generate matches to speciesGraph
-    foreach my $sg (@sgs)
-    {
-        my @matches = $epatt->Pattern->isomorphicToSubgraph($sg);
-        $epatt->SpecMatches->[ $sg->Species->Index ] = scalar @matches;
-    }
-
-    return ( $err );
+    return $err;
 }
 
 
@@ -213,21 +208,21 @@ sub getStoich
     my $stoich = 0;
     foreach my $reactant (@{$rxn->Reactants})
     {
-        if ( defined $epatt->SpecMatches->[ $reactant->Index ] )
+        if ( defined $epatt->SpecMatches->[$reactant->Index] )
         {
-            $stoich -= $epatt->SpecMatches->[ $reactant->Index ];
+            $stoich -= $epatt->SpecMatches->[$reactant->Index];
         }
     }
     foreach my $product (@{$rxn->Products})
     {
-        if ( defined $epatt->SpecMatches->[ $product->Index ] )
+        if ( defined $epatt->SpecMatches->[$product->Index] )
         {
-            $stoich += $epatt->SpecMatches->[ $product->Index ];
+            $stoich += $epatt->SpecMatches->[$product->Index];
         }    
     }
 
     
-    return ( $stoich, $err );
+    return $stoich, $err;
 }
 
 
@@ -278,7 +273,7 @@ sub getRateExpression
             }
         } 
         $err = $rate_expr->readString( \$rate_string, $plist );  
-        if ( $err ) { return ( undef, $err ); }
+        if ( $err ) { return undef, $err; }
     }
     
     return $rate_expr, $err;

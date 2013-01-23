@@ -46,7 +46,7 @@ struct RxnRule =>
 	MapF      => '%',    # Map from reactants to products 'rP.rM.rC' -> 'pP.pM.pC'
 	MapR      => '%',    # Map from products to reactants 'pP.pM.pC' -> 'rP.rM.rC'
 
-	RateLaw   => 'RateLaw',    # Array of rate laws, 1 if unidirectional, 2 if reversible
+	RateLaw   => 'RateLaw',    # RateLaw
     TotalRate => '$',          # indicates whether the ratelaws corresponding to this rule define a TotalRate (1)
                                #   or a PerSite rate (default=0)
 
@@ -3202,11 +3202,26 @@ sub build_reaction
 		# a pointer to new or existing species with isomorphic sg.
 		# If we want mapping for this reaction need to update to
 		# account for reordering of molecules and components
-		my $spec;
-		unless ( $spec = $model->SpeciesList->lookup($p, $params->{check_iso}) )
+		my $spec = $model->SpeciesList->lookup($p, $params->{check_iso});
+		if ( not defined $spec )
 		{
+            # add species to the list
 			$spec = $model->SpeciesList->add($p, 0);
 			++$n_new_species;
+
+            # update observables
+            foreach my $obs ( @{$model->Observables} )
+            {   $obs->update([$spec]);   }
+
+            # Set ObservablesApplied attribute to everything in SpeciesList
+            $spec->ObservablesApplied(1);
+
+            # update energy patterns (for energyBNG only)
+            if ( $model->Options->{energyBNG} )
+            {
+                foreach my $epatt ( @{$model->EnergyPatterns} )
+                {   $epatt->update([$spec]);   }
+            }
 		}
 
 		# Add the product Species
@@ -3233,67 +3248,28 @@ sub build_reaction
 	}
         
 
-    # get rateLaw for this reaction
-    # By default, use the same ratelaw as the rule
-    my $rl = $rr->RateLaw;
-
-    # If this rule has reactant tags and the ratelaw has type function,
-    #  then we may need to create a local ratelaw . . .
-    if ( %{$rr->RRefs}  and  $rr->RateLaw->Type eq 'Function' )
+    # map reference tags to local objects
+    my $local_refs = {};
+    while ( my ($ref,$ptr1) = each %{$rr->RRefs} )
     {
-        # get parameter corresponding to ratelaw function
-        (my $rl_param) = $model->ParamList->lookup( $rr->RateLaw->Constants->[0] );       
-        unless ( $rl_param->Type eq 'Function' )
-        {   die "Error in RxnRule->ApplyRule(): cannot find parameter for RateLaw!";   }
-                       
-        # get function object
-        my $fcn = $rl_param->Ref;                     
-        
-        # check for local dependency
-        if ( $fcn->checkLocalDependency($model->ParamList) )
-        {
-            # need to create a new ratelaw with locally evaluated observables
-            
-            # get local values for function evaluation
-            my @local_refs = ($fcn->Name);
-            for ( my $ii=0; $ii < @{$fcn->Args}; ++$ii )
-            {   
-                my $ptr1 = $rr->RRefs->{ $fcn->Args->[$ii] };
-                my ($patt_idx,$mol_idx,$comp_idx) = split( /\./, $ptr1 );
-                # first remap pattern pointer to a species
-                my $ptr2 = $reactant_species->[$patt_idx]->Index;
-                if (defined $mol_idx)
-                {   # next remap the molecule
-                    my ($mol2_idx) = split( /\./, $matches->[$patt_idx]->mapF($mol_idx) );
-                    $ptr2 .= ".$mol2_idx";
-                    if (defined $comp_idx)
-                    {   # finally remap the component
-                        my ($mol2_idx, $comp2_idx) = split( /\./, $matches->[$patt_idx]->mapF("$mol_idx.$comp_idx") );
-                        $ptr2 .= ".$comp2_idx";
-                    }
-                }
-                push @local_refs, $ptr2;
-            }                   
-        
-            # evaluate function with local values to get local function
-            (my $local_fcn) = $fcn->evaluate_local( \@local_refs, $model->ParamList );
-
-            # add local_fcn to the parameter list
-            #  (so we can lookup the local function in the future!)
-            $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );                  
-       
-            #(my $lf_param) = $model->ParamList->lookup($local_fcn->Name); 
-            
-            # replace fcn name with new local funct name
-            $local_refs[0] = $local_fcn->Name;
-            
-            # create param for local function
-            $rl = RateLaw->new( Type=>'Function', Constants=>[@local_refs], Factor=>$rr->RateLaw->Factor );
-        
-            # increment number of ratelaws (in the RateLaw class)
-            ++$RateLaw::n_Ratelaw;
+        my ($patt_idx,$mol_idx,$comp_idx) = split( /\./, $ptr1 );
+        # first remap pattern pointer to a species
+        my $ptr2 = $reactant_species->[$patt_idx]->Index;
+        if (defined $mol_idx)
+        {   # next remap the molecule
+            my ($mol2_idx) = split( /\./, $matches->[$patt_idx]->mapF($mol_idx) );
+            $ptr2 .= ".$mol2_idx";
+            if (defined $comp_idx)
+            {   # finally remap the component
+                my ($mol2_idx, $comp2_idx) = split( /\./, $matches->[$patt_idx]->mapF("$mol_idx.$comp_idx") );
+                $ptr2 .= ".$comp2_idx";
+            }
         }
+        $local_refs->{$ref} = $ptr2;
     }
+
+    # evaluate ratelaw in local context    
+    my $rl = $rr->RateLaw->evaluate_local($local_refs, $model);
 
 	# Create reaction
 	my $rxn = Rxn->new( Reactants=>$reactant_species, Products=>$product_species,

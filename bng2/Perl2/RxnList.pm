@@ -39,9 +39,18 @@ sub resetHash
 }
 
 
+# get the size of the rxn list
+sub size
+{
+    my $rlist = shift @_;
+    return scalar @{$rlist->Array};
+}
+
+
 ###
 ###
 ###
+
 
 
 # Add a reaction to the list.

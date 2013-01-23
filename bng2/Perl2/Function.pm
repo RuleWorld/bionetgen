@@ -29,24 +29,19 @@ struct Function =>
 
 sub clone
 {
-    my $fcn = shift;
-    my $plist = (@_) ? shift : undef;
-    my $level = (@_) ? shift : 0;
+    my $fcn   = shift @_;
+    my $plist = @_ ? shift @_ : undef;
+    my $level = @_ ? shift @_ : 0;
     # keep same name? or get a unique name?
-    my $same_name = (@_) ? shift : 0;
-    
-    my $err = '';
-    
-    my $clone = Function->new();
-    my ($clone_name) = ($same_name ? ($fcn->Name) : $plist->getName($fcn->Name) );
+    my $same_name = @_ ? shift @_ : 0;
 
-    ( my $clone_expr, $err ) = $fcn->Expr->clone( $plist, $level+1 );
+    my ($clone_name) = $same_name ? $fcn->Name : $plist->getName($fcn->Name);
+
+    my $err = '';
+    (my $clone_expr, $err) = $fcn->Expr->clone( $plist, $level+1 );
     
-    $clone->Name( $clone_name );
-    $clone->Expr( $clone_expr );
-    $clone->Args([ @{$fcn->Args} ]);
-            
-    return ($clone, $err);
+    my $clone = Function->new( Name=>$clone_name, Expr=>$clone_expr, Args=>[@{$fcn->Args}] );            
+    return $clone, $err;
 }
 
 
@@ -125,7 +120,6 @@ sub evaluate_local
             splice @{$local_fcn->Args}, $ii, 1;
             push @$bad_args, $ii+1;
         }
-        
     }    
 
     return $local_fcn, $bad_args;
