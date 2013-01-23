@@ -23,18 +23,19 @@ def createMolecule(molecule, bonds):
     nameDict = {}
     mol = st.Molecule(molecule.get('name'),molecule.get('id'))
     nameDict[molecule.get('id')] = molecule.get('name')
-    for element in \
-     molecule.find('.//{http://www.sbml.org/sbml/level3}ListOfComponents'):
-        component = st.Component(element.get('name'),element.get('id'))
-        nameDict[element.get('id')] = element.get('name')
-        if element.get('numberOfBonds') in ['+','?']:
-            component.addBond(element.get('numberOfBonds'))
-        elif element.get('numberOfBonds') != '0':
-            component.addBond(findBond(bonds, element.get('id')))
-        state = element.get('state') if element.get('state') != None else ''
-        component.states.append(state)
-        component.activeState = state
-        mol.addComponent(component)
+    listOfComponents =  molecule.find('.//{http://www.sbml.org/sbml/level3}ListOfComponents')
+    if listOfComponents != None:
+        for element in listOfComponents:
+            component = st.Component(element.get('name'),element.get('id'))
+            nameDict[element.get('id')] = element.get('name')
+            if element.get('numberOfBonds') in ['+','?']:
+                component.addBond(element.get('numberOfBonds'))
+            elif element.get('numberOfBonds') != '0':
+                component.addBond(findBond(bonds, element.get('id')))
+            state = element.get('state') if element.get('state') != None else ''
+            component.states.append(state)
+            component.activeState = state
+            mol.addComponent(component)
     return mol, nameDict
     
 

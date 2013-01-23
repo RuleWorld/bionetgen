@@ -73,7 +73,10 @@ def extractTransformations(rules):
     transformationCenter = []
     transformationContext = []
     productElements = []
+    actionName = []
+    index=0
     for react,product,act,mapp,_ in rules:
+        index += 1
         for action in act:
             atomic,reactionCenter,context = extractMolecules(action.site1, 
                                                              action.site2, react)
@@ -86,8 +89,10 @@ def extractTransformations(rules):
                                            product)
             productElements.append(rc)
             atomicArray.update(atomic)
-    solveWildcards(atomicArray)                
-    return atomicArray, transformationCenter, transformationContext, productElements
+            actionName.append('%i-%s' % (index,action.action))
+    solveWildcards(atomicArray)
+                   
+    return atomicArray, transformationCenter, transformationContext, productElements,actionName
             
 
 def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, builtList):
@@ -121,9 +126,8 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                     context=True, products=True):
     
     #extract reactioncenter, context information
-    atomicArray, transformationCenter, transformationContext, productElements = \
+    atomicArray, transformationCenter, transformationContext, productElements,actionNames = \
                     extractTransformations(rules)
-    
     #create the graph structure and the three main subgraphs
     if len(transformations) == 1:
         react= '+'.join([str(x) for x in rules[transformations[0]-1][0]])
@@ -141,9 +145,9 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     edgeIdx = 1
     reactantbuiltlist = {}
     productbuildlist ={}
-    for idx,_ in enumerate(transformationCenter):
+    for idx,name in enumerate(actionNames):
         if idx+1 in transformations:
-            gRules.add_node("T%i" % (idx + 1))
+            gRules.add_node(name)
     #create reactionCenter nodes and edges
     if reactionCenter:
         for idx,element in enumerate(transformationCenter):
@@ -152,7 +156,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                     clusterName = createNode(atomicArray, reactant, 
                                              reactantDictionary, gReactants, 
                                              'clusterr',reactantbuiltlist)
-                    graph.add_edge(clusterName, "T%i"%(idx+1), 
+                    graph.add_edge(clusterName, actionNames[idx], 
                                    key = 'key%i' % edgeIdx, dir='forward')
                     edgeIdx+=1
     #create context nodes
@@ -164,7 +168,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                                              reactantDictionary, gReactants, 
                                              'clusterr',reactantbuiltlist)
                     if clusterName != '':
-                        graph.add_edge(clusterName,"T%i"%(idx+1), 
+                        graph.add_edge(clusterName,actionNames[idx], 
                                        key = 'key%i' % edgeIdx, 
                                        dir='forward',color='red')
                         edgeIdx+=1  
@@ -173,7 +177,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                             clusterName = createNode(atomicArray, str(atom), 
                                             reactantDictionary, gReactants, 
                                             'clusterr',reactantbuiltlist)
-                            graph.add_edge(clusterName, "T%i"%(idx+1), 
+                            graph.add_edge(clusterName, actionNames[idx], 
                                            key = 'key%i' % edgeIdx, dir='forward', 
                                            color='red')
                             edgeIdx+=1
@@ -185,11 +189,12 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                     clusterName =createNode(atomicArray, product, 
                                             productDictionary, gProducts, 
                                             'clusterp', productbuildlist)
-                    graph.add_edge("T%i"%(idx+1), clusterName, 
+                    graph.add_edge(actionNames[idx], clusterName, 
                                    key = 'key%i' % edgeIdx, dir='foward')
                     edgeIdx+=1
     
-    #output        
+    #output      
+    print '%s.dot' % fileName
     graph.write('%s.dot' % fileName)
     graph = pgv.AGraph('%s.dot' % fileName)
     graph.layout(prog='fdp')
@@ -200,7 +205,7 @@ def main(fileName):
     #createBiPartite(rules,[x for x in range(1,25)],'simple', 
     #                       reactionCenter=True, context=True, products=True)
     
-    for element in range(1,2):
+    for element in range(1,20):
         print element
         try:
             createBiPartite(rules, [element], 'simple%i' % element, 
@@ -211,4 +216,4 @@ def main(fileName):
             continue
     
 if __name__ == "__main__":
-    main("fceri.xml")
+    main("output19.xml")

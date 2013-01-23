@@ -118,7 +118,11 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator,outpu
  #           else:
             if outputFlag:
                 print '-',sbml_name
+            if 'EGF_EGFRim2_GAP_Grb2' in original[0] or 'EGF_EGFRm2_GAP_Grb2_Prot' in original[1] and 'Proti' in original[0]:
+                print original
             tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag)
+            
+
             if (tags,molecules) == (None,None):
                 tmp = st.Species()
                 tmp.addMolecule(st.Molecule(sbml_name))
@@ -493,7 +497,6 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator,reactionP
 
 def rebalance(original,sortedResult,translator):
     
-    print original
     reactantsCount = {}
     for element in translator[original[0][0]].molecules:
         if element.name not in reactantsCount:
@@ -535,7 +538,9 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
             #    species = deepcopy(translator[original[0][0]])
             
             #make a copy of the original element we are going to modify
-            if sortedConvention[0] in translator:
+            if reactant in translator:
+                species = deepcopy(translator[reactant])
+            elif sortedConvention[0] in translator:
                 species = deepcopy(translator[sortedConvention[0]])
             tmp = dictionary[reactant]
             for element in tmp:
@@ -578,8 +583,6 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                     translator[reactant] = species
 
                 else:
-                    if reactant == 'EGF_EGFRm2_GAP_Grb2_Prot':
-                        print original
                     translator[reactant].extend(species,False)
                 if finalMolecule.name in translator:
                     if len(translator[finalMolecule.name].molecules) == 1:
