@@ -8,7 +8,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
     if len(reactant) == 0:
-        finalString += '0() '
+        finalString += 'Null() '
     for index in range(0,len(reactant)):
         tag = ''
         if reactant[index][0] in tags and isCompartments:
@@ -21,7 +21,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     else:
         finalString += ' -> '
     if len(product) == 0:
-        finalString += '0() '
+        finalString += 'Null() '
     for index in range(0,len(product)):
         tag = ''
         if product[index][0] in tags and isCompartments:
