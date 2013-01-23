@@ -157,7 +157,10 @@ class SBML2BNGL:
                     tmp2 += (self.tags[rawSpecies[0]])
                 speciesText.append('%s %f' % (tmp2 + ":" + str(tmp),rawSpecies[1])) 
             observablesText.append('Species %s %s #%s' % (rawSpecies[0], tmp,rawSpecies[5]))
+        moleculesText.append('Null()')
+        speciesText.append('$Null() 1')
         return moleculesText,speciesText,observablesText
+        
 
     def getSpeciesAnnotation(self):
         speciesAnnotation = {}
@@ -430,3 +433,4 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     main()
+    
