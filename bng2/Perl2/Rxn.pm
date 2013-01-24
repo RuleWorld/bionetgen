@@ -230,7 +230,7 @@ sub stringID
   
     # sort reactants and products (if ratelaw is elementary or zero-order)
     my $type= $rxn->RateLaw->Type;
-    if ( ($type eq 'Ele') or ($type eq 'Zero') )
+    if ( $type eq "Ele" )
     {
         @rstrings = sort {$a<=>$b} @rstrings;
         @pstrings = sort {$a<=>$b} @pstrings;
@@ -334,79 +334,8 @@ sub volume_scale
 
 
 
-# For energyBNG only!!  --Justin, 9nov2010
-# When a rxn is created, it inherits a generic elementary rateLaw from its parent RxnRule.
-# Each specific rxn must have a ratelaw that is compatible with the stoichiometry of 
-# energy patterns.  This method constructs a ratelaw (specific to this rxn) that will
-# guarantee energy compatibility (detailed balance, etc).
-sub updateEnergyRatelaw
-{
-    my $rxn    = shift;
-    my $model  = shift;
-    
-    my $epatts = $model->EnergyPatterns;
-    my $plist = $model->ParamList;
-    
-    my $err = '';
-    
-    # get energy stoichiometry fingerprint
-    my $fingerprint = $rxn->getEnergyFingerprint( $epatts );
-     
-    #  lookup fingerprint in RateLaw hash
-    if ( exists $rxn->RateLaw->EnergyHash->{ $fingerprint } )
-    {
-        # assign ratelaw matching fingerprint
-        $rxn->RateLaw( $rxn->RateLaw->EnergyHash->{ $fingerprint } );
-    }
-    else
-    {
-        # construct a new ratelaw and assign to this fingerprint   
-        my @rate_strings = ();
-        # get the rate constant expression from the generic ratelaw
-        push @rate_strings, '('. $rxn->RateLaw->Constants->[0] .')';
-        # now add terms to account for changes in energy pattern counts
-        foreach my $epatt ( @$epatts )
-        {
-            (my $expr_term, $err) = $epatt->getRateExpression( $rxn, $plist );
-        
-            if ( defined $expr_term )
-            {   push @rate_strings, '('. $expr_term->toString( $plist ) .')';   }
-        }
-        # the customized rate is calculated as the multiplication of all the above terms.
-        my $rate_string = join( '*', @rate_strings );   
-        # construct the updated rate law
-        (my $updated_rate_law) = RateLaw::newRateLaw( \$rate_string, $model );
-        
-        # assign updated rate law in the energy hash (before we forget about the base ratelaw)
-        $rxn->RateLaw->EnergyHash->{ $fingerprint } = $updated_rate_law;
-        # point the RateLaw field to the updated law.
-        $rxn->RateLaw( $updated_rate_law );
-    }
-    
-    # return with any error messages
-    return ( $err );
-}
-
-
-
-sub getEnergyFingerprint
-{
-    my $rxn   = shift;    # this Reaction object
-    my $epatts = shift;   # reference to list of EnergyPatterns
-    
-    my $err = '';
-   
-    # gather stoichiometry of each energy pattern under this reaction
-    my @fingerprint = ();
-    foreach my $epatt ( @$epatts )
-    {
-        (my $stoich, $err) = $epatt->getStoich( $rxn );
-        push @fingerprint, $stoich;
-    }    
-
-    # return fingerprint
-    return join( ',', @fingerprint );
-}
-
+###
+###
+###
 
 1;

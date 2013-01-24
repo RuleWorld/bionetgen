@@ -517,7 +517,7 @@ sub simulate
                 $spec->RulesApplied($n_iter) unless ($spec->RulesApplied);
             }
 
-            # Set ObservablesApplied attribute to everything in SpeciesList
+            # Set RulesApplied attribute to everything in SpeciesList
             my $new_species = [];
             foreach my $spec ( @{$model->SpeciesList->Array} )
             {

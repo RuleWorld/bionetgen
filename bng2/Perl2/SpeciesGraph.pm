@@ -1861,14 +1861,21 @@ sub toXML
 	# add support for MatchOnce keyword
 	if ( $sg->MatchOnce )
     {
-		$string .= ' matchOnce="1"';
+		$string .= " matchOnce=\"1\"";
 	}
 
 	# add support for Fixed
 	if ( $sg->Fixed )
     {
-		$string .= ' Fixed="1"';
+		$string .= " Fixed=\"1\"";
 	}
+
+
+	# add support for Automorphism count (TODO: disabled for now)
+	#if ( defined $sg->Automorphisms )
+    #{
+	#	$string .= " automorphisms=\"" . $sg->Automorphisms . "\"";
+	#}
 
 	# add quantifiers
 	if ( $sg->Quantifier )

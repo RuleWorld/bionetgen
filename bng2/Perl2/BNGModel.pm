@@ -1276,7 +1276,7 @@ sub writeBNGL
     use strict;
     use warnings;
 
-    my $model  = shift @_;
+    my $model = shift @_;
     my $user_params = @_ ? shift @_ : {};
 
     # Default parameters required by this method.
@@ -1476,7 +1476,7 @@ sub setOption
     while (@_)
     {
         my $arg = shift @_;
-        @_ || return ("No value specified for option $arg");
+        unless (@_) { return "No value specified for option $arg"; }
         my $val = shift @_;
 
         if ( $arg eq "SpeciesLabel" )
@@ -1484,19 +1484,20 @@ sub setOption
             # SpeciesLabel method can only be changed prior to reading species.
             # Otherwise, inconsistent behavior could arise from changing the
             # labeling method.
-            if ( $model->SeedSpeciesList ) {
-                return ( "SpeciesLabel attribute can only be changed prior to reading of species.");
-            }
-            ( $err = SpeciesGraph::setSpeciesLabel($val) )  and  return ($err);
+            if ( $model->SpeciesList->size() )
+            {   return "$arg option can only be changed prior to defining species.";  }
+            $err = SpeciesGraph::setSpeciesLabel($val);
+            if ($err) { return $err; }
             $model->Options->{$arg} = $val;
         }
         elsif ( $arg eq "energyBNG" )
         {   # enable energy mode
-            if ( scalar @{$model->RxnRules} )
-            {   return ( "energyBNG mode can only be changed prior to reading ReactionRules.");  }
+            if ( @{$model->RxnRules} )
+            {   return "$arg option can only be changed prior to reading ReactionRules.";  }
             $model->Options->{$arg} = $val;
         }
-        else {
+        else
+        {
             return "Unrecognized option $arg in setOption";
         }
     }
@@ -1507,8 +1508,8 @@ sub setOption
 
 sub substanceUnits
 {
-    my $model = shift;
-    my $units = shift;
+    my $model = shift @_;
+    my $units = shift @_;
 
     my $ucommand = "";
     if ( $units =~ /^conc/i ) {
@@ -1533,8 +1534,7 @@ sub setVolume
     my $compartment_name = shift @_;
     my $value            = shift @_;
 
-    my $err = $model->CompartmentList->setVolume( $compartment_name, $value );
-    return ($err);
+    return $model->CompartmentList->setVolume( $compartment_name, $value );
 }
 
 
@@ -2069,8 +2069,9 @@ sub generate_network
     {   return "No reaction_rules defined in call to generate_network";   }
 
     # if no reactions have been generated previosuly, then we have to initize some things..
-    if ( $model->RxnList->size()==0 or $params{continue}==0 )
+    if ( $model->RxnList->size()==0 or $params{'continue'}==0 )
     {
+        print STDERR "initializing model for network generations..\n";
         # initialize rules
         foreach my $rset ( @{$model->RxnRules} )
         {
@@ -2084,11 +2085,9 @@ sub generate_network
             $obs->reset_weights( $model->SpeciesList->size() );
             $obs->update( $model->SpeciesList->Array );
         }
+        foreach my $sp ( @{$model->SpeciesList->Array} )
+        {   $sp->ObservablesApplied(1);   }
 
-        # Set ObservablesApplied attribute to everything in SpeciesList
-        foreach my $spec ( @{$model->SpeciesList->Array} )
-        {   $spec->ObservablesApplied(1);   }
-  
         # Initialize energy patterns (for energyBNG only)
         if ( $model->Options->{energyBNG} )
         {

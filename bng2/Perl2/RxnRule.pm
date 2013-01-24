@@ -64,7 +64,9 @@ struct RxnRule =>
 	ChangeCompartment => '@',
 
 	RRefs => '%',    # Refs to objects on reactants side of rule
-	PRefs => '%',    # Refs to objects on products side of rule
+	PRefs => '%',    # Refs
+
+    Direction => '$',       # direction of rule: forward=1, reverse=-1
 
 	# operation modifiers
 	DeleteMolecules => '$', # If True, deleting a molecule in a species will remove only that molecule.
@@ -136,6 +138,8 @@ sub copy
 
     %{$rr_copy->RRefs} = %{$rr->RRefs};
     %{$rr_copy->PRefs} = %{$rr->PRefs};
+
+    $rr_copy->Direction( $rr->Direction );
 
     $rr_copy->DeleteMolecules( $rr->DeleteMolecules );
     $rr_copy->MoveConnected( $rr->MoveConnected );
@@ -456,39 +460,62 @@ sub newRxnRule
     if ( $string =~ s/(^|\s)TotalRate(\s|$)/$2/ )
     {   $TotalRate = 1;   }
 
+    # Extract the Ratelaws..
 
-	# temporarily add Reference tags as names in the ParamList
-	if (%rrefs) {  setRefs( \%rrefs, '', $plist );  }
+    # Get forward ratelaw..
+    # temporarily add Reference tags as names in the ParamList
+    if (%rrefs) { setRefs(\%rrefs, '', $plist); }
     # Parse and Create the ratelaw
-	( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@reac );
-	if ($err) {  return [], $err;  }
+    ( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@reac );
+    if ($err) { return [], $err; }
     # unset temporary names of Reference tags
-	if (%rrefs) {  unsetRefs(\%rrefs, $plist);  } 
-	# Save the ratelaw
-	push @rate_laws, $rl;
+    if (%rrefs) { unsetRefs(\%rrefs, $plist); }
+    # Save the ratelaw
+    push @rate_laws, $rl;
 
+    # Reversible rule requires two valid rate laws
+    if ($reversible)
+    {
+        if ($string =~ /^\s*,/)
+        {   
+            if ($rl->Type eq "Arrhenius")
+            { return [], "Found second ratelaw, but Arrhenius rate law is sufficient for both directions"; }
 
-	# Reversible reaction requires two valid rate laws
-	if ($reversible)
-	{
-		# Remove separator for backward compatibility
-		$string =~ s/^\s*[,]\s*//;
-		if (%prefs) { setRefs( \%prefs, '', $plist ); }
-		( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@prod );
-		if ($err) { return ( [], $err ); }
-		if (%prefs) { unsetRefs( \%prefs, $plist ); }
-		push @rate_laws, $rl;
-	}
-	else
-	{
-		if ( $string =~ /^\s*[,]/ ) {
-			return ( [], "Unidirection reaction may have only one rate law" );
-		}
-	}
+            # get reverse rate law
+            $string =~ s/^\s*,\s*//;
+	        if (%prefs) { setRefs( \%prefs, '', $plist ); }
+	        ($rl, $err) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@prod );
+	        if ($err) { return [], $err; }
+	        if (%prefs) { unsetRefs( \%prefs, $plist ); }
+	        push @rate_laws, $rl;  
+        }
+        else
+        {   # can't find second rate law
+            if ( $model->Options->{energyBNG} and $rl->Type eq "Arrhenius" )
+            {   # the forward ratelaw will suffice for the forward and reverse rule..
+
+                # first make sure there are no undefined local args for the reverse ratelaw
+                my $last = @{$rl->Constants}-1;
+                my @local_args = @{$rl->Constants}[2..$last];
+                my @missing_args = grep {not exists $prefs{$_}} @local_args;
+                if (@missing_args)
+                { return [], "Arrhenius rate law has undefined local arguments for the reverse direction"; }
+
+                push @rate_laws, $rl;
+            }
+            else
+            {   return [], "Expecting--but did not find--second ratelaw for reversible rule";   }
+        }
+    }
+    else
+    {
+	    if ($string =~ /^\s*,/) { return [], "Unidirection reaction may have only one rate law"; }
+    }
+
+    #print STDERR "rateLaw = ", $rl->toString(), "\n";
 
 
     # NOTE1: keywords can be in any order following the ratelaws.
-
     # NOTE2: made keyword extraction safer by checking for white space characters
     #   or end of string around the keyword.  Also, if keyword is extracted midstring
     #   a space is left in place of keyword.  --Justin 
@@ -649,17 +676,16 @@ sub newRxnRule
 	$rr->Pexclude( [@Pexclude] );
 	$rr->Rinclude( [@Rinclude] );
 	$rr->Pinclude( [@Pinclude] );
+    $rr->Direction(1);
 	$rr->TotalRate($TotalRate);
 	$rr->DeleteMolecules($DeleteMolecules);
 	$rr->MoveConnected($MoveConnected);
 	$rr->RRefs( {%rrefs} );
 	$rr->PRefs( {%prefs} );
 
-
 	# Find mapping of reactants onto products
 	if ( $err = $rr->findMap($mtlist) ) { return [], $err; }
 	push @$rrs, $rr;
-
 
 	if ($reversible)
 	{
@@ -673,6 +699,7 @@ sub newRxnRule
 		$rr->Rexclude( [@Pexclude] );
 		$rr->Pinclude( [@Rinclude] );
 		$rr->Rinclude( [@Pinclude] );
+        $rr->Direction(-1);
 		$rr->TotalRate($TotalRate);
 		$rr->DeleteMolecules($DeleteMolecules);
 		$rr->MoveConnected($MoveConnected);		
@@ -823,7 +850,7 @@ sub toString
 
 
 	$string .= "  " . $rr->RateLaw->toString();
-	if ($rr_rev)
+	if ($rr_rev and not ($rr->RateLaw->Type eq "Arrhenius") )
 	{
 		$string .= ", " . $rr_rev->RateLaw->toString();
 	}
@@ -3212,8 +3239,6 @@ sub build_reaction
             # update observables
             foreach my $obs ( @{$model->Observables} )
             {   $obs->update([$spec]);   }
-
-            # Set ObservablesApplied attribute to everything in SpeciesList
             $spec->ObservablesApplied(1);
 
             # update energy patterns (for energyBNG only)
@@ -3268,13 +3293,16 @@ sub build_reaction
         $local_refs->{$ref} = $ptr2;
     }
 
-    # evaluate ratelaw in local context    
-    my $rl = $rr->RateLaw->evaluate_local($local_refs, $model);
 
 	# Create reaction
 	my $rxn = Rxn->new( Reactants=>$reactant_species, Products=>$product_species,
-                        RateLaw=>$rl, Priority=>$rr->Priority, RxnRule=>$rr,
+                        RateLaw=>undef, Priority=>$rr->Priority, RxnRule=>$rr,
                         StatFactor=>$rr->MultScale );
+
+    # evaluate ratelaw in local context    
+    my $rl = $rr->RateLaw->evaluate_local($rxn, $local_refs, $model);
+    $rxn->RateLaw( $rl );
+
     # return rxn
     return $rxn;
 }

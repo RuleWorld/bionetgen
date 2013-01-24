@@ -127,7 +127,7 @@ use SpeciesGraph;
 
 struct RateLaw =>
 {
-    Type        => '$',
+    Type        => '$',       # Ele, Sat, Hill, MM, Arrhenius, FunctionProduct
     Constants   => '@',       # If function, first constant is the function name and the following are local args
     Factor      => '$',
     TotalRate   => '$',       # If true, this ratelaw specifies the Total reaction rate.
@@ -179,11 +179,12 @@ sub copy
 # create a new ratelaw from a BNGL string
 sub newRateLaw
 {
-    my $strptr    = shift @_;
-    my $model     = shift @_;
-    my $totalRate = @_ ? shift @_ : 0;
-    my $reactants = @_ ? shift @_ : undef;
-    my $basename  = @_ ? shift @_ : "rateLaw";
+    my $strptr     = shift @_;
+    my $model      = shift @_;
+    my $totalRate  = @_ ? shift @_ : 0;
+    my $reactants  = @_ ? shift @_ : undef;
+    my $basename   = @_ ? shift @_ : "rateLaw";
+
 
     my $string_left = $$strptr;
     my ($name, $rate_law_type, $rate_fac);
@@ -194,7 +195,7 @@ sub newRateLaw
 
     # if totalRate, we need to force expression into a function,
     #  even if it's a constant function.
-    my $force_fcn = $totalRate ? 1 : 0;  
+    my $force_fcn = $totalRate ? 1 : 0;
 
     # are we in energy BNG mode?
     my $energyBNG = exists $model->Options->{energyBNG} ? $model->Options->{energyBNG} : 0;
@@ -205,9 +206,8 @@ sub newRateLaw
     {
         $rate_law_type = $1;
         
-        if ( $totalRate )
-        {   return ( undef, "TotalRate keyword is not compatible with $rate_law_type type RateLaw." );   }
-        
+        if ($totalRate) { return undef, "TotalRate keyword is not compatible with $rate_law_type type RateLaw."; }
+
         # Validate remaining rate constants
         my $found_end = 0;
         while ( $string_left =~ s/^(\w+)\s*// )
@@ -259,6 +259,48 @@ sub newRateLaw
         # add both functions to the list of "constants"
         push @rate_constants, ($name1, $name2);
     }
+    elsif ( $string_left =~ s/^Arrhenius\(\s*// )
+    {
+        #print STDERR "Parseing Arrhenius RateLaw..\n";
+        if ($totalRate)     { return undef, "TotalRate keyword is not compatible with Arrhenius type RateLaw."; }
+        unless ($energyBNG) { return undef, "Arrhenius type RateLaw is not available unless energyBNG is enabled."; }       
+
+        my $err;
+        $rate_law_type = "Arrhenius"; 
+
+        # extract phi term
+        #print STDERR "  string_left = $string_left\n";
+        my $phi_expr = Expression->new();
+        $err = $phi_expr->readString( \$string_left, $model->ParamList, "," );
+        if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting phi string): $err"; }
+        my $phi_name = $phi_expr->getName( $model->ParamList, "phi" );
+        (my $phi_param, $err) = $model->ParamList->lookup($phi_name);
+
+        # remove separating comma and quotes
+        #$string_left =~ s/^\s*\"\s*,\s*\"\s*//;
+        $string_left =~ s/^\s*,\s*//;
+
+        # extract activation energy expression
+        #print STDERR "  string_left = $string_left\n";
+        my $actE_expr = Expression->new();
+        $err = $actE_expr->readString( \$string_left, $model->ParamList );
+        if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting activation energy string): $err"; }
+        my $actE_name = $actE_expr->getName( $model->ParamList, "actEnergy" );
+        (my $actE_param, $err) = $model->ParamList->lookup($actE_name);
+
+        # remove trailing parens
+        #$string_left =~ s/^\s*\"\s*\)\s*//;
+        $string_left =~ s/^\s*\)\s*//;
+        #print STDERR "  string_left = $string_left\n";
+
+        # put name of rate parameter (or fcn) on the constants array
+        push @rate_constants, $phi_name, $actE_name;
+        if ($actE_param->Type eq "Function")
+        {   push @rate_constants, @{$actE_param->Ref->Args};  }
+
+        #print STDERR "  rate constants = ", join(",", @rate_constants), "\n";
+        #print STDERR "..done\n";
+    }
     elsif ( $string_left =~ /\S+/ )
     {
         # Handle expression for rate constant of elementary reaction
@@ -272,6 +314,8 @@ sub newRateLaw
         # retreive param with this name
         (my $param, $err) = $model->ParamList->lookup($name);
 
+
+        my @local_args = ();
         # determine ratelaw type
         if ( $param->Type eq "Constant"  or  $param->Type eq "ConstantExpression" )
         {   # this is an elementary expression
@@ -284,10 +328,11 @@ sub newRateLaw
             {   return undef, "TotalRate keyword is not compatible with local functions.";   }
             
             $rate_law_type = "Function";
+            push @local_args, @{$param->Ref->Args};
         }
         
         # put name of rate parameter (or fcn) on the constants array
-        push @rate_constants, $name;
+        push @rate_constants, $name, @local_args;
     }
     else
     {   # REMOVED IMPLICIT RATELAWS!!  --Justin
@@ -442,13 +487,122 @@ sub newRateLawNet
 ###
 
 
+
+# evaluate the RateLaw for the local context
 sub evaluate_local
 {
-    my ($rl, $ref_map, $model) = @_;
+    my ($rl, $rxn, $ref_map, $model) = @_;
 
-    # If this rule has reactant tags and the ratelaw has type function,
-    #  then we may need to create a local ratelaw . . .
-    if ( %{$ref_map}  and  $rl->Type eq 'Function' )
+    # two things to accomplish
+    # (1) evaluate deltaG_rxn
+    # (2) evaluate local activation energy
+
+    my $local_rl = $rl;
+    if ($rl->Type eq "Arrhenius" )
+    { 
+        # get deltaG fingerprint
+        my $fingerprint = "$dir;";
+        $fingerprint .= $rl->get_deltaG_fingerprint( $model->EnergyPatterns );
+     
+        # evaluate activation energy in local context and get activation energy fingerprint
+        my $local_fcn;
+        my ($param) = $model->ParamList->lookup($rl->Constants->[1]);
+        if (defined $param  and  $param->Type eq "Function" )
+        {
+            my $fcn = $param->Ref;
+            if ( $fcn->checkLocalDependency($model->ParamList) )
+            {
+                # get local values for function evaluation
+                my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
+                # evaluate function with local values to get local function
+                ($local_fcn) = $param->Ref->evaluate_local( \@local_args, $model->ParamList );
+                # add to localfunc string to fingerprint
+                $fingerprint .= ";" . $local_fcn->Expr->toString();
+            }
+            else
+            {
+                # add to localfunc string to fingerprint
+                $fingerprint .= ";" . $fcn->Name;
+            }
+        }
+        else
+        {   # no local context in this parameter, create 
+            # add to localfunc string to fingerprint
+            $fingerprint .= ";" . $rl->Constants->[1];
+        }
+
+        #  lookup fingerprint in RateLaw hash
+        if ( exists $rl->EnergyHash->{$fingerprint} )
+        {   # fetch ratelaw with this fingerprint
+            #print STDERR "..found fingerprint.\n";
+            $local_rl = $rl->EnergyHash->{$fingerprint};
+        }
+        else
+        {   
+            #print STDERR "..didn't find fingerprint. creating new ratelaw.\n";
+            # building arrhenius expression..
+            # 1) get baseline activation energy
+            my $arrhenius_expr;
+            if (defined $local_fcn)
+            {   $arrhenius_expr = $local_fcn->Expr;   }
+            else
+            {   $arrhenius_expr = Expression::newNumOrVar( $rl->Constants->[1], $model->ParamList );   }
+
+            # 2a) compute deltaG terms
+            my @deltaG_terms = ();
+            foreach my $epatt ( @$epatts )
+            {
+                (my $expr, $err) = $epatt->getEnergyExpression( $rxn, $model->Paramlist );
+                if (defined $expr)
+                {   push @deltaG_terms, $expr;   }
+            }
+            # 2b) computer overall deltaG
+            my $deltaG_expr;
+            if (@deltaG_terms)
+            {   $deltaG_expr = Expression::operate( "+", [@deltaG_terms], $model->ParamList );   }
+
+            # 3) compute phi term
+            my $phi_expr;
+            if ($rxn->RxnRule->Direction==1)
+            {   # forward rule:  phi
+                $phi_expr = Expression::newNumOrVar( $rl->Constants->[0], $model->ParamList );
+            }
+            elsif ($rxn->RxnRule->Direction==-1)
+            {   # reverse rule: (phi-1).  NOTE: we use (phi-1) rather than (1-phi) since dG(+) = -dG(-)
+                $phi_expr = Expression::newNumOrVar( $rl->Constants->[0], $model->ParamList );
+                $phi_expr = Expression::operate( "-", [$phi_expr, 1], $model->ParamList );
+            }
+            else
+            {   die "ERROR: invalid direction (must be 1 or -1)";   }
+
+            # 4) computer total activation energy
+            my $phi_deltaG_expr;
+            if (defined $deltaG_expr)
+            {
+                my $phi_deltaG_expr = Expression::operate("*", [$phi_expr, $deltaG_expr], $model->ParamList);
+                $arrhenius_expr  = Expression::operate("+", [$arrhenius_expr, $phi_deltaG_expr], $model->ParamList);
+            }
+
+            # 5) get negative exponential
+            $arrhenius_expr = Expression::operate("-", [$arrhenius_expr], $model->ParamList);
+            $arrhenius_expr = Expression::operate("FUN", ["exp", $arrhenius_expr], $model->ParamList);
+
+            #print STDERR "  arrhenius expr = ", $arrhenius_expr->toString($model->ParamList), "\n";
+
+            # assign local expr to a parameter
+            #my $local_paramname = $model->ParamList->getName($rl->Constants->[1]);
+            my $local_paramname = $model->ParamList->getName("Arrhenius");
+            $model->ParamList->set( $local_paramname, $arrhenius_expr, 1);
+
+            # create new ratelaw
+            $local_rl = RateLaw->new( Type=>"Ele", Constants=>[$local_paramname], Factor=>$rl->Factor );
+            ++$RateLaw::n_Ratelaw;
+
+            # add this local ratelaw to the energyhash
+            $rl->EnergyHash->{$fingerprint} = $local_rl;
+        }
+    }
+    elsif ( $rl->Type eq 'Function' )
     {
         # get parameter corresponding to ratelaw function
         (my $rl_param) = $model->ParamList->lookup( $rl->Constants->[0] );
@@ -456,31 +610,50 @@ sub evaluate_local
         {   die "Error in RateLaw->evaluate_local(): cannot find parameter for functional RateLaw!";   }
                        
         # get function object
-        my $fcn = $rl_param->Ref;                     
+        my $fcn = $rl_param->Ref;                   
         
         # check for local dependency
         if ( $fcn->checkLocalDependency($model->ParamList) )
         {
-            # need to create a new ratelaw with locally evaluated observables
-            # get local values for function evaluation
-            my @local_refs = ($fcn->Name);
-            push @local_refs, map {$ref_map->{$_}} @{$fcn->Args};
-
-            # evaluate function with local values to get local function
-            (my $local_fcn) = $fcn->evaluate_local( \@local_refs, $model->ParamList );
-
-            # add local_fcn to the parameter list
-            #  (so we can lookup the local function in the future!)
-            $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );
-            
-            # create new ratelaw
-            my $local_rl = RateLaw->new( Type=>'Function', Constants=>[$local_fcn->Name], Factor=>$rl->Factor );
-            ++$RateLaw::n_Ratelaw;
-            return $local_rl;
+            # need to create a new ratelaw with locally evaluated observables.
+            # evaluate function with local values to get local function.
+            my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
+            (my $local_fcn) = $fcn->evaluate_local( \@local_args, $model->ParamList );
+            #  lookup fingerprint in RateLaw hash.
+            my $fingerprint = $local_fcn->Expr->toString();
+            if ( exists $rl->EnergyHash->{$fingerprint} )
+            {   # fetch ratelaw with this fingerprint
+                $local_rl = $rl->EnergyHash->{$fingerprint};
+            }
+            else
+            {   # add local_fcn to the parameter list
+                #  (so we can lookup the local function in the future!)
+                $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );    
+                # create new ratelaw
+                $local_rl = RateLaw->new( Type=>'Function', Constants=>[$local_fcn->Name], Factor=>$local_rl->Factor, TotalRate=>0 );
+                ++$RateLaw::n_Ratelaw;
+            }
         }
     }
+    return $local_rl;
+}
 
-    return $rl;
+
+###
+###
+###
+
+
+sub get_deltaG_fingerprint
+{
+    my ($rl, $rxn, $epatts) = @_;
+    # gather stoichiometry of each energy pattern under this reaction
+    my ($err, $stoich);
+    my @fingerprint = (0) x @$epatts;
+    foreach my $ii (0 .. $#$epatts)
+    {   ($fingerprint[$ii], $err) = $epatts->[$ii]->getStoich($rxn);   }
+    # return fingerprint
+    return join(",", @fingerprint);
 }
 
 
@@ -491,8 +664,8 @@ sub evaluate_local
 
 sub equivalent
 {
-    my $rl1   = shift;
-    my $rl2   = shift;
+    my $rl1   = shift @_;
+    my $rl2   = shift @_;
     my $plist = (@_) ? shift : undef;
 
     # first make sure we're dealing with defined ratelaws
@@ -507,10 +680,9 @@ sub equivalent
     # compare number of constants
     return 0  unless ( @{$rl1->Constants} == @{$rl2->Constants} );
     # compare factor
-    return 0  unless ( $rl1->Factor  ==  $rl2->Factor );    
+    return 0  unless ( $rl1->Factor == $rl2->Factor );   
     # compare totalrate flag
-    return 0  unless ( $rl1->TotalRate  eq  $rl2->TotalRate );
-    
+    return 0  unless ( $rl1->TotalRate eq $rl2->TotalRate );
     
     if ( $rl1->Type eq 'Function' )
     {
@@ -557,7 +729,7 @@ sub toString
     my $ratelaw_mult = undef;
     if ( (defined $rl->Factor)  and  ($rl->Factor ne '1')  and  ($rl->Factor ne '') )
     {   
-        $ratelaw_mult = Expression::newNumOrVar( $rl->Factor );
+        $ratelaw_mult = Expression::newNumOrVar($rl->Factor);
     }
     
     if ( defined $rxn_mult )
@@ -576,7 +748,7 @@ sub toString
     # now write the ratelaw to the string
     my $type = $rl->Type;
     my $rcs  = $rl->Constants->[0];
-    if ( $type eq 'Ele' )
+    if ( $type eq "Ele" )
     {
         # nothing more to do.. just write the rate constant 
         $string .= sprintf "%s", $rcs;
@@ -585,12 +757,13 @@ sub toString
     {
         # we need to write function name and pointer arguments!
         my $last = @{$rl->Constants}-1;
-        my @local_refs = @{$rl->Constants}[1..$last]; 
-        
+        my @local_refs = @{$rl->Constants}[1..$last];
+
         $string .= $rcs;
         unless ($netfile)
-        {   $string .= '(' . join(",", @local_refs) . ')';   }
+        {   $string .= "(" . join(",", @local_refs) . ")";   }
     }
+    #TODO FunctionProduct
     else
     {
         if ($netfile){
@@ -644,7 +817,7 @@ sub toCVodeString
     my $type = $rl->Type;
     my $rate_constants = $rl->Constants;
 
-    if ( $type eq 'Ele' )
+    if ( $type eq "Ele" )
     {
         # look up parameter
         (my $const) = $plist->lookup( $rate_constants->[0] );
@@ -746,7 +919,7 @@ sub toMatlabString
     my $type = $rl->Type;
     my $rate_constants = $rl->Constants;
 
-    if ( $type eq 'Ele' )
+    if ( $type eq "Ele" )
     {
         # look up parameter
         (my $const) = $plist->lookup( $rate_constants->[0] );
@@ -1039,11 +1212,11 @@ sub toXMLFunctionProduct
 # WARNING: Checking here is minimal
 sub validate
 {
-    my $rl = shift;
-    my $reactants = (@_) ? shift : undef;
-    my $model     = (@_) ? shift : undef;
+    my $rl = shift @_;
+    my $reactants = @_ ? shift @_ : undef;
+    my $model     = @_ ? shift @_ : undef;
 
-    if ( $rl->Type eq 'Ele' )
+    if ( $rl->Type eq "Ele" )
     {
   
     }
@@ -1111,9 +1284,13 @@ sub validate
     {
         # Validate local arguments here ?
     }
+    elsif ( $rl->Type eq 'Arrhenius' )
+    {
+        # Validate local arguments here ?
+    }
     else
     {
-        return "Unrecogized RateLaw type $type";
+        return "Unrecognized RateLaw type $type";
     }
 
     return undef;
@@ -1160,7 +1337,7 @@ sub toLatexString
     }
     else
     {
-        return "", "Unrecogized RateLaw type $type";
+        return "", "Unrecognized RateLaw type $type";
     }
     return $string, '';
 }
@@ -1186,7 +1363,7 @@ sub toMathMLString
 
     $statFactor *= $rl->Factor;
 
-    if ( $type eq 'Ele' )
+    if ( $type eq "Ele" )
     {
         # $statFactor*$k[0]*reactant1*...*reactantN
         $string .= "  <apply>\n    <times/>\n";
@@ -1270,7 +1447,7 @@ sub toMathMLString
     }
     else
     {
-        return ( '', "Unrecogized RateLaw type $type" );
+        return ( '', "Unrecognized RateLaw type $type" );
     }
 
     $string .= "</math>\n";

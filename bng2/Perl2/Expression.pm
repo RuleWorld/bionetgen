@@ -247,17 +247,13 @@ sub newNumOrVar
 #   a built-in or user-defined function.
 sub operate
 {
-    my $type  = shift;
-    my $args  = shift;
-    my $plist = shift;
+    my ($type, $args, $plist) = @_;
    
     # can't do anything without arguments!
-    unless ( @$args )
-    {   return undef;   }   
+    unless (@$args) { return undef; }
     
     # operate is unhappy without a paramlist!
-    unless ( ref $plist eq 'ParamList' )
-    {   return undef;   }   
+    unless (ref $plist eq 'ParamList') { return undef; }
     
     my $err;
     my $args_copy;
@@ -275,11 +271,9 @@ sub operate
 
         # is this a built-in function?
         if ( exists $functions{ $fcn_name } )
-        {      
-            # correct number of arguments?
+        {   # correct number of arguments?
             return undef  unless (  $functions{ $fcn_name }->{NARGS} == (@$args_copy - 1)  );
-        }
-   
+        }   
         # or is this custom?
         else
         {
@@ -307,11 +301,9 @@ sub operate
             {   $arg = Expression::newNumOrVar( $arg );   }
     
             # check that are is still defined
-            unless ( defined $arg )
-            {   return undef;   }  
+            unless (defined $arg) { return undef; }
         }        
     }
-    
     # or an operator?
     else
     {
@@ -328,20 +320,19 @@ sub operate
         {
             # clone argument, if it's an expression
             if ( ref $arg eq 'Expression' ) 
-            {   ($arg, $err) = $arg->clone($plist);     }
+            {   ($arg, $err) = $arg->clone($plist);   }
         
             # if arg isn't an expression, try to create one  
             else      
             {   $arg = Expression::newNumOrVar( $arg );   }
     
             # check that are is still defined
-            unless ( defined $arg )
-            {   return undef;   }  
+            unless (defined $arg) { return undef; }  
         }             
     }
             
     # return undefined if there were any errors
-    if ($err) {   return undef;   }
+    if ($err) { return undef; }
    
     # create the new expression
     my $expr = Expression->new();
@@ -1028,8 +1019,8 @@ sub checkLocalDependency
 # check if two expressions are equivalent
 sub equivalent
 {
-    my $expr1 = shift;
-    my $expr2 = shift;
+    my $expr1 = shift @_;
+    my $expr2 = shift @_;
     my $plist = (@_) ? shift : undef;
     my $level = (@_) ? shift : 0;
   
