@@ -162,7 +162,8 @@ sub update
         my $spec = $species->[$ii];
         next if ($spec->ObservablesApplied);
         my @matches = $epatt->Pattern->isomorphicToSubgraph($spec->SpeciesGraph);
-        $epatt->Weights->[$spec->Index] = scalar @matches / $epatt->Pattern->Automorphisms;
+        #TODO: $epatt->Weights->[$spec->Index] = (scalar @matches)/$epatt->Pattern->Automorphisms;
+        $epatt->Weights->[$spec->Index] = scalar @matches;
     }
     return $err;
 }
@@ -184,7 +185,7 @@ sub getStoich
     }
     foreach my $product (@{$rxn->Products})
     {
-        if ( $epatt->Weights->[$product->Index]!=0 )
+        if ( $epatt->Weights->[$product->Index] )
         {   $stoich += $epatt->Weights->[$product->Index];   }    
     }
     return $stoich, $err;

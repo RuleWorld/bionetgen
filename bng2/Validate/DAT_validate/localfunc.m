@@ -179,44 +179,24 @@ end
 
 
 % user-defined functions
-% function f_synth_1
-function [val] = f_synth_1(expressions, observables)
-    val = (expressions(3)*(0^2));
-end
-
 % function rateLaw1_1
 function [val] = rateLaw1_1(expressions, observables)
-    val = f_synth_1(expressions,observables);
-end
-
-% function f_synth_2
-function [val] = f_synth_2(expressions, observables)
-    val = (expressions(3)*(1^2));
+    val = (expressions(3)*(0^2));
 end
 
 % function rateLaw1_2
 function [val] = rateLaw1_2(expressions, observables)
-    val = f_synth_2(expressions,observables);
-end
-
-% function f_synth_3
-function [val] = f_synth_3(expressions, observables)
-    val = (expressions(3)*(2^2));
+    val = (expressions(3)*(1^2));
 end
 
 % function rateLaw1_3
 function [val] = rateLaw1_3(expressions, observables)
-    val = f_synth_3(expressions,observables);
-end
-
-% function f_synth_4
-function [val] = f_synth_4(expressions, observables)
-    val = (expressions(3)*(3^2));
+    val = (expressions(3)*(2^2));
 end
 
 % function rateLaw1_4
 function [val] = rateLaw1_4(expressions, observables)
-    val = f_synth_4(expressions,observables);
+    val = (expressions(3)*(3^2));
 end
 
 

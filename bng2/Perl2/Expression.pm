@@ -270,7 +270,7 @@ sub operate
         my $fcn_name = $args_copy->[0];
 
         # is this a built-in function?
-        if ( exists $functions{ $fcn_name } )
+        if ( defined $fcn_name  and  exists $functions{ $fcn_name } )
         {   # correct number of arguments?
             return undef  unless (  $functions{ $fcn_name }->{NARGS} == (@$args_copy - 1)  );
         }   
@@ -792,10 +792,13 @@ sub evaluate
     {
         # first argument is function name
         my $name  = $expr->Arglist->[0];
-        
-        # handle built-in functions
-        if ( exists $functions{$name} )
-        {
+
+        if ( ref $name eq "Function" )
+        {   # anonymous function (TODO: double-check that its ok to be lazy about evaluating the args
+            $val = $name->evaluate( $expr->Arglist, $plist, $level+1);
+        }
+        elsif ( exists $functions{$name} )
+        {   # built-in function
             my $f = $functions{$name}->{FPTR};
             # evaluate all the remaining arguments
             my $eval_args = [];
@@ -807,9 +810,9 @@ sub evaluate
             }             
             $val = $f->(@$eval_args);
         }
-        # handle user-defined functions
+        
         else
-        {
+        {   # lookup user-defined function in paramlist
             unless (defined $plist)
             {  die "Expression->evaluate: Error! Cannot evaluate user Function without ParamList.";  }
         
@@ -890,7 +893,7 @@ sub evaluate_local
     my $err = '';
 
     # clone expression
-    ($local_expr, $err) = $expr->clone( $plist, $level+1 );   
+    ($local_expr, $err) = $expr->clone( $plist, $level+1 );
 
     # evaluate local dependencies in arguments
     foreach my $arg ( @{$local_expr->Arglist} )
@@ -910,9 +913,27 @@ sub evaluate_local
         
         # First argument is the function name
         my $name = $expr->Arglist->[0];
-        # Handle user-defined functions only (non-built-ins)
-        unless( exists $functions{$name} )
+
+        if ( ref $name eq "Function" )
+        {   # anonymous function..
+            my $fcn = $name;
+            # get locally evaluated function
+            my ($local_fcn, $elim_args) = $fcn->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
+
+            # set first argument of FUN expr to the function reference (not the parameter name, since it's anonymous).
+            $local_expr->Arglist->[0] = $local_fcn;
+
+            # eliminate unused arguments
+            foreach my $iarg (@$elim_args)
+            {   splice @{$local_expr->Arglist}, $iarg, 1;   }
+        }
+        elsif ( exists $functions{$name} )
         {
+            # nothing to do
+        }
+        else
+        {   # custom, named function 
+
             # lookup function parameter:
             (my $fcn_param) = $plist->lookup( $name );
             
@@ -922,18 +943,13 @@ sub evaluate_local
                 # get locally evaluated function
                 my ($local_fcn, $elim_args) = $fcn_param->Ref->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
-                # add local_fcn to the parameter list
-                #  (so we can lookup the local function in the future!
-                $plist->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn, 1 );
-
-                # get parameter name for local function
-                $local_expr->Arglist->[0] = $local_fcn->Name;
+                # set first argument of FUN expr to the function reference
+                #  (not the parameter name, since it's anonymous).
+                $local_expr->Arglist->[0] = $local_fcn;
 
                 # eliminate unused arguments
                 foreach my $iarg (@$elim_args)
-                {
-                    splice @{$local_expr->Arglist}, $iarg, 1;
-                }
+                {   splice @{$local_expr->Arglist}, $iarg, 1;   }
             }
             # This function is Really an Observable!!    
             elsif ( $fcn_param->Type eq 'Observable' )
@@ -988,10 +1004,19 @@ sub checkLocalDependency
        
     if ( $expr->Type eq 'FUN' )
     {    
-        # only need to handle custom functions
-        unless ( exists $functions{ $expr->Arglist->[0] } )
-        {    
-            # get fcn parameter
+        my $name = $expr->Arglist->[0];
+
+        if ( ref $name eq "Function" )
+        {   # anonymous function..
+            my $fcn = $name;        
+            return 1  if ( $fcn->checkLocalDependency( $plist, $level+1 ) );
+        }
+        elsif ( exists $functions{$name} )
+        {
+            # nothing to do
+        }
+        else
+        {   # lookup custom function by name
             my ($fcn_param) = $plist->lookup( $expr->Arglist->[0] );
             # is this a true function or an observable?
             if ( $fcn_param->Type eq 'Function' ) 
@@ -1050,7 +1075,8 @@ sub equivalent
     }
     elsif ( $expr2->Type eq 'FUN' )
     {
-        # compare function names
+        # compare function names (or refs)
+        return 0  unless ( ref $expr1->Arglist->[0] eq ref $expr2->Arglist->[0] );
         return 0  unless ( $expr1->Arglist->[0] eq $expr2->Arglist->[0] );
     
         # check argument equivalence
@@ -1105,14 +1131,12 @@ sub toString
     elsif ( $type eq 'VAR' )
     {
         if ( $expand )
-        {
-            # descend recursively into parameter!
+        {   # descend recursively into parameter!
             ( my $param, $err ) = $plist->lookup( $expr->Arglist->[0] );
              $string = $param->toString( $plist, $level+1, $expand );
         }
         else
-        {
-            # just write the parameter name
+        {   # just write the parameter name
             $string = $expr->Arglist->[0];
         }
         #$string= $expr->evaluate($plist);
@@ -1120,22 +1144,38 @@ sub toString
     }
     elsif ( $type eq 'FUN' )
     {
-        if ( $expand )
-        {
-            # TODO ??
-            my @sarr = ();
-            foreach my $i ( 1 .. $#{ $expr->Arglist } ) {
-                push @sarr, $expr->Arglist->[$i]->toString( $plist, $level + 1 );
+        my $name = $expr->Arglist->[0];
+        if ( $expand  or  (ref $name eq "Function") )
+        {   # expand the function
+            my @sarr = ($expr->Arglist->[0]);
+            foreach my $i ( 1 .. $#{$expr->Arglist} )
+            {   push @sarr, $expr->Arglist->[$i]->toString( $plist, $level+1, $expand );   }
+
+            if (ref $name eq "Function")
+            {   # anonymous function
+                my $fcn = $name;
+                (my $local_fcn) = $fcn->evaluate_local( \@sarr, $plist, $level+1 );
+                $string = $local_fcn->Expr->toString( $plist, $level+1, $expand );
             }
-            $string = $expr->Arglist->[0] . '(' . join( ',', @sarr ) . ')';
+            elsif ( exists $Expression::function{$name} )
+            {   # built-in function
+                $string = $expr->Arglist->[0] . '(' . join( ',', @sarr ) . ')';
+            }
+            else
+            {   # lookup custom function by name and expand
+                ( my $param, $err ) = $plist->lookup($name);
+                (my $local_fcn) = $param->Ref->evaluate_local( \@sarr, $plist, $level+1 );
+                $string = $local_fcn->Expr->toString( $plist, $level+1, $expand );
+            }
         }
         else
-        {
+        {   # just write the function and its argument values
             my @sarr = ();
-            foreach my $i ( 1 .. $#{ $expr->Arglist } ) {
+            foreach my $i ( 1 .. $#{$expr->Arglist} )
+            {
                 push @sarr, $expr->Arglist->[$i]->toString( $plist, $level + 1 );
             }
-            $string = $expr->Arglist->[0] . '(' . join( ',', @sarr ) . ')';
+            $string = $name . '(' . join( ',', @sarr ) . ')';
         }
     }
     else
@@ -1351,9 +1391,16 @@ sub toCVodeString
         # the first argument is the function name
         my $fcn_name = $expr->Arglist->[0];
         
-        # first see if this is a built-in function (e.g. sin, cos, exp..)
-        if ( exists $functions{ $expr->Arglist->[0] } )
-        {
+        if ( ref $fcn_name eq "Function" )
+        {   # anonymous function
+            my $fcn = $fcn_name;
+            # we can't call function by name, so we have to expand the function expression with args in place
+            (my $local_fcn) = $fcn->evaluate_local( [@{$expr->Arglist}], $plist, $level+1 );
+            unless (defined $local_fcn) { die "Error in Expression->toMatlabString(): some problem evaluating anonymous function"; }
+            $string = $local_fcn->Expr->toCVodeString($plist, $level+1, $expand);
+        }
+        elsif ( exists $functions{ $expr->Arglist->[0] } )
+        {   # this is a built-in function
             # handle built-ins with 1 argument that have the same name in the C library
             if ( $fcn_name =~ /^(sin|cos|exp|log|abs|sqrt|floor|ceil)$/ )
             {
@@ -1375,11 +1422,8 @@ sub toCVodeString
             else
             {   die "Error in Expression->toCVodeString():  don't know how to handle built-in function $fcn_name!";   }
         }
-        
-        # otherwise, this is a user-defined function or observable
         else
-        {             
-            # lookup parameter
+        {   # user-defined function or observable
             # lookup function parameter:
             (my $fcn_param) = $plist->lookup( $fcn_name );
             unless ($fcn_param)
@@ -1441,10 +1485,10 @@ sub toCVodeString
 #  export to a Matlab M-file.
 sub toMatlabString
 {
-    my $expr   = shift;
-    my $plist  = (@_) ? shift : '';
-    my $level  = (@_) ? shift : 0;
-    my $expand = (@_) ? shift : 0;
+    my $expr   = shift @_;
+    my $plist  = @_ ? shift @_ : undef;
+    my $level  = @_ ? shift @_ : 0;
+    my $expand = @_ ? shift @_ : 0;
 
     if ( $level > $MAX_LEVEL ) {  die "Max recursion depth $MAX_LEVEL exceeded.";  }
 
@@ -1475,8 +1519,15 @@ sub toMatlabString
         # the first argument is the function name
         my $fcn_name = $expr->Arglist->[0];
         
-        # first see if this is a built-in function (e.g. sin, cos, exp..)
-        if ( exists $functions{ $expr->Arglist->[0] } )
+        if ( ref $fcn_name eq "Function" )
+        {   # anonymous function!
+            my $fcn = $fcn_name;
+            # we can't call function by name, so we have to expand the function expression with args in place
+            (my $local_fcn) = $fcn->evaluate_local( [@{$expr->Arglist}], $plist, $level+1 );
+            unless (defined $local_fcn) { die "Error in Expression->toMatlabString(): some problem evaluating anonymous function"; }
+            $string = $local_fcn->Expr->toMatlabString($plist, $level+1, $expand);
+        }
+        elsif ( exists $functions{ $expr->Arglist->[0] } )
         {
             # handle built-ins with 1 argument that have the same name in Matlab
             if ( $fcn_name =~ /^(sin|cos|exp|log|abs|sqrt|floor|ceil)$/ )
@@ -1499,11 +1550,8 @@ sub toMatlabString
             else
             {   die "Error in Expression->toMatlabString():  don't know how to handle built-in function $fcn_name!";   }
         }
-        
-        # otherwise, this is a user-defined function or observable
         else
-        {             
-            # lookup parameter
+        {   # this is a user-defined function or observable
             # lookup function parameter:
             (my $fcn_param) = $plist->lookup( $fcn_name );
             unless ($fcn_param)
@@ -1525,8 +1573,7 @@ sub toMatlabString
                 $string = $fcn_param->getMatlabName();
             }
             else
-            {   die "Error in Expression->toMatlabString(): don't know how to process function expression of non-function type!";   }
-            
+            {   die "Error in Expression->toMatlabString(): don't know how to process function expression of non-function type!";   }   
         }
         
     }
@@ -1545,7 +1592,7 @@ sub toMatlabString
         }
     }
 
-    return ($string);
+    return $string;
 }
 
 

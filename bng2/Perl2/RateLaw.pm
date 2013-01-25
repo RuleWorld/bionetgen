@@ -1,10 +1,8 @@
-# $Id: RateLaw.pm,v 1.14 2007/07/06 04:47:47 faeder Exp $
-
 package RateLaw;
 
 # pragmas
-#use strict;
-#use warnings;
+use strict;
+use warnings;
 
 # Perl Modules
 use Class::Struct;
@@ -17,126 +15,23 @@ use Carp qw(cluck);
 use BNGUtils;
 use SpeciesGraph;
 
-
-### THE COMMENTED CODE IS AN EXPERIMENT IN REPLACING THE STRUCT MODULE 
-###  WITH OUR OWN CUSTOM CLASSES!!!
-
-# Constants
-#use constant TYPE=>0, CONSTANTS=>1, FACTOR=>2, TOTALRATE=>3, ENERGYHASH=>4;
-
-## $rl = RateLaw::new( )
-## $rl = RateLaw::new( $init )
-#sub new
-#{
-#    my $class = shift @_;
-#    my $init  = @_ ? shift @_ : {};
-
-#    my $rl => [ undef, [], undef, undef, {} ];
-#    bless $rl, $class;
-#           
-#    unless (ref $init eq "HASH")
-#    {   confess("expecting hash reference for INIT argument.");  }
-
-#    while ( my ($key, $value) = each %$init )
-#    {
-#        if    ($key eq "Type")       { $rl->setTotalRate( $value );  }
-#        elsif ($key eq "Constants")  { $rl->setConstants( $value );  }
-#        elsif ($key eq "Factor")     { $rl->setFactor( $value );     }
-#        elsif ($key eq "TotalRate")  { $rl->setTotalRate( $value );  }
-#        elsif ($key eq "EnergyHash") { $rl->setEnergyHash( $value ); }
-#        else {   carp("unrecognized member '$key'.");   }
-#    }
-
-#    ++$n_RateLaw;
-#    return $rl;
-#}
-
-
-###################
-### get/set methods
-#sub setType
-#{
-#    my ($rl, $value) = @_;
-#    unless (ref \$value eq 'SCALAR')
-#    {   confess("expecting scalar value.");   }
-#    $rl->[TYPE] = $value;
-#}
-#sub getType
-#{
-#    my ($rl) = @_;
-#    return $rl->[TYPE];
-#}
-##
-#sub setConstants
-#{
-#    my ($rl, $value) = @_;
-#    unless (ref $value eq 'ARRAY')
-#    {   confess("expecting array reference.");   }
-#    $rl->[CONSTANTS] = $value;
-#}
-#sub getConstants
-#{
-#    my ($rl) = @_;
-#    return $rl->[CONSTANTS];
-#}
-##
-#sub setFactor
-#{
-#    my ($rl, $value) = @_;
-#    unless (ref \$value eq 'SCALAR')
-#    {   confess("expecting scalar value.");   }
-#    $rl->[FACTOR] = $value;
-#    return undef;
-#}
-#sub getFactor
-#{
-#    my ($rl) = @_;
-#    return $rl->[FACTOR];
-#}
-##
-#sub setTotalRate
-#{
-#    my ($rl, $value) = @_;
-#    unless (ref \$value eq 'SCALAR')
-#    {   confess("expecting scalar value.");   }
-#    $rl->[TOTALRATE] = $value;
-#    return undef;
-#}
-#sub getTotalRate
-#{
-#    my ($rl) = @_;
-#    return $rl->[TOTALRATE];
-#}
-##
-#sub setEnergyHash
-#{
-#    my ($rl, $value) = @_;
-#    unless (ref \$value eq 'HASH')
-#    {   confess("expecting hash reference.");   }
-#    $rl->[ENERGYHASH] = $value;
-#}
-#sub getEnergyHash
-#{
-#    my ($rl) = @_;
-#    return $rl->[ENERGYHASH];
-#}
-
-### END OF EXPERIMENT
-###
-
-
+# Class definition
 struct RateLaw =>
 {
     Type        => '$',       # Ele, Sat, Hill, MM, Arrhenius, FunctionProduct
     Constants   => '@',       # If function, first constant is the function name and the following are local args
-    Factor      => '$',
+    Factor      => '$',       # Statistical or Multiplicity factor
     TotalRate   => '$',       # If true, this ratelaw specifies the Total reaction rate.
                               #   If false (default), the ratelaw specifies a Per Site reaction rate.
-    EnergyHash  => '%'        # For energyBNG: Stores a map from rxn energy stoichiometry fingerprints 
+    EnergyHash  => '%',       # For energyBNG: Stores a map from rxn energy stoichiometry fingerprints 
                               #   to customized ratelaws for rxns with such a fingerprint.  This allows
                               #   us to lookup and reuse ratelaws (rather than creating a unique ratelaw
                               #   for every reaction induced by a rule).
+    LocalFcnHash => '%'       # Stores a map from local function strings to the local fcns. This allows
+                              #   us to lookup and reuse localfcn evaluations (rather than creating a unique
+                              #   expression for every local evaluation induced by a rule).
 };
+
 
 
 # track total number of ratelaws
@@ -152,14 +47,9 @@ my $n_RateLaw = 0;
 sub copy
 {
     my $rl = shift @_;
-    
-    $rl_copy = RateLaw::new();
-    $rl_copy->Type( $rl->Type );
-    @{$rl_copy->Constants} = @{$rl->Constants};
-    $rl_copy->Factor( $rl->Factor );
-    $rl_copy->TotalRate( $rl->TotalRate );
-    %{$rl_copy->EnergyHash} = %{$rl_copy->EnergyHash};
-    
+    my $rl_copy = RateLaw->new( Type=>$rl->Type, Constants=>[@{$rl->Constants}], Factor=>$rl->Factor, TotalRate=>$rl->TotalRate );
+    #%{$rl_copy->EnergyHash} = %{$rl_copy->EnergyHash};
+    #%{$rl_copy->LocalFcnHash} = %{$rl_copy->LocalFcnHash};
     ++$n_RateLaw;
     return $rl_copy;
 }
@@ -185,13 +75,13 @@ sub newRateLaw
     my $reactants  = @_ ? shift @_ : undef;
     my $basename   = @_ ? shift @_ : "rateLaw";
 
-
     my $string_left = $$strptr;
-    my ($name, $rate_law_type, $rate_fac);
+    my $name;
+    my $rate_law_type;
+    my $rate_fac = 1;
     my @rate_constants = ();
-    my ($param, $err);
-
-    $rate_fac = 1;
+    my $param;
+    my $err;
 
     # if totalRate, we need to force expression into a function,
     #  even if it's a constant function.
@@ -200,14 +90,12 @@ sub newRateLaw
     # are we in energy BNG mode?
     my $energyBNG = exists $model->Options->{energyBNG} ? $model->Options->{energyBNG} : 0;
 
-    # Handle legacy Sat and MM RateLaw types
-    # TODO: convert Sat, MM and Hill into regular functions?
+    # Determine type of RateLaw
     if ( $string_left =~ s/^(Sat|MM|Hill)\(// )
-    {
+    {   # TODO: convert Sat, MM and Hill into regular functions?
         $rate_law_type = $1;
         
         if ($totalRate) { return undef, "TotalRate keyword is not compatible with $rate_law_type type RateLaw."; }
-
         # Validate remaining rate constants
         my $found_end = 0;
         while ( $string_left =~ s/^(\w+)\s*// )
@@ -217,13 +105,9 @@ sub newRateLaw
             if ($err) {  return '', $err;  }
             push @rate_constants, $rc;
             next if ($string_left =~ s/^,\s*//);
-            if ($string_left =~ s/\)//){
-                $found_end=1;
-            }
+            if ($string_left =~ s/\)//) { $found_end=1; }
         }
-        unless ($found_end) {
-            return undef, "RateLaw not terminated at $string_left";
-        }
+        unless ($found_end) { return undef, "RateLaw not terminated at $string_left"; }
     }
     elsif ( $string_left =~ s/^FunctionProduct\(\s*// )
     {
@@ -238,12 +122,13 @@ sub newRateLaw
 
         # Read function 1
         my $expr1 = Expression->new();
-        my $err = $expr1->readString( \$expr_string_1, $model->ParamList );
+        $err = $expr1->readString( \$expr_string_1, $model->ParamList );
         if ($err) { return '', $err }
         # get name for ratelaw
         my $name1 = $expr1->getName( $model->ParamList, "localFuncL", $force_fcn );
         # retreive param with this name
-        (my $param1, my $err) = $model->ParamList->lookup($name1);
+        (my $param1, $err) = $model->ParamList->lookup($name1);
+        if ($err) { return undef, $err; }
 
         # Read function 2
         my $expr2 = Expression->new();
@@ -252,68 +137,64 @@ sub newRateLaw
         # get name for ratelaw
         my $name2 = $expr2->getName( $model->ParamList, "localFuncR", $force_fcn );
         # retreive param with this name
-        (my $param2, my $err) = $model->ParamList->lookup($name2);
+        (my $param2, $err) = $model->ParamList->lookup($name2);
+        if ($err) { return undef, $err; }
 
         # set ratelaw type
         $rate_law_type = "FunctionProduct";
-        # add both functions to the list of "constants"
-        push @rate_constants, ($name1, $name2);
+        # constants are:  fcn name 1, fcn name 2, array of fcn1 args, array of fcn2 args
+        my $args1 = ($param1->Type eq "Function") ? [@{$param1->Ref->Args}] : [];
+        my $args2 = ($param1->Type eq "Function") ? [@{$param2->Ref->Args}] : [];
+
+        push @rate_constants, ($name1, $name2, $args1, $args2 );
     }
     elsif ( $string_left =~ s/^Arrhenius\(\s*// )
     {
-        #print STDERR "Parseing Arrhenius RateLaw..\n";
         if ($totalRate)     { return undef, "TotalRate keyword is not compatible with Arrhenius type RateLaw."; }
         unless ($energyBNG) { return undef, "Arrhenius type RateLaw is not available unless energyBNG is enabled."; }       
 
-        my $err;
         $rate_law_type = "Arrhenius"; 
 
         # extract phi term
-        #print STDERR "  string_left = $string_left\n";
         my $phi_expr = Expression->new();
         $err = $phi_expr->readString( \$string_left, $model->ParamList, "," );
         if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting phi string): $err"; }
         my $phi_name = $phi_expr->getName( $model->ParamList, "phi" );
         (my $phi_param, $err) = $model->ParamList->lookup($phi_name);
+        if ($err) { return undef, $err; }
 
         # remove separating comma and quotes
-        #$string_left =~ s/^\s*\"\s*,\s*\"\s*//;
         $string_left =~ s/^\s*,\s*//;
 
         # extract activation energy expression
-        #print STDERR "  string_left = $string_left\n";
         my $actE_expr = Expression->new();
         $err = $actE_expr->readString( \$string_left, $model->ParamList );
         if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting activation energy string): $err"; }
-        my $actE_name = $actE_expr->getName( $model->ParamList, "actEnergy" );
+        my $actE_name = $actE_expr->getName( $model->ParamList, "actE" );
         (my $actE_param, $err) = $model->ParamList->lookup($actE_name);
+        if ($err) { return undef, $err; }
 
         # remove trailing parens
-        #$string_left =~ s/^\s*\"\s*\)\s*//;
         $string_left =~ s/^\s*\)\s*//;
-        #print STDERR "  string_left = $string_left\n";
 
         # put name of rate parameter (or fcn) on the constants array
         push @rate_constants, $phi_name, $actE_name;
         if ($actE_param->Type eq "Function")
         {   push @rate_constants, @{$actE_param->Ref->Args};  }
-
-        #print STDERR "  rate constants = ", join(",", @rate_constants), "\n";
-        #print STDERR "..done\n";
     }
     elsif ( $string_left =~ /\S+/ )
     {
         # Handle expression for rate constant of elementary reaction
         # Read expression
         my $expr = Expression->new();
-        my $err = $expr->readString( \$string_left, $model->ParamList, "," );
+        $err = $expr->readString( \$string_left, $model->ParamList, "," );
         if ($err) { return '', $err; }
 
         # get name for ratelaw
         my $name = $expr->getName( $model->ParamList, $basename, $force_fcn );
         # retreive param with this name
         (my $param, $err) = $model->ParamList->lookup($name);
-
+        if ($err) { return '', $err; }
 
         my @local_args = ();
         # determine ratelaw type
@@ -335,7 +216,7 @@ sub newRateLaw
         push @rate_constants, $name, @local_args;
     }
     else
-    {   # REMOVED IMPLICIT RATELAWS!!  --Justin
+    {   # no ratelaw found
         return undef, "No RateLaw supplied for Reaction Rule.";
     }
 
@@ -348,8 +229,8 @@ sub newRateLaw
     my $rl = RateLaw->new( Type=>$rate_law_type, Constants=>[@rate_constants], TotalRate=>$totalRate, Factor=>$rate_fac );
 
     # Validate rate law type
-    if ( $err = $rl->validate($reactants,$model) )
-    {   return undef, $err;   }
+    $err = $rl->validate($reactants,$model);
+    if ($err) { return undef, $err; }
 
     ++$n_RateLaw;
     return $rl;
@@ -369,49 +250,41 @@ sub newRateLaw
 # create a new ratelaw from a .NET string
 sub newRateLawNet
 {
-    my $strptr = shift;
-    my $plist  = shift;
+    my $strptr = shift @_;
+    my $plist  = shift @_;
 
     my $string_left = $$strptr;
-    my $name, $rate_law_type, $rate_fac;
+    my $name;
+    my $rate_law_type;
+    my $rate_fac = 1;
     my @rate_constants = ();
-    my $param, $err;
+    my $param;
+    my $err;
 
     # Find statistical factor for rate law
     if ( $string_left =~ s/^([^*\s,]*)\*// )
     {
         my $value;
-        ( $param, $err ) = $plist->lookup($1);
+        ($param, $err) = $plist->lookup($1);
         if ($param)
         {
             $value = $param->evaluate([], $plist);
-            #$value= $1;
-            #print "val=$value\n";
         }
         else
         {
             unless (isReal($1))
-            {   return ( '', "Coefficient for rate law ($1) must be a parameter or a real number");   }
+            {   return undef, "Coefficient for rate law ($1) must be a parameter or a real number";   }
             
             $value = $1;
         }
         $rate_fac = $value;
     }
-    else
-    {
-        $rate_fac = 1;
-    }
-
-    #print "rf=$rate_fac\n";
 
     # Get rate law type or name
     if ( $string_left =~ s/^(\w+)\s*// )
-    {
-        $name = $1;
-        #print "name=$name|$string_left\n";
-    }
+    {   $name = $1;   }
     else
-    {   return '', "Invalid rate law specification in $string_left";   }
+    {   return undef, "Invalid rate law specification in $string_left";   }
 
     if ( $string_left =~ /^\S+/ )
     {
@@ -419,17 +292,16 @@ sub newRateLawNet
         $rate_law_type = $name;
 
         # Validate remaining rate constants
-        while ( $string_left =~ s/^([A-Za-z0-9_]+)\s*// )
+        while ( $string_left =~ s/^(\w+)\s*// )
         {
             my $rc = $1;
-            #print "rc=$rc\n";
             ( $param, $err ) = $plist->lookup($rc);
             if ($err) {  return ( '', $err );  }
             push @rate_constants, $rc;
         }
 
         if ( $string_left =~ /\S+/ )
-        {   return ( '', "Invalid rate law syntax in $string_left" );   }
+        {   return undef, "Invalid rate law syntax in $string_left";   }
     }
     else 
     {
@@ -441,7 +313,7 @@ sub newRateLawNet
         else
         {   # look up parameter
             ($param, $err) = $plist->lookup($name);
-            if ($err) {  return '', $err;  }
+            if ($err) {  return undef, $err;  }
 
             # determine ratelaw type
             if ( $param->Type =~ /^Constant/ )
@@ -462,20 +334,16 @@ sub newRateLawNet
 
     # Remove leading whitespace
     $string_left =~ s/^\s*//;
-
     # Done processing input string
     $$strptr = $string_left;
 
     # Create new RateLaw object
     my $rl;
-    $rl = RateLaw->new();
-    $rl->Type($rate_law_type);
-    $rl->Constants( [@rate_constants] );
-    $rl->TotalRate(0);  
-    $rl->Factor($rate_fac);
+    $rl = RateLaw->new( Type=>$rate_law_type, Constants=>[@rate_constants], TotalRate=>0, Factor=>$rate_fac );
 
     # Validate rate law type
-    if ( $err = $rl->validate ) {  return '', $err;  }
+    $err = $rl->validate();
+    if ($err) { return undef, $err; }
 
     ++$n_RateLaw;
     return $rl;
@@ -497,17 +365,16 @@ sub evaluate_local
     # (1) evaluate deltaG_rxn
     # (2) evaluate local activation energy
 
+    my $err;
+
     my $local_rl = $rl;
     if ($rl->Type eq "Arrhenius" )
     { 
-        # get deltaG fingerprint
-        my $fingerprint = "$dir;";
-        $fingerprint .= $rl->get_deltaG_fingerprint( $model->EnergyPatterns );
-     
         # evaluate activation energy in local context and get activation energy fingerprint
         my $local_fcn;
+        my $lfcn_fingerprint;
         my ($param) = $model->ParamList->lookup($rl->Constants->[1]);
-        if (defined $param  and  $param->Type eq "Function" )
+        if (defined $param  and  $param->Type eq "Function")
         {
             my $fcn = $param->Ref;
             if ( $fcn->checkLocalDependency($model->ParamList) )
@@ -516,20 +383,44 @@ sub evaluate_local
                 my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
                 # evaluate function with local values to get local function
                 ($local_fcn) = $param->Ref->evaluate_local( \@local_args, $model->ParamList );
+
                 # add to localfunc string to fingerprint
-                $fingerprint .= ";" . $local_fcn->Expr->toString();
+                $lfcn_fingerprint = $local_fcn->Expr->toString($model->ParamList, 0, 2);
+
+                #  lookup localfcn fingerprint in hash
+                if ( exists $rl->LocalFcnHash->{$lfcn_fingerprint} )
+                {   # fetch the original localfcn
+                    $local_fcn = $rl->LocalFcnHash->{$lfcn_fingerprint};
+                }
+                else
+                {   # add this new localfcn evaluation to the hash
+                    # get a name for the anonymous function
+                    my $name = $model->ParamList->getName( $fcn->Name );
+                    $local_fcn->Name($name);
+                    # add to paramlist
+                    $model->ParamList->set( $name, $local_fcn->Expr, 1, 'Function', $local_fcn ); 
+                    $rl->LocalFcnHash->{$lfcn_fingerprint} = $local_fcn;
+                }
             }
             else
             {
                 # add to localfunc string to fingerprint
-                $fingerprint .= ";" . $fcn->Name;
+                $lfcn_fingerprint .= ";" . $fcn->Name;
             }
         }
         else
         {   # no local context in this parameter, create 
             # add to localfunc string to fingerprint
-            $fingerprint .= ";" . $rl->Constants->[1];
+            $lfcn_fingerprint .= ";" . $rl->Constants->[1];
         }
+
+
+        # get deltaG fingerprint
+        my $fingerprint = $rxn->RxnRule->Direction . ";";
+        $fingerprint .= $rl->get_deltaG_fingerprint( $rxn, $model->EnergyPatterns );
+        # add localfcn to fingerprint
+        $fingerprint .= ";$lfcn_fingerprint";
+
 
         #  lookup fingerprint in RateLaw hash
         if ( exists $rl->EnergyHash->{$fingerprint} )
@@ -550,9 +441,9 @@ sub evaluate_local
 
             # 2a) compute deltaG terms
             my @deltaG_terms = ();
-            foreach my $epatt ( @$epatts )
+            foreach my $epatt ( @{$model->EnergyPatterns} )
             {
-                (my $expr, $err) = $epatt->getEnergyExpression( $rxn, $model->Paramlist );
+                (my $expr, $err) = $epatt->getDeltaEnergy( $rxn, $model->ParamList );
                 if (defined $expr)
                 {   push @deltaG_terms, $expr;   }
             }
@@ -576,7 +467,6 @@ sub evaluate_local
             {   die "ERROR: invalid direction (must be 1 or -1)";   }
 
             # 4) computer total activation energy
-            my $phi_deltaG_expr;
             if (defined $deltaG_expr)
             {
                 my $phi_deltaG_expr = Expression::operate("*", [$phi_expr, $deltaG_expr], $model->ParamList);
@@ -587,10 +477,7 @@ sub evaluate_local
             $arrhenius_expr = Expression::operate("-", [$arrhenius_expr], $model->ParamList);
             $arrhenius_expr = Expression::operate("FUN", ["exp", $arrhenius_expr], $model->ParamList);
 
-            #print STDERR "  arrhenius expr = ", $arrhenius_expr->toString($model->ParamList), "\n";
-
             # assign local expr to a parameter
-            #my $local_paramname = $model->ParamList->getName($rl->Constants->[1]);
             my $local_paramname = $model->ParamList->getName("Arrhenius");
             $model->ParamList->set( $local_paramname, $arrhenius_expr, 1);
 
@@ -608,10 +495,8 @@ sub evaluate_local
         (my $rl_param) = $model->ParamList->lookup( $rl->Constants->[0] );
         unless ( $rl_param->Type eq 'Function' )
         {   die "Error in RateLaw->evaluate_local(): cannot find parameter for functional RateLaw!";   }
-                       
         # get function object
         my $fcn = $rl_param->Ref;                   
-        
         # check for local dependency
         if ( $fcn->checkLocalDependency($model->ParamList) )
         {
@@ -620,18 +505,23 @@ sub evaluate_local
             my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
             (my $local_fcn) = $fcn->evaluate_local( \@local_args, $model->ParamList );
             #  lookup fingerprint in RateLaw hash.
-            my $fingerprint = $local_fcn->Expr->toString();
-            if ( exists $rl->EnergyHash->{$fingerprint} )
+            my $fingerprint = $local_fcn->Expr->toString($model->ParamList, 0, 2);
+            if ( exists $rl->LocalFcnHash->{$fingerprint} )
             {   # fetch ratelaw with this fingerprint
-                $local_rl = $rl->EnergyHash->{$fingerprint};
+                $local_rl = $rl->LocalFcnHash->{$fingerprint};
             }
             else
-            {   # add local_fcn to the parameter list
-                #  (so we can lookup the local function in the future!)
-                $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );    
+            {   # add this new localfcn evaluation to the hash
+                # get a name for the anonymous function
+                my $name = $model->ParamList->getName( $fcn->Name );
+                $local_fcn->Name($name);
+                # add to paramlist
+                $model->ParamList->set( $name, $local_fcn->Expr, 1, 'Function', $local_fcn ); 
                 # create new ratelaw
-                $local_rl = RateLaw->new( Type=>'Function', Constants=>[$local_fcn->Name], Factor=>$local_rl->Factor, TotalRate=>0 );
+                $local_rl = RateLaw->new( Type=>'Function', Constants=>[$name], Factor=>$local_rl->Factor, TotalRate=>0 );
                 ++$RateLaw::n_Ratelaw;
+                # add this ratelaw to LocalFcnHash
+                $rl->LocalFcnHash->{$fingerprint} = $local_rl;
             }
         }
     }
@@ -668,6 +558,8 @@ sub equivalent
     my $rl2   = shift @_;
     my $plist = (@_) ? shift : undef;
 
+    my $err;
+
     # first make sure we're dealing with defined ratelaws
     return 0  unless (      defined $rl1  and  (ref $rl1 eq 'RateLaw') 
                        and  defined $rl2  and  (ref $rl2 eq 'RateLaw')  );
@@ -687,11 +579,11 @@ sub equivalent
     if ( $rl1->Type eq 'Function' )
     {
         # check function equivalence: (ignore name)
-        my ($par1, $err) = $plist->lookup( $rl1->Constants->[0] );
-        return 0  if ($err);
+        (my $par1, $err) = $plist->lookup( $rl1->Constants->[0] );
+        if ($err) { return 0; }
         
-        my ($par2, $err) = $plist->lookup( $rl2->Constants->[0] );
-        return 0  if ($err);
+        (my $par2, $err) = $plist->lookup( $rl2->Constants->[0] );
+        if ($err) { return 0; }
 
         return 0  unless ( Function::equivalent($par1->Ref, $par2->Ref, $plist) );
     }
@@ -699,9 +591,7 @@ sub equivalent
     {
         # compare arguments (all arguments are parameter names)
         for ( my $i = 0;  $i < @{$rl1->Constants};  ++$i )
-        {
-            return 0  unless ( $rl1->Constants->[$i] eq $rl2->Constants->[$i] );
-        }
+        {   return 0  unless ( $rl1->Constants->[$i] eq $rl2->Constants->[$i] );   }
     }
     # TODO: handling for FunctionProduct    
 
@@ -718,58 +608,69 @@ sub equivalent
 # write ratelaw as a string
 sub toString
 {
-    my $rl        = shift @_;
-    my $rxn_mult  = @_ ? shift @_ : undef;
-    my $netfile   = @_ ? shift @_ : 0;
-    my $plist     = @_ ? shift @_ : undef;
+    my $rl       = shift @_;
+    my $rxn_mult = @_ ? shift @_ : undef;
+    my $netfile  = @_ ? shift @_ : 0;
+    my $plist    = @_ ? shift @_ : undef;
 
     my $string = '';
 
-    # handle ratelaw multiplier
+    # NOTE: netfile can handle a single scalar multiplier before the ratelaw,
+    #  so we have to evaluate the product of the ratelaw factor and rxn multiplier
+
+    # ratelaw factor
     my $ratelaw_mult = undef;
-    if ( (defined $rl->Factor)  and  ($rl->Factor ne '1')  and  ($rl->Factor ne '') )
-    {   
-        $ratelaw_mult = Expression::newNumOrVar($rl->Factor);
-    }
-    
-    if ( defined $rxn_mult )
+    if ( defined $rl->Factor  and  $rl->Factor != 1 )
+    {   $ratelaw_mult = Expression::newNumOrVar($rl->Factor);   }
+    # rxn multiplier
+    if ( defined $rxn_mult  and  $rxn_mult != 1 )
     {
         if ( defined $ratelaw_mult )
-        {
-            $ratelaw_mult = Expression::operate( '*', [($ratelaw_mult, $rxn_mult)], $plist );
-        }
+        {   $ratelaw_mult = Expression::operate('*', [($ratelaw_mult, $rxn_mult)], $plist);   }
         else
         {   $ratelaw_mult = $rxn_mult;   }
     }
-
-    # evaluate ratelaw multiplier and add to the string
+    # evaluate product
     if ( defined $ratelaw_mult ) { $string .= $ratelaw_mult->evaluate($plist) . "*"; }
 
     # now write the ratelaw to the string
     my $type = $rl->Type;
-    my $rcs  = $rl->Constants->[0];
     if ( $type eq "Ele" )
     {
         # nothing more to do.. just write the rate constant 
-        $string .= sprintf "%s", $rcs;
+        $string .= $rl->Constants->[0];
     }
-    elsif ( $type eq 'Function' )
+    elsif ( $type eq "Function" )
     {
-        # we need to write function name and pointer arguments!
-        my $last = @{$rl->Constants}-1;
-        my @local_refs = @{$rl->Constants}[1..$last];
-
-        $string .= $rcs;
+        $string .= $rl->Constants->[0];
         unless ($netfile)
-        {   $string .= "(" . join(",", @local_refs) . ")";   }
+        {   # write arguments
+            my $last = @{$rl->Constants}-1;
+            $string .= '(' . join(',', @{$rl->Constants}[1..$last]) . ')';
+        }
     }
-    #TODO FunctionProduct
-    else
+    elsif ( $type eq "FunctionProduct" )
     {
+        $string .= 'FunctionProduct("';
+        $string .= $rl->Constants->[0] . '(' . join(',', @{$rl->Constants->[2]}) . ')';
+        $string .= '","';
+        $string .= $rl->Constants->[1] . '(' . join(',', @{$rl->Constants->[3]}) . ')';
+        $string .= '")';
+    }
+    elsif ( $type eq "Arrhenius" )
+    {
+        my $last = @{$rl->Constants}-1;
+        $string .= 'Arrhenius(';
+        $string .= $rl->Constants->[0] . ',';
+        $string .= $rl->Constants->[1] . '(' . join(',', @{$rl->Constants}[2..$last]) . ')';
+        $string .= ')';
+    }
+    else
+    {   # Sat, MM, Hill
         if ($netfile){
-            $string.= $type." ".join(' ', @{$rl->Constants});
+            $string.= $type . " " . join(' ', @{$rl->Constants});
         } else {
-            $string.= $type."(".join(',', @{$rl->Constants}).")";
+            $string.= $type . "(" . join(',', @{$rl->Constants}) . ")";
         }
     }
 
@@ -791,24 +692,18 @@ sub toCVodeString
     my $rrefs      = shift;
     my $plist      = (@_) ? shift : undef;
 
-
-    # handle ratelaw multiplier
+    # ratelaw factor
     my $ratelaw_mult = undef;
-    if ( (defined $rl->Factor)  and  ($rl->Factor ne '1')  and  ($rl->Factor ne '') )
-    {   
-        $ratelaw_mult = Expression::newNumOrVar( $rl->Factor );
-    }
-    
-    if ( defined $rxn_mult )
+    if ( defined $rl->Factor  and  $rl->Factor != 1 )
+    {   $ratelaw_mult = Expression::newNumOrVar($rl->Factor);   }
+    # rxn multiplier
+    if ( defined $rxn_mult  and  $rxn_mult != 1 )
     {
         if ( defined $ratelaw_mult )
-        {
-            $ratelaw_mult = Expression::operate( '*', [($ratelaw_mult, $rxn_mult)], $plist );
-        }
+        {   $ratelaw_mult = Expression::operate('*', [($ratelaw_mult, $rxn_mult)], $plist);   }
         else
         {   $ratelaw_mult = $rxn_mult;   }
     }
-    
     
     # begin gather ratelaw terms
     my @rl_terms = ();    
@@ -888,26 +783,21 @@ sub toCVodeString
 # write ratelaw as a CVode formula
 sub toMatlabString
 {
-    my $rl         = shift;
-    my $rxn_mult   = shift;
-    my $reactants  = shift;
-    my $rrefs      = shift;
-    my $plist      = (@_) ? shift : undef;
+    my $rl         = shift @_;
+    my $rxn_mult   = shift @_;
+    my $reactants  = shift @_;
+    my $rrefs      = shift @_;
+    my $plist      = @_ ? shift @_ : undef;
 
-
-    # handle ratelaw multiplier
+    # ratelaw factor
     my $ratelaw_mult = undef;
-    if ( (defined $rl->Factor)  and  ($rl->Factor ne '1')  and  ($rl->Factor ne '') )
-    {   
-        $ratelaw_mult = Expression::newNumOrVar( $rl->Factor );
-    }
-    
-    if ( defined $rxn_mult )
+    if ( defined $rl->Factor  and  $rl->Factor != 1 )
+    {   $ratelaw_mult = Expression::newNumOrVar($rl->Factor);   }
+    # rxn multiplier
+    if ( defined $rxn_mult  and  $rxn_mult != 1 )
     {
         if ( defined $ratelaw_mult )
-        {
-            $ratelaw_mult = Expression::operate( '*', [($ratelaw_mult, $rxn_mult)], $plist );
-        }
+        {   $ratelaw_mult = Expression::operate('*', [($ratelaw_mult, $rxn_mult)], $plist);   }
         else
         {   $ratelaw_mult = $rxn_mult;   }
     }
@@ -973,7 +863,6 @@ sub toMatlabString
     }
     else
     {
-        #$string.= $type."(".join(',', @{$rl->Constants}).")";
         return  "Ratelaws of type $type are not yet supported by writeMfile()";
     }
         
@@ -991,27 +880,29 @@ sub toMatlabString
 # write ratelaw in XML format
 sub toXML
 {
-    my $rl      = shift;
-    my $indent  = shift;
-    my $rr_id   = (@_) ? shift : '';       # rxn rule id
-    my $plist   = (@_) ? shift : undef;    # parameter list
-    my $rrefs   = (@_) ? shift : undef;    # rxnrule reference hash
-
-
-    # separate handling for function ratelaws
-    if ( $rl->Type eq "Function" )
-    {
-        return ( $rl->toXMLFunction( $indent, $rr_id, $plist, $rrefs ) );
-    }
-
-    # separate handling for function product ratelaws
-    if ( $rl->Type eq "FunctionProduct" )
-    {
-        return ( $rl->toXMLFunctionProduct( $indent, $rr_id, $plist, $rrefs ) );
-    }
-
-    # handle other ratelaw types
+    my $rl      = shift @_;
+    my $indent  = shift @_;
+    my $rr_id   = @_ ? shift @_ : '';       # rxn rule id
+    my $plist   = @_ ? shift @_ : undef;    # parameter list
+    my $rrefs   = @_ ? shift @_ : undef;    # rxnrule reference hash
     
+    if ( $rl->Type eq "Function" )
+    {   # separate handling for Function ratelaws
+        return $rl->toXMLFunction($indent, $rr_id, $plist, $rrefs);
+    }
+
+    if ( $rl->Type eq "FunctionProduct" )
+    {   # separate handling for FunctionProduct ratelaws
+        return $rl->toXMLFunctionProduct($indent, $rr_id, $plist, $rrefs);
+    }
+
+    if ( $rl->Type eq "Arrhenius" )
+    {   # not implemented since NFsim doesn't know how to use Arrhenius RateLaw!
+        warn "RateLaw::toXML does not yet support Arrhenius RateLaw!";
+        return "";
+    }   
+
+    # handle other ratelaw types  
     # define ratelaw id
     my $id;
     if ( $rr_id ) 
@@ -1019,16 +910,13 @@ sub toXML
     else
     {   $id = "RateLaw" . $RateLaw::n_RateLaw;   }
 
+    # begin XML string
     my $string = $indent . "<RateLaw";
 
-
-    # Attributes
     # id
     $string .= " id=\"" . $id . "\"";
-
     # type
     $string .= " type=\"" . $rl->Type . "\"";
-
     # total rate attribute
     $string .= " totalrate=\"" . $rl->TotalRate . "\"";
 
@@ -1041,7 +929,7 @@ sub toXML
     my $indent2 = "  " . $indent;
 
     $ostring .= $indent2 . "<ListOfRateConstants>\n";
-    foreach my $rc ( @{ $rl->Constants } )
+    foreach my $rc ( @{$rl->Constants} )
     {
         my $indent3 = "  " . $indent2;
         ### How to handle references to named parameters?
@@ -1054,16 +942,14 @@ sub toXML
     # Termination
     if ($ostring)
     {
-        $string .= ">\n";                      # terminate tag opening
+        $string .= ">\n";
         $string .= $ostring;
         $string .= $indent . "</RateLaw>\n";
     }
     else
-    {
-        $string .= "/>\n";                     # short tag termination
-    }
+    {   $string .= "/>\n";   }
     
-    return ( $string );
+    return $string;
 }
 
 
@@ -1139,6 +1025,8 @@ sub toXMLFunctionProduct
     my $plist   = @_ ? shift @_ : undef;    # parameter list
     my $rrefs   = @_ ? shift @_ : undef;    # rxnrule reference hash
 
+    my $err;
+
     # define ratelaw id
     my $id;
     if ( $rr_id ) 
@@ -1163,7 +1051,7 @@ sub toXMLFunctionProduct
 
     # Write References
     my $indent2 = $indent.'  ';
-    my ( $param1, $err ) = $plist->lookup( $rl->Constants->[0] );
+    (my $param1, $err) = $plist->lookup( $rl->Constants->[0] );
     my $fun1 = $param1->Ref;
     $string .= $indent2 . "<ListOfArguments1>\n";
     foreach my $arg ( @{$fun1->Args} )
@@ -1180,8 +1068,8 @@ sub toXMLFunctionProduct
     $string .= $indent2 . "</ListOfArguments1>\n";
 
     # Write References
-    my $indent2 = $indent.'  ';
-    my ( $param2, $err ) = $plist->lookup( $rl->Constants->[1] );
+    $indent2 = $indent.'  ';
+    (my $param2, $err) = $plist->lookup( $rl->Constants->[1] );
     my $fun2 = $param2->Ref;
     $string .= $indent2 . "<ListOfArguments2>\n";
     foreach my $arg ( @{$fun2->Args} )
@@ -1220,7 +1108,7 @@ sub validate
     {
   
     }
-    elsif ( $rl->Type eq 'Sat' )
+    elsif ( $rl->Type eq "Sat" )
     {
         if ( @{$rl->Constants} < 2 )
         {   # Too few rate constants
@@ -1234,7 +1122,7 @@ sub validate
             }
         }
     }
-    elsif ( $rl->Type eq 'MM' )
+    elsif ( $rl->Type eq "MM" )
     {
         if ( @{$rl->Constants} != 2 )
         {   # incorrect number of rate constants
@@ -1269,29 +1157,29 @@ sub validate
             }
         }
     }
-    elsif ( $rl->Type eq 'Hill' )
+    elsif ( $rl->Type eq "Hill" )
     {
         if ( @{$rl->Constants} != 3 )
         {   # incorrect number of rate constants
             return "Hill type ratelaws require exactly 3 rate constants";
         }
     }
-    elsif ( $rl->Type eq 'Function' )
+    elsif ( $rl->Type eq "Function" )
     {
         # Validate local arguments here ?
     }
-    elsif ( $rl->Type eq 'FunctionProduct' )
+    elsif ( $rl->Type eq "FunctionProduct" )
     {
         # Validate local arguments here ?
     }
-    elsif ( $rl->Type eq 'Arrhenius' )
+    elsif ( $rl->Type eq "Arrhenius" )
     {
         # Validate local arguments here ?
+        # TODO: 1) verify that phi is not a function
+        #       2) verify that actE is independent of deltaG (is this possible here?)
     }
     else
-    {
-        return "Unrecognized RateLaw type $type";
-    }
+    {   return sprintf("Unrecognized RateLaw type %s", $rl->Type);   }
 
     return undef;
 }
@@ -1337,7 +1225,7 @@ sub toLatexString
     }
     else
     {
-        return "", "Unrecognized RateLaw type $type";
+        return "", "Unrecognized RateLaw type $type in toLatexString()";
     }
     return $string, '';
 }
@@ -1443,16 +1331,16 @@ sub toMathMLString
     }
     elsif ( $type eq 'MM' )
     {
-        return ( '', "Michaelis-Menton type reactions are not curently handled." );
+        return '', "Michaelis-Menton type reactions are not curently handled.";
     }
     else
     {
-        return ( '', "Unrecognized RateLaw type $type" );
+        return '', "Unrecognized RateLaw type $type in toMathMLString()";
     }
 
     $string .= "</math>\n";
 
-    return ( $string, '' );
+    return $string, '';
 }
 
 

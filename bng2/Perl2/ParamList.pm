@@ -146,7 +146,7 @@ sub getName
         ++$index;
     }
     $name = "${basename}_${index}";
-    return ($name);
+    return $name;
 }
 
 

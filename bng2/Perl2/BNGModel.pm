@@ -2071,23 +2071,18 @@ sub generate_network
     # if no reactions have been generated previosuly, then we have to initize some things..
     if ( $model->RxnList->size()==0 or $params{'continue'}==0 )
     {
-        print STDERR "initializing model for network generations..\n";
         # initialize rules
         foreach my $rset ( @{$model->RxnRules} )
         {
             foreach my $rr (@$rset)
             {   $rr->initializeRule();   }
         }
-
         # Initialize observables
         foreach my $obs ( @{$model->Observables} )
         {   
             $obs->reset_weights( $model->SpeciesList->size() );
             $obs->update( $model->SpeciesList->Array );
         }
-        foreach my $sp ( @{$model->SpeciesList->Array} )
-        {   $sp->ObservablesApplied(1);   }
-
         # Initialize energy patterns (for energyBNG only)
         if ( $model->Options->{energyBNG} )
         {
@@ -2097,6 +2092,9 @@ sub generate_network
                 $epatt->update($model->SpeciesList->Array);
             }
         }
+        # remember that we applied the observables
+        foreach my $sp ( @{$model->SpeciesList->Array} )
+        {   $sp->ObservablesApplied(1);   }
     }
     else
     {   # friendly warning that we're continuing network generation 

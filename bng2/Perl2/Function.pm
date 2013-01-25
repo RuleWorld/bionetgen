@@ -20,6 +20,7 @@ struct Function =>
     Name => '$',
     Args => '@',
     Expr => 'Expression',
+    LocalHash => '%',
 };
 
 
@@ -27,20 +28,23 @@ struct Function =>
 ###
 ###
 
+
+# create a copy of this function.
+# 
 sub clone
 {
     my $fcn   = shift @_;
     my $plist = @_ ? shift @_ : undef;
     my $level = @_ ? shift @_ : 0;
-    # keep same name? or get a unique name?
-    my $same_name = @_ ? shift @_ : 0;
+    my $named = @_ ? shift @_ : 0;
 
-    my ($clone_name) = $same_name ? $fcn->Name : $plist->getName($fcn->Name);
+    # if the clone doesn't have a name, it will be anonymous
+    my $clone_name = $named ? $fcn->Name : undef;
 
     my $err = '';
     (my $clone_expr, $err) = $fcn->Expr->clone( $plist, $level+1 );
     
-    my $clone = Function->new( Name=>$clone_name, Expr=>$clone_expr, Args=>[@{$fcn->Args}] );            
+    my $clone = Function->new( Name=>$clone_name, Expr=>$clone_expr, Args=>[@{$fcn->Args}] );
     return $clone, $err;
 }
 
@@ -48,7 +52,6 @@ sub clone
 ###
 ###
 ###
-
 
 sub evaluate
 {
@@ -101,7 +104,7 @@ sub evaluate_local
     
     # locally evaluate function expression
     my $expr = $local_fcn->Expr->evaluate_local($local_plist, $level+1);
-    $local_fcn->Expr( $expr );
+    $local_fcn->Expr($expr);
 
     # check if local variables are unused
     my $bad_args = [];
@@ -284,13 +287,14 @@ sub readString
 
 sub toString
 {
-    my $fun = shift;
-    my $plist = (@_) ? shift : '';
+    my $fun   = shift @_;
+    my $plist = @_ ? shift @_ : undef;
     my $include_equal = (@_) ? shift : 0;
     # used for aligning columns nicely
     my $max_length    = (@_) ? shift : 0;
     
-    my $string = $fun->Name . '(' . join(',', @{$fun->Args}) . ')';
+    my $name = defined $fun->Name ? $fun->Name : "anon";
+    my $string = $name . '(' . join(',', @{$fun->Args}) . ')';
     if ( $fun->Expr )
     {
         $string .= ($include_equal) ? ' = ' : ' ';
@@ -373,9 +377,9 @@ sub toCVodeString
 sub toMatlabString
 # construct a call, declaration or definition for this function in CVode.
 {
-    my $fcn     = shift;                 # this function
-    my $plist   = (@_) ? shift : undef;  # reference to ParamList
-    my $arghash = (@_) ? shift : {};     # reference to argument hash
+    my $fcn     = shift @_;               # this function
+    my $plist   = @_ ? shift @_ : undef;  # reference to ParamList
+    my $arghash = @_ ? shift @_ : {};     # reference to argument hash
    
     # set default mode
     unless ( exists $arghash->{fcn_mode} )

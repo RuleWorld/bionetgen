@@ -800,22 +800,20 @@ sub listActions
 ##
 
 
-
-# write RxnRule to a string
+# write RxnRule to a BNGL string
 sub toString
 {
-	my $rr     = shift;
-	my $rr_rev = (@_) ? shift : undef;
+	my $rr     = shift @_;
+	my $rr_rev = @_ ? shift @_ : undef;
+
 	my $string = '';
 
 	# Reaction name
 	# Name is an index unless it contains non-digit character
 	if ( defined $rr->Name  and  $rr->Name ne '' )
-	{
-        $string .= $rr->Name . ":  ";
-	}
+	{   $string .= $rr->Name . ":  ";	}
 	
-
+    # Reactant Patterns
     if ( @{$rr->Reactants} )
     {
 	    my $i = 0;
@@ -831,8 +829,10 @@ sub toString
         $string .= SpeciesGraph::getNullString();
     }
 
-	$string .= ($rr_rev) ? " <-> " : " -> ";
+    # Directional Arrow
+	$string .= (defined $rr_rev) ? " <-> " : " -> ";
 
+    # Product Patterns
     if ( @{$rr->Products} )
     {
 	    my $i = 0;
@@ -848,67 +848,57 @@ sub toString
         $string .= SpeciesGraph::getNullString();
     }
 
-
+    # Ratelaw
 	$string .= "  " . $rr->RateLaw->toString();
 	if ($rr_rev and not ($rr->RateLaw->Type eq "Arrhenius") )
-	{
-		$string .= ", " . $rr_rev->RateLaw->toString();
-	}
+	{   $string .= ", " . $rr_rev->RateLaw->toString();   }
 
+    # Priority
 	if ( $rr->Priority != 0 )
-	{
-		$string .= sprintf " priority=%d", $rr->Priority;
-	}
+	{	$string .= sprintf " priority=%d", $rr->Priority;   }
 
+    # Include/Exclude 
 	foreach my $i ( 0 .. $#{$rr->Rexclude} )
 	{
-		next unless ( @{ $rr->Rexclude->[$i] } );
+		next unless ( @{$rr->Rexclude->[$i]} );
 		$string .= " exclude_reactants(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Rexclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Rexclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
 	foreach my $i ( 0 .. $#{$rr->Pexclude} )
 	{
-		next unless ( @{ $rr->Pexclude->[$i] } );
+		next unless ( @{$rr->Pexclude->[$i]} );
 		$string .= " exclude_products(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Pexclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Pexclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
 	foreach my $i ( 0 .. $#{$rr->Rinclude} )
 	{
-		next unless ( @{ $rr->Rinclude->[$i] } );
+		next unless ( @{$rr->Rinclude->[$i]} );
 		$string .= " include_reactants(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Rinclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Rinclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
 	foreach my $i ( 0 .. $#{$rr->Pinclude} )
 	{
-		next unless ( @{ $rr->Pinclude->[$i] } );
+		next unless ( @{$rr->Pinclude->[$i]} );
 		$string .= " include_products(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Pinclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Pinclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
-    # modifier flags
+    # Keywords
 	$string .= " TotalRate" if ( $rr->TotalRate );
     $string .= " DeleteMolecules" if ( $rr->DeleteMolecules );
     $string .= " MoveConnected"	if ( $rr->MoveConnected );
@@ -3239,7 +3229,6 @@ sub build_reaction
             # update observables
             foreach my $obs ( @{$model->Observables} )
             {   $obs->update([$spec]);   }
-            $spec->ObservablesApplied(1);
 
             # update energy patterns (for energyBNG only)
             if ( $model->Options->{energyBNG} )
@@ -3247,6 +3236,9 @@ sub build_reaction
                 foreach my $epatt ( @{$model->EnergyPatterns} )
                 {   $epatt->update([$spec]);   }
             }
+
+            # remember that we applied the observables
+            $spec->ObservablesApplied(1);
 		}
 
 		# Add the product Species

@@ -31,7 +31,7 @@ struct Rxn => {
 
 sub toString
 {
-    my $rxn   = shift;
+    my $rxn   = shift @_;
     my $text  = (@_) ? shift : 0;
     my $plist = (@_) ? shift : 0;
   
@@ -78,7 +78,9 @@ sub toString
     }
 
     # get ratelaw string
+    if (defined $rxn->RateLaw){ #TODO
     $string .= $rxn->RateLaw->toString( $rxn_mult, 1, $plist );
+    }
 
     if ($rxn->RxnRule)
     {  $string .= " #" . $rxn->RxnRule->Name;  }

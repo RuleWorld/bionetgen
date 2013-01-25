@@ -64,63 +64,35 @@ void  calc_ratelaws    ( N_Vector ratelaws,  N_Vector species, N_Vector expressi
 int   calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data );
 
 /* user-defined function declarations */
-double f_synth_1 ( N_Vector expressions, N_Vector observables );
 double rateLaw1_1 ( N_Vector expressions, N_Vector observables );
-double f_synth_2 ( N_Vector expressions, N_Vector observables );
 double rateLaw1_2 ( N_Vector expressions, N_Vector observables );
-double f_synth_3 ( N_Vector expressions, N_Vector observables );
 double rateLaw1_3 ( N_Vector expressions, N_Vector observables );
-double f_synth_4 ( N_Vector expressions, N_Vector observables );
 double rateLaw1_4 ( N_Vector expressions, N_Vector observables );
 
 
 /* user-defined function definitions  */
-/* user-defined function f_synth_1 */
-double f_synth_1 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(0.0,2.0));
-}
-
 /* user-defined function rateLaw1_1 */
 double rateLaw1_1 ( N_Vector expressions, N_Vector observables )
 {
-    return f_synth_1(expressions,observables);
-}
-
-/* user-defined function f_synth_2 */
-double f_synth_2 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(1.0,2.0));
+    return (NV_Ith_S(expressions,2)*pow(0.0,2.0));
 }
 
 /* user-defined function rateLaw1_2 */
 double rateLaw1_2 ( N_Vector expressions, N_Vector observables )
 {
-    return f_synth_2(expressions,observables);
-}
-
-/* user-defined function f_synth_3 */
-double f_synth_3 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(2.0,2.0));
+    return (NV_Ith_S(expressions,2)*pow(1.0,2.0));
 }
 
 /* user-defined function rateLaw1_3 */
 double rateLaw1_3 ( N_Vector expressions, N_Vector observables )
 {
-    return f_synth_3(expressions,observables);
-}
-
-/* user-defined function f_synth_4 */
-double f_synth_4 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(3.0,2.0));
+    return (NV_Ith_S(expressions,2)*pow(2.0,2.0));
 }
 
 /* user-defined function rateLaw1_4 */
 double rateLaw1_4 ( N_Vector expressions, N_Vector observables )
 {
-    return f_synth_4(expressions,observables);
+    return (NV_Ith_S(expressions,2)*pow(3.0,2.0));
 }
 
 
