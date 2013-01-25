@@ -338,24 +338,34 @@ vector<string> find_variables(string a) {
 	//	istringstream in(a,istringstream::in);
 	char c;
 	for (unsigned int i = 0; i < a.length();) {
-		c = a[i++];
-		if ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-				(c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
-				(c == '_')) // "_"
+//		c = a[i++];
+		c = a[i];
+		// Support scientific notation (i.e., X{eE}{+-}YYY)
+		if ((c == 'e' || c == 'E') &&
+			(a[i-1] >= '0' && a[i-1] <= '9') &&
+			((a[i+1] >= '0' && a[i+1] <= '9') || a[i+1] == '+' || a[i+1] == '-')){
+			// Do nothing
+		}
+		// Continue
+		else if ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			(c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
+			(c == '_')) 			  // "_"
 		{
 			string s;
 			while ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-					(c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
-					(c == '_') || // "_"
-					(c >= '0' && c <= '9')) // "0123456789"
+				   (c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
+				   (c == '_') || 			 // "_"
+				   (c >= '0' && c <= '9'))   // "0123456789"
 			{
 				s.push_back(c);
-				c = a[i++];
+				c = a[++i];
+//				c = a[i++];
 			}
 			if (!isMuParserFunction(s)) {
 				variables.push_back(s);
 			}
 		}
+		i++;
 	}
 	return variables;
 }
@@ -377,7 +387,7 @@ void process_function_names(string& a) {
 		curr_letter = next_letter;
 		next_letter = a[i++];
 		if (curr_letter == '(' && next_letter == ')')
-			a.erase(i - 2, 2);
+			a.erase(i-2, 2);
 	}
 }
 
@@ -575,8 +585,7 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 //	return functions;
 }
 
-Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
-		int* n_read, Elt_array* params) {
+Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_read, Elt_array* params) {
 	Elt_array* earray = NULL;
 	Elt *list_start = NULL, *list_end, *elt, *new_elt;
 	char *line, **tokens;
@@ -600,7 +609,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 		/* parse commands */
 
 		/* check for beginning of list */
-		if (n_tokens == 2 && strcmp(tokens[0], "begin") == 0) {
+		if (n_tokens == 2 && strcmp(tokens[0], "begin") == 0){
 			if (strcmp(tokens[1], name) == 0) {
 				read_begin = 1;
 			}
@@ -612,8 +621,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 			goto cleanup;
 
 		/* Check for end of list */
-		if (n_tokens == 2 && strcmp(tokens[0], "end") == 0 && strcmp(tokens[1],
-				name) == 0) {
+		if (n_tokens == 2 && strcmp(tokens[0], "end") == 0 && strcmp(tokens[1], name) == 0){
 			read_end = 1;
 			goto cleanup;
 		}
@@ -641,62 +649,102 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 
 			/* Read elt value either directly or by looking up parameter value */
 			if (n_tok < n_tokens) {
+				/////////////////////////
+				// NEW CODE (expression parsing): 01/25/13 -- LAH
+				/////////////////////////
+//				cout << index << " " << elt_name << " " << tokens[n_tok] << endl;
+				myParser parser;
+				parser.name = elt_name;
+				vector<string> v = find_variables(tokens[n_tok]);
+				for (unsigned int i=0;i < v.size();i++){
+					// Look for variable in parameters vector
+					bool found = false;
+					for (unsigned int j=0;j < network.parameters.size() && !found;j++){
+						if (network.parameters[j].name == v[i]){
+							parser.p.DefineVar(v[i],&network.parameters[j].val);
+							found = true;
+						}
+					}
+					// Error check
+					if (!found){
+						cout << "Error in parsing '" << name << "' block expression: \"" << tokens[n_tok] <<
+								"\". Could not find parameter " << v[i] << ". Exiting." << endl;
+						exit(1);
+					}
+				}
+				parser.p.SetExpr(tokens[n_tok]);
+				parser.val = parser.p.Eval();
+//				cout << "\t" << parser.name << " " << parser.val << endl;
+				// Store the value
+				val = parser.val;
+				// If the element is a parameter, store it
+				if (name == "parameters"){
+					network.parameters.push_back(parser);
+				}
+				/////////////////////////
+/*				OLD CODE
+				////////////////////////
 				double factor;
 				char buf[1000], c;
 
-				/* Look for prefactor */
+				// Look for prefactor
 				if (sscanf(tokens[n_tok], "%lf*%s", &factor, buf) != 2) {
 					factor = 1;
 					strcpy(buf, tokens[n_tok]);
 				}
 
-				/* Try to obtain numerical value for elt, or lookup parameter */
+				// Try to obtain numerical value for elt, or lookup parameter
 				if (sscanf(buf, "%lf%c", &val, &c) != 1) {
-					/* Then try to lookup elt in parameter list (if present) */
+					// Then try to lookup elt in parameter list (if present)
 					if (!params) {
 						fprintf(stderr, "Invalid value %s at line %d.\n",
 								tokens[n_tok], *line_number);
 						++error;
 						goto cleanup;
-					} else if ((elt = lookup_Elt(buf, params->list))) {
+					}
+					else if ((elt = lookup_Elt(buf, params->list))) {
 						val = factor * elt->val;
-					} else {
-						fprintf(
-								stderr,
+					}
+					else {
+						fprintf(stderr,
 								"Invalid parameter specification %s at line %d.\n",
 								tokens[n_tok], *line_number);
 						++error;
 						goto cleanup;
 					}
-				} else {
+				}
+				else {
 					val *= factor;
 				}
+*/				////////////////////////
 				++n_tok;
-			} else {
+			}
+			else {
 				val = 0.0;
 			}
 
-			/* Read elt normalization */
+			// Read elt normalization
 			if (n_tok < n_tokens) {
-				fprintf(
-						stderr,
+				fprintf(stderr,
 						"Element normalization no longer supported at line %d\n.",
 						*line_number);
 				++error;
 				goto cleanup;
 			}
 
-			/* Allocate new list element */
+			// Allocate new list element
 			++(*n_read);
 			new_elt = new_Elt(elt_name, val, index);
 			new_elt->fixed = fixed;
 			if (list_start) {
 				list_end->next = new_elt;
 				list_end = new_elt;
-			} else {
+			}
+			else {
 				list_start = list_end = new_elt;
 			}
-		} else {
+		}
+		else {
 			fprintf(stderr, "Invalid list entry at line %d.\n", *line_number);
 			++error;
 			goto cleanup;
@@ -719,7 +767,8 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 			new_elt = elt->next;
 			free_Elt(elt);
 		}
-	} else {
+	}
+	else {
 		earray = new_Elt_array(list_start);
 		if (n_fixed) {
 			int *iarray = IALLOC_VECTOR(n_fixed);

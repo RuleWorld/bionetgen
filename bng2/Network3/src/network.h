@@ -158,11 +158,19 @@ extern Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, E
 		map<string,bool>, int&);
 extern void print_Rxn_array(FILE* outfile, Rxn_array* reactions, Elt_array* species, Elt_array* rates);
 
+class myParser{
+	public:
+	string name;
+	double val;
+	mu::Parser p;
+};
+
 /* Network interface */
 struct NETWORK{
 	char*					name;
 	Rxn_array*				reactions;
 	Elt_array*				rates;
+	vector<myParser>		parameters;
 	Elt_array*				species;
 	int       	 			n_groups;
 	Group*					spec_groups;
