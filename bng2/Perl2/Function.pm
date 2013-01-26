@@ -55,10 +55,10 @@ sub clone
 
 sub evaluate
 {
-    my $fcn = shift;
-    my $args  = (@_) ? shift : [];        
-    my $plist = (@_) ? shift : undef;
-    my $level = (@_) ? shift : 0; 
+    my $fcn   = shift @_;
+    my $args  = @_ ? shift @_ : [];
+    my $plist = @_ ? shift @_ : undef;
+    my $level = @_ ? shift @_ : 0;
 
     # create local parameterList
     my $local_plist = $plist->getChildList();

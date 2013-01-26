@@ -23,11 +23,11 @@ struct RateLaw =>
     Factor      => '$',       # Statistical or Multiplicity factor
     TotalRate   => '$',       # If true, this ratelaw specifies the Total reaction rate.
                               #   If false (default), the ratelaw specifies a Per Site reaction rate.
-    EnergyHash  => '%',       # For energyBNG: Stores a map from rxn energy stoichiometry fingerprints 
+    LocalRatelawsHash  => '%',       # For energyBNG: Stores a map from rxn energy stoichiometry fingerprints 
                               #   to customized ratelaws for rxns with such a fingerprint.  This allows
                               #   us to lookup and reuse ratelaws (rather than creating a unique ratelaw
                               #   for every reaction induced by a rule).
-    LocalFcnHash => '%'       # Stores a map from local function strings to the local fcns. This allows
+    LocalRatelawsHash => '%'       # Stores a map from local function strings to the local fcns. This allows
                               #   us to lookup and reuse localfcn evaluations (rather than creating a unique
                               #   expression for every local evaluation induced by a rule).
 };
@@ -48,8 +48,8 @@ sub copy
 {
     my $rl = shift @_;
     my $rl_copy = RateLaw->new( Type=>$rl->Type, Constants=>[@{$rl->Constants}], Factor=>$rl->Factor, TotalRate=>$rl->TotalRate );
-    #%{$rl_copy->EnergyHash} = %{$rl_copy->EnergyHash};
-    #%{$rl_copy->LocalFcnHash} = %{$rl_copy->LocalFcnHash};
+    #%{$rl_copy->LocalRatelawsHash} = %{$rl_copy->LocalRatelawsHash};
+    #%{$rl_copy->LocalRatelawsHash} = %{$rl_copy->LocalRatelawsHash};
     ++$n_RateLaw;
     return $rl_copy;
 }
@@ -338,8 +338,7 @@ sub newRateLawNet
     $$strptr = $string_left;
 
     # Create new RateLaw object
-    my $rl;
-    $rl = RateLaw->new( Type=>$rate_law_type, Constants=>[@rate_constants], TotalRate=>0, Factor=>$rate_fac );
+    my $rl = RateLaw->new( Type=>$rate_law_type, Constants=>[@rate_constants], TotalRate=>0, Factor=>$rate_fac );
 
     # Validate rate law type
     $err = $rl->validate();
@@ -366,12 +365,11 @@ sub evaluate_local
     # (2) evaluate local activation energy
 
     my $err;
-
     my $local_rl = $rl;
     if ($rl->Type eq "Arrhenius" )
     { 
         # evaluate activation energy in local context and get activation energy fingerprint
-        my $local_fcn;
+        my $local_expr;
         my $lfcn_fingerprint;
         my ($param) = $model->ParamList->lookup($rl->Constants->[1]);
         if (defined $param  and  $param->Type eq "Function")
@@ -379,63 +377,69 @@ sub evaluate_local
             my $fcn = $param->Ref;
             if ( $fcn->checkLocalDependency($model->ParamList) )
             {
-                # get local values for function evaluation
+                # evaluate function locally
                 my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
-                # evaluate function with local values to get local function
-                ($local_fcn) = $param->Ref->evaluate_local( \@local_args, $model->ParamList );
+                my $expr = Expression->new(Type=>"FUN", Arglist=>[@local_args]);
+                $local_expr = $expr->evaluate_local($model->ParamList);
 
                 # add to localfunc string to fingerprint
-                $lfcn_fingerprint = $local_fcn->Expr->toString($model->ParamList, 0, 2);
+                $lfcn_fingerprint = "arg1=" . $rl->Constants->[0] . ",arg2=" . $local_expr->toString($model->ParamList, 0, 2);
 
-                #  lookup localfcn fingerprint in hash
-                if ( exists $rl->LocalFcnHash->{$lfcn_fingerprint} )
-                {   # fetch the original localfcn
-                    $local_fcn = $rl->LocalFcnHash->{$lfcn_fingerprint};
-                }
-                else
-                {   # add this new localfcn evaluation to the hash
-                    # get a name for the anonymous function
-                    my $name = $model->ParamList->getName( $fcn->Name );
-                    $local_fcn->Name($name);
-                    # add to paramlist
-                    $model->ParamList->set( $name, $local_fcn->Expr, 1, 'Function', $local_fcn ); 
-                    $rl->LocalFcnHash->{$lfcn_fingerprint} = $local_fcn;
-                }
+                #if ($local_expr->Type eq "FUN")
+                #{
+                #    #  lookup localfcn fingerprint in hash
+                #    if ( exists $rl->LocalRatelawsHash->{$lfcn_fingerprint} )
+                #    {   # fetch the original localfcn
+                #        $local_expr->Arglist->[0] = $rl->LocalRatelawsHash->{$lfcn_fingerprint}->Name;
+                #    }
+                #    else
+                #    {   # add this new localfcn evaluation to the hash
+                #        if (ref $local_expr->Arglist->[0] eq "Function" )
+                #        {   # get a name for the anonymous function
+                #            my $local_fcn = $local_expr->Arglist->[0];
+                #            my $name = $model->ParamList->getName($fcn->Name);
+                #            $local_fcn->Name($name);
+                #            $local_expr->Arglist->[0] = $name;
+                #            # add to paramlist
+                #            $model->ParamList->set($name, $local_fcn->Expr, 1, '', $local_fcn); 
+                #            $rl->LocalRatelawsHash->{$lfcn_fingerprint} = $local_fcn;
+                #        }
+                #        else
+                #        {   # function already has a name!
+                #            # nothing to do
+                #        }
+                #    }
+                #}
             }
             else
-            {
-                # add to localfunc string to fingerprint
-                $lfcn_fingerprint .= ";" . $fcn->Name;
+            {   # add to localfunc string to fingerprint
+                $lfcn_fingerprint .= "arg1=" . $rl->Constants->[0] . ",arg2=" . $fcn->Name;
             }
         }
         else
         {   # no local context in this parameter, create 
             # add to localfunc string to fingerprint
-            $lfcn_fingerprint .= ";" . $rl->Constants->[1];
+            $lfcn_fingerprint .= "arg1=" . $rl->Constants->[0] . ",arg2=" . $rl->Constants->[1];
         }
 
-
         # get deltaG fingerprint
-        my $fingerprint = $rxn->RxnRule->Direction . ";";
-        $fingerprint .= $rl->get_deltaG_fingerprint( $rxn, $model->EnergyPatterns );
+        my $fingerprint = "dir=" . $rxn->RxnRule->Direction;
+        $fingerprint .= ";stoich=" . $rl->get_deltaG_fingerprint( $rxn, $model->EnergyPatterns );
         # add localfcn to fingerprint
-        $fingerprint .= ";$lfcn_fingerprint";
-
+        $fingerprint .= ";" . $lfcn_fingerprint;
 
         #  lookup fingerprint in RateLaw hash
-        if ( exists $rl->EnergyHash->{$fingerprint} )
+        if ( exists $rl->LocalRatelawsHash->{$fingerprint} )
         {   # fetch ratelaw with this fingerprint
-            #print STDERR "..found fingerprint.\n";
-            $local_rl = $rl->EnergyHash->{$fingerprint};
+            $local_rl = $rl->LocalRatelawsHash->{$fingerprint};
         }
         else
         {   
-            #print STDERR "..didn't find fingerprint. creating new ratelaw.\n";
             # building arrhenius expression..
             # 1) get baseline activation energy
             my $arrhenius_expr;
-            if (defined $local_fcn)
-            {   $arrhenius_expr = $local_fcn->Expr;   }
+            if (defined $local_expr)
+            {   $arrhenius_expr = $local_expr;   }
             else
             {   $arrhenius_expr = Expression::newNumOrVar( $rl->Constants->[1], $model->ParamList );   }
 
@@ -478,53 +482,97 @@ sub evaluate_local
             $arrhenius_expr = Expression::operate("FUN", ["exp", $arrhenius_expr], $model->ParamList);
 
             # assign local expr to a parameter
-            my $local_paramname = $model->ParamList->getName("Arrhenius");
+            my $rule_name = $rxn->RxnRule->Name;  # base parameter name on the rule
+            $rule_name =~ s/[^\w]+//g;  # remove non-word characters
+            my $local_paramname = $model->ParamList->getName("${rule_name}Rate");
             $model->ParamList->set( $local_paramname, $arrhenius_expr, 1);
+            (my $rl_param) = $model->ParamList->lookup($local_paramname);
 
             # create new ratelaw
-            $local_rl = RateLaw->new( Type=>"Ele", Constants=>[$local_paramname], Factor=>$rl->Factor );
+            my $rl_type = $rl_param->Type eq "Function" ? "Function" : "Ele";
+            $local_rl = RateLaw->new( Type=>$rl_type, Constants=>[$local_paramname], Factor=>$rl->Factor, TotalRate=>0 );
             ++$RateLaw::n_Ratelaw;
 
-            # add this local ratelaw to the energyhash
-            $rl->EnergyHash->{$fingerprint} = $local_rl;
+            # add this local ratelaw to the LocalRatelawsHash
+            $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
         }
     }
-    elsif ( $rl->Type eq 'Function' )
+    elsif ( $rl->Type eq "FunctionProduct" )
+    {   # TODO: implement
+        die "Error in RateLaw->evaluate_local(): FunctionProduct type RateLaw is not yet supported!";
+    }
+    elsif ( $rl->Type eq "Function" )
     {
         # get parameter corresponding to ratelaw function
-        (my $rl_param) = $model->ParamList->lookup( $rl->Constants->[0] );
+        (my $rl_param) = $model->ParamList->lookup($rl->Constants->[0]);
         unless ( $rl_param->Type eq 'Function' )
         {   die "Error in RateLaw->evaluate_local(): cannot find parameter for functional RateLaw!";   }
+
         # get function object
         my $fcn = $rl_param->Ref;                   
         # check for local dependency
         if ( $fcn->checkLocalDependency($model->ParamList) )
         {
-            # need to create a new ratelaw with locally evaluated observables.
-            # evaluate function with local values to get local function.
+            # evaluate function locally
             my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
-            (my $local_fcn) = $fcn->evaluate_local( \@local_args, $model->ParamList );
-            #  lookup fingerprint in RateLaw hash.
-            my $fingerprint = $local_fcn->Expr->toString($model->ParamList, 0, 2);
-            if ( exists $rl->LocalFcnHash->{$fingerprint} )
-            {   # fetch ratelaw with this fingerprint
-                $local_rl = $rl->LocalFcnHash->{$fingerprint};
+            my $expr = Expression->new(Type=>"FUN", Arglist=>[@local_args]);
+            my $local_expr = $expr->evaluate_local($model->ParamList);
+
+            # add to localfunc string to fingerprint
+            my $fingerprint = $local_expr->toString($model->ParamList, 0, 2);
+
+            #  lookup localfcn fingerprint in hash
+            if ( exists $rl->LocalRatelawsHash->{$fingerprint} )
+            {   # fetch the original localfcn
+                $local_rl = $rl->LocalRatelawsHash->{$fingerprint};
             }
             else
-            {   # add this new localfcn evaluation to the hash
-                # get a name for the anonymous function
-                my $name = $model->ParamList->getName( $fcn->Name );
-                $local_fcn->Name($name);
-                # add to paramlist
-                $model->ParamList->set( $name, $local_fcn->Expr, 1, 'Function', $local_fcn ); 
+            {   # build a new ratelaw
+                my $rl_type;
+                my $rl_constants = [];
+
+                if ($local_expr->Type eq "FUN")
+                {   # Function RateLaw
+                    $rl_type = "Function";
+                    if (ref $local_expr->Arglist->[0] eq "Function" )
+                    {   # create new parameter for this anonymous function
+                        my $local_fcn = $local_expr->Arglist->[0];
+                        my $name = $model->ParamList->getName($fcn->Name);
+                        $local_fcn->Name($name);
+                        $model->ParamList->set($name, $local_fcn->Expr, 1, '', $local_fcn); 
+                        # ratelaw argument is the new name
+                        push @$rl_constants, $name;
+                    }
+                    else
+                    {   # function already has a name! this will be the ratelaw argument              
+                        push @$rl_constants, $local_expr->Arglist->[0];
+                    }
+                }
+                else
+                {   # Elementary Ratelaw
+                    $rl_type = "Ele";
+                    if ($local_expr->Type eq "VAR")
+                    {   # ratelaw argument will be the variable name
+                        push @$rl_constants, $local_expr->Arglist->[0];
+                    }
+                    else
+                    {   # create new parameter for this expression and an elementary rate law
+                        my $name = $model->ParamList->getName($fcn->Name);
+                        $model->ParamList->set($name, $local_expr, 1, '');
+                        push @$rl_constants, $name;
+                    }
+                }
+
                 # create new ratelaw
-                $local_rl = RateLaw->new( Type=>'Function', Constants=>[$name], Factor=>$local_rl->Factor, TotalRate=>0 );
+                $local_rl = RateLaw->new( Type=>$rl_type, Constants=>$rl_constants, Factor=>$rl->Factor, TotalRate=>0 );
                 ++$RateLaw::n_Ratelaw;
-                # add this ratelaw to LocalFcnHash
-                $rl->LocalFcnHash->{$fingerprint} = $local_rl;
+
+                # add this ratelaw to LocalRatelawsHash
+                $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
             }
         }
     }
+
     return $local_rl;
 }
 

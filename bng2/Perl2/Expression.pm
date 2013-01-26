@@ -881,9 +881,9 @@ sub evaluate
 #  work correctly if observables haven't been computed prior to the call.
 sub evaluate_local
 {
-    my $expr  = shift;
-    my $plist = (@_) ? shift : undef;
-    my $level = (@_) ? shift : 0;
+    my $expr  = shift @_;
+    my $plist = @_ ? shift @_ : undef;
+    my $level = @_ ? shift @_ : 0;
     
     if ( $level > $MAX_LEVEL ) {  return (undef, "Max recursion depth $MAX_LEVEL exceeded.");  }
     unless (defined $plist)    {  die "Expression->evaluate_local: Error! Function called without required ParamList.";  }    
@@ -920,12 +920,22 @@ sub evaluate_local
             # get locally evaluated function
             my ($local_fcn, $elim_args) = $fcn->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
-            # set first argument of FUN expr to the function reference (not the parameter name, since it's anonymous).
-            $local_expr->Arglist->[0] = $local_fcn;
-
-            # eliminate unused arguments
-            foreach my $iarg (@$elim_args)
-            {   splice @{$local_expr->Arglist}, $iarg, 1;   }
+            # if the local_fcn does not refer to observables of named functions,
+            # then we can convert it to a constant expression
+            my $dependencies = $local_fcn->Expr->getVariables($plist);
+            if ( @{$local_fcn->Args}==0
+                 and not exists $dependencies->{'Observable'}
+                 and not exists $dependencies->{'Function'}   )
+            {   # replace this fcn call with the localfcn expression
+                $local_expr = $local_fcn->Expr;
+            }                
+            else
+            {   # point this fcn call to the local expr
+                $local_expr->Arglist->[0] = $local_fcn;
+                # eliminate unused arguments
+                foreach my $iarg (@$elim_args)
+                {   splice @{$local_expr->Arglist}, $iarg, 1;   }
+            }
         }
         elsif ( exists $functions{$name} )
         {
@@ -933,7 +943,6 @@ sub evaluate_local
         }
         else
         {   # custom, named function 
-
             # lookup function parameter:
             (my $fcn_param) = $plist->lookup( $name );
             
@@ -943,13 +952,22 @@ sub evaluate_local
                 # get locally evaluated function
                 my ($local_fcn, $elim_args) = $fcn_param->Ref->evaluate_local( $local_expr->Arglist, $plist, $level+1 );
 
-                # set first argument of FUN expr to the function reference
-                #  (not the parameter name, since it's anonymous).
-                $local_expr->Arglist->[0] = $local_fcn;
-
-                # eliminate unused arguments
-                foreach my $iarg (@$elim_args)
-                {   splice @{$local_expr->Arglist}, $iarg, 1;   }
+                # if the local_fcn does not refer to observables of named functions,
+                # then we can convert it to a constant expression
+                my $dependencies = $local_fcn->Expr->getVariables($plist);
+                if ( @{$local_fcn->Args}==0
+                     and not exists $dependencies->{'Observable'}
+                     and not exists $dependencies->{'Function'}   )
+                {   # replace this fcn call with the localfcn expression
+                    $local_expr = $local_fcn->Expr;
+                }                
+                else
+                {   # point this fcn call to the local expr
+                    $local_expr->Arglist->[0] = $local_fcn;
+                    # eliminate unused arguments
+                    foreach my $iarg (@$elim_args)
+                    {   splice @{$local_expr->Arglist}, $iarg, 1;   }
+                }
             }
             # This function is Really an Observable!!    
             elsif ( $fcn_param->Type eq 'Observable' )
@@ -1773,17 +1791,15 @@ sub getNumber
 # returns name of new VAR containing expression.
 sub getName
 {
-    my $expr       = shift;
-    my $plist      = shift;
-    my $basename   = (@_) ? shift : "k";
-    my $force_fcn = (@_) ? shift : 0; 
+    my $expr      = shift @_;
+    my $plist     = shift @_;
+    my $basename  = @_ ? shift @_ : "k";
+    my $force_fcn = @_ ? shift @_ : 0; 
 
     my $name;
-  
     if ( $expr->Type eq 'VAR'  and  !$force_fcn )
     {
         $name = $expr->Arglist->[0];
-        #printf "Found existing parameter %s\n", $name;
     }
     else 
     {
@@ -1791,19 +1807,16 @@ sub getName
         my $index = 1;
         while (1)
         {
-            my ( $param, $err ) = $plist->lookup( $basename . $index );
+            my ($param, $err) = $plist->lookup($basename . $index);
             last unless $param;
             ++$index;
         }
-        $name = $basename . $index;
-                
+        $name = $basename . $index;         
         # set parameter in list (with type Function, if force)
         $plist->set( $name, $expr, 0, ($force_fcn ? 'Function' : '') );
-
-        #printf "Creating new parameter %s\n", $name;
     }
 
-    return ($name);
+    return $name;
 }
 
 
@@ -1811,63 +1824,61 @@ sub getName
 # Return a hash of all the variable names referenced in the current expression.
 sub getVariables
 {
-    my $expr    = shift;
-    my $plist   = shift;
-    my $level   = (@_) ? shift : 0;
-    my $rethash = (@_) ? shift : '';
-    #  use Data::Dumper;
+    my $expr    = shift @_;
+    my $plist   = shift @_;
+    my $level   = @_ ? shift @_ : 0;
+    my $rethash = @_ ? shift @_ : {};
 
-    if ( $level > $MAX_LEVEL ) { die "Max recursion depth $MAX_LEVEL exceeded."; }
-
-    if ( $level == 0 )
-    {
-        $rethash = {};
-    }
+    if ($level > $MAX_LEVEL) { die "Max recursion depth $MAX_LEVEL exceeded."; }
 
     my $type = $expr->Type;
     if ( $type eq 'NUM' )
     {
-
+        # nothing to do
     }
     elsif ( $type eq 'VAR' )
     {
-        my ( $param, $err ) = $plist->lookup( $expr->Arglist->[0] );
-        if ($err) {  die $err  };    # Shouldn't be an undefined variable name here
+        my ($param, $err) = $plist->lookup( $expr->Arglist->[0] );
+        if ($err) { die $err };    # Shouldn't be an undefined variable name here
         if ( defined $param->Type )
         {   # add parameter name to type hash
-            $rethash->{ $param->Type }->{ $param->Name } = $param;
+            $rethash->{$param->Type}->{$param->Name} = $param;
         }
         else
         {   # this parameter has undefined type!
-            $rethash->{ 'UNDEF' }->{ $param->Name } = $param;
+            $rethash->{'UNDEF'}->{$param->Name} = $param;
         }
     }
     elsif ( $type eq 'FUN' )
     {
-        my ( $param, $err ) = $plist->lookup( $expr->Arglist->[0] );
-        if ($err)
-        {
-            #printf "function is a built-in\n";      
+        if ( ref $expr->Arglist->[0] eq "Function" )
+        {   # anonymous function
+            # we have to descend into the function expression to see what it may reference
+            $expr->Arglist->[0]->Expr->getVariables($plist, $level+1, $rethash);
         }
         else
-        {
-            $rethash->{$param->Type}->{ $param->Name } = $param;
+        {   # named function
+            my ($param, $err) = $plist->lookup( $expr->Arglist->[0] );
+            if (defined $param)
+            {   # add named function to rethash
+                $rethash->{$param->Type}->{$param->Name} = $param;
+            }
         }
 
+        # handle the function arguments
         foreach my $i ( 1 .. $#{$expr->Arglist} )
         {
-            $expr->Arglist->[$i]->getVariables( $plist, $level + 1, $rethash );
+            $expr->Arglist->[$i]->getVariables($plist, $level+1, $rethash);
         }
     }
     else
     {
-        foreach my $e ( @{ $expr->Arglist } )
+        foreach my $e ( @{$expr->Arglist} )
         {
-            $e->getVariables( $plist, $level + 1, $rethash );
+            $e->getVariables($plist, $level + 1, $rethash);
         }
     }
 
-    if ( $level > 0 ) {  return ();  }
     return $rethash;
 }
 
