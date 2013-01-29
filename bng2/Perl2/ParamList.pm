@@ -781,9 +781,9 @@ sub check
     {
         # Check that variable has defined value
         #printf "Checking if parameter %s is defined.\n", $param->Name;
-        unless ( $param->Type )
+        unless ( $param->Type || $param->Name eq "_time")
         {
-            $err= sprintf "Parameter %s is referenced but not defined", $param->Name;
+            $err= sprintf "Parameter '%s' is referenced but not defined", $param->Name;
             last;
         }
     }
@@ -791,14 +791,16 @@ sub check
 
     foreach my $param ( @{$plist->Unchecked} )
     {
-        #printf "Checking parameter %s for cycles.\n", $param->Name;
-        # Check that variable doesn't have cylic dependency
-        (my $dep, $err) = ($param->Expr->depends( $plist, $param->Name ));
-        if ($dep)
-        {
-            $err= sprintf "Parameter %s has a dependency cycle %s", $param->Name, $param->Name.'->'.$dep;
-            last;
-        }
+    	unless ($param->Name eq "_time"){
+	        #printf "Checking parameter %s for cycles.\n", $param->Name;
+	        # Check that variable doesn't have cylic dependency
+	        (my $dep, $err) = ($param->Expr->depends( $plist, $param->Name ));
+	        if ($dep)
+	        {
+	            $err= sprintf "Parameter %s has a dependency cycle %s", $param->Name, $param->Name.'->'.$dep;
+	            last;
+	        }
+    	}
     }
   
     # Reset list of Unchecked parameters if all parameters passed checks.

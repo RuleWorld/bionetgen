@@ -368,20 +368,7 @@ int main(int argc, char *argv[]){
 
 	// Initialize time
 	t = t_start;
-/////
-//	mu::Parser _time_;
-//	_time_.DefineVar("_time_",&t);
-//	_time_.SetExpr("_time_");
-//	cout << "time = " << _time_.Eval() << endl;
-/*	network.functions.push_back(_time_);
-	// create a new parameter
-	Elt* new_elt = new_Elt((char*)"_time_",_time_.Eval(),network.rates->n_elt+1); // THERE'S SOMETHING WRONG HERE
-	new_elt->next = NULL;
-	network.is_func_map["_time_"] = true;
-	// push index of new parameter into var_parameters vector
-	network.var_parameters.push_back(rates->n_elt+1);*/
-//	exit(1);
-/////
+
 	// Find NET file
 	if (!(netfile = fopen(netfile_name, "r"))) {
 		fprintf(stderr, "ERROR: Couldn't open file %s.\n", netfile_name);
@@ -439,8 +426,11 @@ int main(int argc, char *argv[]){
 //    map<string, bool> is_func_map_temp;
     /*functions = read_functions_array(netfile_name_tmp, spec_groups, rates, species, variable_parameters, param_map,
 				param_index_map, observ_index_map, func_observ_depend, func_param_depend, is_func_map_temp);*/
-    read_functions_array(netfile_name_tmp,spec_groups,rates,species,param_map,param_index_map,observ_index_map);
-    cout << "Read " << network.functions.size() << " function(s)" << endl;
+//    read_functions_array(netfile_name_tmp,spec_groups,rates,species,param_map,param_index_map,observ_index_map);
+    read_functions_array(netfile_name_tmp,rates,param_map,param_index_map,observ_index_map,&t);
+    int n_func = network.functions.size();
+    if (n_func > 0) n_func--; // Subtract off '_time' function
+    cout << "Read " << n_func << " function(s)" << endl;
 
     // Create stop condition
 	process_function_names(stop_string); // Remove parentheses from variable names
@@ -582,7 +572,7 @@ int main(int argc, char *argv[]){
 		cout << "Accelerated stochastic simulation using PLA" << endl;
 
 		// Initialize Network3
-		Network3::init_Network3(false);
+		Network3::init_Network3(&t,false);
 
 		// Stop condition
 		mu::Parser pla_stop_condition;
@@ -992,14 +982,6 @@ int main(int argc, char *argv[]){
 	if (group_file && print_func) finish_print_function_values_network(group_file);
 	if (enable_species_stats) finish_print_species_stats(species_stats_file);
 
-	// Clean up memory allocated for functions
-	if (network.has_functions) delete[] network.rates->elt;
-	if (propagator == SSA){
-		// GSP.included added to GSP struct in code extension for functions
-		// NOTE: GSP.included is created whether functions exist or not, so it must always be deleted
-		delete_GSP_included();
-	}
-
 	// Screen outputs
 	outpre = chop_suffix(outpre, ".net");
 	if (propagator == SSA) fprintf(stdout, "TOTAL STEPS: %-16.0f\n", gillespie_n_steps());
@@ -1020,6 +1002,14 @@ int main(int argc, char *argv[]){
 	}
 	ptimes = t_elapsed();
 	fprintf(stdout, "Program times:  %.2f CPU s %.2f clock s \n", ptimes.total_cpu, ptimes.total_real);
+
+	// Clean up memory allocated for functions
+	if (network.has_functions) delete[] network.rates->elt;
+	if (propagator == SSA){
+		// GSP.included added to GSP struct in code extension for functions
+		// NOTE: GSP.included is created whether functions exist or not, so it must always be deleted
+		delete_GSP_included();
+	}
 
 //	exit:
 	if (sample_times) free(sample_times);
