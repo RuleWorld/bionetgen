@@ -208,16 +208,20 @@ sub readString
     {
         my $name = $1;
         $fun->Name($name);
-        
+    
         # Make sure function name not the same as built-in functions --Leonard
 		if ( Expression::isBuiltIn($name) ){
 			return "Cannot use built-in function name '$name' as a user-defined function name.";
+		}
+		# Make sure function name not "_time" --Leonard
+		if ( $name eq "_time" ){
+			return "Cannot use reserved function name '$name' as a user-defined function name.";
 		}
     }
     else
     {
         my ($name) = split( ' ', $string );
-        return ("Invalid function name $name: may contain only alphanumeric characters and underscore");
+        return ("Invalid function name '$name': may contain only alphanumeric characters and underscore");
     }
 
     # Process arguments to function (if any)

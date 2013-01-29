@@ -421,6 +421,10 @@ sub operate
 					if ( exists $functions{ $param_name } ){
 						return "Cannot use built-in function name '$param_name' as a parameter name.";
 					}
+					# Make sure parameter name not "_time" --Leonard
+					if ( $param_name eq "_time" ){
+						return "Cannot use reserved function name '$param_name' as a parameter name.";
+					}
 					
                     unless ( $param->Type eq 'VAR' )
                     {   return "Attempted assignment to non-variable type in $string_sav at $$sptr.";   }
