@@ -1,0 +1,52 @@
+# Ising Spin Model, energy-based
+# 3x3 lattice w/ toroidal topology
+begin model
+setOption("SpeciesLabel","HNauty")
+begin parameters
+    # energy parameters (no units, i.e. divide by temperature and Boltzmann constant)
+    Gf_up        0    # deltaG formation of up spin (down spin is baseline)
+    Gf_misalign  0.7  # deltaG formation of neighbors with different spin (aligned spin is baseline)
+    Eact0_flip   1    # baseline activation energy of flip
+    # rate distribution parameter, no units
+    phi          0.5
+end parameters
+begin molecule types
+    M(n,e,s,w,sp~up~dn)
+end molecule types
+begin seed species
+    # 3x3
+    M(n!0,e!3,s!6,w!1,sp~dn).M(n!2,e!5,s!8,w!3,sp~dn).M(n!4,e!1,s!10,w!5,sp~dn).\
+M(n!6,e!9,s!12,w!7,sp~dn).M(n!8,e!11,s!14,w!9,sp~dn).M(n!10,e!7,s!16,w!11,sp~dn).\
+M(n!12,e!15,s!0,w!13,sp~dn).M(n!14,e!17,s!2,w!15,sp~dn).M(n!16,e!13,s!4,w!17,sp~dn)  1
+#    # 4x4
+#    M(n!0,e!20,s!4,w!16,sp~dn).M(n!1,e!24,s!5,w!20,sp~dn).M(n!2,e!28,s!6,w!24,sp~dn).M(n!3,e!16,s!7,w!28,sp~dn).\
+#M(n!4,e!21,s!8,w!17,sp~dn).M(n!5,e!25,s!9,w!21,sp~dn).M(n!6,e!29,s!10,w!25,sp~dn).M(n!7,e!17,s!11,w!29,sp~dn).\
+#M(n!8,e!22,s!12,w!18,sp~dn).M(n!9,e!26,s!13,w!22,sp~dn).M(n!10,e!30,s!14,w!26,sp~dn).M(n!11,e!18,s!15,w!30,sp~dn).\
+#M(n!12,e!23,s!0,w!19,sp~dn).M(n!13,e!27,s!1,w!23,sp~dn).M(n!14,e!31,s!2,w!27,sp~dn).M(n!15,e!19,s!3,w!31,sp~dn)  1
+end seed species
+begin energy patterns
+    M(sp~up)                     Gf_up
+    M(n!0,sp~dn).M(s!0,sp~up)    Gf_misalign
+    M(n!0,sp~up).M(s!0,sp~dn)    Gf_misalign
+    M(e!0,sp~dn).M(w!0,sp~up)    Gf_misalign
+    M(e!0,sp~up).M(w!0,sp~dn)    Gf_misalign
+end energy patterns
+begin observables
+    Molecules  M_spUp      M(sp~up)
+    Molecules  M_spDown    M(sp~dn)
+    Molecules  M_spAny     M(sp~up), M(sp~dn)
+    Molecules  Misaligned  M(n!0,sp~up).M(s!0,sp~dn), M(n!0,sp~dn).M(s!0,sp~up), M(e!0,sp~up).M(w!0,sp~dn), M(e!0,sp~dn).M(w!0,sp~up)
+    Molecules  M_total     M()
+end observables
+begin reaction rules
+    M%x(sp~dn)  <->  M%x(sp~up)  Arrhenius(phi,Eact0_flip)
+end reaction rules
+end model
+
+## actions
+generate_network({overwrite=>1,max_iter=>99})
+simulate_ssa({suffix=>"burnin",t_start=>0,t_end=>100000,n_steps=>10})
+saveConcentrations()
+simulate_ssa({suffix=>"ssa_equil",t_start=>0,t_end=>5000000,n_steps=>5000,print_CDAT=>0})
+
+
