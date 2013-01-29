@@ -14,22 +14,18 @@ use Carp qw(cluck);
 # BNG Modules
 use BNGUtils;
 use SpeciesGraph;
+use Expression;
 
 # Class definition
 struct RateLaw =>
 {
-    Type        => '$',       # Ele, Sat, Hill, MM, Arrhenius, FunctionProduct
-    Constants   => '@',       # If function, first constant is the function name and the following are local args
-    Factor      => '$',       # Statistical or Multiplicity factor
-    TotalRate   => '$',       # If true, this ratelaw specifies the Total reaction rate.
-                              #   If false (default), the ratelaw specifies a Per Site reaction rate.
-    LocalRatelawsHash  => '%',       # For energyBNG: Stores a map from rxn energy stoichiometry fingerprints 
-                              #   to customized ratelaws for rxns with such a fingerprint.  This allows
-                              #   us to lookup and reuse ratelaws (rather than creating a unique ratelaw
-                              #   for every reaction induced by a rule).
-    LocalRatelawsHash => '%'       # Stores a map from local function strings to the local fcns. This allows
-                              #   us to lookup and reuse localfcn evaluations (rather than creating a unique
-                              #   expression for every local evaluation induced by a rule).
+    Type        => '$',        # Ele, Sat, Hill, MM, Arrhenius, FunctionProduct
+    Constants   => '@',        # If function, first constant is the function name and the following are local args
+    Factor      => '$',        # Statistical or Multiplicity factor
+    TotalRate   => '$',        # If true, this ratelaw specifies the Total reaction rate.
+                               #   If false (default), the ratelaw specifies a Per Site reaction rate.
+    LocalRatelawsHash  => '%', # A map from locally-evaluated ratelaw "fingerprints" and instances of those ratelaws.
+                               #   This allows for efficient refuse of local ratelaws.
 };
 
 
@@ -86,9 +82,6 @@ sub newRateLaw
     # if totalRate, we need to force expression into a function,
     #  even if it's a constant function.
     my $force_fcn = $totalRate ? 1 : 0;
-
-    # are we in energy BNG mode?
-    my $energyBNG = exists $model->Options->{energyBNG} ? $model->Options->{energyBNG} : 0;
 
     # Determine type of RateLaw
     if ( $string_left =~ s/^(Sat|MM|Hill)\(// )
@@ -151,7 +144,6 @@ sub newRateLaw
     elsif ( $string_left =~ s/^Arrhenius\(\s*// )
     {
         if ($totalRate)     { return undef, "TotalRate keyword is not compatible with Arrhenius type RateLaw."; }
-        unless ($energyBNG) { return undef, "Arrhenius type RateLaw is not available unless energyBNG is enabled."; }       
 
         $rate_law_type = "Arrhenius"; 
 
@@ -384,32 +376,6 @@ sub evaluate_local
 
                 # add to localfunc string to fingerprint
                 $lfcn_fingerprint = "arg1=" . $rl->Constants->[0] . ",arg2=" . $local_expr->toString($model->ParamList, 0, 2);
-
-                #if ($local_expr->Type eq "FUN")
-                #{
-                #    #  lookup localfcn fingerprint in hash
-                #    if ( exists $rl->LocalRatelawsHash->{$lfcn_fingerprint} )
-                #    {   # fetch the original localfcn
-                #        $local_expr->Arglist->[0] = $rl->LocalRatelawsHash->{$lfcn_fingerprint}->Name;
-                #    }
-                #    else
-                #    {   # add this new localfcn evaluation to the hash
-                #        if (ref $local_expr->Arglist->[0] eq "Function" )
-                #        {   # get a name for the anonymous function
-                #            my $local_fcn = $local_expr->Arglist->[0];
-                #            my $name = $model->ParamList->getName($fcn->Name);
-                #            $local_fcn->Name($name);
-                #            $local_expr->Arglist->[0] = $name;
-                #            # add to paramlist
-                #            $model->ParamList->set($name, $local_fcn->Expr, 1, '', $local_fcn); 
-                #            $rl->LocalRatelawsHash->{$lfcn_fingerprint} = $local_fcn;
-                #        }
-                #        else
-                #        {   # function already has a name!
-                #            # nothing to do
-                #        }
-                #    }
-                #}
             }
             else
             {   # add to localfunc string to fingerprint
@@ -465,7 +431,7 @@ sub evaluate_local
             elsif ($rxn->RxnRule->Direction==-1)
             {   # reverse rule: (phi-1).  NOTE: we use (phi-1) rather than (1-phi) since dG(+) = -dG(-)
                 $phi_expr = Expression::newNumOrVar( $rl->Constants->[0], $model->ParamList );
-                $phi_expr = Expression::operate( "-", [$phi_expr, 1], $model->ParamList );
+                $phi_expr = Expression::operate( "-", [1, $phi_expr], $model->ParamList );
             }
             else
             {   die "ERROR: invalid direction (must be 1 or -1)";   }
@@ -532,33 +498,47 @@ sub evaluate_local
                 my $rl_constants = [];
 
                 if ($local_expr->Type eq "FUN")
-                {   # Function RateLaw
-                    $rl_type = "Function";
-                    if (ref $local_expr->Arglist->[0] eq "Function" )
+                {   # function expressions
+                    if (ref $local_expr->Arglist->[0] eq "Function")
                     {   # create new parameter for this anonymous function
                         my $local_fcn = $local_expr->Arglist->[0];
                         my $name = $model->ParamList->getName($fcn->Name);
                         $local_fcn->Name($name);
                         $model->ParamList->set($name, $local_fcn->Expr, 1, '', $local_fcn); 
                         # ratelaw argument is the new name
+                        $rl_type = "Function";
+                        push @$rl_constants, $name;
+                    }
+                    elsif (  Expression::isBuiltIn($local_expr->Arglist->[0]) )
+                    {   # this is a built-in function
+                        # need to create parameter that refers to this fcn call..
+                        my $name = $model->ParamList->getName($fcn->Name);
+                        $model->ParamList->set($name, $local_expr, 1);
+                        my ($param) = $model->ParamList->lookup($name);
+                        # set ratelaw type and constants
+                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
                         push @$rl_constants, $name;
                     }
                     else
-                    {   # function already has a name! this will be the ratelaw argument              
+                    {   # function already has a name! this will be the ratelaw argument
+                        $rl_type = "Function";            
                         push @$rl_constants, $local_expr->Arglist->[0];
                     }
                 }
                 else
-                {   # Elementary Ratelaw
-                    $rl_type = "Ele";
+                {   # non-function expressions
                     if ($local_expr->Type eq "VAR")
                     {   # ratelaw argument will be the variable name
+                        $rl_type = "Ele";
                         push @$rl_constants, $local_expr->Arglist->[0];
                     }
                     else
                     {   # create new parameter for this expression and an elementary rate law
                         my $name = $model->ParamList->getName($fcn->Name);
                         $model->ParamList->set($name, $local_expr, 1, '');
+                        my ($param) = $model->ParamList->lookup($name);
+                        # set ratelaw type and constants
+                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
                         push @$rl_constants, $name;
                     }
                 }

@@ -127,11 +127,8 @@ my $PARAM_REGEX  = '^[A-Za-z]\w*$';
 
 sub isBuiltIn
 {
-	my $name = shift;
-	if ( exists $functions{ $name } ){
-		return 1;
-	}
-	return 0;
+	my $name = shift @_;
+	return (exists $functions{$name} ? 1 : 0);
 }
 
 ###
@@ -270,9 +267,9 @@ sub operate
         my $fcn_name = $args_copy->[0];
 
         # is this a built-in function?
-        if ( defined $fcn_name  and  exists $functions{ $fcn_name } )
+        if ( defined $fcn_name  and  exists $functions{$fcn_name} )
         {   # correct number of arguments?
-            return undef  unless (  $functions{ $fcn_name }->{NARGS} == (@$args_copy - 1)  );
+            return undef  unless ( $functions{$fcn_name}->{NARGS} == (@$args_copy - 1) );
         }   
         # or is this custom?
         else
@@ -900,7 +897,7 @@ sub evaluate_local
     {
         # only need to do this for expression arguments
         if ( ref $arg eq 'Expression' )
-        {   $arg = $arg->evaluate_local( $plist, $level+1 );   }
+        {   $arg = $arg->evaluate_local($plist, $level+1);   }
     } 
    
     # some additional handling for Function expressions!
@@ -1167,7 +1164,7 @@ sub toString
         {   # expand the function
             my @sarr = ($expr->Arglist->[0]);
             foreach my $i ( 1 .. $#{$expr->Arglist} )
-            {   push @sarr, $expr->Arglist->[$i]->toString( $plist, $level+1, $expand );   }
+            {   push @sarr, $expr->Arglist->[$i]->toString($plist, $level+1, $expand);   }
 
             if (ref $name eq "Function")
             {   # anonymous function
@@ -1175,9 +1172,9 @@ sub toString
                 (my $local_fcn) = $fcn->evaluate_local( \@sarr, $plist, $level+1 );
                 $string = $local_fcn->Expr->toString( $plist, $level+1, $expand );
             }
-            elsif ( exists $Expression::function{$name} )
+            elsif ( exists $functions{$name} )
             {   # built-in function
-                $string = $expr->Arglist->[0] . '(' . join( ',', @sarr ) . ')';
+                $string = $expr->Arglist->[0] . "(" . join(",", @sarr[1..$#sarr]) . ")";
             }
             else
             {   # lookup custom function by name and expand
@@ -1855,6 +1852,10 @@ sub getVariables
         {   # anonymous function
             # we have to descend into the function expression to see what it may reference
             $expr->Arglist->[0]->Expr->getVariables($plist, $level+1, $rethash);
+        }
+        elsif ( exists $functions{$expr->Arglist->[0]} )
+        {   # built-in function..
+            # nothing to do
         }
         else
         {   # named function

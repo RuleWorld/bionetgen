@@ -38,12 +38,10 @@ use POSIX ("floor", "ceil");
 use Scalar::Util ("looks_like_number");
 use Config;
 
-
 # BNGOutput contains BNGModel methods related to third-party output
 #  e.g. writeXML, writeSBML, writeMfile, writeMexfile, toSSC...
 #  Note that .NET and .BNGL writer methods are contained in THIS file.
 use BNGOutput;
-
 
 # BNGAction contains BNGModel action methods
 #  e.g. simulate, simulate_pla, simulate_nf, parameter_scan, generate_hybrid_model...
@@ -86,7 +84,7 @@ struct BNGModel =>
     RxnRules            => '@',
     ParamList           => 'ParamList',
     Observables         => '@',
-    EnergyPatterns      => '@',  # energyBNG: Holds a list of energy patterns  --Justin
+    EnergyPatterns      => '@',                  # for energy BNG only: Holds a list of energy patterns
     CompartmentList     => 'CompartmentList',    # list of reaction compartments (volumes and surfaces)
     PopulationTypesList => 'MoleculeTypesList',  # list of population molecule types
     PopulationList      => 'PopulationList',     # list of population species
@@ -749,12 +747,6 @@ sub readNetwork
                 ### Read Energy Patterns Block
                 elsif ( $name eq 'energy patterns' )
                 {
-                    # check if this is an energyBNG model!
-                    unless ( $model->Options->{energyBNG}  )
-                    {
-                        $err = errgen("$name cannot be defined unless the energyBNG option is true");
-                        goto EXIT;
-                    }
                     # read energy patterns
                     foreach my $line ( @$block_dat )
                     {
@@ -1492,9 +1484,7 @@ sub setOption
         }
         elsif ( $arg eq "energyBNG" )
         {   # enable energy mode
-            if ( @{$model->RxnRules} )
-            {   return "$arg option can only be changed prior to reading ReactionRules.";  }
-            $model->Options->{$arg} = $val;
+            send_warning("The energyBNG option is now deprecated (energy features available by default).");
         }
         else
         {
@@ -2083,14 +2073,11 @@ sub generate_network
             $obs->reset_weights( $model->SpeciesList->size() );
             $obs->update( $model->SpeciesList->Array );
         }
-        # Initialize energy patterns (for energyBNG only)
-        if ( $model->Options->{energyBNG} )
+        # Initialize energy patterns (for energy BNG only)
+        foreach my $epatt ( @{$model->EnergyPatterns} )
         {
-            foreach my $epatt ( @{$model->EnergyPatterns} )
-            {
-                $epatt->reset_weights($model->SpeciesList->size());
-                $epatt->update($model->SpeciesList->Array);
-            }
+            $epatt->reset_weights($model->SpeciesList->size());
+            $epatt->update($model->SpeciesList->Array);
         }
         # remember that we applied the observables
         foreach my $sp ( @{$model->SpeciesList->Array} )

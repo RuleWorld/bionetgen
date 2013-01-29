@@ -298,11 +298,6 @@ sub newRxnRule
 		if ($1)
 		{   # Check if this reaction is reversible
 			$reversible = ( $1 eq "<->" ) ? 1 : 0;
-		    # check reversibility in energyBNG mode.  Does this matter?  Maybe issue warning?  --Justin, 9nov2010
-		    #if ( !$reversible  and  ($model->Options->{EnergyBNG}) )
-		    #{
-		    #    return ( [], "All rules must be reversible in energyBNG mode.  Reaction rule $name is not reversible." );
-		    #}
 			# We're done with Reactants, so exit this loop
 			last;
 		}
@@ -491,9 +486,8 @@ sub newRxnRule
         }
         else
         {   # can't find second rate law
-            if ( $model->Options->{energyBNG} and $rl->Type eq "Arrhenius" )
+            if ( $rl->Type eq "Arrhenius" )
             {   # the forward ratelaw will suffice for the forward and reverse rule..
-
                 # first make sure there are no undefined local args for the reverse ratelaw
                 my $last = @{$rl->Constants}-1;
                 my @local_args = @{$rl->Constants}[2..$last];
@@ -3230,12 +3224,9 @@ sub build_reaction
             foreach my $obs ( @{$model->Observables} )
             {   $obs->update([$spec]);   }
 
-            # update energy patterns (for energyBNG only)
-            if ( $model->Options->{energyBNG} )
-            {
-                foreach my $epatt ( @{$model->EnergyPatterns} )
-                {   $epatt->update([$spec]);   }
-            }
+            # update energy patterns (for energy BNG only)
+            foreach my $epatt ( @{$model->EnergyPatterns} )
+            {   $epatt->update([$spec]);   }
 
             # remember that we applied the observables
             $spec->ObservablesApplied(1);

@@ -182,7 +182,9 @@ sub match
 {
     my $obs = shift @_;
     my $sg  = shift @_;
-    my $rootmol = @_ ? shift @_ : -1;
+    my $root_src  = @_ ? shift @_ : -1;
+    my $root_targ = @_ ? shift @_ : -1;
+    #printf STDOUT "Observable::match(obs=%s, sg=%s, rootmol=%s)\n", $obs->Name, $sg->toString(), $root_targ;
 
     my $total_matches = 0;
     if ($obs->Type eq "Molecules")
@@ -190,7 +192,7 @@ sub match
         foreach my $patt (@{$obs->Patterns})
         {
             # find matches of this pattern in species graph
-            my @matches = $patt->isomorphicToSubgraph( $sg, $rootmol );
+            my @matches = $patt->isomorphicToSubgraph( $sg, $root_src, $root_targ );
             if (@matches)
             {
                 ## SYMMETRY CORRECTION is disabled for the time being!
@@ -204,7 +206,7 @@ sub match
         foreach my $patt (@{$obs->Patterns})
         {
             # find matches of this pattern in species graph
-            my @matches = $patt->isomorphicToSubgraph( $sg, $rootmol );            
+            my @matches = $patt->isomorphicToSubgraph( $sg, $root_src, $root_targ );            
             ## SYMMETRY CORRECTION is disabled for the time being!
             #my $n_match = scalar @matches / $patt->Automorphisms;
             my $n_match = scalar @matches;
@@ -267,7 +269,7 @@ sub evaluate
     my $args  = @_ ? shift @_ : [];        
     my $plist = @_ ? shift @_ : undef;
     my $level = @_ ? shift @_ : 0;
-    
+
     # first argument is observable name,
     #  remaining arguments should be pointers to species
     my $eval_args = [];
@@ -290,7 +292,7 @@ sub evaluate
                 {  die "Observable->evaluate(): Error! Can't find current Model to evaluate local observable!";  }
 
                 my $sg = $BNGModel::GLOBAL_MODEL->SpeciesList->Array->[$species_idx-1]->SpeciesGraph;
-                $val += $obs->match( $sg, $mol_idx );
+                $val += $obs->match( $sg, 0, $mol_idx );
             }   
             elsif ( $species_idx >= 0 )
             {   # complex-scoped (i.e. species-scoped) observable

@@ -2537,6 +2537,9 @@ sub isomorphicToSubgraph
     my $root_src  = @_ ? shift @_ : -1;
     my $root_targ = @_ ? shift @_ : -1;
 
+    #printf STDOUT "SpeciesGraph::isomorphicToSubGraph(sg1=%s,sg2=%s,root_src=%d,root_targ=%d)\n",
+    #    $sg1->toString(), $sg2->toString(), $root_src, $root_targ;
+
 	my $molecules1 = $sg1->Molecules;
  	my $edges1     = $sg1->Edges;
 	my $adj1       = $sg1->Adjacency;
@@ -2582,13 +2585,22 @@ sub isomorphicToSubgraph
     my @mol1_end   = (scalar @$molecules2) x @$molecules1;   # end index of mol2 that mol1 can match 
 	my @mol2_used  = (0) x @$molecules2;
 
-    if ($root_src >= 0)
+
+    if ($root_src >= @$molecules1  or  $root_targ >= @$molecules2)
+    {   die "SpeciesGraph::isomorphicToSubgraph(): root_src or root_targ is out of range";   }
+
+    if ( ($root_src == -1 and $root_targ >= 0) or ($root_src >= 0 and $root_targ==-1))
+    {   die "SpeciesGraph::isomorphicToSubgraph(): incompatible root_src and root_targ";   }
+
+    # force molecule $root_src of sg1 to match molecule $root_targ of sg2
+    if ($root_src >= 0 and $root_targ >= 0)
     {
         $mol1_begin[$root_src] = $root_targ;
         $mol1_ptr[$root_src]   = $root_targ;
         $mol1_end[$root_src]   = $root_targ + 1;
         $mol2_used[$root_targ] = 1;
     }
+
 
 	my @comp1_ptrs  = (undef) x @$molecules1;
 	my @comp2_useds = (undef) x @$molecules2;
@@ -2611,19 +2623,17 @@ sub isomorphicToSubgraph
 	    # find a match at the current level
 	    # Currently loop is done over all possible molecules, but this could be
 	    # changed to loop over molecules adjacent to molecules higher level to limit search.
-		my $mmatch = 0;
+		my $found_mol_match = 0;
 		for ( $im2 = $mol1_ptr[$im1]; $im2 < $mol1_end[$im1]; ++$im2 )
         {
             # Continue if this molecule already mapped
-            unless ($im1==$root_src)
-            {   next if $mol2_used[$im2];   } 
+            unless ($im1==$root_src) { next if $mol2_used[$im2]; } 
 
+            # Is mol2? a candidate match for mol1?
             # compare molecule types
             next unless ( $molecules1->[$im1]->Name eq $molecules2->[$im2]->Name );
-
             # compare number of components
             next if ( @$components1 > @{$molecules2->[$im2]->Components} );
-
             # compare compartments
 			if ( defined $molecules1->[$im1]->Compartment )
             {   
@@ -2633,16 +2643,16 @@ sub isomorphicToSubgraph
 
              # Initialize data for component match at this level
             $mol1_ptr[$im1] = $im2;
-			$components2  = $molecules2->[$im2]->Components;
+			$components2 = $molecules2->[$im2]->Components;
 			$comp1_ptrs[$im1]  = [ (0) x @$components1 ];
 			$comp2_useds[$im1] = [ (0) x @$components2 ];
-			$ic1 = ( $comp1_last >= 0 ) ? 0 : -1;
-			$mmatch = 1;
+			$ic1 = ($comp1_last >= 0) ? 0 : -1;
+			$found_mol_match = 1;
 			last;
-		}
+		}    
 
 		# if no match found to this molecule, move back to previous molecule and try again
-		unless ($mmatch)
+		unless ($found_mol_match)
         {
 			last MITER if ( $im1==0 );
 
@@ -2656,7 +2666,8 @@ sub isomorphicToSubgraph
 			$ic1 = $comp1_last;
 			$im2 = $mol1_ptr[$im1];
             unless ($im1==$root_src)
-            {   $mol2_used[ $mol1_ptr[$im1] ] = 0;  }
+            {   $mol2_used[ $mol1_ptr[$im1] ] = 0;   }
+
 			if ( $ic1 >= 0 )
             {
                 ++$comp1_ptrs[$im1][$ic1];
@@ -2675,7 +2686,7 @@ sub isomorphicToSubgraph
 	  CITER:
 		while (1)
         {
-            my $cmatch = 0;
+            my $found_comp_match = 0;
 			if ( $comp1_last >= 0 )
             {
                 my ($ci1, $ci2);
@@ -2688,14 +2699,11 @@ sub isomorphicToSubgraph
 
 					# Component name
 					next unless ( $ci1->Name eq $ci2->Name );
-
 					# Component state only if present in sg1
 					if ( defined $ci1->State )
                     {
 						unless ( $ci1->State eq "?" )
-                        {
-							next unless ( $ci1->State eq $ci2->State );
-						}
+                        {   next unless ( $ci1->State eq $ci2->State );   }
 					}
                     # compare compartments
 					if ( defined $ci1->Compartment )
@@ -2718,18 +2726,14 @@ sub isomorphicToSubgraph
 
 					        # + wildcard requires $diff>=0 (= case handled above)
 						    if ( $wild eq '+' )
-                            {
-							    next unless ( $diff > 0 );
-						    }
+                            {   next unless ( $diff > 0 );   }
 						    else
                             {   # *? (equivalent) wildcard requires $diff>-1, #c2 edges >= #c1 edges - 1 (for wildcard)
 							    next unless ( $diff >= -1 );
 						    }
                         }
                         else
-                        {
-                            next;
-                        }
+                        {   next;   }
 					}
 
 					#Check component edges
@@ -2762,7 +2766,7 @@ sub isomorphicToSubgraph
 					# Complete mapping of this molecule if $ic1==$comp1_last
 					if ( $ic1 == $comp1_last )
                     {
-						$cmatch = 1;
+						$found_comp_match = 1;
 						last;
 					}
 					else
@@ -2775,11 +2779,11 @@ sub isomorphicToSubgraph
 			}
 			else
             {   # No components in pattern
-				$cmatch = 1;
+				$found_comp_match = 1;
 			}
 
 			# Move back to previous component if no match found
-			unless ( $cmatch )
+			unless ( $found_comp_match )
             {   # Move to next molecule at current level if up exhausted
 				# component search
 				if ( $ic1 <= 0 )
@@ -2797,26 +2801,25 @@ sub isomorphicToSubgraph
 				next CITER;
 			}
 
-			# If $im1==$mol1_last, then graphs are isomorhpic and we can return
+			# If $im1==$mol1_last, then graphs are isomorphic and we can return
 			# Modify to save map for subgraph isomorphism case
 			if ( $im1 == $mol1_last )
             {
 				my $map = Map->new;
 				$map->Source($sg1);
 				$map->Target($sg2);
-				my %mapf = ();
-				foreach my $im ( 0 .. $mol1_last )
+				my $mapf = {};
+				foreach my $im (0 .. $mol1_last)
                 {
                     my $im2 = $mol1_ptr[$im];
-					$mapf{$im} = $im2;
+					$mapf->{$im} = $im2;
 					my $comp1_ptr = $comp1_ptrs[$im];
 
 					foreach my $ic ( 0 .. $#$comp1_ptr )
-                    {
-						$mapf{"$im.$ic"} = sprintf "%d.%d", $im2, $comp1_ptr->[$ic];
-					}
+                    {   $mapf->{"$im.$ic"} = sprintf "%d.%d", $im2, $comp1_ptr->[$ic];   }
 				}
-				$map->MapF( {%mapf} );
+				$map->MapF($mapf);
+                #print STDOUT "  map=", join( ", ", map {"$_->$mapf{$_}"} keys %mapf ), "\n";
 				push @maps, $map;
 
 				if ($sg1->MatchOnce)
@@ -2828,8 +2831,7 @@ sub isomorphicToSubgraph
 					next CITER;
 				}
 				else
-                {
-			        # Go to next molecule if no components in the current molecule
+                {   # Go to next molecule if no components in the current molecule
                     ++$mol1_ptr[$im1];
 					next MITER;
 				}
@@ -2843,7 +2845,7 @@ sub isomorphicToSubgraph
 		$components1 = $molecules1->[$im1]->Components;
 		$comp1_last  = $#$components1;
 	}
-	
+
 	return @maps;
 }
 
