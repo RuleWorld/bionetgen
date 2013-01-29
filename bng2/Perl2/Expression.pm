@@ -31,7 +31,7 @@ use List::Util qw(min max sum);
 
 struct Expression =>
 {
-    Type    => '$',    # Valid types are 'NUM', 'VAR', 'FUN', '+', '-', '*', '/', '^', '**',
+    Type    => '$',    # Valid types are 'NUM', 'VAR', 'FunctionCall', '+', '-', '*', '/', '^', '**',
                        # '>','<','>=','<=','==','!=','~=','&&','||','!','~'
     Arglist => '@',
     Err     => '$',
@@ -137,7 +137,7 @@ sub isBuiltIn
 
 
 # get a recursive copy of an expression.
-#   Note that the recursion does not descend past VAR and FUN type expressions.
+#   Note that the recursion does not descend past VAR and FunctionCall type expressions.
 #   Returns a refence to the clone and any error messages.
 sub clone
 {
@@ -239,8 +239,8 @@ sub newNumOrVar
 
 # Creates a new expression from a list of existing expressions.
 # The type argument indicates the operation used to combine the expressions.
-#   E.g. '+', '-', 'FUN'.
-# If the type is 'FUN', then the first argument should be the name of
+#   E.g. '+', '-', 'FunctionCall'.
+# If the type is 'FunctionCall', then the first argument should be the name of
 #   a built-in or user-defined function.
 sub operate
 {
@@ -261,7 +261,7 @@ sub operate
     # Check for the right number of arguments..
    
     # is this a function?
-    if ( $type eq 'FUN' )
+    if ( $type eq 'FunctionCall' )
     {
         # get function name (first argument)
         my $fcn_name = $args_copy->[0];
@@ -474,7 +474,7 @@ sub operate
                 next;
             }
     
-            # look for a FUNCTION
+            # look for a function call
             if ( $$sptr =~ s/^($ops_un)?\s*(\w+)\s*\(// )
             {
                 if ( my $op = $1 )
@@ -563,7 +563,7 @@ sub operate
                     }
                 }
                 my $express = Expression->new();
-                $express->Type('FUN');
+                $express->Type('FunctionCall');
                 $express->Arglist( [ $name, @fargs ] );
                 push @list, $express;
                 $expect_op = 1;
@@ -723,7 +723,7 @@ sub depends
         # ..check if this depends on varname
         my @arglist = @{ $expr->Arglist };
         # Skip function name if this is a function
-        if ( $type eq 'FUN' ) {  shift @arglist;  }
+        if ( $type eq 'FunctionCall' ) {  shift @arglist;  }
         foreach my $expr (@arglist)
         {
             ($retval, $err) = $expr->depends($plist, $varname, $level + 1, $dep);
@@ -785,7 +785,7 @@ sub evaluate
         unless (defined $val)
         {  die "Expression->evaluate: Error! Parameter $name is not defined!\n";  }
     }
-    elsif ( $expr->Type eq 'FUN' )
+    elsif ( $expr->Type eq 'FunctionCall' )
     {
         # first argument is function name
         my $name  = $expr->Arglist->[0];
@@ -901,7 +901,7 @@ sub evaluate_local
     } 
    
     # some additional handling for Function expressions!
-    if ( $expr->Type eq 'FUN' )
+    if ( $expr->Type eq 'FunctionCall' )
     {
         # if local arguments are passed to this function, then we
         #  must go into the function and evaluate the local bits.  Then
@@ -1017,7 +1017,7 @@ sub checkLocalDependency
         }
     }    
        
-    if ( $expr->Type eq 'FUN' )
+    if ( $expr->Type eq 'FunctionCall' )
     {    
         my $name = $expr->Arglist->[0];
 
@@ -1088,7 +1088,7 @@ sub equivalent
         # compare var names
         return ( $expr1->Arglist->[0]  eq  $expr2->Arglist->[0] );
     }
-    elsif ( $expr2->Type eq 'FUN' )
+    elsif ( $expr2->Type eq 'FunctionCall' )
     {
         # compare function names (or refs)
         return 0  unless ( ref $expr1->Arglist->[0] eq ref $expr2->Arglist->[0] );
@@ -1157,7 +1157,7 @@ sub toString
         #$string= $expr->evaluate($plist);
         #print "VAR=$string\n";
     }
-    elsif ( $type eq 'FUN' )
+    elsif ( $type eq 'FunctionCall' )
     {
         my $name = $expr->Arglist->[0];
         if ( $expand  or  (ref $name eq "Function") )
@@ -1277,7 +1277,7 @@ sub toXML
             $string = $expr->Arglist->[0];
         }
     }
-    elsif ( $type eq 'FUN' )
+    elsif ( $type eq 'FunctionCall' )
     {
         if ( $expand )
         {
@@ -1401,7 +1401,7 @@ sub toCVodeString
             $string = $expr->Arglist->[0];
         }        
     }
-    elsif ( $type eq 'FUN' )
+    elsif ( $type eq 'FunctionCall' )
     {
         # the first argument is the function name
         my $fcn_name = $expr->Arglist->[0];
@@ -1529,7 +1529,7 @@ sub toMatlabString
             $string = $expr->Arglist->[0];
         }        
     }
-    elsif ( $type eq 'FUN' )
+    elsif ( $type eq 'FunctionCall' )
     {
         # the first argument is the function name
         my $fcn_name = $expr->Arglist->[0];
@@ -1654,7 +1654,7 @@ sub toMatlabString
         {
             $string .= sprintf "%s<ci> %s </ci>\n", $indentp, $expr->Arglist->[0];
         }
-        elsif ( $type eq 'FUN' ) {
+        elsif ( $type eq 'FunctionCall' ) {
             $string .= $indentp . "<apply>\n";
             my $indentpp = $indentp . "  ";
             my @arglist  = @{ $expr->Arglist };
@@ -1846,7 +1846,7 @@ sub getVariables
             $rethash->{'UNDEF'}->{$param->Name} = $param;
         }
     }
-    elsif ( $type eq 'FUN' )
+    elsif ( $type eq 'FunctionCall' )
     {
         if ( ref $expr->Arglist->[0] eq "Function" )
         {   # anonymous function

@@ -371,7 +371,7 @@ sub evaluate_local
             {
                 # evaluate function locally
                 my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
-                my $expr = Expression->new(Type=>"FUN", Arglist=>[@local_args]);
+                my $expr = Expression->new(Type=>"FunctionCall", Arglist=>[@local_args]);
                 $local_expr = $expr->evaluate_local($model->ParamList);
 
                 # add to localfunc string to fingerprint
@@ -445,7 +445,7 @@ sub evaluate_local
 
             # 5) get negative exponential
             $arrhenius_expr = Expression::operate("-", [$arrhenius_expr], $model->ParamList);
-            $arrhenius_expr = Expression::operate("FUN", ["exp", $arrhenius_expr], $model->ParamList);
+            $arrhenius_expr = Expression::operate("FunctionCall", ["exp", $arrhenius_expr], $model->ParamList);
 
             # assign local expr to a parameter
             my $rule_name = $rxn->RxnRule->Name;  # base parameter name on the rule
@@ -481,7 +481,7 @@ sub evaluate_local
         {
             # evaluate function locally
             my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
-            my $expr = Expression->new(Type=>"FUN", Arglist=>[@local_args]);
+            my $expr = Expression->new(Type=>"FunctionCall", Arglist=>[@local_args]);
             my $local_expr = $expr->evaluate_local($model->ParamList);
 
             # add to localfunc string to fingerprint
@@ -497,7 +497,7 @@ sub evaluate_local
                 my $rl_type;
                 my $rl_constants = [];
 
-                if ($local_expr->Type eq "FUN")
+                if ($local_expr->Type eq "FunctionCall")
                 {   # function expressions
                     if (ref $local_expr->Arglist->[0] eq "Function")
                     {   # create new parameter for this anonymous function
