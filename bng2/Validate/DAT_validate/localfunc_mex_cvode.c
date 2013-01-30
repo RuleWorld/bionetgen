@@ -50,7 +50,7 @@
 
 /* Problem Dimensions */
 #define __N_PARAMETERS__   4
-#define __N_EXPRESSIONS__  4
+#define __N_EXPRESSIONS__  8
 #define __N_OBSERVABLES__  8
 #define __N_RATELAWS__     11
 #define __N_SPECIES__      7
@@ -64,65 +64,9 @@ void  calc_ratelaws    ( N_Vector ratelaws,  N_Vector species, N_Vector expressi
 int   calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data );
 
 /* user-defined function declarations */
-double f_synth_1 ( N_Vector expressions, N_Vector observables );
-double rateLaw1_1 ( N_Vector expressions, N_Vector observables );
-double f_synth_2 ( N_Vector expressions, N_Vector observables );
-double rateLaw1_2 ( N_Vector expressions, N_Vector observables );
-double f_synth_3 ( N_Vector expressions, N_Vector observables );
-double rateLaw1_3 ( N_Vector expressions, N_Vector observables );
-double f_synth_4 ( N_Vector expressions, N_Vector observables );
-double rateLaw1_4 ( N_Vector expressions, N_Vector observables );
 
 
 /* user-defined function definitions  */
-/* user-defined function f_synth_1 */
-double f_synth_1 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(0.0,2.0));
-}
-
-/* user-defined function rateLaw1_1 */
-double rateLaw1_1 ( N_Vector expressions, N_Vector observables )
-{
-    return f_synth_1(expressions,observables);
-}
-
-/* user-defined function f_synth_2 */
-double f_synth_2 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(1.0,2.0));
-}
-
-/* user-defined function rateLaw1_2 */
-double rateLaw1_2 ( N_Vector expressions, N_Vector observables )
-{
-    return f_synth_2(expressions,observables);
-}
-
-/* user-defined function f_synth_3 */
-double f_synth_3 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(2.0,2.0));
-}
-
-/* user-defined function rateLaw1_3 */
-double rateLaw1_3 ( N_Vector expressions, N_Vector observables )
-{
-    return f_synth_3(expressions,observables);
-}
-
-/* user-defined function f_synth_4 */
-double f_synth_4 ( N_Vector expressions, N_Vector observables )
-{
-    return (NV_Ith_S(expressions,2)*pow(3.0,2.0));
-}
-
-/* user-defined function rateLaw1_4 */
-double rateLaw1_4 ( N_Vector expressions, N_Vector observables )
-{
-    return f_synth_4(expressions,observables);
-}
-
 
 
 /* Calculate expressions */
@@ -133,6 +77,10 @@ calc_expressions ( N_Vector expressions, double * parameters )
     NV_Ith_S(expressions,1) = parameters[1];
     NV_Ith_S(expressions,2) = parameters[2];
     NV_Ith_S(expressions,3) = parameters[3];
+    NV_Ith_S(expressions,4) = (NV_Ith_S(expressions,2)*pow(0.0,2.0));
+    NV_Ith_S(expressions,5) = (NV_Ith_S(expressions,2)*pow(1.0,2.0));
+    NV_Ith_S(expressions,6) = (NV_Ith_S(expressions,2)*pow(2.0,2.0));
+    NV_Ith_S(expressions,7) = (NV_Ith_S(expressions,2)*pow(3.0,2.0));
    
 }
 
@@ -155,16 +103,16 @@ calc_observables ( N_Vector observables, N_Vector species, N_Vector expressions 
 void
 calc_ratelaws ( N_Vector ratelaws, N_Vector species, N_Vector expressions, N_Vector observables )
 {  
-    NV_Ith_S(ratelaws,0) = rateLaw1_1(expressions,observables)*NV_Ith_S(species,0);
+    NV_Ith_S(ratelaws,0) = (NV_Ith_S(expressions,2)*pow(0.0,2.0))*NV_Ith_S(species,0);
     NV_Ith_S(ratelaws,1) = 3.0*NV_Ith_S(expressions,0)*NV_Ith_S(species,0)*NV_Ith_S(species,1);
     NV_Ith_S(ratelaws,2) = NV_Ith_S(expressions,3)*NV_Ith_S(species,2);
-    NV_Ith_S(ratelaws,3) = rateLaw1_2(expressions,observables)*NV_Ith_S(species,4);
+    NV_Ith_S(ratelaws,3) = (NV_Ith_S(expressions,2)*pow(1.0,2.0))*NV_Ith_S(species,4);
     NV_Ith_S(ratelaws,4) = 2.0*NV_Ith_S(expressions,0)*NV_Ith_S(species,4)*NV_Ith_S(species,1);
     NV_Ith_S(ratelaws,5) = NV_Ith_S(expressions,1)*NV_Ith_S(species,4);
-    NV_Ith_S(ratelaws,6) = rateLaw1_3(expressions,observables)*NV_Ith_S(species,5);
+    NV_Ith_S(ratelaws,6) = (NV_Ith_S(expressions,2)*pow(2.0,2.0))*NV_Ith_S(species,5);
     NV_Ith_S(ratelaws,7) = NV_Ith_S(expressions,0)*NV_Ith_S(species,5)*NV_Ith_S(species,1);
     NV_Ith_S(ratelaws,8) = 2.0*NV_Ith_S(expressions,1)*NV_Ith_S(species,5);
-    NV_Ith_S(ratelaws,9) = rateLaw1_4(expressions,observables)*NV_Ith_S(species,6);
+    NV_Ith_S(ratelaws,9) = (NV_Ith_S(expressions,2)*pow(3.0,2.0))*NV_Ith_S(species,6);
     NV_Ith_S(ratelaws,10) = 3.0*NV_Ith_S(expressions,1)*NV_Ith_S(species,6);
 
 }

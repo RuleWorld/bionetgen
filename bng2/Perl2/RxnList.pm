@@ -39,9 +39,18 @@ sub resetHash
 }
 
 
+# get the size of the rxn list
+sub size
+{
+    my $rlist = shift @_;
+    return scalar @{$rlist->Array};
+}
+
+
 ###
 ###
 ###
+
 
 
 # Add a reaction to the list.
@@ -73,15 +82,16 @@ sub add
             if ( $rxn->Priority == $rxn2->Priority )
             {
                 # Reaction with same rate law as previous reaction is combined with it
+                # TODO: this may be obsolete after implementing ratelaw hashing..
                 if ( RateLaw::equivalent($rxn->RateLaw, $rxn2->RateLaw, $plist) )
                 {
                     $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
                     $add_rxn = 0;
 
-                    # Need to delete reaction and ratelaw?
+                    # Need to delete reaction and ratelaw? 
                     #  (if the ratelaws references are different and the rules are the same,
                     #   then we can safely delete the extra Ratelaw copy.  This is useful
-                    #   for energyBNG where we derive new ratelaws from general rates, but often
+                    #   for energy BNG where we derive new ratelaws from general rates, but often
                     #   the same derived law works for many reactions. Deleting redundant derived laws
                     #   allows us to save space.)
                     if ( ($rxn->RateLaw != $rxn2->RateLaw) and ($rxn->RxnRule == $rxn2->RxnRule) )

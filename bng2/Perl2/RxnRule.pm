@@ -46,7 +46,7 @@ struct RxnRule =>
 	MapF      => '%',    # Map from reactants to products 'rP.rM.rC' -> 'pP.pM.pC'
 	MapR      => '%',    # Map from products to reactants 'pP.pM.pC' -> 'rP.rM.rC'
 
-	RateLaw   => 'RateLaw',    # Array of rate laws, 1 if unidirectional, 2 if reversible
+	RateLaw   => 'RateLaw',    # RateLaw
     TotalRate => '$',          # indicates whether the ratelaws corresponding to this rule define a TotalRate (1)
                                #   or a PerSite rate (default=0)
 
@@ -64,7 +64,9 @@ struct RxnRule =>
 	ChangeCompartment => '@',
 
 	RRefs => '%',    # Refs to objects on reactants side of rule
-	PRefs => '%',    # Refs to objects on products side of rule
+	PRefs => '%',    # Refs
+
+    Direction => '$',       # direction of rule: forward=1, reverse=-1
 
 	# operation modifiers
 	DeleteMolecules => '$', # If True, deleting a molecule in a species will remove only that molecule.
@@ -136,6 +138,8 @@ sub copy
 
     %{$rr_copy->RRefs} = %{$rr->RRefs};
     %{$rr_copy->PRefs} = %{$rr->PRefs};
+
+    $rr_copy->Direction( $rr->Direction );
 
     $rr_copy->DeleteMolecules( $rr->DeleteMolecules );
     $rr_copy->MoveConnected( $rr->MoveConnected );
@@ -294,11 +298,6 @@ sub newRxnRule
 		if ($1)
 		{   # Check if this reaction is reversible
 			$reversible = ( $1 eq "<->" ) ? 1 : 0;
-		    # check reversibility in energyBNG mode.  Does this matter?  Maybe issue warning?  --Justin, 9nov2010
-		    #if ( !$reversible  and  ($model->Options->{EnergyBNG}) )
-		    #{
-		    #    return ( [], "All rules must be reversible in energyBNG mode.  Reaction rule $name is not reversible." );
-		    #}
 			# We're done with Reactants, so exit this loop
 			last;
 		}
@@ -456,39 +455,61 @@ sub newRxnRule
     if ( $string =~ s/(^|\s)TotalRate(\s|$)/$2/ )
     {   $TotalRate = 1;   }
 
+    # Extract the Ratelaws..
 
-	# temporarily add Reference tags as names in the ParamList
-	if (%rrefs) {  setRefs( \%rrefs, '', $plist );  }
+    # Get forward ratelaw..
+    # temporarily add Reference tags as names in the ParamList
+    if (%rrefs) { setRefs(\%rrefs, '', $plist); }
     # Parse and Create the ratelaw
-	( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@reac );
-	if ($err) {  return [], $err;  }
+    ( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@reac );
+    if ($err) { return [], $err; }
     # unset temporary names of Reference tags
-	if (%rrefs) {  unsetRefs(\%rrefs, $plist);  } 
-	# Save the ratelaw
-	push @rate_laws, $rl;
+    if (%rrefs) { unsetRefs(\%rrefs, $plist); }
+    # Save the ratelaw
+    push @rate_laws, $rl;
 
+    # Reversible rule requires two valid rate laws
+    if ($reversible)
+    {
+        if ($string =~ /^\s*,/)
+        {   
+            if ($rl->Type eq "Arrhenius")
+            { return [], "Found second ratelaw, but Arrhenius rate law is sufficient for both directions"; }
 
-	# Reversible reaction requires two valid rate laws
-	if ($reversible)
-	{
-		# Remove separator for backward compatibility
-		$string =~ s/^\s*[,]\s*//;
-		if (%prefs) { setRefs( \%prefs, '', $plist ); }
-		( $rl, $err ) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@prod );
-		if ($err) { return ( [], $err ); }
-		if (%prefs) { unsetRefs( \%prefs, $plist ); }
-		push @rate_laws, $rl;
-	}
-	else
-	{
-		if ( $string =~ /^\s*[,]/ ) {
-			return ( [], "Unidirection reaction may have only one rate law" );
-		}
-	}
+            # get reverse rate law
+            $string =~ s/^\s*,\s*//;
+	        if (%prefs) { setRefs( \%prefs, '', $plist ); }
+	        ($rl, $err) = RateLaw::newRateLaw( \$string, $model, $TotalRate, \@prod );
+	        if ($err) { return [], $err; }
+	        if (%prefs) { unsetRefs( \%prefs, $plist ); }
+	        push @rate_laws, $rl;  
+        }
+        else
+        {   # can't find second rate law
+            if ( $rl->Type eq "Arrhenius" )
+            {   # the forward ratelaw will suffice for the forward and reverse rule..
+                # first make sure there are no undefined local args for the reverse ratelaw
+                my $last = @{$rl->Constants}-1;
+                my @local_args = @{$rl->Constants}[2..$last];
+                my @missing_args = grep {not exists $prefs{$_}} @local_args;
+                if (@missing_args)
+                { return [], "Arrhenius rate law has undefined local arguments for the reverse direction"; }
+
+                push @rate_laws, $rl;
+            }
+            else
+            {   return [], "Expecting--but did not find--second ratelaw for reversible rule";   }
+        }
+    }
+    else
+    {
+	    if ($string =~ /^\s*,/) { return [], "Unidirection reaction may have only one rate law"; }
+    }
+
+    #print STDERR "rateLaw = ", $rl->toString(), "\n";
 
 
     # NOTE1: keywords can be in any order following the ratelaws.
-
     # NOTE2: made keyword extraction safer by checking for white space characters
     #   or end of string around the keyword.  Also, if keyword is extracted midstring
     #   a space is left in place of keyword.  --Justin 
@@ -649,17 +670,16 @@ sub newRxnRule
 	$rr->Pexclude( [@Pexclude] );
 	$rr->Rinclude( [@Rinclude] );
 	$rr->Pinclude( [@Pinclude] );
+    $rr->Direction(1);
 	$rr->TotalRate($TotalRate);
 	$rr->DeleteMolecules($DeleteMolecules);
 	$rr->MoveConnected($MoveConnected);
 	$rr->RRefs( {%rrefs} );
 	$rr->PRefs( {%prefs} );
 
-
 	# Find mapping of reactants onto products
 	if ( $err = $rr->findMap($mtlist) ) { return [], $err; }
 	push @$rrs, $rr;
-
 
 	if ($reversible)
 	{
@@ -673,6 +693,7 @@ sub newRxnRule
 		$rr->Rexclude( [@Pexclude] );
 		$rr->Pinclude( [@Rinclude] );
 		$rr->Rinclude( [@Pinclude] );
+        $rr->Direction(-1);
 		$rr->TotalRate($TotalRate);
 		$rr->DeleteMolecules($DeleteMolecules);
 		$rr->MoveConnected($MoveConnected);		
@@ -773,22 +794,20 @@ sub listActions
 ##
 
 
-
-# write RxnRule to a string
+# write RxnRule to a BNGL string
 sub toString
 {
-	my $rr     = shift;
-	my $rr_rev = (@_) ? shift : undef;
+	my $rr     = shift @_;
+	my $rr_rev = @_ ? shift @_ : undef;
+
 	my $string = '';
 
 	# Reaction name
 	# Name is an index unless it contains non-digit character
 	if ( defined $rr->Name  and  $rr->Name ne '' )
-	{
-        $string .= $rr->Name . ":  ";
-	}
+	{   $string .= $rr->Name . ":  ";	}
 	
-
+    # Reactant Patterns
     if ( @{$rr->Reactants} )
     {
 	    my $i = 0;
@@ -804,8 +823,10 @@ sub toString
         $string .= SpeciesGraph::getNullString();
     }
 
-	$string .= ($rr_rev) ? " <-> " : " -> ";
+    # Directional Arrow
+	$string .= (defined $rr_rev) ? " <-> " : " -> ";
 
+    # Product Patterns
     if ( @{$rr->Products} )
     {
 	    my $i = 0;
@@ -821,67 +842,57 @@ sub toString
         $string .= SpeciesGraph::getNullString();
     }
 
-
+    # Ratelaw
 	$string .= "  " . $rr->RateLaw->toString();
-	if ($rr_rev)
-	{
-		$string .= ", " . $rr_rev->RateLaw->toString();
-	}
+	if ($rr_rev and not ($rr->RateLaw->Type eq "Arrhenius") )
+	{   $string .= ", " . $rr_rev->RateLaw->toString();   }
 
+    # Priority
 	if ( $rr->Priority != 0 )
-	{
-		$string .= sprintf " priority=%d", $rr->Priority;
-	}
+	{	$string .= sprintf " priority=%d", $rr->Priority;   }
 
+    # Include/Exclude 
 	foreach my $i ( 0 .. $#{$rr->Rexclude} )
 	{
-		next unless ( @{ $rr->Rexclude->[$i] } );
+		next unless ( @{$rr->Rexclude->[$i]} );
 		$string .= " exclude_reactants(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Rexclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Rexclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
 	foreach my $i ( 0 .. $#{$rr->Pexclude} )
 	{
-		next unless ( @{ $rr->Pexclude->[$i] } );
+		next unless ( @{$rr->Pexclude->[$i]} );
 		$string .= " exclude_products(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Pexclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Pexclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
 	foreach my $i ( 0 .. $#{$rr->Rinclude} )
 	{
-		next unless ( @{ $rr->Rinclude->[$i] } );
+		next unless ( @{$rr->Rinclude->[$i]} );
 		$string .= " include_reactants(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Rinclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Rinclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
 	foreach my $i ( 0 .. $#{$rr->Pinclude} )
 	{
-		next unless ( @{ $rr->Pinclude->[$i] } );
+		next unless ( @{$rr->Pinclude->[$i]} );
 		$string .= " include_products(";
 		$string .= $i + 1;
-		foreach my $g ( @{ $rr->Pinclude->[$i] } )
-		{
-			$string .= ',' . $g->toString();
-		}
+		foreach my $g ( @{$rr->Pinclude->[$i]} )
+		{   $string .= ',' . $g->toString();   }
 		$string .= ")";
 	}
 
-    # modifier flags
+    # Keywords
 	$string .= " TotalRate" if ( $rr->TotalRate );
     $string .= " DeleteMolecules" if ( $rr->DeleteMolecules );
     $string .= " MoveConnected"	if ( $rr->MoveConnected );
@@ -3202,11 +3213,23 @@ sub build_reaction
 		# a pointer to new or existing species with isomorphic sg.
 		# If we want mapping for this reaction need to update to
 		# account for reordering of molecules and components
-		my $spec;
-		unless ( $spec = $model->SpeciesList->lookup($p, $params->{check_iso}) )
+		my $spec = $model->SpeciesList->lookup($p, $params->{check_iso});
+		if ( not defined $spec )
 		{
+            # add species to the list
 			$spec = $model->SpeciesList->add($p, 0);
 			++$n_new_species;
+
+            # update observables
+            foreach my $obs ( @{$model->Observables} )
+            {   $obs->update([$spec]);   }
+
+            # update energy patterns (for energy BNG only)
+            foreach my $epatt ( @{$model->EnergyPatterns} )
+            {   $epatt->update([$spec]);   }
+
+            # remember that we applied the observables
+            $spec->ObservablesApplied(1);
 		}
 
 		# Add the product Species
@@ -3233,57 +3256,36 @@ sub build_reaction
 	}
         
 
-    # get rateLaw for this reaction
-    # By default, use the same ratelaw as the rule
-    my $rl = $rr->RateLaw;
-
-    # If this rule has reactant tags and the ratelaw has type function,
-    #  then we may need to create a local ratelaw . . .
-    if ( %{$rr->RRefs}  and  $rr->RateLaw->Type eq 'Function' )
+    # map reference tags to local objects
+    my $local_refs = {};
+    while ( my ($ref,$ptr1) = each %{$rr->RRefs} )
     {
-        # get parameter corresponding to ratelaw function
-        (my $rl_param) = $model->ParamList->lookup( $rr->RateLaw->Constants->[0] );       
-        unless ( $rl_param->Type eq 'Function' )
-        {   die "Error in RxnRule->ApplyRule(): cannot find parameter for RateLaw!";   }
-                       
-        # get function object
-        my $fcn = $rl_param->Ref;                     
-        
-        # check for local dependency
-        if ( $fcn->checkLocalDependency($model->ParamList) )
-        {
-            # need to create a new ratelaw with locally evaluated observables
-            
-            # get local values for function evaluation
-            my @local_refs = ($fcn->Name);
-            for ( my $ii=0; $ii < @{$fcn->Args}; ++$ii )
-            {   push @local_refs, $reactant_species->[ $rr->RRefs->{$fcn->Args->[$ii]} ]->Index;   }                   
-        
-            # evaluate function with local values to get local function
-            (my $local_fcn) = $fcn->evaluate_local( \@local_refs, $model->ParamList );
-
-            # add local_fcn to the parameter list
-            #  (so we can lookup the local function in the future!)
-            $model->ParamList->set( $local_fcn->Name, $local_fcn->Expr, 1, 'Function', $local_fcn );                  
-       
-            my $lf_name = $local_fcn->Name;
-            (my $lf_param) = $model->ParamList->lookup($lf_name); 
-            
-            # replace fcn name with new local funct name
-            $local_refs[0] = $local_fcn->Name;
-            
-            # create param for local function
-            $rl = RateLaw->new( Type=>'Function', Constants=>[@local_refs], Factor=>$rr->RateLaw->Factor );
-        
-            # increment number of ratelaws (in the RateLaw class)
-            ++$RateLaw::n_Ratelaw;
+        my ($patt_idx,$mol_idx,$comp_idx) = split( /\./, $ptr1 );
+        # first remap pattern pointer to a species
+        my $ptr2 = $reactant_species->[$patt_idx]->Index;
+        if (defined $mol_idx)
+        {   # next remap the molecule
+            my ($mol2_idx) = split( /\./, $matches->[$patt_idx]->mapF($mol_idx) );
+            $ptr2 .= ".$mol2_idx";
+            if (defined $comp_idx)
+            {   # finally remap the component
+                my ($mol2_idx, $comp2_idx) = split( /\./, $matches->[$patt_idx]->mapF("$mol_idx.$comp_idx") );
+                $ptr2 .= ".$comp2_idx";
+            }
         }
+        $local_refs->{$ref} = $ptr2;
     }
+
 
 	# Create reaction
 	my $rxn = Rxn->new( Reactants=>$reactant_species, Products=>$product_species,
-                        RateLaw=>$rl, Priority=>$rr->Priority, RxnRule=>$rr,
+                        RateLaw=>undef, Priority=>$rr->Priority, RxnRule=>$rr,
                         StatFactor=>$rr->MultScale );
+
+    # evaluate ratelaw in local context    
+    my $rl = $rr->RateLaw->evaluate_local($rxn, $local_refs, $model);
+    $rxn->RateLaw( $rl );
+
     # return rxn
     return $rxn;
 }

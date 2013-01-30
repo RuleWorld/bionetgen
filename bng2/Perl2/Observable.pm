@@ -26,22 +26,18 @@ struct Observable =>
     Output    => '$',           # If false, suppress output.  (Feature not yet implemented)
 };
 
-
+my $print_match=0;
 
 ###
 ###
 ###
-
 
 
 sub copy
 {
-    my $obs = shift;
+    my $obs = shift @_;
     
-    my $obs_copy = Observable::new();
-    $obs_copy->Name( $obs->Name );
-    $obs_copy->Type( $obs->Type );
-    $obs_copy->Output( $obs->Output );
+    my $obs_copy = Observable->new( Name=>$obs->Name, Type=>$obs->Type, Output=>$obs->Output );
     
     foreach my $patt ( @{$obs->Patterns} )
     {
@@ -50,9 +46,7 @@ sub copy
     }
     
     if ( defined $obs->Weights )
-    {
-        $obs_copy->Weights( [ @{$obs->Weights} ] );
-    }
+    {   $obs_copy->Weights( [@{$obs->Weights}] );   }
 
     return $obs_copy;
 }
@@ -63,12 +57,11 @@ sub copy
 ###
 
 
-
 # call this method to link Compartments to a new CompartmentList
 sub relinkCompartments
 {
-    my $obs = shift;
-    my $clist = shift;
+    my $obs = shift @_;
+    my $clist = shift @_;
     
     my $err = undef;
     unless ( ref $clist eq 'CompartmentList' )
@@ -84,34 +77,199 @@ sub relinkCompartments
 }
 
 
-
 ###
 ###
 ###
 
 
-
-sub clearWeights
+sub readString
 {
-    my $obs = shift;
-    @{$obs->Weights} = ();
+    my $obs    = shift @_;
+    my $string = shift @_;
+    my $model  = shift @_;
+    
+    my $err;
+
+    # set output true (by default)
+    $obs->Output(1);
+
+    # Check if first token is an index (This index will be ignored)
+    $string =~ s/^\s*\d+\s+//;
+
+    # Check if next token is observable type
+    #  Adding Counter and Population types  --Justin, 5nov2010
+    #  Function observable is undocumenterd, but its here to include function
+    #    evaluations among the output observables --Justin
+    if ( $string =~ s/^\s*(Molecules|Species|Counter)\s*// )
+    {
+        # record observable type
+        $obs->Type($1);
+    }
+    else
+    {   # Justin thinks defaults like this are dangerous and prone to unpredictable behavior
+        #  when future changes are made to the language or code.  Return error instead
+        return "Observable type is not valid";
+    }
+
+    # Next token is observable Name
+    if ( $string =~ s/^\s*([A-z]\w*)\s+// )
+    {
+        my $name=$1;
+        $obs->Name($name);
+    }
+    else
+    {
+        my ($name) = split(' ', $string);
+        return "Invalid observable name $name: may contain only alphnumeric and underscore";
+    }
+
+    # Define parameter with name of the Observable
+    if ( $model->ParamList->set( $obs->Name, "0", 1, "Observable", $obs) )
+    {
+  	    my $name= $obs->Name;
+        return "Observable name $name matches previously defined Observable or Parameter";
+    }
+
+    # Remaining entries are patterns
+    my $sep = '^\s+|^\s*,\s*';
+    while ($string)
+    {
+        my $g = SpeciesGraph->new();
+        my $count_autos = 1;
+        $err = $g->readString( \$string, $model->CompartmentList, 0, $sep, $model->MoleculeTypesList, $count_autos );
+        if ($err) { return "While reading observable " . $obs->Name . ": $err"; }
+
+        $string =~ s/$sep//;
+
+        if ( $g->isNull() )
+        {   # this is the null pattern
+            send_warning( sprintf("Found useless instance of null pattern in observable %s.", $obs->Name) );
+            next;
+        }
+
+        if ( ($obs->Type eq 'Species') and (not defined($g->Quantifier) or $g->Quantifier eq '') )
+        { 
+            $g->MatchOnce(1);
+        }
+        push @{$obs->Patterns}, $g;
+    }
+    
+    return $err;
 }
 
 
+###
+###
+###
+
+
+# reset the observable weights to zero
+sub reset_weights
+{
+    my $obs   = shift @_;
+    my $alloc = @_ ? shift @_ : 0;
+    $obs->Weights( [(0) x ($alloc+1)] );
+}
+
 
 ###
 ###
 ###
 
 
+# try to match observable to a speciesGraph and return the number of matches
+sub match
+{
+    my $obs = shift @_;
+    my $sg  = shift @_;
+    my $root_src  = @_ ? shift @_ : -1;
+    my $root_targ = @_ ? shift @_ : -1;
+    #printf STDOUT "Observable::match(obs=%s, sg=%s, rootmol=%s)\n", $obs->Name, $sg->toString(), $root_targ;
 
+    my $total_matches = 0;
+    if ($obs->Type eq "Molecules")
+    {
+        foreach my $patt (@{$obs->Patterns})
+        {
+            # find matches of this pattern in species graph
+            my @matches = $patt->isomorphicToSubgraph( $sg, $root_src, $root_targ );
+            if (@matches)
+            {
+                ## SYMMETRY CORRECTION is disabled for the time being!
+                #$total_matches += scalar @matches / $patt->Automorphisms;
+                $total_matches += scalar @matches;
+            }
+        }
+    }
+    elsif ($obs->Type eq "Species")
+    {
+        foreach my $patt (@{$obs->Patterns})
+        {
+            # find matches of this pattern in species graph
+            my @matches = $patt->isomorphicToSubgraph( $sg, $root_src, $root_targ );            
+            ## SYMMETRY CORRECTION is disabled for the time being!
+            #my $n_match = scalar @matches / $patt->Automorphisms;
+            my $n_match = scalar @matches;
+             
+            if ($patt->Quantifier)
+            {
+                my $test_string = $n_match . $patt->Quantifier;
+                my $result = eval $test_string;
+                warn $@ if $@;
+                $total_matches += $result ? 1 : 0;
+                #last;
+            }
+            elsif ($n_match>0)
+            {
+                $total_matches += 1;
+                #last;
+            }
+        }
+
+    }
+    return $total_matches;
+}
+
+
+###
+###
+###
+
+
+# compute observable weights for the species in the array
+sub update
+{
+    my $obs = shift @_;
+    my $species = shift @_;
+    my $idx_start = @_ ? shift @_ : 0;
+
+    my $err = '';
+
+    for ( my $ii = $idx_start; $ii < @$species; ++$ii )
+    {
+        my $sp = $species->[$ii];
+        next if ($sp->ObservablesApplied);
+        $obs->Weights->[$sp->Index] = $obs->match( $sp->SpeciesGraph );
+    }
+    return $err;
+}
+
+
+###
+###
+###
+
+
+# evaluate observable.
+# If observable evaluation is scoped to a complex or molecule,
+#  the scope argument is the first element of @$args.
 sub evaluate
 {
-    my $obs = shift;
-    my $args  = (@_) ? shift : [];        
-    my $plist = (@_) ? shift : undef;
-    my $level = (@_) ? shift : 0;
-    
+    my $obs = shift @_;
+    my $args  = @_ ? shift @_ : [];        
+    my $plist = @_ ? shift @_ : undef;
+    my $level = @_ ? shift @_ : 0;
+
     # first argument is observable name,
     #  remaining arguments should be pointers to species
     my $eval_args = [];
@@ -120,16 +278,29 @@ sub evaluate
     {
         push @$eval_args, $args->[$ii]->evaluate( $plist, $level+1 );
         ++$ii;
-    }             
+    }
     
     my $val = 0;
     if (@$eval_args)
     {   # this is a local observable
-        foreach my $species_idx ( @$eval_args )
+        foreach my $ptr ( @$eval_args )
         {
-            unless ( $species_idx =~ /^\d+$/  and  $species_idx >= 0 )
-            {  die "Observable->evaluate(): Error! Observable argument was not a species Index!";  }
-            $val += (defined $obs->Weights->[$species_idx]) ? $obs->Weights->[$species_idx] : 0;
+            my ($species_idx,$mol_idx) = split( /\./, $ptr );
+            if ( defined $mol_idx )
+            {   # molecule-scoped observable
+                unless ( defined $BNGModel::GLOBAL_MODEL )
+                {  die "Observable->evaluate(): Error! Can't find current Model to evaluate local observable!";  }
+
+                my $sg = $BNGModel::GLOBAL_MODEL->SpeciesList->Array->[$species_idx-1]->SpeciesGraph;
+                $val += $obs->match( $sg, 0, $mol_idx );
+            }   
+            elsif ( $species_idx >= 0 )
+            {   # complex-scoped (i.e. species-scoped) observable
+                $val += (defined $obs->Weights->[$species_idx]) ? $obs->Weights->[$species_idx] : 0;
+            }
+            else
+            {   die "Observable->evaluate(): Error! Observable argument was not a pointer to a species or a molecule!";   }
+
         }
     }
     else
@@ -151,126 +322,6 @@ sub evaluate
     }
     return $val;
 }
-
-
-###
-###
-###
-
-
-
-sub readString
-{
-    my $obs    = shift;
-    my $string = shift;
-    my $model  = shift;
-    
-    my $err;
-
-    my $plist  = $model->ParamList;
-    my $clist  = $model->CompartmentList;
-    my $mtlist = $model->MoleculeTypesList;
-
-    # set output true (by default)
-    $obs->Output(1);
-
-    # Check if first token is an index
-    if ( $string =~ s/^\s*\d+\s+// )
-    {
-        # This index will be ignored
-    }
-
-    # Check if next token is observable type
-    #  Adding Counter and Population types  --Justin, 5nov2010
-    #  Function observable is undocumenterd, but its here to include function
-    #    evaluations among the output observables --Justin
-    if ( $string =~ s/^\s*(Molecules|Species|Counter|Population|Function)\s*// )
-    {
-        # record observable type
-        $obs->Type($1);
-    }
-    else
-    {
-        # Justin thinks defaults like this are dangerous and prone to unpredictable behavior
-        #  when future changes are made to the language or code.  Return error instead
-        return "Observable type is not valid";
-        
-        # this is the old default behavior.  leave in tact for now.
-        #$obs->Type('Molecules');
-    }
-
-    # Next token is observable Name
-    if ( $string =~ s/^\s*([A-z]\w*)\s+// )
-    {
-        my $name=$1;
-        $obs->Name($name);
-    }
-    else
-    {
-        my ($name) = split(' ', $string);
-        return "Invalid observable name $name: may contain only alphnumeric and underscore";
-    }
-
-    if ( $obs->Type ne 'Function' )
-    {
-        # Define parameter with name of the Observable
-        if ( $plist->set( $obs->Name, "0", 1, "Observable", $obs) )
-        {
-      	    my $name= $obs->Name;
-            return "Observable name $name matches previously defined Observable or Parameter";
-        }
-
-        # Remaining entries are patterns
-        my $sep = '^\s+|^\s*,\s*';
-        while ($string)
-        {
-            my $g = SpeciesGraph->new();
-
-            my $count_autos = $obs->Type eq 'Molecules' ? 1 : 0;
-            $err = $g->readString( \$string, $clist, 0, $sep, $mtlist, $count_autos );
-            if ($err) {  return "While reading observable " . $obs->Name . ": $err";  }
-
-            $string =~ s/$sep//;
-
-            if ( $g->isNull() )
-            {   # this is the null pattern
-                send_warning( sprintf("Found useless instance of null pattern in observable %s.", $obs->Name) );
-                next;
-            }
-
-            if ( ($obs->Type eq 'Species') and (!defined($g->Quantifier) or $g->Quantifier eq ''))
-            { 
-                $g->MatchOnce(1);
-            }
-            push @{$obs->Patterns}, $g;
-        }
-    }
-    else
-    {
-        # This is a Function observable (this undocumented'feature' might be dropped --Justin)
-        # remainder of string is expression..
-        my $expr = Expression::new();
-        $expr->setAllowForward(1);
-        if ( my $err = $expr->readString( \$string, $plist ) )
-        {  return ($err);  }
-      
-        # check for remaining string
-        if ( $string )
-        {  return ( "Syntax error at $string" );  }
-        
-        $expr->setAllowForward(0);
-   
-        # Define parameter with name of the Observable
-        if ( $plist->set( $obs->Name, $expr, 1, 'Observable', $obs ) )
-        {
-      	    my $name= $obs->Name;
-            return "Observable name $name matches previously defined Observable or Parameter";
-        }
-    }
-    
-    return $err;
-}
-
 
 
 ###
@@ -303,6 +354,11 @@ sub toStringSSC
 }
 
 
+###
+###
+###
+
+
 sub toCVodeString
 {
     my $obs = shift;
@@ -316,7 +372,7 @@ sub toCVodeString
         for ( my $idx1=1; $idx1 < @{$obs->Weights}; $idx1++ )
         {  
             my $idx0 = $idx1 - 1;
-            if ( defined $obs->Weights->[$idx1] )
+            if ( defined $obs->Weights->[$idx1] and $obs->Weights->[$idx1]!=0 )
             {
                 my $term;
                 if ( $obs->Weights->[$idx1] == 1 )
@@ -357,7 +413,7 @@ sub toMatlabString
         my @terms = ();
         for ( my $idx1=1; $idx1 < @{$obs->Weights}; $idx1++ )
         {  
-            if ( defined $obs->Weights->[$idx1] )
+            if ( defined $obs->Weights->[$idx1] and $obs->Weights->[$idx1]!=0 )
             {
                 my $term;
                 if ( $obs->Weights->[$idx1] == 1 )
@@ -388,9 +444,9 @@ sub toMatlabString
 
 sub toXML
 {
-    my $obs    = shift;
-    my $indent = shift;
-    my $index  = shift;
+    my $obs    = shift @_;
+    my $indent = shift @_;
+    my $index  = shift @_;
 
     my $id = "O" . $index;
     my $string = $indent . "<Observable";
@@ -408,6 +464,12 @@ sub toXML
     {
         $string .= " type=\"" . $obs->Type . "\"";
     }
+    ## output flag (TODO: disable for now)
+    #if (defined $obs->Output)
+    #{
+    #    $string .= " output=\"" . $obs->Output . "\"";
+    #}
+        
 
     # Objects contained
     my $indent2= "  ".$indent;
@@ -435,114 +497,6 @@ sub toXML
     }
 }
 
-
-###
-###
-###
-
-
-# try to match observable to a speciesGraph and return the number of matches
-sub match
-{
-    my $obs  = shift;
-    my $sg   = shift;
-
-    # Loop over patterns and find matches
-    my $total_matches = 0;    
-    foreach my $patt (@{$obs->Patterns})
-    {
-        # find matches of this pattern in species graph
-        my @matches = $patt->isomorphicToSubgraph($sg);
-            
-        # add correction for symmetry!
-        my $n_match = scalar @matches;
-        # SYMMETRY CORRECTION is disabled for the time being!
-        #  Uncommend the following block to enable the correction.  --Justin 15mar2010
-        #if ( $obs->Type eq 'Molecules' )
-        #{
-        #    $n_match /= $patt->Automorphisms;
-        #}
-            
-        # add these matches, if found
-        next unless $n_match;
-        # check quantitifer
-        if ($patt->Quantifier)
-        {
-	        my $test = $n_match.$patt->Quantifier;
-	        my $result = eval $test;
-	        next unless $result;
-        }
-        # check the species observable
-        if ($obs->Type eq 'Species') {  $n_match = 1;  }
-        # add matches
-        $total_matches += $n_match;
-    }
-
-    return $total_matches;
-}
-
-
-###
-###
-###
-
-
-sub update
-{
-    my $obs = shift;
-    my $species = shift;
-    my $idx_start = (@_) ? shift : 0;
-
-    my $err = '';
-  
-    # This appears to be a little speed tweak (force PERL to allocate space for array)..
-    #   Make sure full size of array is allocated, but don't risk overwritting the last element.
-    unless (@$species == 0)
-    {   $obs->Weights->[@$species] = $obs->Weights->[@$species];   }
-
-    # Loop over patterns to generate matches; update weight at index of each match.
-    foreach my $patt (@{$obs->Patterns})
-    {
-        for ( my $ii = $idx_start; $ii < @$species; ++$ii )
-        {
-            my $sp = $species->[$ii];
-            next if ( $sp->ObservablesApplied );
-
-            # find matches of this pattern in species graph
-            my @matches = $patt->isomorphicToSubgraph( $sp->SpeciesGraph );
-            
-            # add correction for symmetry!
-            my $n_match = scalar @matches;
-            # SYMMETRY CORRECTION is disabled for the time being!
-            #  Uncommend the following block to enable the correction.  --Justin 15mar2010
-            #if ( $obs->Type eq 'Molecules' )
-            #{
-            #    $n_match /= $patt->Automorphisms;
-            #}
-            
-            # add these matches, if found
-            next unless $n_match;
-            if ($patt->Quantifier)
-            {
-	            my $test = $n_match.$patt->Quantifier;
-	            my $result = eval $test;
-	            next unless $result;
-            }
-            # NOTE: quantifiers are Species observables, so this logic works
-            if ($obs->Type eq 'Species') {  $n_match = 1;  }
-            $obs->Weights->[$sp->Index] += $n_match;
-        }
-    }
-
-    return $err;
-}
-
-
-###
-###
-###
-
-my $print_match=0;
 
 ###
 ###
@@ -577,8 +531,8 @@ sub getWeightVector
 
 sub toGroupString
 {
-    my $obs   = shift;
-    my $slist = shift;
+    my $obs   = shift @_;
+    my $slist = shift @_;
 
     my $out   = sprintf "%-20s ", $obs->Name;
     my $i     = -1;

@@ -193,7 +193,6 @@ sub simulate
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
             $err = $model->writeNET( {prefix=>"$netpre"} );
-#            $err = $model->writeNetwork( {prefix=>"$netpre"} );
             if ($err) {  return $err;  }
         }
     }
@@ -357,7 +356,6 @@ sub simulate
         
         if ( ($t_end - $t_start) <= 0.0 )
         {
-#        	return "t_end must be greater than t_start.";
         	print "WARNING: t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
                   "Simulation won't run.\n";
         }
@@ -376,7 +374,6 @@ sub simulate
         my $step_size = ($t_end - $t_start) / $n_steps;
         push @command, $step_size, $n_steps;
     }
-#    elsif ( defined $params->{sample_times} || @sample_times )
     else
     {
         if (defined $params->{sample_times})
@@ -489,8 +486,8 @@ sub simulate
             }
 
             # Apply reaction rules
-            my $nspec = scalar @{$model->SpeciesList->Array};
-            my $nrxn  = scalar @{$model->RxnList->Array};
+            my $nspec = $model->SpeciesList->size();
+            my $nrxn  = $model->RxnList->size();
             my $irule = 1;
             my ($n_new, $t_off);
             foreach my $rset ( @{$model->RxnRules} )
@@ -509,8 +506,7 @@ sub simulate
                 if ($verbose)
                 {
                     printf "Rule %3d: %3d new reactions %.2e s CPU time\n",
-                      $irule,
-                      $n_new, cpu_time(0) - $t_off;
+                      $irule, $n_new, cpu_time(0) - $t_off;
                 }
                 ++$irule;
             }
@@ -520,24 +516,16 @@ sub simulate
             {
                 $spec->RulesApplied($n_iter) unless ($spec->RulesApplied);
             }
-            # Update observables
-            foreach my $obs (@{$model->Observables})
-            {
-                $obs->update( $model->SpeciesList->Array, $nspec );
-            }
-            # Set ObservablesApplied attribute to everything in SpeciesList
+
+            # Set RulesApplied attribute to everything in SpeciesList
             my $new_species = [];
             foreach my $spec ( @{$model->SpeciesList->Array} )
             {
-                unless ( $spec->ObservablesApplied )
-                {
-                    push @$new_species, $spec  unless ( $spec->RulesApplied );
-                    $spec->ObservablesApplied(1);
-                }
+                push @$new_species, $spec  unless ($spec->RulesApplied);
             }
 
             # Print new species, reactions, and observable entries
-            if ( scalar @{$model->RxnList->Array} > $nrxn )
+            if ( $model->RxnList->size() > $nrxn )
             {
                 print Writer "read\n";
                 $model->SpeciesList->print( *Writer, $nspec );
@@ -596,7 +584,6 @@ sub simulate
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
         $err = $model->writeNET( {prefix => "$netpre"} );
-#        $err = $model->writeNetwork( {prefix => "$netpre"} );
         if ($err) { return $err; }
     }
 

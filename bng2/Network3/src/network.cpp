@@ -131,9 +131,11 @@ void add_Elt(Elt** list, Elt* new_elt) {
 	Elt* elt;
 	if ((*list) == NULL) {
 		*list = new_elt;
-	} else {
-		for (elt = *list; elt->next != NULL; elt = elt->next)
+	}
+	else {
+		for (elt = *list; elt->next != NULL; elt = elt->next){
 			;
+		}
 		elt->next = new_elt;
 	}
 	return;
@@ -338,24 +340,34 @@ vector<string> find_variables(string a) {
 	//	istringstream in(a,istringstream::in);
 	char c;
 	for (unsigned int i = 0; i < a.length();) {
-		c = a[i++];
-		if ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-				(c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
-				(c == '_')) // "_"
+//		c = a[i++];
+		c = a[i];
+		// Support scientific notation (i.e., X{eE}{+-}YYY)
+		if ((c == 'e' || c == 'E') &&
+			(a[i-1] >= '0' && a[i-1] <= '9') &&
+			((a[i+1] >= '0' && a[i+1] <= '9') || a[i+1] == '+' || a[i+1] == '-')){
+			// Do nothing
+		}
+		// Continue
+		else if ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+				 (c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
+				 (c == '_')) 			  // "_"
 		{
 			string s;
 			while ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-					(c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
-					(c == '_') || // "_"
-					(c >= '0' && c <= '9')) // "0123456789"
+				   (c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
+				   (c == '_') || 			 // "_"
+				   (c >= '0' && c <= '9'))   // "0123456789"
 			{
 				s.push_back(c);
-				c = a[i++];
+				c = a[++i];
+//				c = a[i++];
 			}
 			if (!isMuParserFunction(s)) {
 				variables.push_back(s);
 			}
 		}
+		i++;
 	}
 	return variables;
 }
@@ -377,7 +389,7 @@ void process_function_names(string& a) {
 		curr_letter = next_letter;
 		next_letter = a[i++];
 		if (curr_letter == '(' && next_letter == ')')
-			a.erase(i - 2, 2);
+			a.erase(i-2, 2);
 	}
 }
 
@@ -396,8 +408,10 @@ void process_function_names(string& a) {
 //		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
 //		map<string, int> observ_index_map, vector<vector<int> >& func_observ_depend, vector<vector<int> >& func_param_depend,
 //		map<string, bool>& is_func_map_p) {
-void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
-		map<string,double*>& param_map, map<string,int> param_index_map, map<string,int> observ_index_map) {
+//void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
+//		map<string,double*>& param_map, map<string,int> param_index_map, map<string,int> observ_index_map) {
+void read_functions_array(const char* netfile, Elt_array*& rates, map<string,double*>& param_map,
+		map<string,int> param_index_map, map<string,int> observ_index_map, double* t) {
 
 	// find beginning of block
 	// go to next line
@@ -407,7 +421,7 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 	// link it to pars and obs
 	// evaluate it and store value
 
-	// create a new parameter with the name var_par_<function_name>
+	// create a new parameter with the name 'func_name'
 	// push index of new parameter into var_parameters vector
 	// check that parameter index (in var_parameters) matches function index
 	// push and link parameter into elt_array
@@ -421,7 +435,7 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 	string function_string;
 	int num_free_spaces = 0;
 
-	while (infile.getline(line, 512)) {
+	while (infile.getline(line,512)) {
 
 		istringstream readLine(line);
 		dummy_string.clear(); // Be sure to clear the string before extracting data to it --LAH
@@ -432,91 +446,116 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 			readLine >> dummy_string;
 			if (dummy_string == "functions")
 				foundBegin = true;
-			continue;
+//			continue;
 		}
 
 		// check for end of block
 		else if (foundBegin && dummy_string == "end") {
 			readLine >> dummy_string;
-			if (dummy_string != "functions")
-				cout << "WARNING: functions block must terminate with an 'end functions' line" << endl;
+			if (dummy_string != "functions"){
+				cout << "ERROR: functions block must terminate with an 'end functions' directive." << endl;
+				exit(1);
+			}
 			break;
 		}
 
 		// process functions in block
-		else if (foundBegin && isdigit(dummy_string[0])) {
-			index = atoi(dummy_string.c_str());
-//   		cout << "function " << index << ":\t";
-
-			// create parser for that function
-			readLine >> func_name >> function_string;
-			// Check for function arguments -- exit if they exist
-			if (func_name[func_name.length() - 2] != '(') {
-				cout << "Error in network::read_functions_array(): Functions cannot contain arguments ('"
-					 << func_name << "'). Exiting." << endl;
-				exit(1);
-			}
-			// Just to be safe
-			if (func_name[func_name.length() - 1] != ')') {
-				cout << "Error in network::read_functions_array(): Not sure what's going on with function '"
-					 << func_name << "', but it should end with a ')' character. Exiting."
-					 << endl;
-				exit(1);
-			}
-			// Erase '()' from end of function name
-			func_name.erase(func_name.length() - 2, func_name.length());
-//			cout << func_name << "\t" << function_string;
-
+		if (foundBegin && (isdigit(dummy_string[0]) || dummy_string == "functions")) {
 			mu::Parser parser;
-
-			// link it to rates and observables (spec_groups)
-			process_function_names(function_string); // Remove parentheses from variable names
-			vector<string> variable_names = find_variables(function_string); // Extract variable names
-//    		for (unsigned int i=0;i < variable_names.size();i++){
-//    			cout << "\t" << variable_names[i];
-//    		}
-
-			// Identify dependencies
 			vector<int> observ_depend;
 			vector<int> param_depend;
-			for (unsigned int i = 0; i < variable_names.size(); i++) {
-				if (param_map.find(variable_names[i]) == param_map.end()) {
-					cout << "Error in parsing function '" << func_name << "'. Could not find variable '"
-						 << variable_names[i] << "'. Exiting.\n";
+
+			// Functions block exists, create '_time' function
+			if (dummy_string == "functions"){
+				func_name = "_time";
+				parser.DefineVar("_time",t);
+				parser.SetExpr("_time");
+			//	cout << parser.GetExpr() << "= " << parser.Eval() << endl;
+			}
+			// Create other functions
+			else{
+				index = atoi(dummy_string.c_str());
+//   			cout << "function " << index << ":\t";
+
+				// create parser for that function
+				readLine >> func_name >> function_string;
+				// Check for function arguments -- exit if they exist
+				if (func_name[func_name.length()-2] != '(') {
+					cout << "Error in network::read_functions_array(): Functions cannot contain arguments ('"
+						 << func_name << "'). Exiting." << endl;
 					exit(1);
 				}
-				else {
-					parser.DefineVar(_T(variable_names[i]),param_map[variable_names[i]]); // Define variable
-					if (observ_index_map.find(variable_names[i]) != observ_index_map.end()) { // Observable dependencies
-						observ_depend.push_back(observ_index_map[variable_names[i]]);
-					}
-					else if (param_index_map.find(variable_names[i]) != param_index_map.end()) { // Parameter dependencies
-						param_depend.push_back(param_index_map[variable_names[i]]);
-					}
-					else {
-						cout << "Ummm, variable '" << variable_names[i] << "' in function '" << func_name
-							 << "' is not a parameter or an observable. That's a problem. Exiting." << endl;
+				// Just to be safe
+				if (func_name[func_name.length()-1] != ')') {
+					cout << "Error in network::read_functions_array(): Not sure what's going on with function '"
+						 << func_name << "', but it should end with a ')' character. Exiting."
+						 << endl;
+					exit(1);
+				}
+
+				// Erase '()' from end of function name
+				func_name.erase(func_name.length()-2,func_name.length());
+//				cout << func_name << "\t" << function_string;
+
+				// Make sure the function isn't named "_time", just to be safe
+				if (func_name == "_time"){
+					cout << "ERROR: Function name \"_time()\" is a reserved keyword. ";
+					cout << "Please choose a different name." << endl;
+					exit(1);
+				}
+
+				// link it to rates and observables (spec_groups)
+				process_function_names(function_string); // Remove parentheses from variable names
+				vector<string> variable_names = find_variables(function_string); // Extract variable names
+//    			for (unsigned int i=0;i < variable_names.size();i++){
+//    				cout << "\t" << variable_names[i];
+//    			}
+
+				// Identify dependencies
+//				vector<int> observ_depend;
+//				vector<int> param_depend;
+				for (unsigned int i = 0; i < variable_names.size(); i++) {
+					if (param_map.find(variable_names[i]) == param_map.end()) {
+						cout << "Error in parsing function '" << func_name << "'. Could not find variable '"
+							 << variable_names[i] << "'. Exiting.\n";
 						exit(1);
 					}
+					else {
+						parser.DefineVar(_T(variable_names[i]),param_map[variable_names[i]]); // Define variable
+						if (observ_index_map.find(variable_names[i]) != observ_index_map.end()) { // Observable dependencies
+							observ_depend.push_back(observ_index_map[variable_names[i]]);
+						}
+						else if (param_index_map.find(variable_names[i]) != param_index_map.end()) { // Parameter dependencies
+							param_depend.push_back(param_index_map[variable_names[i]]);
+						}
+						else {
+							cout << "Ummm, variable '" << variable_names[i] << "' in function '" << func_name
+								 << "' is not a parameter or an observable. That's a problem. Exiting." << endl;
+							exit(1);
+						}
+					}
 				}
+
+				// evaluate it and store value
+//				cout << function_string << endl;
+				size_t found;
+				while ((found = function_string.find("&&")) != string::npos){
+					function_string.replace(found,2,"and");
+				}
+				while ((found = function_string.find("||")) != string::npos){
+					function_string.replace(found,2,"or");
+				}
+
+//				cout << function_string << endl;
+				parser.SetExpr(function_string);
+//				double new_val = parser.Eval();
 			}
 
-			// evaluate it and store value
-//			cout << function_string << endl;
-			size_t found;
-			while ((found = function_string.find("&&")) != string::npos){
-				function_string.replace(found,2,"and");
-			}
-			while ((found = function_string.find("||")) != string::npos){
-				function_string.replace(found,2,"or");
-			}
-//			cout << function_string << endl;
-			parser.SetExpr(function_string);
-			double new_val = parser.Eval();
 			network.functions.push_back(parser);
-/*
-			cout << "\t" << functions[functions.size()-1].GetExpr();
-			map<string,double*> m = functions[functions.size()-1].GetUsedVar();
+
+//			cout << "\t" << func_name << ": " << network.functions[network.functions.size()-1].GetExpr() <<
+//					"= " << network.functions[network.functions.size()-1].Eval() << endl;
+/*			map<string,double*> m = network.functions[network.functions.size()-1].GetUsedVar();
 			map<string,double*>::iterator iter;
 			for (iter = m.begin();iter != m.end();iter++){
 			cout << "\t" << (*iter).first;
@@ -526,8 +565,8 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 //    		char* name_char_ptr = new char[func_name.size()];
 //   		strcpy(name_char_ptr,func_name.c_str());
 
-			// create a new parameter with the name var_par_<function_name>
-			Elt* new_elt = new_Elt((char*)func_name.c_str(),new_val,rates->n_elt+1); // THERE'S SOMETHING WRONG HERE
+			// create a new parameter with the name 'func_name'
+			Elt* new_elt = new_Elt((char*)func_name.c_str(),parser.Eval(),rates->n_elt+1);
 			new_elt->next = NULL;
 			network.is_func_map[func_name] = true;
 
@@ -535,9 +574,13 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 			// check that parameter index (in var_parameters) matches function index
 			network.var_parameters.push_back(rates->n_elt+1);
 			if (network.functions.size() != network.var_parameters.size()){
-				cout << "ERROR: Function and variable parameter index do not match and will not update correctly." << endl;
+				cout << "ERROR: Function and variable parameter indices do not match." << endl;
 				exit(1);
 			}
+
+			//////////////////////////////////////////////////////////
+			// THIS PART OF THE CODE COULD PROBABLY BE IMPROVED --LAH
+			//////////////////////////////////////////////////////////
 
 			// allocate space in elt_array **elt (double the space), if necessary
 			if (num_free_spaces == 0) {
@@ -555,28 +598,31 @@ void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& r
 			Elt* curr = rates->list;
 			Elt* prev = curr;
 			for (; curr != NULL; prev = curr, curr = curr->next);
-
 			prev->next = new_elt;
 			num_free_spaces--;
 
 			// push new parameter into parameter map
-			param_map[new_elt->name] = &new_elt->val; // I THINK THIS MIGHT BE A PROBLEM --Leonard
+			param_map[new_elt->name] = &new_elt->val;
 			param_index_map[new_elt->name] = new_elt->index;
 
 			// push variables indices into vectors
 			network.func_observ_depend.push_back(observ_depend);
 			network.func_param_depend.push_back(param_depend);
+
+			//////////////////////////////////////////////////////////
 		}
-/*   	else if (foundBegin){
-			cout << "ERROR: FOUND INVALID LINE IN ATTEMPTING TO READ FUNCTIONS BLOCK" << endl;
-			break;
-		}*/
+
+		else if (foundBegin && dummy_string != ""){ // Allow for blank lines
+			cout << "ERROR: Found invalid line \"" << dummy_string <<
+					"\" while reading functions block." << endl;
+			exit(1);
+		}
 	}
+
 //	return functions;
 }
 
-Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
-		int* n_read, Elt_array* params) {
+Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_read, Elt_array* params) {
 	Elt_array* earray = NULL;
 	Elt *list_start = NULL, *list_end, *elt, *new_elt;
 	char *line, **tokens;
@@ -600,7 +646,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 		/* parse commands */
 
 		/* check for beginning of list */
-		if (n_tokens == 2 && strcmp(tokens[0], "begin") == 0) {
+		if (n_tokens == 2 && strcmp(tokens[0], "begin") == 0){
 			if (strcmp(tokens[1], name) == 0) {
 				read_begin = 1;
 			}
@@ -612,8 +658,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 			goto cleanup;
 
 		/* Check for end of list */
-		if (n_tokens == 2 && strcmp(tokens[0], "end") == 0 && strcmp(tokens[1],
-				name) == 0) {
+		if (n_tokens == 2 && strcmp(tokens[0], "end") == 0 && strcmp(tokens[1], name) == 0){
 			read_end = 1;
 			goto cleanup;
 		}
@@ -641,62 +686,102 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 
 			/* Read elt value either directly or by looking up parameter value */
 			if (n_tok < n_tokens) {
+				/////////////////////////
+				// NEW CODE (expression parsing): 01/25/13 -- LAH
+				/////////////////////////
+//				cout << index << " " << elt_name << " " << tokens[n_tok] << endl;
+				myParser parser;
+				parser.name = elt_name;
+				vector<string> v = find_variables(tokens[n_tok]);
+				for (unsigned int i=0;i < v.size();i++){
+					// Look for variable in parameters vector
+					bool found = false;
+					for (unsigned int j=0;j < network.parameters.size() && !found;j++){
+						if (network.parameters[j].name == v[i]){
+							parser.p.DefineVar(v[i],&network.parameters[j].val);
+							found = true;
+						}
+					}
+					// Error check
+					if (!found){
+						cout << "Error in parsing '" << name << "' block expression: \"" << tokens[n_tok] <<
+								"\". Could not find parameter " << v[i] << ". Exiting." << endl;
+						exit(1);
+					}
+				}
+				parser.p.SetExpr(tokens[n_tok]);
+				parser.val = parser.p.Eval();
+//				cout << "\t" << parser.name << " " << parser.val << endl;
+				// Store the value
+				val = parser.val;
+				// If the element is a parameter, store it
+				if (name == "parameters"){
+					network.parameters.push_back(parser);
+				}
+				/////////////////////////
+/*				OLD CODE
+				////////////////////////
 				double factor;
 				char buf[1000], c;
 
-				/* Look for prefactor */
+				// Look for prefactor
 				if (sscanf(tokens[n_tok], "%lf*%s", &factor, buf) != 2) {
 					factor = 1;
 					strcpy(buf, tokens[n_tok]);
 				}
 
-				/* Try to obtain numerical value for elt, or lookup parameter */
+				// Try to obtain numerical value for elt, or lookup parameter
 				if (sscanf(buf, "%lf%c", &val, &c) != 1) {
-					/* Then try to lookup elt in parameter list (if present) */
+					// Then try to lookup elt in parameter list (if present)
 					if (!params) {
 						fprintf(stderr, "Invalid value %s at line %d.\n",
 								tokens[n_tok], *line_number);
 						++error;
 						goto cleanup;
-					} else if ((elt = lookup_Elt(buf, params->list))) {
+					}
+					else if ((elt = lookup_Elt(buf, params->list))) {
 						val = factor * elt->val;
-					} else {
-						fprintf(
-								stderr,
+					}
+					else {
+						fprintf(stderr,
 								"Invalid parameter specification %s at line %d.\n",
 								tokens[n_tok], *line_number);
 						++error;
 						goto cleanup;
 					}
-				} else {
+				}
+				else {
 					val *= factor;
 				}
+*/				////////////////////////
 				++n_tok;
-			} else {
+			}
+			else {
 				val = 0.0;
 			}
 
-			/* Read elt normalization */
+			// Read elt normalization
 			if (n_tok < n_tokens) {
-				fprintf(
-						stderr,
+				fprintf(stderr,
 						"Element normalization no longer supported at line %d\n.",
 						*line_number);
 				++error;
 				goto cleanup;
 			}
 
-			/* Allocate new list element */
+			// Allocate new list element
 			++(*n_read);
 			new_elt = new_Elt(elt_name, val, index);
 			new_elt->fixed = fixed;
 			if (list_start) {
 				list_end->next = new_elt;
 				list_end = new_elt;
-			} else {
+			}
+			else {
 				list_start = list_end = new_elt;
 			}
-		} else {
+		}
+		else {
 			fprintf(stderr, "Invalid list entry at line %d.\n", *line_number);
 			++error;
 			goto cleanup;
@@ -719,7 +804,8 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name,
 			new_elt = elt->next;
 			free_Elt(elt);
 		}
-	} else {
+	}
+	else {
 		earray = new_Elt_array(list_start);
 		if (n_fixed) {
 			int *iarray = IALLOC_VECTOR(n_fixed);
@@ -807,8 +893,8 @@ void free_Group(Group* group) {
 	return;
 }
 
-Group* read_Groups(Group* glist, FILE* datfile, Elt_array* earray,
-		int* line_number, char* name, int* n_read) {
+Group* read_Groups(Group* glist, FILE* datfile, Elt_array* earray, int* line_number, char* name,
+		int* n_read) {
 
 	Group* glist_ret;
 	char *line, **tokens;
@@ -1749,10 +1835,8 @@ void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species, Elt_ar
 	register int i;
 	Rxn* rxn;
 	Elt **sarr, **rarr;
-
 	sarr = species->elt - species->offset;
 	rarr = rates->elt - rates->offset;
-
 	fprintf(out, "begin reactions\n");
 	for (rxn = reactions->list; rxn != NULL; rxn = rxn->next) {
 		fprintf(out, "%5d ", rxn->index);
@@ -1845,10 +1929,8 @@ int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Gro
 //	network.is_func_map = new_is_func_map;
 	network.n_groups = 0;
 //	network.functions = new_functions;
-	if (network.functions.size() > 0)
-		network.has_functions = true;
-	else
-		network.has_functions = false;
+	if (network.functions.size() > 0) network.has_functions = true;
+	else network.has_functions = false;
 //	network.var_parameters = new_var_parameters;
 //	network.func_observ_depend = new_func_observ_depend;
 //	network.func_param_depend = new_func_param_depend;
@@ -2219,10 +2301,9 @@ void derivs_network(double t, double* conc, double* derivs) {
 		for (int i = 0; i < curr->n_elt; i++)
 			curr->total_val += curr->elt_factor[i] * conc[curr->elt_index[i]-1];
 	}
-
 	// update variable rate parameters
-	for (unsigned int j = 0; j < network.var_parameters.size(); j++) {
-		network.rates->elt[network.var_parameters[j] - 1]->val = network.functions[j].Eval();
+	for (unsigned int j=0;j < network.var_parameters.size();j++) {
+		network.rates->elt[network.var_parameters[j]-1]->val = network.functions[j].Eval();
 	}
 
 	/* Compute derivatives of each species by looping over reactions. */
@@ -2926,6 +3007,20 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 	/* Set network concentrations to values returned in X */
 	set_conc_network(NV_DATA_S(y));
 
+	// Update functions, if any
+	if (network.has_functions){
+		// update groups
+		for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
+			curr->total_val = 0;
+			for (int i = 0; i < curr->n_elt; i++)
+				curr->total_val += curr->elt_factor[i] * network.species->elt[curr->elt_index[i]-1]->val;
+		}
+		// update variable rate parameters
+		for (unsigned int j=0;j < network.var_parameters.size();j++) {
+			network.rates->elt[network.var_parameters[j]-1]->val = network.functions[j].Eval();
+		}
+	}
+
 //  exit:
 	return (error);
 }
@@ -2992,6 +3087,20 @@ int propagate_euler_network(double* t, double delta_t, double* n_steps, double h
 	/* Set final concentrations */
 	set_conc_network(y);
 
+	// Update functions, if any
+	if (network.has_functions){
+		// update groups
+		for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
+			curr->total_val = 0;
+			for (int i = 0; i < curr->n_elt; i++)
+				curr->total_val += curr->elt_factor[i] * network.species->elt[curr->elt_index[i]-1]->val;
+		}
+		// update variable rate parameters
+		for (unsigned int j=0;j < network.var_parameters.size();j++) {
+			network.rates->elt[network.var_parameters[j]-1]->val = network.functions[j].Eval();
+		}
+	}
+
 	FREE_VECTOR(y);
 	FREE_VECTOR(dy);
 
@@ -3048,6 +3157,20 @@ int propagate_rkcs_network(double* t, double delta_t, double* n_steps, double to
 
 	/* Set network concentrations to values returned in X */
 	set_conc_network(X);
+
+	// Update functions, if any
+	if (network.has_functions){
+		// update groups
+		for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
+			curr->total_val = 0;
+			for (int i = 0; i < curr->n_elt; i++)
+				curr->total_val += curr->elt_factor[i] * network.species->elt[curr->elt_index[i]-1]->val;
+		}
+		// update variable rate parameters
+		for (unsigned int j=0;j < network.var_parameters.size();j++) {
+			network.rates->elt[network.var_parameters[j]-1]->val = network.functions[j].Eval();
+		}
+	}
 
 //	exit:
 	if (X) FREE_VECTOR(X);
@@ -3144,12 +3267,12 @@ FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_
 	char* mode;
 	if (append) mode = (char*)"a";
 	else mode = (char*)"w";
-/*
-	if (!n_groups_network()) {
+
+	/*if (!n_groups_network()) {
 		out = NULL;
 		return (out); // exit
-	}
-*/
+	}*/
+
 	sprintf(buf, "%s.gdat", prefix);
 	if (!(out = fopen(buf, mode))) {
 		++error;
@@ -3185,11 +3308,10 @@ int print_group_concentrations_network(FILE* out, double t, bool no_newline) {
 		if (X) FREE_VECTOR(X);
 		return (error); // exit
 	}
-/*	if (!n_groups_network()){
+	/*if (!n_groups_network()){
 		if (X) FREE_VECTOR(X);
 		return (error); // exit
-	}
-*/
+	}*/
 	n_species = n_species_network();
 	X = ALLOC_VECTOR(n_species);
 	get_conc_network(X);
@@ -3239,7 +3361,7 @@ int init_print_function_values_network(FILE* out){
 	// Write header
 //	fprintf(out, "#");
 //	fprintf(out, "%18s", "time");
-	for (unsigned int i = 0; i < network.functions.size(); ++i) {
+	for (unsigned int i = 1; i < network.functions.size(); ++i) { // Don't print '_time' function (i=0)
 		fprintf(out, " %19s", network.rates->elt[network.var_parameters[i]-network.rates->offset]->name);
 	}
 	fprintf(out, "\n");
@@ -3269,7 +3391,7 @@ int print_function_values_network(FILE* out, double t){
 	exit(1);
 ////*/
 //	fprintf(out, "%19.12e", t);
-	for (unsigned int i = 0; i < network.functions.size(); i++) {
+	for (unsigned int i = 1; i < network.functions.size(); i++) { // Don't print '_time' function (i=0)
 		fprintf(out, " %19.12e", network.rates->elt[network.var_parameters[i]-network.rates->offset]->val);
 	}
 	fprintf(out, "\n");
@@ -3438,7 +3560,6 @@ int print_flux_network(FILE* out, double t, int discrete) {
 
 int print_network(FILE* out) {
 	int error = 0;
-
 	if (network.rates) {
 		fprintf(out, "begin parameters\n");
 		Elt* elt;
@@ -3463,11 +3584,52 @@ int print_network(FILE* out) {
 
 	if (network.has_functions){
 		fprintf(out, "begin functions\n");
-		char* funcName; string funcExpr;
-		for (unsigned int i=0;i < network.functions.size();i++){
+		char* funcName;
+		string funcExpr;
+		// Loop over functions
+		for (unsigned int i=1;i < network.functions.size();i++){ // Don't print '_time' function (i=0)
 			funcName = network.rates->elt[network.var_parameters[i]-1]->name;
 			funcExpr = network.functions[i].GetExpr();
-			fprintf(out, "%5d %s() %s\n", i+1, funcName, funcExpr.c_str());
+//			cout << funcName << ": " << funcExpr << endl;
+			// Look for nested functions in funcExpr
+			for (unsigned int j=0;j < network.functions.size();j++){
+				string s = network.rates->elt[network.var_parameters[j]-1]->name;
+//				cout << "\t" << s << endl;
+				unsigned int p = funcExpr.find(s); // Search expression
+				if (p != string::npos){ // Nested function found
+					bool replace = true; // Need to make sure it's not a substring of another function name
+					char c;
+					// Make sure the preceding character is not a letter, number, or underscore
+					if (p != 0){
+//						cout << "[" << (p-1) << "]: " << funcExpr[p-1] << endl;
+						c = funcExpr[p-1];
+						if ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+							(c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
+							(c == '_') || 			 // "_"
+							(c >= '0' && c <= '9'))  // "0123456789")
+						{
+							replace = false;
+						}
+					}
+					// Make sure the following character is not a letter, number, or underscore
+					if (replace && p+s.size()-1 < funcExpr.size()-1){
+//						cout << "[" << (p+s.size()) << "]: " << funcExpr[p+s.size()] << endl;
+						c = funcExpr[p+s.size()];
+						if ((c >= 'A' && c <= 'Z') || // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+							(c >= 'a' && c <= 'z') || // "abcdefghijklmnopqrstuvwxyz"
+							(c == '_') || 			 // "_"
+							(c >= '0' && c <= '9'))  // "0123456789")
+						{
+							replace = false;
+						}
+					}
+					if (replace){ // Confirmed the function name, append "()" before printing.
+						funcExpr.insert(p+s.size(),"()");
+					}
+				}
+			}
+//			cout << "----------" << endl;
+			fprintf(out, "%5d %-21s %s\n", i, ((string)funcName+"()").c_str(), funcExpr.c_str());
 		}
 		fprintf(out, "end functions\n");
 	}
@@ -4613,6 +4775,11 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 
 	/* Set final network concentrations */
 	set_conc_network(GSP.c);
+
+	// Update _time function
+	if (network.has_functions){
+		network.rates->elt[network.var_parameters[0]-1]->val = network.functions[0].Eval();
+	}
 
 //  exit:
 	return (error);

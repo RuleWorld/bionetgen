@@ -14,7 +14,7 @@ vector<pair<Function*,double>*> Network3::FUNCTION;
 vector<Reaction*> Network3::REACTION;
 PLA* Network3::PLA_SIM = NULL;
 
-void Network3::init_Network3(bool verbose){
+void Network3::init_Network3(double* t, bool verbose){
 	//
 	cout << "*** Initializing Network3 ***" << endl;
 	//
@@ -70,52 +70,56 @@ void Network3::init_Network3(bool verbose){
 			FUNCTION.push_back(new pair<Function*,double>(
 					new Function(network.rates->elt[network.var_parameters[i]-off]->name),0.0));
 			//
-			map<string,double*> var = network.functions[i].GetUsedVar();
-/*
-			map<string,double*>::iterator iter;
-			for (iter = var.begin();iter != var.end();iter++){
-				cout << "{" << (*iter).first << " = " << *(*iter).second << "}\t";
+			if (i==0){ // '_time' function
+				FUNCTION[0]->first->p->DefineVar("_time",t);
 			}
-			cout << endl;
-//*/
-			// Search observables
-			for (unsigned int j=0;j < OBSERVABLE.size();j++){
-				if (var.find(OBSERVABLE[j]->first->name) != var.end()){
-//					cout << "\t" << OBSERVABLE[j]->first->name << " = " << OBSERVABLE[j]->second << endl;
-					FUNCTION[i]->first->p->DefineVar(OBSERVABLE[j]->first->name,&OBSERVABLE[j]->second);
+			else{
+				map<string,double*> var = network.functions[i].GetUsedVar();
+/*				map<string,double*>::iterator iter;
+				for (iter = var.begin();iter != var.end();iter++){
+					cout << "{" << (*iter).first << " = " << *(*iter).second << "}\t";
 				}
-			}
-			// Search parameters
-			for (Elt* elt=network.rates->list;elt != NULL;elt=elt->next){
-				if (var.find(elt->name) != var.end()){
-//					cout << "\t" << "rates[" << elt->index << "] = " << elt->name << " (";
-					bool func = false;
-					// Is it a function?
-					for (unsigned int j=0;j < network.var_parameters.size() && !func;j++){
-						if (elt->index == network.var_parameters[j]){
-							// YES
-//							cout << "function[" << j <<"] = " << network.functions[j].GetExpr() << ")" << endl;
-							func = true;
-							bool found = false;
-							// Which one?
-							for (unsigned int k=0;k < FUNCTION.size() && !found;k++){
-								if (network.functions[j].GetExpr() == FUNCTION[k]->first->GetExpr()){
-									found = true;
-									FUNCTION[i]->first->p->DefineVar(elt->name,&FUNCTION[k]->second);
+				cout << endl;
+//*/
+				// Search observables
+				for (unsigned int j=0;j < OBSERVABLE.size();j++){
+					if (var.find(OBSERVABLE[j]->first->name) != var.end()){
+	//					cout << "\t" << OBSERVABLE[j]->first->name << " = " << OBSERVABLE[j]->second << endl;
+						FUNCTION[i]->first->p->DefineVar(OBSERVABLE[j]->first->name,&OBSERVABLE[j]->second);
+					}
+				}
+				// Search parameters
+				for (Elt* elt=network.rates->list;elt != NULL;elt=elt->next){
+					if (var.find(elt->name) != var.end()){
+	//					cout << "\t" << "rates[" << elt->index << "] = " << elt->name << " (";
+						bool func = false;
+						// Is it a function?
+						for (unsigned int j=0;j < network.var_parameters.size() && !func;j++){
+							if (elt->index == network.var_parameters[j]){
+								// YES
+	//							cout << "function[" << j <<"] = " << network.functions[j].GetExpr() << ")" << endl;
+								func = true;
+								bool found = false;
+								// Which one?
+								for (unsigned int k=0;k < FUNCTION.size() && !found;k++){
+									if (network.functions[j].GetExpr() == FUNCTION[k]->first->GetExpr()){
+										found = true;
+										FUNCTION[i]->first->p->DefineVar(elt->name,&FUNCTION[k]->second);
+									}
+								}
+								// Error check
+								if (!found){
+									cout << "Error in Network3::init_Network3(): Couldn't find function "
+										 << network.functions[j].GetExpr() << ". Exiting." << endl;
+									exit(1);
 								}
 							}
-							// Error check
-							if (!found){
-								cout << "Error in Network3::init_Network3(): Couldn't find function "
-									 << network.functions[j].GetExpr() << ". Exiting." << endl;
-								exit(1);
-							}
 						}
-					}
-					// NO, it's a constant
-					if (!func){
-//						cout << "constant)" << endl;
-						FUNCTION[i]->first->p->DefineConst(elt->name,elt->val);
+						// NO, it's a constant
+						if (!func){
+	//						cout << "constant)" << endl;
+							FUNCTION[i]->first->p->DefineConst(elt->name,elt->val);
+						}
 					}
 				}
 			}
@@ -1005,7 +1009,7 @@ void Network3::print_function_values(FILE* out, double t){
 	//
 	const char *fmt = "%19.12e";
 //	fprintf(out, fmt, t);
-	for (unsigned int i=0;i < FUNCTION.size();i++){
+	for (unsigned int i=1;i < FUNCTION.size();i++){ // Don't print '_time' function (i=0)
 		fprintf(out, " ");
 		fprintf(out, fmt, FUNCTION[i]->second);
 	}

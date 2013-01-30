@@ -136,8 +136,10 @@ extern void process_function_names(string& a);
 //		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
 //		map<string, int> observ_index_map, vector<vector<int> >& func_observ_depend, vector<vector<int> >& func_param_depend,
 //		map<string, bool>& is_func_map);
-extern void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
-		map<string,double*>& param_map, map<string,int> param_index_map,map<string,int> observ_index_map);
+//extern void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
+//		map<string,double*>& param_map, map<string,int> param_index_map,map<string,int> observ_index_map);
+extern void read_functions_array(const char* netfile, Elt_array*& rates, map<string,double*>& param_map,
+		map<string,int> param_index_map,map<string,int> observ_index_map, double* t);
 extern void remove_redundancies(vector<int>& vec);
 
 /* Rxn handling routines */
@@ -158,11 +160,19 @@ extern Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, E
 		map<string,bool>, int&);
 extern void print_Rxn_array(FILE* outfile, Rxn_array* reactions, Elt_array* species, Elt_array* rates);
 
+class myParser{
+	public:
+	string name;
+	double val;
+	mu::Parser p;
+};
+
 /* Network interface */
 struct NETWORK{
 	char*					name;
 	Rxn_array*				reactions;
 	Elt_array*				rates;
+	vector<myParser>		parameters;
 	Elt_array*				species;
 	int       	 			n_groups;
 	Group*					spec_groups;

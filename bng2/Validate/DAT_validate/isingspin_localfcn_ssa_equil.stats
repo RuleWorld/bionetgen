@@ -1,0 +1,10 @@
+statistic = chi_square
+observable = M_spUp
+number_of_bins = 10
+degrees_of_freedom = 9
+significance_levels = 0.2000, 0.1000, 0.0500, 0.0200, 0.0100, 0.0050, 0.0020, 0.0010
+statistic_values    = 12.242, 14.684, 16.919, 19,679, 21.666, 23.589, 26.056, 27.877
+bin_minimum_value = -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5
+bin_maximum_value =  0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5
+bin_probability = 0.2108, 0.1159, 0.0721, 0.0557, 0.0456, 0.0456, 0.0557, 0.0721, 0.1159, 0.2108
+

@@ -80,9 +80,9 @@ sub sort
 # Returns pointer to matching species in $slist or null if no match found
 sub lookup
 {
-    my $slist = shift;
-    my $sg = shift;
-    my $check_iso = (@_) ? shift : 1;
+    my $slist = shift @_;
+    my $sg = shift @_;
+    my $check_iso = @_ ? shift @_ : 1;
 
     if( $sg->IsCanonical ) {  $check_iso = 0;  }
 
@@ -94,20 +94,17 @@ sub lookup
         # Determine whether the graph is isomorphic to any on the current list
         if ($check_iso)
         {
-            my $found_iso=0;
             foreach my $spec2 ( @{$slist->Hash->{$sstring}} )
             {
 	            if ($sg->isomorphicTo($spec2->SpeciesGraph))
 	            {
                     $spec = $spec2;
-                    $found_iso=1;
                     last;
                 }
             }
         }
         else
         {
-            #print "Not checking isomorphism\n";
             $spec = $slist->Hash->{$sstring}->[0];
         }
     }

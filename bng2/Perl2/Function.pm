@@ -20,6 +20,7 @@ struct Function =>
     Name => '$',
     Args => '@',
     Expr => 'Expression',
+    LocalHash => '%',
 };
 
 
@@ -27,26 +28,24 @@ struct Function =>
 ###
 ###
 
+
+# create a copy of this function.
+# 
 sub clone
 {
-    my $fcn = shift;
-    my $plist = (@_) ? shift : undef;
-    my $level = (@_) ? shift : 0;
-    # keep same name? or get a unique name?
-    my $same_name = (@_) ? shift : 0;
-    
-    my $err = '';
-    
-    my $clone = Function->new();
-    my ($clone_name) = ($same_name ? ($fcn->Name) : $plist->getName($fcn->Name) );
+    my $fcn   = shift @_;
+    my $plist = @_ ? shift @_ : undef;
+    my $level = @_ ? shift @_ : 0;
+    my $named = @_ ? shift @_ : 0;
 
-    ( my $clone_expr, $err ) = $fcn->Expr->clone( $plist, $level+1 );
+    # if the clone doesn't have a name, it will be anonymous
+    my $clone_name = $named ? $fcn->Name : undef;
+
+    my $err = '';
+    (my $clone_expr, $err) = $fcn->Expr->clone( $plist, $level+1 );
     
-    $clone->Name( $clone_name );
-    $clone->Expr( $clone_expr );
-    $clone->Args([ @{$fcn->Args} ]);
-            
-    return ($clone, $err);
+    my $clone = Function->new( Name=>$clone_name, Expr=>$clone_expr, Args=>[@{$fcn->Args}] );
+    return $clone, $err;
 }
 
 
@@ -54,13 +53,12 @@ sub clone
 ###
 ###
 
-
 sub evaluate
 {
-    my $fcn = shift;
-    my $args  = (@_) ? shift : [];        
-    my $plist = (@_) ? shift : undef;
-    my $level = (@_) ? shift : 0; 
+    my $fcn   = shift @_;
+    my $args  = @_ ? shift @_ : [];
+    my $plist = @_ ? shift @_ : undef;
+    my $level = @_ ? shift @_ : 0;
 
     # create local parameterList
     my $local_plist = $plist->getChildList();
@@ -106,7 +104,7 @@ sub evaluate_local
     
     # locally evaluate function expression
     my $expr = $local_fcn->Expr->evaluate_local($local_plist, $level+1);
-    $local_fcn->Expr( $expr );
+    $local_fcn->Expr($expr);
 
     # check if local variables are unused
     my $bad_args = [];
@@ -125,7 +123,6 @@ sub evaluate_local
             splice @{$local_fcn->Args}, $ii, 1;
             push @$bad_args, $ii+1;
         }
-        
     }    
 
     return $local_fcn, $bad_args;
@@ -211,16 +208,20 @@ sub readString
     {
         my $name = $1;
         $fun->Name($name);
-        
+    
         # Make sure function name not the same as built-in functions --Leonard
 		if ( Expression::isBuiltIn($name) ){
 			return "Cannot use built-in function name '$name' as a user-defined function name.";
+		}
+		# Make sure function name not "_time" --Leonard
+		if ( $name eq "_time" ){
+			return "Cannot use reserved function name '$name' as a user-defined function name.";
 		}
     }
     else
     {
         my ($name) = split( ' ', $string );
-        return ("Invalid function name $name: may contain only alphanumeric characters and underscore");
+        return ("Invalid function name '$name': may contain only alphanumeric characters and underscore");
     }
 
     # Process arguments to function (if any)
@@ -290,13 +291,14 @@ sub readString
 
 sub toString
 {
-    my $fun = shift;
-    my $plist = (@_) ? shift : '';
+    my $fun   = shift @_;
+    my $plist = @_ ? shift @_ : undef;
     my $include_equal = (@_) ? shift : 0;
     # used for aligning columns nicely
     my $max_length    = (@_) ? shift : 0;
     
-    my $string = $fun->Name . '(' . join(',', @{$fun->Args}) . ')';
+    my $name = defined $fun->Name ? $fun->Name : "anon";
+    my $string = $name . '(' . join(',', @{$fun->Args}) . ')';
     if ( $fun->Expr )
     {
         $string .= ($include_equal) ? ' = ' : ' ';
@@ -379,9 +381,9 @@ sub toCVodeString
 sub toMatlabString
 # construct a call, declaration or definition for this function in CVode.
 {
-    my $fcn     = shift;                 # this function
-    my $plist   = (@_) ? shift : undef;  # reference to ParamList
-    my $arghash = (@_) ? shift : {};     # reference to argument hash
+    my $fcn     = shift @_;               # this function
+    my $plist   = @_ ? shift @_ : undef;  # reference to ParamList
+    my $arghash = @_ ? shift @_ : {};     # reference to argument hash
    
     # set default mode
     unless ( exists $arghash->{fcn_mode} )
