@@ -69,6 +69,7 @@ def updateState(original):
 
 def addToLabelDictionary(dictionary,label,value):
     #dictionary[label] = value
+    
     if label not in dictionary:
         dictionary[label] = [value]
     else:
@@ -184,6 +185,7 @@ def resolveCycles(database,equivalenceTranslator):
     return cycles
         
         
+
 def recursiveChecking(labelDictionary,root,acc,):
     if root in acc:
         acc.extend(['CYCLEPROBLEM',root])
@@ -368,22 +370,6 @@ def getPertinentNamingEquivalence2(original,labelDatabase, equivalenceTranslator
     for functionSet in functions:    
         temp = []
         for element in original[1]:
-            temp.extend([x for x in equivalenceTranslator if functionSet[0](x,key=len) == element ])
-            if(len(temp) == 1):
-                return temp[0]
-            elif temp != []:
-                 z = Counter(temp).most_common(2)
-                 if(z[0][1] > z[1][1]):
-                     return z[0][0]
-        for element in original[0]:
-            temp.extend([x for x in equivalenceTranslator if functionSet[1](x,key=len) == element ])
-            if(len(temp) == 1):
-                return temp[0]
-            elif temp != []:
-                 z = Counter(temp).most_common(2)
-                 if(z[0][1] > z[1][1]):
-                     return z[0][0]
-        for element in original[1]:
             temp.extend([x for x in equivalenceTranslator if functionSet[0](x,key=len) in labelDatabase[element] ])
             if(len(temp) == 1):
                 return temp[0]
@@ -399,12 +385,29 @@ def getPertinentNamingEquivalence2(original,labelDatabase, equivalenceTranslator
                  z = Counter(temp).most_common(2)
                  if(z[0][1] > z[1][1]):
                      return z[0][0]
+        for element in original[1]:
+            temp.extend([x for x in equivalenceTranslator if functionSet[0](x,key=len) == element ])
+            if(len(temp) == 1):
+                return temp[0]
+            elif temp != []:
+                 z = Counter(temp).most_common(2)
+                 if(z[0][1] > z[1][1]):
+                     return z[0][0]
+        for element in original[0]:
+            temp.extend([x for x in equivalenceTranslator if functionSet[1](x,key=len) == element ])
+            if(len(temp) == 1):
+                return temp[0]
+            elif temp != []:
+                 z = Counter(temp).most_common(2)
+                 if(z[0][1] > z[1][1]):
+                     return z[0][0]
     if len(temp ) >=2:
         return temp[1]
     else:
         return None
     
-
+def getPertinentNamingEquivalence3(original,labelDatabase, equivalenceTranslator):
+    pass
 
 def processRule(original,database,
                 classification,equivalenceTranslator,outputFlag = False):
@@ -480,6 +483,8 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile,speciesEquivalences)
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
+    
+    database.translator,database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
     #print rdfAnnotations
@@ -505,19 +510,19 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         database.labelDictionary = defineCorrespondence(reaction2,totalElements,
                                                database,classification,
                                                rdfAnnotations)
-       # print 'label',database.labelDictionary
         #database.labelDictionary = resolveCorrespondence(database)
     #correctClassifications(rules,classifications,database.labelDictionary)
-    #print 'step1',database.labelDictionary    
+    #print 'step1',database.labelDictionary
     simplify(database.labelDictionary)
     #TODO: uncomment this section when we solve the bug on reclassifying
-        
     #print database.labelDictionary 
     cycles = resolveCycles(database,equivalenceTranslator)
     database.rawLabelDictionary = deepcopy(database.labelDictionary)
+    
     for _ in range(0,5):
         database.labelDictionary = resolveCorrespondence(database,cycles)
     #print 'after resolving correspondences'
+    
     classifications2,_,eequivalenceTranslator = sbmlAnalyzer.reclassifyReactions(rules,molecules,database.labelDictionary)
     for index in range(0,len(classifications)):
         if classifications[index] in ['None','Binding'] and classifications2[index] != 'None':
@@ -588,12 +593,16 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         outputFlag = False
         #if classification == 'Modification':
         #    outputFlag = True
+        if '28' in rule:
+            print rule,classification
         counter += 1
         reaction2 = list(parseReactions(rule))
 
         if outputFlag:
             tmp = deepcopy(database.translator)
             print reaction2
+
+
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
         #if 'EGF_EGFRm2_GAP_Grb2_Prot' in database.translator:
         #    print '++++',rule,difflib.SequenceMatcher(None, 'Grb2(egfr,shc!10,sos).EGF(egfr!5,modI~U,modM~M).EGFR(egf!5,egfr!8,gap!9,grb2!11,modI~U,prot,ras_gdp,shc!10).EGF(egfr!7,modI~U,modM~U).EGFR(egf!7,egfr!8,gap!8,grb2,modI~U,prot,ras_gdp,shc!9).GAP(egfr!9).Prot(egfr!11,modI~U,ras_gdp,ras_gtp)' , str(database.translator['EGF_EGFRm2_GAP_Grb2_Prot'])).ratio()

@@ -10,6 +10,8 @@ from numpy import zeros,nonzero
 import numpy as np
 import json
 import itertools
+import structures as st
+from copy import deepcopy
 '''
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
@@ -48,6 +50,7 @@ class SBMLAnalyzer:
         we wnat to parse and what are the requirements of a given reaction type to be considered
         as such
         '''
+        reactionDefinition = ''
         with open(fileName,'r') as fp:
             reactionDefinition = json.load(fp)
         return reactionDefinition
@@ -125,7 +128,7 @@ class SBMLAnalyzer:
             baseMol = []
             modMol = []
             for molecule in smolecules:
-                if convention[0] in molecule:
+                if convention[0] in molecule and convention[1] not in molecule:
                     baseMol.append(molecule)
                 elif convention[1] in molecule:
                     modMol.append(molecule)
@@ -208,7 +211,7 @@ class SBMLAnalyzer:
                 index += 1
             
                 
-        
+        print equivalenceTranslator
         #now we want to fill in all intermediate relationships
         newTranslator = equivalenceTranslator.copy()
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
@@ -242,9 +245,11 @@ class SBMLAnalyzer:
         #contains which rules are equal to reactions defined in reactionDefiniotion['reactions]    
         ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
         for (idx,rule) in enumerate(rules):
+
             reaction2 = rule #list(parseReactions(rule))
             ruleComplianceMatrix[idx] = self.identifyReactions2(reaction2,reactionDefinition)
         #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
+        
         tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
         #check which reaction conditions each tuple satisfies
         for element in ruleDictionary:
@@ -393,3 +398,35 @@ class SBMLAnalyzer:
                     tmp.extend(list(labelDictionary[rawReactions[reactionIndex][reactantIndex][chemicalIndex]]))
                 rawReactions[reactionIndex][reactantIndex] = tmp
         #self.annotationClassificationHelper(rawReactions,equivalenceTranslator[-1])         
+    
+    def getUserDefinedComplexes(self):
+        dictionary = {}
+        labelDictionary = {}
+        if self.speciesEquivalences != None:
+            speciesdictionary =self.loadConfigFiles(self.speciesEquivalences)
+            userEquivalences = speciesdictionary['complexDefinition'] \
+                if 'complexDefinition' in speciesdictionary else None
+            for element in userEquivalences:
+                tmp = st.Species()
+                label = []
+                for molecule in element[1]:
+                    tmp2 = st.Molecule(molecule[0])
+                    tmp3 = st.Component(molecule[1])
+                    if molecule[2][0] == "b":
+                        tmp3.addBond(molecule[2][1])
+                    elif molecule[2][0] == "s":
+                        tmp3.addState(molecule[2][1])
+                        tmp3.addState(molecule[2][2])
+                    
+                    tmp2.addComponent(tmp3)
+                    stmp = st.Species()
+                    stmp.addMolecule(deepcopy(tmp2))
+                    dictionary[molecule[0]] = deepcopy(stmp)
+                    labelDictionary[molecule[0]] = [(molecule[0],)]
+                    label.append(molecule[0])
+                    tmp.addMolecule(tmp2)
+                dictionary[element[0]] = deepcopy(tmp)
+                labelDictionary[element[0]] = [tuple(label)]
+        print labelDictionary
+        return dictionary,labelDictionary
+        
