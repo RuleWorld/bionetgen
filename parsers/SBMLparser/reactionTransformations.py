@@ -118,8 +118,8 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator,outpu
  #           else:
             if outputFlag:
                 print '-',sbml_name
-            if 'EGF_EGFRim2_GAP_Grb2' in original[0] or 'EGF_EGFRm2_GAP_Grb2_Prot' in original[1] and 'Proti' in original[0]:
-                print original
+           # if 'Ras_GDP' in original[0]:
+            #    print original
             tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag)
             
 

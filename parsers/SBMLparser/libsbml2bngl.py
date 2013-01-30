@@ -354,7 +354,7 @@ def processDatabase():
 
 def evaluation(numMolecules,translator):
     originalElements = (numMolecules)
-    ruleElements = len([str(translator[x]) for x in translator if ('.' in str(translator[x]) or '~' in str(translator[x]))])
+    ruleElements = len([str(translator[x]) for x in translator if ('.' in str(translator[x]) or '~' in str(translator[x]))])*1.0/originalElements
     return ruleElements
 
 
