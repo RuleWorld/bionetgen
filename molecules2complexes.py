@@ -406,9 +406,33 @@ def getPertinentNamingEquivalence2(original,labelDatabase, equivalenceTranslator
     else:
         return None
     
-def getPertinentNamingEquivalence3(original,labelDatabase, equivalenceTranslator):
-    pass
+def getEquivalenceList(reactant,equivalenceTranslator):
+    equivalenceList = []
+    for element in equivalenceTranslator:
+        if reactant in element:
+            equivalenceList.append(element)
+    return equivalenceList
 
+def getPertinentNamingEquivalence3(original,labelDatabase, equivalenceTranslator):
+    overallEquivalence = []
+    for element in original:
+        equivalenceList = []
+        for reactant in element:
+            equivalenceList.extend(getEquivalenceList(reactant,equivalenceTranslator))
+        overallEquivalence.append(equivalenceList)
+    intersection = [x for x in overallEquivalence[0] if x in overallEquivalence[1]]
+    overallEquivalence = []
+    
+    if intersection == []:
+        for element in original:
+            equivalenceList = []
+            for reactant in element:
+                for subreactant in labelDatabase[reactant]:
+                    equivalenceList.extend(getEquivalenceList(subreactant,equivalenceTranslator))
+            overallEquivalence.append(equivalenceList)
+        intersection = [x for x in overallEquivalence[0] if x in overallEquivalence[1]]
+    #TODO: we still need some additional checking
+    return intersection[0]
 def processRule(original,database,
                 classification,equivalenceTranslator,outputFlag = False):
     '''
@@ -419,7 +443,7 @@ def processRule(original,database,
         database.rawDatabase,database.synthesisDatabase,database.translator,outputFlag)
     elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification','mMod','iMod']:
         equ = equivalenceTranslator[classification]
-        pertinentEquivalence = getPertinentNamingEquivalence2(original,database.rawLabelDictionary,equ)
+        pertinentEquivalence = getPertinentNamingEquivalence3(original,database.rawLabelDictionary,equ)
         return reactionTransformations.catalysis(original,database.labelDictionary,database.rawDatabase,
                                                   None,
                                                   database.translator,pertinentEquivalence,
