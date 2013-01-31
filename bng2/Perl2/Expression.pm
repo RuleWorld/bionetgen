@@ -19,6 +19,7 @@ use warnings;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
+use Scalar::Util ("looks_like_number");
 
 # BNG Modules
 use Param;
@@ -118,7 +119,7 @@ my %NARGS = ( '+'  => { 'min'=>2           },
 # this regex matches numbers (regular and scientific notation
 my $NUMBER_REGEX = '^[\+\-]?(\d+\.?\d*|\.\d+)(|[Ee][\+\-]?\d+|\*10\^[\+\-]?\d+)$';
 # this regex matches param names (letter followed optional by word characters)
-my $PARAM_REGEX  = '^[A-Za-z]\w*$';
+my $PARAM_REGEX  = '^\w+$';
 
 
 ###
@@ -192,16 +193,14 @@ sub clone
 # create a new expression from a number or a param name
 sub newNumOrVar
 {
-    my $value = shift;
-    my $plist = (@_) ? shift : undef;
+    my $value = shift @_;
+    my $plist = (@_) ? shift @_ : undef;
     
-    my $expr = undef;
-    my $err  = undef;
-    
+    my $expr;
+    my $err;
     # is this a number?
-    if ( $value =~ /$NUMBER_REGEX/ )
-    {
-        # create a new number expression
+    if ( looks_like_number($value) )
+    {   # create a new number expression
         $expr = Expression->new();
         $expr->Type('NUM');
         $expr->Arglist( [$value] );
@@ -211,14 +210,12 @@ sub newNumOrVar
     elsif ( $value =~ /$PARAM_REGEX/ )
     {
         # we need a paramlist to continue
-        if ( ref $plist  eq  'ParamList' )
+        if ( ref $plist eq "ParamList" )
         {
             # check that parameter exists
             (my $param, $err) = $plist->lookup( $value );
-            # if we found the parameter, then..
-            unless ($err)
-            {
-                # create a new number expression
+            if (defined $param)
+            {   # create a new number expression
                 $expr = Expression->new();
                 $expr->Type('VAR');
                 $expr->Arglist( [$value] );
@@ -226,6 +223,9 @@ sub newNumOrVar
             }
         }
     }
+    
+    unless (defined $expr)
+    {   die "Expression::newNumOrVar() - Attempted but failed to create number or variable expression";   }
 
     # return expression or undefined
     return $expr;
@@ -321,7 +321,7 @@ sub operate
         
             # if arg isn't an expression, try to create one  
             else      
-            {   $arg = Expression::newNumOrVar( $arg );   }
+            {   $arg = Expression::newNumOrVar($arg,$plist);   }
     
             # check that are is still defined
             unless (defined $arg) { return undef; }  

@@ -189,6 +189,13 @@ sub match
     my $total_matches = 0;
     if ($obs->Type eq "Molecules")
     {
+        my $mode = 0;
+        if (exists $BNGModel::GLOBAL_MODEL->Options->{MoleculesObservables})
+        {
+            if ( $BNGModel::GLOBAL_MODEL->Options->{MoleculesObservables} eq "CountUnique" )
+            {   $mode = 1;  }
+        }
+
         foreach my $patt (@{$obs->Patterns})
         {
             # find matches of this pattern in species graph
@@ -196,13 +203,22 @@ sub match
             if (@matches)
             {
                 ## SYMMETRY CORRECTION is disabled for the time being!
-                #$total_matches += scalar @matches / $patt->Automorphisms;
-                $total_matches += scalar @matches;
+                if ($mode)
+                {   $total_matches += scalar @matches / $patt->Automorphisms;    }
+                else
+                {   $total_matches += scalar @matches;   }
             }
         }
     }
     elsif ($obs->Type eq "Species")
     {
+        my $mode = 0;
+        if (exists $BNGModel::GLOBAL_MODEL->Options->{SpeciesObservables})
+        {
+            if ( $BNGModel::GLOBAL_MODEL->Options->{SpeciesObservables} eq "CountUnique" )
+            {   $mode = 1;  }
+        }
+
         foreach my $patt (@{$obs->Patterns})
         {
             # find matches of this pattern in species graph
@@ -217,12 +233,12 @@ sub match
                 my $result = eval $test_string;
                 warn $@ if $@;
                 $total_matches += $result ? 1 : 0;
-                #last;
+                last if ($mode);
             }
             elsif ($n_match>0)
             {
                 $total_matches += 1;
-                #last;
+                last if ($mode);
             }
         }
 
