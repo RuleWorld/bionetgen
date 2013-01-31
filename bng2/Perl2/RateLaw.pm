@@ -432,8 +432,10 @@ sub evaluate_local
             }
             # 2b) computer overall deltaG
             my $deltaG_expr;
-            if (@deltaG_terms)
-            {   $deltaG_expr = Expression::operate( "+", [@deltaG_terms], $model->ParamList );   }
+            if (@deltaG_terms>1)
+            {   $deltaG_expr = Expression::operate("+", [@deltaG_terms], $model->ParamList);   }
+            elsif (@deltaG_terms==1)
+            {   $deltaG_expr = $deltaG_terms[0];   }
 
             # 3) compute phi term
             my $phi_expr;
