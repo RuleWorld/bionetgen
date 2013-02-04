@@ -429,7 +429,7 @@ int main(int argc, char *argv[]){
 //    read_functions_array(netfile_name_tmp,spec_groups,rates,species,param_map,param_index_map,observ_index_map);
     read_functions_array(netfile_name_tmp,rates,param_map,param_index_map,observ_index_map,&t);
     int n_func = network.functions.size();
-    if (n_func > 0) n_func--; // Subtract off '_time' function
+    if (n_func > 0) n_func--; // Subtract off 'time' function
     cout << "Read " << n_func << " function(s)" << endl;
 
     // Create stop condition

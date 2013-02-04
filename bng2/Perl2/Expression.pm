@@ -421,8 +421,8 @@ sub operate
 					if ( exists $functions{ $param_name } ){
 						return "Cannot use built-in function name '$param_name' as a parameter name.";
 					}
-					# Make sure parameter name not "_time" --Leonard
-					if ( $param_name eq "_time" ){
+					# Make sure parameter name not "time" --Leonard
+					if ( $param_name eq "time" ){
 						return "Cannot use reserved function name '$param_name' as a parameter name.";
 					}
 					

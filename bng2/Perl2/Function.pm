@@ -213,8 +213,8 @@ sub readString
 		if ( Expression::isBuiltIn($name) ){
 			return "Cannot use built-in function name '$name' as a user-defined function name.";
 		}
-		# Make sure function name not "_time" --Leonard
-		if ( $name eq "_time" ){
+		# Make sure function name not "time" --Leonard
+		if ( $name eq "time" ){
 			return "Cannot use reserved function name '$name' as a user-defined function name.";
 		}
     }
