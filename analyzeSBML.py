@@ -98,11 +98,14 @@ class SBMLAnalyzer:
         ruleResult = np.zeros(len(ruleBook))
         for validTupleIndex in np.nonzero(tupleCompliance):
             for index in validTupleIndex:
-                if 'r' in ruleBook[index] and np.any([ruleCompliance[temp] for temp in ruleBook[index]['r']]):
-                    ruleResult[index] = 1
-                #check if just this is enough
-                if 'n' in ruleBook[index]:
-                    ruleResult[index] = 1
+                for alternative in ruleBook[index]:
+                    if 'r' in alternative and np.any([ruleCompliance[temp] for temp in alternative['r']]):
+                        ruleResult[index] = 1
+                        break
+                    #check if just this is enough
+                    if 'n' in alternative:
+                        ruleResult[index] = 1
+                        break
         return ruleResult
         
     def levenshtein(self,s1, s2):
@@ -143,7 +146,7 @@ class SBMLAnalyzer:
                         break
         return equivalences,modifiedElement        
      
-    def analyzeNamingConventions(self,molecules,originalPattern='',modifiedPattern=''):
+    def analyzeNamingConventions(self,molecules,originalPattern='',modifiedPattern='',totalPatterns=''):
         '''
         *originalPattern* and *modifiedPattern* are regular expressions containing
         the patterns we wish to compare and see if they are the same.
@@ -164,14 +167,25 @@ class SBMLAnalyzer:
             comparisonMethod = str.startswith
         elif patternType == 'suffix':
             comparisonMethod = str.endswith
-        #elif patternType == 'infix':
-        #    comparisonMethod = str.count
+        elif patternType == 'infix':
+            comparisonMethod = str.count
             
-        comparisonMethod = str.startswith if patternType == 'prefix' else str.endswith
+        #comparisonMethod = str.startswith if patternType == 'prefix' else str.endswith
         for molecule in [x.strip('()') for x in molecules]:
             if comparisonMethod(molecule,pattern):
                 oMolecules.append(molecule)
         
+        
+        
+        if patternType == 'infix':
+            for superMolecule in oMolecules:
+                exceptions = [x[1] for x in totalPatterns if pattern in x[1] and x[1] != pattern]
+                #FIXME: We do not need to totally reject it, just to properly handle it
+                if not True in [x in superMolecule for x in exceptions]:
+                    moleculeArray = tuple(superMolecule.split(pattern))
+                    results.append([superMolecule,moleculeArray])
+            return results
+                
         for molecule in [x.strip('()') for x in molecules]:
             if molecule in oMolecules:
                 continue
@@ -180,8 +194,9 @@ class SBMLAnalyzer:
                     comparison = superMolecule[len(pattern):]
                 elif patternType == 'suffix':
                     comparison = superMolecule[:len(superMolecule)- len(pattern)]
-                elif patternType == 'infix':
-                    comparison = superMolecule.replace(pattern,'',1)
+
+                #elif patternType == 'infix':
+                #    comparison = superMolecule.replace(pattern,'',1)
                     #if 'EGF_EGFR2' in comparison:
                     #    print comparison,molecule
                 if comparison == molecule:
@@ -201,22 +216,25 @@ class SBMLAnalyzer:
         if self.userEquivalencesDict == None:
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
-            if 'n' in prop.keys():
-                convention = reactionDefinition['namingConvention'][prop['n'][0]]
-                temp = self.analyzeNamingConventions(molecules,convention[0],convention[1])
-                if name in self.userEquivalencesDict:
-                    temp.extend(self.userEquivalencesDict[name])
-                equivalenceTranslator[name] = temp
-                reactionIndex[name] = index
-                index += 1
+            #xxxxxxxxxxxxxxxxxxxxxxx
+            for alternative in prop:
+                if 'n' in alternative.keys():
+                    convention = reactionDefinition['namingConvention'][alternative['n'][0]]
+                    temp = self.analyzeNamingConventions(molecules,convention[0],convention[1],reactionDefinition['namingConvention'])
+                    if name in self.userEquivalencesDict:
+                        temp.extend(self.userEquivalencesDict[name])
+                    equivalenceTranslator[name] = temp
+                    reactionIndex[name] = alternative['n'][0]
+                    index += 1
             
                 
-        print equivalenceTranslator
         #now we want to fill in all intermediate relationships
         newTranslator = equivalenceTranslator.copy()
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
             if key1 == key2:
                 continue
+            
+
             intersection = [[x for x in set.intersection(set(sublist),set(sublist2))] 
                 for sublist in equivalenceTranslator[key2] for sublist2 in equivalenceTranslator[key1]]
             intersectionPoints = [(int(x/len(equivalenceTranslator[key1])),int(x%len(equivalenceTranslator[key1]))) for x in 
@@ -230,6 +248,8 @@ class SBMLAnalyzer:
                 #RELATIONSHIP IS ASSIGNED CORRECTLY
                 if len(temp2) == 2:
                     newTranslator[max(key1,key2,key=len)].append(tuple(temp2))
+            else:
+                pass
         return reactionIndex,newTranslator
     
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,reactionIndex,useNamingConventions=True):
@@ -258,22 +278,30 @@ class SBMLAnalyzer:
         #print tupleC
         #now we will check for the nameConventionMatrix
         tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
+               
         for rule in ruleDictionary:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
                     if all(element in rule for element in equivalence):
+                        if rule == ('EGFR', 'EGFRi'):
+                            print namingConvention,reactionIndex[namingConvention],reactionIndex
                         tupleNameComplianceMatrix[rule][reactionIndex[namingConvention]] +=1
                         break
+        
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
         tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
         for key,element in tupleComplianceMatrix.items():
             for idx,member in enumerate(reactionDefinition['definitions']):
                 #tupleDefinitionMatrix[key][idx] = True
-                if 'r' in member:            
-                    tupleDefinitionMatrix[key][idx] = np.all([element[reaction] for reaction in member[u'r']])
-                if 'n' in member:
-                    tupleDefinitionMatrix[key][idx] = np.all([tupleNameComplianceMatrix[key][reaction] for reaction in member[u'n']])
+                #('ERKi_P', 'MEKi_PP', 'ERKi_MEKi_PP')
+                #('ERKi_P', 'MEKi_PP', 'ERK', 'MEKi_PP')
+                #xxxxxxxxxxxxxxxxxxxx
+                for alternative in member:
+                    if 'r' in alternative:            
+                        tupleDefinitionMatrix[key][idx] += np.all([element[reaction] for reaction in alternative[u'r']])
+                    if 'n' in alternative:
+                        tupleDefinitionMatrix[key][idx] += np.all([tupleNameComplianceMatrix[key][reaction] for reaction in alternative[u'n']])
                # if 'n' in member:
                 #    tupleDefinitionMatrix[key][idx] = tupleDefinitionMatrix[key][idx]  and ruleNameComplianceMatrix
                 #if 'n' in member:
@@ -315,16 +343,18 @@ class SBMLAnalyzer:
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
         for reactionType,properties in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
-            #if its a reaction defined by its naming convention            
-            if 'n' in properties.keys():
-                try:
-                    site = reactionDefinition['reactionSite'][properties['rsi']]
-                    state = reactionDefinition['reactionState'][properties['rst']]
-                except:
-                    print 'malformed json file in the definitions section, using defaults'
-                    site = reactionType
-                    state = reactionType[0]
-                reactionTypeProperties[reactionType] = [site,state]
+            #if its a reaction defined by its naming convention   
+            #xxxxxxxxxxxxxxxxxxx
+            for alternative in properties:
+                if 'n' in alternative.keys():
+                    try:
+                        site = reactionDefinition['reactionSite'][alternative['rsi']]
+                        state = reactionDefinition['reactionState'][alternative['rst']]
+                    except:
+                        print 'malformed json file in the definitions section, using defaults'
+                        site = reactionType
+                        state = reactionType[0]
+                    reactionTypeProperties[reactionType] = [site,state]
         return reactionTypeProperties
 
     def classifyReactions(self,reactions,molecules):
