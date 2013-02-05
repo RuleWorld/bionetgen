@@ -386,7 +386,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     
-    translator = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
     #translator = {}
     print evaluation(len(parser.getSpecies()[0]),translator)
     param2 = parser.getParameters()
@@ -396,6 +396,10 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     param += param2
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
+    with open(outputFile + '.log', 'w') as f:
+        for element in log:
+            f.write(element + '\n')
+            
 
 
 def processFile(translator,parser,outputFile):
