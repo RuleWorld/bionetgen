@@ -68,6 +68,7 @@ my %functions =
   "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 },
   "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 },
   "pi"    => { FPTR => sub { pi },                   NARGS => 0 },
+  "time"  => { FPTR => sub { time },                 NARGS => 0 },
   "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
   "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) },
   "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) },
@@ -420,10 +421,6 @@ sub operate
 					# Make sure parameter name not the same as built-in functions --Leonard
 					if ( exists $functions{ $param_name } ){
 						return "Cannot use built-in function name '$param_name' as a parameter name.";
-					}
-					# Make sure parameter name not "time" --Leonard
-					if ( $param_name eq "time" ){
-						return "Cannot use reserved function name '$param_name' as a parameter name.";
 					}
 					
                     unless ( $param->Type eq 'VAR' )
