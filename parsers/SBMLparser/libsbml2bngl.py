@@ -431,7 +431,7 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    for bioNumber in range(0,409):  
+    for bioNumber in range(1,409):  
     #bioNumber = 175
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
