@@ -70,8 +70,8 @@ void Network3::init_Network3(double* t, bool verbose){
 			FUNCTION.push_back(new pair<Function*,double>(
 					new Function(network.rates->elt[network.var_parameters[i]-off]->name),0.0));
 			//
-			if (i==0){ // '_time' function
-				FUNCTION[0]->first->p->DefineVar("_time",t);
+			if (i==0){ // 'time' function
+				FUNCTION[0]->first->p->DefineVar("time",t);
 			}
 			else{
 				map<string,double*> var = network.functions[i].GetUsedVar();
@@ -1009,7 +1009,7 @@ void Network3::print_function_values(FILE* out, double t){
 	//
 	const char *fmt = "%19.12e";
 //	fprintf(out, fmt, t);
-	for (unsigned int i=1;i < FUNCTION.size();i++){ // Don't print '_time' function (i=0)
+	for (unsigned int i=1;i < FUNCTION.size();i++){ // Don't print 'time' function (i=0)
 		fprintf(out, " ");
 		fprintf(out, fmt, FUNCTION[i]->second);
 	}

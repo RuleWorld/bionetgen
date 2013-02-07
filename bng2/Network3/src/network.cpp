@@ -465,11 +465,11 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			vector<int> observ_depend;
 			vector<int> param_depend;
 
-			// Functions block exists, create '_time' function
+			// Functions block exists, create 'time' function
 			if (dummy_string == "functions"){
-				func_name = "_time";
-				parser.DefineVar("_time",t);
-				parser.SetExpr("_time");
+				func_name = "time";
+				parser.DefineVar("time",t);
+				parser.SetExpr("time");
 			//	cout << parser.GetExpr() << "= " << parser.Eval() << endl;
 			}
 			// Create other functions
@@ -497,9 +497,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				func_name.erase(func_name.length()-2,func_name.length());
 //				cout << func_name << "\t" << function_string;
 
-				// Make sure the function isn't named "_time", just to be safe
-				if (func_name == "_time"){
-					cout << "ERROR: Function name \"_time()\" is a reserved keyword. ";
+				// Make sure the function isn't named "time", just to be safe
+				if (func_name == "time"){
+					cout << "ERROR: Function name \"time()\" is a reserved keyword. ";
 					cout << "Please choose a different name." << endl;
 					exit(1);
 				}
@@ -3361,7 +3361,7 @@ int init_print_function_values_network(FILE* out){
 	// Write header
 //	fprintf(out, "#");
 //	fprintf(out, "%18s", "time");
-	for (unsigned int i = 1; i < network.functions.size(); ++i) { // Don't print '_time' function (i=0)
+	for (unsigned int i = 1; i < network.functions.size(); ++i) { // Don't print 'time' function (i=0)
 		fprintf(out, " %19s", network.rates->elt[network.var_parameters[i]-network.rates->offset]->name);
 	}
 	fprintf(out, "\n");
@@ -3391,7 +3391,7 @@ int print_function_values_network(FILE* out, double t){
 	exit(1);
 ////*/
 //	fprintf(out, "%19.12e", t);
-	for (unsigned int i = 1; i < network.functions.size(); i++) { // Don't print '_time' function (i=0)
+	for (unsigned int i = 1; i < network.functions.size(); i++) { // Don't print 'time' function (i=0)
 		fprintf(out, " %19.12e", network.rates->elt[network.var_parameters[i]-network.rates->offset]->val);
 	}
 	fprintf(out, "\n");
@@ -3587,7 +3587,7 @@ int print_network(FILE* out) {
 		char* funcName;
 		string funcExpr;
 		// Loop over functions
-		for (unsigned int i=1;i < network.functions.size();i++){ // Don't print '_time' function (i=0)
+		for (unsigned int i=1;i < network.functions.size();i++){ // Don't print 'time' function (i=0)
 			funcName = network.rates->elt[network.var_parameters[i]-1]->name;
 			funcExpr = network.functions[i].GetExpr();
 //			cout << funcName << ": " << funcExpr << endl;
@@ -4776,7 +4776,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	/* Set final network concentrations */
 	set_conc_network(GSP.c);
 
-	// Update _time function
+	// Update time function
 	if (network.has_functions){
 		network.rates->elt[network.var_parameters[0]-1]->val = network.functions[0].Eval();
 	}
