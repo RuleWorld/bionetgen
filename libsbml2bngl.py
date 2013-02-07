@@ -9,6 +9,7 @@ import structures
 from os import listdir
 import numpy as np
 import analyzeRDF
+import string
 
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
@@ -107,11 +108,15 @@ class SBML2BNGL:
                 for parameter in rawRules[2]:
                     parameters.append('%s %f' % (parameter[0],parameter[1]))
             compartmentList = ['cell']
-            compartmentList.extend([x.getName() for x in self.model.getListOfCompartments() if x.getName() is not ''])
+            
+            compartmentList.extend([self.__getRawCompartments(x)[0] for x in self.model.getListOfCompartments()])
             functionName = '%s%d()' % (functionTitle,index)          
-            if rawRules[4]:            
+            if rawRules[4]:
                 tmp = rawRules[3].split('-')
                 if len(tmp) == 2:
+                    if tmp[1][-1] == ')':
+                        tmp[0] = tmp[0] + ') #' + rawRules[3] 
+                        tmp[1] = tmp[0][0:string.find(tmp[0],'(')+1]+ tmp[1]
                     functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
@@ -386,8 +391,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     
-    translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    #translator = {}
+    #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    translator = {}
     print evaluation(len(parser.getSpecies()[0]),translator)
     param2 = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
@@ -426,12 +431,12 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    for bioNumber in [19]:  
+    for bioNumber in [104]:  
     #bioNumber = 175
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
         spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
-        analyzeFile(bioNumber,reactionDefinitions,useID,'egfr/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        analyzeFile(bioNumber,reactionDefinitions,useID,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
 
 if __name__ == "__main__":
     #identifyNamingConvention()
