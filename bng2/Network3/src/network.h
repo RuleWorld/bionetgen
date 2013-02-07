@@ -90,6 +90,7 @@ typedef struct RXN{
 	double*			rateLaw_params;
 	int*			rateLaw_indices;
 	double          stat_factor;
+	string*			toString;
 	struct RXN*		next;
 } Rxn;
 
