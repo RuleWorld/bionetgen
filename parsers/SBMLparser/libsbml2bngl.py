@@ -159,8 +159,8 @@ class SBML2BNGL:
                 #print translator[rawSpecies[0]].toString()
                 tmp2 = temp
                 if rawSpecies[0] in self.tags:
-                    tmp2 += (self.tags[rawSpecies[0]])
-                speciesText.append('%s %f' % (tmp2 + ":" + str(tmp),rawSpecies[1])) 
+                    tmp2 = (self.tags[rawSpecies[0]])
+                speciesText.append('%s:%s%s %f' % (tmp2,temp,str(tmp),rawSpecies[1])) 
             observablesText.append('Species %s %s #%s' % (rawSpecies[0], tmp,rawSpecies[5]))
         moleculesText.append('Null()')
         speciesText.append('$Null() 1')
@@ -431,7 +431,7 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    for bioNumber in [104]:  
+    for bioNumber in range(0,409):  
     #bioNumber = 175
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
