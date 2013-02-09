@@ -10,7 +10,7 @@ from os import listdir
 import numpy as np
 import analyzeRDF
 import string
-
+from util import logMess
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
 
@@ -80,7 +80,20 @@ class SBML2BNGL:
         name = compartment.getId()
         size = compartment.getSize()
         return name,3,size
+        
+    def __getRawFunctions(self,function):
+        math= function[1].getMath()
+        name = function[1].getId()
+        
+        return name,libsbml.formulaToString(math)
 
+    def getSBMLFunctions(self):
+        functions = []
+        for function in enumerate(self.model.getListOfFunctionDefinitions()):
+            functionInfo = self.__getRawFunctions(function)
+            functions.append(writer.bnglFunction(functionInfo[1],functionInfo[0],[]))
+        return functions
+            
     def getCompartments(self):
         '''
         Returns an array of triples, where each triple is defined as
@@ -121,14 +134,17 @@ class SBML2BNGL:
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
                 else:
-                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
+                    functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[0],functionName2,compartmentList))
+                    idx = logMess('ERROR','I do not know how to split the rate law into two %s'.format(rawRules[3]))
+                    functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
+                    #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
                 functionName +=', %s' % (functionName2)
             else:        
                 functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
-
+        if len(rules) == 0:
+            logMess("ERROR","The file contains no reactions")
         return parameters, rules,functions
 
     def getParameters(self):
@@ -398,12 +414,14 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     param,rules,functions = parser.getReactions(translator,True)
+    functions.extend(parser.getSBMLFunctions())
     param += param2
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
-    with open(outputFile + '.log', 'w') as f:
-        for element in log:
-            f.write(element + '\n')
+    if len(logMess.log) > 0:
+        with open(outputFile + '.log', 'w') as f:
+            for element in logMess.log:
+                f.write(element + '\n')
             
 
 
@@ -433,6 +451,8 @@ def main():
     (options, _) = parser.parse_args()
     for bioNumber in range(1,409):  
     #bioNumber = 175
+        logMess.log = []
+        logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
         spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'

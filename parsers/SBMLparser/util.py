@@ -13,6 +13,14 @@ def defaultReactionDefinition():
     final = {'reactions':listOfReactions,'definitions':listOfDefinitions}
     with open('reactionDefinition.json','w') as fp:
         json.dump(final,fp)
+ 
+def logMess(logType,logMessage):
+    if not hasattr(logMess, "log"):
+        logMess.log = []
+        logMess.counter = -1
+    logMess.counter += 1
+    logMess.log.append("%s.%d: %s"%(logType,logMess.counter,logMessage))
+    return logMess.counter
     
 if __name__ == "__main__":
     defaultReactionDefinition()
