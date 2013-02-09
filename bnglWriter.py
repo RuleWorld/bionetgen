@@ -2,6 +2,8 @@
 
 import re
 from copy import deepcopy
+from util import logMess
+import string
 
 def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True):
     finalString = ''
@@ -41,8 +43,12 @@ def printTranslate(chemical,tags,translator={}):
     else:
         translator[chemical[0]].addCompartment(tags)
         app = str(translator[chemical[0]])
-    for item in range(0,int(chemical[1])):
-        tmp.append(app)
+    if float(int(chemical[1])) == chemical[1]:
+        for item in range(0,int(chemical[1])):
+            tmp.append(app)
+    else:
+        idx = logMess("ERROR","Cannot deal with non integer stoicheometries: {0}* {1}".format(chemical[1],chemical[0]))
+        tmp.append('ERROR CHECK LOG {0}'.format(idx))
     return ' + '.join(tmp)
 
 def balanceTranslator(reactant,product,translator):
@@ -73,6 +79,11 @@ def bnglFunction(rule,functionTitle,compartments=[]):
     def powParse(match):
         return '({0})^({1})'.format(match.group(2),match.group(3))
 
+    
+    if 'lambda' in rule:
+        parameters =  rule[string.find(rule,'(')+1:-1].split(',')
+        return '{0}({1}) = {2}'.format(functionTitle,','.join(parameters[0:-1]),parameters[-1])
+        
     tmp = rule
     #delete the compartment from the rate function since cBNGL already does it
     for compartment in compartments:
