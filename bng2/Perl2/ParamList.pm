@@ -783,7 +783,7 @@ sub check
         #printf "Checking if parameter %s is defined.\n", $param->Name;
         unless ( $param->Type )
         {
-            $err= sprintf "Parameter %s is referenced but not defined", $param->Name;
+            $err= sprintf "Parameter '%s' is referenced but not defined", $param->Name;
             last;
         }
     }

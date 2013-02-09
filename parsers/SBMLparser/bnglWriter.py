@@ -67,12 +67,19 @@ def balanceTranslator(reactant,product,translator):
                 pMolecule.removeComponents(overFlowingComponents)
     return newTranslator
 
+
     
 def bnglFunction(rule,functionTitle,compartments=[]):
+    def powParse(match):
+        return '({0})^({1})'.format(match.group(2),match.group(3))
+
     tmp = rule
+    #delete the compartment from the rate function since cBNGL already does it
     for compartment in compartments:
-        tmp = re.sub('{0}\\s*\\*'.format(compartment),'',tmp)
+        tmp = re.sub('{0}\\s*[*]'.format(compartment),'',tmp)
         tmp = re.sub('\\*\\s*{0}'.format(compartment),'',tmp)
+    #BNGL has ^ for power. 
+    tmp = re.sub('(pow)\(([^,]+),([^)]+)\)',powParse,tmp)
     finalString = '%s = %s' % (functionTitle,tmp)
     return finalString
 
@@ -88,9 +95,9 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    #output.write('generate_network();\n')
-    #output.write('simulate_ode({t_end=>400,n_steps=>50});')
-    output.write('writeXML()\n')
+    output.write('generate_network();\n')
+    output.write('simulate_ode({t_end=>100,n_steps=>100});')
+    #output.write('writeXML()\n')
     
 def sectionTemplate(name,content):
     section = 'begin %s\n' % name
