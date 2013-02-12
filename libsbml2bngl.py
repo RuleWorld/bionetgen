@@ -10,7 +10,7 @@ from os import listdir
 import numpy as np
 import analyzeRDF
 import string
-from util import logMess
+from util import logMess,NumericStringParser
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
 
@@ -114,6 +114,7 @@ class SBML2BNGL:
         rules = []
         parameters = []
         functions = []
+        tester = NumericStringParser()
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
             rawRules =  self.__getRawRules(reaction)
@@ -123,13 +124,17 @@ class SBML2BNGL:
             compartmentList = ['cell']
             
             compartmentList.extend([self.__getRawCompartments(x)[0] for x in self.model.getListOfCompartments()])
-            functionName = '%s%d()' % (functionTitle,index)          
+            functionName = '%s%d()' % (functionTitle,index)
+            if 'delay' in rawRules[3]:
+                logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
             if rawRules[4]:
                 tmp = rawRules[3].split('-')
                 if len(tmp) == 2:
                     if tmp[1][-1] == ')':
                         tmp[0] = tmp[0] + ') #' + rawRules[3] 
                         tmp[1] = tmp[0][0:string.find(tmp[0],'(')+1]+ tmp[1]
+                    if not tester.eval(tmp[0]) or not tester.eval(tmp[1]):
+                        idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
                     functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
@@ -140,7 +145,7 @@ class SBML2BNGL:
                     functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
                     #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
                 functionName +=', %s' % (functionName2)
-            else:        
+            else: 
                 functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
         if len(rules) == 0:
@@ -449,7 +454,8 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    for bioNumber in range(1,409):  
+    #350,380
+    for bioNumber in [380]:  
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
