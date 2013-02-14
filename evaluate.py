@@ -12,13 +12,21 @@ def main():
     onlyfiles = [ f for f in listdir('./raw') if isfile(join('./raw',f)) ]
     
     logFiles = [x[0:-4] for x in onlyfiles if 'log' in x]
+    errorFiles = []
+    #dont skip the files that only have warnings    
+    for x in logFiles:    
+        with open('./raw/' + x +'.log','r') as f:
+            k = f.readlines()
+            if 'ERROR' in k[0]:
+                errorFiles.append(x)
+    #print len(errorFiles),len(logFiles)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
-    validFiles = [x for x in bnglFiles if x not in logFiles]
+    validFiles = [x for x in bnglFiles if x not in errorFiles]
     skip = ['334','225','332']
     with open('executionTestErrors' + '.log', 'w') as f:
         for bnglFile in validFiles:
             
-            if len([x for x in skip if x in bnglFile]) > 0:
+            if len([x for x in skip if x in bnglFile]) > 0: 
                 continue
             with open('temp.tmp', "w") as outfile:
                 d = open('dummy.tmp','w')

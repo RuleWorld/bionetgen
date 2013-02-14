@@ -121,12 +121,13 @@ class SBML2BNGL:
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
                     parameters.append('%s %f' % (parameter[0],parameter[1]))
-            compartmentList = ['cell']
+            compartmentList = [['cell',1]]
             
-            compartmentList.extend([self.__getRawCompartments(x)[0] for x in self.model.getListOfCompartments()])
+            compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
             functionName = '%s%d()' % (functionTitle,index)
             if 'delay' in rawRules[3]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
+            #print rawRules[3]
             if rawRules[4]:
                 tmp = rawRules[3].split('-')
                 if len(tmp) == 2:
@@ -134,7 +135,11 @@ class SBML2BNGL:
                         tmp[0] = tmp[0] + ') #' + rawRules[3] 
                         tmp[1] = tmp[0][0:string.find(tmp[0],'(')+1]+ tmp[1]
                     if not tester.eval(tmp[0]) or not tester.eval(tmp[1]):
-                        idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
+                        tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
+                        tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
+                        logMess('WARNING','Cannot reliably separate rate function %s into two, falling back to an if statement' % functionName)
+                        #idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
+                        #print 'mop'
                     functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
@@ -455,7 +460,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #350,380
-    for bioNumber in [380]:  
+    for bioNumber in range(1,350):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
