@@ -91,6 +91,7 @@ class SBML2BNGL:
         functions = []
         for function in enumerate(self.model.getListOfFunctionDefinitions()):
             functionInfo = self.__getRawFunctions(function)
+            print functionInfo
             functions.append(writer.bnglFunction(functionInfo[1],functionInfo[0],[]))
         return functions
             
@@ -144,10 +145,14 @@ class SBML2BNGL:
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
                 else:
-                    functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
+                    tmp = [0,0]
+                    tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
+                    tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
+                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
-                    idx = logMess('ERROR','I do not know how to split the rate law into two %s'.format(rawRules[3]))
-                    functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
+                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
+                    idx = logMess('ERROR','I do not know how to split the rate law {0} into two, falling back to an if statement'.format(functionName))
+
                     #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
                 functionName +=', %s' % (functionName2)
             else: 
@@ -460,7 +465,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #350,380
-    for bioNumber in range(1,350):
+    for bioNumber in range(351,409):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
