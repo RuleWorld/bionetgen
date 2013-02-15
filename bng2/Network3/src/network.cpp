@@ -1093,7 +1093,7 @@ Rxn* new_Rxn(int index, int n_reactants, int n_products, int* r_index,
 		rxn->rateLaw_params[i] = karray[j]->val;
 	}
 	// printf("Rxn %d stat_factor=%g\n", index, stat_factor);
-
+	rxn->toString = new string();
 	return (rxn);
 }
 
@@ -1142,6 +1142,8 @@ void free_Rxn(Rxn* rxn) {
 			free(rxn->rateLaw_params);
 		if (rxn->rateLaw_indices)
 			free(rxn->rateLaw_indices);
+		if (rxn->toString)
+			delete rxn->toString;
 		free(rxn);
 	}
 	return;
@@ -1783,11 +1785,23 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 
 		/* Allocate new reaction */
 		++(*n_read);
-
 		new_elt = new_Rxn(index, n_reactants, n_products, r_index, p_index,
 				rateLaw_type, n_rateLaw_tokens, rateLaw_indices, stat_factor,
 				rates);
-
+		// Create rxn string
+//		new_elt->toString = "";
+		if (new_elt->n_reactants == 0) *new_elt->toString += "*";
+		else *new_elt->toString += (string)species->elt[new_elt->r_index[0]-1]->name;
+		for (int y=1;y < new_elt->n_reactants;y++){
+			*new_elt->toString += " " + (string)species->elt[new_elt->r_index[y]-1]->name;
+		}
+		*new_elt->toString += " -> ";
+		if (new_elt->n_products == 0) *new_elt->toString += "*";
+		else *new_elt->toString += (string)species->elt[new_elt->p_index[0]-1]->name;
+		for (int y=1;y < new_elt->n_products;y++){
+			*new_elt->toString += " " + (string)species->elt[new_elt->p_index[y]-1]->name;
+		}
+		*new_elt->toString += " " + (string)rates->elt[new_elt->rateLaw_indices[0]-1]->name;
 		/* Add new reaction to list of reactions */
 		if (list_start) {
 			rxn->next = new_elt;
@@ -3825,22 +3839,17 @@ static struct {
 	int rxn_update_size;
 	int rxn_rate_update_interval;
 	// species -> observables
-//	vector<int>* species_observ_affect; // species by observables
 	vector<vector<int> > species_observ_affect; // species by observables
 	// observables -> functions
-//	vector<int>* observ_func_affect; // observables by functions
 	vector<vector<int> > observ_func_affect; // observables by functions
 	// functions -> parameters */
 	vector<int> func_param_affect; // functions by parameters (n x 1)
 	// parameters -> functions
-//	vector<int>* param_func_affect; // parameters by functions
 	vector<vector<int> > param_func_affect; // parameters by functions
 	// parameters -> rxns
-//	vector<int>* param_rxn_affect; // parameters by reactions
-	vector<vector<int> > param_rxn_affect; // parameters by reactions
+	vector<vector<int> > param_rxn_affect; // parameters by rxns
 	// rxns -> observables
-//	vector<int>* rxn_observ_affect; // reactions by observables
-	vector<vector<int> > rxn_observ_affect; // reactions by observables
+	vector<vector<int> > rxn_observ_affect; // rxns by observables
 
 	//  list<pair<double*,int> > prop; // list of propensities
 	vector<int> prop;
@@ -3977,8 +3986,7 @@ int create_update_lists() {
 	 *   parameters -> rxns
 	 */
 
-	// species -> observables (should this be: species -> observables ??  -Justin) (Yes, changed it. -Leonard)
-//	GSP.species_observ_affect = new vector<int>[network.species->n_elt]; // species by observables
+	// species -> observables (should this be: species -> observables ?? -Justin) (Yes, changed it. -Leonard)
 	GSP.species_observ_affect.resize(network.species->n_elt); // species by observables
 	for (Group* grp = network.spec_groups; grp != NULL; grp = grp->next) {
 		for (int i=0; i < grp->n_elt; i++) {
@@ -3996,7 +4004,7 @@ int create_update_lists() {
 	}*/
 
 	/* rxns -> observables */
-	GSP.rxn_observ_affect.resize(network.reactions->n_rxn); //
+	GSP.rxn_observ_affect.resize(network.reactions->n_rxn); // rxns by observables
 	for (int i=0; i < network.reactions->n_rxn; i++) {
 		for (int j=0; j < network.reactions->rxn[i]->n_reactants; j++) {
 			for (unsigned int k=0; k < GSP.species_observ_affect[network.reactions->rxn[i]->r_index[j]-1].size(); k++) {
@@ -4053,6 +4061,7 @@ int create_update_lists() {
 		}
 	}
 	/*cout << endl;
+	cout << "param_func_affect:" << endl;
 	for (int i=0;i < network.rates->n_elt;i++){
 		cout << "P_" << (i+1) << ": ";
 		for (unsigned int j=0;j < GSP.param_func_affect[i].size();j++){
@@ -4062,13 +4071,14 @@ int create_update_lists() {
 	}*/
 
 	/* parameters -> rxns */
-	GSP.param_rxn_affect.resize(network.rates->n_elt); // parameters by reactions
+	GSP.param_rxn_affect.resize(network.rates->n_elt); // parameters by rxns
 	for (int i=0; i < network.reactions->n_rxn; i++) {
 		for (int j=0; j < network.reactions->rxn[i]->n_rateLaw_params; j++) {
 			GSP.param_rxn_affect[network.reactions->rxn[i]->rateLaw_indices[j]-1].push_back(i+1);
 		}
 	}
 	/*cout << endl;
+	cout << "param_rxn_affect:" << endl;
 	for (int i=0;i < network.rates->n_elt;i++){
 		cout << "P_" << (i+1) << ": ";
 		for (unsigned int j=0;j < GSP.param_rxn_affect[i].size();j++){
@@ -4162,8 +4172,8 @@ int create_update_lists() {
 		cout << endl;
 	}*/
 
-	/* Create reaction update list by looping over reactants for each reaction and adding all reactions that appear on
-	 * species update lists */
+	/* Create reaction update list by looping over reactants for each reaction and adding all
+	   reactions that appear on species update lists */
 	rxn_dep = IALLOC_VECTOR(GSP.na);
 	GSP.rxn_update_size = 0;
 	for (i = 0; i < GSP.na; ++i) {
@@ -4202,34 +4212,90 @@ int create_update_lists() {
 	GSP.as_product_list = apl;
 	GSP.rxn_update_list = rul;
 
-	/*	the actual update vectors that are used during simluation. Given a rxn irxn
+	/*
+	 The actual update vectors that are used during simulation. Given a rxn irxn:
 	 (1) irxn -> observables : rxn_observ_affect, defined above (base 1)
 	 (2) irxn -> functions (through o_update_func) : rxn_update_func (base 0)
 	 (3) irxn -> rxns (through o_update_rxns and GSP.rxn_update_list) : rxn_update_rxn (base 0)
-	 */
+	*/
 
-	for (int i=0; i < network.reactions->n_rxn; i++) {
+	// Collect all functions and rxns that depend on time(), either directly or indirectly
+	vector<int> time_funcs, time_rxns;
+	if (network.has_functions){
+		time_funcs.push_back(1); // time() is F_0
+		// Loop over time()-dependent functions
+		for (unsigned int j=0;j < time_funcs.size();j++){
+			int f = time_funcs[j]-1;
+			string expr = network.functions[f].GetExpr();
+//			cout << "F_" << f << " (" << expr.substr(0,expr.size()-1) <<  ") : ";
+			int p = GSP.func_param_affect.at(f)-1;
+//			cout << "P_" << p << " (" << network.rates->elt[p]->name << ")" << endl;
+			// Loop over rxns dependent on parameter p
+			for (unsigned int k=0;k < GSP.param_rxn_affect.at(p).size();k++){
+				int r = GSP.param_rxn_affect.at(p).at(k)-1;
+//				cout << "\t" << "R_" << r << " [" << *network.reactions->rxn[r]->toString << "]" << endl;
+				time_rxns.push_back(r);
+			}
+			// Loop over functions dependent on parameter p
+			for (unsigned int k=0;k < GSP.param_func_affect.at(p).size();k++){
+				int ff = GSP.param_func_affect.at(p).at(k)-1;
+				expr = network.functions[ff].GetExpr();
+//				cout << "\t" << "F_" << ff << " (" << expr.substr(0,expr.size()-1) <<  ") : ";
+				int pp = GSP.func_param_affect.at(ff)-1;
+//				cout << "P_" << pp << " (" << network.rates->elt[pp]->name << ")" << endl;
+				time_funcs.push_back(ff+1);
+			}
+		}
+//		cout << "-----" << endl;
+	}
+
+	// Collect all functions and rxns that dependent on this rxn
+	for (int i=0;i < network.reactions->n_rxn;i++) {
 		vector<int> temp_vec_func, temp_vec_rxn;
-		for (unsigned int j=0; j < GSP.rxn_observ_affect[i].size(); j++) {
-			for (unsigned int k=0; k < o_update_func[GSP.rxn_observ_affect[i][j]-1].size(); k++){
+
+		for (unsigned int j=0;j < GSP.rxn_observ_affect[i].size();j++) {
+			for (unsigned int k=0;k < o_update_func[GSP.rxn_observ_affect[i][j]-1].size();k++){
 				temp_vec_func.push_back(o_update_func[GSP.rxn_observ_affect[i][j]-1][k]);
 			}
-			for (unsigned int k = 0; k < o_update_rxn[GSP.rxn_observ_affect[i][j]-1].size(); k++){
+			for (unsigned int k=0;k < o_update_rxn[GSP.rxn_observ_affect[i][j]-1].size();k++){
 				temp_vec_rxn.push_back(o_update_rxn[GSP.rxn_observ_affect[i][j]-1][k]);
 			}
 		}
 
-		for (int j = 0; j < GSP.rxn_update_list->l_arr[i]; j++){
+		for (int j=0;j < GSP.rxn_update_list->l_arr[i];j++){
 			temp_vec_rxn.push_back(GSP.rxn_update_list->arr[i][j]);
 		}
 
+		// Add time()-dependent functions
+		for (unsigned int j=0;j < time_funcs.size();j++){
+			temp_vec_func.push_back(time_funcs[j]);
+		}
 		remove_redundancies(temp_vec_func);
 		GSP.rxn_update_func.push_back(temp_vec_func);
+
+		// Add time()-dependent rxns
+		for (unsigned int j=0;j < time_rxns.size();j++){
+			temp_vec_rxn.push_back(time_rxns[j]);
+		}
 		remove_redundancies(temp_vec_rxn);
 		GSP.rxn_update_rxn.push_back(temp_vec_rxn);
 	}
+	/*
+	cout << "rxn_update_rxn/func:" << endl;
+	for (unsigned int i=0;i < GSP.rxn_update_func.size();i++){
+		cout << "R_" << i << ": ";
+		for (unsigned int j=0;j < GSP.rxn_update_rxn[i].size();j++){
+			cout << "R_" << GSP.rxn_update_rxn[i][j] << " ";
+		}
+		for (unsigned int j=0;j < GSP.rxn_update_func[i].size();j++){
+			cout << "F_" << GSP.rxn_update_func[i][j] << " ";
+		}
+		cout << endl;
+	}
+	cout << "-----" << endl;
+	*/
 
-	/*  print_as_reactant_list( stdout); */
+	/*  print_as_reactant_list(stdout); */
 	print_rxn_update_list(stdout);
 
 	/* printf("RUL_size: %d\n", GSP.rxn_update_size); */
@@ -4301,7 +4367,8 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 	int nc_old, na_old;
 	int ip, ir, is, irxn;
 	//	int err=0;
-	int *rxn_dep/*, *rxn_dep2, *rxn_dep3*/; /* boolean arrays to keep track of dependent reactions in creating rxn update list */
+	int *rxn_dep/*, *rxn_dep2, *rxn_dep3*/; /* boolean arrays to keep track of dependent
+											   reactions in creating rxn update list */
 
 	iarray *arl, *apl, *rul; /* species and reaction update lists */
 	int offset, r_index, p_index;
@@ -4338,7 +4405,8 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 	offset = network.species->offset;
 	rarray = network.reactions->rxn;
 
-	/* Create species update list by looping over reactions adding rxn to each species that appears as reactant */
+	/* Create species update list by looping over reactions adding rxn to each species
+	 * that appears as reactant */
 	for (i = na_old; i < GSP.na; ++i) {
 		if (!(rxn = rarray[i]))
 			continue;
@@ -4353,7 +4421,8 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 		}
 	}
 
-	/* This method is far more straightforward than the (in principle) more optimized method that is commented out below. */
+	/* This method is far more straightforward than the (in principle) more optimized
+	 * method that is commented out below. */
 	rxn_dep = IALLOC_VECTOR(GSP.na);
 	for (i = 0; i < GSP.na; ++i) {
 		int ilower;
@@ -4617,7 +4686,8 @@ int update_concentrations(int irxn) {
 			/* 	if (n_groups_updated) */
 			/* 	  printf("  and updated %d groups.", n_groups_updated); */
 			/* 	printf("\n"); */
-		} else {
+		}
+		else {
 			printf("Population of species");
 			for (i = 0; i < nspec_newpop; ++i) {
 				ispec = ispec_newpop[i];
@@ -4642,7 +4712,7 @@ void update_rxn_rates(int irxn) {
 	double *a, anew, *c;
 
 	if (network.has_functions){
-		// update observables only if there are functions to be updated
+		// Update observables
 //		cout << "Rxn " << (irxn+1) << ": ";
 		for (unsigned int i=0; i < GSP.rxn_observ_affect[irxn].size(); i++){
 			int g = GSP.rxn_observ_affect[irxn][i]-1; // actual (base 0) index of group
@@ -4650,15 +4720,17 @@ void update_rxn_rates(int irxn) {
 			network.spec_groups_vec[g]->total_val = 0.0;
 			for (int j=0; j < network.spec_groups_vec[g]->n_elt; j++){
 				network.spec_groups_vec[g]->total_val +=
-						network.spec_groups_vec[g]->elt_factor[j] * GSP.c[network.spec_groups_vec[g]->elt_index[j]-1];
+						network.spec_groups_vec[g]->elt_factor[j] *
+						GSP.c[network.spec_groups_vec[g]->elt_index[j]-1];
 			}
 //			cout << ", new = " << network.spec_groups_vec[g]->total_val << " | ";
 		}
 //		cout << endl;
-		// update variable parameters
+
+		// Update variable parameters
 //		cout << "Rxn " << (irxn+1) << ": functions ";
 		for (unsigned int i=0; i < GSP.rxn_update_func[irxn].size(); i++){
-//			cout << GSP.rxn_update_func[irxn][i] << " ";
+//			cout << GSP.rxn_update_func[irxn][i]-1 << " ";
 			network.rates->elt[GSP.func_param_affect[GSP.rxn_update_func[irxn][i]-1]-1]->val =
 					network.functions[GSP.rxn_update_func[irxn][i]-1].Eval();
 		}
@@ -4698,7 +4770,7 @@ void update_rxn_rates(int irxn) {
 int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep,
 		mu::Parser& stop_condition) {
 
-	double t_remain;
+	double t_remain, t_end;
 	double rnd;
 	int irxn;
 	int error = 0;
@@ -4707,6 +4779,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 
 	/* Initialize times */
 	t_remain = delta_t;
+	t_end = *t + delta_t;
 
 	if (!GSP.c) {
 		fprintf(stderr,"gillespie_direct_network called without initialization.\n");
@@ -4730,6 +4803,9 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		tau = -log(rnd) / GSP.a_tot;
 //		cout << "tau : " << tau << endl;
 		t_remain -= tau;
+		if (network.has_functions){ // Only do this if time() function exists
+			*t += tau;
+		}
 
 		// Don't fire the next reaction if it occurs past the current integration endpoint
 		if (t_remain < 0.0) break;
@@ -4766,20 +4842,21 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	}
 
 	/* Back up to return time */
-	if (t_remain < 0.0){
-		*t += delta_t;
+	if (t_remain < 0.0){ // No rxn fired
+//		*t += delta_t;
+		*t = t_end;
+		// Need to update time(), functions that depend on time(), and rates that depend on time()
+		if (network.has_functions){
+			update_rxn_rates(0); // All rxns have the necessary update lists, so just call any of them
+		}
 	}
 	else{ // t_remain might be > 0 if maxSteps reached
-		*t += (delta_t - t_remain);
+//		*t += (delta_t - t_remain);
+		*t = t_end - t_remain;
 	}
 
 	/* Set final network concentrations */
 	set_conc_network(GSP.c);
-
-	// Update time function
-	if (network.has_functions){
-		network.rates->elt[network.var_parameters[0]-1]->val = network.functions[0].Eval();
-	}
 
 //  exit:
 	return (error);
