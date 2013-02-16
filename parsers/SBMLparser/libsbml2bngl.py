@@ -10,7 +10,7 @@ from os import listdir
 import numpy as np
 import analyzeRDF
 import string
-
+from util import logMess,NumericStringParser
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
 
@@ -80,7 +80,21 @@ class SBML2BNGL:
         name = compartment.getId()
         size = compartment.getSize()
         return name,3,size
+        
+    def __getRawFunctions(self,function):
+        math= function[1].getMath()
+        name = function[1].getId()
+        
+        return name,libsbml.formulaToString(math)
 
+    def getSBMLFunctions(self):
+        functions = []
+        for function in enumerate(self.model.getListOfFunctionDefinitions()):
+            functionInfo = self.__getRawFunctions(function)
+            print functionInfo
+            functions.append(writer.bnglFunction(functionInfo[1],functionInfo[0],[]))
+        return functions
+            
     def getCompartments(self):
         '''
         Returns an array of triples, where each triple is defined as
@@ -101,34 +115,51 @@ class SBML2BNGL:
         rules = []
         parameters = []
         functions = []
+        tester = NumericStringParser()
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
             rawRules =  self.__getRawRules(reaction)
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
                     parameters.append('%s %f' % (parameter[0],parameter[1]))
-            compartmentList = ['cell']
+            compartmentList = [['cell',1]]
             
-            compartmentList.extend([self.__getRawCompartments(x)[0] for x in self.model.getListOfCompartments()])
-            functionName = '%s%d()' % (functionTitle,index)          
+            compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
+            functionName = '%s%d()' % (functionTitle,index)
+            if 'delay' in rawRules[3]:
+                logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
+            #print rawRules[3]
             if rawRules[4]:
                 tmp = rawRules[3].split('-')
                 if len(tmp) == 2:
                     if tmp[1][-1] == ')':
                         tmp[0] = tmp[0] + ') #' + rawRules[3] 
                         tmp[1] = tmp[0][0:string.find(tmp[0],'(')+1]+ tmp[1]
+                    if not tester.eval(tmp[0]) or not tester.eval(tmp[1]):
+                        tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
+                        tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
+                        logMess('WARNING','Cannot reliably separate rate function %s into two, falling back to an if statement' % functionName)
+                        #idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
+                        #print 'mop'
                     functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
                 else:
+                    tmp = [0,0]
+                    tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
+                    tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
                     functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[0],functionName2,compartmentList))
+                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
+                    idx = logMess('ERROR','I do not know how to split the rate law {0} into two, falling back to an if statement'.format(functionName))
+
+                    #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
                 functionName +=', %s' % (functionName2)
-            else:        
+            else: 
                 functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
-
+        if len(rules) == 0:
+            logMess("ERROR","The file contains no reactions")
         return parameters, rules,functions
 
     def getParameters(self):
@@ -159,8 +190,8 @@ class SBML2BNGL:
                 #print translator[rawSpecies[0]].toString()
                 tmp2 = temp
                 if rawSpecies[0] in self.tags:
-                    tmp2 += (self.tags[rawSpecies[0]])
-                speciesText.append('%s %f' % (tmp2 + ":" + str(tmp),rawSpecies[1])) 
+                    tmp2 = (self.tags[rawSpecies[0]])
+                speciesText.append('%s:%s%s %f' % (tmp2,temp,str(tmp),rawSpecies[1])) 
             observablesText.append('Species %s %s #%s' % (rawSpecies[0], tmp,rawSpecies[5]))
         moleculesText.append('Null()')
         speciesText.append('$Null() 1')
@@ -398,12 +429,14 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     param,rules,functions = parser.getReactions(translator,True)
+    functions.extend(parser.getSBMLFunctions())
     param += param2
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
-    with open(outputFile + '.log', 'w') as f:
-        for element in log:
-            f.write(element + '\n')
+    if len(logMess.log) > 0:
+        with open(outputFile + '.log', 'w') as f:
+            for element in logMess.log:
+                f.write(element + '\n')
             
 
 
@@ -431,8 +464,11 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    for bioNumber in [104]:  
+    #350,380
+    for bioNumber in range(351,409):
     #bioNumber = 175
+        logMess.log = []
+        logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
         spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'

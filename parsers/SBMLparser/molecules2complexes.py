@@ -10,13 +10,9 @@ from copy import deepcopy
 import reactionTransformations
 import analyzeSBML
 import analyzeRDF
+from util import logMess
 
 
-def logMess(logType,logMessage):
-    if not hasattr(logMess, "log"):
-        logMess.log = []
-    logMess.log.append("%s: %s"%(logType,logMessage))
-    
 def parseReactions(reaction):
     species =   (Word(alphanums+"_") 
     + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
