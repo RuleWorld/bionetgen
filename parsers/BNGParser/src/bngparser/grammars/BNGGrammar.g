@@ -20,6 +20,7 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   import bngparser.dataType.ChangeableChannelTokenStream;
   import bngparser.dataType.ReactionRegister;
   import bngparser.methods.GenericMethods;
+  import java.util.Arrays;
 }
 @members{
   public Stack<String> paraphrases = new Stack<String>();
@@ -73,13 +74,23 @@ scope {
 }
 :
 LB*
-(SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+)?
+header_block*
+
 ((BEGIN MODEL LB+ (program_block)* END MODEL LB*) | (program_block)*)
 (a1=actions_block {$actionsTemplate = $a1.st;} )? 
 EOF  -> prog2(parameters={$prog::parameters},molecules={molecules},species={$prog::seedSpecies},reactions={$prog::reactionRules},
                             observables={$prog::observables},functions={$prog::functions}, compartments={$prog::compartments});
 
-version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN SEMI;
+header_block
+: version_def
+| substance_def
+| set_option
+;
+
+substance_def: (SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN  LB+);
+version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN  LB+;
+set_option: SET_OPTION LPAREN DBQUOTES STRING DBQUOTES COMMA DBQUOTES STRING DBQUOTES RPAREN  LB+;
+
 
 // a list of the different sections a bngl file may have. Order is not enforced.
 program_block
@@ -89,6 +100,7 @@ program_block
 | observables_block[$prog::observables]
 | reaction_rules_block[$prog::reactionRules]
 | functions_block
+| population_maps_block
 | compartments_block
 //| set_option
 ;
@@ -136,7 +148,6 @@ scope{
                             referencesName={$expression.reference.keySet()},referencesType={Register.getTypes($expression.reference)},
                             expression={$expression.text})
   
-    
 ;
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL

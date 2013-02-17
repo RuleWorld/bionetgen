@@ -3,7 +3,12 @@ import random
 import sys
 import libsbml2bngl
 import structures as st
+import itertools
 
+
+class InsufficientInformationError(Exception):
+     def __init__(self):
+         pass
 
 def printSpecies(label,definition):
     molecules = []
@@ -102,7 +107,7 @@ def findIntersection(set1,set2,database):
     return intersections
 
     
-def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
+def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator,outputFlag=False):
     #reaction = []
     for elements in original:
         #temp = []  
@@ -111,12 +116,19 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
  #           if molecule in translator:
  #               species.append(translator[molecule])
  #           else:
-            tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator)
+            if outputFlag:
+                print '-',sbml_name
+            #if 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP' in original[1]:
+            #    print original
+            tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag)
+            
+
             if (tags,molecules) == (None,None):
                 tmp = st.Species()
                 tmp.addMolecule(st.Molecule(sbml_name))
                 if sbml_name not in translator:
                     translator[sbml_name] = tmp
+                    #raise InsufficientInformationError
                 libsbml2bngl.log['reactions'].append(original)
             #TODO: probably we will need to add a check if there are several ways of defining a reaction
             elif isinstance(molecules,st.Species):
@@ -143,7 +155,7 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator):
                 translator[sbml_name] = species
                 if tags not in synthesisDatabase and tags not in rawDatabase:
                     synthesisDatabase[tags] = tuple(molecules)
-
+    return 0
         #reaction.append(temp)
     #return reaction
 
@@ -183,7 +195,7 @@ def reverseFind(name,dictionary):
         if dictionary[element] == name:
             return element
         
-def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesisDatabase,originalProductName):
+def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesisDatabase,originalProductName,outputFlag=False):
     '''
     this method goes through two complexes and tries to check how they
     get together to create a product (e.g. how their components link)
@@ -227,38 +239,91 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
             species.append(translator[reactants[0]])
         if reactants[1] in translator:
             species.append(translator[reactants[1]])
-        rnd = random.randint(0,1000)
+        if outputFlag:
+            print '-----------',species,reactants[0],reactants[1],reactants[1] in translator
+            print '+++',binding1,binding2,r1,r2
+            
+        bondName = max(species.getBondNumbers()) + 1
         molecule1 = st.Molecule(binding1)
         molecule2 = st.Molecule(binding2)
         component1 = st.Component(r1)
         component2 = st.Component(r2)
-        component1.addBond(str(rnd))
-        component2.addBond(str(rnd))
+        component1.addBond(str(bondName))
+        component2.addBond(str(bondName))
         molecule1.addComponent(component1)
         molecule2.addComponent(component2)
+        
+        if outputFlag:
+            print '////////',molecule1,molecule2
         species.addMolecule(molecule1,True,1)
         counter = 2 if binding1 == binding2 else 1 
         species.addMolecule(molecule2,True,counter)
-        
+        if outputFlag:
+            print '\\\\\\',species
         ####TODO: update the rawDAtabase with the m1m2 information
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule1))
         if molecule1.name in translator:
-            sp = st.Species()
-            sp.addMolecule(deepcopy(molecule1))
             translator[molecule1.name].extend(sp)
-            translator[molecule1.name].reset()
-        
+        else:
+            translator[molecule1.name] = sp
+        translator[molecule1.name].reset()
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule2))
         if molecule2.name in translator:
-            sp = st.Species()
-            sp.addMolecule(deepcopy(molecule2))
             translator[molecule2.name].extend(sp)
-            translator[molecule2.name].reset()
+        else:
+            translator[molecule2.name] = sp
+        translator[molecule2.name].reset()
+        if outputFlag:
+            print '||||||||||||||||||||||',translator[molecule2.name]
         #print reactants,product,str(species)
         #print name1,name2,extended1,extended2
         #print {x:str(translator[x]) for x in translator}, translator
-
+        if len(species.molecules) == 0:
+            return (None,None,None,None)
         return species,[],[],[]
     return extended1,extended2,intersection,[]
 
+def merge(reactant1,reactant2,r1,r2,translator,outputFlag=False):
+    '''
+    Receives two species reactant1 and reactant1, and their intersection points 
+    r1 and r2 and creates a new complex that is the union
+    '''
+    species = st.Species()
+    if reactant1 in translator:
+        species.append(translator[reactant1])
+    if reactant2 in translator:
+        species.append(translator[reactant2])
+    if outputFlag:
+        print '-----------',species,reactant1,reactant2,reactant2 in translator
+    rnd = max(species.getBondNumbers()) + 1
+    molecule1 = st.Molecule(binding1)
+    molecule2 = st.Molecule(binding2)
+    component1 = st.Component(r1)
+    component2 = st.Component(r2)
+    component1.addBond(str(rnd))
+    component2.addBond(str(rnd))
+    molecule1.addComponent(component1)
+    molecule2.addComponent(component2)
+    species.addMolecule(molecule1,True,1)
+    counter = 2 if binding1 == binding2 else 1 
+    species.addMolecule(molecule2,True,counter)
+    
+    ####TODO: update the rawDAtabase with the m1m2 information
+    if molecule1.name in translator:
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule1))
+        translator[molecule1.name].extend(sp)
+        translator[molecule1.name].reset()
+    
+    if molecule2.name in translator:
+        sp = st.Species()
+        sp.addMolecule(deepcopy(molecule2))
+        translator[molecule2.name].extend(sp)
+        translator[molecule2.name].reset()
+
+    
 def createIntersection(reactants,rawDatabase,translator,dictionary):
     '''
     if there are no components in record that allow for two species to merge
@@ -282,7 +347,7 @@ def createIntersection(reactants,rawDatabase,translator,dictionary):
         temp.append(([reactants[0].lower()],))
         rawDatabase[(reactants[1],)] = (temp,)
         
-def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase,translator):
+def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag=False):
     """
     this method reconstructs the component structure for a set of sbml
     molecules that undergo synthesis using context and history information    
@@ -308,8 +373,11 @@ def findCorrespondence(reactants,products,dictionary,sbml_name,rawDatabase,synth
     #synthetized product
     extended1,extended2,intersection,extendedComponent = getIntersection(reactants,product,
                                                        dictionary,rawDatabase,translator,
-                                                      synthesisDatabase,products)
+                                                      synthesisDatabase,products,outputFlag)
+                                                     
     #print 'aaaaa',dictionary
+    if outputFlag:
+        print '---',extended1,extended2,intersection,extendedComponent
     if len(species) <2 and species in rawDatabase:
         return species,rawDatabase[species]
     if (extended1,extended2,intersection) == (None,None,None):
@@ -364,19 +432,6 @@ def decay(original,dictionary,rawDatabase,translator):
     reaction[0] = [(tuple(original[0]),rawDatabase[tuple(original[0])],)]
     return reaction   
     
-def getStateName(namingConvention):
-    if namingConvention == 'Phosporylation':
-        return 'P'
-    if namingConvention == 'Double-Phosporylation':
-        return 'PP'
-    if namingConvention == 'Generic-Catalysis':
-        return 'M'
-
-def getCatalysisSiteName(namingConvention):
-    if namingConvention == 'Phosporylation' or namingConvention == 'Double-Phosporylation':
-        return 'phospo'
-    elif namingConvention == 'Generic-Catalysis':
-        return 'cata'
     
 def addRawDatabaseState(reactant,state,rawDatabase):
     if (reactant,) not in rawDatabase:
@@ -387,13 +442,16 @@ def addRawDatabaseState(reactant,state,rawDatabase):
         rawDatabase[(reactant,)] = (temp,)
         
         
-def catalyze(original,modified,namingConvention,rawDatabase,translator):
+def catalyze(original,modified,namingConvention,rawDatabase,translator,reactionProperties):
     result = [0,0]
+    siteName = reactionProperties[namingConvention][0]
+    stateName = reactionProperties[namingConvention][1]
     if (original,) not in translator:
-        result[0] = [getCatalysisSiteName(namingConvention),'U']
+        result[0] = [siteName,'U']
         #rawDatabase[(original,)] = ([([getCatalysisSiteName(namingConvention),'U'],)],)
     else:
-        if (getCatalysisSiteName(namingConvention),) in rawDatabase[(original,)][0]:
+        siteName = reactionProperties[namingConvention][0]
+        if siteName in rawDatabase[(original,)][0]:
             if not 'U' in rawDatabase[(original,)][1]:
                 temp = list(rawDatabase[(original,)])
                 #todoL we ave to actually get an index, not blindly append
@@ -403,22 +461,22 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator):
                 #rawDatabase[(original,)] = tuple(temp)
         else:
             temp = list(rawDatabase[(original,)])
-            temp[0].append(getCatalysisSiteName(namingConvention))
+            temp[0].append(siteName)
             temp[1].append('U')
             #addRawDatabaseState(original,tuple(temp),rawDatabase)
             #rawDatabase[(original,)] = tuple(temp)
             result[0] = temp
     if (modified,) not in translator:
+        
         #rawDatabase[(modified,)] = ([([getCatalysisSiteName(namingConvention),getStateName(namingConvention)],)],)
-        result[1] = [getCatalysisSiteName(namingConvention),getStateName(namingConvention)]
+        result[1] = [siteName,stateName]
         #addRawDatabaseState(modified,([getCatalysisSiteName(namingConvention),getStateName(namingConvention)],),rawDatabase)
     else:
-        if (getCatalysisSiteName(namingConvention),) in rawDatabase[(modified,)][0]:
-            if not getStateName(namingConvention) in rawDatabase[(modified,)][1]:
+        if siteName in rawDatabase[(modified,)][0]:
+            if not stateName in rawDatabase[(modified,)][1]:
                 temp = list(rawDatabase[(modified,)])
                 #TODO: in the special case for generic-catalysis, we do it so that any additional modification to an already
                 #modified state is done via an additional M. ['M','MM' etc]. Check if it makes sense for other modifications
-                stateName = getStateName(namingConvention)
                 if namingConvention == 'Generic-Catalysis':
                     longestStateName = max(temp[1],key=len)
                     temp[1].append(stateName+longestStateName)
@@ -429,76 +487,117 @@ def catalyze(original,modified,namingConvention,rawDatabase,translator):
                 result[1] = tuple(temp)
         else:
             temp = list(rawDatabase[(modified,)]) 
-            temp[0].append(getCatalysisSiteName(namingConvention))
-            temp[1].append(getStateName(namingConvention))
+            temp[0].append(siteName)
+            temp[1].append(stateName)
             #addRawDatabaseState(modified,tuple(temp),rawDatabase)
             #rawDatabase[(modified,)] = tuple(temp)
             result[1] = temp
     
     return result
 
-
+def rebalance(original,sortedResult,translator):
+    
+    reactantsCount = {}
+    for element in translator[original[0][0]].molecules:
+        if element.name not in reactantsCount:
+            reactantsCount[element.name] = 0
+        reactantsCount[element.name] += 1
+    for product in original[1]:
+        for element in translator[product].molecules:
+            if element.name not in reactantsCount:
+                reactantsCount[element.name] = 0
+            reactantsCount[element.name] -= 1         
+    for element in reactantsCount:
+        if reactantsCount[element] < 0:
+            translator[sortedResult[1]].deleteMolecule(element)
+            
+    
             
 def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
-              namingConvention,classification):
+              namingConvention,classification,reactionProperties):
     """
     This method is for reactions of the form A+ B -> A' + B
     """
-    
+    #if 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in original[0] or 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in original[1]:
+    #    print original,'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in translator
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
-    ,translator)
-    k = [x  == min(namingConvention,key=len) for x in original[0]]
-    k2 = [x == max(namingConvention,key=len)  for x in original[1]]
+    ,translator,reactionProperties)
+    k = [min(namingConvention,key=len) in x for x in original[0]]
+    k2 = [max(namingConvention,key=len) in x for x in original[1]]
     k =  k and k2
     sortedResult = [result[0],result[1]] if any(k) else [result[1],result[0]]
     sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]]
     flag = False
+    
+
     for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:
             flag = False
             species = st.Species()
-            if original[0][0] in translator:
-                species = deepcopy(translator[original[0][0]])
+            #if original[0][0] in translator:
+            #    species = deepcopy(translator[original[0][0]])
+            
+            #make a copy of the original element we are going to modify
+            if reactant in translator:
+                species = deepcopy(translator[reactant])
+            elif sortedConvention[0] in translator:
+                species = deepcopy(translator[sortedConvention[0]])
             tmp = dictionary[reactant]
             for element in tmp:
                 molecule = st.Molecule(element)
+                
+                #here it would be much more precise to have the molecule
+                #that is going to be modified instead of just modifying the 
+                #first thing you find
                 if element in conv:
-                        #print 'lelelele',element,reactant
                     #chunk = result[1] if reactant == max(namingConvention,key=len) else result[0]
                     component = st.Component(res[0])
                     component.addState(res[1])
                     molecule.addComponent(component,1)
                     flag = True
-                '''
-                else:
-                    if conv in reactant:
-                        
-                        component = st.Component(res[0])
-                        component.addState(res[1])
-                        molecule.addComponent(component,1)
-                        print conv,molecule,element
-                        flag = True
-                        #continue
-                '''                    
-                    #FIXME: the comparison should be done a lil more carefully
-                    #to avoid overlap
-            
- 
+                    finalMolecule = molecule
                     
-                species.addMolecule(molecule,True)
+                    '''
+                    else:
+                        if conv in reactant:
+                            
+                            component = st.Component(res[0])
+                            component.addState(res[1])
+                            molecule.addComponent(component,1)
+                            print conv,molecule,element
+                            flag = True
+                            #continue
+                    '''                    
+                        #FIXME: the comparison should be done a lil more carefully
+                        #to avoid overlap
+                
+     
+                    
+                    species.addMolecule(molecule,True)
+                    if str(species) == '':
+                        species.addMolecule(molecule)
+                    break
             if flag:
+                
                 if reactant not in translator:
                     translator[reactant] = species
+
                 else:
                     translator[reactant].extend(species,False)
-                
-                if len(translator[molecule.name].molecules) == 1:
-                    sp = st.Species()
-                    sp.addMolecule(molecule)
-                    translator[molecule.name].extend(sp,False)
-                    translator[molecule.name].reset()
-                
-                #if len(translator[reactant].molecules) > 1 and molecule.name in translator:
+                if finalMolecule.name in translator:
+                    if len(translator[finalMolecule.name].molecules) == 1:
+                        sp = st.Species()
+                        sp.addMolecule(deepcopy(finalMolecule))
+                        translator[finalMolecule.name].extend(sp,False)
+                        translator[finalMolecule.name].reset()
+                else:
+                        sp = st.Species()
+                        sp.addMolecule(molecule)
+                        translator[molecule.name] = sp
+               
+    if len(original[0]) < len(original[1]):
+        rebalance(original,sortedConvention,translator)
+               #if len(translator[reactant].molecules) > 1 and molecule.name in translator:
                 #    sp = st.Species()
                 #    sp.addMolecule(molecule,)
                 #    translator[molecule.name].extend(sp)

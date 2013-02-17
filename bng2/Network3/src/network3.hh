@@ -27,7 +27,7 @@ namespace network3{
 		static vector<pair<Function*,double>*> FUNCTION;
 		static vector<Reaction*> REACTION;
 		static PLA* PLA_SIM;
-		static void init_Network3(bool verbose);
+		static void init_Network3(double* t, bool verbose);
 		static void init_PLA(string config, bool verbose);
 		static int run_PLA(double& time, double maxTime, double sampleTime,
 						   double& step, double maxStep, double stepInterval,

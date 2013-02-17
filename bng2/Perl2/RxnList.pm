@@ -39,38 +39,39 @@ sub resetHash
 }
 
 
+# get the size of the rxn list
+sub size
+{
+    my $rlist = shift @_;
+    return scalar @{$rlist->Array};
+}
+
+
 ###
 ###
 ###
+
 
 
 # Add a reaction to the list.
 #  Returns the number of added reactions.
 sub add
 {
-    my $rlist    = shift;
-    my $rxn      = shift;
-    my $add_zero = (@_) ? shift : 0;
-    my $plist    = (@_) ? shift : undef;
+    my $rlist    = shift @_;
+    my $rxn      = shift @_;
+    my $add_zero = @_ ? shift @_ : 0;
+    my $plist    = @_ ? shift @_ : undef;
 
-    my $n_add = 0;
-
-    # Don't add reaction with RateLaw of type Zero
-    my $add_rxn;
-    if ( ( $rxn->RateLaw->Type eq 'Zero' ) and ( !$add_zero ) )
-    {   $add_rxn = 0;   }
-    else
-    {   $add_rxn = 1;   }
+    my $n_add   = 0;
+    my $add_rxn = 1;
 
     # Modify the string returned by this call to affect when reactions are combined.
     my $rstring = $rxn->stringID();
-    my ( $r, $p ) = split( ' ', $rstring );
-
+    my ($r, $p) = split ' ', $rstring;
 
     # Check for identical reactants and products
     if ( $r eq $p )
-    {   
-        # don't add this null reaction to the list
+    {   # null rxn, don't add to the list
         $add_rxn = 0;
     }
     elsif ( exists $rlist->Hash->{$rstring} )
@@ -81,26 +82,25 @@ sub add
             if ( $rxn->Priority == $rxn2->Priority )
             {
                 # Reaction with same rate law as previous reaction is combined with it
+                # TODO: this may be obsolete after implementing ratelaw hashing..
                 if ( RateLaw::equivalent($rxn->RateLaw, $rxn2->RateLaw, $plist) )
                 {
                     $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
                     $add_rxn = 0;
 
-                    # Need to delete reaction and ratelaw?
+                    # Need to delete reaction and ratelaw? 
                     #  (if the ratelaws references are different and the rules are the same,
                     #   then we can safely delete the extra Ratelaw copy.  This is useful
-                    #   for energyBNG where we derive new ratelaws from general rates, but often
+                    #   for energy BNG where we derive new ratelaws from general rates, but often
                     #   the same derived law works for many reactions. Deleting redundant derived laws
                     #   allows us to save space.)
                     if ( ($rxn->RateLaw != $rxn2->RateLaw) and ($rxn->RxnRule == $rxn2->RxnRule) )
-                    {                        
+                    {
                         if ( defined $plist )
                         {
                             # delete parameters associated with this ratelaw
                             foreach my $const ( @{$rxn->RateLaw->Constants} )
-                            {
-                                $plist->deleteParam( $const );
-                            }
+                            {   $plist->deleteParam( $const );   }
                         }
                         
                         # undefine the ratelaw
@@ -137,14 +137,12 @@ sub add
     {
         push @{ $rlist->Array }, $rxn;
         push @{ $rlist->Hash->{$rstring} }, $rxn;
-        foreach my $spec ( @{ $rxn->Products } )
-        {
-            ++($rlist->AsProduct->{$spec});
-        }
+        foreach my $spec ( @{$rxn->Products} )
+        {   ++($rlist->AsProduct->{$spec});   }
         ++$n_add;
     }
   
-    return ( $n_add );
+    return ($n_add);
 }
 
 

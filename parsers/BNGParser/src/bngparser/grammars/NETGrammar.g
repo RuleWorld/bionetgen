@@ -28,6 +28,11 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   private Map<String, Map<String,String>> options = new HashMap<String, Map<String,String>>();
 
   public boolean netGrammar = true;
+  
+  //This is a pretty complex flag. 
+  //Surface compartments require pretty special treatment as opposed to volume compartments
+  //If this flag is not activated, it will treat all compartments the same, however if it is activated
+  // it will generate the corresponding surface syntax. This is still experimental
   public boolean compartmentToSurface = true;
   public List<StringTemplate> molecules = new ArrayList<StringTemplate>();
   public List<StringTemplate> reactions = new ArrayList<StringTemplate>();
@@ -102,6 +107,10 @@ import BNGGrammar_Expression,BNGGrammar_Parameters,BNGGrammar_SeedSpecies,BNGGra
   }
 }
 
+/**
+Rewriting the seed species blook for netfiles. This is a modified version that includes some helper methods
+for the generation of the mdl structure
+**/
 seed_species_block[List seedSpecies]
 scope{
  int numSpecies;
@@ -116,7 +125,7 @@ scope{
 }
 : BEGIN (SEED)? SPECIES LB+
 (seed_species_def[$seed_species_block::numSpecies]{
-                                      //System.out.println($seed_species_def.compartment);
+                                      //System.out.println("aaaaa " + $seed_species_def.compartment);
                                       if(!$seed_species_def.concentration.equals("0")){
 	                                      if(!compartmentToSurface || compartmentList.isVolume($seed_species_def.compartment))
 	                                        $seedSpecies.add($seed_species_def.st);
@@ -131,7 +140,10 @@ END (SEED)? SPECIES LB+
 ;
 
 
+/**
+This method reads a line in the seed species section and creates the corresponding generator in the mdl file
 
+**/
 seed_species_def[int counter] returns [String compartment, String concentration]
 scope{
   List molecules;
@@ -147,16 +159,17 @@ scope{
 :
  pre=pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
  //There needs to need a space between species and the expression token, so we go back and make sure there was one
-((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
+//((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
 $compartment = $pre.compartment;
 $seed_species_def::isVolume = !compartmentToSurface || compartmentList.isVolume(pre.compartment);
-// System.out.println(input);
+ //System.out.println("aaaa " +input);
+ //((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
 } 
-      WS 
+       
      expression[memory] 
      {
       $concentration = $expression.text;
-      
+      //fixme: using static coordinates for now. Fix for something better
       if(compartmentToSurface &&  compartmentList.isOuterCompartment($compartment)){
         $seed_species_def::location = "-0.15,-0.15,-0.15";
       }
@@ -190,13 +203,16 @@ INT
  ;
   
  
-        
+/**
+Syntax definition for the net file only groups section
+**/
 groups_block:
 BEGIN GROUPS LB+
   (group_line LB+)*
 END GROUPS LB+
 
 ;
+
 
 group_line:
 INT STRING group_list[$STRING.text] {groups.add($group_list.st);}
@@ -221,7 +237,9 @@ group_element[String name,int counter]:
   | (i2=INT TIMES i3=INT) -> groups_block(id = {$i3.text},times = {$i2.text});
   
 
-
+/**
+entry point
+**/
 prog
 scope {
   List parameters;
@@ -259,11 +277,17 @@ SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN SEMI LB+
 (program_block)* 
 
 {
+
+//generating the code for surfaces and volumes
   for(String element: compartmentSurfaces.keySet()){
     if(!compartmentList.isSurface(element))
       continue;
     StringTemplate temp;
     //temp = template("create_surface_region");
+    
+    //this is the equivalent of manually calling a template from a stg file
+    //where the options aray contains the parameters, and the templateLib calls the method
+    //This is necessary because of the stark differences in mdl syntax between a surface and a volume
     STAttrMap options = new STAttrMap();
     options.put("name", element);
     options.put("molecules",compartmentSurfaces.get(element));
@@ -307,6 +331,8 @@ version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN SEMI;
 
 //program_body:  ;
 
+
+
 program_block
 : parameters_block[memory,$prog::parameters]
 | molecule_types_block
@@ -348,7 +374,7 @@ compartments_block:
 compartment:
    s1=STRING INT s3=expression[memory] 
    {
-      compartmentList.addCompartment($s1.text,$INT.text,$s3.text);
+      compartmentList.addCompartment($s1.text,$INT.text,($s3.value).toString());
    }
    (s2=STRING
    {
@@ -391,20 +417,23 @@ scope{
  {
   if($r1.size>1){
 	  if(!compartmentToSurface){
-	    $reaction::volume =memory.get(compartmentList.getECMVolume()).getValue() *avogadro_constant;
+	    $reaction::volume =new Double(compartmentList.getECMVolume()) *avogadro_constant;
 	    //$reaction::volume = ecm_volume_value *avogadro_constant;
 	  } 
 	  else if($r1.volume.equals(ecm_volume) || $r2.volume.equals(ecm_volume)){
-	  $reaction::volume = memory.get(compartmentList.getECMVolume()).getValue() *avogadro_constant;
-	    //$reaction::volume = ecm_volume_value *avogadro_constant;
+	  //System.out.println(compartmentList.getECMVolume());
+	  $reaction::volume = new Double(compartmentList.getECMVolume()) *avogadro_constant/1e4;
+	  //  $reaction::volume = ecm_volume_value *avogadro_constant;
 	  }
 	  else if($r1.volume.equals(cyto_volume) || $r2.volume.equals(cyto_volume)){
-	    $reaction::volume =memory.get(compartmentList.getCytoplasmicVolume()).getValue() *avogadro_constant;
+	    $reaction::volume =new Double(compartmentList.getCytoplasmicVolume()) *avogadro_constant/1e4;
 	    //$reaction::volume = cyto_volume_value *avogadro_constant;
 	  }
 	  else{
-	  $reaction::volume = 1*0.01/memory.get(compartmentList.getMembraneVolume()).getValue()*1e15;
-	    //$reaction::volume = cyto_volume_value /1.0e-4;
+	  //$reaction::volume = 1*0.01/new Double(compartmentList.getMembraneVolume())*1e15;
+	  
+	  //fixme: this should be automatically calculated
+	    $reaction::volume = 4*3.141592*5*5;
 	  }
   }
   else{
@@ -417,6 +446,10 @@ scope{
   factor={""})
 ;
 
+
+/**
+reactant section
+**/
 reactant[List<String> elements] returns [boolean surfaceCompartment=false, String volume="1", List<String> orientation, int size=0]
 @init{
   $orientation = new ArrayList<String>();
@@ -441,6 +474,8 @@ reactant[List<String> elements] returns [boolean surfaceCompartment=false, Strin
 	      if(compartmentList.isSurface(getCompartment("S" + molecules))){
 	        $surfaceCompartment =  true;
 	      }
+	      
+	      //here we are assiginging a preset volume to a compartment depending if its the cytoplasm or the ecm
 	      else if(compartmentList.isOuterCompartment(getCompartment("S" + molecules))){
 	        $volume = ecm_volume;
 	      }

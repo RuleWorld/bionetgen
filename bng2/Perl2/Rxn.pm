@@ -25,14 +25,13 @@ struct Rxn => {
   StatFactor     => '$',	       
   Priority       => '$',
   RxnRule        => '$',
-  Compartments   => '@',          # List of reaction compartments (usually one)
   Index          => '$',          # Reaction Index for writing network output
 };
 
 
 sub toString
 {
-    my $rxn   = shift;
+    my $rxn   = shift @_;
     my $text  = (@_) ? shift : 0;
     my $plist = (@_) ? shift : 0;
   
@@ -79,7 +78,9 @@ sub toString
     }
 
     # get ratelaw string
+    if (defined $rxn->RateLaw){ #TODO
     $string .= $rxn->RateLaw->toString( $rxn_mult, 1, $plist );
+    }
 
     if ($rxn->RxnRule)
     {  $string .= " #" . $rxn->RxnRule->Name;  }
@@ -231,7 +232,7 @@ sub stringID
   
     # sort reactants and products (if ratelaw is elementary or zero-order)
     my $type= $rxn->RateLaw->Type;
-    if ( ($type eq 'Ele') or ($type eq 'Zero') )
+    if ( $type eq "Ele" )
     {
         @rstrings = sort {$a<=>$b} @rstrings;
         @pstrings = sort {$a<=>$b} @pstrings;
@@ -271,23 +272,26 @@ sub volume_scale
 #   S + S + V              /S/V
 #   S + V + V              /V/V
 #   V + V + V              /V/V            etc...
+#   0 -> S                 S  ??
+#   0 -> V                 V  ??
 
 {
     my $rxn = shift;
     my $plist = (@_) ? shift : undef;
 
     my $err;
-    my $vol_expr;
+    my $vol_expr = undef;
 
     # get all the defined compartments
-    my @defined_compartments = ( grep {defined $_} @{$rxn->Compartments} );
+    my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
+    my @product_compartments  = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Products});
    
     # return undefined volume expr if there are no compartments
-    if ( @defined_compartments )
-    {
+    if ( @reactant_compartments )
+    { 
         # divide into surfaces and volumes
-        my @surfaces = ( grep {$_->SpatialDimensions==2} @defined_compartments );
-        my @volumes  = ( grep {$_->SpatialDimensions==3} @defined_compartments );
+        my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
+        my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
 
         # Pick and toss an anchor reactant.  If there's a surface reactant, toss it.
         # Otherwise toss a volume.
@@ -300,89 +304,40 @@ sub volume_scale
             my @vol_factors = (1.0);
             push @vol_factors, ( map {$_->Size} (@surfaces, @volumes) );
             $vol_expr = Expression::operate( '/', \@vol_factors, $plist );
-    
             unless ( defined $vol_expr )
-            {   $err = "Error in Rxn::volume_scale(): Some problem defined compartment volume expression.";  }
+            {   $err = "Error in Rxn::volume_scale(): Some problem defing compartment volume expression.";  }
         }
+    }
+    elsif ( @product_compartments>0 )
+    {
+        # check if products are in the same compartment
+        my $consistent = 1;
+        my $comp1 = $product_compartments[0];
+        foreach my $comp2 ( @product_compartments[1..$#product_compartments] )
+        {
+            unless ($comp1 == $comp2)
+            {
+                $consistent = 0;
+                last;
+            }
+        }
+
+        if ($consistent)
+        {   # construct the volume expression
+            $vol_expr = $comp1->Size;
+        }
+        else
+        {   send_warning("compartmental BioNetGen doesn't know how to handle zero-order synthesis of products in multiple compartments.");  }
     }
     
     # return the expression (possibly undefined) and the error msg (if any).
     return ($vol_expr, $err);
 }
 
-# For energyBNG only!!  --Justin, 9nov2010
-# When a rxn is created, it inherits a generic elementary rateLaw from its parent RxnRule.
-# Each specific rxn must have a ratelaw that is compatible with the stoichiometry of 
-# energy patterns.  This method constructs a ratelaw (specific to this rxn) that will
-# guarantee energy compatibility (detailed balance, etc).
-sub updateEnergyRatelaw
-{
-    my $rxn    = shift;
-    my $model  = shift;
-    
-    my $epatts = $model->EnergyPatterns;
-    my $plist = $model->ParamList;
-    
-    my $err = '';
-    
-    # get energy stoichiometry fingerprint
-    my $fingerprint = $rxn->getEnergyFingerprint( $epatts );
-     
-    #  lookup fingerprint in RateLaw hash
-    if ( exists $rxn->RateLaw->EnergyHash->{ $fingerprint } )
-    {
-        # assign ratelaw matching fingerprint
-        $rxn->RateLaw( $rxn->RateLaw->EnergyHash->{ $fingerprint } );
-    }
-    else
-    {
-        # construct a new ratelaw and assign to this fingerprint   
-        my @rate_strings = ();
-        # get the rate constant expression from the generic ratelaw
-        push @rate_strings, '('. $rxn->RateLaw->Constants->[0] .')';
-        # now add terms to account for changes in energy pattern counts
-        foreach my $epatt ( @$epatts )
-        {
-            (my $expr_term, $err) = $epatt->getRateExpression( $rxn, $plist );
-        
-            if ( defined $expr_term )
-            {   push @rate_strings, '('. $expr_term->toString( $plist ) .')';   }
-        }
-        # the customized rate is calculated as the multiplication of all the above terms.
-        my $rate_string = join( '*', @rate_strings );   
-        # construct the updated rate law
-        (my $updated_rate_law) = RateLaw::newRateLaw( \$rate_string, $model );
-        
-        # assign updated rate law in the energy hash (before we forget about the base ratelaw)
-        $rxn->RateLaw->EnergyHash->{ $fingerprint } = $updated_rate_law;
-        # point the RateLaw field to the updated law.
-        $rxn->RateLaw( $updated_rate_law );
-    }
-    
-    # return with any error messages
-    return ( $err );
-}
 
 
-
-sub getEnergyFingerprint
-{
-    my $rxn   = shift;    # this Reaction object
-    my $epatts = shift;   # reference to list of EnergyPatterns
-    
-    my $err = '';
-   
-    # gather stoichiometry of each energy pattern under this reaction
-    my @fingerprint = ();
-    foreach my $epatt ( @$epatts )
-    {
-        (my $stoich, $err) = $epatt->getStoich( $rxn );
-        push @fingerprint, $stoich;
-    }    
-
-    # return fingerprint
-    return join( ',', @fingerprint );
-}
-
+###
+###
+###
 
 1;

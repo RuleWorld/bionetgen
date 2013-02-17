@@ -343,6 +343,22 @@ sub send_warning{
 }
 
 
+# send error message with line number
+sub line_error
+{
+    my ($msg, $lno) = @_;
+    print STDERR sprintf( "ABORT: [at line %s] %S\n", $lno, $msg );
+    exit 1;
+}
+
+# send warning message with line number
+sub line_warning
+{
+    my ($msg, $lno) = @_;
+    print STDOUT sprintf( "WARNING: [at line %s] %s\n", $lno, $msg );
+}
+
+
 ##------------------------------------------------------------------------
 # Used to create list of all multi-state objects from a list of
 # dimensions.  It returns an array containing all elements of the

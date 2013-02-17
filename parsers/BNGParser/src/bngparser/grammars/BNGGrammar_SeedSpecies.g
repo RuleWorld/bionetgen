@@ -18,8 +18,10 @@ scope{
  }
 @init{
  $seed_species_block::numSpecies = 1;
-   gParent.paraphrases.push("in seed species section");
+ //this is meant as information for the error logger. it provides information of which section the parser is currently processing
    getParentTemplate();
+   gParent.paraphrases.push("in seed species section");
+   
 }
 @after{
   gParent.paraphrases.pop();
@@ -91,11 +93,13 @@ scope{
   $species_def::variableName = "";
   $constant = false;
   $lmemory = new HashMap<String,Register>();
+  //this is done so we can temporarily recognize whitespaces
 ((ChangeableChannelTokenStream)input).addChannel(HIDDEN);
   gParent.paraphrases.push("in species def section");
 }
 @after{
 ((ChangeableChannelTokenStream)input).delChannel(HIDDEN);
+//go back one space 
 ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1);
 ((ChangeableChannelTokenStream)input).consume();
 
@@ -182,8 +186,10 @@ getParentTemplate();
 }
 
 :
-  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? 
-  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)?
+  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})
+  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN) //If it's not a netfile it's necessary to add a '?' to allow for optional component syntax
+ 
+  
   (AT s2=STRING 
   {
     $species_element::lcompartment = $s2.text; 

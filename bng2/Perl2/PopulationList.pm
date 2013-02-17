@@ -47,7 +47,7 @@ sub readString
     
   
     # make sure population mapping is unique!
-    my $species_label    = $pop->Species->StringExact;
+    my $species_label    = $pop->SpeciesGraph->StringExact;
     my $population_label = $pop->Population->StringExact;
     
 

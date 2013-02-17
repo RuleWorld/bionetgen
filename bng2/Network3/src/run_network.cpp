@@ -97,7 +97,7 @@ int main(int argc, char *argv[]){
     char *group_input_file_name = NULL;
     char *save_file_name;
     FILE *netfile, *conc_file, *group_file/*, *func_file*/, *out, *flux_file, *species_stats_file;
-    int line_number, n_read;
+    int net_line_number, group_line_number, n_read;
     Elt_array *species, *rates/*, *parameters*/;
     Group *spec_groups = NULL;
     Rxn_array *reactions;
@@ -368,20 +368,7 @@ int main(int argc, char *argv[]){
 
 	// Initialize time
 	t = t_start;
-/////
-//	mu::Parser _time_;
-//	_time_.DefineVar("_time_",&t);
-//	_time_.SetExpr("_time_");
-//	cout << "time = " << _time_.Eval() << endl;
-/*	network.functions.push_back(_time_);
-	// create a new parameter
-	Elt* new_elt = new_Elt((char*)"_time_",_time_.Eval(),network.rates->n_elt+1); // THERE'S SOMETHING WRONG HERE
-	new_elt->next = NULL;
-	network.is_func_map["_time_"] = true;
-	// push index of new parameter into var_parameters vector
-	network.var_parameters.push_back(rates->n_elt+1);*/
-//	exit(1);
-/////
+
 	// Find NET file
 	if (!(netfile = fopen(netfile_name, "r"))) {
 		fprintf(stderr, "ERROR: Couldn't open file %s.\n", netfile_name);
@@ -394,20 +381,19 @@ int main(int argc, char *argv[]){
 		outpre = network_name;
 	}
 
-	line_number = 0;
-
 	/* Rate constants and concentration parameters should now be placed in the parameters block. */
-	rates = read_Elt_array(netfile, &line_number, (char*)"parameters", &n_read, 0x0);
+	net_line_number = 0;
+	rates = read_Elt_array(netfile, &net_line_number, (char*)"parameters", &n_read, 0x0);
 	fprintf(stdout, "Read %d parameters\n", n_read);
 	if (n_read < 1) {
 		fprintf(stderr,"ERROR: Reaction network must have parameters defined to be used as rate constants.\n");
 		exit(1);
 	}
 	rewind(netfile);
-	line_number = 0;
+	net_line_number = 0;
 
     /* Read species */
-    if (!(species = read_Elt_array(netfile, &line_number, (char*)"species", &n_read, rates))){
+    if (!(species = read_Elt_array(netfile, &net_line_number, (char*)"species", &n_read, rates))){
     	fprintf(stderr,"ERROR: Couldn't read rates array.\n");
     	exit(1);
     }
@@ -419,8 +405,8 @@ int main(int argc, char *argv[]){
 			fprintf(stderr, "ERROR: Couldn't open file %s.\n", group_input_file_name);
 			exit(1);
 		}
-		line_number = 0;
-		spec_groups = read_Groups(0x0, group_file, species, &line_number, (char*)"groups", &n_read);
+		group_line_number = 0;
+		spec_groups = read_Groups(0x0, group_file, species, &group_line_number, (char*)"groups", &n_read);
 		fprintf(stdout, "Read %d group(s) from %s\n", n_read, group_input_file_name);
 		fclose(group_file);
     }
@@ -440,8 +426,29 @@ int main(int argc, char *argv[]){
 //    map<string, bool> is_func_map_temp;
     /*functions = read_functions_array(netfile_name_tmp, spec_groups, rates, species, variable_parameters, param_map,
 				param_index_map, observ_index_map, func_observ_depend, func_param_depend, is_func_map_temp);*/
-    read_functions_array(netfile_name_tmp,spec_groups,rates,species,param_map,param_index_map,observ_index_map);
-    cout << "Read " << network.functions.size() << " function(s)" << endl;
+//    read_functions_array(netfile_name_tmp,spec_groups,rates,species,param_map,param_index_map,observ_index_map);
+    read_functions_array(netfile_name_tmp,rates,param_map,param_index_map,observ_index_map,&t);
+    int n_func = network.functions.size();
+    if (n_func > 0) n_func--; // Subtract off 'time' function
+    cout << "Read " << n_func << " function(s)" << endl;
+
+////////
+/*for (unsigned int i=0;i < network.functions.size();i++){
+	cout << rates->elt[network.var_parameters[i]-1]->name << ": "
+			<< network.functions[i].GetExpr() << endl;
+	cout << "\t" << "Observ: ";
+	for (unsigned int j=0;j < network.func_observ_depend[i].size();j++){
+		cout << network.func_observ_depend[i][j] << " ";
+	}
+	cout << endl;
+	cout << "\t" << "Param:  ";
+	for (unsigned int j=0;j < network.func_param_depend[i].size();j++){
+		cout << network.func_param_depend[i][j] << " ";
+	}
+	cout << endl;
+}*/
+//exit(1);
+////////
 
     // Create stop condition
 	process_function_names(stop_string); // Remove parentheses from variable names
@@ -466,7 +473,7 @@ int main(int argc, char *argv[]){
 
     /* Read reactions */
 //	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
-	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
+	if (!(reactions = read_Rxn_array(netfile, &net_line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
 
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
 		exit(1);
@@ -583,7 +590,7 @@ int main(int argc, char *argv[]){
 		cout << "Accelerated stochastic simulation using PLA" << endl;
 
 		// Initialize Network3
-		Network3::init_Network3(false);
+		Network3::init_Network3(&t,false);
 
 		// Stop condition
 		mu::Parser pla_stop_condition;
@@ -993,14 +1000,6 @@ int main(int argc, char *argv[]){
 	if (group_file && print_func) finish_print_function_values_network(group_file);
 	if (enable_species_stats) finish_print_species_stats(species_stats_file);
 
-	// Clean up memory allocated for functions
-	if (network.has_functions) delete[] network.rates->elt;
-	if (propagator == SSA){
-		// GSP.included added to GSP struct in code extension for functions
-		// NOTE: GSP.included is created whether functions exist or not, so it must always be deleted
-		delete_GSP_included();
-	}
-
 	// Screen outputs
 	outpre = chop_suffix(outpre, ".net");
 	if (propagator == SSA) fprintf(stdout, "TOTAL STEPS: %-16.0f\n", gillespie_n_steps());
@@ -1021,6 +1020,14 @@ int main(int argc, char *argv[]){
 	}
 	ptimes = t_elapsed();
 	fprintf(stdout, "Program times:  %.2f CPU s %.2f clock s \n", ptimes.total_cpu, ptimes.total_real);
+
+	// Clean up memory allocated for functions
+	if (network.has_functions) delete[] network.rates->elt;
+	if (propagator == SSA){
+		// GSP.included added to GSP struct in code extension for functions
+		// NOTE: GSP.included is created whether functions exist or not, so it must always be deleted
+		delete_GSP_included();
+	}
 
 //	exit:
 	if (sample_times) free(sample_times);

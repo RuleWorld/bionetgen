@@ -15,6 +15,11 @@ use lib $FindBin::Bin;
 use BNGUtils;
 use Compartment;
 
+# constants
+use constant { TRUE                 => 1,
+               FALSE                => 0
+             };
+
 
 struct Component => {
     Name  => '$',
@@ -55,7 +60,7 @@ sub readString
 {
     my $comp   = shift @_;
     my $strptr = shift @_;
-    my $clist  = (@_) ? shift @_ : undef;
+    my $clist  = @_ ? shift @_ : undef;
 
     my $string_left = $$strptr;
 
@@ -72,6 +77,7 @@ sub readString
 
     # Get component state (marked by ~) edges (marked by !) and label (marked by %) 
     my $edge_wildcard = 0;
+    my $edge_labels = 0;
     while ($string_left)
     {
         if ( $string_left =~ s/^([~%!@])(\w+|\+|\?)// )
@@ -79,46 +85,45 @@ sub readString
             my $type = $1;
             my $arg  = $2;
             if ($type eq '~')
-            {   # State label
+            {
+                # State label
 	            if (defined $comp->State)
-                {
-	                return undef, "Multiple state definitions";
-	            }
+                {   return undef, "Multiple state definitions";   }
 	            $comp->State($arg);
             }
             elsif ($type eq '!')
-            {   # Bond label or wildcard
+            {
+                # Bond label or wildcard
 	            if ( $arg =~ /^[+?]$/ )
                 { 
-	                if ($edge_wildcard)
-                    {
-	                    return undef, "Multiple edge wildcards in component";
-	                }
+	                if ($edge_wildcard or $edge_labels)
+                    {   return undef, "Multiple edge wildcards in component";   }
 	                $edge_wildcard=1;
 	            }
+                else
+                {
+                    if ($edge_wildcard)
+                    {   return undef, "Labeled edges mixed with wildcard";   }
+                }
 	            push @{$comp->Edges}, $arg;
             }
             elsif ($type eq '%')
-            {   # Tag label
+            {
+                # Tag label
 	            if (defined $comp->Label)
-                {
-	                return undef, "Multiple label definitions";
-	            }
+                {   return undef, "Multiple label definitions";   }
 	            $comp->Label($arg);
             }
             elsif ($type eq '@')
-            {   # Compartment label
+            {
+                # Compartment label
 	            if (defined $comp->Compartment)
-                {
-	                return undef, "Multiple compartment definitions";
-	            }
+                {   return undef, "Multiple compartment definitions";   }
 
                 if ( defined $clist )
                 {
 				    if ( my $compart = $clist->lookup($arg) )
-                    {
-					    $comp->Compartment($compart);
-				    }
+                    {   $comp->Compartment($compart);   }
                 }
 				else
                 {
@@ -131,12 +136,9 @@ sub readString
             last;
         }
         else
-        {
-            return undef, "Invalid syntax at $string_left";
-        }
+        {   return undef, "Invalid syntax at $string_left";   }
     }
 
-  
     $$strptr = $string_left;
     return '';
 }
@@ -151,52 +153,40 @@ sub readString
 
 sub toString
 {
-    my $comp = shift;
-    my $suppress_edge_names = (@_) ? shift : 0;
-    my $suppress_attributes = (@_) ? shift : 0;
+    my $comp = shift @_;
+    my $print_edges      = @_ ? shift @_ : TRUE;
+    my $print_attributes = @_ ? shift @_ : TRUE;
 
     my $string .= $comp->Name;
 
     if (defined $comp->State )
-    {
-        $string .= sprintf "~%s", $comp->State;
-    }
+    {   $string .= sprintf "~%s", $comp->State;   }
 
-    unless ($suppress_attributes)
-    {
-        $string .= sprintf("%%%s", $comp->Label)  if (defined $comp->Label);
-    }
+    if ($print_attributes)
+    {   $string .= sprintf("%%%s", $comp->Label)  if (defined $comp->Label);   }
 
     if ( defined $comp->Compartment )
-    {
-        $string .= sprintf "@%s", $comp->Compartment->Name;
-    }
+    {   $string .= sprintf "@%s", $comp->Compartment->Name;   }
 
     if (defined $comp->Edges )
     {
-        if ($suppress_edge_names)
-        {
-            $string .= "!" x @{$comp->Edges};
-        } 
-        else
+        if ($print_edges)
         {
             my $wildcard='';
             foreach my $edge (@{$comp->Edges})
             {
                 if ($edge=~ /^\d+$/)
-                {
-                    $string .= sprintf "!%d", $edge+1;
-                }
+                {   $string .= sprintf "!%d", $edge+1;   }
                 else
-                {
-                    $wildcard = "!$edge";
-                }
+                {   $wildcard = "!$edge";   }
             }
             $string .= $wildcard;
-        }
+        } 
+        else
+        {   $string .= "!" x @{$comp->Edges};   }
     }
 
-    return($string);
+    return $string;
 }
 
 
@@ -209,10 +199,11 @@ sub toString
 
 sub toStringSSC
 {
-    my $comp = shift @_;
-    my $comp_label = ($_) ? shift @_: 0;
-    my $suppress_edge_names= (@_) ? shift @_ : 0;
-    my $string = $comp->Name;
+    my $comp        = shift @_;
+    my $comp_label  = @_ ? shift @_: 0;
+    my $print_edges = @_ ? shift @_ : TRUE;
+
+    my $string      = $comp->Name;
     if ( $comp_label != 0 ) { $string .= $comp_label; } # for checking components with same name
                                                         # if comp_label != 0 same component exists
 
@@ -238,11 +229,7 @@ sub toStringSSC
     if (defined $comp->Edges)
     {
         $string .= "#"; #As SSC considers every non-bound component as empty, so attaching #
-        if ($suppress_edge_names)
-        {
-            $string.= ""x scalar(@{$comp->Edges});
-        }
-        else
+        if ($print_edges)
         {
             my $wildcard="";
             foreach my $edge (@{$comp->Edges})
@@ -257,6 +244,10 @@ sub toStringSSC
                 }
                 $string.=$wildcard;
             }
+        }
+        else
+        {
+            $string.= ""x scalar(@{$comp->Edges});
         }
     }
     $string =~ s/\+/_/; # SSC equivalent of '+' is '_', substituting that

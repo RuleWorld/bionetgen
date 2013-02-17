@@ -32,7 +32,7 @@ struct Param =>
 my %allowedTypes = ( Constant           => 1,  # A number or an expression involving only numbers
                      ConstantExpression => 1,  # An expression involving at least on other Constant or ConstantExpression
 		             Observable         => 1,  # A variable defined by the name of an Observable - may take a single argument
-		             Function           => 1,  # A function that takes variable arguments
+		             Function           => 1,  # A function call w/ arguments
                      Local              => 1,  # local arguments to functions
                      RRef               => 1,  # Reactant Reference (not yet implemented)
                    );
@@ -46,21 +46,21 @@ my %allowedTypes = ( Constant           => 1,  # A number or an expression invol
 # evaluate the expression that this parameter refers to
 sub evaluate
 {
-    my $param = shift;
-    my $args  = (@_) ? shift : [];  
-    my $plist = (@_) ? shift : undef;    
-    my $level = (@_) ? shift : 0; 
+    my $param = shift @_;
+    my $args  = @_ ? shift @_ : [];  
+    my $plist = @_ ? shift @_ : undef;    
+    my $level = @_ ? shift @_ : 0; 
 
     #print STDERR "eval param name: ", $param->Name ,"  type: ", $param->Type, "\n";
     if ($param->Type eq 'Constant'  or  $param->Type eq 'ConstantExpression' )
     {
         if ( defined $param->Expr )
-        {   return $param->Expr->evaluate( $plist, $level+1);   }
+        {   return $param->Expr->evaluate($plist, $level+1);   }
     }
     elsif ( $param->Type eq 'Function'  or $param->Type eq 'Observable' )
     {
         if ( defined $param->Ref )
-        {   return $param->Ref->evaluate( $args, $plist, $level+1);   }
+        {   return $param->Ref->evaluate($args, $plist, $level+1);   }
     }
     return undef;
 }
@@ -74,7 +74,7 @@ sub evaluate
 sub copyConstant
 {
     my $param = shift @_ ;
-    my $plist = (@_) ? shift @_ : undef;
+    my $plist = @_ ? shift @_ : undef;
 
     return undef unless ( $param->Type eq 'Constant'  or  $param->Type eq 'ConstantExpression' );
 
@@ -97,9 +97,9 @@ sub copyConstant
 # set the type field of this parameter
 sub setType
 {
-    my $param = shift;
-    my $type  = shift;
-    my $ref   = (@_) ? shift : '';
+    my $param = shift @_;
+    my $type  = shift @_;
+    my $ref   = @_ ? shift @_ : '';
 
     unless ( exists $allowedTypes{$type} )
     {
@@ -122,10 +122,10 @@ sub setType
 # expand = 2   : write expression, unless constant (just write param name in this case).
 sub toString
 {
-    my $param  = shift;
-    my $plist  = (@_) ? shift : undef;
-    my $level  = (@_) ? shift : 0;
-    my $expand = (@_) ? shift : 0;
+    my $param  = shift @_;
+    my $plist  = @_ ? shift @_ : undef;
+    my $level  = @_ ? shift @_ : 0;
+    my $expand = @_ ? shift @_ : 0;
   
     if ( $param->Type eq 'Constant'  and  $expand == 2 )
     {
@@ -181,10 +181,10 @@ sub readXML
 # Write the parameter to XML
 sub toXML
 {
-    my $param  = shift;
-    my $plist  = (@_) ? shift : undef;
-    my $level  = (@_) ? shift : 0;
-    my $expand = (@_) ? shift : 0;
+    my $param  = shift @_;
+    my $plist  = @_ ? shift @_ : undef;
+    my $level  = @_ ? shift @_ : 0;
+    my $expand = @_ ? shift @_ : 0;
 
     if ( $param->Type eq 'Constant'  and  $expand == 2 )
     {
@@ -213,10 +213,10 @@ sub toXML
 # write parameter expression as a CVode string
 sub toCVodeString
 {
-    my $param  = shift;
-    my $plist  = (@_) ? shift : undef;
-    my $level  = (@_) ? shift : 0;
-    my $expand = (@_) ? shift : 0;    
+    my $param  = shift @_;
+    my $plist  = @_ ? shift @_ : undef;
+    my $level  = @_ ? shift @_ : 0;
+    my $expand = @_ ? shift @_ : 0;    
   
     if ( $param->Type eq 'Constant' )
     {
@@ -240,7 +240,7 @@ sub toCVodeString
 
 sub getCVodeName
 {
-    my $param = shift;
+    my $param = shift @_;
     
     my $type = $param->Type;
     my $expr = $param->Expr;

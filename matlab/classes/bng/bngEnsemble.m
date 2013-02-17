@@ -18,6 +18,8 @@ classdef bngEnsemble
             obj.N = size(data,1);
         end
         
+  
+        
         function [outs,labels] = getSubset(obj,conditionvec,featurevec)
             % conditionvec matches rows (samples)
             % featurevec matches columns (features)
@@ -113,11 +115,23 @@ classdef bngEnsemble
         function outs = plotQuantiles(obj,label,N)
             assert(ischar(label));
             vals = obj.getFeatures({label});
-            outs = [min(vals) quantile(vals,N-1) max(vals)];
-            plot(0:1:N,outs);
+            outs = [min(vals) quantile(vals,(1/N):(1/N):(N-1)/N) max(vals)];
+            plot(0:1:N,outs);         
         end
             
     end
+    
+    methods (Static)
+       
+        function obj = makeEnsemble(data,Labels,subsetVector)
+            assert(isa(Labels,'bngLabels'),'Provide a labels object');
+            assert(isnumeric(subsetVector) && isvector(subsetVector),'Provided vector is improper');
+            labels2 = Labels.labels(subsetVector);
+            data2 = data(:,subsetVector);
+            obj = bngEnsemble(data2,labels2);
+        end 
+    end
+        
     
 end
 

@@ -69,7 +69,7 @@ classdef bngModel
                 err = 0;
                 fhandle = str2func(obj.simulators{i});
                 timepoints = linspace(0,t_sim,n_steps+1)';
-                [err, ~, species_out, observables_out ] = model( timepoints, species_init, parameters, 1 );
+                [err, ~, species_out, observables_out ] = fhandle( timepoints, species_init, parameters, 1 );
                 if(~err), break,end
             end
         end

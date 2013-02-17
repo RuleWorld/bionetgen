@@ -15,6 +15,12 @@ use lib $FindBin::Bin;
 use Component;
 use BNGUtils;
 
+# constants
+use constant { TRUE                 => 1,
+               FALSE                => 0
+             };
+
+
 
 struct Molecule =>
 {
@@ -61,20 +67,11 @@ sub readString
 
 	my $string_left = $$strptr;
 
-	# Get molecule name
-    # NOTE: for now we allow molecule type to be any alpha-numeric string (possibly numeric)
-    #  but in the future we will disallow numeric identifiers.  The 0 symbol will be reserved
-    #  for the null species (useful in 0 order synthesis reactions and unimolecular deletions)	
-	if ( $string_left =~ s/^(\w+)// )
-	#if ( $string_left =~ s/^([A-z]\w*)// )
+	# Get molecule name (alphanumeric ID, must contain at least one letter!)
+	if ( $string_left =~ s/^(\w*[A-Za-z]\w*)// )
 	{
 		$mol->Name($1);
 	}
-	#elsif ( $string_left =~ s/^(['"][^'"]+['"])// )
-	#{   # TODO: is this supported anymore?  deprecate.  --Justin
-	#	# read a quoted string, preserving the quotes
-	#	$mol->Name($1);
-	#}
 	else
 	{
 		return undef, "Invalid molecule name in $string_left";
@@ -231,39 +228,34 @@ sub readString
 
 sub toString
 {
-	my $mol                 = shift @_;
-	my $suppress_edge_names = (@_) ? shift @_ : 0;
-	my $speciesCompartment  = (@_) ? shift @_ : undef;
-	my $suppress_attributes = (@_) ? shift @_ : 0;
+	my $mol                = shift @_;
+	my $print_edges        = @_ ? shift @_ : TRUE;
+	my $print_attributes   = @_ ? shift @_ : TRUE;
+	my $speciesCompartment = @_ ? shift @_ : undef;
 
 	my $string .= $mol->Name;
 
 	$string .= sprintf("~%s", $mol->State)  if (defined $mol->State);
 
-    unless ($suppress_attributes)
-    {
-	    $string .= sprintf("%%%s", $mol->Label)  if (defined $mol->Label);
-	}
+    if ($print_attributes)
+    {   $string .= sprintf("%%%s", $mol->Label)  if (defined $mol->Label);   }
 	
 	if ( defined $mol->Edges )
 	{
-		if ($suppress_edge_names)
-		{
-			$string .= "!" x scalar( @{ $mol->Edges } );
-		}
-		else
+		if ( $print_edges)
 		{
 			my $wildcard = "";
-			foreach my $edge ( @{ $mol->Edges } ) {
-				if ( $edge =~ /^\d+$/ ) {
-					$string .= sprintf "!%d", $edge + 1;
-				}
-				else {
-					$wildcard = "!$edge";
-				}
+			foreach my $edge ( @{$mol->Edges} )
+            {
+				if ( $edge =~ /^\d+$/ )
+                {   $string .= sprintf "!%d", $edge + 1;   }
+				else
+                {   $wildcard = "!$edge";   }
 				$string .= $wildcard;
 			}
 		}
+		else
+		{   $string .= "!" x scalar( @{$mol->Edges} );   }
 	}
 
 	if ( defined $mol->Components )
@@ -274,32 +266,31 @@ sub toString
 		{
 			if ($icomp)
 			{   $string .= ',';   }
-			$string .= $comp->toString($suppress_edge_names, $suppress_attributes);
+			$string .= $comp->toString($print_edges, $print_attributes);
 			++$icomp;
 		}
 		$string .= ")";
 	}
-	else {
-		$string .= "()";
-	}
+	else
+    {   $string .= "()";   }
+
 	if ( defined $mol->Compartment )
 	{  
 		unless ( (defined $speciesCompartment) and ($mol->Compartment == $speciesCompartment) )
-		{
-			$string .= sprintf "@%s", $mol->Compartment->Name;
-		}
+		{   $string .= sprintf "@%s", $mol->Compartment->Name;   }
 	}
 
 	# attributes
-	my @attr = ();
-	if ( $mol->Context ) {
-		push @attr, "Context";
-	}
-	if (@attr) {
-		$string .= '{' . join( ',', @attr ) . '}';
-	}
+    if ($print_attributes)
+    {
+	    my @attr = ();
+	    if ( $mol->Context )
+        {   push @attr, "Context";   }
+	    if (@attr)
+        {   $string .= '{' . join( ',', @attr ) . '}';   }
+    }
 
-	return ($string);
+	return $string;
 }
 
 
@@ -348,13 +339,7 @@ sub toStringSSC
 	}
 
     $string .= ')';
-
-    # to debug
-	#unless ( $sameCompExists == 0 )
-    #{
-	#    foreach my $key ( keys %checkComp ) { print "\n $key = $checkComp{$key} \n";}
-	#}
-	return ($string, 0);
+	return $string, 0;
 }
 
 
@@ -400,8 +385,8 @@ sub getCompHash
 
 sub toStringSSCMol
 {
-	my $mol                 = shift;
-	my $suppress_edge_names = (@_) ? shift : 0;
+	my $mol         = shift @_;
+	my $print_edges = @_ ? shift @_ : TRUE;
 
 	my $string              = '';
 	my $icomp               = 0;
@@ -453,9 +438,10 @@ sub toStringSSCMol
 
 sub toStringMCell
 {
-	my $mol                 = shift;
-	my $suppress_edge_names = (@_) ? shift : 0;
-	my $speciesCompartment  = (@_) ? shift : "";
+	my $mol                = shift @_;
+	my $print_edges        = @_ ? shift @_ : TRUE;
+	my $print_attributes   = @_ ? shift @_ : TRUE;
+	my $speciesCompartment = @_ ? shift @_ : "";
 
 	my $string .= $mol->Name;
 

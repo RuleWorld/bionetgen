@@ -1,10 +1,14 @@
-# Created by BioNetGen 2.1.8+
-substanceUnits("Number");
+# Created by BioNetGen 2.2.3
+substanceUnits("Number")
 begin parameters
     1 kp          0.5  # Constant
     2 km          0.1  # Constant
     3 k_synthC    0.5  # Constant
     4 k_degrC     0.5  # Constant
+    5 rateLaw1_1  0  # ConstantExpression
+    6 rateLaw1_2  0.5  # ConstantExpression
+    7 rateLaw1_3  2  # ConstantExpression
+    8 rateLaw1_4  4.5  # ConstantExpression
 end parameters
 begin molecule types
     1 A(b,b,b)
@@ -22,16 +26,6 @@ begin observables
     7 Species AB3 {MatchOnce}A(b!1,b!2,b!3).B(a!1).B(a!2).B(a!3)
     8 Molecules AB_motif A(b!1).B(a!1)
 end observables
-begin functions
-    1 f_synth_1() k_synthC*(0^2)
-    2 rateLaw1_1() f_synth_1()
-    3 f_synth_2() k_synthC*(1^2)
-    4 rateLaw1_2() f_synth_2()
-    5 f_synth_3() k_synthC*(2^2)
-    6 rateLaw1_3() f_synth_3()
-    7 f_synth_4() k_synthC*(3^2)
-    8 rateLaw1_4() f_synth_4()
-end functions
 begin species
     1 A(b,b,b)                             1
     2 B(a)                                 3
@@ -42,30 +36,27 @@ begin species
     7 A(b!1,b!2,b!3).B(a!1).B(a!2).B(a!3)  0
 end species
 begin reaction rules
-  Rule1: \
-  %x::A() -> %x::A() + C()  rateLaw1
-    # Add Species C()
-  Rule2: \
-  A(b) + B(a) <-> A(b!1).B(a!1)  kp, km
-    # Bind(0.0.0,0.1.0)
+  Rule1:  %x::A() -> %x::A() + C()  rateLaw1(x)
+  # Add Species C()
+  Rule2:  A(b) + B(a) <-> A(b!1).B(a!1)  kp, km
+  # Bind(0.0.0,0.1.0)
   # Reverse
-    # Unbind(0.0.0,0.1.0)
-  Rule3: \
-  C() -> Trash()  k_degrC
-    # Add Species Trash()
-    # Delete Pattern C()
+  # Unbind(0.0.0,0.1.0)
+  Rule3:  C() -> Trash()  k_degrC
+  # Add Species Trash()
+  # Delete Pattern C()
 end reaction rules
 begin reactions
     1 1 1,3 rateLaw1_1 #Rule1
     2 1,2 5 3*kp #Rule2
     3 3 4 k_degrC #Rule3
-    4 5 5,3 rateLaw1_2 #Rule1
+    4 5 3,5 rateLaw1_2 #Rule1
     5 2,5 6 2*kp #Rule2
     6 5 1,2 km #Rule2r
-    7 6 6,3 rateLaw1_3 #Rule1
+    7 6 3,6 rateLaw1_3 #Rule1
     8 2,6 7 kp #Rule2
     9 6 2,5 2*km #Rule2r
-   10 7 7,3 rateLaw1_4 #Rule1
+   10 7 3,7 rateLaw1_4 #Rule1
    11 7 2,6 3*km #Rule2r
 end reactions
 begin groups

@@ -274,6 +274,7 @@ simulate_nf_par_def[Map<String,String> map]
         : PARAM ASSIGNS DBQUOTES (MINUS s1=STRING s2=(STRING|INT|DOUBLE))* DBQUOTES  {map.put($PARAM.text,"-" + $s1.text + " " + $s2.text);}
         | COMPLEX ASSIGNS i1=INT {map.put($COMPLEX.text,$i1.text);}
         | GET_FINAL_STATE ASSIGNS i2=INT {map.put($GET_FINAL_STATE.text,$i2.text);}
+        | GML ASSIGNS i3=INT {$map.put($GML.text,$i3.text);}
       
         ;    
         

@@ -179,57 +179,21 @@ end
 
 
 % user-defined functions
-% function f_synth_1
-function [val] = f_synth_1(expressions, observables)
-    val = (expressions(3)*(0^2));
-end
-
-% function rateLaw1_1
-function [val] = rateLaw1_1(expressions, observables)
-    val = f_synth_1(expressions,observables);
-end
-
-% function f_synth_2
-function [val] = f_synth_2(expressions, observables)
-    val = (expressions(3)*(1^2));
-end
-
-% function rateLaw1_2
-function [val] = rateLaw1_2(expressions, observables)
-    val = f_synth_2(expressions,observables);
-end
-
-% function f_synth_3
-function [val] = f_synth_3(expressions, observables)
-    val = (expressions(3)*(2^2));
-end
-
-% function rateLaw1_3
-function [val] = rateLaw1_3(expressions, observables)
-    val = f_synth_3(expressions,observables);
-end
-
-% function f_synth_4
-function [val] = f_synth_4(expressions, observables)
-    val = (expressions(3)*(3^2));
-end
-
-% function rateLaw1_4
-function [val] = rateLaw1_4(expressions, observables)
-    val = f_synth_4(expressions,observables);
-end
-
 
 
 
 % Calculate expressions
 function [ expressions ] = calc_expressions ( parameters )
 
-    expressions = zeros(1,4);
+    expressions = zeros(1,8);
     expressions(1) = parameters(1);
     expressions(2) = parameters(2);
     expressions(3) = parameters(3);
     expressions(4) = parameters(4);
+    expressions(5) = (expressions(3)*(0^2));
+    expressions(6) = (expressions(3)*(1^2));
+    expressions(7) = (expressions(3)*(2^2));
+    expressions(8) = (expressions(3)*(3^2));
    
 end
 
@@ -255,16 +219,16 @@ end
 function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 
     ratelaws = zeros(1,8);
-    ratelaws(1) = rateLaw1_1(expressions,observables)*species(1);
+    ratelaws(1) = (expressions(3)*(0^2))*species(1);
     ratelaws(2) = 3*expressions(1)*species(1)*species(2);
     ratelaws(3) = expressions(4)*species(3);
-    ratelaws(4) = rateLaw1_2(expressions,observables)*species(5);
+    ratelaws(4) = (expressions(3)*(1^2))*species(5);
     ratelaws(5) = 2*expressions(1)*species(5)*species(2);
     ratelaws(6) = expressions(2)*species(5);
-    ratelaws(7) = rateLaw1_3(expressions,observables)*species(6);
+    ratelaws(7) = (expressions(3)*(2^2))*species(6);
     ratelaws(8) = expressions(1)*species(6)*species(2);
     ratelaws(9) = 2*expressions(2)*species(6);
-    ratelaws(10) = rateLaw1_4(expressions,observables)*species(7);
+    ratelaws(10) = (expressions(3)*(3^2))*species(7);
     ratelaws(11) = 3*expressions(2)*species(7);
 
 end

@@ -47,8 +47,10 @@ FUNCTIONS : ('F'|'f')('U'|'u')('N'|'n')('C'|'c')('T'|'t')('I'|'i')('O'|'o')('n'|
 COMPARTMENTS : ('C'|'c')('O'|'o')('M'|'m')('P'|'p')('A'|'a')('R'|'r')('T'|'t')('M'|'m')('E'|'e')('N'|'n')('T'|'t')('S'|'s');
 ACTIONS: ('A'|'a')('C'|'c')('T'|'t')('i'|'I')('o'|'O')('n'|'N')('S'|'s');
 OBSERVABLES: 'observables';
+POPULATION: 'population';
+MAPS: 'maps';
 
-SET_OPTION : 'SETOPTION';
+SET_OPTION : 'setOption';
 SPECIES_LABEL : 'SPECIESLABEL';
 GENERATE_NETWORK : 'GENERATENETWORK';
 MAX_AGG : 'max_agg';
@@ -66,6 +68,7 @@ LABEL : 'LABEL';
 PARAMETERS : ('p'|'P')('a'|'A')('r'|'R')('a'|'A')('m'|'M')('e'|'E')('t'|'T')('e'|'E')('r'|'R')('s'|'S');
 VERBOSE : ('V'|'v')('E'|'e')('R'|'r')('B'|'b')('O'|'o')('S'|'s')('E '|'e');
 
+GML: 'gml';
 MATCHONCE: 'MatchOnce';
 DELETEMOLECULES: 'DeleteMolecules';
 MOVECONNECTED: 'MoveConnected';
@@ -77,7 +80,7 @@ INCLUDE_REACTANTS: 'include_reactants';
 INCLUDE_PRODUCTS: 'include_products';
 EXCLUDE_REACTANTS: 'exclude_reactants';
 EXCLUDE_PRODUCTS: 'exclude_products';
-
+GENERATEHYBRIDMODEL: 'generate_hybrid_model';
 ATOL: 'atol';
 RTOL: 'rtol';
 STEADY_STATE: 'steady_state';
@@ -112,7 +115,6 @@ RESETCONCENTRATIONS: 'resetConcentrations';
 ADDCONCENTRATION: 'addConcentration';
 GENERATENETWORK: 'generate_network';
 WRITENETWORK: 'writeNetwork';
-GENERATEHYBRIDMODEL: 'generate_hybrid_model';
 SUBSTANCEUNITS: 'substanceUnits';
 PARAM: 'param';
 COMPLEX: 'complex';
@@ -181,8 +183,7 @@ fragment UPPER: 'A'..'Z';
 fragment EXPONENT : ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
 
-VERSION_NUMBER : (DIGIT) | (DIGIT'.'DIGIT) | (DIGIT'.'DIGIT'.'DIGIT) ;
-
+VERSION_NUMBER : (INT) | (INT'.'INT) | (INT'.'INT'.'INT) ;
 
 
 

@@ -84,6 +84,8 @@ sub size
 # Lookup a parameter by name.
 #  Returns reference to parameter, if found.
 #  Otherwise returns undefined.
+#
+# ($param, $err) = $plist->lookup($name);
 sub lookup
 {
     my $plist = shift @_;
@@ -146,7 +148,7 @@ sub getName
         ++$index;
     }
     $name = "${basename}_${index}";
-    return ($name);
+    return $name;
 }
 
 
@@ -462,7 +464,7 @@ sub set
     {
         # Get hash of variables reference in Expr
         my $vhash = $param->Expr->getVariables($plist);
-        if ( $vhash->{Observable} || $vhash->{Function} )
+        if ( exists $vhash->{'Observable'} || exists $vhash->{'Function'} )
         {
             $param->setType('Function');
             my $fun= Function->new();
@@ -781,7 +783,7 @@ sub check
         #printf "Checking if parameter %s is defined.\n", $param->Name;
         unless ( $param->Type )
         {
-            $err= sprintf "Parameter %s is referenced but not defined", $param->Name;
+            $err= sprintf "Parameter '%s' is referenced but not defined", $param->Name;
             last;
         }
     }

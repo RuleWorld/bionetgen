@@ -193,7 +193,6 @@ sub simulate
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
             $err = $model->writeNET( {prefix=>"$netpre"} );
-#            $err = $model->writeNetwork( {prefix=>"$netpre"} );
             if ($err) {  return $err;  }
         }
     }
@@ -357,7 +356,6 @@ sub simulate
         
         if ( ($t_end - $t_start) <= 0.0 )
         {
-#        	return "t_end must be greater than t_start.";
         	print "WARNING: t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
                   "Simulation won't run.\n";
         }
@@ -376,7 +374,6 @@ sub simulate
         my $step_size = ($t_end - $t_start) / $n_steps;
         push @command, $step_size, $n_steps;
     }
-#    elsif ( defined $params->{sample_times} || @sample_times )
     else
     {
         if (defined $params->{sample_times})
@@ -489,8 +486,8 @@ sub simulate
             }
 
             # Apply reaction rules
-            my $nspec = scalar @{$model->SpeciesList->Array};
-            my $nrxn  = scalar @{$model->RxnList->Array};
+            my $nspec = $model->SpeciesList->size();
+            my $nrxn  = $model->RxnList->size();
             my $irule = 1;
             my ($n_new, $t_off);
             foreach my $rset ( @{$model->RxnRules} )
@@ -499,13 +496,17 @@ sub simulate
                 $n_new = 0;
                 foreach my $rr (@$rset)
                 {
-                    $n_new += $rr->applyRule( $model->SpeciesList, $model->RxnList, $model->ParamList, $species, $params );
+                    # expand rule
+                    my ($err, $nr) = $rr->expand_rule( $species, $model, $params );
+                    if (defined $err)
+                    {   return "Some problem expanding rule (OTF): $err";   }                    
+                    $n_new += $nr;
+
                 }
                 if ($verbose)
                 {
                     printf "Rule %3d: %3d new reactions %.2e s CPU time\n",
-                      $irule,
-                      $n_new, cpu_time(0) - $t_off;
+                      $irule, $n_new, cpu_time(0) - $t_off;
                 }
                 ++$irule;
             }
@@ -515,24 +516,16 @@ sub simulate
             {
                 $spec->RulesApplied($n_iter) unless ($spec->RulesApplied);
             }
-            # Update observables
-            foreach my $obs (@{$model->Observables})
-            {
-                $obs->update( $model->SpeciesList->Array, $nspec );
-            }
-            # Set ObservablesApplied attribute to everything in SpeciesList
+
+            # Set RulesApplied attribute to everything in SpeciesList
             my $new_species = [];
             foreach my $spec ( @{$model->SpeciesList->Array} )
             {
-                unless ( $spec->ObservablesApplied )
-                {
-                    push @$new_species, $spec  unless ( $spec->RulesApplied );
-                    $spec->ObservablesApplied(1);
-                }
+                push @$new_species, $spec  unless ($spec->RulesApplied);
             }
 
             # Print new species, reactions, and observable entries
-            if ( scalar @{$model->RxnList->Array} > $nrxn )
+            if ( $model->RxnList->size() > $nrxn )
             {
                 print Writer "read\n";
                 $model->SpeciesList->print( *Writer, $nspec );
@@ -591,7 +584,6 @@ sub simulate
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
         $err = $model->writeNET( {prefix => "$netpre"} );
-#        $err = $model->writeNetwork( {prefix => "$netpre"} );
         if ($err) { return $err; }
     }
 
@@ -933,7 +925,7 @@ sub readNFspecies
 
 
 
-# construct a hybrid particle population model
+# construct a hybrid particle population (HPP) model
 #  --Justin, 21mar2001
 sub generate_hybrid_model
 {
@@ -943,17 +935,18 @@ sub generate_hybrid_model
 
     my $indent = '    ';
     my $step_index = 0;
-    printf "generate_hybrid_model( %s )\n", $model->Name;
+    printf "ACTION: generate_hybrid_model( %s )\n", $model->Name;
 
 
     # default options
     my $options =
-    {   'prefix'     => '',
-        'suffix'     => 'hybrid',
+    {   'prefix'     => undef,
+        'suffix'     => 'hpp',
         'overwrite'  => 0,
         'verbose'    => 0,
         'actions'    => ['writeXML()'],
-        'execute'    => 0
+        'execute'    => 0,
+        'exact'      => 0
     };
     # get user options
     while ( my ($opt,$val) = each %$user_options )
@@ -964,13 +957,24 @@ sub generate_hybrid_model
         # overwrite default option
         $options->{$opt} = $val;
     }
+    # print options
+    print "options = \n";
+    while ( my ($par,$val) = each %$options )
+    {   
+        next unless (defined $val);
+        if ( ref $val eq 'ARRAY')
+        {   printf( "%12s => %-60s\n", $par, "[array]" );   }
+        elsif ( ref $val eq 'HASH')
+        {   printf( "%12s => %-60s\n", $par, "{hash}" );   }
+        elsif ( ref \$val eq 'SCALAR')
+        {   printf( "%12s => %-60s\n", $par, $val );   }
+    }
 
     # do nothing if $NO_EXEC is true
     return '' if $BNGModel::NO_EXEC;
 
-
     # determine prefix, modelname and filename
-    my $prefix = ( $options->{prefix} ) ? $options->{prefix} : $model->getOutputPrefix() .'_'. $options->{suffix};
+    my $prefix = ( defined $options->{prefix} ) ? $options->{prefix} : $model->getOutputPrefix() .'_'. $options->{suffix};
     my $modelname = $model->Name .'_'. $options->{suffix};
     my $modelfile = $prefix . '.bngl';
 
@@ -986,6 +990,7 @@ sub generate_hybrid_model
             return "Model file $modelfile already exists. Set overwrite=>1 option to force overwrite.";
         }
     }
+
 
 
     # check if a ParamList exists
@@ -1081,7 +1086,7 @@ sub generate_hybrid_model
             my $is_pop = 0;
             foreach my $pop ( @{$model->PopulationList->List} )
             {
-                if ( SpeciesGraph::isomorphicTo($species->SpeciesGraph, $pop->Species) )
+                if ( SpeciesGraph::isomorphicTo($species->SpeciesGraph, $pop->SpeciesGraph) )
                 {   # add the population instead of the speciesGraph
                     my $sg_copy = $pop->Population->copy();
                     $sg_copy->relinkCompartments( $hybrid_model->CompartmentList );
@@ -1148,7 +1153,7 @@ sub generate_hybrid_model
             my @add_patterns = ();
             foreach my $pop ( @{$model->PopulationList->List} )
             {
-                my $matches = $obs_copy->match( $pop->Species );
+                my $matches = $obs_copy->match( $pop->SpeciesGraph );
             
                 if ($matches)
                 {   
@@ -1183,23 +1188,23 @@ sub generate_hybrid_model
     }
    
 
-    # Refine rules
+    # Expand rules
     my $rxnrules_new = [];
     $hybrid_model->RxnRules( $rxnrules_new );
     {
-        print $indent . "$step_index:Refining rules with respect to population objects..\n"; ++$step_index;   
+        print $indent . "$step_index:Expanding rules with respect to population objects..\n"; ++$step_index;   
     
         # get the species graphs corresponding to each population
         my $pop_species = [];
         foreach my $pop ( @{$model->PopulationList->List} )
-        {   push @$pop_species, $pop->Species;   }
+        {   push @$pop_species, $pop->SpeciesGraph;   }
         my $n_popspec = scalar @$pop_species;
     
         # loop over rules
         my $rule_count = 0;
         foreach my $rset ( @{$model->RxnRules} )
         {
-            # NOTE: each element of @RxnRules is an array of reactions.
+            # NOTE: each element of @RxnRules is an array of rules.
             #  If a rule is unidirectional, then the array has a single element.
             #  If a rule is bidirectional, then the array has two elements (forward and reverse)    
             foreach my $rr (@$rset)
@@ -1208,16 +1213,16 @@ sub generate_hybrid_model
                 my $rr_copy = $rr->copy();
                 $rr_copy->resetLabels();
             
-                # apply rule to species
-                my $refinements = $rr_copy->refineRule(  $pop_species, $model, $hybrid_model, {verbose => $options->{verbose}} );
-                foreach my $refinement ( @$refinements )
+                # apply rule to population species
+                my $child_rule_list = $rr_copy->expandRule(  $pop_species, $model, $hybrid_model, $options );
+                foreach my $child_rule ( @$child_rule_list )
                 {
-                    push @$rxnrules_new, [$refinement];
+                    push @$rxnrules_new, [$child_rule];
                 }
                 if ( $options->{verbose} )
                 {
-                    print $indent.$indent . sprintf "Rule %s: created %d refinement%s.\n",
-                                                    $rr_copy->Name, scalar @$refinements, ((scalar @$refinements > 1)?'s':'');
+                    print $indent.$indent . sprintf "Rule '%s': expanded to %d child rules%s.\n",
+                                                    $rr_copy->Name, scalar @$child_rule_list, ((scalar @$child_rule_list > 1)?'s':'');
                 }
                 ++$rule_count;
             }
@@ -1258,10 +1263,10 @@ sub generate_hybrid_model
     # writing actions!
     if ( @{$options->{actions}} )
     {
-        my $action_string = "\n\n###  model actions  ###\n\n";
+        my $action_string = "\n\n## model actions ##\n";
         foreach my $action ( @{$options->{actions}} )
         {
-            $action_string .= "$action;\n";
+            $action_string .= "$action\n";
         }
         $action_string .= "\n";
         print $FH $action_string;

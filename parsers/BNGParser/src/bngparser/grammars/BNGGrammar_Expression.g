@@ -25,8 +25,8 @@ options {
   }
   
   public boolean isSpecialFunction(String text){
-    if(Arrays.asList(list).contains(text))
-      return true;
+    //if(Arrays.asList(list).contains(text))
+    //  return true;
      return false;
   }
   
