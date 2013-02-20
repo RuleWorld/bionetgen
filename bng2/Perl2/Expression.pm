@@ -1558,7 +1558,9 @@ sub toMatlabString
                 my @sarr = ( map {$_->toMatlabString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
 
                 if ( @sarr == 3)
-                {   $string = 'if('. $sarr[0] . ',' . $sarr[1] . ',' . $sarr[2] . ')';   }
+                {   # TODO: find better solution here. this version will return NaN if either return value is Inf.
+                    $string = sprintf( "((%s~=0)*%s + (%s==0)*%s)"  $sarr[0], $sarr[1], $sarr[0], $sarr[2]);
+                }
                 else
                 {   die "Error in Expression->toMatlabString():  built-in function 'if' must have three arguments!";   }    
             }

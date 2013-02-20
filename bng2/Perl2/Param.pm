@@ -218,11 +218,11 @@ sub toCVodeString
     my $level  = @_ ? shift @_ : 0;
     my $expand = @_ ? shift @_ : 0;    
   
-    if ( $param->Type eq 'Constant' )
+    if ( $param->Type eq 'Constant')
     {
         return $param->getCVodeName;
     }
-    elsif ( $param->Expr )
+    elsif ( defined $param->Expr )
     {
         return $param->Expr->toCVodeString($plist, $level, $expand);
     }

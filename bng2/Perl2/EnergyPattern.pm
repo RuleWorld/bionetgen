@@ -185,7 +185,7 @@ sub getStoich
     foreach my $product (@{$rxn->Products})
     {
         if ( $epatt->Weights->[$product->Index] )
-        {   $stoich += $epatt->Weights->[$product->Index];   }    
+        {   $stoich += $epatt->Weights->[$product->Index];   }
     }
     return $stoich, $err;
 }

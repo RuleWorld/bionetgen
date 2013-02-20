@@ -909,7 +909,8 @@ sub toCVodeString
         (my $const) = $plist->lookup( $rate_constants->[0] );
     
         # get rate constant
-        push @rl_terms, $const->toCVodeString($plist);
+        push @rl_terms, $const->getCVodeName();
+        #push @rl_terms, $const->toCVodeString($plist);
       
         # get reactant species    
         foreach my $reactant ( @$reactants )
@@ -919,7 +920,9 @@ sub toCVodeString
         }
     }
     elsif ( $type eq 'Function' )
-    {
+    {   # assume the function arguments are evaluated..
+        # only need to worry about observables and such..
+
         # look up parameter
         (my $fcn_param) = $plist->lookup( $rate_constants->[0] ); 
         

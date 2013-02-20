@@ -731,7 +731,7 @@ sub writeMfile
     # open Mexfile and begin printing...
 	open( Mscript, ">$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
     print Mscript <<"EOF";
-function [err, timepoints, species_out, observables_out ] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
+function [err, timepoints, species_out, observables_out] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
 %${mscript_filebase_caps} Integrate reaction network and plot observables.
 %   Integrates the reaction network corresponding to the BioNetGen model
 %   '${model_name}' and then (optionally) plots the observable trajectories,
@@ -857,7 +857,7 @@ try
     [timepoints, species_out] = ode15s( rhs_fcn, timepoints, species_init', opts );
 catch
     err = 1;
-    fprintf( 1, 'Error: some problem encounteredwhile integrating ODE network!\\n' );
+    fprintf( 1, 'Error: some problem encountered while integrating ODE network!\\n' );
     return;
 end
 
