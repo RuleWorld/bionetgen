@@ -11,6 +11,7 @@ import numpy as np
 import analyzeRDF
 import string
 from util import logMess,NumericStringParser
+import re
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
 
@@ -70,7 +71,8 @@ class SBML2BNGL:
         
     def convertToName(self,rate):
         for element in sorted(self.speciesDictionary,key=len,reverse=True):
-            rate = rate.replace(element,self.speciesDictionary[element])
+            rate = re.sub(r'(\W|^)({0})(\W|$)'.format(element),r'\1 {0} \3'.format(self.speciesDictionary[element]),rate)
+            #rate = rate.replace(element,self.speciesDictionary[element])
         return rate
 
     def __getRawCompartments(self, compartment):
@@ -91,7 +93,6 @@ class SBML2BNGL:
         functions = []
         for function in enumerate(self.model.getListOfFunctionDefinitions()):
             functionInfo = self.__getRawFunctions(function)
-            print functionInfo
             functions.append(writer.bnglFunction(functionInfo[1],functionInfo[0],[]))
         return functions
             
@@ -128,7 +129,6 @@ class SBML2BNGL:
             functionName = '%s%d()' % (functionTitle,index)
             if 'delay' in rawRules[3]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
-            #print rawRules[3]
             if rawRules[4]:
                 tmp = rawRules[3].split('-')
                 if len(tmp) == 2:
@@ -171,6 +171,7 @@ class SBML2BNGL:
         moleculesText  = []
         speciesText = []
         observablesText = []
+        nullFlag = False
         names = []
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
@@ -193,8 +194,8 @@ class SBML2BNGL:
                     tmp2 = (self.tags[rawSpecies[0]])
                 speciesText.append('%s:%s%s %f' % (tmp2,temp,str(tmp),rawSpecies[1])) 
             observablesText.append('Species %s %s #%s' % (rawSpecies[0], tmp,rawSpecies[5]))
-        moleculesText.append('Null()')
-        speciesText.append('$Null() 1')
+        moleculesText.append('NullSpecies()')
+        speciesText.append('$NullSpecies() 1')
         return moleculesText,speciesText,observablesText
         
 
@@ -465,7 +466,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #350,380
-    for bioNumber in range(351,409):
+    for bioNumber in [350]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1

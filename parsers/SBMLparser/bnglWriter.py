@@ -9,8 +9,8 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
-    if len(reactant) == 0:
-        finalString += 'Null() '
+    if len(reactant) == 0 or (len(reactant) == 1 and reactant[0][1] == 0):
+        finalString += 'NullSpecies() '
     for index in range(0,len(reactant)):
         tag = ''
         if reactant[index][0] in tags and isCompartments:
@@ -23,7 +23,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     else:
         finalString += ' -> '
     if len(product) == 0:
-        finalString += 'Null() '
+        finalString += 'NullSpecies() '
     for index in range(0,len(product)):
         tag = ''
         if product[index][0] in tags and isCompartments:
@@ -102,6 +102,7 @@ def bnglFunction(rule,functionTitle,compartments=[]):
         param = []
         for idx,element in enumerate(parameters[0:-1]):
             param.append('p' + element.strip())
+            print '(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1]
             parameters[-1] = re.sub('(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1])
         param.append(parameters[-1])
         return '{0}({1}) = {2}'.format(functionTitle,','.join(param[0:-1]),param[-1])
@@ -117,7 +118,7 @@ def bnglFunction(rule,functionTitle,compartments=[]):
             logMess('WARNING','Exchanging reference to compartment %s for its dimensions' % compartment[0])
     
     #change references to time for time()    
-    tmp =re.sub(r'(\W)(time)(\W)',r'\1 time() \3',tmp)
+    tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1 time() \3',tmp)
     #BNGL has ^ for power. 
     
     finalString = '%s = %s' % (functionTitle,tmp)
