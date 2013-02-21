@@ -666,7 +666,7 @@ sub simulate_nf
     my %optional_args =
     (   # option name        NFsim flag       arguments?      default (used if user_args is 0)
         verbose         => { flag => "-v",    user_args => 0, default_arg => undef },
-        complex         => { flag => "-cb",   user_args => 0, default_arg => undef },
+        complex         => { flag => "-cb",   user_args => 1, default_arg => undef },
         nocslf          => { flag => "-nocslf", user_args => 0, default_arg => undef },
         notf            => { flag => "-notf", user_args => 0, default_arg => undef },
         print_functions => { flag => "-ogf",  user_args => 0, default_arg => undef },

@@ -1470,6 +1470,8 @@ sub setOption
         my $arg = shift @_;
         unless (@_) { return "No value specified for option $arg"; }
         my $val = shift @_;
+        
+        # TODO: print arg and val to user?
 
         if ( $arg eq "SpeciesLabel" )
         {
@@ -1485,6 +1487,23 @@ sub setOption
         elsif ( $arg eq "energyBNG" )
         {   # enable energy mode
             send_warning("The energyBNG option is now deprecated (energy features available by default).");
+        }
+        elsif ( $arg eq "NumberPerQuantityUnit" )
+        {   # set conversion from quantity units to pure numbers
+            # TODO: allow this to be a parameter?
+            $model->Options->{$arg} = $val;
+        }
+        elsif ( $arg eq "MoleculesObservables" )
+        {   # set molecules observables mode
+            unless ($val eq "CountUnique"  or $val eq "CountAll")
+            {   return "Invalid option for or $arg (valid options are 'CountUnique' and 'CountAll')";   }
+            $model->Options->{$arg} = $val;
+        }
+        elsif ( $arg eq "SpeciesObservables" )
+        {   # set species observables mode
+            unless ($val eq "CountUnique"  or $val eq "CountAll")
+            {   return "Invalid option for or $arg (valid options are 'CountUnique' and 'CountAll')";   }
+            $model->Options->{$arg} = $val;
         }
         else
         {

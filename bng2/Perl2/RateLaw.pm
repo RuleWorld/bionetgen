@@ -151,7 +151,7 @@ sub newRateLaw
         my $phi_expr = Expression->new();
         $err = $phi_expr->readString( \$string_left, $model->ParamList, "," );
         if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting phi string): $err"; }
-        my $phi_name = $phi_expr->getName( $model->ParamList, "phi" );
+        my $phi_name = $phi_expr->getName( $model->ParamList, "Aphi_" );
         (my $phi_param, $err) = $model->ParamList->lookup($phi_name);
         if ($err) { return undef, $err; }
 
@@ -162,7 +162,7 @@ sub newRateLaw
         my $actE_expr = Expression->new();
         $err = $actE_expr->readString( \$string_left, $model->ParamList );
         if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting activation energy string): $err"; }
-        my $actE_name = $actE_expr->getName( $model->ParamList, "actE" );
+        my $actE_name = $actE_expr->getName( $model->ParamList, "AEact0_" );
         (my $actE_param, $err) = $model->ParamList->lookup($actE_name);
         if ($err) { return undef, $err; }
 
@@ -347,19 +347,29 @@ sub newRateLawNet
 
 
 
-# evaluate the RateLaw for the local context
+# evaluate the RateLaw for the local reaction context
+#
+# things to accomplishs:
+# (1) conversion from intensive to extensive units
+# (2) evaluate local functions
+# (3) compute delta G contribution
+#
+# This method fingerprints and caches local ratelaws for efficient re-use
+#
+# $local_rl = $rl->evaluate_local( $rxn, $ref_map, $model )
 sub evaluate_local
 {
     my ($rl, $rxn, $ref_map, $model) = @_;
 
-    # two things to accomplish
-    # (1) evaluate deltaG_rxn
-    # (2) evaluate local activation energy
-
     my $err;
+
+    # get the expression for converting intensive units to extensive units (if any)
+    (my $conv_expr, $err) = $rl->get_intensive_to_extensive_units_conversion($rxn, $model);
+
     my $local_rl = $rl;
     if ($rl->Type eq "Arrhenius" )
-    { 
+    {
+        # TODO: verify that phi is a constant expression! (do this is ratelaw verify?)
         # evaluate activation energy in local context and get activation energy fingerprint
         my $local_expr;
         my $lfcn_fingerprint;
@@ -375,24 +385,27 @@ sub evaluate_local
                 $local_expr = $expr->evaluate_local($model->ParamList);
 
                 # add to localfunc string to fingerprint
-                $lfcn_fingerprint = "arg1=" . $rl->Constants->[0] . ",arg2=" . $local_expr->toString($model->ParamList, 0, 2);
+                $lfcn_fingerprint = $rl->Constants->[0] . "," . $local_expr->toString($model->ParamList, 0, 2);
             }
             else
             {   # add to localfunc string to fingerprint
-                $lfcn_fingerprint .= "arg1=" . $rl->Constants->[0] . ",arg2=" . $fcn->Name;
+                $lfcn_fingerprint =  $rl->Constants->[0] . "," . $fcn->Name;
             }
         }
         else
-        {   # no local context in this parameter, create 
+        {   # no local context in this parameter, create
             # add to localfunc string to fingerprint
-            $lfcn_fingerprint .= "arg1=" . $rl->Constants->[0] . ",arg2=" . $rl->Constants->[1];
+            $lfcn_fingerprint =  $rl->Constants->[0] . "," . $rl->Constants->[1];
         }
 
         # get deltaG fingerprint
         my $fingerprint = "dir=" . $rxn->RxnRule->Direction;
-        $fingerprint .= ";stoich=" . $rl->get_deltaG_fingerprint( $rxn, $model->EnergyPatterns );
+        $fingerprint .= ";energy=" . $rl->get_deltaG_fingerprint( $rxn, $model->EnergyPatterns );
+        # add unit conversion factor
+        if (defined $conv_expr)
+        {   $fingerprint .= ";unit=" . $conv_expr->toString($model->ParamList, 0, 2);   }
         # add localfcn to fingerprint
-        $fingerprint .= ";" . $lfcn_fingerprint;
+        $fingerprint .= ";local=" . $lfcn_fingerprint;
 
         #  lookup fingerprint in RateLaw hash
         if ( exists $rl->LocalRatelawsHash->{$fingerprint} )
@@ -419,8 +432,10 @@ sub evaluate_local
             }
             # 2b) computer overall deltaG
             my $deltaG_expr;
-            if (@deltaG_terms)
-            {   $deltaG_expr = Expression::operate( "+", [@deltaG_terms], $model->ParamList );   }
+            if (@deltaG_terms>1)
+            {   $deltaG_expr = Expression::operate("+", [@deltaG_terms], $model->ParamList);   }
+            elsif (@deltaG_terms==1)
+            {   $deltaG_expr = $deltaG_terms[0];   }
 
             # 3) compute phi term
             my $phi_expr;
@@ -447,24 +462,59 @@ sub evaluate_local
             $arrhenius_expr = Expression::operate("-", [$arrhenius_expr], $model->ParamList);
             $arrhenius_expr = Expression::operate("FunctionCall", ["exp", $arrhenius_expr], $model->ParamList);
 
-            # assign local expr to a parameter
-            my $rule_name = $rxn->RxnRule->Name;  # base parameter name on the rule
-            $rule_name =~ s/[^\w]+//g;  # remove non-word characters
-            my $local_paramname = $model->ParamList->getName("${rule_name}Rate");
-            $model->ParamList->set( $local_paramname, $arrhenius_expr, 1);
-            (my $rl_param) = $model->ParamList->lookup($local_paramname);
+            # 6) unit conversions
+            if (defined $conv_expr)
+            {   $arrhenius_expr = Expression::operate("*", [$conv_expr, $arrhenius_expr], $model->ParamList);   }
+
+            # get parameter name for new ratelaw expression (if required)
+            my $base_name = $rxn->RxnRule->Name;  # base parameter name is the rule name
+            $base_name =~ s/[^\w]+//g;            # remove non-word characters
+            my $local_name = $arrhenius_expr->getName( $model->ParamList, "${base_name}_local" );
+            (my $local_param, $err) = $model->ParamList->lookup($local_name);
+            unless (defined $local_param) { die "RateLaw::evaluate_local() - Some problem creating param name for local ratelaw ($err)"; }
 
             # create new ratelaw
-            my $rl_type = $rl_param->Type eq "Function" ? "Function" : "Ele";
-            $local_rl = RateLaw->new( Type=>$rl_type, Constants=>[$local_paramname], Factor=>$rl->Factor, TotalRate=>0 );
+            my $rl_type = $local_param->Type eq "Function" ? "Function" : "Ele";
+            $local_rl = RateLaw->new( Type=>$rl_type, Constants=>[$local_name], Factor=>$rl->Factor, TotalRate=>0 );
             ++$RateLaw::n_Ratelaw;
 
             # add this local ratelaw to the LocalRatelawsHash
             $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
         }
     }
+    elsif ( $rl->Type eq "Ele"  and  defined $conv_expr)
+    {   # Elementary rate law
+        my $local_expr = $conv_expr;
+        my $fingerprint = $local_expr->toString($model->ParamList, 0, 2);
+        #  lookup localfcn fingerprint in hash
+        if ( exists $rl->LocalRatelawsHash->{$fingerprint} )
+        {   # fetch the original localfcn
+            $local_rl = $rl->LocalRatelawsHash->{$fingerprint};
+        }
+        else
+        {   # build a new ratelaw
+            # multiply conversion expression by rate constant
+            $local_expr = Expression::operate("*", [$rl->Constants->[0], $local_expr], $model->ParamList);
+
+            # get parameter name for new ratelaw expression (if required)
+            my $base_name = $rxn->RxnRule->Name;  # base parameter name is the rule name
+            $base_name =~ s/[^\w]+//g;            # remove non-word characters
+            my $local_name = $local_expr->getName( $model->ParamList, "${base_name}_local" );
+            (my $local_param, $err) = $model->ParamList->lookup($local_name);
+            unless (defined $local_param) { die "RateLaw::evaluate_local() - Some problem creating param name for local ratelaw ($err)"; }
+
+            # create new ratelaw
+            my $rl_type = $local_param->Type eq "Function" ? "Function" : "Ele";
+            $local_rl = RateLaw->new( Type=>$rl_type, Constants=>[$local_name], Factor=>$rl->Factor, TotalRate=>0 );
+            ++$RateLaw::n_Ratelaw;
+
+            # add this ratelaw to LocalRatelawsHash
+            $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
+        }
+    }
     elsif ( $rl->Type eq "FunctionProduct" )
-    {   # TODO: implement
+    {
+        # TODO: implement
         die "Error in RateLaw->evaluate_local(): FunctionProduct type RateLaw is not yet supported!";
     }
     elsif ( $rl->Type eq "Function" )
@@ -483,6 +533,8 @@ sub evaluate_local
             my @local_args = ( $fcn->Name, map {$ref_map->{$_}} @{$fcn->Args} );
             my $expr = Expression->new(Type=>"FunctionCall", Arglist=>[@local_args]);
             my $local_expr = $expr->evaluate_local($model->ParamList);
+            if (defined $conv_expr)
+            {   $local_expr = Expression::operate("*", [$conv_expr, $local_expr], $model->ParamList);   }
 
             # add to localfunc string to fingerprint
             my $fingerprint = $local_expr->toString($model->ParamList, 0, 2);
@@ -494,61 +546,79 @@ sub evaluate_local
             }
             else
             {   # build a new ratelaw
-                my $rl_type;
-                my $rl_constants = [];
+#                my $rl_type;
+#                my $rl_constants = [];
 
-                if ($local_expr->Type eq "FunctionCall")
-                {   # function expressions
-                    if (ref $local_expr->Arglist->[0] eq "Function")
-                    {   # create new parameter for this anonymous function
-                        my $local_fcn = $local_expr->Arglist->[0];
-                        my $name = $model->ParamList->getName($fcn->Name);
-                        $local_fcn->Name($name);
-                        $model->ParamList->set($name, $local_fcn->Expr, 1, '', $local_fcn); 
-                        # ratelaw argument is the new name
-                        $rl_type = "Function";
-                        push @$rl_constants, $name;
-                    }
-                    elsif (  Expression::isBuiltIn($local_expr->Arglist->[0]) )
-                    {   # this is a built-in function
-                        # need to create parameter that refers to this fcn call..
-                        my $name = $model->ParamList->getName($fcn->Name);
-                        $model->ParamList->set($name, $local_expr, 1);
-                        my ($param) = $model->ParamList->lookup($name);
-                        # set ratelaw type and constants
-                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
-                        push @$rl_constants, $name;
-                    }
-                    else
-                    {   # function already has a name! this will be the ratelaw argument
-                        $rl_type = "Function";            
-                        push @$rl_constants, $local_expr->Arglist->[0];
-                    }
-                }
-                else
-                {   # non-function expressions
-                    if ($local_expr->Type eq "VAR")
-                    {   # ratelaw argument will be the variable name
-                        $rl_type = "Ele";
-                        push @$rl_constants, $local_expr->Arglist->[0];
-                    }
-                    else
-                    {   # create new parameter for this expression and an elementary rate law
-                        my $name = $model->ParamList->getName($fcn->Name);
-                        $model->ParamList->set($name, $local_expr, 1, '');
-                        my ($param) = $model->ParamList->lookup($name);
-                        # set ratelaw type and constants
-                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
-                        push @$rl_constants, $name;
-                    }
-                }
+                # get parameter name for new ratelaw expression (if required)
+                my $base_name = $rxn->RxnRule->Name;  # base parameter name is the rule name
+                $base_name =~ s/[^\w]+//g;            # remove non-word characters
+                my $local_name = $local_expr->getName( $model->ParamList, "${base_name}_local" );
+                (my $local_param, $err) = $model->ParamList->lookup($local_name);
+                unless (defined $local_param) { die "RateLaw::evaluate_local() - Some problem creating param name for local ratelaw ($err)"; }
 
                 # create new ratelaw
-                $local_rl = RateLaw->new( Type=>$rl_type, Constants=>$rl_constants, Factor=>$rl->Factor, TotalRate=>0 );
+                my $rl_type = $local_param->Type eq "Function" ? "Function" : "Ele";
+                $local_rl = RateLaw->new( Type=>$rl_type, Constants=>[$local_name], Factor=>$rl->Factor, TotalRate=>0 );
                 ++$RateLaw::n_Ratelaw;
 
                 # add this ratelaw to LocalRatelawsHash
                 $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
+
+#                my $base_name = $rxn->RxnRule->Name;  # base parameter name on the rule
+#                $base_name =~ s/[^\w]+//g;  # remove non-word characters
+
+#                if ($local_expr->Type eq "FunctionCall")
+#                {   # function expressions
+#                    if (ref $local_expr->Arglist->[0] eq "Function")
+#                    {   # create new parameter for this anonymous function
+#                        my $local_fcn = $local_expr->Arglist->[0];
+#                        my $name = $model->ParamList->getName("${base_name}_local");
+#                        $local_fcn->Name($name);
+#                        $model->ParamList->set($name, $local_fcn->Expr, 1, '', $local_fcn); 
+#                        # ratelaw argument is the new name
+#                        $rl_type = "Function";
+#                        push @$rl_constants, $name;
+#                    }
+#                    elsif (  Expression::isBuiltIn($local_expr->Arglist->[0]) )
+#                    {   # this is a built-in function
+#                        # need to create parameter that refers to this fcn call..
+#                        my $name = $model->ParamList->getName("${base_name}_local");
+#                        $model->ParamList->set($name, $local_expr, 1);
+#                        my ($param) = $model->ParamList->lookup($name);
+#                        # set ratelaw type and constants
+#                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
+#                        push @$rl_constants, $name;
+#                    }
+#                    else
+#                    {   # function already has a name! this will be the ratelaw argument
+#                        $rl_type = "Function";            
+#                        push @$rl_constants, $local_expr->Arglist->[0];
+#                    }
+#                }
+#                else
+#                {   # non-function expressions
+#                    if ($local_expr->Type eq "VAR")
+#                    {   # ratelaw argument will be the variable name
+#                        $rl_type = "Ele";
+#                        push @$rl_constants, $local_expr->Arglist->[0];
+#                    }
+#                    else
+#                    {   # create new parameter for this expression and an elementary rate law
+#                        my $name = $model->ParamList->getName("${base_name}_local");
+#                        $model->ParamList->set($name, $local_expr, 1, '');
+#                        my ($param) = $model->ParamList->lookup($name);
+#                        # set ratelaw type and constants
+#                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
+#                        push @$rl_constants, $name;
+#                    }
+#                }
+
+#                # create new ratelaw
+#                $local_rl = RateLaw->new( Type=>$rl_type, Constants=>$rl_constants, Factor=>$rl->Factor, TotalRate=>0 );
+#                ++$RateLaw::n_Ratelaw;
+
+#                # add this ratelaw to LocalRatelawsHash
+#                $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
             }
         }
     }
@@ -578,6 +648,99 @@ sub get_deltaG_fingerprint
 ###
 ###
 ###
+
+
+sub get_intensive_to_extensive_units_conversion
+# ($vol_expr, $err) = $rl->get_intensive_to_extensive_units_conversion($rxn, $model)
+# Get expression that converts intrinsic rate constants to extrinsic units.
+#  Returns undefined if the conversion expression is '1'.
+#
+# for bi-molecular reactions, the reaction compartment is the 3-D volume [V]
+# unless all reactants are at a 2-D surface [S].
+#
+#  rxn type                adjustment
+#  ----------------------------------------------------
+#   S                      none
+#   V                      none
+#   S + S                  /S
+#   S + V                  /V
+#   V + V                  /V 
+#   S + S + S              /S/S
+#   S + S + V              /S/V
+#   S + V + V              /V/V
+#   V + V + V              /V/V            etc...
+#   0 -> S                 S
+#   0 -> V                 V
+{
+    my ($rl, $rxn, $model)  = @_;
+
+    my $err;
+    my $conv_expr = undef;
+
+    # get all the defined compartments
+    my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
+    my @product_compartments  = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Products});
+   
+    # return undefined volume expr if there are no compartments
+    if ( @reactant_compartments )
+    {   # order >=1 reactions
+        # divide into surfaces and volumes
+        my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
+        my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
+
+        # Pick and toss an anchor reactant.  If there's a surface reactant, toss it.
+        # Otherwise toss a volume.
+        (@surfaces) ? shift @surfaces : shift @volumes;
+
+        # if there are surfaces or volumes remaining, we need to define a volume expression
+        if ( @surfaces  or  @volumes )
+        {   # order >=2 reactions
+            my $number_per_quantity;
+            if ( exists $model->Options->{NumberPerQuantityUnit} )
+            {   $number_per_quantity = $model->Options->{NumberPerQuantityUnit};   }
+
+            # construct the volume expression
+            my @terms = map {$_->Size} (@surfaces, @volumes);
+            if (defined $number_per_quantity)
+            {   @terms = map { Expression::operate('*', [$number_per_quantity, $_], $model->ParamList) } @terms;   }
+            
+            $conv_expr = Expression::operate('/', [1, @terms], $model->ParamList);
+            unless ( defined $conv_expr )
+            {   $err = "RateLaw::get_intensive_to_extensive_units_conversion() - Some problem defining unit conversion expression.";  }
+        }
+    }
+    elsif ( @product_compartments>0 )
+    {   # zero-order reactions
+
+        # check if products are in the same compartment
+        my $consistent = 1;
+        my $comp1 = $product_compartments[0];
+        foreach my $comp2 ( @product_compartments[1..$#product_compartments] )
+        {
+            unless ($comp1 == $comp2)
+            {
+                $consistent = 0;
+                last;
+            }
+        }
+        if ($consistent)
+        {   # construct the volume expression
+            $conv_expr = $comp1->Size;
+        }
+        else
+        {   send_warning("BioNetGen doesn't know how to handle zero-order synthesis of products in multiple compartments.");  }
+    }
+    
+    # return the expression (possibly undefined) and the error msg (if any).
+    return $conv_expr, $err;
+}
+
+
+
+###
+###
+###
+
 
 
 sub equivalent
@@ -654,12 +817,12 @@ sub toString
     if ( defined $rxn_mult  and  $rxn_mult != 1 )
     {
         if ( defined $ratelaw_mult )
-        {   $ratelaw_mult = Expression::operate('*', [($ratelaw_mult, $rxn_mult)], $plist);   }
+        {   $ratelaw_mult = Expression::operate('*', [$ratelaw_mult, $rxn_mult], $plist);   }
         else
-        {   $ratelaw_mult = $rxn_mult;   }
+        {   $ratelaw_mult = Expression::newNumOrVar($rxn_mult);   }
     }
     # evaluate product
-    if ( defined $ratelaw_mult ) { $string .= $ratelaw_mult->evaluate($plist) . "*"; }
+    if (defined $ratelaw_mult) { $string .= sprintf("%.8g", $ratelaw_mult->evaluate($plist)) . "*"; }
 
     # now write the ratelaw to the string
     my $type = $rl->Type;
@@ -714,11 +877,11 @@ sub toString
 # write ratelaw as a CVode formula
 sub toCVodeString
 {
-    my $rl         = shift;
-    my $rxn_mult   = shift;
-    my $reactants  = shift;
-    my $rrefs      = shift;
-    my $plist      = (@_) ? shift : undef;
+    my $rl         = shift @_;
+    my $rxn_mult   = shift @_;
+    my $reactants  = shift @_;
+    my $rrefs      = shift @_;
+    my $plist      = @_ ? shift @_ : undef;
 
     # ratelaw factor
     my $ratelaw_mult = undef;
@@ -728,9 +891,9 @@ sub toCVodeString
     if ( defined $rxn_mult  and  $rxn_mult != 1 )
     {
         if ( defined $ratelaw_mult )
-        {   $ratelaw_mult = Expression::operate('*', [($ratelaw_mult, $rxn_mult)], $plist);   }
+        {   $ratelaw_mult = Expression::operate('*', [$ratelaw_mult, $rxn_mult], $plist);   }
         else
-        {   $ratelaw_mult = $rxn_mult;   }
+        {   $ratelaw_mult = Expression::newNumOrVar($rxn_mult);   }
     }
     
     # begin gather ratelaw terms
@@ -746,7 +909,8 @@ sub toCVodeString
         (my $const) = $plist->lookup( $rate_constants->[0] );
     
         # get rate constant
-        push @rl_terms, $const->toCVodeString($plist);
+        push @rl_terms, $const->getCVodeName();
+        #push @rl_terms, $const->toCVodeString($plist);
       
         # get reactant species    
         foreach my $reactant ( @$reactants )
@@ -756,13 +920,16 @@ sub toCVodeString
         }
     }
     elsif ( $type eq 'Function' )
-    {
+    {   # assume the function arguments are evaluated..
+        # only need to worry about observables and such..
+
         # look up parameter
         (my $fcn_param) = $plist->lookup( $rate_constants->[0] ); 
         
         my $fcn = $fcn_param->Ref;
 
         # get CVodeRefs for tagged reactants
+        # TODO: this may be obsolete due to local fnc evaluation
         my @fcn_args = ();
         if ( @{$fcn->Args} )
         {
@@ -787,19 +954,15 @@ sub toCVodeString
 
         # get reactant species  
         foreach my $reactant ( @$reactants )
-        {
-            # add CVode ref to this reactant species
+        {   # add CVode ref to this reactant species
             push @rl_terms, $reactant->getCVodeName;
         }
     }
     else
-    {
-        #$string.= $type."(".join(',', @{$rl->Constants}).")";
-        return  "Ratelaws of type $type are not yet supported by writeMexfile()";
-    }
+    {   return "Ratelaws of type $type are not yet supported by writeMexfile()";   }
         
     # build ratelaw string
-    return join( '*', @rl_terms );
+    return join('*', @rl_terms);
 }
 
 
@@ -825,9 +988,9 @@ sub toMatlabString
     if ( defined $rxn_mult  and  $rxn_mult != 1 )
     {
         if ( defined $ratelaw_mult )
-        {   $ratelaw_mult = Expression::operate('*', [($ratelaw_mult, $rxn_mult)], $plist);   }
+        {   $ratelaw_mult = Expression::operate('*', [$ratelaw_mult, $rxn_mult], $plist);   }
         else
-        {   $ratelaw_mult = $rxn_mult;   }
+        {   $ratelaw_mult = Expression::newNumOrVar($rxn_mult);   }
     }
     
     # begin gather ratelaw terms
@@ -847,8 +1010,7 @@ sub toMatlabString
         
         # get reactant species    
         foreach my $reactant ( @$reactants )
-        {
-            # add CVode ref to this reactant species
+        {   # add CVode ref to this reactant species
             push @rl_terms, $reactant->getMatlabName();          
         }
     }
@@ -859,7 +1021,8 @@ sub toMatlabString
         
         my $fcn = $fcn_param->Ref;
 
-        # get CVodeRefs for tagged reactants
+        # get MatlabRefs for tagged reactants
+        # TODO: this may be obsolete due to local fnc evaluation
         my @fcn_args = ();
         if ( @{$fcn->Args} )
         {
@@ -890,12 +1053,10 @@ sub toMatlabString
         }
     }
     else
-    {
-        return  "Ratelaws of type $type are not yet supported by writeMfile()";
-    }
+    {   return  "Ratelaws of type $type are not yet supported by writeMfile()";   }
         
     # build ratelaw string
-    return join( '*', @rl_terms );
+    return join('*', @rl_terms);
 }
 
 
