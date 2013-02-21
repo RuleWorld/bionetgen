@@ -108,8 +108,13 @@ class SBML2BNGL:
             compartments.append("%s  %d  %s" % (name,compartmentInfo[1],compartmentInfo[2]))
         return compartments
 
-
-    def getReactions(self, translator=[],isCompartments=False):
+    def updateFunctionReference(self,reaction,updatedReferences):
+        newRate = reaction[3]
+        for reference in updatedReferences:
+            newRate = re.sub(r'(\W|^)({0})(\W|$)'.format(reference),r'\1 {0} \3'.format(updatedReferences[reference]),newRate)
+        return newRate
+    
+    def getReactions(self, translator=[],isCompartments=False,extraParameters={}):
         '''
         returns a triple containing the parameters,rules,functions
         '''
@@ -120,6 +125,9 @@ class SBML2BNGL:
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
             rawRules =  self.__getRawRules(reaction)
+            
+            #newRate = self.updateFunctionReference(rawRules,extraParameters)
+            
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
                     parameters.append('%s %f' % (parameter[0],parameter[1]))
@@ -151,7 +159,7 @@ class SBML2BNGL:
                     functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
-                    idx = logMess('ERROR','I do not know how to split the rate law {0} into two, falling back to an if statement'.format(functionName))
+                    idx = logMess('WARNING','I do not know how to split the rate law {0} into two, falling back to an if statement'.format(functionName))
 
                     #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
                 functionName +=', %s' % (functionName2)
@@ -162,8 +170,27 @@ class SBML2BNGL:
             logMess("ERROR","The file contains no reactions")
         return parameters, rules,functions
 
+    def __getRawAssignmentRules(self,arule):
+        variable =   arule.getVariable()
+        rate = libsbml.formulaToString(arule.getMath())
+        if not self.useID:
+            rate = self.convertToName(rate)
+        return variable,rate
+        
+    def getAssignmentRules(self,paramRules=[]):
+        arules = []
+        aParameters = {}
+        for arule in self.model.getListOfRules():
+            rawArule = self.__getRawAssignmentRules(arule)
+            #newRule = rawArule[1].replace('+',',').strip()
+            ruleName = 'ar' + rawArule[0] if rawArule[0] not in paramRules else rawArule[0]
+            arules.append(writer.bnglFunction(rawArule[1],ruleName,[]))
+            aParameters[rawArule[0]] = 'ar' + rawArule[0]
+            #arules.append('%s = %s' %(rawArule[0],newRule))
+        return aParameters,arules
+
     def getParameters(self):
-        return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters()]
+        return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters() if parameter.getValue() != 0], [x.getId() for x in self.model.getListOfParameters() if x.getValue() == 0]
 
 
     def getSpecies(self,translator = {}):
@@ -422,15 +449,21 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    
     #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
     translator = {}
     print evaluation(len(parser.getSpecies()[0]),translator)
-    param2 = parser.getParameters()
+    param2,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
-    param,rules,functions = parser.getReactions(translator,True)
+    
+    aParameters,aRules = parser.getAssignmentRules(zparam) 
+    functions = []
+    functions.extend(aRules)
+    param,rules,tfunc = parser.getReactions(translator,True)
+    functions.extend(tfunc) 
     functions.extend(parser.getSBMLFunctions())
+    functions.extend(aRules)
+    
     param += param2
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
@@ -438,6 +471,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         with open(outputFile + '.log', 'w') as f:
             for element in logMess.log:
                 f.write(element + '\n')
+    
             
 
 
@@ -465,8 +499,8 @@ def main():
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    #350,380
-    for bioNumber in [350]:
+    #208,236
+    for bioNumber in range(249,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
@@ -479,4 +513,6 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     main()
-    
+#todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
+#definitions those that are defined as 0'
+#2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s

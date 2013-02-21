@@ -4,6 +4,9 @@ import re
 from copy import deepcopy
 from util import logMess
 import string
+from pyparsing import commaSeparatedList as csl
+def evaluatePiecewiseFunction(function):
+    pass
 
 def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True):
     finalString = ''
@@ -74,6 +77,11 @@ def balanceTranslator(reactant,product,translator):
     return newTranslator
 
 
+def parsePieceWiseFunction(parameters):
+    if len(parameters) == 3:
+        return 'if({0},{1},{2})'.format(parameters[1],parameters[0],parameters[2])
+    else:
+        return 'if({0},{1},{2})'.format(parameters[1],parameters[0],parsePieceWiseFunction(parameters[2:]))
     
 def bnglFunction(rule,functionTitle,compartments=[]):
     def powParse(match):
@@ -81,29 +89,74 @@ def bnglFunction(rule,functionTitle,compartments=[]):
             exponent = '(1/%s)' % match.group(3)
         else:
             exponent = match.group(3)
-        return '({0})^({1})'.format(match.group(2),exponent)
-    
+        if match.group(1) in ['root','pow']:
+            operator = '^'
+        return '({0}){1}({2})'.format(match.group(2),operator,exponent)
+    def compParse(match):
+
+        translator = {'gt':'>','lt':'<','and':'AND','or':'OR','geq':'>=','leq':'<=','eq':'=='}
+        exponent = match.group(3)
+        operator = translator[match.group(1)]
+        return '{0} {1} {2}'.format(match.group(2),operator,exponent)
+      
     def parameterRewrite(match):
         return 'p' + match.group(1)
-    oldrule = ''
-    while (('pow' in rule) or ('root' in rule)) and (oldrule != rule):
-        oldrule = rule
-        rule  = re.sub('(pow)\(([^,]+),([^)]+)\)',powParse,rule)
-        rule  = re.sub('(root)\(([^,]+),([^)]+)\)',powParse,rule)
-        if rule == oldrule:
-            logMess('ERROR','Malformed pow or root function %s' % rule)
-            print 'meep'
-    if 'piecewise' in rule:
-        logMess('ERROR','We cannot deal with piecewise functions for the time being %s' %rule)
-        return ''               
+        
+    def findClosure(rule):
+        stackCount = 1
+        init = 0
+        while stackCount != 0:
+            lparen = string.find(rule[init:],'(')
+            rparen = string.find(rule[init:],')')
+            if lparen == -1 or rparen < lparen:
+                stackCount -= 1
+                init += rparen + 1
+            else:
+                stackCount += 1
+                init += lparen + 1
+            
+        return init
+        
+    def changeToBNGL(functionList,rule,function):
+        oldrule = ''
+        #if the rule contains any mathematical function we need to reformat
+        while any([re.search(r'(\W)({0})(\W)'.format(x),rule) != None for x in functionList]) and (oldrule != rule):
+            oldrule = rule
+            for x in functionList:
+                rule  = re.sub('({0})\(([^,]+),([^)]+)\)'.format(x),function,rule)
+            if rule == oldrule:
+                logMess('ERROR','Malformed pow or root function %s' % rule)
+                print 'meep'
+        return rule
+    
+    def piecewiseToIf(rule):
+        init = string.find(rule,'piecewise(')+len('piecewise(')
+        end = findClosure(rule[init:])
+        mrule = rule[init:init+end]
+        while 'piecewise' in mrule:
+            mrule = piecewiseToIf(mrule)
+        parameters = csl.parseString(mrule)
+        result =  parsePieceWiseFunction(parameters)
+        return rule[0:init-len('piecewise(')] + result + rule[init+end:]        
+    
+    rule = changeToBNGL(['pow','root'],rule,powParse)
+    rule = changeToBNGL(['gt','lt','leq','geq','eq'],rule,compParse)
+    rule = changeToBNGL(['and','or'],rule,compParse)
 
+    while 'piecewise' in rule:
+        rule = piecewiseToIf(rule)
+    #change function commas for semicolons
     if 'lambda(' in rule:
-        parameters =  rule[string.find(rule,'(')+1:-1].split(',')
+        parameters =  csl.parseString(rule[string.find(rule,'(')+1:-1])
         param = []
         for idx,element in enumerate(parameters[0:-1]):
             param.append('p' + element.strip())
-            print '(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1]
-            parameters[-1] = re.sub('(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1])
+            #print '(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1]
+            try:
+                parameters[-1] = re.sub('(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1])
+            except:
+                logMess('ERROR','Cannot parse function %s-%s' % (functionTitle,rule))
+                parameters[-1] = ''
         param.append(parameters[-1])
         return '{0}({1}) = {2}'.format(functionTitle,','.join(param[0:-1]),param[-1])
         
@@ -137,7 +190,7 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
     output.write('generate_network();\n')
-    output.write('simulate_ode({t_end=>100,n_steps=>100});')
+    output.write('simulate({method=>ode,t_end=>100,n_steps=>100,print_functions=>1});')
     #output.write('writeXML()\n')
     
 def sectionTemplate(name,content):
