@@ -120,10 +120,12 @@ class SBML2BNGL:
         '''
         rules = []
         parameters = []
+        
         functions = []
         tester = NumericStringParser()
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
+            parameterDict = {}
             rawRules =  self.__getRawRules(reaction)
             
             #newRate = self.updateFunctionReference(rawRules,extraParameters)
@@ -131,6 +133,7 @@ class SBML2BNGL:
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
                     parameters.append('%s %f' % (parameter[0],parameter[1]))
+                    parameterDict[parameter[0]] = parameter[1]
             compartmentList = [['cell',1]]
             
             compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
@@ -149,22 +152,22 @@ class SBML2BNGL:
                         logMess('WARNING','Cannot reliably separate rate function %s into two, falling back to an if statement' % functionName)
                         #idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
                         #print 'mop'
-                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
+                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList,parameterDict))
                     functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
+                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList,parameterDict))
                 else:
                     tmp = [0,0]
                     tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
                     tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
-                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList))
+                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList,parameterDict))
                     functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList))
+                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList,parameterDict))
                     idx = logMess('WARNING','I do not know how to split the rate law {0} into two, falling back to an if statement'.format(functionName))
 
                     #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
                 functionName +=', %s' % (functionName2)
             else: 
-                functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList))
+                functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList,parameterDict))
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
         if len(rules) == 0:
             logMess("ERROR","The file contains no reactions")
@@ -452,19 +455,18 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
     translator = {}
     print evaluation(len(parser.getSpecies()[0]),translator)
-    param2,zparam = parser.getParameters()
+    param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     
     aParameters,aRules = parser.getAssignmentRules(zparam) 
     functions = []
     functions.extend(aRules)
-    param,rules,tfunc = parser.getReactions(translator,True)
+    _,rules,tfunc = parser.getReactions(translator,True)
     functions.extend(tfunc) 
     functions.extend(parser.getSBMLFunctions())
     functions.extend(aRules)
     
-    param += param2
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
     if len(logMess.log) > 0:
@@ -500,7 +502,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #208,236
-    for bioNumber in range(249,410):
+    for bioNumber in range(1,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1

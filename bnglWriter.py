@@ -83,7 +83,7 @@ def parsePieceWiseFunction(parameters):
     else:
         return 'if({0},{1},{2})'.format(parameters[1],parameters[0],parsePieceWiseFunction(parameters[2:]))
     
-def bnglFunction(rule,functionTitle,compartments=[]):
+def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
     def powParse(match):
         if match.group(1) == 'root':
             exponent = '(1/%s)' % match.group(3)
@@ -145,7 +145,7 @@ def bnglFunction(rule,functionTitle,compartments=[]):
 
     while 'piecewise' in rule:
         rule = piecewiseToIf(rule)
-    #change function commas for semicolons
+    #remove references to lambda functions
     if 'lambda(' in rule:
         parameters =  csl.parseString(rule[string.find(rule,'(')+1:-1])
         param = []
@@ -175,6 +175,10 @@ def bnglFunction(rule,functionTitle,compartments=[]):
     #BNGL has ^ for power. 
     
     finalString = '%s = %s' % (functionTitle,tmp)
+    
+    #change references to local parameters
+    for parameter in parameterDict:
+        finalString = re.sub(r'(\W)({0})(\W)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
     return finalString
 
     
