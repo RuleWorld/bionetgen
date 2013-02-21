@@ -152,6 +152,7 @@ class SBML2BNGL:
                         logMess('WARNING','Cannot reliably separate rate function %s into two, falling back to an if statement' % functionName)
                         #idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
                         #print 'mop'
+                    
                     functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList,parameterDict))
                     functionName2 = '%s%dm()' % (functionTitle,index)
                     functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList,parameterDict))
@@ -183,14 +184,19 @@ class SBML2BNGL:
     def getAssignmentRules(self,paramRules=[]):
         arules = []
         aParameters = {}
+        zRules = paramRules
         for arule in self.model.getListOfRules():
             rawArule = self.__getRawAssignmentRules(arule)
             #newRule = rawArule[1].replace('+',',').strip()
-            ruleName = 'ar' + rawArule[0] if rawArule[0] not in paramRules else rawArule[0]
+            if rawArule[0] not in paramRules:
+                ruleName = 'ar' + rawArule[0]
+            else:
+                ruleName = rawArule[0]
+                zRules.remove(rawArule[0])
             arules.append(writer.bnglFunction(rawArule[1],ruleName,[]))
             aParameters[rawArule[0]] = 'ar' + rawArule[0]
             #arules.append('%s = %s' %(rawArule[0],newRule))
-        return aParameters,arules
+        return aParameters,arules,zRules
 
     def getParameters(self):
         return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters() if parameter.getValue() != 0], [x.getId() for x in self.model.getListOfParameters() if x.getValue() == 0]
@@ -459,13 +465,15 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     
-    aParameters,aRules = parser.getAssignmentRules(zparam) 
+    aParameters,aRules,nonzparam = parser.getAssignmentRules(zparam)
+    for element in nonzparam:
+        param.append('{0} 0'.format(element))
     functions = []
     functions.extend(aRules)
     _,rules,tfunc = parser.getReactions(translator,True)
     functions.extend(tfunc) 
     functions.extend(parser.getSBMLFunctions())
-    functions.extend(aRules)
+    #functions.extend(aRules)
     
     writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile

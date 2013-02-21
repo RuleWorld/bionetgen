@@ -132,7 +132,7 @@ def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
     def piecewiseToIf(rule):
         init = string.find(rule,'piecewise(')+len('piecewise(')
         end = findClosure(rule[init:])
-        mrule = rule[init:init+end]
+        mrule = rule[init:init+end-1]
         while 'piecewise' in mrule:
             mrule = piecewiseToIf(mrule)
         parameters = csl.parseString(mrule)
@@ -178,7 +178,11 @@ def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
     
     #change references to local parameters
     for parameter in parameterDict:
-        finalString = re.sub(r'(\W)({0})(\W)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
+        finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
+    #combinations '+ -' break ibonetgen
+    finalString = re.sub(r'(\W|^)([+] [-])(\W|$)',r'\1 - \3',finalString)
+    
+   
     return finalString
 
     
