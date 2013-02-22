@@ -94,7 +94,7 @@ def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
         return '({0}){1}({2})'.format(match.group(2),operator,exponent)
     def compParse(match):
 
-        translator = {'gt':'>','lt':'<','and':'AND','or':'OR','geq':'>=','leq':'<=','eq':'=='}
+        translator = {'gt':'>','lt':'<','and':'&&','or':'||','geq':'>=','leq':'<=','eq':'=='}
         exponent = match.group(3)
         operator = translator[match.group(1)]
         return '{0} {1} {2}'.format(match.group(2),operator,exponent)
@@ -120,7 +120,7 @@ def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
     def changeToBNGL(functionList,rule,function):
         oldrule = ''
         #if the rule contains any mathematical function we need to reformat
-        while any([re.search(r'(\W)({0})(\W)'.format(x),rule) != None for x in functionList]) and (oldrule != rule):
+        while any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in functionList]) and (oldrule != rule):
             oldrule = rule
             for x in functionList:
                 rule  = re.sub('({0})\(([^,]+),([^)]+)\)'.format(x),function,rule)
@@ -180,8 +180,11 @@ def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
     for parameter in parameterDict:
         finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
     #combinations '+ -' break ibonetgen
-    finalString = re.sub(r'(\W|^)([+] [-])(\W|$)',r'\1 - \3',finalString)
-    
+    finalString = re.sub(r'(\W|^)([-])(\s)+',r'\1-',finalString)
+    #changing reference of 't' to time()
+    finalString = re.sub(r'(\W|^)(t)(\W|$)',r'\1 time() \3',finalString)
+    #pi
+    finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\1 3.141592 \3',finalString)
    
     return finalString
 

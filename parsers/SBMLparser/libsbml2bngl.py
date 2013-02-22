@@ -190,6 +190,7 @@ class SBML2BNGL:
             #newRule = rawArule[1].replace('+',',').strip()
             if rawArule[0] not in paramRules:
                 ruleName = 'ar' + rawArule[0]
+                
             else:
                 ruleName = rawArule[0]
                 zRules.remove(rawArule[0])
