@@ -312,6 +312,7 @@ simulate_par_def[Map<String,String> map]
         | CONTINUE ASSIGNS i13=INT {map.put($CONTINUE.text,$i13.text);}
         | EVALUATE_EXPRESSIONS ASSIGNS i14=INT {map.put($EVALUATE_EXPRESSIONS.text,$i14.text);}
         | OVERWRITE ASSIGNS i15=INT {map.put($OVERWRITE.text,$i15.text);}
+        | SEED ASSIGNS i16=INT {map.put($SEED.text,$i16.text);}
         ;
         
 multiple_definition returns [String value]:
