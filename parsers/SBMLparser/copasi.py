@@ -1,0 +1,154 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 22 14:37:28 2013
+
+@author: proto
+"""
+
+import libsbml
+import libsbml2bngl
+from subprocess import call        
+import numpy as np  
+import re   
+import pickle
+import gnuplot
+        
+def xml2cps():
+    with open('dummy.tmp','w') as d:
+        for element in range(1,410):
+            call(['/home/proto/Downloads/copasi/bin/CopasiSE','-i','XMLExamples/curated/BIOMD%010i.xml' % element],stdout=d)
+            print element
+#    inputFile = open('fceri_ji_{0}b.cps'.format(index),'r')
+    
+    
+def correctCPS():
+    for element in range(1,410):
+        #inputFile = open('XMLExamples/curated/BIOMD%010i.xml' % element,'r')
+        cinputFile = open('XMLExamples/curated/BIOMD%010i.cps' % element,'r')
+        content = cinputFile.readlines()
+        newContent = []
+        flag = False
+        counter = 0
+        reader = libsbml.SBMLReader()
+        document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % element)
+        parser =libsbml2bngl.SBML2BNGL(document.getModel(),True)
+        speciesList = []
+        speciesDict = {}
+        compartmentList = {}        
+        for compartment in parser.model.getListOfCompartments():
+            compartmentList[compartment.getId()] = compartment.getName() if compartment.getName() != '' else compartment.getId()
+        for species in parser.model.getListOfSpecies():
+            speciesList.append((parser.getRawSpecies(species)[5],compartmentList[parser.getRawSpecies(species)[4]],parser.getRawSpecies(species)[0]))
+            speciesDict[speciesList[-1][0]] = speciesList[-1][2]
+        f = open('copasiBenchmark/speciesDict{0}.dump'.format(element),'w')
+        pickle.dump(speciesDict,f)
+        for idx,line in enumerate(content):
+            if line.rfind('name="Time-Course" type="timeCourse"') != -1:
+                newContent.append(line.replace('false', 'true'))
+                newContent.append('<Report reference="Report_90" target="output_{0}.txt" append="0"/>\n'.format(element))
+                flag = True
+            elif flag == True:
+                if counter == 2:
+                    newContent.append(line.replace('0.01','1'))
+                elif counter == 3:
+                    newContent.append(line.replace('1','100'))
+                    flag = False
+                else:
+                    newContent.append(content[idx])
+                counter += 1
+            
+            
+            elif line.rfind('<ListOfReports>') != -1:
+                newContent.append(line)
+                newContent.append('<Report key="Report_90" name="Time, Concentrations, Volumes, and Global Quantity Values" taskType="timeCourse" separator="&#x09;" precision="6"> \n\
+          <Table printTitle="1"> \n\
+            <Object cn="CN=Root,Model={0},Reference=Time"/> \n'.format(parser.model.getName()))
+                for species in speciesList:
+                    newContent.append('<Object cn="CN=Root,Model={1},Vector=Compartments[{2}],Vector=Metabolites[{0}],Reference=Concentration"/> \n'.format(species[0],parser.model.getName(),species[1]))
+                newContent.append('</Table> \n</Report>\n')
+          
+            else:
+                newContent.append(content[idx])
+                    
+        outputFile = open('copasiBenchmark/mBIOMD%010i.cps' % (element),'w')
+        outputFile.write(''.join(newContent))
+        
+ 
+def generateCopasiOutput():
+    with open('dummy.tmp','w') as d:
+        for element in range(1,410):
+            call(['/home/proto/Downloads/copasi/bin/CopasiSE','copasiBenchmark/mBIOMD%010i.cps' % element],stdout=d)
+            print element
+
+
+def loadResults(fileName,split):
+    try:
+        with open(fileName) as dataInput:
+            timeCourse = []
+            #remove spaces
+            line = dataInput.readline().strip()
+            headers = re.sub('\s+',' ',line).split(split)
+            
+            for line in dataInput:
+                 nline = re.sub('\s+',' ',line.strip()).split(' ')
+                 timeCourse.append([float(x) for x in nline])            
+        return headers,np.array(timeCourse)
+    except IOError:
+        print 'no file',fileName
+        return [],[]
+        
+def plotResults():
+    pass
+     
+def compareResults():
+    good= 0
+    tested = 0
+    for fileNumber in range(1,409):
+        print fileNumber
+        copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
+        copheaders = [x.replace(']','').strip() for x in copheaders]
+        bngheaders,bng = loadResults('output{0}.gdat'.format(fileNumber),' ')
+        with open('copasiBenchmark/speciesDict{0}.dump'.format(fileNumber)) as f:
+            translator = pickle.load(f)
+            
+        newCopHeaders = []
+        if len(copasi) < 2:
+            print 'copasi pass'
+            continue
+        elif len(bng) < 2:
+            print 'bng pass'
+            continue
+        elif np.size(copasi,0) != np.size(bng,0):
+            print 'different times'
+            continue
+        #print copheaders
+        for element in copheaders:
+            if element == 'Time':
+                newCopHeaders.append('time')
+            elif element not in translator:
+                print 'herp derp'
+                continue
+            else:
+                newCopHeaders.append(translator[element])
+        newBngHeaders = [x for x in bngheaders if x in newCopHeaders]
+        bNGIndexes = [idx for idx,x in enumerate(bngheaders) if x in newCopHeaders]
+        copasiIndexes = range(1,len(bNGIndexes))
+        
+        score =  np.average(np.sum(pow(copasi[:,copasiIndexes] - bng[:,copasiIndexes],2),axis=0)/np.size(copasi,0))
+        print score        
+        tested += 1        
+        if score < 0.1:
+            good += 1
+    print tested,good            
+            
+        
+def main():
+    #xml2cps()
+    #correctCPS()
+    #generateCopasiOutput()
+    #loadCopasiResults()
+    #loadBNGResults(1)
+    compareResults()
+
+if __name__ == "__main__":
+    main()
