@@ -45,7 +45,7 @@
 #    ".stat" extension and describe a binned equilibrium distribution of a
 #    model observable. See $datdir/gene_expr_ssa_equil.stats for an example.
 #    Equilibrium samples are compared to the reference distribution by a
-#    Chi-square goodness of fit test. The stats file defines the obsevable of
+#    Chi-square goodness of fit test. The stats file defines the observable of
 #    interest, bin widths and probabilities, and the Chi-square values
 #    corresponding to various significance levels.
 #
