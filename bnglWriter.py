@@ -83,7 +83,7 @@ def parsePieceWiseFunction(parameters):
     else:
         return 'if({0},{1},{2})'.format(parameters[1],parameters[0],parsePieceWiseFunction(parameters[2:]))
     
-def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
+def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     def powParse(match):
         if match.group(1) == 'root':
             exponent = '(1/%s)' % match.group(3)
@@ -185,7 +185,7 @@ def bnglFunction(rule,functionTitle,compartments=[],parameterDict={}):
     finalString = re.sub(r'(\W|^)(t)(\W|$)',r'\1 time() \3',finalString)
     #pi
     finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\1 3.141592 \3',finalString)
-   
+    print reactants,finalString
     return finalString
 
     
