@@ -108,7 +108,7 @@ def plotResults(fileResults1,fileResults2):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [6]:
+    for fileNumber in [4]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -144,9 +144,11 @@ def compareResults():
         tested += 1        
         if score < 0.1:
             good += 1
-    plotResults(bng,copasi)
+    print bngheaders,copheaders,copasiIndexes
+    plotResults(bng[:,copasiIndexes],copasi[:,copasiIndexes])
     print tested,good            
-            
+    print bng[0:2,copasiIndexes]
+    print copasi[0:2,copasiIndexes]
         
 def main():
     #xml2cps()

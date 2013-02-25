@@ -153,22 +153,22 @@ class SBML2BNGL:
                         #idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
                         #print 'mop'
                     
-                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList,parameterDict))
+                    functions.append(writer.bnglFunction(tmp[0],functionName,rawRules[0],compartmentList,parameterDict))
                     functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList,parameterDict))
+                    functions.append(writer.bnglFunction(tmp[1],functionName2,rawRules[1],compartmentList,parameterDict))
                 else:
                     tmp = [0,0]
                     tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
                     tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
-                    functions.append(writer.bnglFunction(tmp[0],functionName,compartmentList,parameterDict))
+                    functions.append(writer.bnglFunction(tmp[0],functionName,rawRules[0],compartmentList,parameterDict))
                     functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[1],functionName2,compartmentList,parameterDict))
+                    functions.append(writer.bnglFunction(tmp[1],functionName2,rawRules[1],compartmentList,parameterDict))
                     idx = logMess('WARNING','I do not know how to split the rate law {0} into two, falling back to an if statement'.format(functionName))
 
                     #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
                 functionName +=', %s' % (functionName2)
             else: 
-                functions.append(writer.bnglFunction(rawRules[3],functionName,compartmentList,parameterDict))
+                functions.append(writer.bnglFunction(rawRules[3],functionName,rawRules[0],compartmentList,parameterDict))
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
         if len(rules) == 0:
             logMess("ERROR","The file contains no reactions")
