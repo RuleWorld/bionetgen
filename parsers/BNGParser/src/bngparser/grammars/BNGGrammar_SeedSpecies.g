@@ -178,16 +178,16 @@ getParentTemplate();
   $information = new ReactionRegister();
   $information.setNumBonds($bonds.getNumBonds());
   $information.setCompartment(compartment);
-  
+  gParent.paraphrases.push("in species element section");
 }
 @after{
   $information.setNumBonds($bonds.getNumBonds()-$information.getNumBonds());
- 
+ gParent.paraphrases.pop();
 }
 
 :
-  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})
-  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN) //If it's not a netfile it's necessary to add a '?' to allow for optional component syntax
+  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? //label
+  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)? //If it's not a netfile it's necessary to add a '?' to allow for optional component syntax
  
   
   (AT s2=STRING 
@@ -204,6 +204,10 @@ scope{
 }
 @init{
   $site_list::numSites = 1;
+  gParent.paraphrases.push("in species site list section");
+}
+@after{
+gParent.paraphrases.pop();
 }
 :
   (s1=site_obs[bonds,upperID+"_C" + $site_list::numSites] {sites.add(s1.st);$site_list::numSites++;} 

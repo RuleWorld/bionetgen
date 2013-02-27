@@ -497,8 +497,6 @@ int main(int argc, char *argv[]){
 	}
 
 	/* Initialize reaction network */
-//	init_network(reactions, rates, species, spec_groups, network_name, functions, variable_parameters,
-//				 func_observ_depend, func_param_depend, is_func_map_temp);
 	init_network(reactions, rates, species, spec_groups, network_name);
 
 	// Round species populations if propagator is SSA or PLA

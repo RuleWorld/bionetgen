@@ -124,7 +124,8 @@ scope{
   paraphrases.pop();
 }
 : BEGIN (SEED)? SPECIES LB+
-(seed_species_def[$seed_species_block::numSpecies]{
+(seed_species_def[$seed_species_block::numSpecies]
+                                      {
                                       //System.out.println("aaaaa " + $seed_species_def.compartment);
                                       if(!$seed_species_def.concentration.equals("0")){
 	                                      if(!compartmentToSurface || compartmentList.isVolume($seed_species_def.compartment))
@@ -135,7 +136,8 @@ scope{
                                       addMoleculeToCompartment($seed_species_def.compartment,"S" + $seed_species_block::numSpecies);
                                       $seed_species_block::numSpecies++;
                                       //}
-                                      } LB+)* 
+                                      } 
+                                      LB+)* 
 END (SEED)? SPECIES LB+
 ;
 

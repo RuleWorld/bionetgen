@@ -21,7 +21,7 @@ def main():
                 errorFiles.append(x)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
     validFiles = [x for x in bnglFiles if x not in errorFiles]
-    skip = ['334','225','332','105','293','333']
+    skip = ['334','225','332','105','293','333','337']
     with open('executionTestErrors' + '.log', 'w') as f:
         subprocess.call(['rm','./*net'])
         for idx,bnglFile in enumerate(sorted(validFiles)):
