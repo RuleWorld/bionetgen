@@ -343,9 +343,11 @@ vector<string> find_variables(string a) {
 //		c = a[i++];
 		c = a[i];
 		// Support scientific notation (i.e., X{eE}{+-}YYY)
-		if ((c == 'e' || c == 'E') &&
+		if (i > 0 && i < a.length()-1 &&
+			(c == 'e' || c == 'E') &&
 			(a[i-1] >= '0' && a[i-1] <= '9') &&
-			((a[i+1] >= '0' && a[i+1] <= '9') || a[i+1] == '+' || a[i+1] == '-')){
+			((a[i+1] >= '0' && a[i+1] <= '9') || a[i+1] == '+' || a[i+1] == '-'))
+		{
 			// Do nothing
 		}
 		// Continue
