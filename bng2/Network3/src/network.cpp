@@ -4624,7 +4624,7 @@ int select_next_rxn() {
     // Error check
     cout << "Uh oh, got to the end of select_next_rxn(). This should never happen. Exiting." << endl;
     exit(1);
-    return NULL; // Should never get here
+    return 0; // Should never get here
 }
 
 int update_concentrations(int irxn) {
@@ -4739,11 +4739,8 @@ int update_concentrations(int irxn) {
 			/* Read group updates */
 			read_Groups(network.spec_groups, stdin, network.species, &line_number, (char*)"groups", &n_groups_updated);
 
-//			printf( "At step %-16.0f added %d new species (%d total %d active) %d new reactions (%d total)\n",
-//					GSP.n_steps, n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
-			cout << "At step " << GSP.n_steps << " added " << n_spec_new << " new species (" << GSP.nc
-					<< " total " << n_spec_act << " active) and " << n_rxns_new << " new reactions ("
-					<< GSP.na << " total)" << endl;
+			printf( "At step %d added %d new species (%d total %d active) %d new reactions (%d total)\n",
+					(int)(GSP.n_steps+0.5), n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
 			/* 	if (n_groups_updated){
 			 	  printf("  and updated %d groups.", n_groups_updated);
 			 	}
