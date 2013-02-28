@@ -504,3 +504,35 @@ reactant[List<String> elements] returns [boolean surfaceCompartment=false, Strin
   }
 ;
 
+species_element[BondList bonds,String upperID,String compartment] returns [String myLabel,String name, ReactionRegister information]
+scope {
+  List sites;
+  String lcompartment;
+  String lname;
+}
+@init{
+getParentTemplate();
+  $species_element::sites = new ArrayList();
+  $species_element::lcompartment = compartment;
+  $information = new ReactionRegister();
+  $information.setNumBonds($bonds.getNumBonds());
+  $information.setCompartment(compartment);
+  gParent.paraphrases.push("in species element section");
+}
+@after{
+  $information.setNumBonds($bonds.getNumBonds()-$information.getNumBonds());
+ gParent.paraphrases.pop();
+}
+
+:
+  s1= STRING {$name = $s1.text;$species_element::lname=$s1.text;} (label {$myLabel = $label.label;})? //label
+  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN) //If it's not a netfile it's necessary to add a '?' to allow for optional component syntax
+ 
+  
+  (AT s2=STRING 
+  {
+    $species_element::lcompartment = $s2.text; 
+    $information.setCompartment($s2.text);
+    $information.setBondList(bonds);
+  })?
+  -> list_molecule_def(id={upperID},name={$s1.text},sites={$species_element::sites},compartment = {$species_element::lcompartment},label={$myLabel});
