@@ -2067,15 +2067,16 @@ sub generate_network
             return "Previously generated $prefix.net exists.  Set overwrite=>1 option to overwrite.";
         }
     }
-
-
-    # nothing to do if no species are defined
+    
     if ( $model->SpeciesList->size() == 0 )
-    {   return "No species defined in call to generate_network";   }
+    {   # warn user if the seed species list is empty.
+        send_warning("The seed species block is empty--the reaction network will be empty "
+                    ."unless zero-order synthesis reactions are defined.");
+    }
 
     # nothing to do if no rules are defined
     if ( @{$model->RxnRules} == 0 )
-    {   return "No reaction_rules defined in call to generate_network";   }
+    {   return "Nothing to do--no reaction rules are defined.";   }
 
     # if no reactions have been generated previosuly, then we have to initize some things..
     if ( $model->RxnList->size()==0 or $params{'continue'}==0 )
