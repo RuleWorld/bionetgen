@@ -546,8 +546,37 @@ sub evaluate_local
             }
             else
             {   # build a new ratelaw
-#                my $rl_type;
-#                my $rl_constants = [];
+                # get parameter name for new ratelaw expression (if required)
+                my $base_name = $rxn->RxnRule->Name;  # base parameter name is the rule name
+                $base_name =~ s/[^\w]+//g;            # remove non-word characters
+                my $local_name = $local_expr->getName( $model->ParamList, "${base_name}_local" );
+                (my $local_param, $err) = $model->ParamList->lookup($local_name);
+                unless (defined $local_param) { die "RateLaw::evaluate_local() - Some problem creating param name for local ratelaw ($err)"; }
+
+                # create new ratelaw
+                my $rl_type = $local_param->Type eq "Function" ? "Function" : "Ele";
+                $local_rl = RateLaw->new( Type=>$rl_type, Constants=>[$local_name], Factor=>$rl->Factor, TotalRate=>0 );
+                ++$RateLaw::n_Ratelaw;
+
+                # add this ratelaw to LocalRatelawsHash
+                $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
+            }
+        }
+        elsif ( defined $conv_expr)
+        {   # no local functions, just need to handle compartmental context
+            my $local_expr = $conv_expr;
+            my $fingerprint = $local_expr->toString($model->ParamList, 0, 2);
+            #  lookup localfcn fingerprint in hash
+            if ( exists $rl->LocalRatelawsHash->{$fingerprint} )
+            {   # fetch the original localfcn
+                $local_rl = $rl->LocalRatelawsHash->{$fingerprint};
+            }
+            else
+            {   # build a new ratelaw
+                # get expression for the fcn call
+                my $fcncall_expr = Expression->new(Type=>"FunctionCall", Arglist=>[$rl->Constants->[0]]);
+                # and multiply by the local componentn
+                $local_expr = Expression::operate("*", [$fcncall_expr, $local_expr], $model->ParamList);
 
                 # get parameter name for new ratelaw expression (if required)
                 my $base_name = $rxn->RxnRule->Name;  # base parameter name is the rule name
@@ -563,62 +592,6 @@ sub evaluate_local
 
                 # add this ratelaw to LocalRatelawsHash
                 $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
-
-#                my $base_name = $rxn->RxnRule->Name;  # base parameter name on the rule
-#                $base_name =~ s/[^\w]+//g;  # remove non-word characters
-
-#                if ($local_expr->Type eq "FunctionCall")
-#                {   # function expressions
-#                    if (ref $local_expr->Arglist->[0] eq "Function")
-#                    {   # create new parameter for this anonymous function
-#                        my $local_fcn = $local_expr->Arglist->[0];
-#                        my $name = $model->ParamList->getName("${base_name}_local");
-#                        $local_fcn->Name($name);
-#                        $model->ParamList->set($name, $local_fcn->Expr, 1, '', $local_fcn); 
-#                        # ratelaw argument is the new name
-#                        $rl_type = "Function";
-#                        push @$rl_constants, $name;
-#                    }
-#                    elsif (  Expression::isBuiltIn($local_expr->Arglist->[0]) )
-#                    {   # this is a built-in function
-#                        # need to create parameter that refers to this fcn call..
-#                        my $name = $model->ParamList->getName("${base_name}_local");
-#                        $model->ParamList->set($name, $local_expr, 1);
-#                        my ($param) = $model->ParamList->lookup($name);
-#                        # set ratelaw type and constants
-#                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
-#                        push @$rl_constants, $name;
-#                    }
-#                    else
-#                    {   # function already has a name! this will be the ratelaw argument
-#                        $rl_type = "Function";            
-#                        push @$rl_constants, $local_expr->Arglist->[0];
-#                    }
-#                }
-#                else
-#                {   # non-function expressions
-#                    if ($local_expr->Type eq "VAR")
-#                    {   # ratelaw argument will be the variable name
-#                        $rl_type = "Ele";
-#                        push @$rl_constants, $local_expr->Arglist->[0];
-#                    }
-#                    else
-#                    {   # create new parameter for this expression and an elementary rate law
-#                        my $name = $model->ParamList->getName("${base_name}_local");
-#                        $model->ParamList->set($name, $local_expr, 1, '');
-#                        my ($param) = $model->ParamList->lookup($name);
-#                        # set ratelaw type and constants
-#                        $rl_type = ($param->Type eq "Function") ? "Function" : "Ele";
-#                        push @$rl_constants, $name;
-#                    }
-#                }
-
-#                # create new ratelaw
-#                $local_rl = RateLaw->new( Type=>$rl_type, Constants=>$rl_constants, Factor=>$rl->Factor, TotalRate=>0 );
-#                ++$RateLaw::n_Ratelaw;
-
-#                # add this ratelaw to LocalRatelawsHash
-#                $rl->LocalRatelawsHash->{$fingerprint} = $local_rl;
             }
         }
     }

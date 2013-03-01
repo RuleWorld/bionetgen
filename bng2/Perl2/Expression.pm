@@ -1395,12 +1395,12 @@ sub toCVodeString
         (my $param, $err) = $plist->lookup( $expr->Arglist->[0] );
         if ($param)
         {   # return cvode ref
-            $string = $param->getCVodeName();   
+            $string = $param->getCVodeName();
         }
         else
         {   # parameter not defined, assume it's a local argument and write its name
             $string = $expr->Arglist->[0];
-        }        
+        }
     }
     elsif ( $type eq 'FunctionCall' )
     {
