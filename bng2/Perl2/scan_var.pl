@@ -201,6 +201,11 @@ while ( my $line = <IN> )
 }
 close(IN);
 
+# Require 'end model' directive
+if (!($script =~ /\n\s*end\s+model/)){
+	die "ERROR: scan_var requires model to be enclosed in 'begin model' / 'end model' block.";
+}
+
 # prepare working directory
 if (-d $prefix)
 {   # delete output directory
@@ -221,6 +226,7 @@ my $logfile   = File::Spec->catfile( ${prefix}, "${prefix}.log" );
 
 open(BNGL,">", $scanmodel) or die "Couldn't open $scanmodel for output";
 print BNGL $script;
+print BNGL "\n";
 print BNGL "generate_network({overwrite=>1})\n";
 
 {

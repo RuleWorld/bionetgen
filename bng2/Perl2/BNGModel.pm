@@ -2006,7 +2006,7 @@ sub generate_network
 
     # default params
     my %params = (
-        'continue'     => 0,
+        'continue'     => 1,
         'max_iter'     => 100,
         'max_agg'      => 1e9,
         'max_stoich'   => {},
