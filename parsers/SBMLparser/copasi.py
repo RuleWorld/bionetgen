@@ -22,7 +22,7 @@ def xml2cps():
     
     
 def correctCPS():
-    for element in range(1,410):
+    for element in [8]:
         #inputFile = open('XMLExamples/curated/BIOMD%010i.xml' % element,'r')
         cinputFile = open('XMLExamples/curated/BIOMD%010i.cps' % element,'r')
         content = cinputFile.readlines()
@@ -76,7 +76,7 @@ def correctCPS():
  
 def generateCopasiOutput():
     with open('dummy.tmp','w') as d:
-        for element in range(1,410):
+        for element in [8]:
             call(['/home/proto/Downloads/copasi/bin/CopasiSE','copasiBenchmark/mBIOMD%010i.cps' % element],stdout=d)
             print element
 
@@ -108,7 +108,7 @@ def plotResults(fileResults1,fileResults2):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [4]:
+    for fileNumber in [95]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -127,28 +127,34 @@ def compareResults():
             print 'different times'
             continue
         #print copheaders
+        #print translator
+        #print copheaders
         for element in copheaders:
             if element == 'Time':
                 newCopHeaders.append('time')
             elif element not in translator:
-                print 'herp derp'
+                print 'herp derp',element
                 continue
             else:
                 newCopHeaders.append(translator[element])
         newBngHeaders = [x for x in bngheaders if x in newCopHeaders]
         bNGIndexes = [idx for idx,x in enumerate(bngheaders) if x in newCopHeaders]
         copasiIndexes = range(1,len(bNGIndexes))
-        
+        #print bNGIndexes,copasiIndexes
+        #print copasi[1:5,1]
+        #print bng[1:5,1]
+        print np.sum(pow(copasi[:,copasiIndexes] - bng[:,copasiIndexes],2),axis=0)/np.size(copasi,0)
         score =  np.average(np.sum(pow(copasi[:,copasiIndexes] - bng[:,copasiIndexes],2),axis=0)/np.size(copasi,0))
         print score        
         tested += 1        
         if score < 0.1:
             good += 1
-    print bngheaders,copheaders,copasiIndexes
+        #print newCopHeaders
+    #print bngheaders,copheaders,copasiIndexes
     plotResults(bng[:,copasiIndexes],copasi[:,copasiIndexes])
     print tested,good            
-    print bng[0:2,copasiIndexes]
-    print copasi[0:2,copasiIndexes]
+    #print bng[0:3,copasiIndexes]
+    #print copasi[0:3,copasiIndexes]
         
 def main():
     #xml2cps()
@@ -160,3 +166,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+#16

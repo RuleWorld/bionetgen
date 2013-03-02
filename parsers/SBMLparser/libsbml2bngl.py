@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar  1 16:14:42 2013
+
+@author: proto
+"""
+
 #!/usr/bin/env python
 
 import libsbml
@@ -47,18 +54,64 @@ class SBML2BNGL:
         returnID = identifier if self.useID else self.speciesDictionary[identifier]
         return (returnID,initialConcentration,isConstant,isBoundary,compartment,name)
 
+    
+    def removeFactorFromMath(self,math,reactants):
+        '''
+        walks through a series of * nodes and removes the left reactant factors
+        '''
+        def getPrunnedTree(math,remainderPatterns):
+            while math.getCharacter() == '*' and len(remainderPatterns) > 0:
+                if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
+                    remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
+                    math = math.getRightChild()
+                elif libsbml.formulaToString(math.getRightChild()) in remainderPatterns:
+                    remainderPatterns.remove(libsbml.formulaToString(math.getRightChild()))
+                    math = math.getLeftChild()            
+                else:
+                    if(math.getLeftChild().getCharacter()) == '*':
+                        math.replaceChild(0,getPrunnedTree(math.getLeftChild(),remainderPatterns))
+                    if(math.getRightChild().getCharacter()) == '*':
+                        math.replaceChild(math.getNumChildren() - 1,getPrunnedTree(math.getRightChild(),remainderPatterns))
+                    break
+            return math
+                    
+            
+        remainderPatterns = [x[0] for x in reactants]
+        math = getPrunnedTree(math,remainderPatterns)
+        rateR = libsbml.formulaToString(math) 
+        for element in remainderPatterns:
+            rateR = 'if({0} >0,{1}/{0} ,0)'.format(element,rateR)
+        return rateR
+        
     def __getRawRules(self, reaction):
         if self.useID:
-            reactant = [(reactant.getSpecies(),reactant.getStoichiometry()) for reactant in reaction.getListOfReactants()]
-            product = [(product.getSpecies(),product.getStoichiometry()) for product in reaction.getListOfProducts()]
+            reactant = [(reactant.getSpecies(),reactant.getStoichiometry()) for reactant in reaction.getListOfReactants() if reactant.getSpecies() != 'EmptySet']
+            product = [(product.getSpecies(),product.getStoichiometry()) for product in reaction.getListOfProducts() if product.getSpecies() != 'EmptySet']
         else:
             reactant = [(self.speciesDictionary[reactant.getSpecies()],reactant.getStoichiometry()) for reactant in reaction.getListOfReactants()]
             product = [(self.speciesDictionary[product.getSpecies()],product.getStoichiometry()) for product in reaction.getListOfProducts()]
         kineticLaw = reaction.getKineticLaw()
+        
+        
         parameters = [(parameter.getId(),parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
         math = kineticLaw.getMath()
-        rate = libsbml.formulaToString(math)
         reversible = reaction.getReversible()
+        if reversible:
+            if math.getCharacter() == '-' and math.getNumChildren() > 1:
+                rateL = (self.removeFactorFromMath(math.getLeftChild(),reactant))
+                rateR = (self.removeFactorFromMath(math.getRightChild(),product))
+            else:
+                rateL = "if({0} >= 0 ,{0},0)".format(self.removeFactorFromMath(math,reactant))
+                rateR = "if({0} < 0 ,-{0},0)".format(self.removeFactorFromMath(math,product))
+        else:
+            rateL =(self.removeFactorFromMath(math,reactant))
+            rateR = 0
+                
+                
+
+
+        rate = libsbml.formulaToString(math)
+        
         if not self.useID:
             rate = self.convertToName(rate)
         if reversible:
@@ -67,7 +120,7 @@ class SBML2BNGL:
         #because of the way BNG handles functions
         #for element in reactant:
         #    rate = rate.replace('* %s' % element[0],'',1)
-        return (reactant,product,parameters,rate,reversible)
+        return (reactant,product,parameters,[rateL,rateR],reversible)
         
     def convertToName(self,rate):
         for element in sorted(self.speciesDictionary,key=len,reverse=True):
@@ -138,37 +191,18 @@ class SBML2BNGL:
             
             compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
             functionName = '%s%d()' % (functionTitle,index)
-            if 'delay' in rawRules[3]:
+            if 'delay' in rawRules[3][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
+                
             if rawRules[4]:
-                tmp = rawRules[3].split('-')
-                if len(tmp) == 2:
-                    if tmp[1][-1] == ')':
-                        tmp[0] = tmp[0] + ') #' + rawRules[3] 
-                        tmp[1] = tmp[0][0:string.find(tmp[0],'(')+1]+ tmp[1]
-                    if not tester.eval(tmp[0]) or not tester.eval(tmp[1]):
-                        tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
-                        tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
-                        logMess('WARNING','Cannot reliably separate rate function %s into two, falling back to an if statement' % functionName)
-                        #idx = logMess('ERROR','Splitting the rate law %s into two return an invalid expression' % (functionName))
-                        #print 'mop'
-                    
-                    functions.append(writer.bnglFunction(tmp[0],functionName,rawRules[0],compartmentList,parameterDict))
-                    functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[1],functionName2,rawRules[1],compartmentList,parameterDict))
-                else:
-                    tmp = [0,0]
-                    tmp[0] = "if({0} >= 0 ,{0},0)".format(rawRules[3])
-                    tmp[1] = "if({0} < 0 ,{0},0)".format(rawRules[3])
-                    functions.append(writer.bnglFunction(tmp[0],functionName,rawRules[0],compartmentList,parameterDict))
-                    functionName2 = '%s%dm()' % (functionTitle,index)
-                    functions.append(writer.bnglFunction(tmp[1],functionName2,rawRules[1],compartmentList,parameterDict))
-                    idx = logMess('WARNING','I do not know how to split the rate law {0} into two, falling back to an if statement'.format(functionName))
-
-                    #functions.append(writer.bnglFunction('ERROR CHECK LOG {0}'.format(idx),functionName2,compartmentList))
-                functionName +=', %s' % (functionName2)
-            else: 
-                functions.append(writer.bnglFunction(rawRules[3],functionName,rawRules[0],compartmentList,parameterDict))
+                
+                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict))
+                functionName2 = '%s%dm()' % (functionTitle,index)                
+                functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict))
+                functionName = '{0},{1}'.format(functionName,functionName2)
+            else:
+                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict))
+               
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
         if len(rules) == 0:
             logMess("ERROR","The file contains no reactions")
@@ -177,31 +211,83 @@ class SBML2BNGL:
     def __getRawAssignmentRules(self,arule):
         variable =   arule.getVariable()
         rate = libsbml.formulaToString(arule.getMath())
-        if not self.useID:
-            rate = self.convertToName(rate)
-        return variable,rate
         
-    def getAssignmentRules(self,paramRules=[]):
+        #try to separate into positive and negative sections
+        if arule.getMath().getCharacter() == '-' and arule.getMath().getNumChildren() > 1:
+            rateL = libsbml.formulaToString(arule.getMath().getLeftChild())
+            if(arule.getMath().getRightChild().getCharacter()) == '*':
+                if libsbml.formulaToString(arule.getMath().getRightChild().getLeftChild()) == variable:
+                    rateR = libsbml.formulaToString(arule.getMath().getRightChild().getRightChild())
+                elif libsbml.formulaToString(arule.getMath().getRightChild().getRightChild()) == variable:
+                    rateR = libsbml.formulaToString(arule.getMath().getRightChild().getLeftChild())
+                else:
+                    rateR = 'if({0} >0,{1}/{0} ,0)'.format(variable,libsbml.formulaToString(arule.getMath().getRightChild()))
+            else:
+                rateR = 'if({0} >0,{1}/{0} ,0)'.format(variable,libsbml.formulaToString((arule.getMath().getRightChild())))
+        else:
+            rateL = libsbml.formulaToString(arule.getMath())
+            rateR = '0'
+        if not self.useID:
+            rateL = self.convertToName(rateL)
+            rateR = self.convertToName(rateR)
+        #print arule.isAssignment(),arule.isRate()
+        return variable,[rateL,rateR],arule.isAssignment(),arule.isRate()
+        
+    def getAssignmentRules(self,paramRules,parameters,molecules):
+        
         arules = []
         aParameters = {}
         zRules = paramRules
+        removeParameters = []
+        newSeedSpecies = []
+        artificialReactions = []
         for arule in self.model.getListOfRules():
             rawArule = self.__getRawAssignmentRules(arule)
             #newRule = rawArule[1].replace('+',',').strip()
-            if rawArule[0] not in paramRules:
-                ruleName = 'ar' + rawArule[0]
+            if rawArule[3] == True:
+                rateLaw1 = rawArule[1][0]
+                rateLaw2 = rawArule[1][1]
+                arules.append(writer.bnglFunction(rateLaw1,'arRate{0}'.format(rawArule[0]),[]))
+                arules.append(writer.bnglFunction(rateLaw2,'armRate{0}'.format(rawArule[0]),[]))
+                artificialReactions.append(writer.bnglReaction([],[[rawArule[0],1]],'{0},{1}'.format('arRate{0}'.format(rawArule[0]),'armRate{0}'.format(rawArule[0])),self.tags,{},isCompartments=True,comment = '#rateLaw'))
                 
+                for element in parameters:
+                    if re.search('^{0}\s'.format(rawArule[0]),element):
+                        removeParameters.append(element)
             else:
-                ruleName = rawArule[0]
-                zRules.remove(rawArule[0])
-            arules.append(writer.bnglFunction(rawArule[1],ruleName,[]))
-            aParameters[rawArule[0]] = 'ar' + rawArule[0]
+                if rawArule[0] not in paramRules:
+                    ruleName = 'ar' + rawArule[0]
+                else:
+                    ruleName = rawArule[0]
+                    zRules.remove(rawArule[0])
+                arules.append(writer.bnglFunction(rawArule[1][0],ruleName,[]))
+                aParameters[rawArule[0]] = 'ar' + rawArule[0]
+            '''
+            elif rawArule[2] == True:
+                for parameter in parameters:
+                    if re.search('^{0}\s'.format(rawArule[0]),parameter):
+                        print '////',rawArule[0]
+            '''
+
+            
             #arules.append('%s = %s' %(rawArule[0],newRule))
-        return aParameters,arules,zRules
+        return aParameters,arules,zRules,artificialReactions,removeParameters
 
     def getParameters(self):
-        return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters() if parameter.getValue() != 0], [x.getId() for x in self.model.getListOfParameters() if x.getValue() == 0]
+        parameters = []
+        zparam = []
+        for parameter in self.model.getListOfParameters():
+            parameterSpecs = (parameter.getId(),parameter.getValue(),parameter.getConstant())
+            #reserved keywords
+            if parameterSpecs[0] == 'e':
+                parameterSpecs = ('are',parameterSpecs[1])
+            if parameterSpecs[1] == 0:
+                zparam.append(parameterSpecs[0])
+            else:
+                parameters.append('{0} {1}'.format(parameterSpecs[0], parameterSpecs[1]))
 
+        #return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters() if parameter.getValue() != 0], [x.getId() for x in self.model.getListOfParameters() if x.getValue() == 0]
+        return parameters,zparam
 
     def getSpecies(self,translator = {}):
 
@@ -223,7 +309,7 @@ class SBML2BNGL:
             temp = '$' if rawSpecies[2] != 0 else ''
             tmp = translator[str(rawSpecies[0])] if rawSpecies[0] in translator \
                 else rawSpecies[0] + '()'
-            if rawSpecies[1]>0:
+            if rawSpecies[1]>=00:
                 #tmp= translator[rawSpecies[0]].toString()
                 #print translator[rawSpecies[0]].toString()
                 tmp2 = temp
@@ -231,8 +317,8 @@ class SBML2BNGL:
                     tmp2 = (self.tags[rawSpecies[0]])
                 speciesText.append('%s:%s%s %f' % (tmp2,temp,str(tmp),rawSpecies[1])) 
             observablesText.append('Species %s %s #%s' % (rawSpecies[0], tmp,rawSpecies[5]))
-        moleculesText.append('NullSpecies()')
-        speciesText.append('$NullSpecies() 1')
+        #moleculesText.append('NullSpecies()')
+        #speciesText.append('$NullSpecies() 1')
         return moleculesText,speciesText,observablesText
         
 
@@ -455,28 +541,40 @@ def selectReactionDefinitions(bioNumber):
     return fileName,useID
 
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
+    
+    useArtificialRules = False
+    
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
     translator = {}
-    print evaluation(len(parser.getSpecies()[0]),translator)
+    #print evaluation(len(parser.getSpecies()[0]),translator)
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     
-    aParameters,aRules,nonzparam = parser.getAssignmentRules(zparam)
+    aParameters,aRules,nonzparam,artificialRules,removeParams = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
+    param = [x for x in param if x not in removeParams]
+    species.extend(removeParams)
     functions = []
     functions.extend(aRules)
     _,rules,tfunc = parser.getReactions(translator,True)
     functions.extend(tfunc) 
     functions.extend(parser.getSBMLFunctions())
     #functions.extend(aRules)
-    
-    writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
+    if useArtificialRules or len(artificialRules) > 0:
+        rules =['#{0}'.format(x) for x in rules]
+        artificialRules.extend(rules)
+        writer.finalText(param,molecules,species,observables,artificialRules,functions,compartments,outputFile)
+    else:
+        artificialRules =['#{0}'.format(x) for x in artificialRules]
+        rules.extend(artificialRules)
+        
+        writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
     if len(logMess.log) > 0:
         with open(outputFile + '.log', 'w') as f:
@@ -511,7 +609,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #208,236
-    for bioNumber in range(1,410):
+    for bioNumber in [95]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1

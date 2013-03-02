@@ -21,17 +21,19 @@ def main():
                 errorFiles.append(x)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
     validFiles = [x for x in bnglFiles if x not in errorFiles]
-    skip = ['334','225','332','105','293','333','337']
+    skip = ['334','225','332','105','293','333','337','18']
     with open('executionTestErrors' + '.log', 'w') as f:
         subprocess.call(['rm','./*net'])
         for idx,bnglFile in enumerate(sorted(validFiles)):
+            #if '100.' not in bnglFile:
+            #    continue
             print bnglFile,
             if len([x for x in skip if x in bnglFile]) > 0: 
                 continue
             with open('temp.tmp', "w") as outfile:
                 d = open('dummy.tmp','w')
                 
-                result = subprocess.call(['/opt/RuleBender-2.0.271-lin64/BioNetGen-2.2.2/BNG2.pl', './raw/{0}'.format(bnglFile)],stderr=outfile,stdout=d)
+                result = subprocess.call(['bngdev', './raw/{0}'.format(bnglFile)],stderr=outfile,stdout=d)
                 d.close()
             if  result > 0:
                 
