@@ -8,12 +8,12 @@ from pyparsing import commaSeparatedList as csl
 def evaluatePiecewiseFunction(function):
     pass
 
-def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True):
+def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True,comment=''):
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
     if len(reactant) == 0 or (len(reactant) == 1 and reactant[0][1] == 0):
-        finalString += 'NullSpecies() '
+        finalString += '0 '
     for index in range(0,len(reactant)):
         tag = ''
         if reactant[index][0] in tags and isCompartments:
@@ -26,7 +26,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     else:
         finalString += ' -> '
     if len(product) == 0:
-        finalString += 'NullSpecies() '
+        finalString += '0 '
     for index in range(0,len(product)):
         tag = ''
         if product[index][0] in tags and isCompartments:
@@ -34,7 +34,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
         finalString +=  printTranslate(product[index],tag,translator) 
         if index < len(product) -1:
             finalString += ' + '
-    finalString += ' ' + rate
+    finalString += ' ' + rate + ' ' + comment
     return finalString
     
 
@@ -138,7 +138,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
         parameters = csl.parseString(mrule)
         result =  parsePieceWiseFunction(parameters)
         return rule[0:init-len('piecewise(')] + result + rule[init+end:]        
-    
     rule = changeToBNGL(['pow','root'],rule,powParse)
     rule = changeToBNGL(['gt','lt','leq','geq','eq'],rule,compParse)
     rule = changeToBNGL(['and','or'],rule,compParse)
@@ -172,6 +171,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     
     #change references to time for time()    
     tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1 time() \3',tmp)
+    tmp =re.sub(r'(\W|^)(Time)(\W|$)',r'\1 time() \3',tmp)
     #BNGL has ^ for power. 
     
     finalString = '%s = %s' % (functionTitle,tmp)
@@ -185,7 +185,24 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     finalString = re.sub(r'(\W|^)(t)(\W|$)',r'\1 time() \3',finalString)
     #pi
     finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\1 3.141592 \3',finalString)
-    print reactants,finalString
+    #print reactants,finalString
+    #log for log 10
+    finalString = re.sub(r'(\W|^)log\(',r'\1 log10(',finalString)
+    #reserved keyword: e
+    finalString = re.sub(r'(\W|^)(e)(\W|$)',r'\1 are \3',finalString)
+    
+    
+    #removing mass-action elements
+    
+    tmp = finalString
+    #print finalString,reactants
+    #for reactant in reactants:
+    #    finalString = re.sub(r'(\W|^)({0}\s+\*)'.format(reactant[0]),r'\1',finalString)
+    #    finalString = re.sub(r'(\W|^)(\*\s+{0}(\s|$))'.format(reactant[0]),r'\1',finalString)
+    #print finalString
+    
+    #if finalString != tmp:
+    #    logMess('WARNING','Removed mass action elements from )
     return finalString
 
     
@@ -200,8 +217,8 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('generate_network();\n')
-    output.write('simulate({method=>ode,t_end=>100,n_steps=>100,print_functions=>1});')
+    output.write('generate_network(overwrite=>1);\n')
+    output.write('simulate({method=>ode,t_end=>100,n_steps=>100});')
     #output.write('writeXML()\n')
     
 def sectionTemplate(name,content):
@@ -211,3 +228,4 @@ def sectionTemplate(name,content):
     section += 'end %s\n' % name
     return section
 
+#341,6,12
