@@ -74,7 +74,9 @@ class SBML2BNGL:
                         math.replaceChild(math.getNumChildren() - 1,getPrunnedTree(math.getRightChild(),remainderPatterns))
                     break
             return math
-                    
+            
+        
+            
         #change so that it uses what is in speciesDictionary
         remainderPatterns = [x[0] for x in reactants]
         math = getPrunnedTree(math,remainderPatterns)
@@ -92,23 +94,24 @@ class SBML2BNGL:
             product = [(self.speciesDictionary[product.getSpecies()],product.getStoichiometry()) for product in reaction.getListOfProducts()]
         kineticLaw = reaction.getKineticLaw()
         
-        
+        rReactant = [(x.getSpecies(),1) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
+        rProduct = [(x.getSpecies(),1) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
+        #rReactant = [reactant for reactant in reaction.getListOfReactants()]
         parameters = [(parameter.getId(),parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
         math = kineticLaw.getMath()
         reversible = reaction.getReversible()
         if reversible:
             if math.getCharacter() == '-' and math.getNumChildren() > 1:
-                rateL = (self.removeFactorFromMath(math.getLeftChild(),reactant))
-                rateR = (self.removeFactorFromMath(math.getRightChild(),product))
+                rateL = (self.removeFactorFromMath(math.getLeftChild(),rReactant))
+                rateR = (self.removeFactorFromMath(math.getRightChild(),rProduct))
             else:
-                rateL = "if({0} >= 0 ,{0},0)".format(self.removeFactorFromMath(math,reactant))
-                rateR = "if({0} < 0 ,-{0},0)".format(self.removeFactorFromMath(math,product))
+                rateL = "if({0} >= 0 ,{0},0)".format(self.removeFactorFromMath(math,rReactant))
+                rateR = "if({0} < 0 ,-{0},0)".format(self.removeFactorFromMath(math,rProduct))
         else:
-            rateL =(self.removeFactorFromMath(math,reactant))
+            rateL =(self.removeFactorFromMath(math,rReactant))
             rateR = '0'
                 
                 
-
         
         if not self.useID:
             rateL = self.convertToName(rateL)
@@ -551,8 +554,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    #translator = {}
+    #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    translator = {}
     #print evaluation(len(parser.getSpecies()[0]),translator)
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
@@ -623,7 +626,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #208,236
-    for bioNumber in [48]:
+    for bioNumber in [5]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
