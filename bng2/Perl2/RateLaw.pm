@@ -190,18 +190,29 @@ sub newRateLaw
 
         my @local_args = ();
         # determine ratelaw type
-        if ( $param->Type eq "Constant"  or  $param->Type eq "ConstantExpression" )
-        {   # this is an elementary expression
-            $rate_law_type = "Ele";
+        if (defined $param->Type)
+        {
+            if ( $param->Type eq "Constant"  or  $param->Type eq "ConstantExpression" )
+            {   # this is an elementary expression
+                $rate_law_type = "Ele";
+            }
+            elsif ( $param->Type eq "Function" )
+            {   # this is a function expression..            
+                # check for local functions
+                if ( $totalRate   and  $expr->checkLocalDependency($model->ParamList) )
+                {   return undef, "TotalRate keyword is not compatible with local functions.";   }
+                
+                $rate_law_type = "Function";
+                push @local_args, @{$param->Ref->Args};
+            }
+            else
+            {   # we don't know how to handle this type of ratelaw
+                return undef, sprintf("Unable to construct Ratelaw with '%s' type parameter.", $param->Type);
+            }
         }
         else
-        {   # this is a function expression..            
-            # check for local functions
-            if ( $totalRate   and  $expr->checkLocalDependency($model->ParamList) )
-            {   return undef, "TotalRate keyword is not compatible with local functions.";   }
-            
-            $rate_law_type = "Function";
-            push @local_args, @{$param->Ref->Args};
+        {   # this parameter is undefined, cannot determine the time
+            return undef, sprintf("Undefined parameter '%s' is referenced in Ratelaw.", $name);
         }
         
         # put name of rate parameter (or fcn) on the constants array
