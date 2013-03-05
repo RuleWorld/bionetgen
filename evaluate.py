@@ -21,7 +21,7 @@ def main():
                 errorFiles.append(x)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
     validFiles = [x for x in bnglFiles if x not in errorFiles]
-    skip = ['334','225','332','105','293','333','337','18']
+    skip = ['334','225','332','105','293','333','337','18','409']
     with open('executionTestErrors' + '.log', 'w') as f:
         subprocess.call(['rm','./*net'])
         for idx,bnglFile in enumerate(sorted(validFiles)):
@@ -45,8 +45,8 @@ def main():
                     tag = 'cvode'
                 elif 'time' in ','.join(lines):
                     print '\\\\\\',bnglFile
-                elif 'Incorrect number of arguments' in ','.join(lines):
-                    print '[[]]',bnglFile
+                #elif 'Incorrect number of arguments' in ','.join(lines):
+                #    print '[[]]',bnglFile
                 else:
                     print '---',bnglFile
                     tag = lines

@@ -210,7 +210,8 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output = open(fileName,'w')
     output.write('begin model\n')
     output.write(sectionTemplate('parameters',param))
-    output.write(sectionTemplate('compartments',compartments))          
+    if len(compartments) > 0:
+        output.write(sectionTemplate('compartments',compartments))          
     output.write(sectionTemplate('molecule types',molecules))
     output.write(sectionTemplate('seed species',species))
     output.write(sectionTemplate('observables',observables))

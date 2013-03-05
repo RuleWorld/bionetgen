@@ -22,7 +22,7 @@ def xml2cps():
     
     
 def correctCPS():
-    for element in [8]:
+    for element in range(1,410):
         #inputFile = open('XMLExamples/curated/BIOMD%010i.xml' % element,'r')
         cinputFile = open('XMLExamples/curated/BIOMD%010i.cps' % element,'r')
         content = cinputFile.readlines()
@@ -40,6 +40,13 @@ def correctCPS():
         for species in parser.model.getListOfSpecies():
             speciesList.append((parser.getRawSpecies(species)[5],compartmentList[parser.getRawSpecies(species)[4]],parser.getRawSpecies(species)[0]))
             speciesDict[speciesList[-1][0]] = speciesList[-1][2]
+            
+        param,zparam = parser.getParameters()
+        molecules,_,_ = parser.getSpecies({})
+        _,_,_,_,removeParams = parser.getAssignmentRules(zparam,param,molecules)  
+        
+        
+        
         f = open('copasiBenchmark/speciesDict{0}.dump'.format(element),'w')
         pickle.dump(speciesDict,f)
         for idx,line in enumerate(content):
@@ -64,9 +71,11 @@ def correctCPS():
           <Table printTitle="1"> \n\
             <Object cn="CN=Root,Model={0},Reference=Time"/> \n'.format(parser.model.getName()))
                 for species in speciesList:
-                    newContent.append('<Object cn="CN=Root,Model={1},Vector=Compartments[{2}],Vector=Metabolites[{0}],Reference=Concentration"/> \n'.format(species[0],parser.model.getName(),species[1]))
+                    newContent.append('\t<Object cn="CN=Root,Model={1},Vector=Compartments[{2}],Vector=Metabolites[{0}],Reference=Concentration"/> \n'.format(species[0],parser.model.getName(),species[1]))
+                
+                for artificialSpecies in removeParams:
+                    newContent.append('\t<Object cn="CN=Root,Model={1},Vector=Values[{0}],Reference=Value"/> \n'.format(artificialSpecies.split(' ')[0],parser.model.getName()))
                 newContent.append('</Table> \n</Report>\n')
-          
             else:
                 newContent.append(content[idx])
                     
@@ -76,7 +85,7 @@ def correctCPS():
  
 def generateCopasiOutput():
     with open('dummy.tmp','w') as d:
-        for element in [8]:
+        for element in range(1,410):
             call(['/home/proto/Downloads/copasi/bin/CopasiSE','copasiBenchmark/mBIOMD%010i.cps' % element],stdout=d)
             print element
 
@@ -108,15 +117,15 @@ def plotResults(fileResults1,fileResults2):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [95]:
+    for fileNumber in range(1,410):
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
         bngheaders,bng = loadResults('output{0}.gdat'.format(fileNumber),' ')
         with open('copasiBenchmark/speciesDict{0}.dump'.format(fileNumber)) as f:
             translator = pickle.load(f)
-            
         newCopHeaders = []
+        newBngHeaders = []
         if len(copasi) < 2:
             print 'copasi pass'
             continue
@@ -126,32 +135,45 @@ def compareResults():
         elif np.size(copasi,0) != np.size(bng,0):
             print 'different times'
             continue
-        #print copheaders
         #print translator
         #print copheaders
-        for element in copheaders:
+        for idx,element in enumerate(copheaders):
             if element == 'Time':
-                newCopHeaders.append('time')
-            elif element not in translator:
-                print 'herp derp',element
                 continue
-            else:
-                newCopHeaders.append(translator[element])
-        newBngHeaders = [x for x in bngheaders if x in newCopHeaders]
-        bNGIndexes = [idx for idx,x in enumerate(bngheaders) if x in newCopHeaders]
-        copasiIndexes = range(1,len(bNGIndexes))
+                #newCopHeaders.append('time')
+            elif element not in translator:
+                
+                nelement = element.split(' ')[0]  
+                if nelement in bngheaders and nelement != '#':
+                    if not (bng[-1,bngheaders.index(element.split(' ')[0])-1] ==0 and copasi[-1,idx] != 0):
+                            newCopHeaders.append(idx)
+                            newBngHeaders.append(bngheaders.index(element.split(' ')[0])-1)
+                    else:
+                        print 'herp derp',element
+                continue
+            elif translator[element] in bngheaders:
+                if not (bng[-1,bngheaders.index(translator[element])-1] ==0 and copasi[-1,idx] > 1e-5):
+                    newCopHeaders.append(idx)
+                    newBngHeaders.append(bngheaders.index(translator[element])-1)
+        #newBngHeaders = [x for x in bngheaders if x in newCopHeaders]
+        #bNGIndexes = [idx for idx,x in enumerate(bngheaders) if x in newCopHeaders]
+        #copasiIndexes = range(1,len(bNGIndexes))
+        #print 
         #print bNGIndexes,copasiIndexes
-        #print copasi[1:5,1]
-        #print bng[1:5,1]
-        print np.sum(pow(copasi[:,copasiIndexes] - bng[:,copasiIndexes],2),axis=0)/np.size(copasi,0)
-        score =  np.average(np.sum(pow(copasi[:,copasiIndexes] - bng[:,copasiIndexes],2),axis=0)/np.size(copasi,0))
-        print score        
+        #print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)
+        score =  np.average(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
+        
+        mini = np.min(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
+        if score>1e-3 and mini<1e-5:
+            print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)       
         tested += 1        
         if score < 0.1:
             good += 1
         #print newCopHeaders
     #print bngheaders,copheaders,copasiIndexes
-    plotResults(bng[:,copasiIndexes],copasi[:,copasiIndexes])
+    #print bng[0:3,newBngHeaders]
+    #print copasi[0:3,newCopHeaders]    
+    plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])
     print tested,good            
     #print bng[0:3,copasiIndexes]
     #print copasi[0:3,copasiIndexes]
