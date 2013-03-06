@@ -270,24 +270,32 @@ void free_Elt_array(Elt_array* earray) {
  */
 map<string, double*> init_param_map(Elt_array*& rates, Group*& spec_groups) {
 	map<string, double*> result_map;
-	for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
-		result_map[curr->name] = &curr->total_val;
-	for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
-		result_map[curr->name] = &curr->val;
+	if (spec_groups){
+		for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
+			result_map[curr->name] = &curr->total_val;
+	}
+	if (rates){
+		for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
+			result_map[curr->name] = &curr->val;
+	}
 	return result_map;
 }
 
 map<string, int> init_param_index_map(Elt_array*& rates) {
 	map<string, int> result_map;
-	for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
-		result_map[curr->name] = curr->index;
+	if (rates){
+		for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
+			result_map[curr->name] = curr->index;
+	}
 	return result_map;
 }
 
 map<string, int> init_observ_index_map(Group*& spec_groups) {
 	map<string, int> result_map;
-	for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
-		result_map[curr->name] = curr->index;
+	if (spec_groups){
+		for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
+			result_map[curr->name] = curr->index;
+	}
 	return result_map;
 }
 
@@ -562,13 +570,16 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 //   		strcpy(name_char_ptr,func_name.c_str());
 
 			// create a new parameter with the name 'func_name'
-			Elt* new_elt = new_Elt((char*)func_name.c_str(),parser.Eval(),rates->n_elt+1);
+			Elt* new_elt;
+			if (rates) new_elt = new_Elt((char*)func_name.c_str(),parser.Eval(),rates->n_elt+1);
+			else new_elt = new_Elt((char*)func_name.c_str(),parser.Eval(),1);
 			new_elt->next = NULL;
 			network.is_func_map[func_name] = true;
 
 			// push index of new parameter into var_parameters vector
 			// check that parameter index (in var_parameters) matches function index
-			network.var_parameters.push_back(rates->n_elt+1);
+			if (rates) network.var_parameters.push_back(rates->n_elt+1);
+			else network.var_parameters.push_back(1);
 			if (network.functions.size() != network.var_parameters.size()){
 				cout << "ERROR: Function and variable parameter indices do not match." << endl;
 				exit(1);
@@ -578,24 +589,29 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			// THIS PART OF THE CODE COULD PROBABLY BE IMPROVED --LAH
 			//////////////////////////////////////////////////////////
 
-			// allocate space in elt_array **elt (double the space), if necessary
-			if (num_free_spaces == 0) {
-				Elt** elt_temp = new Elt*[2*rates->n_elt]; // This is deleted at the end of run_network
-				for (int q = 0; q < rates->n_elt; q++){
-					elt_temp[q] = rates->elt[q];
+			if (rates){
+				// allocate space in elt_array **elt (double the space), if necessary
+				if (num_free_spaces == 0) {
+					Elt** elt_temp = new Elt*[2*rates->n_elt]; // This is deleted at the end of run_network
+					for (int q = 0; q < rates->n_elt; q++){
+						elt_temp[q] = rates->elt[q];
+					}
+					delete[] rates->elt;
+					rates->elt = elt_temp;
+					num_free_spaces = rates->n_elt;
 				}
-				delete[] rates->elt;
-				rates->elt = elt_temp;
-				num_free_spaces = rates->n_elt;
-			}
 
-			// push and link parameter into elt_array
-			rates->elt[rates->n_elt++] = new_elt;
-			Elt* curr = rates->list;
-			Elt* prev = curr;
-			for (; curr != NULL; prev = curr, curr = curr->next);
-			prev->next = new_elt;
-			num_free_spaces--;
+				// push and link parameter into elt_array
+				rates->elt[rates->n_elt++] = new_elt;
+				Elt* curr = rates->list;
+				Elt* prev = curr;
+				for (; curr != NULL; prev = curr, curr = curr->next);
+				prev->next = new_elt;
+				num_free_spaces--;
+			}
+			else{
+				rates = new_Elt_array(new_elt);
+			}
 
 			// push new parameter into parameter map
 			param_map[new_elt->name] = &new_elt->val;
@@ -711,7 +727,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 				// Store the value
 				val = parser.val;
 				// If the element is a parameter, store it
-				if (name == "parameters"){
+				if (strcmp(name,"parameters") == 0){
 					network.parameters.push_back(parser);
 				}
 				/////////////////////////
@@ -4589,7 +4605,8 @@ int select_next_rxn() {
     while (1) {
 
         // generate random number between 0 and a_tot
-    	while ( (f = RANDOM(0.0, GSP.a_tot)) == 0.0 ); // NOTE: Won't get here if GSP.a_tot = 0.0, so no infinite loop.
+    	while ( (f = RANDOM(0.0, GSP.a_tot)) == 0.0 )
+    		; // NOTE: Won't get here if GSP.a_tot = 0.0, so no infinite loop.
         // find rxn corresponding to random sample
         a_sum = 0.0;
         //
