@@ -218,8 +218,8 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('generate_network(overwrite=>1);\n')
-    output.write('simulate({method=>ode,t_end=>100,n_steps=>100});')
+    output.write('generate_network({overwrite=>1})\n')
+    output.write('simulate({method=>ode,t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     
 def sectionTemplate(name,content):
