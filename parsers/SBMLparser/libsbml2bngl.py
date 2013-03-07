@@ -57,7 +57,7 @@ class SBML2BNGL:
     
     def removeFactorFromMath(self,math,reactants):
         '''
-        walks through a series of * nodes and removes the left reactant factors
+        walks through a series of * nodes and removes the remainder reactant factors
         '''
         def getPrunnedTree(math,remainderPatterns):
             while math.getCharacter() == '*' and len(remainderPatterns) > 0:
@@ -76,8 +76,6 @@ class SBML2BNGL:
             return math
             
         
-            
-        #change so that it uses what is in speciesDictionary
         remainderPatterns = [x[0] for x in reactants]
         math = getPrunnedTree(math,remainderPatterns)
         rateR = libsbml.formulaToString(math) 
@@ -215,7 +213,7 @@ class SBML2BNGL:
         rate = libsbml.formulaToString(arule.getMath())
         
         #try to separate into positive and negative sections
-        if arule.getMath().getCharacter() == '-' and arule.getMath().getNumChildren() > 1:
+        if arule.getMath().getCharacter() == '-' and arule.getMath().getNumChildren() > 1 and not arule.isAssignment():
             rateL = libsbml.formulaToString(arule.getMath().getLeftChild())
             if(arule.getMath().getRightChild().getCharacter()) == '*':
                 if libsbml.formulaToString(arule.getMath().getRightChild().getLeftChild()) == variable:
@@ -232,6 +230,7 @@ class SBML2BNGL:
         if not self.useID:
             rateL = self.convertToName(rateL)
             rateR = self.convertToName(rateR)
+            variable = self.convertToName(variable).strip()
         #print arule.isAssignment(),arule.isRate()
         return variable,[rateL,rateR],arule.isAssignment(),arule.isRate()
         
@@ -243,6 +242,7 @@ class SBML2BNGL:
         removeParameters = []
         newSeedSpecies = []
         artificialReactions = []
+        artificialObservables = {}
         for arule in self.model.getListOfRules():
             rawArule = self.__getRawAssignmentRules(arule)
             #newRule = rawArule[1].replace('+',',').strip()
@@ -260,7 +260,15 @@ class SBML2BNGL:
                         if re.search('^{0}\s'.format(rawArule[0]),element):
                             removeParameters.append(element)
                         
+            elif rawArule[2] == True:
+                artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[])
+                if rawArule[0] in zRules:
+                    zRules.remove(rawArule[0])
+                #if rawArule[0] in paramRules:
+                #    removeParameters.append('{0} 0'.format(rawArule[0]))
+            
             else:
+                        
                 if rawArule[0] not in paramRules:
                     ruleName = 'ar' + rawArule[0]
                 else:
@@ -276,7 +284,7 @@ class SBML2BNGL:
             '''
 
             #arules.append('%s = %s' %(rawArule[0],newRule))
-        return aParameters,arules,zRules,artificialReactions,removeParameters
+        return aParameters,arules,zRules,artificialReactions,removeParameters,artificialObservables
 
     def getParameters(self):
         parameters = []
@@ -546,6 +554,13 @@ def selectReactionDefinitions(bioNumber):
             break
     return fileName,useID
 
+
+def resolveDependencies(dictionary,key):
+    counter = 0
+    for element in dictionary[key]:
+        counter += resolveDependencies(dictionary,element)
+    return len(dictionary[key]) + counter    
+    
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
     
     useArtificialRules = False
@@ -560,11 +575,10 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
-    
-    aParameters,aRules,nonzparam,artificialRules,removeParams = parser.getAssignmentRules(zparam,param,molecules)
+    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
-        
+
     param = [x for x in param if x not in removeParams]
     
     if len(molecules) == 0:
@@ -575,11 +589,46 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     for x in removeParams:
         species.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
     functions = []
+    
+    for key in artificialObservables:
+        flag = -1
+        for idx,observable in enumerate(observables):
+            if 'Species {0} {0}()'.format(key) in observable:
+                flag = idx
+        if flag != -1:
+            observables.pop(flag)
+        functions.append(artificialObservables[key])
+        flag = -1
+        if '{0}()'.format(key) in molecules:
+            flag = molecules.index('{0}()'.format(key))
+
+        if flag != -1:
+            molecules.pop(flag)
     functions.extend(aRules)
     _,rules,tfunc = parser.getReactions(translator,True)
     functions.extend(tfunc) 
     functions.extend(parser.getSBMLFunctions())
-    
+    dependencies = [0 for x in functions]
+    dependencies2 = {}
+    for idx in range(0,len(functions)):
+        dependencies2[functions[idx].split('=')[0][:-3]] = []
+        for key in artificialObservables:
+            oldfunc = functions[idx]
+            functions[idx] = (re.sub(r'(\W|^)({0})([^\w(]|$)'.format(key),r'\1\2()\3',functions[idx]))
+            if oldfunc != functions[idx]:
+                dependencies2[functions[idx].split('=')[0][:-3]].append(key)
+        
+                
+    for counter in range(0,3):
+        for element in dependencies2:
+            if len(dependencies2[element]) > counter:
+                dependencies2[element].extend(dependencies2[dependencies2[element][counter]])
+                
+    fd = []
+    for function in functions:
+        fd.append([function,resolveDependencies(dependencies2,function.split('=')[0][:-3])])
+    fd = sorted(fd,key= lambda rule:rule[1])
+    functions = [x[0] for x in fd]
     if len(param) == 0:
         param.append('dummy 0')
     #functions.extend(aRules)
@@ -593,6 +642,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         
         writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
+    
     if len(logMess.log) > 0:
         with open(outputFile + '.log', 'w') as f:
             for element in logMess.log:
@@ -626,7 +676,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #208,236
-    for bioNumber in [5]:
+    for bioNumber in range(1,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1

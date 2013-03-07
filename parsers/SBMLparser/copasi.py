@@ -121,6 +121,7 @@ def compareResults():
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
+        copheaders = [x.replace('-','_').strip() for x in copheaders]
         bngheaders,bng = loadResults('output{0}.gdat'.format(fileNumber),' ')
         with open('copasiBenchmark/speciesDict{0}.dump'.format(fileNumber)) as f:
             translator = pickle.load(f)
@@ -136,7 +137,6 @@ def compareResults():
             print 'different times'
             continue
         #print translator
-        #print copheaders
         for idx,element in enumerate(copheaders):
             if element == 'Time':
                 continue
@@ -172,8 +172,10 @@ def compareResults():
         #print newCopHeaders
     #print bngheaders,copheaders,copasiIndexes
     #print bng[0:3,newBngHeaders]
-    #print copasi[0:3,newCopHeaders]    
-    plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])
+    #print copasi[0:3,newCopHeaders]
+#    print bng[:,newBngHeaders]
+#    print copasi[:,newCopHeaders]
+    #plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])
     print tested,good            
     #print bng[0:3,copasiIndexes]
     #print copasi[0:3,copasiIndexes]
