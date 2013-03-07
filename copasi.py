@@ -100,7 +100,10 @@ def loadResults(fileName,split):
             
             for line in dataInput:
                  nline = re.sub('\s+',' ',line.strip()).split(' ')
-                 timeCourse.append([float(x) for x in nline])            
+                 try:
+                     timeCourse.append([float(x) for x in nline])     
+                 except:
+                     print '++++',nline
         return headers,np.array(timeCourse)
     except IOError:
         print 'no file',fileName
@@ -117,7 +120,7 @@ def plotResults(fileResults1,fileResults2):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in range(1,410):
+    for fileNumber in range(1,12):
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -164,8 +167,8 @@ def compareResults():
         score =  np.average(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
         
         mini = np.min(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
-        if score>1e-3 and mini<1e-5:
-            print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)       
+        #if score>1e-3 and mini<1e-5:
+        #    print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)       
         tested += 1        
         if score < 0.1:
             good += 1
@@ -175,7 +178,7 @@ def compareResults():
     #print copasi[0:3,newCopHeaders]
 #    print bng[:,newBngHeaders]
 #    print copasi[:,newCopHeaders]
-    #plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])
+    plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])
     print tested,good            
     #print bng[0:3,copasiIndexes]
     #print copasi[0:3,copasiIndexes]

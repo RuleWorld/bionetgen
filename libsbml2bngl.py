@@ -555,10 +555,13 @@ def selectReactionDefinitions(bioNumber):
     return fileName,useID
 
 
-def resolveDependencies(dictionary,key):
+def resolveDependencies(dictionary,key,idx):
     counter = 0
     for element in dictionary[key]:
-        counter += resolveDependencies(dictionary,element)
+        if idx < 20:
+            counter += resolveDependencies(dictionary,element,idx+1)
+        else:
+            counter += 1
     return len(dictionary[key]) + counter    
     
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
@@ -583,13 +586,24 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     
     if len(molecules) == 0:
         compartments = []
-    tags = '@{0}'.format(compartments[0].split(' ')[0]) if len(compartments) == 1 else ''
+    tags = '@{0}'.format(compartments[0].split(' ')[0]) if len(compartments) == 1 else '@cell'
     molecules.extend([x.split(' ')[0] for x in removeParams])
     observables.extend('Species {0} {0}'.format(x.split(' ')[0]) for x in removeParams)
     for x in removeParams:
         species.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
     functions = []
+    idxArray = []
     
+    ##Comment out those parameters that are defined with assignment rules
+    ##TODO: I think this is correct, but it may need to be checked
+    for idx,parameter in enumerate(param):
+        for key in artificialObservables:
+            if re.search('^{0}\s'.format(key),parameter)!= None:
+                idxArray.append(idx)
+    
+    for element in idxArray:
+        param[element] = '#' + param[element]
+        
     for key in artificialObservables:
         flag = -1
         for idx,observable in enumerate(observables):
@@ -604,34 +618,49 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
 
         if flag != -1:
             molecules.pop(flag)
+        
+        flag = -1
+        for idx,specie in enumerate(species):
+            if ':{0}('.format(key) in specie:
+                flag = idx
+        if flag != -1:
+            species[flag] = '#' + species[flag]
     functions.extend(aRules)
     _,rules,tfunc = parser.getReactions(translator,True)
     functions.extend(tfunc) 
-    functions.extend(parser.getSBMLFunctions())
-    dependencies = [0 for x in functions]
+    sbmlfunctions = parser.getSBMLFunctions()
+    functions.extend(sbmlfunctions)
     dependencies2 = {}
     for idx in range(0,len(functions)):
-        dependencies2[functions[idx].split('=')[0][:-3]] = []
+        dependencies2[functions[idx].split('=')[0].split('(')[0]] = []
         for key in artificialObservables:
             oldfunc = functions[idx]
             functions[idx] = (re.sub(r'(\W|^)({0})([^\w(]|$)'.format(key),r'\1\2()\3',functions[idx]))
             if oldfunc != functions[idx]:
-                dependencies2[functions[idx].split('=')[0][:-3]].append(key)
-        
+                dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
+        for element in sbmlfunctions:
+            oldfunc = functions[idx]
+            key = element.split('=')[0].split('(')[0]
+            if key in functions[idx].split('=')[1]:
+                dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
                 
+    '''           
     for counter in range(0,3):
         for element in dependencies2:
             if len(dependencies2[element]) > counter:
                 dependencies2[element].extend(dependencies2[dependencies2[element][counter]])
-                
+    '''      
     fd = []
     for function in functions:
-        fd.append([function,resolveDependencies(dependencies2,function.split('=')[0][:-3])])
+        fd.append([function,resolveDependencies(dependencies2,function.split('=')[0].split('(')[0],0)])
     fd = sorted(fd,key= lambda rule:rule[1])
     functions = [x[0] for x in fd]
     if len(param) == 0:
         param.append('dummy 0')
     #functions.extend(aRules)
+    if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
+        compartments.append('cell 3 1.0')
+        
     if useArtificialRules or len(artificialRules) > 0:
         rules =['#{0}'.format(x) for x in rules]
         artificialRules.extend(rules)
@@ -671,11 +700,11 @@ def main():
         default='XMLExamples/curated/BIOMD0000000272.xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
-        default='output.bngl',type="string",
+        default='output.bngl',type="string",    
         help="the output file where we will store our matrix. Default = output.bngl",metavar="FILE")
 
     (options, _) = parser.parse_args()
-    #208,236
+    #144
     for bioNumber in range(1,410):
     #bioNumber = 175
         logMess.log = []
