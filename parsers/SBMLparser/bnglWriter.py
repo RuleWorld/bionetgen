@@ -29,8 +29,9 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
         finalString += '0 '
     for index in range(0,len(product)):
         tag = ''
-        if product[index][0] in tags and isCompartments:
-            tag = tags[product[index][0]]
+        if isCompartments:
+            if product[index][0] in tags:
+                tag = tags[product[index][0]]
         finalString +=  printTranslate(product[index],tag,translator) 
         if index < len(product) -1:
             finalString += ' + '
@@ -100,7 +101,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
         return '{0} {1} {2}'.format(match.group(2),operator,exponent)
       
     def parameterRewrite(match):
-        return 'p' + match.group(1)
+        return match.group(1) + 'param_' + match.group(2) + match.group(3)
         
     def findClosure(rule):
         stackCount = 1
@@ -149,10 +150,10 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
         parameters =  csl.parseString(rule[string.find(rule,'(')+1:-1])
         param = []
         for idx,element in enumerate(parameters[0:-1]):
-            param.append('p' + element.strip())
+            param.append('param_' + element.strip())
             #print '(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1]
             try:
-                parameters[-1] = re.sub('(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1])
+                parameters[-1] = re.sub('(\W|^)(%s)(\W|$)' % element.strip(),parameterRewrite,parameters[-1])
             except:
                 logMess('ERROR','Cannot parse function %s-%s' % (functionTitle,rule))
                 parameters[-1] = ''
