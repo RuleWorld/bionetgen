@@ -5,6 +5,7 @@ from copy import deepcopy
 from util import logMess
 import string
 from pyparsing import commaSeparatedList as csl
+import pyparsing
 def evaluatePiecewiseFunction(function):
     pass
 
@@ -100,8 +101,36 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
         operator = translator[match.group(1)]
         return '{0} {1} {2}'.format(match.group(2),operator,exponent)
       
+    def ceilfloorParse(math):
+        flag = False
+        if math.group(1) == 'ceil':
+             flag = True
+        if flag:
+            return 'min(rint({0}+0.5),rint({0} + 1))'.format(math.group(2))
+        else:
+            return 'min(rint({0}-0.5),rint({0}+0.5))'.format(math.group(2))
+    
+    
     def parameterRewrite(match):
         return match.group(1) + 'param_' + match.group(2) + match.group(3)
+    
+    def constructFromList(argList):
+        string = ''
+        idx = 0
+        while idx < len(argList):
+            if type(argList[idx]) is list:
+                string += '(' + constructFromList(argList[idx]) + ')'
+            elif argList[idx] == 'ceil':
+                string += 'min(rint(({0}) + 0.5),rint(({0}) + 1))'.format(constructFromList(argList[idx+1]))
+                idx += 1
+            elif argList[idx] == 'floor':
+                string += 'min((rint(({0}) -0.5),rint(({0}) + 0.5))'.format(constructFromList(argList[idx+1]))
+                idx += 1
+            else:
+                string += argList[idx]
+            idx += 1
+        return string
+            
         
     def findClosure(rule):
         stackCount = 1
@@ -143,6 +172,16 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     rule = changeToBNGL(['gt','lt','leq','geq','eq'],rule,compParse)
     rule = changeToBNGL(['and','or'],rule,compParse)
 
+    #remove ceil,floor        
+    if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor']]):
+
+        contentRule = pyparsing.Word(pyparsing.alphanums) | ',' | '.' | '+' | '-' | '*' | '/' | '^' | '_' | '&' | '>' | '<' | '=' | '|' 
+        parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
+        argList = parens.parseString(rule).asList()
+        rule = constructFromList(argList)
+        #for x in ['ceil','floor']:        
+        #    rule = re.sub('({0})\(([^)]+)\)'.format(x),ceilfloorParse,rule)
+            
     while 'piecewise' in rule:
         rule = piecewiseToIf(rule)
     #remove references to lambda functions
@@ -166,7 +205,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
         tmp = re.sub('^{0}\s*[*]'.format(compartment[0]),'',tmp)
         tmp = re.sub('([*]\s*{0})$'.format(compartment[0]),'',tmp)
         if compartment[0] in tmp:
-            tmp =re.sub(r'(\W)({0})(\W)'.format(compartment[0]),r'\1 {0} \3'.format(str(compartment[1])),tmp)
+            tmp =re.sub(r'(\W|^)({0})(\W|$)'.format(compartment[0]),r'\1 {0} \3'.format(str(compartment[1])),tmp)
             #tmp = re.sub(r'(\W)({0})(\W)'.format(compartment[0]),r'\1%s\3' % str(compartment[1]),tmp)
             logMess('WARNING','Exchanging reference to compartment %s for its dimensions' % compartment[0])
     
@@ -192,6 +231,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     #reserved keyword: e
     finalString = re.sub(r'(\W|^)(e)(\W|$)',r'\1 are \3',finalString)
     
+    #changing ceil
     
     #removing mass-action elements
     

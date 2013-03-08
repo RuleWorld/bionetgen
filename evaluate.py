@@ -57,7 +57,7 @@ def main():
                 if 'cvode' in ','.join(lines):
                     print '///',bnglFile
                     tag = 'cvode'
-                elif 'time' in ','.join(lines):
+                elif 'ABORT: Reaction rule list could not be read because of errors' in ','.join(lines):
                     print '\\\\\\',bnglFile
                 #elif 'Incorrect number of arguments' in ','.join(lines):
                 #    print '[[]]',bnglFile
