@@ -235,7 +235,9 @@ class SBML2BNGL:
         return variable,[rateL,rateR],arule.isAssignment(),arule.isRate()
         
     def getAssignmentRules(self,paramRules,parameters,molecules):
-        
+        compartmentList = [['cell',1]]
+        compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
+
         arules = []
         aParameters = {}
         zRules = paramRules
@@ -249,8 +251,8 @@ class SBML2BNGL:
             if rawArule[3] == True:
                 rateLaw1 = rawArule[1][0]
                 rateLaw2 = rawArule[1][1]
-                arules.append(writer.bnglFunction(rateLaw1,'arRate{0}'.format(rawArule[0]),[]))
-                arules.append(writer.bnglFunction(rateLaw2,'armRate{0}'.format(rawArule[0]),[]))
+                arules.append(writer.bnglFunction(rateLaw1,'arRate{0}'.format(rawArule[0]),[],compartments=compartmentList))
+                arules.append(writer.bnglFunction(rateLaw2,'armRate{0}'.format(rawArule[0]),[],compartments=compartmentList))
                 artificialReactions.append(writer.bnglReaction([],[[rawArule[0],1]],'{0},{1}'.format('arRate{0}'.format(rawArule[0]),'armRate{0}'.format(rawArule[0])),self.tags,{},isCompartments=True,comment = '#rateLaw'))
                 if rawArule[0] in paramRules:
                     removeParameters.append('{0} 0'.format(rawArule[0]))
@@ -261,7 +263,7 @@ class SBML2BNGL:
                             removeParameters.append(element)
                         
             elif rawArule[2] == True:
-                artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[])
+                artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList)
                 if rawArule[0] in zRules:
                     zRules.remove(rawArule[0])
                 #if rawArule[0] in paramRules:
@@ -274,7 +276,7 @@ class SBML2BNGL:
                 else:
                     ruleName = rawArule[0]
                     zRules.remove(rawArule[0])
-                arules.append(writer.bnglFunction(rawArule[1][0],ruleName,[]))
+                arules.append(writer.bnglFunction(rawArule[1][0],ruleName,[],compartments=compartmentList))
                 aParameters[rawArule[0]] = 'ar' + rawArule[0]
             '''
             elif rawArule[2] == True:
@@ -603,7 +605,6 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     
     for element in idxArray:
         param[element] = '#' + param[element]
-        
     for key in artificialObservables:
         flag = -1
         for idx,observable in enumerate(observables):
@@ -705,7 +706,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in range(1,410):
+    for bioNumber in [171]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
