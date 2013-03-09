@@ -166,7 +166,7 @@ def compareResults():
         #print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)
         score =  np.average(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
         
-        mini = np.min(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
+        #mini = np.min(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
         #if score>1e-3 and mini<1e-5:
         #    print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)       
         tested += 1        
@@ -195,3 +195,4 @@ if __name__ == "__main__":
     main()
     
 #16
+#311: Using reaction ID's as parameters

@@ -204,8 +204,6 @@ class SBML2BNGL:
                 functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict))
                
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
-        if len(rules) == 0:
-            logMess("ERROR","The file contains no reactions")
         return parameters, rules,functions
 
     def __getRawAssignmentRules(self,arule):
@@ -585,11 +583,12 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         param.append('{0} 0'.format(element))
 
     param = [x for x in param if x not in removeParams]
-    
-    if len(molecules) == 0:
-        compartments = []
     tags = '@{0}'.format(compartments[0].split(' ')[0]) if len(compartments) == 1 else '@cell'
     molecules.extend([x.split(' ')[0] for x in removeParams])
+
+    if len(molecules) == 0:
+        compartments = []
+
     observables.extend('Species {0} {0}'.format(x.split(' ')[0]) for x in removeParams)
     for x in removeParams:
         species.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
@@ -661,7 +660,10 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     #functions.extend(aRules)
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
         compartments.append('cell 3 1.0')
-        
+    
+    
+    if len(artificialRules) + len(rules) == 0:
+        logMess('ERROR','The file contains no reactions')
     if useArtificialRules or len(artificialRules) > 0:
         rules =['#{0}'.format(x) for x in rules]
         artificialRules.extend(rules)
@@ -706,7 +708,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in [171]:
+    for bioNumber in range(1,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
