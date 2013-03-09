@@ -26,6 +26,7 @@ def main():
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
     validFiles = [x for x in bnglFiles if x not in errorFiles]
     skip = [] #['334','225','332','105','293','333','337','18','409']
+    counter = 0
     with open('executionTestErrors' + '.log', 'w') as f:
         subprocess.call(['rm','./*net'])
         for idx,bnglFile in enumerate(sorted(validFiles)):
@@ -46,6 +47,7 @@ def main():
                         os.kill(result.pid, signal.SIGKILL)
                         os.waitpid(-1, os.WNOHANG)
                         print 'breaker',
+                        counter -=1
                         break
                 
                 d.close()
@@ -67,7 +69,9 @@ def main():
                     f.write('%s %s\n' % (bnglFile,tag))
                 f.flush()
             else:
+                counter += 1
                 print '+++',bnglFile
+    print counter
         
 
 if __name__ == "__main__":

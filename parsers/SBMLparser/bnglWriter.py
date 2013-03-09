@@ -6,6 +6,7 @@ from util import logMess
 import string
 from pyparsing import commaSeparatedList as csl
 import pyparsing
+from itertools import dropwhile
 def evaluatePiecewiseFunction(function):
     pass
 
@@ -79,6 +80,16 @@ def balanceTranslator(reactant,product,translator):
     return newTranslator
 
 
+def rindex(lst, item):
+    '''
+    returns the last ocurrence of an element in alist
+    '''
+    try:
+        return dropwhile(lambda x: lst[x] != item, reversed(xrange(len(lst)))).next()
+    except StopIteration:
+        raise ValueError, "rindex(lst, item): item not in list"
+        
+        
 def parsePieceWiseFunction(parameters):
     if len(parameters) == 3:
         return 'if({0},{1},{2})'.format(parameters[1],parameters[0],parameters[2])
@@ -114,22 +125,57 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     def parameterRewrite(match):
         return match.group(1) + 'param_' + match.group(2) + match.group(3)
     
-    def constructFromList(argList):
-        string = ''
+    def constructFromList(argList,optionList):
+        parsedString = ''
         idx = 0
+        translator = {'gt':'>','lt':'<','and':'&&','or':'||','geq':'>=','leq':'<=','eq':'=='}
         while idx < len(argList):
             if type(argList[idx]) is list:
-                string += '(' + constructFromList(argList[idx]) + ')'
-            elif argList[idx] == 'ceil':
-                string += 'min(rint(({0}) + 0.5),rint(({0}) + 1))'.format(constructFromList(argList[idx+1]))
+                parsedString += '(' + constructFromList(argList[idx],optionList) + ')'
+            elif argList[idx] == 'ceil' and 'ceil' in optionList:
+                parsedString += 'min(rint(({0}) + 0.5),rint(({0}) + 1))'.format(constructFromList(argList[idx+1],optionList))
                 idx += 1
-            elif argList[idx] == 'floor':
-                string += 'min((rint(({0}) -0.5),rint(({0}) + 0.5))'.format(constructFromList(argList[idx+1]))
+            elif argList[idx] == 'floor' and 'floor' in optionList:
+                parsedString += 'min(rint(({0}) -0.5),rint(({0}) + 0.5))'.format(constructFromList(argList[idx+1],optionList))
                 idx += 1
+            elif argList[idx] in ['pow'] and ('pow' in optionList):
+                index = rindex(argList[idx+1],',')
+                parsedString += '(('+ constructFromList(argList[idx+1][0:index],optionList) + ')' 
+                parsedString += ' ^ '  + '(' + constructFromList(argList[idx+1][index+1:] ,optionList) + '))'
+                idx += 1
+            elif argList[idx] in ['sqr','sqrt'] and ('sqrt' in optionList or 'sqr' in optionList):
+                tag = '1/' if argList[idx] == 'sqrt' else ''
+                parsedString += '((' + constructFromList(argList[idx+1],optionList) + ') ^ ({0}2))'.format(tag)
+                idx += 1
+            elif argList[idx] == 'root' and argList[idx] in optionList:
+                index = rindex(argList[idx+1],',')
+                tmp =  '1/('+ constructFromList(argList[idx+1][0:index],optionList) + '))' 
+                parsedString += '((' + constructFromList(argList[idx+1][index+1:] ,optionList) + ') ^ ' + tmp
+                idx += 1
+                
+                
+            elif argList[idx] == 'lambda' and 'lambda' in optionList:
+                
+                tmp = '('
+                upperLimit = rindex(argList[idx+1],',')
+                parsedParams = []
+                for x in argList[idx+1][0:upperLimit]:
+                    if x == ',':
+                        tmp += ', '
+                    else:
+                        tmp += 'param_' + x
+                        parsedParams.append(x)
+                        
+                #tmp = ''.join([x for x in constructFromList(argList[idx+1][0:upperLimit])]) 
+                tmp2 = ') = ' + constructFromList(argList[idx+1][rindex(argList[idx+1],',')+1:],optionList)
+                for x in parsedParams:
+                    tmp2 = re.sub(r'(\W|^)({0})(\W|$)'.format(x),r'\1param_\2 \3',tmp2)
+                idx+= 1
+                parsedString += tmp + tmp2
             else:
-                string += argList[idx]
+                parsedString += argList[idx]
             idx += 1
-        return string
+        return parsedString
             
         
     def findClosure(rule):
@@ -167,37 +213,28 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
             mrule = piecewiseToIf(mrule)
         parameters = csl.parseString(mrule)
         result =  parsePieceWiseFunction(parameters)
-        return rule[0:init-len('piecewise(')] + result + rule[init+end:]        
-    rule = changeToBNGL(['pow','root'],rule,powParse)
+        return rule[0:init-len('piecewise(')] + result + rule[init+end:]   
+        
+    #rule = changeToBNGL(['pow','root'],rule,powParse)
     rule = changeToBNGL(['gt','lt','leq','geq','eq'],rule,compParse)
     rule = changeToBNGL(['and','or'],rule,compParse)
-
-    #remove ceil,floor        
-    if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor']]):
-
-        contentRule = pyparsing.Word(pyparsing.alphanums) | ',' | '.' | '+' | '-' | '*' | '/' | '^' | '_' | '&' | '>' | '<' | '=' | '|' 
-        parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
-        argList = parens.parseString(rule).asList()
-        rule = constructFromList(argList)
-        #for x in ['ceil','floor']:        
-        #    rule = re.sub('({0})\(([^)]+)\)'.format(x),ceilfloorParse,rule)
-            
+    flag = True
+    contentRule = pyparsing.Word(pyparsing.alphanums + '_') | ',' | '.' | '+' | '-' | '*' | '/' | '^' | '&' | '>' | '<' | '=' | '|' 
+    parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
+    #remove ceil,floor 
+    if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor','pow','sqrt','sqr','root']]):
+        argList = parens.parseString('('+ rule + ')').asList()
+        rule = constructFromList(argList[0],['floor','ceil','pow','sqrt','sqr','root'])
+    
+    #TODO:rewrite this to use pyparsing  
     while 'piecewise' in rule:
         rule = piecewiseToIf(rule)
     #remove references to lambda functions
     if 'lambda(' in rule:
-        parameters =  csl.parseString(rule[string.find(rule,'(')+1:-1])
-        param = []
-        for idx,element in enumerate(parameters[0:-1]):
-            param.append('param_' + element.strip())
-            #print '(%s(\W|$))' % element.strip(),parameterRewrite,parameters[-1]
-            try:
-                parameters[-1] = re.sub('(\W|^)(%s)(\W|$)' % element.strip(),parameterRewrite,parameters[-1])
-            except:
-                logMess('ERROR','Cannot parse function %s-%s' % (functionTitle,rule))
-                parameters[-1] = ''
-        param.append(parameters[-1])
-        return '{0}({1}) = {2}'.format(functionTitle,','.join(param[0:-1]),param[-1])
+        lambdaList =  parens.parseString('(' + rule + ')')
+        functionBody =  constructFromList(lambdaList[0].asList(),['lambda'])
+        flag = False
+        rule =  '{0}{1}'.format(functionTitle,functionBody)
         
     tmp = rule
     #delete the compartment from the rate function since cBNGL already does it
@@ -213,9 +250,10 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1 time() \3',tmp)
     tmp =re.sub(r'(\W|^)(Time)(\W|$)',r'\1 time() \3',tmp)
     #BNGL has ^ for power. 
-    
-    finalString = '%s = %s' % (functionTitle,tmp)
-    
+    if flag:
+        finalString = '%s = %s' % (functionTitle,tmp)
+    else:
+        finalString = tmp
     #change references to local parameters
     for parameter in parameterDict:
         finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
@@ -224,10 +262,10 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={}):
     #changing reference of 't' to time()
     finalString = re.sub(r'(\W|^)(t)(\W|$)',r'\1 time() \3',finalString)
     #pi
-    finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\1 3.141592 \3',finalString)
+    finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\1 3.1415926535 \3',finalString)
     #print reactants,finalString
     #log for log 10
-    finalString = re.sub(r'(\W|^)log\(',r'\1 log10(',finalString)
+    finalString = re.sub(r'(\W|^)log\(',r'\1 ln(',finalString)
     #reserved keyword: e
     finalString = re.sub(r'(\W|^)(e)(\W|$)',r'\1 are \3',finalString)
     
