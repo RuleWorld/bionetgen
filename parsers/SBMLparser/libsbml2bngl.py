@@ -16,7 +16,6 @@ import structures
 from os import listdir
 import numpy as np
 import analyzeRDF
-import string
 from util import logMess,NumericStringParser
 import re
 log = {'species':[],'reactions':[]}
@@ -29,6 +28,7 @@ class SBML2BNGL:
         self.tags= {}
         self.speciesDictionary = {}
         self.getSpecies()
+        self.reactionDictionary = {}
         
 
     def getRawSpecies(self, species):
@@ -121,7 +121,7 @@ class SBML2BNGL:
         #because of the way BNG handles functions
         #for element in reactant:
         #    rate = rate.replace('* %s' % element[0],'',1)
-        return (reactant,product,parameters,[rateL,rateR],reversible)
+        return (reactant,product,parameters,[rateL,rateR],reversible,reaction.getId())
         
     def convertToName(self,rate):
         for element in sorted(self.speciesDictionary,key=len,reverse=True):
@@ -147,7 +147,7 @@ class SBML2BNGL:
         functions = []
         for function in enumerate(self.model.getListOfFunctionDefinitions()):
             functionInfo = self.__getRawFunctions(function)
-            functions.append(writer.bnglFunction(functionInfo[1],functionInfo[0],[]))
+            functions.append(writer.bnglFunction(functionInfo[1],functionInfo[0],[],reactionDict=self.reactionDictionary))
         return functions
             
     def getCompartments(self):
@@ -196,14 +196,18 @@ class SBML2BNGL:
                 
             if rawRules[4]:
                 
-                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict))
+                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
                 functionName2 = '%s%dm()' % (functionTitle,index)                
-                functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict))
+                functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
+                self.reactionDictionary[rawRules[5]] = '({0} - {1})'.format(functionName, functionName2)                
                 functionName = '{0},{1}'.format(functionName,functionName2)
+                
             else:
-                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict))
-               
+                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
+                self.reactionDictionary[rawRules[5]] = '(functionName)'
+                
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
+        
         return parameters, rules,functions
 
     def __getRawAssignmentRules(self,arule):
@@ -249,8 +253,8 @@ class SBML2BNGL:
             if rawArule[3] == True:
                 rateLaw1 = rawArule[1][0]
                 rateLaw2 = rawArule[1][1]
-                arules.append(writer.bnglFunction(rateLaw1,'arRate{0}'.format(rawArule[0]),[],compartments=compartmentList))
-                arules.append(writer.bnglFunction(rateLaw2,'armRate{0}'.format(rawArule[0]),[],compartments=compartmentList))
+                arules.append(writer.bnglFunction(rateLaw1,'arRate{0}'.format(rawArule[0]),[],compartments=compartmentList,reactionDict=self.reactionDictionary))
+                arules.append(writer.bnglFunction(rateLaw2,'armRate{0}'.format(rawArule[0]),[],compartments=compartmentList,reactionDict=self.reactionDictionary))
                 artificialReactions.append(writer.bnglReaction([],[[rawArule[0],1]],'{0},{1}'.format('arRate{0}'.format(rawArule[0]),'armRate{0}'.format(rawArule[0])),self.tags,{},isCompartments=True,comment = '#rateLaw'))
                 if rawArule[0] in paramRules:
                     removeParameters.append('{0} 0'.format(rawArule[0]))
@@ -261,7 +265,7 @@ class SBML2BNGL:
                             removeParameters.append(element)
                         
             elif rawArule[2] == True:
-                artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList)
+                artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
                 if rawArule[0] in zRules:
                     zRules.remove(rawArule[0])
                 #if rawArule[0] in paramRules:
@@ -274,7 +278,7 @@ class SBML2BNGL:
                 else:
                     ruleName = rawArule[0]
                     zRules.remove(rawArule[0])
-                arules.append(writer.bnglFunction(rawArule[1][0],ruleName,[],compartments=compartmentList))
+                arules.append(writer.bnglFunction(rawArule[1][0],ruleName,[],compartments=compartmentList,reactionDict=self.reactionDictionary))
                 aParameters[rawArule[0]] = 'ar' + rawArule[0]
             '''
             elif rawArule[2] == True:
@@ -578,6 +582,12 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
+
+    functions = []
+    idxArray = []
+    _,rules,tfunc = parser.getReactions(translator,True)
+    functions.extend(tfunc)     
+
     aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
@@ -592,9 +602,6 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     observables.extend('Species {0} {0}'.format(x.split(' ')[0]) for x in removeParams)
     for x in removeParams:
         species.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
-    functions = []
-    idxArray = []
-    
     ##Comment out those parameters that are defined with assignment rules
     ##TODO: I think this is correct, but it may need to be checked
     for idx,parameter in enumerate(param):
@@ -626,8 +633,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         if flag != -1:
             species[flag] = '#' + species[flag]
     functions.extend(aRules)
-    _,rules,tfunc = parser.getReactions(translator,True)
-    functions.extend(tfunc) 
+
     sbmlfunctions = parser.getSBMLFunctions()
     functions.extend(sbmlfunctions)
     dependencies2 = {}
@@ -640,6 +646,10 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
                 dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
         for element in sbmlfunctions:
             oldfunc = functions[idx]
+            key = element.split('=')[0].split('(')[0]
+            if key in functions[idx].split('=')[1]:
+                dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
+        for element in tfunc:
             key = element.split('=')[0].split('(')[0]
             if key in functions[idx].split('=')[1]:
                 dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
@@ -708,7 +718,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in range(1,410):
+    for bioNumber in [248]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1

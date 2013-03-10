@@ -26,7 +26,7 @@ def correctCPS():
         #inputFile = open('XMLExamples/curated/BIOMD%010i.xml' % element,'r')
         cinputFile = open('XMLExamples/curated/BIOMD%010i.cps' % element,'r')
         content = cinputFile.readlines()
-        newContent = []
+        newContent = []     
         flag = False
         counter = 0
         reader = libsbml.SBMLReader()
@@ -195,4 +195,4 @@ if __name__ == "__main__":
     main()
     
 #16
-#311: Using reaction ID's as parameters
+#311,248: Using reaction ID's as parameters
