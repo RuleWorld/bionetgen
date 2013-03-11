@@ -193,7 +193,7 @@ class SBML2BNGL:
             functionName = '%s%d()' % (functionTitle,index)
             if 'delay' in rawRules[3][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
-                
+              
             if rawRules[4]:
                 
                 functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
@@ -205,7 +205,7 @@ class SBML2BNGL:
             else:
                 functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
                 self.reactionDictionary[rawRules[5]] = '(functionName)'
-                
+               
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
         
         return parameters, rules,functions
@@ -576,8 +576,12 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    translator = {}
+    try:
+        translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    except:
+        print 'failure'
+        return
+    #translator = {}
     #print evaluation(len(parser.getSpecies()[0]),translator)
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
@@ -587,7 +591,6 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     idxArray = []
     _,rules,tfunc = parser.getReactions(translator,True)
     functions.extend(tfunc)     
-
     aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
@@ -718,14 +721,14 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in [248]:
+    for bioNumber in range(1,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
         spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
-        analyzeFile(bioNumber,reactionDefinitions,useID,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        analyzeFile(bioNumber,reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
 
 if __name__ == "__main__":
     #identifyNamingConvention()

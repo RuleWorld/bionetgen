@@ -32,7 +32,7 @@ class SBMLAnalyzer:
         + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
         + Suppress("()"))
         rate = Word(alphanums + "()")
-        grammar = (Group(species) + Suppress(Optional("<") + "->") + Group(species) + Suppress(rate)) \
+        grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate)) \
         ^ (species + Suppress("->") + Suppress(rate))  
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    

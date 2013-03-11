@@ -1,4 +1,9 @@
 {
-	"reactionDefinition" : [["EGFR2","EGFRm2","mMod"],["EGFRm2","EGFRim2","iMod"]]	
-
+	"reactionDefinition" : [
+	["EGFR2","EGFRm2","mMod"],["EGFRm2","EGFRim2","iMod"],["Raf","Rafi","iMod"],
+	["Ras","Rasi","iMod"]
+	],
+	"complexDefinition" : [
+	["Ras_GDP", [["Ras","gdp",["b",1]], ["GDP","ras",["b",1]]]]
+	]
 }

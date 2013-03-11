@@ -26,7 +26,7 @@ def parseReactions(reaction):
     + Suppress("()"))
     '''
     rate = Word(alphanums + "()")
-    grammar = (Group(species) + Suppress(Optional("<") + "->") + Group(species) + Suppress(rate)) \
+    grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate)) \
     ^ (species + Suppress(Optional("<") + "->") + Suppress(rate))  
     result =  grammar.parseString(reaction).asList()
     if len(result) < 2:
@@ -489,7 +489,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     #translator = {}
     sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile,speciesEquivalences)
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
-    print classifications[5]    
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
     
     database.translator,database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()

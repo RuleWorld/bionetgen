@@ -201,22 +201,28 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     flag = True
     contentRule = pyparsing.Word(pyparsing.alphanums + '_') | ',' | '.' | '+' | '-' | '*' | '/' | '^' | '&' | '>' | '<' | '=' | '|' 
     parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
+    finalString = ''
     #remove ceil,floor 
+    
     if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor','pow','sqrt','sqr','root']]):
         argList = parens.parseString('('+ rule + ')').asList()
         rule = constructFromList(argList[0],['floor','ceil','pow','sqrt','sqr','root'])
     
     #TODO:rewrite this to use pyparsing  
+    
+    
     while 'piecewise' in rule:
         argList = parens.parseString('('+ rule + ')').asList()
         rule = constructFromList(argList[0],['piecewise'])
+    
     #remove references to lambda functions
     if 'lambda(' in rule:
         lambdaList =  parens.parseString('(' + rule + ')')
         functionBody =  constructFromList(lambdaList[0].asList(),['lambda'])
         flag = False
         rule =  '{0}{1}'.format(functionTitle,functionBody)
-        
+    
+    
     tmp = rule
     #delete the compartment from the rate function since cBNGL already does it
     for compartment in compartments:
@@ -241,7 +247,8 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
         finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
     #change references to reaction Id's to their netflux equivalent
     for reaction in reactionDict:
-        finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(reaction),r'\1 {0} \3'.format(reactionDict[reaction]),finalString)
+        if reaction in finalString:
+            finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(reaction),r'\1 {0} \3'.format(reactionDict[reaction]),finalString)
     
     #combinations '+ -' break ibonetgen
     finalString = re.sub(r'(\W|^)([-])(\s)+',r'\1-',finalString)
@@ -260,6 +267,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     #removing mass-action elements
     
     tmp = finalString
+    
     #print finalString,reactants
     #for reactant in reactants:
     #    finalString = re.sub(r'(\W|^)({0}\s+\*)'.format(reactant[0]),r'\1',finalString)
