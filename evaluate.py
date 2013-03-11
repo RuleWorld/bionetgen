@@ -13,13 +13,14 @@ import datetime
 import signal
 
 def main():
-    onlyfiles = [ f for f in listdir('./raw') if isfile(join('./raw',f)) ]
+    directory = 'complex'
+    onlyfiles = [ f for f in listdir('./complex') if isfile(join('./complex',f)) ]
     
     logFiles = [x[0:-4] for x in onlyfiles if 'log' in x]
     errorFiles = []
     #dont skip the files that only have warnings    
     for x in logFiles:    
-        with open('./raw/' + x +'.log','r') as f:
+        with open('./complex/' + x +'.log','r') as f:
             k = f.readlines()
             if 'ERROR' in ','.join(k):
                 errorFiles.append(x)
@@ -39,7 +40,7 @@ def main():
             with open('temp.tmp', "w") as outfile:
                 d = open('dummy.tmp','w')
                 start = datetime.datetime.now()
-                result = subprocess.Popen(['bngdev', './raw/{0}'.format(bnglFile)],stderr=outfile,stdout=d)
+                result = subprocess.Popen(['bngdev', './complex/{0}'.format(bnglFile)],stderr=outfile,stdout=d)
                 while result.poll() is None:
                     time.sleep(0.1)
                     now = datetime.datetime.now()
