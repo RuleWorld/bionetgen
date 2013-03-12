@@ -151,9 +151,16 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
                 elif argList[idx] == 'piecewise':
                     index1 = argList[idx+1].index(',')
                     index2 = argList[idx+1][index1+1:].index(',') + index1+1
+                    try:
+                        index3 = argList[idx+1][index2+1:].index(',') + index2+1
+                    except ValueError:
+                        index3 = -1
                     condition = constructFromList([argList[idx+1][index1+1:index2]],optionList)
                     result = constructFromList([argList[idx+1][:index1]],optionList)
-                    result2 = constructFromList([argList[idx+1][index2+1:]],optionList)
+                    if index3 == -1:
+                        result2 = constructFromList([argList[idx+1][index2+1:]],optionList)
+                    else:
+                        result2 = constructFromList(['piecewise', argList[idx+1][index2+1:]],optionList)
                     parsedString += 'if({0},{1},{2})'.format(condition,result,result2)
                     idx+=1
                     
@@ -214,7 +221,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     while 'piecewise' in rule:
         argList = parens.parseString('('+ rule + ')').asList()
         rule = constructFromList(argList[0],['piecewise'])
-    
     #remove references to lambda functions
     if 'lambda(' in rule:
         lambdaList =  parens.parseString('(' + rule + ')')

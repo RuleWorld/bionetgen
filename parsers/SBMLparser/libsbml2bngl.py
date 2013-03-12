@@ -577,7 +577,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     #try:
-    translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    translator={}    
     #except:
     #    print 'failure'
     #    return
@@ -706,7 +707,7 @@ def processFile(translator,parser,outputFile):
 
    
 def BNGL2XML():
-    pass
+    passcomplex
 
 def main():
     jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
@@ -721,14 +722,14 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in [9]:
+    for bioNumber in [255]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
         spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
-        analyzeFile(bioNumber,reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        analyzeFile(bioNumber,reactionDefinitions,useID,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
 
 if __name__ == "__main__":
     #identifyNamingConvention()
