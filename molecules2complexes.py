@@ -11,7 +11,7 @@ import reactionTransformations
 import analyzeSBML
 import analyzeRDF
 from util import logMess
-
+import re
 
 def parseReactions(reaction):
     species =   (Word(alphanums+"_") 
@@ -594,13 +594,13 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     #secondary key: length of the names of the elements involved    
     ruleWeightTable = []
     ruleWeight2Table= []
+    print equivalenceTranslator
     for rule in rules:
-        
         flag = False
         weight = 0
         weight2 = 0
         reaction2 = list(parseReactions(rule))
-
+        print rule,' ',
         #sort rules according to the complexity of the reactants (not the products)
         for element in reaction2[0]:
             if element not in database.labelDictionary:
@@ -608,25 +608,29 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             else:
                 weight = max(weight,len(database.labelDictionary[element]))
             weight2 += len(element)
-
+        print weight,' ',
+        for element in reaction2[0]:
+            weight+= sum([1 for x in equivalenceTranslator if re.search(r'(_|^)({0})(_|$)'.format(x[1]),element) != None])
+        print weight
         ruleWeight2Table.append(weight2)
         ruleWeightTable.append(weight)
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[1])
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
-    print '-------------------'
-    for w0,w1,rule,classification in nonProcessedRules:
+    
+        
+    for idx,(w0,w1,rule,classification) in enumerate(nonProcessedRules):
+        print rule,classification,w0,w1
         outputFlag = False
-       
         #if classification == 'Modification':
         #    outputFlag = True
         counter += 1
         reaction2 = list(parseReactions(rule))
-
         if outputFlag:
             tmp = deepcopy(database.translator)
             print reaction2
 
+ 
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
         #if 'EGF_EGFRm2_GAP_Grb2_Prot' in database.translator:
         #    print '++++',rule,difflib.SequenceMatcher(None, 'Grb2(egfr,shc!10,sos).EGF(egfr!5,modI~U,modM~M).EGFR(egf!5,egfr!8,gap!9,grb2!11,modI~U,prot,ras_gdp,shc!10).EGF(egfr!7,modI~U,modM~U).EGFR(egf!7,egfr!8,gap!8,grb2,modI~U,prot,ras_gdp,shc!9).GAP(egfr!9).Prot(egfr!11,modI~U,ras_gdp,ras_gtp)' , str(database.translator['EGF_EGFRm2_GAP_Grb2_Prot'])).ratio()
@@ -644,6 +648,5 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         for mol in database.translator[element].molecules:
             if mol.name in database.translator:
                 mol.update(database.translator[mol.name].molecules[0])
-     
     return database.translator,logMess.log
 
