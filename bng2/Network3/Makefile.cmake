@@ -25,7 +25,7 @@ BNG_BINDIR = ../bin
 MATHUTILS = Mathutils
 CVODE = cvode-2.6.0
 #GSL = gsl-1.9
-MUPARSER = muparser_v134
+MUPARSER = muparser_v2_2_3
 
 # library files
 MATHUTILS_LIB = ${LIBDIR}/libmathutils.a 
@@ -60,10 +60,10 @@ $(CVODE_LIB):  $(LIBSOURCE)/$(CVODE).tar.gz
 #	tar -xzf $(LIBSOURCE)/$(GSL).tar.gz
 #	cd $(GSL);  ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
 
-$(MUPARSER_LIB):  $(LIBSOURCE)/$(MUPARSER).tar.gz
+$(MUPARSER_LIB):  $(LIBSOURCE)/$(MUPARSER).zip
 	mkdir -p $(LIBDIR) $(INCDIR)
 	rm -rf $(MUPARSER)
-	tar -xzf $(LIBSOURCE)/$(MUPARSER).tar.gz
+	unzip $(LIBSOURCE)/$(MUPARSER).zip
 	cd $(MUPARSER); ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
 
 $(MATHUTILS_LIB):  $(LIBSOURCE)/$(MATHUTILS).tar.gz
