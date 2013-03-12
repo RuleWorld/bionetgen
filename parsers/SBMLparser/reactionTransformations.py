@@ -120,6 +120,8 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator,outpu
                 print '-',sbml_name
             #if 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP' in original[1]:
             #    print original
+            #if 'P_KKK_KK' in translator:        
+            #    print 'hola'
             tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag)
             
 

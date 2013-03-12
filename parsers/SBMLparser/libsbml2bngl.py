@@ -576,11 +576,11 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    try:
-        translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    except:
-        print 'failure'
-        return
+    #try:
+    translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #except:
+    #    print 'failure'
+    #    return
     #translator = {}
     #print evaluation(len(parser.getSpecies()[0]),translator)
     param,zparam = parser.getParameters()
@@ -721,7 +721,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in range(1,410):
+    for bioNumber in [9]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
