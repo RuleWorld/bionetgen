@@ -75,6 +75,7 @@ def extractTransformations(rules):
     productElements = []
     actionName = []
     index=0
+    label = []
     for react,product,act,mapp,_ in rules:
         index += 1
         for action in act:
@@ -90,9 +91,13 @@ def extractTransformations(rules):
             productElements.append(rc)
             atomicArray.update(atomic)
             actionName.append('%i-%s' % (index,action.action))
+            r= '+'.join([str(x) for x in react])
+            p = '+'.join([str(x) for x in product])
+            label.append('->'.join([r,p,'%i-%s' % (index,action.action)]))
+
     solveWildcards(atomicArray)
                    
-    return atomicArray, transformationCenter, transformationContext, productElements,actionName
+    return atomicArray, transformationCenter, transformationContext, productElements,actionName,label
             
 
 def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, builtList):
@@ -126,14 +131,12 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                     context=True, products=True):
     
     #extract reactioncenter, context information
-    atomicArray, transformationCenter, transformationContext, productElements,actionNames = \
+    atomicArray, transformationCenter, transformationContext, productElements,actionNames,labelArray = \
                     extractTransformations(rules)
     #create the graph structure and the three main subgraphs
+    
     if len(transformations) == 1:
-        react= '+'.join([str(x) for x in rules[transformations[0]-1][0]])
-        prod = '+'.join([str(x) for x in rules[transformations[0]-1][1]])
-        action = rules[transformations[0]-1][2][0].action
-        graph = pgv.AGraph(directed=True,strict=False,label='->'.join([react,prod,action]))    
+        graph = pgv.AGraph(directed=True,strict=False,label=labelArray[transformations[0]-1]) 
     else:
         graph = pgv.AGraph(directed=True, strict=False)
     gReactants = graph.subgraph(name='clusterReactants', label='Chemicals')
@@ -216,4 +219,4 @@ def main(fileName):
             continue
     
 if __name__ == "__main__":
-    main("output19.xml")
+    main("output9.xml")
