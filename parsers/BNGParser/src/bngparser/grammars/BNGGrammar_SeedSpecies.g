@@ -64,10 +64,10 @@ scope{
 :
 
 ({gParent.netGrammar}? INT | )
- species_def[molecules,bonds,"S" + speciesCounter]
+ species_def2[molecules,bonds,"S" + speciesCounter]
  {
-    $pre_species_def::constant = $species_def.constant;
-    $lmemory = $species_def.lmemory;
+    $pre_species_def::constant = $species_def2.constant;
+    $lmemory = $species_def2.lmemory;
  }
 
   
@@ -76,20 +76,87 @@ scope{
 //DOT DOT DOT
 ;
 
-
-species_def[List molecules,BondList bonds,String speciesCounter] returns [Map<String,List<ReactionRegister>> listOfMolecules, String glabel, boolean constant,String compartment="",Map<String, Register> lmemory]
+//this call is used only for the seed species definitions section
+species_def2[List molecules,BondList bonds,String speciesCounter] returns [Map<String,List<ReactionRegister>> listOfMolecules, String glabel, boolean constant,String compartment="",Map<String, Register> lmemory]
 scope{
  int numMolecules; 
  String variableName;
  
+}
+@init{
+  $species_def2::numMolecules =1;
+  $listOfMolecules = new HashMap<String,List<ReactionRegister>>();
+   $species_def2::variableName = "";
+  $constant = false;
+  $lmemory = new HashMap<String,Register>();
+  //this is done so we can temporarily recognize whitespaces
+((ChangeableChannelTokenStream)input).addChannel(HIDDEN);
+  gParent.paraphrases.push("in species def section");
+}
+@after{
+((ChangeableChannelTokenStream)input).delChannel(HIDDEN);
+//go back one space 
+((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1);
+((ChangeableChannelTokenStream)input).consume();
 
+  gParent.paraphrases.pop();
+}
+:
+   (AT scomp=STRING 
+   
+   {
+    $compartment = $scomp.text;
+   }
+   COLON ({gParent.netGrammar}? COLON | ))?  
+   
+   (MOD slabel=STRING COLON COLON?
+   {
+    $lmemory.put($slabel.text,new Register(1.0,"observable"));
+    $glabel = $slabel.text;
+   }
+   )? 
+   (DOLLAR {$constant = true;})?
+   
+   (s1=species_element[bonds,speciesCounter + "_M" + $species_def2::numMolecules,$scomp.text] 
+   {
+    molecules.add(s1.st);
+    $species_def2::numMolecules++;
+    ReactionRegister.addElement($listOfMolecules,$s1.name,$s1.information);
+    $species_def2::variableName += $s1.text;
+    //in this step we are adding the label to local memory so that the expression grammar doesn't throw a variable not found error
+    //i don't think it needs to make numerical sense.
+    if($s1.myLabel != null){
+      $lmemory.put($s1.myLabel,new Register(1.0,"observable"));
+    }
+   }
+  (DOT s2=species_element[bonds,speciesCounter + "_M" + $species_def2::numMolecules,$scomp.text] 
+        {molecules.add(s2.st);
+        $species_def2::numMolecules++;
+         $species_def2::variableName += "."+ $s2.text;
+         if($s2.myLabel != null){
+          $lmemory.put($s2.myLabel,new Register(1.0,"observable"));
+         }
+        })*
+   )
+   
+    
+   ->  molecules_def(id={$species_def2::variableName})
+   
+  
+    
+    
+   ;
+   
+ 
+//this call is used only for reaction rules and observables
+species_def[List molecules,BondList bonds,String speciesCounter] returns [Map<String,List<ReactionRegister>> listOfMolecules, String glabel, boolean constant,String compartment="",Map<String, Register> lmemory]
+scope{
+ int numMolecules; 
+ String variableName;
 }
 @init{
   $species_def::numMolecules =1;
   $listOfMolecules = new HashMap<String,List<ReactionRegister>>();
-   //We cannot have spaces between the elements of a species definition, so we activate space recognition. Should there be a space
-   //the parser will not continue with this rule
- //  ((ChangeableChannelTokenStream)input).setChannel(Token.DEFAULT_CHANNEL|HIDDEN);
   $species_def::variableName = "";
   $constant = false;
   $lmemory = new HashMap<String,Register>();
@@ -120,7 +187,7 @@ scope{
     $glabel = $slabel.text;
    }
    )? 
-   (DOLLAR {$constant = true;})?
+   
    
    (s1=species_element[bonds,speciesCounter + "_M" + $species_def::numMolecules,$scomp.text] 
    {
@@ -142,21 +209,8 @@ scope{
           $lmemory.put($s2.myLabel,new Register(1.0,"observable"));
          }
         })*
-   {
-   //We are done with space recognition so we turn it off and get the next token that is not a space
-  // ((ChangeableChannelTokenStream)input).setChannel(Token.DEFAULT_CHANNEL);
-  // ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).skipOffTokenChannels(((ChangeableChannelTokenStream)input).index()));
- 
-   }
    )
    
-    {
-    //((ChangeableChannelTokenStream)input).delChannel(HIDDEN);
-    //if(!gParent.variableName.contains($species_def::variableName) && gParent.conserveNewMolecules){
-      //gParent.variableName.add($species_def::variableName);
-     // gParent.molecules.add(new StringTemplate($species_def::variableName));
-     // }
-    }
     
    ->  molecules_def(id={$species_def::variableName})
    
@@ -190,14 +244,21 @@ getParentTemplate();
   (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)? //If it's not a netfile it's necessary to add a '?' to allow for optional component syntax
  
   
-  (AT s2=STRING 
+  (ca=compartment_allocation 
   {
-    $species_element::lcompartment = $s2.text; 
-    $information.setCompartment($s2.text);
+    $species_element::lcompartment = $ca.compartment; 
+    $information.setCompartment($ca.compartment);
     $information.setBondList(bonds);
   })?
   -> list_molecule_def(id={upperID},name={$s1.text},sites={$species_element::sites},compartment = {$species_element::lcompartment},label={$myLabel});
 
+compartment_allocation returns [String compartment]
+:
+  AT STRING
+  {
+    $compartment = $STRING.text;
+  }
+;
 site_list[List sites,BondList bonds,String upperID]
 scope{
    int numSites
