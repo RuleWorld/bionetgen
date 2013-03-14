@@ -520,6 +520,7 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     """
     This method is for reactions of the form A+ B -> A' + B
     """
+
     #if 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in original[0] or 'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in original[1]:
     #    print original,'EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP' in translator
     result = catalyze(namingConvention[0],namingConvention[1],classification,rawDatabase
@@ -595,7 +596,7 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
                 else:
                         sp = st.Species()
                         sp.addMolecule(molecule)
-                        translator[molecule.name] = sp
+                        translator[molecule.name] = deepcopy(sp)
                
     if len(original[0]) < len(original[1]):
         rebalance(original,sortedConvention,translator)

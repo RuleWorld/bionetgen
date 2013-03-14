@@ -14,8 +14,8 @@ from util import logMess
 import re
 
 def parseReactions(reaction):
-    species =   (Word(alphanums+"_") 
-    + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
+    species =   (Word(alphanums+"_:#") 
+    + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_:#") 
     + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
     + Suppress("()"))
@@ -424,7 +424,7 @@ def processRule(original,database,
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,database.labelDictionary,
         database.rawDatabase,database.synthesisDatabase,database.translator,outputFlag)
-    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification','mMod','iMod']:
+    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification','mMod','iMod','modI']:
         equ = equivalenceTranslator[classification]
         pertinentEquivalence = getPertinentNamingEquivalence3(original,database.rawLabelDictionary,equ)
         return reactionTransformations.catalysis(original,database.labelDictionary,database.rawDatabase,
@@ -539,7 +539,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         if classifications[index] in ['None','Binding'] and classifications2[index] != 'None':
             classifications[index] = classifications2[index]
     tmp = {}
-        
     
     tmp = {x:[database.labelDictionary[x]] for x in database.labelDictionary}
     database.labelDictionary = tmp
@@ -594,13 +593,11 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     #secondary key: length of the names of the elements involved    
     ruleWeightTable = []
     ruleWeight2Table= []
-    print equivalenceTranslator
     for rule in rules:
         flag = False
         weight = 0
         weight2 = 0
         reaction2 = list(parseReactions(rule))
-        print rule,' ',
         #sort rules according to the complexity of the reactants (not the products)
         for element in reaction2[0]:
             if element not in database.labelDictionary:
@@ -608,10 +605,8 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             else:
                 weight = max(weight,len(database.labelDictionary[element]))
             weight2 += len(element)
-        print weight,' ',
         for element in reaction2[0]:
             weight+= sum([1 for x in equivalenceTranslator if re.search(r'(_|^)({0})(_|$)'.format(x[1]),element) != None])
-        print weight
         ruleWeight2Table.append(weight2)
         ruleWeightTable.append(weight)
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
@@ -620,7 +615,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     
         
     for idx,(w0,w1,rule,classification) in enumerate(nonProcessedRules):
-        print rule,classification,w0,w1
         outputFlag = False
         #if classification == 'Modification':
         #    outputFlag = True
@@ -629,8 +623,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         if outputFlag:
             tmp = deepcopy(database.translator)
             print reaction2
-
- 
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
         #if 'EGF_EGFRm2_GAP_Grb2_Prot' in database.translator:
         #    print '++++',rule,difflib.SequenceMatcher(None, 'Grb2(egfr,shc!10,sos).EGF(egfr!5,modI~U,modM~M).EGFR(egf!5,egfr!8,gap!9,grb2!11,modI~U,prot,ras_gdp,shc!10).EGF(egfr!7,modI~U,modM~U).EGFR(egf!7,egfr!8,gap!8,grb2,modI~U,prot,ras_gdp,shc!9).GAP(egfr!9).Prot(egfr!11,modI~U,ras_gdp,ras_gtp)' , str(database.translator['EGF_EGFRm2_GAP_Grb2_Prot'])).ratio()

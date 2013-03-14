@@ -309,3 +309,18 @@ def sectionTemplate(name,content):
     return section
 
 #341,6,12
+
+def extendFunction(function, subfunctionName,subfunction):
+    param = subfunction.split(' = ')[0][len(subfunctionName)+1:-1]
+    body = subfunction.split(' = ')[1]
+    while re.search(r'{0}\([^)]*\)'.format(subfunctionName),function) != None:
+        call =  re.search(r'{0}\([^)]*\)'.format(subfunctionName),function).group(0)
+             
+        callParams = call[len(subfunctionName)+1:-1]
+        transDict = {x.strip():y.strip() for x,y in zip(param.split(','),callParams.split(','))}
+        for element in transDict:
+            body = re.sub(r'(\W|^)({0})(\W|$)'.format(element),r'\1 {0} \3'.format(transDict[element]),body)
+        function = re.sub(r'{0}\([^)]*\)'.format(subfunctionName),body,function)
+    return function
+        
+        

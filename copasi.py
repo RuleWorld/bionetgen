@@ -120,7 +120,7 @@ def plotResults(fileResults1,fileResults2):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [255]:
+    for fileNumber in range(1,410):
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -178,8 +178,9 @@ def compareResults():
     #print copasi[0:3,newCopHeaders]
 #    print bng[:,newBngHeaders]
 #    print copasi[:,newCopHeaders]
-    plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])
-    print tested,good            
+    
+    print tested,good 
+    #plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])           
     #print bng[0:3,copasiIndexes]
     #print copasi[0:3,copasiIndexes]
         
