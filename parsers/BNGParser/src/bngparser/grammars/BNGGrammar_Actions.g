@@ -242,7 +242,8 @@ reset_concentrations
         : RESETCONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? -> action(id={$RESETCONCENTRATIONS.text})
         ;
 hash_value
-        : STRING ASSIGNS LBRACKET assignment_list RBRACKET
+//        : STRING ASSIGNS LBRACKET assignment_list RBRACKET
+        : LBRACKET assignment_list RBRACKET
         ;
 assignment_list
         : STRING ASSIGNS value (COMMA STRING ASSIGNS value)
@@ -250,7 +251,7 @@ assignment_list
 value   : INT | FLOAT | STRING
         ;
 ps_par_def[Map<String,String> map]
-        : PREFFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES))
+        : PREFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES))
         | SUFFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES))
         ;
 simulate_ode_par_def[Map<String,String> map]

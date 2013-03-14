@@ -99,8 +99,10 @@ primitive_element returns [Double value]
         | (IF LPAREN (~RPAREN)+ RPAREN) => if_expression {$value = $if_expression.value;}
         | (STRING LPAREN (expression2 (COMMA expression2)*)? RPAREN) => function {$value = $function.value;}
         |  variable {$value = $variable.value;}
-        | (EXP | LOG) LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
+        | (EXP | LN | LOG10 | LOG2 | SQRT | RINT | ABS | SIN | COS | TAN | ASIN | ACOS | ATAN | SINH | COSH | TANH | ASINH | ACOSH | ATANH) LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
         | LPAREN e2=expression2 RPAREN {$value = $e2.value;}
+        | PI LPAREN RPAREN {$value = Math.PI;}
+        | (MIN | MAX | SUM | AVG) LPAREN (e2=expression2 (COMMA expression2)*) RPAREN {$value = $e2.value;}
         
         ;
 
