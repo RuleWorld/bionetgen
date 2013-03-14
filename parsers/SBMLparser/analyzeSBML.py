@@ -25,15 +25,14 @@ class SBMLAnalyzer:
         self.userEquivalencesDict = None
         
         
-    def parseReactions(self,reaction):
-        species =  (Word(alphanums+"_") 
-        + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
+    def parseReactions(self,reaction,specialSymbols=''):
+        species =  (Word(alphanums+"_"+":#") 
+        + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_"+":#") 
         + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
         + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
         + Suppress("()"))
         rate = Word(alphanums + "()")
-        grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate)) \
-        ^ (species + Suppress("->") + Suppress(rate))  
+        grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
             result = [result,[]]
@@ -140,7 +139,7 @@ class SBMLAnalyzer:
             for mol1 in baseMol:
                 for mol2 in modMol:
                     score = self.levenshtein(mol1,mol2)
-                    if score == 1:
+                    if score == self.levenshtein(convention[0],convention[1]):
                         equivalences[convention[2]].append((mol1,mol2))
                         modifiedElement[convention[0]].append((mol1,mol2))
                         break
@@ -158,7 +157,6 @@ class SBMLAnalyzer:
         #pOriginal = re.compile(original)
         #pModified = re.compile(modified)
         #oMolecules = []
-        
         patternType = originalPattern
         pattern = modifiedPattern
         oMolecules = []
@@ -227,7 +225,6 @@ class SBMLAnalyzer:
                     reactionIndex[name] = alternative['n'][0]
                     index += 1
             
-                
         #now we want to fill in all intermediate relationships
         newTranslator = equivalenceTranslator.copy()
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
@@ -376,7 +373,6 @@ class SBMLAnalyzer:
         listOfEquivalences = []
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
-            
         return reactionClassification,listOfEquivalences,equivalenceTranslator
     
     
@@ -457,6 +453,5 @@ class SBMLAnalyzer:
                     tmp.addMolecule(tmp2)
                 dictionary[element[0]] = deepcopy(tmp)
                 labelDictionary[element[0]] = [tuple(label)]
-        print labelDictionary
         return dictionary,labelDictionary
         

@@ -18,6 +18,7 @@ import numpy as np
 import analyzeRDF
 from util import logMess,NumericStringParser
 import re
+import time
 log = {'species':[],'reactions':[]}
 class SBML2BNGL:
 
@@ -84,6 +85,7 @@ class SBML2BNGL:
         return rateR
         
     def __getRawRules(self, reaction):
+        timeArray = []
         if self.useID:
             reactant = [(reactant.getSpecies(),reactant.getStoichiometry()) for reactant in reaction.getListOfReactants() if reactant.getSpecies() != 'EmptySet']
             product = [(product.getSpecies(),product.getStoichiometry()) for product in reaction.getListOfProducts() if product.getSpecies() != 'EmptySet']
@@ -125,7 +127,8 @@ class SBML2BNGL:
         
     def convertToName(self,rate):
         for element in sorted(self.speciesDictionary,key=len,reverse=True):
-            rate = re.sub(r'(\W|^)({0})(\W|$)'.format(element),r'\1 {0} \3'.format(self.speciesDictionary[element]),rate)
+            if element in rate:
+                rate = re.sub(r'(\W|^)({0})(\W|$)'.format(element),r'\1 {0} \3'.format(self.speciesDictionary[element]),rate)
             #rate = rate.replace(element,self.speciesDictionary[element])
         return rate
 
@@ -144,10 +147,10 @@ class SBML2BNGL:
         return name,libsbml.formulaToString(math)
 
     def getSBMLFunctions(self):
-        functions = []
+        functions = {}
         for function in enumerate(self.model.getListOfFunctionDefinitions()):
             functionInfo = self.__getRawFunctions(function)
-            functions.append(writer.bnglFunction(functionInfo[1],functionInfo[0],[],reactionDict=self.reactionDictionary))
+            functions[functionInfo[0]] = (writer.bnglFunction(functionInfo[1],functionInfo[0],[],reactionDict=self.reactionDictionary))
         return functions
             
     def getCompartments(self):
@@ -177,12 +180,13 @@ class SBML2BNGL:
         
         functions = []
         tester = NumericStringParser()
+        
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
+            
             rawRules =  self.__getRawRules(reaction)
             #newRate = self.updateFunctionReference(rawRules,extraParameters)
-            
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
                     parameters.append('%s %f' % (parameter[0],parameter[1]))
@@ -193,7 +197,6 @@ class SBML2BNGL:
             functionName = '%s%d()' % (functionTitle,index)
             if 'delay' in rawRules[3][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
-              
             if rawRules[4]:
                 
                 functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
@@ -204,10 +207,8 @@ class SBML2BNGL:
                 
             else:
                 functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
-                self.reactionDictionary[rawRules[5]] = '(functionName)'
-               
+                self.reactionDictionary[rawRules[5]] = '{0}'.format(functionName)
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
-        
         return parameters, rules,functions
 
     def __getRawAssignmentRules(self,arule):
@@ -378,16 +379,25 @@ class SBML2BNGL:
         return name
         
 def standardizeName(name):
+    name2 = name
+    
+    
     name2 = name.replace("-","_")
     name2 = name2.replace("^","")
     name2 = name2.replace("'","")
     name2 = name2.replace("*","m")
+    #name2 = name2.replace("#","m")
     name2 = name2.replace(" ","_")
     name2 = name2.replace(",","_")
+    
     name2 = name2.replace("(","_")
     name2 = name2.replace(")","_")
+    name2 = name2.replace(" ","")
+    name2 = name2.replace("+","")
     name2 = name2.replace("/","_")
     name2 = name2.replace(":","_")
+    name2 = name2.replace(".","_")
+    
     return name2
         
 
@@ -504,7 +514,7 @@ def processDatabase():
             '''
             #translator = []
             while(history[index2][0] < index):
-                    index2+=1
+                    index2=1
             print history[index2][0],index
             if (history[index2][0]==index) and history[index2][1] != 0:
                 print str( int(history[index2][1]))
@@ -639,34 +649,45 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     functions.extend(aRules)
 
     sbmlfunctions = parser.getSBMLFunctions()
-    functions.extend(sbmlfunctions)
+    for interation in range(0,3):
+        for sbml2 in sbmlfunctions:
+            for sbml in sbmlfunctions:
+                if sbml == sbml2:
+                    continue
+                if sbml in sbmlfunctions[sbml2]:
+                    sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
+    
+    for idx in range(0,len(functions)):
+        for sbml in sbmlfunctions:
+            if sbml in functions[idx]:
+                functions[idx] = writer.extendFunction(functions[idx],sbml,sbmlfunctions[sbml])
+    #functions.extend(sbmlfunctions)
     dependencies2 = {}
     for idx in range(0,len(functions)):
-        dependencies2[functions[idx].split('=')[0].split('(')[0]] = []
+        dependencies2[functions[idx].split(' = ')[0].split('(')[0].strip()] = []
         for key in artificialObservables:
             oldfunc = functions[idx]
             functions[idx] = (re.sub(r'(\W|^)({0})([^\w(]|$)'.format(key),r'\1\2()\3',functions[idx]))
             if oldfunc != functions[idx]:
-                dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
+                dependencies2[functions[idx].split(' = ')[0].split('(')[0]].append(key)
         for element in sbmlfunctions:
             oldfunc = functions[idx]
-            key = element.split('=')[0].split('(')[0]
-            if key in functions[idx].split('=')[1]:
-                dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
+            key = element.split(' = ')[0].split('(')[0]
+            if re.search('(\W|^){0}(\W|$)'.format(key),functions[idx].split(' = ')[1]) != None:
+                dependencies2[functions[idx].split(' = ')[0].split('(')[0]].append(key)
         for element in tfunc:
-            key = element.split('=')[0].split('(')[0]
-            if key in functions[idx].split('=')[1]:
-                dependencies2[functions[idx].split('=')[0].split('(')[0]].append(key)
-                
+            key = element.split(' = ')[0].split('(')[0]
+            if key in functions[idx].split(' = ')[1]:
+                dependencies2[functions[idx].split( ' = ')[0].split('(')[0]].append(key)
     '''           
     for counter in range(0,3):
         for element in dependencies2:
             if len(dependencies2[element]) > counter:
                 dependencies2[element].extend(dependencies2[dependencies2[element][counter]])
-    '''      
+    '''
     fd = []
     for function in functions:
-        fd.append([function,resolveDependencies(dependencies2,function.split('=')[0].split('(')[0],0)])
+        fd.append([function,resolveDependencies(dependencies2,function.split(' = ' )[0].split('(')[0],0)])
     fd = sorted(fd,key= lambda rule:rule[1])
     functions = [x[0] for x in fd]
     if len(param) == 0:
@@ -722,14 +743,15 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in [255]:
+    for bioNumber in range(293,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
         spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
-        analyzeFile(bioNumber,reactionDefinitions,useID,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
+        analyzeFile(bioNumber,reactionDefinitions,False,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
 
 if __name__ == "__main__":
     #identifyNamingConvention()
