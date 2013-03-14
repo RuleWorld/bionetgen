@@ -459,9 +459,9 @@ int main(int argc, char *argv[]){
     // Create stop condition
 	process_function_names(stop_string); // Remove parentheses from variable names
 	vector<string> variable_names = find_variables(stop_string); // Extract variable names
-	size_t found;
-	while ((found = stop_string.find("&&")) != string::npos) stop_string.replace(found,2,"and"); // Replace && with 'and'
-	while ((found = stop_string.find("||")) != string::npos) stop_string.replace(found,2,"or");  // Replace || with 'or'
+//	size_t found;
+//	while ((found = stop_string.find("&&")) != string::npos) stop_string.replace(found,2,"and"); // Replace && with 'and'
+//	while ((found = stop_string.find("||")) != string::npos) stop_string.replace(found,2,"or");  // Replace || with 'or'
 	for (unsigned int i=0;i < variable_names.size();i++){
 		// Error check
 		if (param_map.find(variable_names[i]) == param_map.end()) {

@@ -476,6 +476,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				parser.SetExpr("time");
 			//	cout << parser.GetExpr() << "= " << parser.Eval() << endl;
 			}
+
 			// Create other functions
 			else{
 				index = atoi(dummy_string.c_str());
@@ -499,7 +500,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// Erase '()' from end of function name
 				func_name.erase(func_name.length()-2,func_name.length());
-//				cout << func_name << "\t" << function_string;
+//				cout << func_name << ": " << function_string << endl;
 
 				// Make sure the function isn't named "time", just to be safe
 				if (func_name == "time"){
@@ -512,7 +513,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				process_function_names(function_string); // Remove parentheses from variable names
 				vector<string> variable_names = find_variables(function_string); // Extract variable names
 //    			for (unsigned int i=0;i < variable_names.size();i++){
-//    				cout << "\t" << variable_names[i];
+//    				cout << "\t" << variable_names[i] << endl;
 //    			}
 
 				// Identify dependencies
@@ -542,14 +543,14 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// evaluate it and store value
 //				cout << function_string << endl;
-				size_t found;
+/*				size_t found;
 				while ((found = function_string.find("&&")) != string::npos){
 					function_string.replace(found,2,"and");
 				}
 				while ((found = function_string.find("||")) != string::npos){
 					function_string.replace(found,2,"or");
 				}
-
+*/
 //				cout << function_string << endl;
 				parser.SetExpr(function_string);
 //				double new_val = parser.Eval();
@@ -557,14 +558,14 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 			network.functions.push_back(parser);
 
-//			cout << "\t" << func_name << ": " << network.functions[network.functions.size()-1].GetExpr() <<
+//			cout << func_name << ": " << network.functions[network.functions.size()-1].GetExpr() <<
 //					"= " << network.functions[network.functions.size()-1].Eval() << endl;
-/*			map<string,double*> m = network.functions[network.functions.size()-1].GetUsedVar();
+/*
+			map<string,double*> m = network.functions[network.functions.size()-1].GetUsedVar();
 			map<string,double*>::iterator iter;
 			for (iter = m.begin();iter != m.end();iter++){
-			cout << "\t" << (*iter).first;
+				cout << "\t" << (*iter).first << endl;
 			}
-			cout << endl;
 //*/
 //    		char* name_char_ptr = new char[func_name.size()];
 //   		strcpy(name_char_ptr,func_name.c_str());
