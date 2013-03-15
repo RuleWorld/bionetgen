@@ -288,7 +288,7 @@ scope{
   $rate_list::memoryWithLocal.putAll($reaction_rule_def::lmemory);
   $rate_list::numberRateLaws = 1;
 }
-        : e1=expression[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA? e2=expression[$rate_list::memoryWithLocal] 
+        : e1=expression[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA e2=expression[$rate_list::memoryWithLocal] 
         {rateList.add($e2.text);
         $rate_list::numberRateLaws = 2;
         })?
