@@ -5,7 +5,7 @@ Created on Thu Mar 22 13:11:38 2012
 @author: proto
 """
 
-from pyparsing import Word, Suppress,Optional,alphanums,Group
+from pyparsing import Word, Suppress,Optional,alphanums,Group,ZeroOrMore
 from numpy import zeros,nonzero
 import numpy as np
 import json
@@ -27,9 +27,7 @@ class SBMLAnalyzer:
         
     def parseReactions(self,reaction,specialSymbols=''):
         species =  (Word(alphanums+"_"+":#") 
-        + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_"+":#") 
-        + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
-        + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+        + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#") 
         + Suppress("()"))
         rate = Word(alphanums + "()")
         grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  

@@ -41,7 +41,7 @@ scope{
   (s1=site_def {$molecule_def::sites.add($s1.st);}
   (COMMA s2=site_def {$molecule_def::sites.add($s2.st);})*) 
   | //nothing 
-  ) RPAREN)? //? adding optional parenthesis require more work
+  ) RPAREN)? POPULATION? //? adding optional parenthesis require more work
  
   
   -> molecules_def(id={$STRING.text},sites={$molecule_def::sites});
