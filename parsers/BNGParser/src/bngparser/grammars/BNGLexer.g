@@ -122,7 +122,7 @@ COMPLEX: 'complex';
 GET_FINAL_STATE: 'get_final_state';
 SAT: 'Sat';
 EXP: 'exp';
-//LOG: 'log';
+//LOG: 'log'; deprecated
 LN: 'ln';
 LOG10: 'log10';
 LOG2: 'log2';

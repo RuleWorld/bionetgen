@@ -37,14 +37,16 @@ scope{
 @init{
   $molecule_def::sites = new ArrayList();
 }
-: ({gParent.netGrammar}? INT | ) STRING (LPAREN (
+: ({gParent.netGrammar}? INT | ) // We should deprecate this eventually --LAH
+  ((STRING | INT) COLON)?
+  s3=STRING (LPAREN (
   (s1=site_def {$molecule_def::sites.add($s1.st);}
   (COMMA s2=site_def {$molecule_def::sites.add($s2.st);})*) 
   | //nothing 
   ) RPAREN)? POPULATION? //? adding optional parenthesis require more work
  
   
-  -> molecules_def(id={$STRING.text},sites={$molecule_def::sites});
+  -> molecules_def(id={$s3.text},sites={$molecule_def::sites});
 
 
 site_def

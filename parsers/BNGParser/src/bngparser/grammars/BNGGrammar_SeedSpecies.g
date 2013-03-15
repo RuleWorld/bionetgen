@@ -45,7 +45,9 @@ scope{
 }
 
 :
-(STRING COLON)? pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
+  ({gParent.netGrammar}? INT | ) // We should deprecate this eventually --LAH
+  ((STRING | INT) COLON)? 
+  pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] {
  //There needs to need a space between species and the expression token, so we go back and make sure there was one
 ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1)  ;
 } 
@@ -63,7 +65,7 @@ scope{
 
 :
 
-({gParent.netGrammar}? INT | )
+//({gParent.netGrammar}? INT | )
  species_def2[molecules,bonds,"S" + speciesCounter]
  {
     $pre_species_def::constant = $species_def2.constant;

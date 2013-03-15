@@ -45,10 +45,13 @@ scope{
 
 }
         : 
-        ({gParent.netGrammar}? INT | )
-        (s1=observable_type)? STRING {gParent.memory.put($STRING.text,new Register(0.0,"observable"));} 
+        ({gParent.netGrammar}? INT | ) // We should deprecate this eventually --LAH
+        ((STRING | INT) COLON)?
+        (s1=observable_type)? s2=STRING {gParent.memory.put($s2.text,new Register(0.0,"observable"));} 
+//        (s1=observable_type)? STRING {gParent.memory.put($STRING.text,new Register(0.0,"observable"));} 
         ({gParent.netGrammar}? LBRACKET MATCHONCE RBRACKET | ) (pattern_list[upperID] { $observable_def_line::pattern.add($pattern_list.st);})
-        -> observables_block(id={upperID},type={$observable_type.text},patterns={$observable_def_line::pattern},name={$STRING.text})
+        -> observables_block(id={upperID},type={$observable_type.text},patterns={$observable_def_line::pattern},name={$s2.text})
+//        -> observables_block(id={upperID},type={$observable_type.text},patterns={$observable_def_line::pattern},name={$STRING.text})
         ;
 observable_type
         : (MOLECULES) | (SPECIES)

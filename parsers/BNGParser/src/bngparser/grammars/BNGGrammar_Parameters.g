@@ -38,7 +38,9 @@ END PARAMETERS LB+;
 
 parameter_def[Map<String,Register> lmemory]
 :
-({gParent.netGrammar}? INT |  ) STRING (BECOMES)? expression[lmemory]  {
-        lmemory.put($STRING.text,new Register($expression.value,"ConstantExpression"));
-        }   -> parameter_def(id={$STRING.text},value={$expression.text})
+({gParent.netGrammar}? INT |  ) // We should deprecate this eventually --LAH
+        ((STRING | INT) COLON)?
+        s1=STRING (BECOMES)? expression[lmemory]  {
+        lmemory.put($s1.text,new Register($expression.value,"ConstantExpression"));
+        }   -> parameter_def(id={$s1.text},value={$expression.text})
 ;
