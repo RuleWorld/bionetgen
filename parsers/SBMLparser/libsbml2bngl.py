@@ -7,6 +7,8 @@ Created on Fri Mar  1 16:14:42 2013
 
 #!/usr/bin/env python
 
+from numpy import histogram
+from matplotlib.pyplot import hist,savefig
 import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
@@ -106,7 +108,7 @@ class SBML2BNGL:
                 rateR = (self.removeFactorFromMath(math.getRightChild(),rProduct))
             else:
                 rateL = "if({0} >= 0 ,{0},0)".format(self.removeFactorFromMath(math,rReactant))
-                rateR = "if({0} < 0 ,-{0},0)".format(self.removeFactorFromMath(math,rProduct))
+                rateR = "if({0} < 0 ,-({0}),0)".format(self.removeFactorFromMath(math,rProduct))
         else:
             rateL =(self.removeFactorFromMath(math,rReactant))
             rateR = '0'
@@ -542,7 +544,9 @@ def processDatabase():
 
 def evaluation(numMolecules,translator):
     originalElements = (numMolecules)
-    ruleElements = len([str(translator[x]) for x in translator if ('.' in str(translator[x]) or '~' in str(translator[x]))])*1.0/originalElements
+    nonStructuredElements = len([1 for x in translator if '()' in str(translator[x])])
+    ruleElements = (len(translator) - nonStructuredElements)*1.0/originalElements
+    
     return ruleElements
 
 
@@ -586,14 +590,15 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    #try:
-    #translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    translator={}    
-    #except:
-    #    print 'failure'
-    #    return
+        
+    try:
+        translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+        #translator={}    
+    except:
+        print 'failure'
+        return None,None
+    
     #translator = {}
-    #print evaluation(len(parser.getSpecies()[0]),translator)
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
@@ -701,10 +706,15 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         logMess('ERROR','The file contains no reactions')
     if useArtificialRules or len(artificialRules) > 0:
         rules =['#{0}'.format(x) for x in rules]
+        evaluate =  evaluation(len(artificialRules),translator)
+
         artificialRules.extend(rules)
         writer.finalText(param,molecules,species,observables,artificialRules,functions,compartments,outputFile)
+
     else:
         artificialRules =['#{0}'.format(x) for x in artificialRules]
+        evaluate =  evaluation(len(rules),translator)
+
         rules.extend(artificialRules)
         
         writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
@@ -714,9 +724,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         with open(outputFile + '.log', 'w') as f:
             for element in logMess.log:
                 f.write(element + '\n')
-    
             
-
+    return len(rules), evaluate
 
 def processFile(translator,parser,outputFile):
     param2 = parser.getParameters()
@@ -734,6 +743,8 @@ def main():
     jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
     jsonFiles.sort()
     parser = OptionParser()
+    rulesLength = []
+    evaluation = []
     parser.add_option("-i","--input",dest="input",
         default='XMLExamples/curated/BIOMD0000000272.xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
@@ -743,7 +754,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in range(293,410):
+    for bioNumber in range(1,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
@@ -751,7 +762,15 @@ def main():
         print reactionDefinitions,useID
         spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
-        analyzeFile(bioNumber,reactionDefinitions,False,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        rlength,reval = analyzeFile(bioNumber,reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        if rlength != None:        
+            rulesLength.append(rlength)
+            evaluation.append(reval)
+    print evaluation
+    #hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
+    #savefig('lengthDistro.png')
+    hist(evaluation,bins =[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    savefig('ruleifyDistro.png')
 
 if __name__ == "__main__":
     #identifyNamingConvention()

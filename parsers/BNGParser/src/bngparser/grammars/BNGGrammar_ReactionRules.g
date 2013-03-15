@@ -125,13 +125,13 @@ String name;
         WS
         
       //  (rate_function modif_command* DELETEMOLECULES? MOVECONNECTED? LB) => 
-        bi=rate_function[$reaction_rule_def::rateList,$reaction_def.bidirectional] {
+        bi=rate_list[$reaction_rule_def::rateList,$reaction_def.bidirectional] {
         //TODO: add a try catch exception to check that if a bidirectional reaction is required it asks for two reaction rates
             if($numReactions == 2 && $reaction_rule_def::rateList.size() > 1)
                 $secondRate=$reaction_rule_def::rateList.get(1);
             else
                 $secondRate="0";
-            $reaction_rule_def::text += " " + $rate_function.text;
+            $reaction_rule_def::text += " " + $rate_list.text;
         }
         (modif_command)* (DELETEMOLECULES)? (MOVECONNECTED)?
         
@@ -144,7 +144,7 @@ String name;
         -> reaction_block(id={"RR" + reactionCounter},reactant={$reaction_rule_def::patternsReactants},
         product={$reaction_rule_def::patternsProducts},name={$reaction_rule_def::name},
         rate={$reaction_rule_def::rateList},bidirectional={bi},
-        lawType={$rate_function.functionName},
+        //lawType={$rate_function.functionName},
         leftMap={$reaction_rule_def::reactionAction.getLeft()},
         rightMap={$reaction_rule_def::reactionAction.getRight()},operations={$reaction_rule_def::reactionAction.getOperations()},
         operator1={$reaction_rule_def::reactionAction.getOperator1()},
@@ -264,17 +264,26 @@ BondList bonds;
       secondBonds={$rule_species_def::bonds.getRight()})
     ;
 
-rate_function [List<String> rateList,boolean bidirectional] returns [String functionName]
+rate_primitive [Map<String,Register> memory] returns [String functionName]
 @init{
   $functionName = "Ele";
+  int numArguments = 0;
 }:
-    (function_keyword LPAREN) => function_keyword {$functionName = $function_keyword.text;} LPAREN rate_list[rateList,bidirectional] RPAREN |
-    rate_list[rateList,bidirectional]
+    (function_keyword LPAREN) => f1=function_keyword {$functionName = $function_keyword.text;} 
+    LPAREN expression[memory] {numArguments++;} (COMMA expression[memory] {numArguments++;})* RPAREN
+    {
+      if($function_keyword.numArguments != numArguments){
+	      String msg = getErrorMessage2(f1.tk,"Incorrect number of arguments");
+	      System.err.println(msg);
+      }
+    } 
+    |
+    expression[memory]
     
 ;
 
-function_keyword:
-  SAT 
+function_keyword returns [int numArguments,Token tk]:
+  SAT {$numArguments = 2;$tk = $SAT;}
 ;
 
 rate_list[List<String> rateList,boolean bidirectional]
@@ -288,7 +297,7 @@ scope{
   $rate_list::memoryWithLocal.putAll($reaction_rule_def::lmemory);
   $rate_list::numberRateLaws = 1;
 }
-        : e1=expression[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA e2=expression[$rate_list::memoryWithLocal] 
+        : e1=rate_primitive[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA e2=rate_primitive[$rate_list::memoryWithLocal] 
         {rateList.add($e2.text);
         $rate_list::numberRateLaws = 2;
         })?
