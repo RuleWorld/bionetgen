@@ -625,7 +625,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			//////////////////////////////////////////////////////////
 		}
 
-		else if (foundBegin && dummy_string != ""){ // Allow for blank lines
+		else if (foundBegin && dummy_string != "" && dummy_string[0] != '#'){ // Allow for blank and commented lines
 			cout << "ERROR: Found invalid line \"" << dummy_string <<
 					"\" while reading functions block." << endl;
 			exit(1);
