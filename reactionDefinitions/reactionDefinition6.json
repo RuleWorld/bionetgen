@@ -1,7 +1,7 @@
 {"reactions": [[["S0", "S1"], ["S2"]], [["S2"], ["S0", "S1"]], [[],["S0"]],[["S0"],[]]],
-"reactionsNames": ["Binding","Generation","Decay","Phosporylation"],
- "namingConvention":[["suffix","_P"]],
- "reactionSite":["phospho"],
-"reactionState":["P"],
- "definitions": [[{"r":[0]}],[{"r":[2]}],[{"r":[3]}],[{"n":[0],"rsi":0,"rst":0}]]
+"reactionsNames": ["Binding","Generation","Decay","Phosporylation","modI"],
+ "namingConvention":[["suffix","_P"],["suffix","_I"]],
+ "reactionSite":["phospho","modI"],
+"reactionState":["P","I"],
+ "definitions": [[{"r":[0]}],[{"r":[2]}],[{"r":[3]}],[{"n":[0],"rsi":0,"rst":0}],[{"n":[1],"rsi":1,"rst":1}]]
  }

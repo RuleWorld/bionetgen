@@ -4,7 +4,7 @@ Created on Tue Dec  6 17:42:31 2011
 
 @author: proto
 """
-from pyparsing import Word, Suppress, Optional, alphanums, Group
+from pyparsing import Word, Suppress, Optional, alphanums, Group,ZeroOrMore
 from numpy import sort
 from copy import deepcopy
 import reactionTransformations
@@ -15,9 +15,7 @@ import re
 
 def parseReactions(reaction):
     species =   (Word(alphanums+"_:#") 
-    + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_:#") 
-    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
-    + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+    + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_:#") 
     + Suppress("()"))
     '''
     species = Optional(Suppress(Word(nums+"*"))) +  Optional(Word(alphanums+"_") + Suppress('()')) +  \
@@ -424,7 +422,8 @@ def processRule(original,database,
     if identifyReaction(original,0) == 1 and classification == 'Binding':
         return reactionTransformations.synthesis(original,database.labelDictionary,
         database.rawDatabase,database.synthesisDatabase,database.translator,outputFlag)
-    elif classification in ['Phosporylation','Double-Phosporylation','Generic-Catalysis','Modification','mMod','iMod','modI']:
+    elif classification in ['Phosporylation','Double-Phosporylation','Modification','mMod','iMod','modI']: #generic-catalysis
+        
         equ = equivalenceTranslator[classification]
         pertinentEquivalence = getPertinentNamingEquivalence3(original,database.rawLabelDictionary,equ)
         return reactionTransformations.catalysis(original,database.labelDictionary,database.rawDatabase,
