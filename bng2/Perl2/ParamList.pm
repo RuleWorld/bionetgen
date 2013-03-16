@@ -208,6 +208,9 @@ sub readString
     
     # Remove leading numeric index, if any
     $$sptr =~ s/^\d+\s+//;
+    
+    # Remove leading label, if any
+    $$sptr =~ s/^\w+:\s+//;
 
     # Convert non assignment format to assignment
     unless ( $$sptr =~ /^\w+\s*=/ )

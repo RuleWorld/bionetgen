@@ -95,6 +95,9 @@ sub readString
 
     # Check if first token is an index (This index will be ignored)
     $string =~ s/^\s*\d+\s+//;
+    
+    # Remove leading label, if exists
+    $string =~ s/^\s*\w+:\s+//;
 
     # Check if next token is observable type
     #  Adding Counter and Population types  --Justin, 5nov2010

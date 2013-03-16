@@ -6,7 +6,7 @@ package BNGModel;
 #
 #      James R. Faeder    (faeder at pitt dot edu)
 #      Justin S. Hogg     (justinshogg at gmail dot com)
-#      Leonard A. Harris
+#      Leonard A. Harris  (lh64 at cornell dot com)
 #      John A. P. Sekar
 #      Jose Juan Tapia
 #      Arshi Arora
