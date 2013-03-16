@@ -128,6 +128,7 @@ scope{
   $function_def::lmemory =  new HashMap<String,Register>();
   $function_def::lmemory.putAll(memory);
 }:
+    ((STRING | INT) COLON)?
     s1=STRING LPAREN 
     parameter=(s2=STRING
     {
