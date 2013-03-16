@@ -152,6 +152,7 @@ String name;
         ,expression={$reaction_rule_def::text}
         )
         ;
+        
 match_attribute
         : LBRACKET MATCHONCE RBRACKET
         ;
@@ -172,7 +173,7 @@ int reactantPatternCounter;
 }
 
 :
- s1=rule_species_def[upperID+"_RP" + $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
+  s1=rule_species_def[upperID+"_RP" + $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
            //Add as many chemicals as the stoichiometry tells us. We also have to modify some of the internal tags
            //(more specifically all the RP's and PP's
            {
@@ -194,7 +195,7 @@ int reactantPatternCounter;
               $reaction_def::reactantPatternCounter++;
             }
             })* 
-        (UNI_REACTION_SIGN {$bidirectional = false;}| BI_REACTION_SIGN {$bidirectional = true;}) 
+  (UNI_REACTION_SIGN {$bidirectional = false;}| BI_REACTION_SIGN {$bidirectional = true;}) 
   (s3=rule_species_def[upperID+"_PP"+ 1,$reaction_rule_def::reactionAction] 
         {
         $reaction_def::reactantPatternCounter =1;
@@ -205,8 +206,8 @@ int reactantPatternCounter;
             ReactionRegister.mergeMaps($s3.map,$productStack);
             $reaction_def::reactantPatternCounter++;
         }
-        }) 
-        (PLUS s4=rule_species_def[upperID+"_PP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
+        })
+  (PLUS s4=rule_species_def[upperID+"_PP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
         {
             int counter = $reaction_def::reactantPatternCounter;
            for(int i=0;i<s4.stoichiometry;i++){ 
@@ -327,7 +328,8 @@ exclude_command
 
 
 
-pattern :   STRING|INT    ;
+//pattern :   STRING|INT    ;
+pattern :   STRING    ;
 
 
 

@@ -87,9 +87,9 @@ header_block
 | set_option
 ;
 
-substance_def: (SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN  LB+);
-version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN  LB+;
-set_option: SET_OPTION LPAREN DBQUOTES STRING DBQUOTES COMMA DBQUOTES STRING DBQUOTES RPAREN  LB+;
+substance_def: SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN (SEMI+)? LB+;
+version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER DBQUOTES RPAREN (SEMI+)? LB+;
+set_option: SET_OPTION LPAREN DBQUOTES STRING DBQUOTES COMMA DBQUOTES STRING DBQUOTES RPAREN (SEMI+)? LB+;
 
 
 // a list of the different sections a bngl file may have. Order is not enforced.
@@ -102,7 +102,6 @@ program_block
 | functions_block
 | population_maps_block
 | compartments_block
-//| set_option
 ;
 
 //Note: The grammars for all sections except functions and compartments are separated in their own files

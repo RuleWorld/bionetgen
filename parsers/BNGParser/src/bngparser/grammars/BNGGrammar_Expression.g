@@ -98,11 +98,11 @@ primitive_element returns [Double value]
         number {$value = $number.value;} 
         | (IF LPAREN (~RPAREN)+ RPAREN) => if_expression {$value = $if_expression.value;}
         | (STRING LPAREN (expression2 (COMMA expression2)*)? RPAREN) => function {$value = $function.value;}
-        |  variable {$value = $variable.value;}
+        | variable {$value = $variable.value;}
         | (EXP | LN | LOG10 | LOG2 | SQRT | RINT | ABS | SIN | COS | TAN | ASIN | ACOS | ATAN | SINH | COSH | TANH | ASINH | ACOSH | ATANH) LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
         | LPAREN e2=expression2 RPAREN {$value = $e2.value;}
         | PI LPAREN RPAREN {$value = Math.PI;}
-        | (MIN | MAX | SUM | AVG) LPAREN (e2=expression2 (COMMA expression2)*) RPAREN {$value = $e2.value;}
+        | (MIN | MAX | SUM | AVG) LPAREN (e3=expression2 (COMMA expression2)*) RPAREN {$value = $e3.value;}
         
         ;
 
@@ -166,9 +166,9 @@ function returns [Double value]:
        //add xml code in here
         $value=1.0;
        }
-       else if($STRING.text.equals("MM")){
-        $value=1.0;
-       }
+//       else if($STRING.text.equals("MM")){
+//        $value=1.0;
+//       }
        else{
                     $value = 1.0;
                     //throw new RuntimeException("function not found: " + $STRING.text, new BNGSemanticException("function not found: " + $STRING.text,s1.getLine()));
