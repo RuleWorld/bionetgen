@@ -1884,7 +1884,7 @@ sub version
 
     unless ( defined $version )
     {   # complain that version is invalid
-        return "version argument '$vstring' has invalid format.";
+        return "version argument '$vstring' has invalid format (make sure argument is enclosed in double quotes \"\").";
     }
 
     if ( $relation eq "" )

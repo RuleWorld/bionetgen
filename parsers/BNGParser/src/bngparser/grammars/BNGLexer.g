@@ -206,8 +206,6 @@ fragment LOWER: 'a'..'z';
 fragment UPPER: 'A'..'Z';
 fragment EXPONENT : ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
-
 VERSION_NUMBER : (INT) | (INT'.'INT) | (INT'.'INT'.'INT) ;
-
 
 
