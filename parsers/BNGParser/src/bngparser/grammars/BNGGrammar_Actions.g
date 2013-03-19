@@ -149,7 +149,7 @@ scope{
   $read_file::actions = new HashMap<String,String>();
 }
         : READFILE LPAREN 
-        (LBRACKET (FILE ASSIGNS DBQUOTES s1=(filename) DBQUOTES {$read_file::actions.put($FILE.text,$s1.text);})? RBRACKET)? 
+        (LBRACKET (FILE ASSIGNS DBQUOTES s1=(filename) DBQUOTES {$read_file::actions.put($FILE.text,$s1.text);}) RBRACKET) 
         RPAREN SEMI? -> action(id={$READFILE.text},optionMap={$read_file::actions})
         ;
 //TODO: this is just a stub right now
@@ -334,5 +334,5 @@ array_value
         ;
 
 filename:
-(STRING|DOT|DIV|MINUS)+
+(STRING|DOT|DIV|MINUS|FLOAT)+
 ;

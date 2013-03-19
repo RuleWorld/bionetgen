@@ -52,7 +52,7 @@ MAPS: 'maps';
 
 SET_OPTION : 'setOption';
 SPECIES_LABEL : 'SPECIESLABEL';
-GENERATE_NETWORK : 'GENERATENETWORK';
+//GENERATE_NETWORK : 'GENERATENETWORK';
 MAX_AGG : 'max_agg';
 MAX_ITER : ('M'|'m')('A'|'a')('X'|'x')'_'('I'|'i')('T'|'t')('E'|'e')('R'|'r');
 MAX_STOICH : 'max_stoich';
@@ -163,8 +163,7 @@ FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | (DIGIT)+ EXPONENT;
 INT: DIGIT+;
-STRING: (LETTER | DIGIT | '_')+
-;
+STRING: (LETTER | DIGIT | '_')+;
 SEMI : ';';
 COLON: ':';
 LSBRACKET : '[';
