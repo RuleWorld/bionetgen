@@ -117,8 +117,7 @@ my %NARGS = ( '+'  => { 'min'=>2           },
 # !=  not equal	 
 # ==  equal	 
 
-# this regex matches numbers (regular and scientific notation)
-my $NUMBER_REGEX = '^[\+\-]?(\d+\.?\d*|\.\d+)(|[Ee][\+\-]?\d+|\*10\^[\+\-]?\d+)$';
+
 # this regex matches param names (letter followed optional by word characters)
 my $PARAM_REGEX  = '^\w+$';
 
@@ -380,7 +379,6 @@ sub operate
             $string_sav = $$sptr;
             %$variables  = ();
         }
-    
 
         # parse string into form expr op expr op ...
         # a+b*(c+d)
@@ -398,8 +396,7 @@ sub operate
                 # Binary operator
                 if ( $$sptr =~ s/^\s*($ops_bi)// )
                 {
-                    my $express = Expression->new();
-                    $express->Type($1);
+                    my $express = Expression->new( Type=>$1 );
                     push @list, $express;
                     $expect_op = 0;
                     next;
@@ -410,7 +407,6 @@ sub operate
                 #  starts parsing a RHS expression which will be assigned to PARAM.
                 elsif ( $$sptr =~ s/^\s*=// )
                 {
-
                     # Check that only preceding argument is variable
                     unless ( @list==1 )
                     {  return "Invalid assignment syntax (VAR = EXPRESSION) in $string_sav at $$sptr";  }
@@ -478,13 +474,12 @@ sub operate
             # look for a function call
             if ( $$sptr =~ s/^($ops_un)?\s*(\w+)\s*\(// )
             {
+                my $express_u;
                 if ( my $op = $1 )
-                {
-                    # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
-                    my $express_u = Expression->new();
-                    $express_u->Type($1);
-                    push @list, $express_u;
+                {   # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
+                    $express_u = Expression->new( Type=>$1 );
                 }
+
                 my $name  = $2;
                 my @fargs = ();
                 my $type  = '';
@@ -526,8 +521,8 @@ sub operate
                 {
                     my $express = Expression->new();
                     $err = $express->readString( $sptr, $plist, ',\)', $level + 1 );
-                    if ($err) {   return ($err);   }
-                    if ($express->Type) {   push @fargs, $express;   }
+                    if ($err) { return $err; }
+                    if ($express->Type) { push @fargs, $express; }
                     
                     if ( $$sptr =~ s/^\)// )
                     {   last;   }
@@ -557,16 +552,19 @@ sub operate
                 }
                 else
                 {
-                
                     if ( $param  and  ($nargs != @fargs) )
-                    {
-                        return ( "Incorrect number of arguments to function $name" );
-                    }
+                    {   return "Incorrect number of arguments to function $name";   }
                 }
-                my $express = Expression->new();
-                $express->Type('FunctionCall');
-                $express->Arglist( [ $name, @fargs ] );
-                push @list, $express;
+                my $express = Expression->new( Type=>'FunctionCall', Arglist=>[$name, @fargs] );
+
+                if (defined $express_u)
+                {
+                    push @{$express_u->Arglist}, $express;
+                    push @list, $express_u;
+                } 
+                else
+                {   push @list, $express;   }
+
                 $expect_op = 1;
                 next;
             }
@@ -574,15 +572,13 @@ sub operate
             # VARIABLE
             elsif ( $$sptr =~ s/^($ops_un)?\s*(\w+)// )
             {
+                my $express_u;
                 if ( my $op = $1 )
-                {
-                    # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
-                    my $express_u = Expression->new();
-                    $express_u->Type($1);
-                    push @list, $express_u;
+                {   # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
+                    $express_u = Expression->new( Type=>$1 );
                 }
                 my $name = $2;
-                
+
                 # Validate against ParamList, if present
                 if ($plist)
                 {
@@ -601,15 +597,19 @@ sub operate
                     }
                 }
                 else
-                {
-                    return "No parameter list provided";
-                }
+                {   return "No parameter list provided";   }
 
-                my $express = Expression->new();
-                $express->Type('VAR');
-                $express->Arglist( [$name] );
+                my $express = Expression->new( Type=>'VAR', Arglist=>[$name] );
                 ++($variables->{$name});
-                push @list, $express;
+
+                if (defined $express_u)
+                {
+                    push @{$express_u->Arglist}, $express;
+                    push @list, $express_u;
+                } 
+                else
+                {   push @list, $express;   }
+
                 $expect_op = 1;
                 next;
             }
@@ -617,41 +617,40 @@ sub operate
             # Get expression enclosed in parentheses
             elsif ( $$sptr =~ s/^($ops_un)?\s*\(// )
             {
+                my $express_u;
                 if ( my $op = $1 )
-                {
-                    # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
-                    my $express_u = Expression->new();
-                    $express_u->Type($1);
-                    push @list, $express_u;
+                {   # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
+                    $express_u = Expression->new( Type=>$1 );
                 }
                 my $express = Expression->new();
                 $err = $express->readString( $sptr, $plist, '\)', $level + 1 );
                 if ($err) {  return ($err);  }
                 unless ( $$sptr =~ s/^\s*\)// )
-                {
-                    return ("Missing end parentheses in $string_sav at $$sptr");
-                }
+                {   return "Missing end parentheses in $string_sav at $$sptr";   }
     
                 #printf "express=%s %s\n", $express->toString($plist), $$sptr;
-                push @list, $express;
+                if (defined $express_u)
+                {
+                    push @{$express_u->Arglist}, $express;
+                    push @list, $express_u;
+                } 
+                else
+                {   push @list, $express;   }
+
                 $expect_op = 1;
                 next;
             }
             elsif ( $end_chars  and  ($$sptr =~ /^\s*[${end_chars}]/) )
-            {
-                last;
-            }
+            {   last;   }
           
             # ERROR
             else
-            {
-                return "Expecting operator argument in $string_sav at $$sptr";
-            }
+            {   return "Expecting operator argument in $string_sav at $$sptr";   }
         }
 
         # Transform list into expression preserving operator precedence
-        if (@list) {  $expr->copy( arrayToExpression(@list) );  }
-
+        if (@list) { $expr->copy(arrayToExpression(@list)); }
+        
         return $err;
     }
 }
@@ -1694,17 +1693,16 @@ sub arrayToExpression
     my @earr = @_;
 
     # list of optypes in order of precedence
-    my @operators = ( '\*\*|\^', '[*/]', '[+-]','[<>]|==|!=|~=|>=|<=','&&|\|\|'); #edited, msneddon
+    my @operators = ('\*\*|\^', '[*/]', '[+-]', '[<>]|==|!=|~=|>=|<=', '&&|\|\|');
     my $optype = shift @operators;
     while ($optype)
     {
         my $i = 0;
-
         # Consolidate EXPR OP EXPR into EXPR
-        while ( $i < $#earr )
+        while ($i < $#earr)
         {
             my $expr = $earr[$i];
-            if ( $expr->Type =~ /$optype/ && !( @{ $expr->Arglist } ) )
+            if ( $expr->Type =~ /$optype/  and  !@{$expr->Arglist} )
             {
                 if ( $i > 0 )
                 {
