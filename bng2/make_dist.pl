@@ -4,7 +4,7 @@
 #   make_dist.pl [OPTS] 
 #
 # DESCRIPTION:
-#   Create a BioNetGen distribution from the reposity. By default, attempts
+#   Create a BioNetGen distribution from the repository. By default, attempts
 #   to extract version number and codename from VERSION file in BNG root.
 #
 # OPTIONS:
@@ -56,7 +56,8 @@ my @include_subdirectories = qw/ Perl2 Models2 Network3 PhiBPlot Validate /;
 # directory containing library archives
 my $libarc_subdir = "libsource";
 # include libraries
-my @include_libraries = ("cvode-2.6.0.tar.gz","muparser_v134.tar.gz");
+#my @include_libraries = ("cvode-2.6.0.tar.gz","muparser_v134.tar.gz");
+my @include_libraries = ("cvode-2.6.0.tar.gz","muparser_v2_2_3.tar.gz");
 # run_network binary
 my $run_network = "run_network";
 
@@ -312,7 +313,7 @@ if (defined $bindir)
 # gather libraries, build configure scripts, and (optionally) compile/install
 {
     unless (-d $build_dir)
-    {   # bindir doesn't exist!
+    {   # build_dir doesn't exist!
         print "make_dist.pl error:\nbuild directory '${build_dir}' does not exist.\n";
         exit -1;
     }

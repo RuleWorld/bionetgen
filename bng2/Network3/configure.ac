@@ -37,20 +37,13 @@ AC_CONFIG_FILES([
  Makefile
  src/Makefile
 ])
-#AC_CONFIG_FILES([
-# Makefile
-# mathutils-1.0/Makefile
-# src/Makefile
+#AC_CONFIG_SUBDIRS([
+# cvode-2.6.0
+# muparser_v134
 #])
 AC_CONFIG_SUBDIRS([
  cvode-2.6.0
- muparser_v134
+ muparser_v2_2_3
 ])
-#AC_CONFIG_SUBDIRS([
-# mathutils-1.0
-# cvode-2.6.0
-# gsl-1.9
-# muparser_v134
-#])
 AC_OUTPUT
 
