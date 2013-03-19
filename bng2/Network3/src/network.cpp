@@ -323,7 +323,7 @@ bool isMuParserFunction(string in_string) {
 		in_string == "sign"  ||
 		in_string == "rint"  ||
 		in_string == "abs"   ||
-		in_string == "if"    ||
+		in_string == "if"    || // Now implemented as static If() in network.h
 		in_string == "min"   ||
 		in_string == "max"   ||
 		in_string == "sum"   ||
@@ -543,18 +543,21 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// evaluate it and store value
 //				cout << function_string << endl;
-/*				size_t found;
+				/*size_t found;
 				while ((found = function_string.find("&&")) != string::npos){
 					function_string.replace(found,2,"and");
 				}
 				while ((found = function_string.find("||")) != string::npos){
 					function_string.replace(found,2,"or");
-				}
-*/
+				}*/
+
 //				cout << function_string << endl;
 				parser.SetExpr(function_string);
 //				double new_val = parser.Eval();
 			}
+
+			// Define if() function as reference to static If() in network.h
+			parser.DefineFun(_T("if"), If);
 
 			network.functions.push_back(parser);
 
@@ -3631,7 +3634,7 @@ int print_network(FILE* out) {
 			for (unsigned int j=0;j < network.functions.size();j++){
 				string s = network.rates->elt[network.var_parameters[j]-1]->name;
 //				cout << "\t" << s << endl;
-				unsigned int p = funcExpr.find(s); // Search expression
+				size_t p = funcExpr.find(s); // Search expression
 				if (p != string::npos){ // Nested function found
 					bool replace = true; // Need to make sure it's not a substring of another function name
 					char c;

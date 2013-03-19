@@ -117,7 +117,7 @@ my %NARGS = ( '+'  => { 'min'=>2           },
 # !=  not equal	 
 # ==  equal	 
 
-# this regex matches numbers (regular and scientific notation
+# this regex matches numbers (regular and scientific notation)
 my $NUMBER_REGEX = '^[\+\-]?(\d+\.?\d*|\.\d+)(|[Ee][\+\-]?\d+|\*10\^[\+\-]?\d+)$';
 # this regex matches param names (letter followed optional by word characters)
 my $PARAM_REGEX  = '^\w+$';
@@ -614,7 +614,7 @@ sub operate
                 next;
             }
 
-            # Get expression enclosed in parenthesis
+            # Get expression enclosed in parentheses
             elsif ( $$sptr =~ s/^($ops_un)?\s*\(// )
             {
                 if ( my $op = $1 )
@@ -629,7 +629,7 @@ sub operate
                 if ($err) {  return ($err);  }
                 unless ( $$sptr =~ s/^\s*\)// )
                 {
-                    return ("Missing end parenthesis in $string_sav at $$sptr");
+                    return ("Missing end parentheses in $string_sav at $$sptr");
                 }
     
                 #printf "express=%s %s\n", $express->toString($plist), $$sptr;

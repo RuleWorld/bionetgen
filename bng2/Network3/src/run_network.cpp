@@ -480,7 +480,6 @@ int main(int argc, char *argv[]){
     /* Read reactions */
 //	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
 	if (!(reactions = read_Rxn_array(netfile, &net_line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
-
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
 		exit(1);
 	}

@@ -259,3 +259,8 @@ extern double gillespie_n_steps();
 extern double gillespie_frac_species_active();
 extern double gillespie_frac_rxns_active();
 extern void	  delete_GSP_included();
+
+// Custom muParser function to support if() syntax
+static mu::value_type If(mu::value_type v1, mu::value_type v2, mu::value_type v3){
+	return (v1>0.5?v2:v3); // v1 should equal 0.0 or 1.0. Using v1 > 0.5 for 'true' just to be safe.
+}
