@@ -854,7 +854,11 @@ rhs_fcn = @(t,y)( calc_species_deriv( t, y, expressions ) );
 
 % simulate model system (stiff integrator)
 try 
-    [timepoints, species_out] = ode15s( rhs_fcn, timepoints, species_init', opts );
+    [~, species_out] = ode15s( rhs_fcn, timepoints, species_init', opts );
+    if(length(timepoints) ~= size(species_out,1))
+        exception = MException('ODE15sError:MissingOutput','Not all timepoints output\\n');
+        throw(exception);
+    end
 catch
     err = 1;
     fprintf( 1, 'Error: some problem encountered while integrating ODE network!\\n' );
