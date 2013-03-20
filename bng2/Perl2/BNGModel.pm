@@ -782,7 +782,10 @@ sub readNetwork
                         if ( $entry =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
                         {
                             $action  = $1;
-                            $options = $2; 
+                            $options = $2;
+                            # replace double quotes with single quotes so that Perl won't
+                            #  try to interpret special characters.    
+                            $options =~ s/"/'/g;
                         }
                         else                        
                         {
@@ -800,8 +803,8 @@ sub readNetwork
                             goto EXIT;
                         }
 
-                        # build command                        
-                        my $command = '$model->' . $action . '(' . $options . ');';
+                        # build command        
+                        my $command = sprintf  "\$model->%s(%s);", $action, $options;
                         # execute action
                         my $t_start = cpu_time(0);
                         $err = eval $command;
@@ -857,7 +860,10 @@ sub readNetwork
             {   # execute an Action:  "action(options)"
                 my $action = $1;
                 my $options = $2;
-                
+                # replace double quotes with single quotes so that Perl won't
+                #  try to interpret special characters.    
+                $options =~ s/"/'/g;
+
                 unless ($model->Params->{allow_actions})
                 {
                     unless ($model->Params->{action_skip_warn})
@@ -873,16 +879,14 @@ sub readNetwork
                 }
 
                 # call to methods associated with $model
-                my $command = '$model->' . $action . '(' . $options . ');';
+                my $command = sprintf  "\$model->%s(%s);", $action, $options;
                 my $t_start = cpu_time(0);    # Set cpu clock offset
                 $err = eval $command;
                 if ($@)   {  $err = errgen($@);    goto EXIT;  }
                 if ($err) {  $err = errgen($err);  goto EXIT;  }
                 my $t_interval = cpu_time(0) - $t_start;
                 if ( $t_interval > 0.0 )
-                {
-                    printf "CPU TIME: %s %.1f s.\n", $1, $t_interval;
-                }
+                {   printf "CPU TIME: %s %.1f s.\n", $1, $t_interval;   }
             }
             else
             {   # Try to execute general PERL code (Dangerous!!)
@@ -890,7 +894,7 @@ sub readNetwork
                 {
                     # General Perl code
                     eval $string;
-                    if ($@) {  $err = errgen($@);  goto EXIT;  }
+                    if ($@) { $err = errgen($@);  goto EXIT; }
                 }
                 else
                 {
@@ -1678,7 +1682,7 @@ sub setConcentration
     my $estring = $value;
     if ( my $err = $expr->readString( \$estring, $plist ) )
     {
-        return ( '', $err );
+        return '', $err;
     }
     my $conc = $expr->evaluate($plist);
 
