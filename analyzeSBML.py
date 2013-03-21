@@ -26,8 +26,8 @@ class SBMLAnalyzer:
         
         
     def parseReactions(self,reaction,specialSymbols=''):
-        species =  (Word(alphanums+"_"+":#") 
-        + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#") 
+        species =  (Word(alphanums+"_"+":#-") 
+        + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
         + Suppress("()"))
         rate = Word(alphanums + "()")
         grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
@@ -222,7 +222,6 @@ class SBMLAnalyzer:
                     equivalenceTranslator[name] = temp
                     reactionIndex[name] = alternative['n'][0]
                     index += 1
-            
         #now we want to fill in all intermediate relationships
         newTranslator = equivalenceTranslator.copy()
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
@@ -245,6 +244,7 @@ class SBMLAnalyzer:
                     newTranslator[max(key1,key2,key=len)].append(tuple(temp2))
             else:
                 pass
+        
         return reactionIndex,newTranslator
     
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,reactionIndex,useNamingConventions=True):

@@ -262,14 +262,16 @@ class Molecule:
         
     def __str__(self):
         self.components = sorted(self.components,key=lambda x:x.name)
-        return self.name + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
+        tmp = self.name.replace('-','_')
+        return tmp + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
         
     def toString(self):
         return self.__str__()
         
     def str2(self):
         self.components = sorted(self.components,key=lambda x:x.name)
-        return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
+        tmp = self.name.replace('-','_')
+        return tmp + '(' + ','.join([x.str2() for x in self.components]) + ')'
         
     def extend(self,molecule):
         for element in molecule.components:
