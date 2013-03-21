@@ -26,8 +26,8 @@ package BNGModel;
 
 
 # pragmas
-#use strict;
-#use warnings;
+use strict;
+use warnings;
 
 # Perl Modules
 use Class::Struct;
@@ -1747,7 +1747,7 @@ sub addConcentration
     {   # evaluate parameter
         $orig_conc = $plist->evaluate($spec->Concentration);
     }        
-    $conc = $add_conc + $orig_conc;
+    my $conc = $add_conc + $orig_conc;
 
     # set new concentration
     $model->Concentrations->[$spec->Index - 1] = $conc;
@@ -2045,7 +2045,7 @@ sub generate_network
         'max_agg'    => $params{max_agg},
         'check_iso'  => $params{check_iso},
         'max_stoich' => $params{max_stoich},
-        'verbose'    => $parans{verbose},
+        'verbose'    => $params{verbose},
     };
 
     # check verbose option
@@ -2180,7 +2180,7 @@ sub generate_network
         if ( $params{print_iter} )
         {
             $params_writeNET->{prefix} = "${prefix}_${niter}";
-            $err = $model->writeNET($params_writeNET);
+            my $err = $model->writeNET($params_writeNET);
             if ($err) { return $err; }
             $params_writeNET->{prefix} = $prefix;
         }
@@ -2203,7 +2203,7 @@ sub generate_network
     printf "Total   : %5d reactions %.2e CPU s %.2e CPU s/rxn\n", $n_tot, $t_tot, $eff;
 
     # Print result to netfile
-    $err = $model->writeNET($params_writeNET);
+    my $err = $model->writeNET($params_writeNET);
     if ($err) { return $err; }
 
     return '';
