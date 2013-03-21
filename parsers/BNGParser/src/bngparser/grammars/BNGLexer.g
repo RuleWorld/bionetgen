@@ -69,7 +69,6 @@ LABEL : 'LABEL';
 PARAMETERS : ('p'|'P')('a'|'A')('r'|'R')('a'|'A')('m'|'M')('e'|'E')('t'|'T')('e'|'E')('r'|'R')('s'|'S');
 VERBOSE : ('V'|'v')('E'|'e')('R'|'r')('B'|'b')('O'|'o')('S'|'s')('E '|'e');
 
-GML: 'gml';
 MATCHONCE: 'MatchOnce';
 DELETEMOLECULES: 'DeleteMolecules';
 MOVECONNECTED: 'MoveConnected';
@@ -120,7 +119,16 @@ SUBSTANCEUNITS: 'substanceUnits';
 PARAM: 'param';
 COMPLEX: 'complex';
 GET_FINAL_STATE: 'get_final_state';
+GML: 'gml';
+NOCSLF: 'nocslf';
+NOTF: 'notf';
+BINARY_OUTPUT: 'binary_output';
+UTL: 'utl';
+EQUIL: 'equil';
+//ELE: 'Ele';
 SAT: 'Sat';
+//MM: 'MM';
+//HILL: 'Hill';
 EXP: 'exp';
 //LOG: 'log'; deprecated
 LN: 'ln';
