@@ -120,9 +120,9 @@ String name;
         {
         //Whitespaces are normally skipped but they are still in the stream. In this case if this rule is valid
         //a valid WS would be located on the previous token
-        ((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1);
+        //((ChangeableChannelTokenStream)input).seek(((ChangeableChannelTokenStream)input).index()-1);
         } 
-        WS
+        //WS
         
       //  (rate_function modif_command* DELETEMOLECULES? MOVECONNECTED? LB) => 
         bi=rate_list[$reaction_rule_def::rateList,$reaction_def.bidirectional] {
