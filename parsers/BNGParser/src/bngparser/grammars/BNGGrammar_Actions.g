@@ -49,6 +49,7 @@ action  : generate_network {actions.add($generate_network.st);}
         | save_concentrations {actions.add($save_concentrations.st);}
         | reset_concentrations {actions.add($reset_concentrations.st);}
         | add_concentration {actions.add($add_concentration.st);}
+        | generate_hybrid_model {actions.add($generate_hybrid_model.st);}
         ;
         
 generate_network
@@ -74,6 +75,29 @@ gn_action_par_def[Map<String,String> map]
         | ps_par_def[map]
         ;
 
+generate_hybrid_model
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $generate_hybrid_model::actions = new HashMap<String,String>();
+}
+        : GENERATEHYBRIDMODEL LPAREN (LBRACKET
+        ((gnhy_action_par_def[$generate_hybrid_model::actions]) 
+        (COMMA gnhy_action_par_def[$generate_hybrid_model::actions])*)?
+        RBRACKET)? RPAREN SEMI? -> action(id={$GENERATEHYBRIDMODEL.text},optionMap={$generate_hybrid_model::actions})
+        ;
+        
+gnhy_action_par_def[Map<String,String> map]
+        : (OVERWRITE ASSIGNS i1=INT {map.put($OVERWRITE.text,$i1.text);})
+        | (EXECUTE ASSIGNS i2=INT {map.put($EXECUTE.text,$i2.text);})
+        | (VERBOSE ASSIGNS i3=INT {map.put($VERBOSE.text,$i3.text);})
+        | (SUFFIX ASSIGNS DBQUOTES (s1=~(DBQUOTES ))* DBQUOTES {map.put($SUFFIX.text,$s1.text);})
+//        | (ACTIONS ASSIGNS LSBRACKET (DBQUOTE action DBQUOTE)
+//          (COMMA DBQUOTE action DBQUOTE)* RSBRACKET)// {map.put($ACTIONS.text,$i5.text);})
+        | (EXACT ASSIGNS i4=INT {map.put($EXACT.text,$i4.text);})
+        ;
+               
 simulate_method
 scope{
   Map<String,String> actions;
@@ -83,7 +107,6 @@ scope{
   $simulate_method::method = "";
   $simulate_method::actions = new HashMap<String,String>();
 }
-
         : (simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";}
         | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";}
         | write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";}
