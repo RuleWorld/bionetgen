@@ -121,7 +121,7 @@ BondList bonds;
   $stoichiometry = 1;
 }
 : 
- //(match_attribute)?
+ (match_attribute)?
  s1=(species_def[$obs_species_def::reactants,$obs_species_def::bonds,upperID] 
   {
        reactionAction.addMolecule(upperID,$species_def.text,$obs_species_def::bonds);
