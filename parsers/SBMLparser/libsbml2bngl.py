@@ -384,7 +384,7 @@ def standardizeName(name):
     name2 = name
     
     
-    name2 = name.replace("-","_")
+    #name2 = name.replace("-","_")
     name2 = name2.replace("^","")
     name2 = name2.replace("'","")
     name2 = name2.replace("*","m")
@@ -392,8 +392,8 @@ def standardizeName(name):
     name2 = name2.replace(" ","_")
     name2 = name2.replace(",","_")
     
-    name2 = name2.replace("(","_")
-    name2 = name2.replace(")","_")
+    name2 = name2.replace("(","")
+    name2 = name2.replace(")","")
     name2 = name2.replace(" ","")
     name2 = name2.replace("+","")
     name2 = name2.replace("/","_")
@@ -591,12 +591,13 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
         
-    try:
-        translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #try:
+    translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         #translator={}    
-    except:
-        print 'failure'
-        return None,None
+    #except:
+    #    print 'failure'
+    #    return None,None
+    
     
     #translator = {}
     param,zparam = parser.getParameters()
@@ -754,7 +755,7 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in range(1,410):
+    for bioNumber in [48]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1

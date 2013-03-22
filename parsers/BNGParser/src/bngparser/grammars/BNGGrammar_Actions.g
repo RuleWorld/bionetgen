@@ -39,6 +39,7 @@ actions_block
         (action LB*)+
         (END ACTIONS LB*)?
 ;
+
 action  : generate_network {actions.add($generate_network.st);}
         | simulate_method {actions.add($simulate_method.st);}
         | read_file {actions.add($read_file.st);}
@@ -48,7 +49,9 @@ action  : generate_network {actions.add($generate_network.st);}
         | save_concentrations {actions.add($save_concentrations.st);}
         | reset_concentrations {actions.add($reset_concentrations.st);}
         | add_concentration {actions.add($add_concentration.st);}
+        | generate_hybrid_model {actions.add($generate_hybrid_model.st);}
         ;
+        
 generate_network
 scope{
   Map<String,String> actions;
@@ -72,6 +75,29 @@ gn_action_par_def[Map<String,String> map]
         | ps_par_def[map]
         ;
 
+generate_hybrid_model
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $generate_hybrid_model::actions = new HashMap<String,String>();
+}
+        : GENERATEHYBRIDMODEL LPAREN (LBRACKET
+        ((gnhy_action_par_def[$generate_hybrid_model::actions]) 
+        (COMMA gnhy_action_par_def[$generate_hybrid_model::actions])*)?
+        RBRACKET)? RPAREN SEMI? -> action(id={$GENERATEHYBRIDMODEL.text},optionMap={$generate_hybrid_model::actions})
+        ;
+        
+gnhy_action_par_def[Map<String,String> map]
+        : (OVERWRITE ASSIGNS i1=INT {map.put($OVERWRITE.text,$i1.text);})
+        | (EXECUTE ASSIGNS i2=INT {map.put($EXECUTE.text,$i2.text);})
+        | (VERBOSE ASSIGNS i3=INT {map.put($VERBOSE.text,$i3.text);})
+        | (SUFFIX ASSIGNS DBQUOTES (s1=~(DBQUOTES ))* DBQUOTES {map.put($SUFFIX.text,$s1.text);})
+//        | (ACTIONS ASSIGNS LSBRACKET (DBQUOTE action DBQUOTE)
+//          (COMMA DBQUOTE action DBQUOTE)* RSBRACKET)// {map.put($ACTIONS.text,$i5.text);})
+        | (EXACT ASSIGNS i4=INT {map.put($EXACT.text,$i4.text);})
+        ;
+               
 simulate_method
 scope{
   Map<String,String> actions;
@@ -81,7 +107,6 @@ scope{
   $simulate_method::method = "";
   $simulate_method::actions = new HashMap<String,String>();
 }
-
         : (simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";}
         | simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";}
         | write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";}
@@ -92,29 +117,29 @@ scope{
         | simulate[$simulate_method::actions] {$simulate_method::method = "simulate";})
         -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
         ;
+        
 simulate[Map<String,String> map]:
         SIMULATE LPAREN (LBRACKET 
         ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
-        RBRACKET)? RPAREN SEMI?
-        ;
+        RBRACKET)? RPAREN SEMI?;
+        
 simulate_ode[Map<String,String> map]
         : SIMULATE_ODE LPAREN (LBRACKET
          ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
-          RBRACKET)? RPAREN SEMI?
-         ;
+          RBRACKET)? RPAREN SEMI?;
+          
 simulate_ssa[Map<String,String> map]
         : SIMULATE_SSA LPAREN (LBRACKET
           ((ps_par_def[map]|simulate_par_def[map]) (COMMA (ps_par_def[map]|simulate_par_def[map]))*)?
-          RBRACKET)? RPAREN SEMI? ;
+          RBRACKET)? RPAREN SEMI?;
 
 simulate_nf[Map<String,String> map]
         : SIMULATE_NF LPAREN (LBRACKET
          ((ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map]))*)? 
-          RBRACKET)? RPAREN SEMI?
-         ;
+          RBRACKET)? RPAREN SEMI?;
 
 write_m_file[Map<String,String> map]
         : WRITEMFILE LPAREN (LBRACKET
@@ -132,8 +157,8 @@ write_network[Map<String,String> map]
           (COMMA (ps_par_def[map]|simulate_par_def[map]))*)? 
       RBRACKET)? 
       RPAREN
-      
       ;
+      
 simulate_pla[Map<String,String> map]
     : SIMULATE_PLA LPAREN (LBRACKET
              ((ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map])
@@ -230,10 +255,7 @@ species_def[$variable_definition::reactants,$variable_definition::bonds,""] {$va
 DBQUOTES COMMA 
 (e1=expression[gParent.memory] {$variableValue = $e1.text; }| 
 (DBQUOTES e2=expression[gParent.memory] DBQUOTES {$variableValue = $e2.text; }))
-          
-           
             ;
-
 
 save_concentrations
         : SAVECONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? -> action(id={$SAVECONCENTRATIONS.text})
@@ -272,11 +294,15 @@ scope{
         ;    
  
 simulate_nf_par_def[Map<String,String> map]
-        : PARAM ASSIGNS DBQUOTES (MINUS s1=STRING s2=(STRING|INT|DOUBLE))* DBQUOTES  {map.put($PARAM.text,"-" + $s1.text + " " + $s2.text);}
+        : PARAM ASSIGNS DBQUOTES (MINUS s1=(STRING|NOCSLF|NOTF|UTL|GML|SEED) s2=(STRING|INT|DOUBLE)?)* DBQUOTES  {map.put($PARAM.text,"-" + $s1.text + " " + $s2.text);}
         | COMPLEX ASSIGNS i1=INT {map.put($COMPLEX.text,$i1.text);}
         | GET_FINAL_STATE ASSIGNS i2=INT {map.put($GET_FINAL_STATE.text,$i2.text);}
         | GML ASSIGNS i3=INT {$map.put($GML.text,$i3.text);}
-      
+        | NOCSLF ASSIGNS i4=INT {$map.put($NOCSLF.text,$i4.text);}
+        | NOTF ASSIGNS i5=INT {$map.put($NOTF.text,$i5.text);}
+        | BINARY_OUTPUT ASSIGNS i6=INT {$map.put($BINARY_OUTPUT.text,$i6.text);}
+        | UTL ASSIGNS i7=INT {$map.put($UTL.text,$i7.text);}
+        | EQUIL ASSIGNS i8=(FLOAT|INT) {$map.put($EQUIL.text,$i8.text);}
         ;    
         
 write_par_def:
@@ -315,7 +341,7 @@ simulate_par_def[Map<String,String> map]
         | OVERWRITE ASSIGNS i15=INT {map.put($OVERWRITE.text,$i15.text);}
         | SEED ASSIGNS i16=INT {map.put($SEED.text,$i16.text);}
         ;
-        
+
 multiple_definition returns [String value]:
   INT {$value=$INT.text;}| FLOAT {$value=$FLOAT.text;}| 
   STRING {

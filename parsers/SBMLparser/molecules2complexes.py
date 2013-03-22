@@ -14,8 +14,8 @@ from util import logMess
 import re
 
 def parseReactions(reaction):
-    species =   (Word(alphanums+"_:#") 
-    + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_:#") 
+    species =   (Word(alphanums+"_:#-") 
+    + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_:#-") 
     + Suppress("()"))
     '''
     species = Optional(Suppress(Word(nums+"*"))) +  Optional(Word(alphanums+"_") + Suppress('()')) +  \
@@ -592,6 +592,7 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     #secondary key: length of the names of the elements involved    
     ruleWeightTable = []
     ruleWeight2Table= []
+    #print equivalenceTranslator
     for rule in rules:
         flag = False
         weight = 0
@@ -606,14 +607,18 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             weight2 += len(element)
         for element in reaction2[0]:
             weight+= sum([1 for x in equivalenceTranslator if re.search(r'(_|^)({0})(_|$)'.format(x[1]),element) != None])
+        for element in reaction2[0]:
+            weight += element.count('_')
         ruleWeight2Table.append(weight2)
         ruleWeightTable.append(weight)
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[1])
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
     
+    
         
     for idx,(w0,w1,rule,classification) in enumerate(nonProcessedRules):
+        
         outputFlag = False
         #if classification == 'Modification':
         #    outputFlag = True
@@ -623,6 +628,8 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             tmp = deepcopy(database.translator)
             print reaction2
         processRule(reaction2,database,classification,eequivalenceTranslator,outputFlag)
+        #if 'EGF_EGFR2_PLCg' in database.translator:
+        #    print rule,database.translator['EGF_EGFR2_PLCg'],classification
         #if 'EGF_EGFRm2_GAP_Grb2_Prot' in database.translator:
         #    print '++++',rule,difflib.SequenceMatcher(None, 'Grb2(egfr,shc!10,sos).EGF(egfr!5,modI~U,modM~M).EGFR(egf!5,egfr!8,gap!9,grb2!11,modI~U,prot,ras_gdp,shc!10).EGF(egfr!7,modI~U,modM~U).EGFR(egf!7,egfr!8,gap!8,grb2,modI~U,prot,ras_gdp,shc!9).GAP(egfr!9).Prot(egfr!11,modI~U,ras_gdp,ras_gtp)' , str(database.translator['EGF_EGFRm2_GAP_Grb2_Prot'])).ratio()
         if outputFlag:

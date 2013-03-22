@@ -27,7 +27,7 @@ def issubset(possible_sub, superset):
 
 
 
-def getFreeRadical(element,rawDatabase,translator,product,dictionary):
+def getFreeRadical(element,tiebreaker,rawDatabase,translator,product,dictionary):
     """
     this method is used when the user does not provide a full binding specification
     it searches a molecule for a component that has not been used before in another reaction
@@ -66,6 +66,8 @@ def getFreeRadical(element,rawDatabase,translator,product,dictionary):
                         components2.remove(component.name)
     if not components2:
         return []
+    if tiebreaker.lower() in components2:
+        return tiebreaker.lower()
     return components2[0]
 '''
 def findIntersection(set1,set2,translator):
@@ -122,6 +124,8 @@ def synthesis(original,dictionary,rawDatabase,synthesisDatabase,translator,outpu
             #    print original
             #if 'P_KKK_KK' in translator:        
             #    print 'hola'
+            if 'EGF_EGFR2_PLCg' in original[1]:
+                print original
             tags,molecules = findCorrespondence(original[0],original[1],dictionary,sbml_name,rawDatabase,synthesisDatabase,translator,outputFlag)
             
 
@@ -216,8 +220,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
     intersection = findIntersection(extended1,extended2,synthesisDatabase)
     #otherwise we create it from scratch
     if not intersection:
-        r1 = getFreeRadical(extended1,rawDatabase,translator,product,dictionary)
-        r2 = getFreeRadical(extended2,rawDatabase,translator,product,dictionary)
+        r1 = getFreeRadical(extended1,extended2[0],rawDatabase,translator,product,dictionary)
+        r2 = getFreeRadical(extended2,extended1[0],rawDatabase,translator,product,dictionary)
         binding1,binding2 = getBindingPoints(extended1,extended2,reactants,originalProductName[0])
         if not r1 or not r2:
             #prin   t 'Cannot infer how',extended1,'binds to',extended2
@@ -228,8 +232,8 @@ def getIntersection(reactants,product,dictionary,rawDatabase,translator,synthesi
             #print extended1,extended2
             
             createIntersection((binding1,binding2),rawDatabase,translator,dictionary)
-            r1 = getFreeRadical((binding1,),rawDatabase,translator,product,dictionary)
-            r2 = getFreeRadical((binding2,),rawDatabase,translator,product,dictionary)
+            r1 = getFreeRadical((binding1,),binding2,rawDatabase,translator,product,dictionary)
+            r2 = getFreeRadical((binding2,),binding1,rawDatabase,translator,product,dictionary)
             #print 'rrrrrrrrrrr',r1,r2
             if not r1 or not r2:
                 return (None,None,None,None)
