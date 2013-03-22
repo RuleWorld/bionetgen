@@ -166,7 +166,7 @@ sub toXML
 
 
 
-# write reaction network to SBML level 2 format
+# write reaction network to SBML Level 2 Version 1 format
 sub writeSBML
 {
 	my $model  = shift @_;
@@ -202,25 +202,33 @@ sub writeSBML
 
 
 	# 0. HEADER
-	print $SBML <<"EOF";
-<?xml version="1.0" encoding="UTF-8"?>
+#	print $SBML <<"EOF";
+#<?xml version="1.0" encoding="UTF-8"?>
+#<!-- Created by BioNetGen $version  -->
+#<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+#  <model id="$model_name">
+#EOF
+	print $SBML qq{<?xml version="1.0" encoding="UTF-8"?>
 <!-- Created by BioNetGen $version  -->
 <sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
   <model id="$model_name">
-EOF
+};
 
 
 	# 1. Compartments (currently one dimensionsless compartment)
-	print $SBML <<"EOF";
-    <listOfCompartments>
+#	print $SBML <<"EOF";
+#    <listOfCompartments>
+#      <compartment id="cell" size="1"/>
+#    </listOfCompartments>
+#EOF
+	print $SBML qq{    <listOfCompartments>
       <compartment id="cell" size="1"/>
     </listOfCompartments>
-EOF
+};
 
 
 	# 2. Species
 	print $SBML "    <listOfSpecies>\n";
-
 	my $use_array = @{$model->Concentrations} ? 1 : 0;
 	foreach my $spec ( @{$model->SpeciesList->Array} )
 	{
@@ -233,6 +241,13 @@ EOF
         # If concentration is a parameter name, then evaluate the parameter
 		unless ( isReal($conc) )
         {   $conc = $plist->evaluate($conc, []);   }
+        
+        # NOTE: In SBML Level 2 Version 2, the InitialAssignment construct was introduced that
+        # "permits the calculation of the value of a constant or the initial value of a variable 
+        # from the values of other quantities in a model" -- see
+        # [http://sbml.org/Software/libSBML/docs/java-api/org/sbml/libsbml/InitialAssignment.html].
+        # We could use this in the next version of writeSBML() to allow for variable initial
+        # concentrations. --LAH
 
 		printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
 		                                                                $spec->Index, "cell", $conc;
@@ -269,17 +284,28 @@ EOF
 	}
 	foreach my $obs ( @{$model->Observables} )
 	{
-		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", "Group_" . $obs->Name;
+#		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", "Group_" . $obs->Name;
+		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $obs->Name;
+	}
+	
+	# C. Global functions
+	print $SBML "      <!-- Global functions -->\n";
+	foreach my $param ( @{$plist->Array} )
+	{
+	    next unless ( $param->Type eq 'Function');
+	    next if ( @{$param->Ref->Args} ); # Don't print local functions
+	    printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $param->Name;
 	}
 	print $SBML "    </listOfParameters>\n";
 
 
-	# 4. 'Rules' (for observables)
+	# 4. Assignment rules (for dependent variables, observables, and functions)
 	print $SBML "    <listOfRules>\n";
 	print $SBML "      <!-- Dependent variables -->\n";
 	foreach my $param ( @{$plist->Array} )
     {
-		next if ( $param->Expr->Type eq 'NUM' );
+#		next if ( $param->Expr->Type eq 'NUM' );
+		next unless ( $param->Type eq 'ConstantExpression');
 		printf $SBML "      <assignmentRule variable=\"%s\">\n", $param->Name;
         #print  $SBML "        <notes>\n";
         #print  $SBML "          <xhtml:p>\n";
@@ -294,8 +320,8 @@ EOF
 		print $SBML "      <!-- Observables -->\n";
 		foreach my $obs ( @{$model->Observables} )
         {
-			printf $SBML "      <assignmentRule variable=\"%s\">\n",
-			  "Group_" . $obs->Name;
+#			printf $SBML "      <assignmentRule variable=\"%s\">\n", "Group_" . $obs->Name;
+			printf $SBML "      <assignmentRule variable=\"%s\">\n", $obs->Name;
 			my ( $ostring, $err ) = $obs->toMathMLString();
 			if ($err) { return $err; }
 			foreach my $line ( split "\n", $ostring )
@@ -304,6 +330,15 @@ EOF
 			}
 			print $SBML "      </assignmentRule>\n";
 		}
+	}
+	print $SBML "      <!-- Global functions -->\n";
+	foreach my $param ( @{$plist->Array} )
+    {
+		next unless ( $param->Type eq 'Function');
+		next if ( @{$param->Ref->Args} ); # Don't print local functions
+		printf $SBML "      <assignmentRule variable=\"%s\">\n", $param->Name;
+		printf $SBML $param->toMathMLString( $plist, "        " );
+		print $SBML "      </assignmentRule>\n";
 	}
 	print $SBML "    </listOfRules>\n";
 
@@ -360,11 +395,15 @@ EOF
 	}
 	print $SBML "    </listOfReactions>\n";
 
+
 	# 6. FOOTER
-	print $SBML <<"EOF";
-  </model>
+#	print $SBML <<"EOF";
+#  </model>
+#</sbml>
+#EOF
+	print $SBML qq{  </model>
 </sbml>
-EOF
+};
 
     close $SBML;
 	print "Wrote SBML to $file.\n";
