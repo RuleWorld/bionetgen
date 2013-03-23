@@ -1056,7 +1056,7 @@ void print_Groups(FILE* out, Group* list, Elt_array* earray) {
 
 	fprintf(out, "begin groups\n");
 	for (group = list; group != NULL; group = group->next) {
-		fprintf(out, "%5d %10s", group->index, group->name);
+		fprintf(out, "%5d %-21s", group->index, group->name);
 		for (i = 0; i < group->n_elt; ++i) {
 			eindex = group->elt_index[i];
 			factor = (group->elt_factor) ? group->elt_factor[i] : 1.0;
@@ -3602,11 +3602,16 @@ int print_network(FILE* out) {
 	if (network.rates) {
 		fprintf(out, "begin parameters\n");
 		Elt* elt;
-		char* str;
+//		char* str;
 		for (elt = network.rates->list; elt != NULL; elt = elt->next) {
 			//str= (elt->fixed) ? "$" : "";
-			if (elt->fixed) str = (char*)"$";
-			else str = (char*)"";
+			if (elt->fixed){ // Error check (parameters cannot be fixed)
+//				str = (char*)"$";
+				cout << "Error in network::print_network(): Parameter " << elt->name
+					 << " is fixed. This shouldn't happen. Exiting." << endl;
+				exit(1);
+			}
+//			else str = (char*)"";
 			// Don't print functions
 			bool print = true;
 			for (unsigned int i=0;i < network.functions.size() && print;i++){
@@ -3614,10 +3619,13 @@ int print_network(FILE* out) {
 					print = false;
 				}
 			}
-			if (print)
-				fprintf(out, "%5d %s%-20s %22.15e\n", elt->index, str, elt->name, elt->val);
+			if (print){
+//				fprintf(out, "%5d %s%-20s %22.15e\n", elt->index, str, elt->name, elt->val);
+//				fprintf(out, "%5d %-21s %22.15e\n", elt->index, elt->name, elt->val);
+				fprintf(out, "%5d %-21s %s\n", elt->index, elt->name,
+						network.parameters.at(elt->index-1).p.GetExpr().c_str());
+			}
 		}
-//		print_Elt_list(out, network.rates->list);
 		fprintf(out, "end parameters\n");
 	}
 
@@ -3630,7 +3638,7 @@ int print_network(FILE* out) {
 			funcName = network.rates->elt[network.var_parameters[i]-1]->name;
 			funcExpr = network.functions[i].GetExpr();
 //			cout << funcName << ": " << funcExpr << endl;
-			// Look for nested functions in funcExpr
+			// Look for nested functions in funcExpr and append "()"
 			for (unsigned int j=0;j < network.functions.size();j++){
 				string s = network.rates->elt[network.var_parameters[j]-1]->name;
 //				cout << "\t" << s << endl;
