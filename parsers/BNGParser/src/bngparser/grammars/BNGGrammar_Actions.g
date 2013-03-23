@@ -335,7 +335,7 @@ simulate_par_def[Map<String,String> map]
         | PRINT_NET ASSIGNS i11=INT {map.put($PRINT_NET.text,$i11.text);}
         | PRINT_END ASSIGNS i12=INT {map.put($PRINT_END.text,$i12.text);}    
         | NETFILE ASSIGNS DBQUOTES s4=filename DBQUOTES {map.put($NETFILE.text,$s4.text);}
-        | METHOD ASSIGNS method_definition {map.put($METHOD.text,$method_definition.text);}
+        | METHOD ASSIGNS DBQUOTES method_definition DBQUOTES {map.put($METHOD.text,$method_definition.text);}
         | CONTINUE ASSIGNS i13=INT {map.put($CONTINUE.text,$i13.text);}
         | EVALUATE_EXPRESSIONS ASSIGNS i14=INT {map.put($EVALUATE_EXPRESSIONS.text,$i14.text);}
         | OVERWRITE ASSIGNS i15=INT {map.put($OVERWRITE.text,$i15.text);}

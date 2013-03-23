@@ -74,5 +74,5 @@ end model
 
 ## actions ##
 generate_network({overwrite=>1})
-simulate({method=>ode,t_end=>50,n_steps=>5,rtol=>1e-12,atol=>1e-12})
+simulate({method=>"ode",t_end=>50,n_steps=>5,rtol=>1e-12,atol=>1e-12})
 

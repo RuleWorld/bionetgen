@@ -145,8 +145,8 @@ generate_network({overwrite=>1})
 
 # Equilibration
 setConcentration("EGF",0)
-simulate({method=>ode,t_end=>100000,n_steps=>10,steady_state=>1})
+simulate({method=>"ode",t_end=>100000,n_steps=>10,steady_state=>1})
 
 # Kinetics
 setConcentration("EGF","EGF_tot")
-simulate({method=>ode,t_end=>120,n_steps=>120})
+simulate({method=>"ode",t_end=>120,n_steps=>120})

@@ -69,7 +69,7 @@ my %functions =
   "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 },
   "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 },
   "pi"    => { FPTR => sub { pi },                   NARGS => 0 },
-  "time"  => { FPTR => sub { time },                 NARGS => 0 },
+  "time"  => { FPTR => sub {  },                 	 NARGS => 0 }, # Not sure what to put here --LAH
   "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
   "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) },
   "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) },
