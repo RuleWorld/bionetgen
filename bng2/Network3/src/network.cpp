@@ -1807,13 +1807,13 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 
 		// Create rxn string
 //		new_elt->toString = "";
-		if (new_elt->n_reactants == 0) *new_elt->toString += "*";
+		if (new_elt->n_reactants == 0) *new_elt->toString += "0";
 		else *new_elt->toString += (string)species->elt[new_elt->r_index[0]-1]->name;
 		for (int y=1;y < new_elt->n_reactants;y++){
 			*new_elt->toString += " + " + (string)species->elt[new_elt->r_index[y]-1]->name;
 		}
 		*new_elt->toString += " -> ";
-		if (new_elt->n_products == 0) *new_elt->toString += "*";
+		if (new_elt->n_products == 0) *new_elt->toString += "0";
 		else *new_elt->toString += (string)species->elt[new_elt->p_index[0]-1]->name;
 		for (int y=1;y < new_elt->n_products;y++){
 			*new_elt->toString += " + " + (string)species->elt[new_elt->p_index[y]-1]->name;
@@ -1823,7 +1823,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			*new_elt->toString += Util::toString(new_elt->stat_factor) + "*";
 		}
 		*new_elt->toString += (string)rates->elt[new_elt->rateLaw_indices[0]-1]->name;
-		*new_elt->toString += " (=" + Util::toString(new_elt->stat_factor*
+		*new_elt->toString += " (= " + Util::toString(new_elt->stat_factor*
 				rates->elt[new_elt->rateLaw_indices[0]-1]->val) + ")";
 
 		/* Add new reaction to list of reactions */
@@ -2082,13 +2082,13 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 			//for (index=iarr+1; index<iarr+rxn->n_reactants; ++index){
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				if (index > iarr) {
-					if (*index == *(index - 1)) {
+					if (*index == *(index-1)) {
 						n += 1.0;
 					} else {
 						n = 0.0;
 					}
 				}
-				rate *= (X[*index] - n);
+				rate *= (X[*index]-n);
 			}
 		}
 		// Continuous case
@@ -2184,12 +2184,12 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 			double n = 0.0;
 			/* Compute contributions to rate from species appearing only in numerator */
 			for (ig = 1; ig < rxn->n_reactants; ++ig) {
-				if (iarr[ig] == iarr[ig - 1]) {
+				if (iarr[ig] == iarr[ig-1]) {
 					n += 1.0;
 				} else {
 					n = 0.0;
 				}
-				rate *= (X[iarr[ig]] - n);
+				rate *= (X[iarr[ig]]-n);
 			}
 		}
 		// Continuous case
@@ -2209,7 +2209,7 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 		// Handle reactions with discrete molecules with multiple copies of the same reactants.
 		// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
 		//       automatically by BNG).
-		if (discrete) {
+		if (discrete && rxn->n_reactants) { // Make sure the rxn has reactants (not pure synth)
 			double n = 0.0;
 			rate *= X[*iarr];
 			for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
@@ -2234,16 +2234,7 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 	if (discrete && rate < 0.0){
 		cout << "Error: Negative rate detected in rxn_rate() (rate = " << rate << "). Exiting." << endl;
 		// Print rxn string
-		cout << "R" << rxn->index << ": ";
-		for (int j=0;j < rxn->n_reactants;j++){
-			if (j > 0) cout << " + ";
-			cout << network.species->elt[rxn->r_index[j]-network.species->offset]->name;
-		}
-		cout << " -> ";
-		for (int j=0;j < rxn->n_products;j++){
-			if (j > 0) cout << " + ";
-			cout << network.species->elt[rxn->p_index[j]-network.species->offset]->name;
-		}
+		cout << "R" << rxn->index << ": " << *rxn->toString;
 		if (rxn->rateLaw_type == ELEMENTARY) cout << " (ELEMENTARY)" << endl;
 		else if (rxn->rateLaw_type == MICHAELIS_MENTEN) cout << " (MICHAELIS_MENTEN)" << endl;
 		else if (rxn->rateLaw_type == SATURATION) cout << " (SATURATION)" << endl;
