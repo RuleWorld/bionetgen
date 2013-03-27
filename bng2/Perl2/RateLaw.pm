@@ -19,13 +19,13 @@ use Expression;
 # Class definition
 struct RateLaw =>
 {
-    Type        => '$',        # Ele, Sat, Hill, MM, Arrhenius, FunctionProduct
+    Type        => '$',        # Ele, Sat, Hill, MM, Arrhenius, Function, FunctionProduct
     Constants   => '@',        # If function, first constant is the function name and the following are local args
     Factor      => '$',        # Statistical or Multiplicity factor
     TotalRate   => '$',        # If true, this ratelaw specifies the Total reaction rate.
                                #   If false (default), the ratelaw specifies a Per Site reaction rate.
     LocalRatelawsHash  => '%', # A map from locally-evaluated ratelaw "fingerprints" and instances of those ratelaws.
-                               #   This allows for efficient refuse of local ratelaws.
+                               #   This allows for efficient reuse of local ratelaws.
 };
 
 
@@ -1424,7 +1424,8 @@ sub toMathMLString
 
     $statFactor *= $rl->Factor;
 
-    if ( $type eq "Ele" )
+#	if ( $type eq "Ele" )
+    if ( $type eq "Ele" | $type eq "Function" )
     {
         # $statFactor*$k[0]*reactant1*...*reactantN
         $string .= "  <apply>\n    <times/>\n";

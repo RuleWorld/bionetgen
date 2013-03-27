@@ -149,7 +149,7 @@ end observables
 end model
 
 generate_network({overwrite=>1})
-simulate({method=>ode,t_end=>1000,n_steps=>100,steady_state=>1,atol=>1e-10,rtol=>1e-8,sparse=>0})
+simulate({method=>"ode",t_end=>1000,n_steps=>100,steady_state=>1,atol=>1e-10,rtol=>1e-8,sparse=>0})
 
 
 

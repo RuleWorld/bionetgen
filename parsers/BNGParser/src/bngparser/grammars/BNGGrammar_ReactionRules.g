@@ -98,13 +98,10 @@ String name;
   $reaction_rule_def::lmemory = new HashMap<String,Register>();
   
 }
-        :  ((match_attribute)? (
-          
-	        l1=reactionLabel{$reaction_rule_def::text += $l1.label + ":"; 
+        :  
+        (l1=reactionLabel{$reaction_rule_def::text += $l1.label + ":"; 
 	                         $reaction_rule_def::name = $l1.label;
-	                  })?)
-        
-        
+	                  })?
 
         reaction_def[$reaction_rule_def::patternsReactants,$reaction_rule_def::patternsProducts,"RR" + reactionCounter]{
           $reaction_rule_def::reactionAction.execute();
@@ -114,7 +111,6 @@ String name;
               $numReactions = 1;
            
           $reaction_rule_def::text += $reaction_def.text;
-        
         }
         
         {
@@ -157,21 +153,18 @@ match_attribute
         : LBRACKET MATCHONCE RBRACKET
         ;
         
-reaction_def  [List patternsReactants,List patternsProducts,String upperID] returns [boolean bidirectional,Map<String,List<ReactionRegister>> reactionStack,
+reaction_def[List patternsReactants,List patternsProducts,String upperID] returns [boolean bidirectional, Map<String,List<ReactionRegister>> reactionStack,
 Map<String,List<ReactionRegister>> productStack]
 scope{
 int reactantPatternCounter;
 //Map<String,List<ReactionRegister>> reactionStack;
 //Map<String,List<ReactionRegister>> productStack;
-
 }
 @init{
   $reaction_def::reactantPatternCounter =1;
   $reactionStack = new HashMap<String,List<ReactionRegister>>();
   $productStack = new HashMap<String,List<ReactionRegister>>();
-  
 }
-
 :
   s1=rule_species_def[upperID+"_RP" + $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
            //Add as many chemicals as the stoichiometry tells us. We also have to modify some of the internal tags
@@ -185,7 +178,8 @@ int reactantPatternCounter;
               $reaction_def::reactantPatternCounter++;
             } 
            } 
-  (PLUS s2=rule_species_def[upperID+"_RP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction]
+  (PLUS 
+  s2=rule_species_def[upperID+"_RP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction]
             {
             int counter = $reaction_def::reactantPatternCounter;
             for(int i=0;i<s2.stoichiometry;i++){ 
@@ -195,8 +189,8 @@ int reactantPatternCounter;
               $reaction_def::reactantPatternCounter++;
             }
             })* 
-  (UNI_REACTION_SIGN {$bidirectional = false;}| BI_REACTION_SIGN {$bidirectional = true;}) 
-  (s3=rule_species_def[upperID+"_PP"+ 1,$reaction_rule_def::reactionAction] 
+  (UNI_REACTION_SIGN {$bidirectional = false;} | BI_REACTION_SIGN {$bidirectional = true;})
+  s3=rule_species_def[upperID+"_PP"+ 1,$reaction_rule_def::reactionAction] 
         {
         $reaction_def::reactantPatternCounter =1;
           int counter = $reaction_def::reactantPatternCounter;
@@ -205,19 +199,19 @@ int reactantPatternCounter;
             patternsProducts.add(correctedString);
             ReactionRegister.mergeMaps($s3.map,$productStack);
             $reaction_def::reactantPatternCounter++;
+          }
         }
-        })
-  (PLUS s4=rule_species_def[upperID+"_PP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
+  (PLUS
+  s4=rule_species_def[upperID+"_PP"+ $reaction_def::reactantPatternCounter,$reaction_rule_def::reactionAction] 
         {
             int counter = $reaction_def::reactantPatternCounter;
-           for(int i=0;i<s4.stoichiometry;i++){ 
+            for(int i=0;i<s4.stoichiometry;i++){ 
                StringTemplate correctedString = GenericMethods.replace(s4.st,"PP" + counter,"PP" + $reaction_def::reactantPatternCounter);
                patternsProducts.add(correctedString);
-              $reaction_def::reactantPatternCounter++;
-              ReactionRegister.mergeMaps($s4.map,$productStack);
-           }
-        })* 
-        
+               $reaction_def::reactantPatternCounter++;
+               ReactionRegister.mergeMaps($s4.map,$productStack);
+            }
+        })*
  ;
         
 rule_species_def[String upperID,ReactionAction reactionAction] returns [int stoichiometry,Map <String,List<ReactionRegister>> map,boolean fixed] throws SemanticException
@@ -231,9 +225,10 @@ BondList bonds;
   $stoichiometry = 1;
   $fixed = false;
 }
-: 
+:
 (
-(i1=INT {$stoichiometry = Integer.parseInt($i1.text);} TIMES)? 
+ (i1=INT {$stoichiometry = Integer.parseInt($i1.text);} TIMES)?
+ (match_attribute)?
  s1=species_def[$rule_species_def::reactants,$rule_species_def::bonds,upperID] {
        String trimmedName = $species_def.text;
        trimmedName = trimmedName.replaceAll("\\$","");
@@ -244,7 +239,6 @@ BondList bonds;
           $fixed = true;
   }
   {
-   
        if(!$rule_species_def::bonds.validateBonds(0,0)){
           String err = String.format("\%s line \%d:\%d \%s\n",input.getSourceName(),s1.start.getLine(),s1.start.getCharPositionInLine(),"dangling bond");
   
@@ -255,10 +249,10 @@ BondList bonds;
   | i2=INT {
         $map  = new HashMap<String,List<ReactionRegister>>();
         if(!$i2.text.equals("0")){
-        throw new RecognitionException();
+          throw new RecognitionException();
         }
-      }
-    )
+     }
+)
 
 
     ->rule_seed_species_block(id={upperID},molecules={$rule_species_def::reactants},firstBonds={$rule_species_def::bonds.getLeft()},

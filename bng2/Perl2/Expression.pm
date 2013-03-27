@@ -42,7 +42,7 @@ struct Expression =>
 # NOTE: it's weird that some built-in functions with names (like exp, cos, etc) are handled
 #  differently thant built-ins with operator symbols (like +, -, etc).  We could really simplify this.
 #  --Justin
-# Supported most muParser built-in functions. --Leonard 
+# Supported most muParser built-in functions. --LAH 
 # See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
 my %functions =
 (
@@ -69,7 +69,7 @@ my %functions =
   "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 },
   "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 },
   "pi"    => { FPTR => sub { pi },                   NARGS => 0 },
-  "time"  => { FPTR => sub { time },                 NARGS => 0 },
+  "time"  => { FPTR => sub {  },                 	 NARGS => 0 }, # Not sure what to put here --LAH
   "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
   "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) },
   "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) },
@@ -139,7 +139,7 @@ sub isBuiltIn
 
 # get a recursive copy of an expression.
 #   Note that the recursion does not descend past VAR and FunctionCall type expressions.
-#   Returns a refence to the clone and any error messages.
+#   Returns a reference to the clone and any error messages.
 sub clone
 {
     my $expr = shift;

@@ -886,7 +886,7 @@ sub readNetwork
                 if ($err) {  $err = errgen($err);  goto EXIT;  }
                 my $t_interval = cpu_time(0) - $t_start;
                 if ( $t_interval > 0.0 )
-                {   printf "CPU TIME: %s %.1f s.\n", $1, $t_interval;   }
+                {   printf "CPU TIME: %s %.1f s.\n", $action, $t_interval;   }
             }
             else
             {   # Try to execute general PERL code (Dangerous!!)

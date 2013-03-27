@@ -27,10 +27,10 @@
       <parameter id="v0" constant="false"/>
       <parameter id="v1" constant="false"/>
       <!-- Observables -->
-      <parameter id="Group_DNA_Active" constant="false"/>
-      <parameter id="Group_DNA_Total" constant="false"/>
-      <parameter id="Group_mRNA_Total" constant="false"/>
-      <parameter id="Group_Protein_Total" constant="false"/>
+      <parameter id="DNA_Active" constant="false"/>
+      <parameter id="DNA_Total" constant="false"/>
+      <parameter id="mRNA_Total" constant="false"/>
+      <parameter id="Protein_Total" constant="false"/>
     </listOfParameters>
     <listOfRules>
       <!-- Dependent variables -->
@@ -80,7 +80,7 @@
         </math>
       </assignmentRule>
       <!-- Observables -->
-      <assignmentRule variable="Group_DNA_Active">
+      <assignmentRule variable="DNA_Active">
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <plus/>
@@ -89,7 +89,7 @@
             </apply>
           </math>
       </assignmentRule>
-      <assignmentRule variable="Group_DNA_Total">
+      <assignmentRule variable="DNA_Total">
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <plus/>
@@ -98,7 +98,7 @@
             </apply>
           </math>
       </assignmentRule>
-      <assignmentRule variable="Group_mRNA_Total">
+      <assignmentRule variable="mRNA_Total">
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <plus/>
@@ -107,7 +107,7 @@
             </apply>
           </math>
       </assignmentRule>
-      <assignmentRule variable="Group_Protein_Total">
+      <assignmentRule variable="Protein_Total">
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <plus/>
