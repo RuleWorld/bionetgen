@@ -7,7 +7,7 @@ Created on Fri Mar  1 16:14:42 2013
 
 #!/usr/bin/env python
 
-from numpy import histogram
+from numpy import array
 from matplotlib.pyplot import hist,savefig
 import libsbml
 import bnglWriter as writer
@@ -20,8 +20,14 @@ import numpy as np
 import analyzeRDF
 from util import logMess,NumericStringParser
 import re
-import time
+import pickle
 log = {'species':[],'reactions':[]}
+import signal
+
+def handler(signum, frame):
+    print "Forever is over!"
+    raise Exception("end of time")
+
 class SBML2BNGL:
 
     
@@ -356,7 +362,46 @@ class SBML2BNGL:
             else:
                 speciesAnnotation[rawSpecies[0]] = lista.get(0).getResources()
         return speciesAnnotation
-
+        
+    def getModelAnnotation(self):
+        modelAnnotation = []
+        annotationXML = self.model.getAnnotation()
+        lista = libsbml.CVTermList()
+        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
+        if lista.getSize() == 0:
+            modelAnnotations = []
+        else:
+            tempDict = {}
+            for element in [2,3,4,5,6]:
+                if lista.get(element) == None:
+                    continue
+                tempDict[lista.get(element).getBiologicalQualifierType()] = lista.get(element)
+            if 3 in tempDict:
+                modelAnnotation = tempDict[3].getResources()
+            elif 0 in tempDict and ('GO' in tempDict[0].getResources().getValue(1) or 'kegg' in tempDict[0].getResources().getValue(1)):
+                modelAnnotation = tempDict[0].getResources()
+            elif 5 in tempDict:
+                modelAnnotation = tempDict[5].getResources()
+            else:
+                if lista.get(3) != None and ('GO' in lista.get(3).getResources().getValue(0) or 'kegg' in lista.get(3).getResources().getValue(0)):
+                    modelAnnotation = lista.get(3).getResources()
+                    
+                elif lista.get(4) != None and ('GO' in lista.get(4).getResources().getValue(0) or 'kegg' in lista.get(4).getResources().getValue(0)):
+                    modelAnnotation = lista.get(4).getResources()
+                elif lista.get(5) != None and ('GO' in lista.get(5).getResources().getValue(0) or 'kegg' in lista.get(5).getResources().getValue(0)):
+                    modelAnnotation = lista.get(5).getResources()
+                else:
+                    if lista.get(3) != None and ('reactome' in lista.get(3).getResources().getValue(0)):
+                        modelAnnotation = lista.get(3).getResources()
+                        
+                    elif lista.get(4) != None and ('reactome' in lista.get(4).getResources().getValue(0)):
+                        modelAnnotation = lista.get(4).getResources()
+                    elif lista.get(5) != None and ('reactome' in lista.get(5).getResources().getValue(0)):
+                        modelAnnotation = lista.get(5).getResources()
+                    elif lista.get(2) != None:
+                        modelAnnotation = lista.get(2).getResources()
+        return modelAnnotation
+        
     def getSpeciesInfo(self,name):
         return self.getRawSpecies(self.model.getSpecies(name))
 
@@ -415,6 +460,7 @@ def identifyNamingConvention():
     arrayMolecules = []
     rules = 0
     #go through all curated models in the biomodels database
+    signal.signal(signal.SIGALRM, handler)
     for index in range(1,410):
         bestTranslator = {}
         
@@ -423,7 +469,7 @@ def identifyNamingConvention():
             document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
             parser = SBML2BNGL(document.getModel())
             database = structures.Databases()
-
+    
             print nameStr + '.xml',
             naming = 'reactionDefinition0.json'
             bestUseID = True
@@ -432,12 +478,18 @@ def identifyNamingConvention():
             #creates the most rulified elements in the translator
             for jsonFile in jsonFiles:
                 for useID in [True,False]:
+                    print '-',
                     try:
                         oldmaxi = numberOfSpecies
                         parser = SBML2BNGL(document.getModel(),useID)
                         database = structures.Databases()
-                        translator = m2c.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile)
-                        numberOfSpecies = max(numberOfSpecies,evaluation(len(parser.getSpecies()),translator))
+                        signal.alarm(30)
+                        try:
+                            m2c.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile,None)
+                        except Exception, exc: 
+                            print exc,sys.exc_info()[0]
+                        translator = database.translator                        
+                        numberOfSpecies = max(numberOfSpecies,evaluation(len(parser.getSpecies()),database.translator))
                         if oldmaxi != numberOfSpecies:
                             naming = jsonFile
                             bestTranslator = translator
@@ -445,8 +497,8 @@ def identifyNamingConvention():
                             _,rules,_ = parser.getReactions(translator)
                             numberofMolecules = len(translator)
                     except:
-                        print 'ERROR',sys.exc_info()[0]
-                        continue
+                            print 'ERROR',sys.exc_info()[0]
+                            continue
         except:
             print 'ERROR',sys.exc_info()[0]
             continue
@@ -487,8 +539,7 @@ def identifyNamingConvention():
             np.save('stats3.npy',np.array(translationLevel))
         else:
             arrayMolecules.append([])
-        #print arrayMolecules
-        np.save('stats3b.npy',np.array(arrayMolecules))
+        #np.save('stats3b.npy',np.array(arrayMolecules))
 
 def processDatabase():
     reader = libsbml.SBMLReader()
@@ -546,7 +597,6 @@ def evaluation(numMolecules,translator):
     originalElements = (numMolecules)
     nonStructuredElements = len([1 for x in translator if '()' in str(translator[x])])
     ruleElements = (len(translator) - nonStructuredElements)*1.0/originalElements
-    
     return ruleElements
 
 
@@ -591,19 +641,18 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
         
-    #try:
-    translator,log = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    try:
+        translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         #translator={}    
-    #except:
-    #    print 'failure'
-    #    return None,None
-    
+    except:
+        print 'failure'
+        return None,None,None,None
     
     #translator = {}
+    
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
-
     functions = []
     idxArray = []
     _,rules,tfunc = parser.getReactions(translator,True)
@@ -707,14 +756,14 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         logMess('ERROR','The file contains no reactions')
     if useArtificialRules or len(artificialRules) > 0:
         rules =['#{0}'.format(x) for x in rules]
-        evaluate =  evaluation(len(artificialRules),translator)
+        evaluate =  evaluation(len(observables),translator)
 
         artificialRules.extend(rules)
         writer.finalText(param,molecules,species,observables,artificialRules,functions,compartments,outputFile)
 
     else:
         artificialRules =['#{0}'.format(x) for x in artificialRules]
-        evaluate =  evaluation(len(rules),translator)
+        evaluate =  evaluation(len(observables),translator)
 
         rules.extend(artificialRules)
         
@@ -725,8 +774,15 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         with open(outputFile + '.log', 'w') as f:
             for element in logMess.log:
                 f.write(element + '\n')
-            
-    return len(rules), evaluate
+    
+
+    #rate of each classified rule
+    classificationDict = {}
+    for element in database.classifications:
+        if element not in classificationDict:
+            classificationDict[element] = 0.0
+        classificationDict[element] += 1.0/len(database.classifications)
+    return len(rules), evaluate,parser.getModelAnnotation(),classificationDict
 
 def processFile(translator,parser,outputFile):
     param2 = parser.getParameters()
@@ -738,7 +794,17 @@ def processFile(translator,parser,outputFile):
 
    
 def BNGL2XML():
-    passcomplex
+    pass
+
+def getAnnotations(annotation):
+    annotationDictionary = []
+    if annotation ==[] or annotation ==None:
+        return []
+    for index in range(0,annotation.getNumAttributes()):
+        annotationDictionary.append(annotation.getValue(index))
+    return annotationDictionary
+
+
 
 def main():
     jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
@@ -755,22 +821,41 @@ def main():
 
     (options, _) = parser.parse_args()
     #144
-    for bioNumber in [48]:
+    rdfArray = []
+    classificationArray = []
+    for bioNumber in range(1,410):
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
-        spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        #spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
-        rlength,reval = analyzeFile(bioNumber,reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        
+        rlength,reval,rdf,classif = analyzeFile(bioNumber,reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+               
+        rdfArray.append(getAnnotations(rdf))
+        
         if rlength != None:        
             rulesLength.append(rlength)
             evaluation.append(reval)
+            classificationArray.append(classif)
+        else:
+            evaluation.append(0)
+            classificationArray.append({})
     print evaluation
+    
+    #sortedCurated = [i for i in enumerate(evaluation), key=lambda x:x[1]]
+    with open('sortedC.dump','wb') as f:
+        pickle.dump(evaluation,f)
+    with open('annotations.dump','wb') as f:
+        pickle.dump(rdfArray,f)
+    with open('classificationDict.dump','wb') as f:
+        pickle.dump(classificationArray,f)
     #hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
     #savefig('lengthDistro.png')
-    hist(evaluation,bins =[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    hist(evaluation,bins =[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
     savefig('ruleifyDistro.png')
 
 if __name__ == "__main__":
@@ -780,3 +865,6 @@ if __name__ == "__main__":
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s
+#http://nullege.com/codes/show/src@s@e@semanticsbml-HEAD@semanticSBML@annotate.py
+#http://wiki.geneontology.org/index.php/Example_Queries#Find_terms_by_GO_ID
+#http://www.geneontology.org/GO.database.shtml

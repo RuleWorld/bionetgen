@@ -54,7 +54,7 @@ def printTranslate(chemical,tags,translator={}):
             tmp.append(app)
     else:
         idx = logMess("ERROR","Cannot deal with non integer stoicheometries: {0}* {1}".format(chemical[1],chemical[0]))
-        tmp.append('ERROR CHECK LOG {0}'.format(idx))
+        tmp.append(app)
     return ' + '.join(tmp)
 
 def balanceTranslator(reactant,product,translator):

@@ -616,9 +616,9 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
     
     
+    database.classifications = classifications
         
     for idx,(w0,w1,rule,classification) in enumerate(nonProcessedRules):
-        
         outputFlag = False
         #if classification == 'Modification':
         #    outputFlag = True
@@ -646,5 +646,5 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         for mol in database.translator[element].molecules:
             if mol.name in database.translator:
                 mol.update(database.translator[mol.name].molecules[0])
-    return database.translator,logMess.log
+    return database.translator,logMess.log,parser.getSpeciesAnnotation()
 
