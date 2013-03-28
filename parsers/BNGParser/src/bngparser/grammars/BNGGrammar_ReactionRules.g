@@ -227,7 +227,7 @@ BondList bonds;
 }
 :
 (
- (i1=INT {$stoichiometry = Integer.parseInt($i1.text);} TIMES)?
+// (i1=INT {$stoichiometry = Integer.parseInt($i1.text);} TIMES)? // Stoichiometry (not yet supported in BNG)
  (match_attribute)?
  s1=species_def[$rule_species_def::reactants,$rule_species_def::bonds,upperID] {
        String trimmedName = $species_def.text;

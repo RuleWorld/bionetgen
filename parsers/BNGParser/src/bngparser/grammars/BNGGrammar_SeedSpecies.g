@@ -190,7 +190,6 @@ scope{
    }
    )? 
    
-   
    (s1=species_element[bonds,speciesCounter + "_M" + $species_def::numMolecules,$scomp.text] 
    {
     molecules.add(s1.st);
