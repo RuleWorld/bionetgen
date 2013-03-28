@@ -48,6 +48,8 @@ class SBMLAnalyzer:
         as such
         '''
         reactionDefinition = ''
+        if fileName == '':
+            return []
         with open(fileName,'r') as fp:
             reactionDefinition = json.load(fp)
         return reactionDefinition
@@ -60,7 +62,9 @@ class SBMLAnalyzer:
         #print reactionDefinition
         result = []
         for idx,element in enumerate(reactionDefinition['reactions']):
-            if(len(rule[0]) == len(element[0]) and len(rule[1]) == len(element[1])):
+            tmp1 = rule[0] if rule[0] not in  ['0',['0']] else []
+            tmp2 = rule[1] if rule[1] not in  ['0',['0']] else []
+            if(len(tmp1) == len(element[0]) and len(tmp2) == len(element[1])):
                 result.append(1)           
     #            for (el1,el2) in (element[0],rule[0]):
     #                if element[0].count(el1) == element[]
@@ -76,14 +80,14 @@ class SBMLAnalyzer:
         according to the reactions they appear in.
         '''
         ruleDictionary = {}
-        for rule in rules:
+        for idx,rule in enumerate(rules):
             reaction2 = rule #list(parseReactions(rule))
             #print reaction2
             totalElements =  [item for sublist in reaction2 for item in sublist]
             if tuple(totalElements) in ruleDictionary:
-                ruleDictionary[tuple(totalElements)].append(rules.index(rule))
+                ruleDictionary[tuple(totalElements)].append(idx)
             else:
-                ruleDictionary[tuple(totalElements)] = [rules.index(rule)]
+                ruleDictionary[tuple(totalElements)] = [idx]
         return ruleDictionary
     
     def checkCompliance(self,ruleCompliance,tupleCompliance,ruleBook):
@@ -92,6 +96,7 @@ class SBMLAnalyzer:
         in different ways, but in the context of its tuple partners it can only be classified
         as one
         '''
+        
         ruleResult = np.zeros(len(ruleBook))
         for validTupleIndex in np.nonzero(tupleCompliance):
             for index in validTupleIndex:
@@ -168,7 +173,7 @@ class SBMLAnalyzer:
             
         #comparisonMethod = str.startswith if patternType == 'prefix' else str.endswith
         for molecule in [x.strip('()') for x in molecules]:
-            if comparisonMethod(molecule,pattern):
+            if comparisonMethod(molecule,pattern) or comparisonMethod(molecule,pattern.lower()) or comparisonMethod(molecule,pattern.upper()):
                 oMolecules.append(molecule)
         
         
@@ -209,8 +214,9 @@ class SBMLAnalyzer:
         equivalenceTranslator = {}
         reactionIndex = {}
         index = 0
-        if self.userEquivalencesDict == None:
+        if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
+        else: self.userEquivalencesDict = {}
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #xxxxxxxxxxxxxxxxxxxxxxx
             for alternative in prop:
@@ -256,6 +262,7 @@ class SBMLAnalyzer:
         provided
         '''
         ruleDictionary = self.species2Rules(rules)
+        
         #TODO: recognize bidirectional rules
         #contains which rules are equal to reactions defined in reactionDefiniotion['reactions]    
         ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
@@ -264,7 +271,6 @@ class SBMLAnalyzer:
             reaction2 = rule #list(parseReactions(rule))
             ruleComplianceMatrix[idx] = self.identifyReactions2(reaction2,reactionDefinition)
         #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
-        
         tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
         #check which reaction conditions each tuple satisfies
         for element in ruleDictionary:
@@ -303,6 +309,7 @@ class SBMLAnalyzer:
         #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
         #use the per tuple classification to obtain a per reaction classification
         ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
+
         for key,element in ruleDictionary.items():
             for rule in element:
                 #FIXME: This is totally a hack. fix so that it doesn't mistakingly classify something as binding
@@ -337,6 +344,7 @@ class SBMLAnalyzer:
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
+        
         for reactionType,properties in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #if its a reaction defined by its naming convention   
             #xxxxxxxxxxxxxxxxxxx
@@ -346,7 +354,7 @@ class SBMLAnalyzer:
                         site = reactionDefinition['reactionSite'][alternative['rsi']]
                         state = reactionDefinition['reactionState'][alternative['rst']]
                     except:
-                        print 'malformed json file in the definitions section, using defaults'
+                        #print 'malformed json file in the definitions section, using defaults'
                         site = reactionType
                         state = reactionType[0]
                     reactionTypeProperties[reactionType] = [site,state]
