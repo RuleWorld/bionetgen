@@ -946,11 +946,18 @@ sub generate_hybrid_model
         'verbose'    => 0,
         'actions'    => ['writeXML()'],
         'execute'    => 0,
-        'exact'      => 0
+        'safe'      => 0
     };
     # get user options
     while ( my ($opt,$val) = each %$user_options )
     {
+        
+        if ($opt eq "exact")
+        {   # TODO: temporary patch to allow the old "exact" option
+            send_warning("The 'exact' option has been renamed 'safe', please use this in the future.");
+            $opt = "safe";
+        }
+
         unless ( exists $options->{$opt} )
         {   return "Unrecognized option $opt in call to generate_hybrid_model";   }
         
