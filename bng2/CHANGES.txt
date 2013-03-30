@@ -165,35 +165,5 @@ A function without an associated Param is anonymous (i.e. cannot be found in
 the ParamList).
 
 == BioNetGen-2.2.3-testing ==
-2012 December 31
-
-==== New Features ====
-
-===== Empty species symbol "0" =====
-We introduced the new symbol "0" for representing an empty pattern or species.
-This is useful anywhere BNG expects a pattern or species but the modeler wants
-the empty set. For example, "0" may be used on the LHS of a reaction rule for
-zero-order synthesis, or the RHS for degradation rules.
-
-==== Changes to BNG action commands ====
-* A new option, 'exact', was added to the generate_hybrid_model() action. If
-the 'exact' option is enabled, the partial network expansion algorithm does
-not discard the original reaction rule, which ensures the method yields
-exact results, even when the lumping rate is finite. The default is exact=>1.
-NOTE: in 2.2.4-testing, this option was renamed to 'safe'. 
-
-==== Code refactoring ====
-* Refactored symmetry handling in hybrid model generation. The new method
-pre-calculates of rule symmetry rather than relying on post-detection of
-canonically identical reactions.
-* Refactored rule expansion methods to improve modularity. As part of this
-refactoring, the CrossProduct module was renamed as CartesianProduct, which
-is more technically correct. This change should not affect users of BioNetGen.
-
-==== Other Changes? ====
-See the repository at http://code.google.com/p/bionetgen/ for complete details.
-
-
-== BioNetGen-2.2.2-stable ==
 See "Release Notes" at http://bionetgen.org for changes to older versions of BioNetGen.
 
