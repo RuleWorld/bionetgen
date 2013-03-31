@@ -3,7 +3,7 @@ updated 29 March 2013
 http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.4-testing ==
-2013 March 30
+2013 March 31
 
 ===== Mac OS/X run_network executable is now compiled for 64-bit =====
 The run_network Mac executable distributed with BioNetGen was previously
