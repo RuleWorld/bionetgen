@@ -5,6 +5,12 @@ http://code.google.com/p/bionetgen
 == BioNetGen-2.2.4-testing ==
 2013 March 30
 
+===== Mac OS/X run_network executable is now compiled for 64-bit =====
+The run_network Mac executable distributed with BioNetGen was previously
+compiled for 32-bit Mac OS/X. In this and future distributions, executables
+will be compiled for 64-bit Mac OS/X. If a 32-bit executable is required, 
+browse to the "Network3" subdirectory and follow the compilation instructions.
+
 ==== New Features ====
 
 ===== Empty species symbol "0" supported for compartmental BNGL =====
