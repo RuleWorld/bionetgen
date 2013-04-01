@@ -1088,7 +1088,7 @@ sub writeNetwork
     my $user_params = @_ ? shift @_ : {};
 
     my %params = (
-        'evaluate_expressions' => 1,
+        'evaluate_expressions' => 0,
         'format'               => 'net',
         'include_model'        => 0,
         'include_network'      => 1,
@@ -1106,7 +1106,7 @@ sub writeNetwork
 
 
 # Write Reaction Network to .NET file
-# This action will be deprecated! writeModel and writeNetwork should be used instead
+# This action will be Deprecated! writeModel and writeNetwork should be used instead
 sub writeNET
 {
     my $model       = shift @_;
@@ -2034,16 +2034,17 @@ sub generate_network
     return '' if $NO_EXEC;
 
 
-    # default params for calling writeNET
-    my $params_writeNET = {
-        'TextReaction' => $params{TextReaction},
-        'prefix'       => $params{prefix}
+    # default params for calling writeNetwork
+    my $params_writeNetwork = {
+        'overwrite'    => 1,
+        'prefix'       => $params{prefix},
+        'TextReaction' => $params{TextReaction}
     };
 
     # default params for calling expand_rule
     my $params_expand_rule = {
-        'max_agg'    => $params{max_agg},
         'check_iso'  => $params{check_iso},
+        'max_agg'    => $params{max_agg},
         'max_stoich' => $params{max_stoich},
         'verbose'    => $params{verbose},
     };
@@ -2063,7 +2064,7 @@ sub generate_network
         elsif ( -M "$prefix.net" < -M "$prefix.bngl" )
         {
             send_warning("$prefix.net is newer than $prefix.bngl so reading NET file.");
-            my $err = $model->readFile( {file => "$prefix.net"} );
+            my $err = $model->readFile({file=>"${prefix}.net"});
             return $err;
         }
         else
@@ -2074,13 +2075,13 @@ sub generate_network
     
     if ( $model->SpeciesList->size() == 0 )
     {   # warn user if the seed species list is empty.
-        send_warning("The seed species block is empty--the reaction network will be empty "
-                    ."unless zero-order synthesis reactions are defined.");
+        send_warning("The seed species block is empty: reaction network will be empty "
+                    ."unless zero-order synthesis rules are defined.");
     }
 
     # nothing to do if no rules are defined
     if ( @{$model->RxnRules} == 0 )
-    {   return "Nothing to do--no reaction rules are defined.";   }
+    {   return "Nothing to do: no reaction rules defined.";   }
 
     # if no reactions have been generated previosuly, then we have to initize some things..
     if ( $model->RxnList->size()==0 or $params{'continue'}==0 )
@@ -2179,10 +2180,10 @@ sub generate_network
         # Print network after current iteration to netfile
         if ( $params{print_iter} )
         {
-            $params_writeNET->{prefix} = "${prefix}_${niter}";
-            my $err = $model->writeNET($params_writeNET);
+            $params_writeNetwork->{prefix} = "${prefix}_${niter}";
+            my $err = $model->writeNetwork($params_writeNetwork);
             if ($err) { return $err; }
-            $params_writeNET->{prefix} = $prefix;
+            $params_writeNetwork->{prefix} = $prefix;
         }
     }
         
@@ -2203,7 +2204,7 @@ sub generate_network
     printf "Total   : %5d reactions %.2e CPU s %.2e CPU s/rxn\n", $n_tot, $t_tot, $eff;
 
     # Print result to netfile
-    my $err = $model->writeNET($params_writeNET);
+    my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
 
     return '';

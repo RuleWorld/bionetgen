@@ -21,8 +21,8 @@ used on the LHS of a reaction rule for zero-order synthesis, or
 the RHS for degradation rules. This feature is now supported in
 compartmental BNGL
 
-'''NOTE:''' compartmental BNGL adopts the syntax that zero order synthesis rate
-constants are given as intensive units (conc/time or counts/vol/time).
+'''NOTE:''' compartmental BNGL adopts the convention that zero order synthesis
+rate constants are given as intensive units (conc/time or counts/vol/time).
 Hence, the total rate of synthesis depends on the rate constant AND
 the volume of the compartment.
 
@@ -32,8 +32,9 @@ kinetics are derived from changes in free-energy and activation barriers.
 This approach was pioneered by J. Ollivier, et al. (PLoS Comp. Bio. 2010)
 and generalized by Vincent Danos. Energy modeling has a number of advantages,
 including: detailed balance is guaranteed, reaction rules are simplified,
-and allostery/cooperativity easily implemented. Keep an eye out for more
-documentation and examples of energy modeling in BNG.
+and allostery/cooperativity easily implemented. A simple example of energy
+modeling, 'energy_example1.bngl' was added to the Models2 directory. Keep an
+eye out for more documentation and examples of energy modeling in BNG.
 
 ===== Time-dependent functions (testing) =====
 Implemented a special function "time()" that refers to the current time 
@@ -44,14 +45,14 @@ not (presently) by NFsim.
 
 '''CAUTION:''' Discontinuities in ratelaws may cause problems for
 ODE integrators. If a timed event causes a discrete change
-in a ratelaw, it is best to stop and continue the simulation.
+in a ratelaw, it is best to stop and restart the simulator.
 
 '''CAUTION:''' Time-dependent rates in SSA simulations may introduce
 substantial error if the relative rate change is fast in time. Advanced
 methods exist for managing time-dependent rates accurately; however,
-these methods are not currently implemented in run_network. The
+these methods are not currently implemented in run_network.
 
-===== molecule-scoped local functions =====
+===== Molecule-scoped local functions =====
 Added support for local functions evaluated on the scope of a tagged
 molecule. This feature was already supported by NFsim, but is now
 available for network generation and network simulation. See the NFsim
@@ -59,7 +60,7 @@ manual (chapter 7) for examples of moelcule-scoped local functions.
 
 ==== Improvements to Existing Features ====
 
-===== on-the-fly network generation is fixed =====
+===== On-the-fly network generation is fixed =====
 Run_network supports on-the-fly network generation again. However, the
 implementation is not very efficient. For most applicables, NFsim is
 recommended for applications with large networks.
@@ -75,10 +76,10 @@ parameters and observables occupy the same namespace so there's no
 possibility of conflicts.
 
 ===== Better handling of mathematical expression in output =====
-BioNetGen now exports mathematical expressions by default, rather than evaluating
-to a number. This preserves the original math when models or networks are written 
-to file. Support for mathematical expressions in the parameters block was added
-to run_network.
+BioNetGen now exports mathematical expressions by default, rather than
+evaluating to a number. This preserves the original math when models or
+networks are written to file. Support for mathematical expressions in the
+parameters block was added to run_network.
 
 ===== Upgrades to MATLAB export via writeMfile() =====
 * Improved error capture when calling MATLAB's ODE23s integrator.
@@ -93,8 +94,8 @@ run-time efficiency.
 * Fixed bug where parameters beginning with "and" or "or" were confused
 with the logical operations. The problem was traced to the muParser
 library. Upgrading to muParser v2.2.3 solved this problem.
-* Fixed bug where setConcentration (and potentially other actions) fail to parse
-arguments that contain species definitions with compartmental syntax.
+* Fixed bug where setConcentration (and potentially other actions) fail to
+parse arguments that contain species definitions with compartmental syntax.
 * Fixed bug in BNG math expression parser where unary operators were parsed
 incorrectly in some circumstances.
 * Fixed bug where run_network reported incorrect line number in error message.
@@ -144,8 +145,10 @@ NET file.
 ==== New Example and Validation Models ====
 * Added gene_expr_func.bngl and localfunc.bngl to Models2 directory.
 NOTE: these models were previous distributed as validation models.
-* Adding two new validation files: (1) isingspin_energy.bngl implements an ising
-spin model on a 3x3 toroidal lattice using the energy approach, (2)
+* A simple example of energy modeling, 'energy_example1.bngl' was added to
+the Models2 directory.
+* Adding two new validation files: (1) isingspin_energy.bngl implements an
+ising spin model on a 3x3 toroidal lattice using the energy approach, (2)
 isingspin_localfcn.bngl implements the ising spin model (same topology) using
 local functions. Both models test the SSA equillibrium distribution. Model 2
 also tests the NF equillibrium distribution.  NOTE: the energy approach is
@@ -171,5 +174,6 @@ A function without an associated Param is anonymous (i.e. cannot be found in
 the ParamList).
 
 == BioNetGen-2.2.3-testing ==
-See "Release Notes" at http://bionetgen.org for changes to older versions of BioNetGen.
+See "Release Notes" at http://bionetgen.org for changes to older versions of
+BioNetGen.
 
