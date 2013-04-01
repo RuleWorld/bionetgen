@@ -2035,10 +2035,12 @@ sub generate_network
 
 
     # default params for calling writeNetwork
+    # (only need to change if we want non-default)
     my $params_writeNetwork = {
-        'overwrite'    => 1,
-        'prefix'       => $params{prefix},
-        'TextReaction' => $params{TextReaction}
+        'include_model' => 1,
+        'overwrite'     => 1,
+        'prefix'        => $params{prefix},
+        'TextReaction'  => $params{TextReaction}
     };
 
     # default params for calling expand_rule
