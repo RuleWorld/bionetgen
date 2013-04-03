@@ -135,7 +135,7 @@ sub setAsGlobalModel
 ###
 
 
-# write Model from file
+# read Model from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readModel
 {
@@ -157,7 +157,7 @@ sub readModel
 }
 
 
-# write Network from file
+# read Network from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readNetwork
 {
