@@ -118,53 +118,53 @@ scope{
         -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
         ;
         
-simulate[Map<String,String> map]:
-        SIMULATE LPAREN (LBRACKET 
-        ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
+simulate[Map<String,String> map]
+        : SIMULATE LPAREN (LBRACKET 
+          ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
-        RBRACKET)? RPAREN SEMI?;
+          RBRACKET)? RPAREN SEMI?;
         
 simulate_ode[Map<String,String> map]
         : SIMULATE_ODE LPAREN (LBRACKET
-         ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
+          ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
           RBRACKET)? RPAREN SEMI?;
           
 simulate_ssa[Map<String,String> map]
         : SIMULATE_SSA LPAREN (LBRACKET
-          ((ps_par_def[map]|simulate_par_def[map]) (COMMA (ps_par_def[map]|simulate_par_def[map]))*)?
+          ((ps_par_def[map]|simulate_par_def[map]) 
+          (COMMA (ps_par_def[map]|simulate_par_def[map]))*)?
           RBRACKET)? RPAREN SEMI?;
 
+simulate_pla[Map<String,String> map]
+        : SIMULATE_PLA LPAREN (LBRACKET
+          ((ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map])
+          (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map]))*)? 
+          RBRACKET)? RPAREN SEMI?;
+     
 simulate_nf[Map<String,String> map]
         : SIMULATE_NF LPAREN (LBRACKET
-         ((ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map])
+          ((ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map])
           (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map]))*)? 
           RBRACKET)? RPAREN SEMI?;
 
 write_m_file[Map<String,String> map]
         : WRITEMFILE LPAREN (LBRACKET
-        ((write_m_par_def[map]) (COMMA write_m_par_def[map])*)?
-        RBRACKET)? RPAREN SEMI?;
+          ((write_m_par_def[map]) 
+          (COMMA write_m_par_def[map])*)?
+          RBRACKET)? RPAREN SEMI?;
 
 write_mex_file[Map<String,String> map]
         : WRITEMEXFILE LPAREN LBRACKET
-        ((write_m_par_def[map]| ps_par_def[map]) (COMMA write_m_par_def[map]| ps_par_def[map])*)?
-        RBRACKET RPAREN SEMI?;
+          ((write_m_par_def[map]| ps_par_def[map]) 
+          (COMMA write_m_par_def[map]| ps_par_def[map])*)?
+          RBRACKET RPAREN SEMI?;
 
 write_network[Map<String,String> map]
-      : WRITENETWORK LPAREN (LBRACKET 
-      ((ps_par_def[map]|simulate_par_def[map])
+        : WRITENETWORK LPAREN (LBRACKET 
+          ((ps_par_def[map]|simulate_par_def[map]) 
           (COMMA (ps_par_def[map]|simulate_par_def[map]))*)? 
-      RBRACKET)? 
-      RPAREN
-      ;
-      
-simulate_pla[Map<String,String> map]
-    : SIMULATE_PLA LPAREN (LBRACKET
-             ((ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map])
-          (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map]))*)? 
-          RBRACKET)? RPAREN SEMI?
-     ;
+          RBRACKET)? RPAREN SEMI?;
 
 read_file
 scope{

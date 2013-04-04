@@ -1,0 +1,185 @@
+CHANGES to BioNetGen
+updated 29 March 2013
+http://code.google.com/p/bionetgen
+
+== BioNetGen-2.2.4-testing ==
+2013 March 31
+
+===== Mac OS/X run_network executable is now compiled for 64-bit =====
+The run_network Mac executable distributed with BioNetGen was previously
+compiled for 32-bit Mac OS/X. In this and future distributions, executables
+will be compiled for 64-bit Mac OS/X. If a 32-bit executable is required, 
+browse to the "Network3" subdirectory and follow the compilation instructions.
+
+==== New Features ====
+
+===== Empty species symbol "0" supported for compartmental BNGL =====
+We introduced the new symbol "0" in 2.2.3 for representing an empty
+pattern or species. This is useful anywhere BNG expects a pattern or
+species but the modeler wants the empty set. For example, "0" may be
+used on the LHS of a reaction rule for zero-order synthesis, or
+the RHS for degradation rules. This feature is now supported in
+compartmental BNGL
+
+'''NOTE:''' compartmental BNGL adopts the convention that zero order synthesis
+rate constants are given as intensive units (conc/time or counts/vol/time).
+Hence, the total rate of synthesis depends on the rate constant AND
+the volume of the compartment.
+
+===== Energy BNGL (testing) =====
+Energy modeling is a new approach to rule-based modeling where
+kinetics are derived from changes in free-energy and activation barriers.
+This approach was pioneered by J. Ollivier, et al. (PLoS Comp. Bio. 2010)
+and generalized by Vincent Danos. Energy modeling has a number of advantages,
+including: detailed balance is guaranteed, reaction rules are simplified,
+and allostery/cooperativity easily implemented. A simple example of energy
+modeling, 'energy_example1.bngl' was added to the Models2 directory. Keep an
+eye out for more documentation and examples of energy modeling in BNG.
+
+===== Time-dependent functions (testing) =====
+Implemented a special function "time()" that refers to the current time 
+in a simulation. The time function may be used
+in any mathemetical expression. This is useful for ratelaws or
+events that depend on time. Time is recognized by run_network but
+not (presently) by NFsim.
+
+'''CAUTION:''' Discontinuities in ratelaws may cause problems for
+ODE integrators. If a timed event causes a discrete change
+in a ratelaw, it is best to stop and restart the simulator.
+
+'''CAUTION:''' Time-dependent rates in SSA simulations may introduce
+substantial error if the relative rate change is fast in time. Advanced
+methods exist for managing time-dependent rates accurately; however,
+these methods are not currently implemented in run_network.
+
+===== Molecule-scoped local functions =====
+Added support for local functions evaluated on the scope of a tagged
+molecule. This feature was already supported by NFsim, but is now
+available for network generation and network simulation. See the NFsim
+manual (chapter 7) for examples of moelcule-scoped local functions.
+
+==== Improvements to Existing Features ====
+
+===== On-the-fly network generation is fixed =====
+Run_network supports on-the-fly network generation again. However, the
+implementation is not very efficient. For most applicables, NFsim is
+recommended for applications with large networks.
+
+===== Added support for functional rate laws in SBML export =====
+Fixed SBML export for functional rate laws. Global functions are now
+output in the same way as parameter expressions. Local functions are NOT
+output to SBML because they are evaluated down to a number by BNG during
+network generation so they're unnecessary. Note that the "Group_" prefix
+has been removed from the SBML IDs of observables so that they can be
+easily referenced in function expressions. This is not a problem because
+parameters and observables occupy the same namespace so there's no
+possibility of conflicts.
+
+===== Better handling of mathematical expression in output =====
+BioNetGen now exports mathematical expressions by default, rather than
+evaluating to a number. This preserves the original math when models or
+networks are written to file. Support for mathematical expressions in the
+parameters block was added to run_network.
+
+===== Upgrades to MATLAB export via writeMfile() =====
+* Improved error capture when calling MATLAB's ODE23s integrator.
+* Support for "if" functions: "if(cond,val1,val2)" is translated
+to "(cond~=0)*val1 + (cond==1)*val2". This isn't a perfect solution since it
+requires that val1 and val2 both evaluate to finite numbers. Unfortunately,
+MATLAB does not support the ternary conditional (a better solution).
+* Eliminated redundancy of expression evaluation, resulting in better 
+run-time efficiency.
+
+==== Bug Notices ====
+* run_network fails to parse math expressions properly if a parameter name in
+the expression begins with a number. We recommend that parameter names begin
+with a letter character. Parameter names beginning with numbers will likely
+be deprecated in a future release.
+
+==== Bug Fixes ====
+* Fixed bug where parameters beginning with "and" or "or" were confused
+with the logical operations. The problem was traced to the muParser
+library. Upgrading to muParser v2.2.3 solved this problem.
+* Fixed bug where setConcentration (and potentially other actions) fail to
+parse arguments that contain species definitions with compartmental syntax.
+* Fixed bug in BNG math expression parser where unary operators were parsed
+incorrectly in some circumstances.
+* Fixed bug where run_network reported incorrect line number in error message.
+* Fixed potential bug in isomorphic detection method, where BNG attempts to
+access undefined nodes if graphs have unequal size. This is prevented by
+checking the size of the graphs prior to comparison.
+* Fixed bug that caused generate_network() action to return an error if no
+seed species are defined. This fix permits network generation for models with
+0-order synthesis but no seed species.
+* Fixed bug where scan_var.pl generated invalid scripts if the BNGL model file
+does not end with a new line.
+
+==== Minor Syntax Changes ====
+* Deprecated use of fixed quantity flag "$"  within reactant rules.
+The fixed quantity flag should only be used in the seed species block.
+* Use of "fake" species such as "NULL", "TRASH", or "SINK" as placeholders
+in reaction rules with zero reactants and products is now deprecated.
+We advise the use of the special symbol "0" instead.
+* Labels are now permitted before definitions in all BNGL blocks.
+
+==== Changes to BNG action commands ====
+* Added 'continue' option to generate_network() action. If this option
+is enabled, BNG will continue generating a network from the last
+completed iteration. If disabled, BNG will start reset the network
+and generate from scratch. The option is enabled by default, i.e.'continue=>1'.
+* Complex bookkeeping option, 'complex', is now enabled by default in the
+simulate_nf() action, i.e. 'complex=>1'.
+* The 'exact' option for generate_hybrid_model() was renamed to 'safe'. This
+avoids confusion over whether the standard method is exact. Indeed, both
+methods are exact if population lumping is instantaneous. However, only
+the 'safe' method is exact for finite lumping rates. The default is
+'safe=>0'. The old 'exact' option will be supported up to (and including) the
+next stable release.
+
+==== Error and Warning Message Changes ====
+* Useless {MatchOnce} attribute in species definitions are now detected and
+reported.
+* Improved detection of illegal dangling bonds and wildcards in reaction rules.
+* Improved clarity of error messages for unrecognized BNG version strings
+and missing ratelaw arguments.
+* scan_var.pl utility reports an error is the BNGL model does not contain an
+"end model" directive.
+* run_network will now allow commented lines in the functions block of the
+NET file.
+* run_network no longer complains is there are no parameters in the model.
+
+==== New Example and Validation Models ====
+* Added gene_expr_func.bngl and localfunc.bngl to Models2 directory.
+NOTE: these models were previous distributed as validation models.
+* A simple example of energy modeling, 'energy_example1.bngl' was added to
+the Models2 directory.
+* Adding two new validation files: (1) isingspin_energy.bngl implements an
+ising spin model on a 3x3 toroidal lattice using the energy approach, (2)
+isingspin_localfcn.bngl implements the ising spin model (same topology) using
+local functions. Both models test the SSA equillibrium distribution. Model 2
+also tests the NF equillibrium distribution.  NOTE: the energy approach is
+not supported in NFsim, hence this version won't scale to a larger lattice.
+
+==== Code refactoring ====
+* Enabled strict and warning pragmas in BNGModel.pm
+* Migrated to muParser 2.2.3 (from v134) for parsing math expressions in
+run_network.I mplemented a static "If()" function in network.h that gets
+called as "if()" in muParser [parser.DefineFun("if",If) in
+network::read_functions_array()]. This should solve the problem of if()
+being deprecated in the muparser_v2_2_3. Also modified run_network.cpp and
+network.cpp to no longer replace "&&" with "and" and "||" with "or".
+* Reformulated generate_network so that observables and energy patterns are
+updated as species are generated, rather than after an iteration of
+network generation completes.
+* The Expression type "FUN" was renamed as "FunctionCall". The original type
+name caused some confusion as to whether the expression was a function
+definition or a function call. To clarify, the type was renamed FunctionCall.
+The Function object holds the definition (RHS) for a function. For further
+reference: the Param type Function associates a name to a Function object.
+A function without an associated Param is anonymous (i.e. cannot be found in
+the ParamList).
+
+== BioNetGen-2.2.3-testing ==
+See "Release Notes" at http://bionetgen.org for changes to older versions of
+BioNetGen.
+

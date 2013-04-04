@@ -192,8 +192,8 @@ sub simulate
         # Generate NET file if not already created or if updateNet flag is set
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
-            $err = $model->writeNET( {prefix=>"$netpre"} );
-            if ($err) {  return $err;  }
+            $err = $model->writeNetwork({include_model=>1, overwrite=>1, prefix=>"$netpre"});
+            if ($err) { return $err; }
         }
     }
 
@@ -583,7 +583,7 @@ sub simulate
     if ( $otf  and  $model->SpeciesList )
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
-        $err = $model->writeNET( {prefix => "$netpre"} );
+        $err = $model->writeNetwork({include_model=>1, overwrite=>1, prefix=>"$netpre"});
         if ($err) { return $err; }
     }
 
@@ -946,11 +946,18 @@ sub generate_hybrid_model
         'verbose'    => 0,
         'actions'    => ['writeXML()'],
         'execute'    => 0,
-        'exact'      => 0
+        'safe'      => 0
     };
     # get user options
     while ( my ($opt,$val) = each %$user_options )
     {
+        
+        if ($opt eq "exact")
+        {   # TODO: temporary patch to allow the old "exact" option
+            send_warning("The 'exact' option has been renamed 'safe', please use this in the future.");
+            $opt = "safe";
+        }
+
         unless ( exists $options->{$opt} )
         {   return "Unrecognized option $opt in call to generate_hybrid_model";   }
         

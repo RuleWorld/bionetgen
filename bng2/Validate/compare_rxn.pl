@@ -176,6 +176,8 @@ sub rxn2text
     my $products  = join(" + ", map {"S$_"} split(",", $rxn->[2]) );
 
     # evaluate the reaction rate in crude fashion..
+    # TODO: implement a more reliable way to do this (but don't make it
+    # depend on the BNG expression parser, as it might produce the same bugs.)
     my $rate = $rxn->[3];    
     my $last_rate = $rate;
     my $iter = 0;
@@ -187,10 +189,15 @@ sub rxn2text
             $rate =~ s/(^|[\+\-\/\*\^\(\)\ ])$par([\+\-\/\*\^\(\)\ ]|$)/$1($val)$2/g;
         }
 
-        ++$iter;
-        $last_rate = $rate;
+        # try to substitute log for ln
+        $rate =~ s/(^|[\+\-\/\*\^\(\ ])ln\(/$1log(/g;
 
+        # try to substitute ** for ^
+        $rate =~ s/([\w\)\.\ ])\^([\w\+\-\.\(\ ])/$1**$2/g;
+
+        ++$iter;
         last if ($rate eq $last_rate);
+        $last_rate = $rate;
     }
 
     if ( looks_like_number($rate) )

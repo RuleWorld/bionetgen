@@ -13,7 +13,26 @@ options {
   this.setTemplateLib(gParent.getTemplateLib());
  
  }
-  String[] list = {"sin", "cos", "tan","exp","ln","log10","log2","abs","floor","ceil","sqrt","asin","acos","atan","sinh","cosh","tanh","asinh","acosh","atanh"};
+  String[] list = {"sin",
+                   "cos",
+                   "tan",
+                   "exp",
+                   "ln",
+                   "log10",
+                   "log2",
+                   "abs",
+                   "floor",
+                   "ceil",
+                   "sqrt",
+                   "asin",
+                   "acos",
+                   "atan",
+                   "sinh",
+                   "cosh",
+                   "tanh",
+                   "asinh",
+                   "acosh",
+                   "atanh"};
       @Override
   public String getErrorMessage(RecognitionException e,String[] tokenNames){
     return gParent.getErrorMessage(e,tokenNames);
@@ -99,11 +118,10 @@ primitive_element returns [Double value]
         | (IF LPAREN (~RPAREN)+ RPAREN) => if_expression {$value = $if_expression.value;}
         | (STRING LPAREN (expression2 (COMMA expression2)*)? RPAREN) => function {$value = $function.value;}
         | variable {$value = $variable.value;}
-        | (EXP | LN | LOG10 | LOG2 | SQRT | RINT | ABS | SIN | COS | TAN | ASIN | ACOS | ATAN | SINH | COSH | TANH | ASINH | ACOSH | ATANH) LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);} //TODO: not working
+        | (EXP | LN | LOG10 | LOG2 | SQRT | RINT | ABS | SIN | COS | TAN | ASIN | ACOS | ATAN | SINH | COSH | TANH | ASINH | ACOSH | ATANH) LPAREN e1=expression2 RPAREN {$value = Math.exp($e1.value);}
         | LPAREN e2=expression2 RPAREN {$value = $e2.value;}
-        | PI LPAREN RPAREN {$value = Math.PI;}
+        | (PI | EULERIAN | TIME) LPAREN RPAREN {$value = Math.PI;}
         | (MIN | MAX | SUM | AVG) LPAREN (e3=expression2 (COMMA expression2)*) RPAREN {$value = $e3.value;}
-        
         ;
 
 number returns [Double value]: s1=INT {$value = Double.parseDouble($INT.text);}
