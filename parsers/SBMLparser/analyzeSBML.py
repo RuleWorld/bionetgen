@@ -216,9 +216,14 @@ class SBMLAnalyzer:
         index = 0
         if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
-        else: self.userEquivalencesDict = {}
+        
+        else: 
+            if self.userEquivalencesDict ==None:            
+                self.userEquivalencesDict = {}
+        #TODO: user defined naming conventions are not being added
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #xxxxxxxxxxxxxxxxxxxxxxx
+            
             for alternative in prop:
                 if 'n' in alternative.keys():
                     convention = reactionDefinition['namingConvention'][alternative['n'][0]]
@@ -262,7 +267,6 @@ class SBMLAnalyzer:
         provided
         '''
         ruleDictionary = self.species2Rules(rules)
-        
         #TODO: recognize bidirectional rules
         #contains which rules are equal to reactions defined in reactionDefiniotion['reactions]    
         ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
@@ -279,7 +283,6 @@ class SBMLAnalyzer:
         #print tupleC
         #now we will check for the nameConventionMatrix
         tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
-               
         for rule in ruleDictionary:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
@@ -288,7 +291,9 @@ class SBMLAnalyzer:
                             print namingConvention,reactionIndex[namingConvention],reactionIndex
                         tupleNameComplianceMatrix[rule][reactionIndex[namingConvention]] +=1
                         break
-        
+        #for element in tupleNameComplianceMatrix:
+        #    if 'EGF_EGFR2' in element:
+        #        print element,tupleNameComplianceMatrix[element]        
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
         tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
@@ -369,7 +374,6 @@ class SBMLAnalyzer:
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
 
-        equivalenceTranslator = {}
         #determines if two molecules have a relationship according to the naming convention section
         reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
                     reactionDefinition)
@@ -386,6 +390,9 @@ class SBMLAnalyzer:
         rawReactions = [self.parseReactions(x) for x in reactions]
         #reactionDefinition = loadConfigFiles()
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
+        if self.speciesEquivalences != None:
+            self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
+
         reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
                     reactionDefinition)
         for reactionIndex in range(0,len(rawReactions)):

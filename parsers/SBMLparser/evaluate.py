@@ -26,6 +26,7 @@ def main():
                 errorFiles.append(x)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
     validFiles = [x for x in bnglFiles if x not in errorFiles]
+    print 'Thrown out: {0}'.format(len(bnglFiles)-len(validFiles))
     skip = [] #['334','225','332','105','293','333','337','18','409']
     counter = 0
     with open('executionTestErrors' + '.log', 'w') as f:

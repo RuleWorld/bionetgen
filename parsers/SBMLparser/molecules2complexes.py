@@ -80,13 +80,138 @@ def correctClassificationsWithCycleInformation(rules,classifications,cycles):
         if (len([x for x in reaction2[0] if x in [y for x in cycles for y in x]]) > 0 and
             len([x for x in reaction2[1] if x in [y for x in cycles for y in x]]) > 0):
                 classifications[index] = 'Generic-Catalysis'
+
+class Memoize:
+    def __init__(self, f):
+        self.f = f
+        self.memo = {}
+    def __call__(self, *args):
+        if not args in self.memo:
+            self.memo[args] = self.f(*args)
+        return self.memo[args]
+
+    
+def resolveDependencyGraph(dependencyGraph,reactant):
+    return resolveDependencyGraphHelper(dependencyGraph,reactant,[])
+
+
+def resolveDependencyGraphHelper(dependencyGraph,reactant,memory,withModifications=False):
+    result = []
+    if reactant not in dependencyGraph or dependencyGraph[reactant] == []:
+        result.append([reactant])
+    else:
+        for option in dependencyGraph[reactant]:
+            tmp = []
+            for element in option:
+                if element in memory:
+                    continue
+                baseElement = resolveDependencyGraphHelper(dependencyGraph,element,memory + [element])
+                if baseElement != None:
+                    if not withModifications:
+                        tmp.extend(baseElement)
+                    else:
+                        tmp.extend(baseElement)
+            result.extend(tmp)
+    return result
                 
+def addToDependencyGraph(dependencyGraph,label,value):
+    if label not in dependencyGraph:
+        dependencyGraph[label] = []
+    if value not in dependencyGraph[label] and value != []:
+        dependencyGraph[label].append(value)
+        
+def dependencyGraph(dependencyGraph,reaction,classification,equivalenceTranslator):
+    totalElements =  [item for sublist in reaction for item in sublist]
+    for element in totalElements:
+        addToDependencyGraph(dependencyGraph,element,[])
+        if classification == 'Binding':
+            if len(reaction[0]) == 2 and element not in reaction[0]:
+                addToDependencyGraph(dependencyGraph,element,reaction[0])
+            elif len(reaction[1]) == 2 and element not in reaction[1]:
+                addToDependencyGraph(dependencyGraph,element,reaction[1])
+
+
+    
+def weightDependencyGraph(dependencyGraph):
+    def measureGraph(path):
+        counter = 1
+        for x in path:
+            if type(x) == list or type(x) == tuple:
+                counter += measureGraph(x)
+            else:
+                counter += 1
+        return counter                
+
+    weights = []
+    for element in dependencyGraph:
+        path = resolveDependencyGraph(dependencyGraph,element)
+        weight = measureGraph(path)
+        weights.append([element,weight])
+        
+    weights = sorted(weights,key=lambda rule: rule[1]) 
+    return weights
+
+def consolidateDependencyGraph(dependencyGraph):
+    def selectBestCandidate(candidates,dependencyGraph):
+        tmpCandidates = []
+        for individualAnswer in candidates:
+            tmpAnswer = []
+            flag = True
+            for chemical in individualAnswer:
+                #we cannot handle tuple naming conventions for now
+                if type(chemical) == tuple:
+                    flag = False
+                    continue
+                rootChemical = resolveDependencyGraph(dependencyGraph,chemical)
+                for element in rootChemical:
+                    if len(element) == 1 and type(element[0]) == tuple:
+                        continue
+                    if element == chemical:
+                        tmpAnswer.append(chemical)
+                    else:
+                        tmpAnswer.append(element[0])
+            if flag:
+                tmpAnswer = sorted(tmpAnswer)
+                tmpCandidates.append(tmpAnswer)
+        #we cannot handle tuple naming conventions for now
+        if len(tmpCandidates) == 0:
+            return None
+        #check if all candidates are the same
+        if tmpCandidates[1:] == tmpCandidates[:-1]:
+            return [tmpCandidates[0]]
+        print 'error'
+        return [tmpCandidates[0]]
+       
+    tmp = {}
+    prunnedDependencyGraph = deepcopy(dependencyGraph)
+    weights = weightDependencyGraph(prunnedDependencyGraph)
+    for element in weights:
+        candidates = [x for x in prunnedDependencyGraph[element[0]]]
+        if len(candidates) == 1 and type(candidates[0][0])  == tuple:
+            prunnedDependencyGraph[element[0]] = []
+        if len(candidates) > 1:
+            candidates = selectBestCandidate(candidates,prunnedDependencyGraph)
+        if candidates == None:
+            prunnedDependencyGraph[element[0]] = []
+        else:
+            prunnedDependencyGraph[element[0]] = candidates
+    return prunnedDependencyGraph      
+    '''
+    for element in database.dependencyGraph:
+        print element
+        candidates = [x for x in database.dependencyGraph[element]]
+        if len(candidates) >1:
+            candidates = selectBestCandidate(candidates)
+        tmp[element] = candidates
+    '''        
+
 
 def defineCorrespondence(reaction2, totalElements,database,
     classification,rdfAnnotations):
     '''
     this method goes through the list of reactions and determines what kind of 
-    reaction each one is (eg. catalysis, synthesis etc). It also fills the database
+    reaction each one is (eg. catalysis, syn
+    thesis etc). It also fills the database
     with information about what each sbml molecule is equal to in bngl lingo._
     eg S1 + s2 -> s3 would return s3 == s1.s2
     '''
@@ -112,8 +237,10 @@ def defineCorrespondence(reaction2, totalElements,database,
                     pass
                     addToLabelDictionary(database.labelDictionary,element,(element,))
                     #database.labelDictionary[element] = (element,)
-        elif classification == 'Phosporylation' or classification == 'Double-Phosporylation':
+        elif classification == 'Phosporylation' or classification == 'Double-Phosporylation' \
+        or classification =='mMod' or classification =='iMod':
             #print element
+            
             addToLabelDictionary(database.labelDictionary,element,(element,))
             #pass
         else:
@@ -165,8 +292,13 @@ def defineComplexCorrespondenceWithNamingConventions(reactant,namingConventions,
 def defineCorrespondenceWithNamingConventions(reactant,namingConventions,database,createOnDemand=False):
     #FIXME: this is just a hack for where there are many naming conventions. Fix
     if isinstance(namingConventions[0][1],tuple):
+        database.labelDictionary[reactant] = [namingConventions[0][1]]
+        for element in namingConventions[0][1]:
+            if element not in database.labelDictionary:
+                database.labelDictionary[element] = [(element,)]
         return
     if reactant == max(namingConventions[0],key=len):
+        
         if database.labelDictionary[ max(namingConventions[0],key=len)][0] ==  (max(namingConventions[0],key=len),):
              database.labelDictionary[ max(namingConventions[0],key=len)] = [(min(namingConventions[0],key=len),)]
         else:
@@ -221,6 +353,8 @@ def resolveCycles(database,equivalenceTranslator):
 def recursiveChecking(labelDictionary,root,acc,):
     if root in acc:
         acc.extend(['CYCLEPROBLEM',root])
+    elif root not in labelDictionary:
+        acc.append(root)
     elif root in labelDictionary[root]:
         acc.append(root)
     else:
@@ -266,6 +400,7 @@ def resolveCorrespondence(database,cycles):
                 history.append(tmpLabel)
                 
                 tmpLabel = database.labelDictionary[tmpLabel][0]
+                
                 #print oldTemp,temp[element],history
                 #print database.labelDictionary[tmpLabel]
                 if oldTemp == temp[element]:
@@ -395,6 +530,7 @@ def getPertinentNamingEquivalence3(original,labelDatabase, equivalenceTranslator
     """
     This function receives
     """
+    print original,equivalenceTranslator
     overallEquivalence = []
     for element in original:
         equivalenceList = []
@@ -477,8 +613,10 @@ def correctClassifications(rules,classifications,labelDatabase,equivalenceTransl
         #print reaction2
         #print labelDatabase[reaction2[1][0]]
         labelDatabase[reaction2[1][0]] = [min(labelDatabase[reaction2[1][0]],key=len)]
-                
-            
+        
+
+
+    
             
 def transformMolecules(parser,database,configurationFile,speciesEquivalences=None):
     #labelDictionary = {}
@@ -489,7 +627,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile,speciesEquivalences)
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
-    
     database.translator,database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
     
     #analyzeSBML.analyzeNamingConventions(molecules)
@@ -522,9 +659,9 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         #database.labelDictionary = resolveCorrespondence(database)
     #correctClassifications(rules,classifications,database.labelDictionary)
     #print 'step1',database.labelDictionary
-
+            
     simplify(database.labelDictionary)
-    
+   
     #TODO: uncomment this section when we solve the bug on reclassifying
     #print database.labelDictionary 
     cycles = resolveCycles(database,equivalenceTranslator)
@@ -538,22 +675,22 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
         if classifications[index] in ['None','Binding'] and classifications2[index] != 'None':
             classifications[index] = classifications2[index]
     tmp = {}
-    
+
+
     tmp = {x:[database.labelDictionary[x]] for x in database.labelDictionary}
-    database.labelDictionary = tmp
     
+    
+    database.labelDictionary = tmp
     #print 'step1.5',database.labelDictionary    
     #STEP2: Use naming conventions
-    
     for element in set(x for rule in rules for tmp in parseReactions(rule) for x in tmp):
         equivalence = [x for x in equivalenceTranslator if element == max(x,key=len)]
         if equivalence != []:
             defineCorrespondenceWithNamingConventions(element,equivalence,database,createOnDemand=True)
-            
+          
     #for _ in range(0,5):
     #    database.labelDictionary = resolveCorrespondence(database,cycles)
-
-
+    #print {x:type(database.labelDictionary[x]) == tuple for x in database.labelDictionary
     for element in set(x for rule in rules for tmp in parseReactions(rule) for x in tmp):
         equivalence = [x for x in equivalenceTranslator if element == max(x,key=len)]
         if equivalence != []:
@@ -592,6 +729,7 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     #secondary key: length of the names of the elements involved    
     ruleWeightTable = []
     ruleWeight2Table= []
+    
     #print equivalenceTranslator
     for rule in rules:
         flag = False
@@ -614,8 +752,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     nonProcessedRules = zip(ruleWeightTable,ruleWeight2Table,rules,classifications)
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[1])
     nonProcessedRules = sorted(nonProcessedRules,key=lambda rule: rule[0])
-    
-    
     database.classifications = classifications
         
     for idx,(w0,w1,rule,classification) in enumerate(nonProcessedRules):

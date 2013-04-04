@@ -181,10 +181,10 @@ class Species:
             self.molecules.append(deepcopy(element))              
         
     def __str__(self):
-        return '.'.join([x.toString() for x in self.molecules])
+        return '.'.join([x.toString().replace('-','_') for x in self.molecules])
         
     def str2(self):
-        return '.'.join([x.str2() for x in self.molecules])
+        return '.'.join([x.str2().replace('-','_') for x in self.molecules])
         
     def reset(self):
         for element in self.molecules:
@@ -342,7 +342,9 @@ class Component:
         return self.name 
         
     def __str__(self):
-        return self.getRuleStr()
+        tmp = self.getRuleStr()
+        tmp = tmp.replace('-','_')
+        return tmp
         
     def str2(self):
         tmp = self.name
