@@ -13,6 +13,7 @@ import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
 import molecules2complexes as m2c
+import moleculeCreation as mc
 import sys
 import structures
 from os import listdir
@@ -59,7 +60,6 @@ class SBML2BNGL:
         isBoundary = species.getBoundaryCondition()
         compartment = species.getCompartment()
         self.speciesDictionary[identifier] = standardizeName(name)
-        
         returnID = identifier if self.useID else self.speciesDictionary[identifier]
         return (returnID,initialConcentration,isConstant,isBoundary,compartment,name)
 
@@ -120,7 +120,6 @@ class SBML2BNGL:
             rateR = '0'
                 
                 
-        
         if not self.useID:
             rateL = self.convertToName(rateL)
             rateR = self.convertToName(rateR)
@@ -323,6 +322,7 @@ class SBML2BNGL:
         nullFlag = False
         names = []
         for species in self.model.getListOfSpecies():
+            
             rawSpecies = self.getRawSpecies(species)
             if (rawSpecies[4] != ''):
                 self.tags[rawSpecies[0]] = '@%s' % (rawSpecies[4])
@@ -342,8 +342,12 @@ class SBML2BNGL:
                 if rawSpecies[0] in self.tags:
                     tmp2 = (self.tags[rawSpecies[0]])
                 if rawSpecies[1] > 0:
-                    speciesText.append('%s:%s%s %f' % (tmp2,temp,str(tmp),rawSpecies[1])) 
-            observablesText.append('Species %s %s #%s' % (rawSpecies[0], tmp,rawSpecies[5]))
+                    speciesText.append('%s:%s%s %f' % (tmp2,temp,str(tmp),rawSpecies[1]))
+            if rawSpecies[0] == 'e':
+                modifiedName = 'are'
+            else:
+                modifiedName = rawSpecies[0]
+            observablesText.append('Species %s %s #%s' % (modifiedName, tmp,rawSpecies[5]))
         #moleculesText.append('NullSpecies()')
         #speciesText.append('$NullSpecies() 1')
         return moleculesText,speciesText,observablesText
@@ -429,7 +433,7 @@ def standardizeName(name):
     name2 = name
     
     
-    #name2 = name.replace("-","_")
+    name2 = name.replace("-","_")
     name2 = name2.replace("^","")
     name2 = name2.replace("'","")
     name2 = name2.replace("*","m")
@@ -632,6 +636,11 @@ def resolveDependencies(dictionary,key,idx):
             counter += 1
     return len(dictionary[key]) + counter    
     
+def validateReactionUsage(reactant,reactions):
+    for element in reactions:
+        if reactant in element:
+            return element
+    return None
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
     
     useArtificialRules = False
@@ -640,13 +649,15 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
+    #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         
-    try:
-        translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #try:
+    #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         #translator={}    
-    except:
-        print 'failure'
-        return None,None,None,None
+    #except:
+    #    print 'failure'
+    #    return None,None,None,None
     
     #translator = {}
     
@@ -656,7 +667,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     functions = []
     idxArray = []
     _,rules,tfunc = parser.getReactions(translator,True)
-    functions.extend(tfunc)     
+    functions.extend(tfunc)
     aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
@@ -664,7 +675,6 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     param = [x for x in param if x not in removeParams]
     tags = '@{0}'.format(compartments[0].split(' ')[0]) if len(compartments) == 1 else '@cell'
     molecules.extend([x.split(' ')[0] for x in removeParams])
-
     if len(molecules) == 0:
         compartments = []
 
@@ -693,6 +703,9 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
             flag = molecules.index('{0}()'.format(key))
 
         if flag != -1:
+            result =validateReactionUsage(molecules[flag],rules)
+            if result != None:
+                logMess('ERROR','Pseudo observable {0} in reaction {1}'.format(molecules[flag],result))
             molecules.pop(flag)
         
         flag = -1
@@ -701,6 +714,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
                 flag = idx
         if flag != -1:
             species[flag] = '#' + species[flag]
+    
     functions.extend(aRules)
 
     sbmlfunctions = parser.getSBMLFunctions()
@@ -711,11 +725,14 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
                     continue
                 if sbml in sbmlfunctions[sbml2]:
                     sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
-    
     for idx in range(0,len(functions)):
         for sbml in sbmlfunctions:
             if sbml in functions[idx]:
                 functions[idx] = writer.extendFunction(functions[idx],sbml,sbmlfunctions[sbml])
+        functions[idx] =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',functions[idx])
+        functions[idx] =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',functions[idx])
+        functions[idx] =re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',functions[idx])
+
     #functions.extend(sbmlfunctions)
     dependencies2 = {}
     for idx in range(0,len(functions)):
@@ -754,7 +771,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     
     if len(artificialRules) + len(rules) == 0:
         logMess('ERROR','The file contains no reactions')
-    if useArtificialRules or len(artificialRules) > 0:
+    if useArtificialRules or len(rules) == 0:
         rules =['#{0}'.format(x) for x in rules]
         evaluate =  evaluation(len(observables),translator)
 
@@ -778,11 +795,13 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
 
     #rate of each classified rule
     classificationDict = {}
-    for element in database.classifications:
-        if element not in classificationDict:
-            classificationDict[element] = 0.0
-        classificationDict[element] += 1.0/len(database.classifications)
-    return len(rules), evaluate,parser.getModelAnnotation(),classificationDict
+    if translator != {}:
+        for element in database.classifications:
+            if element not in classificationDict:
+                classificationDict[element] = 0.0
+            classificationDict[element] += 1.0/len(database.classifications)
+        return len(rules), evaluate,parser.getModelAnnotation(),classificationDict
+    return None,None,None,None
 
 def processFile(translator,parser,outputFile):
     param2 = parser.getParameters()
@@ -823,17 +842,18 @@ def main():
     #144
     rdfArray = []
     classificationArray = []
-    for bioNumber in range(1,410):
+    for bioNumber in [19]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
-        #spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
-        spEquivalence = None
+        reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
+        spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        #spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
         
-        rlength,reval,rdf,classif = analyzeFile(bioNumber,reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        rlength,reval,rdf,classif = analyzeFile(bioNumber,reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
                
         rdfArray.append(getAnnotations(rdf))
         
@@ -867,4 +887,4 @@ if __name__ == "__main__":
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s
 #http://nullege.com/codes/show/src@s@e@semanticsbml-HEAD@semanticSBML@annotate.py
 #http://wiki.geneontology.org/index.php/Example_Queries#Find_terms_by_GO_ID
-#http://www.geneontology.org/GO.database.shtml
+#http://www.geneontology.org/GO.database.shtml  

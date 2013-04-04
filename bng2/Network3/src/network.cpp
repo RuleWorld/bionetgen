@@ -316,22 +316,23 @@ bool isMuParserFunction(string in_string) {
 		in_string == "atanh" ||
 		in_string == "log2"  ||
 		in_string == "log10" ||
-		in_string == "log"   ||
+//		in_string == "log"   || not supported in BNG
 		in_string == "ln"    ||
 		in_string == "exp"   ||
 		in_string == "sqrt"  ||
-		in_string == "sign"  ||
+//		in_string == "sign"  || not supported in BNG
 		in_string == "rint"  ||
 		in_string == "abs"   ||
 		in_string == "if"    || // Now implemented as static If() in network.h
 		in_string == "min"   ||
 		in_string == "max"   ||
 		in_string == "sum"   ||
-		in_string == "e"     ||
 		in_string == "avg"   ||
-		in_string == "or"    ||
-		in_string == "and"   ||
-		in_string == "xor"
+		in_string == "_pi"   || // muParser.cpp 311: DefineConst(_T("_pi"), (value_type)PARSER_CONST_PI);
+		in_string == "_e"       // muParser.cpp 312: DefineConst(_T("_e"), (value_type)PARSER_CONST_E);
+//		in_string == "or"    || deprecated in muParser
+//		in_string == "and"   || deprecated in muParser
+//		in_string == "xor"      deprecated in muParser
 		)
 		return true;
 	else
@@ -345,10 +346,8 @@ bool isMuParserFunction(string in_string) {
  */
 vector<string> find_variables(string a) {
 	vector<string> variables;
-	//	istringstream in(a,istringstream::in);
 	char c;
 	for (unsigned int i = 0; i < a.length();) {
-//		c = a[i++];
 		c = a[i];
 		// Support scientific notation (i.e., X{eE}{+-}YYY)
 		if (i > 0 && i < a.length()-1 &&
@@ -371,7 +370,6 @@ vector<string> find_variables(string a) {
 			{
 				s.push_back(c);
 				c = a[++i];
-//				c = a[i++];
 			}
 			if (!isMuParserFunction(s)) {
 				variables.push_back(s);
@@ -388,10 +386,7 @@ vector<string> find_variables(string a) {
  * This is because MuParser cannot handle variables with parentheses at the end of their names
  */
 void process_function_names(string& a) {
-	if (a.length() < 2)
-		return;
-
-	istringstream in(a, istringstream::in);
+	if (a.length() < 2) return;
 	char curr_letter, next_letter;
 	curr_letter = a[0];
 	next_letter = a[1];
@@ -468,6 +463,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			mu::Parser parser;
 			vector<int> observ_depend;
 			vector<int> param_depend;
+
+			// Define if() function as reference to static If() in network.h
+			parser.DefineFun(_T("if"), If);
 
 			// Functions block exists, create 'time' function
 			if (dummy_string == "functions"){
@@ -555,9 +553,6 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				parser.SetExpr(function_string);
 //				double new_val = parser.Eval();
 			}
-
-			// Define if() function as reference to static If() in network.h
-			parser.DefineFun(_T("if"), If);
 
 			network.functions.push_back(parser);
 
@@ -708,7 +703,9 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 //				cout << index << " " << elt_name << " " << tokens[n_tok] << endl;
 				myParser parser;
 				parser.name = elt_name;
-				vector<string> v = find_variables(tokens[n_tok]);
+				string expr(tokens[n_tok]);
+				process_function_names(expr); // Remove parentheses from _pi() and _e()
+				vector<string> v = find_variables(expr); //find_variables(tokens[n_tok]);
 				for (unsigned int i=0;i < v.size();i++){
 					// Look for variable in parameters vector
 					bool found = false;
@@ -720,12 +717,12 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 					}
 					// Error check
 					if (!found){
-						cout << "Error in parsing '" << name << "' block expression: \"" << tokens[n_tok] <<
-								"\". Could not find parameter " << v[i] << ". Exiting." << endl;
+						cout << "Error in parsing '" << name << "' block expression: \"" << expr // tokens[n_tok] <<
+							 <<	"\". Could not find parameter " << v[i] << ". Exiting." << endl;
 						exit(1);
 					}
 				}
-				parser.p.SetExpr(tokens[n_tok]);
+				parser.p.SetExpr(expr); //parser.p.SetExpr(tokens[n_tok]);
 				parser.val = parser.p.Eval();
 //				cout << "\t" << parser.name << " " << parser.val << endl;
 				// Store the value

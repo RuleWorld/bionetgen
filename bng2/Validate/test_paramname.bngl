@@ -1,7 +1,7 @@
 begin parameters
     L0      602
     R0      1204
-    1kp1    1.66112957e-04
+    kp1    1.66112957e-04
     km1     1
 end parameters
 
@@ -10,7 +10,7 @@ begin seed species
     R(l)        R0
 end seed species
 begin reaction rules
-    L(r,r,r) + R(l) <-> L(r,r,r!1).R(l!1)  1kp1*km1, km1
+    L(r,r,r) + R(l) <-> L(r,r,r!1).R(l!1)  kp1*km1, km1
 end reaction rules
 
 generate_network({overwrite=>1})

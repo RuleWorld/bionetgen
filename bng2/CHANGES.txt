@@ -90,6 +90,12 @@ MATLAB does not support the ternary conditional (a better solution).
 * Eliminated redundancy of expression evaluation, resulting in better 
 run-time efficiency.
 
+==== Bug Notices ====
+* run_network fails to parse math expressions properly if a parameter name in
+the expression begins with a number. We recommend that parameter names begin
+with a letter character. Parameter names beginning with numbers will likely
+be deprecated in a future release.
+
 ==== Bug Fixes ====
 * Fixed bug where parameters beginning with "and" or "or" were confused
 with the logical operations. The problem was traced to the muParser
