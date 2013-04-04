@@ -5,7 +5,7 @@ import libsbml2bngl
 import structures as st
 import itertools
 
-
+                    
 class InsufficientInformationError(Exception):
      def __init__(self):
          pass
@@ -535,7 +535,8 @@ def catalysis(original,dictionary,rawDatabase,catalysisDatabase,translator,
     sortedResult = [result[0],result[1]] if any(k) else [result[1],result[0]]
     sortedConvention = [namingConvention[0],namingConvention[1]] if any(k) else [namingConvention[1],namingConvention[0]]
     flag = False
-    
+    if 'EGF_EGFRm2' in original[1]:
+        print 'hello'
 
     for reactantGroup,res,conv in zip(original,sortedResult,sortedConvention):
         for reactant in reactantGroup:

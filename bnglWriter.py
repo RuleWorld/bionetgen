@@ -228,7 +228,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
         flag = False
         rule =  '{0}{1}'.format(functionTitle,functionBody)
     
-    
     tmp = rule
     #delete the compartment from the rate function since cBNGL already does it
     for compartment in compartments:
@@ -240,14 +239,13 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
             logMess('WARNING','Exchanging reference to compartment %s for its dimensions' % compartment[0])
     
     #change references to time for time()    
-    tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1 time() \3',tmp)
-    tmp =re.sub(r'(\W|^)(Time)(\W|$)',r'\1 time() \3',tmp)
+    #tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',tmp)
+    #tmp =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',tmp)
     #BNGL has ^ for power. 
     if flag:
         finalString = '%s = %s' % (functionTitle,tmp)
     else:
         finalString = tmp
-        
     #change references to local parameters
     for parameter in parameterDict:
         finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
@@ -259,7 +257,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     #combinations '+ -' break ibonetgen
     finalString = re.sub(r'(\W|^)([-])(\s)+',r'\1-',finalString)
     #changing reference of 't' to time()
-    finalString = re.sub(r'(\W|^)(t)(\W|$)',r'\1 time() \3',finalString)
+    #finalString = re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',finalString)
     #pi
     finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\1 3.1415926535 \3',finalString)
     #print reactants,finalString
@@ -267,8 +265,9 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     finalString = re.sub(r'(\W|^)log\(',r'\1 ln(',finalString)
     #reserved keyword: e
     finalString = re.sub(r'(\W|^)(e)(\W|$)',r'\1 are \3',finalString)
-    
     #changing ceil
+    
+    #avoiding variables whose name starts with a number
     
     #removing mass-action elements
     
@@ -298,7 +297,7 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
     output.write('generate_network({overwrite=>1})\n')
-    output.write('simulate({method=>ode,t_end=>100,n_steps=>100})')
+    output.write('simulate({method=>\'ode\',t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     
 def sectionTemplate(name,content):

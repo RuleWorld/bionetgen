@@ -14,7 +14,7 @@ import pickle
 import re
 from restful_lib import Connection
 import urllib,urllib2
-
+from wordcloud import cloudText
 def main():
     history = np.load('stats3b.npy')
     history2 = np.load('stats3.npy')
@@ -67,6 +67,24 @@ def bagOfWords():
     bins = np.digitize(sortedFiles,np.arange(0,1.1,0.1))
     annotationDict = {x:{} for x in range(1,12)}
     classDict = {x:{} for x in range(1,12)}
+    
+    problem = {}
+    problem['empty'] = 0
+    problem['none'] = 0
+    problem['pheno'] = 0
+    for idx,element in enumerate(classifications):
+        if bins[idx] == 1:
+            if element == {}:
+                problem['empty'] += 1
+            else:
+                if 'None' in element:
+                    problem['none'] += element['None']
+                if 'Generation' in element:
+                    problem['pheno'] += element['Generation']  
+                if 'Decay' in element:
+                    problem['pheno'] += element['Decay']
+    
+    print problem
     for idx,element in enumerate(annotations):
         if idx < len(bins):
             if len(element) > 0:
@@ -74,13 +92,27 @@ def bagOfWords():
                     for word in ann[0].split(' '):
                         if word not in annotationDict[bins[idx]]:
                             annotationDict[bins[idx]][word] = 0
-                        annotationDict[bins[idx]][word] += 1
+                        annotationDict[bins[idx]][word] += 1.0
     for element in annotationDict:
         annotationDict[element] = {x:annotationDict[element][x] for x in annotationDict[element] if annotationDict[element][x] > 3 and len(x) > 2}
     print annotationDict
     
+    for element in annotationDict:
+        stringA = ''
+        for word in annotationDict[element]:
+            tword = word.replace('/','')
+            tword = word.replace('-','')
+            stringA += ' ' + ' '.join([tword for x in range(0,int(annotationDict[element][word]))])
+        cloudText(stringA,'cloud{0}.png'.format(element))
     
-    
+    stringA = ''
+    for element in [9,10,11]:
+        for word in annotationDict[element]:
+            tword = word.replace('/','')
+            tword = word.replace('-','')
+            stringA += ' ' + ' '.join([tword for x in range(0,int(annotationDict[element][word]))])
+    cloudText(stringA,'cloudMax.png')
+        
           
 def main2():
     #go database
