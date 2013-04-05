@@ -457,6 +457,7 @@ class SBMLAnalyzer:
                         tmp3.addBond(molecule[2][1])
                     elif molecule[2][0] == "s":
                         tmp3.addState(molecule[2][1])
+                        tmp3.addState('U')
                         #tmp3.addState(molecule[2][2])
                     
                     tmp2.addComponent(tmp3)

@@ -238,9 +238,72 @@ def consolidateDependencyGraph(dependencyGraph):
             
     return prunnedDependencyGraph,weights,unevenElementDict
     
+def identifyReaction(equivalenceDictionary,originalElement,modifiedElement):
+    print originalElement,modifiedElement
+    for classification in equivalenceDictionary:
+        if (originalElement,modifiedElement) in equivalenceDictionary[classification]:
+            return classification
+    return None
 
-def preRuleifyReactions(dependencyGraph):
-    pass
+
+def createEmptySpecies(name):
+    species = st.Species()
+    molecule = st.Molecule(name)
+    species.addMolecule(molecule)
+    return species
+
+def addStateToComponent(species,moleculeName,componentName,state):
+    for molecule in species.molecules:
+        if moleculeName == molecule.name:
+            for component in molecule.components:
+                if componentName == component.name and state not in component.states:
+                    component.addState(state)
+    
+def addComponentToMolecule(species,moleculeName,componentName):
+    for molecule in species.molecules:
+        if moleculeName == molecule.name:
+            if componentName not in [x.name for x in molecule.components]:
+                component = st.Component(componentName)
+                molecule.addComponent(component)
+    
+def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,equivalenceDictionary):
+    for element in weights:
+        if element[0] == '0':
+            continue
+        if dependencyGraph[element[0]] == []:
+            if element[0] not in translator:
+                translator[element[0]] = createEmptySpecies(element[0])
+        else:
+            if len(dependencyGraph[element[0]][0]) == 1:
+                if dependencyGraph[element[0]][0][0] == element[0]:
+                    if element[0] not in translator:
+                        translator[element[0]] = createEmptySpecies(element[0])
+                else:                      
+                    classification = identifyReaction(equivalenceDictionary,dependencyGraph[element[0]][0][0],element[0])
+                    species = createEmptySpecies(dependencyGraph[element[0]][0][0])
+                    if classification != None:
+                        if dependencyGraph[element[0]][0][0] in translator:
+                            species = translator[dependencyGraph[element[0]][0][0]]
+
+                        addComponentToMolecule(species,dependencyGraph[element[0]][0][0],reactionProperties[classification][0])
+                        addStateToComponent(species,dependencyGraph[element[0]][0][0],reactionProperties[classification][0],reactionProperties[classification][1])
+                        modifiedSpecies = deepcopy(species)
+                        addStateToComponent(species,dependencyGraph[element[0]][0][0],reactionProperties[classification][0],'U')
+                        
+                        #update the base species
+                        translator[dependencyGraph[element[0]][0][0]] = species
+                        translator[element[0]] = modifiedSpecies
+                        print ';;;;;;;;--;;;',str(species),str(modifiedSpecies),classification
+                        print '::::',element[0],dependencyGraph[element[0]]
+                    else:
+                        print 'ALERT',element[0]
+            else:
+                print '---',dependencyGraph[element[0]],element
+                species = st.Species()
+                for molecule in dependencyGraph[element[0]][0]:
+                    pass
+                    
+        
 
 def preRuleify(reaction,dependencyGraph,ruleifyDictionary):
     moleculeList = []
@@ -287,6 +350,8 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     molecules,_,_ = parser.getSpecies()
     sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile,speciesEquivalences)
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
+    
+    
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
     database.translator,database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
@@ -323,7 +388,7 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     weightsDict = {x[0]:x[1] for x in weights}
     tempRules = {}
     weights = sorted(weights,key=lambda rule:rule[1])
-    preRuleifyReactions(prunnedDependencyGraph)
+    preRuleifyReactions(prunnedDependencyGraph,weights,database.translator,database.reactionProperties,eequivalenceTranslator)
     for rule in rules:
         reaction = list(parseReactions(rule))
         preRuleify(reaction,prunnedDependencyGraph,tempRules)
