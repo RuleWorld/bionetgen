@@ -349,7 +349,7 @@ class SBMLAnalyzer:
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
-        
+        print ';;;;;;;',self.userEquivalences
         for reactionType,properties in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #if its a reaction defined by its naming convention   
             #xxxxxxxxxxxxxxxxxxx
@@ -385,6 +385,8 @@ class SBMLAnalyzer:
             listOfEquivalences.extend(equivalenceTranslator[element])
         return reactionClassification,listOfEquivalences,equivalenceTranslator
     
+    def resolveUnidentifiedEquivalences(self,unevenDict):
+        pass
     
     def reclassifyReactions(self,reactions,molecules,labelDictionary):
         rawReactions = [self.parseReactions(x) for x in reactions]
@@ -455,7 +457,7 @@ class SBMLAnalyzer:
                         tmp3.addBond(molecule[2][1])
                     elif molecule[2][0] == "s":
                         tmp3.addState(molecule[2][1])
-                        tmp3.addState(molecule[2][2])
+                        #tmp3.addState(molecule[2][2])
                     
                     tmp2.addComponent(tmp3)
                     stmp = st.Species()
@@ -466,5 +468,6 @@ class SBMLAnalyzer:
                     tmp.addMolecule(tmp2)
                 dictionary[element[0]] = deepcopy(tmp)
                 labelDictionary[element[0]] = [tuple(label)]
+                
         return dictionary,labelDictionary
         

@@ -178,31 +178,40 @@ def consolidateDependencyGraph(dependencyGraph):
                         tmpCandidates[0][idx] = newModifiedElements[chemical]
                         flag = True
                         break
+            tmpCandidates[0] = candidates[0]
+            
         else:
         #temporal solution for defaulting to the first alternative
-            print '---','error',newModifiedElements,tmpCandidates
+            print '---','error',reactant,newModifiedElements,tmpCandidates
             totalElements = [y for x in tmpCandidates for y in x]
             elementDict = {}
+            namingConvention = []
             for word in totalElements:
                 if word not in elementDict:
                     elementDict[word] = 0
                 elementDict[word] += 1
-
+            newTmpCandidates = [[]]
             for element in elementDict:
-                if elementDict[element] %2 == 1:
+                if elementDict[element] % len(tmpCandidates) == 0:
+                    newTmpCandidates[0].append(element)
+                #elif elementDict[element] % len(tmpCandidates) != 0 and re.search('(_|^){0}(_|$)'.format(element),reactant):
+                #    newTmpCandidates[0].append(element)
+                #    unevenElements.append([element])
+                else:
                     unevenElements.append(element)
             flag = True
+            
             while flag:
                 flag = False
-                for idx,chemical in enumerate(tmpCandidates[0]):
+                for idx,chemical in enumerate(newTmpCandidates[0]):
                     if chemical in newModifiedElements and newModifiedElements[chemical] in reactant:
-                        tmpCandidates[0][idx] = newModifiedElements[chemical]
+                        newTmpCandidates[0][idx] = newModifiedElements[chemical]
                         flag = True
                         break
-
+            #print newTmpCandidates,unevenElements
         #print ';;;',tmpCandidates[0]
         if len(candidates) == 1 and len(candidates[0]) == 1 and candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
-            #print '+++','error I dont know how this is modified',candidates[0],reactant
+            print '+++','error I dont know how this is modified',candidates[0],reactant
             return [],[]
 
 
@@ -220,7 +229,8 @@ def consolidateDependencyGraph(dependencyGraph):
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
             candidates,uneven = selectBestCandidate(element[0],candidates,prunnedDependencyGraph)
-            unevenElementDict[element[0]] = (uneven)
+            if uneven != []:            
+                unevenElementDict[element[0]] = (uneven)
         if candidates == None:
             prunnedDependencyGraph[element[0]] = []
         else:
@@ -229,6 +239,8 @@ def consolidateDependencyGraph(dependencyGraph):
     return prunnedDependencyGraph,weights,unevenElementDict
     
 
+def preRuleifyReactions(dependencyGraph):
+    pass
 
 def preRuleify(reaction,dependencyGraph,ruleifyDictionary):
     moleculeList = []
@@ -241,6 +253,7 @@ def preRuleify(reaction,dependencyGraph,ruleifyDictionary):
                 tmp.addMolecule(tmpMolecule)
             else:
                 for molecule in dependencyGraph[element][0]: 
+                    print molecule,dependencyGraph[molecule],resolveDependencyGraph(dependencyGraph,molecule)
                     tmpMolecule = st.Molecule(molecule)
                     moleculeList.append(tmpMolecule)
                     tmp.addMolecule(tmpMolecule)
@@ -276,14 +289,15 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
     database.translator,database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
-    
+    database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
   
-    database.dependencyGraph = {}
+    
     
     for reaction,classification in zip(rules,classifications):
         dependencyGraph(database.dependencyGraph,list(parseReactions(reaction)),classification,equivalenceTranslator)
+
     
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
@@ -292,30 +306,35 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             if key!= 'Binding':
                 addToDependencyGraph(database.dependencyGraph,modElement,[baseElement])
 
-            
+    for element in database.labelDictionary:
+        if element == database.labelDictionary[element][0][0]:
+            addToDependencyGraph(database.dependencyGraph,element,[])
+        else:
+            addToDependencyGraph(database.dependencyGraph,element,list(database.labelDictionary[element][0]))
     
     prunnedDependencyGraph,weights,unevenElementDict = consolidateDependencyGraph(database.dependencyGraph)
+    #print prunnedDependencyGraph
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
 
-    print 'ERK_P',database.dependencyGraph['ERK_P']
-    print 'ERK_P',prunnedDependencyGraph['ERK_P']
     #print resolveDependencyGraph(database.dependencyGraph,'EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot',True)
     #print resolveDependencyGraph(prunnedDependencyGraph,'EGF_EGFRm2')
     print '+++',prunnedDependencyGraph['EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot']
-    weights = {x[0]:x[1] for x in weights}
+    print prunnedDependencyGraph
+    weightsDict = {x[0]:x[1] for x in weights}
     tempRules = {}
-
+    weights = sorted(weights,key=lambda rule:rule[1])
+    preRuleifyReactions(prunnedDependencyGraph)
     for rule in rules:
         reaction = list(parseReactions(rule))
         preRuleify(reaction,prunnedDependencyGraph,tempRules)
-
+    print {x:str(tempRules[x]) for x in tempRules}
     weightList = []
     for rule in rules:
         reaction = list(parseReactions(rule))
         reactants  = [x for x in reaction[0]]
         weight = 0
         for element in reactants:
-            weight += weights[element]
+            weight += weightsDict[element]
         weightList.append(weight)
     weightedReactions = zip(rules,weightList,classifications)
     weightedReactions = sorted(weightedReactions,key=lambda rule: rule[1])
