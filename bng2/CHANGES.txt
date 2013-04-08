@@ -84,7 +84,7 @@ parameters block was added to run_network.
 ===== Upgrades to MATLAB export via writeMfile() =====
 * Improved error capture when calling MATLAB's ODE23s integrator.
 * Support for "if" functions: "if(cond,val1,val2)" is translated
-to "(cond~=0)*val1 + (cond==1)*val2". This isn't a perfect solution since it
+to "(cond~=0)*val1 + (cond==0)*val2". This isn't a perfect solution since it
 requires that val1 and val2 both evaluate to finite numbers. Unfortunately,
 MATLAB does not support the ternary conditional (a better solution).
 * Eliminated redundancy of expression evaluation, resulting in better 
