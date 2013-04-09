@@ -456,8 +456,9 @@ class SBMLAnalyzer:
                     if molecule[2][0] == "b":
                         tmp3.addBond(molecule[2][1])
                     elif molecule[2][0] == "s":
-                        tmp3.addState(molecule[2][1])
                         tmp3.addState('U')
+                        tmp3.addState(molecule[2][1])
+                        
                         #tmp3.addState(molecule[2][2])
                     
                     tmp2.addComponent(tmp3)
@@ -466,7 +467,12 @@ class SBMLAnalyzer:
                     dictionary[molecule[0]] = deepcopy(stmp)
                     labelDictionary[molecule[0]] = [(molecule[0],)]
                     label.append(molecule[0])
+                    
+                    #for component in tmp2.components:
+                    #    if component.name == molecule[1]:
+                    #        component.setActiveState(molecule[2][1])
                     tmp.addMolecule(tmp2)
+                    
                 dictionary[element[0]] = deepcopy(tmp)
                 labelDictionary[element[0]] = [tuple(label)]
                 
