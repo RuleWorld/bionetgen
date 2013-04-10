@@ -15,7 +15,7 @@ version("2.2.4")
 
 # BNG uses the following value, along with compartment volumes, to convert
 # intensive units (concentration) to extensive units (numbers). If you are
-# measuring quanity in moles, set this to Avogadro's number. If quantity is
+# measuring quantity in moles, set this to Avogadro's number. If quantity is
 # measured by pure numbers, then set to 1, etc.
 setOption("NumberPerQuantityUnit",6.0221e23)
 
