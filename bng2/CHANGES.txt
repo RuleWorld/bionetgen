@@ -2,6 +2,12 @@ CHANGES to BioNetGen
 updated 29 March 2013
 http://code.google.com/p/bionetgen
 
+== Since last version ==
+
+==== New Example and Validation Models ====
+* Added catalysis.bngl to Models2 directory. This model demonstrates
+the implementation of energy consuming reactions in energy BNGL.
+
 == BioNetGen-2.2.4-testing ==
 2013 March 31
 
