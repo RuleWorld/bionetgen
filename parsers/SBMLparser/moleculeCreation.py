@@ -367,7 +367,7 @@ def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,eq
     for element in weights:
         if element[0] == '0':
             continue
-        if element[0] == 'EGF_EGFRi2':
+        if element[0] == 'Proti':
             print 'hola'
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
@@ -422,8 +422,6 @@ def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,eq
                     #TODO: update basic molecules with new components
                     #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
                     #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
-                if element[0] == 'EGF_EGFR2':
-                    print 'hola'
                 for idx,molecule in enumerate(moleculePairsList):
                     flag = False
                     for component in molecule[0].components:
@@ -463,6 +461,8 @@ def updateSpecies(species,referenceMolecule):
                 count = [x.name for x in referenceMolecule.components].count(component.name)
                 count -= [x.name for x in moleculeStructure.components].count(component.name)
                 newComponent= st.Component(component.name)
+                if len(component.states) > 0:
+                    newComponent.addState('U')
                 if count > 0:
                     for idx in range(0,count):
                         moleculeStructure.addComponent(deepcopy(newComponent))
