@@ -844,7 +844,7 @@ def main():
     #144
     rdfArray = []
     classificationArray = []
-    for bioNumber in [2]:
+    for bioNumber in [19]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1

@@ -464,6 +464,7 @@ class SBMLAnalyzer:
                     tmp2.addComponent(tmp3)
                     stmp = st.Species()
                     stmp.addMolecule(deepcopy(tmp2))
+                    stmp.reset()                                 
                     dictionary[molecule[0]] = deepcopy(stmp)
                     labelDictionary[molecule[0]] = [(molecule[0],)]
                     label.append(molecule[0])
