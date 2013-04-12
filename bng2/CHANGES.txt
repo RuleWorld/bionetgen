@@ -2,14 +2,39 @@ CHANGES to BioNetGen
 updated 29 March 2013
 http://code.google.com/p/bionetgen
 
-== BioNetGen-2.2.4-testing ==
-2013 March 31
+== Since 2.2.4-testing ==
 
-===== Mac OS/X run_network executable is now compiled for 64-bit =====
+==== New Example and Validation Models ====
+* Added catalysis.bngl to Models2 directory. This model demonstrates
+the implementation of energy consuming reactions in energy BNGL.
+
+==== Changes to BNG action commands ====
+* Complex bookkeeping option, 'complex', is now enabled by default in the
+simulate_nf() action, i.e. 'complex=>1'.
+
+== BioNetGen-2.2.4-testing ==
+'''''2013 March 31'''''
+
+==== Errata ====
+'''''2013 April 10''''' The original release notes for 2.2.4-testing stated that
+the simulate_nf() action enabled complex bookkeeping by default. However, the
+implementation of this change was flawed! 2.2.4-testing still defaults to
+complex bookkeeping disabled. To enable complex bookkeeping, add the option
+"complex=>1". This will be corrected in the next release.
+
+'''''2013 April 10''''' The original release notes for 2.2.4-testing stated that
+the time() function is available for use in any math expression. This is
+incorrect. The time() function is only available in math expressions defined
+in the functions block of BNGL model.
+
+==== Hardware and Operating System Support ====
+
+===== Mac OS/X run_network executable is now compiled for x86_64 =====
 The run_network Mac executable distributed with BioNetGen was previously
-compiled for 32-bit Mac OS/X. In this and future distributions, executables
-will be compiled for 64-bit Mac OS/X. If a 32-bit executable is required, 
-browse to the "Network3" subdirectory and follow the compilation instructions.
+compiled for i686 architecture (32-bit). In this and future distributions,
+Mac OS/X executables will be compiled for x86_64 (64-bit). If a 32-bit
+executable is required, browse to the "Network3" subdirectory and follow the
+compilation instructions.
 
 ==== New Features ====
 
@@ -21,10 +46,10 @@ used on the LHS of a reaction rule for zero-order synthesis, or
 the RHS for degradation rules. This feature is now supported in
 compartmental BNGL
 
-'''NOTE:''' compartmental BNGL adopts the convention that zero order synthesis
-rate constants are given as intensive units (conc/time or counts/vol/time).
-Hence, the total rate of synthesis depends on the rate constant AND
-the volume of the compartment.
+'''''NOTE:''''' compartmental BNGL adopts the convention that zero order
+synthesis rate constants are given as intensive units (conc/time or
+counts/vol/time). Hence, the total rate of synthesis depends on the rate
+constant AND the volume of the compartment.
 
 ===== Energy BNGL (testing) =====
 Energy modeling is a new approach to rule-based modeling where
@@ -39,15 +64,16 @@ eye out for more documentation and examples of energy modeling in BNG.
 ===== Time-dependent functions (testing) =====
 Implemented a special function "time()" that refers to the current time 
 in a simulation. The time function may be used
-in any mathemetical expression. This is useful for ratelaws or
-events that depend on time. Time is recognized by run_network but
-not (presently) by NFsim.
+in any mathemetical expression. '''''CORRECTION:''''' ''The time() function is
+only recognized in math expressions defined in the functions block.'' This is
+useful for ratelaws or events that depend on time. Time is recognized by
+run_network but not (presently) by NFsim. 
 
-'''CAUTION:''' Discontinuities in ratelaws may cause problems for
+'''''CAUTION:''''' Discontinuities in ratelaws may cause problems for
 ODE integrators. If a timed event causes a discrete change
 in a ratelaw, it is best to stop and restart the simulator.
 
-'''CAUTION:''' Time-dependent rates in SSA simulations may introduce
+'''''CAUTION:''''' Time-dependent rates in SSA simulations may introduce
 substantial error if the relative rate change is fast in time. Advanced
 methods exist for managing time-dependent rates accurately; however,
 these methods are not currently implemented in run_network.
@@ -84,7 +110,7 @@ parameters block was added to run_network.
 ===== Upgrades to MATLAB export via writeMfile() =====
 * Improved error capture when calling MATLAB's ODE23s integrator.
 * Support for "if" functions: "if(cond,val1,val2)" is translated
-to "(cond~=0)*val1 + (cond==1)*val2". This isn't a perfect solution since it
+to "(cond~=0)*val1 + (cond==0)*val2". This isn't a perfect solution since it
 requires that val1 and val2 both evaluate to finite numbers. Unfortunately,
 MATLAB does not support the ternary conditional (a better solution).
 * Eliminated redundancy of expression evaluation, resulting in better 
@@ -128,7 +154,10 @@ is enabled, BNG will continue generating a network from the last
 completed iteration. If disabled, BNG will start reset the network
 and generate from scratch. The option is enabled by default, i.e.'continue=>1'.
 * Complex bookkeeping option, 'complex', is now enabled by default in the
-simulate_nf() action, i.e. 'complex=>1'.
+simulate_nf() action, i.e. 'complex=>1'. '''''CORRECTION:''''' ''The
+implementation of this change was flawed. The 2.2.4-testing release still
+defaults to complex bookkeeping disabled. To enable complex bookkeeping, add
+the option complex=>1''.
 * The 'exact' option for generate_hybrid_model() was renamed to 'safe'. This
 avoids confusion over whether the standard method is exact. Indeed, both
 methods are exact if population lumping is instantaneous. However, only

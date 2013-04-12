@@ -1663,15 +1663,26 @@ sub toMatlabString
             $string .= sprintf "%s<ci> %s </ci>\n", $indentp, $expr->Arglist->[0];
         }
         elsif ( $type eq 'FunctionCall' ) {
-            $string .= $indentp . "<apply>\n";
-            my $indentpp = $indentp . "  ";
-            my @arglist  = @{ $expr->Arglist };
-            $string .= sprintf "%s<%s/>\n", $indentpp, shift(@arglist);
-            foreach my $e (@arglist)
-            {
-                $string .= $e->toMathMLString( $plist, $indentpp, $level + 1 );
-            }
-            $string .= $indentp . "</apply>\n";
+			my @arglist  = @{ $expr->Arglist };
+			my $func_name = shift(@arglist); # Get function name
+			# Built-in functions
+			if (isBuiltIn($func_name)){
+	            $string .= $indentp . "<apply>\n";
+	            my $indentpp = $indentp . "  ";
+	            $string .= sprintf "%s<%s/>\n", $indentpp, $func_name; #shift(@arglist);
+	            foreach my $e (@arglist)
+	            {
+	                $string .= $e->toMathMLString( $plist, $indentpp, $level + 1 );
+	            }
+	            $string .= $indentp . "</apply>\n";
+			}
+			# User-defined functions
+			else{
+				if (@arglist){ # There better not be any arguments
+					die "Expression::toMathMLString: User-defined functions should not have arguments.";
+				}
+				$string .= sprintf "%s<ci> %s </ci>\n", $indentp, $func_name;
+			}
         }
         else
         {
