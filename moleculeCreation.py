@@ -21,6 +21,8 @@ from util import logMess
 import re
 import structures as st
 
+
+
 def parseReactions(reaction):
     species =   (Word(alphanums+"_:#-") 
     + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_:#-") 
@@ -277,28 +279,82 @@ def addBondToComponent(species,moleculeName,componentName,bond,priority = 1):
             if priority == order or len([x for x in species.molecules if x.name==moleculeName]) == order:
                 for component in molecule.components:
                     if componentName == component.name:
-                            component.addBond(bond)
-                            return
+                            # if we are adding a second bond to the same component
+                            #it actually means that we have two components with the same
+                            #name
+                            if len(component.bonds) == 0:
+                                component.addBond(bond)
+                                return
+                            else:
+                                newComponent = st.Component(componentName)
+                                newComponent.addBond(bond)
+                                molecule.addComponent(newComponent)
+                                return
+                                
             else:
                 order += 1
+
+def getComplexationComponents2(species):
+    def getBiggestMolecule(array):
+        sortedMolecules = sorted(array,key=lambda rule: len(rule.components))
+        sortedMolecule = sorted(array,key=lambda rule: len(str(rule)))
+        return sortedMolecule[-1]
+    speciesDict = {}
+    #this array will contain all molecules that bind together
+    pairedMolecules = []
+    for x in species.molecules:
+        for y in x.components:
+            if y.name not in speciesDict:
+                speciesDict[y.name] = []
+            speciesDict[y.name].append(x)
+    orphanedMolecules = [x.name.lower() for x in species.molecules]
+    for x in species.molecules:
+        for component in [y for y in x.components if y.name.lower() in speciesDict.keys()]:
+            if x.name.lower() in speciesDict:
+                if(x in speciesDict[component.name.lower()]) and \
+                    component.name in [y.name.lower() for y in speciesDict[x.name.lower()]] \
+                    and x != speciesDict[x.name.lower()][0]:
+                    for mol in speciesDict[x.name.lower()]:
+                        if mol.name.lower() == component.name:
+                            pairedMolecules.append([x,mol])
+                            speciesDict[x.name.lower()].remove(mol)
+                            speciesDict[component.name].remove(x)
+                            if x.name.lower() in orphanedMolecules:
+                                orphanedMolecules.remove(x.name.lower())
+                            if component.name in orphanedMolecules:
+                                orphanedMolecules.remove(component.name)
+    totalComplex = [set(x) for x in pairedMolecules]
+ 
+    flag = True
+    while flag:
+        flag = False
+        for idx in range(0,len(totalComplex)-1):
+            for idx2 in range(idx+1,len(totalComplex)):
+                if len([x for x in totalComplex[idx] if x in totalComplex[idx2]]) > 0:
+                    totalComplex[idx] = totalComplex[idx].union(totalComplex[idx2])
+                    totalComplex.pop(idx2)
+                    flag = True
+                    break
+            if flag:
+                break
+    #now we process those molecules where we need to create a new component
+    newComponentPairs = []
+    for element in orphanedMolecules:
+        for mol1 in species.molecules:
+            if mol1.name.lower() == element:
+                totalComplex.append(set([mol1]))
+    while len(totalComplex) > 1:
+        mol1=  getBiggestMolecule(totalComplex[0])
+        mol2 =  getBiggestMolecule(totalComplex[1])
+        newComponentPairs.append([mol1,mol2])
+        pairedMolecules.append([mol1,mol2])
+        totalComplex[0] = totalComplex[0].union(totalComplex[1])
+        totalComplex.pop(1)
+    #totalComplex.extend(orphanedMolecules)
+    return newComponentPairs,pairedMolecules
+        #    pass        
+        
     
-def getComplexationComponents(species,dependencyGraph,reactants):
-    '''
-    return a dict that classifies which molecules contain
-    those components that are necessary for binding
-    '''
-    componentDict = {getTrueTag(dependencyGraph,x):[] for x in reactants}
-    for component in componentDict:
-        for molecule in species.molecules:
-            if component.lower() in [x.name for x in molecule.components]:
-                componentDict[component].append(molecule)
-
-    unpairedreactantList = deepcopy([getTrueTag(dependencyGraph,x) for x in reactants])
-    for molecule in species.molecules:
-        componentList = [x.name for x in molecule.components]
-        unpairedreactantList = [x for x in unpairedreactantList if x.lower() not in componentList]
-
-    return componentDict,unpairedreactantList
            
 def getTrueTag(dependencyGraph,molecule):
     if dependencyGraph[molecule] == []:
@@ -312,8 +368,6 @@ def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,eq
     for element in weights:
         if element[0] == '0':
             continue
-        if element[0] == 'EGF_EGFR2':
-            print 'hola get dollah'
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
                 translator[element[0]] = createEmptySpecies(element[0])
@@ -331,11 +385,12 @@ def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,eq
 
                         addComponentToMolecule(species,dependencyGraph[element[0]][0][0],reactionProperties[classification][0])
                         addStateToComponent(species,dependencyGraph[element[0]][0][0],reactionProperties[classification][0],reactionProperties[classification][1])
-                        modifiedSpecies = deepcopy(species)
+                        modifiedSpecies = deepcopy(species) 
                         addStateToComponent(species,dependencyGraph[element[0]][0][0],reactionProperties[classification][0],'U')
                         
                         #update the base species
-                        translator[dependencyGraph[element[0]][0][0]] = species
+                        print ';;;;;;;:::::::::;;;;',getTrueTag(dependencyGraph,element[0]),dependencyGraph[element[0]][0][0],str(species)
+                        translator[dependencyGraph[element[0]][0][0]] = deepcopy(species)
                         translator[element[0]] = modifiedSpecies
                     else:
                         print 'ALERT',element[0]
@@ -351,68 +406,67 @@ def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,eq
                 species =st.Species()
                 for molecule in dependencyGraph[element[0]][0]:
                     if molecule in translator:
-                        species.addMolecule(deepcopy(translator[molecule].molecules[0]))
+                        tmpSpecies = translator[molecule]
+                        if molecule != getTrueTag(dependencyGraph,molecule):
+                            original =translator[getTrueTag(dependencyGraph,molecule)]
+                            updateSpecies(tmpSpecies,original.molecules[0])
+                        species.addMolecule(deepcopy(tmpSpecies.molecules[0]))
                     else:
                         mol = st.Molecule(molecule)
                         dependencyGraph[molecule] = deepcopy(mol)
                         species.addMolecule(mol)
-                listOfConnectingComponents,unpairedComponent = getComplexationComponents(species,dependencyGraph,dependencyGraph[element[0]][0])
-                bondBlackboard = {}
+                #listOfConnectingComponents,unpairedComponent = getComplexationComponents(species,dependencyGraph,dependencyGraph[element[0]][0])
+                newComponentList,moleculePairsList = getComplexationComponents2(species)
+                for molecule in newComponentList:
+                    newComponent1 = st.Component(molecule[1].name.lower())
+                    newComponent2 = st.Component(molecule[0].name.lower())
                     
-                while len(unpairedComponent) > 0:
-                    if len(dependencyGraph[element[0]][0]) == 2:
-                        connectingComponent = dependencyGraph[element[0]][0][0] if dependencyGraph[element[0]][0][0] != unpairedComponent[0] else dependencyGraph[element[0]][0][1]
-                    else:
-                        print 'ALERT2',unpairedComponent[0],element[0],listOfConnectingComponents
-                        connectingComponent = dependencyGraph[element[0]][0][0] if dependencyGraph[element[0]][0][0] != unpairedComponent[0] else dependencyGraph[element[0]][0][1]
-                    connectingComponentTag  =getTrueTag(dependencyGraph,connectingComponent)
-                    trueTag = getTrueTag(dependencyGraph,unpairedComponent[0])                      
-                    #TODO: pay attention to dimers                        
-                    addComponentToMolecule(species,trueTag,connectingComponentTag.lower())
-                    addComponentToMolecule(species,connectingComponentTag,trueTag.lower())
+                    molecule[0].components.append(newComponent1)
+                    molecule[1].components.append(newComponent2)
+                    
+                    #TODO: update basic molecules with new components
+                    #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
+                    #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
+                
+                for idx,molecule in enumerate(moleculePairsList):
+                    for component in molecule[0].components:
+                        if component.name == molecule[1].name.lower() and len(component.bonds) == 0:
+                            component.bonds.append(idx)
+                    for component in molecule[1].components:
+                        if component.name == molecule[0].name.lower() and len(component.bonds) == 0:
+                            component.bonds.append(idx)
 
-                    modMol = species.getMolecule(trueTag)
-                    newSpecies = st.Species()
-                    newSpecies.addMolecule(deepcopy(modMol))
-                    translator[trueTag] = newSpecies
-                                        
-                    modMol2 = species.getMolecule(connectingComponentTag)
-                    newSpecies = st.Species()
-                    newSpecies.addMolecule(deepcopy(modMol2))
-                    translator[connectingComponentTag] = newSpecies
-                    
-                    unpairedComponent.remove(unpairedComponent[0])
-                    
-                    if connectingComponent in unpairedComponent:
-                        unpairedComponent.remove(connectingComponent)
-                    print ';;;',unpairedComponent
-
-                       
-                #probably i want to update it instead of just overwriting it
-                print '???',str(species)                
-                listOfConnectingComponents,_ = getComplexationComponents(species,dependencyGraph,dependencyGraph[element[0]][0])
-                print '<<<',listOfConnectingComponents
-                print '>>>>',[x for x in species.molecules]
-                for component in listOfConnectingComponents:
-                    connectionDict  = {x.name:1 for x in listOfConnectingComponents[component]}
-                    while len(listOfConnectingComponents[component]) > 0:
-                        print component,
-                        connectingComponent = listOfConnectingComponents[component][0].name
-                        addBondToComponent(species,component,connectingComponent.lower(),bondNumber)
-                        addBondToComponent(species,listOfConnectingComponents[component][0].name,component.lower(),bondNumber,connectionDict[connectingComponent])
-                        connectionDict[connectingComponent] += 1                        
-                        bondNumber += 1
-                        for idx,mol in enumerate(listOfConnectingComponents[connectingComponent]):
-                            if mol.name == component:
-                                del(listOfConnectingComponents[connectingComponent][idx])
-                                break
-                        del(listOfConnectingComponents[component][0])
-                        bondNumber+=1
-                print '???!!!',str(species)
+                            
+                print '???!!!',element[0],str(species)
                 translator[element[0]] = species
-                print translator
+
+def updateSpecies(species,referenceMolecule):
+    flag = False
+    for moleculeStructure in species.molecules:
+        if moleculeStructure.name == referenceMolecule.name:
+            for component in referenceMolecule.components:
+                count = [x.name for x in referenceMolecule.components].count(component.name)
+                count -= [x.name for x in moleculeStructure.components].count(component.name)
+                newComponent= st.Component(component.name)
+                if count > 0:
+                    for idx in range(0,count):
+                        moleculeStructure.addComponent(deepcopy(newComponent))
+                elif count < 0:
+                    for idx in range(0,-count):
+                        referenceMolecule.addComponent(deepcopy(newComponent))
+                        flag = True
+    return flag
                     
-        
+def propagateChanges(translator,dependencyGraph):
+    flag = True
+    while flag:
+        flag = False
+        for dependency in dependencyGraph:
+            if dependencyGraph[dependency] == []:
+                continue
+            for molecule in dependencyGraph[dependency][0]:
+                if updateSpecies(translator[dependency],translator[getTrueTag(dependencyGraph,molecule)].molecules[0]):
+                    flag = True
 
 def preRuleify(reaction,dependencyGraph,ruleifyDictionary):
     moleculeList = []
@@ -492,11 +546,13 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
 
     #print resolveDependencyGraph(database.dependencyGraph,'EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot',True)
     #print resolveDependencyGraph(prunnedDependencyGraph,'EGF_EGFRm2')
-    print prunnedDependencyGraph
     weightsDict = {x[0]:x[1] for x in weights}
     tempRules = {}
     weights = sorted(weights,key=lambda rule:rule[1])
     preRuleifyReactions(prunnedDependencyGraph,weights,database.translator,database.reactionProperties,eequivalenceTranslator)
+    print {x:str(database.translator[x]) for x in database.translator}
+    #propagate changes
+    propagateChanges(database.translator,prunnedDependencyGraph)    
     #for rule in rules:
     #    reaction = list(parseReactions(rule))
     #    preRuleify(reaction,prunnedDependencyGraph,tempRules)

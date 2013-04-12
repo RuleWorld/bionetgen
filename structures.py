@@ -6,6 +6,8 @@ Created on Wed May 30 11:44:17 2012
 """
 from copy import deepcopy
 import difflib
+import hashlib  
+import numpy
 
 class Species:
     def __init__(self):
@@ -200,6 +202,13 @@ class Molecule:
         self.name = name
         self.compartment = ''
         
+        a = numpy.random.rand(10, 100)
+        self.hash = hashlib.sha1(a).digest()
+        
+
+        
+
+
     def copy(self):
         molecule = Molecule(self.name)
         for element in self.components:
@@ -318,8 +327,12 @@ class Component:
                 self.addState(state,update)
         
     def addBond(self,bondName):
+        #if len(self.bonds) == 0:
+        #    self.bonds.append('U')
         if not bondName in self.bonds:
             self.bonds.append(bondName)
+            return True
+        return False
         
     def setActiveState(self,state):
         if state not in self.states:
