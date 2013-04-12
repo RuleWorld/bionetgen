@@ -669,9 +669,9 @@ sub toMathMLString
 
     $string .= "  <apply>\n";
     $string .= "    <plus/>\n";
-    if ($n_elt==1)
+    if ($n_elt<=1)
     {
-        $string .= sprintf "      <cn> 0 </cn>\n";
+        $string .= sprintf "    <cn> 0 </cn>\n";
     }
 
     my $i=-1;

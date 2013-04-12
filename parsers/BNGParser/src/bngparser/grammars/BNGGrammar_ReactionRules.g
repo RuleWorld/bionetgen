@@ -144,8 +144,8 @@ String name;
         leftMap={$reaction_rule_def::reactionAction.getLeft()},
         rightMap={$reaction_rule_def::reactionAction.getRight()},operations={$reaction_rule_def::reactionAction.getOperations()},
         operator1={$reaction_rule_def::reactionAction.getOperator1()},
-        operator2={$reaction_rule_def::reactionAction.getOperator2()}
-        ,expression={$reaction_rule_def::text}
+        operator2={$reaction_rule_def::reactionAction.getOperator2()},
+        expression={$reaction_rule_def::text}
         )
         ;
         
@@ -246,7 +246,7 @@ BondList bonds;
         }
   }
 
-  | i2=INT {
+  | i2=INT { // '0'
         $map  = new HashMap<String,List<ReactionRegister>>();
         if(!$i2.text.equals("0")){
           throw new RecognitionException();
@@ -267,8 +267,9 @@ rate_primitive [Map<String,Register> memory] returns [String functionName]
     (function_keyword LPAREN) => f1=function_keyword {$functionName = $function_keyword.text;} 
     LPAREN expression[memory] {numArguments++;} (COMMA expression[memory] {numArguments++;})* RPAREN
     {
-      if($function_keyword.numArguments != numArguments){
-	      String msg = getErrorMessage2(f1.tk,"Incorrect number of arguments");
+      if(numArguments != $function_keyword.numArguments){
+	      String msg = getErrorMessage2(f1.tk,"Incorrect number of arguments (" + numArguments + "). Requires "
+	                                          + $function_keyword.numArguments + ".");
 	      System.err.println(msg);
       }
     } 
@@ -278,7 +279,10 @@ rate_primitive [Map<String,Register> memory] returns [String functionName]
 ;
 
 function_keyword returns [int numArguments,Token tk]:
-  SAT {$numArguments = 2;$tk = $SAT;}
+  SAT  {$numArguments = 2;$tk = $SAT;}  |
+  MM   {$numArguments = 2;$tk = $MM;}   |
+  HILL {$numArguments = 3;$tk = $HILL;} |
+  ARRHENIUS {$numArguments = 2;$tk = $ARRHENIUS;}
 ;
 
 rate_list[List<String> rateList,boolean bidirectional]
@@ -292,28 +296,40 @@ scope{
   $rate_list::memoryWithLocal.putAll($reaction_rule_def::lmemory);
   $rate_list::numberRateLaws = 1;
 }
-        : e1=rate_primitive[$rate_list::memoryWithLocal] {rateList.add($e1.text);}(COMMA e2=rate_primitive[$rate_list::memoryWithLocal] 
-        {rateList.add($e2.text);
-        $rate_list::numberRateLaws = 2;
-        })?
+        : e1=rate_primitive[$rate_list::memoryWithLocal]
         {
-        if ((bidirectional && $rate_list::numberRateLaws == 1) || (!bidirectional && $rate_list::numberRateLaws == 2)){
-                    String msg = getErrorMessage2((Token)e1.getStart(),"Incorrect number of rate laws");
-                    System.err.println(msg);
+          rateList.add($e1.text);
         }
-        
+        (COMMA e2=rate_primitive[$rate_list::memoryWithLocal] 
+        {
+          rateList.add($e2.text);
+          $rate_list::numberRateLaws = 2;
+        }
+        )?
+        {
+          if ( $e1.functionName.equals("Arrhenius") && (!bidirectional || $rate_list::numberRateLaws == 2)
+          || (!$e1.functionName.equals("Arrhenius") && ( bidirectional && $rate_list::numberRateLaws == 1)) 
+          || (!$e1.functionName.equals("Arrhenius") && (!bidirectional && $rate_list::numberRateLaws == 2)))
+          {
+            String msg = getErrorMessage2((Token)e1.getStart(),"Incorrect number of rate laws (" 
+                                                              + $rate_list::numberRateLaws + ")");
+            System.err.println(msg);
+          }
         }
         ;
+        
 modif_command
         : include_command
         | exclude_command
         ;
+        
 //are the patterns same in include and exclude?
 include_command
         :  (INCLUDE_REACTANTS
           | INCLUDE_PRODUCTS)
           LPAREN INT COMMA pattern (COMMA pattern)* RPAREN
         ;
+        
 exclude_command
         : (EXCLUDE_REACTANTS
         | EXCLUDE_PRODUCTS)

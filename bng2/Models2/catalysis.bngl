@@ -1,12 +1,12 @@
 # Catalysis in energy BNG
 # justin.s.hogg@gmail.com, 9 Apr 2013
-begin model
 
 # requires BioNetGen version >= 2.2.4
 version("2.2.4")
 # Quantities have units in moles, so set this to Avogadro's Number
 setOption("NumberPerQuantityUnit",6.0221e23)
 
+begin model
 begin parameters
     # fundamental constants
     RT               2.577       # kJ/mol
@@ -44,11 +44,11 @@ begin molecule types
     ADP()
 end molecule types
 begin species
-    S@C(e,y~0)   conc_S_0*NA*volC
-    kinase@C(s)  conc_kinase_0*NA*volC
-    pptase@C(s)  conc_pptase_0*NA*volC
-    $ATP@C()     conc_ATP_0*NA*volC     # ATP concentration held constant
-    $ADP@C()     conc_ADP_0*NA*volC     # ADP concentration held constant
+    S(e,y~0)@C   conc_S_0*NA*volC
+    kinase(s)@C  conc_kinase_0*NA*volC
+    pptase(s)@C  conc_pptase_0*NA*volC
+    $ATP()@C     conc_ATP_0*NA*volC     # ATP concentration held constant
+    $ADP()@C     conc_ADP_0*NA*volC     # ADP concentration held constant
 end species
 begin reaction rules
     # binding rules
