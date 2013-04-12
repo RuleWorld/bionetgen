@@ -46,63 +46,61 @@ struct Expression =>
 # See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
 my %functions =
 (
-  "_pi"   => { FPTR => sub { pi },                   NARGS => 0 },
-  "_e"    => { FPTR => sub { exp(1) },               NARGS => 0 },
+  "_pi"   => { FPTR => sub { pi },                   NARGS => 0 }, # <pi>
+  "_e"    => { FPTR => sub { exp(1) },               NARGS => 0 }, # <exponentiale> (MathML 2.0)
   "time"  => { FPTR => sub 
   	{ 
   		if (defined($BNGModel::GLOBAL_MODEL->time)) 
   		{$BNGModel::GLOBAL_MODEL->time} 
   		else {0} 
-  	}, 												 NARGS => 0 },
-  "exp"   => { FPTR => sub { exp( $_[0] ) },         NARGS => 1 },
-  "ln"    => { FPTR => sub { log( $_[0] ) },         NARGS => 1 },
-  "log10" => { FPTR => sub { log($_[0])/log(10) },   NARGS => 1 },
-  "log2"  => { FPTR => sub { log($_[0])/log(2) },    NARGS => 1 },
-  "abs"   => { FPTR => sub { abs( $_[0] ) },         NARGS => 1 },
+  	}, 												 NARGS => 0 }, # ???
+  "exp"   => { FPTR => sub { exp( $_[0] ) },         NARGS => 1 }, # <exp/> (MathML 2.0)
+  "ln"    => { FPTR => sub { log( $_[0] ) },         NARGS => 1 }, # <ln/>
+  "log10" => { FPTR => sub { log($_[0])/log(10) },   NARGS => 1 }, # <log/>
+  "log2"  => { FPTR => sub { log($_[0])/log(2) },    NARGS => 1 }, # <log/><logbase><cn>2</cn></logbase>
+  "abs"   => { FPTR => sub { abs( $_[0] ) },         NARGS => 1 }, # <abs/>
 # "int"   => { FPTR => sub { int( $_[0] ) },         NARGS => 1 }, # deprecated!
 # "floor" => { FPTR => sub { floor( $_[0] ) },       NARGS => 1 }, # not supported by muParser
 # "ceil"  => { FPTR => sub { ceil( $_[0] ) },        NARGS => 1 }, # not supported by muParser
-  "rint"  => { FPTR => sub { floor( $_[0] + 0.5 ) }, NARGS => 1 },
-  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },        NARGS => 1 },
-  "cos"   => { FPTR => sub { cos( $_[0] ) },         NARGS => 1 },
-  "sin"   => { FPTR => sub { sin( $_[0] ) },         NARGS => 1 },
-  "tan"   => { FPTR => sub { tan( $_[0] ) },         NARGS => 1 },
-  "asin"  => { FPTR => sub { asin( $_[0] ) },        NARGS => 1 },
-  "acos"  => { FPTR => sub { acos( $_[0] ) },        NARGS => 1 },
-  "atan"  => { FPTR => sub { atan( $_[0] ) },        NARGS => 1 },
-  "sinh"  => { FPTR => sub { sinh( $_[0] ) },        NARGS => 1 },
-  "cosh"  => { FPTR => sub { cosh( $_[0] ) },        NARGS => 1 },
-  "tanh"  => { FPTR => sub { tanh( $_[0] ) },        NARGS => 1 },
-  "asinh" => { FPTR => sub { asinh( $_[0] ) },       NARGS => 1 },
-  "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 },
-  "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 },
-  "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
-  "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) },
-  "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) },
-  "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) },
-  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) },
+  "rint"  => { FPTR => sub { floor( $_[0] + 0.5 ) }, NARGS => 1 }, # requires special handling (see toMathMLString)
+  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },        NARGS => 1 }, # <root/>
+  "cos"   => { FPTR => sub { cos( $_[0] ) },         NARGS => 1 }, # <cos/>
+  "sin"   => { FPTR => sub { sin( $_[0] ) },         NARGS => 1 }, # <sin/>
+  "tan"   => { FPTR => sub { tan( $_[0] ) },         NARGS => 1 }, # <tan/>
+  "asin"  => { FPTR => sub { asin( $_[0] ) },        NARGS => 1 }, # <arcsin/>
+  "acos"  => { FPTR => sub { acos( $_[0] ) },        NARGS => 1 }, # <arccos/>
+  "atan"  => { FPTR => sub { atan( $_[0] ) },        NARGS => 1 }, # <arctan/>
+  "sinh"  => { FPTR => sub { sinh( $_[0] ) },        NARGS => 1 }, # <sinh/>
+  "cosh"  => { FPTR => sub { cosh( $_[0] ) },        NARGS => 1 }, # <cosh/>
+  "tanh"  => { FPTR => sub { tanh( $_[0] ) },        NARGS => 1 }, # <tanh/>
+  "asinh" => { FPTR => sub { asinh( $_[0] ) },       NARGS => 1 }, # <arcsinh/> (MathML 2.0)
+  "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 }, # <arccosh/> (MathML 2.0)
+  "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 }, # <arctanh/> (MathML 2.0)
+  "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, # requires special handling (see toMathMLString)
+  "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) }, # <min/>
+  "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) }, # <max/>
+  "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) }, # <sum/>
+  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) }, # <mean/>
 );
-
 
 my $MAX_LEVEL = 500;    # Prevent infinite loop due to dependency loops
 
-
 # this hash maps operators to the min and max number of arguments
-my %NARGS = ( '+'  => { 'min'=>2           },
-              '-'  => { 'min'=>1           },
-              '*'  => { 'min'=>2           },
-              '/'  => { 'min'=>2           },
-              '^'  => { 'min'=>2, 'max'=>2 },
+my %NARGS = ( '+'  => { 'min'=>2           }, # <plus/>
+              '-'  => { 'min'=>1           }, # <minus/>
+              '*'  => { 'min'=>2           }, # <times/>
+              '/'  => { 'min'=>2           }, # <divide/>
+              '^'  => { 'min'=>2, 'max'=>2 }, # <power/>
               '**' => { 'min'=>2, 'max'=>2 }, # Not supported by muParser
-              '&&' => { 'min'=>2           },
-              '||' => { 'min'=>2           }, 
-              '<'  => { 'min'=>2, 'max'=>2 },
-              '>'  => { 'min'=>2, 'max'=>2 },
-              '<=' => { 'min'=>2, 'max'=>2 },
-              '>=' => { 'min'=>2, 'max'=>2 },
-              '!=' => { 'min'=>2, 'max'=>2 },
+              '&&' => { 'min'=>2           }, # <and/>
+              '||' => { 'min'=>2           }, # <or/>
+              '<'  => { 'min'=>2, 'max'=>2 }, # <lt/>
+              '>'  => { 'min'=>2, 'max'=>2 }, # <gt/>
+              '<=' => { 'min'=>2, 'max'=>2 }, # <leq/>
+              '>=' => { 'min'=>2, 'max'=>2 }, # <geq/>
+              '!=' => { 'min'=>2, 'max'=>2 }, # <neq/>
               '~=' => { 'min'=>2, 'max'=>2 }, # Not supported by muParser
-              '==' => { 'min'=>2, 'max'=>2 },
+              '==' => { 'min'=>2, 'max'=>2 }, # <equivalent/> (MathML 2.0)
               '!'  => { 'min'=>1, 'max'=>1 }, # Not supported by muParser
               '~'  => { 'min'=>1, 'max'=>1 }  # Not supported by muParser
             );
@@ -1633,7 +1631,45 @@ sub toMatlabString
         '/'  => 'divide',
         '**' => 'power',
         '^'  => 'power',
+        '&&' => 'and',
+        '||' => 'or',
+        '<'  => 'lt',
+        '>'  => 'gt',
+        '<=' => 'leq',
+        '>=' => 'geq',
+        '!=' => 'neq',
+        '==' => 'equivalent'
     );
+
+	my %fnhash =
+	(
+	  	'_pi'   => 'pi',
+  		'_e'    => 'exponentiale',
+		'exp'   => 'exp',
+  		'ln'    => 'ln',
+  		'log10' => 'log',
+#  		'log2'  => Requires special handling (see below)
+  		'abs'   => 'abs',
+#  		'rint'  => Requires special handling (see below)
+  		'sqrt'  => 'root',
+  		'cos'   => 'cos',
+  		'sin'   => 'sin',
+  		'tan'   => 'tan',
+  		'asin'  => 'arcsin',
+  		'acos'  => 'arccos',
+  		'atan'  => 'arctan',
+  		'sinh'  => 'sinh',
+  		'cosh'  => 'cosh',
+  		'tanh'  => 'tanh',
+  		'asinh' => 'arcsinh',
+  		'acosh' => 'arccosh',
+  		'atanh' => 'arctanh',
+#  		'if'    => Requires special handling (see below)
+  		'min'   => 'min',
+  		'max'   => 'max',
+  		'sum'   => 'sum',
+  		'avg'   => 'mean'		
+	);
 
     sub toMathMLString
     {
@@ -1665,16 +1701,51 @@ sub toMatlabString
         elsif ( $type eq 'FunctionCall' ) {
 			my @arglist  = @{ $expr->Arglist };
 			my $func_name = shift(@arglist); # Get function name
+			
 			# Built-in functions
 			if (isBuiltIn($func_name)){
-	            $string .= $indentp . "<apply>\n";
-	            my $indentpp = $indentp . "  ";
-	            $string .= sprintf "%s<%s/>\n", $indentpp, $func_name; #shift(@arglist);
-	            foreach my $e (@arglist)
-	            {
-	                $string .= $e->toMathMLString( $plist, $indentpp, $level + 1 );
-	            }
-	            $string .= $indentp . "</apply>\n";
+				
+				# Special handling for log2(x)
+				if ($func_name eq 'log2'){
+					$string .= $indentp . "<apply>\n"; 
+					$string .= $indentp . "  <log/><logbase><cn>2</cn></logbase>\n";
+					$string .= $arglist[0]->toMathMLString( $plist, $indentp . "  ", $level + 1 );
+					$string .= $indentp . "</apply>\n";
+				}
+				# Special handling for rint(x)
+				elsif ($func_name eq 'rint'){
+					$string .= $indentp . "<apply>\n"; 
+					$string .= $indentp . "  <floor/>\n";
+					$string .= $indentp . "  <apply>\n";
+					$string .= $indentp . "    <plus/>\n";
+					$string .= $indentp . "    <cn> 0.5 </cn>\n";
+					$string .= $arglist[0]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+					$string .= $indentp . "  </apply>\n";
+					$string .= $indentp . "</apply>\n";
+				}
+				# Special handling for if(x,y,z)
+				elsif ($func_name eq 'if'){
+					$string .= $indentp . "<piecewise>\n";
+				    $string .= $indentp . "  <piece>\n";
+					$string .= $arglist[1]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+					$string .= $arglist[0]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+				    $string .= $indentp . "  </piece>\n";
+					$string .= $indentp . "  <otherwise>\n";
+					$string .= $arglist[2]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+					$string .= $indentp . "  </otherwise>\n";
+					$string .= $indentp . "</piecewise>\n";
+				}
+				# All other built-ins
+				else{
+		            $string .= $indentp . "<apply>\n";
+		            my $indentpp = $indentp . "  ";
+		            $string .= sprintf "%s<%s/>\n", $indentpp, $fnhash{ $func_name }; #shift(@arglist);
+		            foreach my $e (@arglist)
+		            {
+		                $string .= $e->toMathMLString( $plist, $indentpp, $level + 1 );
+		            }
+		            $string .= $indentp . "</apply>\n";
+				}
 			}
 			# User-defined functions
 			else{
