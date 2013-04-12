@@ -551,16 +551,15 @@ sub writeMfile
 	return '' if $BNGModel::NO_EXEC;
 
     # nothing to do if there are no reactions
-	unless ( $model->RxnList )
+	if ( @{$model->RxnList->Array}==0 )
 	{
-	    return ( "writeMfile() has nothing to do: no reactions in current model.\n"
-	            ."  Did you remember to call generate_network() before attempting to\n"
-	            ."  write network output?");
+	    return "writeMfile() has nothing to do: no reactions in current model. "
+	          ."Did you remember to call generate_network() before attempting to "
+	          ."write network output?";
 	}
 
     # get reference to parameter list
 	my $plist = $model->ParamList;
-
 	
 	# get model name
 	my $model_name = $model->Name;
@@ -1008,14 +1007,14 @@ sub writeMexfile
     my $err;
 
     # nothing to do if NO_EXEC is true
-	return ('') if $BNGModel::NO_EXEC;
+	return '' if $BNGModel::NO_EXEC;
 
     # nothing to do if there are no reactions
-	unless ( $model->RxnList )
+	if ( @{$model->RxnList->Array}==0 )
 	{
-	    return ( "writeMexfile() has nothing to do: no reactions in current model.\n"
-	            ."  Did you remember to call generate_network() before attempting to\n"
-	            ."  write network output?");
+	    return "writeMexfile() has nothing to do: no reactions in current model. "
+	          ."Did you remember to call generate_network() before attempting to "
+	          ."write network output?";
 	}
 
     # get reference to parameter list
