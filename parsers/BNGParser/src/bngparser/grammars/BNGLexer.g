@@ -127,8 +127,9 @@ UTL: 'utl';
 EQUIL: 'equil';
 //ELE: 'Ele';
 SAT: 'Sat';
-//MM: 'MM';
-//HILL: 'Hill';
+MM: 'MM';
+HILL: 'Hill';
+ARRHENIUS: 'Arrhenius';
 EXP: 'exp';
 //LOG: 'log'; deprecated
 LN: 'ln';

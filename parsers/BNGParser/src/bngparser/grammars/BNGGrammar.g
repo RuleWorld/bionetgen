@@ -89,7 +89,7 @@ header_block
 
 substance_def: SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN (SEMI+)? LB+;
 version_def: VERSION LPAREN DBQUOTES VERSION_NUMBER (PLUS|MINUS)? DBQUOTES RPAREN (SEMI+)? LB+;
-set_option: SET_OPTION LPAREN DBQUOTES STRING DBQUOTES COMMA DBQUOTES STRING DBQUOTES RPAREN (SEMI+)? LB+;
+set_option: SET_OPTION LPAREN DBQUOTES STRING DBQUOTES COMMA (DBQUOTES STRING DBQUOTES|INT|FLOAT) RPAREN (SEMI+)? LB+;
 
 
 // a list of the different sections a bngl file may have. Order is not enforced.
@@ -108,7 +108,7 @@ program_block
 
 functions_block
 @init{
-  paraphrases.push("in function block");
+  paraphrases.push("in functions block");
 }
 @after{
   paraphrases.pop();
