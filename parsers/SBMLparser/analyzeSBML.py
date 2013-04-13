@@ -216,7 +216,6 @@ class SBMLAnalyzer:
         index = 0
         if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
-        
         else: 
             if self.userEquivalencesDict ==None:            
                 self.userEquivalencesDict = {}
@@ -255,7 +254,6 @@ class SBMLAnalyzer:
                     newTranslator[max(key1,key2,key=len)].append(tuple(temp2))
             else:
                 pass
-        
         return reactionIndex,newTranslator
     
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,reactionIndex,useNamingConventions=True):
@@ -349,7 +347,6 @@ class SBMLAnalyzer:
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
-        print ';;;;;;;',self.userEquivalences
         for reactionType,properties in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #if its a reaction defined by its naming convention   
             #xxxxxxxxxxxxxxxxxxx
@@ -443,6 +440,7 @@ class SBMLAnalyzer:
     def getUserDefinedComplexes(self):
         dictionary = {}
         labelDictionary = {}
+        equivalencesList = []
         if self.speciesEquivalences != None:
             speciesdictionary =self.loadConfigFiles(self.speciesEquivalences)
             userEquivalences = speciesdictionary['complexDefinition'] \
@@ -458,6 +456,7 @@ class SBMLAnalyzer:
                     elif molecule[2][0] == "s":
                         tmp3.addState('U')
                         tmp3.addState(molecule[2][1])
+                        equivalencesList.append([element[0],molecule[0]])
                         
                         #tmp3.addState(molecule[2][2])
                     
@@ -476,6 +475,8 @@ class SBMLAnalyzer:
                     
                 dictionary[element[0]] = deepcopy(tmp)
                 labelDictionary[element[0]] = [tuple(label)]
-                
+            complexEquivalences = speciesdictionary['modificationDefinition']
+            for element in complexEquivalences:
+                labelDictionary[element] = [tuple(complexEquivalences[element])]
         return dictionary,labelDictionary
         
