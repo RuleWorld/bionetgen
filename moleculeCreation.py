@@ -142,7 +142,6 @@ def consolidateDependencyGraph(dependencyGraph):
                     flag = False
                     continue
                 rootChemical = resolveDependencyGraph(dependencyGraph,chemical)
-                
                 mod = resolveDependencyGraph(dependencyGraph,chemical,True)
                 if mod != []:
                     modifiedElements.extend(mod)
@@ -161,7 +160,7 @@ def consolidateDependencyGraph(dependencyGraph):
         #we cannot handle tuple naming conventions for now
         if len(tmpCandidates) == 0:
             return None
- 
+
         #if we have more than one modified element for a single reactant
         #we can try to choose the one that is most similar to the original
         #reactant
@@ -171,8 +170,6 @@ def consolidateDependencyGraph(dependencyGraph):
                 newModifiedElements[element[0]] = element[1]
         #check if all candidates are the same
         #print '...',tmpCandidates[0]
-        if reactant == 'EGF_EGFR2':
-            print 'dollah'
         if tmpCandidates[1:] == tmpCandidates[:-1] or len(tmpCandidates) == 1:
             flag = True
             while flag:
@@ -205,11 +202,12 @@ def consolidateDependencyGraph(dependencyGraph):
                     unevenElements.append(element)
             flag = True
             
+            #this should be done on newtmpCandidates instead of tmpcandidates
             while flag:
                 flag = False
-                for idx,chemical in enumerate(newTmpCandidates[0]):
+                for idx,chemical in enumerate(tmpCandidates[0]):
                     if chemical in newModifiedElements and newModifiedElements[chemical] in reactant:
-                        newTmpCandidates[0][idx] = newModifiedElements[chemical]
+                        tmpCandidates[0][idx] = newModifiedElements[chemical]
                         flag = True
                         break
             #print newTmpCandidates,unevenElements
@@ -365,20 +363,22 @@ def getTrueTag(dependencyGraph,molecule):
 
 def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,equivalenceDictionary):
     for element in weights:
+        if element[0] == 'ERKi_P':
+            print 'hola'
+
         if element[0] == '0':
             continue
-        if element[0] == 'Proti':
-            print 'hola'
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
                 translator[element[0]] = createEmptySpecies(element[0])
         else:
             if len(dependencyGraph[element[0]][0]) == 1:
+                #catalysis
                 if dependencyGraph[element[0]][0][0] == element[0]:
                     if element[0] not in translator:
                         translator[element[0]] = createEmptySpecies(element[0])
                 else:                      
-
+                    #TODO More than one state change
                     classification = identifyReaction(equivalenceDictionary,dependencyGraph[element[0]][0][0],element[0])
                     species = createEmptySpecies(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0]))
                     if classification != None:
@@ -396,6 +396,8 @@ def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,eq
                     else:
                         print 'ALERT',element[0]
             else:
+                #binding
+                
                 print '---',dependencyGraph[element[0]],element
                 '''
                 if element[0] not in database:
@@ -548,7 +550,6 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
             modElement = max(namingEquivalence,key=len)
             if key!= 'Binding':
                 addToDependencyGraph(database.dependencyGraph,modElement,[baseElement])
-
     for element in database.labelDictionary:
         if element == database.labelDictionary[element][0][0]:
             addToDependencyGraph(database.dependencyGraph,element,[])
