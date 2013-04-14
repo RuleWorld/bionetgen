@@ -425,8 +425,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 	// check that parameter index (in var_parameters) matches function index
 	// push and link parameter into elt_array
 
-//	vector<mu::Parser> functions;
-	char line[512];
+	string line;
 	ifstream infile(netfile);
 	bool foundBegin = false;
 	int index;
@@ -434,7 +433,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 	string function_string;
 	int num_free_spaces = 0;
 
-	while (infile.getline(line,512)) {
+	while (getline(infile,line)) {
 
 		istringstream readLine(line);
 		dummy_string.clear(); // Be sure to clear the string before extracting data to it --LAH
@@ -482,6 +481,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// create parser for that function
 				readLine >> func_name >> function_string;
+
 				// Check for function arguments -- exit if they exist
 				if (func_name[func_name.length()-2] != '(') {
 					cout << "Error in network::read_functions_array(): Functions cannot contain arguments ('"
@@ -1668,7 +1668,8 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 		if (strcmp(tokens[0], "end") == 0) {
 			if (n_tokens == 2 && strcmp(tokens[1], format) == 0) {
 				read_end = 1;
-			} else {
+			}
+			else {
 				fprintf(stderr, "Error in end command at line %d.\n",
 						*line_number);
 				read_end = -1;
@@ -1682,8 +1683,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			/* Default format */
 			n_rateLaw_tokens = n_tokens - 3;
 			if (n_rateLaw_tokens < 1) {
-				fprintf(stderr, "Invalid list entry at line %d.\n",
-						*line_number);
+				fprintf(stderr, "Invalid list entry at line %d.\n", *line_number);
 				++error;
 				goto cleanup;
 			}
@@ -1696,16 +1696,14 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			++n_tok;
 
 			/* Get indices of reactants */
-			if (!(r_index = read_indices_Rxn(tokens[n_tok], &n_reactants,
-					species, *line_number))) {
+			if (!(r_index = read_indices_Rxn(tokens[n_tok], &n_reactants, species, *line_number))) {
 				++error;
 				goto cleanup;
 			}
 			++n_tok;
 
 			/* Get indices of products */
-			if (!(p_index = read_indices_Rxn(tokens[n_tok], &n_products,
-					species, *line_number))) {
+			if (!(p_index = read_indices_Rxn(tokens[n_tok], &n_products, species, *line_number))) {
 				++error;
 				goto cleanup;
 			}
@@ -1714,7 +1712,8 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			// Find optional statistical factor for reaction
 			if (sscanf(tokens[n_tok], "%lf*%s", &stat_factor, buf) == 2) {
 				strcpy(tokens[n_tok], buf);
-			} else {
+			}
+			else {
 				stat_factor = 1.0;
 			}
 
@@ -1724,21 +1723,25 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 					rateLaw_type = FUNCTIONAL;
 					remove_zero = 0;
 				}
-				// Elementary reaction specified with a single rate constant
-				// name
-				else
+				else{
 					rateLaw_type = ELEMENTARY;
-			} else {
+				}
+			}
+			else {
 				// Find match on list of types
 				if (strcmp(tokens[n_tok], "Ele") == 0) {
 					rateLaw_type = ELEMENTARY;
-				} else if (strcmp(tokens[n_tok], "Sat") == 0) {
+				}
+				else if (strcmp(tokens[n_tok], "Sat") == 0) {
 					rateLaw_type = SATURATION;
-				} else if (strcmp(tokens[n_tok], "Hill") == 0) {
+				}
+				else if (strcmp(tokens[n_tok], "Hill") == 0) {
 					rateLaw_type = HILL;
-				} else if (strcmp(tokens[n_tok], "MM") == 0) {
+				}
+				else if (strcmp(tokens[n_tok], "MM") == 0) {
 					rateLaw_type = MICHAELIS_MENTEN;
-				} else {
+				}
+				else {
 					// No match found
 					fprintf(stderr, "Undefined rateLaw type %s at line %d.\n",
 							tokens[n_tok], *line_number);
@@ -1760,8 +1763,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 				perr = (n_rateLaw_tokens != 1);
 				break;
 			case SATURATION:
-				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens
-						> (n_reactants + 1));
+				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens > (n_reactants + 1));
 				break;
 			case HILL:
 				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens != 3);
