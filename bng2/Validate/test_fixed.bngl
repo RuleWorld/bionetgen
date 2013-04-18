@@ -25,8 +25,8 @@ begin molecule types
 end molecule types
 begin seed species
 
-    A()       1
-    Degr()    0
+    $A()       1
+    $Degr()    0
     $Trash()  0
   
 end seed species
@@ -52,14 +52,14 @@ end observables
 begin reaction rules
 
     # synthesis of B
-    $A()   ->  B()        k_synthB
+    A()   ->  B()        k_synthB
 
     # baseline degradation
     B()    ->  Trash()    k_degr
     D()    ->  Trash()    k_degr
 
     # synthesis of C by B
-    $B()   ->  C(n~0)     k_synthcat
+    0   ->  C(n~0)     k_synthcat*B_tot
 
     # delayed conversion of C to D
     C(n~0) ->  C(n~1)     k_conv
@@ -68,7 +68,7 @@ begin reaction rules
     C(n~3) ->  D(x,x)     k_conv
 
     # catalytic degradation of B by D
-    B()    ->  $Degr()    k_degrcat*D3c
+    B()    ->  Degr()    k_degrcat*D3c
 
     # D binding/unbinding
     D(x,x)  +  D(x,x)             <->  D(x,x!0).D(x,x!0)                  k_bind,    k_unbind
