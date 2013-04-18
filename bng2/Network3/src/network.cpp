@@ -4885,6 +4885,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		t_remain -= tau;
 		if (network.has_functions){ // Only do this if time() function exists
 			*t += tau;
+//			cout << *t << endl;
 		}
 
 		// Don't fire the next reaction if it occurs past the current integration endpoint
