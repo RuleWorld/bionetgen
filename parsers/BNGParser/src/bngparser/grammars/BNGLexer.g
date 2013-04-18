@@ -79,7 +79,7 @@ INCLUDE_PRODUCTS: 'include_products';
 EXCLUDE_REACTANTS: 'exclude_reactants'; // To be deprecated
 EXCLUDE_PRODUCTS: 'exclude_products';
 GENERATEHYBRIDMODEL: 'generate_hybrid_model';
-EXACT: 'exact';
+SAFE: 'safe';
 EXECUTE: 'execute';
 ATOL: 'atol';
 RTOL: 'rtol';
