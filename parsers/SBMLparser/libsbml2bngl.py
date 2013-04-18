@@ -653,7 +653,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         
     #try:
     #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         #translator={}    
     #except:
     #    print 'failure'
@@ -795,12 +795,14 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
 
     #rate of each classified rule
     classificationDict = {}
+    '''
     if translator != {}:
         for element in database.classifications:
             if element not in classificationDict:
                 classificationDict[element] = 0.0
             classificationDict[element] += 1.0/len(database.classifications)
         return len(rules), evaluate,parser.getModelAnnotation(),classificationDict
+    '''
     return None,None,None,None
 
 def processFile(translator,parser,outputFile):

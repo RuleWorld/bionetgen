@@ -1,5 +1,7 @@
 Installation procedure for Network3:
 
+**Building with Autotools**
+---------------------------
 If configure script does not exist (developers only):
 0) autoreconf --no-recursive --install
 
@@ -8,14 +10,23 @@ To configure compile and install Network3 (all users):
 2) make
 3) make install
 
-The run_network binary will be placed at BNGPATH/bin/.
-Note the BNGPATH must specify the absolute path.
+The run_network binary will be placed in BNGPATH/bin/.
+Note that BNGPATH must specify the absolute path.
 
-To validate BioNetGen installation:
-0) if NFsim validation is desired, place NFsim binary (or symbolic link)
+**Building with CMake**
+-----------------------
+0) Download CMake (http://www.cmake.org/) and add to PATH.
+1) cp Makefile.cmake Makefile
+2) make
+
+The run_network binary will be placed in ../bin/.
+
+**Validating the BioNetGen installation**
+-----------------------------------------
+0) If NFsim validation is desired, place NFsim binary (or symbolic link)
    in the folder BNGPATH/bin/.
-1) run the Perl script BNGPATH/Validate/validate_examples.pl.
-2) if any tests fail, look at the log files for more information.
+1) Run the Perl script BNGPATH/Validate/validate_examples.pl.
+2) If any tests fail, look at the log files for more information.
 
 PLEASE NOTE: Stochastic simulation tests rely on statistical validation.
 Occasionally a validation will fail due to outliers. Run the validation
@@ -23,6 +34,6 @@ script a few times. If a test passes most of the time, it is probably OK.
 Single tests may be run by passing the model basename as argument.
 
 --
-LAST UPDATE: Justin Hogg, 6 April 2012
+LAST UPDATE: Leonard Harris, 14 April 2013
 
 

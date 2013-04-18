@@ -8,17 +8,16 @@
 # of energy modeling in the BioNetGen platform. We think there are lots of
 # exciting applications on the horizon.
 
-begin model
-
 # Requires BioNetGen >= 2.2.4
 version("2.2.4")
 
 # BNG uses the following value, along with compartment volumes, to convert
 # intensive units (concentration) to extensive units (numbers). If you are
-# measuring quanity in moles, set this to Avogadro's number. If quantity is
+# measuring quantity in moles, set this to Avogadro's number. If quantity is
 # measured by pure numbers, then set to 1, etc.
 setOption("NumberPerQuantityUnit",6.0221e23)
 
+begin model
 begin parameters
     # Fundamental constants
     RT  2.5774863        # product of Universal gas constant and Temperature, kJ/mol
@@ -135,7 +134,7 @@ begin reaction rules
     #     Arrhenius(phi, Ea0/RT)
     #
     # where "phi" is the rate distribution parameter (no units), "Ea0" the
-    # baseline activtion energy (kJ/mol) for a reaction with DeltaG=0, and
+    # baseline activation energy (kJ/mol) for a reaction with DeltaG=0, and
     # "RT" is the product of univ. gas constant and temperature (kJ/mol).
     #
     # Kinetic rates are computed as follows:
@@ -146,8 +145,8 @@ begin reaction rules
     # This deviates slightly from Ollivier et al., but has the same spirit. 
     # Note that we assume C=1 (no loss of generality if temperature is fixed).
     #
-    # In most cases, phi=1/2 is a good choice. Bidirectional energyt rules
-    # only have ONE arrhenius type ratelaw, not two (in constrast to other
+    # In most cases, phi=1/2 is a good choice. Bidirectional energy rules
+    # only have ONE Arrhenius type ratelaw, not two (in contrast to other
     # ratelaw types). Note that a model may include both elementary ratelaw
     # rules and Arrhenius ratelaw rules. However, there is no guarantee that
     # detailed balance will be satisfied.
@@ -162,7 +161,7 @@ end model
 # Generate the network. Kinetics are computed as the reactions are constructed. 
 generate_network({overwrite=>1})
 # Simulate with ODE or SSA only. NFsim does not yet support energy models =(.
-simulate_ode({t_start=>0,t_end=>200,n_steps=>1000,atol=>1e-4,rtol=>1e-6})
+simulate({method=>"ode",t_start=>0,t_end=>200,n_steps=>1000,atol=>1e-4,rtol=>1e-6})
 
 # ..and we're done!
 
