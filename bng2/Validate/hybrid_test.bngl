@@ -45,5 +45,5 @@ end population maps
 end model
 
 ## actions ##
-generate_hybrid_model({overwrite=>1, execute=>1, verbose=>1, exact=>0, actions=>["writeXML()"]})
+generate_hybrid_model({overwrite=>1, execute=>1, verbose=>1, safe=>0, actions=>["writeXML()"]})
 

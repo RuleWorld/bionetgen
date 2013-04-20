@@ -105,13 +105,13 @@ end model
 generate_network({overwrite=>1})
 
 # Equilibration
-simulate({method=>ode,suffix=>"equil",t_end=>1000,n_steps=>10,atol=>1e-10,rtol=>1e-8,sparse=>1,steady_state=>1})
+simulate({method=>"ode",suffix=>"equil",t_end=>1000,n_steps=>10,atol=>1e-10,rtol=>1e-8,sparse=>1,steady_state=>1})
 writeSBML()
 
 # Kinetics
 setConcentration("L(r)","L_tot")
-simulate({method=>ode,t_end=>120,n_steps=>120,atol=>1e-10,rtol=>1e-8})
+simulate({method=>"ode",t_end=>120,n_steps=>120,atol=>1e-10,rtol=>1e-8})
 
-# Modified Kinetics, starts from end point of previous simulate_ode command
+# Modified Kinetics, starts from end point of previous simulate command
 #setParameter("pKs",0)
-#simulate({method=>ode,suffix=>"kinetics2",t_end=>100,n_steps=>10,atol=>1e-10,rtol=>1e-8})
+#simulate({method=>"ode",suffix=>"kinetics2",t_end=>100,n_steps=>10,atol=>1e-10,rtol=>1e-8})

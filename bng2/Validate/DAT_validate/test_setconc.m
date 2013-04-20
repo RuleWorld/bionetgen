@@ -1,4 +1,4 @@
-function [err, timepoints, species_out, observables_out ] = test_setconc( timepoints, species_init, parameters, suppress_plot )
+function [err, timepoints, species_out, observables_out] = test_setconc( timepoints, species_init, parameters, suppress_plot )
 %TEST_SETCONC Integrate reaction network and plot observables.
 %   Integrates the reaction network corresponding to the BioNetGen model
 %   'test_setconc' and then (optionally) plots the observable trajectories,
@@ -126,10 +126,14 @@ rhs_fcn = @(t,y)( calc_species_deriv( t, y, expressions ) );
 
 % simulate model system (stiff integrator)
 try 
-    [timepoints, species_out] = ode15s( rhs_fcn, timepoints, species_init', opts );
+    [~, species_out] = ode15s( rhs_fcn, timepoints, species_init', opts );
+    if(length(timepoints) ~= size(species_out,1))
+        exception = MException('ODE15sError:MissingOutput','Not all timepoints output\n');
+        throw(exception);
+    end
 catch
     err = 1;
-    fprintf( 1, 'Error: some problem encounteredwhile integrating ODE network!\n' );
+    fprintf( 1, 'Error: some problem encountered while integrating ODE network!\n' );
     return;
 end
 

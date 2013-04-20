@@ -220,6 +220,10 @@ sub readString
 
 				if ( $attr eq 'MatchOnce' )
                 {
+                	if ($is_species)
+                	{
+                		return "MatchOnce is not a valid attribute for a species.";
+                	}
 					my $val = booleanToInt($value);
 					if ( $val == -1 )
                     {

@@ -305,7 +305,7 @@ sub expandRule
     # Specify default params
 	my $params = {   verbose => 0,
 	                 indent  => ' ' x 8,
-                     exact   => 1
+                     safe    => 0
 	             };
 	# overwrite defaults with user params
 	while ( my ($opt,$val) = each %$user_params )
@@ -330,7 +330,7 @@ sub expandRule
 	{
 	    # make sure rmatches is empty!
 		$rr->Rmatches->[$ipatt] = [];
-        if ( $params->{exact} )
+        if ( $params->{safe} )
         {
             # add self-embedding of reactant pattern its match list
             my $copy_patt = $patt->copy( !SpeciesGraph::COPY_LABEL, SpeciesGraph::GET_LABEL );        

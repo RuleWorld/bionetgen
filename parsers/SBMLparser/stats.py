@@ -8,7 +8,13 @@ import numpy as np
 import libsbml2bngl
 import libsbml
 import analyzeRDF
-
+import MySQLdb
+from SOAPpy import WSDL,Types
+import pickle
+import re
+from restful_lib import Connection
+import urllib,urllib2
+from wordcloud import cloudText
 def main():
     history = np.load('stats3b.npy')
     history2 = np.load('stats3.npy')
@@ -48,34 +54,140 @@ def main():
         if len(dictionary[element]) > 1:
             print element,dictionary[element]
             
-            
+def bagOfWords():
+    with open('sortedC.dump','rb') as f:
+        sortedFiles = pickle.load(f)
+        
+    with open('parsedAnnotations.dump','rb') as f:
+        annotations = pickle.load(f)
+    
+    with open('classificationDict.dump','rb') as f:
+        classifications = pickle.load(f)
+        
+    bins = np.digitize(sortedFiles,np.arange(0,1.1,0.1))
+    annotationDict = {x:{} for x in range(1,12)}
+    classDict = {x:{} for x in range(1,12)}
+    
+    problem = {}
+    problem['empty'] = 0
+    problem['none'] = 0
+    problem['pheno'] = 0
+    for idx,element in enumerate(classifications):
+        if bins[idx] == 1:
+            if element == {}:
+                problem['empty'] += 1
+            else:
+                if 'None' in element:
+                    problem['none'] += element['None']
+                if 'Generation' in element:
+                    problem['pheno'] += element['Generation']  
+                if 'Decay' in element:
+                    problem['pheno'] += element['Decay']
+    
+    print problem
+    for idx,element in enumerate(annotations):
+        if idx < len(bins):
+            if len(element) > 0:
+                for ann in element:
+                    for word in ann[0].split(' '):
+                        if word not in annotationDict[bins[idx]]:
+                            annotationDict[bins[idx]][word] = 0
+                        annotationDict[bins[idx]][word] += 1.0
+    for element in annotationDict:
+        annotationDict[element] = {x:annotationDict[element][x] for x in annotationDict[element] if annotationDict[element][x] > 3 and len(x) > 2}
+    print annotationDict
+    
+    for element in annotationDict:
+        stringA = ''
+        for word in annotationDict[element]:
+            tword = word.replace('/','')
+            tword = word.replace('-','')
+            stringA += ' ' + ' '.join([tword for x in range(0,int(annotationDict[element][word]))])
+        cloudText(stringA,'cloud{0}.png'.format(element))
+    
+    stringA = ''
+    for element in [9,10,11]:
+        for word in annotationDict[element]:
+            tword = word.replace('/','')
+            tword = word.replace('-','')
+            stringA += ' ' + ' '.join([tword for x in range(0,int(annotationDict[element][word]))])
+    cloudText(stringA,'cloudMax.png')
+        
+          
 def main2():
-    #336,365
-    pair = [336,365]
-    history = np.load('stats3.npy')
-    extracts = []
-    for element in history:
-        if element[0] in pair:
-            extracts.append(element)
-        if len(extracts) == 2:
-            break
-    print extracts
-    reader = libsbml.SBMLReader()
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000336.xml')
-    parser = libsbml2bngl.SBML2BNGL(document.getModel())    
-    rdfAnnotations = analyzeRDF.getAnnotations(parser,'miriam')
-    print rdfAnnotations
+    #go database
+    dbs = MySQLdb.connect(host='mysql.ebi.ac.uk',user='go_select',passwd='amigo',db='go_latest',port=4085)
+    cur = dbs.cursor()
+    #reactome
+    rwsdl = "http://www.reactome.org:8080/caBIOWebApp/services/caBIOService?wsdl"
+    rserv = WSDL.Proxy(rwsdl)
     
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000365.xml')
-    parser = libsbml2bngl.SBML2BNGL(document.getModel())    
-    rdfAnnotations2 = analyzeRDF.getAnnotations(parser,'miriam')
-    print rdfAnnotations2
+    #kegg
+    kegg_url = "http://rest.kegg.jp"
+    conn = Connection(kegg_url)
     
-    for element in rdfAnnotations:
-        if element in rdfAnnotations2:
-            print element,rdfAnnotations[element],rdfAnnotations2[element]
-                        
+    #uniprot taxonomy
+    url = 'http://www.uniprot.org/taxonomy/'
+    
+    
+    print '---'    
+    annotationArray = []
+    with open('annotations.dump','rb') as f:
+        ar = pickle.load(f)
+    for idx,element in enumerate(ar):
+        print idx
+        bioArray = []
+        for annotation in element:
+            tAnnotation = annotation.replace('%3A',':')
+            tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
+            
+            if 'GO' in annotation:            
+                cur.execute("SELECT * FROM term WHERE acc='{0}'".format(tAnnotation))
+                for row in cur.fetchall():
+                    bioArray.append([row[1],row[3]])
+            
+            elif 'reactome' in annotation:
+                tAnnotation2 = re.search('_([^_]+$)',tAnnotation).group(1)
+                try:
+                    query = rserv.queryById(Types.longType(long(tAnnotation)))
+                except:
+                    continue
+                bioArray.append([query['name'],tAnnotation])
+            elif 'kegg' in annotation:
+                if 'pathway' in tAnnotation:
+                    tAnnotation2 = 'map' + re.search('[^0-9]+([0-9]+$)',tAnnotation).group(1)
+                    reply = conn.request_get('find/pathway/{0}'.format(tAnnotation2), headers={'Accept':'text/json'})
+                    if reply['body'] != '\n':
+                        bioArray.append([reply['body'].split('\t')[1].strip(),tAnnotation])
+                else:
+                    print annotation
+            #elif 'taxonomy' in annotation:
+                #uniprot stuff for taxonomy
+            #    pass
+                '''
+                url = 'http://www.uniprot.org/taxonomy/'
+                params = {
+                'from':'ACC',
+                'to':'P_REFSEQ_AC',
+                'format':'tab',
+                'query':'P13368 P20806 Q9UM73 P97793 Q17192'
+                }
+                
+                data = urllib.urlencode(params)
+                request = urllib2.Request(url, data)
+                contact = "" # Please set your email address here to help us debug in case of problems.
+                request.add_header('User-Agent', 'Python contact')
+                response = urllib2.urlopen(request)
+                page = response.read(200000)
+                '''
+            else:
+                print '--',annotation,'GO' in tAnnotation
+        annotationArray.append(bioArray)
+    print annotationArray
+    with open('parsedAnnotations.dump','wb') as f:
+        pickle.dump(annotationArray,f)
+
             
           
 if __name__ == "__main__":
-    main2()
+    bagOfWords()

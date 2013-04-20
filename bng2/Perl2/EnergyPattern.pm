@@ -41,11 +41,14 @@ sub readString
     $string =~ s/^\s*\d+\s+//;
     # strip any leading whitesace
     $string =~ s/^\s+//;
+    
+    # Remove leading label, if exists
+    $string =~ s/^\s*\w+:\s+//;
 
     # Next read the SpeciesGraph that will define the Energy Pattern
     my $sep = '^\s+';
     my $sg = SpeciesGraph->new();
-    $err = $sg->readString( \$string, $model->CompartmentList, 0, $sep, $model->MoleculeTypesList, 0 );
+    $err = $sg->readString( \$string, $model->CompartmentList, 0, $sep, $model->MoleculeTypesList, 1 );
     if ($err) { return "While reading Energy Pattern: $err"; }
 
     $epatt->Pattern($sg);
@@ -162,8 +165,7 @@ sub update
         my $spec = $species->[$ii];
         next if ($spec->ObservablesApplied);
         my @matches = $epatt->Pattern->isomorphicToSubgraph($spec->SpeciesGraph);
-        #TODO: $epatt->Weights->[$spec->Index] = (scalar @matches)/$epatt->Pattern->Automorphisms;
-        $epatt->Weights->[$spec->Index] = scalar @matches;
+        $epatt->Weights->[$spec->Index] = (scalar @matches)/($epatt->Pattern->Automorphisms);
     }
     return $err;
 }
@@ -186,7 +188,7 @@ sub getStoich
     foreach my $product (@{$rxn->Products})
     {
         if ( $epatt->Weights->[$product->Index] )
-        {   $stoich += $epatt->Weights->[$product->Index];   }    
+        {   $stoich += $epatt->Weights->[$product->Index];   }
     }
     return $stoich, $err;
 }

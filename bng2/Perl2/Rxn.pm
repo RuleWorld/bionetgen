@@ -19,27 +19,27 @@ use EnergyPattern;
 
 
 struct Rxn => {
-  Reactants      => '@',          # Array of reactant Species
-  Products       => '@',          # Array of product Species
-  RateLaw        => 'RateLaw',
-  StatFactor     => '$',	       
-  Priority       => '$',
-  RxnRule        => '$',
-  Index          => '$',          # Reaction Index for writing network output
+  Reactants      => '@',         # Array of reactant Species
+  Products       => '@',         # Array of product Species
+  RateLaw        => 'RateLaw',   # Reference to a RateLaw object
+  StatFactor     => '$',	     # Statistical (multiplicity) factor for multiple rxn pathways
+  Priority       => '$',         # Priority of this Rxn (Deprecated?)
+  RxnRule        => '$',         # RxnRule that generated this Rxn
+  Index          => '$',         # Reaction Index for writing network output
 };
 
 
 sub toString
 {
     my $rxn   = shift @_;
-    my $text  = (@_) ? shift : 0;
-    my $plist = (@_) ? shift : 0;
+    my $text  = @_ ? shift @_ : 0;
+    my $plist = @_ ? shift @_ : undef;
   
     my $err;
     my $string;
   
     if ($text)
-    {
+    {   # write Reactants and Products as BNGL strings
         my @rstrings=();
         my @pstrings=();
         foreach my $r ( @{$rxn->Reactants} )
@@ -49,41 +49,18 @@ sub toString
         $string = join(' + ', @rstrings) . " -> " . join(' + ', @pstrings);
     }
     else
-    { 
+    {   # just write Reactant and Product species indexes
         $string = $rxn->stringID(); 
     }
 
     $string .= ' ';
 
-
     # Write the Ratelaw...
-    #   First prcoess reaction multipliers (statistical factor, compartment volumes, etc)
-    my $err = undef;
-    my $rxn_mult = undef;
+    if (defined $rxn->RateLaw)
+    {   $string .= $rxn->RateLaw->toString($rxn->StatFactor, 1, $plist);   }   
     
-    # handle the statistical factor
-    if ( defined( $rxn->StatFactor ) and ($rxn->StatFactor ne '') and ($rxn->StatFactor ne '1') )
-    {   $rxn_mult = Expression::newNumOrVar( $rxn->StatFactor );   }
-  
-    # handle the volume expression
-    (my $volume_expr, $err) = $rxn->volume_scale($plist);    
-    if ( defined $volume_expr )
-    {
-        if ( defined $rxn_mult )
-        {
-            $rxn_mult = Expression::operate( '*', [($rxn_mult, $volume_expr)], $plist );
-        }
-        else
-        {   $rxn_mult = $volume_expr;   }
-    }
-
-    # get ratelaw string
-    if (defined $rxn->RateLaw){ #TODO
-    $string .= $rxn->RateLaw->toString( $rxn_mult, 1, $plist );
-    }
-
-    if ($rxn->RxnRule)
-    {  $string .= " #" . $rxn->RxnRule->Name;  }
+    # Write source RxnRule
+    if (defined $rxn->RxnRule) {  $string .= " #" . $rxn->RxnRule->Name;  }
 
     return $string;
 }
@@ -121,36 +98,15 @@ sub getMatlabName
 
 sub getCVodeRate
 {
-    my $rxn   = shift;
-    my $plist = shift;
+    my $rxn   = shift @_;
+    my $plist = shift @_;
 
-    my $err;
-    
-    # get multiplier factors
-    my $rxn_mult = undef;
-    
-    # handle the statistical factor
-    if ( defined( $rxn->StatFactor ) and ($rxn->StatFactor ne '') and ($rxn->StatFactor ne '1') )
-    {   $rxn_mult = Expression::newNumOrVar( $rxn->StatFactor );   }
-  
-    # handle the volume expression
-    (my $volume_expr, $err) = $rxn->volume_scale($plist);    
-    if ( defined $volume_expr )
-    {
-        if ( defined $rxn_mult )
-        {
-            $rxn_mult = Expression::operate( '*', [($rxn_mult, $volume_expr)], $plist );
-        }
-        else
-        {   $rxn_mult = $volume_expr;   }
-    }
-
-    # get reference to RxnRule RRef hash
+    # get reference to RxnRule RRef hash (TODO: may be obsolete)
     my $rrefs = undef;
     if ( $rxn->RxnRule )
     {   $rrefs = $rxn->RxnRule->RRefs;   }
-    # get ratelaw string    
-    return $rxn->RateLaw->toCVodeString( $rxn_mult, $rxn->Reactants, $rrefs, $plist );
+    # get ratelaw string   
+    return $rxn->RateLaw->toCVodeString( $rxn->StatFactor, $rxn->Reactants, $rrefs, $plist );
 }
 
 
@@ -161,37 +117,15 @@ sub getCVodeRate
 
 sub getMatlabRate
 {
-    my $rxn   = shift;
-    my $plist = shift;
-
-    my $err;
-    
-    # get multiplier factors
-    my $rxn_mult = undef;
-    
-    # handle the statistical factor
-    if ( defined( $rxn->StatFactor ) and ($rxn->StatFactor ne '') and ($rxn->StatFactor ne '1') )
-    {   $rxn_mult = Expression::newNumOrVar( $rxn->StatFactor );   }
-  
-    # handle the volume expression
-    (my $volume_expr, $err) = $rxn->volume_scale($plist);    
-    if ( defined $volume_expr )
-    {
-        if ( defined $rxn_mult )
-        {
-            $rxn_mult = Expression::operate( '*', [($rxn_mult, $volume_expr)], $plist );
-        }
-        else
-        {   $rxn_mult = $volume_expr;   }
-    }
+    my $rxn   = shift @_;
+    my $plist = shift @_;
 
     # get reference to RxnRule RRef hash
     my $rrefs = undef;
     if ( $rxn->RxnRule )
     {   $rrefs = $rxn->RxnRule->RRefs;   }
-
     # get ratelaw string  
-    return $rxn->RateLaw->toMatlabString( $rxn_mult, $rxn->Reactants, $rrefs, $plist );
+    return $rxn->RateLaw->toMatlabString( $rxn->StatFactor, $rxn->Reactants, $rrefs, $plist );
 }
 
 
@@ -233,7 +167,7 @@ sub stringID
     # sort reactants and products (if ratelaw is elementary or zero-order)
     my $type= $rxn->RateLaw->Type;
     if ( $type eq "Ele" )
-    {
+    {   # don't sort MM, Sat, or Hill...  TODO: sort Function ratelaws? (since local context is already evaluated)
         @rstrings = sort {$a<=>$b} @rstrings;
         @pstrings = sort {$a<=>$b} @pstrings;
     }
@@ -241,100 +175,6 @@ sub stringID
     $string .= join(',', @rstrings) . " " . join(',', @pstrings);
     return ($string);
 }
-
-
-
-sub volume_scale
-# ($vol_expr, $err) = $rxn->volume_scale($plist)
-# Construct volume scaling expression for compartment reactions.
-#  Returns undefined if the volume scaling expression is '1'.
-#
-# NOTE: Should this be moved to RateLaw.pm?
-
-# Handle volume-dependent rate constants for compartment reactions.
-#   justinshogg@gmail.com  23feb2009
-#
-# we assume state variables are species counts (not concentrations) and
-# that user has chosen consistent units for reaction constants which are
-# independent of compartment volumes.
-#
-# for bi-molecular reactions, the reaction compartment is the 3-D volume [V]
-# unless all reactants are at a 2-D surface [S].
-#
-#  rxn type                adjustment
-#  ----------------------------------------------------
-#   S                      none
-#   V                      none
-#   S + S                  /S
-#   S + V                  /V
-#   V + V                  /V 
-#   S + S + S              /S/S
-#   S + S + V              /S/V
-#   S + V + V              /V/V
-#   V + V + V              /V/V            etc...
-#   0 -> S                 S  ??
-#   0 -> V                 V  ??
-
-{
-    my $rxn = shift;
-    my $plist = (@_) ? shift : undef;
-
-    my $err;
-    my $vol_expr = undef;
-
-    # get all the defined compartments
-    my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
-    my @product_compartments  = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Products});
-   
-    # return undefined volume expr if there are no compartments
-    if ( @reactant_compartments )
-    { 
-        # divide into surfaces and volumes
-        my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
-        my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
-
-        # Pick and toss an anchor reactant.  If there's a surface reactant, toss it.
-        # Otherwise toss a volume.
-        (@surfaces) ? shift @surfaces : shift @volumes;
-
-        # if there are surfaces or volumes remaining, we need to define a volume expression
-        if ( @surfaces  or  @volumes )
-        {
-            # construct the volume expression
-            my @vol_factors = (1.0);
-            push @vol_factors, ( map {$_->Size} (@surfaces, @volumes) );
-            $vol_expr = Expression::operate( '/', \@vol_factors, $plist );
-            unless ( defined $vol_expr )
-            {   $err = "Error in Rxn::volume_scale(): Some problem defing compartment volume expression.";  }
-        }
-    }
-    elsif ( @product_compartments>0 )
-    {
-        # check if products are in the same compartment
-        my $consistent = 1;
-        my $comp1 = $product_compartments[0];
-        foreach my $comp2 ( @product_compartments[1..$#product_compartments] )
-        {
-            unless ($comp1 == $comp2)
-            {
-                $consistent = 0;
-                last;
-            }
-        }
-
-        if ($consistent)
-        {   # construct the volume expression
-            $vol_expr = $comp1->Size;
-        }
-        else
-        {   send_warning("compartmental BioNetGen doesn't know how to handle zero-order synthesis of products in multiple compartments.");  }
-    }
-    
-    # return the expression (possibly undefined) and the error msg (if any).
-    return ($vol_expr, $err);
-}
-
-
 
 ###
 ###

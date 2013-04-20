@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 # define library source directories
 SUNDIALS_DIR  = ../cvode-2.6.0
-MUPARSER_DIR  = ../muparser_v134
+MUPARSER_DIR  = ../muparser_v2_2_3
 
 # this is the program we're building
 bin_PROGRAMS = run_network

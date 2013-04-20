@@ -3,7 +3,7 @@
  #prefix                test                # Default is BNGL filename
  #suffix                equil               # Default is '' (nothing)
  #netfile               test.net            # Default is {BNGL_filename}.net
- method                 ode                 # Currently supported methods are 'ode', 'pla', 'ssa' (use simulate_nf() for NFsim)
+ method                 ode                 # Currently supported methods are "ode", "pla", "ssa" (use simulate_nf() for NFsim)
  verbose                1                   # Default is 0
  #continue              1                   # Default is 0
  t_start                0                   # Default is 0

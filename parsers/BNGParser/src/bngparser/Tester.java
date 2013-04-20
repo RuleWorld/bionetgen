@@ -43,12 +43,13 @@ public class Tester {
 	
 	public static void main(String[] args) throws IOException,RecognitionException{
 		
-		String inputFile2 = "testModels/NFSim/actin/actin_simple.bngl";
-		//String inputFile = "testModels/FullModelBurstSeconds.bngl";
+		//String inputFile2 = "/home/proto/workspace/bionetgen/parser/SBMLparser/egfr/output19.bngl";
+		String inputFile2 = "testModels/Validate/Motivating_example_cBNGL.bngl";
 		
-		List<String> inputFileList = getFileNames("testModels/Validate");
-		//List<String> inputFileList = new ArrayList<String>();
-		//inputFileList.add("testModels/Validate/ANx.bngl");
+		//List<String> inputFileList = getFileNames("testModels/NFSim");
+		List<String> inputFileList = new ArrayList<String>();
+		inputFileList.add("testModels/Validate/Motivating_example_cBNGL.bngl");
+		//inputFileList = getFileNames("testModels");
 		String outputFile = "output.xml";
 		
 		if(args.length > 0){
@@ -83,20 +84,27 @@ public class Tester {
 				
 			
 			r = parser.prog();
-			r2 = parser.actions_prog();
+			//r2 = parser.actions_prog();
 			
 			//System.out.println(r2.getTemplate().toString());
-			FileWriter writer = new FileWriter(outputFile);
+			FileWriter writer = new FileWriter(inputFile + ".xml");
+			System.out.println(inputFile);
 			writer.write(r.getTemplate().toString());
 			
 			//r.g
 			writer.close();
 			System.out.println("pass");
 			}
+			catch(NullPointerException e){
+				System.err.println("a translation could not be created");
+				
+			}
 			catch(Exception e){
 				System.err.println("fail");
 				e.printStackTrace();
 			}
 		}
+
+		
 	}
 }

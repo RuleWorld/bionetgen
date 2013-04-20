@@ -6,6 +6,8 @@ Created on Wed May 30 11:44:17 2012
 """
 from copy import deepcopy
 import difflib
+import hashlib  
+import numpy
 
 class Species:
     def __init__(self):
@@ -181,10 +183,10 @@ class Species:
             self.molecules.append(deepcopy(element))              
         
     def __str__(self):
-        return '.'.join([x.toString() for x in self.molecules])
+        return '.'.join([x.toString().replace('-','_') for x in self.molecules])
         
     def str2(self):
-        return '.'.join([x.str2() for x in self.molecules])
+        return '.'.join([x.str2().replace('-','_') for x in self.molecules])
         
     def reset(self):
         for element in self.molecules:
@@ -200,6 +202,13 @@ class Molecule:
         self.name = name
         self.compartment = ''
         
+        a = numpy.random.rand(10, 100)
+        self.hash = hashlib.sha1(a).digest()
+        
+
+        
+
+
     def copy(self):
         molecule = Molecule(self.name)
         for element in self.components:
@@ -262,14 +271,16 @@ class Molecule:
         
     def __str__(self):
         self.components = sorted(self.components,key=lambda x:x.name)
-        return self.name + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
+        tmp = self.name.replace('-','_')
+        return tmp + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
         
     def toString(self):
         return self.__str__()
         
     def str2(self):
         self.components = sorted(self.components,key=lambda x:x.name)
-        return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
+        tmp = self.name.replace('-','_')
+        return tmp + '(' + ','.join([x.str2() for x in self.components]) + ')'
         
     def extend(self,molecule):
         for element in molecule.components:
@@ -316,8 +327,12 @@ class Component:
                 self.addState(state,update)
         
     def addBond(self,bondName):
+        #if len(self.bonds) == 0:
+        #    self.bonds.append('U')
         if not bondName in self.bonds:
             self.bonds.append(bondName)
+            return True
+        return False
         
     def setActiveState(self,state):
         if state not in self.states:
@@ -340,7 +355,9 @@ class Component:
         return self.name 
         
     def __str__(self):
-        return self.getRuleStr()
+        tmp = self.getRuleStr()
+        tmp = tmp.replace('-','_')
+        return tmp
         
     def str2(self):
         tmp = self.name

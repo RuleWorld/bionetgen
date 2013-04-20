@@ -45,6 +45,9 @@ sub readString
         # This index will be ignored
         my $index = $1;
     }
+
+    # Remove leading label, if exists
+    $entry =~ s/^\s*\w+:\s+//;
   
     # Next token is string for species graph
     $entry =~ s/^\s*//;

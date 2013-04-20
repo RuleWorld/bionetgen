@@ -270,24 +270,32 @@ void free_Elt_array(Elt_array* earray) {
  */
 map<string, double*> init_param_map(Elt_array*& rates, Group*& spec_groups) {
 	map<string, double*> result_map;
-	for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
-		result_map[curr->name] = &curr->total_val;
-	for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
-		result_map[curr->name] = &curr->val;
+	if (spec_groups){
+		for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
+			result_map[curr->name] = &curr->total_val;
+	}
+	if (rates){
+		for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
+			result_map[curr->name] = &curr->val;
+	}
 	return result_map;
 }
 
 map<string, int> init_param_index_map(Elt_array*& rates) {
 	map<string, int> result_map;
-	for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
-		result_map[curr->name] = curr->index;
+	if (rates){
+		for (Elt* curr = rates->list; curr != NULL; curr = curr->next)
+			result_map[curr->name] = curr->index;
+	}
 	return result_map;
 }
 
 map<string, int> init_observ_index_map(Group*& spec_groups) {
 	map<string, int> result_map;
-	for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
-		result_map[curr->name] = curr->index;
+	if (spec_groups){
+		for (Group* curr = spec_groups; curr != NULL; curr = curr->next)
+			result_map[curr->name] = curr->index;
+	}
 	return result_map;
 }
 
@@ -308,22 +316,23 @@ bool isMuParserFunction(string in_string) {
 		in_string == "atanh" ||
 		in_string == "log2"  ||
 		in_string == "log10" ||
-		in_string == "log"   ||
+//		in_string == "log"   || not supported in BNG
 		in_string == "ln"    ||
 		in_string == "exp"   ||
 		in_string == "sqrt"  ||
-		in_string == "sign"  ||
+//		in_string == "sign"  || not supported in BNG
 		in_string == "rint"  ||
 		in_string == "abs"   ||
-		in_string == "if"    ||
+		in_string == "if"    || // Now implemented as static If() in network.h
 		in_string == "min"   ||
 		in_string == "max"   ||
 		in_string == "sum"   ||
-		in_string == "e"     ||
 		in_string == "avg"   ||
-		in_string == "or"    ||
-		in_string == "and"   ||
-		in_string == "xor"
+		in_string == "_pi"   || // muParser.cpp 311: DefineConst(_T("_pi"), (value_type)PARSER_CONST_PI);
+		in_string == "_e"       // muParser.cpp 312: DefineConst(_T("_e"), (value_type)PARSER_CONST_E);
+//		in_string == "or"    || deprecated in muParser
+//		in_string == "and"   || deprecated in muParser
+//		in_string == "xor"      deprecated in muParser
 		)
 		return true;
 	else
@@ -337,15 +346,15 @@ bool isMuParserFunction(string in_string) {
  */
 vector<string> find_variables(string a) {
 	vector<string> variables;
-	//	istringstream in(a,istringstream::in);
 	char c;
 	for (unsigned int i = 0; i < a.length();) {
-//		c = a[i++];
 		c = a[i];
 		// Support scientific notation (i.e., X{eE}{+-}YYY)
-		if ((c == 'e' || c == 'E') &&
+		if (i > 0 && i < a.length()-1 &&
+			(c == 'e' || c == 'E') &&
 			(a[i-1] >= '0' && a[i-1] <= '9') &&
-			((a[i+1] >= '0' && a[i+1] <= '9') || a[i+1] == '+' || a[i+1] == '-')){
+			((a[i+1] >= '0' && a[i+1] <= '9') || a[i+1] == '+' || a[i+1] == '-'))
+		{
 			// Do nothing
 		}
 		// Continue
@@ -361,7 +370,6 @@ vector<string> find_variables(string a) {
 			{
 				s.push_back(c);
 				c = a[++i];
-//				c = a[i++];
 			}
 			if (!isMuParserFunction(s)) {
 				variables.push_back(s);
@@ -378,10 +386,7 @@ vector<string> find_variables(string a) {
  * This is because MuParser cannot handle variables with parentheses at the end of their names
  */
 void process_function_names(string& a) {
-	if (a.length() < 2)
-		return;
-
-	istringstream in(a, istringstream::in);
+	if (a.length() < 2) return;
 	char curr_letter, next_letter;
 	curr_letter = a[0];
 	next_letter = a[1];
@@ -404,12 +409,6 @@ void process_function_names(string& a) {
  * Indices of variable parameters vector and functions vector should match
  *
  */
-//vector<mu::Parser> read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
-//		vector<int>& var_parameters, map<string, double*>& param_map, map<string, int> param_index_map,
-//		map<string, int> observ_index_map, vector<vector<int> >& func_observ_depend, vector<vector<int> >& func_param_depend,
-//		map<string, bool>& is_func_map_p) {
-//void read_functions_array(const char* netfile, Group* spec_groups, Elt_array*& rates, Elt_array* species,
-//		map<string,double*>& param_map, map<string,int> param_index_map, map<string,int> observ_index_map) {
 void read_functions_array(const char* netfile, Elt_array*& rates, map<string,double*>& param_map,
 		map<string,int> param_index_map, map<string,int> observ_index_map, double* t) {
 
@@ -426,8 +425,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 	// check that parameter index (in var_parameters) matches function index
 	// push and link parameter into elt_array
 
-//	vector<mu::Parser> functions;
-	char line[512];
+	string line;
 	ifstream infile(netfile);
 	bool foundBegin = false;
 	int index;
@@ -435,7 +433,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 	string function_string;
 	int num_free_spaces = 0;
 
-	while (infile.getline(line,512)) {
+	while (getline(infile,line)) {
 
 		istringstream readLine(line);
 		dummy_string.clear(); // Be sure to clear the string before extracting data to it --LAH
@@ -465,6 +463,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			vector<int> observ_depend;
 			vector<int> param_depend;
 
+			// Define if() function as reference to static If() in network.h
+			parser.DefineFun(_T("if"), If);
+
 			// Functions block exists, create 'time' function
 			if (dummy_string == "functions"){
 				func_name = "time";
@@ -472,6 +473,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				parser.SetExpr("time");
 			//	cout << parser.GetExpr() << "= " << parser.Eval() << endl;
 			}
+
 			// Create other functions
 			else{
 				index = atoi(dummy_string.c_str());
@@ -479,6 +481,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// create parser for that function
 				readLine >> func_name >> function_string;
+
 				// Check for function arguments -- exit if they exist
 				if (func_name[func_name.length()-2] != '(') {
 					cout << "Error in network::read_functions_array(): Functions cannot contain arguments ('"
@@ -495,7 +498,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// Erase '()' from end of function name
 				func_name.erase(func_name.length()-2,func_name.length());
-//				cout << func_name << "\t" << function_string;
+//				cout << func_name << ": " << function_string << endl;
 
 				// Make sure the function isn't named "time", just to be safe
 				if (func_name == "time"){
@@ -508,7 +511,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				process_function_names(function_string); // Remove parentheses from variable names
 				vector<string> variable_names = find_variables(function_string); // Extract variable names
 //    			for (unsigned int i=0;i < variable_names.size();i++){
-//    				cout << "\t" << variable_names[i];
+//    				cout << "\t" << variable_names[i] << endl;
 //    			}
 
 				// Identify dependencies
@@ -538,13 +541,13 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// evaluate it and store value
 //				cout << function_string << endl;
-				size_t found;
+				/*size_t found;
 				while ((found = function_string.find("&&")) != string::npos){
 					function_string.replace(found,2,"and");
 				}
 				while ((found = function_string.find("||")) != string::npos){
 					function_string.replace(found,2,"or");
-				}
+				}*/
 
 //				cout << function_string << endl;
 				parser.SetExpr(function_string);
@@ -553,26 +556,29 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 			network.functions.push_back(parser);
 
-//			cout << "\t" << func_name << ": " << network.functions[network.functions.size()-1].GetExpr() <<
+//			cout << func_name << ": " << network.functions[network.functions.size()-1].GetExpr() <<
 //					"= " << network.functions[network.functions.size()-1].Eval() << endl;
-/*			map<string,double*> m = network.functions[network.functions.size()-1].GetUsedVar();
+/*
+			map<string,double*> m = network.functions[network.functions.size()-1].GetUsedVar();
 			map<string,double*>::iterator iter;
 			for (iter = m.begin();iter != m.end();iter++){
-			cout << "\t" << (*iter).first;
+				cout << "\t" << (*iter).first << endl;
 			}
-			cout << endl;
 //*/
 //    		char* name_char_ptr = new char[func_name.size()];
 //   		strcpy(name_char_ptr,func_name.c_str());
 
 			// create a new parameter with the name 'func_name'
-			Elt* new_elt = new_Elt((char*)func_name.c_str(),parser.Eval(),rates->n_elt+1);
+			Elt* new_elt;
+			if (rates) new_elt = new_Elt((char*)func_name.c_str(),parser.Eval(),rates->n_elt+1);
+			else new_elt = new_Elt((char*)func_name.c_str(),parser.Eval(),1);
 			new_elt->next = NULL;
 			network.is_func_map[func_name] = true;
 
 			// push index of new parameter into var_parameters vector
 			// check that parameter index (in var_parameters) matches function index
-			network.var_parameters.push_back(rates->n_elt+1);
+			if (rates) network.var_parameters.push_back(rates->n_elt+1);
+			else network.var_parameters.push_back(1);
 			if (network.functions.size() != network.var_parameters.size()){
 				cout << "ERROR: Function and variable parameter indices do not match." << endl;
 				exit(1);
@@ -582,24 +588,29 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			// THIS PART OF THE CODE COULD PROBABLY BE IMPROVED --LAH
 			//////////////////////////////////////////////////////////
 
-			// allocate space in elt_array **elt (double the space), if necessary
-			if (num_free_spaces == 0) {
-				Elt** elt_temp = new Elt*[2*rates->n_elt]; // This is deleted at the end of run_network
-				for (int q = 0; q < rates->n_elt; q++){
-					elt_temp[q] = rates->elt[q];
+			if (rates){
+				// allocate space in elt_array **elt (double the space), if necessary
+				if (num_free_spaces == 0) {
+					Elt** elt_temp = new Elt*[2*rates->n_elt]; // This is deleted at the end of run_network
+					for (int q = 0; q < rates->n_elt; q++){
+						elt_temp[q] = rates->elt[q];
+					}
+					delete[] rates->elt;
+					rates->elt = elt_temp;
+					num_free_spaces = rates->n_elt;
 				}
-				delete[] rates->elt;
-				rates->elt = elt_temp;
-				num_free_spaces = rates->n_elt;
-			}
 
-			// push and link parameter into elt_array
-			rates->elt[rates->n_elt++] = new_elt;
-			Elt* curr = rates->list;
-			Elt* prev = curr;
-			for (; curr != NULL; prev = curr, curr = curr->next);
-			prev->next = new_elt;
-			num_free_spaces--;
+				// push and link parameter into elt_array
+				rates->elt[rates->n_elt++] = new_elt;
+				Elt* curr = rates->list;
+				Elt* prev = curr;
+				for (; curr != NULL; prev = curr, curr = curr->next);
+				prev->next = new_elt;
+				num_free_spaces--;
+			}
+			else{
+				rates = new_Elt_array(new_elt);
+			}
 
 			// push new parameter into parameter map
 			param_map[new_elt->name] = &new_elt->val;
@@ -612,7 +623,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			//////////////////////////////////////////////////////////
 		}
 
-		else if (foundBegin && dummy_string != ""){ // Allow for blank lines
+		else if (foundBegin && dummy_string != "" && dummy_string[0] != '#'){ // Allow for blank and commented lines
 			cout << "ERROR: Found invalid line \"" << dummy_string <<
 					"\" while reading functions block." << endl;
 			exit(1);
@@ -692,7 +703,9 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 //				cout << index << " " << elt_name << " " << tokens[n_tok] << endl;
 				myParser parser;
 				parser.name = elt_name;
-				vector<string> v = find_variables(tokens[n_tok]);
+				string expr(tokens[n_tok]);
+				process_function_names(expr); // Remove parentheses from _pi() and _e()
+				vector<string> v = find_variables(expr); //find_variables(tokens[n_tok]);
 				for (unsigned int i=0;i < v.size();i++){
 					// Look for variable in parameters vector
 					bool found = false;
@@ -704,18 +717,18 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 					}
 					// Error check
 					if (!found){
-						cout << "Error in parsing '" << name << "' block expression: \"" << tokens[n_tok] <<
-								"\". Could not find parameter " << v[i] << ". Exiting." << endl;
+						cout << "Error in parsing '" << name << "' block expression: \"" << expr // tokens[n_tok] <<
+							 <<	"\". Could not find parameter " << v[i] << ". Exiting." << endl;
 						exit(1);
 					}
 				}
-				parser.p.SetExpr(tokens[n_tok]);
+				parser.p.SetExpr(expr); //parser.p.SetExpr(tokens[n_tok]);
 				parser.val = parser.p.Eval();
 //				cout << "\t" << parser.name << " " << parser.val << endl;
 				// Store the value
 				val = parser.val;
 				// If the element is a parameter, store it
-				if (name == "parameters"){
+				if (strcmp(name,"parameters") == 0){
 					network.parameters.push_back(parser);
 				}
 				/////////////////////////
@@ -1040,7 +1053,7 @@ void print_Groups(FILE* out, Group* list, Elt_array* earray) {
 
 	fprintf(out, "begin groups\n");
 	for (group = list; group != NULL; group = group->next) {
-		fprintf(out, "%5d %10s", group->index, group->name);
+		fprintf(out, "%5d %-21s", group->index, group->name);
 		for (i = 0; i < group->n_elt; ++i) {
 			eindex = group->elt_index[i];
 			factor = (group->elt_factor) ? group->elt_factor[i] : 1.0;
@@ -1655,7 +1668,8 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 		if (strcmp(tokens[0], "end") == 0) {
 			if (n_tokens == 2 && strcmp(tokens[1], format) == 0) {
 				read_end = 1;
-			} else {
+			}
+			else {
 				fprintf(stderr, "Error in end command at line %d.\n",
 						*line_number);
 				read_end = -1;
@@ -1669,8 +1683,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			/* Default format */
 			n_rateLaw_tokens = n_tokens - 3;
 			if (n_rateLaw_tokens < 1) {
-				fprintf(stderr, "Invalid list entry at line %d.\n",
-						*line_number);
+				fprintf(stderr, "Invalid list entry at line %d.\n", *line_number);
 				++error;
 				goto cleanup;
 			}
@@ -1683,16 +1696,14 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			++n_tok;
 
 			/* Get indices of reactants */
-			if (!(r_index = read_indices_Rxn(tokens[n_tok], &n_reactants,
-					species, *line_number))) {
+			if (!(r_index = read_indices_Rxn(tokens[n_tok], &n_reactants, species, *line_number))) {
 				++error;
 				goto cleanup;
 			}
 			++n_tok;
 
 			/* Get indices of products */
-			if (!(p_index = read_indices_Rxn(tokens[n_tok], &n_products,
-					species, *line_number))) {
+			if (!(p_index = read_indices_Rxn(tokens[n_tok], &n_products, species, *line_number))) {
 				++error;
 				goto cleanup;
 			}
@@ -1701,7 +1712,8 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			// Find optional statistical factor for reaction
 			if (sscanf(tokens[n_tok], "%lf*%s", &stat_factor, buf) == 2) {
 				strcpy(tokens[n_tok], buf);
-			} else {
+			}
+			else {
 				stat_factor = 1.0;
 			}
 
@@ -1711,21 +1723,25 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 					rateLaw_type = FUNCTIONAL;
 					remove_zero = 0;
 				}
-				// Elementary reaction specified with a single rate constant
-				// name
-				else
+				else{
 					rateLaw_type = ELEMENTARY;
-			} else {
+				}
+			}
+			else {
 				// Find match on list of types
 				if (strcmp(tokens[n_tok], "Ele") == 0) {
 					rateLaw_type = ELEMENTARY;
-				} else if (strcmp(tokens[n_tok], "Sat") == 0) {
+				}
+				else if (strcmp(tokens[n_tok], "Sat") == 0) {
 					rateLaw_type = SATURATION;
-				} else if (strcmp(tokens[n_tok], "Hill") == 0) {
+				}
+				else if (strcmp(tokens[n_tok], "Hill") == 0) {
 					rateLaw_type = HILL;
-				} else if (strcmp(tokens[n_tok], "MM") == 0) {
+				}
+				else if (strcmp(tokens[n_tok], "MM") == 0) {
 					rateLaw_type = MICHAELIS_MENTEN;
-				} else {
+				}
+				else {
 					// No match found
 					fprintf(stderr, "Undefined rateLaw type %s at line %d.\n",
 							tokens[n_tok], *line_number);
@@ -1747,8 +1763,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 				perr = (n_rateLaw_tokens != 1);
 				break;
 			case SATURATION:
-				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens
-						> (n_reactants + 1));
+				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens > (n_reactants + 1));
 				break;
 			case HILL:
 				perr = (n_rateLaw_tokens == 0) || (n_rateLaw_tokens != 3);
@@ -1788,25 +1803,34 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 		new_elt = new_Rxn(index, n_reactants, n_products, r_index, p_index,
 				rateLaw_type, n_rateLaw_tokens, rateLaw_indices, stat_factor,
 				rates);
+
 		// Create rxn string
 //		new_elt->toString = "";
-		if (new_elt->n_reactants == 0) *new_elt->toString += "*";
+		if (new_elt->n_reactants == 0) *new_elt->toString += "0";
 		else *new_elt->toString += (string)species->elt[new_elt->r_index[0]-1]->name;
 		for (int y=1;y < new_elt->n_reactants;y++){
-			*new_elt->toString += " " + (string)species->elt[new_elt->r_index[y]-1]->name;
+			*new_elt->toString += " + " + (string)species->elt[new_elt->r_index[y]-1]->name;
 		}
 		*new_elt->toString += " -> ";
-		if (new_elt->n_products == 0) *new_elt->toString += "*";
+		if (new_elt->n_products == 0) *new_elt->toString += "0";
 		else *new_elt->toString += (string)species->elt[new_elt->p_index[0]-1]->name;
 		for (int y=1;y < new_elt->n_products;y++){
-			*new_elt->toString += " " + (string)species->elt[new_elt->p_index[y]-1]->name;
+			*new_elt->toString += " + " + (string)species->elt[new_elt->p_index[y]-1]->name;
 		}
-		*new_elt->toString += " " + (string)rates->elt[new_elt->rateLaw_indices[0]-1]->name;
+		*new_elt->toString += " ";
+		if (new_elt->stat_factor > 1.0){
+			*new_elt->toString += Util::toString(new_elt->stat_factor) + "*";
+		}
+		*new_elt->toString += (string)rates->elt[new_elt->rateLaw_indices[0]-1]->name;
+		*new_elt->toString += " (= " + Util::toString(new_elt->stat_factor*
+				rates->elt[new_elt->rateLaw_indices[0]-1]->val) + ")";
+
 		/* Add new reaction to list of reactions */
 		if (list_start) {
 			rxn->next = new_elt;
 			rxn = new_elt;
-		} else {
+		}
+		else {
 			list_start = rxn = new_elt;
 		}
 
@@ -2057,13 +2081,13 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 			//for (index=iarr+1; index<iarr+rxn->n_reactants; ++index){
 			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
 				if (index > iarr) {
-					if (*index == *(index - 1)) {
+					if (*index == *(index-1)) {
 						n += 1.0;
 					} else {
 						n = 0.0;
 					}
 				}
-				rate *= (X[*index] - n);
+				rate *= (X[*index]-n);
 			}
 		}
 		// Continuous case
@@ -2159,12 +2183,12 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 			double n = 0.0;
 			/* Compute contributions to rate from species appearing only in numerator */
 			for (ig = 1; ig < rxn->n_reactants; ++ig) {
-				if (iarr[ig] == iarr[ig - 1]) {
+				if (iarr[ig] == iarr[ig-1]) {
 					n += 1.0;
 				} else {
 					n = 0.0;
 				}
-				rate *= (X[iarr[ig]] - n);
+				rate *= (X[iarr[ig]]-n);
 			}
 		}
 		// Continuous case
@@ -2184,7 +2208,7 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 		// Handle reactions with discrete molecules with multiple copies of the same reactants.
 		// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
 		//       automatically by BNG).
-		if (discrete) {
+		if (discrete && rxn->n_reactants) { // Make sure the rxn has reactants (not pure synth)
 			double n = 0.0;
 			rate *= X[*iarr];
 			for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
@@ -2209,16 +2233,7 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 	if (discrete && rate < 0.0){
 		cout << "Error: Negative rate detected in rxn_rate() (rate = " << rate << "). Exiting." << endl;
 		// Print rxn string
-		cout << "R" << rxn->index << ": ";
-		for (int j=0;j < rxn->n_reactants;j++){
-			if (j > 0) cout << " + ";
-			cout << network.species->elt[rxn->r_index[j]-network.species->offset]->name;
-		}
-		cout << " -> ";
-		for (int j=0;j < rxn->n_products;j++){
-			if (j > 0) cout << " + ";
-			cout << network.species->elt[rxn->p_index[j]-network.species->offset]->name;
-		}
+		cout << "R" << rxn->index << ": " << *rxn->toString;
 		if (rxn->rateLaw_type == ELEMENTARY) cout << " (ELEMENTARY)" << endl;
 		else if (rxn->rateLaw_type == MICHAELIS_MENTEN) cout << " (MICHAELIS_MENTEN)" << endl;
 		else if (rxn->rateLaw_type == SATURATION) cout << " (SATURATION)" << endl;
@@ -3577,11 +3592,16 @@ int print_network(FILE* out) {
 	if (network.rates) {
 		fprintf(out, "begin parameters\n");
 		Elt* elt;
-		char* str;
+//		char* str;
 		for (elt = network.rates->list; elt != NULL; elt = elt->next) {
 			//str= (elt->fixed) ? "$" : "";
-			if (elt->fixed) str = (char*)"$";
-			else str = (char*)"";
+			if (elt->fixed){ // Error check (parameters cannot be fixed)
+//				str = (char*)"$";
+				cout << "Error in network::print_network(): Parameter " << elt->name
+					 << " is fixed. This shouldn't happen. Exiting." << endl;
+				exit(1);
+			}
+//			else str = (char*)"";
 			// Don't print functions
 			bool print = true;
 			for (unsigned int i=0;i < network.functions.size() && print;i++){
@@ -3589,10 +3609,13 @@ int print_network(FILE* out) {
 					print = false;
 				}
 			}
-			if (print)
-				fprintf(out, "%5d %s%-20s %22.15e\n", elt->index, str, elt->name, elt->val);
+			if (print){
+//				fprintf(out, "%5d %s%-20s %22.15e\n", elt->index, str, elt->name, elt->val);
+//				fprintf(out, "%5d %-21s %22.15e\n", elt->index, elt->name, elt->val);
+				fprintf(out, "%5d %-21s %s\n", elt->index, elt->name,
+						network.parameters.at(elt->index-1).p.GetExpr().c_str());
+			}
 		}
-//		print_Elt_list(out, network.rates->list);
 		fprintf(out, "end parameters\n");
 	}
 
@@ -3605,11 +3628,11 @@ int print_network(FILE* out) {
 			funcName = network.rates->elt[network.var_parameters[i]-1]->name;
 			funcExpr = network.functions[i].GetExpr();
 //			cout << funcName << ": " << funcExpr << endl;
-			// Look for nested functions in funcExpr
+			// Look for nested functions in funcExpr and append "()"
 			for (unsigned int j=0;j < network.functions.size();j++){
 				string s = network.rates->elt[network.var_parameters[j]-1]->name;
 //				cout << "\t" << s << endl;
-				unsigned int p = funcExpr.find(s); // Search expression
+				size_t p = funcExpr.find(s); // Search expression
 				if (p != string::npos){ // Nested function found
 					bool replace = true; // Need to make sure it's not a substring of another function name
 					char c;
@@ -3947,6 +3970,9 @@ void remove_redundancies(vector<int>& vec) {
 
 /* Determine list of reactions whose rates depend on each species */
 int create_update_lists() {
+
+//cout << "create_update_lists: nrxns = " << network.reactions->n_rxn << endl;
+
 	int i, ip, ir, is, irxn;
 	int err = 0;
 	int* rxn_dep; /* a boolean array to keep track of dependent reaction in creating rxn update list */
@@ -4208,6 +4234,11 @@ int create_update_lists() {
 	}
 	free(rxn_dep);
 
+	// Need to free the iarrays if this is an update due to OTF network generation
+	if (GSP.as_reactant_list) free_iarray(GSP.as_reactant_list);
+	if (GSP.as_product_list)  free_iarray(GSP.as_product_list);
+	if (GSP.rxn_update_list)  free_iarray(GSP.rxn_update_list);
+
 	GSP.as_reactant_list = arl;
 	GSP.as_product_list = apl;
 	GSP.rxn_update_list = rul;
@@ -4249,7 +4280,9 @@ int create_update_lists() {
 //		cout << "-----" << endl;
 	}
 
-	// Collect all functions and rxns that dependent on this rxn
+	// Collect all functions and rxns that are dependent on this rxn
+	GSP.rxn_update_func.resize(network.reactions->n_rxn);
+	GSP.rxn_update_rxn.resize(network.reactions->n_rxn);
 	for (int i=0;i < network.reactions->n_rxn;i++) {
 		vector<int> temp_vec_func, temp_vec_rxn;
 
@@ -4271,16 +4304,32 @@ int create_update_lists() {
 			temp_vec_func.push_back(time_funcs[j]);
 		}
 		remove_redundancies(temp_vec_func);
-		GSP.rxn_update_func.push_back(temp_vec_func);
+		GSP.rxn_update_func[i].clear();
+		for (unsigned int k=0;k < temp_vec_func.size();k++){
+			GSP.rxn_update_func[i].push_back(temp_vec_func[k]);
+		}
 
 		// Add time()-dependent rxns
 		for (unsigned int j=0;j < time_rxns.size();j++){
 			temp_vec_rxn.push_back(time_rxns[j]);
 		}
 		remove_redundancies(temp_vec_rxn);
-		GSP.rxn_update_rxn.push_back(temp_vec_rxn);
+		GSP.rxn_update_rxn[i].clear();
+		for (unsigned int k=0;k < temp_vec_rxn.size();k++){
+			GSP.rxn_update_rxn[i].push_back(temp_vec_rxn[k]);
+		}
 	}
-	/*
+
+	/*///////////
+	cout << "rxn_observ_affect:" << endl;
+	for (unsigned int i=0;i < GSP.rxn_observ_affect.size();i++){
+		cout << "R_" << i << ": ";
+		for (unsigned int j=0;j < GSP.rxn_observ_affect[i].size();j++){
+			cout << "O_" << GSP.rxn_observ_affect[i][j] << " ";
+		}
+		cout << endl;
+	}
+	cout << "-----" << endl;
 	cout << "rxn_update_rxn/func:" << endl;
 	for (unsigned int i=0;i < GSP.rxn_update_func.size();i++){
 		cout << "R_" << i << ": ";
@@ -4293,7 +4342,7 @@ int create_update_lists() {
 		cout << endl;
 	}
 	cout << "-----" << endl;
-	*/
+	///////////*/
 
 	/*  print_as_reactant_list(stdout); */
 	print_rxn_update_list(stdout);
@@ -4351,12 +4400,16 @@ int init_gillespie_direct_network(int update_interval, int seed) {
 	else{
 		GSP.rxn_rate_update_interval = 1;
 	}
-	/* initialize list of propensities used to speed up next rxn selection */
+
+	// Initialize list of propensities used to speed up next rxn selection
 	for (i = 0; i < GSP.na; i++){
 		GSP.prop.push_back(i);
 	}
 
+	// Arrays used in creating the update lists
 	GSP.included = new GSP_included_arrays;
+
+	// Create the update lists
 	create_update_lists();
 
 	return (0);
@@ -4383,7 +4436,7 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 		GSP.c_offset = GSP.c - network.species->offset;
 		for (i = nc_old; i < GSP.nc; ++i) {
 			GSP.c[i] = 0.0;
-			GSP.ever_populated[i] = (GSP.c[i] > 0.0 ? 1 : 0);
+			GSP.ever_populated[i] = 0; //(GSP.c[i] > 0.0 ? 1 : 0);
 		}
 	}
 
@@ -4396,8 +4449,20 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 		}
 	}
 
-	/* create_update_lists(); */
-	/* Append update lists */
+	// Propensities used to speed up next rxn selection
+	for (i = na_old;i < GSP.na;i++){
+		GSP.prop.push_back(i);
+	}
+
+	// Arrays used in creating the update lists
+	delete_GSP_included();
+	GSP.included = new GSP_included_arrays;
+
+	// Update lists
+	// TODO: Append update lists instead of recreating them from scratch
+	create_update_lists();
+
+/*	// Append update lists
 	iarray_add_rows(arl = GSP.as_reactant_list, GSP.nc - 1);
 	iarray_add_rows(apl = GSP.as_product_list, GSP.nc - 1);
 	iarray_add_rows(rul = GSP.rxn_update_list, GSP.na - 1);
@@ -4405,12 +4470,12 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 	offset = network.species->offset;
 	rarray = network.reactions->rxn;
 
-	/* Create species update list by looping over reactions adding rxn to each species
-	 * that appears as reactant */
+	// Create species update list by looping over reactions adding rxn to each species
+	// that appears as reactant
 	for (i = na_old; i < GSP.na; ++i) {
 		if (!(rxn = rarray[i]))
 			continue;
-		/* loop over reactant indices for reaction */
+		// loop over reactant indices for reaction
 		for (ir = 0; ir < rxn->n_reactants; ++ir) {
 			r_index = rxn->r_index[ir] - offset;
 			iarray_add_elt(arl, r_index, i);
@@ -4421,33 +4486,33 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 		}
 	}
 
-	/* This method is far more straightforward than the (in principle) more optimized
-	 * method that is commented out below. */
+	// This method is far more straightforward than the (in principle) more optimized
+	// method that is commented out below.
 	rxn_dep = IALLOC_VECTOR(GSP.na);
 	for (i = 0; i < GSP.na; ++i) {
 		int ilower;
 		if (!(rxn = rarray[i]))
 			continue;
 		IINIT_VECTOR(rxn_dep, 0, GSP.na);
-		/* loop over reactant indices for reaction */
+		// loop over reactant indices for reaction
 		for (ir = 0; ir < rxn->n_reactants; ++ir) {
 			r_index = rxn->r_index[ir] - offset;
-			/* loop over reactions in species update list for this species */
+			// loop over reactions in species update list for this species
 			for (is = 0; is < arl->l_arr[r_index]; ++is) {
 				++rxn_dep[arl->arr[r_index][is]];
 			}
 		}
 
-		/* loop over product indices for reaction */
+		// loop over product indices for reaction
 		for (ip = 0; ip < rxn->n_products; ++ip) {
 			p_index = rxn->p_index[ip] - offset;
-			/* loop over reactions in species update list for this species */
+			// loop over reactions in species update list for this species
 			for (is = 0; is < arl->l_arr[p_index]; ++is) {
 				++rxn_dep[arl->arr[p_index][is]];
 			}
 		}
 
-		/* loop over elements of rxn_dep adding nonzero elts to rxn update list for this reaction */
+		// loop over elements of rxn_dep adding nonzero elts to rxn update list for this reaction
 		ilower = (i >= na_old) ? 0 : na_old;
 		for (irxn = ilower; irxn < GSP.na; ++irxn) {
 			if (rxn_dep[irxn]) {
@@ -4457,6 +4522,7 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 		}
 	}
 	free(rxn_dep);
+*/
 
 #ifdef COMMENT
 	/* Create reaction update list by looping over reactants for each reaction
@@ -4541,7 +4607,8 @@ int select_next_rxn() {
     while (1) {
 
         // generate random number between 0 and a_tot
-    	while ( (f = RANDOM(0.0, GSP.a_tot)) == 0.0 ); // NOTE: Won't get here if GSP.a_tot = 0.0, so no infinite loop.
+    	while ( (f = RANDOM(0.0, GSP.a_tot)) == 0.0 )
+    		; // NOTE: Won't get here if GSP.a_tot = 0.0, so no infinite loop.
         // find rxn corresponding to random sample
         a_sum = 0.0;
         //
@@ -4578,7 +4645,7 @@ int select_next_rxn() {
     // Error check
     cout << "Uh oh, got to the end of select_next_rxn(). This should never happen. Exiting." << endl;
     exit(1);
-    return NULL; // Should never get here
+    return 0; // Should never get here
 }
 
 int update_concentrations(int irxn) {
@@ -4606,10 +4673,12 @@ int update_concentrations(int irxn) {
 		int ri = rxn->r_index[i] - offset;
 		if (!spec[ri]->fixed) {
 			double newpop = --GSP.c[ri];
-			if (newpop < 1.0)
+			if (newpop < 1.0){
 				GSP.c[ri] = 0; // This must be done to avoid negative concentrations!
-			if (newpop < thresh_occ)
+			}
+			if (newpop < thresh_occ){
 				force_update = 1;
+			}
 		}
 	}
 
@@ -4627,7 +4696,7 @@ int update_concentrations(int irxn) {
 						spec_newpop = new_iarray(1, 10);
 					/* Check if reactions have already been generated for this
 					 species and if not, call network generator to generate all
-					 reacions arising either from this species or at this level,
+					 reactions arising either from this species or at this level,
 					 as determined by network generator */
 					iarray_add_elt(spec_newpop, 0, pi + offset);
 				}
@@ -4642,7 +4711,7 @@ int update_concentrations(int irxn) {
 		int ispec;
 		int line_number = 0, n_spec_new = 0, n_rxns_new = 0, n_groups_updated;
 		Elt** elt;
-		//    	Rxn** rxn;
+//    	Rxn** rxn;
 		Elt_array *spec_new;
 		Rxn_array *rxns_new;
 		int nspec_newpop = spec_newpop->l_arr[0];
@@ -4660,17 +4729,29 @@ int update_concentrations(int irxn) {
 		fflush(stdout);
 		/* Process return data */
 		line = get_line(stdin);
-		/* Only read data preceeded by read command, otherwise continue */
+		/* Only read data preceded by read command, otherwise continue */
 		if (strncmp("read", line, 4) == 0) {
 			/* Read new species */
 			spec_new = read_Elt_array(stdin, &line_number, (char*)"species", &n_spec_new, 0x0);
 			append_Elt_array(network.species, spec_new);
+			/*cout << "n_spec_new: " << n_spec_new << endl;
+			if (n_spec_new > 0){
+				for (Elt* e = spec_new->list;e != NULL;e = e->next){
+					cout << e->name << endl;
+				}
+			}*/
 
 			/* Read new reactions */
 			int remove_rxns;
 			rxns_new = read_Rxn_array(stdin, &line_number, &n_rxns_new, network.species, network.rates, network.is_func_map,
 									  remove_rxns);
 			append_Rxn_array(network.reactions, rxns_new);
+			/*cout << "n_rxns_new: " << n_rxns_new << endl;
+			if (n_rxns_new > 0){
+				for (Rxn* r = rxns_new->list;r != NULL;r = r->next){
+					cout << *r->toString << endl;
+				}
+			}*/
 
 			/* Update species and reaction dependency lists */
 			if (n_rxns_new)
@@ -4679,13 +4760,12 @@ int update_concentrations(int irxn) {
 			/* Read group updates */
 			read_Groups(network.spec_groups, stdin, network.species, &line_number, (char*)"groups", &n_groups_updated);
 
-//			printf( "At step %ld added %d new species (%d total %d active) %d new reactions (%d total)\n",
-//					GSP.n_steps, n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
-			printf( "At step %-16.0f added %d new species (%d total %d active) %d new reactions (%d total)\n",
-					GSP.n_steps, n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
-			/* 	if (n_groups_updated) */
-			/* 	  printf("  and updated %d groups.", n_groups_updated); */
-			/* 	printf("\n"); */
+			printf( "At step %d added %d new species (%d total %d active) %d new reactions (%d total)\n",
+					(int)(GSP.n_steps+0.5), n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
+			/* 	if (n_groups_updated){
+			 	  printf("  and updated %d groups.", n_groups_updated);
+			 	}
+			 	printf("\n"); */
 		}
 		else {
 			printf("Population of species");
@@ -4805,6 +4885,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		t_remain -= tau;
 		if (network.has_functions){ // Only do this if time() function exists
 			*t += tau;
+//			cout << *t << endl;
 		}
 
 		// Don't fire the next reaction if it occurs past the current integration endpoint
@@ -4895,6 +4976,6 @@ double gillespie_n_steps() {
 
 void delete_GSP_included(){
 	delete GSP.included;
-	GSP.included = 0;
+	GSP.included = NULL;
 	return;
 }

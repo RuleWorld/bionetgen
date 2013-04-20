@@ -453,7 +453,7 @@ void Network3::init_PLA(string config, bool verbose){
 	definedParam.resize(7,false);
 	while ((next = arg[3].find(',',last+1)) != (int)string::npos){
 		s = arg[3].substr(last+1,next-(last+1));
-		unsigned int equal = s.find("=");
+		size_t equal = s.find("=");
 		if (equal == string::npos){ // Error check
 			cout << "Oops, PLA parameters must be input in the form 'param=val'. "
 					"You input " << s << ". Please try again." << endl;

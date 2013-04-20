@@ -166,7 +166,7 @@ sub toXML
 
 
 
-# write reaction network to SBML level 2 format
+# write reaction network to SBML Level 2 Version 1 format
 sub writeSBML
 {
 	my $model  = shift @_;
@@ -202,25 +202,33 @@ sub writeSBML
 
 
 	# 0. HEADER
-	print $SBML <<"EOF";
-<?xml version="1.0" encoding="UTF-8"?>
+#	print $SBML <<"EOF";
+#<?xml version="1.0" encoding="UTF-8"?>
+#<!-- Created by BioNetGen $version  -->
+#<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+#  <model id="$model_name">
+#EOF
+	print $SBML qq{<?xml version="1.0" encoding="UTF-8"?>
 <!-- Created by BioNetGen $version  -->
 <sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
   <model id="$model_name">
-EOF
+};
 
 
 	# 1. Compartments (currently one dimensionsless compartment)
-	print $SBML <<"EOF";
-    <listOfCompartments>
+#	print $SBML <<"EOF";
+#    <listOfCompartments>
+#      <compartment id="cell" size="1"/>
+#    </listOfCompartments>
+#EOF
+	print $SBML qq{    <listOfCompartments>
       <compartment id="cell" size="1"/>
     </listOfCompartments>
-EOF
+};
 
 
 	# 2. Species
 	print $SBML "    <listOfSpecies>\n";
-
 	my $use_array = @{$model->Concentrations} ? 1 : 0;
 	foreach my $spec ( @{$model->SpeciesList->Array} )
 	{
@@ -233,6 +241,13 @@ EOF
         # If concentration is a parameter name, then evaluate the parameter
 		unless ( isReal($conc) )
         {   $conc = $plist->evaluate($conc, []);   }
+        
+        # NOTE: In SBML Level 2 Version 2, the InitialAssignment construct was introduced that
+        # "permits the calculation of the value of a constant or the initial value of a variable 
+        # from the values of other quantities in a model" -- see
+        # [http://sbml.org/Software/libSBML/docs/java-api/org/sbml/libsbml/InitialAssignment.html].
+        # We could use this in the next version of writeSBML() to allow for variable initial
+        # concentrations. --LAH
 
 		printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
 		                                                                $spec->Index, "cell", $conc;
@@ -269,17 +284,28 @@ EOF
 	}
 	foreach my $obs ( @{$model->Observables} )
 	{
-		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", "Group_" . $obs->Name;
+#		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", "Group_" . $obs->Name;
+		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $obs->Name;
+	}
+	
+	# C. Global functions
+	print $SBML "      <!-- Global functions -->\n";
+	foreach my $param ( @{$plist->Array} )
+	{
+	    next unless ( $param->Type eq 'Function');
+	    next if ( @{$param->Ref->Args} ); # Don't print local functions
+	    printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $param->Name;
 	}
 	print $SBML "    </listOfParameters>\n";
 
 
-	# 4. 'Rules' (for observables)
+	# 4. Assignment rules (for dependent variables, observables, and functions)
 	print $SBML "    <listOfRules>\n";
 	print $SBML "      <!-- Dependent variables -->\n";
 	foreach my $param ( @{$plist->Array} )
     {
-		next if ( $param->Expr->Type eq 'NUM' );
+#		next if ( $param->Expr->Type eq 'NUM' );
+		next unless ( $param->Type eq 'ConstantExpression');
 		printf $SBML "      <assignmentRule variable=\"%s\">\n", $param->Name;
         #print  $SBML "        <notes>\n";
         #print  $SBML "          <xhtml:p>\n";
@@ -294,8 +320,8 @@ EOF
 		print $SBML "      <!-- Observables -->\n";
 		foreach my $obs ( @{$model->Observables} )
         {
-			printf $SBML "      <assignmentRule variable=\"%s\">\n",
-			  "Group_" . $obs->Name;
+#			printf $SBML "      <assignmentRule variable=\"%s\">\n", "Group_" . $obs->Name;
+			printf $SBML "      <assignmentRule variable=\"%s\">\n", $obs->Name;
 			my ( $ostring, $err ) = $obs->toMathMLString();
 			if ($err) { return $err; }
 			foreach my $line ( split "\n", $ostring )
@@ -304,6 +330,15 @@ EOF
 			}
 			print $SBML "      </assignmentRule>\n";
 		}
+	}
+	print $SBML "      <!-- Global functions -->\n";
+	foreach my $param ( @{$plist->Array} )
+    {
+		next unless ( $param->Type eq 'Function');
+		next if ( @{$param->Ref->Args} ); # Don't print local functions
+		printf $SBML "      <assignmentRule variable=\"%s\">\n", $param->Name;
+		printf $SBML $param->toMathMLString( $plist, "        " );
+		print $SBML "      </assignmentRule>\n";
 	}
 	print $SBML "    </listOfRules>\n";
 
@@ -360,11 +395,15 @@ EOF
 	}
 	print $SBML "    </listOfReactions>\n";
 
+
 	# 6. FOOTER
-	print $SBML <<"EOF";
-  </model>
+#	print $SBML <<"EOF";
+#  </model>
+#</sbml>
+#EOF
+	print $SBML qq{  </model>
 </sbml>
-EOF
+};
 
     close $SBML;
 	print "Wrote SBML to $file.\n";
@@ -512,16 +551,15 @@ sub writeMfile
 	return '' if $BNGModel::NO_EXEC;
 
     # nothing to do if there are no reactions
-	unless ( $model->RxnList )
+	if ( @{$model->RxnList->Array}==0 )
 	{
-	    return ( "writeMfile() has nothing to do: no reactions in current model.\n"
-	            ."  Did you remember to call generate_network() before attempting to\n"
-	            ."  write network output?");
+	    return "writeMfile() has nothing to do: no reactions in current model. "
+	          ."Did you remember to call generate_network() before attempting to "
+	          ."write network output?";
 	}
 
     # get reference to parameter list
 	my $plist = $model->ParamList;
-
 	
 	# get model name
 	my $model_name = $model->Name;
@@ -731,7 +769,7 @@ sub writeMfile
     # open Mexfile and begin printing...
 	open( Mscript, ">$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
     print Mscript <<"EOF";
-function [err, timepoints, species_out, observables_out ] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
+function [err, timepoints, species_out, observables_out] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
 %${mscript_filebase_caps} Integrate reaction network and plot observables.
 %   Integrates the reaction network corresponding to the BioNetGen model
 %   '${model_name}' and then (optionally) plots the observable trajectories,
@@ -854,10 +892,14 @@ rhs_fcn = @(t,y)( calc_species_deriv( t, y, expressions ) );
 
 % simulate model system (stiff integrator)
 try 
-    [timepoints, species_out] = ode15s( rhs_fcn, timepoints, species_init', opts );
+    [~, species_out] = ode15s( rhs_fcn, timepoints, species_init', opts );
+    if(length(timepoints) ~= size(species_out,1))
+        exception = MException('ODE15sError:MissingOutput','Not all timepoints output\\n');
+        throw(exception);
+    end
 catch
     err = 1;
-    fprintf( 1, 'Error: some problem encounteredwhile integrating ODE network!\\n' );
+    fprintf( 1, 'Error: some problem encountered while integrating ODE network!\\n' );
     return;
 end
 
@@ -965,14 +1007,14 @@ sub writeMexfile
     my $err;
 
     # nothing to do if NO_EXEC is true
-	return ('') if $BNGModel::NO_EXEC;
+	return '' if $BNGModel::NO_EXEC;
 
     # nothing to do if there are no reactions
-	unless ( $model->RxnList )
+	if ( @{$model->RxnList->Array}==0 )
 	{
-	    return ( "writeMexfile() has nothing to do: no reactions in current model.\n"
-	            ."  Did you remember to call generate_network() before attempting to\n"
-	            ."  write network output?");
+	    return "writeMexfile() has nothing to do: no reactions in current model. "
+	          ."Did you remember to call generate_network() before attempting to "
+	          ."write network output?";
 	}
 
     # get reference to parameter list

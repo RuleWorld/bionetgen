@@ -192,8 +192,8 @@ sub simulate
         # Generate NET file if not already created or if updateNet flag is set
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
-            $err = $model->writeNET( {prefix=>"$netpre"} );
-            if ($err) {  return $err;  }
+            $err = $model->writeNetwork({include_model=>1, overwrite=>1, prefix=>"$netpre"});
+            if ($err) { return $err; }
         }
     }
 
@@ -583,7 +583,7 @@ sub simulate
     if ( $otf  and  $model->SpeciesList )
     {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
-        $err = $model->writeNET( {prefix => "$netpre"} );
+        $err = $model->writeNetwork({include_model=>1, overwrite=>1, prefix=>"$netpre"});
         if ($err) { return $err; }
     }
 
@@ -663,39 +663,46 @@ sub simulate_nf
     # TODO: detect unrecognized parameters
 
     # map BNG options to NFsim flags
-    my %optional_args =
-    (   # option name        NFsim flag       arguments?      default (used if user_args is 0)
-        verbose         => { flag => "-v",    user_args => 0, default_arg => undef },
-        complex         => { flag => "-cb",   user_args => 0, default_arg => undef },
-        nocslf          => { flag => "-nocslf", user_args => 0, default_arg => undef },
-        notf            => { flag => "-notf", user_args => 0, default_arg => undef },
-        print_functions => { flag => "-ogf",  user_args => 0, default_arg => undef },
-        binary_output   => { flag => "-b",    user_args => 0, default_arg => undef },
-        get_final_state => { flag => "-ss",   user_args => 0, default_arg => "${prefix}.species" },
-        utl             => { flag => "-utl",  user_args => 1, default_arg => undef },
-        gml             => { flag => "-gml",  user_args => 1, default_arg => undef },
-        seed            => { flag => "-seed", user_args => 1, default_arg => undef },
-        equil           => { flag => "-eq",   user_args => 1, default_arg => undef },
+    my %nfparams =
+    (   # option name        type              defaults              simulator flags (one or more)
+        binary_output   => { type => 'switch', default_arg => 0,     flags => ["-b"]                      },
+        complex         => { type => 'switch', default_arg => 1,     flags => ["-cb"]                     },
+        equil           => { type => 'param',  default_arg => undef, flags => ["-eq"]                     },
+        get_final_state => { type => 'switch', default_arg => 0,     flags => ["-ss","${prefix}.species"] },
+        gml             => { type => 'param',  default_arg => undef, flags => ["-gml"]                    },
+        nocslf          => { type => 'switch', default_arg => 0,     flags => ["-nocslf"]                 },
+        notf            => { type => 'switch', default_arg => 0,     flags => ["-notf"]                   },
+        print_functions => { type => 'switch', default_arg => 0,     flags => ["-ogf"]                    },
+        seed            => { type => 'param',  default_arg => undef, flags => ["-seed"]                   },
+        utl             => { type => 'param',  default_arg => undef, flags => ["-utl"]                    },
+        verbose         => { type => 'switch', default_arg => 0,     flags => ["-v"]                      }
     );
 
-
-
+    # get nfsim arguments
     my @args = ();
-    # get options
-    while ( my ($option,$option_hash) = each %optional_args )
+    while ( my ($arg,$arg_hash) = each %nfparams )
     {
-        if (defined $params->{$option})
-        {   # option is defined by user
-            if ($option_hash->{user_args})
-            {   # this option has an argument:
-                #  supply flag and user defined argument
-                push @args, $option_hash->{flag}, $params->{$option};
+        if ($arg_hash->{type} eq "switch")
+        {
+            if (defined $params->{$arg})
+            {   # user switch
+                if ($params->{$arg})
+                {   push @args, @{$arg_hash->{flags}};   }
             }
-            elsif ($params->{$option})
-            {   # this option is a switch (true=include)
-                push @args, $option_hash->{flag};
-                if (defined $option_hash->{default_arg})
-                {  push @args, $option_hash->{default_arg};  }
+            elsif ($arg_hash->{default_arg})
+            {   # default switch
+                push @args, @{$arg_hash->{flags}};
+            }
+        }
+        elsif ($arg_hash->{type} eq "param")
+        {
+            if (defined $params->{$arg})
+            {   # user parameter
+                push @args, @{$arg_hash->{flags}}, $params->{$arg};
+            }
+            elsif ( defined $arg_hash->{default_arg} )
+            {   # user parameter
+                push @args, @{$arg_hash->{flags}}, $arg_hash->{default_arg};
             }
         }
     }
@@ -946,11 +953,18 @@ sub generate_hybrid_model
         'verbose'    => 0,
         'actions'    => ['writeXML()'],
         'execute'    => 0,
-        'exact'      => 0
+        'safe'      => 0
     };
     # get user options
     while ( my ($opt,$val) = each %$user_options )
     {
+        
+        if ($opt eq "exact")
+        {   # TODO: temporary patch to allow the old "exact" option
+            send_warning("The 'exact' option has been renamed 'safe', please use this in the future.");
+            $opt = "safe";
+        }
+
         unless ( exists $options->{$opt} )
         {   return "Unrecognized option $opt in call to generate_hybrid_model";   }
         

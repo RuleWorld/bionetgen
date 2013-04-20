@@ -19,6 +19,7 @@ use warnings;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
+use Scalar::Util ("looks_like_number");
 
 # BNG Modules
 use Param;
@@ -41,61 +42,65 @@ struct Expression =>
 # NOTE: it's weird that some built-in functions with names (like exp, cos, etc) are handled
 #  differently thant built-ins with operator symbols (like +, -, etc).  We could really simplify this.
 #  --Justin
-# Supported most muParser built-in functions. --Leonard 
+# Supported most muParser built-in functions. --LAH 
 # See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
 my %functions =
 (
-  "exp"   => { FPTR => sub { exp( $_[0] ) },         NARGS => 1 },
-  "ln"    => { FPTR => sub { log( $_[0] ) },         NARGS => 1 },
-  "log10" => { FPTR => sub { log($_[0])/log(10) },   NARGS => 1 },
-  "log2"  => { FPTR => sub { log($_[0])/log(2) },    NARGS => 1 },
-  "abs"   => { FPTR => sub { abs( $_[0] ) },         NARGS => 1 },
+  "_pi"   => { FPTR => sub { pi },                   NARGS => 0 }, # <pi>
+  "_e"    => { FPTR => sub { exp(1) },               NARGS => 0 }, # <exponentiale> (MathML 2.0)
+  "time"  => { FPTR => sub 
+  	{ 
+  		if (defined($BNGModel::GLOBAL_MODEL->time)) 
+  		{$BNGModel::GLOBAL_MODEL->time} 
+  		else {0} 
+  	}, 												 NARGS => 0 }, # ???
+  "exp"   => { FPTR => sub { exp( $_[0] ) },         NARGS => 1 }, # <exp/> (MathML 2.0)
+  "ln"    => { FPTR => sub { log( $_[0] ) },         NARGS => 1 }, # <ln/>
+  "log10" => { FPTR => sub { log($_[0])/log(10) },   NARGS => 1 }, # <log/>
+  "log2"  => { FPTR => sub { log($_[0])/log(2) },    NARGS => 1 }, # <log/><logbase><cn>2</cn></logbase>
+  "abs"   => { FPTR => sub { abs( $_[0] ) },         NARGS => 1 }, # <abs/>
 # "int"   => { FPTR => sub { int( $_[0] ) },         NARGS => 1 }, # deprecated!
 # "floor" => { FPTR => sub { floor( $_[0] ) },       NARGS => 1 }, # not supported by muParser
 # "ceil"  => { FPTR => sub { ceil( $_[0] ) },        NARGS => 1 }, # not supported by muParser
-  "rint"  => { FPTR => sub { floor( $_[0] + 0.5 ) }, NARGS => 1 },
-  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },        NARGS => 1 },
-  "cos"   => { FPTR => sub { cos( $_[0] ) },         NARGS => 1 },
-  "sin"   => { FPTR => sub { sin( $_[0] ) },         NARGS => 1 },
-  "tan"   => { FPTR => sub { tan( $_[0] ) },         NARGS => 1 },
-  "asin"  => { FPTR => sub { asin( $_[0] ) },        NARGS => 1 },
-  "acos"  => { FPTR => sub { acos( $_[0] ) },        NARGS => 1 },
-  "atan"  => { FPTR => sub { atan( $_[0] ) },        NARGS => 1 },
-  "sinh"  => { FPTR => sub { sinh( $_[0] ) },        NARGS => 1 },
-  "cosh"  => { FPTR => sub { cosh( $_[0] ) },        NARGS => 1 },
-  "tanh"  => { FPTR => sub { tanh( $_[0] ) },        NARGS => 1 },
-  "asinh" => { FPTR => sub { asinh( $_[0] ) },       NARGS => 1 },
-  "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 },
-  "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 },
-  "pi"    => { FPTR => sub { pi },                   NARGS => 0 },
-  "time"  => { FPTR => sub { time },                 NARGS => 0 },
-  "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, #added line, msneddon
-  "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) },
-  "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) },
-  "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) },
-  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) },
+  "rint"  => { FPTR => sub { floor( $_[0] + 0.5 ) }, NARGS => 1 }, # requires special handling (see toMathMLString)
+  "sqrt"  => { FPTR => sub { sqrt( $_[0] ) },        NARGS => 1 }, # <root/>
+  "cos"   => { FPTR => sub { cos( $_[0] ) },         NARGS => 1 }, # <cos/>
+  "sin"   => { FPTR => sub { sin( $_[0] ) },         NARGS => 1 }, # <sin/>
+  "tan"   => { FPTR => sub { tan( $_[0] ) },         NARGS => 1 }, # <tan/>
+  "asin"  => { FPTR => sub { asin( $_[0] ) },        NARGS => 1 }, # <arcsin/>
+  "acos"  => { FPTR => sub { acos( $_[0] ) },        NARGS => 1 }, # <arccos/>
+  "atan"  => { FPTR => sub { atan( $_[0] ) },        NARGS => 1 }, # <arctan/>
+  "sinh"  => { FPTR => sub { sinh( $_[0] ) },        NARGS => 1 }, # <sinh/>
+  "cosh"  => { FPTR => sub { cosh( $_[0] ) },        NARGS => 1 }, # <cosh/>
+  "tanh"  => { FPTR => sub { tanh( $_[0] ) },        NARGS => 1 }, # <tanh/>
+  "asinh" => { FPTR => sub { asinh( $_[0] ) },       NARGS => 1 }, # <arcsinh/> (MathML 2.0)
+  "acosh" => { FPTR => sub { acosh( $_[0] ) },       NARGS => 1 }, # <arccosh/> (MathML 2.0)
+  "atanh" => { FPTR => sub { atanh( $_[0] ) },       NARGS => 1 }, # <arctanh/> (MathML 2.0)
+  "if"    => { FPTR => sub { if($_[0]) { $_[1] } else { $_[2] } }, NARGS => 3 }, # requires special handling (see toMathMLString)
+  "min"   => { FPTR => sub { min(@_) },              NARGS => scalar(@_) }, # <min/>
+  "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) }, # <max/>
+  "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) }, # <sum/>
+  "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) }, # <mean/>
 );
-
 
 my $MAX_LEVEL = 500;    # Prevent infinite loop due to dependency loops
 
-
 # this hash maps operators to the min and max number of arguments
-my %NARGS = ( '+'  => { 'min'=>2           },
-              '-'  => { 'min'=>1           },
-              '*'  => { 'min'=>2           },
-              '/'  => { 'min'=>2           },
-              '^'  => { 'min'=>2, 'max'=>2 },
+my %NARGS = ( '+'  => { 'min'=>2           }, # <plus/>
+              '-'  => { 'min'=>1           }, # <minus/>
+              '*'  => { 'min'=>2           }, # <times/>
+              '/'  => { 'min'=>2           }, # <divide/>
+              '^'  => { 'min'=>2, 'max'=>2 }, # <power/>
               '**' => { 'min'=>2, 'max'=>2 }, # Not supported by muParser
-              '&&' => { 'min'=>2           },
-              '||' => { 'min'=>2           }, 
-              '<'  => { 'min'=>2, 'max'=>2 },
-              '>'  => { 'min'=>2, 'max'=>2 },
-              '<=' => { 'min'=>2, 'max'=>2 },
-              '>=' => { 'min'=>2, 'max'=>2 },
-              '!=' => { 'min'=>2, 'max'=>2 },
+              '&&' => { 'min'=>2           }, # <and/>
+              '||' => { 'min'=>2           }, # <or/>
+              '<'  => { 'min'=>2, 'max'=>2 }, # <lt/>
+              '>'  => { 'min'=>2, 'max'=>2 }, # <gt/>
+              '<=' => { 'min'=>2, 'max'=>2 }, # <leq/>
+              '>=' => { 'min'=>2, 'max'=>2 }, # <geq/>
+              '!=' => { 'min'=>2, 'max'=>2 }, # <neq/>
               '~=' => { 'min'=>2, 'max'=>2 }, # Not supported by muParser
-              '==' => { 'min'=>2, 'max'=>2 },
+              '==' => { 'min'=>2, 'max'=>2 }, # <equivalent/> (MathML 2.0)
               '!'  => { 'min'=>1, 'max'=>1 }, # Not supported by muParser
               '~'  => { 'min'=>1, 'max'=>1 }  # Not supported by muParser
             );
@@ -116,10 +121,9 @@ my %NARGS = ( '+'  => { 'min'=>2           },
 # !=  not equal	 
 # ==  equal	 
 
-# this regex matches numbers (regular and scientific notation
-my $NUMBER_REGEX = '^[\+\-]?(\d+\.?\d*|\.\d+)(|[Ee][\+\-]?\d+|\*10\^[\+\-]?\d+)$';
+
 # this regex matches param names (letter followed optional by word characters)
-my $PARAM_REGEX  = '^[A-Za-z]\w*$';
+my $PARAM_REGEX  = '^\w+$';
 
 
 ###
@@ -139,7 +143,7 @@ sub isBuiltIn
 
 # get a recursive copy of an expression.
 #   Note that the recursion does not descend past VAR and FunctionCall type expressions.
-#   Returns a refence to the clone and any error messages.
+#   Returns a reference to the clone and any error messages.
 sub clone
 {
     my $expr = shift;
@@ -193,16 +197,14 @@ sub clone
 # create a new expression from a number or a param name
 sub newNumOrVar
 {
-    my $value = shift;
-    my $plist = (@_) ? shift : undef;
+    my $value = shift @_;
+    my $plist = (@_) ? shift @_ : undef;
     
-    my $expr = undef;
-    my $err  = undef;
-    
+    my $expr;
+    my $err;
     # is this a number?
-    if ( $value =~ /$NUMBER_REGEX/ )
-    {
-        # create a new number expression
+    if ( looks_like_number($value) )
+    {   # create a new number expression
         $expr = Expression->new();
         $expr->Type('NUM');
         $expr->Arglist( [$value] );
@@ -212,14 +214,12 @@ sub newNumOrVar
     elsif ( $value =~ /$PARAM_REGEX/ )
     {
         # we need a paramlist to continue
-        if ( ref $plist  eq  'ParamList' )
+        if ( ref $plist eq "ParamList" )
         {
             # check that parameter exists
             (my $param, $err) = $plist->lookup( $value );
-            # if we found the parameter, then..
-            unless ($err)
-            {
-                # create a new number expression
+            if (defined $param)
+            {   # create a new number expression
                 $expr = Expression->new();
                 $expr->Type('VAR');
                 $expr->Arglist( [$value] );
@@ -227,6 +227,9 @@ sub newNumOrVar
             }
         }
     }
+    
+    unless (defined $expr)
+    {   die "Expression::newNumOrVar() - Attempted but failed to create number or variable expression";   }
 
     # return expression or undefined
     return $expr;
@@ -322,7 +325,7 @@ sub operate
         
             # if arg isn't an expression, try to create one  
             else      
-            {   $arg = Expression::newNumOrVar( $arg );   }
+            {   $arg = Expression::newNumOrVar($arg,$plist);   }
     
             # check that are is still defined
             unless (defined $arg) { return undef; }  
@@ -380,7 +383,6 @@ sub operate
             $string_sav = $$sptr;
             %$variables  = ();
         }
-    
 
         # parse string into form expr op expr op ...
         # a+b*(c+d)
@@ -398,8 +400,7 @@ sub operate
                 # Binary operator
                 if ( $$sptr =~ s/^\s*($ops_bi)// )
                 {
-                    my $express = Expression->new();
-                    $express->Type($1);
+                    my $express = Expression->new( Type=>$1 );
                     push @list, $express;
                     $expect_op = 0;
                     next;
@@ -410,7 +411,6 @@ sub operate
                 #  starts parsing a RHS expression which will be assigned to PARAM.
                 elsif ( $$sptr =~ s/^\s*=// )
                 {
-
                     # Check that only preceding argument is variable
                     unless ( @list==1 )
                     {  return "Invalid assignment syntax (VAR = EXPRESSION) in $string_sav at $$sptr";  }
@@ -478,13 +478,12 @@ sub operate
             # look for a function call
             if ( $$sptr =~ s/^($ops_un)?\s*(\w+)\s*\(// )
             {
+                my $express_u;
                 if ( my $op = $1 )
-                {
-                    # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
-                    my $express_u = Expression->new();
-                    $express_u->Type($1);
-                    push @list, $express_u;
+                {   # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
+                    $express_u = Expression->new( Type=>$1 );
                 }
+
                 my $name  = $2;
                 my @fargs = ();
                 my $type  = '';
@@ -526,8 +525,8 @@ sub operate
                 {
                     my $express = Expression->new();
                     $err = $express->readString( $sptr, $plist, ',\)', $level + 1 );
-                    if ($err) {   return ($err);   }
-                    if ($express->Type) {   push @fargs, $express;   }
+                    if ($err) { return $err; }
+                    if ($express->Type) { push @fargs, $express; }
                     
                     if ( $$sptr =~ s/^\)// )
                     {   last;   }
@@ -557,16 +556,19 @@ sub operate
                 }
                 else
                 {
-                
                     if ( $param  and  ($nargs != @fargs) )
-                    {
-                        return ( "Incorrect number of arguments to function $name" );
-                    }
+                    {   return "Incorrect number of arguments to function $name";   }
                 }
-                my $express = Expression->new();
-                $express->Type('FunctionCall');
-                $express->Arglist( [ $name, @fargs ] );
-                push @list, $express;
+                my $express = Expression->new( Type=>'FunctionCall', Arglist=>[$name, @fargs] );
+
+                if (defined $express_u)
+                {
+                    push @{$express_u->Arglist}, $express;
+                    push @list, $express_u;
+                } 
+                else
+                {   push @list, $express;   }
+
                 $expect_op = 1;
                 next;
             }
@@ -574,15 +576,13 @@ sub operate
             # VARIABLE
             elsif ( $$sptr =~ s/^($ops_un)?\s*(\w+)// )
             {
+                my $express_u;
                 if ( my $op = $1 )
-                {
-                    # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
-                    my $express_u = Expression->new();
-                    $express_u->Type($1);
-                    push @list, $express_u;
+                {   # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
+                    $express_u = Expression->new( Type=>$1 );
                 }
                 my $name = $2;
-                
+
                 # Validate against ParamList, if present
                 if ($plist)
                 {
@@ -601,57 +601,60 @@ sub operate
                     }
                 }
                 else
-                {
-                    return "No parameter list provided";
-                }
+                {   return "No parameter list provided";   }
 
-                my $express = Expression->new();
-                $express->Type('VAR');
-                $express->Arglist( [$name] );
+                my $express = Expression->new( Type=>'VAR', Arglist=>[$name] );
                 ++($variables->{$name});
-                push @list, $express;
+
+                if (defined $express_u)
+                {
+                    push @{$express_u->Arglist}, $express;
+                    push @list, $express_u;
+                } 
+                else
+                {   push @list, $express;   }
+
                 $expect_op = 1;
                 next;
             }
 
-            # Get expression enclosed in parenthesis
+            # Get expression enclosed in parentheses
             elsif ( $$sptr =~ s/^($ops_un)?\s*\(// )
             {
+                my $express_u;
                 if ( my $op = $1 )
-                {
-                    # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
-                    my $express_u = Expression->new();
-                    $express_u->Type($1);
-                    push @list, $express_u;
+                {   # (optional) UNARY OP at start of expression, as in -a + b, or -a^2
+                    $express_u = Expression->new( Type=>$1 );
                 }
                 my $express = Expression->new();
                 $err = $express->readString( $sptr, $plist, '\)', $level + 1 );
                 if ($err) {  return ($err);  }
                 unless ( $$sptr =~ s/^\s*\)// )
-                {
-                    return ("Missing end parenthesis in $string_sav at $$sptr");
-                }
+                {   return "Missing end parentheses in $string_sav at $$sptr";   }
     
                 #printf "express=%s %s\n", $express->toString($plist), $$sptr;
-                push @list, $express;
+                if (defined $express_u)
+                {
+                    push @{$express_u->Arglist}, $express;
+                    push @list, $express_u;
+                } 
+                else
+                {   push @list, $express;   }
+
                 $expect_op = 1;
                 next;
             }
             elsif ( $end_chars  and  ($$sptr =~ /^\s*[${end_chars}]/) )
-            {
-                last;
-            }
+            {   last;   }
           
             # ERROR
             else
-            {
-                return "Expecting operator argument in $string_sav at $$sptr";
-            }
+            {   return "Expecting operator argument in $string_sav at $$sptr";   }
         }
 
         # Transform list into expression preserving operator precedence
-        if (@list) {  $expr->copy( arrayToExpression(@list) );  }
-
+        if (@list) { $expr->copy(arrayToExpression(@list)); }
+        
         return $err;
     }
 }
@@ -1395,12 +1398,12 @@ sub toCVodeString
         (my $param, $err) = $plist->lookup( $expr->Arglist->[0] );
         if ($param)
         {   # return cvode ref
-            $string = $param->getCVodeName();   
+            $string = $param->getCVodeName();
         }
         else
         {   # parameter not defined, assume it's a local argument and write its name
             $string = $expr->Arglist->[0];
-        }        
+        }
     }
     elsif ( $type eq 'FunctionCall' )
     {
@@ -1558,7 +1561,9 @@ sub toMatlabString
                 my @sarr = ( map {$_->toMatlabString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
 
                 if ( @sarr == 3)
-                {   $string = 'if('. $sarr[0] . ',' . $sarr[1] . ',' . $sarr[2] . ')';   }
+                {   # TODO: find better solution here. this version will return NaN if either return value is Inf.
+                    $string = sprintf( "((%s~=0)*%s + (%s==0)*%s)", $sarr[0], $sarr[1], $sarr[0], $sarr[2]);
+                }
                 else
                 {   die "Error in Expression->toMatlabString():  built-in function 'if' must have three arguments!";   }    
             }
@@ -1626,7 +1631,45 @@ sub toMatlabString
         '/'  => 'divide',
         '**' => 'power',
         '^'  => 'power',
+        '&&' => 'and',
+        '||' => 'or',
+        '<'  => 'lt',
+        '>'  => 'gt',
+        '<=' => 'leq',
+        '>=' => 'geq',
+        '!=' => 'neq',
+        '==' => 'equivalent'
     );
+
+	my %fnhash =
+	(
+	  	'_pi'   => 'pi',
+  		'_e'    => 'exponentiale',
+		'exp'   => 'exp',
+  		'ln'    => 'ln',
+  		'log10' => 'log',
+#  		'log2'  => Requires special handling (see below)
+  		'abs'   => 'abs',
+#  		'rint'  => Requires special handling (see below)
+  		'sqrt'  => 'root',
+  		'cos'   => 'cos',
+  		'sin'   => 'sin',
+  		'tan'   => 'tan',
+  		'asin'  => 'arcsin',
+  		'acos'  => 'arccos',
+  		'atan'  => 'arctan',
+  		'sinh'  => 'sinh',
+  		'cosh'  => 'cosh',
+  		'tanh'  => 'tanh',
+  		'asinh' => 'arcsinh',
+  		'acosh' => 'arccosh',
+  		'atanh' => 'arctanh',
+#  		'if'    => Requires special handling (see below)
+  		'min'   => 'min',
+  		'max'   => 'max',
+  		'sum'   => 'sum',
+  		'avg'   => 'mean'		
+	);
 
     sub toMathMLString
     {
@@ -1656,15 +1699,61 @@ sub toMatlabString
             $string .= sprintf "%s<ci> %s </ci>\n", $indentp, $expr->Arglist->[0];
         }
         elsif ( $type eq 'FunctionCall' ) {
-            $string .= $indentp . "<apply>\n";
-            my $indentpp = $indentp . "  ";
-            my @arglist  = @{ $expr->Arglist };
-            $string .= sprintf "%s<%s/>\n", $indentpp, shift(@arglist);
-            foreach my $e (@arglist)
-            {
-                $string .= $e->toMathMLString( $plist, $indentpp, $level + 1 );
-            }
-            $string .= $indentp . "</apply>\n";
+			my @arglist  = @{ $expr->Arglist };
+			my $func_name = shift(@arglist); # Get function name
+			
+			# Built-in functions
+			if (isBuiltIn($func_name)){
+				
+				# Special handling for log2(x)
+				if ($func_name eq 'log2'){
+					$string .= $indentp . "<apply>\n"; 
+					$string .= $indentp . "  <log/><logbase><cn>2</cn></logbase>\n";
+					$string .= $arglist[0]->toMathMLString( $plist, $indentp . "  ", $level + 1 );
+					$string .= $indentp . "</apply>\n";
+				}
+				# Special handling for rint(x)
+				elsif ($func_name eq 'rint'){
+					$string .= $indentp . "<apply>\n"; 
+					$string .= $indentp . "  <floor/>\n";
+					$string .= $indentp . "  <apply>\n";
+					$string .= $indentp . "    <plus/>\n";
+					$string .= $indentp . "    <cn> 0.5 </cn>\n";
+					$string .= $arglist[0]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+					$string .= $indentp . "  </apply>\n";
+					$string .= $indentp . "</apply>\n";
+				}
+				# Special handling for if(x,y,z)
+				elsif ($func_name eq 'if'){
+					$string .= $indentp . "<piecewise>\n";
+				    $string .= $indentp . "  <piece>\n";
+					$string .= $arglist[1]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+					$string .= $arglist[0]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+				    $string .= $indentp . "  </piece>\n";
+					$string .= $indentp . "  <otherwise>\n";
+					$string .= $arglist[2]->toMathMLString( $plist, $indentp . "    ", $level + 1 );
+					$string .= $indentp . "  </otherwise>\n";
+					$string .= $indentp . "</piecewise>\n";
+				}
+				# All other built-ins
+				else{
+		            $string .= $indentp . "<apply>\n";
+		            my $indentpp = $indentp . "  ";
+		            $string .= sprintf "%s<%s/>\n", $indentpp, $fnhash{ $func_name }; #shift(@arglist);
+		            foreach my $e (@arglist)
+		            {
+		                $string .= $e->toMathMLString( $plist, $indentpp, $level + 1 );
+		            }
+		            $string .= $indentp . "</apply>\n";
+				}
+			}
+			# User-defined functions
+			else{
+				if (@arglist){ # There better not be any arguments
+					die "Expression::toMathMLString: User-defined functions should not have arguments.";
+				}
+				$string .= sprintf "%s<ci> %s </ci>\n", $indentp, $func_name;
+			}
         }
         else
         {
@@ -1692,17 +1781,16 @@ sub arrayToExpression
     my @earr = @_;
 
     # list of optypes in order of precedence
-    my @operators = ( '\*\*|\^', '[*/]', '[+-]','[<>]|==|!=|~=|>=|<=','&&|\|\|'); #edited, msneddon
+    my @operators = ('\*\*|\^', '[*/]', '[+-]', '[<>]|==|!=|~=|>=|<=', '&&|\|\|');
     my $optype = shift @operators;
     while ($optype)
     {
         my $i = 0;
-
         # Consolidate EXPR OP EXPR into EXPR
-        while ( $i < $#earr )
+        while ($i < $#earr)
         {
             my $expr = $earr[$i];
-            if ( $expr->Type =~ /$optype/ && !( @{ $expr->Arglist } ) )
+            if ( $expr->Type =~ /$optype/  and  !@{$expr->Arglist} )
             {
                 if ( $i > 0 )
                 {

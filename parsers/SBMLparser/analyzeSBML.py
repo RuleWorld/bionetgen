@@ -5,7 +5,7 @@ Created on Thu Mar 22 13:11:38 2012
 @author: proto
 """
 
-from pyparsing import Word, Suppress,Optional,alphanums,Group
+from pyparsing import Word, Suppress,Optional,alphanums,Group,ZeroOrMore
 from numpy import zeros,nonzero
 import numpy as np
 import json
@@ -25,15 +25,12 @@ class SBMLAnalyzer:
         self.userEquivalencesDict = None
         
         
-    def parseReactions(self,reaction):
-        species =  (Word(alphanums+"_") 
-        + Suppress('()')) + Optional(Suppress('+') + Word(alphanums+"_") 
-        + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
-        + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
+    def parseReactions(self,reaction,specialSymbols=''):
+        species =  (Word(alphanums+"_"+":#-") 
+        + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
         + Suppress("()"))
         rate = Word(alphanums + "()")
-        grammar = (Group(species) + Suppress(Optional("<") + "->") + Group(species) + Suppress(rate)) \
-        ^ (species + Suppress("->") + Suppress(rate))  
+        grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
             result = [result,[]]
@@ -51,6 +48,8 @@ class SBMLAnalyzer:
         as such
         '''
         reactionDefinition = ''
+        if fileName == '':
+            return []
         with open(fileName,'r') as fp:
             reactionDefinition = json.load(fp)
         return reactionDefinition
@@ -63,7 +62,9 @@ class SBMLAnalyzer:
         #print reactionDefinition
         result = []
         for idx,element in enumerate(reactionDefinition['reactions']):
-            if(len(rule[0]) == len(element[0]) and len(rule[1]) == len(element[1])):
+            tmp1 = rule[0] if rule[0] not in  ['0',['0']] else []
+            tmp2 = rule[1] if rule[1] not in  ['0',['0']] else []
+            if(len(tmp1) == len(element[0]) and len(tmp2) == len(element[1])):
                 result.append(1)           
     #            for (el1,el2) in (element[0],rule[0]):
     #                if element[0].count(el1) == element[]
@@ -79,14 +80,14 @@ class SBMLAnalyzer:
         according to the reactions they appear in.
         '''
         ruleDictionary = {}
-        for rule in rules:
+        for idx,rule in enumerate(rules):
             reaction2 = rule #list(parseReactions(rule))
             #print reaction2
             totalElements =  [item for sublist in reaction2 for item in sublist]
             if tuple(totalElements) in ruleDictionary:
-                ruleDictionary[tuple(totalElements)].append(rules.index(rule))
+                ruleDictionary[tuple(totalElements)].append(idx)
             else:
-                ruleDictionary[tuple(totalElements)] = [rules.index(rule)]
+                ruleDictionary[tuple(totalElements)] = [idx]
         return ruleDictionary
     
     def checkCompliance(self,ruleCompliance,tupleCompliance,ruleBook):
@@ -95,6 +96,7 @@ class SBMLAnalyzer:
         in different ways, but in the context of its tuple partners it can only be classified
         as one
         '''
+        
         ruleResult = np.zeros(len(ruleBook))
         for validTupleIndex in np.nonzero(tupleCompliance):
             for index in validTupleIndex:
@@ -140,7 +142,7 @@ class SBMLAnalyzer:
             for mol1 in baseMol:
                 for mol2 in modMol:
                     score = self.levenshtein(mol1,mol2)
-                    if score == 1:
+                    if score == self.levenshtein(convention[0],convention[1]):
                         equivalences[convention[2]].append((mol1,mol2))
                         modifiedElement[convention[0]].append((mol1,mol2))
                         break
@@ -158,7 +160,6 @@ class SBMLAnalyzer:
         #pOriginal = re.compile(original)
         #pModified = re.compile(modified)
         #oMolecules = []
-        
         patternType = originalPattern
         pattern = modifiedPattern
         oMolecules = []
@@ -172,7 +173,7 @@ class SBMLAnalyzer:
             
         #comparisonMethod = str.startswith if patternType == 'prefix' else str.endswith
         for molecule in [x.strip('()') for x in molecules]:
-            if comparisonMethod(molecule,pattern):
+            if comparisonMethod(molecule,pattern) or comparisonMethod(molecule,pattern.lower()) or comparisonMethod(molecule,pattern.upper()):
                 oMolecules.append(molecule)
         
         
@@ -213,10 +214,15 @@ class SBMLAnalyzer:
         equivalenceTranslator = {}
         reactionIndex = {}
         index = 0
-        if self.userEquivalencesDict == None:
+        if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
+        else: 
+            if self.userEquivalencesDict ==None:            
+                self.userEquivalencesDict = {}
+        #TODO: user defined naming conventions are not being added
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #xxxxxxxxxxxxxxxxxxxxxxx
+            
             for alternative in prop:
                 if 'n' in alternative.keys():
                     convention = reactionDefinition['namingConvention'][alternative['n'][0]]
@@ -226,8 +232,6 @@ class SBMLAnalyzer:
                     equivalenceTranslator[name] = temp
                     reactionIndex[name] = alternative['n'][0]
                     index += 1
-            
-                
         #now we want to fill in all intermediate relationships
         newTranslator = equivalenceTranslator.copy()
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
@@ -269,7 +273,6 @@ class SBMLAnalyzer:
             reaction2 = rule #list(parseReactions(rule))
             ruleComplianceMatrix[idx] = self.identifyReactions2(reaction2,reactionDefinition)
         #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
-        
         tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
         #check which reaction conditions each tuple satisfies
         for element in ruleDictionary:
@@ -278,7 +281,6 @@ class SBMLAnalyzer:
         #print tupleC
         #now we will check for the nameConventionMatrix
         tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
-               
         for rule in ruleDictionary:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
@@ -287,7 +289,9 @@ class SBMLAnalyzer:
                             print namingConvention,reactionIndex[namingConvention],reactionIndex
                         tupleNameComplianceMatrix[rule][reactionIndex[namingConvention]] +=1
                         break
-        
+        #for element in tupleNameComplianceMatrix:
+        #    if 'EGF_EGFR2' in element:
+        #        print element,tupleNameComplianceMatrix[element]        
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
         tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
@@ -308,6 +312,7 @@ class SBMLAnalyzer:
         #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
         #use the per tuple classification to obtain a per reaction classification
         ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
+
         for key,element in ruleDictionary.items():
             for rule in element:
                 #FIXME: This is totally a hack. fix so that it doesn't mistakingly classify something as binding
@@ -351,7 +356,7 @@ class SBMLAnalyzer:
                         site = reactionDefinition['reactionSite'][alternative['rsi']]
                         state = reactionDefinition['reactionState'][alternative['rst']]
                     except:
-                        print 'malformed json file in the definitions section, using defaults'
+                        #print 'malformed json file in the definitions section, using defaults'
                         site = reactionType
                         state = reactionType[0]
                     reactionTypeProperties[reactionType] = [site,state]
@@ -366,7 +371,6 @@ class SBMLAnalyzer:
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
 
-        equivalenceTranslator = {}
         #determines if two molecules have a relationship according to the naming convention section
         reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
                     reactionDefinition)
@@ -376,14 +380,18 @@ class SBMLAnalyzer:
         listOfEquivalences = []
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
-            
         return reactionClassification,listOfEquivalences,equivalenceTranslator
     
+    def resolveUnidentifiedEquivalences(self,unevenDict):
+        pass
     
     def reclassifyReactions(self,reactions,molecules,labelDictionary):
         rawReactions = [self.parseReactions(x) for x in reactions]
         #reactionDefinition = loadConfigFiles()
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
+        if self.speciesEquivalences != None:
+            self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
+
         reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
                     reactionDefinition)
         for reactionIndex in range(0,len(rawReactions)):
@@ -432,6 +440,7 @@ class SBMLAnalyzer:
     def getUserDefinedComplexes(self):
         dictionary = {}
         labelDictionary = {}
+        equivalencesList = []
         if self.speciesEquivalences != None:
             speciesdictionary =self.loadConfigFiles(self.speciesEquivalences)
             userEquivalences = speciesdictionary['complexDefinition'] \
@@ -445,18 +454,29 @@ class SBMLAnalyzer:
                     if molecule[2][0] == "b":
                         tmp3.addBond(molecule[2][1])
                     elif molecule[2][0] == "s":
+                        tmp3.addState('U')
                         tmp3.addState(molecule[2][1])
-                        tmp3.addState(molecule[2][2])
+                        equivalencesList.append([element[0],molecule[0]])
+                        
+                        #tmp3.addState(molecule[2][2])
                     
                     tmp2.addComponent(tmp3)
                     stmp = st.Species()
                     stmp.addMolecule(deepcopy(tmp2))
+                    stmp.reset()                                 
                     dictionary[molecule[0]] = deepcopy(stmp)
                     labelDictionary[molecule[0]] = [(molecule[0],)]
                     label.append(molecule[0])
+                    
+                    #for component in tmp2.components:
+                    #    if component.name == molecule[1]:
+                    #        component.setActiveState(molecule[2][1])
                     tmp.addMolecule(tmp2)
+                    
                 dictionary[element[0]] = deepcopy(tmp)
                 labelDictionary[element[0]] = [tuple(label)]
-        print labelDictionary
+            complexEquivalences = speciesdictionary['modificationDefinition']
+            for element in complexEquivalences:
+                labelDictionary[element] = [tuple(complexEquivalences[element])]
         return dictionary,labelDictionary
         

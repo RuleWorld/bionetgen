@@ -6,7 +6,7 @@ package BNGModel;
 #
 #      James R. Faeder    (faeder at pitt dot edu)
 #      Justin S. Hogg     (justinshogg at gmail dot com)
-#      Leonard A. Harris
+#      Leonard A. Harris  (lh64 at cornell dot com)
 #      John A. P. Sekar
 #      Jose Juan Tapia
 #      Arshi Arora
@@ -26,8 +26,8 @@ package BNGModel;
 
 
 # pragmas
-#use strict;
-#use warnings;
+use strict;
+use warnings;
 
 # Perl Modules
 use Class::Struct;
@@ -135,7 +135,7 @@ sub setAsGlobalModel
 ###
 
 
-# write Model from file
+# read Model from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readModel
 {
@@ -157,7 +157,7 @@ sub readModel
 }
 
 
-# write Network from file
+# read Network from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readNetwork
 {
@@ -782,7 +782,10 @@ sub readNetwork
                         if ( $entry =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
                         {
                             $action  = $1;
-                            $options = $2; 
+                            $options = $2;
+                            # replace double quotes with single quotes so that Perl won't
+                            #  try to interpret special characters.    
+                            $options =~ s/"/'/g;
                         }
                         else                        
                         {
@@ -800,8 +803,8 @@ sub readNetwork
                             goto EXIT;
                         }
 
-                        # build command                        
-                        my $command = '$model->' . $action . '(' . $options . ');';
+                        # build command        
+                        my $command = sprintf  "\$model->%s(%s);", $action, $options;
                         # execute action
                         my $t_start = cpu_time(0);
                         $err = eval $command;
@@ -857,7 +860,10 @@ sub readNetwork
             {   # execute an Action:  "action(options)"
                 my $action = $1;
                 my $options = $2;
-                
+                # replace double quotes with single quotes so that Perl won't
+                #  try to interpret special characters.    
+                $options =~ s/"/'/g;
+
                 unless ($model->Params->{allow_actions})
                 {
                     unless ($model->Params->{action_skip_warn})
@@ -873,16 +879,14 @@ sub readNetwork
                 }
 
                 # call to methods associated with $model
-                my $command = '$model->' . $action . '(' . $options . ');';
+                my $command = sprintf  "\$model->%s(%s);", $action, $options;
                 my $t_start = cpu_time(0);    # Set cpu clock offset
                 $err = eval $command;
                 if ($@)   {  $err = errgen($@);    goto EXIT;  }
                 if ($err) {  $err = errgen($err);  goto EXIT;  }
                 my $t_interval = cpu_time(0) - $t_start;
                 if ( $t_interval > 0.0 )
-                {
-                    printf "CPU TIME: %s %.1f s.\n", $1, $t_interval;
-                }
+                {   printf "CPU TIME: %s %.1f s.\n", $action, $t_interval;   }
             }
             else
             {   # Try to execute general PERL code (Dangerous!!)
@@ -890,7 +894,7 @@ sub readNetwork
                 {
                     # General Perl code
                     eval $string;
-                    if ($@) {  $err = errgen($@);  goto EXIT;  }
+                    if ($@) { $err = errgen($@);  goto EXIT; }
                 }
                 else
                 {
@@ -1084,7 +1088,7 @@ sub writeNetwork
     my $user_params = @_ ? shift @_ : {};
 
     my %params = (
-        'evaluate_expressions' => 1,
+        'evaluate_expressions' => 0,
         'format'               => 'net',
         'include_model'        => 0,
         'include_network'      => 1,
@@ -1102,7 +1106,7 @@ sub writeNetwork
 
 
 # Write Reaction Network to .NET file
-# This action will be deprecated! writeModel and writeNetwork should be used instead
+# This action will be Deprecated! writeModel and writeNetwork should be used instead
 sub writeNET
 {
     my $model       = shift @_;
@@ -1470,6 +1474,8 @@ sub setOption
         my $arg = shift @_;
         unless (@_) { return "No value specified for option $arg"; }
         my $val = shift @_;
+        
+        # TODO: print arg and val to user?
 
         if ( $arg eq "SpeciesLabel" )
         {
@@ -1485,6 +1491,23 @@ sub setOption
         elsif ( $arg eq "energyBNG" )
         {   # enable energy mode
             send_warning("The energyBNG option is now deprecated (energy features available by default).");
+        }
+        elsif ( $arg eq "NumberPerQuantityUnit" )
+        {   # set conversion from quantity units to pure numbers
+            # TODO: allow this to be a parameter?
+            $model->Options->{$arg} = $val;
+        }
+        elsif ( $arg eq "MoleculesObservables" )
+        {   # set molecules observables mode
+            unless ($val eq "CountUnique"  or $val eq "CountAll")
+            {   return "Invalid option for or $arg (valid options are 'CountUnique' and 'CountAll')";   }
+            $model->Options->{$arg} = $val;
+        }
+        elsif ( $arg eq "SpeciesObservables" )
+        {   # set species observables mode
+            unless ($val eq "CountUnique"  or $val eq "CountAll")
+            {   return "Invalid option for or $arg (valid options are 'CountUnique' and 'CountAll')";   }
+            $model->Options->{$arg} = $val;
         }
         else
         {
@@ -1659,7 +1682,7 @@ sub setConcentration
     my $estring = $value;
     if ( my $err = $expr->readString( \$estring, $plist ) )
     {
-        return ( '', $err );
+        return '', $err;
     }
     my $conc = $expr->evaluate($plist);
 
@@ -1724,7 +1747,7 @@ sub addConcentration
     {   # evaluate parameter
         $orig_conc = $plist->evaluate($spec->Concentration);
     }        
-    $conc = $add_conc + $orig_conc;
+    my $conc = $add_conc + $orig_conc;
 
     # set new concentration
     $model->Concentrations->[$spec->Index - 1] = $conc;
@@ -1865,7 +1888,7 @@ sub version
 
     unless ( defined $version )
     {   # complain that version is invalid
-        return "version argument '$vstring' has invalid format.";
+        return "version argument '$vstring' has invalid format (make sure argument is enclosed in double quotes \"\").";
     }
 
     if ( $relation eq "" )
@@ -1987,7 +2010,7 @@ sub generate_network
 
     # default params
     my %params = (
-        'continue'     => 0,
+        'continue'     => 1,
         'max_iter'     => 100,
         'max_agg'      => 1e9,
         'max_stoich'   => {},
@@ -2011,18 +2034,21 @@ sub generate_network
     return '' if $NO_EXEC;
 
 
-    # default params for calling writeNET
-    my $params_writeNET = {
-        'TextReaction' => $params{TextReaction},
-        'prefix'       => $params{prefix}
+    # default params for calling writeNetwork
+    # (only need to change if we want non-default)
+    my $params_writeNetwork = {
+        'include_model' => 1,
+        'overwrite'     => 1,
+        'prefix'        => $params{prefix},
+        'TextReaction'  => $params{TextReaction}
     };
 
     # default params for calling expand_rule
     my $params_expand_rule = {
-        'max_agg'    => $params{max_agg},
         'check_iso'  => $params{check_iso},
+        'max_agg'    => $params{max_agg},
         'max_stoich' => $params{max_stoich},
-        'verbose'    => $parans{verbose},
+        'verbose'    => $params{verbose},
     };
 
     # check verbose option
@@ -2040,7 +2066,7 @@ sub generate_network
         elsif ( -M "$prefix.net" < -M "$prefix.bngl" )
         {
             send_warning("$prefix.net is newer than $prefix.bngl so reading NET file.");
-            my $err = $model->readFile( {file => "$prefix.net"} );
+            my $err = $model->readFile({file=>"${prefix}.net"});
             return $err;
         }
         else
@@ -2048,15 +2074,16 @@ sub generate_network
             return "Previously generated $prefix.net exists.  Set overwrite=>1 option to overwrite.";
         }
     }
-
-
-    # nothing to do if no species are defined
+    
     if ( $model->SpeciesList->size() == 0 )
-    {   return "No species defined in call to generate_network";   }
+    {   # warn user if the seed species list is empty.
+        send_warning("The seed species block is empty: reaction network will be empty "
+                    ."unless zero-order synthesis rules are defined.");
+    }
 
     # nothing to do if no rules are defined
     if ( @{$model->RxnRules} == 0 )
-    {   return "No reaction_rules defined in call to generate_network";   }
+    {   return "Nothing to do: no reaction rules defined.";   }
 
     # if no reactions have been generated previosuly, then we have to initize some things..
     if ( $model->RxnList->size()==0 or $params{'continue'}==0 )
@@ -2155,10 +2182,10 @@ sub generate_network
         # Print network after current iteration to netfile
         if ( $params{print_iter} )
         {
-            $params_writeNET->{prefix} = "${prefix}_${niter}";
-            $err = $model->writeNET($params_writeNET);
+            $params_writeNetwork->{prefix} = "${prefix}_${niter}";
+            my $err = $model->writeNetwork($params_writeNetwork);
             if ($err) { return $err; }
-            $params_writeNET->{prefix} = $prefix;
+            $params_writeNetwork->{prefix} = $prefix;
         }
     }
         
@@ -2179,7 +2206,7 @@ sub generate_network
     printf "Total   : %5d reactions %.2e CPU s %.2e CPU s/rxn\n", $n_tot, $t_tot, $eff;
 
     # Print result to netfile
-    $err = $model->writeNET($params_writeNET);
+    my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
 
     return '';

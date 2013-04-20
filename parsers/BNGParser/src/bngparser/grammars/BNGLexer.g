@@ -1,15 +1,13 @@
 lexer grammar BNGLexer;
 
-options {
-
+options{
   language = Java;
 }
-
 @header{
-package bngparser.grammars;
+  package bngparser.grammars;
 }
 @members{
- public boolean floatLA(){
+  public boolean floatLA(){
     int counter = 1;
     while(true){
       int LA8_0 = input.LT(counter);
@@ -24,63 +22,65 @@ package bngparser.grammars;
     if((LA14_0>='A' && LA14_0<='Z')||LA14_0=='_'||(LA14_0>='a' && LA14_0<='z'))
       return false;
     return true;
- }
+  }
 }
 
-LINE_COMMENT : '#' ~('\n'|'\r')* {skip();} ;
-LB : ('\n'|'\r')+; 
-WS : (' '|'\t'|('\\')(' ')*('\r')?('\n'))+ { $channel=HIDDEN;};
-VERSION : ('v'|'V')('e'|'E')('r'|'R')('s'|'S')('i'|'I')('o'|'O')('n'|'N');
-END : ('e'|'E')('n'|'N')('d'|'D');
-BEGIN : ('b'|'B')('e'|'E')('g'|'G')('i'|'I')('n'|'N');
-SEED : ('s'|'S')('e'|'E')('e'|'E')('d'|'D');
-SPECIES : ('s'|'S')('p'|'P')('e'|'E')('c'|'C')('i'|'I')('e'|'E')('s'|'S');
-GROUPS : ('G'|'g')('R'|'r')('O'|'o')('U'|'u')('P'|'p')('S'|'s');
-MOLECULE : ('m'|'M')('o'|'O')('l'|'L')('e'|'E')('c'|'C')('u'|'l')('l'|'L')('e'|'E');
-MOLECULES : MOLECULE('s'|'S');
-MODEL: ('m'|'M')('o'|'O')('d'|'D')('e'|'E')('l'|'L');
-TYPES : ('t'|'T')('y'|'Y')('p'|'P')('e'|'E')('s'|'S');
-REACTION : ('r'|'R')('e'|'E')('a'|'A')('c'|'C')('t'|'T')('i'|'I')('o'|'O')('n'|'N');
-REACTIONS : REACTION('s'|'S');
-RULES : ('r'|'R')('u'|'U')('l'|'L')('e'|'E')('s'|'S');
-FUNCTIONS : ('F'|'f')('U'|'u')('N'|'n')('C'|'c')('T'|'t')('I'|'i')('O'|'o')('n'|'N')('S'|'s');
-COMPARTMENTS : ('C'|'c')('O'|'o')('M'|'m')('P'|'p')('A'|'a')('R'|'r')('T'|'t')('M'|'m')('E'|'e')('N'|'n')('T'|'t')('S'|'s');
-ACTIONS: ('A'|'a')('C'|'c')('T'|'t')('i'|'I')('o'|'O')('n'|'N')('S'|'s');
+LINE_COMMENT: '#' ~('\n'|'\r')* {skip();};
+LB: ('\n'|'\r')+; 
+WS: (' '|'\t'|('\\')(' ')*('\r')?('\n'))+ { $channel=HIDDEN;};
+VERSION: 'version'; //('v'|'V')('e'|'E')('r'|'R')('s'|'S')('i'|'I')('o'|'O')('n'|'N');
+END: 'end'; //('e'|'E')('n'|'N')('d'|'D');
+BEGIN: 'begin'; //('b'|'B')('e'|'E')('g'|'G')('i'|'I')('n'|'N');
+PARAMETERS: 'parameters'; //('p'|'P')('a'|'A')('r'|'R')('a'|'A')('m'|'M')('e'|'E')('t'|'T')('e'|'E')('r'|'R')('s'|'S');
+SEED: 'seed'; //('s'|'S')('e'|'E')('e'|'E')('d'|'D');
+SPECIES: ('s'|'S')'pecies'; //('s'|'S')('p'|'P')('e'|'E')('c'|'C')('i'|'I')('e'|'E')('s'|'S');
+GROUPS: 'groups'; //('G'|'g')('R'|'r')('O'|'o')('U'|'u')('P'|'p')('S'|'s');
+MOLECULE: ('m'|'M')'olecule'; //('m'|'M')('o'|'O')('l'|'L')('e'|'E')('c'|'C')('u'|'l')('l'|'L')('e'|'E');
+MOLECULES: MOLECULE's';
+MODEL: 'model'; //('m'|'M')('o'|'O')('d'|'D')('e'|'E')('l'|'L');
+TYPES: 'types'; //('t'|'T')('y'|'Y')('p'|'P')('e'|'E')('s'|'S');
+REACTION: 'reaction'; //('r'|'R')('e'|'E')('a'|'A')('c'|'C')('t'|'T')('i'|'I')('o'|'O')('n'|'N');
+REACTIONS: REACTION's';
+RULES: 'rules'; //('r'|'R')('u'|'U')('l'|'L')('e'|'E')('s'|'S');
+FUNCTIONS: 'functions'; //('F'|'f')('U'|'u')('N'|'n')('C'|'c')('T'|'t')('I'|'i')('O'|'o')('n'|'N')('S'|'s');
+COMPARTMENTS: 'compartments'; //('C'|'c')('O'|'o')('M'|'m')('P'|'p')('A'|'a')('R'|'r')('T'|'t')('M'|'m')('E'|'e')('N'|'n')('T'|'t')('S'|'s');
+ACTIONS: 'actions'; //('A'|'a')('C'|'c')('T'|'t')('i'|'I')('o'|'O')('n'|'N')('S'|'s');
 OBSERVABLES: 'observables';
 POPULATION: 'population';
 MAPS: 'maps';
+ENERGY: 'energy';
+PATTERNS: 'patterns';
 
-SET_OPTION : 'setOption';
-SPECIES_LABEL : 'SPECIESLABEL';
-GENERATE_NETWORK : 'GENERATENETWORK';
-MAX_AGG : 'max_agg';
-MAX_ITER : ('M'|'m')('A'|'a')('X'|'x')'_'('I'|'i')('T'|'t')('E'|'e')('R'|'r');
-MAX_STOICH : 'MAXSTOICH';
+SET_OPTION: 'setOption';
+//SPECIES_LABEL: 'SPECIESLABEL';
+MAX_AGG: 'max_agg';
+MAX_ITER: 'max_iter';
+MAX_STOICH: 'max_stoich';
 OVERWRITE: 'overwrite';
-PRINT_ITER : 'PRINTITER';
-AND : 'AND';
-OR : 'OR';
-ID : 'ID';
-IF : 'if';
-PREFFIX : 'PREFFIX';
-SUFFIX : 'SUFFIX'|'suffix';
-LABEL : 'LABEL';
-PARAMETERS : ('p'|'P')('a'|'A')('r'|'R')('a'|'A')('m'|'M')('e'|'E')('t'|'T')('e'|'E')('r'|'R')('s'|'S');
-VERBOSE : ('V'|'v')('E'|'e')('R'|'r')('B'|'b')('O'|'o')('S'|'s')('E '|'e');
+PRINT_ITER: 'print_iter';
+//AND: 'AND';
+//OR: 'OR';
+//ID: 'ID';
+IF: 'if';
+PREFIX: 'prefix';
+SUFFIX: 'suffix';
+//LABEL: 'LABEL';
+VERBOSE: 'verbose'; //('V'|'v')('E'|'e')('R'|'r')('B'|'b')('O'|'o')('S'|'s')('E '|'e');
 
-GML: 'gml';
 MATCHONCE: 'MatchOnce';
 DELETEMOLECULES: 'DeleteMolecules';
 MOVECONNECTED: 'MoveConnected';
-AUTO : 'Auto';
-HNAUTY : 'Hnauty';
-QUASY : 'Quasy';
-NOT: 'not';
-INCLUDE_REACTANTS: 'include_reactants';
+//AUTO: 'Auto';
+//HNAUTY: 'Hnauty';
+//QUASI: 'Quasi';
+//NOT: 'not';
+INCLUDE_REACTANTS: 'include_reactants'; // To be deprecated
 INCLUDE_PRODUCTS: 'include_products';
-EXCLUDE_REACTANTS: 'exclude_reactants';
+EXCLUDE_REACTANTS: 'exclude_reactants'; // To be deprecated
 EXCLUDE_PRODUCTS: 'exclude_products';
 GENERATEHYBRIDMODEL: 'generate_hybrid_model';
+SAFE: 'safe';
+EXECUTE: 'execute';
 ATOL: 'atol';
 RTOL: 'rtol';
 STEADY_STATE: 'steady_state';
@@ -105,6 +105,7 @@ WRITESBML: 'writeSBML';
 WRITEMFILE: 'writeMfile';
 WRITEXML: 'writeXML';
 WRITEMEXFILE: 'writeMex'('F'|'f')'ile';
+WRITEMODEL: 'writeModel';
 PRINT_CDAT: 'print_CDAT';
 PRINT_FUNCTIONS: 'print_functions';
 SETCONCENTRATION: 'setConcentration';
@@ -119,15 +120,51 @@ SUBSTANCEUNITS: 'substanceUnits';
 PARAM: 'param';
 COMPLEX: 'complex';
 GET_FINAL_STATE: 'get_final_state';
+GML: 'gml';
+NOCSLF: 'nocslf';
+NOTF: 'notf';
+BINARY_OUTPUT: 'binary_output';
+UTL: 'utl';
+EQUIL: 'equil';
+//ELE: 'Ele';
 SAT: 'Sat';
+MM: 'MM';
+HILL: 'Hill';
+ARRHENIUS: 'Arrhenius';
 EXP: 'exp';
-LOG: 'log';
+//LOG: 'log'; deprecated
+LN: 'ln';
+LOG10: 'log10';
+LOG2: 'log2';
+SQRT: 'sqrt';
+RINT: 'rint';
+ABS: 'abs';
+SIN: 'sin';
+COS: 'cos';
+TAN: 'tan';
+ASIN: 'asin';
+ACOS: 'acos';
+ATAN: 'atan';
+SINH: 'sinh';
+COSH: 'cosh';
+TANH: 'tanh';
+ASINH: 'asinh';
+ACOSH: 'acosh';
+ATANH: 'atanh';
+PI: '_pi';
+EULERIAN:  '_e';
+MIN: 'min';
+MAX: 'max';
+SUM: 'sum';
+AVG: 'avg';
+TIME: 'time';
 ARGFILE: 'argfile';
 SAVE_PROGRESS: 'save_progress';
 NETFILE: 'netfile';
 PRINT_NET: 'print_net';
 PRINT_END: 'print_end';
 TEXTREACTION: 'TextReaction';
+//TEXTSPECIES: 'TextSpecies';
 CONTINUE: 'continue';
 ODE: 'ode';
 SSA: 'ssa';
@@ -139,51 +176,47 @@ FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | (DIGIT)+ EXPONENT;
 INT: DIGIT+;
-STRING: (LETTER | DIGIT | '_')+
-;
-SEMI : ';';
+STRING: (LETTER | DIGIT | '_')+;
+SEMI: ';';
 COLON: ':';
-LSBRACKET : '[';
-RSBRACKET : ']';
-LBRACKET : '{';
-RBRACKET : '}';
-COMMA : ',';
-DOT : '.'   ({floatLA()}? => ((DIGIT)+ EXPONENT?  {$type=FLOAT;}) | {$type=DOT;});
-LPAREN : '(';
-RPAREN : ')';
-UNI_REACTION_SIGN : '->';
-BI_REACTION_SIGN : '<->';
-DOLLAR : '$';
-TILDE : '~';
-AT : '@';
-GTE : '>=';
-GT : '>';
-LTE : '<=';
-LT : '<';
-ASSIGNS : '=>';
-EQUALS : '==';
-BECOMES : '=';
-DIV : '/';
-TIMES : '*';
-MINUS : '-';
-PLUS : '+';
+LSBRACKET: '[';
+RSBRACKET: ']';
+LBRACKET: '{';
+RBRACKET: '}';
+COMMA: ',';
+DOT: '.'   ({floatLA()}? => ((DIGIT)+ EXPONENT?  {$type=FLOAT;}) | {$type=DOT;});
+LPAREN: '(';
+RPAREN: ')';
+UNI_REACTION_SIGN: '->';
+BI_REACTION_SIGN: '<->';
+DOLLAR: '$';
+TILDE: '~';
+AT: '@';
+GTE: '>=';
+GT: '>';
+LTE: '<=';
+LT: '<';
+ASSIGNS: '=>';
+EQUALS: '==';
+BECOMES: '=';
+DIV: '/';
+TIMES: '*';
+MINUS: '-';
+PLUS: '+';
 POWER: '^';
-MOD : '%';
-PIPE : '|';
-QMARK : '?';
+MOD: '%';
+PIPE: '|';
+QMARK: '?';
 EMARK: '!';
-DBQUOTES : '"';
-AMPERSAND : '&';
+DBQUOTES: '"';
+AMPERSAND: '&';
 
 fragment NULL: '0';
 fragment DIGIT: NULL |'1'..'9';
 fragment LETTER: LOWER | UPPER;
 fragment LOWER: 'a'..'z';
 fragment UPPER: 'A'..'Z';
-fragment EXPONENT : ('e'|'E') ('+'|'-')? (DIGIT)+ ;
+fragment EXPONENT: ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
-
-VERSION_NUMBER : (INT) | (INT'.'INT) | (INT'.'INT'.'INT) ;
-
-
+VERSION_NUMBER : INT'.'INT'.'INT ;
 

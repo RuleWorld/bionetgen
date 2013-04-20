@@ -314,11 +314,14 @@ int main(int argc, char *argv[]){
 		/* input is t1 t2 ... tn */
 		n_sample = argleft;
 		vector<double> st;
+		vector<bool> keep;
 		st.push_back(t_start);
+		keep.push_back(true);
 
 		// Collect all sample times
 		for (int j=0;j < n_sample;j++){
 			st.push_back(atof(argv[iarg++]));
+			keep.push_back(true);
 		}
 		if (t_start > st[st.size()-1]){ // BNG appends t_end to the sample_times array
 			cout << "WARNING: t_start > t_end. Setting t_end = t_start, simulation will not run." << endl;
@@ -326,23 +329,29 @@ int main(int argc, char *argv[]){
 		}
 		double t_end = st[st.size()-1];
 
-		// Remove sample times <= t_start and >= t_end
-		vector<double>::iterator it;
-		for (it=st.begin()+1;it != st.end()-1;){
-//			cout << *it;
-			if (*it <= t_start || *it >= t_end){
+		// Flag sample times <= t_start and >= t_end for removal
+		for (unsigned int j=1;j < st.size()-1;j++){
+			if (st[j] <= t_start || st[j] >= t_end){
 //				cout << ": ERASE";
-				st.erase(it);
+				keep.at(j) = false;
 				n_sample--;
 			}
-			else{ it++; }
 //			cout << endl;
 		}
 
 		// Fill up sample_times array
 		sample_times = ALLOC_VECTOR(n_sample+1); // t_start is the extra sample
-		for (int j=0;j <= n_sample;j++){
-			sample_times[j] = st[j];
+		int k=0;
+		for (unsigned int j=0;j < st.size();j++){
+			if (keep.at(j)){
+				sample_times[k] = st[j];
+				k++;
+			}
+		}
+		// Error check
+		if (k != n_sample+1){
+			cout << "Oops, something went wrong while processing sample_times." << endl;
+			exit(1);
 		}
 
 		// Make sure there are at least 2 elements (t_start and t_end)
@@ -385,10 +394,10 @@ int main(int argc, char *argv[]){
 	net_line_number = 0;
 	rates = read_Elt_array(netfile, &net_line_number, (char*)"parameters", &n_read, 0x0);
 	fprintf(stdout, "Read %d parameters\n", n_read);
-	if (n_read < 1) {
-		fprintf(stderr,"ERROR: Reaction network must have parameters defined to be used as rate constants.\n");
-		exit(1);
-	}
+//	if (n_read < 1) {
+//		fprintf(stderr,"ERROR: Reaction network must have parameters defined to be used as rate constants.\n");
+//		exit(1);
+//	}
 	rewind(netfile);
 	net_line_number = 0;
 
@@ -418,44 +427,23 @@ int main(int argc, char *argv[]){
 //    vector<vector<int> > func_observ_depend;
 //    vector<vector<int> > func_param_depend;
 
-//    vector<mu::Parser> functions;
-//    vector<int> variable_parameters;
     char* netfile_name_tmp = netfile_name; 
     sprintf(netfile_name_tmp, "%s%s", netfile_name_tmp, ".net");
-
-//    map<string, bool> is_func_map_temp;
-    /*functions = read_functions_array(netfile_name_tmp, spec_groups, rates, species, variable_parameters, param_map,
-				param_index_map, observ_index_map, func_observ_depend, func_param_depend, is_func_map_temp);*/
-//    read_functions_array(netfile_name_tmp,spec_groups,rates,species,param_map,param_index_map,observ_index_map);
     read_functions_array(netfile_name_tmp,rates,param_map,param_index_map,observ_index_map,&t);
     int n_func = network.functions.size();
     if (n_func > 0) n_func--; // Subtract off 'time' function
     cout << "Read " << n_func << " function(s)" << endl;
-
-////////
-/*for (unsigned int i=0;i < network.functions.size();i++){
-	cout << rates->elt[network.var_parameters[i]-1]->name << ": "
-			<< network.functions[i].GetExpr() << endl;
-	cout << "\t" << "Observ: ";
-	for (unsigned int j=0;j < network.func_observ_depend[i].size();j++){
-		cout << network.func_observ_depend[i][j] << " ";
+	if (!rates){ // Error if the 'rates' array doesn't exist (means 0 parameters, 0 functions)
+		fprintf(stderr,"ERROR: Reaction network must have parameters and/or functions defined to be used as rate laws.\n");
+		exit(1);
 	}
-	cout << endl;
-	cout << "\t" << "Param:  ";
-	for (unsigned int j=0;j < network.func_param_depend[i].size();j++){
-		cout << network.func_param_depend[i][j] << " ";
-	}
-	cout << endl;
-}*/
-//exit(1);
-////////
 
     // Create stop condition
 	process_function_names(stop_string); // Remove parentheses from variable names
 	vector<string> variable_names = find_variables(stop_string); // Extract variable names
-	size_t found;
-	while ((found = stop_string.find("&&")) != string::npos) stop_string.replace(found,2,"and"); // Replace && with 'and'
-	while ((found = stop_string.find("||")) != string::npos) stop_string.replace(found,2,"or");  // Replace || with 'or'
+//	size_t found;
+//	while ((found = stop_string.find("&&")) != string::npos) stop_string.replace(found,2,"and"); // Replace && with 'and'
+//	while ((found = stop_string.find("||")) != string::npos) stop_string.replace(found,2,"or");  // Replace || with 'or'
 	for (unsigned int i=0;i < variable_names.size();i++){
 		// Error check
 		if (param_map.find(variable_names[i]) == param_map.end()) {
@@ -474,7 +462,6 @@ int main(int argc, char *argv[]){
     /* Read reactions */
 //	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
 	if (!(reactions = read_Rxn_array(netfile, &net_line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
-
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
 		exit(1);
 	}
@@ -497,8 +484,6 @@ int main(int argc, char *argv[]){
 	}
 
 	/* Initialize reaction network */
-//	init_network(reactions, rates, species, spec_groups, network_name, functions, variable_parameters,
-//				 func_observ_depend, func_param_depend, is_func_map_temp);
 	init_network(reactions, rates, species, spec_groups, network_name);
 
 	// Round species populations if propagator is SSA or PLA
