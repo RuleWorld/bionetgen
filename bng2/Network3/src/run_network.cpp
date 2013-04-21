@@ -438,24 +438,6 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
-////////
-/*for (unsigned int i=0;i < network.functions.size();i++){
-	cout << rates->elt[network.var_parameters[i]-1]->name << ": "
-			<< network.functions[i].GetExpr() << endl;
-	cout << "\t" << "Observ: ";
-	for (unsigned int j=0;j < network.func_observ_depend[i].size();j++){
-		cout << network.func_observ_depend[i][j] << " ";
-	}
-	cout << endl;
-	cout << "\t" << "Param:  ";
-	for (unsigned int j=0;j < network.func_param_depend[i].size();j++){
-		cout << network.func_param_depend[i][j] << " ";
-	}
-	cout << endl;
-}*/
-//exit(1);
-////////
-
     // Create stop condition
 	process_function_names(stop_string); // Remove parentheses from variable names
 	vector<string> variable_names = find_variables(stop_string); // Extract variable names
