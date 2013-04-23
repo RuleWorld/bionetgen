@@ -291,7 +291,12 @@ def addBondToComponent(species,moleculeName,componentName,bond,priority = 1):
             else:
                 order += 1
 
+
 def getComplexationComponents2(species):
+'''
+method used during the atomization process. It determines how molecules in a species
+bind together
+'''
     def getBiggestMolecule(array):
         sortedMolecules = sorted(array,key=lambda rule: len(rule.components))
         sortedMolecule = sorted(array,key=lambda rule: len(str(rule)))
@@ -354,6 +359,10 @@ def getComplexationComponents2(species):
     
            
 def getTrueTag(dependencyGraph,molecule):
+'''
+given any modified or basic element it returns its basic
+name
+'''
     if dependencyGraph[molecule] == []:
         return molecule
     elif dependencyGraph[molecule][0][0] == molecule:
@@ -361,7 +370,7 @@ def getTrueTag(dependencyGraph,molecule):
     else:
         return getTrueTag(dependencyGraph,dependencyGraph[molecule][0][0])
 
-def preRuleifyReactions(dependencyGraph,weights,translator,reactionProperties,equivalenceDictionary):
+def atomize(dependencyGraph,weights,translator,reactionProperties,equivalenceDictionary):
     for element in weights:
 
         if element[0] == '0':
@@ -539,46 +548,46 @@ def preRuleify(reaction,dependencyGraph,ruleifyDictionary):
 def transformMolecules(parser,database,configurationFile,speciesEquivalences=None):
     _,rules,_ = parser.getReactions()
     molecules,_,_ = parser.getSpecies()
+    
     sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile,speciesEquivalences)
+    
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     
-    
+    #####input processing
+    #states,components,other user options
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
     database.translator,database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
   
-    
-    
+    ####dependency graph
+    #binding reactions
     for reaction,classification in zip(rules,classifications):
         dependencyGraph(database.dependencyGraph,list(parseReactions(reaction)),classification,equivalenceTranslator)
 
-    
+    #catalysis reactions
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
             baseElement = min(namingEquivalence,key=len)
             modElement = max(namingEquivalence,key=len)
             if key!= 'Binding':
                 addToDependencyGraph(database.dependencyGraph,modElement,[baseElement])
+    #user defined stuff
     for element in database.labelDictionary:
         if element == database.labelDictionary[element][0][0]:
             addToDependencyGraph(database.dependencyGraph,element,[])
         else:
             addToDependencyGraph(database.dependencyGraph,element,list(database.labelDictionary[element][0]))
+    #####sct
     prunnedDependencyGraph,weights,unevenElementDict = consolidateDependencyGraph(database.dependencyGraph)
-    #print prunnedDependencyGraph
+
+
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
 
-    #print resolveDependencyGraph(database.dependencyGraph,'EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot',True)
-    #print resolveDependencyGraph(prunnedDependencyGraph,'EGF_EGFRm2')
-    weightsDict = {x[0]:x[1] for x in weights}
-    tempRules = {}
+    
     weights = sorted(weights,key=lambda rule:rule[1])
-    preRuleifyReactions(prunnedDependencyGraph,weights,database.translator,database.reactionProperties,eequivalenceTranslator)
-    #propagate changes
+    atomize(prunnedDependencyGraph,weights,database.translator,database.reactionProperties,eequivalenceTranslator)
     propagateChanges(database.translator,prunnedDependencyGraph)    
-    #for rule in rules:
-    #    reaction = list(parseReactions(rule))
-    #    preRuleify(reaction,prunnedDependencyGraph,tempRules)
+
     return database.translator        
