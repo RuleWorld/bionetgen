@@ -845,15 +845,15 @@ def main():
     rdfArray = []
     classificationArray = []
     #18,32,87,88,91,109,253,255,268,338,330
-    for bioNumber in range(345,410):
+    for bioNumber in [19]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
         reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
-        #spEquivalence = 'reactionDefinitions/speciesEquivalence48.json'
-        spEquivalence = None
+        spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        #spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
         
         rlength,reval,rdf,classif = analyzeFile(bioNumber,reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
