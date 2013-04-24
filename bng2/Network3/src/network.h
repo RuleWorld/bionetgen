@@ -187,9 +187,6 @@ extern struct NETWORK network;
 enum {DENSE, GMRES, DENSE_J, GMRES_J};
 extern void  sparse_jac_matlab(FILE* outfile);
 extern void  init_sparse_matlab_file(FILE* outfile);
-//extern int   init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name,
-//						  vector<mu::Parser> new_functions, vector<int> new_var_parameters, vector<vector<int> > func_observ_depend,
-//						  vector<vector<int> > func_param_depend, map<string, bool>);
 extern int   init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Group* spec_groups, char* name);
 extern int   n_rate_calls_network();
 extern int   n_deriv_calls_network();
@@ -210,10 +207,6 @@ extern int   print_derivs_network(FILE* out);
 extern int   print_derivs_species_network(FILE* out);
 extern int   print_rates_network(FILE* out, int discrete);
 extern int   print_derivs_byrxn_network(FILE* out);
-//extern int   propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol,
-//									 int SOLVER_TYPE, double maxStep);
-//extern int   propagate_euler_network(double* t, double delta_t, long int* n_steps, double h, double maxStep);
-//extern int   propagate_rkcs_network (double* t, double delta_t, long int* n_steps, double tol, double maxStep);
 extern int   propagate_cvode_network(double* t, double delta_t, double* n_steps, double* rtol, double* atol,
 									 int SOLVER_TYPE, double maxStep, mu::Parser& stop_condition);
 extern int   propagate_euler_network(double* t, double delta_t, double* n_steps, double h, double maxStep,

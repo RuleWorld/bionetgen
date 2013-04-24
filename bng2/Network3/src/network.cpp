@@ -1262,7 +1262,8 @@ void remove_zero_rate_rxns(Rxn_array** reactions, Elt_array* rates) {
 		if (rxn->rateLaw_params[0] != 0.0 || rxn->rateLaw_type == FUNCTIONAL) {
 			++n_new;
 			add_Rxn(&list_new, copy_Rxn(rxn, n_new, rates));
-		} else {
+		}
+		else {
 			++n_drop;
 		}
 	}
@@ -1274,7 +1275,8 @@ void remove_zero_rate_rxns(Rxn_array** reactions, Elt_array* rates) {
 	if (list_new) {
 		rarray_new = new_Rxn_array(list_new);
 		*reactions = rarray_new;
-	} else {
+	}
+	else {
 		*reactions = NULL;
 	}
 	return;
@@ -1619,9 +1621,8 @@ static int *read_indices_Rxn( char *string, int *n_indices, Elt_array *species, 
 
  */
 
-Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
-		Elt_array* species, Elt_array* rates, map<string, bool> is_func_map_p,
-		int &remove_zero) {
+Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_array* species,
+		Elt_array* rates, map<string, bool> is_func_map_p, int &remove_zero) {
 
 	Rxn_array* rarray;
 	Rxn *list_start = NULL, *rxn, *new_elt;
@@ -1694,21 +1695,18 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 				goto cleanup;
 			}
 			++n_tok;
-
 			/* Get indices of reactants */
 			if (!(r_index = read_indices_Rxn(tokens[n_tok], &n_reactants, species, *line_number))) {
 				++error;
 				goto cleanup;
 			}
 			++n_tok;
-
 			/* Get indices of products */
 			if (!(p_index = read_indices_Rxn(tokens[n_tok], &n_products, species, *line_number))) {
 				++error;
 				goto cleanup;
 			}
 			++n_tok;
-
 			// Find optional statistical factor for reaction
 			if (sscanf(tokens[n_tok], "%lf*%s", &stat_factor, buf) == 2) {
 				strcpy(tokens[n_tok], buf);
@@ -1716,7 +1714,6 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			else {
 				stat_factor = 1.0;
 			}
-
 			// Determine rateLaw type
 			if (n_rateLaw_tokens == 1) {
 				if (is_func_map_p[tokens[n_tok]]) {
@@ -1780,13 +1777,13 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 				++error;
 				goto cleanup;
 			}
-
 			for (i = 0; i < n_rateLaw_tokens; ++i) {
 				/* Lookup rate name */
 				if (rates) {
 					if ((elt = lookup_Elt(tokens[n_tok], rates->list))) {
 						rateLaw_indices[i] = elt->index;
-					} else {
+					}
+					else {
 						fprintf(stderr,
 								"Undefined rate constant %s at line %d.\n",
 								tokens[n_tok], *line_number);
@@ -1800,9 +1797,8 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 
 		/* Allocate new reaction */
 		++(*n_read);
-		new_elt = new_Rxn(index, n_reactants, n_products, r_index, p_index,
-				rateLaw_type, n_rateLaw_tokens, rateLaw_indices, stat_factor,
-				rates);
+		new_elt = new_Rxn(index, n_reactants, n_products, r_index, p_index, rateLaw_type,
+				  	  	  n_rateLaw_tokens, rateLaw_indices, stat_factor, rates);
 
 		// Create rxn string
 //		new_elt->toString = "";
@@ -1851,7 +1847,8 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 	if (read_begin == FMT_NONE) {
 		fprintf(stderr, "End of file reached before begin command found.\n");
 		++error;
-	} else if (read_end == 0) {
+	}
+	else if (read_end == 0) {
 		fprintf(stderr, "End of file reached before list terminated.\n");
 		++error;
 	}
@@ -1862,7 +1859,8 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read,
 			free_Rxn(rxn);
 		}
 		rarray = NULL;
-	} else {
+	}
+	else {
 		rarray = new_Rxn_array(list_start);
 	}
 
@@ -1990,9 +1988,19 @@ int n_rate_calls_network() { return (network.n_rate_calls); }
 
 int n_deriv_calls_network() { return (network.n_deriv_calls); }
 
-int n_rxns_network() { return (network.reactions->n_rxn); }
+int n_rxns_network() {
+	if (network.reactions)
+		return (network.reactions->n_rxn);
+	else
+		return 0;
+}
 
-int n_species_network() { return (network.species->n_elt); }
+int n_species_network() {
+	if (network.species)
+		return (network.species->n_elt);
+	else
+		return 0;
+}
 
 int n_species_active() {
 	register int i;
@@ -2308,7 +2316,7 @@ void derivs_network(double t, double* conc, double* derivs) {
 	int i;
 //	int ig;
 //	int error=0;
-	int n_reactions, n_species, *index, *iarr;
+	int n_reactions = 0, n_species = 0, *index, *iarr;
 	Rxn **rarray, *rxn;
 	Elt** rates;
 	double /*x, xn, kn,*/ *X, *dX, rate/*, rate0, *param*/;
@@ -2317,9 +2325,12 @@ void derivs_network(double t, double* conc, double* derivs) {
 
 	++network.n_deriv_calls;
 
-	n_reactions = network.reactions->n_rxn;
-	n_species = network.species->n_elt;
-
+	if (network.reactions){
+		n_reactions = network.reactions->n_rxn;
+	}
+	if (network.species){
+		n_species = network.species->n_elt;
+	}
 	/* Initialize derivatives to zero */
 	INIT_VECTOR(derivs, 0.0, n_species);
 
@@ -2336,14 +2347,14 @@ void derivs_network(double t, double* conc, double* derivs) {
 	}
 
 	/* Compute derivatives of each species by looping over reactions. */
-	rarray = network.reactions->rxn;
+//	rarray = network.reactions->rxn;
 	rates = network.rates->elt - network.rates->offset;
 	X = conc - network.species->offset;
 	dX = derivs - network.species->offset;
 	for (i = 0; i < n_reactions; ++i) {
 		/* Compute rate for current reaction */
-		if (!(rxn = rarray[i]))
-			continue;
+//		if (!(rxn = rarray[i])) continue;
+		if (!(rxn = network.reactions->rxn[i])) continue;
 		++network.n_rate_calls;
 		int rateLaw_type = rxn->rateLaw_type;
 
@@ -2921,8 +2932,6 @@ static int cvode_derivs(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
 	return 0;
 }
 
-//int propagate_cvode_network(double* t, double delta_t, long int* n_steps, double* rtol, double* atol, int SOLVER,
-//		double maxStep){
 int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* rtol, double* atol, int SOLVER,
 		double maxStep, mu::Parser& stop_condition){
 	int error = 0;
@@ -2957,7 +2966,6 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 			fprintf(stderr, "CVodeMalloc failed.\n");
 			return (1);
 		}
-
 		/*
 		 * Specific intitialization for CVODE:
 		 * GMRES vs Dense
@@ -2988,11 +2996,12 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 	else {
 		get_conc_network(NV_DATA_S(y));
 	}
+
 	/* Propagation */
 	t_end = (*t) + delta_t;
 	while (1){
 		long n_old, n_new;
-		//
+
 		// Integrate one step at a time
 		if ( (maxStep - *n_steps) < (double)cvode_maxnumsteps ){
 			CVodeSetStopTime(cvode_mem, t_end);
@@ -3822,11 +3831,15 @@ public:
 	bool *rxn, *observ, *func;
 	//
 	GSP_included_arrays() {
-		rxn = new bool[network.reactions->n_rxn];
+		int n_rxn = 0;
+		if (network.reactions){
+			n_rxn = network.reactions->n_rxn;
+		}
+		rxn = new bool[n_rxn];
 		observ = new bool[network.n_groups];
 		func = new bool[network.functions.size()];
 
-		for (int i = 0; i < network.reactions->n_rxn; i++){
+		for (int i = 0; i < n_rxn; i++){
 			rxn[i] = false;
 		}
 		for (int i = 0; i < network.n_groups; i++){
@@ -3896,14 +3909,15 @@ int n_species_ever_populated() {
 void print_rxn_update_list(FILE* out) {
 	iarray* iarr;
 	int irxn/*, jrxn, rindex*/;
-	Rxn **rarray, *rxn;
+	Rxn /* **rarray,*/ *rxn;
 	long int n_update_avg = 0;
 
 	iarr = GSP.rxn_update_list;
-	rarray = network.reactions->rxn;
+//	rarray = network.reactions->rxn;
 
 	for (irxn = 0; irxn < iarr->n_arr; ++irxn) {
-		rxn = rarray[irxn];
+//		rxn = rarray[irxn];
+		rxn = network.reactions->rxn[irxn];
 		/*
 		 fprintf(out, "Rxn ");
 		 print_Rxn_text(out, rxn, network.species, network.rates);
@@ -3985,7 +3999,11 @@ int create_update_lists() {
 	rul = new_iarray(GSP.na, 10);
 
 	offset = network.species->offset;
-	rarray = network.reactions->rxn;
+	int n_rxn = 0;
+	if (network.reactions){
+		rarray = network.reactions->rxn;
+		n_rxn = network.reactions->n_rxn;
+	}
 
 	/* Create species update list by looping over reactions adding rxn to each species that appears as reactant */
 	for (i = 0; i < GSP.na; ++i) {
@@ -4030,8 +4048,8 @@ int create_update_lists() {
 	}*/
 
 	/* rxns -> observables */
-	GSP.rxn_observ_affect.resize(network.reactions->n_rxn); // rxns by observables
-	for (int i=0; i < network.reactions->n_rxn; i++) {
+	GSP.rxn_observ_affect.resize(n_rxn); // rxns by observables
+	for (int i=0; i < n_rxn; i++) {
 		for (int j=0; j < network.reactions->rxn[i]->n_reactants; j++) {
 			for (unsigned int k=0; k < GSP.species_observ_affect[network.reactions->rxn[i]->r_index[j]-1].size(); k++) {
 				GSP.rxn_observ_affect[i].push_back(GSP.species_observ_affect[network.reactions->rxn[i]->r_index[j]-1][k]);
@@ -4045,7 +4063,7 @@ int create_update_lists() {
 		remove_redundancies(GSP.rxn_observ_affect[i]);
 	}
 	/*cout << endl;
-	for (int i=0; i < network.reactions->n_rxn; i++){
+	for (int i=0; i < n_rxn; i++){
 		cout << "R_" << (i+1) << ": ";
 		for (unsigned int j=0;j < GSP.rxn_observ_affect[i].size();j++){
 			cout << "G_" << GSP.rxn_observ_affect[i][j] << " ";
@@ -4098,7 +4116,7 @@ int create_update_lists() {
 
 	/* parameters -> rxns */
 	GSP.param_rxn_affect.resize(network.rates->n_elt); // parameters by rxns
-	for (int i=0; i < network.reactions->n_rxn; i++) {
+	for (int i=0; i < n_rxn; i++) {
 		for (int j=0; j < network.reactions->rxn[i]->n_rateLaw_params; j++) {
 			GSP.param_rxn_affect[network.reactions->rxn[i]->rateLaw_indices[j]-1].push_back(i+1);
 		}
@@ -4123,7 +4141,7 @@ int create_update_lists() {
 		stack<int>  param_stack;
 
 		// Need to reset the GSP.included->func[] and GSP.included->rxn[] vectors to false (--Leonard)
-		for (int j=0; j < network.reactions->n_rxn; j++){
+		for (int j=0; j < n_rxn; j++){
 			GSP.included->rxn[j] = false;
 		}
 		for (unsigned int j=0; j < network.functions.size(); j++){
@@ -4281,9 +4299,9 @@ int create_update_lists() {
 	}
 
 	// Collect all functions and rxns that are dependent on this rxn
-	GSP.rxn_update_func.resize(network.reactions->n_rxn);
-	GSP.rxn_update_rxn.resize(network.reactions->n_rxn);
-	for (int i=0;i < network.reactions->n_rxn;i++) {
+	GSP.rxn_update_func.resize(n_rxn);
+	GSP.rxn_update_rxn.resize(n_rxn);
+	for (int i=0;i < n_rxn;i++) {
 		vector<int> temp_vec_func, temp_vec_rxn;
 
 		for (unsigned int j=0;j < GSP.rxn_observ_affect[i].size();j++) {
@@ -4347,13 +4365,11 @@ int create_update_lists() {
 	/*  print_as_reactant_list(stdout); */
 	print_rxn_update_list(stdout);
 
-	/* printf("RUL_size: %d\n", GSP.rxn_update_size); */
 	return (err);
 }
 
 int init_gillespie_direct_network(int update_interval, int seed) {
 	int i;
-
 	Rxn** rarray;
 
 	// Initialize random number generator
@@ -4387,9 +4403,10 @@ int init_gillespie_direct_network(int update_interval, int seed) {
 	/* Initialize reaction rate array */
 	GSP.a = ALLOC_VECTOR(GSP.na);
 	/* rxn_rates_network( GSP.a); */
-	rarray = network.reactions->rxn;
+//	rarray = network.reactions->rxn;
 	for (i = 0; i < GSP.na; ++i) {
-		GSP.a[i] = rxn_rate(rarray[i], GSP.c_offset, 1);
+//		GSP.a[i] = rxn_rate(rarray, GSP.c_offset, 1);
+		GSP.a[i] = rxn_rate(network.reactions->rxn[i], GSP.c_offset, 1);
 		GSP.a_tot += GSP.a[i];
 	}
 
@@ -4768,10 +4785,10 @@ int update_concentrations(int irxn) {
 			 	printf("\n"); */
 		}
 		else {
-			printf("Population of species");
+			printf("Population of species ");
 			for (i = 0; i < nspec_newpop; ++i) {
 				ispec = ispec_newpop[i];
-				printf("  %s", elt[ispec]->name);
+				printf("%s", elt[ispec]->name);
 			}
 			printf(" did not produce new reactions or species.\n");
 		}
