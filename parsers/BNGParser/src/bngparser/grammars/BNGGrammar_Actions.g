@@ -50,7 +50,8 @@ action
   reset_concentrations {actions.add($reset_concentrations.st);} | 
   set_parameter {actions.add($set_parameter.st);}  |
   save_parameters {actions.add($save_parameters.st);} | 
-  reset_parameters {actions.add($reset_parameters.st);}
+  reset_parameters {actions.add($reset_parameters.st);} |
+  quit {actions.add($quit.st);}
 ;
 
 generate_network
@@ -310,6 +311,12 @@ reset_parameters
 : 
   RESETPARAMETERS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? 
   -> action(id={$RESETPARAMETERS.text})
+;
+
+quit
+:
+  QUIT LPAREN RPAREN SEMI?
+  -> action(id={$QUIT.text})
 ;
 
 parameter_definition returns [String parameterName,String parameterValue]

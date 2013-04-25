@@ -146,6 +146,7 @@ RESETCONCENTRATIONS: 'resetConcentrations';
 SETPARAMETER: 'setParameter';
 SAVEPARAMETERS: 'saveParameters';
 RESETPARAMETERS: 'resetParameters';
+QUIT: 'quit';
 
 //ELE: 'Ele';
 SAT: 'Sat';
