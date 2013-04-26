@@ -137,8 +137,12 @@ class SBMLAnalyzer:
                     baseMol.append(molecule)
                 elif convention[1] in molecule:
                     modMol.append(molecule)
-            equivalences[convention[2]] = []
-            modifiedElement[convention[0]] = []
+            if convention[2] not in equivalences:
+                equivalences[convention[2]] = []
+            equivalences[convention[2]].append((convention[0],convention[1]))
+            if convention[0] not in modifiedElement:            
+                modifiedElement[convention[0]] = []
+            modifiedElement[convention[0]].append((convention[0],convention[1]))
             for mol1 in baseMol:
                 for mol2 in modMol:
                     score = self.levenshtein(mol1,mol2)
@@ -233,7 +237,9 @@ class SBMLAnalyzer:
                     reactionIndex[name] = alternative['n'][0]
                     index += 1
         #now we want to fill in all intermediate relationships
+        
         newTranslator = equivalenceTranslator.copy()
+        '''
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
             if key1 == key2:
                 continue
@@ -254,6 +260,7 @@ class SBMLAnalyzer:
                     newTranslator[max(key1,key2,key=len)].append(tuple(temp2))
             else:
                 pass
+        '''
         return reactionIndex,newTranslator
     
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,reactionIndex,useNamingConventions=True):
@@ -362,7 +369,6 @@ class SBMLAnalyzer:
         #load user defined complexes        
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
-
         #determines if two molecules have a relationship according to the naming convention section
         #equivalenceTranslator is a dictionary of actual modifications
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
@@ -448,13 +454,14 @@ class SBMLAnalyzer:
                 label = []
                 for molecule in element[1]:
                     tmp2 = st.Molecule(molecule[0])
-                    tmp3 = st.Component(molecule[1])
-                    if molecule[2][0] == "b":
-                        tmp3.addBond(molecule[2][1])
-                    elif molecule[2][0] == "s":
-                        tmp3.addState('U')
-                        tmp3.addState(molecule[2][1])
-                        equivalencesList.append([element[0],molecule[0]])
+                    for componentIdx in range(1,len(molecule),2):
+                        tmp3 = st.Component(molecule[componentIdx])
+                        if molecule[componentIdx+1][0] == "b":
+                            tmp3.addBond(molecule[componentIdx+1][1])
+                        elif molecule[componentIdx+1][0] == "s":
+                            tmp3.addState('U')
+                            tmp3.addState(molecule[componentIdx+1][1])
+                            equivalencesList.append([element[0],molecule[0]])
                         
                         #tmp3.addState(molecule[2][2])
                     
