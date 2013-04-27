@@ -844,6 +844,7 @@ def main():
     #144
     rdfArray = []
     classificationArray = []
+    #18,32,87,88,91,109,253,255,268,338,330
     for bioNumber in [19]:
     #bioNumber = 175
         logMess.log = []
