@@ -25,6 +25,8 @@ import BNGGrammar_Expression,
   import bngparser.dataType.ReactionRegister;
   import bngparser.methods.GenericMethods;
   import java.util.Arrays;
+  
+  import org.apache.commons.lang3.StringEscapeUtils;
 }
 @members{
   public Stack<String> paraphrases = new Stack<String>();
@@ -166,7 +168,7 @@ scope{
   -> functions_block(id={$s1.text},
                      referencesName={$expression.reference.keySet()},
                      referencesType={Register.getTypes($expression.reference)},
-                     expression={$expression.text})
+                     expression={StringEscapeUtils.escapeXml($expression.text)})
 ;
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL

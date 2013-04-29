@@ -124,7 +124,7 @@ scope{
       $secondRate=$reaction_rule_def::rateList.get(1);
     else
       $secondRate="0";
-    $reaction_rule_def::text += " " + $rate_list.text;
+    $reaction_rule_def::text += " " + StringEscapeUtils.escapeXml($rate_list.text);
   }
   (modif_command)* (DELETEMOLECULES)? (MOVECONNECTED)?
   {
@@ -310,10 +310,10 @@ scope{
   $rate_list::numberRateLaws = 1;
 }
 : 
-  e1=rate_primitive[$rate_list::memoryWithLocal] {rateList.add($e1.text);}
+  e1=rate_primitive[$rate_list::memoryWithLocal] {rateList.add(StringEscapeUtils.escapeXml($e1.text));}
   (COMMA e2=rate_primitive[$rate_list::memoryWithLocal] 
   {
-    rateList.add($e2.text);
+    rateList.add(StringEscapeUtils.escapeXml($e2.text));
     $rate_list::numberRateLaws = 2;
   }
   )?
