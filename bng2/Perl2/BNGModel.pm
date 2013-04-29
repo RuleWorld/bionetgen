@@ -366,9 +366,6 @@ sub readNetwork
                 if ($err) {  goto EXIT;  }
                 $bngdata{$name} = 1;
 
-
-
-
                 ### Read Parameters Block
                 if ( $name eq 'parameters' )
                 {
@@ -609,7 +606,7 @@ sub readNetwork
                             my $group_name = @tokens ? shift @tokens : '';
                             unless ( $group_name eq $obs->Name )
                             {
-                                $err = errgen("Group named $tokens[0] is not compatible with any observable", $lno );
+                                $err = errgen("Group named '$tokens[0]' is not compatible with any observable", $lno );
                                 goto EXIT;
                             }
 
@@ -643,7 +640,7 @@ sub readNetwork
                     }
                     else
                     {   # create a dummy observable for each group
-                        send_warning("Found groups block before observables: creating observables.");
+                        send_warning("Found 'groups' block before 'observables': creating observables.");
 
                         # get the number of species
                         my $n_species = $model->SpeciesList->getNumSpecies();
@@ -824,7 +821,7 @@ sub readNetwork
                 ### Try to read any other Block type (probably an error)
                 else
                 {   # warn user
-                    send_warning( errgen("Could not process block type $name") );
+                    send_warning( errgen("Could not process block type '$name'") );
                 }
             }
 

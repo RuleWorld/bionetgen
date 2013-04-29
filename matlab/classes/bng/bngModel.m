@@ -49,6 +49,7 @@ classdef bngModel
             % Checking and setting up input options
             assert(~isempty(t_sim),'Must provide simulation time');
             assert(~isempty(n_steps),'Must provide number of steps');
+            
             if(isempty(sims))
                 sims = obj.simulators;
             else
@@ -70,6 +71,7 @@ classdef bngModel
                 fhandle = str2func(obj.simulators{i});
                 timepoints = linspace(0,t_sim,n_steps+1)';
                 [err, ~, species_out, observables_out ] = fhandle( timepoints, species_init, parameters, 1 );
+                %size(species_out)
                 if(~err), break,end
             end
         end
@@ -177,6 +179,10 @@ classdef bngModel
                 [err1, species1, observables1] = exec(obj,sims,t_sim,n_steps, species_init1,parameters1);
                 % setting other outputs
                 err(startpoint:endpoint) = err1;
+                %startpoint;
+                %endpoint;
+                %size(species1);
+                %species1;
                 species_out(startpoint:endpoint,:) = species1;
                 observables_out(startpoint:endpoint,:) = observables1;
                 

@@ -40,17 +40,20 @@ actions_block
 action  
 : 
   generate_network {actions.add($generate_network.st);} | 
+  generate_hybrid_model {actions.add($generate_hybrid_model.st);} |
   simulate_method {actions.add($simulate_method.st);} | 
   read_file {actions.add($read_file.st);} | 
   write_file {actions.add($write_file.st);} | 
   set_concentration {actions.add($set_concentration.st);} | 
-  set_parameter {actions.add($set_parameter.st);} | 
+  add_concentration {actions.add($add_concentration.st);} |
   save_concentrations {actions.add($save_concentrations.st);} | 
   reset_concentrations {actions.add($reset_concentrations.st);} | 
-  add_concentration {actions.add($add_concentration.st);} | 
-  generate_hybrid_model {actions.add($generate_hybrid_model.st);}
+  set_parameter {actions.add($set_parameter.st);}  |
+  save_parameters {actions.add($save_parameters.st);} | 
+  reset_parameters {actions.add($reset_parameters.st);} |
+  quit {actions.add($quit.st);}
 ;
-        
+
 generate_network
 scope{
   Map<String,String> actions;
@@ -74,6 +77,7 @@ gn_action_par_def[Map<String,String> map]
   (OVERWRITE ASSIGNS i3=INT {map.put($OVERWRITE.text,$i3.text);}) | 
   (PRINT_ITER ASSIGNS i4=INT {map.put($PRINT_ITER.text,$i4.text);}) | 
   (TEXTREACTION ASSIGNS i5=INT {map.put($TEXTREACTION.text,$i5.text);}) | 
+  (TEXTSPECIES ASSIGNS i6=INT {map.put($TEXTSPECIES.text,$i6.text);}) | 
   ps_par_def[map]
 ;
 
@@ -113,14 +117,14 @@ scope{
   $simulate_method::actions = new HashMap<String,String>();
 }
 : 
-  (simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";} | 
+  simulate[$simulate_method::actions] {$simulate_method::method = "simulate";} |
+  simulate_ode[$simulate_method::actions] {$simulate_method::method = "simulate_ode";} | 
   simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";} | 
-  write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";} | 
-  write_mex_file[$simulate_method::actions] {$simulate_method::method = "writeMexfile";} | 
-  write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";} | 
   simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";} | 
   simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";} | 
-  simulate[$simulate_method::actions] {$simulate_method::method = "simulate";})
+  write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";} | 
+  write_mex_file[$simulate_method::actions] {$simulate_method::method = "writeMexfile";} | 
+  write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";}
   -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
 ;
         
@@ -175,16 +179,22 @@ write_m_file[Map<String,String> map]
 write_mex_file[Map<String,String> map]
 : 
   WRITEMEXFILE LPAREN LBRACKET
-  ((write_m_par_def[map]| ps_par_def[map]) 
-  (COMMA write_m_par_def[map]| ps_par_def[map])*)?
+  ((write_m_par_def[map]|ps_par_def[map]) 
+  (COMMA write_m_par_def[map]|ps_par_def[map])*)?
   RBRACKET RPAREN SEMI?
 ;
 
 write_network[Map<String,String> map]
 : 
   WRITENETWORK LPAREN (LBRACKET 
-  ((ps_par_def[map]|simulate_par_def[map]) 
-  (COMMA (ps_par_def[map]|simulate_par_def[map]))*)? 
+  (
+  (ps_par_def[map]|simulate_par_def[map] |
+    s1=TEXTREACTION ASSIGNS i1=INT {map.put($s1.text,$i1.text);} |
+    s2=TEXTSPECIES ASSIGNS  i2=INT {map.put($s2.text, $i2.text);})
+  (COMMA (ps_par_def[map]|simulate_par_def[map] |
+    s3=TEXTREACTION ASSIGNS i3=INT {map.put($s3.text,$i3.text);} |
+    s4=TEXTSPECIES ASSIGNS  i4=INT {map.put($s4.text, $i4.text);}))
+  *)?
   RBRACKET)? RPAREN SEMI?
 ;
 
@@ -221,9 +231,10 @@ scope{
 
 write_type
 : 
-  WRITENET | 
-  WRITESBML | 
-  WRITEXML |
+  WRITEFILE  |
+  WRITENET   | 
+  WRITESBML  | 
+  WRITEXML   |
   WRITEMODEL
 ;
 
@@ -261,6 +272,18 @@ scope{
   -> action(id={$ADDCONCENTRATION.text},optionMap={$add_concentration::options})
 ; 
         
+save_concentrations
+: 
+  SAVECONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? 
+  -> action(id={$SAVECONCENTRATIONS.text})
+;
+
+reset_concentrations
+: 
+  RESETCONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? 
+  -> action(id={$RESETCONCENTRATIONS.text})
+;
+        
 set_parameter
 scope{
   Map<String,String> options;
@@ -276,6 +299,24 @@ scope{
   }
   RPAREN SEMI? 
   -> action(id={$SETPARAMETER.text},optionMap={$set_parameter::options})
+;
+
+save_parameters
+: 
+  SAVEPARAMETERS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? 
+  -> action(id={$SAVEPARAMETERS.text})
+;
+
+reset_parameters
+: 
+  RESETPARAMETERS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? 
+  -> action(id={$RESETPARAMETERS.text})
+;
+
+quit
+:
+  QUIT LPAREN RPAREN SEMI?
+  -> action(id={$QUIT.text})
 ;
 
 parameter_definition returns [String parameterName,String parameterValue]
@@ -304,18 +345,6 @@ scope{
   DBQUOTES COMMA 
   (e1=expression[gParent.memory] {$variableValue = $e1.text; } | 
   (DBQUOTES e2=expression[gParent.memory] DBQUOTES {$variableValue = $e2.text; }))
-;
-
-save_concentrations
-: 
-  SAVECONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? 
-  -> action(id={$SAVECONCENTRATIONS.text})
-;
-
-reset_concentrations
-: 
-  RESETCONCENTRATIONS LPAREN (DBQUOTES STRING DBQUOTES)? RPAREN SEMI? 
-  -> action(id={$RESETCONCENTRATIONS.text})
 ;
 
 hash_value
@@ -431,7 +460,7 @@ multiple_definition returns [String value]
      
 method_definition 
 :
-  ODE|SSA|PLA|NF
+  ODE|SSA|PLA
 ;
 
 array_value
