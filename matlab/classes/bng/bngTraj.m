@@ -57,8 +57,9 @@ classdef bngTraj
                 end
             end
             obj2 =  bngTraj(obj1.Labels,obj1.timepoints(t_inds),obj1.val(t_inds,:),obj1.stds(t_inds,:));
-        end 
-        
+        end
+
+
         
     end
     
@@ -70,7 +71,13 @@ classdef bngTraj
             c = size(data,2);
             timepoints = data(:,1);
             val = data(:,2:c);
-            
+            if nargin < 2
+				labels_obj = bngObs(cellstr(labels(2:c,:))');
+			else
+				assert(isa(labels_obj,'bngLabels'));
+			end
+				
+			
             obj = bngTraj(labels_obj,timepoints,val);
 
         end
