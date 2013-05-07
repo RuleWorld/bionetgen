@@ -877,6 +877,11 @@ sub readNFspecies
     open(my $FH, "<", $fname)
         or return "Couldn't read from file $fname: $!";
 
+    # tell SpeciesLabel to use Quasi method for species w/ large number of molecules
+    my $maxMols = 50;
+    my $save_maxMols = SpeciesGraph::getSpeciesLabelMethod_MaxMols();
+    SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $maxMols );
+
     my $n_spec_read = 0;
     my $n_spec_new = 0;
     my $line_num = 0;
@@ -918,6 +923,9 @@ sub readNFspecies
         ++$n_spec_read;
     }
     close $FH;
+
+    # return SpeciesLable method to original setting
+    SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $save_maxMols );
 
     $model->Concentrations( $conc_vec );
     printf "Read %d unique species of %d total.\n", $n_spec_new, $n_spec_read;

@@ -270,15 +270,15 @@ sub writeBNGL
     #  OR checks that @$conc is okay (if @$conc has elements)
     $slist->checkOrInitConcentrations($conc);
 
-    # Determine length of longest species string
-    my $maxlen = 0;
-    foreach my $spec ( @{$slist->Array} )
-    {
-        my $len = 1;
-        $len += defined $spec->SpeciesGraph->Name        ? length $spec->SpeciesGraph->Name        : 0;
-        $len += defined $spec->SpeciesGraph->StringExact ? length $spec->SpeciesGraph->StringExact : 0;
-        $maxlen = ($len > $maxlen) ? $len : $maxlen;
-    }
+    ## Determine length of longest species string
+    #my $maxlen = 0;
+    #foreach my $spec ( @{$slist->Array} )
+    #{
+    #    my $len = 1;
+    #    $len += defined $spec->SpeciesGraph->Name        ? length $spec->SpeciesGraph->Name        : 0;
+    #    $len += defined $spec->SpeciesGraph->StringExact ? length $spec->SpeciesGraph->StringExact : 0;
+    #    $maxlen = ($len > $maxlen) ? $len : $maxlen;
+    #}
 
     my $out .= "begin species\n";
     foreach my $spec ( @{$slist->Array} )
@@ -294,7 +294,8 @@ sub writeBNGL
 
         # get species graph string
         my $sexact = $spec->SpeciesGraph->toString();
-        $out .= sprintf "%-${maxlen}s", $sexact;
+        #$out .= sprintf "%-${maxlen}s", $sexact;
+        $out .= sprintf "%s", $sexact;
         
         my $c = $conc->[ $spec->Index - 1 ];
         $out .= sprintf " %s\n", $c;

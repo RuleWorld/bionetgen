@@ -56,6 +56,7 @@ struct SpeciesGraph =>
 # Set default species label method:
 #   Allowed values are Auto, HNauty, Quasi.
 my $SpeciesLabel = 'Auto';
+my $SpeciesLabel_MaxMols = 0;
 
 
 
@@ -71,7 +72,8 @@ my $SpeciesLabel = 'Auto';
 #  Quasi  == quasi-canonical labeling, no checks (unsafe method)
 sub setSpeciesLabel
 {
-	my $label = shift;
+	my $label = shift @_;
+    my $maxmols = @_ ? shift @_ : 0;
 	my %valid = ( 'Auto' => 1, 'HNauty' => 1, 'Quasi' => 1 );
 	if ( defined( $valid{$label} ) )
 	{
@@ -81,10 +83,24 @@ sub setSpeciesLabel
 	else {
 		return ("Invalid value for SpeciesLabel function: $label");
 	}
+
+    if ($maxmols != 0)
+    {   send_warning( sprintf "Setting SpeciesLabel max molecule threshold at %.0f.", $maxmols );   }
+    $SpeciesLabel_MaxMols = $maxmols;
+
 	return "";
 }
 
-
+# get species label method
+sub getSpeciesLabelMethod
+{
+    return $SpeciesLabel;
+}
+# get species label max molecules
+sub getSpeciesLabelMethod_MaxMols
+{
+    return $SpeciesLabel_MaxMols;
+}
 
 
 ###
@@ -564,19 +580,19 @@ sub labelQuasi
 # Modified version using different labeling functions
 sub sortLabel
 { 
-	my $sg = shift;
-	my $allow_dangling = (@_) ? shift : FALSE;
-	my $trim_dangling  = (@_) ? shift : FALSE;
+	my $sg = shift @_;
+	my $allow_dangling = @_ ? shift @_ : FALSE;
+	my $trim_dangling  = @_ ? shift @_ : FALSE;
 
     my $err = undef;
-	if    ( $SpeciesLabel eq 'Auto' )
-	{
-	    my $is_canonical = FALSE;
-		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
-	}
-	elsif ( $SpeciesLabel eq 'Quasi' )
+	if ( ($SpeciesLabel eq 'Quasi') or ($SpeciesLabel_MaxMols and (@{$sg->Molecules} > $SpeciesLabel_MaxMols)) )
 	{   # Equivalent to setting check_iso=>0
 	    my $is_canonical = TRUE;
+		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
+	}
+	elsif ( $SpeciesLabel eq 'Auto' )
+	{
+	    my $is_canonical = FALSE;
 		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
 	}
 	elsif ( $SpeciesLabel eq 'HNauty' )
@@ -586,6 +602,7 @@ sub sortLabel
 	
 	return $err;
 }
+
 
 
 
