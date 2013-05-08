@@ -204,6 +204,8 @@ scope {
   List sites;
   String lcompartment;
   String lname;
+  boolean compartmentFlag;
+  StringBuilder myLabelWrapper;
 }
 @init{
 getParentTemplate();
@@ -213,21 +215,22 @@ getParentTemplate();
   $information.setNumBonds($bonds.getNumBonds());
   $information.setCompartment(compartment);
   gParent.paraphrases.push("in species element section");
+  $species_element::compartmentFlag = false;
+  $species_element::myLabelWrapper = new StringBuilder();
 }
 @after{
   $information.setNumBonds($bonds.getNumBonds()-$information.getNumBonds());
   gParent.paraphrases.pop();
+  $myLabel = $species_element::myLabelWrapper.toString();
 }
 :
   s1=STRING {$name = $s1.text;$species_element::lname=$s1.text;} 
-  (label {$myLabel = $label.label;})? //label
-  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)? //If it's not a netfile it's necessary to add a '?' to allow for optional component syntax 
-  (ca=compartment_allocation 
-  {
-    $species_element::lcompartment = $ca.compartment; 
-    $information.setCompartment($ca.compartment);
-    $information.setBondList(bonds);
-  })?
+  
+  species_postModification[bonds,$information,$species_element::myLabelWrapper,upperID]*
+
+
+  
+  
   -> list_molecule_def(id={upperID},
                        name={$s1.text},
                        sites={$species_element::sites},
@@ -235,9 +238,20 @@ getParentTemplate();
                        label={$myLabel})
 ;
 
-compartment_allocation returns [String compartment]
+species_postModification[BondList bonds, ReactionRegister information, StringBuilder myLabel,String upperID]:
+  (label {$myLabel = new StringBuilder($label.label);}) |
+  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN) |
+  (ca=compartment_allocation[$information,$bonds])
+    
+;
+
+compartment_allocation[ReactionRegister information,BondList bonds] returns [String compartment]
 :
-  AT STRING {$compartment = $STRING.text;}
+  AT STRING {
+  $species_element::lcompartment = $STRING.text;
+   $information.setCompartment($STRING.text);
+   $information.setBondList(bonds);
+  }
 ;
 
 site_list[List sites,BondList bonds,String upperID]
