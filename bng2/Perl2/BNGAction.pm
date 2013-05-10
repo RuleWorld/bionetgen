@@ -1243,7 +1243,7 @@ sub generate_hybrid_model
                 }
                 if ( $options->{verbose} )
                 {
-                    print $indent.$indent . sprintf "Rule '%s': expanded to %d child rules%s.\n",
+                    print $indent.$indent . sprintf "Rule '%s': expanded to %d child rule%s.\n",
                                                     $rr_copy->Name, scalar @$child_rule_list, ((scalar @$child_rule_list > 1)?'s':'');
                 }
                 ++$rule_count;

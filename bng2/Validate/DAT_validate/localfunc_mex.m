@@ -135,7 +135,7 @@ if ( ~suppress_plot )
     axis([0 timepoints(end) 0 inf]);
     legend(observable_labels,'fontSize',10,'Interpreter','none');
     xlabel('time','fontSize',12,'Interpreter','none');
-    ylabel('number','fontSize',12,'Interpreter','none');
+    ylabel('number or concentration','fontSize',12,'Interpreter','none');
 
 end
 
