@@ -401,9 +401,9 @@ sub labelHNauty
 	use strict;
 	use Data::Dumper;
 	
-	my $sg = shift;
-	my $allow_dangling = (@_) ? shift : 0;
-	my $trim_dangling  = (@_) ? shift : 0;
+	my $sg = shift @_;
+	my $allow_dangling = @_ ? shift @_ : 0;
+	my $trim_dangling  = @_ ? shift @_ : 0;
 	
 	# holds error value for return
 	my $err;
@@ -433,33 +433,54 @@ sub labelHNauty
     # (2) partition by Molecule and Componoent names (could add connectivity later, if it improves performance)
     # (3) create edges from Molecules to its contained Components
     # (4) collect bonds in a hash (precludes need to call update edges beforehand).
-	foreach my $mol ( @{ $sg->Molecules } )
+	foreach my $mol ( @{$sg->Molecules} )
     {
-		my $mname = $mol->Name . "."
-                    . ( defined $mol->State ? $mol->State : '' ) . "."
-                    . ( defined $mol->Compartment ? $mol->Compartment : '' );
 		$pointer_index{$imol} = $imol;
-		push @{ $mtypes{$mname} }, $imol;
-		foreach my $edge ( @{ $mol->Edges } )
+
+        my $bond_wildcard = '';
+		foreach my $edge ( @{$mol->Edges} )
         {
-			push @{ $bonds{$edge} }, $imol;
+            if ($edge =~ /(\+|\?|\-)/)
+            {  $bond_wildcard = $1;  }
+            else
+            {  push @{$bonds{$edge}}, $imol;  }
 		}
+
+		my $mname = join( ".", $mol->Name,
+                               defined $mol->State ? $mol->State : '',
+                               $bond_wildcard,
+                               defined $mol->Compartment ? $mol->Compartment : ''
+                        );
+
+		push @{ $mtypes{$mname} }, $imol;
+
 		my $jcomp = 0;
 		foreach my $comp ( @{$mol->Components} )
         {
-			my $cname = $mname . "."
-			            . $comp->Name . "."
-			            . ( defined $comp->State ? $comp->State : '' ) . "."
-			            . ( defined $comp->Compartment ? $comp->Compartment : '' );
-			my $p = "$imol.$jcomp";
-			$pointer_index{$p} = $icomp;
-			push @{ $ctypes{$cname} }, $icomp;
-			$adj{$imol}{$icomp} = [0];
-			$adj{$icomp}{$imol} = [0];
+			my $ptr = "$imol.$jcomp";
+			$pointer_index{$ptr} = $icomp;
+
+            my $bond_wildcard = '';
 			foreach my $edge ( @{$comp->Edges} )
             {
-				push @{ $bonds{$edge} }, $p;
+                if ($edge =~ /(\+|\?|\-)/)
+                {  $bond_wildcard = $1;  }
+                else
+                {  push @{$bonds{$edge}}, $ptr;  }
 			}
+
+			my $cname = join( ".", $mname,
+                                   $comp->Name,
+                                   defined $comp->State ? $comp->State : '',
+                                   $bond_wildcard,
+			                       defined $comp->Compartment ? $comp->Compartment : ''
+                            );
+
+			push @{ $ctypes{$cname} }, $icomp;
+
+			$adj{$imol}{$icomp} = [0];
+			$adj{$icomp}{$imol} = [0];
+
 			++$icomp;
 			++$jcomp;
 		}
@@ -554,8 +575,7 @@ sub labelQuasi
 
     # update edges after sort!
 	$err = $sg->updateEdges( $allow_dangling, $trim_dangling );
-	if ( $err ) { return $err; }
-
+	if ($err) { return $err; }
 
 	# Create quasi-canonical string representation
 	$sg->StringID( $sg->toString(!PRINT_EDGES, !PRINT_ATTRIBUTES ) );
@@ -1138,8 +1158,8 @@ sub relinkCompartments
 # gather all labels associated with this Species
 sub gatherLabels
 {
-    my $sg = shift;
-    my $label_map = shift;
+    my $sg = shift @_;
+    my $label_map = shift @_;
     my $i_sg = (@_) ? shift : 0;
     
     $label_map->{$sg->Label} = $i_sg  if (defined $sg->Label);
@@ -1164,8 +1184,8 @@ sub gatherLabels
 
 sub isPopulationType
 {
-    my $sg = shift;
-    my $mtlist = shift;
+    my $sg = shift @_;
+    my $mtlist = shift @_;
  
     my $mt = $mtlist->MolTypes->{$sg->Molecules->[0]->Name};
     return (defined $mt->PopulationType) ? $mt->PopulationType : 0;
@@ -1182,10 +1202,10 @@ sub isPopulationType
 # assign unique labels to molecules and components of this species
 sub assignLabels
 {
-    my $sg = shift;
-    my $start_index = shift;
-    my $new_labels = shift;
-    my $used_labels = shift;
+    my $sg = shift @_;
+    my $start_index = shift @_;
+    my $new_labels = shift @_;
+    my $used_labels = shift @_;
     
     my $base = 'T';
     my $i_label = $start_index;
@@ -1225,8 +1245,8 @@ sub assignLabels
 # search for and remove specific labels
 sub removeLabels
 {
-    my $sg = shift;
-    my $delete_labels = shift;
+    my $sg = shift @_;
+    my $delete_labels = shift @_;
 
     foreach my $mol ( @{$sg->Molecules} )
     {
@@ -1567,8 +1587,8 @@ sub copySubgraph
 #  in species graph $sg.
 sub stoich
 {
-	my $sg    = shift;
-	my $mname = shift;
+	my $sg    = shift @_;
+	my $mname = shift @_;
 	my $count = 0;
 
 	foreach my $mol ( @{ $sg->Molecules } )
