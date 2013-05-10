@@ -25,7 +25,6 @@ import BNGGrammar_Expression,
   import bngparser.dataType.ReactionRegister;
   import bngparser.methods.GenericMethods;
   import java.util.Arrays;
-  
   import org.apache.commons.lang3.StringEscapeUtils;
 }
 @members{
