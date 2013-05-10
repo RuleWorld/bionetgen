@@ -90,7 +90,7 @@ struct BNGModel =>
     PopulationList      => 'PopulationList',     # list of population species
     SubstanceUnits      => '$',
     UpdateNet           => '$',  # This variable is set to force update of NET file before simulation.
-    Version             => '@',  # Indicates set of version requirements- output to BNGL and NET files
+    Version             => '$',  # Indicates set of version requirements- output to BNGL and NET files
     Options             => '%',  # Options used to control behavior of model and associated methods
     Params              => '%',  # run-time parameters (not to be saved)
     ParameterCache      => 'Cache',   
@@ -111,6 +111,7 @@ sub initialize
     my $model = shift @_;
 
     $model->Name('');
+    $model->Version('');
     $model->Time(0);
     $model->UpdateNet(0);
     $model->ParamList( ParamList->new() );
@@ -1295,7 +1296,8 @@ sub writeBNGL
     $out .= "# Created by BioNetGen $version\n";
 
     # Version requirements
-    $out .= sprintf "version(\"%s\")\n", $model->Version;
+    unless ( $model->Version eq '' )
+    {  $out .= sprintf "version(\"%s\")\n", $model->Version;  }
 
     # Options
     while ( my ($opt,$val) = each %{$model->Options} )
