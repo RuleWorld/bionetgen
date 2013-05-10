@@ -6,8 +6,6 @@ use warnings;
 
 # Perl Modules
 use Class::Struct;
-use FindBin;
-use lib $FindBin::Bin;
 # consider using for reference address comparison?
 #use Scalar::Util 'refaddr';
 

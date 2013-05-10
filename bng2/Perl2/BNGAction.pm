@@ -668,7 +668,7 @@ sub simulate_nf
         binary_output   => { type => 'switch', default_arg => 0,     flags => ["-b"]                      },
         complex         => { type => 'switch', default_arg => 1,     flags => ["-cb"]                     },
         equil           => { type => 'param',  default_arg => undef, flags => ["-eq"]                     },
-        get_final_state => { type => 'switch', default_arg => 0,     flags => ["-ss","${prefix}.species"] },
+        get_final_state => { type => 'switch', default_arg => 1,     flags => ["-ss","${prefix}.species"] },
         gml             => { type => 'param',  default_arg => undef, flags => ["-gml"]                    },
         nocslf          => { type => 'switch', default_arg => 0,     flags => ["-nocslf"]                 },
         notf            => { type => 'switch', default_arg => 0,     flags => ["-notf"]                   },

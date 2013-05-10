@@ -4,13 +4,40 @@ http://code.google.com/p/bionetgen
 
 == Since 2.2.4-testing ==
 
-==== New Example and Validation Models ====
-* Added catalysis.bngl to Models2 directory. This model demonstrates
-the implementation of energy consuming reactions in energy BNGL.
+==== New Features ====
+
+===== Modular model source files =====
+BNG now supports multiple and recursive calls of the readFile() action. This
+allows modular assembly of BNGL models from multiple source files. For example,
+the model definitions can be stored in one file and parameter values in
+a second file.
 
 ==== Changes to BNG action commands ====
 * Complex bookkeeping option, 'complex', is now enabled by default in the
 simulate_nf() action, i.e. 'complex=>1'.
+* Default value for option 'get_final_state' for simulate_nf() action has been
+changed to TRUE. Consequently, the final state of a NF simulation will be
+loaded into the BNG by default. However, to avoid the ''slow'' process of
+canonically labeling massive complexes, any species composed of more than
+20 molecules will be labeled using a quasi-canonical method. If this is still
+too slow, set the option to FALSE (0).
+
+==== New Example and Validation Models ====
+* Added catalysis.bngl to Models2 directory. This model demonstrates
+the implementation of energy consuming reactions in energy BNGL.
+
+==== Bug Fixes ====
+* Fixed minor bug that caused unnecessary retention of temporary labels in HPP
+rules. This bug did not cause errors per se, but did result in a lot of
+unnecessary warning messages.
+* Fixed minor bug in HNauty labeling method that led to failure for species
+graphs with bond wildcards. Note that this bug only affected pattern labels
+(used in HPP) and not proper species.
+
+==== Code refactoring ====
+* Command line argument parsing in BNG2.pl is now handled by the core
+module GetOpts::Long. This change should result in more robust parsing and
+reduced maintaince in the future.
 
 == BioNetGen-2.2.4-testing ==
 '''''2013 March 31'''''
