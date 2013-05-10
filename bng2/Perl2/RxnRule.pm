@@ -406,7 +406,7 @@ sub newRxnRule
                         }
                         else
                         {   # this label was not found among the reactants
-                            $labels{ $g->Label } = 'PC'
+                            $labels{ $label } = 'PC';
                         }
 					    $prefs{$label} = join '.', ($ipatt, $imol, $icomp);
 				    }
