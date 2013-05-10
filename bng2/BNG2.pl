@@ -28,18 +28,18 @@
 use strict;
 use warnings;
 
-
 # Perl Modules
-use File::Spec;
-use IO::Handle;
-use FindBin;
 use Config;
+use File::Spec;
+use FindBin;
+use Getopt::Long;
+use IO::Handle;
 
 # get Perl2 Module directory: look for environment variables BNGPATH or BioNetGenRoot.
 # If neither are defined, use RealBin module
 use lib File::Spec->catdir( (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
-                                (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : $FindBin::RealBin)), "Perl2" );
-
+                              (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : $FindBin::RealBin)), 'Perl2'
+                          );
 # BNG Modules
 use BNGUtils;
 use BNGModel;
@@ -82,132 +82,131 @@ $SIG{'INT'} = sub
 
 
 # Defaults params for File mode
-my $PARAMS_DEFAULT = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
-                       allow_actions=>1, action_skip_warn=>0, logging=>0, no_exec=>0, allow_perl=>0,
-                       no_nfsim=>0 };
+my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
+                             'write_SBML'    => 0,  'generate_network' => 0,
+                             'allow_actions' => 1,  'action_skip_warn' => 0,
+                             'logging'       => 0,  'no_exec'          => 0,
+                             'allow_perl'    => 0,  'no_nfsim'         => 0,
+                             'outdir'        => File::Spec->curdir()
+                           );
 # Default params for Console mode
-my $PARAMS_CONSOLE = { write_xml=>0, write_mfile=>0, write_SBML=>0, generate_network=>0,
-                       allow_actions=>0, action_skip_warn=>1, logging=>0, no_exec=>0, allow_perl=>0,
-                       no_nfsim=>0 };
+my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
+                             'write_SBML'    => 0,  'generate_network' => 0,
+                             'allow_actions' => 0,  'action_skip_warn' => 1,
+                             'logging'       => 0,  'no_exec'          => 0,
+                             'allow_perl'    => 0,  'no_nfsim'         => 0,
+                             'outdir'        => File::Spec->curdir()
+                           );
 
-# Read command line options
-my $params = {%$PARAMS_DEFAULT};
-while ( @ARGV  and  $ARGV[0] =~ s/^(-{1,2})// )
+
+# variables to contain user args
+my $console = 0;
+my $findbin = '';
+my $help    = 0;
+my $version = 0;
+my %user_args = ( 'console' => \$console,
+                  'findbin' => \$findbin,
+                  'help'    => \$help,
+                  'version' => \$version
+                );
+
+# parse command line arguments
+GetOptions( \%user_args, 
+            'help|h',
+            'version|v',
+            'console',
+            'findbin=s',
+            'no_exec|check',
+            'no_nfsim|no-nfsim',
+            'outdir=s',
+            'logging|log',
+            'generate_network|netgen',
+            'write_SBML|sbml',
+            'write_mfile|mfile',
+            'write_xml|xml'
+          )
+or die "Error in command line arguments (try: BNG2.pl --help)";
+
+# display help if requested
+if ($help)
 {
-    my $arg = shift @ARGV;
-    if ( $arg eq 'check' ) {
-        $params->{no_exec} = 1;
-    }
-    elsif ( $arg eq 'log' ) {
-        $params->{logging} = 1;
-    }
-    elsif ( $arg =~ /^(v|version)$/ ){
-        printf "BioNetGen version %s\n", BNGversion();
-        exit(0);    
-    }
-    elsif ( $arg eq 'xml' ) {
-        $params->{write_xml} = 1;
-    }
-    elsif ( $arg eq 'mfile' ) {
-        $params->{write_mfile} = 1;
-    }
-    elsif ( $arg eq 'sbml' ) {
-        $params->{write_sbml} = 1;
-    }
-    elsif ( $arg eq 'outdir' )
-    {   # specify output directory (default is CWD)
-        if (@ARGV) 
-        {   $params->{output_dir} = shift @ARGV;   }
-        else
-        {   exit_error("expected directory name following option 'outdir'.");  }
-    }
-    elsif ( $arg eq 'console' ) {
-        $params->{console} = 1;
-    }
-    elsif ( $arg eq 'findbin' )
-    {   # ask if BNG can find binary
-        if (@ARGV) 
-        {   # next argument is binary name
-            my $bin = shift @ARGV;
-            if ( BNGModel::findExec($bin) )
-            {   exit 0;  }
-            else
-            {   exit 1;  }
-        }
-        else
-        {   exit_error("expected binary name following option 'findbin'.");  }
-    }
-    elsif ( $arg eq 'no-nfsim' ) {
-        $params->{no_nfsim} = 1;
-    }
-    elsif ( $arg =~ /^(h|help)$/ )
-    {   # show help menu and exit
-        display_help();
-        exit(0);
-    }
-    else {
-        exit_error("Unrecognized command line option $arg");
-    }
+    display_help();
+    exit(0);
 }
 
-
-
-
-# check/set output directory
-unless ( $params->{outdir} )
-{   # set to current directory
-    $params->{outdir} = File::Spec->curdir();
-}
-unless ( -d $params->{outdir} )
-{   #  output directory is not a directory
-    send_warning( sprintf "Default output directory %s is not a directory.", $params->{outdir} );
-}
-unless ( -w $params->{outdir} )
-{   # can't write to output directory
-    send_warning( sprintf "Not able to write to default output directory %s.", $params->{outdir} );
-}
-
-
-
-
-if ( $params->{console} )
+# display version info
+if ($version)
 {
-    # Start BioNetGen console!!
-    # use default params for the console (ignore most command line arguments!)
-    my $local_params = {%$PARAMS_CONSOLE};
-    # but do get the output_dir argument
-    if ( defined $params->{output_dir} )
-    {  $local_params->{output_dir} = $params->{output_dir};  }
+    printf "BioNetGen version %s\n", BNGversion();
+    exit(0);
+}
+
+# try to find binary
+if (not( $findbin eq ''))
+{
+    # exit with value 0 if binary is found, 1 otherwise
+    exit( BNGModel::findExec($findbin) ? 0 : 1 );
+}
+
+
+
+if ( $console )
+{
+    # get arguments
+    my %args = ();
+    while ( my ($opt,$val) = each %default_args_console )
+    {
+        $args{$opt} = exists $user_args{$opt} ? $user_args{$opt} : $val;
+    }
+
+    # check if output directory exists and is writable
+    unless ( -d $args{outdir} )
+    {  send_warning( sprintf "Default output directory '%s' is not a directory.", $args{outdir});  }
+    unless ( -w $args{outdir} )
+    {  send_warning( sprintf "Not able to write to default output directory '%s'.", $args{outdir});  }
+
     # start console
-    my $err = BNGconsole( $local_params );
-    if ($err) {  exit_error($err);  }
+    my $err = BNGconsole( \%args );
+    exit_error($err) if ($err);
 }
 else
 {
+    # get arguments
+    my %args = ();
+    while ( my ($opt,$val) = each %default_args )
+    {
+        $args{$opt} = exists $user_args{$opt} ? $user_args{$opt} : $val;
+    }
+
+    # check if output directory exists and is writable
+    unless ( -d $args{outdir} )
+    {  send_warning( sprintf "Default output directory '%s' is not a directory.", $args{outdir});  }
+    unless ( -w $args{outdir} )
+    {  send_warning( sprintf "Not able to write to default output directory '%s'.", $args{outdir});  }
+
     # Process any files
     while ( my $file = shift @ARGV )
     {
         # create BNGMOdel object
         my $model = BNGModel->new();
+        $model->initialize();
         $BNGModel::GLOBAL_MODEL = $model;
-        # make local copy of params
-        my $local_params = { %$params };
-        # add filename to params
-        $local_params->{file} = $file;
+
+        # set file argument
+        $args{'file'} = $file;
 
         # read and process Model file
-        my $err = $model->readFile( $local_params );
-        if ($err) {  exit_error($err);  }
+        my $err = $model->readFile( \%args );
+        exit_error($err) if ($err);
+
         # undefine model
         %$model = ();  undef %$model;
         $BNGModel::GLOBAL_MODEL = undef;
     }
 }
 
-
 # all done!
 exit(0);
-
 
 
 

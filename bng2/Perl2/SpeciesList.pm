@@ -1,5 +1,4 @@
-# $Id: SpeciesList.pm,v 1.14 2007/02/20 17:37:01 faeder Exp $
-
+# A container class for Species objects
 package SpeciesList;
 
 # pragmas
@@ -8,8 +7,6 @@ use warnings;
 
 # Perl Modules
 use Class::Struct;
-use FindBin;
-use lib $FindBin::Bin;
 
 # BNG Modules
 use BNGUtils;
@@ -19,13 +16,12 @@ use MoleculeTypesList;
 use ParamList;
 
 
-
 # Members
 struct SpeciesList =>
 {
-    Array      => '@',
-    Hash       => '%',
-    Hash_exact => '%'
+    Array      => '@',  # array of pointers to species
+    Hash       => '%',  # a hash map from species' StringID to species pointers
+    Hash_exact => '%'   # a hash map from species' StringExact to species pointers
 };
 
 
@@ -46,6 +42,7 @@ sub size
     my $slist = shift @_;
     return scalar @{$slist->Array};
 }
+
 
 ###
 ###
@@ -77,7 +74,7 @@ sub sort
 
 
 
-# Returns pointer to matching species in $slist or null if no match found
+# Returns pointer to matching species in $slist or undef if no match found
 sub lookup
 {
     my $slist = shift @_;
@@ -111,14 +108,7 @@ sub lookup
     return $spec;
 }
 
-
-
-###
-###
-###
-
-
-
+# Look up species by StringExact, returns pointer to species or undef if not found.
 sub lookup_bystring
 {
     my $slist   = shift @_;
@@ -131,6 +121,17 @@ sub lookup_bystring
     }
     return $species;
 }
+
+# Look up species by Index, returns pointer to species or undef if not found.
+sub lookup_by_index
+{
+    my ($slist, $idx) = @_;
+    my $species = undef;
+    if ( exists $slist->Array->[$idx-1] and defined $slist->Array->[$idx-1] )
+    {  $species = $slist->Array->[$idx-1];  }
+    return $species;
+}
+
 
 # Returns reference to Species object either newly created or found in $slist
 # Should check if species already exists in list before adding
@@ -600,8 +601,10 @@ sub getMatlabSpeciesNamesOnly
 
 }
 
-# Put copy of initial concentrations (as defined in model at @$conc
-# If @$conc is non-empty, then check if @$conc is okay (pad with zeros if too short)
+# Check or initialize a species concentration vector: If @$cond is empty, it is loaded
+# with species concentrations from the SpeciesList. If @$conc is non-empty, then 
+# it's checked for size compatibility with SpeciesList. If @$conc is shorter than the
+# SpeciesList, it is padded with zeros. If @$conc is longer, it's an error.
 #
 # $slist->checkOrInitConcentrations( $conc )
 sub checkOrInitConcentrations

@@ -1384,8 +1384,10 @@ sub removeRedundantLabels
     # handle product molecules with autolabels not found in reactants
     foreach my $key ( keys %$autolabels2 )
     {   
+        print STDERR "autolabels2 key = $key\n";
         unless ( exists $autolabels1->{$key} )
         {   
+            print STDERR "  not found in reactants!\n";
             my @set = @{$autolabels2->{$key}};
             foreach my $ptr (@set)
             {

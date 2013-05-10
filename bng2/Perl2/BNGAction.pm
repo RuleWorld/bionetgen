@@ -878,7 +878,7 @@ sub readNFspecies
         or return "Couldn't read from file $fname: $!";
 
     # tell SpeciesLabel to use Quasi method for species w/ large number of molecules
-    my $maxMols = 50;
+    my $maxMols = 20;
     my $save_maxMols = SpeciesGraph::getSpeciesLabelMethod_MaxMols();
     SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $maxMols );
 
