@@ -687,11 +687,14 @@ sub simulate_nf
             if (defined $params->{$arg})
             {   # user switch
                 if ($params->{$arg})
-                {   push @args, @{$arg_hash->{flags}};   }
+                {   push @args, @{$arg_hash->{flags}};  }
             }
-            elsif ($arg_hash->{default_arg})
+            elsif (defined $arg_hash->{default_arg})
             {   # default switch
-                push @args, @{$arg_hash->{flags}};
+                $params->{$arg} = $arg_hash->{default_arg};
+                if ($arg_hash->{default_arg})
+                {   push @args, @{$arg_hash->{flags}};  }
+                
             }
         }
         elsif ($arg_hash->{type} eq "param")
@@ -700,9 +703,10 @@ sub simulate_nf
             {   # user parameter
                 push @args, @{$arg_hash->{flags}}, $params->{$arg};
             }
-            elsif ( defined $arg_hash->{default_arg} )
+            elsif (defined $arg_hash->{default_arg})
             {   # user parameter
                 push @args, @{$arg_hash->{flags}}, $arg_hash->{default_arg};
+                $params->{$arg} = $arg_hash->{default_arg};
             }
         }
     }
@@ -710,7 +714,6 @@ sub simulate_nf
     # append other command line arguments not recognized by BNG
     if ( defined $params->{param} )
     {  push @args, split " ", $params->{param};  }
-
 
     # exit here if we're not executing
     return '' if $BNGModel::NO_EXEC;
@@ -834,8 +837,8 @@ sub simulate_nf
     }
     else
     {
-        print  "Warning: final system state was not retrieved following simulate_nf.\n"
-              ."  To retreive final state, call simulate_nf with option: get_final_state=>1.\n";
+        send_warning( "system state was not retrieved following simulate_nf. "
+                     ."To retreive system state, call simulate_nf with option: get_final_state=>1." );
     }
 
     $model->Time($t_end);
@@ -871,16 +874,16 @@ sub readNFspecies
     }
     my $slist = $model->SpeciesList;
 
+    # tell SpeciesLabel to use Quasi method for species w/ large number of molecules
+    my $maxMols = 20;
+    my $save_maxMols = SpeciesGraph::getSpeciesLabelMethod_MaxMols();
+    SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $maxMols );
+
     # Read NFsim species file
     print "readNFspecies::Reading from file $fname\n";
     #my $FH;
     open(my $FH, "<", $fname)
         or return "Couldn't read from file $fname: $!";
-
-    # tell SpeciesLabel to use Quasi method for species w/ large number of molecules
-    my $maxMols = 20;
-    my $save_maxMols = SpeciesGraph::getSpeciesLabelMethod_MaxMols();
-    SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $maxMols );
 
     my $n_spec_read = 0;
     my $n_spec_new = 0;
@@ -924,11 +927,12 @@ sub readNFspecies
     }
     close $FH;
 
+    $model->Concentrations( $conc_vec );
+    printf "Read %d unique species of %d total.\n", $n_spec_new, $n_spec_read;
+
     # return SpeciesLable method to original setting
     SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $save_maxMols );
 
-    $model->Concentrations( $conc_vec );
-    printf "Read %d unique species of %d total.\n", $n_spec_new, $n_spec_read;
     return '';
 }
 

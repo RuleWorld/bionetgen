@@ -74,21 +74,31 @@ sub setSpeciesLabel
 {
 	my $label = shift @_;
     my $maxmols = @_ ? shift @_ : 0;
-	my %valid = ( 'Auto' => 1, 'HNauty' => 1, 'Quasi' => 1 );
-	if ( defined( $valid{$label} ) )
+	my %valid = ('Auto' => 1, 'HNauty' => 1, 'Quasi' => 1);
+	if ( defined $valid{$label} )
 	{
-		$SpeciesLabel = $label;
-		print "SpeciesLabel method set to $label.\n";
+        if ($SpeciesLabel ne $label)
+        {
+		    $SpeciesLabel = $label;
+		    print "SpeciesLabel method set to $label.\n";
+        }
 	}
-	else {
-		return ("Invalid value for SpeciesLabel function: $label");
+	else
+    {
+		return "Invalid value for SpeciesLabel function: $label";
 	}
 
-    if ($maxmols != 0)
-    {   send_warning( sprintf "Setting SpeciesLabel max molecule threshold at %.0f.", $maxmols );   }
-    $SpeciesLabel_MaxMols = $maxmols;
+    if ($SpeciesLabel_MaxMols != $maxmols)
+    {
+        $SpeciesLabel_MaxMols = $maxmols;
+        printf "SpeciesLabel max molecule threshold set to %.0f.\n", $maxmols;
+        if ($maxmols > 0)
+        {  send_warning(sprintf "Species with more than %.0f molecules will be labeled with the Quasi method.", $maxmols)  }
+        elsif ($maxmols <= 0)
+        {  printf "  (all species will be labeled with the %s method)\n", $SpeciesLabel;  }
+    }
 
-	return "";
+	return '';
 }
 
 # get species label method
