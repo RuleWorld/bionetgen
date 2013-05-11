@@ -25,6 +25,7 @@ use warnings;
 # Perl Core Modules
 use FindBin;
 use File::Spec;
+use Getopt::Long;
 use Cwd ("getcwd");
 use Config;
 
@@ -44,7 +45,7 @@ my $validate = 0;
 # if true, overwrites existing distribution (default 0)
 my $overwrite = 0;
 # distribution version (default undefined)
-my $version;
+my $version = '';
 # distribution codename (default="stable")
 my $codename = 'stable';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
@@ -97,43 +98,26 @@ my @validate_flags  = ();
 # Greet the User
 print "\n>>> BioNetGen Distribution Tool\n";
 
-# Process command line arguments
-while ( @ARGV and $ARGV[0] =~ /^--/ )
+# parse command line arguments
+GetOptions( 'help|h'        => sub { display_help(); exit(0); },
+            'bngpath=s'     => \$bngpath,
+            'outdir=s'      => \$outdir,
+            'bindir=s'      => \$bindir,
+            'version=s'     => \$version,
+            'codename=s'    => \$codename,
+            'archive'       => \$archive,
+            'build'         => \$build,
+            'validate'      => \$validate,
+            'overwrite'     => \$overwrite
+          )
+or die "Error in command line arguments (try: make_dist.pl --help)";
+
+if (@ARGV)
 {
-    my $arg = shift @ARGV;
-    if ( $arg eq '--bngpath' )
-    {   $bngpath = shift @ARGV;   }
-    elsif ( $arg eq '--outdir' )
-    {   $outdir  = shift @ARGV;    }
-    elsif ( $arg eq '--bindir' )
-    {   $bindir  = shift @ARGV;    }
-    elsif ( $arg eq '--version' )
-    {   $version = shift @ARGV;    }
-    elsif ( $arg eq '--codename' )
-    {   $codename = shift @ARGV;   }
-    elsif ( $arg eq '--archive' )
-    {   $archive = 1;   }
-    elsif ( $arg eq '--build' )
-    {   $build = 1;   }
-    elsif ( $arg eq '--validate' )
-    {   $validate = 1;   }
-    elsif ( $arg eq '--overwrite' )
-    {   $overwrite = 1;   }
-    elsif ( $arg eq '--help' )
-    {
-        display_help();
-        exit 0;
-    }
-    else
-    {   # unrecognized option!
-        print "make_dist.pl syntax error:\nunrecognized command line option '$arg'.\n";
-        exit -1;
-    }
+    printf "make_dist.pl warning:\nignoring unrecognized arguments (%s).\n", join(" ", @ARGV);
 }
 
-
-
-if (defined $version )
+if ($version ne '')
 {   # check for proper version format
     unless ($version =~ /^\d+\.\d+\.\d+$/)
     {   # invalid format
