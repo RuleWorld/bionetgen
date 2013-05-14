@@ -230,4 +230,4 @@ fragment UPPER: 'A'..'Z';
 fragment EXPONENT: ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
 VERSION_NUMBER : INT'.'INT'.'INT ;
-ULB:('\\'(' ')*'\r'?'\n')+ {skip();};
+ULB:('\\'(' ')*'\r'?'\n'(WS)*) {skip();};
