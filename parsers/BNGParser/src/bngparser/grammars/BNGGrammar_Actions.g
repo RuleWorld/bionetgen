@@ -104,6 +104,7 @@ gnhy_action_par_def[Map<String,String> map]
   (SUFFIX ASSIGNS DBQUOTES (s1=~(DBQUOTES ))* DBQUOTES {map.put($SUFFIX.text,$s1.text);}) |
 //(ACTIONS ASSIGNS LSBRACKET (DBQUOTE action DBQUOTE)
 //(COMMA DBQUOTE action DBQUOTE)* RSBRACKET)// {map.put($ACTIONS.text,$i5.text);}) |
+  (ACTIONS ASSIGNS LSBRACKET a1=((~RSBRACKET)*) RSBRACKET {map.put($ACTIONS.text,$a1.text);}) | 
   (SAFE ASSIGNS i4=INT {map.put($SAFE.text,$i4.text);})
 ;
                
