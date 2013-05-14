@@ -832,8 +832,8 @@ sub simulate_nf
     {   # Update final species concentrations to allow trajectory continuation
         if (my $err = $model->readNFspecies("${prefix}.species"))
         {  return $err;  }
-        if ( $params->{verbose} )
-        {  print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList );  }
+        #if ( $params->{verbose} )
+        #{  print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList );  }
     }
     else
     {
@@ -999,10 +999,32 @@ sub generate_hybrid_model
     # do nothing if $NO_EXEC is true
     return '' if $BNGModel::NO_EXEC;
 
-    # determine prefix, modelname and filename
-    my $prefix = ( defined $options->{prefix} ) ? $options->{prefix} : $model->getOutputPrefix() .'_'. $options->{suffix};
-    my $modelname = $model->Name .'_'. $options->{suffix};
-    my $modelfile = $prefix . '.bngl';
+    # determine HPP model name
+    # (1) if prefix is defined, try to extract the file basename
+    # (2) otherwise use the name of the parent model
+    my $modelname;
+    my $outdir;
+    if (defined $options->{prefix})
+    {
+        my ($vol,$dir,$filebase) = File::Spec->splitpath($options->{prefix});
+        if ($filebase eq '')
+        { return sprintf "Prefix value '%s' does not end with a file basename", $options->{prefix}; }
+        $outdir = File::Spec->catpath($vol, $dir);
+        $modelname = $filebase;
+    }
+    else
+    {   $outdir = defined $options->{output_dir} ? $options->{output_dir} : $model->getOutputDir();
+        $modelname = $model->Name;
+    }
+    # add suffix
+    $modelname .= "_" . $options->{suffix};
+
+
+    # define prefix
+    my $prefix = defined $options->{prefix} ? $options->{prefix} : File::Spec->catfile($outdir, $modelname);
+    # define filename
+    my $modelfile = $modelname . ".bngl";
+
 
     if ( -e $modelfile )
     {
@@ -1314,7 +1336,7 @@ sub generate_hybrid_model
             if ($@)   {  warn $@;  }
             if ($err) {  push @$errors, $err;  }
         }
-        $BNGModel::GLOBAL_MODEL = undef;
+        $BNGModel::GLOBAL_MODEL = $model;
         if (@$errors) {  return join "\n", $errors;  }
     }
     

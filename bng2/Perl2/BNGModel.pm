@@ -2000,6 +2000,8 @@ sub generate_network
     my $model       = shift @_;
     my $user_params = @_ ? shift @_ : {};
 
+    printf "ACTION: generate_network( %s )\n", $model->Name;
+
     # default params
     my %params = (
         'continue'     => 1,
