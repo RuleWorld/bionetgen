@@ -27,7 +27,7 @@ options{
 
 LINE_COMMENT: '#' ~('\n'|'\r')* {skip();};
 LB: ('\n'|'\r')+; 
-WS: (' '|'\t'|('\\')(' ')*('\r')?('\n'))+ { $channel=HIDDEN;};
+WS: (' '|'\t')+ { $channel=HIDDEN;};
 
 BEGIN: 'begin';
 END: 'end';
@@ -230,3 +230,4 @@ fragment UPPER: 'A'..'Z';
 fragment EXPONENT: ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
 VERSION_NUMBER : INT'.'INT'.'INT ;
+ULB:('\\'(' ')*'\r'?'\n')+ {skip();};
