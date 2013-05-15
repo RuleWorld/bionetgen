@@ -90,7 +90,7 @@ struct BNGModel =>
     PopulationList      => 'PopulationList',     # list of population species
     SubstanceUnits      => '$',
     UpdateNet           => '$',  # This variable is set to force update of NET file before simulation.
-    Version             => '@',  # Indicates set of version requirements- output to BNGL and NET files
+    Version             => '$',  # Indicates set of version requirements- output to BNGL and NET files
     Options             => '%',  # Options used to control behavior of model and associated methods
     Params              => '%',  # run-time parameters (not to be saved)
     ParameterCache      => 'Cache',   
@@ -110,6 +110,10 @@ sub initialize
 {
     my $model = shift @_;
 
+    $model->Name('');
+    $model->Version('');
+    $model->Time(0);
+    $model->UpdateNet(0);
     $model->ParamList( ParamList->new() );
     $model->MoleculeTypesList( MoleculeTypesList->new('StrictTyping'=>0) );
     $model->PopulationTypesList( MoleculeTypesList->new('StrictTyping'=>0) );
@@ -117,7 +121,7 @@ sub initialize
     $model->CompartmentList( CompartmentList->new('Used'=>0) );
     $model->SpeciesList( SpeciesList->new() );
     $model->RxnList( RxnList->new('SpeciesList'=>$model->SpeciesList) );
-    $model->SubstanceUnits("Number");
+    $model->SubstanceUnits('');
     $model->ConcentrationCache( Cache->new() );
     $model->ParameterCache( Cache->new() );
 }
@@ -139,21 +143,16 @@ sub setAsGlobalModel
 # $err = $model->readModel({file=>FILENAME}) 
 sub readModel
 {
-    use strict;
-    use warnings;
-
     my $model = shift @_;
-    my $user_params = @_ ? shift @_ : {};
+    my $user_args = @_ ? shift @_ : {};
 
-    # default parameters
-    my %params = ();
-
+    my %args = ();
     # copy user_params into pass_params structures
-    while ( my ($key,$val) = each %$user_params )
-    {   $params{$key} = $val;    }
+    while ( my ($key,$val) = each %$user_args )
+    {   $args{$key} = $val;    }
 
     # writeFile will generate the output
-    return $model->readFile( \%params );
+    return $model->readFile( \%args );
 }
 
 
@@ -161,21 +160,16 @@ sub readModel
 # $err = $model->readModel({file=>FILENAME}) 
 sub readNetwork
 {
-    use strict;
-    use warnings;
-
     my $model = shift @_;
-    my $user_params = @_ ? shift @_ : {};
+    my $user_args = @_ ? shift @_ : {};
 
-    # default parameters
-    my %params = ();
-
+    my %args = ();
     # copy user_params into pass_params structures
-    while ( my ($key,$val) = each %$user_params )
-    {   $params{$key} = $val;    }
+    while ( my ($key,$val) = each %$user_args )
+    {   $args{$key} = $val;    }
 
     # writeFile will generate the output
-    return $model->readFile( \%params );
+    return $model->readFile( \%args );
 }
 
 
@@ -193,10 +187,10 @@ sub readNetwork
 #  by the block name
 {
 
-    my ($filename, $line_number, $file_dat);
-    my (@filenames, @line_numbers, @file_dats);
+    my ($filename, $line_number, $file_data);
+    my (@filename_stack, @line_number_stack, @file_data_stack, @params_stack);
     my $level = -1;
-    my $MAX_LEVEL = 5;    # Sets maximum level of allowed recursion
+    my $MAX_LEVEL = 10;    # Sets maximum level of allowed recursion
     my %bngdata;
     my $t_start;
     my $stdout_handle;
@@ -210,30 +204,21 @@ sub readNetwork
         # a place for error messages
         my $err;
 
-        # increment level
-        ++$level;
-        # save previous work!
-        if ( $level > 0 )
-        {   # Do this now, so we can exit and recover the previous level in a uniform manner
-            push @filenames, $filename;
-            push @file_dats, $file_dat;
-            push @line_numbers, $line_number;
+        # get the filename
+        my $filename = exists $params->{file} ? $params->{file} : undef;
+        unless ( defined $filename )
+        {   # Filename argument is mandatory
+            $err = errgen( "File parameter is required for action readFile()" );
+            goto EXIT;
         }
 
-        if ( $level > $MAX_LEVEL )
-        {   # done
+        # increment level
+        ++$level;
+        if ($level > $MAX_LEVEL)
+        {
             $err = errgen( "Recursion level exceeds maximum of $MAX_LEVEL" );
             goto EXIT;
         }
- 
-        # get the filename
-        my $filename = defined $params->{file} ? $params->{file} : undef;
-        unless ( defined $filename )
-        {   # Filename argument is mandatory
-            $err = errgen( "File parameter is required for method BNGModel::readFile" );
-            goto EXIT;
-        }
-
 
         # Top level stuff
         if ($level==0)
@@ -241,37 +226,37 @@ sub readNetwork
             # get start time
             $t_start = cpu_time(0);
 
-            # Initialize_model
-            $model->initialize();
-
             # set model update flag
             $model->UpdateNet(1);
 
             # set model name
-            if ( $params->{basename} )
-            {   # set model name to basename
-                $model->Name( $params->{basename} );
-            }
-            else
-            {   # determine model basename from filename
-                my ($vol, $dir, $fn) = File::Spec->splitpath( $filename );  
-                    
-                my $basename;
-                # file = basename.ext
-                if ( $fn =~ /^(.+)\.([^\.]+)$/ )
-                {   $basename = $1;   }
-                # file = basename
-                elsif ( $fn =~ /^([^\.]+)$/ )
-                {   $basename = $1;   }
-                # file = ???
+            if ($model->Name eq '')
+            {
+                if ( $params->{basename} )
+                {   # set model name to basename
+                    $model->Name( $params->{basename} );
+                }
                 else
-                {   $basename = $fn;  }
+                {   # determine model basename from filename
+                    my ($vol, $dir, $fn) = File::Spec->splitpath( $filename );  
+                        
+                    my $basename;
+                    # file = basename.ext
+                    if ( $fn =~ /^(.+)\.([^\.]+)$/ )
+                    {   $basename = $1;   }
+                    # file = basename
+                    elsif ( $fn =~ /^([^\.]+)$/ )
+                    {   $basename = $1;   }
+                    # file = ???
+                    else
+                    {   $basename = $fn;  }
 
-                $model->Name( $basename );  
+                    $model->Name($basename);
+                }
             }
- 
+            
             # set model parameters
-            $model->Params( $params );
+            $model->Params($params);
 
             # set output directory
             unless ( defined $model->Params->{output_dir} )
@@ -298,6 +283,20 @@ sub readNetwork
             # Say Hello to the user
             printf "BioNetGen version %s\n", BNGversion();   
         }
+        elsif ($level > 0)
+        {
+            # save state of previous level on stacks
+            push @filename_stack, $filename;
+            push @file_data_stack, $file_data;
+            push @line_number_stack, $line_number;
+            push @params_stack, $model->Params;
+
+            # inherit params from previous level
+            $model->Params( {%{$model->Params}} );
+            # overwrite any params that were explicitly changed
+            while ( my ($opt,$val) = each %$params )
+            {  $model->Params->{$opt} = $val;  }
+        }
 
 
         # Read BNG model data        
@@ -307,8 +306,8 @@ sub readNetwork
             $err = "Couldn't read from file $filename: $!";
             goto EXIT;
         }
-        # read all lines of the file into an array at $file_dat
-        $file_dat = [<FILE>];
+        # read all lines of the file into an array at $file_data
+        $file_data = [<FILE>];
         # close file
         close FILE;
 
@@ -365,9 +364,6 @@ sub readNetwork
                 ( $block_dat, $err ) = read_block_array($name);
                 if ($err) {  goto EXIT;  }
                 $bngdata{$name} = 1;
-
-
-
 
                 ### Read Parameters Block
                 if ( $name eq 'parameters' )
@@ -585,7 +581,7 @@ sub readNetwork
                 	my $iobs = 0;
                     if ( @{$model->Observables} )
                     {   # Associate groups with exisiting observables
-#                        my $iobs   = 0;
+                        # my $iobs   = 0;
                         foreach my $line ( @$block_dat )
                         {
                             my ($entry, $lno) = @$line;
@@ -609,7 +605,7 @@ sub readNetwork
                             my $group_name = @tokens ? shift @tokens : '';
                             unless ( $group_name eq $obs->Name )
                             {
-                                $err = errgen("Group named $tokens[0] is not compatible with any observable", $lno );
+                                $err = errgen("Group named '$tokens[0]' is not compatible with any observable", $lno );
                                 goto EXIT;
                             }
 
@@ -643,7 +639,7 @@ sub readNetwork
                     }
                     else
                     {   # create a dummy observable for each group
-                        send_warning("Found groups block before observables: creating observables.");
+                        send_warning("Found 'groups' block before 'observables': creating observables.");
 
                         # get the number of species
                         my $n_species = $model->SpeciesList->getNumSpecies();
@@ -753,7 +749,7 @@ sub readNetwork
                         my ($entry, $lno) = @$line;
                         my $epatt = EnergyPattern->new();
                         $err = $epatt->readString( $entry, $model );
-                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                        if ($err) {  $err = errgen($err, $lno);  goto EXIT;  }
                         push @{$model->EnergyPatterns}, $epatt;
                     }
                     # update 
@@ -765,9 +761,9 @@ sub readNetwork
                 ### Read Actions Block
                 elsif ( $name eq 'actions' )
                 {
-                    unless ($model->Params->{allow_actions})
+                    unless ($model->Params->{'allow_actions'})
                     {
-                        unless ($model->Params->{action_skip_warn})
+                        unless ($model->Params->{'action_skip_warn'})
                         {   send_warning( err_gen("Skipping actions") );   }
                         next;
                     }
@@ -824,7 +820,7 @@ sub readNetwork
                 ### Try to read any other Block type (probably an error)
                 else
                 {   # warn user
-                    send_warning( errgen("Could not process block type $name") );
+                    send_warning( errgen("Could not process block type '$name'") );
                 }
             }
 
@@ -864,9 +860,9 @@ sub readNetwork
                 #  try to interpret special characters.    
                 $options =~ s/"/'/g;
 
-                unless ($model->Params->{allow_actions})
+                unless ($model->Params->{'allow_actions'})
                 {
-                    unless ($model->Params->{action_skip_warn})
+                    unless ($model->Params->{'action_skip_warn'})
                     {   send_warning( errgen("Skipping actions") );   }
                     next;
                 }
@@ -911,17 +907,17 @@ sub readNetwork
             # if we're back at level 0, perform any required actions
             if ($level == 0)
             {
-                if ( $model->Params->{write_xml} )
-                {  $model->writeXML();   }
+                if ( $model->Params->{'write_xml'} )
+                {  $model->writeXML();  }
 
-                if ( $model->Params->{generate_network} )
-                {  $model->generate_network( {overwrite=>1} );  }
+                if ( $model->Params->{'generate_network'} )
+                {  $model->generate_network({'overwrite'=>1});  }
 
-                if ( $model->Params->{write_mfile} )
+                if ( $model->Params->{'write_mfile'} )
                 {  $model->writeMfile();  }
 
-                if ( $model->Params->{write_sbml} )
-                {  $model->writeSBML();   }
+                if ( $model->Params->{'write_sbml'} )
+                {  $model->writeSBML();  }
             }
 
             # indicate that we're finished
@@ -938,15 +934,13 @@ sub readNetwork
             }
         }
 
-
-        # RECURSION BOOKKEEPING..
         if ($level > 0)
-        {   # retrieve previous filename, file_dat and line_number
-            $filename = pop @filenames;
-            $file_dat = pop @file_dats;
-            $line_number = pop @line_numbers;
+        {   # retrieve state of previous level from stack
+            $filename = pop @filename_stack;
+            $file_data = pop @file_data_stack;
+            $line_number = pop @line_number_stack;
+            $model->Params( pop @params_stack );
         }    
-
         # drop a level
         --$level;
         # return with any error messages    
@@ -958,7 +952,7 @@ sub readNetwork
 
     sub read_block_array
     {
-        my $name  = shift;
+        my $name  = shift @_;
         my @array = ();
 
         my $got_end = 0;
@@ -983,20 +977,19 @@ sub readNetwork
             }
             elsif ( /^\s*begin\s*/ )
             {
-                return ( [], errgen("begin block before end of previous block $name") );
+                return [], errgen("begin block before end of previous block $name");
             }
 
             # Add declarations from current line
-            push @array, [ ( $_, $line_number ) ];
+            push @array, [$_, $line_number];
 
             #print "$_ $line_number\n";
         }
-        if ( !$got_end )
-        {
-            return ( [], errgen("begin $name has no matching end $name") );
-        }
 
-        return ( [@array] );
+        unless ($got_end)
+        {  return [], errgen("begin $name has no matching end $name");  }
+
+        return [@array];
     }
 
     ###
@@ -1005,7 +998,7 @@ sub readNetwork
     sub errgen
     {
         my $err = shift @_;
-        my $lno = @_ ? shift : $line_number;
+        my $lno = @_ ? shift @_ : $line_number;
         $err =~ s/[*]/\*/g;
         my $reterr = sprintf "%s\n  at line $lno", $err;
         if (defined $filename) { $reterr .= " of file '$filename'"; }
@@ -1018,20 +1011,20 @@ sub readNetwork
     sub get_line
     {
         my $line;
-        while ( $line = shift @$file_dat )
+        while ( $line = shift @$file_data )
         {
             ++$line_number;
             chomp $line;                         # remove newline character
             $line =~ s/\#.*$//;                  # remove comments
-            unless ( $line =~ /\S+/ ) { next; }  # skip blank lines
+            next unless ($line =~ /\S+/);        # skip blank lines
             while ( $line =~ s/\\\s*$// )
             {   # line continuations "\"
-                unless (scalar @$file_dat) { last; }  # end if there are no more lines
+                last unless (@$file_data);       # end if there are no more lines
                 ++$line_number;
-                my $nline = shift @$file_dat;
+                my $nline = shift @$file_data;
                 chomp $nline;
-                $nline =~ s/\#.*$//;                  # remove comments
-                $line .= $nline;                      # append to previous line    
+                $nline =~ s/\#.*$//;             # remove comments
+                $line .= $nline;                 # append to previous line    
             }
             last;
         }
@@ -1303,8 +1296,8 @@ sub writeBNGL
     $out .= "# Created by BioNetGen $version\n";
 
     # Version requirements
-    foreach my $vstring ( @{$model->Version} )
-    {   $out .= "version(\"$vstring\")\n";   }
+    unless ( $model->Version eq '' )
+    {  $out .= sprintf "version(\"%s\")\n", $model->Version;  }
 
     # Options
     while ( my ($opt,$val) = each %{$model->Options} )
@@ -1315,7 +1308,8 @@ sub writeBNGL
     }
 
     # Units
-    $out .= sprintf "substanceUnits(\"%s\")\n", $model->SubstanceUnits;
+    unless ($model->SubstanceUnits eq '')
+    {  $out .= sprintf "substanceUnits(\"%s\")\n", $model->SubstanceUnits;  }
 
     # Begin Model (BNGL only)
     $out .= "\nbegin model\n"  if ( $params{'format'} eq 'bngl'  and  $params{'pretty_formatting'} );
@@ -1915,7 +1909,6 @@ sub version
         return "Requested BioNetGen version $version or lesser. Active version is $bng_version.";
     }
     
-
     # check codename
     unless ($codename eq "")
     {
@@ -1926,9 +1919,8 @@ sub version
         }
     }
     
-
-    # Add current version requirement to the model
-    push @{$model->Version}, $vstring;
+    # Set version requirement
+    $model->Version( $vstring );
 
     # everything is good
     return undef;
@@ -2007,6 +1999,8 @@ sub generate_network
 {
     my $model       = shift @_;
     my $user_params = @_ ? shift @_ : {};
+
+    printf "ACTION: generate_network( %s )\n", $model->Name;
 
     # default params
     my %params = (

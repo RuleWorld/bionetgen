@@ -9,7 +9,7 @@ import java.util.Map;
 import bngparser.dataType.BondList;
 
 /**
- * This class analizes a given reaction and outputs the reactant-product mapping and any necessary actions
+ * This class analyzes a given reaction and outputs the reactant-product mapping and any necessary actions
  * @author proto
  *
  */
@@ -37,8 +37,6 @@ class MoleculeBonds{
 		return bonds;
 	}
 
-
-	
 	public MoleculeBonds(String name, BondList bonds, String[] components) {
 		this.name = name;
 		this.bonds = bonds;
@@ -126,7 +124,6 @@ public class ReactionAction {
 		Map<String,List<String>> tempBonds = new HashMap<String,List<String>>();
 		for(String reactant: molecules.keySet()){
 			List<MoleculeBonds> molecule = molecules.get(reactant);
-			
 			moleculeTag:
 			for(MoleculeBonds species1: molecule){
 				if(species1.getName().contains("RP")){
@@ -134,25 +131,20 @@ public class ReactionAction {
 						if(!species2.getName().contains("RP")){
 							leftMap.add(species1.getName());
 							rightMap.add(species2.getName());
+						
+							//TODO: add bond and delete bond have to be done on a per component level. 
 							
-							//TODO: addbond and delete bond have to be done on a per component level. 
-							
-							//if 2 molecules map two each other we need to check how the components map too
+							//if 2 molecules map to each other we need to check how the components map too
 							for(int i = 0; i< species1.getComponents().length;i++){
 								for(int j = 0; j< species2.getComponents().length;j++){
 									String component1 = species1.getComponents()[i].replaceAll("([A-Za-z0-9_]+).*","$1").replaceAll("\\s","");
 									String component2 = species2.getComponents()[j].replaceAll("([A-Za-z0-9_]+).*","$1").replaceAll("\\s","");
 									if(component1.equals(component2)){
 										leftMap.add(species1.getName() + "_C" + (i+1));
-										rightMap.add(species2.getName() + "_C" + (j+1));
-										
-										
-										
-										if(species1.getComponents()[i].contains("!") && 
-												!species2.getComponents()[j].contains("!")){
-											
+										rightMap.add(species2.getName() + "_C" + (j+1));	
+										if(species1.getComponents()[i].contains("!") && !species2.getComponents()[j].contains("!")){
 											//String label = species1.getComponents()[i].replaceAll("(.+)(![A-Za-z0-9]+)", "$2");
-											String[] label = species1.getComponents()[j].split("!");
+											String[] label = species1.getComponents()[i].split("!");
 											for(int counter=1;counter<label.length;counter++){
 												if(tempBonds.get(label[counter]) == null){
 													tempBonds.put(label[counter], new ArrayList<String>());
@@ -162,9 +154,8 @@ public class ReactionAction {
 											}
 												
 										}
-										else if(species2.getComponents()[j].contains("!") && 
-												!species1.getComponents()[i].contains("!")){
-											//this step checks how many molecules a single components is bound to and adds them to the add bond operation
+										else if(species2.getComponents()[j].contains("!") && !species1.getComponents()[i].contains("!")){
+											//this step checks how many molecules a single component is bound to and adds them to the add bond operation
 											String[] label = species2.getComponents()[j].split("!");
 											for(int counter=1;counter<label.length;counter++){
 												if(tempBonds.get(label[counter]) == null){
@@ -175,16 +166,10 @@ public class ReactionAction {
 											}
 										}
 										species2.getComponents()[j] = "";	
-											
 										break;
 									}
-									
 								}
-								
-								
 							}
-							
-							
 							
 							/*if(species1.getBonds().getNumBonds() > species2.getBonds().getNumBonds()){
 								operations.add("DeleteBond");
@@ -197,18 +182,17 @@ public class ReactionAction {
 								operator2.add(species2.getName());
 							}*/
 							
-							species2.name = "RP"; //this is to indicate that it species2 is not eligible to appear again in the map section
+							species2.name = "RP"; //this is to indicate that species2 is not eligible to appear again in the map section
 					
 							copyMolecules.get(reactant).remove(species1);
 							copyMolecules.get(reactant).remove(species2);
-							
 							
 							continue moleculeTag; //and this is to indicate the same for species1
 						}
 					}
 				}
 			}
-			if(copyMolecules.get(reactant).size()>0){
+			if(copyMolecules.get(reactant).size() > 0){
 				for(MoleculeBonds species: copyMolecules.get(reactant)){
 					if(species.getName().contains("RP")){
 						operations.add("Delete");
@@ -233,6 +217,5 @@ public class ReactionAction {
 				operator2.add("site2=\"" + tempBonds.get(label).get(2) + "\"");
 			}
 		}
-		
 	}
 }

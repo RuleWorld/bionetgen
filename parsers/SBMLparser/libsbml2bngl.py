@@ -63,36 +63,41 @@ class SBML2BNGL:
         returnID = identifier if self.useID else self.speciesDictionary[identifier]
         return (returnID,initialConcentration,isConstant,isBoundary,compartment,name)
 
-    
+   
+    '''
+    walks through a series of * nodes and removes the remainder reactant factors
+    '''
+    def getPrunnedTree(self,math,remainderPatterns):
+        while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
+            if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
+                remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
+                math = math.getRightChild()
+            elif libsbml.formulaToString(math.getRightChild()) in remainderPatterns:
+                remainderPatterns.remove(libsbml.formulaToString(math.getRightChild()))
+                math = math.getLeftChild()            
+            else:
+                if(math.getLeftChild().getCharacter()) == '*':
+                    math.replaceChild(0,self.getPrunnedTree(math.getLeftChild(),remainderPatterns))
+                if(math.getRightChild().getCharacter()) == '*':
+                    math.replaceChild(math.getNumChildren() - 1,self.getPrunnedTree(math.getRightChild(),remainderPatterns))
+                break
+        return math
+
     def removeFactorFromMath(self,math,reactants):
-        '''
-        walks through a series of * nodes and removes the remainder reactant factors
-        '''
-        def getPrunnedTree(math,remainderPatterns):
-            while math.getCharacter() == '*' and len(remainderPatterns) > 0:
-                if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
-                    remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
-                    math = math.getRightChild()
-                elif libsbml.formulaToString(math.getRightChild()) in remainderPatterns:
-                    remainderPatterns.remove(libsbml.formulaToString(math.getRightChild()))
-                    math = math.getLeftChild()            
-                else:
-                    if(math.getLeftChild().getCharacter()) == '*':
-                        math.replaceChild(0,getPrunnedTree(math.getLeftChild(),remainderPatterns))
-                    if(math.getRightChild().getCharacter()) == '*':
-                        math.replaceChild(math.getNumChildren() - 1,getPrunnedTree(math.getRightChild(),remainderPatterns))
-                    break
-            return math
+        
             
         
         remainderPatterns = [x[0] for x in reactants]
-        math = getPrunnedTree(math,remainderPatterns)
+        math = self.getPrunnedTree(math,remainderPatterns)
         rateR = libsbml.formulaToString(math) 
         for element in remainderPatterns:
             rateR = 'if({0} >0,{1}/{0} ,0)'.format(element,rateR)
         return rateR
         
     def __getRawRules(self, reaction):
+        def removeCompartment(math,compartmentList):
+            return getPrunnedTree
+            
         timeArray = []
         if self.useID:
             reactant = [(reactant.getSpecies(),reactant.getStoichiometry()) for reactant in reaction.getListOfReactants() if reactant.getSpecies() != 'EmptySet']
@@ -101,14 +106,25 @@ class SBML2BNGL:
             reactant = [(self.speciesDictionary[reactant.getSpecies()],reactant.getStoichiometry()) for reactant in reaction.getListOfReactants()]
             product = [(self.speciesDictionary[product.getSpecies()],product.getStoichiometry()) for product in reaction.getListOfProducts()]
         kineticLaw = reaction.getKineticLaw()
-        
         rReactant = [(x.getSpecies(),1) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(),1) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
         parameters = [(parameter.getId(),parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
         math = kineticLaw.getMath()
+        #print reactant,product,libsbml.formulaToString(math)
         reversible = reaction.getReversible()
+        
+        #get a list of compartments so that we can remove them
+        compartmentList  = []
+        for compartment in (self.model.getListOfCompartments()):
+            compartmentList.append(compartment.getId())
+        
+        #remove compartments from expression
+        math = self.getPrunnedTree(math,compartmentList)
+        #print libsbml.formulaToString(math)
+            
         if reversible:
+            #print math.getCharacter(),libsbml.formulaToString(math.getLeftChild()),libsbml.formulaToString(math.getRightChild())
             if math.getCharacter() == '-' and math.getNumChildren() > 1:
                 rateL = (self.removeFactorFromMath(math.getLeftChild(),rReactant))
                 rateR = (self.removeFactorFromMath(math.getRightChild(),rProduct))
@@ -191,7 +207,7 @@ class SBML2BNGL:
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
-            
+            #print '--',index
             rawRules =  self.__getRawRules(reaction)
             #newRate = self.updateFunctionReference(rawRules,extraParameters)
             if len(rawRules[2]) >0:
@@ -257,6 +273,7 @@ class SBML2BNGL:
         artificialObservables = {}
         for arule in self.model.getListOfRules():
             rawArule = self.__getRawAssignmentRules(arule)
+            print rawArule
             #newRule = rawArule[1].replace('+',',').strip()
             if rawArule[3] == True:
                 rateLaw1 = rawArule[1][0]
@@ -653,8 +670,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         
     #try:
     #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-        #translator={}    
+    #translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    translator={}    
     #except:
     #    print 'failure'
     #    return None,None,None,None
@@ -844,18 +861,19 @@ def main():
     #144
     rdfArray = []
     classificationArray = []
+    #18,32,87,88,91,109,253,255,268,338,330
     for bioNumber in [19]:
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
         print reactionDefinitions,useID
-        reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
-        spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
-        #spEquivalence = None
+        #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
+        #spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
         
-        rlength,reval,rdf,classif = analyzeFile(bioNumber,reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        rlength,reval,rdf,classif = analyzeFile(bioNumber,reactionDefinitions,False,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
                
         rdfArray.append(getAnnotations(rdf))
         

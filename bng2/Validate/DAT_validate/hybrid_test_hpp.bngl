@@ -1,5 +1,4 @@
 # Created by BioNetGen 2.1.8+
-substanceUnits("Number")
 
 begin model
 begin parameters

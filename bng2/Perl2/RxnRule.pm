@@ -6,8 +6,6 @@ use warnings;
 
 # Perl Modules
 use Class::Struct;
-use FindBin;
-use lib $FindBin::Bin;
 # consider using for reference address comparison?
 #use Scalar::Util 'refaddr';
 
@@ -406,7 +404,7 @@ sub newRxnRule
                         }
                         else
                         {   # this label was not found among the reactants
-                            $labels{ $g->Label } = 'PC'
+                            $labels{ $label } = 'PC';
                         }
 					    $prefs{$label} = join '.', ($ipatt, $imol, $icomp);
 				    }

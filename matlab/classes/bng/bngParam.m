@@ -18,6 +18,8 @@ classdef bngParam < bngLabels
     %                       from unit interval space to parameter space
     %       
     %       genRand     -   samples using the stored distribution objects
+	%
+	%		paramstruct -	creates a parameter structure to be used for PTEMPEST
     %
     %   Use 'help bngLabels' for additional methods inherited from the
     %   superclass
@@ -62,6 +64,29 @@ classdef bngParam < bngLabels
             ind = obj1.getIndex(label);
             obj1.Distribs{ind} = distribObj;
         end
+		
+		function obj1 = createSubset(obj,labels)
+			% obj.createSubset() creates another parameters object from a subset of the labels
+            % USAGE:
+            % 
+            % obj = obj.createSubset(labels)
+            %   obj         - bngParam object
+            %   label       - cell array of strings
+            assert(iscellstr(labels),'Provide a cell array of strings as labels');
+			inds = zeros(1,length(labels));
+			
+			for i=1:1:obj.N
+				for j=1:1:length(labels)
+					if(strcmp(obj.labels{i},labels(j)))
+					inds(j) = i;
+					end
+				end
+			end
+			defaults = obj.defaults(inds);
+			Distribs = obj.Distribs(inds);
+			obj1 = bngParam(labels,defaults);
+			obj1.Distribs = Distribs;
+		end
         
         function xvec = invcdf(obj,yvec)
             % obj.invcdf() uses the stored cdfs to transform a numeric vector from unit interval space to parameter space
@@ -112,6 +137,23 @@ classdef bngParam < bngLabels
             end
         end
         
+		function paramstruct = constructParamStruct(obj)
+			
+			paramstruct = cell(1,obj.N);
+			for i=1:1:obj.N
+				paramname = obj.labels{i};
+				if isa(obj.Distribs{i},'distUniform')
+					parammin = obj.Distribs{i}.Min;
+					parammax = obj.Distribs{i}.Max;
+					paramstruct{i} = struct('name',paramname,'prior','uniform','min',parammin,'max',parammax,'units','');
+				else if isa(obj.Distribs{i},'distConstant')
+					paramvalue = obj.Distribs{i}.val;
+					paramstruct{i} = struct('name',paramname,'prior','point','value',paramvalue,'units','');
+					end
+				end
+					
+			end
+		end
         
             
         

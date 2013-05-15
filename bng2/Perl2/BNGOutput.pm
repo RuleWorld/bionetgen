@@ -737,7 +737,7 @@ sub writeMfile
     elsif ( $model->SubstanceUnits eq 'Concentration' )
     {   $ylabel = 'concentration';   }
     else
-    {   return "writeMfile(): I could not identify model substance units!";   }
+    {   $ylabel = 'number or concentration';   }
 
     
     if ( @{$model->Observables} )
@@ -1222,7 +1222,7 @@ sub writeMexfile
     elsif ( $model->SubstanceUnits eq 'Concentration' )
     {   $ylabel = 'concentration';   }
     else
-    {   return "writeMfile(): I could not identify model substance units!";   }
+    {   $ylabel = 'number or concentration';   }
 
     
     if ( @{$model->Observables} )
@@ -2315,7 +2315,7 @@ sub writeMfile_all
     elsif ( $model->SubstanceUnits eq 'Concentration' )
     {   $ylabel = 'concentration';   }
     else
-    {   return "writeMfile(): I could not identify model substance units!";   }
+    {   $ylabel = 'number or concentration';   }
 
     
     if ( @{$model->Observables} )

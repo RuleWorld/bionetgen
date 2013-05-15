@@ -460,15 +460,18 @@ int main(int argc, char *argv[]){
 	stop_condition.SetExpr(stop_string);
 
     /* Read reactions */
-//	if (!(reactions = read_Rxn_array(netfile, &line_number, &n_read, species, rates, is_func_map_temp, remove_zero))){
-	if (!(reactions = read_Rxn_array(netfile, &net_line_number, &n_read, species, rates, network.is_func_map, remove_zero))){
+	if (!(reactions = read_Rxn_array(netfile,&net_line_number,&n_read,species,rates,network.is_func_map,remove_zero))){
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
 		exit(1);
 	}
 	fprintf(stdout, "Read %d reaction(s)\n", n_read);
 	if (remove_zero) {
 		remove_zero_rate_rxns(&reactions, rates);
-		fprintf(stdout, "%d reaction(s) have nonzero rate\n", reactions->n_rxn);
+		int n_rxn = 0;
+		if (reactions){
+			n_rxn = reactions->n_rxn;
+		}
+		fprintf(stdout, "%d reaction(s) have nonzero rate\n", n_rxn);
 	}
 	else{
 		fprintf(stdout, "nonzero rate reactions were not removed\n"); 
@@ -495,7 +498,7 @@ int main(int argc, char *argv[]){
 
 	/* Initialize SSA */
 	if (propagator == SSA){
-		init_gillespie_direct_network(gillespie_update_interval, seed);
+		init_gillespie_direct_network(gillespie_update_interval,seed);
 	}
 
 	/* Save network to file */
@@ -1003,9 +1006,8 @@ int main(int argc, char *argv[]){
 		fclose(out);
 		fprintf(stdout, "Final network file written to %s\n", buf);
 	}
-	ptimes = t_elapsed();
-	fprintf(stdout, "Program times:  %.2f CPU s %.2f clock s \n", ptimes.total_cpu, ptimes.total_real);
 
+//	exit:
 	// Clean up memory allocated for functions
 	if (network.has_functions) delete[] network.rates->elt;
 	if (propagator == SSA){
@@ -1013,8 +1015,12 @@ int main(int argc, char *argv[]){
 		// NOTE: GSP.included is created whether functions exist or not, so it must always be deleted
 		delete_GSP_included();
 	}
-
-//	exit:
+	// Delete sample_times if exists
 	if (sample_times) free(sample_times);
+
+	// Note that "/^Program times:/" must be last message sent from Network3 (see BNGAction.pm)
+	ptimes = t_elapsed();
+	fprintf(stdout, "Program times:  %.2f CPU s %.2f clock s \n", ptimes.total_cpu, ptimes.total_real);
+
 	return (0);
 }

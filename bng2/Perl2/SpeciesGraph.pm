@@ -56,6 +56,7 @@ struct SpeciesGraph =>
 # Set default species label method:
 #   Allowed values are Auto, HNauty, Quasi.
 my $SpeciesLabel = 'Auto';
+my $SpeciesLabel_MaxMols = 0;
 
 
 
@@ -71,20 +72,45 @@ my $SpeciesLabel = 'Auto';
 #  Quasi  == quasi-canonical labeling, no checks (unsafe method)
 sub setSpeciesLabel
 {
-	my $label = shift;
-	my %valid = ( 'Auto' => 1, 'HNauty' => 1, 'Quasi' => 1 );
-	if ( defined( $valid{$label} ) )
+	my $label = shift @_;
+    my $maxmols = @_ ? shift @_ : 0;
+	my %valid = ('Auto' => 1, 'HNauty' => 1, 'Quasi' => 1);
+	if ( defined $valid{$label} )
 	{
-		$SpeciesLabel = $label;
-		print "SpeciesLabel method set to $label.\n";
+        if ($SpeciesLabel ne $label)
+        {
+		    $SpeciesLabel = $label;
+		    print "SpeciesLabel method set to $label.\n";
+        }
 	}
-	else {
-		return ("Invalid value for SpeciesLabel function: $label");
+	else
+    {
+		return "Invalid value for SpeciesLabel function: $label";
 	}
-	return "";
+
+    if ($SpeciesLabel_MaxMols != $maxmols)
+    {
+        $SpeciesLabel_MaxMols = $maxmols;
+        printf "SpeciesLabel max molecule threshold set to %.0f.\n", $maxmols;
+        if ($maxmols > 0)
+        {  send_warning(sprintf "Species with more than %.0f molecules will be labeled with the Quasi method.", $maxmols)  }
+        elsif ($maxmols <= 0)
+        {  printf "  (all species will be labeled with the %s method)\n", $SpeciesLabel;  }
+    }
+
+	return '';
 }
 
-
+# get species label method
+sub getSpeciesLabelMethod
+{
+    return $SpeciesLabel;
+}
+# get species label max molecules
+sub getSpeciesLabelMethod_MaxMols
+{
+    return $SpeciesLabel_MaxMols;
+}
 
 
 ###
@@ -385,9 +411,9 @@ sub labelHNauty
 	use strict;
 	use Data::Dumper;
 	
-	my $sg = shift;
-	my $allow_dangling = (@_) ? shift : 0;
-	my $trim_dangling  = (@_) ? shift : 0;
+	my $sg = shift @_;
+	my $allow_dangling = @_ ? shift @_ : 0;
+	my $trim_dangling  = @_ ? shift @_ : 0;
 	
 	# holds error value for return
 	my $err;
@@ -417,33 +443,54 @@ sub labelHNauty
     # (2) partition by Molecule and Componoent names (could add connectivity later, if it improves performance)
     # (3) create edges from Molecules to its contained Components
     # (4) collect bonds in a hash (precludes need to call update edges beforehand).
-	foreach my $mol ( @{ $sg->Molecules } )
+	foreach my $mol ( @{$sg->Molecules} )
     {
-		my $mname = $mol->Name . "."
-                    . ( defined $mol->State ? $mol->State : '' ) . "."
-                    . ( defined $mol->Compartment ? $mol->Compartment : '' );
 		$pointer_index{$imol} = $imol;
-		push @{ $mtypes{$mname} }, $imol;
-		foreach my $edge ( @{ $mol->Edges } )
+
+        my $bond_wildcard = '';
+		foreach my $edge ( @{$mol->Edges} )
         {
-			push @{ $bonds{$edge} }, $imol;
+            if ($edge =~ /(\+|\?|\-)/)
+            {  $bond_wildcard = $1;  }
+            else
+            {  push @{$bonds{$edge}}, $imol;  }
 		}
+
+		my $mname = join( ".", $mol->Name,
+                               defined $mol->State ? $mol->State : '',
+                               $bond_wildcard,
+                               defined $mol->Compartment ? $mol->Compartment : ''
+                        );
+
+		push @{ $mtypes{$mname} }, $imol;
+
 		my $jcomp = 0;
 		foreach my $comp ( @{$mol->Components} )
         {
-			my $cname = $mname . "."
-			            . $comp->Name . "."
-			            . ( defined $comp->State ? $comp->State : '' ) . "."
-			            . ( defined $comp->Compartment ? $comp->Compartment : '' );
-			my $p = "$imol.$jcomp";
-			$pointer_index{$p} = $icomp;
-			push @{ $ctypes{$cname} }, $icomp;
-			$adj{$imol}{$icomp} = [0];
-			$adj{$icomp}{$imol} = [0];
+			my $ptr = "$imol.$jcomp";
+			$pointer_index{$ptr} = $icomp;
+
+            my $bond_wildcard = '';
 			foreach my $edge ( @{$comp->Edges} )
             {
-				push @{ $bonds{$edge} }, $p;
+                if ($edge =~ /(\+|\?|\-)/)
+                {  $bond_wildcard = $1;  }
+                else
+                {  push @{$bonds{$edge}}, $ptr;  }
 			}
+
+			my $cname = join( ".", $mname,
+                                   $comp->Name,
+                                   defined $comp->State ? $comp->State : '',
+                                   $bond_wildcard,
+			                       defined $comp->Compartment ? $comp->Compartment : ''
+                            );
+
+			push @{ $ctypes{$cname} }, $icomp;
+
+			$adj{$imol}{$icomp} = [0];
+			$adj{$icomp}{$imol} = [0];
+
 			++$icomp;
 			++$jcomp;
 		}
@@ -538,8 +585,7 @@ sub labelQuasi
 
     # update edges after sort!
 	$err = $sg->updateEdges( $allow_dangling, $trim_dangling );
-	if ( $err ) { return $err; }
-
+	if ($err) { return $err; }
 
 	# Create quasi-canonical string representation
 	$sg->StringID( $sg->toString(!PRINT_EDGES, !PRINT_ATTRIBUTES ) );
@@ -564,19 +610,19 @@ sub labelQuasi
 # Modified version using different labeling functions
 sub sortLabel
 { 
-	my $sg = shift;
-	my $allow_dangling = (@_) ? shift : FALSE;
-	my $trim_dangling  = (@_) ? shift : FALSE;
+	my $sg = shift @_;
+	my $allow_dangling = @_ ? shift @_ : FALSE;
+	my $trim_dangling  = @_ ? shift @_ : FALSE;
 
     my $err = undef;
-	if    ( $SpeciesLabel eq 'Auto' )
-	{
-	    my $is_canonical = FALSE;
-		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
-	}
-	elsif ( $SpeciesLabel eq 'Quasi' )
+	if ( ($SpeciesLabel eq 'Quasi') or ($SpeciesLabel_MaxMols and (@{$sg->Molecules} > $SpeciesLabel_MaxMols)) )
 	{   # Equivalent to setting check_iso=>0
 	    my $is_canonical = TRUE;
+		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
+	}
+	elsif ( $SpeciesLabel eq 'Auto' )
+	{
+	    my $is_canonical = FALSE;
 		$err = $sg->labelQuasi( $is_canonical, $allow_dangling, $trim_dangling );
 	}
 	elsif ( $SpeciesLabel eq 'HNauty' )
@@ -586,6 +632,7 @@ sub sortLabel
 	
 	return $err;
 }
+
 
 
 
@@ -1121,8 +1168,8 @@ sub relinkCompartments
 # gather all labels associated with this Species
 sub gatherLabels
 {
-    my $sg = shift;
-    my $label_map = shift;
+    my $sg = shift @_;
+    my $label_map = shift @_;
     my $i_sg = (@_) ? shift : 0;
     
     $label_map->{$sg->Label} = $i_sg  if (defined $sg->Label);
@@ -1147,8 +1194,8 @@ sub gatherLabels
 
 sub isPopulationType
 {
-    my $sg = shift;
-    my $mtlist = shift;
+    my $sg = shift @_;
+    my $mtlist = shift @_;
  
     my $mt = $mtlist->MolTypes->{$sg->Molecules->[0]->Name};
     return (defined $mt->PopulationType) ? $mt->PopulationType : 0;
@@ -1165,10 +1212,10 @@ sub isPopulationType
 # assign unique labels to molecules and components of this species
 sub assignLabels
 {
-    my $sg = shift;
-    my $start_index = shift;
-    my $new_labels = shift;
-    my $used_labels = shift;
+    my $sg = shift @_;
+    my $start_index = shift @_;
+    my $new_labels = shift @_;
+    my $used_labels = shift @_;
     
     my $base = 'T';
     my $i_label = $start_index;
@@ -1208,8 +1255,8 @@ sub assignLabels
 # search for and remove specific labels
 sub removeLabels
 {
-    my $sg = shift;
-    my $delete_labels = shift;
+    my $sg = shift @_;
+    my $delete_labels = shift @_;
 
     foreach my $mol ( @{$sg->Molecules} )
     {
@@ -1236,67 +1283,33 @@ sub removeLabels
 ###
 
 
-# remove labels
+# remove labels that are not required to enforce the correct mapping
+#   a set of 'reactant' species graphs to 'product' species graphs.
 sub removeRedundantLabels
 {
     my ($sgs1, $sgs2, $temp_labels) = @_;
     
-    # build auto-labels for reactant molecules
-    my $autolabels1 = {};
-    for ( my $ip = 0;  $ip < @$sgs1;  ++$ip )
-    {
-        my $patt = $sgs1->[$ip];
-	    for ( my $im = 0 ; $im < @{$patt->Molecules} ; ++$im )
-	    {
-		    my $mol   = $patt->Molecules->[$im];
-            my @comps = ();
-            foreach my $comp ( @{$mol->Components} )
-            {
-                if ( defined $comp->Label and (not exists $temp_labels->{$comp->Label}) )
-                {   push @comps, "%" . $comp->Label;   }
-                else
-                {   push @comps, $comp->Name;   }
-            }
-            my $mlabel = ((defined $mol->Label) and (not exists $temp_labels->{$mol->Label})) ?
-                          ("%" . $mol->Label)  :  $mol->Name;
-            # add component names so we can distinguish molecules of the same type w/ different listed components.
-			$mlabel .= '_' . join( '_', sort @comps )  if (@comps);
-            $autolabels1->{$mlabel} = []  unless (exists $autolabels1->{$mlabel});
-		    push @{$autolabels1->{$mlabel}}, "$ip.$im";
-		}
-    }
+    # autolabel molecules
+    my $autolabels1 = autolabel_molecules($sgs1, $temp_labels);
+    my $autolabels2 = autolabel_molecules($sgs2, $temp_labels);
 
-    # build auto-labels for product molecules
-    my $autolabels2 = {};
-    for ( my $ip = 0;  $ip < @$sgs2;  ++$ip )
+    # balance autolabels
+    foreach my $key ( keys %$autolabels1)
     {
-        my $patt = $sgs2->[$ip];
-	    for ( my $im = 0 ; $im < @{$patt->Molecules} ; ++$im )
-	    {
-		    my $mol   = $patt->Molecules->[$im];
-            my @comps = ();
-            foreach my $comp ( @{$mol->Components} )
-            {
-                if ( defined $comp->Label and (not exists $temp_labels->{$comp->Label}) )
-                {   push @comps, "%" . $comp->Label;   }
-                else
-                {   push @comps, $comp->Name;   }
-            }
-            my $mlabel = ((defined $mol->Label) and (not exists $temp_labels->{$mol->Label})) ?
-                          ("%" . $mol->Label)  :  $mol->Name;
-            # add component names so we can distinguish molecules of the same type w/ different listed components.
-			$mlabel .= '_' . join( '_', sort @comps )  if (@comps);
-    		# add to list of molecules with this label
-            $autolabels2->{$mlabel} = []  unless (exists $autolabels2->{$mlabel});
-		    push @{$autolabels2->{$mlabel}}, "$ip.$im";
-		}
+        unless ( exists $autolabels2->{$key} )
+        {  $autolabels2->{$key} = [];  }
+    }
+    foreach my $key ( keys %$autolabels2)
+    {
+        unless ( exists $autolabels1->{$key} )
+        {  $autolabels1->{$key} = [];  }
     }
 
     # remove temporary molecule labels that are not required for the correspondence mapping
     foreach my $key ( keys %$autolabels1 )
     {   
         my @set1 = @{$autolabels1->{$key}};
-        my @set2 = exists $autolabels2->{$key} ? @{$autolabels2->{$key}} : ();
+        my @set2 = @{$autolabels2->{$key}};
 
         while ( @set1 )
         {   # get molecule 1
@@ -1362,62 +1375,83 @@ sub removeRedundantLabels
                 }
             }
         }
-    }
 
-    # handle product molecules with autolabels not found in reactants
-    foreach my $key ( keys %$autolabels2 )
-    {   
-        unless ( exists $autolabels1->{$key} )
-        {   
-            my @set = @{$autolabels2->{$key}};
-            foreach my $ptr (@set)
-            {
-                my ($ip,$im) = split /\./, $ptr;
-                my $mol = $sgs2->[$ip]->Molecules->[$im];
-                $mol->Label(undef)  if ( defined $mol->Label  and  exists $temp_labels->{$mol->Label} );
-                foreach my $comp ( @{$mol->Components} )
-                {   # remove temporary component labels
-                    $comp->Label(undef)  if ( defined $comp->Label  and  exists $temp_labels->{$comp->Label} );
-                }
+        # handle product molecules without a match on the reactant side
+        while (@set2)
+        {   # get molecule 2
+            my ($ip2,$im2) = split /\./, shift @set2;
+            my $mol2 = $sgs2->[$ip2]->Molecules->[$im2];
+
+            if ( defined $mol2->Label and exists $temp_labels->{$mol2->Label})
+            {   # remove temporary label
+                $mol2->Label(undef);
+            }
+            foreach my $comp ( @{$mol2->Components} )
+            {   # remove temporary component labels
+                $comp->Label(undef) if ( defined $comp->Label and exists $temp_labels->{$comp->Label} );
             }
         }
     }
 
     return;
 
-    #----------------------------------------------------#
-    # subroutine that removes redundant component labels #
-    #----------------------------------------------------#
+
+    # build autolabels for molecules belonging to species graphs in an array
+    sub autolabel_molecules
+    {
+        my ($sgs, $temp_labels) = @_;
+        # build auto-labels for reactant molecules
+        my $autolabels = {};
+        for ( my $ip = 0;  $ip < @$sgs;  ++$ip )
+        {
+            my $patt = $sgs->[$ip];
+	        for ( my $im = 0 ; $im < @{$patt->Molecules} ; ++$im )
+	        {
+		        my $mol   = $patt->Molecules->[$im];
+                my @comps = ();
+                foreach my $comp ( @{$mol->Components} )
+                {
+                    if ( defined $comp->Label and (not exists $temp_labels->{$comp->Label}) )
+                    {   push @comps, "%" . $comp->Label;   }
+                    else
+                    {   push @comps, $comp->Name;   }
+                }
+                my $mlabel = ((defined $mol->Label) and (not exists $temp_labels->{$mol->Label})) ?
+                              ("%" . $mol->Label)  :  $mol->Name;
+                # add component names so we can distinguish molecules of the same type w/ different listed components.
+			    $mlabel .= '_' . join( '_', sort @comps )  if (@comps);
+                $autolabels->{$mlabel} = []  unless (exists $autolabels->{$mlabel});
+		        push @{$autolabels->{$mlabel}}, "$ip.$im";
+		    }
+        }
+        return $autolabels;
+    }
+
+    # removes redundant component labels
     sub remove_redundant_component_labels
     {
         my ($mol1, $mol2, $temp_labels) = @_;
 
-        # build auto-labels for mol1 components
-        my $autolabels1 = {};
-	    for ( my $ic = 0 ; $ic < @{$mol1->Components} ; ++$ic )
+        my $autolabels1 = autolabel_components($mol1, $temp_labels);
+        my $autolabels2 = autolabel_components($mol2, $temp_labels);
+
+        # balance autolabels
+        foreach my $key ( keys %$autolabels1)
         {
-            my $comp = $mol1->Components->[$ic];
-            my $clabel = ((defined $comp->Label)  and  (not exists $temp_labels->{$comp->Label})) ?
-                          ("%" . $comp->Label)  :  $comp->Name;
-            $autolabels1->{$clabel} = []  unless (exists $autolabels1->{$clabel});
-            push @{$autolabels1->{$clabel}}, "$ic";
+            unless ( exists $autolabels2->{$key} )
+            {  $autolabels2->{$key} = [];  }
         }
-        # build auto-labels for mol2 components
-        my $autolabels2 = {};
-	    for ( my $ic = 0 ; $ic < @{$mol2->Components} ; ++$ic )
+        foreach my $key ( keys %$autolabels2)
         {
-            my $comp = $mol2->Components->[$ic];
-            my $clabel = ((defined $comp->Label) and (not exists $temp_labels->{$comp->Label})) ?
-                          ("%" . $comp->Label)  :  $comp->Name;
-    		# add to list of molecules with this label
-            $autolabels2->{$clabel} = []  unless (exists $autolabels2->{$clabel});
-            push @{$autolabels2->{$clabel}}, "$ic";
+            unless ( exists $autolabels1->{$key} )
+            {  $autolabels1->{$key} = [];  }
         }
+
         # remove temporary molecule labels that are not required for the correspondence mapping
         foreach my $key ( keys %$autolabels1 )
         {   
             my @set1 = @{$autolabels1->{$key}};
-            my @set2 = exists $autolabels2->{$key} ? @{$autolabels2->{$key}} : ();
+            my @set2 = @{$autolabels2->{$key}};
 
             while ( @set1 )
             {   # get component 1
@@ -1476,23 +1510,35 @@ sub removeRedundantLabels
                     $comp1->Label(undef) if ( not $ambiguous and defined $comp1->Label and exists $temp_labels->{$comp1->Label} );
                 }
             }
-        }
-        # handle product components with autolabels not found in reactants
-        foreach my $key ( keys %$autolabels2 )
-        {   
-            unless ( exists $autolabels1->{$key} )
-            {   
-                my @set = @{$autolabels2->{$key}};
-                foreach my $ic (@set)
-                {
-                    my $comp = $mol2->Components->[$ic];
-                    $comp->Label(undef)  if ( defined $comp->Label and exists $temp_labels->{$comp->Label} );
+
+            # handle product molecules without a match on the reactant side
+            while (@set2)
+            {   # get component 2
+                my $ic = shift @set2;
+                my $comp = $mol2->Components->[$ic];
+                if ( defined $comp->Label and exists $temp_labels->{$comp->Label})
+                {   # remove temporary label
+                    $comp->Label(undef);
                 }
             }
         }
-        return;
     }
-    # end sub-sub
+
+    # build autolabels for components belonging to a molecule
+    sub autolabel_components
+    {
+        my ($mol, $temp_labels) = @_;
+        my $autolabels = {};
+	    for ( my $ic = 0 ; $ic < @{$mol->Components} ; ++$ic )
+        {
+            my $comp = $mol->Components->[$ic];
+            my $clabel = ((defined $comp->Label)  and  (not exists $temp_labels->{$comp->Label})) ?
+                          ("%" . $comp->Label)  :  $comp->Name;
+            $autolabels->{$clabel} = []  unless (exists $autolabels->{$clabel});
+            push @{$autolabels->{$clabel}}, "$ic";
+        }
+        return $autolabels;
+    }
 }
 
 
@@ -1551,8 +1597,8 @@ sub copySubgraph
 #  in species graph $sg.
 sub stoich
 {
-	my $sg    = shift;
-	my $mname = shift;
+	my $sg    = shift @_;
+	my $mname = shift @_;
 	my $count = 0;
 
 	foreach my $mol ( @{ $sg->Molecules } )

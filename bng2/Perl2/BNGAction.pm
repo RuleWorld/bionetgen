@@ -668,7 +668,7 @@ sub simulate_nf
         binary_output   => { type => 'switch', default_arg => 0,     flags => ["-b"]                      },
         complex         => { type => 'switch', default_arg => 1,     flags => ["-cb"]                     },
         equil           => { type => 'param',  default_arg => undef, flags => ["-eq"]                     },
-        get_final_state => { type => 'switch', default_arg => 0,     flags => ["-ss","${prefix}.species"] },
+        get_final_state => { type => 'switch', default_arg => 1,     flags => ["-ss","${prefix}.species"] },
         gml             => { type => 'param',  default_arg => undef, flags => ["-gml"]                    },
         nocslf          => { type => 'switch', default_arg => 0,     flags => ["-nocslf"]                 },
         notf            => { type => 'switch', default_arg => 0,     flags => ["-notf"]                   },
@@ -687,11 +687,14 @@ sub simulate_nf
             if (defined $params->{$arg})
             {   # user switch
                 if ($params->{$arg})
-                {   push @args, @{$arg_hash->{flags}};   }
+                {   push @args, @{$arg_hash->{flags}};  }
             }
-            elsif ($arg_hash->{default_arg})
+            elsif (defined $arg_hash->{default_arg})
             {   # default switch
-                push @args, @{$arg_hash->{flags}};
+                $params->{$arg} = $arg_hash->{default_arg};
+                if ($arg_hash->{default_arg})
+                {   push @args, @{$arg_hash->{flags}};  }
+                
             }
         }
         elsif ($arg_hash->{type} eq "param")
@@ -700,9 +703,10 @@ sub simulate_nf
             {   # user parameter
                 push @args, @{$arg_hash->{flags}}, $params->{$arg};
             }
-            elsif ( defined $arg_hash->{default_arg} )
+            elsif (defined $arg_hash->{default_arg})
             {   # user parameter
                 push @args, @{$arg_hash->{flags}}, $arg_hash->{default_arg};
+                $params->{$arg} = $arg_hash->{default_arg};
             }
         }
     }
@@ -710,7 +714,6 @@ sub simulate_nf
     # append other command line arguments not recognized by BNG
     if ( defined $params->{param} )
     {  push @args, split " ", $params->{param};  }
-
 
     # exit here if we're not executing
     return '' if $BNGModel::NO_EXEC;
@@ -829,13 +832,13 @@ sub simulate_nf
     {   # Update final species concentrations to allow trajectory continuation
         if (my $err = $model->readNFspecies("${prefix}.species"))
         {  return $err;  }
-        if ( $params->{verbose} )
-        {  print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList );  }
+        #if ( $params->{verbose} )
+        #{  print $model->SpeciesList->writeBNGL( $model->Concentrations, $model->ParamList );  }
     }
     else
     {
-        print  "Warning: final system state was not retrieved following simulate_nf.\n"
-              ."  To retreive final state, call simulate_nf with option: get_final_state=>1.\n";
+        send_warning( "system state was not retrieved following simulate_nf. "
+                     ."To retreive system state, call simulate_nf with option: get_final_state=>1." );
     }
 
     $model->Time($t_end);
@@ -870,6 +873,11 @@ sub readNFspecies
         $model->SpeciesList( SpeciesList->new );
     }
     my $slist = $model->SpeciesList;
+
+    # tell SpeciesLabel to use Quasi method for species w/ large number of molecules
+    my $maxMols = 20;
+    my $save_maxMols = SpeciesGraph::getSpeciesLabelMethod_MaxMols();
+    SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $maxMols );
 
     # Read NFsim species file
     print "readNFspecies::Reading from file $fname\n";
@@ -921,6 +929,10 @@ sub readNFspecies
 
     $model->Concentrations( $conc_vec );
     printf "Read %d unique species of %d total.\n", $n_spec_new, $n_spec_read;
+
+    # return SpeciesLable method to original setting
+    SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $save_maxMols );
+
     return '';
 }
 
@@ -987,10 +999,32 @@ sub generate_hybrid_model
     # do nothing if $NO_EXEC is true
     return '' if $BNGModel::NO_EXEC;
 
-    # determine prefix, modelname and filename
-    my $prefix = ( defined $options->{prefix} ) ? $options->{prefix} : $model->getOutputPrefix() .'_'. $options->{suffix};
-    my $modelname = $model->Name .'_'. $options->{suffix};
-    my $modelfile = $prefix . '.bngl';
+    # determine HPP model name
+    # (1) if prefix is defined, try to extract the file basename
+    # (2) otherwise use the name of the parent model
+    my $modelname;
+    my $outdir;
+    if (defined $options->{prefix})
+    {
+        my ($vol,$dir,$filebase) = File::Spec->splitpath($options->{prefix});
+        if ($filebase eq '')
+        { return sprintf "Prefix value '%s' does not end with a file basename", $options->{prefix}; }
+        $outdir = File::Spec->catpath($vol, $dir);
+        $modelname = $filebase;
+    }
+    else
+    {   $outdir = defined $options->{output_dir} ? $options->{output_dir} : $model->getOutputDir();
+        $modelname = $model->Name;
+    }
+    # add suffix
+    $modelname .= "_" . $options->{suffix};
+
+
+    # define prefix
+    my $prefix = defined $options->{prefix} ? $options->{prefix} : File::Spec->catfile($outdir, $modelname);
+    # define filename
+    my $modelfile = $modelname . ".bngl";
+
 
     if ( -e $modelfile )
     {
@@ -1235,7 +1269,7 @@ sub generate_hybrid_model
                 }
                 if ( $options->{verbose} )
                 {
-                    print $indent.$indent . sprintf "Rule '%s': expanded to %d child rules%s.\n",
+                    print $indent.$indent . sprintf "Rule '%s': expanded to %d child rule%s.\n",
                                                     $rr_copy->Name, scalar @$child_rule_list, ((scalar @$child_rule_list > 1)?'s':'');
                 }
                 ++$rule_count;
@@ -1302,7 +1336,7 @@ sub generate_hybrid_model
             if ($@)   {  warn $@;  }
             if ($err) {  push @$errors, $err;  }
         }
-        $BNGModel::GLOBAL_MODEL = undef;
+        $BNGModel::GLOBAL_MODEL = $model;
         if (@$errors) {  return join "\n", $errors;  }
     }
     

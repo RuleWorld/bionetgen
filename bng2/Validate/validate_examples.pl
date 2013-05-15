@@ -60,18 +60,16 @@
 #   Canonical labeling
 #   On-the-fly simulation
 
-
 use strict;
 use warnings;
-
 # Perl Modules
 use FindBin;
 use File::Spec;
+use Getopt::Long;
 use Scalar::Util qw( looks_like_number );
 use Config;
 use IO::Handle;
 use IPC::Open3;
-
 
 
 ### PARAMETERS ###
@@ -131,38 +129,30 @@ my @bngargs = ();
 # Greet the User
 print "\n---[ BioNetGen Validation Utility ]---\n\n";
 
-# Process command line arguments
-while ( @ARGV and $ARGV[0] =~ /^--/ )
-{
-    my $arg = shift @ARGV;
-    if ( $arg eq '--bngpath' )
-    {   $bngpath = shift @ARGV;   }
-    elsif ( $arg eq '--modelpath' )
-    {   $modeldir = shift @ARGV;  }
-    elsif ( $arg eq '--datpath' )
-    {   $datdir = shift @ARGV;    }
-    elsif ( $arg eq '--outpath' )
-    {   $outdir = shift @ARGV;    }
-    elsif ( $arg eq '--pvalue' )
-    {   $pvalue = shift @ARGV;    }
-    elsif ( $arg eq '--no-nfsim' )
-    {   $check_nfsim = 0;   }
-    elsif ( $arg eq '--no-delete-files' )
-    {   $delete_working_files = 0;   }
-    elsif ( $arg eq '--help' )
-    {   display_help();  exit 0;   }
-    else
-    {   # unrecognized option!
-        print "$0 syntax error: unrecognized command line option '$arg'.\n";
-        exit -1;
-    }
-}
+# parse command line arguments
+GetOptions( 'help|h'        => sub { display_help(); exit(0); },
+            'bngpath=s'     => \$bngpath,
+            'modeldir=s'    => \$modeldir,
+            'datdir=s'      => \$datdir,
+            'outdir=s'      => \$outdir,
+            'pvalue=f'      => \$pvalue,
+            'nfsim!'        => \$check_nfsim,
+            'delete-files!' => \$delete_working_files
+          )
+or die "Error in command line arguments (try: validate_examples.pl --help)";
+
+
+
 
 # get models to validate
 my @models;
 if (@ARGV)
 {   # remaining command line arguments are models
     @models = (@ARGV);
+    foreach my $model (@models)
+    {   # trim trailing .bngl, if any
+        $model =~ s/\.bngl$//;
+    }
 }
 else
 {   # run validations on all models in $modeldir

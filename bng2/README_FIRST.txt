@@ -32,6 +32,13 @@ compilation tools, you may compile your own binaries from a console as follows:
     ./configure --disable-shared --prefix=<bngpath>
     make
     make install
+    
+Alternatively, binaries can be compiled using CMake. Download CMake from
+http://www.cmake.org/ and add to PATH. Then:
+
+	cd <bngpath>\Network3
+	cp Makefile.cmake Makefile
+	make
 
 Example models are provided in the Models2 folder. To run them, go to
 the Models2 directory, and type:

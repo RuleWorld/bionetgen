@@ -110,7 +110,8 @@ sign_expression returns [Double value]
 //recover primitive for functions
 boolean_negation_expression returns [Double value]
 : 
-  (n=NOT)? e=primitive_element {$value = e.value * (n == null ? 1 : -1);} 
+// (n=NOT)? e=primitive_element {$value = e.value * (n == null ? 1 : -1);} // BNG doesn't support unary 'not'
+  e=primitive_element {$value = e.value;} 
 ;
 
 primitive_element returns [Double value]

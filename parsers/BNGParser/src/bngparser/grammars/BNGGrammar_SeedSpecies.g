@@ -198,12 +198,14 @@ scope{
    ->  molecules_def(id={$species_def::variableName})
 ;
 
-species_element[BondList bonds,String upperID,String compartment] returns [
-                String myLabel,String name, ReactionRegister information]
+species_element[BondList bonds, String upperID, String compartment] returns [
+                String myLabel, String name, ReactionRegister information]
 scope {
   List sites;
   String lcompartment;
   String lname;
+  boolean compartmentFlag;
+  StringBuilder myLabelWrapper;
 }
 @init{
 getParentTemplate();
@@ -213,21 +215,17 @@ getParentTemplate();
   $information.setNumBonds($bonds.getNumBonds());
   $information.setCompartment(compartment);
   gParent.paraphrases.push("in species element section");
+  $species_element::compartmentFlag = false;
+  $species_element::myLabelWrapper = new StringBuilder();
 }
 @after{
   $information.setNumBonds($bonds.getNumBonds()-$information.getNumBonds());
   gParent.paraphrases.pop();
+  $myLabel = $species_element::myLabelWrapper.toString();
 }
 :
-  s1=STRING {$name = $s1.text;$species_element::lname=$s1.text;} 
-  (label {$myLabel = $label.label;})? //label
-  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN)? //If it's not a netfile it's necessary to add a '?' to allow for optional component syntax 
-  (ca=compartment_allocation 
-  {
-    $species_element::lcompartment = $ca.compartment; 
-    $information.setCompartment($ca.compartment);
-    $information.setBondList(bonds);
-  })?
+  s1=STRING {$name = $s1.text; $species_element::lname = $s1.text;} 
+  species_postModification[bonds,$information,upperID]*
   -> list_molecule_def(id={upperID},
                        name={$s1.text},
                        sites={$species_element::sites},
@@ -235,9 +233,21 @@ getParentTemplate();
                        label={$myLabel})
 ;
 
-compartment_allocation returns [String compartment]
+species_postModification[BondList bonds, ReactionRegister information, String upperID]
 :
-  AT STRING {$compartment = $STRING.text;}
+  (label {$species_element::myLabelWrapper = new StringBuilder($label.label);}) |
+  (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN) |
+  (ca=compartment_allocation[$information,$bonds])
+    
+;
+
+compartment_allocation[ReactionRegister information,BondList bonds] returns [String compartment]
+:
+  AT STRING {
+  $species_element::lcompartment = $STRING.text;
+   $information.setCompartment($STRING.text);
+   $information.setBondList(bonds);
+  }
 ;
 
 site_list[List sites,BondList bonds,String upperID]
@@ -267,20 +277,32 @@ scope{
 @init{
   $site_obs::defaultState = null;
   $site_obs::bondIndicator = "0";
-  }
+}
 :
-  s1=STRING 
+  STRING 
+//  (
+//  ((sos=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $sos.bond;})? site_obs_state?) |
+//  site_obs_state sos2=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $sos2.bond;}
+//  )
+//  (label{$myLabel = $label.text;})?
+//
+  // 16 different possibilities: NULL, x, y, z, xy, xz, yx, yz, zx, zy, xyz, xzy, yxz, yzx, zxy, zyx
+  // where x=site_obs_site, y=site_obs_state, z=label
+  // Must be a better way to do this, but the following 6 patterns match all 16 possibilities unamibiguously
   (
-  ((sos=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $sos.bond;})? site_obs_state?)
-  | site_obs_state sos2=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $sos2.bond;}  
-  ) 
-  (label {$myLabel = $label.text;})?
+  (s1=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $s1.bond;})? site_obs_state? (l1=label{$myLabel = $l1.text;})? | // Matches NULL, x, y, z, xy, xz, yz, xyz
+  site_obs_state (s2=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $s2.bond;}) (l2=label{$myLabel = $l2.text;})?   | // Matches yx, yxz
+  (l3=label{$myLabel = $l3.text;}) (s3=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $s3.bond;}) site_obs_state?   | // Matches zx, zxy
+  (l4=label{$myLabel = $l4.text;}) site_obs_state (s4=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $s4.bond;})?   | // Matches zy, zyx
+  (s5=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $s5.bond;}) (l5=label{$myLabel = $l5.text;}) site_obs_state    | // Matches xzy
+  site_obs_state (l6=label{$myLabel = $l6.text;}) (s6=site_obs_site[bonds,upperID]{$site_obs::bondIndicator = $s6.bond;})      // Matches yzx
+  )
   -> component_def(id={upperID},
-                   name={$s1.text},
+                   name={$STRING.text},
                    state={$site_obs::defaultState},
                    numberOfBonds={$site_obs::bondIndicator})
 ;
-  
+
 site_obs_state
 : 
   (TILDE state_label {$site_obs::defaultState = $state_label.text;})
@@ -296,7 +318,8 @@ scope{
   $site_obs_site::bondIndicator = "";
 }
 :
-  (EMARK ((PLUS {$site_obs_site::bondIndicator += $PLUS.text;}) | 
+  (EMARK (
+  (PLUS {$site_obs_site::bondIndicator += $PLUS.text;}) | 
   (QMARK {$site_obs_site::bondIndicator += $QMARK.text;}) | 
   s1=bond_name 
   {

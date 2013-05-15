@@ -25,6 +25,7 @@ import BNGGrammar_Expression,
   import bngparser.dataType.ReactionRegister;
   import bngparser.methods.GenericMethods;
   import java.util.Arrays;
+  import org.apache.commons.lang3.StringEscapeUtils;
 }
 @members{
   public Stack<String> paraphrases = new Stack<String>();
@@ -92,12 +93,8 @@ header_block
 : 
   version_def | 
   substance_def | 
-  set_option
-;
-
-substance_def
-: 
-  SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN (SEMI+)? LB+
+  set_option |
+  set_model_name
 ;
 
 version_def
@@ -105,9 +102,22 @@ version_def
   VERSION LPAREN DBQUOTES VERSION_NUMBER (PLUS|MINUS)? DBQUOTES RPAREN (SEMI+)? LB+
 ;
 
+substance_def
+: 
+  SUBSTANCEUNITS LPAREN DBQUOTES STRING DBQUOTES RPAREN (SEMI+)? LB+
+;
+
 set_option
 : 
-  SET_OPTION LPAREN DBQUOTES STRING DBQUOTES COMMA (DBQUOTES STRING DBQUOTES|INT|FLOAT) RPAREN (SEMI+)? LB+
+  SET_OPTION LPAREN 
+  DBQUOTES STRING DBQUOTES COMMA (DBQUOTES STRING DBQUOTES|INT|FLOAT)
+  (COMMA DBQUOTES STRING DBQUOTES COMMA (DBQUOTES STRING DBQUOTES|INT|FLOAT))*
+  RPAREN (SEMI+)? LB+
+;
+
+set_model_name
+:
+  SET_MODEL_NAME LPAREN DBQUOTES STRING DBQUOTES RPAREN (SEMI+)? LB+
 ;
 
 // a list of the different sections a bngl file may have. Order is not enforced.
@@ -166,7 +176,7 @@ scope{
   -> functions_block(id={$s1.text},
                      referencesName={$expression.reference.keySet()},
                      referencesType={Register.getTypes($expression.reference)},
-                     expression={$expression.text})
+                     expression={StringEscapeUtils.escapeXml($expression.text)})
 ;
 
 //http://bionetgen.org/index.php/Compartments_in_BNGL

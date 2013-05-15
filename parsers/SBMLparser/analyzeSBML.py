@@ -137,8 +137,12 @@ class SBMLAnalyzer:
                     baseMol.append(molecule)
                 elif convention[1] in molecule:
                     modMol.append(molecule)
-            equivalences[convention[2]] = []
-            modifiedElement[convention[0]] = []
+            if convention[2] not in equivalences:
+                equivalences[convention[2]] = []
+            equivalences[convention[2]].append((convention[0],convention[1]))
+            if convention[0] not in modifiedElement:            
+                modifiedElement[convention[0]] = []
+            modifiedElement[convention[0]].append((convention[0],convention[1]))
             for mol1 in baseMol:
                 for mol2 in modMol:
                     score = self.levenshtein(mol1,mol2)
@@ -233,7 +237,9 @@ class SBMLAnalyzer:
                     reactionIndex[name] = alternative['n'][0]
                     index += 1
         #now we want to fill in all intermediate relationships
+        
         newTranslator = equivalenceTranslator.copy()
+        '''
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
             if key1 == key2:
                 continue
@@ -254,71 +260,61 @@ class SBMLAnalyzer:
                     newTranslator[max(key1,key2,key=len)].append(tuple(temp2))
             else:
                 pass
+        '''
         return reactionIndex,newTranslator
     
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,reactionIndex,useNamingConventions=True):
         '''
-        *reactionDefinition* is ....
-        *rules*
+        *reactionDefinition* is a list of conditions that must be met for a reaction
+        to be classified a certain way
+        *rules* is the list of reactions
+        *equivalenceTranslator* is a dictinary containing all complexes that have been
+        determined to be the same through naming conventions
         This method will go through the list of rules and the list of rule definitions
         and tell us which rules it can classify according to the rule definitions list
         provided
         '''
         ruleDictionary = self.species2Rules(rules)
-        #TODO: recognize bidirectional rules
-        #contains which rules are equal to reactions defined in reactionDefiniotion['reactions]    
+        #determines a reaction's reactionStructure
         ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
         for (idx,rule) in enumerate(rules):
 
             reaction2 = rule #list(parseReactions(rule))
             ruleComplianceMatrix[idx] = self.identifyReactions2(reaction2,reactionDefinition)
         #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
+        #the tuple complianceMatrix is basically there to make sure we evaluate
+        #bidirectional reactions as one reaction        
         tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
         #check which reaction conditions each tuple satisfies
         for element in ruleDictionary:
             for rule in ruleDictionary[element]:
                 tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
         #print tupleC
-        #now we will check for the nameConventionMatrix
+        #now we will check for the nameConventionMatrix (same thing as before but for naming conventions)
         tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
         for rule in ruleDictionary:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
                     if all(element in rule for element in equivalence):
-                        if rule == ('EGFR', 'EGFRi'):
-                            print namingConvention,reactionIndex[namingConvention],reactionIndex
                         tupleNameComplianceMatrix[rule][reactionIndex[namingConvention]] +=1
                         break
-        #for element in tupleNameComplianceMatrix:
-        #    if 'EGF_EGFR2' in element:
-        #        print element,tupleNameComplianceMatrix[element]        
+   
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
         tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
         for key,element in tupleComplianceMatrix.items():
             for idx,member in enumerate(reactionDefinition['definitions']):
-                #tupleDefinitionMatrix[key][idx] = True
-                #('ERKi_P', 'MEKi_PP', 'ERKi_MEKi_PP')
-                #('ERKi_P', 'MEKi_PP', 'ERK', 'MEKi_PP')
-                #xxxxxxxxxxxxxxxxxxxx
                 for alternative in member:
                     if 'r' in alternative:            
                         tupleDefinitionMatrix[key][idx] += np.all([element[reaction] for reaction in alternative[u'r']])
                     if 'n' in alternative:
                         tupleDefinitionMatrix[key][idx] += np.all([tupleNameComplianceMatrix[key][reaction] for reaction in alternative[u'n']])
-               # if 'n' in member:
-                #    tupleDefinitionMatrix[key][idx] = tupleDefinitionMatrix[key][idx]  and ruleNameComplianceMatrix
-                #if 'n' in member:
         #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
         #use the per tuple classification to obtain a per reaction classification
         ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
 
         for key,element in ruleDictionary.items():
             for rule in element:
-                #FIXME: This is totally a hack. fix so that it doesn't mistakingly classify something as binding
-                #if 'R2' in key and ('R' in key or 'Ra' in key):
-                    #ruleComplianceMatrix[rule] = [0,0,0,0]
-                    #pass
                 ruleDefinitionMatrix[rule] = self.checkCompliance(ruleComplianceMatrix[rule],
     tupleDefinitionMatrix[key],reactionDefinition['definitions'])
         #use reactionDefinitions reactionNames field to actually tell us what reaction
@@ -331,7 +327,6 @@ class SBMLAnalyzer:
             #todo: need to do something if it matches more than one reaction
             else:
                 results.append(reactionDefinition['reactionsNames'][nonZero[0]])
-        #now we will process the naming conventions section
         return  results
     
     def setConfigurationFile(self,configurationFile):
@@ -367,23 +362,32 @@ class SBMLAnalyzer:
         classifies a group of reaction according to the information in the json
         config file
         '''
+        
+        #load the json config file
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
+        
+        #load user defined complexes        
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
-
         #determines if two molecules have a relationship according to the naming convention section
+        #equivalenceTranslator is a dictionary of actual modifications
+        #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
         reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
                     reactionDefinition)
+                    
+        #lists of plain reactions
         rawReactions = [self.parseReactions(x) for x in reactions]
+        
+        #list of reaction classifications        
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,reactionDict)
         listOfEquivalences = []
+        
+        
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
         return reactionClassification,listOfEquivalences,equivalenceTranslator
     
-    def resolveUnidentifiedEquivalences(self,unevenDict):
-        pass
     
     def reclassifyReactions(self,reactions,molecules,labelDictionary):
         rawReactions = [self.parseReactions(x) for x in reactions]
@@ -450,13 +454,14 @@ class SBMLAnalyzer:
                 label = []
                 for molecule in element[1]:
                     tmp2 = st.Molecule(molecule[0])
-                    tmp3 = st.Component(molecule[1])
-                    if molecule[2][0] == "b":
-                        tmp3.addBond(molecule[2][1])
-                    elif molecule[2][0] == "s":
-                        tmp3.addState('U')
-                        tmp3.addState(molecule[2][1])
-                        equivalencesList.append([element[0],molecule[0]])
+                    for componentIdx in range(1,len(molecule),2):
+                        tmp3 = st.Component(molecule[componentIdx])
+                        if molecule[componentIdx+1][0] == "b":
+                            tmp3.addBond(molecule[componentIdx+1][1])
+                        elif molecule[componentIdx+1][0] == "s":
+                            tmp3.addState('U')
+                            tmp3.addState(molecule[componentIdx+1][1])
+                            equivalencesList.append([element[0],molecule[0]])
                         
                         #tmp3.addState(molecule[2][2])
                     

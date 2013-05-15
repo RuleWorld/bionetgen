@@ -27,96 +27,92 @@ options{
 
 LINE_COMMENT: '#' ~('\n'|'\r')* {skip();};
 LB: ('\n'|'\r')+; 
-WS: (' '|'\t'|('\\')(' ')*('\r')?('\n'))+ { $channel=HIDDEN;};
-VERSION: 'version'; //('v'|'V')('e'|'E')('r'|'R')('s'|'S')('i'|'I')('o'|'O')('n'|'N');
-END: 'end'; //('e'|'E')('n'|'N')('d'|'D');
-BEGIN: 'begin'; //('b'|'B')('e'|'E')('g'|'G')('i'|'I')('n'|'N');
-PARAMETERS: 'parameters'; //('p'|'P')('a'|'A')('r'|'R')('a'|'A')('m'|'M')('e'|'E')('t'|'T')('e'|'E')('r'|'R')('s'|'S');
-SEED: 'seed'; //('s'|'S')('e'|'E')('e'|'E')('d'|'D');
-SPECIES: ('s'|'S')'pecies'; //('s'|'S')('p'|'P')('e'|'E')('c'|'C')('i'|'I')('e'|'E')('s'|'S');
-GROUPS: 'groups'; //('G'|'g')('R'|'r')('O'|'o')('U'|'u')('P'|'p')('S'|'s');
-MOLECULE: ('m'|'M')'olecule'; //('m'|'M')('o'|'O')('l'|'L')('e'|'E')('c'|'C')('u'|'l')('l'|'L')('e'|'E');
+WS: (' '|'\t')+ { $channel=HIDDEN;};
+
+BEGIN: 'begin';
+END: 'end';
+MODEL: 'model';
+PARAMETERS: 'parameters';
+COMPARTMENTS: 'compartments';
+MOLECULE: ('m'|'M')'olecule';
 MOLECULES: MOLECULE's';
-MODEL: 'model'; //('m'|'M')('o'|'O')('d'|'D')('e'|'E')('l'|'L');
-TYPES: 'types'; //('t'|'T')('y'|'Y')('p'|'P')('e'|'E')('s'|'S');
-REACTION: 'reaction'; //('r'|'R')('e'|'E')('a'|'A')('c'|'C')('t'|'T')('i'|'I')('o'|'O')('n'|'N');
-REACTIONS: REACTION's';
-RULES: 'rules'; //('r'|'R')('u'|'U')('l'|'L')('e'|'E')('s'|'S');
-FUNCTIONS: 'functions'; //('F'|'f')('U'|'u')('N'|'n')('C'|'c')('T'|'t')('I'|'i')('O'|'o')('n'|'N')('S'|'s');
-COMPARTMENTS: 'compartments'; //('C'|'c')('O'|'o')('M'|'m')('P'|'p')('A'|'a')('R'|'r')('T'|'t')('M'|'m')('E'|'e')('N'|'n')('T'|'t')('S'|'s');
-ACTIONS: 'actions'; //('A'|'a')('C'|'c')('T'|'t')('i'|'I')('o'|'O')('n'|'N')('S'|'s');
+TYPES: 'types';
+SEED: 'seed';
+SPECIES: ('s'|'S')'pecies';
 OBSERVABLES: 'observables';
+FUNCTIONS: 'functions';
+REACTION: 'reaction';
+REACTIONS: REACTION's';
+RULES: 'rules';
+GROUPS: 'groups';
+ACTIONS: 'actions';
 POPULATION: 'population';
 MAPS: 'maps';
 ENERGY: 'energy';
 PATTERNS: 'patterns';
 
-SET_OPTION: 'setOption';
-//SPECIES_LABEL: 'SPECIESLABEL';
-MAX_AGG: 'max_agg';
-MAX_ITER: 'max_iter';
-MAX_STOICH: 'max_stoich';
-OVERWRITE: 'overwrite';
-PRINT_ITER: 'print_iter';
-//AND: 'AND';
-//OR: 'OR';
-//ID: 'ID';
-IF: 'if';
-PREFIX: 'prefix';
-SUFFIX: 'suffix';
-//LABEL: 'LABEL';
-VERBOSE: 'verbose'; //('V'|'v')('E'|'e')('R'|'r')('B'|'b')('O'|'o')('S'|'s')('E '|'e');
-
 MATCHONCE: 'MatchOnce';
 DELETEMOLECULES: 'DeleteMolecules';
 MOVECONNECTED: 'MoveConnected';
-//AUTO: 'Auto';
-//HNAUTY: 'Hnauty';
-//QUASI: 'Quasi';
-//NOT: 'not';
 INCLUDE_REACTANTS: 'include_reactants'; // To be deprecated
 INCLUDE_PRODUCTS: 'include_products';
 EXCLUDE_REACTANTS: 'exclude_reactants'; // To be deprecated
 EXCLUDE_PRODUCTS: 'exclude_products';
+
+VERSION: 'version';
+SET_OPTION: 'setOption';
+SET_MODEL_NAME: 'setModelName';
+SUBSTANCEUNITS: 'substanceUnits';
+
+PREFIX: 'prefix';
+SUFFIX: 'suffix';
+
+GENERATENETWORK: 'generate_network';
+OVERWRITE: 'overwrite';
+MAX_AGG: 'max_agg';
+MAX_ITER: 'max_iter';
+MAX_STOICH: 'max_stoich';
+PRINT_ITER: 'print_iter';
+
 GENERATEHYBRIDMODEL: 'generate_hybrid_model';
 SAFE: 'safe';
 EXECUTE: 'execute';
-ATOL: 'atol';
-RTOL: 'rtol';
-STEADY_STATE: 'steady_state';
-SPARSE: 'sparse';
-T_END: 't_end';
+
+SIMULATE: 'simulate';
+METHOD: 'method';
+ODE: 'ode';
+SSA: 'ssa';
+PLA: 'pla';
+//NF: 'nf';
+VERBOSE: 'verbose';
+NETFILE: 'netfile';
+ARGFILE: 'argfile';
+CONTINUE: 'continue';
 T_START: 't_start';
+T_END: 't_end';
 N_STEPS: 'n_steps';
 N_OUTPUT_STEPS: 'n_output_steps';
 MAX_SIM_STEPS: 'max_sim_steps';
 OUTPUT_STEP_INTERVAL: 'output_step_interval';
-PLA_CONFIG: 'pla_config';
 SAMPLE_TIMES: 'sample_times';
-SIMULATE_ODE: 'simulate_ode';
-SIMULATE_SSA: 'simulate_ssa';
-SIMULATE_NF: 'simulate_nf';
-SIMULATE_PLA: 'simulate_pla';
-SIMULATE: 'simulate';
-READFILE: 'readFile';
-FILE: 'file';
-WRITENET: 'writeNET';
-WRITESBML: 'writeSBML';
-WRITEMFILE: 'writeMfile';
-WRITEXML: 'writeXML';
-WRITEMEXFILE: 'writeMex'('F'|'f')'ile';
-WRITEMODEL: 'writeModel';
+SAVE_PROGRESS: 'save_progress';
 PRINT_CDAT: 'print_CDAT';
 PRINT_FUNCTIONS: 'print_functions';
-SETCONCENTRATION: 'setConcentration';
-METHOD: 'method';
-SETPARAMETER: 'setParameter';
-SAVECONCENTRATIONS: 'saveConcentrations';
-RESETCONCENTRATIONS: 'resetConcentrations';
-ADDCONCENTRATION: 'addConcentration';
-GENERATENETWORK: 'generate_network';
-WRITENETWORK: 'writeNetwork';
-SUBSTANCEUNITS: 'substanceUnits';
+PRINT_NET: 'print_net';
+PRINT_END: 'print_end';
+
+SIMULATE_ODE: 'simulate_ode';
+ATOL: 'atol';
+RTOL: 'rtol';
+STEADY_STATE: 'steady_state';
+SPARSE: 'sparse';
+
+SIMULATE_SSA: 'simulate_ssa';
+
+SIMULATE_PLA: 'simulate_pla';
+PLA_CONFIG: 'pla_config';
+
+SIMULATE_NF: 'simulate_nf';
 PARAM: 'param';
 COMPLEX: 'complex';
 GET_FINAL_STATE: 'get_final_state';
@@ -126,11 +122,39 @@ NOTF: 'notf';
 BINARY_OUTPUT: 'binary_output';
 UTL: 'utl';
 EQUIL: 'equil';
+
+READFILE: 'readFile';
+FILE: 'file';
+
+WRITEFILE: 'writeFile';
+WRITENET: 'writeNET';
+WRITENETWORK: 'writeNetwork';
+WRITESBML: 'writeSBML';
+WRITEMFILE: 'writeMfile';
+WRITEXML: 'writeXML';
+WRITEMEXFILE: 'writeMexfile';
+WRITEMODEL: 'writeModel';
+EVALUATE_EXPRESSIONS: 'evaluate_expressions';
+BDF: 'bdf';
+TEXTREACTION: 'TextReaction';
+TEXTSPECIES: 'TextSpecies';
+
+SETCONCENTRATION: 'setConcentration';
+ADDCONCENTRATION: 'addConcentration';
+SAVECONCENTRATIONS: 'saveConcentrations';
+RESETCONCENTRATIONS: 'resetConcentrations';
+SETPARAMETER: 'setParameter';
+SAVEPARAMETERS: 'saveParameters';
+RESETPARAMETERS: 'resetParameters';
+QUIT: 'quit';
+
 //ELE: 'Ele';
 SAT: 'Sat';
 MM: 'MM';
 HILL: 'Hill';
 ARRHENIUS: 'Arrhenius';
+
+IF: 'if';
 EXP: 'exp';
 //LOG: 'log'; deprecated
 LN: 'ln';
@@ -158,20 +182,7 @@ MAX: 'max';
 SUM: 'sum';
 AVG: 'avg';
 TIME: 'time';
-ARGFILE: 'argfile';
-SAVE_PROGRESS: 'save_progress';
-NETFILE: 'netfile';
-PRINT_NET: 'print_net';
-PRINT_END: 'print_end';
-TEXTREACTION: 'TextReaction';
-//TEXTSPECIES: 'TextSpecies';
-CONTINUE: 'continue';
-ODE: 'ode';
-SSA: 'ssa';
-NF: 'nf';
-PLA: 'pla';
-EVALUATE_EXPRESSIONS: 'evaluate_expressions';
-BDF: 'bdf';
+
 FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | (DIGIT)+ EXPONENT;
@@ -219,4 +230,4 @@ fragment UPPER: 'A'..'Z';
 fragment EXPONENT: ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
 VERSION_NUMBER : INT'.'INT'.'INT ;
-
+ULB:('\\'(' ')*'\r'?'\n'(WS)*) {skip();};
