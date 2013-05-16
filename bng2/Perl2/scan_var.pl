@@ -85,7 +85,7 @@ my $log     = 0;
 my $t_end   = 20;
 my $n_steps = 1;
 my $steady_state = 0;
-my $method = 'ode';
+my $method = "\"ode\"";
 my $pla_output = 0;
 
 my $prefix;
