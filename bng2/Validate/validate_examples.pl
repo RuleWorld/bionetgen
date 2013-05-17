@@ -132,9 +132,9 @@ print "\n---[ BioNetGen Validation Utility ]---\n\n";
 # parse command line arguments
 GetOptions( 'help|h'        => sub { display_help(); exit(0); },
             'bngpath=s'     => \$bngpath,
-            'modeldir=s'    => \$modeldir,
-            'datdir=s'      => \$datdir,
-            'outdir=s'      => \$outdir,
+            'modelpath=s'   => \$modeldir,
+            'datpath=s'     => \$datdir,
+            'outpath=s'     => \$outdir,
             'pvalue=f'      => \$pvalue,
             'nfsim!'        => \$check_nfsim,
             'delete-files!' => \$delete_working_files
