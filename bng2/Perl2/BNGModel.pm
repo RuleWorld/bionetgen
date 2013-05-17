@@ -2279,7 +2279,7 @@ sub findExec
 # get output prefix = outputDir/modelName[_outputSuffix]
 sub getOutputPrefix
 {
-    my $model = shift;
+    my $model = shift @_;
 
     my $file_prefix = $model->Name;
     if ( $model->Params->{suffix} )
@@ -2291,11 +2291,11 @@ sub getOutputPrefix
 ###
 ###
 
-# returns 0 if everything is ok, otherwise 1.
+# set the output directory, defulats to curdir if no argument is provided 
 sub setOutputDir
 {
-    my $model = shift;
-    my $dir   = (@_) ? shift : undef;
+    my $model = shift @_;
+    my $dir   = @_ ? shift @_ : undef;
 
     unless (defined $dir)
     {   # default to current directory
@@ -2312,7 +2312,7 @@ sub setOutputDir
 # get the output directory
 sub getOutputDir
 {
-    my $model = shift;
+    my $model = shift @_;
     unless ( defined $model->Params->{output_dir} )
     {   # output directory not defined, set to default
         $model->setOutputDir();

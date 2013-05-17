@@ -87,7 +87,7 @@ my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'allow_actions' => 1,  'action_skip_warn' => 0,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
-                             'outdir'        => File::Spec->curdir()
+                             'output_dir'    => File::Spec->curdir()
                            );
 # Default params for Console mode
 my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
@@ -95,7 +95,7 @@ my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'allow_actions' => 0,  'action_skip_warn' => 1,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
-                             'outdir'        => File::Spec->curdir()
+                             'output_dir'    => File::Spec->curdir()
                            );
 
 
@@ -118,7 +118,7 @@ GetOptions( \%user_args,
             'findbin=s',
             'no_exec|check',
             'no_nfsim|no-nfsim',
-            'outdir=s',
+            'output_dir|outdir=s',
             'logging|log',
             'generate_network|netgen',
             'write_SBML|sbml',
@@ -160,10 +160,10 @@ if ( $console )
     }
 
     # check if output directory exists and is writable
-    unless ( -d $args{outdir} )
-    {  send_warning( sprintf "Default output directory '%s' is not a directory.", $args{outdir});  }
-    unless ( -w $args{outdir} )
-    {  send_warning( sprintf "Not able to write to default output directory '%s'.", $args{outdir});  }
+    unless ( -d $args{output_dir} )
+    {  send_warning( sprintf "Default output directory '%s' is not a directory.", $args{output_dir});  }
+    unless ( -w $args{output_dir} )
+    {  send_warning( sprintf "Not able to write to default output directory '%s'.", $args{output_dir});  }
 
     # start console
     my $err = BNGconsole( \%args );
@@ -179,10 +179,10 @@ else
     }
 
     # check if output directory exists and is writable
-    unless ( -d $args{outdir} )
-    {  send_warning( sprintf "Default output directory '%s' is not a directory.", $args{outdir});  }
-    unless ( -w $args{outdir} )
-    {  send_warning( sprintf "Not able to write to default output directory '%s'.", $args{outdir});  }
+    unless ( -d $args{output_dir} )
+    {  send_warning( sprintf "Default output directory '%s' is not a directory.", $args{output_dir});  }
+    unless ( -w $args{output_dir} )
+    {  send_warning( sprintf "Not able to write to default output directory '%s'.", $args{output_dir});  }
 
     # Process any files
     while ( my $file = shift @ARGV )
