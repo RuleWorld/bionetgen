@@ -322,7 +322,7 @@ open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
             printf OUT "# %+14s", $var;
             foreach my $head (@heads)
             {
-                printf OUT "%+19s", $head;
+                printf OUT " %+19s", $head;
             }
             print OUT "\n";
         }
