@@ -537,7 +537,7 @@ sub delete_files
                        _equil.net      _equil.cdat      _equil.gdat
                        _ssa_equil.net  _ssa_equil.cdat  _ssa_equil.gdat 
                        _pla_equil.net  _ssa_pla.cdat    _pla_equil.gdat
-                       _nf_equil.xml   _nf_equil.gdat                    
+                       _nf_equil.xml   _nf_equil.gdat   _nf_equil.species                 
                        .m              _mex.m           _mex_cvode.c 
                        _hpp.bngl       _hpp.xml                        );
     my @files = ();
