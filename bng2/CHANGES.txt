@@ -1,8 +1,9 @@
 CHANGES to BioNetGen
-updated 29 March 2013
+updated 16 May 2013
 http://code.google.com/p/bionetgen
 
-== Since 2.2.4-testing ==
+== BioNetGen-2.2.4-stable ==
+'''''2013 May 16'''''
 
 ==== New Features ====
 
@@ -13,8 +14,8 @@ the model definitions can be stored in one file and parameter values in
 a second file.
 
 ==== Changes to BNG action commands ====
-* Complex bookkeeping option, 'complex', is now enabled by default in the
-simulate_nf() action, i.e. 'complex=>1'.
+* Complex bookkeeping option, "complex", is now enabled by default in the
+simulate_nf() action, i.e. "complex=>1".
 * Default value for option 'get_final_state' for simulate_nf() action has been
 changed to TRUE. Consequently, the final state of a NF simulation will be
 loaded into the BNG by default. However, to avoid the ''slow'' process of
