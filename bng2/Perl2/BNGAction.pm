@@ -1496,7 +1496,7 @@ sub parameter_scan
             printf $ofh "# %+14s", $params->{parameter};
             foreach my $header (@headers)
             {
-                printf $ofh "%+16s", $header;
+                printf $ofh " %+16s", $header;
             }
             print $ofh "\n";
         }
@@ -1515,7 +1515,7 @@ sub parameter_scan
         printf $ofh "%16.8e", $par_value;
         foreach my $data ( @data )
         {
-            printf $ofh "%16.8e", $data;
+            printf $ofh " %16.8e", $data;
         }
         print $ofh "\n";
     }  
