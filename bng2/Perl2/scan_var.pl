@@ -85,7 +85,7 @@ my $log     = 0;
 my $t_end   = 20;
 my $n_steps = 1;
 my $steady_state = 0;
-my $method = 'ode';
+my $method = "\"ode\"";
 my $pla_output = 0;
 
 my $prefix;
@@ -322,7 +322,7 @@ open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
             printf OUT "# %+14s", $var;
             foreach my $head (@heads)
             {
-                printf OUT "%+19s", $head;
+                printf OUT " %+16s", $head;
             }
             print OUT "\n";
         }
@@ -331,7 +331,13 @@ open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
         my @dat = split(' ',$last);
         my $time = shift @dat;
         my $x = $log ? exp($val) : $val;
-        printf OUT "%16.8e %s\n", $x, join(' ',@dat);
+#        printf OUT "%16.8e %s\n", $x, join(' ',@dat);
+        printf OUT "%16.8e", $x;
+        foreach my $data ( @dat )
+        {
+            printf OUT " %16.8e", $data;
+        }
+        print OUT "\n";
         close(IN);
         $val += $delta;
     }
