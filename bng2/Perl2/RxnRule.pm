@@ -180,7 +180,7 @@ sub newRxnRule
     my $linenum = @_ ? shift @_ : "?";
 	
 	my ( $err, $sep, $reversible );
-	my $name = '';
+	my $name;
 
 	my $DeleteMolecules = 0;
 	my $MoveConnected   = 0;
@@ -200,11 +200,14 @@ sub newRxnRule
     # Check for a ReactionRule label or index at the beginning of the string
 	if ( $string =~ s/^([\w\s]+):\s*// )
 	{
-        if ( $1 =~ /\s/ )
-        {  BNGUtils::line_warning(
-               "Reaction rule label '$name' contains white space. This is deprecated (BioNetGen >= 2.2.3).", $linenum);  }
 	    # We found an alphanumeric label
 		$name = $1;
+		
+        if ( $1 =~ /\s/ )
+        {  BNGUtils::line_warning(
+               "Reaction rule label '$name' contains white space. This is deprecated (BioNetGen >= 2.2.3).", $linenum);  
+        }
+
 	}
 	elsif ( $string =~ /^0\s*(\+|->|<->)/ )
 	{   # We found a numerical token that appears to be a species pattern (perhaps the null pattern?).
@@ -659,7 +662,7 @@ sub newRxnRule
 	my $rrs = [];
     # Construct Forward RxnRule
 	my $rr  = RxnRule->new();
-	if ( $name ne '' ) {  $rr->Name($name);  }
+	if ( defined $name ) {  $rr->Name($name);  }
 	$rr->Reactants( [@reac] );
 	$rr->Products(  [@prod] );
 	$rr->Priority($priority);
@@ -682,7 +685,7 @@ sub newRxnRule
 	if ($reversible)
 	{
 		$rr = RxnRule->new();
-		if ( $name ne '' ) { $rr->Name("${name}(reverse)"); }
+		if ( defined $name ) { $rr->Name("${name}(reverse)"); }
 		$rr->Reactants( [@prod] );
 		$rr->Products(  [@reac] );
 		$rr->Priority($priority);
