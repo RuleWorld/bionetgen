@@ -703,6 +703,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 //				cout << index << " " << elt_name << " " << tokens[n_tok] << endl;
 				myParser parser;
 				parser.name = elt_name;
+				parser.p.DefineFun(_T("if"), If); // Define if() function as reference to static If() in network.h
 				string expr(tokens[n_tok]);
 				process_function_names(expr); // Remove parentheses from _pi() and _e()
 				vector<string> v = find_variables(expr); //find_variables(tokens[n_tok]);
