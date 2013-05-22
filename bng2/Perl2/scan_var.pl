@@ -352,11 +352,10 @@ exit 0;
 # display help
 sub display_help
 {
-
-    print <<END_HELP
-
-scan_var.pl, a simple parameter scan utility for BioNetGen.
-
+#    print <<END_HELP
+print qq{
+scan_var.pl: a simple parameter scan utility for BioNetGen
+----------------------------------------------------------
 SYNOPSIS:
   scan_var.pl [OPTS] MODEL VAR MIN MAX NPTS     : perform parameter scan
   scan_var.pl --help                            : display help
@@ -375,8 +374,7 @@ Runs simulations of MODEL with a range of values of parameter VAR using the spec
 Simulation data is placed in a directory folder named PREFIX_VAR. A data file
 called PREFIX_VAR.scan contains the final simulation state for each parameter 
 value. The scan file may be visualized with a plotting tool, such as PhiBPlot.
-
-END_HELP
-
+};
+#END_HELP
 }
 
