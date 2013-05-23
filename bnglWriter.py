@@ -179,7 +179,8 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
                     #tmp = ''.join([x for x in constructFromList(argList[idx+1][0:upperLimit])]) 
                     tmp2 = ') = ' + constructFromList(argList[idx+1][rindex(argList[idx+1],',')+1:],optionList)
                     for x in parsedParams:
-                        tmp2 = re.sub(r'(\W|^)({0})(\W|$)'.format(x),r'\1param_\2 \3',tmp2)
+                        while re.search(r'(\W|^)({0})(\W|$)'.format(x),tmp2) != None:
+                            tmp2 = re.sub(r'(\W|^)({0})(\W|$)'.format(x),r'\1param_\2 \3',tmp2)
                     idx+= 1
                     parsedString += tmp + tmp2
             else:
@@ -293,11 +294,12 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write(sectionTemplate('molecule types',molecules))
     output.write(sectionTemplate('seed species',species))
     output.write(sectionTemplate('observables',observables))
-    output.write(sectionTemplate('functions',functions))
+    if len(functions) > 0:
+        output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
     output.write('generate_network({overwrite=>1})\n')
-    output.write('simulate({method=>\'ode\',t_end=>100,n_steps=>100})')
+    output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     
 def sectionTemplate(name,content):

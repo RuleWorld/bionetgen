@@ -143,6 +143,7 @@ class SBMLAnalyzer:
             if convention[0] not in modifiedElement:            
                 modifiedElement[convention[0]] = []
             modifiedElement[convention[0]].append((convention[0],convention[1]))
+            '''
             for mol1 in baseMol:
                 for mol2 in modMol:
                     score = self.levenshtein(mol1,mol2)
@@ -150,6 +151,7 @@ class SBMLAnalyzer:
                         equivalences[convention[2]].append((mol1,mol2))
                         modifiedElement[convention[0]].append((mol1,mol2))
                         break
+            '''
         return equivalences,modifiedElement        
      
     def analyzeNamingConventions(self,molecules,originalPattern='',modifiedPattern='',totalPatterns=''):
@@ -218,6 +220,7 @@ class SBMLAnalyzer:
         equivalenceTranslator = {}
         reactionIndex = {}
         index = 0
+        
         if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
         else: 
@@ -456,12 +459,13 @@ class SBMLAnalyzer:
                     tmp2 = st.Molecule(molecule[0])
                     for componentIdx in range(1,len(molecule),2):
                         tmp3 = st.Component(molecule[componentIdx])
-                        if molecule[componentIdx+1][0] == "b":
-                            tmp3.addBond(molecule[componentIdx+1][1])
-                        elif molecule[componentIdx+1][0] == "s":
-                            tmp3.addState('U')
-                            tmp3.addState(molecule[componentIdx+1][1])
-                            equivalencesList.append([element[0],molecule[0]])
+                        if len(molecule[componentIdx+1])>0:
+                            if molecule[componentIdx+1][0] == "b":
+                                tmp3.addBond(molecule[componentIdx+1][1])
+                            elif molecule[componentIdx+1][0] == "s":
+                                tmp3.addState('U')
+                                tmp3.addState(molecule[componentIdx+1][1])
+                                equivalencesList.append([element[0],molecule[0]])
                         
                         #tmp3.addState(molecule[2][2])
                     

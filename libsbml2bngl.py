@@ -8,11 +8,10 @@ Created on Fri Mar  1 16:14:42 2013
 #!/usr/bin/env python
 
 from numpy import array
-from matplotlib.pyplot import hist,savefig
+import matplotlib.pyplot as plt
 import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
-import molecules2complexes as m2c
 import moleculeCreation as mc
 import sys
 import structures
@@ -86,13 +85,17 @@ class SBML2BNGL:
     def removeFactorFromMath(self,math,reactants):
         
             
-        
-        remainderPatterns = [x[0] for x in reactants]
+        remainderPatterns = []
+        for x in reactants:
+            for counter in range(0,int(x[1])):
+                remainderPatterns.append(x[0])
+        #remainderPatterns = [x[0] for x in reactants]
         math = self.getPrunnedTree(math,remainderPatterns)
+        
         rateR = libsbml.formulaToString(math) 
         for element in remainderPatterns:
-            rateR = 'if({0} >0,{1}/{0} ,0)'.format(element,rateR)
-        return rateR
+            rateR = 'if({0} >0,({1})/{0} ,0)'.format(element,rateR)
+        return rateR,math.getNumChildren()
         
     def __getRawRules(self, reaction):
         def removeCompartment(math,compartmentList):
@@ -106,12 +109,14 @@ class SBML2BNGL:
             reactant = [(self.speciesDictionary[reactant.getSpecies()],reactant.getStoichiometry()) for reactant in reaction.getListOfReactants()]
             product = [(self.speciesDictionary[product.getSpecies()],product.getStoichiometry()) for product in reaction.getListOfProducts()]
         kineticLaw = reaction.getKineticLaw()
-        rReactant = [(x.getSpecies(),1) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
-        rProduct = [(x.getSpecies(),1) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
+        rReactant = [(x.getSpecies(),x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
+        rProduct = [(x.getSpecies(),x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
         parameters = [(parameter.getId(),parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
+
+        #TODO: For some reason creating a deepcopy of this screws everything up, even
+        #though its what we should be doing
         math = kineticLaw.getMath()
-        #print reactant,product,libsbml.formulaToString(math)
         reversible = reaction.getReversible()
         
         #get a list of compartments so that we can remove them
@@ -121,32 +126,28 @@ class SBML2BNGL:
         
         #remove compartments from expression
         math = self.getPrunnedTree(math,compartmentList)
-        #print libsbml.formulaToString(math)
             
         if reversible:
-            #print math.getCharacter(),libsbml.formulaToString(math.getLeftChild()),libsbml.formulaToString(math.getRightChild())
             if math.getCharacter() == '-' and math.getNumChildren() > 1:
-                rateL = (self.removeFactorFromMath(math.getLeftChild(),rReactant))
-                rateR = (self.removeFactorFromMath(math.getRightChild(),rProduct))
+                rateL,nl = (self.removeFactorFromMath(math.getLeftChild().deepCopy(),rReactant))
+                rateR,nr = (self.removeFactorFromMath(math.getRightChild().deepCopy(),rProduct))
             else:
-                rateL = "if({0} >= 0 ,{0},0)".format(self.removeFactorFromMath(math,rReactant))
-                rateR = "if({0} < 0 ,-({0}),0)".format(self.removeFactorFromMath(math,rProduct))
+                rateL,nl = self.removeFactorFromMath(math,rReactant)
+                rateL = "if({0} >= 0 ,{0},0)".format(rateL)
+                rateR,nr = self.removeFactorFromMath(math,rReactant)
+                rateR = "if({0} < 0 ,-({0}),0)".format(rateR)
+                nl,nr = 1,1
         else:
-            rateL =(self.removeFactorFromMath(math,rReactant))
-            rateR = '0'
-                
+            rateL,nl =(self.removeFactorFromMath(math.deepCopy(),rReactant))
+            rateR,nr = '0','-1'
                 
         if not self.useID:
             rateL = self.convertToName(rateL)
             rateR = self.convertToName(rateR)
-            
         if reversible:
             pass
-        #this removes any reactants that appear in the reaction from the formula
-        #because of the way BNG handles functions
-        #for element in reactant:
-        #    rate = rate.replace('* %s' % element[0],'',1)
-        return (reactant,product,parameters,[rateL,rateR],reversible,reaction.getId())
+        
+        return (reactant,product,parameters,[rateL,rateR],reversible,reaction.getId(),[nl,nr])
         
     def convertToName(self,rate):
         for element in sorted(self.speciesDictionary,key=len,reverse=True):
@@ -207,30 +208,42 @@ class SBML2BNGL:
         functionTitle = 'functionRate'
         for index,reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
-            #print '--',index
             rawRules =  self.__getRawRules(reaction)
             #newRate = self.updateFunctionReference(rawRules,extraParameters)
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
-                    parameters.append('%s %f' % (parameter[0],parameter[1]))
+                    parameters.append('r%d_%s %f' % (index+1,parameter[0],parameter[1]))
                     parameterDict[parameter[0]] = parameter[1]
             compartmentList = [['cell',1]]
-            
             compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
-            functionName = '%s%d()' % (functionTitle,index)
+            threshold = 0     
+            if rawRules[6][0] > threshold:            
+                functionName = '%s%d()' % (functionTitle,index)
+            else:
+                #append reactionNumbers to parameterNames
+                finalString = str(rawRules[3][0])
+                for parameter in parameterDict:
+                    finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format('r{0}_{1}'.format(index+1,parameter)),finalString)
+                functionName = finalString
             if 'delay' in rawRules[3][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
             if rawRules[4]:
-                
-                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
-                functionName2 = '%s%dm()' % (functionTitle,index)                
-                functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
-                self.reactionDictionary[rawRules[5]] = '({0} - {1})'.format(functionName, functionName2)                
-                functionName = '{0},{1}'.format(functionName,functionName2)
-                
+                if rawRules[6][0] > threshold:
+                    functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
+                if rawRules[6][1] > threshold:
+                    functionName2 = '%s%dm()' % (functionTitle,index)                
+                    functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
+                    self.reactionDictionary[rawRules[5]] = '({0} - {1})'.format(functionName, functionName2)                
+                    functionName = '{0},{1}'.format(functionName,functionName2)
+                else:
+                    finalString = str(rawRules[3][1])
+                    for parameter in parameterDict:
+                        finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format('r{0}_{1}'.format(index+1,parameter)),finalString)
+                    functionName = '{0},{1}'.format(functionName,finalString)
             else:
-                functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
-                self.reactionDictionary[rawRules[5]] = '{0}'.format(functionName)
+                if rawRules[6][0] > threshold:
+                    functions.append(writer.bnglFunction(rawRules[3][0],functionName,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
+                    self.reactionDictionary[rawRules[5]] = '{0}'.format(functionName)
             rules.append(writer.bnglReaction(rawRules[0],rawRules[1],functionName,self.tags,translator,isCompartments,rawRules[4]))
         return parameters, rules,functions
 
@@ -247,9 +260,9 @@ class SBML2BNGL:
                 elif libsbml.formulaToString(arule.getMath().getRightChild().getRightChild()) == variable:
                     rateR = libsbml.formulaToString(arule.getMath().getRightChild().getLeftChild())
                 else:
-                    rateR = 'if({0} >0,{1}/{0} ,0)'.format(variable,libsbml.formulaToString(arule.getMath().getRightChild()))
+                    rateR = 'if({0} >0,({1})/{0} ,0)'.format(variable,libsbml.formulaToString(arule.getMath().getRightChild()))
             else:
-                rateR = 'if({0} >0,{1}/{0} ,0)'.format(variable,libsbml.formulaToString((arule.getMath().getRightChild())))
+                rateR = 'if({0} >0,({1})/{0} ,0)'.format(variable,libsbml.formulaToString((arule.getMath().getRightChild())))
         else:
             rateL = libsbml.formulaToString(arule.getMath())
             rateR = '0'
@@ -273,7 +286,6 @@ class SBML2BNGL:
         artificialObservables = {}
         for arule in self.model.getListOfRules():
             rawArule = self.__getRawAssignmentRules(arule)
-            print rawArule
             #newRule = rawArule[1].replace('+',',').strip()
             if rawArule[3] == True:
                 rateLaw1 = rawArule[1][0]
@@ -338,12 +350,15 @@ class SBML2BNGL:
         observablesText = []
         nullFlag = False
         names = []
+        rawSpeciesName = translator.keys()
         for species in self.model.getListOfSpecies():
             
             rawSpecies = self.getRawSpecies(species)
             if (rawSpecies[4] != ''):
                 self.tags[rawSpecies[0]] = '@%s' % (rawSpecies[4])
             if(rawSpecies[0] in translator):
+                if rawSpecies[0] in rawSpeciesName:
+                    rawSpeciesName.remove(rawSpecies[0])
                 if translator[rawSpecies[0]].getSize()==1 and translator[rawSpecies[0]].molecules[0].name not in names:
                     names.append(translator[rawSpecies[0]].molecules[0].name)
                     moleculesText.append(translator[rawSpecies[0]].str2())
@@ -365,6 +380,11 @@ class SBML2BNGL:
             else:
                 modifiedName = rawSpecies[0]
             observablesText.append('Species %s %s #%s' % (modifiedName, tmp,rawSpecies[5]))
+        sorted(rawSpeciesName,key=len)
+        for species in rawSpeciesName:
+            if translator[species].getSize()==1 and translator[species].molecules[0].name not in names:
+                names.append(translator[species].molecules[0].name)
+                moleculesText.append(translator[species].str2())
         #moleculesText.append('NullSpecies()')
         #speciesText.append('$NullSpecies() 1')
         return moleculesText,speciesText,observablesText
@@ -457,7 +477,9 @@ def standardizeName(name):
     #name2 = name2.replace("#","m")
     name2 = name2.replace(" ","_")
     name2 = name2.replace(",","_")
-    
+    name2 = name2.replace('α','a')
+    name2 = name2.replace('β','b')
+    name2 = name2.replace('γ','g')
     name2 = name2.replace("(","")
     name2 = name2.replace(")","")
     name2 = name2.replace(" ","")
@@ -476,7 +498,7 @@ def identifyNamingConvention():
     '''
     
     reader = libsbml.SBMLReader()
-    jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
+    jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso' and 'reactionDefinition' in f]
     translationLevel = []
     arrayMolecules = []
     rules = 0
@@ -485,44 +507,36 @@ def identifyNamingConvention():
     for index in range(1,410):
         bestTranslator = {}
         
-        try:
-            nameStr = 'BIOMD0000000%03d' % (index)
-            document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
-            parser = SBML2BNGL(document.getModel())
-            database = structures.Databases()
-    
-            print nameStr + '.xml',
-            naming = 'reactionDefinition0.json'
-            bestUseID = True
-            numberofMolecules = numberOfSpecies = 0
-            #iterate through our naming conventions and selects that which
-            #creates the most rulified elements in the translator
-            for jsonFile in jsonFiles:
-                for useID in [True,False]:
-                    print '-',
+        nameStr = 'BIOMD0000000%03d' % (index)
+        document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
+        parser = SBML2BNGL(document.getModel())
+        database = structures.Databases()
+
+        print nameStr + '.xml',
+        naming = 'reactionDefinition0.json'
+        bestUseID = True
+        numberofMolecules = numberOfSpecies = 0
+        #iterate through our naming conventions and selects that which
+        #creates the most rulified elements in the translator
+        for jsonFile in jsonFiles:
+            for useID in [True,False]:
+                    oldmaxi = numberOfSpecies
+                    parser = SBML2BNGL(document.getModel(),useID)
+                    database = structures.Databases()
+                    signal.alarm(30)
                     try:
-                        oldmaxi = numberOfSpecies
-                        parser = SBML2BNGL(document.getModel(),useID)
-                        database = structures.Databases()
-                        signal.alarm(30)
-                        try:
-                            m2c.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile,None)
-                        except Exception, exc: 
-                            print exc,sys.exc_info()[0]
-                        translator = database.translator                        
-                        numberOfSpecies = max(numberOfSpecies,evaluation(len(parser.getSpecies()),database.translator))
-                        if oldmaxi != numberOfSpecies:
-                            naming = jsonFile
-                            bestTranslator = translator
-                            bestUseID = useID
-                            _,rules,_ = parser.getReactions(translator)
-                            numberofMolecules = len(translator)
+                        mc.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile,None)
                     except:
-                            print 'ERROR',sys.exc_info()[0]
-                            continue
-        except:
-            print 'ERROR',sys.exc_info()[0]
-            continue
+                        print '--error',jsonFile,useID
+                        continue
+                    translator = database.translator                        
+                    numberOfSpecies = max(numberOfSpecies,evaluation(len(parser.getSpecies()),database.translator))
+                    if oldmaxi != numberOfSpecies:
+                        naming = jsonFile
+                        bestTranslator = translator
+                        bestUseID = useID
+                        _,rules,_ = parser.getReactions(translator)
+                        numberofMolecules = len(translator)
 
         _,_,obs = parser.getSpecies()
         rdfAnnotations = analyzeRDF.getAnnotations(parser,'miriam')
@@ -552,14 +566,16 @@ def identifyNamingConvention():
        #for rule in rules:
         
         if len(obs) != 0:
-            print index*1.0,int(naming[-6])*1.0,numberOfSpecies*1.0/len(obs),numberofMolecules*1.0/len(obs),len(obs)*1.0,bestUseID
+            print index*1.0,(naming[-6]),numberOfSpecies*1.0/len(obs),numberofMolecules*1.0/len(obs),len(obs)*1.0,bestUseID
             
             arrayMolecule = [[x,molecules[x]] for x in molecules]
             arrayMolecules.append(arrayMolecule)
-            translationLevel.append([index*1.0,int(naming[-6])*1.0,numberOfSpecies*1.0/len(obs),numberofMolecules*1.0/len(obs),len(obs)*1.0,bestUseID])
-            np.save('stats3.npy',np.array(translationLevel))
+            translationLevel.append([nameStr+'.xml',(naming[-6]),numberOfSpecies*1.0/len(obs),numberofMolecules*1.0/len(obs),len(obs)*1.0,bestUseID])
         else:
             arrayMolecules.append([])
+    with open('stats4.npy','wb') as f:
+        pickle.dump(translationLevel,f)
+
         #np.save('stats3b.npy',np.array(arrayMolecules))
 
 def processDatabase():
@@ -631,13 +647,13 @@ def selectReactionDefinitions(bioNumber):
     This method goes through the stats-biomodels database looking for the 
     best reactionDefinitions definition available
     '''
-    
-    db = np.load('stats3.npy')
+    with open('stats4.npy') as f:
+        db = pickle.load(f)
     fileName = 'reactionDefinitions/reactionDefinition7.json'
     useID = True
-    for element in db:
-        if element[0] == bioNumber and element[1] != 0:
-            fileName = 'reactionDefinitions/reactionDefinition' + str(int(element[1])) + '.json'
+    for element in db:    
+        if element[0] == bioNumber and element[1] != '0':
+            fileName = 'reactionDefinitions/reactionDefinition' + element[1] + '.json'
             useID = element[5]
         elif element[0] > bioNumber:
             break
@@ -663,27 +679,25 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     useArtificialRules = False
     
     reader = libsbml.SBMLReader()
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
+    document = reader.readSBMLFromFile(bioNumber)
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         
     #try:
-    #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    #translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    translator={}    
+    translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #translator={}    
     #except:
     #    print 'failure'
     #    return None,None,None,None
     
     #translator = {}
-    
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     functions = []
     idxArray = []
-    _,rules,tfunc = parser.getReactions(translator,True)
+    param3,rules,tfunc = parser.getReactions(translator,len(compartments)>1)
     functions.extend(tfunc)
     aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
@@ -694,7 +708,6 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     molecules.extend([x.split(' ')[0] for x in removeParams])
     if len(molecules) == 0:
         compartments = []
-
     observables.extend('Species {0} {0}'.format(x.split(' ')[0]) for x in removeParams)
     for x in removeParams:
         species.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
@@ -718,13 +731,13 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         flag = -1
         if '{0}()'.format(key) in molecules:
             flag = molecules.index('{0}()'.format(key))
-
+        
         if flag != -1:
             result =validateReactionUsage(molecules[flag],rules)
             if result != None:
                 logMess('ERROR','Pseudo observable {0} in reaction {1}'.format(molecules[flag],result))
             molecules.pop(flag)
-        
+            
         flag = -1
         for idx,specie in enumerate(species):
             if ':{0}('.format(key) in specie:
@@ -742,6 +755,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
                     continue
                 if sbml in sbmlfunctions[sbml2]:
                     sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
+    
     for idx in range(0,len(functions)):
         for sbml in sbmlfunctions:
             if sbml in functions[idx]:
@@ -749,7 +763,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         functions[idx] =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',functions[idx])
         functions[idx] =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',functions[idx])
         functions[idx] =re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',functions[idx])
-
+    
     #functions.extend(sbmlfunctions)
     dependencies2 = {}
     for idx in range(0,len(functions)):
@@ -779,10 +793,12 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         fd.append([function,resolveDependencies(dependencies2,function.split(' = ' )[0].split('(')[0],0)])
     fd = sorted(fd,key= lambda rule:rule[1])
     functions = [x[0] for x in fd]
-    if len(param) == 0:
-        param.append('dummy 0')
     #functions.extend(aRules)
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
+        compartments.append('cell 3 1.0')
+    #sbml always has the 'cell' default compartment, even when it
+    #doesn't declare it
+    elif len(compartments) == 0 and len(molecules) != 0:
         compartments.append('cell 3 1.0')
     
     
@@ -801,7 +817,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
 
         rules.extend(artificialRules)
         
-        writer.finalText(param,molecules,species,observables,rules,functions,compartments,outputFile)
+        writer.finalText(param+param3,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
     
     if len(logMess.log) > 0:
@@ -812,6 +828,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
 
     #rate of each classified rule
     classificationDict = {}
+    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments)
+    
     '''
     if translator != {}:
         for element in database.classifications:
@@ -820,7 +838,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
             classificationDict[element] += 1.0/len(database.classifications)
         return len(rules), evaluate,parser.getModelAnnotation(),classificationDict
     '''
-    return None,None,None,None
+    #return None,None,None,None
 
 def processFile(translator,parser,outputFile):
     param2 = parser.getParameters()
@@ -850,6 +868,8 @@ def main():
     parser = OptionParser()
     rulesLength = []
     evaluation = []
+    evaluation2 = []
+    compartmentLength = []
     parser.add_option("-i","--input",dest="input",
         default='XMLExamples/curated/BIOMD0000000272.xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
@@ -862,42 +882,74 @@ def main():
     rdfArray = []
     classificationArray = []
     #18,32,87,88,91,109,253,255,268,338,330
-    for bioNumber in [19]:
+    #normal:51,353
+    #cycles 18,108,109,255,268,392
+    for bioNumber in [17]:
+        #if bioNumber in [18,51,353,108,109,255,268,392]:
+        #    continue
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
-        reactionDefinitions,useID = selectReactionDefinitions(bioNumber)
+        reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
         print reactionDefinitions,useID
-        #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
-        #spEquivalence = 'reactionDefinitions/speciesEquivalence1.json'
+        reactionDefinitions = 'reactionDefinitions/reactionDefinition4.json'
+        #spEquivalence = 'reactionDefinitions/speciesEquivalence48.json'
         spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
         
-        rlength,reval,rdf,classif = analyzeFile(bioNumber,reactionDefinitions,False,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
+        rlength,reval,reval2,clength = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber,reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
                
-        rdfArray.append(getAnnotations(rdf))
+        #rdfArray.append(getAnnotations(rdf))
         
         if rlength != None:        
             rulesLength.append(rlength)
             evaluation.append(reval)
-            classificationArray.append(classif)
+            evaluation2.append(reval2)
+            compartmentLength.append(clength)
         else:
+            rulesLength.append(-1)
             evaluation.append(0)
-            classificationArray.append({})
-    print evaluation
-    
+            evaluation2.append(0)
+            compartmentLength.append(0)
+            #classificationArray.append({})
+    #print evaluation
+    #print evaluation2
     #sortedCurated = [i for i in enumerate(evaluation), key=lambda x:x[1]]
     with open('sortedC.dump','wb') as f:
+        pickle.dump(rulesLength,f)
         pickle.dump(evaluation,f)
-    with open('annotations.dump','wb') as f:
-        pickle.dump(rdfArray,f)
-    with open('classificationDict.dump','wb') as f:
-        pickle.dump(classificationArray,f)
-    #hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
-    #savefig('lengthDistro.png')
-    hist(evaluation,bins =[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
-    savefig('ruleifyDistro.png')
+        pickle.dump(evaluation2,f)   
+    #with open('annotations.dump','wb') as f:
+    #    pickle.dump(rdfArray,f)
+    #with open('classificationDict.dump','wb') as f:
+    #    pickle.dump(classificationArray,f)
+    plt.hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
+    plt.xlabel('Number of reactions',fontsize=18)
+    plt.savefig('lengthDistro.png')
+    plt.clf()
+    plt.hist(evaluation,bins =[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    plt.xlabel('Atomization Degree',fontsize=18)    
+    plt.savefig('ruleifyDistro.png')
+    plt.clf()
+    plt.hist(evaluation2,bins =[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    plt.xlabel('Atomization Degree',fontsize=18)    
+    plt.savefig('ruleifyDistro2.png')
+    plt.clf()
+    ev = []
+    idx = 1
+    for x,y,z in zip(rulesLength,evaluation,compartmentLength):
+        
+        if idx in [18,51,353,108,109,255,268,392]:
+            idx+=1
 
+        if x < 15 and y > 0.7 and z>1:
+            print '---',idx,x,y
+        idx+=1
+    #plt.hist(ev,bins =[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    #plt.xlabel('Atomization Degree',fontsize=18)    
+    #plt.savefig('ruleifyDistro3.png')
+            
+            
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
