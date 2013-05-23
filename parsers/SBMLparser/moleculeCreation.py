@@ -78,7 +78,8 @@ def resolveDependencyGraphHelper(dependencyGraph,reactant,memory,withModificatio
                     result.append([element])
                     continue
                 elif element in memory:
-                    continue
+                    print 'Detected cycle',element
+                    return []
                 baseElement = resolveDependencyGraphHelper(dependencyGraph,element,memory + [element],withModifications)
                 
                 if baseElement != None:
@@ -126,7 +127,7 @@ def weightDependencyGraph(dependencyGraph):
     weights = sorted(weights,key=lambda rule: rule[1]) 
     return weights
 
-def consolidateDependencyGraph(dependencyGraph):
+def consolidateDependencyGraph(dependencyGraph,equivalenceTranslator):
     def selectBestCandidate(reactant,candidates,dependencyGraph):
         tmpCandidates = []
         modifiedElements = []
@@ -213,9 +214,13 @@ def consolidateDependencyGraph(dependencyGraph):
             #print newTmpCandidates,unevenElements
         #print ';;;',tmpCandidates[0]
         if len(candidates) == 1 and len(candidates[0]) == 1 and candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
-            print '+++','error I dont know how this is modified',candidates[0],reactant
-            return [],[]
-
+            print '+++','error I dont know how this is modified',candidates[0],reactant,tmpCandidates
+            candidates = []
+            modificationCandidates = {x[0]:x[1] for x in equivalenceTranslator if x[0] in tmpCandidates[0] and x[1] in reactant}
+            for idx,molecule in enumerate(tmpCandidates[0]):
+                if molecule in modificationCandidates:
+                    tmpCandidates[0][idx] = modificationCandidates[molecule]
+            return [tmpCandidates[0]],unevenElements
 
         return [tmpCandidates[0]],unevenElements
        
@@ -224,8 +229,9 @@ def consolidateDependencyGraph(dependencyGraph):
     weights = weightDependencyGraph(prunnedDependencyGraph)
     unevenElementDict = {}
     for element in weights:
-        if element[0] == 'EGF_EGFRim2':
-            print 'hola'
+        
+        if element[0] == 'EGF_EGFR2_P':
+            print 'break'
         #print element
         candidates = [x for x in prunnedDependencyGraph[element[0]]]
         #print '-',candidates
@@ -302,6 +308,7 @@ def getComplexationComponents2(species):
     def getBiggestMolecule(array):
         sortedMolecules = sorted(array,key=lambda rule: len(rule.components))
         sortedMolecule = sorted(array,key=lambda rule: len(str(rule)))
+        #print 'sortedMolecule',[str(x) for x in sortedMolecule]
         return sortedMolecule[-1]
     speciesDict = {}
     #this array will contain all molecules that bind together
@@ -421,6 +428,7 @@ def atomize(dependencyGraph,weights,translator,reactionProperties,equivalenceDic
                         translator[element[0]] = modifiedSpecies
                     else:
                         print 'ALERT',element[0],str(modifiedSpecies),str(species)
+                        print equivalenceDictionary
             else:
                 #binding
                 
@@ -484,6 +492,7 @@ def atomize(dependencyGraph,weights,translator,reactionProperties,equivalenceDic
 
 def updateSpecies(species,referenceMolecule):
     flag = False
+    #print '--',str(species),str(referenceMolecule)
     for moleculeStructure in species.molecules:
         if moleculeStructure.name == referenceMolecule.name:
             for component in referenceMolecule.components:
@@ -499,6 +508,21 @@ def updateSpecies(species,referenceMolecule):
                     for idx in range(0,-count):
                         referenceMolecule.addComponent(deepcopy(newComponent))
                         flag = True
+            for component in moleculeStructure.components:
+                count = [x.name for x in referenceMolecule.components].count(component.name)
+                count -= [x.name for x in moleculeStructure.components].count(component.name)
+                newComponent= st.Component(component.name)
+                if len(component.states) > 0:
+                    newComponent.addState(component.states[0])
+                    newComponent.addState('U')
+                if count > 0:
+                    for idx in range(0,count):
+                        moleculeStructure.addComponent(deepcopy(newComponent))
+                elif count < 0:
+                    for idx in range(0,-count):
+                        referenceMolecule.addComponent(deepcopy(newComponent))
+                        flag = True
+                
     return flag
                     
 def propagateChanges(translator,dependencyGraph):
@@ -535,26 +559,27 @@ def transformMolecules(parser,database,configurationFile,speciesEquivalences=Non
     for reaction,classification in zip(rules,classifications):
         dependencyGraph(database.dependencyGraph,list(parseReactions(reaction)),classification,equivalenceTranslator)
     #catalysis reactions
+    
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
             baseElement = min(namingEquivalence,key=len)
             modElement = max(namingEquivalence,key=len)
             if key!= 'Binding':
                 addToDependencyGraph(database.dependencyGraph,modElement,[baseElement])
+                if baseElement not in database.dependencyGraph:
+                    addToDependencyGraph(database.dependencyGraph,baseElement,[])
+    
     #user defined stuff
     for element in database.labelDictionary:
-        if element == database.labelDictionary[element][0][0]:
+        if len(database.labelDictionary[element][0]) == 0 or element == database.labelDictionary[element][0][0]:
             addToDependencyGraph(database.dependencyGraph,element,[])
         else:
-            addToDependencyGraph(database.dependencyGraph,element,list(database.labelDictionary[element][0]))
+            database.dependencyGraph[element] = [list(database.labelDictionary[element][0])]
     #####sct
-    prunnedDependencyGraph,weights,unevenElementDict = consolidateDependencyGraph(database.dependencyGraph)
-
+    prunnedDependencyGraph,weights,unevenElementDict = consolidateDependencyGraph(database.dependencyGraph,equivalenceTranslator)
     classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
 
-    
     weights = sorted(weights,key=lambda rule:rule[1])
     atomize(prunnedDependencyGraph,weights,database.translator,database.reactionProperties,eequivalenceTranslator)
     propagateChanges(database.translator,prunnedDependencyGraph)    
-
     return database.translator        

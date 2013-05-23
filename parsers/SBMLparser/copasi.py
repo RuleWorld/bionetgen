@@ -120,7 +120,7 @@ def plotResults(fileResults1,fileResults2):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [19]:
+    for fileNumber in [48]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -130,6 +130,7 @@ def compareResults():
             translator = pickle.load(f)
         newCopHeaders = []
         newBngHeaders = []
+        
         if len(copasi) < 2:
             print 'copasi pass'
             continue
@@ -164,6 +165,10 @@ def compareResults():
         #print 
         #print bNGIndexes,copasiIndexes
         #print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)
+        atol = copasi[:,newCopHeaders] - bng[:,newBngHeaders]
+        rtol = atol/copasi[:,newCopHeaders]
+        rtol = rtol[np.logical_not(np.isnan(rtol))]
+        print np.average(rtol)
         score =  np.average(pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5))
         
         #mini = np.min(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
