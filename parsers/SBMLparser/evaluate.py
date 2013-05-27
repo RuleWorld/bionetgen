@@ -12,6 +12,37 @@ import time
 import datetime
 import signal
 
+
+
+def evaluate(fileName):
+    timeout = 30
+    with open('temp.tmp', "w") as outfile:
+        d = open('dummy.tmp','w')
+        start = datetime.datetime.now()
+        result = subprocess.Popen(['bngdev', './' + fileName],stderr=outfile,stdout=d)
+        while result.poll() is None:
+            time.sleep(0.1)
+            now = datetime.datetime.now()
+            if (now - start).seconds > timeout:
+                os.kill(result.pid, signal.SIGKILL)
+                os.waitpid(-1, os.WNOHANG)
+                subprocess.call(['killall','run_network'])
+                return 5
+            d.close()
+        
+        if  result.poll() > 0:
+            with open('temp.tmp','r') as outfile:
+                lines = outfile.readlines()
+            if 'cvode' in ','.join(lines):
+                return 2
+            elif 'ABORT: Reaction rule list could not be read because of errors' in ','.join(lines):
+                return 3
+            else:
+                return 4
+        else:
+            return result.poll()
+        
+    
 def main():
     directory = 'raw'
     onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) ]

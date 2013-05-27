@@ -86,22 +86,24 @@ class SBML2BNGL:
         
             
         remainderPatterns = []
+        highStoichoiMetry = []
         for x in reactants:
+            if x[1] > 1:
+                highStoichoiMetry.extend([x[1]])
             for counter in range(0,int(x[1])):
                 remainderPatterns.append(x[0])
         #remainderPatterns = [x[0] for x in reactants]
         math = self.getPrunnedTree(math,remainderPatterns)
-        
+        print highStoichoiMetry
         rateR = libsbml.formulaToString(math) 
         for element in remainderPatterns:
             rateR = 'if({0} >0,({1})/{0} ,0)'.format(element,rateR)
+        for rate in highStoichoiMetry:
+            rateR = '{0}*{1}'.format(rateR,rate)
         return rateR,math.getNumChildren()
         
     def __getRawRules(self, reaction):
-        def removeCompartment(math,compartmentList):
-            return getPrunnedTree
             
-        timeArray = []
         if self.useID:
             reactant = [(reactant.getSpecies(),reactant.getStoichiometry()) for reactant in reaction.getListOfReactants() if reactant.getSpecies() != 'EmptySet']
             product = [(product.getSpecies(),product.getStoichiometry()) for product in reaction.getListOfProducts() if product.getSpecies() != 'EmptySet']
@@ -820,11 +822,13 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         writer.finalText(param+param3,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
     
+    #store a logfile
+    '''
     if len(logMess.log) > 0:
         with open(outputFile + '.log', 'w') as f:
             for element in logMess.log:
                 f.write(element + '\n')
-    
+    '''
 
     #rate of each classified rule
     classificationDict = {}
@@ -884,7 +888,7 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in [17]:
+    for bioNumber in [19]:
         #if bioNumber in [18,51,353,108,109,255,268,392]:
         #    continue
     #bioNumber = 175
@@ -892,9 +896,9 @@ def main():
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
         print reactionDefinitions,useID
-        reactionDefinitions = 'reactionDefinitions/reactionDefinition4.json'
-        #spEquivalence = 'reactionDefinitions/speciesEquivalence48.json'
-        spEquivalence = None
+        reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
+        spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
+        #spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
         
         rlength,reval,reval2,clength = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber,reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)

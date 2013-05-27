@@ -117,10 +117,60 @@ def plotResults(fileResults1,fileResults2):
     plt.plot(fileResults2[:,1:])
     plt.show()
      
+def evaluate(fileNumber):
+    copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
+    copheaders = [x.replace(']','').strip() for x in copheaders]
+    copheaders = [x.replace('-','_').strip() for x in copheaders]
+    bngheaders,bng = loadResults('output{0}.gdat'.format(fileNumber),' ')
+    with open('copasiBenchmark/speciesDict{0}.dump'.format(fileNumber)) as f:
+        translator = pickle.load(f)
+    newCopHeaders = []
+    newBngHeaders = []
+    if len(copasi) < 2:
+        return 0
+    elif len(bng) < 2:
+        return 0
+    elif np.size(copasi,0) != np.size(bng,0):
+        return 0
+    for idx,element in enumerate(copheaders):
+        if element == 'Time':
+            continue
+            #newCopHeaders.append('time')
+        elif element in bngheaders:
+            if not (bng[-1,bngheaders.index(element)-1] ==0 and copasi[-1,idx] > 1e-5):
+                newCopHeaders.append(idx)
+                newBngHeaders.append(bngheaders.index(element)-1)
+        elif element not in translator:
+            
+            nelement = element.split(' ')[0]  
+            if nelement in bngheaders and nelement != '#':
+                if not (bng[-1,bngheaders.index(element.split(' ')[0])-1] ==0 and copasi[-1,idx] != 0):
+                        newCopHeaders.append(idx)
+                        newBngHeaders.append(bngheaders.index(element.split(' ')[0])-1)
+                #else:
+                #    print 'herp derp',element
+            continue
+        elif translator[element] in bngheaders:
+            if not (bng[-1,bngheaders.index(translator[element])-1] ==0 and copasi[-1,idx] > 1e-5):
+                newCopHeaders.append(idx)
+                newBngHeaders.append(bngheaders.index(translator[element])-1)
+    #newBngHeaders = [x for x in bngheaders if x in newCopHeaders]
+    #bNGIndexes = [idx for idx,x in enumerate(bngheaders) if x in newCopHeaders]
+    #copasiIndexes = range(1,len(bNGIndexes))
+    #print 
+    #print bNGIndexes,copasiIndexes
+    #print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)
+    atol = copasi[:,newCopHeaders] - bng[:,newBngHeaders]
+    rtol = atol/copasi[:,newCopHeaders]
+    rtol = rtol[np.logical_not(np.isnan(rtol))]
+    score =  np.average(pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5))
+    print '---',score,fileNumber    
+    return score
+    
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [48]:
+    for fileNumber in [19]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -145,8 +195,11 @@ def compareResults():
             if element == 'Time':
                 continue
                 #newCopHeaders.append('time')
+            elif element in bngheaders:
+                if not (bng[-1,bngheaders.index(element)-1] ==0 and copasi[-1,idx] > 1e-5):
+                    newCopHeaders.append(idx)
+                    newBngHeaders.append(bngheaders.index(element)-1)
             elif element not in translator:
-                
                 nelement = element.split(' ')[0]  
                 if nelement in bngheaders and nelement != '#':
                     if not (bng[-1,bngheaders.index(element.split(' ')[0])-1] ==0 and copasi[-1,idx] != 0):
@@ -159,6 +212,7 @@ def compareResults():
                 if not (bng[-1,bngheaders.index(translator[element])-1] ==0 and copasi[-1,idx] > 1e-5):
                     newCopHeaders.append(idx)
                     newBngHeaders.append(bngheaders.index(translator[element])-1)
+            
         #newBngHeaders = [x for x in bngheaders if x in newCopHeaders]
         #bNGIndexes = [idx for idx,x in enumerate(bngheaders) if x in newCopHeaders]
         #copasiIndexes = range(1,len(bNGIndexes))
@@ -168,7 +222,6 @@ def compareResults():
         atol = copasi[:,newCopHeaders] - bng[:,newBngHeaders]
         rtol = atol/copasi[:,newCopHeaders]
         rtol = rtol[np.logical_not(np.isnan(rtol))]
-        print np.average(rtol)
         score =  np.average(pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5))
         
         #mini = np.min(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
