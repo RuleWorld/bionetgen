@@ -91,7 +91,7 @@ class SBML2BNGL:
             highStoichoiMetryFactor  *= factorial(x[1])
             y = [i[1] for i in products if i[0] == x[0]]
             y = y[0] if len(y) > 0 else 0
-            highStoichoiMetryFactor /= comb(x[1],y)
+            highStoichoiMetryFactor /= comb(x[1],y,exact=True)
             for counter in range(0,int(x[1])):
                 remainderPatterns.append(x[0])
         #for x in products:
