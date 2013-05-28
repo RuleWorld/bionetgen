@@ -35,6 +35,7 @@ extern "C" {
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <cfloat>
 #include "util/mathutils/mathutils.h"
 }
 /*
@@ -554,6 +555,23 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 //				double new_val = parser.Eval();
 			}
 
+			// Error check
+			try
+			{
+				parser.Eval();
+			}
+			catch(mu::Parser::exception_type &e)
+			{
+				cout << "**muParser error**" << endl;
+				cout << "Message:  " << e.GetMsg() << "\n";
+				cout << "Formula:  " << e.GetExpr() << "\n";
+				cout << "Token:    " << e.GetToken() << "\n";
+				cout << "Position: " << e.GetPos() << "\n";
+				cout << "Errc:     " << e.GetCode() << "\n";
+				exit(1);
+			}
+
+			// Add parser to functions vector
 			network.functions.push_back(parser);
 
 //			cout << func_name << ": " << network.functions[network.functions.size()-1].GetExpr() <<
@@ -724,7 +742,20 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 					}
 				}
 				parser.p.SetExpr(expr); //parser.p.SetExpr(tokens[n_tok]);
-				parser.val = parser.p.Eval();
+				try
+				{
+					parser.val = parser.p.Eval();
+				}
+				catch(mu::Parser::exception_type &e)
+				{
+					cout << "**muParser error**" << endl;
+					cout << "Message:  " << e.GetMsg() << "\n";
+					cout << "Formula:  " << e.GetExpr() << "\n";
+					cout << "Token:    " << e.GetToken() << "\n";
+					cout << "Position: " << e.GetPos() << "\n";
+					cout << "Errc:     " << e.GetCode() << "\n";
+					exit(1);
+				}
 //				cout << "\t" << parser.name << " " << parser.val << endl;
 				// Store the value
 				val = parser.val;
@@ -3271,9 +3302,10 @@ int print_concentrations_network(FILE* out, double t) {
 	nconc = network.species->elt;
 	for (i = 0; i < n_species; ++i, ++nconc) {
 		conc = (*nconc)->val;
+		if (fabs(conc) < 10*DBL_MIN) conc = 0; // To avoid underflow problems
 		fprintf(out, " %19.12e", conc);
 	}
-	fprintf(out, "\n");
+	fprintf(out,"\n");
 	fflush(out);
 
 //	exit:
