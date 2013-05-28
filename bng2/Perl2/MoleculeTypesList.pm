@@ -47,7 +47,7 @@ sub readString
     }
 
     # Remove leading label, if exists
-    $entry =~ s/^\s*\w+:\s+//;
+    $entry =~ s/^\s*\w+\s*:\s+//;
   
     # Next token is string for species graph
     $entry =~ s/^\s*//;

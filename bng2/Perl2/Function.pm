@@ -204,7 +204,7 @@ sub readString
     }
 
     # Remove leading label, if exists
-    $string =~ s/^\s*\w+:\s+//;
+    $string =~ s/^\s*\w+\s*:\s+//;
 
     # Next token is function Name
     if ( $string =~ s/^\s*([A-Za-z0-9_]+)\s*// )
