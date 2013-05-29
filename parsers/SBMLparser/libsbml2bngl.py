@@ -6,7 +6,7 @@ Created on Fri Mar  1 16:14:42 2013
 """
 
 #!/usr/bin/env python
-
+from scipy.misc import factorial,comb
 from numpy import array
 import matplotlib.pyplot as plt
 import libsbml
@@ -82,24 +82,28 @@ class SBML2BNGL:
                 break
         return math
 
-    def removeFactorFromMath(self,math,reactants):
+    def removeFactorFromMath(self,math,reactants,products):
         
             
         remainderPatterns = []
-        highStoichoiMetry = []
+        highStoichoiMetryFactor = 1
         for x in reactants:
-            if x[1] > 1:
-                highStoichoiMetry.extend([x[1]])
+            highStoichoiMetryFactor  *= factorial(x[1])
+            y = [i[1] for i in products if i[0] == x[0]]
+            y = y[0] if len(y) > 0 else 0
+            highStoichoiMetryFactor /= comb(x[1],y,exact=True)
             for counter in range(0,int(x[1])):
                 remainderPatterns.append(x[0])
+        #for x in products:
+        #    highStoichoiMetryFactor /= math.factorial(x[1])
         #remainderPatterns = [x[0] for x in reactants]
         math = self.getPrunnedTree(math,remainderPatterns)
-        print highStoichoiMetry
         rateR = libsbml.formulaToString(math) 
         for element in remainderPatterns:
             rateR = 'if({0} >0,({1})/{0} ,0)'.format(element,rateR)
-        for rate in highStoichoiMetry:
-            rateR = '{0}*{1}'.format(rateR,rate)
+        if highStoichoiMetryFactor != 1:
+            rateR = '{0}*{1}'.format(rateR,int(highStoichoiMetryFactor))
+
         return rateR,math.getNumChildren()
         
     def __getRawRules(self, reaction):
@@ -131,16 +135,16 @@ class SBML2BNGL:
             
         if reversible:
             if math.getCharacter() == '-' and math.getNumChildren() > 1:
-                rateL,nl = (self.removeFactorFromMath(math.getLeftChild().deepCopy(),rReactant))
-                rateR,nr = (self.removeFactorFromMath(math.getRightChild().deepCopy(),rProduct))
+                rateL,nl = (self.removeFactorFromMath(math.getLeftChild().deepCopy(),rReactant,rProduct))
+                rateR,nr = (self.removeFactorFromMath(math.getRightChild().deepCopy(),rProduct,rReactant))
             else:
-                rateL,nl = self.removeFactorFromMath(math,rReactant)
+                rateL,nl = self.removeFactorFromMath(math,rReactant,rProduct)
                 rateL = "if({0} >= 0 ,{0},0)".format(rateL)
-                rateR,nr = self.removeFactorFromMath(math,rReactant)
+                rateR,nr = self.removeFactorFromMath(math,rReactant,rProduct)
                 rateR = "if({0} < 0 ,-({0}),0)".format(rateR)
                 nl,nr = 1,1
         else:
-            rateL,nl =(self.removeFactorFromMath(math.deepCopy(),rReactant))
+            rateL,nl =(self.removeFactorFromMath(math.deepCopy(),rReactant,rProduct))
             rateR,nr = '0','-1'
                 
         if not self.useID:
