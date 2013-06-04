@@ -367,20 +367,24 @@ sub writeSBML
 		}
 		@pindices = sort { $a <=> $b } @pindices;
 
-		print $SBML "        <listOfReactants>\n";
-		foreach my $i (@rindices)
-        {
-			printf $SBML "          <speciesReference species=\"S%d\"/>\n", $i;
+		if (scalar(@rindices) > 0){
+			print $SBML "        <listOfReactants>\n";
+			foreach my $i (@rindices)
+	        {
+				printf $SBML "          <speciesReference species=\"S%d\"/>\n", $i;
+			}
+			print $SBML "        </listOfReactants>\n";
 		}
-		print $SBML "        </listOfReactants>\n";
-
-		print $SBML "        <listOfProducts>\n";
-		foreach my $i (@pindices)
-        {
-			printf $SBML "          <speciesReference species=\"S%d\"/>\n", $i;
+		
+		if (scalar(@pindices) > 0){
+			print $SBML "        <listOfProducts>\n";
+			foreach my $i (@pindices)
+	        {
+				printf $SBML "          <speciesReference species=\"S%d\"/>\n", $i;
+			}
+			print $SBML "        </listOfProducts>\n";
 		}
-		print $SBML "        </listOfProducts>\n";
-
+		
 		print $SBML "        <kineticLaw>\n";
 		my ( $rstring, $err ) = $rxn->RateLaw->toMathMLString( \@rindices, \@pindices, $rxn->StatFactor );
 		if ($err) { return $err; }

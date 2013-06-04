@@ -210,7 +210,7 @@ sub readString
     $$sptr =~ s/^\d+\s+//;
     
     # Remove leading label, if any
-    $$sptr =~ s/^\w+:\s+//;
+    $$sptr =~ s/^\w+\s*:\s+//;
 
     # Convert non assignment format to assignment
     unless ( $$sptr =~ /^\w+\s*=/ )

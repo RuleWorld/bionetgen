@@ -180,7 +180,8 @@ sub readString
 
 		# Optional species name
 		# COMMENT: why is "*" allowed in a Name?
-		if ( $head =~ s/^([\w\s*]+)// ) {  $sg->Name($1);  }
+#		if ( $head =~ s/^([\w\s*]+)// ) {  $sg->Name($1);  }
+		if ( $head =~ s/^(\w+)\s*// ) {  $sg->Name($1);  }
 
 		# Optional Label (variable tag name)
 		if ( $head =~ s/^\%(\w+)// ) {  $sg->Label($1);  }

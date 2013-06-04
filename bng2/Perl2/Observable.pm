@@ -97,7 +97,7 @@ sub readString
     $string =~ s/^\s*\d+\s+//;
     
     # Remove leading label, if exists
-    $string =~ s/^\s*\w+:\s+//;
+    $string =~ s/^\s*\w+\s*:\s+//;
 
     # Check if next token is observable type
     #  Adding Counter and Population types  --Justin, 5nov2010
