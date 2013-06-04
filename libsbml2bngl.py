@@ -6,8 +6,7 @@ Created on Fri Mar  1 16:14:42 2013
 """
 
 #!/usr/bin/env python
-from scipy.misc import factorial,comb
-from numpy import array
+from scipy.misc import factorial, comb
 import matplotlib.pyplot as plt
 import libsbml
 import bnglWriter as writer
@@ -18,27 +17,27 @@ import structures
 from os import listdir
 import numpy as np
 import analyzeRDF
-from util import logMess,NumericStringParser
+from util import logMess, NumericStringParser
 import re
 import pickle
-log = {'species':[],'reactions':[]}
+log = {'species': [], 'reactions': []}
 import signal
+
 
 def handler(signum, frame):
     print "Forever is over!"
     raise Exception("end of time")
 
+
 class SBML2BNGL:
 
-    
-    def __init__(self,model,useID=True):
+    def __init__(self, model, useID=True):
         self.useID = useID
         self.model = model
-        self.tags= {}
+        self.tags = {}
         self.speciesDictionary = {}
         self.getSpecies()
         self.reactionDictionary = {}
-        
 
     def getRawSpecies(self, species):
         '''
@@ -53,14 +52,15 @@ class SBML2BNGL:
         if name == '':
             name = identifier
         initialConcentration = species.getInitialConcentration()
-        if initialConcentration ==0:
+        if initialConcentration == 0:
             initialConcentration = species.getInitialAmount()
         isConstant = species.getConstant()
         isBoundary = species.getBoundaryCondition()
         compartment = species.getCompartment()
         self.speciesDictionary[identifier] = standardizeName(name)
         returnID = identifier if self.useID else self.speciesDictionary[identifier]
-        return (returnID,initialConcentration,isConstant,isBoundary,compartment,name)
+        return (returnID, initialConcentration, isConstant, isBoundary,
+                compartment, name)
 
    
     '''
@@ -461,10 +461,13 @@ class SBML2BNGL:
             logString += "Species we couldn't recognize:\n"
             for element in log['species']:
                 logString += '\t%s\n' % element
-        if(len(log['reactions'])>0):
-            logString += "Reactions we couldn't infer more about due to insufficient information:"
+        if(len(log['reactions']) > 0):
+            logString += "Reactions we couldn't infer more about due to \
+            insufficient information:"
             for element in log['reactions']:
-                logString += '\t%s + %s -> %s\n' % (element[0][0],element[0][1],element[1])
+                logString += '\t%s + %s -> %s\n' % (element[0][0],
+                                                    element[0][1],
+                                                    element[1])
         return logString
 
     def getStandardName(self,name):
