@@ -82,3 +82,4 @@ if __name__ == "__main__":
     for index in range(1,410):
         suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
     unittest.TextTestRunner(verbosity=2).run(suite)
+

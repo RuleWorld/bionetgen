@@ -11,58 +11,49 @@ Created on Tue Dec  6 17:42:31 2011
 
 @author: proto
 """
-from pyparsing import Word, Suppress, Optional, alphanums, Group,ZeroOrMore
-from numpy import sort
+from pyparsing import Word, Suppress, Optional, alphanums, Group, ZeroOrMore
 from copy import deepcopy
-import reactionTransformations
 import analyzeSBML
 import analyzeRDF
-from util import logMess
-import re
 import structures as st
 
 
-
 def parseReactions(reaction):
-    species =   (Word(alphanums+"_:#-") 
-    + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_:#-") 
+    species = (Word(alphanums + "_:#-")
+    + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_:#-")
     + Suppress("()"))
-    '''
-    species = Optional(Suppress(Word(nums+"*"))) +  Optional(Word(alphanums+"_") + Suppress('()')) +  \
-    Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + \
-    Optional(Suppress('+') + Word(alphanums+"_") + Suppress("()")) + Optional(Suppress('+') + Word(alphanums+"_") 
-    + Suppress("()"))
-    '''
+
     rate = Word(alphanums + "()")
-    grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate)) \
-    ^ (species + Suppress(Optional("<") + "->") + Suppress(rate))  
-    result =  grammar.parseString(reaction).asList()
+    grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") +
+              (Group(species) | '0') + Suppress(rate)) \
+              ^ (species + Suppress(Optional("<") + "->") + Suppress(rate))
+    result = grammar.parseString(reaction).asList()
     if len(result) < 2:
-        result = [result,[]]
+        result = [result, []]
     if '<->' in reaction and len(result[0]) == 1 and len(result[1]) == 2:
-        result2 = [result[1],result[0]]
+        result2 = [result[1], result[0]]
         result = result2
     return result
 
 
-    
-
-
 class Memoize:
-    def __init__(self, f):
-        self.f = f
+    def __init__(self, function):
+        self.function = function
         self.memo = {}
+
     def __call__(self, *args):
         if not args in self.memo:
-            self.memo[args] = self.f(*args)
+            self.memo[args] = self.function(*args)
         return self.memo[args]
 
-    
-def resolveDependencyGraph(dependencyGraph,reactant,withModifications=False):
-    return resolveDependencyGraphHelper(dependencyGraph,reactant,[],withModifications)
+
+def resolveDependencyGraph(dependencyGraph, reactant, withModifications=False):
+    return resolveDependencyGraphHelper(dependencyGraph, reactant, [],
+                                        withModifications)
 
 
-def resolveDependencyGraphHelper(dependencyGraph,reactant,memory,withModifications=False):
+def resolveDependencyGraphHelper(dependencyGraph, reactant, memory,
+                                 withModifications=False):
     result = []
     #if type(reactant) == tuple:
     #    return []
@@ -72,42 +63,50 @@ def resolveDependencyGraphHelper(dependencyGraph,reactant,memory,withModificatio
     else:
         for option in dependencyGraph[reactant]:
             tmp = []
-            
+
             for element in option:
                 if element in memory and not withModifications:
                     result.append([element])
                     continue
                 elif element in memory:
-                    print 'Detected cycle',element
+                    print 'Detected cycle', element
                     return []
-                baseElement = resolveDependencyGraphHelper(dependencyGraph,element,memory + [element],withModifications)
-                
-                if baseElement != None:
+                baseElement = resolveDependencyGraphHelper(
+                                                          dependencyGraph,
+                                                          element, memory +
+                                                          [element],
+                                                          withModifications)
+                if baseElement is not None:
                     tmp.extend(baseElement)
             #if not withModifications:
             result.extend(tmp)
             if len(option) == 1 and withModifications and option[0] != reactant:
-                result.append((option[0],reactant))
+                result.append((option[0], reactant))
     return result
-                
-def addToDependencyGraph(dependencyGraph,label,value):
+
+
+def addToDependencyGraph(dependencyGraph, label, value):
     if label not in dependencyGraph:
         dependencyGraph[label] = []
     if value not in dependencyGraph[label] and value != []:
         dependencyGraph[label].append(value)
-        
-def dependencyGraph(dependencyGraph,reaction,classification,equivalenceTranslator):
-    totalElements =  [item for sublist in reaction for item in sublist]
+
+
+def dependencyGraph(dependencyGraph, reaction, classification,
+                    equivalenceTranslator):
+    '''
+    adds addBond based reactions based dependencies to the dependency graph
+    '''
+    totalElements = [item for sublist in reaction for item in sublist]
     for element in totalElements:
-        addToDependencyGraph(dependencyGraph,element,[])
+        addToDependencyGraph(dependencyGraph, element, [])
         if classification == 'Binding':
             if len(reaction[0]) == 2 and element not in reaction[0]:
-                addToDependencyGraph(dependencyGraph,element,reaction[0])
+                addToDependencyGraph(dependencyGraph, element, reaction[0])
             elif len(reaction[1]) == 2 and element not in reaction[1]:
-                addToDependencyGraph(dependencyGraph,element,reaction[1])
+                addToDependencyGraph(dependencyGraph, element, reaction[1])
 
 
-    
 def weightDependencyGraph(dependencyGraph):
     def measureGraph(path):
         counter = 1
@@ -116,19 +115,20 @@ def weightDependencyGraph(dependencyGraph):
                 counter += measureGraph(x)
             elif x != '0':
                 counter += 1
-        return counter                
+        return counter
 
     weights = []
     for element in dependencyGraph:
-        path = resolveDependencyGraph(dependencyGraph,element)
+        path = resolveDependencyGraph(dependencyGraph, element)
         weight = measureGraph(path)
-        weights.append([element,weight])
-        
-    weights = sorted(weights,key=lambda rule: rule[1]) 
+        weights.append([element, weight])
+
+    weights = sorted(weights, key=lambda rule: rule[1])
     return weights
 
-def consolidateDependencyGraph(dependencyGraph,equivalenceTranslator):
-    def selectBestCandidate(reactant,candidates,dependencyGraph):
+
+def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
+    def selectBestCandidate(reactant, candidates, dependencyGraph):
         tmpCandidates = []
         modifiedElements = []
         unevenElements = []
@@ -142,8 +142,9 @@ def consolidateDependencyGraph(dependencyGraph,equivalenceTranslator):
                 if type(chemical) == tuple:
                     flag = False
                     continue
-                rootChemical = resolveDependencyGraph(dependencyGraph,chemical)
-                mod = resolveDependencyGraph(dependencyGraph,chemical,True)
+                rootChemical = resolveDependencyGraph(dependencyGraph,
+                                                      chemical)
+                mod = resolveDependencyGraph(dependencyGraph, chemical, True)
                 if mod != []:
                     modifiedElements.extend(mod)
                 for element in rootChemical:
@@ -160,7 +161,7 @@ def consolidateDependencyGraph(dependencyGraph,equivalenceTranslator):
                 tmpCandidates.append(tmpAnswer)
         #we cannot handle tuple naming conventions for now
         if len(tmpCandidates) == 0:
-            return None,None
+            return None, None
 
         #if we have more than one modified element for a single reactant
         #we can try to choose the one that is most similar to the original
@@ -175,19 +176,18 @@ def consolidateDependencyGraph(dependencyGraph,equivalenceTranslator):
             flag = True
             while flag:
                 flag = False
-                for idx,chemical in enumerate(tmpCandidates[0]):
+                for idx, chemical in enumerate(tmpCandidates[0]):
                     if chemical in newModifiedElements:
                         tmpCandidates[0][idx] = newModifiedElements[chemical]
                         flag = True
                         break
             #tmpCandidates[0] = candidates[0]
-            
+
         else:
         #temporal solution for defaulting to the first alternative
             #print '---','error',reactant,newModifiedElements,tmpCandidates
             totalElements = [y for x in tmpCandidates for y in x]
             elementDict = {}
-            namingConvention = []
             for word in totalElements:
                 if word not in elementDict:
                     elementDict[word] = 0
@@ -202,55 +202,59 @@ def consolidateDependencyGraph(dependencyGraph,equivalenceTranslator):
                 else:
                     unevenElements.append(element)
             flag = True
-            
             #this should be done on newtmpCandidates instead of tmpcandidates
             while flag:
                 flag = False
-                for idx,chemical in enumerate(tmpCandidates[0]):
-                    if chemical in newModifiedElements and newModifiedElements[chemical] in reactant:
+                for idx, chemical in enumerate(tmpCandidates[0]):
+                    if chemical in newModifiedElements and \
+                    newModifiedElements[chemical] in reactant:
                         tmpCandidates[0][idx] = newModifiedElements[chemical]
                         flag = True
                         break
             #print newTmpCandidates,unevenElements
         #print ';;;',tmpCandidates[0]
-        if len(candidates) == 1 and len(candidates[0]) == 1 and candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
-            print '+++','error I dont know how this is modified',candidates[0],reactant,tmpCandidates
+        if len(candidates) == 1 and len(candidates[0]) == 1 and \
+        candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
+            print '+++', 'error I dont know how this is modified',
+            candidates[0], reactant, tmpCandidates
             candidates = []
-            modificationCandidates = {x[0]:x[1] for x in equivalenceTranslator if x[0] in tmpCandidates[0] and x[1] in reactant}
-            for idx,molecule in enumerate(tmpCandidates[0]):
+            modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
+            if x[0] in tmpCandidates[0] and x[1] in reactant}
+            for idx, molecule in enumerate(tmpCandidates[0]):
                 if molecule in modificationCandidates:
                     tmpCandidates[0][idx] = modificationCandidates[molecule]
-            return [tmpCandidates[0]],unevenElements
+            return [tmpCandidates[0]], unevenElements
 
-        return [tmpCandidates[0]],unevenElements
-       
-    tmp = {}
+        return [tmpCandidates[0]], unevenElements
+
     prunnedDependencyGraph = deepcopy(dependencyGraph)
     weights = weightDependencyGraph(prunnedDependencyGraph)
     unevenElementDict = {}
     for element in weights:
-        
         if element[0] == 'EGF_EGFR2_P':
             print 'break'
         #print element
         candidates = [x for x in prunnedDependencyGraph[element[0]]]
         #print '-',candidates
-        if len(candidates) == 1 and type(candidates[0][0])  == tuple:
+        if len(candidates) == 1 and type(candidates[0][0]) == tuple:
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
-            candidates,uneven = selectBestCandidate(element[0],candidates,prunnedDependencyGraph)
-            if uneven != []:            
+            candidates, uneven = selectBestCandidate(element[0], candidates,
+                                                    prunnedDependencyGraph)
+            if uneven != []:
                 unevenElementDict[element[0]] = (uneven)
-        if candidates == None:
+        if candidates is None:
             prunnedDependencyGraph[element[0]] = []
         else:
             prunnedDependencyGraph[element[0]] = candidates
-            
-    return prunnedDependencyGraph,weights,unevenElementDict
-    
-def identifyReaction(equivalenceDictionary,originalElement,modifiedElement):
+
+    return prunnedDependencyGraph, weights, unevenElementDict
+
+
+def identifyReaction(equivalenceDictionary, originalElement, modifiedElement):
     for classification in equivalenceDictionary:
-        if (originalElement,modifiedElement) in equivalenceDictionary[classification]:
+        if (originalElement, modifiedElement) in \
+        equivalenceDictionary[classification]:
             return classification
     return None
 
@@ -261,53 +265,57 @@ def createEmptySpecies(name):
     species.addMolecule(molecule)
     return species
 
-def addStateToComponent(species,moleculeName,componentName,state):
+
+def addStateToComponent(species, moleculeName, componentName, state):
     for molecule in species.molecules:
         if moleculeName == molecule.name:
             for component in molecule.components:
-                if componentName == component.name and state not in component.states:
+                if componentName == component.name and \
+                   state not in component.states:
                     component.addState(state)
                 elif state in component.states:
                     component.setActiveState(state)
-    
-def addComponentToMolecule(species,moleculeName,componentName):
+
+
+def addComponentToMolecule(species, moleculeName, componentName):
     for molecule in species.molecules:
         if moleculeName == molecule.name:
             if componentName not in [x.name for x in molecule.components]:
                 component = st.Component(componentName)
                 molecule.addComponent(component)
 
-def addBondToComponent(species,moleculeName,componentName,bond,priority = 1):
+
+def addBondToComponent(species, moleculeName, componentName, bond,
+                       priority=1):
     order = 1
     for molecule in species.molecules:
         if moleculeName == molecule.name:
-            if priority == order or len([x for x in species.molecules if x.name==moleculeName]) == order:
+            if priority == order or len([x for x in species.molecules if
+            x.name == moleculeName]) == order:
                 for component in molecule.components:
                     if componentName == component.name:
-                            # if we are adding a second bond to the same component
-                            #it actually means that we have two components with the same
-                            #name
-                            if len(component.bonds) == 0:
-                                component.addBond(bond)
-                                return
-                            else:
-                                newComponent = st.Component(componentName)
-                                newComponent.addBond(bond)
-                                molecule.addComponent(newComponent)
-                                return
-                                
+                        # if we are adding a second bond to the same component
+                        #it actually means that we have two components with the
+                        #same name
+                        if len(component.bonds) == 0:
+                            component.addBond(bond)
+                            return
+                        else:
+                            newComponent = st.Component(componentName)
+                            newComponent.addBond(bond)
+                            molecule.addComponent(newComponent)
+                            return
             else:
                 order += 1
 
 
 def getComplexationComponents2(species):
     '''
-    method used during the atomization process. It determines how molecules in a species
-    bind together
+    method used during the atomization process. It determines how molecules
+    in a species bind together
     '''
     def getBiggestMolecule(array):
-        sortedMolecules = sorted(array,key=lambda rule: len(rule.components))
-        sortedMolecule = sorted(array,key=lambda rule: len(str(rule)))
+        sortedMolecule = sorted(array, key=lambda rule: len(str(rule)))
         #print 'sortedMolecule',[str(x) for x in sortedMolecule]
         return sortedMolecule[-1]
     speciesDict = {}
@@ -318,15 +326,20 @@ def getComplexationComponents2(species):
             if y.name not in speciesDict:
                 speciesDict[y.name] = []
             speciesDict[y.name].append(x)
+    #this array wil contain all molecules that dont bind to anything
     orphanedMolecules = [x for x in species.molecules]
+    #determine how molecules bind together
     for x in species.molecules:
-        for component in [y for y in x.components if y.name.lower() in speciesDict.keys()]:
+        for component in [y for y in x.components if y.name.lower()
+                          in speciesDict.keys()]:
             if x.name.lower() in speciesDict:
                 if(x in speciesDict[component.name.lower()]) and \
-                    component.name in [y.name.lower() for y in speciesDict[x.name.lower()]]:
+                    component.name in [y.name.lower() for y
+                    in speciesDict[x.name.lower()]]:
                     for mol in speciesDict[x.name.lower()]:
-                        if mol.name.lower() == component.name and x!= mol and x in speciesDict[component.name]:
-                            pairedMolecules.append([x,mol])
+                        if mol.name.lower() == component.name and x != mol \
+                        and x in speciesDict[component.name]:
+                            pairedMolecules.append([x, mol])
                             speciesDict[x.name.lower()].remove(mol)
                             speciesDict[component.name].remove(x)
                             if x in orphanedMolecules:
@@ -335,39 +348,40 @@ def getComplexationComponents2(species):
                                 orphanedMolecules.remove(mol)
     totalComplex = [set(x) for x in pairedMolecules]
     flag = True
+
+    #determine which pairs form a continuous chain
     while flag:
         flag = False
-        for idx in range(0,len(totalComplex)-1):
-            for idx2 in range(idx+1,len(totalComplex)):
-                if len([x for x in totalComplex[idx] if x in totalComplex[idx2]]) > 0:
-                    totalComplex[idx] = totalComplex[idx].union(totalComplex[idx2])
+        for idx in range(0, len(totalComplex) - 1):
+            for idx2 in range(idx + 1, len(totalComplex)):
+                if len([x for x in totalComplex[idx] if x
+                in totalComplex[idx2]]) > 0:
+                    totalComplex[idx] = totalComplex[idx]. \
+                    union(totalComplex[idx2])
                     totalComplex.pop(idx2)
                     flag = True
                     break
             if flag:
                 break
     #now we process those molecules where we need to create a new component
-    newComponentPairs = []
     for element in orphanedMolecules:
         for mol1 in species.molecules:
-            #when adding orphaned molecules make sure it's not already in the list
+            #when adding orphaned molecules make sure it's not already in
+            #the list
             if mol1 == element and mol1 not in set().union(*totalComplex):
                 totalComplex.append(set([mol1]))
     while len(totalComplex) > 1:
-        mol1=  getBiggestMolecule(totalComplex[0])
-        mol2 =  getBiggestMolecule(totalComplex[1])
+        mol1 = getBiggestMolecule(totalComplex[0])
+        mol2 = getBiggestMolecule(totalComplex[1])
         #newComponentPairs.append([mol1,mol2])
-        pairedMolecules.append([mol1,mol2])
+        pairedMolecules.append([mol1, mol2])
         totalComplex[0] = totalComplex[0].union(totalComplex[1])
         totalComplex.pop(1)
     #totalComplex.extend(orphanedMolecules)
     return pairedMolecules
-    
-        #    pass        
-        
-    
-           
-def getTrueTag(dependencyGraph,molecule):
+
+
+def getTrueTag(dependencyGraph, molecule):
     '''
     given any modified or basic element it returns its basic
     name
@@ -377,9 +391,10 @@ def getTrueTag(dependencyGraph,molecule):
     elif dependencyGraph[molecule][0][0] == molecule:
         return molecule
     else:
-        return getTrueTag(dependencyGraph,dependencyGraph[molecule][0][0])
+        return getTrueTag(dependencyGraph, dependencyGraph[molecule][0][0])
 
-def atomize(dependencyGraph,weights,translator,reactionProperties,equivalenceDictionary):
+def atomize(dependencyGraph, weights, translator, reactionProperties,
+            equivalenceDictionary):
     for element in weights:
         #0 molecule
         if element[0] == '0':
@@ -398,40 +413,54 @@ def atomize(dependencyGraph,weights,translator,reactionProperties,equivalenceDic
                 else:                      
                     classificationArray = []
                     tmp = element[0]
-                    existingComponents= []
+                    existingComponents = []
                     while dependencyGraph[tmp] != []:
                         #what kind of catalysis are we dealing with     
-                        classification = identifyReaction(equivalenceDictionary,dependencyGraph[tmp][0][0],tmp)
-                        if classification != None and reactionProperties[classification][0] not in existingComponents:                       
-                            classificationArray.append([classification,tmp,dependencyGraph[tmp][0][0]])
-                            existingComponents.append(reactionProperties[classification][0])
+                        classification = identifyReaction(
+                                                          equivalenceDictionary, 
+                                                          dependencyGraph[tmp][0][0],
+                                                          tmp)
+                        if classification is not None and \
+                        reactionProperties[classification][0] not in \
+                        existingComponents:                       
+                            classificationArray.append([classification,
+                                                        tmp,
+                                                        dependencyGraph[tmp]
+                                                        [0][0]])
+                            existingComponents.append(reactionProperties[
+                            classification][0])
                         tmp = dependencyGraph[tmp][0][0]
-                    species = createEmptySpecies(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0]))
+                    species = createEmptySpecies(getTrueTag(
+                    dependencyGraph,dependencyGraph[element[0]][0][0]))
                     #use the already existing structure if its in the translator, otherwise empty                    
-                    if (getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0])) in translator:
-                         species = translator[(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0]))]
+                    if (getTrueTag(dependencyGraph,
+                                   dependencyGraph[element[0]][0][0])) \
+                                   in translator:
+                         species = translator[(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0]))]
                     modifiedSpecies = deepcopy(species) 
                     for classification in classificationArray:                   
                         if classification[0] != None:
-                    
-                            addComponentToMolecule(species,(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0])
-                            addComponentToMolecule(modifiedSpecies,(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0])
-                            
-                            addStateToComponent(species,(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0],reactionProperties[classification[0]][1])
-                            addStateToComponent(modifiedSpecies,(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0],reactionProperties[classification[0]][1])
-
-                            addStateToComponent(species,(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0],'U')
+                            addComponentToMolecule(species, (
+                            getTrueTag(dependencyGraph, 
+                                       dependencyGraph[element[0]][0][0])),
+reactionProperties[classification[0]][0])
+                            addComponentToMolecule(modifiedSpecies, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0])
+                            addStateToComponent(species,(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0],reactionProperties[classification[0]][1])
+                            addStateToComponent(modifiedSpecies, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0],reactionProperties[classification[0]][1])
+                            addStateToComponent(species,(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0],'U')
                             
                     #update the base species
                     if len(classificationArray) > 0 and classificationArray[0][0] != None:
-                        translator[(getTrueTag(dependencyGraph,dependencyGraph[element[0]][0][0]))] = deepcopy(species)
+                        translator[(getTrueTag(
+                        dependencyGraph, dependencyGraph[element[0]][0][0]))] = \
+                        deepcopy(species)
                         translator[element[0]] = modifiedSpecies
                     else:
-                        print 'ALERT',element[0],str(modifiedSpecies),str(species)
+                        print 'ALERT', element[0], \
+                        str(modifiedSpecies), str(species)
                         print equivalenceDictionary
             else:
                 #binding
-                
                 #print '---',dependencyGraph[element[0]],element
                 '''
                 if element[0] not in database:
@@ -439,44 +468,48 @@ def atomize(dependencyGraph,weights,translator,reactionProperties,equivalenceDic
                 else:
                     species = database[element[0]]
                 '''
-                species =st.Species()
+                species = st.Species()
                 #go over the sct and reuse existing stuff
                 for molecule in dependencyGraph[element[0]][0]:
                     if molecule in translator:
                         tmpSpecies = translator[molecule]
-                        if molecule != getTrueTag(dependencyGraph,molecule):
-                            original =translator[getTrueTag(dependencyGraph,molecule)]
-                            updateSpecies(tmpSpecies,original.molecules[0])
+                        if molecule != getTrueTag(dependencyGraph, molecule):
+                            original = translator[getTrueTag(dependencyGraph,
+                                                            molecule)]
+                            updateSpecies(tmpSpecies, original.molecules[0])
                         species.addMolecule(deepcopy(tmpSpecies.molecules[0]))
                     else:
                         mol = st.Molecule(molecule)
                         dependencyGraph[molecule] = deepcopy(mol)
                         species.addMolecule(mol)
-                #how do things bind together?                            
+                #how do things bind together?
                 moleculePairsList = getComplexationComponents2(species)
-                    
                     #TODO: update basic molecules with new components
                     #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
                     #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
-                for idx,molecule in enumerate(moleculePairsList):
+                for idx, molecule in enumerate(moleculePairsList):
                     flag = False
                     #add bonds where binding components already exist
                     for component in molecule[0].components:
-                        if component.name == molecule[1].name.lower() and len(component.bonds) == 0:
+                        if component.name == molecule[1].name.lower() and \
+                        len(component.bonds) == 0:
                             component.bonds.append(idx)
                             flag = True
                             break
                     if not flag:
-                        #create components if they dont exist already. Add a bond afterwards
+                        #create components if they dont exist already.
+                        #Add a bond afterwards
                         newComponent1 = st.Component(molecule[1].name.lower())
-                        
+
                         molecule[0].components.append(newComponent1)
-                        translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
+                        translator[molecule[0].name].molecules[0]. \
+                        components.append(deepcopy(newComponent1))
                         molecule[0].components[-1].bonds.append(idx)
                     flag = False
                     #same thing for the other member of the bond
                     for component in molecule[1].components:
-                        if component.name == molecule[0].name.lower() and len(component.bonds) == 0:
+                        if component.name == molecule[0].name.lower() and \
+                        len(component.bonds) == 0:
                             component.bonds.append(idx)
                             flag = True
                             break
@@ -484,48 +517,55 @@ def atomize(dependencyGraph,weights,translator,reactionProperties,equivalenceDic
                         newComponent2 = st.Component(molecule[0].name.lower())
                         molecule[1].components.append(newComponent2)
                         if molecule[0].name != molecule[1].name:
-                            translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
+                            translator[molecule[1].name].molecules[0]. \
+                            components.append(deepcopy(newComponent2))
                         molecule[1].components[-1].bonds.append(idx)
-                            
+
                 #update the translator
                 translator[element[0]] = species
 
-def updateSpecies(species,referenceMolecule):
+
+def updateSpecies(species, referenceMolecule):
     flag = False
     #print '--',str(species),str(referenceMolecule)
     for moleculeStructure in species.molecules:
         if moleculeStructure.name == referenceMolecule.name:
             for component in referenceMolecule.components:
-                count = [x.name for x in referenceMolecule.components].count(component.name)
-                count -= [x.name for x in moleculeStructure.components].count(component.name)
-                newComponent= st.Component(component.name)
+                count = [x.name for x in referenceMolecule.components].count(
+                component.name)
+                count -= [x.name for x in moleculeStructure.components].count(
+                component.name)
+                newComponent = st.Component(component.name)
                 if len(component.states) > 0:
                     newComponent.addState('U')
                 if count > 0:
-                    for idx in range(0,count):
+                    for _ in range(0, count):
                         moleculeStructure.addComponent(deepcopy(newComponent))
                 elif count < 0:
-                    for idx in range(0,-count):
+                    for _ in range(0, -count):
                         referenceMolecule.addComponent(deepcopy(newComponent))
                         flag = True
             for component in moleculeStructure.components:
-                count = [x.name for x in referenceMolecule.components].count(component.name)
-                count -= [x.name for x in moleculeStructure.components].count(component.name)
-                newComponent= st.Component(component.name)
+                count = [x.name for x in referenceMolecule.components].count(
+                component.name)
+                count -= [x.name for x in moleculeStructure.components].count(
+                component.name)
+                newComponent = st.Component(component.name)
                 if len(component.states) > 0:
                     newComponent.addState(component.states[0])
                     newComponent.addState('U')
                 if count > 0:
-                    for idx in range(0,count):
+                    for idx in range(0, count):
                         moleculeStructure.addComponent(deepcopy(newComponent))
                 elif count < 0:
-                    for idx in range(0,-count):
+                    for idx in range(0, -count):
                         referenceMolecule.addComponent(deepcopy(newComponent))
                         flag = True
-                
+
     return flag
-                    
-def propagateChanges(translator,dependencyGraph):
+
+
+def propagateChanges(translator, dependencyGraph):
     flag = True
     while flag:
         flag = False
@@ -533,53 +573,71 @@ def propagateChanges(translator,dependencyGraph):
             if dependencyGraph[dependency] == []:
                 continue
             for molecule in dependencyGraph[dependency][0]:
-                if updateSpecies(translator[dependency],translator[getTrueTag(dependencyGraph,molecule)].molecules[0]):
+                if updateSpecies(translator[dependency],
+                                 translator[getTrueTag(dependencyGraph,
+                                                       molecule)].molecules[0]):
                     flag = True
 
 
-            
-def transformMolecules(parser,database,configurationFile,speciesEquivalences=None):
-    _,rules,_ = parser.getReactions()
-    molecules,_,_ = parser.getSpecies()
-    
-    sbmlAnalyzer =analyzeSBML.SBMLAnalyzer(configurationFile,speciesEquivalences)
-    
+def transformMolecules(parser, database, configurationFile,
+                       speciesEquivalences=None):
+    '''
+    main method. Receives a parser configuration, a configurationFile and a list
+    of user defined species equivalences and returns a dictionary containing
+    an atomized version of the model
+    '''
+    _, rules, _ = parser.getReactions()
+    molecules, _, _ = parser.getSpecies()
+
+    sbmlAnalyzer = \
+    analyzeSBML.SBMLAnalyzer(configurationFile, speciesEquivalences)
+  
     #classify reactions
-    classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
+    classifications, equivalenceTranslator, eequivalenceTranslator = \
+    sbmlAnalyzer.classifyReactions(rules, molecules)
     #####input processing
     #states,components,other user options
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
-    database.translator,database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
+    database.translator, database.labelDictionary = \
+    sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
-  
+
     ####dependency graph
     #binding reactions
-    for reaction,classification in zip(rules,classifications):
-        dependencyGraph(database.dependencyGraph,list(parseReactions(reaction)),classification,equivalenceTranslator)
+    for reaction, classification in zip(rules, classifications):
+        dependencyGraph(database.dependencyGraph,
+                        list(parseReactions(reaction)),
+        classification, equivalenceTranslator)
     #catalysis reactions
-    
+
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
-            baseElement = min(namingEquivalence,key=len)
-            modElement = max(namingEquivalence,key=len)
-            if key!= 'Binding':
-                addToDependencyGraph(database.dependencyGraph,modElement,[baseElement])
+            baseElement = min(namingEquivalence, key=len)
+            modElement = max(namingEquivalence, key=len)
+            if key != 'Binding':
+                addToDependencyGraph(database.dependencyGraph, modElement,
+                                     [baseElement])
                 if baseElement not in database.dependencyGraph:
-                    addToDependencyGraph(database.dependencyGraph,baseElement,[])
-    
+                    addToDependencyGraph(database.dependencyGraph,
+                                         baseElement, [])
+
     #user defined stuff
     for element in database.labelDictionary:
-        if len(database.labelDictionary[element][0]) == 0 or element == database.labelDictionary[element][0][0]:
-            addToDependencyGraph(database.dependencyGraph,element,[])
+        if len(database.labelDictionary[element][0]) == 0 or element == \
+        database.labelDictionary[element][0][0]:
+            addToDependencyGraph(database.dependencyGraph, element, [])
         else:
             database.dependencyGraph[element] = [list(database.labelDictionary[element][0])]
     #####sct
-    prunnedDependencyGraph,weights,unevenElementDict = consolidateDependencyGraph(database.dependencyGraph,equivalenceTranslator)
-    classifications,equivalenceTranslator,eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
+    prunnedDependencyGraph, weights, unevenElementDict = \
+    consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
+    classifications, equivalenceTranslator, eequivalenceTranslator = \
+    sbmlAnalyzer.classifyReactions(rules, molecules)
 
-    weights = sorted(weights,key=lambda rule:rule[1])
-    atomize(prunnedDependencyGraph,weights,database.translator,database.reactionProperties,eequivalenceTranslator)
-    propagateChanges(database.translator,prunnedDependencyGraph)    
-    return database.translator        
+    weights = sorted(weights, key=lambda rule: rule[1])
+    atomize(prunnedDependencyGraph, weights, database.translator,
+            database.reactionProperties, eequivalenceTranslator)
+    propagateChanges(database.translator, prunnedDependencyGraph)
+    return database.translator
