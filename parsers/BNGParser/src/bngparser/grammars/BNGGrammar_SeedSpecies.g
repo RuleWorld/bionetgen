@@ -238,7 +238,6 @@ species_postModification[BondList bonds, ReactionRegister information, String up
   (label {$species_element::myLabelWrapper = new StringBuilder($label.label);}) |
   (LPAREN site_list[$species_element::sites,bonds,upperID] RPAREN) |
   (ca=compartment_allocation[$information,$bonds])
-    
 ;
 
 compartment_allocation[ReactionRegister information,BondList bonds] returns [String compartment]

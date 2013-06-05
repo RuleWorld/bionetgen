@@ -102,12 +102,10 @@ gnhy_action_par_def[Map<String,String> map]
   (EXECUTE ASSIGNS i2=INT {map.put($EXECUTE.text,$i2.text);}) | 
   (VERBOSE ASSIGNS i3=INT {map.put($VERBOSE.text,$i3.text);}) | 
   (SUFFIX ASSIGNS DBQUOTES (s1=~(DBQUOTES ))* DBQUOTES {map.put($SUFFIX.text,$s1.text);}) |
-//(ACTIONS ASSIGNS LSBRACKET (DBQUOTE action DBQUOTE)
-//(COMMA DBQUOTE action DBQUOTE)* RSBRACKET)// {map.put($ACTIONS.text,$i5.text);}) |
   (ACTIONS ASSIGNS LSBRACKET a1=((~RSBRACKET)*) RSBRACKET {map.put($ACTIONS.text,$a1.text);}) | 
   (SAFE ASSIGNS i4=INT {map.put($SAFE.text,$i4.text);})
 ;
-               
+
 simulate_method
 scope{
   Map<String,String> actions;
@@ -125,7 +123,8 @@ scope{
   simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";} | 
   write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";} | 
   write_mex_file[$simulate_method::actions] {$simulate_method::method = "writeMexfile";} | 
-  write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";}
+  write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";} |
+  parameter_scan[$simulate_method::actions] {$simulate_method::method = "parameter_scan";}
   -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
 ;
         
@@ -196,6 +195,14 @@ write_network[Map<String,String> map]
     s3=TEXTREACTION ASSIGNS i3=INT {map.put($s3.text,$i3.text);} |
     s4=TEXTSPECIES ASSIGNS  i4=INT {map.put($s4.text, $i4.text);}))
   *)?
+  RBRACKET)? RPAREN SEMI?
+;
+
+parameter_scan[Map<String,String> map]
+:
+  PARAMETER_SCAN LPAREN (LBRACKET 
+  ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map])
+  (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
@@ -324,8 +331,8 @@ parameter_definition returns [String parameterName,String parameterValue]
 :
   DBQUOTES STRING {$parameterName = $STRING.text;} DBQUOTES 
   COMMA 
-  (e1=expression[gParent.memory] {$parameterValue = $e1.text; } | 
-  (DBQUOTES e2=expression[gParent.memory] DBQUOTES {$parameterValue = $e2.text; }))
+  (e1=expression[gParent.memory] {$parameterValue = $e1.text;} | 
+  (DBQUOTES e2=expression[gParent.memory] DBQUOTES {$parameterValue = $e2.text;}))
 ;
         
 variable_definition returns [String variableName, String variableValue]
@@ -387,10 +394,10 @@ scope{
 }
 : 
   PLA_CONFIG ASSIGNS 
-  DBQUOTES 
-  (s1=~(DBQUOTES ){$simulate_pla_par_def::temp += $s1.text;})* 
-  DBQUOTES {map.put($PLA_CONFIG.text,$simulate_pla_par_def::temp);}
-;    
+  DBQUOTES (s1=~(DBQUOTES ){$simulate_pla_par_def::temp += $s1.text;})* 
+  DBQUOTES {map.put($PLA_CONFIG.text,$simulate_pla_par_def::temp);} |
+  PLA_OUTPUT ASSIGNS i1=INT {map.put($PLA_OUTPUT.text,$i1.text);}
+;
  
 simulate_nf_par_def[Map<String,String> map]
 : 
@@ -424,25 +431,36 @@ write_m_par_def[Map<String,String> map]
 //TODO: error or warning?????
 simulate_par_def[Map<String,String> map]
 : 
+  METHOD ASSIGNS DBQUOTES method_definition DBQUOTES {map.put($METHOD.text,$method_definition.text);} |
   T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);})  | 
   T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);}) | 
   N_STEPS ASSIGNS i3=(INT|FLOAT) {map.put($N_STEPS.text,$i3.text);} | 
+  N_OUTPUT_STEPS ASSIGNS multiple_definition {map.put($N_OUTPUT_STEPS.text,$multiple_definition.value);} | 
   SAMPLE_TIMES ASSIGNS i4=array_value | 
   VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i5.text);} | 
   PRINT_CDAT ASSIGNS i6=INT {map.put($PRINT_CDAT.text,$i6.text);} | 
   PRINT_FUNCTIONS ASSIGNS i7=INT {map.put($PRINT_FUNCTIONS.text,$i7.text);} | 
-  N_OUTPUT_STEPS ASSIGNS multiple_definition {map.put($N_OUTPUT_STEPS.text,$multiple_definition.value);} | 
   MAX_SIM_STEPS ASSIGNS multiple_definition {map.put($MAX_SIM_STEPS.text,$multiple_definition.value);} | 
   ARGFILE ASSIGNS DBQUOTES s3=filename DBQUOTES {map.put($ARGFILE.text,$s3.text);} | 
   SAVE_PROGRESS ASSIGNS i10=INT {map.put($SAVE_PROGRESS.text,$i10.text);} | 
   PRINT_NET ASSIGNS i11=INT {map.put($PRINT_NET.text,$i11.text);} | 
   PRINT_END ASSIGNS i12=INT {map.put($PRINT_END.text,$i12.text);} | 
   NETFILE ASSIGNS DBQUOTES s4=filename DBQUOTES {map.put($NETFILE.text,$s4.text);} | 
-  METHOD ASSIGNS DBQUOTES method_definition DBQUOTES {map.put($METHOD.text,$method_definition.text);} | 
   CONTINUE ASSIGNS i13=INT {map.put($CONTINUE.text,$i13.text);} | 
   EVALUATE_EXPRESSIONS ASSIGNS i14=INT {map.put($EVALUATE_EXPRESSIONS.text,$i14.text);} | 
   OVERWRITE ASSIGNS i15=INT {map.put($OVERWRITE.text,$i15.text);} | 
-  SEED ASSIGNS i16=INT {map.put($SEED.text,$i16.text);}
+  SEED ASSIGNS i16=INT {map.put($SEED.text,$i16.text);} |
+  STOP_IF ASSIGNS DBQUOTES e1=expression[gParent.memory] DBQUOTES {map.put($STOP_IF.text,$e1.text);} |
+  PRINT_ON_STOP ASSIGNS i17=INT {map.put($PRINT_ON_STOP.text,$i17.text);}
+;
+
+pscan_par_def[Map<String,String> map]
+:
+  PARAMETER ASSIGNS DBQUOTES STRING DBQUOTES {map.put($PARAMETER.text,$STRING.text);} |
+  PAR_MIN ASSIGNS i1=(INT|FLOAT) {map.put($PAR_MIN.text,$i1.text);} |
+  PAR_MAX ASSIGNS i2=(INT|FLOAT) {map.put($PAR_MAX.text,$i2.text);} |
+  N_SCAN_PTS ASSIGNS i3=(INT|FLOAT) {map.put($N_SCAN_PTS.text,$i3.text);} |
+  LOG_SCALE ASSIGNS i4=INT {map.put($LOG_SCALE.text,$i4.text);}
 ;
 
 multiple_definition returns [String value]
