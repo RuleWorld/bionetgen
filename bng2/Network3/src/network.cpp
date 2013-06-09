@@ -1653,8 +1653,10 @@ static int *read_indices_Rxn( char *string, int *n_indices, Elt_array *species, 
 
  */
 
+//Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_array* species,
+//		Elt_array* rates, map<string, bool> is_func_map_p, int &remove_zero) {
 Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_array* species,
-		Elt_array* rates, map<string, bool> is_func_map_p, int &remove_zero) {
+		Elt_array* rates, map<string, bool> is_func_map_p) {
 
 	Rxn_array* rarray;
 	Rxn *list_start = NULL, *rxn, *new_elt;
@@ -1750,7 +1752,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 			if (n_rateLaw_tokens == 1) {
 				if (is_func_map_p[tokens[n_tok]]) {
 					rateLaw_type = FUNCTIONAL;
-					remove_zero = 0;
+//					remove_zero = 0;
 				}
 				else{
 					rateLaw_type = ELEMENTARY;
@@ -4792,9 +4794,11 @@ int update_concentrations(int irxn) {
 			}*/
 
 			/* Read new reactions */
-			int remove_rxns;
-			rxns_new = read_Rxn_array(stdin, &line_number, &n_rxns_new, network.species, network.rates, network.is_func_map,
-									  remove_rxns);
+//			int remove_rxns;
+//			rxns_new = read_Rxn_array(stdin, &line_number, &n_rxns_new, network.species, network.rates,
+//					network.is_func_map, remove_rxns);
+			rxns_new = read_Rxn_array(stdin, &line_number, &n_rxns_new, network.species, network.rates,
+					network.is_func_map);
 			append_Rxn_array(network.reactions, rxns_new);
 			/*cout << "n_rxns_new: " << n_rxns_new << endl;
 			if (n_rxns_new > 0){
