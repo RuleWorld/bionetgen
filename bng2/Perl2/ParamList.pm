@@ -749,7 +749,7 @@ sub deleteParam
     }
   
     # remove param from unchecked (expensive)
-    my $index = @{$plist->Unchecked};
+    $index = @{$plist->Unchecked};
     while ($index > 1)
     {
         --$index;

@@ -107,7 +107,7 @@ sub setType
     }
 
     $param->Type($type);
-    if ($ref) {  param->Ref($ref);  }
+    if ($ref) {  $param->Ref($ref);  }
     return '';
 }
 

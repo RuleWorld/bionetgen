@@ -309,14 +309,14 @@ sub Run {
     $le_perm       = $he_perm;
 
     @$result = HNauty( $adj_in, $adj_out, $the_partition );
-    my $adj_a = get_adj_str( $adj_out, @$result[0] );
+    $adj_a = get_adj_str( $adj_out, @$result[0] );
     print @$adj_a, "\n\n";
 
     # permute
     $adj_in  = adj_permute( $adj_in,  $le_perm );
     $adj_out = adj_permute( $adj_out, $le_perm );
     @$result = HNauty( $adj_in, $adj_out, $the_partition );
-    my $adj_b = get_adj_str( $adj_out, @$result[0] );
+    $adj_b = get_adj_str( $adj_out, @$result[0] );
     print @$adj_b;
     $is_equal = lex_ordered( $adj_a, $adj_b );
     if ( @$is_equal[0] eq 'eq' ) { print "\nThey are equal!\n\n"; }
@@ -325,7 +325,7 @@ sub Run {
     $adj_in  = adj_permute( $adj_in,  $le_perm );
     $adj_out = adj_permute( $adj_out, $le_perm );
     @$result = HNauty( $adj_in, $adj_out, $the_partition );
-    my $adj_c = get_adj_str( $adj_out, @$result[0] );
+    $adj_c = get_adj_str( $adj_out, @$result[0] );
     print @$adj_c;
     $is_equal = lex_ordered( $adj_c, $adj_b );
     if ( @$is_equal[0] eq 'eq' ) { print "\nThey are equal!\n\n"; }
@@ -440,7 +440,7 @@ sub adj_permute {
   my $adj  = shift;    #hash  adj_out
   my $perm = shift;    #hash
 
-  $new_adj;            #hash
+  my $new_adj;            #hash
   my ( $i, $j, $new_i, $new_j );
 
   $new_adj = {};

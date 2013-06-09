@@ -208,7 +208,7 @@ sub readNetwork
         my $filename = exists $params->{file} ? $params->{file} : undef;
         unless ( defined $filename )
         {   # Filename argument is mandatory
-            $err = errgen( "File parameter is required for action readFile()" );
+            $err = errgen( "'file' parameter is required for action readFile()" );
             goto EXIT;
         }
 
@@ -2291,7 +2291,7 @@ sub getOutputPrefix
 ###
 ###
 
-# set the output directory, defulats to curdir if no argument is provided 
+# set the output directory, defaults to curdir if no argument is provided 
 sub setOutputDir
 {
     my $model = shift @_;
