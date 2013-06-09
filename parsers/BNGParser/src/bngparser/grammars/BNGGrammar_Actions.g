@@ -101,7 +101,8 @@ gnhy_action_par_def[Map<String,String> map]
   (OVERWRITE ASSIGNS i1=INT {map.put($OVERWRITE.text,$i1.text);}) | 
   (EXECUTE ASSIGNS i2=INT {map.put($EXECUTE.text,$i2.text);}) | 
   (VERBOSE ASSIGNS i3=INT {map.put($VERBOSE.text,$i3.text);}) | 
-  (SUFFIX ASSIGNS DBQUOTES (s1=~(DBQUOTES ))* DBQUOTES {map.put($SUFFIX.text,$s1.text);}) |
+  (PREFIX ASSIGNS DBQUOTES (s1=~(DBQUOTES ))* DBQUOTES {map.put($PREFIX.text,$s1.text);}) |
+  (SUFFIX ASSIGNS DBQUOTES (s2=~(DBQUOTES ))* DBQUOTES {map.put($SUFFIX.text,$s2.text);}) |
   (ACTIONS ASSIGNS LSBRACKET a1=((~RSBRACKET)*) RSBRACKET {map.put($ACTIONS.text,$a1.text);}) | 
   (SAFE ASSIGNS i4=INT {map.put($SAFE.text,$i4.text);})
 ;
