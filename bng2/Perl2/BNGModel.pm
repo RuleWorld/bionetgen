@@ -1865,7 +1865,7 @@ sub setModelName
 
 # Function to require the version conform to specified requirement
 # Syntax: version(string);
-# string = major[.minor][.dist][+-]
+# string = major[.minor][.dist][+-][codename]
 #
 # major, minor, and dist. indicate the major, minor, and distribution number
 # respectively against which the BioNetGen version numbers will be compared.
@@ -1921,7 +1921,7 @@ sub version
         my $bng_codename = BNGcodename();
         unless ( $codename eq $bng_codename )
         {
-            return "Requested BioNetGen codename ${codename}. Active codename is ${bng_codename}.";
+            return "Requested BioNetGen codename '${codename}'. Active codename is '${bng_codename}'.";
         }
     }
     

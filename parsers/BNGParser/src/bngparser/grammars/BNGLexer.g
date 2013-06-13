@@ -239,5 +239,5 @@ fragment LOWER: 'a'..'z';
 fragment UPPER: 'A'..'Z';
 fragment EXPONENT: ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
-VERSION_NUMBER : INT'.'INT'.'INT ;
+VERSION_NUMBER : INT'.'INT'.'INT(PLUS|MINUS)? ;
 ULB:('\\'(' ')*'\r'?'\n'(WS)*) {skip();};
