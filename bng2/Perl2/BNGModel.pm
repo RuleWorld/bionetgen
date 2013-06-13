@@ -240,7 +240,12 @@ sub readNetwork
                 else
                 {   # determine model basename from filename
                     my ($vol, $dir, $fn) = File::Spec->splitpath( $filename );  
-                        
+
+					# Output directory
+					if ($params->{output_dir} eq File::Spec->curdir()){ # curdir is default
+						$params->{output_dir} = $dir;
+					}
+					
                     my $basename;
                     # file = basename.ext
                     if ( $fn =~ /^(.+)\.([^\.]+)$/ )
@@ -255,7 +260,7 @@ sub readNetwork
                     $model->Name($basename);
                 }
             }
-            
+
             # set model parameters
             $model->Params($params);
 
@@ -2027,7 +2032,7 @@ sub generate_network
     }
 
     return '' if $NO_EXEC;
-
+    
 
     # default params for calling writeNetwork
     # (only need to change if we want non-default)
@@ -2281,12 +2286,16 @@ sub findExec
 sub getOutputPrefix
 {
     my $model = shift @_;
+#    my $file_prefix = @_ ? shift @_ : $model->Name;
+    
+#    my $is_absolute = File::Spec->file_name_is_absolute( $file_prefix );
 
     my $file_prefix = $model->Name;
     if ( $model->Params->{suffix} )
     {   $file_prefix .= '_' . $model->Params->{output_suffix};   }
 
     return File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
+#    return $is_absolute ? $file_prefix : File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
 }
 
 ###
