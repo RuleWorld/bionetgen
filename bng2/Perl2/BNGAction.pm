@@ -140,6 +140,7 @@ sub simulate
 
     # general options
     my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
+#    my $prefix       = defined $params->{prefix}     ? File::Spec->catfile( ($model->getOutputDir()), $params->{prefix} ) : $model->getOutputPrefix();
     my $netfile      = defined $params->{netfile}    ? $params->{netfile}    : undef;
     my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
     my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
@@ -655,6 +656,7 @@ sub simulate_nf
 
     # get simulation output prefix
     my $prefix  = defined $params->{prefix} ? $params->{prefix} : $model->getOutputPrefix();
+#    my $prefix  = defined $params->{prefix} ? File::Spec->catfile( ($model->getOutputDir()), $params->{prefix} ) : $model->getOutputPrefix();
     my $suffix  = defined $params->{suffix} ? $params->{suffix} : "";
 
     unless ($suffix eq "")
@@ -757,7 +759,7 @@ sub simulate_nf
     }
 
     if ($params->{continue})
-    {   # warn user that continue is not support
+    {   # warn user that continue is not supported
         send_warning("simulate_nf(): NFsim does not support 'continue' option. NFsim will overwrite any existing trajectories.");
     }
 
@@ -1022,6 +1024,8 @@ sub generate_hybrid_model
 
     # define prefix
     my $prefix = defined $options->{prefix} ? $options->{prefix} : File::Spec->catfile($outdir, $modelname);
+#    my $prefix = File::Spec->catfile($model->getOutputDir(), $modelname);
+
     # define filename
     my $modelfile = $modelname . ".bngl";
 
@@ -1038,8 +1042,6 @@ sub generate_hybrid_model
             return "Model file $modelfile already exists. Set overwrite=>1 option to force overwrite.";
         }
     }
-
-
 
     # check if a ParamList exists
     unless ( defined $model->ParamList )
@@ -1323,7 +1325,8 @@ sub generate_hybrid_model
     
     
     print "done.\n";
-    print "Wrote hybrid model to file $modelfile.\n";
+#    print "Wrote hybrid model to file $modelfile.\n";
+    print "Wrote hybrid model to file $prefix.bngl.\n";
     
     if ( $options->{execute} )
     {   # execute actions
@@ -1357,8 +1360,8 @@ sub parameter_scan
     my $params = @_ ? shift @_ : {};
 
     # define default params
-    my $default_params = {  'prefix'   => $model->getOutputPrefix(),
-                            'log_scale'      => 0
+    my $default_params = {  'prefix'   	=> $model->getOutputPrefix(),
+                            'log_scale'	=> 0
                          };
 
     # copy default values for undefined keys

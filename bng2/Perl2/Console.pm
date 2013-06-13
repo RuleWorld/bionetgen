@@ -51,6 +51,7 @@ sub BNGconsole
     while ( my $linein = <STDIN> )
     {
         unless ($interactive) {  print $linein;  }
+        
 
         # trim leading and trailing white space
         $linein =~ s/^\s+//;        
@@ -63,7 +64,7 @@ sub BNGconsole
             {
                 if (defined $model)
                 {
-                    send_warning( "Attempt to load model while another model is active" );
+                    send_warning( "Attempted to load model while another model is active." );
                     last PROCESS_INPUT;
                 }
     
@@ -71,7 +72,7 @@ sub BNGconsole
                 my $filename = $linein;
                 unless ($filename and -e $filename)
                 {
-                    send_warning( "Attempt to load model, but file '$filename' was not found." );
+                    send_warning( "Attempted to load model, but file '$filename' was not found." );
                     last PROCESS_INPUT;
                 }
 
@@ -82,6 +83,7 @@ sub BNGconsole
 
                 # create BNGModel object
                 $model = BNGModel->new();
+                $model->initialize();
                 $BNGModel::GLOBAL_MODEL = $model;
                 {   # read model file
                     my $err = $model->readFile($local_params);

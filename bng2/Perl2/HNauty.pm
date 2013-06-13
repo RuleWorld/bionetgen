@@ -340,7 +340,7 @@ sub update_cell {
 
   my $i;
 
-  $fixing = [];
+#  $fixing = [];
   for $i ( 0 .. $#{$perms} ) {
     if ( pfixp( $node, @{ @$perms[$i] }[0] ) ) {
       $cell = intersection( $cell, @{ @$perms[$i] }[1] );
@@ -464,7 +464,7 @@ sub get_adj_str {
   my $adj_info;        # unfortunately also an array
   my ( $i, $j, $value, $e, $length );
 
-  $le_adj = [];
+#  $le_adj = [];
   if ( ref $part eq 'ARRAY' ) {
     for $i ( 0 .. $#{$part} ) {
       $perm->{ @{ @$part[$i] }[0] } = $i;
@@ -809,9 +809,8 @@ sub HNauty {
 
     #main loop
     if ( is_discrete( @$current_node[$counter] ) ) {
-      if ( $first_terminal_node ==
-        ( @$current_node[$counter], @$node_indicator[$counter], $new_adj ) )
-      {
+#      if ( $first_terminal_node == ( @$current_node[$counter], @$node_indicator[$counter], $new_adj ) ){
+   	  if ( $first_terminal_node == [ @$current_node[$counter], @$node_indicator[$counter], $new_adj ] ){
         @$best_node = @$first_terminal_node;
       }
       $counter += -1;
@@ -893,7 +892,8 @@ sub HNauty {
       if ( not scalar @$best_node == 0 ) {
         $i = lex_ordered( @$node_indicator[$counter], @$best_node[1] );
         if ( @$i[0] eq 'gt' ) {
-          $counter   = $i[1] - 1;
+#      	  $counter   = $i[1] - 1;
+          $counter   = @$i[1] - 1;
           $jump_back = 1;
         }
       }

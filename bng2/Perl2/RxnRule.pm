@@ -3,6 +3,7 @@ package RxnRule;
 # pragmas
 use strict;
 use warnings;
+no warnings 'redefine';
 
 # Perl Modules
 use Class::Struct;

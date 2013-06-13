@@ -440,7 +440,7 @@ sub make_aggregates{
 	
 	# loop over ptrs at lowest depth
 	my @obj_low= @{$a[$max_depth]};
-	my $eq=$equiv[$idepth];
+#	my $eq=$equiv[$idepth];
 	for $obj (@obj_low){
 	    push @olist, $obj;
 	    my $new_agg= join(".", sort by_obj @olist);

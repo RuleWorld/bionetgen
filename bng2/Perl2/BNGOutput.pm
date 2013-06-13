@@ -198,7 +198,7 @@ sub writeSBML
 	open( $SBML, '>', $file )  or die "Couldn't open $file: $!\n";
 
     # get BNG version
-	my $version = BNGversion();
+	my $version = BNGUtils::BNGversion();
 
 
 	# 0. HEADER
@@ -239,7 +239,7 @@ sub writeSBML
         {   $conc = $spec->Concentration;   }
 
         # If concentration is a parameter name, then evaluate the parameter
-		unless ( isReal($conc) )
+		unless ( BNGUtils::isReal($conc) )
         {   $conc = $plist->evaluate($conc, []);   }
         
         # NOTE: In SBML Level 2 Version 2, the InitialAssignment construct was introduced that

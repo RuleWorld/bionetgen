@@ -28,6 +28,7 @@ package BNGModel;
 # pragmas
 use strict;
 use warnings;
+no warnings 'redefine';
 
 # Perl Modules
 use Class::Struct;
@@ -2079,7 +2080,7 @@ sub generate_network
     if ( @{$model->RxnRules} == 0 )
     {   return "Nothing to do: no reaction rules defined.";   }
 
-    # if no reactions have been generated previosuly, then we have to initize some things..
+    # if no reactions have been generated previously, then we have to initialize some things...
     if ( $model->RxnList->size()==0 or $params{'continue'}==0 )
     {
         # initialize rules

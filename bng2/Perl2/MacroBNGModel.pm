@@ -26,7 +26,7 @@ struct MacroBNGModel=>{
 };
 
 {
-  my $file, $line_number, $file_dat;
+  my ($file, $line_number, $file_dat);
   my %bngdata;
 
   sub readFile{
@@ -90,7 +90,7 @@ $err = $slist->readString($entry,$base_model->ParamList,$base_model->MoleculeTyp
       print WFILEbngl $simul1;
     close (WFILEbngl);
     $params{file}=$file;   # macr_fceri_ji3.bngl
-    $generate_network=0;
+#    $generate_network=0;
     $base_model->UpdateNet(0);
     if ($err=$base_model->readFile(\%params)){ 
       exit_error($err);                  
@@ -109,7 +109,7 @@ my ($param_prefix) = @_;
  my ($line, $entry, $lno, $name, $suff);
  my (@rab);
  my (%nm_site, %nm2_site, %skf, %dpp_site, %lis1h);
-  my $file, $line_number, $file_dat;
+  my ($file, $line_number, $file_dat);
   my %bngdata;
 
 
@@ -149,7 +149,7 @@ READ:
 	      my ($entry, $lno)= @{$line};
               print WFILEpar "$entry\n";
               my @tok1ens= split(' ',$entry);
-              my $ind1ex, $na1m, $va1l;
+              my ($ind1ex, $na1m, $va1l);
               if ($tok1ens[0]=~/^\d+$/){
                 $ind1ex= shift(@tok1ens); # This index will be ignored
               }
@@ -277,8 +277,8 @@ READ:
 	      shift(@tokens);
 	      my @array= split(',',$tokens[0]);
 	      *weights= $obs->Weights;
-	      @weights= (0)x@weigths;
-	      my $w, $ind;
+	      @weights= (0)x@weights;
+	      my ($w, $ind);
 	      for $elt (@array){
 		if($elt=~ s/^([^*]*)\*//){
 		  $w=$1;
@@ -387,7 +387,7 @@ foreach $ii (@species2) {
   }
 
   my @tok1ens= split(' ',$ii);
-  $entry = @tok1ens[0];                           # Grb2(SH2,SH3!1).Sos(dom!1)
+  $entry = $tok1ens[0];                           # Grb2(SH2,SH3!1).Sos(dom!1)
   while ( $entry =~ s/(?:[\(])(.*?)(?:[)])//) {   # select inside ( and )
     $name  = $`;                                  # L     Grb2 Sos
     if ( !(exists($$nm_site{$name})) )   {
@@ -411,7 +411,7 @@ foreach $ii (@species2) {
 sub pre_rules{  
 my ($nm_site, $nm2_site, $param_prefix, $skf, $dpp_site, $lis1h) = @_;
  my ($rulesfile, $obserfile, $spec2file);
- my ($line, $endl, $entry, $lno, $name, $i, $key_d, $endl);
+ my ($line, $endl, $entry, $lno, $name, $i, $key_d);#, $endl);
  my ( @lis1, @rab);
  my (%site_lig);
 
@@ -922,7 +922,7 @@ my ($rp1, $skf, $nm2_site) = @_;             #;Rec(a!1).Lig(l!1,l)
 sub cor_net{  
 my ($param_prefix) = @_;
 my ($recfile,$netfile,$rabfile,$namenet,$namerab,$linen,$rec,$linei,$line);
-my ($nn,$fl,$tei1,$out,$endl,$key,$ii,$jj,$r1,$r2,$jj,$fm1,$fm2,$fs1,$fs2,$file,$suff);
+my ($nn,$fl,$tei1,$out,$endl,$key,$ii,$jj,$r1,$r2,$fm1,$fm2,$fs1,$fs2,$file,$suff);
 my ($fli,$r1i,$r2i,$fm1i,$fm2i,$fs1i,$fs2i,$n_subtracts,$n_adds,$s1,$s2,$s3,$nk);
 my ($foun,$nnn,$s1n,$s3n,$nkn,$an,$bn,$ns1,$ns2,$li1,$li2,$si1,$m1,$si2,$m2);
 my ($foui,$nni,$s1i,$s3i,$nki,$ai,$bi);
@@ -1083,7 +1083,7 @@ my (%m_spe,%s_spe,%rea_l,%rea_r,%rrea_l,%rrea_r,%dubl);
            for ( $ii=0; $ii<$nn; $ii++ ) {  
              @rr1i = (); @rr2i = (); @rabi = ();  
              if ($n_adds == 2) { %dubl = (); last; }       # out from 
-             $linei = @reac[$ii];               # read from 1<n
+             $linei = $reac[$ii];               # read from 1<n
              if ( !($linei =~ /\,/) ) { next; } # net zapjatoi
              $line = $linei;
              $line =~ s/^\s+//;                 #    27 14 20 km1
@@ -1112,7 +1112,7 @@ my (%m_spe,%s_spe,%rea_l,%rea_r,%rrea_l,%rrea_r,%dubl);
            for ( $ii=0; $ii<$nn; $ii++ ) {  # sverka s predydushimi records reactions
              @rr1i = (); @rr2i = (); @rabi = ();
              if ($n_subtracts == 2) { %dubl = (); last; }  # out from 
-             $linei = @reac[$ii];               # read from 1<n
+             $linei = $reac[$ii];               # read from 1<n
              if ( !($linei =~ /\,/) ) { next; } # net zapjatoi
              $line = $linei;
              $line =~ s/^\s+//;                #    27 14 20 km1
@@ -1170,7 +1170,7 @@ my ($an, $bn, $key, $egf, $egfr1148, $jj);
        foreach $ii ( @obser1vable ) {
          if ( $ii =~ /;$egf$/ ) {           #;Molecules;egf_tot;egf
            if ( $ii =~ /Molecules;(.*?);/ ) {
-             @egf_tot{$1} = @rabm;        # %egf_tot
+             $egf_tot{$1} = @rabm;        # %egf_tot
              last;
            }
          } ## if egf
@@ -1577,7 +1577,7 @@ my ($comp, $dpp_site, $lis1h, $mol, $mol_form, $skf) =  @_;
        $out .= ').';                      # Rec(a!1).      
        $$mol .= $out;                     # 
      } else { $hform = ''; $zform = ''; $lform = ''; $nrabm = @rabm;   # it is formulae
-       for ($ii=0;$ii<$nrabm;$ii++){@irabm[$ii]=0;}  $ii =0; $i1=0; %dep_del =();
+       for ($ii=0;$ii<$nrabm;$ii++){$irabm[$ii]=0;}  $ii =0; $i1=0; %dep_del =();
        while(!($i1)) {  if ($ii > 2*$nrabm) { print WFILErec "INVALID GROUP OBSERVABLES $rscaf sites=@rabm"; last; }
         &h_dep($dpp_site, \%dep_del, \@rabm, \@rab2, $out);   #@rab2= a b ---prepare @rab2
         $out .=join("_",@rab2)."(";           # Reca_b(;            Reca_g(
@@ -1856,7 +1856,8 @@ STEP1:
      }
    }
 STEP2x3:
-   if ( !(defined(@par1)) ) {
+#   if ( !(defined(@par1)) ) {
+   if ( !(@par1) ) {
      return(0);            # It's not odnorodny
    } else {                # It's odnorodny
      for ( $jj=0; $jj<=$#par1; $jj++) {               # pary macro-name (Q1 Q2) (R1 R2)...

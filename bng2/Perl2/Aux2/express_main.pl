@@ -14,7 +14,7 @@ $a2= Expression->new;
 $a2->Type('NUM');
 $a2->Arglist([12]);
 
-$a3= Expression->new;
+#$a3= Expression->new;
 
 $expr= Expression->new;
 $expr->Type('-');
@@ -90,7 +90,8 @@ printf "expr $estring_sav evaluates to %g\n", $val;
 print $plist->writeBNGL();
 print $plist->toString();
 
-sub getNumber(){
+#sub getNumber(){
+sub getNumber{
   my $string=shift;
   my $number="";
 

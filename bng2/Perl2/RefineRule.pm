@@ -55,7 +55,7 @@ sub newPopulationMappingRule
 	{
 		$g = SpeciesGraph->new();
 		# use the MoleculeTypes list for reactant validation
-		$err = $g->readString( \$string, $model->CompartmentList, SpeciesGraph::IS_SPECIES,
+		$err = $g->readString( \$string, $model->CompartmentList, SpeciesGraph::IS_SPECIES(),
 		                         $sep, $model->MoleculeTypesList );
 		if ($err) {  return ($err, $rr);  }
 		++$ipatt;
@@ -131,7 +131,7 @@ sub newPopulationMappingRule
 	{
 		my $g = SpeciesGraph->new();	
 		# Validate product graphs using population types
-		$err = $g->readString( \$string, $model->CompartmentList, SpeciesGraph::IS_SPECIES,
+		$err = $g->readString( \$string, $model->CompartmentList, SpeciesGraph::IS_SPECIES(),
 		                       $sep, $model->PopulationTypesList );
 		if ($err) {  return ($err, $rr);  }
 		++$ipatt;
@@ -333,7 +333,7 @@ sub expandRule
         if ( $params->{safe} )
         {
             # add self-embedding of reactant pattern its match list
-            my $copy_patt = $patt->copy( !SpeciesGraph::COPY_LABEL, SpeciesGraph::GET_LABEL );        
+            my $copy_patt = $patt->copy( !SpeciesGraph::COPY_LABEL(), SpeciesGraph::GET_LABEL() );        
             (my $copy_match) = $patt->isomorphicToSubgraph($copy_patt);
             push @{$rr->Rmatches->[$ipatt]}, $copy_match;
 
@@ -356,7 +356,7 @@ sub expandRule
             unless ($is_isomorph)
             {
                 # add self-embedding of reactant pattern its match list
-                my $copy_patt = $patt->copy( !SpeciesGraph::COPY_LABEL, SpeciesGraph::GET_LABEL );
+                my $copy_patt = $patt->copy( !SpeciesGraph::COPY_LABEL(), SpeciesGraph::GET_LABEL() );
                 (my $copy_match) = $patt->isomorphicToSubgraph($copy_patt);
                 push @{$rr->Rmatches->[$ipatt]}, $copy_match;
             }
