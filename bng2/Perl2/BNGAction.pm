@@ -139,8 +139,8 @@ sub simulate
     }
 
     # general options
-    my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
-#    my $prefix       = defined $params->{prefix}     ? File::Spec->catfile( ($model->getOutputDir()), $params->{prefix} ) : $model->getOutputPrefix();
+#    my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
+    my $prefix       = defined $params->{prefix}     ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
     my $netfile      = defined $params->{netfile}    ? $params->{netfile}    : undef;
     my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
     my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
@@ -655,8 +655,8 @@ sub simulate_nf
     my $err;
 
     # get simulation output prefix
-    my $prefix  = defined $params->{prefix} ? $params->{prefix} : $model->getOutputPrefix();
-#    my $prefix  = defined $params->{prefix} ? File::Spec->catfile( ($model->getOutputDir()), $params->{prefix} ) : $model->getOutputPrefix();
+#    my $prefix  = defined $params->{prefix} ? $params->{prefix} : $model->getOutputPrefix();
+    my $prefix  = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
     my $suffix  = defined $params->{suffix} ? $params->{suffix} : "";
 
     unless ($suffix eq "")
@@ -947,7 +947,7 @@ sub readNFspecies
 
 
 # construct a hybrid particle population (HPP) model
-#  --Justin, 21mar2001
+#  --Justin, 21mar2011
 sub generate_hybrid_model
 {
     my $model        = shift;
@@ -1004,31 +1004,37 @@ sub generate_hybrid_model
     # determine HPP model name
     # (1) if prefix is defined, try to extract the file basename
     # (2) otherwise use the name of the parent model
-    my $modelname;
-    my $outdir;
-    if (defined $options->{prefix})
-    {
-        my ($vol,$dir,$filebase) = File::Spec->splitpath($options->{prefix});
-        if ($filebase eq '')
-        { return sprintf "Prefix value '%s' does not end with a file basename", $options->{prefix}; }
-        $outdir = File::Spec->catpath($vol, $dir);
-        $modelname = $filebase;
-    }
-    else
-    {   $outdir = defined $options->{output_dir} ? $options->{output_dir} : $model->getOutputDir();
-        $modelname = $model->Name;
-    }
+#    my $modelname;
+#    my $outdir;
+#    if (defined $options->{prefix})
+#    {
+#        my ($vol,$dir,$filebase) = File::Spec->splitpath($options->{prefix});
+#        if ($filebase eq '')
+#        { return sprintf "Prefix value '%s' does not end with a file basename", $options->{prefix}; }
+#        $outdir = File::Spec->catpath($vol, $dir);
+#        $modelname = $filebase;
+#    }
+#    else
+#    {   
+ #   	$outdir = defined $options->{output_dir} ? $options->{output_dir} : $model->getOutputDir();
+#        $modelname = $model->Name;
+#    }
     # add suffix
-    $modelname .= "_" . $options->{suffix};
+#    $modelname .= "_" . $options->{suffix};
 
 
     # define prefix
-    my $prefix = defined $options->{prefix} ? $options->{prefix} : File::Spec->catfile($outdir, $modelname);
-#    my $prefix = File::Spec->catfile($model->getOutputDir(), $modelname);
+#    my $prefix = defined $options->{prefix} ? $options->{prefix} : File::Spec->catfile($outdir, $modelname);
+    my $prefix = defined $options->{prefix} ? $model->getOutputPrefix( $options->{prefix} ) : $model->getOutputPrefix();
+	$prefix .= "_" . $options->{suffix};
 
+	# define outdir and modelname
+	my ($vol,$dir,$modelname) = File::Spec->splitpath($prefix);
+	my $outdir = File::Spec->catpath($vol, $dir);
+	
     # define filename
-    my $modelfile = $modelname . ".bngl";
-
+#    my $modelfile = $modelname . ".bngl";
+	my $modelfile = $prefix . ".bngl";
 
     if ( -e $modelfile )
     {
@@ -1079,7 +1085,9 @@ sub generate_hybrid_model
     %{$hybrid_model->Options} = %{$model->Options};
     # set prefix
     $hybrid_model->Options->{prefix} = $prefix;
-
+    #set output_dir
+	$hybrid_model->setOutputDir($outdir);
+	
     # copy the constants in the parameter list
     #  NOTE: we'll add observable and functions later
     print $indent . "$step_index:Fetching model parameters.. ";  ++$step_index;
@@ -1308,6 +1316,7 @@ sub generate_hybrid_model
     my $FH;
     print $indent . "$step_index:Attempting to write hybrid BNGL.. "; ++$step_index;        
     unless ( open $FH, '>', $modelfile ) {  return "Couldn't write to $modelfile: $!\n";  }
+
     print $FH $hybrid_model->writeBNGL( {'format'=>'bngl', 'include_model'=>1,'include_network'=>0,
                                          'pretty_formatting'=>1,'evaluate_expressions'=>0} );
     # writing actions!
@@ -1325,8 +1334,8 @@ sub generate_hybrid_model
     
     
     print "done.\n";
-#    print "Wrote hybrid model to file $modelfile.\n";
-    print "Wrote hybrid model to file $prefix.bngl.\n";
+    print "Wrote hybrid model to file $modelfile.\n";
+    
     
     if ( $options->{execute} )
     {   # execute actions
@@ -1370,6 +1379,9 @@ sub parameter_scan
         unless ( defined $params->{$key} )
         {   $params->{$key} = $val;   }
     }
+    
+    # Output prefix
+   	$params->{prefix} = $model->getOutputPrefix($params->{prefix});
 
     # check for required parameters
     unless ( defined $params->{parameter} )
@@ -1401,6 +1413,8 @@ sub parameter_scan
     my $workdir = $basename;
     # define output file for parameter scan results
     my $outfile = $basename . ".scan";
+    # define file prefix for output results
+    my ($vol, $dir, $file_prefix) = File::Spec->splitpath( $basename );
 
 
     # create working directory
@@ -1447,7 +1461,8 @@ sub parameter_scan
         $model->setParameter( $params->{parameter}, $par_value );
 
         # define prefix
-        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d", $params->{parameter}, $k+1) );
+  #      my $local_prefix = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d", $params->{parameter}, $k+1) );
+        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
 
         # reset concentrations
         $model->resetConcentrations();
@@ -1483,7 +1498,7 @@ sub parameter_scan
         {   $par_value = exp $par_value;   }
 
         # Get data from gdat file
-        my $data_file = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d.gdat", $params->{parameter}, $k+1) );
+        my $data_file = File::Spec->catfile( ($workdir), sprintf("%s_%05d.gdat", $file_prefix, $k+1) );
         print "Extracting observable trajectory from $data_file\n";
         my $ifh;
         unless ( open $ifh,'<', $data_file )
