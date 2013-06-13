@@ -1143,7 +1143,7 @@ sub writeNET
 #   include_model => 0,1        : include model blocks in output file (default=1).
 #   include_network => 0,1      : include network blocks in output file (default=1).
 #   overwrite => 0,1            : allow writeFile to overwrite exisiting files (default=0).
-#   prefix => "string"          : set prefix of output file name (default=./MODELNAME).
+#   prefix => "string"          : set prefix of output file name (default=outdir/MODELNAME).
 #   pretty_formatting => 0,1    : write output in "pretty" form (default=0).
 #   suffix => "string"          : set suffix of output file name (default=NONE).
 #   TextReaction => 0,1         : write reactions as BNGL strings (default=0).
@@ -2033,6 +2033,10 @@ sub generate_network
 
     return '' if $NO_EXEC;
     
+    # Output prefix
+    if (defined $user_params->{prefix}){
+    	$params{prefix} = $model->getOutputPrefix($user_params->{prefix});
+    }
 
     # default params for calling writeNetwork
     # (only need to change if we want non-default)
@@ -2286,16 +2290,16 @@ sub findExec
 sub getOutputPrefix
 {
     my $model = shift @_;
-#    my $file_prefix = @_ ? shift @_ : $model->Name;
-    
-#    my $is_absolute = File::Spec->file_name_is_absolute( $file_prefix );
+    my $file_prefix = @_ ? shift @_ : $model->Name;
 
-    my $file_prefix = $model->Name;
+    my $is_absolute = File::Spec->file_name_is_absolute( $file_prefix );
+
+#    my $file_prefix = $model->Name;
     if ( $model->Params->{suffix} )
     {   $file_prefix .= '_' . $model->Params->{output_suffix};   }
 
-    return File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
-#    return $is_absolute ? $file_prefix : File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
+    return ($is_absolute ? $file_prefix : File::Spec->catfile( ($model->getOutputDir()), $file_prefix ));
+#    return File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
 }
 
 ###
