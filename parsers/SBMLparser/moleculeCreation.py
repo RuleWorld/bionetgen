@@ -48,8 +48,7 @@ class Memoize:
 
 
 def resolveDependencyGraph(dependencyGraph, reactant, withModifications=False):
-    return resolveDependencyGraphHelper(dependencyGraph, reactant, [],
-                                        withModifications)
+    return resolveDependencyGraphHelper(dependencyGraph, reactant, [], withModifications)
 
 
 def resolveDependencyGraphHelper(dependencyGraph, reactant, memory,
@@ -71,11 +70,8 @@ def resolveDependencyGraphHelper(dependencyGraph, reactant, memory,
                 elif element in memory:
                     print 'Detected cycle', element
                     return []
-                baseElement = resolveDependencyGraphHelper(
-                                                          dependencyGraph,
-                                                          element, memory +
-                                                          [element],
-                                                          withModifications)
+                baseElement = resolveDependencyGraphHelper(dependencyGraph,element, 
+                                                           memory + [element], withModifications)
                 if baseElement is not None:
                     tmp.extend(baseElement)
             #if not withModifications:
@@ -142,8 +138,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
                 if type(chemical) == tuple:
                     flag = False
                     continue
-                rootChemical = resolveDependencyGraph(dependencyGraph,
-                                                      chemical)
+                rootChemical = resolveDependencyGraph(dependencyGraph, chemical)
                 mod = resolveDependencyGraph(dependencyGraph, chemical, True)
                 if mod != []:
                     modifiedElements.extend(mod)
@@ -206,8 +201,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
             while flag:
                 flag = False
                 for idx, chemical in enumerate(tmpCandidates[0]):
-                    if chemical in newModifiedElements and \
-                    newModifiedElements[chemical] in reactant:
+                    if chemical in newModifiedElements and newModifiedElements[chemical] in reactant:
                         tmpCandidates[0][idx] = newModifiedElements[chemical]
                         flag = True
                         break
@@ -215,8 +209,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
         #print ';;;',tmpCandidates[0]
         if len(candidates) == 1 and len(candidates[0]) == 1 and \
         candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
-            print '+++', 'error I dont know how this is modified',
-            candidates[0], reactant, tmpCandidates
+            print '+++', 'error I dont know how this is modified', candidates[0], reactant, tmpCandidates
             candidates = []
             modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
             if x[0] in tmpCandidates[0] and x[1] in reactant}
@@ -239,8 +232,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
         if len(candidates) == 1 and type(candidates[0][0]) == tuple:
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
-            candidates, uneven = selectBestCandidate(element[0], candidates,
-                                                    prunnedDependencyGraph)
+            candidates, uneven = selectBestCandidate(element[0], candidates, prunnedDependencyGraph)
             if uneven != []:
                 unevenElementDict[element[0]] = (uneven)
         if candidates is None:
@@ -253,8 +245,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
 
 def identifyReaction(equivalenceDictionary, originalElement, modifiedElement):
     for classification in equivalenceDictionary:
-        if (originalElement, modifiedElement) in \
-        equivalenceDictionary[classification]:
+        if (originalElement, modifiedElement) in equivalenceDictionary[classification]:
             return classification
     return None
 
@@ -270,8 +261,7 @@ def addStateToComponent(species, moleculeName, componentName, state):
     for molecule in species.molecules:
         if moleculeName == molecule.name:
             for component in molecule.components:
-                if componentName == component.name and \
-                   state not in component.states:
+                if componentName == component.name and state not in component.states:
                     component.addState(state)
                 elif state in component.states:
                     component.setActiveState(state)
@@ -285,13 +275,11 @@ def addComponentToMolecule(species, moleculeName, componentName):
                 molecule.addComponent(component)
 
 
-def addBondToComponent(species, moleculeName, componentName, bond,
-                       priority=1):
+def addBondToComponent(species, moleculeName, componentName, bond, priority=1):
     order = 1
     for molecule in species.molecules:
         if moleculeName == molecule.name:
-            if priority == order or len([x for x in species.molecules if
-            x.name == moleculeName]) == order:
+            if priority == order or len([x for x in species.molecules if x.name == moleculeName]) == order:
                 for component in molecule.components:
                     if componentName == component.name:
                         # if we are adding a second bond to the same component
@@ -333,12 +321,11 @@ def getComplexationComponents2(species):
         for component in [y for y in x.components if y.name.lower()
                           in speciesDict.keys()]:
             if x.name.lower() in speciesDict:
-                if(x in speciesDict[component.name.lower()]) and \
-                    component.name in [y.name.lower() for y
+                if(x in speciesDict[component.name.lower()]) and component.name in [y.name.lower() for y
                     in speciesDict[x.name.lower()]]:
                     for mol in speciesDict[x.name.lower()]:
-                        if mol.name.lower() == component.name and x != mol \
-                        and x in speciesDict[component.name]:
+                        if mol.name.lower() == component.name and x != mol and x in \
+                        speciesDict[component.name]:
                             pairedMolecules.append([x, mol])
                             speciesDict[x.name.lower()].remove(mol)
                             speciesDict[component.name].remove(x)
@@ -354,10 +341,8 @@ def getComplexationComponents2(species):
         flag = False
         for idx in range(0, len(totalComplex) - 1):
             for idx2 in range(idx + 1, len(totalComplex)):
-                if len([x for x in totalComplex[idx] if x
-                in totalComplex[idx2]]) > 0:
-                    totalComplex[idx] = totalComplex[idx]. \
-                    union(totalComplex[idx2])
+                if len([x for x in totalComplex[idx] if x in totalComplex[idx2]]) > 0:
+                    totalComplex[idx] = totalComplex[idx].union(totalComplex[idx2])
                     totalComplex.pop(idx2)
                     flag = True
                     break
@@ -393,6 +378,7 @@ def getTrueTag(dependencyGraph, molecule):
     else:
         return getTrueTag(dependencyGraph, dependencyGraph[molecule][0][0])
 
+
 def atomize(dependencyGraph, weights, translator, reactionProperties,
             equivalenceDictionary):
     for element in weights:
@@ -415,28 +401,25 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                     tmp = element[0]
                     existingComponents = []
                     while dependencyGraph[tmp] != []:
-                        #what kind of catalysis are we dealing with     
+                        #what kind of catalysis are we dealing with
                         classification = identifyReaction(
                                                           equivalenceDictionary, 
-                                                          dependencyGraph[tmp][0][0],
-                                                          tmp)
+                                                          dependencyGraph[tmp][0][0],tmp)
                         if classification is not None and \
-                        reactionProperties[classification][0] not in \
-                        existingComponents:                       
+                        reactionProperties[classification][0] not in existingComponents:
                             classificationArray.append([classification,
-                                                        tmp,
-                                                        dependencyGraph[tmp]
+                                                        tmp,dependencyGraph[tmp]
                                                         [0][0]])
                             existingComponents.append(reactionProperties[
                             classification][0])
                         tmp = dependencyGraph[tmp][0][0]
                     species = createEmptySpecies(getTrueTag(
-                    dependencyGraph,dependencyGraph[element[0]][0][0]))
-                    #use the already existing structure if its in the translator, otherwise empty                    
-                    if (getTrueTag(dependencyGraph,
-                                   dependencyGraph[element[0]][0][0])) \
-                                   in translator:
-                         species = translator[(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0]))]
+                    dependencyGraph, dependencyGraph[element[0]][0][0]))
+                    #use the already existing structure if its in the
+                    #translator,otherwise empty
+                    if (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])) in translator:
+                         species = translator[(getTrueTag(dependencyGraph, 
+                                                          dependencyGraph[element[0]][0][0]))]
                     modifiedSpecies = deepcopy(species) 
                     for classification in classificationArray:                   
                         if classification[0] != None:
@@ -444,20 +427,20 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                             getTrueTag(dependencyGraph, 
                                        dependencyGraph[element[0]][0][0])),
 reactionProperties[classification[0]][0])
-                            addComponentToMolecule(modifiedSpecies, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0])
-                            addStateToComponent(species,(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0],reactionProperties[classification[0]][1])
-                            addStateToComponent(modifiedSpecies, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])),reactionProperties[classification[0]][0],reactionProperties[classification[0]][1])
-                            addStateToComponent(species,(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0],'U')
+                            addComponentToMolecule(modifiedSpecies, (getTrueTag(dependencyGraph,
+                                                                    dependencyGraph[element[0]][0][0])),
+reactionProperties[classification[0]][0])
+                            addStateToComponent(species,(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], reactionProperties[classification[0]][1])
+                            addStateToComponent(modifiedSpecies, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], reactionProperties[classification[0]][1])
+                            addStateToComponent(species, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], 'U')
                             
                     #update the base species
-                    if len(classificationArray) > 0 and classificationArray[0][0] != None:
-                        translator[(getTrueTag(
-                        dependencyGraph, dependencyGraph[element[0]][0][0]))] = \
+                    if len(classificationArray) > 0 and classificationArray[0][0] is not None:
+                        translator[(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0]))] = \
                         deepcopy(species)
                         translator[element[0]] = modifiedSpecies
                     else:
-                        print 'ALERT', element[0], \
-                        str(modifiedSpecies), str(species)
+                        print 'ALERT', element[0], str(modifiedSpecies), str(species)
                         print equivalenceDictionary
             else:
                 #binding
@@ -474,8 +457,7 @@ reactionProperties[classification[0]][0])
                     if molecule in translator:
                         tmpSpecies = translator[molecule]
                         if molecule != getTrueTag(dependencyGraph, molecule):
-                            original = translator[getTrueTag(dependencyGraph,
-                                                            molecule)]
+                            original = translator[getTrueTag(dependencyGraph, molecule)]
                             updateSpecies(tmpSpecies, original.molecules[0])
                         species.addMolecule(deepcopy(tmpSpecies.molecules[0]))
                     else:
@@ -508,8 +490,7 @@ reactionProperties[classification[0]][0])
                     flag = False
                     #same thing for the other member of the bond
                     for component in molecule[1].components:
-                        if component.name == molecule[0].name.lower() and \
-                        len(component.bonds) == 0:
+                        if component.name == molecule[0].name.lower() and len(component.bonds) == 0:
                             component.bonds.append(idx)
                             flag = True
                             break
@@ -517,8 +498,8 @@ reactionProperties[classification[0]][0])
                         newComponent2 = st.Component(molecule[0].name.lower())
                         molecule[1].components.append(newComponent2)
                         if molecule[0].name != molecule[1].name:
-                            translator[molecule[1].name].molecules[0]. \
-                            components.append(deepcopy(newComponent2))
+                            translator[molecule[1].name].molecules[0].components.append(
+                            deepcopy(newComponent2))
                         molecule[1].components[-1].bonds.append(idx)
 
                 #update the translator
@@ -531,10 +512,8 @@ def updateSpecies(species, referenceMolecule):
     for moleculeStructure in species.molecules:
         if moleculeStructure.name == referenceMolecule.name:
             for component in referenceMolecule.components:
-                count = [x.name for x in referenceMolecule.components].count(
-                component.name)
-                count -= [x.name for x in moleculeStructure.components].count(
-                component.name)
+                count = [x.name for x in referenceMolecule.components].count(component.name)
+                count -= [x.name for x in moleculeStructure.components].count(component.name)
                 newComponent = st.Component(component.name)
                 if len(component.states) > 0:
                     newComponent.addState('U')
@@ -546,10 +525,8 @@ def updateSpecies(species, referenceMolecule):
                         referenceMolecule.addComponent(deepcopy(newComponent))
                         flag = True
             for component in moleculeStructure.components:
-                count = [x.name for x in referenceMolecule.components].count(
-                component.name)
-                count -= [x.name for x in moleculeStructure.components].count(
-                component.name)
+                count = [x.name for x in referenceMolecule.components].count(component.name)
+                count -= [x.name for x in moleculeStructure.components].count(component.name)
                 newComponent = st.Component(component.name)
                 if len(component.states) > 0:
                     newComponent.addState(component.states[0])
@@ -573,33 +550,30 @@ def propagateChanges(translator, dependencyGraph):
             if dependencyGraph[dependency] == []:
                 continue
             for molecule in dependencyGraph[dependency][0]:
-                if updateSpecies(translator[dependency],
-                                 translator[getTrueTag(dependencyGraph,
-                                                       molecule)].molecules[0]):
+                if updateSpecies(translator[dependency], translator[getTrueTag(dependencyGraph,
+                                                      molecule)].molecules[0]):
                     flag = True
 
 
 def transformMolecules(parser, database, configurationFile,
                        speciesEquivalences=None):
     '''
-    main method. Receives a parser configuration, a configurationFile and a list
-    of user defined species equivalences and returns a dictionary containing
-    an atomized version of the model
+    main method. Receives a parser configuration, a configurationFile and a
+    list of user defined species equivalences and returns a dictionary
+    containing an atomized version of the model
     '''
     _, rules, _ = parser.getReactions()
     molecules, _, _ = parser.getSpecies()
 
     sbmlAnalyzer = \
     analyzeSBML.SBMLAnalyzer(configurationFile, speciesEquivalences)
-  
     #classify reactions
     classifications, equivalenceTranslator, eequivalenceTranslator = \
-    sbmlAnalyzer.classifyReactions(rules, molecules)
+                                                            sbmlAnalyzer.classifyReactions(rules, molecules)
     #####input processing
     #states,components,other user options
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
-    database.translator, database.labelDictionary = \
-    sbmlAnalyzer.getUserDefinedComplexes()
+    database.translator, database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
@@ -629,15 +603,16 @@ def transformMolecules(parser, database, configurationFile,
         database.labelDictionary[element][0][0]:
             addToDependencyGraph(database.dependencyGraph, element, [])
         else:
-            database.dependencyGraph[element] = [list(database.labelDictionary[element][0])]
+            database.dependencyGraph[element] = [list(
+            database.labelDictionary[element][0])]
     #####sct
     prunnedDependencyGraph, weights, unevenElementDict = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
-    classifications, equivalenceTranslator, eequivalenceTranslator = \
-    sbmlAnalyzer.classifyReactions(rules, molecules)
+    classifications, equivalenceTranslator, eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules, 
+                                                                                                molecules)
 
     weights = sorted(weights, key=lambda rule: rule[1])
-    atomize(prunnedDependencyGraph, weights, database.translator,
-            database.reactionProperties, eequivalenceTranslator)
+    atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
+                                                                eequivalenceTranslator)
     propagateChanges(database.translator, prunnedDependencyGraph)
     return database.translator
