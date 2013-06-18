@@ -11,6 +11,12 @@
 # + output now written in current directory (not the model directory!)
 # + This version requires BioNetGen version 2.2.0-testing
 
+# Additional updates by L. Harris (2012,2013)
+# -method argument
+# require 'begin/end model'
+# -verbose argument
+# various bug fixes
+
 use strict;
 use warnings;
 
@@ -87,6 +93,7 @@ my $n_steps = 1;
 my $steady_state = 0;
 my $method = "\"ode\"";
 my $pla_output = 0;
+my $verbose = 0;
 
 my $prefix;
 my @mandatory_args = ();
@@ -126,8 +133,8 @@ while ( @ARGV )
             if ($method eq 'pla'){
             	my $pla_config = shift @ARGV;
             	if ($pla_config =~ /^-{1,2}/ || $pla_config =~ /\.bngl$/)
-            	{ die "Syntax error: PLA simulator requires a simulation configuration: --method pla \"string_config\" " . 
-            	      "(don't forget the quotes). Please try again."; }
+            	{ die "Syntax error: PLA simulator requires a simulation configuration: --method pla CONFIG. " . 
+            	      "Please try again."; }
             	$method = "\"$method\",pla_config=>\"$pla_config\"";
             }
             else{
@@ -136,6 +143,9 @@ while ( @ARGV )
         }
         elsif($arg eq 'pla_output'){
         	$pla_output = 1;
+        }
+        elsif($arg eq 'verbose'){
+            $verbose = 1;
         }
         elsif($arg eq 'help'){
             display_help();
@@ -249,7 +259,11 @@ print BNGL "generate_network({overwrite=>1})\n";
         if ($steady_state){
             $opt .= ",steady_state=>1";
         }
+        if ($verbose){
+        	$opt .= ",verbose=>1";
+        }
         printf BNGL "simulate({$opt})\n"; #"simulate_ode({$opt})\n";
+
         $val += $delta;
     }  
 }
@@ -290,6 +304,9 @@ while( my $line = <$child_out> )
     else
     {   # write message to log
         print $logFH $line;
+		if ($verbose){
+			print $line; # to STDOUT
+		}
     }
 }
 
@@ -361,18 +378,19 @@ SYNOPSIS:
   scan_var.pl --help                            : display help
 
 OPTIONS:
+  --verbose       : verbose output
   --log           : select parameter values on a log scale
   --n_steps N     : number of output time steps per simulation
   --t_end VAL     : end time for each simulation 
   --prefix PREFIX : prefix for output file (default: MODEL basename)
   --steady-state  : check for steady state at end of each simulation 
                     (ignored if method not 'ode')
-  --method        : simulation method (default: ode)
+  --method METHOD : simulation method (default: ode)
   --pla_output    : print PLA-specific output (ignored if method not 'pla')
 
-Runs simulations of MODEL with a range of values of parameter VAR using the specified method.
-Simulation data is placed in a directory folder named PREFIX_VAR. A data file
-called PREFIX_VAR.scan contains the final simulation state for each parameter 
+Runs simulations of MODEL with a range of values of parameter VAR using the method 
+METHOD. Simulation data is placed in a directory folder named PREFIX_VAR. A data 
+file called PREFIX_VAR.scan contains the final simulation state for each parameter 
 value. The scan file may be visualized with a plotting tool, such as PhiBPlot.
 };
 #END_HELP
