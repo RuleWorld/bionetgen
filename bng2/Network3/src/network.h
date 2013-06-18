@@ -151,8 +151,10 @@ extern void free_Rxn_array(Rxn_array* rarray);
 extern void sort_Rxn_array(Rxn_array* rarray, Elt_array* rates);
 extern void set_Rxn_rates(Rxn_array* reactions, Elt_array* rates);
 extern void remove_zero_rate_rxns(Rxn_array** reactions, Elt_array* rates);
+//extern Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_array* species, Elt_array* rates,
+//		map<string,bool>, int&);
 extern Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_array* species, Elt_array* rates,
-		map<string,bool>, int&);
+		map<string,bool>);
 extern void print_Rxn_array(FILE* outfile, Rxn_array* reactions, Elt_array* species, Elt_array* rates);
 
 class myParser{

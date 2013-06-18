@@ -3,6 +3,7 @@ package Map;
 # pragmas
 #use strict;
 #use warnings;
+no warnings 'redefine';
 
 # Perl Modules
 use Class::Struct;
@@ -83,7 +84,8 @@ sub mapF
    {
       my ($im2, $ic2) = split('\.', $p2);
       $im2 += $offset;
-      if ($ic2 ne '')
+#      if ($ic2 ne '')
+      if (defined $ic2)
       {  $p2 = "$im2.$ic2";  }
       else
       {  $p2 = "$im2";       }

@@ -309,14 +309,14 @@ sub Run {
     $le_perm       = $he_perm;
 
     @$result = HNauty( $adj_in, $adj_out, $the_partition );
-    my $adj_a = get_adj_str( $adj_out, @$result[0] );
+    $adj_a = get_adj_str( $adj_out, @$result[0] );
     print @$adj_a, "\n\n";
 
     # permute
     $adj_in  = adj_permute( $adj_in,  $le_perm );
     $adj_out = adj_permute( $adj_out, $le_perm );
     @$result = HNauty( $adj_in, $adj_out, $the_partition );
-    my $adj_b = get_adj_str( $adj_out, @$result[0] );
+    $adj_b = get_adj_str( $adj_out, @$result[0] );
     print @$adj_b;
     $is_equal = lex_ordered( $adj_a, $adj_b );
     if ( @$is_equal[0] eq 'eq' ) { print "\nThey are equal!\n\n"; }
@@ -325,7 +325,7 @@ sub Run {
     $adj_in  = adj_permute( $adj_in,  $le_perm );
     $adj_out = adj_permute( $adj_out, $le_perm );
     @$result = HNauty( $adj_in, $adj_out, $the_partition );
-    my $adj_c = get_adj_str( $adj_out, @$result[0] );
+    $adj_c = get_adj_str( $adj_out, @$result[0] );
     print @$adj_c;
     $is_equal = lex_ordered( $adj_c, $adj_b );
     if ( @$is_equal[0] eq 'eq' ) { print "\nThey are equal!\n\n"; }
@@ -340,7 +340,7 @@ sub update_cell {
 
   my $i;
 
-  $fixing = [];
+#  $fixing = [];
   for $i ( 0 .. $#{$perms} ) {
     if ( pfixp( $node, @{ @$perms[$i] }[0] ) ) {
       $cell = intersection( $cell, @{ @$perms[$i] }[1] );
@@ -440,7 +440,7 @@ sub adj_permute {
   my $adj  = shift;    #hash  adj_out
   my $perm = shift;    #hash
 
-  $new_adj;            #hash
+  my $new_adj;            #hash
   my ( $i, $j, $new_i, $new_j );
 
   $new_adj = {};
@@ -464,7 +464,7 @@ sub get_adj_str {
   my $adj_info;        # unfortunately also an array
   my ( $i, $j, $value, $e, $length );
 
-  $le_adj = [];
+#  $le_adj = [];
   if ( ref $part eq 'ARRAY' ) {
     for $i ( 0 .. $#{$part} ) {
       $perm->{ @{ @$part[$i] }[0] } = $i;
@@ -809,9 +809,8 @@ sub HNauty {
 
     #main loop
     if ( is_discrete( @$current_node[$counter] ) ) {
-      if ( $first_terminal_node ==
-        ( @$current_node[$counter], @$node_indicator[$counter], $new_adj ) )
-      {
+#      if ( $first_terminal_node == ( @$current_node[$counter], @$node_indicator[$counter], $new_adj ) ){
+   	  if ( $first_terminal_node == [ @$current_node[$counter], @$node_indicator[$counter], $new_adj ] ){
         @$best_node = @$first_terminal_node;
       }
       $counter += -1;
@@ -893,7 +892,8 @@ sub HNauty {
       if ( not scalar @$best_node == 0 ) {
         $i = lex_ordered( @$node_indicator[$counter], @$best_node[1] );
         if ( @$i[0] eq 'gt' ) {
-          $counter   = $i[1] - 1;
+#      	  $counter   = $i[1] - 1;
+          $counter   = @$i[1] - 1;
           $jump_back = 1;
         }
       }

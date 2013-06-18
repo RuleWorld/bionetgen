@@ -100,6 +100,8 @@ PRINT_CDAT: 'print_CDAT';
 PRINT_FUNCTIONS: 'print_functions';
 PRINT_NET: 'print_net';
 PRINT_END: 'print_end';
+STOP_IF: 'stop_if';
+PRINT_ON_STOP: 'print_on_stop';
 
 SIMULATE_ODE: 'simulate_ode';
 ATOL: 'atol';
@@ -111,6 +113,7 @@ SIMULATE_SSA: 'simulate_ssa';
 
 SIMULATE_PLA: 'simulate_pla';
 PLA_CONFIG: 'pla_config';
+PLA_OUTPUT: 'pla_output';
 
 SIMULATE_NF: 'simulate_nf';
 PARAM: 'param';
@@ -122,6 +125,13 @@ NOTF: 'notf';
 BINARY_OUTPUT: 'binary_output';
 UTL: 'utl';
 EQUIL: 'equil';
+
+PARAMETER_SCAN: 'parameter_scan';
+PARAMETER: 'parameter';
+PAR_MIN: 'par_min';
+PAR_MAX: 'par_max';
+N_SCAN_PTS: 'n_scan_pts';
+LOG_SCALE: 'log_scale';
 
 READFILE: 'readFile';
 FILE: 'file';
@@ -229,5 +239,5 @@ fragment LOWER: 'a'..'z';
 fragment UPPER: 'A'..'Z';
 fragment EXPONENT: ('e'|'E') ('+'|'-')? (DIGIT)+ ;
 
-VERSION_NUMBER : INT'.'INT'.'INT ;
+VERSION_NUMBER : INT'.'INT'.'INT(PLUS|MINUS)? ;
 ULB:('\\'(' ')*'\r'?'\n'(WS)*) {skip();};

@@ -28,6 +28,7 @@ package BNGModel;
 # pragmas
 use strict;
 use warnings;
+no warnings 'redefine';
 
 # Perl Modules
 use Class::Struct;
@@ -208,7 +209,7 @@ sub readNetwork
         my $filename = exists $params->{file} ? $params->{file} : undef;
         unless ( defined $filename )
         {   # Filename argument is mandatory
-            $err = errgen( "File parameter is required for action readFile()" );
+            $err = errgen( "'file' parameter is required for action readFile()" );
             goto EXIT;
         }
 
@@ -239,7 +240,12 @@ sub readNetwork
                 else
                 {   # determine model basename from filename
                     my ($vol, $dir, $fn) = File::Spec->splitpath( $filename );  
-                        
+
+					# Output directory
+					if ($params->{output_dir} eq File::Spec->curdir()){ # curdir is default
+						$params->{output_dir} = $dir;
+					}
+					
                     my $basename;
                     # file = basename.ext
                     if ( $fn =~ /^(.+)\.([^\.]+)$/ )
@@ -254,7 +260,7 @@ sub readNetwork
                     $model->Name($basename);
                 }
             }
-            
+
             # set model parameters
             $model->Params($params);
 
@@ -1137,7 +1143,7 @@ sub writeNET
 #   include_model => 0,1        : include model blocks in output file (default=1).
 #   include_network => 0,1      : include network blocks in output file (default=1).
 #   overwrite => 0,1            : allow writeFile to overwrite exisiting files (default=0).
-#   prefix => "string"          : set prefix of output file name (default=./MODELNAME).
+#   prefix => "string"          : set prefix of output file name (default=outdir/MODELNAME).
 #   pretty_formatting => 0,1    : write output in "pretty" form (default=0).
 #   suffix => "string"          : set suffix of output file name (default=NONE).
 #   TextReaction => 0,1         : write reactions as BNGL strings (default=0).
@@ -1859,7 +1865,7 @@ sub setModelName
 
 # Function to require the version conform to specified requirement
 # Syntax: version(string);
-# string = major[.minor][.dist][+-]
+# string = major[.minor][.dist][+-][codename]
 #
 # major, minor, and dist. indicate the major, minor, and distribution number
 # respectively against which the BioNetGen version numbers will be compared.
@@ -1915,7 +1921,7 @@ sub version
         my $bng_codename = BNGcodename();
         unless ( $codename eq $bng_codename )
         {
-            return "Requested BioNetGen codename ${codename}. Active codename is ${bng_codename}.";
+            return "Requested BioNetGen codename '${codename}'. Active codename is '${bng_codename}'.";
         }
     }
     
@@ -2026,7 +2032,11 @@ sub generate_network
     }
 
     return '' if $NO_EXEC;
-
+    
+    # Output prefix
+    if (defined $user_params->{prefix}){
+    	$params{prefix} = $model->getOutputPrefix($user_params->{prefix});
+    }
 
     # default params for calling writeNetwork
     # (only need to change if we want non-default)
@@ -2079,7 +2089,7 @@ sub generate_network
     if ( @{$model->RxnRules} == 0 )
     {   return "Nothing to do: no reaction rules defined.";   }
 
-    # if no reactions have been generated previosuly, then we have to initize some things..
+    # if no reactions have been generated previously, then we have to initialize some things...
     if ( $model->RxnList->size()==0 or $params{'continue'}==0 )
     {
         # initialize rules
@@ -2280,18 +2290,22 @@ sub findExec
 sub getOutputPrefix
 {
     my $model = shift @_;
+    my $file_prefix = @_ ? shift @_ : $model->Name;
 
-    my $file_prefix = $model->Name;
+    my $is_absolute = File::Spec->file_name_is_absolute( $file_prefix );
+
+#    my $file_prefix = $model->Name;
     if ( $model->Params->{suffix} )
     {   $file_prefix .= '_' . $model->Params->{output_suffix};   }
 
-    return File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
+    return ($is_absolute ? $file_prefix : File::Spec->catfile( ($model->getOutputDir()), $file_prefix ));
+#    return File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
 }
 
 ###
 ###
 
-# set the output directory, defulats to curdir if no argument is provided 
+# set the output directory, defaults to curdir if no argument is provided 
 sub setOutputDir
 {
     my $model = shift @_;

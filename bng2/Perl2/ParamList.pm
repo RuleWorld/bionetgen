@@ -5,6 +5,7 @@ package ParamList;
 # pragmas
 #use strict;
 #use warnings;
+no warnings 'redefine';
 
 # Perl Modules
 use Class::Struct;
@@ -417,14 +418,14 @@ sub set
         if ($rhs eq '')
         {   return '';   }
     }
-  
-    # check if we're overwriting a parameter
-    if ($param->Expr ne '')
+
+#    if ($param->Expr ne '')
+    if (defined $param->Expr)
     {
         if ($no_overwrite)
-        {   return "Changing value of previously defined variable $name is not allowed";   }
+        {   return "Changing value of previously defined variable '$name' is not allowed";   }
         else
-        {   send_warning( "Changing value of previously defined variable $name" );   }
+        {   send_warning( "Changing value of previously defined variable '$name'" );   }
     }
 
     # Handle scalar (string) argument (probably from setParameter)
@@ -749,7 +750,7 @@ sub deleteParam
     }
   
     # remove param from unchecked (expensive)
-    my $index = @{$plist->Unchecked};
+    $index = @{$plist->Unchecked};
     while ($index > 1)
     {
         --$index;

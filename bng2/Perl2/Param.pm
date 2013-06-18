@@ -5,6 +5,7 @@ package Param;
 # pragmas
 #use strict;
 #use warnings;
+no warnings 'redefine';
 
 # Perl Modules
 use Class::Struct;
@@ -107,7 +108,7 @@ sub setType
     }
 
     $param->Type($type);
-    if ($ref) {  param->Ref($ref);  }
+    if ($ref) {  $param->Ref($ref);  }
     return '';
 }
 

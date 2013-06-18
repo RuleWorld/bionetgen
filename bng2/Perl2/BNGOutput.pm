@@ -198,7 +198,7 @@ sub writeSBML
 	open( $SBML, '>', $file )  or die "Couldn't open $file: $!\n";
 
     # get BNG version
-	my $version = BNGversion();
+	my $version = BNGUtils::BNGversion();
 
 
 	# 0. HEADER
@@ -239,7 +239,7 @@ sub writeSBML
         {   $conc = $spec->Concentration;   }
 
         # If concentration is a parameter name, then evaluate the parameter
-		unless ( isReal($conc) )
+		unless ( BNGUtils::isReal($conc) )
         {   $conc = $plist->evaluate($conc, []);   }
         
         # NOTE: In SBML Level 2 Version 2, the InitialAssignment construct was introduced that
@@ -447,7 +447,7 @@ sub writeSSC
 	printf SSCfile
 	  "region World \n  box width 1 height 1 depth 1\nsubvolume edge 1";
 
-	# --This part correspond to seed specie
+	# --This part corresponds to seed species
 	print SSCfile "\n\n";
 	print SSCfile "--# Initial molecules and their concentrations\n";
 	my $sp_string = $model->SpeciesList->writeSSC( $model->Concentrations,
