@@ -595,12 +595,16 @@ sub writeMfile
     {   $odeset_reltol = $params->{'rtol'};  } 
 
     my $odeset_stats = 'off';
-    if ( exists $params->{'stats'} )
-    {   $odeset_stats = $params->{'stats'};  } 
+    if ( $params->{'stats'} )
+    {   $odeset_stats = 'on';  } 
+#    if ( exists $params->{'stats'} )
+#    {   $odeset_stats = $params->{'stats'};  } 
 
     my $odeset_bdf = 'off';
-    if ( exists $params->{'bdf'} )
-    {   $odeset_bdf = $params->{'bdf'};  }
+    if ( $params->{'bdf'} )
+    {   $odeset_bdf = 'on';  }
+#    if ( exists $params->{'bdf'} )
+#    {   $odeset_bdf = $params->{'bdf'};  }
 
     my $odeset_maxorder = 5;
     if ( exists $params->{'maxOrder'} )
