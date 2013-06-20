@@ -1247,7 +1247,7 @@ sub writeFile
         $file_string = $model->writeBNGL( \%params );
     }
     elsif ( $params{'format'} eq 'xml' )
-    {   # write BNGL format
+    {   # write XML format
         $file_string = $model->toXML( \%params );
     }
 
@@ -2016,8 +2016,10 @@ sub generate_network
         'max_stoich'   => {},
         'check_iso'    => 1,
         'prefix'       => $model->getOutputPrefix(),
+        'suffix'       => undef,
         'overwrite'    => 0,
         'print_iter'   => 0,
+        'TextSpecies'  => 1,
         'TextReaction' => 0,
         'verbose'      => 0
     );
@@ -2037,6 +2039,10 @@ sub generate_network
     if (defined $user_params->{prefix}){
     	$params{prefix} = $model->getOutputPrefix($user_params->{prefix});
     }
+    
+    # add optional suffix to output prefix
+    if ( $params{suffix} )
+    {  $params{prefix} .= "_" . $params{suffix};  }
 
     # default params for calling writeNetwork
     # (only need to change if we want non-default)
@@ -2044,6 +2050,7 @@ sub generate_network
         'include_model' => 1,
         'overwrite'     => 1,
         'prefix'        => $params{prefix},
+        'TextSpecies'   => $params{TextSpecies},
         'TextReaction'  => $params{TextReaction}
     };
 
