@@ -47,7 +47,7 @@ action
   write_model {actions.add($write_model.st);} | 
   write_xml {actions.add($write_xml.st);} | 
   write_network {actions.add($write_network.st);} |
-  write_sbml {actions.add($write_sbml.st} |
+  write_sbml {actions.add($write_sbml.st);} |
   write_mfile {actions.add($write_mfile.st);} | 
   write_mexfile {actions.add($write_mexfile.st);} | 
   set_concentration {actions.add($set_concentration.st);} | 
@@ -236,7 +236,7 @@ scope{
   (write_model_args (COMMA write_model_args)*)? 
   RBRACKET)?
   RPAREN SEMI? 
-  -> action(id={$write_model.text})
+  -> action(id={$WRITEMODEL.text})
 ;
 
 write_model_args
@@ -261,7 +261,7 @@ scope{
   (write_xml_args (COMMA write_xml_args)*)? 
   RBRACKET)?
   RPAREN SEMI? 
-  -> action(id={$write_xml.text})
+  -> action(id={$WRITEXML.text})
 ;
 
 write_xml_args
@@ -284,7 +284,7 @@ scope{
   (write_network_args (COMMA write_network_args)*)? 
   RBRACKET)?
   RPAREN SEMI? 
-  -> action(id={$write_network.text})
+  -> action(id={$WRITENETWORK.text})
 ;
 
 write_network_args
@@ -309,10 +309,10 @@ scope{
   WRITESBML
   LPAREN 
   (LBRACKET 
-  (write_sbml_args (COMMA write_sbml_args)*)? 
+  (write_sbml_args (COMMA write_sbml_args)*)?
   RBRACKET)?
   RPAREN SEMI? 
-  -> action(id={$write_sbml.text})
+  -> action(id={$WRITESBML.text})
 ;
 
 write_sbml_args
@@ -334,7 +334,7 @@ scope{
   (write_mfile_args (COMMA write_mfile_args)*)? 
   RBRACKET)?
   RPAREN SEMI? 
-  -> action(id={$write_mfile.text})
+  -> action(id={$WRITEMFILE.text})
 ;
 
 write_mfile_args
@@ -365,7 +365,7 @@ scope{
   (write_mexfile_args (COMMA write_mexfile_args)*)? 
   RBRACKET)?
   RPAREN SEMI? 
-  -> action(id={$write_mexfile.text})
+  -> action(id={$WRITEMEXFILE.text})
 ;
 
 write_mexfile_args
@@ -550,7 +550,8 @@ value
   INT | FLOAT | STRING
 ;
 
-ps_par_def //[Map<String,String> map]
+//ps_par_def [Map<String,String> map]
+ps_par_def
 : 
   PREFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES)) | 
   SUFFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES))
