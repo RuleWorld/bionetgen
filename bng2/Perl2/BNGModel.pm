@@ -1150,7 +1150,6 @@ sub writeNET
 #   TextSpecies => 0,1          : write species as BNGL string (default=1).
 #
 # TODO: set up additional formats: SBML, SSC, etc.
-# TODO: setting TextSpecies to 0 does not do anything!
 sub writeFile
 {
     use strict;

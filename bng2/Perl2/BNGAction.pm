@@ -961,13 +961,13 @@ sub generate_hybrid_model
 
     # default options
     my $options =
-    {   'prefix'     => undef,
-        'suffix'     => 'hpp',
-        'overwrite'  => 0,
-        'verbose'    => 0,
-        'actions'    => ['writeXML()'],
-        'execute'    => 0,
-        'safe'      => 0
+    {   'prefix'       => undef,
+        'suffix'       => 'hpp',
+        'overwrite'    => 0,
+        'verbose'      => 0,
+        'actions'      => ['writeXML()'],
+        'execute'      => 0,
+        'safe'         => 0
     };
     # get user options
     while ( my ($opt,$val) = each %$user_options )
@@ -1318,7 +1318,7 @@ sub generate_hybrid_model
     unless ( open $FH, '>', $modelfile ) {  return "Couldn't write to $modelfile: $!\n";  }
 
     print $FH $hybrid_model->writeBNGL( {'format'=>'bngl', 'include_model'=>1,'include_network'=>0,
-                                         'pretty_formatting'=>1,'evaluate_expressions'=>0} );
+                                         'pretty_formatting'=>1,'evaluate_expressions'=>0 } );
     # writing actions!
     if ( @{$options->{actions}} )
     {
