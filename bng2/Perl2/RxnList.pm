@@ -318,25 +318,46 @@ sub writeBNGL
     my $plist = (@_) ? shift : '';
     my $out   = '';
 
-    # write reactions as text?
-    my $text = $params->{TextReaction};
-
-    $out .= "begin reactions";
-    if ( $text )
-    {   $out .= "_text";   }
-    $out .= "\n";
-    
+	# write non-text reactions
+	$out .= "begin reactions\n";
     my $irxn = 1;
     foreach my $rxn ( @{ $rlist->Array } )
     {
-        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( $text, $plist );
+        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( 0, $plist );
         ++$irxn;
     }
-    
-    $out .= "end reactions";
-    if ($text)
-    {   $out .= "_text";   }
-    $out .= "\n";
+	$out .= "end reactions\n";
+
+    # write reactions as text?
+    my $text = $params->{TextReaction};
+
+	if ($text){
+	    $out .= "begin reactions_text\n";
+	    my $irxn = 1;
+	    foreach my $rxn ( @{ $rlist->Array } )
+	    {
+	        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( $text, $plist );
+	        ++$irxn;
+	    }
+	    $out .= "end reactions_text\n";
+	}
+	
+#    $out .= "begin reactions";
+#    if ( $text )
+#    {   $out .= "_text";   }
+#    $out .= "\n";
+#    
+#    my $irxn = 1;
+#    foreach my $rxn ( @{ $rlist->Array } )
+#    {
+#        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( $text, $plist );
+#        ++$irxn;
+#    }
+#    
+#    $out .= "end reactions";
+#    if ($text)
+#    {   $out .= "_text";   }
+#    $out .= "\n";
     
     return $out;
 }

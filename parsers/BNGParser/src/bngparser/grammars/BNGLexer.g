@@ -136,18 +136,28 @@ LOG_SCALE: 'log_scale';
 READFILE: 'readFile';
 FILE: 'file';
 
-WRITEFILE: 'writeFile';
-WRITENET: 'writeNET';
+//WRITEFILE: 'writeFile';
+//WRITENET: 'writeNET';
+WRITEMODEL: 'writeModel';
+WRITEXML: 'writeXML';
 WRITENETWORK: 'writeNetwork';
 WRITESBML: 'writeSBML';
-WRITEMFILE: 'writeMfile';
-WRITEXML: 'writeXML';
-WRITEMEXFILE: 'writeMexfile';
-WRITEMODEL: 'writeModel';
+INCLUDE_MODEL: 'include_model';
+PRETTY_FORMATTING: 'pretty_formatting';
 EVALUATE_EXPRESSIONS: 'evaluate_expressions';
-BDF: 'bdf';
 TEXTREACTION: 'TextReaction';
 TEXTSPECIES: 'TextSpecies';
+
+WRITEMFILE: 'writeMfile';
+WRITEMEXFILE: 'writeMexfile';
+BDF: 'bdf';
+MAX_STEP: 'max_step';
+MAXORDER: 'maxOrder';
+STATS: 'stats';
+MAX_NUM_STEPS: 'max_num_steps';
+MAX_ERR_TEST_FAILS: 'max_err_test_fails';
+MAX_CONV_FAILS: 'max_conv_fails';
+STIFF: 'stiff';
 
 SETCONCENTRATION: 'setConcentration';
 ADDCONCENTRATION: 'addConcentration';

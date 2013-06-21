@@ -294,9 +294,15 @@ sub writeBNGL
         }
 
         # get species graph string
-        my $sexact = $spec->SpeciesGraph->toString();
+#        my $sexact = $spec->SpeciesGraph->toString();
+		if ($user_params->{'TextSpecies'}){
+			$out .= sprintf "%s", $spec->SpeciesGraph->toString();
+		}
+		else{
+			$out .= sprintf "S%d", $spec->Index;
+		}
         #$out .= sprintf "%-${maxlen}s", $sexact;
-        $out .= sprintf "%s", $sexact;
+#        $out .= sprintf "%s", $sexact;
         
         my $c = $conc->[ $spec->Index - 1 ];
         $out .= sprintf " %s\n", $c;

@@ -43,7 +43,13 @@ action
   generate_hybrid_model {actions.add($generate_hybrid_model.st);} |
   simulate_method {actions.add($simulate_method.st);} | 
   read_file {actions.add($read_file.st);} | 
-  write_file {actions.add($write_file.st);} | 
+//  write_file {actions.add($write_file.st);} | 
+  write_model {actions.add($write_model.st);} | 
+  write_xml {actions.add($write_xml.st);} | 
+  write_network {actions.add($write_network.st);} |
+  write_sbml {actions.add($write_sbml.st);} |
+  write_mfile {actions.add($write_mfile.st);} | 
+  write_mexfile {actions.add($write_mexfile.st);} | 
   set_concentration {actions.add($set_concentration.st);} | 
   add_concentration {actions.add($add_concentration.st);} |
   save_concentrations {actions.add($save_concentrations.st);} | 
@@ -71,14 +77,15 @@ scope{
         
 gn_action_par_def[Map<String,String> map]
 : 
-  (MAX_AGG ASSIGNS i1=INT {map.put($MAX_AGG.text,$i1.text);}) | 
-  (MAX_ITER ASSIGNS i2=INT {map.put($MAX_ITER.text,$i2.text);}) | 
+  ps_par_def |
+  (VERBOSE ASSIGNS i1=INT {map.put($VERBOSE.text,$i1.text);}) | 
+  (OVERWRITE ASSIGNS i2=INT {map.put($OVERWRITE.text,$i2.text);}) | 
+  (PRINT_ITER ASSIGNS i3=INT {map.put($PRINT_ITER.text,$i3.text);}) | 
+  (MAX_AGG ASSIGNS i4=INT {map.put($MAX_AGG.text,$i4.text);}) | 
+  (MAX_ITER ASSIGNS i5=INT {map.put($MAX_ITER.text,$i5.text);}) | 
   (MAX_STOICH ASSIGNS hash_value) | 
-  (OVERWRITE ASSIGNS i3=INT {map.put($OVERWRITE.text,$i3.text);}) | 
-  (PRINT_ITER ASSIGNS i4=INT {map.put($PRINT_ITER.text,$i4.text);}) | 
-  (TEXTREACTION ASSIGNS i5=INT {map.put($TEXTREACTION.text,$i5.text);}) | 
-  (TEXTSPECIES ASSIGNS i6=INT {map.put($TEXTSPECIES.text,$i6.text);}) | 
-  ps_par_def[map]
+  (TEXTSPECIES ASSIGNS i6=INT {map.put($TEXTSPECIES.text,$i6.text);})  |
+  (TEXTREACTION ASSIGNS i7=INT {map.put($TEXTREACTION.text,$i7.text);})
 ;
 
 generate_hybrid_model
@@ -98,11 +105,10 @@ scope{
         
 gnhy_action_par_def[Map<String,String> map]
 : 
-  (OVERWRITE ASSIGNS i1=INT {map.put($OVERWRITE.text,$i1.text);}) | 
-  (EXECUTE ASSIGNS i2=INT {map.put($EXECUTE.text,$i2.text);}) | 
-  (VERBOSE ASSIGNS i3=INT {map.put($VERBOSE.text,$i3.text);}) | 
-  (PREFIX ASSIGNS DBQUOTES (s1=~(DBQUOTES ))* DBQUOTES {map.put($PREFIX.text,$s1.text);}) |
-  (SUFFIX ASSIGNS DBQUOTES (s2=~(DBQUOTES ))* DBQUOTES {map.put($SUFFIX.text,$s2.text);}) |
+  ps_par_def |
+  (VERBOSE ASSIGNS i1=INT {map.put($VERBOSE.text,$i1.text);}) | 
+  (OVERWRITE ASSIGNS i2=INT {map.put($OVERWRITE.text,$i2.text);}) | 
+  (EXECUTE ASSIGNS i3=INT {map.put($EXECUTE.text,$i3.text);}) | 
   (ACTIONS ASSIGNS LSBRACKET a1=((~RSBRACKET)*) RSBRACKET {map.put($ACTIONS.text,$a1.text);}) | 
   (SAFE ASSIGNS i4=INT {map.put($SAFE.text,$i4.text);})
 ;
@@ -122,9 +128,9 @@ scope{
   simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";} | 
   simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";} | 
   simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";} | 
-  write_m_file[$simulate_method::actions] {$simulate_method::method = "writeMfile";} | 
-  write_mex_file[$simulate_method::actions] {$simulate_method::method = "writeMexfile";} | 
-  write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";} |
+//  write_mfile[$simulate_method::actions] {$simulate_method::method = "writeMfile";} | 
+//  write_mexfile[$simulate_method::actions] {$simulate_method::method = "writeMexfile";} | 
+//  write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";} |
   parameter_scan[$simulate_method::actions] {$simulate_method::method = "parameter_scan";}
   -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
 ;
@@ -132,78 +138,48 @@ scope{
 simulate[Map<String,String> map]
 : 
   SIMULATE LPAREN (LBRACKET 
-  ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map])
-  (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]))*)? 
+  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map])
+  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
 simulate_ode[Map<String,String> map]
 :
   SIMULATE_ODE LPAREN (LBRACKET
-  ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map])
-  (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
+  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map])
+  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
 simulate_ssa[Map<String,String> map]
 : 
   SIMULATE_SSA LPAREN (LBRACKET
-  ((ps_par_def[map]|simulate_par_def[map]) 
-  (COMMA (ps_par_def[map]|simulate_par_def[map]))*)?
+  ((ps_par_def|simulate_par_def[map]) 
+  (COMMA (ps_par_def|simulate_par_def[map]))*)?
   RBRACKET)? RPAREN SEMI?
 ;
 
 simulate_pla[Map<String,String> map]
 :
   SIMULATE_PLA LPAREN (LBRACKET
-  ((ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map])
-  (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_pla_par_def[map]))*)? 
+  ((ps_par_def|simulate_par_def[map]|simulate_pla_par_def[map])
+  (COMMA (ps_par_def|simulate_par_def[map]|simulate_pla_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
 simulate_nf[Map<String,String> map]
 :
   SIMULATE_NF LPAREN (LBRACKET
-  ((ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map])
-  (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_nf_par_def[map]))*)? 
-  RBRACKET)? RPAREN SEMI?
-;
-
-write_m_file[Map<String,String> map]
-: 
-  WRITEMFILE LPAREN (LBRACKET
-  ((write_m_par_def[map]) 
-  (COMMA write_m_par_def[map])*)?
-  RBRACKET)? RPAREN SEMI?
-;
-
-write_mex_file[Map<String,String> map]
-: 
-  WRITEMEXFILE LPAREN LBRACKET
-  ((write_m_par_def[map]|ps_par_def[map]) 
-  (COMMA write_m_par_def[map]|ps_par_def[map])*)?
-  RBRACKET RPAREN SEMI?
-;
-
-write_network[Map<String,String> map]
-: 
-  WRITENETWORK LPAREN (LBRACKET 
-  (
-  (ps_par_def[map]|simulate_par_def[map] |
-    s1=TEXTREACTION ASSIGNS i1=INT {map.put($s1.text,$i1.text);} |
-    s2=TEXTSPECIES ASSIGNS  i2=INT {map.put($s2.text, $i2.text);})
-  (COMMA (ps_par_def[map]|simulate_par_def[map] |
-    s3=TEXTREACTION ASSIGNS i3=INT {map.put($s3.text,$i3.text);} |
-    s4=TEXTSPECIES ASSIGNS  i4=INT {map.put($s4.text, $i4.text);}))
-  *)?
+  ((ps_par_def|simulate_par_def[map]|simulate_nf_par_def[map])
+  (COMMA (ps_par_def|simulate_par_def[map]|simulate_nf_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
 parameter_scan[Map<String,String> map]
 :
   PARAMETER_SCAN LPAREN (LBRACKET 
-  ((ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map])
-  (COMMA (ps_par_def[map]|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]))*)? 
+  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map])
+  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
@@ -223,29 +199,231 @@ scope{
   -> action(id={$READFILE.text},optionMap={$read_file::actions})
 ;
 
-//TODO: this is just a stub right now
-write_file
+//write_file
+//scope{
+//  Map<String,String> actions;
+//}
+//@init{
+//  $write_file::actions = new HashMap<String,String>();
+//}
+//: 
+//  write_type
+//  LPAREN (LBRACKET (write_par_def (COMMA write_par_def)*)? RBRACKET)?
+//  RPAREN SEMI? 
+//  -> action(id={$write_type.text})
+//;
+
+//write_type
+//: 
+//  WRITEFILE  |
+//  WRITEMODEL |
+//  WRITEXML   
+//  WRITENET   | 
+//  WRITESBML  | 
+//;
+
+write_model
 scope{
   Map<String,String> actions;
 }
 @init{
-  $write_file::actions = new HashMap<String,String>();
+  $write_model::actions = new HashMap<String,String>();
 }
 : 
-  write_type
-  LPAREN (LBRACKET (write_par_def (COMMA write_par_def)*)? RBRACKET)?
+  WRITEMODEL
+  LPAREN 
+  (LBRACKET 
+  (write_model_args (COMMA write_model_args)*)? 
+  RBRACKET)?
   RPAREN SEMI? 
-  -> action(id={$write_type.text})
+  -> action(id={$WRITEMODEL.text})
 ;
 
-write_type
+write_model_args
 : 
-  WRITEFILE  |
-  WRITENET   | 
-  WRITESBML  | 
-  WRITEXML   |
-  WRITEMODEL
+  ps_par_def |
+  OVERWRITE ASSIGNS INT |
+  PRETTY_FORMATTING ASSIGNS INT |
+  EVALUATE_EXPRESSIONS ASSIGNS INT
 ;
+
+write_xml
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $write_xml::actions = new HashMap<String,String>();
+}
+: 
+  WRITEXML
+  LPAREN 
+  (LBRACKET 
+  (write_xml_args (COMMA write_xml_args)*)? 
+  RBRACKET)?
+  RPAREN SEMI? 
+  -> action(id={$WRITEXML.text})
+;
+
+write_xml_args
+: 
+  ps_par_def |
+  OVERWRITE ASSIGNS INT
+;
+
+write_network
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $write_network::actions = new HashMap<String,String>();
+}
+: 
+  WRITENETWORK
+  LPAREN 
+  (LBRACKET 
+  (write_network_args (COMMA write_network_args)*)? 
+  RBRACKET)?
+  RPAREN SEMI? 
+  -> action(id={$WRITENETWORK.text})
+;
+
+write_network_args
+: 
+  ps_par_def |
+  OVERWRITE ASSIGNS INT |
+  INCLUDE_MODEL ASSIGNS INT |
+  PRETTY_FORMATTING ASSIGNS INT |
+  EVALUATE_EXPRESSIONS ASSIGNS INT |
+  TEXTREACTION ASSIGNS INT |
+  TEXTSPECIES ASSIGNS INT
+;
+
+write_sbml
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $write_sbml::actions = new HashMap<String,String>();
+}
+: 
+  WRITESBML
+  LPAREN 
+  (LBRACKET 
+  (write_sbml_args (COMMA write_sbml_args)*)?
+  RBRACKET)?
+  RPAREN SEMI? 
+  -> action(id={$WRITESBML.text})
+;
+
+write_sbml_args
+:
+  ps_par_def
+;
+
+write_mfile
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $write_mfile::actions = new HashMap<String,String>();
+}
+: 
+  WRITEMFILE
+  LPAREN 
+  (LBRACKET 
+  (write_mfile_args (COMMA write_mfile_args)*)? 
+  RBRACKET)?
+  RPAREN SEMI? 
+  -> action(id={$WRITEMFILE.text})
+;
+
+write_mfile_args
+:
+  ps_par_def |
+  T_START ASSIGNS (INT|FLOAT) |
+  T_END ASSIGNS (INT|FLOAT) |
+  N_STEPS ASSIGNS (INT|FLOAT) | 
+  ATOL ASSIGNS FLOAT | 
+  RTOL ASSIGNS FLOAT | 
+  MAX_STEP ASSIGNS (INT|FLOAT) |
+  BDF ASSIGNS INT |
+  MAXORDER ASSIGNS INT |
+  STATS ASSIGNS INT
+;
+
+write_mexfile
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $write_mexfile::actions = new HashMap<String,String>();
+}
+: 
+  WRITEMEXFILE
+  LPAREN 
+  (LBRACKET 
+  (write_mexfile_args (COMMA write_mexfile_args)*)? 
+  RBRACKET)?
+  RPAREN SEMI? 
+  -> action(id={$WRITEMEXFILE.text})
+;
+
+write_mexfile_args
+:
+  ps_par_def |
+  T_START ASSIGNS (INT|FLOAT) |
+  T_END ASSIGNS (INT|FLOAT) |
+  N_STEPS ASSIGNS (INT|FLOAT) | 
+  ATOL ASSIGNS FLOAT | 
+  RTOL ASSIGNS FLOAT | 
+  MAX_STEP ASSIGNS (INT|FLOAT) |
+  MAX_NUM_STEPS ASSIGNS (INT|FLOAT) |
+  MAX_ERR_TEST_FAILS ASSIGNS INT |
+  MAX_CONV_FAILS ASSIGNS INT |
+  STIFF ASSIGNS INT |
+  SPARSE ASSIGNS INT
+;
+
+//write_m_file[Map<String,String> map]
+//: 
+//  WRITEMFILE LPAREN (LBRACKET
+//  ((write_m_par_def[map]) 
+//  (COMMA write_m_par_def[map])*)?
+//  RBRACKET)? RPAREN SEMI?
+//;
+//
+//write_mex_file[Map<String,String> map]
+//: 
+//  WRITEMEXFILE LPAREN LBRACKET
+//  ((ps_par_def|write_m_par_def[map]) 
+//  (COMMA ps_par_def|write_m_par_def[map])*)?
+//  RBRACKET RPAREN SEMI?
+//;
+//
+//write_m_par_def[Map<String,String> map]
+//: 
+//  ATOL ASSIGNS f1=FLOAT {map.put($ATOL.text,$f1.text);} | 
+//  RTOL ASSIGNS f2=FLOAT {map.put($RTOL.text,$f2.text);} | 
+//  T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);})  | 
+//  T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);}) | 
+//  N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);} | 
+//  SPARSE ASSIGNS i4=INT {map.put($SPARSE.text,$i4.text);} | 
+//  BDF ASSIGNS i5=INT {map.put($BDF.text,$i5.text);}
+//;
+
+//write_network[Map<String,String> map]
+//: 
+//  WRITENETWORK LPAREN (LBRACKET 
+//  (
+//  (ps_par_def|simulate_par_def[map] |
+//    s1=TEXTREACTION ASSIGNS i1=INT {map.put($s1.text,$i1.text);} |
+//    s2=TEXTSPECIES ASSIGNS  i2=INT {map.put($s2.text, $i2.text);})
+//  (COMMA (ps_par_def|simulate_par_def[map] |
+//    s3=TEXTREACTION ASSIGNS i3=INT {map.put($s3.text,$i3.text);} |
+//    s4=TEXTSPECIES ASSIGNS  i4=INT {map.put($s4.text, $i4.text);}))
+//  *)?
+//  RBRACKET)? RPAREN SEMI?
+//;
 
 set_concentration 
 scope{
@@ -372,7 +550,8 @@ value
   INT | FLOAT | STRING
 ;
 
-ps_par_def[Map<String,String> map]
+//ps_par_def [Map<String,String> map]
+ps_par_def
 : 
   PREFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES)) | 
   SUFFIX ASSIGNS ((DBQUOTES  ~(DBQUOTES )* DBQUOTES))
@@ -413,21 +592,10 @@ simulate_nf_par_def[Map<String,String> map]
   EQUIL ASSIGNS i8=(FLOAT|INT) {$map.put($EQUIL.text,$i8.text);}
 ;    
         
-write_par_def
-:
-  SUFFIX ASSIGNS DBQUOTES ~(DBQUOTES )* DBQUOTES
-;
-         
-write_m_par_def[Map<String,String> map]
-: 
-  ATOL ASSIGNS f1=FLOAT {map.put($ATOL.text,$f1.text);} | 
-  RTOL ASSIGNS f2=FLOAT {map.put($RTOL.text,$f2.text);} | 
-  T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);})  | 
-  T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);}) | 
-  N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);} | 
-  SPARSE ASSIGNS i4=INT {map.put($SPARSE.text,$i4.text);} | 
-  BDF ASSIGNS i5=INT {map.put($BDF.text,$i5.text);}
-;
+//write_par_def
+//:
+//  SUFFIX ASSIGNS DBQUOTES ~(DBQUOTES )* DBQUOTES
+//;
 
 //TODO: error or warning?????
 simulate_par_def[Map<String,String> map]
