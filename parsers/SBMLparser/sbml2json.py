@@ -7,11 +7,13 @@ Created on Mon Jun 17 11:19:37 2013
 
 import libsbml
 from scipy.misc import factorial, comb
+import json
 
 class SBML2JSON:
     
     def __init__(self, model):
         self.model = model
+        self.moleculeData = {}
 
     def getParameters(self):
         parameters = []
@@ -26,6 +28,20 @@ class SBML2JSON:
             '''
             parameters.append(parameterSpecs)
         return parameters
+        
+    
+    def __getRawCompartments(self):
+        '''
+        extracts information about the compartments in a model
+        *returns* name,dimensions,size
+        '''
+        compartmentList = {}
+        for compartment in self.model.getListOfCompartments():
+            name = compartment.getId()
+            size = compartment.getSize()
+            dimensions = compartment.getSpatialDimensions()
+            compartmentList[name] = [dimensions,size]
+        return compartmentList
             
     def getMolecules(self):
         '''
@@ -35,16 +51,28 @@ class SBML2JSON:
         It returns id,initialConcentration,(bool)isconstant and isboundary,
         and the compartment
         '''
+        
+        compartmentList = self.__getRawCompartments()
+        print compartmentList
+        
         molecules = []
         release = []
         for idx,species in enumerate(self.model.getListOfSpecies()):
-            moleculeSpecs={'name':species.getId(),'extendedName':species.getName()}
+            compartment = species.getCompartment()
+            if compartmentList[compartment][0] == 3:
+                typeD = '3D'
+                diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
+            else:
+                typeD = '2D'
+                diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_EC+mu_CP)/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment)
+            self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
+            moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
             if initialConcentration == 0:
                 initialConcentration = species.getInitialAmount()
             isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
-            compartment = species.getCompartment()
+            
             releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx),'molecule':species.getId(),'shape':'OBJECT'}
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
@@ -126,7 +154,7 @@ class SBML2JSON:
         return rateR,math.getNumChildren()
 
     def getReactions(self):
-        
+        reactionSpecs = []
         for index, reaction in enumerate(self.model.getListOfReactions()):
             reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
             for reactant in reaction.getListOfReactants() if
@@ -148,7 +176,33 @@ class SBML2JSON:
                 compartmentList.append(compartment.getId())
                 
             rateL, rateR = self.getInstanceRate(math,compartmentList,reversible,rReactant,rProduct)
-            
+            #finalReactant = [x[0]]    
+            #testing whether we have volume-surface interactions
+            rcList = []
+            prdList = []
+            for element in reactant:
+                orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
+                > 1 and self.moleculeData[element[0]] == '3' else "'"
+                rcList.append("{0}{1}".format(element[0],orientation))
+            for element in product:
+                orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
+                > 1 and self.moleculeData[element[0]] == '3' else "'"
+                
+                prdList.append("{0}{1}".format(element[0],orientation))
+            if rateL != 0:
+                tmp = {}
+                tmp['reactants'] = ' + '.join(rcList)
+                tmp['products'] = ' + '.join(prdList)
+                tmp['fwd_rate'] = rateL
+                reactionSpecs.append(tmp)
+            if rateR != 0:
+                tmp ={}
+                tmp['reactants'] = ' + '.join(prdList)
+                tmp['products'] = ' + '.join(rcList)
+                tmp['fwd_rate'] = rateR
+                reactionSpecs.append(tmp)
+
+        return reactionSpecs
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
         
@@ -157,8 +211,15 @@ def main():
     nameStr = 'BIOMD0000000%03d' % (1)
     document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
     parser = SBML2JSON(document.getModel())
-    print parser.getParameters()
-    print parser.getReactions()
-    
+    parameters =  parser.getParameters()
+    molecules,release = parser.getMolecules()        
+    reactions =  parser.getReactions()
+    definition = {}
+    definition['parameters'] = parameters
+    definition['molecules'] = molecules
+    definition['reactions'] = reactions
+    definition['release'] = release
+    with open('outfile.json','w') as f:
+        json.dump(definition,f,sort_keys=True,indent=4, separators=(',', ': '))
 if __name__ == "__main__":
     main()
