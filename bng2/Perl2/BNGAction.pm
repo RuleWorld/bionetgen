@@ -193,7 +193,7 @@ sub simulate
         # Generate NET file if not already created or if updateNet flag is set
         if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
         {
-            $err = $model->writeNetwork({include_model=>1, overwrite=>1, prefix=>"$netpre"});
+            $err = $model->writeNetwork({include_model=>0, overwrite=>1, prefix=>"$netpre"});
             if ($err) { return $err; }
         }
     }
@@ -582,9 +582,9 @@ sub simulate
     # At this point, the simulation seems to be ok.
     #  Go ahead and print out final netfile (if there are new reactions or species)
     if ( $otf  and  $model->SpeciesList )
-    {   # TODO: I don'think it's sufficient to check if SpeciesList is defined.
+    {   # TODO: I don't think it's sufficient to check if SpeciesList is defined.
         #  It's possible that it exists but the Network generation infrastructure is missing --Justin
-        $err = $model->writeNetwork({include_model=>1, overwrite=>1, prefix=>"$netpre"});
+        $err = $model->writeNetwork({include_model=>0, overwrite=>1, prefix=>"$netpre"});
         if ($err) { return $err; }
     }
 
