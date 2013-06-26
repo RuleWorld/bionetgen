@@ -2046,7 +2046,7 @@ sub generate_network
     # default params for calling writeNetwork
     # (only need to change if we want non-default)
     my $params_writeNetwork = {
-        'include_model' => 1,
+        'include_model' => 0,
         'overwrite'     => 1,
         'prefix'        => $params{prefix},
         'TextSpecies'   => $params{TextSpecies},
