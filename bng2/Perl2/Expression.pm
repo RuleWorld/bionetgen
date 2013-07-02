@@ -1888,6 +1888,12 @@ sub getName
     {
         $name = $expr->Arglist->[0];
     }
+    elsif ( $expr->Type eq "FunctionCall"
+             and @{$expr->Arglist}==1
+             and ref $expr->Arglist->[0] ne "Function" )
+    {   # function call without arguments, no need to create a new parameter
+        $name = $expr->Arglist->[0];
+    }
     else 
     {
         # Find unused name
