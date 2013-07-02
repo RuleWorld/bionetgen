@@ -239,12 +239,7 @@ sub readNetwork
                 }
                 else
                 {   # determine model basename from filename
-                    my ($vol, $dir, $fn) = File::Spec->splitpath( $filename );  
-
-					# Output directory
-					if ($params->{output_dir} eq File::Spec->curdir()){ # curdir is default
-						$params->{output_dir} = $dir;
-					}
+                    my ($vol, $dir, $fn) = File::Spec->splitpath( $filename );
 					
                     my $basename;
                     # file = basename.ext
@@ -2300,12 +2295,17 @@ sub getOutputPrefix
 
     my $is_absolute = File::Spec->file_name_is_absolute( $file_prefix );
 
-#    my $file_prefix = $model->Name;
     if ( $model->Params->{suffix} )
     {   $file_prefix .= '_' . $model->Params->{output_suffix};   }
 
-    return ($is_absolute ? $file_prefix : File::Spec->catfile( ($model->getOutputDir()), $file_prefix ));
-#    return File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
+    if ($is_absolute or $model->getOutputDir() eq "")
+    {
+        return $file_prefix;
+    }
+    else
+    {
+        return File::Spec->catfile( ($model->getOutputDir()), $file_prefix );
+    }
 }
 
 ###
@@ -2333,10 +2333,12 @@ sub setOutputDir
 sub getOutputDir
 {
     my $model = shift @_;
+
     unless ( defined $model->Params->{output_dir} )
     {   # output directory not defined, set to default
         $model->setOutputDir();
     }
+
     return $model->Params->{output_dir};
 }
 
