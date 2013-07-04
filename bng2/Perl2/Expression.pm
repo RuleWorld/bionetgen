@@ -1239,7 +1239,7 @@ sub toString
         }
     }
 
-    return ($string);
+    return $string;
 }
 
 
