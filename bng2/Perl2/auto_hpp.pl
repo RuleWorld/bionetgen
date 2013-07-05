@@ -3,14 +3,25 @@ use strict;
 use warnings;
 # Find Perl2 Module directory:
 # Look for environment variable BNGPATH. If not defined, try current directory.
+use FindBin;
 use File::Spec;
-use lib File::Spec->catdir((exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} : File::Spec->curdir()), "Perl2");
+use lib $FindBin::RealBin;
+use lib exists $ENV{'BNGPATH'} ? File::Spec->catdir( ($ENV{'BNGPATH'}), "Perl2" ) : $FindBin::RealBin; 
 # load Perl Modules
 use List::Util ("sum");
 use Scalar::Util ("looks_like_number");
 use Getopt::Long;
 # load BNG Module
 use BNGModel;
+
+
+unless (exists $ENV{'BNGPATH'})
+{   # set BNGPATH environment variable
+    my ($volume,$directories,$file) = File::Spec->splitpath( $FindBin::RealBin );
+    my @dirs = File::Spec->splitdir( $directories );
+    pop @dirs;   # BNG executable script should be down one directory from here
+    $ENV{'BNGPATH'} = File::Spec->catpath( $volume, File::Spec->catdir(@dirs), '' );
+}
 
 
 # process arguments
