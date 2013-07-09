@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <body>
+    <form action="{{ action }}" method="post" enctype="multipart/form-data">
+    Model submission: <br>
+      <div>Author: <input name="author"> </div>
+      <div>Publication: <input name="publication"> </div>
+      <div>Journal: <input name="journal"> </div>
+      <div><select name=fileFormat>
+        {% for option in formatOptions %}
+	  	<option>{{ option }}</option>
+  	{% endfor %}
+      </select></div>
+      Upload File: <input type="file" name="file"><br> 
+      Upload Simulation Trajectory: <input type="file" name="simulation"><br>
+      <input type="submit" value="Submit">
+      
+    </form>
+  
+
+
+    
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
+  </body>
+</html>
+{% endautoescape %}

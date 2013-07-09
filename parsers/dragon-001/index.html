@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <body>
+	<div><a href="/submit">Submit new Model</a></div>
+	<div><a href="/list">List all models</a></div>
+	<div><a href="/query">Query Models</a></div>
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
+  </body>
+</html>
+{% endautoescape %}

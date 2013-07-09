@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <body>
+
+    {%for query in queryArray %}
+    	{% for element in query %}
+    		{{element}} : {{query[element]}}
+   	{% endfor %}
+    {% endfor %}
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
+  </body>
+</html>
+
+{% endautoescape %}
