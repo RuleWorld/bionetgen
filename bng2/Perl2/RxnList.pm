@@ -313,17 +313,18 @@ sub readString
 # write reaction list to a string formatted for a BNGL .NET output file
 sub writeBNGL
 {
-    my $rlist = shift;
-    my $params  = (@_) ? shift @_ : { 'TextReaction'=>0 };
-    my $plist = (@_) ? shift : '';
-    my $out   = '';
+    my $rlist  = shift @_;
+    my $params = @_ ? shift @_ : { 'TextReaction'=>0, 'convert_intensive_to_extensive_units'=>1 };
+    my $plist  = @_ ? shift : undef;
+
+    my $out    = '';
 
 	# write non-text reactions
 	$out .= "begin reactions\n";
     my $irxn = 1;
     foreach my $rxn ( @{ $rlist->Array } )
     {
-        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( 0, $plist );
+        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( 0, $plist, $params->{'convert_intensive_to_extensive_units'} );
         ++$irxn;
     }
 	$out .= "end reactions\n";
@@ -336,28 +337,11 @@ sub writeBNGL
 	    my $irxn = 1;
 	    foreach my $rxn ( @{ $rlist->Array } )
 	    {
-	        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( $text, $plist );
+	        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( $text, $plist, $params->{'convert_intensive_to_extensive_units'} );
 	        ++$irxn;
 	    }
 	    $out .= "end reactions_text\n";
 	}
-	
-#    $out .= "begin reactions";
-#    if ( $text )
-#    {   $out .= "_text";   }
-#    $out .= "\n";
-#    
-#    my $irxn = 1;
-#    foreach my $rxn ( @{ $rlist->Array } )
-#    {
-#        $out .= sprintf "%5d %s\n", $irxn, $rxn->toString( $text, $plist );
-#        ++$irxn;
-#    }
-#    
-#    $out .= "end reactions";
-#    if ($text)
-#    {   $out .= "_text";   }
-#    $out .= "\n";
     
     return $out;
 }
@@ -408,7 +392,7 @@ sub updateIndex
         ++$n_rxns;
     }
 
-    return ($err);
+    return $err;
 }
 
 
@@ -421,8 +405,8 @@ sub updateIndex
 # each reaction in the list.
 sub getCVodeRateDefs
 {
-    my $rlist = shift;
-    my $plist = (@_) ? shift : undef;
+    my $rlist = shift @_;
+    my $plist = @_ ? shift @_ : undef;
 
     # expression definition string
     my $rate_defs = '';
@@ -450,8 +434,8 @@ sub getCVodeRateDefs
 # each reaction in the list.
 sub getMatlabRateDefs
 {
-    my $rlist = shift;
-    my $plist = (@_) ? shift : undef;
+    my $rlist = shift @_;
+    my $plist = @_ ? shift @_ : undef;
 
     # expression definition string
     my $rate_defs = '';

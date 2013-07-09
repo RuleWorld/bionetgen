@@ -1272,6 +1272,7 @@ sub writeBNGL
     # NOTE: since this method is not a user action, we don't need to check parameters.
     # Instead, we assume the programmers call this method with valid options.
     my %params = (
+        'convert_intensive_to_extensive_units' => 1,
         'evaluate_expressions' => 0,
         'format'               => 'net',
         'include_model'        => 1,

@@ -171,6 +171,9 @@ if ( $console )
 }
 else
 {
+    unless (@ARGV)
+    {  display_help();  }
+
     # get arguments
     my %args = ();
     while ( my ($opt,$val) = each %default_args )
