@@ -4,6 +4,7 @@
   <body>
     <form action="{{ action }}" method="post" enctype="multipart/form-data">
     Model submission: <br>
+      <div>Name: <input name="name"> </div>	
       <div>Author: <input name="author"> </div>
       <div>Publication: <input name="publication"> </div>
       <div>Journal: <input name="journal"> </div>
@@ -12,10 +13,12 @@
 	  	<option>{{ option }}</option>
   	{% endfor %}
       </select></div>
+      <div><input type="checkbox" name="privacy" value="privacy">Private model </div>
       Upload File: <input type="file" name="file"><br> 
       Upload Simulation Trajectory: <input type="file" name="simulation"><br>
-      <input type="submit" value="Submit">
       
+      <div>Description: <textarea name="description" cols="25" rows="5"></textarea></div>
+      <input type="submit" value="Submit">
     </form>
   
 
