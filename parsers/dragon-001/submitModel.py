@@ -12,7 +12,7 @@ from google.appengine.api import users
 from google.appengine.ext import ndb
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
-
+from google.appengine.api.images import get_serving_url
 import webapp2
 
 
@@ -48,7 +48,7 @@ class ModelInfo(ndb.Model):
     """Models an individual Guestbook entry with author, content, and date."""
     author = ndb.StringProperty()
     content = ndb.BlobKeyProperty() #BlobInfo(blobkey)
-    simulationResults = ndb.BlobKeyProperty()
+    contactMap = ndb.BlobKeyProperty()
     name = ndb.StringProperty()
     description = ndb.StringProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
@@ -128,14 +128,14 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
             modelSubmission.submitter = users.get_current_user()
             
         upload_files = self.get_uploads('file')
-        simulation = self.get_uploads('simulation')
+        contact = self.get_uploads('contact')
         blob_info = upload_files[0]
-        blob_info2 = simulation[0]
+        blob_info2 = contact[0]
         modelSubmission.content = blob_info.key()
         modelSubmission.author = self.request.get('author')
         modelSubmission.publication = publicationInfo
         modelSubmission.fileFormat = self.request.get('fileFormat')
-        modelSubmission.simulationResults = blob_info2.key() 
+        modelSubmission.contactMap = blob_info2.key() 
         modelSubmission.name = self.request.get('name')
         modelSubmission.description = self.request.get('description')
         modelSubmission.privacy = self.request.get('privacy')
@@ -223,8 +223,12 @@ class Description(webapp2.RequestHandler):
             for element in dp:
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
 
-                if element in ['content','simulationResults']:
+                if element in ['content']:
                     printStatement = '<a href="serve/{1}?key={0}">{1}</a>'.format(dp[element],blobstore.BlobInfo(dp[element]).filename)
+                elif element in ['contactMap']:
+                    url = get_serving_url(dp[element],size=400)
+                    self.response.write('<img src={0}/><br>'.format(url))
+                
                 else:
                     printStatement = dp[element]
                 self.response.write('{0}:{1}<br>'.format(element,printStatement))
