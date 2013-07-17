@@ -8,6 +8,7 @@ Created on Mon May 27 20:32:52 2013
 import cgi
 import urllib
 import os
+from google.appengine.ext.db import Key
 from google.appengine.api import users
 from google.appengine.ext import ndb
 from google.appengine.ext.webapp import blobstore_handlers
@@ -74,7 +75,7 @@ class MainPage(webapp2.RequestHandler):
             'url_linktext': url_linktext,
             'current_user':current_user
         }
-        template =JINJA_ENVIRONMENT.get_template('index.html')
+        template =JINJA_ENVIRONMENT.get_template('index2.html')
         self.response.write(template.render(template_values))
 
 class Submit(webapp2.RequestHandler):
@@ -90,9 +91,11 @@ class Submit(webapp2.RequestHandler):
         if users.get_current_user():
             url = users.create_logout_url(self.request.uri)
             url_linktext = 'Logout'
+            current_user=True
         else:
             url = users.create_login_url(self.request.uri)
             url_linktext = 'Login'
+            current_user=False
 
         template_values = {
             'action':  upload_url,
@@ -100,10 +103,11 @@ class Submit(webapp2.RequestHandler):
             #'model_name': urllib.urlencode({'model_name':model_name}),
             'url': url,
             'url_linktext': url_linktext,
-            'formatOptions':set(["bngl","kappa"])
+            'formatOptions':set(["bngl","kappa"]),
+            'current_user':current_user
         }
 
-        template = JINJA_ENVIRONMENT.get_template('submit.html')
+        template = JINJA_ENVIRONMENT.get_template('submit2.html')
         self.response.write(template.render(template_values))
 
 
@@ -152,16 +156,19 @@ class Query(webapp2.RequestHandler):
         if users.get_current_user():
             url = users.create_logout_url(self.request.uri)
             url_linktext = 'Logout'
+            current_user=True
         else:
             url = users.create_login_url(self.request.uri)
             url_linktext = 'Login'
+            current_user=False
     
         template_values ={
             'url': url,
             'url_linktext': url_linktext,
-            'queryOptions':set(['Author','Publication'])
+            'queryOptions':set(['Author','Publication']),
+            'current_user':current_user
         }
-        template =JINJA_ENVIRONMENT.get_template('query.html')
+        template =JINJA_ENVIRONMENT.get_template('query2.html')
         self.response.write(template.render(template_values))
 
 class addAnnotation(webapp2.RequestHandler):
@@ -184,7 +191,7 @@ class List(webapp2.RequestHandler):
             
             dp = p.to_dict()
             #only display public models
-            if dp['privacy'] == 'privacy':
+            if dp['privacy'] == 'privacy' and dp['submitter'] != users.get_current_user():
                 continue
             counter += 1            
             self.response.write('{1}: Name: <a href="description?file={2}">{0}</a><br>'.format(dp['name'],counter,dp['name']))
@@ -226,13 +233,38 @@ class Description(webapp2.RequestHandler):
                 if element in ['content']:
                     printStatement = '<a href="serve/{1}?key={0}">{1}</a>'.format(dp[element],blobstore.BlobInfo(dp[element]).filename)
                 elif element in ['contactMap']:
-                    url = get_serving_url(dp[element],size=400)
-                    self.response.write('<img src={0}/><br>'.format(url))
-                
+                    blobkey = urllib.unquote(str(dp[element]))
+                    url = get_serving_url(blobkey,size=400)
+                    url =' "serve/{1}?key={0}"'.format(dp[element],blobstore.BlobInfo(dp[element]).filename)                  
+                    printStatement = '<img src={0} /><br>'.format(url)
+                    #printStatement = '<img src=image?img_id={0}/><br>'.format(dp[element])
                 else:
                     printStatement = dp[element]
                 self.response.write('{0}:{1}<br>'.format(element,printStatement))
 
+class Image (webapp2.RequestHandler):
+    def get(self):
+        #get the key of the image "img_id" from datastore
+        #what is the value of "img_id"? Where does it come from?
+        #how does the app engine know to get what key for which image?
+        key = Key(self.request.get("img_id"))
+        the_document = DocumentsModel.all().filter("__key__ =", key).get()
+        #what is greeting.avatar?
+        #is it img_id.avatar ?
+        #I assume "avatar" refers to the "avatar" property in the model
+        if key:
+            file_data = blobstore.BlobInfo.get(str(the_document.blobstore_key))
+            self.response.headers['Content-Type'] = "image/png"
+            #does this display the avatar?
+            #I thought the img tag displayed the avatar
+            payload = {}
+            payload['user_id'] = '1234123412341234'
+            payload['test_file'] = MultipartParam('the_file', filename="something",
+                                      filetype=file_data.content_type,
+                                      fileobj=file_data.open())
+        else:
+            self.error(404)
+          
 class SendDocuments(webapp2.RequestHandler):
     def post(self):
         document_key = self.request.get("document_key")
@@ -313,4 +345,5 @@ app = webapp2.WSGIApplication([
     ('/description',Description),
     ('/myModels',MyModels),
     ('/serve/([^/]+)?', ServeHandler),
+    ('/image',Image)
 ], debug=True)
