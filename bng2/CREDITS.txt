@@ -83,4 +83,6 @@ Alexander S. Chistopolsky <eroxi@savelovo.net>
 Marc Birtwistle <mrbirdy@udel.edu>
    * Contributor of parameter sensitivity code.
 
+Dipak Barua 
+   * BNGL to MDL converter.
 
