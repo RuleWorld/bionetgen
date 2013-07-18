@@ -20,6 +20,7 @@ def evaluate(fileName):
         d = open('dummy.tmp','w')
         start = datetime.datetime.now()
         result = subprocess.Popen(['bngdev', './' + fileName],stderr=outfile,stdout=d)
+        #result = subprocess.Popen(['bngdev', './' + fileName],stderr=outfile,stdout=d)
         while result.poll() is None:
             time.sleep(0.1)
             now = datetime.datetime.now()

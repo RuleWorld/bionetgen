@@ -170,7 +170,7 @@ def evaluate(fileNumber):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in range(1,410):
+    for fileNumber in [2]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
