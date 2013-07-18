@@ -83,15 +83,22 @@ def getValidBNGLFiles(directory):
 
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
-    for index in range(1, 410):
+    #ran = range(1,410)
+    ran = [1,2,9,16,24,25,41,48]
+    for index in ran:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
-    validFiles = getValidBNGLFiles('raw')
-    for fileName in validFiles:
+    #validFiles = getValidBNGLFiles('raw')
+    #for fileName in validFiles:
+        
+    for fileNumber in ran:
+        fileName = 'output{0}.bngl'.format(fileNumber)
         suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    '''
     #validFiles = getValidBNGLFiles('complex')
     #for fileName in validFiles:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
-    for index in range(1,410):
+    for index in ran:
         suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
+    '''   
     unittest.TextTestRunner(verbosity=2).run(suite)
 

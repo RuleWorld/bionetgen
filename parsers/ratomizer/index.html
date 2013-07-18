@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <body>
+    <form action="{{ action }}" method="post" enctype="multipart/form-data">
+    Model submission: <br>
+      Upload File: <input type="file" name="file"><br> 
+      <input type="submit" value="Submit">
+    </form>
+  
+
+
+    
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
+  </body>
+</html>
+{% endautoescape %}

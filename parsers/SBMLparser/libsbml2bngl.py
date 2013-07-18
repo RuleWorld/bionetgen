@@ -87,6 +87,9 @@ class SBML2BNGL:
                 break
         return math
 
+    def getUnitDefinitions(self):
+        for unitDefinition in self.model.getListOfUnits():
+            pass
     def removeFactorFromMath(self, math, reactants, products):
         
             
@@ -173,14 +176,15 @@ class SBML2BNGL:
         #return compartments if the reaction is unimolecular
         #they were removed in the first palce because its easier to handle
         #around the equation in tree form when it has less terms
-        #if len(self.model.getListOfCompartments()) > 0:
-        #    for compartment in (self.model.getListOfCompartments()):
-        #        if compartment.getId() not in compartmentList:
-        #            if len(rReactant) == 2:
-        #                rateL = '{0} * {1}'.format(rateL,compartment.getSize())
-        #            if len(rProduct) == 2:
-        #                 rateR = '{0} * {1}'.format(rateR,compartment.getSize())
-                
+        '''
+        if len(self.model.getListOfCompartments()) > 0:
+            for compartment in (self.model.getListOfCompartments()):
+                if compartment.getId() not in compartmentList:
+                    if len(rReactant) != 2:
+                        rateL = '{0} * {1}'.format(rateL,compartment.getSize())
+                    if len(rProduct) != 2:
+                         rateR = '{0} * {1}'.format(rateR,compartment.getSize())
+        '''     
 
 
                 
@@ -202,6 +206,8 @@ class SBML2BNGL:
         '''
         name = compartment.getId()
         size = compartment.getSize()
+        #if size != 1:
+        #    print '!',
         return name,3,size
         
     def __getRawFunctions(self,function):
@@ -725,12 +731,26 @@ def validateReactionUsage(reactant,reactions):
         if reactant in element:
             return element
     return None
+
+
+def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None):
+    reader = libsbml.SBMLReader()
+    document = reader.readSBMLFromString(inputString)
+    return analyzeHelper(document,useID,outputFile,speciesEquivalence)[-1]
+
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
     
-    useArtificialRules = False
+    
     
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(bioNumber)
+    returnArray= analyzeHelper(document,useID,outputFile,speciesEquivalence)
+    with open(outputFile,'w') as f:
+            f.write(returnArray[-1])
+    return returnArray[0:-1]
+
+def analyzeHelper(document,useID,outputFile,speciesEquivalence):
+    useArtificialRules = False
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
@@ -860,7 +880,9 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
         evaluate =  evaluation(len(observables),translator)
 
         artificialRules.extend(rules)
-        writer.finalText(param,molecules,species,observables,artificialRules,functions,compartments,outputFile)
+        finalString = writer.finalText(param,molecules,species,observables,artificialRules,functions,compartments,outputFile)
+        
+
 
     else:
         artificialRules =['#{0}'.format(x) for x in artificialRules]
@@ -868,7 +890,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
 
         rules.extend(artificialRules)
         
-        writer.finalText(param+param3,molecules,species,observables,rules,functions,compartments,outputFile)
+        finalString = writer.finalText(param+param3,molecules,species,observables,rules,functions,compartments,outputFile)
     print outputFile
     
     #store a logfile
@@ -881,7 +903,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
 
     #rate of each classified rule
     classificationDict = {}
-    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments)
+    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments), finalString
     
     '''
     if translator != {}:
@@ -938,7 +960,7 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in [65]:
+    for bioNumber in range(1,410):
         #if bioNumber in [18,51,353,108,109,255,268,392]:
         #    continue
     #bioNumber = 175

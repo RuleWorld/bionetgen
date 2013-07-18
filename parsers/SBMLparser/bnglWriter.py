@@ -7,6 +7,7 @@ import string
 from pyparsing import commaSeparatedList as csl
 import pyparsing
 from itertools import dropwhile
+import StringIO
 def evaluatePiecewiseFunction(function):
     pass
 
@@ -286,7 +287,10 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
 
     
 def finalText(param,molecules,species,observables,rules,functions,compartments,fileName):
-    output = open(fileName,'w')
+    #output = open(fileName,'w')
+    
+    output = StringIO.StringIO()
+    
     output.write('begin model\n')
     output.write(sectionTemplate('parameters',param))
     if len(compartments) > 0:
@@ -301,7 +305,10 @@ def finalText(param,molecules,species,observables,rules,functions,compartments,f
     output.write('generate_network({overwrite=>1})\n')
     output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
-    
+    #with open(fileName,'w') as outputFile:
+    #    outputFile.write(output.getvalue()) 
+    #output.close()
+    return output.getvalue()
 def sectionTemplate(name,content):
     section = 'begin %s\n' % name
     temp = ['\t%s\n' % line for line in content]
