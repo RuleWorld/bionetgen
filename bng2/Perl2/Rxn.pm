@@ -250,6 +250,96 @@ sub getMatlabRate
 ###
 ###
 
+sub getMDLrxn
+{
+    my $rxn     = shift;
+    my $plist   = shift; 
+    my $iscomp  = shift; 
+    my $py_reactions = shift;
+    my $string  = "    ";
+    my $py_string = "";
+    
+    my $mcomp = undef;  
+    my %orient; 
+    
+    if ($iscomp){
+         foreach (@{$rxn->Reactants}){
+               if ($_->SpeciesGraph->Compartment->SpatialDimensions == 2){ 
+	           $mcomp = $_->SpeciesGraph->Compartment; 
+	           last; 
+	       }
+         }
+    }
+         
+    if (defined $mcomp){
+        foreach (@{$rxn->Reactants}){
+                my $scomp = $_->SpeciesGraph->Compartment; 
+	        if ($scomp->SpatialDimensions == 2){
+	           $orient{$_->Index} = "'"; 
+	           }
+	        if ($scomp->SpatialDimensions == 3){
+	           $orient{$_->Index} = ($scomp->Outside) ?  ($mcomp == $scomp->Outside ? "," : "'") : "'" ; 
+		   }
+		      
+        foreach (@{$rxn->Products}){
+                my $scomp = $_->SpeciesGraph->Compartment; 
+	        if ($scomp->SpatialDimensions == 2){
+	           $orient{$_->Index} = "'"; 
+	           }
+	        if ($scomp->SpatialDimensions == 3){
+	           $orient{$_->Index} = ($scomp->Outside) ?  ($mcomp == $scomp->Outside ? "," : "'") : "'" ; 
+		   }
+		}
+	    }
+         }
+   else{
+         foreach (@{$rxn->Reactants}){
+	         $orient{$_->Index} = "";
+	 }
+	 foreach (@{$rxn->Products}){
+	            $orient{$_->Index} = ""; 
+        }
+     }
+ 
+    my $reactant_expr = join " + ", map {"s".$_->Index.$orient{$_->Index}} @{$rxn->Reactants};
+    my $product_expr = join " + ", map {"s".$_->Index.$orient{$_->Index}} @{$rxn->Products};
+    
+    $string .= $reactant_expr; 
+    $string .= " -> ";
+    $string .= $product_expr;
+    
+    $py_string .= "{'reactants':\"".$reactant_expr."\","; 
+    $py_string .= "'products':\"".$product_expr."\",";
+   
+   
+    # Write the Ratelaw...
+    #   First prcoess reaction multipliers (statistical factor, compartment volumes, etc)
+    my $err = undef;
+    
+    #my $rxn_mult_temp=""; 
+    #if (scalar @{$rxn->Reactants} >1){
+       #my $i = 0; 
+       #foreach (@{$rxn->Reactants}){
+             #$i = 1 if ($_->SpeciesGraph->Compartment->SpatialDimensions == 3); 
+	     #}
+      #$rxn_mult_temp = ($i == 1) ? "*Nav" : "/rxn_layer_t";      
+      #}
+      
+   
+    my $rxn_mult = undef; 
+
+    # get ratelaw string
+    #$string .= sprintf("   [%s$rxn_mult_temp]",$rxn->RateLaw->toString( $rxn_mult, 1, $plist ));
+    my $rate_expr = sprintf("%s",$rxn->RateLaw->toString($rxn->StatFactor, 1, $plist)); 
+    $string .= "    [".$rate_expr."]"; 
+    $py_string .= "'fwd_rate':\"".$rate_expr."\"}"; 
+    push (@{$py_reactions}, $py_string); 
+    if ($rxn->RxnRule)
+    {  $string .= "       /* BNG ".$rxn->RxnRule->Name."  */" ;  }
+
+    return $string; 
+     
+}    
 
 
 # Used to compare whether reactions are identical

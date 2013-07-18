@@ -137,6 +137,18 @@ sub toXML{
   return($string);
 }
 
+sub writeMDL
+{
+    my $ctype = shift; 
+    my $string = $ctype->Name; 
+    
+    if (@{$ctype->States}){
+       foreach my $state (@{$ctype->States}){
+              $string .= "~".$state; 
+	      }
+     }
+    return $string; 
+}
 
 
 1;

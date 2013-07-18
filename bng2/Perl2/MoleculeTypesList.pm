@@ -337,6 +337,19 @@ sub toXML
     return $string;
 }
 
+sub writeMDL
+{
+    my $mtlist = shift;
+    my $indent = shift; 
+    my $string = ""; 
+    # loop over molecule types
+    foreach my $mname (sort keys %{$mtlist->MolTypes})
+    {
+ 	my $mt = $mtlist->MolTypes->{$mname};
+        $string .= $indent.$mt->writeMDL()."\n";
+    }
+    return $string;
+}
 
 
 1;

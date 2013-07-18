@@ -351,6 +351,22 @@ sub writeBNGL
 ###
 ###
 
+sub writeMDL
+{
+     my $rlist = shift;
+     my $plist = shift; 
+     my $iscomp = shift; 
+     my $py_reactions = shift; 
+     
+     my $string = "DEFINE_REACTIONS\n{\n"; 
+     foreach my $rxn (@{$rlist->Array})
+     {
+        $string .= $rxn->getMDLrxn($plist, $iscomp, $py_reactions)."\n";  
+      }
+     $string .= "}"; 
+     return $string; 
+}
+
 
 # print rxns to a file
 sub print
