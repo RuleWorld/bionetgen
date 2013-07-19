@@ -736,7 +736,7 @@ def validateReactionUsage(reactant,reactions):
 def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None):
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromString(inputString)
-    return analyzeHelper(document,useID,outputFile,speciesEquivalence)[-1]
+    return analyzeHelper(document,useID,'',speciesEquivalence)[-1]
 
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
     
@@ -1027,11 +1027,18 @@ def main():
     #plt.xlabel('Atomization Degree',fontsize=18)    
     #plt.savefig('ruleifyDistro3.png')
             
-            
+def main2():
+    with open('XMLExamples/curated/BIOMD0000000001.xml','r') as f:
+        st = f.read()
+        print readFromString(st,
+                                             'reactionDefinitions/reactionDefinition7.json',True)        
+
+       
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
-    main()
+    #main()
+    main2()
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s
