@@ -180,6 +180,30 @@ sub reset_weights
 ###
 ###
 
+#####################################DB#################################
+sub writeMDL
+{
+     my $obs = shift @_; 
+     my $string = ""; 
+     my $indent = "   "; 
+     
+     $string .= "\n$indent/*".$obs->Name."*/\n"; 
+     my $i = -1; 
+     my $first = 1; 
+     
+     $string .= $indent."{ "; 
+     foreach my $w (@{$obs->Weights}){
+         ++$i; 
+	 next unless $w; 
+	 $string .= " + " unless $first; 
+	 $string .= sprintf("%sCOUNT[s%s,WORLD]", $w > 1 ? $w."*" : "", $i); 
+	 $first = 0;     
+	 }
+     $string .= sprintf(" }=> \"./react_data/%s.dat\"\n",$obs->Name); 
+     return $string; 
+}
+
+############
 
 # try to match observable to a speciesGraph and return the number of matches
 sub match

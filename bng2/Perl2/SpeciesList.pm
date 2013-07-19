@@ -395,6 +395,111 @@ sub toXML
 ###
 ###
 ###
+sub writeMDL
+{
+    my $slist  = shift @_; 
+    my $model  = shift @_; 
+    my $indent = shift @_; 
+    my $py_species = shift @_;
+    my $py_param = shift @_; 
+	  
+    my $string = ""; 
+    my $tpy_param = {}; 
+    my @tpy_keys = ('name','value','unit','type');
+    # Define diffusion constants for compartments
+    $string .= $indent."T = 298.15      /* Temperature, K */\n";
+    $tpy_param = {'name'=>"T",'value'=>"298.25",'unit'=>"K",'type'=>""}; 
+    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+   
+    if (@{$model->CompartmentList->Array}) {
+        $string .= $indent."h = rxn_layer_t      /* Thickness of 2D compartment, um */\n";
+        $tpy_param = {'name'=>"h",'value'=>"rxn_layer_t",'unit'=>"um",'type'=>""}; 
+        push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");       
+        }
+    $string .= $indent."Rs = 0.002564      /* Radius of a (spherical) molecule in 3D compartment, um */\n";
+    $tpy_param = {'name'=>"Rs",'value'=>"0.002564",'unit'=>"um",'type'=>""}; 
+    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+ 
+    if (@{$model->CompartmentList->Array}) {
+        $string .= $indent."Rc = 0.0015      /* Radius of a (cylindrical) molecule in 2D compartment, um */\n";
+        $tpy_param = {'name'=>"Rc",'value'=>"0.0015",'unit'=>"um",'type'=>""}; 
+        push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+        }
+
+    $string .= $indent."gamma = 0.5722      /* Euler's constant */\n";
+    $tpy_param = {'name'=>"gamma",'value'=>"0.5722",'unit'=>"",'type'=>"Euler's constant"}; 
+    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+    $string .= $indent."KB = 1.3806488e-19     /* Boltzmann constant, cm^2.kg/K.s^2 */\n"; 
+    $tpy_param = {'name'=>"KB",'value'=>"1.3806488e-19",'unit'=>"cm^2.kg/K.s^2",'type'=>"Boltzmann constant"}; 
+    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+  
+    my %difconst = (); 
+    my %difexp   = (); 	  
+    if (@{$model->CompartmentList->Array}){
+          foreach my $comp (@{$model->CompartmentList->Array}){
+              if ($comp->SpatialDimensions == 3){
+	          $difexp{$comp} = "KB*T/(6*PI*mu_".$comp->Name."*Rsp)" ; 
+	      }
+	      
+              	      
+	      if ($comp->SpatialDimensions == 2){
+	          my $vi = "";
+	          my $vo = ""; 
+		  my $vavg = ""; 
+
+	          if (@{$comp->Inside}){
+		     foreach (@{$comp->Inside}){
+		          if ($_->Outside == $comp){
+			      $vi = "mu_".$_->Name; 
+			      last;
+			      } 
+		     }
+		  }
+		  
+		  if ($comp->Outside){
+		      $vo = "mu_".$comp->Outside->Name;
+		      }
+		  
+		  if (($vi eq "")&&($vo eq "")){
+		     $vavg = "mu_".$comp->Name; 
+		     }
+		  elsif (($vi eq "")&&($vo ne "")){
+		     $vavg = $vo;
+		     }
+		  elsif (($vi ne "")&&($vo eq "")){
+		     $vavg = $vi;
+		     }
+		  else{
+		     $vavg = "(".$vo."+".$vi.")/2"; 
+		     }  
+		  
+	          $difexp{$comp} = "KB*T*LOG((mu_".$comp->Name."*h/(Rsp*".$vavg."))-gamma)/(4*PI*mu_".$comp->Name."*h)";
+	      } 
+	      
+              my $tstring = "$indent"."mu_".$comp->Name;  
+	      $string .= $tstring." = 1e-9      /* Viscosity in compartment ".$comp->Name.", kg/um.s */\n"; 
+	      $tpy_param = {'name'=>"mu_".$comp->Name,'value'=>"1e-9",'unit'=>"kg/um.s",'type'=>"viscosity"}; 
+              push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+	      }
+         }      
+    else {
+         $string .= $indent."mu = 1e-9\n"; # Default viscosity 
+         }
+		      
+    $difconst{"DEFAULT"} = "DIF"; 
+    $difexp{"DEFAULT"} = "KB*T/(6*PI*mu"."*Rsp)"; 
+   
+    $string .= "\nDEFINE_MOLECULES\n{\n"; 
+    foreach my $spec (@{$slist->Array}){
+	 $string .= $indent.$spec->writeMDL(\%difexp,$py_species,$py_param);
+         }
+    
+    $string .= "}\n";
+    return $string;
+}
+###
+###
+###
 
 
 sub toCVodeString

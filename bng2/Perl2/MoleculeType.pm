@@ -408,6 +408,29 @@ sub toXML
     return $string;
 }
 
+sub writeMDL
+{
+    my $mtype  = shift;
+    my $string = "";
+    
+    $string = $mtype->Name; 
+    $string .= "("; 
+    
+    if (@{$mtype->Components})
+    {
+       my $k = 0; 
+       foreach my $comp (@{$mtype->Components})
+       {
+              if ($k)
+	      {$string .=",";}
+	      $string .= $comp->writeMDL();
+	      $k = 1;  
+       }
+    
+    }
+    $string .= ")"; 
+    return $string;
+}
 
 
 1;

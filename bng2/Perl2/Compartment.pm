@@ -330,4 +330,115 @@ sub toXML{
   return($string);
 }
 
+############DB###################
+# This function calculates scaling factor for the compartment volumes/areas of compartments based on the user-specified volumes 
+#provided in the BNGL file. The scaling is determined by the ration of the user-specified volume and the default volume of a 
+# M-cell produced geometry, which in this case is a sphere. The default size of a MCell/Blender-created is r = 1 micron (volume
+# = 4.19 cubic micron, and surface area is 12.57 sq. micron. The function first determines size of a sphere based on the sum of 
+# all nested compartment volumes (by calling the getMDLSize function). It then determines the linear scaling factor, which is the 
+# ratio from the volume of the sphere and the volume of the MCell/Blender-created default sphere. In addition, the function
+# stores the first word from the first line into a hash called %shape. The first word referes to the name of the geometry object itself (in this 
+# case it is "Sphere". 
+
+ 
+sub getMDLgeometry
+{
+   my $comp = shift; 
+   my $plist = shift; 
+   my $geometry = shift; 
+   my $object = shift; 
+   my $shape = shift; 
+   my $scale = shift; 
+   my $string = ""; 
+   
+    my $surf; 
+   my $i=0; 
+   foreach (@{$geometry}){
+        if ($_ =~ /POLYGON_LIST/){
+	    $object->{$comp->Name} = $_;
+	    $object->{$comp->Name} =~ s/POLYGON_LIST//; 
+	    $object->{$comp->Name} =~ s/^\s*//; 
+	    $object->{$comp->Name} =~ s/\s*$//;
+	    $object->{$comp->Name} = $comp->Name."_".$object->{$comp->Name}; 
+	    }
+	    
+	if ($_ =~ /DEFINE_SURFACE_REGIONS/){
+	    $surf = $geometry->[$i+2];
+	    $surf =~ s/^\s*//;
+	    $surf =~ s/\s*$//;
+	    }
+	++$i; 
+   }
+
+   my $volume_mcell;   
+   my $area_mcell; 
+   my $volume; 
+   my $area; 
+   
+   if ($object->{$comp->Name} =~ /Sphere/){
+      $volume_mcell = 4.1904762;  # Default volume of sphere in Blender;
+      $area_mcell = 12.571429;  # Default surface area of sphere in Blender;
+      $volume = getMDLSize($comp, $plist);  # Volume of sphere inclosing the compartment and nested inside compartments
+      $area = 4.836624601*($volume)**(2/3);  # Surface area of sphere
+      }
+      
+   
+   if ((!$comp->Outside) || ($comp->SpatialDimensions == 2)){ # Write geometries defined by 2D surfaces
+      $string = join "", map {$_=~ /POLYGON_LIST/ ? $comp->Name."_".$_ : $_ } (@{$geometry}); 
+      $shape->{$comp->Name} .= $object->{$comp->Name}."[$surf]";
+      my ($volume, $area) = ($comp->SpatialDimensions == 3) ? ($volume, undef) : (undef, $area);  
+      # $volume is relevant only in the case of the outermost space if it has no defined boundary (in BNGL). 
+      $scale->{$comp->Name} = (defined $volume) ? ($volume/$volume_mcell)**(1/3) : sqrt($area/$area_mcell); 
+      }
+     
+   if (@{$comp->Inside}){
+        foreach my $incomp (@{$comp->Inside}){
+            $string .= getMDLgeometry($incomp,$plist,$geometry,$object,$shape,$scale);  # Recursive call 
+	}  
+   }
+   return $string; 
+}
+
+# This function returns a reference to an array. The first array element is a compartment name. Subsequent elements are the names of nested compartments. 
+sub getMDLRelSite
+{
+   my $comp = shift; 
+   my @array;
+   if ($comp->SpatialDimensions == 2){
+       push(@array, $comp->Name);    # The array contains a single element because membrane compartment does not hold any nested compartments. 
+       return \@array;
+       }
+   
+   push (@array, $comp->Outside ? $comp->Outside->Name : $comp->Name); # If outermost 3D space, then name the 'hypothetical' outer membrane with  the same name as the compartment 
+   foreach (@{$comp->Inside}){
+       push (@array, $_->Name);   # First element is the primary compartment. Subsequent elements are nested compartments. 
+       }
+   return \@array;     
+} 
+ 
+# This function calculates total volume of a sphere (i.e., volume of (compartment + all inside compartments).
+# Membrane volume is assumed zero regardless of the user-assigned value
+# because potential contradiction can arise from independently assigning both the membrane and enclosed volume size
+# Size of a sphere is only based on the assigned 3D volumes.
+ 
+sub getMDLSize
+{
+  my $comp = shift; 
+  my $plist = shift; 
+  my $custom_geometry = shift; 
+  my $volume = 0;
+  my $childvolume = 0; 
+  
+  $volume = $comp->Size->evaluate($plist);
+  return $volume if ($custom_geometry);
+  
+  $volume =  0 if ($comp->SpatialDimensions == 2);  
+  
+  foreach my $child (@{$comp->Inside}){    # Calculate volume of all nested compartments inside the current compartment 
+          $childvolume = $childvolume + $child->getMDLSize($plist, $custom_geometry); 
+	  }
+  $volume = $volume + $childvolume; # Sphere volume = volume of (current compartment + all nested compartments inside)
+  return ($volume); 	    
+}   
+
 1;
