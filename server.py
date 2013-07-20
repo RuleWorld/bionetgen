@@ -43,7 +43,7 @@ class AtomizerServer:
     
     def __init__(self):
         pass
-    def atomize(self, bxm   lFile,atomize=False):
+    def atomize(self, bxmlFile,atomize=False):
         counter = next_id()
         xmlFile = bxmlFile.data
         result = libsbml2bngl.readFromString(xmlFile,
