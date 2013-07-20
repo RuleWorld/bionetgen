@@ -38,7 +38,8 @@ class MainPage(webapp2.RequestHandler):
         upload_url = blobstore.create_upload_url('/process')
         
         template_values={
-            'action' : upload_url
+            'action' : upload_url,
+            'reactionDefinition' : ['1','2','3','4','5','6','7','8','9','10','a','b','c']
         }
         template =JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render(template_values))
@@ -54,8 +55,11 @@ class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
         blob_info = upload_files[0]
         reader = blob_info.open()
         sbmlContent = xmlrpclib.Binary(reader.read())
+        atomizeString = self.request.get('atomize')
+        #print 'fsdgsdgsd',atomize
         s = xmlrpclib.ServerProxy('http://54.214.249.43:9000')
-        result = s.atomize(sbmlContent)
+        #s = xmlrpclib.ServerProxy('http://128.237.114.30:9000') 
+        result = s.atomize(sbmlContent,atomizeString)
         #self.response.write(result)
 
         file_name = files.blobstore.create(mime_type='application/octet-stream')

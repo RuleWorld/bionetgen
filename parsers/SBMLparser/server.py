@@ -22,6 +22,8 @@ class RequestHandler(SimpleXMLRPCRequestHandler):
 # Create server
 server = SimpleXMLRPCServer(("10.253.98.102", 9000),
                             requestHandler=RequestHandler)
+#server = SimpleXMLRPCServer(("128.237.114.30", 9000),
+#                            requestHandler=RequestHandler)
 server.register_introspection_functions()
 
 
@@ -38,13 +40,19 @@ def next_id():
 
 
 class AtomizerServer:
-    def atomize(self, bxmlFile):
+    
+    def __init__(self):
+        pass
+    def atomize(self, bxm   lFile,atomize=False):
         counter = next_id()
         xmlFile = bxmlFile.data
         result = libsbml2bngl.readFromString(xmlFile,
-                                             'reactionDefinitions/reactionDefinition7.json',True)
+                                             'reactionDefinitions/reactionDefinition7.json',True,None,atomize)
 
         return result
+    def getSpeciesConventions(self):
+        
+        return ''
 
 
         
