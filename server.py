@@ -5,14 +5,13 @@ Created on Fri May 31 16:56:13 2013
 @author: proto
 """
 
-import datetime
 import os
-import time
-import subprocess
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 import threading
-import signal
+
+from os import listdir
+from os.path import isfile, join
 
 import libsbml2bngl
 # Restrict to a particular path.
@@ -20,10 +19,9 @@ class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
 
 # Create server
-server = SimpleXMLRPCServer(("10.253.98.102", 9000),
+#server = SimpleXMLRPCServer(("10.253.98.102", 9000),              requestHandler=RequestHandler)
+server = SimpleXMLRPCServer(("127.0.0.1", 9000),
                             requestHandler=RequestHandler)
-#server = SimpleXMLRPCServer(("128.237.114.30", 9000),
-#                            requestHandler=RequestHandler)
 server.register_introspection_functions()
 
 
@@ -36,23 +34,28 @@ def next_id():
     with iid_lock:
         result = iid
         iid += 1
-    return result
+    return result   
 
 
 class AtomizerServer:
     
     def __init__(self):
         pass
-    def atomize(self, bxmlFile,atomize=False):
+    def atomize(self, bxmlFile,atomize=False,reaction='reactionDefinitions/reactionDefinition7.json',species=None):
         counter = next_id()
         xmlFile = bxmlFile.data
+        reaction = 'reactionDefinitions/' + reaction
+        species = 'reactionDefinitions/' + species
         result = libsbml2bngl.readFromString(xmlFile,
-                                             'reactionDefinitions/reactionDefinition7.json',True,None,atomize)
+                                             reaction,True,None,atomize)
 
         return result
     def getSpeciesConventions(self):
+        onlyfiles = [ f for f in listdir('./reactionDefinitions') if isfile(join('./reactionDefinitions',f)) ]
+        reactionFiles = [x for x in onlyfiles if 'reaction' in x]
+        speciesFiles = [x for x in onlyfiles if 'species' in x ]
         
-        return ''
+        return reactionFiles,speciesFiles
 
 
         
