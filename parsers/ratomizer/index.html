@@ -7,8 +7,14 @@
       Upload File: <input type="file" name="file"><br> 
       Options:<br>
       <div><input type="checkbox" name="atomize" value="atomize">Atomize </div>
-      <div><select name=fileFormat>
+      <div><select name=reaction>
         {% for option in reactionDefinition %}
+	  	<option>{{ option }}</option>
+  	{% endfor %}
+      </select></div>
+      
+      <div><select name=species>
+        {% for option in speciesDefinition %}
 	  	<option>{{ option }}</option>
   	{% endfor %}
       </select></div>
