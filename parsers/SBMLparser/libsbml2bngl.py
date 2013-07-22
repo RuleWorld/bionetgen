@@ -733,36 +733,39 @@ def validateReactionUsage(reactant,reactions):
     return None
 
 
-def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None):
+def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None,atomize=False):
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromString(inputString)
-    return analyzeHelper(document,useID,outputFile,speciesEquivalence)[-1]
+    return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize)[-1]
 
-def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None):
+def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None,atomize=False):
     
     
     
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(bioNumber)
-    returnArray= analyzeHelper(document,useID,outputFile,speciesEquivalence)
+    returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize)
     with open(outputFile,'w') as f:
             f.write(returnArray[-1])
     return returnArray[0:-1]
 
-def analyzeHelper(document,useID,outputFile,speciesEquivalence):
+def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize):
     useArtificialRules = False
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         
     #try:
-    #translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    #translator={}    
+    if atomize:
+        translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    else:    
+        translator={} 
+    
     #except:
     #    print 'failure'
     #    return None,None,None,None
     
-    translator = {}
+    #translator = {}
     param,zparam = parser.getParameters()
     molecules,species,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
@@ -1027,11 +1030,18 @@ def main():
     #plt.xlabel('Atomization Degree',fontsize=18)    
     #plt.savefig('ruleifyDistro3.png')
             
-            
+def main2():
+    with open('XMLExamples/curated/BIOMD0000000001.xml','r') as f:
+        st = f.read()
+        print readFromString(st,
+                                             'reactionDefinitions/reactionDefinition9.json',True,None,True)        
+
+       
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
-    main()
+    #main()
+    main2()
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s

@@ -5,6 +5,19 @@
     <form action="{{ action }}" method="post" enctype="multipart/form-data">
     Model submission: <br>
       Upload File: <input type="file" name="file"><br> 
+      Options:<br>
+      <div><input type="checkbox" name="atomize" value="atomize">Atomize </div>
+      <div><select name=reaction>
+        {% for option in reactionDefinition %}
+	  	<option>{{ option }}</option>
+  	{% endfor %}
+      </select></div>
+      
+      <div><select name=species>
+        {% for option in speciesDefinition %}
+	  	<option>{{ option }}</option>
+  	{% endfor %}
+      </select></div>
       <input type="submit" value="Submit">
     </form>
   
