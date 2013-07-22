@@ -96,7 +96,7 @@ sub writeMDL
 	use File::Basename; 
         my $bngpath = dirname(dirname(__FILE__));
 	my $custom_geometry = 0; 
- 	my $custom_geometry_file = File::Spec->catfile($bngpath,'MCell',$mdlscript_filebase.".geometry.mdl"); 
+ 	my $custom_geometry_file = File::Spec->catfile($mdlscript_filedir,$mdlscript_filebase.".geometry.mdl"); 
 	if  ( -e  $custom_geometry_file){
 	    $custom_geometry = 1; 
 	    }
