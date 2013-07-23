@@ -1,9 +1,43 @@
 CHANGES to BioNetGen
-updated 16 May 2013
+updated 22 July 2013
 http://code.google.com/p/bionetgen
+
+== BioNetGen-2.2.5-stable ==
+'''''2013 July XX'''''
+
+==== New Features ====
+
+===== AutoHPP =====
+AutoHPP automates the construction and simulation of Hybrid Particle/Population
+systems. AutoHPP profiles species populations during a test simulation,
+identifies species with average population graater than a threshold, and then
+constructs and simulates an HPP system where the identified species are treated
+as lumped populations. Auto HPP is implemented in the "auto_hpp.pl" script
+found in the "Perl2" subfolder (requires NFsim).
+
+==== Minor changes ====
+* If "BNG2.pl" is called without a model argument, the help menu is printed to
+STDOUT. (In prior releases, BNG2.pl exited silently.)
+* When parsing a global function ratelaw, BNG will not create a reference to
+the function in the parameter table unless the function call is part of an
+inline math expression. (Note that use of inline expressions within ratelaws is 
+advised against, since this is not supported by NFsim.)
+
+==== Bug Fixes ====
+* Fixed bug that caused simulations of HPP models containing global functions
+to fail after loading from file. The problem was fixed by tracking global
+functions directly rather than creating a reference in the parameter table.
+ 
 
 == BioNetGen-2.2.4-stable ==
 '''''2013 May 16'''''
+
+==== Errata ====
+'''''2013 July 22''''' HPP models with global functions fail to simulate in
+NFsim after loading from file. The problem can be circumvented by simulating
+the HPP model immediately after construction by passing the "execute=>1"
+argument to "generate_hybrid_model()".
+
 
 ==== New Features ====
 
