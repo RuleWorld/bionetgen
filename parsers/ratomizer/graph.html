@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <body>
+    <form action="{{ action }}" method="post" enctype="multipart/form-data">
+    Model submission: <br>
+      Upload File: <input type="file" name="file"><br> 
+      Options:<br>
+      <div><input type="checkbox" name="reactants" value="reactants">Reactants </div>
+      Return: <div><select name=return>
+	  	<option>dot</option>
+      </select></div>
+      <input type="submit" value="Submit">
+    </form>
+  
+
+
+    
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
+  </body>
+</html>
+{% endautoescape %}
