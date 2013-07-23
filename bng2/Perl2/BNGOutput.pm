@@ -96,11 +96,11 @@ sub writeMDL
 	use File::Basename; 
         my $bngpath = dirname(dirname(__FILE__));
 	my $custom_geometry = 0; 
- 	my $custom_geometry_file = File::Spec->catfile($bngpath,'MCell',$mdlscript_filebase.".geometry.mdl"); 
+ 	my $custom_geometry_file = File::Spec->catfile($mdlscript_filedir,$mdlscript_filebase.".geometry.mdl"); 
 	if  ( -e  $custom_geometry_file){
 	    $custom_geometry = 1; 
 	    }
-	my $default_geometry_file = File::Spec->catfile($bngpath,'MCell',"default.geometry.mdl");
+	my $default_geometry_file = File::Spec->catfile($mdlscript_filedir,"default.geometry.mdl");
       
 	# Read template geometry (Sphere with radius 1 micron)
 	my $iscomp = @{$model->CompartmentList->Array} ? 1 : 0; 
@@ -136,7 +136,7 @@ sub writeMDL
         }   
 
        my %surf; #Each key of this hash represents a surface element in the geometry file. Corresponding value represents the name of the object/geometry to which the surface element belongs
-
+       my $overwrite_custom_geometry = 1; 
        if ($iscomp && $custom_geometry){    # This bloc will be excecuted if only a custom geometry is provided 
              open (READ_CUSTOM_GEOMETRY, "<", $custom_geometry_file) || die "Error loading custom geometry: $custom_geometry_file is missing or corrupted "; 
              my @custom_geometry = <READ_CUSTOM_GEOMETRY>; 
@@ -156,7 +156,11 @@ sub writeMDL
 	     %shape = ();  
 	     %object = (); 
 	     %scale = (); 
+             my %dummy_shape = ();  
 	     foreach my $line (@custom_geometry){
+                 if ($line =~ /obj_wall/){
+                     $overwrite_custom_geometry = 0;
+                 }
 	         $text .= $line; 
 	         ++$curly if ($line =~ /{/); 
 	         --$curly if ($line =~ /}/); 
@@ -194,11 +198,12 @@ sub writeMDL
 		     $text .= "\n".$buf."  ELEMENT_LIST = ["; 
 		     for (my $k=0; $k<$elemn; $k++){
 		          $text .= ($k < $elemn-1) ? $k.", " : $k."]\n";
-			  }
+		         }
 		     $text .= $buf."}\n"; 
 		     $elemn = 0; 
-		     
-		     $shape{$objname} = $objname."[obj_wall]";
+
+                     $shape{$objname} = $objname."[obj_wall]" unless exists $dummy_shape{$objname."[obj_wall]"};
+                     $dummy_shape{$objname."[obj_wall]"} = 1; 
 		     $object{$objname} = $objname;
 		     $scale{$objname} = 1; 
 		     }          
@@ -209,7 +214,8 @@ sub writeMDL
 		     $line =~ s/\s*$//;
 		     $surf{$line} = $objname; 
 		     $obj{$objname}->{$line} = 1; 
-		     $shape{$line} = $objname."[$line]"; 
+		     $shape{$line} = $objname."[$line]" unless $line=~/obj_wall/; 
+                     $dummy_shape{$line} = 1; 
                    } 
 	      }
 	
@@ -222,12 +228,14 @@ sub writeMDL
 	    } 
         }
 	
- 
-        my $gfile = File::Spec->catpath($mdlscript_filedir,$path,$mdlscript_filebase.".geometry.mdl");
-        open (WRITEGEOMETRY, '>',$gfile) || die "Could not open $gfile: $!"; 
-        print WRITEGEOMETRY $text; 
-        close WRITEGEOMETRY;
-	    
+        if (!$overwrite_custom_geometry){
+        }
+        else{ 
+            my $gfile = File::Spec->catpath($mdlscript_filedir,$path,$mdlscript_filebase.".geometry.mdl");
+            open (WRITEGEOMETRY, '>',$gfile) || die "Could not open $gfile: $!"; 
+            print WRITEGEOMETRY $text; 
+            close WRITEGEOMETRY;
+	}    
 	
         my $mdl;
 	my $indent = "   "; 
