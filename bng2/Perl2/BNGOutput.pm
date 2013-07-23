@@ -100,7 +100,7 @@ sub writeMDL
 	if  ( -e  $custom_geometry_file){
 	    $custom_geometry = 1; 
 	    }
-	my $default_geometry_file = File::Spec->catfile($bngpath,'MCell',"default.geometry.mdl");
+	my $default_geometry_file = File::Spec->catfile($mdlscript_filedir,"default.geometry.mdl");
       
 	# Read template geometry (Sphere with radius 1 micron)
 	my $iscomp = @{$model->CompartmentList->Array} ? 1 : 0; 
