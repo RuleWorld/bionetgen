@@ -17,6 +17,8 @@ import urllib
 
 from google.appengine.api import files
 
+from google.appengine.api import urlfetch
+
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -70,6 +72,8 @@ class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
         reaction = self.request.get('reaction')
         species = self.request.get('species')
         #print 'fsdgsdgsd',atomize
+        #https://developers.google.com/appengine/docs/python/urlfetch/fetchfunction
+        #https://groups.google.com/forum/#!topic/google-appengine/XbrJvt9LfuI
         s = xmlrpclib.ServerProxy('http://54.214.249.43:9000')
         #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000') 
         result = s.atomize(sbmlContent,atomizeString,reaction,species)
@@ -121,9 +125,25 @@ class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
         returnType = self.request.get('return')
         #atomizeString = self.request.get('atomize')
         #print 'fsdgsdgsd',atomize
+        print blob_info.size
+        urlfetch.set_default_fetch_deadline(blob_info.size/300)
+        print blob_info.size/300
         s = xmlrpclib.ServerProxy('http://54.214.249.43:9100')
         #s = xmlrpclib.ServerProxy('http://127.0.0.1:9100') 
         dotResult = s.bipartite(bnglContent,returnType)
+        '''
+        rpc = urlfetch.create_rpc(deadline= 10)
+        urlfetch.make_fetch_call(rpc, "http://54.214.249.43:9100",method='bipartite',headers=[bnglContent,returnType])
+        try:
+            result = rpc.get_result()
+            if result.status_code == 200:
+                dotResult = result.content
+        # ...
+        except urlfetch.DownloadError:
+            dotResult = None
+        '''
+    # Request timed out or failed.
+    # ...
         #self.response.write(result)
 
         file_name = files.blobstore.create(mime_type='application/octet-stream')
