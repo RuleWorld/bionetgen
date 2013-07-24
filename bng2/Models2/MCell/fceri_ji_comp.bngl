@@ -2,7 +2,7 @@ begin model
 begin parameters
     Nav   6.022e8
     Lig_tot  6.0e3  # units: molecules
-    Rec_tot  4.0e3  # units: molecules
+    Rec_tot  4.0e2  # units: molecules
     Lyn_tot  2.8e2  # units: molecules
     Syk_tot  4e2  # units: molecules
      kp1  1e5/Nav  # units: M
