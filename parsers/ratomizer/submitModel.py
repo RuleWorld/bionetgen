@@ -126,8 +126,8 @@ class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
         #atomizeString = self.request.get('atomize')
         #print 'fsdgsdgsd',atomize
         urlfetch.set_default_fetch_deadline(blob_info.size/300)
-        #s = xmlrpclib.ServerProxy('http://54.214.249.43:9100')
-        s = xmlrpclib.ServerProxy('http://127.0.0.1:9100') 
+        s = xmlrpclib.ServerProxy('http://54.214.249.43:9100')
+        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9100') 
         dotResult = s.bipartite(bnglContent,returnType).data
                 
         '''
