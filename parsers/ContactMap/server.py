@@ -14,13 +14,14 @@ import datetime
 import subprocess
 import createGraph
 import pexpect
+import xmlrpclib
 # Restrict to a particular path.
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
 
 # Create server
-server = SimpleXMLRPCServer(("10.253.98.102", 9100),              requestHandler=RequestHandler)
-#server = SimpleXMLRPCServer(("127.0.0.1", 9100), requestHandler=RequestHandler)
+#server = SimpleXMLRPCServer(("10.253.98.102", 9100),              requestHandler=RequestHandler)
+server = SimpleXMLRPCServer(("127.0.0.1", 9100), requestHandler=RequestHandler)
 server.register_introspection_functions()
 
 
@@ -52,10 +53,11 @@ class BipartiteServer:
         with open('temp{0}.xml.png'.format(counter),'rb') as f:
             png = f.read()
         subprocess.call(['rm','temp{0}*'.format(counter)])
-        print png
         if returnType == 'dot':
-            return dot
-        return png
+            data = xmlrpclib.Binary(dot)
+        else:
+            data = xmlrpclib.Binary(png)
+        return data
     def bngl2xml(self,bnglFile):
 
         bngconsole = pexpect.spawn('bngdev --console')

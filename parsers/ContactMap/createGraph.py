@@ -8,7 +8,7 @@ Created on Wed Nov 21 16:56:19 2012
 
 from readBNGXML import parseXML
 import pygraphviz as pgv
-
+import subprocess
 
 
 def extractMolecules(site1,site2,chemicalArray):
@@ -199,10 +199,10 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     #output      
     print '%s.dot' % fileName
     graph.write('%s.dot' % fileName)
-    graph = pgv.AGraph('%s.dot' % fileName)
-    graph.layout(prog='fdp')
-    graph.draw('%s.png' % fileName)
-
+    #graph = pgv.AGraph('%s.dot' % fileName)
+    #graph.layout(prog='fdp')
+    #graph.draw('%s.png' % fileName)
+    subprocess.call(['fdp', '-Tpng', '{0}.dot'.format(fileName),  '-Ln5', '-o{0}.png'.format(fileName)])
 
 def createXML(self):
     pass

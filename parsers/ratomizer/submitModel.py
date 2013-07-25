@@ -125,12 +125,11 @@ class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
         returnType = self.request.get('return')
         #atomizeString = self.request.get('atomize')
         #print 'fsdgsdgsd',atomize
-        print blob_info.size
         urlfetch.set_default_fetch_deadline(blob_info.size/300)
-        print blob_info.size/300
-        s = xmlrpclib.ServerProxy('http://54.214.249.43:9100')
-        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9100') 
-        dotResult = s.bipartite(bnglContent,returnType)
+        #s = xmlrpclib.ServerProxy('http://54.214.249.43:9100')
+        s = xmlrpclib.ServerProxy('http://127.0.0.1:9100') 
+        dotResult = s.bipartite(bnglContent,returnType).data
+                
         '''
         rpc = urlfetch.create_rpc(deadline= 10)
         urlfetch.make_fetch_call(rpc, "http://54.214.249.43:9100",method='bipartite',headers=[bnglContent,returnType])
@@ -162,7 +161,7 @@ class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
         #blob_info = blobstore.BlobInfo.get(blob_key)
         #output = blob_info.open()
         ###
-        printStatement = '<a href="/serve/{1}.dot?key={0}">{1}.dot</a>'.format(blob_key,blob_info.filename)
+        printStatement = '<a href="/serve/{1}.{2}?key={0}">{1}.{2}</a>'.format(blob_key,blob_info.filename,returnType)
         #p2 = output.read()        
         self.response.write(printStatement)
 
