@@ -8,7 +8,7 @@ Created on Wed Nov 21 16:56:19 2012
 
 from readBNGXML import parseXML
 import pygraphviz as pgv
-
+import subprocess
 
 
 def extractMolecules(site1,site2,chemicalArray):
@@ -135,7 +135,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                     extractTransformations(rules)
     #create the graph structure and the three main subgraphs
     
-    if len(transformations) == 1:
+    if transformations != None and len(transformations) == 1:
         graph = pgv.AGraph(directed=True,strict=False,label=labelArray[transformations[0]-1]) 
     else:
         graph = pgv.AGraph(directed=True, strict=False)
@@ -149,12 +149,12 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     reactantbuiltlist = {}
     productbuildlist ={}
     for idx,name in enumerate(actionNames):
-        if idx+1 in transformations:
+        if transformations == None or idx+1 in transformations:
             gRules.add_node(name)
     #create reactionCenter nodes and edges
     if reactionCenter:
         for idx,element in enumerate(transformationCenter):
-            if idx+1 in transformations:
+            if transformations == None or idx+1 in transformations:
                 for reactant in element:
                     clusterName = createNode(atomicArray, reactant, 
                                              reactantDictionary, gReactants, 
@@ -165,7 +165,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     #create context nodes
     if context:
         for idx,element in enumerate(transformationContext):
-            if idx+1 in transformations:
+            if transformations == None or idx+1 in transformations:
                 for reactant in element:
                     clusterName = createNode(atomicArray, reactant, 
                                              reactantDictionary, gReactants, 
@@ -187,7 +187,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     #create product nodes
     if products:
         for idx,element in enumerate(productElements):
-            if idx+1 in transformations:
+            if transformations == None or idx+1 in transformations:
                 for product in element:
                     clusterName =createNode(atomicArray, product, 
                                             productDictionary, gProducts, 
@@ -199,15 +199,27 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     #output      
     print '%s.dot' % fileName
     graph.write('%s.dot' % fileName)
-    graph = pgv.AGraph('%s.dot' % fileName)
-    graph.layout(prog='fdp')
-    graph.draw('%s.png' % fileName)
+    #graph = pgv.AGraph('%s.dot' % fileName)
+    #graph.layout(prog='fdp')
+    #graph.draw('%s.png' % fileName)
+    subprocess.call(['fdp', '-Tpng', '{0}.dot'.format(fileName),  '-Ln5', '-o{0}.png'.format(fileName)])
 
+def createXML(self):
+    pass
+
+def processBNGL(bngl):
+    #xml = createXML(bngl)
+    xml = bngl
+    _,rules = parseXML(xml)
+    createBiPartite(rules,None,bngl, 
+                           reactionCenter=True, context=True, products=True)
+    
 def main(fileName):
     _,rules = parseXML(fileName)
-    #createBiPartite(rules,[x for x in range(1,25)],'simple', 
-    #                       reactionCenter=True, context=True, products=True)
-    
+    print '---',rules
+    createBiPartite(rules,None,'simple', 
+                           reactionCenter=True, context=True, products=True)
+    '''
     for element in range(1,20):
         print element
         try:
@@ -217,6 +229,7 @@ def main(fileName):
         except:
             print 'xxx'
             continue
-    
+    '''
 if __name__ == "__main__":
-    main("output9.xml")
+    #main("output9.xml")
+    main("temp1.xml")

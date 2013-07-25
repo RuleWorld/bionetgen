@@ -1,11 +1,22 @@
 CHANGES to BioNetGen
-updated 22 July 2013
+updated 24 July 2013
 http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
 
 ==== New Features ====
+
+===== BioNetGen-to-MCell Converter =====
+The converter creates spatial MCell models from BioNetGen. it is implemented 
+by adding an extra syntax "writeMDL();" in the actions block of a BioNetGen 
+model file. It also requires a geometry input file externally created using 
+CellBlender, a software that uses Blender interfaces to create MCell geometries. 
+Execution of a BioNetGen model integrates the reaction network and geometry 
+information, and creates a MCell model file (.mdl). Alternatively,
+"wirteMDL();" enables direct execution and import of BioNetGen models from 
+Cellblender. The imported BioNetGen model can be integrated with geometries 
+created on CellBlender, and exported from CellBlender as MCell model files. 
 
 ===== AutoHPP =====
 AutoHPP automates the construction and simulation of Hybrid Particle/Population

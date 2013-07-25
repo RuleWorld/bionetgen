@@ -113,7 +113,7 @@ sub getMDLRelSite
     my $object = shift; 
     my $shape = shift; 
     my $custom_geometry = shift; 
-    
+
     my $comp; 
     my $site = []; 
     $site = ($comp = $sp->SpeciesGraph->Compartment) ? $comp->getMDLRelSite() : undef;
@@ -140,7 +140,7 @@ sub getMDLRelSite
 	  }
        }
     else{
-          $string = "Scene.".$shape->{"default"};
+          $string = "Scene."."default_Sphere";
 	}
 	
     return $string; 	
