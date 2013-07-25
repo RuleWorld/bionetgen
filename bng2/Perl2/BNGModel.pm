@@ -762,7 +762,7 @@ sub readNetwork
                 ### Read Actions Block
                 elsif ( $name eq 'actions' )
                 {
-                    unless ($model->Params->{'allow_actions'})
+                    if ($model->Params->{'skip_actions'})
                     {
                         unless ($model->Params->{'action_skip_warn'})
                         {   send_warning( err_gen("Skipping actions") );   }
@@ -861,7 +861,7 @@ sub readNetwork
                 #  try to interpret special characters.    
                 $options =~ s/"/'/g;
 
-                unless ($model->Params->{'allow_actions'})
+                if ($model->Params->{'skip_actions'})
                 {
                     unless ($model->Params->{'action_skip_warn'})
                     {   send_warning( errgen("Skipping actions") );   }

@@ -37,8 +37,14 @@ use IO::Handle;
 
 # get Perl2 Module directory: look for environment variables BNGPATH or BioNetGenRoot.
 # If neither are defined, use RealBin module
-use lib File::Spec->catdir( (exists $ENV{'BNGPATH'} ? $ENV{'BNGPATH'} :
-                              (exists $ENV{'BioNetGenRoot'} ? $ENV{'BioNetGenRoot'} : $FindBin::RealBin)), 'Perl2'
+use lib File::Spec->catdir( ( exists $ENV{'BNGPATH'}
+                              ? $ENV{'BNGPATH'}
+                              : ( exists $ENV{'BioNetGenRoot'} 
+                                  ? $ENV{'BioNetGenRoot'}
+                                  : $FindBin::RealBin
+                                )
+                            ),
+                            'Perl2'
                           );
 # BNG Modules
 use BNGUtils;
@@ -84,7 +90,7 @@ $SIG{'INT'} = sub
 # Defaults params for File mode
 my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'write_SBML'    => 0,  'generate_network' => 0,
-                             'allow_actions' => 1,  'action_skip_warn' => 0,
+                             'skip_actions'  => 0,  'action_skip_warn' => 1,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
                              'output_dir'    => File::Spec->curdir()
@@ -92,7 +98,7 @@ my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
 # Default params for Console mode
 my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'write_SBML'    => 0,  'generate_network' => 0,
-                             'allow_actions' => 0,  'action_skip_warn' => 1,
+                             'skip_actions'  => 1,  'action_skip_warn' => 1,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
                              'output_dir'    => File::Spec->curdir()
@@ -116,7 +122,7 @@ GetOptions( \%user_args,
             'version|v',
             'console',
             'findbin=s',
-            'no_exec|check',
+            'skip_actions|check',
             'no_nfsim|no-nfsim',
             'output_dir|outdir=s',
             'logging|log',
