@@ -38,6 +38,8 @@ advised against, since this is not supported by NFsim.)
 * Fixed bug that caused simulations of HPP models containing global functions
 to fail after loading from file. The problem was fixed by tracking global
 functions directly rather than creating a reference in the parameter table.
+* Fixed "--check" command line option (i.e., parse model, but do not execute
+actions). 
  
 
 == BioNetGen-2.2.4-stable ==
@@ -49,6 +51,8 @@ NFsim after loading from file. The problem can be circumvented by simulating
 the HPP model immediately after construction by passing the "execute=>1"
 argument to "generate_hybrid_model()".
 
+'''''2013 July 24''''' The "--check" command line switch is broken in this
+version. BNG will parse the model and execute actions regardless of the switch.
 
 ==== New Features ====
 
