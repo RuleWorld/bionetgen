@@ -13,6 +13,8 @@ import time
 import datetime
 import subprocess
 import createGraph
+import pexpect
+import xmlrpclib
 # Restrict to a particular path.
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
@@ -51,24 +53,20 @@ class BipartiteServer:
         with open('temp{0}.xml.png'.format(counter),'rb') as f:
             png = f.read()
         subprocess.call(['rm','temp{0}*'.format(counter)])
-        print png
         if returnType == 'dot':
-            return dot
-        return png
+            data = xmlrpclib.Binary(dot)
+        else:
+            data = xmlrpclib.Binary(png)
+        return data
     def bngl2xml(self,bnglFile):
-        timeout = 20
-        start = datetime.datetime.now()
-        d = open('dummy.tmp','w')
-        result = subprocess.Popen(['bngdev', './' + bnglFile,'--xml'],stderr=d,stdout=d)
-        while result.poll() is None:
-            time.sleep(0.1)
-            now = datetime.datetime.now()
-            if (now - start).seconds > timeout:
-                os.kill(result.pid, signal.SIGKILL)
-                os.waitpid(-1, os.WNOHANG)
-                subprocess.call(['killall','run_network'])
-                return 5
-            d.close()
+
+        bngconsole = pexpect.spawn('bngdev --console')
+        bngconsole.expect('BNG>')
+        bngconsole.sendline('load {0}'.format(bnglFile))
+        bngconsole.expect('BNG>')
+        bngconsole.sendline('action writeXML()')
+        bngconsole.expect('BNG>')
+        bngconsole.close()
         
         
 server.register_instance(BipartiteServer())
