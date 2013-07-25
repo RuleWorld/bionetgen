@@ -82,13 +82,16 @@ sub writeMDL
 	my $mdlscript_filedir = File::Spec->catpath($vol, $path); 
         my $mdlscript_filebase = "${filebase}";
         my $mdlscript_filename = "${mdlscript_filebase}.mdl";
-	my $mdlscript_path     = File::Spec->catpath($mdlscript_filedir,$path,$mdlscript_filename);
-	
-        my $mdlscript_filebase_caps = uc $mdlscript_filebase;
-	
         my $MDL; 
+
+   # create output directory where MDL files will be dumped 
+        if (-d ($_ = File::Spec->catpath($mdlscript_filedir,'MDL'))){
+            use File::Path; rmtree $_; 
+            }
+  	mkdir File::Spec->catpath($mdlscript_filedir,'MDL');	
 	
    # open file to write MDL script
+	my $mdlscript_path = File::Spec->catpath($mdlscript_filedir,'MDL',$mdlscript_filename);
 	open( $MDL, '>', $mdlscript_path )  or die "Couldn't open $mdlscript_path: $!\n";
 	
    # get BNG version
@@ -96,11 +99,15 @@ sub writeMDL
 	use File::Basename; 
         my $bngpath = dirname(dirname(__FILE__));
 	my $custom_geometry = 0; 
- 	my $custom_geometry_file = File::Spec->catfile($mdlscript_filedir,$mdlscript_filebase.".geometry.mdl"); 
+	my $bnglfiledir = dirname($model->Params->{'file'});
+
+   # look for custom geometry file in the directory where bngl file is located  
+ 	my $custom_geometry_file = File::Spec->catfile($bnglfiledir,$mdlscript_filebase.".geometry.mdl"); 
 	if  ( -e  $custom_geometry_file){
 	    $custom_geometry = 1; 
 	    }
-	my $default_geometry_file = File::Spec->catfile($mdlscript_filedir,"default.geometry.mdl");
+   # look for default geometry file in the directory where bngl file is located 
+	my $default_geometry_file = File::Spec->catfile($bnglfiledir,"default.geometry.mdl");
       
 	# Read template geometry (Sphere with radius 1 micron)
 	my $iscomp = @{$model->CompartmentList->Array} ? 1 : 0; 
@@ -170,7 +177,7 @@ sub writeMDL
 	             $line =~ s/POLYGON_LIST//; 
 	             $line =~ s/^\s*//; # Remove preceding white spaces 
 		     $line =~ s/\s*$//; # Remove traling white spaces
-		     die "Unknown compartment in geometry file at line $lnum" unless exists $complist{$line}; 
+		     die "Unknown compartment detected in custom geometry file $custom_geometry_file at line $lnum" unless exists $complist{$line}; 
 		
 		     $objname = $line;
 		     $obj{$objname} = {};  
@@ -227,11 +234,11 @@ sub writeMDL
 	        }
 	    } 
         }
-	
+
         if (!$overwrite_custom_geometry){
         }
         else{ 
-            my $gfile = File::Spec->catpath($mdlscript_filedir,$path,$mdlscript_filebase.".geometry.mdl");
+            my $gfile = File::Spec->catpath($mdlscript_filedir,'MDL',$mdlscript_filebase.".geometry.mdl");
             open (WRITEGEOMETRY, '>',$gfile) || die "Could not open $gfile: $!"; 
             print WRITEGEOMETRY $text; 
             close WRITEGEOMETRY;
