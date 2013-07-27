@@ -169,6 +169,7 @@ sub simulate
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }
 
+    printf "ACTION: simulate( method=>\"%s\" )\n", $method;
 
     # add optional suffix to output prefix
     if ( $params->{suffix} )
@@ -654,6 +655,8 @@ sub simulate_nf
     my $params = shift @_;
     my $err;
 
+    printf "ACTION: simulate_nf( )\n";
+
     # get simulation output prefix
 #    my $prefix  = defined $params->{prefix} ? $params->{prefix} : $model->getOutputPrefix();
     my $prefix  = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
@@ -728,7 +731,7 @@ sub simulate_nf
 
 
     # continue with simulation...
-    print "Netfree simulation using NFsim\n";
+#    print "Netfree simulation using NFsim\n";
     my $program;
     unless ( $program = findExec("NFsim") )
     {  return "Could not find executable NFsim";  }
