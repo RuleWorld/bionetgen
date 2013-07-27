@@ -858,7 +858,7 @@ sub simulate_nf
 sub readNFspecies 
 {
     # This function reads a list of species strings from NFsim output to form a 
-    # canonical species list with correct concentrations. Note that it overwritees
+    # canonical species list with correct concentrations. Note that it overwrites
     # any existing species.
     my $model = shift @_;
     my $fname = shift @_;

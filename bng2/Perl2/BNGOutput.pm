@@ -43,11 +43,11 @@ sub writeXML
 # code for writeMDL starts here
 sub writeMDL
 {
-        my $model = shift @_;
-        my $params = @_ ? shift @_ : {};
+	my $model = shift @_;
+    my $params = @_ ? shift @_ : {};
 
     # a place to hold errors
-        my $err;
+    my $err;
 
     # nothing to do if NO_EXEC is true
 	return '' if $BNGModel::NO_EXEC;
@@ -77,36 +77,37 @@ sub writeMDL
 	{   $prefix .= "_${suffix}";   }
 	
     # split prefix into volume, path and filebase
-        my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
-	# define m-script file name
-	my $mdlscript_filedir = File::Spec->catpath($vol, $path); 
-        my $mdlscript_filebase = "${filebase}";
-        my $mdlscript_filename = "${mdlscript_filebase}.mdl";
-        my $MDL; 
+    my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
+ 
+	# define mdl-script file name
+	my $mdlscript_filedir = $path; #File::Spec->catpath($vol, $path); 
+    my $mdlscript_filebase = "${filebase}";
+    my $mdlscript_filename = "${mdlscript_filebase}.mdl";
+    my $MDL; 
 
-   # create output directory where MDL files will be dumped 
-        if (-d ($_ = File::Spec->catpath($mdlscript_filedir,'MDL'))){
-            use File::Path; rmtree $_; 
-            }
-  	mkdir File::Spec->catpath($mdlscript_filedir,'MDL');	
-	
-   # open file to write MDL script
-	my $mdlscript_path = File::Spec->catpath($mdlscript_filedir,'MDL',$mdlscript_filename);
+   	# create output directory where MDL files will be dumped 
+	my $mdlscript_dumpdir = File::Spec->catdir($mdlscript_filedir,'MDL');
+	unless(-e $mdlscript_dumpdir or mkdir $mdlscript_dumpdir) {
+		die "Unable to create $mdlscript_dumpdir\n";
+	}
+
+   	# open file to write MDL script
+	my $mdlscript_path = File::Spec->catfile($mdlscript_dumpdir,$mdlscript_filename);
 	open( $MDL, '>', $mdlscript_path )  or die "Couldn't open $mdlscript_path: $!\n";
 	
-   # get BNG version
+   	# get BNG version
 	my $version = BNGversion(); 
 	use File::Basename; 
-        my $bngpath = dirname(dirname(__FILE__));
+    my $bngpath = dirname(dirname(__FILE__));
 	my $custom_geometry = 0; 
 	my $bnglfiledir = dirname($model->Params->{'file'});
 
-   # look for custom geometry file in the directory where bngl file is located  
+   	# look for custom geometry file in the directory where bngl file is located  
  	my $custom_geometry_file = File::Spec->catfile($bnglfiledir,$mdlscript_filebase.".geometry.mdl"); 
 	if  ( -e  $custom_geometry_file){
-	    $custom_geometry = 1; 
-	    }
-   # look for default geometry file in the directory where bngl file is located 
+		$custom_geometry = 1; 
+	}
+   	# look for default geometry file in the directory where bngl file is located 
 	my $default_geometry_file = File::Spec->catfile($bnglfiledir,"default.geometry.mdl");
       
 	# Read template geometry (Sphere with radius 1 micron)
@@ -118,142 +119,140 @@ sub writeMDL
 	my @geometry; 
 	
 	if (!$iscomp){
-            open (READSHAPE, "<", $default_geometry_file) || die "Error loading default geometry: $default_geometry_file is missing or corrupted"; 
-            @geometry = <READSHAPE>; 
-            close(READSHAPE); 
+    	open (READSHAPE, "<", $default_geometry_file) || die "Error loading default geometry: $default_geometry_file is missing or corrupted"; 
+        @geometry = <READSHAPE>; 
+        close(READSHAPE); 
 
-            $text = join "", map {$_=~ /POLYGON_LIST/ ? $shape{"default"} = "default_".$_ : $_} @geometry; 
+        $text = join "", map {$_=~ /POLYGON_LIST/ ? $shape{"default"} = "default_".$_ : $_} @geometry; 
 	    $shape{"default"} =~ s/POLYGON_LIST//; $shape{"default"} =~ s/^\s+//; $shape{"default"} =~ s/\s+$//;
 	    $object{"default"} = $shape{"default"};
 	    $shape{"default"} .= "[surface]"; 
 	    $scale{"default"} = (1000/4.19048)**(1/3); 	 
-        }	
+    }	
 	    
   	if ($iscomp && !$custom_geometry){
-            open (READSHAPE, "<", $default_geometry_file) || die "Error loading default geometry: $default_geometry_file is missing or corrupted"; 
-            @geometry = <READSHAPE>; 
-            close(READSHAPE); 
+    	open (READSHAPE, "<", $default_geometry_file) || die "Error loading default geometry: $default_geometry_file is missing or corrupted"; 
+        @geometry = <READSHAPE>; 
+        close(READSHAPE); 
 
  	    foreach my $comp (@{$model->CompartmentList->Array}){
 	        if (!$comp->Outside){   # If the outermost compartment is found, start from here. 
-		    $text .= $comp->getMDLgeometry($plist,\@geometry,\%object,\%shape,\%scale);
-		    last; 
+		    	$text .= $comp->getMDLgeometry($plist,\@geometry,\%object,\%shape,\%scale);
+		    	last; 
 		    }
-	        }
-        }   
+	    }
+    }   
 
-       my %surf; #Each key of this hash represents a surface element in the geometry file. Corresponding value represents the name of the object/geometry to which the surface element belongs
-       my $overwrite_custom_geometry = 1; 
-       if ($iscomp && $custom_geometry){    # This bloc will be excecuted if only a custom geometry is provided 
-             open (READ_CUSTOM_GEOMETRY, "<", $custom_geometry_file) || die "Error loading custom geometry: $custom_geometry_file is missing or corrupted "; 
-             my @custom_geometry = <READ_CUSTOM_GEOMETRY>; 
-             close(READ_CUSTOM_GEOMETRY); 
+    my %surf; #Each key of this hash represents a surface element in the geometry file. Corresponding value represents the name of the object/geometry to which the surface element belongs
+    my $overwrite_custom_geometry = 1; 
+    if ($iscomp && $custom_geometry){    # This bloc will be excecuted if only a custom geometry is provided 
+    	open (READ_CUSTOM_GEOMETRY, "<", $custom_geometry_file) || die "Error loading custom geometry: $custom_geometry_file is missing or corrupted "; 
+        my @custom_geometry = <READ_CUSTOM_GEOMETRY>; 
+        close(READ_CUSTOM_GEOMETRY); 
 	
-	     my $lnum; 
-	     my $curly = 0; 
-	     my $brack = 0;
-	     my $elemn  = 0; 
-	     my $i = 0;
-	     my $j = 0; 
-	     my $next_curly = 0;  
-	     my %obj;  # A key of this hash repersents an object/geometry in the geometry file. Each value of this hash is a hash, whose keys are all surface element names belonging to the object
-	     my $objname; 
-	     my %complist = map {$_->Name=>$_->Name} @{$model->CompartmentList->Array}; 
+	    my $lnum; 
+	    my $curly = 0; 
+	    my $brack = 0;
+	    my $elemn  = 0; 
+	    my $i = 0;
+	    my $j = 0; 
+	    my $next_curly = 0;  
+	    my %obj;  # A key of this hash repersents an object/geometry in the geometry file. Each value of this hash is a hash, whose keys are all surface element names belonging to the object
+	    my $objname; 
+	    my %complist = map {$_->Name=>$_->Name} @{$model->CompartmentList->Array}; 
 	     
-	     %shape = ();  
-	     %object = (); 
-	     %scale = (); 
-             my %dummy_shape = ();  
-	     foreach my $line (@custom_geometry){
-                 if ($line =~ /obj_wall/){
-                     $overwrite_custom_geometry = 0;
-                 }
-	         $text .= $line; 
-	         ++$curly if ($line =~ /{/); 
-	         --$curly if ($line =~ /}/); 
-	         ++$lnum;
+	    %shape = ();  
+	    %object = (); 
+	    %scale = (); 
+        my %dummy_shape = ();  
+	    foreach my $line (@custom_geometry){
+        	if ($line =~ /obj_wall/){
+            	$overwrite_custom_geometry = 0;
+            }
+	        $text .= $line; 
+	        ++$curly if ($line =~ /{/); 
+	        --$curly if ($line =~ /}/); 
+	        ++$lnum;
 		 
-	         if ($line =~/POLYGON_LIST/){  # A new geometric object found 
-	             $line =~ s/POLYGON_LIST//; 
-	             $line =~ s/^\s*//; # Remove preceding white spaces 
-		     $line =~ s/\s*$//; # Remove traling white spaces
-		     die "Unknown compartment detected in custom geometry file $custom_geometry_file at line $lnum" unless exists $complist{$line}; 
+	        if ($line =~/POLYGON_LIST/){  # A new geometric object found 
+	        	$line =~ s/POLYGON_LIST//; 
+	            $line =~ s/^\s*//; # Remove preceding white spaces 
+		     	$line =~ s/\s*$//; # Remove traling white spaces
+		     	die "Unknown compartment detected in custom geometry file $custom_geometry_file at line $lnum" unless exists $complist{$line}; 
 		
-		     $objname = $line;
-		     $obj{$objname} = {};  
-	          }
+		     	$objname = $line;
+		     	$obj{$objname} = {};  
+	        }
 		 
-		  $i = 1 if ($line =~ /ELEMENT_CONNECTIONS/);
-		  if ($i){
-                     ++$brack if ($line =~ /{/);
-		     --$brack if ($line =~ /}/);
-		     ++$elemn if ($line =~ /\[/); 
-		     $i = 0 if (!$brack && $elemn > 0); 
-		     }
-		  
+		  	$i = 1 if ($line =~ /ELEMENT_CONNECTIONS/);
+		  	if ($i){
+            	++$brack if ($line =~ /{/);
+		     	--$brack if ($line =~ /}/);
+		     	++$elemn if ($line =~ /\[/); 
+		     	$i = 0 if (!$brack && $elemn > 0); 
+		    }
 		     
-		  $j=1 if ($line =~ /DEFINE_SURFACE_REGIONS/); 
+		  	$j=1 if ($line =~ /DEFINE_SURFACE_REGIONS/); 
 		  
-		  if (($j == 1)&&($line =~/{/)){
-		     $j=0; 
-		     my $buf = $line;
-		     $buf =~ s/\s*$//;
-		     $buf =~ s/{//;
-		     $buf .= "  ";   
-		     $text .= $buf."obj_wall";
-		     $text .= "\n".$buf."{";
-		     $text .= "\n".$buf."  ELEMENT_LIST = ["; 
-		     for (my $k=0; $k<$elemn; $k++){
-		          $text .= ($k < $elemn-1) ? $k.", " : $k."]\n";
-		         }
-		     $text .= $buf."}\n"; 
-		     $elemn = 0; 
+		  	if (($j == 1)&&($line =~/{/)){
+		    	$j=0; 
+		     	my $buf = $line;
+		     	$buf =~ s/\s*$//;
+		     	$buf =~ s/{//;
+		     	$buf .= "  ";   
+		     	$text .= $buf."obj_wall";
+		     	$text .= "\n".$buf."{";
+		     	$text .= "\n".$buf."  ELEMENT_LIST = ["; 
+		     	for (my $k=0; $k<$elemn; $k++){
+		        	$text .= ($k < $elemn-1) ? $k.", " : $k."]\n";
+		        }
+		     	$text .= $buf."}\n"; 
+		     	$elemn = 0; 
 
-                     $shape{$objname} = $objname."[obj_wall]" unless exists $dummy_shape{$objname."[obj_wall]"};
-                     $dummy_shape{$objname."[obj_wall]"} = 1; 
-		     $object{$objname} = $objname;
-		     $scale{$objname} = 1; 
-		     }          
+                $shape{$objname} = $objname."[obj_wall]" unless exists $dummy_shape{$objname."[obj_wall]"};
+                $dummy_shape{$objname."[obj_wall]"} = 1; 
+		     	$object{$objname} = $objname;
+		     	$scale{$objname} = 1; 
+		    }          
 
-	          if (($curly > 0)&&($line =~/ELEMENT_LIST/)){
-	             $line = $custom_geometry[$lnum-3];
-		     $line =~ s/^\s*//;
-		     $line =~ s/\s*$//;
-		     $surf{$line} = $objname; 
-		     $obj{$objname}->{$line} = 1; 
-		     $shape{$line} = $objname."[$line]" unless $line=~/obj_wall/; 
-                     $dummy_shape{$line} = 1; 
-                   } 
-	      }
+	        if (($curly > 0)&&($line =~/ELEMENT_LIST/)){
+	        	$line = $custom_geometry[$lnum-3];
+		     	$line =~ s/^\s*//;
+		     	$line =~ s/\s*$//;
+		     	$surf{$line} = $objname; 
+		     	$obj{$objname}->{$line} = 1; 
+		     	$shape{$line} = $objname."[$line]" unless $line=~/obj_wall/; 
+                $dummy_shape{$line} = 1; 
+            } 
+		}
 	
         # Send error if any 2D compartment is not found as a surface region in the geometry file  
-	foreach (@{$model->CompartmentList->Array}){
-	     if ($_->SpatialDimensions == 2){
-	         my $cname = $_->Name;  
-                 die "Compartment $cname is not specified as any surface region in the geometry file" unless (exists $surf{$cname}); 
+		foreach (@{$model->CompartmentList->Array}){
+	    	if ($_->SpatialDimensions == 2){
+	        	my $cname = $_->Name;  
+                die "Compartment $cname is not specified as any surface region in the geometry file" unless (exists $surf{$cname}); 
 	        }
 	    } 
-        }
+	}
 
-        if (!$overwrite_custom_geometry){
-        }
-        else{ 
-            my $gfile = File::Spec->catpath($mdlscript_filedir,'MDL',$mdlscript_filebase.".geometry.mdl");
-            open (WRITEGEOMETRY, '>',$gfile) || die "Could not open $gfile: $!"; 
-            print WRITEGEOMETRY $text; 
-            close WRITEGEOMETRY;
+    if ($overwrite_custom_geometry){
+    	my $gfile = File::Spec->catfile($mdlscript_dumpdir,$mdlscript_filebase.".geometry.mdl");
+        open (WRITEGEOMETRY, '>',$gfile) || die "Could not open $gfile: $!"; 
+        print WRITEGEOMETRY $text; 
+        close WRITEGEOMETRY;
+        print "Wrote MCell geometry file to $gfile.\n"; 	
 	}    
 	
-        my $mdl;
+    my $mdl;
 	my $indent = "   "; 
 	
-        # Define default iteration size and time step for mdl
-	$mdl = "ITERATIONS = 100000\n"."TIME_STEP = 5e-06\n"."VACANCY_SEARCH_DISTANCE = 100\n\n";  
+    # Define default iteration size and time step for mdl
+	$mdl  = "ITERATIONS = 100000\n"."TIME_STEP = 5e-06\n"."VACANCY_SEARCH_DISTANCE = 100\n\n";  
 	$mdl .= "INCLUDE_FILE = \"${mdlscript_filebase}.geometry.mdl\"\n\n"; # Produced as a separate text file in the current directory
-        $mdl .= "DEFINE_SURFACE_CLASSES\n{\n".$indent."reflect {REFLECTIVE = ALL_MOLECULES}\n}\n\n"; 
+    $mdl .= "DEFINE_SURFACE_CLASSES\n{\n".$indent."reflect {REFLECTIVE = ALL_MOLECULES}\n}\n\n"; 
 	$mdl .= "MODIFY_SURFACE_REGIONS\n{\n";  
-        for my $key (keys %shape){
-	    $mdl .= $indent.$shape{$key}."\n"; 
+    for my $key (keys %shape){
+		$mdl .= $indent.$shape{$key}."\n"; 
 	    $mdl .= $indent."{\n";
 	    $mdl .= $indent.$indent."SURFACE_CLASS = reflect\n";
 	    $mdl .= $indent."}\n";
@@ -262,7 +261,7 @@ sub writeMDL
 			
 	# Define parameter bloc 
 	my @py_param; 
-        my $tpy_param = {}; 
+    my $tpy_param = {}; 
 	my @tpy_keys = ('name', 'value', 'unit', 'type'); 
 	$mdl .= "\n/* Model Parameters */\n"; 
 	$mdl .= $indent."Nav = 6.022e8               /* Avogadro number based on a volume size of 1 cubic um */\n" unless (exists $plist->{"Nav"}); 
@@ -271,26 +270,26 @@ sub writeMDL
         
 	push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
 	
-        my $rxn_layer_t = 0.01; 
+    my $rxn_layer_t = 0.01; 
 	if ($iscomp){
-	    $mdl .= $indent."rxn_layer_t = $rxn_layer_t\n";
+		$mdl .= $indent."rxn_layer_t = $rxn_layer_t\n";
 	    $tpy_param={'name'=>"rxn_layer_t",'value'=>"0.01",'unit'=>"um",'type'=>""}; 
 	    push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
-	    }
+	}
 
 	# Scale parameters for MDL units
 	my %tcomp = (); 
 	if ($iscomp){
-	    foreach (@{$model->CompartmentList->Array}){
-	         my $cname = $_->Size->toString();
-	         my $csize = $_->Size->evaluate($plist);
-		 my $ssize = $_->getMDLSize($plist, $custom_geometry); # Volume of corresponding sphere 
-		 my $ssurf = ($_->SpatialDimensions == 2) ? ($custom_geometry? $ssize."/rxn_layer_t" : 4.836624601*($ssize)**(2/3)) : undef; # Surface area of corresponding sphere
-	         # 2D compartments as the surface area of the enclosing sphere
-	         $tcomp{$cname} = (defined $ssurf) ? $ssurf : $csize; 
-	         $mdl .= $indent.$cname." = ".$tcomp{$cname}.($ssurf ? "  /*Surface area*/" : "")."\n"; 
-	         $tpy_param = {'name'=>$cname,'value'=>$tcomp{$cname},'unit'=>$ssurf ? "um^2": "um^3",'type'=>""}; 
-	         push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
+		foreach (@{$model->CompartmentList->Array}){
+	    	my $cname = $_->Size->toString();
+	    	my $csize = $_->Size->evaluate($plist);
+			my $ssize = $_->getMDLSize($plist, $custom_geometry); # Volume of corresponding sphere 
+			my $ssurf = ($_->SpatialDimensions == 2) ? ($custom_geometry? $ssize."/rxn_layer_t" : 4.836624601*($ssize)**(2/3)) : undef; # Surface area of corresponding sphere
+	    	# 2D compartments as the surface area of the enclosing sphere
+	    	$tcomp{$cname} = (defined $ssurf) ? $ssurf : $csize; 
+	    	$mdl .= $indent.$cname." = ".$tcomp{$cname}.($ssurf ? "  /*Surface area*/" : "")."\n"; 
+	    	$tpy_param = {'name'=>$cname,'value'=>$tcomp{$cname},'unit'=>$ssurf ? "um^2": "um^3",'type'=>""}; 
+	    	push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
 	    }
 	}
 	
@@ -298,74 +297,73 @@ sub writeMDL
 	my %rpy_param = (); 
 	foreach my $rxn (@{$model->RxnList->Array})
 	{
-	    # Check if rate law type is elementary
+		# Check if rate law type is elementary
 	    if ($rxn->RateLaw->Type =~ "Ele"){
-	        my $rconst = $rxn->RateLaw->Constants->[0];
-		# If rxn parameter unit has already been converted, no need for further calculation
-		if (exists $tparam{$rconst}) { next; } 
-		# Find rate const value 
-		my $rconst_val = $plist->evaluate($rconst); 
-		# Store in new hash without converting, i.e., assuming reaction is unimolecular 
-		$tparam{$rconst} = $rconst_val; 
-		$tpy_param->{'name'} = $rconst; 
-		$tpy_param->{'type'} = "Unimolecular reaction"; 
-		$tpy_param->{'unit'} = "/s"; 
-		# If reaction is bimolecular, overwrite hash value with the converted parameter value
+	    	my $rconst = $rxn->RateLaw->Constants->[0];
+			# If rxn parameter unit has already been converted, no need for further calculation
+			if (exists $tparam{$rconst}) { next; } 
+			# Find rate const value 
+			my $rconst_val = $plist->evaluate($rconst); 
+			# Store in new hash without converting, i.e., assuming reaction is unimolecular 
+			$tparam{$rconst} = $rconst_val; 
+			$tpy_param->{'name'} = $rconst; 
+			$tpy_param->{'type'} = "Unimolecular reaction"; 
+			$tpy_param->{'unit'} = "/s"; 
+			# If reaction is bimolecular, overwrite hash value with the converted parameter value
 	        if (@{$rxn->Reactants}==2){ 
-		      $tpy_param->{'type'} = "Bimolecular reaction"; 
-		      $tpy_param->{'unit'} = "/M.s"; 
-		      # Assume non-compartmental model. Apply default scaling in unit conversion (default volume 10^3 cubic micron)
-		      my $scale = "1000*Nav"; 
-		      $tparam{$rconst} = $rconst_val."*".$scale; 
-		      # If model is compartmental, re-calculate the conversion
-		      if ($iscomp){		      
-		            # Volume and dimension for compartment of the first reactant species
+		    	$tpy_param->{'type'} = "Bimolecular reaction"; 
+		      	$tpy_param->{'unit'} = "/M.s"; 
+		      	# Assume non-compartmental model. Apply default scaling in unit conversion (default volume 10^3 cubic micron)
+		      	my $scale = "1000*Nav"; 
+		      	$tparam{$rconst} = $rconst_val."*".$scale; 
+		      	# If model is compartmental, re-calculate the conversion
+		      	if ($iscomp){		      
+		        	# Volume and dimension for compartment of the first reactant species
 		            my ($vol1, $dim1, $ssize1) = ($_= $rxn->Reactants->[0]->SpeciesGraph->Compartment)? ($_->Size->toString(), $_->SpatialDimensions, $_->getMDLSize($plist, $custom_geometry)):(undef, undef, undef); 
-			    # Volume and dimension for compartment of the second reactant species 
+			    	# Volume and dimension for compartment of the second reactant species 
 		            my ($vol2, $dim2, $ssize2) = ($_= $rxn->Reactants->[1]->SpeciesGraph->Compartment)? ($_->Size->toString(), $_->SpatialDimensions, $_->getMDLSize($plist, $custom_geometry)):(undef, undef, undef); 
 
-			    if ((defined $dim1) && (defined $dim2)){
-			          my $sarea = $custom_geometry ? $_->Size->toString() : 4.836624601*($ssize1)**(2/3); 
-		                  #$scale = ($dim1 > $dim2)? $vol1."*Nav" : (($dim2 > $dim1)? $vol2."*Nav" : (($dim1==3)? $vol1."*Nav" : $sarea)) ;  # Sphere surface area comes into play only if both compartments are 2D
-		                  $scale = ($dim1 == 3) ? "*Nav" : (($dim2 ==3) ? "*Nav" : "/rxn_layer_t"); 
-				  if (($dim1 ==3) || ($dim2==3)){
-				       $tpy_param->{'unit'} = "/M.s"; 
-				       }
-				  else{
-				       $tpy_param->{'unit'} = "um^2/#.s"; 
-				       }
-				  #$scale = ($dim1 == 3)? "" : (($dim2 ==3 )? "" : "") ;  # Sphere surface area comes into play only if both compartments are 2D
-				  # Overwrite previously stored hash value with the new calculation
-			          $tparam{$rconst} = $rconst_val.$scale;  
-			    } 
-		      }
-	        }
-		$tpy_param->{'value'} = $tparam{$rconst}; 
-		$rpy_param{$rconst} = "{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"; 
-	   }
+			    	if ((defined $dim1) && (defined $dim2)){
+			        	my $sarea = $custom_geometry ? $_->Size->toString() : 4.836624601*($ssize1)**(2/3); 
+		                #$scale = ($dim1 > $dim2)? $vol1."*Nav" : (($dim2 > $dim1)? $vol2."*Nav" : (($dim1==3)? $vol1."*Nav" : $sarea)) ;  # Sphere surface area comes into play only if both compartments are 2D
+		                $scale = ($dim1 == 3) ? "*Nav" : (($dim2 ==3) ? "*Nav" : "/rxn_layer_t"); 
+				  		if (($dim1 ==3) || ($dim2==3)){
+				       		$tpy_param->{'unit'} = "/M.s"; 
+				       	}
+				  		else{
+				       		$tpy_param->{'unit'} = "um^2/#.s"; 
+				       	}
+				  		#$scale = ($dim1 == 3)? "" : (($dim2 ==3 )? "" : "") ;  # Sphere surface area comes into play only if both compartments are 2D
+				  		# Overwrite previously stored hash value with the new calculation
+			          	$tparam{$rconst} = $rconst_val.$scale;  
+			    	} 
+		      	}
+	    	}
+			$tpy_param->{'value'} = $tparam{$rconst}; 
+			$rpy_param{$rconst} = "{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"; 
+	    }
 	}    
 
 	# Copy into the new hash any parameter that has not yet been included 
 	foreach (@{$plist->Array}){
-	    unless ($tparam{$_->Name}) {$tparam{$_->Name} = $_->evaluate([],$plist) if ($_->Type =~ /^Constant/)}; 
+		unless ($tparam{$_->Name}) {$tparam{$_->Name} = $_->evaluate([],$plist) if ($_->Type =~ /^Constant/)}; 
 	}
 	
-        foreach (@{$plist->Array}){
-	    if ($rpy_param{$_->Name}){
-	        push(@py_param, $rpy_param{$_->Name}) if ($_->Type =~ /^Constant/) ; 
+    foreach (@{$plist->Array}){
+		if ($rpy_param{$_->Name}){
+	    	push(@py_param, $rpy_param{$_->Name}) if ($_->Type =~ /^Constant/) ; 
 		}
 	}
 
 	$mdl .= join "", map {(exists $tparam{$_->Name} && (!exists $tcomp{$_->Name}))? $indent.$_->Name." = ".$tparam{$_->Name}."\n":""} @{$plist->Array};
-	
 
 	# Molecule Types
 	#$mdl .= "\n/* Molecule Types */\n".$model->MoleculeTypesList->writeMDL($indent);
 	
 	# Define species and diffusion constants
 	my @py_species;   # For writing python file for cell blender
-        my @dpy_param; 
-        $mdl .= "\n/* Diffusion bloc */\n".$model->SpeciesList->writeMDL($model, $indent,\@py_species, \@dpy_param);
+    my @dpy_param; 
+    $mdl .= "\n/* Diffusion bloc */\n".$model->SpeciesList->writeMDL($model, $indent,\@py_species, \@dpy_param);
         
 	my @py_reactions; 
 	# Define reactions
@@ -373,103 +371,103 @@ sub writeMDL
         
  	my @SeedSpecies; 
 	foreach my $spc (@{$model->SpeciesList->Array}){
-	     push (@SeedSpecies, $spc) unless (!$spc->Concentration); 
+		push (@SeedSpecies, $spc) unless (!$spc->Concentration); 
  	}
         
 	# To include seed species concentrations as parameters for the CellBlender python file. 
-        my @conc_array = map($_->Concentration, @SeedSpecies); 
-        foreach my $par (@{$plist->Array}){
-             if ($par->Type =~ /^Constant/) {
-                  if (grep $_ eq $par->Name, @conc_array){
-                      $tpy_param = {'name'=>$par->Name,'value'=>$par->evaluate(),'unit'=>"Number",'type'=>""}; 
-                      push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
-                      }
-                  }
-             }
-        push(@py_param, @dpy_param); 
+    my @conc_array = map($_->Concentration, @SeedSpecies); 
+    foreach my $par (@{$plist->Array}){
+    	if ($par->Type =~ /^Constant/) {
+        	if (grep $_ eq $par->Name, @conc_array){
+            	$tpy_param = {'name'=>$par->Name,'value'=>$par->evaluate(),'unit'=>"Number",'type'=>""}; 
+                push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
+          	}
+     	}
+    }
+    push(@py_param, @dpy_param); 
 
-        my @py_SeedSpecies;
+    my @py_SeedSpecies;
 	foreach (@SeedSpecies){
-	     my $tpytext = "{"; 
-	     my $comp; 
-	     my $dim = ( $comp = $_->SpeciesGraph->Compartment) ?  $comp->SpatialDimensions : 3; 
-	     my $orient = ($dim == 2)? "\\'" : ","; 
-	     $tpytext .=  "'name':".sprintf("\"Release_Site_s%d\",",$_->Index);
-	     $tpytext .= "'molecule':".sprintf("\"s%d\",",$_->Index);
-	     $tpytext .= "'shape':".sprintf("\"%s\",","OBJECT");
-	     $tpytext .= "'orient':".sprintf("\"%s\",",$orient);
-	     $tpytext .= "'quantity_type':".sprintf("\"%s\",","DENSITY");
-	     my $factor; 
-	     if ( $comp = $_->SpeciesGraph->Compartment){
-	          $factor = ($dim == 2 )? "/vol_".$comp->Name : "/(Nav*vol_".$comp->Name.")"; 
-		  }
-	     else{
-	          $factor = "/(Nav*1000)"; 
-		  }
-	     $tpytext .= "'quantity_expr':".sprintf("\"%s%s\",",$_->Concentration,$factor); 
-	     push(@py_SeedSpecies, $tpytext); 
-	     }
+		my $tpytext = "{"; 
+	    my $comp; 
+	    my $dim = ( $comp = $_->SpeciesGraph->Compartment) ?  $comp->SpatialDimensions : 3; 
+	    my $orient = ($dim == 2)? "\\'" : ","; 
+	    $tpytext .= "'name':".sprintf("\"Release_Site_s%d\",",$_->Index);
+	    $tpytext .= "'molecule':".sprintf("\"s%d\",",$_->Index);
+	    $tpytext .= "'shape':".sprintf("\"%s\",","OBJECT");
+	    $tpytext .= "'orient':".sprintf("\"%s\",",$orient);
+	    $tpytext .= "'quantity_type':".sprintf("\"%s\",","DENSITY");
+	    my $factor; 
+	    if ( $comp = $_->SpeciesGraph->Compartment){
+	    	$factor = ($dim == 2 )? "/vol_".$comp->Name : "/(Nav*vol_".$comp->Name.")"; 
+		}
+	    else{
+	    	$factor = "/(Nav*1000)"; 
+		}
+	    $tpytext .= "'quantity_expr':".sprintf("\"%s%s\",",$_->Concentration,$factor); 
+	    push(@py_SeedSpecies, $tpytext); 
+	}
 	     
-	     $mdl .= ($custom_geometry) ? "" : "\n\n/************ DEFAULT GEOMETRY LOADED **********/\n";
-	     $mdl .= "\n\nINSTANTIATE Scene OBJECT\n{\n";
+	$mdl .= ($custom_geometry) ? "" : "\n\n/************ DEFAULT GEOMETRY LOADED **********/\n";
+	$mdl .= "\n\nINSTANTIATE Scene OBJECT\n{\n";
 	     
-	     if ($custom_geometry){
-	        foreach my $key (keys %object){ # Outermost compartment is defined in BNGL file as a 2D boundary 
-	             $mdl .= $indent.$object{$key}." OBJECT ".$object{$key}." { SCALE = [$scale{$key}, $scale{$key}, $scale{$key}] }\n"; 
-	        }
-	     }
-	     else{
-	        foreach my $key (keys %shape){ # 2D buondary of the outer-most compartment is not defined in BNGL file as an additional compartment
-	             $mdl .= $indent.$object{$key}." OBJECT ".$object{$key}." { SCALE = [$scale{$key}, $scale{$key}, $scale{$key}] }\n"; 
-	        }
-	     }
+	if ($custom_geometry){
+		foreach my $key (keys %object){ # Outermost compartment is defined in BNGL file as a 2D boundary 
+	    	$mdl .= $indent.$object{$key}." OBJECT ".$object{$key}." { SCALE = [$scale{$key}, $scale{$key}, $scale{$key}] }\n"; 
+	    }
+	}
+	else{
+		foreach my $key (keys %shape){ # 2D buondary of the outer-most compartment is not defined in BNGL file as an additional compartment
+	    	$mdl .= $indent.$object{$key}." OBJECT ".$object{$key}." { SCALE = [$scale{$key}, $scale{$key}, $scale{$key}] }\n"; 
+	    }
+	}
 	     
-	     my $i = 0; 
-	     foreach (@SeedSpecies){
-	         my $relsite = $custom_geometry ?  $_->getMDLRelSite(\%surf,\%shape,$custom_geometry) : $_->getMDLRelSite(\%object,\%shape); 
-	         $mdl .= "\n".$indent."s".$_->Index."_rel RELEASE_SITE\n$indent"."{\n$indent SHAPE = $relsite"; 
-	         $mdl .= "\n$indent MOLECULE = s".($iscomp ? ($_->SpeciesGraph->Compartment->SpatialDimensions == 3 ? $_->Index : $_->Index."'") : $_->Index);
-	         $mdl .= "\n$indent NUMBER_TO_RELEASE = ".$_->Concentration."\n$indent RELEASE_PROBABILITY = 1"."\n$indent"."}"; 
-		 my $pyrelsite = $relsite;
-		 $pyrelsite =~ s/Scene.//g;
-		 $pyrelsite =~ s/obj_wall/ALL/g;
-	         $py_SeedSpecies[$i] .= "'object_expr':".sprintf("\"%s\"}",$pyrelsite);
-		 $i++;
-	     }
-	     $mdl .= "\n}";
+	my $i = 0; 
+	foreach (@SeedSpecies){
+		my $relsite = $custom_geometry ?  $_->getMDLRelSite(\%surf,\%shape,$custom_geometry) : $_->getMDLRelSite(\%object,\%shape); 
+	    $mdl .= "\n".$indent."s".$_->Index."_rel RELEASE_SITE\n$indent"."{\n$indent SHAPE = $relsite"; 
+	    $mdl .= "\n$indent MOLECULE = s".($iscomp ? ($_->SpeciesGraph->Compartment->SpatialDimensions == 3 ? $_->Index : $_->Index."'") : $_->Index);
+	    $mdl .= "\n$indent NUMBER_TO_RELEASE = ".$_->Concentration."\n$indent RELEASE_PROBABILITY = 1"."\n$indent"."}"; 
+		my $pyrelsite = $relsite;
+		$pyrelsite =~ s/Scene.//g;
+		$pyrelsite =~ s/obj_wall/ALL/g;
+	    $py_SeedSpecies[$i] .= "'object_expr':".sprintf("\"%s\"}",$pyrelsite);
+		$i++;
+	}
+	$mdl .= "\n}";
         
-        my $pytext=""; 
-        $i = 0; 	
+    my $pytext=""; 
+    $i = 0; 	
 	
-        @py_param = map{sprintf("%d", ++$i).":".$_} @py_param;
+    @py_param = map{sprintf("%d", ++$i).":".$_} @py_param;
 	$pytext .= "par_list={\n".$indent; 
-        $pytext .= join(",\n$indent",@py_param); 
+    $pytext .= join(",\n$indent",@py_param); 
 	$pytext .= "}"; 
 
 	$pytext .= "\n\nmol_list={\n".$indent; 
-        $pytext .= join(",\n$indent",@py_species); 
+    $pytext .= join(",\n$indent",@py_species); 
 	$pytext .= "}";  
 
-        $i = 0; 	
+    $i = 0; 	
 	@py_reactions = map{sprintf("%d", ++$i).":".$_} @py_reactions;
-        $pytext .= "\n\nrxn_list={\n".$indent; 
-        $pytext .= join(",\n$indent",@py_reactions); 
+    $pytext .= "\n\nrxn_list={\n".$indent; 
+    $pytext .= join(",\n$indent",@py_reactions); 
 	$pytext .= "}";
 
 
-        $i = 0; 	
+    $i = 0; 	
 	@py_SeedSpecies = map{sprintf("%d", ++$i).":".$_} @py_SeedSpecies;
 	$pytext .= "\n\nrel_list={\n".$indent; 
-        $pytext .= join(",\n$indent",@py_SeedSpecies); 
+    $pytext .= join(",\n$indent",@py_SeedSpecies); 
 	$pytext .= "}"; 
     	     
-	my $pyfile = File::Spec->catpath($mdlscript_filedir,$path,"net.py");
+	my $pyfile = File::Spec->catfile($mdlscript_filedir,"net.py");
 	
 	open (WRITEPYFILE, '>', $pyfile);
-        print WRITEPYFILE $pytext; 
+    print WRITEPYFILE $pytext; 
 	close(WRITEPYFILE);
-        print "Wrote reaction network script for CellBlender $pyfile\n"; 	    
-        $mdl .= "\n\n/* Observables bloc */\nREACTION_DATA_OUTPUT\n{";
+    print "Wrote CellBlender reaction network script to $pyfile.\n"; 	    
+    $mdl .= "\n\n/* Observables bloc */\nREACTION_DATA_OUTPUT\n{";
 	$mdl .= "\n$indent"."STEP = 1e-6\n"; 
 	foreach my $obs (@{$model->Observables}) { $mdl .= $obs->writeMDL(); }
 	$mdl .= "\n}\n\n"; 
@@ -478,13 +476,10 @@ sub writeMDL
 	$mdl .= "$indent"."MOLECULES\n"."$indent"."{\n"."$indent"."$indent"."NAME_LIST {ALL_MOLECULES}\n"."$indent"."$indent"."ITERATION_NUMBERS {ALL_DATA @ [1, 100, [200 TO 100000 STEP 100]]}\n";
 	$mdl .= "$indent"."}\n"."}"; 
 	
-	print $MDL <<"EOF"; 
-$mdl
-EOF
-
+	print $MDL $mdl;
 	close($mdlscript_path); 
-        print "Wrote MDL-file script $mdlscript_path.\n";	
-return ();       
+    print "Wrote MDL file to $mdlscript_path.\n";	
+	return ();       
 }
 # code for writeMDL ends here 
 
