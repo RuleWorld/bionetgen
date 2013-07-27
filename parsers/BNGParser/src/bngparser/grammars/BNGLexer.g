@@ -142,6 +142,7 @@ WRITEMODEL: 'writeModel';
 WRITEXML: 'writeXML';
 WRITENETWORK: 'writeNetwork';
 WRITESBML: 'writeSBML';
+WRITEMDL: 'writeMDL';
 INCLUDE_MODEL: 'include_model';
 PRETTY_FORMATTING: 'pretty_formatting';
 EVALUATE_EXPRESSIONS: 'evaluate_expressions';
