@@ -35,6 +35,10 @@ inline math expression. (Note that use of inline expressions within ratelaws is
 advised against, since this is not supported by NFsim.)
 
 ==== Bug Fixes ====
+* Fixed bug in Network3 code that caused an error if an "if()" function was used 
+in the <big><tt>parameters</tt></big> block. This situation arises when a local 
+function is defined that includes an "if()" function. Thus, logical local functions 
+are now supported for network simulations.
 * Fixed bug that caused simulations of HPP models containing global functions
 to fail after loading from file. The problem was fixed by tracking global
 functions directly rather than creating a reference in the parameter table.
