@@ -46,6 +46,8 @@ sub writeMDL
 	my $model = shift @_;
     my $params = @_ ? shift @_ : {};
 
+ 	printf "ACTION: writeMDL( %s )\n", $model->Name;
+
     # a place to hold errors
     my $err;
 
