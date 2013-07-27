@@ -70,15 +70,15 @@ sub writeMDL
 
     # Build output file name
 	# ..use prefix if defined, otherwise use model name
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	# ..add suffix, if any
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
-	
+		
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
- 
+
 	# define mdl-script file name
 	my $mdlscript_filedir = $path; #File::Spec->catpath($vol, $path); 
     my $mdlscript_filebase = "${filebase}";
@@ -627,7 +627,7 @@ sub writeSBML
 	my $model_name = $model->Name;
 
 	# Strip prefixed path
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : '';
 	unless ( $suffix eq '' )
     {   $prefix .= "_${suffix}";   }
@@ -873,7 +873,7 @@ sub writeSSC
     # get model name
 	my $model_name = $model->Name;
 
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix ) {
 		$prefix .= "_${suffix}";
@@ -958,7 +958,7 @@ sub writeSSCcfg
 	my $model_name = $model->Name;
 
 	# Strip prefixed path
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : '';
 	if ( $suffix ne '' )
     {
@@ -1012,7 +1012,7 @@ sub writeMfile
 
     # Build output file name
 	# ..use prefix if defined, otherwise use model name
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	# ..add suffix, if any
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
@@ -1474,7 +1474,7 @@ sub writeMexfile
 	my $model_name = $model->Name;
     
 	# Strip prefixed path
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
 	{   $prefix .= "_${suffix}";   }
@@ -2463,7 +2463,7 @@ sub writeLatex
 	my $model_name = $model->Name;
 
 	# Strip prefixed path
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	unless ( $suffix eq '' ) { $prefix .= "_${suffix}"; }
 
@@ -2594,7 +2594,7 @@ sub writeMfile_all
 
     # Build output file name
 	# ..use prefix if defined, otherwise use model name
-	my $prefix = ( defined $params->{prefix} ) ? $params->{prefix} : $model->getOutputPrefix();
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
 	# ..add suffix, if any
 	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
 	if ( $suffix )
