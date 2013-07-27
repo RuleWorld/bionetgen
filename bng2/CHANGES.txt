@@ -8,15 +8,15 @@ http://code.google.com/p/bionetgen
 ==== New Features ====
 
 ===== BioNetGen-to-MCell Converter =====
-The converter creates spatial MCell models from BioNetGen. it is implemented 
-by adding an extra syntax "writeMDL();" in the actions block of a BioNetGen 
+The converter creates spatial MCell models from BioNetGen. It is called 
+by adding "<big><tt>writeMDL()</tt></big>" to the actions of a BioNetGen 
 model file. It also requires a geometry input file externally created using 
-CellBlender, a software that uses Blender interfaces to create MCell geometries. 
+CellBlender, an addon to the Blender software for creating MCell geometries. 
 Execution of a BioNetGen model integrates the reaction network and geometry 
-information, and creates a MCell model file (.mdl). Alternatively,
-"wirteMDL();" enables direct execution and import of BioNetGen models from 
-Cellblender. The imported BioNetGen model can be integrated with geometries 
-created on CellBlender, and exported from CellBlender as MCell model files. 
+information and creates a MCell model file (.mdl). Alternatively,
+"writeMDL()" enables direct execution and import of BioNetGen models from 
+CellBlender. The imported BioNetGen model can be integrated with geometries 
+created in CellBlender and exported from CellBlender as MCell model files. 
 
 ===== AutoHPP =====
 AutoHPP automates the construction and simulation of Hybrid Particle/Population
@@ -33,6 +33,12 @@ STDOUT. (In prior releases, BNG2.pl exited silently.)
 the function in the parameter table unless the function call is part of an
 inline math expression. (Note that use of inline expressions within ratelaws is 
 advised against, since this is not supported by NFsim.)
+* Modified the behavior of the '<big><tt>prefix</tt></big>' argument. Previously,
+the argument was assumed to be an absolute path. Now, it is checked using 
+<big><tt>File::Spec->file_name_is_absolute()</tt></big> to determine whether or
+not it is an absolute path. If it is not an absolute path, then the output 
+directory remains the current working directory and only the model name is 
+modified.
 
 ==== Bug Fixes ====
 * Fixed bug in Network3 code that caused an error if an "if()" function was used 
