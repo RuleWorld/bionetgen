@@ -13,19 +13,9 @@
   	{% endfor %}
       </select></div>
       
-      <div><select name=species>
-        {% for option in speciesDefinition %}
-	  	<option>{{ option }}</option>
-  	{% endfor %}
-      </select></div>
       <input type="submit" value="Submit">
     </form>
-  
-
-
-    
-    <a href="{{ url|safe }}">{{ url_linktext }}</a>
-
+    <a href="/static/helpMe.html">Help</a><br>
   </body>
 </html>
 {% endautoescape %}
