@@ -47,7 +47,7 @@ end reaction rules
 
 end model
 
-writeMDL(); 
+writeMDL()
 #generate_network({overwrite=>1})
 #simulate({method=>"ode",t_end=>5,n_steps=>1000})
 
