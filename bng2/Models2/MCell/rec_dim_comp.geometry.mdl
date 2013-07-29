@@ -28,10 +28,6 @@ EC POLYGON_LIST
   }
   DEFINE_SURFACE_REGIONS
   {
-    obj_wall
-    {
-      ELEMENT_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    }
     wall
     {
       ELEMENT_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -69,10 +65,6 @@ CP POLYGON_LIST
   }
   DEFINE_SURFACE_REGIONS
   {
-    obj_wall
-    {
-      ELEMENT_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    }
     PM
     {
       ELEMENT_LIST = [1, 7]

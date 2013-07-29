@@ -50,6 +50,7 @@ action
   write_sbml {actions.add($write_sbml.st);} |
   write_mfile {actions.add($write_mfile.st);} | 
   write_mexfile {actions.add($write_mexfile.st);} | 
+  write_mdl {actions.add($write_mdl.st);} |
   set_concentration {actions.add($set_concentration.st);} | 
   add_concentration {actions.add($add_concentration.st);} |
   save_concentrations {actions.add($save_concentrations.st);} | 
@@ -382,6 +383,28 @@ write_mexfile_args
   MAX_CONV_FAILS ASSIGNS INT |
   STIFF ASSIGNS INT |
   SPARSE ASSIGNS INT
+;
+
+write_mdl
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $write_mdl::actions = new HashMap<String,String>();
+}
+: 
+  WRITEMDL
+  LPAREN 
+  (LBRACKET 
+  (write_mdl_args (COMMA write_mdl_args)*)?
+  RBRACKET)?
+  RPAREN SEMI? 
+  -> action(id={$WRITEMDL.text})
+;
+
+write_mdl_args
+:
+  ps_par_def
 ;
 
 //write_m_file[Map<String,String> map]
