@@ -56,13 +56,17 @@ actions).
 '''''2013 May 16'''''
 
 ==== Errata ====
+'''''2013 July 30''''' A bug was discovered in the handling of max_stoich
+constraints. In some cases, the constraints will be ignored during network
+generation, and complexes larger than the maximum specified may be constructed.
+
+'''''2013 July 24''''' The "--check" command line switch is broken in this
+version. BNG will parse the model and execute actions regardless of the switch.
+
 '''''2013 July 22''''' HPP models with global functions fail to simulate in
 NFsim after loading from file. The problem can be circumvented by simulating
 the HPP model immediately after construction by passing the "execute=>1"
 argument to "generate_hybrid_model()".
-
-'''''2013 July 24''''' The "--check" command line switch is broken in this
-version. BNG will parse the model and execute actions regardless of the switch.
 
 ==== New Features ====
 
@@ -103,6 +107,10 @@ reduced maintaince in the future.
 '''''2013 March 31'''''
 
 ==== Errata ====
+'''''2013 July 30''''' A bug was discovered in the handling of max_stoich
+constraints. In some cases, the constraints will be ignored during network
+generation, and complexes larger than the maximum specified may be constructed.
+
 '''''2013 April 10''''' The original release notes for 2.2.4-testing stated that
 the simulate_nf() action enabled complex bookkeeping by default. However, the
 implementation of this change was flawed! 2.2.4-testing still defaults to
