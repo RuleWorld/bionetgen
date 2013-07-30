@@ -1170,8 +1170,9 @@ sub writeFile
     my %allowed_formats = ( 'net'=>1, 'bngl'=>1, 'sbml'=>0, 'xml'=>1, 'ssc'=>0 );
 
     # copy user_params into params and pass_params structures
-    while ( my ($key,$val) = each %$user_params )
+    foreach my $key ( keys %$user_params )
     {
+        my $val = $user_params->{$key};
         if ( exists $params{$key} )
         {   $params{$key} = $val;   }
         else
@@ -2020,8 +2021,9 @@ sub generate_network
     );
 
     # overwrite default params with user params
-    while ( my ($key,$val) = each %$user_params )
+    foreach my $key (keys %$user_params)
     {
+        my $val = $user_params->{$key};
         unless ( exists $params{$key} )
         {   return "Unrecognized parameter $key in generate_network";   }
 
