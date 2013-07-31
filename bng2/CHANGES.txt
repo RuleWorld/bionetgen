@@ -50,6 +50,9 @@ to fail after loading from file. The problem was fixed by tracking global
 functions directly rather than creating a reference in the parameter table.
 * Fixed "--check" command line option (i.e., parse model, but do not execute
 actions). 
+* Fixed bug in the handling of max_stoich constraints. In versions 2.2.3 and
+2.2.4, the constraints were sometimes ignored during network generation and
+complexes larger than the maximum specified could be constructed.
  
 
 == BioNetGen-2.2.4-stable ==
@@ -59,6 +62,7 @@ actions).
 '''''2013 July 30''''' A bug was discovered in the handling of max_stoich
 constraints. In some cases, the constraints will be ignored during network
 generation, and complexes larger than the maximum specified may be constructed.
+(Fixed in 2.2.5)
 
 '''''2013 July 24''''' The "--check" command line switch is broken in this
 version. BNG will parse the model and execute actions regardless of the switch.
@@ -110,6 +114,7 @@ reduced maintaince in the future.
 '''''2013 July 30''''' A bug was discovered in the handling of max_stoich
 constraints. In some cases, the constraints will be ignored during network
 generation, and complexes larger than the maximum specified may be constructed.
+(Fixed in 2.2.5)
 
 '''''2013 April 10''''' The original release notes for 2.2.4-testing stated that
 the simulate_nf() action enabled complex bookkeeping by default. However, the
