@@ -3095,12 +3095,12 @@ sub build_reaction
 		return undef if ( @{$p->Molecules} > $params->{max_agg} );
 		
 		# check for Max Stoichiometry violations
-		while ( my ($mol, $max) = each %{$params->{max_stoich}} )
+        foreach my $mol ( keys %{$params->{'max_stoich'}} )
 		{
+            my $max = $params->{'max_stoich'}->{$mol};
 			next if ($max eq "unlimited");
-			return undef if ( $p->stoich($mol) > $max );
+            return undef if ($p->stoich($mol) > $max)
 		}
-
 
         if ($using_compartments)
         {

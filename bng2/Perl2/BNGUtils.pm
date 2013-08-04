@@ -318,7 +318,7 @@ sub process_val_string{
 }
 
 
-# Basic error handlers
+# Send error message to STDERR and exit.
 sub exit_error
 {
     my @msgs = @_;
@@ -331,15 +331,26 @@ sub exit_error
 }
 
 
-sub send_warning{
+# Send error message to STDERR, but do not exit.
+sub send_error
+{
+    my @msgs = @_;
+    print STDERR "ERROR: ";
+    foreach my $msg (@msgs)
+    {  print STDERR $msg, "\n";  }
+    return 0;
+}
+
+
+# send warning to STDOUT
+sub send_warning
+{
     my @msgs = @_;
     print STDOUT "WARNING: ";
     foreach my $msg (@msgs)
-    {
-	    print STDOUT $msg,"\n";
-    }
+    {  print STDOUT $msg,"\n";  }
     # Could have $STRICT flag to force exit
-    return(0);
+    return 0;
 }
 
 

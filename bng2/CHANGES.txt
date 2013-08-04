@@ -50,19 +50,27 @@ to fail after loading from file. The problem was fixed by tracking global
 functions directly rather than creating a reference in the parameter table.
 * Fixed "--check" command line option (i.e., parse model, but do not execute
 actions). 
+* Fixed bug in the handling of max_stoich constraints. In versions 2.2.3 and
+2.2.4, the constraints were sometimes ignored during network generation and
+complexes larger than the maximum specified could be constructed.
  
 
 == BioNetGen-2.2.4-stable ==
 '''''2013 May 16'''''
 
 ==== Errata ====
+'''''2013 July 30''''' A bug was discovered in the handling of max_stoich
+constraints. In some cases, the constraints will be ignored during network
+generation, and complexes larger than the maximum specified may be constructed.
+(Fixed in 2.2.5)
+
+'''''2013 July 24''''' The "--check" command line switch is broken in this
+version. BNG will parse the model and execute actions regardless of the switch.
+
 '''''2013 July 22''''' HPP models with global functions fail to simulate in
 NFsim after loading from file. The problem can be circumvented by simulating
 the HPP model immediately after construction by passing the "execute=>1"
 argument to "generate_hybrid_model()".
-
-'''''2013 July 24''''' The "--check" command line switch is broken in this
-version. BNG will parse the model and execute actions regardless of the switch.
 
 ==== New Features ====
 
@@ -103,6 +111,11 @@ reduced maintaince in the future.
 '''''2013 March 31'''''
 
 ==== Errata ====
+'''''2013 July 30''''' A bug was discovered in the handling of max_stoich
+constraints. In some cases, the constraints will be ignored during network
+generation, and complexes larger than the maximum specified may be constructed.
+(Fixed in 2.2.5)
+
 '''''2013 April 10''''' The original release notes for 2.2.4-testing stated that
 the simulate_nf() action enabled complex bookkeeping by default. However, the
 implementation of this change was flawed! 2.2.4-testing still defaults to
