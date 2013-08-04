@@ -196,25 +196,39 @@ class Species:
             
     def toString(self):
         return self.__str__()
-
-    def extractAtomicPatterns(self,site1,site2):
+    
+    def extractAtomicPatterns(self,action,site1,site2):
         atomicPatterns = {}
         bondedPatterns = {}
         reactionCenter = []
         context = []
-        
+        #one atomic pattern for the state, one for the bond
         for molecule in self.molecules:
             for component in molecule.components:
+                if component.activeState != '':
+                    speciesStructure = Species()
+                    #one atomic pattern for the states
+                    speciesStructure.bonds = self.bonds
+                    moleculeStructure = Molecule(molecule.name,molecule.idx)
+                    componentStructure = Component(component.name,component.idx)
+
+                    componentStructure.addState(component.activeState)
+                    componentStructure.activeState = component.activeState
+                    moleculeStructure.addComponent(componentStructure)
+                    speciesStructure.addMolecule(moleculeStructure)
+                    if componentStructure.idx in [site1,site2] and action == 'StateChange':
+                        reactionCenter.append((speciesStructure))
+                    else:
+                        context.append((speciesStructure))
+                    atomicPatterns[str(speciesStructure)] = speciesStructure   
                 speciesStructure = Species()
-                #TODO: placeholder, in fact we only want the bond of the components we are copying over
+                #one atomic pattern for the bonds
                 speciesStructure.bonds = self.bonds
                 moleculeStructure = Molecule(molecule.name,molecule.idx)
                 componentStructure = Component(component.name,component.idx)
-                if component.activeState != '':
-                    componentStructure.addState(component.activeState)
-                    componentStructure.activeState = component.activeState
                 moleculeStructure.addComponent(componentStructure)
                 speciesStructure.addMolecule(moleculeStructure)
+                #atomicPatterns[str(speciesStructure)] = speciesStructure
                 if len(component.bonds) == 0:
                     atomicPatterns[str(speciesStructure)] = speciesStructure
                 else:
@@ -404,6 +418,10 @@ class Molecule:
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
         moleculeDictionary = {}
+        #graph.add_node(identifier,label=self.__str__())
+        #moleculeDictionary[self.idx] = identifier
+        #return moleculeDictionary
+        
         if len(self.components) == 0:
             graph.add_node(identifier,label=self.name)
             moleculeDictionary[self.idx] = identifier
@@ -506,6 +524,7 @@ class Component:
     
     def graphVizGraph(self,graph,identifier):
         compDictionary = {}
+        
         if len(self.states) == 0:
             graph.add_node(identifier,label=self.name)
         else:

@@ -9,9 +9,9 @@ Created on Wed Nov 21 16:56:19 2012
 from readBNGXML import parseXML
 import pygraphviz as pgv
 import subprocess
+import pexpect
 
-
-def extractMolecules(site1,site2,chemicalArray):
+def extractMolecules(action,site1,site2,chemicalArray):
     '''
     this method goes through the chemicals in a given array 'chemicalArray'
     and extracts its atomic patterns into two arrays:
@@ -28,7 +28,7 @@ def extractMolecules(site1,site2,chemicalArray):
     context = set()
     
     for reactant in chemicalArray:
-        ta,tr,tc = reactant.extractAtomicPatterns(site1,site2)
+        ta,tr,tc = reactant.extractAtomicPatterns(action,site1,site2)
         #for element in ta:
         #    atomicPatterns.add(element)
         atomicPatterns.update(ta)
@@ -78,15 +78,17 @@ def extractTransformations(rules):
     label = []
     for react,product,act,mapp,_ in rules:
         index += 1
+        if index ==5:
+            pass
         for action in act:
-            atomic,reactionCenter,context = extractMolecules(action.site1, 
+            atomic,reactionCenter,context = extractMolecules(action.action,action.site1, 
                                                              action.site2, react)
             transformationCenter.append(reactionCenter)
             transformationContext.append(context)
             atomicArray.update(atomic)    
             productSites = [getMapping(mapp,action.site1), 
                             getMapping(mapp, action.site2)]
-            atomic,rc,_ = extractMolecules(productSites[0], productSites[1],
+            atomic,rc,_ = extractMolecules(action.action,productSites[0], productSites[1],
                                            product)
             productElements.append(rc)
             atomicArray.update(atomic)
@@ -105,8 +107,9 @@ def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, 
     creates a child node for 'chemical' on the 'subgraph' graph 
     '''
     clusterName = ''
-    #if its not a complex
+    
     if not str(chemical) in builtList:
+        #if its not a complex
         if '+' not in str(chemical) and len(atomicArray[chemical].molecules) == 1:
             clusterName = '%s_%s' % (nameHeader,atomicArray[chemical].molecules[0].name)
             chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,clusterName))
@@ -142,7 +145,13 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     gReactants = graph.subgraph(name='clusterReactants', label='Chemicals')
     gRules = graph.subgraph(name='clusterRules', label='Transformations')
     gProducts = graph.subgraph(name='clusterProducts', label='Products')
-    
+    gReactants.graph_attr['height']='{0}'.format(5)
+    gReactants.graph_attr['width']='{0}'.format(20)
+    gReactants.graph_attr.update(landscape='true',ranksep='0.1')
+    gProducts.graph_attr['height']='{0}'.format(5)
+    gProducts.graph_attr['width']='{0}'.format(20)
+    gProducts.graph_attr.update(landscape='true',ranksep='0.1')
+
     reactantDictionary = {}
     productDictionary = {}
     edgeIdx = 1
@@ -170,11 +179,13 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
                     clusterName = createNode(atomicArray, reactant, 
                                              reactantDictionary, gReactants, 
                                              'clusterr',reactantbuiltlist)
+                    #theres a single context molecule
                     if clusterName != '':
                         graph.add_edge(clusterName,actionNames[idx], 
                                        key = 'key%i' % edgeIdx, 
                                        dir='forward',color='red')
                         edgeIdx+=1  
+                    #theres multiple context nodes for a single transformation
                     else:
                         for atom in atomicArray[reactant]:
                             clusterName = createNode(atomicArray, str(atom), 
@@ -202,7 +213,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
     #graph.draw('%s.png' % fileName)
-    subprocess.call(['fdp', '-Tpng', '{0}.dot'.format(fileName),  '-Ln5', '-o{0}.png'.format(fileName)])
+    subprocess.call(['fdp', '-Tpng', '{0}.dot'.format(fileName),  '-Ln1', '-o{0}.png'.format(fileName)])
 
 def createXML(self):
     pass
@@ -213,15 +224,28 @@ def processBNGL(bngl):
     _,rules = parseXML(xml)
     createBiPartite(rules,None,bngl, 
                            reactionCenter=True, context=True, products=True)
+def bngl2xml(bnglFile):
+
+    bngconsole = pexpect.spawn('bngdev --console')
+    bngconsole.expect('BNG>')
+    bngconsole.sendline('load {0}'.format(bnglFile))
+    bngconsole.expect('BNG>')
+    bngconsole.sendline('action writeXML()')
+    bngconsole.expect('BNG>')
+    bngconsole.close()
+
     
 def main(fileName):
     _,rules = parseXML(fileName)
-    print '---',rules
-    createBiPartite(rules,None,'simple', 
-                           reactionCenter=True, context=True, products=True)
-    '''
-    for element in range(1,20):
+    #print '---',rules
+    #createBiPartite(rules,None,'simple', 
+    #                       reactionCenter=True, context=True, products=True)
+    
+    for element in [5]:
         print element
+        createBiPartite(rules, [element], 'simple%i' % element, 
+                    reactionCenter=True, context=True, products=True)
+
         try:
             createBiPartite(rules, [element], 'simple%i' % element, 
                             reactionCenter=True, context=True, products=True)
@@ -229,7 +253,8 @@ def main(fileName):
         except:
             print 'xxx'
             continue
-    '''
+    
 if __name__ == "__main__":
     #main("output9.xml")
-    main("temp1.xml")
+    bngl2xml('fceri.bngl')
+    main("fceri.xml")

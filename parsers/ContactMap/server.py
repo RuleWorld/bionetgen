@@ -58,6 +58,9 @@ class BipartiteServer:
         else:
             data = xmlrpclib.Binary(png)
         return data
+
+    def getTransformations(self,bbnglFile):
+        
     def bngl2xml(self,bnglFile):
 
         bngconsole = pexpect.spawn('bngdev --console')
