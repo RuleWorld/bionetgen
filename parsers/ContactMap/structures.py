@@ -241,7 +241,7 @@ class Species:
                     elif '+' not in component.bonds[0] or \
                       len(bondedPatterns[component.bonds[0]].molecules) == 0: 
                         bondedPatterns[component.bonds[0]].addMolecule(moleculeStructure)
-                if componentStructure.idx in [site1,site2]:
+                if componentStructure.idx in [site1,site2] and action != 'StateChange':
                     reactionCenter.append((speciesStructure))
                 else:
                     context.append((speciesStructure))      

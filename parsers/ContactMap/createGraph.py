@@ -78,8 +78,6 @@ def extractTransformations(rules):
     label = []
     for react,product,act,mapp,_ in rules:
         index += 1
-        if index ==5:
-            pass
         for action in act:
             atomic,reactionCenter,context = extractMolecules(action.action,action.site1, 
                                                              action.site2, react)
@@ -104,7 +102,9 @@ def extractTransformations(rules):
 
 def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, builtList):
     '''
-    creates a child node for 'chemical' on the 'subgraph' graph 
+    creates a child node for 'chemical' on the 'subgraph' graph
+    Args:
+        
     '''
     clusterName = ''
     
@@ -132,6 +132,15 @@ def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, 
     
 def createBiPartite(rules, transformations, fileName, reactionCenter=True, 
                     context=True, products=True):
+    '''
+    creates a bipartite graph given a list of rules
+    Args:
+        rules: The list of rules to process
+        transformations: which transformations do we want to process (their index)
+        fileName: output filename
+        reactioncenter,context,products: booleans indicating whether we desire include the reactioncenter,context
+    or product in our ouput file
+    '''
     
     #extract reactioncenter, context information
     atomicArray, transformationCenter, transformationContext, productElements,actionNames,labelArray = \
@@ -145,13 +154,14 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     gReactants = graph.subgraph(name='clusterReactants', label='Chemicals')
     gRules = graph.subgraph(name='clusterRules', label='Transformations')
     gProducts = graph.subgraph(name='clusterProducts', label='Products')
+    '''
     gReactants.graph_attr['height']='{0}'.format(5)
     gReactants.graph_attr['width']='{0}'.format(20)
     gReactants.graph_attr.update(landscape='true',ranksep='0.1')
     gProducts.graph_attr['height']='{0}'.format(5)
     gProducts.graph_attr['width']='{0}'.format(20)
     gProducts.graph_attr.update(landscape='true',ranksep='0.1')
-
+    '''
     reactantDictionary = {}
     productDictionary = {}
     edgeIdx = 1
@@ -213,7 +223,7 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
     #graph.draw('%s.png' % fileName)
-    subprocess.call(['fdp', '-Tpng', '{0}.dot'.format(fileName),  '-Ln1', '-o{0}.png'.format(fileName)])
+    subprocess.call(['fdp', '-Tpng', '{0}.dot'.format(fileName),  '-Ln200', '-LC100 ','-LT5','-o{0}.png'.format(fileName)])
 
 def createXML(self):
     pass
@@ -238,9 +248,9 @@ def bngl2xml(bnglFile):
 def main(fileName):
     _,rules = parseXML(fileName)
     #print '---',rules
-    #createBiPartite(rules,None,'simple', 
-    #                       reactionCenter=True, context=True, products=True)
-    
+    createBiPartite(rules,None,'simple', 
+                           reactionCenter=True, context=True, products=True)
+    '''
     for element in [5]:
         print element
         createBiPartite(rules, [element], 'simple%i' % element, 
@@ -253,7 +263,7 @@ def main(fileName):
         except:
             print 'xxx'
             continue
-    
+    '''
 if __name__ == "__main__":
     #main("output9.xml")
     bngl2xml('fceri.bngl')
