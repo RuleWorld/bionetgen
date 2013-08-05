@@ -60,7 +60,7 @@ class BipartiteServer:
         return data
 
     def getTransformations(self,bbnglFile):
-        
+        pass
     def bngl2xml(self,bnglFile):
 
         bngconsole = pexpect.spawn('bngdev --console')

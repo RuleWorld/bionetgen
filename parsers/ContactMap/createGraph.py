@@ -242,7 +242,7 @@ def bngl2xml(bnglFile):
     bngconsole.expect('BNG>')
     bngconsole.sendline('action writeXML()')
     bngconsole.expect('BNG>')
-    bngconsole.close()
+    bngconsole.close() 
 
     
 def main(fileName):
