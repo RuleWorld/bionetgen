@@ -8,25 +8,69 @@ Created on Mon Jun 17 11:19:37 2013
 import libsbml
 from scipy.misc import factorial, comb
 import json
+from optparse import OptionParser
+
 
 class SBML2JSON:
     
     def __init__(self, model):
         self.model = model
+        self.getUnits()
         self.moleculeData = {}
-
+    def getUnits(self):
+        self.unitDictionary = {}
+        #unitDictionary['substance'] = [libsbml.UNIT_KIND_MOLE,1]
+        #unitDictionary['volume'] = [libsbml.UNIT_KIND_LITER,1]
+        #unitDictionary['area'] = [libsbml.UNIT_KIND_METER,1]
+        #unitDictionary['length'] = [libsbml.UNIT_KIND_METER,1]
+        #unitDictionary['time'] = [libsbml.UNIT_KIND_SECOND,1]
+        
+        for unitDefinition in self.model.getListOfUnitDefinitions():
+            unitList = []
+            for unit in unitDefinition.getListOfUnits():
+                
+                unitList.append([unit.getKind(),unit.getScale(),unit.getExponent()])
+                
+            self.unitDictionary[unitDefinition.getId()] = unitList
+        '''
+        
+Table 3: SBML's built-in units.
+Name	 Possible Scalable Units	 Default Units	
+substance	 mole, item	 mole	
+volume	 litre, cubic metre	 litre	
+area	 square metre	 square metre	
+length	 metre	 metre	
+time	 second	 second	
+'''
+        
     def getParameters(self):
         parameters = []
         for parameter in self.model.getListOfParameters():
             parameterSpecs = {'name':parameter.getId(),'value':parameter.getValue(),
-                              'unit':parameter.getUnits()}
+                              'unit':parameter.getUnits(),'type' : ""}
             '''                             
             if parameterSpecs[0] == 'e':
                 parameterSpecs = ('are',parameterSpecs[1])
             if parameterSpecs[1] == 0:
                 zparam.append(parameterSpecs[0])
             '''
+            if parameter.getUnits() in self.unitDictionary:
+                for factor in self.unitDictionary[parameter.getUnits()]:
+                    parameterSpecs['value'] *= 10 ** (factor[1] * factor[2])
+                    parameterSpecs['unit'] = '{0}*1e{1}'.format(parameterSpecs['unit'],factor[1]*factor[2])
+                if 'mole' in parameter.getUnits() and 'per_mole' not in parameter.getUnits():
+                    parameterSpecs['value' ] *= float('6.022e23')
+                    parameterSpecs['unit'] = '{0}*{1}'.format(parameterSpecs['unit'],'avo.num')
+            
             parameters.append(parameterSpecs)
+        prx = {'name':"rxn_layer_t",'value':"0.01",'unit':"um",'type':""}
+        ph = {'name':"h",'value':"rxn_layer_t",'unit':"um",'type':""}
+        pRs = {'name':"Rs",'value':"0.002564",'unit':"um",'type':""}
+        pRc = {'name':"Rc",'value':"0.0015",'unit':"um",'type':""}
+        parameters.append(prx)        
+        parameters.append(ph)
+        parameters.append(pRs)
+        parameters.append(pRc)
         return parameters
         
     
@@ -39,10 +83,18 @@ class SBML2JSON:
         for compartment in self.model.getListOfCompartments():
             name = compartment.getId()
             size = compartment.getSize()
+            outside = compartment.getOutside()
             dimensions = compartment.getSpatialDimensions()
-            compartmentList[name] = [dimensions,size]
+            compartmentList[name] = [dimensions,size,outside]
         return compartmentList
-            
+    
+    def getOutsideInsideCompartment(self,compartmentList,compartment):
+        outside = compartmentList[compartment][2]
+        for comp in compartmentList:
+            if compartmentList[comp][2] == compartment:
+                return outside, comp
+        return outside,-1
+    
     def getMolecules(self):
         '''
         *species* is the element whose SBML information we will extract
@@ -53,7 +105,6 @@ class SBML2JSON:
         '''
         
         compartmentList = self.__getRawCompartments()
-        print compartmentList
         
         molecules = []
         release = []
@@ -61,24 +112,39 @@ class SBML2JSON:
             compartment = species.getCompartment()
             if compartmentList[compartment][0] == 3:
                 typeD = '3D'
+                outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
                 diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
             else:
                 typeD = '2D'
-                diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_EC+mu_CP)/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment)
+                
+                diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
+
             if initialConcentration == 0:
                 initialConcentration = species.getInitialAmount()
+            if species.getSubstanceUnits() in self.unitDictionary:
+                for factor in self.unitDictionary[species.getSubstanceUnits()]:
+                    initialConcentration *= 10 ** (factor[1] * factor[2])
+                if 'mole' in species.getSubstanceUnits():
+                    initialConcentration *= float('6.022e23')
+
             isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
-            
-            releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx),'molecule':species.getId(),'shape':'OBJECT'}
+            if initialConcentration != 0:
+                if compartmentList[compartment][0] == 2:
+                    objectExpr = '{0}[{1}]'.format(inside.upper(),compartment.upper())
+                else:
+                    objectExpr = '{0}'.format(compartment)                    
+                releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx),'molecule':species.getId(),'shape':'OBJECT'
+            ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr}
+                release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
-            #self.speciesDictionary[identifier]
             molecules.append(moleculeSpecs)
-            release.append(releaseSpecs )
+            
+            #self.sp eciesDictionary[identifier]
         return molecules,release
     
     def getPrunnedTree(self,math,remainderPatterns):
@@ -205,21 +271,36 @@ class SBML2JSON:
         return reactionSpecs
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
-        
+
 def main():
+	
+    parser = OptionParser()
+    parser.add_option("-i","--input",dest="input",
+		default='input.xml',type="string",
+		help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
+    parser.add_option("-o","--output",dest="output",
+		default='output.json',type="string",
+		help="the output JSON file. Default = output.json",metavar="FILE")
+    (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
-    nameStr = 'BIOMD0000000%03d' % (1)
-    document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
+    nameStr = options.input
+    document = reader.readSBMLFromFile(nameStr)
+    if document.getModel() == None:
+        print 'No such file'
+        return
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
     molecules,release = parser.getMolecules()        
     reactions =  parser.getReactions()
     definition = {}
-    definition['parameters'] = parameters
-    definition['molecules'] = molecules
-    definition['reactions'] = reactions
-    definition['release'] = release
-    with open('outfile.json','w') as f:
+    definition['par_list'] = parameters
+    definition['mol_list'] = molecules
+    definition['rxn_list'] = reactions
+    definition['rel_list'] = release
+    print 'Writing output to {0}'.format(options.output)
+    with open(options.output,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=4, separators=(',', ': '))
+        
+
 if __name__ == "__main__":
-    main()
+	main()
