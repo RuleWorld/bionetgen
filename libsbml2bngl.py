@@ -734,14 +734,17 @@ def validateReactionUsage(reactant,reactions):
 
 
 def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None,atomize=False):
+    '''
+    one of the library's main entry methods. Process data from a string
+    '''
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromString(inputString)
     return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize)[-1]
 
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None,atomize=False):
-    
-    
-    
+    '''
+    one of the library's main entry methods. Process data from a string
+    '''
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(bioNumber)
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize)
