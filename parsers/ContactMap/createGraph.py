@@ -267,13 +267,13 @@ def addAnnotations(fileName):
 def createXML(self):
     pass
 
-def processBNGL(bngl):
+def processBNGL(bngl,center,context,product):
     #xml = createXML(bngl)
     xml = bngl
     _,rules = parseXML(xml)
     
     createBiPartite(rules,None,bngl, 
-                           reactionCenter=True, context=True, products=True)
+                           reactionCenter=center, context=context, products=product)
                            
 def bngl2xml(bnglFile):
 

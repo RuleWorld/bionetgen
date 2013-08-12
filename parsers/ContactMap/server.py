@@ -41,13 +41,14 @@ class BipartiteServer:
     
     def __init__(self):
         pass
-    def bipartite(self, bbnglFile,returnType):
+    def bipartite(self, bbnglFile,returnType,center,context,product):
         counter = next_id()
+        print center,context,product
         bnglFile = bbnglFile.data
         with open('temp{0}.bngl'.format(counter),'w') as f:
             f.write(bnglFile)
         xmlFile = self.bngl2xml('temp{0}.bngl'.format(counter))
-        createGraph.processBNGL('temp{0}.xml'.format(counter))
+        createGraph.processBNGL('temp{0}.xml'.format(counter),center,context,product)
         with open('temp{0}.xml.dot'.format(counter),'rb') as f:
             dot = f.read()
         with open('temp{0}.xml.png'.format(counter),'rb') as f:
