@@ -256,11 +256,14 @@ class Species:
                     
                     
         
-    def graphVizGraph(self,graph,identifier):
+    def graphVizGraph(self,graph,identifier,layout='LR'):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
         
+
         for idx,molecule in enumerate(self.molecules):
+        #for idx in range(len(self.molecules)-1,-1,-1):
+            molecule = self.molecules[idx]
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
             if len(self.molecules) == 1:
@@ -272,7 +275,11 @@ class Species:
             
         for bond in self.bonds:
             if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none')
+                if layout == 'RL':
+                    graph.add_edge(speciesDictionary[bond[1]],speciesDictionary[bond[0]],dir='none',len=0.1,weight=100)
+                else:
+                    graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none',len=0.1,weight=100)
+                    
         return speciesDictionary
         
     
@@ -418,19 +425,29 @@ class Molecule:
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
         moleculeDictionary = {}
-        #graph.add_node(identifier,label=self.__str__())
-        #moleculeDictionary[self.idx] = identifier
-        #return moleculeDictionary
+        flag = False
+        '''
+        if flag:
+            graph.add_node(identifier,label=self.__str__(),name="cluster%s_%s" % (identifier,self.idx))
+            print "cluster%s_%s" % (identifier,self.idx)
+        else:
+            print identifier
+            graph.add_node(identifier,label=self.__str__(),name=identifier)
         
+        moleculeDictionary[self.idx] = identifier
+        return moleculeDictionary
+        '''
         if len(self.components) == 0:
             graph.add_node(identifier,label=self.name)
             moleculeDictionary[self.idx] = identifier
         else:
             if not flag:
                 s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
+                #graph.add_node("cluster%s_%s_dummy" % (identifier,self.idx),label=self.__str__())
+                #return {}
             else:
                 s1 = graph.subgraph(name = identifier,label=self.name)
-
+            s1.add_node('cluster%s_%s_dummy' % (identifier,self.idx),shape='point',style='invis')
             if components == None:
                 tmpComponents = self.components
             else:
