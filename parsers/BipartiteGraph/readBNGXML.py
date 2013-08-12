@@ -84,7 +84,9 @@ def parseRule(rule):
         action = st.Action()
         tag = operation.tag
         tag = tag.replace('{http://www.sbml.org/sbml/level3}','')
-        if operation.get('site1') != None:
+        if tag in ['Add','Delete']:
+		action.setAction(tag,operation.get('id'),None)
+	elif 'Bond' in tag:
             action.setAction(tag, operation.get('site1'), operation.get('site2'))
         else:
             action.setAction(tag, operation.get('site'), None)
@@ -93,6 +95,7 @@ def parseRule(rule):
         tmpMap = (mapping.get('sourceID'), mapping.get('targetID'))
         mappings.append(tmpMap)
     return reactants, products, actions, mappings, nameDict
+    
     
 def parseMolecules(molecules):
     '''

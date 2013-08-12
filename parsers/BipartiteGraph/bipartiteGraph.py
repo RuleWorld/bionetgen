@@ -8,6 +8,7 @@ from math import ceil
 import string
 import argparse
 import os
+import structures as st
 
 def extractMolecules(action,site1,site2,chemicalArray):
     '''
@@ -33,7 +34,7 @@ def extractMolecules(action,site1,site2,chemicalArray):
         for element in tr:
             reactionCenter.add(element)
         for element in tc:
-            context.add(element)
+            context.add(element)   	
     return atomicPatterns,reactionCenter,context
 
  
@@ -56,22 +57,60 @@ def extractTransformations(rules):
     actionName = []
     index=0
     label = []
-    for react,product,act,mapp,_ in rules:
+
+    #for idx,(react,product,act,mapp,nameDict) in enumerate(rules):
+    #	print idx
+	#print "react\t"," ".join([str(x) for x in react])
+	#print "product\t"," ".join([str(x) for x in product])
+	#print "act\t"," ".join([str(x) for x in act])
+	#print "mapp\t"," ".join([str(x) for x in mapp])
+	#print "nameDict\t"," ".join([x+":"+y for x,y in nameDict.items()])
+    
+		
+    for react,product,act,mapp,nameDict in rules:
         index += 1
-        if index ==5:
-            pass
         for action in act:
-            atomic,reactionCenter,context = extractMolecules(action.action,action.site1, 
+	    atomic,reactionCenter,context = extractMolecules(action.action,action.site1, 
                                                              action.site2, react)
-            transformationCenter.append(reactionCenter)
-            transformationContext.append(context)
-            atomicArray.update(atomic)    
-            productSites = [getMapping(mapp,action.site1), 
-                            getMapping(mapp, action.site2)]
-            atomic,rc,_ = extractMolecules(action.action,productSites[0], productSites[1],
-                                           product)
-            productElements.append(rc)
-            atomicArray.update(atomic)
+     	    atomicArray.update(atomic)
+            # this method does not extract reaction centers for creation and deletion transformations
+            # however it extracts context correctly
+            # so generate the reactioncenter here
+            
+
+            if action.action == 'Delete':
+            	temp = st.Species()
+            	temp.addMolecule(st.Molecule(nameDict[action.site1],1))
+            	atomic = dict()
+            	atomic[str(temp)] = temp
+            	atomicArray.update(atomic)
+            	transformationCenter.append(set([str(temp)]))
+            	productElements.append(set())
+            	transformationContext.append(context)
+
+            	
+            elif action.action == 'Add':
+            	temp = st.Species()
+            	temp.addMolecule(st.Molecule(nameDict[action.site1],1))
+            	atomic = dict()
+            	atomic[str(temp)] = temp
+            	atomicArray.update(atomic)
+            	transformationCenter.append(set())
+            	productElements.append(set([str(temp)]))
+            	transformationContext.append(context)
+            	
+            else:
+		transformationCenter.append(reactionCenter)
+		transformationContext.append(context)
+		atomicArray.update(atomic) 
+     		productSites = [getMapping(mapp,action.site1),getMapping(mapp, action.site2)]
+		atomic,rc,_ = extractMolecules(action.action,productSites[0], productSites[1],product)           
+		productElements.append(rc)
+		atomicArray.update(atomic)
+ 
+
+            
+            	
             actionName.append('%i-%s' % (index,action.action))
             r= '+'.join([str(x) for x in react])
             p = '+'.join([str(x) for x in product])
@@ -79,6 +118,7 @@ def extractTransformations(rules):
 
 
 
+    # resolving bond wildcards
     wildcards = [x for x in atomicArray if '!+' in x]
     bondedpatterns = [x for x in atomicArray if '!' in x and x not in wildcards]
     for item in wildcards:
@@ -92,7 +132,6 @@ def extractTransformations(rules):
     			transformationContext[idx] = set1
     	del atomicArray[item]
 
-        
     return atomicArray, transformationCenter, transformationContext, productElements,actionName,label
     
  
@@ -142,15 +181,6 @@ def createT2Pmaps(patternDict,transformationDict,transformationCenter,transforma
 					temp = [tr_id,patternDict[item2]]
 					if temp not in t2pContext:
 						t2pContext.append(temp)
-	#Accounting for bond wildcards
-	
-					
-				
-			
-
-	#print "Reactant",t2pReactant
-	#print "Product",t2pProduct
-	#print "Context",t2pContext
 	return t2pReactant, t2pProduct, t2pContext
 	
 	
@@ -185,13 +215,6 @@ def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,trans
 			f.write("Process: "+transformationAnnotations[tr]+"(" + str(tr_id) + ")\n")
 			annot_list = [(str(atomicPatternAnnotations[invPatternDict[item[1]]])+ "(" + str(item[1]) + ")" ) for item in t2pContext if item[0]==tr_id]
 			f.write("Kinetic Modifiers: " + ', '.join(annot_list)+"\n\n")
-		
-		#for item in t2pContext:
-		#	if(item[0] == tr_id):
-		#		ct_id = item[1]
-		#		patt = invPatternDict[ct_id]
-		#		print atomicPatternAnnotations[patt]
-		#print "\n"
 		
 def writeAnnotationFiles(atomicPatternAnnotations,transformationAnnotations,patternDict,transformationDict):
 	maxsize = max([len(str(item)) for item in atomicPatternAnnotations.keys()])
@@ -234,8 +257,8 @@ def readAnnotationFiles(patternDict,transformationDict):
     			lhs = '+'.join(key[0])
 		    	rhs = '+'.join(key[1])
     			rulestring = lhs + " -> " + rhs
+    			rulestring = rulestring.strip()
     			newdict[rulestring] = key
-
 		
 		data = deque(f.readlines())
 		assert data.popleft() == '#Transformation Annotations\n', 'Not a valid annotation file for transformations'
@@ -247,8 +270,7 @@ def readAnnotationFiles(patternDict,transformationDict):
 			rulestring = line_contents.popleft()
 			assert(rulestring in newdict.keys()), 'Transformation not found'
 			#Note we are only comparing rule-strings to see if the transformation is present. May need refining!!
-			transformationAnnotations[newdict[rulestring]] = ' '.join(line_contents)
-		
+			transformationAnnotations[newdict[rulestring]] = ' '.join(line_contents)	
 	return atomicPatternAnnotations, transformationAnnotations
 
 
@@ -261,7 +283,7 @@ def writeNewAnnotationFiles(atomicArray,transformationCenter,patternDict,transfo
 	for idx,item in enumerate(transformationCenter):
     		key =tuple([ tuple(transformationCenter[idx]),tuple(productElements[idx]) ])
 		transformationAnnotations[key] = None
-	print "Overwriting annotation files"
+	print "Overwriting annotation files..."
 	writeAnnotationFiles(atomicPatternAnnotations,transformationAnnotations,patternDict,transformationDict)
 	return atomicPatternAnnotations, transformationAnnotations
 			
@@ -392,6 +414,11 @@ def printDict(dict1):
 def createXML(self):
     pass
 
+def getStats(rules,patternDict,transformationDict):
+	print "\n\n"
+	print "Number of rules: ",len(rules)
+	print "Number of transformations: ", len(transformationDict)
+	print "Number of atomic patterns: ", len(patternDict)
 
 
 #biograph-matlab
@@ -410,6 +437,7 @@ if __name__ == "__main__":
 	annot_parser = subparsers.add_parser('annotate',help='Write new empty annotation files')
 	bpg_parser = subparsers.add_parser('graph',help='Generate a bipartite graph')
 	summ_parser = subparsers.add_parser('summarize',help='Summarizes model interactions using annotations')
+	devel_parser = subparsers.add_parser('devel',help='Developer')
 	
 	
 	bpg1 =bpg_parser.add_mutually_exclusive_group()
@@ -427,28 +455,45 @@ if __name__ == "__main__":
 	
 	if(os.path.isfile(args.xml)):
 		# This generates all the pattern and transformation arrays and dictionaries
-		_,rules = parseXML(args.xml)
+		_,rules = parseXML(args.xml)			
 		atomicArray, transformationCenter, transformationContext, productElements,actionName,label = extractTransformations(rules)
+		
+		if args.mode == 'devel':
+			print len(atomicArray), len(transformationCenter), len(transformationContext), len(productElements)
+			#for idx,item in enumerate(transformationCenter):
+			#	print transformationCenter[idx],"to",productElements[idx],"by",transformationContext[idx],"\n"
+			
+		
 		patternDict,transformationDict = createDictionaries(atomicArray,transformationCenter,productElements)
+		
+		if args.mode == 'devel':
+			print len(patternDict), len(transformationDict)
+			#printDict(patternDict)
+			#printDict(transformationDict)
+
 		# This lets you create new empty annotation files
 		if args.mode=='annotate':
+			getStats(rules,patternDict,transformationDict)
 			print "\n\nAnnotate mode."
 			if args.verbose:
 				tempstr = raw_input('This will overwrite any existing annotation files. Proceed? Y/N\t')
 				if(tempstr == 'y' or tempstr== 'Y'):
 					atomicPatternAnnotations, transformationAnnotations = writeNewAnnotationFiles(atomicArray,transformationCenter,patternDict,transformationDict)
+
 					sys.exit()
 			else:
 				atomicPatternAnnotations, transformationAnnotations = writeNewAnnotationFiles(atomicArray,transformationCenter,patternDict,transformationDict)
 				sys.exit()
+		
 		# This figures out the t2p maps (transformation to pattern)
 		t2pReactant, t2pProduct, t2pContext = createT2Pmaps(patternDict,transformationDict,transformationCenter,transformationContext,productElements)
 		if args.mode=='graph':
+			getStats(rules,patternDict,transformationDict)
 			print "\n\nGraphing mode."
 			if os.path.isfile('atomicPatternAnnotations.txt') and os.path.isfile('transformationAnnotations.txt'):
 				atomicPatternAnnotations, transformationAnnotations = readAnnotationFiles(patternDict,transformationDict)
 			else:
-				print "Annotations not found. Generating empty templates."
+				print "Annotations not found. Generating empty templates. Edit them with your favorite text editor."
 				if args.use_annot:
 					print "Use-annot will be disabled. Use annotate mode to create empty editable templates."
 					args.use_annot = False;
@@ -466,19 +511,22 @@ if __name__ == "__main__":
 				options_string = options_string + 'p'
 			print "Generating dot file."
 			writeDot(patternDict,transformationDict,atomicPatternAnnotations,transformationAnnotations,t2pReactant, t2pProduct, t2pContext,options_string)
+			
 		
 		
 		if args.mode=='summarize':
+			getStats(rules,patternDict,transformationDict)
 			print "\n\nSummarize mode."
 			print "Generating model summary"
 			if os.path.isfile('atomicPatternAnnotations.txt') and os.path.isfile('transformationAnnotations.txt'):
 				atomicPatternAnnotations, transformationAnnotations = readAnnotationFiles(patternDict,transformationDict)
 				
 			else:
-				print "Annotations not found. Cannot summarize. Use annotate mode to create empty editable templates."
+				print "Annotations not found. Cannot summarize. Use annotate mode to create empty templates and edit them with your favorite text editor."
 				sys.exit()
 			atomicPatternAnnotations, transformationAnnotations = readAnnotationFiles(patternDict,transformationDict)
 			summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,transformationAnnotations,t2pContext)
+		
 					
 	else:
 		print "Something wrong with reading bngxml file"
