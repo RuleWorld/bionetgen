@@ -630,9 +630,11 @@ sub writeSBML
 
 	# Strip prefixed path
 	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
-	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : '';
-	unless ( $suffix eq '' )
-    {   $prefix .= "_${suffix}";   }
+	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : 'sbml';
+#	unless ( $suffix eq '' )
+#    {   
+    	$prefix .= "_${suffix}";   
+#    }
 
     # define file name
 	my $file = "${prefix}.xml";
