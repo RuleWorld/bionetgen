@@ -943,7 +943,22 @@ def getAnnotations(annotation):
     return annotationDictionary
 
 
-
+def processFile2():
+    for bioNumber in [19]:
+        #if bioNumber in [18,51,353,108,109,255,268,392]:
+        #    continue
+    #bioNumber = 175
+        logMess.log = []
+        logMess.counter = -1
+        reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
+        print reactionDefinitions, useID
+        #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
+        spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
+        #spEquivalence = None
+        #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
+        
+        rlength, reval, reval2, clength = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence,atomize=True)
+ 
 def main():
     jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
     jsonFiles.sort()
@@ -1044,7 +1059,8 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     #main()
-    main2()
+    #main2()
+    processFile2()
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s
