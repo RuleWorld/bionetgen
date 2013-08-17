@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+6# -*- coding: utf-8 -*-
 """
 Created on Mon Jun 17 11:19:37 2013
 
@@ -286,7 +286,7 @@ def main():
     nameStr = options.input
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
-        print 'No such file'
+        print 'No such input file'
         return
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
