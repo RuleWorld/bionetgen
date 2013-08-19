@@ -62,7 +62,7 @@ if __name__ == "__main__":
     for element in centerDict:
         tmpDict = {}
         for rnum in centerDict[element]:
-            actionString = rules[rnum][2]
+            actionString = rules[rnum][0].actions
             key =  [x.action for x in actionString]
             key.sort()
             key.append(rules[rnum][-2])
@@ -98,3 +98,5 @@ if __name__ == "__main__":
         redundantListDict[element] = constantDifferences
     #todo: remove redundancies from rules
     
+    for reactionCenter in redundantDict:
+        print redundantDict[reactionCenter]
