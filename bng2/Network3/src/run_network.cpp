@@ -124,6 +124,8 @@ int main(int argc, char *argv[]){
     int propagator = CVODE;
     int SOLVER = DENSE;
     int outtime = -1;
+    int parallel_simsize = 1; 
+    static int parallel_output = 0; 
     //
     double maxSteps = INFINITY;//LONG_MAX;//-1;
     double stepInterval = INFINITY;//LONG_MAX;// -1;
@@ -800,7 +802,7 @@ int main(int argc, char *argv[]){
 					// Continue
 					stepLimit = min(stepLimit+stepInterval,maxSteps);
 				}
-				error = gillespie_direct_network(&t, dt, 0x0, 0x0, stepLimit-network3::TOL,stop_condition);
+				error = gillespie_direct_network(&t, dt, 0x0, 0x0, stepLimit-network3::TOL,stop_condition, &parallel_simsize);
 				if (verbose){
 //					fprintf(stdout, "%15.6f %8ld %12d %7.3f %7.3f %10d %7d",
 					fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d",
@@ -916,6 +918,11 @@ int main(int argc, char *argv[]){
 			if (print_cdat) print_concentrations_network(conc_file,t);
 			// Don't print if stopping condition met and !print_on_stop (must print to CDAT)
 			// NOTE: Sometimes forceQuit happens at an output step. In this case print.
+                        if (!parallel_output){
+                            if (parallel_simsize > 1) 
+		                group_file = init_print_group_concentrations_network_parallel(outpre,continuation,print_func);
+                            parallel_output = 1;
+                        }
 			if (!(forceQuit && !print_on_stop && t < t_out-network3::TOL)){
 				if (group_file) print_group_concentrations_network(group_file,t,print_func);
 				if (group_file && print_func) print_function_values_network(group_file,t);
