@@ -123,12 +123,15 @@ class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
         bnglContent = xmlrpclib.Binary(reader.read())
         
         returnType = self.request.get('return')
+        reactionCenter = True if self.request.get('center') else False
+        context = True if self.request.get('context') else False
+        product = True if self.request.get('products') else False
         #atomizeString = self.request.get('atomize')
         #print 'fsdgsdgsd',atomize
         urlfetch.set_default_fetch_deadline(blob_info.size/300)
         s = xmlrpclib.ServerProxy('http://54.214.249.43:9100')
         #s = xmlrpclib.ServerProxy('http://127.0.0.1:9100') 
-        dotResult = s.bipartite(bnglContent,returnType).data
+        dotResult = s.bipartite(bnglContent,returnType,reactionCenter,context,product).data
                 
         '''
         rpc = urlfetch.create_rpc(deadline= 10)

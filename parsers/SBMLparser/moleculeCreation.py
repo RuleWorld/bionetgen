@@ -561,6 +561,11 @@ def transformMolecules(parser, database, configurationFile,
     main method. Receives a parser configuration, a configurationFile and a
     list of user defined species equivalences and returns a dictionary
     containing an atomized version of the model
+    Keywords:
+        ---parser: data structure containing the reactions and species we will use
+        ---database:data structure containing the result of the outgoing translation
+        ---configurationFile
+        ---speciesEquivalences:predefined species
     '''
     _, rules, _ = parser.getReactions()
     molecules, _, _ = parser.getSpecies()
@@ -612,6 +617,7 @@ def transformMolecules(parser, database, configurationFile,
                                                                                                 molecules)
 
     weights = sorted(weights, key=lambda rule: rule[1])
+    print prunnedDependencyGraph
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
                                                                 eequivalenceTranslator)
     propagateChanges(database.translator, prunnedDependencyGraph)

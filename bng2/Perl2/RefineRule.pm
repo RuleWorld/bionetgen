@@ -532,9 +532,10 @@ sub restrict_rule
 		}
 
 		# check for Max Stoichiometry violations
-		while ( my ($key,$max) = each %{$params->{max_stoich}} )
+		foreach my $key ( keys %{$params->{'max_stoich'}} )
 		{
-			next if $max =~ /^unlimited/;
+            my $max = $params->{'max_stoich'}->{$key};
+			next if ($max eq "unlimited");
 			if ( $p->stoich($key) > $max )
 			{
                 #printf "Stoichometry of $key in %s exceeds max of %d\n", $p->toString(), $max;

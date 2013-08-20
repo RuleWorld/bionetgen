@@ -973,9 +973,9 @@ sub generate_hybrid_model
         'safe'         => 0
     };
     # get user options
-    while ( my ($opt,$val) = each %$user_options )
+    foreach my $opt (keys %$user_options)
     {
-        
+        my $val = $user_options->{$opt};
         if ($opt eq "exact")
         {   # TODO: temporary patch to allow the old "exact" option
             send_warning("The 'exact' option has been renamed 'safe', please use this in the future.");
@@ -1120,8 +1120,9 @@ sub generate_hybrid_model
     {
         # Add population types
         print $indent . "$step_index:Adding population types..   "; ++$step_index;
-        while ( my ($name,$mt) = each %{$model->PopulationTypesList->MolTypes} )
+        foreach my $name ( keys %{$model->PopulationTypesList->MolTypes} )
         {
+            my $mt = $model->PopulationTypesList->MolTypes->{$name};
             my $mt_copy = $mt->copy();
             $mt_copy->PopulationType(1);
             unless ( $mtlist_new->add($mt_copy) )

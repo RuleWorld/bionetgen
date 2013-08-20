@@ -6,7 +6,7 @@ Created on Wed May 30 11:44:17 2012
 """
 from copy import deepcopy
 from lxml import etree
-import pygraphviz as pgv
+#import pygraphviz as pgv
 import re
 from random import randint
 
@@ -196,7 +196,7 @@ class Species:
             
     def toString(self):
         return self.__str__()
-    
+
     def extractAtomicPatterns(self,action,site1,site2):
         atomicPatterns = {}
         bondedPatterns = {}
@@ -216,6 +216,7 @@ class Species:
                     componentStructure.activeState = component.activeState
                     moleculeStructure.addComponent(componentStructure)
                     speciesStructure.addMolecule(moleculeStructure)
+                                      
                     if componentStructure.idx in [site1,site2] and action == 'StateChange':
                         reactionCenter.append((speciesStructure))
                     else:
@@ -241,8 +242,9 @@ class Species:
                     elif '+' not in component.bonds[0] or \
                       len(bondedPatterns[component.bonds[0]].molecules) == 0: 
                         bondedPatterns[component.bonds[0]].addMolecule(moleculeStructure)
+                                
                 if componentStructure.idx in [site1,site2] and action != 'StateChange':
-                    reactionCenter.append((speciesStructure))
+                    	reactionCenter.append((speciesStructure))                    
                 else:
                     context.append((speciesStructure))      
         for element in bondedPatterns:
@@ -252,18 +254,15 @@ class Species:
             if str(x) in atomicPatterns]
         context =  [str(x) for x in context if str(x) in atomicPatterns]
         return atomicPatterns,reactionCenter,context
-                
+            
                     
                     
         
-    def graphVizGraph(self,graph,identifier,layout='LR'):
+    def graphVizGraph(self,graph,identifier):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
         
-
         for idx,molecule in enumerate(self.molecules):
-        #for idx in range(len(self.molecules)-1,-1,-1):
-            molecule = self.molecules[idx]
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
             if len(self.molecules) == 1:
@@ -275,11 +274,7 @@ class Species:
             
         for bond in self.bonds:
             if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                if layout == 'RL':
-                    graph.add_edge(speciesDictionary[bond[1]],speciesDictionary[bond[0]],dir='none',len=0.1,weight=100)
-                else:
-                    graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none',len=0.1,weight=100)
-                    
+                graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none')
         return speciesDictionary
         
     
@@ -425,29 +420,15 @@ class Molecule:
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
         moleculeDictionary = {}
-        flag = False
-        '''
-        if flag:
-            graph.add_node(identifier,label=self.__str__(),name="cluster%s_%s" % (identifier,self.idx))
-            print "cluster%s_%s" % (identifier,self.idx)
-        else:
-            print identifier
-            graph.add_node(identifier,label=self.__str__(),name=identifier)
-        
-        moleculeDictionary[self.idx] = identifier
-        return moleculeDictionary
-        '''
         if len(self.components) == 0:
             graph.add_node(identifier,label=self.name)
             moleculeDictionary[self.idx] = identifier
         else:
             if not flag:
                 s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
-                #graph.add_node("cluster%s_%s_dummy" % (identifier,self.idx),label=self.__str__())
-                #return {}
             else:
                 s1 = graph.subgraph(name = identifier,label=self.name)
-            s1.add_node('cluster%s_%s_dummy' % (identifier,self.idx),shape='point',style='invis')
+
             if components == None:
                 tmpComponents = self.components
             else:
@@ -541,7 +522,6 @@ class Component:
     
     def graphVizGraph(self,graph,identifier):
         compDictionary = {}
-        
         if len(self.states) == 0:
             graph.add_node(identifier,label=self.name)
         else:

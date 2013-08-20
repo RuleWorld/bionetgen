@@ -208,7 +208,7 @@ FLOAT:
   (DIGIT)+ '.' (DIGIT)* EXPONENT?
 | (DIGIT)+ EXPONENT;
 INT: DIGIT+;
-STRING: (LETTER | DIGIT | '_')+;
+STRING: (LETTER | '_') (LETTER | DIGIT | '_')*;
 SEMI: ';';
 COLON: ':';
 LSBRACKET: '[';

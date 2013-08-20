@@ -1,0 +1,112 @@
+    FAQ:<br>
+    <i>What is this application for?</i><br>
+    This application allows for the translation
+    between an SBML model and its equivalent BioNetGen
+    definition.<br><br>
+    <i>What kind of files should I upload?</i>
+    <br>
+    You should upload an SBML definition file, which is an XML file that follows the SBML convention. Uploading any other file will result in an error.
+    <br><br>
+    <i>What is the atomize option for?</i>
+    <br>
+    Leaving the atomize option unmarked allows for a raw translation of the SBML file. The resultant file will not have any component information. When atomization is enabled the application will attempt to extract as much context information from the original SBML file as possible to obtain a richer BNGL definition. <br><br>
+    <i>What does the reaction definition files mean?</i><br>
+    The reaction definition files contain an specification on the structure and general guidelines that the translator will use in order to understand the SBML file. When unsure, select <b>reactionDefiniton7.json</b>. Bellow is a definition of the kind of information each file contains.<br><br>
+    
+<table>
+<tr>
+<td>reactionDefinition1</td>
+<td>A + B -> C synthesis <br>
+A -> pA Phosporylation<br>
+pa -> ppA Double-Phosporylation</td>
+</tr>
+<tr>
+<td>reactionDefinition2</td>
+<td>A + B <-> C synthesis <br>
+A -> pA Phosporylation<br>
+pA -> ppA Double-Phosporylation</td>
+</tr>
+<tr>
+<td>reactionDefinition3</td>
+<td>A + B -> C synthesis <br>
+A -> P_A Phosporylation<br>
+P_A -> PP_A Double-Phosporylation</td>
+</tr>
+<tr>
+<td>reactionDefinition4</td>
+<td>A + B <-> C synthesis <br>
+A -> A_P Phosporylation</td>
+</tr>
+<tr>
+<td>reactionDefinition5</td>
+<td>A + B -> C synthesis <br>
+A -> Ap Phosporylation<br>
+Ap -> App Double-Phosporylation<br>
+A -> Am Modification
+</td>
+</tr>
+<tr>
+<td>reactionDefinition6</td>
+<td>A + B -> C synthesis <br>
+A -> A_P Phosporylation<br>
+A -> A_I Internalization</td>
+</tr>
+<tr>
+<td>reactionDefinition7</td>
+<td>A + B -> C synthesis <br>
+A -> A_P Phosporylation<br>
+A_P -> A_PP Double-Phosporylation<br>
+A -> Ai Internalization<br>
+A -> Am Modification<br>
+</td>
+</tr>
+<tr>
+<td>reactionDefinition8</td>
+<td>A + B -> C synthesis <br>
+A -> A__P Phosporylation<br>
+A_P -> A__PP Double-Phosporylation</td>
+</tr>
+<tr>
+<td>reactionDefinition9</td>
+<td>A + B -> C synthesis <br>
+A -> A_L L-modification<br>
+A_L -> A_LL LL-modification</td>
+</tr>
+<tr>
+<td>reactionDefinition10</td>
+<td>A + B -> C synthesis <br>
+A -> A_L L-modification<br>
+A_L -> A_LL LL-modification</td>
+</tr>
+<tr>
+<td>reactionDefinitiona</td>
+<td>A + B -> C synthesis <br>
+A -> pA Phosporylation<br>
+pa -> ppA Double-Phosporylation<br>
+A -> A_n N-modification<br>
+A -> A_c C-modification
+</td>
+</tr>
+<tr>
+<td>reactionDefinitionb</td>
+<td>A + B -> C synthesis <br>
+A -> A_P Phosporylation<br>
+A_P -> A_PP Double-Phosporylation<br>
+A -> Am M-modification<br>
+A -> Ai Internalization<br>
+A -> Aast Ast-Modification<br>
+</td>
+</tr>
+<tr>
+<td>reactionDefinitionc</td>
+<td>A + B -> C synthesis <br>
+A -> AAch Ach-modification<br>
+AAch -> AAch2 Ach2-Modification<br>
+</td></tr>
+
+</table>
+<br>
+<i>Isn't there an easier way of doing this?</i>
+<br>
+In the near future we will enable the translator to automatically detect the patterns it is supposed to use. For the time being, the easiest is to first attempt a non-atomized translation and check the resulting BNGL file. From here one would be able to see what kind of naming patterns appear in the file, and select a definition file accordingly. Alternatively, reactionDefinition7 has been found to statistically work with a large percentage of the models in BioModels.
+<br><br>

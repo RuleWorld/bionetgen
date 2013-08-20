@@ -224,9 +224,10 @@ scope{
 
 label returns [String label]
 :
-  MOD l1=(STRING | INT) {$label = $l1.text;}
+//  MOD l1=(STRING | INT) {$label = $l1.text;}
+  MOD STRING {$label = $STRING.text;}
 ;
-  
+
 dereference returns [String label]
 :
   AMPERSAND STRING{$label = $STRING.text;}
