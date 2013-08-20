@@ -1,18 +1,18 @@
 /*# Routine for parallel SSA implementation and interprocess client-server communication 
 
 ############ For parallel SSA without client-server, generate the net file and then use the following command:
-      mpirun -np 100  /bngpath/bin/run_network -o ./fceri_ji -p ssa -g ./modelname.net ./modelname.net 1 600 
+      mpirun -np 100  /bngpath/bin/run_network -o ./modelname -p ssa -g ./modelname.net ./modelname.net 1 600 
 # Results from the 100 runs will be stored in gdat files with unique names (format 'modelname_pid#.gdat'). 
 
 ############ For parallel SSA with client-server generate the network and follow the 3 steps: 
-  # step 1: start ompi server on a terminal using command: ompi-server --no-daemonize -r, which  will output a unique string similar to as follows:  
+  # step 1: start ompi server on a terminal using command: ompi-server --no-daemonize -r +, which  will output a unique string similar to as follows:  
       ompi-server --no-daemonize -r +
           460128256.0;tcp://130.49.212.142:44934
   # step 2: In a separate terminal run the server program (server.cpp, code provided in the commented out bloc at the end of this file):
           mpic++ server.cpp -o server 
           mpirun -np 1 --ompi-server "460128256.0;tcp://130.49.212.142:44934" server 
   # step 3: In a third terminal run SSA (client): 
-          mpirun -np 100 --ompi-server "460128256.0;tcp://130.49.212.142:44934" /bngpath/bin/run_network -o ./fceri_ji -p ssa -g ./modelname.net ./modelname.net 1 600
+          mpirun -np 100 --ompi-server "460128256.0;tcp://130.49.212.142:44934" /bngpath/bin/run_network -o ./modelname -p ssa -g ./modelname.net ./modelname.net 1 600
 
 # Step 3 will establish a connection between the simulations and the server program. An interface will be displaced on the server terminal prompting for user input. 
 # current inputs: pid (displays ranks and pids of all parallel runs in a table), conc (displays ranks, pids and corresponding concentrations of all observables in a 
