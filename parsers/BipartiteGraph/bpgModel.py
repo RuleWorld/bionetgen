@@ -11,6 +11,8 @@ atomizedrules = bpgModel.getAtomizedRules(bngxml)
 Author: John Sekar
 
 Dependencies: readBNGXML.py (needs lxml), structures.py
+
+Not supported: ChangeCompartment, DeleteSpecies
 '''
 
 import readBNGXML
@@ -102,15 +104,17 @@ def chopRule(reactants, products, actions, mappings, nameDict):
 	'''
 	maps = dict(mappings)
 	patterns = reactants+products
-	rule = ChoppedRule(len(actions))
+
+	tempactions = [x for x in actions if x.action != 'ChangeCompartment']
+	rule = ChoppedRule(len(tempactions))
+
 	# Chopped rule has components
 	# self.transformations = []*n_actions
 	# self.syndel_context = []*n_actions
 	#self.transf_center = []*n_actions
 	# self.context = []
 	
-
-	for act_idx, act in enumerate(actions):
+	for act_idx, act in enumerate(tempactions):
 		if act.action=='StateChange':
 			# Get LHS state
 			p_idx, m_idx, c_idx = decompose_cidx(act.site1)
@@ -210,7 +214,10 @@ def chopRule(reactants, products, actions, mappings, nameDict):
 			rule.transformations[act_idx] = tr
 			rule.transf_center[act_idx] = getTransfCenterIDs(act,maps)
 			rule.syndel_context[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
-	return rule				
+	return rule
+
+def printRule(reactants,products):
+	return "+".join([str(x) for x in reactants])+"->"+"+".join([str(x) for x in products])
 
 		
 class AtomizedRule:
@@ -489,13 +496,11 @@ def getAtomizedRules(bngxml):
 	input an xml file, return atomized rules
 	'''
 	_,rules = readBNGXML.parseXML(bngxml)
-	choppedrules = []
+
 	atomizedrules = []
 	for idx, [reactants, products, actions, mappings, nameDict] in enumerate(rules):
-		choppedrules.append(chopRule(reactants, products, actions, mappings, nameDict))
-	for idx, [ reactants,products,_,_,_ ] in enumerate(rules):
-		#print idx,reactants, products, choppedrules[idx]
-		atomizedrules.append(AtomizedRule(choppedrules[idx],reactants,products))
+		choppedrule = chopRule(reactants, products, actions, mappings, nameDict)
+		atomizedrules.append(AtomizedRule(choppedrule,reactants,products))
 	return atomizedrules
 		
 		
