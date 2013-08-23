@@ -6,6 +6,7 @@ use FindBin;
 use lib $FindBin::Bin;
 use File::Spec;
 use Cwd;
+use Time::HiRes ("clock");
 
 use constant VERSION_FILENAME => "VERSION";
 use constant DEFAULT_VERSION  => "UNKNOWN";
@@ -483,25 +484,17 @@ sub make_aggregates{
 ##------------------------------------------------------------------------
 # Returns the total cputime (user+system) of the current process and
 # all children since the last call to cpu_time.
-# Optional argument can be used to reset the offset, t_last.
-# Thus, the total process CPU time is given by cpu_time(0);
+# Optional argument can be used to reset the offset.
+# Call cpu_time(0) to tare (i.e. "zero") the clock.
 {
-  my $t_last;
-
-  sub cpu_time{
-    my ($t_tot, $utime, $stime, $cutime, $cstime);
-    my $t_ret;
-    
-    $t_last= shift if (@_);
-    
-    ($utime, $stime, $cutime, $cstime)= times;
-    $t_tot= $utime + $stime +$cutime + $cstime;
-    
-    $t_ret= $t_tot - $t_last;
-    $t_last= $t_tot;
-    
-    return($t_ret);
-  }
+    my $store_time=0;
+    sub cpu_time
+    {
+        my $prev_time = @_ ? shift @_ : $store_time;
+        my $curr_time = clock();
+        $store_time = $curr_time;
+        return $curr_time - $prev_time;
+    }
 }
 
 # Compute average and standard deviation over a set of data in
