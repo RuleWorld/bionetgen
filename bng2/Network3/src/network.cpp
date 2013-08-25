@@ -4970,7 +4970,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	while (1){
                 // if no parallel implementation, this function will return immediately after first time evaluation 
                 // No noticeable performance difference in non-parallel SSA because of its inclusion 
-                client(0, NULL, network.spec_groups, network.species, *t, simsize); 
+                client(0, NULL, network.spec_groups, network.species, *t, GSP.c, simsize); 
 
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxStep){

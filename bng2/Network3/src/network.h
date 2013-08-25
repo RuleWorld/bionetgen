@@ -38,6 +38,7 @@ using namespace std;
 #include "util/util.hh"
 
 #include <cmath>
+#include <mpi.h>
 
 extern "C" int isnan(double);
 
