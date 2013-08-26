@@ -4455,8 +4455,8 @@ int init_gillespie_direct_network(int update_interval, int seed) {
 		SEED_RANDOM(seed);
 	}
 	else{
- //   		cout << "pid: " << getpid() << endl;
-    		SEED_RANDOM(getpid());
+//   	cout << "pid: " << getpid() << endl;
+		SEED_RANDOM(getpid());
 	}
 
 	GSP.n_steps = 0;
@@ -4968,9 +4968,9 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	}
 
 	while (1){
-                // if no parallel implementation, this function will return immediately after first time evaluation 
-                // No noticeable performance difference in non-parallel SSA because of its inclusion 
-                client(0, NULL, network.spec_groups, network.species, *t, GSP.c, simsize); 
+		// if no parallel implementation, this function will return immediately after first time evaluation
+		// No noticeable performance difference in non-parallel SSA because of its inclusion
+		client(0, NULL, network.spec_groups, network.species, *t, GSP.c, simsize);
 
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxStep){
@@ -4981,7 +4981,6 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		/* Determine time to next reaction */
 //		if (GSP.a_tot <= 0.0) break; // Don't do this, let t_remain go to -INFINITY.
 		rnd = RANDOM(0.0, 1.0);
-
 		while (rnd == 0.0 || rnd == 1.0){ // avoid taking log of 0.0 or 1.0
 			rnd = RANDOM(0.0, 1.0);
 		}
