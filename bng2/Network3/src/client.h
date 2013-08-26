@@ -28,9 +28,7 @@
 #include <cstdio>
 #include <sys/types.h>
 #include <sys/ipc.h>
-#include <sys/shm.h>
 #include <exception>
-#include <map>
 #include "mpi.h"
 
 #define MAX_DAT 1000
@@ -80,7 +78,6 @@ char cbuf[MAX_LEN];
 int tag, rank; 
 int key[WCOUNT]; 
 vector<char*> tokenlist; 
-map<string, int> comkey; 
 
 MPI_Status status;
 MPI_Comm server;
@@ -196,7 +193,6 @@ if (rank == ROOT){ // master node has rank zero; manages worker nodes having ran
 
 if (rank != 0 ){
     int sflag;
-    int c; 
     MPI_Status sstatus; 
     
     MPI_Iprobe(ROOT, MPI_ANY_TAG, MPI_COMM_WORLD, &sflag, &sstatus);
@@ -275,6 +271,15 @@ Msg nonroot_response(char* buf, vector<int>& v, double tau, double* gspc){
             bzero(cbuf, MAX_LEN); 
             sprintf(cbuf,"node %d: concentration of species %d reset to new value %d", rank, dcp->spcid, dcp->conval); 
             strcpy(newmsg.msg1,cbuf);  
+            break; 
+        case 9:
+            if (rank == dcp->rankval){
+                *(gspc + dcp->spcid - 1) = dcp->conval; 
+                bzero(cbuf, MAX_LEN); 
+                sprintf(cbuf,"node %d: concentration of species %d reset to new value %d", rank, dcp->spcid, dcp->conval); 
+                strcpy(newmsg.msg1,cbuf);  
+            }
+            break; 
         case 0: 
             break; 
    }
@@ -348,11 +353,12 @@ void ReadMSG::read(char* msg){
     if (group && grpid) cue = 6;  // group-# (concentration fo group # at all nodes) 
     if (rank && rankval && group && grpid) cue = 7; // rank-# group-# (concentration of group # at node #) 
     if (push && conval && species && spcid) cue = 8; // push-# species-# (change concentration of species # to a new value # at all nodes) 
+    if (push && conval && species && spcid && rank && rankval) cue = 9; // push-# species-# rank-# (change concentration of species # to a new value # at node #) 
 } 
          
 #endif
 
-/*// server.cpp
+/*//server.cpp
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -360,7 +366,6 @@ void ReadMSG::read(char* msg){
 #include <sstream>
 #include <string>
 #include <string.h>
-#include <time.h>
 #include <error.h>
 #include <errno.h>
 #include "mpi.h"
@@ -532,7 +537,6 @@ void print_output(char* msg){
             }
             break;     
         case 3: 
-
             cout << "Nodes";  
             for (int i = 1; i < msglist[1].count + 1; i++){
                 cout << "      " << "Group" << i; 
@@ -571,6 +575,9 @@ void print_output(char* msg){
             for (int i = 1; i< remote_size; i++){
                 cout << msglist[i].msg1 << endl; 
             }
+            break; 
+        case 9:
+            cout << msglist[dcp->rankval].msg1 << endl; 
             break;     
     }
     delete(dcp); 
@@ -641,5 +648,6 @@ void ReadMSG::read(char* msg){
     if (group && grpid) cue = 6; 
     if (rank && rankval && group && grpid) cue = 7; 
     if (push && conval && species && spcid) cue = 8; 
+    if (push && conval && species & spcid && rank && rankval) cue = 9; 
 }
 */
