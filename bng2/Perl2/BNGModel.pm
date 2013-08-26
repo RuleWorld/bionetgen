@@ -800,20 +800,14 @@ sub readNetwork
                             goto EXIT;
                         }
 
-                        # build command        
-                        my $command = sprintf  "\$model->%s(%s);", $action, $options;
-                        # execute action
+                        # execute action        
+                        my $command = sprintf "\$model->%s(%s);", $action, $options;
                         my $t_start = cpu_time(0);
                         $err = eval $command;
-                        if ($@)   {  $err = errgen($@, $lno);   goto EXIT;  }
-                        if ($err) {  $err = errgen($err, $lno); goto EXIT;  }
-
-                        # report time (TODO: maybe more to action?)                        
-                        my $t_interval = cpu_time(0) - $t_start;
-                        if ( $t_interval > 0.0 )
-                        {
-                            printf "CPU TIME: %s %.1f s.\n", $1, $t_interval;
-                        }
+                        if ($@)   { $err = errgen($@);    goto EXIT; }
+                        if ($err) { $err = errgen($err);  goto EXIT; }
+                        my $t_elapsed = cpu_time($t_start);
+                        printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
                     }
                 }
                 
@@ -875,15 +869,14 @@ sub readNetwork
                     goto EXIT;
                 }
 
-                # call to methods associated with $model
-                my $command = sprintf  "\$model->%s(%s);", $action, $options;
-                my $t_start = cpu_time(0);    # Set cpu clock offset
+                # execute action
+                my $command = sprintf "\$model->%s(%s);", $action, $options;
+                my $t_start = cpu_time(0);
                 $err = eval $command;
-                if ($@)   {  $err = errgen($@);    goto EXIT;  }
-                if ($err) {  $err = errgen($err);  goto EXIT;  }
-                my $t_interval = cpu_time(0) - $t_start;
-                if ( $t_interval > 0.0 )
-                {   printf "CPU TIME: %s %.1f s.\n", $action, $t_interval;   }
+                if ($@)   { $err = errgen($@);    goto EXIT; }
+                if ($err) { $err = errgen($err);  goto EXIT; }
+                my $t_elapsed = cpu_time($t_start);
+                printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
             }
             else
             {   # Try to execute general PERL code (Dangerous!!)
@@ -925,7 +918,7 @@ sub readNetwork
             print "Finished processing file $filename.\n";          
             if ($level == 0)
             {   # write time info
-                printf "CPU TIME: total %.1f s.\n", cpu_time(0) - $t_start;
+                printf "CPU TIME: total %.2f s.\n", cpu_time($t_start);
                 # restore STDOUT
                 if ($params->{logging})
                 {

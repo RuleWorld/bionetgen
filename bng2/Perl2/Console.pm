@@ -138,20 +138,16 @@ sub BNGconsole
 		    	    my $err = eval $command;
                     if ($@)
                     {
-                        send_warning( "Problem executing action: $@." );
+                        send_warning("Problem executing action: $@.");
                         last PROCESS_INPUT;
                     }
                     if ($err)
                     {
-                        send_warning( "Problem executing action: $err." );
+                        send_warning("Problem executing action: $err.");
                         last PROCESS_INPUT;
                     }
-    
-		    	    my $t_elapsed = cpu_time(0) - $t_start;
-		    	    if ( $t_elapsed > 0.0 )
-                    {
-		    	        printf "CPU TIME: %s %.1f s.\n", $action, $t_elapsed;
-		    	    }
+		    	    my $t_elapsed = cpu_time($t_start);
+                    printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
 		    	}
             }
     
