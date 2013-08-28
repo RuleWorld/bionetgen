@@ -6,7 +6,6 @@ use FindBin;
 use lib $FindBin::Bin;
 use File::Spec;
 use Cwd;
-use Time::HiRes ("clock");
 
 use constant VERSION_FILENAME => "VERSION";
 use constant DEFAULT_VERSION  => "UNKNOWN";
@@ -491,7 +490,7 @@ sub make_aggregates{
     sub cpu_time
     {
         my $prev_time = @_ ? shift @_ : $store_time;
-        my $curr_time = clock();
+        my $curr_time = sum times;
         $store_time = $curr_time;
         return $curr_time - $prev_time;
     }
