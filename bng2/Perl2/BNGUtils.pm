@@ -6,6 +6,7 @@ use FindBin;
 use lib $FindBin::Bin;
 use File::Spec;
 use Cwd;
+use List::Util ("sum");
 
 use constant VERSION_FILENAME => "VERSION";
 use constant DEFAULT_VERSION  => "UNKNOWN";
