@@ -3,8 +3,7 @@ Creates transformation pairs, creates various dictionaries and infers various ma
 
 Usage: 
 transformationpairs, irreversibles = bpgMaps.getTransformationPairs(transformations,tprules)
-dictRules,dictPatterns,dictTransformations,dictTransformationPairs = bpgMaps.getNameDictionaries(atomizedrules,patterns,transformations,transformationpairs) 
-rule_map,tr_map,trpair_map = bpgMaps.getMaps(dictRules,dictPatterns,dictTransformations,dictTransformationPairs)
+dictRules,dictPatterns,dictTransformations,dictTransformationPairs, rule_map,tr_map,trpair_map = getMaps(atomizedrules,patterns,transformations,transformationpairs)
 
 Dependencies: bpgModel.py
 
