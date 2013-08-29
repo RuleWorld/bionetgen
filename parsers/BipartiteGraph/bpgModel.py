@@ -1,11 +1,11 @@
 '''
 Bipartite Graph - bpgModel.py
 
-Contains methods and classes to take reaction rules and chop them up into atomic patterns and transformations
-Produces atomic rules which need to be processed to create the different bipartite maps
+Contains methods and classes to take reaction rules and atomize into atomic patterns and transformations.
 
 Usage:
 atomizedrules = bpgModel.getAtomizedRules(bngxml)
+patterns,transformations = bpgModel.getElements(atomizedrules)
 
 
 Author: John Sekar
@@ -42,27 +42,55 @@ class Transformation:
 		self.lhs = lhs
 		self.rhs = rhs
 		self.action = action
+		self.annotate = ''
 
 	def __str__(self):
-		if self.lhs==None:
-			lhs_str = '0'
-		else:
-			lhs_str = " + ".join(sorted([str(x) for x in self.lhs]))
-		if self.rhs==None:
-			rhs_str = '0'
-		else:
-			rhs_str = " + ".join(sorted([str(x) for x in self.rhs]))
-		return " ".join([lhs_str,"->",rhs_str])
+		return " ".join([self.strLHS(),"->",self.strRHS()])
 	def __eq__(self,other):
 		return str(self)==str(other)
 	def __hash__(self):
 		return hash(str(self))
 	def __repr__(self):
 		return str(self)
+		
+	def strLHS(self):
+		if self.lhs==None:
+			lhs_str = '0()'
+		else:
+			lhs_str = " + ".join(sorted([str(x) for x in self.lhs]))
+		return lhs_str
+	
+	def strRHS(self):
+		if self.rhs==None:
+			rhs_str = '0()'
+		else:
+			rhs_str = " + ".join(sorted([str(x) for x in self.rhs]))
+		return rhs_str
+		
+	def getLHS(self):
+		if self.lhs==None:
+			return []
+		else:
+			return self.lhs
+			
+	def getRHS(self):
+		if self.rhs==None:
+			return []
+		else:
+			return self.rhs
+			
+	def isSynDel(self):
+		if self.action in ['Add','Delete']:
+			return True
+		else:
+			return False
+	
+			
 
 class AtomicPattern:
 	def __init__(self,sp):
 		self.sp = sp
+		self.annotate = ''
 	def __str__(self):
 		return ".".join(sorted([str(x) for x in self.sp.molecules]))
 	def __eq__(self, other):
@@ -71,6 +99,13 @@ class AtomicPattern:
 		return hash(str(self.sp))
 	def __repr__(self):
 		return str(self.sp)
+	def isMolecule(self):
+		if len(self.sp.molecules) > 1:
+			return False
+		elif len(self.sp.molecules[0].components) > 0:
+			return False
+		else:
+			return True
 
 class ChoppedRule:
 	def __init__(self,n_actions):
@@ -226,24 +261,12 @@ class AtomizedRule:
 	returns an atomized rule
 	'''
 	def __str__(self):
-		tempstr = ["\nTransformations"]
-		for tr in self.transformations:
-			tempstr.append(str(tr))
-		tempstr.append("LHS transformation center")
-		for item in self.transf_center_lhs:
-			tempstr.append(" ".join([str(x) for x in item if x is not None]))
-		tempstr.append("Syndel context")
-		for item in self.syndel_context:
-			tempstr.append(" ".join([str(x) for x in item if x is not None]))
-		tempstr.append("Context")
-		for item in self.context:
-			tempstr.append(str(item))
-		tempstr.append("\n")
-		return "\n".join(tempstr)
-			
-		
+		return self.rulestring
 	
 	def __init__(self,choppedrule,reactants,products):
+		# this is to generate the rule as required
+		self.rulestring = printRule(reactants,products)
+		
 		self.transformations = choppedrule.transformations
 		
 		# this lhs is for the purpose of unambiguously assigning context for simultaneous transformationst
@@ -497,15 +520,44 @@ def getAtomizedRules(bngxml):
 	'''
 	_,rules = readBNGXML.parseXML(bngxml)
 
+	print "\nChopping and atomizing rules..."
 	atomizedrules = []
 	for idx, [reactants, products, actions, mappings, nameDict] in enumerate(rules):
 		choppedrule = chopRule(reactants, products, actions, mappings, nameDict)
 		atomizedrules.append(AtomizedRule(choppedrule,reactants,products))
+	print len(atomizedrules), "rules atomized."
 	return atomizedrules
-		
-		
+	
+def getElements(atomizedrules):
+	'''
+	input atomized rules, return patterns (set) and transformations (set)
+	'''
+	patterns = set()
+	transformations = set()
+	print "\nExtracting basic patterns and transformations..."
+	for rule in atomizedrules:
+		transformations.update(rule.transformations)
+		for tr in rule.transformations:
+			patterns.update(tr.getLHS())
+			patterns.update(tr.getRHS())
+		#for item in rule.transf_center_lhs:
+		#	patterns.update(item)
+		patterns.update(rule.context)
+		for item in rule.syndel_context:
+			patterns.update(item)
+			
+	syndels = [x for x in transformations if x.isSynDel()]
+	molecpats = [x for x in patterns if x.isMolecule()]
+
+	print len(transformations),"transformations found ("+str(len(syndels)),"are syndels)."
+	print len(patterns),"basic patterns constructed, ("+str(len(molecpats)),"in syndels)."
+	
+	return patterns,transformations
+	
+
 if __name__ == "__main__":
 	atomizedrules = getAtomizedRules(sys.argv[-1])
+	patterns,transformations = getElements(atomizedrules)
 	for item in atomizedrules:
 		print item
 	
