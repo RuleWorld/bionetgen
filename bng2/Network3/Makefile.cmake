@@ -43,7 +43,7 @@ MUPARSER_LIB = ${LIBDIR}/libmuparser.a
 #run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(GSL_LIB) $(MUPARSER_LIB)
 run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(NETWORK_BINDIR)
-	cd $(NETWORK_BINDIR); cmake -D CMAKE_CXX_COMPILER=mpic++ $(CMAKELISTS_DIR); make;
+	cd $(NETWORK_BINDIR); cmake $(CMAKELISTS_DIR); make;
 	mkdir -p $(BNG_BINDIR)
 	cp -f $(NETWORK_BINDIR)/run_network $(BNG_BINDIR)
 

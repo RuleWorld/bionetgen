@@ -38,7 +38,6 @@ using namespace std;
 #include "util/util.hh"
 
 #include <cmath>
-#include <mpi.h>
 
 extern "C" int isnan(double);
 
@@ -222,7 +221,6 @@ extern int   print_concentrations_network(FILE* out, double t);
 extern int   finish_print_concentrations_network(FILE* out);
 
 extern FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline);
-extern FILE* init_print_group_concentrations_network_parallel(char* prefix, int append, bool no_newline);
 extern int   print_group_concentrations_network(FILE* out, double t, bool no_newline);
 extern int   finish_print_group_concentrations_network(FILE* out, bool leave_open);
 
@@ -250,7 +248,7 @@ extern int   print_pca_network(FILE* out, double t);
 /* Gillespie Monte Carlo functions */
 extern int    init_gillespie_direct_network(int update_interval, int seed);
 extern int    gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig,
-									   double maxStep, mu::Parser& stop_condition, int* simsize);
+									   double maxStep, mu::Parser& stop_condition);
 //extern long int gillespie_n_steps();
 extern double gillespie_n_steps();
 extern double gillespie_frac_species_active();

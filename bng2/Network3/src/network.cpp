@@ -50,7 +50,6 @@ extern "C" {
  #include <iomanip>
  */
 #include "network.h"
-#include "client.h"
 
 #define BUFSIZE 10000
 
@@ -3370,48 +3369,6 @@ FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_
 	return (out);
 }
 
-FILE* init_print_group_concentrations_network_parallel(char* prefix, int append, bool no_newline) {
-
-	FILE* out;
-	Group* group;
-	int error = 0;
-	char buf[1000];
-	char* fmt = (char*)"%19s";
-	char* mode;
-	if (append) mode = (char*)"a";
-	else mode = (char*)"w";
-
-	/*if (!n_groups_network()) {
-		out = NULL;
-		return (out); // exit
-	}*/
-        sprintf(buf,"%s.gdat",prefix);
-        remove(buf); 
-        bzero(buf,1000);          
-        sprintf(buf, "%s_%d.gdat", prefix, getpid());
-
-	if (!(out = fopen(buf, mode))) {
-		++error;
-		fprintf(stderr, "Couldn't open file %s.\n", buf);
-		return (out); // exit
-	}
-
-	/* Skip header if this file is a continuation */
-	if (append)	return (out);
-
-	/* Write group header  */
-	fprintf(out, "#");
-	fprintf(out, "%18s", "time");
-	for (group = network.spec_groups; group != NULL; group = group->next) {
-		fprintf(out, " ");
-		fprintf(out, fmt, group->name);
-	}
-	if (!no_newline) fprintf(out, "\n"); // Yes, a double negative
-
-//	exit:
-	return (out);
-}
-
 int print_group_concentrations_network(FILE* out, double t, bool no_newline) {
 
 	int i, error = 0, n_species, offset, index;
@@ -4949,7 +4906,7 @@ void update_rxn_rates(int irxn) {
 }
 
 int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C_sig, double maxStep,
-		mu::Parser& stop_condition, int* simsize) {
+		mu::Parser& stop_condition) {
 
 	double t_remain, t_end;
 	double rnd;
@@ -4968,10 +4925,6 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	}
 
 	while (1){
-		// if no parallel implementation, this function will return immediately after first time evaluation
-		// No noticeable performance difference in non-parallel SSA because of its inclusion
-		client(0, NULL, network.spec_groups, network.species, *t, GSP.c, simsize);
-
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxStep){
 			error = -1; // Step limit reached
