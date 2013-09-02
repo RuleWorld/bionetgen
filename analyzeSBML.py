@@ -453,6 +453,8 @@ class SBMLAnalyzer:
             userEquivalences = speciesdictionary['complexDefinition'] \
                 if 'complexDefinition' in speciesdictionary else None
             for element in userEquivalences:
+                if element[0] == 'EGFRim':
+                    print 'hola'
                 tmp = st.Species()
                 label = []
                 for molecule in element[1]:
@@ -469,7 +471,7 @@ class SBMLAnalyzer:
                         
                         #tmp3.addState(molecule[2][2])
                     
-                    tmp2.addComponent(tmp3)
+                        tmp2.addComponent(tmp3)
                     stmp = st.Species()
                     stmp.addMolecule(deepcopy(tmp2))
                     stmp.reset()                                 

@@ -224,8 +224,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
     weights = weightDependencyGraph(prunnedDependencyGraph)
     unevenElementDict = {}
     for element in weights:
-        if element[0] == 'EGF_EGFR2_P':
-            print 'break'
         #print element
         candidates = [x for x in prunnedDependencyGraph[element[0]]]
         #print '-',candidates
@@ -613,11 +611,8 @@ def transformMolecules(parser, database, configurationFile,
     #####sct
     prunnedDependencyGraph, weights, unevenElementDict = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
-    classifications, equivalenceTranslator, eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules, 
-                                                                                                molecules)
-
+    classifications, equivalenceTranslator, eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     weights = sorted(weights, key=lambda rule: rule[1])
-    print prunnedDependencyGraph
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
                                                                 eequivalenceTranslator)
     propagateChanges(database.translator, prunnedDependencyGraph)
