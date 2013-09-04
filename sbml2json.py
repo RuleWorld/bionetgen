@@ -28,7 +28,7 @@ class SBML2JSON:
         for unitDefinition in self.model.getListOfUnitDefinitions():
             unitList = []
             for unit in unitDefinition.getListOfUnits():
-                
+                        
                 unitList.append([unit.getKind(),unit.getScale(),unit.getExponent()])
                 
             self.unitDictionary[unitDefinition.getId()] = unitList
@@ -45,6 +45,8 @@ time	 second	 second
         
     def getParameters(self):
         parameters = []
+        prx = {'name':"Nav",'value':"6.022e8",'unit':"",'type':"Avogadro number for 1 um^3"}
+        parameters.append(prx)
         for parameter in self.model.getListOfParameters():
             parameterSpecs = {'name':parameter.getId(),'value':parameter.getValue(),
                               'unit':parameter.getUnits(),'type' : ""}
@@ -59,8 +61,11 @@ time	 second	 second
                     parameterSpecs['value'] *= 10 ** (factor[1] * factor[2])
                     parameterSpecs['unit'] = '{0}*1e{1}'.format(parameterSpecs['unit'],factor[1]*factor[2])
                 if 'mole' in parameter.getUnits() and 'per_mole' not in parameter.getUnits():
-                    parameterSpecs['value' ] *= float('6.022e23')
+                    parameterSpecs['value' ] *= float(6.022e8)
                     parameterSpecs['unit'] = '{0}*{1}'.format(parameterSpecs['unit'],'avo.num')
+            #if parameter.getUnits() == '':
+            #    parameterSpecs['value'] *= float(6.022e8*1000)
+            #    parameterSpecs['unit'] = '{0}*{1}'.format(parameterSpecs['unit'],'avo.num*1000')
             
             parameters.append(parameterSpecs)
         prx = {'name':"rxn_layer_t",'value':"0.01",'unit':"um",'type':""}
@@ -71,7 +76,8 @@ time	 second	 second
         parameters.append(ph)
         parameters.append(pRs)
         parameters.append(pRc)
-        return parameters
+        parameterDict = {idx+1:x for idx,x in enumerate(parameters)}
+        return parameterDict
         
     
     def __getRawCompartments(self):
@@ -128,8 +134,10 @@ time	 second	 second
                 for factor in self.unitDictionary[species.getSubstanceUnits()]:
                     initialConcentration *= 10 ** (factor[1] * factor[2])
                 if 'mole' in species.getSubstanceUnits():
-                    initialConcentration *= float('6.022e23')
-
+                    initialConcentration /= float(6.022e8)
+            if species.getSubstanceUnits() == '':
+                initialConcentration /= float(6.022e8)
+                
             isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
             if initialConcentration != 0:
@@ -137,7 +145,7 @@ time	 second	 second
                     objectExpr = '{0}[{1}]'.format(inside.upper(),compartment.upper())
                 else:
                     objectExpr = '{0}'.format(compartment)                    
-                releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx),'molecule':species.getId(),'shape':'OBJECT'
+                releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
             ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr}
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
@@ -145,7 +153,9 @@ time	 second	 second
             molecules.append(moleculeSpecs)
             
             #self.sp eciesDictionary[identifier]
-        return molecules,release
+        moleculesDict = {idx+1:x for idx,x in enumerate(molecules)}
+        releaseDict = {idx+1:x for idx, x in enumerate(release)}
+        return moleculesDict,releaseDict
     
     def getPrunnedTree(self,math,remainderPatterns):
         while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
@@ -219,7 +229,22 @@ time	 second	 second
 
         return rateR,math.getNumChildren()
 
-    def getReactions(self):
+    def adjustParameters(self,stoichoimetry,rate,parameters):
+        for parameter in parameters:
+            if parameters[parameter]['name'] in rate and parameters[parameter]['unit'] == '':
+                print parameters[parameter]
+                if stoichoimetry == 2:
+                    parameters[parameter]['value'] *= float(6.022e8)
+                    parameters[parameter]['unit'] ='Bimolecular * NaV'
+                elif stoichoimetry == 0:
+                    parameters[parameter]['value'] /= float(6.022e8)
+                    parameters[parameter]['unit'] ='0-order / NaV'
+                elif stoichoimetry == 1:
+                    parameters[parameter]['unit'] ='Unimolecular'
+                print parameters[parameter]
+                
+            
+    def getReactions(self,sparameters):
         reactionSpecs = []
         for index, reaction in enumerate(self.model.getListOfReactions()):
             reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
@@ -267,8 +292,11 @@ time	 second	 second
                 tmp['products'] = ' + '.join(rcList)
                 tmp['fwd_rate'] = rateR
                 reactionSpecs.append(tmp)
-
-        return reactionSpecs
+            
+            self.adjustParameters(len(reactant),rateL,sparameters)
+            self.adjustParameters(len(product),rateR,sparameters)
+        reactionDict = {idx+1:x for idx,x in enumerate(reactionSpecs)}
+        return reactionDict
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
 
@@ -276,30 +304,34 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='input.xml',type="string",
+		default='bngl2mcell/rec_dim_sbml.xml',type="string",
 		help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
-		default='output.json',type="string",
-		help="the output JSON file. Default = output.json",metavar="FILE")
+		type="string",
+		help="the output JSON file. Default = <input>.py",metavar="FILE")
     (options, args) = parser.parse_args()
     reader = libsbml.SBMLReader()
     nameStr = options.input
+    if options.output == None:
+        outputFile = nameStr + '.py'
+    else:
+        outputFile = options.output
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
         print 'No such input file'
         return
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
-    molecules,release = parser.getMolecules()        
-    reactions =  parser.getReactions()
+    molecules,release = parser.getMolecules()      
+    reactions =  parser.getReactions(parameters)
     definition = {}
     definition['par_list'] = parameters
     definition['mol_list'] = molecules
     definition['rxn_list'] = reactions
     definition['rel_list'] = release
-    print 'Writing output to {0}'.format(options.output)
-    with open(options.output,'w') as f:
-        json.dump(definition,f,sort_keys=True,indent=4, separators=(',', ': '))
+    print 'Writing output to {0}'.format(outputFile)
+    with open(outputFile,'w') as f:
+        json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
         
 
 if __name__ == "__main__":
