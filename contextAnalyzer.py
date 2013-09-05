@@ -222,11 +222,21 @@ def extractStatistics():
     print x
         #redundantDict['{0}.{1}'.format(element,element2)] = tmpDict[element2]
  
-
+def findNewParameters(parameters,bngParameters):
+    '''
+    finds which parameters were added in the xml definition that were not in the original bngl file 
+    '''
+    tmp = [par.strip().split(' ')[0] for par in parameters]
+    newPar = []    
+    for bngp in bngParameters:
+        if bngp not in tmp:
+            newPar.append('\t {0} {1}\n'.format(bngp,bngParameters[bngp]))
+    return newPar
+    
 def main():
     fileName = 'complex/output19.bngl'
     console.bngl2xml(fileName)
-    species,rules= readBNGXML.parseXML('output19.xml')
+    species,rules,par= readBNGXML.parseXML('output19.xml')
     #print rules
     
     
@@ -286,10 +296,13 @@ def main():
     for element in newRules:
         newRulesArray.append('{0}\n'.format(str(rules[element][0])))
     lines = readFile(fileName)
-    start = lines.index('begin reaction rules\n')
-    end = lines.index('end reaction rules\n')
-    newLines = lines[0:start+1] + newRulesArray + lines[end:len(lines)]
-    print newLines
+    startR = lines.index('begin reaction rules\n')
+    endR = lines.index('end reaction rules\n')
+    startP = lines.index('begin parameters\n')
+    endP = lines.index('end parameters\n')
+    
+    newPar = findNewParameters(lines[startP+1:endP],par)
+    newLines = lines[0:endP] + newPar + lines[endP:startR+1] + newRulesArray + lines[endR:len(lines)]
     
     f = open(fileName + 'reduced.bngl','w')
     f.writelines(newLines)
