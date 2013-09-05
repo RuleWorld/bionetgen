@@ -36,15 +36,26 @@ class TestOne(ParametrizedTestCase):
     Test for file correctness
     '''
     def test_correctness(self):
-        fileName = self.param
-        score = console.correctness(fileName)
+        fileName = self.param[0]
+        score = console.correctness(fileName + '.bngl')
         self.assertTrue(score)
 
+    '''
+    test for the generated network to be the same
+    '''
+    def test_networkSameness(self):
+        fileNameReference = self.param[0]
+        fileNameComparison = self.param[1]
+        console.writeNetwork(fileNameReference + '.bngl')
+        console.writeNetwork(fileNameComparison + '.bngl')
+        
+        #netReference = open()
+        return True
 
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
     #ran = range(1,410)
-    suite.addTest(ParametrizedTestCase.parametrize(TestOne, param='complex/output19.bnglreduced.bngl'))
+    suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=['complex/output19.bnglreduced','complex/output19']))
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 
