@@ -85,6 +85,18 @@ def createMetaRule(ruleSet,differences):
                                     molList[key] = []
                                 molList[key].append([reactant,molecule,component])
         moleculeDict.append(molList)
+        for reactant in ruleDescription[0].products:
+            for key in differences:
+                for molecule in reactant.molecules:
+                    if molecule.name + '(' in key:
+                        for component in molecule.components:
+                            if '(' + component.name + ')' in key:
+                                #print molecule.name,component.name,key
+                                if key not in molList:
+                                    molList[key] = []
+                                molList[key].append([reactant,molecule,component])
+        moleculeDict.append(molList)
+
     metaRule = moleculeDict[0]
     matchedArray = {}
     for idx in range(1,len(moleculeDict)):
