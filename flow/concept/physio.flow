@@ -1,0 +1,12 @@
+modelname "physiological_man"
+universal_rules "univ.bngl"
+
+begin organ "heart"
+    file "heart.bngl"
+    output "liver", "flow1"
+end organ
+
+begin organ "liver"
+    file "liver.bngl"
+    output "heart", "flow2"
+end organ

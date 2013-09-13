@@ -1,0 +1,30 @@
+begin parameters
+    vol_vascular_heart 1.0
+    vol_vascular_liver 1.0
+    init_A_heart  1.0
+    init_A_liver  1.0
+    init_B  1.0
+    init_C  1.0
+end parameters
+begin compartments
+    Vascular_heart  3  vol_vascular_heart
+    Vascular_liver  3  vol_vascular_liver
+end compartments
+begin seed species
+    A()@Vascular_heart  init_A_heart
+    A()@Vascular_liver  init_A_liver
+    B()@Vascular_heart  init_B
+    C()@Vascular_liver  init_C
+end seed species
+begin reaction rules
+    # joint rules
+    A@Vascular_heart + B@Vascular_heart -> A@Vascular_heart  rateAB
+    A@Vascular_liver + C@Vascular_liver -> A@Vascular_liver  rateAC
+    # transport rules
+    A@Vascular_heart -> A@Vascular_liver  flow1
+    A@Vascular_liver -> A@Vascular_heart  flow2
+    B@Vascular_heart -> B@Vascular_liver  flow1
+    B@Vascular_liver -> B@Vascular_heart  flow2
+    C@Vascular_heart -> C@Vascular_liver  flow1
+    C@Vascular_liver -> C@Vascular_heart  flow2
+end reaction rules
