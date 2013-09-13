@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+use strict;
+use warnings;
+
 my $file = shift @ARGV;
 open(my $filehandle,"<", $file) or die "Problem opening file";
 while ( my $line = <$filehandle> )
