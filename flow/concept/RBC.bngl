@@ -1,0 +1,42 @@
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+krbcplas 0.05107/40 #rbc to plasma adjusted for humans
+kplasrbc 0.0139/40 #plasma to rbc
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBR1         2         1   Body	 #Red blood cells from veins
+EBR2         2         1   Body  #Red blood cells from arteries
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  RBC1       3         1   EBR1  
+  RBC2       3         1   EBR2  
+
+end compartments
+begin molecule types
+drug()
+
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	RBC1     drug()@RBC1
+Molecules	RBC2     drug()@RBC2 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@VPL<->drug()@RBC1 krbcplas,kplasrbc 
+drug()@APL<->drug()@RBC2 krbcplas,kplasrbc 
+end reaction rules
+end model

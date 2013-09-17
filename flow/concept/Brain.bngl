@@ -1,0 +1,51 @@
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fb 0.78
+#Tissue Volume L
+BrainVol 1.4
+#Tissue Vascular Fraction 
+frac_b  0.04      
+#From Florian 
+finb Fb/BrainVol  #flow into brain from arteries
+BRvolV BrainVol*frac_b         #Brain vascular volume L
+BRvolEV BrainVol*(1-frac_b)         #Brain vascular volume L
+kbve 0.0547
+kbev 0.0573
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBBr         2         1   Body	 #Brain 
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Brain
+  BRV        3   BRvolV     EBBr  
+  BRE        2   BRvolEV	BRV   
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	BrainV   drug()@BRV
+Molecules   BrainEV  drug()@BRE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@BRV finb
+drug()@BRV<->drug()@BRE kbve,kbev
+drug()@BRV->drug()@VPL finb
+end reaction rules
+end model

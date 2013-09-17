@@ -1,0 +1,57 @@
+begin model
+begin parameters
+k1 0.51
+k2 0.49
+k3 0.51
+Ft 0.03
+#Tissue Volume
+TumorVol 0.2
+#From Florian 
+ fint Ft/TumorVol   #flow into tumor from arteries
+ ft  0.05      #tissue vascular fraction tumor
+TUvolV  TumorVol*ft         #Tumor vascular volume L
+TUvolEV TumorVol*(1-ft)         #Tumor vascular volume L
+ktve 0.11
+ktev 0.0006
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries	
+EBTu         2         1   Body	 #Tumor
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Tumor
+  TUV        3   TUvolV     EBTu 
+  TUE        2   TUvolEV	TUV  
+  IC         3   1          TUE
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	TumorV   drug()@TUV
+Molecules   TumorEV  drug()@TUE
+Molecules   cancer    drug()@TUV	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+
+drug()@APL->drug()@TUV fint
+drug()@TUV<->drug()@TUE ktve,ktev
+drug()@TUV->drug()@VPL fint
+
+drug()@TUE<->drug()@IC k1,k2
+drug()@IC->drug()@TUV k3
+
+end reaction rules
+end model

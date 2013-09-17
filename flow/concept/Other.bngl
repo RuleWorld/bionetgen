@@ -1,0 +1,48 @@
+begin model
+begin parameters
+Fo 0.36
+#Tissue Volume
+OtherVol 15.8
+#From Florian 
+ fino Fo/OtherVol   #flow into other from arteries
+ fo  0.05      #tissue vascular fraction other
+OTvolV OtherVol*fo       #Other vascular volume L
+OTvolEV OtherVol*(1-fo)
+kove 0.7451
+koev 0.0099
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBOt         2         1   Body	 #Other	 
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Other
+  OTV        3   OTvolV     EBOt   
+  OTE        2   OTvolEV	OTV  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	OtherV   drug()@OTV
+Molecules   OtherEV  drug()@OTE
+	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@OTV fino
+drug()@OTV<->drug()@OTE kove,koev
+drug()@OTV->drug()@VPL fino
+end reaction rules
+end model

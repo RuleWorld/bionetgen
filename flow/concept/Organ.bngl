@@ -1,0 +1,61 @@
+begin model
+begin parameters
+flow 1 #flow rate into and out of vascular space
+f  1      #tissue vascular fraction kidney
+BodyVolume 70
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+TissueVolume 1
+
+OrganVolV  TissueVolume*f        #Heart vascular volume L
+OrganVolEV TissueVolume*(1-f)   #Heart extravascular volume L
+
+kve 1
+kev 1
+
+end parameters
+begin compartments
+  Body                  3         BodyVolume  
+  
+  EBV                   2         1         Body	 # Endothelial Barrier Veins
+  EBA                   2         1         Body# Endothelial Barrier Arteries
+  EBorgan               2         1         Body	 #Heart
+
+  Venous_Blood          3         1         EBV 
+  Arterial_Blood        3         1         EBA 
+
+  Organ_Vascular        3       OrganVolV   EBorgan  
+  Organ_Extravascular   2       OrganVolEV	Organ_Vascular  
+
+end compartments
+begin molecule types
+
+drug()
+
+end molecule types
+
+begin seed species
+
+end seed species
+
+begin observables
+
+Molecules   Venous              drug()@Venous_Blood
+Molecules	OrganVascular       drug()@Organ_Vascular
+Molecules   OrganExtravascular  drug()@Organ_Extravascular
+	 
+end observables
+
+begin functions
+
+end functions
+
+begin reaction rules
+
+drug()@Arterial_Blood->drug()@Organ_Vascular flow
+drug()@Organ_Vascular<->drug()@Organ_Extravascular kve,kev
+drug()@Organ_Vascular->drug()@Venous_Blood flow
+
+end reaction rules
+
+end model
