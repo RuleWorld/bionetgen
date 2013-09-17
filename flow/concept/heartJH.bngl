@@ -1,0 +1,15 @@
+begin parameters
+    vol_vascular 1.0
+    init_A  1.0
+    init_B  1.0
+end parameters
+begin compartments
+    Vascular  3  vol_vascular
+end compartments
+begin seed species
+    A()@Vascular  init_A
+    B()@Vascular  init_B
+end seed species
+begin reaction rules
+    A@Vascular + B@Vascular -> A@Vascular  rateAB
+end reaction rules

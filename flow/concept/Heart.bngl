@@ -1,0 +1,50 @@
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fh 0.26
+#Tissue Volume L
+HeartVol 0.33
+#Tissue Vascular Fraction
+frac_h  0.02     
+#From Florian 
+finh Fh/HeartVol     #flow into heart from arteries
+HEvolV HeartVol*frac_h        #Heart vascular volume L
+HEvolEV HeartVol*(1-frac_h)        #Heart vascular volume L
+khve 2.246
+khev 0.0495
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBHe         2         1   Body	 #Heart
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Heart
+  HEV        3   HEvolV     EBHe  
+  HEE        2   HEvolEV	HEV  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules	HeartV   drug()@HEV
+Molecules   HeartEV  drug()@HEE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@HEV finh
+drug()@HEV<->drug()@HEE khve,khev
+drug()@HEV->drug()@VPL finh
+end reaction rules
+end model

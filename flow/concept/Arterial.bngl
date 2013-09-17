@@ -1,0 +1,155 @@
+begin model
+begin parameters
+#Tissue Blood Flow Rates L/min
+Fli 0.45
+Fl 5.60
+Ft 0.03
+Fg 1.13
+Fm 0.59
+Fs 0.02
+Fh 0.26
+Ff 0.74
+Fk 1.24
+Fb 0.78
+Fo 0.36
+#Tissue Volume L
+LiverVol 1.8
+LungVol 0.53
+TumorVol 0.2
+GutVol 1.19
+MuscleVol 28
+SpleenVol 0.18
+HeartVol 0.33
+FatVol 15
+KidneyVol 0.31
+BrainVol 1.4
+OtherVol 15.8
+#Tissue Vascular Fraction
+frac_li 0.16     
+frac_l  0.3      
+frac_t  0.05 
+frac_g  0   
+frac_m  0.03    
+frac_s  0.20
+frac_h  0.02    
+frac_f  0.03    
+frac_k  0.24   
+frac_b  0.04    
+frac_o  0.05    
+#From Florian 
+finli Fli/LiverVol   #flow into liver from arteries(L/min/L) min-1
+finl Fl/LungVol   #flow into lungs from veins min-1
+fint Ft/TumorVol   #flow into tumor from arteries
+fing Fg/GutVol     #flow into gut from arteries
+finm Fm/MuscleVol  #flow into muscle from arteries
+fins Fs/SpleenVol  #flow into spleen from arteries
+finh Fh/HeartVol     #flow into heart from arteries
+finf Ff/FatVol    #flow into fat from arteries
+fink Fk/KidneyVol     #flow into kidneys from arteries
+finb Fb/BrainVol  #flow into brain from arteries
+fino Fo/OtherVol   #flow into other from arteries
+
+FAvolV FatVol*frac_f          #Fat vascular volume L  
+BRvolV BrainVol*frac_b         #Brain vascular volume L
+HEvolV HeartVol*frac_h        #Heart vascular volume L
+KIvolV KidneyVol*frac_k        #Kidneys vascular volume L
+LIvolV LiverVol*frac_li         #Liver vascular volume L
+LUvolV LungVol*frac_l         #Lung vascular volume L
+GUvolV GutVol*frac_g
+MUvolV MuscleVol*frac_m          #Muscle vascular volume L
+SPvolV SpleenVol*frac_s
+OTvolV OtherVol*frac_o       #Other vascular volume L
+TUvolV TumorVol*frac_t         #Tumor vascular volume L
+
+krbcplas 0.05107/40 #rbc to plasma adjusted for humans
+kplasrbc 0.0139/40 #plasma to rbc
+
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBR1         2         1   Body	 #Red blood cells from veins
+EBR2         2         1   Body  #Red blood cells from arteries
+EBLu         2         1   Body	 #Lung 
+EBBr         2         1   Body	 #Brain 
+EBHe         2         1   Body	 #Heart
+EBLi         2         1   Body	 #Liver
+EBKi         2         1   Body	 #Kidney	
+EBTu         2         1   Body	 #Tumor
+EBOt         2         1   Body	 #Other	 
+EBMu         2         1   Body	 #Muscle
+EBFa         2         1   Body	 #Fat 
+EBSp         2         1   Body	 #Spleen 
+EBGu         2         1   Body	 #Gut
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  RBC1       3         1   EBR1  
+  RBC2       3         1   EBR2  
+  #Lung
+  LUV        3   LUvolV     EBLu  
+  #Tumor
+  TUV        3   TUvolV     EBTu 
+  #Adipose
+  FAV        3   FAvolV     EBFa   
+  #Brain
+  BRV        3   BRvolV     EBBr    
+  #Heart
+  HEV        3   HEvolV     EBHe   
+  #Kidney
+  KIV        3   KIvolV     EBKi    
+  #Liver 
+  LIV        3   LIvolV     EBLi   
+  #Spleen
+  SPV        3   SPvolV     EBSp  
+  #Gut
+  GUV        3   GUvolV     EBGu  
+  #Muscle
+  MUV        3   MUvolV     EBMu  
+  #Other
+  OTV        3   OTvolV     EBOt    
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules	RBC1     drug()@RBC1
+Molecules	RBC2     drug()@RBC2
+Molecules	LungV    drug()@LUV
+Molecules	TumorV   drug()@TUV
+Molecules	FatV     drug()@FAV
+Molecules	BrainV   drug()@BRV
+Molecules	HeartV   drug()@HEV
+Molecules	LiverV   drug()@LIV
+Molecules	KidneyV  drug()@KIV
+Molecules	OtherV   drug()@OTV
+Molecules	MuscleV  drug()@MUV
+Molecules	SpleenV  drug()@SPV
+Molecules	Gut      drug()@GUV
+Molecules   cancer   drug()@TUV	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+
+drug()@LUV->drug()@APL finl
+drug()@APL<->drug()@RBC2 krbcplas,kplasrbc 
+drug()@APL->drug()@TUV fint
+drug()@APL->drug()@FAV finf
+drug()@APL->drug()@BRV finb
+drug()@APL->drug()@HEV finh
+drug()@APL->drug()@KIV fink
+drug()@APL->drug()@LIV finli
+drug()@APL->drug()@SPV fins
+drug()@APL->drug()@GUV fing
+drug()@APL->drug()@MUV finm
+drug()@APL->drug()@OTV fino
+
+end reaction rules
+end model

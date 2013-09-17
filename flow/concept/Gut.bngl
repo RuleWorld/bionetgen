@@ -1,0 +1,55 @@
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fli 0.45
+Fg 1.13
+#Tissue Volume L
+LiverVol 1.8
+GutVol 1.19
+#Tissue Vascular Fraction
+frac_li 0.16     
+frac_g  0     
+#From Florian 
+fing Fg/GutVol     #flow into gut from arteries
+LIvolV LiverVol*frac_li         #Liver vascular volume L
+GUvolV GutVol*frac_g
+GUvolEV GutVol*(1-frac_g)
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBLi         2         1   Body	 #Liver
+EBGu         2         1   Body	 #Gut
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Liver 
+  LIV        3   LIvolV     EBLi  
+  #Gut
+  GUV        3   GUvolV     EBGu  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules	Infusion Infusion()@Body
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	LiverV   drug()@LIV
+Molecules	Gut      drug()@GUV
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@GUV fing
+drug()@GUV->drug()@LIV fing
+end reaction rules
+end model
