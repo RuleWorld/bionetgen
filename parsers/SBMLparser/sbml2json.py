@@ -95,6 +95,9 @@ time	 second	 second
         return compartmentList
     
     def getOutsideInsideCompartment(self,compartmentList,compartment):
+        '''
+        Gets the containing compartment for this compartment
+        '''
         outside = compartmentList[compartment][2]
         for comp in compartmentList:
             if compartmentList[comp][2] == compartment:
@@ -158,6 +161,9 @@ time	 second	 second
         return moleculesDict,releaseDict
     
     def getPrunnedTree(self,math,remainderPatterns):
+        '''
+        remove mass action factors 
+        '''
         while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
             if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
@@ -230,6 +236,9 @@ time	 second	 second
         return rateR,math.getNumChildren()
 
     def adjustParameters(self,stoichoimetry,rate,parameters):
+        '''
+        adds avogadros number and other adjusting factors to the reaction rates
+        '''
         for parameter in parameters:
             if parameters[parameter]['name'] in rate and parameters[parameter]['unit'] == '':
                 print parameters[parameter]
@@ -245,6 +254,10 @@ time	 second	 second
                 
             
     def getReactions(self,sparameters):
+        '''
+        returns a list with reactant,product and fwdRate
+        '''        
+        
         reactionSpecs = []
         for index, reaction in enumerate(self.model.getListOfReactions()):
             reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
@@ -302,6 +315,7 @@ time	 second	 second
 
 def main():
 	
+    #command line arguments
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
 		default='bngl2mcell/rec_dim_sbml.xml',type="string",
@@ -316,10 +330,13 @@ def main():
         outputFile = nameStr + '.py'
     else:
         outputFile = options.output
+        
+    #libsbml initialization stuff
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
         print 'No such input file'
         return
+    #get data
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
     molecules,release = parser.getMolecules()      
@@ -330,6 +347,7 @@ def main():
     definition['rxn_list'] = reactions
     definition['rel_list'] = release
     print 'Writing output to {0}'.format(outputFile)
+    #output
     with open(outputFile,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
         
