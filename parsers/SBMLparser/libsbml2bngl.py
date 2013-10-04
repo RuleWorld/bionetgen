@@ -22,7 +22,7 @@ import re
 import pickle
 log = {'species': [], 'reactions': []}
 import signal
-
+from collections import Counter
 
 def handler(signum, frame):
     print "Forever is over!"
@@ -741,18 +741,185 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
     document = reader.readSBMLFromString(inputString)
     return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize)[-1]
 
+def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
+    '''
+    this method goes through the list of functions and removes all
+    sbml elements that are extraneous to bngl
+    '''
+    
+    for idx in range(0,len(functions)):
+        for sbml in sbmlfunctions:
+            if sbml in functions[idx]:
+                functions[idx] = writer.extendFunction(functions[idx],sbml,sbmlfunctions[sbml])
+        functions[idx] =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',functions[idx])
+        functions[idx] =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',functions[idx])
+        functions[idx] =re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',functions[idx])
+    
+    #functions.extend(sbmlfunctions)
+    dependencies2 = {}
+    for idx in range(0,len(functions)):
+        dependencies2[functions[idx].split(' = ')[0].split('(')[0].strip()] = []
+        for key in artificialObservables:
+            oldfunc = functions[idx]
+            functions[idx] = (re.sub(r'(\W|^)({0})([^\w(]|$)'.format(key),r'\1\2()\3',functions[idx]))
+            if oldfunc != functions[idx]:
+                dependencies2[functions[idx].split(' = ')[0].split('(')[0]].append(key)
+        for element in sbmlfunctions:
+            oldfunc = functions[idx]
+            key = element.split(' = ')[0].split('(')[0]
+            if re.search('(\W|^){0}(\W|$)'.format(key),functions[idx].split(' = ')[1]) != None:
+                dependencies2[functions[idx].split(' = ')[0].split('(')[0]].append(key)
+        for element in tfunc:
+            key = element.split(' = ')[0].split('(')[0]
+            if key in functions[idx].split(' = ')[1]:
+                dependencies2[functions[idx].split( ' = ')[0].split('(')[0]].append(key)
+    '''           
+    for counter in range(0,3):
+        for element in dependencies2:
+            if len(dependencies2[element]) > counter:
+                dependencies2[element].extend(dependencies2[dependencies2[element][counter]])
+    '''
+    fd = []
+    for function in functions:
+        fd.append([function,resolveDependencies(dependencies2,function.split(' = ' )[0].split('(')[0],0)])
+    fd = sorted(fd,key= lambda rule:rule[1])
+    functions = [x[0] for x in fd]
+    
+    return functions
+
+
+def extractAtoms(species):
+    '''
+    given a list of structures, returns a list
+    of individual molecules/compartment pairs
+    appends a number for 
+    '''
+    listOfAtoms = set()
+    for molecule in species.molecules:
+        for component in molecule.components:
+            listOfAtoms.add(tuple([molecule.name,component.name]))
+    return listOfAtoms
+
+
+def bondPartners(species,bondNumber):
+    relevantComponents = []
+    for molecule in species.molecules:
+        for component in molecule.components:
+            if bondNumber in component.bonds:
+                relevantComponents.append(tuple([molecule.name,component.name]))
+    return relevantComponents
+    
+def getMoleculeByName(species,atom):
+    '''
+    returns the state of molecule-component contained in atom
+    '''
+    
+    stateVector = []
+    for molecule in species.molecules:
+        if molecule.name == atom[0]:
+            for component in molecule.components:
+                if component.name == atom[1]:
+                    #get whatever species this atom is bound to
+                    if len(component.bonds) > 0:
+                        comp = bondPartners(species,component.bonds[0])
+                        comp = [x for x in comp if x != atom]
+                        if len(comp) > 0:
+                            stateVector.append(comp[0])
+                        else:
+                            stateVector.append('')
+                    else:
+                        stateVector.append('')
+                    if len(component.states) > 0:
+                        stateVector.append(component.activeState)
+                    else:
+                        stateVector.append('')
+                    
+    return tuple(stateVector)
+        
+    
+    
+def extractCompartmentCoIncidence(species):
+    atomPairDictionary = {}
+    for molecule in species.molecules:
+        for component in molecule.components:
+            for component2 in molecule.components:
+                if component == component2:
+                    continue
+                atom = tuple([molecule.name,component.name])
+                atom2 = tuple([molecule.name,component2.name])
+                molId1 = getMoleculeByName(species,atom)
+                molId2 = getMoleculeByName(species,atom2)
+                key = tuple([atom,atom2])
+                if key not in atomPairDictionary:
+                    atomPairDictionary[key] = Counter()
+                atomPairDictionary[key].update([tuple([molId1,molId2])])
+
+    return atomPairDictionary    
+    
+def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEquivalence):
+    '''
+    Iterate over the translated species and check which compartments
+    are used together, and how. 
+    '''
+    reader = libsbml.SBMLReader()
+    document = reader.readSBMLFromFile(bioNumber)
+    
+    
+    parser =SBML2BNGL(document.getModel(),useID)
+    database = structures.Databases()
+    
+    #call the atomizer (or not)
+    #if atomize:
+    translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    #else:    
+    #    translator={} 
+
+
+    compartmentPairs = {}
+    for element in translator:
+        temp = extractCompartmentCoIncidence(translator[element])
+        for element in temp:
+            if element not in compartmentPairs:
+                compartmentPairs[element] = temp[element]
+            else:
+                compartmentPairs[element].update(temp[element])
+    finalCompartmentPairs = {}
+    
+    for element in compartmentPairs:
+        if element[0][0] not in finalCompartmentPairs:
+            finalCompartmentPairs[element[0][0]] = {}
+        finalCompartmentPairs[element[0][0]][tuple([element[0][1],element[1][1]])] = compartmentPairs[element]
+    return finalCompartmentPairs
+    
+    
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None,atomize=False):
     '''
     one of the library's main entry methods. Process data from a string
     '''
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(bioNumber)
-    returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize)
+    
+    parser =SBML2BNGL(document.getModel(),useID)
+    database = structures.Databases()
+    
+    #call the atomizer (or not)
+    if atomize:
+        translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    else:    
+        translator={} 
+
+    
+    returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     with open(outputFile,'w') as f:
             f.write(returnArray[-1])
     return returnArray[0:-1]
 
-def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize):
+    
+def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator):
+    '''
+    taking the atomized dictionary and a series of data structure, this method
+    does the actual string output.
+    '''
     useArtificialRules = False
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
@@ -825,6 +992,9 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     functions.extend(aRules)
 
     sbmlfunctions = parser.getSBMLFunctions()
+    
+    processFunctions(functions,sbmlfunctions,artificialObservables,tfunc)
+    
     for interation in range(0,3):
         for sbml2 in sbmlfunctions:
             for sbml in sbmlfunctions:
@@ -833,43 +1003,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
                 if sbml in sbmlfunctions[sbml2]:
                     sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
     
-    for idx in range(0,len(functions)):
-        for sbml in sbmlfunctions:
-            if sbml in functions[idx]:
-                functions[idx] = writer.extendFunction(functions[idx],sbml,sbmlfunctions[sbml])
-        functions[idx] =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',functions[idx])
-        functions[idx] =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',functions[idx])
-        functions[idx] =re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',functions[idx])
-    
-    #functions.extend(sbmlfunctions)
-    dependencies2 = {}
-    for idx in range(0,len(functions)):
-        dependencies2[functions[idx].split(' = ')[0].split('(')[0].strip()] = []
-        for key in artificialObservables:
-            oldfunc = functions[idx]
-            functions[idx] = (re.sub(r'(\W|^)({0})([^\w(]|$)'.format(key),r'\1\2()\3',functions[idx]))
-            if oldfunc != functions[idx]:
-                dependencies2[functions[idx].split(' = ')[0].split('(')[0]].append(key)
-        for element in sbmlfunctions:
-            oldfunc = functions[idx]
-            key = element.split(' = ')[0].split('(')[0]
-            if re.search('(\W|^){0}(\W|$)'.format(key),functions[idx].split(' = ')[1]) != None:
-                dependencies2[functions[idx].split(' = ')[0].split('(')[0]].append(key)
-        for element in tfunc:
-            key = element.split(' = ')[0].split('(')[0]
-            if key in functions[idx].split(' = ')[1]:
-                dependencies2[functions[idx].split( ' = ')[0].split('(')[0]].append(key)
-    '''           
-    for counter in range(0,3):
-        for element in dependencies2:
-            if len(dependencies2[element]) > counter:
-                dependencies2[element].extend(dependencies2[dependencies2[element][counter]])
-    '''
-    fd = []
-    for function in functions:
-        fd.append([function,resolveDependencies(dependencies2,function.split(' = ' )[0].split('(')[0],0)])
-    fd = sorted(fd,key= lambda rule:rule[1])
-    functions = [x[0] for x in fd]
     #functions.extend(aRules)
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
         compartments.append('cell 3 1.0')
@@ -909,7 +1042,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
 
     #rate of each classified rule
     classificationDict = {}
-    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments), finalString
+
+    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments), parser.getSpeciesAnnotation(),finalString
     
     '''
     if translator != {}:
@@ -942,6 +1076,11 @@ def getAnnotations(annotation):
         annotationDictionary.append(annotation.getValue(index))
     return annotationDictionary
 
+def getAnnotationsDict(annotation):
+    annotationDict = {}
+    for element in annotation:
+        annotationDict[element] = getAnnotations(annotation[element])
+    return annotationDict
 
 def processFile2():
     for bioNumber in [19]:
@@ -993,21 +1132,24 @@ def main():
         #spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
         spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
-        
-        rlength, reval, reval2, clength = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,False,'raw/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence)
-               
-        #rdfArray.append(getAnnotations(rdf))
-        
+
+        #try:
+        rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence,atomize=True)
+        #except:
+        #    continue
         if rlength != None:        
             rulesLength.append(rlength)
             evaluation.append(reval)
             evaluation2.append(reval2)
             compartmentLength.append(clength)
+            rdfArray.append(getAnnotationsDict(rdf))
+        
         else:
             rulesLength.append(-1)
             evaluation.append(0)
             evaluation2.append(0)
             compartmentLength.append(0)
+            rdfArray.append({})
             #classificationArray.append({})
     #print evaluation
     #print evaluation2
@@ -1016,10 +1158,11 @@ def main():
         pickle.dump(rulesLength,f)
         pickle.dump(evaluation,f)
         pickle.dump(evaluation2,f)   
-    #with open('annotations.dump','wb') as f:
-    #    pickle.dump(rdfArray,f)
+    with open('annotations.dump','wb') as f:
+        pickle.dump(rdfArray,f)
     #with open('classificationDict.dump','wb') as f:
     #    pickle.dump(classificationArray,f)
+    '''
     plt.hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
     plt.xlabel('Number of reactions',fontsize=18)
     plt.savefig('lengthDistro.png')
@@ -1047,20 +1190,56 @@ def main():
     #plt.hist(ev,bins =[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
     #plt.xlabel('Atomization Degree',fontsize=18)    
     #plt.savefig('ruleifyDistro3.png')
+    '''
             
 def main2():
     with open('XMLExamples/curated/BIOMD0000000001.xml','r') as f:
         st = f.read()
         print readFromString(st,
-                                             'reactionDefinitions/reactionDefinition9.json',True,None,True)        
+              'reactionDefinitions/reactionDefinition9.json',True,None,True)        
 
-       
+
+
+def isActivated(statusVector):
+    if statusVector[0] != '' or statusVector[1] not in ['','U','0']:
+        return True
+    return False
+ 
+def orBox(status1,status2):
+    return not(status1 & status2)
+   
+def getRelationshipDegree(componentPair,statusQueryFunction,comparisonFunction):
+    componentPairRelationshipDict = {}    
+    for pair in componentPair:
+        stats = []
+        for state in componentPair[pair]:
+            status1 = statusQueryFunction(state[0])
+            status2 = statusQueryFunction(state[1])
+            comparison = comparisonFunction(status1,status2)
+            stats.append(comparison)
+        componentPairRelationshipDict[pair] = all(stats)
+    return componentPairRelationshipDict
+
+def statFiles():
+    for bioNumber in [19]:
+        reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
+        speciesEquivalence = None
+        componentPairs =  extractC      ompartmentStatistics('XMLExamples/curated/BIOMD%010i.xml' % bioNumber,useID,reactionDefinitions,speciesEquivalence)
+        
+        #analyze the relationship degree betweeen the components of each molecule
+        #in this case we are analyzing for orBoxes
+        orBoxDict = {}        
+        for molecule in componentPairs:
+            orBoxDict[molecule] = getRelationshipDegree(componentPairs[molecule],isActivated,orBox)
+        print orBoxDict
+
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     #main()
+    statFiles()
     #main2()
-    processFile2()
+    #processFile2()
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s
