@@ -3,6 +3,7 @@
 Created on Mon Oct  8 14:16:25 2012
 
 @author: proto
+
 """
 import numpy as np
 import libsbml2bngl
@@ -12,9 +13,12 @@ import MySQLdb
 from SOAPpy import WSDL,Types
 import pickle
 import re
-from restful_lib import Connection
+#from restful_lib import Connection
 import urllib,urllib2
-from wordcloud import cloudText
+#from wordcloud import cloudText
+import operator
+from collections import Counter
+
 def main():
     history = np.load('stats3b.npy')
     history2 = np.load('stats3.npy')
@@ -124,7 +128,7 @@ def main2():
     
     #kegg
     kegg_url = "http://rest.kegg.jp"
-    conn = Connection(kegg_url)
+    #conn = Connection(kegg_url)
     
     #uniprot taxonomy
     url = 'http://www.uniprot.org/taxonomy/'
@@ -136,58 +140,150 @@ def main2():
         ar = pickle.load(f)
     for idx,element in enumerate(ar):
         print idx
-        bioArray = []
-        for annotation in element:
-            tAnnotation = annotation.replace('%3A',':')
-            tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
-            
-            if 'GO' in annotation:            
-                cur.execute("SELECT * FROM term WHERE acc='{0}'".format(tAnnotation))
-                for row in cur.fetchall():
-                    bioArray.append([row[1],row[3]])
-            
-            elif 'reactome' in annotation:
-                tAnnotation2 = re.search('_([^_]+$)',tAnnotation).group(1)
+        modelAnnotations = Counter()
+        for index  in element:
+            for annotation in element[index]:
                 try:
-                    query = rserv.queryById(Types.longType(long(tAnnotation)))
+                    bioArray = []
+                    tAnnotation = annotation.replace('%3A',':')
+                    tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
+                    
+                    if 'GO' in annotation:            
+                        cur.execute("SELECT * FROM term WHERE acc='{0}'".format(tAnnotation))
+                        for row in cur.fetchall():
+                            bioArray.append([row[1],row[3]])
+                            modelAnnotations.update([row[1]])
+                    elif 'reactome' in annotation:
+                        tAnnotation2 = re.search('_([^_]+$)',tAnnotation).group(1)
+                        try:
+                            query = rserv.queryById(Types.longType(long(tAnnotation)))
+                        except:
+                            continue
+                        bioArray.append([query['name'],tAnnotation])
+                        modelAnnotations.update([query['name']])
+                        '''
+                    elif 'kegg' in annotation:
+                        if 'pathway' in tAnnotation:
+                            tAnnotation2 = 'map' + re.search('[^0-9]+([0-9]+$)',tAnnotation).group(1)
+                            reply = conn.request_get('find/pathway/{0}'.format(tAnnotation2), headers={'Accept':'text/json'})
+                            if reply['body'] != '\n':
+                                bioArray.append([reply['body'].split('\t')[1].strip(),tAnnotation])
+                                modelAnnotations.update([reply['body'].split('\t')[1].strip()])
+                        else:
+                            print annotation
+                        '''
+                    elif 'uniprot' in annotation:
+                        identifier = annotation.split(':')[-1]
+                        url = 'http://www.uniprot.org/uniprot/{0}.tab'.format(identifier)
+                        params = {}
+                        data = urllib.urlencode(params)
+                        request = urllib2.Request(url, data)
+                        request.add_header('User-Agent', 'Python contact')
+                        response = urllib2.urlopen(request)
+                        page = response.read(200000)
+                        proteinName = page.split('\n')[1].split('\t')[3]
+                        modelAnnotations.update([proteinName])
+                    elif 'interpro' in annotation:
+                        identifier = annotation.split(':')[-1]
+                        url = 'http://www.ebi.ac.uk/interpro/entry/{0}'.format(identifier)
+                        params = {}
+                        data = urllib.urlencode(params)
+                        request = urllib2.Request(url, data)
+                        request.add_header('User-Agent', 'Python contact')
+                        response = urllib2.urlopen(request)
+                        page = response.read(200000)
+                        pointer = page.index('h2 class="strapline"')
+                        extract = page[pointer:pointer+100]
+                        extract = extract[extract.index('>')+1:extract.index('<')]
+                        modelAnnotations.update([extract])
+    
+                        
+                    #elif 'taxonomy' in annotation:
+                        #uniprot stuff for taxonomy
+                    #    pass
+                        '''
+                        url = 'http://www.uniprot.org/taxonomy/'
+                        params = {
+                        'from':'ACC',
+                        'to':'P_REFSEQ_AC',
+                        'format':'tab',
+                        'query':'P13368 P20806 Q9UM73 P97793 Q17192'
+                        }
+                        
+                        data = urllib.urlencode(params)
+                        request = urllib2.Request(url, data)
+                        contact = "" # Please set your email address here to help us debug in case of problems.
+                        request.add_header('User-Agent', 'Python contact')
+                        response = urllib2.urlopen(request)
+                        page = response.read(200000)
+                        '''
+                    else:
+                        print '--',annotation,'GO' in tAnnotation
                 except:
                     continue
-                bioArray.append([query['name'],tAnnotation])
-            elif 'kegg' in annotation:
-                if 'pathway' in tAnnotation:
-                    tAnnotation2 = 'map' + re.search('[^0-9]+([0-9]+$)',tAnnotation).group(1)
-                    reply = conn.request_get('find/pathway/{0}'.format(tAnnotation2), headers={'Accept':'text/json'})
-                    if reply['body'] != '\n':
-                        bioArray.append([reply['body'].split('\t')[1].strip(),tAnnotation])
-                else:
-                    print annotation
-            #elif 'taxonomy' in annotation:
-                #uniprot stuff for taxonomy
-            #    pass
-                '''
-                url = 'http://www.uniprot.org/taxonomy/'
-                params = {
-                'from':'ACC',
-                'to':'P_REFSEQ_AC',
-                'format':'tab',
-                'query':'P13368 P20806 Q9UM73 P97793 Q17192'
-                }
-                
-                data = urllib.urlencode(params)
-                request = urllib2.Request(url, data)
-                contact = "" # Please set your email address here to help us debug in case of problems.
-                request.add_header('User-Agent', 'Python contact')
-                response = urllib2.urlopen(request)
-                page = response.read(200000)
-                '''
-            else:
-                print '--',annotation,'GO' in tAnnotation
-        annotationArray.append(bioArray)
-    print annotationArray
+        print modelAnnotations
+        annotationArray.append(modelAnnotations)
     with open('parsedAnnotations.dump','wb') as f:
         pickle.dump(annotationArray,f)
 
+
+def extractProteinCompendiums():
+    '''
+    Extract a dictionary where keys: proteins that map
+    to an array of models that contain them
+    '''
+    annotationFile = open('annotations.dump','rb')
+    annotations = pickle.load(annotationFile)
+    
+    annotationDictionary = {}
+    for idx,fileAnnotation in enumerate(annotations):
+        for annotation in fileAnnotation:
+            for miriamNumber in fileAnnotation[annotation]:
+                if miriamNumber not in annotationDictionary:
+                    annotationDictionary[miriamNumber] = []
+                annotationDictionary[miriamNumber].append(idx)
+    print annotationDictionary
+                    
+
+    
+def rankingAnalysis():
+    annotationFile = open('parsedAnnotations.dump','rb')
+    evaluationFile = open('sortedC.dump','rb')
+    
+    annotations = pickle.load(annotationFile)
+    pickle.load(evaluationFile)
+    ev1 =     pickle.load(evaluationFile)
+    totalAnnotations = {}
+    totalAppereances = {}
+    weightedTotalAppereances = {}
+    for ann,evaluation in zip(annotations,ev1):
+        total = sum(ann[x] for x in ann)
+        for x in ann:
+            if x not in totalAnnotations:
+                totalAnnotations[x] = 0
+                totalAppereances[x] = 0
+                weightedTotalAppereances[x] = 0
+            totalAnnotations[x] += ann[x]*evaluation/total
+            totalAppereances[x] += ann[x]
+            weightedTotalAppereances[x] += ann[x]*1.0/total
             
-          
+    sortedAnnotations = sorted(totalAnnotations.iteritems(), key=operator.itemgetter(1),reverse=True)
+    sortedAppereances = sorted(totalAppereances.iteritems(), key=operator.itemgetter(1),reverse=True)
+    sortedWeightedAppereances = sorted(weightedTotalAppereances.iteritems(), key=operator.itemgetter(1),reverse=True)
+    print '--- top proteins weighted by the number of times they appear and how atomizable their model is'
+    print sortedAnnotations[0:10]
+    print '--- top protein by number of appereances in a model'
+    print sortedAppereances[0:10]
+    print '--- top proteins by number of weighted appeareances in a model'
+    print sortedWeightedAppereances[0:10]
+    #print sortedAnnotations
+    
+def inverseAnnotationClassification():
+    annotationFile = open('annotations.dump','rb')
+    annotations = pickle.load(annotationFile)    
+    
 if __name__ == "__main__":
-    bagOfWords()
+    #bagOfWords()
+    #main2()
+    extractFamilies()
+    #rankingAnalysis()
