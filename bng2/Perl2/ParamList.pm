@@ -415,8 +415,16 @@ sub set
         unless ( $type eq 'Local'  or  $type eq 'RRef' )
         {   push @{$plist->Unchecked}, $param;   }
         # Return leaving param unset if no rhs
-        if ($rhs eq '')
-        {   return '';   }
+#        if ($rhs eq '')
+#        {
+#        	return '';   
+#        }
+    }
+
+	# Return leaving param unset if no rhs
+    if ($rhs eq '')
+    {
+     	return '';   
     }
 
 #    if ($param->Expr ne '')
