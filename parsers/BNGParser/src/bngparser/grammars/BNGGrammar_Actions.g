@@ -632,7 +632,8 @@ simulate_par_def[Map<String,String> map]
   VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i5.text);} | 
   PRINT_CDAT ASSIGNS i6=INT {map.put($PRINT_CDAT.text,$i6.text);} | 
   PRINT_FUNCTIONS ASSIGNS i7=INT {map.put($PRINT_FUNCTIONS.text,$i7.text);} | 
-  MAX_SIM_STEPS ASSIGNS multiple_definition {map.put($MAX_SIM_STEPS.text,$multiple_definition.value);} | 
+  MAX_SIM_STEPS ASSIGNS multiple_definition {map.put($MAX_SIM_STEPS.text,$multiple_definition.value);} |
+  OUTPUT_STEP_INTERVAL ASSIGNS multiple_definition {map.put($OUTPUT_STEP_INTERVAL.text,$multiple_definition.value);} | 
   ARGFILE ASSIGNS DBQUOTES s3=filename DBQUOTES {map.put($ARGFILE.text,$s3.text);} | 
   SAVE_PROGRESS ASSIGNS i10=INT {map.put($SAVE_PROGRESS.text,$i10.text);} | 
   PRINT_NET ASSIGNS i11=INT {map.put($PRINT_NET.text,$i11.text);} | 
