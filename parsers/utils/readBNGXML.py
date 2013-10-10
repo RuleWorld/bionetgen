@@ -161,7 +161,7 @@ def parseXML(xmlFile):
     for rule in rules:
         ruleDescription.append(parseRule(rule,parameterDict))
         
-    return moleculeList, ruleDescription
+    return moleculeList, ruleDescription,parameterDict
         
 if __name__ == "__main__":
     parseXML("fceri.xml")
