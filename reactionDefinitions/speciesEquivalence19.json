@@ -1,0 +1,27 @@
+{
+	"reactionDefinition" : [
+	["Raf","Rafi","iMod"],
+	["Ras","Rasi","iMod"],["EGF_EGFR2","EGF_EGFRm2","mMod"],["ERK","ERKi","iMod"],
+	["MEK","MEKi","iMod"],
+	["GTP","GTPm","mMod"],
+	["MEKi","MEKi_P","Phosporylation"],
+	["MEKi","MEKi_PP","Double-Phosporylation"],
+	["ERKi","ERKi_P","Phosporylation"],
+	["ERKi","ERKi_PP","Double-Phosporylation"]
+	
+	],
+	"complexDefinition" : [
+	["Ras_GDP", [["Ras","gdp",["b",1]], ["GDP","ras",["b",1]]]],["EGFRm",[["EGFR","mMod",["s","M"]]]],["ERKi",[["ERK","iMod",["s","I"]]]],
+	["MEKi",[["MEK","iMod",["s","I"]]]],["EGFRim",[["EGFR","mMod",["s","M"],"iMod",["s","I"]]]],
+	["Ras_GTP", [["Ras","gtp",["b",1]], ["GTP","ras",["b",1]]]],["EGFR",[["EGFR","egfr",[]]]],
+	["Rafim",[["Raf","iMod",["s","I"],"mMod",["s","M"]]]],
+	["EGFRim",[["EGFR","iMod",["s","I"],"mMod",["s","M"]]]]
+	],
+	"modificationDefinition": {
+	"EGF_EGFRm2":["EGFRm","EGF","EGFR","EGF"],
+	"EGF_EGFRim2":["EGFRim","EGF","EGFR","EGF"],
+	"Rasi_GTP":["Rasi","GTP"]
+	}
+	
+	
+}
