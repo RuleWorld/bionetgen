@@ -1,0 +1,16 @@
+{
+	"reactionDefinition" : [
+	["IL6_gp80_gp130_JAK2","IL6_gp80_gp130_JAK_ast2","astMod"],
+	["gp130_JAK","gp130_JAK_ast","astMod"]
+	],
+	"complexDefinition" : [
+	]
+	,
+	"modificationDefinition": {
+	"IL6_gp80_gp130_JAKast2_STAT3C_SHP2":["IL6_gp80","IL6_gp80","STAT3C","SHP2","gp130_JAK","gp130_JAK"],
+	"STAT3Cast_STAT3Cast":["STAT3Cast","STAT3Cast"]
+	
+	}
+	
+	
+}
