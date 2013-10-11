@@ -329,7 +329,7 @@ class Species:
                     
                     
         
-    def graphVizGraph(self,graph,identifier):
+    def graphVizGraph(self,graph,identifier,layout='LR'):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
         
@@ -345,7 +345,10 @@ class Species:
             
         for bond in self.bonds:
             if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none')
+                if layout == 'RL':
+                    graph.add_edge(speciesDictionary[bond[1]],speciesDictionary[bond[0]],dir='none',len=0.1,weight=100)
+                else:
+                    graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none',len=0.1,weight=100)
         return speciesDictionary
         
     
@@ -519,7 +522,7 @@ class Molecule:
                 s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
             else:
                 s1 = graph.subgraph(name = identifier,label=self.name)
-
+            s1.add_node('cluster%s_%s_dummy' % (identifier,self.idx),shape='point',style='invis')
             if components == None:
                 tmpComponents = self.components
             else:
