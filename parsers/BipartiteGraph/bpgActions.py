@@ -128,8 +128,11 @@ def processActions(strings):
 				annot.processAnnotations(tempstring,names)
 		
 		elif command == 'make_maps':
-			rule_map, tr_map, trpair_map = bpgMaps.getMaps(names)
-
+			if 'make_names' not in successfullyissued:
+				names = bpgMaps.getNameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles)
+				successfullyissued.append('make_names')
+			all_maps = bpgMaps.getMaps(names)		
+		
 		else:
 			print "Command not found: "+command
 			

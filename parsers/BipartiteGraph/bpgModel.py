@@ -42,7 +42,7 @@ class Transformation:
 		self.lhs = lhs
 		self.rhs = rhs
 		self.action = action
-		self.annotate = ''
+
 
 	def __str__(self):
 		return " ".join([self.strLHS(),"->",self.strRHS()])
@@ -90,7 +90,6 @@ class Transformation:
 class AtomicPattern:
 	def __init__(self,sp):
 		self.sp = sp
-		self.annotate = ''
 	def __str__(self):
 		return ".".join(sorted([str(x) for x in self.sp.molecules]))
 	def __eq__(self, other):
