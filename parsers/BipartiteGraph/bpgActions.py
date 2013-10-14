@@ -19,7 +19,7 @@ from collections import deque
 
 def cleanstrings(strings):
 	''' preprocesses strings from actions file'''
-	available = ['read_xml','tprule','make_pairs','make_maps','write_elements','read_annot']
+	available = ['read_xml','tprule','make_pairs','make_maps','write_elements','read_annot','make_flow']
 	allcommands = []
 	for item in strings.split("\n"):
 		item2  = item.strip()
@@ -131,7 +131,25 @@ def processActions(strings):
 			if 'make_names' not in successfullyissued:
 				names = bpgMaps.getNameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles)
 				successfullyissued.append('make_names')
-			all_maps = bpgMaps.getMaps(names)		
+			all_maps = bpgMaps.getMaps(names,0)
+			
+		elif command == 'make_flow':
+			assert len(current_line)>1, "provide a seed of the form: start <list of atomic patterns> [end <list of atomic patterns>]"
+			assert current_line.popleft()=='start',"provide a seed of the form: start <list of atomic patterns> [end <list of atomic patterns>]"
+			start = []
+			end = []
+			startend = 0 # a switch used to create either the start vector or the end vector of patterns
+			while(len(current_line)>0):
+				patt = current_line.popleft()
+				if patt != 'end' and startend == 0:
+					start.append(patt)
+				if startend ==1:
+					end.append(patt)
+				if patt == 'end':
+					startend =1
+				
+			flowlevels = bpgMaps.makeFlow(names,all_maps,start,end)
+				
 		
 		else:
 			print "Command not found: "+command
