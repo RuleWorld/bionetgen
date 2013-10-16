@@ -14,6 +14,9 @@ Author: John Sekar
 import bpgModel
 import sys
 import itertools
+import re
+import collections as co
+import copy
 
 
 # Classes and methods for collecting transformation pairs
@@ -151,6 +154,9 @@ class NameDictionary:
 		if elemtype == 'irr':
 			return [x for x,idx in self.irr.items() if idx==idx1][0]
 			
+	def getString(self,elemtype,idx1):
+		return str(self.getElement(elemtype,idx1))
+			
 			
 def getNameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles):
 	'''
@@ -254,10 +260,11 @@ class allMaps:
 	'''
 	Class to contain all map objects
 	'''
-	def __init__(self,rule_map,tr_map,trpair_map):
+	def __init__(self,rule_map,tr_map,trpair_map,names):
 		self.r = rule_map
 		self.t = tr_map
 		self.tp = trpair_map
+		self.names = names
 		
 	def getFlow(self, type_vector, idx_list):
 		if type_vector == ['p','t']:
@@ -266,25 +273,105 @@ class allMaps:
 			list2 = unq([t_id for t_id,p_id1 in self.t.t2p_context for p_id2 in idx_list if p_id1==p_id2])
 			list3 = unq([t_id for t_id,p_id1 in self.t.t2p_syndelcontext for p_id2 in idx_list if self.t.t2action[t_id]=='Delete' and p_id1==p_id2])
 			return unq(combineLists([list1,list2,list3]))
-		if type_vector == ['p','tp']:
+		elif type_vector == ['p','tp']:
 			# get transformation pairs that contain the pattern as forwardreactant, forward or reverse context, or delcontext
 			list1 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_forwardreactant for p_id2 in idx_list if p_id1==p_id2])
 			list2 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_forwardcontext for p_id2 in idx_list if p_id1==p_id2])
 			list3 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_reversecontext for p_id2 in idx_list if p_id1==p_id2])
 			list4 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_delcontext for p_id2 in idx_list if p_id1==p_id2])
 			return unq(combineLists([list1,list2,list3,list4]))
-		if type_vector == ['t','p']:
+		elif type_vector == ['p','irr']:
+			return [ x for x in self.getFlow(['p','t'],idx_list) if x in self.names.irr.values() ]	
+		
+		elif type_vector == ['t','p']:
 			# get transformations that contain the pattern as product or syncontext
 			list1 = unq([p_id for t_id1,p_id in self.t.t2p_product for t_id2 in idx_list if t_id1==t_id2])
-			list2 = unq([p_id for t_id1,p_id in self.t.t2p_syndelcontext for t_id2 in idx_list if self.t.t2action[t_id]=='Add' and t_id1==t_id2])
+			list2 = unq([p_id for t_id1,p_id in self.t.t2p_syndelcontext for t_id2 in idx_list if self.t.t2action[t_id1]=='Add' and t_id1==t_id2])
 			return unq(combineLists([list1,list2]))
-		if type_vector == ['tp','p']:
+		elif type_vector == ['tp','p']:
 			# get transformation pairs that contain the pattern as product or syncontext
 			list1 = unq([p_id for tp_id1,p_id in self.tp.tp2p_reversereactant for tp_id2 in idx_list if tp_id1==tp_id2])
 			list2 = unq([p_id for tp_id1,p_id in self.tp.tp2p_syncontext for tp_id2 in idx_list if tp_id1==tp_id2])
-			return unq(combineLists([list1,list2]))
+			return unq(combineLists([list1,list2]))	
+		elif type_vector == ['irr','p']:
+			return self.getFlow(['t','p'],idx_list)
+			
+		else:
+			print "Bad Type Vector!"
+			return None
 
-def getMaps(names):
+	def getFlux(self,type_vector,idx_list):
+		if type_vector == ['tp','p']:
+			# get patterns that are consumed or produced by a transformation pair
+			list1 = unq([p_id for tp_id1,p_id in self.tp.tp2p_forwardreactant for tp_id2 in idx_list if tp_id1==tp_id2])		
+			list2 = unq([p_id for tp_id1,p_id in self.tp.tp2p_reversereactant for tp_id2 in idx_list if tp_id1==tp_id2])
+			list3 = unq([p_id for tp_id1,p_id in self.tp.tp2p_syncontext for tp_id2 in idx_list if tp_id1==tp_id2])	
+			list4 = unq([p_id for tp_id1,p_id in self.tp.tp2p_delcontext for tp_id2 in idx_list if tp_id1==tp_id2])
+			return unq(combineLists([list1,list2,list3,list4]))
+		if type_vector == ['t','p']:
+			# get patterns that are consumed or produced by a transformation
+			list1 = unq([p_id for t_id1,p_id in self.t.t2p_reactant for t_id2 in idx_list if t_id1==t_id2])		
+			list2 = unq([p_id for t_id1,p_id in self.t.t2p_product for t_id2 in idx_list if t_id1==t_id2])
+			list3 = unq([p_id for t_id1,p_id in self.t.t2p_syndelcontext for t_id2 in idx_list if t_id1==t_id2])
+			return unq(combineLists([list1,list2,list3]))
+		if type_vector == ['irr','p']:
+			return self.getFlux(['t','p'],idx_list)
+		
+		if type_vector == ['p','tp']:
+			# get transformation pairs that consume or produce a pattern
+			list1 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_forwardreactant for p_id2 in idx_list if p_id1==p_id2])		
+			list2 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_reversereactant for p_id2 in idx_list if p_id1==p_id2])
+			list3 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_syncontext for p_id2 in idx_list if p_id1==p_id2])	
+			list4 = unq([tp_id for tp_id,p_id1 in self.tp.tp2p_delcontext for p_id2 in idx_list if p_id1==p_id2])
+			return unq(combineLists([list1,list2,list3,list4]))
+		if type_vector == ['p','t']:
+			# get transformations that consume or produced by a transformation
+			list1 = unq([t_id for t_id,p_id1 in self.t.t2p_reactant for p_id2 in idx_list if p_id1==p_id2])		
+			list2 = unq([t_id for t_id,p_id1 in self.t.t2p_product for p_id2 in idx_list if p_id1==p_id2])
+			list3 = unq([t_id for t_id,p_id1 in self.t.t2p_syndelcontext for p_id2 in idx_list if p_id1==p_id2])
+			return unq(combineLists([list1,list2,list3]))
+		if type_vector == ['p','irr']:
+			return [x for x in self.getFlux(['p','t'],idx_list) if x in self.names.irr.values()]
+			
+	def getAll(self,type_vector,idx_list):
+		if type_vector == ['tp','p']:
+			# get all patterns associated with a transformation pair
+			list1 = unq([p_id for tp_id1,p_id in self.tp.tp2p_forwardreactant for tp_id2 in idx_list if tp_id1==tp_id2])		
+			list2 = unq([p_id for tp_id1,p_id in self.tp.tp2p_reversereactant for tp_id2 in idx_list if tp_id1==tp_id2])
+			list3 = unq([p_id for tp_id1,p_id in self.tp.tp2p_syncontext for tp_id2 in idx_list if tp_id1==tp_id2])	
+			list4 = unq([p_id for tp_id1,p_id in self.tp.tp2p_delcontext for tp_id2 in idx_list if tp_id1==tp_id2])
+			list5 = unq([p_id for tp_id1,p_id in self.tp.tp2p_forwardcontext for tp_id2 in idx_list if tp_id1==tp_id2])		
+			list6 = unq([p_id for tp_id1,p_id in self.tp.tp2p_reversecontext for tp_id2 in idx_list if tp_id1==tp_id2])
+			return unq(combineLists([list1,list2,list3,list4,list5,list6]))
+		if type_vector == ['t','p']:
+			# get all patterns associated with a transformation
+			list1 = unq([p_id for t_id1,p_id in self.t.t2p_reactant for t_id2 in idx_list if t_id1==t_id2])		
+			list2 = unq([p_id for t_id1,p_id in self.t.t2p_product for t_id2 in idx_list if t_id1==t_id2])
+			list3 = unq([p_id for t_id1,p_id in self.t.t2p_syndelcontext for t_id2 in idx_list if t_id1==t_id2])
+			list4 = unq([p_id for t_id1,p_id in self.t.t2p_context for t_id2 in idx_list if t_id1==t_id2])
+			return unq(combineLists([list1,list2,list3,list4]))
+		if type_vector == ['irr','p']:
+			return self.getAll(['t','p'],idx_list)
+					
+			
+			
+	def getTriplets(self,type_vector):
+		ty1 = type_vector[0]
+		ty2 = type_vector[1]
+		ty3 = type_vector[2]
+		
+		if ty1=='p':
+			list1 = self.names.p.values()
+		if ty1=='tp':
+			list1 = self.names.tp.values()
+		if ty1=='t':
+			list1 = self.names.t.values()
+		if ty1=='irr':
+			list1 = self.names.irr.values()
+		
+		return [ (x,y,z) for x in list1 for y in self.getFlow([ty1,ty2],[x]) for z in self.getFlow([ty2,ty3],[y]) ]
+	
+def getMaps(names,verbose):
 	'''
 	Takes dictionaries of rules, patterns, transformations, transformation pairs
 	returns map objects from RuleMap, TransformationMap and TransformationPairMap classes
@@ -294,36 +381,157 @@ def getMaps(names):
 	print "Building maps between elements..."
 
 	rule_map = RuleMap(names)
-	print "\nMaps to reaction rules:"
-	print "There are",len(rule_map.r2t),"maps to transformations,"
-	print len(rule_map.r2p_transfcenter),"maps from patterns to reaction centers,"
-	print len(rule_map.r2p_context),"maps from patterns to reaction contexts, and"
-	print len(rule_map.r2p_syndelcontext),"maps from patterns that are syndel contexts."
+	if(verbose):
+		print "\nMaps to reaction rules:"
+		print "There are",len(rule_map.r2t),"maps to transformations,"
+		print len(rule_map.r2p_transfcenter),"maps from patterns to reaction centers,"
+		print len(rule_map.r2p_context),"maps from patterns to reaction contexts, and"
+		print len(rule_map.r2p_syndelcontext),"maps from patterns that are syndel contexts."
 	
 	tr_map = TransformationMap(names,rule_map)
-	print "\nMaps to transformations:"
-	print "There are",len(tr_map.t2p_reactant),"maps from reactant patterns,"
-	print len(tr_map.t2p_product),"maps from product patterns,"
-	print len(tr_map.t2p_context),"maps from context patterns, and"
-	print len(tr_map.t2p_syndelcontext),"maps from patterns that are syndel contexts."
+	if verbose:
+		print "\nMaps to transformations:"
+		print "There are",len(tr_map.t2p_reactant),"maps from reactant patterns,"
+		print len(tr_map.t2p_product),"maps from product patterns,"
+		print len(tr_map.t2p_context),"maps from context patterns, and"
+		print len(tr_map.t2p_syndelcontext),"maps from patterns that are syndel contexts."
 	
 	trpair_map = TransformationPairMap(names,tr_map)
-	print "\nMaps to transformation pairs:"
-	print "There are",len(trpair_map.tp2p_forwardreactant),"forward reactant patterns and",len(trpair_map.tp2p_reversereactant),"reverse reactant patterns,"
-	print len(trpair_map.tp2p_forwardcontext),"forward context patterns and",len(trpair_map.tp2p_reversecontext),"reverse context patterns, and"
-	print len(trpair_map.tp2p_syncontext),"synthesis context patterns and",len(trpair_map.tp2p_delcontext),"deletion context patterns."
+	if verbose:
+		print "\nMaps to transformation pairs:"
+		print "There are",len(trpair_map.tp2p_forwardreactant),"forward reactant patterns and",len(trpair_map.tp2p_reversereactant),"reverse reactant patterns,"
+		print len(trpair_map.tp2p_forwardcontext),"forward context patterns and",len(trpair_map.tp2p_reversecontext),"reverse context patterns, and"
+		print len(trpair_map.tp2p_syncontext),"synthesis context patterns and",len(trpair_map.tp2p_delcontext),"deletion context patterns."
+	
+	
 	
 	
 	#return rule_map,tr_map,trpair_map
-	return allMaps(rule_map,tr_map,trpair_map)
+	return allMaps(rule_map,tr_map,trpair_map,names)
 	
 #methods for more complex stuff based on bipartite relations
+
+class Trace:
+	'''
+	Trace of elements of a single type: either patterns or trpairs or trs
+	'''
+	def __init__(self,trace,tracetype):
+		self.trace = trace
+		self.type = tracetype
+		
+	def __str__(self):
+		return "->".join([str(x) for x in self.trace])
+		
+	def toString(self,names):
+		return "->".join([str(names.getElement(self.type,x)) for x in self.trace])
+	
+	def getLast(self):
+		return self.trace[-1]
+		
+	def has(self,item):
+		return item in self.trace
+		
+	def extend(self,item):
+		self.trace.append(item)
+		
+	def flip(self):
+		return Trace(list(reversed(self.trace)),self.type)
+			
+class TraceStack:
+	'''
+	Stack of traces
+	'''
+	def __init__(self,traces,tracetype):
+		self.stack = co.deque(traces)
+		self.type = tracetype
+		
+	def __str__(self):
+		return "\n".join([str(x) for x in self.stack])
+		
+	def toString(self,names):
+		return "\n".join([x.toString(names) for x in self.stack])
+	
+	def addTrace(self,trace):
+		self.stack.append(trace)
+		
+	def addStack(self,tracestack):
+		assert self.type == tracestack.type
+		self.stack += tracestack.stack
+
+
+	def length(self):
+		return len(self.stack)
+		
+	def popTrace(self):
+		return self.stack.popleft()
+		
+	def sortByLength(self):
+		#biggest first
+		return TraceStack(sorted(self.stack,key=lambda x:-len(x.trace)),self.type)
+		
+	def flipTraces(self):
+		return TraceStack([x.flip() for x in self.stack],self.type)
+		
+
+		
+	@staticmethod
+	def initializeTraces(elementlist,elemtype):
+		return TraceStack([Trace([x],elemtype) for x in elementlist],elemtype)
+		
+		
+		
+		
+	
+			
+
+def getTraces(start,end,triplets,elemtype,names):
+	# start is a list of ids
+	# end is a list of ids
+		
+	valid_traces =TraceStack([],elemtype)
+	invalid_traces =TraceStack([],elemtype)
+
+	# start with a stack of traces
+	# pick the top of the stack
+	# check if it is a trace that ends the way we want it, i.e. with an element in the end-list
+	# if so, put it in valid traces set
+	# if not, 
+	#	get the next candidates to extend the trace (condition z is next to x if x,y,z in triplets and z not already in trace)
+	#	if there are no new candidates, add trace to invalid traces set
+	#	else create new traces extended with each candidate and add it to bottom of stack  
+		
+	traces = TraceStack.initializeTraces(start,elemtype)
+	while traces.length()>0:
+		trace = traces.popTrace()
+		if trace.getLast() in end:
+			valid_traces.addTrace(trace)
+		else:
+			next_candidates = [z for x,y,z in triplets if x==trace.getLast() and not trace.has(z)] 
+			if len(next_candidates) == 0:
+				invalid_traces.addTrace(trace)
+			for item in next_candidates:
+				t = copy.deepcopy(trace)
+				t.extend(item)
+				traces.addTrace(t)
+	return valid_traces,invalid_traces
+	
+def getLevels(start,end,names,all_maps):
+	triplets1 = all_maps.getTriplets(['p','tp','p'])
+	triplets2 = all_maps.getTriplets(['p','irr','p'])
+	triplets = triplets1 + triplets2
+	print "Getting forward traces for patterns..."
+	[p_fwd,p_fwd_bad] = getTraces(start,end,triplets,'p',names)
+	print "Getting reverse traces for patterns..."
+	[p_rev,p_rev_bad] = getTraces(end,start,triplets,'p',names)
+	
+	print p_fwd.toString(names)
+	# Unfinished
 	
 def makeFlow(names,all_maps,start,end):
 	'''
 	Creates a flow from starting pattern list to ending pattern list
 	Returns a dictionaries of patterns and transformation groups and irreversibles with levels attached to them
-	Level meaning: 0 - not important/default, 1 - start, -1 or max - end
+	Level meaning: None - not important/default, 1 - start, -1 or max - end
 	'''
 	start  = resolveBondWildcards(start,names.p.keys())
 	end  = resolveBondWildcards(end,names.p.keys())
@@ -331,36 +539,13 @@ def makeFlow(names,all_maps,start,end):
 	start = [names.p[x] for x in names.p.keys() if str(x) in start]
 	end = [names.p[x] for x in names.p.keys() if str(x) in end]
 	
-	p_levels = defaultDict(names.p.values(),0)
-	tp_levels = defaultDict(names.tp.values(),0)
-	irr_levels = defaultDict(names.irr.values(),0)
-	
-	curr_level = 1
-	p_levels = assignVal(p_levels,start,1)
-	stopCriterion = False
-	
+	getLevels(start,end,names,all_maps)
 
-	while not stopCriterion:
-		tp_set = all_maps.getFlow(['p','tp'],[p_id for p_id,level in p_levels.items() if level==curr_level])
-		tp_set_pruned = [tp_id for tp_id in tp_set if tp_levels[tp_id]==0]
-		tp_levels = assignVal(tp_levels,tp_set_pruned,curr_level)
 
-		curr_level = curr_level+1
-		p_set = all_maps.getFlow(['tp','p'],[tp_id in tp_set_pruned])
-		p_set_pruned = [p_id for p_id in p_set if p_levels[p_id]==0]
-		p_levels = assignVal(p_levels,p_set_pruned,curr_level)
-		if len(tp_set_pruned)==0 or len(p_set_pruned)==0:
-			stopCriterion=True
-	
-	print p_levels
-	print tp_levels
-	
-	
-	
-
-	return "Hi"	
+		
 	
 #methods for handling dictionaries and lists and generic bulk actions
+
 def unq(list1):
 	return list(set(list1))
  
