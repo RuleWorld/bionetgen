@@ -244,29 +244,11 @@ def findNewParameters(parameters,bngParameters):
         if bngp not in tmp:
             newPar.append('\t {0} {1}\n'.format(bngp,bngParameters[bngp]))
     return newPar
-    
-def main():
-    fileName = 'complex/output19.bngl'
-    console.bngl2xml(fileName)
-    species,rules,par= readBNGXML.parseXML('output19.xml')
-    #print rules
-    
-    
-    atomicArray =[]
-    transformationCenter = []
-    transformationContext = []
-    productElements = []
-    actionNames = []
-    labelArray = []
 
-    #extract the context of such reactions
-    for idx,rule in enumerate(rules):
-        tatomicArray, ttransformationCenter, ttransformationContext, \
-                tproductElements,tactionNames,tlabelArray = extractAtomic.extractTransformations([rule])
-    #atomicArray.append(tatomicArray)
-        transformationCenter.append(ttransformationCenter)
-        transformationContext.append(ttransformationContext)
-
+def extractRedundantContext(rules,transformationCenter,transformationContext):
+    ''''
+    
+    '''
     centerDict = groupByReactionCenter(transformationCenter)
     redundantDict = groupByReactionCenterAndRateAndActions(rules,centerDict)
                 #redundantDict['{0}.{1}'.format(element,element2)] = tmpDict[element2]
@@ -281,12 +263,32 @@ def main():
             if center not in patternDictList:
                 patternDictList[center] = {}
             patternDictList[center][rate] = patternDict
+    return redundantDict,patternDictList
+
+def main():
+    fileName = 'complex/output19.bngl'
+    console.bngl2xml(fileName)
+    species,rules,par= readBNGXML.parseXML('output19.xml')
+    #print rules
     
+    
+    transformationCenter = []
+    transformationContext = []
+
+    #extract the context of such reactions
+    for idx,rule in enumerate(rules):
+        tatomicArray, ttransformationCenter, ttransformationContext, \
+                tproductElements,tactionNames,tlabelArray = extractAtomic.extractTransformations([rule])
+    #atomicArray.append(tatomicArray)
+        transformationCenter.append(ttransformationCenter)
+        transformationContext.append(ttransformationContext)
+
+    redundantDict,patternDictList = extractRedundantContext(rules,transformationCenter,transformationContext)
     #print redundantDict
     #construct rule based patterns based on the reaction patterns they have to match and
     #the ones they  have to discriminate
     
-    for center in redundantListDict:
+    for center in patternDictList:
         for rate in patternDictList[center]:
             match = patternDictList[center][rate]
             notContext = []
@@ -294,6 +296,7 @@ def main():
                 notContext.append([transformationContext[x] for x in redundantDict[center][cRate]])
             ruleSet = [rules[x] for x in redundantDict[center][rate]]
             createMetaRule(ruleSet,match)
+    
     
     newRules = range(0,len(rules))
     for center in redundantDict:
