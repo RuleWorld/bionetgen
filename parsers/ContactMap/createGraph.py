@@ -66,7 +66,8 @@ def solveWildcards(atomicArray):
 
             
 
-def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, builtList):
+def createNode(atomicArray, chemical, chemicalDictionary, 
+               subgraph, nameHeader, builtList,options):
     '''
     creates a child node for 'chemical' on the 'subgraph' graph
     Args:
@@ -83,7 +84,8 @@ def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, 
                 layout = 'RL'
             else:
                 layout = 'LR'
-            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,clusterName,layout))
+            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,
+                                      clusterName,layout,options))
         else:
             #if it's a complex
             if '+' not in str(chemical):
@@ -93,7 +95,8 @@ def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, 
                     layout = 'LR'
 
                 clusterName = nameHeader
-                chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,nameHeader,layout))
+                chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,
+                                          nameHeader,layout,options))
         
         if clusterName != '':
             clusterName = 'cluster%s_%s_m0_%s' % (clusterName, 
@@ -140,23 +143,32 @@ def extractTransformations(rules):
     return atomicArray, transformationCenter, transformationContext, productElements,actionName,label
 
 
-def createSubGraph(element,
+def createSubGraph(reactantList,
                    gSubgraph,chemicalDictionary,buildList,atomicArray,
-                   graph,edgeIdx,tag):
+                   graph,edgeIdx,tag,optionList = None):
     edgeArray = []
-    for reactant in element:
+    for idx,reactant in enumerate(reactantList):
+        if optionList == None:
+            options = {}
+        else:
+            options = optionList[idx]
         clusterName = createNode(atomicArray, reactant, 
                                  chemicalDictionary, gSubgraph, 
-                                 tag,buildList)
+                                 tag,buildList,options)
+            
         #theres a single context molecule
         if clusterName != '':
             edgeArray.append(clusterName)
         #theres multiple context nodes for a single transformation
         else:
+            if optionList == None:
+                options = {}
+            else:
+                options = optionList[idx]
             for atom in atomicArray[reactant]:
                 clusterName = createNode(atomicArray, str(atom), 
                                 chemicalDictionary, gSubgraph, 
-                                tag,buildList)
+                                tag,buildList,options)
                 edgeArray.append(clusterName)
     return edgeArray           
 

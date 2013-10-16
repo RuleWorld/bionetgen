@@ -329,7 +329,7 @@ class Species:
                     
                     
         
-    def graphVizGraph(self,graph,identifier,layout='LR'):
+    def graphVizGraph(self,graph,identifier,layout='LR',options={}):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
         
@@ -337,10 +337,10 @@ class Species:
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
             if len(self.molecules) == 1:
-                compDictionary = molecule.graphVizGraph(graph,ident,flag=False)
+                compDictionary = molecule.graphVizGraph(graph,ident,flag=False,options=options)
             else:
                 #s1 = graph.subgraph(name = graphName,label=' ')
-                compDictionary = molecule.graphVizGraph(graph,ident,flag=False)
+                compDictionary = molecule.graphVizGraph(graph,ident,flag=False,options=options)
             speciesDictionary.update(compDictionary)
             
         for bond in self.bonds:
@@ -500,7 +500,7 @@ class Molecule:
             if comp.name not in [x.name for x in self.components]:
                 self.components.append(deepcopy(comp))
                 
-    def graphVizGraph(self,graph,identifier,components=None,flag=False):
+    def graphVizGraph(self,graph,identifier,components=None,flag=False,options={}):
         moleculeDictionary = {}
         flag = False
         '''
@@ -519,9 +519,9 @@ class Molecule:
             moleculeDictionary[self.idx] = identifier
         else:
             if not flag:
-                s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
+                s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name,**options)
             else:
-                s1 = graph.subgraph(name = identifier,label=self.name)
+                s1 = graph.subgraph(name = identifier,label=self.name,**options)
             s1.add_node('cluster%s_%s_dummy' % (identifier,self.idx),shape='point',style='invis')
             if components == None:
                 tmpComponents = self.components
