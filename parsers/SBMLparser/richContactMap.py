@@ -148,8 +148,7 @@ def createBipartiteGraph(fileName):
     for rule,center,context,product,action,atom in zip(rules,transformationCenter,transformationContext,transformationProduct,actionNames,atomicArray):
         redundantPattern = []
         if idx in reverseRedundantDict:
-            keyList = reverseRedundantDict[idx]
-            for key in keyList:
+            for key in reverseRedundantDict[idx]:
                 redundantPattern.append(patternDictList[key[0]][key[1]])
         redundantPatternCounter =  dictionaryToCounter(redundantPattern)
         createRuleBiPartite(rule,center,context,product,action,atom,'img/bipartite{0}'.format(idx),redundantPatternCounter)
@@ -157,8 +156,81 @@ def createBipartiteGraph(fileName):
             
 
 
-    #for idx,rule in enumerate(rules):
+def matchName(rmolecule,rcomponent,componentList):
         
+    for component in componentList:
+        if rmolecule in component and rcomponent in component:
+            return True
+    return False
+    #for idx,rule in enumerate(rules):
+def createMap(rules,center,redundantContext,fileName):
+    graph = pgv.AGraph(directed=True, strict=True,ranksep='2.5',compound='true',
+                       rankdir='LR')
+    subgraphs = {}
+    center = [[x.site1,x.site2] for x in rules[0].actions]
+    center = set([y for x in center for y in x if y != None])
+    newCenter = []
+    for element in rules[0].mapping:
+        if element[0] in center:
+            newCenter.append(element[1])
+    if len(newCenter) == 0:
+        newCenter = center
+    redundantKeys = list(redundantContext.elements())    
+    for product in rules[0].products:
+        for molecule in product.molecules:
+            if molecule not in subgraphs:
+                newSubgraph = graph.subgraph(name='cluster_{0}'.format(molecule.idx), label='{0}'.format(molecule.name),rankdir='TB',shape='ellipse')
+                subgraphs[molecule.idx] = newSubgraph
+            else:
+                newSubgraph = subgraphs[molecule.idx]
+            for component in molecule.components:
+                if component.idx in newCenter:
+                    
+                    color = 'red'
+                elif matchName(molecule.name,component.name,redundantKeys):
+                    color = 'green'
+                else:
+                    color = 'blue'
+                newSubgraph.add_node(component.idx,label=component.name,color=color,penwidth=2,shape='circle')
+        for bond in product.bonds:
+            graph.add_edge(bond[0],bond[1],dir='none',len=0.1,weight=100,penwidth=2)
+
+    graph.write('%s.dot' % fileName)
+    subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
+
+
+def createContactMap(fileName):
+    rules = extractRulesfromBNGL(fileName)    
+    transformationCenter = []
+    transformationContext = []
+    transformationProduct = []
+    actionNames = []
+    atomicArray = []
+
+    for idx,rule in enumerate(rules):
+        tatomicArray, ttransformationCenter, ttransformationContext, \
+                tproductElements,tactionNames,tlabelArray = extractAtomic.extractTransformations([rule])
+
+        transformationCenter.append(ttransformationCenter)
+        transformationContext.append(ttransformationContext)
+        actionNames.append(tactionNames)
+        atomicArray.append(tatomicArray)
+        transformationProduct.append(tproductElements)
+
+    #tatomicArray, ttransformationCenter, ttransformationContext, \
+    #            tproductElements,tactionNames,tlabelArray = extractAtomic.extractTransformations(rules)
+    redundantDict,patternDictList= contextAnalyzer.extractRedundantContext(rules,transformationCenter,transformationContext)
+    reverseRedundantDict = reverseLookup(redundantDict)
+
+    for idx in range(0,len(rules)):
+        redundantPattern = []
+        if idx in reverseRedundantDict:
+            for key in reverseRedundantDict[idx]:
+                redundantPattern.append(patternDictList[key[0]][key[1]])
+        redundantPatternCounter =  dictionaryToCounter(redundantPattern)
+
+        createMap(rules[idx],transformationProduct[idx],redundantPatternCounter,'conImg/contatMap{0}'.format(idx))
+    
 
 def extractRulesfromBNGL(fileName):
     console.bngl2xml(fileName)
@@ -167,4 +239,5 @@ def extractRulesfromBNGL(fileName):
     
     
 if __name__ == "__main__":
-    createBipartiteGraph('output/output19.bngl')
+    #createBipartiteGraph('output/output19.bngl')
+    createContactMap('output/output19.bngl')
