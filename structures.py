@@ -320,6 +320,8 @@ class Component:
             self.states.append(state)
         if update:
             self.setActiveState(state)
+        if not 'U' in self.states:
+            self.states.append('U')
         #print 'LALALA',state
     def addStates(self,states,update=True):
         for state in states:

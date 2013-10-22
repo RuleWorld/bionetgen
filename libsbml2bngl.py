@@ -1090,7 +1090,7 @@ def getAnnotationsDict(annotation):
     return annotationDict
 
 def processFile2():
-    for bioNumber in [19]:
+    for bioNumber in [56]:
         #if bioNumber in [18,51,353,108,109,255,268,392]:
         #    continue
     #bioNumber = 175
@@ -1099,8 +1099,9 @@ def processFile2():
         reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
         print reactionDefinitions, useID
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
-        spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
-        #spEquivalence = None
+        #spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
+        spEquivalence = None
+        useID = False
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
         
         analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,useID,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence,atomize=True)
@@ -1135,15 +1136,20 @@ def main():
         logMess.counter = -1
         reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
         print reactionDefinitions, useID
-        reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
+        #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
         #spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
         spEquivalence = None
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
 
-        #try:
-        rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',speciesEquivalence=spEquivalence,atomize=True)
-        #except:
-        #    continue
+        try:
+            rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
+                                                              reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
+                                                                speciesEquivalence=spEquivalence,atomize=True)
+        except:
+            print '-------------error--------------'
+            rulesLength.append(-1)
+            continue
+            
         if rlength != None:        
             rulesLength.append(rlength)
             evaluation.append(reval)
@@ -1161,6 +1167,7 @@ def main():
     #print evaluation
     #print evaluation2
     #sortedCurated = [i for i in enumerate(evaluation), key=lambda x:x[1]]
+    print [(idx+1,x) for idx,x in enumerate(rulesLength) if  x > 50]
     with open('sortedC.dump','wb') as f:
         pickle.dump(rulesLength,f)
         pickle.dump(evaluation,f)
@@ -1299,9 +1306,9 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     #main()
-    statFiles()
+    #statFiles()
     #main2()
-    #processFile2()
+    processFile2()
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s

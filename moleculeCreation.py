@@ -212,7 +212,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
             print '+++', 'error I dont know how this is modified', candidates[0], reactant, tmpCandidates
             candidates = []
             modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
-            if x[0] in tmpCandidates[0] and x[1] in reactant}
+            if x[0] in tmpCandidates[0] and type(x[1]) is not tuple and x[1] in reactant}
             for idx, molecule in enumerate(tmpCandidates[0]):
                 if molecule in modificationCandidates:
                     tmpCandidates[0][idx] = modificationCandidates[molecule]
@@ -439,7 +439,7 @@ reactionProperties[classification[0]][0])
                         translator[element[0]] = modifiedSpecies
                     else:
                         print 'ALERT', element[0], str(modifiedSpecies), str(species)
-                        print equivalenceDictionary
+                        #print equivalenceDictionary
             else:
                 #binding
                 #print '---',dependencyGraph[element[0]],element

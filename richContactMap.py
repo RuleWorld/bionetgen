@@ -179,7 +179,10 @@ def createMap(rules,center,redundantContext,fileName):
     for product in rules[0].products:
         for molecule in product.molecules:
             if molecule not in subgraphs:
-                newSubgraph = graph.subgraph(name='cluster_{0}'.format(molecule.idx), label='{0}'.format(molecule.name),rankdir='TB',shape='ellipse')
+                newSubgraph = graph.subgraph(name='cluster_{0}'.format(molecule.idx), 
+                                             label='{0}'.format(molecule.name),
+                                    rankdir='TB',shape='square',style='rounded',
+                                    pendwidth=2)
                 subgraphs[molecule.idx] = newSubgraph
             else:
                 newSubgraph = subgraphs[molecule.idx]
@@ -191,7 +194,7 @@ def createMap(rules,center,redundantContext,fileName):
                     color = 'green'
                 else:
                     color = 'blue'
-                newSubgraph.add_node(component.idx,label=component.name,color=color,penwidth=2,shape='circle')
+                newSubgraph.add_node(component.idx,label=component.name,color=color,penwidth=2,shape='circle',fontcolor=color)
         for bond in product.bonds:
             graph.add_edge(bond[0],bond[1],dir='none',len=0.1,weight=100,penwidth=2)
 
