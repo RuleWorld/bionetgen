@@ -29,6 +29,13 @@ def levenshtein(s1, s2):
         return matrix[l2][l1]
 
 def getDifferences(scoreMatrix, speciesName):
+    '''
+    given a list of strings and a scoreMatrix, return the list of difference between
+    those strings with a levenshtein difference of less than two
+    returns: 
+        namePairs: list of tuples containing strings with distance <2
+        differenceList: list of differences between the tuples in namePairs
+    '''
     differenceList = []
     threshold = 3
     namePairs = []
@@ -36,7 +43,10 @@ def getDifferences(scoreMatrix, speciesName):
     for idx,element in enumerate(scoreMatrix):
         for idx2,element2 in enumerate(scoreMatrix[idx]):
             if scoreMatrix[idx][idx2] <= threshold and  idx < idx2:
-                namePairs.append([speciesName[idx],speciesName[idx2]])
+                if len(speciesName[idx])<len(speciesName[idx2]):
+                    namePairs.append([speciesName[idx],speciesName[idx2]])
+                else:
+                    namePairs.append([speciesName[idx2],speciesName[idx]])
     for pair in namePairs:
         if len(pair[1]) < len(pair[0]):
             difference =  difflib.ndiff(pair[1],pair[0])
@@ -60,17 +70,11 @@ def loadOntology(ontologyFile):
     ontology['patterns'] =  tmp
     return ontology
   
-  
-def main(fileName):
-    reader = libsbml.SBMLReader()
-    document = reader.readSBMLFromFile(fileName)
-    model = document.getModel()
-    speciesName = []
-    threshold = 2
-    ontology =  loadOntology('reactionDefinitions/namingConventions.json')
+
+def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=2):
+    ontology =  loadOntology(ontologyFile)
     differenceCounter = Counter()
-    for species in model.getListOfSpecies():
-        speciesName.append(species.getName())
+    
     scoreMatrix = np.zeros((len(speciesName),len(speciesName)))
     for idx,species in enumerate(speciesName):
         for idx2,species2 in enumerate(speciesName):
@@ -81,11 +85,29 @@ def main(fileName):
             
     namePairs,differenceList = getDifferences(scoreMatrix, speciesName)
     differenceCounter.update(differenceList)
-    
+    patternClassification = {}
+    pairClassification = {}
     for element in differenceCounter:
         if element in ontology['patterns']:
-            print element, ontology['patterns'][element]
-        
+            patternClassification[element] = ontology['patterns'][element]
+    for pair,difference in zip(namePairs,differenceList):
+        if difference in patternClassification:
+            if patternClassification[difference] not in pairClassification:
+                pairClassification[patternClassification[difference]] = []
+            pairClassification[patternClassification[difference]].append(tuple(pair))
+    return pairClassification
+
+
+def main(fileName):
+    reader = libsbml.SBMLReader()
+    document = reader.readSBMLFromFile(fileName)
+    model = document.getModel()
+    speciesName = []
+    
+    for species in model.getListOfSpecies():
+        speciesName.append(species.getName())
+
+    analyzeNamingConventions(speciesName,'reactionDefinitions/namingConventions.json')
             
 if __name__ == "__main__":
     bioNumber= 19

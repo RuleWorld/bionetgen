@@ -12,6 +12,7 @@ import json
 import itertools
 import structures as st
 from copy import deepcopy
+import detectOntology
 '''
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
@@ -227,6 +228,7 @@ class SBMLAnalyzer:
             if self.userEquivalencesDict ==None:            
                 self.userEquivalencesDict = {}
         #TODO: user defined naming conventions are not being added
+        tmpTranslator =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],'reactionDefinitions/namingConventions.json')
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #xxxxxxxxxxxxxxxxxxxxxxx
             
@@ -242,6 +244,14 @@ class SBMLAnalyzer:
         #now we want to fill in all intermediate relationships
         
         newTranslator = equivalenceTranslator.copy()
+        #FIXME: the only thing we want to copy over from the old 
+        #naming convention detection is the binding information
+        for element in newTranslator:
+            if element not in tmpTranslator and len(newTranslator[element]) > 0:
+                tmpTranslator[element] = newTranslator[element]
+        for element in tmpTranslator:
+            if element in self.userEquivalencesDict:
+                tmpTranslator[element].extend(self.userEquivalencesDict[element])
         '''
         for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
             if key1 == key2:
@@ -264,9 +274,9 @@ class SBMLAnalyzer:
             else:
                 pass
         '''
-        return reactionIndex,newTranslator
+        return reactionIndex,tmpTranslator
     
-    def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,reactionIndex,useNamingConventions=True):
+    def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,useNamingConventions=True):
         '''
         *reactionDefinition* is a list of conditions that must be met for a reaction
         to be classified a certain way
@@ -294,12 +304,12 @@ class SBMLAnalyzer:
                 tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
         #print tupleC
         #now we will check for the nameConventionMatrix (same thing as before but for naming conventions)
-        tupleNameComplianceMatrix = {key:zeros((len(reactionDefinition['namingConvention']))) for key in ruleDictionary}
+        tupleNameComplianceMatrix = {key:zeros((len(equivalenceTranslator.keys()))) for key in ruleDictionary}
         for rule in ruleDictionary:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
                     if all(element in rule for element in equivalence):
-                        tupleNameComplianceMatrix[rule][reactionIndex[namingConvention]] +=1
+                        tupleNameComplianceMatrix[rule][equivalenceTranslator.keys().index(namingConvention)] +=1
                         break
    
         #check if the reaction conditions each tuple satisfies are enough to get classified
@@ -341,6 +351,9 @@ class SBMLAnalyzer:
         this method will return the component and state names that this 
         reaction uses
         '''
+        
+        #TODO: once we transition completely to a naming convention delete 
+        #this ----
         reactionTypeProperties = {}
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
         if self.speciesEquivalences != None:
@@ -358,6 +371,12 @@ class SBMLAnalyzer:
                         site = reactionType
                         state = reactionType[0]
                     reactionTypeProperties[reactionType] = [site,state]
+        #TODO: end of delete
+        reactionDefinition = detectOntology.loadOntology('reactionDefinitions/namingConventions.json')
+        for idx,reactionType in enumerate(reactionDefinition['modificationList']):
+            site = reactionDefinition['reactionSite'][reactionDefinition['definitions'][idx]['rsi']]
+            state = reactionDefinition['reactionState'][reactionDefinition['definitions'][idx]['rst']]
+            reactionTypeProperties[reactionType] = [site,state]
         return reactionTypeProperties
 
     def classifyReactions(self,reactions,molecules):
@@ -375,9 +394,10 @@ class SBMLAnalyzer:
         #determines if two molecules have a relationship according to the naming convention section
         #equivalenceTranslator is a dictionary of actual modifications
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
+        
         reactionDict,equivalenceTranslator = self.processNamingConventions(molecules,
                     reactionDefinition)
-                    
+        
         #lists of plain reactions
         rawReactions = [self.parseReactions(x) for x in reactions]
         
@@ -453,8 +473,6 @@ class SBMLAnalyzer:
             userEquivalences = speciesdictionary['complexDefinition'] \
                 if 'complexDefinition' in speciesdictionary else None
             for element in userEquivalences:
-                if element[0] == 'EGFRim':
-                    print 'hola'
                 tmp = st.Species()
                 label = []
                 for molecule in element[1]:
