@@ -16,7 +16,7 @@ from copy import deepcopy
 import analyzeSBML
 import analyzeRDF
 import structures as st
-
+from util import logMess
 
 def parseReactions(reaction):
     species = (Word(alphanums + "_:#-")
@@ -68,6 +68,7 @@ def resolveDependencyGraphHelper(dependencyGraph, reactant, memory,
                     result.append([element])
                     continue
                 elif element in memory:
+                    logMess('ERROR','dependency cycle detected on {0}'.format(element))
                     print 'Detected cycle', element
                     return []
                 baseElement = resolveDependencyGraphHelper(dependencyGraph,element, 
@@ -209,10 +210,12 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
         #print ';;;',tmpCandidates[0]
         if len(candidates) == 1 and len(candidates[0]) == 1 and \
         candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
-            print '+++', 'error I dont know how this is modified', candidates[0], reactant, tmpCandidates
             candidates = []
             modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
-            if x[0] in tmpCandidates[0] and type(x[1]) is not tuple and x[1] in reactant}
+            if x[0] in tmpCandidates[0] and type(x[1]) is not tuple}
+            if modificationCandidates == {}:
+                logMess('WARNING','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}. Halp.'.format(reactant))
+                tmpCandidates[0] = [reactant]
             for idx, molecule in enumerate(tmpCandidates[0]):
                 if molecule in modificationCandidates:
                     tmpCandidates[0][idx] = modificationCandidates[molecule]

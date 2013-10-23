@@ -304,12 +304,12 @@ class SBMLAnalyzer:
                 tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
         #print tupleC
         #now we will check for the nameConventionMatrix (same thing as before but for naming conventions)
-        tupleNameComplianceMatrix = {key:zeros((len(equivalenceTranslator.keys()))) for key in ruleDictionary}
+        tupleNameComplianceMatrix = {key:{key2:0 for key2 in equivalenceTranslator} for key in ruleDictionary}
         for rule in ruleDictionary:
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
                     if all(element in rule for element in equivalence):
-                        tupleNameComplianceMatrix[rule][equivalenceTranslator.keys().index(namingConvention)] +=1
+                        tupleNameComplianceMatrix[rule][namingConvention] +=1
                         break
    
         #check if the reaction conditions each tuple satisfies are enough to get classified
@@ -320,8 +320,8 @@ class SBMLAnalyzer:
                 for alternative in member:
                     if 'r' in alternative:            
                         tupleDefinitionMatrix[key][idx] += np.all([element[reaction] for reaction in alternative[u'r']])
-                    if 'n' in alternative:
-                        tupleDefinitionMatrix[key][idx] += np.all([tupleNameComplianceMatrix[key][reaction] for reaction in alternative[u'n']])
+                    if 'n' in alternative and reactionDefinition['reactionsNames'][idx] in equivalenceTranslator:
+                        tupleDefinitionMatrix[key][idx] += np.all([tupleNameComplianceMatrix[key][reactionDefinition['reactionsNames'][idx]]])
         #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
         #use the per tuple classification to obtain a per reaction classification
         ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))

@@ -11,16 +11,15 @@
 	
 	],
 	"complexDefinition" : [
-	["Ras_GDP", [["Ras","gdp",["b",1]], ["GDP","ras",["b",1]]]],["EGFRm",[["EGFR","mMod",["s","M"]]]],["ERKi",[["ERK","iMod",["s","I"]]]],
-	["MEKi",[["MEK","iMod",["s","I"]]]],["EGFRim",[["EGFR","mMod",["s","M"],"iMod",["s","I"]]]],
+	["Ras_GDP", [["Ras","gdp",["b",1]], ["GDP","ras",["b",1]]]],["EGFRm",[["EGFR","mMod",["s","M"]]]],
 	["Ras_GTP", [["Ras","gtp",["b",1]], ["GTP","ras",["b",1]]]],["EGFR",[["EGFR","egfr",[]]]],
-	["Rafim",[["Raf","iMod",["s","I"],"mMod",["s","M"]]]],
 	["EGFRim",[["EGFR","iMod",["s","I"],"mMod",["s","M"]]]]
 	],
 	"modificationDefinition": {
 	"EGF_EGFRm2":["EGFRm","EGF","EGFR","EGF"],
 	"EGF_EGFRim2":["EGFRim","EGF","EGFR","EGF"],
-	"Rasi_GTP":["Rasi","GTP"]
+	"Rasi_GTP":["Rasi","GTP"],
+	"Ras_GTPm":["Ras","GTPm"]
 	}
 	
 	
