@@ -830,7 +830,11 @@ sub simulate_nf
 
     if (@err) {
         print "Error log:\n", @err;
-        return sprintf("%s did not run successfully.", join(" ", @command));
+		foreach my $e (@err){
+			unless ( $e =~ /^\s*WARNING/i ){
+	        	return sprintf("%s did not run successfully.", join(" ", @command));
+			}
+	    }
     }
 
     if ( $params->{get_final_state} )
