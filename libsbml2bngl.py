@@ -1361,11 +1361,30 @@ def statFiles():
         #box.append(orBoxDict)
         with open('orBox{0}.dump'.format(bioNumber),'wb') as f:
             pickle.dump(box,f)
-            
+
+def processFile3(fileName,customDefinitions=None,atomize=True):
+    logMess.log = []
+    logMess.counter = -1
+    reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
+    spEquivalence = customDefinitions
+    #spEquivalence = None
+    useID = False
+    #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
+    outputFile = '{0}.bngl'.format(fileName)
+    analyzeFile(fileName, reactionDefinitions,
+                useID,outputFile,speciesEquivalence=spEquivalence,atomize=atomize)
+
+    if len(logMess.log) > 0:
+        with open(fileName + '.log', 'w') as f:
+            for element in logMess.log:
+                f.write(element + '\n')
+    
+        
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
-    main()
+    #main()
+    processFile3('XMLExamples/curated/BIOMD0000000001.xml')
     #statFiles()
     #main2()
     #processFile2()
