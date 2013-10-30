@@ -4,14 +4,17 @@ Created on Sat Oct 19 15:19:35 2013
 
 @author: proto
 """
-
+import pprint
 import libsbml
 import numpy as np
 import difflib
 from collections import Counter
-from itertools import dropwhile
 import json
 import ast
+import pickle
+from os import listdir
+from os.path import isfile, join
+
 
 def levenshtein(s1, s2):
         l1 = len(s1)
@@ -107,8 +110,73 @@ def main(fileName):
     for species in model.getListOfSpecies():
         speciesName.append(species.getName())
 
-    analyzeNamingConventions(speciesName,'reactionDefinitions/namingConventions.json')
+    return analyzeNamingConventions(speciesName,'reactionDefinitions/namingConventions.json')
             
+def databaseAnalysis(directory,outputFile):
+    xmlFiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) and 'xml' in f]
+    differenceCounter = Counter()
+    differenceDict = {}
+    fileDict = {}
+    for xml in xmlFiles:
+        print xml
+        reader = libsbml.SBMLReader()
+        document = reader.readSBMLFromFile(directory + xml)
+        model = document.getModel()
+        if model == None:
+            continue
+        speciesName = []
+        
+        for species in model.getListOfSpecies():
+            speciesName.append(species.getName())
+        scoreMatrix = np.zeros((len(speciesName),len(speciesName)))
+        for idx,species in enumerate(speciesName):
+            for idx2,species2 in enumerate(speciesName):
+                if species == species2 or scoreMatrix[idx][idx2] != 0:
+                    continue
+                scoreMatrix[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
+                scoreMatrix[idx2][idx] = scoreMatrix[idx][idx2]
+                
+        namePairs,differenceList = getDifferences(scoreMatrix, speciesName)
+        differenceCounter.update(differenceList)
+        for key,element in zip(differenceList,namePairs):
+            if key == ():
+                continue
+            if key not in fileDict:
+                #differenceDict[tuple(key)] = set()
+                fileDict[tuple(key)] = set()
+            #differenceDict[tuple(key)].add((xml,tuple(element)))
+            fileDict[tuple(key)].add(xml)
+            
+        fileCounter = Counter()
+        for element in fileDict:
+            fileCounter[element] = len(fileDict[element])
+        with open(outputFile,'wb') as f:
+            pickle.dump(differenceCounter,f)
+            #pickle.dump(differenceDict,f)
+            pickle.dump(fileCounter,f)
+        
+        
+def analyzeTrends(inputFile):
+    with open(inputFile,'rb') as f:
+        counter = pickle.load(f)
+        dictionary = pickle.load(f)
+        fileCounter = pickle.load(f)
+    totalCounter = Counter()
+    for element in counter:
+        totalCounter[element] = counter[element] * fileCounter[element]
+    keys = totalCounter.most_common(35)
+    #keys = keys[1:]
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(keys)
+    for element in keys:
+        print '------------------'
+        print element
+        pp.pprint(dictionary[element[0]])
+        
+    
 if __name__ == "__main__":
     bioNumber= 19
-    main('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
+    #main('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
+    
+    databaseAnalysis('XMLExamples/non_curated/','non_contologies.dump')    
+    #analyzeTrends('ontologies.dump')
