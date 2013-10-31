@@ -990,7 +990,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
-
     param = [x for x in param if x not in removeParams]
     tags = '@{0}'.format(compartments[0].split(' ')[0]) if len(compartments) == 1 else '@cell'
     molecules.extend([x.split(' ')[0] for x in removeParams])
@@ -1008,9 +1007,10 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         for key in artificialObservables:
             
             if re.search('^{0}\s'.format(key),parameter)!= None:
-                tmpParams.append(key)
                 assigmentRuleDefinedParameters.append(idx)
-    
+    tmpParams.extend(artificialObservables)
+    tmpParams.extend(removeParams)
+    tmpParams = set(tmpParams)
     correctRulesWithParenthesis(rules,tmpParams)
     for element in assigmentRuleDefinedParameters:
         param[element] = '#' + param[element]
@@ -1089,7 +1089,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         evaluate =  evaluation(len(observables),translator)
 
         artificialRules.extend(rules)
-        finalString = writer.finalText(param,molecules,initialConditions,observables,set(artificialRules),functions,compartments,outputFile)
+        finalString = writer.finalText(param,molecules,initialConditions,set(observables),set(artificialRules),functions,compartments,outputFile)
         
 
 
@@ -1099,7 +1099,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
 
         rules.extend(artificialRules)
         
-        finalString = writer.finalText(param+param3,molecules,initialConditions,observables,set(rules),functions,compartments,outputFile)
+        finalString = writer.finalText(param+param3,molecules,initialConditions,set(observables),set(rules),functions,compartments,outputFile)
     print outputFile
     
     #store a logfile
@@ -1152,7 +1152,7 @@ def getAnnotationsDict(annotation):
     return annotationDict
 
 def processFile2():
-    for bioNumber in [183]:
+    for bioNumber in [175]:
         #if bioNumber in [18,51,353,108,109,255,268,392]:
         #    continue
     #bioNumber = 175
@@ -1208,7 +1208,7 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in range(1,410):
+    for bioNumber in range(1,463):
         #if bioNumber in [18,51,353,108,109,255,268,392]:
         #    continue
     #bioNumber = 175
