@@ -749,7 +749,6 @@ def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
         functions[idx] =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',functions[idx])
         functions[idx] =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',functions[idx])
         functions[idx] =re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',functions[idx])
-    
     #functions.extend(sbmlfunctions)
     dependencies2 = {}
     for idx in range(0,len(functions)):
@@ -779,7 +778,6 @@ def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
         fd.append([function,resolveDependencies(dependencies2,function.split(' = ' )[0].split('(')[0],0)])
     fd = sorted(fd,key= lambda rule:rule[1])
     functions = [x[0] for x in fd]
-    
     return functions
 
 
@@ -891,27 +889,40 @@ def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEqui
         finalCompartmentPairs[element[0][0]][tuple([element[0][1],element[1][1]])] = compartmentPairs[element]
     return finalCompartmentPairs
     
+def recursiveSearch(dictionary,element):
+    tmp = 0
+    for item in dictionary[element]:
+        if dictionary[item] == []:
+            tmp +=1
+        else:
+            tmp += 1
+            tmp += (recursiveSearch(dictionary,item))
+    return tmp
 
 def reorderFunctions(functions):
     ''''
     Analyze a list of sbml functions and make sure there are no forward dependencies. 
     Reorder if necessary
     '''    
-    dependencyList = []
     functionNames = []
-    functionDependencies = []
     tmp = []
     for function in functions:
         m = re.split('(?<=\()[\w)]', function)
         functionNames.append(m[0])
+    functionNamesDict = {x:[] for x in functionNames}
     for idx,function in enumerate(functions):
         tmp = [x for x in functionNames if x in function and x!= functionNames[idx]]
-        functionDependencies.append(tmp)
-    idx = sorted(range(len(functionDependencies)), key=lambda x: len(functionDependencies[x]))
-    for element in idx:
-        tmp.append(functions[element])
-    return tmp
-            
+        functionNamesDict[functionNames[idx]].extend(tmp)
+    newFunctionNamesDict = {}
+    for name in functionNamesDict:
+        newFunctionNamesDict[name] = recursiveSearch(functionNamesDict,name)
+    functionWeightsDict = {x:newFunctionNamesDict[x] for x in newFunctionNamesDict}
+    functionWeights = []
+    for name in functionNames:
+        functionWeights.append(functionWeightsDict[name])
+    tmp = zip(functions,functionWeights)
+    idx = sorted(tmp,key=lambda x:x[1])
+    return [x[0] for x in idx]
     
     
 def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None,atomize=False):
@@ -936,6 +947,17 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
             f.write(returnArray[-1])
     return returnArray[0:-1]
 
+def correctRulesWithParenthesis(rules,parameters):
+    '''
+    helper function. Goes through a list of rules and adds a parenthesis
+    to the reaction rates of those functions whose rate is in list 
+    'parameters'
+    '''
+    for idx in range(len(rules)):
+        tmp = [x for x in parameters if x + ' ' in rules[idx]]
+        if len(tmp) > 0:
+            rules[idx].strip()
+            rules[idx] += '()'
     
 def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator):
     '''
@@ -962,7 +984,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     molecules,initialConditions,observables = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     functions = []
-    idxArray = []
+    assigmentRuleDefinedParameters = []
     param3,rules,tfunc = parser.getReactions(translator,len(compartments)>1)
     functions.extend(tfunc)
     aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
@@ -977,14 +999,20 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     observables.extend('Species {0} {0}'.format(x.split(' ')[0]) for x in removeParams)
     for x in removeParams:
         initialConditions.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
+
     ##Comment out those parameters that are defined with assignment rules
     ##TODO: I think this is correct, but it may need to be checked
+    
+    tmpParams = []
     for idx,parameter in enumerate(param):
         for key in artificialObservables:
+            
             if re.search('^{0}\s'.format(key),parameter)!= None:
-                idxArray.append(idx)
+                tmpParams.append(key)
+                assigmentRuleDefinedParameters.append(idx)
     
-    for element in idxArray:
+    correctRulesWithParenthesis(rules,tmpParams)
+    for element in assigmentRuleDefinedParameters:
         param[element] = '#' + param[element]
         
     
@@ -1031,14 +1059,11 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         else:
             logMess('WARNING','{0} reported as species, but usage is ambiguous.'.format(flag) )
             artificialObservables.pop(flag)
-        
     functions.extend(aRules)
-
     sbmlfunctions = parser.getSBMLFunctions()
     
     processFunctions(functions,sbmlfunctions,artificialObservables,tfunc)
     
-    #TODO: reorder functions.
     for interation in range(0,3):
         for sbml2 in sbmlfunctions:
             for sbml in sbmlfunctions:
@@ -1046,13 +1071,11 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
                     continue
                 if sbml in sbmlfunctions[sbml2]:
                     sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
-    #for element in sbmlfunctions:
-    #    functions.append(sbmlfunctions[element])
-        
+    
     functions = reorderFunctions(functions)
-    #functions.extend(aRules)
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
         compartments.append('cell 3 1.0')
+
     #sbml always has the 'cell' default compartment, even when it
     #doesn't declare it
     elif len(compartments) == 0 and len(molecules) != 0:
@@ -1066,7 +1089,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         evaluate =  evaluation(len(observables),translator)
 
         artificialRules.extend(rules)
-        finalString = writer.finalText(param,molecules,initialConditions,observables,artificialRules,functions,compartments,outputFile)
+        finalString = writer.finalText(param,molecules,initialConditions,observables,set(artificialRules),functions,compartments,outputFile)
         
 
 
@@ -1076,7 +1099,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
 
         rules.extend(artificialRules)
         
-        finalString = writer.finalText(param+param3,molecules,initialConditions,observables,rules,functions,compartments,outputFile)
+        finalString = writer.finalText(param+param3,molecules,initialConditions,observables,set(rules),functions,compartments,outputFile)
     print outputFile
     
     #store a logfile
@@ -1129,7 +1152,7 @@ def getAnnotationsDict(annotation):
     return annotationDict
 
 def processFile2():
-    for bioNumber in [19]:
+    for bioNumber in [183]:
         #if bioNumber in [18,51,353,108,109,255,268,392]:
         #    continue
     #bioNumber = 175
@@ -1138,8 +1161,8 @@ def processFile2():
         reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
         print reactionDefinitions, useID
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
-        spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
-        #spEquivalence = None
+        #spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
+        spEquivalence = None
         useID = False
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
         outputFile = 'complex/output' + str(bioNumber) + '.bngl'
@@ -1203,8 +1226,8 @@ def main():
 
         try:
             rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
-                                                              reactionDefinitions,False,'raw/output' + str(bioNumber) + '.bngl',
-                                                                speciesEquivalence=spEquivalence,atomize=False)
+                                                              reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
+                                                                speciesEquivalence=spEquivalence,atomize=True)
         except:
             print '-------------error--------------'
             rulesLength.append(-1)
@@ -1363,6 +1386,9 @@ def statFiles():
             pickle.dump(box,f)
 
 def processFile3(fileName,customDefinitions=None,atomize=True):
+    '''
+    processes a file. derp.
+    '''
     logMess.log = []
     logMess.counter = -1
     reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
@@ -1379,15 +1405,37 @@ def processFile3(fileName,customDefinitions=None,atomize=True):
             for element in logMess.log:
                 f.write(element + '\n')
     
-        
+    
+def listFiles(minReactions,directory):
+    '''
+    List of SBML files that meet a given condition
+    '''
+    from os import listdir
+    from os.path import isfile, join
+    
+    xmlFiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) and 'xml' in f]
+    outputList = []
+    for xml in xmlFiles:
+        print '.',
+        reader = libsbml.SBMLReader()
+        document = reader.readSBMLFromFile(directory + xml)
+        model = document.getModel()
+        if model == None:
+            continue
+        if len(model.getListOfReactions()) > minReactions:
+            outputList.append(xml)
+    print outputList
+    print len(outputList)
+    
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
-    #main()
-    processFile3('XMLExamples/curated/BIOMD0000000001.xml')
+    main()
+    #processFile3('XMLExamples/curated/BIOMD0000000183.xml')
     #statFiles()
     #main2()
     #processFile2()
+    #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
 #2:figure out which assignment rules are being used in reactions. Done before the substitution for id;s
