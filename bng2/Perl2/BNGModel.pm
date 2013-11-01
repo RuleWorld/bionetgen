@@ -677,8 +677,8 @@ sub readNetwork
                             }
 
                             # get group weights
-                            my @group_weights = split /,/, $tokens[0];
-
+                            my @group_weights = ($tokens[0]) ? split( /,/ , $tokens[0] ) : ();
+                            
                             # Zero the weights
                             @{$obs->Weights} = (0) x ($n_species+1);
                             my ($weight, $species_idx);
