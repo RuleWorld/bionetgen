@@ -41,7 +41,7 @@ class TestOne(ParametrizedTestCase):
     def test_parsing(self):
         reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
         libsbml2bngl.analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % self.param, reactionDefinitions,
-                    False, 'raw/output' + str(self.param) + '.bngl', speciesEquivalence=None)
+                    False, 'raw/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=False)
 
 
 class TestEval(ParametrizedTestCase):
@@ -84,21 +84,26 @@ def getValidBNGLFiles(directory):
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
     #ran = range(1,410)
-    ran = [1,2,9,16,24,25,41,48]
+    ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,
+           147, 338, 297, 293, 49, 344, 83, 230, 453, 223, 109, 56, 256, 410, 
+           340, 452, 286, 399, 445, 285, 457, 74, 250, 334, 227, 205, 339, 151, 
+           424, 14, 153, 105, 407, 451, 332, 326, 255, 356]
+           
     for index in ran:
-        suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
-    #validFiles = getValidBNGLFiles('raw')
+         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
     for fileNumber in ran:
         fileName = 'output{0}.bngl'.format(fileNumber)
         suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
-    '''
+    
     #validFiles = getValidBNGLFiles('complex')
+    #validFiles = getValidBNGLFiles('raw')
+
     #for fileName in validFiles:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     for index in ran:
         suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
-    '''   
+       
     unittest.TextTestRunner(verbosity=2).run(suite)
 

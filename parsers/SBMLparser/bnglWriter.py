@@ -15,7 +15,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
-    if len(reactant) == 0 or (len(reactant) == 1 and reactant[0][1] == 0):
+    if len(reactant) == 0:
         finalString += '0 '
     for index in range(0,len(reactant)):
         tag = ''
@@ -39,6 +39,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
         if index < len(product) -1:
             finalString += ' + '
     finalString += ' ' + rate + ' ' + comment
+    finalString = re.sub(r'(\W|^)0\(\)','0',finalString)
     return finalString
     
 

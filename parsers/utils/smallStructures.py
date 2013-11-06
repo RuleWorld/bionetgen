@@ -392,9 +392,8 @@ class Species:
 class Molecule:
     def __init__(self,name,idx):
         self.components = []
-        self.name = name
+        self.name,self.idx = name,idx
         self.compartment = ''
-        self.idx = idx
         self.uniqueIdentifier = randint(0,100000)
         
     def copy(self):
@@ -567,11 +566,10 @@ class Molecule:
             
 class Component:
     def __init__(self,name,idx,bonds = [],states=[]):
-        self.name = name
+        self.name,self.idx = name,idx
         self.states = []
         self.bonds = []
         self.activeState = ''
-        self.idx = idx
         
     def copy(self):
         component = Component(self.name,self.idx,deepcopy(self.bonds),deepcopy(self.states))

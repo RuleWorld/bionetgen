@@ -11,6 +11,7 @@ import pygraphviz as pgv
 import subprocess
 import pexpect
 
+
 def extractMolecules(action,site1,site2,chemicalArray):
     '''
     this method goes through the chemicals in a given array 'chemicalArray'
@@ -188,7 +189,6 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     atomicArray, transformationCenter, transformationContext, \
             productElements,actionNames,labelArray = extractTransformations(rules)
     #create the graph structure and the three main subgraphs
-    
     if transformations != None and len(transformations) == 1:
         graph = pgv.AGraph(directed=True,strict=False,
                            label=labelArray[transformations[0]-1],
@@ -324,6 +324,6 @@ def main(fileName):
     
 if __name__ == "__main__":
     #main("output9.xml")
-    #bngl2xml('fceri_ji.bngl')
+    bngl2xml('fceri_ji.bngl')
     main("fceri_ji.xml")
     #addAnnotations('fceri_ji')

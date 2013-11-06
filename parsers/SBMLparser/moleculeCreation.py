@@ -305,6 +305,7 @@ def getComplexationComponents2(species):
     '''
     def getBiggestMolecule(array):
         sortedMolecule = sorted(array, key=lambda rule: len(str(rule)))
+        sortedMolecule = sorted(sortedMolecule, key=lambda rule: len(rule.components))
         #print 'sortedMolecule',[str(x) for x in sortedMolecule]
         return sortedMolecule[-1]
     speciesDict = {}

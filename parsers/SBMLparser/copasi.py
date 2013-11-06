@@ -15,14 +15,14 @@ import matplotlib.pyplot as plt
         
 def xml2cps():
     with open('dummy.tmp','w') as d:
-        for element in range(1,410):
+        for element in range(1,463):
             call(['/home/proto/Downloads/copasi/bin/CopasiSE','-i','XMLExamples/curated/BIOMD%010i.xml' % element],stdout=d)
             print element
 #    inputFile = open('fceri_ji_{0}b.cps'.format(index),'r')
     
     
 def correctCPS():
-    for element in range(1,410):
+    for element in range(1,463):
         #inputFile = open('XMLExamples/curated/BIOMD%010i.xml' % element,'r')
         cinputFile = open('XMLExamples/curated/BIOMD%010i.cps' % element,'r')
         content = cinputFile.readlines()
@@ -43,7 +43,7 @@ def correctCPS():
             
         param,zparam = parser.getParameters()
         molecules,_,_ = parser.getSpecies({})
-        _,_,_,_,removeParams = parser.getAssignmentRules(zparam,param,molecules)  
+        _,_,_,_,removeParams,_ = parser.getAssignmentRules(zparam,param,molecules)  
         
         
         
@@ -85,12 +85,13 @@ def correctCPS():
  
 def generateCopasiOutput():
     with open('dummy.tmp','w') as d:
-        for element in range(1,410):
+        for element in range(1,463):
             call(['/home/proto/Downloads/copasi/bin/CopasiSE','copasiBenchmark/mBIOMD%010i.cps' % element],stdout=d)
             print element
 
 
 def loadResults(fileName,split):
+    print fileName,
     try:
         with open(fileName) as dataInput:
             timeCourse = []
@@ -104,9 +105,10 @@ def loadResults(fileName,split):
                      timeCourse.append([float(x) for x in nline])     
                  except:
                      print '++++',nline
+        print 'loaded'
         return headers,np.array(timeCourse)
     except IOError:
-        print 'no file',fileName
+        print 'no file'
         return [],[]
         
 def plotResults(fileResults1,fileResults2):
@@ -127,11 +129,11 @@ def evaluate(fileNumber):
     newCopHeaders = []
     newBngHeaders = []
     if len(copasi) < 2:
-        return 0
+        raise
     elif len(bng) < 2:
-        return 0
+        raise
     elif np.size(copasi,0) != np.size(bng,0):
-        return 0
+        raise
     for idx,element in enumerate(copheaders):
         if element == 'Time':
             continue
@@ -170,7 +172,7 @@ def evaluate(fileNumber):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [2]:
+    for fileNumber in [406]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
