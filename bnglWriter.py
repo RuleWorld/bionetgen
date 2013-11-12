@@ -15,7 +15,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
-    if len(reactant) == 0:
+    if len(reactant) == 0 or (len(reactant) == 1 and reactant[0][1] == 0):
         finalString += '0 '
     for index in range(0,len(reactant)):
         tag = ''
@@ -287,11 +287,11 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     return finalString
 
     
-def finalText(param,molecules,species,observables,rules,functions,compartments,fileName):
+def finalText(comments,param,molecules,species,observables,rules,functions,compartments,fileName):
     #output = open(fileName,'w')
     
     output = StringIO.StringIO()
-    
+    output.write(comments)
     output.write('begin model\n')
     output.write(sectionTemplate('parameters',param))
     if len(compartments) > 0:

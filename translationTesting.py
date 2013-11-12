@@ -93,17 +93,17 @@ if __name__ == "__main__":
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    for fileNumber in ran:
-        fileName = 'output{0}.bngl'.format(fileNumber)
-        suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    #for fileNumber in ran:
+    #    fileName = 'output{0}.bngl'.format(fileNumber)
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
     
     #validFiles = getValidBNGLFiles('complex')
     #validFiles = getValidBNGLFiles('raw')
 
     #for fileName in validFiles:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
-    for index in ran:
-        suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
+    #for index in ran:
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
     unittest.TextTestRunner(verbosity=2).run(suite)
 
