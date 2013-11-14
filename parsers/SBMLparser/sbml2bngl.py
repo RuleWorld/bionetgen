@@ -626,7 +626,7 @@ class SBML2BNGL:
 def standardizeName(name):
     name2 = name
     
-    sbml2BnglTranslationDict = {"-":"_","^":"",
+    sbml2BnglTranslationDict = {"^":"",
                                 "'":"",
                                 "*":"m"," ":"_",
                                 "#":"sh",
@@ -636,29 +636,10 @@ def standardizeName(name):
                                 ")":"__",
                                 " ":"","+":"pl",
                                 "/":"_",":":"_",
+                                "-":"_",
                                 ".":"_"}
                                 
     for element in sbml2BnglTranslationDict:
         name = name.replace(element,sbml2BnglTranslationDict[element])
-    '''
-    name2 = name.replace("-","_")
-    name2 = name2.replace("^","")
-    name2 = name2.replace("'","")
-    name2 = name2.replace("*","m")
-    #name2 = name2.replace("#","m")
-    name2 = name2.replace(" ","_")
-    name2 = name2.replace("#","sh")
-    name2 = name2.replace(",","_")
-    name2 = name2.replace('α','a')
-    name2 = name2.replace('β','b')
-    name2 = name2.replace('γ','g')
-    name2 = name2.replace("(","__")
-    name2 = name2.replace(")","__")
-    name2 = name2.replace(" ","")
-    name2 = name2.replace("+","pl")
-    name2 = name2.replace("/","_")
-    name2 = name2.replace(":","_")
-    name2 = name2.replace(".","_")
-    '''
     
     return name

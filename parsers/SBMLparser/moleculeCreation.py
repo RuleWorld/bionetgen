@@ -17,7 +17,7 @@ import analyzeSBML
 import analyzeRDF
 import structures as st
 from util import logMess
-
+import biogrid
 def parseReactions(reaction):
     species = (Word(alphanums + "_:#-")
     + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_:#-")
@@ -357,9 +357,29 @@ def getComplexationComponents2(species):
             #the list
             if mol1 == element and mol1 not in set().union(*totalComplex):
                 totalComplex.append(set([mol1]))
+   
     while len(totalComplex) > 1:
-        mol1 = getBiggestMolecule(totalComplex[0])
-        mol2 = getBiggestMolecule(totalComplex[1])
+        if len(totalComplex[0]) ==1 and len(totalComplex[1]) == 1:
+            mol1 = list(totalComplex[0])[0]
+            mol2 = list(totalComplex[1])[0]
+        else:
+            #print '---',totalComplex,len(biogrid.loadBioGridDict())
+            names1 =  [str(x.name) for x in totalComplex[0]]
+            names2 =  [str(x.name) for x in totalComplex[1]]
+            #print [str(x) for x in totalComplex[0]]
+            '''
+            for name1 in names1:
+                if name1 in biogrid.loadBioGridDict():
+                    tmp= biogrid.loadBioGridDict()[name1]
+                    for name2 in names2:
+                        if name2 in tmp:
+                            print name1,name2
+            '''     
+            #print [x in biogrid.loadBioGridDict() for x in names1],names1
+            #print [x in biogrid.loadBioGridDict() for x in names2],names2
+            
+            mol1 = getBiggestMolecule(totalComplex[0])
+            mol2 = getBiggestMolecule(totalComplex[1])
         #newComponentPairs.append([mol1,mol2])
         pairedMolecules.append([mol1, mol2])
         totalComplex[0] = totalComplex[0].union(totalComplex[1])
@@ -558,7 +578,7 @@ def propagateChanges(translator, dependencyGraph):
 
 
 def transformMolecules(parser, database, configurationFile,
-                       speciesEquivalences=None):
+                       speciesEquivalences=None,bioGrid={}):
     '''
     main method. Receives a parser configuration, a configurationFile and a
     list of user defined species equivalences and returns a dictionary
@@ -617,6 +637,7 @@ def transformMolecules(parser, database, configurationFile,
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
     classifications, equivalenceTranslator, eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     weights = sorted(weights, key=lambda rule: rule[1])
+    #print {x:str(database.translator[x]) for x in database.translator}
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
                                                                 eequivalenceTranslator)
     propagateChanges(database.translator, prunnedDependencyGraph)

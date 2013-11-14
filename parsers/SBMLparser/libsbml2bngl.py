@@ -26,6 +26,7 @@ log = {'species': [], 'reactions': []}
 import signal
 from collections import Counter
 from sbml2bngl import SBML2BNGL
+from biogrid import loadBioGridDict as loadBioGrid
 
 def handler(signum, frame):
     print "Forever is over!"
@@ -33,33 +34,6 @@ def handler(signum, frame):
 
 
         
-def standardizeName(name):
-    name2 = name
-    
-    
-    name2 = name.replace("-","_")
-    name2 = name2.replace("^","")
-    name2 = name2.replace("'","")
-    name2 = name2.replace("*","m")
-    #name2 = name2.replace("#","m")
-    name2 = name2.replace(" ","_")
-    name2 = name2.replace("#","sh")
-    name2 = name2.replace(",","_")
-    name2 = name2.replace('α','a')
-    name2 = name2.replace('β','b')
-    name2 = name2.replace('γ','g')
-    name2 = name2.replace("(","__")
-    name2 = name2.replace(")","__")
-    name2 = name2.replace(" ","")
-    name2 = name2.replace("+","pl")
-    name2 = name2.replace("/","_")
-    name2 = name2.replace(":","_")
-    name2 = name2.replace(".","_")
-    
-    
-    return name2
-        
-
 
 def identifyNamingConvention():
     '''
@@ -442,7 +416,8 @@ def reorderFunctions(functions):
     return [x[0] for x in idx]
     
     
-def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalence=None,atomize=False):
+def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,
+                speciesEquivalence=None,atomize=False,bioGrid=False):
     '''
     one of the library's main entry methods. Process data from a string
     '''
@@ -453,6 +428,11 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,speciesEquivalenc
     database = structures.Databases()
     
     #call the atomizer (or not)
+    
+    bioGridDict = {}
+    if bioGrid:
+        bioGridDict = loadBioGrid()
+    
     if atomize:
         translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
     else:    
@@ -521,7 +501,7 @@ def unrollFunctions(functions):
         
             
     
-def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator):
+def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator,bioGrid = False):
     '''
     taking the atomized dictionary and a series of data structure, this method
     does the actual string output.
@@ -532,10 +512,13 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         
     #try:
-    if atomize:
-        translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
-    else:    
-        translator={} 
+    #bioGridDict = {}
+    #if biogrid:
+    #    bioGridDict = biogrid()
+    #if atomize:
+    #    translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence,bioGridDict)
+    #else:    
+    #    translator={} 
     
     parser =SBML2BNGL(document.getModel(),useID)
     #except:
@@ -739,9 +722,9 @@ def processFile2():
         print spEquivalence
         useID = False
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
-        outputFile = 'raw/output' + str(bioNumber) + '.bngl'
+        outputFile = 'complex/output' + str(bioNumber) + '.bngl'
         analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,
-                    useID,outputFile,speciesEquivalence=spEquivalence,atomize=False)
+                    useID,outputFile,speciesEquivalence=spEquivalence,atomize=True,bioGrid=False)
 
         if len(logMess.log) > 0:
             with open(outputFile + '.log', 'w') as f:
