@@ -77,7 +77,7 @@ def loadOntology(ontologyFile):
 def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=2):
     ontology =  loadOntology(ontologyFile)
     differenceCounter = Counter()
-    
+    finalDifferenceCounter=Counter()
     scoreMatrix = np.zeros((len(speciesName),len(speciesName)))
     for idx,species in enumerate(speciesName):
         for idx2,species2 in enumerate(speciesName):
@@ -92,13 +92,17 @@ def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},simi
     pairClassification = {}
     for element in differenceCounter:
         if element in ontology['patterns']:
+            finalDifferenceCounter[element] = differenceCounter[element]
             patternClassification[element] = ontology['patterns'][element]
     for pair,difference in zip(namePairs,differenceList):
         if difference in patternClassification:
             if patternClassification[difference] not in pairClassification:
                 pairClassification[patternClassification[difference]] = []
             pairClassification[patternClassification[difference]].append(tuple(pair))
-    return pairClassification
+    keys = finalDifferenceCounter.keys()
+    keys =  [''.join(x).replace('+ ','') for x in keys]
+    #print ontology
+    return pairClassification,keys
 
 
 def main(fileName):
