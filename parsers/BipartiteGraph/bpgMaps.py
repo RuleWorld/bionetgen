@@ -732,14 +732,17 @@ def writeJSON(names,all_maps,annot):
 		nodes.append({'type':'mol','name':mol})
 
 	# Links are structured thus
-	edges = []
+	edges = {}
 	rmap = all_maps.r
-	edges.append({"r2t":listify(rmap.r2t)})
+	#edges.append({"r2t":listify(rmap.r2t)})
+	edges["r2t"] = listify(rmap.r2t)
+	
 	temp = dict()
 	temp["context"] = listify(rmap.r2p_context)
 	temp["syncontext"] = listify(rmap.r2p_syncontext)
 	temp["delcontext"] = listify(rmap.r2p_delcontext)
-	edges.append({"r2p":temp})
+	#edges.append({"r2p":temp})
+	edges["r2p"] = temp
 	
 	tmap = all_maps.t
 	temp = dict()
@@ -748,12 +751,15 @@ def writeJSON(names,all_maps,annot):
 	temp["context"] = listify(tmap.t2p_context)
 	temp["syncontext"] = listify(tmap.t2p_syncontext)
 	temp["delcontext"] = listify(tmap.t2p_delcontext)
-	edges.append({"t2p":temp})
+	#edges.append({"t2p":temp})
+	edges["t2p"] = temp
 	
 	tpmap = all_maps.tp
 	temp1 = dict()
 	temp1["forward"] = listify2(tpmap.tp2t_forward)
 	temp1["reverse"] = listify2(tpmap.tp2t_reverse)
+	edges["tp2t"] = temp1
+	
 	temp2 = dict()
 	temp2["forwardreactant"] = listify(tpmap.tp2p_forwardreactant)
 	temp2["reversereactant"] = listify(tpmap.tp2p_reversereactant)
@@ -761,7 +767,8 @@ def writeJSON(names,all_maps,annot):
 	temp2["reversecontext"] = listify(tpmap.tp2p_reversecontext)
 	temp2["syncontext"] = listify(tpmap.tp2p_syncontext)
 	temp2["delcontext"] = listify(tpmap.tp2p_delcontext)
-	edges.append({"tp2t":temp1,"tp2p":temp2})
+	#edges.append({"tp2t":temp1,"tp2p":temp2})
+	edges["tp2p"] = temp2
 	return json.dumps({'nodes':nodes,'edges':edges})
 		
 	
