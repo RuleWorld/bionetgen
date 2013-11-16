@@ -89,8 +89,7 @@ def addToDependencyGraph(dependencyGraph, label, value):
         dependencyGraph[label].append(value)
 
 
-def dependencyGraph(dependencyGraph, reaction, classification,
-                    equivalenceTranslator):
+def dependencyGraph(dependencyGraph, reaction, classification):
     '''
     adds addBond based reactions based dependencies to the dependency graph
     '''
@@ -116,6 +115,7 @@ def weightDependencyGraph(dependencyGraph):
 
     weights = []
     for element in dependencyGraph:
+
         path = resolveDependencyGraph(dependencyGraph, element)
         weight = measureGraph(path)
         weights.append([element, weight])
@@ -240,7 +240,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
             prunnedDependencyGraph[element[0]] = []
         else:
             prunnedDependencyGraph[element[0]] = candidates
-
+    weights = weightDependencyGraph(prunnedDependencyGraph)
     return prunnedDependencyGraph, weights, unevenElementDict
 
 
@@ -572,11 +572,12 @@ def propagateChanges(translator, dependencyGraph):
             if dependencyGraph[dependency] == []:
                 continue
             for molecule in dependencyGraph[dependency][0]:
-                if updateSpecies(translator[dependency], translator[getTrueTag(dependencyGraph,
+                if updateSpecies(translator[dependency],
+                                 translator[getTrueTag(dependencyGraph,
                                                       molecule)].molecules[0]):
                     flag = True
 
-
+#TODO:bm19:Rafi_Rasi_GTP
 def transformMolecules(parser, database, configurationFile,
                        speciesEquivalences=None,bioGrid={}):
     '''
@@ -595,8 +596,8 @@ def transformMolecules(parser, database, configurationFile,
     sbmlAnalyzer = \
     analyzeSBML.SBMLAnalyzer(configurationFile, speciesEquivalences)
     #classify reactions
-    classifications, equivalenceTranslator, eequivalenceTranslator = \
-                                                            sbmlAnalyzer.classifyReactions(rules, molecules)
+    classifications, equivalenceTranslator, eequivalenceTranslator,\
+    indirectEquivalenceTranslator=  sbmlAnalyzer.classifyReactions(rules, molecules)
     #####input processing
     #states,components,other user options
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
@@ -606,13 +607,13 @@ def transformMolecules(parser, database, configurationFile,
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
 
     ####dependency graph
+    
     #binding reactions
     for reaction, classification in zip(rules, classifications):
         dependencyGraph(database.dependencyGraph,
-                        list(parseReactions(reaction)),
-        classification, equivalenceTranslator)
+                        list(parseReactions(reaction)),classification)
+    
     #catalysis reactions
-
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
             baseElement = min(namingEquivalence, key=len)
@@ -623,7 +624,36 @@ def transformMolecules(parser, database, configurationFile,
                 if baseElement not in database.dependencyGraph:
                     addToDependencyGraph(database.dependencyGraph,
                                          baseElement, [])
-
+    #complex catalysis reactions
+    for key in indirectEquivalenceTranslator:
+        #first remove these entries from the dependencyGraph since 
+        #they are not true bindingReactions
+        for namingEquivalence in indirectEquivalenceTranslator[key]:
+            tmp = deepcopy(namingEquivalence[1])
+            if tmp in database.dependencyGraph[namingEquivalence[0][0]]:
+                database.dependencyGraph[namingEquivalence[0][0]].remove(tmp)
+            elif tmp in database.dependencyGraph[namingEquivalence[0][1]]:
+                database.dependencyGraph[namingEquivalence[0][1]].remove(tmp)
+            else:
+                tmp.reverse()
+                if tmp in database.dependencyGraph[namingEquivalence[0][0]]:
+                    database.dependencyGraph[namingEquivalence[0][0]].remove(tmp)
+                elif tmp in database.dependencyGraph[namingEquivalence[0][1]]:
+                    database.dependencyGraph[namingEquivalence[0][1]].remove(tmp)
+            #then add the new, true dependencies
+            #if its not supposed to be a basic element
+            tmp = [x for x in namingEquivalence[1] if x not in namingEquivalence[2]]
+            tmp.extend([x for x in namingEquivalence[2] if x not in namingEquivalence[1]])
+            tmp2 = deepcopy(tmp)
+            tmp2.reverse()
+            
+            ##TODO: map back for the elements in namingEquivalence[2]
+            if tmp not in database.dependencyGraph[namingEquivalence[3][0]] \
+                and tmp2 not in database.dependencyGraph[namingEquivalence[3][0]]:
+                if all(x in database.dependencyGraph for x in tmp):
+                    database.dependencyGraph[namingEquivalence[3][0]].append(tmp)
+        
+    
     #user defined stuff
     for element in database.labelDictionary:
         if len(database.labelDictionary[element][0]) == 0 or element == \
@@ -635,7 +665,9 @@ def transformMolecules(parser, database, configurationFile,
     #####sct
     prunnedDependencyGraph, weights, unevenElementDict = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
-    classifications, equivalenceTranslator, eequivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
+    classifications, equivalenceTranslator, eequivalenceTranslator, \
+        indirectEquivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
+    
     weights = sorted(weights, key=lambda rule: rule[1])
     #print {x:str(database.translator[x]) for x in database.translator}
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 

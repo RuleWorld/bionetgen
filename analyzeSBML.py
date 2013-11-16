@@ -230,7 +230,7 @@ class SBMLAnalyzer:
             if self.userEquivalencesDict ==None:            
                 self.userEquivalencesDict = {}
         #TODO: user defined naming conventions are not being added
-        tmpTranslator,translationKeys =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],'reactionDefinitions/namingConventions.json')
+        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],'reactionDefinitions/namingConventions.json')
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #xxxxxxxxxxxxxxxxxxxxxxx
             
@@ -255,31 +255,14 @@ class SBMLAnalyzer:
             if element in self.userEquivalencesDict:
                 tmpTranslator[element].extend(self.userEquivalencesDict[element])
                 
-        '''
-        for (key1,key2) in [list(x) for x in itertools.combinations([y for y in equivalenceTranslator],2)]:
-            if key1 == key2:
-                continue
-            
-
-            intersection = [[x for x in set.intersection(set(sublist),set(sublist2))] 
-                for sublist in equivalenceTranslator[key2] for sublist2 in equivalenceTranslator[key1]]
-            intersectionPoints = [(int(x/len(equivalenceTranslator[key1])),int(x%len(equivalenceTranslator[key1]))) for x in 
-                range(0,len(intersection)) if len(intersection[x]) > 0]
-            for (point) in (intersectionPoints):
-                temp = list(equivalenceTranslator[key2][point[0]])
-                temp.extend(list(equivalenceTranslator[key1][point[1]]))
-                temp2 = [x for x in temp if temp.count(x) == 1]
-                temp2.sort(key=len)
-                #FIXME: THIS IS TOTALLU JUST A HACK. FIX SO THAT THE INDIRECT 
-                #RELATIONSHIP IS ASSIGNED CORRECTLY
-                if len(temp2) == 2:
-                    newTranslator[max(key1,key2,key=len)].append(tuple(temp2))
-            else:
-                pass
-        '''
-        return reactionIndex,tmpTranslator,translationKeys
+        return reactionIndex,tmpTranslator,translationKeys,conventionDict
     
     def approximateMatching(self,ruleList,differences=[]):
+        '''
+        remove compound differencese (>2 characters) and instead represent them with symbols
+        returns transformed string and an equivalence dictionary
+        
+        '''
         def curateString(element,differences,symbolList = ['#','&',';','@'],equivalenceDict={}):
             tmp = element
             for difference in differences:
@@ -301,8 +284,6 @@ class SBMLAnalyzer:
         '''
         tmpRuleList = deepcopy(ruleList)
         if len(ruleList[1]) == 1:
-            print ruleList
-            
             tmpRuleList[0][0],sym,dic =  curateString(ruleList[0][0],differences)
             tmpRuleList[0][1],sym,dic = curateString(ruleList[0][1],differences,sym,dic)
             tmpRuleList[1][0],sym,dic =  curateString(ruleList[1][0],differences,sym,dic)
@@ -323,7 +304,7 @@ class SBMLAnalyzer:
             simplifiedDifference = difflib.SequenceMatcher(lambda x: x in sym,tmpRuleList[0][0] + '-' + tmpRuleList[0][1],tmpRuleList[1][0])
             matches =  simplifiedDifference.get_matching_blocks()
             if len(matches) != 3:
-                return None
+                return [],[],[],[]
             productfirstHalf = tmpRuleList[1][0][matches[0][1]:matches[0][2]]
             productsecondHalf = tmpRuleList[1][0][matches[1][1]:]
             tmpString = tmpRuleList[0][0] + '-' + tmpRuleList[0][1]
@@ -348,55 +329,13 @@ class SBMLAnalyzer:
 
             difference = difflib.ndiff(reactantfirstHalf,productfirstHalf)
             difference2 = difflib.ndiff(reactantsecondHalf,productsecondHalf)
-            
-            ##TODO:process differences
-            '''
-            tmp = []
-            tmp2 = []
-            tmp3 = []
-            difference = difflib.ndiff(alt,ruleList[1][0],)
-            difference2 = difflib.ndiff(salt,ruleList[1][0])
-            
-            print simplifiedDifference.get_matching_blocks()
-
-            print tmpRuleList
-            flag = False
-            for _,diff2 in zip(difference,difference2):
-               if diff2[0] == ' ' and not flag:
-                   if len(tmp) > 0 and tmp[-1] != None:
-                       tmp2.append(tmp)
-                       tmp = []
-                   if diff2 == '- -':
-                       if tmp == ['+ _']:
-                           tmp = []
-                       tmp2.append(tmp)
-                       tmp3.append(tmp2)
-                       tmp = []
-                       tmp2=[]
-                   continue
-               if diff2 not in ['- -','+ _']: 
-                   tmp.append(diff2)
-               else:
-                   if not flag:
-                       flag = True
-                       continue
-                   flag = False
-                   tmp2.append(tmp)
-                   tmp3.append(tmp2)
-                   tmp = []
-                   tmp2=[]
-                   continue
-            if len(tmp) > 0 and tmp[-1] == None:
-                tmp.pop()
-            if len(tmp) > 0 and tmp[-1] == '+ _':
-                tmp.pop()
-            tmp2.append(tmp)
-            tmp3.append(tmp2)
-            print  ruleList,tmp3
-            return tmp3
-            '''
-            
+            difference1 =  [x for x in difference if '+' in x or '-' in x]
+            difference2 =  [x for x in difference2 if '+' in x or '-' in x]
+        return difference1,difference2,[reactantfirstHalf,productfirstHalf], \
+                [reactantsecondHalf,productsecondHalf]
+             
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,
+                                  indirectEquivalenceTranslator,
                                   useNamingConventions=True,translationKeys=[]):
         '''
         *reactionDefinition* is a list of conditions that must be met for a reaction
@@ -428,13 +367,16 @@ class SBMLAnalyzer:
         tupleNameComplianceMatrix = {key:{key2:0 for key2 in equivalenceTranslator} \
                                         for key in ruleDictionary}
         for rule in ruleDictionary:
-            if len(rule) > 2:
-                self.approximateMatching(rules[ruleDictionary[rule][0]],translationKeys)
             for namingConvention in equivalenceTranslator:
                 for equivalence in equivalenceTranslator[namingConvention]:
                     if all(element in rule for element in equivalence):
                         tupleNameComplianceMatrix[rule][namingConvention] +=1
                         break
+                for equivalence in indirectEquivalenceTranslator[namingConvention]:
+                    if all(element in rule for element in equivalence[0]):
+                        tupleNameComplianceMatrix[rule][namingConvention] +=1
+                        break
+                        #we can have more than one
                     #elif appro
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
@@ -457,13 +399,15 @@ class SBMLAnalyzer:
         #use reactionDefinitions reactionNames field to actually tell us what reaction
         #type each reaction is
         results = []    
-        for element in ruleDefinitionMatrix:
+        for idx,element in enumerate(ruleDefinitionMatrix):
             nonZero = nonzero(element)[0]
             if(len(nonZero) == 0):
                 results.append('None')
             #todo: need to do something if it matches more than one reaction
             else:
-                results.append(reactionDefinition['reactionsNames'][nonZero[0]])
+                classifications = [reactionDefinition['reactionsNames'][x] for x in nonZero]
+                #FIXME: we should be able to support more than one transformation
+                results.append(classifications[0])
         return  results
     
     def setConfigurationFile(self,configurationFile):
@@ -519,22 +463,63 @@ class SBMLAnalyzer:
         #equivalenceTranslator is a dictionary of actual modifications
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
         
-        reactionDict,equivalenceTranslator,translationKeys = self.processNamingConventions(molecules,
+        #process straightforward naming conventions
+        reactionDict,equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions(molecules,
                     reactionDefinition)
+        
+
         
         #lists of plain reactions
         rawReactions = [self.parseReactions(x) for x in reactions]
-        
-        #list of reaction classifications        
+        #process fuzzy naming conventions based on reaction information
+        indirectEquivalenceTranslator= {x:[] for x in equivalenceTranslator}
+        for reaction in rawReactions:
+            
+            if len(reaction[0]) == 2:
+                d1,d2,firstMatch,secondMatch= self.approximateMatching(reaction,
+                                                            translationKeys)
+                #print reaction,d1,d2
+                idx1=0
+                idx2 = 1
+                matches = [firstMatch,secondMatch]
+                for index,element in enumerate([d1,d2]):
+                    while idx2 <= len(element):
+                        if (element[idx1],) in conventionDict.keys():
+                            pattern = conventionDict[(element[idx1],)]
+                            indirectEquivalenceTranslator[pattern].append([[reaction[0][index],reaction[1][0]],reaction[0],matches[index],reaction[1]])
+                        elif (element[idx1].replace('-','+'),) in conventionDict.keys():
+                            matches[index].reverse()
+                            transformedPattern = conventionDict[(element[idx1].replace('-','+'),) ]
+                            indirectEquivalenceTranslator[transformedPattern].append([[reaction[1][0],reaction[0][index]],reaction[0],matches[index],reaction[1]])
+                            
+                        elif idx2 < len(element):
+                            if tuple([element[idx1],element[idx2]]) in conventionDict.keys():    
+                                pattern = conventionDict[tuple([element[idx1],element[idx2]])]
+                                indirectEquivalenceTranslator[pattern].append([[reaction[0][index],reaction[1][0]],reaction[0],matches[index],reaction[1]])
+                                idx1 += 1
+                                idx2 += 1
+                            elif '-' in element[idx1] and '-' in element[idx2]:
+                                if tuple([element[idx1].replace('-','+'),element[idx2].replace('-','+')]) in conventionDict.keys():  
+                                    matches[index].reverse()
+                                    transformedPattern = conventionDict[tuple([element[idx1].replace('-','+'),element[idx2].replace('-','+')])]
+                                    indirectEquivalenceTranslator[transformedPattern].append([[reaction[1][0],reaction[0][index]],reaction[0],matches[index],reaction[1]])
+                                    idx1 += 1
+                                    idx2 += 1
+
+                        idx1+=1
+                        idx2+=1
+
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
+                                            indirectEquivalenceTranslator,
                                             reactionDict,translationKeys)
         listOfEquivalences = []
         
         
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
-        return reactionClassification,listOfEquivalences,equivalenceTranslator
+        return reactionClassification,listOfEquivalences,equivalenceTranslator, \
+                indirectEquivalenceTranslator
     
     
     def reclassifyReactions(self,reactions,molecules,labelDictionary):
