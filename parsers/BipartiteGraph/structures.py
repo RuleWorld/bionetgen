@@ -173,7 +173,7 @@ class Species:
         
     def __str__(self):
         self.molecules.sort(key= lambda molecule: molecule.name)
-        name= '.'.join([x.toString() for x in self.molecules])
+        name= '.'.join(sorted([x.toString() for x in self.molecules]))
         '''
         name = name.replace('~','')
         
@@ -388,8 +388,7 @@ class Molecule:
         return componentName in [x.name for x in self.components]
         
     def __str__(self):
-        self.components.sort()
-        return self.name + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
+        return self.name + '(' + ','.join(sorted([str(x) for x in self.components])) + ')' + self.compartment
         
     def toString(self):
         return self.__str__()
