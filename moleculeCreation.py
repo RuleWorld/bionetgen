@@ -629,6 +629,8 @@ def transformMolecules(parser, database, configurationFile,
         #first remove these entries from the dependencyGraph since 
         #they are not true bindingReactions
         for namingEquivalence in indirectEquivalenceTranslator[key]:
+            if 'Rafi_Rasi_GTP' in namingEquivalence[0]:
+                print'----'
             tmp = deepcopy(namingEquivalence[1])
             if tmp in database.dependencyGraph[namingEquivalence[0][0]]:
                 database.dependencyGraph[namingEquivalence[0][0]].remove(tmp)
@@ -651,9 +653,10 @@ def transformMolecules(parser, database, configurationFile,
             if tmp not in database.dependencyGraph[namingEquivalence[3][0]] \
                 and tmp2 not in database.dependencyGraph[namingEquivalence[3][0]]:
                 if all(x in database.dependencyGraph for x in tmp):
-                    database.dependencyGraph[namingEquivalence[3][0]].append(tmp)
+                    database.dependencyGraph[namingEquivalence[3][0]] = [tmp]
         
     
+
     #user defined stuff
     for element in database.labelDictionary:
         if len(database.labelDictionary[element][0]) == 0 or element == \
@@ -667,7 +670,7 @@ def transformMolecules(parser, database, configurationFile,
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
     classifications, equivalenceTranslator, eequivalenceTranslator, \
         indirectEquivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
-    
+        
     weights = sorted(weights, key=lambda rule: rule[1])
     #print {x:str(database.translator[x]) for x in database.translator}
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 

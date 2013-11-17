@@ -260,19 +260,19 @@ class SBMLAnalyzer:
     def approximateMatching(self,ruleList,differences=[]):
         '''
         remove compound differencese (>2 characters) and instead represent them with symbols
-        returns transformed string and an equivalence dictionary
+        returns transformed string,an equivalence dictionary and unused symbols
         
         '''
-        def curateString(element,differences,symbolList = ['#','&',';','@'],equivalenceDict={}):
+        def curateString(element,differences,symbolList = ['#','&',';','@','!','?'],equivalenceDict={}):
             tmp = element
             for difference in differences:
                 if difference in element:
+                    if difference not in equivalenceDict:
+                        symbol = symbolList.pop()
+                        equivalenceDict[difference] = symbol
+                    else:
+                        symbol = equivalenceDict[difference]
                     if difference.startswith('_'):
-                        if difference not in equivalenceDict:
-                            symbol = symbolList.pop()
-                            equivalenceDict[difference] = symbol
-                        else:
-                            symbol = equivalenceDict[difference]
                         tmp = re.sub(r'{0}(_|$)'.format(difference),r'{0}\1'.format(symbol),tmp)
                     elif difference.endswith('_'):
                         tmp = re.sub(r'(_|^){0}'.format(difference),r'{0}\1'.format(symbol),tmp)
@@ -283,7 +283,7 @@ class SBMLAnalyzer:
         lexical changes that a and b must undergo to become ~a and ~b.
         '''
         tmpRuleList = deepcopy(ruleList)
-        if len(ruleList[1]) == 1:
+        if len(ruleList[1]) == 1 and ruleList[1] != '0':
             tmpRuleList[0][0],sym,dic =  curateString(ruleList[0][0],differences)
             tmpRuleList[0][1],sym,dic = curateString(ruleList[0][1],differences,sym,dic)
             tmpRuleList[1][0],sym,dic =  curateString(ruleList[1][0],differences,sym,dic)
@@ -331,6 +331,9 @@ class SBMLAnalyzer:
             difference2 = difflib.ndiff(reactantsecondHalf,productsecondHalf)
             difference1 =  [x for x in difference if '+' in x or '-' in x]
             difference2 =  [x for x in difference2 if '+' in x or '-' in x]
+        else:
+            #TODO: dea with reactions of the kindd a+b ->  c + d
+            return [],[],[],[],
         return difference1,difference2,[reactantfirstHalf,productfirstHalf], \
                 [reactantsecondHalf,productsecondHalf]
              

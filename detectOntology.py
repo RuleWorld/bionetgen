@@ -14,8 +14,6 @@ import ast
 import pickle
 from os import listdir
 from os.path import isfile, join
-import re
-from copy import deepcopy
 
 def levenshtein(s1, s2):
         l1 = len(s1)
@@ -74,81 +72,6 @@ def loadOntology(ontologyFile):
     ontology['patterns'] =  tmp
     return ontology
   
-def approximateMatching(ruleList,differences=[]):
-    '''
-    remove compound differencese (>2 characters) and instead represent them with symbols
-    returns transformed string and an equivalence dictionary
-    
-    '''
-    def curateString(element,differences,symbolList = ['#','&',';','@'],equivalenceDict={}):
-        tmp = element
-        for difference in differences:
-            if difference in element:
-                if difference.startswith('_'):
-                    if difference not in equivalenceDict:
-                        symbol = symbolList.pop()
-                        equivalenceDict[difference] = symbol
-                    else:
-                        symbol = equivalenceDict[difference]
-                    tmp = re.sub(r'{0}(_|$)'.format(difference),r'{0}\1'.format(symbol),tmp)
-                elif difference.endswith('_'):
-                    tmp = re.sub(r'(_|^){0}'.format(difference),r'{0}\1'.format(symbol),tmp)
-        return tmp,symbolList,equivalenceDict
-    '''
-    given a transformation of the kind a+ b -> ~a_~b, where ~a and ~b are some
-    slightly modified version of a and b, this function will return a list of 
-    lexical changes that a and b must undergo to become ~a and ~b.
-    '''
-    tmpRuleList = deepcopy(ruleList)
-    if len(ruleList[1]) == 1:
-        tmpRuleList[0][0],sym,dic =  curateString(ruleList[0][0],differences)
-        tmpRuleList[0][1],sym,dic = curateString(ruleList[0][1],differences,sym,dic)
-        tmpRuleList[1][0],sym,dic =  curateString(ruleList[1][0],differences,sym,dic)
-        
-        alt1 = ruleList[0][0] + ruleList[0][1]
-        alt2 = ruleList[0][1] + ruleList[0][0]
-        r1 = difflib.SequenceMatcher(None,alt1,ruleList[1][0]).ratio()
-        r2 =  difflib.SequenceMatcher(None,alt2,ruleList[1][0]).ratio()
-        #alt = alt1
-        if r2>r1:
-            ruleList[0].reverse()
-            tmpRuleList[0].reverse()
-            #alt = alt2
-        #salt = ruleList[0][0] + '-' + ruleList[0][1]
-        sym = [dic[x] for x in dic]
-        sym.extend(differences)
-        sym = [x for x in sym if '_' not in x]
-        simplifiedDifference = difflib.SequenceMatcher(lambda x: x in sym,tmpRuleList[0][0] + '-' + tmpRuleList[0][1],tmpRuleList[1][0])
-        matches =  simplifiedDifference.get_matching_blocks()
-        if len(matches) != 3:
-            return [],[]
-        productfirstHalf = tmpRuleList[1][0][matches[0][1]:matches[0][2]]
-        productsecondHalf = tmpRuleList[1][0][matches[1][1]:]
-        tmpString = tmpRuleList[0][0] + '-' + tmpRuleList[0][1]
-        reactantfirstHalf = tmpString[matches[0][0]:matches[0][2]]
-        reactantsecondHalf = tmpString[matches[1][0]:]
-        #greedymatching
-        idx = 0
-        while(tmpRuleList[1][0][matches[0][2]+ idx]  in sym):
-            productfirstHalf += tmpRuleList[1][0][matches[0][2] + idx]
-            idx += 1
-        idx = 0
-        while(tmpString[matches[0][2]+ idx]  in sym):
-            reactantfirstHalf += tmpString[matches[0][2] + idx]
-            idx += 1
-        
-        
-        for element in dic:
-            reactantfirstHalf = reactantfirstHalf.replace(dic[element],element)
-            reactantsecondHalf = reactantsecondHalf.replace(dic[element],element)
-            productfirstHalf = productfirstHalf.replace(dic[element],element)
-            productsecondHalf = productsecondHalf.replace(dic[element],element)
-
-        difference = difflib.ndiff(reactantfirstHalf,productfirstHalf)
-        difference2 = difflib.ndiff(reactantsecondHalf,productsecondHalf)
-        difference1 =  [x for x in difference if '+' in x or '-' in x]
-        difference2 =  [x for x in difference2 if '+' in x or '-' in x]
-    return difference1,difference2
 
 
 def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=2):
