@@ -471,12 +471,14 @@ def changeNames(functions,dictionary):
     
 def changeRates(reactions,dictionary):
     tmpArray = []
+    tmp = None
     for reaction in reactions:
         tmp = reaction.strip().split(' ')
         for key in [x for x in dictionary if x in tmp[-1]]:
             tmp[-1] = re.sub(r'(\W|^){0}(\W|$)'.format(key),r'\1{0}\2'.format(dictionary[key]),tmp[-1])
         tmpArray.append(' '.join(tmp))
-    tmpArray.append(' '.join(tmp))
+    if tmp:
+        tmpArray.append(' '.join(tmp))
     return tmpArray
     
 def unrollFunctions(functions):
@@ -708,7 +710,7 @@ def getAnnotationsDict(annotation):
     return annotationDict
 
 def processFile2():
-    for bioNumber in [19]:
+    for bioNumber in [51]:
         #if bioNumber in [398]:
         #    continue
     #bioNumber = 175
@@ -987,11 +989,11 @@ def listFiles(minReactions,directory):
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
-   # main()
+    main()
     #processFile3('XMLExamples/curated/BIOMD0000000183.xml')
     #statFiles()
     #main2()
-    processFile2()
+    #processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'

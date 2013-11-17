@@ -151,8 +151,8 @@ class SBML2BNGL:
         for unitDefinition in self.model.getListOfUnits():
             pass
     def removeFactorFromMath(self, math, reactants, products):
-        
-            
+        from collections import Counter
+        ifStack = Counter()
         remainderPatterns = []
         highStoichoiMetryFactor = 1
         for x in reactants:
@@ -173,13 +173,17 @@ class SBML2BNGL:
         
         rateR = libsbml.formulaToString(math)
         for element in remainderPatterns:
-            rateR = 'if({0}>0,({1})/{0},0)'.format(element,rateR)
+            ifStack.update([element])
+        for element in ifStack:
+            if ifStack[element] > 1:
+                rateR = 'if({0}>0,{1}/({0}^{2}),0)'.format(element,rateR,ifStack[element])
+            else:
+                rateR = 'if({0}>0,{1}/{0},0)'.format(element,rateR)
         if highStoichoiMetryFactor != 1:
             rateR = '{0}*{1}'.format(rateR, int(highStoichoiMetryFactor))
         return rateR,math.getNumChildren()
         
     def __getRawRules(self, reaction):
-        
         if self.useID:
             reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
             for reactant in reaction.getListOfReactants() if
@@ -637,7 +641,8 @@ def standardizeName(name):
                                 " ":"","+":"pl",
                                 "/":"_",":":"_",
                                 "-":"_",
-                                ".":"_"}
+                                ".":"_",
+                                ',':'_'}
                                 
     for element in sbml2BnglTranslationDict:
         name = name.replace(element,sbml2BnglTranslationDict[element])
