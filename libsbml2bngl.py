@@ -710,7 +710,7 @@ def getAnnotationsDict(annotation):
     return annotationDict
 
 def processFile2():
-    for bioNumber in [51]:
+    for bioNumber in [19]:
         #if bioNumber in [398]:
         #    continue
     #bioNumber = 175
@@ -989,11 +989,12 @@ def listFiles(minReactions,directory):
 if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
-    main()
+    
+    #main()
     #processFile3('XMLExamples/curated/BIOMD0000000183.xml')
     #statFiles()
     #main2()
-    #processFile2()
+    processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'
