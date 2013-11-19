@@ -628,6 +628,9 @@ class SBML2BNGL:
     
     
 def standardizeName(name):
+    '''
+    Remove stuff not used by bngl
+    '''
     name2 = name
     
     sbml2BnglTranslationDict = {"^":"",

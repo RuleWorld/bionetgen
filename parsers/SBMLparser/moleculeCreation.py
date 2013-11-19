@@ -308,6 +308,12 @@ def getComplexationComponents2(species):
         sortedMolecule = sorted(sortedMolecule, key=lambda rule: len(rule.components))
         #print 'sortedMolecule',[str(x) for x in sortedMolecule]
         return sortedMolecule[-1]
+    def getNamedMolecule(array,name):
+        
+        for molecule in array:
+            if molecule.name == name:
+                return molecule
+        
     speciesDict = {}
     #this array will contain all molecules that bind together
     pairedMolecules = []
@@ -336,19 +342,19 @@ def getComplexationComponents2(species):
                             if mol in orphanedMolecules:
                                 orphanedMolecules.remove(mol)
     totalComplex = [set(x) for x in pairedMolecules]
-    flag = True
+    isContinuousFlag = True
 
     #determine which pairs form a continuous chain
-    while flag:
-        flag = False
+    while isContinuousFlag:
+        isContinuousFlag = False
         for idx in range(0, len(totalComplex) - 1):
             for idx2 in range(idx + 1, len(totalComplex)):
                 if len([x for x in totalComplex[idx] if x in totalComplex[idx2]]) > 0:
                     totalComplex[idx] = totalComplex[idx].union(totalComplex[idx2])
                     totalComplex.pop(idx2)
-                    flag = True
+                    isContinuousFlag = True
                     break
-            if flag:
+            if isContinuousFlag:
                 break
     #now we process those molecules where we need to create a new component
     for element in orphanedMolecules:
@@ -358,29 +364,34 @@ def getComplexationComponents2(species):
             if mol1 == element and mol1 not in set().union(*totalComplex):
                 totalComplex.append(set([mol1]))
    
+    #now we process for those molecules we are not sure how do they bind
     while len(totalComplex) > 1:
         if len(totalComplex[0]) ==1 and len(totalComplex[1]) == 1:
             mol1 = list(totalComplex[0])[0]
             mol2 = list(totalComplex[1])[0]
         else:
-            #print '---',totalComplex,len(biogrid.loadBioGridDict())
             names1 =  [str(x.name) for x in totalComplex[0]]
             names2 =  [str(x.name) for x in totalComplex[1]]
-            #print [str(x) for x in totalComplex[0]]
-            '''
+            dbPair = None
+            p = biogrid.loadBioGridDict()
             for name1 in names1:
-                if name1 in biogrid.loadBioGridDict():
-                    tmp= biogrid.loadBioGridDict()[name1]
+                if name1.upper() in p:
+                    tmp= p[name1.upper()]
                     for name2 in names2:
-                        if name2 in tmp:
-                            print name1,name2
-            '''     
-            #print [x in biogrid.loadBioGridDict() for x in names1],names1
-            #print [x in biogrid.loadBioGridDict() for x in names2],names2
-            
-            mol1 = getBiggestMolecule(totalComplex[0])
-            mol2 = getBiggestMolecule(totalComplex[1])
-        #newComponentPairs.append([mol1,mol2])
+                        if name2.upper() in tmp:
+                            dbPair = [name1,name2]
+                            break
+                    else: #executed if the loop ended normally (no break)
+                        continue
+                    break
+            if dbPair != None:
+                mol1 = getNamedMolecule(totalComplex[0],dbPair[0])
+                mol2 = getNamedMolecule(totalComplex[1],dbPair[1])
+            else:
+                logMess('WARNING',"We don't know how {0} and {1} bind together and there's \
+                no relevant BioGrid information. Defaulting to largest molecule".format(totalComplex[0],totalComplex[1]))
+                mol1 = getBiggestMolecule(totalComplex[0])
+                mol2 = getBiggestMolecule(totalComplex[1])
         pairedMolecules.append([mol1, mol2])
         totalComplex[0] = totalComplex[0].union(totalComplex[1])
         totalComplex.pop(1)
@@ -629,8 +640,6 @@ def transformMolecules(parser, database, configurationFile,
         #first remove these entries from the dependencyGraph since 
         #they are not true bindingReactions
         for namingEquivalence in indirectEquivalenceTranslator[key]:
-            if 'Rafi_Rasi_GTP' in namingEquivalence[0]:
-                print'----'
             tmp = deepcopy(namingEquivalence[1])
             if tmp in database.dependencyGraph[namingEquivalence[0][0]]:
                 database.dependencyGraph[namingEquivalence[0][0]].remove(tmp)
@@ -668,6 +677,8 @@ def transformMolecules(parser, database, configurationFile,
     #####sct
     prunnedDependencyGraph, weights, unevenElementDict = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
+    #FIXME: I'm conatminating these data structures somewhere. In here
+    #im just calling the original generator to recover them.
     classifications, equivalenceTranslator, eequivalenceTranslator, \
         indirectEquivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
         

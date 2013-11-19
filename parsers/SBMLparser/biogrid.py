@@ -7,13 +7,16 @@ Created on Tue Nov 12 13:44:53 2013
 
 import csv
 import pickle
+
+import pandas as pd
+
 def loadBioGrid(fileName='BIOGRID-ALL-3.2.106.tab2.txt'):
     if hasattr(loadBioGrid, 'db'):
         return loadBioGrid.db
     loadBioGrid.db = {}
     def check(db,term):
         if term not in db:
-            db[term] = []
+            db[term] = set([])
             
     f = open(fileName,'rb')
     content =  csv.DictReader(f,delimiter='\t')
@@ -23,20 +26,18 @@ def loadBioGrid(fileName='BIOGRID-ALL-3.2.106.tab2.txt'):
         tmp['osiA'] = line['Official Symbol Interactor A']
         #tmp['siA'] = tmp['Synonyms Interactor A']
         #tmp['siB'] = tmp['Synonyms Interactor B']
-        check(loadBioGrid.db,tmp['osiB'])
-        check(loadBioGrid.db,tmp['osiA'])
-        loadBioGrid.db[tmp['osiB']].append(tmp['osiA'])
-        loadBioGrid.db[tmp['osiA']].append(tmp['osiB'])
-        
-    return loadBioGrid.db
+        check(loadBioGrid.db,tmp['osiB'].upper())
+        check(loadBioGrid.db,tmp['osiA'].upper())
+        loadBioGrid.db[tmp['osiB'].upper()].add(tmp['osiA'].upper())
+        loadBioGrid.db[tmp['osiA'].upper()].add(tmp['osiB'].upper())
+    p = pd.Series(loadBioGrid.db)
+    p.to_pickle('BioGridPandas.dump')
     
-def loadBioGridDict(fileName='bioGridDict.dump'):
+    
+def loadBioGridDict(fileName='BioGridPandas.dump'):
     if hasattr(loadBioGrid, 'db'):
         return loadBioGrid.db
-    loadBioGrid.db = {}
-
-    f = open(fileName,'rb')
-    loadBioGrid.db = pickle.load(f)
+    loadBioGrid.db = pd.read_pickle('BioGridPandas.dump')
     return loadBioGrid.db
     
 if __name__ == "__main__":
@@ -45,11 +46,10 @@ if __name__ == "__main__":
     #print len(db)
     #f = open('bioGridDict.dump','wb')
     #pickle.dump(db,f)
-
-    db2 = loadBioGridDict()
-    print len(db2)
-    
+    #pass
+    #db2 = loadBioGridDict()
+    #print len(db2)
     #f = open('bioGridDict.dump','wb')
     #print len(db)
-    #db2 = loadBioGrid()
+    loadBioGrid()
     #print len(db2)  

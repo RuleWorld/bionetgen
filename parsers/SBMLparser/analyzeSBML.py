@@ -302,6 +302,7 @@ class SBMLAnalyzer:
             sym.extend(differences)
             sym = [x for x in sym if '_' not in x]
             simplifiedDifference = difflib.SequenceMatcher(lambda x: x in sym,tmpRuleList[0][0] + '-' + tmpRuleList[0][1],tmpRuleList[1][0])
+                        
             matches =  simplifiedDifference.get_matching_blocks()
             if len(matches) != 3:
                 return [],[],[],[]
