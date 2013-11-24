@@ -1,0 +1,13 @@
+*=0
+n=100 s7 %%%%% c  ! 3262 vertices
+jx a=ccfaa80 o=f935ec3 b=6f5ed03
+jx a=c846139 o=555fdb2 b=155828f
+jx a=bb5e92d o=918c61 b=6f70f94
+jx a=e8f9f8a o=437a860 b=53c138c
+jx a=c05721 o=936879b b=33d85a6
+
+n=10000 s3 _ cx a=1 o=a72fb0f b=1ec7f77
+n=20000 s3 _ cx a=1 o=2e19ad7 b=a5c28ff
+n=25000 s4 cx a=1 o=76d150c b=54e0d8c
+
+q

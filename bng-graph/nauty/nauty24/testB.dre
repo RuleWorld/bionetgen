@@ -1,0 +1,9 @@
+"WARNING:  This test will need about 512MB free memory to complete
+ in a reasonable time.  To turn it off, change the definition of
+ BIGTEST to 0 near the start of makefile.\n"
+
+n=40000 s9 cx a=1 b=df16e41 o=88b646b
+
+n=25000 s10 % c f=[0 25001] x a=e9178ea b=4a21f8c o=274dc8c
+
+q
