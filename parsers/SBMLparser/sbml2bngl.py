@@ -43,6 +43,8 @@ class SBML2BNGL:
 
 
     def getMetaInformation(self,additionalNotes):
+      #import stats
+
       metaInformation = {}
       annotation = self.model.getAnnotation()
       lista = libsbml.CVTermList()
@@ -61,7 +63,9 @@ class SBML2BNGL:
               index = bioqual[biol]
           if index not in metaInformation:
               metaInformation[index] = set([])
-          metaInformation[index].add(lista.get(idx).getResources().getValue(0))
+          resource = lista.get(idx).getResources().getValue(0)
+          #print stats.resolveAnnotation(resource)
+          metaInformation[index].add(resource)
           
       metaInformation.update(additionalNotes)
       metaString = '###\n'
@@ -120,8 +124,16 @@ class SBML2BNGL:
         self.speciesDictionary[identifier] = standardizedName
         returnID = identifier if self.useID else \
         self.speciesDictionary[identifier]
-        return (returnID, initialConcentration, isConstant, isBoundary,
-                compartment, name,identifier)
+        
+        values = {}
+        values['returnID'] = returnID
+        values['initialConcentration'] = initialConcentration
+        values['isConstant'] = isConstant
+        values['isBoundary'] = isBoundary
+        values['compartment'] = compartment
+        values['name'] = name
+        values['identifier'] = identifier
+        return values
 
 
   
@@ -498,7 +510,7 @@ class SBML2BNGL:
         observablesText = []
         names = []
         rawSpeciesName = translator.keys()
-        
+        speciesTranslationDict = {}
         compartmentDict = {}
         compartmentDict[''] = 1
         for compartment in self.model.getListOfCompartments():
@@ -506,37 +518,33 @@ class SBML2BNGL:
 
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species,parameters)
-            #if rawSpecies[0] in self.boundaryConditionVariables:
+            #if rawSpecies['returnID'] in self.boundaryConditionVariables:
             #    continue
-            if (rawSpecies[4] != ''):
-                self.tags[rawSpecies[0]] = '@%s' % (rawSpecies[4])
-            if(rawSpecies[0] in translator):
-                if rawSpecies[0] in rawSpeciesName:
-                    rawSpeciesName.remove(rawSpecies[0])
-                if translator[rawSpecies[0]].getSize()==1 and translator[rawSpecies[0]].molecules[0].name not in names:
-                    names.append(translator[rawSpecies[0]].molecules[0].name)
-                    moleculesText.append(translator[rawSpecies[0]].str2())
+            if (rawSpecies['compartment'] != ''):
+                self.tags[rawSpecies['returnID']] = '@%s' % (rawSpecies['compartment'])
+            if(rawSpecies['returnID'] in translator):
+                if rawSpecies['returnID'] in rawSpeciesName:
+                    rawSpeciesName.remove(rawSpecies['returnID'])
+                if translator[rawSpecies['returnID']].getSize()==1 and translator[rawSpecies['returnID']].molecules[0].name not in names:
+                    names.append(translator[rawSpecies['returnID']].molecules[0].name)
+                    moleculesText.append(translator[rawSpecies['returnID']].str2())
             else:
-                moleculesText.append(rawSpecies[0] + '()')
-            temp = '$' if rawSpecies[2] != 0 else ''
-            tmp = translator[str(rawSpecies[0])] if rawSpecies[0] in translator \
-                else rawSpecies[0] + '()'
-            if rawSpecies[1]>=0:
-                #tmp= translator[rawSpecies[0]].toString()
-                #print translator[rawSpecies[0]].toString()
+                moleculesText.append(rawSpecies['returnID'] + '()')
+            temp = '$' if rawSpecies['isConstant'] != 0 else ''
+            tmp = translator[str(rawSpecies['returnID'])] if rawSpecies['returnID'] in translator \
+                else rawSpecies['returnID'] + '()'
+            if rawSpecies['initialConcentration']>=0:
                 tmp2 = temp
-                if rawSpecies[0] in self.tags:
-                    tmp2 = (self.tags[rawSpecies[0]])
-                if rawSpecies[1] > 0.0:
-                    #if compartmentDict[rawSpecies[4]] != 1.0:
-                    #    speciesText.append('{0}:{1}{2} {3}/{4}'.format(tmp2, temp, str(tmp), rawSpecies[1],compartmentDict[rawSpecies[4]]))
-                    #else:
-                    speciesText.append('{0}:{1}{2} {3}'.format(tmp2, temp, str(tmp), rawSpecies[1]))
-            if rawSpecies[0] == 'e':
+                if rawSpecies['returnID'] in self.tags:
+                    tmp2 = (self.tags[rawSpecies['returnID']])
+                if rawSpecies['initialConcentration'] > 0.0:
+                    speciesText.append('{0}:{1}{2} {3}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration']))
+            if rawSpecies['returnID'] == 'e':
                 modifiedName = 'are'
             else:
-                modifiedName = rawSpecies[0]
-            observablesText.append('Species {0} {1} #{2}'.format(modifiedName, tmp,rawSpecies[5]))
+                modifiedName = rawSpecies['returnID']
+            observablesText.append('Species {0} {1} #{2}'.format(modifiedName, tmp,rawSpecies['name']))
+            speciesTranslationDict[rawSpecies['identifier']] = tmp
         sorted(rawSpeciesName,key=len)
         for species in rawSpeciesName:
             if translator[species].getSize()==1 and translator[species].molecules[0].name not in names:
@@ -545,7 +553,8 @@ class SBML2BNGL:
         #moleculesText.append('NullSpecies()')
         #speciesText.append('$NullSpecies() 1')
         self.speciesMemory = []
-        return moleculesText,speciesText,observablesText
+        
+        return moleculesText,speciesText,observablesText,speciesTranslationDict
 
     def getSpeciesAnnotation(self):
         speciesAnnotation = {}
@@ -556,9 +565,9 @@ class SBML2BNGL:
             lista = libsbml.CVTermList()
             libsbml.RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
             if lista.getSize() == 0:
-                speciesAnnotation[rawSpecies[0]] =  None
+                speciesAnnotation[rawSpecies['returnID']] =  None
             else:
-                speciesAnnotation[rawSpecies[0]] = lista.get(0).getResources()
+                speciesAnnotation[rawSpecies['returnID']] = lista.get(0).getResources()
         return speciesAnnotation
 
     def getModelAnnotation(self):

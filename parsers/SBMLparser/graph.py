@@ -15,6 +15,7 @@ def orBox(bioNumber):
         boxes = pickle.load(f)        
     fileName = 'image'
     graph = pgv.AGraph(directed=False,concentrate=True)
+    print boxes[0]
     for element in boxes[0]:
         graph.add_node(element,shape='diamond',color='pink',style='filled')
         s = set()

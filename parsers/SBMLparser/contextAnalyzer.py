@@ -5,6 +5,8 @@ Created on Wed Aug  7 21:04:16 2013
 @author: proto
 """
 
+import pygraphviz as pgv
+
 import sys
 sys.path.insert(0, '../utils/')
 import operator
@@ -15,6 +17,7 @@ import readBNGXML
 from collections import Counter
 from copy import deepcopy
 import numpy as np
+import pandas as pd
 
 def readFile(fileName):
     f = open(fileName)
@@ -189,18 +192,30 @@ def obtainDifferences(redundantDict,transformationContext):
                 redundantListDict[center] = {}
             redundantListDict[center][rate] = constantDifferences
     return redundantListDict
-   
-def extractStatistics():
+
+
+def reactionCenterGraph(species,reactionCenter):
+    total = sum(x[1] for x in reactionCenter)
+    graph = pgv.AGraph(directed=False,concentrate=True)
+    print reactionCenter,
+    for element in species:
+        graph.add_node(element.name,shape='diamond',style='filled')
+        for component in element.components:
+            pass            
+
     
-    console.bngl2xml('complex/output19.bngl')
-    species,rules= readBNGXML.parseXML('output19.xml')
+    
+def extractStatistics():
+    number = 151
+    console.bngl2xml('complex/output{0}.bngl'.format(number))
+    species,rules,parameterDict= readBNGXML.parseXML('output{0}.xml'.format(number))
     #print rules
     
     
     transformationCenter = []
     transformationContext = []
 
-    k = 0
+    k = []
     actions = Counter()
     actionSet = Counter()
     for idx,rule in enumerate(rules):
@@ -209,34 +224,52 @@ def extractStatistics():
     #atomicArray.append(tatomicArray)
         transformationCenter.append(ttransformationCenter)
         transformationContext.append(ttransformationContext)
-        k += len(rule[0].actions)
+        k.append(len(rule[0].actions))
         #if len(rule[0].actions) > 3:
         #    print rule[0].reactants
         actions.update([x.action for x in rule[0].actions])
         tmp = [x.action for x in rule[0].actions]
         tmp.sort()
         actionSet.update([tuple(tmp)])
-    k /= len(rules)*1.0
+    
     
     #print actions
     #print actionSet
-    print 'avg number o actions',k
+    print 'number of species',len(species)
+    print 'avg number o actions',np.average(k),np.std(k)
     centerDict = groupByReactionCenter(transformationCenter)
-    print '----',len({x:centerDict[x] for x in centerDict if len(centerDict[x]) == 1})
+    print 'singletons',len({x:centerDict[x] for x in centerDict if len(centerDict[x]) == 1})
+    tmp = [[tuple(set(x)),len(centerDict[x])] for x in centerDict]
+    #reactionCenterGraph(species,tmp)
+    #tmp.sort(key=lambda x:x[1],reverse=True)
     print 'number of reaction centers',len(centerDict.keys())
     print 'number of rules',len(rules)
     
-    r = 0
-    for element in centerDict:
-        r += len(centerDict[element])
-    print '---',r
-    print 'unique',[x for x in centerDict[element] if len(centerDict[element]) == 1]
+    #print 'unique',[x for x in centerDict[element] if len(centerDict[element]) == 1]
     redundantDict = groupByReactionCenterAndRateAndActions(rules,centerDict)
     #print redundantDict
-    x = [len(redundantDict[x][y]) for x in redundantDict for y in redundantDict[x]]
+    tmp2 = [('$\\tt{{{0}}}$'.format(tuple(set(x))),tuple(set(y[:-1])),y[-1],len (redundantDict[x][y])) for x in redundantDict for y in redundantDict[x] if 'kr' not in y[-1]]
+    tmp2 = set(tmp2)
+    tmp2 = list(tmp2)
+    tmp2.sort(key=lambda x:x[3],reverse=True)
+    tmp2.sort(key=lambda x:x[0],reverse=True)
+
+    tmp2 = ['{0} & {1} & {2} & {3}\\\\\n'.format(element[0],element[1],element[2],element[3]) for element in tmp2]
+    
+    with open('table.tex','w') as f:
+        f.write('\\begin{tabular}{|cccc|}\n')
+        f.write('\\hline\n')
+        f.write('Reaction Centers & Action & Score\\\\\\hline\n')
+        for element in tmp2:
+            f.write(element)
+        f.write('\\hline\n')
+        f.write('\\end{tabular}\n')
+
+    #print redundantDict
+    x = [len(centerDict[x]) for x in centerDict]    
     #122,138
-    print 'average number of reactions with same rate and reaction cneter',float(sum(x))/len(x)  
-    print 'total number of clusters',sum(x)
+    print 'average number of reactions with same rate and reaction cneter',np.average(x),np.std(x) 
+    print 'total number of clusters',len(x)
     print x
         #redundantDict['{0}.{1}'.format(element,element2)] = tmpDict[element2]
  
@@ -335,5 +368,5 @@ def main():
     '''
     
 if __name__ == "__main__":
-    #extractStatistics()
-    main()
+    extractStatistics()
+    #main()
