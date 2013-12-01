@@ -15,6 +15,7 @@ import pickle
 from os import listdir
 from os.path import isfile, join
 
+import pandas as pd
 def levenshtein(s1, s2):
         l1 = len(s1)
         l2 = len(s2)
@@ -170,19 +171,22 @@ def analyzeTrends(inputFile):
     totalCounter = Counter()
     for element in counter:
         totalCounter[element] = counter[element] * fileCounter[element]
-    keys = totalCounter.most_common(35)
+    keys = totalCounter.most_common(200)
     #keys = keys[1:]
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(keys)
+    data = pd.DataFrame(keys)
+    print data.to_latex()
+    '''
     for element in keys:
         print '------------------'
         print element
         pp.pprint(dictionary[element[0]])
-        
+    ''' 
     
 if __name__ == "__main__":
     bioNumber= 19
     #main('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     
-    databaseAnalysis('XMLExamples/non_curated/','non_contologies.dump')    
-    #analyzeTrends('ontologies.dump')
+    #databaseAnalysis('XMLExamples/non_curated/','non_contologies.dump')    
+    analyzeTrends('ontologies.dump')

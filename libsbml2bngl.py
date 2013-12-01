@@ -441,8 +441,10 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,
     
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     with open(outputFile,'w') as f:
-            f.write(returnArray[-1])
-    return returnArray[0:-1]
+            f.write(returnArray[-2])
+    with open('{0}.dict'.format(outputFile),'wb') as f:
+        pickle.dump(returnArray[-1],f)
+    return returnArray[0:-2]
 
 def correctRulesWithParenthesis(rules,parameters):
     '''
@@ -529,7 +531,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     #translator = {}
     param,zparam = parser.getParameters()
-    molecules,initialConditions,observables = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
+    molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
@@ -669,8 +671,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
 
     #rate of each classified rule
-
-    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments), parser.getSpeciesAnnotation(),finalString
+    
+    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
     
     '''
     if translator != {}:
@@ -710,7 +712,7 @@ def getAnnotationsDict(annotation):
     return annotationDict
 
 def processFile2():
-    for bioNumber in [19]:
+    for bioNumber in [1]:
         #if bioNumber in [398]:
         #    continue
     #bioNumber = 175
@@ -920,7 +922,7 @@ def createPlot(labelDict):
         print '{0}.png'.format(element)
 def statFiles():
     
-    for bioNumber in [406]:
+    for bioNumber in [19]:
         reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
         #speciesEquivalence = None
         speciesEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
@@ -990,11 +992,11 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     
-    #main()
+    main()
     #processFile3('XMLExamples/curated/BIOMD0000000183.xml')
     #statFiles()
     #main2()
-    processFile2()
+    #processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'

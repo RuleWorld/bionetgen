@@ -372,24 +372,26 @@ def getComplexationComponents2(species):
         else:
             names1 =  [str(x.name) for x in totalComplex[0]]
             names2 =  [str(x.name) for x in totalComplex[1]]
-            dbPair = None
+            dbPair = set([])
             p = biogrid.loadBioGridDict()
-            for name1 in names1:
-                if name1.upper() in p:
-                    tmp= p[name1.upper()]
-                    for name2 in names2:
-                        if name2.upper() in tmp:
-                            dbPair = [name1,name2]
-                            break
-                    else: #executed if the loop ended normally (no break)
-                        continue
-                    break
-            if dbPair != None:
-                mol1 = getNamedMolecule(totalComplex[0],dbPair[0])
-                mol2 = getNamedMolecule(totalComplex[1],dbPair[1])
+            comb = set([])
+            equivalence = {}
+            comb = [(x,y) for x in names1 for y in names2]
+            dbPair = set([])
+            for element in comb:
+                if element[0].upper() in p and element[1] in p[element[0].upper()] or \
+                element[1].upper() in p and element[0] in p[element[1].upper()]:
+                    dbPair.add((element[0],element[1]))
+                    
+            dbPair = list(dbPair)
+            if dbPair != []:
+                logMess('WARNING',"More than one interaction was find in {0}".format(dbPair))
+                mol1 = getNamedMolecule(totalComplex[0],dbPair[0][0])
+                mol2 = getNamedMolecule(totalComplex[1],dbPair[0][1])
             else:
                 logMess('WARNING',"We don't know how {0} and {1} bind together and there's \
-                no relevant BioGrid information. Defaulting to largest molecule".format(totalComplex[0],totalComplex[1]))
+                no relevant BioGrid information. Defaulting to largest molecule".format(
+                [x.name for x in totalComplex[0]],[x.name for x in totalComplex[1]]))
                 mol1 = getBiggestMolecule(totalComplex[0])
                 mol2 = getBiggestMolecule(totalComplex[1])
         pairedMolecules.append([mol1, mol2])
@@ -414,6 +416,9 @@ def getTrueTag(dependencyGraph, molecule):
 
 def atomize(dependencyGraph, weights, translator, reactionProperties,
             equivalenceDictionary):
+    '''
+    The atomizer's main methods. Receives a dependency graph
+    '''
     for element in weights:
         #0 molecule
         if element[0] == '0':
@@ -602,7 +607,7 @@ def transformMolecules(parser, database, configurationFile,
         ---speciesEquivalences:predefined species
     '''
     _, rules, _ = parser.getReactions()
-    molecules, _, _ = parser.getSpecies()
+    molecules, _, _,_ = parser.getSpecies()
 
     sbmlAnalyzer = \
     analyzeSBML.SBMLAnalyzer(configurationFile, speciesEquivalences)
