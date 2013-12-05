@@ -20,17 +20,15 @@ import operator
 from collections import Counter
 
 import libsbml
+import networkx as nx
+
 from os import listdir
 from os.path import isfile, join
-import os
-import pickle
 import sys
 sys.path.insert(0, '../utils/')
 import pygraphviz as pgv
-import subprocess
 import bioservices
 import pprint
-import csv
 
 def main():
     history = np.load('stats3b.npy')
@@ -428,15 +426,16 @@ def reduceElements(element,linkArray):
 
 def basicReactome(relationshipMatrix):
     fileName = 'basicReactome'
-    graph = pgv.AGraph(directed=False,concentrate=True)
+    graph = nx.Graph()
     for element in range(0,len(relationshipMatrix)):
-        graph.add_node('Model {0}'.format(element+1),color='teal',style='filled')
-
+        graph.add_node('Model {0}'.format(element+1),color='teal')
+    edgeList = []
     for idx,row in enumerate(relationshipMatrix):
         for idx2,column in enumerate(row):
             if column != 0.0:
-                graph.add_edge('Model {0}'.format(idx+1),'Model {0}'.format(idx2+1),weight=column)
-    graph.write('%s.dot' % fileName)
+                edgeList.append(['Model {0}'.format(idx+1),'Model {0}'.format(idx2+1),column])
+    graph.add_weighted_edges_from(edgeList)
+    nx.write_gml(graph,'%s.gml' % fileName)
     #subprocess.call(['circo', '-Tpng', '{0}.dot'.format(fileName),'-o{0}.png'.format(fileName)])
 
 def basicCSVReactome(relationshipMatrix):
@@ -491,8 +490,8 @@ def biomodelsInteractomeAnalysis():
             else:
                 relationshipMatrix[element,element2] = 0
     
-    #basicReactome(relationshipMatrix)
-    basicCSVReactome(relationshipMatrix)
+    basicReactome(relationshipMatrix)
+    #basicCSVReactome(relationshipMatrix)
     #return
     counter = Counter()
     for annotation in annotations:
