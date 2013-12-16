@@ -1,12 +1,85 @@
 modelname "physiological_man"
 universal_rules "univ.bngl"
 
-begin organ "heart"
-    file "heart.bngl"
-    output "liver", "flow1"
+begin organ "Arterial"
+    file "Arterial.bngl"
+    output "Red Blood Cell", "flow1"
+    output "Brain", "flow2"
+    output "Heart", "flow3"
+    output "Gut", "flow4"
+    output "Spleen", "flow5"
+    output "Liver", "flow6"
+    output "Kidney", "flow7"
+    output "Tumor", "flow8"
+    output "Other", "flow9"
+    output "Muscle", "flow10"
+    output "Fat", "flow11"
 end organ
 
-begin organ "liver"
-    file "liver.bngl"
-    output "heart", "flow2"
+begin organ "Brain"
+    file "Brain.bngl"
+    output "Venous", "flow12"
+end organ
+
+begin organ "Fat"
+    file "Fat.bngl"
+    output "Venous", "flow13"
+end organ
+
+begin organ "Gut"
+    file "Gut.bngl"
+    output "Spleen", "flow14"
+end organ
+
+begin organ "Heart"
+    file "Heart.bngl"
+    output "Venous", "flow15"
+end organ
+
+begin organ "Kidney"
+    file "Kidney.bngl"
+    output "Venous", "flow16"
+end organ
+
+begin organ "Liver"
+    file "Liver.bngl"
+    output "Venous", "flow17"
+    output "Clearance", "flow18"
+end organ
+
+begin organ "Lung"
+    file "Lung.bngl"
+    output "Arterial", "flow19"
+end organ
+
+begin organ "Muscle"
+    file "Muscle.bngl"
+    output "Venous", "flow20"
+end organ
+
+begin organ "Other"
+    file "Other.bngl"
+    output "Venous", "flow21"
+end organ
+
+begin organ "Red Blood Cell"
+    file "RBC.bngl"
+    output "Venous", "flow22"
+    output "Arterial", "flow23"
+end organ
+
+begin organ "Spleen"
+    file "Spleen.bngl"
+    output "Liver", "flow24"
+end organ
+
+begin organ "Tumor"
+    file "Tumor.bngl"
+    output "Venous", "flow25"
+end organ
+
+begin organ "Venous"
+    file "Venous.bngl"
+    output "Red Blood Cell", "flow26"
+    output "Lung", "flow27"          
 end organ

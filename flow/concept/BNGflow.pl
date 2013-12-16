@@ -10,7 +10,7 @@ while ( my $line = <$filehandle> )
     if ( $line =~ /^begin organ/ )
     {
         my ($organ_name) = $line =~ /^begin organ \"(.+)\"/;
-        print "organ name = $organ_name\n";
+        print "#organ name = $organ_name\n";
         while (my $line = <$filehandle> )
         {
             last if $line =~ /^end organ/;
