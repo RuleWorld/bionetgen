@@ -42,7 +42,6 @@ class Transformation:
 		self.lhs = lhs
 		self.rhs = rhs
 		self.action = action
-		self.annotate = ''
 
 	def __str__(self):
 		return " ".join([self.strLHS(),"->",self.strRHS()])
@@ -52,45 +51,39 @@ class Transformation:
 		return hash(str(self))
 	def __repr__(self):
 		return str(self)
-		
 	def strLHS(self):
 		if self.lhs==None:
 			lhs_str = '0()'
 		else:
 			lhs_str = " + ".join(sorted([str(x) for x in self.lhs]))
 		return lhs_str
-	
 	def strRHS(self):
 		if self.rhs==None:
 			rhs_str = '0()'
 		else:
 			rhs_str = " + ".join(sorted([str(x) for x in self.rhs]))
 		return rhs_str
-		
 	def getLHS(self):
 		if self.lhs==None:
 			return []
 		else:
 			return self.lhs
-			
 	def getRHS(self):
 		if self.rhs==None:
 			return []
 		else:
 			return self.rhs
-			
 	def isSynDel(self):
-		if self.action in ['Add','Delete']:
-			return True
-		else:
-			return False
-	
+		return self.action in ['Add','Delete']
+			
+	def getJSON(self):
+		return {'type':'t','subtype':self.action,'name':str(self)}
 			
 
 class AtomicPattern:
 	def __init__(self,sp):
 		self.sp = sp
-		self.annotate = ''
+
 	def __str__(self):
 		return ".".join(sorted([str(x) for x in self.sp.molecules]))
 	def __eq__(self, other):
@@ -106,12 +99,28 @@ class AtomicPattern:
 			return False
 		else:
 			return True
-
+	def getJSON(self):
+		if '!' in str(self):
+			ptype = 'bond'
+		elif '~' in str(self):
+			ptype = 'state'
+		elif self.isMolecule():
+			ptype = 'molec'
+		else:
+			ptype = 'unbound'
+		mol_list = []
+		for mol in self.sp.molecules:
+			c = "".join([x.name for x in mol.components])
+			mol_list.append({'m':mol.name,'c':c})
+		return {'type':'p','subtype':ptype,'mol':mol_list,'name':str(self)}
+		
 class ChoppedRule:
 	def __init__(self,n_actions):
 		# transformations are objects, rest are just ids
 		self.transformations = [None]*n_actions
 		self.syndel_context = [None]*n_actions
+		self.syncontext = [None]*n_actions
+		self.delcontext = [None]*n_actions
 		self.transf_center = [None]*n_actions
 		self.context = []
 		
@@ -234,6 +243,7 @@ def chopRule(reactants, products, actions, mappings, nameDict):
 			rule.transformations[act_idx] = tr
 			rule.transf_center[act_idx] = getTransfCenterIDs(act,maps)
 			rule.syndel_context[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
+			rule.syncontext[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
 
 			
 		if act.action=='Delete':
@@ -249,10 +259,11 @@ def chopRule(reactants, products, actions, mappings, nameDict):
 			rule.transformations[act_idx] = tr
 			rule.transf_center[act_idx] = getTransfCenterIDs(act,maps)
 			rule.syndel_context[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
+			rule.delcontext[act_idx] = getSynDelContextIDs(rule.transf_center[act_idx][0],nameDict.keys())
 	return rule
 
 def printRule(reactants,products):
-	return "+".join([str(x) for x in reactants])+"->"+"+".join([str(x) for x in products])
+	return "+".join(sorted([str(x) for x in reactants]))+"->"+"+".join(sorted([str(x) for x in products]))
 
 		
 class AtomizedRule:
@@ -278,6 +289,9 @@ class AtomizedRule:
 		self.context = []
 		
 		self.syndel_context = [None]*len(choppedrule.transformations)
+		#moving from syndel to syn, del descriptions
+		self.syncontext = [None]*len(choppedrule.transformations)
+		self.delcontext = [None]*len(choppedrule.transformations)
 		
 		for idx,tr in enumerate(self.transformations):
 			if tr.action in ['AddBond','DeleteBond','StateChange']:
@@ -360,12 +374,18 @@ class AtomizedRule:
 				patt,_,_ = getPMC(patterns,p_idx,m_idx,None)
 				
 				self.syndel_context[idx] = []
+				self.syncontext[idx] = []
+				self.delcontext[idx] = []
 				# get each component:
 				c_list = [c for c in mol.components]
 				for comp in c_list:
 					# query activestate
 					if comp.activeState:
 						self.syndel_context[idx].append(AtomicPattern(makeStatePattern(mol,comp,comp.activeState)))
+						if tr.action=='Add':
+							self.syncontext[idx].append(AtomicPattern(makeStatePattern(mol,comp,comp.activeState)))
+						else:
+							self.delcontext[idx].append(AtomicPattern(makeStatePattern(mol,comp,comp.activeState)))
 					if comp.bonds:
 						# no need to check for wildcards, since they cannot be created or deleted
 						# get the bond name
@@ -378,7 +398,11 @@ class AtomizedRule:
 								p_idx2,m_idx2,c_idx2 = decompose_cidx(comp2.idx)
 								_,mol2,_ = getPMC(patterns,p_idx2,m_idx2,c_idx2)
 								# make the pattern
-								self.syndel_context[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))	
+								self.syndel_context[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))
+								if tr.action=='Add':
+									self.syncontext[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))
+								else:
+									self.delcontext[idx].append(AtomicPattern(makeBondPattern([mol,comp],[mol2,comp2])))
 			
 		# remaking lists into sets
 		#self.transformations = choppedrule.transformations
@@ -393,6 +417,20 @@ class AtomizedRule:
 				self.syndel_context[idx] = set()
 			else:
 				self.syndel_context[idx] = set(item)
+		for idx,item in enumerate(self.syncontext):
+			if item is None:
+				self.syncontext[idx] = set()
+			else:
+				self.syncontext[idx] = set(item)
+		for idx,item in enumerate(self.delcontext):
+			if item is None:
+				self.delcontext[idx] = set()
+			else:
+				self.delcontext[idx] = set(item)
+	def getJSON(self):
+		return {'type':'r','name':self.rulestring}
+
+
 
 def decompose_cidx(idx):
 	''' returns ids for pattern, molecule and component respectively from component id

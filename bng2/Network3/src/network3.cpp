@@ -353,7 +353,7 @@ void Network3::init_PLA(string config, bool verbose){
 	// Argument 1: Method type
 	if (verbose) cout << "1: ";
 	if (arg[0] == "fEuler"){
-		if (verbose) cout << "You've chosen 'fEuler', very good." << endl;
+		if (verbose) cout << "You've chosen 'fEuler'. Very good." << endl;
 		// alpha
 		alpha.resize(1);
 		alpha[0].push_back(0.0);
@@ -361,7 +361,7 @@ void Network3::init_PLA(string config, bool verbose){
 		beta.push_back(1.0);
 	}
 	else if (arg[0] == "midpt"){
-		if (verbose) cout << "You've chosen 'midpt', this should be interesting." << endl;
+		if (verbose) cout << "You've chosen 'midpt'. This should be interesting." << endl;
 		// alpha
 		alpha.resize(2);
 		alpha[0].push_back(0.0); alpha[0].push_back(0.0);
@@ -370,7 +370,7 @@ void Network3::init_PLA(string config, bool verbose){
 		beta.push_back(0.0); beta.push_back(1.0);
 	}
 	else if (arg[0] == "rk4"){
-		if (verbose) cout << "You've chosen 'rk4', go get 'em cowboy." << endl;
+		if (verbose) cout << "You've chosen 'rk4'. Go get 'em cowboy." << endl;
 		// alpha
 		alpha.resize(4);
 		alpha[0].push_back(0.0); alpha[0].push_back(0.0); alpha[0].push_back(0.0); alpha[0].push_back(0.0);
@@ -388,7 +388,7 @@ void Network3::init_PLA(string config, bool verbose){
 			exit(1);
 		}
 		//
-		if (verbose) cout << "You've chosen 'custom', the adventurous type I see." << endl;
+		if (verbose) cout << "You've chosen 'custom'. The adventurous type I see." << endl;
 	}
 	else{
 		cout << "Uh oh, I don't recognize your choice of method (" << arg[0] << "). Currently supported methods are" << endl;

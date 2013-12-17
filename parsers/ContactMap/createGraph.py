@@ -11,6 +11,7 @@ import pygraphviz as pgv
 import subprocess
 import pexpect
 
+
 def extractMolecules(action,site1,site2,chemicalArray):
     '''
     this method goes through the chemicals in a given array 'chemicalArray'
@@ -66,7 +67,8 @@ def solveWildcards(atomicArray):
 
             
 
-def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, builtList):
+def createNode(atomicArray, chemical, chemicalDictionary, 
+               subgraph, nameHeader, builtList,options):
     '''
     creates a child node for 'chemical' on the 'subgraph' graph
     Args:
@@ -83,7 +85,8 @@ def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, 
                 layout = 'RL'
             else:
                 layout = 'LR'
-            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,clusterName,layout))
+            chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,
+                                      clusterName,layout,options))
         else:
             #if it's a complex
             if '+' not in str(chemical):
@@ -93,7 +96,8 @@ def createNode(atomicArray, chemical, chemicalDictionary, subgraph, nameHeader, 
                     layout = 'LR'
 
                 clusterName = nameHeader
-                chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,nameHeader,layout))
+                chemicalDictionary.update(atomicArray[chemical].graphVizGraph(subgraph,
+                                          nameHeader,layout,options))
         
         if clusterName != '':
             clusterName = 'cluster%s_%s_m0_%s' % (clusterName, 
@@ -140,6 +144,34 @@ def extractTransformations(rules):
     return atomicArray, transformationCenter, transformationContext, productElements,actionName,label
 
 
+def createSubGraph(reactantList,
+                   gSubgraph,chemicalDictionary,buildList,atomicArray,
+                   graph,edgeIdx,tag,optionList = None):
+    edgeArray = []
+    for idx,reactant in enumerate(reactantList):
+        if optionList == None:
+            options = {}
+        else:
+            options = optionList[idx]
+        clusterName = createNode(atomicArray, reactant, 
+                                 chemicalDictionary, gSubgraph, 
+                                 tag,buildList,options)
+            
+        #theres a single context molecule
+        if clusterName != '':
+            edgeArray.append(clusterName)
+        #theres multiple context nodes for a single transformation
+        else:
+            if optionList == None:
+                options = {}
+            else:
+                options = optionList[idx]
+            for atom in atomicArray[reactant]:
+                clusterName = createNode(atomicArray, str(atom), 
+                                chemicalDictionary, gSubgraph, 
+                                tag,buildList,options)
+                edgeArray.append(clusterName)
+    return edgeArray           
 
 def createBiPartite(rules, transformations, fileName, reactionCenter=True, 
                     context=True, products=True):
@@ -157,7 +189,6 @@ def createBiPartite(rules, transformations, fileName, reactionCenter=True,
     atomicArray, transformationCenter, transformationContext, \
             productElements,actionNames,labelArray = extractTransformations(rules)
     #create the graph structure and the three main subgraphs
-    
     if transformations != None and len(transformations) == 1:
         graph = pgv.AGraph(directed=True,strict=False,
                            label=labelArray[transformations[0]-1],
@@ -173,16 +204,7 @@ ranksep='1.5',rankdir='LR',compound='true')
     
     gReactants.node_attr.update(shape='square')
     gProducts.node_attr.update(shape='square')
-    #gReactants.add_node('dummyr',shape='point',style='invis')
-    #gProducts.add_node('dummyp',shape='point',style='invis')
-    '''
-    gReactants.graph_attr['height']='{0}'.format(5)
-    gReactants.graph_attr['width']='{0}'.format(20)
-    gReactants.graph_attr.update(landscape='true',ranksep='0.1')
-    gProducts.graph_attr['height']='{0}'.format(5)
-    gProducts.graph_attr['width']='{0}'.format(20)
-    gProducts.graph_attr.update(landscape='true',ranksep='0.1')
-    '''
+
     reactantDictionary = {}
     productDictionary = {}
     edgeIdx = 1
@@ -194,50 +216,45 @@ ranksep='1.5',rankdir='LR',compound='true')
             gRules.add_node('{0}_dummy'.format(name),style='invis')
     #create reactionCenter nodes and edges
     if reactionCenter:
-        for idx,element in enumerate(transformationCenter):
-            if transformations == None or idx+1 in transformations:
-                for reactant in element:
-                    clusterName = createNode(atomicArray, reactant, 
-                                             reactantDictionary, gReactants, 
-                                             'clusterr',reactantbuiltlist)
-                    graph.add_edge(clusterName + '_dummy', actionNames[idx], 
-                                   key = 'key%i' % edgeIdx, ltail=clusterName)
-                    edgeIdx+=1
+        transformationRange = range(0,len(transformationCenter)) if \
+        transformations == None else transformations
+        for element in transformationRange:
+            edgeArray = createSubGraph(transformationCenter[element-1],
+                       gReactants,reactantDictionary,reactantbuiltlist,atomicArray,
+                       graph,edgeIdx,'clusterr')
+            for edge in edgeArray:
+                graph.add_edge(edge+'_dummy',actionNames[element-1],
+                               key = 'key%i' % edgeIdx, ltail=edge)
+                edgeIdx+=1
+
+        
     #create context nodes
     if context:
-        for idx,element in enumerate(transformationContext):
-            if transformations == None or idx+1 in transformations:
-                for reactant in element:
-                    clusterName = createNode(atomicArray, reactant, 
-                                             reactantDictionary, gReactants, 
-                                             'clusterr',reactantbuiltlist)
-                    #theres a single context molecule
-                    if clusterName != '':
-                        graph.add_edge(clusterName + '_dummy',actionNames[idx], 
-                                       key = 'key%i' % edgeIdx, 
-                                       color='red',ltail=clusterName)
-                        edgeIdx+=1  
-                    #theres multiple context nodes for a single transformation
-                    else:
-                        for atom in atomicArray[reactant]:
-                            clusterName = createNode(atomicArray, str(atom), 
-                                            reactantDictionary, gReactants, 
-                                            'clusterr',reactantbuiltlist)
-                            graph.add_edge(clusterName + '_dummy', actionNames[idx], 
-                                           key = 'key%i' % edgeIdx,  ltail=clusterName,
-                                           color='red')
-                            edgeIdx+=1
+        transformationRange = range(0,len(transformationContext)) if \
+        transformations == None else transformations
+        for idx,element in enumerate(transformationRange):
+            edgeArray = createSubGraph(transformationContext[element-1],
+                       gReactants,reactantDictionary,reactantbuiltlist,atomicArray,
+                       graph,edgeIdx,'clusterr')
+            for edge in edgeArray:
+                graph.add_edge(edge+'_dummy',actionNames[element-1],
+                               key = 'key%i' % edgeIdx, ltail=edge,color='red')
+                edgeIdx+=1
     #create product nodes
     if products:
-        for idx,element in enumerate(productElements):
-            if transformations == None or idx+1 in transformations:
-                for product in element:
-                    clusterName =createNode(atomicArray, product, 
-                                            productDictionary, gProducts, 
-                                            'clusterp', productbuildlist)
-                    graph.add_edge(actionNames[idx], clusterName + '_dummy', 
-                                   key = 'key%i' % edgeIdx, dir='foward',lhead=clusterName)
-                    edgeIdx+=1
+        
+        transformationRange = range(0,len(productElements)) if \
+        transformations == None else transformations
+        for idx,element in enumerate(transformationRange):
+            edgeArray = createSubGraph(productElements[element-1],
+                       gProducts,productDictionary,productbuildlist,atomicArray,
+                       graph,edgeIdx,'clusterp')
+            for edge in edgeArray:
+                graph.add_edge(actionNames[element-1],edge+'_dummy',
+                               key = 'key%i' % edgeIdx, lhead=edge)
+                edgeIdx+=1
+        
+        
     
     #output      
     print '%s.dot' % fileName
@@ -245,7 +262,7 @@ ranksep='1.5',rankdir='LR',compound='true')
     #graph = pgv.AGraph('%s.dot' % fileName)
     #graph.layout(prog='fdp')
     #graph.draw('%s.png' % fileName)
-    subprocess.call(['dot', '-Tpng', '{0}.dot'.format(fileName),'-o{0}.png'.format(fileName)])
+    subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
     
 
 def addAnnotations(fileName):
@@ -289,8 +306,8 @@ def bngl2xml(bnglFile):
 def main(fileName):
     _,rules = parseXML(fileName)
     #print '---',rules
-    createBiPartite(rules,None,'simple', 
-                           reactionCenter=True, context=True, products=True)
+    #createBiPartite(rules,None,'simple', 
+    #                       reactionCenter=True, context=True, products=True)
     
     for element in [2]:
         print element
@@ -307,6 +324,6 @@ def main(fileName):
     
 if __name__ == "__main__":
     #main("output9.xml")
-    #bngl2xml('fceri_ji.bngl')
+    bngl2xml('fceri_ji.bngl')
     main("fceri_ji.xml")
     #addAnnotations('fceri_ji')

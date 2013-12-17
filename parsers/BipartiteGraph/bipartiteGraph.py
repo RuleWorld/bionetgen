@@ -26,6 +26,8 @@ def extractMolecules(action,site1,site2,chemicalArray):
     reactionCenter = set()
     context = set()
     
+    #if action=='AddBond':
+    #	print action,chemicalArray
     for reactant in chemicalArray:
         ta,tr,tc = reactant.extractAtomicPatterns(action,site1,site2)
         #for element in ta:
@@ -78,6 +80,7 @@ def extractTransformations(rules):
             # so generate the reactioncenter here
             
 
+
             if action.action == 'Delete':
             	temp = st.Species()
             	temp.addMolecule(st.Molecule(nameDict[action.site1],1))
@@ -100,6 +103,7 @@ def extractTransformations(rules):
             	transformationContext.append(context)
             	
             else:
+		
 		transformationCenter.append(reactionCenter)
 		transformationContext.append(context)
 		atomicArray.update(atomic) 
@@ -124,7 +128,7 @@ def extractTransformations(rules):
     for item in wildcards:
     	loc = string.find(item,'+')
     	selected_bondedpatterns = [x for x in bondedpatterns if item[0:loc] in x]
-    	type(transformationContext)
+
     	for idx,set1 in enumerate(transformationContext):
     		if item in set1:
     			set1.update(selected_bondedpatterns)
@@ -182,7 +186,73 @@ def createT2Pmaps(patternDict,transformationDict,transformationCenter,transforma
 					if temp not in t2pContext:
 						t2pContext.append(temp)
 	return t2pReactant, t2pProduct, t2pContext
+
+def createTransformationPairs(t2pReactant,t2pProduct,t2pContext):
+	tr_id_list = set()
+	tr_id_list.update([x for x,y in t2pReactant])
+	tr_id_list.update([x for x,y in t2pProduct])
+	reactDict = dict()
+	prodDict = dict()
+	for tr in tr_id_list:
+		r = [y for x,y in t2pReactant if x==tr]
+		p = [y for x,y in t2pProduct if x==tr]
+		#print r,p
+		
+		reactDict[tr] = r
+		prodDict[tr] = p
+		#print tr,reactDict[tr],prodDict[tr]
+	trPairs = []
+	tr_id_list = deque(tr_id_list)
 	
+	#while len(tr_id_list)>0:
+	#	tr1 = tr_id_list.popleft()
+	#	for tr2 in tr_id_list:
+	#		if prodDict[tr1] == reactDict[tr2]:
+	#			print tr1,tr2
+	#		if reactDict[tr1] == prodDict[tr2]:
+	#			print tr1,tr2
+	
+
+		#tr_id2 = [x for x in tr_id_list if (prodDict[tr_id1]==reactDict[x] and reactDict[tr_id1] == prodDict[x])][0]
+		#tr_id_list.remove(tr_id2)
+		#trPairs.append([tr_id1,tr_id2])
+	return trPairs
+
+def sortTransformationPairs(trPairs,transformationDict):
+
+	trPairs2 = []
+	tDict = dict([[v,k] for k,v in transformationDict.items()])
+	for tr1,tr2 in trPairs:
+		lhs = tDict[tr1][0]
+		rhs = tDict[tr1][1]
+		print len(lhs),len(rhs)	
+
+	return trPairs
+
+def remapToTransformationPairs(trPairs,t2pReactant,t2pProduct,t2pContext):
+	# fc - forward consumptive - pattern is reactant for first item of trPair, i.e. forward transformation
+	# rc - reverse consumptive - pattern is reactant for second item of trPair, i.e. reverse transformation
+	# fi - forward influential - pattern is context for first item of trPair, i.e. forward transformation
+	# ri - reverse influential - pattern is context for second item of trPair, i.e. reverse transformation
+	fc = []
+	rc = []
+	fi = []
+	ri = []
+	for trPair in trPairs:
+		fc_items = [y for x,y in t2pReactant if x==trPair[0]]
+		rc_items = [y for x,y in t2pReactant if x==trPair[1]]
+		fi_items = [y for x,y in t2pContext if x==trPair[0]]
+		ri_items = [y for x,y in t2pContext if x==trPair[1]]	
+		for item in fc_items:
+			fc.append([tuple(trPair),item])
+		for item in rc_items:
+			rc.append([tuple(trPair),item])
+		for item in fi_items:
+			fi.append([tuple(trPair),item])
+		for item in ri_items:
+			ri.append([tuple(trPair),item])
+	return fc,rc,fi,ri
+
 	
 def summarizeModel(patternDict,transformationDict,atomicPatternAnnotations,transformationAnnotations,t2pContext):
 	with open('model_summary.txt','w') as f:
@@ -445,6 +515,8 @@ if __name__ == "__main__":
 	bpg1.add_argument('--omit-products',help='Omit product relationships on the bipartite graph',action='store_true',dest='no_p')
 	bpg1.add_argument('--omit-contexts',help='Omit context relationships on the bipartite graph',action='store_true',dest='no_c')
 	bpg_parser.add_argument('--use-annot',help='Use annotations instead of code',action='store_true',dest='use_annot')
+	bpg_parser.add_argument('--filter',help='Textfile with list of patterns',required=False,dest='filter')
+	bpg_parser.add_argument('--level',help='Depth to filter pattern list',required=False,dest='level',type=int)
 	
 
 	g1 = parser.add_argument_group('required arguments')
@@ -455,21 +527,20 @@ if __name__ == "__main__":
 	
 	if(os.path.isfile(args.xml)):
 		# This generates all the pattern and transformation arrays and dictionaries
-		_,rules = parseXML(args.xml)			
+		_,rules = parseXML(args.xml)
+		
+		
+		#rewrite required here:
+		atomicArray = extractAtomicArray(rules)
+
+			
 		atomicArray, transformationCenter, transformationContext, productElements,actionName,label = extractTransformations(rules)
 		
-		if args.mode == 'devel':
-			print len(atomicArray), len(transformationCenter), len(transformationContext), len(productElements)
-			#for idx,item in enumerate(transformationCenter):
-			#	print transformationCenter[idx],"to",productElements[idx],"by",transformationContext[idx],"\n"
+		
 			
 		
 		patternDict,transformationDict = createDictionaries(atomicArray,transformationCenter,productElements)
 		
-		if args.mode == 'devel':
-			print len(patternDict), len(transformationDict)
-			#printDict(patternDict)
-			#printDict(transformationDict)
 
 		# This lets you create new empty annotation files
 		if args.mode=='annotate':
@@ -487,8 +558,19 @@ if __name__ == "__main__":
 		
 		# This figures out the t2p maps (transformation to pattern)
 		t2pReactant, t2pProduct, t2pContext = createT2Pmaps(patternDict,transformationDict,transformationCenter,transformationContext,productElements)
+
+		#if args.mode == 'devel':
+		#	printDict(patternDict)
+		#	printDict(transformationDict)
+			
+			#trPairs = createTransformationPairs(t2pReactant,t2pProduct,t2pContext)
+			#trPairs = sortTransformationPairs(trPairs,transformationDict)
+			#trPairs = sortTransformationPairs(trPairs)
+			#fc,rc,fi,ri = remapToTransformationPairs(trPairs,t2pReactant,t2pProduct,t2pContext)
+
 		if args.mode=='graph':
 			getStats(rules,patternDict,transformationDict)
+			
 			print "\n\nGraphing mode."
 			if os.path.isfile('atomicPatternAnnotations.txt') and os.path.isfile('transformationAnnotations.txt'):
 				atomicPatternAnnotations, transformationAnnotations = readAnnotationFiles(patternDict,transformationDict)
@@ -497,7 +579,38 @@ if __name__ == "__main__":
 				if args.use_annot:
 					print "Use-annot will be disabled. Use annotate mode to create empty editable templates."
 					args.use_annot = False;
+			if args.filter:
+				if not args.level:
+					args.level = 1
+				elif args.level < 0:
+					args.level = abs(args.level)
+				if args.level <= 1 :
+					itermax = 1
+				else:
+					itermax = args.level
+
 				
+				with open(args.filter,'r') as f:
+					data = f.read()
+					templist = re.findall(r"[\w()~!+]+",data)
+					patlist = set()
+					for item in templist:
+						if '!+' in item:
+							loc = string.find(item,'+')
+							newlist = [x for x in patternDict.keys() if item[0:loc] in x]
+							assert len(newlist) > 0, 'Bond pattern ' + item + ' not found'
+							patlist.update(newlist)
+						else:
+							assert item in patternDict.keys(), 'Bond pattern ' + item + ' not found'
+							patlist.update([item])
+    							
+						
+				print patlist
+				pat_ids = [patternDict[x] for x in patlist]
+				
+				for lev in xrange(0,itermax+1):
+					print lev
+						
 			
 			options_string = ''
 			if args.use_annot:

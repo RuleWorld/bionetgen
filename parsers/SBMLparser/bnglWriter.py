@@ -39,6 +39,7 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
         if index < len(product) -1:
             finalString += ' + '
     finalString += ' ' + rate + ' ' + comment
+    finalString = re.sub(r'(\W|^)0\(\)','0',finalString)
     return finalString
     
 
@@ -286,11 +287,11 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     return finalString
 
     
-def finalText(param,molecules,species,observables,rules,functions,compartments,fileName):
+def finalText(comments,param,molecules,species,observables,rules,functions,compartments,fileName):
     #output = open(fileName,'w')
     
     output = StringIO.StringIO()
-    
+    output.write(comments)
     output.write('begin model\n')
     output.write(sectionTemplate('parameters',param))
     if len(compartments) > 0:

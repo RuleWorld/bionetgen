@@ -9,7 +9,76 @@ from lxml import etree
 import pygraphviz as pgv
 import re
 from random import randint
+from pyparsing import Word, Suppress, Optional, alphanums, Group, ZeroOrMore
+from collections import Counter
 
+def parseReactions(reaction):
+    components = (Word(alphanums + "_") + Optional(Group('~' + Word(alphanums)))
+    + Optional(Group('!' + Word(alphanums))))
+    molecule = (Word(alphanums + "_")
+    + Optional(Suppress('(')) + Group(components) + ZeroOrMore(Suppress(',') + Group(components))    
+    +Suppress(')'))
+    
+    species = Group(molecule) + ZeroOrMore(Suppress('.') + Group(molecule))
+
+    result = species.parseString(reaction).asList()
+    
+    return result
+
+def readFromString(string):
+    sp = Species()
+    reactionList = parseReactions(string)
+    for molecule in reactionList:
+        mol = Molecule(molecule[0],'')
+        if len(molecule) >1:
+            for idx in range(1,len(molecule)):
+                comp = Component(molecule[idx][0],'')
+                if len(molecule[idx]) > 1:
+                    for idx2 in range(1,len(molecule[idx])):
+                        if molecule[idx][idx2][0] == '~':
+                            comp.addState(molecule[idx][idx2][1])
+                        elif molecule[idx][idx2][0] == '!':
+                            comp.addBond(molecule[idx][idx2][1])
+                mol.addComponent(comp)
+        sp.addMolecule(mol)
+    return sp
+
+class Rule:
+    def __init__(self):
+        self.reactants = []
+        self.products = []
+        self.rates = []
+        self.bidirectional = False
+        self.actions = []
+        self.mapping = []
+        
+    def addReactant(self,reactant):
+        self.reactants.append(reactant)
+
+    def addProduct(self,product):
+        self.products.append(product)
+
+    def addReactantList(self,reactants):
+        self.reactants.extend(reactants)
+
+    def addProductList(self,products):
+        self.products.extend(products)
+        
+    def addRate(self,rate):
+        self.rates.append(rate)
+        
+    def addMapping(self,mapping):
+        self.mapping.add(mapping)
+        
+    def addMappingList(self,mappingList):
+        self.mapping.extend(mappingList)
+        
+    def addActionList(self,actionList):
+        self.actions.extend(actionList)
+        
+    def __str__(self):
+        return ' + '.join([str(x) for x in self.reactants]) + ' -> ' + ' + '.join([str(x) for x in self.products]) + ' ' + ','.join(self.rates)
+            
 class Species:
     def __init__(self):
         self.molecules = []
@@ -19,6 +88,8 @@ class Species:
         self.idx = ''
     
 
+
+        
     def getBondNumbers(self):
         bondNumbers = [0]
         for element in self.molecules:
@@ -230,7 +301,8 @@ class Species:
                 speciesStructure.addMolecule(moleculeStructure)
                 #atomicPatterns[str(speciesStructure)] = speciesStructure
                 if len(component.bonds) == 0:
-                    atomicPatterns[str(speciesStructure)] = speciesStructure
+                    if component.activeState == '':
+                        atomicPatterns[str(speciesStructure)] = speciesStructure
                 else:
                     if component.bonds[0] != '+':
                         componentStructure.addBond(1)
@@ -243,7 +315,7 @@ class Species:
                         bondedPatterns[component.bonds[0]].addMolecule(moleculeStructure)
                 if componentStructure.idx in [site1,site2] and action != 'StateChange':
                     reactionCenter.append((speciesStructure))
-                else:
+                elif len(component.bonds) > 0 or component.activeState == '':
                     context.append((speciesStructure))      
         for element in bondedPatterns:
             atomicPatterns[str(bondedPatterns[element])] = bondedPatterns[element]
@@ -251,6 +323,7 @@ class Species:
         reactionCenter = [str(x) for x in reactionCenter 
             if str(x) in atomicPatterns]
         context =  [str(x) for x in context if str(x) in atomicPatterns]
+        
         return atomicPatterns,reactionCenter,context
                 
                     
@@ -260,10 +333,7 @@ class Species:
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
         
-
         for idx,molecule in enumerate(self.molecules):
-        #for idx in range(len(self.molecules)-1,-1,-1):
-            molecule = self.molecules[idx]
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
             if len(self.molecules) == 1:
@@ -279,7 +349,6 @@ class Species:
                     graph.add_edge(speciesDictionary[bond[1]],speciesDictionary[bond[0]],dir='none',len=0.1,weight=100)
                 else:
                     graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none',len=0.1,weight=100)
-                    
         return speciesDictionary
         
     
@@ -393,8 +462,13 @@ class Molecule:
         return componentName in [x.name for x in self.components]
         
     def __str__(self):
-        self.components.sort()
-        return self.name + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
+        self.components = sorted(self.components,key = lambda st:st.name)
+        finalStr =  self.name
+        if len(self.components) > 0:
+            finalStr += '(' + ','.join([str(x) for x in self.components]) + ')' 
+        if self.compartment != '':
+            finalStr += '@' + self.compartment
+        return finalStr
         
     def toString(self):
         return self.__str__()
@@ -403,6 +477,9 @@ class Molecule:
         self.components.sort()
         return self.name + '(' + ','.join([x.str2() for x in self.components]) + ')'
         
+    def str3(self):
+        return self.name + '(' + self.components[0].name + ')'
+
     def extend(self,molecule):
         for element in molecule.components:
             comp = [x for x in self.components if x.name == element.name]
@@ -443,8 +520,6 @@ class Molecule:
         else:
             if not flag:
                 s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
-                #graph.add_node("cluster%s_%s_dummy" % (identifier,self.idx),label=self.__str__())
-                #return {}
             else:
                 s1 = graph.subgraph(name = identifier,label=self.name)
             s1.add_node('cluster%s_%s_dummy' % (identifier,self.idx),shape='point',style='invis')
@@ -465,8 +540,31 @@ class Molecule:
             if component.hasWilcardBonds():
                 return True
         return False
-            
+        
+    def distance(self,cMolecule):
+        distance = 0
+        distance += 10000 if self.name != cMolecule.name else 0
+        for component1,component2 in zip(self.components,cMolecule.components):
+            distance += not component1.bonds == component2.bonds
+            distance += not component1.activeState == component2.activeState
+        return distance
     
+    def compare(self,cMolecule):
+        self.components = sorted(self.components,key=lambda st:st.name)
+        cMolecule.components = sorted(cMolecule.components,key=lambda st:st.name)
+        for c1,c2 in zip(self.components,cMolecule.components):
+            if c1.activeState != c2.activeState:
+                c1.activeState = ''
+            
+            if c1.bonds != c2.bonds:
+                '''
+                if len(c1.bonds) != len(c2.bonds) or '?' in c1.bonds or '?' in c2.bonds:
+                    c1.bonds = ['?']
+            
+                else:
+                    c1.bonds = ['+']
+            '''
+            
 class Component:
     def __init__(self,name,idx,bonds = [],states=[]):
         self.name = name
@@ -607,4 +705,6 @@ class Databases:
     
     def getTranslator(self):
         return self.translator
-     
+    
+if __name__ == "__main__":
+    sp = readFromString('A(b!1,p~P).B(a!1)')

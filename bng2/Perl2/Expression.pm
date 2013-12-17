@@ -499,26 +499,29 @@ sub operate
                     $type  = "B";
                     $nargs = $functions{$name}->{NARGS};
                 }
-                elsif ( $param  and  ($param->Type eq 'Observable') )
+#                elsif ( $param  and  ($param->Type eq 'Observable') )
+                elsif ( $param  and defined $param->Type and ($param->Type eq 'Observable') )
                 {
                     $type = "O";
                     # number of args may be zero or one.
                 }
-                elsif ( $param  and  ($param->Type eq 'Function') )
+#                elsif ( $param  and  ($param->Type eq 'Function') )
+                elsif ( $param  and defined $param->Type and ($param->Type eq 'Function') )
                 {
                     $type  = "F";
                     $nargs = scalar( @{ $param->Ref->Args } );
                 }
                 else
                 {
-                    if ($allowForward)
-                    {
-                        $plist->set($name);
-                    }
-                    else
-                    {
-                        return "Function $name is not a built-in function, Observable, or defined Function";
-                    }
+					unless ( defined $param )
+					{
+	                    if ($allowForward)
+	                    { $plist->set($name); }
+	                    else
+	                    {
+	                        return "Function $name is not a built-in function, Observable, or defined Function";
+	                    }
+					}
                 }
     
                 # Read arguments to function
@@ -538,7 +541,7 @@ sub operate
                 # Check Argument list for consistency with function
                 if ( $type eq "O" )
                 {
-                    my $nargs= scalar(@fargs);
+                    $nargs= scalar(@fargs);
                     if  ($nargs>1){
                         return ("Observables $name is called with too many arguments");
                     }
@@ -557,7 +560,8 @@ sub operate
                 }
                 else
                 {
-                    if ( $param  and  ($nargs != @fargs) )
+#					if ( $param  and  ($nargs != @fargs) )
+					if ( $type ne '' and $param  and  ($nargs != @fargs) )
                     {   return "Incorrect number of arguments to function $name";   }
                 }
                 my $express = Expression->new( Type=>'FunctionCall', Arglist=>[$name, @fargs] );
@@ -1956,7 +1960,8 @@ sub getVariables
         else
         {   # named function
             my ($param, $err) = $plist->lookup( $expr->Arglist->[0] );
-            if (defined $param)
+#			if (defined $param)
+            if (defined $param && defined $param->Type)
             {   # add named function to rethash
                 $rethash->{$param->Type}->{$param->Name} = $param;
             }

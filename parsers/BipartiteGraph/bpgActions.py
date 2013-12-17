@@ -19,7 +19,7 @@ from collections import deque
 
 def cleanstrings(strings):
 	''' preprocesses strings from actions file'''
-	available = ['read_xml','tprule','make_pairs','make_maps','write_elements','read_annot']
+	available = ['read_xml','tprule','make_pairs','make_maps','write_elements','read_annot','make_flow','make_viz']
 	allcommands = []
 	for item in strings.split("\n"):
 		item2  = item.strip()
@@ -79,7 +79,7 @@ def processActions(strings):
 		elif command == 'write_elements':
 			assert len(current_line)>0, "write_elements requires a filename to output to"
 			if 'make_names' not in successfullyissued:
-				names = bpgMaps.getNameDictionary(atomizedrules,patterns,transformations,transformationpairs)
+				names = bpgMaps.getNameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles)
 				successfullyissued.append('make_names')
 			filename = current_line.popleft()
 			if len(current_line)==0:
@@ -115,7 +115,7 @@ def processActions(strings):
 			# Usage: read_annot <list of filenames>
 			assert len(current_line)>0, "read_annot requires atleast one filename to read from"
 			if 'make_names' not in successfullyissued:
-				names = bpgMaps.getNameDictionary(atomizedrules,patterns,transformations,transformationpairs)
+				names = bpgMaps.getNameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles)
 				successfullyissued.append('make_names')
 			tempstring = ''
 			for item in current_line:
@@ -128,8 +128,36 @@ def processActions(strings):
 				annot.processAnnotations(tempstring,names)
 		
 		elif command == 'make_maps':
-			rule_map, tr_map, trpair_map = bpgMaps.getMaps(names)
+			if 'make_names' not in successfullyissued:
+				names = bpgMaps.getNameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles)
+				successfullyissued.append('make_names')
+			all_maps = bpgMaps.getMaps(names,0)
+			
+		elif command == 'make_flow':
+			assert len(current_line)>1, "provide a seed of the form: start <list of atomic patterns> [end <list of atomic patterns>]"
+			assert current_line.popleft()=='start',"provide a seed of the form: start <list of atomic patterns> [end <list of atomic patterns>]"
+			start = []
+			end = []
+			startend = 0 # a switch used to create either the start vector or the end vector of patterns
+			while(len(current_line)>0):
+				patt = current_line.popleft()
+				if patt != 'end' and startend == 0:
+					start.append(patt)
+				if startend ==1:
+					end.append(patt)
+				if patt == 'end':
+					startend =1
+				
+			flowlevels = bpgMaps.makeFlow(names,all_maps,start,end)
 
+		elif command == 'make_viz':
+			assert len(current_line) > 0, "provide a filename for writing vizdata"
+			filename = current_line.popleft()
+			with open("data.js","w") as f:
+				f.write("var data = "+bpgMaps.writeJSON(names,all_maps,annot))
+			f.close()
+			
+		
 		else:
 			print "Command not found: "+command
 			

@@ -1,0 +1,164 @@
+This is gtools version 1.0 (beta release).
+-----------------------------------------
+
+Brendan McKay
+Computer Science Dept
+Australian National University
+Canberra, ACT 0200
+Australia
+bdm@cs.anu.edu.au
+
+gtools is a growing suite of programs for handling graphs in bulk.
+The formats supported are graph6 and sparse6; see below for the
+definitions.
+
+gtools is not supported on all the platforms which can compile nauty.
+Generally we have assumed 'int' has at least 32 bits, and system
+calls are UNIX or ANSI oriented.  The shortg program needs a UNIX-like
+'sort' program.
+
+Each program has an option -help (also known as --help) which
+describes what the program does and what the options are.
+
+Brief list:
+
+geng - generate graphs
+	IMPORTANT NOTE: Contrary to earlier versions, the option for
+        bounding the maximum degree is now -D and not -d.  The new
+	version uses -d to bound the minimum degree.
+
+labelg - canonically label graphs
+
+shortg - reduce graphs by isomorphism type
+
+complg - take the complements of graphs
+
+NRswitchg - perform various switching operations on graphs
+
+dretog - convert dreadnaut input to graph6 or sparse6
+
+amtog - convert adjacency matrix input to graph6 or sparse6
+
+listg - display/convert graphs to various formats
+
+readg - a stand-alone version of listg
+
+deledgeg - delete each edge from a graph
+
+copyg - convert between graph formats
+
+pickg - select graphs according to their properties
+
+countg - count graphs according to their properties
+
+Many more programs will be added over time.
+
+To compile gtools, you first need to compile nauty.  This version of
+gtools requires nauty 2.0 beta 7 or later.  Make links from the
+gtools directory to the files nauty.h, naututil.h, nauty.o, nautil.o,
+nauty1.o, naututil.o, rng.h and rng.o which are in the nauty directory.
+Then do "make" and it will be done.  Alternatively, you can make nauty
+and gtools in the same directory.,
+
+-------------------------------------------------------------------------
+
+Definition of graph6 and sparse6 graph formats.
+
+  All numbers in this description are in decimal unless obviously in
+  binary.  graph6 and sparse6 are text formats, and a file containing
+  them is a text file.
+
+  Apart from the header, there is one object per line.  Apart from the
+  header and the end-of-line characters, all bytes have a value in the
+  range 63-126 (which are all printable ASCII characters).
+
+  BIT VECTORS:
+
+  A bit vector x of length k can be represented as follows.  
+      Example:  1000101100011100
+
+  (1) Pad on the right with 0 to make the length a multiple of 6.
+      Example:  100010110001110000
+
+  (2) Split into groups of 6 bits each.
+      Example:  100010 110001 110000
+
+  (3) Add 63 to each group, considering them as bigendian binary numbers.
+      Example:  97 112 111
+
+  These values are then stored one per byte.  
+  So, the number of bytes required is ceiling(k/6).
+
+  Let R(x) denote this representation of x as a string of bytes.
+      
+  SMALL NONNEGATIVE INTEGERS:
+ 
+  Let n be an integer in the range 0-262143 (262143 = 2^18-1).
+
+  If 0 <= n <= 62, define N(n) to be the single byte n+63.
+  If n >= 63, define N(n) to be the four bytes 126 R(x), where
+    x is the bigendian 18-bit binary form of n.
+
+  Examples:  N(30) = 93
+             N(12345) = N(000011 000000 111001) = 126 69 63 120
+
+
+  ========= graph6 format:
+
+  Suppose G has n vertices.  Write the upper triangle of the adjacency
+  matrix of G as a bit vector x of length n(n-1)/2, using the ordering
+  (0,1),(0,2),(1,2),(0,3),(1,3),(2,3),...,(n-1,n).
+
+  Then the graph is represented as  N(n) R(x).
+
+    Example: Suppose n=5 and G has edges 0-2, 0-4, 1-3 and 3-4.
+
+       x = 0 10 010 1001
+    
+       Then N(n) = 68 and R(x) = R(010010 100100) = 81 99.
+       So, the graph is  68 81 99.
+
+  Note that graph6 format cannot represent loops or parallel edges.
+
+  ========= sparse6 format:
+
+  The encoded graph consists of:
+     (1) The character ':'.   (This is present to distinguish
+                                  the code from graph6 format.)
+     (2) The number of vertices.
+     (3) A list of edges.
+     (4) end-of-line
+
+  Loops and multiple edges are supported, but not directed edges.
+
+  Number of vertices n:  Represented as N(n) like in graph6 format.
+
+  List of edges:
+
+    Let k be the number of bits needed to represent n-1 in binary.
+    The remaining bytes encode a sequence R(z) where
+      z = b[0] x[0] b[1] x[1] b[2] x[2] ... b[m] x[m] 111...
+
+    Each b[i] occupies 1 bit, and each x[i] occupies k bits, and the number
+    of 1's at the end is the least needed to make the total length a 
+    multiple of 6.
+
+    The vertices of the graph are 0..n-1.
+    The edges encoded by this sequence are determined thus:
+
+       v = 0
+       for i from 0 to m do
+          if b[i] = 1 then v = v+1 endif;
+          if x[i] > v then v = x[i] else output {x[i],v} endif
+       endfor
+
+    Example:    :Fa@x^
+    ':' indicates sparse6 format.
+    Subtract 63 from the other bytes and write them in binary, six bits each.
+         000111 100010 000001 111001 011111
+    The first byte is not 63, so it is n.  n=7
+    n-1 needs 3 bits (k=3).  Write the other bits in groups of 1 and k:
+      1 000  1 000  0 001  1 110   0 101  1 111
+    This is the b/x sequence  1,0 1,0 0,1 1,6 0,5 1,7.
+    The 1,7 at the end is just padding.
+    The remaining pairs give the edges 0-1 1-2 5-6.

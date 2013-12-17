@@ -1,0 +1,11 @@
+{"reactions": [[["S0", "S1"], ["S2"]], [["S2"], ["S0", "S1"]], [[],["S0"]],[["S0"],[]]],
+"reactionsNames": ["Binding","Generation","Decay","Phosporylation","Double-Phosporylation","nMod","cMod","Ubiquitination"],
+ "namingConvention":[["prefix","p"],["prefix","pp"],["suffix","_n"],["suffix","_c"],["suffix","_ubiq"]],
+"reactionSite":["phospho","mod","ubiq"],
+"reactionState":["P","PP","N","C","UU"],
+ "definitions": [[{"r":[0]}],[{"r":[2]}],[{"r":[3]}],
+ [{"n":[0],"rsi":0,"rst":0}],[{"n":[1],"rsi":0,"rst":1}],
+ [{"n":[2],"rsi":1,"rst":2}],[{"n":[3],"rsi":1,"rst":3}],
+ [{"n":[4],"rsi":2,"rst":4}]
+]	
+ }

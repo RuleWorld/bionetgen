@@ -329,7 +329,7 @@ class Species:
                     
                     
         
-    def graphVizGraph(self,graph,identifier):
+    def graphVizGraph(self,graph,identifier,layout='LR',options={}):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier,str(self))
         
@@ -337,15 +337,18 @@ class Species:
             ident = "%s_m%i" %(graphName,idx)
             speciesDictionary[molecule.idx] = ident
             if len(self.molecules) == 1:
-                compDictionary = molecule.graphVizGraph(graph,ident,flag=False)
+                compDictionary = molecule.graphVizGraph(graph,ident,flag=False,options=options)
             else:
                 #s1 = graph.subgraph(name = graphName,label=' ')
-                compDictionary = molecule.graphVizGraph(graph,ident,flag=False)
+                compDictionary = molecule.graphVizGraph(graph,ident,flag=False,options=options)
             speciesDictionary.update(compDictionary)
             
         for bond in self.bonds:
             if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
-                graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none')
+                if layout == 'RL':
+                    graph.add_edge(speciesDictionary[bond[1]],speciesDictionary[bond[0]],dir='none',len=0.1,weight=100)
+                else:
+                    graph.add_edge(speciesDictionary[bond[0]],speciesDictionary[bond[1]],dir='none',len=0.1,weight=100)
         return speciesDictionary
         
     
@@ -389,9 +392,8 @@ class Species:
 class Molecule:
     def __init__(self,name,idx):
         self.components = []
-        self.name = name
+        self.name,self.idx = name,idx
         self.compartment = ''
-        self.idx = idx
         self.uniqueIdentifier = randint(0,100000)
         
     def copy(self):
@@ -497,7 +499,7 @@ class Molecule:
             if comp.name not in [x.name for x in self.components]:
                 self.components.append(deepcopy(comp))
                 
-    def graphVizGraph(self,graph,identifier,components=None,flag=False):
+    def graphVizGraph(self,graph,identifier,components=None,flag=False,options={}):
         moleculeDictionary = {}
         flag = False
         '''
@@ -516,10 +518,10 @@ class Molecule:
             moleculeDictionary[self.idx] = identifier
         else:
             if not flag:
-                s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name)
+                s1 = graph.subgraph(name = "cluster%s_%s" % (identifier,self.idx),label=self.name,**options)
             else:
-                s1 = graph.subgraph(name = identifier,label=self.name)
-
+                s1 = graph.subgraph(name = identifier,label=self.name,**options)
+            s1.add_node('cluster%s_%s_dummy' % (identifier,self.idx),shape='point',style='invis')
             if components == None:
                 tmpComponents = self.components
             else:
@@ -554,20 +556,20 @@ class Molecule:
                 c1.activeState = ''
             
             if c1.bonds != c2.bonds:
+                '''
                 if len(c1.bonds) != len(c2.bonds) or '?' in c1.bonds or '?' in c2.bonds:
                     c1.bonds = ['?']
-            '''
+            
                 else:
                     c1.bonds = ['+']
             '''
             
 class Component:
     def __init__(self,name,idx,bonds = [],states=[]):
-        self.name = name
+        self.name,self.idx = name,idx
         self.states = []
         self.bonds = []
         self.activeState = ''
-        self.idx = idx
         
     def copy(self):
         component = Component(self.name,self.idx,deepcopy(self.bonds),deepcopy(self.states))

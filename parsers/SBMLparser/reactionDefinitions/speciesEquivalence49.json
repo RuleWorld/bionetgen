@@ -1,0 +1,16 @@
+{
+	"reactionDefinition" : [
+		["c_Cbl","c_Cbl_ubiq","ubiq"]
+					
+	],
+	"complexDefinition" : [
+		["c_Cbl_ubiq",[["c_Cbl","ubiq",["s","UU"]]]],
+		["pEGFR",[["EGFR","phospo",["s","P"]]]]
+
+	],
+	"modificationDefinition": {
+		"L_dpEGFR":["EGFR","pEGFR","EGF","EGF"]
+	}
+	
+	
+}
