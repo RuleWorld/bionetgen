@@ -7,8 +7,7 @@ my @array = '/Users/cmcarcil/git/bionetgen/flow/concept/BNGflowSortOutput.bngl';
 {
 	local @ARGV = (@array);
 ##delets repeats
-print "begin model";
-print "\n";
+
 my %seen = ();
 {
    local @ARGV = (@array);
