@@ -1,0 +1,928 @@
+#organ name = Arterial
+begin model
+begin parameters
+#Tissue Blood Flow Rates L/min
+Fli 0.45
+Fl 5.60
+Ft 0.03
+Fg 1.13
+Fm 0.59
+Fs 0.02
+Fh 0.26
+Ff 0.74
+Fk 1.24
+Fb 0.78
+Fo 0.36
+#Tissue Volume L
+LiverVol 1.8
+LungVol 0.53
+TumorVol 0.2
+GutVol 1.19
+MuscleVol 28
+SpleenVol 0.18
+HeartVol 0.33
+FatVol 15
+KidneyVol 0.31
+BrainVol 1.4
+OtherVol 15.8
+#Tissue Vascular Fraction
+frac_li 0.16     
+frac_l  0.3      
+frac_t  0.05 
+frac_g  0   
+frac_m  0.03    
+frac_s  0.20
+frac_h  0.02    
+frac_f  0.03    
+frac_k  0.24   
+frac_b  0.04    
+frac_o  0.05    
+#From Florian 
+finli Fli/LiverVol   #flow into liver from arteries(L/min/L) min-1
+finl Fl/LungVol   #flow into lungs from veins min-1
+fint Ft/TumorVol   #flow into tumor from arteries
+fing Fg/GutVol     #flow into gut from arteries
+finm Fm/MuscleVol  #flow into muscle from arteries
+fins Fs/SpleenVol  #flow into spleen from arteries
+finh Fh/HeartVol     #flow into heart from arteries
+finf Ff/FatVol    #flow into fat from arteries
+fink Fk/KidneyVol     #flow into kidneys from arteries
+finb Fb/BrainVol  #flow into brain from arteries
+fino Fo/OtherVol   #flow into other from arteries
+
+FAvolV FatVol*frac_f          #Fat vascular volume L  
+BRvolV BrainVol*frac_b         #Brain vascular volume L
+HEvolV HeartVol*frac_h        #Heart vascular volume L
+KIvolV KidneyVol*frac_k        #Kidneys vascular volume L
+LIvolV LiverVol*frac_li         #Liver vascular volume L
+LUvolV LungVol*frac_l         #Lung vascular volume L
+GUvolV GutVol*frac_g
+MUvolV MuscleVol*frac_m          #Muscle vascular volume L
+SPvolV SpleenVol*frac_s
+OTvolV OtherVol*frac_o       #Other vascular volume L
+TUvolV TumorVol*frac_t         #Tumor vascular volume L
+
+krbcplas 0.05107/40 #rbc to plasma adjusted for humans
+kplasrbc 0.0139/40 #plasma to rbc
+
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBR1         2         1   Body	 #Red blood cells from veins
+EBR2         2         1   Body  #Red blood cells from arteries
+EBLu         2         1   Body	 #Lung 
+EBBr         2         1   Body	 #Brain 
+EBHe         2         1   Body	 #Heart
+EBLi         2         1   Body	 #Liver
+EBKi         2         1   Body	 #Kidney	
+EBTu         2         1   Body	 #Tumor
+EBOt         2         1   Body	 #Other	 
+EBMu         2         1   Body	 #Muscle
+EBFa         2         1   Body	 #Fat 
+EBSp         2         1   Body	 #Spleen 
+EBGu         2         1   Body	 #Gut
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  RBC1       3         1   EBR1  
+  RBC2       3         1   EBR2  
+  #Lung
+  LUV        3   LUvolV     EBLu  
+  #Tumor
+  TUV        3   TUvolV     EBTu 
+  #Adipose
+  FAV        3   FAvolV     EBFa   
+  #Brain
+  BRV        3   BRvolV     EBBr    
+  #Heart
+  HEV        3   HEvolV     EBHe   
+  #Kidney
+  KIV        3   KIvolV     EBKi    
+  #Liver 
+  LIV        3   LIvolV     EBLi   
+  #Spleen
+  SPV        3   SPvolV     EBSp  
+  #Gut
+  GUV        3   GUvolV     EBGu  
+  #Muscle
+  MUV        3   MUvolV     EBMu  
+  #Other
+  OTV        3   OTvolV     EBOt    
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules	RBC1     drug()@RBC1
+Molecules	RBC2     drug()@RBC2
+Molecules	LungV    drug()@LUV
+Molecules	TumorV   drug()@TUV
+Molecules	FatV     drug()@FAV
+Molecules	BrainV   drug()@BRV
+Molecules	HeartV   drug()@HEV
+Molecules	LiverV   drug()@LIV
+Molecules	KidneyV  drug()@KIV
+Molecules	OtherV   drug()@OTV
+Molecules	MuscleV  drug()@MUV
+Molecules	SpleenV  drug()@SPV
+Molecules	Gut      drug()@GUV
+Molecules   cancer   drug()@TUV	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+
+drug()@LUV->drug()@APL finl
+drug()@APL<->drug()@RBC2 krbcplas,kplasrbc 
+drug()@APL->drug()@TUV fint
+drug()@APL->drug()@FAV finf
+drug()@APL->drug()@BRV finb
+drug()@APL->drug()@HEV finh
+drug()@APL->drug()@KIV fink
+drug()@APL->drug()@LIV finli
+drug()@APL->drug()@SPV fins
+drug()@APL->drug()@GUV fing
+drug()@APL->drug()@MUV finm
+drug()@APL->drug()@OTV fino
+
+end reaction rules
+end model
+#organ name = Brain
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fb 0.78
+#Tissue Volume L
+BrainVol 1.4
+#Tissue Vascular Fraction 
+frac_b  0.04      
+#From Florian 
+finb Fb/BrainVol  #flow into brain from arteries
+BRvolV BrainVol*frac_b         #Brain vascular volume L
+BRvolEV BrainVol*(1-frac_b)         #Brain vascular volume L
+kbve 0.0547
+kbev 0.0573
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBBr         2         1   Body	 #Brain 
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Brain
+  BRV        3   BRvolV     EBBr  
+  BRE        2   BRvolEV	BRV   
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	BrainV   drug()@BRV
+Molecules   BrainEV  drug()@BRE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@BRV finb
+drug()@BRV<->drug()@BRE kbve,kbev
+drug()@BRV->drug()@VPL finb
+end reaction rules
+end model
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Ff 0.74
+#Tissue Volume L
+FatVol 15
+#Tissue Vascular Fraction 
+frac_f  0.03     
+#From Florian 
+finf Ff/FatVol    #flow into fat from arteries
+FAvolV FatVol*frac_f          #Fat vascular volume L  
+FAvolEV FatVol*(1-frac_f)          #Fat vascular volume L 
+kfve 0.2161
+kfev 0.0079
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBFa         2         1   Body	 #Fat 
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Adipose
+  FAV        3   FAvolV     EBFa   
+  FAE        2   FAvolEV	FAV 
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	FatV     drug()@FAV
+Molecules   FatEV    drug()@FAE
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@FAV finf
+drug()@FAV<->drug()@FAE kfve,kfev
+drug()@FAV->drug()@VPL finf
+end reaction rules
+end model
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fli 0.45
+Fg 1.13
+#Tissue Volume L
+LiverVol 1.8
+GutVol 1.19
+#Tissue Vascular Fraction
+frac_li 0.16     
+frac_g  0     
+#From Florian 
+fing Fg/GutVol     #flow into gut from arteries
+LIvolV LiverVol*frac_li         #Liver vascular volume L
+GUvolV GutVol*frac_g
+GUvolEV GutVol*(1-frac_g)
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBLi         2         1   Body	 #Liver
+EBGu         2         1   Body	 #Gut
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Liver 
+  LIV        3   LIvolV     EBLi  
+  #Gut
+  GUV        3   GUvolV     EBGu  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules	Infusion Infusion()@Body
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	LiverV   drug()@LIV
+Molecules	Gut      drug()@GUV
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@GUV fing
+drug()@GUV->drug()@LIV fing
+end reaction rules
+end model
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fh 0.26
+#Tissue Volume L
+HeartVol 0.33
+#Tissue Vascular Fraction
+frac_h  0.02     
+#From Florian 
+finh Fh/HeartVol     #flow into heart from arteries
+HEvolV HeartVol*frac_h        #Heart vascular volume L
+HEvolEV HeartVol*(1-frac_h)        #Heart vascular volume L
+khve 2.246
+khev 0.0495
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBHe         2         1   Body	 #Heart
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Heart
+  HEV        3   HEvolV     EBHe  
+  HEE        2   HEvolEV	HEV  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules	HeartV   drug()@HEV
+Molecules   HeartEV  drug()@HEE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@HEV finh
+drug()@HEV<->drug()@HEE khve,khev
+drug()@HEV->drug()@VPL finh
+end reaction rules
+end model
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fk 1.24
+#Tissue Volume L
+KidneyVol 0.31
+#Tissue Vascular Fraction 
+frac_k  0.24    
+#From Florian 
+fink Fk/KidneyVol     #flow into kidneys from arteries
+KIvolV KidneyVol*frac_k        #Kidneys vascular volume L
+KIvolEV KidneyVol*(1-frac_k)        #Kidneys vascular volume L
+kkve 2.924
+kkev 0.1859
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBKi         2         1   Body	 #Kidney	
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Kidney
+  KIV        3   KIvolV     EBKi
+  KIE        2   KIvolEV	KIV    
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	KidneyV   drug()@KIV
+Molecules   KidneyEV  drug()@KIE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@KIV fink
+drug()@KIV<->drug()@KIE kkve,kkev
+drug()@KIV->drug()@VPL fink
+end reaction rules
+end model
+begin model
+begin parameters
+#Tissue Blood Flow Rates L/min
+Fli 0.45
+Fg 1.13
+Fs 0.02
+#Tissue Volume L
+LiverVol 1.8
+GutVol 1.19
+SpleenVol 0.18
+#Tissue Vascular Fraction
+frac_li 0.16     
+frac_g  0     
+frac_s  0.20
+#From Florian 
+finli Fli/LiverVol   #flow into liver from arteries(L/min/L) min-1
+fing  Fg/GutVol
+fins  Fs/SpleenVol
+LIvolV LiverVol*frac_li         #Liver vascular volume L
+GUvolV GutVol*frac_g
+SPvolV SpleenVol*frac_s
+LIvolEV LiverVol*(1-frac_li)         #Liver vascular volume L
+krbcplas 0.05107/40 #rbc to plasma adjusted for humans
+kplasrbc 0.0139/40 #plasma to rbc
+klive 10.253
+kliev 0.0965
+kclli 0.1023
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBLi         2         1   Body	 #Liver
+EBSp         2         1   Body	 #Spleen 
+EBGu         2         1   Body	 #Gut
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Liver 
+  LIV        3   LIvolV     EBLi  
+  LIE        2   LIvolEV	LIV 
+  #Spleen
+  SPV        3   SPvolV     EBSp  
+  #Gut
+  GUV        3   GUvolV     EBGu  
+end compartments
+begin molecule types
+drug()
+null() 
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	LiverV   drug()@LIV
+Molecules   LiverEV  drug()@LIE
+Molecules	SpleenV   drug()@SPV
+Molecules	Gut       drug()@GUV	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@LIV finli
+drug()@LIV<->drug()@LIE klive,kliev
+drug()@LIV->drug()@VPL finli
+drug()@LIV->null() kclli 
+drug()@SPV->drug()@LIV fins
+drug()@GUV->drug()@LIV fing
+end reaction rules
+end modelbegin model
+begin parameters
+#Tissue Blood Flow Rates L/min
+Fl 5.60
+#Tissue Volume L
+LungVol 0.53
+#Tissue Vascular Fraction   
+frac_l  0.3       
+#From Florian 
+finlu Fl/LungVol   #flow into lungs from veins min-1
+LUvolV LungVol*frac_l         #Lung vascular volume L
+LUvolEV LungVol*(1-frac_l)         #Lung vascular volume L
+kluve 0.2662
+kluev 0.0365
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBLu         2         1   Body	 #Lung 
+  VPL        3         1   EBV 
+  APL        3         1   EBA
+  #Lung
+  LUV        3   LUvolV     EBLu  
+  LUE        2   LUvolEV	LUV  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules	LungV    drug()@LUV
+Molecules   LungEV   drug()@LUE 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@VPL->drug()@LUV finlu #venous blood to lung
+drug()@LUV<->drug()@LUE kluve,kluev
+drug()@LUV->drug()@APL finlu
+end reaction rules
+end model
+begin model
+begin parameters
+#Tissue Blood Flow Rates L/min
+Fm 0.59
+#Tissue Volume L
+MuscleVol 28
+#Tissue Vascular Fraction
+frac_m  0.03     
+#From Florian 
+finm Fm/MuscleVol  #flow into muscle from arteries
+MUvolV MuscleVol*frac_m          #Muscle vascular volume L
+MUvolEV MuscleVol*(1-frac_m)          #Muscle vascular volume L
+kmve 0.5952
+kmev 0.0158
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBMu         2         1   Body	 #Muscle
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Muscle
+  MUV        3   MUvolV     EBMu  
+  MUE        2   MUvolEV	MUV  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	MuscleV   drug()@MUV
+Molecules   MuscleEV  drug()@MUE
+	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@MUV finm
+drug()@MUV<->drug()@MUE kmve,kmev
+drug()@MUV->drug()@VPL finm
+end reaction rules
+end model
+begin model
+begin parameters
+Fo 0.36
+#Tissue Volume
+OtherVol 15.8
+#From Florian 
+ fino Fo/OtherVol   #flow into other from arteries
+ fo  0.05      #tissue vascular fraction other
+OTvolV OtherVol*fo       #Other vascular volume L
+OTvolEV OtherVol*(1-fo)
+kove 0.7451
+koev 0.0099
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBOt         2         1   Body	 #Other	 
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Other
+  OTV        3   OTvolV     EBOt   
+  OTE        2   OTvolEV	OTV  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	OtherV   drug()@OTV
+Molecules   OtherEV  drug()@OTE
+	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@OTV fino
+drug()@OTV<->drug()@OTE kove,koev
+drug()@OTV->drug()@VPL fino
+end reaction rules
+end model
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+krbcplas 0.05107/40 #rbc to plasma adjusted for humans
+kplasrbc 0.0139/40 #plasma to rbc
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBR1         2         1   Body	 #Red blood cells from veins
+EBR2         2         1   Body  #Red blood cells from arteries
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  RBC1       3         1   EBR1  
+  RBC2       3         1   EBR2  
+
+end compartments
+begin molecule types
+drug()
+
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	RBC1     drug()@RBC1
+Molecules	RBC2     drug()@RBC2 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@VPL<->drug()@RBC1 krbcplas,kplasrbc 
+drug()@APL<->drug()@RBC2 krbcplas,kplasrbc 
+end reaction rules
+end model
+begin model
+begin parameters
+#Tissue Blood Flow Rates L/min
+Fli 0.45
+Fs 0.02
+#Tissue Volume L
+LiverVol 1.8
+SpleenVol 0.18
+#Tissue Vascular Fraction
+frac_li 0.16       
+frac_s  0.20  
+#From Florian 
+finli Fli/LiverVol   #flow into liver from arteries(L/min/L) min-1
+fins Fs/SpleenVol  #flow into spleen from arteries
+LIvolV LiverVol*frac_li         #Liver vascular volume L
+SPvolV SpleenVol*frac_s
+LIvolEV LiverVol*(1-frac_li)         #Liver vascular volume L
+SPvolEV SpleenVol*(1-frac_s)
+ksve 1.8667
+ksev 0.0445
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBLi         2         1   Body	 #Liver
+EBSp         2         1   Body	 #Spleen 
+  APL        3         1   EBA 
+  #Liver 
+  LIV        3   LIvolV     EBLi  
+  #Spleen
+  SPV        3   SPvolV     EBSp  
+  SPE        2   SPvolEV	SPV  
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Arterial drug()@APL
+Molecules	LiverV   drug()@LIV
+Molecules	SpleenV   drug()@SPV
+Molecules   SpleenEV  drug()@SPE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+drug()@APL->drug()@SPV fins
+drug()@SPV<->drug()@SPE ksve,ksev
+drug()@SPV->drug()@LIV fins
+end reaction rules
+end model
+begin model
+begin parameters
+k1 0.51
+k2 0.49
+k3 0.51
+Ft 0.03
+#Tissue Volume
+TumorVol 0.2
+#From Florian 
+ fint Ft/TumorVol   #flow into tumor from arteries
+ ft  0.05      #tissue vascular fraction tumor
+TUvolV  TumorVol*ft         #Tumor vascular volume L
+TUvolEV TumorVol*(1-ft)         #Tumor vascular volume L
+ktve 0.11
+ktev 0.0006
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries	
+EBTu         2         1   Body	 #Tumor
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  #Tumor
+  TUV        3   TUvolV     EBTu 
+  TUE        2   TUvolEV	TUV  
+  IC         3   1          TUE
+end compartments
+begin molecule types
+drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	TumorV   drug()@TUV
+Molecules   TumorEV  drug()@TUE
+Molecules   cancer    drug()@TUV	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+
+drug()@APL->drug()@TUV fint
+drug()@TUV<->drug()@TUE ktve,ktev
+drug()@TUV->drug()@VPL fint
+
+drug()@TUE<->drug()@IC k1,k2
+drug()@IC->drug()@TUV k3
+
+end reaction rules
+end model
+begin model
+begin parameters
+infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+kinf 1              #set as 1 infusion rate
+#Tissue Blood Flow Rates L/min
+Fli 0.45
+Fl 5.60
+Ft 0.03
+Fm 0.59
+Fh 0.26
+Ff 0.74
+Fk 1.24
+Fb 0.78
+Fo 0.36
+#Tissue Volume L
+LiverVol 1.8
+LungVol 0.53
+TumorVol 0.2
+MuscleVol 28
+HeartVol 0.33
+FatVol 15
+KidneyVol 0.31
+BrainVol 1.4
+OtherVol 15.8
+#Tissue Vascular Fraction
+frac_li 0.16     
+frac_l  0.3      
+frac_t  0.05   
+frac_m  0.03    
+frac_h  0.02    
+frac_f  0.03    
+frac_k  0.24   
+frac_b  0.04    
+frac_o  0.05    
+#From Florian 
+finli Fli/LiverVol   #flow into liver from arteries(L/min/L) min-1
+finl Fl/LungVol   #flow into lungs from veins min-1
+fint Ft/TumorVol   #flow into tumor from arteries
+finm Fm/MuscleVol  #flow into muscle from arteries
+finh Fh/HeartVol     #flow into heart from arteries
+finf Ff/FatVol    #flow into fat from arteries
+fink Fk/KidneyVol     #flow into kidneys from arteries
+finb Fb/BrainVol  #flow into brain from arteries
+fino Fo/OtherVol   #flow into other from arteries
+
+FAvolV FatVol*frac_f          #Fat vascular volume L  
+BRvolV BrainVol*frac_b         #Brain vascular volume L
+HEvolV HeartVol*frac_h        #Heart vascular volume L
+KIvolV KidneyVol*frac_k        #Kidneys vascular volume L
+LIvolV LiverVol*frac_li         #Liver vascular volume L
+LUvolV LungVol*frac_l         #Lung vascular volume L
+MUvolV MuscleVol*frac_m          #Muscle vascular volume L
+OTvolV OtherVol*frac_o       #Other vascular volume L
+TUvolV TumorVol*frac_t         #Tumor vascular volume L
+
+krbcplas 0.05107/40 #rbc to plasma adjusted for humans
+kplasrbc 0.0139/40 #plasma to rbc
+end parameters
+begin compartments
+Body         3         70  #overall compartment is the body
+EBV          2         1   Body	 # Endothelial Barrier Veins
+EBA          2         1   Body# Endothelial Barrier Arteries
+EBR1         2         1   Body	 #Red blood cells from veins
+EBR2         2         1   Body  #Red blood cells from arteries
+EBLu         2         1   Body	 #Lung 
+EBBr         2         1   Body	 #Brain 
+EBHe         2         1   Body	 #Heart
+EBLi         2         1   Body	 #Liver
+EBKi         2         1   Body	 #Kidney	
+EBTu         2         1   Body	 #Tumor
+EBOt         2         1   Body	 #Other	 
+EBMu         2         1   Body	 #Muscle
+EBFa         2         1   Body	 #Fat 
+  VPL        3         1   EBV 
+  APL        3         1   EBA 
+  RBC1       3         1   EBR1  
+  #Lung
+  LUV        3   LUvolV     EBLu  
+  #Tumor
+  TUV        3   TUvolV     EBTu 
+  #Adipose
+  FAV        3   FAvolV     EBFa   
+  #Brain
+  BRV        3   BRvolV     EBBr  
+  #Heart
+  HEV        3   HEvolV     EBHe  
+  #Kidney
+  KIV        3   KIvolV     EBKi 
+  #Liver 
+  LIV        3   LIvolV     EBLi  
+  #Muscle
+  MUV        3   MUvolV     EBMu  
+  #Other
+  OTV        3   OTvolV     EBOt   
+
+end compartments
+begin molecule types
+Infusion()
+drug()
+end molecule types
+
+begin seed species
+@Body:$Infusion() infusion
+end seed species
+
+begin observables
+
+Molecules	Infusion Infusion()@Body
+Molecules   Venous   drug()@VPL
+Molecules   Arterial drug()@APL
+Molecules	RBC1     drug()@RBC1
+Molecules	LungV    drug()@LUV
+Molecules	TumorV   drug()@TUV
+Molecules	FatV     drug()@FAV
+Molecules	BrainV   drug()@BRV
+Molecules	HeartV   drug()@HEV
+Molecules	LiverV   drug()@LIV
+Molecules	KidneyV   drug()@KIV
+Molecules	OtherV   drug()@OTV
+Molecules	MuscleV   drug()@MUV	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+Infusion()@Body->drug()@VPL kinf #Infusion
+drug()@VPL<->drug()@RBC1 krbcplas,kplasrbc 
+drug()@VPL->drug()@LUV finl #venous blood to lung
+drug()@TUV->drug()@VPL fint
+drug()@FAV->drug()@VPL finf
+drug()@BRV->drug()@VPL finb
+drug()@HEV->drug()@VPL finh
+drug()@KIV->drug()@VPL fink
+drug()@LIV->drug()@VPL finli
+drug()@MUV->drug()@VPL finm
+drug()@OTV->drug()@VPL fino
+end reaction rules
+end model
