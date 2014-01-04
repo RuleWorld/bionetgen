@@ -1692,7 +1692,8 @@ sub setConcentration
     # Set flag to update netfile when it's used
     $model->UpdateNet(1);
 
-    printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, $conc;
+    printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, 
+    		($expr->Type eq 'NUM' ? $conc : $expr->toString());
     return undef;
 }
 

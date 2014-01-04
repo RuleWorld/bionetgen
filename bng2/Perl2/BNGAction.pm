@@ -1455,7 +1455,7 @@ sub parameter_scan
 
 
     # remember concentrations!
-    $model->saveConcentrations();
+    $model->saveConcentrations("SCAN");
 
     # loop over timepoints
     for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k )
@@ -1473,7 +1473,7 @@ sub parameter_scan
         my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
 
         # reset concentrations
-        $model->resetConcentrations();
+        $model->resetConcentrations("SCAN");
 
         # define local params
         my $local_params;
@@ -1491,7 +1491,7 @@ sub parameter_scan
     }
 
     # recover concentrations
-    $model->resetConcentrations();
+    $model->resetConcentrations("SCAN");
 
 
     # Extract last timepoint from each simulation and write to outfile
