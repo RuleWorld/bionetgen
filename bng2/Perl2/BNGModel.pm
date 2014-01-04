@@ -1673,7 +1673,15 @@ sub setConcentration
     {
         return '', $err;
     }
-    my $conc = $expr->evaluate($plist);
+    my $conc; # = $expr->evaluate($plist);
+    if ( $expr->Type eq 'NUM' )
+    {
+    		$conc = $expr->evaluate();
+    }
+    else
+    {
+        $conc = $expr->getName( $plist, 'NewConc' );
+    }
 
     # load Concentration array (if not already done)
     $model->SpeciesList->checkOrInitConcentrations( $model->Concentrations );

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.0  -->
+<!-- Created by BioNetGen 2.2.5  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="test_setconc">
     <ListOfParameters>
@@ -11,6 +11,7 @@
       <Parameter id="km" type="Constant" value="0.1"/>
       <Parameter id="InitialConc1" type="Constant" value="602210"/>
       <Parameter id="InitialConc2" type="Constant" value="602210"/>
+      <Parameter id="NewConc1" type="Constant" value="1204420"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
       <MoleculeType id="L">
