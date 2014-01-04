@@ -1406,8 +1406,8 @@ sub parameter_scan
 
 
     # update user
-    printf "ACTION: parameter_scan(par: %s, min: %.3e, max: %.3e, n_pts: %d, log: %d)\n",
-           $params->{parameter}, $params->{par_min}, $params->{par_max}, $params->{n_scan_pts}, $params->{log_scale};
+    printf "ACTION: parameter_scan(par: $params->{parameter}, min: $params->{par_min}, max: $params->{par_max}, ";
+    printf "n_pts: $params->{n_scan_pts}, log: $params->{log_scale})\n";
 
 
     # define basename for scan results
@@ -1453,13 +1453,16 @@ sub parameter_scan
     	$delta = ($par_max - $par_min) / ($params->{n_scan_pts} - 1); # note that this may be negative if par_max < par_min (not a problem)
     }   
 
-
     # remember concentrations!
     $model->saveConcentrations("SCAN");
 
-    # loop over timepoints
+    # loop over scan points
     for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k )
     {
+        # define prefix
+        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
+  #      my $local_prefix = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d", $params->{parameter}, $k+1) );
+    	
         # define parameter value
         my $par_value = $par_min + $k*$delta;
         if ( $params->{log_scale} )
@@ -1467,10 +1470,6 @@ sub parameter_scan
 
         # set parameter
         $model->setParameter( $params->{parameter}, $par_value );
-
-        # define prefix
-  #      my $local_prefix = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d", $params->{parameter}, $k+1) );
-        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
 
         # reset concentrations
         $model->resetConcentrations("SCAN");
