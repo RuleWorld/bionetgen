@@ -1,0 +1,16 @@
+<html>
+  <body>
+    <form action="{{ action }}" method="post" enctype="multipart/form-data">
+    Model submission: <br>
+      <div><input type="checkbox" name="privacy" value="privacy">Private model </div>
+      Upload Archive: <input type="file" name="file"><br> 
+      <input type="submit" value="Submit">
+    </form>
+  
+
+
+    
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
+  </body>
+</html>

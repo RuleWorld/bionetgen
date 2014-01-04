@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 {% autoescape true %}
-<html>
-  <body>
     <form action="{{ action }}" method="post" enctype="multipart/form-data">
     Model submission: <br>
       <div>Name: <input name="name"> </div>	
@@ -24,8 +22,6 @@
 
 
     
-    <a href="{{ url|safe }}">{{ url_linktext }}</a>
 
-  </body>
-</html>
+
 {% endautoescape %}

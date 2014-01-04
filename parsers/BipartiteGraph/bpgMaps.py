@@ -17,7 +17,7 @@ import itertools
 import re
 import collections as co
 import copy
-
+import json
 
 # Classes and methods for collecting transformation pairs
 class TransformationPair:
@@ -51,6 +51,15 @@ class TransformationPair:
 		return self.forward.getRHS()
 	def isSynDel(self):
 		return isSynDel(self.forward)
+		
+	def getJSON(self):
+		if 'Bond' in self.forward.action:
+			tp_type = 'bond'
+		elif self.forward.action=='StateChange':
+			tp_type = 'state'
+		elif self.forward.action in ['Add','Delete']:
+			tp_type = 'syndel'
+		return {'type':'tp','subtype':tp_type,'f':self.forward.action,'r':self.reverse.action}
 
 def processTransformationPairRules(tprules):
 	'''
@@ -157,6 +166,12 @@ class NameDictionary:
 	def getString(self,elemtype,idx1):
 		return str(self.getElement(elemtype,idx1))
 			
+	def printDict(self,elemtype,someDict,sortbywhat):
+		tuples = [(self.getString(elemtype,x),y) for x,y in someDict.items()]
+		if sortbywhat == 'value':
+			tuples = sorted(tuples,key=lambda x: x[1])
+		return "\n".join([":".join([str(x) for x in z]) for z in tuples])
+		
 			
 def getNameDictionary(atomizedrules,patterns,transformations,transformationpairs,irreversibles):
 	'''
@@ -191,7 +206,7 @@ class RuleMap:
 	'''
 	Class to contain maps from rules
 	to transformations (r2t)
-	to patterns (r2p_transfcenter, r2p_context, r2p_syndelcontext)
+	to patterns (r2p_transfcenter, r2p_context, r2p_syndelcontext) MOVE TO SYNCONTEXT AND DELCONTEXT
 	'''
 	def __init__(self,dictNames):
 	
@@ -203,6 +218,9 @@ class RuleMap:
 		self.r2p_transfcenter = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.transf_center_lhs for p in item ] )
 		self.r2p_context = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for p in r.context ] )
 		self.r2p_syndelcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.syndel_context for p in item ] )
+		#moving to syncontext and delcontext
+		self.r2p_syncontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.syncontext for p in item ] )
+		self.r2p_delcontext = set( [ (dictRules[r],dictPatterns[p]) for r in dictRules.keys() for item in r.delcontext for p in item ] )
 
  
 class TransformationMap:
@@ -227,6 +245,9 @@ class TransformationMap:
 		
 		self.t2p_syndelcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for idx,t in enumerate(r.transformations) for p in r.syndel_context[idx] if t.isSynDel() ] ))
 		
+		self.t2p_syncontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for idx,t in enumerate(r.transformations) for p in r.syncontext[idx] if t.action=='Add' ] ))		
+		self.t2p_delcontext = list(set( [ (dictTransformations[t],dictPatterns[p]) for r in dictRules.keys() for idx,t in enumerate(r.transformations) for p in r.delcontext[idx] if t.action=='Delete' ] ))
+		
 class TransformationPairMap:
 	'''
 	Class to contain maps from transformation pairs
@@ -246,8 +267,8 @@ class TransformationPairMap:
 		self.tp2p_forwardreactant = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_reactant if t_id==self.tp2t_forward[tp_id] ] ))
 		self.tp2p_reversereactant = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_reactant if t_id==self.tp2t_reverse[tp_id] ] ))
 
-		self.tp2p_forwardcontext = set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_context if t_id==self.tp2t_forward[tp_id] ] )
-		self.tp2p_reversecontext = set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_context if t_id==self.tp2t_reverse[tp_id] ] )
+		self.tp2p_forwardcontext = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_context if t_id==self.tp2t_forward[tp_id] ] ))
+		self.tp2p_reversecontext = list(set( [ (tp_id,p_id) for tp_id in dictTransformationPairs.values() for t_id,p_id in tr_map.t2p_context if t_id==self.tp2t_reverse[tp_id] ] ))
 		
 		syndel_list = [(tp_id,t_id,dictNames.getElement('t',t_id).action) for tp_id,t_id in list(self.tp2t_forward.items())+list(self.tp2t_reverse.items()) ]
 		self.tp2p_syncontext = [ (tp_id,p_id) for tp_id,t_id,action in syndel_list for (t_id2,p_id) in tr_map.t2p_syndelcontext if t_id==t_id2 and action=='Add']
@@ -454,9 +475,10 @@ class TraceStack:
 	def addTrace(self,trace):
 		self.stack.append(trace)
 		
-	def addStack(self,tracestack):
-		assert self.type == tracestack.type
-		self.stack += tracestack.stack
+	def addStack(self,tracestacklist):
+		for item in tracestacklist:
+			assert self.type == item.type
+			self.stack += item.stack
 
 
 	def length(self):
@@ -467,7 +489,7 @@ class TraceStack:
 		
 	def sortByLength(self):
 		#biggest first
-		return TraceStack(sorted(self.stack,key=lambda x:-len(x.trace)),self.type)
+		self.stack = sorted(self.stack,key=lambda x:-len(x.trace))
 		
 	def flipTraces(self):
 		return TraceStack([x.flip() for x in self.stack],self.type)
@@ -515,6 +537,15 @@ def getTraces(start,end,triplets,elemtype,names):
 				traces.addTrace(t)
 	return valid_traces,invalid_traces
 	
+class LevelObject:
+	'''
+	Stores levels for each pattern, transformation pair and irreversible transformation
+	'''
+	def __init__(self,p_levels,tp_levels,irr_levels):
+		self.p = p_levels
+		self.tp = tp_levels
+		self.irr = irr_levels
+	
 def getLevels(start,end,names,all_maps):
 	triplets1 = all_maps.getTriplets(['p','tp','p'])
 	triplets2 = all_maps.getTriplets(['p','irr','p'])
@@ -524,8 +555,131 @@ def getLevels(start,end,names,all_maps):
 	print "Getting reverse traces for patterns..."
 	[p_rev,p_rev_bad] = getTraces(end,start,triplets,'p',names)
 	
-	print p_fwd.toString(names)
-	# Unfinished
+	# Collect and sort traces
+	p_stack = TraceStack([],'p')
+	p_stack.addStack([p_fwd,p_rev.flipTraces()])
+	p_stack.sortByLength()
+	
+	# First round of assigning levels to patterns
+	p_levels = dict()
+	for trace in p_stack.stack:
+		for idx,p in enumerate(trace.trace):
+			if p not in p_levels.keys():
+				p_levels[p]=idx
+				
+	# First round of assigning levels to transformation pairs
+	tp_levels = dict()
+	maps = all_maps.tp.tp2p_forwardreactant+all_maps.tp.tp2p_reversereactant+all_maps.tp.tp2p_delcontext+all_maps.tp.tp2p_syncontext
+	for tp in [x for x in names.tp.values() if x not in tp_levels.keys()]:
+		possiblelevels = [p_levels[y] for x,y in maps if x==tp if y in p_levels.keys()]
+		if len(possiblelevels)>0:
+			if max(p_levels.values()) in possiblelevels:
+				tp_levels[tp] = max(p_levels.values())-1
+			elif min(p_levels.values()) in possiblelevels:
+				tp_levels[tp] = min(p_levels.values())
+			else:
+				tp_levels[tp] = min(possiblelevels)
+	irr_levels = dict()
+	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext
+	for irr in [x for x in names.irr.values() if x not in irr_levels.keys()]:
+		possiblelevels = [p_levels[y] for x,y in maps2 if x==irr if y in p_levels.keys()]
+		if len(possiblelevels)>0:
+			if max(p_levels.values()) in possiblelevels:
+				irr_levels[irr] = max(p_levels.values())-1
+			elif min(p_levels.values()) in possiblelevels:
+				irr_levels[irr] = min(p_levels.values())
+			else:
+				irr_levels[irr] = min(possiblelevels)
+			
+
+	# Second round of assigning levels to patterns
+	maps = all_maps.tp.tp2p_forwardreactant+all_maps.tp.tp2p_delcontext + all_maps.tp.tp2p_forwardcontext + all_maps.tp.tp2p_reversecontext
+	for p in [x for x in names.p.values() if x not in p_levels.keys()]:
+		possiblelevels = [tp_levels[x] for x,y in maps if y==p and x in tp_levels.keys()]
+		if len(possiblelevels) > 0:
+			p_levels[p] = min(possiblelevels)
+	maps2 = all_maps.t.t2p_reactant+all_maps.t.t2p_product+all_maps.t.t2p_syndelcontext + all_maps.t.t2p_context
+	for p in [x for x in names.p.values() if x not in p_levels.keys()]:
+		possiblelevels = [irr_levels[x] for x,y in maps2 if y==p and x in irr_levels.keys()]
+		if len(possiblelevels) > 0:
+			p_levels[p] = min(possiblelevels)
+			
+	return LevelObject(p_levels,tp_levels,irr_levels)
+	
+def graphData(names,levels,all_maps):
+	#tempstring = "[\n"
+	id_counter=1
+	node_list = []
+	for idx1,(p,level) in enumerate(levels.p.items()):
+		dict1 = {'id':id_counter,'type':'p','name':names.getString('p',p),'level':level,'idx':p}
+		node_list.append(dict1)
+		id_counter += 1
+	for idx1,(tp,level) in enumerate(levels.tp.items()):
+		dict1 = {'id':id_counter,'type':'tp','name':names.getString('tp',tp),'level':level,'idx':tp}
+		node_list.append(dict1)
+		id_counter += 1
+	for idx1,(irr,level) in enumerate(levels.irr.items()):
+		dict1 = {'id':id_counter,'type':'irr','name':names.getString('irr',irr),'level':level,'idx':irr}
+		node_list.append(dict1)
+		id_counter += 1
+	def getCounter(	elemtype,x):
+		return [node for node in node_list if node['type']==elemtype and node['idx']==x][0]['id']
+
+			
+	edge_list=[]
+	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_forwardreactant):
+		if p in levels.p.keys() and tp in levels.tp.keys():
+			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'reactant','linktype':'tp2p'}
+			edge_list.append(dict1)
+	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_reversereactant):
+		if p in levels.p.keys() and tp in levels.tp.keys():
+			dict1 = {'source':getCounter('tp',tp),'target':getCounter('p',p),'type':'product','linktype':'tp2p'}
+			edge_list.append(dict1)
+	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_forwardcontext):
+		if p in levels.p.keys() and tp in levels.tp.keys():
+			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'forwardcontext','linktype':'tp2p'}
+			edge_list.append(dict1)
+	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_reversecontext):
+		if p in levels.p.keys() and tp in levels.tp.keys():
+			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'reversecontext','linktype':'tp2p'}
+			edge_list.append(dict1)
+	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_delcontext):
+		if p in levels.p.keys() and tp in levels.tp.keys():
+			dict1 = {'source':getCounter('p',p),'target':getCounter('tp',tp),'type':'delcontext','linktype':'tp2p'}
+			edge_list.append(dict1)
+	for idx1,(tp,p) in enumerate(all_maps.tp.tp2p_syncontext):
+		if p in levels.p.keys() and tp in levels.tp.keys():
+			dict1 = {'source':getCounter('tp',tp),'target':getCounter('p',p),'type':'syncontext','linktype':'tp2p'}
+			edge_list.append(dict1)
+			
+	for idx1,(t,p) in enumerate(all_maps.t.t2p_reactant):
+		if p in levels.p.keys() and t in levels.irr.keys():
+			dict1 = {'source':getCounter('p',p),'target':getCounter('irr',t),'type':'reactant','linktype':'t2p'}
+			edge_list.append(dict1)	
+	for idx1,(t,p) in enumerate(all_maps.t.t2p_product):
+		if p in levels.p.keys() and t in levels.irr.keys():
+			dict1 = {'source':getCounter('irr',t),'target':getCounter('p',p),'type':'product','linktype':'t2p'}
+			edge_list.append(dict1)	
+	for idx1,(t,p) in enumerate(all_maps.t.t2p_context):
+		if p in levels.p.keys() and t in levels.irr.keys():
+			dict1 = {'source':getCounter('p',p),'target':getCounter('irr',t),'type':'context','linktype':'t2p'}
+			edge_list.append(dict1)	
+	for idx1,(t,p) in enumerate(all_maps.t.t2p_syndelcontext):
+		if p in levels.p.keys() and t in levels.irr.keys():
+			if names.t.t2action[t] == 'Delete':
+				dict1 = {'source':getCounter('p',p),'target':getCounter('irr',t),'type':'delcontext','linktype':'t2p'}
+			elif names.t.t2action[t]=='Add':
+				dict1 = {'source':getCounter('irr',t),'target':getCounter('p',p),'type':'syncontext','linktype':'t2p'}
+			edge_list.append(dict1)	
+		
+	#print json.dumps({'nodes':node_list,'edges':edge_list},separators=(',', ':'))
+	with open("bpg.json","w") as f:
+		f.write(json.dumps({'nodes':node_list,'edges':edge_list},indent=1,separators=(',', ':')))
+	f.close()
+	#print json.dumps(node_list,indent=3,separators=('{'))
+	#
+ 
+	#print json.dumps(tempstring,separators=(',',':'))
 	
 def makeFlow(names,all_maps,start,end):
 	'''
@@ -539,12 +693,90 @@ def makeFlow(names,all_maps,start,end):
 	start = [names.p[x] for x in names.p.keys() if str(x) in start]
 	end = [names.p[x] for x in names.p.keys() if str(x) in end]
 	
-	getLevels(start,end,names,all_maps)
+	lev = getLevels(start,end,names,all_maps)
+	graphData(names,lev,all_maps)
+	
+def writeJSON(names,all_maps,annot):
+	# Getting the node elements
+	# A node for each rule
+	nodes = []
+	for rule,idx in names.r.items(): 
+		temp = rule.getJSON()
+		temp.update({"idx":idx,"annot":annot.r[idx]})
+		nodes.append(temp)
+	# A node for each pattern
+	for patt,idx in names.p.items():
+		temp = patt.getJSON()
+		temp.update({"idx":idx,"annot":annot.p[idx]})
+		nodes.append(temp)
+	# A node for each transformation (how to deal with irreversibles)
+	for tr,idx in names.t.items():
+		temp = tr.getJSON()
+		temp.update({"idx":idx,"annot":annot.p[idx]})
+		if idx in [str(x) for x in names.irr.keys()]:
+			temp.update({"irr":True})
+		else:
+			temp.update({"irr":False})
+		nodes.append(temp)
 
+	# A node for each transformation pair
+	for tp,idx in names.tp.items():
+		temp = tp.getJSON()
+		temp.update({"idx":idx,"annot":annot.tp[idx]})
+		nodes.append(temp)
+		
+	# A node for each molecule type
+	p_list = [x for x in nodes if x['type']=='p']
+	moltypes = unq([y['m'] for x in p_list for y in x['mol'] ])
+	for mol in moltypes:
+		nodes.append({'type':'mol','name':mol})
 
+	# Links are structured thus
+	edges = {}
+	rmap = all_maps.r
+	#edges.append({"r2t":listify(rmap.r2t)})
+	edges["r2t"] = listify(rmap.r2t)
+	
+	temp = dict()
+	temp["context"] = listify(rmap.r2p_context)
+	temp["syncontext"] = listify(rmap.r2p_syncontext)
+	temp["delcontext"] = listify(rmap.r2p_delcontext)
+	#edges.append({"r2p":temp})
+	edges["r2p"] = temp
+	
+	tmap = all_maps.t
+	temp = dict()
+	temp["reactant"] = listify(tmap.t2p_reactant)
+	temp["product"] = listify(tmap.t2p_product)
+	temp["context"] = listify(tmap.t2p_context)
+	temp["syncontext"] = listify(tmap.t2p_syncontext)
+	temp["delcontext"] = listify(tmap.t2p_delcontext)
+	#edges.append({"t2p":temp})
+	edges["t2p"] = temp
+	
+	tpmap = all_maps.tp
+	temp1 = dict()
+	temp1["forward"] = listify2(tpmap.tp2t_forward)
+	temp1["reverse"] = listify2(tpmap.tp2t_reverse)
+	edges["tp2t"] = temp1
+	
+	temp2 = dict()
+	temp2["forwardreactant"] = listify(tpmap.tp2p_forwardreactant)
+	temp2["reversereactant"] = listify(tpmap.tp2p_reversereactant)
+	temp2["forwardcontext"] = listify(tpmap.tp2p_forwardcontext)
+	temp2["reversecontext"] = listify(tpmap.tp2p_reversecontext)
+	temp2["syncontext"] = listify(tpmap.tp2p_syncontext)
+	temp2["delcontext"] = listify(tpmap.tp2p_delcontext)
+	#edges.append({"tp2t":temp1,"tp2p":temp2})
+	edges["tp2p"] = temp2
+	return json.dumps({'nodes':nodes,'edges':edges})
 		
 	
 #methods for handling dictionaries and lists and generic bulk actions
+def listify(set1):
+	return [list(x) for x in list(set1)]
+def listify2(dict1):
+	return [ [x,y] for x,y in dict1.items()]
 
 def unq(list1):
 	return list(set(list1))
