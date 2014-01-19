@@ -663,12 +663,12 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     print outputFile
     
     #store a logfile
-    
+    '''
     if len(logMess.log) > 0:
         with open(outputFile + '.log', 'w') as f:
             for element in logMess.log:
                 f.write(element + '\n')
-    
+    '''
 
     #rate of each classified rule
     
@@ -769,7 +769,7 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in range(400,463):
+    for bioNumber in range(1,400):
         #if bioNumber in [18,51,353,108,109,255,268,392]:
         #    continue
     #bioNumber = 175
@@ -992,11 +992,11 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     
-    main()
+    #main()
     #processFile3('XMLExamples/curated/BIOMD0000000183.xml')
     #statFiles()
     #main2()
-    #processFile2()
+    processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'

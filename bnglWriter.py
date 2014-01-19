@@ -291,7 +291,7 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
     #output = open(fileName,'w')
     
     output = StringIO.StringIO()
-    output.write(comments)
+    output.write(comments.decode('ascii','ignore'))
     output.write('begin model\n')
     output.write(sectionTemplate('parameters',param))
     if len(compartments) > 0:
