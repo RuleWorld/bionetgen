@@ -584,6 +584,7 @@ class SBMLAnalyzer:
         equivalencesList = []
         if self.speciesEquivalences != None:
             speciesdictionary =self.loadConfigFiles(self.speciesEquivalences)
+            print speciesdictionary
             userEquivalences = speciesdictionary['complexDefinition'] \
                 if 'complexDefinition' in speciesdictionary else None
             for element in userEquivalences:
