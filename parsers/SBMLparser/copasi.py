@@ -38,11 +38,11 @@ def correctCPS():
         for compartment in parser.model.getListOfCompartments():
             compartmentList[compartment.getId()] = compartment.getName() if compartment.getName() != '' else compartment.getId()
         for species in parser.model.getListOfSpecies():
-            speciesList.append((parser.getRawSpecies(species)[5],compartmentList[parser.getRawSpecies(species)[4]],parser.getRawSpecies(species)[0]))
+            speciesList.append((parser.getRawSpecies(species)['name'],compartmentList[parser.getRawSpecies(species)['compartment']],parser.getRawSpecies(species)['returnID']))
             speciesDict[speciesList[-1][0]] = speciesList[-1][2]
             
         param,zparam = parser.getParameters()
-        molecules,_,_ = parser.getSpecies({})
+        molecules,_,_,_ = parser.getSpecies({})
         _,_,_,_,removeParams,_ = parser.getAssignmentRules(zparam,param,molecules)  
         
         
@@ -172,7 +172,7 @@ def evaluate(fileNumber):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [406]:
+    for fileNumber in [51]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]

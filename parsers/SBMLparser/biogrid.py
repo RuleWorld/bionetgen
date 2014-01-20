@@ -10,7 +10,7 @@ import pickle
 import itertools
 import pandas as pd
 
-def loadBioGrid(fileName='BIOGRID-ALL-3.2.106.tab2.txt'):
+def loadBioGrid(fileName='BIOGRID-ALL-3.2.108.tab2.txt'):
     if hasattr(loadBioGrid, 'db'):
         return loadBioGrid.db
     loadBioGrid.db = {}
@@ -64,7 +64,7 @@ def loadBioGridDict(fileName='BioGridPandas.h5'):
     return loadBioGrid.db
     
 if __name__ == "__main__":
-    #extractStatistics()
+        #extractStatistics()
     db = loadBioGrid()
     #print len(db)
     #f = open('bioGridDict.dump','wb')

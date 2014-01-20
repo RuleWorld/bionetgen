@@ -185,7 +185,7 @@ end
 % Calculate expressions
 function [ expressions ] = calc_expressions ( parameters )
 
-    expressions = zeros(1,8);
+    expressions = zeros(1,9);
     expressions(1) = parameters(1);
     expressions(2) = parameters(2);
     expressions(3) = parameters(3);
@@ -194,6 +194,7 @@ function [ expressions ] = calc_expressions ( parameters )
     expressions(6) = parameters(5);
     expressions(7) = ((expressions(3)*expressions(1))*expressions(2));
     expressions(8) = ((expressions(4)*expressions(1))*expressions(2));
+    expressions(9) = ((2e-9*expressions(1))*expressions(2));
    
 end
 

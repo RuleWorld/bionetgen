@@ -1673,7 +1673,15 @@ sub setConcentration
     {
         return '', $err;
     }
-    my $conc = $expr->evaluate($plist);
+    my $conc; # = $expr->evaluate($plist);
+    if ( $expr->Type eq 'NUM' )
+    {
+    		$conc = $expr->evaluate();
+    }
+    else
+    {
+        $conc = $expr->getName( $plist, 'NewConc' );
+    }
 
     # load Concentration array (if not already done)
     $model->SpeciesList->checkOrInitConcentrations( $model->Concentrations );
@@ -1684,7 +1692,8 @@ sub setConcentration
     # Set flag to update netfile when it's used
     $model->UpdateNet(1);
 
-    printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, $conc;
+    printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, 
+    		($expr->Type eq 'NUM' ? $conc : $expr->toString());
     return undef;
 }
 
