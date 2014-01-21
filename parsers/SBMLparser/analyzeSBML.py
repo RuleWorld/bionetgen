@@ -245,8 +245,8 @@ class SBMLAnalyzer:
                 if 'n' in alternative.keys():
                     convention = reactionDefinition['namingConvention'][alternative['n'][0]]
                     temp = self.analyzeNamingConventions(molecules,convention[0],convention[1],reactionDefinition['namingConvention'])
-                    #if name in self.userEquivalencesDict:
-                    #    temp.extend(self.userEquivalencesDict[name])
+                    if name in self.userEquivalencesDict:
+                        temp.extend(self.userEquivalencesDict[name])
                     equivalenceTranslator[name] = temp
                     reactionIndex[name] = alternative['n'][0]
                     index += 1
