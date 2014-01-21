@@ -7,7 +7,7 @@ Created on Tue May 21 12:38:21 2013
 
 import libsbml2bngl as ls2b
 import argparse
-import numpy.core.multiarray
+
 
 
 def defineConsole():
@@ -42,7 +42,7 @@ def main():
     namespace = parser.parse_args()
 
     options = checkInput(namespace)
-    #print options    
+    print options    
     
     ls2b.analyzeFile(options['inputFile'],options['conventionFile'],options['useId'],
                      options['outputFile'],speciesEquivalence=options['userStructure'],
