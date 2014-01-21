@@ -8,7 +8,7 @@ Created on Fri Mar  1 16:14:42 2013
 #!/usr/bin/env python
 from collections import OrderedDict
 import time
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
@@ -434,7 +434,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,
         bioGridDict = loadBioGrid()
     
     if atomize:
-        translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+        translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence,bioGrid)
     else:    
         translator={} 
 
@@ -712,7 +712,7 @@ def getAnnotationsDict(annotation):
     return annotationDict
 
 def processFile2():
-    for bioNumber in [1]:
+    for bioNumber in [19]:
         #if bioNumber in [398]:
         #    continue
     #bioNumber = 175
@@ -728,7 +728,7 @@ def processFile2():
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
         outputFile = 'complex/output' + str(bioNumber) + '.bngl'
         analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,
-                    useID,outputFile,speciesEquivalence=spEquivalence,atomize=True,bioGrid=False)
+                    useID,outputFile,speciesEquivalence=spEquivalence,atomize=True,bioGrid=True)
 
         if len(logMess.log) > 0:
             with open(outputFile + '.log', 'w') as f:
@@ -902,6 +902,7 @@ def getRelationshipDegree(componentPair,statusQueryFunction,comparisonFunction,f
         componentPairRelationshipDict[pair] = finalComparison(stats)
     return componentPairRelationshipDict
 
+'''
 def createPlot(labelDict):
     #f, ax = plt.subplots(int(math.ceil(len(labelDict)/4)),4)
     for idx,element in enumerate(labelDict):
@@ -920,6 +921,8 @@ def createPlot(labelDict):
         #ax[math.floor(idx/4)][idx%4].title(element)
         plt.savefig('{0}.png'.format(element))
         print '{0}.png'.format(element)
+'''
+
 def statFiles():
     
     for bioNumber in [19]:

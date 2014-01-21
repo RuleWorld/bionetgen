@@ -6,7 +6,6 @@ Created on Thu Mar 22 13:11:38 2012
 """
 
 from pyparsing import Word, Suppress,Optional,alphanums,Group,ZeroOrMore
-from numpy import zeros,nonzero
 import numpy as np
 import json
 import itertools
@@ -15,6 +14,7 @@ from copy import deepcopy
 import detectOntology
 import re
 import difflib
+
 '''
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
@@ -230,7 +230,14 @@ class SBMLAnalyzer:
             if self.userEquivalencesDict ==None:            
                 self.userEquivalencesDict = {}
         #TODO: user defined naming conventions are not being added
+        
         tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],'reactionDefinitions/namingConventions.json')
+        
+        
+        #for name in self.userEquivalencesDict:
+        #    equivalenceTranslator[name] = self.userEquivalencesDict[name]
+        #print '---',equivalenceTranslator            
+        
         for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
             #xxxxxxxxxxxxxxxxxxxxxxx
             
@@ -238,14 +245,15 @@ class SBMLAnalyzer:
                 if 'n' in alternative.keys():
                     convention = reactionDefinition['namingConvention'][alternative['n'][0]]
                     temp = self.analyzeNamingConventions(molecules,convention[0],convention[1],reactionDefinition['namingConvention'])
-                    if name in self.userEquivalencesDict:
-                        temp.extend(self.userEquivalencesDict[name])
+                    #if name in self.userEquivalencesDict:
+                    #    temp.extend(self.userEquivalencesDict[name])
                     equivalenceTranslator[name] = temp
                     reactionIndex[name] = alternative['n'][0]
                     index += 1
         #now we want to fill in all intermediate relationships
         
         newTranslator = equivalenceTranslator.copy()
+        print equivalenceTranslator
         #FIXME: the only thing we want to copy over from the old 
         #naming convention detection is the binding information
         for element in newTranslator:
@@ -353,14 +361,14 @@ class SBMLAnalyzer:
         '''
         ruleDictionary = self.species2Rules(rules)
         #determines a reaction's reactionStructure aka stoichoimetry
-        ruleComplianceMatrix = zeros((len(rules),len(reactionDefinition['reactions'])))
+        ruleComplianceMatrix = np.zeros((len(rules),len(reactionDefinition['reactions'])))
         for (idx,rule) in enumerate(rules):
             reaction2 = rule #list(parseReactions(rule))
             ruleComplianceMatrix[idx] = self.identifyReactions2(reaction2,reactionDefinition)
         #initialize the tupleComplianceMatrix array with the same keys as ruleDictionary
         #the tuple complianceMatrix is basically there to make sure we evaluate
         #bidirectional reactions as one reaction        
-        tupleComplianceMatrix = {key:zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
+        tupleComplianceMatrix = {key:np.zeros((len(reactionDefinition['reactions']))) for key in ruleDictionary}
         #check which reaction conditions each tuple satisfies
         for element in ruleDictionary:
             for rule in ruleDictionary[element]:
@@ -384,7 +392,7 @@ class SBMLAnalyzer:
                     #elif appro
         #check if the reaction conditions each tuple satisfies are enough to get classified
         #as an specific named reaction type
-        tupleDefinitionMatrix = {key:zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
+        tupleDefinitionMatrix = {key:np.zeros((len(reactionDefinition['definitions']))) for key in ruleDictionary}
         for key,element in tupleComplianceMatrix.items():
             for idx,member in enumerate(reactionDefinition['definitions']):
                 for alternative in member:
@@ -394,7 +402,7 @@ class SBMLAnalyzer:
                         tupleDefinitionMatrix[key][idx] += np.all([tupleNameComplianceMatrix[key][reactionDefinition['reactionsNames'][idx]]])
         #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
         #use the per tuple classification to obtain a per reaction classification
-        ruleDefinitionMatrix = zeros((len(rules),len(reactionDefinition['definitions'])))
+        ruleDefinitionMatrix = np.zeros((len(rules),len(reactionDefinition['definitions'])))
 
         for key,element in ruleDictionary.items():
             for rule in element:
@@ -404,7 +412,7 @@ class SBMLAnalyzer:
         #type each reaction is
         results = []    
         for idx,element in enumerate(ruleDefinitionMatrix):
-            nonZero = nonzero(element)[0]
+            nonZero = np.nonzero(element)[0]
             if(len(nonZero) == 0):
                 results.append('None')
             #todo: need to do something if it matches more than one reaction

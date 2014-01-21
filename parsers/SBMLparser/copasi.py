@@ -11,7 +11,7 @@ from subprocess import call
 import numpy as np  
 import re   
 import pickle
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
         
 def xml2cps():
     with open('dummy.tmp','w') as d:
@@ -110,7 +110,8 @@ def loadResults(fileName,split):
     except IOError:
         print 'no file'
         return [],[]
-        
+
+'''        
 def plotResults(fileResults1,fileResults2):
     plt.figure(1)
     plt.subplot(211)
@@ -118,7 +119,8 @@ def plotResults(fileResults1,fileResults2):
     plt.subplot(212)
     plt.plot(fileResults2[:,1:])
     plt.show()
-     
+'''
+  
 def evaluate(fileNumber):
     copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
     copheaders = [x.replace(']','').strip() for x in copheaders]

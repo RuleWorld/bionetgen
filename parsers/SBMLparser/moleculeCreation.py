@@ -298,7 +298,7 @@ def addBondToComponent(species, moleculeName, componentName, bond, priority=1):
                 order += 1
 
 
-def getComplexationComponents2(species):
+def getComplexationComponents2(species,bioGridFlag):
     '''
     method used during the atomization process. It determines how molecules
     in a species bind together
@@ -373,14 +373,17 @@ def getComplexationComponents2(species):
             names1 =  [str(x.name) for x in totalComplex[0]]
             names2 =  [str(x.name) for x in totalComplex[1]]
             dbPair = set([])
-            p = biogrid.loadBioGridDict()
+            if bioGridFlag:
+                bioGridDict = biogrid.loadBioGridDict()
+            else:
+                bioGridDict = {}
             comb = set([])
             equivalence = {}
             comb = [(x,y) for x in names1 for y in names2]
             dbPair = set([])
             for element in comb:
-                if element[0].upper() in p and element[1] in p[element[0].upper()] or \
-                element[1].upper() in p and element[0] in p[element[1].upper()]:
+                if element[0].upper() in bioGridDict and element[1] in bioGridDict[element[0].upper()] or \
+                element[1].upper() in bioGridDict and element[0] in bioGridDict[element[1].upper()]:
                     dbPair.add((element[0],element[1]))
                     
             dbPair = list(dbPair)
@@ -415,7 +418,7 @@ def getTrueTag(dependencyGraph, molecule):
 
 
 def atomize(dependencyGraph, weights, translator, reactionProperties,
-            equivalenceDictionary):
+            equivalenceDictionary,bioGridFlag):
     '''
     The atomizer's main methods. Receives a dependency graph
     '''
@@ -503,7 +506,7 @@ reactionProperties[classification[0]][0])
                         dependencyGraph[molecule] = deepcopy(mol)
                         species.addMolecule(mol)
                 #how do things bind together?
-                moleculePairsList = getComplexationComponents2(species)
+                moleculePairsList = getComplexationComponents2(species,bioGridFlag)
                     #TODO: update basic molecules with new components
                     #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
                     #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
@@ -595,7 +598,7 @@ def propagateChanges(translator, dependencyGraph):
 
 #TODO:bm19:Rafi_Rasi_GTP
 def transformMolecules(parser, database, configurationFile,
-                       speciesEquivalences=None,bioGrid={}):
+                       speciesEquivalences=None,bioGridFlag=False):
     '''
     main method. Receives a parser configuration, a configurationFile and a
     list of user defined species equivalences and returns a dictionary
@@ -606,6 +609,7 @@ def transformMolecules(parser, database, configurationFile,
         ---configurationFile
         ---speciesEquivalences:predefined species
     '''
+    
     _, rules, _ = parser.getReactions()
     molecules, _, _,_ = parser.getSpecies()
 
@@ -690,6 +694,6 @@ def transformMolecules(parser, database, configurationFile,
     weights = sorted(weights, key=lambda rule: rule[1])
     #print {x:str(database.translator[x]) for x in database.translator}
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
-                                                                eequivalenceTranslator)
+                                                                eequivalenceTranslator,bioGridFlag)
     propagateChanges(database.translator, prunnedDependencyGraph)
     return database.translator
