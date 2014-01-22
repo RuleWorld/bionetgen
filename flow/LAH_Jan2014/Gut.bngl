@@ -1,0 +1,25 @@
+begin model
+begin parameters
+end parameters
+
+begin compartments
+end compartments
+
+begin molecule types
+	drug()
+end molecule types
+
+begin seed species
+    drug()  # VALUE?
+end seed species
+
+begin observables
+    Molecules  DRUG  drug()
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+end reaction rules
+end model

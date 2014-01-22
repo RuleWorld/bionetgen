@@ -1,0 +1,38 @@
+begin model
+begin parameters
+	FatVol 15                    # Tissue Volume L
+	frac_f  0.03                 # Tissue Vascular Fraction 
+	FAvolV FatVol*frac_f         # Fat vascular volume L  
+	FAvolEV FatVol*(1-frac_f)    # Fat extravascular volume L 
+	kfve 0.2161
+	kfev 0.0079
+end parameters
+
+begin compartments
+	FAV        3   FAvolV
+	membrane   2   1         FAV  
+ 	FAE        3   FAvolEV   membrane
+  	# Need a 3D compartment here 
+end compartments
+
+begin molecule types
+	drug()
+end molecule types
+
+begin seed species
+	drug()@FAV  # VALUE?
+	drug()@FAE  # VALUE?
+end seed species
+
+begin observables
+	Molecules   DRUG_FAV    drug()@FAV
+	Molecules   DRUG_FAE    drug()@FAE
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+	drug()@FAV<->drug()@FAE kfve,kfev
+end reaction rules
+end model

@@ -1,0 +1,118 @@
+modelname "physiological_man"
+universal_rules "univ.bngl"
+
+begin parameters
+	# Organ volumes (L)
+	BrainVol  1.4
+	FatVol    15.0
+	GutVol    1.19
+	HeartVol  0.33
+	KidneyVol 0.31
+	LiverVol  1.8
+	LungVol   0.53
+	MuscleVol 28
+	OtherVol  15.8
+	SpleenVol 0.18
+	TumorVol  0.2
+	
+    	# Tissue Blood Flow Rates (L/min)
+	Fb  0.78  # BRAIN
+	Ff  0.74  # FAT
+	Fg  1.13  # GUT
+	Fh  0.26  # HEART
+	Fk  1.24  # KIDNEY
+	Fli 0.45  # LIVER
+	Flu 5.60  # LUNG
+	Fm  0.59  # MUSCLE
+	Fo  0.36  # OTHER
+	Fs  0.02  # SPLEEN
+	Ft  0.03  # TUMOR
+	
+	# From Florian (1/min)
+	finb  Fb/BrainVol   # flow into brain from arteries
+	finf  Ff/FatVol     # flow into fat from arteries
+	fing  Fg/GutVol     # flow into gut from arteries
+	finh  Fh/HeartVol   # flow into heart from arteries
+	fink  Fk/KidneyVol  # flow into kidneys from arteries
+	finli Fli/LiverVol  # flow into liver from arteries
+	finlu Flu/LungVol   # flow into lungs from veins
+	finm Fm/MuscleVol   # flow into muscle from arteries
+	fino Fo/OtherVol    # flow into other from arteries
+    krbcplas 0.05107/40 # rbc to plasma adjusted for humans
+	kplasrbc 0.0139/40  # plasma to rbc
+	fins Fs/SpleenVol   # flow into spleen from arteries
+	fint Ft/TumorVol    # flow into tumor from arteries
+end parameters
+
+begin organ "Arterial"
+    file    "Arterial.bngl"
+    volume  # VALUE?
+    output  "Brain"  finb
+    output  "Fat"    finf
+    output  "Gut"    fing
+    output  "Heart"  finh
+    output  "Kidney" fink
+    output  "Liver"  finli
+    output  "Muscle" finm
+    output  "Other"  fino
+    output  "RBC"    krbcplas
+    output  "Spleen" fins
+    output  "Tumor"  fint
+end organ
+begin organ "Brain"
+    file    "Brain.bngl"
+    output  "Venous" finb
+end organ
+begin organ "Fat"
+    file    "Fat.bngl"
+    output  "Venous" finf
+end organ
+begin organ "Gut"
+    file    "Gut.bngl"
+    volume  # VALUE?
+    output  "Liver" fing
+end organ
+begin organ "Heart"
+    file    "Heart.bngl"
+    output  "Venous" finh
+end organ
+begin organ "Kidney"
+    file    "Kidney.bngl"
+    output  "Venous" fink
+end organ
+begin organ "Liver"
+    file    "Liver.bngl"
+    output  "Venous" finli
+end organ
+begin organ "Lung"
+    file    "Lung.bngl"
+    output  "Arterial" finlu
+end organ
+begin organ "Muscle"
+    file    "Muscle.bngl"
+    output  "Venous" finm
+end organ
+begin organ "Other"
+    file    "Other.bngl"
+    output  "Venous" fino
+end organ
+begin organ "RBC"
+    file    "RBC.bngl"
+    volume  # VALUE?
+    output  "Arterial" kplasrbc
+    output  "Venous"   kplasrbc
+end organ
+begin organ "Spleen"
+    file    "Spleen.bngl"
+    output  "Liver" fins
+end organ
+begin organ "Tumor"
+    file    "Tumor.bngl"
+    output  "Venous" fint
+end organ
+begin organ "Venous"
+    file    "Venous.bngl"
+    volume  # VALUE?
+    output  "RBC"  krbcplas 
+    output  "Lung" finlu 
+end organ     

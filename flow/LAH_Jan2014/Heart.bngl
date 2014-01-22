@@ -1,0 +1,35 @@
+begin model
+begin parameters
+	HeartVol 0.33                 # Tissue Volume L
+	frac_h   0.02                 # Tissue Vascular Fraction
+	HEvolV HeartVol*frac_h        # Heart vascular volume L
+	HEvolEV HeartVol*(1-frac_h)   # Heart extravascular volume L
+	khve 2.246
+	khev 0.0495
+end parameters
+
+begin compartments
+    HEV        3   HEvolV
+    	membrane   2   1         HEV
+    HEE        3   HEvolEV   membrane 
+end compartments
+
+begin molecule types
+	drug()
+end molecule types
+
+begin seed species
+end seed species
+
+begin observables
+	Molecules   DRUG_HEV  drug()@HEV
+	Molecules   DRUG_HEE  drug()@HEE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+	drug()@HEV<->drug()@HEE khve,khev
+end reaction rules
+end model

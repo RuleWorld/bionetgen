@@ -1,0 +1,38 @@
+begin model
+begin parameters
+	BrainVol 1.4                  # Tissue Volume L
+	frac_b  0.04                  # Tissue Vascular Fraction 
+	BRvolV BrainVol*frac_b        # Brain vascular volume L
+	BRvolEV BrainVol*(1-frac_b)   # Brain extravascular volume L
+	kbve 0.0547
+	kbev 0.0573
+end parameters
+
+begin compartments
+	BRV        3   BRvolV
+	membrane   2   1         BRV  
+	BRE        3   BRvolEV   membrane   
+	# Need a 3D compartment here
+end compartments
+
+begin molecule types
+	drug()
+end molecule types
+
+begin seed species
+	drug()@BRV  # VALUE?
+	drug()@BRE  # VALUE?
+end seed species
+
+begin observables
+	Molecules   DRUG_BRV   drug()@BRV
+	Molecules   DRUB_BRE   drug()@BRE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+	drug()@BRV<->drug()@BRE kbve,kbev
+end reaction rules
+end model

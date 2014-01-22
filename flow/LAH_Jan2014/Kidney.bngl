@@ -1,0 +1,37 @@
+begin model
+begin parameters
+	KidneyVol 0.31                 # Tissue Volume L
+	frac_k    0.24                 # Tissue Vascular Fraction 
+	KIvolV KidneyVol*frac_k        # Kidneys vascular volume L
+	KIvolEV KidneyVol*(1-frac_k)   # Kidneys vascular volume L
+	kkve 2.924
+	kkev 0.1859
+end parameters
+
+begin compartments
+    KIV        3   KIvolV
+    	membrane   2   1         KIV
+    KIE        3   KIvolEV   membrane
+end compartments
+
+begin molecule types
+	drug()
+end molecule types
+
+begin seed species
+    drug()@KIV  # VALUE?
+    drug()@KIE  # VALUE?
+end seed species
+
+begin observables
+    Molecules   DRUG_KIV  drug()@KIV
+    Molecules   DRUG_KIE  drug()@KIE	 
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+	drug()@KIV<->drug()@KIE kkve,kkev
+end reaction rules
+end model

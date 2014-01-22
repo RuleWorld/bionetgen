@@ -1,0 +1,38 @@
+begin model
+begin parameters
+    LiverVol  1.8                   # Tissue Volume L
+	frac_li 0.16                    # Tissue Vascular Fraction
+	LIvolV LiverVol*frac_li         # Liver vascular volume L
+	LIvolEV LiverVol*(1-frac_li)    # Liver extravascular volume L
+	klive 10.253
+	kliev 0.0965
+	kclli 0.1023
+end parameters
+begin compartments
+    LIV        3   LIvolV
+    	membrane   2   1         LIV
+    LIE        3   LIvolEV   membrane
+end compartments
+
+begin molecule types
+	drug()
+end molecule types
+
+begin seed species
+    drug()@LIV  # VALUE
+    drug()@LIE  # VALUE
+end seed species
+
+begin observables
+	Molecules   DRUG_LIV   drug()@LIV
+	Molecules   DRUG_LIE   drug()@LIE
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+	drug()@LIV<->drug()@LIE klive,kliev
+	drug()@LIV -> 0         kclli 
+end reaction rules
+end model
