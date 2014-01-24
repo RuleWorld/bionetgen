@@ -1,8 +1,10 @@
 begin model
 begin parameters
+   RBC_Art_Vol  XXX
 end parameters
 
 begin compartments
+   RBC_Art  3  RBC_Art_Vol
 end compartments
 
 begin molecule types
@@ -10,11 +12,11 @@ begin molecule types
 end molecule types
 
 begin seed species
-    drug()  # VALUE?
+#    drug()  # VALUE?
 end seed species
 
 begin observables
-	Molecules	DRUG     drug()
+	Molecules	DRUG     drug()@RBC_Art
 end observables
 
 begin functions

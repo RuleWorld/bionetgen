@@ -46,7 +46,6 @@ end parameters
 
 begin organ "Arterial"
     file    "Arterial.bngl"
-    volume  # VALUE?
     output  "Brain"  finb
     output  "Fat"    finf
     output  "Gut"    fing
@@ -55,7 +54,7 @@ begin organ "Arterial"
     output  "Liver"  finli
     output  "Muscle" finm
     output  "Other"  fino
-    output  "RBC"    krbcplas
+    output  "RBC_Art"    krbcplas
     output  "Spleen" fins
     output  "Tumor"  fint
 end organ
@@ -69,7 +68,6 @@ begin organ "Fat"
 end organ
 begin organ "Gut"
     file    "Gut.bngl"
-    volume  # VALUE?
     output  "Liver" fing
 end organ
 begin organ "Heart"
@@ -96,10 +94,12 @@ begin organ "Other"
     file    "Other.bngl"
     output  "Venous" fino
 end organ
-begin organ "RBC"
-    file    "RBC.bngl"
-    volume  # VALUE?
+begin organ "RBC_Art"
+    file    "RBC_Art.bngl"
     output  "Arterial" kplasrbc
+end organ
+begin organ "RBC_Ven"
+    file    "RBC_Ven.bngl"
     output  "Venous"   kplasrbc
 end organ
 begin organ "Spleen"
@@ -112,7 +112,6 @@ begin organ "Tumor"
 end organ
 begin organ "Venous"
     file    "Venous.bngl"
-    volume  # VALUE?
-    output  "RBC"  krbcplas 
+    output  "RBC_Ven"  krbcplas 
     output  "Lung" finlu 
 end organ     

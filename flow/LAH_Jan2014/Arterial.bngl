@@ -1,8 +1,10 @@
 begin model
 begin parameters
+   ArterialVol  XXX
 end parameters
 
 begin compartments
+   Arterial  3  ArterialVol
 end compartments
 
 begin molecule types
@@ -10,7 +12,7 @@ begin molecule types
 end molecule types
 
 begin seed species
-    drug()  # VALUE?
+#    drug()  # VALUE?
 end seed species
 
 begin observables
