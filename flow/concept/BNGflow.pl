@@ -2,15 +2,23 @@
 
 use strict;
 use warnings;
-my $file = shift @ARGV;
-my $term = "output";
-open(my $filehandle,"<", $file) or die "Problem opening file";
+my $input_file = shift @ARGV;
+my $output_file;
+my @compartments;
+
+open(my $filehandle,"<", $input_file) or die "Problem opening file";
 while ( my $line = <$filehandle> )
 {
+	if ( $line =~ /^\s*modelname/ )
+	{
+		my ($model_name) = $line =~ /^\s*modelname\s+\"(.+)\"/;
+		open($output_file,">",$model_name.".bngl") or die "Problem open output file";
+	}
     if ( $line =~ /^begin organ/ )
     {
         my ($organ_name) = $line =~ /^begin organ \"(.+)\"/;
-        print "#organ name = $organ_name\n";
+        print "#organ name = $organ_name\n";        
+        print $output_file "$organ_name\n";
         while (my $line = <$filehandle> )
         
         {
@@ -34,18 +42,8 @@ while ( my $line = <$filehandle> )
 	
 
 				}
-            
-            if ( $line =~ /^    exchange/ )
-				{
-					my ($exchange_rate) = $line =~ /^    exchange \"(.+)\"/;
-				
-					print "A\@Vascular_$organ_name <-> A\@Extravascular_$organ_name $exchange_rate \n"
-	
 
-				
             }
-            }
-            print "end reaction rules\nend model\n";
 }
  
 }
