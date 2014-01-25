@@ -190,17 +190,20 @@ def selectReactionDefinitions(bioNumber):
     This method goes through the stats-biomodels database looking for the 
     best reactionDefinitions definition available
     '''
-    with open('stats4.npy') as f:
-        db = pickle.load(f)
-    fileName = 'reactionDefinitions/reactionDefinition7.json'
+    #with open('stats4.npy') as f:
+    #    db = pickle.load(f)
+    fileName = 'config/reactionDefinitions.json'
     useID = True
+    naming = 'config/namingConventions.json'
+    '''
     for element in db:    
         if element[0] == bioNumber and element[1] != '0':
             fileName = 'reactionDefinitions/reactionDefinition' + element[1] + '.json'
             useID = element[5]
         elif element[0] > bioNumber:
             break
-    return fileName,useID
+    '''
+    return fileName,useID,naming
 
 
 def resolveDependencies(dictionary,key,idx):
@@ -416,7 +419,7 @@ def reorderFunctions(functions):
     return [x[0] for x in idx]
     
     
-def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,
+def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile,
                 speciesEquivalence=None,atomize=False,bioGrid=False):
     '''
     one of the library's main entry methods. Process data from a string
@@ -434,7 +437,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,outputFile,
         bioGridDict = loadBioGrid()
     
     if atomize:
-        translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence,bioGrid)
+        translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
     else:    
         translator={} 
 
@@ -718,7 +721,7 @@ def processFile2():
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
-        reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
+        reactionDefinitions,useID,naming = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
         print reactionDefinitions, useID
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
         #spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
@@ -728,7 +731,7 @@ def processFile2():
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
         outputFile = 'complex/output' + str(bioNumber) + '.bngl'
         analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, reactionDefinitions,
-                    useID,outputFile,speciesEquivalence=spEquivalence,atomize=True,bioGrid=True)
+                    useID,naming,outputFile,speciesEquivalence=spEquivalence,atomize=True,bioGrid=True)
 
         if len(logMess.log) > 0:
             with open(outputFile + '.log', 'w') as f:

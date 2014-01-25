@@ -22,8 +22,9 @@ the json config file for classyfying rules according to their reactants/products
 
 class SBMLAnalyzer:
     
-    def __init__(self,configurationFile,speciesEquivalences=None):
+    def __init__(self,configurationFile,namingConventions,speciesEquivalences=None):
         self.configurationFile = configurationFile
+        self.namingConventions = namingConventions
         self.speciesEquivalences= speciesEquivalences
         self.userEquivalencesDict = None
         
@@ -219,9 +220,33 @@ class SBMLAnalyzer:
     
         return results
      
+     
+    
+    def processNamingConventions2(self,molecules):
+            
+        
+        #normal naming conventions
+        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],
+                                                                                      self.namingConventions)
+        #user defined naming convention
+        if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
+            self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
+        else: 
+            if self.userEquivalencesDict ==None:            
+                self.userEquivalencesDict = {}
+        
+        #for name in self.userEquivalencesDict:
+        #    equivalenceTranslator[name] = self.userEquivalencesDict[name]
+
+        #add stuff to the main translator
+        for element in self.userEquivalencesDict:
+            tmpTranslator[element].extend(self.userEquivalencesDict[element])
+        
+        return tmpTranslator,translationKeys,conventionDict
+        
+    
     def processNamingConventions(self,molecules,reactionDefinition):
         equivalenceTranslator = {}
-        reactionIndex = {}
         index = 0
         
         if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
@@ -231,9 +256,10 @@ class SBMLAnalyzer:
                 self.userEquivalencesDict = {}
         #TODO: user defined naming conventions are not being added
         
-        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],'reactionDefinitions/namingConventions.json')
+        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],self.namingConventions)
         
-        
+        print translationKeys
+        print conventionDict
         #for name in self.userEquivalencesDict:
         #    equivalenceTranslator[name] = self.userEquivalencesDict[name]
         #print '---',equivalenceTranslator            
@@ -248,12 +274,9 @@ class SBMLAnalyzer:
                     if name in self.userEquivalencesDict:
                         temp.extend(self.userEquivalencesDict[name])
                     equivalenceTranslator[name] = temp
-                    reactionIndex[name] = alternative['n'][0]
                     index += 1
         #now we want to fill in all intermediate relationships
-        
         newTranslator = equivalenceTranslator.copy()
-        print equivalenceTranslator
         #FIXME: the only thing we want to copy over from the old 
         #naming convention detection is the binding information
         for element in newTranslator:
@@ -263,7 +286,7 @@ class SBMLAnalyzer:
             if element in self.userEquivalencesDict:
                 tmpTranslator[element].extend(self.userEquivalencesDict[element])
                 
-        return reactionIndex,tmpTranslator,translationKeys,conventionDict
+        return tmpTranslator,translationKeys,conventionDict
     
     def approximateMatching(self,ruleList,differences=[]):
         '''
@@ -348,7 +371,7 @@ class SBMLAnalyzer:
              
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,
                                   indirectEquivalenceTranslator,
-                                  useNamingConventions=True,translationKeys=[]):
+                                  translationKeys=[]):
         '''
         *reactionDefinition* is a list of conditions that must be met for a reaction
         to be classified a certain way
@@ -452,12 +475,13 @@ class SBMLAnalyzer:
                         state = reactionType[0]
                     reactionTypeProperties[reactionType] = [site,state]
         #TODO: end of delete
-        reactionDefinition = detectOntology.loadOntology('reactionDefinitions/namingConventions.json')
+        reactionDefinition = detectOntology.loadOntology(self.namingConventions)
         for idx,reactionType in enumerate(reactionDefinition['modificationList']):
             site = reactionDefinition['reactionSite'][reactionDefinition['definitions'][idx]['rsi']]
             state = reactionDefinition['reactionState'][reactionDefinition['definitions'][idx]['rst']]
             reactionTypeProperties[reactionType] = [site,state]
         return reactionTypeProperties
+
 
     def classifyReactions(self,reactions,molecules):
         '''
@@ -476,10 +500,11 @@ class SBMLAnalyzer:
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
         
         #process straightforward naming conventions
-        reactionDict,equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions(molecules,
-                    reactionDefinition)
+        #equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions(molecules,reactionDefinition)
+                    
+        equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules)
+    
         
-
         
         #lists of plain reactions
         rawReactions = [self.parseReactions(x) for x in reactions]
@@ -524,7 +549,7 @@ class SBMLAnalyzer:
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
-                                            reactionDict,translationKeys)
+                                            translationKeys)
         listOfEquivalences = []
         
         
@@ -534,26 +559,7 @@ class SBMLAnalyzer:
                 indirectEquivalenceTranslator
     
     
-    def reclassifyReactions(self,reactions,molecules,labelDictionary):
-        rawReactions = [self.parseReactions(x) for x in reactions]
-        #reactionDefinition = loadConfigFiles()
-        reactionDefinition = self.loadConfigFiles(self.configurationFile)
-        if self.speciesEquivalences != None:
-            self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
-
-        reactionDict,equivalenceTranslator,translationKeys = self.processNamingConventions(molecules,
-                    reactionDefinition)
-        for reactionIndex in range(0,len(rawReactions)):
-            for reactantIndex in range(0,len(rawReactions[reactionIndex])):
-                tmp = []
-                for chemicalIndex in range(0,len(rawReactions[reactionIndex][reactantIndex])):
-                    tmp.extend(list(labelDictionary[rawReactions[reactionIndex][reactantIndex][chemicalIndex]]))
-                rawReactions[reactionIndex][reactantIndex] = tmp
-        
-        reactionClassification = self.getReactionClassification(reactionDefinition,
-                                            rawReactions,equivalenceTranslator,reactionDict)
-        return reactionClassification,[],equivalenceTranslator          
-
+ 
     
     def processAnnotations(self,molecules,annotations):
         processedAnnotations = []
@@ -592,7 +598,6 @@ class SBMLAnalyzer:
         equivalencesList = []
         if self.speciesEquivalences != None:
             speciesdictionary =self.loadConfigFiles(self.speciesEquivalences)
-            print speciesdictionary
             userEquivalences = speciesdictionary['complexDefinition'] \
                 if 'complexDefinition' in speciesdictionary else None
             for element in userEquivalences:
