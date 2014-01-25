@@ -597,7 +597,7 @@ def propagateChanges(translator, dependencyGraph):
                     flag = True
 
 #TODO:bm19:Rafi_Rasi_GTP
-def transformMolecules(parser, database, configurationFile,
+def transformMolecules(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=None,bioGridFlag=False):
     '''
     main method. Receives a parser configuration, a configurationFile and a
@@ -614,7 +614,7 @@ def transformMolecules(parser, database, configurationFile,
     molecules, _, _,_ = parser.getSpecies()
 
     sbmlAnalyzer = \
-    analyzeSBML.SBMLAnalyzer(configurationFile, speciesEquivalences)
+    analyzeSBML.SBMLAnalyzer(configurationFile, namingConventions,speciesEquivalences)
     #classify reactions
     classifications, equivalenceTranslator, eequivalenceTranslator,\
     indirectEquivalenceTranslator=  sbmlAnalyzer.classifyReactions(rules, molecules)
