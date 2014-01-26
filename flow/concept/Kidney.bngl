@@ -1,51 +1,22 @@
-begin model
 begin parameters
-infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
-kinf 1              #set as 1 infusion rate
-#Tissue Blood Flow Rates L/min
-Fk 1.24
-#Tissue Volume L
-KidneyVol 0.31
-#Tissue Vascular Fraction 
-frac_k  0.24    
-#From Florian 
-fink Fk/KidneyVol     #flow into kidneys from arteries
-KIvolV KidneyVol*frac_k        #Kidneys vascular volume L
-KIvolEV KidneyVol*(1-frac_k)        #Kidneys vascular volume L
-kkve 2.924
-kkev 0.1859
+	Fk 1.24
+	KidneyVol 0.31 
+	frac_k  0.24    
+	fink Fk/KidneyVol   
+	vol_vascular KidneyVol*frac_k      
+	vol_extravascular KidneyVol*(1-frac_k)    
+	kkve 2.924
+	kkev 0.1859
 end parameters
 begin compartments
-Body         3         70  #overall compartment is the body
-EBV          2         1   Body	 # Endothelial Barrier Veins
-EBA          2         1   Body# Endothelial Barrier Arteries
-EBKi         2         1   Body	 #Kidney	
-  VPL        3         1   EBV 
-  APL        3         1   EBA 
-  #Kidney
-  KIV        3   KIvolV     EBKi
-  KIE        2   KIvolEV	KIV    
+	Vascular             3   vol_vascular         EBKi  
+	Extravascular        2   vol_extravascular	  KIV   
 end compartments
-begin molecule types
-drug()
-end molecule types
 
-begin seed species
-end seed species
 
-begin observables
-Molecules   Venous   drug()@VPL
-Molecules   Arterial drug()@APL
-Molecules	KidneyV   drug()@KIV
-Molecules   KidneyEV  drug()@KIE	 
-end observables
 
-begin functions
-end functions
 
-begin reaction rules
-drug()@APL->drug()@KIV fink
-drug()@KIV<->drug()@KIE kkve,kkev
-drug()@KIV->drug()@VPL fink
-end reaction rules
-end model
+
+
+
+

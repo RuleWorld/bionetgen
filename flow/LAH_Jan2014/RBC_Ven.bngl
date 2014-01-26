@@ -1,10 +1,10 @@
 begin model
 begin parameters
-    GutVol  XXX
+   RBC_Ven_Vol  XXX
 end parameters
 
 begin compartments
-    Gut  3  GutVol
+   RBC_Ven  3  RBC_Ven_Vol
 end compartments
 
 begin molecule types
@@ -12,11 +12,11 @@ begin molecule types
 end molecule types
 
 begin seed species
-    drug()@Gut  # VALUE?
+#    drug()  # VALUE?
 end seed species
 
 begin observables
-    Molecules  DRUG  drug()@Gut
+	Molecules	DRUG     drug()@RBC_Ven
 end observables
 
 begin functions

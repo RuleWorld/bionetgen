@@ -5,6 +5,7 @@ begin parameters
 end parameters
 
 begin compartments
+    Venous  3  VenousVol
 end compartments
 
 begin molecule types
@@ -13,12 +14,12 @@ begin molecule types
 end molecule types
 
 begin seed species
-	$Infusion() infusion
-	drug()  # VALUE?
+	$Infusion()@Venous infusion
+#	drug()  # VALUE?
 end seed species
 
 begin observables
-	Molecules   DRUG   drug()
+	Molecules   DRUG   drug()@Venous
 end observables
 
 begin functions

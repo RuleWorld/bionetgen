@@ -5,15 +5,16 @@ use warnings;
 
 my @array = '/Users/cmcarcil/git/bionetgen/flow/concept/BNGflowSortOutput.bngl';
 {
-	local @ARGV = (@array);
+        local @ARGV = (@array);
 ##delets repeats
 
-my %seen = ();
+print "\n";
+my %duplicate = ();
 {
    local @ARGV = (@array);
    while(<>){
-      $seen{$_}++;
-      next if $seen{$_} > 1;
+      $duplicate{$_}++;
+      next if $duplicate{$_} > 1;
       print;
   }
 }

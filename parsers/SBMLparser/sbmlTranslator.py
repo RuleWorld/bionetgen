@@ -16,6 +16,7 @@ def defineConsole():
     
     parser.add_argument('-o','--output-file',type=str,help='output SBML file')
     parser.add_argument('-c','--convention-file',type=str,help='Conventions file')
+    parser.add_argument('-n','--naming-conventions',type=str,help='Naming conventions file')
     parser.add_argument('-u','--user-structures',type=str,help='User defined species')
     parser.add_argument('-id','--molecule-id',action='store_true',help='use SBML molecule ids instead of names. IDs are less descriptive \
     but more bngl friendly. Use only if the generated BNGL has syntactic errors')
@@ -28,10 +29,11 @@ def checkInput(namespace):
     options = {}
     options['inputFile'] = namespace.input_file
     
-    conv,useID = ls2b.selectReactionDefinitions(options['inputFile'])    
+    conv,useID,naming = ls2b.selectReactionDefinitions(options['inputFile'])    
     options['outputFile'] = namespace.output_file if namespace.output_file != None else options['inputFile'] + '.bngl'
     options['conventionFile'] = namespace.convention_file if namespace.convention_file != None else conv
     options['userStructure'] = namespace.user_structures
+    options['namingConventions'] = namespace.naming_conventions if namespace.naming_conventions != None else naming
     options['useId'] = namespace.molecule_id
     options['atomize'] = namespace.atomize
     options['biogrid'] = namespace.biogrid
@@ -42,9 +44,8 @@ def main():
     namespace = parser.parse_args()
 
     options = checkInput(namespace)
-    #print options    
     
-    ls2b.analyzeFile(options['inputFile'],options['conventionFile'],options['useId'],
+    ls2b.analyzeFile(options['inputFile'],options['conventionFile'],options['useId'],options['namingConventions'],
                      options['outputFile'],speciesEquivalence=options['userStructure'],
                      atomize=options['atomize'],bioGrid=options['biogrid'])
     

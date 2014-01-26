@@ -1,74 +1,16 @@
-begin model
 begin parameters
-#Tissue Blood Flow Rates L/min
-Fli 0.45
-Fg 1.13
-Fs 0.02
-#Tissue Volume L
-LiverVol 1.8
-GutVol 1.19
-SpleenVol 0.18
-#Tissue Vascular Fraction
-frac_li 0.16     
-frac_g  0     
-frac_s  0.20
-#From Florian 
-finli Fli/LiverVol   #flow into liver from arteries(L/min/L) min-1
-fing  Fg/GutVol
-fins  Fs/SpleenVol
-LIvolV LiverVol*frac_li         #Liver vascular volume L
-GUvolV GutVol*frac_g
-SPvolV SpleenVol*frac_s
-LIvolEV LiverVol*(1-frac_li)         #Liver vascular volume L
-krbcplas 0.05107/40 #rbc to plasma adjusted for humans
-kplasrbc 0.0139/40 #plasma to rbc
-klive 10.253
-kliev 0.0965
-kclli 0.1023
+	Fli 0.45
+	LiverVol 1.8
+	frac_li 0.16     
+	finli Fli/LiverVol  
+	vol_vascular LiverVol*frac_li      
+	vol_extravascular LiverVol*(1-frac_li)      
+	klive 10.253
+	kliev 0.0965
+	kclli 0.1023
 end parameters
 begin compartments
-Body         3         70  #overall compartment is the body
-EBV          2         1   Body	 # Endothelial Barrier Veins
-EBA          2         1   Body# Endothelial Barrier Arteries
-EBLi         2         1   Body	 #Liver
-EBSp         2         1   Body	 #Spleen 
-EBGu         2         1   Body	 #Gut
-  VPL        3         1   EBV 
-  APL        3         1   EBA 
-  #Liver 
-  LIV        3   LIvolV     EBLi  
-  LIE        2   LIvolEV	LIV 
-  #Spleen
-  SPV        3   SPvolV     EBSp  
-  #Gut
-  GUV        3   GUvolV     EBGu  
+	Vascular             3   vol_vascular         EBLi  
+	Extravascular        2   vol_extravascular	  LIV   
 end compartments
-begin molecule types
-drug()
-null() 
-end molecule types
 
-begin seed species
-end seed species
-
-begin observables
-Molecules   Venous   drug()@VPL
-Molecules   Arterial drug()@APL
-Molecules	LiverV   drug()@LIV
-Molecules   LiverEV  drug()@LIE
-Molecules	SpleenV   drug()@SPV
-Molecules	Gut       drug()@GUV	 
-end observables
-
-begin functions
-end functions
-
-begin reaction rules
-drug()@APL->drug()@LIV finli
-drug()@LIV<->drug()@LIE klive,kliev
-drug()@LIV->drug()@VPL finli
-drug()@LIV->null() kclli 
-drug()@SPV->drug()@LIV fins
-drug()@GUV->drug()@LIV fing
-end reaction rules
-end model

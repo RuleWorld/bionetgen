@@ -1,48 +1,18 @@
-begin model
 begin parameters
-#Tissue Blood Flow Rates L/min
-Fl 5.60
-#Tissue Volume L
-LungVol 0.53
-#Tissue Vascular Fraction   
-frac_l  0.3       
-#From Florian 
-finlu Fl/LungVol   #flow into lungs from veins min-1
-LUvolV LungVol*frac_l         #Lung vascular volume L
-LUvolEV LungVol*(1-frac_l)         #Lung vascular volume L
-kluve 0.2662
-kluev 0.0365
+	Fl 5.60
+	LungVol 0.53  
+	frac_l  0.3        
+	finlu Fl/LungVol  
+	vol_vascular LungVol*frac_l    
+	vol_extravascular LungVol*(1-frac_l)      
+	kluve 0.2662
+	kluev 0.0365
 end parameters
 begin compartments
-Body         3         70  #overall compartment is the body
-EBV          2         1   Body	 # Endothelial Barrier Veins
-EBA          2         1   Body# Endothelial Barrier Arteries
-EBLu         2         1   Body	 #Lung 
-  VPL        3         1   EBV 
-  APL        3         1   EBA
-  #Lung
-  LUV        3   LUvolV     EBLu  
-  LUE        2   LUvolEV	LUV  
+	Vascular             3   vol_vascular         EBLu  
+	Extravascular        2   vol_extravascular	  LUV   
 end compartments
-begin molecule types
-drug()
-end molecule types
 
-begin seed species
-end seed species
 
-begin observables
-Molecules   Venous   drug()@VPL
-Molecules	LungV    drug()@LUV
-Molecules   LungEV   drug()@LUE 
-end observables
 
-begin functions
-end functions
 
-begin reaction rules
-drug()@VPL->drug()@LUV finlu #venous blood to lung
-drug()@LUV<->drug()@LUE kluve,kluev
-drug()@LUV->drug()@APL finlu
-end reaction rules
-end model

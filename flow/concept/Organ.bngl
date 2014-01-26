@@ -1,25 +1,29 @@
 begin model
+
 begin parameters
+
 flow 1 #flow rate into and out of vascular space
-f  1      #tissue vascular fraction kidney
+f  1      #tissue vascular fraction 
 BodyVolume 70
-infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
+infusion 60      #30 min infusion of 60 mg
 kinf 1              #set as 1 infusion rate
 TissueVolume 1
 
-OrganVolV  TissueVolume*f        #Heart vascular volume L
-OrganVolEV TissueVolume*(1-f)   #Heart extravascular volume L
+OrganVolV  TissueVolume*f        #Organ vascular volume L
+OrganVolEV TissueVolume*(1-f)    #Organ extravascular volume L
 
-kve 1
-kev 1
+kve 1   	#rate constant vascular to extravascular
+kev 1   	#rate constant extravascular to vascular
 
 end parameters
+
 begin compartments
+
   Body                  3         BodyVolume  
   
   EBV                   2         1         Body	 # Endothelial Barrier Veins
-  EBA                   2         1         Body# Endothelial Barrier Arteries
-  EBorgan               2         1         Body	 #Heart
+  EBA                   2         1         Body     # Endothelial Barrier Arteries
+  EBorgan               2         1         Body	 # Organ
 
   Venous_Blood          3         1         EBV 
   Arterial_Blood        3         1         EBA 
@@ -28,6 +32,7 @@ begin compartments
   Organ_Extravascular   2       OrganVolEV	Organ_Vascular  
 
 end compartments
+
 begin molecule types
 
 drug()

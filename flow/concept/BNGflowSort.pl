@@ -3,10 +3,10 @@
 use strict;
 use warnings;
 
-my @array = '/Users/cmcarcil/git/bionetgen/flow/concept/output.bngl';
+my @array = '>>BNGflow.pl';
 ##combines groups
 
-my %a = ();
+my %parameter = ();
 {
 	local @ARGV = (@array);
 print "begin model\n";
@@ -17,7 +17,7 @@ while (<>) {
 	}
 }
 print "end parameters\n\n";
-my %b = ();
+my %compartment = ();
 {
 	local @ARGV = (@array);
 	print "begin compartments\n\n";
@@ -29,7 +29,7 @@ while (<>) {
   }
 }
 print "end compartments\n\n";
-my %c = ();
+my %molecule = ();
 {
 	local @ARGV = (@array);
 	print "begin molecule types\n\n";
@@ -41,7 +41,7 @@ if (/begin molecule types/../end molecule types/) {
   }
 }
 	print "end molecule types\n\n";
-my %d = ();
+my %species = ();
 {
 	local @ARGV = (@array);
 print "begin seed species\n\n";
@@ -53,7 +53,7 @@ if (/begin seed species/../end seed species/) {
   }
 }
 print "end seed species\n\n";
-my %e = ();
+my %observable = ();
 {
 	local @ARGV = (@array);
 print "begin observables\n\n";
@@ -66,7 +66,7 @@ if (/begin observables/../end observables/) {
 }
 print "end observables\n\n";
 
-my %f = ();
+my %function = ();
 {
 	local @ARGV = (@array);
 	print "begin functions\n\n";
@@ -78,13 +78,13 @@ if (/begin functions/../end functions/) {
   }
 }
 	print "end functions\n\n";
-my %g = ();
+my %rule = ();
 {
 	local @ARGV = (@array);
 	print "begin reaction rules\n\n";
 while (<>) {
-if (/begin reaction rules/../end model/) {
-  next if /begin reaction rules/ || /end model/;
+if (/begin reaction rules/../end reaction rules/) {
+  next if /begin reaction rules/ || /end reaction rules/;
   print;}
 
   }

@@ -1,50 +1,16 @@
-begin model
 begin parameters
-#Tissue Blood Flow Rates L/min
-Fm 0.59
-#Tissue Volume L
-MuscleVol 28
-#Tissue Vascular Fraction
-frac_m  0.03     
-#From Florian 
-finm Fm/MuscleVol  #flow into muscle from arteries
-MUvolV MuscleVol*frac_m          #Muscle vascular volume L
-MUvolEV MuscleVol*(1-frac_m)          #Muscle vascular volume L
-kmve 0.5952
-kmev 0.0158
+	Fm 0.59
+	MuscleVol 28
+	frac_m  0.03      
+	finm Fm/MuscleVol 
+	vol_vascular MuscleVol*frac_m  
+	vol_extravascular MuscleVol*(1-frac_m)   
+	kmve 0.5952
+	kmev 0.0158
 end parameters
 begin compartments
-Body         3         70  #overall compartment is the body
-EBV          2         1   Body	 # Endothelial Barrier Veins
-EBA          2         1   Body# Endothelial Barrier Arteries
-EBMu         2         1   Body	 #Muscle
-  VPL        3         1   EBV 
-  APL        3         1   EBA 
-  #Muscle
-  MUV        3   MUvolV     EBMu  
-  MUE        2   MUvolEV	MUV  
+	Vascular             3   vol_vascular         EBMu  
+	Extravascular        2   vol_extravascular	  MUV   
 end compartments
-begin molecule types
-drug()
-end molecule types
 
-begin seed species
-end seed species
 
-begin observables
-Molecules   Venous   drug()@VPL
-Molecules   Arterial drug()@APL
-Molecules	MuscleV   drug()@MUV
-Molecules   MuscleEV  drug()@MUE
-	 
-end observables
-
-begin functions
-end functions
-
-begin reaction rules
-drug()@APL->drug()@MUV finm
-drug()@MUV<->drug()@MUE kmve,kmev
-drug()@MUV->drug()@VPL finm
-end reaction rules
-end model

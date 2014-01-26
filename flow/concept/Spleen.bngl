@@ -1,56 +1,21 @@
-begin model
 begin parameters
-#Tissue Blood Flow Rates L/min
-Fli 0.45
-Fs 0.02
-#Tissue Volume L
-LiverVol 1.8
-SpleenVol 0.18
-#Tissue Vascular Fraction
-frac_li 0.16       
-frac_s  0.20  
-#From Florian 
-finli Fli/LiverVol   #flow into liver from arteries(L/min/L) min-1
-fins Fs/SpleenVol  #flow into spleen from arteries
-LIvolV LiverVol*frac_li         #Liver vascular volume L
-SPvolV SpleenVol*frac_s
-LIvolEV LiverVol*(1-frac_li)         #Liver vascular volume L
-SPvolEV SpleenVol*(1-frac_s)
-ksve 1.8667
-ksev 0.0445
+	Fs 0.02
+	SpleenVol 0.18     
+	frac_s  0.20  
+	fins Fs/SpleenVol  
+	vol_vascular SpleenVol*frac_s
+	vol_extravascular SpleenVol*(1-frac_s)
+	ksve 1.8667
+	ksev 0.0445
 end parameters
 begin compartments
-Body         3         70  #overall compartment is the body
-EBA          2         1   Body# Endothelial Barrier Arteries
-EBLi         2         1   Body	 #Liver
-EBSp         2         1   Body	 #Spleen 
-  APL        3         1   EBA 
-  #Liver 
-  LIV        3   LIvolV     EBLi  
-  #Spleen
-  SPV        3   SPvolV     EBSp  
-  SPE        2   SPvolEV	SPV  
+	Vascular             3   vol_vascular         EBSp	  
+	Extravascular        2   vol_extravascular	  SPV   
 end compartments
-begin molecule types
-drug()
-end molecule types
 
-begin seed species
-end seed species
 
-begin observables
-Molecules   Arterial drug()@APL
-Molecules	LiverV   drug()@LIV
-Molecules	SpleenV   drug()@SPV
-Molecules   SpleenEV  drug()@SPE	 
-end observables
 
-begin functions
-end functions
 
-begin reaction rules
-drug()@APL->drug()@SPV fins
-drug()@SPV<->drug()@SPE ksve,ksev
-drug()@SPV->drug()@LIV fins
-end reaction rules
-end model
+
+
+

@@ -206,6 +206,7 @@ drug()@BRV<->drug()@BRE kbve,kbev
 drug()@BRV->drug()@VPL finb
 end reaction rules
 end model
+#organ name = Fat
 begin model
 begin parameters
 infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
@@ -257,6 +258,7 @@ drug()@FAV<->drug()@FAE kfve,kfev
 drug()@FAV->drug()@VPL finf
 end reaction rules
 end model
+#organ name = Gut
 begin model
 begin parameters
 infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
@@ -312,6 +314,7 @@ drug()@APL->drug()@GUV fing
 drug()@GUV->drug()@LIV fing
 end reaction rules
 end model
+#organ name = Heart
 begin model
 begin parameters
 infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
@@ -362,6 +365,7 @@ drug()@HEV<->drug()@HEE khve,khev
 drug()@HEV->drug()@VPL finh
 end reaction rules
 end model
+#organ name = Kidney
 begin model
 begin parameters
 infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
@@ -413,6 +417,7 @@ drug()@KIV<->drug()@KIE kkve,kkev
 drug()@KIV->drug()@VPL fink
 end reaction rules
 end model
+#organ name = Liver
 begin model
 begin parameters
 #Tissue Blood Flow Rates L/min
@@ -486,7 +491,8 @@ drug()@LIV->null() kclli
 drug()@SPV->drug()@LIV fins
 drug()@GUV->drug()@LIV fing
 end reaction rules
-end modelbegin model
+end model#organ name = Lung
+begin model
 begin parameters
 #Tissue Blood Flow Rates L/min
 Fl 5.60
@@ -534,6 +540,7 @@ drug()@LUV<->drug()@LUE kluve,kluev
 drug()@LUV->drug()@APL finlu
 end reaction rules
 end model
+#organ name = Muscle
 begin model
 begin parameters
 #Tissue Blood Flow Rates L/min
@@ -584,6 +591,7 @@ drug()@MUV<->drug()@MUE kmve,kmev
 drug()@MUV->drug()@VPL finm
 end reaction rules
 end model
+#organ name = Other
 begin model
 begin parameters
 Fo 0.36
@@ -632,6 +640,7 @@ drug()@OTV<->drug()@OTE kove,koev
 drug()@OTV->drug()@VPL fino
 end reaction rules
 end model
+#organ name = Red Blood Cell
 begin model
 begin parameters
 infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
@@ -674,6 +683,7 @@ drug()@VPL<->drug()@RBC1 krbcplas,kplasrbc
 drug()@APL<->drug()@RBC2 krbcplas,kplasrbc 
 end reaction rules
 end model
+#organ name = Spleen
 begin model
 begin parameters
 #Tissue Blood Flow Rates L/min
@@ -730,6 +740,7 @@ drug()@SPV<->drug()@SPE ksve,ksev
 drug()@SPV->drug()@LIV fins
 end reaction rules
 end model
+#organ name = Tumor
 begin model
 begin parameters
 k1 0.51
@@ -787,6 +798,7 @@ drug()@IC->drug()@TUV k3
 
 end reaction rules
 end model
+#organ name = Venous
 begin model
 begin parameters
 infusion 53.83      #30 min infusion of gemcitabine 53.83 mg
