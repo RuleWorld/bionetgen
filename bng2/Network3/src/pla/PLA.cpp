@@ -207,7 +207,7 @@ double PLA::run(double tStart, int nSteps){
 	return (time-tStart);
 }
 
-void PLA::nextStep(){
+void PLA::nextStep(double maxTau){
 
 	// Step 1: Calculate initial tau
 	this->tc.getNewTau(this->tau);
@@ -276,12 +276,16 @@ void PLA::nextStep(){
 		// If all rxns are ES, just fire the one with min{tau_ES_v} and move on (no need to postleap check)
 		if (allES){
 //			cout << "allES" << endl;
-			if (this->ES_rxn){ // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
-//				cout << "Firing rxn: " << this->ES_rxn->toString() << endl;
-//				printf("rate: %26.18f\n",this->ES_rxn->getRate());
-				this->ES_rxn->fire(1.0);
+			if (this->tau <= maxTau){ // Don't fire if tau > maxTau
+				if (this->ES_rxn){ // Don't fire if all rxns are inactive (ES_rxn = NULL initially)
+	//				cout << "Firing rxn: " << this->ES_rxn->toString() << endl;
+	//				printf("rate: %26.18f\n",this->ES_rxn->getRate());
+					this->ES_rxn->fire(1.0);
+				}
 			}
-//			cout << "All ES step" << endl;
+			else{ // Set tau = maxTau
+				this->tau = maxTau;
+			}
 		}
 		// Otherwise...
 		else{

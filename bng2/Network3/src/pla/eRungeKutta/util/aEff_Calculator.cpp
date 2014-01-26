@@ -128,8 +128,12 @@ void aEff_Calculator::calc_aEff(double tau){
 		cout << "a_" << v << ": " << this->rxn[v]->getRate() << endl;
 	}
 	cout << endl;
-	if (this->X_eff.size() != this->sp.size()){ cout << "X_eff.size != sp.size. Exiting." << endl; exit(1); }
-	if (this->a_eff.size() != this->rxn.size()){ cout << "a_eff.size != rxn.size. Exiting." << endl; exit(1); }
+	if (this->X_eff.size() != this->sp.size()){
+		cout << "X_eff.size != sp.size. Exiting." << endl; exit(1);
+	}
+	if (this->a_eff.size() != this->rxn.size()){
+		cout << "a_eff.size != rxn.size. Exiting." << endl; exit(1);
+	}
 	for (unsigned int j=0;j < this->X_eff.size();j++){
 		cout << "xEff_" << j << ": " << this->X_eff[j] << endl;
 	}
@@ -138,7 +142,7 @@ void aEff_Calculator::calc_aEff(double tau){
 		cout << "aEff_" << v << ": " << this->a_eff[v] << endl;
 	}
 	cout << endl;
-	vector<double> xEff;
+//	vector<double> xEff;
 	for (unsigned int v=0;v < this->rxn.size();v++){
 		xEff.resize(this->rxn[v]->rateSpecies.size());
 		for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
@@ -146,7 +150,7 @@ void aEff_Calculator::calc_aEff(double tau){
 		}
 		cout << "a(xEff)_" << v << ": " << this->rxn[v]->re->getRate(xEff) << endl;
 	}
-//	exit(1);
+	exit(1);
 	cout << endl;
 	//////////////
 //*/

@@ -313,8 +313,8 @@ void Network3::init_PLA(string config, bool verbose){
 	// 2nd argument: Rxn-based (rb) or species-based (sb).
 	// 3rd argument: TauCalculator:PostleapChecker type (pre:neg, pre:post, post:post).
 	// 4th argument: PLA parameters:
-	//				 Minimum of 4 (eps,apx1,gg1,p).
-	//				 Optional 3 additional (pp,q,w).
+	//				 1 required (eps)
+	//				 6 optional (apx1,gg1,p,pp,q,w)
 	// 5th argument (optional): Path to butcher tableau file (required if 'custom' chosen in arg 1).
 
 	cout << "Initializing PLA simulation. Configuration = " << config << endl;
@@ -418,21 +418,26 @@ void Network3::init_PLA(string config, bool verbose){
 			cout << "   Very good, a straightforward but effective choice." << endl;
 		}
 	}
-	else if (arg[2] == "pre:post"){
+	else if (arg[2] == "pre:eps"){ // formerly "pre:post"
 		if (verbose){
 			cout << "You've chosen to use a preleap tau calculator and an epsilon-based postleap checker." << endl;
 			cout << "   Excellent, this should improve the accuracy of your results." << endl;
 		}
 	}
-	else if (arg[2] == "post:post"){
+	else if (arg[2] == "post:eps"){ // formerly "post:post"
 		if (verbose){
 			cout << "Ahh, you must be hungry, you've chosen the combo meal: an Anderson-style combined" << endl;
 			cout << "   tau calculator/postleap checker. I like how you think." << endl;
 		}
 	}
+	else if (arg[2] == "fixed"){
+		if (verbose){
+			cout << "You've chosen a fixed timestep method. Back to basics." << endl;
+		}
+	}
 	else{
 		cout << "Uh oh, I don't recognize your preleap:postleap configuration. Supported configurations are" << endl;
-		cout << "'pre:neg', 'pre:post' and 'post:post'. You entered '" << arg[2] << "'. Please try again." << endl;
+		cout << "'fixed', 'pre:neg', 'pre:eps', and 'post:eps'. You entered '" << arg[2] << "'. Please try again." << endl;
 		exit(1);
 	}
 
@@ -464,7 +469,7 @@ void Network3::init_PLA(string config, bool verbose){
 		double valDbl;
 		if (val == "INFINITY") valDbl = INFINITY;
 		else valDbl = atof(val.c_str());
-		if (name == "eps"){
+		if (name == "eps" || name == "tau"){
 			param[0] = valDbl;
 			definedParam[0] = true;
 		}
@@ -513,12 +518,12 @@ void Network3::init_PLA(string config, bool verbose){
 			if (i==1) cout << "   apx1 = "	<< param[1];
 			if (i==2) cout << "   gg1 = " 	<< param[2];
 			if (i==3) cout << "   p = " 	<< param[3];
-			if (arg[2] == "post:post"){
+			if (arg[2] == "post:eps"){
 				if (i==4) cout << "   pp = " 	<< param[4];
 				if (i==5) cout << "   q = " 	<< param[5];
 				if (i==6) cout << "   w = " 	<< param[6];
 			}
-			if (i < 4 || arg[2] == "post:post"){
+			if (i < 4 || arg[2] == "post:eps"){
 				if (!definedParam[i]) cout << " (default)";
 				cout << endl;
 			}
@@ -563,7 +568,11 @@ void Network3::init_PLA(string config, bool verbose){
 	//
 	// Preleap TC (required for all configurations)
 	Preleap_TC* ptc;
-	if (arg[1] == "rb" || arg[1] == "RB"){
+	if (arg[2] == "fixed"){
+		static Fixed_TC fixed_ptc(param[0]);
+		ptc = &fixed_ptc;
+	}
+	else if (arg[1] == "rb" || arg[1] == "RB"){
 		static fEulerPreleapRB_TC fe_ptc(eps,REACTION);
 		ptc = &fe_ptc;
 	}
@@ -573,12 +582,12 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 	//
 	// Configuration 1: preTC_RC_FG_negPL
-	if (arg[2] == "pre:neg"){
+	if (arg[2] == "pre:neg" || arg[2] == "fixed"){
 		static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
 		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 	}
 	// Configuration 2: preTC_RC_FG_postPL
-	if (arg[2] == "pre:post"){
+	else if (arg[2] == "pre:eps"){
 		if (arg[1] == "rb" || arg[1] == "RB"){
 			static eRungeKutta_preTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
 			tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
@@ -589,7 +598,7 @@ void Network3::init_PLA(string config, bool verbose){
 		}
 	}
 	// Configuration 3: postTC_RC_FG_postPL
-	if (arg[2] == "post:post"){
+	else if (arg[2] == "post:eps"){
 		double pp = param[4];
 		double q = param[5];
 		double w = param[6];
@@ -643,17 +652,6 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 //		cout << "Warning: Groups file \"" << gFile << "\" doesn't exist." << endl;
 	}
 
-	// Functions file (optional)
-/*	FILE* fdat = NULL;
-	string fFile = outpre + ".fdat";
-	if ((fdat = fopen(fFile.c_str(),"r"))){
-		fclose(fdat);
-		fdat = fopen(fFile.c_str(),"a");
-	}
-	else{
-//		cout << "Warning: Functions file \"" << fFile << "\" doesn't exist." << endl;
-	}*/
-
 	// PLA-specific output files
 	FILE* classif = NULL;
 	if (print_classif){
@@ -701,7 +699,7 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 	{
 		// Next step
 		step++;
-		PLA_SIM->nextStep();
+		PLA_SIM->nextStep(nextOutputTime-time);
 
 		if (PLA_SIM->tau < INFINITY && PLA_SIM->tau > -INFINITY){
 			time += PLA_SIM->tau;
@@ -758,14 +756,15 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 			}
 			// Output to stdout
 			if (verbose){
-				cout << "\t" << fixed << setprecision(6) << time << "\t" << setprecision(0) << step;
+				printf("\t %f \t %d",time,(int)step);
 //				for (unsigned int i=0;i < OBSERVABLE.size();i++){
 //					cout << "\t" << OBSERVABLE[i]->second;
 //				}
 				if (print_save_net){
 					fprintf(stdout, "%s", print_net_message.c_str());
 				}
-				cout << endl;
+				printf("\n");
+				fflush(stdout);
 			}
 			// Get next output time and step
 			if (time >= nextOutputTime) nextOutputTime += sampleTime;

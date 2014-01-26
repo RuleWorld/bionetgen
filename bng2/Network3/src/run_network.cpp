@@ -655,8 +655,9 @@ int main(int argc, char *argv[]){
 
 		// Initial output to stdout
 		if (verbose){
-			cout << "#" << "\t" << setw(8) << left << "time" << "\t" << "step" << endl;
-			cout << "\t" << fixed << setprecision(6) << t_start << "\t" << 0 << endl;
+			printf("# \t time \t\t step\n");
+			printf("\t %f \t 0\n",t_start);
+			fflush(stdout);
 		}
 
 		// Run simulation

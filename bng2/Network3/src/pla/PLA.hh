@@ -56,12 +56,29 @@ namespace network3{
 		double run(double tStart, double tEnd);
 		double run(int nSteps){ return this->run(0.0,nSteps); }
 		double run(double tStart, int nSteps);
-		void nextStep(); //{ return this->nextStep(INFINITY); }
-//		double nextStep(double maxTau);
+		void nextStep(){ return this->nextStep(INFINITY); }
+		void nextStep(double maxTau);
 
 		double get_tau_ES(unsigned int v);
 //		double get_tau_Gibson(unsigned int v);
 		void perform_allES_step();
+
+		void forceES(){
+			cout << "Forcing ES classifications" << endl;
+			this->rc.forceClassifications(0);
+		}
+		void forcePoisson(){
+			cout << "Forcing Poisson classifications" << endl;
+			this->rc.forceClassifications(1);
+		}
+		void forceLangevin(){
+			cout << "Forcing Langevin classifications" << endl;
+			this->rc.forceClassifications(2);
+		}
+		void forceDeterm(){
+			cout << "Forcing Deterministic classifications" << endl;
+			this->rc.forceClassifications(3);
+		}
 
 	protected:
 //		map<Reaction*,vector<Reaction*> > dependency;
