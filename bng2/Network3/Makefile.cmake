@@ -64,7 +64,10 @@ $(MUPARSER_LIB):  $(LIBSOURCE)/$(MUPARSER).zip
 	mkdir -p $(LIBDIR) $(INCDIR)
 	rm -rf $(MUPARSER)
 	unzip $(LIBSOURCE)/$(MUPARSER).zip
-	cd $(MUPARSER); ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
+	cd $(MUPARSER); ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install	
+### Mac users (OS X 10.9+) comment out line above and uncomment line below
+### Also, uncomment lines 6 and 66 in CMakelists.txt (those defining "-stdlib=libstdc++" flag)
+#	cd $(MUPARSER); ./configure CXX=g++-4.2 --prefix=$(CURDIR) --disable-shared;  make;  make install
 
 $(MATHUTILS_LIB):  $(LIBSOURCE)/$(MATHUTILS).tar.gz
 	mkdir -p $(LIBDIR) $(INCDIR)

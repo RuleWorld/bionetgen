@@ -1,6 +1,18 @@
 CHANGES to BioNetGen
-updated 24 July 2013
+updated 23 January 2014
 http://code.google.com/p/bionetgen
+
+== BioNetGen-2.2.6-stable ==
+
+* Added instructions to Makefile.cmake for Mac OS X 10.9+ users regarding
+modifications that must be made to build Network3.
+
+* Modified 'setConcentration' action to read and retain expressions 
+(rather than evaluating to a number).
+
+* Modified 'readFile' to process SBML input files using $BNG_HOME/bin/sbmlTranslator.
+'readFile' also will now throw an error if input file extension is not any
+of ".bngl", ".net", or ".xml".
 
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
