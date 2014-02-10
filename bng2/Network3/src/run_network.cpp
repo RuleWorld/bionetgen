@@ -36,7 +36,7 @@ extern "C" {
 #include <time.h>
 #include <sys/times.h>
 #include <limits.h>
-#include "util/mathutils/mathutils.h"
+#include "mathutils.h"
 }
 
 #include <vector>

@@ -36,7 +36,7 @@ extern "C" {
 #include <errno.h>
 #include <assert.h>
 #include <cfloat>
-#include "util/mathutils/mathutils.h"
+#include "mathutils.h"
 }
 /*
  #include <cstdlib>
