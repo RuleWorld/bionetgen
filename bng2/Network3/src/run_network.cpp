@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
 	/* Output message */
 	fprintf(stdout, "run_network %s\n", RUN_NETWORK_VERSION);
 	fflush(stdout);
-	// Variables
+	// Variables //
 	register int i/*, j*/;
     char *netfile_name, *network_name;
     char *group_input_file_name = NULL;
