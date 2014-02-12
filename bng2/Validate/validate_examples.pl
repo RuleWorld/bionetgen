@@ -119,8 +119,8 @@ my $pvalue = 0.01;
 my $check_nfsim = 1;
 # arguments for BNG
 my @bngargs = ();
-
-
+# models to exclude
+my @exclude = ();
 
 ###                                                          ###
 ###  BEGIN MAIN SCRIPT, no user options beyond this point!!  ###
@@ -137,12 +137,10 @@ GetOptions( 'help|h'        => sub { display_help(); exit(0); },
             'outpath=s'     => \$outdir,
             'pvalue=f'      => \$pvalue,
             'nfsim!'        => \$check_nfsim,
-            'delete-files!' => \$delete_working_files
+            'delete-files!' => \$delete_working_files,
+            'exclude:s'     => \@exclude
           )
 or die "Error in command line arguments (try: validate_examples.pl --help)";
-
-
-
 
 # get models to validate
 my @models;
@@ -150,7 +148,7 @@ if (@ARGV)
 {   # remaining command line arguments are models
     @models = (@ARGV);
     foreach my $model (@models)
-    {   # trim trailing .bngl, if any
+    {   # strip trailing .bngl, if any
         $model =~ s/\.bngl$//;
     }
 }
@@ -165,13 +163,16 @@ else
     # strip ".bngl" extension
     @models = map { /^(.+)\.bngl$/ } ( grep {/^.+\.bngl$/} readdir($dh) );
     # sort models alphabetically
-    @models = sort {$a cmp $b} @models;
+    @models = sort {"\L$a" cmp "\L$b"} @models; # case-insensitive sort
     # done with directory
     closedir $dh;
 }
 
-
-
+# remove excluded models from model list
+foreach my $x (@exclude){
+	$x =~ s/\.bngl$//; # strip trailing .bngl, if any
+	@models = grep { ! /$x/ } @models;
+}
 
 # check that we can find the BNG2.pl executable script!
 unless ( -e $bngexec )
@@ -565,7 +566,7 @@ sub read_datfile
     
     # process fields
     my $fields = [];
-    @$fields = split /\s+/, $header;
+    @$fields = split (/\s+/, $header);
     foreach my $field (@$fields)
     {
         my $field_hash = { 'field' => $field, 'elements' => [] };
@@ -583,7 +584,7 @@ sub read_datfile
 
         # split tokens
         my $tokens = [];
-        @$tokens = split /\s+/, $line;
+        @$tokens = split (/\s+/, $line);
         
         my $idx = 0;
         foreach my $token (@$tokens)
@@ -619,7 +620,7 @@ sub read_stats
         next unless (defined $key);
         # get values
         my $values = [];
-        @$values = split /,\s*/, $line;
+        @$values = split (/,\s*/, $line);
 
         # add to stats hash
         foreach my $val (@$values)
@@ -970,6 +971,8 @@ SYNOPSIS:
                                         (omit ".bngl" extension from MODEL)
 
 OPTIONS:
+  --exclude MODEL     : Models to exclude from validation; can be used multiple
+                        times (e.g., --exclude model1.bngl --exclude model2.bngl)
   --bngpath PATH      : BioNetGen path (..)
   --modelpath PATH    : model path ([BNGPATH\\Validate)
   --datpath PATH      : database path (BNGPATH]\\Validate\\DAT_validate)
