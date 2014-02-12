@@ -568,8 +568,9 @@ sub readSBML
 	                {
 	                    # Read reaction rules
 	                    my $nerr = 0;
-	                    my $rrules = [];
-	                    $model->RxnRules( $rrules );
+#						my $rrules = [];
+#	                    $model->RxnRules( $rrules );
+	                    my $rrules = $model->RxnRules;
 	                    foreach my $line ( @$block_dat )
 	                    {
 	                        my ($entry, $lno) = @$line;
