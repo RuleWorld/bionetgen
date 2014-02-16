@@ -278,7 +278,7 @@ void Network3::init_Network3(double* t, bool verbose){
 			else if (rxn->rateLaw_type == FUNCTIONAL){
 				if (verbose) cout << "]]] Function rxn type [[[" << endl;
 				// Find the function
-				unsigned int func_index;
+				unsigned int func_index = 0;
 				for (unsigned int j=0;j < network.var_parameters.size();j++){
 					if (network.var_parameters[j] == rxn->rateLaw_indices[0]){
 						func_index = j;
@@ -317,7 +317,11 @@ void Network3::init_PLA(string config, bool verbose){
 	//				 6 optional (apx1,gg1,p,pp,q,w)
 	// 5th argument (optional): Path to butcher tableau file (required if 'custom' chosen in arg 1).
 
-	cout << "Initializing PLA simulation. Configuration = " << config << endl;
+	string method;					// Method (fEuler,midpt,etc.)
+	string prepost;					// Preleap/postleap config (preNeg:sb,fixed,etc.)
+	map<string,string> params;		// Parameters (eps,approx1,gg1,etc.)
+
+	cout << "Initializing PLA simulation. Configuration = \"" << config << "\"" << endl;
 
 	// Remove '|' from beginning of string, if present
 	if (config.at(0) == '|') config.erase(0,1);
@@ -337,22 +341,49 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 
 	// Error check
-	if (arg.size() != 4 && arg.size() != 5){
-		cout << "Oops, a minimum of 4 arguments are required, a maximum of 5 are allowed. ";
-		cout << "You've specified " << arg.size() << ". Please try again." << endl;
+	if (arg.size() != 3){
+		cout << "Oops, 3 arguments are required, you've specified " << arg.size() << "." << endl;
+		cout << "Please try again." << endl;
 		exit(1);
 	}
-	cout << "Read " << arg.size() << " arguments." << endl;
+	else{
+		method = arg[0];
+		prepost = arg[1];
+	}
 
 	// Process arguments
 	if (verbose) cout << "Processing..." << endl;
-	vector<vector<double> > alpha; 	// Butcher tableau
-	vector<double> beta;			// Butcher tableau
-	vector<double> param;			// PLA parameters (eps,approx1,gg1,etc.)
 
-	// Argument 1: Method type
+	// Recognized arguments:
+	string _METHODS_;
+	_METHODS_ = "fEuler midpt rk4 custom";
+	transform(_METHODS_.begin(), _METHODS_.end(), _METHODS_.begin(), ::tolower); // convert to lower case
+	string _PREPOST_;
+	_PREPOST_ =  "pre-neg:rb pre-neg:sb pre-eps:rb pre-eps:sb post-eps:rb post-eps:sb ";
+	_PREPOST_ += "Anderson:rb Anderson:sb fixed fixed:no-ES default";
+	transform(_PREPOST_.begin(), _PREPOST_.end(), _PREPOST_.begin(), ::tolower); // convert to lower case
+	string _PARAMS_;
+	_PARAMS_ = "eps apx1 gg1 p pp q w tau bt";
+	// Defaults
+	params["apx1"] = "3.0";
+	params["gg1"]  = "100.0";
+	params["p"]    = "0.5";
+	params["pp"]   = "0.8";
+	params["q"]    = "1.5";
+	params["w"]    = "0.75";
+
+	// Argument 0: Method type
 	if (verbose) cout << "1: ";
-	if (arg[0] == "fEuler"){
+	vector<vector<double> > alpha; 	// Butcher tableau
+	vector<double> beta;			    // Butcher tableau
+	transform(method.begin(), method.end(), method.begin(), ::tolower); // convert to lower case
+	if ((" "+_METHODS_+" ").find(" "+method+" ")==string::npos){ // match whole words only
+		cout << "Uh oh, I don't recognize your choice of method (" << arg[0] << ")." << endl;
+		cout << "Currently supported methods are ==> " << _METHODS_ << endl;
+		cout << "Please try again." << endl;
+		exit(1);
+	}
+	else if (method == "feuler"){
 		if (verbose) cout << "You've chosen 'fEuler'. Very good." << endl;
 		// alpha
 		alpha.resize(1);
@@ -360,7 +391,7 @@ void Network3::init_PLA(string config, bool verbose){
 		// beta
 		beta.push_back(1.0);
 	}
-	else if (arg[0] == "midpt"){
+	else if (method == "midpt"){
 		if (verbose) cout << "You've chosen 'midpt'. This should be interesting." << endl;
 		// alpha
 		alpha.resize(2);
@@ -369,7 +400,7 @@ void Network3::init_PLA(string config, bool verbose){
 		// beta
 		beta.push_back(0.0); beta.push_back(1.0);
 	}
-	else if (arg[0] == "rk4"){
+	else if (method == "rk4"){
 		if (verbose) cout << "You've chosen 'rk4'. Go get 'em cowboy." << endl;
 		// alpha
 		alpha.resize(4);
@@ -380,84 +411,65 @@ void Network3::init_PLA(string config, bool verbose){
 		// beta
 		beta.push_back(1.0/6.0); beta.push_back(1.0/3.0); beta.push_back(1.0/3.0); beta.push_back(1.0/6.0);
 	}
-	else if (arg[0] == "custom"){
-		// Error check
-		if (arg.size() != 5){
-			cout << "Oops, you've chosen 'custom' but you haven't specified a Butcher tableau input file." << endl;
-			cout << "It should be the 5th argument but I only see 4. Please try again." << endl;
-			exit(1);
-		}
-		//
+	else if (method == "custom"){
 		if (verbose) cout << "You've chosen 'custom'. The adventurous type I see." << endl;
 	}
-	else{
-		cout << "Uh oh, I don't recognize your choice of method (" << arg[0] << "). Currently supported methods are" << endl;
-		cout << "  'fEuler', 'midpt', 'rk4' and 'custom'. Please try again." << endl;
-		exit(1);
-	}
 
-	// Argument 2: RB or SB
+	// Argument 1: Preleap/postleap configuration
 	if (verbose) cout << "2: ";
-	if (arg[1] == "rb" || arg[1] == "RB"){
-		if (verbose) cout << "You've chosen a reaction-based approach. I like it, I like it a lot." << endl;
-	}
-	else if (arg[1] == "sb" || arg[1] == "SB"){
-		if (verbose) cout << "You've chosen a species-based approach. Excellent choice sir." << endl;
-	}
-	else{
-		cout << "Oops, the 2nd argument must specify rxn-based ('rb' or 'RB') or species-based ('sb' or 'SB')." << endl;
-		cout << "You entered '" << arg[1] << "'. Please try again." << endl;
+	transform(prepost.begin(), prepost.end(), prepost.begin(), ::tolower); // convert to lower case
+	if ((" "+_PREPOST_+" ").find(" "+prepost+" ")==string::npos){ // // match whole words only
+		cout << "Uh oh, I don't recognize your preleap/postleap configuration (" << arg[1] << ")." << endl;
+		cout << "Supported configurations are ==> " << _PREPOST_ << endl;
+		cout << "Please try again." << endl;
 		exit(1);
 	}
+	else if (prepost == "fixed"){
+		if (verbose){
+			cout << "You've chosen a fixed time step method. Back to basics." << endl;
+		}
+	}
+	else if (prepost == "default"){
+		if (verbose){
+			cout << "You've chosen the default preleap/postleap configuration: 'preNeg:sb'" << endl;
+		}
+		//
+		prepost = "pre-neg:sb";
+	}
+	else if (prepost.find(":rb")!=string::npos || prepost.find(":sb")!=string::npos){
+		if (prepost.find(":rb")!=string::npos){
+			if (verbose) cout << "You've chosen a reaction-based ";
+		}
+		else if (prepost.find(":sb")!=string::npos){
+			if (verbose) cout << "You've chosen a species-based ";
+		}
+		if (prepost.find("pre-neg:")!=string::npos){
+			if (verbose){
+				cout << "preleap tau calculator with a negative-population postleap checker." << endl;
+				cout << "   Very good, a straightforward but effective choice." << endl;
+			}
+		}
+		else if (prepost.find("pre-eps:")!=string::npos){
+			if (verbose){
+				cout << "preleap tau calculator with an epsilon-based postleap checker." << endl;
+				cout << "   Excellent, this should improve the accuracy of your results." << endl;
+			}
+		}
+		else if (prepost.find("post-eps:")!=string::npos || prepost.find("anderson:")!=string::npos){
+			if (verbose){
+				cout << "Anderson-style postleap checker/tau calculator." << endl;
+				cout << "   I like how you think." << endl;
+			}
+		}
+	}
 
-	// Argument 3: PLA configuration
-	if (verbose) cout << "3: ";
-	if (arg[2] == "pre:neg"){
-		if (verbose){
-			cout << "You've chosen to use a preleap tau calculator and a negative-population postleap checker." << endl;
-			cout << "   Very good, a straightforward but effective choice." << endl;
-		}
-	}
-	else if (arg[2] == "pre:eps"){ // formerly "pre:post"
-		if (verbose){
-			cout << "You've chosen to use a preleap tau calculator and an epsilon-based postleap checker." << endl;
-			cout << "   Excellent, this should improve the accuracy of your results." << endl;
-		}
-	}
-	else if (arg[2] == "post:eps"){ // formerly "post:post"
-		if (verbose){
-			cout << "Ahh, you must be hungry, you've chosen the combo meal: an Anderson-style combined" << endl;
-			cout << "   tau calculator/postleap checker. I like how you think." << endl;
-		}
-	}
-	else if (arg[2] == "fixed"){
-		if (verbose){
-			cout << "You've chosen a fixed timestep method. Back to basics." << endl;
-		}
-	}
-	else{
-		cout << "Uh oh, I don't recognize your preleap:postleap configuration. Supported configurations are" << endl;
-		cout << "'fixed', 'pre:neg', 'pre:eps', and 'post:eps'. You entered '" << arg[2] << "'. Please try again." << endl;
-		exit(1);
-	}
-
-	// Argument 4: PLA parameters
-	if (verbose) cout << "4: ";
+	// Argument 2: parameters
+	if (verbose) cout << "3: User-defined parameters:" << endl;
 	last = -1;
-	arg[3].append(",");
+	arg[2].append(",");
 	string s, name, val;
-	param.resize(7,NAN);
-	// Default values
-	param[1] = 3.0;   // apx1
-	param[2] = 100.0; // gg1
-	param[3] = 0.5;   // p
-	param[4] = 0.8;   // pp
-	param[5] = 1.5;   // q
-	param[6] = 0.75;  // w
-	vector<bool> definedParam;
-	definedParam.resize(7,false);
-	while ((next = arg[3].find(',',last+1)) != (int)string::npos){
-		s = arg[3].substr(last+1,next-(last+1));
+	while ((next = arg[2].find(',',last+1)) != (int)string::npos){
+		s = arg[2].substr(last+1,next-(last+1));
 		size_t equal = s.find("=");
 		if (equal == string::npos){ // Error check
 			cout << "Oops, PLA parameters must be input in the form 'param=val'. "
@@ -465,92 +477,48 @@ void Network3::init_PLA(string config, bool verbose){
 		}
 		name = s.substr(0,equal);
 		Util::remove_whitespace(name);
+		transform(name.begin(), name.end(), name.begin(), ::tolower); // convert to lower case
 		val = s.substr(equal+1,string::npos);
-		double valDbl;
-		if (val == "INFINITY") valDbl = INFINITY;
-		else valDbl = atof(val.c_str());
-		if (name == "eps" || name == "tau"){
-			param[0] = valDbl;
-			definedParam[0] = true;
-		}
-		else if (name == "apx1"){
-			param[1] = valDbl;
-			definedParam[1] = true;
-		}
-		else if (name == "gg1"){
-			param[2] = valDbl;
-			definedParam[2] = true;
-		}
-		else if (name == "p"){
-			param[3] = valDbl;
-			definedParam[3] = true;
-		}
-		else if (name == "pp"){
-			param[4] = valDbl;
-			definedParam[4] = true;
-		}
-		else if (name == "q"){
-			param[5] = valDbl;
-			definedParam[5] = true;
-		}
-		else if (name == "w"){
-			param[6] = valDbl;
-			definedParam[6] = true;
-		}
-		else{ // Error check
-			cout << "Oops, I don't recognize the parameter " << name << " in argument 4: \"" << arg[3] << "\". "
-				 << "Please try again." << endl;
+		// Set parameter values
+		if ((" "+_PARAMS_+" ").find(" "+name+" ")==string::npos){ // match whole words only
+			cout << "Oops, I don't recognize the parameter '" << name << "' (=" << val << ")." << endl;
+			cout << "Currently supported parameters are ==> " << _PARAMS_ << endl;
+			cout << "Please try again." << endl;
 			exit(1);
+		}
+		else {
+			if (verbose) cout << "   " << name << " = " << val << endl;
+			params[name] = val;
 		}
 		last = next;
 	}
-
 	// Error check
-	if (!definedParam[0]){ // User required to define 'eps'. All other parameters have default values.
-		cout << "Oops, must provide a value for 'eps' (<< 1). Please try again." << endl;
+	if (prepost == "fixed"){
+		if (params.find("tau")==params.end()){
+			cout << "Oops, 'fixed' requires that 'tau' be defined. Please try again." << endl;
+			exit(1);
+		}
+	}
+	else if (params.find("eps")==params.end()){
+		cout << "Oops, '" << prepost << "' requires that 'eps' be defined. Please try again." << endl;
 		exit(1);
 	}
-
-	if (verbose){
-		cout << "Your simulation parameters for this run are:" << endl;
-		for (unsigned int i=0;i < param.size();i++){
-			if (i==0) cout << "   eps = "	<< param[0];
-			if (i==1) cout << "   apx1 = "	<< param[1];
-			if (i==2) cout << "   gg1 = " 	<< param[2];
-			if (i==3) cout << "   p = " 	<< param[3];
-			if (arg[2] == "post:eps"){
-				if (i==4) cout << "   pp = " 	<< param[4];
-				if (i==5) cout << "   q = " 	<< param[5];
-				if (i==6) cout << "   w = " 	<< param[6];
-			}
-			if (i < 4 || arg[2] == "post:eps"){
-				if (!definedParam[i]) cout << " (default)";
-				cout << endl;
-			}
+	if (method == "custom"){
+		if (params.find("bt")==params.end()){
+			cout << "Oops, 'custom' requires that 'bt' (Butcher tableau input file) be defined. Please try again." << endl;
 		}
-	}
-
-	// Argument 5 (optional): Path to Butcher tableau input file
-	if (arg.size() == 5){
-		if (verbose) cout << "5: ";
-		if (verbose) cout << "You've specified a Butcher tableau input file: " << arg[4] << endl;
-
-		// Continue
-		if (arg[0] != "custom"){ // skip
-			if (verbose) cout << "   You haven't chosen 'custom', so I'll ignore it." << endl;
-		}
-		else
-		{
+		else{
+			// Read Butcher tableau input file
+			if (verbose) cout << "  >You've specified a Butcher tableau input file: " << params["bt"] << endl;
 			// Try to open the file
-			if (fopen(arg[4].c_str(),"r")){
+			if (fopen(params["bt"].c_str(),"r")){
 				if (verbose) cout << "   Ok, I see it." << endl;
+				read_Butcher_tableau(params["bt"],alpha,beta,verbose);
 			}
 			else{
-				cout << "   Sorry , I can't find it: \"" << arg[4].c_str() << "\". Please try again." << endl;
+				cout << "   Sorry, I can't find it. Please try again." << endl;
 				exit(1);
 			}
-			// Read file
-			read_Butcher_tableau(arg[4],alpha,beta,verbose);
 		}
 	}
 
@@ -559,56 +527,69 @@ void Network3::init_PLA(string config, bool verbose){
 	RxnClassifier* rc = 0;
 	FiringGenerator* fg = 0;
 	PostleapChecker* pl = 0;
-	//
 	ButcherTableau bt(alpha,beta);
-	double eps = param[0];
-	double approx1 = param[1];
-	double gg1 = param[2];
-	double p = param[3];
+	double apx1 = atof(params["apx1"].c_str());
+	double gg1  = atof(params["gg1"].c_str());
+	double p    = atof(params["p"].c_str());
 	//
-	// Preleap TC (required for all configurations)
+	if (verbose){
+		cout << "  >Parameters for this run:" << endl;
+		if (prepost == "fixed") cout << "   tau  = " << params["tau"] << endl;
+		else cout << "   eps  = " << params["eps"] << endl;
+		cout << "   apx1 = " << params["apx1"] << endl;
+		cout << "   gg1  = " << params["gg1"] << endl;
+		cout << "   p    = " << params["p"] << endl;
+	}
+	// Create preleap tau calculator first
 	Preleap_TC* ptc;
-	if (arg[2] == "fixed"){
-		static Fixed_TC fixed_ptc(param[0]);
+	double eps_tau;
+	if (prepost.find("fixed")!=string::npos){
+		eps_tau = atof(params["tau"].c_str());
+		static Fixed_TC fixed_ptc(eps_tau);
 		ptc = &fixed_ptc;
 	}
-	else if (arg[1] == "rb" || arg[1] == "RB"){
-		static fEulerPreleapRB_TC fe_ptc(eps,REACTION);
-		ptc = &fe_ptc;
-	}
 	else{
-		static fEulerPreleapSB_TC fe_ptc(eps,SPECIES,REACTION);
-		ptc = &fe_ptc;
+		eps_tau = atof(params["eps"].c_str());
+		if (prepost.find(":rb")!=string::npos){
+			static fEulerPreleapRB_TC fe_ptc(eps_tau,REACTION);
+			ptc = &fe_ptc;
+		}
+		else{
+			static fEulerPreleapSB_TC fe_ptc(eps_tau,SPECIES,REACTION);
+			ptc = &fe_ptc;
+		}
 	}
-	//
 	// Configuration 1: preTC_RC_FG_negPL
-	if (arg[2] == "pre:neg" || arg[2] == "fixed"){
-		static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
+	if (prepost.find("pre-neg:")!=string::npos || prepost.find("fixed")!=string::npos){
+		static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,ptc,SPECIES,REACTION);
 		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 	}
 	// Configuration 2: preTC_RC_FG_postPL
-	else if (arg[2] == "pre:eps"){
-		if (arg[1] == "rb" || arg[1] == "RB"){
-			static eRungeKutta_preTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
-			tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
-		}
-		else{
-			static eRungeKutta_preTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,ptc,SPECIES,REACTION);
-			tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
-		}
+	else if (prepost == "pre-eps:rb"){
+		static eRungeKutta_preTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,ptc,SPECIES,REACTION);
+		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
+	}
+	else if (prepost == "pre-eps:sb"){
+		static eRungeKutta_preTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,ptc,SPECIES,REACTION);
+		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 	}
 	// Configuration 3: postTC_RC_FG_postPL
-	else if (arg[2] == "post:eps"){
-		double pp = param[4];
-		double q = param[5];
-		double w = param[6];
+	else if (prepost.find("post-eps:")!=string::npos || prepost.find("anderson:")!=string::npos){
+		double pp = atof(params["pp"].c_str());
+		double q  = atof(params["q"].c_str());
+		double w  = atof(params["w"].c_str());
 		if (arg[1] == "rb" || arg[1] == "RB"){
-			static eRungeKutta_postTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
+			static eRungeKutta_postTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
 			tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
 		}
 		else{
-			static eRungeKutta_postTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps,approx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
+			static eRungeKutta_postTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
 			tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
+		}
+		if (verbose){
+			cout << "   pp   = " << params["pp"] << endl;
+			cout << "   q    = " << params["q"] << endl;
+			cout << "   w    = " << params["w"] << endl;
 		}
 	}
 	//
@@ -945,23 +926,24 @@ void Network3::read_Butcher_tableau(string filename, vector<vector<double> >& al
 	}
 	// Print to screen
 	if (verbose){
-		cout << "   -----" << endl;
-		cout << "   Columns:\t" << dim << endl;
-		cout << "   Rows:\t" << nRows << endl;
-		cout << "   -----" << endl;
+		printf("  --------------------------\n");
+		printf("   Columns: %d\n",dim);
+		printf("   Rows:    %d\n",nRows);
+		printf("  --------------------------\n");
 		for (unsigned int i=0;i < alpha.size();i++){
-			cout << "   ";
+			printf("   ");
 			for (unsigned int j=0;j < alpha[i].size();j++){
-				cout << alpha[i][j] << "\t";
+				printf("%-7.4g  ",alpha[i][j]);
 			}
-			cout << endl;
+			printf("\n");
 		}
-		cout << "   -----" << endl;
-		cout << "   ";
+		printf("  --------------------------\n");
+		printf("   ");
 		for (unsigned int i=0;i < beta.size();i++){
-			cout << beta[i] << "\t";
+			printf("%-7.4g  ",beta[i]);
 		}
-		cout << endl;
+		printf("\n");
+		printf("  --------------------------\n");
 	}
 }
 
