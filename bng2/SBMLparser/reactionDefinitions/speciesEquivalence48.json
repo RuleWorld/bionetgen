@@ -1,0 +1,23 @@
+{
+	"reactionDefinition" : [
+	],
+	"complexDefinition" : [
+	["PLCgP_I",[["PLC","iMod",["s","I"],"phospo",["s","P"]]]],
+	["EGFR_P",[["EGFR","phospo",["s","P"]]]]
+	]
+	,
+	"modificationDefinition": {
+	"EGF_EGFR2_P":["EGFR_P","Epidermal_Growth_Factor","EGFR_P","Epidermal_Growth_Factor"],
+	"EGF_EGFR2_PLCg":["EGFR","Epidermal_Growth_Factor","EGFR","Epidermal_Growth_Factor","PLCg"],
+	"EGF_EGFR2_PLCg_P":["EGFR","Epidermal_Growth_Factor","EGFR","Epidermal_Growth_Factor","PLCg_P"],
+	"EGF_EGFR2_Grb2":["EGFR","Epidermal_Growth_Factor","EGFR","Epidermal_Growth_Factor","Grb2"],
+	"EGF_EGFR2_Shc":["EGFR","Epidermal_Growth_Factor","EGFR","Epidermal_Growth_Factor","Shc"],
+	"EGF_EGFR2_Shc_Grb2":["EGFR","Epidermal_Growth_Factor","EGFR","Epidermal_Growth_Factor","Grb2","Shc"],
+	"EGF_EGFR_Shc_P":["EGFR","Epidermal_Growth_Factor","EGFR","Epidermal_Growth_Factor","Shc_P"],
+	"EGF_EGFR2_Shc_Grb2_SOS":["EGFR","Epidermal_Growth_Factor","EGFR","Epidermal_Growth_Factor","Grb2","Shc","SOS"],
+	"Shc_Grb2":["Shc","Grb2"],
+	"Shc_Grb2_SOS":["Shc","Grb2","SOS"]
+	}
+	
+	
+}

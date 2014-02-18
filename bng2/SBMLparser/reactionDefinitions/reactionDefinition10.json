@@ -1,0 +1,7 @@
+{"reactions": [[["S0", "S1"], ["S2"]], [["S2"], ["S0", "S1"]], [[],["S0"]],[["S0"],[]]],
+"reactionsNames": ["Binding","Generation","Decay","star","modN"],
+ "namingConvention":[["suffix","_star"],["suffix","_N"]],
+ "reactionSite":["star","modN"],
+"reactionState":["S","N"],
+ "definitions": [[{"r":[0]}],[{"r":[2]}],[{"r":[3]}],[{"n":[0],"rsi":0,"rst":0}],[{"n":[1],"rsi":1,"rst":1}]]
+ }
