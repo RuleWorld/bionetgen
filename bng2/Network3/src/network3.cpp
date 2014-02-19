@@ -458,13 +458,6 @@ void Network3::init_PLA(string config, bool verbose){
 
 	// Build the PLA simulator
 	ButcherTableau bt(alpha,beta);
-	// Required params
-	if (PARAMS.find("apx1")==PARAMS.end()) PARAMS["apx1"] = _DEFAULT_PARAMS_["apx1"];
-	if (PARAMS.find("gg1")==PARAMS.end())  PARAMS["gg1"]  = _DEFAULT_PARAMS_["gg1"];
-	if (PARAMS.find("p")==PARAMS.end())    PARAMS["p"]    = _DEFAULT_PARAMS_["p"];
-	double apx1 = atof(PARAMS["apx1"].c_str());
-	double gg1  = atof(PARAMS["gg1"].c_str());
-	double p    = atof(PARAMS["p"].c_str());
 	//
 	if (arg.size() > 1){
 		if (verbose) cout << "3. Preleap/postleap configuation:\n";
@@ -527,7 +520,14 @@ void Network3::init_PLA(string config, bool verbose){
 			}
 		}
 
+		if (PARAMS.find("eps")==PARAMS.end()) PARAMS["eps"] = 0.0; // Only for fixed-neg, which doesn't need 'eps'
+		if (PARAMS.find("apx1")==PARAMS.end()) PARAMS["apx1"] = _DEFAULT_PARAMS_["apx1"];
+		if (PARAMS.find("gg1")==PARAMS.end())  PARAMS["gg1"]  = _DEFAULT_PARAMS_["gg1"];
+		if (PARAMS.find("p")==PARAMS.end())    PARAMS["p"]    = _DEFAULT_PARAMS_["p"];
 		double eps = atof(PARAMS["eps"].c_str());
+		double apx1 = atof(PARAMS["apx1"].c_str());
+		double gg1  = atof(PARAMS["gg1"].c_str());
+		double p    = atof(PARAMS["p"].c_str());
 		// Configuration 1: preTC_RC_FG_negPL
 		if (PREPOST.find("pre-neg:")!=string::npos || PREPOST == "fixed-neg"){
 			if (verbose) cout << " with a negative-population postleap checker.\n";
