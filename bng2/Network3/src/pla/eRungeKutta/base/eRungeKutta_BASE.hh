@@ -54,7 +54,7 @@ namespace network3{
 	protected:
 		bool round;
 		double eps;
-		double approx1;
+		double apx1;
 		double gg1;
 		Preleap_TC* ptc;
 		aEff_Calculator* aCalc;

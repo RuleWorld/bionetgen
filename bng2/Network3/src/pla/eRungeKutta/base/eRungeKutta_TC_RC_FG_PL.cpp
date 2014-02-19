@@ -7,9 +7,9 @@
 
 #include "../eRungeKutta.hh"
 
-eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double apx1, double gg1, double p,
 		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn) : round(true), eps(eps),
-		approx1(approx1), gg1(gg1), rxn(rxn){
+		apx1(apx1), gg1(gg1), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
 	// Error check
@@ -27,9 +27,9 @@ eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, 
 	this->bc = new BinomialCorrector_RK(p,rxn);
 }
 
-eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double approx1, double gg1, double p,
+eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, double apx1, double gg1, double p,
 		Preleap_TC* ptc, vector<SimpleSpecies*>& sp, vector<Reaction*>& rxn, bool round) : round(round), eps(eps),
-		approx1(approx1), gg1(gg1), rxn(rxn){
+				apx1(apx1), gg1(gg1), rxn(rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL constructor called." << endl;
 	// Error check
@@ -51,7 +51,7 @@ eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(ButcherTableau bt, double eps, 
 
 eRungeKutta_TC_RC_FG_PL::eRungeKutta_TC_RC_FG_PL(const eRungeKutta_TC_RC_FG_PL& tc_rc_fg_pl) : TauCalculator(tc_rc_fg_pl),
 		RxnClassifier(tc_rc_fg_pl), FiringGenerator(tc_rc_fg_pl), PostleapChecker(tc_rc_fg_pl), round(tc_rc_fg_pl.round),
-		eps(tc_rc_fg_pl.eps), approx1(tc_rc_fg_pl.approx1), gg1(tc_rc_fg_pl.gg1), rxn(tc_rc_fg_pl.rxn){
+		eps(tc_rc_fg_pl.eps), apx1(tc_rc_fg_pl.apx1), gg1(tc_rc_fg_pl.gg1), rxn(tc_rc_fg_pl.rxn){
 	if (debug)
 		cout << "eRungeKutta_TC_RC_FG_PL copy constructor called." << endl;
 	//
@@ -90,7 +90,7 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 			else if (a_tau > this->gg1){
 				classif[v] = RxnClassifier::LANGEVIN;
 			}
-			else if (a_tau > this->approx1){
+			else if (a_tau > this->apx1){
 				classif[v] = RxnClassifier::POISSON;
 			}
 			else{
@@ -98,7 +98,7 @@ void eRungeKutta_TC_RC_FG_PL::classifyRxns(vector<int>& classif, double tau, boo
 //				classif[v] = RxnClassifier::EXACT_STOCHASTIC;
 				//
 				// NEW classification scheme
-///*			// Calculate derivatives dav/dXj
+///*				// Calculate derivatives dav/dXj
 				vector<double> dav_dX;
 				for (unsigned int j=0;j < this->rxn[v]->rateSpecies.size();j++){
 					dav_dX.push_back(this->rxn[v]->get_dRate_dX(j));
