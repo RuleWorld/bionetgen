@@ -309,18 +309,6 @@ void Network3::init_Network3(double* t, bool verbose){
 
 void Network3::init_PLA(string config, bool verbose){
 
-	// 1st argument: Method type (fEuler, midpt, rk4, custom).
-	// 2nd argument: Rxn-based (rb) or species-based (sb).
-	// 3rd argument: TauCalculator:PostleapChecker type (pre:neg, pre:post, post:post).
-	// 4th argument: PLA parameters:
-	//				 1 required (eps)
-	//				 6 optional (apx1,gg1,p,pp,q,w)
-	// 5th argument (optional): Path to butcher tableau file (required if 'custom' chosen in arg 1).
-
-	string method;					// Method (fEuler,midpt,etc.)
-	string prepost;					// Preleap/postleap config (preNeg:sb,fixed,etc.)
-	map<string,string> params;		// Parameters (eps,approx1,gg1,etc.)
-
 	cout << "Initializing PLA simulation. Configuration = \"" << config << "\"" << endl;
 
 	// Remove '|' from beginning of string, if present
@@ -341,179 +329,121 @@ void Network3::init_PLA(string config, bool verbose){
 	}
 
 	// Error check
-	if (arg.size() != 3){
-		cout << "Oops, 3 arguments are required, you've specified " << arg.size() << "." << endl;
+	if (arg.size() < 1 || arg.size() > 3){
+		cout << "Oops, a minimum of 1 and a maximum of 3 arguments are allowed. You've defined " << arg.size() << "." << endl;
 		cout << "Please try again." << endl;
 		exit(1);
-	}
-	else{
-		method = arg[0];
-		prepost = arg[1];
 	}
 
 	// Process arguments
 	if (verbose) cout << "Processing..." << endl;
+	string footnotes = "";
 
-	// Recognized arguments:
-	string _METHODS_;
-	_METHODS_ = "fEuler midpt rk4 custom";
-	transform(_METHODS_.begin(), _METHODS_.end(), _METHODS_.begin(), ::tolower); // convert to lower case
-	string _PREPOST_;
-	_PREPOST_ =  "pre-neg:rb pre-neg:sb pre-eps:rb pre-eps:sb post-eps:rb post-eps:sb ";
-	_PREPOST_ += "Anderson:rb Anderson:sb fixed fixed:no-ES default";
-	transform(_PREPOST_.begin(), _PREPOST_.end(), _PREPOST_.begin(), ::tolower); // convert to lower case
-	string _PARAMS_;
-	_PARAMS_ = "eps apx1 gg1 p pp q w tau bt";
-	// Defaults
-	params["apx1"] = "3.0";
-	params["gg1"]  = "100.0";
-	params["p"]    = "0.5";
-	params["pp"]   = "0.8";
-	params["q"]    = "1.5";
-	params["w"]    = "0.75";
-
-	// Argument 0: Method type
-	if (verbose) cout << "1: ";
+	string METHOD;             // arg[0]: fEuler, midpt, rk4, custom, etc.
+	string PREPOST;            // arg[1]: pre-neg:rb, pre-neg:sb, pre-eps:rb, etc.
+	map<string,string> PARAMS; // arg[2]: eps, apx1, gg1, p, pp, q, w, etc.
+	TauCalculator* tc = 0;
+	RxnClassifier* rc = 0;
+	FiringGenerator* fg = 0;
+	PostleapChecker* pl = 0;
 	vector<vector<double> > alpha; 	// Butcher tableau
 	vector<double> beta;			    // Butcher tableau
-	transform(method.begin(), method.end(), method.begin(), ::tolower); // convert to lower case
-	if ((" "+_METHODS_+" ").find(" "+method+" ")==string::npos){ // match whole words only
-		cout << "Uh oh, I don't recognize your choice of method (" << arg[0] << ")." << endl;
-		cout << "Currently supported methods are ==> " << _METHODS_ << endl;
+
+	// Recognized arguments and defaults
+	string _ALLOWED_METHODS_ = " fEuler midpt rk4 custom force-ES ";
+	transform(_ALLOWED_METHODS_.begin(), _ALLOWED_METHODS_.end(), _ALLOWED_METHODS_.begin(), ::tolower); // convert to lower case
+	string _ALLOWED_PREPOST_;
+	_ALLOWED_PREPOST_  =  " pre-neg:rb pre-neg:sb pre-eps:rb pre-eps:sb post-eps:rb post-eps:sb Anderson:rb Anderson:sb";
+	_ALLOWED_PREPOST_ +=  " default fixed-neg fixed-eps:rb fixed-eps:sb ";
+	transform(_ALLOWED_PREPOST_.begin(), _ALLOWED_PREPOST_.end(), _ALLOWED_PREPOST_.begin(), ::tolower); // convert to lower case
+	string _DEFAULT_PREPOST_ = "pre-neg:sb";
+	string _ALLOWED_PARAMS_ = " eps apx1 gg1 p pp q w tau bt ";// force=Poisson force=Langevin force=Determ ";
+	map<string,string> _DEFAULT_PARAMS_;
+	_DEFAULT_PARAMS_["apx1"] = "3.0";
+	_DEFAULT_PARAMS_["gg1"]  = "100.0";
+	_DEFAULT_PARAMS_["p"]    = "0.5";
+	_DEFAULT_PARAMS_["pp"]   = "0.8";
+	_DEFAULT_PARAMS_["q"]    = "1.5";
+	_DEFAULT_PARAMS_["w"]    = "0.75";
+
+	// Process parameters
+	if (arg.size() > 2){
+		if (verbose) cout << "1. User-defined parameters:\n";
+		last = -1;
+		arg[2].append(",");
+		string s, name, val;
+		// Get parameter names and values
+		while ((next = arg[2].find(',',last+1)) != (int)string::npos){
+			s = arg[2].substr(last+1,next-(last+1));
+			size_t equal = s.find("=");
+			if (equal == string::npos){ // Error check
+				cout << "Oops, PLA parameters must be input in the form 'param=val'. "
+						"You input " << s << ". Please try again." << endl;
+			}
+			name = s.substr(0,equal);
+			Util::remove_whitespace(name);
+			transform(name.begin(), name.end(), name.begin(), ::tolower); // convert to lower case
+			val = s.substr(equal+1,string::npos);
+			// Set parameter values
+			if ((" "+_ALLOWED_PARAMS_+" ").find(" "+name+" ")==string::npos){ // match whole words only
+				cout << "Oops, I don't recognize the parameter '" << name << "' (=" << val << ")." << endl;
+				cout << "Currently supported parameters are ==> " << _ALLOWED_PARAMS_ << endl;
+				cout << "Please try again." << endl;
+				exit(1);
+			}
+			else {
+				if (verbose) cout << "   " + name + " = " + val + "\n";
+				PARAMS[name] = val;
+			}
+			last = next;
+		}
+	}
+
+	// Process method type
+	if (verbose) cout << "2. Method type:\n";
+	METHOD = arg[0];
+	transform(METHOD.begin(), METHOD.end(), METHOD.begin(), ::tolower); // convert to lower case
+	if ((" "+_ALLOWED_METHODS_+" ").find(" "+METHOD+" ")==string::npos){ // match whole words only
+		cout << "Uh oh, I don't recognize your choice of method: '" << arg[0] << "'" << endl;
+		cout << "Currently supported methods are ==> " << _ALLOWED_METHODS_ << endl;
 		cout << "Please try again." << endl;
 		exit(1);
 	}
-	else if (method == "feuler"){
-		if (verbose) cout << "You've chosen 'fEuler'. Very good." << endl;
-		// alpha
+	else if (METHOD == "feuler"){
+		if (verbose) cout << "   You've chosen 'fEuler'. Very good.\n";
 		alpha.resize(1);
 		alpha[0].push_back(0.0);
-		// beta
 		beta.push_back(1.0);
 	}
-	else if (method == "midpt"){
-		if (verbose) cout << "You've chosen 'midpt'. This should be interesting." << endl;
-		// alpha
+	else if (METHOD == "midpt"){
+		if (verbose) cout << "   You've chosen 'midpt'. This should be interesting.\n";
 		alpha.resize(2);
 		alpha[0].push_back(0.0); alpha[0].push_back(0.0);
 		alpha[1].push_back(0.5); alpha[1].push_back(0.0);
-		// beta
 		beta.push_back(0.0); beta.push_back(1.0);
 	}
-	else if (method == "rk4"){
-		if (verbose) cout << "You've chosen 'rk4'. Go get 'em cowboy." << endl;
-		// alpha
+	else if (METHOD == "rk4"){
+		if (verbose) cout << "   You've chosen 'rk4'. Go get 'em cowboy.\n";
 		alpha.resize(4);
 		alpha[0].push_back(0.0); alpha[0].push_back(0.0); alpha[0].push_back(0.0); alpha[0].push_back(0.0);
 		alpha[1].push_back(0.5); alpha[1].push_back(0.0); alpha[1].push_back(0.0); alpha[1].push_back(0.0);
 		alpha[2].push_back(0.0); alpha[2].push_back(0.5); alpha[2].push_back(0.0); alpha[2].push_back(0.0);
 		alpha[3].push_back(0.0); alpha[3].push_back(0.0); alpha[3].push_back(1.0); alpha[3].push_back(0.0);
-		// beta
 		beta.push_back(1.0/6.0); beta.push_back(1.0/3.0); beta.push_back(1.0/3.0); beta.push_back(1.0/6.0);
 	}
-	else if (method == "custom"){
-		if (verbose) cout << "You've chosen 'custom'. The adventurous type I see." << endl;
-	}
-
-	// Argument 1: Preleap/postleap configuration
-	if (verbose) cout << "2: ";
-	transform(prepost.begin(), prepost.end(), prepost.begin(), ::tolower); // convert to lower case
-	if ((" "+_PREPOST_+" ").find(" "+prepost+" ")==string::npos){ // // match whole words only
-		cout << "Uh oh, I don't recognize your preleap/postleap configuration (" << arg[1] << ")." << endl;
-		cout << "Supported configurations are ==> " << _PREPOST_ << endl;
-		cout << "Please try again." << endl;
-		exit(1);
-	}
-	else if (prepost == "fixed"){
-		if (verbose){
-			cout << "You've chosen a fixed time step method. Back to basics." << endl;
-		}
-	}
-	else if (prepost == "default"){
-		if (verbose){
-			cout << "You've chosen the default preleap/postleap configuration: 'preNeg:sb'" << endl;
-		}
-		//
-		prepost = "pre-neg:sb";
-	}
-	else if (prepost.find(":rb")!=string::npos || prepost.find(":sb")!=string::npos){
-		if (prepost.find(":rb")!=string::npos){
-			if (verbose) cout << "You've chosen a reaction-based ";
-		}
-		else if (prepost.find(":sb")!=string::npos){
-			if (verbose) cout << "You've chosen a species-based ";
-		}
-		if (prepost.find("pre-neg:")!=string::npos){
-			if (verbose){
-				cout << "preleap tau calculator with a negative-population postleap checker." << endl;
-				cout << "   Very good, a straightforward but effective choice." << endl;
-			}
-		}
-		else if (prepost.find("pre-eps:")!=string::npos){
-			if (verbose){
-				cout << "preleap tau calculator with an epsilon-based postleap checker." << endl;
-				cout << "   Excellent, this should improve the accuracy of your results." << endl;
-			}
-		}
-		else if (prepost.find("post-eps:")!=string::npos || prepost.find("anderson:")!=string::npos){
-			if (verbose){
-				cout << "Anderson-style postleap checker/tau calculator." << endl;
-				cout << "   I like how you think." << endl;
-			}
-		}
-	}
-
-	// Argument 2: parameters
-	if (verbose) cout << "3: User-defined parameters:" << endl;
-	last = -1;
-	arg[2].append(",");
-	string s, name, val;
-	while ((next = arg[2].find(',',last+1)) != (int)string::npos){
-		s = arg[2].substr(last+1,next-(last+1));
-		size_t equal = s.find("=");
-		if (equal == string::npos){ // Error check
-			cout << "Oops, PLA parameters must be input in the form 'param=val'. "
-					"You input " << s << ". Please try again." << endl;
-		}
-		name = s.substr(0,equal);
-		Util::remove_whitespace(name);
-		transform(name.begin(), name.end(), name.begin(), ::tolower); // convert to lower case
-		val = s.substr(equal+1,string::npos);
-		// Set parameter values
-		if ((" "+_PARAMS_+" ").find(" "+name+" ")==string::npos){ // match whole words only
-			cout << "Oops, I don't recognize the parameter '" << name << "' (=" << val << ")." << endl;
-			cout << "Currently supported parameters are ==> " << _PARAMS_ << endl;
-			cout << "Please try again." << endl;
-			exit(1);
-		}
-		else {
-			if (verbose) cout << "   " << name << " = " << val << endl;
-			params[name] = val;
-		}
-		last = next;
-	}
-	// Error check
-	if (prepost == "fixed"){
-		if (params.find("tau")==params.end()){
-			cout << "Oops, 'fixed' requires that 'tau' be defined. Please try again." << endl;
-			exit(1);
-		}
-	}
-	else if (params.find("eps")==params.end()){
-		cout << "Oops, '" << prepost << "' requires that 'eps' be defined. Please try again." << endl;
-		exit(1);
-	}
-	if (method == "custom"){
-		if (params.find("bt")==params.end()){
+	else if (METHOD == "custom"){
+		if (verbose) cout << "   You've chosen 'custom'. The adventurous type I see.\n";
+		if (PARAMS.find("bt")==PARAMS.end()){
 			cout << "Oops, 'custom' requires that 'bt' (Butcher tableau input file) be defined. Please try again." << endl;
+			exit(1);
 		}
 		else{
 			// Read Butcher tableau input file
-			if (verbose) cout << "  >You've specified a Butcher tableau input file: " << params["bt"] << endl;
+			if (verbose) cout << "  >You've specified a Butcher tableau input file: " << PARAMS["bt"] << endl;
 			// Try to open the file
-			if (fopen(params["bt"].c_str(),"r")){
+			if (fopen(PARAMS["bt"].c_str(),"r")){
 				if (verbose) cout << "   Ok, I see it." << endl;
-				read_Butcher_tableau(params["bt"],alpha,beta,verbose);
+				read_Butcher_tableau(PARAMS["bt"],alpha,beta,verbose);
 			}
 			else{
 				cout << "   Sorry, I can't find it. Please try again." << endl;
@@ -521,80 +451,148 @@ void Network3::init_PLA(string config, bool verbose){
 			}
 		}
 	}
+	else if (METHOD == "force-es"){
+		if (verbose) cout << "   You've chosen to force an exact-stochastic simulation. Let 'er rip!\n";
+		arg.resize(1); // discard other arguments if they exist
+	}
 
 	// Build the PLA simulator
-	TauCalculator* tc = 0;
-	RxnClassifier* rc = 0;
-	FiringGenerator* fg = 0;
-	PostleapChecker* pl = 0;
 	ButcherTableau bt(alpha,beta);
-	double apx1 = atof(params["apx1"].c_str());
-	double gg1  = atof(params["gg1"].c_str());
-	double p    = atof(params["p"].c_str());
 	//
-	if (verbose){
-		cout << "  >Parameters for this run:" << endl;
-		if (prepost == "fixed") cout << "   tau  = " << params["tau"] << endl;
-		else cout << "   eps  = " << params["eps"] << endl;
-		cout << "   apx1 = " << params["apx1"] << endl;
-		cout << "   gg1  = " << params["gg1"] << endl;
-		cout << "   p    = " << params["p"] << endl;
-	}
-	// Create preleap tau calculator first
-	Preleap_TC* ptc;
-	double eps_tau;
-	if (prepost.find("fixed")!=string::npos){
-		eps_tau = atof(params["tau"].c_str());
-		static Fixed_TC fixed_ptc(eps_tau);
-		ptc = &fixed_ptc;
-	}
-	else{
-		eps_tau = atof(params["eps"].c_str());
-		if (prepost.find(":rb")!=string::npos){
-			static fEulerPreleapRB_TC fe_ptc(eps_tau,REACTION);
-			ptc = &fe_ptc;
+	if (arg.size() > 1){
+		if (verbose) cout << "3. Preleap/postleap configuation:\n";
+		PREPOST = arg[1];
+		transform(PREPOST.begin(), PREPOST.end(), PREPOST.begin(), ::tolower); // convert to lower case
+		// Default configuration
+		if (PREPOST == "default"){
+			PREPOST = _DEFAULT_PREPOST_;
+			if (verbose) cout << "   You've chosen the default preleap/postleap configuration: '" + _DEFAULT_PREPOST_ + "'\n";
+		}
+		// Error check: Make sure pre/post configuration is supported
+		if ((" "+_ALLOWED_PREPOST_+" ").find(" "+PREPOST+" ")==string::npos){ // // match whole words only
+			cout << "Uh oh, I don't recognize your preleap/postleap configuration: '" << arg[1] << "'" << endl;
+			cout << "Supported configurations are ==> " << _ALLOWED_PREPOST_ << endl;
+			cout << "Please try again." << endl;
+			exit(1);
+		}
+		// Error check: RB and SB methods require that 'eps' be defined
+		if ( (PREPOST.find(":rb")!=string::npos || PREPOST.find(":sb")!=string::npos)
+				&& PARAMS.find("eps")==PARAMS.end()){
+			cout << "Oops, '" << PREPOST << "' requires that 'eps' be defined. Please try again." << endl;
+			exit(1);
+		}
+		// Error check: FIXED methods require that 'tau' be defined
+		if (PREPOST.find("fixed-")!=string::npos
+				&& PARAMS.find("tau")==PARAMS.end()){
+			cout << "Oops, '" << PREPOST << "' requires that 'tau' be defined. Please try again." << endl;
+			exit(1);
+		}
+
+		// Create the preleap tau calculator
+		if (verbose) {
+			cout << "   You've chosen a";
+			if (PREPOST.find(":rb")!=string::npos) cout << " reaction-based";
+			else if (PREPOST.find(":sb")!=string::npos) cout << " species-based";
+		}
+		Preleap_TC* ptc;
+		if (PREPOST.find("fixed-")!=string::npos){
+			if (verbose) {
+				cout << " fixed time step method*1,2*";
+				footnotes += "   *1* Note that 'apx1' will be set to 0.0 automatically, even if you have defined it.\n";
+				footnotes += "   *2* Also note that 'tau' will still be reduced if populations go negative or if the leap\n";
+				footnotes += "       condition is violated. The simulation may thus take more steps than expected.\n";
+			}
+			PARAMS["apx1"] = "0.0";
+			static Fixed_TC fixed_ptc(atof(PARAMS["tau"].c_str()));
+			ptc = &fixed_ptc;
 		}
 		else{
-			static fEulerPreleapSB_TC fe_ptc(eps_tau,SPECIES,REACTION);
-			ptc = &fe_ptc;
+			if (verbose) {
+				if (PREPOST.find("pre-")!=string::npos) cout << " preleap tau calculator";
+			}
+			if (PREPOST.find(":rb")!=string::npos){
+				static fEulerPreleapRB_TC fe_ptc(atof(PARAMS["eps"].c_str()),REACTION);
+				ptc = &fe_ptc;
+			}
+			else{
+				static fEulerPreleapSB_TC fe_ptc(atof(PARAMS["eps"].c_str()),SPECIES,REACTION);
+				ptc = &fe_ptc;
+			}
 		}
-	}
-	// Configuration 1: preTC_RC_FG_negPL
-	if (prepost.find("pre-neg:")!=string::npos || prepost.find("fixed")!=string::npos){
-		static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,ptc,SPECIES,REACTION);
-		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
-	}
-	// Configuration 2: preTC_RC_FG_postPL
-	else if (prepost == "pre-eps:rb"){
-		static eRungeKutta_preTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,ptc,SPECIES,REACTION);
-		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
-	}
-	else if (prepost == "pre-eps:sb"){
-		static eRungeKutta_preTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,ptc,SPECIES,REACTION);
-		tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
-	}
-	// Configuration 3: postTC_RC_FG_postPL
-	else if (prepost.find("post-eps:")!=string::npos || prepost.find("anderson:")!=string::npos){
-		double pp = atof(params["pp"].c_str());
-		double q  = atof(params["q"].c_str());
-		double w  = atof(params["w"].c_str());
-		if (arg[1] == "rb" || arg[1] == "RB"){
-			static eRungeKutta_postTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
-			tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
+
+		if (PARAMS.find("eps")==PARAMS.end()) PARAMS["eps"] = 0.0; // Only for fixed-neg, which doesn't need 'eps'
+		if (PARAMS.find("apx1")==PARAMS.end()) PARAMS["apx1"] = _DEFAULT_PARAMS_["apx1"];
+		if (PARAMS.find("gg1")==PARAMS.end())  PARAMS["gg1"]  = _DEFAULT_PARAMS_["gg1"];
+		if (PARAMS.find("p")==PARAMS.end())    PARAMS["p"]    = _DEFAULT_PARAMS_["p"];
+		double eps = atof(PARAMS["eps"].c_str());
+		double apx1 = atof(PARAMS["apx1"].c_str());
+		double gg1  = atof(PARAMS["gg1"].c_str());
+		double p    = atof(PARAMS["p"].c_str());
+		// Configuration 1: preTC_RC_FG_negPL
+		if (PREPOST.find("pre-neg:")!=string::npos || PREPOST == "fixed-neg"){
+			if (verbose) cout << " with a negative-population postleap checker.\n";
+			static eRungeKutta_preTC_RC_FG_negPL erk_tc_rc_fg_pl(bt,eps,apx1,gg1,p,ptc,SPECIES,REACTION);
+			tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
 		}
-		else{
-			static eRungeKutta_postTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps_tau,apx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
-			tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
+		// Configuration 2: preTC_RC_FG_postPL
+		else if (PREPOST.find("pre-eps:")!=string::npos || PREPOST.find("fixed-eps:")!=string::npos){
+			if (verbose) cout << " with an epsilon-based postleap checker.\n";
+			if (PREPOST.find(":rb")!=string::npos){
+				static eRungeKutta_preTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps,apx1,gg1,p,ptc,SPECIES,REACTION);
+				tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
+			}
+			else{
+				static eRungeKutta_preTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps,apx1,gg1,p,ptc,SPECIES,REACTION);
+				tc = &erk_tc_rc_fg_pl;	rc = &erk_tc_rc_fg_pl;	fg = &erk_tc_rc_fg_pl;	pl = &erk_tc_rc_fg_pl;
+			}
 		}
-		if (verbose){
-			cout << "   pp   = " << params["pp"] << endl;
-			cout << "   q    = " << params["q"] << endl;
-			cout << "   w    = " << params["w"] << endl;
+		// Configuration 3: postTC_RC_FG_postPL
+		else if (PREPOST.find("post-eps:")!=string::npos || PREPOST.find("anderson:")!=string::npos){
+			if (verbose) cout << " Anderson-style postleap checker/tau calculator.\n";
+			//
+			if (PARAMS.find("pp")==PARAMS.end()) PARAMS["pp"] = _DEFAULT_PARAMS_["pp"];
+			if (PARAMS.find("q")==PARAMS.end())  PARAMS["q"] =  _DEFAULT_PARAMS_["q"];
+			if (PARAMS.find("w")==PARAMS.end())  PARAMS["w"] =  _DEFAULT_PARAMS_["w"];
+			double pp = atof(PARAMS["pp"].c_str());
+			double q  = atof(PARAMS["q"].c_str());
+			double w  = atof(PARAMS["w"].c_str());
+			//
+			if (PREPOST.find(":rb")!=string::npos){
+				static eRungeKutta_postTC_RC_FG_rbPL erk_tc_rc_fg_pl(bt,eps,apx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
+				tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
+			}
+			else{
+				static eRungeKutta_postTC_RC_FG_sbPL erk_tc_rc_fg_pl(bt,eps,apx1,gg1,p,pp,q,w,ptc,SPECIES,REACTION);
+				tc = &erk_tc_rc_fg_pl; rc = &erk_tc_rc_fg_pl; fg = &erk_tc_rc_fg_pl; pl = &erk_tc_rc_fg_pl;
+			}
 		}
 	}
 	//
 	PLA_SIM = new PLA(*tc,*rc,*fg,*pl,SPECIES,REACTION);
-	if (verbose) cout << "...Ok done, let's go for it." << endl;
+	//
+	if (verbose){
+		cout << "4. Parameters for this run:\n";
+		if (PREPOST.find("fixed")!=string::npos){
+			cout << "   tau  = " << PARAMS["tau"] << endl;
+		}
+		if (PREPOST.find(":rb")!=string::npos || PREPOST.find(":sb")!=string::npos){
+			cout << "   eps  = " << PARAMS["eps"] << endl;
+		}
+		cout << "   apx1 = " << PARAMS["apx1"] << endl;
+		cout << "   gg1  = " << PARAMS["gg1"] << endl;
+		cout << "   p    = " << PARAMS["p"] << endl;
+		if (PREPOST.find("post-eps:")!=string::npos || PREPOST.find("anderson:")!=string::npos){
+			cout << "   pp   = " << PARAMS["pp"] << endl;
+			cout << "   q    = " << PARAMS["q"] << endl;
+			cout << "   w    = " << PARAMS["w"] << endl;
+		}
+		if (METHOD == "custom"){
+			cout << "   bt   = '" << PARAMS["bt"] << "'" << endl;
+		}
+		cout << "   -----" << endl;
+		if (footnotes != "") cout << footnotes;
+		cout << "...Ok done, let's go for it." << endl;
+	}
 }
 
 int Network3::run_PLA(double& time, double maxTime, double sampleTime,
@@ -676,7 +674,7 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 	// Simulation loop
 //	PLA_SIM->rc.forceClassifications(RxnClassifier::EXACT_STOCHASTIC);
 	string print_net_message;
-	while (time < maxTime && step < maxStep && !stop_condition.Eval())
+	while (time < (maxTime-network3::TOL) && step < (maxStep-network3::TOL) && !stop_condition.Eval())
 	{
 		// Next step
 		step++;
@@ -688,14 +686,14 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 		else break;
 
 		// Error check
-		if (PLA_SIM->tau <= 0.0){
+		if (PLA_SIM->tau <= 0.0){ // maybe (PLA_SIM->tau <= network3::TOL)
 			cout << "Error in Network3::run_PLA(): tau = " << PLA_SIM->tau << ". Shouldn't happen. Exiting." << endl;
 			exit(1);
 		}
 
 		// Is it time to output?
 		lastOut = false;
-		if (time >= nextOutputTime || step >= nextOutputStep) // YES
+		if (time >= (nextOutputTime-network3::TOL) || step >= (nextOutputStep-network3::TOL)) // YES
 		{
 			// Update all observables
 			for (unsigned int i=0;i < OBSERVABLE.size();i++){
@@ -748,8 +746,8 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 				fflush(stdout);
 			}
 			// Get next output time and step
-			if (time >= nextOutputTime) nextOutputTime += sampleTime;
-			if (step >= nextOutputStep) nextOutputStep += stepInterval;
+			if (time >= (nextOutputTime-network3::TOL)) nextOutputTime += sampleTime;
+			if (step >= (nextOutputStep-network3::TOL)) nextOutputStep += stepInterval;
 			lastOut = true;
 		}
 		else{ // NO
