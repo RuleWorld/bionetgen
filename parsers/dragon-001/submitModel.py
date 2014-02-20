@@ -4,9 +4,9 @@ Created on Mon May 27 20:32:52 2013
 
 @author: proto
 """
-import unicodedata
 
-import ast
+from __future__ import with_statement
+
 import urllib
 import os
 from google.appengine.ext.db import Key
@@ -16,11 +16,13 @@ from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
 from google.appengine.api.images import get_serving_url
 import webapp2
-from zipfile import ZipFile
-import tempfile
-from google.appengine.api import files
 
 import jinja2
+import zipfile
+import tempfile
+
+from google.appengine.api import files
+import parseAnnotations
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -51,19 +53,19 @@ class AnnotationInfo(ndb.Model):
 class ModelInfo(ndb.Model):
     """Models an individual Guestbook entry with author, content, and date."""
     author = ndb.StringProperty()
-    authorEmail = ndb.StringProperty()
     content = ndb.BlobKeyProperty() #BlobInfo(blobkey)
     contactMap = ndb.BlobKeyProperty()
     name = ndb.StringProperty()
     description = ndb.StringProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
-    tags = ndb.StringProperty(repeated=True)
     publication = ndb.StructuredProperty(PublicationInfo)
     fileFormat = ndb.StringProperty(choices=set(["bngl","kappa"]))
     submitter = ndb.UserProperty()
     annotationInfo = ndb.KeyProperty(kind=AnnotationInfo,repeated=True)
+    tags = ndb.StringProperty(repeated=True)
+    structuredTags = ndb.StringProperty(repeated=True)
     privacy = ndb.StringProperty()
-    
+    notes = ndb.StringProperty()
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
@@ -75,15 +77,12 @@ class MainPage(webapp2.RequestHandler):
             url = users.create_login_url(self.request.uri)
             url_linktext = 'Login'
             current_user = False
-
-        menuHighlight = {'HomePage':'current_page_item','List':'','Query':'',
-                         'Submit':'','Login':''}
     
         template_values ={
             'url': url,
             'url_linktext': url_linktext,
             'current_user':current_user,
-            'highlight':menuHighlight
+            'homepageh':'current_page_item'
         }
         template =JINJA_ENVIRONMENT.get_template('index2.html')
         self.response.write(template.render(template_values))
@@ -91,17 +90,7 @@ class MainPage(webapp2.RequestHandler):
 class Submit(webapp2.RequestHandler):
 
     def get(self):
-        submissionType =  self.request.get('type')
-        if submissionType=='form':
-            upload_url = blobstore.create_upload_url('/sign')
-            include_url='submit.html'
-        elif submissionType=='file':
-            upload_url = blobstore.create_upload_url('/signFile')
-            include_url = 'submitFile.html'
-        elif submissionType == 'archive':
-            upload_url = blobstore.create_upload_url('/signBatch')
-            include_url = 'submitBatch.html'
-            
+        upload_url = blobstore.create_upload_url('/sign')
         
         #model_name = self.request.get('model_name', DEFAULT_GUESTBOOK_NAME)
         #models_query = ModelInfo.query(
@@ -117,8 +106,6 @@ class Submit(webapp2.RequestHandler):
             url_linktext = 'Login'
             current_user=False
 
-        menuHighlight = {'Submit':'current_page_item'}
-        
         template_values = {
             'action':  upload_url,
             #'models': models,
@@ -127,170 +114,76 @@ class Submit(webapp2.RequestHandler):
             'url_linktext': url_linktext,
             'formatOptions':set(["bngl","kappa"]),
             'current_user':current_user,
-            'highlight':menuHighlight,
-            'type':include_url
+            'submith':'current_page_item'
         }
 
         template = JINJA_ENVIRONMENT.get_template('submit2.html')
         self.response.write(template.render(template_values))
 
-class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
-    def post(self):
+class SubmitFile(webapp2.RequestHandler):
+    def get(self):
+        upload_url = blobstore.create_upload_url('/signFile')
         
+        #model_name = self.request.get('model_name', DEFAULT_GUESTBOOK_NAME)
+        #models_query = ModelInfo.query(
+        #    ancestor=dbmodel_key(model_name)).order(-ModelInfo.date)
+        #models = models_query.fetch(10)
         
+        if users.get_current_user():
+            url = users.create_logout_url(self.request.uri)
+            url_linktext = 'Logout'
+            current_user=True
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_linktext = 'Login'
+            current_user=False
 
-        upload_files = self.get_uploads('file')
-        blob_info = upload_files[0]
+        template_values = {
+            'action':  upload_url,
+            #'models': models,
+            #'model_name': urllib.urlencode({'model_name':model_name}),
+            'url': url,
+            'url_linktext': url_linktext,
+            'formatOptions':set(["bngl","kappa"]),
+            'current_user':current_user,
+            'submith':'current_page_item'
+        }
 
-        reader = blob_info.open()
-        content =  reader.read()
-        tmp = tempfile.TemporaryFile()
-        tmp.write(content)
+        template = JINJA_ENVIRONMENT.get_template('submitFile2.html')
+        self.response.write(template.render(template_values))
+
+class SubmitBatch(webapp2.RequestHandler):
+    def get(self):
+        upload_url = blobstore.create_upload_url('/signBatch')
         
-        objZip = ZipFile(tmp,'r')
-        filelist = objZip.namelist()
-        for element in [x for x in filelist if x.endswith('bngl')]:
-            f = objZip.open(element)
-            content = f.read()
-
-            file_name = files.blobstore.create(mime_type='application/octet-stream')
+        #model_name = self.request.get('model_name', DEFAULT_GUESTBOOK_NAME)
+        #models_query = ModelInfo.query(
+        #    ancestor=dbmodel_key(model_name)).order(-ModelInfo.date)
+        #models = models_query.fetch(10)
         
-            with files.open(file_name, 'a') as f:
-              f.write(content)
-            files.finalize(file_name)
-            blob_key = files.blobstore.get_blob_key(file_name)
-            blob_key2 = None
-            
-            if element + '.png' in filelist:
-                f = objZip.open(element + '.png')
-                content2 = f.read()
+        if users.get_current_user():
+            url = users.create_logout_url(self.request.uri)
+            url_linktext = 'Logout'
+            current_user=True
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_linktext = 'Login'
+            current_user=False
 
-                file_name2 = files.blobstore.create(mime_type='application/octet-stream')
-                with files.open(file_name2,'ab') as f:
-                    f.write(content2)
-                files.finalize(file_name2)
-                blob_key2 = files.blobstore.get_blob_key(file_name2)
-            
+        template_values = {
+            'action':  upload_url,
+            #'models': models,
+            #'model_name': urllib.urlencode({'model_name':model_name}),
+            'url': url,
+            'url_linktext': url_linktext,
+            'formatOptions':set(["bngl","kappa"]),
+            'current_user':current_user,
+            'submith':'current_page_item'
+        }
 
-            fields = self.importBNGLString(content)
-            model_name = self.request.get('model_name',
-                                              DEFAULT_GUESTBOOK_NAME)
-            modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
-            print fields
-            if 'creatorName' in fields:
-                modelSubmission.author = fields['creatorName']
-                modelSubmission.authorEmail= fields['creatorEmail']
-            if 'notes' in fields:
-                modelSubmission.description = fields['notes']
-                                        
+        template = JINJA_ENVIRONMENT.get_template('submitBatch.html')
+        self.response.write(template.render(template_values))
 
-            modelSubmission.name = element 
-            modelSubmission.fileFormat = 'bngl'
-            modelSubmission.privacy = self.request.get('privacy')
-            modelSubmission.submitter =  users.get_current_user()
-            modelSubmission.content = blob_key
-            if blob_key2 != None:
-                modelSubmission.contactMap = blob_key2
-            modelSubmission.submitter =  users.get_current_user()        
-     
-            tmp  = []
-            for field in fields:
-                try:
-                    tmpField = ast.literal_eval(fields[field])
-                except SyntaxError:
-                    continue
-                if type(tmpField) == list:
-                    tmp.extend(tmpField)
-            modelSubmission.tags = tmp
-            print modelSubmission
-            modelSubmission.put()
-
-            
-    def importBNGLString(self,content):
-        content = content.split('\n')
-        fields = {}
-        try:
-            start = content.index('###')
-            end = content[start+1:].index('###')
-        except ValueError:
-            return []
-        comments = content[start+1:end+1]
-        for comment in comments:
-            try:
-                tmp = comment.split(':')
-                header = tmp[0].split('@')[1]
-                tmp[1] = ':'.join(tmp[1:])
-                message = tmp[1].encode('ascii', 'ignore')
-                fields[header] = message
-            except:
-                continue
-        return fields
-
-        
-class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
-    def post(self):
-        model_name = self.request.get('model_name',
-                                          DEFAULT_GUESTBOOK_NAME)
-        modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
-
-        upload_files = self.get_uploads('file')
-        blob_info = upload_files[0]
-        contact = self.get_uploads('contact')
-        blob_info2 = contact[0]
-
-        reader = blob_info.open()
-        content =  reader.read()
-        fields = self.importBNGLString(content)
-        print fields
-        if 'creatorName' in fields:
-            modelSubmission.author = fields['creatorName']
-        if 'notes' in fields:
-            modelSubmission.description = fields['notes']
-        
-        modelSubmission.name = blob_info.filename
-        modelSubmission.fileFormat = 'bngl'
-        modelSubmission.privacy = self.request.get('privacy')
-        modelSubmission.submitter =  users.get_current_user()
-        modelSubmission.content = blob_info.key()    
-        modelSubmission.contactMap = blob_info2.key() 
-        modelSubmission.submitter =  users.get_current_user()        
- 
-        tmp  = []
-        for field in fields:
-            try:
-                tmpField = ast.literal_eval(fields[field])
-            except SyntaxError:
-                continue
-            if type(tmpField) == list:
-                tmp.extend(tmpField)
-        modelSubmission.tags = tmp
-        print modelSubmission
-        modelSubmission.put()
-        
-
-        query_params = {'model_name': model_name}
-        self.redirect('/?' + urllib.urlencode(query_params))
-
-
-    def importBNGLString(self,content):
-        content = content.split('\n')
-        fields = {}
-        try:
-            start = content.index('###')
-            end = content[start+1:].index('###')
-        except ValueError:
-            return []
-        comments = content[start+1:end+1]
-        for comment in comments:
-            try:
-                tmp = comment.split(':')
-                header = tmp[0].split('@')[1]
-                tmp[1] = ':'.join(tmp[1:])
-                message = tmp[1].encode('ascii', 'ignore')
-                fields[header] = message
-            except:
-                continue
-        return fields
 
 class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 
@@ -330,7 +223,139 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         query_params = {'model_name': model_name}
         self.redirect('/?' + urllib.urlencode(query_params))
  
-    
+
+class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
+
+    def post(self):
+        # We set the same parent key on the 'Greeting' to ensure each greeting
+        # is in the same entity group. Queries across the single entity group
+        # will be consistent. However, the write rate to a single entity group
+        # should be limited to ~1/second.
+        
+        
+        
+        model_name = self.request.get('model_name',
+                                          DEFAULT_GUESTBOOK_NAME)
+        modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
+        publicationInfo = PublicationInfo(parent=dbmodel_key(model_name))
+
+        '''
+        publicationInfo.name = self.request.get('publication')
+        publicationInfo.journal =   self.request.get('journal')
+        '''        
+        if users.get_current_user():
+            modelSubmission.submitter = users.get_current_user()
+            
+        upload_files = self.get_uploads('file')
+        contact = self.get_uploads('contact')
+        blob_info = upload_files[0]
+        blob_info2 = contact[0]
+        modelSubmission.content = blob_info.key()
+        modelSubmission.privacy = self.request.get('privacy')
+        modelSubmission.submitter =  users.get_current_user()
+        modelSubmission.name = blob_info.filename 
+        modelSubmission.contactMap = blob_info2.key() 
+        modelSubmission.contactMap = blob_info2.key()
+        
+        bnglContent = blob_info.open().read()
+        annotationDict = parseAnnotations.parseAnnotations(bnglContent)
+        parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
+        
+        modelSubmission.author = parsedAnnotationDict['author']
+        modelSubmission.structuredTags = parsedAnnotationDict['structuredTags']
+        
+        modelSubmission.put()
+
+        #modelSubmission.author = self.request.get('author')
+        #modelSubmission.publication = publicationInfo
+        #modelSubmission.fileFormat = self.request.get('fileFormat')
+        
+        #modelSubmission.name = self.request.get('name')
+        #modelSubmission.description = self.request.get('description')
+        
+
+        query_params = {'model_name': model_name}
+        self.redirect('/?' + urllib.urlencode(query_params))
+ 
+ 
+ 
+class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
+
+    def post(self):
+        # We set the same parent key on the 'Greeting' to ensure each greeting
+        # is in the same entity group. Queries across the single entity group
+        # will be consistent. However, the write rate to a single entity group
+        # should be limited to ~1/second.
+        
+        
+        
+
+        '''
+        publicationInfo.name = self.request.get('publication')
+        publicationInfo.journal =   self.request.get('journal')
+        '''        
+            
+        upload_files = self.get_uploads('file')
+        #contact = self.get_uploads('contact')
+        #blob_info = upload_files[0]
+        reader = upload_files[0].open()
+        
+        tmp = tempfile.TemporaryFile()
+        tmp.write(reader.read()) # myZipFile is your decoded string containing the zip-data
+        objZip = zipfile.ZipFile(tmp)
+        
+        
+        nameList = objZip.namelist()
+
+        bnglnameList = [x for x in nameList if '.bngl' in x]        
+        print nameList,bnglnameList
+        for element in bnglnameList:
+            model_name = self.request.get('model_name',
+                                              DEFAULT_GUESTBOOK_NAME)
+            modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
+            if users.get_current_user():
+                modelSubmission.submitter = users.get_current_user()
+
+            zipModel = objZip.open(element)
+            
+            #fixme: this will be deprecated in the near future, use gcs client library instead
+            file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename=element)
+            with files.open(file_name, 'a') as f:
+              f.write(zipModel.read())
+            files.finalize(file_name)
+            blob_key = files.blobstore.get_blob_key(file_name)   
+            
+            modelSubmission.content = blob_key
+            modelSubmission.name = element
+            if '{0}.png'.format(element) in nameList:
+                zipModel = objZip.open(element)
+                file_name = files.blobstore.create(mime_type='application/octet-stream',
+                                                   _blobinfo_uploaded_filename='{0}.png'.format(element))
+                with files.open(file_name, 'a') as f:
+                  f.write(zipModel.read())
+                files.finalize(file_name)
+                modelSubmission.contactMap(file_name)
+                
+                
+            modelSubmission.privacy = self.request.get('privacy')
+            modelSubmission.submitter =  users.get_current_user()        
+            modelSubmission.put()
+
+        #blob_info2 = contact[0]
+        #modelSubmission.content = blob_info.key()
+
+        #modelSubmission.author = self.request.get('author')
+        #modelSubmission.publication = publicationInfo
+        #modelSubmission.fileFormat = self.request.get('fileFormat')
+        #modelSubmission.contactMap = blob_info2.key() 
+        #modelSubmission.name = self.request.get('name')
+        #modelSubmission.description = self.request.get('description')
+        
+
+        #query_params = {'model_name': model_name}
+        self.redirect('/')
+ 
+
 class Query(webapp2.RequestHandler):
     def get(self):
         if users.get_current_user():
@@ -342,15 +367,12 @@ class Query(webapp2.RequestHandler):
             url_linktext = 'Login'
             current_user=False
     
-        menuHighlight = {'Query':'current_page_item'}
-
         template_values ={
             'url': url,
             'url_linktext': url_linktext,
             'queryOptions':set(['Author','Publication']),
             'current_user':current_user,
-            'highlight':menuHighlight
-
+            'queryh':'current_page_item'
         }
         template =JINJA_ENVIRONMENT.get_template('query2.html')
         self.response.write(template.render(template_values))
@@ -371,80 +393,89 @@ class List(webapp2.RequestHandler):
         q = ModelInfo.query()
         queryArray = []
         counter = 0
-        output = ''
-        if users.get_current_user():
-            url = users.create_logout_url(self.request.uri)
-            url_linktext = 'Logout'
-            current_user=True
-        else:
-            url = users.create_login_url(self.request.uri)
-            url_linktext = 'Login'
-            current_user=False
-
         for p in q.iter():
             
-            dp = p.to_dict()
-            #only display public models
-            if dp['privacy'] == 'privacy' and dp['submitter'] != users.get_current_user():
-                continue
             counter += 1            
-            output += '{1}: Name: <a href="description?file={2}">{0}</a><br>'.format(dp['name'],counter,dp['name'])
-            output += 'Description: {0}<br><br>'.format(dp['description'])
+            dp = p.to_dict()
             newdp = {}
             #for element in dp:
-            #    if element in ['content','simulationResults']:
-            #        printStatement = blobstore.BlobInfo(dp[element]).filename
-            #    else:
-            #        printStatement = dp[element]
-            #    newdp[element] = printStatement
-                
-            #    self.response.write('{0} : {1}<br>'.format(element,printStatement))
+            #response.write('{1}: Name: <a href="description?file={2}">{0}</a><br>'.format(dp['name'],counter,dp['name']))
+            #response.write('Description: {0}<br><br>'.format(dp['description']))
+            newdp['link'] = 'description?file={0}'.format(dp['name'])
+            newdp['name'] = dp['name']
+            newdp['counter'] = counter
+            newdp['description'] = dp['description']
+            
+            #response.write('{0} : {1}<br>'.format(element,printStatement))
             queryArray.append(newdp)
-        output += '<br><br>Found {0} results<br>'.format(counter)
-        if users.get_current_user():
-            url = users.create_logout_url(self.request.uri)
-            url_linktext = 'Logout'
-        else:
-            url = users.create_login_url(self.request.uri)
-            url_linktext = 'Login'  
-        menuHighlight = {'List':'current_page_item'}
-        template_values ={
-            'url': url,
-            'url_linktext': url_linktext,
-            'output':output,
-            'current_user':current_user,
-            'highlight':menuHighlight
-        }
-        template =JINJA_ENVIRONMENT.get_template('results2.html')   
+
+        #self.response.write('<br><br>Found {0} results<br>'.format(counter))
+     
+        template_values = boilerplateParams(self.request.uri)
+        template_values['counter'] = counter
+        template_values['queryArray'] = queryArray
+        template_values['listh'] = 'current_page_item'
+        
+        template =JINJA_ENVIRONMENT.get_template('resultsList2.html')
         self.response.write(template.render(template_values))
+
+def boilerplateParams(uri):
+    if users.get_current_user():
+        url = users.create_logout_url(uri)
+        url_linktext = 'Logout'
+        current_user=True
+    else:
+        url = users.create_login_url(uri)
+        url_linktext = 'Login'
+        current_user=False
+    
+    
+    template_values ={
+    'url': url,
+    'url_linktext': url_linktext,
+    'current_user': current_user
+    }
+    
+    return template_values
+
+    
 
 class Description(webapp2.RequestHandler):
     def get(self):
         query = ModelInfo.name
         q = ModelInfo.query(query == self.request.get('file'))
+        ndp = {}
+        queryArray = []
+        
         for p in q.iter():
             dp = p.to_dict()
+            
             for element in dp:
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
-                try:
-                    if element in ['content']:
-                        printStatement = '<a href="serve/{1}?key={0}">{1}</a>'.format(dp[element],dp['name'])
-                    elif element in ['contactMap']:
-                        
-                            blobkey = urllib.unquote(str(dp[element]))
-                            url = get_serving_url(blobkey,size=400)
-                            url =' "serve/{1}?key={0}"'.format(dp[element],blobstore.BlobInfo(dp[element]).filename)                  
-                            printStatement = '<img src={0} /><br>'.format(url)
-                         #printStatement = '<img src=image?img_id={0}/><br>'.format(dp[element])
-                    else:
-                        printStatement = dp[element]
-                except TypeError:
-                    continue
-                if printStatement != None:
-                    try:
-                        self.response.write('{0}:{1}<br>'.format(element.decode('ascii', 'ignore'),printStatement))
-                    except UnicodeEncodeError:
-                        self.response.write('{0}:{1}<br>'.format(element.decode('ascii', 'ignore'),unicodedata.normalize('NFKD', printStatement).encode('ascii','ignore')))
+
+                if element in ['content']:
+                    ndp[element] = [dp[element],blobstore.BlobInfo(dp[element]).filename]
+                elif element in ['contactMap']:
+                    try:                    
+                        blobkey = urllib.unquote(str(dp[element]))
+                        url = get_serving_url(blobkey,size=400)
+                        url ='serve/{1}?key={0}'.format(dp[element],blobstore.BlobInfo(dp[element]).filename)
+                        ndp[element] = url
+                    except TypeError:
+                        pass
+                    #printStatement = '<img src=image?img_id={0}/><br>'.format(dp[element])
+                else:
+                    ndp[element] = dp[element]
+                 
+            queryArray.append(ndp)
+
+        template_values = boilerplateParams(self.request.uri)
+        template_values['queryArray'] = queryArray
+        template_values['listh'] = 'current_page_item'
+
+        template =JINJA_ENVIRONMENT.get_template('singleResult2.html')
+        self.response.write(template.render(template_values))
+
 
 class Image (webapp2.RequestHandler):
     def get(self):
@@ -492,12 +523,18 @@ def search(parameter,queryString,response):
         dp = p.to_dict()
         newdp = {}
         #for element in dp:
-        response.write('{1}: Name: <a href="description?file={2}">{0}</a><br>'.format(dp['name'],counter,dp['name']))
-        response.write('Description: {0}<br><br>'.format(dp['description']))
-            
-            #response.write('{0} : {1}<br>'.format(element,printStatement))
+        #response.write('Description: {0}<br><br>'.format(dp['description']))
+        #response.write('{1}: Name: <a href="description?file={2}">{0}</a><br>'.format(dp['name'],counter,dp['name']))
+        newdp['link'] = 'description?file={0}'.format(dp['name'])
+        newdp['name'] = dp['name']
+        newdp['counter'] = counter
+        newdp['description'] = dp['description']
+        
+        #response.write('{0} : {1}<br>'.format(element,printStatement))
         queryArray.append(newdp)
-    response.write('<br>Found {0} results<br>'.format(counter))
+    #response.write('<br>Found {0} results<br>'.format(counter))
+    
+        
     return queryArray,counter
     
 class MyModels(webapp2.RequestHandler):
@@ -505,6 +542,13 @@ class MyModels(webapp2.RequestHandler):
         query = ModelInfo.submitter
         queryString = users.get_current_user()
         queryArray,counter = search(query,queryString,self.response)
+        
+        template_values = boilerplateParams(self.request.uri)
+        template_values['counter'] = counter
+        template_values['queryArray'] = queryArray
+        template_values['myModelsh']  = 'current_page_item'
+        template =JINJA_ENVIRONMENT.get_template('resultsList2.html')
+        self.response.write(template.render(template_values))
 
             
 class Search(webapp2.RequestHandler):
@@ -515,23 +559,13 @@ class Search(webapp2.RequestHandler):
             query = ModelInfo.author
             
         queryArray,counter = search(query,self.request.get('queryString'),self.response)
-        if users.get_current_user():
-            url = users.create_logout_url(self.request.uri)
-            url_linktext = 'Logout'
-        else:
-            url = users.create_login_url(self.request.uri)
-            url_linktext = 'Login'            
-            
         
-
-        template_values ={
-            'url': url,
-            'url_linktext': url_linktext,
-            'queryArray':queryArray
-        }
-        template =JINJA_ENVIRONMENT.get_template('results.html')   
-        self.response.write(template.render(template_values))
-
+        template_values['counter'] = counter
+        template_values = boilerplateParams(self.request.uri)
+        template_values['queryArray'] = queryArray
+        
+        template =JINJA_ENVIRONMENT.get_template('resultsList2.html')
+        self.response.write(template.render(template_values)) 
         #if counter > 0:
         #    self.response.write(dp)
         #    self.response.write('<br>')
@@ -547,6 +581,8 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
 app = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/submit',Submit),
+    ('/submitFile',SubmitFile),
+    ('/submitBatch',SubmitBatch),
     ('/query',Query),
     ('/sign', ModelDB),
     ('/signFile',ModelDBFile),
@@ -557,5 +593,4 @@ app = webapp2.WSGIApplication([
     ('/myModels',MyModels),
     ('/serve/([^/]+)?', ServeHandler),
     ('/image',Image)
-    
 ], debug=True)

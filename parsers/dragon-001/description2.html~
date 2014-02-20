@@ -25,26 +25,23 @@ Released   : 20130602
 </head>
 <body>
 <div id="wrapper">
-{% include "header.html" %}
+	{% include "header.html" %}
 	<div id="page" class="container">
 		<div id="content">
 			<div class="title">
-				<h2>Query</h2>
+				<h2>Results</h2>
 			</div>
-		    <form action="/search?{{ model_name }}" method="post">
-    Query Database: <br>
-      <div>Search by:<select name=searchSelection>
-        {% for option in queryOptions %}
-	  	<option>{{ option }}</option>
-  	{% endfor %}
-      </select></div>
-      <div>QueryString: <input name="queryString"> </div>
-      <input type="submit" value="Submit">
-      
-    </form>
+   {%for query in queryArray %}
+    	{{ query['counter'] }} : <a href="{{ query['link']|safe }}">{{ query['name'] }}</a> <br>
+    	{{ query['description'] }} <br>
+    {% endfor %}
+    <br>
+    Found {{ counter }} <br/>
+
 
 		</div>
 		{% include "normalSidebar.html" %}
+
 	</div>
 </div>
 {% include "footer.html" %}

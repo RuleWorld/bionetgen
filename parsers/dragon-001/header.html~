@@ -2,7 +2,7 @@
 		<div id="menu" class="container">
 			<ul>
 				<li class={{homepageh}}><a href="/">Homepage</a></li>
-				<li class={{listh}}><a href="/list">List all models</a></li>
+				<li class={{listh}}><a href="/slist">List all models</a></li>
 				<li class={{queryh}}><a href="/query">Query Models</a></li>
 				{% if current_user %}
 				<li class={{submith}}><a href="/submit">Submit new Model</a></li>

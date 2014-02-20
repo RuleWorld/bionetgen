@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <body>
+
+    {%for query in queryArray %}
+    	{{ query['counter'] }} : <a href="{{ query['link']|safe }}">{{ query['name'] }}</a> <br>
+    	{{ query['description'] }} <br>
+    {% endfor %}
+    <br>
+    Foundfsikds {{ counter }} <br/>
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
+  </body>
+</html>
+
+{% endautoescape %}

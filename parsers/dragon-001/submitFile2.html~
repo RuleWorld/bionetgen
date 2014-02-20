@@ -29,22 +29,19 @@ Released   : 20130602
 	<div id="page" class="container">
 		<div id="content">
 			<div class="title">
-				<h2>Query</h2>
+				<h2>Submit an annotated model</h2>
 			</div>
-		    <form action="/search?{{ model_name }}" method="post">
-    Query Database: <br>
-      <div>Search by:<select name=searchSelection>
-        {% for option in queryOptions %}
-	  	<option>{{ option }}</option>
-  	{% endfor %}
-      </select></div>
-      <div>QueryString: <input name="queryString"> </div>
-      <input type="submit" value="Submit">
+		  <form action="{{ action }}" method="post" enctype="multipart/form-data">
+      <div><input type="checkbox" name="privacy" value="privacy">Private model </div>
+      Upload File: <input type="file" name="file"><br> 
+      Upload Contact Map: <input type="file" name="contact"><br>
       
+      <div>Description: <textarea name="description" cols="25" rows="5"></textarea></div>
+      <input type="submit" value="Submit">
     </form>
 
 		</div>
-		{% include "normalSidebar.html" %}
+	{% include "submitSidebar.html" %}	
 	</div>
 </div>
 {% include "footer.html" %}

@@ -658,7 +658,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         commentDictionary['notes'] = 'This is an atomized translation of an SBML model created on {0}.'.format(time.strftime("%d/%m/%Y"))
     else:
         commentDictionary['notes'] = 'This is a plain translation of an SBML model created on {0}'.format(time.strftime("%d/%m/%Y"))
-    commentDictionary['notes'] += 'The original model has {0} species and {1} reactions. The translated model has {2} species and {3} rules'.format(parser.model.getNumSpecies(),parser.model.getNumReactions(),len(molecules),len(set(rules)))
+    commentDictionary['notes'] += 'The original model has {0} molecules and {1} reactions. The translated model has {2} molecules and {3} rules'.format(parser.model.getNumSpecies(),parser.model.getNumReactions(),len(molecules),len(set(rules)))
     meta = parser.getMetaInformation(commentDictionary)
 
     finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,set(observables),set(rules),functions,compartments,outputFile)
@@ -952,6 +952,18 @@ def statFiles():
         with open('orBox{0}.dump'.format(bioNumber),'wb') as f:
             pickle.dump(box,f)
 
+def processDir(directory,atomize=True):
+    from os import listdir
+    from os.path import isfile, join
+    xmlFiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) and f.endswith('xml')]
+    for xml in xmlFiles:
+        #try:
+        print xml
+        if xml not in ['MODEL1310110034.xml']:
+            processFile3(directory + xml,atomize=atomize)        
+        #except:
+            #continue
+    
 def processFile3(fileName,customDefinitions=None,atomize=True):
     '''
     processes a file. derp.
@@ -960,12 +972,13 @@ def processFile3(fileName,customDefinitions=None,atomize=True):
     logMess.counter = -1
     reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
     spEquivalence = customDefinitions
+    namingConventions = 'config/namingConventions.json'
     #spEquivalence = None
     useID = False
     #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
     outputFile = '{0}.bngl'.format(fileName)
     analyzeFile(fileName, reactionDefinitions,
-                useID,outputFile,speciesEquivalence=spEquivalence,atomize=atomize)
+                useID,namingConventions,outputFile,speciesEquivalence=spEquivalence,atomize=atomize,bioGrid=False)
 
     if len(logMess.log) > 0:
         with open(fileName + '.log', 'w') as f:
@@ -999,10 +1012,13 @@ if __name__ == "__main__":
     #processDatabase()
     
     #main()
-    #processFile3('XMLExamples/curated/BIOMD0000000183.xml')
+    #processFile3('XMLExamples/noncurated/MODEL2463576061.xml')
+    #processFile3('XMLExamples/jws/dupreez2.xml')
+    processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
+    #processDir('XMLExamples/non_curated/')
     #statFiles()
     #main2()
-    processFile2()
+    #processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
 #definitions those that are defined as 0'

@@ -6,9 +6,9 @@
 				<li class={{queryh}}><a href="/query">Query Models</a></li>
 				{% if current_user %}
 				<li class={{submith}}><a href="/submit">Submit new Model</a></li>
-				<li class={{myModelsh}}><a href="/myModels">My models</a></li>
+				<li class={{myModels}}><a href="/myModels">My models</a></li>
 				{% endif %}
-				<li class={{urlh}}><a href="{{ url|safe }}">{{ url_linktext }}</a></li>
+				<li><a href="{{ url|safe }}">{{ url_linktext }}</a></li>
 			</ul>
 		</div>
 		<!-- end #menu -->
