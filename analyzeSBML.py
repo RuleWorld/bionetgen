@@ -30,6 +30,7 @@ class SBMLAnalyzer:
         
         
     def parseReactions(self,reaction,specialSymbols=''):
+        print reaction
         species =  (Word(alphanums+"_"+":#-") 
         + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
         + Suppress("()"))

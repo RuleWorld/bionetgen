@@ -66,6 +66,7 @@ def main():
         
     
     for cidx,cluster in enumerate(linkArray):
+        #FIXME:only do the first cluster
         cidx = 1
         cluster = linkArray[1]
         if len(cluster) == 1:

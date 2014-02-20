@@ -207,6 +207,12 @@ class SBML2BNGL:
             reactant = [(self.speciesDictionary[rElement.getSpecies()], rElement.getStoichiometry()) for rElement in reaction.getListOfReactants()]
             product = [(self.speciesDictionary[rProduct.getSpecies()], rProduct.getStoichiometry()) for rProduct in reaction.getListOfProducts()]
         kineticLaw = reaction.getKineticLaw()
+        reversible = reaction.getReversible()
+
+        if kineticLaw == None:
+            return (reactant, product, [], ['0', '0'],
+                reversible, reaction.getId(), [0, 0])
+
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
@@ -215,7 +221,6 @@ class SBML2BNGL:
         #TODO: For some reason creating a deepcopy of this screws everything up, even
         #though its what we should be doing
         math = kineticLaw.getMath()
-        reversible = reaction.getReversible()
         
         #get a list of compartments so that we can remove them
         compartmentList  = []
@@ -654,6 +659,7 @@ def standardizeName(name):
                                 "/":"_",":":"_",
                                 "-":"_",
                                 ".":"_",
+                                '?':"unkn",
                                 ',':'_'}
                                 
     for element in sbml2BnglTranslationDict:
