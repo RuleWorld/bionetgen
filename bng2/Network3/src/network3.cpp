@@ -463,6 +463,11 @@ void Network3::init_PLA(string config, bool verbose){
 		if (verbose) cout << "3. Preleap/postleap configuation:\n";
 		PREPOST = arg[1];
 		transform(PREPOST.begin(), PREPOST.end(), PREPOST.begin(), ::tolower); // convert to lower case
+		// Default configuration
+		if (PREPOST == "default"){
+			PREPOST = _DEFAULT_PREPOST_;
+			if (verbose) cout << "   You've chosen the default preleap/postleap configuration: '" + _DEFAULT_PREPOST_ + "'\n";
+		}
 		// Error check: Make sure pre/post configuration is supported
 		if ((" "+_ALLOWED_PREPOST_+" ").find(" "+PREPOST+" ")==string::npos){ // // match whole words only
 			cout << "Uh oh, I don't recognize your preleap/postleap configuration: '" << arg[1] << "'" << endl;
@@ -481,11 +486,6 @@ void Network3::init_PLA(string config, bool verbose){
 				&& PARAMS.find("tau")==PARAMS.end()){
 			cout << "Oops, '" << PREPOST << "' requires that 'tau' be defined. Please try again." << endl;
 			exit(1);
-		}
-		// Default configuration
-		if (PREPOST == "default"){
-			PREPOST = _DEFAULT_PREPOST_;
-			if (verbose) cout << "   You've chosen the default preleap/postleap configuration: '" + _DEFAULT_PREPOST_ + "'\n   ";
 		}
 
 		// Create the preleap tau calculator
