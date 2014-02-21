@@ -446,7 +446,11 @@ void Network3::init_PLA(string config, bool verbose){
 				read_Butcher_tableau(PARAMS["bt"],alpha,beta,verbose);
 			}
 			else{
-				cout << "   Sorry, I can't find it. Please try again." << endl;
+				if (verbose) cout << "   Sorry, I can't find it. Please try again." << endl;
+				else{
+					cout << "Cannot read Butcher tableau input file: " << PARAMS["bt"] << endl;
+					cout << "Please try again." << endl;
+				}
 				exit(1);
 			}
 		}
@@ -500,7 +504,7 @@ void Network3::init_PLA(string config, bool verbose){
 				cout << " fixed time step method*1,2*";
 				footnotes += "   *1* Note that 'apx1' will be set to 0.0 automatically, even if you have defined it.\n";
 				footnotes += "   *2* Also note that 'tau' will still be reduced if populations go negative or if the leap\n";
-				footnotes += "       condition is violated. The simulation may thus take more steps than expected.\n";
+				footnotes += "       condition is violated. The simulation may thus take more steps than you anticipate.\n";
 			}
 			PARAMS["apx1"] = "0.0";
 			static Fixed_TC fixed_ptc(atof(PARAMS["tau"].c_str()));
