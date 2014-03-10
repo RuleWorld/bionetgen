@@ -1,4 +1,4 @@
-setOption(SpeciesLabel,HNauty);
+setOption("SpeciesLabel","HNauty");
 begin parameters
  kp1 1
  km1 1

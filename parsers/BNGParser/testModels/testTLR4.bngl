@@ -352,6 +352,7 @@ Molecules  A20_NFkB_DNA                    NFkB(IkB,location~nucleus,A20!1).DNA(
 Molecules TNFDegrade     TrashTNF()
 Molecules A20Degrade     TrashA20()
 end observables
+end model 
 
 #actions
 generate_network({overwrite=>1});

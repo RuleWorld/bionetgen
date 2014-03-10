@@ -58,19 +58,19 @@ J17 .3
 end parameters
 
 begin molecule types
-1 I()
-2 Cyclin(deg~y~n)
-3 APC(c~OFF~ON)
-4 Cdk()
-5 MPF(cyclin,cdk~U~1P~2P)
-6 Wee1(c~P~U)
-7 Cdc25(c~P~U)
-8 PPase()
-9 IE(c~P~U)
-10 ERG()
-11 DRG()
-12 Erk()
-13 Trash()
+I()
+Cyclin(deg~y~n)
+APC(c~OFF~ON)
+Cdk()
+MPF(cyclin,cdk~U~1P~2P)
+Wee1(c~P~U)
+Cdc25(c~P~U)
+PPase()
+IE(c~P~U)
+ERG()
+DRG()
+Erk()
+Trash()
 end molecule types
 
 begin seed species

@@ -71,11 +71,11 @@ end reaction rules
 
 generate_network({overwrite=>1});
 # Equilibration
-simulate_ode({suffix=>equil,t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1});
+simulate_ode({suffix=>"equil",t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1});
 # Kinetics 
 setConcentration("EGF(R)","EGF_init");
 saveConcentrations(); # Saves concentrations for future reset
 simulate_ode({t_end=>120,n_steps=>120});
 resetConcentrations(); # reverts to saved Concentrations
 #Stochastic simulation
-simulate_ssa({suffix=>ssa,t_end=>120,n_steps=>40});
+simulate_ssa({suffix=>"ssa",t_end=>120,n_steps=>40});

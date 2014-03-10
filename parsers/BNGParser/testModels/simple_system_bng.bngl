@@ -112,9 +112,9 @@ generate_network({overwrite=>1});
 # mid-simulation by using an RNF script (see example.rnf file in the same directory as this
 # model).
 #
-simulate_ode({suffix=>ode,t_end=>100,n_steps=>50});
+simulate_ode({suffix=>"ode",t_end=>100,n_steps=>50});
 resetConcentrations();
-simulate_ssa({suffix=>ssa,t_end=>100,n_steps=>50});
+simulate_ssa({suffix=>"ssa",t_end=>100,n_steps=>50});
 
 
 

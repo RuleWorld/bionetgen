@@ -33,7 +33,7 @@ options{
     return gParent.getErrorMessage(e,tokenNames);
   }
   public String getErrorMessage(Token s1,String error){
-    return String.format("\%s line \%d:\%d \%s: \%s\n",
+    return String.format("\%s line \%d:\%d \%s: \%s",
                          input.getSourceName(),
                          s1.getLine(),
                          s1.getCharPositionInLine(),

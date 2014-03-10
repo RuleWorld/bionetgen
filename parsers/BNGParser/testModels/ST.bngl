@@ -258,5 +258,5 @@ end model
 
 # actions #
 generate_network({overwrite=>1,TextReaction=>1});
-simulate_ode({suffix=>'ode',t_start=>0,t_end=>200,n_steps=>100});
+simulate_ode({suffix=>"ode",t_start=>0,t_end=>200,n_steps=>100});
 #writeSBML();

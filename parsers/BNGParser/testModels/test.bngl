@@ -19,19 +19,19 @@
 
 begin model
 begin seed species
-L(r,r)
-R(l,b) 
-Lyn(U,SH2) 
+L(r,r) 1
+R(l,b) 1
+Lyn(U,SH2) 1 
 end  seed species
 
 begin reaction rules
 
-L(r) + R(l) <-> R(l!1).L(r!1)
+L(r) + R(l) <-> R(l!1).L(r!1) 1,1
 #Lyn(SH2, U) + R(b) <-> Lyn(SH2!1, U).R(b!1)
 #Lyn(U, SH2) + R(b) <-> Lyn(U!1, SH2).R(b!1)
 
-Lyn(SH2) + R(b) <-> Lyn(SH2!1).R(b!1)
-Lyn(U) + R(b) <-> Lyn(U!1).R(b!1)
+Lyn(SH2) + R(b) <-> Lyn(SH2!1).R(b!1) 1,1
+Lyn(U) + R(b) <-> Lyn(U!1).R(b!1) 1,1
 
 end reaction rules
 end model

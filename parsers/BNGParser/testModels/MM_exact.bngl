@@ -32,7 +32,7 @@ end observables
 
 begin reaction rules
 # enzyme-substrate binding
-ES bind: S(Y~0) + E(kin) <-> S(Y~0!1).E(kin!1) kp1,km1
+ES_bind: S(Y~0) + E(kin) <-> S(Y~0!1).E(kin!1) kp1,km1
 Phosphorylation: S(Y~0!1).E(kin!1) -> S(Y~P) + E(kin) k2
 
 end reaction rules

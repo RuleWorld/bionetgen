@@ -39,28 +39,28 @@ end observables
 
 begin reaction rules
 
-Production of activated CD4: \
+Production_of_activated_CD4: \
   I() -> I() + CD4(HIV~0) gamma*tau
 
-CD4 natural death: \
+CD4_natural_death: \
   CD4() -> Null() mu
 
-Latent infection: \
+Latent_infection: \
   CD4(HIV~0) + HIV() -> CD4(HIV~L) + HIV() (1-p)*beta
 
-Active infection: \
+Active_infection: \
   CD4(HIV~0) + HIV() -> CD4(HIV~A) + HIV() p*beta
 
-Activation of infected cells: \
+Activation_of_infected_cells: \
   CD4(HIV~L) -> CD4(HIV~A) alpha
 
-Virus production: \
+Virus_production: \
   CD4(HIV~A) -> CD4(HIV~A) + HIV() pi
 
-Virus removal: \
+Virus_removal: \
   HIV() -> Null() sigma
 
-Actively infected CD4 death: \
+Actively_infected_CD4_death: \
   CD4(HIV~A) -> Null() (delta-mu)
 
 end reaction rules

@@ -5,9 +5,9 @@ NA 6.02e23 # Avogadro's number (molecues/mol)
 cell_dens	1e6      # Cell density in cells/ml - standard exptl. units
 Vo              f/(1000*cell_dens) # Effective extracelular volume of a cell
 Vcyt            f*3.0e-12  # Cytoplasmic volume (L)
-Vmem            Vcyt/chi 
 chi             200        # enhancement factor for membrane reactions
                            # chi ~ (cell radius)/(3*membrane thickness)
+Vmem            Vcyt/chi 
 
 # All concentrations are converted to number per cell
 Lig_conc        2e-9 # Ligand concentration input in molar units 
@@ -73,7 +73,7 @@ Syk(tSH2,a~Y) Syk_tot*cell_dens
 end species
 
 
-begin reaction_rules
+begin reaction rules
 
 # Ligand-receptor binding      
 Lig(l) + Rec(a) <-> Lig(l!1).Rec(a!1)		kp1, km1
@@ -106,7 +106,7 @@ Lig(l!1,l).Rec(a!1) + Rec(a) <-> Lig(l!1,l!2).Rec(a!1).Rec(a!2)		kp2, km2
 
 # Dephosphorylation of Syk in cytosol
 
-end reaction_rules
+end reaction rules
 
 begin observables
 Species Lig_rec Lig(l!1,l).Rec(a!1)
@@ -121,4 +121,4 @@ generate_network({overwrite=>1,max_iter=>12,max_agg=>12});
 
 # Run an ODE simulation.  Results saved to files with prefix: "simple_ode"
 saveConcentrations();             # Save concentrations (in memory) for later use.
-simulate_ode({suffix=>ode,t_start=>0,t_end=>12,n_steps=>120});
+simulate_ode({suffix=>"ode",t_start=>0,t_end=>12,n_steps=>120});

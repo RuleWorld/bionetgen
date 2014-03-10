@@ -41,15 +41,15 @@ Molecules E_f E(f~on)
 Molecules Tot_f A(f~on),C(f~on),E(f~on)
 end observables
 begin reaction rules
-A(f%1) + B() <-> C(f%1) kpAB, kmAB
-C(f%1) + D() <-> E(f%1) kpCD, kmCD
+A(f%t1) + B() <-> C(f%t1) kpAB, kmAB
+C(f%t1) + D() <-> E(f%t1) kpCD, kmCD
 A(f~off) + I <-> A(f~on) kpI, kmI
 end reaction rules
 
 generate_network({overwrite=>1});
 writeXML({});
 # Equilibrate
-simulate_ode({suffix=>equil,t_end=>10000,n_steps=>10,steady_state=>1});
+simulate_ode({suffix=>"equil",t_end=>10000,n_steps=>10,steady_state=>1});
 # Add indicator
 setConcentration("I","A_tot/10");
 simulate_ode({t_end=>200,n_steps=>50});

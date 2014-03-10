@@ -101,7 +101,7 @@ end reaction rules
 # Note that this step will also automatically create an NFsim readable XML model
 # specification file.
  
-simulate_nf({suffix=>nf,t_end=>100,n_steps=>50});
+simulate_nf({suffix=>"nf",t_end=>100,n_steps=>50});
 
 
 

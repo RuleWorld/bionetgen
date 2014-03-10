@@ -10,8 +10,8 @@ L0 10000
 end parameters
 
 begin molecule types
-1 Protein(b,b,Conf~R~T)
-2 Ligand(c)
+M1: Protein(b,b,Conf~R~T)
+M2: Ligand(c)
 end molecule types
 
 begin seed species

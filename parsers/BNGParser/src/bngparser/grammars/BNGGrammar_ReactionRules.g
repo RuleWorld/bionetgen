@@ -247,7 +247,7 @@ scope{
   }
   {
     if(!$rule_species_def::bonds.validateBonds(0,0)){
-      String err = String.format("\%s line \%d:\%d \%s\n",
+      String err = String.format("\%s line \%d:\%d \%s",
                                  input.getSourceName(),
                                  s1.start.getLine(),
                                  s1.start.getCharPositionInLine(),

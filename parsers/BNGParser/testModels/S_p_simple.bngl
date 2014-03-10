@@ -239,16 +239,16 @@ end reaction rules
 
 begin observables
 
-c22_ERK_cyt_act      ERK_c22(S1~Ypp)    
-s22_ERK_cyt_act      ERK_s22(s,S1~Ypp)
-f22_ERK_cyt_act      ERK_f22(s,S1~Ypp)    
+Molecules c22_ERK_cyt_act      ERK_c22(S1~Ypp)    
+Molecules s22_ERK_cyt_act      ERK_s22(s,S1~Ypp)
+Molecules f22_ERK_cyt_act      ERK_f22(s,S1~Ypp)    
 
 end observables
 
 generate_network({overwrite=>1});
 writeMfile();
 
-simulate_ode({suffix=>equil,t_end=>100000,n_steps=>1000,sparse=>1,steady_state=>1});
+simulate_ode({suffix=>"equil",t_end=>100000,n_steps=>1000,sparse=>1,steady_state=>1});
 simulate_ode({t_end=>100000,n_steps=>1000,steady_state=>1});
 #setConcentration("RAS_f22(GDP~P)",RAS_post_eq);
 #setConcentration("RAS_c22(GDP~P)",RAS_post_eq);

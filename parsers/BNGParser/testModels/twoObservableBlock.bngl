@@ -1,4 +1,4 @@
-See the two observable blocks bellows:
+#See the two observable blocks below:
 
 begin parameters
  Sa_init 100000
@@ -33,9 +33,9 @@ Mol2(a,c~P) 0
 end seed species
 
 begin observables
- 1 Species Sa_tot Sa(a!+,b~U,c)
- 2 Molecules Sb_tot Sb(p,q,r~U)
- 3 Molecules Sc_tot Sc(l~U,m~U,n)
+ Species Sa_tot Sa(a!+,b~U,c)
+ Molecules Sb_tot Sb(p,q,r~U)
+ Molecules Sc_tot Sc(l~U,m~U,n)
 end observables
 
 begin reaction rules
