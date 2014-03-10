@@ -565,7 +565,7 @@ hash_value
 
 assignment_list
 : 
-  STRING ASSIGNS value (COMMA STRING ASSIGNS value)
+  STRING ASSIGNS value (COMMA STRING ASSIGNS value)*
 ;
 
 value   

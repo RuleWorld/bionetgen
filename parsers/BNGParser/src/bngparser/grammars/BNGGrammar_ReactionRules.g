@@ -337,20 +337,44 @@ modif_command
         
 //are the patterns same in include and exclude?
 include_command
+scope{
+  List molecules;
+  BondList bonds;
+  String s;
+}
+@init{
+  $include_command::molecules = new ArrayList();
+  $include_command::bonds = new BondList();
+  $include_command::s = "";
+}
 :  
   (INCLUDE_REACTANTS | INCLUDE_PRODUCTS)
-  LPAREN INT COMMA pattern (COMMA pattern)* RPAREN
+  LPAREN INT COMMA species_def[$include_command::molecules,$include_command::bonds,$include_command::s] 
+    (COMMA species_def[$include_command::molecules,$include_command::bonds,$include_command::s])* RPAREN
+//  LPAREN INT COMMA pattern (COMMA pattern)* RPAREN
 ;
         
 exclude_command
+scope{
+  List molecules;
+  BondList bonds;
+  String s;
+}
+@init{
+  $exclude_command::molecules = new ArrayList();
+  $exclude_command::bonds = new BondList();
+  $exclude_command::s = "";
+}
 : 
   (EXCLUDE_REACTANTS | EXCLUDE_PRODUCTS)
-  LPAREN INT COMMA pattern (COMMA pattern)* RPAREN
+  LPAREN INT COMMA species_def[$exclude_command::molecules,$exclude_command::bonds,$exclude_command::s] 
+    (COMMA species_def[$exclude_command::molecules,$exclude_command::bonds,$exclude_command::s])* RPAREN
+//  LPAREN INT COMMA pattern (COMMA pattern)* RPAREN
 ;
 
 //pattern : STRING|INT;
-pattern 
-:
-  STRING
-;
+//pattern 
+//:
+//  STRING
+//;
  
