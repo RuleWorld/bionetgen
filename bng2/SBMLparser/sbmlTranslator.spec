@@ -1,7 +1,7 @@
 # -*- mode: python -*-
 a = Analysis(['sbmlTranslator.py'],
              pathex=['/home/proto/workspace/bionetgen/parsers/SBMLparser'],
-             hiddenimports=['_libsbml','scipy.special._ufuncs.cxx'],
+             hiddenimports=['_libsbml','scipy.special._ufuncs.cxx','pandas'],
              hookspath=None,
              runtime_hooks=None,
 	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui'])
