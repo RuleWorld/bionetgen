@@ -14,8 +14,10 @@ import ast
 import pickle
 from os import listdir
 from os.path import isfile, join
-
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 def levenshtein(s1, s2):
         l1 = len(s1)
         l2 = len(s2)
@@ -86,7 +88,6 @@ def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},simi
                 continue
             scoreMatrix[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
             scoreMatrix[idx2][idx] = scoreMatrix[idx][idx2]
-            
     namePairs,differenceList = getDifferences(scoreMatrix, speciesName)
     differenceCounter.update(differenceList)
     patternClassification = {}
