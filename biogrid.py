@@ -8,7 +8,11 @@ Created on Tue Nov 12 13:44:53 2013
 import csv
 import pickle
 import itertools
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    print 'pandas library not found.'
+    pd = None
 
 def loadBioGrid(fileName='BIOGRID-ALL-3.2.108.tab2.txt'):
     if hasattr(loadBioGrid, 'db'):
@@ -59,7 +63,14 @@ def loadBioGrid(fileName='BIOGRID-ALL-3.2.108.tab2.txt'):
 def loadBioGridDict(fileName='BioGridPandas.h5'):
     if hasattr(loadBioGrid, 'db'):
         return loadBioGrid.db
-    loadBioGrid.db = pd.read_hdf('BioGridPandas.h5','biogrid')
+    if pd is None:
+        loadBioGrid.db = {}
+    else:
+        try:
+            loadBioGrid.db = pd.read_hdf('BioGridPandas.h5','biogrid')
+        except:
+            print 'Biogrid database not found'
+            loadBioGrid.db = {}
     
     return loadBioGrid.db
     
