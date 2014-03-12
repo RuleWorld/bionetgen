@@ -17,7 +17,6 @@ import readBNGXML
 from collections import Counter
 from copy import deepcopy
 import numpy as np
-import pandas as pd
 
 def readFile(fileName):
     f = open(fileName)
