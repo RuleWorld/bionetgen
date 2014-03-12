@@ -11,7 +11,6 @@ import itertools
 try:
     import pandas as pd
 except ImportError:
-    print 'pandas library not found.'
     pd = None
 
 def loadBioGrid(fileName='BIOGRID-ALL-3.2.108.tab2.txt'):
@@ -64,6 +63,7 @@ def loadBioGridDict(fileName='BioGridPandas.h5'):
     if hasattr(loadBioGrid, 'db'):
         return loadBioGrid.db
     if pd is None:
+        print 'pandas library not found.'
         loadBioGrid.db = {}
     else:
         try:
