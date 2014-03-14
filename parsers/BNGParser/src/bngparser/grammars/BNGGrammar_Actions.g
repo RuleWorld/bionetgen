@@ -195,6 +195,7 @@ scope{
   READFILE LPAREN 
   (LBRACKET 
   (FILE ASSIGNS DBQUOTES s1=(filename) DBQUOTES {$read_file::actions.put($FILE.text,$s1.text);}) 
+  (COMMA ATOMIZE ASSIGNS i1=INT {$read_file::actions.put($ATOMIZE.text,$i1.text);})?
   RBRACKET) 
   RPAREN SEMI? 
   -> action(id={$READFILE.text},optionMap={$read_file::actions})

@@ -135,6 +135,7 @@ LOG_SCALE: 'log_scale';
 
 READFILE: 'readFile';
 FILE: 'file';
+ATOMIZE: 'atomize';
 
 //WRITEFILE: 'writeFile';
 //WRITENET: 'writeNET';
