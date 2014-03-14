@@ -269,7 +269,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     #reserved keyword: e
     finalString = re.sub(r'(\W|^)(e)(\W|$)',r'\1 are \3',finalString)
     #changing ceil
-    
     #avoiding variables whose name starts with a number
     
     #removing mass-action elements
@@ -304,7 +303,7 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
     output.write('generate_network({overwrite=>1})\n')
-    output.write('simulate({method=>"ode",t_end=>10,n_steps=>1000})')
+    output.write('#simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     #with open(fileName,'w') as outputFile:
     #    outputFile.write(output.getvalue()) 

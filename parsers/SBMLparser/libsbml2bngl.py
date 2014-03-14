@@ -232,7 +232,8 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
 
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
-    this method goes through the list of functions and removes all
+    this method goes through the list of functions and 
+    s all
     sbml elements that are extraneous to bngl
     '''
     
@@ -501,7 +502,7 @@ def unrollFunctions(functions):
             dictionary[tmp[0].split('()')[0]] = tmp[1]
         tmp = []
         for key in dictionary:
-            tmp.append('{0} = {1}'.format(key,dictionary[key]))
+            tmp.append('{0}() = {1}'.format(key,dictionary[key]))
         functions = tmp
     return functions
             
@@ -623,7 +624,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
                     sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
     functions = reorderFunctions(functions)
     functions = changeNames(functions,aParameters)
-    
     functions = unrollFunctions(functions)
     rules = changeRates(rules,aParameters)
 
@@ -1004,7 +1004,6 @@ def listFiles(minReactions,directory):
             continue
         if len(model.getListOfReactions()) > minReactions:
             outputList.append(xml)
-    print outputList
     print len(outputList)
     
 if __name__ == "__main__":
@@ -1014,7 +1013,10 @@ if __name__ == "__main__":
     #main()
     #processFile3('XMLExamples/noncurated/MODEL2463576061.xml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
-    processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
+    #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
+    #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='reactionDefinitions/speciesEquivalence5.json')    
+    processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions=None)    
+
     #processDir('XMLExamples/non_curated/')
     #statFiles()
     #main2()
