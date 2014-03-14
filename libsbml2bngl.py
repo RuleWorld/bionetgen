@@ -187,7 +187,7 @@ def evaluation(numMolecules,translator):
 
 def selectReactionDefinitions(bioNumber):
     '''
-    This method goes through the stats-biomodels database looking for the 
+    This method rrough the stats-biomodels database looking for the 
     best reactionDefinitions definition available
     '''
     #with open('stats4.npy') as f:
@@ -232,8 +232,7 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
 
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
-    this method goes through the list of functions and 
-    s all
+    this method goes through the list of functions and removes all
     sbml elements that are extraneous to bngl
     '''
     
@@ -446,8 +445,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     with open(outputFile,'w') as f:
             f.write(returnArray[-2])
-    with open('{0}.dict'.format(outputFile),'wb') as f:
-        pickle.dump(returnArray[-1],f)
+    #with open('{0}.dict'.format(outputFile),'wb') as f:
+    #    pickle.dump(returnArray[-1],f)
     return returnArray[0:-2]
 
 def correctRulesWithParenthesis(rules,parameters):
