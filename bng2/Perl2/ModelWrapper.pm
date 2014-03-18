@@ -11,7 +11,7 @@ use File::Spec;
 
 # Perl Modules
 use BNGUtils;
-use BNGModels;
+use BNGModel;
 
 
 
@@ -61,7 +61,7 @@ sub load
         return 0;
     }
 
-    # create BNGMOdel object
+    # create BNGModel object
     $modelwrapper->Model = BNGModel->new();
     # make local copy of params
     my $local_params = { %{$modelwrapper->Defaults} };
@@ -69,7 +69,7 @@ sub load
     $local_params->{file} = $file;
 
     # read and process Model file
-    my $err = $model->readFile( $local_params );
+    my $err = $modelwrapper->Model->readFile( $local_params );
     if ($err)
     {
         print "MODEL.load(FILE): some problem parsing model file $file.\n";    
@@ -114,7 +114,6 @@ sub state
         printf "MODEL.load(FILE): model %s is not defined.\n", $modelwrapper->Name;
         return 0;
     }
-    }
 
     if (@_)
     {
@@ -135,7 +134,7 @@ sub state
     {
         # get state
         my $state_copy = [];
-        if ( @{$model->Concentrations}
+        if ( @{$model->Concentrations} )
         {
             @$state_copy = @{$model->Concentrations};
         }

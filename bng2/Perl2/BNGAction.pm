@@ -417,13 +417,12 @@ sub simulate
     }
 
 
-
-
     ### RUN SIMULATION ###
     print  "Running run_network on ", `hostname`;
     printf "full command: %s\n", join(" ", @command);
 
     # disable dospath warnings for Windows OS.
+    use Config;
     if ( $Config{'osname'} eq 'MSWin32' )
     {   $ENV{'CYGWIN'}='nodosfilewarning';   }
 

@@ -182,6 +182,7 @@ sub readSBML
 	my $filepath = shift @_;
 	$filepath =~ /(\w+)\.xml/;
 	my $filename = $1;
+	my $outfile = $model->getOutputDir() . $filename . '.bngl';
     my $user_args = @_ ? shift @_ : {};
     
     # Collect user arguments
@@ -202,7 +203,7 @@ sub readSBML
     # Begin writing command: start with 'program'
     my $cmd = $program;
 	$cmd .= ' -i "' . $filepath .'"';
-	$cmd .= ' -o "' . $model->getOutputDir() . $filename . '.bngl"';
+	$cmd .= ' -o "' . $outfile . '"';
 	if ($args{"atomize"}){
 		$cmd .= ' -a';
 		$cmd .= ' -c "' . $bindir . 'config/reactionDefinitions.json"';
@@ -212,6 +213,9 @@ sub readSBML
 	# Run the translator
 	printf "SBML translation: $cmd\n";
 	system($cmd);
+	
+	# Return full path to generated BNGL file
+	return $outfile
 }
 
 
@@ -341,9 +345,12 @@ sub readSBML
         # SBML translator
 		if ( $filename =~ /\.xml$/ )
 		{
-			$model->readSBML($filename,$model->Params);
+			$filename = $model->readSBML($filename,$model->Params); 
+			# Generated BNGL file will now be read in below
 		}
-		elsif ( $filename =~ /\.bngl$/ || $filename =~ /\.net$/ )
+		
+		# Read BNGL or NET file
+		if ( $filename =~ /\.bngl$/ || $filename =~ /\.net$/ )
 		{
 	        # Read BNG model data        
 	        print "Reading from file $filename (level $level)\n";
