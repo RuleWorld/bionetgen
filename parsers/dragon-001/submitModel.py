@@ -16,7 +16,7 @@ from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
 from google.appengine.api.images import get_serving_url
 import webapp2
-
+import xmlrpclib
 import jinja2
 import zipfile
 import tempfile
@@ -30,7 +30,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     
 
 DEFAULT_GUESTBOOK_NAME = 'default_guestbook'
-
 
 # We set a parent key on the 'Greetings' to ensure that they are all in the same
 # entity group. Queries across the single entity group will be consistent.
@@ -52,7 +51,7 @@ class AnnotationInfo(ndb.Model):
 
 class ModelInfo(ndb.Model):
     """Models an individual Guestbook entry with author, content, and date."""
-    author = ndb.StringProperty()
+    author = ndb.StringProperty(repeated=True)
     content = ndb.BlobKeyProperty() #BlobInfo(blobkey)
     contactMap = ndb.BlobKeyProperty()
     name = ndb.StringProperty()
@@ -205,11 +204,11 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
             modelSubmission.submitter = users.get_current_user()
             
         upload_files = self.get_uploads('file')
-        contact = self.get_uploads('contact')
+        contact = self.get_uploads('contact ')
         blob_info = upload_files[0]
         blob_info2 = contact[0]
         modelSubmission.content = blob_info.key()
-        modelSubmission.author = self.request.get('author')
+        modelSubmission.author = [self.request.get('author')]
         modelSubmission.publication = publicationInfo
         modelSubmission.fileFormat = self.request.get('fileFormat')
         modelSubmission.contactMap = blob_info2.key() 
@@ -224,6 +223,17 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         self.redirect('/?' + urllib.urlencode(query_params))
  
 
+def processAnnotations(bnglContent):
+    annotationDict = parseAnnotations.parseAnnotations(bnglContent)
+    parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
+    s = xmlrpclib.ServerProxy('http://127.0.0.1:9200')
+    tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
+    tagDict = {}
+    for element in tagArray:
+        tagDict[element[0]] = element[1]
+    print tagDict
+    return parsedAnnotationDict,tagDict
+    
 class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
 
     def post(self):
@@ -257,13 +267,21 @@ class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
         modelSubmission.contactMap = blob_info2.key() 
         modelSubmission.contactMap = blob_info2.key()
         
+        #annotationDict = parseAnnotations.parseAnnotations(bnglContent)
+        #parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
+        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9200')
+        #tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
+
         bnglContent = blob_info.open().read()
-        annotationDict = parseAnnotations.parseAnnotations(bnglContent)
-        parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
-        
-        modelSubmission.author = parsedAnnotationDict['author']
+        parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
+        modelSubmission.author = [parsedAnnotationDict['author']]
         modelSubmission.structuredTags = parsedAnnotationDict['structuredTags']
-        
+        if 'tags' in tagArray:
+            modelSubmission.tags = tagArray['tags']
+        if 'modelName' in tagArray:
+            modelSubmission.name = tagArray['modelName'][0]
+        if 'author' in tagArray:
+            modelSubmission.author = tagArray['author']
         modelSubmission.put()
 
         #modelSubmission.author = self.request.get('author')
@@ -321,7 +339,8 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
             #fixme: this will be deprecated in the near future, use gcs client library instead
             file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename=element)
             with files.open(file_name, 'a') as f:
-              f.write(zipModel.read())
+              bnglContent = zipModel.read()
+            f.write(bnglContent)
             files.finalize(file_name)
             blob_key = files.blobstore.get_blob_key(file_name)   
             
@@ -336,9 +355,15 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
                 files.finalize(file_name)
                 modelSubmission.contactMap(file_name)
                 
-                
-            modelSubmission.privacy = self.request.get('privacy')
-            modelSubmission.submitter =  users.get_current_user()        
+            parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
+            modelSubmission.author = [parsedAnnotationDict['author']]
+            modelSubmission.structuredTags = parsedAnnotationDict['structuredTags']
+            if 'tags' in tagArray:
+                modelSubmission.tags = tagArray['tags']
+            if 'modelName' in tagArray:
+                modelSubmission.name = tagArray['modelName'][0]
+            if 'author' in tagArray:
+                modelSubmission.author = tagArray['author']
             modelSubmission.put()
 
         #blob_info2 = contact[0]
@@ -370,7 +395,7 @@ class Query(webapp2.RequestHandler):
         template_values ={
             'url': url,
             'url_linktext': url_linktext,
-            'queryOptions':set(['Author','Publication']),
+            'queryOptions':set(['Author','Key Terms','Biomodels.org URI']),
             'current_user':current_user,
             'queryh':'current_page_item'
         }
@@ -454,7 +479,7 @@ class Description(webapp2.RequestHandler):
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
 
                 if element in ['content']:
-                    ndp[element] = [dp[element],blobstore.BlobInfo(dp[element]).filename]
+                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),blobstore.BlobInfo(dp[element]).filename]
                 elif element in ['contactMap']:
                     try:                    
                         blobkey = urllib.unquote(str(dp[element]))
@@ -515,7 +540,7 @@ class SendDocuments(webapp2.RequestHandler):
 
 #queries and prints
 def search(parameter,queryString,response):
-    q = ModelInfo.query(parameter == queryString)
+    q = ModelInfo.query(parameter.IN([queryString]))
     queryArray = []
     counter = 0
     for p in q.iter(limit=5):
@@ -553,13 +578,15 @@ class MyModels(webapp2.RequestHandler):
             
 class Search(webapp2.RequestHandler):
     def post(self):
-        if self.request.get('searchSelection') == 'Publication':
-            query = ModelInfo.publication
+        if self.request.get('searchSelection') == 'Key Terms':
+            query = ModelInfo.tags
         elif self.request.get('searchSelection') == 'Author':
             query = ModelInfo.author
+        elif self.request.get('searchSelection') == 'Biomodels.org URI':
+            query = ModelInfo.structuredTags
             
         queryArray,counter = search(query,self.request.get('queryString'),self.response)
-        
+        template_values = boilerplateParams(self.request.uri)
         template_values['counter'] = counter
         template_values = boilerplateParams(self.request.uri)
         template_values['queryArray'] = queryArray

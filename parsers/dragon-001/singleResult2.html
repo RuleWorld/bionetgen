@@ -34,7 +34,7 @@ Released   : 20130602
    {%for query in queryArray %}
 	{%for element in query %}
 		{% if element == 'content' %}
-			{{element}} : <a href="{{ query[element][0]|safe }}">{{ query[element][1] }}</a><br>
+			{{element}} : <a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a><br>
 		{% elif element == 'contactMap'%}
 			{{element}} : <img src="{{query[element]}}"/><br>
 		{% else %}
@@ -51,6 +51,7 @@ Released   : 20130602
 
 	</div>
 </div>
+gds
 {% include "footer.html" %}
 </body>
 </html>
