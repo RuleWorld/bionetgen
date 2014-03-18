@@ -226,7 +226,8 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 def processAnnotations(bnglContent):
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
     parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
-    s = xmlrpclib.ServerProxy('http://127.0.0.1:9200')
+    #s = xmlrpclib.ServerProxy('http://127.0.0.1:9200')
+    s = xmlrpclib.ServerProxy('http://10.253.98.102:9200')
     tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
     tagDict = {}
     for element in tagArray:

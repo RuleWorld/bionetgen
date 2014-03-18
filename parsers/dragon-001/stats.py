@@ -20,9 +20,10 @@ class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
 
 # Create server
-#server = SimpleXMLRPCServer(("10.253.98.102", 9200),              requestHandler=RequestHandler)
 port = 9200
-server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
+server = SimpleXMLRPCServer(("10.253.98.102", port),requestHandler=RequestHandler)
+
+#server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
 
 server.register_introspection_functions()
 
