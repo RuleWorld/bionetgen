@@ -24,6 +24,48 @@ import tempfile
 from google.appengine.api import files
 import parseAnnotations
 
+from google.appengine.api import urlfetch
+urlfetch.set_default_fetch_deadline(45)
+import logging
+
+class GAEXMLRPCTransport(object):
+    """taken directly from http://brizzled.clapper.org/blog/2008/08/25/making-xmlrpc-calls-from-a-google-app-engine-application/"""
+    """Handles an HTTP transaction to an XML-RPC server."""
+
+    def __init__(self):
+        pass
+
+    def request(self, host, handler, request_body, verbose=0):
+        result = None
+        url = 'http://%s%s' % (host, handler)
+        try:
+            response = urlfetch.fetch(url,
+                                      payload=request_body,
+                                      method=urlfetch.POST,
+                                      headers={'Content-Type': 'text/xml'},
+                                      deadline=60)
+        except:
+            msg = 'Failed to fetch %s' % url
+            logging.error(msg)
+            raise xmlrpclib.ProtocolError(host + handler, 500, msg, {})
+
+        if response.status_code != 200:
+            logging.error('%s returned status code %s' %
+                          (url, response.status_code))
+            raise xmlrpclib.ProtocolError(host + handler,
+                                          response.status_code,
+                                          "",
+                                          response.headers)
+        else:
+            result = self.__parse_response(response.content)
+
+        return result
+
+    def __parse_response(self, response_body):
+        p, u = xmlrpclib.getparser(use_datetime=False)
+        p.feed(response_body)
+        return u.close()
+
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'])
@@ -227,7 +269,7 @@ def processAnnotations(bnglContent):
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
     parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
     #s = xmlrpclib.ServerProxy('http://127.0.0.1:9200')
-    s = xmlrpclib.ServerProxy('http://10.253.98.102:9200')
+    s = xmlrpclib.ServerProxy('http://54.214.249.43:9200',GAEXMLRPCTransport())
     tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
     tagDict = {}
     for element in tagArray:
