@@ -18,6 +18,9 @@
 "('+ m',)":"mMod",
 "('+ _', '+ P')":"Phosporylation",
 "('+ P', '+ _')":"Phosporylation",
+"('+ p', '+ _')":"Phosporylation",
+"('+ _', '+ p')":"Phosporylation",
+
 "('+ p',)":"Phosporylation",
 "('+ P',)":"Phosporylation",
 "('+ _', '+ P', '+ P')": "Double-Phosporylation",

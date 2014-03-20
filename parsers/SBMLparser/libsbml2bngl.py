@@ -1014,7 +1014,7 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
     #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='reactionDefinitions/speciesEquivalence5.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions=None)    
+    processFile3('XMLExamples/curated/BIOMD0000000217.xml',customDefinitions=None)    
 
     #processDir('XMLExamples/non_curated/')
     #statFiles()
