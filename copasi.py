@@ -110,16 +110,17 @@ def loadResults(fileName,split):
     except IOError:
         print 'no file'
         return [],[]
+        
 
-'''        
 def plotResults(fileResults1,fileResults2):
+    import matplotlib.pyplot as plt
     plt.figure(1)
     plt.subplot(211)
     plt.plot(fileResults1[:,1:])
     plt.subplot(212)
     plt.plot(fileResults2[:,1:])
     plt.show()
-'''
+
   
 def evaluate(fileNumber):
     copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
@@ -174,7 +175,7 @@ def evaluate(fileNumber):
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [51]:
+    for fileNumber in [5]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -192,7 +193,7 @@ def compareResults():
             print 'bng pass'
             continue
         elif np.size(copasi,0) != np.size(bng,0):
-            print 'different times'
+            print 'different times {0} {1}'.format(len(copasi),len(bng))
             continue
         #print translator
         for idx,element in enumerate(copheaders):

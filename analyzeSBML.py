@@ -30,7 +30,7 @@ class SBMLAnalyzer:
         
         
     def parseReactions(self,reaction,specialSymbols=''):
-        print reaction
+#        print reaction
         species =  (Word(alphanums+"_"+":#-") 
         + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
         + Suppress("()"))
@@ -225,10 +225,10 @@ class SBMLAnalyzer:
     
     def processNamingConventions2(self,molecules):
             
-        
         #normal naming conventions
         tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],
                                                                                       self.namingConventions)
+        
         #user defined naming convention
         if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
@@ -242,7 +242,6 @@ class SBMLAnalyzer:
         #add stuff to the main translator
         for element in self.userEquivalencesDict:
             tmpTranslator[element].extend(self.userEquivalencesDict[element])
-        
         return tmpTranslator,translationKeys,conventionDict
         
     
@@ -314,6 +313,8 @@ class SBMLAnalyzer:
         slightly modified version of a and b, this function will return a list of 
         lexical changes that a and b must undergo to become ~a and ~b.
         '''
+        
+
         tmpRuleList = deepcopy(ruleList)
         if len(ruleList[1]) == 1 and ruleList[1] != '0':
             tmpRuleList[0][0],sym,dic =  curateString(ruleList[0][0],differences)
@@ -338,10 +339,11 @@ class SBMLAnalyzer:
             matches =  simplifiedDifference.get_matching_blocks()
             if len(matches) != 3:
                 return [],[],[],[]
-            productfirstHalf = tmpRuleList[1][0][matches[0][1]:matches[0][2]]
+            
+            productfirstHalf = tmpRuleList[1][0][0:matches[0][1]+matches[0][2]]
             productsecondHalf = tmpRuleList[1][0][matches[1][1]:]
             tmpString = tmpRuleList[0][0] + '-' + tmpRuleList[0][1]
-            reactantfirstHalf = tmpString[matches[0][0]:matches[0][2]]
+            reactantfirstHalf = tmpString[0:matches[0][0]+matches[0][2]]
             reactantsecondHalf = tmpString[matches[1][0]:]
             #greedymatching
             idx = 0
@@ -484,6 +486,40 @@ class SBMLAnalyzer:
         return reactionTypeProperties
 
 
+    def processFuzzyReaction(self,reaction,translationKeys,conventionDict,indirectEquivalenceTranslator):
+        
+        d1,d2,firstMatch,secondMatch= self.approximateMatching(reaction,
+                                                    translationKeys)
+        idx1=0
+        idx2 = 1
+        matches = [firstMatch,secondMatch]
+        for index,element in enumerate([d1,d2]):
+            while idx2 <= len(element):
+                if (element[idx1],) in conventionDict.keys():
+                    pattern = conventionDict[(element[idx1],)]
+                    indirectEquivalenceTranslator[pattern].append([[reaction[0][index],reaction[1][0]],reaction[0],matches[index],reaction[1]])
+                elif (element[idx1].replace('-','+'),) in conventionDict.keys():
+                    matches[index].reverse()
+                    transformedPattern = conventionDict[(element[idx1].replace('-','+'),) ]
+                    indirectEquivalenceTranslator[transformedPattern].append([[reaction[1][0],reaction[0][index]],reaction[0],matches[index],reaction[1]])
+                    
+                elif idx2 < len(element):
+                    if tuple([element[idx1],element[idx2]]) in conventionDict.keys():    
+                        pattern = conventionDict[tuple([element[idx1],element[idx2]])]
+                        indirectEquivalenceTranslator[pattern].append([[reaction[0][index],reaction[1][0]],reaction[0],matches[index],reaction[1]])
+                        idx1 += 1
+                        idx2 += 1
+                    elif '-' in element[idx1] and '-' in element[idx2]:
+                        if tuple([element[idx1].replace('-','+'),element[idx2].replace('-','+')]) in conventionDict.keys():  
+                            matches[index].reverse()
+                            transformedPattern = conventionDict[tuple([element[idx1].replace('-','+'),element[idx2].replace('-','+')])]
+                            indirectEquivalenceTranslator[transformedPattern].append([[reaction[1][0],reaction[0][index]],reaction[0],matches[index],reaction[1]])
+                            idx1 += 1
+                            idx2 += 1
+
+                idx1+=1
+                idx2+=1
+        
     def classifyReactions(self,reactions,molecules):
         '''
         classifies a group of reaction according to the information in the json
@@ -506,13 +542,16 @@ class SBMLAnalyzer:
         equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules)
     
         
-        
         #lists of plain reactions
         rawReactions = [self.parseReactions(x) for x in reactions]
         #process fuzzy naming conventions based on reaction information
         indirectEquivalenceTranslator= {x:[] for x in equivalenceTranslator}
         for reaction in rawReactions:
-            
+            if len(reaction[0]) == 2:
+                self.processFuzzyReaction(reaction,translationKeys,conventionDict,indirectEquivalenceTranslator)
+            elif len(reaction[1]) == 2 and len(reaction[0]) == 1:
+                self.processFuzzyReaction([reaction[1],reaction[0]],translationKeys,conventionDict,indirectEquivalenceTranslator)
+        '''                
             if len(reaction[0]) == 2:
                 d1,d2,firstMatch,secondMatch= self.approximateMatching(reaction,
                                                             translationKeys)
@@ -546,7 +585,7 @@ class SBMLAnalyzer:
 
                         idx1+=1
                         idx2+=1
-
+            '''
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
