@@ -662,7 +662,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
 
     finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,set(observables),set(rules),functions,compartments,outputFile)
     
-    print outputFile
+#    print outputFile
     
     #store a logfile
     '''
