@@ -168,14 +168,14 @@ def evaluate(fileNumber):
     atol = copasi[:,newCopHeaders] - bng[:,newBngHeaders]
     rtol = atol/copasi[:,newCopHeaders]
     rtol = rtol[np.logical_not(np.isnan(rtol))]
-    score =  np.average(pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5))
+    score =  np.median(pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5))
     print '---',score,fileNumber    
     return score
     
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [5]:
+    for fileNumber in [217]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -227,8 +227,9 @@ def compareResults():
         #atol = copasi[:,newCopHeaders] - bng[:,newBngHeaders]
         #rtol = atol/copasi[:,newCopHeaders]
         #rtol = rtol[np.logical_not(np.isnan(rtol))]
-        score =  np.average(pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5))
-        
+        score =  pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5)
+        print score
+        score = np.median(score)
         #mini = np.min(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0))
         #if score>1e-3 and mini<1e-5:
         #    print np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0)       

@@ -642,7 +642,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
 
     ####dependency graph
-#    print '---',indirectEquivalenceTranslator
     #binding reactions
     for reaction, classification in zip(rules, classifications):
         dependencyGraph(database.dependencyGraph,
