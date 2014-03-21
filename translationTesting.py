@@ -81,11 +81,34 @@ def getValidBNGLFiles(directory):
                 errorFiles.append(log)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x and 'dict' not in x]
     validFiles = [x for x in bnglFiles if x not in errorFiles]
-    return validFiles
+    import re
+    validNumbers = []
+    for x in validFiles:
+        number = re.search('output([0-9]+)',x)    
+        if number != None:
+            validNumbers.append(number.group(1))
+        
+    return validNumbers
 
+def getValidGDats(directory):
+    onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory, f)) ]
+    gdatFiles = [x for x in onlyfiles if 'gdat' in x]
+    validNumbers = []
+    import re
+    for x in gdatFiles:
+        number = re.search('output([0-9]+)',x)    
+        if number != None:
+            validNumbers.append(number.group(1))
+        
+    return validNumbers
+
+    
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
     ran = range(1,464)
+    ran.remove(52)
+    ran.remove(205)
+    ran.remove(235)
     #ran = [51]
     '''
     ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,
@@ -93,23 +116,27 @@ if __name__ == "__main__":
            340, 452, 286, 399, 445, 285, 457, 74, 250, 334, 227, 205, 339, 151, 
            424, 14, 153, 105, 407, 451, 332, 326, 255, 356]
     '''
+    ran = [217]
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
-    ran  = [5,6,7]    
+    #ran  = [5]    
     for index in ran:
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    for fileNumber in ran:
-        fileName = 'output{0}.bngl'.format(fileNumber)
-        suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+    validFiles = getValidBNGLFiles('raw') 
+    validFiles = sorted(validFiles)
+    validFiles.remove('54')
+    #for fileNumber in validFiles:
+    #    fileName = 'output{0}.bngl'.format(fileNumber)
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    validGdats = getValidGDats('.')
     
-    validFiles = getValidBNGLFiles('raw')
     #validFiles = getValidBNGLFiles('raw')
 
     #for fileName in validFiles:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
-    for index in ran:
-        suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
+    #for index in validGdats:
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
     unittest.TextTestRunner(verbosity=2).run(suite)
 

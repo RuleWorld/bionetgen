@@ -100,6 +100,8 @@ class SBML2BNGL:
         isBoundary = species.getBoundaryCondition()
         if isBoundary:
             isConstant = True
+            if initialConcentration == 0:
+                initialConcentration = 1
         compartment = species.getCompartment()
         boundaryCondition = species.getBoundaryCondition()
         standardizedName = standardizeName(name)
@@ -326,12 +328,19 @@ class SBML2BNGL:
         '''
         returns a triple containing the parameters,rules,functions
         '''
+        
+        ##thi part of the code is there so that we only generate the functions list once through different
+        #iterations of this call. This is because we cannot create a clone of the 'math' object for this
+        #reaction and it is being permanently changed every call. It's ugly but it works. Change for something
+        #better when we figure out how to clone the math object
+        if not hasattr(self.getReactions,'functionFlag'):
+            self.getReactions.__func__.functionFlag = True
+            self.getReactions.__func__.functions = []
+
         rules = []
         parameters = []
-        
-        functions = []
-        
         functionTitle = 'functionRate'
+        
         for index, reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
             rawRules =  self.__getRawRules(reaction)
@@ -355,10 +364,12 @@ class SBML2BNGL:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
             if rawRules[4]:
                 if rawRules[6][0] > threshold:
-                    functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict, self.reactionDictionary))
+                    if self.getReactions.functionFlag:
+                        self.getReactions.__func__.functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict, self.reactionDictionary))
                 if rawRules[6][1] > threshold:
-                    functionName2 = '%s%dm()' % (functionTitle,index)                
-                    functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
+                    functionName2 = '%s%dm()' % (functionTitle,index)    
+                    if self.getReactions.functionFlag:
+                        self.getReactions.__func__.functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
                     self.reactionDictionary[rawRules[5]] = '({0} - {1})'.format(functionName, functionName2)                
                     functionName = '{0},{1}'.format(functionName, functionName2)
                 else:
@@ -368,14 +379,16 @@ class SBML2BNGL:
                     functionName = '{0},{1}'.format(functionName,finalString)
             else:
                 if rawRules[6][0] > threshold:
-                    functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict,self.reactionDictionary))
+                    if self.getReactions.functionFlag:
+                        self.getReactions.__func__.functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict,self.reactionDictionary))
                     self.reactionDictionary[rawRules[5]] = '{0}'.format(functionName)
             #reactants = [x for x in rawRules[0] if x[0] not in self.boundaryConditionVariables]
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
             reactants = [x for x in rawRules[0]]
             products = [x for x in rawRules[1]]
             rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,isCompartments,rawRules[4]))
-        return parameters, rules,functions
+        self.getReactions.__func__.functionFlag = False
+        return parameters, rules,self.getReactions.functions
 
     def __getRawAssignmentRules(self,arule):
         variable =   arule.getVariable()
