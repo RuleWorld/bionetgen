@@ -310,7 +310,7 @@ def getComplexationComponents2(species,bioGridFlag):
     in a species bind together
     '''
     def getBiggestMolecule(array):
-        sortedMolecule = sorted(array, key=lambda rule: (len(rule.components),len(str(rule))),str(rule))
+        sortedMolecule = sorted(array, key=lambda rule: (len(rule.components),len(str(rule)),str(rule)))
         #sortedMolecule = sorted(sortedMolecule, key=lambda rule: len(rule.components))
         
         #print 'sortedMolecule',[str(x) for x in sortedMolecule]
