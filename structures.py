@@ -182,10 +182,16 @@ class Species:
         for element in newSpecies.molecules:
             self.molecules.append(deepcopy(element))              
         
+
+    def sort(self):
+        self.molecules.sort(key=lambda x:(-len(x.components),x.evaluateMolecule(),x.name))
+        
     def __str__(self):
+        self.sort()
         return '.'.join([x.toString().replace('-','_') for x in self.molecules])
         
     def str2(self):
+        self.sort()
         return '.'.join([x.str2().replace('-','_') for x in self.molecules])
         
     def reset(self):
@@ -269,8 +275,22 @@ class Molecule:
     def contains(self,componentName):
         return componentName in [x.name for x in self.components]
         
+        
+    def evaluateMolecule(self):
+        try:
+            return min([self.evaluateBonds(x.bonds) for x in self.components])
+        except ValueError:
+            return 999999
+
+    def evaluateBonds(self,bonds):
+        if len(bonds) == 0:
+            return 9999999
+        return bonds[0]
+
+    def sort(self):
+        self.components.sort(key=lambda x:(self.evaluateBonds(x.bonds),x.name))
     def __str__(self):
-        self.components = sorted(self.components,key=lambda x:x.name)
+        self.sort()
         tmp = self.name.replace('-','_')
         return tmp + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
         
@@ -278,6 +298,7 @@ class Molecule:
         return self.__str__()
         
     def str2(self):
+        self.sort()
         self.components = sorted(self.components,key=lambda x:x.name)
         tmp = self.name.replace('-','_')
         return tmp + '(' + ','.join([x.str2() for x in self.components]) + ')'
