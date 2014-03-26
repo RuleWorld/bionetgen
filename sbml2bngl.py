@@ -395,16 +395,16 @@ class SBML2BNGL:
         #better when we figure out how to clone the math object
         if not hasattr(self.getReactions,'functionFlag'):
             self.getReactions.__func__.functionFlag = False
-            self.getReactions.__func__.functions = []
 
         rules = []
         parameters = []
+        functions = []
         functionTitle = 'functionRate'
         
         for index, reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
             #symmetry factors for components with the same name
-            sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,self.getReactions.functions)
+            sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,functions)
 
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
             if len(rawRules[2]) >0:
@@ -428,11 +428,11 @@ class SBML2BNGL:
             if rawRules[4]:
                 if rawRules[6][0] > threshold:
                     if self.getReactions.functionFlag:
-                        self.getReactions.__func__.functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict, self.reactionDictionary))
+                        functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict, self.reactionDictionary))
                 if rawRules[6][1] > threshold:
                     functionName2 = '%s%dm()' % (functionTitle,index)    
                     if self.getReactions.functionFlag:
-                        self.getReactions.__func__.functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
+                        functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
                     self.reactionDictionary[rawRules[5]] = '({0} - {1})'.format(functionName, functionName2)                
                     functionName = '{0},{1}'.format(functionName, functionName2)
                 else:
@@ -443,15 +443,15 @@ class SBML2BNGL:
             else:
                 if rawRules[6][0] > threshold:
                     if self.getReactions.functionFlag:
-                        self.getReactions.__func__.functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict,self.reactionDictionary))
+                        functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict,self.reactionDictionary))
                     self.reactionDictionary[rawRules[5]] = '{0}'.format(functionName)
             #reactants = [x for x in rawRules[0] if x[0] not in self.boundaryConditionVariables]
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
             reactants = [x for x in rawRules[0]]
             products = [x for x in rawRules[1]]
             rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,isCompartments,rawRules[4]))
-        self.getReactions.__func__.functionFlag = True
-        return parameters, rules,self.getReactions.functions
+        self.getReactions.__func__.functionFlag = not self.getReactions.functionFlag
+        return parameters, rules,functions
 
     def __getRawAssignmentRules(self,arule):
         variable =   arule.getVariable()
