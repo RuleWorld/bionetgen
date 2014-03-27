@@ -449,7 +449,7 @@ class SBML2BNGL:
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
             reactants = [x for x in rawRules[0]]
             products = [x for x in rawRules[1]]
-            rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or (len(reactants) == 0 and self.getReactions.__func__.functionFlag)),rawRules[4]))
+            rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),rawRules[4]))
         if atomize:
             self.getReactions.__func__.functionFlag = not self.getReactions.functionFlag
         return parameters, rules,functions
