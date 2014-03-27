@@ -538,7 +538,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
-    reactionParameters,rules,rateFunctions = parser.getReactions(translator,len(compartments)>1)
+    reactionParameters,rules,rateFunctions = parser.getReactions(translator,len(compartments)>1,atomize=atomize)
     functions.extend(rateFunctions)
     aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
     for element in nonzparam:
@@ -1014,7 +1014,7 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
     #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='reactionDefinitions/speciesEquivalence5.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000217.xml',customDefinitions=None,atomize=True)    
+    processFile3('XMLExamples/curated/BIOMD0000000120.xml',customDefinitions=None,atomize=False)    
 
     #processDir('XMLExamples/non_curated/')
     #statFiles()

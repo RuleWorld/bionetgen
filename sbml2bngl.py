@@ -384,7 +384,7 @@ class SBML2BNGL:
             
         return newRate
     
-    def getReactions(self, translator={}, isCompartments=False, extraParameters={}):
+    def getReactions(self, translator={}, isCompartments=False, extraParameters={},atomize=False):
         '''
         returns a triple containing the parameters,rules,functions
         '''
@@ -394,7 +394,7 @@ class SBML2BNGL:
         #reaction and it is being permanently changed every call. It's ugly but it works. Change for something
         #better when we figure out how to clone the math object
         if not hasattr(self.getReactions,'functionFlag'):
-            self.getReactions.__func__.functionFlag = False
+            self.getReactions.__func__.functionFlag = False or (not atomize)
 
         rules = []
         parameters = []
@@ -449,8 +449,9 @@ class SBML2BNGL:
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
             reactants = [x for x in rawRules[0]]
             products = [x for x in rawRules[1]]
-            rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,isCompartments,rawRules[4]))
-        self.getReactions.__func__.functionFlag = not self.getReactions.functionFlag
+            rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or (len(reactants) == 0 and self.getReactions.__func__.functionFlag)),rawRules[4]))
+        if atomize:
+            self.getReactions.__func__.functionFlag = not self.getReactions.functionFlag
         return parameters, rules,functions
 
     def __getRawAssignmentRules(self,arule):
