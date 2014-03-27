@@ -625,7 +625,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         ---speciesEquivalences:predefined species
     '''
     
-    _, rules, _ = parser.getReactions()
+    _, rules, _ = parser.getReactions(atomize=True)
     molecules, _, _,_ = parser.getSpecies()
 
     sbmlAnalyzer = \
