@@ -196,7 +196,7 @@ sub readSBML
     # Find program and save path to directory
     my $program;
     unless ( $program = findExec("sbmlTranslator") )
-    {   return "Could not find executable 'sbmlTranslator'";   }
+    {   return 1, "Could not find executable 'sbmlTranslator'";   }
     my ($vol, $dir, $bin) = File::Spec->splitpath( $program );
 	my $bindir = File::Spec->catpath($vol, $dir);
 
@@ -215,7 +215,7 @@ sub readSBML
 	system($cmd);
 	
 	# Return full path to generated BNGL file
-	return $outfile
+	return 0, $outfile
 }
 
 
@@ -345,7 +345,13 @@ sub readSBML
         # SBML translator
 		if ( $filename =~ /\.xml$/ )
 		{
-			$filename = $model->readSBML($filename,$model->Params); 
+			my $out;
+			($err, $out) = $model->readSBML($filename,$model->Params);
+			if ($err){
+				$err = $out;
+				goto EXIT;
+			}
+			$filename = $out
 			# Generated BNGL file will now be read in below
 		}
 		
