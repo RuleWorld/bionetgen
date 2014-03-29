@@ -535,6 +535,9 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     #translator = {}
     param,zparam = parser.getParameters()
     molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
+    #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
+    param,zparam,initialConditions = parser.getInitialAssignments(translator,param,zparam,molecules,initialConditions)
+
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
@@ -659,6 +662,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         commentDictionary['notes'] = 'This is a plain translation of an SBML model created on {0}'.format(time.strftime("%d/%m/%Y"))
     commentDictionary['notes'] += 'The original model has {0} molecules and {1} reactions. The translated model has {2} molecules and {3} rules'.format(parser.model.getNumSpecies(),parser.model.getNumReactions(),len(molecules),len(set(rules)))
     meta = parser.getMetaInformation(commentDictionary)
+
+
 
     finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,set(observables),set(rules),functions,compartments,outputFile)
     
@@ -1014,7 +1019,7 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
     #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='reactionDefinitions/speciesEquivalence5.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000229.xml',customDefinitions=None,atomize=False)    
+    processFile3('XMLExamples/curated/BIOMD0000000457.xml',customDefinitions=None,atomize=False)    
 
     #processDir('XMLExamples/non_curated/')
     #statFiles()

@@ -164,6 +164,7 @@ class SBML2BNGL:
     def getUnitDefinitions(self):
         for unitDefinition in self.model.getListOfUnits():
             pass
+        
     def removeFactorFromMath(self, math, reactants, products):
         ifStack = Counter()
         remainderPatterns = []
@@ -638,6 +639,42 @@ class SBML2BNGL:
         
         return moleculesText,speciesText,observablesText,speciesTranslationDict
 
+    def getInitialAssignments(self,translator,param,zparam,molecules,initialConditions):
+        param2 = param
+        zparam2 = zparam
+        initialConditions2 =initialConditions
+        pparam = {}
+        
+        for element in param:
+            pparam[element.split(' ')[0]] =(element.split(' ')[1],None)
+            
+        for species in self.model.getListOfSpecies():
+            tmp = self.getRawSpecies(species)
+            if species.getName() in translator:
+                extendedStr = '@{0}:{1}'.format(species.getCompartment(),translator[species.getName()])
+            else:
+                extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
+            pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
+        
+        for initialAssignment in self.model.getListOfInitialAssignments():
+            symbol = initialAssignment.getSymbol()
+            math = libsbml.formulaToString(initialAssignment.getMath())
+            for element in pparam:
+                if element in math:
+                    math = re.sub(r'(\W|^)({0})(\W|$)'.format(element),
+                    r'{0}'.format(pparam[element][0]),math)
+
+            param2 = [x for x in param if '{0} '.format(symbol) not in x]
+            zparam2 = [x for x in zparam if '{0} '.format(symbol) not in x]
+            if (len(param2) != len(param)) or (len(zparam) != len(zparam2)):
+                param2.append('{0} {1}'.format(symbol,math))
+            else:
+                initialConditions2 = [x for x in initialConditions if '{0}()'.format(symbol) not in x]
+                                
+                initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
+        return param2,zparam2,initialConditions2
+            
+            
     def getSpeciesAnnotation(self):
         speciesAnnotation = {}
 
