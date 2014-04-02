@@ -667,11 +667,12 @@ sub writeSBML
 #      <compartment id="cell" size="1"/>
 #    </listOfCompartments>
 #EOF
-	print $SBML qq{    <listOfCompartments>
-      <compartment id="cell" size="1"/>
-    </listOfCompartments>
-};
+#	print $SBML qq{    <listOfCompartments>
+#      <compartment id="cell" size="1"/>
+#    </listOfCompartments>
+#};
 
+	printf $SBML "%s",$model->CompartmentList->toXML("     ");
 
 	# 2. Species
 	print $SBML "    <listOfSpecies>\n";
@@ -696,7 +697,7 @@ sub writeSBML
         # concentrations. --LAH
 
 		printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
-		                                                                $spec->Index, "cell", $conc;
+		                                                                $spec->Index, $spec->SpeciesGraph->Compartment->Name, $conc;
 
 		if ( $spec->SpeciesGraph->Fixed )
         {   printf $SBML " boundaryCondition=\"true\"";   }
