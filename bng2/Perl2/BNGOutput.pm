@@ -667,12 +667,17 @@ sub writeSBML
 #      <compartment id="cell" size="1"/>
 #    </listOfCompartments>
 #EOF
-#	print $SBML qq{    <listOfCompartments>
-#      <compartment id="cell" size="1"/>
-#    </listOfCompartments>
-#};
+	
+	if (@{$model->CompartmentList->Array}) { # @a is not empty...
+		printf $SBML "%s",$model->CompartmentList->toXML("     ");
+	} else { # @a is empty
+	print $SBML qq{    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+	};
+  
+	}
 
-	printf $SBML "%s",$model->CompartmentList->toXML("     ");
 
 	# 2. Species
 	print $SBML "    <listOfSpecies>\n";
@@ -695,9 +700,15 @@ sub writeSBML
         # [http://sbml.org/Software/libSBML/docs/java-api/org/sbml/libsbml/InitialAssignment.html].
         # We could use this in the next version of writeSBML() to allow for variable initial
         # concentrations. --LAH
-
+        my $compartmentString; 
+        if (defined($spec->SpeciesGraph->Compartment)){
+        	$compartmentString = $spec->SpeciesGraph->Compartment->Name;
+        }
+        else{
+        	$compartmentString = "cell";
+        }
 		printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
-		                                                                $spec->Index, $spec->SpeciesGraph->Compartment->Name, $conc;
+		                                                                $spec->Index,$compartmentString, $conc;
 
 		if ( $spec->SpeciesGraph->Fixed )
         {   printf $SBML " boundaryCondition=\"true\"";   }
