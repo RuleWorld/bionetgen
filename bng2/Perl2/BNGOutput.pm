@@ -668,8 +668,29 @@ sub writeSBML
 #    </listOfCompartments>
 #EOF
 	
-	if (@{$model->CompartmentList->Array}) { # @a is not empty...
-		printf $SBML "%s",$model->CompartmentList->toXML("     ");
+	if ($model->CompartmentList->Used) { # @a is not empty...
+        print $SBML "   <listOfCompartments>\n";
+        foreach my $comp (@{$model->CompartmentList->Array})
+        {
+              my $string="      <compartment";
+
+              # Attributes
+              # id
+              $string.=" id=\"".$comp->Name."\"";
+              # spatialDimensions
+              $string.= " spatialDimensions=\"".$comp->SpatialDimensions."\"";
+              # size
+              $string.= " size=\"".$comp->Size->toString()."\"";
+              # outside
+              if ($comp->Outside){
+                $string.= " outside=\"".$comp->Outside->Name."\"";
+              }
+
+              $string.="/>\n"; # short tag termination
+              printf $SBML "%s",$string
+        }
+        print $SBML "   </listOfCompartments>\n";
+		#printf $SBML "%s",$model->CompartmentList->toXML("     ");
 	} else { # @a is empty
 	print $SBML qq{    <listOfCompartments>
       <compartment id="cell" size="1"/>
