@@ -253,6 +253,8 @@ seed species are defined. This fix permits network generation for models with
 does not end with a new line.
 * Fixed bug where functions comprised of more than 512 characters could not 
 be read. There is now no limit to the number of characters.
+* Fixed bug where cBNGL fails to produce an error when zero-order synthesis 
+products do not have a compartment.
 
 ==== Minor Syntax Changes ====
 * Deprecated use of fixed quantity flag "$"  within reactant rules.

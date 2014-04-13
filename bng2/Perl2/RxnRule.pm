@@ -3122,7 +3122,7 @@ sub build_reaction
                 {
 			        print "ERROR: unable to assign reaction product to a compartment!\n"
 			            . ">>", $rr->toString(), "\n";
-			        return undef;
+			        die "Program has terminated prior to completion.";
                 }
                 # find the surface, if any, and assign product to that surface
 			    foreach my $comp (@$compartments)
@@ -3146,7 +3146,7 @@ sub build_reaction
             {
 		        print "ERROR: unable to assign reaction product to a compartment!\n"
 		            . "RxnRule>", $rr->toString(), "\n";
-		        return undef;
+		        die "Program has terminated prior to completion.";
             }
 
             # (2) Assign product species to inferred compartment (possibly undefined).  Note that
