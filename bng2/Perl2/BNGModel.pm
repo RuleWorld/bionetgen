@@ -180,8 +180,8 @@ sub readSBML
 {
 	my $model  = shift @_;
 	my $filepath = shift @_;
-	$filepath =~ /(\w+)\.xml/;
-	my $filename = $1;
+	my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
+	$filename =~ s/\.xml//;
 	my $outfile = $model->getOutputDir() . $filename . '.bngl';
     my $user_args = @_ ? shift @_ : {};
     
@@ -197,7 +197,7 @@ sub readSBML
     my $program;
     unless ( $program = findExec("sbmlTranslator") )
     {   return 1, "Could not find executable 'sbmlTranslator'";   }
-    my ($vol, $dir, $bin) = File::Spec->splitpath( $program );
+    ($vol, $dir, my $bin) = File::Spec->splitpath( $program );
 	my $bindir = File::Spec->catpath($vol, $dir);
 
     # Begin writing command: start with 'program'
