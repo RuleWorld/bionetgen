@@ -753,7 +753,7 @@ sub writeSBML
 	foreach my $param ( @{$plist->Array} )
 	{
 	    next unless ( $param->Type eq 'ConstantExpression' );	
-		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $param->Name;
+		printf $SBML "      <parameter id=\"%s\" constant=\"True\"/>\n", $param->Name;
 	}
 
 	# B. Observables
