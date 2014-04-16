@@ -728,7 +728,7 @@ sub listActions
 	{
 		my @compInhRefs = @$molAddRef;
 		my $molRef      = shift(@compInhRefs);
-		my ( $p, $m ) = split /\./, $molRef;
+		my ( $p, $m ) = split (/\./, $molRef);
 		my $newMol = $rr->Products->[$p]->Molecules->[$m];
 		$out .= "  # Add Species " . $newMol->toString() . "\n";
 	}
@@ -777,7 +777,7 @@ sub listActions
 	# Molecule Deletion
 	foreach my $molRef ( @{ $rr->MolDel } )
 	{
-		my ( $p, $m ) = split /\./, $molRef;
+		my ( $p, $m ) = split (/\./, $molRef);
 		if ( defined($m) ) {
 			$out .= "  # Delete Molecule "
 			  . $rr->Reactants->[$p]->Molecules->[$m]->toString() . "\n";
@@ -942,7 +942,7 @@ sub toStringSSC
 	my $i = 0;
 	my $curLabel;
 	for my $molRef ( @{ $rr->MolDel } ) {
-		my ( $p, $m ) = split /\./, $molRef;
+		my ( $p, $m ) = split (/\./, $molRef);
 		if ( $i != 0 ) { $pstring .= ";"; }
 		if ( defined $m )
 		{
@@ -995,7 +995,7 @@ sub toStringSSC
 		if ( $i != 0 ) { $pstring .= ";"; }
 		my @compInhRefs = @$molAddRef;
 		my $molRef      = shift(@compInhRefs);
-		my ( $p, $m ) = split /\./, $molRef;
+		my ( $p, $m ) = split (/\./, $molRef);
 		my $newMol = $rr->Products->[$p]->Molecules->[$m];
 		my $addMol = $newMol->toString();
 		$pstring .= " new ";
@@ -1008,8 +1008,8 @@ sub toStringSSC
 		my $pstring1 = $rr->MapR->{$p1};    #Mapping back to reactants
 		my $pstring2 = $rr->MapR->{$p2};
 
-		( my $pat1, my $mol1, my $comp1 ) = split /\./, $pstring1;
-		( my $pat2, my $mol2, my $comp2 ) = split /\./, $pstring2;
+		( my $pat1, my $mol1, my $comp1 ) = split (/\./, $pstring1);
+		( my $pat2, my $mol2, my $comp2 ) = split (/\./, $pstring2);
 
 		if ( $i != 0 ) { $pstring .= ";"; }
 		my $newComp1 = $rr->Reactants->[$pat1]->Molecules->[$mol1]->Components->[$comp1];
@@ -1182,14 +1182,14 @@ sub toStringSSC
 	for my $ed ( @{ $rr->EdgeDel } ) {
 		( my $p1, my $p2 ) = @{$ed};
 
-		( my $pat1, my $mol1, my $comp1 ) = split /\./, $p1;
-		( my $pat2, my $mol2, my $comp2 ) = split /\./, $p2;
+		( my $pat1, my $mol1, my $comp1 ) = split (/\./, $p1);
+		( my $pat2, my $mol2, my $comp2 ) = split (/\./, $p2);
 
 		my $newComp1 = $rr->Reactants->[$pat1]->Molecules->[$mol1]->Components->[$comp1];
 		my $newComp2 = $rr->Reactants->[$pat2]->Molecules->[$mol2]->Components->[$comp2];
 		my $unbMol1 .= $pat1 . $mol2;
 		my $unbMol2 .= $pat2 . $mol2;
-		( my $name, my $bond ) = split /#/, $newComp1->toStringSSC();
+		( my $name, my $bond ) = split (/#/, $newComp1->toStringSSC());
 		# check for molecules not in delMolecules
 		if ( $delMolCase == 0 ) {
 			if ( $i != 0 ) { $pstring .= ";"; }
@@ -1204,7 +1204,7 @@ sub toStringSSC
 		my $checkComp1;
 		my $checkComp2;
 		( my $p, my $sR, my $sP ) = @{$sc};
-		( my $pat1, my $mol1, my $comp1 ) = split /\./, $p;
+		( my $pat1, my $mol1, my $comp1 ) = split (/\./, $p);
 		if ( $pat1 == 0 ) {
 			if ( exists $pattern1{$mol1} ) {
 				$stateLabel = $pattern1{$mol1};
@@ -1233,7 +1233,7 @@ sub toStringSSC
 		}
 
 		my $newComp = $rr->Reactants->[$pat1]->Molecules->[$mol1]->Components->[$comp1]->toStringSSC();
-		( my $my_Comp ) = split /=/, $newComp;
+		( my $my_Comp ) = split (/=/, $newComp);
 		if ( $i != 0 ) {
 			$pstring .= ";";
 		}    # As two state changes are separated, cannot bedefined in one line
@@ -2113,7 +2113,7 @@ sub findMap
 
         # Check that this molecule is fully specified, i.e. all components and component states
 		my $ref = $aggMapP[$imP];
-		my ($p, $m) = split /\./, $ref;
+		my ($p, $m) = split (/\./, $ref);
 		my $mol = $rr->Products->[$p]->Molecules->[$m];
 
         # List of pointers to reactant components from which to inherit attributes of each component
@@ -2123,7 +2123,7 @@ sub findMap
 		{
 			if ( ( my $cref = $map->MapR->{"$imP.$ic"} ) ne "-1" )
 			{
-				my ( $imR, $icR ) = split /\./, $cref;
+				my ( $imR, $icR ) = split (/\./, $cref);
 				$cref = $aggMapR[$imR] . ".$icR";
 				push @ilist, $cref;
 			}
@@ -2146,7 +2146,7 @@ sub findMap
 	my @eused = (0) x @{$pg->Edges};
 	foreach my $edgeR ( @{$rg->Edges} )
 	{
-	    my ($p1R,$p2R) = split / /, $edgeR;
+	    my ($p1R,$p2R) = split (/ /, $edgeR);
 	    next unless ( defined $p1R  and  defined $p2R );
 		
 		my $p1P = $map->MapF->{$p1R};
@@ -2161,8 +2161,8 @@ sub findMap
 		
 		# edge not found! create an edge deletion operation!
 		#  get molecule and component index (within reactant aggregate)
-		my ( $im1, $ic1 ) = split /\./, $p1R;
-		my ( $im2, $ic2 ) = split /\./, $p2R;
+		my ( $im1, $ic1 ) = split (/\./, $p1R);
+		my ( $im2, $ic2 ) = split (/\./, $p2R);
 		
 		# Check if either molecule is deleted.
 		#  if so, the egde is removed as a side-effect and we don't need to
@@ -2170,7 +2170,7 @@ sub findMap
 		next if ( grep {$_ eq $aggMapR[$im1]} @{$rr->MolDel}  or  grep {$_ eq $aggMapR[$im2]} @{$rr->MolDel} );
 		
 		# check if bond is part of a complex that is deleted
-		my ($ip1) = split /\./, $aggMapR[$im1];
+		my ($ip1) = split (/\./, $aggMapR[$im1]);
 		next if ( grep {$_ eq $ip1 } @{$rr->MolDel} );	        
 
         # edge delete operation points to the reactant molecules
@@ -2185,12 +2185,12 @@ sub findMap
 	foreach my $iedgeP ( 0 .. $#{$pg->Edges} )
 	{
 		next unless ( $eused[$iedgeP] == 0 );
-		my @ps = split / /, $pg->Edges->[$iedgeP];
+		my @ps = split (/ /, $pg->Edges->[$iedgeP]);
 		next unless ( @ps==2 );
 		my $p1P = $ps[0];
 		my $p2P = $ps[1];
-		my ( $im1, $ic1 ) = split /\./, $p1P;
-		my ( $im2, $ic2 ) = split /\./, $p2P;
+		my ( $im1, $ic1 ) = split (/\./, $p1P);
+		my ( $im2, $ic2 ) = split (/\./, $p2P);
 		$p1P = $aggMapP[$im1] . ".$ic1";
 		$p2P = $aggMapP[$im2] . ".$ic2";
 
@@ -2207,7 +2207,7 @@ sub findMap
             my $comp = $mol->Components->[$icP];
             next unless (@{$comp->Edges});
             
-            my ($imR, $icR) = split /\./, $map->MapR("$imP.$icP");
+            my ($imR, $icR) = split (/\./, $map->MapR("$imP.$icP"));
             # we already checked synthesized molecules, so we only need to check those with
             #  a correspondence in the reactants
             next if ( $imR == -1 );
@@ -2251,7 +2251,7 @@ sub findMap
 		foreach my $icR ( 0 .. $#{$componentsR} )
 		{   
 		    # get product component index
-			my ( $imP, $icP ) = split /\./, $map->MapF->{"$imR.$icR"};
+			my ( $imP, $icP ) = split (/\./, $map->MapF->{"$imR.$icR"});
 
             # Get reactant and product state
             my $stateR = $componentsR->[$icR]->State;
@@ -2345,7 +2345,7 @@ sub findMap
 		my $components = $rg->Molecules->[$im1]->Components;
 		foreach my $ic1 ( 0 .. $#{$components} )
 		{
-			my ( $im2, $ic2 ) = split /\./, $map->MapF->{"$im1.$ic1"};
+			my ( $im2, $ic2 ) = split (/\./, $map->MapF->{"$im1.$ic1"});
 			if ( $im2 >= 0 )
 			{
 				$mapf_new->{"$pm1.$ic1"} = "$pm2.$ic2";
@@ -2373,7 +2373,7 @@ sub findMap
 		my $components = $pg->Molecules->[$im1]->Components;
 		foreach my $ic1 ( 0 .. $#{$components} )
 		{
-			my ( $im2, $ic2 ) = split /\./, $map->MapR->{"$im1.$ic1"};
+			my ( $im2, $ic2 ) = split (/\./, $map->MapR->{"$im1.$ic1"});
 			if ( $im2 >= 0 )
 			{
 				$mapr_new->{"$pm1.$ic1"} = "$pm2.$ic2";
@@ -2400,7 +2400,7 @@ sub findMap
 		    foreach my $molR ( @{$rr->Reactants->[$i_pattR]->Molecules} )
 			{
 				my $i_pattP_molP = $mapf_new->{ $aggMapR[ $i_R++ ] };
-				my ($i_pattP) = split /\./, $i_pattP_molP;
+				my ($i_pattP) = split (/\./, $i_pattP_molP);
 
 				# if pattR mapping has already failed, do nothing
 				if ( exists $mapPattR[$i_pattR] )
@@ -2424,7 +2424,7 @@ sub findMap
 		    foreach my $molP ( @{$rr->Products->[$i_pattP]->Molecules} )
 			{
 				my $i_pattR_molR = $mapr_new->{ $aggMapP[ $i_P++ ] };
-				my ($i_pattR) = split /\./, $i_pattR_molR;
+				my ($i_pattR) = split (/\./, $i_pattR_molR);
 
 				# if pattR mapping has already failed, do nothing
 				if ( exists $mapPattP[$i_pattP] )
@@ -2587,7 +2587,7 @@ sub findMap
 		my $molR_comp = $rg->Molecules->[$i_molR]->Compartment;
 
 		# get reactant pattern index and compartment (if any)
-		my ( $i_pattR ) = split /\./, $aggMapR[$i_molR];
+		my ( $i_pattR ) = split (/\./, $aggMapR[$i_molR]);
 		my $pattR_comp = $rr->Reactants->[$i_pattR]->Compartment;
 
 		# check that molecule and pattern compartments are compatible
@@ -2612,7 +2612,7 @@ sub findMap
 		my $molP_comp = $pg->Molecules->[$i_molP]->Compartment;
 
 		# get product pattern index and compartment (if any)
-		( my $i_pattP ) = split /\./, $aggMapP[$i_molP];
+		( my $i_pattP ) = split (/\./, $aggMapP[$i_molP]);
 		my $pattP_comp = $rr->Products->[$i_pattP]->Compartment;
 
 		# check that molecule and pattern compartments are compatible.
@@ -2809,30 +2809,30 @@ sub findMap
 	$rr->MultScale($multScale);
 	
 	## debug symmetry output
-    #print $rr->toString(), "\n";
-    #print STDERR "|autR|    = ", scalar(@r_auto), "\n";
-    #print STDERR "|autP|    = ", scalar(@p_auto), "\n";
-    #print STDERR "|RG|      = ", scalar(@RuleGroup), "\n";
-    #print STDERR "|StabRC|  = ", scalar(@StabRxnCntr), "\n";
-    #print STDERR "CRG perms = ", $crg_permutations, "\n";
-    #print STDERR "multScale = ", $multScale, "\n";
+#	print $rr->toString(), "\n";
+#	print STDERR "|autR|    = ", scalar(@r_auto), "\n";
+#	print STDERR "|autP|    = ", scalar(@p_auto), "\n";
+#	print STDERR "|RG|      = ", scalar(@RuleGroup), "\n";
+#	print STDERR "|StabRC|  = ", scalar(@StabRxnCntr), "\n";
+#	print STDERR "CRG perms = ", $crg_permutations, "\n";
+#	print STDERR "multScale = ", $multScale, "\n";
 
 
 	# save maps
 	$rr->MapF( $mapf_new );
 	$rr->MapR( $mapr_new );
 
-	# print "=====\n", $rr->toString(), "\n";
-	# foreach my $key ( keys %{$rr->MapF} )
-	# {
-	#    print $key, " -> ", $rr->MapF->{$key}, "\n";
-	# }
-	# print "-----\n";
-	# foreach my $key ( keys %{$rr->MapR} )
-	# {
-	#    print $key, " -> ", $rr->MapR->{$key}, "\n";
-	# }
-
+#	print "=====\n", $rr->toString(), "\n";
+#	foreach my $key ( keys %{$rr->MapF} )
+#	{
+#	   print $key, " -> ", $rr->MapF->{$key}, "\n";
+#	}
+#	print "-----\n";
+#	foreach my $key ( keys %{$rr->MapR} )
+#	{
+#	   print $key, " -> ", $rr->MapR->{$key}, "\n";
+#	}
+	
     # send warning if no transformations were detected
     unless ( @{$rr->MolDel} or @{$rr->MolAdd} or @{$rr->EdgeDel} or @{$rr->EdgeAdd}
                              or @{$rr->CompStateChange} or @{$rr->ChangeCompartment} )
@@ -3120,9 +3120,8 @@ sub build_reaction
                 # if there are no reactants, we're in trouble
                 unless (@$compartments)
                 {
-			        print "ERROR: unable to assign reaction product to a compartment!\n"
-			            . ">>", $rr->toString(), "\n";
-			        return undef;
+			        exit_error( "Unable to assign reaction product to a compartment!\n"
+			            . ">>" . $rr->toString() . "\n" );
                 }
                 # find the surface, if any, and assign product to that surface
 			    foreach my $comp (@$compartments)
@@ -3144,9 +3143,8 @@ sub build_reaction
 		    }
             unless ( defined $infer_comp )
             {
-		        print "ERROR: unable to assign reaction product to a compartment!\n"
-		            . "RxnRule>", $rr->toString(), "\n";
-		        return undef;
+		        exit_error( "Unable to assign reaction product to a compartment!\n"
+		            . "RxnRule>" . $rr->toString() . "\n" );
             }
 
             # (2) Assign product species to inferred compartment (possibly undefined).  Note that
@@ -3587,7 +3585,7 @@ sub apply_operations
 		{
 			my @compInhRefs = @$molAddRef;
 			my $molRef      = shift @compInhRefs;
-			my ( $ip, $im ) = split /\./, $molRef;
+			my ( $ip, $im ) = split (/\./, $molRef);
 			my $newMol = $rr->Products->[$ip]->Molecules->[$im]->copy($molRef);
 			
 			# Clear out edges to avoid label clashing!! We'll add bonds later.
@@ -3602,13 +3600,13 @@ sub apply_operations
 			foreach my $compInhRef (@compInhRefs)
 			{
 				next unless $compInhRef;
-				my ( $ip, $im, $ic ) = split /\./, $compInhRef;
+				my ( $ip, $im, $ic ) = split (/\./, $compInhRef);
 
 				# permute reactants
 				if ( defined $permute ) { $ip = $permute->[$ip]; }
 
-				my ( $im_targ, $ic_targ ) = split /\./,
-				  $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] );
+				my ( $im_targ, $ic_targ ) = split ( /\./,
+				  $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] ) );
 
 				# Copy component state
 				my $stateNew = $mol->[$im_targ]->Components->[$ic_targ]->State;
@@ -3653,13 +3651,13 @@ sub apply_operations
 		foreach my $sc ( @{$rr->CompStateChange} )
 		{
 			my ( $ref, $stateR, $stateP ) = @$sc;
-			my ( $ip, $im, $ic ) = split /\./, $ref;
+			my ( $ip, $im, $ic ) = split (/\./, $ref);
 
 			# permute reactants
 			if ( defined $permute ) { $ip = $permute->[$ip]; }
 
 			my ( $im_targ, $ic_targ ) =
-			        split /\./, $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] );
+			        split ( /\./, $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] ) );
 				    
 		    $mol->[$im_targ]->Components->[$ic_targ]->State($stateP);
 
@@ -3685,7 +3683,7 @@ sub apply_operations
 			my ( $ref, $compartR, $compartP, $cytosis ) = @$comp_change;
 
 			# parse pattern.molecule indexing
-			my ( $ip, $im, $ic ) = ( split /\./, $ref );
+			my ( $ip, $im, $ic ) = ( split (/\./, $ref) );
 
 			# permute reactants
 			if ( defined $permute ) { $ip = $permute->[$ip]; }
@@ -3696,7 +3694,7 @@ sub apply_operations
 			{   # component compartment chanfge
 				# implementation of component compartments is not completed (here and elsewhere)
 				my ( $im_targ, $ic_targ ) =
-				        split /\./, $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] );
+				        split (/\./, $matches->[$ip]->mapF( "$im.$ic", $offsets->[$ip] ));
 				
 				$mol->[$im_targ]->Components->[$ic_targ]->Compartment($compartP);
 
@@ -3835,7 +3833,7 @@ sub apply_operations
 			# loop over components connected to the edge
 			foreach my $ref ( @$edel )
 			{
-				my ( $ip, $im, $ic ) = split /\./, $ref;
+				my ( $ip, $im, $ic ) = split (/\./, $ref);
 
 				# permute reactants
 				if ( defined $permute ) { $ip = $permute->[$ip]; }
@@ -3948,7 +3946,7 @@ sub apply_operations
 		foreach my $molref ( @{$rr->MolDel} )
 		{
 			#print STDERR "molDel\n";
-			my ( $ip, $im ) = split /\./, $molref;
+			my ( $ip, $im ) = split (/\./, $molref);
 
 			# permute reactants
 			if ( defined $permute ) {  $ip = $permute->[$ip];  }
@@ -4058,8 +4056,8 @@ sub apply_operations
 sub cmp_pointer
 {
     # split pointers into elements
-	my @a = split /\./, $a;
-	my @b = split /\./, $b;
+	my @a = split (/\./, $a);
+	my @b = split (/\./, $b);
 
     # set $cmp=0, i.e. no difference found yet
 	my $cmp = 0;
@@ -4085,8 +4083,8 @@ sub cmp_pointer
 sub cmp_edge
 {
     # split edges into pointer arrays
-	my @a = split /,/, $a;
-	my @b = split /,/, $b;
+	my @a = split (/,/, $a);
+	my @b = split (/,/, $b);
     
     # initialize $cmp=0, i.e. no difference found yet
 	my $cmp = 0;
@@ -4099,8 +4097,8 @@ sub cmp_edge
 	    unless (@b) {  $cmp = 1;  last;            }
 	
 	    # shift pointers and split into elements
-	    my @pa = split /\./, shift @a;
-	    my @pb = split /\./, shift @b;
+	    my @pa = split (/\./, shift @a);
+	    my @pb = split (/\./, shift @b);
 	    
 	    # loop until break
 	    while (1)
@@ -4134,7 +4132,7 @@ sub pointer_to_ID
 	my ($id, $pointer) = @_;
 
 	my @names   = ( "P", "M", "C" );
-	my @arr = split /\./, $pointer;
+	my @arr = split (/\./, $pointer);
 	if ( $arr[0] == -1 )
     {
         $id = "Null";

@@ -165,6 +165,10 @@ sub get_intensive_to_extensive_units_conversion
         else
         {   send_warning("BioNetGen doesn't know how to handle zero-order synthesis of products in multiple compartments.");  }
     }
+    elsif ( @product_compartments=0 )
+    {   # zero-order synthesis products that do not have a compartment
+		$err = "BioNetGen cannot complete the zero-order synthesis of products if a compartment is not specified.";
+    }
     
     # return the expression (possibly undefined) and the error msg (if any).
     return $conv_expr, $err;

@@ -14,6 +14,9 @@ modifications that must be made to build Network3.
 'readFile' also will now throw an error if input file extension is not any
 of ".bngl", ".net", or ".xml".
 
+* Fixed bug where cBNGL fails to produce an error when zero-order synthesis 
+products do not have a compartment.
+
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
 
