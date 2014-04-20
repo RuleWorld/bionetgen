@@ -3279,7 +3279,7 @@ sub build_reaction
 
 	# Create reaction
 	my $rxn = Rxn->new( Reactants=>$reactant_species, Products=>$product_species,
-                        RateLaw=>undef, Priority=>$rr->Priority, RxnRule=>$rr,
+                        RateLaw=>undef, Priority=>$rr->Priority, RxnRule=>$rr, RxnRuleArray=>[$rr],
                         StatFactor=>$rr->MultScale );
 
     # evaluate ratelaw in local context    

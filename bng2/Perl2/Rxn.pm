@@ -26,6 +26,7 @@ struct Rxn => {
   StatFactor     => '$',	     # Statistical (multiplicity) factor for multiple rxn pathways
   Priority       => '$',         # Priority of this Rxn (Deprecated?)
   RxnRule        => '$',         # RxnRule that generated this Rxn
+  RxnRuleArray   => '@',         # Stores all RxnRules that generate this Rxn (can be more than one)
   Index          => '$',         # Reaction Index for writing network output
 };
 
@@ -70,8 +71,17 @@ sub toString
     $string .= " #";
 
     # write source RxnRule
-    if (defined $rxn->RxnRule) {  $string .= $rxn->RxnRule->Name;  }
-
+#    if (defined $rxn->RxnRule) {  $string .= $rxn->RxnRule->Name;  }
+	if (defined $rxn->RxnRule)
+	{
+		my $i = 0;
+		foreach my $rr (@{$rxn->RxnRuleArray}){
+			if ($i > 0) { $string .= "," }
+			$string .= $rr->Name;
+			$i++;
+		}
+	}
+	
     # write unit conversions
     if (defined $conv_expr)
     {   $string .= " unit_conversion=" . $conv_expr->toString($plist);   }

@@ -87,6 +87,7 @@ sub add
                 if ( RateLaw::equivalent($rxn->RateLaw, $rxn2->RateLaw, $plist) )
                 {
                     $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
+                    push @{$rxn2->RxnRuleArray}, @{$rxn->RxnRuleArray};
                     $add_rxn = 0;
 
                     # Need to delete reaction and ratelaw? 
