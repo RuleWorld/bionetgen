@@ -656,7 +656,7 @@ sub writeSBML
 #EOF
 	print $SBML qq{<?xml version="1.0" encoding="UTF-8"?>
 <!-- Created by BioNetGen $version  -->
-<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="2">
   <model id="$model_name">
 };
 
@@ -753,7 +753,7 @@ sub writeSBML
 	foreach my $param ( @{$plist->Array} )
 	{
 	    next unless ( $param->Type eq 'ConstantExpression' );	
-		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $param->Name;
+		printf $SBML "      <parameter id=\"%s\" constant=\"true\"/>\n", $param->Name;
 	}
 
 	# B. Observables
@@ -778,22 +778,28 @@ sub writeSBML
 	print $SBML "    </listOfParameters>\n";
 
 
-	# 4. Assignment rules (for dependent variables, observables, and functions)
-	print $SBML "    <listOfRules>\n";
+	# 3.5. Initial assignments (for dependent variables)
+
+    print $SBML "    <listOfInitialAssignments>\n";
 	print $SBML "      <!-- Dependent variables -->\n";
 	foreach my $param ( @{$plist->Array} )
     {
 #		next if ( $param->Expr->Type eq 'NUM' );
 		next unless ( $param->Type eq 'ConstantExpression');
-		printf $SBML "      <assignmentRule variable=\"%s\">\n", $param->Name;
+		printf $SBML "      <initialAssignment symbol=\"%s\">\n", $param->Name;
         #print  $SBML "        <notes>\n";
         #print  $SBML "          <xhtml:p>\n";
         #printf $SBML "            %s=%s\n", $param->Name,$param->toString($plist);
         #print  $SBML "          </xhtml:p>\n";
         #print  $SBML "        </notes>\n";
 		printf $SBML $param->toMathMLString( $plist, "        " );
-		print $SBML "      </assignmentRule>\n";
+		print $SBML "      </initialAssignment>\n";
 	}
+	print $SBML "    </listOfInitialAssignments>\n";
+
+	# 4. Assignment rules (for observables, and functions)
+
+	print $SBML "    <listOfRules>\n";
 	if ( @{$model->Observables} )
     {
 		print $SBML "      <!-- Observables -->\n";
