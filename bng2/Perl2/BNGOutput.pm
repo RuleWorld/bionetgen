@@ -656,7 +656,7 @@ sub writeSBML
 #EOF
 	print $SBML qq{<?xml version="1.0" encoding="UTF-8"?>
 <!-- Created by BioNetGen $version  -->
-<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="2">
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="$model_name">
 };
 
