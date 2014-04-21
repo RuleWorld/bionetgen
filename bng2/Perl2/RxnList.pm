@@ -113,7 +113,6 @@ sub add
                     #   allows us to save space.)
                     if ( ($rxn->RateLaw != $rxn2->RateLaw) and ($rxn->RxnRule == $rxn2->RxnRule) )
                     {
-#                    	print $rxn->RateLaw->Name . " " . $rxn2->RateLaw->Name . "\n";
                         if ( defined $plist )
                         {
                             # delete parameters associated with this ratelaw
