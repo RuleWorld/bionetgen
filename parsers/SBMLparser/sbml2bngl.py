@@ -215,6 +215,9 @@ class SBML2BNGL:
             return (reactant, product, [], ['0', '0'],
                 reversible, reaction.getId(), [0, 0])
 
+        return (reactant, product, parameters, [rateL, rateR],
+                reversible, reaction.getId(), [nl, nr])
+
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
@@ -280,6 +283,8 @@ class SBML2BNGL:
         return (reactant, product, parameters, [rateL, rateR],
                 reversible, reaction.getId(), [nl, nr])
         
+    #create symmetry factors for reactions with components and species with
+    #identical names
     def reduceComponentSymmetryFactors(self,reaction,translator,functions):
         from copy import deepcopy        
         
@@ -297,8 +302,7 @@ class SBML2BNGL:
         reversible = reaction.getReversible()
 
         if kineticLaw == None:
-            return (reactant, product, [], ['0', '0'],
-                reversible, reaction.getId(), [0, 0])
+            return 1,1
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
@@ -307,7 +311,9 @@ class SBML2BNGL:
         #though its what we should be doing
         rcomponent = Counter()
         pcomponent = Counter()
-       
+        
+        #get the total count of components in the reactants and products
+        #e.g. components across diffent species
         for element in rReactant:
             if element[0] in translator:
                 componentList = Counter([(x.name,component.name,len(component.bonds) > 0) for x in translator[element[0]].molecules for component in x.components])
@@ -316,13 +322,22 @@ class SBML2BNGL:
             if element[0] in translator:
                 componentList = Counter([(x.name,component.name,len(component.bonds) > 0) for x in translator[element[0]].molecules for component in x.components])
                 pcomponent.update(componentList)
+        #is the number of components across products and reactants the same?
+        #eg is there any DeleteMolecules action
         pdifference = deepcopy(pcomponent)
         pdifference.subtract(rcomponent)
         pcorrectionFactor = 1
         rcorrectionFactor = 1
         rStack = []
         pStack = []
-        
+        '''
+        if a reaction can take place in several ways account for it in the reaction 
+        rate (this is specially important in dimer and trimer binding)
+        pcomponent[element] < rcomponent[element] asks if an specific instance
+        of a component decreases in number from a reactant to a product
+        for example if there are 3 A(b)'s and one binds, we will have 2 A(b)'s
+        in the product
+        '''
         for element in [x for x in rcomponent if rcomponent[x] > 1]:
             if element in pcomponent and pcomponent[element] < rcomponent[element] and set([element[0].lower(),element[1].lower()]) not in rStack:
                 rcorrectionFactor *= comb(rcomponent[element],pcomponent[element],exact=1)
@@ -331,7 +346,6 @@ class SBML2BNGL:
             if element in rcomponent and rcomponent[element] < pcomponent[element] and set([element[0].lower(),element[1].lower()]) not in pStack:
                 pcorrectionFactor *= comb(pcomponent[element],rcomponent[element],exact=1)
                 pStack.append(set([element[0].lower(),element[1].lower()]))
-        
         return rcorrectionFactor,pcorrectionFactor
         
     def convertToName(self, rate):
