@@ -15,7 +15,7 @@ use lib $FindBin::Bin;
 # BNG Modules
 use Rxn;
 use SpeciesList;
-
+use BNGUtils;
 
 # This class manages a list of Rxn objects
 struct RxnList => {
@@ -86,10 +86,25 @@ sub add
                 # TODO: this may be obsolete after implementing ratelaw hashing..
                 if ( RateLaw::equivalent($rxn->RateLaw, $rxn2->RateLaw, $plist) )
                 {
-                    $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
-                    push @{$rxn2->RxnRuleArray}, @{$rxn->RxnRuleArray};
-                    $add_rxn = 0;
-
+                	    $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
+                	    $add_rxn = 0;
+                	    
+                	    # Check if different rules are generating the same rxn 
+                	   	if ($rxn->RxnRule != $rxn2->RxnRule){
+                	   		# Add ref to new RxnRule to array of RxnRules
+	                   	push @{$rxn2->RxnRuleArray}, @{$rxn->RxnRuleArray}; 
+	                    	# Send a warning that a duplicate reaction was generated from a different rule
+	                    	my $msg = "Duplicate of rxn " . $rxn2->Index . " detected. Rules generating this rxn are ";
+	                    	my $i = 0;
+	                    foreach $r (@{$rxn2->RxnRuleArray}){
+	                    		if ($i > 0){ $msg .= ", "; }
+	                    		$msg .= $r->Name;
+	                    		if ($i == $#{$rxn2->RxnRuleArray}){ $msg .= "."; }
+	                    		$i++;
+	                    }
+	                    send_warning($msg);
+                	   	}
+					
                     # Need to delete reaction and ratelaw? 
                     #  (if the ratelaws references are different and the rules are the same,
                     #   then we can safely delete the extra Ratelaw copy.  This is useful
@@ -138,6 +153,7 @@ sub add
     if ($add_rxn)
     {
         push @{ $rlist->Array }, $rxn;
+        $rxn->Index(scalar @{$rlist->Array});
         push @{ $rlist->Hash->{$rstring} }, $rxn;
         foreach my $spec ( @{$rxn->Products} )
         {   ++($rlist->AsProduct->{$spec});   }
