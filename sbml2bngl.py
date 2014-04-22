@@ -215,8 +215,6 @@ class SBML2BNGL:
             return (reactant, product, [], ['0', '0'],
                 reversible, reaction.getId(), [0, 0])
 
-        return (reactant, product, parameters, [rateL, rateR],
-                reversible, reaction.getId(), [nl, nr])
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
