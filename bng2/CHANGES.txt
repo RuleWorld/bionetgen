@@ -24,6 +24,8 @@ reaction will help identify and debug situations like this.
 * Fixed bug where cBNGL fails to produce an error when zero-order synthesis 
 products do not have a compartment.
 
+* Fixed bug where BNG should throw an error if an unrecognized block name is encountered.
+
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
 

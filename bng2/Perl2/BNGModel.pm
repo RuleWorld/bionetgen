@@ -873,8 +873,9 @@ sub readSBML
 	
 	                ### Try to read any other Block type (probably an error)
 	                else
-	                {   # warn user
+	                {   # exit
 	                    send_warning( errgen("Could not process block type '$name'") );
+	                    quit();
 	                }
 	            }
 	
