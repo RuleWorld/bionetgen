@@ -551,11 +551,12 @@ sub readSBML
 	                        $err = errgen( $err, $lno );
 	                        goto EXIT;
 	                    }
-	                    # set flag to indicate compartments are being used
-	                    $model->CompartmentList->Used(1);
-	                    
-	                    # update user
-	                    printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
+	                    if ($model->CompartmentList->getNumCompartments() > 0){
+	                    		# set flag to indicate compartments are being used
+	            				$model->CompartmentList->Used(1);
+	            				# update user
+	            				printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
+	                    }
 	                }
 	                
 	                    
