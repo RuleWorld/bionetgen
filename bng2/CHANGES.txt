@@ -26,6 +26,8 @@ products do not have a compartment.
 
 * Fixed bug where BNG should throw an error if an unrecognized block name is encountered.
 
+* Fixed bug where BNG switches to "compartmental" mode even if the 'compartments' block is empty.
+
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
 

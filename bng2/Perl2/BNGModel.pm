@@ -536,10 +536,7 @@ sub readSBML
 	                    
 	                ### Read Compartments Block
 	                elsif ( $name eq 'compartments' )
-	                {
-	                    # set flag to indicate compartments are being used
-	                    $model->CompartmentList->Used(1);
-	
+	                {	
 	                    # Read Compartments
 	                    my ($entry, $lno);
 	                    foreach my $line ( @$block_dat )
@@ -554,6 +551,9 @@ sub readSBML
 	                        $err = errgen( $err, $lno );
 	                        goto EXIT;
 	                    }
+	                    # set flag to indicate compartments are being used
+	                    $model->CompartmentList->Used(1);
+	                    
 	                    # update user
 	                    printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
 	                }
