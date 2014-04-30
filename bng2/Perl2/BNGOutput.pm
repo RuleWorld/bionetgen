@@ -661,7 +661,7 @@ sub writeSBML
 };
 
 
-	# 1. Compartments (currently one dimensionsless compartment)
+	# 1. Compartments
 #	print $SBML <<"EOF";
 #    <listOfCompartments>
 #      <compartment id="cell" size="1"/>
@@ -669,34 +669,18 @@ sub writeSBML
 #EOF
 	
 	if ($model->CompartmentList->Used) { # @a is not empty...
-        print $SBML "   <listOfCompartments>\n";
+        print $SBML "    <listOfCompartments>\n";
         foreach my $comp (@{$model->CompartmentList->Array})
         {
-              my $string="      <compartment";
-
-              # Attributes
-              # id
-              $string.=" id=\"".$comp->Name."\"";
-              # spatialDimensions
-              $string.= " spatialDimensions=\"".$comp->SpatialDimensions."\"";
-              # size
-              $string.= " size=\"".$comp->Size->toString()."\"";
-              # outside
-              if ($comp->Outside){
-                $string.= " outside=\"".$comp->Outside->Name."\"";
-              }
-
-              $string.="/>\n"; # short tag termination
-              printf $SBML "%s",$string
+        		print $SBML $comp->toXML("      ", $plist);
         }
-        print $SBML "   </listOfCompartments>\n";
+        print $SBML "    </listOfCompartments>\n";
 		#printf $SBML "%s",$model->CompartmentList->toXML("     ");
 	} else { # @a is empty
 	print $SBML qq{    <listOfCompartments>
       <compartment id="cell" size="1"/>
     </listOfCompartments>
-	};
-  
+};
 	}
 
 
@@ -723,13 +707,13 @@ sub writeSBML
         # concentrations. --LAH
         my $compartmentString; 
         if (defined($spec->SpeciesGraph->Compartment)){
-        	$compartmentString = $spec->SpeciesGraph->Compartment->Name;
+        		$compartmentString = $spec->SpeciesGraph->Compartment->Name;
         }
         else{
-        	$compartmentString = "cell";
+        		$compartmentString = "cell";
         }
 		printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
-		                                                                $spec->Index,$compartmentString, $conc;
+		                                                                $spec->Index, $compartmentString, $conc;
 
 		if ( $spec->SpeciesGraph->Fixed )
         {   printf $SBML " boundaryCondition=\"true\"";   }
@@ -743,90 +727,98 @@ sub writeSBML
 	# 3. Parameters
 	# A. Rate constants
 	print $SBML "    <listOfParameters>\n";
-	print $SBML "      <!-- Independent variables -->\n";
-	foreach my $param ( @{$plist->Array} )
-	{
-	    next unless ( $param->Type eq 'Constant' );
-		printf $SBML "      <parameter id=\"%s\" value=\"%.8g\"/>\n", $param->Name, $param->evaluate([], $plist);
+	if ($plist->countType('Constant')){
+		print $SBML "      <!-- Independent variables -->\n";
+		foreach my $param ( @{$plist->Array} )
+		{
+		    next unless ( $param->Type eq 'Constant' );
+			printf $SBML "      <parameter id=\"%s\" value=\"%.8g\"/>\n", $param->Name, $param->evaluate([], $plist);
+		}
 	}
-	print $SBML "      <!-- Dependent variables -->\n";
-	foreach my $param ( @{$plist->Array} )
-	{
-	    next unless ( $param->Type eq 'ConstantExpression' );	
-		printf $SBML "      <parameter id=\"%s\" constant=\"true\"/>\n", $param->Name;
+	if ($plist->countType('ConstantExpression')){
+		print $SBML "      <!-- Dependent variables -->\n";
+		foreach my $param ( @{$plist->Array} )
+		{
+		    next unless ( $param->Type eq 'ConstantExpression' );	
+			printf $SBML "      <parameter id=\"%s\" constant=\"true\"/>\n", $param->Name;
+		}
 	}
-
+	
 	# B. Observables
 	if ( @{$model->Observables} )
 	{
 		print $SBML "      <!-- Observables -->\n";
-	}
-	foreach my $obs ( @{$model->Observables} )
-	{
-#		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", "Group_" . $obs->Name;
-		printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $obs->Name;
+		foreach my $obs ( @{$model->Observables} )
+		{
+			printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $obs->Name;
+		}
 	}
 	
 	# C. Global functions
-	print $SBML "      <!-- Global functions -->\n";
-	foreach my $param ( @{$plist->Array} )
-	{
-	    next unless ( $param->Type eq 'Function');
-	    next if ( @{$param->Ref->Args} ); # Don't print local functions
-	    printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $param->Name;
-	}
-	print $SBML "    </listOfParameters>\n";
-
-
-	# 3.5. Initial assignments (for dependent variables)
-
-    print $SBML "    <listOfInitialAssignments>\n";
-	print $SBML "      <!-- Dependent variables -->\n";
-	foreach my $param ( @{$plist->Array} )
-    {
-#		next if ( $param->Expr->Type eq 'NUM' );
-		next unless ( $param->Type eq 'ConstantExpression');
-		printf $SBML "      <initialAssignment symbol=\"%s\">\n", $param->Name;
-        #print  $SBML "        <notes>\n";
-        #print  $SBML "          <xhtml:p>\n";
-        #printf $SBML "            %s=%s\n", $param->Name,$param->toString($plist);
-        #print  $SBML "          </xhtml:p>\n";
-        #print  $SBML "        </notes>\n";
-		printf $SBML $param->toMathMLString( $plist, "        " );
-		print $SBML "      </initialAssignment>\n";
-	}
-	print $SBML "    </listOfInitialAssignments>\n";
-
-	# 4. Assignment rules (for observables, and functions)
-
-	print $SBML "    <listOfRules>\n";
-	if ( @{$model->Observables} )
-    {
-		print $SBML "      <!-- Observables -->\n";
-		foreach my $obs ( @{$model->Observables} )
-        {
-#			printf $SBML "      <assignmentRule variable=\"%s\">\n", "Group_" . $obs->Name;
-			printf $SBML "      <assignmentRule variable=\"%s\">\n", $obs->Name;
-			my ( $ostring, $err ) = $obs->toMathMLString();
-			if ($err) { return $err; }
-			foreach my $line ( split "\n", $ostring )
-            {
-				print $SBML "          $line\n";
-			}
-			print $SBML "      </assignmentRule>\n";
+	if ($plist->countType('Function')){
+		print $SBML "      <!-- Global functions -->\n";
+		foreach my $param ( @{$plist->Array} )
+		{
+		    next unless ( $param->Type eq 'Function');
+		    next if ( @{$param->Ref->Args} ); # Don't print local functions
+		    printf $SBML "      <parameter id=\"%s\" constant=\"false\"/>\n", $param->Name;
 		}
 	}
-	print $SBML "      <!-- Global functions -->\n";
-	foreach my $param ( @{$plist->Array} )
-    {
-		next unless ( $param->Type eq 'Function');
-		next if ( @{$param->Ref->Args} ); # Don't print local functions
-		printf $SBML "      <assignmentRule variable=\"%s\">\n", $param->Name;
-		printf $SBML $param->toMathMLString( $plist, "        " );
-		print $SBML "      </assignmentRule>\n";
-	}
-	print $SBML "    </listOfRules>\n";
+	
+	print $SBML "    </listOfParameters>\n";
+	
 
+	# 3.5. Initial assignments (for dependent variables)
+	if ($plist->countType('ConstantExpression')){
+	    print $SBML "    <listOfInitialAssignments>\n";
+		print $SBML "      <!-- Dependent variables -->\n";
+		foreach my $param ( @{$plist->Array} )
+	    {
+	#		next if ( $param->Expr->Type eq 'NUM' );
+			next unless ( $param->Type eq 'ConstantExpression');
+			printf $SBML "      <initialAssignment symbol=\"%s\">\n", $param->Name;
+	        #print  $SBML "        <notes>\n";
+	        #print  $SBML "          <xhtml:p>\n";
+	        #printf $SBML "            %s=%s\n", $param->Name,$param->toString($plist);
+	        #print  $SBML "          </xhtml:p>\n";
+	        #print  $SBML "        </notes>\n";
+			printf $SBML $param->toMathMLString( $plist, "        " );
+			print $SBML "      </initialAssignment>\n";
+		}
+		print $SBML "    </listOfInitialAssignments>\n";
+	}
+	
+	# 4. Assignment rules (for observables and functions)
+	if ( @{$model->Observables} or $plist->countType('Function') ){
+		print $SBML "    <listOfRules>\n";
+		if ( @{$model->Observables} ){
+			print $SBML "      <!-- Observables -->\n";
+			foreach my $obs ( @{$model->Observables} )
+	        {
+	#			printf $SBML "      <assignmentRule variable=\"%s\">\n", "Group_" . $obs->Name;
+				printf $SBML "      <assignmentRule variable=\"%s\">\n", $obs->Name;
+				my ( $ostring, $err ) = $obs->toMathMLString();
+				if ($err) { return $err; }
+				foreach my $line ( split "\n", $ostring )
+	            {
+					print $SBML "          $line\n";
+				}
+				print $SBML "      </assignmentRule>\n";
+			}
+		}
+		if ($plist->countType('Function')){
+			print $SBML "      <!-- Global functions -->\n";
+			foreach my $param ( @{$plist->Array} )
+		    {
+				next unless ( $param->Type eq 'Function');
+				next if ( @{$param->Ref->Args} ); # Don't print local functions
+				printf $SBML "      <assignmentRule variable=\"%s\">\n", $param->Name;
+				printf $SBML $param->toMathMLString( $plist, "        " );
+				print $SBML "      </assignmentRule>\n";
+			}
+		}
+		print $SBML "    </listOfRules>\n";
+	}
 
 	# 5. Reactions
 	print $SBML "    <listOfReactions>\n";

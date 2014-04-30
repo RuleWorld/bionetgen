@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.1.8+  -->
-<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+<!-- Created by BioNetGen 2.2.5  -->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="gene_expr">
     <listOfCompartments>
       <compartment id="cell" size="1"/>
@@ -21,20 +21,20 @@
       <parameter id="kap1" value="0.2"/>
       <parameter id="d1" value="0.0005"/>
       <!-- Dependent variables -->
-      <parameter id="d0" constant="false"/>
-      <parameter id="k0" constant="false"/>
-      <parameter id="k1" constant="false"/>
-      <parameter id="v0" constant="false"/>
-      <parameter id="v1" constant="false"/>
+      <parameter id="d0" constant="true"/>
+      <parameter id="k0" constant="true"/>
+      <parameter id="k1" constant="true"/>
+      <parameter id="v0" constant="true"/>
+      <parameter id="v1" constant="true"/>
       <!-- Observables -->
       <parameter id="DNA_Active" constant="false"/>
       <parameter id="DNA_Total" constant="false"/>
       <parameter id="mRNA_Total" constant="false"/>
       <parameter id="Protein_Total" constant="false"/>
     </listOfParameters>
-    <listOfRules>
+    <listOfInitialAssignments>
       <!-- Dependent variables -->
-      <assignmentRule variable="d0">
+      <initialAssignment symbol="d0">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
@@ -42,8 +42,8 @@
             <ci> d1 </ci>
           </apply>
         </math>
-      </assignmentRule>
-      <assignmentRule variable="k0">
+      </initialAssignment>
+      <initialAssignment symbol="k0">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
@@ -51,8 +51,8 @@
             <ci> d1 </ci>
           </apply>
         </math>
-      </assignmentRule>
-      <assignmentRule variable="k1">
+      </initialAssignment>
+      <initialAssignment symbol="k1">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
@@ -60,8 +60,8 @@
             <ci> d1 </ci>
           </apply>
         </math>
-      </assignmentRule>
-      <assignmentRule variable="v0">
+      </initialAssignment>
+      <initialAssignment symbol="v0">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
@@ -69,8 +69,8 @@
             <ci> d1 </ci>
           </apply>
         </math>
-      </assignmentRule>
-      <assignmentRule variable="v1">
+      </initialAssignment>
+      <initialAssignment symbol="v1">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
@@ -78,13 +78,15 @@
             <ci> d0 </ci>
           </apply>
         </math>
-      </assignmentRule>
+      </initialAssignment>
+    </listOfInitialAssignments>
+    <listOfRules>
       <!-- Observables -->
       <assignmentRule variable="DNA_Active">
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <plus/>
-                <cn> 0 </cn>
+              <cn> 0 </cn>
               <ci> S5 </ci>
             </apply>
           </math>
@@ -102,7 +104,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <plus/>
-                <cn> 0 </cn>
+              <cn> 0 </cn>
               <ci> S2 </ci>
             </apply>
           </math>
@@ -111,7 +113,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <plus/>
-                <cn> 0 </cn>
+              <cn> 0 </cn>
               <ci> S3 </ci>
             </apply>
           </math>

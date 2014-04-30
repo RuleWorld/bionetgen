@@ -310,8 +310,9 @@ sub toString{
 sub toXML{
   my $comp=shift;
   my $indent=shift;
+  my $plist = (@_) ? shift : undef;
 
-  my $string=$indent."<Compartment";
+  my $string=$indent."<compartment";
 
   # Attributes
   # id
@@ -319,7 +320,11 @@ sub toXML{
   # spatialDimensions
   $string.= " spatialDimensions=\"".$comp->SpatialDimensions."\"";
   # size
-  $string.= " size=\"".$comp->Size->toString()."\"";
+  my $size = $comp->Size->toString();
+  unless ( BNGUtils::isReal($size) )
+  {   $size = $comp->Size->evaluate($plist);   } # evaluate to a number
+#  $string.= " size=\"".$comp->Size->toString()."\"";
+  $string.= " size=\"".$size."\"";
   # outside
   if ($comp->Outside){
     $string.= " outside=\"".$comp->Outside->Name."\"";
