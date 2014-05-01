@@ -16,13 +16,8 @@ use Data::Dumper;
 use SpeciesGraph;
 
 # Notes for self
-# Hash keys and values must be scalars!
-# Always pass the array reference when passing an array as an argument.. e.g. mysub($aa, \@ba, $ca);
-# Inside the subroutine, "get" that reference as an element of @_ and assign it inside structs 
-# e.g. if struct A => {'Ba' => '@'} and if $a is a struct of type A, then assign $a->{'Ba'} = shift @_;
-# where @_ contains a reference to some array @ba
-# When needed to access the elements, dereference the array using @{$a->{'Ba'}}
-
+# Only pass array and hash references to subroutines using \@ and \%
+# Dereference using @{...} and %{...}
 
 struct Node => 
 { 
@@ -32,7 +27,6 @@ struct Node =>
 	'Parents' => '@', 
 	'Side' => '$'
 }; 
-
 
 struct StructureGraph => { 'Type' => '$', 'NodeList' => '@' };
 
@@ -62,8 +56,19 @@ sub printNode
 {
 	my $node = $_;
 	my $string = $node->{'ID'};
-	$string .= ' ';
+	$string .= "\t\t";
 	$string .= $node->{'Name'};
+	if ($node->{'Parents'})
+	{
+		$string .= "\t\t";
+		$string .= "(".join(",",@{$node->{'Parents'}} ).")";
+	}
+	
+	if ($node->{'Side'})
+	{
+		$string .= "\t\t";
+		$string .= $node->{'Side'};
+	}
 	return $string;
 }
 
@@ -72,7 +77,7 @@ sub printGraph
 {
 	my $psg = shift @_;
 	my @string = map {printNode()} @{$psg->{'NodeList'}};
-	return join("\n",@string);
+	return $psg->{'Type'}."\n".join("\n",@string);
 }
 
 
@@ -202,6 +207,14 @@ sub hasType
 	return @nodes;
 }
 
+sub hasSide
+{
+	my @nodelist = @{shift @_};
+	my $side = shift @_;
+	my @nodes = grep ( $_->{'Side'} eq $side, @nodelist);
+	return @nodes;
+}
+
 sub hasParent
 {
 	my @nodelist = @{shift @_};
@@ -234,18 +247,162 @@ sub hasParents
 	return @nodes;
 }
 
+sub remapIDs
+{
+	my $node = shift @_;
+	my %remap = %{shift @_};
+	my $id = $node->{'ID'};
+	$node->{'ID'} = $remap{$id};
+	if ($node->{'Parents'})
+	{
+		my @parents = @{$node->{'Parents'}};
+		my @new_parents = sort map ( $remap{$_}, @parents);
+		$node->{'Parents'} = \@new_parents;
+	}
+}
+
+sub mergeCorrespondent
+{
+	my %mapf = %{shift @_}; # these maps should have been modified and extended
+	my %mapr = %{shift @_};
+
+	my $reac = shift @_; # should be a combined structure graph of patterns
+	my $prod = shift @_;
+	
+	my @reac_nodelist = @{$reac->{'NodeList'}};
+	my @prod_nodelist = @{$prod->{'NodeList'}};
+	
+	# i.e. mapping correspondent IDs on both sides of a rule
+	# to a single canonical ID
+	my %idmap;
+	while (my ($key, $value) = each %mapf)
+	{
+		$idmap{$key} = $key;
+	}
+	while (my ($key, $value) = each %mapr)
+	{
+		$idmap{$key} = ($value eq "-1") ? $key : $value;
+	}
+
+	my @nodelist = ();
+	
+	foreach my $node (@reac_nodelist)
+	{
+		#check if it has a correspondence
+		if ($mapf{$node->{'ID'}} ne "-1")
+			{
+			remapIDs($node,\%idmap);
+			$node->{'Side'} = 'both';
+			push @nodelist, $node;
+			}
+		else
+			{
+			remapIDs($node,\%idmap);
+			$node->{'Side'} = 'left';
+			push @nodelist, $node;
+			}
+	}
+	foreach my $node (@prod_nodelist)
+	{
+	if ($mapr{$node->{'ID'}} eq "-1")
+			{
+			remapIDs($node,\%idmap);
+			$node->{'Side'} = 'right';
+			push @nodelist, $node;
+			}
+	}
+	my $rsg = makeStructureGraph('Rule',\@nodelist);
+	return $rsg;
+}
+
+sub addGraphOperations
+{
+	my $rsg = shift @_;
+	my @nodelist = @{$rsg->{'NodeList'}};
+	
+	my $id = -1;
+	
+	# identify modified bonds
+	my @bondstates = hasType(\@nodelist,'BondState');
+	my @delbonds = hasSide(\@bondstates,'left');
+	my @addbonds = hasSide(\@bondstates,'right');
+	
+	my @mols = hasType(\@nodelist,'Mol');
+	my @left_mols = hasSide(\@mols,'left');
+	my @right_mols = hasSide(\@mols,'right');
+	
+	my @compstates = hasType(\@nodelist,'CompState');
+	my @left_compstates = hasSide(\@compstates,'left');
+	my @right_compstates = hasSide(\@compstates,'right');
+
+	# transcribing the graph operations in order
+	# this order will be used later to process context
+	# order: statechange, deletebond/deletemol, addbond/addmol
+	
+	foreach my $left_compstate (@left_compstates)
+	{
+		# find the partner on the right
+		my $comp_id = ${$left_compstate->{'Parents'}}[0];
+		my @partner = hasParent(\@right_compstates,$comp_id);
+		# partner may not exist, in case of deletion
+		if (@partner)
+			{
+				my $left_id = $left_compstate->{'ID'};
+				my $right_id = $partner[0]->{'ID'};
+				my $name = 'StateChange';
+				my @parents = ($left_id,$right_id);
+				push @nodelist, makeNode('GraphOp',$name,++$id,\@parents);
+			}
+	}
+	
+	foreach my $bondstate(@delbonds)
+	{
+		my $bond_id = $bondstate->{'ID'};
+		my $name = 'DeleteBond';
+		my @parents = ($bond_id);
+		push @nodelist, makeNode('GraphOp',$name,++$id,\@parents);
+	}
+
+	foreach my $mol (@left_mols)
+	{
+		my $mol_id = $mol->{'ID'};
+		my $name = 'DeleteMol';
+		my @parents = ($mol_id);
+		push @nodelist, makeNode('GraphOp',$name,++$id,\@parents);
+	}
+	
+	foreach my $bondstate(@addbonds)
+	{
+		my $bond_id = $bondstate->{'ID'};
+		my $name = 'AddBond';
+		my @parents = ($bond_id);
+		push @nodelist, makeNode('GraphOp',$name,++$id,\@parents);
+	}
+
+	foreach my $mol (@right_mols)
+	{
+		my $mol_id = $mol->{'ID'};
+		my $name = 'AddMol';
+		my @parents = ($mol_id);
+		push @nodelist, makeNode('GraphOp',$name,++$id,\@parents);
+	}
+	
+	my $rsg1 = makeStructureGraph('Rule',\@nodelist);
+	return $rsg1;
+}
+
+
 sub makeRuleStructureGraph
 {
 	# Get rule reactants and products and map
 	my $rr = shift @_;
 	my @reac = @{$rr->Reactants};
 	my @prod= @{$rr->Products};
-	
-	# the correspondence hash needs to be modified to add
-	# reactant/product indexes to IDs
 	my %mapf = %{$rr->MapF};
 	my %mapr = %{$rr->MapR};
 	
+	# the correspondence hash needs to be modified to add
+	# reactant/product indexes to IDs
 	%mapf = modifyCorrespondenceHash(\%mapf,0,1);
 	%mapr = modifyCorrespondenceHash(\%mapr,1,0);
 	
@@ -259,22 +416,19 @@ sub makeRuleStructureGraph
 	my $reac_psg1 = combine(\@reac_psg,"0");
 	my $prod_psg1 = combine(\@prod_psg,"1");
 	
-	# the correspondence hash needs to be extended to include component states & bonds
-	
+	# the correspondence hash needs to be extended 
+	# to include component states & bonds
 	my ($mapf1,$mapr1) = extendCorrespondenceHash(\%mapf,\%mapr,$reac_psg1,$prod_psg1);
 	%mapf = %$mapf1;
 	%mapr = %$mapr1;
 	
-	# print "\n\n";
-	# sanity checks
-	# print printHash(\%mapf);
-	# print printHash(\%mapr);
-	# print scalar keys %mapf;
-	# print scalar @{$reac_psg1->{'NodeList'}};
-	# print scalar keys %mapr;
-	#print scalar @{$prod_psg1->{'NodeList'}};
-
+	# merge the nodes to generate the 'implicit' rule structure graph
+	my $rsg = mergeCorrespondent(\%mapf,\%mapr,$reac_psg1,$prod_psg1);
 	
+	# add the graph operation nodes to generate
+	# the 'explicit' rule structure graph
+	my $rsg1 = addGraphOperations($rsg);
+	return $rsg1;	
 }
 
 # functions dealing with hashes
@@ -350,7 +504,7 @@ sub extendCorrespondenceHash
 		}
 	}
 	
-	# filter the bonds on both sides
+	# filter the bond states on both sides
 	my @reac_bondstates = hasType($reac->{'NodeList'},'BondState');
 	my @prod_bondstates = hasType($prod->{'NodeList'},'BondState');
 	foreach my $node (@reac_bondstates)
@@ -386,9 +540,7 @@ sub extendCorrespondenceHash
 						$mapr{$prod_id} = $reac_id;
 					}
 				}
-		}
-	
-		
+		}	
 	}
 	
 	# fill out the assignments for the remaining nodes that were not assigned
@@ -396,15 +548,11 @@ sub extendCorrespondenceHash
 	{
 		if (! $mapf{$node->{'ID'}}) { $mapf{$node->{'ID'}} = "-1";}	
 	}
-	#print join("\n",sort map($_->{'ID'},@prod_nodelist))."\n\n";
-	#print join("\n",sort keys %mapr)."\n";
-	
 	foreach my $node (@prod_nodelist)
 	{
 		if (! $mapr{$node->{'ID'}}) { $mapr{$node->{'ID'}} = "-1";}	
 	}
 	return (\%mapf,\%mapr);
-	
 }	
 
 
