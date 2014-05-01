@@ -302,8 +302,8 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
         output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('generate_network({overwrite=>1})\n')
-    output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
+    #output.write('generate_network({overwrite=>1})\n')
+    #output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     #with open(fileName,'w') as outputFile:
     #    outputFile.write(output.getvalue()) 
