@@ -147,8 +147,8 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
     {
         my ($version1, $version2) = @_;
         
-        my (@version1) = split /\./, $version1;
-        my (@version2) = split /\./, $version2;
+        my (@version1) = split (/\./, $version1);
+        my (@version2) = split (/\./, $version2);
 
         # compare major, minor and release numbers
         while (@version1 and @version2)
@@ -166,7 +166,6 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
 
 
 # Determine if a string corresponds to a float or a double
-
 sub isReal{
   my $string=shift;
   my $isdec=0;

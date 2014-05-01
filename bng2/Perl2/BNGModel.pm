@@ -536,10 +536,7 @@ sub readSBML
 	                    
 	                ### Read Compartments Block
 	                elsif ( $name eq 'compartments' )
-	                {
-	                    # set flag to indicate compartments are being used
-	                    $model->CompartmentList->Used(1);
-	
+	                {	
 	                    # Read Compartments
 	                    my ($entry, $lno);
 	                    foreach my $line ( @$block_dat )
@@ -554,8 +551,12 @@ sub readSBML
 	                        $err = errgen( $err, $lno );
 	                        goto EXIT;
 	                    }
-	                    # update user
-	                    printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
+	                    if ($model->CompartmentList->getNumCompartments() > 0){
+	                    		# set flag to indicate compartments are being used
+	            				$model->CompartmentList->Used(1);
+	            				# update user
+	            				printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
+	                    }
 	                }
 	                
 	                    
@@ -873,8 +874,9 @@ sub readSBML
 	
 	                ### Try to read any other Block type (probably an error)
 	                else
-	                {   # warn user
-	                    send_warning( errgen("Could not process block type '$name'") );
+	                {   # exit
+	                    $err = errgen("Could not process block type '$name'");
+	                    goto EXIT;
 	                }
 	            }
 	
