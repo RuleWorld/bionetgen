@@ -228,7 +228,20 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
     '''
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromString(inputString)
-    return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize)[-1]
+    parser =SBML2BNGL(document.getModel(),useID)
+    
+    bioGrid = False
+    if bioGrid:
+        loadBioGrid()
+    database = structures.Databases()
+    namingConventions = 'config/namingConventions.json'
+    
+    if atomize:
+        translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
+    else:    
+        translator={} 
+
+    return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-1]
 
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
@@ -1019,8 +1032,8 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
     #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='reactionDefinitions/speciesEquivalence5.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000457.xml',customDefinitions=None,atomize=False)    
-
+    #processFile3('XMLExamples/curated/BIOMD0000000457.xml',customDefinitions=None,atomize=False)    
+    processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/non_curated/')
     #statFiles()
     #main2()

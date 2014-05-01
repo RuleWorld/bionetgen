@@ -15,9 +15,9 @@ from collections import Counter
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
 'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
-'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF']
+'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_UNKNOWN']
 
-modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM']
+modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_UNKNOWN']
 
 class SBML2BNGL:
     '''
@@ -57,7 +57,7 @@ class SBML2BNGL:
           metaInformation['creatorName'] = tmp
       for idx in range(lista.getSize()):
           biol,qual =  lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
-          if biol >= len(bioqual):
+          if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
               index = modqual[qual]
           else:
               index = bioqual[biol]
@@ -418,7 +418,7 @@ class SBML2BNGL:
             parameterDict = {}
             #symmetry factors for components with the same name
             sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,functions)
-
+            
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
             if len(rawRules[2]) >0:
                 for parameter in rawRules[2]:
