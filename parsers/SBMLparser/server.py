@@ -40,11 +40,11 @@ class AtomizerServer:
     
     def __init__(self):
         pass
-    def atomize(self, bxmlFile,atomize=False,reaction='reactionDefinitions/reactionDefinition7.json',species=None):
+    def atomize(self, bxmlFile,atomize=False,reaction='config/reactionDefinitions.json',species=None):
         counter = next_id()
         xmlFile = bxmlFile.data
-        reaction = 'reactionDefinitions/' + reaction
-        species = 'reactionDefinitions/' + species
+        species = 'config/' + species
+        reaction = 'config/reactionDefinitions.json'
         result = libsbml2bngl.readFromString(xmlFile,
                                              reaction,True,None,atomize)
 
