@@ -5,11 +5,10 @@ Created on Fri May 31 16:56:13 2013
 @author: proto
 """
 
-import os
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 import threading
-
+import SocketServer
 from os import listdir
 from os.path import isfile, join
 
@@ -17,10 +16,13 @@ import libsbml2bngl
 # Restrict to a particular path.
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
+    
+class RPCThreading(SocketServer.ThreadingMixIn, SimpleXMLRPCServer.SimpleXMLRPCServer):
+    pass
 
 # Create server
-#server = SimpleXMLRPCServer(("10.253.98.102", 9000),              requestHandler=RequestHandler)
-server = SimpleXMLRPCServer(("127.0.0.1", 9000), requestHandler=RequestHandler)
+server = RPCThreading(("10.253.98.102", 9000),              requestHandler=RequestHandler)
+#server = SimpleXMLRPCServer(("127.0.0.1", 9000), requestHandler=RequestHandler)
 server.register_introspection_functions()
 
 
