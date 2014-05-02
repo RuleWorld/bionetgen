@@ -55,8 +55,8 @@ class Translate(webapp2.RequestHandler):
         template_values={
             'action' : upload_url,
             #'reactionDefinition' : ['1','2','3','4','5','6','7','8','9','10','a','b','c']
-            'reactionDefinition' : reactionFiles,
-            'speciesDefinition': speciesFiles
+            #'reactionDefinition' : reactionFiles,
+            #'speciesDefinition': speciesFiles
         }
         template =JINJA_ENVIRONMENT.get_template('translate.html')
         self.response.write(template.render(template_values))

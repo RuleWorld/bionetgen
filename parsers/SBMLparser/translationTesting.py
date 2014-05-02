@@ -122,24 +122,24 @@ if __name__ == "__main__":
     #ran = [229]
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [120]    
-    #for index in ran:
-    #     suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
+    for index in ran:
+         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    validFiles = getValidBNGLFiles('raw') 
-    validFiles = sorted(validFiles)
+    #validFiles = getValidBNGLFiles('raw') 
+    #validFiles = sorted(validFiles)
     #validFiles.remove('54')
     #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
-    validGdats = getValidGDats('.')
+    #validGdats = getValidGDats('.')
     
-    validFiles = getValidBNGLFiles('raw')
+    #validFiles = getValidBNGLFiles('raw')
     #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
-    for index in validGdats:
-        suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
+    #for index in validGdats:
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
     unittest.TextTestRunner(verbosity=2).run(suite)
 
