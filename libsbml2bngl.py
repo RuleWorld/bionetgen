@@ -241,7 +241,7 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
     else:    
         translator={} 
 
-    return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-1]
+    return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-2]
 
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
@@ -1031,9 +1031,9 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/noncurated/MODEL2463576061.xml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
-    #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='reactionDefinitions/speciesEquivalence5.json')    
-    #processFile3('XMLExamples/curated/BIOMD0000000457.xml',customDefinitions=None,atomize=False)    
-    processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
+    #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='config/speciesEquivalences.json')    
+    processFile3('XMLExamples/curated/BIOMD0000000256.xml',customDefinitions=None,atomize=True)    
+    #processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/non_curated/')
     #statFiles()
     #main2()

@@ -11,7 +11,7 @@ import StringIO
 def evaluatePiecewiseFunction(function):
     pass
 
-def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True,comment=''):
+def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True,comment='',reactionName=None):
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
@@ -40,6 +40,8 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
             finalString += ' + '
     finalString += ' ' + rate + ' ' + comment
     finalString = re.sub(r'(\W|^)0\(\)','0',finalString)
+    if reactionName:
+        finalString = '{0}: {1}'.format(reactionName,finalString)
     return finalString
     
 
