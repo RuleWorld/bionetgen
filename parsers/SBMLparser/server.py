@@ -17,11 +17,11 @@ import libsbml2bngl
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
     
-class RPCThreading(SocketServer.ThreadingMixIn, SimpleXMLRPCServer.SimpleXMLRPCServer):
+class RPCThreading(SocketServer.ThreadingMixIn, SimpleXMLRPCServer):
     pass
 
 # Create server
-server = RPCThreading(("10.253.98.102", 9000),              requestHandler=RequestHandler)
+server = RPCThreading(("10.253.98.102", 9000),requestHandler=RequestHandler)
 #server = SimpleXMLRPCServer(("127.0.0.1", 9000), requestHandler=RequestHandler)
 server.register_introspection_functions()
 
@@ -37,6 +37,7 @@ def next_id():
         iid += 1
     return result   
 
+processDict = {}
 
 class AtomizerServer:
     
@@ -47,9 +48,12 @@ class AtomizerServer:
         xmlFile = bxmlFile.data
         species = 'config/' + species
         reaction = 'config/reactionDefinitions.json'
+        
+        
         result = libsbml2bngl.readFromString(xmlFile,
                                              reaction,True,None,atomize)
-
+        
+        
         return result
     def getSpeciesConventions(self):
         onlyfiles = [ f for f in listdir('./reactionDefinitions') if isfile(join('./reactionDefinitions',f)) ]

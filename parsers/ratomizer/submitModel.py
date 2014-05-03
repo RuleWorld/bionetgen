@@ -17,7 +17,49 @@ import urllib
 
 from google.appengine.api import files
 
+
 from google.appengine.api import urlfetch
+urlfetch.set_default_fetch_deadline(60)
+import logging
+
+
+class GAEXMLRPCTransport(object):
+    """taken directly from http://brizzled.clapper.org/blog/2008/08/25/making-xmlrpc-calls-from-a-google-app-engine-application/"""
+    """Handles an HTTP transaction to an XML-RPC server."""
+
+    def __init__(self):
+        pass
+
+    def request(self, host, handler, request_body, verbose=0):
+        result = None
+        url = 'http://%s%s' % (host, handler)
+        try:
+            response = urlfetch.fetch(url,
+                                      payload=request_body,
+                                      method=urlfetch.POST,
+                                      headers={'Content-Type': 'text/xml'},
+                                      deadline=60)
+        except:
+            msg = 'Failed to fetch %s' % url
+            logging.error(msg)
+            raise xmlrpclib.ProtocolError(host + handler, 500, msg, {})
+
+        if response.status_code != 200:
+            logging.error('%s returned status code %s' %
+                          (url, response.status_code))
+            raise xmlrpclib.ProtocolError(host + handler,
+                                          response.status_code,
+                                          "",
+                                          response.headers)
+        else:
+            result = self.__parse_response(response.content)
+
+        return result
+
+    def __parse_response(self, response_body):
+        p, u = xmlrpclib.getparser(use_datetime=False)
+        p.feed(response_body)
+        return u.close()
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -47,11 +89,11 @@ def dbmodel_key(model_name=DATABASE_NAME):
 class Translate(webapp2.RequestHandler):
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
-        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000')
+        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000',GAEXMLRPCTransport())
         #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000')
         
-        reactionFiles,speciesFiles = s.getSpeciesConventions()
-        print '-----',reactionFiles,speciesFiles
+        #reactionFiles,speciesFiles = s.getSpeciesConventions()
+        #print '-----',reactionFiles,speciesFiles
         template_values={
             'action' : upload_url,
             #'reactionDefinition' : ['1','2','3','4','5','6','7','8','9','10','a','b','c']
@@ -74,8 +116,8 @@ class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
         #print 'fsdgsdgsd',atomize
         #https://developers.google.com/appengine/docs/python/urlfetch/fetchfunction
         #https://groups.google.com/forum/#!topic/google-appengine/XbrJvt9LfuI
-        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000')
-        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000') 
+        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000',GAEXMLRPCTransport())
+        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000',GAEXMLRPCTransport())
         result = s.atomize(sbmlContent,atomizeString,reaction,species)
         #self.response.write(result)
 
