@@ -88,7 +88,6 @@ def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},simi
                 continue
             scoreMatrix[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
             scoreMatrix[idx2][idx] = scoreMatrix[idx][idx2]
-            
     namePairs,differenceList = getDifferences(scoreMatrix, speciesName)
     differenceCounter.update(differenceList)
     patternClassification = {}

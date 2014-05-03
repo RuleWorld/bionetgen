@@ -5,11 +5,10 @@ Created on Fri May 31 16:56:13 2013
 @author: proto
 """
 
-import os
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 import threading
-
+import SocketServer
 from os import listdir
 from os.path import isfile, join
 
@@ -17,9 +16,12 @@ import libsbml2bngl
 # Restrict to a particular path.
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
+    
+class RPCThreading(SocketServer.ThreadingMixIn, SimpleXMLRPCServer):
+    pass
 
 # Create server
-server = SimpleXMLRPCServer(("10.253.98.102", 9000),              requestHandler=RequestHandler)
+server = RPCThreading(("10.253.98.102", 9000),requestHandler=RequestHandler)
 #server = SimpleXMLRPCServer(("127.0.0.1", 9000), requestHandler=RequestHandler)
 server.register_introspection_functions()
 
@@ -35,19 +37,23 @@ def next_id():
         iid += 1
     return result   
 
+processDict = {}
 
 class AtomizerServer:
     
     def __init__(self):
         pass
-    def atomize(self, bxmlFile,atomize=False,reaction='reactionDefinitions/reactionDefinition7.json',species=None):
+    def atomize(self, bxmlFile,atomize=False,reaction='config/reactionDefinitions.json',species=None):
         counter = next_id()
         xmlFile = bxmlFile.data
-        reaction = 'reactionDefinitions/' + reaction
-        species = 'reactionDefinitions/' + species
+        species = 'config/' + species
+        reaction = 'config/reactionDefinitions.json'
+        
+        
         result = libsbml2bngl.readFromString(xmlFile,
                                              reaction,True,None,atomize)
-
+        
+        
         return result
     def getSpeciesConventions(self):
         onlyfiles = [ f for f in listdir('./reactionDefinitions') if isfile(join('./reactionDefinitions',f)) ]

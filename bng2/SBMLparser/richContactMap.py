@@ -67,7 +67,7 @@ def createRuleBiPartite(rule,transformationCenter,transformationContext,
         importantContext = Counter(el for el in tmp.elements() if tmp[el] > 0)
         redundantContext = Counter(el for el in redundantPattern.elements() if el not in negativeCounts and  el in transformationContext[element-1])
         
-        options = [{'style':'filled','color':'teal'} for x in range(0,len(transformationContext[element-1]))]
+        options = [{'style':'filled','color':'green'} for x in range(0,len(transformationContext[element-1]))]
         options2 = [{'style':'filled','color':'cyan'} for x in range(0,len(transformationContext[element-1]))]
 
         edgeArray = createGraph.createSubGraph(importantContext,
@@ -97,6 +97,7 @@ def createRuleBiPartite(rule,transformationCenter,transformationContext,
 
     graph.write('%s.dot' % fileName)
     subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
+    subprocess.call(['dot', '-Tpng', '{0}.dot'.format(fileName),'-o{0}.png'.format(fileName)])
 
 
 def reverseLookup(redundantDict):
@@ -237,10 +238,10 @@ def createContactMap(fileName):
 
 def extractRulesfromBNGL(fileName):
     console.bngl2xml(fileName)
-    species,rules,par= readBNGXML.parseXML('output19.xml')
+    species,rules,par= readBNGXML.parseXML('output5.xml')
     return rules
     
     
 if __name__ == "__main__":
-    #createBipartiteGraph('output/output19.bngl')
-    createContactMap('output/output19.bngl')
+    createBipartiteGraph('complex/output5.bngl')
+    #createContactMap('output/output5.bngl')

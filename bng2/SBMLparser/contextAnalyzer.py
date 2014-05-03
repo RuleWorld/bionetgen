@@ -18,6 +18,7 @@ from collections import Counter
 from copy import deepcopy
 import numpy as np
 
+
 def readFile(fileName):
     f = open(fileName)
     r = f.readlines()

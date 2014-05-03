@@ -31,11 +31,12 @@ class SBMLAnalyzer:
         
     def parseReactions(self,reaction,specialSymbols=''):
 #        print reaction
+        name = Word(alphanums + '_-') + ':'
         species =  (Word(alphanums+"_"+":#-") 
         + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
         + Suppress("()"))
         rate = Word(alphanums + "()")
-        grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
+        grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
             result = [result,[]]

@@ -19,12 +19,15 @@ import structures as st
 from util import logMess
 import biogrid
 def parseReactions(reaction):
+    name = Word(alphanums + '_-') + ':'
+
     species = (Word(alphanums + "_:#-")
     + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_:#-")
     + Suppress("()"))
 
     rate = Word(alphanums + "()")
-    grammar = ((Group(species) | '0') + Suppress(Optional("<") + "->") +
+    
+    grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") +
               (Group(species) | '0') + Suppress(rate)) \
               ^ (species + Suppress(Optional("<") + "->") + Suppress(rate))
     result = grammar.parseString(reaction).asList()

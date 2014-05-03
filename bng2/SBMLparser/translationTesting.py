@@ -39,10 +39,12 @@ class TestOne(ParametrizedTestCase):
     Test for ability to ruleify
     '''
     def test_parsing(self):
-        reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
+        #reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
         #spEquivalence = detectCustomDefinitions(bioNumber)
-        libsbml2bngl.analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % self.param, reactionDefinitions,
-                    False, 'raw/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=False,bioGrid=True)
+        print self.param
+        libsbml2bngl.analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % self.param, 'reactionDefinitions/reactionDefinition7.json',
+                    False, 'config/namingConventions.json',
+                    'raw/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=False,bioGrid=False)
 
 
 class TestEval(ParametrizedTestCase):
@@ -80,33 +82,64 @@ def getValidBNGLFiles(directory):
                 errorFiles.append(log)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x and 'dict' not in x]
     validFiles = [x for x in bnglFiles if x not in errorFiles]
-    return validFiles
+    import re
+    validNumbers = []
+    for x in validFiles:
+        number = re.search('output([0-9]+)',x)    
+        if number != None:
+            validNumbers.append(number.group(1))
+        
+    return validNumbers
 
+def getValidGDats(directory):
+    onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory, f)) ]
+    gdatFiles = [x for x in onlyfiles if 'gdat' in x]
+    validNumbers = []
+    import re
+    for x in gdatFiles:
+        number = re.search('output([0-9]+)',x)    
+        if number != None:
+            validNumbers.append(number.group(1))
+        
+    return validNumbers
+
+    
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
+    suite2 = unittest.TestSuite()
+    suite3 = unittest.TestSuite()
     ran = range(1,464)
-    #ran = [51]
+    #ran.remove(52)
+    #ran.remove(205)
+    #ran.remove(235)
+    #ran = [229]
     '''
     ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,
            147, 338, 297, 293, 49, 344, 83, 230, 453, 223, 109, 56, 256, 410, 
            340, 452, 286, 399, 445, 285, 457, 74, 250, 334, 227, 205, 339, 151, 
            424, 14, 153, 105, 407, 451, 332, 326, 255, 356]
-    '''       
-    #for index in ran:
-    #     suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
+    ''' 
+    #ran = [229]
+    #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
+    #ran  = [120]    
+    for index in ran:
+         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    #for fileNumber in ran:
+    #validFiles = getValidBNGLFiles('raw') 
+    #validFiles = sorted(validFiles)
+    #validFiles.remove('54')
+    #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)
-    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    #validGdats = getValidGDats('.')
     
-    validFiles = getValidBNGLFiles('raw')
     #validFiles = getValidBNGLFiles('raw')
-
-    for fileName in validFiles:
-        suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
-    for index in ran:
-        suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
+    #for fileNumber in validFiles:
+    #    fileName = 'output{0}.bngl'.format(fileNumber)
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    #for index in validGdats:
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
     unittest.TextTestRunner(verbosity=2).run(suite)
 

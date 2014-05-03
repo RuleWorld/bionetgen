@@ -11,7 +11,7 @@ import StringIO
 def evaluatePiecewiseFunction(function):
     pass
 
-def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True,comment=''):
+def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True,comment='',reactionName=None):
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)
@@ -40,6 +40,8 @@ def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,r
             finalString += ' + '
     finalString += ' ' + rate + ' ' + comment
     finalString = re.sub(r'(\W|^)0\(\)','0',finalString)
+    if reactionName:
+        finalString = '{0}: {1}'.format(reactionName,finalString)
     return finalString
     
 
@@ -302,8 +304,8 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
         output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('generate_network({overwrite=>1})\n')
-    output.write('#simulate({method=>"ode",t_end=>100,n_steps=>100})')
+    #output.write('generate_network({overwrite=>1})\n')
+    #output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     #with open(fileName,'w') as outputFile:
     #    outputFile.write(output.getvalue()) 

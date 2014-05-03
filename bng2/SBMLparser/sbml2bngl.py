@@ -15,9 +15,9 @@ from collections import Counter
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
 'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
-'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF']
+'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_UNKNOWN']
 
-modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM']
+modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_UNKNOWN']
 
 class SBML2BNGL:
     '''
@@ -57,7 +57,7 @@ class SBML2BNGL:
           metaInformation['creatorName'] = tmp
       for idx in range(lista.getSize()):
           biol,qual =  lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
-          if biol >= len(bioqual):
+          if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
               index = modqual[qual]
           else:
               index = bioqual[biol]
@@ -212,8 +212,9 @@ class SBML2BNGL:
         reversible = reaction.getReversible()
 
         if kineticLaw == None:
-            return (reactant, product, [], ['0', '0'],
-                reversible, reaction.getId(), [0, 0])
+            return {'reactants':reactant,'products':product,'parameters':[],'rates':['0','0'],
+            'reversible':reversible,'reactionID':reaction.getId(),'numbers':[0,0]}
+
 
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
@@ -276,7 +277,8 @@ class SBML2BNGL:
                              rateR = '{0} * {1}'.format(rateR,compartment.getSize())
             '''     
 
-
+        return {'reactants':reactant,'products':product,'parameters':parameters,'rates':[rateL,rateR],
+        'reversible':reversible,'reactionID':reaction.getId(),'numbers':[nl,nr]}
                 
         return (reactant, product, parameters, [rateL, rateR],
                 reversible, reaction.getId(), [nl, nr])
@@ -399,10 +401,10 @@ class SBML2BNGL:
     
     def getReactions(self, translator={}, isCompartments=False, extraParameters={},atomize=False):
         '''
-        returns a triple containing the parameters,rules,functions
+        @returns: a triple containing the parameters,rules,functions
         '''
         
-        ##thi part of the code is there so that we only generate the functions list once through different
+        ##@FIXME:this part of the code is there so that we only generate the functions list once through different
         #iterations of this call. This is because we cannot create a clone of the 'math' object for this
         #reaction and it is being permanently changed every call. It's ugly but it works. Change for something
         #better when we figure out how to clone the math object
@@ -418,51 +420,52 @@ class SBML2BNGL:
             parameterDict = {}
             #symmetry factors for components with the same name
             sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,functions)
-
+            
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
-            if len(rawRules[2]) >0:
-                for parameter in rawRules[2]:
+
+            if len(rawRules['parameters']) >0:
+                for parameter in rawRules['parameters']:
                     parameters.append('r%d_%s %f' % (index+1, parameter[0], parameter[1]))
                     parameterDict[parameter[0]] = parameter[1]
             compartmentList = [['cell',1]]
             compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
             threshold = 0
-            if rawRules[6][0] > threshold:  
+            if rawRules['numbers'][0] > threshold:  
                 functionName = '%s%d()' % (functionTitle,index)
             else:
-                #append reactionNumbers to parameterNames
-                finalString = str(rawRules[3][0])
+                #append reactionNumbers to parameterNames 
+                finalString = str(rawRules['rates'][0])
                 for parameter in parameterDict:
                     finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter), r'\1{0}\3'.format('r{0}_{1}'.format(index+1,parameter)), finalString)
                 functionName = finalString
             
-            if self.getReactions.functionFlag and 'delay' in rawRules[3][0]:
+            if self.getReactions.functionFlag and 'delay' in rawRules['rates'][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
-            if rawRules[4]:
-                if rawRules[6][0] > threshold:
+            if rawRules['reversible']:
+                if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
-                        functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict, self.reactionDictionary))
-                if rawRules[6][1] > threshold:
+                        functions.append(writer.bnglFunction(rawRules['rates'][0], functionName, rawRules['reactants'], compartmentList, parameterDict, self.reactionDictionary))
+                if rawRules['numbers'][1] > threshold:
                     functionName2 = '%s%dm()' % (functionTitle,index)    
                     if self.getReactions.functionFlag:
-                        functions.append(writer.bnglFunction(rawRules[3][1],functionName2,rawRules[0],compartmentList,parameterDict,self.reactionDictionary))
-                    self.reactionDictionary[rawRules[5]] = '({0} - {1})'.format(functionName, functionName2)                
+                        functions.append(writer.bnglFunction(rawRules['rates'][1],functionName2,rawRules['reactants'],compartmentList,parameterDict,self.reactionDictionary))
+                    self.reactionDictionary[rawRules['reactionID']] = '({0} - {1})'.format(functionName, functionName2)                
                     functionName = '{0},{1}'.format(functionName, functionName2)
                 else:
-                    finalString = str(rawRules[3][1])
+                    finalString = str(rawRules['rates'][1])
                     for parameter in parameterDict:
                         finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1{0}\3'.format('r{0}_{1}'.format(index+1,parameter)),finalString)
                     functionName = '{0},{1}'.format(functionName,finalString)
             else:
-                if rawRules[6][0] > threshold:
+                if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
-                        functions.append(writer.bnglFunction(rawRules[3][0], functionName, rawRules[0], compartmentList, parameterDict,self.reactionDictionary))
-                    self.reactionDictionary[rawRules[5]] = '{0}'.format(functionName)
+                        functions.append(writer.bnglFunction(rawRules['rates'][0], functionName, rawRules['reactants'], compartmentList, parameterDict,self.reactionDictionary))
+                    self.reactionDictionary[rawRules['reactionID']] = '{0}'.format(functionName)
             #reactants = [x for x in rawRules[0] if x[0] not in self.boundaryConditionVariables]
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
-            reactants = [x for x in rawRules[0]]
-            products = [x for x in rawRules[1]]
-            rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),rawRules[4]))
+            reactants = [x for x in rawRules['reactants']]
+            products = [x for x in rawRules['products']]
+            rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),rawRules['reversible'],reactionName=rawRules['reactionID']))
         if atomize:
             self.getReactions.__func__.functionFlag = not self.getReactions.functionFlag
         return parameters, rules,functions
@@ -652,6 +655,10 @@ class SBML2BNGL:
         return moleculesText,speciesText,observablesText,speciesTranslationDict
 
     def getInitialAssignments(self,translator,param,zparam,molecules,initialConditions):
+        '''
+        process the get initial assigmnetns section. This can be used to initialize
+        parameters or species, so we have to account for both checking both arrays
+        '''
         param2 = param
         zparam2 = zparam
         initialConditions2 =initialConditions
@@ -668,6 +675,7 @@ class SBML2BNGL:
                 extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
             pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
         
+        from copy import copy
         for initialAssignment in self.model.getListOfInitialAssignments():
             symbol = initialAssignment.getSymbol()
             math = libsbml.formulaToString(initialAssignment.getMath())
@@ -677,14 +685,16 @@ class SBML2BNGL:
                     r'{0}'.format(pparam[element][0]),math)
 
             param2 = [x for x in param if '{0} '.format(symbol) not in x]
-            zparam2 = [x for x in zparam if '{0} '.format(symbol) not in x]
+            zparam2 = [x for x in zparam if '{0}'.format(symbol) not in x]
             if (len(param2) != len(param)) or (len(zparam) != len(zparam2)):
                 param2.append('{0} {1}'.format(symbol,math))
+                param = param2
+                zparam = zparam2
             else:
                 initialConditions2 = [x for x in initialConditions if '{0}()'.format(symbol) not in x]
-                                
                 initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
-        return param2,zparam2,initialConditions2
+                initialConditions = initialConditions2
+        return param,zparam,initialConditions
             
             
     def getSpeciesAnnotation(self):

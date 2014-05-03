@@ -28,6 +28,7 @@ def evaluate(fileName):
                 os.kill(result.pid, signal.SIGKILL)
                 os.waitpid(-1, os.WNOHANG)
                 subprocess.call(['killall','run_network'])
+                subprocess.call(['killall','bngdev'])
                 return 5
             d.close()
         
