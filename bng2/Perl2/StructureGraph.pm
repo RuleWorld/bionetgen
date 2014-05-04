@@ -157,15 +157,14 @@ sub combine
 # appends an index to all nodes of each structure graph 
 # then combines the structure graphs
 	my @psg_list =  @{shift @_};
-	my @indexlist =  @_ ? @{shift @_} : "" x scalar @psg_list;
-	
+	my $index =  @_ ? shift @_ : "0";
 	my $type = $psg_list[0]->{'Type'};
 	my @nodelist = ();
 	
 	foreach my $i(0..@psg_list-1) 
 		{ 
 			my $psg = $psg_list[$i];
-			my $index = $indexlist[$i]; 
+			#my $index = $indexlist[$i]; 
 			my @nodes = @{$psg->{'NodeList'}};
 			foreach my $node (@nodes)
 				{
@@ -183,7 +182,22 @@ sub combine
 	my $psg1 = makeStructureGraph($type,\@nodelist);
 	return $psg1;
 }
-
+sub combine2
+{
+# trivially combines structure graphs
+	my @psg_list =  @{shift @_};
+	my $type = $psg_list[0]->{'Type'};
+	my @nodelist = ();
+	
+	foreach my $i(0..@psg_list-1) 
+		{ 
+			my $psg = $psg_list[$i];
+			my @nodes = @{$psg->{'NodeList'}};
+			push @nodelist, @nodes;
+		}	
+	my $psg1 = makeStructureGraph($type,\@nodelist);
+	return $psg1;
+}
 sub findNode
 {
 	my @nodelist = @{shift @_};
@@ -415,8 +429,10 @@ sub addRuleNode
 {
 	my $rsg = shift @_;
 	my $index = shift @_;
+	
 	my @nodelist = @{$rsg->{'NodeList'}};
 	my %remap = map { $_->{'ID'} => $index.".".$_->{'ID'}} @nodelist;
+	
 	foreach my $node (@nodelist ) 
 	{
 		remapNode($node,\%remap);
@@ -434,6 +450,7 @@ sub makeRuleStructureGraph
 	# Get rule reactants and products and map
 	my $rr = shift @_;
 	my $index = @_ ? shift @_ : "0";
+
 	#print $rr->toString();
 	my @reac = @{$rr->Reactants};
 	my @prod= @{$rr->Products};
@@ -453,11 +470,8 @@ sub makeRuleStructureGraph
 	my @reac_psg = map( makePatternStructureGraph($_,$ind_reac{$_}), @reac);
 	my @prod_psg = map( makePatternStructureGraph($_,$ind_prod{$_}), @prod);
 	
-	my @reac_index = ("0") x scalar @reac_psg;
-	my @prod_index = ("1") x scalar @prod_psg;
-	
-	my $reac_psg1 = combine(\@reac_psg,\@reac_index);
-	my $prod_psg1 = combine(\@prod_psg,\@prod_index);
+	my $reac_psg1 = combine(\@reac_psg,"0");
+	my $prod_psg1 = combine(\@prod_psg,"1");
 	
 	# the correspondence hash needs to be extended 
 	# to include component states & bonds

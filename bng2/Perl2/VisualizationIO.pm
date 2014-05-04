@@ -212,4 +212,21 @@ sub toGML_yED
 	return $string;
 }
 
+sub vizRules
+{
+	# input is an array of rules
+	my @rules = @{shift @_};
+	
+	my $n = scalar @rules;
+	my @rsgs = () x $n;
+	foreach my $i(0..$n-1)
+		{
+		my $rr = $rules[$i];
+		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i);
+		}
+	my $rsg = StructureGraph::combine2(\@rsgs);
+	my $string = toGML_yED($rsg);
+	return $string;
+}
+
 1;
