@@ -69,7 +69,9 @@ sub toGML_yED
 	my %shape = ( 'Mol'=>'rectangle', 'Comp'=>'rectangle', 
 	'CompState'=>'roundrectangle', 'BondState'=>'ellipse', 
 	'GraphOp'=>'hexagon','Rule'=>'rectangle');
-	my %fill = ('Mol'=>'#D2D2D2', 'Comp'=>'#FFFFFF', 'CompState'=>'#FFCC00', 'BondState'=>'#FFCC00','GraphOp'=>'#CC99FF','Rule'=>'#FFFFFF');
+	my %fill = ('Mol'=>'#D2D2D2', 'Comp'=>'#FFFFFF', 
+	'CompState'=>'#FFCC00', 'BondState'=>'#FFCC00',
+	'GraphOp'=>'#CC99FF','Rule'=>'#FFFFFF');
 	my @structnodes = grep ( { $_->{'Type'} ne 'BondState' and $_->{'Type'} ne 'GraphOp'} @nodelist);
 	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
 	my @graphopnodes = grep ( { $_->{'Type'} eq 'GraphOp'} @nodelist);
@@ -216,13 +218,15 @@ sub vizRules
 {
 	# input is an array of rules
 	my @rules = @{shift @_};
+	my @rulenames = @{shift @_};
 	
 	my $n = scalar @rules;
 	my @rsgs = () x $n;
 	foreach my $i(0..$n-1)
 		{
 		my $rr = $rules[$i];
-		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i);
+		my $name = $rulenames[$i];
+		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i,$name);
 		}
 	my $rsg = StructureGraph::combine2(\@rsgs);
 	my $string = toGML_yED($rsg);

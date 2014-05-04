@@ -11,6 +11,7 @@ no warnings 'redefine';
 # Perl Modules
 use Class::Struct;
 use List::Util qw(min max sum);
+#use List::MoreUtils qw( uniq);
 use Data::Dumper;
 
 # BNG Modules
@@ -192,8 +193,9 @@ sub combine2
 	foreach my $i(0..@psg_list-1) 
 		{ 
 			my $psg = $psg_list[$i];
-			my @nodes = @{$psg->{'NodeList'}};
-			push @nodelist, @nodes;
+			my @nodes;
+			if (defined $psg->{'NodeList'}) {@nodes = @{$psg->{'NodeList'}};}
+			if (@nodes) { push @nodelist, @nodes; }
 		}	
 	my $psg1 = makeStructureGraph($type,\@nodelist);
 	return $psg1;
@@ -429,6 +431,7 @@ sub addRuleNode
 {
 	my $rsg = shift @_;
 	my $index = shift @_;
+	my $name = shift @_;
 	
 	my @nodelist = @{$rsg->{'NodeList'}};
 	my %remap = map { $_->{'ID'} => $index.".".$_->{'ID'}} @nodelist;
@@ -438,7 +441,7 @@ sub addRuleNode
 		remapNode($node,\%remap);
 		$node->{'Rule'} = $index;
 	}
-	my $node = makeNode('Rule',"R".$index,$index);
+	my $node = makeNode('Rule',"R_".$name,$index);
 	$node->{'Rule'} = $index;
 	push @nodelist, $node;
 	my $rsg1 = makeStructureGraph('Rule',\@nodelist);
@@ -450,6 +453,7 @@ sub makeRuleStructureGraph
 	# Get rule reactants and products and map
 	my $rr = shift @_;
 	my $index = @_ ? shift @_ : "0";
+	my $name = @_ ? shift @_ : "0";
 
 	#print $rr->toString();
 	my @reac = @{$rr->Reactants};
@@ -485,7 +489,7 @@ sub makeRuleStructureGraph
 	# add the graph operation nodes to generate
 	# the 'explicit' rule structure graph
 	$rsg = addGraphOperations($rsg);
-	$rsg = addRuleNode($rsg,$index);
+	$rsg = addRuleNode($rsg,$index,$name);
 	return $rsg;	
 }
 
