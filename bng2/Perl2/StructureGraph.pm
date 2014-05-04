@@ -1,4 +1,5 @@
-# StructureGraph.pm, used for creating visualizations of patterns
+# StructureGraph.pm, 
+# used for creating visualizations of patterns and rules
 # Author: John Sekar (johnarul.sekar@gmail.com)
 
 package StructureGraph;
@@ -21,11 +22,13 @@ use SpeciesGraph;
 
 struct Node => 
 { 
-	'Type' => '$', #must be one of 'Mol', 'Comp', 'BondState', 'CompState', 'GraphOp'
+	'Type' => '$', 
+	#must be one of 'Mol', 'Comp', 'BondState', 'CompState', 'GraphOp', 'Rule'
 	'Name' => '$', 
 	'ID' => '$', #only one id is used for each node
 	'Parents' => '@', 
-	'Side' => '$'
+	'Side' => '$',
+	'Rule' => '$'
 }; 
 
 struct StructureGraph => { 'Type' => '$', 'NodeList' => '@' };
@@ -151,14 +154,18 @@ sub makePatternStructureGraph
 # operations on structure graphs
 sub combine
 {
+# appends an index to all nodes of each structure graph 
+# then combines the structure graphs
 	my @psg_list =  @{shift @_};
-	my $index =  @_ ? shift @_ : "";
+	my @indexlist =  @_ ? @{shift @_} : "" x scalar @psg_list;
 	
 	my $type = $psg_list[0]->{'Type'};
 	my @nodelist = ();
 	
-	foreach my $psg(@psg_list) 
+	foreach my $i(0..@psg_list-1) 
 		{ 
+			my $psg = $psg_list[$i];
+			my $index = $indexlist[$i]; 
 			my @nodes = @{$psg->{'NodeList'}};
 			foreach my $node (@nodes)
 				{
@@ -247,7 +254,7 @@ sub hasParents
 	return @nodes;
 }
 
-sub remapIDs
+sub remapNode
 {
 	my $node = shift @_;
 	my %remap = %{shift @_};
@@ -259,6 +266,19 @@ sub remapIDs
 		my @new_parents = sort map ( $remap{$_}, @parents);
 		$node->{'Parents'} = \@new_parents;
 	}
+	if (defined $node->{'Rule'})
+	{
+	$node->{'Rule'} = $remap{$node->{'Rule'}};
+	}
+}
+
+sub remapNodeList
+{
+	my @nodelist = @{shift @_};
+	my %remap = %{shift @_};
+	
+	foreach my $node (@nodelist) { remapNode($node,\%remap); }
+	return @nodelist;
 }
 
 sub mergeCorrespondent
@@ -291,13 +311,13 @@ sub mergeCorrespondent
 		#check if it has a correspondence
 		if ($mapf{$node->{'ID'}} ne "-1")
 			{
-			remapIDs($node,\%idmap);
+			remapNode($node,\%idmap);
 			$node->{'Side'} = 'both';
 			push @nodelist, $node;
 			}
 		else
 			{
-			remapIDs($node,\%idmap);
+			remapNode($node,\%idmap);
 			$node->{'Side'} = 'left';
 			push @nodelist, $node;
 			}
@@ -306,7 +326,7 @@ sub mergeCorrespondent
 	{
 	if ($mapr{$node->{'ID'}} eq "-1")
 			{
-			remapIDs($node,\%idmap);
+			remapNode($node,\%idmap);
 			$node->{'Side'} = 'right';
 			push @nodelist, $node;
 			}
@@ -391,11 +411,30 @@ sub addGraphOperations
 	return $rsg1;
 }
 
+sub addRuleNode
+{
+	my $rsg = shift @_;
+	my $index = shift @_;
+	my @nodelist = @{$rsg->{'NodeList'}};
+	my %remap = map { $_->{'ID'} => $index.".".$_->{'ID'}} @nodelist;
+	foreach my $node (@nodelist ) 
+	{
+		remapNode($node,\%remap);
+		$node->{'Rule'} = $index;
+	}
+	my $node = makeNode('Rule',"R".$index,$index);
+	$node->{'Rule'} = $index;
+	push @nodelist, $node;
+	my $rsg1 = makeStructureGraph('Rule',\@nodelist);
+	return $rsg1;
+}
 
 sub makeRuleStructureGraph
 {
 	# Get rule reactants and products and map
 	my $rr = shift @_;
+	my $index = @_ ? shift @_ : "0";
+	#print $rr->toString();
 	my @reac = @{$rr->Reactants};
 	my @prod= @{$rr->Products};
 	my %mapf = %{$rr->MapF};
@@ -406,6 +445,7 @@ sub makeRuleStructureGraph
 	%mapf = modifyCorrespondenceHash(\%mapf,0,1);
 	%mapr = modifyCorrespondenceHash(\%mapr,1,0);
 	
+	
 	# Make combined structure graphs of reactant and product patterns respectively
 	my %ind_reac = indexHash(\@reac);
 	my %ind_prod = indexHash(\@prod);
@@ -413,8 +453,11 @@ sub makeRuleStructureGraph
 	my @reac_psg = map( makePatternStructureGraph($_,$ind_reac{$_}), @reac);
 	my @prod_psg = map( makePatternStructureGraph($_,$ind_prod{$_}), @prod);
 	
-	my $reac_psg1 = combine(\@reac_psg,"0");
-	my $prod_psg1 = combine(\@prod_psg,"1");
+	my @reac_index = ("0") x scalar @reac_psg;
+	my @prod_index = ("1") x scalar @prod_psg;
+	
+	my $reac_psg1 = combine(\@reac_psg,\@reac_index);
+	my $prod_psg1 = combine(\@prod_psg,\@prod_index);
 	
 	# the correspondence hash needs to be extended 
 	# to include component states & bonds
@@ -427,8 +470,9 @@ sub makeRuleStructureGraph
 	
 	# add the graph operation nodes to generate
 	# the 'explicit' rule structure graph
-	my $rsg1 = addGraphOperations($rsg);
-	return $rsg1;	
+	$rsg = addGraphOperations($rsg);
+	$rsg = addRuleNode($rsg,$index);
+	return $rsg;	
 }
 
 # functions dealing with hashes
@@ -555,160 +599,4 @@ sub extendCorrespondenceHash
 	return (\%mapf,\%mapr);
 }	
 
-sub toGML_yED
-{
-	my $sg = shift @_;
-	#this is a structure graph.
-	# could be pattern, rule or combination of rules
-	my $type = $sg->{'Type'};
-	my @nodelist = @{$sg->{'NodeList'}};
-	
-	# remap all the ids to integers
-	my @idlist = map {$_->{'ID'}} @nodelist;
-	my %indhash = indexHash(\@idlist);
-	foreach my $node (@nodelist) { remapIDs($node,\%indhash); }
-	
-	
-	# need hashes for isGroup, gid, type, fill
-	# node [ id 0 label "A" graphics [ type "roundrectangle" fill "#FFCC00" ] gid 1 isGroup 1]
-	# eventually move to importing customized hashes for visual properties
-	my %shape = ( 'Mol'=>'rectangle', 'Comp'=>'rectangle', 'CompState'=>'roundrectangle', 'BondState'=>'ellipse', 'GraphOp'=>'hexagon');
-	my %fill = ('Mol'=>'#D2D2D2', 'Comp'=>'#FFFFFF', 'CompState'=>'#FFCC00', 'BondState'=>'#FFCC00','GraphOp'=>'#CC99FF');
-	my @structnodes = grep ( { $_->{'Type'} ne 'BondState' and $_->{'Type'} ne 'GraphOp'} @nodelist);
-	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
-	my @graphopnodes = grep ( { $_->{'Type'} eq 'GraphOp'} @nodelist);
-	
-	# hashes for is group and gid
-	my %isgroup;
-	my %gid;
-	#foreach my $node(@structnodes) { $isgroup{$node->{'ID'}} = 0;}
-	foreach my $node(@structnodes) 
-	{
-		foreach my $parent_id(@{$node->{'Parents'}}) 
-		{
-			$isgroup{$parent_id} = 1; 
-			$gid{$node->{'ID'}} = $parent_id; 
-		}
-	}
-	
-	foreach my $node(@graphopnodes)
-	{
-		if ($node->{'Name'} eq 'ChangeState' )
-		{
-			
-			my @parents = @{$node->{'Parents'}};
-			my $parent = findNode(\@nodelist,$parents[0]);
-			my @grandparents = @{$parent->{'Parents'}};
-			my $grandparent = $grandparents[0];
-			$gid{$node->{'ID'}} = $grandparents[0]; 
-		}
-	}
-	my @nodestrings = ();
-	my @edgestrings = ();
-	# make node strings
-	foreach my $node(@nodelist)
-	{
-		# ignore if it is a bond with two parents
-		if ( $node->{'Type'} eq 'BondState' and scalar @{$node->{'Parents'}} == 2) { next; }
-		
-		my $id = $node->{'ID'};
-		my $nm = $node->{'Name'};
-		my $shp = $shape{$node->{'Type'}};
-		my $fl = $fill{$node->{'Type'}};
-		my $string = sprintf "id %d label \"%s\" ",$id,$nm;
-		$string .= sprintf "graphics [ type \"%s\" fill \"%s\" ] ",$shp,$fl;
-		$string .= sprintf "LabelGraphics [ label \"%s\" anchor \"t\" ] ",$nm;
-		if ($isgroup{$id}) { $string .= " isGroup 1"; }
-		if (exists $gid{$id}) { $string .= sprintf " gid %d", $gid{$id};}
-		$string = " node [ ".$string." ]";
-		push @nodestrings, $string;
-	}
-	# make edges for bonds
-	foreach my $node (@bondnodes)
-	{
-		my @parents = @{$node->{'Parents'}};
-		my $source;
-		my $target;
-		# address wildcards
-		if (scalar @parents == 1) 
-		{
-			$source = $node->{'ID'};
-			$target = $parents[0];
-		}
-		# ignore bonds that are made or removed
-		elsif ($node->{'Side'} eq 'both')
-		{
-			$source = $parents[0];
-			$target = $parents[1];
-		}
-		else { next; }
-		my $string = sprintf "source %d target %d ",$source,$target;
-		$string .= "graphics [ fill \"#000000\" ] ";
-		$string = " edge [ ".$string." ]";
-		push @edgestrings,$string;
-	}
-	# make edges adjacent to graph operation nodes
-	foreach my $node (@graphopnodes)
-	{
-		my $name = $node->{'Name'};
-		my $id = $node->{'ID'};
-		my @parents = @{$node->{'Parents'}};
-		my @c;
-		my @p;
-		my @consumed;
-		my @produced;
-		
-		if ($name eq 'ChangeState')
-			{
-			my @compstates = grep ( { $_->{'Type'} eq 'CompState' } @nodelist);
-			my @nodes = findNodes(\@compstates,\@parents);
-			@c = grep ( { $_->{'Side'} eq 'left' } @nodes);
-			@p = grep ( { $_->{'Side'} eq 'right' } @nodes);
-			}
-			
-		if ($name eq 'AddMol' or $name eq 'DeleteMol')
-			{
-			my @mols = grep ( { $_->{'Type'} eq 'Mol' } @nodelist);
-			my @nodes = findNodes(\@mols,\@parents);
-			@c = grep ( { $_->{'Side'} eq 'left' } @nodes);
-			@p = grep ( { $_->{'Side'} eq 'right' } @nodes);
-			}
-			
-		if ($name eq 'AddBond' or $name eq 'DeleteBond')
-			{
-				my @allbonds = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
-				my $bond = findNode(\@allbonds,$parents[0]);
-				my @comps = grep ( { $_->{'Type'} eq 'Comp' } @nodelist);
-				my @nodes = findNodes(\@comps, $bond->{'Parents'});
-				if ($name eq 'DeleteBond') { @c = @nodes; }
-				if ($name eq 'AddBond') { @p = @nodes; }
-			}
-		
-		if (@c) { @consumed = map ($_->{'ID'},@c); }
-		if (@p) { @produced = map ($_->{'ID'},@p); }	
-		
-		foreach my $id2(@consumed)
-		{
-			my $string = sprintf "source %d target %d ",$id2,$id;
-			$string .= "graphics [ fill \"#000000\" targetArrow \"standard\" ] ";
-			$string = " edge [ ".$string." ]";
-			push @edgestrings,$string;
-		}
-		
-		foreach my $id2(@produced)
-		{
-			my $string = sprintf "source %d target %d ",$id,$id2;
-			$string .= "graphics [ fill \"#000000\" targetArrow \"standard\" ] ";
-			$string = " edge [ ".$string." ]";
-			push @edgestrings,$string;
-		}
-	}
-
-	my $string = "graph\n[\n hierarchic 1\n directed 1\n";
-	$string .= join("\n",@nodestrings)."\n";
-	$string .= join("\n",@edgestrings)."\n";
-	$string .= "]\n";
-	
-	return $string;
-}
 1;
