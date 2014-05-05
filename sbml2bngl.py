@@ -796,7 +796,11 @@ def standardizeName(name):
                                 "-":"_",
                                 ".":"_",
                                 '?':"unkn",
-                                ',':'_'}
+                                ',':'_',
+                                '[':'__',
+                                  ']':'__',
+                                  '>':'_',
+                                  '<':'_'}
                                 
     for element in sbml2BnglTranslationDict:
         name = name.replace(element,sbml2BnglTranslationDict[element])
