@@ -87,8 +87,8 @@ def dbmodel_key(model_name=DATABASE_NAME):
     return ndb.Key('ModelDB', model_name)
     
     
-#remoteServer = "http://54.214.249.43:9000"
-remoteServer = "http://127.0.0.1:9002"
+remoteServer = "http://54.214.249.43:9000"
+#remoteServer = "http://127.0.0.1:9002"
 class Translate(webapp2.RequestHandler):
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
@@ -106,7 +106,6 @@ class Translate(webapp2.RequestHandler):
 
 class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
     def post(self):
-        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000',GAEXMLRPCTransport())
         
         upload_files = self.get_uploads('file')
         blob_info = upload_files[0]
@@ -131,7 +130,7 @@ class WaitFile(webapp2.RequestHandler):
         fileName = self.request.get("fileName")
         s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
         result = s.isready(int(ticket))
-        if result != 1:
+        if result in [-2,'-2']:
             redirectionURL='waitFile?ticket={0}&fileName={1}'.format(ticket,fileName)
             template_values={
                 'redirection' : redirectionURL,
@@ -142,10 +141,15 @@ class WaitFile(webapp2.RequestHandler):
             }
             template =JINJA_ENVIRONMENT.get_template('wait.html')
             self.response.write(template.render(template_values))
-
+        elif result in [-1,'-1']:
+            self.response.write("Your request doesn't exist. Please submit your file again")
+            return
         else:
             s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
             result = s.getDict(int(ticket))
+            if result in ['-5',-5]:
+                self.response.write("There was an error processing your request")
+                return
             file_name = files.blobstore.create(mime_type='application/octet-stream')
             
             # Open the file and write to it
