@@ -86,11 +86,12 @@ def dbmodel_key(model_name=DATABASE_NAME):
     """Constructs a Datastore key for a ModelDB entity with model_name."""
     return ndb.Key('ModelDB', model_name)
     
+    
+#remoteServer = "http://54.214.249.43:9000"
+remoteServer = "http://127.0.0.1:9002"
 class Translate(webapp2.RequestHandler):
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
-        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000',GAEXMLRPCTransport())
-        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000')
         
         #reactionFiles,speciesFiles = s.getSpeciesConventions()
         #print '-----',reactionFiles,speciesFiles
@@ -105,6 +106,7 @@ class Translate(webapp2.RequestHandler):
 
 class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
     def post(self):
+        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000',GAEXMLRPCTransport())
         
         upload_files = self.get_uploads('file')
         blob_info = upload_files[0]
@@ -116,31 +118,56 @@ class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
         #print 'fsdgsdgsd',atomize
         #https://developers.google.com/appengine/docs/python/urlfetch/fetchfunction
         #https://groups.google.com/forum/#!topic/google-appengine/XbrJvt9LfuI
-        s = xmlrpclib.ServerProxy('http://54.214.249.43:9000',GAEXMLRPCTransport())
+        s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
         #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000',GAEXMLRPCTransport())
-        result = s.atomize(sbmlContent,atomizeString,reaction,species)
+        ticket = s.atomize(sbmlContent,atomizeString,reaction,species)
         #self.response.write(result)
+        
+        self.redirect('/waitFile?ticket={0}&fileName={1}'.format(ticket,blob_info.filename))
+        
+class WaitFile(webapp2.RequestHandler):
+    def get(self):
+        ticket = self.request.get("ticket")
+        fileName = self.request.get("fileName")
+        s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
+        result = s.isready(int(ticket))
+        if result != 1:
+            redirectionURL='waitFile?ticket={0}&fileName={1}'.format(ticket,fileName)
+            template_values={
+                'redirection' : redirectionURL,
+                'result':result
+                #'reactionDefinition' : ['1','2','3','4','5','6','7','8','9','10','a','b','c']
+                #'reactionDefinition' : reactionFiles,
+                #'speciesDefinition': speciesFiles
+            }
+            template =JINJA_ENVIRONMENT.get_template('wait.html')
+            self.response.write(template.render(template_values))
 
-        file_name = files.blobstore.create(mime_type='application/octet-stream')
+        else:
+            s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
+            result = s.getDict(int(ticket))
+            file_name = files.blobstore.create(mime_type='application/octet-stream')
+            
+            # Open the file and write to it
+            with files.open(file_name, 'a') as f:
+              f.write(result)
+            
+            # Finalize the file. Do this before attempting to read it.
+            files.finalize(file_name)
+            
+            # Get the file's blob key
+            blob_key = files.blobstore.get_blob_key(file_name)
+            
+            ###        
+            #blob_info = blobstore.BlobInfo.get(blob_key)
+            #output = blob_info.open()
+            ###
+            printStatement = '<a href="/serve/{1}.bngl?key={0}">{1}.bngl</a>'.format(blob_key,fileName)
+            #p2 = output.read()        
+            self.response.write(printStatement)
+                    #modelSubmission.put()
         
-        # Open the file and write to it
-        with files.open(file_name, 'a') as f:
-          f.write(result)
-        
-        # Finalize the file. Do this before attempting to read it.
-        files.finalize(file_name)
-        
-        # Get the file's blob key
-        blob_key = files.blobstore.get_blob_key(file_name)
-        
-        ###        
-        #blob_info = blobstore.BlobInfo.get(blob_key)
-        #output = blob_info.open()
-        ###
-        printStatement = '<a href="/serve/{1}.bngl?key={0}">{1}.bngl</a>'.format(blob_key,blob_info.filename)
-        #p2 = output.read()        
-        self.response.write(printStatement)
-                #modelSubmission.put()
+
 
 class Graph(webapp2.RequestHandler):
     def get(self):
@@ -224,5 +251,6 @@ app = webapp2.WSGIApplication([
     ('/serve/([^/]+)?', ServeHandler),
     ('/process',ProcessFile),
     ('/graphp',GraphFile),
-    ('/graph',Graph)
+    ('/graph',Graph),
+    ('/waitFile',WaitFile),
 ], debug=True)
