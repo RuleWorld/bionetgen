@@ -14,7 +14,7 @@ from google.appengine.ext import blobstore
 from google.appengine.ext import ndb
 import xmlrpclib
 import urllib
-
+import json
 from google.appengine.api import files
 
 
@@ -123,7 +123,19 @@ class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
         #self.response.write(result)
         
         self.redirect('/waitFile?ticket={0}&fileName={1}'.format(ticket,blob_info.filename))
+
+class WaitFileJson(webapp2.RequestHandler):
+    
+    def get(self):
+        ticket = self.request.get("ticket")
+        s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
+        result = s.isready(int(ticket))
+        resultJson = {'result':result}
+        resultJson = json.dumps(resultJson)
+        self.response.headers.add_header('content-type', 'application/json', charset='utf-8')
+        self.response.out.write(resultJson)
         
+          
 class WaitFile(webapp2.RequestHandler):
     def get(self):
         ticket = self.request.get("ticket")
@@ -134,10 +146,8 @@ class WaitFile(webapp2.RequestHandler):
             redirectionURL='waitFile?ticket={0}&fileName={1}'.format(ticket,fileName)
             template_values={
                 'redirection' : redirectionURL,
-                'result':result
-                #'reactionDefinition' : ['1','2','3','4','5','6','7','8','9','10','a','b','c']
-                #'reactionDefinition' : reactionFiles,
-                #'speciesDefinition': speciesFiles
+                'ticket':int(ticket),
+                'fileName':fileName
             }
             template =JINJA_ENVIRONMENT.get_template('wait.html')
             self.response.write(template.render(template_values))
@@ -170,6 +180,8 @@ class WaitFile(webapp2.RequestHandler):
             #p2 = output.read()        
             self.response.write(printStatement)
                     #modelSubmission.put()
+    def post(self):
+        return self.get()
         
 
 
@@ -257,4 +269,5 @@ app = webapp2.WSGIApplication([
     ('/graphp',GraphFile),
     ('/graph',Graph),
     ('/waitFile',WaitFile),
+    ('/testFile',WaitFileJson)
 ], debug=True)

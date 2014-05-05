@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <head>
+    <!-- <meta http-equiv="refresh" content="5;url={{redirection}}">-->
+   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script>
+	    var count = 2;
+    var timer = setInterval(function() {
+        if (--count < 1) {
+
+            $.get( "testFile?ticket={{ticket}}", function(data){
+            	var obj = jQuery.parseJSON( data);
+            	if (obj.result == -2){
+            		count = 5
+            		
+            	}
+            	else if(obj.result == -1){
+            		$("#display").text("Your request doesn't exist. Please submit your file again")	
+            	}
+            	else{
+            		$("#display").empty()
+            		$.get( "waitFile?ticket={{ticket}}&fileName={{fileName}}", function(data2){
+            		$( "body" )
+    					.append( data2 )
+    				});
+    				clearInterval(timer);
+            	}
+            	
+
+
+            });
+            
+        }
+    }, 1000);
+	</script>
+   <script>
+		var url = "/script/rotate.js";
+		$.getScript(url, function() {
+			var spinner = new Spinner().spin();
+			$("#display").append(spinner.el);
+		}
+		);
+		
+   </script>
+  </head>
+  <body>
+  		Please wait a couple seconds while your request is processed...
+  		<div id="display">
+        
+    	</div>
+  </body>
+</html>
+{% endautoescape %}

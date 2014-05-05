@@ -9,7 +9,8 @@ libraries:
   version: latest    
   
 handlers:
-
+- url: /script
+  static_dir: script
   
 - url: /.*
   script: submitModel.app
