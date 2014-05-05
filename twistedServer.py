@@ -35,15 +35,17 @@ class AtomizerServer(xmlrpc.XMLRPC):
         
     def atomize(self,ticket,xmlFile,atomize):
         reaction = 'config/reactionDefinitions.json'
-        result = libsbml2bngl.readFromString(xmlFile,
-                                             reaction,False,None,atomize)
-       
-        self.addToDict(ticket,result)
-        
+        try:
+            result = libsbml2bngl.readFromString(xmlFile,
+                                                 reaction,False,None,atomize)
+            self.addToDict(ticket,result)
+        except:
+            self.addToDict(ticket,-5)
     def xmlrpc_atomize(self, bxmlFile,atomize=False,reaction='config/reactionDefinitions.json',species=None):
         counter = next_id()
         xmlFile = bxmlFile.data
         reactor.callInThread(self.atomize,counter,xmlFile,atomize)
+        processDict[counter] = -2
         #result = threads.deferToThread(libsbml2bngl.readFromString,xmlFile,
         #                                     reaction,True,None,atomize)
         #result = libsbml2bngl.readFromString(xmlFile,
@@ -58,6 +60,8 @@ class AtomizerServer(xmlrpc.XMLRPC):
     
     def xmlrpc_isready(self,ticketNumber):
         if ticketNumber in processDict:
+            if processDict[ticketNumber] == -2:
+                return -2
             return 1
         else:
             return -1
@@ -65,5 +69,5 @@ class AtomizerServer(xmlrpc.XMLRPC):
 
 if __name__ == '__main__':
     r = AtomizerServer()
-    reactor.listenTCP(9002, server.Site(r))
+    reactor.listenTCP(9000, server.Site(r))
     reactor.run() 
