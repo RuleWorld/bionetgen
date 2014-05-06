@@ -10,7 +10,7 @@ import libsbml2bngl
 # Restrict to a particular path.
 
 from twisted.web import xmlrpc, server
-from twisted.internet import threads,defer,reactor
+from twisted.internet import reactor
 import threading
 iid = 1
 iid_lock = threading.Lock()
@@ -35,12 +35,15 @@ class AtomizerServer(xmlrpc.XMLRPC):
         
     def atomize(self,ticket,xmlFile,atomize):
         reaction = 'config/reactionDefinitions.json'
+        print ticket
         try:
             result = libsbml2bngl.readFromString(xmlFile,
                                                  reaction,False,None,atomize)
             self.addToDict(ticket,result)
+            print 'sucess',result
         except:
             self.addToDict(ticket,-5)
+            print 'failure'
     def xmlrpc_atomize(self, bxmlFile,atomize=False,reaction='config/reactionDefinitions.json',species=None):
         counter = next_id()
         xmlFile = bxmlFile.data
