@@ -1,26 +1,51 @@
 <!DOCTYPE html>
 {% autoescape true %}
 <html>
+<head>
+ <link rel="stylesheet" type="text/css" href="script/style.css">
+ <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.4.2/pure-min.css">
+  </head>
   <body>
-    <form action="{{ action }}" method="post" enctype="multipart/form-data">
+    <div id="container">
+  <div id="header">
+    <h1>
+      Site name
+    </h1>
+  </div>
+  <div id="navigation" class="pure-menu pure-menu-open pure-menu-horizontal">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/translate">Atomizer</a></li>
+      <li><a href="/graph">Bipartite Graph</a></li>
+      <li><a href="/static/contact.html">Contact us</a></li>
+    </ul>
+  </div>
+  <div id="content-container">
+        <form action="{{ action }}" class="pure-form" method="post" enctype="multipart/form-data">
     Model submission: <br>
       Upload File: <input type="file" name="file"><br> 
-      Options:<br>
       
-      Return: <div><select name=return>
-	  	<option>dot</option>
-	  	<option>png</option>
-      </select></div><br/>
-      Include:  <div><input type="checkbox" name="center" value="center">Reaction Center </div>
-      <div><input type="checkbox" name="context" value="context">Context</div>
-      <div><input type="checkbox" name="products" value="products">Products </div>
-      <input type="submit" value="Submit">
+      
+      Return: <select class="pure-input-1-2" name="return">
+      <option>dot</option>
+      <option>png</option>
+      </select><br/>
+      Include:  <div><input    id="center" type="checkbox" name="center" value="center">Reaction Center </div>
+      <div><input  type="checkbox" id="context" name="context" value="context">Context</div>
+      <div><input  type="checkbox" id="products" name="products" value="products">Products </div>
+      <input class="pure-button pure-button-primary" type="submit" value="Submit">
     </form>
+
+    </div>
+    <div id="footer">
+      Copyright © Jose Juan Tapia, 2014
+    </div>
+  </div>
+</div>
   
 
 
     
-    <a href="{{ url|safe }}">{{ url_linktext }}</a>
 
   </body>
 </html>

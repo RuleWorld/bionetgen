@@ -1,22 +1,62 @@
+
+
 <!DOCTYPE html>
 {% autoescape true %}
 <html>
+<head>
+ <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.4.2/pure-min.css">
+ <link rel="stylesheet" type="text/css" href="script/style.css">
+  </head>
   <body>
-    <form action="{{ action }}" method="post" enctype="multipart/form-data">
-    Model submission: <br>
-      Upload File: <input type="file" name="file"><br> 
-      Options:<br>
-      <div><input type="checkbox" name="atomize" value="atomize">Atomize </div>
+<div id="container">
+  <div id="header">
+    <h1>
+      Site name
+    </h1>
+  </div>
+  <div id="navigation" class="pure-menu pure-menu-open pure-menu-horizontal">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/translate">Atomizer</a></li>
+      <li><a href="/graph">Bipartite Graph</a></li>
+      <li><a href="/static/contact.html">Contact us</a></li>
+    </ul>
+  </div>
+  <div id="content-container">
+    <div id="content">
+      <h2>
+        SBML 2 BNGL
+      </h2>
+        <form action="{{ action }}" class="pure-form" method="post" enctype="multipart/form-data">
+          <fieldset>
+    <legend>Model submission: </legend>
+       <input type="file" class="pure-button" name="file"><br> 
+      <label for="atomID" class="pure-checkbox">Atomize
+      <div><input id="atomID" type="checkbox" name="atomize" value="atomize"> </div></label>
       <!--
       <div><select name=reaction>
         {% for option in reactionDefinition %}
-	  	<option>{{ option }}</option>
-  	{% endfor %}
+      <option>{{ option }}</option>
+    {% endfor %}
       </select></div>
       -->
-      <input type="submit" value="Submit">
+      <input type="submit" class="pure-button pure-button-primary" value="Submit">
+    </fieldset>
     </form>
+  </div>
+    <div id="aside">
+      <h3>
+        Links
+      </h3>
+      <p>
     <a href="/static/helpMe.html">Help</a><br>
+      </p>
+    </div>
+    <div id="footer">
+      Copyright © Jose Juan Tapia, 2014
+    </div>
+  </div>
+</div>
   </body>
 </html>
 {% endautoescape %}

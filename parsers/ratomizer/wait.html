@@ -2,6 +2,8 @@
 {% autoescape true %}
 <html>
   <head>
+  	<link rel="stylesheet" type="text/css" href="script/style.css">
+  	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.4.2/pure-min.css">
     <!-- <meta http-equiv="refresh" content="5;url={{redirection}}">-->
    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 	<script>
@@ -19,9 +21,9 @@
             		$("#display").text("Your request doesn't exist. Please submit your file again")	
             	}
             	else{
-            		$("#display").empty()
+            		$("#content").empty()
             		$.get( "waitFile?ticket={{ticket}}&fileName={{fileName}}", function(data2){
-            		$( "body" )
+            		$("#content")
     					.append( data2 )
     				});
     				clearInterval(timer);
@@ -38,17 +40,46 @@
 		var url = "/script/rotate.js";
 		$.getScript(url, function() {
 			var spinner = new Spinner().spin();
-			$("#display").append(spinner.el);
+			$("#content").append(spinner.el);
 		}
 		);
 		
    </script>
   </head>
   <body>
-  		Please wait a couple seconds while your request is processed...
-  		<div id="display">
-        
-    	</div>
+  	<div id="container">
+  <div id="header">
+    <h1>
+      Site name
+    </h1>
+  </div>
+  <div id="navigation" class="pure-menu pure-menu-open pure-menu-horizontal">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/translate">Atomizer</a></li>
+      <li><a href="/graph">Bipartite Graph</a></li>
+      <li><a href="/static/contact.html">Contact us</a></li>
+    </ul>
+  </div>
+  <div id="content-container">
+    <div id="content">
+      		Please wait a couple seconds while your request is processed...
+
+  </div>
+    <div id="aside">
+      <h3>
+        Links
+      </h3>
+      <p>
+    <a href="/static/helpMe.html">Help</a><br>
+      </p>
+    </div>
+    <div id="footer">
+      Copyright © Jose Juan Tapia, 2014
+    </div>
+  </div>
+</div>
+
   </body>
 </html>
 {% endautoescape %}

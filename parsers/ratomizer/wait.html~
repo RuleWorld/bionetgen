@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <head>
+     <meta http-equiv="refresh" content="5;url={{redirection}}">
+   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript" charset="utf-8">
+       $(document).ready(function(){
+            // This will run when the item of class 'button' is clicked
+            $(".button").click(function() {
+                
+                // Grabs the text input
+                var name = $("input#txtValue").val();
+         
+                var dataString = 'txtValue='+ name;  
+                // This creates the AJAX connection
+                $.ajax({
+                    type: "POST",
+                    url: "/tutorial",
+                    data: dataString,
+                    success: function(data) {
+                        $('#display').html(data.text);
+                    }
+                });
+            return false;
+            });
+        });
+       </script>
+    </head>
+  </head>
+  <body>
+        Please wait a couple seconds while your request is processed...
+  </body>
+</html>
+{% endautoescape %}

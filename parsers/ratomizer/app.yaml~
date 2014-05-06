@@ -11,6 +11,8 @@ libraries:
 handlers:
 - url: /script
   static_dir: script
+
+handlers:
 - url: /static
   static_dir: static
   
