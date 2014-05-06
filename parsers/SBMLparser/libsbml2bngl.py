@@ -226,23 +226,25 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
     '''
     one of the library's main entry methods. Process data from a string
     '''
-    reader = libsbml.SBMLReader()
-    document = reader.readSBMLFromString(inputString)
-    parser =SBML2BNGL(document.getModel(),useID)
-    
-    bioGrid = False
-    if bioGrid:
-        loadBioGrid()
-    database = structures.Databases()
-    namingConventions = 'config/namingConventions.json'
-    
-    if atomize:
-        translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
-    else:    
-        translator={} 
-
-    return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-2]
-
+    try:
+        reader = libsbml.SBMLReader()
+        document = reader.readSBMLFromString(inputString)
+        parser =SBML2BNGL(document.getModel(),useID)
+        
+        bioGrid = False
+        if bioGrid:
+            loadBioGrid()
+        database = structures.Databases()
+        namingConventions = 'config/namingConventions.json'
+        
+        if atomize:
+            translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
+        else:    
+            translator={} 
+        
+        return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-2]
+    except:
+        return -5
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
     this method goes through the list of functions and removes all
@@ -1032,11 +1034,12 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
     #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='config/speciesEquivalences.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000256.xml',customDefinitions=None,atomize=True)    
+    #processFile3('XMLExamples/curated/BIOMD0000000256.xml',customDefinitions=None,atomize=True)    
     #processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/non_curated/')
     #statFiles()
     #main2()
+    print readFromString('dsfsdf','config/reactionDefinitions.json',False)
     #processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
