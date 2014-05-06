@@ -602,7 +602,14 @@ sub writeBNGL
         }
         else
         {   # include parameter type
-            $out .= "  # " . $param->Type . "\n";
+            if ($param->Type eq 'ConstantExpression')
+            {
+                $out .= "  # " . $param->Type . " " . $param->evaluate([], $plist). "\n";
+            }
+            else{
+                $out .= "  # " . $param->Type . "\n";
+            }
+            
         }
 
         ++$iparam; 
