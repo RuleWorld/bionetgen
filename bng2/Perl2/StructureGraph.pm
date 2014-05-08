@@ -76,6 +76,13 @@ sub printNode
 	return $string;
 }
 
+sub getNodeList
+{
+	my $sg = shift @_;
+	if ($sg->{'NodeList'}) {return @{$sg->{'NodeList'}};}
+	return ();
+}
+
 
 sub printGraph 
 {
@@ -166,7 +173,8 @@ sub combine
 		{ 
 			my $psg = $psg_list[$i];
 			#my $index = $indexlist[$i]; 
-			my @nodes = @{$psg->{'NodeList'}};
+			#my @nodes = @{$psg->{'NodeList'}};
+			my @nodes = getNodeList($psg);
 			foreach my $node (@nodes)
 				{
 					my $id = $node->{'ID'};
@@ -621,6 +629,7 @@ sub makeAtomicPattern
 {
 	my @nodelist = @{shift @_};
 	my $node = shift @_;
+	
 	my $type = $node->{'Type'};
 	my $ap;
 	if ($type eq 'CompState')
@@ -658,9 +667,16 @@ sub makeAtomicPattern
 		}
 	elsif ($type eq 'Mol')
 		{
-		$ap = $node->{'Name'}."()";
+		$ap = $node->{'Name'};
 		}
 	return $ap;
+}
+sub makeAtomicPatterns 
+{ 
+	my $nodelist = shift @_;
+	my $nodes = shift @_;
+	my @aps = map { makeAtomicPattern($nodelist,$_)} @$nodes; 
+	return @aps;
 }
 
 sub makeTransformation
@@ -669,7 +685,7 @@ sub makeTransformation
 	my $node = shift @_;
 	my $type = $node->{'Type'};
 	my $name = $node->{'Name'};
-	my $arrow = " -> ";
+	my $arrow = "->";
 	my $comma = ",";
 	my $tr;
 	if ($type ne 'GraphOp') { return undef; }
@@ -702,14 +718,17 @@ sub makeTransformation
 		{
 		my $mol = findNode(\@nodelist,${$node->{'Parents'}}[0]);
 		my $name = makeAtomicPattern(\@nodelist,$mol);
-		$tr = "0".$arrow.$name;
+		$tr = $arrow.$name;
 		}
 	elsif ($name eq 'DeleteMol')
 		{
 		my $mol = findNode(\@nodelist,${$node->{'Parents'}}[0]);
 		my $name = makeAtomicPattern(\@nodelist,$mol);
-		$tr = $name.$arrow."0";
+		$tr = $name.$arrow;
 		}
 	return $tr;
 }
+
+
+
 1;

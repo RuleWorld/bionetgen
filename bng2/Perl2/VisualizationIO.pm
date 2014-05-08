@@ -15,19 +15,24 @@ use Data::Dumper;
 
 # BNG Modules
 use StructureGraph;
+use BipartiteGraph;
 
 sub GMLNode
 {
 	my $id = shift @_;
 	my $label = shift @_;
-	my $shape = shift @_;
-	my $fill = shift @_;
+	my $nodestyle = shift @_;
+	my $labelstyle = shift @_;
+	#my $shape = shift @_;
+	#my $fill = shift @_;
 	my $gid = @_ ? shift @_: undef;
 	my $isgroup = @_ ? shift @_: undef;
 	
 	my $string = sprintf "id %d label \"%s\" ",$id,$label;
-	$string .= sprintf "graphics [ type \"%s\" fill \"%s\" ] ",$shape,$fill;
-	$string .= sprintf "LabelGraphics [ label \"%s\" anchor \"t\" ] ",$label;
+	#$string .= sprintf "graphics [ type \"%s\" fill \"%s\" ] ",$shape,$fill;
+	$string .= $nodestyle." ";
+	#$string .= sprintf "LabelGraphics [ label \"%s\" anchor \"t\" ] ",$label;
+	$string .= $labelstyle." ";
 	if (defined $isgroup) { $string .= " isGroup 1"; }
 	if (defined $gid) { $string .= sprintf " gid %d", $gid;}
 	$string = " node [ ".$string." ]";
@@ -63,15 +68,7 @@ sub toGML_yED
 	foreach my $node(@nodelist) { StructureGraph::remapNode($node,\%indhash); }
 	#StructureGraph::remapNodeList(\@nodelist,\%indhash);
 	
-	# need hashes for isGroup, gid, type, fill
-	# node [ id 0 label "A" graphics [ type "roundrectangle" fill "#FFCC00" ] gid 1 isGroup 1]
-	# eventually move to importing customized hashes for visual properties
-	my %shape = ( 'Mol'=>'rectangle', 'Comp'=>'rectangle', 
-	'CompState'=>'roundrectangle', 'BondState'=>'ellipse', 
-	'GraphOp'=>'hexagon','Rule'=>'rectangle');
-	my %fill = ('Mol'=>'#D2D2D2', 'Comp'=>'#FFFFFF', 
-	'CompState'=>'#FFCC00', 'BondState'=>'#FFCC00',
-	'GraphOp'=>'#CC99FF','Rule'=>'#FFFFFF');
+
 	my @structnodes = grep ( { $_->{'Type'} ne 'BondState' and $_->{'Type'} ne 'GraphOp'} @nodelist);
 	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
 	my @graphopnodes = grep ( { $_->{'Type'} eq 'GraphOp'} @nodelist);
@@ -126,9 +123,10 @@ sub toGML_yED
 		
 		my $id = $node->{'ID'};
 		my $nm = $node->{'Name'};
-		my $shp = $shape{$node->{'Type'}};
-		my $fl = $fill{$node->{'Type'}};
-		my $string = GMLNode($id,$nm,$shp,$fl,$gid{$id},$isgroup{$id});
+		my $type = $node->{'Type'};
+		my $nodestyle =  styling('node',$type,$nm,$isgroup{$id});
+		my $labelstyle = styling('nodelabel',$type,$nm,$isgroup{$id});
+		my $string = GMLNode($id,$nm,$nodestyle,$labelstyle,$gid{$id},$isgroup{$id});
 		push @nodestrings, $string;
 	}
 	# make edgestrings for bonds
@@ -232,5 +230,70 @@ sub vizRules
 	my $string = toGML_yED($rsg);
 	return $string;
 }
+sub styling
+{
+	my $attrib = shift @_; # what attribute is required graphics/LabelGraphics
+	my $type = shift @_; # what node type the attribute is required for
+	my $label = shift @_;
+	my $isgroup = shift @_;
+	
+	my %shape = ( 'Mol'=>'roundrectangle', 'Comp'=>'roundrectangle', 
+	'CompState'=>'roundrectangle', 'BondState'=>'roundrectangle', 
+	'GraphOp'=>'hexagon','Rule'=>'roundrectangle');
+	my %fill = ( 'Mol'=>"#FFFFFF", 'Comp'=>"#D2D2D2", 
+	'CompState'=>"#FFCC00", 'BondState'=>"#D2D2D2", 
+	'GraphOp'=>"#CC99FF",'Rule'=>"#FFFFFF");
+	my %outlineStyle = ('Rule'=>"dotted");
+	my %anchor = ( '1'=>"t", '0'=>"c");
+	my %fontstyle = ( 'Mol'=>"bold", 'GraphOp'=>"italic");
+	
+	
+	my $string = "";
+	my $q1 = " \"";
+	my $q2 = "\" ";
+	my $sp = " ";
+	if ($attrib eq 'node')
+	{
+		$string .= "type".$q1.$shape{$type}.$q2;
+		$string .= "fill".$q1.$fill{$type}.$q2;
+		if ($type eq 'Rule')
+		{ $string .= "outlineStyle".$q1."dotted".$q2; }
+		$string = "graphics [ ".$string." ]";
+		
+	}
+	elsif ($attrib eq 'nodelabel')
+	{
+		$string .= "label".$q1.$label.$q2;
+		$isgroup = $isgroup ? 1 : 0;
+		$string .= "anchor".$q1.$anchor{$isgroup}.$q2;
+		if (exists $fontstyle{$type})
+		{ $string .= "fontStyle".$q1.$fontstyle{$type}.$q2;}
+		$string = "LabelGraphics [ ".$string." ]";
+	}	
+	return $string;	
+}
 
+
+sub vizBPG
+{
+	# input is an array of rules
+	my @rules = @{shift @_};
+	my @rulenames = @{shift @_};
+	
+	my $n = scalar @rules;
+	my @rsgs = () x $n;
+	my @bpgs = () x $n;
+	foreach my $i(0..$n-1)
+		{
+		my $rr = $rules[$i];
+		my $name = $rulenames[$i];
+		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i,$name);
+		$bpgs[$i] = BipartiteGraph::makeRuleBipartiteGraph($rsgs[$i]);
+		}
+		
+	my $bpg = BipartiteGraph::combine(@bpgs);
+	my $string
+	### needs filling
+	return $string;
+}
 1;

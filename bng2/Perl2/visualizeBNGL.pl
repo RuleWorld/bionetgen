@@ -19,14 +19,19 @@ my $model = BNGModel->new();
 $model->initialize();
 
 my $filename = shift @ARGV;
+#my $type_of_viz = shift @ARGV;
 my $err = $model->readModel({file=>$filename}) ;
 if ($err) { print "ERROR:".$err."\n";}
+
+
 my @splits = split(/[.\\]/,$filename);
 pop @splits;
 
 my @rrules = @{$model->RxnRules};
 
 my @numbers;
+
+
 if (@ARGV) { @numbers = sort {$a <=> $b} @ARGV; } else { @numbers = (scalar @rrules + 1); }
 
 my $i = 0;
