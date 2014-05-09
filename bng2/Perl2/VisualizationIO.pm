@@ -52,6 +52,18 @@ sub GMLEdge
 	$string = " edge [ ".$string." ]";
 	return $string;
 }
+sub GMLEdge2
+{
+	my $source = shift @_;
+	my $target = shift @_;
+	my $type = shift @_;
+	my $string = sprintf "source %d target %d ",$source,$target;
+	$string .= stylingBPG('edge',$type);
+	$string = " edge [ ".$string." ]";
+	return $string;
+
+}
+
 
 sub toGML_yED
 {
@@ -274,6 +286,52 @@ sub styling
 }
 
 
+
+sub stylingBPG
+{
+	my $attrib = shift @_; # what attribute is required graphics/LabelGraphics
+	my $type = shift @_; # what node type the attribute is required for
+	my $label = @_ ? shift @_ : "";
+	
+	
+	my %shape = ( 'AtomicPattern'=>'roundrectangle', 'Transformation'=>'hexagon');
+	my %fill = ( 'AtomicPattern'=>"#FFCC00", 'Transformation'=>"#CC99FF" );
+	#my %outlineStyle = ('Rule'=>"dotted");
+	#my %anchor = ( '1'=>"t", '0'=>"c");
+	my %fontstyle =  ('Transformation'=>"bold" );
+	my %edgecolor = ('Reactant'=>"#000000",'Product'=>"#000000",
+	'Context'=>"#005aff", 'Syndel'=>"#ffa400", 
+	'Wildcard'=>"#000000", 'ProcessPair'=>"#CC99FF");
+	my %isdirected = ('Reactant'=>1,'Product'=>1,
+	'Context'=>1, 'Syndel'=>1, 
+	'Wildcard'=>1, 'ProcessPair'=>0);
+	
+	my $string = "";
+	my $q1 = " \"";
+	my $q2 = "\" ";
+	my $sp = " ";
+	if ($attrib eq 'node')
+	{
+		$string .= "type".$q1.$shape{$type}.$q2;
+		$string .= "fill".$q1.$fill{$type}.$q2;
+		$string = "graphics [ ".$string." ]";
+	}
+	elsif ($attrib eq 'nodelabel')
+	{
+		$string .= "label".$q1.$label.$q2;
+		$string .= "anchor".$q1."c".$q2;
+		$string = "LabelGraphics [ ".$string." ]";
+	}
+	elsif ($attrib eq 'edge')
+	{
+		$string .= "fill".$q1.$edgecolor{$type}.$q2;
+		if ($isdirected{$type}) { $string .= "targetArrow".$q1."standard".$q2; }
+		$string = "graphics [ ".$string." ]";
+	}
+	return $string;	
+}
+
+
 sub vizBPG
 {
 	# input is an array of rules
@@ -291,9 +349,65 @@ sub vizBPG
 		$bpgs[$i] = BipartiteGraph::makeRuleBipartiteGraph($rsgs[$i]);
 		}
 		
-	my $bpg = BipartiteGraph::combine(@bpgs);
-	my $string
-	### needs filling
+	my $bpg = BipartiteGraph::combine(\@bpgs);
+	BipartiteGraph::addWildcards($bpg);
+	BipartiteGraph::addProcessPairs($bpg);
+	#print BipartiteGraph::printGraph($bpg);
+	return toGML_yED_BPG($bpg);
+}
+
+
+sub toGML_yED_BPG
+{
+
+	my $bpg = shift @_;
+	my @nodestrings = ();
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my %nodehash;
+	foreach my $i(0..@nodelist-1)
+	{
+		my $node = $nodelist[$i];
+		my $label = BipartiteGraph::prettify($node);
+		$nodehash{$node} = $i;
+		my $type = (BipartiteGraph::isAtomicPattern($node)) ? 'AtomicPattern' : 'Transformation';
+		my $nodestyle = stylingBPG('node',$type,$label);
+		my $labelstyle = stylingBPG('nodelabel',$type,$label);
+		my $string = GMLNode($i,$label,$nodestyle,$labelstyle);
+		push @nodestrings, $string;
+	}
+	my @edgestrings = ();
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	foreach my $edge(@edgelist)
+	{
+		my ($node1,$node2,$type) = split ":",$edge;
+		# its typically $tr, $ap, $type
+		my $source;
+		my $target;
+		if ($type eq 'Reactant') { $source = $nodehash{$node2}; $target = $nodehash{$node1}; }
+		if ($type eq 'Product') { $source = $nodehash{$node1}; $target = $nodehash{$node2}; }
+		if ($type eq 'Context') { $source = $nodehash{$node2}; $target = $nodehash{$node1}; }
+		# wildcard, specific bond, 'Wildcard
+		if ($type eq 'Wildcard') { $source = $nodehash{$node2}; $target = $nodehash{$node1}; }
+		if ($type eq 'ProcessPair') { $source = $nodehash{$node2}; $target = $nodehash{$node1}; }
+		# syndel
+		if ($type eq 'Syndel') 
+		{
+		# check if it is a deletion transformation
+		if ($edge =~ /->$/)  { $source = $nodehash{$node2}; $target = $nodehash{$node1}; }
+		else { $source = $nodehash{$node1}; $target = $nodehash{$node2}; }
+
+		}
+		
+		my $string = GMLEdge2($source,$target,$type);
+		push @edgestrings, $string;
+	}
+	
+	my $string = "graph\n[\n directed 1\n";
+	$string .= join("\n",@nodestrings)."\n";
+	$string .= join("\n",@edgestrings)."\n";
+	$string .= "]\n";
+	
 	return $string;
 }
+
 1;

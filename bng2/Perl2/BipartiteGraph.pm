@@ -26,6 +26,26 @@ struct BipartiteGraph =>
 
 sub isAtomicPattern { return ($_[0] =~ '->') ? 0 : 1; }
 sub isTransformation { return ($_[0] =~ '->') ? 1 : 0; }
+sub isWildcard{ return ($_[0] =~ /\!\+/) ? 1 : 0; }
+sub listHas
+{
+	my @list = @{shift @_};
+	my $item = shift @_;
+	foreach my $check(@list)
+		{
+		if ($item eq $check) { return 1;}
+		}
+	return 0;
+}
+sub reverseTransformation
+{
+	my $tr = shift @_; #unprettified
+	my @splits = reverse split('->',prettify($tr));
+	my @splits2 = map ( join(',',sort split(',',$_)), @splits);
+	my $tr2 = unprettify(join '->',@splits2 );
+	return $tr2;
+}
+
 sub makeAtomicPattern { return StructureGraph::makeAtomicPattern(@_); }
 sub makeTransformation { return StructureGraph::makeTransformation(@_); }
 sub printGraph 
@@ -41,11 +61,11 @@ sub printGraph
 		}
 	
 	my $string = "";
-	$string .= "\n\nAtomicPatterns:\n";
+	$string .= "\n\nAtomicPatterns: ".(scalar @ap)."\n";
 	$string .= join("", map prettify($_)."\n", @ap);
-	$string .= "\n\nTransformations:\n";
+	$string .= "\n\nTransformations: ".(scalar @transf)."\n";
 	$string .= join("", map prettify($_)."\n", @transf);
-	$string .= "\n\nEdges:\n";
+	$string .= "\n\nEdges: ".(scalar @{$bpg->{'EdgeList'}})."\n";
 	$string .= join("", map $_."\n",@{$bpg->{'EdgeList'}});
 	return $string;
 	
@@ -241,7 +261,7 @@ sub getSyndelContext
 
 sub makeEdge
 {
-	my %shortname = ( 'r'=>"Reactant", 'p'=>"Product", 'c'=>"Context", 's'=>"Syndel", 'w'=>"Wildcard" );
+	my %shortname = ( 'r'=>"Reactant", 'p'=>"Product", 'c'=>"Context", 's'=>"Syndel", 'w'=>"Wildcard", 'pp'=>"ProcessPair" );
 	
 	my $node1 = shift @_;
 	my $node2 = shift @_;
@@ -256,13 +276,7 @@ sub findNode { return StructureGraph::findNode(@_); }
 sub hasType { return StructureGraph::hasType(@_); }
 sub hasSide { return StructureGraph::hasSide(@_); }
 sub printHash {return StructureGraph::printHash(@_); }
-sub findChildren
-{
-	my $nodelist = shift @_;
-	my $node = shift @_;
-	my $id = $node->{'ID'};
-	return grep listHas($_->{'Parents'},$id)==1, @$nodelist;
-}
+
 sub findParents
 {
 	my $nodelist = shift @_;
@@ -283,9 +297,54 @@ sub combine
 	
 	@{$bpgout->{'NodeList'}} = uniq @{$bpgout->{'NodeList'}};
 	@{$bpgout->{'EdgeList'}} = uniq @{$bpgout->{'EdgeList'}};
+
+	
 	
 	return $bpgout;
 
+}
+sub addWildcards
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @ap = grep (isAtomicPattern($_),@nodelist);
+	my @tr = grep (isTransformation($_),@nodelist);
+	my @wildcards = grep (isWildcard($_), @ap);
+	my @notwildcards = grep (!isWildcard($_), @ap);
+
+	foreach my $wc(@wildcards)
+		{
+		my @splits = split '\+', $wc;
+		my $string = $splits[0];
+		
+		my @matches = grep(index($_, $string) != -1, @notwildcards);
+		foreach my $match(@matches)
+			{
+			my $edge = makeEdge($wc,$match,'w');
+			push @{$bpg->{'EdgeList'}},$edge;
+			}
+		}
+	return;
+}
+sub addProcessPairs
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @trs = grep (isTransformation($_),@nodelist);
+	my %checked;
+	foreach my $tr(@trs) {$checked{$tr} = 0;}
+	foreach my $tr(@trs)
+		{
+		if ($checked{$tr}) {next;}
+		$checked{$tr} = 1;
+		my $rev = reverseTransformation($tr);
+		if(listHas(\@trs,$rev))
+			{
+			$checked{$rev} = 1;
+			my $edge = makeEdge($tr,$rev,'pp');
+			push @{$bpg->{'EdgeList'}},$edge;
+			}
+		}
 }
 
 sub makeRuleBipartiteGraph
@@ -307,6 +366,9 @@ sub makeRuleBipartiteGraph
 	foreach my $op(@graphop)
 	{
 		my $tr = makeTransformation(\@nodelist,$op);
+		# this is because we are currently not treating wildcard bond deletions
+		if(length $tr == 0) { next; }
+		
 		push @{$bpg->{'NodeList'}}, $tr;
 		push @transf, $tr;
 		
@@ -314,18 +376,21 @@ sub makeRuleBipartiteGraph
 		push @{$bpg->{'NodeList'}}, @$reac, @$prod;
 		foreach my $reactant (@$reac)
 		{
+			if (length $reactant == 0) {next;}
 			my $edge = makeEdge($tr,$reactant,'r');
 			push @{$bpg->{'NodeList'}}, $reactant;
 			push @{$bpg->{'EdgeList'}}, $edge;
 		}
 		foreach my $product (@$prod)
 		{
+			if (length $product == 0) {next;}
 			my $edge = makeEdge($tr,$product,'p');
 			push @{$bpg->{'NodeList'}}, $product;
 			push @{$bpg->{'EdgeList'}}, $edge;
 		}
 		foreach my $context(@contexts)
 		{
+			if (length $context == 0) {next;}
 			my $edge = makeEdge($tr,$context,'c');
 			push @{$bpg->{'NodeList'}}, $context;
 			push @{$bpg->{'EdgeList'}}, $edge;
@@ -337,6 +402,7 @@ sub makeRuleBipartiteGraph
 			my @syndels = getSyndelContext(\@nodelist,$op);
 			foreach my $syndel(@syndels)
 			{
+				if (length $syndel == 0) {next;}
 				my $edge = makeEdge($tr,$syndel,'s');
 				push @{$bpg->{'NodeList'}}, $syndel;
 				push @{$bpg->{'EdgeList'}}, $edge;
@@ -347,9 +413,6 @@ sub makeRuleBipartiteGraph
 	@{$bpg->{'NodeList'}} = uniq @{$bpg->{'NodeList'}};
 	@{$bpg->{'EdgeList'}} = uniq @{$bpg->{'EdgeList'}};
 	
-	#print join("\n",map prettify($_), @{$bpg->{'NodeList'}}); print "\n\n";
-	#print join("\n",@{$bpg->{'EdgeList'}}); print "\n\n";
-	print printGraph($bpg);
 	return $bpg;
 }
 

@@ -637,7 +637,7 @@ sub makeAtomicPattern
 		my $comp = findNode(\@nodelist,${$node->{'Parents'}}[0]);
 		my $mol = findNode(\@nodelist,${$comp->{'Parents'}}[0]);
 		my $string = $mol->{'Name'}."(".$comp->{'Name'}."~".$node->{'Name'}.")";
-		$ap = ($node->{'Name'} ne '?') ?  $string : undef;
+		$ap = ($node->{'Name'} ne '?') ?  $string : "";
 		}
 	elsif ($type eq 'BondState')
 		{
@@ -647,7 +647,7 @@ sub makeAtomicPattern
 			{
 			# it's a wildcard
 			my $string = $mols[0]->{'Name'}."(".$comps[0]->{'Name'}."!".$node->{'Name'}.")";
-			$ap = ($node->{'Name'} ne '?') ?  $string : undef;
+			$ap = ($node->{'Name'} ne '?') ?  $string : "";
 			}
 		else
 			{
@@ -702,15 +702,19 @@ sub makeTransformation
 		{
 		my $bond = findNode(\@nodelist,${$node->{'Parents'}}[0]);
 		my @comps = map (findNode(\@nodelist,$_), @{$bond->{'Parents'}});
-		my @leftstr = map ( makeAtomicPattern(\@nodelist,$_),@comps);
+		my @leftstr = sort map ( makeAtomicPattern(\@nodelist,$_),@comps);
 		my $rightstr = makeAtomicPattern(\@nodelist,$bond);
 		$tr = join($comma,@leftstr).$arrow.$rightstr;
 		}
 	elsif ($name eq 'DeleteBond')
 		{
 		my $bond = findNode(\@nodelist,${$node->{'Parents'}}[0]);
+		# bond wildcards are also being deleted when molecules are deleted
+		# how do you transform them into processes?
+		# need to talk to bngdev
 		my @comps = map (findNode(\@nodelist,$_), @{$bond->{'Parents'}});
-		my @rightstr = map ( makeAtomicPattern(\@nodelist,$_),@comps);
+		if (scalar @comps == 1) { return ""; }
+		my @rightstr = sort map ( makeAtomicPattern(\@nodelist,$_),@comps);
 		my $leftstr = makeAtomicPattern(\@nodelist,$bond);
 		$tr = $leftstr.$arrow.join($comma,@rightstr);
 		}
@@ -722,6 +726,8 @@ sub makeTransformation
 		}
 	elsif ($name eq 'DeleteMol')
 		{
+		# species deletion is interpreted as molecule deletion
+		# how to check? what to do?
 		my $mol = findNode(\@nodelist,${$node->{'Parents'}}[0]);
 		my $name = makeAtomicPattern(\@nodelist,$mol);
 		$tr = $name.$arrow;

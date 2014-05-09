@@ -46,7 +46,7 @@ foreach my $rrule(@rrules)
 	++$i;
 	my $n = scalar @$rrule;
 	my $reversible = $n==2 ? " reversible " : " ";
-	print "Processing".$reversible."rule ".$i."\n";
+	#print "Processing".$reversible."rule ".$i."\n";
 	my $j=-1;
 	
 	my %h = ("0"=>'f',"1"=>'r');
@@ -66,8 +66,9 @@ foreach my $rrule(@rrules)
 		my $outfile = join("\\",@splits)."_".$suffix.".gml";
 		open( my $fh, ">",$outfile);
 		print "Writing GML file... $outfile\n";
-		print $fh VisualizationIO::vizRules(\@rrs,\@rrnames);
+		print $fh VisualizationIO::vizBPG(\@rrs,\@rrnames);
 		close $fh;
+		
 		@rrs = ();
 		@rrnames = ();
 		$currentmax = @numbers ? shift @numbers : scalar @rrules+1;
