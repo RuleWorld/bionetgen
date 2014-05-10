@@ -8,7 +8,6 @@ use strict;
 use warnings;
 
 
-
 ###
 ###
 ###
@@ -261,22 +260,22 @@ sub writeMDL
 	}
 	$mdl .= "}\n\n";
 			
-	# Define parameter bloc 
+	# Define parameter block
 	my @py_param; 
     my $tpy_param = {}; 
 	my @tpy_keys = ('name', 'value', 'unit', 'type'); 
 	$mdl .= "\n/* Model Parameters */\n"; 
 	$mdl .= $indent."Nav = 6.022e8               /* Avogadro number based on a volume size of 1 cubic um */\n" unless (exists $plist->{"Nav"}); 
-	$tpy_param = {'name'=>'Nav', 'value'=>"6.022e8", 'unit'=>"", 'type'=>"Avogadro number for 1 um^3"};   
+	$tpy_param = {"name"=>"Nav", "value"=>"6.022e8", "unit"=>"", "type"=>"Avogadro number for 1 um^3"};   
 	#print "{"."'name':"."Nav,"."'value':"."6.022e8,"."'type':"."\"\","."'unit':"."Avogadro number for 1 um^3"."}";
         
-	push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
+	push(@py_param,"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
 	
     my $rxn_layer_t = 0.01; 
 	if ($iscomp){
 		$mdl .= $indent."rxn_layer_t = $rxn_layer_t\n";
 	    $tpy_param={'name'=>"rxn_layer_t",'value'=>"0.01",'unit'=>"um",'type'=>""}; 
-	    push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
+	    push(@py_param,"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
 	}
 
 	# Scale parameters for MDL units
@@ -291,7 +290,7 @@ sub writeMDL
 	    	$tcomp{$cname} = (defined $ssurf) ? $ssurf : $csize; 
 	    	$mdl .= $indent.$cname." = ".$tcomp{$cname}.($ssurf ? "  /*Surface area*/" : "")."\n"; 
 	    	$tpy_param = {'name'=>$cname,'value'=>$tcomp{$cname},'unit'=>$ssurf ? "um^2": "um^3",'type'=>""}; 
-	    	push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
+	    	push(@py_param,"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
 	    }
 	}
 	
@@ -342,7 +341,7 @@ sub writeMDL
 		      	}
 	    	}
 			$tpy_param->{'value'} = $tparam{$rconst}; 
-			$rpy_param{$rconst} = "{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"; 
+			$rpy_param{$rconst} = "{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"; 
 	    }
 	}    
 
@@ -382,7 +381,7 @@ sub writeMDL
     	if ($par->Type =~ /^Constant/) {
         	if (grep $_ eq $par->Name, @conc_array){
             	$tpy_param = {'name'=>$par->Name,'value'=>$par->evaluate(),'unit'=>"Number",'type'=>""}; 
-                push(@py_param,"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
+                push(@py_param,"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}"); 
           	}
      	}
     }
@@ -393,12 +392,12 @@ sub writeMDL
 		my $tpytext = "{"; 
 	    my $comp; 
 	    my $dim = ( $comp = $_->SpeciesGraph->Compartment) ?  $comp->SpatialDimensions : 3; 
-	    my $orient = ($dim == 2)? "\\'" : ","; 
-	    $tpytext .= "'name':".sprintf("\"Release_Site_s%d\",",$_->Index);
-	    $tpytext .= "'molecule':".sprintf("\"s%d\",",$_->Index);
-	    $tpytext .= "'shape':".sprintf("\"%s\",","OBJECT");
-	    $tpytext .= "'orient':".sprintf("\"%s\",",$orient);
-	    $tpytext .= "'quantity_type':".sprintf("\"%s\",","DENSITY");
+	    my $orient = ($dim == 2)? "'" : ","; 
+	    $tpytext .= "\"name\":".sprintf("\"Release_Site_s%d\",",$_->Index);
+	    $tpytext .= "\"molecule\":".sprintf("\"s%d\",",$_->Index);
+	    $tpytext .= "\"shape\":".sprintf("\"%s\",","OBJECT");
+	    $tpytext .= "\"orient\":".sprintf("\"%s\",",$orient);
+	    $tpytext .= "\"quantity_type\":".sprintf("\"%s\",","DENSITY");
 	    my $factor; 
 	    if ( $comp = $_->SpeciesGraph->Compartment){
 	    	$factor = ($dim == 2 )? "/vol_".$comp->Name : "/(Nav*vol_".$comp->Name.")"; 
@@ -406,7 +405,7 @@ sub writeMDL
 	    else{
 	    	$factor = "/(Nav*1000)"; 
 		}
-	    $tpytext .= "'quantity_expr':".sprintf("\"%s%s\",",$_->Concentration,$factor); 
+	    $tpytext .= "\"quantity_expr\":".sprintf("\"%s%s\",",$_->Concentration,$factor); 
 	    push(@py_SeedSpecies, $tpytext); 
 	}
 	     
@@ -433,38 +432,41 @@ sub writeMDL
 		my $pyrelsite = $relsite;
 		$pyrelsite =~ s/Scene.//g;
 		$pyrelsite =~ s/obj_wall/ALL/g;
-	    $py_SeedSpecies[$i] .= "'object_expr':".sprintf("\"%s\"}",$pyrelsite);
+	    $py_SeedSpecies[$i] .= "\"object_expr\":".sprintf("\"%s\"}",$pyrelsite);
 		$i++;
 	}
 	$mdl .= "\n}";
         
-    my $pytext=""; 
+    my $pytext="{\n"; 
     $i = 0; 	
-	
-    @py_param = map{sprintf("%d", ++$i).":".$_} @py_param;
-	$pytext .= "par_list={\n".$indent; 
+
+
+    #@py_param = map{sprintf("%d", ++$i).":".$_} @py_param;
+
+	$pytext .= "\"par_list\":[\n".$indent; 
     $pytext .= join(",\n$indent",@py_param); 
-	$pytext .= "}"; 
+	$pytext .= "],"; 
 
-	$pytext .= "\n\nmol_list={\n".$indent; 
+	$pytext .= "\n\n\"mol_list\":[\n".$indent; 
     $pytext .= join(",\n$indent",@py_species); 
-	$pytext .= "}";  
+	$pytext .= "],";  
 
     $i = 0; 	
-	@py_reactions = map{sprintf("%d", ++$i).":".$_} @py_reactions;
-    $pytext .= "\n\nrxn_list={\n".$indent; 
+	#@py_reactions = map{sprintf("%d", ++$i).":".$_} @py_reactions;
+    $pytext .= "\n\n\"rxn_list\":[\n".$indent; 
     $pytext .= join(",\n$indent",@py_reactions); 
-	$pytext .= "}";
+	$pytext .= "],";
 
 
     $i = 0; 	
-	@py_SeedSpecies = map{sprintf("%d", ++$i).":".$_} @py_SeedSpecies;
-	$pytext .= "\n\nrel_list={\n".$indent; 
+	#@py_SeedSpecies = map{sprintf("%d", ++$i).":".$_} @py_SeedSpecies;
+	$pytext .= "\n\n\"rel_list\":[\n".$indent; 
     $pytext .= join(",\n$indent",@py_SeedSpecies); 
-	$pytext .= "}"; 
-    	     
-	my $pyfile = File::Spec->catfile($mdlscript_filedir,"net.py");
-	
+	$pytext .= "]\n}"; 
+
+
+	#my $pyfile = File::Spec->catfile(,"net.py");
+	my $pyfile = "${path}${filebase}.bngl.json";
 	open (WRITEPYFILE, '>', $pyfile);
     print WRITEPYFILE $pytext; 
 	close(WRITEPYFILE);

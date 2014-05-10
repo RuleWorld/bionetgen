@@ -322,8 +322,8 @@ sub getMDLrxn
     $string .= " -> ";
     $string .= $product_expr;
     
-    $py_string .= "{'reactants':\"".$reactant_expr."\","; 
-    $py_string .= "'products':\"".$product_expr."\",";
+    $py_string .= "{\"reactants\":\"".$reactant_expr."\","; 
+    $py_string .= "\"products\":\"".$product_expr."\",";
    
    
     # Write the Ratelaw...
@@ -346,7 +346,7 @@ sub getMDLrxn
     #$string .= sprintf("   [%s$rxn_mult_temp]",$rxn->RateLaw->toString( $rxn_mult, 1, $plist ));
     my $rate_expr = sprintf("%s",$rxn->RateLaw->toString($rxn->StatFactor, 1, $plist)); 
     $string .= "    [".$rate_expr."]"; 
-    $py_string .= "'fwd_rate':\"".$rate_expr."\"}"; 
+    $py_string .= "\"fwd_rate\":\"".$rate_expr."\"}"; 
     push (@{$py_reactions}, $py_string); 
     if ($rxn->RxnRule)
     {  $string .= "       /* BNG ".$rxn->RxnRule->Name."  */" ;  }

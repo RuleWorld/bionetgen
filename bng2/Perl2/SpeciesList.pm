@@ -409,29 +409,29 @@ sub writeMDL
     # Define diffusion constants for compartments
     $string .= $indent."T = 298.15      /* Temperature, K */\n";
     $tpy_param = {'name'=>"T",'value'=>"298.25",'unit'=>"K",'type'=>""}; 
-    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+    push(@{$py_param},"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
    
     if (@{$model->CompartmentList->Array}) {
         $string .= $indent."h = rxn_layer_t      /* Thickness of 2D compartment, um */\n";
         $tpy_param = {'name'=>"h",'value'=>"rxn_layer_t",'unit'=>"um",'type'=>""}; 
-        push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");       
+        push(@{$py_param},"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");       
         }
     $string .= $indent."Rs = 0.002564      /* Radius of a (spherical) molecule in 3D compartment, um */\n";
     $tpy_param = {'name'=>"Rs",'value'=>"0.002564",'unit'=>"um",'type'=>""}; 
-    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+    push(@{$py_param},"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
  
     if (@{$model->CompartmentList->Array}) {
         $string .= $indent."Rc = 0.0015      /* Radius of a (cylindrical) molecule in 2D compartment, um */\n";
         $tpy_param = {'name'=>"Rc",'value'=>"0.0015",'unit'=>"um",'type'=>""}; 
-        push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+        push(@{$py_param},"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
         }
 
     $string .= $indent."gamma = 0.5722      /* Euler's constant */\n";
     $tpy_param = {'name'=>"gamma",'value'=>"0.5722",'unit'=>"",'type'=>"Euler's constant"}; 
-    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+    push(@{$py_param},"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
     $string .= $indent."KB = 1.3806488e-19     /* Boltzmann constant, cm^2.kg/K.s^2 */\n"; 
     $tpy_param = {'name'=>"KB",'value'=>"1.3806488e-19",'unit'=>"cm^2.kg/K.s^2",'type'=>"Boltzmann constant"}; 
-    push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+    push(@{$py_param},"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
   
     my %difconst = (); 
     my %difexp   = (); 	  
@@ -479,7 +479,7 @@ sub writeMDL
               my $tstring = "$indent"."mu_".$comp->Name;  
 	      $string .= $tstring." = 1e-9      /* Viscosity in compartment ".$comp->Name.", kg/um.s */\n"; 
 	      $tpy_param = {'name'=>"mu_".$comp->Name,'value'=>"1e-9",'unit'=>"kg/um.s",'type'=>"viscosity"}; 
-              push(@{$py_param},"{".join(",",map("'$_'".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
+              push(@{$py_param},"{".join(",",map("\"$_\"".":\"".$tpy_param->{$_}."\"", @tpy_keys))."}");
 	      }
          }      
     else {

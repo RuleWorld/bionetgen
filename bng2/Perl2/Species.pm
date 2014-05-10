@@ -89,11 +89,11 @@ sub writeMDL
     $string .= $indent.$indent.sprintf("DIFFUSION_CONSTANT_%dD = %s\n", $cdimension, $difconst);
     $string .= $indent."}\n";   
     
-    $py_string = $spec->Index.":{";
+    $py_string = "{";
     #$py_string .= "'name':"."'s".$spec->Index." /* ".$spec->SpeciesGraph->toString()."* /',";
-    $py_string .= "'name':"."\"s".$spec->Index."\",";
-    $py_string .= "'type':"."\"".sprintf("%dD",$cdimension)."\",";
-    $py_string .= "'dif':"."\"".sprintf("%s", $difconst)."\"" ;
+    $py_string .= "\"name\":"."\"s".$spec->Index."\",";
+    $py_string .= "\"type\":"."\"".sprintf("%dD",$cdimension)."\",";
+    $py_string .= "\"dif\":"."\"".sprintf("%s", $difconst)."\"" ;
     $py_string .= "}";
     
     push(@{$py_species},$py_string);
