@@ -11,6 +11,7 @@ no warnings 'redefine';
 # Perl Modules
 use Class::Struct;
 use List::Util qw(min max sum);
+use List::MoreUtils qw( uniq);
 use Data::Dumper;
 
 # BNG Modules
@@ -64,6 +65,19 @@ sub GMLEdge2
 
 }
 
+sub GMLEdge3
+{
+	my $source = shift @_;
+	my $target = shift @_;
+	my $type = shift @_; # should be uni or bi
+	my $string = sprintf "source %d target %d ",$source,$target;
+	if ($type eq 'bi')
+		{ $string .= "graphics [ fill \"#000000\" sourceArrow \"standard\" targetArrow \"standard\" ] ";}
+	else
+		{ $string .= "graphics [ fill \"#000000\" targetArrow \"standard\" ] ";}
+	$string = " edge [ ".$string." ]";
+	return $string;
+}
 
 sub toGML_yED
 {
@@ -294,10 +308,10 @@ sub stylingBPG
 	my $label = @_ ? shift @_ : "";
 	
 	
-	my %shape = ( 'AtomicPattern'=>'roundrectangle', 'Transformation'=>'hexagon');
-	my %fill = ( 'AtomicPattern'=>"#FFCC00", 'Transformation'=>"#CC99FF" );
+	my %shape = ( 'AtomicPattern'=>'roundrectangle', 'Transformation'=>'hexagon','Group'=>'roundrectangle');
+	my %fill = ( 'AtomicPattern'=>"#FFCC00", 'Transformation'=>"#CC99FF",'Group'=>"#FFFFFF" );
 	#my %outlineStyle = ('Rule'=>"dotted");
-	#my %anchor = ( '1'=>"t", '0'=>"c");
+	my %anchor = ( 'AtomicPattern'=>"c", 'Transformation'=>"c",'Group'=>"t" );
 	my %fontstyle =  ('Transformation'=>"bold" );
 	my %edgecolor = ('Reactant'=>"#000000",'Product'=>"#000000",
 	'Context'=>"#005aff", 'Syndel'=>"#ffa400", 
@@ -315,11 +329,13 @@ sub stylingBPG
 		$string .= "type".$q1.$shape{$type}.$q2;
 		$string .= "fill".$q1.$fill{$type}.$q2;
 		$string = "graphics [ ".$string." ]";
+		if ($type eq 'Group')
+		{ $string .= "outlineStyle".$q1."dotted".$q2; }
 	}
 	elsif ($attrib eq 'nodelabel')
 	{
 		$string .= "label".$q1.$label.$q2;
-		$string .= "anchor".$q1."c".$q2;
+		$string .= "anchor".$q1.$anchor{$type}.$q2;
 		$string = "LabelGraphics [ ".$string." ]";
 	}
 	elsif ($attrib eq 'edge')
@@ -352,8 +368,86 @@ sub vizBPG
 	my $bpg = BipartiteGraph::combine(\@bpgs);
 	BipartiteGraph::addWildcards($bpg);
 	BipartiteGraph::addProcessPairs($bpg);
+	BipartiteGraph::makeGroups($bpg);
 	#print BipartiteGraph::printGraph($bpg);
 	return toGML_yED_BPG($bpg);
+}
+
+
+sub vizGroups
+{
+	# input is an array of rules
+	my @rules = @{shift @_};
+	my @rulenames = @{shift @_};
+	
+	my $n = scalar @rules;
+	my @rsgs = () x $n;
+	my @bpgs = () x $n;
+	foreach my $i(0..$n-1)
+		{
+		my $rr = $rules[$i];
+		my $name = $rulenames[$i];
+		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i,$name);
+		$bpgs[$i] = BipartiteGraph::makeRuleBipartiteGraph($rsgs[$i]);
+		}
+		
+	my $bpg = BipartiteGraph::combine(\@bpgs);
+	BipartiteGraph::addWildcards($bpg);
+	BipartiteGraph::addProcessPairs($bpg);
+	#print BipartiteGraph::printGraph($bpg);
+	BipartiteGraph::makeGroups($bpg);
+	my ($bi,$uni) = BipartiteGraph::analyzeGroups($bpg); # these are array refs
+	return toGML_yED_groups($bi,$uni);
+	
+}
+sub toGML_yED_groups
+{
+	my @bi = @{shift @_};
+	my @uni = @{shift @_};
+	my @nodes;
+	foreach my $line ( (@bi,@uni) )
+	{
+		my @splits = split(/\s/,$line);
+		push @nodes, $splits[0];
+		push @nodes, $splits[1];
+	}
+	@nodes = uniq @nodes;
+	my %nodehash = StructureGraph::indexHash(\@nodes);
+	my @nodestrings = ();
+	foreach my $i(0..@nodes-1)
+	{
+		my $label = $nodes[$i];
+		my $id = $nodehash{$label};
+		my $nodestyle = "graphics [ type \"ellipse\" fill \"#FFFFFF\" ]";
+		my $labelstyle = "LabelGraphics [ label \"".$label."\" anchor \"c\" ]";
+		my $string = GMLNode($id,$label,$nodestyle,$labelstyle);
+		push @nodestrings,$string;
+	}
+
+	my @edgestrings;
+	foreach my $line(@bi)
+	{
+		my @splits = split(/\s/,$line);
+		my $source = $nodehash{$splits[0]};
+		my $target = $nodehash{$splits[1]};
+		my $string = GMLEdge3($source,$target,'bi');
+		push @edgestrings,$string;
+	}
+	foreach my $line(@uni)
+	{
+		my @splits = split(/\s/,$line);
+		my $source = $nodehash{$splits[0]};
+		my $target = $nodehash{$splits[1]};
+		my $string = GMLEdge3($source,$target,'uni');
+		push @edgestrings,$string;
+	}
+	
+	my $string = "graph\n[\n directed 1\n";
+	$string .= join("\n",@nodestrings)."\n";
+	$string .= join("\n",@edgestrings)."\n";
+	$string .= "]\n";
+	
+	return $string;
 }
 
 
@@ -363,16 +457,56 @@ sub toGML_yED_BPG
 	my $bpg = shift @_;
 	my @nodestrings = ();
 	my @nodelist = @{$bpg->{'NodeList'}};
+	my $hasgroups = (defined $bpg->{'NodeGroups'});
+	my $id_offset = 0;
+	
+	my %gid_temp;
+	my %gid;
+	if ($hasgroups) 
+		{
+		foreach my $node(@nodelist) { $gid_temp{$node} = ();}
+		$id_offset = (scalar @{$bpg->{'NodeGroups'}})-1; 
+		my @nodegroups = @{$bpg->{'NodeGroups'}};
+		foreach my $i(0..@nodegroups-1)
+			{
+			my $type = 'Group';
+			my $label = BipartiteGraph::groupName($nodegroups[$i]);
+			my $nodestyle = stylingBPG('node',$type,$label);
+			my $labelstyle = stylingBPG('nodelabel',$type,$label);
+			my $string = GMLNode($i,$label,$nodestyle,$labelstyle,undef,1);
+			
+
+			push @nodestrings,$string;
+			my @group = @{$nodegroups[$i]};
+			foreach my $node(@group)
+				{
+				push @{$gid_temp{$node}}, $i;
+				}
+				
+			}
+		foreach my $node(@nodelist)
+			{
+			my @gids = uniq @{$gid_temp{$node}}; 
+			if (scalar @gids == 1) { $gid{$node} = $gids[0]; }
+			}
+			$id_offset = scalar (keys %gid);
+		}
+
 	my %nodehash;
 	foreach my $i(0..@nodelist-1)
 	{
 		my $node = $nodelist[$i];
 		my $label = BipartiteGraph::prettify($node);
-		$nodehash{$node} = $i;
+		$nodehash{$node} = $id_offset+$i;
 		my $type = (BipartiteGraph::isAtomicPattern($node)) ? 'AtomicPattern' : 'Transformation';
 		my $nodestyle = stylingBPG('node',$type,$label);
 		my $labelstyle = stylingBPG('nodelabel',$type,$label);
-		my $string = GMLNode($i,$label,$nodestyle,$labelstyle);
+		my $string;
+	
+		if (defined $gid{$node})
+			{ $string = GMLNode($nodehash{$node},$label,$nodestyle,$labelstyle,$gid{$node});}
+		else
+			{ $string = GMLNode($nodehash{$node},$label,$nodestyle,$labelstyle);}
 		push @nodestrings, $string;
 	}
 	my @edgestrings = ();

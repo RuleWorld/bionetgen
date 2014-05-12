@@ -6,6 +6,8 @@ use POSIX qw(/ceil/);
 no warnings 'redefine';
 
 # how to use: perl visualizeBNGL.pl FULL_PATH_TO_BNGLFILE [list of starting numbers for different slices of the model]
+# how to use: perl visualizeBNGL.pl  FULL_PATH_TO_BNGLFILE [<subsetfunc> <subsetargs>]
+
 
 use Class::Struct;
 
@@ -41,6 +43,8 @@ if ($currentmax == 1) { $currentmax = shift @numbers};
 my $currentslice = 0;
 my @rrs = ();
 my @rrnames = ();
+
+
 foreach my $rrule(@rrules)
 {
 	++$i;
@@ -63,18 +67,25 @@ foreach my $rrule(@rrules)
 		++$currentslice;
 		my $suffix = $currentslice;
 		# have to pad this suffix to make sure files are named 001, 002.. do it later...
-		my $outfile = join("\\",@splits)."_".$suffix.".gml";
-		open( my $fh, ">",$outfile);
-		print "Writing GML file... $outfile\n";
-		print $fh VisualizationIO::vizBPG(\@rrs,\@rrnames);
-		close $fh;
+		#my $outfile = join("\\",@splits)."_".$suffix.".gml";
+		#open( my $fh, ">",$outfile);
+		#print "Writing GML file... $outfile\n";
+		#print $fh VisualizationIO::vizBPG(\@rrs,\@rrnames);
+		#print $fh VisualizationIO::vizRules(\@rrs,\@rrnames);
+		#close $fh;
 		
-		@rrs = ();
-		@rrnames = ();
+		#@rrs = ();
+		#@rrnames = ();
 		$currentmax = @numbers ? shift @numbers : scalar @rrules+1;
 		if ($currentmax > scalar @rrules+1) { $currentmax = scalar @rrules + 1;}
 	}
+	
+	
 }
 
 
+my $outfile = join("\\",@splits)."_groups.gml";
+open( my $fh, ">",$outfile);
+print "Writing GML file... $outfile\n";
+print $fh VisualizationIO::vizGroups(\@rrs,\@rrnames);
 

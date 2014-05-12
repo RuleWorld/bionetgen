@@ -22,6 +22,7 @@ struct BipartiteGraph =>
 	'Name' => '$', # a name which might come in handy to compare/combine rules
 	# of the form <transformationstring>:<atomicpatternstring>:<edgetype>
 	# or <wildcardpattern>:<atomicpatternstring>:Wildcard
+	'NodeGroups' => '@' # array of arrayrefs, each being a ref to a group of nodes	
 };
 
 sub isAtomicPattern { return ($_[0] =~ '->') ? 0 : 1; }
@@ -416,4 +417,185 @@ sub makeRuleBipartiteGraph
 	return $bpg;
 }
 
+sub makeGroups
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my @groups;
+	# isolate the process pairs 
+	
+	# create isgrouped to keep track of group assignments
+	my %isgrouped;
+	foreach my $node(@nodelist) {$isgrouped{$node} = 0;}
+	
+	# isolate and assign process pairs
+	my @processpairs = grep(/ProcessPair/,@edgelist);
+	foreach my $edge(@processpairs)
+	{
+		my @splits = split(':',$edge);
+		my @trs = splice @splits,0,2;
+		foreach my $tr(@trs) { $isgrouped{$tr} = 1; }
+		push @groups,\@trs;
+	}
+	
+	# identify unpaired transformations and add them to groups
+	my @trs = grep(/->/,@nodelist);
+	my @irr = grep( $isgrouped{$_} == 0, @trs);
+	foreach my $irr(@irr) 
+		{ 
+		my @grp = ($irr); 
+		$isgrouped{$irr} = 1;
+		push @groups,\@grp; 
+		}
+	
+	# isolate and assign reactant/product patterns
+	# note: these will be assigned to multiple groups
+	# this will be a problem during gml export
+	# check at that point when you're assigning group ids
+	my @reactprods = grep( /Reactant|Product/,@edgelist);
+	foreach my $edge(@reactprods)
+	{
+		my @splits = split(':',$edge);
+		my $tr = shift @splits;
+		my $ap =shift @splits;
+		foreach my $grp(@groups)
+			{
+			if (listHas($grp,$tr)) 
+				{ 
+				$isgrouped{$ap} = 1;
+				push @$grp, $ap; 
+				}
+			}
+	}
+	
+	# isolate and assign wildcard bonds
+	# note: these will be assigned to multiple groups
+	# this will be a problem during gml export
+	# check at that point when you're assigning group ids
+	my @wildcards = grep( /Wildcard/,@edgelist);
+	foreach my $edge(@wildcards)
+	{
+		my @splits = split(':',$edge);
+		my $wc = shift @splits;
+		my $ap = shift @splits;
+		foreach my $grp(@groups)
+		{
+		if (listHas($grp,$ap)) 
+			{ 
+			$isgrouped{$wc} = 1;
+			push @$grp, $wc; 
+			}
+		}
+	}
+	$bpg->{'NodeGroups'} = \@groups;
+}
+
+sub printGroups
+{
+	my $bpg = shift @_;
+	my @groups = @{$bpg->{'NodeGroups'}};
+	return map(("Group ".groupName($_)."\n".join("\n",@{$_})."\n\n",@groups));
+}
+
+sub groupName
+{
+	my @group = @{shift @_};
+	my @trs = grep( /->/,@group);
+	# assuming groups only have one process or a process pair
+	my $tr = $trs[0];
+	my $string;
+	if ( (index($tr, '~') != -1) )
+		{
+		# its a statechange
+		my @sides = sort split('->',$tr);
+		my @s1 = split(/\(|\)/,$sides[0]);
+		my @s2 = split(/\(|\)/,$sides[1]);
+		my $molname = $s1[0];
+		my @s3 = split(/~/,$s1[1]);
+		my @s4 = split(/~/,$s2[1]);
+		my $compname = $s3[0];
+		my @states = sort ($s3[1], $s4[1]);
+		$string = $molname."(".$compname."~".$states[0]."~".$states[1].")";
+		}
+	elsif ( (index($tr, '!') != -1) )
+		{
+		# its a bond operation
+		my @sides = split('->',$tr);
+		my $side = (index($sides[0], ',') != -1) ? $sides[0]: $sides[1];
+		my @mols = sort split(',',$side);
+		$string = join(":",@mols);
+		}
+	else 
+		{
+		# its a molecule add or delete opn
+		# is it add
+		my $type = index($tr, '>')==(length($tr)-1) ? 'delete' : 'add';
+		my $len = (length $tr) - 2;
+		my $offset = ($type eq 'add') ? 2 : 0;
+		$string = "+/-:".substr($tr,$offset,$len);
+		}
+	return $string;
+}
+sub analyzeGroups
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my @groups = @{$bpg->{'NodeGroups'}};
+	#print printGroups($bpg);
+	
+	# extract context
+	my @context = grep( /Context/, @edgelist);
+	my @syndel = grep( /Syndel/, @edgelist);
+	my @syn = grep( (index($_, '->') == 0), @syndel);
+	my @del = grep( (index($_, '->') != 0), @syndel);
+	my @uni = ();
+	my @bi = ();
+	
+	foreach my $i(0..@groups-1)
+	{
+		foreach my $j($i..@groups-1)
+		{
+			my @group1 = @{$groups[$i]};
+			my @group2 = @{$groups[$j]};
+			my $f = 0;
+			my $r = 0;
+			foreach my $p (@group1)
+			{
+				foreach my $q(@group2)
+				{
+					if ($p eq $q) { next; }
+					# see if $p is a transformation and $q is a pattern
+					if ((index($p, '->') != -1) and (index($q, '->') == -1) )
+					{
+						my $check = $p.":".$q.":";
+						my @reverse = grep ( index($_, $check) != -1, (@context,@syn,@del) );
+						my @forward = grep( index($_, $check) != -1, @del);
+						if (@forward > 0) {$f++;}
+						if (@reverse > 0) {$r++;}
+					}
+					# see if $q is a transformation and $p is a pattern
+					if ((index($p, '->') == -1) and (index($q, '->') != -1) )
+					{
+						my $check = $q.":".$p.":";
+						my @forward = grep ( index($_, $check) != -1, (@context,@syn,@del) );
+						my @reverse = grep( index($_, $check) != -1, @del);
+						if (@forward > 0) {$f++;}
+						if (@reverse > 0) {$r++;}
+					}
+				}				
+			}
+			my $groupname1 = groupName(\@group1);
+			my $groupname2 = groupName(\@group2);
+			my $string1 = $groupname1." ".$groupname2;
+			my $string2 = $groupname2." ".$groupname1;
+			if ($f > 0 and $r > 0) { push @bi, $string1." ".$f." ".$r; }
+			elsif ($f > 0 ) { push @uni, $string1." ".$f; }
+			elsif ($r > 0 ) { push @uni, $string2." ".$r; }
+		}
+	}
+	
+	return (\@bi,\@uni);
+}
 1;
