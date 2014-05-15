@@ -246,6 +246,24 @@ sub hasSide
 	return @nodes;
 }
 
+sub hasChildren
+{
+	my @nodelist = @{shift @_};
+	my $node = shift @_;
+	my $id = $node->{'ID'};
+	foreach my $n(@nodelist)
+	{
+		if ($n->{'Parents'})
+		{
+			my @parents = @{$n->{'Parents'}};
+			foreach my $p(@parents)
+			{
+				if ($p eq $id) { return 1;}
+			}
+		}
+	}
+	return 0;
+}
 sub hasParent
 {
 	my @nodelist = @{shift @_};
@@ -449,7 +467,7 @@ sub addRuleNode
 		remapNode($node,\%remap);
 		$node->{'Rule'} = $index;
 	}
-	my $node = makeNode('Rule',"R_".$name,$index);
+	my $node = makeNode('Rule',$name,$index);
 	$node->{'Rule'} = $index;
 	push @nodelist, $node;
 	my $rsg1 = makeStructureGraph('Rule',\@nodelist);
