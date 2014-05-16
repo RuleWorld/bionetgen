@@ -18,6 +18,8 @@ use Data::Dumper;
 use StructureGraph;
 use BipartiteGraph;
 
+sub listHas { return BipartiteGraph::listHas(@_); }
+
 struct GMLNode => 
 {
 	'ID' => '$',
@@ -427,7 +429,7 @@ sub toGML_rules_eqn
 		{
 			if ($node->{'Parents'})
 			{
-			foreach my $parent_id(@{$node->{'Parents'}}) 
+				foreach my $parent_id(@{$node->{'Parents'}}) 
 				{ 
 					$gmlnode->{'gid'} = $parent_id;
 				}
@@ -511,4 +513,76 @@ sub toGML_rules_eqn
 	return printGraph($gmlgraph);
 	
 }
+
+sub toGML_contact
+{
+	my $sg = shift @_;
+	my @nodelist = @{$sg->{'NodeList'}};
+	my @idlist = map{$_->{'ID'}} @nodelist;
+	my %indhash = StructureGraph::indexHash(\@idlist);
+	foreach my $node(@nodelist) { StructureGraph::remapNode($node,\%indhash); }
+	my @structnodes = grep $_->{'Type'} ne 'BondState', @nodelist;
+	
+	my @gmlnodes = ();
+	foreach my $node(@structnodes)
+	{
+		my $id = $node->{'ID'};
+		my $name = $node->{'Name'};
+		my $type = $node->{'Type'};
+		my $gmlnode = initializeGMLNode($id,$name,$node);
+		if ($node->{'Parents'})
+		{
+			foreach my $parent_id(@{$node->{'Parents'}}) 
+			{ 
+				$gmlnode->{'gid'} = $parent_id;
+			}
+		}
+		if (StructureGraph::hasChildren(\@structnodes,$node))
+		{
+			$gmlnode->{'isGroup'} = 1;
+		}
+		push @gmlnodes, $gmlnode;
+	}
+	
+	my @gmledges = ();
+	# draw the bonds
+	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
+	foreach my $node(@bondnodes)
+	{
+		my @parents = @{$node->{'Parents'}};
+		my $source;
+		my $target;
+		if (scalar @parents == 1)
+		{
+			$source = $node->{'ID'};
+			$target = $parents[0];
+		}
+		else
+		{
+			$source = $parents[0];
+			$target = $parents[1];		
+		}
+		my $gmledge = initializeGMLEdge($source,$target);
+		push @gmledges,$gmledge;
+	}
+	my %stylemap = ('Mol'=>2, 'Comp'=>3,
+	'BondState'=>3, 'CompState'=>4 );
+	foreach my $node(@gmlnodes)
+	{
+	my $object = $node->{'object'};
+	my $type = $object->{'Type'};
+	styleNode($node,$stylemap{$type});
+	}
+	
+	foreach my $edge(@gmledges)
+	{
+	styleEdge($edge);
+	}
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+}
+
 1;

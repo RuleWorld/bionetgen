@@ -137,11 +137,13 @@ sub processLine
 	if ($type eq'rules')
 	{
 		my @rsgs = ();
+		print "Building rules...\n";
 		foreach my $i (0..@rules-1)
 		{
 		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rules[$i],$i,$rules[$i]->Name);
 		}	
 		my $rsg = StructureGraph::combine2(\@rsgs);
+		print "Building graph...\n";
 		$string = Visualization::toGML_rules($rsg);
 		$outfile = $basename.'_'.$suffix.'.gml';
 	}
@@ -149,13 +151,30 @@ sub processLine
 	if ($type eq 'rules_eqn')
 	{
 		my @rsgs = ();
+		print "Building rules...\n";
 		foreach my $i (0..@rrules -1)
 		{
 		$rsgs[$i] = StructureGraph::makeRuleBipartiteGraph($rrules[$i],$i);
 		}	
 		my $rsg = StructureGraph::combine2(\@rsgs);
 		#print StructureGraph::printGraph($rsg);
+		print "Building graph...\n";
 		$string = Visualization::toGML_rules_eqn($rsg);
+		$outfile = $basename.'_'.$suffix.'.gml';
+	}
+	if ($type eq 'contact')
+	{
+		my @rsgs = ();
+		print "Building rules...\n";
+		foreach my $i (0..@rules-1)
+		{
+		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rules[$i],$i,$rules[$i]->Name);
+		}	
+		my $rsg = StructureGraph::combine2(\@rsgs);
+		print "Building contact map...\n";
+		my $cmap = BipartiteGraph::makeContactMap($rsg);
+		print "Building graph...\n";
+		$string = Visualization::toGML_contact($cmap);
 		$outfile = $basename.'_'.$suffix.'.gml';
 	}
 	
@@ -166,8 +185,9 @@ sub processLine
 	open (my $fh, ">", $outfile);
 	print $fh $string;
 	close $fh;
+	print "\n\n\n";
 	return; 	
-	#print $string;
+	
 	
 }
 
