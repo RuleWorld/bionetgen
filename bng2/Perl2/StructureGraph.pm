@@ -474,6 +474,32 @@ sub addRuleNode
 	return $rsg1;
 }
 
+sub addPatternNode
+{
+	my $psg = shift @_;
+	my $index = shift @_;
+	my $prefix = shift @_;
+	my $name = $prefix.$index;
+	my @nodelist = @{$psg->{'NodeList'}};
+	my %remap = map { $_->{'ID'} => $index.".".$_->{'ID'}} @nodelist;
+	foreach my $node (@nodelist ) 
+	{
+		remapNode($node,\%remap);
+	}
+	my $node = makeNode('Pattern',$name,$index);
+	foreach my $n(@nodelist)
+			{
+			if ($n->{'Type'} eq 'Mol')
+				{
+				@{$n->{'Parents'}} = ( $index );
+				}
+			}
+	push @nodelist,$node;
+	my $psg1 = makeStructureGraph('Pattern',\@nodelist);
+	return $psg1;
+
+}
+
 sub makeRuleStructureGraph
 {
 	# Get rule reactants and products and map
@@ -517,6 +543,37 @@ sub makeRuleStructureGraph
 	$rsg = addGraphOperations($rsg);
 	$rsg = addRuleNode($rsg,$index,$name);
 	return $rsg;	
+}
+
+sub makeRuleBipartiteGraph
+{
+	# inputs a reversible rule (i.e. 2d array)
+	# returns a structure graph where some nodes have type "Rule"
+	my @rrule = @{shift @_};
+	my $rule_ind = shift @_;
+	my $reversible = ( scalar @rrule == 2 ) ? 1 : 0;
+	my $name = $rrule[0]->Name;
+	
+	my $rr = $rrule[0];
+	my @reac = @{$rr->Reactants};
+	my @prod= @{$rr->Products};
+
+	my @reac_psg = map ( makePatternStructureGraph($reac[$_],$_), 0..@reac-1);
+	my @prod_psg = map ( makePatternStructureGraph($prod[$_],$_), 0..@prod-1);
+	
+	# add species nodes
+	@reac_psg = map ( addPatternNode($reac_psg[$_],"0.".$_,"R"), 0..@reac_psg-1);
+	@prod_psg = map ( addPatternNode($prod_psg[$_],"1.".$_,"P"), 0..@prod_psg-1);
+
+	# add rule node
+	my @psg = (@reac_psg,@prod_psg);
+	my $rbpg = combine2(\@psg);
+	$rbpg = addRuleNode($rbpg,$rule_ind,$name);
+	#mark reversible nature of rule
+	my @rulenode = grep($_->{'Type'} eq 'Rule', @{$rbpg->{'NodeList'}});
+	$rulenode[0]->{'Reversible'} = $reversible;
+	
+	return $rbpg;
 }
 
 # functions dealing with hashes

@@ -82,65 +82,91 @@ sub processLine
 	
 	my $line = shift @_;
 	my $basename = shift @_;
-	my @rrules = @{shift @_};
+	print "Processing line \'".$line."\'.\n";
+	if ($line =~ /^#.*$/) {print "Doing nothing.\n"; return;}
+	if ($line =~ /^(.*)#.*/) 
+	{print "Ignoring comments.\n"; processLine($1,$basename, shift @_) ; return;}
+	$line =~ s/\s*$//g;
+	if (length $line == 0) { print "Nothing on this line.\n"; return;}
+	my @all_rrules = @{shift @_};
 	my $string;
 	
-	print "Processing line \'".$line."\'.\n";
+
 	my @splits = split (/\s+/,$line);
-	my @types = qw(rules_text rules_ rules contact regulatory process);
+	my @types = qw(rules_text rules_eqn rules contact regulatory process);
 	my %typehash = map {$_ => 1} @types;
 	#@typehash{@types} = (1) x scalar @types;
 	
 	my $suffix = shift @splits;
 	my $type = shift @splits;
+	my $string;
+	my $outfile;
 	
 	if (! $typehash{$type} ) 
 	{ print "Error! Bad vis type \'".$type."\'.\n"; return 1;}
 	my @rules;
+	my @rrules;
 	if (@splits)
 	{
 		my @numbers = ();
 		foreach my $item(@splits) { push @numbers, getRange($item); }
 		@numbers = sort {$a <=> $b} uniq(@numbers);
-		if (max @numbers > scalar @rrules) { print "Number/Range provided exceeds number of rules."; return;}
-		foreach my $num(@numbers) { push @rules,@{$rrules[$num]}; }
+		if (max @numbers > scalar @all_rrules) { print "Number/Range provided exceeds number of rules."; return;}
+		foreach my $num(@numbers)
+		{ 
+		push @rrules, $all_rrules[$num];
+		push @rules,@{$all_rrules[$num]}; 
+		}
 	}
 	else
 	{
-		foreach my $rrule(@rrules) { push @rules, @$rrule; }
+		foreach my $rrule(@all_rrules) 
+			{ 
+			push @rrules, $rrule;
+			push @rules, @$rrule; 
+			}
 	}
 	
 	#print join("\n",map {$_->toString()} @rules);
 	if ($type eq 'rules_text') 
 	{ 
-		my $string = join("\n",map {$_->toString()} @rules);  
-		my $outfile = $basename.'_'.$suffix.'.txt';
-		print "Writing to file: ".$outfile."\n\n";
-		open (my $fh, ">", $outfile);
-		print $fh $string;
-		close $fh;
-		return; 
+		$string = join("\n",map {$_->toString()} @rules);  
+		$outfile = $basename.'_'.$suffix.'.txt';
 	}
-	my @rsgs = ();
+	
 	if ($type eq'rules')
 	{
+		my @rsgs = ();
 		foreach my $i (0..@rules-1)
 		{
 		$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rules[$i],$i,$rules[$i]->Name);
 		}	
-		
 		my $rsg = StructureGraph::combine2(\@rsgs);
 		$string = Visualization::toGML_rules($rsg);
-		
-
-		my $outfile = $basename.'_'.$suffix.'.gml';
-		print "Writing to file: ".$outfile."\n\n";
-		open (my $fh, ">", $outfile);
-		print $fh $string;
-		close $fh;
-		return; 
+		$outfile = $basename.'_'.$suffix.'.gml';
 	}
-		
+	
+	if ($type eq 'rules_eqn')
+	{
+		my @rsgs = ();
+		foreach my $i (0..@rrules -1)
+		{
+		$rsgs[$i] = StructureGraph::makeRuleBipartiteGraph($rrules[$i],$i);
+		}	
+		my $rsg = StructureGraph::combine2(\@rsgs);
+		#print StructureGraph::printGraph($rsg);
+		$string = Visualization::toGML_rules_eqn($rsg);
+		$outfile = $basename.'_'.$suffix.'.gml';
+	}
+	
+	
+	
+	
+	print "Writing to file: ".$outfile."\n\n";
+	open (my $fh, ">", $outfile);
+	print $fh $string;
+	close $fh;
+	return; 	
 	#print $string;
 	
 }

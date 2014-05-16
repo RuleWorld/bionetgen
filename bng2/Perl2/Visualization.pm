@@ -254,7 +254,6 @@ sub toGML_rules
 		# remaining nodes are structural and nonbonds
 		if ($isstruct)
 		{
-			if ($type eq 'Mol') { $gmlnode->{'gid'} = $node->{'Rule'}; }
 			if ($node->{'Parents'})
 			{
 				foreach my $parent_id(@{$node->{'Parents'}}) 
@@ -262,10 +261,14 @@ sub toGML_rules
 					$gmlnode->{'gid'} = $parent_id;
 				}
 			}
+			else 
+			{ 
+				$gmlnode->{'gid'} = $node->{'Rule'}; 
+			}
 			if (StructureGraph::hasChildren(\@structnodes,$node))
-				{
-					$gmlnode->{'isGroup'} = 1;
-				}
+			{
+				$gmlnode->{'isGroup'} = 1;
+			}
 		}
 		push @gmlnodes, $gmlnode;
 	}
@@ -287,11 +290,11 @@ sub toGML_rules
 		}
 		# ignore bonds that are made or removed
 		elsif ($node->{'Side'} eq 'both')
-		{
+		{ 			
 			$source = $parents[0];
-			$target = $parents[1];
+			$target = $parents[1]; 
 		}
-		else { next; }
+		else {next;}
 		my $gmledge = initializeGMLEdge($source,$target);
 		push @gmledges,$gmledge;
 	}
@@ -351,7 +354,7 @@ sub toGML_rules
 	}
 	
 	# styling
-	my %stylemap = ('Rule'=>1, 'Mol'=>2, 'Comp'=>3,
+	my %stylemap = ('Rule'=>1,'Pattern'=>1, 'Mol'=>2, 'Comp'=>3,
 	'BondState'=>3, 'CompState'=>4, 'GraphOp'=>5 );
 	
 	foreach my $node(@gmlnodes)
@@ -372,5 +375,140 @@ sub toGML_rules
 	return printGraph($gmlgraph);
 }
 
-
+sub toGML_rules_eqn
+{
+	my $sg = shift @_; #imports a rule bipartite graph
+	my @nodelist = @{$sg->{'NodeList'}};
+	#remap all ids to integers
+	my @idlist = map{$_->{'ID'}} @nodelist;
+	my %indhash = StructureGraph::indexHash(\@idlist);
+	foreach my $node(@nodelist) { StructureGraph::remapNode($node,\%indhash); }
+	my @structnodes = grep ( 
+	{ $_->{'Type'} ne 'BondState' 
+	and $_->{'Type'} ne 'Rule'
+	and $_->{'Type'} ne 'Pattern'} @nodelist);
+	#print scalar @nodelist; print "\n";
+	#print scalar @structnodes; print "\n";
+	
+	my @gmlnodes = ();
+	foreach my $node(@nodelist)
+	{
+		my $id = $node->{'ID'};
+		my $name = $node->{'Name'};
+		my $type = $node->{'Type'};
+				
+		# ignore if it is a bond with two parents
+		if ( $type eq 'BondState' and scalar @{$node->{'Parents'}} == 2) 
+		{ next; }
+		
+		my $gmlnode = initializeGMLNode($id,$name,$node);
+		my $isstruct = 1;
+		
+		# treat patterns
+		if ($type eq 'Pattern') 
+		{ 
+			$gmlnode->{'isGroup'} = 1; 
+			#$gmlnode->{'gid'} = $node->{'Rule'};
+			$isstruct = 0;
+		}
+		
+		# treat wildcard bonds
+		if ($type eq 'BondState') 
+		{
+			my @comps = @{$node->{'Parents'}};
+			my $comp = StructureGraph::findNode(\@nodelist,$comps[0]);
+			my @mols = @{$comp->{'Parents'}};
+			my $mol = StructureGraph::findNode(\@nodelist,$mols[0]);
+			my @sp = @{$mol->{'Parents'}};
+			$gmlnode->{'gid'} = $sp[0]; 
+			$isstruct = 0; 
+		}
+		if ($isstruct)
+		{
+			if ($node->{'Parents'})
+			{
+			foreach my $parent_id(@{$node->{'Parents'}}) 
+				{ 
+					$gmlnode->{'gid'} = $parent_id;
+				}
+			}
+			if (StructureGraph::hasChildren(\@structnodes,$node))
+			{
+				$gmlnode->{'isGroup'} = 1;
+			}
+		}
+		push @gmlnodes, $gmlnode;
+	}
+	
+	my @gmledges = ();
+	# draw the bonds
+	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
+	foreach my $node(@bondnodes)
+	{
+		my @parents = @{$node->{'Parents'}};
+		my $source;
+		my $target;
+		if (scalar @parents == 1)
+		{
+			$source = $node->{'ID'};
+			$target = $parents[0];
+		}
+		else
+		{
+			$source = $parents[0];
+			$target = $parents[1];		
+		}
+		my $gmledge = initializeGMLEdge($source,$target);
+		push @gmledges,$gmledge;
+		
+	}
+	# draw edges to rules
+	
+	my @rulenodes = grep ( { $_->{'Type'} eq 'Rule' } @nodelist);
+	my @patterns = grep ( { $_->{'Type'} eq 'Pattern' } @nodelist);
+	foreach my $rule(@rulenodes)
+	{
+	#find the participating species
+	my $id = $rule->{'ID'};
+	my @participating = grep ( { $_->{'Rule'} eq $id } @patterns);
+	my @reac = grep ( { index($_->{'Name'},'R')==0 } @participating);
+	my @prod = grep ( { index($_->{'Name'},'P')==0} @participating);
+	my $targetarrow = 1;
+	my $sourcearrow = $rule->{'Reversible'} ? 1 : 0;
+	foreach my $patt(@reac)
+		{
+		my $source = $patt->{'ID'};
+		my $target = $id;
+		my $gmledge = initializeGMLEdge($source,$target,$targetarrow,$sourcearrow);
+		push @gmledges,$gmledge;
+		}
+	foreach my $patt(@prod)
+		{
+		my $source = $id;
+		my $target = $patt->{'ID'};
+		my $gmledge = initializeGMLEdge($source,$target,$targetarrow,$sourcearrow);
+		push @gmledges,$gmledge;
+		}
+	}
+	
+	my %stylemap = ('Rule'=>5,'Pattern'=>1, 'Mol'=>2, 'Comp'=>3,
+	'BondState'=>3, 'CompState'=>4 );
+	foreach my $node(@gmlnodes)
+	{
+	my $object = $node->{'object'};
+	my $type = $object->{'Type'};
+	styleNode($node,$stylemap{$type});
+	}
+	
+	foreach my $edge(@gmledges)
+	{
+	styleEdge($edge);
+	}
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+	
+}
 1;
