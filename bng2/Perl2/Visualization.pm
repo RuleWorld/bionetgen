@@ -95,7 +95,7 @@ sub initializeGMLEdge
 sub styleNode
 {
 	my $gmlnode = shift @_;
-	my $arg = shift @_;
+	my $arg = @_ ? shift @_ : 0;
 	# defaults
 	$gmlnode->{'type'} = "roundrectangle";
 	$gmlnode->{'fill'} = "#FFFFFF";
@@ -105,7 +105,7 @@ sub styleNode
 	# node, Rule, yED
 	if ($arg==1) { $gmlnode->{'outlineStyle'} = "dotted"; }
 	# node, Mol, yED
-	if ($arg==2) { $gmlnode->{'fontStyle'} = "bold"; }
+	if ($arg==2) { $gmlnode->{'fontStyle'} = "bold"; $gmlnode->{'fill'} = "#D2D2D2";}
 	# node, Comp/BondState, yED
 	if ($arg==3) { $gmlnode->{'fill'} = "#D2D2D2"; }
 	# node, CompState, yED
@@ -725,4 +725,53 @@ sub toGML_regulatory
 	$gmlgraph->{'Edges'} =\@gmledges;
 	return printGraph($gmlgraph);
 }
+
+sub toGML_process
+{
+	my @bi = @{shift @_};
+	my @uni = @{shift @_};
+	my @nodelist = ();
+	my @edgelist = ();
+	foreach my $node((@bi,@uni))
+		{
+		my @splits = split " ",$node;
+		push @nodelist,$splits[0];
+		push @nodelist,$splits[1];
+		}
+	@nodelist = uniq @nodelist;
+	my %indhash = StructureGraph::indexHash(\@nodelist);
+	my @gmlnodes = ();
+	foreach my $node(@nodelist)
+	{
+		my $gmlnode = initializeGMLNode($indhash{$node},$node,$node);
+		styleNode($gmlnode);
+		push @gmlnodes,$gmlnode;
+	}		
+	
+	my @gmledges = ();
+	foreach my $node(@bi)
+	{
+		my @splits = split " ",$node;
+		my $source = $indhash{$splits[0]};
+		my $target = $indhash{$splits[1]};
+		my $gmledge = initializeGMLEdge($source,$target,1,1);
+		styleEdge($gmledge);
+		push @gmledges,$gmledge;
+	}
+	foreach my $node(@uni)
+	{
+		my @splits = split " ",$node;
+		my $source = $indhash{$splits[0]};
+		my $target = $indhash{$splits[1]};
+		my $gmledge = initializeGMLEdge($source,$target,1,0);
+		styleEdge($gmledge);
+		push @gmledges,$gmledge;
+	}
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+}
+
 1;

@@ -207,6 +207,34 @@ sub processLine
 		$outfile = $basename.'_'.$suffix.'.gml';
 	}
 	
+	if ($type eq 'process')
+	{
+		my $n = scalar @rules;
+		my @rsgs = () x $n;
+		my @bpgs = () x $n;
+		print "Building rules...\n";
+		foreach my $i(0..$n-1)
+			{
+			my $rr = $rules[$i];
+			my $name = $rr->{'Name'};
+			$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i,$name);
+			} 
+		print "Decomposing rules into sites, processes and context...\n";
+		foreach my $i(0..$n-1)
+			{
+			$bpgs[$i] = BipartiteGraph::makeRuleBipartiteGraph($rsgs[$i]);
+			}			
+		my $bpg = BipartiteGraph::combine(\@bpgs);
+		BipartiteGraph::addWildcards($bpg);
+		BipartiteGraph::addProcessPairs($bpg);
+		print "Building groups...\n";
+		BipartiteGraph::makeGroups($bpg);
+		my ($bi,$uni) = BipartiteGraph::analyzeGroups($bpg);
+		print "Building graph...\n";
+		$string = Visualization::toGML_process($bi,$uni);
+		$outfile = $basename.'_'.$suffix.'.gml';
+	
+	}
 	
 	print "Writing to file: ".$outfile."\n\n";
 	open (my $fh, ">", $outfile);
