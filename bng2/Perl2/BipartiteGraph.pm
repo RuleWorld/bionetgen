@@ -27,6 +27,8 @@ struct BipartiteGraph =>
 
 sub isAtomicPattern { return ($_[0] =~ '->') ? 0 : 1; }
 sub isTransformation { return ($_[0] =~ '->') ? 1 : 0; }
+sub isSyn { return ($_[0] =~ m/^\->/) ? 1 : 0; }
+sub isDel { return ($_[0] =~ m/->$/) ? 1 : 0; }
 sub isWildcard{ return ($_[0] =~ /\!\+/) ? 1 : 0; }
 sub listHas
 {

@@ -80,12 +80,14 @@ sub initializeGMLEdge
 	#my $object = @_ ? shift @_ : "";
 	my $targetArrow = @_ ? shift @_ : 0;
 	my $sourceArrow = @_ ? shift @_ : 0;
+	my $object = @_ ? shift @_ : 0;
 	
 	my $gmledge = GMLEdge->new();
 	$gmledge->{'source'} = $source;
 	$gmledge->{'target'} = $target;
 	if ($targetArrow) { $gmledge->{'targetArrow'} = 1;}
 	if ($sourceArrow) { $gmledge->{'sourceArrow'} = 1;}
+	if ($object) { $gmledge->{'object'} = $object; }
 	
 	return $gmledge;
 }
@@ -115,15 +117,68 @@ sub styleNode
 		$gmlnode->{'type'} = 'hexagon';
 		$gmlnode->{'fontStyle'} = 'italic';
 	}
+	# groups on bipartite graph, yED
+	if ($arg==6) { $gmlnode->{'fill'} = "#fddbca"; }
+	# pattern on bipartite graph
+	if ($arg==7) { $gmlnode->{'fill'} = "#FFCC00"; }
+	# transformation on bipartite graph, yED
+	if ($arg==8)
+	{
+		$gmlnode->{'fill'} = "#CC99FF"; 
+		$gmlnode->{'type'} = 'hexagon';
+	}
+	
 	return;
 }
 
 sub styleEdge
 {
 	my $gmledge = shift @_;
-	my $arg = @_ ? shift @_ : 1 ;
+	my $arg = @_ ? shift @_ : 0 ;
 	# defaults
 	$gmledge->{'fill'} = "#000000";
+	
+	# reactant/wildcard
+	if ($arg==1) 
+		{
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 0;
+		}
+	# product
+	if ($arg==2) 
+		{
+		$gmledge->{'sourceArrow'} = 0;
+		$gmledge->{'targetArrow'} = 1;
+		}
+	# context
+	if ($arg==3) 
+		{
+		$gmledge->{'fill'} = "#4C8BFF";
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 0;
+		}
+	# syn context
+	if ($arg==4) 
+		{
+		$gmledge->{'fill'} = "#cc3333";
+		$gmledge->{'sourceArrow'} = 0;
+		$gmledge->{'targetArrow'} = 1;
+		}
+	# del context
+	if ($arg==5) 
+		{
+		$gmledge->{'fill'} = "#cc3333";
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 1;
+		}
+	# process pair
+	if ($arg==6) 
+		{
+		$gmledge->{'fill'} = "#CC99FF";
+		$gmledge->{'sourceArrow'} = 0;
+		$gmledge->{'targetArrow'} = 0;
+		}
+	
 	return;
 }
 
@@ -585,4 +640,89 @@ sub toGML_contact
 	return printGraph($gmlgraph);
 }
 
+
+sub toGML_regulatory
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my @groups = @{$bpg->{'NodeGroups'}};
+	
+	my @allnodes = ();
+	push @allnodes, @nodelist;
+	push @allnodes, @groups;
+	my %indhash = StructureGraph::indexHash( \@allnodes );
+
+	my @gmlnodes = ();
+	foreach my $node(@allnodes)
+	{
+		my $id = $indhash{$node};
+		my $name;
+		my $type;
+		my $gmlnode;
+		
+		if (ref($node))
+		{
+			$name = BipartiteGraph::groupName($node);
+			$type = 'Group';
+			$gmlnode = initializeGMLNode($id,$name,$node);
+			$gmlnode->{'isGroup'} = 1;
+		}
+		else 
+		{
+			$name = BipartiteGraph::prettify($node);
+			$type = BipartiteGraph::isTransformation( $node ) ? 'Transformation' : 'AtomicPattern';
+			$gmlnode = initializeGMLNode($id,$name,$node);
+			my $gid;
+			foreach my $grp (@groups)
+			{
+				if (listHas($grp,$node)) { $gid = $indhash{$grp}; last;}
+			}
+			$gmlnode->{'gid'} = $gid;
+		}
+		push @gmlnodes, $gmlnode;
+	}
+	
+	my @gmledges = ();
+	foreach my $edge( @edgelist )
+	{
+		my @splits = split(":",$edge);
+		my $source = $indhash{$splits[0]};
+		my $target = $indhash{$splits[1]};
+		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
+		push @gmledges,$gmledge;
+	}
+	
+	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8);
+	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
+	'Syn'=>4,'Del'=>5,'ProcessPair'=>6);
+		
+	foreach my $node(@gmlnodes)
+	{
+		if ($node->{'isGroup'}) 
+			{ styleNode($node,$nodestyle{'Group'});}
+		elsif ( BipartiteGraph::isTransformation( $node->{'object'}) ) 
+			{ styleNode($node,$nodestyle{'Transformation'}); }
+		else
+			{ styleNode($node,$nodestyle{'AtomicPattern'});}
+			
+	}
+	
+	foreach my $edge(@gmledges)
+	{
+		my $object = $edge->{'object'};
+		my @splits = split ":", $object;
+		my $type = $splits[2];
+		if ($type eq 'Syndel')
+			{
+			if (BipartiteGraph::isSyn($splits[0])) { $type = 'Syn' };
+			if (BipartiteGraph::isDel($splits[0])) { $type = 'Del' };
+			}
+		styleEdge($edge,$edgestyle{$type});
+	}
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+}
 1;
