@@ -243,11 +243,11 @@ class SBML2BNGL:
                     rateR, nr = (self.removeFactorFromMath(
                     math.getRightChild().deepCopy(), rProduct, rReactant))
                 else:
-                    rateL, nl = self.removeFactorFromMath(math, rReactant,
+                    rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
                                                           rProduct)
                     rateL = "if({0}>= 0,{0},0)".format(rateL)
-                    rateR, nr = self.removeFactorFromMath(math, rReactant,
-                                                          rProduct)
+                    rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
+                                                          rReactant)
                     rateR = "if({0}< 0,-({0}),0)".format(rateR)
                     nl, nr = 1,1
             else:
@@ -422,7 +422,6 @@ class SBML2BNGL:
             sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,functions)
             
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
-
             if len(rawRules['parameters']) >0:
                 for parameter in rawRules['parameters']:
                     parameters.append('r%d_%s %f' % (index+1, parameter[0], parameter[1]))
