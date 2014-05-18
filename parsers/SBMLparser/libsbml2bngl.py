@@ -669,7 +669,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         evaluate =  evaluation(len(observables),translator)
 
         rules.extend(artificialRules)
-    
     commentDictionary = {}
     if atomize:
         commentDictionary['notes'] = 'This is an atomized translation of an SBML model created on {0}.'.format(time.strftime("%d/%m/%Y"))
@@ -679,8 +678,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     meta = parser.getMetaInformation(commentDictionary)
 
 
-
-    finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,set(observables),set(rules),functions,compartments,outputFile)
+    from collections import OrderedDict
+    finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,list(OrderedDict.fromkeys(observables)),list(OrderedDict.fromkeys(rules)),functions,compartments,outputFile)
     
     #print outputFile
     
@@ -1034,12 +1033,12 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
     #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='config/speciesEquivalences.json')    
-    #processFile3('XMLExamples/curated/BIOMD0000000256.xml',customDefinitions=None,atomize=True)    
+    processFile3('XMLExamples/curated/BIOMD0000000229.xml',customDefinitions=None,atomize=True)    
     #processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/non_curated/')
     #statFiles()
     #main2()
-    print readFromString('dsfsdf','config/reactionDefinitions.json',False)
+    #print readFromString('dsfsdf','config/reactionDefinitions.json',False)
     #processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
