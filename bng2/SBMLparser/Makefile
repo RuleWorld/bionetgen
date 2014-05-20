@@ -6,6 +6,7 @@ DIST = ./dist
 
 
 all: 
+	python updateDistribution.py
 	python pyinstaller2/pyinstaller.py sbmlTranslator.spec ;
 	cp -r ./config ${DIST} ;
 
