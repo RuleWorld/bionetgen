@@ -154,7 +154,12 @@ sub readString
     my $string = shift;  # compartment string to parse
     my $plist  = shift;  # parameter list
 
+	# Remove leading label, if any
+	# FIXME: label shouldn't be allowed to begin with a number -- LAH
+    $string =~ s/^\s*\w+\s*:\s+//;
+
     # Read name (required argument)
+    # FIXME: compartment name shouldn't be allowed to begin with a number -- LAH
     $string =~ s/^\s*([A-Za-z_0-9]+)//   or return "Invalid compartment name in $string";
     my $name = $1;
 
