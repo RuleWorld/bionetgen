@@ -551,7 +551,7 @@ sub toXML
 	$xml .= $model->MoleculeTypesList->toXML($indent);
 
 	# Compartments
-	$xml .= $model->CompartmentList->toXML($indent);
+	$xml .= $model->CompartmentList->toXML($indent, $plist);
 
 	# Species
 	if (@{$model->Concentrations}){

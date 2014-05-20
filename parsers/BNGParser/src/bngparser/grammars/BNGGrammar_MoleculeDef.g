@@ -39,7 +39,8 @@ scope{
 }
 : 
   ({gParent.netGrammar}? INT | ) // We should deprecate this eventually --LAH
-  ((STRING | INT) COLON)?
+//  ((STRING | INT) COLON)?
+  (STRING COLON)?
   s3=STRING (LPAREN (
   (s1=site_def {$molecule_def::sites.add($s1.st);}
   (COMMA s2=site_def {$molecule_def::sites.add($s2.st);})*) 

@@ -49,7 +49,8 @@ scope{
 }
 : 
   ({gParent.netGrammar}? INT | ) // We should deprecate this eventually --LAH
-  ((STRING | INT) COLON)?
+//  ((STRING | INT) COLON)?
+  (STRING COLON)?
   (s1=observable_type) // Now required. Was optional previously.
   s2=STRING {gParent.memory.put($s2.text,new Register(0.0,"observable"));}
   ({gParent.netGrammar}? LBRACKET MATCHONCE RBRACKET | ) 

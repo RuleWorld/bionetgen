@@ -159,7 +159,8 @@ scope{
   $function_def::lmemory.putAll(memory);
 }
 :
-  ((STRING | INT) COLON)?
+//  ((STRING | INT) COLON)?
+  (STRING COLON)?
   s1=STRING LPAREN 
   parameter=(s2=STRING
   {
@@ -190,6 +191,7 @@ compartments_block
   
 compartment
 :
+  (STRING COLON)?
   s1=STRING INT s3=expression[memory] (s2=STRING)? 
   -> compartments_block(id={$s1.text},
                         dimensions={$INT.text},

@@ -32,7 +32,8 @@ scope{
 parameter_def[Map<String,Register> lmemory]
 :
   ({gParent.netGrammar}? INT |  ) // We should deprecate this eventually --LAH
-  ((STRING | INT) COLON)?
+//  ((STRING | INT) COLON)?
+  (STRING COLON)?
   s1=STRING (BECOMES)? 
   expression[lmemory]
   {
