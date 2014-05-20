@@ -108,10 +108,13 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
     suite2 = unittest.TestSuite()
     suite3 = unittest.TestSuite()
-    ran = range(1,464)
-    #ran.remove(52)
-    #ran.remove(205)
-    #ran.remove(235)
+    ran = range(1,469)
+    '''
+    ran.remove(52)
+    ran.remove(205)
+    ran.remove(235)
+    ran.remove(371)    
+    '''
     #ran = [229]
     '''
     ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,

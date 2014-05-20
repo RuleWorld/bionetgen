@@ -72,7 +72,7 @@ def resolveDependencyGraphHelper(dependencyGraph, reactant, memory,
                     continue
                 elif element in memory:
                     logMess('ERROR','dependency cycle detected on {0}'.format(element))
-                    print 'Detected cycle', element
+                    print 'Detected cycle', element,memory
                     return []
                 baseElement = resolveDependencyGraphHelper(dependencyGraph,element, 
                                                            memory + [element], withModifications)
@@ -92,7 +92,7 @@ def addToDependencyGraph(dependencyGraph, label, value):
         dependencyGraph[label].append(value)
 
 
-def dependencyGraph(dependencyGraph, reaction, classification):
+def bindingReactionsAnalysis(dependencyGraph, reaction, classification):
     '''
     adds addBond based reactions based dependencies to the dependency graph
     '''
@@ -133,8 +133,8 @@ def lexicallyIdentifyModificationCandidate(reactant,tmpCandidate,equivalenceTran
         
     '''
     
-def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
-    def selectBestCandidate(reactant, candidates, dependencyGraph):
+def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyzer):
+    def selectBestCandidate(reactant, candidates, dependencyGraph,sbmlAnalyzer):
         tmpCandidates = []
         modifiedElements = []
         unevenElements = []
@@ -219,9 +219,18 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
         #print ';;;',tmpCandidates[0]
         if len(candidates) == 1 and len(candidates[0]) == 1 and \
         candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
+            
+            lexCandidate,translationKeys,conventionDict = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,tmpCandidates[0])
+            print lexCandidate,translationKeys,conventionDict
             candidates = []
-            modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
-            if x[0] in tmpCandidates[0] and type(x[1]) is not tuple}
+            #FIXME:this doesn't make any sense
+            #so if theres an existing modification it will just take it? wtf
+            
+            #modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
+            #if x[0] in tmpCandidates[0] and type(x[1]) is not tuple}
+            
+            
+            modificationCandidates = {}            
             if modificationCandidates == {}:
                 logMess('WARNING','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}.'.format(reactant))
                 tmpCandidates[0] = [reactant]
@@ -229,7 +238,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
                 if molecule in modificationCandidates:
                     tmpCandidates[0][idx] = modificationCandidates[molecule]
             return [tmpCandidates[0]], unevenElements
-
+        print '---',tmpCandidates[0],unevenElements,reactant
         return [tmpCandidates[0]], unevenElements
 
     prunnedDependencyGraph = deepcopy(dependencyGraph)
@@ -242,7 +251,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator):
         if len(candidates) == 1 and type(candidates[0][0]) == tuple:
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
-            candidates, uneven = selectBestCandidate(element[0], candidates, prunnedDependencyGraph)
+            candidates, uneven = selectBestCandidate(element[0], candidates, prunnedDependencyGraph,sbmlAnalyzer)
             if uneven != []:
                 unevenElementDict[element[0]] = (uneven)
         if candidates is None:
@@ -647,7 +656,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     ####dependency graph
     #binding reactions
     for reaction, classification in zip(rules, classifications):
-        dependencyGraph(database.dependencyGraph,
+        bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
     
     #catalysis reactions
@@ -693,6 +702,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                 and tmp2 not in database.dependencyGraph[namingEquivalence[3][0]]:
                 if all(x in database.dependencyGraph for x in tmp):
                     database.dependencyGraph[namingEquivalence[3][0]] = [tmp]
+                    
     #user defined stuff
     for element in database.labelDictionary:
         if len(database.labelDictionary[element][0]) == 0 or element == \
@@ -703,12 +713,12 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
             database.labelDictionary[element][0])]
     #####sct
     prunnedDependencyGraph, weights, unevenElementDict = \
-    consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator)
+    consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
     #FIXME: I'm conatminating these data structures somewhere. In here
     #im just calling the original generator to recover them.
     classifications, equivalenceTranslator, eequivalenceTranslator, \
         indirectEquivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
-        
+    
     weights = sorted(weights, key=lambda rule: rule[1])
     #print {x:str(database.translator[x]) for x in database.translator}
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 

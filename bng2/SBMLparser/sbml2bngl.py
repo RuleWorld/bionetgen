@@ -53,8 +53,8 @@ class SBML2BNGL:
       if modelHistory:
           tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
           tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
-          metaInformation['creatorEmail'] = libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail()
-          metaInformation['creatorName'] = tmp
+          metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
+          metaInformation['creatorName'] = "'" + tmp + "'"
       for idx in range(lista.getSize()):
           biol,qual =  lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
           if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
@@ -243,11 +243,11 @@ class SBML2BNGL:
                     rateR, nr = (self.removeFactorFromMath(
                     math.getRightChild().deepCopy(), rProduct, rReactant))
                 else:
-                    rateL, nl = self.removeFactorFromMath(math, rReactant,
+                    rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
                                                           rProduct)
                     rateL = "if({0}>= 0,{0},0)".format(rateL)
-                    rateR, nr = self.removeFactorFromMath(math, rReactant,
-                                                          rProduct)
+                    rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
+                                                          rReactant)
                     rateR = "if({0}< 0,-({0}),0)".format(rateR)
                     nl, nr = 1,1
             else:
@@ -422,7 +422,6 @@ class SBML2BNGL:
             sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,functions)
             
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
-
             if len(rawRules['parameters']) >0:
                 for parameter in rawRules['parameters']:
                     parameters.append('r%d_%s %f' % (index+1, parameter[0], parameter[1]))
@@ -674,7 +673,6 @@ class SBML2BNGL:
             else:
                 extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
             pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
-        
         from copy import copy
         for initialAssignment in self.model.getListOfInitialAssignments():
             symbol = initialAssignment.getSymbol()
@@ -686,12 +684,18 @@ class SBML2BNGL:
 
             param2 = [x for x in param if '{0} '.format(symbol) not in x]
             zparam2 = [x for x in zparam if '{0}'.format(symbol) not in x]
+            '''
             if (len(param2) != len(param)) or (len(zparam) != len(zparam2)):
                 param2.append('{0} {1}'.format(symbol,math))
                 param = param2
                 zparam = zparam2
+            '''
+            if pparam[symbol][1] == None:
+                param2.append('{0} {1}'.format(symbol,math))
+                param = param2
+                zparam = zparam2
             else:
-                initialConditions2 = [x for x in initialConditions if '{0}()'.format(symbol) not in x]
+                initialConditions2 = [x for x in initialConditions if '{0}('.format(symbol) not in x]
                 initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
                 initialConditions = initialConditions2
         return param,zparam,initialConditions
@@ -796,7 +800,11 @@ def standardizeName(name):
                                 "-":"_",
                                 ".":"_",
                                 '?':"unkn",
-                                ',':'_'}
+                                ',':'_',
+                                '[':'__',
+                                  ']':'__',
+                                  '>':'_',
+                                  '<':'_'}
                                 
     for element in sbml2BnglTranslationDict:
         name = name.replace(element,sbml2BnglTranslationDict[element])

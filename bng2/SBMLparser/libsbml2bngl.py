@@ -226,23 +226,25 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
     '''
     one of the library's main entry methods. Process data from a string
     '''
-    reader = libsbml.SBMLReader()
-    document = reader.readSBMLFromString(inputString)
-    parser =SBML2BNGL(document.getModel(),useID)
-    
-    bioGrid = False
-    if bioGrid:
-        loadBioGrid()
-    database = structures.Databases()
-    namingConventions = 'config/namingConventions.json'
-    
-    if atomize:
-        translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
-    else:    
-        translator={} 
-
-    return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-2]
-
+    try:
+        reader = libsbml.SBMLReader()
+        document = reader.readSBMLFromString(inputString)
+        parser =SBML2BNGL(document.getModel(),useID)
+        
+        bioGrid = False
+        if bioGrid:
+            loadBioGrid()
+        database = structures.Databases()
+        namingConventions = 'config/namingConventions.json'
+        
+        if atomize:
+            translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
+        else:    
+            translator={} 
+        
+        return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-2]
+    except:
+        return -5
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
     this method goes through the list of functions and removes all
@@ -550,7 +552,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
     param,zparam,initialConditions = parser.getInitialAssignments(translator,param,zparam,molecules,initialConditions)
-
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
@@ -667,7 +668,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         evaluate =  evaluation(len(observables),translator)
 
         rules.extend(artificialRules)
-    
     commentDictionary = {}
     if atomize:
         commentDictionary['notes'] = 'This is an atomized translation of an SBML model created on {0}.'.format(time.strftime("%d/%m/%Y"))
@@ -677,8 +677,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     meta = parser.getMetaInformation(commentDictionary)
 
 
-
-    finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,set(observables),set(rules),functions,compartments,outputFile)
+    from collections import OrderedDict
+    finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,list(OrderedDict.fromkeys(observables)),list(OrderedDict.fromkeys(rules)),functions,compartments,outputFile)
     
     #print outputFile
     
@@ -1028,15 +1028,16 @@ if __name__ == "__main__":
     #processDatabase()
     
     #main()
-    #processFile3('XMLExamples/noncurated/MODEL2463576061.xml')
+    #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
-    #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='config/speciesEquivalences.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000256.xml',customDefinitions=None,atomize=True)    
+    #processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions='reactionDefinitions/speciesEquivalence19.json')    
+    processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions=None,atomize=True)    
     #processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/non_curated/')
     #statFiles()
     #main2()
+    #print readFromString('dsfsdf','config/reactionDefinitions.json',False)
     #processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter
