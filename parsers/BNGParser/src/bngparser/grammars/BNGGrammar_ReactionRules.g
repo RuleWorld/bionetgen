@@ -64,8 +64,6 @@ reactionLabel returns [String label]
   $label = "";
 }
 :
-//  (STRING {$label += $STRING.text + " ";}
-//  |INT {$label += $INT.text + " ";})+
   STRING{$label += $STRING.text;} COLON
 ;
 

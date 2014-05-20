@@ -43,7 +43,6 @@ action
   generate_hybrid_model {actions.add($generate_hybrid_model.st);} |
   simulate_method {actions.add($simulate_method.st);} | 
   read_file {actions.add($read_file.st);} | 
-//  write_file {actions.add($write_file.st);} | 
   write_model {actions.add($write_model.st);} | 
   write_xml {actions.add($write_xml.st);} | 
   write_network {actions.add($write_network.st);} |
@@ -129,9 +128,6 @@ scope{
   simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";} | 
   simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";} | 
   simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";} | 
-//  write_mfile[$simulate_method::actions] {$simulate_method::method = "writeMfile";} | 
-//  write_mexfile[$simulate_method::actions] {$simulate_method::method = "writeMexfile";} | 
-//  write_network[$simulate_method::actions] {$simulate_method::method = "writeNetwork";} |
   parameter_scan[$simulate_method::actions] {$simulate_method::method = "parameter_scan";}
   -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
 ;
@@ -200,29 +196,6 @@ scope{
   RPAREN SEMI? 
   -> action(id={$READFILE.text},optionMap={$read_file::actions})
 ;
-
-//write_file
-//scope{
-//  Map<String,String> actions;
-//}
-//@init{
-//  $write_file::actions = new HashMap<String,String>();
-//}
-//: 
-//  write_type
-//  LPAREN (LBRACKET (write_par_def (COMMA write_par_def)*)? RBRACKET)?
-//  RPAREN SEMI? 
-//  -> action(id={$write_type.text})
-//;
-
-//write_type
-//: 
-//  WRITEFILE  |
-//  WRITEMODEL |
-//  WRITEXML   
-//  WRITENET   | 
-//  WRITESBML  | 
-//;
 
 write_model
 scope{
@@ -407,47 +380,6 @@ write_mdl_args
 :
   ps_par_def
 ;
-
-//write_m_file[Map<String,String> map]
-//: 
-//  WRITEMFILE LPAREN (LBRACKET
-//  ((write_m_par_def[map]) 
-//  (COMMA write_m_par_def[map])*)?
-//  RBRACKET)? RPAREN SEMI?
-//;
-//
-//write_mex_file[Map<String,String> map]
-//: 
-//  WRITEMEXFILE LPAREN LBRACKET
-//  ((ps_par_def|write_m_par_def[map]) 
-//  (COMMA ps_par_def|write_m_par_def[map])*)?
-//  RBRACKET RPAREN SEMI?
-//;
-//
-//write_m_par_def[Map<String,String> map]
-//: 
-//  ATOL ASSIGNS f1=FLOAT {map.put($ATOL.text,$f1.text);} | 
-//  RTOL ASSIGNS f2=FLOAT {map.put($RTOL.text,$f2.text);} | 
-//  T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);})  | 
-//  T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);}) | 
-//  N_STEPS ASSIGNS i3=INT {map.put($N_STEPS.text,$i3.text);} | 
-//  SPARSE ASSIGNS i4=INT {map.put($SPARSE.text,$i4.text);} | 
-//  BDF ASSIGNS i5=INT {map.put($BDF.text,$i5.text);}
-//;
-
-//write_network[Map<String,String> map]
-//: 
-//  WRITENETWORK LPAREN (LBRACKET 
-//  (
-//  (ps_par_def|simulate_par_def[map] |
-//    s1=TEXTREACTION ASSIGNS i1=INT {map.put($s1.text,$i1.text);} |
-//    s2=TEXTSPECIES ASSIGNS  i2=INT {map.put($s2.text, $i2.text);})
-//  (COMMA (ps_par_def|simulate_par_def[map] |
-//    s3=TEXTREACTION ASSIGNS i3=INT {map.put($s3.text,$i3.text);} |
-//    s4=TEXTSPECIES ASSIGNS  i4=INT {map.put($s4.text, $i4.text);}))
-//  *)?
-//  RBRACKET)? RPAREN SEMI?
-//;
 
 set_concentration 
 scope{

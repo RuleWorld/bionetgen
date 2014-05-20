@@ -45,7 +45,8 @@ scope{
 }
 :
   ({gParent.netGrammar}? INT | ) // We should deprecate this eventually --LAH
-  ((STRING | INT) COLON)? 
+//  ((STRING | INT) COLON)?
+  (STRING COLON)? 
   pre_species_def[$seed_species_def::molecules,$seed_species_def::bonds,counter] 
   {
     //There needs to need a space between species and the expression token, so we go back and make sure there was one
