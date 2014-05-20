@@ -1,0 +1,22 @@
+begin model
+begin parameters
+  kf   1
+  kr   1
+  VOL  1
+end parameters
+begin compartments
+  C  3  VOL
+end compartments
+begin molecule types
+  A(a)
+end molecule types
+begin seed species
+  A(a)@C 100
+end seed species
+begin reaction rules
+  A(a) + A(a) <-> A(a!1).A(a!1)  kf,kr
+end reaction rules
+end model
+
+generate_network({overwrite=>1})
+writeXML()

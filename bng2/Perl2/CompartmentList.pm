@@ -197,11 +197,12 @@ sub toXML
 {
     my $clist  = shift;
     my $indent = shift;
+    my $plist  = (@_) ? shift : undef;
 
     my $string = $indent."<ListOfCompartments>\n";
   
     foreach my $comp (@{$clist->Array}){
-        $string .= $comp->toXML("  ".$indent);
+        $string .= $comp->toXML("  ".$indent, $plist);
     }
 
     $string .= $indent."</ListOfCompartments>\n";

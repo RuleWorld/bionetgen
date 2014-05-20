@@ -24,12 +24,15 @@ that generate a reaction can help identify and debug situations like this.
 * Added instructions to Makefile.cmake for Mac OS X 10.9+ users regarding
 modifications that must be made to build Network3.
 
-* Fixed bug where cBNGL fails to produce an error when zero-order synthesis 
-products do not have a compartment.
+* Bug fixes
 
-* Fixed bug where BNG should throw an error if an unrecognized block name is encountered.
+** An error is now thrown if zero-order synthesis products do not have compartments.
 
-* Fixed bug where BNG switches to "compartmental" mode even if the 'compartments' block is empty.
+** An error is now thrown if an unrecognized block name is encountered.
+
+** BNG will no longer switch to "compartmental" mode if the 'compartments' block is empty.
+
+** Expressions for compartment volumes are now correctly evaluated when generating a BNG-XML file.
 
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
