@@ -571,6 +571,7 @@ sub toGML_rules_eqn
 
 sub toGML_contact
 {
+	
 	my $sg = shift @_;
 	my @nodelist = @{$sg->{'NodeList'}};
 	my @idlist = map{$_->{'ID'}} @nodelist;
