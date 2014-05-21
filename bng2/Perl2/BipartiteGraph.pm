@@ -618,9 +618,9 @@ sub makeContactMap
 					@{$rsg->{'NodeList'}};
 	
 	my @ap = uniq map makeAtomicPattern(\@nodelist,$_), @nodelist;
+
 	my %cmap;
 	my @bonds;
-	my @hasbonds;
 	
 	# assigning mols
 	my @mols = grep !/\(/, @ap;
@@ -638,6 +638,7 @@ sub makeContactMap
 		my @arr = ();
 		$cmap{$1}{$2} = \@arr;
 	}
+	
 	
 	# assigning comp states
 	my @compstates = grep /~/,@ap;
@@ -660,8 +661,6 @@ sub makeContactMap
 		my $mol2 = $1; 
 		my $comp2 = $2;
 		push @bonds, $mol1." ".$comp1." ".$mol2." ".$comp2;
-		push @hasbonds, $mol1." ".$comp1;
-		push @hasbonds, $mol2." ".$comp2;
 	}
 	
 	# building the contact map
@@ -691,7 +690,6 @@ sub makeContactMap
 	foreach my $bond(@bonds)
 	{
 		my @splits = split " ",$bond;
-		#print $splits[0].":",$splits[1].",",$splits[2].":",$splits[3]."\n";
 		my $comp1 = findComp(\@new_nodes,$splits[0],$splits[1]);
 		my $comp2 = findComp(\@new_nodes,$splits[2],$splits[3]);
 		my @parents = sort ($comp1,$comp2);
@@ -713,8 +711,10 @@ sub findComp
 	my @nodes = grep $_->{'Name'} eq $molname, @nodelist;
 	my $mol_id = $nodes[0]->{'ID'};
 	@nodes = grep listHas($_->{'Parents'},$mol_id),
-				grep $_->{'Name'} eq $compname, 
+				grep $_->{'Name'} eq $compname,
+				grep $_->{'Type'} eq 'Comp',
 				@nodelist;
+	
 	return $nodes[0]->{'ID'};
 }
 	
