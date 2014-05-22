@@ -290,7 +290,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     
 def finalText(comments,param,molecules,species,observables,rules,functions,compartments,fileName):
     #output = open(fileName,'w')
-    
     output = StringIO.StringIO()
     output.write(comments.decode('ascii','ignore'))
     output.write('begin model\n')

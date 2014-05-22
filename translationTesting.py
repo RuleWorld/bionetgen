@@ -44,7 +44,7 @@ class TestOne(ParametrizedTestCase):
         print self.param
         libsbml2bngl.analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % self.param, 'reactionDefinitions/reactionDefinition7.json',
                     False, 'config/namingConventions.json',
-                    'raw/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=False,bioGrid=False)
+                    'complex/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
 
 
 class TestEval(ParametrizedTestCase):
@@ -108,10 +108,14 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
     suite2 = unittest.TestSuite()
     suite3 = unittest.TestSuite()
-    ran = range(1,464)
-    #ran.remove(52)
-    #ran.remove(205)
-    #ran.remove(235)
+    ran = [302]
+    
+    ''' 
+    ran.remove(205)
+    ran.remove(224)
+    ran.remove(235)
+    ran.remove(371)    
+    '''
     #ran = [229]
     '''
     ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,
@@ -119,7 +123,7 @@ if __name__ == "__main__":
            340, 452, 286, 399, 445, 285, 457, 74, 250, 334, 227, 205, 339, 151, 
            424, 14, 153, 105, 407, 451, 332, 326, 255, 356]
     ''' 
-    #ran = [229]
+    #ran = [73]
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [120]    
     for index in ran:

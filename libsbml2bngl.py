@@ -552,7 +552,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
     param,zparam,initialConditions = parser.getInitialAssignments(translator,param,zparam,molecules,initialConditions)
-
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
@@ -1029,11 +1028,11 @@ if __name__ == "__main__":
     #processDatabase()
     
     #main()
-    #processFile3('XMLExamples/noncurated/MODEL2463576061.xml')
+    #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
-    #processFile3('XMLExamples/curated/BIOMD0000000005.xml',customDefinitions='config/speciesEquivalences.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000229.xml',customDefinitions=None,atomize=True)    
+    #processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions='reactionDefinitions/speciesEquivalence19.json')    
+    processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions=None,atomize=True)    
     #processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/non_curated/')
     #statFiles()
