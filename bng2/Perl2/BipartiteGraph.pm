@@ -428,6 +428,7 @@ sub makeRuleBipartiteGraph
 sub makeGroups
 {
 	my $bpg = shift @_;
+
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my @groups;
@@ -560,6 +561,7 @@ sub analyzeGroups
 	my @del = grep( (index($_, '->') != 0), @syndel);
 	my @uni = ();
 	my @bi = ();
+	my @all = ();
 	
 	foreach my $i(0..@groups-1)
 	{
@@ -602,9 +604,10 @@ sub analyzeGroups
 			elsif ($f > 0 ) { push @uni, $string1." ".$f; }
 			elsif ($r > 0 ) { push @uni, $string2." ".$r; }
 		}
+		push @all, groupName($groups[$i]);
 	}
 	
-	return (\@bi,\@uni);
+	return (\@bi,\@uni,\@all);
 }
 
 

@@ -731,15 +731,8 @@ sub toGML_process
 {
 	my @bi = @{shift @_};
 	my @uni = @{shift @_};
-	my @nodelist = ();
+	my @nodelist = @{shift @_};;
 	my @edgelist = ();
-	foreach my $node((@bi,@uni))
-		{
-		my @splits = split " ",$node;
-		push @nodelist,$splits[0];
-		push @nodelist,$splits[1];
-		}
-	@nodelist = uniq @nodelist;
 	my %indhash = StructureGraph::indexHash(\@nodelist);
 	my @gmlnodes = ();
 	foreach my $node(@nodelist)
