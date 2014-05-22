@@ -220,11 +220,11 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                         break
             #print newTmpCandidates,unevenElements
         #print ';;;',tmpCandidates[0]
-        if len(candidates) == 1 and len(candidates[0]) == 1 and \
+                        
+        #if all the candidates are about modification changes to a complex
+        #then try to do it through lexical analysis
+        if all([len(candidate)==1 for candidate in candidates]) and \
         candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
-            if reactant == 'EGF_EGFRm2':
-                print 'hola'
-             
             lexCandidate,translationKeys,tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,tmpCandidates[0])
             #FIXME: this is iffy. is it always an append modification? could be prepend
             if lexCandidate !=None:
@@ -242,7 +242,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
         
             #FIXME:this doesn't make any sense
             #so if theres an existing modification it will just take it? wtf
-            
             #modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
             #if x[0] in tmpCandidates[0] and type(x[1]) is not tuple}
             
@@ -256,6 +255,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                     if molecule in modificationCandidates:
                         tmpCandidates[0][idx] = modificationCandidates[molecule]
                 return [tmpCandidates[0]], unevenElements
+            
         return [tmpCandidates[0]], unevenElements
 
     prunnedDependencyGraph = deepcopy(dependencyGraph)
@@ -743,6 +743,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     #FIXME: wtf was unevenelementdict supposed to be for
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
+        
     #FIXME: I'm conatminating these data structures somewhere. In here
     #im just calling the original generator to recover them.
     classifications, equivalenceTranslator, eequivalenceTranslator, \
@@ -755,7 +756,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         for candidates in tmpEquivalence[modification]:
             for instance in candidates:
                 addToDependencyGraph(eequivalenceTranslator,modification,instance)
-
+            
     weights = sorted(weights, key=lambda rule: rule[1])
     #print {x:str(database.translator[x]) for x in database.translator}
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
