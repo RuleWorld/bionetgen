@@ -20,6 +20,13 @@ This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
 '''
 
+
+def addToDependencyGraph(dependencyGraph, label, value):
+    if label not in dependencyGraph:
+        dependencyGraph[label] = []
+    if value not in dependencyGraph[label] and value != []:
+        dependencyGraph[label].append(value)
+
 class SBMLAnalyzer:
     
     def __init__(self,configurationFile,namingConventions,speciesEquivalences=None):
@@ -28,14 +35,129 @@ class SBMLAnalyzer:
         self.speciesEquivalences= speciesEquivalences
         self.userEquivalencesDict = None
         
-        
+    def distanceToModification(self,particle,modifiedElement,translationKeys):
+        particlePos = [m.start()+len(particle) for m in re.finditer(particle,modifiedElement)]
+        keyPos = [m.start() for m in re.finditer(translationKeys,modifiedElement)]
+        distance = [(y-x) if x<=y else 9999 for x in particlePos for y in keyPos]
+        distance.append(9999)
+        return min(distance)
+
+
+    
+    def analyzeSpeciesModification(self,baseElement, modifiedElement,partialAnalysis):
+        '''
+        a method for trying to read modifications within complexes
+        This is only possible once we know their internal structure 
+        (this method is called after the creation and resolving of the dependency
+        graph)
+        '''
+        equivalenceTranslator,translationKeys,conventionDict =  self.processNamingConventions2([baseElement,modifiedElement])
+        scores = []        
+        for particle in partialAnalysis:
+            distance = self.distanceToModification(particle,modifiedElement,translationKeys[0])
+            #FIXME:tis is just a heuristic in terms of how far a mod is from a species name
+            #use something better
+            if distance < 4:
+                scores.append([particle,distance])
+        if len(scores)>0:
+            winner = scores[[x[1] for x in scores].index(min([x[1] for x in scores]))][0]   
+        else:
+            winner = None
+        if winner:
+            return winner,translationKeys,equivalenceTranslator
+        return None,None,None
+
+    def findClosestModification(self,particles,species):
+        equivalenceTranslator = {}
+        dependencyGraph = {}
+        def analyzeByParticle(splitparticle,species,
+                              equivalenceTranslator=equivalenceTranslator,
+                              dependencyGraph=dependencyGraph):
+            basicElements = []
+            composingElements = []
+            for splitpindex in range(0,len(splitparticle)):
+                splitp = splitparticle[splitpindex]
+                closestList = difflib.get_close_matches(splitp,species)
+                closestList = [x for x in closestList if len(x) < len(splitp)]
+
+                #if theres nothing in the species list i can find a lexical
+                #neighbor from, then try to create one based on my two
+                #positional neighbors
+                if closestList == []:
+                    flag= True
+                    #do i get something by merging with the previous component?
+                    if len(composingElements) > 0:
+                        tmp,tmp2 = analyzeByParticle([composingElements[-1] + '_' + splitp], species)
+                        if tmp != [] and tmp2 != []:
+                            flag = False
+                            splitp = composingElements[-1] + '_' + splitp
+                            composingElements.pop()
+                            closestList = tmp
+                            localEquivalenceTranslator,_,_ =  self.processNamingConventions2([tmp[0],tmp2[0]])
+                            for element in localEquivalenceTranslator:
+                                if element not in equivalenceTranslator:
+                                    equivalenceTranslator[element] = []
+                                equivalenceTranslator[element].extend(localEquivalenceTranslator[element])
+                                for instance in localEquivalenceTranslator[element]:
+                                    addToDependencyGraph(dependencyGraph,instance[1],[instance[0]])
+                    #do i get something by merging with the next component?
+                    if flag and splitpindex + 1 != len(splitparticle):
+                        tmp,tmp2 = analyzeByParticle([splitp+ '_' + splitparticle[splitpindex+1]],species)
+                        if tmp!= [] and tmp2 != []:
+                            splitp = splitp+ '_' + splitparticle[splitpindex+1]
+                            splitpindex += 1
+                            closestList = tmp
+                            localEquivalenceTranslator,_,_ =  self.processNamingConventions2([tmp[0],tmp2[0]])
+                            for element in localEquivalenceTranslator:
+                                if element not in equivalenceTranslator:
+                                    equivalenceTranslator[element] = []
+                                equivalenceTranslator[element].append(localEquivalenceTranslator[element])
+                                for instance in localEquivalenceTranslator[element]:
+                                    addToDependencyGraph(dependencyGraph,instance[1],[instance[0]])
+
+                        else:
+                            return [],[]
+                    elif flag:
+                        return [],[]
+                basicElements.append(min(closestList,key=len))
+                #if what i have is a known compound just add it
+                if splitp in species:
+                    composingElements.append(splitp)
+                #if not create it
+                else:
+                    closestList = difflib.get_close_matches(splitp,species)
+                    closestList = [x for x in closestList if len(x) < len(splitp)]
+                    flag = False
+                    for element in closestList:
+                        localEquivalenceTranslator,_,_ =  self.processNamingConventions2([element,splitp])
+                        for element in localEquivalenceTranslator:
+                            if element not in equivalenceTranslator:
+                                equivalenceTranslator[element] = []
+                            equivalenceTranslator[element].append(localEquivalenceTranslator[element])
+                            for instance in localEquivalenceTranslator[element]:
+                                addToDependencyGraph(dependencyGraph,instance[1],[instance[0]])
+                            flag = True
+                    if flag:
+                        composingElements.append(splitp)
+            return basicElements,composingElements
+            
+        for particle in particles:
+            composingElements = []
+            basicElements = []
+            #break it down into small bites
+            #TODO: take into account modifiers like _P
+            splitparticle = particle.split('_')
+            basicElements,composingElements = analyzeByParticle(splitparticle,species)
+            if particle not in composingElements and composingElements != []:
+                addToDependencyGraph(dependencyGraph,particle,composingElements)
+        return dependencyGraph,equivalenceTranslator
     def parseReactions(self,reaction,specialSymbols=''):
-#        print reaction
+        
         name = Word(alphanums + '_-') + ':'
         species =  (Word(alphanums+"_"+":#-") 
         + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
         + Suppress("()"))
-        rate = Word(alphanums + "()")
+        rate = Word(alphanums +     "()")
         grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
@@ -246,48 +368,6 @@ class SBMLAnalyzer:
         return tmpTranslator,translationKeys,conventionDict
         
     
-    def processNamingConventions(self,molecules,reactionDefinition):
-        equivalenceTranslator = {}
-        index = 0
-        
-        if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
-            self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
-        else: 
-            if self.userEquivalencesDict ==None:            
-                self.userEquivalencesDict = {}
-        #TODO: user defined naming conventions are not being added
-        
-        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],self.namingConventions)
-        
-        print translationKeys
-        print conventionDict
-        #for name in self.userEquivalencesDict:
-        #    equivalenceTranslator[name] = self.userEquivalencesDict[name]
-        #print '---',equivalenceTranslator            
-        
-        for name,prop in zip(reactionDefinition['reactionsNames'],reactionDefinition['definitions']):
-            #xxxxxxxxxxxxxxxxxxxxxxx
-            
-            for alternative in prop:
-                if 'n' in alternative.keys():
-                    convention = reactionDefinition['namingConvention'][alternative['n'][0]]
-                    temp = self.analyzeNamingConventions(molecules,convention[0],convention[1],reactionDefinition['namingConvention'])
-                    if name in self.userEquivalencesDict:
-                        temp.extend(self.userEquivalencesDict[name])
-                    equivalenceTranslator[name] = temp
-                    index += 1
-        #now we want to fill in all intermediate relationships
-        newTranslator = equivalenceTranslator.copy()
-        #FIXME: the only thing we want to copy over from the old 
-        #naming convention detection is the binding information
-        for element in newTranslator:
-            if element not in tmpTranslator and len(newTranslator[element]) > 0:
-                tmpTranslator[element] = newTranslator[element]
-        for element in tmpTranslator:
-            if element in self.userEquivalencesDict:
-                tmpTranslator[element].extend(self.userEquivalencesDict[element])
-                
-        return tmpTranslator,translationKeys,conventionDict
     
     def approximateMatching(self,ruleList,differences=[]):
         '''
@@ -541,7 +621,6 @@ class SBMLAnalyzer:
         #equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions(molecules,reactionDefinition)
                     
         equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules)
-    
         
         #lists of plain reactions
         rawReactions = [self.parseReactions(x) for x in reactions]
@@ -552,41 +631,6 @@ class SBMLAnalyzer:
                 self.processFuzzyReaction(reaction,translationKeys,conventionDict,indirectEquivalenceTranslator)
             elif len(reaction[1]) == 2 and len(reaction[0]) == 1:
                 self.processFuzzyReaction([reaction[1],reaction[0]],translationKeys,conventionDict,indirectEquivalenceTranslator)
-        '''                
-            if len(reaction[0]) == 2:
-                d1,d2,firstMatch,secondMatch= self.approximateMatching(reaction,
-                                                            translationKeys)
-                #print reaction,d1,d2
-                idx1=0
-                idx2 = 1
-                matches = [firstMatch,secondMatch]
-                for index,element in enumerate([d1,d2]):
-                    while idx2 <= len(element):
-                        if (element[idx1],) in conventionDict.keys():
-                            pattern = conventionDict[(element[idx1],)]
-                            indirectEquivalenceTranslator[pattern].append([[reaction[0][index],reaction[1][0]],reaction[0],matches[index],reaction[1]])
-                        elif (element[idx1].replace('-','+'),) in conventionDict.keys():
-                            matches[index].reverse()
-                            transformedPattern = conventionDict[(element[idx1].replace('-','+'),) ]
-                            indirectEquivalenceTranslator[transformedPattern].append([[reaction[1][0],reaction[0][index]],reaction[0],matches[index],reaction[1]])
-                            
-                        elif idx2 < len(element):
-                            if tuple([element[idx1],element[idx2]]) in conventionDict.keys():    
-                                pattern = conventionDict[tuple([element[idx1],element[idx2]])]
-                                indirectEquivalenceTranslator[pattern].append([[reaction[0][index],reaction[1][0]],reaction[0],matches[index],reaction[1]])
-                                idx1 += 1
-                                idx2 += 1
-                            elif '-' in element[idx1] and '-' in element[idx2]:
-                                if tuple([element[idx1].replace('-','+'),element[idx2].replace('-','+')]) in conventionDict.keys():  
-                                    matches[index].reverse()
-                                    transformedPattern = conventionDict[tuple([element[idx1].replace('-','+'),element[idx2].replace('-','+')])]
-                                    indirectEquivalenceTranslator[transformedPattern].append([[reaction[1][0],reaction[0][index]],reaction[0],matches[index],reaction[1]])
-                                    idx1 += 1
-                                    idx2 += 1
-
-                        idx1+=1
-                        idx2+=1
-            '''
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,

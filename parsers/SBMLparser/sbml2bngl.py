@@ -53,8 +53,8 @@ class SBML2BNGL:
       if modelHistory:
           tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
           tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
-          metaInformation['creatorEmail'] = libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail()
-          metaInformation['creatorName'] = tmp
+          metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
+          metaInformation['creatorName'] = "'" + tmp + "'"
       for idx in range(lista.getSize()):
           biol,qual =  lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
           if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
@@ -665,7 +665,8 @@ class SBML2BNGL:
         
         for element in param:
             pparam[element.split(' ')[0]] =(element.split(' ')[1],None)
-            
+        for element in zparam:
+            pparam[element] = (0,None)
         for species in self.model.getListOfSpecies():
             tmp = self.getRawSpecies(species)
             if species.getName() in translator:
@@ -673,7 +674,6 @@ class SBML2BNGL:
             else:
                 extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
             pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
-        
         from copy import copy
         for initialAssignment in self.model.getListOfInitialAssignments():
             symbol = initialAssignment.getSymbol()
@@ -685,12 +685,18 @@ class SBML2BNGL:
 
             param2 = [x for x in param if '{0} '.format(symbol) not in x]
             zparam2 = [x for x in zparam if '{0}'.format(symbol) not in x]
+            '''
             if (len(param2) != len(param)) or (len(zparam) != len(zparam2)):
                 param2.append('{0} {1}'.format(symbol,math))
                 param = param2
                 zparam = zparam2
+            '''
+            if pparam[symbol][1] == None:
+                param2.append('{0} {1}'.format(symbol,math))
+                param = param2
+                zparam = zparam2
             else:
-                initialConditions2 = [x for x in initialConditions if '{0}()'.format(symbol) not in x]
+                initialConditions2 = [x for x in initialConditions if '{0}('.format(symbol) not in x]
                 initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
                 initialConditions = initialConditions2
         return param,zparam,initialConditions
