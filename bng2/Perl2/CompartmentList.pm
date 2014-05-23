@@ -153,14 +153,20 @@ sub readString
     my $clist  = shift;  # CompartmentList
     my $string = shift;  # compartment string to parse
     my $plist  = shift;  # parameter list
-
+	
+	# Remove leading whitespace
+    $string =~ s/^\s*//;
+	
 	# Remove leading label, if any
-	# FIXME: label shouldn't be allowed to begin with a number -- LAH
-    $string =~ s/^\s*\w+\s*:\s+//;
+	$string =~ s/^\s*\w+\s*:\s+//;
+    
+    # Check label for leading number
+	my $label = $1;
 
-    # Read name (required argument)
-    # FIXME: compartment name shouldn't be allowed to begin with a number -- LAH
-    $string =~ s/^\s*([A-Za-z_0-9]+)//   or return "Invalid compartment name in $string";
+	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at $label";  }
+
+    # Read name (required argument), check for starting number
+    $string =~ s/^([A-Za-z_]\w*)//   or return "Invalid compartment name in $string, cannot start with a number.";
     my $name = $1;
 
     # Read spatialDimensions (required argument)

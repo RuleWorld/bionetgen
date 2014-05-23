@@ -198,15 +198,14 @@ sub newRxnRule
     # save original text of rule for displaying warnings
     (my $rule_text = $string) =~ s/\s+/ /g;
 
-    # Check for a ReactionRule label or index at the beginning of the string
-	if ( $string =~ s/^([\w\s]*\w)\s*:\s*// )
+    # Check label for leading number
+	if ( $string =~ s/^(\w+)\s*:\s+// )
 	{
-	    # We found an alphanumeric label
 		$name = $1;
 
-        if ( $1 =~ /\s/ )
-        {  BNGUtils::line_warning(
-               "Reaction rule label '$name' contains white space. This is deprecated (BioNetGen >= 2.2.3).", $linenum);  
+        if ( $1 =~ /^\d/ )
+        {  
+        	return "Reaction rule label '$name' begins with a number.";  
         }
 
 	}
@@ -219,7 +218,6 @@ sub newRxnRule
         #  Strip the index and assign it as the name.
         $name = $1;
     }
-
 
 	# read reactant patterns
 	my @reac   = ();

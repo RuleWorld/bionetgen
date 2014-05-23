@@ -37,15 +37,15 @@ sub readString
 
     my $string_left = $$strptr;
 
-    # Get molecule name (alphanumeric ID, must contain at least one letter!)
-    if ( $string_left =~ s/^(\w*[A-Za-z]\w*)// )
+    # Get molecule name (cannot start with a number)
+	if ( $string_left =~ s/^([A-Za-z_]\w*)// )
     {
         my $name= $1;
         $mtype->Name($1);
     }
     else
     {
-        return ("Invalid MoleculeType name in $string_left" );
+        return ("Invalid molecule name in $$strptr, name starts with a number." );
     }
 
     # By default, set population tag false

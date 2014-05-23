@@ -76,14 +76,14 @@ begin molecule types
     egfr(l,r,Y1068~Y~pY,Y1148~Y~pY)
     Shc(PTB,Y317~Y~pY)
     Grb2(SH2,SH3)
-    Sos(dom)
+    SoS(dom)
 end molecule types
 
 begin seed species
     egf(r)                        egf_tot
     Grb2(SH2,SH3)                 Grb2_tot
     Shc(PTB,Y317~Y)               Shc_tot
-    Sos(dom)                      Sos_tot
+    1SoS(dom)                      Sos_tot
     egfr(l,r,Y1068~Y,Y1148~Y)     egfr_tot
     Grb2(SH2,SH3!1).Sos(dom!1)    Grb2_Sos_tot
 end seed species
@@ -111,7 +111,7 @@ begin reaction rules
     # Y1068 activity
     egfr(Y1068~pY) + Grb2(SH2,SH3)   <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3)    kp9, km9
     egfr(Y1068~pY) + Grb2(SH2,SH3!+) <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3!+)  kp11, km11
-    egfr(Y1068~pY!1).Grb2(SH2!1,SH3) + Sos(dom) <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)  kp10, km10
+    egfr(Y1068~pY!1).Grb2(SH2!1,SH3) + SoS(dom) <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2)  kp10, km10
 
     # Y1148 activity
     egfr(Y1148~pY) + Shc(PTB,Y317~Y)    <-> egfr(Y1148~pY!1).Shc(PTB!1,Y317~Y)   kp13, km13
@@ -127,15 +127,15 @@ begin reaction rules
     egfr(Y1148~pY!1).Shc(PTB!1,Y317~pY) + Grb2(SH2,SH3!3).Sos(dom!3)   <-> \
         egfr(Y1148~pY!1).Shc(PTB!1,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)  kp24, km24
 
-    Shc(PTB!+,Y317~pY!2).Grb2(SH2!2,SH3) + Sos(dom)   <-> \
+    Shc(PTB!+,Y317~pY!2).Grb2(SH2!2,SH3) + SoS(dom)   <-> \
         Shc(PTB!+,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)  kp19, km19
 
     # Cytosolic 
     Shc(PTB,Y317~pY) + Grb2(SH2,SH3)   <-> Shc(PTB,Y317~pY!1).Grb2(SH2!1,SH3)    kp21, km21
     Shc(PTB,Y317~pY) + Grb2(SH2,SH3!+) <-> Shc(PTB,Y317~pY!1).Grb2(SH2!1,SH3!+)  kp23, km23
     Shc(PTB,Y317~pY) -> Shc(PTB,Y317~Y)  km16
-    Grb2(SH2,SH3) + Sos(dom) <-> Grb2(SH2,SH3!1).Sos(dom!1)  kp12, km12
-    Shc(PTB,Y317~pY!2).Grb2(SH2!2,SH3) + Sos(dom)   <-> \
+    Grb2(SH2,SH3) + SoS(dom) <-> Grb2(SH2,SH3!1).Sos(dom!1)  kp12, km12
+    Shc(PTB,Y317~pY!2).Grb2(SH2!2,SH3) + SoS(dom)   <-> \
     Shc(PTB,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)  kp22, km22
 end reaction rules
 

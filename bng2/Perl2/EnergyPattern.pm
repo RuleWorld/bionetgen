@@ -46,6 +46,18 @@ sub readString
     # Remove leading label, if exists
     $string =~ s/^\s*\w+:\s+//;
 
+    # Check label for leading number
+	my $label = $1;
+
+	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at $label";  }
+	
+	# Check name for leading number
+	my $string_left = $string;
+	unless ( $string_left =~ s/^([A-Za-z_]\w*)// )
+	{ 
+		return "Syntax error (energy name begins with a number) at $string.";
+	}
+    
     # Next read the SpeciesGraph that will define the Energy Pattern
     my $sep = '^\s+';
     my $sg = SpeciesGraph->new();
