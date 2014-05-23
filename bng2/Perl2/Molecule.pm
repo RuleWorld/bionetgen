@@ -67,6 +67,7 @@ sub readString
 
 	my $string_left = $$strptr;
 
+	
 	# Get molecule name (alphanumeric ID, must contain at least one letter!)
 	if ( $string_left =~ s/^(\w*[A-Za-z]\w*)// )
 	{
