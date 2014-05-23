@@ -67,14 +67,14 @@ sub readString
 
 	my $string_left = $$strptr;
 
-	# Get molecule name (cannot start with a number)
-	if ( $string_left =~ s/^([A-Za-z_]\w*)// )
+	# Get molecule name (alphanumeric ID, must contain at least one letter!)
+	if ( $string_left =~ s/^(\w*[A-Za-z]\w*)// )
 	{
 		$mol->Name($1);
 	}
-		else
+	else
 	{
-		return undef, "Invalid MoleculeType name in $string_left, name starts with a number.";
+		return undef, "Invalid molecule name in $string_left";
 	}
 
 	# Get molecule state (marked by ~) edges (marked by !) and label (marked by
