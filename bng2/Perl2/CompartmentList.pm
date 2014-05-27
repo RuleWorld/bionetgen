@@ -158,19 +158,18 @@ sub readString
     $string =~ s/^\s*//;
 	
 	# Remove leading label, if any
-	$string =~ s/^\s*\w+\s*:\s+//;
+	$string =~ s/^\s*(\w+)\s*:\s+//;
     
     # Check label for leading number
 	my $label = $1;
-
-	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at $label";  }
+	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
 
     # Read name (required argument), check for starting number
-    $string =~ s/^([A-Za-z_]\w*)//   or return "Invalid compartment name in $string, cannot start with a number.";
+    $string =~ s/^([A-Za-z_]\w*)//   or return "Invalid compartment name in '$string' (must begin with a letter or underscore)";
     my $name = $1;
-
+	
     # Read spatialDimensions (required argument)
-    $string =~ s/^\s*(\d+)//   or return "Invalid Spatial Dimensions for Compartment in $string"; 
+    $string =~ s/^\s*(\d+)//   or return "Invalid Spatial Dimensions for Compartment in '$string'"; 
     my $spatialDimensions = $1;
     # moved spatial dimension check to newCompartment sub in Compartment module
 

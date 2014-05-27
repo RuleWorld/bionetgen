@@ -40,16 +40,16 @@ sub readString
 
     # Check if first token is an index (This index will be ignored)
     $string =~ s/^\s*\d+\s+//;
+    
     # strip any leading whitesace
     $string =~ s/^\s+//;
     
     # Remove leading label, if exists
-    $string =~ s/^\s*\w+:\s+//;
+    $string =~ s/^\s*(\w+)\s*:\s+//;
 
     # Check label for leading number
 	my $label = $1;
-
-	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at $label";  }
+	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
 	
 	# Check name for leading number
 	my $string_left = $string;

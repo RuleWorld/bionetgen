@@ -101,18 +101,17 @@ sub readString
     $string =~ s/^\s*\d+\s+//;
     
     # Remove leading label, if exists
-    $string =~ s/^\s*\w+\s*:\s+//;
+    $string =~ s/^\s*(\w+)\s*:\s+//;
     
     # Check label for leading number
 	my $label = $1;
-
-	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at $label";  }
+	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
 	
 	# Check name for leading number
 	my $string_left = $string;
 	unless ( $string_left =~ s/^([A-Za-z_]\w*)// )
 	{ 
-		return "Syntax error (observable name begins with a number) at $string.";
+		return "Syntax error (observable name begins with a number) at '$string'";
 	}
 
     # Check if next token is observable type

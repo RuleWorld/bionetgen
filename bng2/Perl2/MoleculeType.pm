@@ -37,7 +37,7 @@ sub readString
 
     my $string_left = $$strptr;
 
-    # Get molecule name (cannot start with a number)
+    # Get molecule name (alphanumeric ID, must begin with a letter or underscore)
 	if ( $string_left =~ s/^([A-Za-z_]\w*)// )
     {
         my $name= $1;
@@ -45,7 +45,7 @@ sub readString
     }
     else
     {
-        return ("Invalid molecule name in $$strptr, name starts with a number." );
+        return ("Invalid MoleculeType name at '$$strptr' (must begin with a letter or underscore)." );
     }
 
     # By default, set population tag false

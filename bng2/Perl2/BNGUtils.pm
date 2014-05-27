@@ -358,7 +358,7 @@ sub send_warning
 sub line_error
 {
     my ($msg, $lno) = @_;
-    print STDERR sprintf( "ABORT: [at line %s] %S\n", $lno, $msg );
+    print STDERR sprintf( "ABORT: [at line %s] %s\n", $lno, $msg );
     exit 1;
 }
 

@@ -215,14 +215,13 @@ sub readString
 
 	# Check label for leading number
 	my $label = $1;
-
-	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at $label";  }
+	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
 	
 	# Check name for leading number
 	my $sptr_left = $$sptr;
 	unless ( $sptr_left =~ s/^([A-Za-z_]\w*)// )
 	{ 
-		return "Syntax error (parameter name begins with a number) at $$sptr.";
+		return "Syntax error (parameter name begins with a number) at '$$sptr'";
 	}
 
     # Convert non assignment format to assignment

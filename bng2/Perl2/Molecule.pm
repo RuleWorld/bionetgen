@@ -74,7 +74,7 @@ sub readString
 	}
 	else
 	{
-		return undef, "Invalid MoleculeType name in $string_left, name starts with a number.";
+		return undef, "Invalid Molecule name in '$string_left' (must begin with a letter or underscore).";
 	}
 
 	# Get molecule state (marked by ~) edges (marked by !) and label (marked by

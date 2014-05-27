@@ -205,7 +205,7 @@ sub newRxnRule
 
         if ( $1 =~ /^\d/ )
         {  
-        	return "Reaction rule label '$name' begins with a number.";  
+        		BNGUtils::line_error("Reaction rule label '$name' begins with a number.", $linenum);
         }
 
 	}
