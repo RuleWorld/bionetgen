@@ -21,7 +21,7 @@ def syntaxDefinition():
     return bnglDocHeader
     
 def bitSyntaxDefinition():
-    commentDemarker = pyp.Suppress(pyp.Literal('####'))
+    commentDemarker = pyp.Suppress(pyp.Literal('###'))
     literal = pyp.Word(pyp.alphanums + "_")
     quotedLiteral = pyp.Suppress(pyp.Literal("'")) + pyp.Word(pyp.alphanums + "._@ :/") + pyp.Suppress(pyp.Literal("'"))
     tags =  pyp.Suppress(pyp.Literal('@')) + literal.setResultsName('tags')
@@ -57,7 +57,7 @@ def parseAnnotations(bnglString):
     return tagsDict
     
 if __name__ == "__main__":
-    with open('output1.bngl') as f:
+    with open('output19.bngl') as f:
         lines = f.read()
     tagsDict = parseAnnotations(lines)
     dict2DatabaseFormat(tagsDict)

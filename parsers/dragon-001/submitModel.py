@@ -15,6 +15,8 @@ from google.appengine.ext import ndb
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
 from google.appengine.api.images import get_serving_url
+from google.appengine.api import taskqueue
+
 import webapp2
 import xmlrpclib
 import jinja2
@@ -371,24 +373,37 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
         bnglnameList = [x for x in nameList if '.bngl' in x]        
         print nameList,bnglnameList
         for element in bnglnameList:
+
+            zipModel = objZip.open(element)
+            bnglContent = zipModel.read()
+            taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,'nameList':nameList})
+
+        self.redirect('/')
+ 
+
+class ProcessAnnotation(webapp2.RequestHandler):
+    def post(self):
+            element = self.request.get('element')
+            bnglContent = self.request.get('bnglContent')
+            nameList = self.request.get('nameList')
+
             model_name = self.request.get('model_name',
                                               DEFAULT_GUESTBOOK_NAME)
             modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
             if users.get_current_user():
                 modelSubmission.submitter = users.get_current_user()
-
-            zipModel = objZip.open(element)
-            
+       
             #fixme: this will be deprecated in the near future, use gcs client library instead
             file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename=element)
             with files.open(file_name, 'a') as f:
-              bnglContent = zipModel.read()
-            f.write(bnglContent)
-            files.finalize(file_name)
+              f.write(bnglContent)
+              #files.finalize(file_name)
+              f.close(finalize=True)
             blob_key = files.blobstore.get_blob_key(file_name)   
             
             modelSubmission.content = blob_key
             modelSubmission.name = element
+            '''
             if '{0}.png'.format(element) in nameList:
                 zipModel = objZip.open(element)
                 file_name = files.blobstore.create(mime_type='application/octet-stream',
@@ -397,7 +412,8 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
                   f.write(zipModel.read())
                 files.finalize(file_name)
                 modelSubmission.contactMap(file_name)
-                
+             '''
+
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
             modelSubmission.author = [parsedAnnotationDict['author']]
             modelSubmission.structuredTags = parsedAnnotationDict['structuredTags']
@@ -408,21 +424,6 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
             if 'author' in tagArray:
                 modelSubmission.author = tagArray['author']
             modelSubmission.put()
-
-        #blob_info2 = contact[0]
-        #modelSubmission.content = blob_info.key()
-
-        #modelSubmission.author = self.request.get('author')
-        #modelSubmission.publication = publicationInfo
-        #modelSubmission.fileFormat = self.request.get('fileFormat')
-        #modelSubmission.contactMap = blob_info2.key() 
-        #modelSubmission.name = self.request.get('name')
-        #modelSubmission.description = self.request.get('description')
-        
-
-        #query_params = {'model_name': model_name}
-        self.redirect('/')
- 
 
 class Query(webapp2.RequestHandler):
     def get(self):
@@ -662,5 +663,6 @@ app = webapp2.WSGIApplication([
     ('/description',Description),
     ('/myModels',MyModels),
     ('/serve/([^/]+)?', ServeHandler),
+    ('/processfileq',ProcessAnnotation),
     ('/image',Image)
 ], debug=True)
