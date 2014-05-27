@@ -12,8 +12,6 @@ use Data::Dumper;
 
 use BNGModel;
 use StructureGraph;
-
-use VisualizationIO;
 use Visualization;
 
 # use: perl visualize.pl FULL_PATH_TO_BNGL FULL_PATH_TO_CONFIG
@@ -227,11 +225,12 @@ sub processLine
 		my $bpg = BipartiteGraph::combine(\@bpgs);
 		BipartiteGraph::addWildcards($bpg);
 		BipartiteGraph::addProcessPairs($bpg);
+		#print BipartiteGraph::printGraph($bpg);
 		print "Building groups...\n";
 		BipartiteGraph::makeGroups($bpg);
-		my ($bi,$uni) = BipartiteGraph::analyzeGroups($bpg);
+		my ($bi,$uni,$all) = BipartiteGraph::analyzeGroups($bpg);
 		print "Building graph...\n";
-		$string = Visualization::toGML_process($bi,$uni);
+		$string = Visualization::toGML_process($bi,$uni,$all);
 		$outfile = $basename.'_'.$suffix.'.gml';
 	
 	}

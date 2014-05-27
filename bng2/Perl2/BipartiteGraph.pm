@@ -270,7 +270,7 @@ sub getSyndelContext
 
 sub makeEdge
 {
-	my %shortname = ( 'r'=>"Reactant", 'p'=>"Product", 'c'=>"Context", 's'=>"Syndel", 'w'=>"Wildcard", 'pp'=>"ProcessPair" );
+	my %shortname = ( 'r'=>"Reactant", 'p'=>"Product", 'c'=>"Context", 's'=>"Syndel", 'w'=>"Wildcard", 'pp'=>"ProcessPair", 'co'=>"Cotransform" );
 	
 	my $node1 = shift @_;
 	my $node2 = shift @_;
@@ -418,7 +418,19 @@ sub makeRuleBipartiteGraph
 			}
 		}
 	}
-	
+	foreach my $i(0..@graphop-1)
+	{
+		foreach my $j($i+1..@graphop-1)
+		{
+			my $tr1 = makeTransformation(\@nodelist,$graphop[$i]);
+			my $tr2 = makeTransformation(\@nodelist,$graphop[$j]);
+			if ($tr1 ne $tr2)
+			{
+				my $edge = makeEdge($tr1,$tr2,'co');
+				push @{$bpg->{'EdgeList'}}, $edge;
+			}
+		}
+	}
 	@{$bpg->{'NodeList'}} = uniq @{$bpg->{'NodeList'}};
 	@{$bpg->{'EdgeList'}} = uniq @{$bpg->{'EdgeList'}};
 	
@@ -428,6 +440,7 @@ sub makeRuleBipartiteGraph
 sub makeGroups
 {
 	my $bpg = shift @_;
+
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my @groups;
@@ -556,10 +569,13 @@ sub analyzeGroups
 	# extract context
 	my @context = grep( /Context/, @edgelist);
 	my @syndel = grep( /Syndel/, @edgelist);
+	my @cotransforms = grep ( /Cotransform/, @edgelist);
+
 	my @syn = grep( (index($_, '->') == 0), @syndel);
 	my @del = grep( (index($_, '->') != 0), @syndel);
 	my @uni = ();
 	my @bi = ();
+	my @all = ();
 	
 	foreach my $i(0..@groups-1)
 	{
@@ -592,6 +608,15 @@ sub analyzeGroups
 						if (@forward > 0) {$f++;}
 						if (@reverse > 0) {$r++;}
 					}
+					# see if both $p and $q are transformations
+					# check for cotransforms
+					if ((index($p, '->') != -1) and (index($q, '->') != -1) )
+					{
+						my @check = grep index($_, $p) != -1, 
+									grep index($_, $q) != -1, 
+									@cotransforms;
+						if (@check) { $f++; $r++; }
+					}
 				}				
 			}
 			my $groupname1 = groupName(\@group1);
@@ -602,9 +627,10 @@ sub analyzeGroups
 			elsif ($f > 0 ) { push @uni, $string1." ".$f; }
 			elsif ($r > 0 ) { push @uni, $string2." ".$r; }
 		}
+		push @all, groupName($groups[$i]);
 	}
 	
-	return (\@bi,\@uni);
+	return (\@bi,\@uni,\@all);
 }
 
 

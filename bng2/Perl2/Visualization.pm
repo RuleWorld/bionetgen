@@ -1,4 +1,4 @@
-# VisualizationIO.pm, 
+# Visualization.pm, 
 # Input and output for viz tools
 # Author: John Sekar (johnarul.sekar@gmail.com)
 
@@ -20,6 +20,9 @@ use BipartiteGraph;
 
 sub listHas { return BipartiteGraph::listHas(@_); }
 
+	
+	
+
 struct GMLNode => 
 {
 	'ID' => '$',
@@ -31,7 +34,9 @@ struct GMLNode =>
 	'anchor'=>'$',
 	'object'=>'$',
 	'isGroup'=>'$',
-	'gid'=>'$'
+	'gid'=>'$',
+	'hasOutline' => '$',
+	'outline'=>'$'
 };
 
 struct GMLEdge =>
@@ -92,95 +97,6 @@ sub initializeGMLEdge
 	return $gmledge;
 }
 
-sub styleNode
-{
-	my $gmlnode = shift @_;
-	my $arg = @_ ? shift @_ : 0;
-	# defaults
-	$gmlnode->{'type'} = "roundrectangle";
-	$gmlnode->{'fill'} = "#FFFFFF";
-	if ($gmlnode->{'isGroup'}) {$gmlnode->{'anchor'} = "t";}
-	else {$gmlnode->{'anchor'} = "c";}
-	
-	# node, Rule, yED
-	if ($arg==1) { $gmlnode->{'outlineStyle'} = "dotted"; }
-	# node, Mol, yED
-	if ($arg==2) { $gmlnode->{'fontStyle'} = "bold"; $gmlnode->{'fill'} = "#D2D2D2";}
-	# node, Comp/BondState, yED
-	if ($arg==3) { $gmlnode->{'fill'} = "#D2D2D2"; }
-	# node, CompState, yED
-	if ($arg==4) { $gmlnode->{'fill'} = "#FFCC00"; }
-	# node, GraphOp, yED
-	if ($arg==5) 
-	{ 
-		$gmlnode->{'fill'} = "#CC99FF"; 
-		$gmlnode->{'type'} = 'hexagon';
-		$gmlnode->{'fontStyle'} = 'italic';
-	}
-	# groups on bipartite graph, yED
-	if ($arg==6) { $gmlnode->{'fill'} = "#fddbca"; }
-	# pattern on bipartite graph
-	if ($arg==7) { $gmlnode->{'fill'} = "#FFCC00"; }
-	# transformation on bipartite graph, yED
-	if ($arg==8)
-	{
-		$gmlnode->{'fill'} = "#CC99FF"; 
-		$gmlnode->{'type'} = 'hexagon';
-	}
-	
-	return;
-}
-
-sub styleEdge
-{
-	my $gmledge = shift @_;
-	my $arg = @_ ? shift @_ : 0 ;
-	# defaults
-	$gmledge->{'fill'} = "#000000";
-	
-	# reactant/wildcard
-	if ($arg==1) 
-		{
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 0;
-		}
-	# product
-	if ($arg==2) 
-		{
-		$gmledge->{'sourceArrow'} = 0;
-		$gmledge->{'targetArrow'} = 1;
-		}
-	# context
-	if ($arg==3) 
-		{
-		$gmledge->{'fill'} = "#4C8BFF";
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 0;
-		}
-	# syn context
-	if ($arg==4) 
-		{
-		$gmledge->{'fill'} = "#cc3333";
-		$gmledge->{'sourceArrow'} = 0;
-		$gmledge->{'targetArrow'} = 1;
-		}
-	# del context
-	if ($arg==5) 
-		{
-		$gmledge->{'fill'} = "#cc3333";
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 1;
-		}
-	# process pair
-	if ($arg==6) 
-		{
-		$gmledge->{'fill'} = "#CC99FF";
-		$gmledge->{'sourceArrow'} = 0;
-		$gmledge->{'targetArrow'} = 0;
-		}
-	
-	return;
-}
 
 sub printGraph
 {
@@ -199,6 +115,9 @@ sub printGraph
 		# graphics
 		$string1 .= "type".$q1.$node->{'type'}.$q2;
 		$string1 .= "fill".$q1.$node->{'fill'}.$q2;
+		if ($node->{'hasOutline'}==0) { $string1 .= "hasOutline 0 ";}
+		if (defined $node->{'outline'}) 
+			{ $string1 .= "outline".$q1.$node->{'outline'}.$q2;}
 		if ($node->{'outlineStyle'})
 			{$string1 .= "outlineStyle".$q1.$node->{'outlineStyle'}.$q2;}
 		$string1 = "graphics [ ".$string1." ]";
@@ -217,8 +136,9 @@ sub printGraph
 		$string .= "label".$q1.$node->{'label'}.$q2;
 		if ($node->{'isGroup'})
 			{$string .= "isGroup ".$node->{'isGroup'}." ";}
-		if (defined $node->{'gid'})
+		if (defined $node->{'gid'} and length($node->{'gid'}) > 0)
 			{$string .= "gid".$q1.$node->{'gid'}.$q2;}
+		
 		$string = "node [".$string." ".$string1." ".$string2." ]";
 		push @nodestrings, $string;
 	}
@@ -239,6 +159,10 @@ sub printGraph
 			{
 			$string2 .= "arrow \"last\" ";
 			}
+		if (defined $edge->{'width'}) 
+		{
+			$string2 .= "width ".$edge->{'width'}." ";
+		}
 		$string2 = "graphics [ ".$string2." ]";
 		
 		$string .= "source".$q1.$edge->{'source'}.$q2;
@@ -688,6 +612,7 @@ sub toGML_regulatory
 	foreach my $edge( @edgelist )
 	{
 		my @splits = split(":",$edge);
+		next if ($splits[2] eq 'ProcessPair');
 		my $source = $indhash{$splits[0]};
 		my $target = $indhash{$splits[1]};
 		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
@@ -696,7 +621,7 @@ sub toGML_regulatory
 	
 	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8);
 	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
-	'Syn'=>4,'Del'=>5,'ProcessPair'=>6);
+	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7);
 		
 	foreach my $node(@gmlnodes)
 	{
@@ -731,15 +656,8 @@ sub toGML_process
 {
 	my @bi = @{shift @_};
 	my @uni = @{shift @_};
-	my @nodelist = ();
+	my @nodelist = @{shift @_};;
 	my @edgelist = ();
-	foreach my $node((@bi,@uni))
-		{
-		my @splits = split " ",$node;
-		push @nodelist,$splits[0];
-		push @nodelist,$splits[1];
-		}
-	@nodelist = uniq @nodelist;
 	my %indhash = StructureGraph::indexHash(\@nodelist);
 	my @gmlnodes = ();
 	foreach my $node(@nodelist)
@@ -773,6 +691,159 @@ sub toGML_process
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
 	return printGraph($gmlgraph);
+}
+
+
+# styling
+my %nodepalette2 = 
+	('Group'=>"#e5e5e5",
+	'Pattern'=>"#ffcc00", 
+	'Transformation'=>"#c57eed");
+my %outline1 = 
+	('Group'=>"#cecece",
+	'Pattern'=>"#e5bece", 
+	'Transformation'=>"#93c3ae");
+	
+	
+my %nodepalette1 = 
+	('Group'=>"#efdbc4",
+	'Pattern'=>"#fda7a9", 
+	'Transformation'=>"#bbb8f4");
+my %outline = 
+	('Group'=>"#000000",
+	'Pattern'=>"#000000", 
+	'Transformation'=>"#000000");
+	
+# red #ff8d84"
+# blue #4cafaf
+my %edgepalette2 = 
+	('Reactant'=>"#7d7566",
+	'Product'=>"#7d7566",
+	'Context'=>"#9068d4",
+	'ProcessPair'=>"#c57eed",
+	'Cotransform'=>"#9068d4",
+	'Syndel'=>"#ff8d84");
+
+my $reaccolor = "#5e3c58";
+my $contcolor = "#798e87";
+
+my %edgepalette1 = 
+	('Reactant'=>$reaccolor,
+	'Product'=>$reaccolor,
+	'Context'=>$contcolor,
+	'ProcessPair'=>"#000000",
+	'Cotransform'=>$contcolor,
+	'Syndel'=>$contcolor);
+
+sub styleNode
+{
+	my $gmlnode = shift @_;
+	my $arg = @_ ? shift @_ : 0;
+	$gmlnode->{'hasOutline'} = 1;
+	# defaults
+	$gmlnode->{'type'} = "roundrectangle";
+	$gmlnode->{'fill'} = "#FFFFFF";
+	$gmlnode->{'outline'} = "#000000";
+	if ($gmlnode->{'isGroup'}) {$gmlnode->{'anchor'} = "t";}
+	else {$gmlnode->{'anchor'} = "c";}
+	
+	# node, Rule, yED
+	if ($arg==1) { $gmlnode->{'outlineStyle'} = "dotted"; }
+	# node, Mol, yED
+	if ($arg==2) { $gmlnode->{'fontStyle'} = "bold"; $gmlnode->{'fill'} = "#D2D2D2";}
+	# node, Comp/BondState, yED
+	if ($arg==3) { $gmlnode->{'fill'} = "#D2D2D2"; }
+	# node, CompState, yED
+	if ($arg==4) { $gmlnode->{'fill'} = "#FFCC00"; }
+	# node, GraphOp, yED
+	if ($arg==5) 
+	{ 
+		$gmlnode->{'fill'} = "#CC99FF"; 
+		$gmlnode->{'type'} = 'hexagon';
+		$gmlnode->{'fontStyle'} = 'italic';
+	}
+	# groups on bipartite graph, yED
+	if ($arg==6) 
+		{ 
+		$gmlnode->{'fill'} = $nodepalette1{'Group'};  
+		$gmlnode->{'fontStyle'} = "bold";
+		}
+	# pattern on bipartite graph
+	if ($arg==7) 
+		{
+		$gmlnode->{'fill'} = $nodepalette1{'Pattern'}; 
+		}
+	# transformation on bipartite graph, yED
+	if ($arg==8)
+	{
+		$gmlnode->{'fill'} = $nodepalette1{'Transformation'}; 
+		$gmlnode->{'type'} = 'hexagon';
+	}
+	return;
+}
+
+sub styleEdge
+{
+	my $gmledge = shift @_;
+	my $arg = @_ ? shift @_ : 0 ;
+	# defaults
+	$gmledge->{'fill'} = "#000000";
+	
+	# reactant/wildcard
+	if ($arg==1) 
+		{
+		$gmledge->{'fill'} = $edgepalette1{'Reactant'};
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 0;
+		$gmledge->{'width'} = 3;
+		}
+	# product
+	if ($arg==2) 
+		{
+		$gmledge->{'fill'} = $edgepalette1{'Product'};
+		$gmledge->{'sourceArrow'} = 0;
+		$gmledge->{'targetArrow'} = 1;
+		$gmledge->{'width'} = 3;
+		}
+	# context
+	if ($arg==3) 
+		{
+		$gmledge->{'fill'} = $edgepalette1{'Context'};
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 0;
+		}
+	# syn context
+	if ($arg==4) 
+		{
+		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
+		$gmledge->{'sourceArrow'} = 0;
+		$gmledge->{'targetArrow'} = 1;
+		$gmledge->{'width'} = 3;
+		}
+	# del context
+	if ($arg==5) 
+		{
+		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 0;
+		$gmledge->{'width'} = 3;
+		}
+	# process pair
+	if ($arg==6) 
+		{
+		$gmledge->{'fill'} = $edgepalette1{'ProcessPair'};
+		$gmledge->{'sourceArrow'} = 0;
+		$gmledge->{'targetArrow'} = 0;
+		}
+	# cooccurring transformations
+	if ($arg==7) 
+		{
+		$gmledge->{'fill'} = $edgepalette1{'Context'};
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 1;
+		}
+	
+	return;
 }
 
 1;
