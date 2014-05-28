@@ -22,7 +22,7 @@ import concurrent.futures
 # Restrict to a particular path.
 
 # Create server
-port = 9202
+port = 9200
 
 #server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
 
@@ -84,7 +84,7 @@ def resolveAnnotation(annotation):
         res = resolveAnnotation.qg.Term(tAnnotation)
         tmp = res.findAll('name')
         finalArray = []
-        goGrammar = pyp.Suppress(pyp.Literal('<name>')) +  pyp.Word(pyp.alphanums + ' ') + pyp.Suppress(pyp.Literal('</name>')) 
+        goGrammar = pyp.Suppress(pyp.Literal('<name>')) +  pyp.Word(pyp.alphanums + ' -_') + pyp.Suppress(pyp.Literal('</name>')) 
         for x in tmp:
             finalArray.append(str(goGrammar.parseString(str(x))[0]))
         tmp = finalArray
@@ -176,7 +176,6 @@ if __name__ == '__main__':
     r = AnnotationServer()
     reactor.listenTCP(port, server.Site(r))
     reactor.run() 
-
 
         
 
