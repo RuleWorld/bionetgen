@@ -509,6 +509,11 @@ sub makeGroups
 			}
 		}
 	}
+	
+	foreach my $grp (@groups)
+	{
+		@$grp = uniq @$grp;
+	}
 	$bpg->{'NodeGroups'} = \@groups;
 }
 
