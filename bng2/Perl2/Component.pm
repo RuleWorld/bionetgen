@@ -63,17 +63,16 @@ sub readString
     my $clist  = @_ ? shift @_ : undef;
 
     my $string_left = $$strptr;
-
-    # Get component name
-    #if ($string_left=~ s/^([A-Za-z0-9_*]*)//)
-    if ( $string_left =~ s/^(\w+)// )
-    {
-        $comp->Name($1);
-    }
-    else
-    {
-        return undef, "Invalid component name";
-    }
+    
+    # Get component name (cannot start with a number)
+	if ( $string_left =~ s/^([A-Za-z_]\w*)// )
+	{
+		$comp->Name($1);
+	}
+	else
+	{
+		return undef, "Invalid component name in '$string_left' (must begin with a letter or underscore).";
+	}
 
     # Get component state (marked by ~) edges (marked by !) and label (marked by %) 
     my $edge_wildcard = 0;
