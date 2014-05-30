@@ -1367,15 +1367,19 @@ param_labels = { $mscript_param_names };
 
 
 %% Integrate Network Model
- 
+
+% calculate initial values of observables
+observables = zeros( 1, $n_observables );
+observables = calc_observables( species_init );
+
 % calculate expressions
-[expressions] = calc_expressions( parameters );
+[expressions] = calc_expressions( parameters, observables );
 
 % set ODE integrator options
 $mscript_call_odeset
 
 % define derivative function
-rhs_fcn = @(t,y)( calc_species_deriv( t, y, expressions ) );
+rhs_fcn = @(t,y)( calc_species_deriv( t, y, parameters, expressions ) );
 
 % simulate model system (stiff integrator)
 try 
@@ -1393,7 +1397,7 @@ end
 % calculate observables
 observables_out = zeros( length(timepoints), $n_observables );
 for t = 1 : length(timepoints)
-    observables_out(t,:) = calc_observables( species_out(t,:), expressions );
+    observables_out(t,:) = calc_observables( species_out(t,:) );
 end
 
 
@@ -1426,7 +1430,7 @@ $user_fcn_definitions
 
 
 % Calculate expressions
-function [ expressions ] = calc_expressions ( parameters )
+function [ expressions ] = calc_expressions ( parameters, observables )
 
     expressions = zeros(1,$n_expressions);
 $calc_expressions_string   
@@ -1435,7 +1439,7 @@ end
 
 
 % Calculate observables
-function [ observables ] = calc_observables ( species, expressions )
+function [ observables ] = calc_observables ( species )
 
     observables = zeros(1,$n_observables);
 $calc_observables_string
@@ -1449,14 +1453,17 @@ function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 $calc_ratelaws_string
 end
 
-% Calculate species derivates
-function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
+% Calculate species derivatives
+function [ Dspecies ] = calc_species_deriv ( time, species, parameters, expressions )
     
     % initialize derivative vector
     Dspecies = zeros($n_species,1);
     
     % update observables
-    [ observables ] = calc_observables( species, expressions );
+    [ observables ] = calc_observables( species );
+    
+    % update expressions
+    [ expressions ] = calc_expressions( parameters, observables );
     
     % update ratelaws
     [ ratelaws ] = calc_ratelaws( species, expressions, observables );

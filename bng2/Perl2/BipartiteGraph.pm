@@ -32,12 +32,9 @@ sub isDel { return ($_[0] =~ m/->$/) ? 1 : 0; }
 sub isWildcard{ return ($_[0] =~ /\!\+/) ? 1 : 0; }
 sub listHas
 {
-	my @list = @{shift @_};
-	my $item = shift @_;
-	foreach my $check(@list)
-		{
-		if ($item eq $check) { return 1;}
-		}
+	my @list = @{$_[0]};
+	my $check = $_[1];
+	return 1 if grep ( $_ eq $check, @list);
 	return 0;
 }
 sub checkAndAdd
@@ -509,6 +506,11 @@ sub makeGroups
 			}
 		}
 	}
+	
+	foreach my $grp (@groups)
+	{
+		@$grp = uniq @$grp;
+	}
 	$bpg->{'NodeGroups'} = \@groups;
 }
 
@@ -523,39 +525,47 @@ sub groupName
 {
 	my @group = @{shift @_};
 	my @trs = grep( /->/,@group);
-	# assuming groups only have one process or a process pair
-	my $tr = $trs[0];
 	my $string;
-	if ( (index($tr, '~') != -1) )
-		{
-		# its a statechange
-		my @sides = sort split('->',$tr);
-		my @s1 = split(/\(|\)/,$sides[0]);
-		my @s2 = split(/\(|\)/,$sides[1]);
-		my $molname = $s1[0];
-		my @s3 = split(/~/,$s1[1]);
-		my @s4 = split(/~/,$s2[1]);
-		my $compname = $s3[0];
-		my @states = sort ($s3[1], $s4[1]);
-		$string = $molname."(".$compname."~".$states[0]."~".$states[1].")";
-		}
-	elsif ( (index($tr, '!') != -1) )
-		{
-		# its a bond operation
-		my @sides = split('->',$tr);
-		my $side = (index($sides[0], ',') != -1) ? $sides[0]: $sides[1];
-		my @mols = sort split(',',$side);
-		$string = join(":",@mols);
-		}
+	# assuming groups only have one process or a process pair
+	if (@trs)
+	{
+		my $tr = $trs[0];
+		if ( (index($tr, '~') != -1) )
+			{
+			# its a statechange
+			my @sides = sort split('->',$tr);
+			my @s1 = split(/\(|\)/,$sides[0]);
+			my @s2 = split(/\(|\)/,$sides[1]);
+			my $molname = $s1[0];
+			my @s3 = split(/~/,$s1[1]);
+			my @s4 = split(/~/,$s2[1]);
+			my $compname = $s3[0];
+			my @states = sort ($s3[1], $s4[1]);
+			$string = $molname."(".$compname."~".$states[0]."~".$states[1].")";
+			}
+		elsif ( (index($tr, '!') != -1) )
+			{
+			# its a bond operation
+			my @sides = split('->',$tr);
+			my $side = (index($sides[0], ',') != -1) ? $sides[0]: $sides[1];
+			my @mols = sort split(',',$side);
+			$string = join(":",@mols);
+			}
+		else 
+			{
+			# its a molecule add or delete opn
+			# is it add
+			my $type = index($tr, '>')==(length($tr)-1) ? 'delete' : 'add';
+			my $len = (length $tr) - 2;
+			my $offset = ($type eq 'add') ? 2 : 0;
+			$string = "+/-:".substr($tr,$offset,$len);
+			}
+	}
 	else 
-		{
-		# its a molecule add or delete opn
-		# is it add
-		my $type = index($tr, '>')==(length($tr)-1) ? 'delete' : 'add';
-		my $len = (length $tr) - 2;
-		my $offset = ($type eq 'add') ? 2 : 0;
-		$string = "+/-:".substr($tr,$offset,$len);
-		}
+	{ 
+	# assuming this is a group with a single pattern in it
+	$string = $group[0];
+	}
 	return $string;
 }
 sub analyzeGroups
@@ -564,7 +574,16 @@ sub analyzeGroups
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my @groups = @{$bpg->{'NodeGroups'}};
-	#print printGroups($bpg);
+	# extend groups to include unassigned nodes
+	my @assigned;
+	foreach my $grp (@groups) { push @assigned, @$grp; }
+	my @unassigned = grep !listHas(\@assigned,$_), @nodelist;
+	foreach my $patt (@unassigned)
+		{
+			my @temp = ( $patt );
+			push @groups, \@temp;
+		}
+	#print map join(" ", @{$_})."\n", @groups;
 	
 	# extract context
 	my @context = grep( /Context/, @edgelist);
@@ -589,7 +608,7 @@ sub analyzeGroups
 			{
 				foreach my $q(@group2)
 				{
-					if ($p eq $q) { next; }
+					next if ($p eq $q); 
 					# see if $p is a transformation and $q is a pattern
 					if ((index($p, '->') != -1) and (index($q, '->') == -1) )
 					{
@@ -617,7 +636,7 @@ sub analyzeGroups
 									@cotransforms;
 						if (@check) { $f++; $r++; }
 					}
-				}				
+				}
 			}
 			my $groupname1 = groupName(\@group1);
 			my $groupname2 = groupName(\@group2);
@@ -629,7 +648,6 @@ sub analyzeGroups
 		}
 		push @all, groupName($groups[$i]);
 	}
-	
 	return (\@bi,\@uni,\@all);
 }
 

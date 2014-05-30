@@ -23,7 +23,6 @@ my $bnglname = shift @ARGV;
 my @rrules = getRules($bnglname);
 my $commandfile = $ARGV[0];
 my $basename = $1 if ($bnglname =~ /^(.*)\.bngl$/);
-print "\n\n\n";
 
 if (-e $commandfile) 
 { 
@@ -41,9 +40,9 @@ else
 	print "No visualize config file found or specified.\n";
 	if (scalar @ARGV)
 	{
-	print "Command line options found.\n\n";
-	my $command = join(" ",@ARGV);
-	processLine($command,$basename,\@rrules);
+		print "Command line options found.\n\n";
+		my $command = join(" ",@ARGV);
+		processLine($command,$basename,\@rrules);
 	}
 }
 

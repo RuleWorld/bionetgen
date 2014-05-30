@@ -18,7 +18,6 @@ foreach my $opt(@ARGV)
 {
 foreach my $file(@files)
 	{
-	
 	system(join(" ",($cmd,$dirpath.$file,$opt,$opt)));
 	}
 }
