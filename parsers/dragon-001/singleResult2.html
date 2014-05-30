@@ -13,6 +13,35 @@ Released   : 20130602
 -->
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+	<style>
+#customers
+{
+font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+width:100%;
+border-collapse:collapse;
+}
+#customers td, #customers th 
+{
+font-size:1.2em;
+border:1px solid #98bf21;
+padding:3px 7px 2px 7px;
+}
+#customers th 
+{
+font-size:1.4em;
+text-align:left;
+padding-top:5px;
+padding-bottom:4px;
+background-color:#A7C942;
+color:#fff;
+}
+#customers tr.alt td 
+{
+color:#000;
+background-color:#EAF2D3;
+}
+</style>
+
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Scoreboard</title>
 <meta name="keywords" content="" />
@@ -31,16 +60,27 @@ Released   : 20130602
 			<div class="title">
 				<h2>Results</h2>
 			</div>
+			<table id="customers">
+				<tr>
+					<th>Property</th>
+					<th>Value</th>
+				<tr>
    {%for query in queryArray %}
 	{%for element in query %}
+		
 		{% if element == 'content' %}
-			{{element}} : <a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a><br>
+		<tr class="alt">
+			<td>{{element}} </td><td> <a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a></td>
 		{% elif element == 'contactMap'%}
-			{{element}} : <img src="{{query[element]}}"/><br>
+		<tr class="alt">
+			<td>{{element}} </td><td><a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a> (<a href="visualize?file={{query[element][2]|safe}}" target="_blank">Visualize</a>)</td>
 		{% else %}
-		    	{{  element }} : {{query[element]}}<br>
+		<tr>
+		    	<td>{{  element }} </td><td> {{query[element]}}</td>
 		{% endif %}
+		<tr>
 	{% endfor %}
+</table>
 	----
     {% endfor %}
     <br>
@@ -51,7 +91,6 @@ Released   : 20130602
 
 	</div>
 </div>
-gds
 {% include "footer.html" %}
 </body>
 </html>

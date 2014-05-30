@@ -23,6 +23,7 @@ import jinja2
 import zipfile
 import tempfile
 
+import json
 from google.appengine.api import files
 import parseAnnotations
 
@@ -98,6 +99,7 @@ class ModelInfo(ndb.Model):
     author = ndb.StringProperty(repeated=True)
     content = ndb.BlobKeyProperty() #BlobInfo(blobkey)
     contactMap = ndb.BlobKeyProperty()
+    contactMapJson = ndb.JsonProperty()
     name = ndb.StringProperty()
     description = ndb.StringProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
@@ -267,18 +269,25 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         self.redirect('/?' + urllib.urlencode(query_params))
  
 
+#address = 'http://127.0.0.1:9200'
+address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
     parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
-    #s = xmlrpclib.ServerProxy('http://127.0.0.1:9200')
-    s = xmlrpclib.ServerProxy('http://54.214.249.43:9200',GAEXMLRPCTransport())
+    print '----',parsedAnnotationDict['structuredTags']
+    s = xmlrpclib.ServerProxy(address,GAEXMLRPCTransport())
     tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
     tagDict = {}
     for element in tagArray:
         tagDict[element[0]] = element[1]
-    print tagDict
+    print '+++++',tagDict
     return parsedAnnotationDict,tagDict
-    
+
+def getMap(bnglContent,mapType):
+    s = xmlrpclib.ServerProxy(address,GAEXMLRPCTransport())
+    mapContent = s.getContactMap(bnglContent,mapType)
+    return mapContent
+
 class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
 
     def post(self):
@@ -287,59 +296,14 @@ class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
         # will be consistent. However, the write rate to a single entity group
         # should be limited to ~1/second.
         
-        
-        
-        model_name = self.request.get('model_name',
-                                          DEFAULT_GUESTBOOK_NAME)
-        modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
-        publicationInfo = PublicationInfo(parent=dbmodel_key(model_name))
-
-        '''
-        publicationInfo.name = self.request.get('publication')
-        publicationInfo.journal =   self.request.get('journal')
-        '''        
-        if users.get_current_user():
-            modelSubmission.submitter = users.get_current_user()
-            
         upload_files = self.get_uploads('file')
-        contact = self.get_uploads('contact')
         blob_info = upload_files[0]
-        blob_info2 = contact[0]
-        modelSubmission.content = blob_info.key()
-        modelSubmission.privacy = self.request.get('privacy')
-        modelSubmission.submitter =  users.get_current_user()
-        modelSubmission.name = blob_info.filename 
-        modelSubmission.contactMap = blob_info2.key() 
-        modelSubmission.contactMap = blob_info2.key()
-        
-        #annotationDict = parseAnnotations.parseAnnotations(bnglContent)
-        #parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
-        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9200')
-        #tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
-
         bnglContent = blob_info.open().read()
-        parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
-        modelSubmission.author = [parsedAnnotationDict['author']]
-        modelSubmission.structuredTags = parsedAnnotationDict['structuredTags']
-        if 'tags' in tagArray:
-            modelSubmission.tags = tagArray['tags']
-        if 'modelName' in tagArray:
-            modelSubmission.name = tagArray['modelName'][0]
-        if 'author' in tagArray:
-            modelSubmission.author = tagArray['author']
-        modelSubmission.put()
-
-        #modelSubmission.author = self.request.get('author')
-        #modelSubmission.publication = publicationInfo
-        #modelSubmission.fileFormat = self.request.get('fileFormat')
+        element = blob_info.filename
         
-        #modelSubmission.name = self.request.get('name')
-        #modelSubmission.description = self.request.get('description')
-        
-
-        query_params = {'model_name': model_name}
-        self.redirect('/?' + urllib.urlencode(query_params))
- 
+        taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,'privacy':self.request.get('privacy')})
+        self.redirect('/')
+  
  
  
 class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
@@ -376,7 +340,7 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
 
             zipModel = objZip.open(element)
             bnglContent = zipModel.read()
-            taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,'nameList':nameList})
+            taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,'privacy':self.request.get('privacy')})
 
         self.redirect('/')
  
@@ -385,7 +349,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
     def post(self):
             element = self.request.get('element')
             bnglContent = self.request.get('bnglContent')
-            nameList = self.request.get('nameList')
+            
 
             model_name = self.request.get('model_name',
                                               DEFAULT_GUESTBOOK_NAME)
@@ -403,6 +367,22 @@ class ProcessAnnotation(webapp2.RequestHandler):
             
             modelSubmission.content = blob_key
             modelSubmission.name = element
+
+            mapInfo = getMap(bnglContent,'contact')
+            file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename='{0}.gml'.format(element))
+                
+            # Open the file and write to it
+            with files.open(file_name, 'a') as f:
+                f.write(mapInfo['gmlStr'])
+            
+            # Finalize the file. Do this before attempting to read it.
+            files.finalize(file_name)
+            
+            # Get the file's blob key
+            blob_key = files.blobstore.get_blob_key(file_name)
+            modelSubmission.contactMap = blob_key
+            modelSubmission.contactMapJson = json.loads(mapInfo['jsonStr'])
+            modelSubmission.privacy = self.request.get('privacy')
             '''
             if '{0}.png'.format(element) in nameList:
                 zipModel = objZip.open(element)
@@ -518,12 +498,22 @@ class Description(webapp2.RequestHandler):
         
         for p in q.iter():
             dp = p.to_dict()
-            
+            print dp.keys()
+            print p.key
             for element in dp:
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
 
                 if element in ['content']:
                     ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),blobstore.BlobInfo(dp[element]).filename]
+                elif element in ['contactMap']:
+                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),blobstore.BlobInfo(dp[element]).filename,dp['name']]
+                elif element in 'contactMapJson':
+                    continue
+                else:
+                    if dp[element] in [None,[]]:
+                        continue
+                    ndp[element] = dp[element]
+                '''    
                 elif element in ['contactMap']:
                     try:                    
                         blobkey = urllib.unquote(str(dp[element]))
@@ -533,8 +523,7 @@ class Description(webapp2.RequestHandler):
                     except TypeError:
                         pass
                     #printStatement = '<img src=image?img_id={0}/><br>'.format(dp[element])
-                else:
-                    ndp[element] = dp[element]
+                '''
                  
             queryArray.append(ndp)
 
@@ -545,6 +534,28 @@ class Description(webapp2.RequestHandler):
         template =JINJA_ENVIRONMENT.get_template('singleResult2.html')
         self.response.write(template.render(template_values))
 
+def convert(input):
+    if isinstance(input, dict):
+        return dict((convert(key), convert(value)) for key, value in input.iteritems())
+    elif isinstance(input, list):
+        return [convert(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('utf-8')
+    else:
+        return input
+
+class Visualize(webapp2.RequestHandler):
+    def get(self):
+        query = ModelInfo.name
+        q = ModelInfo.query(query == self.request.get('file'))
+        model = q.fetch(1)
+        model = model[0].to_dict()
+        
+        template_values = {}
+        template_values['graph'] = convert(model['contactMapJson']['elements'])
+        template_values['layout'] = convert(model['contactMapJson']['layout'][0])
+        template =JINJA_ENVIRONMENT.get_template('visualize.html')
+        self.response.write(template.render(template_values))
 
 class Image (webapp2.RequestHandler):
     def get(self):
@@ -660,6 +671,7 @@ app = webapp2.WSGIApplication([
     ('/signBatch',ModelDBBatch),
     ('/search',Search),
     ('/list',List),
+    ('/visualize',Visualize),
     ('/description',Description),
     ('/myModels',MyModels),
     ('/serve/([^/]+)?', ServeHandler),

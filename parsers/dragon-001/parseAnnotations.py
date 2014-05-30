@@ -57,7 +57,7 @@ def parseAnnotations(bnglString):
     return tagsDict
     
 if __name__ == "__main__":
-    with open('output19.bngl') as f:
+    with open('output1.bngl') as f:
         lines = f.read()
     tagsDict = parseAnnotations(lines)
-    dict2DatabaseFormat(tagsDict)
+    print dict2DatabaseFormat(tagsDict)
