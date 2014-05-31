@@ -47,7 +47,9 @@ sub reverseTransformation
 {
 	my $tr = shift @_; #unprettified
 	my @splits = reverse split('->',prettify($tr));
-	my @splits2 = map ( join(',',sort split(',',$_)), @splits);
+	#my @splits2 = map ( join(',',sort split(',',$_ =~ s/\s//g)), @splits);
+	sub clean { $_ =~ s/\s//g; return $_; }
+	my @splits2 = map ( join(',',sort split(',',clean($_))), @splits);
 	my $tr2 = unprettify(join '->',@splits2 );
 	return $tr2;
 }
@@ -337,6 +339,7 @@ sub addProcessPairs
 	my $bpg = shift @_;
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @trs = grep (isTransformation($_),@nodelist);
+	
 	my %checked;
 	foreach my $tr(@trs) {$checked{$tr} = 0;}
 	foreach my $tr(@trs)
@@ -441,8 +444,7 @@ sub makeGroups
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my @groups;
-	# isolate the process pairs 
-	
+ 	
 	# create isgrouped to keep track of group assignments
 	my %isgrouped;
 	foreach my $node(@nodelist) {$isgrouped{$node} = 0;}
@@ -651,7 +653,95 @@ sub analyzeGroups
 	return (\@bi,\@uni,\@all);
 }
 
+sub analyzeGroups2
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my @groups = @{$bpg->{'NodeGroups'}};
+	# extend groups to include unassigned nodes
+	my @assigned;
+	foreach my $grp (@groups) { push @assigned, @$grp; }
+	my @unassigned = grep !listHas(\@assigned,$_), @nodelist;
+	foreach my $patt (@unassigned)
+		{
+			my @temp = ( $patt );
+			push @groups, \@temp;
+		}
+	# now we need to assign a direction to each element of a group
+	my @reac = grep( /Reactant/, @edgelist);
+	my @prod = grep( /Product/, @edgelist);
+	#my @syndel = grep( /Syndel/, @edgelist);
+	
+	my @sign_arr = ();
+	# each group has a corresponding hash %sign that stores
+	# the sign of each of its elements
+	# @sign_arr is an array of references to those hashes
+	
+	foreach my $grp (@groups)
+	{	
+		my %sign;
+		my @group = @$grp;
+		my $n = scalar @group;
+		my $first = shift @group;
+		# if it is a singleton group, element is simply a pattern
+		# assign +1 and move on
+		if ($n==1) { $sign{$first} = +1; push @sign_arr, \%sign; next; }
+		# if not a singleton group
+		# first element will be a transformation
+		# assign +1 unless it is a del transformation
+		$sign{$first} = isDel($first) ? -1 : +1;
+		# for the remaining transformation.
+		# assign -1 unless it is a syn transformation
+		my @trs = grep /->/, @group;
+		foreach my $tr(@trs) { $sign{$tr} = isSyn($tr) ? +1 :  -1; }
+		
+		# separate patterns and wildcard patterns
+		my @wc = grep /\!\+/, @group;
+		my @temp = (@trs,@wc);
+		my @patts = grep !listHas(\@temp,$_), @group;
+		my @edges = grep index($_,$first)!=-1, @edgelist;
+		my $syndelcheck = (isSyn($first)|isDel($first));
 
+		# assigning signage to each pattern
+		foreach my $patt(@patts)
+		{
+			my $str = ":".$patt.":";
+			my @edges2 = grep index($_,$str)!=-1, @edges;
+			if ($syndelcheck & @edges2) { $sign{$patt} = +1; next; }
+			if (grep /Reactant/,@edges2) { $sign{$patt} = -1; next; }
+			if (grep /Product/,@edges2) { $sign{$patt} = +1; next; }
+		}
+		
+		# assigning signage to each wildcard within each group
+		# note multiple assignments will happen across the groups
+		# if the wildcard is clustered to different groups. that's okay!
+		foreach my $wildcard(@wc)
+		{
+			my @matches = 	grep listHas(\@patts,$_),
+							map { $_ =~ /.*:(.*):.*/; $1;}
+							grep index($_,$wildcard)!=-1,
+							grep /Wildcard/,
+							@edgelist;
+			$sign{$wildcard} = $sign{$matches[0]}; 
+		}
+		push @sign_arr, \%sign;
+	}
+	foreach my $sign(@sign_arr) { print printHash($sign); }
+
+	# extract context
+	my @context = grep( /Context/, @edgelist);
+	my @syndel = grep( /Syndel/, @edgelist);
+	my @cotransforms = grep ( /Cotransform/, @edgelist);
+
+	my @syn = grep( (index($_, '->') == 0), @syndel);
+	my @del = grep( (index($_, '->') != 0), @syndel);
+	my @uni = ();
+	my @bi = ();
+	my @all = ();
+	
+	#incomplete!
+}
 
 sub makeContactMap
 {
