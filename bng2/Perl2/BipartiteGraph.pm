@@ -684,6 +684,7 @@ sub analyzeGroups2
 		my @group = @$grp;
 		my $n = scalar @group;
 		my $first = shift @group;
+
 		# if it is a singleton group, element is simply a pattern
 		# assign +1 and move on
 		if ($n==1) { $sign{$first} = +1; push @sign_arr, \%sign; next; }
@@ -726,20 +727,94 @@ sub analyzeGroups2
 			$sign{$wildcard} = $sign{$matches[0]}; 
 		}
 		push @sign_arr, \%sign;
+		#unshift @group, $first;
+		
 	}
-	foreach my $sign(@sign_arr) { print printHash($sign); }
+	#foreach my $sign(@sign_arr) { print printHash($sign); }
 
 	# extract context
 	my @context = grep( /Context/, @edgelist);
 	my @syndel = grep( /Syndel/, @edgelist);
 	my @cotransforms = grep ( /Cotransform/, @edgelist);
-
 	my @syn = grep( (index($_, '->') == 0), @syndel);
 	my @del = grep( (index($_, '->') != 0), @syndel);
-	my @uni = ();
-	my @bi = ();
-	my @all = ();
 	
+	# initializing arrays holding positive & negative influences
+	my @influences;
+	
+	foreach my $i(0..@groups-1)
+	{
+		foreach my $j(0..@groups-1)
+		{
+			my @group1 = @{$groups[$i]};
+			my @group2 = @{$groups[$j]};
+			my $pos = 0;
+			my $neg = 0;
+			foreach my $item1(@group1)
+			{
+				foreach my $item2(@group2)
+				{
+					#check if items are equal
+					next if ($item1 eq $item2);
+					my $str = $item2.":".$item1;
+					my @conts = grep index($_,$str) != -1, @context;
+					# leave if there are no contexts
+					next if (! @conts) ;
+					foreach my $cont(@conts)
+					{
+						my $sign1 = $sign_arr[$i]{$item1};
+						my $sign2 = $sign_arr[$j]{$item2};
+						my $sign = $sign1*$sign2;
+						if ($sign > 0) {$pos++;}
+						if ($sign < 0) {$neg++;}
+					}
+				}
+			}
+			if ($pos > 0) { push @influences, "+".$i.":".$j; }
+			if ($neg > 0) { push @influences, "-".$i.":".$j; }
+		}
+	}
+	# dealing with syndel context
+	foreach my $i(0..@groups-1)
+	{
+		my @group1 = @{$groups[$i]};
+		my $syndelcheck = isSyn($group1[0])|isDel($group1[0]);
+		next if ( ! $syndelcheck );
+		
+		my @trs = grep /->/, @group1;
+		my @syn1; my @del1;
+		foreach my $tr (@trs) 
+		{
+			push @del1, grep ( index($_,$tr) != -1, @del );
+			push @syn1, grep ( index($_,$tr) != -1, @syn );
+		}
+		
+		foreach my $j(0..@groups-1)
+		{
+			my $c_syn = 0;
+			my $c_del = 0;
+			my @group2 = @{$groups[$j]};
+			foreach my $item(@group2)
+			{
+				my $str = ":".$item.":";
+				if (grep (index($_,$str) != -1, @del1)) { $c_del++; }
+				if (grep (index($_,$str) != -1, @syn1)) { $c_syn++; }
+			}
+			if ($c_del > 0)
+			{
+				push @influences, "-".$j.":".$i;
+				push @influences, "-".$i.":".$j;
+			}
+			if ($c_syn > 0)
+			{
+				push @influences, "+".$i.":".$j;
+			}
+		}
+	}
+	
+	#implement xgroupname2
+	#print map $_."\n", @edgelist;
+	#print map $_."\n", @influences
 	#incomplete!
 }
 
