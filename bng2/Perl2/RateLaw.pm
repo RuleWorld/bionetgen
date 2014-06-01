@@ -179,9 +179,11 @@ sub newRateLaw
         # Handle expression for rate constant of elementary reaction
         # Read expression
         my $expr = Expression->new();
+        $expr->setAllowForward(1);  # don't complain if expression refers to undefined parameters
         $err = $expr->readString( \$string_left, $model->ParamList, "," );
         if ($err) { return '', $err; }
-
+    		$expr->setAllowForward(0);
+		    
         # get name for ratelaw
         my $name = $expr->getName( $model->ParamList, $basename, $force_fcn );
         # retreive param with this name

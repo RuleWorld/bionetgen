@@ -476,7 +476,8 @@ sub set
     {
         # Get hash of variables reference in Expr
         my $vhash = $param->Expr->getVariables($plist);
-        if ( exists $vhash->{'Observable'} || exists $vhash->{'Function'} )
+        # If expression has undefined parameter types make it a 'Function' type to be safe
+        if ( exists $vhash->{'Observable'} || exists $vhash->{'Function'} || exists $vhash->{'UNDEF'} ) 
         {
             $param->setType('Function');
             my $fun= Function->new();
@@ -486,7 +487,7 @@ sub set
             $fun->Args([@args]);
             $param->Ref($fun);
         }
-        elsif ( $vhash->{Constant} or $vhash->{ConstantExpression} )
+        elsif ( $vhash->{'Constant'} or $vhash->{'ConstantExpression'} )
         {
             $param->setType('ConstantExpression');
         }
