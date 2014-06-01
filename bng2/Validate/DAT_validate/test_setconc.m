@@ -64,7 +64,7 @@ if ( isempty(parameters) )
    parameters = [ 6.0221e23, 1e-9, 1e-9, 1e-9, 0.1 ];
 end
 % check that parameters has proper dimensions
-if (  size(parameters,1) ~= 1  |  size(parameters,2) ~= 5  )
+if (  size(parameters,1) ~= 1  ||  size(parameters,2) ~= 5  )
     fprintf( 1, 'Error: size of parameter argument is invalid! Correct size = [1 5].\n' );
     err = 1;
     return;
@@ -75,7 +75,7 @@ if ( isempty(species_init) )
    species_init = initialize_species( parameters );
 end
 % check that species_init has proper dimensions
-if (  size(species_init,1) ~= 1  |  size(species_init,2) ~= 3  )
+if (  size(species_init,1) ~= 1  ||  size(species_init,2) ~= 3  )
     fprintf( 1, 'Error: size of species_init argument is invalid! Correct size = [1 3].\n' );
     err = 1;
     return;
@@ -86,7 +86,7 @@ if ( isempty(timepoints) )
    timepoints = linspace(0,10,20+1)';
 end
 % check that timepoints has proper dimensions
-if (  size(timepoints,1) < 2  |  size(timepoints,2) ~= 1  )
+if (  size(timepoints,1) < 2  ||  size(timepoints,2) ~= 1  )
     fprintf( 1, 'Error: size of timepoints argument is invalid! Correct size = [t 1], t>1.\n' );
     err = 1;
     return;
@@ -97,7 +97,7 @@ if ( isempty(suppress_plot) )
    suppress_plot = 0;
 end
 % check that suppress_plot has proper dimensions
-if ( size(suppress_plot,1) ~= 1  |  size(suppress_plot,2) ~= 1 )
+if ( size(suppress_plot,1) ~= 1  ||  size(suppress_plot,2) ~= 1 )
     fprintf( 1, 'Error: suppress_plots argument should be a scalar!\n' );
     err = 1;
     return;
@@ -109,13 +109,9 @@ param_labels = { 'NA', 'V', 'L0', 'R0', 'km' };
 
 
 %% Integrate Network Model
-
-% calculate initial values of observables
-observables = zeros( 1, 1 );
-observables = calc_observables( species_init );
-
+ 
 % calculate expressions
-[expressions] = calc_expressions( parameters, observables );
+[expressions] = calc_expressions( parameters );
 
 % set ODE integrator options
 opts = odeset( 'RelTol',   1e-08,   ...
@@ -126,7 +122,7 @@ opts = odeset( 'RelTol',   1e-08,   ...
 
 
 % define derivative function
-rhs_fcn = @(t,y)( calc_species_deriv( t, y, parameters, expressions ) );
+rhs_fcn = @(t,y)( calc_species_deriv( t, y, expressions ) );
 
 % simulate model system (stiff integrator)
 try 
@@ -144,7 +140,7 @@ end
 % calculate observables
 observables_out = zeros( length(timepoints), 1 );
 for t = 1 : length(timepoints)
-    observables_out(t,:) = calc_observables( species_out(t,:) );
+    observables_out(t,:) = calc_observables( species_out(t,:), expressions );
 end
 
 
@@ -187,7 +183,7 @@ end
 
 
 % Calculate expressions
-function [ expressions ] = calc_expressions ( parameters, observables )
+function [ expressions ] = calc_expressions ( parameters )
 
     expressions = zeros(1,9);
     expressions(1) = parameters(1);
@@ -205,7 +201,7 @@ end
 
 
 % Calculate observables
-function [ observables ] = calc_observables ( species )
+function [ observables ] = calc_observables ( species, expressions )
 
     observables = zeros(1,1);
     observables(1) = species(3);
@@ -222,17 +218,14 @@ function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 
 end
 
-% Calculate species derivatives
-function [ Dspecies ] = calc_species_deriv ( time, species, parameters, expressions )
+% Calculate species derivates
+function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
     
     % initialize derivative vector
     Dspecies = zeros(3,1);
     
     % update observables
-    [ observables ] = calc_observables( species );
-    
-    % update expressions
-    [ expressions ] = calc_expressions( parameters, observables );
+    [ observables ] = calc_observables( species, expressions );
     
     % update ratelaws
     [ ratelaws ] = calc_ratelaws( species, expressions, observables );

@@ -1322,7 +1322,7 @@ if ( isempty(parameters) )
    parameters = [ $mscript_param_values ];
 end
 % check that parameters has proper dimensions
-if (  size(parameters,1) ~= 1  |  size(parameters,2) ~= $n_parameters  )
+if (  size(parameters,1) ~= 1  ||  size(parameters,2) ~= $n_parameters  )
     fprintf( 1, 'Error: size of parameter argument is invalid! Correct size = [1 $n_parameters].\\n' );
     err = 1;
     return;
@@ -1333,7 +1333,7 @@ if ( isempty(species_init) )
    species_init = initialize_species( parameters );
 end
 % check that species_init has proper dimensions
-if (  size(species_init,1) ~= 1  |  size(species_init,2) ~= $n_species  )
+if (  size(species_init,1) ~= 1  ||  size(species_init,2) ~= $n_species  )
     fprintf( 1, 'Error: size of species_init argument is invalid! Correct size = [1 $n_species].\\n' );
     err = 1;
     return;
@@ -1344,7 +1344,7 @@ if ( isempty(timepoints) )
    timepoints = linspace($t_start,$t_end,$n_steps+1)';
 end
 % check that timepoints has proper dimensions
-if (  size(timepoints,1) < 2  |  size(timepoints,2) ~= 1  )
+if (  size(timepoints,1) < 2  ||  size(timepoints,2) ~= 1  )
     fprintf( 1, 'Error: size of timepoints argument is invalid! Correct size = [t 1], t>1.\\n' );
     err = 1;
     return;
@@ -1355,7 +1355,7 @@ if ( isempty(suppress_plot) )
    suppress_plot = 0;
 end
 % check that suppress_plot has proper dimensions
-if ( size(suppress_plot,1) ~= 1  |  size(suppress_plot,2) ~= 1 )
+if ( size(suppress_plot,1) ~= 1  ||  size(suppress_plot,2) ~= 1 )
     fprintf( 1, 'Error: suppress_plots argument should be a scalar!\\n' );
     err = 1;
     return;
@@ -1367,19 +1367,15 @@ param_labels = { $mscript_param_names };
 
 
 %% Integrate Network Model
-
-% calculate initial values of observables
-observables = zeros( 1, $n_observables );
-observables = calc_observables( species_init );
-
+ 
 % calculate expressions
-[expressions] = calc_expressions( parameters, observables );
+[expressions] = calc_expressions( parameters );
 
 % set ODE integrator options
 $mscript_call_odeset
 
 % define derivative function
-rhs_fcn = @(t,y)( calc_species_deriv( t, y, parameters, expressions ) );
+rhs_fcn = @(t,y)( calc_species_deriv( t, y, expressions ) );
 
 % simulate model system (stiff integrator)
 try 
@@ -1397,7 +1393,7 @@ end
 % calculate observables
 observables_out = zeros( length(timepoints), $n_observables );
 for t = 1 : length(timepoints)
-    observables_out(t,:) = calc_observables( species_out(t,:) );
+    observables_out(t,:) = calc_observables( species_out(t,:), expressions );
 end
 
 
@@ -1430,7 +1426,7 @@ $user_fcn_definitions
 
 
 % Calculate expressions
-function [ expressions ] = calc_expressions ( parameters, observables )
+function [ expressions ] = calc_expressions ( parameters )
 
     expressions = zeros(1,$n_expressions);
 $calc_expressions_string   
@@ -1439,7 +1435,7 @@ end
 
 
 % Calculate observables
-function [ observables ] = calc_observables ( species )
+function [ observables ] = calc_observables ( species, expressions )
 
     observables = zeros(1,$n_observables);
 $calc_observables_string
@@ -1453,17 +1449,14 @@ function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 $calc_ratelaws_string
 end
 
-% Calculate species derivatives
-function [ Dspecies ] = calc_species_deriv ( time, species, parameters, expressions )
+% Calculate species derivates
+function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
     
     % initialize derivative vector
     Dspecies = zeros($n_species,1);
     
     % update observables
-    [ observables ] = calc_observables( species );
-    
-    % update expressions
-    [ expressions ] = calc_expressions( parameters, observables );
+    [ observables ] = calc_observables( species, expressions );
     
     % update ratelaws
     [ ratelaws ] = calc_ratelaws( species, expressions, observables );
@@ -2214,7 +2207,7 @@ if ( isempty(parameters) )
    parameters = [ $mscript_param_values ];
 end
 % check that parameters has proper dimensions
-if (  size(parameters,1) ~= 1  |  size(parameters,2) ~= $n_parameters  )
+if (  size(parameters,1) ~= 1  ||  size(parameters,2) ~= $n_parameters  )
     fprintf( 1, 'Error: size of parameter argument is invalid! Correct size = [1 $n_parameters].\\n' );
     err = 1;
     return;
@@ -2225,7 +2218,7 @@ if ( isempty(species_init) )
    species_init = initialize_species( parameters );
 end
 % check that species_init has proper dimensions
-if (  size(species_init,1) ~= 1  |  size(species_init,2) ~= $n_species  )
+if (  size(species_init,1) ~= 1  ||  size(species_init,2) ~= $n_species  )
     fprintf( 1, 'Error: size of species_init argument is invalid! Correct size = [1 $n_species].\\n' );
     err = 1;
     return;
@@ -2236,7 +2229,7 @@ if ( isempty(timepoints) )
    timepoints = linspace($t_start,$t_end,$n_steps+1)';
 end
 % check that timepoints has proper dimensions
-if (  size(timepoints,1) < 2  |  size(timepoints,2) ~= 1  )
+if (  size(timepoints,1) < 2  ||  size(timepoints,2) ~= 1  )
     fprintf( 1, 'Error: size of timepoints argument is invalid! Correct size = [t 1], t>1.\\n' );
     err = 1;
     return;
@@ -2247,7 +2240,7 @@ if ( isempty(suppress_plot) )
    suppress_plot = 0;
 end
 % check that suppress_plot has proper dimensions
-if ( size(suppress_plot,1) ~= 1  |  size(suppress_plot,2) ~= 1 )
+if ( size(suppress_plot,1) ~= 1  ||  size(suppress_plot,2) ~= 1 )
     fprintf( 1, 'Error: suppress_plots argument should be a scalar!\\n' );
     err = 1;
     return;
@@ -2907,7 +2900,7 @@ if ( isempty(parameters) )
    parameters = [ $mscript_param_values ];
 end
 % check that parameters has proper dimensions
-if (  size(parameters,1) ~= 1  |  size(parameters,2) ~= $n_parameters  )
+if (  size(parameters,1) ~= 1  ||  size(parameters,2) ~= $n_parameters  )
     fprintf( 1, 'Error: size of parameter argument is invalid! Correct size = [1 $n_parameters].\\n' );
     err = 1;
     return;
@@ -2918,7 +2911,7 @@ if ( isempty(species_init) )
    species_init = initialize_species( parameters );
 end
 % check that species_init has proper dimensions
-if (  size(species_init,1) ~= 1  |  size(species_init,2) ~= $n_species  )
+if (  size(species_init,1) ~= 1  ||  size(species_init,2) ~= $n_species  )
     fprintf( 1, 'Error: size of species_init argument is invalid! Correct size = [1 $n_species].\\n' );
     err = 1;
     return;
@@ -2929,7 +2922,7 @@ if ( isempty(timepoints) )
    timepoints = linspace($t_start,$t_end,$n_steps+1)';
 end
 % check that timepoints has proper dimensions
-if (  size(timepoints,1) < 2  |  size(timepoints,2) ~= 1  )
+if (  size(timepoints,1) < 2  ||  size(timepoints,2) ~= 1  )
     fprintf( 1, 'Error: size of timepoints argument is invalid! Correct size = [t 1], t>1.\\n' );
     err = 1;
     return;
@@ -2940,7 +2933,7 @@ if ( isempty(suppress_plot) )
    suppress_plot = 0;
 end
 % check that suppress_plot has proper dimensions
-if ( size(suppress_plot,1) ~= 1  |  size(suppress_plot,2) ~= 1 )
+if ( size(suppress_plot,1) ~= 1  ||  size(suppress_plot,2) ~= 1 )
     fprintf( 1, 'Error: suppress_plots argument should be a scalar!\\n' );
     err = 1;
     return;

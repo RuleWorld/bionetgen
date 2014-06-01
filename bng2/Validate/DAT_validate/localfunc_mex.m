@@ -66,7 +66,7 @@ if ( isempty(parameters) )
    parameters = [ 0.5, 0.1, 0.5, 0.5 ];
 end
 % check that parameters has proper dimensions
-if (  size(parameters,1) ~= 1  |  size(parameters,2) ~= 4  )
+if (  size(parameters,1) ~= 1  ||  size(parameters,2) ~= 4  )
     fprintf( 1, 'Error: size of parameter argument is invalid! Correct size = [1 4].\n' );
     err = 1;
     return;
@@ -77,7 +77,7 @@ if ( isempty(species_init) )
    species_init = initialize_species( parameters );
 end
 % check that species_init has proper dimensions
-if (  size(species_init,1) ~= 1  |  size(species_init,2) ~= 7  )
+if (  size(species_init,1) ~= 1  ||  size(species_init,2) ~= 7  )
     fprintf( 1, 'Error: size of species_init argument is invalid! Correct size = [1 7].\n' );
     err = 1;
     return;
@@ -88,7 +88,7 @@ if ( isempty(timepoints) )
    timepoints = linspace(0,10,40+1)';
 end
 % check that timepoints has proper dimensions
-if (  size(timepoints,1) < 2  |  size(timepoints,2) ~= 1  )
+if (  size(timepoints,1) < 2  ||  size(timepoints,2) ~= 1  )
     fprintf( 1, 'Error: size of timepoints argument is invalid! Correct size = [t 1], t>1.\n' );
     err = 1;
     return;
@@ -99,7 +99,7 @@ if ( isempty(suppress_plot) )
    suppress_plot = 0;
 end
 % check that suppress_plot has proper dimensions
-if ( size(suppress_plot,1) ~= 1  |  size(suppress_plot,2) ~= 1 )
+if ( size(suppress_plot,1) ~= 1  ||  size(suppress_plot,2) ~= 1 )
     fprintf( 1, 'Error: suppress_plots argument should be a scalar!\n' );
     err = 1;
     return;
