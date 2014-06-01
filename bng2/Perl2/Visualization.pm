@@ -147,6 +147,7 @@ sub printGraph
 		my $string = "";
 		my $string2 = "";
 		$string2 .= "fill".$q1.$edge->{'fill'}.$q2;
+		my @temp = (0,1);
 		if ($edge->{'sourceArrow'} and $edge->{'targetArrow'})
 			{
 			$string2 .= "arrow \"both\" ";
@@ -159,12 +160,25 @@ sub printGraph
 			{
 			$string2 .= "arrow \"last\" ";
 			}
+		if ($edge->{'sourceArrow'})
+			{
+				if(!listHas(\@temp,$edge->{'sourceArrow'}))
+					{
+					$string2 .= "sourceArrow".$q1.$edge->{'sourceArrow'}.$q2;
+					}
+			}
+		if ($edge->{'targetArrow'})
+			{
+				if(!listHas(\@temp,$edge->{'targetArrow'}))
+					{
+					$string2 .= "targetArrow".$q1.$edge->{'targetArrow'}.$q2;
+					}
+			}
 		if (defined $edge->{'width'}) 
 		{
 			$string2 .= "width ".$edge->{'width'}." ";
 		}
 		$string2 = "graphics [ ".$string2." ]";
-		
 		$string .= "source".$q1.$edge->{'source'}.$q2;
 		$string .= "target".$q1.$edge->{'target'}.$q2;
 		$string = "edge [ ".$string." ".$string2." ]";
@@ -693,7 +707,67 @@ sub toGML_process
 	return printGraph($gmlgraph);
 }
 
-
+sub toGML_process2
+{
+	my %names = %{shift @_};
+	my @influences = @{shift @_};
+	my @gmlnodes = ();
+	my @groups = sort {$a <=> $b} keys %names;
+	foreach my $i(@groups)
+	{
+		my $node = $names{$i};
+		my $gmlnode = initializeGMLNode($i,$node,$node);
+		styleNode($gmlnode);
+		push @gmlnodes,$gmlnode;
+	}		
+	
+	#process influences
+	#print map $_."\n",@influences;
+	my @gmledges = ();
+	foreach my $i(@groups)
+	{
+		foreach my $j(@groups)
+		{
+			my @forward = grep /^[-+]$i:$j$/, @influences;
+			my @reverse = grep /^[-+]$j:$i$/, @influences;
+			my @all = (@forward,@reverse);
+			# edge exists?
+			next if (! scalar @all);
+			my $gmledge = initializeGMLEdge($i,$j);
+			styleEdge($gmledge);
+			if (@forward)
+				{
+				my @pos = grep /^[+]/, @forward;
+				my @neg = grep /^[-]/, @forward;
+				if (scalar @pos and scalar @neg)
+					{$gmledge->{'targetArrow'}="convex";}
+				elsif (scalar @pos)
+					{$gmledge->{'targetArrow'}="bezier";}
+				elsif (scalar @neg)
+					{$gmledge->{'targetArrow'}="t_shape";}
+				}
+			if (@reverse)
+				{
+				my @pos = grep /^[+]/, @reverse;
+				my @neg = grep /^[-]/, @reverse;
+				if (scalar @pos and scalar @neg)
+					{$gmledge->{'sourceArrow'}="convex";}
+				elsif (scalar @pos)
+					{$gmledge->{'sourceArrow'}="bezier";}
+				elsif (scalar @neg)
+					{$gmledge->{'sourceArrow'}="t_shape";}
+				}
+			push @gmledges, $gmledge;
+		}
+	}
+	
+	
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+}
 # styling
 my %nodepalette2 = 
 	('Group'=>"#e5e5e5",

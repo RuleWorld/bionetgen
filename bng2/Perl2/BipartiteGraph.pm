@@ -811,13 +811,48 @@ sub analyzeGroups2
 			}
 		}
 	}
-	
-	#implement xgroupname2
-	#print map $_."\n", @edgelist;
-	#print map $_."\n", @influences
-	#incomplete!
+	@influences = uniq @influences;
+	my %groupname;
+	@groupname { 0..@groups-1 } = map groupName2($_), @groups;
+	#print printHash(\%groupname);
+	return (\%groupname,\@influences);
 }
 
+sub groupName2
+{
+	my @group = @{shift @_};
+	my $first = $group[0];
+	if ($first !~ /->/) {return $first;}
+	my ($lhs,$rhs) = map {$_=~ s/\s//g; $_;} split('->',prettify($first));
+	if ($first =~ /~/) 
+		{ 
+		my ($mol,$comp) = ($1,$2) if $lhs =~ /^(.*)\((.*)~.*\)/;
+		my $s1 = $1 if $lhs =~ /^.*\(.*~(.*)\)/;
+		my $s2 = $1 if $rhs =~ /^.*\(.*~(.*)\)/;
+		return $mol."(".$comp."~".$s1."->".$s2.")";
+		}
+	if ($first =~ /\!/)
+		{
+		if ($lhs =~ /\!/) 
+			{
+			my ($m1,$m2) = sort {$a cmp $b} split ",",$rhs;
+			return $m1.":".$m2."->";
+			}
+		if ($rhs =~ /\!/) 
+			{
+			my ($m1,$m2) = sort {$a cmp $b} split ",",$lhs;
+			return "->".$m1.":".$m2;
+			}
+		}
+	# has to be a syn/del transform
+	my @trs = grep /->/,@group;
+	if (scalar @trs > 1)
+		{
+		$first =~ s/->//g;
+		return "->".$first."->";
+		}
+	return $first;
+}
 sub makeContactMap
 {
 	my $rsg = shift @_; # a rule structure graph

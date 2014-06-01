@@ -256,10 +256,10 @@ sub processLine
 		#print BipartiteGraph::printGraph($bpg);
 		print "Building groups...\n";
 		BipartiteGraph::makeGroups($bpg);
-		my ($bi,$uni,$all) = BipartiteGraph::analyzeGroups2($bpg);
-		#print "Building graph...\n";
-		#$string = Visualization::toGML_process($bi,$uni,$all);
-		#$outfile = $basename.'_'.$suffix.'.gml';
+		my ($groupname,$influences) = BipartiteGraph::analyzeGroups2($bpg);
+		print "Building graph...\n";
+		$string = Visualization::toGML_process2($groupname,$influences);
+		$outfile = $basename.'_'.$suffix.'.gml';
 	
 	}
 	
