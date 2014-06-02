@@ -11,7 +11,7 @@ no warnings 'redefine';
 # Perl Modules
 use Class::Struct;
 use List::Util qw(min max sum);
-use List::MoreUtils qw( uniq);
+#use List::MoreUtils qw( uniq);
 use Data::Dumper;
 
 # BNG Modules
@@ -19,7 +19,7 @@ use StructureGraph;
 use BipartiteGraph;
 
 sub listHas { return BipartiteGraph::listHas(@_); }
-
+sub uniq { return BipartiteGraph::uniq(@_); }
 	
 	
 

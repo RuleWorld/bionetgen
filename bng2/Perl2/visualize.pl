@@ -7,12 +7,14 @@ use POSIX qw(/ceil/);
 no warnings 'redefine';
 use Class::Struct;
 use List::Util qw(min max sum);
-use List::MoreUtils qw( uniq);
+#use List::MoreUtils qw( uniq);
 use Data::Dumper;
 
 use BNGModel;
 use StructureGraph;
 use Visualization;
+
+sub uniq { return BipartiteGraph::uniq(@_); }
 
 # use: perl visualize.pl FULL_PATH_TO_BNGL FULL_PATH_TO_CONFIG
 # use: perl visualize.pl FULL_PATH_TO_BNGL <suffix> <vistype> [ <range>,... ]
