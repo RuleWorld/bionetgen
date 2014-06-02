@@ -8,13 +8,13 @@ no warnings 'redefine';
 # Perl Modules
 use Class::Struct;
 use List::Util qw(min max sum);
-use List::MoreUtils qw( uniq);
+#use List::MoreUtils qw( uniq);
 use Data::Dumper;
 
 # BNG modules
 use StructureGraph;
-
-
+sub uniq (@) { my %seen = (); grep { not $seen{$_}++ } @_; }
+	
 struct BipartiteGraph => 
 { 
 	'NodeList' => '@', # array of strings
@@ -560,7 +560,8 @@ sub groupName
 			my $type = index($tr, '>')==(length($tr)-1) ? 'delete' : 'add';
 			my $len = (length $tr) - 2;
 			my $offset = ($type eq 'add') ? 2 : 0;
-			$string = "+/-:".substr($tr,$offset,$len);
+			#$string = "+/-:".substr($tr,$offset,$len);
+			$string = substr($tr,$offset,$len);
 			}
 	}
 	else 
