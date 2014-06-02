@@ -418,17 +418,17 @@ sub makeRuleBipartiteGraph
 			}
 		}
 	}
+	#cotransforms
 	foreach my $i(0..@graphop-1)
 	{
 		foreach my $j($i+1..@graphop-1)
 		{
 			my $tr1 = makeTransformation(\@nodelist,$graphop[$i]);
 			my $tr2 = makeTransformation(\@nodelist,$graphop[$j]);
-			if ($tr1 ne $tr2)
-			{
-				my $edge = makeEdge($tr1,$tr2,'co');
-				push @{$bpg->{'EdgeList'}}, $edge;
-			}
+			next if (length($tr1) == 0 || length($tr2) == 0);
+			next if ($tr1 eq $tr2);
+			my $edge = makeEdge($tr1,$tr2,'co');
+			push @{$bpg->{'EdgeList'}}, $edge;
 		}
 	}
 	@{$bpg->{'NodeList'}} = uniq @{$bpg->{'NodeList'}};
@@ -701,7 +701,7 @@ sub analyzeGroups2
 		my @wc = grep /\!\+/, @group;
 		my @temp = (@trs,@wc);
 		my @patts = grep !listHas(\@temp,$_), @group;
-		my @edges = grep index($_,$first)!=-1, @edgelist;
+		my @edges = grep index($_,$first.":")==0, @edgelist;
 		my $syndelcheck = (isSyn($first)|isDel($first));
 
 		# assigning signage to each pattern
@@ -727,21 +727,18 @@ sub analyzeGroups2
 			$sign{$wildcard} = $sign{$matches[0]}; 
 		}
 		push @sign_arr, \%sign;
-		#unshift @group, $first;
-		
+		#unshift @group, $first;	
 	}
 	#foreach my $sign(@sign_arr) { print printHash($sign); }
+	# creating group names
+	my %groupname;
+	@groupname { 0..@groups-1 } = map groupName2($_), @groups;
 
-	# extract context
-	my @context = grep( /Context/, @edgelist);
-	my @syndel = grep( /Syndel/, @edgelist);
-	my @cotransforms = grep ( /Cotransform/, @edgelist);
-	my @syn = grep( (index($_, '->') == 0), @syndel);
-	my @del = grep( (index($_, '->') != 0), @syndel);
-	
 	# initializing arrays holding positive & negative influences
 	my @influences;
 	
+	# processing context
+	my @context = grep( /Context/, @edgelist);
 	foreach my $i(0..@groups-1)
 	{
 		foreach my $j(0..@groups-1)
@@ -754,10 +751,14 @@ sub analyzeGroups2
 			{
 				foreach my $item2(@group2)
 				{
-					#check if items are equal
+					#leave if items are equal
 					next if ($item1 eq $item2);
-					my $str = $item2.":".$item1;
-					my @conts = grep index($_,$str) != -1, @context;
+					# context from item1->item2 is stored as
+					# item2:item1:Context, with item2 usually a transf
+					# and item1 usually a context
+					my $str = $item2.":".$item1.":";
+					my @conts = grep index($_,$str) == 0, @context;
+					#
 					# leave if there are no contexts
 					next if (! @conts) ;
 					foreach my $cont(@conts)
@@ -767,6 +768,8 @@ sub analyzeGroups2
 						my $sign = $sign1*$sign2;
 						if ($sign > 0) {$pos++;}
 						if ($sign < 0) {$neg++;}
+						if ($i==$j && @conts) {print $i." ".$j." ".$cont." ".$sign."\n";}
+						#print join(" ",($cont, $groupname{$i}, $groupname{$j}, $sign1, $sign2, $sign))."\n";
 					}
 				}
 			}
@@ -774,7 +777,10 @@ sub analyzeGroups2
 			if ($neg > 0) { push @influences, "-".$i.":".$j; }
 		}
 	}
-	# dealing with syndel context
+	# processing syndel context
+	my @syndel = grep( /Syndel/, @edgelist);
+	my @syn = grep( (index($_, '->') == 0), @syndel);
+	my @del = grep( (index($_, '->') != 0), @syndel);
 	foreach my $i(0..@groups-1)
 	{
 		my @group1 = @{$groups[$i]};
@@ -785,8 +791,8 @@ sub analyzeGroups2
 		my @syn1; my @del1;
 		foreach my $tr (@trs) 
 		{
-			push @del1, grep ( index($_,$tr) != -1, @del );
-			push @syn1, grep ( index($_,$tr) != -1, @syn );
+			push @del1, grep ( index($_,$tr) == 0, @del );
+			push @syn1, grep ( index($_,$tr) == 0, @syn );
 		}
 		
 		foreach my $j(0..@groups-1)
@@ -811,10 +817,36 @@ sub analyzeGroups2
 			}
 		}
 	}
+	
+	# processing cotransforms
+	my @cotransforms = grep ( /Cotransform/, @edgelist);
+	foreach my $i(0..@groups-1)
+	{	
+		foreach my $j($i+1..@groups-1)
+		{
+			my @trs1 = grep ( /->/, @{$groups[$i]});
+			my @trs2 = grep ( /->/, @{$groups[$j]});
+			my $pos = 0;
+			my $neg = 0;
+			my $check = 0;
+			foreach my $cotr(@cotransforms)
+				{
+				my @splits = split ":",$cotr;
+				$check = 1 if (listHas(\@trs1,$splits[0]) && listHas(\@trs2,$splits[1]));
+				$check = 1 if (listHas(\@trs2,$splits[0]) && listHas(\@trs1,$splits[1]));
+				next if ($check==0);
+				my $sign1 = listHas(\@trs1,$splits[0]) ? $sign_arr[$i]{$splits[0]} : $sign_arr[$j]{$splits[0]};
+				my $sign2 = listHas(\@trs2,$splits[1]) ? $sign_arr[$j]{$splits[1]} : $sign_arr[$i]{$splits[1]};
+				my $sign = -1*$sign1*$sign2;
+				# note the additional -1 here when processing tr-tr signs to indicate causality
+				if ($sign > 0) {$pos++;}
+				if ($sign < 0) {$neg++;}
+				}
+			if ($pos > 0) { push @influences, "+".$i.":".$j; }
+			if ($neg > 0) { push @influences, "-".$i.":".$j; }
+		}
+	}
 	@influences = uniq @influences;
-	my %groupname;
-	@groupname { 0..@groups-1 } = map groupName2($_), @groups;
-	#print printHash(\%groupname);
 	return (\%groupname,\@influences);
 }
 
@@ -846,7 +878,7 @@ sub groupName2
 		}
 	# has to be a syn/del transform
 	my @trs = grep /->/,@group;
-	if (scalar @trs > 1)
+	if ( @trs )
 		{
 		$first =~ s/->//g;
 		return "->".$first."->";

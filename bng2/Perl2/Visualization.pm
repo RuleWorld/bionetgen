@@ -728,6 +728,7 @@ sub toGML_process2
 	{
 		foreach my $j(@groups)
 		{
+			next if ($j<$i);
 			my @forward = grep /^[-+]$i:$j$/, @influences;
 			my @reverse = grep /^[-+]$j:$i$/, @influences;
 			my @all = (@forward,@reverse);
@@ -761,7 +762,7 @@ sub toGML_process2
 		}
 	}
 	
-	
+	@gmledges = uniq @gmledges;
 	
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
