@@ -16,6 +16,11 @@ from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
 from google.appengine.api.images import get_serving_url
 from google.appengine.api import taskqueue
+import os
+from google.appengine.api import app_identity
+
+from google.appengine.ext.webapp import blobstore_handlers
+import cloudstorage as gcs
 
 import webapp2
 import xmlrpclib
@@ -30,6 +35,28 @@ import parseAnnotations
 from google.appengine.api import urlfetch
 urlfetch.set_default_fetch_deadline(45)
 import logging
+
+def CreateFile(filename,content):
+  """Create a GCS file with GCS client lib.
+
+  Args:
+    filename: GCS filename.
+
+  Returns:
+    The corresponding string blobkey for this GCS file.
+  """
+  # Create a GCS file with GCS client.
+  with gcs.open(filename, 'w') as f:
+    f.write(content)
+
+  # Blobstore API requires extra /gs to distinguish against blobstore files.
+  blobstore_filename = '/gs' + filename
+  # This blob_key works with blobstore APIs that do not expect a
+  # corresponding BlobInfo in datastore.
+  bk =  blobstore.create_gs_key(blobstore_filename)
+  if not isinstance(bk,blobstore.BlobKey):
+    bk = blobstore.BlobKey(bk)
+  return bk
 
 class GAEXMLRPCTransport(object):
     """taken directly from http://brizzled.clapper.org/blog/2008/08/25/making-xmlrpc-calls-from-a-google-app-engine-application/"""
@@ -269,8 +296,8 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         self.redirect('/?' + urllib.urlencode(query_params))
  
 
-address = 'http://127.0.0.1:9200'
-#address = 'http://54.214.249.43:9200'
+#address = 'http://127.0.0.1:9200'
+address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
     parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
@@ -358,17 +385,25 @@ class ProcessAnnotation(webapp2.RequestHandler):
                 modelSubmission.submitter = users.get_current_user()
        
             #fixme: this will be deprecated in the near future, use gcs client library instead
+            '''
             file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename=element)
             with files.open(file_name, 'a') as f:
               f.write(bnglContent)
               #files.finalize(file_name)
               f.close(finalize=True)
             blob_key = files.blobstore.get_blob_key(file_name)   
+            '''
+            bucket_name = os.environ.get('BUCKET_NAME',
+                                 app_identity.get_default_gcs_bucket_name())
+
+            gcs_filename = '/{1}/{0}'.format(element,bucket_name)
+            blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
             
             modelSubmission.content = blob_key
             modelSubmission.name = element
-
             mapInfo = getMap(bnglContent,'contact')
+            '''
+            
             file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename='{0}.gml'.format(element))
                 
             # Open the file and write to it
@@ -380,6 +415,10 @@ class ProcessAnnotation(webapp2.RequestHandler):
             
             # Get the file's blob key
             blob_key = files.blobstore.get_blob_key(file_name)
+            '''
+            gcs_filename = '/{1}/{0}.gml'.format(element,bucket_name)
+            blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
+
             modelSubmission.contactMap = blob_key
             modelSubmission.contactMapJson = json.loads(mapInfo['jsonStr'])
             modelSubmission.privacy = self.request.get('privacy')
@@ -504,9 +543,9 @@ class Description(webapp2.RequestHandler):
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
 
                 if element in ['content']:
-                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),blobstore.BlobInfo(dp[element]).filename]
+                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),'BioNetGen file']
                 elif element in ['contactMap']:
-                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),blobstore.BlobInfo(dp[element]).filename,dp['name']]
+                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
                 elif element in 'contactMapJson':
                     continue
                 else:
@@ -655,8 +694,8 @@ class Search(webapp2.RequestHandler):
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
     resource = str(urllib.unquote(self.request.get('key')))
-    blob_info = blobstore.BlobInfo.get(resource)
-    self.send_blob(blob_info)
+    #blob_info = blobstore.BlobInfo.get(resource)
+    self.send_blob(resource)
             
   
             

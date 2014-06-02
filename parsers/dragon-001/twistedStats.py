@@ -220,6 +220,8 @@ def gml2cyjson(gmlText):
     #    gmlText.node[nd].pop('id')
     #jsgrph = json_graph.node_link_data(gmlText)
     for node in gmlText.node:
+        if gmlText.node[node] == {}:
+            continue
         tmp = {'data':{}}
         tmp['data']['id'] = str(node)
         tmp['data']['label'] = str(gmlText.node[node]['label'])
@@ -227,6 +229,7 @@ def gml2cyjson(gmlText):
             tmp['data']['parent'] =  str(gmlText.node[node]['gid'])
         jsonDict['elements']['nodes'].append(tmp)
     for link in gmlText.edge:
+        print gmlText.edge[link]
         for dlink in gmlText.edge[link]:
             tmp = {'data':{}}
             tmp['data']['source'] = int(link)
@@ -275,14 +278,17 @@ class AnnotationServer(xmlrpc.XMLRPC):
         return result
   
     def xmlrpc_getContactMap(self,bnglFile,graphType):
+
         fileName = generateContactMap(bnglFile, graphType)
         try:
+            with open(fileName) as f:
+                gmlText = f.read()
             gml = nx.read_gml(fileName)
         except IOError:
             return {'jsonStr':'','gmlStr':''}
         result = gml2cyjson(gml)
         jsonStr = json.dumps(result,indent=1, separators=(',', ': '))
-        result = {'jsonStr':jsonStr,'gmlStr':gml}
+        result = {'jsonStr':jsonStr,'gmlStr':gmlText}
         return result
 
 #server.register_function(is_even, "is_even")
@@ -294,12 +300,11 @@ if __name__ == '__main__':
     reactor.listenTCP(port, server.Site(r))
     reactor.run()
     #print getcwd()
-    #with open(getcwd() + '/../SBMLparser/complex/output48.bngl','r') as f:
-    #    s = f.read()
+    #gml = nx.read_gml('/tmp/tmpy0ug0r_contact.gml')
 
-    #tmpGenerateCont(s,'contact') 
-   #a = [u'http://rest.kegg.jp/get/ath04710']
-   #resolveAnnotation(a[0])
+    #gml2cyjson(gml) 
+    #a = [u'http://rest.kegg.jp/get/ath04710']
+    #resolveAnnotation(a[0])
 
         
 

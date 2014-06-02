@@ -35,11 +35,12 @@ def bitSyntaxDefinition():
 def dict2DatabaseFormat(tagsDict):
     finalDict = {}
     finalDict['structuredTags'] = []
+    finalDict['notes'] = []
     for element in tagsDict:
         if element == 'creatorName':
             finalDict['author'] = tagsDict[element]
         elif element != 'creatorEmail':
-            if not isinstance(tagsDict[element],str):
+            if not isinstance(tagsDict[element],str) and not isinstance(tagsDict[element],unicode):
                 finalDict['structuredTags'].extend(tagsDict[element])
             else:
                 finalDict['notes'] = tagsDict[element]
@@ -57,7 +58,8 @@ def parseAnnotations(bnglString):
     return tagsDict
     
 if __name__ == "__main__":
-    with open('output1.bngl') as f:
+    with open('output48.bngl') as f:
         lines = f.read()
     tagsDict = parseAnnotations(lines)
+    print tagsDict
     print dict2DatabaseFormat(tagsDict)
