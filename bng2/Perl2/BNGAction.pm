@@ -139,19 +139,23 @@ sub simulate
     }
 
     # general options
-#    my $prefix       = defined $params->{prefix}     ? $params->{prefix}     : $model->getOutputPrefix();
-    my $prefix       = defined $params->{prefix}     ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
-    my $netfile      = defined $params->{netfile}    ? $params->{netfile}    : undef;
-    my $verbose      = defined $params->{verbose}    ? $params->{verbose}    : 0;
-    my $print_end    = defined $params->{print_end}  ? $params->{print_end}  : 0;
-    my $print_net    = defined $params->{print_net}  ? $params->{print_net}  : 0;
+    my $method        = defined $params->{method} ? $params->{method} : undef;
+    my $verbose       = defined $params->{verbose} ? $params->{verbose} : 0;
+    my $prefix        = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
+    my $suffix        = defined $params->{suffix} ? $params->{suffix} : undef;
+    my $netfile       = defined $params->{netfile} ? $params->{netfile} : undef;
+    my $print_end     = defined $params->{print_end} ? $params->{print_end} : 0;
+    my $print_net     = defined $params->{print_net} ? $params->{print_net} : 0;
     my $save_progress = defined $params->{save_progress} ? $params->{save_progress} : 0; # Same as 'print_net'
-    my $continue     = defined $params->{'continue'} ? $params->{'continue'} : 0;    
-    my $method       = defined $params->{method}     ? $params->{method}     : undef;
-    my $print_active = defined $params->{print_n_species_active} ? $params->{print_n_species_active} : 0;
-    my $print_cdat   = defined $params->{print_CDAT} ? $params->{print_CDAT} : 1; # Default is to print .cdat
-    my $print_fdat   = defined $params->{print_functions} ? $params->{print_functions} : 0; # Default is to NOT print .fdat
-
+    my $continue      = defined $params->{'continue'} ? $params->{'continue'} : 0;    
+    my $print_active  = defined $params->{print_n_species_active} ? $params->{print_n_species_active} : 0;
+    my $print_cdat    = defined $params->{print_CDAT} ? $params->{print_CDAT} : 1; # Default is to print .cdat
+    my $print_fdat    = defined $params->{print_functions} ? $params->{print_functions} : 0; # Default is to NOT print .fdat
+	my $stop_if       = defined $params->{stop_if} ? $params->{stop_if} : undef; # stop condition
+	my $print_on_stop = defined $params->{print_on_stop} ? $params->{print_on_stop} : undef; # print at point that stop condition is met
+	my $max_sim_steps = defined $params->{max_sim_steps} ? $params->{max_sim_steps} : undef;
+	my $output_step_interval = defined $params->{output_step_interval} ? $params->{output_step_interval} : undef;
+    
     # continuous options
     my $atol         = defined $params->{atol}         ? $params->{atol}         : 1e-8;
     my $rtol         = defined $params->{rtol}         ? $params->{rtol}         : 1e-8;
@@ -172,8 +176,18 @@ sub simulate
     printf "ACTION: simulate( method=>\"%s\" )\n", $method;
 
     # add optional suffix to output prefix
-    if ( $params->{suffix} )
-    {  $prefix .= "_" . $params->{suffix};  }
+    if ( $suffix )
+    {  $prefix .= "_" . $suffix;  }
+
+	# If stop condition is defined add it to the list of functions
+	if ($stop_if){
+		my $fun = Function->new();
+		if ( $err = $fun->readString( "_stop_if() " . $stop_if, $model ) ){  return $err;  }
+		# check paramlist for unresolved dependency, etc
+		if ( $err = $model->ParamList->check() ){  return $err;  }
+		# update netfile since new function was added
+		$model->UpdateNet(1)
+	}
 
     # Find or Create netfile
     my $netpre;
@@ -192,7 +206,7 @@ sub simulate
         $netpre  = $prefix;
 
         # Generate NET file if not already created or if updateNet flag is set
-        if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or (defined $params->{suffix}) )
+        if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or $suffix )
         {
             $err = $model->writeNetwork({include_model=>0, overwrite=>1, prefix=>"$netpre"});
             if ($err) { return $err; }
@@ -261,22 +275,22 @@ sub simulate
     else { return "Unrecognized expand method $expand";    }
 
     # define maximum # of sim steps
-    if (defined $params->{max_sim_steps})
-    {   push @command, "-M", $params->{max_sim_steps};  }
+    if ($max_sim_steps)
+    {   push @command, "-M", $max_sim_steps;  }
 
     # define output step interval
-    if (defined $params->{output_step_interval})
-    {   push @command, "-I", $params->{output_step_interval};  }
+    if (defined $output_step_interval)
+    {   push @command, "-I", $output_step_interval;  }
     
     # stop condition
-    if (defined $params->{stop_if}){   
-    	push @command, "--stop_cond", $params->{stop_if};
-    	if (defined $params->{print_on_stop}){
-    		push @command, $params->{print_on_stop};
-    	}
-    	else{
-    		push @command, "1"; # Default is to print on stop
-    	}
+    if ($stop_if){   
+	    	push @command, "--stop_cond", $stop_if;
+	    	if ($print_on_stop){
+	    		push @command, $print_on_stop;
+	    	}
+	    	else{
+	    		push @command, "1"; # Default is to print on stop
+	    	}
     }
     
     # output concentrations data
