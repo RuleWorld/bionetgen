@@ -11,6 +11,8 @@ import urllib
 import os
 from google.appengine.ext.db import Key
 from google.appengine.api import users
+from google.appengine.api import search as search2
+
 from google.appengine.ext import ndb
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
@@ -35,6 +37,9 @@ import parseAnnotations
 from google.appengine.api import urlfetch
 urlfetch.set_default_fetch_deadline(45)
 import logging
+
+from models import ModelInfo
+import docs
 
 def CreateFile(filename,content):
   """Create a GCS file with GCS client lib.
@@ -111,33 +116,9 @@ def dbmodel_key(model_name=DEFAULT_GUESTBOOK_NAME):
     """Constructs a Datastore key for a ModelDB entity with model_name."""
     return ndb.Key('ModelDB', model_name)
 
-class PublicationInfo(ndb.Model):
-    name = ndb.StringProperty()
-    journal = ndb.StringProperty()
 
  
-class AnnotationInfo(ndb.Model):
-    database = ndb.StringProperty()
-    databaseID = ndb.StringProperty()
 
-
-class ModelInfo(ndb.Model):
-    """Models an individual Guestbook entry with author, content, and date."""
-    author = ndb.StringProperty(repeated=True)
-    content = ndb.BlobKeyProperty() #BlobInfo(blobkey)
-    contactMap = ndb.BlobKeyProperty()
-    contactMapJson = ndb.JsonProperty()
-    name = ndb.StringProperty()
-    description = ndb.StringProperty()
-    date = ndb.DateTimeProperty(auto_now_add=True)
-    publication = ndb.StructuredProperty(PublicationInfo)
-    fileFormat = ndb.StringProperty(choices=set(["bngl","kappa"]))
-    submitter = ndb.UserProperty()
-    annotationInfo = ndb.KeyProperty(kind=AnnotationInfo,repeated=True)
-    tags = ndb.StringProperty(repeated=True)
-    structuredTags = ndb.StringProperty(repeated=True)
-    privacy = ndb.StringProperty()
-    notes = ndb.StringProperty()
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
@@ -274,7 +255,7 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         publicationInfo.name = self.request.get('publication')
         publicationInfo.journal =   self.request.get('journal')
         if users.get_current_user():
-            modelSubmission.submitter = users.get_current_user()
+            modelSubmission.submitter = users.get_current_user().user_id()
             
         upload_files = self.get_uploads('file')
         contact = self.get_uploads('contact ')
@@ -288,7 +269,7 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         modelSubmission.name = self.request.get('name')
         modelSubmission.description = self.request.get('description')
         modelSubmission.privacy = self.request.get('privacy')
-        modelSubmission.submitter =  users.get_current_user()        
+        #modelSubmission.submitter =  users.get_current_user()        
         modelSubmission.put()
         
 
@@ -328,7 +309,8 @@ class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
         bnglContent = blob_info.open().read()
         element = blob_info.filename
         
-        taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,'privacy':self.request.get('privacy')})
+        taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,
+                                                        'privacy':self.request.get('privacy'),'submitter':users.get_current_user().user_id()})
         self.redirect('/')
   
  
@@ -367,7 +349,8 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
 
             zipModel = objZip.open(element)
             bnglContent = zipModel.read()
-            taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,'privacy':self.request.get('privacy')})
+            taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,
+                                                            'privacy':self.request.get('privacy'),'submitter':users.get_current_user().user_id()})
 
         self.redirect('/')
  
@@ -378,11 +361,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
             bnglContent = self.request.get('bnglContent')
             
 
-            model_name = self.request.get('model_name',
-                                              DEFAULT_GUESTBOOK_NAME)
-            modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
-            if users.get_current_user():
-                modelSubmission.submitter = users.get_current_user()
+            modelSubmission = {}
        
             #fixme: this will be deprecated in the near future, use gcs client library instead
             '''
@@ -399,8 +378,8 @@ class ProcessAnnotation(webapp2.RequestHandler):
             gcs_filename = '/{1}/{0}'.format(element,bucket_name)
             blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
             
-            modelSubmission.content = blob_key
-            modelSubmission.name = element
+            modelSubmission['content'] = blob_key
+            modelSubmission['name'] = element
             mapInfo = getMap(bnglContent,'contact')
             '''
             
@@ -419,9 +398,9 @@ class ProcessAnnotation(webapp2.RequestHandler):
             gcs_filename = '/{1}/{0}.gml'.format(element,bucket_name)
             blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
 
-            modelSubmission.contactMap = blob_key
-            modelSubmission.contactMapJson = json.loads(mapInfo['jsonStr'])
-            modelSubmission.privacy = self.request.get('privacy')
+            modelSubmission['contactMap'] = blob_key
+            modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
+            modelSubmission['privacy'] = self.request.get('privacy')
             '''
             if '{0}.png'.format(element) in nameList:
                 zipModel = objZip.open(element)
@@ -434,15 +413,21 @@ class ProcessAnnotation(webapp2.RequestHandler):
              '''
 
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
-            modelSubmission.author = [parsedAnnotationDict['author']]
-            modelSubmission.structuredTags = parsedAnnotationDict['structuredTags']
+            modelSubmission['author'] = [parsedAnnotationDict['author']]
+            modelSubmission['structuredTags'] = convert(parsedAnnotationDict['structuredTags'])
+            modelSubmission['tags'] = []
             if 'tags' in tagArray:
-                modelSubmission.tags = tagArray['tags']
+                modelSubmission['tags'] = convert(tagArray['tags'])
             if 'modelName' in tagArray:
-                modelSubmission.name = tagArray['modelName'][0]
+                modelSubmission['name'] = tagArray['modelName'][0].replace(" ","")
             if 'author' in tagArray:
-                modelSubmission.author = tagArray['author']
-            modelSubmission.put()
+                modelSubmission['author'] = convert(tagArray['author'])
+            modelSubmission['submitter'] = self.request.get('submitter')
+            modelSubmission['mid'] = tagArray['modelName'][0].replace(" ","")
+            #modelObject = ModelInfo.create(modelSubmission,'2')
+            modelObject = docs.ModelDoc.buildProduct(modelSubmission)
+            #print modelObject
+            modelObject.put()
 
 class Query(webapp2.RequestHandler):
     def get(self):
@@ -464,6 +449,249 @@ class Query(webapp2.RequestHandler):
         }
         template =JINJA_ENVIRONMENT.get_template('query2.html')
         self.response.write(template.render(template_values))
+
+class Query2(webapp2.RequestHandler):
+  """Displays the 'home' page."""
+
+  def get(self):
+        if users.get_current_user():
+            url = users.create_logout_url(self.request.uri)
+            url_linktext = 'Logout'
+            current_user=True
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_linktext = 'Login'
+            current_user=False
+
+        sort_info = docs.ModelDoc.getSortMenu()
+        template_values = {
+             'sort_info': sort_info,
+            'url': url,
+            'url_linktext': url_linktext,
+            'current_user':current_user,
+            'queryh':'current_page_item'
+        }
+        template =JINJA_ENVIRONMENT.get_template('modelResult.html')
+        self.response.write(template.render(template_values))
+        
+
+
+class ModelSearchHandler(webapp2.RequestHandler):
+  """The handler for doing a product search."""
+
+  _DEFAULT_DOC_LIMIT = 3  #default number of search results to display per page.
+  _OFFSET_LIMIT = 1000
+
+  def parseParams(self):
+    """Filter the param set to the expected params."""
+    params = {
+        'qtype': '',
+        'query': '',
+        'category': '',
+        'sort': '',
+        'rating': '',
+        'offset': '0'
+    }
+    for k, v in params.iteritems():
+      # Possibly replace default values.
+      params[k] = self.request.get(k, v)
+    return params
+
+  def post(self):
+    params = self.parseParams()
+    self.redirect('/msearch?' + urllib.urlencode(
+        dict([k, v.encode('utf-8')] for k, v in params.items())))
+
+  def _getDocLimit(self):
+    """if the doc limit is not set in the config file, use the default."""
+    doc_limit = self._DEFAULT_DOC_LIMIT
+    try:
+      doc_limit = int(100)
+    except ValueError:
+      logging.error('DOC_LIMIT not properly set in config file; using default.')
+    return doc_limit
+
+  def get(self):
+    """Handle a product search request."""
+
+    params = self.parseParams()
+    self.doProductSearch(params)
+
+  def doProductSearch(self, params):
+    """Perform a product search and display the results."""
+
+    # the defined product categories
+    #cat_info = models.Category.getCategoryInfo()
+    # the product fields that we can sort on from the UI, and their mappings to
+    # search.SortExpression parameters
+    sort_info = docs.ModelDoc.getSortMenu()
+    sort_dict = docs.ModelDoc.getSortDict()
+    query = params.get('query', '')
+    user_query = query
+    doc_limit = self._getDocLimit()
+
+    #categoryq = params.get('category')
+    #if categoryq:
+      # add specification of the category to the query
+      # Because the category field is atomic, put the category string
+      # in quotes for the search.
+     # query += ' %s:"%s"' % (docs.Product.CATEGORY, categoryq)
+
+    sortq = params.get('sort')
+    try:
+      offsetval = int(params.get('offset', 0))
+    except ValueError:
+      offsetval = 0
+
+    # Check to see if the query parameters include a ratings filter, and
+    # add that to the final query string if so.  At the same time, generate
+    # 'ratings bucket' counts and links-- based on the query prior to addition
+    # of the ratings filter-- for sidebar display.
+    #query, rlinks = self._generateRatingsInfo(
+    #    params, query, user_query, sortq, categoryq)
+    logging.debug('query: %s', query.strip())
+
+    #try:
+      # build the query and perform the search
+    search_query = self._buildQuery(
+      query, sortq, sort_dict, doc_limit, offsetval)
+    search_results = docs.ModelDoc.getIndex().search(search_query)
+    returned_count = len(search_results.results)
+    '''
+    except search.Error:
+      logging.exception("Search error:")  # log the exception stack trace
+      msg = 'There was a search error (see logs).'
+      url = '/'
+      linktext = 'Go to product search page.'
+      template =JINJA_ENVIRONMENT.get_template('notification.html')
+      self.response.write(template.render({'title': 'Error', 'msg': msg,
+           'goto_url': url, 'linktext': linktext}))
+
+     
+      return
+    ''' 
+    # cat_name = models.Category.getCategoryName(categoryq)
+    psearch_response = []
+    # For each document returned from the search
+    for doc in search_results:
+      # logging.info("doc: %s ", doc)
+      mdoc = docs.ModelDoc(doc)
+      # use the description field as the default description snippet, since
+      # snippeting is not supported on the dev app server.
+      description_snippet = mdoc.getName()
+      #price = pdoc.getPrice()
+      # on the dev app server, the doc.expressions property won't be populated.
+      for expr in doc.expressions:
+        if expr.name == docs.ModelDoc.MODEL_NAME:
+          description_snippet = expr.value
+        # uncomment to use 'adjusted price', which should be
+        # defined in returned_expressions in _buildQuery() below, as the
+        # displayed price.
+        # elif expr.name == 'adjusted_price':
+          # price = expr.value
+
+      # get field information from the returned doc
+      mid = mdoc.getMID()
+      #cat = catname = pdoc.getCategory()
+      pname = mdoc.getName()
+      author= mdoc.getAuthor()
+      tags = mdoc.getKeywords()
+      # for this result, generate a result array of selected doc fields, to
+      # pass to the template renderer
+      psearch_response.append(
+          [doc, urllib.quote_plus(mid), 
+           description_snippet,  pname, author,tags])
+    if not query:
+      print_query = 'All'
+    else:
+      print_query = query
+
+    # Build the next/previous pagination links for the result set.
+    (prev_link, next_link) = self._generatePaginationLinks(
+        offsetval, returned_count,
+        search_results.number_found, params)
+
+    logging.debug('returned_count: %s', returned_count)
+    # construct the template values
+    template_values = {
+        'base_pquery': user_query, 'next_link': next_link,
+        'prev_link': prev_link, 'qtype': 'product',
+        'query': query, 'print_query': print_query,
+        'sort_order': sortq,
+        'first_res': offsetval + 1, 'last_res': offsetval + returned_count,
+        'returned_count': returned_count,
+        'number_found': search_results.number_found,
+        'search_response': psearch_response,
+        'sort_info': sort_info,
+        }
+    # render the result page.
+    template =JINJA_ENVIRONMENT.get_template('modelResult.html')
+    self.response.write(template.render(template_values))
+
+    
+
+  def _buildQuery(self, query, sortq, sort_dict, doc_limit, offsetval):
+    """Build and return a search query object."""
+
+    # computed and returned fields examples.  Their use is not required
+    # for the application to function correctly.
+    #computed_expr = search.FieldExpression(name='adjusted_price',
+     #   expression='price * 1.08')
+    returned_fields = [docs.ModelDoc.MID, docs.ModelDoc.MODEL_NAME,
+                docs.ModelDoc.MODEL_AUTHOR, docs.ModelDoc.MODEL_KEYWORDS,
+                docs.ModelDoc.MODEL_SKEYWORDS]
+
+    if sortq == 'relevance':
+      # If sorting on 'relevance', use the Match scorer.
+      sortopts = search2.SortOptions(match_scorer=search2.MatchScorer())
+      search_query = search2.Query(
+          query_string=query.strip(),
+          options=search2.QueryOptions(
+              limit=doc_limit,
+              offset=offsetval,
+              sort_options=sortopts,
+              #snippeted_fields=[docs.Product.DESCRIPTION],
+              #returned_expressions=[computed_expr],
+              returned_fields=returned_fields
+              ))
+    else:
+      expr_list = [sort_dict.get(sortq)]
+      sortopts = search2.SortOptions(expressions=expr_list)
+      # logging.info("sortopts: %s", sortopts)
+      search_query = search2.Query(
+          query_string=query.strip(),
+          options=search2.QueryOptions(
+              limit=doc_limit,
+              offset=offsetval,
+              sort_options=sortopts,
+              #snippeted_fields=[docs.Product.DESCRIPTION],
+              #returned_expressions=[computed_expr],
+              returned_fields=returned_fields
+              ))
+    return search_query
+
+  def _generatePaginationLinks(
+        self, offsetval, returned_count, number_found, params):
+    """Generate the next/prev pagination links for the query.  Detect when we're
+    out of results in a given direction and don't generate the link in that
+    case."""
+
+    doc_limit = self._getDocLimit()
+    pcopy = params.copy()
+    if offsetval - doc_limit >= 0:
+      pcopy['offset'] = offsetval - doc_limit
+      prev_link = '/psearch?' + urllib.urlencode(pcopy)
+    else:
+      prev_link = None
+    if ((offsetval + doc_limit <= self._OFFSET_LIMIT)
+        and (returned_count == doc_limit)
+        and (offsetval + returned_count < number_found)):
+      pcopy['offset'] = offsetval + doc_limit
+      next_link = '/psearch?' + urllib.urlencode(pcopy)
+    else:
+      next_link = None
+    return (prev_link, next_link)
+
 
 class addAnnotation(webapp2.RequestHandler):
     def post(self):
@@ -489,6 +717,8 @@ class List(webapp2.RequestHandler):
             #for element in dp:
             #response.write('{1}: Name: <a href="description?file={2}">{0}</a><br>'.format(dp['name'],counter,dp['name']))
             #response.write('Description: {0}<br><br>'.format(dp['description']))
+            if dp['privacy'] == 'privacy' and (not users.get_current_user() or dp['submitter'] != users.get_current_user().user_id()):
+                continue
             newdp['link'] = 'description?file={0}'.format(dp['name'])
             newdp['name'] = dp['name']
             newdp['counter'] = counter
@@ -546,7 +776,7 @@ class Description(webapp2.RequestHandler):
                     ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),'BioNetGen file']
                 elif element in ['contactMap']:
                     ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
-                elif element in 'contactMapJson':
+                elif element in ['contactMapJson','submitter','doc_id']:
                     continue
                 else:
                     if dp[element] in [None,[]]:
@@ -659,7 +889,11 @@ def search(parameter,queryString,response):
 class MyModels(webapp2.RequestHandler):
     def get(self):
         query = ModelInfo.submitter
-        queryString = users.get_current_user()
+        if users.get_current_user():
+            queryString = users.get_current_user().user_id()
+        else:
+            self.redirect('/')
+            return
         queryArray,counter = search(query,queryString,self.response)
         
         template_values = boilerplateParams(self.request.uri)
@@ -704,7 +938,8 @@ app = webapp2.WSGIApplication([
     ('/submit',Submit),
     ('/submitFile',SubmitFile),
     ('/submitBatch',SubmitBatch),
-    ('/query',Query),
+    ('/query',Query2),
+    ('/msearch',ModelSearchHandler),
     ('/sign', ModelDB),
     ('/signFile',ModelDBFile),
     ('/signBatch',ModelDBBatch),

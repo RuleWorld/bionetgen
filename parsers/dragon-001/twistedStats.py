@@ -24,6 +24,7 @@ import subprocess
 from os import getcwd
 # Restrict to a particular path.
 
+
 # Create server
 port = 9200
 
@@ -269,6 +270,9 @@ def tmpGenerateCont(bnglFile,graphType):
             return json.dumps(result,f,indent=1, separators=(',', ': '))
         
 
+def simulateFile(bnglFile):
+    pass
+    
 class AnnotationServer(xmlrpc.XMLRPC):
 
 
@@ -291,20 +295,22 @@ class AnnotationServer(xmlrpc.XMLRPC):
         result = {'jsonStr':jsonStr,'gmlStr':gmlText}
         return result
 
+
 #server.register_function(is_even, "is_even")
 
 #resolveAnnotations(tmpD)        
 if __name__ == '__main__':
-    print "Listening on port {0}...".format(port)
-    r = AnnotationServer()
-    reactor.listenTCP(port, server.Site(r))
-    reactor.run()
+    #print "Listening on port {0}...".format(port)
+    #r = AnnotationServer()
+    #reactor.listenTCP(port, server.Site(r))
+    #reactor.run()
     #print getcwd()
     #gml = nx.read_gml('/tmp/tmpy0ug0r_contact.gml')
 
     #gml2cyjson(gml) 
-    #a = [u'http://rest.kegg.jp/get/ath04710']
-    #resolveAnnotation(a[0])
+    a = ['http://identifiers.org/pubmed/10514507']
+
+    print resolveAnnotation(a[0])
 
         
 

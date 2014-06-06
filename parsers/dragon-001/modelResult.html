@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% autoescape true %}
+<!--
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Name       : Scoreboard 
+Description: A two-column, fixed-width design with dark color scheme.
+Version    : 1.0
+Released   : 20130602
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Scoreboard</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="/stylesheets/default.css" rel="stylesheet" type="text/css" media="all" />
+<link href="/stylesheets/fonts.css" rel="stylesheet" type="text/css" media="all" />
+<!--[if IE 6]>
+<link href="default_ie6.css" rel="stylesheet" type="text/css" />
+<![endif]-->
+</head>
+<body>
+<div id="wrapper">
+{% include "header.html" %}
+  <div id="page" class="container">
+    <div id="content">
+      <div class="title">
+        <h2>Query</h2>
+      </div>
+
+
+    <h4>Product Search</h4>
+
+
+    <form name="searchform" action="/msearch" method="post">
+      <input type="hidden" name="qtype" value="product"/>
+
+      <table>
+
+      <tr>
+
+      <td>
+
+       <input type="text" id="query" name="query" size="80" value="{{base_pquery}}" />
+
+      </td>
+
+      <td>
+
+         Sort by: <select id="sort" name="sort">
+          {% for sort in sort_info %}
+           {% if sort.0 == sort_order %}
+             <option value="{{sort.0}}" selected="selected">{{sort.1}}</option>
+           {% else %}
+            <option value="{{sort.0}}">{{sort.1}}</option>
+           {% endif %}
+          {% endfor %}
+         </select>
+
+      </td></tr>
+
+      <tr>
+      <td>
+       <input type="submit" class="btn primary"  name="psearchsub" value="Product Search"/>
+       <input type="reset" class="btn primary"  name="psearchreset" value="Clear"/>
+      </td><td></td><td></td></tr>
+
+      </table>
+
+    </form>
+
+
+
+    {% if search_response %}
+    <div>
+     <h2>Product Search Results</h2>
+
+      <p>
+        {% if prev_link %}
+          <a href="{{prev_link}}">Previous Results</a>
+        {% else %}
+          Previous Results
+        {% endif %}
+         |
+        {% if next_link %}
+          <a href="{{next_link}}">Next Results</a>
+        {% else %}
+          Next Results
+        {% endif %}
+      </p>
+
+      <p>&nbsp;</p>
+      {% if returned_count > 0 %}
+      <p>
+       {{first_res}} - {{last_res}} of {{number_found}} {{qtype}}s shown for query: <i>{{print_query}}</i>.
+      </p>
+      {% endif %}
+
+      {% for result in search_response %}
+        <p>
+        <span style="color: #014C9D;"><i>Description</i></span>: {{result.3|safe}}<br/>
+        <span style="color: #014C9D;"><i>Tags</i></span>: {{result.5}}<br/>
+        <span style="color: #014C9D;"><i>Model Name</i></span>: {{result.6}}<br/>
+        <span style="color: #014C9D;"><i>Author</i></span>: {{result.4}}<br/>
+        <br/>
+
+          <a href="/description?file={{result.1}}">View model details</a>
+          
+        </p>
+      {% endfor %}
+
+      <p>
+        {% if prev_link %}
+          <a href="{{prev_link}}">Previous Results</a>
+        {% else %}
+          Previous Results
+        {% endif %}
+         |
+        {% if next_link %}
+          <a href="{{next_link}}">Next Results</a>
+        {% else %}
+          Next Results
+        {% endif %}
+      </p>
+
+    </div>
+    {%else %}
+     {%if print_query %}
+      <p>No results found.</p>
+     {% endif %}
+
+    {% endif %}
+    </div>
+    {% include "normalSidebar.html" %}
+  </div>
+</div>
+{% include "footer.html" %}
+</body>
+
+<script type="text/javascript" language="JavaScript">
+document.forms['searchform'].elements['query'].focus();
+</script>
+</html>
+
+{% endautoescape %}
