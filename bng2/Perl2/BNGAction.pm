@@ -181,12 +181,15 @@ sub simulate
 
 	# If stop condition is defined add it to the list of functions
 	if ($stop_if){
-		my $fun = Function->new();
-		if ( $err = $fun->readString( "_stop_if() " . $stop_if, $model ) ){  return $err;  }
-		# check paramlist for unresolved dependency, etc
-		if ( $err = $model->ParamList->check() ){  return $err;  }
-		# update netfile since new function was added
-		$model->UpdateNet(1)
+		(my $exists), $err = $model->ParamList->lookup("_stop_if");
+		if (!$exists){
+			my $fun = Function->new();
+			if ( $err = $fun->readString( "_stop_if() " . $stop_if, $model ) ){  return $err;  }
+			# check paramlist for unresolved dependency, etc
+			if ( $err = $model->ParamList->check() ){  return $err;  }
+			# update netfile since new function was added
+			$model->UpdateNet(1)
+		}
 	}
 
     # Find or Create netfile
