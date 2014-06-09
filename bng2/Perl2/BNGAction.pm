@@ -181,8 +181,8 @@ sub simulate
 
 	# If stop condition is defined add it to the list of functions
 	if ($stop_if){
-		(my $exists), $err = $model->ParamList->lookup("_stop_if");
-		if (!$exists){
+		(my $ref, $err) = $model->ParamList->lookup("_stop_if");
+		if (!$ref){
 			my $fun = Function->new();
 			if ( $err = $fun->readString( "_stop_if() " . $stop_if, $model ) ){  return $err;  }
 			# check paramlist for unresolved dependency, etc

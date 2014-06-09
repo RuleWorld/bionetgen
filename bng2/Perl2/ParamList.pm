@@ -99,7 +99,7 @@ sub lookup
     }
     elsif ( defined $plist->Parent )
     {
-        return $plist->Parent->lookup($name);
+        return $plist->Parent->lookup($name), "";
     }
     else
     {
