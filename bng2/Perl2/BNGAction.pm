@@ -176,7 +176,7 @@ sub simulate
     printf "ACTION: simulate( method=>\"%s\" )\n", $method;
 
     # add optional suffix to output prefix
-    if ( $suffix )
+    if ( defined $suffix )
     {  $prefix .= "_" . $suffix;  }
 
 	# If stop condition is defined add it to the list of functions
@@ -209,7 +209,7 @@ sub simulate
         $netpre  = $prefix;
 
         # Generate NET file if not already created or if updateNet flag is set
-        if ( !(-e $netfile) or $model->UpdateNet or (defined $params->{prefix}) or $suffix )
+        if ( !(-e $netfile) or $model->UpdateNet or defined $params->{prefix} or defined $suffix )
         {
             $err = $model->writeNetwork({include_model=>0, overwrite=>1, prefix=>"$netpre"});
             if ($err) { return $err; }
