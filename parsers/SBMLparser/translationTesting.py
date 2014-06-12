@@ -108,15 +108,29 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
     suite2 = unittest.TestSuite()
     suite3 = unittest.TestSuite()
-    ran = [302]
     
-    ''' 
+    ran = range(1,469)
+    blackList = [175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]
+    ran.remove(175)
     ran.remove(205)
-    ran.remove(224)
+    ran.remove(212)
+    ran.remove(223)
     ran.remove(235)
-    ran.remove(371)    
-    '''
+    ran.remove(255)
+    ran.remove(328)
+    ran.remove(370)    
+    ran.remove(428)
+    ran.remove(430)
+    ran.remove(431)
+    ran.remove(443)
+    ran.remove(444)
+    ran.remove(452)
+    ran.remove(453)
+    ran.remove(465)
+    
+    #ran = range(466,470)
     #ran = [229]
+    ran = [19]
     '''
     ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,
            147, 338, 297, 293, 49, 344, 83, 230, 453, 223, 109, 56, 256, 410, 
