@@ -669,8 +669,10 @@ class SBML2BNGL:
             pparam[element] = (0,None)
         for species in self.model.getListOfSpecies():
             tmp = self.getRawSpecies(species)
-            if species.getName() in translator:
-                extendedStr = '@{0}:{1}'.format(species.getCompartment(),translator[species.getName()])
+            name = species.getName() if species.isSetName() else species.getId()
+            
+            if name in  translator:
+                extendedStr = '@{0}:{1}'.format(species.getCompartment(),translator[name])
             else:
                 extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
             pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
@@ -697,6 +699,7 @@ class SBML2BNGL:
                 zparam = zparam2
             else:
                 initialConditions2 = [x for x in initialConditions if '{0}('.format(symbol) not in x]
+                
                 initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
                 initialConditions = initialConditions2
         return param,zparam,initialConditions
