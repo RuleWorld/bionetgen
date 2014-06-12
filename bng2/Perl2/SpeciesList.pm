@@ -238,7 +238,7 @@ sub readString
         }
         else
         {
-            $conc = $expr->getName( $plist, 'InitialConc' );
+            $conc = $expr->getName( $plist, '_InitialConc' );
         }
     }
     else

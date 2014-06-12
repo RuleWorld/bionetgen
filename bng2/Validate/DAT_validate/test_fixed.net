@@ -1,5 +1,4 @@
-# Created by BioNetGen 2.2.4
-substanceUnits("Number")
+# Created by BioNetGen 2.2.5
 begin parameters
     1 k_degr      0.5  # Constant
     2 k_synthB    1.0  # Constant
@@ -8,90 +7,32 @@ begin parameters
     5 k_degrcat   10.0  # Constant
     6 k_bind      2.0  # Constant
     7 k_unbind    1.0  # Constant
-    8 rateLaw3    10*k_bind  # ConstantExpression
+    8 _rateLaw3   10*k_bind  # ConstantExpression 20
 end parameters
-begin molecule types
-    1 A()
-    2 Trash()
-    3 Degr()
-    4 D(x,x)
-    5 C(n~0~1~2~3)
-    6 B()
-end molecule types
-begin observables
-    1 Molecules A_tot A()
-    2 Molecules B_tot B()
-    3 Molecules C0 C(n~0)
-    4 Molecules C2 C(n~2)
-    5 Molecules D_tot D()
-    6 Species D1 {MatchOnce}D(x,x)
-    7 Species D2 {MatchOnce}D(x,x!1).D(x!1,x)
-    8 Species D3 {MatchOnce}D(x,x!1).D(x!1,x!2).D(x!2,x)
-    9 Species D3c {MatchOnce}D(x!1,x!2).D(x!2,x!3).D(x!3,x!1)
-   10 Molecules Degr_tot Degr()
-   11 Molecules Trash_tot Trash()
-end observables
 begin functions
-    1 rateLaw1() k_synthcat*B_tot
-    2 rateLaw2() k_degrcat*D3c
+    1 _rateLaw1() k_synthcat*B_tot
+    2 _rateLaw2() k_degrcat*D3c
 end functions
 begin species
-    1 $A()                              1
-    2 $Degr()                           0
-    3 $Trash()                          0
-    4 B()                               0
-    5 C(n~0)                            0
-    6 C(n~1)                            0
-    7 C(n~2)                            0
-    8 C(n~3)                            0
-    9 D(x,x)                            0
-   10 D(x!1,x).D(x!1,x)                 0
-   11 D(x!1,x!2).D(x!1,x).D(x!2,x)      0
-   12 D(x!1,x!2).D(x!1,x!3).D(x!2,x!3)  0
+    1 $A() 1
+    2 $Degr() 0
+    3 $Trash() 0
+    4 B() 0
+    5 C(n~0) 0
+    6 C(n~1) 0
+    7 C(n~2) 0
+    8 C(n~3) 0
+    9 D(x,x) 0
+   10 D(x!1,x).D(x!1,x) 0
+   11 D(x!1,x!2).D(x!1,x).D(x!2,x) 0
+   12 D(x!1,x!2).D(x!1,x!3).D(x!2,x!3) 0
 end species
-begin reaction rules
-  Rule1:  A() -> B()  k_synthB
-  # Add Species B()
-  # Delete Pattern A()
-  Rule2:  B() -> Trash()  k_degr
-  # Add Species Trash()
-  # Delete Pattern B()
-  Rule3:  D() -> Trash()  k_degr
-  # Add Species Trash()
-  # Delete Pattern D()
-  Rule4:  0 -> C(n~0)  rateLaw1()
-  # Add Species C(n~0)
-  Rule5:  C(n~0) -> C(n~1)  k_conv
-  # StateChange(0.0.0,0->1)
-  Rule6:  C(n~1) -> C(n~2)  k_conv
-  # StateChange(0.0.0,1->2)
-  Rule7:  C(n~2) -> C(n~3)  k_conv
-  # StateChange(0.0.0,2->3)
-  Rule8:  C(n~3) -> D(x,x)  k_conv
-  # Add Species D(x,x)
-  # Delete Pattern C(n~3)
-  Rule9:  B() -> Degr()  rateLaw2()
-  # Add Species Degr()
-  # Delete Pattern B()
-  Rule10:  D(x,x) + D(x,x) <-> D(x,x!1).D(x,x!1)  k_bind, k_unbind
-  # Bind(0.0.1,0.1.1)
-  # Reverse
-  # Unbind(0.0.1,0.1.1)
-  Rule11:  D(x,x!1).D(x!1,x) + D(x,x) <-> D(x,x!1).D(x!1,x!2).D(x!2,x)  k_bind, k_unbind
-  # Bind(0.1.1,0.2.0)
-  # Reverse
-  # Unbind(0.1.1,0.2.0)
-  Rule12:  D(x,x!1).D(x!1,x!2).D(x!2,x) <-> D(x!1,x!2).D(x!2,x!3).D(x!3,x!1)  rateLaw3, k_unbind
-  # Bind(0.0.0,0.2.1)
-  # Reverse
-  # Unbind(0.0.0,0.2.1)
-end reaction rules
 begin reactions
     1 1 4 k_synthB #Rule1
-    2 0 5 rateLaw1 #Rule4
+    2 0 5 _rateLaw1 #Rule4
     3 4 3 k_degr #Rule2
     4 5 6 k_conv #Rule5
-    5 4 2 rateLaw2 #Rule9
+    5 4 2 _rateLaw2 #Rule9
     6 6 7 k_conv #Rule6
     7 7 8 k_conv #Rule7
     8 8 9 k_conv #Rule8
@@ -102,7 +43,7 @@ begin reactions
    13 9,10 11 4*k_bind #Rule11
    14 11 3 k_degr #Rule3
    15 11 9,10 2*k_unbind #Rule11r
-   16 11 12 rateLaw3 #Rule12
+   16 11 12 _rateLaw3 #Rule12
    17 12 3 k_degr #Rule3
    18 12 11 3*k_unbind #Rule12r
 end reactions

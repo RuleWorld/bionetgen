@@ -69,7 +69,7 @@ sub newRateLaw
     my $model      = shift @_;
     my $totalRate  = @_ ? shift @_ : 0;
     my $reactants  = @_ ? shift @_ : undef;
-    my $basename   = @_ ? shift @_ : "rateLaw";
+    my $basename   = @_ ? shift @_ : "_rateLaw";
 
     my $string_left = $$strptr;
     my $name;
@@ -118,7 +118,7 @@ sub newRateLaw
         $err = $expr1->readString( \$expr_string_1, $model->ParamList );
         if ($err) { return '', $err }
         # get name for ratelaw
-        my $name1 = $expr1->getName( $model->ParamList, "localFuncL", $force_fcn );
+        my $name1 = $expr1->getName( $model->ParamList, "_localFuncL", $force_fcn );
         # retreive param with this name
         (my $param1, $err) = $model->ParamList->lookup($name1);
         if ($err) { return undef, $err; }
@@ -128,7 +128,7 @@ sub newRateLaw
         my $err = $expr2->readString( \$expr_string_2, $model->ParamList );
         if ($err) { return '', $err }
         # get name for ratelaw
-        my $name2 = $expr2->getName( $model->ParamList, "localFuncR", $force_fcn );
+        my $name2 = $expr2->getName( $model->ParamList, "_localFuncR", $force_fcn );
         # retreive param with this name
         (my $param2, $err) = $model->ParamList->lookup($name2);
         if ($err) { return undef, $err; }
@@ -151,7 +151,7 @@ sub newRateLaw
         my $phi_expr = Expression->new();
         $err = $phi_expr->readString( \$string_left, $model->ParamList, "," );
         if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting phi string): $err"; }
-        my $phi_name = $phi_expr->getName( $model->ParamList, "Aphi_" );
+        my $phi_name = $phi_expr->getName( $model->ParamList, "_Aphi_" );
         (my $phi_param, $err) = $model->ParamList->lookup($phi_name);
         if ($err) { return undef, $err; }
 
@@ -162,7 +162,7 @@ sub newRateLaw
         my $actE_expr = Expression->new();
         $err = $actE_expr->readString( \$string_left, $model->ParamList );
         if ($err) { return undef, "Unable to parse Arrhenius ratelaw (expecting activation energy string): $err"; }
-        my $actE_name = $actE_expr->getName( $model->ParamList, "AEact0_" );
+        my $actE_name = $actE_expr->getName( $model->ParamList, "_AEact0_" );
         (my $actE_param, $err) = $model->ParamList->lookup($actE_name);
         if ($err) { return undef, $err; }
 
@@ -469,7 +469,7 @@ sub evaluate_local
             # get parameter name for new ratelaw expression (if required)
             my $base_name = $rxn->RxnRule->Name;  # base parameter name is the rule name
             $base_name =~ s/[^\w]+//g;            # remove non-word characters
-            my $local_name = $arrhenius_expr->getName( $model->ParamList, "${base_name}_local" );
+            my $local_name = $arrhenius_expr->getName( $model->ParamList, "_${base_name}_local" );
             (my $local_param, $err) = $model->ParamList->lookup($local_name);
             unless (defined $local_param) { die "RateLaw::evaluate_local() - Some problem creating param name for local ratelaw ($err)"; }
 
@@ -519,7 +519,7 @@ sub evaluate_local
                 # get parameter name for new ratelaw expression (if required)
                 my $base_name = $rxn->RxnRule->Name;  # base parameter name is the rule name
                 $base_name =~ s/[^\w]+//g;            # remove non-word characters
-                my $local_name = $local_expr->getName( $model->ParamList, "${base_name}_local" );
+                my $local_name = $local_expr->getName( $model->ParamList, "_${base_name}_local" );
                 (my $local_param, $err) = $model->ParamList->lookup($local_name);
                 unless (defined $local_param) { die "RateLaw::evaluate_local() - Some problem creating param name for local ratelaw ($err)"; }
 

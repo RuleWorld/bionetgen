@@ -9,8 +9,8 @@
       <Parameter id="R0" type="Constant" value="1e-09"/>
       <Parameter id="kp" type="Constant" value="1.6605503e-09"/>
       <Parameter id="km" type="Constant" value="0.1"/>
-      <Parameter id="InitialConc1" type="Constant" value="602210"/>
-      <Parameter id="InitialConc2" type="Constant" value="602210"/>
+      <Parameter id="_InitialConc1" type="Constant" value="602210"/>
+      <Parameter id="_InitialConc2" type="Constant" value="602210"/>
       <Parameter id="NewConc1" type="Constant" value="1204420"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>

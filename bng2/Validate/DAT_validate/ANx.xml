@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.1.8+  -->
+<!-- Created by BioNetGen 2.2.5  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="ANx">
     <ListOfParameters>
@@ -30,8 +30,8 @@
       <Parameter id="ClusterCount" type="Constant" value="370"/>
       <Parameter id="CheRCount" type="Constant" value="500"/>
       <Parameter id="CheBCount" type="Constant" value="500"/>
-      <Parameter id="rateLaw1" type="Constant" value="1000"/>
-      <Parameter id="rateLaw2" type="Constant" value="1000"/>
+      <Parameter id="_rateLaw1" type="Constant" value="1000"/>
+      <Parameter id="_rateLaw2" type="Constant" value="1000"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
       <MoleculeType id="CheB">
@@ -576,7 +576,7 @@
         </ListOfProductPatterns>
         <RateLaw id="RR5_RateLaw" type="Ele" totalrate="0">
           <ListOfRateConstants>
-            <RateConstant value="rateLaw1"/>
+            <RateConstant value="_rateLaw1"/>
           </ListOfRateConstants>
         </RateLaw>
         <Map>
@@ -634,7 +634,7 @@
         </ListOfProductPatterns>
         <RateLaw id="RR6_RateLaw" type="Ele" totalrate="0">
           <ListOfRateConstants>
-            <RateConstant value="rateLaw2"/>
+            <RateConstant value="_rateLaw2"/>
           </ListOfRateConstants>
         </RateLaw>
         <Map>
@@ -692,7 +692,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR7_RateLaw" type="Function" name="rateLaw3" totalrate="0">
+        <RateLaw id="RR7_RateLaw" type="Function" name="_rateLaw3" totalrate="0">
           <ListOfArguments>
             <Argument id="y" type="ObjectReference" value="RR7_RP1_M1"/>
           </ListOfArguments>
@@ -753,7 +753,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR8_RateLaw" type="Function" name="rateLaw4" totalrate="0">
+        <RateLaw id="RR8_RateLaw" type="Function" name="_rateLaw4" totalrate="0">
           <ListOfArguments>
             <Argument id="y" type="ObjectReference" value="RR8_RP1_M1"/>
           </ListOfArguments>
@@ -830,7 +830,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR9_RateLaw" type="Function" name="rateLaw5" totalrate="0">
+        <RateLaw id="RR9_RateLaw" type="Function" name="_rateLaw5" totalrate="0">
           <ListOfArguments>
             <Argument id="r" type="ObjectReference" value="RR9_RP1_M1"/>
           </ListOfArguments>
@@ -911,7 +911,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR10_RateLaw" type="Function" name="rateLaw6" totalrate="0">
+        <RateLaw id="RR10_RateLaw" type="Function" name="_rateLaw6" totalrate="0">
           <ListOfArguments>
             <Argument id="r" type="ObjectReference" value="RR10_RP1_M1"/>
           </ListOfArguments>
@@ -992,7 +992,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR11_RateLaw" type="Function" name="rateLaw7" totalrate="0">
+        <RateLaw id="RR11_RateLaw" type="Function" name="_rateLaw7" totalrate="0">
           <ListOfArguments>
             <Argument id="r" type="ObjectReference" value="RR11_RP1_M1"/>
           </ListOfArguments>
@@ -1073,7 +1073,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR12_RateLaw" type="Function" name="rateLaw8" totalrate="0">
+        <RateLaw id="RR12_RateLaw" type="Function" name="_rateLaw8" totalrate="0">
           <ListOfArguments>
             <Argument id="r" type="ObjectReference" value="RR12_RP1_M1"/>
           </ListOfArguments>
@@ -1154,7 +1154,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR13_RateLaw" type="Function" name="rateLaw9" totalrate="0">
+        <RateLaw id="RR13_RateLaw" type="Function" name="_rateLaw9" totalrate="0">
           <ListOfArguments>
             <Argument id="r" type="ObjectReference" value="RR13_RP1_M1"/>
           </ListOfArguments>
@@ -1235,7 +1235,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR14_RateLaw" type="Function" name="rateLaw10" totalrate="0">
+        <RateLaw id="RR14_RateLaw" type="Function" name="_rateLaw10" totalrate="0">
           <ListOfArguments>
             <Argument id="r" type="ObjectReference" value="RR14_RP1_M1"/>
           </ListOfArguments>
@@ -1298,7 +1298,7 @@
             </ListOfMolecules>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR15_RateLaw" type="Function" name="rateLaw11" totalrate="0">
+        <RateLaw id="RR15_RateLaw" type="Function" name="_rateLaw11" totalrate="0">
           <ListOfArguments>
             <Argument id="x" type="ObjectReference" value="RR15_RP1"/>
           </ListOfArguments>
@@ -1357,7 +1357,7 @@
             </ListOfMolecules>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR16_RateLaw" type="Function" name="rateLaw12" totalrate="0">
+        <RateLaw id="RR16_RateLaw" type="Function" name="_rateLaw12" totalrate="0">
           <ListOfArguments>
             <Argument id="x" type="ObjectReference" value="RR16_RP1"/>
           </ListOfArguments>
@@ -1552,23 +1552,14 @@
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="R3" type="Observable"/>
-
           <Reference name="R1" type="Observable"/>
-
           <Reference name="R7" type="Observable"/>
-
           <Reference name="R6" type="Observable"/>
-
           <Reference name="R4" type="Observable"/>
-
           <Reference name="R5" type="Observable"/>
-
           <Reference name="R2" type="Observable"/>
-
           <Reference name="R8" type="Observable"/>
-
           <Reference name="x" type="Local"/>
-
         </ListOfReferences>
         <Expression> (((((((1*R1(x))+(2*R2(x)))+(3*R3(x)))+(4*R4(x)))+(5*R5(x)))+(6*R6(x)))+(7*R7(x)))+(8*R8(x)) </Expression>
       </Function>
@@ -1578,181 +1569,133 @@
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="R3" type="Observable"/>
-
           <Reference name="R1" type="Observable"/>
-
           <Reference name="R7" type="Observable"/>
-
           <Reference name="R6" type="Observable"/>
-
           <Reference name="R4" type="Observable"/>
-
           <Reference name="R5" type="Observable"/>
-
           <Reference name="R0" type="Observable"/>
-
           <Reference name="R8" type="Observable"/>
-
           <Reference name="R2" type="Observable"/>
-
           <Reference name="e2" type="Constant"/>
-
           <Reference name="Asp_Kon_TSR" type="Constant"/>
-
           <Reference name="e6" type="Constant"/>
-
           <Reference name="e0" type="Constant"/>
-
           <Reference name="TAR_COUNT" type="Constant"/>
-
           <Reference name="AspConc" type="Constant"/>
-
           <Reference name="Asp_Koff_TSR" type="Constant"/>
-
           <Reference name="TSR_COUNT" type="Constant"/>
-
           <Reference name="e4" type="Constant"/>
-
           <Reference name="Asp_Kon_TAR" type="Constant"/>
-
           <Reference name="e3" type="Constant"/>
-
           <Reference name="e5" type="Constant"/>
-
           <Reference name="e1" type="Constant"/>
-
           <Reference name="e8" type="Constant"/>
-
           <Reference name="e7" type="Constant"/>
-
           <Reference name="Asp_Koff_TAR" type="Constant"/>
-
           <Reference name="x" type="Local"/>
-
         </ListOfReferences>
         <Expression> 1/(1+((exp((((((((((e0*R0(x))+(e1*R1(x)))+(e2*R2(x)))+(e3*R3(x)))+(e4*R4(x)))+(e5*R5(x)))+(e6*R6(x)))+(e7*R7(x)))+(e8*R8(x))))*(((1.0+(AspConc/Asp_Koff_TAR))/(1.0+(AspConc/Asp_Kon_TAR)))^TAR_COUNT))*(((1.0+(AspConc/Asp_Koff_TSR))/(1.0+(AspConc/Asp_Kon_TSR)))^TSR_COUNT))) </Expression>
       </Function>
-      <Function id="rateLaw3">
+      <Function id="_rateLaw3">
         <ListOfArguments>
           <Argument id="y"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="y" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(y)) </Expression>
       </Function>
-      <Function id="rateLaw4">
+      <Function id="_rateLaw4">
         <ListOfArguments>
           <Argument id="y"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="y" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*MethLevel(y) </Expression>
       </Function>
-      <Function id="rateLaw5">
+      <Function id="_rateLaw5">
         <ListOfArguments>
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="r" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(r)) </Expression>
       </Function>
-      <Function id="rateLaw6">
+      <Function id="_rateLaw6">
         <ListOfArguments>
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="r" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(r)) </Expression>
       </Function>
-      <Function id="rateLaw7">
+      <Function id="_rateLaw7">
         <ListOfArguments>
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="r" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(r)) </Expression>
       </Function>
-      <Function id="rateLaw8">
+      <Function id="_rateLaw8">
         <ListOfArguments>
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="r" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*MethLevel(r) </Expression>
       </Function>
-      <Function id="rateLaw9">
+      <Function id="_rateLaw9">
         <ListOfArguments>
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="r" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*MethLevel(r) </Expression>
       </Function>
-      <Function id="rateLaw10">
+      <Function id="_rateLaw10">
         <ListOfArguments>
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="r" type="Local"/>
-
           <Reference name="MethLevel" type="Function"/>
-
         </ListOfReferences>
         <Expression> 1000*MethLevel(r) </Expression>
       </Function>
-      <Function id="rateLaw11">
+      <Function id="_rateLaw11">
         <ListOfArguments>
           <Argument id="x"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="kr" type="Constant"/>
-
           <Reference name="x" type="Local"/>
-
           <Reference name="pOn" type="Function"/>
-
         </ListOfReferences>
         <Expression> kr*(1-pOn(x)) </Expression>
       </Function>
-      <Function id="rateLaw12">
+      <Function id="_rateLaw12">
         <ListOfArguments>
           <Argument id="x"/>
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="kb" type="Constant"/>
-
           <Reference name="x" type="Local"/>
-
           <Reference name="pOn" type="Function"/>
-
         </ListOfReferences>
         <Expression> kb*pOn(x) </Expression>
       </Function>
