@@ -216,7 +216,6 @@ class SBML2BNGL:
             'reversible':reversible,'reactionID':reaction.getId(),'numbers':[0,0]}
 
 
-
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
@@ -440,6 +439,7 @@ class SBML2BNGL:
             
             if self.getReactions.functionFlag and 'delay' in rawRules['rates'][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
+
             if rawRules['reversible']:
                 if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
