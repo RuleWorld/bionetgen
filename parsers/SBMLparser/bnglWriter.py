@@ -206,7 +206,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
                 print 'meep'
         return rule
     
-         
     #rule = changeToBNGL(['pow','root'],rule,powParse)
     rule = changeToBNGL(['gt','lt','leq','geq','eq'],rule,compParse)
     rule = changeToBNGL(['and','or'],rule,compParse)
@@ -320,16 +319,39 @@ def sectionTemplate(name,content):
 #341,6,12
 
 def extendFunction(function, subfunctionName,subfunction):
+    def constructFromList(argList,optionList,subfunctionParam,subfunctionBody):
+        parsedString = ''
+        idx = 0
+        while idx < len(argList):
+            if type(argList[idx]) is list:
+                parsedString += '(' + constructFromList(argList[idx],optionList,subfunctionParam,subfunctionBody) + ')'
+            elif argList[idx] in optionList:
+                tmp = subfunctionBody
+                commaIndexes = [0]
+                commaIndexes.extend([i for i, x in enumerate(argList[idx+1]) if x == ","])
+                commaIndexes.append(len(argList[idx+1]))
+                instancedParameters = [argList[idx+1][commaIndexes[i]:commaIndexes[i+1]] for i in range(0,len(commaIndexes)-1)]
+                for parameter,instance in zip(subfunctionParam,instancedParameters):
+                    if ',' in instance:
+                        instance.remove(',')
+                    parsedParameter = ' ( ' + constructFromList(instance,optionList,subfunctionParam,subfunctionBody) + ' ) '
+                    tmp = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter.strip()),r'\1{0} \3'.format(parsedParameter),tmp)
+                parsedString += ' ' + tmp + ' '
+                idx += 1
+            else:
+                if argList[idx] == '=':
+                    parsedString += ' ' + argList[idx] + ' '
+                else:
+                    parsedString += argList[idx]
+            idx += 1
+        return parsedString
     param = subfunction.split(' = ')[0][len(subfunctionName)+1:-1]
     body = subfunction.split(' = ')[1]
     while re.search(r'{0}\([^)]*\)'.format(subfunctionName),function) != None:
-        call =  re.search(r'{0}\([^)]*\)'.format(subfunctionName),function).group(0)
-             
-        callParams = call[len(subfunctionName)+1:-1]
-        transDict = {x.strip():y.strip() for x,y in zip(param.split(','),callParams.split(','))}
-        for element in transDict:
-            body = re.sub(r'(\W|^)({0})(\W|$)'.format(element),r'\1 {0} \3'.format(transDict[element]),body)
-        function = re.sub(r'{0}\([^)]*\)'.format(subfunctionName),body,function)
+        contentRule = pyparsing.Word(pyparsing.alphanums + '_.') |  ',' | '+' | '-' | '*' | '/' | '^' | '&' | '>' | '<' | '=' | '|'  
+        parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
+        subfunctionList = parens.parseString('(' + function + ')').asList()
+        function = constructFromList(subfunctionList[0],[subfunctionName],param.split(','),body)
     return function
         
         

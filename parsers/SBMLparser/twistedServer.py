@@ -8,7 +8,6 @@ Created on Fri May 2 16:56:13 2014
 
 import libsbml2bngl
 # Restrict to a particular path.
-
 from twisted.web import xmlrpc, server
 from twisted.internet import reactor
 import threading

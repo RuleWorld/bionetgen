@@ -369,6 +369,8 @@ def extractXMLInfo(fileName):
     model = document.getModel()
     metaArray = set()    
     metaDict = {}
+    from collections import defaultdict
+    metaDict2 = defaultdict(list)
     if model != None:
         #annotation = model.getAnnotation()
         #lista = libsbml.CVTermList()
@@ -384,12 +386,14 @@ def extractXMLInfo(fileName):
             lista = libsbml.CVTermList()
             libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
             for idx in range(0,lista.getSize()):
-              resource = lista.get(idx).getResources().getValue(0)
-              #resource = resolveAnnotation(resource)
-              metaArray.add(resource)
-              metaDict[speciesId] = (name,resource)
-    
-    return metaArray,metaDict
+              for idx2 in range(0, lista.get(idx).getResources().getLength()):
+                  resource = lista.get(idx).getResources().getValue(idx2)
+                  #resource = resolveAnnotation(resource)
+                  metaArray.add(resource)
+                  metaDict[speciesId] = (name,resource)
+                  metaDict2[resource].append([speciesId,name])
+
+    return metaArray,metaDict,metaDict2
             
 
     
@@ -399,19 +403,23 @@ def biomodelsInteractome():
     onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f))]
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
 
-    xmlFiles = [ f for f in listdir('./XMLExamples/curated') if isfile(join('./XMLExamples/curated',f)) and 'xml' in f]
+    xmlFiles = [ f for f in listdir('./XMLExamples/curated') if isfile(join('./XMLExamples/curated',f)) and f.endswith('.xml')]
     xmlFiles = sorted(xmlFiles)
     xmlArray = []
     xmlExtendedArray = []
+    xmlExtendedArray2 = {}
     for xml in xmlFiles:
-        metaArray,metaDict = extractXMLInfo(join('./XMLExamples/curated',xml))
+        metaArray,metaDict ,metaDict2= extractXMLInfo(join('./XMLExamples/curated',xml))
         xmlArray.append(metaArray)
         xmlExtendedArray.append(metaDict)
+        xmlExtendedArray2[xml] = metaDict2
     with open('xmlAnnotationsExtended.dump','wb') as f:
         pickle.dump(xmlExtendedArray,f)
     with open('xmlAnnotations.dump','wb') as f:
         pickle.dump(xmlArray,f)
-    
+    with open('xmlAnnotationsExtended2.dump','wb') as f:
+        pickle.dump(xmlExtendedArray2,f)
+
 def reduceElements(element,linkArray):
     s = [len(set.intersection(element,x)) > 0 for x in linkArray]
     indexes = np.nonzero(s)
@@ -470,10 +478,10 @@ def getLinkArray(relationshipMatrix):
             linkArray.append(tmp)
             linkArray.extend(tmp2)
 
-    return linkArray    
-def biomodelsInteractomeAnalysis():
-    with open('xmlAnnotations.dump','rb') as f:
-        annotations = pickle.load(f)
+    return linkArray  
+
+
+def getModelRelationshipMatrix(annotations,threshold=3):
     blacklist = ['http://identifiers.org/obo.chebi/CHEBI:33699','http://identifiers.org/kegg.compound/C00562',
                  'http://identifiers.org/obo.chebi/CHEBI:36080','http://identifiers.org/chebi/CHEBI:33699',
                  'http://identifiers.org/obo.chebi/CHEBI:15422','http://identifiers.org/obo.chebi/CHEBI:16761',
@@ -481,15 +489,23 @@ def biomodelsInteractomeAnalysis():
                  'http://identifiers.org/chebi/CHEBI:16761'
                  ]
     relationshipMatrix = np.zeros((len(annotations),len(annotations)))
-    threshold = 3
+    negativeRelationshipMatrix = np.zeros((len(annotations),len(annotations)))
     for element in range(0,len(annotations)-1):
         for element2 in range(element+1,len(annotations)):
             score = len([x for x in  annotations[element] if x in annotations[element2] and x not in blacklist])
+            nscore = len([x for x in  annotations[element] if x not in annotations[element2] and x not in blacklist]) + len([x for x in  annotations[element2] if x not in annotations[element] and x not in blacklist])
             if score > threshold:
                 relationshipMatrix[element,element2] = score
             else:
                 relationshipMatrix[element,element2] = 0
-    
+            negativeRelationshipMatrix[element,element2] = nscore
+    return relationshipMatrix,negativeRelationshipMatrix
+
+def biomodelsInteractomeAnalysis():
+    with open('xmlAnnotations.dump','rb') as f:
+        annotations = pickle.load(f)
+
+    relationshipMatrix = getModelRelationshipMatrix(annotations)
     basicReactome(relationshipMatrix)
     #basicCSVReactome(relationshipMatrix)
     #return
@@ -521,11 +537,51 @@ def biomodelsInteractomeAnalysis():
     with open('linkArray.dump','wb') as f:
         pickle.dump(linkArray,f)
     print [len(x) for x in linkArray]
+     
+def annotationSharingFinder():
+    with open('xmlAnnotations.dump','rb') as f:
+        annotations = pickle.load(f)
+    with open('evalResults.dump','rb') as f:
+        ev = pickle.load(f)
         
+    from operator import itemgetter
+    relationshipTracker = []
+    relationshipMatrix,negativeRelationshipMatrix = getModelRelationshipMatrix(annotations)
+    for idx,_ in enumerate(relationshipMatrix):
+        for idx2,_ in enumerate(relationshipMatrix[idx]):
+            if relationshipMatrix[idx][idx2] > 10:
+                nameStr = 'BIOMD0000000%03d.xml' % (idx+1)
+                nameStr2 = 'BIOMD0000000%03d.xml' % (idx2+1)
+                sc1 = ev[nameStr][2] if nameStr in ev else 0
+                sc2 = ev[nameStr2][2] if nameStr2 in ev else 0
+                
+                if sc1*sc2 > 0 and (1-sc1)*(1-sc2) > 0:
+                    relationshipTracker.append([idx+1,idx2+1,float((0.5*relationshipMatrix[idx][idx2])+ negativeRelationshipMatrix[idx][idx2])*(1-sc1)*(1-sc2)])
+    relationshipTracker =  sorted(relationshipTracker,key=itemgetter(2),reverse=True)
+    print relationshipTracker
+    #print relationshipTracker
+    
+
+def compareConventions(model1,model2):
+    import pprint
+    with open('xmlAnnotationsExtended2.dump','rb') as f:
+        ann = pickle.load(f)
+    dic1 = ann[model1]
+    dic2 = ann[model2]
+
+    pp = pprint.PrettyPrinter(indent=4)
+    #pp.pprint(dict(dic1))
+    #pp.pprint(dict(dic2))
+    for element in [x for x in dic1 if x in dic2]:
+        print dic1[element],'}}}}',dic2[element]  
 
 if __name__ == "__main__":
     #bagOfWords()
     #rankingAnalysis()
     #print resolveAnnotation('http://identifiers.org/reactome/REACT_9417.3')
     #biomodelsInteractome()
-    biomodelsInteractomeAnalysis()
+    #biomodelsInteractomeAnalysis()
+    #biomodelsInteractome()
+    compareConventions('BIOMD0000000070.xml','BIOMD0000000469.xml')
+    #extractXMLInfo('XMLExamples/curated/BIOMD0000000019.xml')
+    #annotationSharingFinder()

@@ -109,7 +109,7 @@ if __name__ == "__main__":
     suite2 = unittest.TestSuite()
     suite3 = unittest.TestSuite()
     
-    ran = range(1,469)
+    ran = range(1,491)
     blackList = [175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]
     ran.remove(175)
     ran.remove(205)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     
     #ran = range(466,470)
     #ran = [229]
-    ran = [19]
+    #ran = range(469,491)
     '''
     ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,
            147, 338, 297, 293, 49, 344, 83, 230, 453, 223, 109, 56, 256, 410, 
@@ -144,12 +144,12 @@ if __name__ == "__main__":
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    #validFiles = getValidBNGLFiles('raw') 
-    #validFiles = sorted(validFiles)
+    validFiles = getValidBNGLFiles('complex') 
+    validFiles = sorted(validFiles)
     #validFiles.remove('54')
-    #for fileNumber in validFiles:
-    #    fileName = 'output{0}.bngl'.format(fileNumber)
-    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    for fileNumber in validFiles:
+        fileName = 'output{0}.bngl'.format(fileNumber)
+        suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
     #validGdats = getValidGDats('.')
     
     #validFiles = getValidBNGLFiles('raw')
