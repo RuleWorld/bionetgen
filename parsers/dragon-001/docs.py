@@ -111,6 +111,7 @@ class ModelDoc(BaseDocumentManager):
   MODEL_AUTHOR = 'model_author'
   MODEL_KEYWORDS = 'model_keywords'
   MODEL_SKEYWORDS = 'model_skeywords'
+  MODEL_FILE = 'model_file'
   UPDATED = 'updated'
 
   _SORT_OPTIONS = [
@@ -138,6 +139,8 @@ class ModelDoc(BaseDocumentManager):
     return self.getFieldVal(self.MID)
   def getSKeywords(self):
     return self.getFieldVal(self.MODEL_SKEYWORDS)
+  def getFile(self):
+    return self.getFieldVal(self.MODEL_FILE)
 
   @classmethod
   def getSortMenu(cls):
@@ -176,7 +179,7 @@ class ModelDoc(BaseDocumentManager):
 
   @classmethod
   def _buildCoreModelFields(
-      cls, mid, name, author, keywords,skeywords):
+      cls, mid, name, author, keywords,skeywords,fileInfo):
     """Construct a 'core' document field list for the fields common to all
     Models. """
     fields = [search.TextField(name=cls.MID, value=mid),
@@ -185,19 +188,19 @@ class ModelDoc(BaseDocumentManager):
                   value=datetime.datetime.now().date()),
               search.TextField(name=cls.MODEL_AUTHOR, value=author),
               search.TextField(name=cls.MODEL_KEYWORDS,value=keywords),
-              search.TextField(name=cls.MODEL_SKEYWORDS, value=skeywords)
-
-             ]
+              search.TextField(name=cls.MODEL_SKEYWORDS, value=skeywords),
+               search.TextField(name=cls.MODEL_FILE, value=fileInfo)
+                ]
     return fields
 
   @classmethod
   def _createDocument(
-      cls, mid, name, author, keywords,skeywords):
+      cls, mid, name, author, keywords,skeywords,fileInfo):
       """Create a Document object from given params."""
       # construct the document fields from the params
       resfields = cls._buildCoreModelFields(
           mid=mid, name=name, author=author,keywords=keywords,
-          skeywords=skeywords)
+          skeywords=skeywords,fileInfo=fileInfo)
       # build and index the document.  Use the pid (product id) as the doc id.
       # (If we did not do this, and left the doc_id unspecified, an id would be
       # auto-generated.)
@@ -213,8 +216,9 @@ class ModelDoc(BaseDocumentManager):
     # check to see if doc already exists.  We do this because we need to retain
     # some information from the existing doc.  We could skip the fetch if this
     # were not the case.
-    curr_doc = cls.getDocFromMid(params['mid'])
-    d = cls._createDocument(params['mid'],params['name'],' '.join(params['author']),' '.join(params['tags']),' '.join(params['structuredTags']))
+    #curr_doc = cls.getDocFromMid(params['mid'])
+    d = cls._createDocument(params['mid'],params['name'],' '.join(params['author'])
+      ,' '.join(params['tags']),' '.join(params['structuredTags']),params['fileInfo'])
 
     # This will reindex if a doc with that doc id already exists
     doc_ids = cls.add(d)

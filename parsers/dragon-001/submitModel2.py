@@ -29,17 +29,20 @@ import xmlrpclib
 import jinja2
 import zipfile
 import tempfile
+import cPickle as pickle
 
 import json
 from google.appengine.api import files
 import parseAnnotations
 
 from google.appengine.api import urlfetch
-urlfetch.set_default_fetch_deadline(45)
 import logging
+logging.basicConfig(filename='/home/proto/rulehub.log',level=logging.DEBUG,format='%(asctime)s - %(levelname)s:%(message)s')
+
 
 from models import ModelInfo
 import docs
+
 
 def CreateFile(filename,content):
   """Create a GCS file with GCS client lib.
@@ -78,7 +81,7 @@ class GAEXMLRPCTransport(object):
                                       payload=request_body,
                                       method=urlfetch.POST,
                                       headers={'Content-Type': 'text/xml'},
-                                      deadline=60)
+                                      deadline=600)
         except:
             msg = 'Failed to fetch %s' % url
             logging.error(msg)
@@ -165,7 +168,7 @@ class Submit(webapp2.RequestHandler):
             #'model_name': urllib.urlencode({'model_name':model_name}),
             'url': url,
             'url_linktext': url_linktext,
-            'formatOptions':set(["bngl","kappa"]),
+            'formatOptions':["bngl","kappa"],
             'current_user':current_user,
             'submith':'current_page_item'
         }
@@ -248,46 +251,52 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         
         
         
-        model_name = self.request.get('model_name',
-                                          DEFAULT_GUESTBOOK_NAME)
-        modelSubmission = ModelInfo(parent=dbmodel_key(model_name))
-        publicationInfo = PublicationInfo(parent=dbmodel_key(model_name))
-        publicationInfo.name = self.request.get('publication')
-        publicationInfo.journal =   self.request.get('journal')
+        modelSubmission = {}
         if users.get_current_user():
-            modelSubmission.submitter = users.get_current_user().user_id()
+            modelSubmission['submitter'] = users.get_current_user().user_id()
+        modelSubmission['author'] = [self.request.get('author')]
+        modelSubmission['fileFormat'] = self.request.get('fileFormat')
+        modelSubmission['name'] = self.request.get('name')
+        modelSubmission['description'] = self.request.get('description')
+        modelSubmission['privacy'] = self.request.get('privacy')
+        
+        modelSubmissionString = pickle.dumps(modelSubmission)
             
         upload_files = self.get_uploads('file')
-        contact = self.get_uploads('contact ')
         blob_info = upload_files[0]
-        blob_info2 = contact[0]
-        modelSubmission.content = blob_info.key()
-        modelSubmission.author = [self.request.get('author')]
-        modelSubmission.publication = publicationInfo
-        modelSubmission.fileFormat = self.request.get('fileFormat')
-        modelSubmission.contactMap = blob_info2.key() 
-        modelSubmission.name = self.request.get('name')
-        modelSubmission.description = self.request.get('description')
-        modelSubmission.privacy = self.request.get('privacy')
+        bnglContent = blob_info.open().read()
+        element = blob_info.filename
+        bucket_name = os.environ.get('BUCKET_NAME',
+                             app_identity.get_default_gcs_bucket_name())
+
+        gcs_filename = '/{1}/{0}'.format(element,bucket_name)
+        blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
+        
+        taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
+                                                        'modelSubmission':modelSubmissionString})
+        self.redirect('/')
+
         #modelSubmission.submitter =  users.get_current_user()        
-        modelSubmission.put()
         
 
-        query_params = {'model_name': model_name}
-        self.redirect('/?' + urllib.urlencode(query_params))
  
 
 #address = 'http://127.0.0.1:9200'
 address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
+    logging.info('starting annotation processing')
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
     parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
+    logging.info(parsedAnnotationDict['structuredTags'])
     print '----',parsedAnnotationDict['structuredTags']
-    s = xmlrpclib.ServerProxy(address,GAEXMLRPCTransport())
-    tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
     tagDict = {}
-    for element in tagArray:
-        tagDict[element[0]] = element[1]
+    if parsedAnnotationDict != {}:
+        s = xmlrpclib.ServerProxy(address,GAEXMLRPCTransport())
+        tagArray = s.resolveAnnotations(parsedAnnotationDict['structuredTags'])
+        
+        for element in tagArray:
+            tagDict[element[0]] = element[1]
+        logging.info(tagDict)
     print '+++++',tagDict
     return parsedAnnotationDict,tagDict
 
@@ -303,14 +312,31 @@ class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
         # is in the same entity group. Queries across the single entity group
         # will be consistent. However, the write rate to a single entity group
         # should be limited to ~1/second.
+
         
         upload_files = self.get_uploads('file')
         blob_info = upload_files[0]
         bnglContent = blob_info.open().read()
         element = blob_info.filename
+        bucket_name = os.environ.get('BUCKET_NAME',
+                             app_identity.get_default_gcs_bucket_name())
+
+        gcs_filename = '/{1}/{0}'.format(element,bucket_name)
+        blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
         
-        taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,
-                                                        'privacy':self.request.get('privacy'),'submitter':users.get_current_user().user_id()})
+        modelSubmission = {}
+        if users.get_current_user():
+            modelSubmission['submitter'] = users.get_current_user().user_id()
+        modelSubmission['author'] = []
+        modelSubmission['fileFormat'] = ''
+        modelSubmission['name'] = ''
+        modelSubmission['description'] = ''
+        modelSubmission['privacy'] = self.request.get('privacy')
+    
+        modelSubmissionString = pickle.dumps(modelSubmission)
+
+        taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
+                                                        'modelSubmission':modelSubmissionString})
         self.redirect('/')
   
  
@@ -349,8 +375,27 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
 
             zipModel = objZip.open(element)
             bnglContent = zipModel.read()
-            taskqueue.add(url='/processfileq', params={'element':element,'bnglContent':bnglContent,
-                                                            'privacy':self.request.get('privacy'),'submitter':users.get_current_user().user_id()})
+
+            modelSubmission = {}
+            if users.get_current_user():
+                modelSubmission['submitter'] = users.get_current_user().user_id()
+            modelSubmission['author'] = []
+            modelSubmission['fileFormat'] = ''
+            modelSubmission['name'] = ''
+            modelSubmission['description'] = ''
+            modelSubmission['privacy'] = self.request.get('privacy')
+        
+            modelSubmissionString = pickle.dumps(modelSubmission)
+            
+            #store the file in the datastore before passing it to the queue
+            bucket_name = os.environ.get('BUCKET_NAME',
+                                 app_identity.get_default_gcs_bucket_name())
+    
+            gcs_filename = '/{1}/{0}'.format(element,bucket_name)
+            blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
+
+            taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
+                                                            'modelSubmission':modelSubmissionString})
 
         self.redirect('/')
  
@@ -358,72 +403,45 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
 class ProcessAnnotation(webapp2.RequestHandler):
     def post(self):
             element = self.request.get('element')
-            bnglContent = self.request.get('bnglContent')
-            
-
-            modelSubmission = {}
-       
-            #fixme: this will be deprecated in the near future, use gcs client library instead
-            '''
-            file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename=element)
-            with files.open(file_name, 'a') as f:
-              f.write(bnglContent)
-              #files.finalize(file_name)
-              f.close(finalize=True)
-            blob_key = files.blobstore.get_blob_key(file_name)   
-            '''
+            bnglKey = self.request.get('bnglKey')
+            bnglContent = blobstore.fetch_data(bnglKey,0,900000)
+            modelSubmission = pickle.loads(self.request.get('modelSubmission').encode('utf-8'))
             bucket_name = os.environ.get('BUCKET_NAME',
                                  app_identity.get_default_gcs_bucket_name())
+       
 
-            gcs_filename = '/{1}/{0}'.format(element,bucket_name)
-            blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
-            
-            modelSubmission['content'] = blob_key
-            modelSubmission['name'] = element
+            modelSubmission['content'] = blobstore.BlobKey(bnglKey)
+            if modelSubmission['name'] == '':
+                modelSubmission['name'] = element
             mapInfo = getMap(bnglContent,'contact')
-            '''
-            
-            file_name = files.blobstore.create(mime_type='application/octet-stream',_blobinfo_uploaded_filename='{0}.gml'.format(element))
-                
-            # Open the file and write to it
-            with files.open(file_name, 'a') as f:
-                f.write(mapInfo['gmlStr'])
-            
-            # Finalize the file. Do this before attempting to read it.
-            files.finalize(file_name)
-            
-            # Get the file's blob key
-            blob_key = files.blobstore.get_blob_key(file_name)
-            '''
+
             gcs_filename = '/{1}/{0}.gml'.format(element,bucket_name)
             blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
 
             modelSubmission['contactMap'] = blob_key
             modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
-            modelSubmission['privacy'] = self.request.get('privacy')
-            '''
-            if '{0}.png'.format(element) in nameList:
-                zipModel = objZip.open(element)
-                file_name = files.blobstore.create(mime_type='application/octet-stream',
-                                                   _blobinfo_uploaded_filename='{0}.png'.format(element))
-                with files.open(file_name, 'a') as f:
-                  f.write(zipModel.read())
-                files.finalize(file_name)
-                modelSubmission.contactMap(file_name)
-             '''
 
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
-            modelSubmission['author'] = [parsedAnnotationDict['author']]
-            modelSubmission['structuredTags'] = convert(parsedAnnotationDict['structuredTags'])
+            if 'author' in parsedAnnotationDict:
+                modelSubmission['author'] = [parsedAnnotationDict['author']]
+                
             modelSubmission['tags'] = []
+
+            if 'structuredTags' in parsedAnnotationDict:
+                modelSubmission['structuredTags'] = convert(parsedAnnotationDict['structuredTags'])
             if 'tags' in tagArray:
                 modelSubmission['tags'] = convert(tagArray['tags'])
+
             if 'modelName' in tagArray:
                 modelSubmission['name'] = tagArray['modelName'][0].replace(" ","")
+                modelSubmission['mid'] = tagArray['modelName'][0].replace(" ","")
+            else:
+                modelSubmission['mid'] = element
+                
             if 'author' in tagArray:
                 modelSubmission['author'] = convert(tagArray['author'])
-            modelSubmission['submitter'] = self.request.get('submitter')
-            modelSubmission['mid'] = tagArray['modelName'][0].replace(" ","")
+
+            modelSubmission['fileInfo'] = bnglContent
             #modelObject = ModelInfo.create(modelSubmission,'2')
             modelObject = docs.ModelDoc.buildProduct(modelSubmission)
             #print modelObject
@@ -705,6 +723,10 @@ class addAnnotation(webapp2.RequestHandler):
 #http://www.youtube.com/watch?feature=player_embedded&v=I3Dh5a9XxX4                
 
 class List(webapp2.RequestHandler):
+    '''
+    Lists all the models in the db
+    should deprecate for using the new query system
+    '''
     def get(self):
         q = ModelInfo.query()
         queryArray = []
@@ -759,6 +781,9 @@ def boilerplateParams(uri):
     
 
 class Description(webapp2.RequestHandler):
+    '''
+    details model description
+    '''
     def get(self):
         query = ModelInfo.name
         q = ModelInfo.query(query == self.request.get('file'))
@@ -804,6 +829,9 @@ class Description(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 def convert(input):
+    '''
+    change array/dict of unicode strings to ascii strings
+    '''
     if isinstance(input, dict):
         return dict((convert(key), convert(value)) for key, value in input.iteritems())
     elif isinstance(input, list):
@@ -813,7 +841,10 @@ def convert(input):
     else:
         return input
 
-class Visualize(webapp2.RequestHandler):
+class Visualize(webapp2.RequestHandler):   
+    '''
+    calls cytoscape.js to visualize a contact map
+    '''
     def get(self):
         query = ModelInfo.name
         q = ModelInfo.query(query == self.request.get('file'))

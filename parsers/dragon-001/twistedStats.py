@@ -300,17 +300,17 @@ class AnnotationServer(xmlrpc.XMLRPC):
 
 #resolveAnnotations(tmpD)        
 if __name__ == '__main__':
-    #print "Listening on port {0}...".format(port)
-    #r = AnnotationServer()
-    #reactor.listenTCP(port, server.Site(r))
-    #reactor.run()
+    print "Listening on port {0}...".format(port)
+    r = AnnotationServer()
+    reactor.listenTCP(port, server.Site(r))
+    reactor.run()
     #print getcwd()
     #gml = nx.read_gml('/tmp/tmpy0ug0r_contact.gml')
 
     #gml2cyjson(gml) 
-    a = ['http://identifiers.org/pubmed/10514507']
+    #a = ['http://identifiers.org/pubmed/10514507']
 
-    print resolveAnnotation(a[0])
+    #print resolveAnnotation(a[0])
 
         
 

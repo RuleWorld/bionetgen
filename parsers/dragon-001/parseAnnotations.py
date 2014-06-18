@@ -51,7 +51,11 @@ def parseAnnotations(bnglString):
     speciesDocSyntax = bitSyntaxDefinition()
     docSyntax = syntaxDefinition()
     scans = speciesDocSyntax.searchString(bnglString)
-    tokens = docSyntax.parseString(bnglString)
+    try:
+        tokens = docSyntax.parseString(bnglString)
+    except pyp.ParseException:
+        print 'Parsing Error'
+        return {}
     tagsDict = {}
     for element in tokens:
         tagsDict[element[0]] = element[1]
