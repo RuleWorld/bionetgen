@@ -14,7 +14,7 @@ Released   : 20130602
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Scoreboard</title>
+<title>RuleHub</title>
 <meta name="keywords" content="" />
 <meta name="description" content="" />
 <link href="/stylesheets/default.css" rel="stylesheet" type="text/css" media="all" />
@@ -29,28 +29,22 @@ Released   : 20130602
 	<div id="page" class="container">
 		<div id="content">
 			<div class="title">
-				<h2>Submit a new model</h2>
+				<h2>Query</h2>
 			</div>
-		  <form action="{{ action }}" method="post" enctype="multipart/form-data">
-    Model submission: <br>
-      <div>Name: <input name="name"> </div>	
-      <div>Author: <input name="author"> </div>
-      <div>Publication: <input name="publication"> </div>
-      <div>Journal: <input name="journal"> </div>
-      <div><select name=fileFormat>
-        {% for option in formatOptions %}
+		    <form action="/search?{{ model_name }}" method="post">
+    Query Database: <br>
+      <div>Search by:<select name=searchSelection>
+        {% for option in queryOptions %}
 	  	<option>{{ option }}</option>
   	{% endfor %}
       </select></div>
-      <div><input type="checkbox" name="privacy" value="privacy">Private model </div>
-      Upload File: <input type="file" name="file"><br> 
-      
-      <div>Description: <textarea name="description" cols="25" rows="5"></textarea></div>
+      <div>QueryString: <input name="queryString"> </div>
       <input type="submit" value="Submit">
+      
     </form>
 
 		</div>
-	{% include "submitSidebar.html" %}	
+		{% include "normalSidebar.html" %}
 	</div>
 </div>
 {% include "footer.html" %}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="description" content="[An example of getting started with Cytoscape.js]" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script src="http://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/cytoscape.min.js"></script>
+<style>
+    #cy {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+</style> <link rel="stylesheet" type="text/css" href="script/cy.css">
+
+<meta charset=utf-8 />
+<title>Cytoscape.js initialisation</title>
+<script>
+#cy {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+</script>
+<script>
+$(function(){ // on dom ready
+
+$('#cy').cytoscape({
+
+   style: [
+    {
+      selector: 'node',
+      css: {
+        'content': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'center'
+      }
+    },
+    {
+      selector: '$node > node',
+      css: {
+        'padding-top': '20px',
+        'padding-left': '10px',
+        'padding-bottom': '10px',
+        'padding-right': '10px',
+        'text-valign': 'top',
+        'text-halign': 'center'
+      }
+    },
+    {
+      selector: 'edge',
+      css: {
+        'target-arrow-shape': 'triangle'
+      }
+    },
+    {
+      selector: ':selected',
+      css: {
+        'background-color': 'black',
+        'line-color': 'black',
+        'target-arrow-color': 'black',
+        'source-arrow-color': 'black'
+      }
+    }
+  ],
+  
+  layout:{'coolingFactor': 0.95, 'nodeRepulsion': 100, 'nodeOverlap': 10, 'gravity': 650, 'padding': 4, 'name': 'cose', 'nestingFactor': 5, 'initialTemp ': 2000, 'minTemp': 1, 'numIter': 100, 'edgeElasticity': 1000, 'idealEdgeLength': 1},
+   
+  elements: {{graph}},
+  
+  ready: function(){
+    window.cy = this;
+    
+    // giddy up...
+    
+    cy.elements().unselectify();
+    
+    cy.on('tap', 'node', function(e){
+      var node = e.cyTarget; 
+      var neighborhood = node.neighborhood().add(node);
+      
+      cy.elements().addClass('faded');
+      neighborhood.removeClass('faded');
+    });
+    
+    cy.on('tap', function(e){
+      if( e.cyTarget === cy ){
+        cy.elements().removeClass('faded');
+      }
+    });
+  }
+});
+
+}); // on dom ready
+</script>
+
+ </head>
+<body>
+  <div id="cy"></div>
+</body>
+</html>

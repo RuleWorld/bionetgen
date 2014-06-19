@@ -140,7 +140,7 @@ class MainPage(webapp2.RequestHandler):
             'current_user':current_user,
             'homepageh':'current_page_item'
         }
-        template =JINJA_ENVIRONMENT.get_template('index2.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/index2.html')
         self.response.write(template.render(template_values))
 
 class Submit(webapp2.RequestHandler):
@@ -173,7 +173,7 @@ class Submit(webapp2.RequestHandler):
             'submith':'current_page_item'
         }
 
-        template = JINJA_ENVIRONMENT.get_template('submit2.html')
+        template = JINJA_ENVIRONMENT.get_template('/pages/submit2.html')
         self.response.write(template.render(template_values))
 
 class SubmitFile(webapp2.RequestHandler):
@@ -205,7 +205,7 @@ class SubmitFile(webapp2.RequestHandler):
             'submith':'current_page_item'
         }
 
-        template = JINJA_ENVIRONMENT.get_template('submitFile2.html')
+        template = JINJA_ENVIRONMENT.get_template('/pages/submitFile2.html')
         self.response.write(template.render(template_values))
 
 class SubmitBatch(webapp2.RequestHandler):
@@ -237,7 +237,7 @@ class SubmitBatch(webapp2.RequestHandler):
             'submith':'current_page_item'
         }
 
-        template = JINJA_ENVIRONMENT.get_template('submitBatch.html')
+        template = JINJA_ENVIRONMENT.get_template('/pages/submitBatch.html')
         self.response.write(template.render(template_values))
 
 
@@ -465,7 +465,7 @@ class Query(webapp2.RequestHandler):
             'current_user':current_user,
             'queryh':'current_page_item'
         }
-        template =JINJA_ENVIRONMENT.get_template('query2.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/query2.html')
         self.response.write(template.render(template_values))
 
 class Query2(webapp2.RequestHandler):
@@ -489,7 +489,7 @@ class Query2(webapp2.RequestHandler):
             'current_user':current_user,
             'queryh':'current_page_item'
         }
-        template =JINJA_ENVIRONMENT.get_template('modelResult.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/modelResult.html')
         self.response.write(template.render(template_values))
         
 
@@ -643,7 +643,7 @@ class ModelSearchHandler(webapp2.RequestHandler):
         'sort_info': sort_info,
         }
     # render the result page.
-    template =JINJA_ENVIRONMENT.get_template('modelResult.html')
+    template =JINJA_ENVIRONMENT.get_template('/pages/modelResult.html')
     self.response.write(template.render(template_values))
 
     
@@ -756,7 +756,7 @@ class List(webapp2.RequestHandler):
         template_values['queryArray'] = queryArray
         template_values['listh'] = 'current_page_item'
         
-        template =JINJA_ENVIRONMENT.get_template('resultsList2.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/resultsList2.html')
         self.response.write(template.render(template_values))
 
 def boilerplateParams(uri):
@@ -825,7 +825,7 @@ class Description(webapp2.RequestHandler):
         template_values['queryArray'] = queryArray
         template_values['listh'] = 'current_page_item'
 
-        template =JINJA_ENVIRONMENT.get_template('singleResult2.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/singleResult2.html')
         self.response.write(template.render(template_values))
 
 def convert(input):
@@ -854,7 +854,7 @@ class Visualize(webapp2.RequestHandler):
         template_values = {}
         template_values['graph'] = convert(model['contactMapJson']['elements'])
         template_values['layout'] = convert(model['contactMapJson']['layout'][0])
-        template =JINJA_ENVIRONMENT.get_template('visualize.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/visualize.html')
         self.response.write(template.render(template_values))
 
 class Image (webapp2.RequestHandler):
@@ -931,7 +931,7 @@ class MyModels(webapp2.RequestHandler):
         template_values['counter'] = counter
         template_values['queryArray'] = queryArray
         template_values['myModelsh']  = 'current_page_item'
-        template =JINJA_ENVIRONMENT.get_template('resultsList2.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/resultsList2.html')
         self.response.write(template.render(template_values))
 
             
@@ -950,7 +950,7 @@ class Search(webapp2.RequestHandler):
         template_values = boilerplateParams(self.request.uri)
         template_values['queryArray'] = queryArray
         
-        template =JINJA_ENVIRONMENT.get_template('resultsList2.html')
+        template =JINJA_ENVIRONMENT.get_template('/pages/resultsList2.html')
         self.response.write(template.render(template_values)) 
         #if counter > 0:
         #    self.response.write(dp)

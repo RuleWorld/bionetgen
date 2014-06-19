@@ -1,0 +1,13 @@
+<div id="menu" class="container">
+	<ul>
+		<li class = {{highlight.HomePage}}><a href="/">Homepage</a></li>
+		<li class = {{highlight.List}}><a href="/list">List all models</a></li>
+		<li class={{highlight.Query}}><a href="/query">Query Models</a></li>
+		{% if current_user %}
+		<li class={{highlight.Submit}}><a href="/submit?type=form">Submit new Model</a></li>
+		<li><a href="/myModels">My models</a></li>
+		{% endif %}
+		<li><a href="{{ url|safe }}">{{ url_linktext }}</a></li>
+	</ul>
+</div>
+

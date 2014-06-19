@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block head %}
+    <title>{{title}}</title>
+{% endblock %}
+
+{% block content %}
+
+  <p></p>
+  <p>
+    {{msg}}
+  </p>
+  {% if url %}
+   <p><a href="{{goto_url}}">{{linktext}}</a></p>
+  {% endif %}
+
+{% endblock %}

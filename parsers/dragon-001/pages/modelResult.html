@@ -12,20 +12,9 @@ Released   : 20130602
 
 -->
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Scoreboard</title>
-<meta name="keywords" content="" />
-<meta name="description" content="" />
-<link href="/stylesheets/default.css" rel="stylesheet" type="text/css" media="all" />
-<link href="/stylesheets/fonts.css" rel="stylesheet" type="text/css" media="all" />
-<!--[if IE 6]>
-<link href="default_ie6.css" rel="stylesheet" type="text/css" />
-<![endif]-->
-</head>
-<body>
+{% include "pages/headTag.html" %}<body>
 <div id="wrapper">
-{% include "header.html" %}
+{% include "/pages/header.html" %}
   <div id="page" class="container">
     <div id="content">
       <div class="title">
@@ -135,10 +124,10 @@ Released   : 20130602
 
     {% endif %}
     </div>
-    {% include "normalSidebar.html" %}
+    {% include "/pages/normalSidebar.html" %}
   </div>
 </div>
-{% include "footer.html" %}
+{% include "/pages/footer.html" %}
 </body>
 
 <script type="text/javascript" language="JavaScript">

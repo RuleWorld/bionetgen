@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% autoescape true %}
+<!--
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Name       : Scoreboard 
+Description: A two-column, fixed-width design with dark color scheme.
+Version    : 1.0
+Released   : 20130602
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+{% include "pages/headTag.html" %}
+<body>
+<div id="wrapper">
+	{% include "pages/header.html" %}
+	<div id="page" class="container">
+		<div id="content">
+		<p>Welcome to <strong>RuleHub</strong>. The purpose of this database is to provide an easy to use and freelly accesible repository for modelers
+to store and share rule-base models. 	</p>
+		</div>
+		{% include "pages/normalSidebar.html" %}
+
+	</div>
+</div>
+{% include "pages/footer.html" %}
+</body>
+</html>
+{% endautoescape %}
