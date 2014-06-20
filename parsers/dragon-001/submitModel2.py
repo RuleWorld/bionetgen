@@ -43,6 +43,18 @@ logging.basicConfig(filename='/home/proto/rulehub.log',level=logging.DEBUG,forma
 from models import ModelInfo
 import docs
 
+import threading
+
+iid = 1
+iid_lock = threading.Lock()
+
+def next_id():
+    global iid
+    with iid_lock:
+        result = iid
+        iid += 1
+    return result
+
 
 def CreateFile(filename,content):
   """Create a GCS file with GCS client lib.
@@ -434,9 +446,9 @@ class ProcessAnnotation(webapp2.RequestHandler):
 
             if 'modelName' in tagArray:
                 modelSubmission['name'] = tagArray['modelName'][0].replace(" ","")
-                modelSubmission['mid'] = tagArray['modelName'][0].replace(" ","")
-            else:
-                modelSubmission['mid'] = element
+            modelSubmission['mid'] = str(next_id())
+            #else:
+            #    modelSubmission['mid'] = element
                 
             if 'author' in tagArray:
                 modelSubmission['author'] = convert(tagArray['author'])
@@ -508,7 +520,8 @@ class ModelSearchHandler(webapp2.RequestHandler):
         'category': '',
         'sort': '',
         'rating': '',
-        'offset': '0'
+        'offset': '0',
+        
     }
     for k, v in params.iteritems():
       # Possibly replace default values.
@@ -517,7 +530,7 @@ class ModelSearchHandler(webapp2.RequestHandler):
 
   def post(self):
     params = self.parseParams()
-    self.redirect('/msearch?' + urllib.urlencode(
+    self.redirect('/msearch?query_h=1&' + urllib.urlencode(
         dict([k, v.encode('utf-8')] for k, v in params.items())))
 
   def _getDocLimit(self):
@@ -591,6 +604,7 @@ class ModelSearchHandler(webapp2.RequestHandler):
     # cat_name = models.Category.getCategoryName(categoryq)
     psearch_response = []
     # For each document returned from the search
+    true_count = 0
     for doc in search_results:
       # logging.info("doc: %s ", doc)
       mdoc = docs.ModelDoc(doc)
@@ -610,6 +624,13 @@ class ModelSearchHandler(webapp2.RequestHandler):
 
       # get field information from the returned doc
       mid = mdoc.getMID()
+      model = ModelInfo.get_by_id(mdoc.doc.doc_id)
+      modelDict = model.to_dict()
+      
+      if (modelDict['privacy'] == 'privacy' or self.request.get('prv') == '1')  and (not users.get_current_user() or modelDict['submitter'] != users.get_current_user().user_id()):
+          continue
+      true_count += 1
+      
       #cat = catname = pdoc.getCategory()
       pname = mdoc.getName()
       author= mdoc.getAuthor()
@@ -617,7 +638,7 @@ class ModelSearchHandler(webapp2.RequestHandler):
       # for this result, generate a result array of selected doc fields, to
       # pass to the template renderer
       psearch_response.append(
-          [doc, urllib.quote_plus(mid), 
+          [doc, urllib.quote_plus(mdoc.doc.doc_id), 
            description_snippet,  pname, author,tags])
     if not query:
       print_query = 'All'
@@ -626,22 +647,42 @@ class ModelSearchHandler(webapp2.RequestHandler):
 
     # Build the next/previous pagination links for the result set.
     (prev_link, next_link) = self._generatePaginationLinks(
-        offsetval, returned_count,
+        offsetval, true_count,
         search_results.number_found, params)
 
     logging.debug('returned_count: %s', returned_count)
     # construct the template values
+    if users.get_current_user():
+        url = users.create_logout_url(self.request.uri)
+        url_linktext = 'Logout'
+        current_user=True
+    else:
+        url = users.create_login_url(self.request.uri)
+        url_linktext = 'Login'
+        current_user=False
+
     template_values = {
         'base_pquery': user_query, 'next_link': next_link,
-        'prev_link': prev_link, 'qtype': 'product',
+        'prev_link': prev_link, 'qtype': 'model',
         'query': query, 'print_query': print_query,
         'sort_order': sortq,
-        'first_res': offsetval + 1, 'last_res': offsetval + returned_count,
-        'returned_count': returned_count,
+        'first_res': offsetval + 1, 'last_res': offsetval + true_count,
+        'returned_count': true_count,
         'number_found': search_results.number_found,
         'search_response': psearch_response,
         'sort_info': sort_info,
+        'url': url,
+        'url_linktext': url_linktext,
+        'current_user':current_user,
+        
+
         }
+    if self.request.get('query_h','0') == '1':
+        template_values['queryh'] = 'current_page_item'
+    elif self.request.get('list_h','0') == '1':
+        template_values['listh'] = 'current_page_item'
+    elif self.request.get('mmodels_h','0') == '1':
+        template_values['myModelsh'] = 'current_page_item'
     # render the result page.
     template =JINJA_ENVIRONMENT.get_template('/pages/modelResult.html')
     self.response.write(template.render(template_values))
@@ -727,7 +768,9 @@ class List(webapp2.RequestHandler):
     Lists all the models in the db
     should deprecate for using the new query system
     '''
+    
     def get(self):
+        ''' 
         q = ModelInfo.query()
         queryArray = []
         counter = 0
@@ -758,6 +801,21 @@ class List(webapp2.RequestHandler):
         
         template =JINJA_ENVIRONMENT.get_template('/pages/resultsList2.html')
         self.response.write(template.render(template_values))
+        '''
+        params = {
+            'qtype': '',
+            'query': '',
+            'category': '',
+            'sort': 'relevance',
+            'rating': '',
+            'offset': '0',
+            'list_h':'1'
+        }
+        
+        
+        self.redirect('/msearch?' + urllib.urlencode(
+            dict([k, v.encode('utf-8')] for k, v in params.items())))
+
 
 def boilerplateParams(uri):
     if users.get_current_user():
@@ -784,16 +842,20 @@ class Description(webapp2.RequestHandler):
     '''
     details model description
     '''
+    
     def get(self):
-        query = ModelInfo.name
-        q = ModelInfo.query(query == self.request.get('file'))
+        #query = ModelInfo.name
+        #q = ModelInfo.query(query == self.request.get('file'))
         ndp = {}
         queryArray = []
+        p = ModelInfo.get_by_id(self.request.get('file'))
         
-        for p in q.iter():
+        if p:
             dp = p.to_dict()
-            print dp.keys()
-            print p.key
+        #for p in q.iter():
+        #    dp = p.to_dict()
+        #    print dp.keys()
+        #    print p.key
             for element in dp:
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
 
@@ -919,6 +981,7 @@ def search(parameter,queryString,response):
     
 class MyModels(webapp2.RequestHandler):
     def get(self):
+        '''
         query = ModelInfo.submitter
         if users.get_current_user():
             queryString = users.get_current_user().user_id()
@@ -933,6 +996,21 @@ class MyModels(webapp2.RequestHandler):
         template_values['myModelsh']  = 'current_page_item'
         template =JINJA_ENVIRONMENT.get_template('/pages/resultsList2.html')
         self.response.write(template.render(template_values))
+        '''
+        params = {
+            'qtype': '',
+            'query': '',
+            'category': '',
+            'sort': 'relevance',
+            'rating': '',
+            'offset': '0',
+            'mmodels_h':'1',
+            'prv':'1',
+        }
+        
+        
+        self.redirect('/msearch?' + urllib.urlencode(
+            dict([k, v.encode('utf-8')] for k, v in params.items())))
 
             
 class Search(webapp2.RequestHandler):

@@ -7,6 +7,8 @@ from google.appengine.api import search
 from google.appengine.ext import ndb
 
 
+
+
 class BaseDocumentManager(object):
   """Abstract class. Provides helper methods to manage search.Documents."""
 
@@ -204,7 +206,7 @@ class ModelDoc(BaseDocumentManager):
       # build and index the document.  Use the pid (product id) as the doc id.
       # (If we did not do this, and left the doc_id unspecified, an id would be
       # auto-generated.)
-      d = search.Document(doc_id=mid, fields=resfields)
+      d = search.Document(fields=resfields)
       return d
 
 
@@ -233,7 +235,7 @@ class ModelDoc(BaseDocumentManager):
     def _tx():
       # Check whether the product entity exists. If so, we want to update
       # from the params, but preserve its ratings-related info.
-      model = models.ModelInfo.get_by_id(params['mid'])
+      model = models.ModelInfo.get_by_id(doc_id)
       if model:  #update
         model.update_core(params,doc_id)
       else:   # create new entity

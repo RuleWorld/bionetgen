@@ -39,7 +39,7 @@ class ModelInfo(ndb.Model):
     def create(cls, params, doc_id):
         """Create a new product entity from a subset of the given params dict
         values, and the given doc_id."""
-        prod = cls(
+        prod = cls(id=doc_id,
             content=params['content'], contactMap=params['contactMap'],
             contactMapJson=params['contactMapJson'], doc_id=doc_id,name=params['name'],
             submitter=params['submitter'],privacy=params['privacy'],tags=params['tags'],
