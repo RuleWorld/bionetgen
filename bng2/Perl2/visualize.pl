@@ -12,6 +12,8 @@ use Data::Dumper;
 
 use BNGModel;
 use StructureGraph;
+use BipartiteGraph;
+use ProcessGraph;
 use Visualization;
 
 sub uniq { return BipartiteGraph::uniq(@_); }
@@ -57,6 +59,7 @@ sub getRules
 	my %args = ();
 	$args{'file'} = $filename;
 	$args{'skip_actions'} = 1;
+	$args{'action_skip_warn'} = 1;
 
 	#print $filename;
 	my $model = BNGModel->new();
@@ -64,6 +67,7 @@ sub getRules
 	
 	#print "Opening file: ".$filename."\n";
 	my $err = $model->readModel(\%args) ;
+	
 	if ($err) { print "ERROR:".$err."\n";}
 	
 	my @rrules = @{$model->RxnRules};
@@ -229,7 +233,7 @@ sub processLine
 		#print BipartiteGraph::printGraph($bpg);
 		print "Building groups...\n";
 		BipartiteGraph::makeGroups($bpg);
-		my ($bi,$uni,$all) = BipartiteGraph::analyzeGroups($bpg);
+		my ($bi,$uni,$all) = ProcessGraph::analyzeGroups($bpg);
 		print "Building graph...\n";
 		$string = Visualization::toGML_process($bi,$uni,$all);
 		$outfile = $basename.'_'.$suffix.'.gml';
@@ -256,11 +260,11 @@ sub processLine
 		BipartiteGraph::addWildcards($bpg);
 		BipartiteGraph::addProcessPairs($bpg);
 		#print BipartiteGraph::printGraph($bpg);
-		print "Building groups...\n";
-		BipartiteGraph::makeGroups($bpg);
-		my ($groupname,$influences) = BipartiteGraph::analyzeGroups2($bpg);
-		print "Building graph...\n";
-		$string = Visualization::toGML_process2($groupname,$influences);
+		
+		print "Building process graph...\n";
+		my ($nodes,$influences) = ProcessGraph::makeProcessGraph($bpg);
+		print "Building GML graph...\n";
+		$string = Visualization::toGML_process2v3($nodes,$influences);
 		$outfile = $basename.'_'.$suffix.'.gml';
 	
 	}
