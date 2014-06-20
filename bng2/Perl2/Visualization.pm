@@ -17,6 +17,7 @@ use Data::Dumper;
 # BNG Modules
 use StructureGraph;
 use BipartiteGraph;
+use ProcessGraph;
 
 sub listHas { return BipartiteGraph::listHas(@_); }
 sub uniq { return BipartiteGraph::uniq(@_); }
@@ -769,6 +770,277 @@ sub toGML_process2
 	$gmlgraph->{'Edges'} =\@gmledges;
 	return printGraph($gmlgraph);
 }
+sub transfNames
+{
+	my $tr = shift @_;
+	my ($re,$pr) = BipartiteGraph::getReactantsProducts($tr);
+	my @reac = @$re;
+	my @prod = @$pr;
+	
+	if ($tr =~ /~/)
+		{
+			$reac[0] =~ /^(.*)\((.*)~(.*)\)$/;
+			my $mol = $1;
+			my $comp = $2;
+			my $state1 = $3;
+			$prod[0] =~ /^(.*)\((.*)~(.*)\)$/;
+			my $state2 = $3;
+			return $mol."(".$comp."~".$state1."->".$state2.")";
+		}
+	if ($tr =~ /\!/)
+		{
+			return (scalar @reac > scalar @prod)? "->".join(":",@reac) : join(":",@prod)."->";
+		}
+	if (BipartiteGraph::isSyn($tr)) { return "->".$prod[0]; }
+	if (BipartiteGraph::isDel($tr)) { return $reac[0]."->"; }
+	return $tr;
+}
+
+sub groupNames
+{
+	my $tr = shift @_;
+	my ($re,$pr) = BipartiteGraph::getReactantsProducts($tr);
+	my @reac = @$re;
+	my @prod = @$pr;
+	
+	if ($tr =~ /~/)
+		{
+			$reac[0] =~ /^(.*)\((.*)~(.*)\)$/;
+			my $mol = $1;
+			my $comp = $2;
+			my $state1 = $3;
+			$prod[0] =~ /^(.*)\((.*)~(.*)\)$/;
+			my $state2 = $3;
+			#return $mol."(".$comp."~".$state1."->".$state2.")";
+			return $mol."(".$comp."~)";
+		}
+	if ($tr =~ /\!/)
+		{
+			#return (scalar @reac > scalar @prod)? "->".join(":",@reac) : join(":",@prod)."->";
+			return (scalar @reac > scalar @prod)? join(":",@reac) : join(":",@prod);
+		}
+	if (BipartiteGraph::isSyn($tr)) { return $prod[0]; }
+	if (BipartiteGraph::isDel($tr)) { return $reac[0]; }
+	return $tr;
+}
+sub transfNames2
+{
+	my $tr = shift @_;
+	my ($re,$pr) = BipartiteGraph::getReactantsProducts($tr);
+	my @reac = @$re;
+	my @prod = @$pr;
+	
+	if ($tr =~ /~/)
+		{
+			$reac[0] =~ /^(.*)\((.*)~(.*)\)$/;
+			my $mol = $1;
+			my $comp = $2;
+			my $state1 = $3;
+			$prod[0] =~ /^(.*)\((.*)~(.*)\)$/;
+			my $state2 = $3;
+			return $state1."->".$state2;
+		}
+	if ($tr =~ /\!/)
+		{
+			return (scalar @reac > scalar @prod)? "->".join(":",@reac) : join(":",@prod)."->";
+		}
+	if (BipartiteGraph::isSyn($tr)) { return "syn"; }
+	if (BipartiteGraph::isDel($tr)) { return "deg"; }
+	return $tr;
+}
+
+sub toGML_process2v2
+{
+	my @trs = @{shift @_};
+	my @groups = @{shift @_};
+	my @influences = @{shift @_};
+	my @gmlnodes = ();
+	my @gmledges = ();
+	#my @groups = sort {$a <=> $b} keys %names;
+	my %indexhash;
+	@indexhash {@trs} = 0..@trs-1;
+	my @groupids = (scalar @trs)..(scalar @trs + scalar @groups -1);
+	my %gidhash;
+	@gidhash {@trs} = (-1) x @trs;
+	foreach my $i(0..@groups-1)
+		{
+		my @grp = @{$groups[$i]};
+		foreach my $tr(@grp) { $gidhash{$tr} = $groupids[$i];}
+		}
+
+	foreach my $node(@trs)
+	{
+		my $gmlnode = initializeGMLNode($indexhash{$node},transfNames($node),$node);
+		if ($gidhash{$node} > -1) { $gmlnode->{'gid'} = $gidhash{$node}; }
+		styleNode($gmlnode,8);
+		push @gmlnodes,$gmlnode;
+	}
+
+	foreach my $i(0..@groups-1)
+	{
+		my $gmlnode = initializeGMLNode($groupids[$i],"","");
+		styleNode($gmlnode,6);
+		$gmlnode->{'isGroup'} = 1;
+		push @gmlnodes,$gmlnode;
+	}
+
+	
+	#process influences
+	my @activation = grep /Activation/, @influences;
+	sub getIndices 
+	{ 
+		my @splits = split ":",$_[0]; pop @splits;
+		my %hash = %{$_[1]};
+		return map $hash{$_},@splits;
+	}
+	foreach my $act(@activation)
+	{
+		my @ids = getIndices($act,\%indexhash);
+		my $gmledge = initializeGMLEdge($ids[0],$ids[1],1);
+		styleEdge($gmledge);
+		push @gmledges,$gmledge;
+	}
+	
+	my @cotransforms = grep /Cotransform/, @influences;
+	foreach my $cotr(@cotransforms)
+		{
+		my @ids = getIndices($cotr,\%indexhash);
+		my $gmledge = initializeGMLEdge($ids[0],$ids[1],1,1);
+		styleEdge($gmledge);
+		push @gmledges,$gmledge;
+		}
+	
+	@gmledges = uniq @gmledges;
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+}
+
+sub nodelabel
+{
+my @nodes = @{shift @_};
+my @hashes = @{shift @_};
+my %singlehash = %{$hashes[0]};
+my %pairhash = %{$hashes[1]};
+my @pairedlist = keys %pairhash;
+my @unpairedlist = grep !listHas(\@pairedlist,$_), keys %singlehash;
+my %names;
+
+foreach my $node(@nodes)
+{
+	my $isgroup = (scalar (@$node) > 1) ? 1 : 0;
+	my $isalone = listHas(\@unpairedlist,$$node[0])  ? 1: 0;
+	if ($isgroup)
+	{
+		$names { $pairhash{$$node[0]} } = groupNames($$node[0]);
+		foreach my $i(0..@$node-1)
+		{
+			#$names { $singlehash{$$node[$i]} } = ($i==0) ? "f" :"r";
+			#if(BipartiteGraph::isSyn($$node[$i])) { $names { $singlehash{$$node[$i]} } = "syn"; }
+			#if(BipartiteGraph::isDel($$node[$i])) { $names { $singlehash{$$node[$i]} } = "deg"; }
+			$names { $singlehash{$$node[$i]} } = transfNames2($$node[$i]);
+		}
+	}
+	if ($isalone)
+	{
+		$names { $singlehash{$$node[0]} } = transfNames($$node[0]);
+	}
+}
+return %names;
+}
+
+sub toGML_process2v3
+{
+	my @nodes = @{shift @_};
+	my @influences = @{shift @_};
+
+	# construct pairhash and singlehash
+	my %pairhash;
+	my %singlehash;
+	foreach my $i(0..@nodes-1)
+	{
+		my @trs = @{$nodes[$i]};
+		if (scalar @trs == 2) { @pairhash { @trs } = ($i) x @trs; }
+		if (scalar @trs == 1) { @singlehash { @trs } = ($i) x @trs; }
+	}
+	my @pairedlist = keys %pairhash;
+	
+	my @gmlnodes = ();
+	my %labels = nodelabel(\@nodes,[\%singlehash,\%pairhash]);
+	my @i = 0..@nodes-1;
+	#%labels = map { $_ => ( (scalar @{$nodes[$_]} > 1) ? "" : $nodes[$_]->[0]) } 0..@nodes-1;
+	
+	foreach my $i(0..@nodes-1)
+	{
+		my $node = $nodes[$i];
+		my $isgroup = (scalar @$node > 1) ? 1:0;
+		my $id = $isgroup ? $pairhash{$$node[0]} : $singlehash{$$node[0]};
+		#my $label = $isgroup ? "" : $$node[0];
+		#my $label = nodelabel($node,[\%singlehash,\%pairhash]);
+		my $label = $labels{$i};
+		my $object = $isgroup ? join(":",@$node) : $$node[0];
+		my $gmlnode = initializeGMLNode($id,$label,$object);
+		if ($isgroup) 
+			{
+			$gmlnode->{'isGroup'} = 1; 
+			styleNode($gmlnode,6);
+			}
+		else
+			{
+			styleNode($gmlnode,8);
+			if (listHas(\@pairedlist,$$node[0])) { $gmlnode->{'gid'} = $pairhash{$$node[0]}; }
+			}
+		push @gmlnodes,$gmlnode;
+	}
+	
+	my @gmledges = ();
+	my @act = grep /Activation/, @influences;
+	my @inh = grep /Inhibition/, @influences;
+	foreach my $str(@influences)
+	{
+		my @ids = split(":",$str);
+		my $type = pop @ids;
+		my $gmledge;
+		if ($type eq 'Activation')
+			{
+			$gmledge = initializeGMLEdge($ids[0],$ids[1],1);
+			styleEdge($gmledge,8);
+			}
+		elsif ($type eq 'Inhibition')
+			{
+			$gmledge = initializeGMLEdge($ids[0],$ids[1],1);
+			styleEdge($gmledge,9);
+			}
+		elsif ($type eq 'Competition')
+			{
+			$gmledge = initializeGMLEdge($ids[0],$ids[1],1,1);
+			styleEdge($gmledge,12);
+			}
+		elsif ($type eq 'Synthesis')
+			{
+			$gmledge = initializeGMLEdge($ids[0],$ids[1],1);
+			styleEdge($gmledge,10);
+			}
+		elsif ($type eq 'Degradation')
+			{
+			$gmledge = initializeGMLEdge($ids[0],$ids[1],1);
+			styleEdge($gmledge,11);
+			}
+		else {next;}
+		push @gmledges,$gmledge;
+	}
+
+	@gmledges = uniq @gmledges;
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+}
+
+
 # styling
 my %nodepalette2 = 
 	('Group'=>"#e5e5e5",
@@ -917,7 +1189,40 @@ sub styleEdge
 		$gmledge->{'sourceArrow'} = 1;
 		$gmledge->{'targetArrow'} = 1;
 		}
-	
+		
+	# process graph -activation
+	if ($arg==8 )
+		{
+		$gmledge->{'targetArrow'} = "bezier";
+		$gmledge->{'fill'} = $edgepalette1{'Context'};
+		}
+	# process graph - inhibition
+	if ($arg==9)
+		{
+		#$gmledge->{'sourceArrow'} = "t_shape";
+		$gmledge->{'targetArrow'} = "t_shape";
+		$gmledge->{'fill'} = $edgepalette1{'Context'};
+		}
+	# process graph -synthesis
+	if ($arg==10 )
+		{
+		$gmledge->{'targetArrow'} = "bezier";
+		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
+		}
+	# process graph - degradation
+	if ($arg==11)
+		{
+		$gmledge->{'sourceArrow'} = "bezier";
+		$gmledge->{'targetArrow'} = "t_shape";
+		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
+		}
+	# process graph - competition
+	if ($arg==12)
+		{
+		$gmledge->{'sourceArrow'} = "t_shape";
+		$gmledge->{'targetArrow'} = "t_shape";
+		$gmledge->{'fill'} = $edgepalette1{'Context'};
+		}
 	return;
 }
 
