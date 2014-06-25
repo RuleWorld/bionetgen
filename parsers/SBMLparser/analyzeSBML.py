@@ -159,6 +159,7 @@ class SBMLAnalyzer:
         + Suppress("()"))
         rate = Word(alphanums +     "()")
         grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
+        
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
             result = [result,[]]

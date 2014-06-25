@@ -169,6 +169,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                 tmpCandidates.append(tmpAnswer)
         #we cannot handle tuple naming conventions for now
         if len(tmpCandidates) == 0:
+            logMess('CRITICAL2','I dont know how to process these candidates and I have no way to make an educated guess. Politely refusing to translate {0}={1}.'.format(reactant,candidates))
             return None, None
 
         #if we have more than one modified element for a single reactant
@@ -192,6 +193,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             #tmpCandidates[0] = candidates[0]
 
         else:
+            
         #temporal solution for defaulting to the first alternative
             #print '---','error',reactant,newModifiedElements,tmpCandidates
             totalElements = [y for x in tmpCandidates for y in x]
@@ -208,6 +210,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                 #    newTmpCandidates[0].append(element)
                 #    unevenElements.append([element])
                 else:
+                    logMess('WARNING2','Are these actually the same? {0}={1}.'.format(reactant,candidates))
                     unevenElements.append(element)
             flag = True
             #this should be done on newtmpCandidates instead of tmpcandidates
@@ -246,15 +249,17 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             #if x[0] in tmpCandidates[0] and type(x[1]) is not tuple}
             
             else:
-                candidates = []
+                #candidates = []
                 modificationCandidates = {}            
                 if modificationCandidates == {}:
-                    logMess('WARNING','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}.'.format(reactant))
+                    logMess('CRITICAL','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}={1}.'.format(reactant,candidates))
                     tmpCandidates[0] = [reactant]
                 for idx, molecule in enumerate(tmpCandidates[0]):
                     if molecule in modificationCandidates:
                         tmpCandidates[0][idx] = modificationCandidates[molecule]
                 return [tmpCandidates[0]], unevenElements
+        elif len(tmpCandidates) > 1:
+            pass
             
         return [tmpCandidates[0]], unevenElements
 
@@ -471,6 +476,8 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
         #0 molecule
         if element[0] == '0':
             continue
+        if element[0] == 'MEK_PP':
+            pass
         #undivisible molecules
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
@@ -748,10 +755,42 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     #im just calling the original generator to recover them.
     classifications, equivalenceTranslator, eequivalenceTranslator, \
         indirectEquivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
+    
     for element in artificialEquivalenceTranslator:
         if element not in eequivalenceTranslator:
             eequivalenceTranslator[element] = []
         eequivalenceTranslator[element].extend(artificialEquivalenceTranslator[element])
+
+    #special handling for double modifications like double phosporylation
+    #FIXME: this needs to be done in a cleaner way    
+    doubleModifications = {"Double-Phosporylation":"Phosporylation"}
+    #print '---',eequivalenceTranslator['Double-Phosporylation']
+
+    for element in doubleModifications:
+        if doubleModifications[element] not in eequivalenceTranslator:
+            continue
+        if element not in eequivalenceTranslator:
+            eequivalenceTranslator[element] = []
+        
+        baseElements = [x[0] for x in eequivalenceTranslator[doubleModifications[element]]]
+        modifiedElements = [x[1] for x in eequivalenceTranslator[doubleModifications[element]]]
+        
+        #deleteEquivalences = [baseElements.index(x) for x in baseElements if x in modifiedElements]
+        
+        deleteEquivalences = [(x,modifiedElements[baseElements.index(x)]) for x in baseElements if x in modifiedElements]
+        
+        for eq in deleteEquivalences:
+            if eq not in eequivalenceTranslator[element]:
+                eequivalenceTranslator[element].append(eq)
+                
+        for eq in deleteEquivalences:
+            
+            if eq in eequivalenceTranslator[doubleModifications[element]]:
+                eequivalenceTranslator[doubleModifications[element]].remove(eq)
+                
+    
+        
+        
     for modification in tmpEquivalence:
         for candidates in tmpEquivalence[modification]:
             for instance in candidates:
