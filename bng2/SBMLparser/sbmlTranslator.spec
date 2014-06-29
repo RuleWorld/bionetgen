@@ -1,10 +1,10 @@
 # -*- mode: python -*-
 a = Analysis(['sbmlTranslator.py'],
              pathex=['/home/proto/workspace/bionetgen/parsers/SBMLparser'],
-             hiddenimports=['_libsbml','scipy.special._ufuncs.cxx','pandas'],
+             hiddenimports=['_libsbml'],
              hookspath=None,
              runtime_hooks=None,
-	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui'])
+	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui','matplotlib','gtk'])
 pyz = PYZ(a.pure)
 
 
@@ -15,7 +15,7 @@ exe = EXE(pyz,
           a.scripts + [('O','','OPTION')],
 	  a.binaries,
 	  Tree('./reactionDefinitions', prefix = 'reactionDefinitions'),
-	  [('stats4.npy', 'stats4.npy', 'stats4.npy')],
+	  [('stats4.npy', 'stats4.npy', 'DATA')],
 	  a.zipfiles,
           a.datas,
           name='sbmlTranslator',
@@ -33,4 +33,3 @@ exe = EXE(pyz,
 #               strip=None,
  #              upx=True,
  #              name='sbmlTranslator')
-
