@@ -812,5 +812,5 @@ def standardizeName(name):
                                 
     for element in sbml2BnglTranslationDict:
         name = name.replace(element,sbml2BnglTranslationDict[element])
-    
+    name = re.sub('[\W]', '', name)
     return name
