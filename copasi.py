@@ -111,7 +111,7 @@ def loadResults(fileName,split):
         print 'no file'
         return [],[]
         
-
+'''
 def plotResults(fileResults1,fileResults2):
     import matplotlib.pyplot as plt
     plt.figure(1)
@@ -120,7 +120,7 @@ def plotResults(fileResults1,fileResults2):
     plt.subplot(212)
     plt.plot(fileResults2[:,1:])
     plt.show()
-
+'''
   
 def evaluate(fileNumber):
     copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
@@ -246,7 +246,7 @@ def compareResults():
 #    print copasi[:,newCopHeaders]
     #print copheaders[1:]
     print tested,good 
-    plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])           
+    #plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])           
 
         
 def main():
