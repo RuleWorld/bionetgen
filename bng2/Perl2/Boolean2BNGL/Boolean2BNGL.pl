@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use File::Slurp;
 
 my @NODES = ();
 
@@ -25,10 +24,15 @@ my $file = shift @ARGV;
 
 my $include_reset = (@ARGV) ? shift @ARGV : 0;
 
-my $text = read_file( $file ) ;
+# read entire file as a string
+local $/ = undef;
+open FILE, $file or die "Couldn't open file: $!";
+binmode FILE;
+my $text = <FILE>;
+close FILE;
 $text =~ s/\r\n*/\n/g; # remove Windows-style carriage returns
-my @lines = split('\n', $text);
 
+my @lines = split('\n', $text);
 foreach my $line (@lines) { # read line-by-line
 	$line =~ tr/A-Z/a-z/; # Make everything lower case
     if ( $line =~ /^\s*(\w+)\s*=\s*([t|f])/ )
@@ -54,7 +58,8 @@ foreach my $line (@lines) { # read line-by-line
 	    	$obs = "Molecules " . $obs . " " . $1 . "(x~1)";
 	    	push @observables, $obs;
     }
-    elsif( $line =~ /^\s*(\d+):\s*(\w+)\*\s*=\s*(.+)/ ){
+    elsif( $line =~ /^\s*(\d+):\s*(\w+)\*\s*=\s*(.+)/ )
+    {
 	    	my $rank = $1;
 	    	my $node = $2;
 	    	my $func = $3;
@@ -78,9 +83,7 @@ foreach my $line (@lines) { # read line-by-line
 
 		# RULES
 		my $rate = "1";
-		if ($rank > 1){
-			$rate = "1/$rank";
-		}
+		if ($rank > 1){ $rate = "1/$rank"; }
 		my $rule_f = "R" . (scalar(@reaction_rules)+1) . ": $node(x";
 		if ($include_reset){ $rule_f .= ",u~N"; }
 		$rule_f .= ") -> $node(x~1";
@@ -103,13 +106,9 @@ if ($include_reset){
 	# Update rule
 	my $first = shift @NODES;
 	my $rule = "R0: " . $first . "(u~Y)";
-	foreach my $i (@NODES){
-		$rule .= " + " . $i . "(u~Y)"
-	}
+	foreach my $i (@NODES){ $rule .= " + " . $i . "(u~Y)" }
 	$rule .= " -> " . $first . "(u~N)";
-	foreach my $i (@NODES){
-		$rule .= " + " . $i . "(u~N)"
-	}
+	foreach my $i (@NODES){ $rule .= " + " . $i . "(u~N)" }
 	$rule .= " 1e10";
 	unshift @reaction_rules, $rule;
 }
