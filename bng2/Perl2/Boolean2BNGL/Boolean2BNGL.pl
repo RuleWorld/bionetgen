@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use File::Slurp;
 
 my @NODES = ();
 
@@ -13,8 +14,8 @@ my @reaction_rules = ();
 
 my $file = shift @ARGV;
 
-#my $mode = shift @ARGV; # syn, roa, ga, gsp
-#if ( $mode eq 'syn' || $mode eq 'roa' || $mode eq 'ga' || $mode eq 'gsp' ){
+#my $mode = shift @ARGV; # synch, roa, ga, gsp
+#if ( $mode eq 'synch' || $mode eq 'roa' || $mode eq 'ga' || $mode eq 'gsp' ){
 #	printf "Update mode '$mode'.\n";
 #}
 #else{
@@ -24,53 +25,55 @@ my $file = shift @ARGV;
 
 my $include_reset = (@ARGV) ? shift @ARGV : 0;
 
-open(my $filehandle,"<", $file) or die "Problem opening file";
-while ( my $line = <$filehandle> )
-{
+my $text = read_file( $file ) ;
+$text =~ s/\r\n*/\n/g; # remove Windows-style carriage returns
+my @lines = split('\n', $text);
+
+foreach my $line (@lines) { # read line-by-line
 	$line =~ tr/A-Z/a-z/; # Make everything lower case
     if ( $line =~ /^\s*(\w+)\s*=\s*([t|f])/ )
     {
 		# MOLECULE TYPES
-    	my $mt = $1;
-    	$mt .= "(x~0~1";
-    	if ($include_reset){ $mt .= ",u~N~Y" }
-    	$mt .= ")";
-    	push @molecule_types, $mt;
-    	
-    	# SEED SPECIES
-    	my $ss = $1;
-    	my $state = ($2 eq 't') ? '1' : '0';
-    	$ss .= "(x~$state";
-    	if ($include_reset){ $ss .= ",u~N"; }
-    	$ss .= ") 1";
-    	push @seed_species, $ss;
-    	
-    	# OBSERVABLES
-    	my $obs = $1;
-    	$obs =~ tr/a-z/A-Z/; # Make observable names all upper case
-    	$obs = "Molecules " . $obs . " " . $1 . "(x~1)";
-    	push @observables, $obs;
+	    	my $mt = $1;
+	    	$mt .= "(x~0~1";
+	    	if ($include_reset){ $mt .= ",u~N~Y" }
+	    	$mt .= ")";
+	    	push @molecule_types, $mt;
+	    	
+	    	# SEED SPECIES
+	    	my $ss = $1;
+	    	my $state = ($2 eq 't') ? '1' : '0';
+	    	$ss .= "(x~$state";
+	    	if ($include_reset){ $ss .= ",u~N"; }
+	    	$ss .= ") 1";
+	    	push @seed_species, $ss;
+	    	
+	    	# OBSERVABLES
+	    	my $obs = $1;
+	    	$obs =~ tr/a-z/A-Z/; # Make observable names all upper case
+	    	$obs = "Molecules " . $obs . " " . $1 . "(x~1)";
+	    	push @observables, $obs;
     }
     elsif( $line =~ /^\s*(\d+):\s*(\w+)\*\s*=\s*(.+)/ ){
-    	my $rank = $1;
-    	my $node = $2;
-    	my $func = $3;
-    	
-    	push @NODES, $node;
-    	
-    	# FUNCTIONS
-    	my $fname = "${node}_func()";
-    	
-    	$func =~ tr/a-z/A-Z/;          # make everything upper case
-    	$func =~ s/\(\s+/\(/g;         # remove whitespace after '(' character
-    	$func =~ s/\s+\)/\)/g;         # remove whitespace before ')' character
-    	$func =~ s/\s+or\s+/ \|\| /ig;   # replace 'or' with '||'
-    	$func =~ s/\s+and\s+/ \&\& /ig;  # replace 'and' with '&&'
-    	$func =~ s/(\s*)not\s+/$1!/ig; # replace 'not' with '!' (also remove trailing whitespace)
-    	$func =~ s/(\w+)/$1>0.5/g;       # replace all 'ABC' with 'ABC>0.5'
-    	$func =~ s/!(\w+)>0.5/$1<0.5/g;    # replace all '!ABC>0.5' with 'ABC<0.5'
-    	
-    	$func = "$fname if($func, 1, 0)";
+	    	my $rank = $1;
+	    	my $node = $2;
+	    	my $func = $3;
+	    	
+	    	push @NODES, $node;
+	    	
+	    	# FUNCTIONS
+	    	my $fname = "${node}_func()";
+	    	
+	    	$func =~ tr/a-z/A-Z/;          # make everything upper case
+	    	$func =~ s/\(\s+/\(/g;         # remove whitespace after '(' character
+	    	$func =~ s/\s+\)/\)/g;         # remove whitespace before ')' character
+	    	$func =~ s/\s+or\s+/ \|\| /ig;   # replace 'or' with '||'
+	    	$func =~ s/\s+and\s+/ \&\& /ig;  # replace 'and' with '&&'
+	    	$func =~ s/(\s*)not\s+/$1!/ig; # replace 'not' with '!' (also remove trailing whitespace)
+	    	$func =~ s/(\w+)/$1>0.5/g;       # replace all 'ABC' with 'ABC>0.5'
+	    	$func =~ s/!(\w+)>0.5/$1<0.5/g;    # replace all '!ABC>0.5' with 'ABC<0.5'
+	    	
+	    	$func = "$fname if($func, 1, 0)";
 		push @functions, $func;
 
 		# RULES
@@ -79,16 +82,16 @@ while ( my $line = <$filehandle> )
 			$rate = "1/$rank";
 		}
 		my $rule_f = "R" . (scalar(@reaction_rules)+1) . ": $node(x";
-			if ($include_reset){ $rule_f .= ",u~N"; }
-			$rule_f .= ") -> $node(x~1";
-			if ($include_reset){ $rule_f .= ",u~Y"; }
-			$rule_f .= ") if($fname>0.5,$rate,0)";
+		if ($include_reset){ $rule_f .= ",u~N"; }
+		$rule_f .= ") -> $node(x~1";
+		if ($include_reset){ $rule_f .= ",u~Y"; }
+		$rule_f .= ") if($fname>0.5,$rate,0)";
 		push @reaction_rules, $rule_f;
 		my $rule_r = "R" . (scalar(@reaction_rules)+1) . ": $node(x"; 
-			if ($include_reset){ $rule_r .= ",u~N"; }
-			$rule_r .= ") -> $node(x~0";
-			if ($include_reset){ $rule_r .= ",u~Y"; }
-			$rule_r .= ") if($fname<0.5,$rate,0)";			
+		if ($include_reset){ $rule_r .= ",u~N"; }
+		$rule_r .= ") -> $node(x~0";
+		if ($include_reset){ $rule_r .= ",u~Y"; }
+		$rule_r .= ") if($fname<0.5,$rate,0)";			
 		push @reaction_rules, $rule_r;
     }
     else{
