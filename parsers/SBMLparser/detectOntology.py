@@ -179,7 +179,7 @@ def analyzeTrends(inputFile):
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(keys)
     data = pd.DataFrame(keys)
-    print data.to_excel('name.xls')
+    #print data.to_excel('name.xls')
     '''
     for element in keys:
         print '------------------'
