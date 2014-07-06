@@ -680,8 +680,11 @@ sub toString
         my $last = @{$rl->Constants}-1;
         $string .= 'Arrhenius(';
         $string .= $rl->Constants->[0] . ',';
-        $string .= $rl->Constants->[1] . '(' . join(',', @{$rl->Constants}[2..$last]) . ')';
-        $string .= ')';
+        $string .= $rl->Constants->[1];
+		if (@{$rl->Constants} > 2){
+			$string .= '(' . join(',', @{$rl->Constants}[2..$last]) . ')';
+		}
+		$string .= ')';
     }
     else
     {   # Sat, MM, Hill
