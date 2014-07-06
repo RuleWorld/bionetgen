@@ -243,10 +243,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                     tmpCandidates[0].append(lexCandidateModification)
                 return [tmpCandidates[0]],unevenElements
         
-            #FIXME:this doesn't make any sense
-            #so if theres an existing modification it will just take it? wtf
-            #modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
-            #if x[0] in tmpCandidates[0] and type(x[1]) is not tuple}
             
             else:
                 #candidates = []
@@ -354,7 +350,6 @@ def getComplexationComponents2(species,bioGridFlag):
         for molecule in array:
             if molecule.name == name:
                 return molecule
-        
     speciesDict = {}
     #this array will contain all molecules that bind together
     pairedMolecules = []
@@ -366,6 +361,7 @@ def getComplexationComponents2(species,bioGridFlag):
     #this array wil contain all molecules that dont bind to anything
     orphanedMolecules = [x for x in species.molecules]
     #determine how molecules bind together
+    redundantBonds = []
     for x in species.molecules:
         for component in [y for y in x.components if y.name.lower()
                           in speciesDict.keys()]:
@@ -375,27 +371,36 @@ def getComplexationComponents2(species,bioGridFlag):
                     for mol in speciesDict[x.name.lower()]:
                         if mol.name.lower() == component.name and x != mol and x in \
                         speciesDict[component.name]:
-                            pairedMolecules.append([x, mol])
                             speciesDict[x.name.lower()].remove(mol)
                             speciesDict[component.name].remove(x)
+                            if x not in orphanedMolecules and mol not in orphanedMolecules:
+                                #FIXME: is it necessary to remove double bonds in complexes?
+                                redundantBonds.append([x,mol])
+                                #continue
+                            pairedMolecules.append([x, mol])
+
                             if x in orphanedMolecules:
                                 orphanedMolecules.remove(x)
                             if mol in orphanedMolecules:
                                 orphanedMolecules.remove(mol)
+    if len(redundantBonds) > 0:
+        print [[x[0].name,x[1].name] for x in redundantBonds],str(species)                    
     totalComplex = [set(x) for x in pairedMolecules]
     isContinuousFlag = True
     #iterate over orphaned and find unidirectional interactions
     #e.g. if a molecule has a previous known interaction with the
     #same kind of molecule, even if it has no available components
     #e.g. k-mers`
+ 
     for element in speciesDict:
         for individualMolecule in speciesDict[element]:
             if individualMolecule in orphanedMolecules:
-                candidatePartner = [x for x in species.molecules if x.name.lower() == element]
+                candidatePartner = [x for x in species.molecules if x.name.lower() == element and x != individualMolecule]
                 if len(candidatePartner) == 1:
                     pairedMolecules.append([candidatePartner[0],individualMolecule])
                     orphanedMolecules.remove(individualMolecule)
     #determine which pairs form a continuous chain
+
     while isContinuousFlag:
         isContinuousFlag = False
         for idx in range(0, len(totalComplex) - 1):
@@ -409,6 +414,7 @@ def getComplexationComponents2(species,bioGridFlag):
                 break
     #now we process those molecules where we need to create a new component
     for element in orphanedMolecules:
+
         for mol1 in species.molecules:
             #when adding orphaned molecules make sure it's not already in
             #the list
@@ -416,12 +422,16 @@ def getComplexationComponents2(species,bioGridFlag):
                 totalComplex.append(set([mol1]))
     #now we process for those molecules we are not sure how do they bind
     while len(totalComplex) > 1:
+        
         if len(totalComplex[0]) ==1 and len(totalComplex[1]) == 1:
             mol1 = list(totalComplex[0])[0]
             mol2 = list(totalComplex[1])[0]
         else:
             names1 =  [str(x.name) for x in totalComplex[0]]
             names2 =  [str(x.name) for x in totalComplex[1]]
+            
+            if 'Ras' in str(species):
+                pass
             dbPair = set([])
             if bioGridFlag:
                 bioGridDict = biogrid.loadBioGridDict()
@@ -437,7 +447,7 @@ def getComplexationComponents2(species,bioGridFlag):
                     dbPair.add((element[0],element[1]))
             dbPair = list(dbPair)
             if dbPair != []:
-                logMess('WARNING',"More than one interaction was find in {0}".format(dbPair))
+                logMess('WARNING',"More than one interaction was found in {0}".format(dbPair))
                 mol1 = getNamedMolecule(totalComplex[0],dbPair[0][0])
                 mol2 = getNamedMolecule(totalComplex[1],dbPair[0][1])
             else:
@@ -476,8 +486,6 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
         #0 molecule
         if element[0] == '0':
             continue
-        if element[0] == 'MEK_PP':
-            pass
         #undivisible molecules
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
@@ -536,6 +544,8 @@ reactionProperties[classification[0]][0])
                         print 'ALERT', element[0], str(modifiedSpecies), str(species)
                         #print equivalenceDictionary
             else:
+                if element[0] == '__EGF_EGFR__2_Shc_Grb2':
+                    pass
                 #binding
                 #print '---',dependencyGraph[element[0]],element
                 '''
@@ -798,6 +808,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
             
     weights = sorted(weights, key=lambda rule: rule[1])
     #print {x:str(database.translator[x]) for x in database.translator}
+
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
                                                                 eequivalenceTranslator,bioGridFlag)
     propagateChanges(database.translator, prunnedDependencyGraph)

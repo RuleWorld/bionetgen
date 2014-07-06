@@ -5,13 +5,14 @@ Created on Tue Dec  6 17:42:31 2011
 @author: proto
 """
 import libsbml
+from copy import deepcopy
 import bnglWriter as writer
 log = {'species': [], 'reactions': []}
 import re
 from util import logMess
 from scipy.misc import factorial, comb
 from collections import Counter
-    
+from collections import defaultdict
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
 'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
@@ -166,6 +167,10 @@ class SBML2BNGL:
             pass
         
     def removeFactorFromMath(self, math, reactants, products):
+        '''
+        it also adds symmetry factors. this checks for symmetry in the species names
+        s
+        '''
         ifStack = Counter()
         remainderPatterns = []
         highStoichoiMetryFactor = 1
@@ -281,16 +286,42 @@ class SBML2BNGL:
                 
         return (reactant, product, parameters, [rateL, rateR],
                 reversible, reaction.getId(), [nl, nr])
+    '''
+    create symmetry factors for reactions with components and species with
+    identical names. This checks for symmetry in the components names then.
+    '''
+    
+    def getReactionCenter(self,reactant,product,translator):
+        rcomponent = Counter()
+        pcomponent = Counter()
         
-    #create symmetry factors for reactions with components and species with
-    #identical names
+        for element in reactant:
+            if element[0] in translator:
+                for molecule in translator[element[0]].molecules:
+                    for component in molecule.components:
+                        molecule.sort()
+                        rcomponent.update(Counter([(molecule.name,component.name,len(component.bonds)>0,component.activeState)]))
+        for element in product:
+            if element[0] in translator:
+                for molecule in translator[element[0]].molecules:
+                    molecule.sort()
+                    for component in molecule.components:
+                        molecule.sort()
+                        pcomponent.update(Counter([(molecule.name,component.name,len(component.bonds)>0,component.activeState)]))
+        reactionCenter = [(x[0],x[1]) for x in rcomponent for y in pcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y and rcomponent[x] != pcomponent[y]]
+        rreactionCenter = [(x[0],x[1]) for x in pcomponent for y in rcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y and pcomponent[x] != rcomponent[y]]
+        return reactionCenter,rreactionCenter
+        
+    def updateComponentCount(self,counterArray,reference,updateValue):
+        for element in counterArray:
+            if reference in counterArray[element]:
+                counterArray[element][reference] += updateValue
     def reduceComponentSymmetryFactors(self,reaction,translator,functions):
-        from copy import deepcopy        
         
         if self.useID:
-            reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
-            for reactant in reaction.getListOfReactants() if
-            reactant.getSpecies() != 'EmptySet']
+            reactant = [(rElement.getSpecies(), rElement.getStoichiometry())
+            for rElement in reaction.getListOfReactants() if
+            rElement.getSpecies() != 'EmptySet']
             product = [(product.getSpecies(), product.getStoichiometry())
             for product in reaction.getListOfProducts() if product.getSpecies()
             != 'EmptySet']
@@ -305,26 +336,48 @@ class SBML2BNGL:
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
-
+        
         #TODO: For some reason creating a deepcopy of this screws everything up, even
         #though its what we should be doing
-        rcomponent = Counter()
-        pcomponent = Counter()
+        rcomponent = defaultdict(Counter)
+        pcomponent = defaultdict(Counter)
         
         #get the total count of components in the reactants and products
         #e.g. components across diffent species
-        for element in rReactant:
+        freactionCenter,breactionCenter = self.getReactionCenter(reactant,product,translator)
+        
+        for element in reactant:
             if element[0] in translator:
-                componentList = Counter([(x.name,component.name,len(component.bonds) > 0) for x in translator[element[0]].molecules for component in x.components])
-                rcomponent.update(componentList)
-        for element in rProduct:
+                
+                for molecule in translator[element[0]].molecules:
+                    for component in molecule.components:
+                        molecule.sort()
+                        componentList = Counter([(molecule.signature(freactionCenter))])
+                        for _ in range(0,int(element[1])):
+                            rcomponent[(molecule.name,component.name,len(component.bonds)>0,component.activeState)].update(componentList)
+                        
+
+        
+        for element in product:
             if element[0] in translator:
-                componentList = Counter([(x.name,component.name,len(component.bonds) > 0) for x in translator[element[0]].molecules for component in x.components])
-                pcomponent.update(componentList)
+                for molecule in translator[element[0]].molecules:
+                    molecule.sort()
+                    for component in molecule.components:
+                        if reaction.getId() == 'v18':
+                            pass
+                        componentList = Counter([(molecule.signature(breactionCenter))])
+                        for _ in range(0,int(element[1])):
+                            pcomponent[(molecule.name,component.name,len(component.bonds)>0,component.activeState)].update(componentList)
+
+        '''
+        only keep information for reaction centers
+        '''
+        reactionCenters = [(x[0],x[1]) for x in rcomponent for y in pcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y]      
+        rcomponent= {x:rcomponent[x] for x in rcomponent if (x[0],x[1]) in reactionCenters}
+        pcomponent= {x:pcomponent[x] for x in pcomponent if (x[0],x[1]) in reactionCenters}
+
         #is the number of components across products and reactants the same?
         #eg is there any DeleteMolecules action
-        pdifference = deepcopy(pcomponent)
-        pdifference.subtract(rcomponent)
         pcorrectionFactor = 1
         rcorrectionFactor = 1
         rStack = []
@@ -335,16 +388,51 @@ class SBML2BNGL:
         pcomponent[element] < rcomponent[element] asks if an specific instance
         of a component decreases in number from a reactant to a product
         for example if there are 3 A(b)'s and one binds, we will have 2 A(b)'s
-        in the product
+        in the product  
         '''
-        for element in [x for x in rcomponent if rcomponent[x] > 1]:
-            if element in pcomponent and pcomponent[element] < rcomponent[element] and set([element[0].lower(),element[1].lower()]) not in rStack:
-                rcorrectionFactor *= comb(rcomponent[element],pcomponent[element],exact=1)
-                rStack.append(set([element[0].lower(),element[1].lower()]))
-        for element in [x for x in pcomponent if pcomponent[x] > 1]:
-            if element in rcomponent and rcomponent[element] < pcomponent[element] and set([element[0].lower(),element[1].lower()]) not in pStack:
-                pcorrectionFactor *= comb(pcomponent[element],rcomponent[element],exact=1)
-                pStack.append(set([element[0].lower(),element[1].lower()]))
+        rcomponentTemp = deepcopy(rcomponent)
+        pcomponentTemp = deepcopy(pcomponent)
+        for key in rcomponent:
+            if key in pcomponent:
+                for element in rcomponent[key]:
+                    if rcomponent[key] ==1:
+                        continue
+                                        
+                    if element in pcomponent[key]:
+                        if pcomponent[key][element] < rcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in rStack:
+                            rcorrectionFactor *= comb(rcomponent[key][element],pcomponent[key][element],exact=1)
+                            rStack.append(set([key[0].lower(),key[1].lower()]))
+                            self.updateComponentCount(pcomponent,element,-1)
+                    else:
+                        for element2 in pcomponent[key]:
+                            if pcomponent[key][element2] < rcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in rStack:
+                                rcorrectionFactor *= comb(rcomponent[key][element],pcomponent[key][element2],exact=1)
+                                rStack.append(set([key[0].lower(),key[1].lower()]))
+                                self.updateComponentCount(pcomponent,element2,-1)
+
+        rcomponent = rcomponentTemp
+        pcomponent = pcomponentTemp
+        
+        if reversible:
+            for key in pcomponent:
+                if key in rcomponent:
+                    for element in pcomponent[key]:
+                        if pcomponent[key] ==1:
+                            continue
+                        if element in rcomponent[key]:
+                            if rcomponent[key][element] < pcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in pStack:
+                                pcorrectionFactor *= comb(pcomponent[key][element],rcomponent[key][element],exact=1)
+                                pStack.append(set([key[0].lower(),key[1].lower()]))
+                                self.updateComponentCount(rcomponent,element,-1)
+
+                        else:
+                            for element2 in rcomponent[key]:
+                                if rcomponent[key][element2] < pcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in pStack:
+                                    pcorrectionFactor *= comb(pcomponent[key][element],rcomponent[key][element2],exact=1)
+                                    pStack.append(set([key[0].lower(),key[1].lower()]))
+                                    self.updateComponentCount(rcomponent,element2,-1)
+
+
         return rcorrectionFactor,pcorrectionFactor
         
     def convertToName(self, rate):

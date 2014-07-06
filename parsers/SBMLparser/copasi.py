@@ -111,7 +111,7 @@ def loadResults(fileName,split):
         print 'no file'
         return [],[]
         
-'''
+
 def plotResults(fileResults1,fileResults2):
     import matplotlib.pyplot as plt
     plt.figure(1)
@@ -120,7 +120,7 @@ def plotResults(fileResults1,fileResults2):
     plt.subplot(212)
     plt.plot(fileResults2[:,1:])
     plt.show()
-'''
+
   
 def evaluate(fileNumber):
     copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
@@ -171,11 +171,23 @@ def evaluate(fileNumber):
     score =  np.median(pow(np.sum(pow(copasi[:,newCopHeaders] - bng[:,newBngHeaders],2),axis=0)/np.size(copasi,0),0.5))
     print '---',score,fileNumber    
     return score
+
+def compareBNGResults(file1,file2):
+    bngheaders,bng = loadResults(file1,' ')
+    bngheaders2,bng2 = loadResults(file2,' ')
+    
+    plotResults(bng,bng2)       
+    score =  pow(np.sum(pow(bng-bng2,2),axis=0)/np.size(bng,0),0.5)
+    print score
+    score = np.median(score)
+    print score
+    print bngheaders
+    
     
 def compareResults():
     good= 0
     tested = 0
-    for fileNumber in [369]:
+    for fileNumber in [48]:
         print fileNumber
         copheaders,copasi = loadResults('copasiBenchmark/output_{0}.txt'.format(fileNumber),'[')
         copheaders = [x.replace(']','').strip() for x in copheaders]
@@ -246,7 +258,7 @@ def compareResults():
 #    print copasi[:,newCopHeaders]
     #print copheaders[1:]
     print tested,good 
-    #plotResults(bng[:,newBngHeaders],copasi[:,newCopHeaders])           
+    plotResults(bng[:,newBngHeaders],bng[:,newBngHeaders]-copasi[:,newCopHeaders])           
 
         
 def main():
@@ -255,7 +267,8 @@ def main():
     #generateCopasiOutput()
     #loadCopasiResults()
     #loadBNGResults(1)
-    compareResults()
+    #compareResults()
+    compareBNGResults('raw/output48.gdat','complex/output48.gdat')
 
 if __name__ == "__main__":
     main()
