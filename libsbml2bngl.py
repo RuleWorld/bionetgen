@@ -854,7 +854,7 @@ def processDir(directory,atomize=True):
         #except:
             #continue'
     
-def processFile3(fileName,customDefinitions=None,atomize=True):
+def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False):
     '''
     processes a file. derp.
     '''
@@ -871,7 +871,7 @@ def processFile3(fileName,customDefinitions=None,atomize=True):
     reval2 = -1
     outputFile = '{0}.bngl'.format(fileName)
     rlength, reval, reval2, clength,rdf  = analyzeFile(fileName, reactionDefinitions,
-                useID,namingConventions,outputFile,speciesEquivalence=spEquivalence,atomize=atomize,bioGrid=False)
+                useID,namingConventions,outputFile,speciesEquivalence=spEquivalence,atomize=atomize,bioGrid=bioGrid)
 
     if len(logMess.log) > 0:
         with open(fileName + '.log', 'w') as f:
@@ -908,9 +908,9 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
-    #processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions='reactionDefinitions/speciesEquivalence19.json') 
-    processFile3('XMLExamples/curated/BIOMD0000000424.xml',customDefinitions=None,atomize=True)    
-    #processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
+    processFile3('XMLExamples/curated/BIOMD0000000048.xml',customDefinitions='reactionDefinitions/speciesEquivalence48.json',bioGrid=False) 
+    #processFile3('XMLExamples/curated/BIOMD0000000048.xml',customDefinitions=None,atomize=True)    
+    #processFile3('/home/proto/Downloads/compartment_test_sbml.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/curated/')
     #processFile3('hexamer.xml')
     #with open('dimer.xml','r') as f:

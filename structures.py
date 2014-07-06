@@ -288,12 +288,18 @@ class Molecule:
         return bonds[0]
 
     def sort(self):
-        self.components.sort(key=lambda x:(self.evaluateBonds(x.bonds),x.name))
+        self.components.sort(key=lambda x:(x.name,self.evaluateBonds(x.bonds)))
     def __str__(self):
         self.sort()
         tmp = self.name.replace('-','_')
         return tmp + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
-        
+      
+    def signature(self,component):
+        #tmpComponents = deepcopy(self.components)
+        #tmpComponents.sort(key=lambda x:x.name)
+        tmp = self.name.replace('-','_')
+        return tmp + '(' + ','.join([x.signature() for x in self.components if (self.name,x.name) not in component]) + ')' + self.compartment
+
     def toString(self):
         return self.__str__()
         
@@ -388,6 +394,14 @@ class Component:
             tmp += '!' + '!'.join([str(x) for x in self.bonds])
         if len(self.states) > 0:
             tmp += '~' + '~'.join([str(x) for x in self.states])
+        return tmp        
+        
+    def signature(self):
+        tmp = self.name
+        if len(self.bonds) > 0:
+            tmp += '!+'
+        if self.activeState != '':
+            tmp += '~{0}'.format(self.activeState)
         return tmp        
         
     def __hash__(self):

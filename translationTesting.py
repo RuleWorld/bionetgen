@@ -109,7 +109,7 @@ if __name__ == "__main__":
     suite2 = unittest.TestSuite()
     suite3 = unittest.TestSuite()
     
-    ran = range(1,100)
+    ran = [48]
     blackList = [18,175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]
     ran = [x for x in ran if x not in blackList]
     '''
