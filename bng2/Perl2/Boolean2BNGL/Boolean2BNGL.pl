@@ -178,9 +178,9 @@ print "end model\n";
 print "\n# generate_network({overwrite=>1})\n\n";
 
 my $n_nodes = scalar(@NODES);
-my $n_rounds = 15;
 
 if ($update_mode eq 'ROA'){
+	my $n_rounds = 15;
 	print "# Simulate for N_ROUNDS = 15 update rounds, outputting every round. Note that with N_NODES = $n_nodes, the\n";
 	print "# average time for each update round is 1 + 1/2 + 1/3 + ... + 1/$n_nodes < $n_nodes. Thus, 't_end' is set to\n";
 	print "# $n_nodes*$n_rounds*100 (N_NODES*N_ROUNDS*100), a number large enough to ensure that 'max_sim_steps' is reached first.\n";
