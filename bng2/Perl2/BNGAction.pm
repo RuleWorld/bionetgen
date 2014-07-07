@@ -278,7 +278,7 @@ sub simulate
     else { return "Unrecognized expand method $expand";    }
 
     # define maximum # of sim steps
-    if ($max_sim_steps)
+    if (defined $max_sim_steps)
     {   push @command, "-M", $max_sim_steps;  }
 
     # define output step interval
@@ -378,7 +378,6 @@ sub simulate
         	print "WARNING: t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
                   "Simulation won't run.\n";
         }
-
         
         if (defined $params->{n_steps}){
             $n_steps = $params->{n_steps};
