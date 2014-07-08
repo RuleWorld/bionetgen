@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use File::Spec;
 
 my @NODES = ();
 
@@ -17,13 +18,22 @@ my $file = shift @ARGV;
 my $update_mode = (@ARGV) ? shift @ARGV : 'GSP'; # ROA, GA, GSP
 $update_mode =~ tr/a-z/A-Z/; # make upper case
 if ( $update_mode eq 'ROA' || $update_mode eq 'GA' || $update_mode eq 'GSP' ){
-	printf "Update mode: '$update_mode'\n";
+	printf "Boolean update mode: '$update_mode'\n";
 }
 else{
-	printf "Update mode '$update_mode' not recognized. Allowed modes are 'ROA', 'GA', and 'GSP'.\n";
+	printf "Boolean update mode '$update_mode' not recognized. Allowed modes are 'ROA', 'GA', and 'GSP'.\n";
 }
 
 my $include_reset = ($update_mode eq 'GSP') ? 0 : 1;
+
+# determine output filename
+if (not File::Spec->file_name_is_absolute( $file )){
+	$file = File::Spec->rel2abs($file);
+}
+my ($vol, $dir, $filename) = File::Spec->splitpath( $file );
+my $outfile = $filename;
+$outfile =~ s/\.\w+$/_$update_mode\.bngl/;
+$outfile = File::Spec->catfile( $vol, $dir, $outfile );
 
 # read entire file as a string
 local $/ = undef;
@@ -134,71 +144,79 @@ elsif ($update_mode eq 'ROA'){
 	}
 }
 
-print "begin model\n";
+# Print to file
+open FILE, ">", $outfile or die "Couldn't open file: $!";
 
-print "begin parameters\n";
+print FILE "# Translation of Boolean model in " . $filename . " to BNGL format within the " . $update_mode . " (" . 
+	( ($update_mode eq 'ROA') ? "random-order asynchronous" : ($update_mode eq 'GA') ? "general asynchronous" :
+	($update_mode eq 'GSP') ? "Gillespie" : "UNKNOWN" ) . ") update mode.\n";
+
+print FILE "begin model\n";
+
+print FILE "begin parameters\n";
 foreach my $i (@parameters){
-	print "   $i\n";
+	print FILE "   $i\n";
 }
-print "end parameters\n";
+print FILE "end parameters\n";
 
-print "begin molecule types\n";
+print FILE "begin molecule types\n";
 foreach my $i (@molecule_types){
-	print "   $i\n";
+	print FILE "   $i\n";
 }
-print "end molecule types\n";
+print FILE "end molecule types\n";
 
-print "begin seed species\n";
+print FILE "begin seed species\n";
 foreach my $i (@seed_species){
-	print "   $i\n";
+	print FILE "   $i\n";
 }
-print "end seed species\n";
+print FILE "end seed species\n";
 
-print "begin observables\n";
+print FILE "begin observables\n";
 foreach my $i (@observables){
-	print "   $i\n";
+	print FILE "   $i\n";
 }
-print "end observables\n";
+print FILE "end observables\n";
 
-print "begin functions\n";
+print FILE "begin functions\n";
 foreach my $i (@functions){
-	print "   $i\n";
+	print FILE "   $i\n";
 }
-print "end functions\n";
+print FILE "end functions\n";
 
-print "begin reaction rules\n";
+print FILE "begin reaction rules\n";
 foreach my $i (@reaction_rules){
-	print "   $i\n";
+	print FILE "   $i\n";
 }
-print "end reaction rules\n";
+print FILE "end reaction rules\n";
 
-print "end model\n";
+print FILE "end model\n";
 
 # actions
-print "\n# generate_network({overwrite=>1})\n\n";
+print FILE "\n";
+print FILE "# generate_network({overwrite=>1})\n\n";
 
 my $n_nodes = scalar(@NODES);
 
 if ($update_mode eq 'ROA'){
 	my $n_rounds = 15;
-	print "# Simulate for N_ROUNDS = 15 update rounds, outputting every round. Note that with N_NODES = $n_nodes, the\n";
-	print "# average time for each update round is 1 + 1/2 + 1/3 + ... + 1/$n_nodes < $n_nodes. Thus, 't_end' is set to\n";
-	print "# $n_nodes*$n_rounds*100 (N_NODES*N_ROUNDS*100), a number large enough to ensure that 'max_sim_steps' is reached first.\n";
-	print "#\n";
-	print "# simulate({method=>\"ssa\",t_end=>($n_nodes*$n_rounds*100),output_step_interval=>($n_nodes*2+2),max_sim_steps=>(($n_nodes*2+2)*$n_rounds),print_CDAT=>0,verbose=>1})\n";
+	print FILE "# Simulate for N_ROUNDS = 15 update rounds, outputting every round. Note that with N_NODES = $n_nodes, the\n";
+	print FILE "# average time for each update round is 1 + 1/2 + 1/3 + ... + 1/$n_nodes < $n_nodes. Thus, 't_end' is set to\n";
+	print FILE "# $n_nodes*$n_rounds*100 (N_NODES*N_ROUNDS*100), a number large enough to ensure that 'max_sim_steps' is reached first.\n";
+	print FILE "#\n";
+	print FILE "# simulate({method=>\"ssa\",t_end=>($n_nodes*$n_rounds*100),output_step_interval=>($n_nodes*2+2),max_sim_steps=>(($n_nodes*2+2)*$n_rounds),print_CDAT=>0,verbose=>1})\n";
 }
 elsif ($update_mode eq 'GA'){
-	print "# Simulate for 30 time units, outputting every time unit.\n";
-	print "#\n";
-	print "# simulate({method=>\"ssa\",t_end=>30,n_steps=>30,print_CDAT=>0,verbose=>1})\n\n";
+	print FILE "# Simulate for 30 time units, outputting every time unit.\n";
+	print FILE "#\n";
+	print FILE "# simulate({method=>\"ssa\",t_end=>30,n_steps=>30,print_CDAT=>0,verbose=>1})\n\n";
 	
-	print "# Simulate for 30 \"update rounds\", outputting every round. This allows for a comparison with the ROA update scheme.\n";
-	print "# With N_NODES = $n_nodes, each round corresponds to $n_nodes*2 reaction firings (one state-change and one reset rule per node).\n";
-	print "# On average, this takes one time unit. Thus, 't_end' is set to 30*100 to ensure that 'max_sim_steps' is reached first.\n";
-	print "#\n";
-	print "# simulate({method=>\"ssa\",t_end=>(30*100),output_step_interval=>($n_nodes*2),max_sim_steps=>(($n_nodes*2)*30),print_CDAT=>0,verbose=>1})\n";
+	print FILE "# Simulate for 30 \"update rounds\", outputting every round. This allows for a comparison with the ROA update scheme.\n";
+	print FILE "# With N_NODES = $n_nodes, each round corresponds to $n_nodes*2 reaction firings (one state-change and one reset rule per node).\n";
+	print FILE "# On average, this takes one time unit. Thus, 't_end' is set to 30*100 to ensure that 'max_sim_steps' is reached first.\n";
+	print FILE "#\n";
+	print FILE "# simulate({method=>\"ssa\",t_end=>(30*100),output_step_interval=>($n_nodes*2),max_sim_steps=>(($n_nodes*2)*30),print_CDAT=>0,verbose=>1})\n";
 }
 elsif ($update_mode eq 'GSP'){
-	print "# Simulate for 30 time units, outputting every time unit.\n";
-	print "# simulate({method=>\"ssa\",t_end=>30,n_steps=>30,print_CDAT=>0,verbose=>1})\n";
+	print FILE "# Simulate for 30 time units, outputting every time unit.\n";
+	print FILE "# simulate({method=>\"ssa\",t_end=>30,n_steps=>30,print_CDAT=>0,verbose=>1})\n";
 }
