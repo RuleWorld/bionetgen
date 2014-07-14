@@ -65,6 +65,7 @@ use RxnRule;
 use EnergyPattern;
 use Observable;
 use PopulationList;
+use Viz;
 
 # A place to store a reference to the current active model.
 # Useful when other classes need to find the model.
@@ -2419,6 +2420,16 @@ sub getOutputDir
 ###
 ###
 ###
+
+sub visualize
+{
+    my $model       = shift @_;
+    my $user_params = @_ ? shift @_ : {};
+	Viz::execute_params($model,$user_params);
+	return '';
+}
+
+
 
 1;
 
