@@ -603,6 +603,7 @@ sub toGML_regulatory
 		
 		if (ref($node))
 		{
+			my @x = @$node;
 			$name = BipartiteGraph::groupName($node);
 			$type = 'Group';
 			$gmlnode = initializeGMLNode($id,$name,$node);
@@ -636,7 +637,7 @@ sub toGML_regulatory
 	
 	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8);
 	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
-	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7);
+	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
 		
 	foreach my $node(@gmlnodes)
 	{
@@ -666,6 +667,64 @@ sub toGML_regulatory
 	$gmlgraph->{'Edges'} =\@gmledges;
 	return printGraph($gmlgraph);
 }
+
+sub toGML_regulatory3
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	
+	my %indhash = StructureGraph::indexHash( \@nodelist );
+	my @gmlnodes = ();
+	foreach my $node(@nodelist)
+	{
+		my $id = $indhash{$node};
+		my $name = BipartiteGraph::prettify($node);
+		my $gmlnode = initializeGMLNode($id,$name,$node);
+		push @gmlnodes, $gmlnode;
+	}
+	
+	my @gmledges = ();
+	foreach my $edge( @edgelist )
+	{
+		my @splits = split(":",$edge);
+		my $source = $indhash{$splits[0]};
+		my $target = $indhash{$splits[1]};
+		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
+		push @gmledges,$gmledge;
+	}
+	
+	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8);
+	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
+	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
+		
+	foreach my $node(@gmlnodes)
+	{
+		if($node->{'label'} =~ /^Rule/) 
+			{ styleNode($node,$nodestyle{'Transformation'}); }
+		else
+			{ styleNode($node,$nodestyle{'AtomicPattern'});}		
+	}
+	
+	foreach my $edge(@gmledges)
+	{
+		my $object = $edge->{'object'};
+		my @splits = split ":", $object;
+		my $type = $splits[2];
+		if ($type eq 'Syndel')
+			{
+			if (BipartiteGraph::isSyn($splits[0])) { $type = 'Syn' };
+			if (BipartiteGraph::isDel($splits[0])) { $type = 'Del' };
+			}
+		styleEdge($edge,$edgestyle{$type});
+	}
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGraph($gmlgraph);
+}
+
+
 
 sub toGML_process
 {
@@ -708,68 +767,7 @@ sub toGML_process
 	return printGraph($gmlgraph);
 }
 
-sub toGML_process2
-{
-	my %names = %{shift @_};
-	my @influences = @{shift @_};
-	my @gmlnodes = ();
-	my @groups = sort {$a <=> $b} keys %names;
-	foreach my $i(@groups)
-	{
-		my $node = $names{$i};
-		my $gmlnode = initializeGMLNode($i,$node,$node);
-		styleNode($gmlnode);
-		push @gmlnodes,$gmlnode;
-	}		
-	
-	#process influences
-	#print map $_."\n",@influences;
-	my @gmledges = ();
-	foreach my $i(@groups)
-	{
-		foreach my $j(@groups)
-		{
-			next if ($j<$i);
-			my @forward = grep /^[-+]$i:$j$/, @influences;
-			my @reverse = grep /^[-+]$j:$i$/, @influences;
-			my @all = (@forward,@reverse);
-			# edge exists?
-			next if (! scalar @all);
-			my $gmledge = initializeGMLEdge($i,$j);
-			styleEdge($gmledge);
-			if (@forward)
-				{
-				my @pos = grep /^[+]/, @forward;
-				my @neg = grep /^[-]/, @forward;
-				if (scalar @pos and scalar @neg)
-					{$gmledge->{'targetArrow'}="convex";}
-				elsif (scalar @pos)
-					{$gmledge->{'targetArrow'}="bezier";}
-				elsif (scalar @neg)
-					{$gmledge->{'targetArrow'}="t_shape";}
-				}
-			if (@reverse)
-				{
-				my @pos = grep /^[+]/, @reverse;
-				my @neg = grep /^[-]/, @reverse;
-				if (scalar @pos and scalar @neg)
-					{$gmledge->{'sourceArrow'}="convex";}
-				elsif (scalar @pos)
-					{$gmledge->{'sourceArrow'}="bezier";}
-				elsif (scalar @neg)
-					{$gmledge->{'sourceArrow'}="t_shape";}
-				}
-			push @gmledges, $gmledge;
-		}
-	}
-	
-	@gmledges = uniq @gmledges;
-	
-	my $gmlgraph = GMLGraph->new();
-	$gmlgraph->{'Nodes'} = \@gmlnodes;
-	$gmlgraph->{'Edges'} =\@gmledges;
-	return printGraph($gmlgraph);
-}
+
 sub transfNames
 {
 	my $tr = shift @_;
@@ -849,74 +847,6 @@ sub transfNames2
 	return $tr;
 }
 
-sub toGML_process2v2
-{
-	my @trs = @{shift @_};
-	my @groups = @{shift @_};
-	my @influences = @{shift @_};
-	my @gmlnodes = ();
-	my @gmledges = ();
-	#my @groups = sort {$a <=> $b} keys %names;
-	my %indexhash;
-	@indexhash {@trs} = 0..@trs-1;
-	my @groupids = (scalar @trs)..(scalar @trs + scalar @groups -1);
-	my %gidhash;
-	@gidhash {@trs} = (-1) x @trs;
-	foreach my $i(0..@groups-1)
-		{
-		my @grp = @{$groups[$i]};
-		foreach my $tr(@grp) { $gidhash{$tr} = $groupids[$i];}
-		}
-
-	foreach my $node(@trs)
-	{
-		my $gmlnode = initializeGMLNode($indexhash{$node},transfNames($node),$node);
-		if ($gidhash{$node} > -1) { $gmlnode->{'gid'} = $gidhash{$node}; }
-		styleNode($gmlnode,8);
-		push @gmlnodes,$gmlnode;
-	}
-
-	foreach my $i(0..@groups-1)
-	{
-		my $gmlnode = initializeGMLNode($groupids[$i],"","");
-		styleNode($gmlnode,6);
-		$gmlnode->{'isGroup'} = 1;
-		push @gmlnodes,$gmlnode;
-	}
-
-	
-	#process influences
-	my @activation = grep /Activation/, @influences;
-	sub getIndices 
-	{ 
-		my @splits = split ":",$_[0]; pop @splits;
-		my %hash = %{$_[1]};
-		return map $hash{$_},@splits;
-	}
-	foreach my $act(@activation)
-	{
-		my @ids = getIndices($act,\%indexhash);
-		my $gmledge = initializeGMLEdge($ids[0],$ids[1],1);
-		styleEdge($gmledge);
-		push @gmledges,$gmledge;
-	}
-	
-	my @cotransforms = grep /Cotransform/, @influences;
-	foreach my $cotr(@cotransforms)
-		{
-		my @ids = getIndices($cotr,\%indexhash);
-		my $gmledge = initializeGMLEdge($ids[0],$ids[1],1,1);
-		styleEdge($gmledge);
-		push @gmledges,$gmledge;
-		}
-	
-	@gmledges = uniq @gmledges;
-	
-	my $gmlgraph = GMLGraph->new();
-	$gmlgraph->{'Nodes'} = \@gmlnodes;
-	$gmlgraph->{'Edges'} =\@gmledges;
-	return printGraph($gmlgraph);
-}
 
 sub nodelabel
 {
@@ -951,7 +881,7 @@ foreach my $node(@nodes)
 return %names;
 }
 
-sub toGML_process2v3
+sub toGML_process2
 {
 	my @nodes = @{shift @_};
 	my @influences = @{shift @_};
@@ -1165,7 +1095,7 @@ sub styleEdge
 		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
 		$gmledge->{'sourceArrow'} = 0;
 		$gmledge->{'targetArrow'} = 1;
-		$gmledge->{'width'} = 3;
+		$gmledge->{'width'} = 2;
 		}
 	# del context
 	if ($arg==5) 
@@ -1189,7 +1119,14 @@ sub styleEdge
 		$gmledge->{'sourceArrow'} = 1;
 		$gmledge->{'targetArrow'} = 1;
 		}
-		
+	# onsite context
+	if ($arg==13) 
+		{
+		#$gmledge->{'fill'} = $edgepalette1{'Context'};
+		$gmledge->{'sourceArrow'} = 1;
+		$gmledge->{'targetArrow'} = 0;
+		$gmledge->{'width'} = 2;
+		}
 	# process graph -activation
 	if ($arg==8 )
 		{

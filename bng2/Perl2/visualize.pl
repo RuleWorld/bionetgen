@@ -96,7 +96,7 @@ sub processLine
 	
 
 	my @splits = split (/\s+/,$line);
-	my @types = qw(rules_text rules_eqn rules contact regulatory process process2);
+	my @types = qw(rules_text rules_eqn rules contact regulatory process process2 temp regulatory2);
 	my %typehash = map {$_ => 1} @types;
 	#@typehash{@types} = (1) x scalar @types;
 	
@@ -197,7 +197,7 @@ sub processLine
 		print "Decomposing rules into sites, processes and context...\n";
 		foreach my $i(0..$n-1)
 			{
-			$bpgs[$i] = BipartiteGraph::makeRuleBipartiteGraph($rsgs[$i]);
+			$bpgs[$i] = BipartiteGraph::makeRuleRegulatoryGraph($rsgs[$i]);
 			}			
 		my $bpg = BipartiteGraph::combine(\@bpgs);
 		BipartiteGraph::addWildcards($bpg);
@@ -225,7 +225,7 @@ sub processLine
 		print "Decomposing rules into sites, processes and context...\n";
 		foreach my $i(0..$n-1)
 			{
-			$bpgs[$i] = BipartiteGraph::makeRuleBipartiteGraph($rsgs[$i]);
+			$bpgs[$i] = BipartiteGraph::makeRuleRegulatoryGraph($rsgs[$i]);
 			}			
 		my $bpg = BipartiteGraph::combine(\@bpgs);
 		BipartiteGraph::addWildcards($bpg);
@@ -254,7 +254,7 @@ sub processLine
 		print "Decomposing rules into sites, processes and context...\n";
 		foreach my $i(0..$n-1)
 			{
-			$bpgs[$i] = BipartiteGraph::makeRuleBipartiteGraph($rsgs[$i]);
+			$bpgs[$i] = BipartiteGraph::makeRuleRegulatoryGraph($rsgs[$i]);
 			}			
 		my $bpg = BipartiteGraph::combine(\@bpgs);
 		BipartiteGraph::addWildcards($bpg);
@@ -264,9 +264,64 @@ sub processLine
 		print "Building process graph...\n";
 		my ($nodes,$influences) = ProcessGraph::makeProcessGraph($bpg);
 		print "Building GML graph...\n";
-		$string = Visualization::toGML_process2v3($nodes,$influences);
+		$string = Visualization::toGML_process2($nodes,$influences);
 		$outfile = $basename.'_'.$suffix.'.gml';
 	
+	}
+	
+	if ($type eq 'temp')
+	{
+		my $n = scalar @rules;
+		my @rsgs = () x $n;
+		my @bpgs = () x $n;
+		print "Building rules...\n";
+		foreach my $i(0..$n-1)
+			{
+			my $rr = $rules[$i];
+			my $name = $rr->{'Name'};
+			$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i,$name);
+			} 
+		print "Decomposing rules into sites, processes and context...\n";
+		foreach my $i(0..$n-1)
+			{
+			$bpgs[$i] = BipartiteGraph::makeRuleRegulatoryGraph2($rsgs[$i]);
+			}			
+		my $bpg = BipartiteGraph::combine(\@bpgs);
+		BipartiteGraph::addWildcards($bpg);
+		BipartiteGraph::addProcessPairs($bpg);
+		print "Building groups...\n";
+		BipartiteGraph::makeGroups($bpg);
+		#print BipartiteGraph::printGraph($bpg);
+		print "Building graph...\n";
+		$string = Visualization::toGML_regulatory($bpg);
+		$outfile = $basename.'_'.$suffix.'.gml';
+		#print BipartiteGraph::printGraph($bpg);
+	}
+	
+	if ($type eq 'regulatory2')
+	{
+		my $n = scalar @rrules;
+		#print @rrules;
+		my @rsgs = () x $n;
+		my @bpgs = () x $n;
+		print "Building rules...\n";
+		foreach my $i(0..$n-1)
+			{
+			my @rrule = @{$rrules[$i]};
+			my $rr = $rrule[0];
+			my $name = $i;
+			$rsgs[$i] = StructureGraph::makeRuleStructureGraph($rr,$i,$name);
+			} 
+		print "Identifying atomic patterns in rules...\n";
+		foreach my $i(0..$n-1)
+			{
+			$bpgs[$i] = BipartiteGraph::makeRuleRegulatoryGraph3($rsgs[$i],$i,scalar @{$rrules[$i]});
+			}			
+		my $bpg = BipartiteGraph::combine(\@bpgs);
+		BipartiteGraph::addWildcards($bpg);
+		print "Building graph...\n";
+		$string = Visualization::toGML_regulatory3($bpg);
+		$outfile = $basename.'_'.$suffix.'.gml';
 	}
 	
 	print "Writing to file: ".$outfile."\n\n";

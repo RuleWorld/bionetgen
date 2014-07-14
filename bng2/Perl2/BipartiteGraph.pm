@@ -146,12 +146,23 @@ sub getStructures
 sub getContext
 {
 	my @nodelist = @{shift @_};
+	my @exclude = ();
+	if (@_) { @exclude = @{shift @_} };
+	my @exclude_ids = ();
+	foreach my $exc (@exclude)
+	{
+		my @x = @$exc;
+		my $y = shift @x;
+		push @exclude_ids, map $_->{'ID'}, @x;
+	}
+	#print scalar @exclude_ids;
 	my @nodes_struct = getStructures(\@nodelist);
 	my @nodes = hasSide(\@nodes_struct,'both');
 	my @context = ();
 	
 	# comp states
-	my @compstates = hasType(\@nodes,'CompState');
+	my @compstates = 	grep listHas(\@exclude_ids,$_->{'ID'})==0,
+						hasType(\@nodes,'CompState');
 	if (@compstates)
 	{
 		foreach my $node(@compstates)
@@ -162,7 +173,8 @@ sub getContext
 	}
 	
 	# bond states
-	my @bondstates = hasType(\@nodes,'BondState');
+	my @bondstates = 	grep listHas(\@exclude_ids,$_->{'ID'})==0,
+						hasType(\@nodes,'BondState');
 	foreach my $node(@bondstates)
 	{
 		my $string = makeAtomicPattern(\@nodes_struct,$node);
@@ -170,7 +182,8 @@ sub getContext
 	}
 	
 	# unbound states
-	my @comps = hasType(\@nodes,'Comp');
+	my @comps =	grep listHas(\@exclude_ids,$_->{'ID'})==0,
+				hasType(\@nodes,'Comp');
 	my %unbound;
 	foreach my $x(@comps) { $unbound{$x->{'ID'}}=1; }
 	my @allbonds = hasType(\@nodelist,'BondState');
@@ -191,7 +204,8 @@ sub getContext
 	my %havenocomps;
 	foreach my $x(@mols) { $havenocomps{$x->{'ID'}}=1; }
 	my @allcompparents;
-	foreach my $node(@comps) { push @allcompparents, @{$node->{'Parents'}}; }
+	foreach my $node(hasType(\@nodes,'Comp')) 
+		{ push @allcompparents, @{$node->{'Parents'}}; }
 	foreach my $x(@allcompparents) { $havenocomps{$x}=0; }
 	foreach my $x(keys %havenocomps) 
 	{ 
@@ -269,7 +283,7 @@ sub getSyndelContext
 
 sub makeEdge
 {
-	my %shortname = ( 'r'=>"Reactant", 'p'=>"Product", 'c'=>"Context", 's'=>"Syndel", 'w'=>"Wildcard", 'pp'=>"ProcessPair", 'co'=>"Cotransform" );
+	my %shortname = ( 'r'=>"Reactant", 'p'=>"Product", 'c'=>"Context", 's'=>"Syndel", 'w'=>"Wildcard", 'pp'=>"ProcessPair", 'co'=>"Cotransform", 'os'=>"Onsite" );
 	
 	my $node1 = shift @_;
 	my $node2 = shift @_;
@@ -356,7 +370,7 @@ sub addProcessPairs
 		}
 }
 
-sub makeRuleBipartiteGraph
+sub makeRuleRegulatoryGraph
 {
 	# from a rule structure graph
 	my $rsg = shift @_;
@@ -436,6 +450,182 @@ sub makeRuleBipartiteGraph
 	
 	return $bpg;
 }
+sub getOnSiteContext
+{
+	my @nodelist = @{shift @_};
+	my %attached_to_graphop = map { $_->{'ID'} => 0 } @nodelist;
+	my @graphops = grep { $_->{'Type'} eq 'GraphOp' } @nodelist;
+	my @all_onsite = ();
+	
+	foreach my $opnode(@graphops)
+	{
+		my @parents = @{$opnode->{'Parents'}};
+		@attached_to_graphop{ @parents } = (1) x @parents ;
+	}
+	foreach my $opnode(@graphops)
+	{
+		my @onsite_context = ();
+		my $type = $opnode->{'Name'};
+		next if ($type =~ /Mol/);
+		my @parents = uniq findParents(\@nodelist,$opnode);
+		my @comps = ();
+		foreach my $parent(@parents)
+			{
+			push @comps,uniq findParents(\@nodelist,$parent);
+			}
+		@comps = uniq @comps;
+		my @compids = 	uniq map {$_->{'ID'}}
+						map {findParents(\@nodelist,$_)}
+						@parents;
+		if ($type =~ /Bond/)
+			{
+			my @states = ();
+			foreach my $compid(@compids)
+				{
+				my @x = 	grep {$attached_to_graphop{$_->{'ID'}}==0}
+							grep listHas($_->{'Parents'},$compid),
+							hasType(\@nodelist,'CompState');
+				if (@x) { push @onsite_context,@x; }		
+				}
+			}
+
+		if ($type =~ /ChangeState/)
+			{
+			my @bonds = ();
+			foreach my $compid(@compids)
+				{
+				my @x =	grep listHas($_->{'Parents'},$compid),
+						hasType(\@nodelist,'BondState');
+				if (@x) { push @bonds,@x;}
+				}
+			if (@bonds)
+				{
+				if ($attached_to_graphop{$bonds[0]->{'ID'}}==0)
+					{ push @onsite_context,@bonds; }
+				}
+			else { push @onsite_context,@comps; }
+			}
+		@onsite_context = uniq  @onsite_context;
+		if (@onsite_context)
+		{
+		my @x = ();
+		push @x, $opnode;
+		push @x,@onsite_context;
+		push @all_onsite, \@x;
+		}
+	}
+	return @all_onsite;
+}
+sub makeRuleRegulatoryGraph2
+{
+	# from a rule structure graph
+	my $rsg = shift @_;
+	my $name = $rsg->{'Name'};
+	my @nodelist = @{$rsg->{'NodeList'}};
+	
+	my $bpg = BipartiteGraph->new();
+	$bpg->{'Name'} = $name;
+	
+	my @graphop = hasType(\@nodelist,'GraphOp');
+	my @transf;
+	# get onsite context
+	my @onsite = getOnSiteContext(\@nodelist);
+
+	# isolate the common context
+	my @contexts = getContext(\@nodelist,\@onsite);
+	
+	
+	
+	# add edges for onsite context
+	foreach my $vec(@onsite)
+	{
+	my @list = @$vec;
+	my $op = shift @list;
+	my $tr = makeTransformation(\@nodelist,$op);
+	# this is because we are currently not treating wildcard bond deletions
+	if(length $tr == 0) { next; }
+	push @{$bpg->{'NodeList'}}, $tr;
+	foreach my $node(@list)
+		{
+		my $string = makeAtomicPattern(\@nodelist,$node);
+		if ($string) 
+			{ 
+			my $edge = makeEdge($tr,$string,'os');
+			push @{$bpg->{'NodeList'}}, $string;
+			push @{$bpg->{'EdgeList'}}, $edge;
+			}	
+		}
+	}
+	
+	
+	
+	#add edges for reactant, product, common context
+	foreach my $op(@graphop)
+	{
+		my $tr = makeTransformation(\@nodelist,$op);
+		# this is because we are currently not treating wildcard bond deletions
+		if(length $tr == 0) { next; }
+		push @{$bpg->{'NodeList'}}, $tr;
+
+		
+		my ($reac,$prod) = getReactantsProducts($tr);
+		push @{$bpg->{'NodeList'}}, @$reac, @$prod;
+		foreach my $reactant (@$reac)
+		{
+			if (length $reactant == 0) {next;}
+			my $edge = makeEdge($tr,$reactant,'r');
+			push @{$bpg->{'NodeList'}}, $reactant;
+			push @{$bpg->{'EdgeList'}}, $edge;
+		}
+		foreach my $product (@$prod)
+		{
+			if (length $product == 0) {next;}
+			my $edge = makeEdge($tr,$product,'p');
+			push @{$bpg->{'NodeList'}}, $product;
+			push @{$bpg->{'EdgeList'}}, $edge;
+		}
+		foreach my $context(@contexts)
+		{
+			if (length $context == 0) {next;}
+			my $edge = makeEdge($tr,$context,'c');
+			push @{$bpg->{'NodeList'}}, $context;
+			push @{$bpg->{'EdgeList'}}, $edge;
+		}
+		
+		# add syndel edges
+		if ($op->{'Name'} =~ /Mol/)
+		{
+			my @syndels = getSyndelContext(\@nodelist,$op);
+			foreach my $syndel(@syndels)
+			{
+				if (length $syndel == 0) {next;}
+				my $edge = makeEdge($tr,$syndel,'s');
+				push @{$bpg->{'NodeList'}}, $syndel;
+				push @{$bpg->{'EdgeList'}}, $edge;
+			}
+		}
+	}
+	#cotransforms
+	foreach my $i(0..@graphop-1)
+	{
+		foreach my $j($i+1..@graphop-1)
+		{
+			my $tr1 = makeTransformation(\@nodelist,$graphop[$i]);
+			my $tr2 = makeTransformation(\@nodelist,$graphop[$j]);
+			next if (length($tr1) == 0 || length($tr2) == 0);
+			next if ($tr1 eq $tr2);
+			my $edge = makeEdge($tr1,$tr2,'co');
+			push @{$bpg->{'EdgeList'}}, $edge;
+		}
+	}
+	@{$bpg->{'NodeList'}} = uniq @{$bpg->{'NodeList'}};
+	@{$bpg->{'EdgeList'}} = uniq @{$bpg->{'EdgeList'}};
+	#print printGraph($bpg);
+	#print map $_."\n",grep (/ProcessPair/,@{$bpg->{'EdgeList'}});
+	#print map $_."\n",@{$bpg->{'EdgeList'}};
+	return $bpg;
+}
+
 
 sub makeGroups
 {
@@ -516,7 +706,54 @@ sub makeGroups
 	$bpg->{'NodeGroups'} = \@groups;
 }
 
-
+sub groupName
+{
+	my @group = @{shift @_};
+	my @trs = grep( /->/,@group);
+	my $string;
+	# assuming groups only have one process or a process pair
+	if (@trs)
+	{
+		my $tr = $trs[0];
+		if ( (index($tr, '~') != -1) )
+			{
+			# its a statechange
+			my @sides = sort split('->',$tr);
+			my @s1 = split(/\(|\)/,$sides[0]);
+			my @s2 = split(/\(|\)/,$sides[1]);
+			my $molname = $s1[0];
+			my @s3 = split(/~/,$s1[1]);
+			my @s4 = split(/~/,$s2[1]);
+			my $compname = $s3[0];
+			my @states = sort ($s3[1], $s4[1]);
+			$string = $molname."(".$compname."~".$states[0]."~".$states[1].")";
+			}
+		elsif ( (index($tr, '!') != -1) )
+			{
+			# its a bond operation
+			my @sides = split('->',$tr);
+			my $side = (index($sides[0], ',') != -1) ? $sides[0]: $sides[1];
+			my @mols = sort split(',',$side);
+			$string = join(":",@mols);
+			}
+		else 
+			{
+			# its a molecule add or delete opn
+			# is it add
+			my $type = index($tr, '>')==(length($tr)-1) ? 'delete' : 'add';
+			my $len = (length $tr) - 2;
+			my $offset = ($type eq 'add') ? 2 : 0;
+			#$string = "+/-:".substr($tr,$offset,$len);
+			$string = substr($tr,$offset,$len);
+			}
+	}
+	else 
+	{ 
+	# assuming this is a group with a single pattern in it
+	$string = $group[0];
+	}
+	return $string;
+}
 sub makeContactMap
 {
 	my $rsg = shift @_; # a rule structure graph
@@ -627,7 +864,83 @@ sub findComp
 }
 	
 	
-
+sub makeRuleRegulatoryGraph3
+{
+	# from a rule structure graph
+	my $rsg = shift @_;
+	my $ind = shift @_;
+	my $rev = shift @_; # either 1 or 2
+	
+	my @nodelist = @{$rsg->{'NodeList'}};
+	
+	my $bpg = BipartiteGraph->new();
+	my $name = ($rev==2) ? "Rule".$ind."rev" : "Rule".$ind;
+	$bpg->{'Name'} = $name;
+	
+	my @graphop = hasType(\@nodelist,'GraphOp');
+	my @transf;
+	# get onsite context
+	#my @onsite = getOnSiteContext(\@nodelist);
+	# isolate the common context
+	#my @contexts = getContext(\@nodelist,\@onsite);
+	my @contexts = getContext(\@nodelist);
+	
+	# add node for rule
+	push @{$bpg->{'NodeList'}}, $name;
+	
+	# add reactant and product edges
+	foreach my $op(@graphop)
+	{
+		my $tr = makeTransformation(\@nodelist,$op);
+		# this is because we are currently not treating wildcard bond deletions
+		if(length $tr == 0) { next; }
+		my ($reac,$prod) = getReactantsProducts($tr);
+		push @{$bpg->{'NodeList'}}, @$reac, @$prod;
+		foreach my $reactant (@$reac)
+		{
+			if (length $reactant == 0) {next;}
+			my $edge = makeEdge($name,$reactant,'r');
+			push @{$bpg->{'NodeList'}}, $reactant;
+			push @{$bpg->{'EdgeList'}}, $edge;
+		}
+		foreach my $product (@$prod)
+		{
+			if (length $product == 0) {next;}
+			my $edge = makeEdge($name,$product,'p');
+			push @{$bpg->{'NodeList'}}, $product;
+			push @{$bpg->{'EdgeList'}}, $edge;
+		}
+	}
+	# add context edges
+	foreach my $context(@contexts)
+	{
+		if (length $context == 0) {next;}
+		my $edge = makeEdge($name,$context,'c');
+		push @{$bpg->{'NodeList'}}, $context;
+		push @{$bpg->{'EdgeList'}}, $edge;
+	}
+	# add syndel edges
+	foreach my $op(@graphop)
+	{
+		if ($op->{'Name'} =~ /Mol/)
+		{
+			my $rel = ($op->{'Name'} =~ /Add/) ? 'p' : 'r';
+			my @syndels = getSyndelContext(\@nodelist,$op);
+			foreach my $syndel(@syndels)
+			{
+				if (length $syndel == 0) {next;}
+				my $edge = makeEdge($name,$syndel,$rel);
+				push @{$bpg->{'NodeList'}}, $syndel;
+				push @{$bpg->{'EdgeList'}}, $edge;
+			}
+		}
+	}
+	@{$bpg->{'NodeList'}} = uniq @{$bpg->{'NodeList'}};
+	@{$bpg->{'EdgeList'}} = uniq @{$bpg->{'EdgeList'}};
+	
+	#print map $_."\n",@{$bpg->{'EdgeList'}};
+	return $bpg;
+}
 
 
 1;

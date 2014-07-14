@@ -120,15 +120,15 @@ sub analyzeGroups
 					}
 				}
 			}
-			my $groupname1 = groupName(\@group1);
-			my $groupname2 = groupName(\@group2);
+			my $groupname1 = BipartiteGraph::groupName(\@group1);
+			my $groupname2 = BipartiteGraph::groupName(\@group2);
 			my $string1 = $groupname1." ".$groupname2;
 			my $string2 = $groupname2." ".$groupname1;
 			if ($f > 0 and $r > 0) { push @bi, $string1." ".$f." ".$r; }
 			elsif ($f > 0 ) { push @uni, $string1." ".$f; }
 			elsif ($r > 0 ) { push @uni, $string2." ".$r; }
 		}
-		push @all, groupName($groups[$i]);
+		push @all, BipartiteGraph::groupName($groups[$i]);
 	}
 	return (\@bi,\@uni,\@all);
 }
@@ -136,57 +136,10 @@ sub printGroups
 {
 	my $bpg = shift @_;
 	my @groups = @{$bpg->{'NodeGroups'}};
-	return map(("Group ".groupName($_)."\n".join("\n",@{$_})."\n\n",@groups));
+	return map(("Group ".BipartiteGraph::groupName($_)."\n".join("\n",@{$_})."\n\n",@groups));
 }
 
-sub groupName
-{
-	my @group = @{shift @_};
-	my @trs = grep( /->/,@group);
-	my $string;
-	# assuming groups only have one process or a process pair
-	if (@trs)
-	{
-		my $tr = $trs[0];
-		if ( (index($tr, '~') != -1) )
-			{
-			# its a statechange
-			my @sides = sort split('->',$tr);
-			my @s1 = split(/\(|\)/,$sides[0]);
-			my @s2 = split(/\(|\)/,$sides[1]);
-			my $molname = $s1[0];
-			my @s3 = split(/~/,$s1[1]);
-			my @s4 = split(/~/,$s2[1]);
-			my $compname = $s3[0];
-			my @states = sort ($s3[1], $s4[1]);
-			$string = $molname."(".$compname."~".$states[0]."~".$states[1].")";
-			}
-		elsif ( (index($tr, '!') != -1) )
-			{
-			# its a bond operation
-			my @sides = split('->',$tr);
-			my $side = (index($sides[0], ',') != -1) ? $sides[0]: $sides[1];
-			my @mols = sort split(',',$side);
-			$string = join(":",@mols);
-			}
-		else 
-			{
-			# its a molecule add or delete opn
-			# is it add
-			my $type = index($tr, '>')==(length($tr)-1) ? 'delete' : 'add';
-			my $len = (length $tr) - 2;
-			my $offset = ($type eq 'add') ? 2 : 0;
-			#$string = "+/-:".substr($tr,$offset,$len);
-			$string = substr($tr,$offset,$len);
-			}
-	}
-	else 
-	{ 
-	# assuming this is a group with a single pattern in it
-	$string = $group[0];
-	}
-	return $string;
-}
+
 
 
 sub analyzeGroups2
