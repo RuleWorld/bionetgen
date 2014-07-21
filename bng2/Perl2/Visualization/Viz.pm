@@ -10,16 +10,6 @@ use StructureGraph;
 use NetworkGraph;
 use GML;
 
-struct VizArgs => 
-{ 
-	'Model' => '$', 
-	'Rules'=> '$', 
-	'BaseName'=> '$',
-	'Suffix'=>'$',
-	'RRules'=>'@',
-	'RuleNames'=>'@',
-	'Groups'=>'$', # a boolean
-};
 
 struct Graphs =>
 {
@@ -46,7 +36,7 @@ sub execute_params
 	$args{'output'} = 1 if (not has(\@argkeys,'output'));
 	$args{'suffix'} = '' if (not has(\@argkeys,'suffix'));
 	$args{'each'} = 0 if (not has(\@argkeys,'each'));
-	$args{'groups'} = 0 if (not has(\@argkeys,'group'));
+	$args{'groups'} = 0 if (not has(\@argkeys,'groups'));
 
 	if (not has(\@argkeys,'type'))
 	{
@@ -60,7 +50,7 @@ sub execute_params
 	my $type = $args{'type'};
 	my $output = $args{'output'};
 	my $each = $args{'each'};
-	my $group = $args{'group'};
+	my $groups = $args{'groups'};
 	
 	if (not has(\@validtypes,$type) ) 
 	{
@@ -104,7 +94,7 @@ sub execute_params
 			#print printStructureGraph($rsg);
 			$str = toGML_rule_operation($rsg);
 		}
-		if($output==1 and $each==1 and $group==0)
+		if($output==1 and $each==1 and $groups==0)
 		{	
 			my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
 			foreach my $rsg(@rsgs)
@@ -124,7 +114,7 @@ sub execute_params
 			#print printStructureGraph($rsg);
 			$str = toGML_rule_pattern($rsg);
 		}
-		if($output==1 and $each==1 and $group==0)
+		if($output==1 and $each==1 and $groups==0)
 		{	
 			my @rsgs = map {@$_;} flat($gr->{'RulePatternGraphs'});
 			foreach my $rsg(@rsgs)
