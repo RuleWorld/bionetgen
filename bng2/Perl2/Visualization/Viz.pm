@@ -7,6 +7,7 @@ no warnings 'redefine';
 use Class::Struct;
 
 use StructureGraph;
+use NetworkGraph;
 use GML;
 
 struct VizArgs => 
@@ -78,32 +79,24 @@ sub execute_params
 	my $str = '';
 	my @strs = ();
 	
-	if (not defined $gr->{'RuleNames'})
-	{
-		my @names_arr = ();
-		foreach my $rrule(@rrules)
+	# getting the relevant structures
+	getRuleNames($model);
+	if ($type eq 'rule_operation')
 		{
-			my @names = map {$_->Name;} @$rrule;
-			push @names_arr,\@names;
+		getRuleStructureGraphs($model);
 		}
-		$gr->{'RuleNames'} = \@names_arr;
+	if ($type eq 'rule_pattern')
+		{
+		getRulePatternGraphs($model);
+		}
+	if ($type eq 'rule_network')
+	{	
+		getRuleNetworkGraphs($model);
 	}
 	
+	# print stuff here;
 	if ($type eq 'rule_operation')
 	{
-		if (not defined $gr->{'RuleStructureGraphs'})
-		{
-			my @rsgs_arr = ();
-			my @names_arr = ();
-			my $j = 0;
-			foreach my $i(0..@rrules-1)
-			{
-				my @rrule = @{$rrules[$i]};
-				my @rsgs = map makeRuleStructureGraph($_,$j++), @rrule;
-				push @rsgs_arr, \@rsgs;
-			}
-			$gr->{'RuleStructureGraphs'} = \@rsgs_arr; 
-		}
 		if($output==1 and $each==0)
 		{	
 			my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
@@ -124,18 +117,6 @@ sub execute_params
 	
 	if ($type eq 'rule_pattern')
 	{
-		if (not defined $gr->{'RulePatternGraphs'})
-		{
-			my @rsgs_arr = ();
-			my $j = 0;
-			foreach my $i(0..@rrules-1)
-			{
-				my @rrule = @{$rrules[$i]};
-				my @rsgs = map makeRulePatternGraph($_,$j++), @rrule;
-				push @rsgs_arr, \@rsgs;
-			}
-			$gr->{'RulePatternGraphs'} = \@rsgs_arr; 
-		}
 		if($output==1 and $each==0)
 		{
 			my @rsgs = map {@$_;} flat($gr->{'RulePatternGraphs'});
@@ -154,6 +135,20 @@ sub execute_params
 		}
 	}
 	
+	if ($type eq 'rule_network')
+	{
+		if ($output==1 and $each==0)
+			{
+			my @x = flat(@{$gr->{'RuleNetworkGraphs'}});
+			my $bpg = combine3(\@x);
+			uniqNetworkGraph($bpg);
+			addWildcards($bpg);
+			uniqNetworkGraph($bpg);
+			if ($groups==0) { $str = toGML_rule_network($bpg); }
+			}
+	}
+	
+
 	if ($output==1 and $each==0)
 	{
 		my $suffix = $args{'suffix'};
@@ -183,7 +178,8 @@ sub writeGML
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
 	
 	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
-						'rule_pattern' => 'rule(s) with patterns',	);
+						'rule_pattern' => 'rule(s) with patterns',
+						'rule_network' => 'network of rules and atomic patterns',	);
 	my $outputmsg = $outputstr{$type};
 	
 	my $file = '';
@@ -203,10 +199,86 @@ sub writeGML
     return undef;
 }
 
-
-sub viz_rule_pattern
+# get methods for different graphs
+sub getRuleNames
 {
-
-
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	my @rrules = @{$model->RxnRules};
+	my @names_arr = ();
+	foreach my $rrule(@rrules)
+	{
+		my @names = map {$_->Name;} @$rrule;
+		push @names_arr,\@names;
+	}
+	$gr->{'RuleNames'} = \@names_arr;
+	return;
 }
+sub getRuleStructureGraphs
+{
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	if (not defined $gr->{'RuleStructureGraphs'})
+	{
+		my @rrules = @{$model->RxnRules};
+		my @rsgs_arr = ();
+		my @names_arr = ();
+		my $j = 0;
+		foreach my $i(0..@rrules-1)
+		{
+			my @rrule = @{$rrules[$i]};
+			my @rsgs = map makeRuleStructureGraph($_,$j++), @rrule;
+			push @rsgs_arr, \@rsgs;
+		}
+		$gr->{'RuleStructureGraphs'} = \@rsgs_arr; 
+	}
+	return;
+}
+sub getRulePatternGraphs
+{
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	
+	if (not defined $gr->{'RulePatternGraphs'})
+	{
+		my @rrules = @{$model->RxnRules};
+		my @rsgs_arr = ();
+		my $j = 0;
+		foreach my $i(0..@rrules-1)
+		{
+			my @rrule = @{$rrules[$i]};
+			my @rsgs = map makeRulePatternGraph($_,$j++), @rrule;
+			push @rsgs_arr, \@rsgs;
+		}
+		$gr->{'RulePatternGraphs'} = \@rsgs_arr; 
+	}
+	return;
+}
+sub getRuleNetworkGraphs
+{
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	getRuleStructureGraphs($model);
+	if (not defined $gr->{'RuleNetworkGraphs'})
+	{
+		my @rsgs_arr = @{$gr->{'RuleStructureGraphs'}};
+		my @names_arr = @{$gr->{'RuleNames'}};
+		my @bpgs_arr = ();
+		foreach my $i(0..@rsgs_arr-1)
+		{
+			my @names = @{$names_arr[$i]};
+			my @rsgs = @{$rsgs_arr[$i]};
+			my @bpgs;
+			foreach my $j(0..@rsgs-1)
+				{
+				my $bpg = makeRuleNetworkGraph($rsgs[$j],$names[$j]);
+				push @bpgs, $bpg;
+				}
+			push @bpgs_arr,\@bpgs;
+		}
+		$gr->{'RuleNetworkGraphs'} = \@bpgs_arr;
+	}
+	return;
+}
+
 1;

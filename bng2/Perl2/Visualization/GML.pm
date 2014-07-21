@@ -356,7 +356,7 @@ sub toGML_rule_operation
 }
 sub toGML_rule_pattern
 {
-	my $sg = shift @_; #imports a rule bipartite graph
+	my $sg = shift @_; #imports a rule pattern graph
 	my @nodelist = @{$sg->{'NodeList'}};
 	#remap all ids to integers
 	my @idlist = map{$_->{'ID'}} @nodelist;
@@ -490,6 +490,63 @@ sub toGML_rule_pattern
 	return printGML($gmlgraph);
 	
 }
+
+sub toGML_rule_network
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	
+	my %indhash = indexHash( \@nodelist );
+	my @gmlnodes = ();
+	foreach my $node(@nodelist)
+	{
+		my $id = $indhash{$node};
+		my $name = prettify($node);
+		my $gmlnode = initializeGMLNode($id,$name,$node);
+		push @gmlnodes, $gmlnode;
+	}
+	
+	my @gmledges = ();
+	foreach my $edge( @edgelist )
+	{
+		my @splits = split(":",$edge);
+		my $source = $indhash{$splits[0]};
+		my $target = $indhash{$splits[1]};
+		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
+		push @gmledges,$gmledge;
+	}
+	
+	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8);
+	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
+	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
+		
+	foreach my $node(@gmlnodes)
+	{
+		if($node->{'label'} =~ /^Rule/) 
+			{ styleNode($node,$nodestyle{'Transformation'}); }
+		else
+			{ styleNode($node,$nodestyle{'AtomicPattern'});}		
+	}
+	
+	foreach my $edge(@gmledges)
+	{
+		my $object = $edge->{'object'};
+		my @splits = split ":", $object;
+		my $type = $splits[2];
+		if ($type eq 'Syndel')
+			{
+			if (BipartiteGraph::isSyn($splits[0])) { $type = 'Syn' };
+			if (BipartiteGraph::isDel($splits[0])) { $type = 'Del' };
+			}
+		styleEdge($edge,$edgestyle{$type});
+	}
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGML($gmlgraph);
+}
+
 
 # styling
 my %nodepalette1 = 
