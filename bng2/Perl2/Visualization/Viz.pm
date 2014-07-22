@@ -17,6 +17,7 @@ struct Graphs =>
 	'RuleStructureGraphs' => '@',
 	'RulePatternGraphs' => '@',
 	'RuleGroups' => '@', # array of rule names
+	'Background' => '@', # array of atomic patterns
 };
 
 sub uniq  { my %seen = (); grep { not $seen{$_}++ } @_; }
@@ -38,6 +39,8 @@ sub execute_params
 	$args{'suffix'} = '' if (not has(\@argkeys,'suffix'));
 	$args{'each'} = 0 if (not has(\@argkeys,'each'));
 	$args{'groups'} = 0 if (not has(\@argkeys,'groups'));
+	$args{'background'} = 1 if (not has(\@argkeys,'background'));
+	$args{'except'} = [] if (not has(\@argkeys,'except'));
 
 	if (not has(\@argkeys,'type'))
 	{
@@ -52,6 +55,8 @@ sub execute_params
 	my $output = $args{'output'};
 	my $each = $args{'each'};
 	my $groups = $args{'groups'};
+	my $background = $args{'background'};
+	my $except = $args{'except'};
 	
 	if (not has(\@validtypes,$type) ) 
 	{
@@ -135,6 +140,12 @@ sub execute_params
 			uniqNetworkGraph($bpg);
 			addWildcards($bpg);
 			uniqNetworkGraph($bpg);
+			
+			if ($background==0)
+			{
+				getBackground($model,$except);
+				filterNetworkGraph($bpg,$gr->{'Background'});
+			}
 			if ($groups==0) { $str = toGML_rule_network($bpg); }
 			if ($groups==1)
 			{
@@ -281,13 +292,42 @@ sub getRuleGroups
 {
 	my $model = shift @_;
 	my $gr = $model->VizGraphs;
-	getRuleNetworkGraphs($model);
 	if (not defined $gr->{'RuleGroups'})
 	{
+		getRuleNetworkGraphs($model);
 		my $bpg = combine3([flat(@{$gr->{'RuleNetworkGraphs'}})]);
 		uniqNetworkGraph($bpg);
 		$gr->{'RuleGroups'} = [makeRuleGroups($bpg)];
 	}
 	return;
 }
+
+sub getBackground
+{
+	my $model = shift @_;
+	my $except = @_ ? shift @_ : [];
+	
+	my $gr = $model->VizGraphs;
+	
+	if (not defined($gr->{'Background'}))
+	{
+		getRuleStructureGraphs($model);
+		my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
+		my @trs = uniq(map { getTransformations($_); } @rsgs);
+		my %added;
+		my %re;
+		my %pr;
+		foreach my $tr(@trs)
+		{	
+			my ($reac,$prod) = getReactantsProducts($tr);
+			# dang, Perl is awesome! 
+			map { $re{$_}++ if(not $added{$_}++); } @$reac;
+			map { $pr{$_}++ if(not $added{$_}++); } @$prod;
+		}
+		my @background = grep { has($except,$_)==0; } keys %re;
+		$gr->{'Background'} = \@background;
+	}
+	return;
+}
+
 1;

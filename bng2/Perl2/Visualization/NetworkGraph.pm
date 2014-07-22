@@ -408,6 +408,24 @@ sub getSyndelContext
 	return @syndel;
 }
 
+sub getTransformations
+{
+	my $rsg = shift @_;
+	my @nodelist = @{$rsg->{'NodeList'}};
+	my @graphop = hasType(\@nodelist,'GraphOp');
+	my @tr = map {makeTransformation(\@nodelist,$_);} @graphop;
+	return @tr;
+}
+sub reverseTransformation
+{
+	my $tr = shift @_; #unprettified
+	my @splits = reverse split('->',prettify($tr));
+	#my @splits2 = map ( join(',',sort split(',',$_ =~ s/\s//g)), @splits);
+	sub clean { $_ =~ s/\s//g; return $_; }
+	my @splits2 = map ( join(',',sort split(',',clean($_))), @splits);
+	my $tr2 = unprettify(join '->',@splits2 );
+	return $tr2;
+}
 
 # make graph methods
 sub makeRuleNetworkGraph
@@ -488,6 +506,8 @@ sub makeRuleNetworkGraph
 	
 }
 
+
+# do things to network graphs
 sub uniqNetworkGraph
 {
 	my $bpg = shift(@_);
@@ -526,6 +546,34 @@ sub makeRuleGroups
 	return uniq(values %reversehash);
 }
 
-
+sub filterNetworkGraph
+{
+	my $bpg = shift @_;
+	my $filter = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my %nodetype = %{$bpg->{'NodeType'}};
+	
+	my @new_nodelist = grep { has($filter,$_)==0; } @nodelist;
+	my %new_nodetype = map { $_=>$nodetype{$_} } @new_nodelist;
+	
+	my @removed_edges;
+	my @remove1 = 	grep { 
+					my $x = $_; 
+					$x =~ /.*:(.*):.*/; 
+					has($filter,$1)==1;
+					} @edgelist;
+	my @remove2 = 	grep { 
+					my $x = $_; 
+					$x =~ /(.*):.*:.*/; 
+					has($filter,$1)==1;
+					} @edgelist;
+	my @new_edgelist = grep { has([(@remove1,@remove2)],$_)==0;} @edgelist;
+	
+	$bpg->{'NodeList'} = \@new_nodelist;
+	$bpg->{'EdgeList'} = \@new_edgelist;
+	$bpg->{'NodeType'} = \%new_nodetype;
+	return;
+}
 
 1;
