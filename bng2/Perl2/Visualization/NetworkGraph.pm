@@ -496,10 +496,34 @@ sub uniqNetworkGraph
 	return;
 }
 
-sub ruleGroups
+sub makeRuleGroups
 {
-
-
+	my $bpg = shift @_;
+	my %nodetype = %{$bpg->{'NodeType'}};
+	my @rules = grep { $nodetype{$_} eq 'Rule' } keys %nodetype;
+	my @edges = grep { $_ =~ /:(Reactant|Product)/} @{$bpg->{'EdgeList'}} ;
+	
+	my %reacprodhash;
+	@reacprodhash { @rules } = 
+		map  
+			{
+			my $rule = $_;
+			join " ",
+			sort { $a cmp $b }
+			map { $_ =~ /$rule:(.*):.*/; $1; }
+			grep { $_ =~ /$rule:.*:.*/ } 
+			@edges; 
+			} @rules;
+	my %reversehash;
+	my @vals = uniq(values %reacprodhash);
+	@reversehash { @vals } = 
+		map
+		{
+			my $x = $_;
+			[grep{ $reacprodhash{$_} eq $x } @rules]; 
+		}	@vals;
+		
+	return uniq(values %reversehash);
 }
 
 

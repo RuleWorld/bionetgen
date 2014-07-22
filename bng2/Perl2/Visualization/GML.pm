@@ -494,16 +494,46 @@ sub toGML_rule_pattern
 sub toGML_rule_network
 {
 	my $bpg = shift @_;
+	my @groups = @_ ? @{shift @_} : ();
+	
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
+	my %nodetype = %{$bpg->{'NodeType'}};
 	
-	my %indhash = indexHash( \@nodelist );
+	my %indhash = indexHash( [(@nodelist,@groups)] );
+
 	my @gmlnodes = ();
+	
+	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8);
+	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
+	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
+	
+	my %gidhash;
+	if (@groups)
+	{
+		foreach my $arr(@groups)
+		{
+		@gidhash { @$arr } = ($indhash{$arr}) x @$arr;
+		}
+	}
+	
 	foreach my $node(@nodelist)
 	{
 		my $id = $indhash{$node};
 		my $name = prettify($node);
 		my $gmlnode = initializeGMLNode($id,$name,$node);
+		styleNode($gmlnode,$nodestyle{$nodetype{$node}});
+		$gmlnode->{'gid'} = $gidhash{$node} if (has([keys %gidhash],$node));
+		push @gmlnodes, $gmlnode;
+	}
+	
+	foreach my $node(@groups)
+	{
+		my $id = $indhash{$node};
+		my $name = '';
+		my $gmlnode = initializeGMLNode($id,$name,join("",@$node));
+		styleNode($gmlnode,$nodestyle{'Group'});
+		$gmlnode->{'isGroup'} = 1;
 		push @gmlnodes, $gmlnode;
 	}
 	
@@ -513,34 +543,13 @@ sub toGML_rule_network
 		my @splits = split(":",$edge);
 		my $source = $indhash{$splits[0]};
 		my $target = $indhash{$splits[1]};
+		my $type = $splits[2];
 		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
+		styleEdge($gmledge,$edgestyle{$type});
 		push @gmledges,$gmledge;
 	}
 	
-	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8);
-	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
-	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
-		
-	foreach my $node(@gmlnodes)
-	{
-		if($node->{'label'} =~ /^Rule/) 
-			{ styleNode($node,$nodestyle{'Transformation'}); }
-		else
-			{ styleNode($node,$nodestyle{'AtomicPattern'});}		
-	}
 	
-	foreach my $edge(@gmledges)
-	{
-		my $object = $edge->{'object'};
-		my @splits = split ":", $object;
-		my $type = $splits[2];
-		if ($type eq 'Syndel')
-			{
-			if (BipartiteGraph::isSyn($splits[0])) { $type = 'Syn' };
-			if (BipartiteGraph::isDel($splits[0])) { $type = 'Del' };
-			}
-		styleEdge($edge,$edgestyle{$type});
-	}
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;

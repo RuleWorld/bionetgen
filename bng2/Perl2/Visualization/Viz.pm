@@ -16,7 +16,7 @@ struct Graphs =>
 	'RuleNames' => '@',
 	'RuleStructureGraphs' => '@',
 	'RulePatternGraphs' => '@',
-	'RuleGroups' => '@',
+	'RuleGroups' => '@', # array of rule names
 };
 
 sub uniq  { my %seen = (); grep { not $seen{$_}++ } @_; }
@@ -24,6 +24,7 @@ sub has { scalar grep ( $_ eq $_[1], @{$_[0]}); }
 sub flat  { map @$_, @_; }
 sub uniqadd { if (not has($_[0],$_[1]) ) {push @{$_[0]}, $_[1] ; }}
 sub indexHash { my @x = @{$_[0]}; map { $x[$_]=>$_ } 0..@x-1; }
+
 
 
 sub execute_params
@@ -128,25 +129,30 @@ sub execute_params
 	if ($type eq 'rule_network')
 	{
 		if ($output==1 and $each==0)
-			{
+		{
 			my @x = flat(@{$gr->{'RuleNetworkGraphs'}});
 			my $bpg = combine3(\@x);
 			uniqNetworkGraph($bpg);
 			addWildcards($bpg);
 			uniqNetworkGraph($bpg);
 			if ($groups==0) { $str = toGML_rule_network($bpg); }
+			if ($groups==1)
+			{
+				getRuleGroups($model);
+				$str = toGML_rule_network($bpg,$model->VizGraphs->{'RuleGroups'});
 			}
+		}
 	}
 	
 
 	if ($output==1 and $each==0)
 	{
 		my $suffix = $args{'suffix'};
-		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);
+		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'groups'=>$groups);
 		writeGML(\%params);
 	}
 
-	if ($output==1 and $each==1)
+	if ($output==1 and $each==1 and $groups==0)
 	{
 		my @names = map {@$_;} flat($gr->{'RuleNames'});
 		map { 
@@ -271,4 +277,17 @@ sub getRuleNetworkGraphs
 	return;
 }
 
+sub getRuleGroups
+{
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	getRuleNetworkGraphs($model);
+	if (not defined $gr->{'RuleGroups'})
+	{
+		my $bpg = combine3([flat(@{$gr->{'RuleNetworkGraphs'}})]);
+		uniqNetworkGraph($bpg);
+		$gr->{'RuleGroups'} = [makeRuleGroups($bpg)];
+	}
+	return;
+}
 1;
