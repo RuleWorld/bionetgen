@@ -106,6 +106,8 @@ sub printGML
 			{ $string1 .= "outline".$q1.$node->{'outline'}.$q2;}
 		if ($node->{'outlineStyle'})
 			{$string1 .= "outlineStyle".$q1.$node->{'outlineStyle'}.$q2;}
+		#if ($node->{'closed'})
+		#	{$string1 .= "closed 1";}
 		$string1 = "graphics [ ".$string1." ]";
 		
 		# labelgraphics
@@ -124,6 +126,7 @@ sub printGML
 			{$string .= "isGroup ".$node->{'isGroup'}." ";}
 		if (defined $node->{'gid'} and length($node->{'gid'}) > 0)
 			{$string .= "gid".$q1.$node->{'gid'}.$q2;}
+		
 		
 		$string = "node [".$string." ".$string1." ".$string2." ]";
 		push @nodestrings, $string;
@@ -494,46 +497,46 @@ sub toGML_rule_pattern
 sub toGML_rule_network
 {
 	my $bpg = shift @_;
-	my @groups = @_ ? @{shift @_} : ();
+	my @groups = ();
+	#my @groups = @_ ? @{shift @_} : ();
+	#my $closed = @_ ? shift @_ : 0;
 	
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my %nodetype = %{$bpg->{'NodeType'}};
 	
-	my %indhash = indexHash( [(@nodelist,@groups)] );
+	
 
 	my @gmlnodes = ();
 	
-	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8);
+	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8,'RuleGroup'=>6);
 	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
 	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
 	
+	# processing node classes
 	my %gidhash;
-	if (@groups)
+	my %isgroup;
+	my @classnodes;
+	my @classed;
+	my %classes;
+	if (defined $bpg->{'NodeClass'})
 	{
-		foreach my $arr(@groups)
-		{
-		@gidhash { @$arr } = ($indhash{$arr}) x @$arr;
-		}
+		%classes = %{$bpg->{'NodeClass'}};
+		@classnodes = uniq(values %classes);
+		push @nodelist, @classnodes;
+		@classed = uniq(keys %classes);
 	}
 	
+	my %indhash = indexHash( [(@nodelist,@groups)] );
 	foreach my $node(@nodelist)
 	{
 		my $id = $indhash{$node};
 		my $name = prettify($node);
 		my $gmlnode = initializeGMLNode($id,$name,$node);
+		#$gmlnode->{'gid'} = $gidhash{$node} if (has([keys %gidhash],$node));
+		$gmlnode->{'gid'} = $indhash{$classes{$node}} if (has(\@classed,$node)==1);
+		$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);
 		styleNode($gmlnode,$nodestyle{$nodetype{$node}});
-		$gmlnode->{'gid'} = $gidhash{$node} if (has([keys %gidhash],$node));
-		push @gmlnodes, $gmlnode;
-	}
-	
-	foreach my $node(@groups)
-	{
-		my $id = $indhash{$node};
-		my $name = '';
-		my $gmlnode = initializeGMLNode($id,$name,join("",@$node));
-		styleNode($gmlnode,$nodestyle{'Group'});
-		$gmlnode->{'isGroup'} = 1;
 		push @gmlnodes, $gmlnode;
 	}
 	

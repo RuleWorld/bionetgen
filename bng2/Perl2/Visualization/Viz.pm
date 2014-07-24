@@ -18,6 +18,7 @@ struct Graphs =>
 	'RulePatternGraphs' => '@',
 	'RuleGroups' => '@', # array of rule names
 	'Background' => '@', # array of atomic patterns
+	'Classes' => '%', # classname => \@arrayofnodes
 };
 
 sub uniq  { my %seen = (); grep { not $seen{$_}++ } @_; }
@@ -41,6 +42,8 @@ sub execute_params
 	$args{'groups'} = 0 if (not has(\@argkeys,'groups'));
 	$args{'background'} = 1 if (not has(\@argkeys,'background'));
 	$args{'except'} = [] if (not has(\@argkeys,'except'));
+	$args{'collapse'} = 0 if (not has(\@argkeys,'collapse'));
+	$args{'filter'} = {} if (not has(\@argkeys,'collapse'));
 
 	if (not has(\@argkeys,'type'))
 	{
@@ -57,6 +60,9 @@ sub execute_params
 	my $groups = $args{'groups'};
 	my $background = $args{'background'};
 	my $except = $args{'except'};
+	my $collapse = $args{'collapse'};
+	my $filter = $args{'filter'};
+	#my $closed = $args{'closed'};
 	
 	if (not has(\@validtypes,$type) ) 
 	{
@@ -140,6 +146,12 @@ sub execute_params
 			uniqNetworkGraph($bpg);
 			addWildcards($bpg);
 			uniqNetworkGraph($bpg);
+			if (defined $filter)
+			{ 
+				my @items= @{$filter->{'items'}}; 
+				my $level = $filter->{'level'};
+				filterNetworkGraphByList($bpg,\@items,$level);
+			}
 			
 			if ($background==0)
 			{
@@ -150,7 +162,12 @@ sub execute_params
 			if ($groups==1)
 			{
 				getRuleGroups($model);
-				$str = toGML_rule_network($bpg,$model->VizGraphs->{'RuleGroups'});
+				my $rgs = $model->VizGraphs->{'RuleGroups'};
+				makeRuleClasses($bpg,$rgs);
+				# placeholder: add other classes here
+				if($collapse==1)
+					{ $bpg = collapseNetworkGraph($bpg); }
+				$str = toGML_rule_network($bpg);
 			}
 		}
 	}

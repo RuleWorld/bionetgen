@@ -14,6 +14,7 @@ struct NetworkGraph =>
 	'NodeList' => '@', # array of strings
 	'EdgeList' => '@', # array of strings
 	'NodeType' => '%', # a hash indicating each node type
+	'NodeClass' => '%', # a hash indicating equivalence class
 	'Name' => '$', # a name which might come in handy to compare/combine rules
 	# of the form <transformationstring>:<atomicpatternstring>:<edgetype>
 	# or <wildcardpattern>:<atomicpatternstring>:Wildcard
@@ -152,7 +153,8 @@ sub printNetworkGraph
 {
 	my $bpg = shift @_;
 	print "Nodes:\n";
-	print map $_."\n", @{$bpg->{'NodeList'}};
+	my %nodetype = %{$bpg->{'NodeType'}};
+	print map $_.":".$nodetype{$_}."\n", @{$bpg->{'NodeList'}};
 	print "Edges:\n";
 	print map $_."\n", @{$bpg->{'EdgeList'}};
 	print "\n";
@@ -520,36 +522,54 @@ sub makeRuleGroups
 {
 	my $bpg = shift @_;
 	my %nodetype = %{$bpg->{'NodeType'}};
-	my @rules = grep { $nodetype{$_} eq 'Rule' } keys %nodetype;
+	my @rules = grep { $nodetype{$_} eq 'Rule' } @{$bpg->{'NodeList'}};
 	my @edges = grep { $_ =~ /:(Reactant|Product)/} @{$bpg->{'EdgeList'}} ;
 	
+	# get a list of reactants and products for each rule, "vals"
 	my %reacprodhash;
 	@reacprodhash { @rules } = 
 		map  
 			{
 			my $rule = $_;
-			join " ",
-			sort { $a cmp $b }
-			map { $_ =~ /$rule:(.*):.*/; $1; }
-			grep { $_ =~ /$rule:.*:.*/ } 
-			@edges; 
+			my $x = join " ", sort {$a cmp $b}
+					map { $_ =~ /$rule:(.*):.*/; $1; }
+					grep { $_ =~ /$rule:.*:.*/ } 
+					@edges; 
+			#print $rule.":".$x."\n"; 
+			$x;
 			} @rules;
-	my %reversehash;
-	my @vals = uniq(values %reacprodhash);
-	@reversehash { @vals } = 
-		map
-		{
-			my $x = $_;
-			[grep{ $reacprodhash{$_} eq $x } @rules]; 
-		}	@vals;
-		
-	return uniq(values %reversehash);
+	
+	
+	my @vals = uniq(values(%reacprodhash));
+	my @rulegroups = ();
+	my @reacprods = ();
+	# make groups from rules, based on similar reacprods
+	# all these hoops are because I want to preserve order
+	# in which rules are added to groups
+	for(my $i=0;$i<@rules;$i++)
+	{
+		my $rule = $rules[$i];
+		my $reacprod = $reacprodhash{$rule};
+
+		push @reacprods, $reacprod if(has(\@reacprods,$reacprod)==0);
+		for(my $j=0;$j<scalar @reacprods;$j++)
+			{
+			if ($reacprods[$j] eq $reacprod) 
+				{
+				if (not defined $rulegroups[$j]) { $rulegroups[$j] = []; }
+				push @{$rulegroups[$j]}, $rule;
+				}
+			}
+	}
+	#print map {join(' ',@$_)."\n";} @rulegroups;
+	return @rulegroups;
 }
 
 sub filterNetworkGraph
 {
 	my $bpg = shift @_;
 	my $filter = shift @_;
+
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my %nodetype = %{$bpg->{'NodeType'}};
@@ -576,4 +596,112 @@ sub filterNetworkGraph
 	return;
 }
 
+sub filterNetworkGraphByList
+{
+	my $bpg = shift @_;
+	my @items = @{shift @_};
+	my $level = @_ ? shift @_ : 1;
+	
+	my @nodes = @{$bpg->{'NodeList'}};
+	my @edges = @{$bpg->{'EdgeList'}};
+	
+	for (my $i=1; $i<=$level; $i++)
+	{
+		my @items2=();
+		foreach my $edge(@edges)
+		{
+			$edge =~ /(.*):(.*):.*/;
+			my $x = $1; my $y = $2;
+			next if(has(\@items,$x)==has(\@items,$y));
+			if(has(\@items,$x)==0) { push @items2,$x; }
+			if(has(\@items,$y)==0) { push @items2,$y; }
+			#print scalar @items2;print "\n";
+		}
+		push @items,uniq(@items2);
+	}
+	#print @items;
+	@items = uniq(@items);
+	my @remove = grep { has(\@items,$_)==0; } @{$bpg->{'NodeList'}};
+	filterNetworkGraph($bpg,\@remove);
+	uniqNetworkGraph($bpg);
+	return;
+}
+
+sub makeRuleClasses
+{
+	my $bpg = shift @_;
+	my @rgs = @{shift @_}; # rule groups
+	my $pre = "RG";
+	my %classes;
+	# Rule1 => RG1
+	#map { @classes{@{$rgs[$_]}} = ($pre.$_) x @{$rgs[$_]};} 0..@rgs-1;
+	# note: $bpg may have a filtered node set. 
+	# so we need to filter the rule groups as well 
+	# to only show the relevant ones
+	foreach my $i(0..@rgs-1)
+	{
+		my @rg = @{$rgs[$i]};
+		my @rules = grep { has(\@rg,$_)==1 } @{$bpg->{'NodeList'}};
+		if(@rules) { @classes{@rules} = ($pre.$i) x @rules };
+	}
+	$bpg->{'NodeClass'} = {} if( not defined($bpg->{'NodeClass'}) );
+	
+	my $cl = $bpg->{'NodeClass'};
+	map { $$cl{$_} = $classes{$_}; } keys %classes;
+
+	my $ty = $bpg->{'NodeType'};
+	@$ty { values %classes } = ('RuleGroup') x scalar values %classes;
+ 	return;
+}
+
+sub collapseNetworkGraph
+{
+	my $bpg = shift @_;
+	my %classes = %{$bpg->{'NodeClass'}};
+	
+	my @classed = keys %classes;
+	my @edges = @{$bpg->{'EdgeList'}};
+	
+	my @edges2;
+	map { push @edges2, $_; } @edges;
+	
+	my $edit = 1;
+	while ($edit>0)
+	{
+		my @edges3;
+		$edit = 0;
+		foreach my $edge(@edges2)
+		{
+			foreach my $node(@classed)
+			{
+				if($edge =~ /$node:.*:.*/)  { $edge =~ s/($node):/$classes{$node}:/;  $edit++;	}
+				if($edge =~ /.*:$node:.*/)  { $edge =~ s/:($node):/:$classes{$node}:/; $edit++; }			
+			}
+		push @edges3,$edge;
+		}
+		@edges2 = uniq(@edges3);
+	}
+	
+	# recompiling $bpg
+	my @nodes2;
+	foreach my $edge(@edges2)
+	{
+		$edge =~ /(.*):(.*):.*/;
+		push @nodes2, $1;
+		push @nodes2, $2;
+	}
+	@nodes2 = uniq(@nodes2);
+	
+	my %nodetype2;
+	my %nodetype = %{$bpg->{'NodeType'}};
+	@nodetype2 { @nodes2 } = @nodetype { @nodes2 };
+	
+	my $bpg2 = NetworkGraph->new();
+	$bpg2->{'NodeList'} = \@nodes2;
+	$bpg2->{'EdgeList'} = \@edges2;
+	$bpg2->{'NodeType'} = \%nodetype2;
+	return $bpg2;	
+}
+
 1;
+
