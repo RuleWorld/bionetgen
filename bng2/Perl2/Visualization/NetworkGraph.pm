@@ -524,18 +524,20 @@ sub makeRuleGroups
 	my %nodetype = %{$bpg->{'NodeType'}};
 	my @rules = grep { $nodetype{$_} eq 'Rule' } @{$bpg->{'NodeList'}};
 	my @edges = grep { $_ =~ /:(Reactant|Product)/} @{$bpg->{'EdgeList'}} ;
+
 	
 	# get a list of reactants and products for each rule, "vals"
 	my %reacprodhash;
 	@reacprodhash { @rules } = 
 		map  
 			{
-			my $rule = $_;
+			my $rule = quotemeta $_;
 			my $x = join " ", sort {$a cmp $b}
 					map { $_ =~ /$rule:(.*):.*/; $1; }
 					grep { $_ =~ /$rule:.*:.*/ } 
 					@edges; 
-			#print $rule.":".$x."\n"; 
+			
+			#print $rule.":".$x."\n";
 			$x;
 			} @rules;
 	
