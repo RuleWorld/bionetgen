@@ -152,13 +152,59 @@ sub makeEdge
 sub printNetworkGraph
 {
 	my $bpg = shift @_;
-	print "Nodes:\n";
+	my @nodelist = @{$bpg->{'NodeList'}};
 	my %nodetype = %{$bpg->{'NodeType'}};
-	print map $_.":".$nodetype{$_}."\n", @{$bpg->{'NodeList'}};
-	print "Edges:\n";
-	print map $_."\n", @{$bpg->{'EdgeList'}};
-	print "\n";
-	return;
+	
+	#get atomic patterns
+	my @ap = grep { $nodetype{$_} eq 'AtomicPattern' } @nodelist;
+	# get binding sites
+	my @bs = sort {$a cmp $b} grep { $_ !~ /~/ and $_ !~ /\!/ } @ap;
+	# get internal states
+	my @is = sort {$a cmp $b} grep {$_ =~ /~/ } @ap;
+	# get bonds
+	my @bonds = sort {$a cmp $b} grep { $_ =~ /\!/ and $_ !~ /\!\+/ } @ap;
+	# wildcards
+	my @wc = sort {$a cmp $b} grep { $_ =~ /\!\+/ } @ap;
+	# rules
+	my @rules = sort {$a cmp $b} grep { $nodetype{$_} eq 'Rule' } @nodelist;
+	# groups
+	my @groups;
+	my @names;
+	if(defined $bpg->{'NodeClass'})
+	{
+	my %classes = %{$bpg->{'NodeClass'}};
+	@names = uniq(sort values %classes);
+	foreach my $grp(@names)
+		{
+		my @items = sort {$a cmp $b} grep {$classes{$_} eq $grp} keys %classes;
+		push @groups, \@items;
+		}
+	}
+	
+	my @str;
+	if(@bs) { push @str,"Binding Sites:\n".join("\n",@bs)."\n"; }
+	if(@is) { push @str,"Internal States:\n".join("\n",@is)."\n"; }
+	if(@bonds) { push @str,"Bonds:\n".join("\n",@bonds)."\n"; }
+	if(@wc) { push @str,"Wildcards:\n".join("\n",@wc)."\n"; }
+	if(@rules) { push @str,"Rules:\n".join("\n",@rules)."\n"; }
+	if(@groups)
+		{
+		my @grpstrs = map {$names[$_].":".join(" ",@{$groups[$_]}) } 0..@groups-1;
+		push @str,"Groups:\n".join("\n",@grpstrs)."\n";
+		}
+		
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my @reac = sort {$a cmp $b} map {$_ =~ /(.*:.*):.*/} grep {$_ =~ /Reactant$/} @edgelist;
+	my @prod = sort {$a cmp $b} map {$_ =~ /(.*:.*):.*/} grep {$_ =~ /Product$/} @edgelist;
+	my @context = sort {$a cmp $b} map {$_ =~ /(.*:.*):.*/} grep {$_ =~ /Context$/} @edgelist;
+	my @wildcards = sort {$a cmp $b} map {$_ =~ /(.*:.*):.*/} grep {$_ =~ /Wildcard$/} @edgelist;
+	
+	if(@reac) { push @str,"Reactant Relationships:\n".join("\n",@reac)."\n"; }
+	if(@prod) { push @str,"Product Relationships:\n".join("\n",@prod)."\n"; }
+	if(@context) { push @str,"Context Relationships:\n".join("\n",@context)."\n"; }
+	if(@wildcards) { push @str,"Wildcard Relationships:\n".join("\n",@wildcards)."\n"; }
+	
+	return join("\n",@str);
 }
 # text cleaning for atomic patterns and transformations
 sub prettify
@@ -522,7 +568,7 @@ sub makeRuleGroups
 {
 	my $bpg = shift @_;
 	my %nodetype = %{$bpg->{'NodeType'}};
-	my @rules = grep { $nodetype{$_} eq 'Rule' } @{$bpg->{'NodeList'}};
+	my @rules = grep { $nodetype{$_} =~ /Rule/ } @{$bpg->{'NodeList'}};
 	my @edges = grep { $_ =~ /:(Reactant|Product)/} @{$bpg->{'EdgeList'}} ;
 
 	
@@ -631,9 +677,12 @@ sub filterNetworkGraphByList
 
 sub makeRuleClasses
 {
+	my $model = shift @_;
+	my @rgs = @{$model->VizGraphs->{'RuleGroups'}};
+	my $gr = $model->VizGraphs;
 	my $bpg = shift @_;
-	my @rgs = @{shift @_}; # rule groups
-	my $pre = "RG";
+	#my @rgs = @{shift @_}; # rule groups
+	my $pre = "G";
 	my %classes;
 	# Rule1 => RG1
 	#map { @classes{@{$rgs[$_]}} = ($pre.$_) x @{$rgs[$_]};} 0..@rgs-1;
@@ -642,9 +691,10 @@ sub makeRuleClasses
 	# to only show the relevant ones
 	foreach my $i(0..@rgs-1)
 	{
+		++$gr->{'NewName'};
 		my @rg = @{$rgs[$i]};
 		my @rules = grep { has(\@rg,$_)==1 } @{$bpg->{'NodeList'}};
-		if(@rules) { @classes{@rules} = ($pre.$i) x @rules };
+		if(@rules) { @classes{@rules} = ($pre.$gr->{'NewName'}) x @rules };
 	}
 	$bpg->{'NodeClass'} = {} if( not defined($bpg->{'NodeClass'}) );
 	

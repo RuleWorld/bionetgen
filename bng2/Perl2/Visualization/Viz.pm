@@ -19,6 +19,7 @@ struct Graphs =>
 	'RuleGroups' => '@', # array of rule names
 	'Background' => '@', # array of atomic patterns
 	'Classes' => '%', # classname => \@arrayofnodes
+	'NewName' => '$', # just a number to keep track of generated new names
 };
 
 sub uniq  { my %seen = (); grep { not $seen{$_}++ } @_; }
@@ -44,6 +45,7 @@ sub execute_params
 	$args{'except'} = [] if (not has(\@argkeys,'except'));
 	$args{'collapse'} = 0 if (not has(\@argkeys,'collapse'));
 	$args{'filter'} = {} if (not has(\@argkeys,'collapse'));
+	$args{'textonly'} = 0 if (not has(\@argkeys,'textonly'));
 
 	if (not has(\@argkeys,'type'))
 	{
@@ -62,6 +64,8 @@ sub execute_params
 	my $except = $args{'except'};
 	my $collapse = $args{'collapse'};
 	my $filter = $args{'filter'};
+	my $textonly = $args{'textonly'};
+	my $suffix = $args{'suffix'};
 	#my $closed = $args{'closed'};
 	
 	if (not has(\@validtypes,$type) ) 
@@ -74,6 +78,7 @@ sub execute_params
 	{ 
 		my $gr = Graphs->new();
 		$model->VizGraphs($gr);
+		$gr->{'NewName'} = -1;
 	}
 	
 	my $gr = $model->VizGraphs;
@@ -94,9 +99,8 @@ sub execute_params
 	if ($type eq 'rule_network')
 	{	
 		getRuleNetworkGraphs($model);
-	}
+	}	
 	
-	# print stuff here;
 	if ($type eq 'rule_operation')
 	{
 		if($output==1 and $each==0)
@@ -158,20 +162,34 @@ sub execute_params
 				getBackground($model,$except);
 				filterNetworkGraph($bpg,$gr->{'Background'});
 			}
-			if ($groups==0) { $str = toGML_rule_network($bpg); }
+
 			if ($groups==1)
 			{
 				getRuleGroups($model);
-				my $rgs = $model->VizGraphs->{'RuleGroups'};
-				makeRuleClasses($bpg,$rgs);
+				#my $rgs = $model->VizGraphs->{'RuleGroups'};
+				makeRuleClasses($model,$bpg);
 				# placeholder: add other classes here
 				if($collapse==1)
 					{ $bpg = collapseNetworkGraph($bpg); }
+				
+			}
+			if ($textonly==1)
+			{
+				$str = printNetworkGraph($bpg);
+				$output = 0;
+			}
+			elsif($output==1)
+			{
 				$str = toGML_rule_network($bpg);
 			}
 		}
 	}
-	
+	if($textonly==1)
+	{
+		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);	
+		writeText(\%params);
+		$output=0;
+	}
 
 	if ($output==1 and $each==0)
 	{
@@ -190,6 +208,37 @@ sub execute_params
 	}
 	
 	return '';
+}
+
+sub writeText
+{
+	my %params = %{shift @_};
+	my $model = $params{'model'};
+	my $str = $params{'str'};
+	my $prefix = $model->getOutputPrefix();
+	my $type = $params{'type'};
+	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
+	
+	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
+						'rule_pattern' => 'rule(s) with patterns',
+						'rule_network' => 'network of rules and atomic patterns',	);
+	my $outputmsg = $outputstr{$type};
+	
+	my $file = '';
+	$file .= $prefix;
+	$file .= "_".$type;
+	$file .= "_".$suffix if (length $suffix > 0);
+	$file .= ".txt";
+		
+	# write the string to file
+    my $FH;
+    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+    print $FH $str;
+    close $FH;
+
+    # all done
+    print sprintf( "Wrote %s in TXT format to %s.\n", $outputmsg, $file);
+    return undef;
 }
 
 sub writeGML
