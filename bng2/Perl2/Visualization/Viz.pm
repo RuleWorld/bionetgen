@@ -44,7 +44,7 @@ sub execute_params
 	$args{'background'} = 1 if (not has(\@argkeys,'background'));
 	$args{'except'} = [] if (not has(\@argkeys,'except'));
 	$args{'collapse'} = 0 if (not has(\@argkeys,'collapse'));
-	$args{'filter'} = {} if (not has(\@argkeys,'collapse'));
+	#$args{'filter'} = {'items'=>[],} if (not has(\@argkeys,'collapse'));
 	$args{'textonly'} = 0 if (not has(\@argkeys,'textonly'));
 
 	if (not has(\@argkeys,'type'))

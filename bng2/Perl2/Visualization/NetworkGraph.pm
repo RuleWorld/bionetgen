@@ -579,11 +579,11 @@ sub makeRuleGroups
 			{
 			my $rule = quotemeta $_;
 			my $x = join " ", sort {$a cmp $b}
-					map { $_ =~ /$rule:(.*):.*/; $1; }
-					grep { $_ =~ /$rule:.*:.*/ } 
+					map { $_ =~ /^$rule:(.*):.*/; $1; }
+					grep { $_ =~ /^$rule:.*:.*/ } 
 					@edges; 
 			
-			#print $rule.":".$x."\n";
+			print $rule.":".$x."\n";
 			$x;
 			} @rules;
 	
