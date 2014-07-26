@@ -38,6 +38,7 @@ using namespace std;
 #include "util/util.hh"
 
 #include <cmath>
+#include "../mpiConfig.h"
 
 extern "C" int isnan(double);
 
@@ -101,6 +102,14 @@ typedef struct{
     Rxn**			rxn;
     Rxn*			list;
 } Rxn_array;
+
+class mpiParScan{
+public: 
+    bool parallel; 
+    bool par_scan; 
+    string par_name; 
+    double par_value; 
+};
 
 /* I/O parsing routines */
 extern char*  get_line(FILE* infile);
@@ -221,6 +230,7 @@ extern int   print_concentrations_network(FILE* out, double t);
 extern int   finish_print_concentrations_network(FILE* out);
 
 extern FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline);
+extern FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline, mpiParScan* mpi_par_scan);
 extern int   print_group_concentrations_network(FILE* out, double t, bool no_newline);
 extern int   finish_print_group_concentrations_network(FILE* out, bool leave_open);
 
@@ -259,3 +269,5 @@ extern void	  delete_GSP_included();
 static mu::value_type If(mu::value_type v1, mu::value_type v2, mu::value_type v3){
 	return (v1>0.5?v2:v3); // v1 should equal 0.0 or 1.0. Using v1 > 0.5 for 'true' just to be safe.
 }
+extern int client( int argc, char **argv, Group* group, Elt_array* earray, double tau ); 
+extern int send_final( Group* group, Elt_array* earray, double tau ); 

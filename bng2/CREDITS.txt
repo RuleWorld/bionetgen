@@ -85,4 +85,5 @@ Marc Birtwistle <mrbirdy@udel.edu>
 
 Dipak Barua 
    * BNGL to MDL converter.
+   * Parallel BioNetGen implementation
 

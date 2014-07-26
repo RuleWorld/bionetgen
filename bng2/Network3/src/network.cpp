@@ -52,6 +52,9 @@ extern "C" {
 #include "network.h"
 
 #define BUFSIZE 10000
+#if MPI_ENABLED_
+    #include "mpi.h" 
+#endif 
 
 char* get_line(FILE* infile) {
 	char *buf, *retval;
@@ -3034,6 +3037,10 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 	/* Propagation */
 	t_end = (*t) + delta_t;
 	while (1){
+                #if MPI_ENABLED_
+                int final_iter =  client(0, NULL, network.spec_groups, network.species, *t); 
+                #endif
+
 		long n_old, n_new;
 
 		// Integrate one step at a time
@@ -3053,6 +3060,9 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 			CVodeGetNumSteps(cvode_mem, &n_new); // Get new # of steps
 			*n_steps += (double)(n_new - n_old); // Increment total # of steps
 		}
+                #if MPI_ENABLED_
+                if (final_iter) send_final(network.spec_groups, network.species, *t); 
+                #endif
 
 		// Check error status
 		if (error == CV_SUCCESS){
@@ -3330,7 +3340,7 @@ int finish_print_concentrations_network(FILE* out) {
 	return (error);
 }
 
-FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline) {
+FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_newline, mpiParScan* mpi_par_scan) {
 
 	FILE* out;
 	Group* group;
@@ -3345,7 +3355,14 @@ FILE* init_print_group_concentrations_network(char* prefix, int append, bool no_
 		out = NULL;
 		return (out); // exit
 	}*/
-        sprintf(buf, "%s.gdat", prefix);
+        if (mpi_par_scan->parallel) {
+            if (!mpi_par_scan->par_scan) 
+                sprintf(buf, "%s_%d.gdat", prefix, getpid());
+            else 
+                sprintf(buf, "%s_%s_%g.gdat", prefix, mpi_par_scan->par_name.c_str(), mpi_par_scan->par_value); 
+            } 
+        else
+            sprintf(buf, "%s.gdat", prefix);
 
 	if (!(out = fopen(buf, mode))) {
 		++error;
@@ -4924,6 +4941,10 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		exit(1);
 	}
 
+        #if MPI_ENABLED_
+           int final_iter =  client(0, NULL, network.spec_groups, network.species, *t); 
+        #endif
+
 	while (1){
 		// Don't exceed maxStep limit
 		if (GSP.n_steps >= maxStep){
@@ -4979,6 +5000,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		}
 	}
 
+
 	/* Back up to return time */
 	if (t_remain < 0.0){ // No rxn fired
 //		*t += delta_t;
@@ -4995,6 +5017,10 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 
 	/* Set final network concentrations */
 	set_conc_network(GSP.c);
+
+        #if MPI_ENABLED_
+             if (final_iter) send_final(network.spec_groups, network.species, *t); 
+        #endif
 
 //  exit:
 	return (error);

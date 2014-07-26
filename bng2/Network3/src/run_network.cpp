@@ -45,6 +45,10 @@ extern "C" {
 
 #include "network3.hh"
 
+#if MPI_ENABLED_
+#include "parallel/parallel.h"
+#endif
+
 #ifndef RUN_NETWORK_VERSION
 #define RUN_NETWORK_VERSION "3.0"
 #endif
@@ -79,6 +83,9 @@ struct program_times t_elapsed(){
 	return (t_elapsed);
 }
 
+bool mpi = false; 
+mpiParScan mpi_par_scan; 
+
 void print_error(){
 	char *usage=(char*)"run_network  [-bcdefkmsvx] [-a atol] [-g groupfile] [-h seed] [-i start_time] [-o outprefix] [-r rtol] [-t tol] [-z iteration number]";
 	fprintf(stderr,	"Usage:\n%s netfile sample_time n_sample\n",usage);
@@ -88,6 +95,7 @@ void print_error(){
 }
 
 int main(int argc, char *argv[]){
+ 
 	/* Output message */
 	fprintf(stdout, "run_network %s\n", RUN_NETWORK_VERSION);
 	fflush(stdout);
@@ -249,6 +257,12 @@ int main(int argc, char *argv[]){
     		else stepInterval = floor(atof(argv[iarg])); //std::atol(argv[iarg++]);
     		iarg++;
     		break;
+        #if MPI_ENABLED_
+        case 'q': // MPI parallel process  
+                mpi = worker.start_MPI(argv, iarg++, network); 
+                mpi_par_scan.parallel = true; 
+                break; 
+        #endif
     	case '-': // Process long options
 //			cout << argv[iarg-1] << " ";
 			string long_opt(argv[iarg-1]);
@@ -393,6 +407,16 @@ int main(int argc, char *argv[]){
 	/* Rate constants and concentration parameters should now be placed in the parameters block. */
 	net_line_number = 0;
 	rates = read_Elt_array(netfile, &net_line_number, (char*)"parameters", &n_read, 0x0);
+        #if MPI_ENABLED_
+        
+        if (worker.grt.key > 0) {
+            worker.scan_parameter(rates, &network); 
+            mpi_par_scan.par_scan = true; 
+            mpi_par_scan.par_name = worker.grt.par_name; 
+            mpi_par_scan.par_value = worker.grt.par_value; 
+        }
+        #endif 
+
 	fprintf(stdout, "Read %d parameters\n", n_read);
 //	if (n_read < 1) {
 //		fprintf(stderr,"ERROR: Reaction network must have parameters defined to be used as rate constants.\n");
@@ -542,7 +566,7 @@ int main(int argc, char *argv[]){
 	/* Initialize and print initial group concentrations and function values */
 	group_file = NULL;
 	if (spec_groups || (print_func && network.functions.size() > 0)){
-		group_file = init_print_group_concentrations_network(outpre,continuation,print_func);
+		group_file = init_print_group_concentrations_network(outpre,continuation,print_func, &mpi_par_scan);
 		if (print_func & !continuation) init_print_function_values_network(group_file);
 		if (!continuation){
 			print_group_concentrations_network(group_file,t,print_func);
@@ -782,6 +806,7 @@ int main(int argc, char *argv[]){
 		// Do propagation
 		int n_old = 0;
 		for (n = 1; n <= n_sample && t < t_end-network3::TOL && !forceQuit; ++n){
+ 
 			if (n != n_old){
 				if (sample_times) t_out = sample_times[n];
 				else t_out += sample_time;
@@ -994,7 +1019,10 @@ int main(int argc, char *argv[]){
 	outpre = chop_suffix(outpre, ".net");
 	if (propagator == SSA) fprintf(stdout, "TOTAL STEPS: %-16.0f\n", gillespie_n_steps());
 	fprintf(stdout, "Time course of concentrations written to file %s.cdat.\n", outpre);
-	if (n_groups_network()) fprintf(stdout, "Time course of groups written to file %s.gdat.\n", outpre);
+	if (n_groups_network() && !mpi) fprintf(stdout, "Time course of groups written to file %s.gdat.\n", outpre);
+	if (n_groups_network() && mpi && !mpi_par_scan.par_scan) fprintf(stdout, "Time course of groups written to file %s_%d.gdat.\n", outpre, getpid());
+	if (n_groups_network() && mpi && mpi_par_scan.par_scan) fprintf(stdout, "Time course of groups written to file %s_%s_%g.gdat.\n", outpre, mpi_par_scan.par_name.c_str(), mpi_par_scan.par_value);
+
 	if (print_func && network.functions.size() > 0) fprintf(stdout, "Time course of functions written to file %s.gdat.\n", outpre);
 	ptimes = t_elapsed();
 	fprintf(stdout, "Propagation took %.2e CPU seconds\n", ptimes.cpu);
@@ -1023,6 +1051,5 @@ int main(int argc, char *argv[]){
 	// Note that "/^Program times:/" must be last message sent from Network3 (see BNGAction.pm)
 	ptimes = t_elapsed();
 	fprintf(stdout, "Program times:  %.2f CPU s %.2f clock s \n", ptimes.total_cpu, ptimes.total_real);
-
 	return (0);
 }

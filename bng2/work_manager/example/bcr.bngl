@@ -1,0 +1,435 @@
+begin parameters
+# Parameter values of Table 1
+# see Table 1 and Methods section for additional information
+s   = 0.001
+p1	s*3.0e5		# molecules/cell
+p2	10.0		# /sec
+p3	3.0e-4		# /sec
+p4	3.0e-7/s		# /(molecules/cell)/sec
+p5	30.0		# /sec
+p6	3.0e-5/s		# /(molecules/cell)/sec
+p7	0.3		# /sec
+p8	0.1		# /sec
+p9	3.0e-6/s		# /(molecules/cell)/sec
+p10	0.3		# /sec
+p11	1.0e-5/s	# /(molecules/cell)/sec
+p12	1.0e3		# /sec
+p13	30.0		# /sec
+p14	0.1		# /sec
+p15	3.0e-7/s		# /(molecules/cell)/sec
+p16	3.0e-3		# /sec
+p17	1.0e-10/s	# /(molecules/cell)/sec
+p18	1.0e-7/s		# /(molecules/cell)/sec
+p19	1.0e-7/s		# /(molecules/cell)/sec
+p20	3.0e-5/s		# /(molecules/cell)/sec
+p21	1.0e3		# /sec
+p22	3.0e-6/s		# /(molecules/cell)/sec
+p23	3.0e-4/s		# /(molecules/cell)/sec
+p24	1.0		# /sec
+p25	5.0		# dimensionless
+
+# Strength of antigen signal 
+# c=0, tonic signaling; c>0, antigen-induced signaling
+c	0.0		# dimensionless
+
+# Protein copy numbers
+BT 	p1		# total amount of BCR      
+LT    	p1   		# total amount of Lyn
+FT    	p1    		# total amount of Fyn
+PT   	p1   		# total amount of PAG
+CT   	p1   		# total amount of Csk
+ST   	p1    		# total amount of Syk
+
+# Rate constants for association, dissociation and phosphorylation reactions
+# these reactions are illustrated in Fig. 1
+kf1	p4		# 1: Lyn(unique) binds BCR(Y188_Y199~0)
+kr1	p5		# reverse of 1
+kf2a	p6		# 2a: Lyn(SH2) binds BCR(Y188_Y199~P)
+kf2b	p6		# 2b: Lyn(SH2) binds BCR(Y188_Y199~PP)
+kr2a	p7		# reverse of 2a
+kr2b	p8		# reverse of 2b
+kf3	p2		# 3: Lyn(SH2) binds Lyn(Y508~P) in cis
+kr3	p3		# reverse of 3
+kp4a	c*p19		# 4a: Lyn-catalyzed phosphorylation of BCR(Y188_Y199~0) 
+kp4b	c*p19		# 4b: Lyn-catalyzed phosphorylation of BCR(Y188_Y199~P)
+kp4c	c*p20		# 4c: Lyn-catalyzed phosphorylation of BCR(Y188_Y199~0)
+kp4d	c*p20		# 4d: Lyn-catalyzed phosphorylation of BCR(Y188_Y199~P)
+kp5a	c*p19		# 5a: Lyn-catalyzed phosphorylation of BCR(Y196_Y207~0) 
+kp5b	c*p19		# 5b: Lyn-catalyzed phosphorylation of BCR(Y196_Y207~P)
+kp5c	c*p20		# 5c: Lyn-catalyzed phosphorylation of BCR(Y196_Y207~0)
+kp5d	c*p20		# 5d: Lyn-catalyzed phosphorylation of BCR(Y196_Y207~P)
+kp6a	c*p19		# 6a: Lyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp6b	c*p20		# 6b: Lyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp6c	p17		# 6c: Lyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp6d	p18		# 6d: Lyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp7a	c*p19		# 7a: Lyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp7b	c*p20		# 7b: Lyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp7c	p17		# 7c: Lyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp7d	p18		# 7d: Lyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp8a	p21		# 8a: Lyn-catalyzed phosphorylation of PAG(Y387_Y417~0)
+kp8b	p21		# 8b: Lyn-catalyzed phosphorylation of PAG(Y163_Y181~0)
+kp8c	p21		# 8c: Lyn-catalyzed phosphorylation of PAG(Y317~0)
+kf9	p4		# 9: Fyn(unique) binds BCR(Y188_Y199~0)
+kr9	p5		# reverse of 9
+kf10a	p6		# 10a: Fyn(SH2) binds BCR(Y188_Y199~P)
+kf10b	p6		# 10b: Fyn(SH2) binds BCR(Y188_Y199~PP)
+kr10a	p7		# reverse of 10a
+kr10b	p8		# reverse of 10b
+kf11	p2		# 11: Fyn(SH2) binds Fyn(Y531~P) in cis
+kr11	p3		# reverse of 11
+kp12a	c*p19/p25	# 12a: Fyn-catalyzed phosphorylation of BCR(Y196_Y207~0)
+kp12b	c*p19/p25	# 12b: Fyn-catalyzed phosphorylation of BCR(Y196_Y207~P)
+kp12c	c*p20/p25 	# 12c: Fyn-catalyzed phosphorylation of BCR(Y196_Y207~0)
+kp12d	c*p20/p25	# 12d: Fyn-catalyzed phosphorylation of BCR(Y196_Y207~P)
+kp13a	c*p19/p25	# 13a: Fyn-catalyzed phosphorylation of BCR(Y188_Y199~0)
+kp13b	c*p19/p25	# 13b: Fyn-catalyzed phosphorylation of BCR(Y188_Y199~P)
+kp13c	c*p20/p25	# 13c: Fyn-catalyzed phosphorylation of BCR(Y188_Y199~0)
+kp13d	c*p20/p25	# 13d: Fyn-catalyzed phosphorylation of BCR(Y188_Y199~P)
+kp14a	c*p19/p25	# 14a: Fyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp14b	c*p20/p25	# 14b: Fyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp14c	p17		# 14c: Fyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp14d	p18		# 14d: Fyn-catalyzed phosphorylation of Fyn(Y420~0)
+kp15a	c*p19/p25	# 15a: Fyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp15b	c*p20/p25	# 15b: Fyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp15c	p17		# 15c: Fyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp15d	p18		# 15d: Fyn-catalyzed phosphorylation of Lyn(Y397~0)
+kp16a	p21		# 16a: Fyn-catalyzed phosphorylation of PAG(Y387_Y417~0)
+kp16b  0.0		# 16b: Fyn-catalyzed phosphorylation of PAG(Y163_Y181~0)
+kp16c	p21		# 16c: Fyn-catalyzed phosphorylation of PAG(Y317~0)
+kf17	p9		# 17: Syk(tSH2) binds BCR(Y196_Y207~PP)
+kr17	p10		# reverse of 17
+kp18a	c*p22		# 18a: Syk-catalyzed phosphorylation of Syk(Y525_Y526~0)
+kp18b	c*p23		# 18b: Syk-catalyzed phosphorylation of Syk(Y525_Y526~0)
+kf19a	p11		# 19a: Lyn(SH3) binds PAG(PRS2)
+kr19a	p13		# reverse of 19a
+kf19b	p12		# 19b: Lyn(SH3) binds PAG(PRS2)
+kf20a	p6		# 20a: Lyn(SH2) binds PAG(Y387_Y417~P)
+kf20b	p12		# 20b: Lyn(SH2) binds PAG(Y387_Y417~P)
+kr20b	p14		# reverse of 20b (and 19b)
+kf21a	p11		# 21a: Fyn(SH3) binds PAG(PRS1)
+kr21a	p13		# reverse of 21a
+kf21b	p12		# 21b: Fyn(SH3) binds PAG(PRS1)
+kf22a	p6		# 22a: Fyn(SH2) binds PAG(Y163_Y181~P)
+kf22b	p12		# 22b: Fyn(SH2) binds PAG(Y163_Y181~P)
+kr22b	p14		# reverse of 22b (and 21b)
+kf23	p15		# 23: Csk(SH2) binds PAG(Y317~P)
+kr23	p16		# reverse of 23
+kp24	p21		# 24: Csk-catalyzed phosphorylation of Lyn(Y508~0)
+kp25	p21		# 25: Csk-catalyzed phosphorylation of Fyn(Y531~0)
+
+# Rate constants for dephosphorylation reactions
+# these reactions are NOT illustrated in Fig. 1
+kdp26a		p24   	# Dephosphorylation of BCR(Y188_Y199~P)
+kdp26b		p24   	# Dephosphorylation of BCR(Y188_Y199~PP)
+kdp27a		p24   	# Dephosphorylation of BCR(Y196_Y207~P)
+kdp27b		p24   	# Dephosphorylation of BCR(Y196_Y207~PP)
+kdp28a		p24	# Dephosphorylation of Lyn(Y397~P)
+kdp28b		p24	# Dephosphorylation of Lyn(Y508~P)
+kdp29a		p24	# Dephosphorylation of Fyn(Y420~P)
+kdp29b		p24	# Dephosphorylation of Fyn(Y531~P)
+kdp30a		p24	# Dephosphorylation of PAG(Y317~P)
+kdp30b		p24	# Dephosphorylation of PAG(Y387_Y417~P)
+kdp30c		p24	# Dephosphorylation of PAG(Y163_Y181~P)
+kdp31		p24	# Dephosphorylation of Syk(Y525_Y526~P)
+end parameters 
+
+begin molecule types
+# The molecule types are illustrated by nested boxes in Fig. 1
+
+# B cell antigen receptor
+# Y188 and Y199 in the Ig-alpha ITAM are lumped together
+# Y196 and Y207 in the Ig-beta ITAM are lumped together
+# 0, unphosphorylated; P, singly phosphorylated; PP, doubly phosphorylated
+BCR(Y188_Y199~0~P~PP,Y196_Y207~0~P~PP)
+
+# Src-family kinase Lyn
+# Y397, A-loop tyrosine
+# Y508, C-terminal regulatory tyrosine
+# 0, unphosphorylated; P, phosphorylated
+Lyn(unique,SH3,SH2,Y397~0~P,Y508~0~P)
+
+# Src-family kinase Fyn (FynT isoform)
+# Y420, A-loop tyrosine
+# Y531, C-terminal regulatory tyrosine
+# 0, unphosphorylated; P, phosphorylated
+Fyn(unique,SH3,SH2,Y420~0~P,Y531~0~P)
+
+# Protein tyrosine kinase Csk   
+Csk(SH2)
+
+# Adapter protein PAG (aka Cbp)
+# PRS1, proline-rich sequence recognized by SH3 domain of Fyn
+# PRS2, proline-rich sequence recognized by SH3 domain of Lyn
+# Y163 and Y181 are lumped together (docking sites for SH2 domain of Fyn)
+# Y387 and Y417 are lumped together (docking sites for SH2 domain of Lyn)
+# Y317, docking site of Csk
+# 0, unphosphorylated; P, phosphorylated
+PAG(PRS1,PRS2,Y317~0~P,Y163_Y181~0~P,Y387_Y417~0~P)
+
+# Protein tyrosine kinase Syk
+# tSH2, the tandem SH2 domains of Syk are lumped together
+# Y525 and Y526 in the activation loop of Syk are lumped together
+Syk(tSH2,Y525_Y526~0~P)
+end molecule types
+
+begin seed species
+BCR(Y188_Y199~0,Y196_Y207~0)                	BT  
+Lyn(unique,SH3,SH2,Y397~0,Y508~0)            	LT  
+Fyn(unique,SH3,SH2,Y420~0,Y531~0)             	FT 
+PAG(PRS1,PRS2,Y317~0,Y163_Y181~0,Y387_Y417~0) 	PT  
+Csk(SH2)                                      	CT
+Syk(tSH2,Y525_Y526~0)                         	ST
+end seed species
+
+begin reaction rules
+# The following 25 sets of rules are represented by Arrows 1-25 in Fig. 1
+# The rules within a set share a common reaction center
+
+# Arrow 1 
+# unique domain of Lyn binds unphosphorylated Ig-alpha ITAM
+BCR(Y188_Y199~0) + Lyn(unique,SH3,SH2) <-> \
+BCR(Y188_Y199~0!1).Lyn(unique!1,SH3,SH2) kf1, kr1
+
+# Arrow 2 
+# SH2 domain of Lyn binds phosphorylated Ig-alpha ITAM
+BCR(Y188_Y199~P) + Lyn(unique,SH3,SH2) <-> \
+BCR(Y188_Y199~P!1).Lyn(unique,SH3,SH2!1) kf2a, kr2a # singly phosphorylated ITAM     
+BCR(Y188_Y199~PP) + Lyn(unique,SH3,SH2) <-> \
+BCR(Y188_Y199~PP!1).Lyn(unique,SH3,SH2!1) kf2b, kr2b # doubly phosphorylated ITAM
+
+# Arrow 3 
+# autoinhibition of Lyn, SH2 domain of Lyn binds C-terminal pY
+Lyn(unique,SH3,SH2,Y508~P) <-> Lyn(unique,SH3,SH2!1,Y508~P!1) kf3, kr3 
+
+# Arrow 4 
+# Lyn phosphorylates Ig-alpha ITAM
+Lyn(Y397~0).BCR() + BCR(Y188_Y199~0) -> Lyn(Y397~0).BCR() + BCR(Y188_Y199~P) 2*kp4a
+Lyn(Y397~0).BCR() + BCR(Y188_Y199~P) -> Lyn(Y397~0).BCR() + BCR(Y188_Y199~PP) kp4b
+Lyn(Y397~P).BCR() + BCR(Y188_Y199~0) -> Lyn(Y397~P).BCR() + BCR(Y188_Y199~P) 2*kp4c 
+Lyn(Y397~P).BCR() + BCR(Y188_Y199~P) -> Lyn(Y397~P).BCR() + BCR(Y188_Y199~PP) kp4d
+
+# Arrow 5 
+# Lyn phosphorylates Ig-beta ITAM
+Lyn(Y397~0).BCR()+BCR(Y196_Y207~0) -> Lyn(Y397~0).BCR()+BCR(Y196_Y207~P) 2*kp5a
+Lyn(Y397~0).BCR()+BCR(Y196_Y207~P) -> Lyn(Y397~0).BCR()+BCR(Y196_Y207~PP) kp5b
+Lyn(Y397~P).BCR()+BCR(Y196_Y207~0) -> Lyn(Y397~P).BCR()+BCR(Y196_Y207~P) 2*kp5c
+Lyn(Y397~P).BCR()+BCR(Y196_Y207~P) -> Lyn(Y397~P).BCR()+BCR(Y196_Y207~PP) kp5d
+
+# Arrow 6 
+# trans autophosphorylation of Lyn
+# receptor-bound Lyn phosphorylates receptor-bound Lyn
+Lyn(Y397~0).BCR() + BCR().Lyn(Y397~0) -> Lyn(Y397~0).BCR() + BCR().Lyn(Y397~P) kp6a
+Lyn(Y397~P).BCR() + BCR().Lyn(Y397~0) -> Lyn(Y397~P).BCR() + BCR().Lyn(Y397~P) kp6b
+# free Lyn phosphorylates free Lyn 
+Lyn(unique,SH3,SH2,Y397~0,Y508~0) + Lyn(unique,SH3,SH2,Y397~0,Y508~0) -> \ 
+Lyn(unique,SH3,SH2,Y397~0,Y508~0) + Lyn(unique,SH3,SH2,Y397~P,Y508~0) kp6c 
+Lyn(unique,SH3,SH2,Y397~P,Y508~0) + Lyn(unique,SH3,SH2,Y397~0,Y508~0) -> \ 
+Lyn(unique,SH3,SH2,Y397~P,Y508~0) + Lyn(unique,SH3,SH2,Y397~P,Y508~0) kp6d 
+
+# Arrow 7 
+# Lyn phosphorylates Fyn
+# receptor-bound Lyn phosphorylates receptor-bound Fyn 
+Lyn(Y397~0).BCR() + BCR().Fyn(Y420~0) -> Lyn(Y397~0).BCR() + BCR().Fyn(Y420~P) kp7a
+Lyn(Y397~P).BCR() + BCR().Fyn(Y420~0) -> Lyn(Y397~P).BCR() + BCR().Fyn(Y420~P) kp7b
+# free Lyn phosphorylates free Fyn
+Lyn(unique,SH3,SH2,Y397~0,Y508~0) + Fyn(unique,SH3,SH2,Y420~0,Y531~0) -> \ 
+Lyn(unique,SH3,SH2,Y397~0,Y508~0) + Fyn(unique,SH3,SH2,Y420~P,Y531~0)  kp7c
+Lyn(unique,SH3,SH2,Y397~P,Y508~0) + Fyn(unique,SH3,SH2,Y420~0,Y531~0) -> \ 
+Lyn(unique,SH3,SH2,Y397~P,Y508~0) + Fyn(unique,SH3,SH2,Y420~P,Y531~0)  kp7d 
+
+# Arrow 8 
+# Lyn phosphorylates PAG
+Lyn(Y397~P,Y508).PAG(Y387_Y417~0) -> Lyn(Y397~P,Y508).PAG(Y387_Y417~P) kp8a                                       
+Lyn(SH2!1,Y397~P,Y508).PAG(Y163_Y181~0,Y387_Y417~P!1) -> \ 
+Lyn(SH2!1,Y397~P,Y508).PAG(Y163_Y181~P,Y387_Y417~P!1) kp8b  
+Lyn(SH2!1,Y397~P,Y508).PAG(Y317~0,Y387_Y417~P!1) -> \ 
+Lyn(SH2!1,Y397~P,Y508).PAG(Y317~P,Y387_Y417~P!1) kp8c       
+
+# Arrow 9 
+# unique domain of Fyn binds unphosphorylated Ig-alpha ITAM
+BCR(Y188_Y199~0) + Fyn(unique,SH3,SH2) <-> \
+BCR(Y188_Y199~0!1).Fyn(unique!1,SH3,SH2) kf9, kr9
+
+# Arrow 10 
+# SH2 domain of Fyn binds phosphorylated Ig-alpha ITAM
+BCR(Y188_Y199~P) + Fyn(unique,SH3,SH2) <-> \
+BCR(Y188_Y199~P!1).Fyn(unique,SH3,SH2!1) kf10a, kr10a      
+BCR(Y188_Y199~PP) + Fyn(unique,SH3,SH2) <-> \
+BCR(Y188_Y199~PP!1).Fyn(unique,SH3,SH2!1) kf10b, kr10b  
+
+# Arrow 11 
+# autoinhibition of Fyn, SH2 domain of Fyn binds C-terminal pY
+Fyn(unique,SH3,SH2,Y531~P) <-> Fyn(unique,SH3,SH2!1,Y531~P!1) kf11, kr11
+
+# Arrow 12 
+# Fyn phosphorylates Ig-beta ITAM
+Fyn(Y420~0).BCR() + BCR(Y196_Y207~0) -> Fyn(Y420~0).BCR() + BCR(Y196_Y207~P) 2*kp12a
+Fyn(Y420~0).BCR() + BCR(Y196_Y207~P) -> Fyn(Y420~0).BCR() + BCR(Y196_Y207~PP) kp12b
+Fyn(Y420~P).BCR() + BCR(Y196_Y207~0) -> Fyn(Y420~P).BCR() + BCR(Y196_Y207~P) 2*kp12c
+Fyn(Y420~P).BCR() + BCR(Y196_Y207~P) -> Fyn(Y420~P).BCR() + BCR(Y196_Y207~PP) kp12d
+
+# Arrow 13 
+# Fyn phosphorylates Ig-alpha ITAM
+Fyn(Y420~0).BCR() + BCR(Y188_Y199~0) -> Fyn(Y420~0).BCR() + BCR(Y188_Y199~P) 2*kp13a
+Fyn(Y420~0).BCR() + BCR(Y188_Y199~P) -> Fyn(Y420~0).BCR() + BCR(Y188_Y199~PP) kp13b
+Fyn(Y420~P).BCR() + BCR(Y188_Y199~0) -> Fyn(Y420~P).BCR() + BCR(Y188_Y199~P) 2*kp13c
+Fyn(Y420~P).BCR() + BCR(Y188_Y199~P) -> Fyn(Y420~P).BCR() + BCR(Y188_Y199~PP) kp13d
+
+# Arrow 14 
+# trans autophosphorylation of Fyn
+# receptor-bound Fyn phosphorylates receptor-bound Fyn 
+Fyn(Y420~0).BCR() + BCR().Fyn(Y420~0) -> Fyn(Y420~0).BCR() + BCR().Fyn(Y420~P) kp14a
+Fyn(Y420~P).BCR() + BCR().Fyn(Y420~0) -> Fyn(Y420~P).BCR() + BCR().Fyn(Y420~P) kp14b
+# free Fyn phosphorylates free Fyn
+Fyn(unique,SH3,SH2,Y420~0,Y531~0) + Fyn(unique,SH3,SH2,Y420~0,Y531~0) -> \   
+Fyn(unique,SH3,SH2,Y420~0,Y531~0) + Fyn(unique,SH3,SH2,Y420~P,Y531~0)  kp14c  
+Fyn(unique,SH3,SH2,Y420~P,Y531~0) + Fyn(unique,SH3,SH2,Y420~0,Y531~0) -> \   
+Fyn(unique,SH3,SH2,Y420~P,Y531~0) + Fyn(unique,SH3,SH2,Y420~P,Y531~0)  kp14d
+
+# Arrow 15 
+# Fyn phosphorylates Lyn
+# receptor-bound Fyn phosphorylates receptor-bound Lyn 
+Fyn(Y420~0).BCR() + BCR().Lyn(Y397~0) -> Fyn(Y420~0).BCR() + BCR().Lyn(Y397~P) kp15a
+Fyn(Y420~P).BCR() + BCR().Lyn(Y397~0) -> Fyn(Y420~P).BCR() + BCR().Lyn(Y397~P) kp15b
+# free Fyn phosphorylates free Lyn
+Fyn(unique,SH3,SH2,Y420~0,Y531~0) + Lyn(unique,SH3,SH2,Y397~0,Y508~0) -> \  
+Fyn(unique,SH3,SH2,Y420~0,Y531~0) + Lyn(unique,SH3,SH2,Y397~P,Y508~0) kp15c 
+Fyn(unique,SH3,SH2,Y420~P,Y531~0) + Lyn(unique,SH3,SH2,Y397~0,Y508~0) -> \   
+Fyn(unique,SH3,SH2,Y420~P,Y531~0) + Lyn(unique,SH3,SH2,Y397~P,Y508~0) kp15d 
+
+# Arrow 16 
+# Fyn phosphorylates PAG
+Fyn(SH2!1,Y420~P,Y531).PAG(Y163_Y181~P!1,Y387_Y417~0) -> \ 
+Fyn(SH2!1,Y420~P,Y531).PAG(Y163_Y181~P!1,Y387_Y417~P) kp16a
+Fyn(Y420~P,Y531).PAG(Y163_Y181~0)-> Fyn(Y420~P,Y531).PAG(Y163_Y181~P) kp16b # =0.0   
+Fyn(SH2!1,Y420~P,Y531).PAG(Y163_Y181~P!1,Y317~0) -> \ 
+Fyn(SH2!1,Y420~P,Y531).PAG(Y163_Y181~P!1,Y317~P) kp16c          
+
+# Arrow 17 
+# tandem SH2 domains of Syk bind doubly phosphorylated Ig-beta ITAM
+Syk(tSH2) + BCR(Y196_Y207~PP) <-> Syk(tSH2!1).BCR(Y196_Y207~PP!1) kf17, kr17
+
+# Arrow 18 
+# trans autophosphorylation of receptor-bound Syk
+Syk(tSH2!+,Y525_Y526~0) + Syk(tSH2!+,Y525_Y526~0) -> \
+Syk(tSH2!+,Y525_Y526~0) + Syk(tSH2!+,Y525_Y526~P) kp18a
+Syk(tSH2!+,Y525_Y526~P) + Syk(tSH2!+,Y525_Y526~0) -> \
+Syk(tSH2!+,Y525_Y526~P) + Syk(tSH2!+,Y525_Y526~P) kp18b 
+
+# Arrow 19 
+# SH3 domain of Lyn binds PRS2 in PAG
+# association, Lyn is free
+Lyn(unique,SH3,SH2) + PAG(PRS2,Y387_Y417) -> \ 
+Lyn(unique,SH3!1,SH2).PAG(PRS2!1,Y387_Y417) kf19a
+# dissociation
+Lyn(unique,SH3!1,SH2).PAG(PRS2!1,Y387_Y417) -> \ 
+Lyn(unique,SH3,SH2) + PAG(PRS2,Y387_Y417)  kr19a    
+# association, Lyn is tethered to PAG (via SH2 domain-pY interaction)
+# Lyn, already tethered in PAG by SH2, binds PAG via SH3 domain
+Lyn(unique,SH3,SH2!2).PAG(PRS2,Y387_Y417~P!2) -> \ 
+Lyn(unique,SH3!1,SH2!2).PAG(PRS2!1,Y387_Y417~P!2) kf19b
+
+# Arrow 20 
+# SH2 domain of Lyn binds a pY docking site in PAG
+# association, Lyn is free
+Lyn(unique,SH3,SH2) + PAG(PRS2,Y387_Y417~P) -> \ 
+Lyn(unique,SH3,SH2!2).PAG(PRS2,Y387_Y417~P!2) kf20a
+# association, Lyn is tethered to PAG (via SH3 domain-PRS interaction)
+Lyn(unique,SH3!1,SH2).PAG(PRS2!1,Y387_Y417~P) -> \ 
+Lyn(unique,SH3!1,SH2!2).PAG(PRS2!1,Y387_Y417~P!2) kf20b
+# release, breaking two-point attachment
+Lyn(unique,SH3!1,SH2!2).PAG(PRS2!1,Y387_Y417~P!2) -> \ 
+Lyn(unique,SH3,SH2) + PAG(PRS2,Y387_Y417~P)  kr20b  
+
+# Arrow 21 
+# SH3 domain of Fyn binds PRS1 in PAG
+# association, Fyn is free
+Fyn(unique,SH3,SH2) + PAG(PRS1,Y163_Y181) -> \ 
+Fyn(unique,SH3!1,SH2).PAG(PRS1!1,Y163_Y181) kf21a
+# dissociation
+Fyn(unique,SH3!1,SH2).PAG(PRS1!1,Y163_Y181)-> \
+Fyn(unique,SH3,SH2) + PAG(PRS1,Y163_Y181)  kr21a          
+# association, Fyn is tethered to PAG (via SH2 domain-pY interaction)
+Fyn(unique,SH3,SH2!2).PAG(PRS1,Y163_Y181~P!2) -> \ 
+Fyn(unique,SH3!1,SH2!2).PAG(PRS1!1,Y163_Y181~P!2) kf21b
+
+# Arrow 22 
+# SH2 domain of Fyn binds a pY docking site in PAG
+# association, Fyn is free
+Fyn(unique,SH3,SH2) + PAG(PRS1,Y163_Y181~P) -> \ 
+Fyn(unique,SH3,SH2!2).PAG(PRS1,Y163_Y181~P!2) kf22a
+# association, Fyn is tethered to PAG (via SH3 domain-PRS interaction)
+Fyn(unique,SH3!1,SH2).PAG(PRS1!1,Y163_Y181~P) -> \ 
+Fyn(unique,SH3!1,SH2!2).PAG(PRS1!1,Y163_Y181~P!2) kf22b
+# release, breaking two-point attachment     
+Fyn(unique,SH3!1,SH2!2).PAG(PRS1!1,Y163_Y181~P!2) -> \ 
+Fyn(unique,SH3,SH2) + PAG(PRS1,Y163_Y181~P) kr22b   
+
+# Arrow 23 
+# SH2 domain of Csk binds pY317 docking site in PAG
+Csk(SH2) + PAG(Y317~P) <-> Csk(SH2!3).PAG(Y317~P!3) kf23, kr23
+
+# Arrow 24 
+# Csk cis phosphorylates C-terminal Y in Lyn
+Lyn(Y508~0).PAG().Csk() -> Lyn(Y508~P).PAG().Csk() kp24
+
+# Arrow 25 
+# Csk cis phosphorylates C-terminal Y in Fyn
+Fyn(Y531~0).PAG().Csk() -> Fyn(Y531~P).PAG().Csk() kp25
+
+# The following rules are NOT illustrated in Fig. 1
+
+# Dephosphorylation of Ig-alpha
+BCR(Y188_Y199~P) -> BCR(Y188_Y199~0) kdp26a # singly phosphorylated ITAM
+BCR(Y188_Y199~PP) -> BCR(Y188_Y199~P) 2*kdp26b # doubly phosphorylated ITAM
+
+# Dephosphorylation of Ig-beta 
+BCR(Y196_Y207~P) -> BCR(Y196_Y207~0) kdp27a # singly phosphorylated ITAM
+BCR(Y196_Y207~PP) -> BCR(Y196_Y207~P) 2*kdp27b # doubly phosphorylated ITAM
+
+# Dephosphorylation of Lyn
+Lyn(Y397~P) -> Lyn(Y397~0) kdp28a # A-loop tyrosine
+Lyn(Y508~P) -> Lyn(Y508~0) kdp28b # C-terminal regulatory tyrosine
+
+# Dephosphorylation of Fyn
+Fyn(Y420~P) -> Fyn(Y420~0) kdp29a # A-loop tyrosine
+Fyn(Y531~P) -> Fyn(Y531~0) kdp29b # C-terminal regulatory tyrosine
+
+# Dephosphorylation of PAG
+PAG(Y317~P) -> PAG(Y317~0) kdp30a # tyrosine in Csk docking site
+PAG(Y387_Y417~P) -> PAG(Y387_Y417~0) kdp30b # tyrosines in Lyn docking sites
+PAG(Y163_Y181~P) -> PAG(Y163_Y181~0) kdp30c # tyrosines in Fyn docking sites
+
+# Dephosphorylation of Syk
+Syk(Y525_Y526~P) -> Syk(Y525_Y526~0) kdp31 # A-loop tyrosines
+end reaction rules
+
+begin observables
+Molecules  Activated_Syk		Syk(Y525_Y526~P)
+Molecules  Ig_alpha_P           	BCR(Y188_Y199~P)
+Molecules  Ig_alpha_PP          	BCR(Y188_Y199~PP)
+Molecules  Ig_beta_PP           	BCR(Y196_Y207~PP)
+Molecules  Activated_Lyn      	Lyn(Y397~P)  
+Molecules  Autoinhibited_Lyn    	Lyn(Y508~P!+)
+Molecules  Activated_Fyn      	Fyn(Y420~P)  
+Molecules  Autoinhibited_Fyn    	Fyn(Y531~P!+)
+Molecules  PAG1_Csk  	   	PAG(Y317~P!+)
+end observables
+
+# actions
+
+# Enumerate reactions implied by rules
+# output is sent to .net file
+generate_network({overwrite=>1});
+
+# Equilibration at c=0 
+# this step ensures that tonic signaling is in steady state
+# the command below calls the deterministic simulation engine
+simulate_ode({suffix=>"equilibration",t_end=>6000,n_steps=>6000});
+
+
+# Simulate response to a step change in antigen signal
+# the command below changes the value of c (from 0 to 3)
+setParameter("c", 3.0)
+# the command below calls the deterministic simulation engine   
+simulate({method=>"ssa",suffix=>"simulation",t_end=>1000,n_steps=>1000});
