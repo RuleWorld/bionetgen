@@ -5,7 +5,7 @@ use warnings;
 no warnings 'redefine';
 
 use Class::Struct;
-
+use SpeciesGraph;
 use StructureGraph;
 use NetworkGraph;
 use GML;
@@ -16,7 +16,6 @@ struct Graphs =>
 	'RuleNames' => '@',
 	'RuleStructureGraphs' => '@',
 	'RulePatternGraphs' => '@',
-	'RuleGroups' => '@', # array of rule names
 	'Background' => '@', # array of atomic patterns
 	'Classes' => '%', # classname => \@arrayofnodes
 	'NewName' => '$', # just a number to keep track of generated new names
@@ -25,6 +24,16 @@ struct Graphs =>
 sub uniq  { my %seen = (); grep { not $seen{$_}++ } @_; }
 sub has { scalar grep ( $_ eq $_[1], @{$_[0]}); }
 sub flat  { map @$_, @_; }
+sub unquotemeta(;$) {
+    my ($string) = scalar(@_) ? $_[0] : $_;    # quotemeta() "If EXPR is omitted, uses $_."
+    return '' if !defined $string;             # quotemeta() undef behavior
+
+    $string =~ s/(?:\\(?!\\))//g;
+    $string =~ s/(?:\\\\)/\\/g;
+
+    return $string;
+}
+
 sub uniqadd { if (not has($_[0],$_[1]) ) {push @{$_[0]}, $_[1] ; }}
 sub indexHash { my @x = @{$_[0]}; map { $x[$_]=>$_ } 0..@x-1; }
 
@@ -46,6 +55,7 @@ sub execute_params
 	$args{'collapse'} = 0 if (not has(\@argkeys,'collapse'));
 	#$args{'filter'} = {'items'=>[],} if (not has(\@argkeys,'collapse'));
 	$args{'textonly'} = 0 if (not has(\@argkeys,'textonly'));
+	$args{'classes'} = {} if (not has(\@argkeys,'classes'));
 
 	if (not has(\@argkeys,'type'))
 	{
@@ -66,7 +76,22 @@ sub execute_params
 	my $filter = $args{'filter'};
 	my $textonly = $args{'textonly'};
 	my $suffix = $args{'suffix'};
+	my %classdefs = %{$args{'classes'}};
 	#my $closed = $args{'closed'};
+	
+	my @excepts = ();
+	my $ref = getAtomicPatterns($except);
+	if(not ref $ref) { print "\nAtomic Pattern could not be created from ".$ref."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+	else {@excepts = @$ref};
+	
+	my %classes;
+	foreach my $name(keys %classdefs)
+	{
+		# we're converting class1:[item1,item2] to the form item1:class1, item2:class1
+		my $ref = getAtomicPatterns($classdefs{$name});
+		if(not ref $ref) { print "\nAtomic Pattern could not be created from ".$ref."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+		else {@classes {@$ref} = ($name) x @$ref; }
+	}
 	
 	if (not has(\@validtypes,$type) ) 
 	{
@@ -85,6 +110,7 @@ sub execute_params
 	my @rrules = @{$model->RxnRules};
 	my $str = '';
 	my @strs = ();
+	
 	
 	# getting the relevant structures
 	getRuleNames($model);
@@ -145,11 +171,7 @@ sub execute_params
 	{
 		if ($output==1 and $each==0)
 		{
-			my @x = flat(@{$gr->{'RuleNetworkGraphs'}});
-			my $bpg = combine3(\@x);
-			uniqNetworkGraph($bpg);
-			addWildcards($bpg);
-			uniqNetworkGraph($bpg);
+			my $bpg = mergeNetworkGraphs(flat(@{$gr->{'RuleNetworkGraphs'}}));
 			if (defined $filter)
 			{ 
 				my @items= @{$filter->{'items'}}; 
@@ -159,15 +181,15 @@ sub execute_params
 			
 			if ($background==0)
 			{
-				getBackground($model,$except);
+				getBackground($model,\@excepts,$bpg);
 				filterNetworkGraph($bpg,$gr->{'Background'});
 			}
 
 			if ($groups==1)
 			{
-				getRuleGroups($model);
-				#my $rgs = $model->VizGraphs->{'RuleGroups'};
-				makeRuleClasses($model,$bpg);
+				# this method syncs the classes definition
+				# in model, in input and in bpg
+				syncClasses($model,$bpg,\%classes);
 				# placeholder: add other classes here
 				if($collapse==1)
 					{ $bpg = collapseNetworkGraph($bpg); }
@@ -354,16 +376,105 @@ sub getRuleNetworkGraphs
 	return;
 }
 
-sub getRuleGroups
+# other get methods
+sub getAtomicPatterns
+{
+	my @stringarr = @{shift @_};
+	my @x;
+	foreach my $pat(@stringarr)
+	{
+		my $ap = stringToAtomicPattern($pat);
+		if(length($ap) > 0)
+			{
+			push @x, $ap;
+			}
+		else { return $pat; }
+	}
+	#$arr = \@x;
+	return \@x;
+}
+sub syncClasses
 {
 	my $model = shift @_;
+	my $bpg = shift @_;
+	my $classes_in = @_ ? shift @_ : undef;
+	
 	my $gr = $model->VizGraphs;
-	if (not defined $gr->{'RuleGroups'})
+	if(not defined $gr->{'Classes'})
+		{
+		$gr->{'Classes'} = {};
+		}
+		
+	if(not defined $bpg->{'NodeClass'})
+		{
+		$bpg->{'NodeClass'} = {};
+		}
+	
+	# get only the atomic patterns 
+	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
+				@{$bpg->{'NodeList'}};
+	# update bpg and model using %$classes_in
+	if(defined $classes_in)
 	{
-		getRuleNetworkGraphs($model);
-		my $bpg = combine3([flat(@{$gr->{'RuleNetworkGraphs'}})]);
-		uniqNetworkGraph($bpg);
-		$gr->{'RuleGroups'} = [makeRuleGroups($bpg)];
+		my %x = %$classes_in;
+		my @aps2 = grep { has([keys %$classes_in],$_); } @aps;
+		map
+			{
+			$gr->{'Classes'}->{$_} = $classes_in->{$_};
+			$bpg->{'NodeClass'}->{$_} = $classes_in->{$_};
+			} @aps2;
+	
+	}
+	
+	# creating temp hash to hold for each AP
+	# either the class (if classed) or 
+	# its name (if unclassed)
+	my @classed = keys %{$bpg->{'NodeClass'}};
+	my @unclassed = grep has(\@classed,$_)==0, @aps;
+	my %temp;
+	@temp { @classed } = @{$bpg->{'NodeClass'}} { @classed };
+	@temp { @unclassed } = @unclassed;
+	
+	# getting rules
+	my @rules =	map {quotemeta($_)}
+				grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+				@{$bpg->{'NodeList'}};
+	my @edges =	grep { $_ =~ /Reactant|Product$/ }
+				@{$bpg->{'EdgeList'}};
+	my %reacprodhash;
+	foreach my $rule(@rules)
+	{
+		my $reacprodstr = 	join " ",
+						sort {$a cmp $b}
+						uniq map {$temp{$_};}
+						map {$_ =~ /.*:(.*):.*/; $1;}
+						grep { $_ =~ /^$rule:/;}
+						@edges;
+		$reacprodhash{unquotemeta $rule} = $reacprodstr;
+	}
+	
+	# get reacprodstrings that occur multiple times
+	# if it occurs only once, it doesnt need a group
+	# prune this to delete reacprods that occur only once
+	my @reacprods = grep
+					{
+					my $x = $_;
+					scalar (grep { $_ eq $x } values %reacprodhash) >1;
+					} uniq values %reacprodhash;
+	return if (scalar @reacprods == 0);
+	$gr->{'NewName'} = -1 if (not defined $gr->{'NewName'}); 
+	
+	# assigning names to rule groups
+	my %names;
+	@names{ @reacprods } = map 'RG'.++$gr->{'NewName'}, @reacprods;
+	
+	# updating model and bpg classdefs for the grouped rules
+	my @rules2 = 	grep { has(\@reacprods,$reacprodhash{$_}) } 
+					map unquotemeta, @rules;
+	foreach my $rule(@rules2)
+	{
+		$gr->{'Classes'}->{$rule} = $names{$reacprodhash{$rule}};
+		$bpg->{'NodeClass'}->{$rule} = $names{$reacprodhash{$rule}};
 	}
 	return;
 }
@@ -372,6 +483,7 @@ sub getBackground
 {
 	my $model = shift @_;
 	my $except = @_ ? shift @_ : [];
+	my $bpg = @_ ? shift @_ : undef;
 	
 	my $gr = $model->VizGraphs;
 	
@@ -391,7 +503,20 @@ sub getBackground
 			map { $pr{$_}++ if(not $added{$_}++); } @$prod;
 		}
 		my @background = grep { has($except,$_)==0; } keys %re;
+		$gr->{'Background'} = \@background;	
+	}
+	
+	if(defined $bpg)
+	{
+		my @aps = grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
+		my @edges = grep {$_ =~ /Reactant|Product$/} @{$bpg->{'EdgeList'}};
+		my @aps2 = grep {$_ =~ /\(.*\)/} uniq map { $_ =~ /.*:(.*):.*/; $1; } @edges;
+		my @aps3 = grep { has(\@aps2,$_)==0 } @aps;
+		my @background = @{$gr->{'Background'}};
+		push @background, @aps3;
+		@background = uniq @background;
 		$gr->{'Background'} = \@background;
+	
 	}
 	return;
 }

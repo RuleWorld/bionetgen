@@ -509,7 +509,7 @@ sub toGML_rule_network
 
 	my @gmlnodes = ();
 	
-	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8,'RuleGroup'=>6);
+	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8,'RuleGroup'=>6,'PatternGroup'=>6);
 	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
 	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
 	
@@ -525,6 +525,12 @@ sub toGML_rule_network
 		@classnodes = uniq(values %classes);
 		push @nodelist, @classnodes;
 		@classed = uniq(keys %classes);
+		foreach my $item(@classed)
+			{
+			my $type = $nodetype{$item};
+			my $grp = $classes{$item};
+			$nodetype{$grp} = ($type eq 'Rule') ? 'RuleGroup' : 'PatternGroup';
+			}
 	}
 	
 	my %indhash = indexHash( [(@nodelist,@groups)] );

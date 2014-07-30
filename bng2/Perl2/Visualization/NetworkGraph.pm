@@ -8,6 +8,7 @@ use Class::Struct;
 # BNG Modules
 use Viz;
 use StructureGraph;
+use SpeciesGraph;
 
 struct NetworkGraph => 
 { 
@@ -18,7 +19,7 @@ struct NetworkGraph =>
 	'Name' => '$', # a name which might come in handy to compare/combine rules
 	# of the form <transformationstring>:<atomicpatternstring>:<edgetype>
 	# or <wildcardpattern>:<atomicpatternstring>:Wildcard
-	'NodeGroups' => '@' # array of arrayrefs, each being a ref to a group of nodes	
+	
 };
 # is methods for checking
 sub isWildcard{ return ($_[0] =~ /\!\+/) ? 1 : 0; }
@@ -168,17 +169,14 @@ sub printNetworkGraph
 	# rules
 	my @rules = sort {$a cmp $b} grep { $nodetype{$_} eq 'Rule' } @nodelist;
 	# groups
+	my %classes;
+	if(defined $bpg->{'NodeClass'}) {%classes = %{$bpg->{'NodeClass'}};}
+	my @names = sort {$a cmp $b} uniq (values %classes);
 	my @groups;
-	my @names;
-	if(defined $bpg->{'NodeClass'})
+	foreach my $name(@names)
 	{
-	my %classes = %{$bpg->{'NodeClass'}};
-	@names = uniq(sort values %classes);
-	foreach my $grp(@names)
-		{
-		my @items = sort {$a cmp $b} grep {$classes{$_} eq $grp} keys %classes;
-		push @groups, \@items;
-		}
+		my @grp = grep { $classes{$_} eq $name } keys %classes;
+		push @groups,\@grp;
 	}
 	
 	my @str;
@@ -475,6 +473,40 @@ sub reverseTransformation
 	return $tr2;
 }
 
+sub stringToAtomicPattern
+{
+		my $pat = shift @_;
+		my $patstr = $pat;
+		my $sg = SpeciesGraph->new();
+		my $err = SpeciesGraph::readString($sg,\$patstr);
+		my $psg = makePatternStructureGraph($sg);
+		my @nodes = @{$psg->{'NodeList'}};
+		my @ap = uniq(makeAtomicPatterns(\@nodes,\@nodes));
+		
+		my @pats;
+		if($pat =~ /\!/ and $pat !~ /\!\+/) 
+			{
+			@pats = grep { $_ =~ /\!/ } @ap;
+			}
+		elsif($pat =~ /\!\+/) 
+			{ 
+			@pats = grep { $_ =~ /\!\+/ } @ap;
+			}
+		elsif($pat =~ /~/) 
+			{ 
+			@pats = grep { $_ =~ /~/ } @ap;
+			}
+		elsif($pat =~ /\(.{1,}\)/)
+			{
+			@pats = grep { $_ =~ /\(.{1,}\)/ } @ap;
+			}
+		if (scalar @pats != 1) 
+			{
+			return ''
+			}
+	return $pats[0];
+}
+
 # make graph methods
 sub makeRuleNetworkGraph
 {
@@ -563,54 +595,14 @@ sub uniqNetworkGraph
 	$bpg->{'EdgeList'} = [uniq(@{$bpg->{'EdgeList'}})];
 	return;
 }
-
-sub makeRuleGroups
+sub mergeNetworkGraphs
 {
-	my $bpg = shift @_;
-	my %nodetype = %{$bpg->{'NodeType'}};
-	my @rules = grep { $nodetype{$_} =~ /Rule/ } @{$bpg->{'NodeList'}};
-	my @edges = grep { $_ =~ /:(Reactant|Product)/} @{$bpg->{'EdgeList'}} ;
-
-	
-	# get a list of reactants and products for each rule, "vals"
-	my %reacprodhash;
-	@reacprodhash { @rules } = 
-		map  
-			{
-			my $rule = quotemeta $_;
-			my $x = join " ", sort {$a cmp $b}
-					map { $_ =~ /^$rule:(.*):.*/; $1; }
-					grep { $_ =~ /^$rule:.*:.*/ } 
-					@edges; 
-			
-			print $rule.":".$x."\n";
-			$x;
-			} @rules;
-	
-	
-	my @vals = uniq(values(%reacprodhash));
-	my @rulegroups = ();
-	my @reacprods = ();
-	# make groups from rules, based on similar reacprods
-	# all these hoops are because I want to preserve order
-	# in which rules are added to groups
-	for(my $i=0;$i<@rules;$i++)
-	{
-		my $rule = $rules[$i];
-		my $reacprod = $reacprodhash{$rule};
-
-		push @reacprods, $reacprod if(has(\@reacprods,$reacprod)==0);
-		for(my $j=0;$j<scalar @reacprods;$j++)
-			{
-			if ($reacprods[$j] eq $reacprod) 
-				{
-				if (not defined $rulegroups[$j]) { $rulegroups[$j] = []; }
-				push @{$rulegroups[$j]}, $rule;
-				}
-			}
-	}
-	#print map {join(' ',@$_)."\n";} @rulegroups;
-	return @rulegroups;
+	my @x = @_;
+	my $bpg = combine3(\@x);
+	uniqNetworkGraph($bpg);
+	addWildcards($bpg);
+	uniqNetworkGraph($bpg);
+	return $bpg;
 }
 
 sub filterNetworkGraph
@@ -675,36 +667,7 @@ sub filterNetworkGraphByList
 	return;
 }
 
-sub makeRuleClasses
-{
-	my $model = shift @_;
-	my @rgs = @{$model->VizGraphs->{'RuleGroups'}};
-	my $gr = $model->VizGraphs;
-	my $bpg = shift @_;
-	#my @rgs = @{shift @_}; # rule groups
-	my $pre = "G";
-	my %classes;
-	# Rule1 => RG1
-	#map { @classes{@{$rgs[$_]}} = ($pre.$_) x @{$rgs[$_]};} 0..@rgs-1;
-	# note: $bpg may have a filtered node set. 
-	# so we need to filter the rule groups as well 
-	# to only show the relevant ones
-	foreach my $i(0..@rgs-1)
-	{
-		++$gr->{'NewName'};
-		my @rg = @{$rgs[$i]};
-		my @rules = grep { has(\@rg,$_)==1 } @{$bpg->{'NodeList'}};
-		if(@rules) { @classes{@rules} = ($pre.$gr->{'NewName'}) x @rules };
-	}
-	$bpg->{'NodeClass'} = {} if( not defined($bpg->{'NodeClass'}) );
-	
-	my $cl = $bpg->{'NodeClass'};
-	map { $$cl{$_} = $classes{$_}; } keys %classes;
 
-	my $ty = $bpg->{'NodeType'};
-	@$ty { values %classes } = ('RuleGroup') x scalar values %classes;
- 	return;
-}
 
 sub collapseNetworkGraph
 {
@@ -754,6 +717,7 @@ sub collapseNetworkGraph
 	$bpg2->{'NodeType'} = \%nodetype2;
 	return $bpg2;	
 }
+
 
 1;
 
