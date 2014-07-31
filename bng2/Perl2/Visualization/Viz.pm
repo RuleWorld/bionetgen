@@ -172,6 +172,7 @@ sub execute_params
 		if ($output==1 and $each==0)
 		{
 			my $bpg = mergeNetworkGraphs(flat(@{$gr->{'RuleNetworkGraphs'}}));
+			$bpg->{'Collapsed'} = 0;
 			if (defined $filter)
 			{ 
 				my @items= @{$filter->{'items'}}; 

@@ -19,6 +19,8 @@ struct NetworkGraph =>
 	'Name' => '$', # a name which might come in handy to compare/combine rules
 	# of the form <transformationstring>:<atomicpatternstring>:<edgetype>
 	# or <wildcardpattern>:<atomicpatternstring>:Wildcard
+	'Merged'=> 0,
+	'Collapsed'=>0,
 	
 };
 # is methods for checking
@@ -171,13 +173,40 @@ sub printNetworkGraph
 	# groups
 	my %classes;
 	if(defined $bpg->{'NodeClass'}) {%classes = %{$bpg->{'NodeClass'}};}
-	my @names = sort {$a cmp $b} uniq (values %classes);
-	my @groups;
-	foreach my $name(@names)
-	{
-		my @grp = grep { $classes{$_} eq $name } keys %classes;
-		push @groups,\@grp;
-	}
+
+	my @rulegroups;
+	my @patterngroups;
+	if($bpg->{'Collapsed'}==1)
+		{
+		@rulegroups = grep {$nodetype{$_} eq 'RuleGroup'} @nodelist;
+		@patterngroups = grep {$nodetype{$_} eq 'PatternGroup'} @nodelist;
+		}
+	else
+		{
+		my @classedrules = grep {$nodetype{$_} eq 'Rule'} keys %classes;
+		@rulegroups = 	map 
+							{
+							my $x = $_; 
+							$x.":".join(" ",
+								sort {$a cmp $b}
+								grep {$classes{$_} eq $x} @classedrules
+								);
+							}
+							sort {$a cmp $b} 
+							uniq( map $classes{$_}, @classedrules);
+		my @classedpatterns = grep {$nodetype{$_} eq 'AtomicPatterns'} keys %classes;
+		@patterngroups = map 
+							{
+							my $x = $_; 
+							$x.":".join(" ",
+								sort {$a cmp $b}
+								grep {$classes{$_} eq $x} @classedpatterns
+								);
+							}
+							sort {$a cmp $b} 
+							uniq( map $classes{$_}, @classedpatterns);
+		}
+	
 	
 	my @str;
 	if(@bs) { push @str,"Binding Sites:\n".join("\n",@bs)."\n"; }
@@ -185,11 +214,13 @@ sub printNetworkGraph
 	if(@bonds) { push @str,"Bonds:\n".join("\n",@bonds)."\n"; }
 	if(@wc) { push @str,"Wildcards:\n".join("\n",@wc)."\n"; }
 	if(@rules) { push @str,"Rules:\n".join("\n",@rules)."\n"; }
-	if(@groups)
-		{
-		my @grpstrs = map {$names[$_].":".join(" ",@{$groups[$_]}) } 0..@groups-1;
-		push @str,"Groups:\n".join("\n",@grpstrs)."\n";
-		}
+	#if(@groups)
+	#	{
+	#	my @grpstrs = map {$names[$_].":".join(" ",@{$groups[$_]}) } 0..@groups-1;
+	#	push @str,"Groups:\n".join("\n",@grpstrs)."\n";
+	#	}
+	if(@patterngroups) { push @str,"Pattern Groups:\n".join("\n",@patterngroups)."\n"; }
+	if(@rulegroups) { push @str,"Rule Groups:\n".join("\n",@rulegroups)."\n"; }
 		
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my @reac = sort {$a cmp $b} map {$_ =~ /(.*:.*):.*/} grep {$_ =~ /Reactant$/} @edgelist;
@@ -602,6 +633,7 @@ sub mergeNetworkGraphs
 	uniqNetworkGraph($bpg);
 	addWildcards($bpg);
 	uniqNetworkGraph($bpg);
+	$bpg->{'Merged'} =1;
 	return $bpg;
 }
 
@@ -667,55 +699,79 @@ sub filterNetworkGraphByList
 	return;
 }
 
-
-
 sub collapseNetworkGraph
 {
+	
 	my $bpg = shift @_;
 	my %classes = %{$bpg->{'NodeClass'}};
 	
+	
 	my @classed = keys %classes;
 	my @edges = @{$bpg->{'EdgeList'}};
+						
+	my @classed_rules = grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} keys %classes;
+	my @classed_patterns = grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} keys %classes;
+	my @rule_classes = uniq(map $classes{$_}, @classed_rules);
+	my @pattern_classes = uniq(map $classes{$_}, @classed_patterns);
 	
-	my @edges2;
-	map { push @edges2, $_; } @edges;
-	
-	my $edit = 1;
-	while ($edit>0)
-	{
-		my @edges3;
-		$edit = 0;
-		foreach my $edge(@edges2)
-		{
-			foreach my $node(@classed)
-			{
-				if($edge =~ /$node:.*:.*/)  { $edge =~ s/($node):/$classes{$node}:/;  $edit++;	}
-				if($edge =~ /.*:$node:.*/)  { $edge =~ s/:($node):/:$classes{$node}:/; $edit++; }			
-			}
-		push @edges3,$edge;
-		}
-		@edges2 = uniq(@edges3);
-	}
-	
-	# recompiling $bpg
-	my @nodes2;
-	foreach my $edge(@edges2)
-	{
-		$edge =~ /(.*):(.*):.*/;
-		push @nodes2, $1;
-		push @nodes2, $2;
-	}
-	@nodes2 = uniq(@nodes2);
-	
+
+	my @nodelist2;
+	my @edgelist2;
 	my %nodetype2;
-	my %nodetype = %{$bpg->{'NodeType'}};
-	@nodetype2 { @nodes2 } = @nodetype { @nodes2 };
+	foreach my $edge(@edges)
+	{
+		# deconstruct edge
+		$edge =~ /^(.*):(.*):(.*)$/;
+		my $x = $1;
+		my $y = $2;
+		my $z = $3;
+		
+		if(has([qw(Reactant Product Context)],$z) )
+		{
+			if(has(\@classed_rules,$x)) { $x = $classes{$x}; }
+			if(has(\@classed_patterns,$y)) { $y = $classes{$y}; }
+		}
+		if($z eq 'Wildcard')
+		{
+			my $dont =0;
+			if(has(\@classed_patterns,$x) and has(\@classed_patterns,$y))
+			{
+				if($classes{$x} eq $classes{$y})
+					{
+					$dont =1;
+					}
+			}
+			if(not $dont)
+			{
+			if(has(\@classed_patterns,$x)) { $x = $classes{$x} };
+			if(has(\@classed_patterns,$y)) { $y = $classes{$y} };
+			}
+		}
+		
+		#pushy stuff
+		push @nodelist2, $x;
+		push @nodelist2, $y;
+		push @edgelist2, join(":",($x,$y,$z));
+		
+		if(has(\@rule_classes,$x)) { $nodetype2{$x} = 'RuleGroup'; }
+		elsif(has(\@pattern_classes,$x)) { $nodetype2{$x} = 'PatternGroup'; }
+		else {$nodetype2{$x} = $bpg->{'NodeType'}->{$x}; }
+		
+		if(has(\@pattern_classes,$y)) { $nodetype2{$y} = 'PatternGroup'; }
+		else {$nodetype2{$y} = $bpg->{'NodeType'}->{$y}; }
+	}
+	
+	@nodelist2=  uniq(@nodelist2);
+	@edgelist2 = uniq(@edgelist2);
 	
 	my $bpg2 = NetworkGraph->new();
-	$bpg2->{'NodeList'} = \@nodes2;
-	$bpg2->{'EdgeList'} = \@edges2;
+	$bpg2->{'NodeList'} = \@nodelist2;
+	$bpg2->{'EdgeList'} = \@edgelist2;
 	$bpg2->{'NodeType'} = \%nodetype2;
-	return $bpg2;	
+	$bpg2->{'Merged'} = $bpg->{'Merged'};
+	$bpg2->{'Collapsed'} = 1;
+	
+	return $bpg2;
 }
 
 

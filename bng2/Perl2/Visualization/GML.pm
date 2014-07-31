@@ -97,6 +97,7 @@ sub printGML
 	my $q2 = "\" ";
 	foreach my $node(@nodes)
 	{
+		
 		my $string1= "";
 		# graphics
 		$string1 .= "type".$q1.$node->{'type'}.$q2;
@@ -497,6 +498,7 @@ sub toGML_rule_pattern
 sub toGML_rule_network
 {
 	my $bpg = shift @_;
+	my $collapsed = $bpg->{'Collapsed'};
 	my @groups = ();
 	#my @groups = @_ ? @{shift @_} : ();
 	#my $closed = @_ ? shift @_ : 0;
@@ -509,7 +511,7 @@ sub toGML_rule_network
 
 	my @gmlnodes = ();
 	
-	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8,'RuleGroup'=>6,'PatternGroup'=>6);
+	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8,'RuleGroup'=>10,'PatternGroup'=>9);
 	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
 	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
 	
@@ -542,7 +544,14 @@ sub toGML_rule_network
 		#$gmlnode->{'gid'} = $gidhash{$node} if (has([keys %gidhash],$node));
 		$gmlnode->{'gid'} = $indhash{$classes{$node}} if (has(\@classed,$node)==1);
 		$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);
-		styleNode($gmlnode,$nodestyle{$nodetype{$node}});
+		#print $collapsed;
+		styleNode2($gmlnode);
+		styleNode2($gmlnode,$nodetype{$node},'color');
+		if($collapsed == 1 or has(['Rule','AtomicPattern'],$nodetype{$node}) )
+			{
+			styleNode2($gmlnode,$nodetype{$node},'shape');
+			}
+		#print $nodetype{$node}." ".$gmlnode->{'fill'}."\n";
 		push @gmlnodes, $gmlnode;
 	}
 	
@@ -570,7 +579,9 @@ sub toGML_rule_network
 my %nodepalette1 = 
 	('Group'=>"#efdbc4",
 	'Pattern'=>"#fda7a9", 
-	'Transformation'=>"#bbb8f4");
+	'Transformation'=>"#bbb8f4",
+	'PatternGroup' => "#fdc1c2",
+	'RuleGroup'=>"#cfcdf7" );
 sub styleNode
 {
 	my $gmlnode = shift @_;
@@ -615,8 +626,53 @@ sub styleNode
 		$gmlnode->{'fill'} = $nodepalette1{'Transformation'}; 
 		$gmlnode->{'type'} = 'hexagon';
 	}
+	if ($arg==9)
+	{
+		$gmlnode->{'fill'} = $nodepalette1{'PatternGroup'}; 
+	}
+	if ($arg==10)
+	{
+		$gmlnode->{'fill'} = $nodepalette1{'RuleGroup'}; 
+		$gmlnode->{'type'} = 'hexagon';
+	}
 	return;
 }
+
+sub styleNode2
+{	
+	my $gmlnode = shift @_;
+	my $type = @_ ? shift @_ : undef;
+	my $property = @_ ? shift @_ : undef;
+	
+	my @props = qw(shape fill);
+	my @types =qw(Rule AtomicPattern RuleGroup PatternGroup);
+	my %keywords = ( 'shape'=>'type', 'color'=>'fill');
+	
+	my %properties = 
+		( 	
+		'Rule' 			=> { 'shape' => 'hexagon', 			'color' => '#bbb8f4' },
+		'AtomicPattern' => { 'shape' => 'roundrectangle', 	'color' => '#fda7a9' },
+		'PatternGroup'	=> { 'shape' => 'roundrectangle', 	'color' => '#fee4e5' },
+		'RuleGroup'		=> { 'shape' => 'hexagon', 			'color' => '#eae9fb' },
+		);
+	if (defined $type and defined $property)
+	{
+	$gmlnode->{$keywords{$property}} = $properties{$type}->{$property};	
+	return;
+	}
+	
+	# defaults
+	$gmlnode->{'hasOutline'} = 1;
+	$gmlnode->{'type'} = "roundrectangle";
+	$gmlnode->{'fill'} = "#FFFFFF";
+	$gmlnode->{'outline'} = "#000000";
+	if ($gmlnode->{'isGroup'}) {$gmlnode->{'anchor'} = "t";}
+	else {$gmlnode->{'anchor'} = "c";}
+	
+	return;
+}
+
+
 my $reaccolor = "#5e3c58";
 my $contcolor = "#798e87";
 my %edgepalette1 = 
