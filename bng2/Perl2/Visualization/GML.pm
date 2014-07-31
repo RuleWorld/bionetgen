@@ -563,15 +563,17 @@ sub toGML_rule_network
 		my $target = $indhash{$splits[1]};
 		my $type = $splits[2];
 		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
-		styleEdge($gmledge,$edgestyle{$type});
+		#styleEdge($gmledge,$edgestyle{$type});
+		styleEdge2($gmledge,$type);
+		#styleEdge($gmledge,$edgestyle{$type});
 		push @gmledges,$gmledge;
 	}
-	
-	
+
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
 	return printGML($gmlgraph);
+	
 }
 
 
@@ -670,6 +672,30 @@ sub styleNode2
 	else {$gmlnode->{'anchor'} = "c";}
 	
 	return;
+}
+
+sub styleEdge2
+{
+	my $gmledge = shift @_;
+	my $type = @_ ? shift @_: undef;
+	my %properties =
+		(
+		'Reactant' =>	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>3},
+		'Product' => 	{'color'=>'#5e3c58','source'=>0,'target'=>1,'width'=>3},
+		'Wildcard' => 	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>3},
+		'Context' => 	{'color'=>'#798e87','source'=>1,'target'=>0,'width'=>1},
+		);
+	my %keywords = ('color'=>'fill','source'=>'sourceArrow','target'=>'targetArrow','width'=>'width');
+	
+	if(defined $type)
+	{
+	foreach my $prop(keys %keywords)
+		{
+		$gmledge->{$keywords{$prop}} = $properties{$type}->{$prop};
+		}
+	}
+	return;
+	
 }
 
 
