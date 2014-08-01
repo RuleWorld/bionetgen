@@ -16,6 +16,7 @@ struct Graphs =>
 	'RuleNames' => '@',
 	'RuleStructureGraphs' => '@',
 	'RulePatternGraphs' => '@',
+	'RuleNetwork' => '$',
 	'Background' => '@', # array of atomic patterns
 	'Classes' => '%', # classname => \@arrayofnodes
 	'NewName' => '$', # just a number to keep track of generated new names
@@ -124,7 +125,7 @@ sub execute_params
 		}
 	if ($type eq 'rule_network')
 	{	
-		getRuleNetworkGraphs($model);
+		getRuleNetwork($model);
 	}	
 	
 	if ($type eq 'rule_operation')
@@ -147,6 +148,7 @@ sub execute_params
 		}
 	}
 	
+	
 	if ($type eq 'rule_pattern')
 	{
 		if($output==1 and $each==0)
@@ -167,41 +169,40 @@ sub execute_params
 		}
 	}
 	
+	
+	
+	
+	
 	if ($type eq 'rule_network')
 	{
+		my $bpg = $gr->{'RuleNetwork'};
 		if ($output==1 and $each==0)
 		{
-			my $bpg = mergeNetworkGraphs(flat(@{$gr->{'RuleNetworkGraphs'}}));
-			$bpg->{'Collapsed'} = 0;
 			if (defined $filter)
 			{ 
 				my @items= @{$filter->{'items'}}; 
 				my $level = $filter->{'level'};
-				filterNetworkGraphByList($bpg,\@items,$level);
+				$bpg = filterNetworkGraphByList($bpg,\@items,$level);
 			}
 			
 			if ($background==0)
 			{
 				getBackground($model,\@excepts,$bpg);
-				filterNetworkGraph($bpg,$gr->{'Background'});
+				$bpg = filterNetworkGraph($bpg,$gr->{'Background'});
 			}
 
 			if ($groups==1)
 			{
-				# this method syncs the classes definition
-				# in model, in input and in bpg
 				syncClasses($model,$bpg,\%classes);
-				# placeholder: add other classes here
 				if($collapse==1)
 					{ $bpg = collapseNetworkGraph($bpg); }
-				
-			}
+			}	
 			if ($textonly==1)
 			{
 				$str = printNetworkGraph($bpg);
 				$output = 0;
 			}
-			elsif($output==1)
+			else
 			{
 				$str = toGML_rule_network($bpg);
 			}
@@ -376,7 +377,35 @@ sub getRuleNetworkGraphs
 	}
 	return;
 }
+sub getRuleNetwork
+{
+	#my ($model,$groups,$background,$excepts,$classes) = @_;
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	getRuleNetworkGraphs($model);
+	my $bpg;
+	if (not defined $gr->{'RuleNetwork'})
+	{
+		$bpg = mergeNetworkGraphs(flat(@{$gr->{'RuleNetworkGraphs'}}));
+		$bpg->{'Merged'} = 1;
+		$bpg->{'Collapsed'} = 0;
+		$gr->{'RuleNetwork'} = $bpg;
+	}
+	return;
+}
 
+sub getRuleGroups
+{
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	my $bpg = $gr->{'RuleNetwork'};
+	# this is to be used only by rule_pattern and rule_operation
+	my %classes = %{$bpg->{'NodeClass'}};
+	my @rules = grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} @{$bpg->{'NodeList'}};
+	
+
+	
+}
 # other get methods
 sub getAtomicPatterns
 {
@@ -399,6 +428,7 @@ sub syncClasses
 	my $model = shift @_;
 	my $bpg = shift @_;
 	my $classes_in = @_ ? shift @_ : undef;
+	#print map $_." ".$$classes_in{$_}."\n", keys %$classes_in;
 	
 	my $gr = $model->VizGraphs;
 	if(not defined $gr->{'Classes'})
@@ -414,6 +444,7 @@ sub syncClasses
 	# get only the atomic patterns 
 	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
 				@{$bpg->{'NodeList'}};
+	
 	# update bpg and model using %$classes_in
 	if(defined $classes_in)
 	{

@@ -507,13 +507,7 @@ sub toGML_rule_network
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my %nodetype = %{$bpg->{'NodeType'}};
 	
-	
-
 	my @gmlnodes = ();
-	
-	my %nodestyle = ('Group'=>6,'AtomicPattern'=>7,'Transformation'=>8,'Rule'=>8,'RuleGroup'=>10,'PatternGroup'=>9);
-	my %edgestyle = ('Reactant'=>1,'Product'=>2,'Context'=>3,'Wildcard'=>1,
-	'Syn'=>4,'Del'=>5,'ProcessPair'=>6,'Cotransform'=>7,'Onsite'=>13);
 	
 	# processing node classes
 	my %gidhash;
@@ -541,17 +535,14 @@ sub toGML_rule_network
 		my $id = $indhash{$node};
 		my $name = prettify($node);
 		my $gmlnode = initializeGMLNode($id,$name,$node);
-		#$gmlnode->{'gid'} = $gidhash{$node} if (has([keys %gidhash],$node));
 		$gmlnode->{'gid'} = $indhash{$classes{$node}} if (has(\@classed,$node)==1);
 		$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);
-		#print $collapsed;
 		styleNode2($gmlnode);
 		styleNode2($gmlnode,$nodetype{$node},'color');
 		if($collapsed == 1 or has(['Rule','AtomicPattern'],$nodetype{$node}) )
 			{
 			styleNode2($gmlnode,$nodetype{$node},'shape');
 			}
-		#print $nodetype{$node}." ".$gmlnode->{'fill'}."\n";
 		push @gmlnodes, $gmlnode;
 	}
 	
@@ -563,9 +554,7 @@ sub toGML_rule_network
 		my $target = $indhash{$splits[1]};
 		my $type = $splits[2];
 		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
-		#styleEdge($gmledge,$edgestyle{$type});
 		styleEdge2($gmledge,$type);
-		#styleEdge($gmledge,$edgestyle{$type});
 		push @gmledges,$gmledge;
 	}
 
@@ -577,13 +566,6 @@ sub toGML_rule_network
 }
 
 
-# styling
-my %nodepalette1 = 
-	('Group'=>"#efdbc4",
-	'Pattern'=>"#fda7a9", 
-	'Transformation'=>"#bbb8f4",
-	'PatternGroup' => "#fdc1c2",
-	'RuleGroup'=>"#cfcdf7" );
 sub styleNode
 {
 	my $gmlnode = shift @_;
@@ -610,32 +592,6 @@ sub styleNode
 		$gmlnode->{'fill'} = "#CC99FF"; 
 		$gmlnode->{'type'} = 'hexagon';
 		$gmlnode->{'fontStyle'} = 'italic';
-	}
-	# groups on bipartite graph, yED
-	if ($arg==6) 
-		{ 
-		$gmlnode->{'fill'} = $nodepalette1{'Group'};  
-		$gmlnode->{'fontStyle'} = "bold";
-		}
-	# pattern on bipartite graph
-	if ($arg==7) 
-		{
-		$gmlnode->{'fill'} = $nodepalette1{'Pattern'}; 
-		}
-	# transformation on bipartite graph, yED
-	if ($arg==8)
-	{
-		$gmlnode->{'fill'} = $nodepalette1{'Transformation'}; 
-		$gmlnode->{'type'} = 'hexagon';
-	}
-	if ($arg==9)
-	{
-		$gmlnode->{'fill'} = $nodepalette1{'PatternGroup'}; 
-	}
-	if ($arg==10)
-	{
-		$gmlnode->{'fill'} = $nodepalette1{'RuleGroup'}; 
-		$gmlnode->{'type'} = 'hexagon';
 	}
 	return;
 }
@@ -697,17 +653,6 @@ sub styleEdge2
 	return;
 	
 }
-
-
-my $reaccolor = "#5e3c58";
-my $contcolor = "#798e87";
-my %edgepalette1 = 
-	('Reactant'=>$reaccolor,
-	'Product'=>$reaccolor,
-	'Context'=>$contcolor,
-	'ProcessPair'=>"#000000",
-	'Cotransform'=>$contcolor,
-	'Syndel'=>$contcolor);
 	
 sub styleEdge
 {
@@ -715,101 +660,6 @@ sub styleEdge
 	my $arg = @_ ? shift @_ : 0 ;
 	# defaults
 	$gmledge->{'fill'} = "#000000";
-	
-	# reactant/wildcard
-	if ($arg==1) 
-		{
-		$gmledge->{'fill'} = $edgepalette1{'Reactant'};
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 0;
-		$gmledge->{'width'} = 3;
-		}
-	# product
-	if ($arg==2) 
-		{
-		$gmledge->{'fill'} = $edgepalette1{'Product'};
-		$gmledge->{'sourceArrow'} = 0;
-		$gmledge->{'targetArrow'} = 1;
-		$gmledge->{'width'} = 3;
-		}
-	# context
-	if ($arg==3) 
-		{
-		$gmledge->{'fill'} = $edgepalette1{'Context'};
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 0;
-		}
-	# syn context
-	if ($arg==4) 
-		{
-		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
-		$gmledge->{'sourceArrow'} = 0;
-		$gmledge->{'targetArrow'} = 1;
-		$gmledge->{'width'} = 2;
-		}
-	# del context
-	if ($arg==5) 
-		{
-		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 0;
-		$gmledge->{'width'} = 3;
-		}
-	# process pair
-	if ($arg==6) 
-		{
-		$gmledge->{'fill'} = $edgepalette1{'ProcessPair'};
-		$gmledge->{'sourceArrow'} = 0;
-		$gmledge->{'targetArrow'} = 0;
-		}
-	# cooccurring transformations
-	if ($arg==7) 
-		{
-		$gmledge->{'fill'} = $edgepalette1{'Context'};
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 1;
-		}
-	# onsite context
-	if ($arg==13) 
-		{
-		#$gmledge->{'fill'} = $edgepalette1{'Context'};
-		$gmledge->{'sourceArrow'} = 1;
-		$gmledge->{'targetArrow'} = 0;
-		$gmledge->{'width'} = 2;
-		}
-	# process graph -activation
-	if ($arg==8 )
-		{
-		$gmledge->{'targetArrow'} = "bezier";
-		$gmledge->{'fill'} = $edgepalette1{'Context'};
-		}
-	# process graph - inhibition
-	if ($arg==9)
-		{
-		#$gmledge->{'sourceArrow'} = "t_shape";
-		$gmledge->{'targetArrow'} = "t_shape";
-		$gmledge->{'fill'} = $edgepalette1{'Context'};
-		}
-	# process graph -synthesis
-	if ($arg==10 )
-		{
-		$gmledge->{'targetArrow'} = "bezier";
-		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
-		}
-	# process graph - degradation
-	if ($arg==11)
-		{
-		$gmledge->{'sourceArrow'} = "bezier";
-		$gmledge->{'targetArrow'} = "t_shape";
-		$gmledge->{'fill'} = $edgepalette1{'Syndel'};
-		}
-	# process graph - competition
-	if ($arg==12)
-		{
-		$gmledge->{'sourceArrow'} = "t_shape";
-		$gmledge->{'targetArrow'} = "t_shape";
-		$gmledge->{'fill'} = $edgepalette1{'Context'};
-		}
 	return;
 }
 

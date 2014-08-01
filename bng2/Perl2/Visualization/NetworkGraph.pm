@@ -21,6 +21,7 @@ struct NetworkGraph =>
 	# or <wildcardpattern>:<atomicpatternstring>:Wildcard
 	'Merged'=> 0,
 	'Collapsed'=>0,
+	'Filtered'=>0,
 	
 };
 # is methods for checking
@@ -173,7 +174,7 @@ sub printNetworkGraph
 	# groups
 	my %classes;
 	if(defined $bpg->{'NodeClass'}) {%classes = %{$bpg->{'NodeClass'}};}
-
+	
 	my @rulegroups;
 	my @patterngroups;
 	if($bpg->{'Collapsed'}==1)
@@ -194,7 +195,7 @@ sub printNetworkGraph
 							}
 							sort {$a cmp $b} 
 							uniq( map $classes{$_}, @classedrules);
-		my @classedpatterns = grep {$nodetype{$_} eq 'AtomicPatterns'} keys %classes;
+		my @classedpatterns = grep {$nodetype{$_} eq 'AtomicPattern'} keys %classes;
 		@patterngroups = map 
 							{
 							my $x = $_; 
@@ -662,10 +663,14 @@ sub filterNetworkGraph
 					} @edgelist;
 	my @new_edgelist = grep { has([(@remove1,@remove2)],$_)==0;} @edgelist;
 	
-	$bpg->{'NodeList'} = \@new_nodelist;
-	$bpg->{'EdgeList'} = \@new_edgelist;
-	$bpg->{'NodeType'} = \%new_nodetype;
-	return;
+	my $bpg2 = NetworkGraph->new();
+	$bpg2->{'NodeList'} = \@new_nodelist;
+	$bpg2->{'EdgeList'} = \@new_edgelist;
+	$bpg2->{'NodeType'} = \%new_nodetype;
+	$bpg2->{'Merged'} = $bpg->{'Merged'};
+	$bpg2->{'Filtered'} = 1;
+	$bpg2->{'Collapsed'} = $bpg->{'Collapsed'};
+	return $bpg2;
 }
 
 sub filterNetworkGraphByList
@@ -694,9 +699,9 @@ sub filterNetworkGraphByList
 	#print @items;
 	@items = uniq(@items);
 	my @remove = grep { has(\@items,$_)==0; } @{$bpg->{'NodeList'}};
-	filterNetworkGraph($bpg,\@remove);
-	uniqNetworkGraph($bpg);
-	return;
+	my $bpg2 = filterNetworkGraph($bpg,\@remove);
+	uniqNetworkGraph($bpg2);
+	return $bpg2;
 }
 
 sub collapseNetworkGraph
