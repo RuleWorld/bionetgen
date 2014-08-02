@@ -51,13 +51,19 @@ sub execute_params
 	$args{'suffix'} = '' if (not has(\@argkeys,'suffix'));
 	$args{'each'} = 0 if (not has(\@argkeys,'each'));
 	$args{'groups'} = 0 if (not has(\@argkeys,'groups'));
-	$args{'background'} = 1 if (not has(\@argkeys,'background'));
-	$args{'except'} = [] if (not has(\@argkeys,'except'));
 	$args{'collapse'} = 0 if (not has(\@argkeys,'collapse'));
 	#$args{'filter'} = {'items'=>[],} if (not has(\@argkeys,'collapse'));
 	$args{'textonly'} = 0 if (not has(\@argkeys,'textonly'));
 	$args{'classes'} = {} if (not has(\@argkeys,'classes'));
-
+	
+	$args{'background'} = {}
+			if (not has(\@argkeys,'background'));;
+	my @argkeys2 = keys %{$args{'background'}};
+	$args{'background'}->{'toggle'} = 1 if(not has(\@argkeys2,'toggle'));
+	$args{'background'}->{'include'} = [] if(not has(\@argkeys2,'include'));
+	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
+	
+	
 	if (not has(\@argkeys,'type'))
 	{
 		print "Visualization type unspecified. Use visualize({type=>string}).\n";
@@ -78,12 +84,23 @@ sub execute_params
 	my $textonly = $args{'textonly'};
 	my $suffix = $args{'suffix'};
 	my %classdefs = %{$args{'classes'}};
+	
+	my $bkg = $args{'background'};
+	my $bkg_toggle = $bkg->{'toggle'};
+	my $bkg_include = $bkg->{'include'};
+	my $bkg_exclude = $bkg->{'exclude'};
 	#my $closed = $args{'closed'};
 	
-	my @excepts = ();
-	my $ref = getAtomicPatterns($except);
-	if(not ref $ref) { print "\nAtomic Pattern could not be created from ".$ref."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
-	else {@excepts = @$ref};
+	my @includes = ();
+	my $ref1 = getAtomicPatterns($bkg_include);
+	if(not ref $ref1) { print "\nAtomic Pattern could not be created from ".$ref1."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+	else {@includes = @$ref1};
+	
+	my @excludes = ();
+	my $ref2 = getAtomicPatterns($bkg_exclude);
+	if(not ref $ref2) { print "\nAtomic Pattern could not be created from ".$ref2."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+	else {@excludes = @$ref2};
+	
 	
 	my %classes;
 	foreach my $name(keys %classdefs)
@@ -185,9 +202,9 @@ sub execute_params
 				$bpg = filterNetworkGraphByList($bpg,\@items,$level);
 			}
 			
-			if ($background==0)
+			if ($bkg_toggle==0)
 			{
-				getBackground($model,\@excepts,$bpg);
+				getBackground($model,\@includes,\@excludes,$bpg);
 				$bpg = filterNetworkGraph($bpg,$gr->{'Background'});
 			}
 
@@ -473,6 +490,10 @@ sub syncClasses
 				@{$bpg->{'NodeList'}};
 	my @edges =	grep { $_ =~ /Reactant|Product$/ }
 				@{$bpg->{'EdgeList'}};
+	my @reac_edges =	grep { $_ =~ /Reactant$/ }
+				@{$bpg->{'EdgeList'}};
+	my @prod_edges =	grep { $_ =~ /Product$/ }
+				@{$bpg->{'EdgeList'}};
 	my %reacprodhash;
 	foreach my $rule(@rules)
 	{
@@ -482,7 +503,20 @@ sub syncClasses
 						map {$_ =~ /.*:(.*):.*/; $1;}
 						grep { $_ =~ /^$rule:/;}
 						@edges;
+		my $reacstr = 	join " + ",
+						sort {$a cmp $b}
+						uniq map {$temp{$_};}
+						map {$_ =~ /.*:(.*):.*/; $1;}
+						grep { $_ =~ /^$rule:/;}
+						@reac_edges;
+		my $prodstr = 	join " + ",
+						sort {$a cmp $b}
+						uniq map {$temp{$_};}
+						map {$_ =~ /.*:(.*):.*/; $1;}
+						grep { $_ =~ /^$rule:/;}
+						@reac_edges;
 		$reacprodhash{unquotemeta $rule} = $reacprodstr;
+		#$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
 	}
 	
 	# get reacprodstrings that occur multiple times
@@ -514,7 +548,9 @@ sub syncClasses
 sub getBackground
 {
 	my $model = shift @_;
-	my $except = @_ ? shift @_ : [];
+	my $include = @_ ? shift @_ : [];
+	my $exclude = @_ ? shift @_ : [];
+	#my $except = @_ ? shift @_ : [];
 	my $bpg = @_ ? shift @_ : undef;
 	
 	my $gr = $model->VizGraphs;
@@ -534,7 +570,9 @@ sub getBackground
 			map { $re{$_}++ if(not $added{$_}++); } @$reac;
 			map { $pr{$_}++ if(not $added{$_}++); } @$prod;
 		}
-		my @background = grep { has($except,$_)==0; } keys %re;
+		my @bkg1 = grep { has($exclude,$_)==0; } keys %re;
+		my @bkg2 = grep { has($include,$_)==1; } keys %pr;;
+		my @background = (@bkg1,@bkg2);
 		$gr->{'Background'} = \@background;	
 	}
 	

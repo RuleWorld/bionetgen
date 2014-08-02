@@ -606,13 +606,22 @@ sub styleNode2
 	my @types =qw(Rule AtomicPattern RuleGroup PatternGroup);
 	my %keywords = ( 'shape'=>'type', 'color'=>'fill');
 	
-	my %properties = 
+	my %properties2 = 
 		( 	
 		'Rule' 			=> { 'shape' => 'hexagon', 			'color' => '#bbb8f4' },
 		'AtomicPattern' => { 'shape' => 'roundrectangle', 	'color' => '#fda7a9' },
 		'PatternGroup'	=> { 'shape' => 'roundrectangle', 	'color' => '#fee4e5' },
 		'RuleGroup'		=> { 'shape' => 'hexagon', 			'color' => '#eae9fb' },
 		);
+		
+	my %properties = 
+		( 	
+		'Rule' 			=> { 'shape' => 'hexagon', 			'color' => '#bbb8f4' },
+		'AtomicPattern' => { 'shape' => 'roundrectangle', 	'color' => '#f4bbb8' },
+		'PatternGroup'	=> { 'shape' => 'roundrectangle', 	'color' => '#fee4e5' },
+		'RuleGroup'		=> { 'shape' => 'hexagon', 			'color' => '#eae9fb' },
+		);
+	
 	if (defined $type and defined $property)
 	{
 	$gmlnode->{$keywords{$property}} = $properties{$type}->{$property};	
@@ -636,9 +645,9 @@ sub styleEdge2
 	my $type = @_ ? shift @_: undef;
 	my %properties =
 		(
-		'Reactant' =>	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>3},
-		'Product' => 	{'color'=>'#5e3c58','source'=>0,'target'=>1,'width'=>3},
-		'Wildcard' => 	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>3},
+		'Reactant' =>	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>1},
+		'Product' => 	{'color'=>'#5e3c58','source'=>0,'target'=>1,'width'=>1},
+		'Wildcard' => 	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>1},
 		'Context' => 	{'color'=>'#798e87','source'=>1,'target'=>0,'width'=>1},
 		);
 	my %keywords = ('color'=>'fill','source'=>'sourceArrow','target'=>'targetArrow','width'=>'width');
