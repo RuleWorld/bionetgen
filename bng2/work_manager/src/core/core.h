@@ -40,10 +40,11 @@ typedef struct{
 
 typedef struct{
     int key; 
-    char par_name[MAX_LEN]; 
-    double par_value_min; 
-    double par_value_max; 
-    double par_value; 
+    int n_param; 
+    char par_name[MAX_LEN][MAX_LEN]; 
+    double par_value_min[MAX_LEN]; 
+    double par_value_max[MAX_LEN]; 
+    double par_value[MAX_LEN]; 
 } Greeting;      
 
 class Worker{
@@ -79,7 +80,7 @@ public:
     void recv_message(Msg*, int ,int); 
     void bcast_message(Greeting*, int); 
     void gather_message(int); 
-    void parameter_scan(int, string, string, double, double); 
+    void parameter_scan(int, string, string, double, double, int ); 
     void print_output(char*); 
     void set_observable_names(); 
     vector<string> observable_names; 
@@ -99,6 +100,8 @@ private:
     void get_t_stop(int, char**); 
     bool terminate_work(); 
     void fprint_statistics(); 
+    void fprint_all_obs_data(); 
+    void fprint_param_info(); 
     int n_stop; 
     int n_step; 
     map<string, vector<double> > scan_param_list; 

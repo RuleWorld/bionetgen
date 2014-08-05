@@ -412,8 +412,8 @@ int main(int argc, char *argv[]){
         if (worker.grt.key > 0) {
             worker.scan_parameter(rates, &network); 
             mpi_par_scan.par_scan = true; 
-            mpi_par_scan.par_name = worker.grt.par_name; 
-            mpi_par_scan.par_value = worker.grt.par_value; 
+            mpi_par_scan.par_name = worker.grt.par_name[0]; 
+            mpi_par_scan.par_value = worker.grt.par_value[0]; 
         }
         #endif 
 

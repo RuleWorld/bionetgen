@@ -19,6 +19,7 @@ int main(int argc, char* argv[]) {
     map<int, string> s; 
 
     int i = 1; 
+    int k = 10; 
     while(i < argc )  {
         switch(args[argv[i]]) {
             case 0: 
@@ -42,10 +43,10 @@ int main(int argc, char* argv[]) {
                 s[9]=argv[i++]; 
                 break; 
             case 5:
-                s[10]=argv[i++];
-                s[11]=argv[i++]; 
-                s[12]=argv[i++]; 
-                s[13]=argv[i++]; 
+                s[k++]=argv[i++];
+                s[k++]=argv[i++]; 
+                s[k++]=argv[i++]; 
+                s[k++]=argv[i++]; 
                 break; 
             default: 
                 i++; 

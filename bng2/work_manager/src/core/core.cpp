@@ -23,6 +23,7 @@ void WorkManager::get_worker(int argc, char* argv[]){
     double delta_t = 0; 
     double t_end = 0; 
     n_step = 0;  
+    int param_index = 0; 
 
     for (int i = 1; i < argc; i++){
         if (i == 1){
@@ -39,6 +40,9 @@ void WorkManager::get_worker(int argc, char* argv[]){
         else if (!strcmp(argv[i],"-q")||!strcmp(argv[i],"-thread")){
             sprintf(worker_args[2],"%s",argv[i]);  
             worker_args[3] = argv[++i]; 
+            n_new_born = atoi(argv[i]); 
+            if (!n_new_born) perr("Number spawned  must be a positive integer",__LINE__); 
+
             grt = new Greeting[atoi(argv[i])]; 
             for (int kk = 0; kk < atoi(argv[i]); kk++){
                 (grt + kk)->key = 0; 
@@ -79,7 +83,10 @@ void WorkManager::get_worker(int argc, char* argv[]){
                 double par_value_min = atof(argv[++i]); 
                 double par_value_max = atof(argv[++i]); 
 
-                parameter_scan(np, type, par_name, par_value_min, par_value_max ); 
+                parameter_scan(np, type, par_name, par_value_min, par_value_max, param_index ); 
+                
+                param_index++; 
+                
             }
             catch (exception &e){
                 perr("Incorrect arguments for parameter scan",__LINE__); 
@@ -87,21 +94,14 @@ void WorkManager::get_worker(int argc, char* argv[]){
             }
         }
           
-        delta_t = t_end/n_step; 
-        t_stop = t_end - 2*delta_t; 
-        sprintf(worker_args[9],"%g",delta_t); 
-        sprintf(worker_args[10],"%d",n_step); 
     }     
+
+    delta_t = t_end/n_step; 
+    t_stop = t_end - 2*delta_t; 
+    sprintf(worker_args[9],"%g",delta_t); 
+    sprintf(worker_args[10],"%d",n_step); 
      
     
-    while(argv[iarg]){
-        if (!strcmp(argv[iarg],"-q")){
-            n_new_born =  atoi(argv[++iarg]); 
-            if (!n_new_born) perr("Number spawned  must be a positive integer",__LINE__); 
-            break; 
-        }
-        iarg++; 
-    }
     get_t_stop(argc, argv);     
 }
 
@@ -134,8 +134,6 @@ void WorkManager::spawn_child_workers(){
 
     for (int i = 0; i < n_worker; i++){
         for (int j = 1; j < worker[i].size; j++){
-            cout << "PARAMETER_VALUE " << (grt + j - 1)->par_value << endl; 
-            //(grt + j -1)->key = 0; 
             MPI_Send( (grt + j - 1), sizeof(Greeting), MPI_BYTE, j, 100, worker[i].universe);
         }
     }
@@ -209,15 +207,81 @@ bool WorkManager::terminate_work(){
                 cout << "TIME   " << (worker[0].msglist + j - 1)->tau << endl; 
             }
             worker[i].data.push_back(worker[i].msglist); 
-            cout << "WAIT....." << endl; 
         }
         
         //MPI_Finalize(); 
-        if (grt->key == 0)  fprint_statistics(); // print avg and std if not a parameter scan 
+        fprint_all_obs_data(); 
+        if (grt->key == 0)  
+            fprint_statistics(); // print avg and std if not a parameter scan 
+        else
+            fprint_param_info(); // print parameter info used for parameter scan 
+      
         cout << "DONE....." << endl; 
         return true; 
     }
     return false; 
+}
+
+void WorkManager::fprint_all_obs_data(){
+    //Each of these files will hold data for each observable in all parallel runs
+    char fname_obs[observable_names.size()][MAX_LEN]; 
+    ofstream all_runs[observable_names.size()]; 
+    for (int i = 0; i < n_worker; i++) {
+        for (size_t j = 0; j < observable_names.size(); j++){
+            bzero(fname_obs[j],MAX_LEN); 
+            sprintf(fname_obs[j],"%s_all_runs.gdat", observable_names[j].c_str()); 
+            all_runs[j].precision(3); 
+            all_runs[j].open(fname_obs[j]); 
+
+            all_runs[j] << "Time" << "  "; 
+
+            for (int k = 0; k < worker[i].size - 1; k++) {
+                all_runs[j] << "run_" << k << "     "; 
+            } 
+
+            all_runs[j]  << endl; 
+        }
+
+        for (vector<Msg* >::const_iterator it = worker[i].data.begin(); it != worker[i].data.end(); it++){
+            for (int j = 0; j < (*it)->group_len; j++){
+                all_runs[j] << scientific << (*it)->tau << "    "; 
+                for (int k = 0; k < worker[i].size - 1; k++){
+                    all_runs[j] << (*it + k)->group_conc[j] << "    "; 
+                }
+
+                all_runs[j] << endl; 
+
+            }
+
+        }
+
+        for (size_t j = 0; j < observable_names.size(); j++) {
+            all_runs[j].close(); 
+        }
+    }
+}
+
+void WorkManager::fprint_param_info() {
+    ofstream param_info; 
+    param_info.open("parameter_info.txt"); 
+
+    param_info << "run #" << "    "; 
+    for (int i = 0; i < grt->n_param; i++) {
+        param_info << grt->par_name[i] << "    "; 
+    }
+
+    param_info << endl; 
+
+    for (size_t j = 0; j < worker[0].size -1; j++){
+         param_info << j << "    "; 
+         for (int k = 0; k < grt->n_param; k++) {
+             param_info << (grt + j)->par_value[k] << "    "; 
+         }
+         param_info << endl; 
+    }
+
+    param_info.close(); 
+
 }
 
 void WorkManager::fprint_statistics(){
@@ -253,22 +317,23 @@ void WorkManager::fprint_statistics(){
         mean_output << "Time" << " ";
         stdv_output << "Time" << " "; 
 
-        for (int m = 0; m < (*worker[i].data.begin())->group_len; m++){
-            mean_output << observable_names[m] << "    ";
-            stdv_output << observable_names[m] << "    "; 
+        for (size_t j = 0; j < observable_names.size(); j++){
+            mean_output << observable_names[j] << "    ";
+            stdv_output << observable_names[j] << "    "; 
         }
 
         mean_output << endl; 
         stdv_output << endl; 
 
         for (vector<Msg* >::const_iterator it = worker[i].data.begin(); it != worker[i].data.end(); it++){
-            mean_output << scientific << (*it)-> tau << "    "; 
-            stdv_output << scientific << (*it)-> tau << "    "; 
+            mean_output << scientific << (*it)->tau << "    "; 
+            stdv_output << scientific << (*it)->tau << "    "; 
             for (int j = 0; j < (*it)->group_len; j++){
                 sum = 0; 
                 for (int k = 0; k < worker[i].size - 1; k++){
                     sum += (*it + k)->group_conc[j]; 
                 }
+
                 mean_val =  sum/(worker[i].size - 1) ; 
                 mean_output << mean_val << "    "; 
 
@@ -286,6 +351,7 @@ void WorkManager::fprint_statistics(){
 
         mean_output.close(); 
         stdv_output.close(); 
+        
     }
 }
  
@@ -343,7 +409,7 @@ void WorkManager::set_observable_names(){
 }
 
 
-void WorkManager::parameter_scan(int n_proc, string type, string param, double val1, double val2) {
+void WorkManager::parameter_scan(int n_proc, string type, string param, double val1, double val2, int index) {
 
 map<string, int> discrete_t; 
 discrete_t["-log"] = 1; 
@@ -371,17 +437,18 @@ case 1:
     for (int i = 0; i < n_proc; i++) {
         value = pow(10,(min + i*step)); 
         scan_param_list[param].push_back(value); 
-    
-        bzero((grt + i)->par_name, MAX_LEN); 
-        sprintf((grt + i)->par_name, param.c_str()); 
-        (grt + i)->par_value = value; 
+         
+        bzero((grt + i)->par_name[index], MAX_LEN); 
+        sprintf((grt + i)->par_name[index], param.c_str()); 
+        (grt + i)->n_param = index + 1; 
+        (grt + i)->par_value[index] = value; 
         (grt + i)->key = discrete_t[type]; 
     }
         
     break; 
 
 case 2: 
-    if (grt->par_value_min < 0 || grt->par_value_max < 0)
+    if (grt->par_value_min[index] < 0 || grt->par_value_max[index] < 0)
         perr("Negative parameter value not permitted",__LINE__); 
 
 
@@ -393,9 +460,10 @@ case 2:
         value = min + i*step; 
         scan_param_list[param].push_back(value); 
   
-        bzero((grt + i)->par_name, MAX_LEN); 
-        sprintf((grt + i)->par_name, param.c_str()); 
-        (grt + i)->par_value = value; 
+        bzero((grt + i)->par_name[index], MAX_LEN); 
+        sprintf((grt + i)->par_name[index], param.c_str()); 
+        (grt + i)->n_param = index + 1; 
+        (grt + i)->par_value[index] = value; 
         (grt + i)->key = discrete_t[type]; 
     }
         
@@ -414,9 +482,10 @@ case 3:
            value = 0; 
         }
             
-        bzero((grt + i)->par_name, MAX_LEN); 
-        sprintf((grt + i)->par_name, param.c_str()); 
-        (grt + i)->par_value = value; 
+        bzero((grt + i)->par_name[index], MAX_LEN); 
+        sprintf((grt + i)->par_name[index], param.c_str()); 
+        (grt + i)->n_param = index + 1; 
+        (grt + i)->par_value[index] = value; 
         (grt + i)->key = discrete_t[type]; 
     }
 
@@ -436,9 +505,10 @@ case 4:
         
         value = val1 + val2*gsl_ran_ugaussian(r); 
             
-        bzero((grt + i)->par_name, MAX_LEN); 
-        sprintf((grt + i)->par_name, param.c_str()); 
-        (grt + i)->par_value = pow(10,value); 
+        bzero((grt + i)->par_name[index], MAX_LEN); 
+        sprintf((grt + i)->par_name[index], param.c_str()); 
+        (grt + i)->n_param = index + 1; 
+        (grt + i)->par_value[index] = pow(10,value); 
         (grt + i)->key = discrete_t[type]; 
     }
 

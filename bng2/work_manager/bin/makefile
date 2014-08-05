@@ -21,7 +21,7 @@ OPENMPI = openmpi-1.8.1
 BINDIR = $(CURDIR)/bin
 
 GSL_LIB = ${LIBDIR}/libgsl.a ${LIBDIR}/libgslcblas.a
-MPI_EXE =$(CURDIR)/$(OPENMPI)/$(MPIDIR)/mpic++ 
+CXX =$(CURDIR)/$(OPENMPI)/$(MPIDIR)/bin/mpic++ 
 BNG_EXE = ../../Network3/bin/run_network
 
 
@@ -31,7 +31,7 @@ $(GSL_LIB): $(GSL).tar.gz
 	tar -xzf $(GSL).tar.gz
 	cd $(GSL);  ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
 
-$(MPI_EXE): $(OPENMPI).tar.gz
+$(CXX): $(OPENMPI).tar.gz
 	rm -rf $(OPENMPI)
 	tar -zxvf $(OPENMPI).tar.gz
 	mkdir -p $(OPENMPI)/$(MPIDIR)
@@ -39,17 +39,18 @@ $(MPI_EXE): $(OPENMPI).tar.gz
 
 #CFLAGS = -I$(CURDIR)/$(INCDIR) -I$(CURDIR)/$(INCDIR)/gsl -I$(CURDIR)/$(INCDIR)/openmpi/ompi -std=c++0x
 CFLAGS = -I$(CURDIR)/$(INCDIR) -I$(CURDIR)/$(INCDIR)/gsl -std=c++0x
-CXX = $(CURDIR)/$(OPENMPI)/$(MPIDIR)/bin/mpic++
 
 # All Target
 all: work_manager
-work_manager: $(GSL_LIB) $(MPI_EXE) $(OBJS) 
+work_manager: $(GSL_LIB) $(CXX) $(OBJS) 
 	cp $(CURDIR)/$(OPENMPI)/$(MPIDIR)/bin/mpirun ../bin/
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
 	$(CXX) $(CFLAGS) -o "work_manager" $(OBJS) $(GSL_LIB)  
+	mv ../../Network3/mpiConfig.h ../../Network3/mpiConfig_backup.h
+	mv ../../Network3/CMakeLists.txt  ../../Network3/CMakeLists_backup.txt
 	cp CMakeListsBNG.txt ../../Network3/CMakeLists.txt
-	cd ../../Network3; cp Makefile.cmake Makefile; make clean; make 
+	cd ../../Network3; cp Makefile.cmake Makefile; make clean; make; mv mpiConfig_backup.h mpiConfig.h; mv CMakeLists_backup.txt CMakeLists.txt 
 	cp ../../Network3/bin/run_network ../bin/
 	g++ run.cpp -o run 
 	@echo 'Finished building target: $@'

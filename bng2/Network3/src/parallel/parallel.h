@@ -34,10 +34,11 @@ typedef struct{
 
 typedef struct{
     int key; 
-    char par_name[MAX_LEN]; 
-    double par_value_min; 
-    double par_value_max; 
-    double par_value; 
+    int n_param; 
+    char par_name[MAX_LEN][MAX_LEN]; 
+    double par_value_min[MAX_LEN]; 
+    double par_value_max[MAX_LEN]; 
+    double par_value[MAX_LEN]; 
 } Greeting;      
 
 class ReadMSG{
@@ -136,11 +137,6 @@ void Worker::scan_parameter(Elt_array* rates, NETWORK* net){
 
     if (grt.key > 0) {
     
-        size_t par_name_len = ( (string) grt.par_name).length();   
-
-        if (par_name_len > MAX_LEN) {
-            perr("Parameter name exceeds 100 characters",__LINE__);  
-        }
 
         /*double par_value, par_value_min, par_value_max, par_value_step; 
 
@@ -165,81 +161,87 @@ void Worker::scan_parameter(Elt_array* rates, NETWORK* net){
         }
         else 
             perr("Unknown scaling of parameter scan, must be in log or linear scale",__LINE__);*/ 
+        for (int index = 0; index < grt.n_param; index++) {
+            char par1[MAX_LEN]; 
+            char par2[MAX_LEN]; 
+            bool parameter_not_found = true; 
 
-        char par1[MAX_LEN]; 
-        char par2[MAX_LEN]; 
-        bool parameter_not_found = true; 
+            size_t par_name_len = ( (string) grt.par_name[index]).length();   
 
-        for (vector<myParser>::iterator it = (net->parameters).begin(); it != (net->parameters).end(); it++) {
-            bzero(par1, MAX_LEN); 
-            bzero(par2, MAX_LEN); 
-        
-           // sprintf(par1,"%s",par_name.c_str()); 
-           // cout << "PARAMETER NAME " << grt.par_name << endl; 
-            sprintf(par1,"%s", grt.par_name); 
-            sprintf(par2,"%s", (it->name).c_str()); 
-
-            if (!strcmp(par1, par2)) {
-                //cout << par1 << "      " << par_value << "       " << getpid() <<  endl; 
-                parameter_not_found = false;  
-                it->val = grt.par_value; 
-                char expr[MAX_LEN]; 
-                bzero(expr,MAX_LEN); 
-                sprintf(expr,"%e",it->val); 
-                (it->p).SetExpr(expr); 
-            } 
-             
-        }
-
-        if (parameter_not_found) 
-            perr("No matching parameter name found for parameter scan",__LINE__); 
-        else { 
-            map<string, double*> param_map; 
-            for(vector<myParser>::iterator it = (net->parameters).begin(); it != (net->parameters).end(); it++){
-                param_map[it->name] = &(it->val); 
+            if (par_name_len > MAX_LEN) {
+                perr("Parameter name exceeds 100 characters",__LINE__);  
             }
 
             for (vector<myParser>::iterator it = (net->parameters).begin(); it != (net->parameters).end(); it++) {
-                mu::varmap_type variables = (it->p).GetVar(); 
-                mu::varmap_type::const_iterator item = variables.begin(); 
-                for (; item != variables.end(); ++item){
-                    try {
-                        (it->p).DefineVar(item->first, param_map[item->first]); 
-                       }
-                    catch(exception &e) {
-                        cout << e.what() << endl; 
-                    }
-                }
-            }
- 
-            for (vector<myParser>::iterator it = (net->parameters).begin(); it != (net->parameters).end(); it++){
-                string varlist; 
-                mu::varmap_type variables = (it->p).GetVar(); 
-                mu::varmap_type::const_iterator item = variables.begin();
-                it->val  = (it->p).Eval(); 
-                mu::console() << "param " << (it->name) << "    " << "Expression " << (it->p).GetExpr() <<  "  value " << it->val <<  _T("\n");
+                bzero(par1, MAX_LEN); 
+                bzero(par2, MAX_LEN); 
+        
+                // sprintf(par1,"%s",par_name.c_str()); 
+                // cout << "PARAMETER NAME " << grt.par_name << endl; 
+                sprintf(par1,"%s", grt.par_name[index]); 
+                sprintf(par2,"%s", (it->name).c_str()); 
 
-                for (; item!=variables.end(); ++item) {
-                     mu::console() << "      " << item->first << "     "  << *(item->second) << endl;
-                }
-
+                if (!strcmp(par1, par2)) {
+                    //cout << par1 << "      " << par_value << "       " << getpid() <<  endl; 
+                    parameter_not_found = false;  
+                    it->val = grt.par_value[index]; 
+                    char expr[MAX_LEN]; 
+                    bzero(expr,MAX_LEN); 
+                    sprintf(expr,"%e",it->val); 
+                    (it->p).SetExpr(expr); 
+                } 
+             
             }
 
-	    if (network.has_functions){
-	        for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
-		    curr->total_val = 0;
-		    for (int i = 0; i < curr->n_elt; i++)
-		        curr->total_val += curr->elt_factor[i] * network.species->elt[curr->elt_index[i]-1]->val;
-		}
-
-		for (unsigned int j=0;j < network.var_parameters.size();j++) {
-			network.rates->elt[network.var_parameters[j]-1]->val = network.functions[j].Eval();
-		}
-	    }
-
-           for (Elt* elt = rates->list; elt != NULL; elt = elt->next) 
-                elt->val = *(param_map[elt->name]); 
+            if (parameter_not_found) 
+            perr("No matching parameter name found for parameter scan",__LINE__); 
         }
+
+        map<string, double*> param_map; 
+        for(vector<myParser>::iterator it = (net->parameters).begin(); it != (net->parameters).end(); it++){
+            param_map[it->name] = &(it->val); 
+        }
+
+        for (vector<myParser>::iterator it = (net->parameters).begin(); it != (net->parameters).end(); it++) {
+            mu::varmap_type variables = (it->p).GetVar(); 
+            mu::varmap_type::const_iterator item = variables.begin(); 
+            for (; item != variables.end(); ++item){
+                try {
+                    (it->p).DefineVar(item->first, param_map[item->first]); 
+                   }
+                catch(exception &e) {
+                    cout << e.what() << endl; 
+                }
+            }
+        }
+ 
+        for (vector<myParser>::iterator it = (net->parameters).begin(); it != (net->parameters).end(); it++){
+            string varlist; 
+            mu::varmap_type variables = (it->p).GetVar(); 
+            mu::varmap_type::const_iterator item = variables.begin();
+            it->val  = (it->p).Eval(); 
+            mu::console() << "param " << (it->name) << "    " << "Expression " << (it->p).GetExpr() <<  "  value " << it->val <<  _T("\n");
+
+            //for (; item!=variables.end(); ++item) {
+                // mu::console() << "      " << item->first << "     "  << *(item->second) << endl;
+            //}
+
+        }
+
+        if (network.has_functions){
+            for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
+		curr->total_val = 0;
+		for (int i = 0; i < curr->n_elt; i++)
+		    curr->total_val += curr->elt_factor[i] * network.species->elt[curr->elt_index[i]-1]->val;
+            }
+
+            for (unsigned int j=0;j < network.var_parameters.size();j++) {
+		network.rates->elt[network.var_parameters[j]-1]->val = network.functions[j].Eval();
+	    }
+       }
+
+       for (Elt* elt = rates->list; elt != NULL; elt = elt->next) 
+           elt->val = *(param_map[elt->name]); 
        
     }
 

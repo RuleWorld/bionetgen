@@ -5,22 +5,22 @@ project(Network3)
 add_definitions(-DRUN_NETWORK_VERSION=\"3.0\")
 #add_definitions("-stdlib=libstdc++")
 
-set(SUB_DIRS 
-    src 
-    src/model 
-    src/pla 
-    src/ssa 
-    src/util 
-    src/model/rateExpressions 
-    src/model/reactions 
-    src/pla/base 
-    src/pla/eRungeKutta 
-    src/pla/fEuler 
-    src/pla/util 
-    src/pla/eRungeKutta/base
-    src/pla/eRungeKutta/util 
-    src/util/MTrand 
-    src/util/rand2
+set(SUB_DIRS
+src
+src/model
+src/pla
+src/ssa
+src/util
+src/model/rateExpressions
+src/model/reactions
+src/pla/base
+src/pla/eRungeKutta
+src/pla/fEuler
+src/pla/util
+src/pla/eRungeKutta/base
+src/pla/eRungeKutta/util
+src/util/MTrand
+src/util/rand2
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} include include/cvode include/nvector include/sundials SUB_DIRS)
@@ -41,22 +41,22 @@ aux_source_directory(src/pla/eRungeKutta/util eRK_util_files)
 aux_source_directory(src/util/MTrand mtrand_files)
 aux_source_directory(src/util/rand2 rand2_files)
 
-set(SRC_FILES 
-    ${src_files} 
-    ${model_files} 
-    ${pla_files} 
-    ${ssa_files}  
-    ${src_util_files} 
-    ${rexp_files} 
-    ${rxn_files} 
-    ${pla_base_files} 
-    ${eRK_files} 
-    ${fEuler_files} 
-    ${pla_util_files} 
-    ${eRK_base_files} 
-    ${eRK_util_files} 
-    ${mtrand_files} 
-    ${rand2_files}
+set(SRC_FILES
+${src_files}
+${model_files}
+${pla_files}
+${ssa_files}
+${src_util_files}
+${rexp_files}
+${rxn_files}
+${pla_base_files}
+${eRK_files}
+${fEuler_files}
+${pla_util_files}
+${eRK_base_files}
+${eRK_util_files}
+${mtrand_files}
+${rand2_files}
 )
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
