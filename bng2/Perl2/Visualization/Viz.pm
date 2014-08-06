@@ -42,8 +42,10 @@ sub indexHash { my @x = @{$_[0]}; map { $x[$_]=>$_ } 0..@x-1; }
 
 sub execute_params
 {
+	print "Executing visualize() command.\n";
 	my $model = shift @_;
 	my %args = %{shift @_};
+	
 	my @argkeys = keys %args;
 	my $err = "visualize() error.";
 	
@@ -62,7 +64,6 @@ sub execute_params
 	$args{'background'}->{'toggle'} = 1 if(not has(\@argkeys2,'toggle'));
 	$args{'background'}->{'include'} = [] if(not has(\@argkeys2,'include'));
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
-	
 	
 	if (not has(\@argkeys,'type'))
 	{
@@ -95,6 +96,7 @@ sub execute_params
 	my $ref1 = getAtomicPatterns($bkg_include);
 	if(not ref $ref1) { print "\nAtomic Pattern could not be created from ".$ref1."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
 	else {@includes = @$ref1};
+	
 	
 	my @excludes = ();
 	my $ref2 = getAtomicPatterns($bkg_exclude);
@@ -210,9 +212,13 @@ sub execute_params
 
 			if ($groups==1)
 			{
+				print "Creating classes of atomic patterns and rules.\n";
 				syncClasses($model,$bpg,\%classes);
 				if($collapse==1)
-					{ $bpg = collapseNetworkGraph($bpg); }
+					{ 
+					print "Collapsing network graph using equivalence classes.\n";
+					$bpg = collapseNetworkGraph($bpg); 
+					}
 			}	
 			if ($textonly==1)
 			{
@@ -375,6 +381,7 @@ sub getRuleNetworkGraphs
 	getRuleStructureGraphs($model);
 	if (not defined $gr->{'RuleNetworkGraphs'})
 	{
+		print "Building network graphs for individual rules.\n";
 		my @rsgs_arr = @{$gr->{'RuleStructureGraphs'}};
 		my @names_arr = @{$gr->{'RuleNames'}};
 		my @bpgs_arr = ();
@@ -403,6 +410,7 @@ sub getRuleNetwork
 	my $bpg;
 	if (not defined $gr->{'RuleNetwork'})
 	{
+		print "Compiling network graph for whole model.\n";
 		$bpg = mergeNetworkGraphs(flat(@{$gr->{'RuleNetworkGraphs'}}));
 		$bpg->{'Merged'} = 1;
 		$bpg->{'Collapsed'} = 0;
@@ -550,6 +558,7 @@ sub getBackground
 	my $model = shift @_;
 	my $include = @_ ? shift @_ : [];
 	my $exclude = @_ ? shift @_ : [];
+	
 	#my $except = @_ ? shift @_ : [];
 	my $bpg = @_ ? shift @_ : undef;
 	
@@ -580,8 +589,10 @@ sub getBackground
 	{
 		my @aps = grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
 		my @edges = grep {$_ =~ /Reactant|Product$/} @{$bpg->{'EdgeList'}};
+		# get atomic patterns not involved as reactant and products
 		my @aps2 = grep {$_ =~ /\(.*\)/} uniq map { $_ =~ /.*:(.*):.*/; $1; } @edges;
-		my @aps3 = grep { has(\@aps2,$_)==0 } @aps;
+		my @aps3 = grep { (has(\@aps2,$_)==0 and has($exclude,$_)==0) or has($include,$_)==1 } @aps;
+		
 		my @background = @{$gr->{'Background'}};
 		push @background, @aps3;
 		@background = uniq @background;
