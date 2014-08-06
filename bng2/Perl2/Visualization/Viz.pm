@@ -207,7 +207,6 @@ sub execute_params
 			if ($bkg_toggle==0)
 			{
 				getBackground($model,\@includes,\@excludes,$bpg);
-				#print map $_."\n", @{$model->VizGraphs->{'Background'}};
 				print "Filtering background.\n";
 				$bpg = filterNetworkGraph($bpg,$gr->{'Background'});
 			}
@@ -472,10 +471,28 @@ sub syncClasses
 	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
 				@{$bpg->{'NodeList'}};
 	
+	# updating classes_in to include wildcards
+	if(defined $classes_in)
+	{
+		my @wcs = grep /\!\+/, @aps;
+		foreach my $wc(@wcs)
+		{
+		# get wildcard relations
+		next if (has([keys %$classes_in],$wc));
+		my @matches = 	uniq( map { $classes_in->{$_} }
+						grep { has([keys %$classes_in],$_) }
+						map { $_ =~  /.*:(.*):.*/; $1;}
+						grep { $_ =~ quotemeta $wc }
+						grep { $_ =~ /Wildcard$/ } 
+						@{$bpg->{'EdgeList'}} );
+		if(scalar(@matches) ==1) { $classes_in->{$wc} = $matches[0]; }
+		}
+	
+	}
+	
 	# update bpg and model using %$classes_in
 	if(defined $classes_in)
 	{
-		my %x = %$classes_in;
 		my @aps2 = grep { has([keys %$classes_in],$_); } @aps;
 		map
 			{
@@ -505,6 +522,8 @@ sub syncClasses
 	my @prod_edges =	grep { $_ =~ /Product$/ }
 				@{$bpg->{'EdgeList'}};
 	my %reacprodhash;
+	# dont wanna lose the order;
+	my @reacprodvals; 
 	foreach my $rule(@rules)
 	{
 		my $reacprodstr = 	join " ",
@@ -526,8 +545,10 @@ sub syncClasses
 						grep { $_ =~ /^$rule:/;}
 						@reac_edges;
 		$reacprodhash{unquotemeta $rule} = $reacprodstr;
+		push @reacprodvals,$reacprodstr;
 		#$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
 	}
+	
 	
 	# get reacprodstrings that occur multiple times
 	# if it occurs only once, it doesnt need a group
@@ -536,7 +557,7 @@ sub syncClasses
 					{
 					my $x = $_;
 					scalar (grep { $_ eq $x } values %reacprodhash) >1;
-					} uniq values %reacprodhash;
+					} uniq @reacprodvals;
 	return if (scalar @reacprods == 0);
 	$gr->{'NewName'} = -1 if (not defined $gr->{'NewName'}); 
 	
@@ -564,7 +585,6 @@ sub getBackground
 	
 	#my $except = @_ ? shift @_ : [];
 	my $bpg = @_ ? shift @_ : undef;
-	
 	my $gr = $model->VizGraphs;
 	
 	if (not defined($gr->{'Background'}))
@@ -583,7 +603,7 @@ sub getBackground
 			map { $pr{$_}++ if(not $added{$_}++); } @$prod;
 		}
 		my @bkg1 = grep { has($exclude,$_)==0; } keys %re;
-		my @bkg2 = grep { has($include,$_)==1; } keys %pr;;
+		my @bkg2 = grep { has($include,$_)==1; } keys %pr;
 		my @background = (@bkg1,@bkg2);
 		$gr->{'Background'} = \@background;	
 	}
@@ -600,7 +620,7 @@ sub getBackground
 						grep {$_ =~ /Wildcard$/} 
 						@{$bpg->{'EdgeList'}};
 		my @aps_3 = uniq((@aps_1,@aps_2));
-		my @aps_4 = grep {has(\@aps_3,$_)==0} @aps;
+		my @aps_4 = grep {(has(\@aps_3,$_)==0 and has($exclude,$_)==0) or has($include,$_)==1} @aps;
 		#print map $_."\n", grep {has(\@aps_3,$_)==0} @aps;
 		
 		#my @aps2 = grep {$_ =~ /\(.*\)/} uniq map { $_ =~ /.*:(.*):.*/; $1; } @edges;

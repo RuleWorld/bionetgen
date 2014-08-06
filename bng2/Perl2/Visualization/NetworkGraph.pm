@@ -514,7 +514,6 @@ sub stringToAtomicPattern
 		my $psg = makePatternStructureGraph($sg);
 		my @nodes = @{$psg->{'NodeList'}};
 		my @ap = uniq(makeAtomicPatterns(\@nodes,\@nodes));
-		
 		my @pats;
 		if($pat =~ /\!/ and $pat !~ /\!\+/) 
 			{
@@ -531,6 +530,10 @@ sub stringToAtomicPattern
 		elsif($pat =~ /\(.{1,}\)/)
 			{
 			@pats = grep { $_ =~ /\(.{1,}\)/ } @ap;
+			}
+		elsif($pat =~ /\(\)/)
+			{
+			@pats = @ap;
 			}
 		if (scalar @pats != 1) 
 			{
@@ -719,7 +722,6 @@ sub collapseNetworkGraph
 	my @rule_classes = uniq(map $classes{$_}, @classed_rules);
 	my @pattern_classes = uniq(map $classes{$_}, @classed_patterns);
 	
-
 	my @nodelist2;
 	my @edgelist2;
 	my %nodetype2;
@@ -738,19 +740,9 @@ sub collapseNetworkGraph
 		}
 		if($z eq 'Wildcard')
 		{
-			my $dont =0;
-			if(has(\@classed_patterns,$x) and has(\@classed_patterns,$y))
-			{
-				if($classes{$x} eq $classes{$y})
-					{
-					$dont =1;
-					}
-			}
-			if(not $dont)
-			{
-			if(has(\@classed_patterns,$x)) { $x = $classes{$x} };
-			if(has(\@classed_patterns,$y)) { $y = $classes{$y} };
-			}
+			if(has(\@classed_patterns,$x)) { $x = $classes{$x}; };
+			if(has(\@classed_patterns,$y)) { $y = $classes{$y}; };
+			next if($x eq $y);
 		}
 		
 		#pushy stuff
@@ -768,6 +760,7 @@ sub collapseNetworkGraph
 	
 	@nodelist2=  uniq(@nodelist2);
 	@edgelist2 = uniq(@edgelist2);
+	
 	
 	my $bpg2 = NetworkGraph->new();
 	$bpg2->{'NodeList'} = \@nodelist2;
