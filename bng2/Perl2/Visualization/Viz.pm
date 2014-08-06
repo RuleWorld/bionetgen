@@ -207,6 +207,8 @@ sub execute_params
 			if ($bkg_toggle==0)
 			{
 				getBackground($model,\@includes,\@excludes,$bpg);
+				#print map $_."\n", @{$model->VizGraphs->{'Background'}};
+				print "Filtering background.\n";
 				$bpg = filterNetworkGraph($bpg,$gr->{'Background'});
 			}
 
@@ -555,6 +557,7 @@ sub syncClasses
 
 sub getBackground
 {
+	print "Computing background.\n";
 	my $model = shift @_;
 	my $include = @_ ? shift @_ : [];
 	my $exclude = @_ ? shift @_ : [];
@@ -588,13 +591,24 @@ sub getBackground
 	if(defined $bpg)
 	{
 		my @aps = grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
-		my @edges = grep {$_ =~ /Reactant|Product$/} @{$bpg->{'EdgeList'}};
-		# get atomic patterns not involved as reactant and products
-		my @aps2 = grep {$_ =~ /\(.*\)/} uniq map { $_ =~ /.*:(.*):.*/; $1; } @edges;
-		my @aps3 = grep { (has(\@aps2,$_)==0 and has($exclude,$_)==0) or has($include,$_)==1 } @aps;
+		my @edges = grep {$_ =~ /Reactant|Product|Wildcard$/} @{$bpg->{'EdgeList'}};
+		
+		my @aps_1 = 	map {$_ =~ /^.*:(.*):.*$/; $1; }
+						grep {$_ =~ /Reactant|Product$/} 
+						@{$bpg->{'EdgeList'}};
+		my @aps_2 = 	map {$_ =~ /^(.*):.*:.*$/; $1; }
+						grep {$_ =~ /Wildcard$/} 
+						@{$bpg->{'EdgeList'}};
+		my @aps_3 = uniq((@aps_1,@aps_2));
+		my @aps_4 = grep {has(\@aps_3,$_)==0} @aps;
+		#print map $_."\n", grep {has(\@aps_3,$_)==0} @aps;
+		
+		#my @aps2 = grep {$_ =~ /\(.*\)/} uniq map { $_ =~ /.*:(.*):.*/; $1; } @edges;
+		#my @aps3 = grep { (has(\@aps2,$_)==0 and has($exclude,$_)==0) or has($include,$_)==1 } @aps;
 		
 		my @background = @{$gr->{'Background'}};
-		push @background, @aps3;
+		#push @background, @aps3;
+		push @background, @aps_4;
 		@background = uniq @background;
 		$gr->{'Background'} = \@background;
 	
