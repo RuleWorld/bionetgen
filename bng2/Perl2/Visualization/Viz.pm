@@ -8,6 +8,7 @@ use Class::Struct;
 use SpeciesGraph;
 use StructureGraph;
 use NetworkGraph;
+use ProcessGraph;
 use GML;
 
 
@@ -17,6 +18,7 @@ struct Graphs =>
 	'RuleStructureGraphs' => '@',
 	'RulePatternGraphs' => '@',
 	'RuleNetwork' => '$',
+	'RuleNetworkCurrent' => '$',
 	'Background' => '@', # array of atomic patterns
 	'Classes' => '%', # classname => \@arrayofnodes
 	'NewName' => '$', # just a number to keep track of generated new names
@@ -42,7 +44,6 @@ sub indexHash { my @x = @{$_[0]}; map { $x[$_]=>$_ } 0..@x-1; }
 
 sub execute_params
 {
-	print "Executing visualize() command.\n";
 	my $model = shift @_;
 	my %args = %{shift @_};
 	
@@ -50,6 +51,7 @@ sub execute_params
 	my $err = "visualize() error.";
 	
 	$args{'output'} = 1 if (not has(\@argkeys,'output'));
+	if($args{'output'} == 1) {print "Executing visualize() command.\n"; }
 	$args{'suffix'} = '' if (not has(\@argkeys,'suffix'));
 	$args{'each'} = 0 if (not has(\@argkeys,'each'));
 	$args{'groups'} = 0 if (not has(\@argkeys,'groups'));
@@ -145,6 +147,7 @@ sub execute_params
 	if ($type eq 'rule_network')
 	{	
 		getRuleNetwork($model);
+		applyRuleNetworkCurrent($model,$model->VizGraphs->{'RuleNetwork'});
 	}	
 	
 	if ($type eq 'rule_operation')
@@ -189,30 +192,31 @@ sub execute_params
 	}
 	
 	
-	
-	
-	
 	if ($type eq 'rule_network')
 	{
-		my $bpg = $gr->{'RuleNetwork'};
-		if ($output==1 and $each==0)
+		if ($each==0)
 		{
 			if (defined $filter)
 			{ 
+				my $bpg = $gr->{'RuleNetworkCurrent'};
 				my @items= @{$filter->{'items'}}; 
 				my $level = $filter->{'level'};
 				$bpg = filterNetworkGraphByList($bpg,\@items,$level);
+				applyRuleNetworkCurrent($model,$bpg);
 			}
 			
 			if ($bkg_toggle==0)
 			{
+				my $bpg = $gr->{'RuleNetworkCurrent'};
 				getBackground($model,\@includes,\@excludes,$bpg);
 				print "Filtering background.\n";
 				$bpg = filterNetworkGraph($bpg,$gr->{'Background'});
+				applyRuleNetworkCurrent($model,$bpg);
 			}
 
 			if ($groups==1)
 			{
+				my $bpg = $gr->{'RuleNetworkCurrent'};
 				print "Creating classes of atomic patterns and rules.\n";
 				syncClasses($model,$bpg,\%classes);
 				if($collapse==1)
@@ -220,18 +224,43 @@ sub execute_params
 					print "Collapsing network graph using equivalence classes.\n";
 					$bpg = collapseNetworkGraph($bpg); 
 					}
-			}	
-			if ($textonly==1)
-			{
-				$str = printNetworkGraph($bpg);
-				$output = 0;
+				applyRuleNetworkCurrent($model,$bpg);
 			}
-			else
+			if($output==1)
 			{
-				$str = toGML_rule_network($bpg);
+				my $bpg = $gr->{'RuleNetworkCurrent'};
+				if ($textonly==1)
+				{
+					$str = printNetworkGraph($bpg);
+					$output = 0;
+				}
+				else
+				{
+					$str = toGML_rule_network($bpg);
+				}
 			}
 		}
 	}
+	
+	if($type eq 'process')
+	{
+		my %args2 = duplicate_args(\%args);
+		$args2{'type'} = 'rule_network';
+		$args2{'output'} = 0;
+		if($args{'groups'}) { $args2{'collapse'}=1; }
+		execute_params($model,\%args2);
+		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
+		my $pg = makeProcessGraph($bpg);
+		if($output==1)
+			{
+			if($textonly==1) {$str = printProcessGraph($pg); }
+			else { $str = toGML_process($pg); }
+			}
+	}
+		
+		
+		
+	
 	if($textonly==1)
 	{
 		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);	
@@ -300,7 +329,8 @@ sub writeGML
 	
 	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
 						'rule_pattern' => 'rule(s) with patterns',
-						'rule_network' => 'network of rules and atomic patterns',	);
+						'rule_network' => 'network of rules and atomic patterns',
+						'process' => 'process graph of rules' );
 	my $outputmsg = $outputstr{$type};
 	
 	my $file = '';
@@ -420,6 +450,13 @@ sub getRuleNetwork
 	return;
 }
 
+sub applyRuleNetworkCurrent
+{
+	my $model = shift @_;
+	my $bpg = shift @_;
+	$model->VizGraphs->{'RuleNetworkCurrent'} = $bpg;
+	return;
+}
 sub getRuleGroups
 {
 	my $model = shift @_;
@@ -479,13 +516,14 @@ sub syncClasses
 		{
 		# get wildcard relations
 		next if (has([keys %$classes_in],$wc));
-		my @matches = 	uniq( map { $classes_in->{$_} }
-						grep { has([keys %$classes_in],$_) }
-						map { $_ =~  /.*:(.*):.*/; $1;}
+		my @matches = 	map { $_ =~  /.*:(.*):.*/; $1;}
 						grep { $_ =~ quotemeta $wc }
 						grep { $_ =~ /Wildcard$/ } 
-						@{$bpg->{'EdgeList'}} );
-		if(scalar(@matches) ==1) { $classes_in->{$wc} = $matches[0]; }
+						@{$bpg->{'EdgeList'}} ;
+		next if ( scalar( grep {has([keys %$classes_in],$_)==0} @matches));
+		next if ( scalar( uniq( map {$classes_in->{$_}} @matches ) ) > 1 );
+		$classes_in->{$wc} = $classes_in->{$matches[0]};
+		#if(scalar(@matches) ==1) { $classes_in->{$wc} = $matches[0]; }
 		}
 	
 	}
@@ -532,18 +570,6 @@ sub syncClasses
 						map {$_ =~ /.*:(.*):.*/; $1;}
 						grep { $_ =~ /^$rule:/;}
 						@edges;
-		my $reacstr = 	join " + ",
-						sort {$a cmp $b}
-						uniq map {$temp{$_};}
-						map {$_ =~ /.*:(.*):.*/; $1;}
-						grep { $_ =~ /^$rule:/;}
-						@reac_edges;
-		my $prodstr = 	join " + ",
-						sort {$a cmp $b}
-						uniq map {$temp{$_};}
-						map {$_ =~ /.*:(.*):.*/; $1;}
-						grep { $_ =~ /^$rule:/;}
-						@reac_edges;
 		$reacprodhash{unquotemeta $rule} = $reacprodstr;
 		push @reacprodvals,$reacprodstr;
 		#$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
@@ -636,4 +662,12 @@ sub getBackground
 	return;
 }
 
+
+sub duplicate_args
+{
+	my %args = %{shift @_};
+	my %args2;
+	map {$args2{$_} = $args{$_}} keys %args;
+	return %args2;
+}
 1;

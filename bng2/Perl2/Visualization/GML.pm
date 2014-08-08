@@ -358,6 +358,7 @@ sub toGML_rule_operation
 	$gmlgraph->{'Edges'} =\@gmledges;
 	return printGML($gmlgraph);
 }
+
 sub toGML_rule_pattern
 {
 	my $sg = shift @_; #imports a rule pattern graph
@@ -565,6 +566,38 @@ sub toGML_rule_network
 	
 }
 
+sub toGML_process
+{
+	my $pg = shift @_;
+	my %indhash = indexHash( $pg->{'Processes'} );
+	
+	my @gmlnodes;
+	foreach my $r(@{$pg->{'Processes'}})
+	{
+		my $id = $indhash{$r};
+		my $name = $pg->{'Names'}->{$r};
+		my $gmlnode = initializeGMLNode($id,$name,$r);
+		styleNode2($gmlnode);
+		push @gmlnodes,$gmlnode;
+	}
+	
+	my @gmledges;
+	foreach my $edge(@{$pg->{'Edges'}})
+	{
+		my ($r1,$r2) = split(" ",$edge);
+		my $source = $indhash{$r1};
+		my $target = $indhash{$r2};
+		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
+		styleEdge2($gmledge,'Process');
+		push @gmledges,$gmledge;
+		
+	}
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGML($gmlgraph);
+}
 
 sub styleNode
 {
@@ -649,6 +682,7 @@ sub styleEdge2
 		'Product' => 	{'color'=>'#5e3c58','source'=>0,'target'=>1,'width'=>1},
 		'Wildcard' => 	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>1},
 		'Context' => 	{'color'=>'#798e87','source'=>1,'target'=>0,'width'=>1},
+		'Process' => 	{'color'=>'#000000','source'=>0,'target'=>1,'width'=>1},
 		);
 	my %keywords = ('color'=>'fill','source'=>'sourceArrow','target'=>'targetArrow','width'=>'width');
 	
