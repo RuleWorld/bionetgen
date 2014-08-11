@@ -186,7 +186,7 @@ sub execute_params
 		applyRuleNetworkCurrent($model,$model->VizGraphs->{'RuleNetwork'});
 		if ($each==0)
 		{
-			if (defined $filter)
+			if (defined $filter->{'items'})
 			{ 
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				my @items= @{$filter->{'items'}}; 
@@ -286,12 +286,12 @@ sub execute_params
 		}
 		
 		# printing pattern space
-		if($output == 1)
+		if($output == 1 and $collapse ==0)
 		{
 			if($textonly==0)
 			{
 				my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-				my %classes = ($groups==1) ? %{$bpg->{'NodeClass'}} : ();
+				my %classes = (defined $bpg->{'NodeClass'}) ? %{$bpg->{'NodeClass'}} : ();
 				my %nodetype = %{$bpg->{'NodeType'}};
 				my @aps = grep {$nodetype{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
 				my @classed = grep { has([keys %classes],$_) } @aps;

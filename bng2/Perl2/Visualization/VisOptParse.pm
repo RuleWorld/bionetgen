@@ -14,11 +14,12 @@ sub parseOpts
 	print "Processing Opts file ".$file."\n";
 	@lines = clean(\@lines);
 	# parsing main block
-	my ($names,$arrs) = getblocks(\@lines,['background','classes','toggle']);
+	my ($names,$arrs) = getblocks(\@lines,['background','classes','toggle','filter']);
 	my %toggle;
 	#my %background = {'include'=>[],'exclude'=>[]};
 	my %background;
 	my %classes;
+	my %filter;
 	foreach my $i(0..@$names-1)
 		{
 		my $name = $names->[$i];
@@ -49,9 +50,14 @@ sub parseOpts
 				$classes{$nm} = \@ar;
 				}
 			}
+		if($name eq 'filter')
+			{
+			my @ar = genlist(\@arr);
+			$filter{'items'} =\@ar;
+			}
 		}
 	#print map { $_.":".join(",",@{$classes{$_}})."\n"; } keys %classes;
-	return (\%toggle,\%background,\%classes);
+	return (\%toggle,\%background,\%classes,\%filter);
 }
 
 sub clean

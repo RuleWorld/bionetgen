@@ -38,7 +38,7 @@ use VisOptParse;
 
 if (scalar (@ARGV) == 0) { display_help(); exit; }
 
-my %args = ('background'=>0, 'collapse'=>0,'groups'=>0,'each'=>0,'textonly'=>0,'suffix'=>'','help'=>0) ;
+my %args = ('background'=>0, 'collapse'=>0,'groups'=>0,'each'=>0,'textonly'=>0,'suffix'=>'','help'=>0,'filter'=>0,'level'=>1) ;
 
 GetOptions(	\%args,
 			'help!',
@@ -51,6 +51,8 @@ GetOptions(	\%args,
 			'groups!',
 			'textonly!',
 			'suffix=s',
+			'filter!',
+			'level=i',
 		) or die "Error in command line arguments.";
 
 if($args{'help'}) 
@@ -110,7 +112,8 @@ sub initializeExecParams
 	my $each = 0;
 	my $groups = 0;
 	my $classes = {};
-	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes);
+	my $filter = {};
+	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter);
 	return %x;
 }
 
@@ -124,10 +127,11 @@ sub getExecParams
 	
 	foreach my $file(@{$args{'opts'}})
 	{
-		my ($x,$y,$z) = parseOpts($file);
+		my ($x,$y,$z,$f) = parseOpts($file);
 		my %toggle = %$x;
 		my %background = %$y;
 		my %classes = %$z;
+		my %filter = %$f;
 		
 		# do toggles;
 		foreach my $key(keys %toggle)
@@ -150,6 +154,11 @@ sub getExecParams
 			if(not defined $classes2->{$key}) { $classes2->{$key} = \@arr; }
 			push2ref($classes2->{$key},$classes{$key});
 		}
+		if(defined $filter{'items'}) 
+			{
+			if (not defined $exec_params{'filter'}->{'items'}) {$exec_params{'filter'}->{'items'} = [];};
+			push2ref($exec_params{'filter'}->{'items'},$filter{'items'});
+			}
 		
 	}
 	
@@ -160,6 +169,8 @@ sub getExecParams
 	$exec_params{'collapse'} = $args{'collapse'};
 	$exec_params{'textonly'} = $args{'textonly'};
 	$exec_params{'suffix'} = $args{'suffix'};
+	
+	if(defined $args{'level'}) {$exec_params{'filter'}->{'level'} = $args{'level'} };
 	return \%exec_params;
 }
 
