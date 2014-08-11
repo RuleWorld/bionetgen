@@ -103,7 +103,7 @@ sub getWCs
 			if(@matches) { push @rets,map {$_ =~ /^(.*):.*:.*/; $1; } @matches; }
 		}
 	}
-	return @rets;
+	return uniq(@rets);
 }
 
 sub makeName

@@ -643,15 +643,29 @@ sub mergeNetworkGraphs
 
 sub filterNetworkGraph
 {
+	# when $reverse is not mentioned, it simply removes the nodes that are
+	# included in @$filter from the bpg
+	# when $reverse eq 'reverse', it removes everything BUT those nodes
 	my $bpg = shift @_;
 	my $filter = shift @_;
+	my $reverse = @_ ? shift @_ : '';
+	my $includegroups = @_ ? shift @_ : 0;
 
 	my @nodelist = @{$bpg->{'NodeList'}};
 	my @edgelist = @{$bpg->{'EdgeList'}};
 	my %nodetype = %{$bpg->{'NodeType'}};
 	
+	
+	if( $reverse eq 'reverse' )
+	{
+		# this is if a reverse
+		my @filter2 = grep { has($filter,$_)==0; } @nodelist;
+		$filter = \@filter2;
+	}
+	
 	my @new_nodelist = grep { has($filter,$_)==0; } @nodelist;
 	my %new_nodetype = map { $_=>$nodetype{$_} } @new_nodelist;
+	
 	
 	my @removed_edges;
 	my @remove1 = 	grep { 
@@ -673,6 +687,14 @@ sub filterNetworkGraph
 	$bpg2->{'Merged'} = $bpg->{'Merged'};
 	$bpg2->{'Filtered'} = 1;
 	$bpg2->{'Collapsed'} = $bpg->{'Collapsed'};
+	
+	if($includegroups and defined $bpg->{'NodeClass'})
+	{
+	my %nodeclass = %{$bpg->{'NodeClass'}};
+	my %new_nodeclass = map { $_=>$nodeclass{$_} } @new_nodelist;
+	$bpg2->{'NodeClass'} = \%new_nodeclass;
+	}
+	
 	return $bpg2;
 }
 
@@ -704,6 +726,12 @@ sub filterNetworkGraphByList
 	my @remove = grep { has(\@items,$_)==0; } @{$bpg->{'NodeList'}};
 	my $bpg2 = filterNetworkGraph($bpg,\@remove);
 	uniqNetworkGraph($bpg2);
+	if(defined $bpg->{'NodeClass'}) 
+	{
+		my %classes;
+		updateDict(\%classes,$bpg->{'NodeClass'},$bpg2->{'NodeList'});
+		$bpg2->{'NodeClass'} = \%classes;
+	}
 	return $bpg2;
 }
 
@@ -772,6 +800,35 @@ sub collapseNetworkGraph
 	return $bpg2;
 }
 
+sub updateDict
+{
+	my $update_this = shift @_;
+	my $update_using  = shift @_;
+	my $update_list = shift @_;
+	
+	#my @keys1 = keys %{$update_this};
+	my @keys2 = keys %{$update_using};
+	my @common_keys = grep { has(\@keys2,$_)  } @{$update_list};
+	
+	map { $update_this->{$_} = $update_using->{$_} } @common_keys; 
+	return;
+}
 
+sub duplicateNetworkGraph
+{
+	my $bpg = shift @_;
+	my $bpg2 = NetworkGraph->new();
+	
+	$bpg2->{'NodeList'} = \@{$bpg->{'NodeList'}};
+	$bpg2->{'EdgeList'} = \@{$bpg->{'EdgeList'}};
+	$bpg2->{'NodeType'} = \%{$bpg->{'NodeType'}};
+	if(defined $bpg->{'NodeClass'})
+	 { $bpg2->{'NodeClass'} = \%{$bpg->{'NodeClass'}}; }
+	$bpg2->{'Merged'} = $bpg->{'Merged'};
+	$bpg2->{'Collapsed'} = $bpg->{'Collapsed'};
+	$bpg2->{'Filtered'} = $bpg->{'Filtered'};
+	return $bpg2;
+
+}
 1;
 

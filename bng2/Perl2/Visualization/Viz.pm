@@ -74,8 +74,8 @@ sub execute_params
 		return $err;
 	}
 	
-	my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	
+	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
 	my $type = $args{'type'};
 	my $output = $args{'output'};
 	my $each = $args{'each'};
@@ -132,26 +132,12 @@ sub execute_params
 	my @rrules = @{$model->RxnRules};
 	my $str = '';
 	my @strs = ();
+	my @groups;
 	
-	
-	# getting the relevant structures
 	getRuleNames($model);
-	if ($type eq 'rule_operation')
-		{
-		getRuleStructureGraphs($model);
-		}
-	if ($type eq 'rule_pattern')
-		{
-		getRulePatternGraphs($model);
-		}
-	if ($type eq 'rule_network')
-	{	
-		getRuleNetwork($model);
-		applyRuleNetworkCurrent($model,$model->VizGraphs->{'RuleNetwork'});
-	}	
-	
-	if ($type eq 'rule_operation')
+	if ($type eq 'ruleviz_operation')
 	{
+		getRuleStructureGraphs($model);
 		if($output==1 and $each==0)
 		{	
 			my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
@@ -171,8 +157,9 @@ sub execute_params
 	}
 	
 	
-	if ($type eq 'rule_pattern')
+	if ($type eq 'ruleviz_pattern')
 	{
+		getRulePatternGraphs($model);
 		if($output==1 and $each==0)
 		{
 			my @rsgs = map {@$_;} flat($gr->{'RulePatternGraphs'});
@@ -192,8 +179,11 @@ sub execute_params
 	}
 	
 	
-	if ($type eq 'rule_network')
+	if ($type eq 'regulatory')
 	{
+		# printing rule network (using each or without each)
+		getRuleNetwork($model);
+		applyRuleNetworkCurrent($model,$model->VizGraphs->{'RuleNetwork'});
 		if ($each==0)
 		{
 			if (defined $filter)
@@ -240,12 +230,116 @@ sub execute_params
 				}
 			}
 		}
+		if ($each ==1)
+		{
+			
+			my %args2 = duplicate_args(\%args);
+			$args2{'output'} = 0;
+			$args2{'each'} = 0;
+			$args2{'collapse'} = 0;
+			execute_params($model,\%args2);
+			my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
+			my %classes = ($groups==1) ? %{$bpg->{'NodeClass'}} : ();
+			my %nodetype = %{$bpg->{'NodeType'}};
+			my @edges = @{$bpg->{'EdgeList'}};
+			my @wcs = uniq(map {$_ =~ /^(.*):.*:.*/; $1; } grep /Wildcard/,@edges);
+			my @groups = 	uniq map {$classes{$_}}
+							grep {has([keys %classes],$_)}
+							grep {$nodetype{$_} eq 'Rule'}
+							@{$bpg->{'NodeList'}};
+			
+			# classed rules
+			foreach my $i(0..@groups-1)
+			{
+				my $grpname = $groups[$i];
+				# check if group is for rules or aps;
+				my @grp = grep { $classes{$_} eq $grpname } keys %classes;
+				my $grptype = $nodetype{$grp[0]};
+				my $bpg2 = filterNetworkGraphByList($bpg,\@grp,1);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2);
+				my %params = ('model'=>$model,'str'=>$str,'suffix'=>$grpname,'type'=>$type);
+				if($output==1)
+				{
+					if($textonly==1) { writeText(\%params); }
+					else { writeGML(\%params); }
+				}
+			}
+			# unclassed rules
+			my @unclassed_rules = 	grep { not has([keys %classes],$_) }
+									grep {$nodetype{$_} eq 'Rule'} 
+									@{$bpg->{'NodeList'}};
+			foreach my $i(0..@unclassed_rules-1)
+			{
+				my @grp = ($unclassed_rules[$i]);
+				my $bpg2 = filterNetworkGraphByList($bpg,\@grp,1);
+				# right now this is not efficient
+				# better way is to regenerate the network graph, but then u'll have to apply background n
+				# filter n other things again... boring!
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2);
+				my %params = ('model'=>$model,'str'=>$str,'suffix'=>$grp[0],'type'=>$type);
+				if($output==1)
+				{
+					if($textonly==1) { writeText(\%params); }
+					else { writeGML(\%params); }
+				}
+			}
+		}
+		
+		# printing pattern space
+		if($output == 1)
+		{
+			if($textonly==0)
+			{
+				my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
+				my %classes = ($groups==1) ? %{$bpg->{'NodeClass'}} : ();
+				my %nodetype = %{$bpg->{'NodeType'}};
+				my @aps = grep {$nodetype{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
+				my @classed = grep { has([keys %classes],$_) } @aps;
+				my @apclasses = uniq map { $classes{$_} } @classed;
+				my @unclassed = grep { not has(\@classed, $_) } @aps;
+				my @pats = ();
+			
+				my $j = -1;
+				foreach my $i(0..@apclasses-1)
+				{
+					$j++;
+					my $apclass = $apclasses[$i];
+					my @grp = grep {$classes{$_} eq $apclass} @classed;
+					my @psgs = map { stringToPatternStructureGraph($grp[$_],$_) } 0..@grp-1;
+					my $psg = combine(\@psgs,$j);
+					my $psg2 = addPatternNode($psg,$j,'',$apclass);
+					push @pats, $psg2;
+				}
+				foreach my $i(0..@unclassed-1)
+				{
+					$j++;
+					my $psg = stringToPatternStructureGraph($unclassed[$i],$j);
+					push @pats, $psg;
+				}
+				
+				my $psg = combine2(\@pats);
+				my $str = toGML_pattern($psg);
+				my %params = ('model'=>$model,'str'=>$str,'suffix'=>'patterns','type'=>$type);
+				writeGML(\%params);
+			}
+			else
+			{
+				my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
+				my $str = printNetworkGraph($bpg);
+				my %params = ('model'=>$model,'str'=>$str,'type'=>'regulatory');
+				# this is the whole network, not the pattern space..
+				# too bored to sit n filter this..
+				writeText(\%params);
+			}
+		}
+		
+		if($each==1) {$output = 0;}
 	}
 	
 	if($type eq 'process')
 	{
 		my %args2 = duplicate_args(\%args);
-		$args2{'type'} = 'rule_network';
+		$args2{'type'} = 'regulatory';
 		$args2{'output'} = 0;
 		if($args{'groups'}) { $args2{'collapse'}=1; }
 		execute_params($model,\%args2);
@@ -261,7 +355,7 @@ sub execute_params
 		
 		
 	
-	if($textonly==1)
+	if($textonly==1 and $each==0)
 	{
 		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);	
 		writeText(\%params);
@@ -284,6 +378,7 @@ sub execute_params
 			}	(0..@names-1);
 	}
 	
+	
 	return '';
 }
 
@@ -298,7 +393,8 @@ sub writeText
 	
 	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
 						'rule_pattern' => 'rule(s) with patterns',
-						'rule_network' => 'network of rules and atomic patterns',	);
+						'regulatory' => 'network of rules and atomic patterns',
+						'patterns' => 'atomic patterns',);
 	my $outputmsg = $outputstr{$type};
 	
 	my $file = '';
@@ -327,9 +423,9 @@ sub writeGML
 	my $type = $params{'type'};
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
 	
-	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
-						'rule_pattern' => 'rule(s) with patterns',
-						'rule_network' => 'network of rules and atomic patterns',
+	my %outputstr = (	'ruleviz_operation' => 'rule(s) with graph operations',
+						'ruleviz_pattern' => 'rule(s) with patterns',
+						'regulatory' => 'network of rules and atomic patterns',
 						'process' => 'process graph of rules' );
 	my $outputmsg = $outputstr{$type};
 	
@@ -355,14 +451,17 @@ sub getRuleNames
 {
 	my $model = shift @_;
 	my $gr = $model->VizGraphs;
-	my @rrules = @{$model->RxnRules};
-	my @names_arr = ();
-	foreach my $rrule(@rrules)
+	if(not defined $gr->{'RuleNames'})
 	{
-		my @names = map {$_->Name;} @$rrule;
-		push @names_arr,\@names;
+		my @rrules = @{$model->RxnRules};
+		my @names_arr = ();
+		foreach my $rrule(@rrules)
+		{
+			my @names = map {$_->Name;} @$rrule;
+			push @names_arr,\@names;
+		}
+		$gr->{'RuleNames'} = \@names_arr;
 	}
-	$gr->{'RuleNames'} = \@names_arr;
 	return;
 }
 sub getRuleStructureGraphs
@@ -570,10 +669,23 @@ sub syncClasses
 						map {$_ =~ /.*:(.*):.*/; $1;}
 						grep { $_ =~ /^$rule:/;}
 						@edges;
+		my @reac = 		uniq map {$_ =~ /.*:(.*):.*/; $1;}
+						grep { $_ =~ /^$rule:/;}
+						grep { $_ =~ /Reactant/; }
+						@edges;
+		my @prod = 		uniq map {$_ =~ /.*:(.*):.*/; $1;}
+						grep { $_ =~ /^$rule:/;}
+						grep { $_ =~ /Product/; }
+						@edges;
+		my $reacstr = @reac ? join(" ",sort {$a cmp $b} map {$temp{$_}} @reac) : '';
+		my $prodstr = @prod ? join(" ",sort {$a cmp $b} map {$temp{$_}} @prod) : '';
+		$reacprodstr = $reacstr." -> ".$prodstr;
 		$reacprodhash{unquotemeta $rule} = $reacprodstr;
 		push @reacprodvals,$reacprodstr;
 		#$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
 	}
+	
+	#print map $_."\n",uniq(@reacprodvals);
 	
 	
 	# get reacprodstrings that occur multiple times

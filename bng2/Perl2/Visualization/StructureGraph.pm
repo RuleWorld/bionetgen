@@ -70,7 +70,6 @@ sub printStructureGraph
 	return $psg->{'Type'}."\n".join("\n",@string);
 }
 
-# methods for making pattern structure graphs
 sub makePatternStructureGraph
 {
 	my $sg = shift @_;
@@ -137,6 +136,7 @@ sub makePatternStructureGraph
 	#print $psg->printStructureGraph();
 	return $psg;	
 }
+
 sub combine
 {
 # appends an index to all nodes of each structure graph 
@@ -588,7 +588,7 @@ sub addPatternNode
 	my $psg = shift @_;
 	my $index = shift @_;
 	my $prefix = shift @_;
-	my $name = $prefix.$index;
+	my $name = @_ ? shift @_ : $prefix.$index;
 	my @nodelist = @{$psg->{'NodeList'}};
 	my %remap = map { $_->{'ID'} => $index.".".$_->{'ID'}} @nodelist;
 	foreach my $node (@nodelist ) 
@@ -609,6 +609,7 @@ sub addPatternNode
 
 }
 
+# patter
 # methods for rule pattern graphs
 sub makeRulePatternGraph
 {	
@@ -631,5 +632,30 @@ sub makeRulePatternGraph
 	$rbpg = addRuleNode($rbpg,$index,$name);
 	return $rbpg;
 }
+
+sub makePatternClassGraph
+{
+	my @patstrs = @{shift @_};
+	my $name = shift @_;
+	my $index = shift @_;
+	
+	my @psgs = map { stringToPatternStructureGraph($patstrs[$_],$_) } 0..@patstrs-1;
+	my $psg = combine(\@psgs,$index);
+	my $psg2 = addPatternNode($psg,$index,'',$name);
+
+}
+
+# string to pattern structure graph
+sub stringToPatternStructureGraph
+{
+		my $pat = shift @_;
+		my $index = shift @_;
+		my $patstr = $pat;
+		my $sg = SpeciesGraph->new();
+		my $err = SpeciesGraph::readString($sg,\$patstr);
+		my $psg = makePatternStructureGraph($sg,$index);
+		return $psg;
+}
+
 
 1;

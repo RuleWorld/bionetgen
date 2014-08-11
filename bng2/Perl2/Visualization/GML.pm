@@ -359,6 +359,111 @@ sub toGML_rule_operation
 	return printGML($gmlgraph);
 }
 
+sub toGML_pattern
+{
+	my $sg = shift @_; #imports a rule pattern graph
+	my @nodelist = @{$sg->{'NodeList'}};
+	#remap all ids to integers
+	my @idlist = map{$_->{'ID'}} @nodelist;
+	my %indhash = indexHash(\@idlist);
+	foreach my $node(@nodelist) { remapNode($node,\%indhash); }
+	my @structnodes = grep ( 
+	{ $_->{'Type'} ne 'BondState' 
+	and $_->{'Type'} ne 'Rule'
+	and $_->{'Type'} ne 'Pattern'} @nodelist);
+	#print scalar @nodelist; print "\n";
+	#print scalar @structnodes; print "\n";
+	
+	my @gmlnodes = ();
+	foreach my $node(@nodelist)
+	{
+		my $id = $node->{'ID'};
+		my $name = $node->{'Name'};
+		my $type = $node->{'Type'};
+				
+		# ignore if it is a bond with two parents
+		if ( $type eq 'BondState' and scalar @{$node->{'Parents'}} == 2) 
+		{ next; }
+		
+		my $gmlnode = initializeGMLNode($id,$name,$node);
+		my $isstruct = 1;
+		
+		# treat wildcard bonds
+		if ($type eq 'BondState') 
+		{
+			my @comps = @{$node->{'Parents'}};
+			my $comp = findNode(\@nodelist,$comps[0]);
+			my @mols = @{$comp->{'Parents'}};
+			my $mol = findNode(\@nodelist,$mols[0]);
+			if(defined $mol->{'Parents'}) 
+				{
+				my @sp = @{$mol->{'Parents'}};
+				$gmlnode->{'gid'} = $sp[0];
+				}
+			$isstruct = 0; 
+		}
+		if ($isstruct)
+		{
+			if ($node->{'Parents'})
+			{
+				foreach my $parent_id(@{$node->{'Parents'}}) 
+				{ 
+					$gmlnode->{'gid'} = $parent_id;
+				}
+			}
+			if (hasChildren(\@structnodes,$node))
+			{
+				$gmlnode->{'isGroup'} = 1;
+			}
+		}
+		push @gmlnodes, $gmlnode;
+	}
+	
+	my @gmledges = ();
+	# draw the bonds
+	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
+	foreach my $node(@bondnodes)
+	{
+		my @parents = @{$node->{'Parents'}};
+		my $source;
+		my $target;
+		if (scalar @parents == 1)
+		{
+			$source = $node->{'ID'};
+			$target = $parents[0];
+		}
+		else
+		{
+			$source = $parents[0];
+			$target = $parents[1];		
+		}
+		my $gmledge = initializeGMLEdge($source,$target);
+		push @gmledges,$gmledge;
+		
+	}
+	# draw edges to rules
+	
+	
+	my %stylemap = ('Rule'=>5,'Pattern'=>1, 'Mol'=>2, 'Comp'=>3,
+	'BondState'=>3, 'CompState'=>4 );
+	foreach my $node(@gmlnodes)
+	{
+	my $object = $node->{'object'};
+	my $type = $object->{'Type'};
+	styleNode($node,$stylemap{$type});
+	}
+	
+	foreach my $edge(@gmledges)
+	{
+	styleEdge($edge);
+	}
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGML($gmlgraph);
+
+}
 sub toGML_rule_pattern
 {
 	my $sg = shift @_; #imports a rule pattern graph

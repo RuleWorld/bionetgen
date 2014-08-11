@@ -36,9 +36,12 @@ use lib 	File::Spec->catdir(
 use Viz;
 use VisOptParse;
 
-my %args = ('type'=>'rule_network', 'background'=>0, 'collapse'=>0,'groups'=>0,'each'=>0,'textonly'=>0,'suffix'=>'') ;
+if (scalar (@ARGV) == 0) { display_help(); exit; }
+
+my %args = ('background'=>0, 'collapse'=>0,'groups'=>0,'each'=>0,'textonly'=>0,'suffix'=>'','help'=>0) ;
 
 GetOptions(	\%args,
+			'help!',
 			'bngl=s',
 			'type=s',
 			'opts=s@',
@@ -49,7 +52,15 @@ GetOptions(	\%args,
 			'textonly!',
 			'suffix=s',
 		) or die "Error in command line arguments.";
-		
+
+if($args{'help'}) 
+{
+if(defined($args{'type'}) ) { display_help(\%args); }
+else { display_help(); }
+exit;
+}
+
+if(not defined $args{'type'}) {$args{'type'} = 'regulatory'; }
 
 filecheck($args{'bngl'},'BNGL');
 map { filecheck($_,'Opts') } @{$args{'opts'}} if defined $args{'opts'};
@@ -160,4 +171,66 @@ sub push2ref
 	else { push @$arr,$item; }
 	return;
 }
-#
+
+
+sub display_help
+{
+	my $args = @_ ? shift @_ : 0;
+	my $str;
+	if($args==0) {
+	$str .= "\n visualize.pl \n";
+	$str .= " ---------------------------------------------/ HELP MENU /----------\n";
+	$str .= " SYNOPSIS\n                                                            \n";
+	$str .= "   visualize.pl                           show this help menu                   \n";
+	$str .= "   visualize.pl -h                                \"                   \n";
+	$str .= "   visualize.pl -help                             \"                   \n";
+	$str .= "   visualize.pl --type TYPE [OPTIONS]     make visualization of type TYPE       \n";
+	$str .= "   visualize.pl --type TYPE --help        show help on a specific visualization \n";
+	$str .= "   TYPE = rule_network, rule_pattern, rule_operation or process\n";
+	$str .= "\n OPTIONS                                                             \n";
+	$str .= "\n File I/O                                                          \n\n";
+	$str .= "   --bngl BNGL     use BioNetGen model file                          \n";
+	$str .= "   --opts FILE     use Options text file                             \n";
+	$str .= "   --textonly      Ouputs Text-only version of visualization (default is GML)\n";
+	$str .= "   --suffix STR    Adds suffix to output filename\n";
+	$str .= "\n Visualization config                                                  \n\n";
+	$str .= "   --type TYPE     create visualization of a certain type \n";
+	$str .= "   --background    turn background ON (default OFF)                  \n";
+	$str .= "   --groups        turn grouping ON (default OFF)                    \n";
+	$str .= "   --each          output each rule/group separately (default OFF)	  \n";
+	$str .= "\n try: visualize.pl --type regulatory --help\n";
+	
+	print $str;
+	return;
+	}
+	
+	if($args->{'type'} eq 'regulatory')
+	{
+	$str .= "\n visualize.pl --type regulatory\n";
+	$str .= " ---------------------------------------------/ HELP MENU /----------\n";
+	$str .= " PURPOSE\n\n";
+	$str .= " Used to generate a regulatory network of rules and atomic patterns.\n";
+	$str .= "\n USAGE\n\n";
+	$str .= " visualize.pl [--type regulatory] [--background] [--groups [--collapse]] [--each] [OPTIONS] \n\n";
+	$str .= " --type is assumed as regulatory if not provided.\n\n";
+
+	$str .= " --background turns background ON (OFF by default). When OFF, some patterns are\n";
+	$str .= " determined to be background and removed from network graph. The assignment can\n";
+	$str .= " be modified using the options file.\n\n";
+
+	$str .= " --groups turns grouping ON (OFF by default). Patterns are grouped using classes\n";
+	$str .= " that are provided in the options file. Rules are grouped automatically based on\n";
+	$str .= " pattern relationships.\n\n";
+	
+	$str .= " --collapse computes a smaller network graph where groups of nodes are replaced\n";
+	$str .= " by a single node representing the group. Requires --groups.\n\n"; 
+
+	$str .= " For help on file input and output options try: visualize.pl --help \n";
+	print $str;
+	return;
+	}
+	
+	print $args->{'type'}." is not a valid type.\n";
+	return;
+}
+
