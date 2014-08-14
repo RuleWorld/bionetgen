@@ -1,0 +1,24 @@
+begin parameters
+	on_rate_AA	1
+	off_rate_AA	1
+end parameters
+begin molecule types
+	x(l,r,type~A~B)
+end molecule types
+begin seed species
+	x(l,r,type~A)	100
+	x(l,r,type~B)	100
+end seed species
+begin observables
+
+end observables
+begin functions
+
+end functions
+begin reaction rules
+	x(r,type~A)+x(l,type~A)<->x(r!0,type~A).x(l!0,type~A) on_rate_AA,off_rate_AA exclude_products(1,x.x.x.x.x)
+end reaction rules
+
+generate_network({overwrite=>1,max_stoich=>{x=>4}})
+#generate_network({max_stoich=>{x=>4},overwrite=>1})
+
