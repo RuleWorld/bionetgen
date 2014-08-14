@@ -124,6 +124,7 @@ set_model_name
 // a list of the different sections a bngl file may have. Order is not enforced.
 program_block
 : 
+  read_file |
   parameters_block[memory,$prog::parameters] | 
   molecule_types_block | 
   seed_species_block[$prog::seedSpecies] | 
@@ -133,6 +134,45 @@ program_block
   population_maps_block | 
   compartments_block |
   energy_patterns_block
+;
+
+read_file
+: 
+  READFILE LPAREN LBRACKET 
+    ((ATOMIZE ASSIGNS INT | BLOCKS ASSIGNS bng_blocks_list) COMMA)* 
+    FILE ASSIGNS DBQUOTES filename DBQUOTES
+    (COMMA (ATOMIZE ASSIGNS INT | BLOCKS ASSIGNS bng_blocks_list))*
+  RBRACKET RPAREN SEMI?
+  (LB+ | EOF)
+;
+
+filename
+:
+//  (STRING|DOT|DIV|MINUS|FLOAT)+
+  (~DBQUOTES)+
+;
+
+bng_blocks_list
+:
+  LSBRACKET (DBQUOTES bng_blocks DBQUOTES (COMMA DBQUOTES bng_blocks DBQUOTES)*) RSBRACKET
+;
+
+bng_blocks
+:
+  PARAMETERS |
+  COMPARTMENTS |
+  MOLECULE TYPES |
+  SPECIES | 
+  SEED SPECIES |
+  OBSERVABLES |
+  FUNCTIONS |
+  ENERGY PATTERNS |
+  POPULATION TYPES |
+  POPULATION MAPS |
+  REACTION RULES |
+  REACTIONS |
+  GROUPS |
+  ACTIONS
 ;
 
 //Note: The grammars for all sections except functions and compartments are separated in their own files

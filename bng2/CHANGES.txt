@@ -1,8 +1,19 @@
 CHANGES to BioNetGen
-updated 23 January 2014
+updated 14 August 2014
 http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.6-stable ==
+
+* Added a 'reset_conc' argument to parameter_scan() that suppresses the call to
+resetConcentrations() if set to 0 (default value is 1). This allows simulations in 
+the scan to be started from the end point of the previous simulation (see below).
+
+* Added a new bifurcate() action that takes the same arguments as parameter_scan() (except
+'reset_conc'). The method automatically runs two scans, one from 'par_min' to 'par_max' and 
+the other in the reverse direction. Each simulation in the scans starts from the end point 
+of the previous simulation by passing 'reset_conc=>1' to parameter_scan(). Output files are
+then generated for each observable containing the parameter values vs. final observable
+values for both forward and reverse directions.
 
 * Added support for compartments in writeSBML() and upgraded the supported
 version of SBML to Level 2 Version 3.
@@ -13,6 +24,9 @@ version of SBML to Level 2 Version 3.
 * Modified 'readFile' to process SBML input files using $BNG_HOME/bin/sbmlTranslator.
 'readFile' will also now throw an error if the input file extension is not any
 of ".bngl", ".net", or ".xml".
+
+* Modified 'readFile' to allow specific model blocks to be read using the 'blocks' argument.
+** Example: <big><tt>readFile({file=>"filename.bngl",blocks=>["parameters","seed species"]})</tt></big>
 
 * Modified NET file output to list all rules that generate a given 
 reaction in the comment following each line of the "reactions" block.
@@ -30,7 +44,7 @@ modifications that must be made to build Network3.
 
 ** An error is now thrown if an unrecognized block name is encountered.
 
-** BNG will no longer switch to "compartmental" mode if the <big><tt>compartments'</tt></big> 
+** BNG will no longer switch to "compartmental" mode if the <big><tt>compartments</tt></big> 
 block is empty.
 
 ** Expressions for compartment volumes are now correctly evaluated when generating a BNG-XML file.

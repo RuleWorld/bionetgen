@@ -41,7 +41,7 @@ begin reaction rules
 R1: Rec(a) + Lig(l,l) <-> Rec(a!1).Lig(l!1,l) kp1, km1
 
 # Receptor-aggregation
-R2: Rec(a) + Lig(l,l!1) <-> Rec(a!2).Lig(l!2,l!1) kp2,km2
+R2: Rec(a) + Lig(l,l!+) <-> Rec(a!2).Lig(l!2,l!+) kp2,km2
 
 # Constitutive Lyn-receptor binding
 R3: Rec(b~Y) + Lyn(U,SH2) <-> Rec(b~Y!1).Lyn(U!1,SH2) kpL, kmL
@@ -87,8 +87,8 @@ R14: Rec(b~pY)-> Rec(b~Y) dm
 R15: Rec(g~pY)-> Rec(g~Y) dm
 
 # Dephosphorylation of Syk at membrane
-R16: Syk(tSH2!1,l~pY)-> Syk(tSH2!1,l~Y) dm
-R17: Syk(tSH2!1,a~pY)-> Syk(tSH2!1,a~Y) dm
+R16: Syk(tSH2!+,l~pY)-> Syk(tSH2!+,l~Y) dm
+R17: Syk(tSH2!+,a~pY)-> Syk(tSH2!+,a~Y) dm
 
 # Dephosphorylation of Syk in cytosol
 R18: Syk(tSH2,l~pY)-> Syk(tSH2,l~Y) dc

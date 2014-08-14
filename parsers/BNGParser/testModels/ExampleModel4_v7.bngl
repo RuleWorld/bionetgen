@@ -1,0 +1,78 @@
+begin model
+
+# A model of a genetic toggle switch
+#   In this model, a transcriptional repressor, X, inhibits the synthesis
+#   of a second repressor, Y, which inhibits the synthesis of X.
+#   Repression is captured using the following function: 
+#   1/(1+([repressor]/K)^n).
+
+# Reference:
+# 1. Gardner TS, Cantor CR, Collins JJ (2000) Nature 403: 339-342.
+
+# read parameters from file
+readFile({file=>"/Users/lopezlab/RuleBender-workspace/BMC_Biology/parameters.bngl"})
+#readFile({file=>"../../../parameters.bngl"})
+
+begin molecule types
+
+# Repressor 1
+X()
+
+# Repressor 2
+Y()
+
+end molecule types
+
+begin species
+X() Xinit
+Y() Yinit
+end species
+
+begin observables
+Molecules X_tot X()
+Molecules Y_tot Y()
+end observables
+
+begin reaction rules
+
+# synthesis of X according to a user-defined rate law
+#   0 is a source.
+0->X() bx/(1+(Y_tot/Kyx)^nyx) 
+
+# clearance of X (through degradation and dilution)
+#   0 is a sink.
+X()->0 ax
+
+# synthesis of Y according to a user-defined rate law
+0->Y() by/(1+(X_tot/Kxy)^nxy) 
+
+# clearance of Y
+Y()->0 ay
+
+end reaction rules
+
+end model
+
+begin actions
+
+generate_network({overwrite=>1})
+
+# Write ODEs for chemical kinetics of the generated network in a MATLAB M-file 
+writeMfile()
+
+# set initial system state close to the stable steady state where
+#   expression of repressor X is off.
+setConcentration("X()",0)
+setConcentration("Y()",50)
+
+# find steady states as a function of Kxy, which reflects the strength
+#   of X's repression of Y.
+#   Values of Kxy are scanned from the minimum specified value to the maximum.
+#   Values are also scanned in the opposite direction.
+#   If bistability exists, this procedure will find both steady states at each
+#   tested value of the bifurcation parameter in the bistable region.
+bifurcate({parameter=>"Kxy",par_min=>1.0,par_max=>1.0e2,n_scan_pts=>100,\ 
+           log_scale=>1,method=>"ode",t_start=>0,t_end=>1000,n_steps=>10,\
+           steady_state=>1})
+
+end actions

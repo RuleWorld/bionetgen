@@ -1385,6 +1385,98 @@ sub generate_hybrid_model
 ###
 
 
+sub bifurcate
+{
+	my $model = shift @_;
+    my $params = @_ ? shift @_ : {};
+    
+    my @scanfiles = ();
+    my ($i,$j,$err);
+    
+    $params->{reset_conc} = 0;
+    
+    # update user
+    printf "ACTION: bifurcate(par: %s, min: %s, max: %s, n_pts: %s, log: %s)\n", 
+    		(exists $params->{parameter}  ? $params->{parameter}  : "UNKNOWN"),
+    		(exists $params->{par_min}    ? $params->{par_min}    : "UNKNOWN"),
+    		(exists $params->{par_max}    ? $params->{par_max}    : "UNKNOWN"),
+    		(exists $params->{n_scan_pts} ? $params->{n_scan_pts} : "UNKNOWN"),
+    		(exists $params->{log_scale}  ? $params->{log_scale}  : 0);
+    		    
+    # forward scan
+    if (exists $params->{suffix}){ $params->{suffix} .= "_forward"; }
+    else{ $params->{suffix} = "forward"; }
+    $err = $model->parameter_scan( $params );
+    if ($err){ return $err }
+    push @scanfiles, $params->{scanfile}; # 'outfile' param set in parameter_scan
+    
+    # backwards scan
+    $params->{suffix} =~ s/forward/backward/;
+    my $par_min = $params->{par_min};
+    $params->{par_min} = $params->{par_max};
+    $params->{par_max} = $par_min;
+    $err = $model->parameter_scan( $params );
+    if ($err){ return $err }
+    push @scanfiles, $params->{scanfile}; # 'outfile' param set in parameter_scan
+    
+    # extract forward scan data
+    my @forward;
+    open FILE, $scanfiles[0] or die "Couldn't open file: $!"; 
+    my $line = <FILE>; # first line
+    chomp $line;
+    $line =~ s/^\s*#\s+//; # remove leading # and whitespace
+    my @header = split('\s+',$line); # scan param + observable names
+    $i = 0;
+	while ($line = <FILE>){
+		chomp $line;
+		$line =~ s/^\s*//; # remove leading whitespace
+		my @tmp = split('\s+',$line);
+		for ($j=0;$j < scalar(@tmp);$j++){
+			$forward[$i][$j] = $tmp[$j];
+		}
+		$i++;
+	}
+	close FILE;
+	
+	# extract backward scan data
+	my @backward;
+	open FILE, $scanfiles[1] or die "Couldn't open file: $!"; 
+    $line = <FILE>; # first line
+    $i = 0;
+	while ($line = <FILE>){
+		chomp $line;
+		$line =~ s/^\s*//; # remove leading whitespace
+		my @tmp = split('\s+',$line);
+		for ($j=0;$j < scalar(@tmp);$j++){
+			$backward[$i][$j] = $tmp[$j];
+		}
+		$i++;
+	}
+	close FILE;
+
+	# generate one output file for each observable
+    my $prefix = $scanfiles[0];
+    $prefix =~ s/_forward.scan$/_bifurcation_/;
+    for (my $j=1;$j < scalar(@header);$j++){
+    		open FILE, '>', ($prefix . $header[$j] . ".scan") or die "Couldn't open file: $!";
+		printf FILE "# %+14s %+16s %+16s\n",$header[0],"$header[$j]_fwd","$header[$j]_bwd";
+		for (my $i=0;$i < scalar(@forward);$i++){
+			printf FILE "%16.8e %16.8e %16.8e\n",$forward[$i][0],$forward[$i][$j],$backward[scalar(@forward)-1-$i][$j];
+		}
+		close FILE;
+    }
+	
+	# delete scan files and return
+    unlink @scanfiles;
+	return;
+}
+
+
+
+###
+###
+###
+
 
 sub parameter_scan
 {
@@ -1393,7 +1485,8 @@ sub parameter_scan
 
     # define default params
     my $default_params = {  'prefix'   	=> $model->getOutputPrefix(),
-                            'log_scale'	=> 0
+                            'log_scale'	=> 0,
+                            'reset_conc' => 1
                          };
 
     # copy default values for undefined keys
@@ -1408,16 +1501,16 @@ sub parameter_scan
 
     # check for required parameters
     unless ( defined $params->{parameter} )
-    {   return "parameter_scan error: 'parameter' is not defined.";   }
+    {   return "Error in parameter_scan: 'parameter' is not defined.";   }
 
     unless ( defined $params->{par_min} )
-    {   return "parameter_scan error: 'par_min' is not defined.";   }
+    {   return "Error in parameter_scan: 'par_min' is not defined.";   }
 
     unless ( defined $params->{par_max} )
-    {   return "parameter_scan error: 'par_max' is not defined.";   }
+    {   return "Error in parameter_scan: 'par_max' is not defined.";   }
     
     unless ( defined $params->{n_scan_pts} )
-    {   return "parameter_scan error: 'n_scan_pts' is not defined.";   }
+    {   return "Error in parameter_scan: 'n_scan_pts' is not defined.";   }
 
 
     # update user
@@ -1456,16 +1549,16 @@ sub parameter_scan
     my $par_max = $params->{log_scale} ? log $params->{par_max} : $params->{par_max};
     my $delta;
     if ($par_max == $par_min){
-    	if ($params->{n_scan_pts} < 1){
-    		return "parameter_scan error: 'n_scan_pts' must be >= 1 if 'par_max' = 'par_min'.";
-    	}
-    	$delta = 0.0;
+	    	if ($params->{n_scan_pts} < 1){
+	    		return "Error in parameter_scan: 'n_scan_pts' must be >= 1 if 'par_max' = 'par_min'.";
+	    	}
+	    	$delta = 0.0;
     }
     elsif ($params->{n_scan_pts} <= 1){
-    	return "parameter_scan error: 'n_scan_pts' must be > 1 if 'par_max' != 'par_min'.";
+	    	return "Error in parameter_scan: 'n_scan_pts' must be > 1 if 'par_max' != 'par_min'.";
     }
     else{
-    	$delta = ($par_max - $par_min) / ($params->{n_scan_pts} - 1); # note that this may be negative if par_max < par_min (not a problem)
+	    	$delta = ($par_max - $par_min) / ($params->{n_scan_pts} - 1); # note that this may be negative if par_max < par_min (not a problem)
     }   
 
     # remember concentrations!
@@ -1476,7 +1569,6 @@ sub parameter_scan
     {
         # define prefix
         my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
-  #      my $local_prefix = File::Spec->catfile( ($workdir), sprintf("par_%s_%05d", $params->{parameter}, $k+1) );
     	
         # define parameter value
         my $par_value = $par_min + $k*$delta;
@@ -1487,7 +1579,9 @@ sub parameter_scan
         $model->setParameter( $params->{parameter}, $par_value );
 
         # reset concentrations
-        $model->resetConcentrations("SCAN");
+        if ( $params->{reset_conc} ){
+        		$model->resetConcentrations("SCAN");
+        }
 
         # define local params
         my $local_params;
@@ -1499,19 +1593,20 @@ sub parameter_scan
         my $err = $model->simulate( $local_params );
         if ( $err )
         {   # return error message
-            $err = "parameter_scan error (step " . ($k+1) . "): $err";
+            $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
             return $err;
         }   
     }
 
     # recover concentrations
-    $model->resetConcentrations("SCAN");
-
+    if ( $params->{reset_conc} ){
+    		$model->resetConcentrations("SCAN");
+    }
 
     # Extract last timepoint from each simulation and write to outfile
     my $ofh;
     unless ( open $ofh, '>', $outfile )
-    {   return "parameter_scan error: problem opening parameter scan output file $outfile";   }
+    {   return "Error in parameter_scan: problem opening parameter scan output file $outfile";   }
 
     for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k )
     {
@@ -1524,7 +1619,7 @@ sub parameter_scan
         print "Extracting observable trajectory from $data_file\n";
         my $ifh;
         unless ( open $ifh,'<', $data_file )
-        {   return "parameter_scan error: problem opening observable file $data_file";   }
+        {   return "Error in parameter_scan: problem opening observable file $data_file";   }
 
         # write header
         if ( $k == 0 )
@@ -1562,7 +1657,8 @@ sub parameter_scan
     close $ofh;
 
     # return without error
-    return undef;
+    $params->{scanfile} = $outfile; # in case another method needs this (e.g. 'bifurcate')
+	return;
 }
 
 

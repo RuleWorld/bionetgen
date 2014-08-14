@@ -127,15 +127,18 @@ UTL: 'utl';
 EQUIL: 'equil';
 
 PARAMETER_SCAN: 'parameter_scan';
+BIFURCATE: 'bifurcate';
 PARAMETER: 'parameter';
 PAR_MIN: 'par_min';
 PAR_MAX: 'par_max';
 N_SCAN_PTS: 'n_scan_pts';
 LOG_SCALE: 'log_scale';
+RESET_CONC: 'reset_conc';
 
 READFILE: 'readFile';
 FILE: 'file';
 ATOMIZE: 'atomize';
+BLOCKS: 'blocks';
 
 //WRITEFILE: 'writeFile';
 //WRITENET: 'writeNET';

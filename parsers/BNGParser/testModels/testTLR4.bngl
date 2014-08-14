@@ -283,7 +283,7 @@ IkB(phosp~P,NFkB!+,p65!1,p50!2,prot26).p65(p50!+,IkB!1,NFkB).p50(p65!+,IkB!2,NFk
 
  NFkB(IkB,activate~Y,location~cytoplasm) <-> NFkB(IkB,activate~Y,location~nucleus) NFkB_Translocation_Nucleus, NFkB_Translocation_Nucleus
 
-IkB(phosp~P,NFkB,p65!+,p50!+,prot26!1,IKK!+) -> TrashIkB  IkB_Proteosome26_Degrade
+IkB(phosp~P,NFkB,p65!+,p50!+,prot26!+,IKK!+) -> TrashIkB  IkB_Proteosome26_Degrade
 
 #Rule 33: TRAF6(IRAK1!?,A20,TRIF!?,TAK1!?,Ub~Y) + A20 -> TRAF6(IRAK1,A20,TRIF,TAK1,Ub~N) + A20 A20_MyD88IRAK1TRAF6_Degrade DeleteMolecules
 

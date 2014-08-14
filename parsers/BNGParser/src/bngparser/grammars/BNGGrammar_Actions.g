@@ -42,7 +42,7 @@ action
   generate_network {actions.add($generate_network.st);} | 
   generate_hybrid_model {actions.add($generate_hybrid_model.st);} |
   simulate_method {actions.add($simulate_method.st);} | 
-  read_file {actions.add($read_file.st);} | 
+//  read_file {actions.add($read_file.st);} | 
   write_model {actions.add($write_model.st);} | 
   write_xml {actions.add($write_xml.st);} | 
   write_network {actions.add($write_network.st);} |
@@ -128,7 +128,8 @@ scope{
   simulate_ssa[$simulate_method::actions] {$simulate_method::method = "simulate_ssa";} | 
   simulate_pla[$simulate_method::actions] {$simulate_method::method = "simulate_pla";} | 
   simulate_nf[$simulate_method::actions] {$simulate_method::method = "simulate_nf";} | 
-  parameter_scan[$simulate_method::actions] {$simulate_method::method = "parameter_scan";}
+  parameter_scan[$simulate_method::actions] {$simulate_method::method = "parameter_scan";} |
+  bifurcate[$simulate_method::actions] {$simulate_method::method = "bifurcate";}
   -> action(id={$simulate_method::method},optionMap={$simulate_method::actions})
 ;
         
@@ -175,27 +176,37 @@ simulate_nf[Map<String,String> map]
 parameter_scan[Map<String,String> map]
 :
   PARAMETER_SCAN LPAREN (LBRACKET 
-  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map])
-  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]))*)? 
+  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]|
+    s1=RESET_CONC ASSIGNS i1=INT {map.put($s1.text,$i1.text);})
+  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]|
+    s2=RESET_CONC ASSIGNS i2=INT {map.put($s2.text,$i2.text);}))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
-read_file
-scope{
-  Map<String,String> actions;
-}
-@init{
-  $read_file::actions = new HashMap<String,String>();
-}
-: 
-  READFILE LPAREN 
-  (LBRACKET 
-  (FILE ASSIGNS DBQUOTES s1=(filename) DBQUOTES {$read_file::actions.put($FILE.text,$s1.text);}) 
-  (COMMA ATOMIZE ASSIGNS i1=INT {$read_file::actions.put($ATOMIZE.text,$i1.text);})?
-  RBRACKET) 
-  RPAREN SEMI? 
-  -> action(id={$READFILE.text},optionMap={$read_file::actions})
+bifurcate[Map<String,String> map]
+:
+  BIFURCATE LPAREN (LBRACKET
+  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map])
+  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]))*)? 
+  RBRACKET)? RPAREN SEMI? 
 ;
+
+//read_file
+//scope{
+//  Map<String,String> actions;
+//}
+//@init{
+//  $read_file::actions = new HashMap<String,String>();
+//}
+//: 
+//  READFILE LPAREN 
+//  (LBRACKET 
+//  (FILE ASSIGNS DBQUOTES s1=(filename) DBQUOTES {$read_file::actions.put($FILE.text,$s1.text);}) 
+//  (COMMA ATOMIZE ASSIGNS i1=INT {$read_file::actions.put($ATOMIZE.text,$i1.text);})?
+//  RBRACKET) 
+//  RPAREN SEMI? 
+//  -> action(id={$READFILE.text},optionMap={$read_file::actions})
+//;
 
 write_model
 scope{
@@ -613,7 +624,7 @@ array_value
   LSBRACKET STRING (COMMA STRING)* RSBRACKET
 ;
 
-filename
-:
-  (STRING|DOT|DIV|MINUS|FLOAT)+
-;
+//filename
+//:
+//  (STRING|DOT|DIV|MINUS|FLOAT)+
+//;

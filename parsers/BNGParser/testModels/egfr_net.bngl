@@ -83,23 +83,23 @@ egfrLigRecBind : egfr(l,r)   + egf(r) <-> egfr(l!1,r).egf(r!1)   kp1, km1   #lig
 
 # Note changed multiplicity
 # Receptor-aggregation 
-RecAggr : egfr(l!1,r) + egfr(l!2,r) <-> egfr(l!1,r!3).egfr(l!2,r!3) kp2,km2
+RecAggr : egfr(l!+,r) + egfr(l!+,r) <-> egfr(l!+,r!3).egfr(l!+,r!3) kp2,km2
 
 # Transphosphorylation of egfr by RTK
-PhosY1068 : egfr(r!1,Y1068~Y) -> egfr(r!1,Y1068~pY)  kp3
-PhosY1148 : egfr(r!1,Y1148~Y) -> egfr(r!1,Y1148~pY)  kp3
+PhosY1068 : egfr(r!+,Y1068~Y) -> egfr(r!+,Y1068~pY)  kp3
+PhosY1148 : egfr(r!+,Y1148~Y) -> egfr(r!+,Y1148~pY)  kp3
 
 #Dephosphorylayion
 DephosY1068 : egfr(Y1068~pY) -> egfr(Y1068~Y)  km3
 DephosY1148 : egfr(Y1148~pY) -> egfr(Y1148~Y)  km3
 
 # Shc transphosph
-SHCegfrtransphos : egfr(r!2,Y1148~pY!1).Shc(PTB!1,Y317~Y) ->  egfr(r!2,Y1148~pY!1).Shc(PTB!1,Y317~pY)  kp14
-SHCtransphos : Shc(PTB!1,Y317~pY)  ->  Shc(PTB!1,Y317~Y)  km14
+SHCegfrtransphos : egfr(r!+,Y1148~pY!1).Shc(PTB!1,Y317~Y) ->  egfr(r!+,Y1148~pY!1).Shc(PTB!1,Y317~pY)  kp14
+SHCtransphos : Shc(PTB!+,Y317~pY)  ->  Shc(PTB!+,Y317~Y)  km14
 
 # Y1068 activity
 Y1068bindSH2freeSH3 : egfr(Y1068~pY) + Grb2(SH2,SH3)   <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3)   kp9,km9
-Y1068bindSH2 : egfr(Y1068~pY) + Grb2(SH2,SH3!2) <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3!2) kp11,km11
+Y1068bindSH2 : egfr(Y1068~pY) + Grb2(SH2,SH3!+) <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3!+) kp11,km11
 Y1068bindSH2SH3binddom : egfr(Y1068~pY!1).Grb2(SH2!1,SH3) + Sos(dom) <-> egfr(Y1068~pY!1).Grb2(SH2!1,SH3!2).Sos(dom!2) kp10,km10
 
 # Y1148 activity
@@ -120,13 +120,13 @@ Y1148bindPTBfreeSH3 : egfr(Y1148~pY!1).Shc(PTB!1,Y317~pY) + Grb2(SH2,SH3)   <-> 
 Y317bindSH2 : egfr(Y1148~pY!1).Shc(PTB!1,Y317~pY) + Grb2(SH2,SH3!3).Sos(dom!3)   <-> \
         egfr(Y1148~pY!1).Shc(PTB!1,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)  kp24,km24
 
-SH3binddom : Shc(PTB!1,Y317~pY!2).Grb2(SH2!2,SH3) + Sos(dom)   <-> \
-        Shc(PTB!1,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)  kp19,km19
+SH3binddom : Shc(PTB!+,Y317~pY!2).Grb2(SH2!2,SH3) + Sos(dom)   <-> \
+        Shc(PTB!+,Y317~pY!2).Grb2(SH2!2,SH3!3).Sos(dom!3)  kp19,km19
 
 # Cytosolic 
 
 Y317bindSH2 : Shc(PTB,Y317~pY) + Grb2(SH2,SH3)   <-> Shc(PTB,Y317~pY!1).Grb2(SH2!1,SH3)    kp21,km21
-Y317bindSH2SH3 : Shc(PTB,Y317~pY) + Grb2(SH2,SH3!2) <-> Shc(PTB,Y317~pY!1).Grb2(SH2!1,SH3!2)  kp23,km23
+Y317bindSH2SH3 : Shc(PTB,Y317~pY) + Grb2(SH2,SH3!+) <-> Shc(PTB,Y317~pY!1).Grb2(SH2!1,SH3!+)  kp23,km23
 Y317dephos : Shc(PTB,Y317~pY) -> Shc(PTB,Y317~Y)  km16
 SH3binddom : Grb2(SH2,SH3) + Sos(dom) <-> Grb2(SH2,SH3!1).Sos(dom!1) kp12,km12
 boundY317SH3binddom : Shc(PTB,Y317~pY!2).Grb2(SH2!2,SH3) + Sos(dom)   <-> \

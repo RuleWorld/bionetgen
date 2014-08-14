@@ -245,6 +245,37 @@ sub readSBML
         my $model  = shift @_;
         my $params = @_ ? shift @_ : {};
 
+		# supported blocks
+		my %blocks = (
+			'parameters' => 1,
+			'compartments' => 1,
+			'molecule types' => 1,
+			'species' => 1,
+			'seed species' => 1,
+			'observables' => 1,
+			'functions' => 1,
+			'energy patterns' => 1,
+			'population types' => 1,
+			'population maps' => 1,
+			'reaction rules' => 1,
+			'reactions' => 1,
+			'groups' => 1,
+			'actions' => 1,
+		);
+
+		# user-specified list of blocks to read
+		if (exists $params->{blocks}){
+			my %tmp;
+			foreach my $block (@{$params->{blocks}}){
+				$tmp{$block} = 1;
+			}
+			foreach (keys %blocks){
+				unless (exists $tmp{$_}){
+					$blocks{$_} = 0;
+				}
+			}
+		}
+
         # a place for error messages
         my $err;
 
@@ -422,7 +453,10 @@ sub readSBML
 	                my $block_dat;
 	                ( $block_dat, $err ) = read_block_array($name);
 	                if ($err) {  goto EXIT;  }
-	                $bngdata{$name} = 1;
+#	                $bngdata{$name} = 1;
+	                
+	                # Move on if block has been suppressed by the user
+					unless ($blocks{$name}) { next; }
 	
 	                ### Read Parameters Block
 	                if ( $name eq 'parameters' )
@@ -671,7 +705,7 @@ sub readSBML
 	                            }
 	
 	                            # get group weights
-	                            my @group_weights = split /,/, $tokens[0];
+	                            my @group_weights = split (/,/, $tokens[0]);
 	
 	                            # Zero the weights (TODO..)
 	                            @{$obs->Weights} = (0) x scalar @{$obs->Weights};
@@ -1004,7 +1038,7 @@ sub readSBML
         }    
         # drop a level
         --$level;
-        # return with any error messages    
+        # return with any error messages
         return $err;
     }
 
