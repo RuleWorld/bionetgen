@@ -237,10 +237,14 @@ sub simulate
     # pla-specific arguments
     if ($method eq 'pla')
     {
-        if (exists $params->{pla_config})
-        {   push @command, split(' ', $params->{pla_config});  }
-        if (defined $params->{pla_output})
-    	{   push @command, "--pla_output", $params->{pla_output};  }
+        if (!exists $params->{pla_config}){
+        		$params->{pla_config} = "fEuler|pre-neg:sb|eps=0.03";
+        		send_warning("'pla_config' not defined, using default: $params->{pla_config}");
+        }
+        push @command, $params->{pla_config};
+        if (defined $params->{pla_output}){
+        		push @command, "--pla_output", $params->{pla_output};
+        }
     }
     
     # add method options
@@ -356,7 +360,7 @@ sub simulate
          (defined $params->{sample_times} || @sample_times) ){
         # Throw warning if both n_steps and sample_times are defined
         my $x = ( defined $params->{n_steps} ) ? "n_steps" : "n_output_steps";
-        printf "WARNING: $x and sample_times both defined. $x takes precedence.\n";
+        send_warning("$x and sample_times both defined. $x takes precedence.");
     }
     if ( defined $params->{n_steps} || defined $params->{n_output_steps} || 
        ( !defined $params->{sample_times} && !@sample_times) )
@@ -375,8 +379,8 @@ sub simulate
         
         if ( ($t_end - $t_start) <= 0.0 )
         {
-        	print "WARNING: t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
-                  "Simulation won't run.\n";
+        	send_warning("t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
+                  	 "Simulation won't run.");
         }
         
         if (defined $params->{n_steps}){
@@ -581,7 +585,7 @@ sub simulate
 
     # Report number of times edge species became populated without network expansion
     if ($edge_warning)
-    {   send_warning("Edge species of truncated network became populated $edge_warning times");   }
+    {   send_warning("Edge species of truncated network became populated $edge_warning times.");   }
 
     if (@err)
     {   # print any errors received from 
@@ -614,7 +618,7 @@ sub simulate
         }
         else
         {   # warn user about failure to acheive steady state
-            send_warning("Steady_state status = $steady_state_reached");
+            send_warning("Steady_state status = $steady_state_reached.");
             return "Simulation did not reach steady state by t_end=${t_end}";
         }
     }
@@ -622,7 +626,7 @@ sub simulate
     # If there are no errors or flags so far, let's load output concentrations
     if ( !($model->RxnList) )
     {   # TODO: what does this accomplish? --Justin
-        send_warning("Not updating species concentrations because no model has been read");
+        send_warning("Not updating species concentrations because no model has been read.");
     }
     elsif ( -e "$prefix.cdat" )
     {
@@ -1126,7 +1130,7 @@ sub generate_hybrid_model
         $clist_new = $model->CompartmentList->copy( $plist_new );
         $hybrid_model->CompartmentList( $clist_new );
         print $indent . sprintf "found %d compartments.\n", scalar @{$clist_new->Array};
-        send_warning( "generate_hybrid_model() does not support compartments at this time" ) if (@{$clist_new->Array});  
+        send_warning( "generate_hybrid_model() does not support compartments at this time." ) if (@{$clist_new->Array});  
     }
     
     

@@ -74,26 +74,26 @@ foreach my $line (@lines)
     }
     elsif( $line =~ /^\s*(\d+):\s*(\w+)\*\s*=\s*(.+)/ )
     {
-    	my $rank = $1;
-    	my $node = $2;
-    	my $func = $3;
-    	
-    	push @NODES, $node;
-    	
-    	# FUNCTIONS
-    	my $fname = "${node}_func()";
-    	
-    	$func =~ tr/a-z/A-Z/;            # make everything upper case
-    	$func =~ s/\(\s+/\(/g;           # remove whitespace after '(' character
-    	$func =~ s/\s+\)/\)/g;           # remove whitespace before ')' character
-    	$func =~ s/\s+or\s+/ \|\| /ig;   # replace 'or' with '||'
-    	$func =~ s/\s+and\s+/ \&\& /ig;  # replace 'and' with '&&'
-    	$func =~ s/(\s*)not\s+/$1!/ig;   # replace 'not' with '!' (also remove trailing whitespace)
-    	$func =~ s/(\w+)/$1>0.5/g;       # replace all 'ABC' with 'ABC>0.5'
-    	$func =~ s/!(\w+)>0.5/$1<0.5/g;  # replace all '!ABC>0.5' with 'ABC<0.5'
-    	
-    	$func = "$fname if($func, 1, 0)";
-    	push @functions, $func;
+	    	my $rank = $1;
+	    	my $node = $2;
+	    	my $func = $3;
+	    	
+	    	push @NODES, $node;
+	    	
+	    	# FUNCTIONS
+	    	my $fname = "${node}_func()";
+	    	
+	    	$func =~ tr/a-z/A-Z/;            # make everything upper case
+	    	$func =~ s/\(\s+/\(/g;           # remove whitespace after '(' character
+	    	$func =~ s/\s+\)/\)/g;           # remove whitespace before ')' character
+	    	$func =~ s/\s+or\s+/ \|\| /ig;   # replace 'or' with '||'
+	    	$func =~ s/\s+and\s+/ \&\& /ig;  # replace 'and' with '&&'
+	    	$func =~ s/(\s*)not\s+/$1!/ig;   # replace 'not' with '!' (also remove trailing whitespace)
+	    	$func =~ s/(\w+)/$1>0.5/g;       # replace all 'ABC' with 'ABC>0.5'
+	    	$func =~ s/!(\w+)>0.5/$1<0.5/g;  # replace all '!ABC>0.5' with 'ABC<0.5'
+	    	
+	    	$func = "$fname if($func, 1, 0)";
+	    	push @functions, $func;
 
 		# RULES
 		my $rate = "1";
