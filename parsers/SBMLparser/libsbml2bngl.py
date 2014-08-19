@@ -326,8 +326,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     with open(outputFile,'w') as f:
             f.write(returnArray[-2])
-    with open('{0}.dict'.format(outputFile),'wb') as f:
-        pickle.dump(returnArray[-1],f)
+#     with open('{0}.dict'.format(outputFile),'wb') as f:
+#         pickle.dump(returnArray[-1],f)
     return returnArray[0:-2]
 
 def correctRulesWithParenthesis(rules,parameters):
@@ -510,7 +510,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     functions = reorderFunctions(functions)
 
     functions = changeNames(functions,aParameters)
-    print [x for x in functions if 'functionRate60' in x]
+#     print [x for x in functions if 'functionRate60' in x]
 
     functions = unrollFunctions(functions)
     rules = changeRates(rules,aParameters)
