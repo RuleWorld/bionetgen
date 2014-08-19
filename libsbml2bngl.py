@@ -303,6 +303,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     '''
     one of the library's main entry methods. Process data from a string
     '''
+    logMess.log = []
+    logMess.counter = -1
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(bioNumber)
     
@@ -324,8 +326,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     with open(outputFile,'w') as f:
             f.write(returnArray[-2])
-    #with open('{0}.dict'.format(outputFile),'wb') as f:
-    #    pickle.dump(returnArray[-1],f)
+    with open('{0}.dict'.format(outputFile),'wb') as f:
+        pickle.dump(returnArray[-1],f)
     return returnArray[0:-2]
 
 def correctRulesWithParenthesis(rules,parameters):
@@ -348,6 +350,9 @@ def changeNames(functions,dictionary):
     tmpArray = []
     for function in functions:
         tmp = function.split(' = ')
+        #hack to avoid problems with less than equal or more than equal
+        #in equations
+        tmp = [tmp[0],''.join(tmp[1:])] 
         for key in [x for x in dictionary if x in tmp[1]]:
             tmp[1] = re.sub(r'(\W|^){0}(\W|$)'.format(key),r'\1{0}\2'.format(dictionary[key]),tmp[1])
         tmpArray.append('{0} = {1}'.format(tmp[0],tmp[1]))
@@ -479,6 +484,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
                 flag = idx
         if flag != -1:
             initialConditions[flag] = '#' + initialConditions[flag]
+
     for flag in sorted(deleteMolecules,reverse=True):
         
         if deleteMoleculesFlag:
@@ -493,6 +499,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     functions.extend(aRules)
     sbmlfunctions = parser.getSBMLFunctions()
     processFunctions(functions,sbmlfunctions,artificialObservables,rateFunctions)
+
     for interation in range(0,3):
         for sbml2 in sbmlfunctions:
             for sbml in sbmlfunctions:
@@ -501,7 +508,10 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
                 if sbml in sbmlfunctions[sbml2]:
                     sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
     functions = reorderFunctions(functions)
+
     functions = changeNames(functions,aParameters)
+    print [x for x in functions if 'functionRate60' in x]
+
     functions = unrollFunctions(functions)
     rules = changeRates(rules,aParameters)
     
@@ -854,7 +864,7 @@ def processDir(directory,atomize=True):
         #except:
             #continue'
     
-def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False):
+def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False,output=None):
     '''
     processes a file. derp.
     '''
@@ -869,7 +879,10 @@ def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False):
     rlength = -1
     reval = -1
     reval2 = -1
-    outputFile = '{0}.bngl'.format(fileName)
+    if output:
+        outputFile = output
+    else:
+        outputFile = '{0}.bngl'.format(fileName)
     rlength, reval, reval2, clength,rdf  = analyzeFile(fileName, reactionDefinitions,
                 useID,namingConventions,outputFile,speciesEquivalence=spEquivalence,atomize=atomize,bioGrid=bioGrid)
 
@@ -907,8 +920,14 @@ if __name__ == "__main__":
     #main()
     #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
-    #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
-    processFile3('XMLExamples/curated/BIOMD0000000048.xml',customDefinitions='reactionDefinitions/speciesEquivalence48.json',bioGrid=False) 
+    #processFile3('XMLExamples/non_curated/MODEL1012220002.xml') 
+    #output=48
+    #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
+    param = 480
+    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
+                    False, 'config/namingConventions.json',
+                    'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+
     #processFile3('XMLExamples/curated/BIOMD0000000048.xml',customDefinitions=None,atomize=True)    
     #processFile3('/home/proto/Downloads/compartment_test_sbml.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/curated/')
