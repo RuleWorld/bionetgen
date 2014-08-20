@@ -38,6 +38,12 @@ that generate a reaction can help identify and debug situations like this.
 * Added instructions to Makefile.cmake for Mac OS X 10.9+ users regarding
 modifications that must be made to build Network3.
 
+* Added a default PLA configuration to 'simulate'. If 'method=>"pla"' and 
+'pla_config' is not defined, the configuration is set to "fEuler|pre-neg:sb|eps=0.03", 
+i.e., a standard tau-leaping method (1st order) with species-based preleap tau
+calculations, negative-population postleap checking, and error control parameter 
+'eps' of 0.03.
+
 * Bug fixes
 
 ** An error is now thrown if zero-order synthesis products do not have compartments.
