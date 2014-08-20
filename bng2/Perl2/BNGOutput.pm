@@ -612,7 +612,7 @@ sub toXML
 
 
 
-# write reaction network to SBML Level 2 Version 1 format
+# write reaction network to SBML Level 2 Version 3 format
 sub writeSBML
 {
 	my $model  = shift @_;

@@ -568,16 +568,16 @@ simulate_nf_par_def[Map<String,String> map]
 simulate_par_def[Map<String,String> map]
 : 
   METHOD ASSIGNS DBQUOTES method_definition DBQUOTES {map.put($METHOD.text,$method_definition.text);} |
-  T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);})  | 
-  T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);}) | 
-  N_STEPS ASSIGNS i3=(INT|FLOAT) {map.put($N_STEPS.text,$i3.text);} | 
-  N_OUTPUT_STEPS ASSIGNS multiple_definition {map.put($N_OUTPUT_STEPS.text,$multiple_definition.value);} | 
+  T_END ASSIGNS e1=expression[gParent.memory] {map.put($T_END.text,$e1.text);} | 
+  T_START ASSIGNS e2=expression[gParent.memory] {map.put($T_START.text,$e2.text);} | 
+  N_STEPS ASSIGNS e3=expression[gParent.memory] {map.put($N_STEPS.text,$e3.text);} | 
+  N_OUTPUT_STEPS ASSIGNS e4=expression[gParent.memory] {map.put($N_OUTPUT_STEPS.text,$e4.text);} | 
   SAMPLE_TIMES ASSIGNS i4=array_value | 
   VERBOSE ASSIGNS i5=INT {map.put($VERBOSE.text,$i5.text);} | 
   PRINT_CDAT ASSIGNS i6=INT {map.put($PRINT_CDAT.text,$i6.text);} | 
   PRINT_FUNCTIONS ASSIGNS i7=INT {map.put($PRINT_FUNCTIONS.text,$i7.text);} | 
-  MAX_SIM_STEPS ASSIGNS multiple_definition {map.put($MAX_SIM_STEPS.text,$multiple_definition.value);} |
-  OUTPUT_STEP_INTERVAL ASSIGNS multiple_definition {map.put($OUTPUT_STEP_INTERVAL.text,$multiple_definition.value);} | 
+  MAX_SIM_STEPS ASSIGNS e5=expression[gParent.memory] {map.put($MAX_SIM_STEPS.text,$e5.text);} |
+  OUTPUT_STEP_INTERVAL ASSIGNS e6=expression[gParent.memory] {map.put($OUTPUT_STEP_INTERVAL.text,$e6.text);} | 
   ARGFILE ASSIGNS DBQUOTES s3=filename DBQUOTES {map.put($ARGFILE.text,$s3.text);} | 
   SAVE_PROGRESS ASSIGNS i10=INT {map.put($SAVE_PROGRESS.text,$i10.text);} | 
   PRINT_NET ASSIGNS i11=INT {map.put($PRINT_NET.text,$i11.text);} | 
@@ -587,8 +587,14 @@ simulate_par_def[Map<String,String> map]
   EVALUATE_EXPRESSIONS ASSIGNS i14=INT {map.put($EVALUATE_EXPRESSIONS.text,$i14.text);} | 
   OVERWRITE ASSIGNS i15=INT {map.put($OVERWRITE.text,$i15.text);} | 
   SEED ASSIGNS i16=INT {map.put($SEED.text,$i16.text);} |
-  STOP_IF ASSIGNS DBQUOTES e1=expression[gParent.memory] DBQUOTES {map.put($STOP_IF.text,$e1.text);} |
+  STOP_IF ASSIGNS DBQUOTES e7=expression[gParent.memory] DBQUOTES {map.put($STOP_IF.text,$e7.text);} |
   PRINT_ON_STOP ASSIGNS i17=INT {map.put($PRINT_ON_STOP.text,$i17.text);}
+//  T_END ASSIGNS (i1=INT {map.put($T_END.text,$i1.text);}|f1=FLOAT {map.put($T_END.text,$f1.text);})  | 
+//  T_START ASSIGNS (i2=INT {map.put($T_START.text,$i2.text);}|f2=FLOAT {map.put($T_START.text,$f2.text);}) | 
+//  N_STEPS ASSIGNS i3=(INT|FLOAT) {map.put($N_STEPS.text,$i3.text);} | 
+//  N_OUTPUT_STEPS ASSIGNS multiple_definition {map.put($N_OUTPUT_STEPS.text,$multiple_definition.value);} | 
+//  MAX_SIM_STEPS ASSIGNS multiple_definition {map.put($MAX_SIM_STEPS.text,$multiple_definition.value);} |
+//  OUTPUT_STEP_INTERVAL ASSIGNS multiple_definition {map.put($OUTPUT_STEP_INTERVAL.text,$multiple_definition.value);} | 
 ;
 
 pscan_par_def[Map<String,String> map]
@@ -600,19 +606,19 @@ pscan_par_def[Map<String,String> map]
   LOG_SCALE ASSIGNS i4=INT {map.put($LOG_SCALE.text,$i4.text);}
 ;
 
-multiple_definition returns [String value]
-:
-  INT {$value=$INT.text;} | 
-  FLOAT {$value=$FLOAT.text;} | 
-  STRING 
-  {
-    if($STRING.text.equals("INT_MAX") || $STRING.text.equals("FLOAT_MAX"))
-      $value=$STRING.text;
-    else{
-      String err = String.format("\%s line \%d:\%d \%s\n",input.getSourceName(),$STRING.getLine(),$STRING.getCharPositionInLine(),"Input should be an INT,FLOAT, 'FLOAT_MAX' or 'INT_MAX'");
-    } 
-  }
-;
+//multiple_definition returns [String value]
+//:
+//  INT {$value=$INT.text;} | 
+//  FLOAT {$value=$FLOAT.text;} | 
+//  STRING 
+//  {
+//    if($STRING.text.equals("INT_MAX") || $STRING.text.equals("FLOAT_MAX"))
+//      $value=$STRING.text;
+//    else{
+//      String err = String.format("\%s line \%d:\%d \%s\n",input.getSourceName(),$STRING.getLine(),$STRING.getCharPositionInLine(),"Input should be an INT, FLOAT, 'FLOAT_MAX' or 'INT_MAX'");
+//    } 
+//  }
+//;
      
 method_definition 
 :
@@ -621,7 +627,7 @@ method_definition
 
 array_value
 : 
-  LSBRACKET STRING (COMMA STRING)* RSBRACKET
+  LSBRACKET (INT|FLOAT) (COMMA (INT|FLOAT))* RSBRACKET
 ;
 
 //filename

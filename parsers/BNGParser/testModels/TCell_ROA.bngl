@@ -1,0 +1,451 @@
+# Translation of Boolean model in Tcell_model_v16.txt to BNGL format within the ROA (random-order asynchronous) update mode.
+begin model
+begin parameters
+   N_NODES 52
+end parameters
+begin molecule types
+   RESET(reset~N~Y)
+   #
+   tcr(state~0~1,reset~N~Y)
+   tcr_low(state~0~1,reset~N~Y)
+   tcr_high(state~0~1,reset~N~Y)
+   cd28(state~0~1,reset~N~Y)
+   tgfbeta(state~0~1,reset~N~Y)
+   il2(state~0~1,reset~N~Y)
+   il2r(state~0~1,reset~N~Y)
+   ap1(state~0~1,reset~N~Y)
+   fos(state~0~1,reset~N~Y)
+   fos_d(state~0~1,reset~N~Y)
+   fos_dd(state~0~1,reset~N~Y)
+   fos_ddd(state~0~1,reset~N~Y)
+   jun(state~0~1,reset~N~Y)
+   erk(state~0~1,reset~N~Y)
+   mek2(state~0~1,reset~N~Y)
+   mek1(state~0~1,reset~N~Y)
+   tak1(state~0~1,reset~N~Y)
+   mkk7(state~0~1,reset~N~Y)
+   jnk(state~0~1,reset~N~Y)
+   raf(state~0~1,reset~N~Y)
+   ras(state~0~1,reset~N~Y)
+   ca(state~0~1,reset~N~Y)
+   nfat(state~0~1,reset~N~Y)
+   pkctheta(state~0~1,reset~N~Y)
+   nfkappab(state~0~1,reset~N~Y)
+   pi3k_low(state~0~1,reset~N~Y)
+   pi3k_high(state~0~1,reset~N~Y)
+   pi3k(state~0~1,reset~N~Y)
+   pip3_low(state~0~1,reset~N~Y)
+   pip3_high(state~0~1,reset~N~Y)
+   pip3(state~0~1,reset~N~Y)
+   pten(state~0~1,reset~N~Y)
+   pdk1(state~0~1,reset~N~Y)
+   akt(state~0~1,reset~N~Y)
+   mtorc1(state~0~1,reset~N~Y)
+   mtorc2(state~0~1,reset~N~Y)
+   mtor(state~0~1,reset~N~Y)
+   mtorc1_d(state~0~1,reset~N~Y)
+   mtorc2_d(state~0~1,reset~N~Y)
+   mtorc2_dd(state~0~1,reset~N~Y)
+   mtor_d(state~0~1,reset~N~Y)
+   mtor_dd(state~0~1,reset~N~Y)
+   mtor_ddd(state~0~1,reset~N~Y)
+   mtor_dddd(state~0~1,reset~N~Y)
+   rheb(state~0~1,reset~N~Y)
+   tsc(state~0~1,reset~N~Y)
+   s6k1(state~0~1,reset~N~Y)
+   ps6(state~0~1,reset~N~Y)
+   smad3(state~0~1,reset~N~Y)
+   jak3(state~0~1,reset~N~Y)
+   stat5(state~0~1,reset~N~Y)
+   stat5_d(state~0~1,reset~N~Y)
+   stat5_dd(state~0~1,reset~N~Y)
+   stat5_ddd(state~0~1,reset~N~Y)
+   foxp3(state~0~1,reset~N~Y)
+   cd25(state~0~1,reset~N~Y)
+   cd122(state~0~1,reset~N~Y)
+   cd132(state~0~1,reset~N~Y)
+   il2_ex(state~0~1,reset~N~Y)
+   foxo1(state~0~1,reset~N~Y)
+   foxo1_p(state~0~1,reset~N~Y)
+   foxo1_p_d(state~0~1,reset~N~Y)
+   foxo1_p_dd(state~0~1,reset~N~Y)
+   foxo1_p_ddd(state~0~1,reset~N~Y)
+   ck2(state~0~1,reset~N~Y)
+   akt_off(state~0~1,reset~N~Y)
+   mtorc1_off(state~0~1,reset~N~Y)
+   nfat_off(state~0~1,reset~N~Y)
+   il2ra(state~0~1,reset~N~Y)
+   il2ra_d(state~0~1,reset~N~Y)
+end molecule types
+begin seed species
+   RESET(reset~N) 1
+   #
+   tcr(state~0,reset~N) 1
+   tcr_low(state~0,reset~N) 1
+   tcr_high(state~1,reset~N) 1
+   cd28(state~1,reset~N) 1
+   tgfbeta(state~0,reset~N) 1
+   il2(state~0,reset~N) 1
+   il2r(state~0,reset~N) 1
+   ap1(state~0,reset~N) 1
+   fos(state~0,reset~N) 1
+   fos_d(state~0,reset~N) 1
+   fos_dd(state~0,reset~N) 1
+   fos_ddd(state~0,reset~N) 1
+   jun(state~0,reset~N) 1
+   erk(state~0,reset~N) 1
+   mek2(state~0,reset~N) 1
+   mek1(state~0,reset~N) 1
+   tak1(state~0,reset~N) 1
+   mkk7(state~0,reset~N) 1
+   jnk(state~0,reset~N) 1
+   raf(state~0,reset~N) 1
+   ras(state~0,reset~N) 1
+   ca(state~0,reset~N) 1
+   nfat(state~0,reset~N) 1
+   pkctheta(state~0,reset~N) 1
+   nfkappab(state~0,reset~N) 1
+   pi3k_low(state~0,reset~N) 1
+   pi3k_high(state~0,reset~N) 1
+   pi3k(state~0,reset~N) 1
+   pip3_low(state~0,reset~N) 1
+   pip3_high(state~0,reset~N) 1
+   pip3(state~0,reset~N) 1
+   pten(state~1,reset~N) 1
+   pdk1(state~0,reset~N) 1
+   akt(state~0,reset~N) 1
+   mtorc1(state~0,reset~N) 1
+   mtorc2(state~0,reset~N) 1
+   mtor(state~0,reset~N) 1
+   mtorc1_d(state~0,reset~N) 1
+   mtorc2_d(state~0,reset~N) 1
+   mtorc2_dd(state~0,reset~N) 1
+   mtor_d(state~0,reset~N) 1
+   mtor_dd(state~0,reset~N) 1
+   mtor_ddd(state~0,reset~N) 1
+   mtor_dddd(state~0,reset~N) 1
+   rheb(state~0,reset~N) 1
+   tsc(state~1,reset~N) 1
+   s6k1(state~0,reset~N) 1
+   ps6(state~0,reset~N) 1
+   smad3(state~0,reset~N) 1
+   jak3(state~0,reset~N) 1
+   stat5(state~0,reset~N) 1
+   stat5_d(state~0,reset~N) 1
+   stat5_dd(state~0,reset~N) 1
+   stat5_ddd(state~0,reset~N) 1
+   foxp3(state~0,reset~N) 1
+   cd25(state~0,reset~N) 1
+   cd122(state~1,reset~N) 1
+   cd132(state~1,reset~N) 1
+   il2_ex(state~0,reset~N) 1
+   foxo1(state~1,reset~N) 1
+   foxo1_p(state~0,reset~N) 1
+   foxo1_p_d(state~0,reset~N) 1
+   foxo1_p_dd(state~0,reset~N) 1
+   foxo1_p_ddd(state~0,reset~N) 1
+   ck2(state~0,reset~N) 1
+   akt_off(state~0,reset~N) 1
+   mtorc1_off(state~0,reset~N) 1
+   nfat_off(state~0,reset~N) 1
+   il2ra(state~0,reset~N) 1
+   il2ra_d(state~0,reset~N) 1
+end seed species
+begin observables
+   Molecules N_FIRED tcr(reset~Y) ck2(reset~Y) ras(reset~Y) raf(reset~Y) mek2(reset~Y) mek1(reset~Y) erk(reset~Y) fos(reset~Y) pkctheta(reset~Y) tak1(reset~Y) mkk7(reset~Y) jnk(reset~Y) jun(reset~Y) fos_d(reset~Y) fos_dd(reset~Y) ap1(reset~Y) ca(reset~Y) nfkappab(reset~Y) nfat(reset~Y) il2(reset~Y) il2r(reset~Y) il2ra(reset~Y) il2ra_d(reset~Y) pi3k_low(reset~Y) pi3k_high(reset~Y) pi3k(reset~Y) pip3_high(reset~Y) pip3_low(reset~Y) pip3(reset~Y) pdk1(reset~Y) akt(reset~Y) tsc(reset~Y) rheb(reset~Y) mtorc1(reset~Y) mtorc2(reset~Y) mtorc1_d(reset~Y) mtorc2_d(reset~Y) mtor(reset~Y) mtor_d(reset~Y) mtor_dd(reset~Y) mtor_ddd(reset~Y) s6k1(reset~Y) ps6(reset~Y) smad3(reset~Y) jak3(reset~Y) stat5(reset~Y) stat5_d(reset~Y) foxp3(reset~Y) cd25(reset~Y) pten(reset~Y) foxo1(reset~Y) il2_ex(reset~Y)
+   #
+   Molecules TCR tcr(state~1)
+   Molecules TCR_LOW tcr_low(state~1)
+   Molecules TCR_HIGH tcr_high(state~1)
+   Molecules CD28 cd28(state~1)
+   Molecules TGFBETA tgfbeta(state~1)
+   Molecules IL2 il2(state~1)
+   Molecules IL2R il2r(state~1)
+   Molecules AP1 ap1(state~1)
+   Molecules FOS fos(state~1)
+   Molecules FOS_D fos_d(state~1)
+   Molecules FOS_DD fos_dd(state~1)
+   Molecules FOS_DDD fos_ddd(state~1)
+   Molecules JUN jun(state~1)
+   Molecules ERK erk(state~1)
+   Molecules MEK2 mek2(state~1)
+   Molecules MEK1 mek1(state~1)
+   Molecules TAK1 tak1(state~1)
+   Molecules MKK7 mkk7(state~1)
+   Molecules JNK jnk(state~1)
+   Molecules RAF raf(state~1)
+   Molecules RAS ras(state~1)
+   Molecules CA ca(state~1)
+   Molecules NFAT nfat(state~1)
+   Molecules PKCTHETA pkctheta(state~1)
+   Molecules NFKAPPAB nfkappab(state~1)
+   Molecules PI3K_LOW pi3k_low(state~1)
+   Molecules PI3K_HIGH pi3k_high(state~1)
+   Molecules PI3K pi3k(state~1)
+   Molecules PIP3_LOW pip3_low(state~1)
+   Molecules PIP3_HIGH pip3_high(state~1)
+   Molecules PIP3 pip3(state~1)
+   Molecules PTEN pten(state~1)
+   Molecules PDK1 pdk1(state~1)
+   Molecules AKT akt(state~1)
+   Molecules MTORC1 mtorc1(state~1)
+   Molecules MTORC2 mtorc2(state~1)
+   Molecules MTOR mtor(state~1)
+   Molecules MTORC1_D mtorc1_d(state~1)
+   Molecules MTORC2_D mtorc2_d(state~1)
+   Molecules MTORC2_DD mtorc2_dd(state~1)
+   Molecules MTOR_D mtor_d(state~1)
+   Molecules MTOR_DD mtor_dd(state~1)
+   Molecules MTOR_DDD mtor_ddd(state~1)
+   Molecules MTOR_DDDD mtor_dddd(state~1)
+   Molecules RHEB rheb(state~1)
+   Molecules TSC tsc(state~1)
+   Molecules S6K1 s6k1(state~1)
+   Molecules PS6 ps6(state~1)
+   Molecules SMAD3 smad3(state~1)
+   Molecules JAK3 jak3(state~1)
+   Molecules STAT5 stat5(state~1)
+   Molecules STAT5_D stat5_d(state~1)
+   Molecules STAT5_DD stat5_dd(state~1)
+   Molecules STAT5_DDD stat5_ddd(state~1)
+   Molecules FOXP3 foxp3(state~1)
+   Molecules CD25 cd25(state~1)
+   Molecules CD122 cd122(state~1)
+   Molecules CD132 cd132(state~1)
+   Molecules IL2_EX il2_ex(state~1)
+   Molecules FOXO1 foxo1(state~1)
+   Molecules FOXO1_P foxo1_p(state~1)
+   Molecules FOXO1_P_D foxo1_p_d(state~1)
+   Molecules FOXO1_P_DD foxo1_p_dd(state~1)
+   Molecules FOXO1_P_DDD foxo1_p_ddd(state~1)
+   Molecules CK2 ck2(state~1)
+   Molecules AKT_OFF akt_off(state~1)
+   Molecules MTORC1_OFF mtorc1_off(state~1)
+   Molecules NFAT_OFF nfat_off(state~1)
+   Molecules IL2RA il2ra(state~1)
+   Molecules IL2RA_D il2ra_d(state~1)
+end observables
+begin functions
+   tcr_func() if(TCR_LOW>0.5 || TCR_HIGH>0.5, 1, 0)
+   ck2_func() if(TCR_HIGH>0.5, 1, 0)
+   ras_func() if((TCR>0.5 && CD28>0.5) || (RAS>0.5 && IL2_EX>0.5 && IL2R>0.5), 1, 0)
+   raf_func() if(RAS>0.5, 1, 0)
+   mek2_func() if(RAF>0.5, 1, 0)
+   mek1_func() if(RAF>0.5, 1, 0)
+   erk_func() if(MEK2>0.5, 1, 0)
+   fos_func() if(ERK>0.5, 1, 0)
+   pkctheta_func() if(TCR_HIGH>0.5 || (TCR_LOW>0.5 && CD28>0.5 && MTORC2>0.5), 1, 0)
+   tak1_func() if(PKCTHETA>0.5, 1, 0)
+   mkk7_func() if(TAK1>0.5, 1, 0)
+   jnk_func() if(MKK7>0.5, 1, 0)
+   jun_func() if(JNK>0.5, 1, 0)
+   fos_d_func() if(FOS>0.5, 1, 0)
+   fos_dd_func() if(FOS_D>0.5, 1, 0)
+   ap1_func() if(FOS>0.5 && JUN>0.5, 1, 0)
+   ca_func() if(TCR>0.5, 1, 0)
+   nfkappab_func() if(PKCTHETA>0.5 || AKT>0.5, 1, 0)
+   nfat_func() if(CA>0.5 && NFAT_OFF<0.5, 1, 0)
+   il2_func() if(((AP1>0.5 && NFAT>0.5 && NFKAPPAB>0.5) || IL2>0.5) && FOXP3<0.5, 1, 0)
+   il2r_func() if(CD25>0.5 && CD122>0.5 && CD132>0.5, 1, 0)
+   il2ra_func() if(IL2>0.5 && IL2R>0.5, 1, 0)
+   il2ra_d_func() if(IL2RA>0.5, 1, 0)
+   pi3k_low_func() if((TCR_LOW>0.5 && CD28>0.5) || (PI3K_LOW>0.5 && IL2RA_D>0.5), 1, 0)
+   pi3k_high_func() if((TCR_HIGH>0.5 && CD28>0.5) || (PI3K_HIGH>0.5 && IL2RA_D>0.5), 1, 0)
+   pi3k_func() if(PI3K_LOW>0.5 || PI3K_HIGH>0.5, 1, 0)
+   pip3_high_func() if(PI3K_HIGH>0.5 && PTEN<0.5, 1, 0)
+   pip3_low_func() if(PI3K_LOW>0.5 && PTEN<0.5, 1, 0)
+   pip3_func() if(PIP3_LOW>0.5 || PIP3_HIGH>0.5, 1, 0)
+   pdk1_func() if(PIP3>0.5, 1, 0)
+   akt_func() if((PDK1>0.5 && MTORC2>0.5) && AKT_OFF<0.5, 1, 0)
+   tsc_func() if(AKT<0.5, 1, 0)
+   rheb_func() if(TSC<0.5, 1, 0)
+   mtorc1_func() if(RHEB>0.5 && MTORC1_OFF<0.5, 1, 0)
+   mtorc2_func() if(PI3K_HIGH>0.5 || (PI3K_LOW>0.5 && S6K1<0.5), 1, 0)
+   mtorc1_d_func() if(MTORC1>0.5 , 1, 0)
+   mtorc2_d_func() if(MTORC2>0.5, 1, 0)
+   mtor_func() if(MTORC1_D>0.5 && MTORC2_D>0.5, 1, 0)
+   mtor_d_func() if(MTOR>0.5, 1, 0)
+   mtor_dd_func() if(MTOR_D>0.5, 1, 0)
+   mtor_ddd_func() if(MTOR_DD>0.5, 1, 0)
+   s6k1_func() if(MTORC1>0.5, 1, 0)
+   ps6_func() if(S6K1>0.5, 1, 0)
+   smad3_func() if(TGFBETA>0.5, 1, 0)
+   jak3_func() if(IL2R>0.5 && IL2_EX>0.5, 1, 0)
+   stat5_func() if(JAK3>0.5, 1, 0)
+   stat5_d_func() if(STAT5>0.5, 1, 0)
+   foxp3_func() if((MTOR_DD<0.5 && (STAT5>0.5 || (NFAT>0.5 && AP1>0.5 && STAT5>0.5 && FOXO1>0.5))) || (NFAT>0.5 && SMAD3>0.5), 1, 0)
+   cd25_func() if(FOXP3>0.5 || (AP1>0.5 && NFAT>0.5 && NFKAPPAB>0.5) || STAT5>0.5, 1, 0)
+   pten_func() if((FOXO1>0.5 && MEK1>0.5) && CK2<0.5, 1, 0)
+   foxo1_func() if(AKT<0.5, 1, 0)
+   il2_ex_func() if(IL2>0.5 || IL2_EX>0.5, 1, 0)
+end functions
+begin reaction rules
+   R1: tcr(state,reset~N) -> tcr(state~1,reset~Y) if(tcr_func()>0.5,1,0)
+   R2: tcr(state,reset~N) -> tcr(state~0,reset~Y) if(tcr_func()<0.5,1,0)
+   R3: ck2(state,reset~N) -> ck2(state~1,reset~Y) if(ck2_func()>0.5,1,0)
+   R4: ck2(state,reset~N) -> ck2(state~0,reset~Y) if(ck2_func()<0.5,1,0)
+   R5: ras(state,reset~N) -> ras(state~1,reset~Y) if(ras_func()>0.5,1,0)
+   R6: ras(state,reset~N) -> ras(state~0,reset~Y) if(ras_func()<0.5,1,0)
+   R7: raf(state,reset~N) -> raf(state~1,reset~Y) if(raf_func()>0.5,1,0)
+   R8: raf(state,reset~N) -> raf(state~0,reset~Y) if(raf_func()<0.5,1,0)
+   R9: mek2(state,reset~N) -> mek2(state~1,reset~Y) if(mek2_func()>0.5,1,0)
+   R10: mek2(state,reset~N) -> mek2(state~0,reset~Y) if(mek2_func()<0.5,1,0)
+   R11: mek1(state,reset~N) -> mek1(state~1,reset~Y) if(mek1_func()>0.5,1,0)
+   R12: mek1(state,reset~N) -> mek1(state~0,reset~Y) if(mek1_func()<0.5,1,0)
+   R13: erk(state,reset~N) -> erk(state~1,reset~Y) if(erk_func()>0.5,1,0)
+   R14: erk(state,reset~N) -> erk(state~0,reset~Y) if(erk_func()<0.5,1,0)
+   R15: fos(state,reset~N) -> fos(state~1,reset~Y) if(fos_func()>0.5,1,0)
+   R16: fos(state,reset~N) -> fos(state~0,reset~Y) if(fos_func()<0.5,1,0)
+   R17: pkctheta(state,reset~N) -> pkctheta(state~1,reset~Y) if(pkctheta_func()>0.5,1,0)
+   R18: pkctheta(state,reset~N) -> pkctheta(state~0,reset~Y) if(pkctheta_func()<0.5,1,0)
+   R19: tak1(state,reset~N) -> tak1(state~1,reset~Y) if(tak1_func()>0.5,1,0)
+   R20: tak1(state,reset~N) -> tak1(state~0,reset~Y) if(tak1_func()<0.5,1,0)
+   R21: mkk7(state,reset~N) -> mkk7(state~1,reset~Y) if(mkk7_func()>0.5,1,0)
+   R22: mkk7(state,reset~N) -> mkk7(state~0,reset~Y) if(mkk7_func()<0.5,1,0)
+   R23: jnk(state,reset~N) -> jnk(state~1,reset~Y) if(jnk_func()>0.5,1,0)
+   R24: jnk(state,reset~N) -> jnk(state~0,reset~Y) if(jnk_func()<0.5,1,0)
+   R25: jun(state,reset~N) -> jun(state~1,reset~Y) if(jun_func()>0.5,1,0)
+   R26: jun(state,reset~N) -> jun(state~0,reset~Y) if(jun_func()<0.5,1,0)
+   R27: fos_d(state,reset~N) -> fos_d(state~1,reset~Y) if(fos_d_func()>0.5,1,0)
+   R28: fos_d(state,reset~N) -> fos_d(state~0,reset~Y) if(fos_d_func()<0.5,1,0)
+   R29: fos_dd(state,reset~N) -> fos_dd(state~1,reset~Y) if(fos_dd_func()>0.5,1,0)
+   R30: fos_dd(state,reset~N) -> fos_dd(state~0,reset~Y) if(fos_dd_func()<0.5,1,0)
+   R31: ap1(state,reset~N) -> ap1(state~1,reset~Y) if(ap1_func()>0.5,1,0)
+   R32: ap1(state,reset~N) -> ap1(state~0,reset~Y) if(ap1_func()<0.5,1,0)
+   R33: ca(state,reset~N) -> ca(state~1,reset~Y) if(ca_func()>0.5,1,0)
+   R34: ca(state,reset~N) -> ca(state~0,reset~Y) if(ca_func()<0.5,1,0)
+   R35: nfkappab(state,reset~N) -> nfkappab(state~1,reset~Y) if(nfkappab_func()>0.5,1,0)
+   R36: nfkappab(state,reset~N) -> nfkappab(state~0,reset~Y) if(nfkappab_func()<0.5,1,0)
+   R37: nfat(state,reset~N) -> nfat(state~1,reset~Y) if(nfat_func()>0.5,1,0)
+   R38: nfat(state,reset~N) -> nfat(state~0,reset~Y) if(nfat_func()<0.5,1,0)
+   R39: il2(state,reset~N) -> il2(state~1,reset~Y) if(il2_func()>0.5,1,0)
+   R40: il2(state,reset~N) -> il2(state~0,reset~Y) if(il2_func()<0.5,1,0)
+   R41: il2r(state,reset~N) -> il2r(state~1,reset~Y) if(il2r_func()>0.5,1,0)
+   R42: il2r(state,reset~N) -> il2r(state~0,reset~Y) if(il2r_func()<0.5,1,0)
+   R43: il2ra(state,reset~N) -> il2ra(state~1,reset~Y) if(il2ra_func()>0.5,1,0)
+   R44: il2ra(state,reset~N) -> il2ra(state~0,reset~Y) if(il2ra_func()<0.5,1,0)
+   R45: il2ra_d(state,reset~N) -> il2ra_d(state~1,reset~Y) if(il2ra_d_func()>0.5,1,0)
+   R46: il2ra_d(state,reset~N) -> il2ra_d(state~0,reset~Y) if(il2ra_d_func()<0.5,1,0)
+   R47: pi3k_low(state,reset~N) -> pi3k_low(state~1,reset~Y) if(pi3k_low_func()>0.5,1,0)
+   R48: pi3k_low(state,reset~N) -> pi3k_low(state~0,reset~Y) if(pi3k_low_func()<0.5,1,0)
+   R49: pi3k_high(state,reset~N) -> pi3k_high(state~1,reset~Y) if(pi3k_high_func()>0.5,1,0)
+   R50: pi3k_high(state,reset~N) -> pi3k_high(state~0,reset~Y) if(pi3k_high_func()<0.5,1,0)
+   R51: pi3k(state,reset~N) -> pi3k(state~1,reset~Y) if(pi3k_func()>0.5,1,0)
+   R52: pi3k(state,reset~N) -> pi3k(state~0,reset~Y) if(pi3k_func()<0.5,1,0)
+   R53: pip3_high(state,reset~N) -> pip3_high(state~1,reset~Y) if(pip3_high_func()>0.5,1,0)
+   R54: pip3_high(state,reset~N) -> pip3_high(state~0,reset~Y) if(pip3_high_func()<0.5,1,0)
+   R55: pip3_low(state,reset~N) -> pip3_low(state~1,reset~Y) if(pip3_low_func()>0.5,1,0)
+   R56: pip3_low(state,reset~N) -> pip3_low(state~0,reset~Y) if(pip3_low_func()<0.5,1,0)
+   R57: pip3(state,reset~N) -> pip3(state~1,reset~Y) if(pip3_func()>0.5,1,0)
+   R58: pip3(state,reset~N) -> pip3(state~0,reset~Y) if(pip3_func()<0.5,1,0)
+   R59: pdk1(state,reset~N) -> pdk1(state~1,reset~Y) if(pdk1_func()>0.5,1,0)
+   R60: pdk1(state,reset~N) -> pdk1(state~0,reset~Y) if(pdk1_func()<0.5,1,0)
+   R61: akt(state,reset~N) -> akt(state~1,reset~Y) if(akt_func()>0.5,1,0)
+   R62: akt(state,reset~N) -> akt(state~0,reset~Y) if(akt_func()<0.5,1,0)
+   R63: tsc(state,reset~N) -> tsc(state~1,reset~Y) if(tsc_func()>0.5,1,0)
+   R64: tsc(state,reset~N) -> tsc(state~0,reset~Y) if(tsc_func()<0.5,1,0)
+   R65: rheb(state,reset~N) -> rheb(state~1,reset~Y) if(rheb_func()>0.5,1,0)
+   R66: rheb(state,reset~N) -> rheb(state~0,reset~Y) if(rheb_func()<0.5,1,0)
+   R67: mtorc1(state,reset~N) -> mtorc1(state~1,reset~Y) if(mtorc1_func()>0.5,1,0)
+   R68: mtorc1(state,reset~N) -> mtorc1(state~0,reset~Y) if(mtorc1_func()<0.5,1,0)
+   R69: mtorc2(state,reset~N) -> mtorc2(state~1,reset~Y) if(mtorc2_func()>0.5,1,0)
+   R70: mtorc2(state,reset~N) -> mtorc2(state~0,reset~Y) if(mtorc2_func()<0.5,1,0)
+   R71: mtorc1_d(state,reset~N) -> mtorc1_d(state~1,reset~Y) if(mtorc1_d_func()>0.5,1,0)
+   R72: mtorc1_d(state,reset~N) -> mtorc1_d(state~0,reset~Y) if(mtorc1_d_func()<0.5,1,0)
+   R73: mtorc2_d(state,reset~N) -> mtorc2_d(state~1,reset~Y) if(mtorc2_d_func()>0.5,1,0)
+   R74: mtorc2_d(state,reset~N) -> mtorc2_d(state~0,reset~Y) if(mtorc2_d_func()<0.5,1,0)
+   R75: mtor(state,reset~N) -> mtor(state~1,reset~Y) if(mtor_func()>0.5,1,0)
+   R76: mtor(state,reset~N) -> mtor(state~0,reset~Y) if(mtor_func()<0.5,1,0)
+   R77: mtor_d(state,reset~N) -> mtor_d(state~1,reset~Y) if(mtor_d_func()>0.5,1,0)
+   R78: mtor_d(state,reset~N) -> mtor_d(state~0,reset~Y) if(mtor_d_func()<0.5,1,0)
+   R79: mtor_dd(state,reset~N) -> mtor_dd(state~1,reset~Y) if(mtor_dd_func()>0.5,1,0)
+   R80: mtor_dd(state,reset~N) -> mtor_dd(state~0,reset~Y) if(mtor_dd_func()<0.5,1,0)
+   R81: mtor_ddd(state,reset~N) -> mtor_ddd(state~1,reset~Y) if(mtor_ddd_func()>0.5,1,0)
+   R82: mtor_ddd(state,reset~N) -> mtor_ddd(state~0,reset~Y) if(mtor_ddd_func()<0.5,1,0)
+   R83: s6k1(state,reset~N) -> s6k1(state~1,reset~Y) if(s6k1_func()>0.5,1,0)
+   R84: s6k1(state,reset~N) -> s6k1(state~0,reset~Y) if(s6k1_func()<0.5,1,0)
+   R85: ps6(state,reset~N) -> ps6(state~1,reset~Y) if(ps6_func()>0.5,1,0)
+   R86: ps6(state,reset~N) -> ps6(state~0,reset~Y) if(ps6_func()<0.5,1,0)
+   R87: smad3(state,reset~N) -> smad3(state~1,reset~Y) if(smad3_func()>0.5,1,0)
+   R88: smad3(state,reset~N) -> smad3(state~0,reset~Y) if(smad3_func()<0.5,1,0)
+   R89: jak3(state,reset~N) -> jak3(state~1,reset~Y) if(jak3_func()>0.5,1,0)
+   R90: jak3(state,reset~N) -> jak3(state~0,reset~Y) if(jak3_func()<0.5,1,0)
+   R91: stat5(state,reset~N) -> stat5(state~1,reset~Y) if(stat5_func()>0.5,1,0)
+   R92: stat5(state,reset~N) -> stat5(state~0,reset~Y) if(stat5_func()<0.5,1,0)
+   R93: stat5_d(state,reset~N) -> stat5_d(state~1,reset~Y) if(stat5_d_func()>0.5,1,0)
+   R94: stat5_d(state,reset~N) -> stat5_d(state~0,reset~Y) if(stat5_d_func()<0.5,1,0)
+   R95: foxp3(state,reset~N) -> foxp3(state~1,reset~Y) if(foxp3_func()>0.5,1,0)
+   R96: foxp3(state,reset~N) -> foxp3(state~0,reset~Y) if(foxp3_func()<0.5,1,0)
+   R97: cd25(state,reset~N) -> cd25(state~1,reset~Y) if(cd25_func()>0.5,1,0)
+   R98: cd25(state,reset~N) -> cd25(state~0,reset~Y) if(cd25_func()<0.5,1,0)
+   R99: pten(state,reset~N) -> pten(state~1,reset~Y) if(pten_func()>0.5,1,0)
+   R100: pten(state,reset~N) -> pten(state~0,reset~Y) if(pten_func()<0.5,1,0)
+   R101: foxo1(state,reset~N) -> foxo1(state~1,reset~Y) if(foxo1_func()>0.5,1,0)
+   R102: foxo1(state,reset~N) -> foxo1(state~0,reset~Y) if(foxo1_func()<0.5,1,0)
+   R103: il2_ex(state,reset~N) -> il2_ex(state~1,reset~Y) if(il2_ex_func()>0.5,1,0)
+   R104: il2_ex(state,reset~N) -> il2_ex(state~0,reset~Y) if(il2_ex_func()<0.5,1,0)
+   
+   # reset rules
+   R105: RESET(reset~N) <-> RESET(reset~Y)  1e10*if(N_FIRED>(N_NODES-0.5),1,0), 1e10*if(N_FIRED<0.5,1,0)
+   R106: tcr(reset~Y) + RESET(reset~Y) -> tcr(reset~N) + RESET(reset~Y) 1e10
+   R107: ck2(reset~Y) + RESET(reset~Y) -> ck2(reset~N) + RESET(reset~Y) 1e10
+   R108: ras(reset~Y) + RESET(reset~Y) -> ras(reset~N) + RESET(reset~Y) 1e10
+   R109: raf(reset~Y) + RESET(reset~Y) -> raf(reset~N) + RESET(reset~Y) 1e10
+   R110: mek2(reset~Y) + RESET(reset~Y) -> mek2(reset~N) + RESET(reset~Y) 1e10
+   R111: mek1(reset~Y) + RESET(reset~Y) -> mek1(reset~N) + RESET(reset~Y) 1e10
+   R112: erk(reset~Y) + RESET(reset~Y) -> erk(reset~N) + RESET(reset~Y) 1e10
+   R113: fos(reset~Y) + RESET(reset~Y) -> fos(reset~N) + RESET(reset~Y) 1e10
+   R114: pkctheta(reset~Y) + RESET(reset~Y) -> pkctheta(reset~N) + RESET(reset~Y) 1e10
+   R115: tak1(reset~Y) + RESET(reset~Y) -> tak1(reset~N) + RESET(reset~Y) 1e10
+   R116: mkk7(reset~Y) + RESET(reset~Y) -> mkk7(reset~N) + RESET(reset~Y) 1e10
+   R117: jnk(reset~Y) + RESET(reset~Y) -> jnk(reset~N) + RESET(reset~Y) 1e10
+   R118: jun(reset~Y) + RESET(reset~Y) -> jun(reset~N) + RESET(reset~Y) 1e10
+   R119: fos_d(reset~Y) + RESET(reset~Y) -> fos_d(reset~N) + RESET(reset~Y) 1e10
+   R120: fos_dd(reset~Y) + RESET(reset~Y) -> fos_dd(reset~N) + RESET(reset~Y) 1e10
+   R121: ap1(reset~Y) + RESET(reset~Y) -> ap1(reset~N) + RESET(reset~Y) 1e10
+   R122: ca(reset~Y) + RESET(reset~Y) -> ca(reset~N) + RESET(reset~Y) 1e10
+   R123: nfkappab(reset~Y) + RESET(reset~Y) -> nfkappab(reset~N) + RESET(reset~Y) 1e10
+   R124: nfat(reset~Y) + RESET(reset~Y) -> nfat(reset~N) + RESET(reset~Y) 1e10
+   R125: il2(reset~Y) + RESET(reset~Y) -> il2(reset~N) + RESET(reset~Y) 1e10
+   R126: il2r(reset~Y) + RESET(reset~Y) -> il2r(reset~N) + RESET(reset~Y) 1e10
+   R127: il2ra(reset~Y) + RESET(reset~Y) -> il2ra(reset~N) + RESET(reset~Y) 1e10
+   R128: il2ra_d(reset~Y) + RESET(reset~Y) -> il2ra_d(reset~N) + RESET(reset~Y) 1e10
+   R129: pi3k_low(reset~Y) + RESET(reset~Y) -> pi3k_low(reset~N) + RESET(reset~Y) 1e10
+   R130: pi3k_high(reset~Y) + RESET(reset~Y) -> pi3k_high(reset~N) + RESET(reset~Y) 1e10
+   R131: pi3k(reset~Y) + RESET(reset~Y) -> pi3k(reset~N) + RESET(reset~Y) 1e10
+   R132: pip3_high(reset~Y) + RESET(reset~Y) -> pip3_high(reset~N) + RESET(reset~Y) 1e10
+   R133: pip3_low(reset~Y) + RESET(reset~Y) -> pip3_low(reset~N) + RESET(reset~Y) 1e10
+   R134: pip3(reset~Y) + RESET(reset~Y) -> pip3(reset~N) + RESET(reset~Y) 1e10
+   R135: pdk1(reset~Y) + RESET(reset~Y) -> pdk1(reset~N) + RESET(reset~Y) 1e10
+   R136: akt(reset~Y) + RESET(reset~Y) -> akt(reset~N) + RESET(reset~Y) 1e10
+   R137: tsc(reset~Y) + RESET(reset~Y) -> tsc(reset~N) + RESET(reset~Y) 1e10
+   R138: rheb(reset~Y) + RESET(reset~Y) -> rheb(reset~N) + RESET(reset~Y) 1e10
+   R139: mtorc1(reset~Y) + RESET(reset~Y) -> mtorc1(reset~N) + RESET(reset~Y) 1e10
+   R140: mtorc2(reset~Y) + RESET(reset~Y) -> mtorc2(reset~N) + RESET(reset~Y) 1e10
+   R141: mtorc1_d(reset~Y) + RESET(reset~Y) -> mtorc1_d(reset~N) + RESET(reset~Y) 1e10
+   R142: mtorc2_d(reset~Y) + RESET(reset~Y) -> mtorc2_d(reset~N) + RESET(reset~Y) 1e10
+   R143: mtor(reset~Y) + RESET(reset~Y) -> mtor(reset~N) + RESET(reset~Y) 1e10
+   R144: mtor_d(reset~Y) + RESET(reset~Y) -> mtor_d(reset~N) + RESET(reset~Y) 1e10
+   R145: mtor_dd(reset~Y) + RESET(reset~Y) -> mtor_dd(reset~N) + RESET(reset~Y) 1e10
+   R146: mtor_ddd(reset~Y) + RESET(reset~Y) -> mtor_ddd(reset~N) + RESET(reset~Y) 1e10
+   R147: s6k1(reset~Y) + RESET(reset~Y) -> s6k1(reset~N) + RESET(reset~Y) 1e10
+   R148: ps6(reset~Y) + RESET(reset~Y) -> ps6(reset~N) + RESET(reset~Y) 1e10
+   R149: smad3(reset~Y) + RESET(reset~Y) -> smad3(reset~N) + RESET(reset~Y) 1e10
+   R150: jak3(reset~Y) + RESET(reset~Y) -> jak3(reset~N) + RESET(reset~Y) 1e10
+   R151: stat5(reset~Y) + RESET(reset~Y) -> stat5(reset~N) + RESET(reset~Y) 1e10
+   R152: stat5_d(reset~Y) + RESET(reset~Y) -> stat5_d(reset~N) + RESET(reset~Y) 1e10
+   R153: foxp3(reset~Y) + RESET(reset~Y) -> foxp3(reset~N) + RESET(reset~Y) 1e10
+   R154: cd25(reset~Y) + RESET(reset~Y) -> cd25(reset~N) + RESET(reset~Y) 1e10
+   R155: pten(reset~Y) + RESET(reset~Y) -> pten(reset~N) + RESET(reset~Y) 1e10
+   R156: foxo1(reset~Y) + RESET(reset~Y) -> foxo1(reset~N) + RESET(reset~Y) 1e10
+   R157: il2_ex(reset~Y) + RESET(reset~Y) -> il2_ex(reset~N) + RESET(reset~Y) 1e10
+end reaction rules
+end model
+
+generate_network({overwrite=>1})
+
+# Simulate for N_ROUNDS = 15 update rounds, outputting every round. Note that with N_NODES = 52, the
+# average time for each update round is 1 + 1/2 + 1/3 + ... + 1/52 < 52. Thus, 't_end' is set to
+# 52*15*100 (N_NODES*N_ROUNDS*100), a number large enough to ensure that 'max_sim_steps' is reached first.
+#
+simulate({method=>"ssa",t_end=>(52*15*100),output_step_interval=>(52*2+2),max_sim_steps=>((52*2+2)*15),print_CDAT=>0,verbose=>1})
