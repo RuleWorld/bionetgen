@@ -1,0 +1,56 @@
+# Created by BioNetGen 2.1.8+
+substanceUnits("Number");
+begin parameters
+    1 PA   1  # Constant
+    2 PB   1  # Constant
+    3 vu   0  # Constant
+    4 vl   1  # Constant
+    5 kab  1  # Constant
+    6 kac  0  # Constant
+    7 kb0  1  # Constant
+end parameters
+begin molecule types
+    1 A(c1~0~1)
+    2 B(c1~0~1,c1~0~1)
+end molecule types
+begin observables
+    1 Molecules A A()
+    2 Molecules B B()
+end observables
+begin species
+    1 A(c1~0)       1.000000000015e+00
+    2 A(c1~1)       0.000000000000e+00
+    3 B(c1~0,c1~0)  5.000000014165e-01
+    4 B(c1~0,c1~1)  0.000000000000e+00
+    5 B(c1~1,c1~1)  0.000000000000e+00
+end species
+begin reaction rules
+  Rule1: \
+  0 -> A(c1~0)  vu
+  # Add Species A(c1~0)
+  Rule2: \
+  0 -> A(c1~1)  vl
+  # Add Species A(c1~1)
+  Rule3: \
+  A(c1%1) + A(c1%2) -> B(c1%1,c1%2)  kab
+  # Add Species B(c1%1,c1%2)
+  # Delete Pattern A(c1%1)
+  # Delete Pattern A(c1%2)
+  Rule4: \
+  B() -> 0  kb0
+  # Delete Pattern B()
+end reaction rules
+begin reactions
+    1 0 1 vu #Rule1
+    2 0 2 vl #Rule2
+    3 1,1 3 0.5*kab #Rule3
+    4 1,2 4 kab #Rule3
+    5 2,2 5 0.5*kab #Rule3
+    6 3 0 kb0 #Rule4
+    7 4 0 kb0 #Rule4
+    8 5 0 kb0 #Rule4
+end reactions
+begin groups
+    1 A                    1,2
+    2 B                    3,4,5
+end groups

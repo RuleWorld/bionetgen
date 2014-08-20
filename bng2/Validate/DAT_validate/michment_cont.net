@@ -1,0 +1,35 @@
+# Created by BioNetGen 2.2.0
+begin parameters
+    1 S0        100  # Constant
+    2 E0        10  # Constant
+    3 kcat      2.0  # Constant
+    4 Km        40.0  # Constant
+    5 kRT       2.0  # Constant
+    6 kTR       1.0  # Constant
+end parameters
+begin functions
+    1 michment() kcat/(Km+Sa0)
+end functions
+begin species
+    1 S(a~0,c~R)  102.302255180226
+    2 E()         1.000000000000e+01
+    3 S(a~P,c~R)  3.103107813909e+01
+    4 S(a~0,c~T)  4.604510365284e+00
+    5 S(a~P,c~T)  6.206215631540e+01
+end species
+begin reactions
+    1 1,2 3,2 michment
+    2 1 4 kRT
+    3 4,2 5,2 michment
+    4 3 5 kRT
+    5 4 1 kTR
+    6 5 3 kTR
+end reactions
+begin groups
+    1 Sa0                  1,4
+    2 SaP                  3,5
+    3 ScR                  1,3
+    4 ScT                  4,5
+    5 S_tot                1,3,4,5
+    6 E_tot                2
+end groups

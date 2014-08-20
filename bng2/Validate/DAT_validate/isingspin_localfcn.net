@@ -1,0 +1,643 @@
+# Created by BioNetGen 2.2.3
+setOption("SpeciesLabel","HNauty")
+substanceUnits("Number")
+begin parameters
+    1 Gf_up           0  # Constant
+    2 Gf_misalign     0.7  # Constant
+    3 Eact0_flip      1  # Constant
+    4 phi             0.5  # Constant
+    5 Rule1_local1    0.0907179532894125  # ConstantExpression
+    6 Rule1_local2    0.182683524052735  # ConstantExpression
+    7 Rule1_local3    0.182683524052735  # ConstantExpression
+    8 Rule1_local4    0.182683524052735  # ConstantExpression
+    9 Rule1_local5    0.182683524052735  # ConstantExpression
+   10 Rule1r_local1   1.49182469764127  # ConstantExpression
+   11 Rule1_local6    0.367879441171442  # ConstantExpression
+   12 Rule1_local7    0.367879441171442  # ConstantExpression
+   13 Rule1_local8    0.367879441171442  # ConstantExpression
+   14 Rule1_local9    0.367879441171442  # ConstantExpression
+   15 Rule1_local10   0.367879441171442  # ConstantExpression
+   16 Rule1_local11   0.367879441171442  # ConstantExpression
+   17 Rule1r_local2   0.740818220681718  # ConstantExpression
+   18 Rule1r_local3   0.740818220681718  # ConstantExpression
+   19 Rule1r_local4   0.740818220681718  # ConstantExpression
+   20 Rule1r_local5   0.740818220681718  # ConstantExpression
+   21 Rule1_local12   0.740818220681718  # ConstantExpression
+   22 Rule1_local13   0.740818220681718  # ConstantExpression
+   23 Rule1_local14   0.740818220681718  # ConstantExpression
+   24 Rule1_local15   0.740818220681718  # ConstantExpression
+   25 Rule1r_local6   0.367879441171442  # ConstantExpression
+   26 Rule1r_local7   0.367879441171442  # ConstantExpression
+   27 Rule1r_local8   0.367879441171442  # ConstantExpression
+   28 Rule1r_local9   0.367879441171442  # ConstantExpression
+   29 Rule1r_local10  0.367879441171442  # ConstantExpression
+   30 Rule1r_local11  0.367879441171442  # ConstantExpression
+   31 Rule1_local16   1.49182469764127  # ConstantExpression
+   32 Rule1r_local12  0.182683524052735  # ConstantExpression
+   33 Rule1r_local13  0.182683524052735  # ConstantExpression
+   34 Rule1r_local14  0.182683524052735  # ConstantExpression
+   35 Rule1r_local15  0.182683524052735  # ConstantExpression
+   36 Rule1r_local16  0.0907179532894125  # ConstantExpression
+end parameters
+begin molecule types
+    1 M(n,e,s,w,sp~up~dn)
+end molecule types
+begin observables
+    1 Molecules M_spUp M(sp~up)
+    2 Molecules M_spDown M(sp~dn)
+    3 Molecules M_spAny M(sp~up) M(sp~dn)
+    4 Molecules Misaligned M(n!1,sp~up).M(s!1,sp~dn) M(n!1,sp~dn).M(s!1,sp~up) M(e!1,sp~up).M(w!1,sp~dn) M(e!1,sp~dn).M(w!1,sp~up)
+    5 Molecules M_total M()
+    6 Molecules northUp M(n!1).M(s!1,sp~up)
+    7 Molecules eastUp M(e!1).M(w!1,sp~up)
+    8 Molecules southUp M(s!1).M(n!1,sp~up)
+    9 Molecules westUp M(w!1).M(e!1,sp~up)
+end observables
+begin energy patterns
+    1 M(sp~up)  Gf_up
+    2 M(n!1,sp~dn).M(s!1,sp~up)  Gf_misalign
+    3 M(n!1,sp~up).M(s!1,sp~dn)  Gf_misalign
+    4 M(e!1,sp~dn).M(w!1,sp~up)  Gf_misalign
+    5 M(e!1,sp~up).M(w!1,sp~dn)  Gf_misalign
+end energy patterns
+begin species
+    1 M(e!1,n!2,s!3,sp~dn,w!4).M(e!5,n!6,s!7,sp~dn,w!8).M(e!9,n!7,s!10,sp~dn,w!11).M(e!8,n!12,s!13,sp~dn,w!14).M(e!11,n!13,s!15,sp~dn,w!16).M(e!4,n!10,s!6,sp~dn,w!17).M(e!14,n!3,s!18,sp~dn,w!5).M(e!16,n!18,s!2,sp~dn,w!9).M(e!17,n!15,s!12,sp~dn,w!1)  1
+    2 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~dn,w!8).M(e!9,n!7,s!10,sp~dn,w!11).M(e!8,n!12,s!13,sp~dn,w!14).M(e!11,n!13,s!15,sp~dn,w!16).M(e!4,n!10,s!6,sp~dn,w!17).M(e!14,n!3,s!18,sp~dn,w!5).M(e!16,n!18,s!2,sp~dn,w!9).M(e!17,n!15,s!12,sp~dn,w!1)  0
+    3 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~dn,w!12).M(e!8,n!13,s!10,sp~dn,w!14).M(e!15,n!7,s!16,sp~dn,w!9).M(e!12,n!17,s!2,sp~dn,w!15).M(e!4,n!16,s!6,sp~dn,w!18).M(e!18,n!11,s!13,sp~dn,w!1).M(e!14,n!3,s!17,sp~dn,w!5)  0
+    4 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~dn,w!12).M(e!4,n!11,s!13,sp~dn,w!14).M(e!12,n!7,s!15,sp~dn,w!16).M(e!8,n!3,s!17,sp~dn,w!18).M(e!16,n!17,s!2,sp~dn,w!9).M(e!18,n!13,s!10,sp~dn,w!5).M(e!14,n!15,s!6,sp~dn,w!1)  0
+    5 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!9,s!10,sp~dn,w!11).M(e!12,n!13,s!9,sp~dn,w!14).M(e!14,n!3,s!15,sp~dn,w!16).M(e!16,n!6,s!17,sp~dn,w!12).M(e!18,n!17,s!5,sp~dn,w!8).M(e!11,n!15,s!2,sp~dn,w!18).M(e!7,n!10,s!13,sp~dn,w!1)  0
+    6 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!3,s!6,sp~up,w!7).M(e!8,n!9,s!10,sp~dn,w!11).M(e!12,n!13,s!14,sp~dn,w!8).M(e!4,n!14,s!15,sp~dn,w!16).M(e!7,n!15,s!13,sp~dn,w!17).M(e!11,n!6,s!2,sp~dn,w!12).M(e!16,n!10,s!18,sp~dn,w!1).M(e!17,n!18,s!9,sp~dn,w!5)  0
+    7 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!12).M(e!8,n!13,s!10,sp~dn,w!14).M(e!4,n!15,s!6,sp~dn,w!16).M(e!12,n!17,s!2,sp~dn,w!18).M(e!18,n!7,s!15,sp~dn,w!9).M(e!14,n!3,s!17,sp~dn,w!5).M(e!16,n!11,s!13,sp~dn,w!1)  0
+    8 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!12,n!3,s!13,sp~dn,w!14).M(e!14,n!6,s!15,sp~dn,w!16).M(e!16,n!17,s!9,sp~dn,w!12).M(e!11,n!13,s!2,sp~dn,w!18).M(e!7,n!10,s!17,sp~dn,w!1).M(e!18,n!15,s!5,sp~dn,w!8)  0
+    9 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!3,s!10,sp~up,w!11).M(e!11,n!12,s!13,sp~dn,w!14).M(e!4,n!15,s!12,sp~dn,w!16).M(e!8,n!10,s!2,sp~dn,w!17).M(e!17,n!13,s!15,sp~dn,w!5).M(e!16,n!7,s!18,sp~dn,w!1).M(e!14,n!18,s!6,sp~dn,w!9)  0
+   10 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!3,s!10,sp~up,w!11).M(e!8,n!12,s!13,sp~dn,w!14).M(e!4,n!7,s!15,sp~dn,w!16).M(e!11,n!15,s!6,sp~dn,w!17).M(e!17,n!18,s!12,sp~dn,w!9).M(e!16,n!13,s!18,sp~dn,w!1).M(e!14,n!10,s!2,sp~dn,w!5)  0
+   11 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!4,n!9,s!6,sp~up,w!10).M(e!11,n!12,s!13,sp~dn,w!14).M(e!8,n!15,s!12,sp~dn,w!16).M(e!14,n!17,s!2,sp~dn,w!18).M(e!18,n!7,s!9,sp~dn,w!11).M(e!16,n!3,s!17,sp~dn,w!5).M(e!10,n!13,s!15,sp~dn,w!1)  0
+   12 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!12,n!10,s!13,sp~dn,w!14).M(e!11,n!3,s!15,sp~dn,w!16).M(e!17,n!18,s!5,sp~dn,w!12).M(e!14,n!15,s!2,sp~dn,w!17).M(e!16,n!6,s!18,sp~dn,w!8).M(e!7,n!13,s!9,sp~dn,w!1)  0
+   13 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!9,s!2,sp~up,w!10).M(e!11,n!12,s!13,sp~dn,w!14).M(e!15,n!6,s!16,sp~dn,w!11).M(e!14,n!3,s!9,sp~dn,w!15).M(e!10,n!16,s!5,sp~dn,w!17).M(e!17,n!13,s!18,sp~dn,w!8).M(e!7,n!18,s!12,sp~dn,w!1)  0
+   14 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!12).M(e!8,n!11,s!13,sp~dn,w!14).M(e!4,n!7,s!15,sp~dn,w!16).M(e!12,n!3,s!17,sp~dn,w!18).M(e!18,n!15,s!6,sp~dn,w!9).M(e!14,n!17,s!2,sp~dn,w!5).M(e!16,n!13,s!10,sp~dn,w!1)  0
+   15 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!9,s!5,sp~up,w!10).M(e!11,n!12,s!13,sp~dn,w!14).M(e!14,n!3,s!15,sp~dn,w!16).M(e!10,n!13,s!17,sp~dn,w!18).M(e!16,n!6,s!9,sp~dn,w!11).M(e!7,n!17,s!12,sp~dn,w!1).M(e!18,n!15,s!2,sp~dn,w!8)  0
+   16 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!3,s!9,sp~up,w!10).M(e!11,n!12,s!13,sp~dn,w!14).M(e!10,n!6,s!15,sp~dn,w!16).M(e!17,n!15,s!5,sp~dn,w!11).M(e!14,n!9,s!2,sp~dn,w!17).M(e!16,n!18,s!12,sp~dn,w!8).M(e!7,n!13,s!18,sp~dn,w!1)  0
+   17 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!7,n!8,s!9,sp~up,w!1).M(e!10,n!6,s!11,sp~dn,w!12).M(e!12,n!9,s!13,sp~dn,w!14).M(e!14,n!3,s!15,sp~dn,w!10).M(e!16,n!11,s!5,sp~dn,w!17).M(e!17,n!13,s!8,sp~dn,w!18).M(e!18,n!15,s!2,sp~dn,w!16)  0
+   18 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!3,s!6,sp~up,w!7).M(e!8,n!6,s!2,sp~up,w!9).M(e!7,n!10,s!11,sp~dn,w!12).M(e!9,n!11,s!13,sp~dn,w!14).M(e!4,n!13,s!10,sp~dn,w!15).M(e!12,n!16,s!17,sp~dn,w!5).M(e!14,n!17,s!18,sp~dn,w!8).M(e!15,n!18,s!16,sp~dn,w!1)  0
+   19 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!12).M(e!4,n!13,s!10,sp~up,w!14).M(e!15,n!11,s!13,sp~dn,w!5).M(e!14,n!7,s!16,sp~dn,w!1).M(e!17,n!3,s!18,sp~dn,w!9).M(e!12,n!16,s!6,sp~dn,w!17).M(e!8,n!18,s!2,sp~dn,w!15)  0
+   20 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!4,n!9,s!10,sp~up,w!11).M(e!12,n!13,s!2,sp~up,w!14).M(e!11,n!15,s!6,sp~dn,w!1).M(e!16,n!7,s!15,sp~dn,w!12).M(e!17,n!10,s!18,sp~dn,w!5).M(e!8,n!3,s!13,sp~dn,w!17).M(e!14,n!18,s!9,sp~dn,w!16)  0
+   21 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!12,n!3,s!13,sp~up,w!14).M(e!15,n!16,s!9,sp~dn,w!12).M(e!17,n!18,s!5,sp~dn,w!8).M(e!7,n!10,s!16,sp~dn,w!1).M(e!11,n!13,s!2,sp~dn,w!17).M(e!14,n!6,s!18,sp~dn,w!15)  0
+   22 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!12,n!13,s!9,sp~up,w!14).M(e!7,n!10,s!13,sp~dn,w!1).M(e!15,n!16,s!5,sp~dn,w!8).M(e!17,n!6,s!16,sp~dn,w!12).M(e!11,n!18,s!2,sp~dn,w!15).M(e!14,n!3,s!18,sp~dn,w!17)  0
+   23 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!8,n!9,s!10,sp~up,w!11).M(e!4,n!12,s!6,sp~up,w!13).M(e!14,n!7,s!12,sp~dn,w!15).M(e!16,n!17,s!2,sp~dn,w!14).M(e!15,n!10,s!18,sp~dn,w!16).M(e!13,n!18,s!9,sp~dn,w!1).M(e!11,n!3,s!17,sp~dn,w!5)  0
+   24 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!8,n!9,s!10,sp~up,w!11).M(e!11,n!3,s!12,sp~up,w!5).M(e!13,n!12,s!2,sp~dn,w!14).M(e!4,n!15,s!6,sp~dn,w!16).M(e!14,n!7,s!15,sp~dn,w!17).M(e!17,n!10,s!18,sp~dn,w!13).M(e!16,n!18,s!9,sp~dn,w!1)  0
+   25 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!8,n!9,s!10,sp~up,w!11).M(e!4,n!7,s!12,sp~up,w!13).M(e!14,n!12,s!6,sp~dn,w!15).M(e!15,n!16,s!9,sp~dn,w!17).M(e!17,n!3,s!18,sp~dn,w!14).M(e!11,n!18,s!2,sp~dn,w!5).M(e!13,n!10,s!16,sp~dn,w!1)  0
+   26 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!6,sp~up,w!11).M(e!4,n!7,s!10,sp~up,w!12).M(e!12,n!13,s!14,sp~dn,w!1).M(e!15,n!3,s!16,sp~dn,w!9).M(e!17,n!16,s!2,sp~dn,w!5).M(e!8,n!18,s!13,sp~dn,w!17).M(e!11,n!14,s!18,sp~dn,w!15)  0
+   27 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!4,n!9,s!6,sp~up,w!10).M(e!11,n!12,s!2,sp~up,w!13).M(e!10,n!14,s!15,sp~dn,w!1).M(e!16,n!17,s!14,sp~dn,w!11).M(e!18,n!3,s!12,sp~dn,w!5).M(e!8,n!15,s!17,sp~dn,w!18).M(e!13,n!7,s!9,sp~dn,w!16)  0
+   28 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!3,s!9,sp~up,w!10).M(e!11,n!12,s!5,sp~up,w!13).M(e!7,n!14,s!15,sp~dn,w!1).M(e!16,n!15,s!17,sp~dn,w!8).M(e!18,n!9,s!2,sp~dn,w!11).M(e!13,n!17,s!14,sp~dn,w!18).M(e!10,n!6,s!12,sp~dn,w!16)  0
+   29 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!4,n!9,s!10,sp~up,w!11).M(e!12,n!13,s!9,sp~up,w!14).M(e!11,n!15,s!6,sp~dn,w!1).M(e!16,n!10,s!13,sp~dn,w!5).M(e!17,n!18,s!2,sp~dn,w!12).M(e!14,n!7,s!15,sp~dn,w!17).M(e!8,n!3,s!18,sp~dn,w!16)  0
+   30 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!3,s!6,sp~up,w!7).M(e!8,n!6,s!2,sp~up,w!9).M(e!4,n!10,s!11,sp~up,w!12).M(e!12,n!13,s!14,sp~dn,w!1).M(e!15,n!16,s!13,sp~dn,w!8).M(e!17,n!14,s!16,sp~dn,w!5).M(e!7,n!11,s!18,sp~dn,w!17).M(e!9,n!18,s!10,sp~dn,w!15)  0
+   31 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!4,n!8,s!9,sp~up,w!10).M(e!7,n!11,s!8,sp~up,w!12).M(e!13,n!14,s!15,sp~dn,w!16).M(e!16,n!3,s!6,sp~dn,w!17).M(e!17,n!9,s!11,sp~dn,w!13).M(e!12,n!15,s!18,sp~dn,w!5).M(e!10,n!18,s!14,sp~dn,w!1)  0
+   32 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!8,n!9,s!10,sp~up,w!11).M(e!11,n!12,s!2,sp~up,w!5).M(e!13,n!3,s!12,sp~dn,w!14).M(e!14,n!15,s!6,sp~dn,w!16).M(e!16,n!17,s!9,sp~dn,w!13).M(e!4,n!7,s!15,sp~dn,w!18).M(e!18,n!10,s!17,sp~dn,w!1)  0
+   33 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!12,n!3,s!6,sp~up,w!8).M(e!13,n!14,s!15,sp~up,w!5).M(e!4,n!16,s!9,sp~dn,w!17).M(e!11,n!18,s!14,sp~dn,w!12).M(e!17,n!15,s!18,sp~dn,w!1).M(e!7,n!10,s!16,sp~dn,w!13)  0
+   34 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!1).M(e!4,n!8,s!9,sp~up,w!5).M(e!10,n!9,s!11,sp~up,w!12).M(e!13,n!14,s!6,sp~up,w!15).M(e!12,n!7,s!14,sp~dn,w!16).M(e!15,n!17,s!2,sp~dn,w!18).M(e!18,n!11,s!8,sp~dn,w!13).M(e!16,n!3,s!17,sp~dn,w!10)  0
+   35 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!6,sp~up,w!11).M(e!12,n!13,s!14,sp~up,w!5).M(e!15,n!16,s!13,sp~up,w!9).M(e!4,n!14,s!16,sp~dn,w!17).M(e!17,n!7,s!10,sp~dn,w!1).M(e!8,n!18,s!2,sp~dn,w!12).M(e!11,n!3,s!18,sp~dn,w!15)  0
+   36 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!12,n!13,s!14,sp~up,w!8).M(e!15,n!10,s!16,sp~up,w!5).M(e!4,n!17,s!13,sp~dn,w!18).M(e!11,n!3,s!6,sp~dn,w!12).M(e!18,n!16,s!9,sp~dn,w!1).M(e!7,n!14,s!17,sp~dn,w!15)  0
+   37 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!12).M(e!13,n!7,s!14,sp~up,w!9).M(e!15,n!11,s!16,sp~up,w!1).M(e!8,n!16,s!10,sp~dn,w!17).M(e!4,n!14,s!6,sp~dn,w!15).M(e!12,n!18,s!2,sp~dn,w!13).M(e!17,n!3,s!18,sp~dn,w!5)  0
+   38 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!12).M(e!13,n!14,s!2,sp~up,w!9).M(e!15,n!16,s!10,sp~up,w!5).M(e!4,n!11,s!16,sp~dn,w!17).M(e!8,n!3,s!14,sp~dn,w!15).M(e!17,n!18,s!6,sp~dn,w!1).M(e!12,n!7,s!18,sp~dn,w!13)  0
+   39 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!7,n!8,s!9,sp~up,w!1).M(e!10,n!9,s!11,sp~up,w!12).M(e!13,n!14,s!5,sp~up,w!15).M(e!15,n!11,s!8,sp~dn,w!16).M(e!12,n!3,s!17,sp~dn,w!18).M(e!18,n!6,s!14,sp~dn,w!10).M(e!16,n!17,s!2,sp~dn,w!13)  0
+   40 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!3,s!6,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!12,n!6,s!2,sp~up,w!8).M(e!13,n!14,s!15,sp~up,w!5).M(e!4,n!10,s!16,sp~dn,w!17).M(e!17,n!18,s!14,sp~dn,w!1).M(e!7,n!16,s!9,sp~dn,w!13).M(e!11,n!15,s!18,sp~dn,w!12)  0
+   41 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!7,n!8,s!9,sp~up,w!1).M(e!10,n!3,s!11,sp~up,w!12).M(e!13,n!11,s!2,sp~up,w!14).M(e!14,n!15,s!5,sp~dn,w!16).M(e!12,n!6,s!15,sp~dn,w!17).M(e!16,n!18,s!8,sp~dn,w!13).M(e!17,n!9,s!18,sp~dn,w!10)  0
+   42 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!2,sp~up,w!11).M(e!12,n!13,s!14,sp~up,w!5).M(e!15,n!16,s!6,sp~up,w!1).M(e!11,n!14,s!17,sp~dn,w!18).M(e!18,n!7,s!16,sp~dn,w!9).M(e!8,n!3,s!10,sp~dn,w!12).M(e!4,n!17,s!13,sp~dn,w!15)  0
+   43 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!4,n!9,s!6,sp~up,w!10).M(e!10,n!11,s!12,sp~up,w!1).M(e!8,n!12,s!13,sp~up,w!14).M(e!14,n!3,s!15,sp~dn,w!5).M(e!16,n!7,s!9,sp~dn,w!17).M(e!17,n!13,s!11,sp~dn,w!18).M(e!18,n!15,s!2,sp~dn,w!16)  0
+   44 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!7,n!8,s!9,sp~up,w!1).M(e!10,n!11,s!5,sp~up,w!12).M(e!12,n!13,s!8,sp~up,w!14).M(e!14,n!15,s!2,sp~dn,w!10).M(e!16,n!6,s!11,sp~dn,w!17).M(e!17,n!9,s!13,sp~dn,w!18).M(e!18,n!3,s!15,sp~dn,w!16)  0
+   45 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!8,n!3,s!6,sp~up,w!9).M(e!10,n!11,s!12,sp~up,w!8).M(e!13,n!12,s!14,sp~up,w!5).M(e!4,n!15,s!16,sp~dn,w!17).M(e!9,n!16,s!18,sp~dn,w!10).M(e!7,n!18,s!15,sp~dn,w!13).M(e!17,n!14,s!11,sp~dn,w!1)  0
+   46 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!7,s!10,sp~up,w!11).M(e!12,n!13,s!2,sp~up,w!9).M(e!14,n!3,s!13,sp~up,w!5).M(e!4,n!10,s!6,sp~dn,w!15).M(e!11,n!16,s!17,sp~dn,w!12).M(e!8,n!18,s!16,sp~dn,w!14).M(e!15,n!17,s!18,sp~dn,w!1)  0
+   47 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!11).M(e!11,n!3,s!6,sp~up,w!12).M(e!7,n!13,s!14,sp~up,w!15).M(e!4,n!14,s!16,sp~up,w!17).M(e!15,n!10,s!18,sp~dn,w!5).M(e!12,n!16,s!13,sp~dn,w!8).M(e!17,n!18,s!9,sp~dn,w!1)  0
+   48 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!1).M(e!4,n!8,s!9,sp~up,w!5).M(e!10,n!7,s!11,sp~up,w!12).M(e!12,n!3,s!13,sp~up,w!14).M(e!15,n!13,s!2,sp~up,w!16).M(e!16,n!17,s!8,sp~dn,w!18).M(e!18,n!11,s!6,sp~dn,w!15).M(e!14,n!9,s!17,sp~dn,w!10)  0
+   49 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!7,s!10,sp~up,w!11).M(e!11,n!12,s!2,sp~up,w!13).M(e!8,n!3,s!12,sp~up,w!14).M(e!4,n!15,s!16,sp~up,w!17).M(e!14,n!16,s!18,sp~dn,w!5).M(e!17,n!10,s!6,sp~dn,w!1).M(e!13,n!18,s!15,sp~dn,w!9)  0
+   50 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!4,n!8,s!9,sp~up,w!10).M(e!10,n!11,s!12,sp~up,w!1).M(e!7,n!13,s!8,sp~up,w!14).M(e!15,n!3,s!6,sp~up,w!16).M(e!16,n!9,s!13,sp~dn,w!17).M(e!14,n!18,s!11,sp~dn,w!5).M(e!17,n!12,s!18,sp~dn,w!15)  0
+   51 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!1).M(e!4,n!7,s!12,sp~up,w!9).M(e!8,n!13,s!10,sp~up,w!14).M(e!15,n!3,s!16,sp~up,w!17).M(e!17,n!12,s!6,sp~dn,w!18).M(e!18,n!11,s!13,sp~dn,w!15).M(e!14,n!16,s!2,sp~dn,w!5)  0
+   52 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!7,n!8,s!9,sp~up,w!1).M(e!10,n!3,s!11,sp~up,w!12).M(e!13,n!14,s!8,sp~up,w!15).M(e!12,n!6,s!16,sp~up,w!17).M(e!15,n!11,s!2,sp~dn,w!18).M(e!18,n!16,s!5,sp~dn,w!13).M(e!17,n!9,s!14,sp~dn,w!10)  0
+   53 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!12).M(e!8,n!13,s!10,sp~up,w!14).M(e!4,n!15,s!6,sp~up,w!16).M(e!12,n!17,s!2,sp~up,w!18).M(e!18,n!7,s!15,sp~dn,w!9).M(e!14,n!3,s!17,sp~dn,w!5).M(e!16,n!11,s!13,sp~dn,w!1)  0
+   54 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!8,n!3,s!9,sp~up,w!10).M(e!7,n!11,s!12,sp~up,w!1).M(e!13,n!9,s!2,sp~up,w!14).M(e!10,n!6,s!15,sp~up,w!16).M(e!14,n!15,s!5,sp~dn,w!17).M(e!17,n!18,s!11,sp~dn,w!13).M(e!16,n!12,s!18,sp~dn,w!8)  0
+   55 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!10,s!11,sp~up,w!12).M(e!8,n!11,s!13,sp~up,w!14).M(e!4,n!7,s!15,sp~up,w!16).M(e!12,n!3,s!17,sp~up,w!18).M(e!18,n!15,s!6,sp~dn,w!9).M(e!14,n!17,s!2,sp~dn,w!5).M(e!16,n!13,s!10,sp~dn,w!1)  0
+   56 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!7,s!10,sp~up,w!1).M(e!4,n!11,s!12,sp~up,w!9).M(e!8,n!13,s!2,sp~up,w!14).M(e!15,n!3,s!13,sp~up,w!16).M(e!16,n!12,s!17,sp~dn,w!18).M(e!18,n!10,s!6,sp~dn,w!15).M(e!14,n!17,s!11,sp~dn,w!5)  0
+   57 M(e!1,n!2,s!3,sp~up,w!4).M(e!4,n!5,s!6,sp~up,w!7).M(e!7,n!8,s!9,sp~up,w!1).M(e!10,n!6,s!11,sp~up,w!12).M(e!12,n!9,s!13,sp~up,w!14).M(e!14,n!3,s!15,sp~up,w!10).M(e!16,n!11,s!5,sp~dn,w!17).M(e!17,n!13,s!8,sp~dn,w!18).M(e!18,n!15,s!2,sp~dn,w!16)  0
+   58 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!3,s!6,sp~up,w!7).M(e!8,n!6,s!2,sp~up,w!9).M(e!7,n!10,s!11,sp~up,w!12).M(e!9,n!11,s!13,sp~up,w!14).M(e!4,n!13,s!10,sp~up,w!15).M(e!12,n!16,s!17,sp~dn,w!5).M(e!14,n!17,s!18,sp~dn,w!8).M(e!15,n!18,s!16,sp~dn,w!1)  0
+   59 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!3,s!6,sp~up,w!7).M(e!4,n!8,s!9,sp~up,w!10).M(e!11,n!12,s!13,sp~up,w!14).M(e!10,n!13,s!15,sp~up,w!1).M(e!14,n!6,s!2,sp~up,w!16).M(e!7,n!9,s!17,sp~up,w!18).M(e!18,n!15,s!12,sp~dn,w!5).M(e!16,n!17,s!8,sp~dn,w!11)  0
+   60 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!1).M(e!8,n!7,s!9,sp~up,w!10).M(e!11,n!9,s!6,sp~up,w!12).M(e!4,n!13,s!14,sp~up,w!5).M(e!10,n!3,s!15,sp~up,w!16).M(e!12,n!15,s!2,sp~up,w!17).M(e!16,n!14,s!18,sp~dn,w!8).M(e!17,n!18,s!13,sp~dn,w!11)  0
+   61 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!8,n!9,s!10,sp~up,w!1).M(e!4,n!11,s!12,sp~up,w!8).M(e!13,n!10,s!14,sp~up,w!15).M(e!15,n!3,s!6,sp~up,w!16).M(e!7,n!17,s!11,sp~up,w!18).M(e!16,n!12,s!17,sp~dn,w!13).M(e!18,n!14,s!9,sp~dn,w!5)  0
+   62 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!2,sp~up,w!7).M(e!7,n!8,s!9,sp~up,w!10).M(e!10,n!11,s!12,sp~up,w!5).M(e!13,n!12,s!14,sp~up,w!1).M(e!4,n!9,s!15,sp~up,w!13).M(e!16,n!3,s!6,sp~up,w!17).M(e!17,n!15,s!8,sp~dn,w!18).M(e!18,n!14,s!11,sp~dn,w!16)  0
+   63 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!3,s!6,sp~up,w!7).M(e!4,n!8,s!9,sp~up,w!10).M(e!7,n!9,s!11,sp~up,w!12).M(e!13,n!6,s!2,sp~up,w!14).M(e!10,n!15,s!16,sp~up,w!1).M(e!12,n!16,s!17,sp~up,w!5).M(e!14,n!11,s!8,sp~up,w!18).M(e!18,n!17,s!15,sp~dn,w!13)  0
+   64 M(e!1,n!2,s!3,sp~up,w!4).M(e!5,n!6,s!7,sp~up,w!8).M(e!9,n!7,s!10,sp~up,w!11).M(e!8,n!12,s!13,sp~up,w!14).M(e!11,n!13,s!15,sp~up,w!16).M(e!4,n!10,s!6,sp~up,w!17).M(e!14,n!3,s!18,sp~up,w!5).M(e!16,n!18,s!2,sp~up,w!9).M(e!17,n!15,s!12,sp~up,w!1)  0
+end species
+begin reaction rules
+  Rule1:  M%x(sp~dn) <-> M%x(sp~up)  rateLaw1(x), rateLaw2(x)
+  # StateChange(0.0.0,dn->up)
+  # Reverse
+  # StateChange(0.0.0,up->dn)
+end reaction rules
+begin reactions
+    1 1 2 9*Rule1_local1 #Rule1
+    2 2 3 2*Rule1_local1 #Rule1
+    3 2 4 2*Rule1_local1 #Rule1
+    4 2 5 Rule1_local2 #Rule1
+    5 2 6 Rule1_local3 #Rule1
+    6 2 6 Rule1_local4 #Rule1
+    7 2 5 Rule1_local5 #Rule1
+    8 2 1 Rule1r_local1 #Rule1r
+    9 3 7 Rule1_local1 #Rule1
+   10 3 8 Rule1_local2 #Rule1
+   11 3 9 Rule1_local3 #Rule1
+   12 3 10 Rule1_local4 #Rule1
+   13 3 11 Rule1_local6 #Rule1
+   14 3 12 Rule1_local5 #Rule1
+   15 3 13 Rule1_local7 #Rule1
+   16 4 14 Rule1_local1 #Rule1
+   17 4 12 Rule1_local2 #Rule1
+   18 4 10 Rule1_local3 #Rule1
+   19 4 15 Rule1_local8 #Rule1
+   20 4 9 Rule1_local4 #Rule1
+   21 4 8 Rule1_local5 #Rule1
+   22 4 16 Rule1_local9 #Rule1
+   23 5 8 Rule1_local1 #Rule1
+   24 5 12 Rule1_local1 #Rule1
+   25 5 16 Rule1_local3 #Rule1
+   26 5 11 Rule1_local3 #Rule1
+   27 5 15 Rule1_local4 #Rule1
+   28 5 13 Rule1_local4 #Rule1
+   29 5 17 Rule1_local10 #Rule1
+   30 6 9 Rule1_local1 #Rule1
+   31 6 10 Rule1_local1 #Rule1
+   32 6 16 Rule1_local2 #Rule1
+   33 6 13 Rule1_local2 #Rule1
+   34 6 18 Rule1_local11 #Rule1
+   35 6 11 Rule1_local5 #Rule1
+   36 6 15 Rule1_local5 #Rule1
+   37 3 2 2*Rule1r_local1 #Rule1r
+   38 4 2 2*Rule1r_local1 #Rule1r
+   39 5 2 Rule1r_local2 #Rule1r
+   40 5 2 Rule1r_local3 #Rule1r
+   41 6 2 Rule1r_local4 #Rule1r
+   42 6 2 Rule1r_local5 #Rule1r
+   43 7 19 3*Rule1_local6 #Rule1
+   44 7 20 3*Rule1_local7 #Rule1
+   45 8 21 Rule1_local3 #Rule1
+   46 8 19 Rule1_local3 #Rule1
+   47 8 22 Rule1_local4 #Rule1
+   48 8 23 Rule1_local6 #Rule1
+   49 8 24 Rule1_local12 #Rule1
+   50 8 25 Rule1_local9 #Rule1
+   51 9 20 Rule1_local2 #Rule1
+   52 9 21 Rule1_local2 #Rule1
+   53 9 26 Rule1_local13 #Rule1
+   54 9 22 Rule1_local5 #Rule1
+   55 9 27 Rule1_local7 #Rule1
+   56 9 28 Rule1_local9 #Rule1
+   57 10 22 Rule1_local2 #Rule1
+   58 10 28 Rule1_local8 #Rule1
+   59 10 27 Rule1_local6 #Rule1
+   60 10 29 Rule1_local5 #Rule1
+   61 10 19 Rule1_local5 #Rule1
+   62 10 30 Rule1_local14 #Rule1
+   63 11 19 Rule1_local1 #Rule1
+   64 11 23 Rule1_local2 #Rule1
+   65 11 27 Rule1_local4 #Rule1
+   66 11 26 Rule1_local11 #Rule1
+   67 11 31 Rule1_local7 #Rule1
+   68 11 32 Rule1_local10 #Rule1
+   69 12 22 Rule1_local3 #Rule1
+   70 12 25 Rule1_local8 #Rule1
+   71 12 29 Rule1_local4 #Rule1
+   72 12 20 Rule1_local4 #Rule1
+   73 12 23 Rule1_local7 #Rule1
+   74 12 32 Rule1_local15 #Rule1
+   75 13 20 Rule1_local1 #Rule1
+   76 13 27 Rule1_local3 #Rule1
+   77 13 30 Rule1_local11 #Rule1
+   78 13 31 Rule1_local6 #Rule1
+   79 13 23 Rule1_local5 #Rule1
+   80 13 24 Rule1_local10 #Rule1
+   81 14 29 3*Rule1_local8 #Rule1
+   82 14 21 3*Rule1_local9 #Rule1
+   83 15 29 Rule1_local1 #Rule1
+   84 15 28 Rule1_local3 #Rule1
+   85 15 25 Rule1_local2 #Rule1
+   86 15 26 Rule1_local11 #Rule1
+   87 15 24 Rule1_local10 #Rule1
+   88 15 31 Rule1_local9 #Rule1
+   89 16 21 Rule1_local1 #Rule1
+   90 16 31 Rule1_local8 #Rule1
+   91 16 28 Rule1_local4 #Rule1
+   92 16 30 Rule1_local11 #Rule1
+   93 16 25 Rule1_local5 #Rule1
+   94 16 32 Rule1_local10 #Rule1
+   95 17 32 3*Rule1_local3 #Rule1
+   96 17 24 3*Rule1_local4 #Rule1
+   97 18 30 3*Rule1_local2 #Rule1
+   98 18 26 3*Rule1_local5 #Rule1
+   99 7 3 3*Rule1r_local1 #Rule1r
+  100 8 4 Rule1r_local2 #Rule1r
+  101 8 3 Rule1r_local3 #Rule1r
+  102 8 5 Rule1r_local1 #Rule1r
+  103 9 4 Rule1r_local4 #Rule1r
+  104 9 6 Rule1r_local1 #Rule1r
+  105 9 3 Rule1r_local5 #Rule1r
+  106 10 3 Rule1r_local4 #Rule1r
+  107 10 6 Rule1r_local1 #Rule1r
+  108 10 4 Rule1r_local5 #Rule1r
+  109 11 6 Rule1r_local2 #Rule1r
+  110 11 5 Rule1r_local5 #Rule1r
+  111 11 3 Rule1r_local6 #Rule1r
+  112 12 3 Rule1r_local2 #Rule1r
+  113 12 4 Rule1r_local3 #Rule1r
+  114 12 5 Rule1r_local1 #Rule1r
+  115 13 3 Rule1r_local7 #Rule1r
+  116 13 6 Rule1r_local3 #Rule1r
+  117 13 5 Rule1r_local4 #Rule1r
+  118 14 4 3*Rule1r_local1 #Rule1r
+  119 15 6 Rule1r_local2 #Rule1r
+  120 15 4 Rule1r_local8 #Rule1r
+  121 15 5 Rule1r_local4 #Rule1r
+  122 16 4 Rule1r_local9 #Rule1r
+  123 16 6 Rule1r_local3 #Rule1r
+  124 16 5 Rule1r_local5 #Rule1r
+  125 17 5 3*Rule1r_local10 #Rule1r
+  126 18 6 3*Rule1r_local11 #Rule1r
+  127 19 33 Rule1_local14 #Rule1
+  128 19 34 Rule1_local12 #Rule1
+  129 19 35 Rule1_local7 #Rule1
+  130 19 36 2*Rule1_local6 #Rule1
+  131 20 34 Rule1_local15 #Rule1
+  132 20 37 2*Rule1_local7 #Rule1
+  133 20 33 Rule1_local13 #Rule1
+  134 20 35 Rule1_local6 #Rule1
+  135 21 38 2*Rule1_local9 #Rule1
+  136 21 39 Rule1_local12 #Rule1
+  137 21 40 Rule1_local13 #Rule1
+  138 21 35 Rule1_local8 #Rule1
+  139 22 41 Rule1_local16 #Rule1
+  140 22 42 Rule1_local9 #Rule1
+  141 22 36 Rule1_local7 #Rule1
+  142 22 37 Rule1_local6 #Rule1
+  143 22 38 Rule1_local8 #Rule1
+  144 23 40 Rule1_local11 #Rule1
+  145 23 37 Rule1_local4 #Rule1
+  146 23 36 Rule1_local3 #Rule1
+  147 23 43 Rule1_local15 #Rule1
+  148 23 44 Rule1_local12 #Rule1
+  149 24 41 Rule1_local11 #Rule1
+  150 24 44 Rule1_local6 #Rule1
+  151 24 39 Rule1_local3 #Rule1
+  152 24 34 Rule1_local3 #Rule1
+  153 24 44 Rule1_local9 #Rule1
+  154 25 33 Rule1_local11 #Rule1
+  155 25 42 Rule1_local4 #Rule1
+  156 25 38 Rule1_local3 #Rule1
+  157 25 43 Rule1_local15 #Rule1
+  158 25 44 Rule1_local12 #Rule1
+  159 26 41 Rule1_local10 #Rule1
+  160 26 45 Rule1_local7 #Rule1
+  161 26 45 Rule1_local9 #Rule1
+  162 26 33 Rule1_local2 #Rule1
+  163 26 40 Rule1_local2 #Rule1
+  164 27 39 Rule1_local10 #Rule1
+  165 27 36 Rule1_local5 #Rule1
+  166 27 46 Rule1_local14 #Rule1
+  167 27 37 Rule1_local2 #Rule1
+  168 27 45 Rule1_local13 #Rule1
+  169 28 34 Rule1_local10 #Rule1
+  170 28 42 Rule1_local5 #Rule1
+  171 28 46 Rule1_local14 #Rule1
+  172 28 38 Rule1_local2 #Rule1
+  173 28 45 Rule1_local13 #Rule1
+  174 29 39 Rule1_local15 #Rule1
+  175 29 40 Rule1_local14 #Rule1
+  176 29 35 Rule1_local9 #Rule1
+  177 29 42 2*Rule1_local8 #Rule1
+  178 30 41 Rule1_local10 #Rule1
+  179 30 40 Rule1_local5 #Rule1
+  180 30 33 Rule1_local5 #Rule1
+  181 30 46 Rule1_local8 #Rule1
+  182 30 46 Rule1_local6 #Rule1
+  183 31 35 Rule1_local1 #Rule1
+  184 31 46 Rule1_local11 #Rule1
+  185 31 45 Rule1_local11 #Rule1
+  186 31 43 Rule1_local10 #Rule1
+  187 31 44 Rule1_local10 #Rule1
+  188 32 41 Rule1_local11 #Rule1
+  189 32 34 Rule1_local4 #Rule1
+  190 32 39 Rule1_local4 #Rule1
+  191 32 43 Rule1_local8 #Rule1
+  192 32 43 Rule1_local7 #Rule1
+  193 19 10 Rule1r_local2 #Rule1r
+  194 19 11 Rule1r_local1 #Rule1r
+  195 19 8 Rule1r_local5 #Rule1r
+  196 19 7 Rule1r_local6 #Rule1r
+  197 20 7 Rule1r_local7 #Rule1r
+  198 20 13 Rule1r_local1 #Rule1r
+  199 20 9 Rule1r_local3 #Rule1r
+  200 20 12 Rule1r_local4 #Rule1r
+  201 21 14 Rule1r_local9 #Rule1r
+  202 21 9 Rule1r_local3 #Rule1r
+  203 21 16 Rule1r_local1 #Rule1r
+  204 21 8 Rule1r_local5 #Rule1r
+  205 22 9 Rule1r_local2 #Rule1r
+  206 22 10 Rule1r_local3 #Rule1r
+  207 22 12 Rule1r_local5 #Rule1r
+  208 22 8 Rule1r_local4 #Rule1r
+  209 23 13 Rule1r_local2 #Rule1r
+  210 23 12 Rule1r_local7 #Rule1r
+  211 23 11 Rule1r_local3 #Rule1r
+  212 23 8 Rule1r_local6 #Rule1r
+  213 24 17 Rule1r_local4 #Rule1r
+  214 24 15 Rule1r_local10 #Rule1r
+  215 24 13 Rule1r_local10 #Rule1r
+  216 24 8 Rule1r_local12 #Rule1r
+  217 25 16 Rule1r_local2 #Rule1r
+  218 25 8 Rule1r_local9 #Rule1r
+  219 25 15 Rule1r_local3 #Rule1r
+  220 25 12 Rule1r_local8 #Rule1r
+  221 26 18 Rule1r_local2 #Rule1r
+  222 26 11 Rule1r_local11 #Rule1r
+  223 26 15 Rule1r_local11 #Rule1r
+  224 26 9 Rule1r_local13 #Rule1r
+  225 27 9 Rule1r_local7 #Rule1r
+  226 27 13 Rule1r_local5 #Rule1r
+  227 27 10 Rule1r_local6 #Rule1r
+  228 27 11 Rule1r_local4 #Rule1r
+  229 28 9 Rule1r_local9 #Rule1r
+  230 28 10 Rule1r_local8 #Rule1r
+  231 28 15 Rule1r_local5 #Rule1r
+  232 28 16 Rule1r_local4 #Rule1r
+  233 29 10 Rule1r_local2 #Rule1r
+  234 29 15 Rule1r_local1 #Rule1r
+  235 29 14 Rule1r_local8 #Rule1r
+  236 29 12 Rule1r_local4 #Rule1r
+  237 30 10 Rule1r_local14 #Rule1r
+  238 30 13 Rule1r_local11 #Rule1r
+  239 30 16 Rule1r_local11 #Rule1r
+  240 30 18 Rule1r_local3 #Rule1r
+  241 31 11 Rule1r_local7 #Rule1r
+  242 31 15 Rule1r_local9 #Rule1r
+  243 31 16 Rule1r_local8 #Rule1r
+  244 31 13 Rule1r_local6 #Rule1r
+  245 32 17 Rule1r_local5 #Rule1r
+  246 32 11 Rule1r_local10 #Rule1r
+  247 32 16 Rule1r_local10 #Rule1r
+  248 32 12 Rule1r_local15 #Rule1r
+  249 33 47 Rule1_local6 #Rule1
+  250 33 48 Rule1_local15 #Rule1
+  251 33 49 Rule1_local7 #Rule1
+  252 33 50 Rule1_local12 #Rule1
+  253 34 48 Rule1_local13 #Rule1
+  254 34 51 Rule1_local6 #Rule1
+  255 34 50 Rule1_local14 #Rule1
+  256 34 52 Rule1_local7 #Rule1
+  257 35 47 Rule1_local13 #Rule1
+  258 35 49 Rule1_local14 #Rule1
+  259 35 51 Rule1_local15 #Rule1
+  260 35 52 Rule1_local12 #Rule1
+  261 36 53 Rule1_local6 #Rule1
+  262 36 48 Rule1_local16 #Rule1
+  263 36 47 Rule1_local14 #Rule1
+  264 36 51 Rule1_local12 #Rule1
+  265 37 49 Rule1_local13 #Rule1
+  266 37 50 Rule1_local16 #Rule1
+  267 37 52 Rule1_local15 #Rule1
+  268 37 53 Rule1_local7 #Rule1
+  269 38 49 Rule1_local13 #Rule1
+  270 38 54 Rule1_local16 #Rule1
+  271 38 55 Rule1_local9 #Rule1
+  272 38 51 Rule1_local12 #Rule1
+  273 39 56 Rule1_local13 #Rule1
+  274 39 52 Rule1_local8 #Rule1
+  275 39 54 Rule1_local14 #Rule1
+  276 39 51 Rule1_local9 #Rule1
+  277 40 47 Rule1_local8 #Rule1
+  278 40 49 Rule1_local9 #Rule1
+  279 40 54 Rule1_local15 #Rule1
+  280 40 56 Rule1_local12 #Rule1
+  281 41 50 Rule1_local6 #Rule1
+  282 41 54 Rule1_local8 #Rule1
+  283 41 56 Rule1_local9 #Rule1
+  284 41 48 Rule1_local7 #Rule1
+  285 42 55 Rule1_local8 #Rule1
+  286 42 47 Rule1_local14 #Rule1
+  287 42 56 Rule1_local16 #Rule1
+  288 42 52 Rule1_local15 #Rule1
+  289 43 57 Rule1_local12 #Rule1
+  290 43 54 Rule1_local11 #Rule1
+  291 43 48 Rule1_local11 #Rule1
+  292 43 52 Rule1_local4 #Rule1
+  293 44 57 Rule1_local15 #Rule1
+  294 44 50 Rule1_local11 #Rule1
+  295 44 56 Rule1_local11 #Rule1
+  296 44 51 Rule1_local3 #Rule1
+  297 45 49 Rule1_local2 #Rule1
+  298 45 48 Rule1_local10 #Rule1
+  299 45 56 Rule1_local10 #Rule1
+  300 45 58 Rule1_local14 #Rule1
+  301 46 58 Rule1_local13 #Rule1
+  302 46 50 Rule1_local10 #Rule1
+  303 46 54 Rule1_local10 #Rule1
+  304 46 47 Rule1_local5 #Rule1
+  305 33 25 Rule1r_local11 #Rule1r
+  306 33 20 Rule1r_local13 #Rule1r
+  307 33 26 Rule1r_local3 #Rule1r
+  308 33 19 Rule1r_local14 #Rule1r
+  309 33 30 Rule1r_local2 #Rule1r
+  310 34 28 Rule1r_local10 #Rule1r
+  311 34 19 Rule1r_local12 #Rule1r
+  312 34 20 Rule1r_local15 #Rule1r
+  313 34 24 Rule1r_local5 #Rule1r
+  314 34 32 Rule1r_local4 #Rule1r
+  315 35 31 Rule1r_local1 #Rule1r
+  316 35 21 Rule1r_local8 #Rule1r
+  317 35 20 Rule1r_local6 #Rule1r
+  318 35 19 Rule1r_local7 #Rule1r
+  319 35 29 Rule1r_local9 #Rule1r
+  320 36 23 Rule1r_local5 #Rule1r
+  321 36 19 2*Rule1r_local6 #Rule1r
+  322 36 27 Rule1r_local2 #Rule1r
+  323 36 22 Rule1r_local7 #Rule1r
+  324 37 27 Rule1r_local3 #Rule1r
+  325 37 23 Rule1r_local4 #Rule1r
+  326 37 22 Rule1r_local6 #Rule1r
+  327 37 20 2*Rule1r_local7 #Rule1r
+  328 38 25 Rule1r_local5 #Rule1r
+  329 38 28 Rule1r_local3 #Rule1r
+  330 38 22 Rule1r_local8 #Rule1r
+  331 38 21 2*Rule1r_local9 #Rule1r
+  332 39 27 Rule1r_local10 #Rule1r
+  333 39 21 Rule1r_local12 #Rule1r
+  334 39 29 Rule1r_local15 #Rule1r
+  335 39 24 Rule1r_local5 #Rule1r
+  336 39 32 Rule1r_local4 #Rule1r
+  337 40 23 Rule1r_local11 #Rule1r
+  338 40 21 Rule1r_local13 #Rule1r
+  339 40 26 Rule1r_local3 #Rule1r
+  340 40 29 Rule1r_local14 #Rule1r
+  341 40 30 Rule1r_local2 #Rule1r
+  342 41 22 Rule1r_local16 #Rule1r
+  343 41 26 Rule1r_local10 #Rule1r
+  344 41 30 Rule1r_local10 #Rule1r
+  345 41 24 Rule1r_local11 #Rule1r
+  346 41 32 Rule1r_local11 #Rule1r
+  347 42 29 2*Rule1r_local8 #Rule1r
+  348 42 25 Rule1r_local4 #Rule1r
+  349 42 28 Rule1r_local2 #Rule1r
+  350 42 22 Rule1r_local9 #Rule1r
+  351 43 31 Rule1r_local10 #Rule1r
+  352 43 32 Rule1r_local7 #Rule1r
+  353 43 25 Rule1r_local15 #Rule1r
+  354 43 23 Rule1r_local15 #Rule1r
+  355 43 32 Rule1r_local8 #Rule1r
+  356 44 31 Rule1r_local10 #Rule1r
+  357 44 23 Rule1r_local12 #Rule1r
+  358 44 25 Rule1r_local12 #Rule1r
+  359 44 24 Rule1r_local9 #Rule1r
+  360 44 24 Rule1r_local6 #Rule1r
+  361 45 31 Rule1r_local11 #Rule1r
+  362 45 28 Rule1r_local13 #Rule1r
+  363 45 27 Rule1r_local13 #Rule1r
+  364 45 26 Rule1r_local9 #Rule1r
+  365 45 26 Rule1r_local7 #Rule1r
+  366 46 31 Rule1r_local11 #Rule1r
+  367 46 30 Rule1r_local6 #Rule1r
+  368 46 30 Rule1r_local8 #Rule1r
+  369 46 27 Rule1r_local14 #Rule1r
+  370 46 28 Rule1r_local14 #Rule1r
+  371 47 59 Rule1_local12 #Rule1
+  372 47 60 Rule1_local16 #Rule1
+  373 47 61 Rule1_local15 #Rule1
+  374 48 61 Rule1_local6 #Rule1
+  375 48 60 Rule1_local14 #Rule1
+  376 48 62 Rule1_local12 #Rule1
+  377 49 61 Rule1_local12 #Rule1
+  378 49 60 Rule1_local16 #Rule1
+  379 49 59 Rule1_local15 #Rule1
+  380 50 60 Rule1_local13 #Rule1
+  381 50 62 Rule1_local15 #Rule1
+  382 50 61 Rule1_local7 #Rule1
+  383 51 61 Rule1_local13 #Rule1
+  384 51 59 Rule1_local14 #Rule1
+  385 51 62 Rule1_local16 #Rule1
+  386 52 59 Rule1_local13 #Rule1
+  387 52 61 Rule1_local14 #Rule1
+  388 52 62 Rule1_local16 #Rule1
+  389 53 61 3*Rule1_local16 #Rule1
+  390 54 60 Rule1_local13 #Rule1
+  391 54 59 Rule1_local9 #Rule1
+  392 54 62 Rule1_local12 #Rule1
+  393 55 59 3*Rule1_local16 #Rule1
+  394 56 59 Rule1_local8 #Rule1
+  395 56 60 Rule1_local14 #Rule1
+  396 56 62 Rule1_local15 #Rule1
+  397 57 62 3*Rule1_local11 #Rule1
+  398 58 60 3*Rule1_local10 #Rule1
+  399 47 36 Rule1r_local14 #Rule1r
+  400 47 42 Rule1r_local14 #Rule1r
+  401 47 46 Rule1r_local2 #Rule1r
+  402 47 35 Rule1r_local13 #Rule1r
+  403 47 33 Rule1r_local6 #Rule1r
+  404 47 40 Rule1r_local8 #Rule1r
+  405 48 36 Rule1r_local16 #Rule1r
+  406 48 33 Rule1r_local15 #Rule1r
+  407 48 45 Rule1r_local10 #Rule1r
+  408 48 41 Rule1r_local7 #Rule1r
+  409 48 34 Rule1r_local13 #Rule1r
+  410 48 43 Rule1r_local11 #Rule1r
+  411 49 35 Rule1r_local14 #Rule1r
+  412 49 40 Rule1r_local9 #Rule1r
+  413 49 33 Rule1r_local7 #Rule1r
+  414 49 38 Rule1r_local13 #Rule1r
+  415 49 37 Rule1r_local13 #Rule1r
+  416 49 45 Rule1r_local3 #Rule1r
+  417 50 37 Rule1r_local16 #Rule1r
+  418 50 34 Rule1r_local14 #Rule1r
+  419 50 33 Rule1r_local12 #Rule1r
+  420 50 46 Rule1r_local10 #Rule1r
+  421 50 41 Rule1r_local6 #Rule1r
+  422 50 44 Rule1r_local11 #Rule1r
+  423 51 35 Rule1r_local15 #Rule1r
+  424 51 39 Rule1r_local9 #Rule1r
+  425 51 38 Rule1r_local12 #Rule1r
+  426 51 36 Rule1r_local12 #Rule1r
+  427 51 34 Rule1r_local6 #Rule1r
+  428 51 44 Rule1r_local5 #Rule1r
+  429 52 42 Rule1r_local15 #Rule1r
+  430 52 37 Rule1r_local15 #Rule1r
+  431 52 35 Rule1r_local12 #Rule1r
+  432 52 34 Rule1r_local7 #Rule1r
+  433 52 43 Rule1r_local4 #Rule1r
+  434 52 39 Rule1r_local8 #Rule1r
+  435 53 37 3*Rule1r_local7 #Rule1r
+  436 53 36 3*Rule1r_local6 #Rule1r
+  437 54 38 Rule1r_local16 #Rule1r
+  438 54 40 Rule1r_local15 #Rule1r
+  439 54 39 Rule1r_local14 #Rule1r
+  440 54 46 Rule1r_local10 #Rule1r
+  441 54 43 Rule1r_local11 #Rule1r
+  442 54 41 Rule1r_local8 #Rule1r
+  443 55 38 3*Rule1r_local9 #Rule1r
+  444 55 42 3*Rule1r_local8 #Rule1r
+  445 56 42 Rule1r_local16 #Rule1r
+  446 56 41 Rule1r_local9 #Rule1r
+  447 56 40 Rule1r_local12 #Rule1r
+  448 56 45 Rule1r_local10 #Rule1r
+  449 56 39 Rule1r_local13 #Rule1r
+  450 56 44 Rule1r_local11 #Rule1r
+  451 57 44 3*Rule1r_local15 #Rule1r
+  452 57 43 3*Rule1r_local12 #Rule1r
+  453 58 45 3*Rule1r_local14 #Rule1r
+  454 58 46 3*Rule1r_local13 #Rule1r
+  455 59 63 2*Rule1_local16 #Rule1
+  456 60 63 Rule1_local12 #Rule1
+  457 60 63 Rule1_local15 #Rule1
+  458 61 63 2*Rule1_local16 #Rule1
+  459 62 63 Rule1_local13 #Rule1
+  460 62 63 Rule1_local14 #Rule1
+  461 59 55 Rule1r_local16 #Rule1r
+  462 59 51 Rule1r_local14 #Rule1r
+  463 59 49 Rule1r_local15 #Rule1r
+  464 59 54 Rule1r_local9 #Rule1r
+  465 59 47 Rule1r_local12 #Rule1r
+  466 59 52 Rule1r_local13 #Rule1r
+  467 59 56 Rule1r_local8 #Rule1r
+  468 60 47 Rule1r_local16 #Rule1r
+  469 60 49 Rule1r_local16 #Rule1r
+  470 60 56 Rule1r_local14 #Rule1r
+  471 60 48 Rule1r_local14 #Rule1r
+  472 60 58 Rule1r_local10 #Rule1r
+  473 60 50 Rule1r_local13 #Rule1r
+  474 60 54 Rule1r_local13 #Rule1r
+  475 61 53 Rule1r_local16 #Rule1r
+  476 61 52 Rule1r_local14 #Rule1r
+  477 61 47 Rule1r_local15 #Rule1r
+  478 61 49 Rule1r_local12 #Rule1r
+  479 61 50 Rule1r_local7 #Rule1r
+  480 61 51 Rule1r_local13 #Rule1r
+  481 61 48 Rule1r_local6 #Rule1r
+  482 62 52 Rule1r_local16 #Rule1r
+  483 62 51 Rule1r_local16 #Rule1r
+  484 62 56 Rule1r_local15 #Rule1r
+  485 62 50 Rule1r_local15 #Rule1r
+  486 62 54 Rule1r_local12 #Rule1r
+  487 62 48 Rule1r_local12 #Rule1r
+  488 62 57 Rule1r_local11 #Rule1r
+  489 63 64 Rule1_local16 #Rule1
+  490 63 61 2*Rule1r_local16 #Rule1r
+  491 63 59 2*Rule1r_local16 #Rule1r
+  492 63 62 Rule1r_local14 #Rule1r
+  493 63 60 Rule1r_local15 #Rule1r
+  494 63 60 Rule1r_local12 #Rule1r
+  495 63 62 Rule1r_local13 #Rule1r
+  496 64 63 9*Rule1r_local16 #Rule1r
+end reactions
+begin groups
+    1 M_spUp               2,2*3,2*4,2*5,2*6,3*7,3*8,3*9,3*10,3*11,3*12,3*13,3*14,3*15,3*16,3*17,3*18,4*19,4*20,4*21,4*22,4*23,4*24,4*25,4*26,4*27,4*28,4*29,4*30,4*31,4*32,5*33,5*34,5*35,5*36,5*37,5*38,5*39,5*40,5*41,5*42,5*43,5*44,5*45,5*46,6*47,6*48,6*49,6*50,6*51,6*52,6*53,6*54,6*55,6*56,6*57,6*58,7*59,7*60,7*61,7*62,8*63,9*64
+    2 M_spDown             9*1,8*2,7*3,7*4,7*5,7*6,6*7,6*8,6*9,6*10,6*11,6*12,6*13,6*14,6*15,6*16,6*17,6*18,5*19,5*20,5*21,5*22,5*23,5*24,5*25,5*26,5*27,5*28,5*29,5*30,5*31,5*32,4*33,4*34,4*35,4*36,4*37,4*38,4*39,4*40,4*41,4*42,4*43,4*44,4*45,4*46,3*47,3*48,3*49,3*50,3*51,3*52,3*53,3*54,3*55,3*56,3*57,3*58,2*59,2*60,2*61,2*62,63
+    3 M_spAny              9*1,9*2,9*3,9*4,9*5,9*6,9*7,9*8,9*9,9*10,9*11,9*12,9*13,9*14,9*15,9*16,9*17,9*18,9*19,9*20,9*21,9*22,9*23,9*24,9*25,9*26,9*27,9*28,9*29,9*30,9*31,9*32,9*33,9*34,9*35,9*36,9*37,9*38,9*39,9*40,9*41,9*42,9*43,9*44,9*45,9*46,9*47,9*48,9*49,9*50,9*51,9*52,9*53,9*54,9*55,9*56,9*57,9*58,9*59,9*60,9*61,9*62,9*63,9*64
+    4 Misaligned           4*2,8*3,8*4,6*5,6*6,12*7,10*8,10*9,10*10,8*11,10*12,8*13,12*14,8*15,8*16,6*17,6*18,12*19,12*20,12*21,12*22,10*23,8*24,10*25,8*26,10*27,10*28,12*29,8*30,8*31,8*32,10*33,10*34,12*35,12*36,12*37,12*38,10*39,10*40,8*41,12*42,8*43,8*44,8*45,8*46,10*47,8*48,10*49,8*50,10*51,10*52,12*53,8*54,12*55,8*56,6*57,6*58,8*59,6*60,8*61,6*62,4*63
+    5 M_total              9*1,9*2,9*3,9*4,9*5,9*6,9*7,9*8,9*9,9*10,9*11,9*12,9*13,9*14,9*15,9*16,9*17,9*18,9*19,9*20,9*21,9*22,9*23,9*24,9*25,9*26,9*27,9*28,9*29,9*30,9*31,9*32,9*33,9*34,9*35,9*36,9*37,9*38,9*39,9*40,9*41,9*42,9*43,9*44,9*45,9*46,9*47,9*48,9*49,9*50,9*51,9*52,9*53,9*54,9*55,9*56,9*57,9*58,9*59,9*60,9*61,9*62,9*63,9*64
+    6 northUp              2,2*3,2*4,2*5,2*6,3*7,3*8,3*9,3*10,3*11,3*12,3*13,3*14,3*15,3*16,3*17,3*18,4*19,4*20,4*21,4*22,4*23,4*24,4*25,4*26,4*27,4*28,4*29,4*30,4*31,4*32,5*33,5*34,5*35,5*36,5*37,5*38,5*39,5*40,5*41,5*42,5*43,5*44,5*45,5*46,6*47,6*48,6*49,6*50,6*51,6*52,6*53,6*54,6*55,6*56,6*57,6*58,7*59,7*60,7*61,7*62,8*63,9*64
+    7 eastUp               2,2*3,2*4,2*5,2*6,3*7,3*8,3*9,3*10,3*11,3*12,3*13,3*14,3*15,3*16,3*17,3*18,4*19,4*20,4*21,4*22,4*23,4*24,4*25,4*26,4*27,4*28,4*29,4*30,4*31,4*32,5*33,5*34,5*35,5*36,5*37,5*38,5*39,5*40,5*41,5*42,5*43,5*44,5*45,5*46,6*47,6*48,6*49,6*50,6*51,6*52,6*53,6*54,6*55,6*56,6*57,6*58,7*59,7*60,7*61,7*62,8*63,9*64
+    8 southUp              2,2*3,2*4,2*5,2*6,3*7,3*8,3*9,3*10,3*11,3*12,3*13,3*14,3*15,3*16,3*17,3*18,4*19,4*20,4*21,4*22,4*23,4*24,4*25,4*26,4*27,4*28,4*29,4*30,4*31,4*32,5*33,5*34,5*35,5*36,5*37,5*38,5*39,5*40,5*41,5*42,5*43,5*44,5*45,5*46,6*47,6*48,6*49,6*50,6*51,6*52,6*53,6*54,6*55,6*56,6*57,6*58,7*59,7*60,7*61,7*62,8*63,9*64
+    9 westUp               2,2*3,2*4,2*5,2*6,3*7,3*8,3*9,3*10,3*11,3*12,3*13,3*14,3*15,3*16,3*17,3*18,4*19,4*20,4*21,4*22,4*23,4*24,4*25,4*26,4*27,4*28,4*29,4*30,4*31,4*32,5*33,5*34,5*35,5*36,5*37,5*38,5*39,5*40,5*41,5*42,5*43,5*44,5*45,5*46,6*47,6*48,6*49,6*50,6*51,6*52,6*53,6*54,6*55,6*56,6*57,6*58,7*59,7*60,7*61,7*62,8*63,9*64
+end groups

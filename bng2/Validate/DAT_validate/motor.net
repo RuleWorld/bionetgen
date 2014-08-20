@@ -1,0 +1,33 @@
+# Created by BioNetGen 2.1.8+
+begin parameters
+    1 kpy         3.5  # Constant
+    2 kmy         10  # Constant
+    3 Kd          3.06  # Constant
+    4 g1          35  # Constant
+    5 w           1.02  # Constant
+    6 cellVolume  1.41e-15  # Constant
+    7 _Na         6.02e23  # Constant
+    8 motorCount  10000  # Constant
+    9 CheYCount   2200  # Constant
+end parameters
+begin functions
+    1 kPlus() w*exp(((g1/2.0)*((1.0/2.0)-((CheYp/((cellVolume*_Na)*(10^-6)))/(Kd+(CheYp/((cellVolume*_Na)*(10^-6))))))))
+    2 kMinus() w*exp((-((g1/2.0)*((1.0/2.0)-((CheYp/((cellVolume*_Na)*(10^-6)))/(Kd+(CheYp/((cellVolume*_Na)*(10^-6)))))))))
+end functions
+begin species
+    1 CheY(p~PHOS)      CheYCount
+    2 Motor(state~CW)   motorCount
+    3 CheY(p~unphos)    0
+    4 Motor(state~CCW)  0
+end species
+begin reactions
+    1 1 3 kmy #Rule1r
+    2 2 4 kPlus #Rule2
+    3 3 1 kpy #Rule1
+    4 4 2 kMinus #Rule3
+end reactions
+begin groups
+    1 CheYp                1
+    2 MotCW                2
+    3 MotCCW               4
+end groups
