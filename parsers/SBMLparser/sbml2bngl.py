@@ -99,7 +99,8 @@ class SBML2BNGL:
         
         isConstant = species.getConstant()
         isBoundary = species.getBoundaryCondition()
-        if isBoundary:
+        #FIXME: check if this is actually necessary
+        if isBoundary and not isConstant:
             isConstant = True
             if initialConcentration == 0:
                 initialConcentration = 1
@@ -735,7 +736,7 @@ class SBML2BNGL:
                 tmp2 = temp
                 if rawSpecies['returnID'] in self.tags:
                     tmp2 = (self.tags[rawSpecies['returnID']])
-                if rawSpecies['initialConcentration'] > 0.0:
+                if rawSpecies['initialConcentration'] > 0.0 or rawSpecies['isConstant']:
                     speciesText.append('{0}:{1}{2} {3}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration']))
             if rawSpecies['returnID'] == 'e':
                 modifiedName = 'are'
