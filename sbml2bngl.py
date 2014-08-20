@@ -142,8 +142,15 @@ class SBML2BNGL:
   
     '''
     walks through a series of * nodes and removes the remainder reactant factors
+    also normalize the name of some time/avogadro string names since that is lost
+    during string convertion
     '''
     def getPrunnedTree(self,math,remainderPatterns):
+        swapDict = {libsbml.AST_NAME_TIME:'Time'}
+        for node in [x for x in math.getLeftChild(),math.getRightChild() if x != None]:
+            if node.getType() in swapDict.keys():
+                node.setName(swapDict[node.getType()])
+                
         while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
             if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
@@ -189,7 +196,6 @@ class SBML2BNGL:
         #    highStoichoiMetryFactor /= math.factorial(x[1])
         #remainderPatterns = [x[0] for x in reactants]
         math = self.getPrunnedTree(math,remainderPatterns)
-        
         rateR = libsbml.formulaToString(math)
         for element in remainderPatterns:
             ifStack.update([element])
@@ -239,7 +245,7 @@ class SBML2BNGL:
                 
             #remove compartments from expression
             math = self.getPrunnedTree(math, compartmentList)
-    
+            
             if reversible:
                 if math.getCharacter() == '-' and math.getNumChildren() > 1:
                     rateL, nl = (self.removeFactorFromMath(
@@ -267,7 +273,6 @@ class SBML2BNGL:
                 rateR = self.convertToName(rateR)
             if reversible:
                 pass
-    
             #return compartments if the reaction is unimolecular
             #they were removed in the first palce because its easier to handle
             #around the equation in tree form when it has less terms
@@ -392,16 +397,23 @@ class SBML2BNGL:
         '''
         rcomponentTemp = deepcopy(rcomponent)
         pcomponentTemp = deepcopy(pcomponent)
+        
+        #calculate actual symmetry factors
         for key in rcomponent:
             if key in pcomponent:
                 for element in rcomponent[key]:
                     if rcomponent[key] ==1:
                         continue
-                                        
+                    #if theres a component on one side of the equation that
+                    #appears a different number of times on the other side of the equation
                     if element in pcomponent[key]:
                         if pcomponent[key][element] < rcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in rStack:
                             rcorrectionFactor *= comb(rcomponent[key][element],pcomponent[key][element],exact=1)
                             rStack.append(set([key[0].lower(),key[1].lower()]))
+                            #once we choose a component for a previous action
+                            #this limits the options for subsequent actions
+                            #although substracting one from the target sites
+                            #may not be the right option. double check.
                             self.updateComponentCount(pcomponent,element,-1)
                     else:
                         for element2 in pcomponent[key]:
@@ -503,6 +515,8 @@ class SBML2BNGL:
         functions = []
         functionTitle = 'functionRate'
         
+        if len(self.model.getListOfReactions()) == 0:
+            logMess('ERROR','Model contains no natural reactions, all reactions are produced by rules')
         for index, reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
             #symmetry factors for components with the same name
@@ -527,7 +541,6 @@ class SBML2BNGL:
             
             if self.getReactions.functionFlag and 'delay' in rawRules['rates'][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
-
             if rawRules['reversible']:
                 if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
