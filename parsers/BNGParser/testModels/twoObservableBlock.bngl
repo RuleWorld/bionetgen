@@ -70,7 +70,6 @@ C(h!1).Sb(p!1,q,r~U) -> C(h) k1 DeleteMolecules
 
 #Dangling case
 Sa(a!1,b~U,c).B(y!2,z!1) + Sb(p!1,q,r~U)-> Sa(a!1,b~U!4,c).B(y!2,z!1).Sb(p!3,q,r~U!4) k1
-
 Sa(a!1,b~U!4,c).B(y!2,z!1).Sb(p!3,q,r~U!4) -> Sa(a!1,b~U!2,c).Sb(p!3,q,r~U!2) k1
 
 #another case of delete molecule 
