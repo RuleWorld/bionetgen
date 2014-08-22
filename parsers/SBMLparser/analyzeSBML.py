@@ -632,6 +632,7 @@ class SBMLAnalyzer:
                 self.processFuzzyReaction(reaction,translationKeys,conventionDict,indirectEquivalenceTranslator)
             elif len(reaction[1]) == 2 and len(reaction[0]) == 1:
                 self.processFuzzyReaction([reaction[1],reaction[0]],translationKeys,conventionDict,indirectEquivalenceTranslator)
+        
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
@@ -641,6 +642,7 @@ class SBMLAnalyzer:
         
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
+        #print zip(reactions,reactionClassification)
         return reactionClassification,listOfEquivalences,equivalenceTranslator, \
                 indirectEquivalenceTranslator
     

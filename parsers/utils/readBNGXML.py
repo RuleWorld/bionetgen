@@ -17,7 +17,7 @@ def findBond(bondDefinitions, component):
     '''
     for idx, bond in enumerate(bondDefinitions.getchildren()):
         if component in [bond.get('site1'), bond.get('site2')]: 
-            return str(idx+1)
+            return str(idx)
 
 
     
@@ -83,7 +83,6 @@ def parseRule(rule,parameterDict):
         ml = st.Molecule('0','')
         sp.addMolecule(ml)
         reactants.append(sp)
-        print str(sp)
     if len(pp) == 0:
         sp = st.Species()
         ml = st.Molecule('0','')
@@ -117,8 +116,10 @@ def parseRule(rule,parameterDict):
             tmp = constant.get('value')
         rateConstants = tmp
     rateConstantsValue = parameterDict[rateConstants] if rateConstants in parameterDict else rateConstants
-    
-    rule = st.Rule()
+    #rule = st.Rule()   
+    label = rule.get('name')
+    label = label.replace('(','_').replace(')','_')
+    rule = st.Rule(label)
     rule.addReactantList(reactants)
     rule.addProductList(products)
     rule.addActionList(actions)
@@ -159,9 +160,13 @@ def parseXML(xmlFile):
         moleculeList.append(parseMolecules(molecule))
         
     for rule in rules:
+        description = parseRule(rule,parameterDict)
+        #if 'reverse' in description[0].label:
+        #    ruleDescription[-1][0].bidirectional= True
+        #    ruleDescription[-1][0].rates.append(description[0].rates[0])
+        #else:
         ruleDescription.append(parseRule(rule,parameterDict))
-        
     return moleculeList, ruleDescription,parameterDict
         
 if __name__ == "__main__":
-    parseXML("fceri.xml")
+    parseXML("output19.xml")

@@ -44,7 +44,8 @@ def readFromString(string):
     return sp
 
 class Rule:
-    def __init__(self):
+    def __init__(self,label=''):
+        self.label = label
         self.reactants = []
         self.products = []
         self.rates = []
@@ -77,8 +78,12 @@ class Rule:
         self.actions.extend(actionList)
         
     def __str__(self):
-        return ' + '.join([str(x) for x in self.reactants]) + ' -> ' + ' + '.join([str(x) for x in self.products]) + ' ' + ','.join(self.rates)
-            
+        finalStr = ''
+        if self.label != '':
+            finalStr += '{0}: '.format(self.label)
+        arrow = ' <-> ' if self.bidirectional else ' -> '
+        finalStr += ' + '.join([str(x) for x in self.reactants]) + arrow + ' + '.join([str(x) for x in self.products]) + ' ' + ','.join(self.rates)
+        return finalStr
 class Species:
     def __init__(self):
         self.molecules = []

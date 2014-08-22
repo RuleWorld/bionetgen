@@ -7,7 +7,7 @@ Created on Fri May 24 15:41:00 2013
 
 import unittest
 import libsbml2bngl
-from evaluate import evaluate
+from evaluate import evaluate,validate
 from os import listdir
 from os.path import isfile, join
 import copasi
@@ -47,6 +47,15 @@ class TestOne(ParametrizedTestCase):
                     'complex/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
 
 
+class TestValid(ParametrizedTestCase):
+    '''
+    Test for whether a file is recognized as correct by bng --check
+    '''
+    def test_valid(self):
+        fileName = self.param
+        print fileName
+        self.assertEqual(validate(fileName),0)
+
 class TestEval(ParametrizedTestCase):
     """
     Test for whether a file is able to be simulated by bionetgen
@@ -81,6 +90,7 @@ def getValidBNGLFiles(directory):
             if 'ERROR' in ','.join(k):
                 errorFiles.append(log)
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x and 'dict' not in x]
+    
     validFiles = [x for x in bnglFiles if x not in errorFiles]
     import re
     validNumbers = []
@@ -109,8 +119,10 @@ if __name__ == "__main__":
     suite2 = unittest.TestSuite()
     suite3 = unittest.TestSuite()
     
-    ran = [48]
-    blackList = [18,175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]
+    #ran = [151]
+    ran = range(1,491)
+    #ran  = [252]
+    blackList = [18,81,175,205,212,223,235,255,328,370,404,428,430,431,443,444,452,453,465]
     ran = [x for x in ran if x not in blackList]
     '''
     ran.remove(175)
@@ -143,7 +155,8 @@ if __name__ == "__main__":
     ''' 
     #ran = [73]
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
-    #ran  = [120]    
+    #ran  = [120]  
+    ran = [480]
     for index in ran:
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
@@ -151,10 +164,13 @@ if __name__ == "__main__":
     validFiles = getValidBNGLFiles('complex') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
-    #for fileNumber in validFiles:
-    #    fileName = 'output{0}.bngl'.format(fileNumber)
-    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
-    #validGdats = getValidGDats('.')
+    validFiles = [480]
+    for fileNumber in validFiles:
+        index += 1
+        fileName = 'output{0}.bngl'.format(fileNumber)
+        suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./complex/' + fileName))
+        #suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+    validGdats = getValidGDats('.')
     
     #validFiles = getValidBNGLFiles('raw')
     #for fileNumber in validFiles:
@@ -164,4 +180,5 @@ if __name__ == "__main__":
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
     unittest.TextTestRunner(verbosity=2).run(suite)
+    print len(validFiles)
 

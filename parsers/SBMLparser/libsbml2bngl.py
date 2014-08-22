@@ -923,8 +923,12 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml') 
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
-    param = 480
-    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
+
+    #analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
+    #                False, 'config/namingConventions.json',
+    #                'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+    param = 24
+    analyzeFile('000{0}-sbml-l2v4.xml'.format(param), 'reactionDefinitions/reactionDefinition7.json',
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
 

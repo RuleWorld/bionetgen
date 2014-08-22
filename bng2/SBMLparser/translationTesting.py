@@ -44,7 +44,7 @@ class TestOne(ParametrizedTestCase):
         print self.param
         libsbml2bngl.analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % self.param, 'reactionDefinitions/reactionDefinition7.json',
                     False, 'config/namingConventions.json',
-                    'raw/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=False,bioGrid=False)
+                    'complex/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
 
 
 class TestEval(ParametrizedTestCase):
@@ -108,33 +108,52 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
     suite2 = unittest.TestSuite()
     suite3 = unittest.TestSuite()
-    ran = range(1,469)
+    
+    ran = range(1,100)
+    blackList = [18,175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]
+    ran = [x for x in ran if x not in blackList]
     '''
-    ran.remove(52)
+    ran.remove(175)
     ran.remove(205)
+    ran.remove(212)
+    ran.remove(223)
     ran.remove(235)
-    ran.remove(371)    
+    ran.remove(255)
+    ran.remove(328)
+    ran.remove(370)   
+    ran.remove(404)
+    ran.remove(428)
+    ran.remove(430)
+    ran.remove(431)
+    ran.remove(443)
+    ran.remove(444)
+    ran.remove(452)
+    ran.remove(453)
+    ran.remove(465)
+    ran.remove(469)
     '''
+    #ran = range(466,470)
     #ran = [229]
+    #ran = range(469,491)
     '''
     ran = [244, 19, 183, 144, 268, 450, 152, 406, 446, 265, 235, 88, 175, 412,
            147, 338, 297, 293, 49, 344, 83, 230, 453, 223, 109, 56, 256, 410, 
            340, 452, 286, 399, 445, 285, 457, 74, 250, 334, 227, 205, 339, 151, 
            424, 14, 153, 105, 407, 451, 332, 326, 255, 356]
     ''' 
-    #ran = [229]
+    #ran = [73]
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [120]    
     for index in ran:
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    #validFiles = getValidBNGLFiles('raw') 
-    #validFiles = sorted(validFiles)
+    validFiles = getValidBNGLFiles('complex') 
+    validFiles = sorted(validFiles)
     #validFiles.remove('54')
     #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)
-    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #validGdats = getValidGDats('.')
     
     #validFiles = getValidBNGLFiles('raw')

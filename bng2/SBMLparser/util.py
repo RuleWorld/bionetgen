@@ -12,6 +12,7 @@ from pyparsing import (Literal,CaselessLiteral,Word,Combine,Group,Optional,
                        ZeroOrMore,Forward,nums,alphas,oneOf,alphanums)
 import math
 import operator
+import logging
 
 
 class NumericStringParser(object):

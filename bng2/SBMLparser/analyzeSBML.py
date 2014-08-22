@@ -21,6 +21,11 @@ the json config file for classyfying rules according to their reactants/products
 '''
 
 
+def addToDependencyGraph(dependencyGraph, label, value):
+    if label not in dependencyGraph:
+        dependencyGraph[label] = []
+    if value not in dependencyGraph[label] and value != []:
+        dependencyGraph[label].append(value)
 
 class SBMLAnalyzer:
     
@@ -33,10 +38,12 @@ class SBMLAnalyzer:
     def distanceToModification(self,particle,modifiedElement,translationKeys):
         particlePos = [m.start()+len(particle) for m in re.finditer(particle,modifiedElement)]
         keyPos = [m.start() for m in re.finditer(translationKeys,modifiedElement)]
-        distance = [(x-y) if x>=y else 9999 for x in particlePos for y in keyPos]
+        distance = [(y-x) if x<=y else 9999 for x in particlePos for y in keyPos]
         distance.append(9999)
         return min(distance)
 
+
+    
     def analyzeSpeciesModification(self,baseElement, modifiedElement,partialAnalysis):
         '''
         a method for trying to read modifications within complexes
@@ -57,17 +64,102 @@ class SBMLAnalyzer:
         else:
             winner = None
         if winner:
-            return winner,translationKeys,conventionDict
+            return winner,translationKeys,equivalenceTranslator
         return None,None,None
-        
+
+    def findClosestModification(self,particles,species):
+        equivalenceTranslator = {}
+        dependencyGraph = {}
+        def analyzeByParticle(splitparticle,species,
+                              equivalenceTranslator=equivalenceTranslator,
+                              dependencyGraph=dependencyGraph):
+            basicElements = []
+            composingElements = []
+            for splitpindex in range(0,len(splitparticle)):
+                splitp = splitparticle[splitpindex]
+                closestList = difflib.get_close_matches(splitp,species)
+                closestList = [x for x in closestList if len(x) < len(splitp)]
+
+                #if theres nothing in the species list i can find a lexical
+                #neighbor from, then try to create one based on my two
+                #positional neighbors
+                if closestList == []:
+                    flag= True
+                    #do i get something by merging with the previous component?
+                    if len(composingElements) > 0:
+                        tmp,tmp2 = analyzeByParticle([composingElements[-1] + '_' + splitp], species)
+                        if tmp != [] and tmp2 != []:
+                            flag = False
+                            splitp = composingElements[-1] + '_' + splitp
+                            composingElements.pop()
+                            closestList = tmp
+                            localEquivalenceTranslator,_,_ =  self.processNamingConventions2([tmp[0],tmp2[0]])
+                            for element in localEquivalenceTranslator:
+                                if element not in equivalenceTranslator:
+                                    equivalenceTranslator[element] = []
+                                equivalenceTranslator[element].extend(localEquivalenceTranslator[element])
+                                for instance in localEquivalenceTranslator[element]:
+                                    addToDependencyGraph(dependencyGraph,instance[1],[instance[0]])
+                    #do i get something by merging with the next component?
+                    if flag and splitpindex + 1 != len(splitparticle):
+                        tmp,tmp2 = analyzeByParticle([splitp+ '_' + splitparticle[splitpindex+1]],species)
+                        if tmp!= [] and tmp2 != []:
+                            splitp = splitp+ '_' + splitparticle[splitpindex+1]
+                            splitpindex += 1
+                            closestList = tmp
+                            localEquivalenceTranslator,_,_ =  self.processNamingConventions2([tmp[0],tmp2[0]])
+                            for element in localEquivalenceTranslator:
+                                if element not in equivalenceTranslator:
+                                    equivalenceTranslator[element] = []
+                                equivalenceTranslator[element].append(localEquivalenceTranslator[element])
+                                for instance in localEquivalenceTranslator[element]:
+                                    addToDependencyGraph(dependencyGraph,instance[1],[instance[0]])
+
+                        else:
+                            return [],[]
+                    elif flag:
+                        return [],[]
+                basicElements.append(min(closestList,key=len))
+                #if what i have is a known compound just add it
+                if splitp in species:
+                    composingElements.append(splitp)
+                #if not create it
+                else:
+                    closestList = difflib.get_close_matches(splitp,species)
+                    closestList = [x for x in closestList if len(x) < len(splitp)]
+                    flag = False
+                    for element in closestList:
+                        localEquivalenceTranslator,_,_ =  self.processNamingConventions2([element,splitp])
+                        for element in localEquivalenceTranslator:
+                            if element not in equivalenceTranslator:
+                                equivalenceTranslator[element] = []
+                            equivalenceTranslator[element].append(localEquivalenceTranslator[element])
+                            for instance in localEquivalenceTranslator[element]:
+                                addToDependencyGraph(dependencyGraph,instance[1],[instance[0]])
+                            flag = True
+                    if flag:
+                        composingElements.append(splitp)
+            return basicElements,composingElements
+            
+        for particle in particles:
+            composingElements = []
+            basicElements = []
+            #break it down into small bites
+            #TODO: take into account modifiers like _P
+            splitparticle = particle.split('_')
+            basicElements,composingElements = analyzeByParticle(splitparticle,species)
+            if particle not in composingElements and composingElements != []:
+                addToDependencyGraph(dependencyGraph,particle,composingElements)
+        return dependencyGraph,equivalenceTranslator
     def parseReactions(self,reaction,specialSymbols=''):
-#        print reaction
+        
         name = Word(alphanums + '_-') + ':'
         species =  (Word(alphanums+"_"+":#-") 
         + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
         + Suppress("()"))
         rate = Word(alphanums +     "()")
         grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
+        
         result =  grammar.parseString(reaction).asList()
         if len(result) < 2:    
             result = [result,[]]

@@ -72,7 +72,7 @@ def resolveDependencyGraphHelper(dependencyGraph, reactant, memory,
                     continue
                 elif element in memory:
                     logMess('ERROR','dependency cycle detected on {0}'.format(element))
-                    print 'Detected cycle', element,memory
+                    print 'Detected cycle', element,dependencyGraph[element],memory
                     return []
                 baseElement = resolveDependencyGraphHelper(dependencyGraph,element, 
                                                            memory + [element], withModifications)
@@ -134,7 +134,9 @@ def lexicallyIdentifyModificationCandidate(reactant,tmpCandidate,equivalenceTran
     '''
     
 def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyzer):
-    def selectBestCandidate(reactant, candidates, dependencyGraph,sbmlAnalyzer):
+    equivalenceTranslator = {}
+    def selectBestCandidate(reactant, candidates, dependencyGraph,sbmlAnalyzer,
+                            equivalenceTranslator=equivalenceTranslator):
         tmpCandidates = []
         modifiedElements = []
         unevenElements = []
@@ -148,6 +150,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                 if type(chemical) == tuple:
                     flag = False
                     continue
+                
                 rootChemical = resolveDependencyGraph(dependencyGraph, chemical)
                 mod = resolveDependencyGraph(dependencyGraph, chemical, True)
                 if mod != []:
@@ -166,6 +169,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                 tmpCandidates.append(tmpAnswer)
         #we cannot handle tuple naming conventions for now
         if len(tmpCandidates) == 0:
+            logMess('CRITICAL2','I dont know how to process these candidates and I have no way to make an educated guess. Politely refusing to translate {0}={1}.'.format(reactant,candidates))
             return None, None
 
         #if we have more than one modified element for a single reactant
@@ -189,6 +193,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             #tmpCandidates[0] = candidates[0]
 
         else:
+            
         #temporal solution for defaulting to the first alternative
             #print '---','error',reactant,newModifiedElements,tmpCandidates
             totalElements = [y for x in tmpCandidates for y in x]
@@ -205,6 +210,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                 #    newTmpCandidates[0].append(element)
                 #    unevenElements.append([element])
                 else:
+                    logMess('WARNING2','Are these actually the same? {0}={1}.'.format(reactant,candidates))
                     unevenElements.append(element)
             flag = True
             #this should be done on newtmpCandidates instead of tmpcandidates
@@ -217,28 +223,44 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                         break
             #print newTmpCandidates,unevenElements
         #print ';;;',tmpCandidates[0]
-        if len(candidates) == 1 and len(candidates[0]) == 1 and \
+                        
+        #if all the candidates are about modification changes to a complex
+        #then try to do it through lexical analysis
+        if all([len(candidate)==1 for candidate in candidates]) and \
         candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
-            
-            lexCandidate,translationKeys,conventionDict = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,tmpCandidates[0])
-            print lexCandidate,translationKeys,conventionDict
-            candidates = []
+            lexCandidate,translationKeys,tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,tmpCandidates[0])
+            #FIXME: this is iffy. is it always an append modification? could be prepend
+            if lexCandidate !=None:
+                lexCandidateModification = lexCandidate + translationKeys[0]
+                for element in tmpequivalenceTranslator:
+                    if element not in equivalenceTranslator:
+                        equivalenceTranslator[element] = []
+                equivalenceTranslator[element].append((lexCandidate,lexCandidateModification))
+
+                dependencyGraph[lexCandidateModification] = [[lexCandidate]]
+                while lexCandidate in tmpCandidates[0]:
+                    tmpCandidates[0].remove(lexCandidate)            
+                    tmpCandidates[0].append(lexCandidateModification)
+                return [tmpCandidates[0]],unevenElements
+        
             #FIXME:this doesn't make any sense
             #so if theres an existing modification it will just take it? wtf
-            
             #modificationCandidates = {x[0]: x[1] for x in equivalenceTranslator
             #if x[0] in tmpCandidates[0] and type(x[1]) is not tuple}
             
+            else:
+                #candidates = []
+                modificationCandidates = {}            
+                if modificationCandidates == {}:
+                    logMess('CRITICAL','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}={1}.'.format(reactant,candidates))
+                    tmpCandidates[0] = [reactant]
+                for idx, molecule in enumerate(tmpCandidates[0]):
+                    if molecule in modificationCandidates:
+                        tmpCandidates[0][idx] = modificationCandidates[molecule]
+                return [tmpCandidates[0]], unevenElements
+        elif len(tmpCandidates) > 1:
+            pass
             
-            modificationCandidates = {}            
-            if modificationCandidates == {}:
-                logMess('WARNING','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}.'.format(reactant))
-                tmpCandidates[0] = [reactant]
-            for idx, molecule in enumerate(tmpCandidates[0]):
-                if molecule in modificationCandidates:
-                    tmpCandidates[0][idx] = modificationCandidates[molecule]
-            return [tmpCandidates[0]], unevenElements
-        print '---',tmpCandidates[0],unevenElements,reactant
         return [tmpCandidates[0]], unevenElements
 
     prunnedDependencyGraph = deepcopy(dependencyGraph)
@@ -259,7 +281,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
         else:
             prunnedDependencyGraph[element[0]] = candidates
     weights = weightDependencyGraph(prunnedDependencyGraph)
-    return prunnedDependencyGraph, weights, unevenElementDict
+    return prunnedDependencyGraph, weights, unevenElementDict,equivalenceTranslator
 
 
 def identifyReaction(equivalenceDictionary, originalElement, modifiedElement):
@@ -450,9 +472,12 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
     The atomizer's main methods. Receives a dependency graph
     '''
     for element in weights:
+        
         #0 molecule
         if element[0] == '0':
             continue
+        if element[0] == 'MEK_PP':
+            pass
         #undivisible molecules
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
@@ -659,6 +684,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
     
+
     #catalysis reactions
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
@@ -668,11 +694,13 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                 if baseElement not in database.dependencyGraph or database.dependencyGraph[baseElement] == []:
                     if modElement not in database.dependencyGraph or database.dependencyGraph[modElement] == []:
                         database.dependencyGraph[baseElement] = []
-                    elif [baseElement] not in database.dependencyGraph[modElement]:
+                    #do we have a meaningful reverse dependence?
+                    elif all([baseElement not in x for x in database.dependencyGraph[modElement]]):
                         addToDependencyGraph(database.dependencyGraph,baseElement,[modElement])
                         continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
+
     
     #complex catalysis reactions
     for key in indirectEquivalenceTranslator:
@@ -711,14 +739,63 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         else:
             database.dependencyGraph[element] = [list(
             database.labelDictionary[element][0])]
+            
+    #pure lexical analysis
+    orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
+    tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,database.dependencyGraph.keys())          
+    for species in tmpDependency:
+        for instance in tmpDependency[species]:
+            addToDependencyGraph(database.dependencyGraph,species,instance)
     #####sct
-    prunnedDependencyGraph, weights, unevenElementDict = \
+    #FIXME: wtf was unevenelementdict supposed to be for
+    prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
+        
     #FIXME: I'm conatminating these data structures somewhere. In here
     #im just calling the original generator to recover them.
     classifications, equivalenceTranslator, eequivalenceTranslator, \
         indirectEquivalenceTranslator = sbmlAnalyzer.classifyReactions(rules,molecules)
     
+    for element in artificialEquivalenceTranslator:
+        if element not in eequivalenceTranslator:
+            eequivalenceTranslator[element] = []
+        eequivalenceTranslator[element].extend(artificialEquivalenceTranslator[element])
+
+    #special handling for double modifications like double phosporylation
+    #FIXME: this needs to be done in a cleaner way    
+    doubleModifications = {"Double-Phosporylation":"Phosporylation"}
+    #print '---',eequivalenceTranslator['Double-Phosporylation']
+
+    for element in doubleModifications:
+        if doubleModifications[element] not in eequivalenceTranslator:
+            continue
+        if element not in eequivalenceTranslator:
+            eequivalenceTranslator[element] = []
+        
+        baseElements = [x[0] for x in eequivalenceTranslator[doubleModifications[element]]]
+        modifiedElements = [x[1] for x in eequivalenceTranslator[doubleModifications[element]]]
+        
+        #deleteEquivalences = [baseElements.index(x) for x in baseElements if x in modifiedElements]
+        
+        deleteEquivalences = [(x,modifiedElements[baseElements.index(x)]) for x in baseElements if x in modifiedElements]
+        
+        for eq in deleteEquivalences:
+            if eq not in eequivalenceTranslator[element]:
+                eequivalenceTranslator[element].append(eq)
+                
+        for eq in deleteEquivalences:
+            
+            if eq in eequivalenceTranslator[doubleModifications[element]]:
+                eequivalenceTranslator[doubleModifications[element]].remove(eq)
+                
+    
+        
+        
+    for modification in tmpEquivalence:
+        for candidates in tmpEquivalence[modification]:
+            for instance in candidates:
+                addToDependencyGraph(eequivalenceTranslator,modification,instance)
+            
     weights = sorted(weights, key=lambda rule: rule[1])
     #print {x:str(database.translator[x]) for x in database.translator}
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 

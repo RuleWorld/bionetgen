@@ -11,7 +11,6 @@ import time
 import subprocess
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
-import threading
 import signal
 # Restrict to a particular path.
 class RequestHandler(SimpleXMLRPCRequestHandler):
@@ -23,6 +22,7 @@ server = SimpleXMLRPCServer(("128.237.203.160", 9000),
 server.register_introspection_functions()
 
 
+import threading
 
 iid = 1
 iid_lock = threading.Lock()

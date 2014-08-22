@@ -128,6 +128,8 @@ def bagOfWords():
             stringA += ' ' + ' '.join([tword for x in range(0,int(annotationDict[element][word]))])
     cloudText(stringA,'cloudMax.png')
         
+import pyparsing as pyp
+goGrammar = pyp.Suppress(pyp.Literal('<name>')) +  pyp.Word(pyp.alphanums + ' -_') + pyp.Suppress(pyp.Literal('</name>')) 
 
 def resolveAnnotation(annotation):
     if not hasattr(resolveAnnotation, 'db'):
@@ -147,22 +149,21 @@ def resolveAnnotation(annotation):
     tAnnotation = annotation.replace('%3A',':')
     tAnnotation = annotation.split('/')[-1]
     #tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
-    '''
-    if 'GO' in annotation:            
-        cur.execute("SELECT * FROM term WHERE acc='{0}'".format(tAnnotation))
-        for row in cur.fetchall():
-            bioArray.append([row[1],row[3]])
-    elif 'reactome' in annotation:
-        tAnnotation2 = re.search('_([^_]+$)',tAnnotation).group(1)
-        #query = rserv.queryById(Types.longType(long('9417')))
-        #query = rserv.queryPathwaysForReferenceIdentifiers([tAnnotation])
-        print str(query)
-        bioArray.append([query['name'],tAnnotation])
-    '''
     try:
         if 'obo.go' in annotation:
+
             res = resolveAnnotation.qg.Term(tAnnotation)
-            resolveAnnotation.db[annotation] = res.findAll('name')
+            tmp = res.findAll('name')
+            finalArray = []
+            for x in tmp:
+                try:
+                    tagString = str(goGrammar.parseString(str(x))[0])
+                    if tagString not in ['Systematic synonym']:
+                        finalArray.append(str(goGrammar.parseString(str(x))[0]))
+                except pyp.ParseBaseException:
+                    continue
+                
+            resolveAnnotation.db[annotation] = finalArray
             return resolveAnnotation.db[annotation]
     
         elif 'kegg' in annotation:
@@ -214,111 +215,33 @@ def resolveAnnotation(annotation):
         return annotation
     #finally:
 
+def extractAnnotations(xmlFiles):
+    
 def main2():
     #go database
-    dbs = MySQLdb.connect(host='mysql.ebi.ac.uk',user='go_select',passwd='amigo',db='go_latest',port=4085)
-    cur = dbs.cursor()
-    #reactome
-    rwsdl = "http://www.reactome.org:8080/caBIOWebApp/services/caBIOService?wsdl"
-    rserv = WSDL.Proxy(rwsdl)
-    
-    #kegg
-    kegg_url = "http://rest.kegg.jp"
-    conn = Connection(kegg_url)
-    
-    #uniprot taxonomy
-    url = 'http://www.uniprot.org/taxonomy/'
-    
-    
     print '---'    
     annotationArray = []
     with open('annotations.dump','rb') as f:
         ar = pickle.load(f)
+    modelAnnotations = Counter()
+
     for idx,element in enumerate(ar):
         print idx
-        modelAnnotations = Counter()
         for index  in element:
+            
             for annotation in element[index]:
-                try:
                     bioArray = []
-                    tAnnotation = annotation.replace('%3A',':')
-                    tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
-                    
-                    if 'GO' in annotation:            
-                        cur.execute("SELECT * FROM term WHERE acc='{0}'".format(tAnnotation))
-                        for row in cur.fetchall():
-                            bioArray.append([row[1],row[3]])
-                            modelAnnotations.update([row[1]])
-                    elif 'reactome' in annotation:
-                        tAnnotation2 = re.search('_([^_]+$)',tAnnotation).group(1)
-                        try:
-                            query = rserv.queryById(Types.longType(long(tAnnotation)))
-                        except:
-                            continue
-                        bioArray.append([query['name'],tAnnotation])
-                        modelAnnotations.update([query['name']])
-                    elif 'kegg' in annotation:
-                        if 'pathway' in tAnnotation:
-                            tAnnotation2 = 'map' + re.search('[^0-9]+([0-9]+$)',tAnnotation).group(1)
-                            reply = conn.request_get('find/pathway/{0}'.format(tAnnotation2), headers={'Accept':'text/json'})
-                            if reply['body'] != '\n':
-                                bioArray.append([reply['body'].split('\t')[1].strip(),tAnnotation])
-                                modelAnnotations.update([reply['body'].split('\t')[1].strip()])
-                        else:
-                            print annotation
-                        
-                    elif 'uniprot' in annotation:
-                        identifier = annotation.split(':')[-1]
-                        url = 'http://www.uniprot.org/uniprot/{0}.tab'.format(identifier)
-                        params = {}
-                        data = urllib.urlencode(params)
-                        request = urllib2.Request(url, data)
-                        request.add_header('User-Agent', 'Python contact')
-                        response = urllib2.urlopen(request)
-                        page = response.read(200000)
-                        proteinName = page.split('\n')[1].split('\t')[3]
-                        modelAnnotations.update([proteinName])
-                        
-                    elif 'interpro' in annotation:
-                        identifier = annotation.split(':')[-1]
-                        url = 'http://www.ebi.ac.uk/interpro/entry/{0}'.format(identifier)
-                        params = {}
-                        data = urllib.urlencode(params)
-                        request = urllib2.Request(url, data)
-                        request.add_header('User-Agent', 'Python contact')
-                        response = urllib2.urlopen(request)
-                        page = response.read(200000)
-                        pointer = page.index('h2 class="strapline"')
-                        extract = page[pointer:pointer+100]
-                        extract = extract[extract.index('>')+1:extract.index('<')]
-                        modelAnnotations.update([extract])
+                    #tAnnotation = annotation.replace('%3A',':')
+                    #tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
+                    resultArray = resolveAnnotation(annotation)
+                    if type(resultArray) is list:
+                        for result in resultArray:
+                            modelAnnotations[result] += 1
+                    elif 'http' not in resultArray:
+                        modelAnnotations[resultArray] += 1
     
-                        
-                    #elif 'taxonomy' in annotation:
-                        #uniprot stuff for taxonomy
-                    #    pass
-                        '''
-                        url = 'http://www.uniprot.org/taxonomy/'
-                        params = {
-                        'from':'ACC',
-                        'to':'P_REFSEQ_AC',
-                        'format':'tab',
-                        'query':'P13368 P20806 Q9UM73 P97793 Q17192'
-                        }
-                        
-                        data = urllib.urlencode(params)
-                        request = urllib2.Request(url, data)
-                        contact = "" # Please set your email address here to help us debug in case of problems.
-                        request.add_header('User-Agent', 'Python contact')
-                        response = urllib2.urlopen(request)
-                        page = response.read(200000)
-                        '''
-                    else:
-                        print '--',annotation,'GO' in tAnnotation
-                except:
-                    continue
-        print modelAnnotations
-        annotationArray.append(modelAnnotations)
+        #annotationArray.append(modelAnnotations)
+    print modelAnnotations
     with open('parsedAnnotations.dump','wb') as f:
         pickle.dump(annotationArray,f)
 
@@ -447,7 +370,7 @@ def reduceElements(element,linkArray):
 
 
 def basicReactome(relationshipMatrix):
-    fileName = 'basicReactome'
+    fileName = 'basicReactome2'
     graph = nx.Graph()
     for element in range(0,len(relationshipMatrix)):
         graph.add_node('Model {0}'.format(element+1),color='teal')
@@ -455,9 +378,10 @@ def basicReactome(relationshipMatrix):
     for idx,row in enumerate(relationshipMatrix):
         for idx2,column in enumerate(row):
             if column != 0.0:
-                edgeList.append(['Model {0}'.format(idx+1),'Model {0}'.format(idx2+1),column])
+                edgeList.append(['Model {0}'.format(idx+1),'Model {0}'.format(idx2+1),int(column)])
     graph.add_weighted_edges_from(edgeList)
     nx.write_gml(graph,'%s.gml' % fileName)
+    nx.write_graphml(graph,'%s.graphml'% fileName)
     #subprocess.call(['circo', '-Tpng', '{0}.dot'.format(fileName),'-o{0}.png'.format(fileName)])
 
 def basicCSVReactome(relationshipMatrix):
@@ -506,8 +430,10 @@ def getModelRelationshipMatrix(annotations,threshold=3):
     negativeRelationshipMatrix = np.zeros((len(annotations),len(annotations)))
     for element in range(0,len(annotations)-1):
         for element2 in range(element+1,len(annotations)):
-            score = len([x for x in  annotations[element] if x in annotations[element2] and x not in blacklist])
-            nscore = len([x for x in  annotations[element] if x not in annotations[element2] and x not in blacklist]) + len([x for x in  annotations[element2] if x not in annotations[element] and x not in blacklist])
+            totalList1 = set([y for x in annotations[element] for y in annotations[element][x]])
+            totalList2 = set([y for x in annotations[element2] for y in annotations[element2][x]])
+            score = len([x for x in totalList1 if x in totalList2 and x not in blacklist])
+            nscore = len([x for x in  totalList1 if x not in totalList2 and x not in blacklist]) + len([x for x in  totalList2 if x not in totalList1 and x not in blacklist])
             if score > threshold:
                 relationshipMatrix[element,element2] = score
             else:
@@ -519,7 +445,7 @@ def biomodelsInteractomeAnalysis():
     with open('xmlAnnotations.dump','rb') as f:
         annotations = pickle.load(f)
 
-    relationshipMatrix = getModelRelationshipMatrix(annotations)
+    relationshipMatrix,negativeRelationshipMatrix = getModelRelationshipMatrix(annotations)
     basicReactome(relationshipMatrix)
     #basicCSVReactome(relationshipMatrix)
     #return
@@ -636,12 +562,13 @@ def compareConventions(name1,name2):
 
 if __name__ == "__main__":
     #bagOfWords()
+    main2()
     #rankingAnalysis()
     #print resolveAnnotation('http://identifiers.org/reactome/REACT_9417.3')
     #biomodelsInteractome()
     #biomodelsInteractomeAnalysis()
     #biomodelsInteractome()
-    counter = []
+    #counter = []
     
     #array = [11,14,19,28,32,49,237,344,399]
     '''    
@@ -660,7 +587,8 @@ if __name__ == "__main__":
     
     #print compareConventions(19,424)
     
-    equivalenceDictionary = {'Ras-GTP':'RasGTP','Ras-GDP':'RasGDP'}
+    #equivalenceDictionary = {'Ras-GTP':'RasGTP','Ras-GDP':'RasGDP'}
+    #biomodelsInteractomeAnalysis()
     #print compareConventions(32,49)
     #extractXMLInfo('XMLExamples/curated/BIOMD0000000019.xml')
     #annotationSharingFinder()
