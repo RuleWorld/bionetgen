@@ -711,7 +711,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
 
-    
     #complex catalysis reactions
     for key in indirectEquivalenceTranslator:
         #first remove these entries from the dependencyGraph since 
@@ -740,7 +739,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                 and tmp2 not in database.dependencyGraph[namingEquivalence[3][0]]:
                 if all(x in database.dependencyGraph for x in tmp):
                     database.dependencyGraph[namingEquivalence[3][0]] = [tmp]
-                    
     #user defined stuff
     for element in database.labelDictionary:
         if len(database.labelDictionary[element][0]) == 0 or element == \
@@ -772,7 +770,8 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         eequivalenceTranslator[element].extend(artificialEquivalenceTranslator[element])
 
     #special handling for double modifications like double phosporylation
-    #FIXME: this needs to be done in a cleaner way    
+    #FIXME: this needs to be done in a cleaner way(e.g. getting them 
+    # from a file instead of being hardcoded)
     doubleModifications = {"Double-Phosporylation":"Phosporylation"}
     #print '---',eequivalenceTranslator['Double-Phosporylation']
 

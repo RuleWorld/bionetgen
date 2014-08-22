@@ -8,6 +8,8 @@ from pyparsing import commaSeparatedList as csl
 import pyparsing
 from itertools import dropwhile
 import StringIO
+import pyparsing as pyp
+
 def evaluatePiecewiseFunction(function):
     pass
 
@@ -167,7 +169,19 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
                         result2 = constructFromList(['piecewise', argList[idx+1][index2+1:]],optionList)
                     parsedString += 'if({0},{1},{2})'.format(condition,result,result2)
                     idx+=1
-                    
+                elif argList[idx] in ['and', 'or']:
+                    symbolDict = {'and':' && ','or':' || '}
+                    indexArray = [-1]
+                    elementArray = []
+                    for idx2,element in enumerate(argList[idx+1]):
+                        if element ==',':
+                            indexArray.append(idx2)
+                    indexArray.append(len(argList[idx+1]))
+                    tmpStr = argList[idx+1]
+                    for idx2,_ in enumerate(indexArray[0:-1]):
+                        elementArray.append(''.join(tmpStr[indexArray[idx2]+1:indexArray[idx2+1]]))
+                    parsedString += symbolDict[argList[idx]].join(elementArray)
+                    idx+=1
                 elif argList[idx] == 'lambda':
                     
                     tmp = '('
@@ -205,20 +219,20 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
                 logMess('ERROR','Malformed pow or root function %s' % rule)
                 print 'meep'
         return rule
-    
+
     #rule = changeToBNGL(['pow','root'],rule,powParse)
     rule = changeToBNGL(['gt','lt','leq','geq','eq'],rule,compParse)
-    rule = changeToBNGL(['and','or'],rule,compParse)
+    #rule = changeToBNGL(['and','or'],rule,compParse)
     flag = True
     contentRule = pyparsing.Word(pyparsing.alphanums + '_') | ',' | '.' | '+' | '-' | '*' | '/' | '^' | '&' | '>' | '<' | '=' | '|' 
     parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
     finalString = ''
     #remove ceil,floor 
     
-    if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor','pow','sqrt','sqr','root']]):
+    if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor','pow','sqrt','sqr','root','and','or']]):
         argList = parens.parseString('('+ rule + ')').asList()
-        rule = constructFromList(argList[0],['floor','ceil','pow','sqrt','sqr','root'])
-    
+        rule = constructFromList(argList[0],['floor','ceil','pow','sqrt','sqr','root','and','or'])
+
     #TODO:rewrite this to use pyparsing  
     
     
@@ -302,8 +316,8 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
         output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('#generate_network({overwrite=>1})\n')
-    output.write('#simulate({method=>"ode",t_end=>100,n_steps=>100})')
+    output.write('generate_network({overwrite=>1})\n')
+    output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     #with open(fileName,'w') as outputFile:
     #    outputFile.write(output.getvalue()) 

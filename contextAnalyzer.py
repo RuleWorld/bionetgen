@@ -111,6 +111,9 @@ def createMetaRule(ruleSet,differences):
             #print metaRule[element],moleculeDict[idx][element]
 
 def groupByReactionCenter(transformationCenter):
+    '''
+    returns:  A Dictionary with 'reactionCenter' keys. 
+    '''
     centerDict = {}
     #extract rules with teh same reaction center
     for idx,rule in enumerate(transformationCenter):

@@ -10,6 +10,7 @@ this method classifies reactants according to the rdf information, and gives
 us information on which reactants are the same, and how do they differ
 (compartment etc)
 '''
+from sbml2bngl import SBML2BNGL
 
 import libsbml
 
