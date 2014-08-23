@@ -136,8 +136,8 @@ scope{
 simulate[Map<String,String> map]
 : 
   SIMULATE LPAREN (LBRACKET 
-  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map])
-  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]))*)? 
+  ((simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map])
+  (COMMA (simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 
@@ -176,9 +176,9 @@ simulate_nf[Map<String,String> map]
 parameter_scan[Map<String,String> map]
 :
   PARAMETER_SCAN LPAREN (LBRACKET 
-  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]|
+  ((simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]|
     s1=RESET_CONC ASSIGNS i1=INT {map.put($s1.text,$i1.text);})
-  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]|
+  (COMMA (simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]|
     s2=RESET_CONC ASSIGNS i2=INT {map.put($s2.text,$i2.text);}))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
@@ -186,8 +186,8 @@ parameter_scan[Map<String,String> map]
 bifurcate[Map<String,String> map]
 :
   BIFURCATE LPAREN (LBRACKET
-  ((ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map])
-  (COMMA (ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]))*)? 
+  ((simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map])
+  (COMMA (simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|pscan_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI? 
 ;
 
@@ -564,10 +564,15 @@ simulate_nf_par_def[Map<String,String> map]
 //  SUFFIX ASSIGNS DBQUOTES ~(DBQUOTES )* DBQUOTES
 //;
 
+simulate_par_method[Map<String,String> map]
+:
+  METHOD ASSIGNS DBQUOTES method_definition DBQUOTES {map.put($METHOD.text,$method_definition.text);}
+;
+
 //TODO: error or warning?????
 simulate_par_def[Map<String,String> map]
 : 
-  METHOD ASSIGNS DBQUOTES method_definition DBQUOTES {map.put($METHOD.text,$method_definition.text);} |
+//  METHOD ASSIGNS DBQUOTES method_definition DBQUOTES {map.put($METHOD.text,$method_definition.text);} |
   T_END ASSIGNS e1=expression[gParent.memory] {map.put($T_END.text,$e1.text);} | 
   T_START ASSIGNS e2=expression[gParent.memory] {map.put($T_START.text,$e2.text);} | 
   N_STEPS ASSIGNS e3=expression[gParent.memory] {map.put($N_STEPS.text,$e3.text);} | 
@@ -622,7 +627,7 @@ pscan_par_def[Map<String,String> map]
      
 method_definition 
 :
-  ODE|SSA|PLA
+  ODE|SSA|PLA|NF
 ;
 
 array_value

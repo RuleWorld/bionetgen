@@ -83,7 +83,7 @@ METHOD: 'method';
 ODE: 'ode';
 SSA: 'ssa';
 PLA: 'pla';
-//NF: 'nf';
+NF: 'nf';
 VERBOSE: 'verbose';
 NETFILE: 'netfile';
 ARGFILE: 'argfile';
