@@ -40,7 +40,14 @@ sub unquotemeta(;$) {
 sub uniqadd { if (not has($_[0],$_[1]) ) {push @{$_[0]}, $_[1] ; }}
 sub indexHash { my @x = @{$_[0]}; map { $x[$_]=>$_ } 0..@x-1; }
 
-
+sub push2ref
+{
+	my $arr = shift @_;
+	my $item = shift @_;
+	if(ref $item) { push @$arr,@$item; }
+	else { push @$arr,$item; }
+	return;
+}
 
 sub execute_params
 {
@@ -58,6 +65,7 @@ sub execute_params
 	$args{'collapse'} = 0 if (not has(\@argkeys,'collapse'));
 	#$args{'filter'} = {'items'=>[],} if (not has(\@argkeys,'collapse'));
 	$args{'textonly'} = 0 if (not has(\@argkeys,'textonly'));
+	$args{'embed'} = 0 if(not has(\@argkeys,'embed'));
 	$args{'classes'} = {} if (not has(\@argkeys,'classes'));
 	
 	$args{'background'} = {}
@@ -66,6 +74,7 @@ sub execute_params
 	$args{'background'}->{'toggle'} = 1 if(not has(\@argkeys2,'toggle'));
 	$args{'background'}->{'include'} = [] if(not has(\@argkeys2,'include'));
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
+
 	
 	if (not has(\@argkeys,'type'))
 	{
@@ -87,11 +96,13 @@ sub execute_params
 	my $textonly = $args{'textonly'};
 	my $suffix = $args{'suffix'};
 	my %classdefs = %{$args{'classes'}};
+	my $embed = $args{'embed'};
 	
 	my $bkg = $args{'background'};
 	my $bkg_toggle = $bkg->{'toggle'};
 	my $bkg_include = $bkg->{'include'};
 	my $bkg_exclude = $bkg->{'exclude'};
+	
 	#my $closed = $args{'closed'};
 	
 	my @includes = ();
@@ -104,7 +115,6 @@ sub execute_params
 	my $ref2 = getAtomicPatterns($bkg_exclude);
 	if(not ref $ref2) { print "\nAtomic Pattern could not be created from ".$ref2."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
 	else {@excludes = @$ref2};
-	
 	
 	my %classes;
 	foreach my $name(keys %classdefs)
@@ -178,6 +188,17 @@ sub execute_params
 		}
 	}
 	
+	if ($type eq 'contactmap')
+	{
+		getRuleNetworkGraphs($model);
+		my @bpgs = flat(@{$gr->{'RuleNetworkGraphs'}});
+		my @aps = uniq map { 
+						my $bpg = $_;
+						grep { $bpg->{'NodeType'}->{$_} eq 'AtomicPattern' }
+						@{$bpg->{'NodeList'}}; 
+					} @bpgs;
+		print @aps;
+	}
 	
 	if ($type eq 'regulatory')
 	{
@@ -186,11 +207,12 @@ sub execute_params
 		applyRuleNetworkCurrent($model,$model->VizGraphs->{'RuleNetwork'});
 		if ($each==0)
 		{
-			if (defined $filter->{'items'})
+			if ($filter->{'toggle'}==1 and defined $filter->{'items'})
 			{ 
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				my @items= @{$filter->{'items'}}; 
 				my $level = $filter->{'level'};
+				print "Filtering network based on user-provided list.\n";
 				$bpg = filterNetworkGraphByList($bpg,\@items,$level);
 				applyRuleNetworkCurrent($model,$bpg);
 			}
@@ -341,10 +363,11 @@ sub execute_params
 		my %args2 = duplicate_args(\%args);
 		$args2{'type'} = 'regulatory';
 		$args2{'output'} = 0;
+		if($args{'mergepairs'}) {$args2{'groups'}=1;$args{'groups'}=1;}
 		if($args{'groups'}) { $args2{'collapse'}=1; }
 		execute_params($model,\%args2);
 		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-		my $pg = makeProcessGraph($bpg);
+		my $pg = makeProcessGraph($bpg,$args{'mergepairs'});
 		if($output==1)
 			{
 			if($textonly==1) {$str = printProcessGraph($pg); }
@@ -426,7 +449,9 @@ sub writeGML
 	my %outputstr = (	'ruleviz_operation' => 'rule(s) with graph operations',
 						'ruleviz_pattern' => 'rule(s) with patterns',
 						'regulatory' => 'network of rules and atomic patterns',
-						'process' => 'process graph of rules' );
+						'process' => 'process graph of rules',
+						'contactmap' => 'contact map of model'
+						);
 	my $outputmsg = $outputstr{$type};
 	
 	my $file = '';
@@ -603,6 +628,7 @@ sub syncClasses
 		$bpg->{'NodeClass'} = {};
 		}
 	
+	
 	# get only the atomic patterns 
 	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
 				@{$bpg->{'NodeList'}};
@@ -649,9 +675,9 @@ sub syncClasses
 	@temp { @unclassed } = @unclassed;
 	
 	# getting rules
-	my @rules =	map {quotemeta($_)}
-				grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
-				@{$bpg->{'NodeList'}};
+	#my @rules =	map {quotemeta($_)}
+	#			grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+	#				@{$bpg->{'NodeList'}};
 	my @edges =	grep { $_ =~ /Reactant|Product$/ }
 				@{$bpg->{'EdgeList'}};
 	my @reac_edges =	grep { $_ =~ /Reactant$/ }
@@ -661,29 +687,55 @@ sub syncClasses
 	my %reacprodhash;
 	# dont wanna lose the order;
 	my @reacprodvals; 
+	my @rules = grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} @{$bpg->{'NodeList'}};
 	foreach my $rule(@rules)
 	{
-		my $reacprodstr = 	join " ",
-						sort {$a cmp $b}
-						uniq map {$temp{$_};}
-						map {$_ =~ /.*:(.*):.*/; $1;}
-						grep { $_ =~ /^$rule:/;}
-						@edges;
-		my @reac = 		uniq map {$_ =~ /.*:(.*):.*/; $1;}
-						grep { $_ =~ /^$rule:/;}
-						grep { $_ =~ /Reactant/; }
-						@edges;
-		my @prod = 		uniq map {$_ =~ /.*:(.*):.*/; $1;}
-						grep { $_ =~ /^$rule:/;}
-						grep { $_ =~ /Product/; }
-						@edges;
-		my $reacstr = @reac ? join(" ",sort {$a cmp $b} map {$temp{$_}} @reac) : '';
-		my $prodstr = @prod ? join(" ",sort {$a cmp $b} map {$temp{$_}} @prod) : '';
-		$reacprodstr = $reacstr." -> ".$prodstr;
-		$reacprodhash{unquotemeta $rule} = $reacprodstr;
+		my @reac = 	uniq 
+					sort {$a cmp $b}
+					map { $temp{$_} } 
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@reac_edges;
+		my @prod = 	uniq
+					sort {$a cmp $b}
+					map { $temp{$_} }
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@prod_edges;
+		my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) );
+		my $hasreacprod = @reac ? 1 : @prod ? 1 : 0;
+		my $reacprodstr = $hasreacprod ? $str : '';
+		$reacprodhash{$rule} = $reacprodstr;
 		push @reacprodvals,$reacprodstr;
-		#$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
+		#print $rule.":".join(" ",@reac).":".join(" ",@prod)."\n";
 	}
+	
+	
+	# foreach my $rule(@rules)
+	# {
+		# my $reacprodstr = 	join " ",
+						# sort {$a cmp $b}
+						# uniq map {$temp{$_};}
+						# map {$_ =~ /.*:(.*):.*/; $1;}
+						# grep { $_ =~ /^$rule:/;}
+						# @edges;
+		# my @reac = 		map {$_ =~ /.*:(.*):.*/; $1;}
+						# grep { $_ =~ /^$rule:/;}
+						# @reac_edges;
+
+		# my @reac1 = @reac ? uniq map {$temp{$_}} @reac : ();
+		# my @prod = 		map {$_ =~ /.*:(.*):.*/; $1;}
+						# grep { $_ =~ /^$rule:/;}
+						# @prod_edges;
+		# my @prod1 = @reac ? uniq map {$temp{$_}} @prod : ();
+		# my $reacstr = @reac1 ? join(" ",sort {$a cmp $b}  @reac1) : '';
+		# my $prodstr = @prod1 ? join(" ",sort {$a cmp $b}  @prod1) : '';
+		# $reacprodstr = $reacstr." -> ".$prodstr;
+		
+		# $reacprodhash{unquotemeta $rule} = $reacprodstr;
+		# push @reacprodvals,$reacprodstr;
+		# #$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
+	# }
 	
 	#print map $_."\n",uniq(@reacprodvals);
 	
@@ -694,7 +746,7 @@ sub syncClasses
 	my @reacprods = grep
 					{
 					my $x = $_;
-					scalar (grep { $_ eq $x } values %reacprodhash) >1;
+					$x ne '' and (scalar (grep { $_ eq $x } values %reacprodhash) >1);
 					} uniq @reacprodvals;
 	return if (scalar @reacprods == 0);
 	$gr->{'NewName'} = -1 if (not defined $gr->{'NewName'}); 
