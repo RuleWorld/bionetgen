@@ -719,9 +719,11 @@ sub styleNode
 	# node, Rule, yED
 	if ($arg==1) { $gmlnode->{'outlineStyle'} = "dotted"; }
 	# node, Mol, yED
-	if ($arg==2) { $gmlnode->{'fontStyle'} = "bold"; $gmlnode->{'fill'} = "#D2D2D2";}
+	if ($arg==2) { $gmlnode->{'fontStyle'} = "bold";  $gmlnode->{'fill'} = "#D2D2D2"; }
 	# node, Comp/BondState, yED
-	if ($arg==3) { $gmlnode->{'fill'} = "#D2D2D2"; }
+	if ($arg==3) { 
+	#$gmlnode->{'fill'} = "#D2D2D2";
+	$gmlnode->{'fill'} = "#FFFFFF";  }
 	# node, CompState, yED
 	if ($arg==4) { $gmlnode->{'fill'} = "#FFCC00"; }
 	# node, GraphOp, yED

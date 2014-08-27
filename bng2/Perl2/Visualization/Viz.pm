@@ -9,6 +9,7 @@ use SpeciesGraph;
 use StructureGraph;
 use NetworkGraph;
 use ProcessGraph;
+use ContactMap;
 use GML;
 
 
@@ -19,6 +20,7 @@ struct Graphs =>
 	'RulePatternGraphs' => '@',
 	'RuleNetwork' => '$',
 	'RuleNetworkCurrent' => '$',
+	'ContactMap' => '$',
 	'Background' => '@', # array of atomic patterns
 	'Classes' => '%', # classname => \@arrayofnodes
 	'NewName' => '$', # just a number to keep track of generated new names
@@ -190,14 +192,16 @@ sub execute_params
 	
 	if ($type eq 'contactmap')
 	{
-		getRuleNetworkGraphs($model);
-		my @bpgs = flat(@{$gr->{'RuleNetworkGraphs'}});
-		my @aps = uniq map { 
-						my $bpg = $_;
-						grep { $bpg->{'NodeType'}->{$_} eq 'AtomicPattern' }
-						@{$bpg->{'NodeList'}}; 
-					} @bpgs;
-		print @aps;
+		getContactMap($model);
+		if($output==1)
+		{
+			my $str = toGML_pattern($gr->{'ContactMap'});
+			my $suffix = $args{'suffix'};
+			my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);
+			writeGML(\%params);
+			return;
+		
+		}
 	}
 	
 	if ($type eq 'regulatory')
@@ -570,6 +574,20 @@ sub getRuleNetwork
 		$bpg->{'Merged'} = 1;
 		$bpg->{'Collapsed'} = 0;
 		$gr->{'RuleNetwork'} = $bpg;
+	}
+	return;
+}
+
+
+sub getContactMap
+{
+	my $model = shift @_;
+	my $gr = $model->VizGraphs;
+	getRuleNetworkGraphs($model);
+	if(not defined $gr->{'ContactMap'})
+	{
+		my $psg = makeContactMap( [ flat(@{$gr->{'RuleNetworkGraphs'}}) ] );
+		$gr->{'ContactMap'} = $psg;
 	}
 	return;
 }
