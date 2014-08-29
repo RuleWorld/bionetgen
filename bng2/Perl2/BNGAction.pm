@@ -168,8 +168,7 @@ sub simulate
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla).";  }
-    if ($method =~ /^ode$/) # Support 'ode' as a valid method
-    {  $method = 'cvode';  } 
+    if ($method =~ /^ode$/){  $method = 'cvode';  } # Support 'ode' as a valid method
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }
 
@@ -192,6 +191,19 @@ sub simulate
 		}
 	}
 
+    # Find binary
+    my $binary = $METHODS->{$method}->{binary}; 
+    printf "%s simulation using %s\n", $METHODS->{$method}->{type}, $method;
+    my $program;
+    unless ( $program = findExec($binary) )
+    {   return "Could not find executable $binary";   }
+
+    # If method = "nf", call simulate_nf() and return
+    if ( $method eq 'nf' ){
+	    return $model->simulate_nf( $params );
+    }
+
+	# Network simulation
     # Find or Create netfile
     my $netpre;
     if ($netfile)
@@ -215,15 +227,6 @@ sub simulate
             if ($err) { return $err; }
         }
     }
-
-
-    # Find binary
-    my $binary = $METHODS->{$method}->{binary}; 
-    printf "%s simulation using %s\n", $METHODS->{$method}->{type}, $method;
-    my $program;
-    unless ( $program = findExec($binary) )
-    {   return "Could not find executable $binary";   }
-
     
     # Begin writing command: start with program
     my @command = ($program);

@@ -44,6 +44,10 @@ i.e., a standard tau-leaping method (1st order) with species-based preleap tau
 calculations, negative-population postleap checking, and error control parameter 
 'eps' of 0.03.
 
+* Added support for <big><tt>method=>"nf"</tt></big> in <big><tt>simulate</tt></big>
+action. This allows NFsim to be used in <big><tt>parameter_scan</tt></big> and
+<big><tt>bifurcate</tt></big> actions as well.
+
 * Bug fixes
 
 ** An error is now thrown if zero-order synthesis products do not have compartments.
