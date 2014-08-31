@@ -66,6 +66,7 @@ use EnergyPattern;
 use Observable;
 use PopulationList;
 
+
 # A place to store a reference to the current active model.
 # Useful when other classes need to find the model.
 $BNGModel::GLOBAL_MODEL = undef;
@@ -99,6 +100,7 @@ struct BNGModel =>
     Params              => '%',  # run-time parameters (not to be saved)
     ParameterCache      => 'Cache',   
     ConcentrationCache  => 'Cache',
+	VizGraphs			=> '$',
 };
 
 
@@ -2453,6 +2455,34 @@ sub getOutputDir
 ###
 ###
 ###
+
+sub visualize
+{
+# get Perl2 Module directory: look for environment variables BNGPATH or BioNetGenRoot.
+# If neither are defined, use RealBin module
+	use lib File::Spec->catdir( ( exists $ENV{'BNGPATH'}
+                              ? $ENV{'BNGPATH'}
+                              : ( exists $ENV{'BioNetGenRoot'} 
+                                  ? $ENV{'BioNetGenRoot'}
+                                  : $FindBin::RealBin
+                                )
+                            ),
+                            'Perl2\Visualization'
+                          );
+	use Viz;
+
+    my $model       = shift @_;
+    my $user_params = @_ ? shift @_ : {};
+	# valid keywords: type=>string, groups=>0/1, background=>0/1, except=>[list], output=>0/1, each=>0/1
+	# background n except are used for detailing which atomic patterns are background
+	# output is for internal use to make visualize() recursive
+	# each for saying if each rule shd be visualized separately
+	my $err = Viz::execute_params($model,$user_params);
+	if ($err) { return $err; }
+	return '';
+}
+
+
 
 1;
 
