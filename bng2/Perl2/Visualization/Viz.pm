@@ -252,7 +252,7 @@ sub execute_params
 				}
 				else
 				{
-					$str = toGML_rule_network($bpg);
+					$str = toGML_rule_network($bpg,$embed);
 				}
 			}
 		}
@@ -282,7 +282,7 @@ sub execute_params
 				my @grp = grep { $classes{$_} eq $grpname } keys %classes;
 				my $grptype = $nodetype{$grp[0]};
 				my $bpg2 = filterNetworkGraphByList($bpg,\@grp,1);
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
 				my %params = ('model'=>$model,'str'=>$str,'suffix'=>$grpname,'type'=>$type);
 				if($output==1)
 				{
@@ -301,7 +301,7 @@ sub execute_params
 				# right now this is not efficient
 				# better way is to regenerate the network graph, but then u'll have to apply background n
 				# filter n other things again... boring!
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
 				my %params = ('model'=>$model,'str'=>$str,'suffix'=>$grp[0],'type'=>$type);
 				if($output==1)
 				{
@@ -371,7 +371,7 @@ sub execute_params
 		if($args{'groups'}) { $args2{'collapse'}=1; }
 		execute_params($model,\%args2);
 		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-		my $pg = makeProcessGraph($bpg,$args{'mergepairs'});
+		my $pg = makeProcessGraph($bpg,$args{'mergepairs'},$args{'embed'});
 		if($output==1)
 			{
 			if($textonly==1) {$str = printProcessGraph($pg); }

@@ -281,6 +281,9 @@ sub unprettify
 	return $string;
 }
 
+
+
+
 sub combine3
 {
 	my @bpgs = @{shift @_};
@@ -622,6 +625,21 @@ sub makeRuleNetworkGraph
 }
 
 
+sub makeRuleNetworkGraph_simple
+{
+	my @nodes = @{shift @_};
+	my @edges = @{shift @_};
+	my %nodetype = %{shift @_};
+	my $name = shift @_;
+	
+	my $bpg = NetworkGraph->new();
+	$bpg->{'NodeType'} = \%nodetype;
+	$bpg->{'NodeList'} = \@nodes;
+	$bpg->{'EdgeList'} = \@edges;
+	$bpg->{'Name'} = $name;
+	return $bpg;
+
+}
 # do things to network graphs
 sub uniqNetworkGraph
 {

@@ -15,6 +15,7 @@ struct ProcessGraph =>
 	'Edges' => '@',
 	'ReacProds' => '%',
 	'Names' => '%',
+	'Embed' => '%',
 };
 
 sub printProcessGraph
@@ -34,7 +35,8 @@ sub makeProcessGraph
 {
 	print "Building process graph for whole model.\n";
 	my $bpg = shift @_;
-	my $mergepairs = shift @_;
+	my $mergepairs = @_ ? shift @_ : 0;
+	my $embed = @_ ? shift @_ : 0;
 
 	my @edges = @{$bpg->{'EdgeList'}};
 	my @edges2;
@@ -74,6 +76,7 @@ sub makeProcessGraph
 		}
 	}
 	my %namesarr;
+	my %bpgs;
 	foreach my $proc(@processes)
 	{
 	my $r = quotemeta $proc;
@@ -93,83 +96,131 @@ sub makeProcessGraph
 	#my $name = $proc."\n:".join("+",@reacs)."->".join("+",@prods)." }";
 	#my $name = make_name($namearr);
 	$namesarr{$proc} = $namearr;
+	
+	# building embed graph here
+	if($embed)
+		{
+			my @embed_edges = grep { $_ =~ /Reactant|Product/ }
+							  grep {$_ =~ /^$r:/ } @edges ;
+			my @embed_nodes = uniq( map { $_ =~ /.*:(.*):.*/;  $1; } @embed_edges);
+			push @embed_nodes,$proc;
+			my %embed_nodetype;
+			my %nodetype = %{$bpg->{'NodeType'}};
+			@embed_nodetype { @embed_nodes } = @nodetype {@embed_nodes};
+			my $bpg2 = makeRuleNetworkGraph_simple(\@embed_nodes,\@embed_edges,\%embed_nodetype,$proc);
+			$bpgs{$proc} = $bpg2;
+		}
 	}
 	
 	my %names;
 	map {$names{$_} = make_name($namesarr{$_});} @processes;
 	
+	my $pg = ProcessGraph->new();
 	if($mergepairs==0)
 	{
-		my $pg = ProcessGraph->new();
 		$pg->{'Processes'} = \@processes;
-		$pg->{'ReacProds'} = \%reacprod;
+		#$pg->{'ReacProds'} = \%reacprod;
 		$pg->{'Names'} = \%names;
 		$pg->{'Edges'} = \@edges2;
-		return $pg;
+		if($embed) {$pg->{'Embed'} = \%bpgs;}
 	}
 
-	# computing pairs
+	# mergepairs needs to be done correctly!
+	my @procs = @processes;
 	my @pairs;
-	my @stack1 = @processes;
-	while(@stack1)
+	my @unpaired;
+	if($mergepairs==1)
 	{
-		my $proc1 = shift @stack1;
-		my @reac1 = @{$reac{$proc1}};
-		my @prod1 = @{$prod{$proc1}};
-		my @stack2 = ();
-		while(@stack1)
+		# build pairs;
+		# get a process from the stack
+		my @stack = @processes;
+		
+		while(@stack)
 		{
-			my $proc2 = shift @stack1;
-			my @reac2 = @{$reac{$proc2}};
-			my @prod2 = @{$prod{$proc2}};
-			my $str = '';
-			if(@reac1)
-				{ if(@reac1~~@prod2) {$str = $proc1." ".$proc2;}  }
-			if(@prod1)
-				{ if(@reac2~~@prod1) {$str = $proc1." ".$proc2;}  } 				
-			if($str ne '')
-				{ push @pairs,$str;}
-			else
-				{ push @stack2, $proc2; }
+			my $proc1 = shift @stack;
+			my @stack2 = @stack;
+			my @stack3;
+			while(@stack2)
+				{
+				my $proc2 = shift @stack2;
+				if(is_reverse_of($reac{$proc1},$prod{$proc1},$reac{$proc2},$prod{$proc2}))
+					{
+					push @pairs, $proc1." ".$proc2;
+					#$pairs{$proc1} = $proc2;
+					last;
+					}
+				else 
+					{
+					push @stack3,$proc2;
+					}
+				if(not @stack2) { push @unpaired,$proc1;}
+				}
+			@stack = (@stack2,@stack3);
 		}
-		@stack1 = @stack2;
 	}
 	
-	#print map $_."\n",@pairs;
-	my %pairhash; # maps each to its dominant partner;
-	my %revpairhash;
-	map {my @x = split(" ",$_); $pairhash{$x[1]} = $x[0]; $revpairhash{$x[0]} = $x[1];} @pairs;
-	my @dompair = uniq(values %pairhash);
-	my @subpair = uniq(keys %pairhash);
-	my @processes2 = grep {has(\@subpair,$_)==0} @processes;
-	my %reacprod2;
-	map {$reacprod2{$_} = $reacprod{$_};} @processes2;
-	my %names2;
-	map { 	my $proc = $_; 
-			my @namearr = @{$namesarr{$_}};
-			push2ref($namearr[0],$revpairhash{$proc}) if has(\@dompair,$proc);
-			$names2{$_} = make_name(\@namearr); } @processes2;
-	my @edges3;
-	foreach my $edge(@edges2)
+	my @procs_p;
+	my @edges_p;
+	my %names_p;
+	my %embed_p;
+	my %remaphash;
+	my %bpgs_p;
+	foreach my $pair(@pairs)
 	{
-		my @x = split(" ",$edge);
-		my @z;
-		foreach my $y(@x)
-			{
-			if(has(\@subpair,$y)) { push @z,$pairhash{$y};}
-			else { push @z,$y;}
-			}
-		push @edges3,join(" ",@z);
+		my ($dom,$sub) = split(" ",$pair);
+		my $proc = join(",",($dom,$sub));
+		push @procs_p, $proc;
+		$remaphash{$dom} = $proc;
+		$remaphash{$sub} = $proc;
+		
+		my @name_arr = @{$namesarr{$dom}};
+		push2ref($name_arr[0],$sub);
+		my $name = make_name(\@name_arr);
+		$names_p{$proc} = $name; 
+		if($embed)
+		{
+			my @bpgs2 = map {$bpgs{$_} } ($dom,$sub);
+			my $bpg = mergeNetworkGraphs(@bpgs2);
+			$bpgs_p{$proc} = $bpg;
+		}
 	}
-	@edges3 = uniq(@edges3);
+	foreach my $proc(@unpaired)
+	{
+		push @procs_p, $proc;
+		$remaphash{$proc} = $proc;
+		my $name = make_name($namesarr{$proc});
+		$names_p{$proc} = $name;
+		if($embed)
+		{
+			$bpgs_p{$proc} = $bpgs{$proc};
+		}
+	}
+	@edges_p =uniq( map 
+	{
+		my @x = split(" ",$_);
+		join(" ",map {$remaphash{$_}} @x);
+	} @edges2);
 	
-	my $pg = ProcessGraph->new();
-	$pg->{'Processes'} = \@processes2;
-	$pg->{'ReacProds'} = \%reacprod2;
-	$pg->{'Names'} = \%names2;
-	$pg->{'Edges'} = \@edges3;
+	
+	$pg->{'Processes'} = \@procs_p;
+	#$pg->{'ReacProds'} = \%reacprod;
+	$pg->{'Names'} = \%names_p;
+	$pg->{'Edges'} = \@edges_p;
+	if($embed) {$pg->{'Embed'} = \%bpgs_p;}
 	return $pg;
 	
+}
+
+sub is_reverse_of
+{
+	my @proc1_reac = sort {$a cmp $b} @{shift @_};
+	my @proc1_prod = sort {$a cmp $b} @{shift @_};
+	my @proc2_reac = sort {$a cmp $b} @{shift @_};
+	my @proc2_prod = sort {$a cmp $b} @{shift @_};
+	my $ret = 0;
+	$ret = 1 if(scalar @proc1_reac and @proc1_reac~~@proc2_prod);
+	$ret = 1 if(scalar @proc1_prod and @proc1_prod~~@proc2_reac);
+	return $ret;
 }
 
 sub has_overlap
@@ -201,15 +252,15 @@ sub make_name
 {
 	my ($x,$y,$z) = @{shift @_};
 	my @procs = @$x;
-	my @reac = @$y;
-	my @prod = @$z;
+	my @reac = sort {$a cmp $b} @$y;
+	my @prod = sort {$a cmp $b} @$z;
 	
 	my $str1 = join(",",@procs);
 	my $str2 = join("+",@reac);
 	my $str3 = join("+",@prod);
 	
 	my $arrow = (scalar @procs > 1) ? "<->" : "->";
-	return $str1."\n".$str2.$arrow.$str3;
-
+	#return $str1."\n".$str2.$arrow.$str3;
+	return $str2.$arrow.$str3;
 }
 1;

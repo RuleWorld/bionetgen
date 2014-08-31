@@ -24,7 +24,8 @@ struct GMLNode =>
 	'isGroup'=>'$',
 	'gid'=>'$',
 	'hasOutline' => '$',
-	'outline'=>'$'
+	'outline'=>'$',
+	'embed'=>'$'
 };
 
 struct GMLEdge =>
@@ -128,9 +129,22 @@ sub printGML
 		if (defined $node->{'gid'} and length($node->{'gid'}) > 0)
 			{$string .= "gid".$q1.$node->{'gid'}.$q2;}
 		
+		my $string3 = '';
+		if(defined $node->{'embed'})
+		{
+			my $somegraph = $node->{'embed'};
+			my $type = ref $somegraph;
+			if($type eq 'StructureGraph') 
+			{ $string3 = toGML_pattern($somegraph);}
+			elsif($type eq 'NetworkGraph') 
+			{ $string3 = toGML_rule_network($somegraph);}
+		}
 		
-		$string = "node [".$string." ".$string1." ".$string2." ]";
-		push @nodestrings, $string;
+		my $str = join(" ",($string,$string1,$string2,$string3));
+		my $str2= "node [".$str." ]";
+		#$string = "node [".$string." ".$string1." ".$string2." ".$string2" ]";
+		
+		push @nodestrings, $str2;
 	}
 	foreach my $edge(@edges)
 	{
@@ -605,6 +619,8 @@ sub toGML_rule_network
 {
 	my $bpg = shift @_;
 	my $collapsed = $bpg->{'Collapsed'};
+	my $embed = @_ ? shift @_ : 0;
+	
 	my @groups = ();
 	#my @groups = @_ ? @{shift @_} : ();
 	#my $closed = @_ ? shift @_ : 0;
@@ -645,9 +661,15 @@ sub toGML_rule_network
 		$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);
 		styleNode2($gmlnode);
 		styleNode2($gmlnode,$nodetype{$node},'color');
-		if($collapsed == 1 or has(['Rule','AtomicPattern'],$nodetype{$node}) )
+		if((defined $collapsed and $collapsed == 1) or has(['Rule','AtomicPattern'],$nodetype{$node}) )
 			{
 			styleNode2($gmlnode,$nodetype{$node},'shape');
+			}
+		if($embed and ($nodetype{$node} eq 'AtomicPattern') and $node =~ /\(/)
+			{
+			$gmlnode->{'anchor'} = "t";
+			my $psg = stringToPatternStructureGraph($node,0);
+			$gmlnode->{'embed'} = $psg;
 			}
 		push @gmlnodes, $gmlnode;
 	}
@@ -674,6 +696,8 @@ sub toGML_rule_network
 sub toGML_process
 {
 	my $pg = shift @_;
+	my $embed = (defined $pg->{'Embed'});
+	
 	my %indhash = indexHash( $pg->{'Processes'} );
 	
 	my @gmlnodes;
@@ -683,6 +707,11 @@ sub toGML_process
 		my $name = $pg->{'Names'}->{$r};
 		my $gmlnode = initializeGMLNode($id,$name,$r);
 		styleNode2($gmlnode);
+		if($embed)
+			{
+			$gmlnode->{'anchor'} = "t";
+			$gmlnode->{'embed'} = $pg->{'Embed'}->{$r};
+			}
 		push @gmlnodes,$gmlnode;
 	}
 	
