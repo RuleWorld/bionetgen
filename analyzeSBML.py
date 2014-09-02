@@ -14,6 +14,8 @@ from copy import deepcopy
 import detectOntology
 import re
 import difflib
+from util import logMess
+
 
 '''
 This file in general classifies rules according to the information contained in
@@ -42,8 +44,25 @@ class SBMLAnalyzer:
         distance.append(9999)
         return min(distance)
 
-
     
+    def fuzzyArtificialReaction(self,baseElements,modifiedElement,molecules):
+        '''
+        in case we don't know how a species is composed but we know its base
+        elements, try to get it by concatenating its basic reactants
+        '''
+        import collections
+        compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
+        equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules)
+        indirectEquivalenceTranslator= {x:[] for x in equivalenceTranslator}
+        self.processFuzzyReaction([baseElements,modifiedElement],translationKeys,conventionDict,indirectEquivalenceTranslator)
+        newBaseElements = baseElements
+        for modification in indirectEquivalenceTranslator:
+            for element in indirectEquivalenceTranslator[modification]:
+                newBaseElements = [element[2][1] if x==element[2][0] else x for x in newBaseElements]
+        if compare(baseElements,newBaseElements):
+            return None
+        return newBaseElements
+        
     def analyzeSpeciesModification(self,baseElement, modifiedElement,partialAnalysis):
         '''
         a method for trying to read modifications within complexes
@@ -52,10 +71,15 @@ class SBMLAnalyzer:
         graph)
         '''
         equivalenceTranslator,translationKeys,conventionDict =  self.processNamingConventions2([baseElement,modifiedElement])
-        scores = []        
+        scores = []
+        if len(translationKeys) == 0:
+            '''
+            there's no clear lexical path between reactant and product
+            '''
+            return None,None,None
         for particle in partialAnalysis:
             distance = self.distanceToModification(particle,modifiedElement,translationKeys[0])
-            #FIXME:tis is just a heuristic in terms of how far a mod is from a species name
+            #FIXME:tis is just an ad-hoc parameter in terms of how far a mod is from a species name
             #use something better
             if distance < 4:
                 scores.append([particle,distance])
@@ -152,7 +176,6 @@ class SBMLAnalyzer:
                 addToDependencyGraph(dependencyGraph,particle,composingElements)
         return dependencyGraph,equivalenceTranslator
     def parseReactions(self,reaction,specialSymbols=''):
-        
         name = Word(alphanums + '_-') + ':'
         species =  (Word(alphanums+"_"+":#-") 
         + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
@@ -282,7 +305,7 @@ class SBMLAnalyzer:
                         break
             '''
         return equivalences,modifiedElement        
-     
+    """
     def analyzeNamingConventions(self,molecules,originalPattern='',modifiedPattern='',totalPatterns=''):
         '''
         *originalPattern* and *modifiedPattern* are regular expressions containing
@@ -344,14 +367,15 @@ class SBMLAnalyzer:
 #                results.append((mmatch.group('key'),molecule[0:-2]))
     
         return results
-     
+     """
      
     
-    def processNamingConventions2(self,molecules):
+    def processNamingConventions2(self,molecules,threshold=3):
             
         #normal naming conventions
-        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions([x.strip('()') for x in molecules],
-                                                                                      self.namingConventions)
+        strippedMolecules = [x.strip('()') for x in molecules]
+        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions(strippedMolecules,
+                                                                                      self.namingConventions,similarityThreshold=threshold)
         
         #user defined naming convention
         if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
@@ -368,15 +392,32 @@ class SBMLAnalyzer:
             tmpTranslator[element].extend(self.userEquivalencesDict[element])
         return tmpTranslator,translationKeys,conventionDict
         
-    
+    def processAdHocNamingConventions(self,reactant,product):
+        #strippedMolecules = [x.strip('()') for x in molecules]
+        molecules = [reactant,product] if len(reactant) < len(product) else [product,reactant]
+        namePairs,differenceList,_ = detectOntology.defineEditDistanceMatrix(molecules,similarityThreshold=10)
+        #FIXME:in here we need a smarter heuristic to detect actual modifications
+        #for now im just going with a simple heuristic that if the species name
+        #is long enough, and the changes from a to be are all about modification
+        longEnough = 4
+        if len(reactant) > longEnough and len(differenceList) > 0:
+            if len([x for x in differenceList[0] if '-' in x]) == 0:
+                return ''.join([x[-1] for x in differenceList[0]]),differenceList[0]
+            else:
+                commonRoot = detectOntology.findLongestSubstring(reactant,product)
+                if len(commonRoot) > 4:
+                    molecules = [commonRoot,reactant,product]
+                    namePairs,differenceList,_ = detectOntology.defineEditDistanceMatrix(molecules,similarityThreshold=10)                    
+                    print namePairs,differenceList
+            
+        return None,None
     
     def approximateMatching(self,ruleList,differences=[]):
-        '''
-        remove compound differencese (>2 characters) and instead represent them with symbols
-        returns transformed string,an equivalence dictionary and unused symbols
-        
-        '''
         def curateString(element,differences,symbolList = ['#','&',';','@','!','?'],equivalenceDict={}):
+            '''
+            remove compound differencese (>2 characters) and instead represent them with symbols
+            returns transformed string,an equivalence dictionary and unused symbols
+            '''
             tmp = element
             for difference in differences:
                 if difference in element:
@@ -395,8 +436,6 @@ class SBMLAnalyzer:
         slightly modified version of a and b, this function will return a list of 
         lexical changes that a and b must undergo to become ~a and ~b.
         '''
-        
-
         tmpRuleList = deepcopy(ruleList)
         if len(ruleList[1]) == 1 and ruleList[1] != '0':
             tmpRuleList[0][0],sym,dic =  curateString(ruleList[0][0],differences)
@@ -568,14 +607,15 @@ class SBMLAnalyzer:
         return reactionTypeProperties
 
 
+        
     def processFuzzyReaction(self,reaction,translationKeys,conventionDict,indirectEquivalenceTranslator):
         
         d1,d2,firstMatch,secondMatch= self.approximateMatching(reaction,
                                                     translationKeys)
-        idx1=0
-        idx2 = 1
         matches = [firstMatch,secondMatch]
         for index,element in enumerate([d1,d2]):
+            idx1=0
+            idx2 = 1
             while idx2 <= len(element):
                 if (element[idx1],) in conventionDict.keys():
                     pattern = conventionDict[(element[idx1],)]
@@ -619,10 +659,9 @@ class SBMLAnalyzer:
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
         
         #process straightforward naming conventions
-        #equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions(molecules,reactionDefinition)
-                    
         equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules)
-        
+        newTranslationKeys = []
+        adhocLabelDictionary = {}
         #lists of plain reactions
         rawReactions = [self.parseReactions(x) for x in reactions]
         #process fuzzy naming conventions based on reaction information
@@ -632,19 +671,31 @@ class SBMLAnalyzer:
                 self.processFuzzyReaction(reaction,translationKeys,conventionDict,indirectEquivalenceTranslator)
             elif len(reaction[1]) == 2 and len(reaction[0]) == 1:
                 self.processFuzzyReaction([reaction[1],reaction[0]],translationKeys,conventionDict,indirectEquivalenceTranslator)
-        
+            elif len(reaction[0]) == 1 and len(reaction[1]) == 1:
+                #if reaction->product shares the same reactant root
+                fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0])
+                if fuzzyKey and fuzzyKey not in translationKeys:
+                    logMess('INFO:Atomization','added induced naming convention {0}'.format(str(reaction)))
+                    if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
+                        equivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
+                        adhocLabelDictionary['{0}mod'.format(fuzzyKey)] = ['{0}mod'.format(fuzzyKey),fuzzyKey.upper()]
+                    if tuple(sorted([x[0] for x in reaction],key=len)) not in equivalenceTranslator['{0}mod'.format(fuzzyKey)]:
+                        equivalenceTranslator['{0}mod'.format(fuzzyKey)].append(tuple(sorted([x[0] for x in reaction],key=len)))
+                        newTranslationKeys.append(fuzzyKey)
+                    conventionDict[fuzzyDifference] = '{0}mod'.format(fuzzyKey)
+                    indirectEquivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
+            #    self.processFuzzyReaction([[reaction[0][0],''],reaction[1]],translationKeys,conventionDict,indirectEquivalenceTranslator)
+        translationKeys.extend(newTranslationKeys)
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
                                             translationKeys)
         listOfEquivalences = []
-        
-        
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
         #print zip(reactions,reactionClassification)
         return reactionClassification,listOfEquivalences,equivalenceTranslator, \
-                indirectEquivalenceTranslator
+                indirectEquivalenceTranslator,adhocLabelDictionary
     
     
  
@@ -680,6 +731,44 @@ class SBMLAnalyzer:
                 rawReactions[reactionIndex][reactantIndex] = tmp
         #self.annotationClassificationHelper(rawReactions,equivalenceTranslator[-1])         
     
+    def userJsonToDataStructure(userEquivalence):
+            tmp = st.Species()
+            label = []
+            for molecule in userEquivalence[1]:
+                tmp2 = st.Molecule(molecule[0])
+                for componentIdx in range(1,len(molecule),2):
+                    tmp3 = st.Component(molecule[componentIdx])
+                    if len(molecule[componentIdx+1])>0:
+                        if molecule[componentIdx+1][0] == "b":
+                            tmp3.addBond(molecule[componentIdx+1][1])
+                        elif molecule[componentIdx+1][0] == "s":
+                            tmp3.addState('U')
+                            tmp3.addState(molecule[componentIdx+1][1])
+                            equivalencesList.append([userEquivalence[0],molecule[0]])
+                    
+                    #tmp3.addState(molecule[2][2])
+                
+                    tmp2.addComponent(tmp3)
+                stmp = st.Species()
+                stmp.addMolecule(deepcopy(tmp2))
+                stmp.reset()
+                #in case one definition overlaps another
+                if molecule[0] in dictionary:
+                    dictionary[molecule[0]].extend(deepcopy(stmp))
+                else:
+                    dictionary[molecule[0]] = deepcopy(stmp)
+                labelDictionary[molecule[0]] = [(molecule[0],)]
+                label.append(molecule[0])
+                
+                #for component in tmp2.components:
+                #    if component.name == molecule[1]:
+                #        component.setActiveState(molecule[2][1])
+                tmp.addMolecule(tmp2)
+            return deepcopy(tmp),labelDictionary[userEquivalence[0]]    
+            #dictionary[userEquivalence[0]] = deepcopy(tmp)
+            #labelDictionary[userEquivalence[0]] = [tuple(label)]
+        complexEquivalences = speciesdictionary['modificationDefinition']
+        
     def getUserDefinedComplexes(self):
         dictionary = {}
         labelDictionary = {}

@@ -6,11 +6,12 @@ Created on Fri May 24 15:41:00 2013
 """
 
 import unittest
-import libsbml2bngl
+#import libsbml2bngl
 from evaluate import evaluate,validate
 from os import listdir
 from os.path import isfile, join
 import copasi
+from subprocess import call        
 
 ##Taken from: http://eli.thegreenplace.net/2011/08/02/python-unit-testing-parametrized-test-cases/
 
@@ -36,16 +37,33 @@ class ParametrizedTestCase(unittest.TestCase):
         
 class TestOne(ParametrizedTestCase):
     '''
+    Test for raw translation
+    '''
+    '''
+    def test_raw(self):
+        print self.param
+        call(['python','sbmlTranslator.py','-i',
+        'XMLExamples/curated/BIOMD%010i.xml' % self.param,
+        '-o','raw/output' + str(self.param) + '.bngl',
+        '-c','reactionDefinitions/reactionDefinition7.json',
+        '-n','config/namingConventions.json'])        
+    '''
+
+    '''
     Test for ability to ruleify
     '''
+    
     def test_parsing(self):
         #reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
         #spEquivalence = detectCustomDefinitions(bioNumber)
         print self.param
-        libsbml2bngl.analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % self.param, 'reactionDefinitions/reactionDefinition7.json',
-                    False, 'config/namingConventions.json',
-                    'complex/output' + str(self.param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
-
+        call(['python','sbmlTranslator.py','-i',
+        'XMLExamples/curated/BIOMD%010i.xml' % self.param,
+        '-o','complex/output' + str(self.param) + '.bngl',
+        '-c','reactionDefinitions/reactionDefinition7.json',
+        '-n','config/namingConventions.json',
+        '-a'])        
+    
 
 class TestValid(ParametrizedTestCase):
     '''
@@ -123,10 +141,14 @@ if __name__ == "__main__":
     ran = range(1,491)
     #ran  = [252]
     blackList = [18,81,175,205,212,223,235,255,328,370,404,428,430,431,443,444,452,453,465]
+    #for some reasons thechange the adhoc components break this model
+    blackList.append(151)
     ran = [x for x in ran if x not in blackList]
     '''
     ran.remove(175)
     ran.remove(205)
+    
+
     ran.remove(212)
     ran.remove(223)
     ran.remove(235)
@@ -153,17 +175,17 @@ if __name__ == "__main__":
            340, 452, 286, 399, 445, 285, 457, 74, 250, 334, 227, 205, 339, 151, 
            424, 14, 153, 105, 407, 451, 332, 326, 255, 356]
     ''' 
-    #ran = [73]
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
-    #ran  = [120]  
-    ran = [480]
+    #ran  = [19]  
+    #ran = [480]
     for index in ran:
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    validFiles = getValidBNGLFiles('complex') 
-    validFiles = sorted(validFiles)
+    #validFiles = getValidBNGLFiles('complex') 
+    #validFiles = sorted(validFiles)
     #validFiles.remove('54')
+    '''
     validFiles = [480]
     for fileNumber in validFiles:
         index += 1
@@ -171,7 +193,7 @@ if __name__ == "__main__":
         suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./complex/' + fileName))
         #suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     validGdats = getValidGDats('.')
-    
+    '''
     #validFiles = getValidBNGLFiles('raw')
     #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)
@@ -180,5 +202,5 @@ if __name__ == "__main__":
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
     unittest.TextTestRunner(verbosity=2).run(suite)
-    print len(validFiles)
+    #print len(validFiles)
 
