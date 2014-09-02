@@ -215,7 +215,7 @@ def resolveAnnotation(annotation):
         return annotation
     #finally:
 
-def extractAnnotations(xmlFiles):
+#def extractAnnotations(xmlFiles):
     
 def main2():
     #go database
@@ -244,6 +244,125 @@ def main2():
     print modelAnnotations
     with open('parsedAnnotations.dump','wb') as f:
         pickle.dump(annotationArray,f)
+
+def histogram():
+    import matplotlib.pyplot as plt
+    import numpy as np
+    evaluationFile = open('sortedC.dump','rb')
+    ev1 =     pickle.load(evaluationFile)
+    number,rulesLength,evaluation,evaluation2 =  zip(*ev1)
+    evaluation20 = []
+    evaluationn20 = []
+    trueEvaluation = []
+    trueRatio = []
+    ratio20 = []
+    ration20 = []
+    
+    
+    problemModels = []
+    print 'syndec',len([x for x in rulesLength if x == -1])
+    for x,y,z,w in zip(rulesLength,evaluation,number,evaluation2):
+        if x>=10:
+            if y <= 0.1:
+                problemModels.append(z)
+            evaluation20.append(y)
+            ratio20.append(1-w)
+        if x>=0:
+            if x<10:
+                evaluationn20.append(y)
+                ration20.append(1-w)
+            trueEvaluation.append(y)
+            trueRatio.append(1-w)
+            
+            
+    print '0 atom large models',problemModels
+    plt.clf()
+    plt.hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
+    plt.xlabel('Number of reactions',fontsize=18)
+    plt.savefig('lengthDistro.png')
+    plt.clf()
+    plt.hist(trueEvaluation, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+                                0.8, 0.9, 1.0])
+
+    
+    plt.xlabel('Atomization Degree ({0} models)'.format(len(trueEvaluation)),fontsize=18)    
+    plt.savefig('atomizationDistroHist.png')
+
+    plt.clf()
+    plt.hist(evaluation20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+                                0.8, 0.9, 1.0])
+    plt.xlabel('Atomization Degree >10 reactions ({0} models)'.format(len(evaluation20)), fontsize=18)
+    plt.savefig('atomizationDistroHist10ormore.png')
+
+    plt.clf()
+    plt.hist(evaluationn20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+                                0.8, 0.9, 1.0])
+    plt.xlabel('Atomization Degree <=10 reactions ({0} models)'.format(len(evaluationn20)), fontsize=18)
+    plt.savefig('atomizationDistroHist10orless.png')
+
+    strueEvaluation=np.sort( trueEvaluation )
+    yvals=np.arange(len(strueEvaluation))/float(len(strueEvaluation))
+    plt.clf()
+    plt.plot( strueEvaluation, yvals )
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Atomization Degree CDF', fontsize=18)
+    plt.savefig('atomizationDistroCDF.png')
+
+    strueRatio=np.sort( trueRatio )
+    yvals=np.arange(len(trueRatio))/float(len(trueRatio))
+    plt.clf()
+    plt.plot( strueRatio, yvals )
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Compression Degree CDF', fontsize=18)
+    plt.savefig('compressionDistroCDF.png')
+
+    s10ormore=np.sort( evaluation20 )
+    yvals=np.arange(len(evaluation20))/float(len(evaluation20))
+    plt.clf()
+    plt.plot( s10ormore, yvals )
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Atomization Degree CDF (>10 reactions)', fontsize=18)
+    plt.savefig('atomizationDistroCDF10ormore.png')
+
+    strueRatio=np.sort( ratio20 )
+    yvals=np.arange(len(ratio20))/float(len(ratio20))
+    plt.clf()
+    plt.plot( strueRatio, yvals )
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Compression Degree CDF (>10 reactions)', fontsize=18)
+    plt.savefig('compressionDistro10orMoreCDF.png')
+
+    s10orless=np.sort( evaluationn20 )
+    yvals=np.arange(len(evaluationn20))/float(len(evaluationn20))
+    plt.clf()
+    plt.plot( s10orless, yvals )
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Atomization Degree CDF (<= 10 reactions)', fontsize=18)
+    plt.savefig('atomizationDistroCDF10orless.png')
+
+    strueRatio=np.sort( ration20 )
+    yvals=np.arange(len(ration20))/float(len(ration20))
+    plt.clf()
+    plt.plot( strueRatio, yvals )
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Compression Degree CDF (<= 10 reactions)', fontsize=18)
+    plt.savefig('compressionDistro10orlessCDF.png')
+
+    ev = []
+    idx = 1
+    '''
+    for x, y, z in zip(rulesLength, evaluation, compartmentLength):
+        
+        if idx in [18, 51, 353, 108, 109, 255, 268, 392]:
+            idx+=1
+
+        if x < 15 and y > 0.7 and z>1:
+            print '---',idx,x,y
+        idx+=1
+    '''
+    #plt.hist(ev,bins =[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    #plt.xlabel('Atomization Degree',fontsize=18)    
+    #plt.savefig('ruleifyDistro3.png')
 
 
 def rankingAnalysis():
@@ -562,7 +681,8 @@ def compareConventions(name1,name2):
 
 if __name__ == "__main__":
     #bagOfWords()
-    main2()
+    #main2()
+    histogram()
     #rankingAnalysis()
     #print resolveAnnotation('http://identifiers.org/reactome/REACT_9417.3')
     #biomodelsInteractome()

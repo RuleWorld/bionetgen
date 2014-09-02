@@ -7,7 +7,7 @@
 
 #header
 {
-	background: #ccf;
+	background: #39e639;
 	padding: 20px;
 }
 
@@ -17,7 +17,7 @@
 {
 	float: left;
 	width: 900px;
-	background: #333;
+	background: #0d8800;
 }
 
 #navigation ul
@@ -77,8 +77,25 @@
 #footer
 {
 	clear: both;
-	background: #aaf;
+	background: #67E46f;
 	text-align: right;
 	padding: 20px;
 	height: 1%;
+}
+
+.fileUpload {
+    position: relative;
+    overflow: hidden;
+    margin: 10px;
+}
+.fileUpload input.upload {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+    filter: alpha(opacity=0);
 }
