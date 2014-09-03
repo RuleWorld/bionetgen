@@ -42,6 +42,9 @@ def evaluation(numMolecules,translator):
     nonStructuredElements = len([1 for x in translator if '()' in str(translator[x])])
     if originalElements > 0:
         ruleElements = (len(translator) - nonStructuredElements)*1.0/originalElements
+        if ruleElements> 1:
+            ruleElements = (len(translator) - nonStructuredElements)*1.0/len(translator.keys())
+        
     else:
         ruleElements= 0
     return ruleElements
@@ -304,7 +307,7 @@ def reorderFunctions(functions):
 def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile,
                 speciesEquivalence=None,atomize=False,bioGrid=False):
     '''
-    one of the library's main entry methods. Process data from a string
+    one of the library's main entry methods. Process data from a file
     '''
     logMess.log = []
     logMess.counter = -1
@@ -314,18 +317,19 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     
-    #call the atomizer (or not)
     
     bioGridDict = {}
     if bioGrid:
         bioGridDict = loadBioGrid()
     
+    #call the atomizer (or not). structured molecules are contained in translator
+    #onlysyndec is a boolean saying if a model is just synthesis of decay reactions
     if atomize:
         translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
     else:    
         translator={} 
 
-    
+    #process other sections of the sbml file (functions reactions etc.)    
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     
     with open(outputFile,'w') as f:
@@ -573,6 +577,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     #rate of each classified rule
     evaluate2 = 0 if len(observables) == 0 else len(molecules)*1.0/len(observables)
+    
+    
     return len(rules),evaluate,evaluate2,len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
     
     '''
@@ -670,9 +676,9 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in range(1,490):
+    for bioNumber in range(1,491):
         
-        if bioNumber in [18,81,151,175,205,212,223,235,255,324,328,370,404,428,430,431,443,444,452,453,465]:
+        if bioNumber in [18,81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
             continue
     #bioNumber = 175
         logMess.log = []
@@ -932,11 +938,11 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  =55
+    param  =16
     
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
                     False, 'config/namingConventions.json',
-                    'complex/output' + str(param) + '.bngl', speciesEquivalence='reactionDefinitions/speciesEquivalence1.json',atomize=True,bioGrid=False)
+                    'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     
     
     '''

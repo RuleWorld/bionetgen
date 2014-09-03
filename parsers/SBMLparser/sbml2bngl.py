@@ -785,7 +785,9 @@ class SBML2BNGL:
             if(rawSpecies['returnID'] in translator):
                 if rawSpecies['returnID'] in rawSpeciesName:
                     rawSpeciesName.remove(rawSpecies['returnID'])
-                if translator[rawSpecies['returnID']].getSize()==1 and translator[rawSpecies['returnID']].molecules[0].name not in names:
+                if translator[rawSpecies['returnID']].getSize()==1 \
+                and translator[rawSpecies['returnID']].molecules[0].name not in names \
+                and translator[rawSpecies['returnID']].molecules[0].name not in rawSpeciesName:
                     names.append(translator[rawSpecies['returnID']].molecules[0].name)
                     moleculesText.append(translator[rawSpecies['returnID']].str2())
             else:
@@ -813,7 +815,6 @@ class SBML2BNGL:
         #moleculesText.append('NullSpecies()')
         #speciesText.append('$NullSpecies() 1')
         self.speciesMemory = []
-        
         return moleculesText,speciesText,observablesText,speciesTranslationDict
 
     def getInitialAssignments(self,translator,param,zparam,molecules,initialConditions):
