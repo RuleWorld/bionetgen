@@ -140,7 +140,7 @@ if __name__ == "__main__":
     #ran = [151]
     ran = range(1,491)
     #ran  = [252]
-    blackList = [18,81,175,205,212,223,235,255,328,370,404,428,430,431,443,444,452,453,465]
+    blackList = [18,81,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]
     #for some reasons thechange the adhoc components break this model
     blackList.append(151)
     ran = [x for x in ran if x not in blackList]

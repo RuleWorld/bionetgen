@@ -708,7 +708,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     _, rules, _ = parser.getReactions(atomize=True)
     molecules, _, _,_ = parser.getSpecies()
     sbmlAnalyzer = \
-    analyzeSBML.SBMLAnalyzer(configurationFile, namingConventions,speciesEquivalences)
+    analyzeSBML.SBMLAnalyzer(parser,configurationFile, namingConventions,speciesEquivalences)
     #classify reactions
     classifications, equivalenceTranslator, eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
