@@ -107,6 +107,7 @@ def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},simi
         tmp[key] = ontology['patterns'][key]
     keys =  [''.join(x).replace('+ ','') for x in keys]
     #print ontology
+    
     return pairClassification,keys,tmp
 
 
@@ -122,7 +123,7 @@ def main(fileName):
     return analyzeNamingConventions(speciesName,'reactionDefinitions/namingConventions.json')
             
 def databaseAnalysis(directory,outputFile):
-    xmlFiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) and 'xml' in f]
+    xmlFiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) and f.endswith('xml')]
     differenceCounter = Counter()
     fileDict = {}
     for xml in xmlFiles:
@@ -167,17 +168,18 @@ def databaseAnalysis(directory,outputFile):
 def analyzeTrends(inputFile):
     with open(inputFile,'rb') as f:
         counter = pickle.load(f)
-        dictionary = pickle.load(f)
+        #dictionary = pickle.load(f)
         fileCounter = pickle.load(f)
     totalCounter = Counter()
     for element in counter:
-        totalCounter[element] = counter[element] * fileCounter[element]
+        
+        totalCounter[element] = counter[element] * fileCounter[element]/469.0
     keys = totalCounter.most_common(200)
     #keys = keys[1:]
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(keys)
     data = pd.DataFrame(keys)
-    print data.to_latex()
+    print data.to_excel('name.xls')
     '''
     for element in keys:
         print '------------------'
@@ -189,5 +191,5 @@ if __name__ == "__main__":
     bioNumber= 19
     #main('XMLExamples/curated/BIOMD%010i.xml' % bioNumber)
     
-    #databaseAnalysis('XMLExamples/non_curated/','non_contologies.dump')    
-    analyzeTrends('ontologies.dump')
+    databaseAnalysis('XMLExamples/non_curated/','non_ontologies.dump')    
+    #analyzeTrends('ontologies.dump')

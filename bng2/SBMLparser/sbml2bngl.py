@@ -216,7 +216,6 @@ class SBML2BNGL:
             'reversible':reversible,'reactionID':reaction.getId(),'numbers':[0,0]}
 
 
-
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
@@ -440,6 +439,7 @@ class SBML2BNGL:
             
             if self.getReactions.functionFlag and 'delay' in rawRules['rates'][0]:
                 logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
+
             if rawRules['reversible']:
                 if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
@@ -665,11 +665,14 @@ class SBML2BNGL:
         
         for element in param:
             pparam[element.split(' ')[0]] =(element.split(' ')[1],None)
-            
+        for element in zparam:
+            pparam[element] = (0,None)
         for species in self.model.getListOfSpecies():
             tmp = self.getRawSpecies(species)
-            if species.getName() in translator:
-                extendedStr = '@{0}:{1}'.format(species.getCompartment(),translator[species.getName()])
+            name = species.getName() if species.isSetName() else species.getId()
+            
+            if name in  translator:
+                extendedStr = '@{0}:{1}'.format(species.getCompartment(),translator[name])
             else:
                 extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
             pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
@@ -696,6 +699,7 @@ class SBML2BNGL:
                 zparam = zparam2
             else:
                 initialConditions2 = [x for x in initialConditions if '{0}('.format(symbol) not in x]
+                
                 initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
                 initialConditions = initialConditions2
         return param,zparam,initialConditions
@@ -808,5 +812,5 @@ def standardizeName(name):
                                 
     for element in sbml2BnglTranslationDict:
         name = name.replace(element,sbml2BnglTranslationDict[element])
-    
+    name = re.sub('[\W]', '', name)
     return name

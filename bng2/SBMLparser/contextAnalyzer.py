@@ -160,15 +160,15 @@ def obtainDifferences(redundantDict,transformationContext):
         for rate in redundantDict[center]:
             tmp = []
             tmp = [transformationContext[x] for x in redundantDict[center][rate]]
-            if center == (('Prot(iMod~U)',), ('Prot(egfr)', 'EGFR(prot)')):
-                print '--',tmp
+            #if center == (('Prot(iMod~U)',), ('Prot(egfr)', 'EGFR(prot)')):
+            #    print '--',tmp
 
             #pair together by traqnsformation the context of all those rules whose reaction center, rate
             #and transformations are the same
             tmp = zip(*tmp)
-            if center == (('Prot(iMod~U)',), ('Prot(egfr)', 'EGFR(prot)')):
-                print '--------------------------------'
-                print '--',tmp
+            #if center == (('Prot(iMod~U)',), ('Prot(egfr)', 'EGFR(prot)')):
+            #    print '--------------------------------'
+            #    print '--',tmp
             #print '@@@',tmp
             intersections = []     
             unions = []
@@ -320,9 +320,7 @@ def main():
     #atomicArray.append(tatomicArray)
         transformationCenter.append(ttransformationCenter)
         transformationContext.append(ttransformationContext)
-    print transformationCenter[6]
     redundantDict,patternDictList = extractRedundantContext(rules,transformationCenter,transformationContext)
-    print redundantDict[(('Prot(iMod~U)',), ('Prot(egfr)', 'EGFR(prot)'))]
     #print redundantDict
     #construct rule based patterns based on the reaction patterns they have to match and
     #the ones they  have to discriminate
@@ -368,5 +366,5 @@ def main():
     '''
     
 if __name__ == "__main__":
-    extractStatistics()
-    #main()
+    #extractStatistics()
+    main()

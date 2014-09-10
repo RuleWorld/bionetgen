@@ -40,7 +40,13 @@ def handler(signum, frame):
 def evaluation(numMolecules,translator):
     originalElements = (numMolecules)
     nonStructuredElements = len([1 for x in translator if '()' in str(translator[x])])
-    ruleElements = (len(translator) - nonStructuredElements)*1.0/originalElements
+    if originalElements > 0:
+        ruleElements = (len(translator) - nonStructuredElements)*1.0/originalElements
+        if ruleElements> 1:
+            ruleElements = (len(translator) - nonStructuredElements)*1.0/len(translator.keys())
+        
+    else:
+        ruleElements= 0
     return ruleElements
 
 
@@ -102,7 +108,7 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
         namingConventions = 'config/namingConventions.json'
         
         if atomize:
-            translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
+            translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
         else:    
             translator={} 
         
@@ -241,7 +247,7 @@ def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEqui
     
     #call the atomizer (or not)
     #if atomize:
-    translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
+    translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
     #else:    
     #    translator={} 
 
@@ -301,7 +307,7 @@ def reorderFunctions(functions):
 def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile,
                 speciesEquivalence=None,atomize=False,bioGrid=False):
     '''
-    one of the library's main entry methods. Process data from a string
+    one of the library's main entry methods. Process data from a file
     '''
     logMess.log = []
     logMess.counter = -1
@@ -311,24 +317,29 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     
-    #call the atomizer (or not)
     
     bioGridDict = {}
     if bioGrid:
         bioGridDict = loadBioGrid()
     
+    #call the atomizer (or not). structured molecules are contained in translator
+    #onlysyndec is a boolean saying if a model is just synthesis of decay reactions
     if atomize:
-        translator = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
+        translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
     else:    
         translator={} 
 
-    
+    #process other sections of the sbml file (functions reactions etc.)    
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
+    
     with open(outputFile,'w') as f:
             f.write(returnArray[-2])
 #     with open('{0}.dict'.format(outputFile),'wb') as f:
 #         pickle.dump(returnArray[-1],f)
-    return returnArray[0:-2]
+    if onlySynDec:
+        returnArray = list(returnArray)
+        returnArray[0] = -1
+    return tuple(returnArray[0:-2])
 
 def correctRulesWithParenthesis(rules,parameters):
     '''
@@ -437,7 +448,6 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     observables.extend('Species {0} {0}'.format(x.split(' ')[0]) for x in removeParams)
     for x in removeParams:
         initialConditions.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
-    
     ##Comment out those parameters that are defined with assignment rules
     ##TODO: I think this is correct, but it may need to be checked
     tmpParams = []
@@ -488,18 +498,17 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     for flag in sorted(deleteMolecules,reverse=True):
         
         if deleteMoleculesFlag:
-            logMess('WARNING','{0} reported as function, but usage is ambiguous'.format(molecules[flag]) )
+            logMess('WARNING:Simulation','{0} reported as function, but usage is ambiguous'.format(molecules[flag]) )
             result =validateReactionUsage(molecules[flag],rules)
             if result != None:
-                logMess('ERROR','Pseudo observable {0} in reaction {1}'.format(molecules[flag],result))
+                logMess('ERROR:Simulation','Pseudo observable {0} in reaction {1}'.format(molecules[flag],result))
             molecules.pop(flag)
         else:
-            logMess('WARNING','{0} reported as species, but usage is ambiguous.'.format(flag) )
+            logMess('WARNING:Simulation','{0} reported as species, but usage is ambiguous.'.format(flag) )
             artificialObservables.pop(flag)
     functions.extend(aRules)
     sbmlfunctions = parser.getSBMLFunctions()
     processFunctions(functions,sbmlfunctions,artificialObservables,rateFunctions)
-
     for interation in range(0,3):
         for sbml2 in sbmlfunctions:
             for sbml in sbmlfunctions:
@@ -525,7 +534,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     
     if len(artificialRules) + len(rules) == 0:
-        logMess('ERROR','The file contains no reactions')
+        logMess('ERROR:Simulation','The file contains no reactions')
     if useArtificialRules or len(rules) == 0:
         rules =['#{0}'.format(x) for x in rules]
         evaluate =  evaluation(len(observables),translator)
@@ -562,11 +571,15 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
                 for element in logMess.log:
                     f.write(element + '\n')
     except AttributeError:
-        pass
-
-    #rate of each classified rule
+        print "couldn't print error file"
+    except IOError:
+        print "couldn't print error file"
     
-    return len(rules),evaluate,len(molecules)*1.0/len(observables),len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
+    #rate of each classified rule
+    evaluate2 = 0 if len(observables) == 0 else len(molecules)*1.0/len(observables)
+    
+    
+    return len(rules),evaluate,evaluate2,len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
     
     '''
     if translator != {}:
@@ -663,9 +676,9 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in range(1,490):
+    for bioNumber in range(1,491):
         
-        if bioNumber in [175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]:
+        if bioNumber in [18,81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
             continue
     #bioNumber = 175
         logMess.log = []
@@ -679,15 +692,16 @@ def main():
         #rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
         #                                                  reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
         #                                                    speciesEquivalence=spEquivalence,atomize=True)
-        rlength = reval = reval2 = None
         try:
-            rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
-                                                              'reactionDefinitions/reactionDefinition7.json',
-                        False, 'config/namingConventions.json','/dev/null', 
-                        speciesEquivalence=None,atomize=True,bioGrid=False)
-            print '++++',bioNumber
+
+            rlength = reval = reval2 = None
+            rlength, reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'reactionDefinitions/reactionDefinition7.json',
+                False,'config/namingConventions.json','/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
+    
+            print '++++',bioNumber,rlength,reval,reval2,clength
                                                                 
-                                                                
+        except IOError:
+            print 'couldnt print error file'                                                                
         except:
             print '-------------error--------------',bioNumber
             continue
@@ -923,11 +937,20 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml') 
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
-    param = 480
+    
+    param  =16
+    
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
-
+    
+    
+    '''
+    param = '00870'
+    analyzeFile('test/testl2v4/{0}/{0}-sbml-l2v4.xml'.format(param), 'reactionDefinitions/reactionDefinition7.json',
+                    False, 'config/namingConventions.json',
+                    'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+    '''
     #processFile3('XMLExamples/curated/BIOMD0000000048.xml',customDefinitions=None,atomize=True)    
     #processFile3('/home/proto/Downloads/compartment_test_sbml.xml',customDefinitions=None,atomize=True)    
     #processDir('XMLExamples/curated/')

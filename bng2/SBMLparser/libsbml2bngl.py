@@ -35,143 +35,7 @@ def handler(signum, frame):
 
         
 
-def identifyNamingConvention():
-    '''
-    extracts statistics from the code
-    '''
-    
-    reader = libsbml.SBMLReader()
-    jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso' and 'reactionDefinition' in f]
-    translationLevel = []
-    arrayMolecules = []
-    rules = 0
-    #go through all curated models in the biomodels database
-    signal.signal(signal.SIGALRM, handler)
-    for index in range(1,410):
-        bestTranslator = {}
-        
-        nameStr = 'BIOMD0000000%03d' % (index)
-        document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
-        parser = SBML2BNGL(document.getModel())
-        database = structures.Databases()
 
-        print nameStr + '.xml',
-        naming = 'reactionDefinition0.json'
-        bestUseID = True
-        numberofMolecules = numberOfSpecies = 0
-        #iterate through our naming conventions and selects that which
-        #creates the most rulified elements in the translator
-        for jsonFile in jsonFiles:
-            for useID in [True,False]:
-                oldmaxi = numberOfSpecies
-                parser = SBML2BNGL(document.getModel(),useID)
-                database = structures.Databases()
-                signal.alarm(30)
-                try:
-                    mc.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile,None)
-                except:
-                    print '--error',jsonFile,useID
-                    continue
-                translator = database.translator                        
-                numberOfSpecies = max(numberOfSpecies,evaluation(len(parser.getSpecies()),database.translator))
-                if oldmaxi != numberOfSpecies:
-                    naming = jsonFile
-                    bestTranslator = translator
-                    bestUseID = useID
-                    _,rules,_ = parser.getReactions(translator)
-                    numberofMolecules = len(translator)
-
-        _,_,obs = parser.getSpecies()
-        rdfAnnotations = analyzeRDF.getAnnotations(parser,'miriam')
-        #go through the annotation list and assign which species
-        #correspond to which uniprot number (if it exists)
-        #similarly list the number of times each individual element appears
-        analyzeRDF.getAnnotations(parser,'miriam')
-        molecules = {}
-        if naming[-6] != 0:
-            for element in bestTranslator:
-                if len(bestTranslator[element].molecules) == 1:
-                    name = bestTranslator[element].molecules[0].name
-                    for annotation in rdfAnnotations:
-                        if name in rdfAnnotations[annotation]:
-                            if name not in molecules:
-                                molecules[name] = [0,[]]
-                            if annotation not in molecules[name][1]:
-                                molecules[name][1].extend(annotation)
-                    
-                    if  name not in molecules:
-                        molecules[name] = [1,[]]
-                    for rule in rules:
-                        if name in rule:
-                            molecules[name][0] += 1
-        
-       # _,rules,_ = parser.getReactions(bestTranslator)
-       #for rule in rules:
-        
-        if len(obs) != 0:
-            print index*1.0,(naming[-6]),numberOfSpecies*1.0/len(obs),numberofMolecules*1.0/len(obs),len(obs)*1.0,bestUseID
-            
-            arrayMolecule = [[x,molecules[x]] for x in molecules]
-            arrayMolecules.append(arrayMolecule)
-            translationLevel.append([nameStr+'.xml',(naming[-6]),numberOfSpecies*1.0/len(obs),numberofMolecules*1.0/len(obs),len(obs)*1.0,bestUseID])
-        else:
-            arrayMolecules.append([])
-    with open('stats4.npy','wb') as f:
-        pickle.dump(translationLevel,f)
-
-        #np.save('stats3b.npy',np.array(arrayMolecules))
-
-def processDatabase():
-    reader = libsbml.SBMLReader()
-    #jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
-    history = np.load('stats3.npy')
-    index2 = 0
-    for index in range(1,410):
-        try:
-            nameStr = 'BIOMD0000000%03d' % (index)
-            document = reader.readSBMLFromFile('XMLExamples/curated/' + nameStr + '.xml')
-            parser = SBML2BNGL(document.getModel())
-            database = structures.Databases()
-
-            print nameStr + '.xml'
-            '''
-            for jsonFile in jsonFiles:
-                try:
-                    #print jsonFile,
-                    translator = m2c.transformMolecules(parser,database,'reactionDefinitions/' + jsonFile)
-                    break
-                except:
-                    print 'ERROR',sys.exc_info()[0]
-                    continue
-                #translator = m2c.transformMolecules(parser,database,'reactionDefinition2.json')
-            '''
-            #translator = []
-            while(history[index2][0] < index):
-                index2=1
-            print history[index2][0],index
-            if (history[index2][0]==index) and history[index2][1] != 0:
-                print str( int(history[index2][1]))
-                translator = mc.transformMolecules(parser,database,'reactionDefinitions/reactionDefinition' + str( int(history[index2][1])) + '.json')            
-            else:
-                translator = {}
-            #print len(parser.getSpecies()),len(translator),
-            evaluation(len(parser.getSpecies()),translator)
-
-            #translator = {}
-            param2 = parser.getParameters()
-            molecules,species,observables = parser.getSpecies(translator)
-            #print molecules,species,observables
-            print 'translated: {0}/{1}'.format(len(translator),len(observables)),
-            print evaluation(len(observables),translator)
-            param,rules,functions = parser.getReactions(translator)
-            compartments = parser.getCompartments()
-            param += param2
-            writer.finalText(param,molecules,species,observables,rules,functions,compartments,'output/' + nameStr + '.bngl')
-            with open('output/' + nameStr + '.log', 'w') as f:
-                f.write(parser.writeLog(translator))
-        except:
-            print 'ERROR',sys.exc_info()[0]
-            continue
 
 def evaluation(numMolecules,translator):
     originalElements = (numMolecules)
@@ -568,7 +432,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     observables.extend('Species {0} {0}'.format(x.split(' ')[0]) for x in removeParams)
     for x in removeParams:
         initialConditions.append(x.split(' ')[0] + tags + ' ' + x.split(' ')[1])
-
+    
     ##Comment out those parameters that are defined with assignment rules
     ##TODO: I think this is correct, but it may need to be checked
     tmpParams = []
@@ -628,9 +492,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
             artificialObservables.pop(flag)
     functions.extend(aRules)
     sbmlfunctions = parser.getSBMLFunctions()
-    
     processFunctions(functions,sbmlfunctions,artificialObservables,rateFunctions)
-    
     for interation in range(0,3):
         for sbml2 in sbmlfunctions:
             for sbml in sbmlfunctions:
@@ -642,7 +504,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     functions = changeNames(functions,aParameters)
     functions = unrollFunctions(functions)
     rules = changeRates(rules,aParameters)
-
+    
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
         compartments.append('cell 3 1.0')
 
@@ -669,26 +531,28 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
 
         rules.extend(artificialRules)
     commentDictionary = {}
+    
     if atomize:
-        commentDictionary['notes'] = 'This is an atomized translation of an SBML model created on {0}.'.format(time.strftime("%d/%m/%Y"))
+        commentDictionary['notes'] = "'This is an atomized translation of an SBML model created on {0}.".format(time.strftime("%d/%m/%Y"))
     else:
-        commentDictionary['notes'] = 'This is a plain translation of an SBML model created on {0}'.format(time.strftime("%d/%m/%Y"))
-    commentDictionary['notes'] += 'The original model has {0} molecules and {1} reactions. The translated model has {2} molecules and {3} rules'.format(parser.model.getNumSpecies(),parser.model.getNumReactions(),len(molecules),len(set(rules)))
+        commentDictionary['notes'] = "'This is a plain translation of an SBML model created on {0}.".format(time.strftime("%d/%m/%Y"))
+    commentDictionary['notes'] += " The original model has {0} molecules and {1} reactions. The translated model has {2} molecules and {3} rules'".format(parser.model.getNumSpecies(),parser.model.getNumReactions(),len(molecules),len(set(rules)))
     meta = parser.getMetaInformation(commentDictionary)
 
-
+    
     from collections import OrderedDict
     finalString = writer.finalText(meta,param+reactionParameters,molecules,initialConditions,list(OrderedDict.fromkeys(observables)),list(OrderedDict.fromkeys(rules)),functions,compartments,outputFile)
     
     #print outputFile
     
     #store a logfile
-    '''
-    if len(logMess.log) > 0:
-        with open(outputFile + '.log', 'w') as f:
-            for element in logMess.log:
-                f.write(element + '\n')
-    '''
+    try:
+        if len(logMess.log) > 0:
+            with open(outputFile + '.log', 'w') as f:
+                for element in logMess.log:
+                    f.write(element + '\n')
+    except AttributeError:
+        pass
 
     #rate of each classified rule
     
@@ -789,44 +653,44 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in range(1,400):
-        #if bioNumber in [18,51,353,108,109,255,268,392]:
-        #    continue
+    for bioNumber in range(1,490):
+        
+        if bioNumber in [175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]:
+            continue
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
-        reactionDefinitions,useID = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
-        print reactionDefinitions, useID
+        #reactionDefinitions,useID,naming = selectReactionDefinitions('BIOMD%010i.xml' %bioNumber)
+        #print reactionDefinitions, useID
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
         #spEquivalence = 'reactionDefinitions/speciesEquivalence19.json'
-        spEquivalence = detectCustomDefinitions(bioNumber)
+        #spEquivalence = naming
         #reactionDefinitions = 'reactionDefinitions/reactionDefinition8.json'
         #rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
         #                                                  reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
         #                                                    speciesEquivalence=spEquivalence,atomize=True)
-
+        rlength = reval = reval2 = None
         try:
             rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
-                                                              reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
-                                                                speciesEquivalence=spEquivalence,atomize=True)
+                                                              'reactionDefinitions/reactionDefinition7.json',
+                        False, 'config/namingConventions.json','/dev/null', 
+                        speciesEquivalence=None,atomize=True,bioGrid=False)
+            print '++++',bioNumber
+                                                                
+                                                                
         except:
-            print '-------------error--------------'
-            rulesLength.append(-1)
+            print '-------------error--------------',bioNumber
             continue
+        finally:  
+            if rlength != None:        
+                rulesLength.append([bioNumber,rlength,reval,reval2])
+                compartmentLength.append(clength)
+                rdfArray.append(getAnnotationsDict(rdf))
             
-        if rlength != None:        
-            rulesLength.append(rlength)
-            evaluation.append(reval)
-            evaluation2.append(reval2)
-            compartmentLength.append(clength)
-            rdfArray.append(getAnnotationsDict(rdf))
-        
-        else:
-            rulesLength.append(-1)
-            evaluation.append(0)
-            evaluation2.append(0)
-            compartmentLength.append(0)
-            rdfArray.append({})
+            else:
+                rulesLength.append([bioNumber,-1,0,0])
+                compartmentLength.append(0)
+                rdfArray.append({})
             #classificationArray.append({})
     #print evaluation
     #print evaluation2
@@ -834,8 +698,6 @@ def main():
     print [(idx+1,x) for idx,x in enumerate(rulesLength) if  x > 50]
     with open('sortedC.dump','wb') as f:
         pickle.dump(rulesLength,f)
-        pickle.dump(evaluation,f)
-        pickle.dump(evaluation2,f)   
     with open('annotations.dump','wb') as f:
         pickle.dump(rdfArray,f)
     #with open('classificationDict.dump','wb') as f:
@@ -972,14 +834,25 @@ def statFiles():
 def processDir(directory,atomize=True):
     from os import listdir
     from os.path import isfile, join
+    resultDir = {}
     xmlFiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) and f.endswith('xml')]
+    blackList = [175,205,212,223,235,255,328,370,428,430,431,443,444,452,453,465]
+
     for xml in xmlFiles:
         #try:
-        print xml
-        if xml not in ['MODEL1310110034.xml']:
-            processFile3(directory + xml,atomize=atomize)        
+        if xml not in ['MODEL1310110034.xml'] and len([x for x in blackList if str(x) in xml]) == 0:
+            print xml
+            try:
+                rlength,reval,reval2,_,_ = analyzeFile(directory + xml,'reactionDefinitions/reactionDefinition7.json',
+                        False, 'config/namingConventions.json',
+                        '/dev/null', speciesEquivalence=None,atomize=True,bioGrid=False)  
+                resultDir[xml] = [rlength,reval,reval2]
+            except:
+                resultDir[xml] = [-1,0,0]
+    with open('evalResults.dump','wb') as f:
+        pickle.dump(resultDir,f)
         #except:
-            #continue
+            #continue'
     
 def processFile3(fileName,customDefinitions=None,atomize=True):
     '''
@@ -987,20 +860,24 @@ def processFile3(fileName,customDefinitions=None,atomize=True):
     '''
     logMess.log = []
     logMess.counter = -1
-    reactionDefinitions = 'reactionDefinitions/reactionDefinition7.json'
+    reactionDefinitions = 'config/reactionDefinitions.json'
     spEquivalence = customDefinitions
     namingConventions = 'config/namingConventions.json'
     #spEquivalence = None
     useID = False
     #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
+    rlength = -1
+    reval = -1
+    reval2 = -1
     outputFile = '{0}.bngl'.format(fileName)
-    analyzeFile(fileName, reactionDefinitions,
+    rlength, reval, reval2, clength,rdf  = analyzeFile(fileName, reactionDefinitions,
                 useID,namingConventions,outputFile,speciesEquivalence=spEquivalence,atomize=atomize,bioGrid=False)
 
     if len(logMess.log) > 0:
         with open(fileName + '.log', 'w') as f:
             for element in logMess.log:
                 f.write(element + '\n')
+    return rlength,reval,reval2
     
     
 def listFiles(minReactions,directory):
@@ -1031,10 +908,14 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml')    
-    #processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions='reactionDefinitions/speciesEquivalence19.json')    
-    processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions=None,atomize=True)    
-    #processFile3('/home/proto/Downloads/xml/nokin.xml',customDefinitions=None,atomize=True)    
-    #processDir('XMLExamples/non_curated/')
+    #processFile3('XMLExamples/curated/BIOMD0000000019.xml',customDefinitions='reactionDefinitions/speciesEquivalence19.json') 
+    #processFile3('XMLExamples/curated/BIOMD0000000424.xml',customDefinitions=None,atomize=True)    
+    processFile3('/home/proto/Downloads/compartment_test_sbml.xml',customDefinitions=None,atomize=True)    
+    #processDir('XMLExamples/curated/')
+    #processFile3('hexamer.xml')
+    #with open('dimer.xml','r') as f:
+    #    r = f.read()
+    #print readFromString(r,'config/reactionDefinitions.json',False,None,True)
     #statFiles()
     #main2()
     #print readFromString('dsfsdf','config/reactionDefinitions.json',False)

@@ -24,7 +24,7 @@ def correctness(bnglFile):
     bngconsole.expect('BNG>')
     output= bngconsole.before
     bngconsole.close()
-    if 'ERROR' in output or 'WARNING' in output:
+    if 'ERROR' in output  in output:
         return False
     return True
 
@@ -39,4 +39,4 @@ def writeNetwork(bnglFile):
     bngconsole.close() 
     
 if __name__ == "__main__":      
-    print correctness('complex/output21.bngl')
+    print writeNetwork('complex/output19.bngl')

@@ -93,16 +93,21 @@ class SBML2BNGL:
             
         if name == '':
             name = identifier
-        initialConcentration = species.getInitialConcentration()
-        if initialConcentration == 0:
+        if species.isSetInitialConcentration():
+            initialConcentration = species.getInitialConcentration()
+        else:
             initialConcentration = species.getInitialAmount()
-        
         isConstant = species.getConstant()
         isBoundary = species.getBoundaryCondition()
-        #FIXME: check if this is actually necessary
+        #FIXME: this condition means that a variable/species can be changed
+        #by rules and/or events. this means that we effectively need a variable
+        #changed by a function that tracks this value, and all references
+        #to this observable have to be changed to the referrencing variable.
+        #http://sbml.org/Software/libSBML/docs/java-api/org/sbml/libsbml/Species.html
         if isBoundary and not isConstant:
             isConstant = True
-            if initialConcentration == 0:
+            if not species.isSetInitialConcentration() \
+                and not species.isSetInitialAmount():
                 initialConcentration = 1
         compartment = species.getCompartment()
         boundaryCondition = species.getBoundaryCondition()
@@ -143,15 +148,16 @@ class SBML2BNGL:
   
     '''
     walks through a series of * nodes and removes the remainder reactant factors
-    also normalize the name of some time/avogadro string names since that is lost
-    during string convertion
+    arg:remainderPatterns: argumetns to be removed from the tree
+    it also changes references to time variables to the keyword 'Time'
     '''
     def getPrunnedTree(self,math,remainderPatterns):
         swapDict = {libsbml.AST_NAME_TIME:'Time'}
         for node in [x for x in math.getLeftChild(),math.getRightChild() if x != None]:
             if node.getType() in swapDict.keys():
                 node.setName(swapDict[node.getType()])
-                
+        if math.getCharacter() == '+' and math.getNumChildren() == 1:
+            math = math.getLeftChild()
         while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
             if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
@@ -161,7 +167,7 @@ class SBML2BNGL:
                     math.getLeftChild().setValue(1)
             elif libsbml.formulaToString(math.getRightChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getRightChild()))
-                math = math.getLeftChild()            
+                math = math.getLeftChild()
             else:
                 if(math.getLeftChild().getCharacter()) == '*':
                     math.replaceChild(0, self.getPrunnedTree(math.getLeftChild(), remainderPatterns))
@@ -169,6 +175,42 @@ class SBML2BNGL:
                     math.replaceChild(math.getNumChildren() - 1,self.getPrunnedTree(math.getRightChild(), remainderPatterns))
                 break
         return math
+        
+    def getIsTreeNegative(self,math):
+        '''
+        walks through a series of * nodes and detects whether there's a negative factor
+        fixme: we should actually test if the number of negative factors is odd
+        right now we are relying on  the modelers not being malicious
+        when writing their rates laws.
+        '''    
+        if (math.getCharacter() == '*' or math.getCharacter() == '/'):
+            if math.getLeftChild().isUMinus():
+                math.setCharacter('+')
+                #math.getLeftChild().setValue(long(libsbml.formulaToString(math.getLeftChild())[1:]))
+                return True
+            elif math.getLeftChild().getNumChildren() == 0 and libsbml.formulaToString(math.getLeftChild()).startswith('-'):
+                math.getLeftChild().setValue(long(libsbml.formulaToString(math.getLeftChild())[1:]))
+                return True
+            elif math.getRightChild().isUMinus():
+                math.setCharacter('+')
+                #math.getRightChild().setValue(long(libsbml.formulaToString(math.getRightChild())[1:]))
+                return True
+            elif math.getRightChild().getNumChildren() == 0 and libsbml.formulaToString(math.getRightChild()).startswith('-'):
+                math.getRightChild().setValue(long(libsbml.formulaToString(math.getRightChild())[1:]))
+                return True
+
+            else:
+                if(math.getLeftChild().getCharacter()) in ['*','/','-']:
+                    if self.getIsTreeNegative(math.getLeftChild()):
+                        return True
+                if(math.getRightChild().getCharacter()) in ['*','/','-']:
+                    if self.getIsTreeNegative(math.getRightChild()):
+                        return True
+        elif math.getCharacter() == '-' and math.getNumChildren() == 1:
+            math.setCharacter('+')
+            return True
+        return False
+
 
     def getUnitDefinitions(self):
         for unitDefinition in self.model.getListOfUnits():
@@ -246,13 +288,32 @@ class SBML2BNGL:
                 
             #remove compartments from expression
             math = self.getPrunnedTree(math, compartmentList)
-            
             if reversible:
                 if math.getCharacter() == '-' and math.getNumChildren() > 1:
                     rateL, nl = (self.removeFactorFromMath(
                     math.getLeftChild().deepCopy(), rReactant, rProduct))
                     rateR, nr = (self.removeFactorFromMath(
                     math.getRightChild().deepCopy(), rProduct, rReactant))
+                elif math.getCharacter() == '+' and math.getNumChildren()> 1:
+                    if(self.getIsTreeNegative(math.getRightChild())):
+                        rateL, nl = (self.removeFactorFromMath(
+                        math.getLeftChild().deepCopy(), rReactant, rProduct))
+                        rateR, nr = (self.removeFactorFromMath(
+                        math.getRightChild().deepCopy(), rProduct, rReactant))
+                    elif(self.getIsTreeNegative(math.getLeftChild())):
+                        rateR, nr = (self.removeFactorFromMath(
+                        math.getLeftChild().deepCopy(), rProduct, rReactant))
+                        rateL, nl = (self.removeFactorFromMath(
+                        math.getRightChild().deepCopy(), rReactant, rProduct))
+                    else:
+                        rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
+                                                              rProduct)
+                        rateL = "if({0}>= 0,{0},0)".format(rateL)
+                        rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
+                                                              rReactant)
+                        rateR = "if({0}< 0,-({0}),0)".format(rateR)
+                        nl, nr = 1,1
+                        
                 else:
                     rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
                                                           rProduct)
@@ -724,7 +785,9 @@ class SBML2BNGL:
             if(rawSpecies['returnID'] in translator):
                 if rawSpecies['returnID'] in rawSpeciesName:
                     rawSpeciesName.remove(rawSpecies['returnID'])
-                if translator[rawSpecies['returnID']].getSize()==1 and translator[rawSpecies['returnID']].molecules[0].name not in names:
+                if translator[rawSpecies['returnID']].getSize()==1 \
+                and translator[rawSpecies['returnID']].molecules[0].name not in names \
+                and translator[rawSpecies['returnID']].molecules[0].name not in rawSpeciesName:
                     names.append(translator[rawSpecies['returnID']].molecules[0].name)
                     moleculesText.append(translator[rawSpecies['returnID']].str2())
             else:
@@ -737,7 +800,7 @@ class SBML2BNGL:
                 if rawSpecies['returnID'] in self.tags:
                     tmp2 = (self.tags[rawSpecies['returnID']])
                 if rawSpecies['initialConcentration'] > 0.0 or rawSpecies['isConstant']:
-                    speciesText.append('{0}:{1}{2} {3}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration']))
+                    speciesText.append('{0}:{1}{2} {3} #{4}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration'],rawSpecies['returnID']))
             if rawSpecies['returnID'] == 'e':
                 modifiedName = 'are'
             else:
@@ -752,7 +815,6 @@ class SBML2BNGL:
         #moleculesText.append('NullSpecies()')
         #speciesText.append('$NullSpecies() 1')
         self.speciesMemory = []
-        
         return moleculesText,speciesText,observablesText,speciesTranslationDict
 
     def getInitialAssignments(self,translator,param,zparam,molecules,initialConditions):
@@ -772,12 +834,14 @@ class SBML2BNGL:
         for species in self.model.getListOfSpecies():
             tmp = self.getRawSpecies(species)
             name = species.getName() if species.isSetName() else species.getId()
-            
+            constant = '$' if species.getConstant() or species.getBoundaryCondition() else ''
             if name in  translator:
-                extendedStr = '@{0}:{1}'.format(species.getCompartment(),translator[name])
+                extendedStr = '@{0}:{2}{1}'.format(species.getCompartment(),translator[name],constant)
             else:
-                extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
-            pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
+                extendedStr = '@{0}:{2}{1}()'.format(tmp['compartment'],tmp['name'],constant)
+            initConc = species.getInitialConcentration() if \
+            species.isSetInitialConcentration() else species.getInitialAmount()
+            pparam[species.getId()] = (initConc,extendedStr)
         from copy import copy
         for initialAssignment in self.model.getListOfInitialAssignments():
             symbol = initialAssignment.getSymbol()
@@ -786,7 +850,7 @@ class SBML2BNGL:
                 if element in math:
                     math = re.sub(r'(\W|^)({0})(\W|$)'.format(element),
                     r'{0}'.format(pparam[element][0]),math)
-
+            
             param2 = [x for x in param if '{0} '.format(symbol) not in x]
             zparam2 = [x for x in zparam if '{0}'.format(symbol) not in x]
             '''
@@ -800,9 +864,8 @@ class SBML2BNGL:
                 param = param2
                 zparam = zparam2
             else:
-                initialConditions2 = [x for x in initialConditions if '{0}('.format(symbol) not in x]
-                
-                initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
+                initialConditions2 = [x for x in initialConditions if '#{0}'.format(symbol) not in x]
+                initialConditions2.append('{0} {1} #{2}'.format(pparam[symbol][1],math,symbol))
                 initialConditions = initialConditions2
         return param,zparam,initialConditions
             

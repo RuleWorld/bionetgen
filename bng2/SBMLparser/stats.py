@@ -360,6 +360,14 @@ def inverseAnnotationClassification():
     annotations = pickle.load(annotationFile)    
 
 
+bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
+          'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
+'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
+'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_UNKNOWN']
+
+modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_UNKNOWN']
+
+qual = [modqual,bioqual]
 def extractXMLInfo(fileName):
     #if not hasattr(extractXMLInfo, 'm'):
     #    extractXMLInfo.m = Miriam()
@@ -367,8 +375,11 @@ def extractXMLInfo(fileName):
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(fileName)
     model = document.getModel()
-    metaArray = set()    
+    from collections import defaultdict
+
+    metaArray = defaultdict(list)   
     metaDict = {}
+    metaDict2 = defaultdict(list)
     if model != None:
         #annotation = model.getAnnotation()
         #lista = libsbml.CVTermList()
@@ -384,12 +395,17 @@ def extractXMLInfo(fileName):
             lista = libsbml.CVTermList()
             libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
             for idx in range(0,lista.getSize()):
-              resource = lista.get(idx).getResources().getValue(0)
-              #resource = resolveAnnotation(resource)
-              metaArray.add(resource)
-              metaDict[speciesId] = (name,resource)
-    
-    return metaArray,metaDict
+              for idx2 in range(0, lista.get(idx).getResources().getLength()):
+                  resource = lista.get(idx).getResources().getValue(idx2)
+                  qualifierType = lista.get(idx).getQualifierType()
+                  qualifierDescription= bioqual[lista.get(idx).getBiologicalQualifierType()] if qualifierType \
+                  else modqual[lista.get(idx).getModelQualifierType()]
+                  #resource = resolveAnnotation(resource)
+                  metaArray[qualifierDescription].append(resource)
+                  metaDict[speciesId] = (name,resource,qualifierDescription)
+                  metaDict2[resource].append([speciesId,name,qualifierDescription])
+
+    return metaArray,metaDict,metaDict2
             
 
     
@@ -399,19 +415,25 @@ def biomodelsInteractome():
     onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f))]
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x]
 
-    xmlFiles = [ f for f in listdir('./XMLExamples/curated') if isfile(join('./XMLExamples/curated',f)) and 'xml' in f]
+    xmlFiles = [ f for f in listdir('./XMLExamples/curated') if isfile(join('./XMLExamples/curated',f)) and f.endswith('.xml')]
     xmlFiles = sorted(xmlFiles)
     xmlArray = []
     xmlExtendedArray = []
+    xmlExtendedArray2 = {}
     for xml in xmlFiles:
-        metaArray,metaDict = extractXMLInfo(join('./XMLExamples/curated',xml))
+        if '019.' in xml:
+            pass
+        metaArray,metaDict ,metaDict2= extractXMLInfo(join('./XMLExamples/curated',xml))
         xmlArray.append(metaArray)
         xmlExtendedArray.append(metaDict)
+        xmlExtendedArray2[xml] = metaDict2
     with open('xmlAnnotationsExtended.dump','wb') as f:
         pickle.dump(xmlExtendedArray,f)
     with open('xmlAnnotations.dump','wb') as f:
         pickle.dump(xmlArray,f)
-    
+    with open('xmlAnnotationsExtended2.dump','wb') as f:
+        pickle.dump(xmlExtendedArray2,f)
+
 def reduceElements(element,linkArray):
     s = [len(set.intersection(element,x)) > 0 for x in linkArray]
     indexes = np.nonzero(s)
@@ -470,10 +492,10 @@ def getLinkArray(relationshipMatrix):
             linkArray.append(tmp)
             linkArray.extend(tmp2)
 
-    return linkArray    
-def biomodelsInteractomeAnalysis():
-    with open('xmlAnnotations.dump','rb') as f:
-        annotations = pickle.load(f)
+    return linkArray  
+
+
+def getModelRelationshipMatrix(annotations,threshold=3):
     blacklist = ['http://identifiers.org/obo.chebi/CHEBI:33699','http://identifiers.org/kegg.compound/C00562',
                  'http://identifiers.org/obo.chebi/CHEBI:36080','http://identifiers.org/chebi/CHEBI:33699',
                  'http://identifiers.org/obo.chebi/CHEBI:15422','http://identifiers.org/obo.chebi/CHEBI:16761',
@@ -481,15 +503,23 @@ def biomodelsInteractomeAnalysis():
                  'http://identifiers.org/chebi/CHEBI:16761'
                  ]
     relationshipMatrix = np.zeros((len(annotations),len(annotations)))
-    threshold = 3
+    negativeRelationshipMatrix = np.zeros((len(annotations),len(annotations)))
     for element in range(0,len(annotations)-1):
         for element2 in range(element+1,len(annotations)):
             score = len([x for x in  annotations[element] if x in annotations[element2] and x not in blacklist])
+            nscore = len([x for x in  annotations[element] if x not in annotations[element2] and x not in blacklist]) + len([x for x in  annotations[element2] if x not in annotations[element] and x not in blacklist])
             if score > threshold:
                 relationshipMatrix[element,element2] = score
             else:
                 relationshipMatrix[element,element2] = 0
-    
+            negativeRelationshipMatrix[element,element2] = nscore
+    return relationshipMatrix,negativeRelationshipMatrix
+
+def biomodelsInteractomeAnalysis():
+    with open('xmlAnnotations.dump','rb') as f:
+        annotations = pickle.load(f)
+
+    relationshipMatrix = getModelRelationshipMatrix(annotations)
     basicReactome(relationshipMatrix)
     #basicCSVReactome(relationshipMatrix)
     #return
@@ -521,11 +551,116 @@ def biomodelsInteractomeAnalysis():
     with open('linkArray.dump','wb') as f:
         pickle.dump(linkArray,f)
     print [len(x) for x in linkArray]
+     
+def annotationSharingFinder():
+    with open('xmlAnnotations.dump','rb') as f:
+        annotations = pickle.load(f)
+    with open('evalResults.dump','rb') as f:
+        ev = pickle.load(f)
         
+    from operator import itemgetter
+    relationshipTracker = []
+    relationshipMatrix,negativeRelationshipMatrix = getModelRelationshipMatrix(annotations)
+    for idx,_ in enumerate(relationshipMatrix):
+        for idx2,_ in enumerate(relationshipMatrix[idx]):
+            if relationshipMatrix[idx][idx2] > 10:
+                nameStr = 'BIOMD0000000%03d.xml' % (idx+1)
+                nameStr2 = 'BIOMD0000000%03d.xml' % (idx2+1)
+                sc1 = ev[nameStr][2] if nameStr in ev else 0
+                sc2 = ev[nameStr2][2] if nameStr2 in ev else 0
+                
+                if sc1*sc2 > 0 and (1-sc1)*(1-sc2) > 0:
+                    relationshipTracker.append([idx+1,idx2+1,float((0.5*relationshipMatrix[idx][idx2])+ negativeRelationshipMatrix[idx][idx2])*(1-sc1)*(1-sc2)])
+    relationshipTracker =  sorted(relationshipTracker,key=itemgetter(2),reverse=True)
+    print relationshipTracker
+    #print relationshipTracker
+    
+
+def standardizeName(name):
+    '''
+    Remove stuff not used by bngl
+    '''
+    name2 = name
+    
+    sbml2BnglTranslationDict = {"^":"",
+                                "'":"",
+                                "*":"m"," ":"_",
+                                "#":"sh",
+                                ":":"_",'α':'a',
+                                'β':'b',
+                                'γ':'g',"(":"__",
+                                ")":"__",
+                                " ":"","+":"pl",
+                                "/":"_",":":"_",
+                                "-":"_",
+                                ".":"_",
+                                '?':"unkn",
+                                ',':'_',
+                                '[':'__',
+                                  ']':'__',
+                                  '>':'_',
+                                  '<':'_'}
+                                
+    for element in sbml2BnglTranslationDict:
+        name = name.replace(element,sbml2BnglTranslationDict[element])
+    if name[:1].isdigit():
+        name = 's' + name
+    
+    return name
+
+
+def compareConventions(name1,name2):
+    nameStr = 'BIOMD0000000%03d.xml' % (name1)
+    nameStr2 = 'BIOMD0000000%03d.xml' % (name2)
+    import re
+    with open('xmlAnnotationsExtended2.dump','rb') as f:
+        ann = pickle.load(f)
+    dic1 = ann[nameStr]
+    dic2 = ann[nameStr2]
+    #print dic1
+    with open('complex/output{0}.bngl'.format(name2),'r') as f:
+        bnglContent = f.read()
+    #pp.pprint(dict(dic1))
+    #pp.pprint(dict(dic2))
+    #print dic2
+    counter = 0
+    for element in [x for x in dic1 if x in dic2]:
+        counter += 1
+        print '---',element,dic1[element],dic2[element]
+        if standardizeName(dic2[element][0][1]) !=standardizeName(dic1[element][0][1]):
+            while re.search(r'(\W|^)({0})(\W|$)'.format(standardizeName(dic2[element][0][1])),bnglContent): 
+                bnglContent = re.sub(r'(\W|^)({0})(\W|$)'.format(standardizeName(dic2[element][0][1])),r'\g<1>{0}\g<3>'.format(standardizeName(dic1[element][0][1])),bnglContent)
+    with open('complex/modified_output{0}_n{1}.bngl'.format(name2,name1),'w') as f:
+        f.write(bnglContent)
+    return counter
 
 if __name__ == "__main__":
     #bagOfWords()
     #rankingAnalysis()
     #print resolveAnnotation('http://identifiers.org/reactome/REACT_9417.3')
     #biomodelsInteractome()
-    biomodelsInteractomeAnalysis()
+    #biomodelsInteractomeAnalysis()
+    #biomodelsInteractome()
+    counter = []
+    
+    #array = [11,14,19,28,32,49,237,344,399]
+    '''    
+    array = [19,33,48,84,262,263,264,394,398,424,427]
+    for idx in range(0,len(array)-1):
+        for idx2 in range(idx+1,len(array)):
+            score = compareConventions(array[idx],array[idx2])
+            counter.append([array[idx],
+                            array[idx2],score])
+            if score > 0:
+                print array[idx],array[idx2],score
+    
+    counter = sorted(counter,key=lambda x:x[2])
+    print counter
+    '''
+    
+    #print compareConventions(19,424)
+    
+    equivalenceDictionary = {'Ras-GTP':'RasGTP','Ras-GDP':'RasGDP'}
+    #print compareConventions(32,49)
+    #extractXMLInfo('XMLExamples/curated/BIOMD0000000019.xml')
+    #annotationSharingFinder()
