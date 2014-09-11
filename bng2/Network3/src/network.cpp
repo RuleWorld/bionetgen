@@ -4674,7 +4674,7 @@ int select_next_rxn() {
 		    if (f <= a_sum) break;
             // speed up direct Gillespie method: if neighboring propensites are in descending order, swap them
 		    if ( irxn > 0  &&  GSP.a[GSP.prop[irxn]] > GSP.a[GSP.prop[irxn-1]] ) {
-		    	temp_prop = GSP.prop[irxn];
+		    		temp_prop = GSP.prop[irxn];
 		      	GSP.prop[irxn] = GSP.prop[irxn-1];
 			    GSP.prop[irxn-1] = temp_prop;
 		    }
