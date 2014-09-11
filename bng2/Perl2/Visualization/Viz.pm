@@ -376,11 +376,12 @@ sub execute_params
 		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
 		
 		my $pg = makeProcessGraph2($bpg,\%args);
-		#if($output==1)
-		#	{
-		#	if($textonly==1) {$str = printProcessGraph($pg); }
-		#	else { $str = toGML_process($pg); }
-		#	}
+		if($args{'embed'}==1) {embedProcessGraph($pg,$gr,\%args);} 
+		if($output==1)
+			{
+			if($textonly==1) {$str = printProcessGraph($pg); }
+			else { $str = toGML_process2($pg); }
+			}
 	}
 		
 		

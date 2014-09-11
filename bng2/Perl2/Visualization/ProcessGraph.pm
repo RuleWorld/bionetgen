@@ -387,9 +387,11 @@ sub makeProcessGraph2
 				my @procs2;
 				my @reacprods2;
 				my @contexts2;
+				my %merged;
+				@merged { 0..@processes-1 } = (0) x @processes;
 				foreach my $i(0..@processes-1)
 				{
-					my $merged = 0;
+					next if ($merged{$i}==1);
 					my @rp1 = sort {$a cmp $b} uniq(@{$reacprods[$i]});
 					foreach my $j(($i+1)..@processes-1)
 						{
@@ -400,10 +402,11 @@ sub makeProcessGraph2
 								push @reacprods2, \@rp1;
 								my @x = (@{$contexts[$i]},@{$contexts[$j]});
 								push @contexts2,\@x;
-								$merged = 1;
+								$merged{$i} = 1;
+								$merged{$j} = 1;
 							}
 						}
-					if($merged == 0) 
+					if($merged{$i} == 0) 
 						{
 							push @procs2, [$processes[$i]];
 							push @reacprods2, \@rp1;
@@ -422,11 +425,59 @@ sub makeProcessGraph2
 				@relations = uniq(@relations);
 				my @names = map join(",",@$_), @procs2;
 				$pg = initializeProcessGraph(\@procs2,\@relations,[],\@names);
-			}
+			}	
 	}
 	return $pg;
 }
 
+sub embedProcessGraph
+{
+	my $pg = shift @_;
+	my $gr = shift @_;
+	my %args = %{shift @_};
+	my $bpg = $gr->{'RuleNetworkCurrent'};
+	my $bpg2;
+	#my $bpg2 = collapseNetworkGraph($bpg);
+	
+	my @nodes = @{$pg->{'Nodes'}};
+	my @names = @{$pg->{'Names'}};
+	my @embed = () x @nodes;
+	my $mergepairs = $args{'mergepairs'};
+	my $groups = $args{'groups'};
+	if($groups) {$bpg2 = collapseNetworkGraph($bpg);}
+	else {$bpg2 = $bpg;}
+	
+	my @reacprods = grep {$_ =~ /^.*:.*:(.*)/; has(['Reactant','Product'],$1);} 
+					@{$bpg2->{'EdgeList'}};
+	my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
+	my @rnames = map {@$_;} flat($gr->{'RuleNames'}); 
+	foreach my $i(0..@nodes-1)
+	{
+		my $node = $nodes[$i];
+		my @arr = ($mergepairs==1) ? @$node : ($node);
+		if($groups==1)
+		{
+			my @edges = map { 
+							my $x = $_;
+							grep {$_ =~ /^(.*):.*:.*/; $1 eq $x} 
+							@reacprods
+							} @arr;
+			@edges = uniq(@edges);
+			$embed[$i] = makeRuleNetworkGraphFromEdges(\@edges,$bpg2->{'NodeType'},$names[$i]);
+		}
+		else
+		{
+			my @rsgs1 = map {
+							my $x = $_;
+							map {$rsgs[$_]}
+							grep {$rnames[$_] eq $x} 0..@rnames-1;
+							} @arr;
+			$embed[$i] = combine2(\@rsgs1);
+		}
+	}
+	$pg->{'Embed'} = \@embed;
+	return;
+}
 sub getRelationship
 {
 	my @edgelist = @{shift @_};
