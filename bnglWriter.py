@@ -59,7 +59,7 @@ def printTranslate(chemical,tags,translator={}):
         for item in range(0,int(chemical[1])):
             tmp.append(app)
     else:
-        idx = logMess("ERROR","Cannot deal with non integer stoicheometries: {0}* {1}".format(chemical[1],chemical[0]))
+        idx = logMess("ERROR:Simulation","Cannot deal with non integer stoicheometries: {0}* {1}".format(chemical[1],chemical[0]))
         tmp.append(app)
     return ' + '.join(tmp)
 
@@ -254,7 +254,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
         if compartment[0] in tmp:
             tmp =re.sub(r'(\W|^)({0})(\W|$)'.format(compartment[0]),r'\1 {0} \3'.format(str(compartment[1])),tmp)
             #tmp = re.sub(r'(\W)({0})(\W)'.format(compartment[0]),r'\1%s\3' % str(compartment[1]),tmp)
-            logMess('WARNING','Exchanging reference to compartment %s for its dimensions' % compartment[0])
+            logMess('INFO','Exchanging reference to compartment %s for its dimensions' % compartment[0])
     
     #change references to time for time()    
     #tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',tmp)
