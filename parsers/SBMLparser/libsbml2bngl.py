@@ -333,9 +333,9 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     
     with open(outputFile,'w') as f:
-            f.write(returnArray[-2])
-#     with open('{0}.dict'.format(outputFile),'wb') as f:
-#         pickle.dump(returnArray[-1],f)
+        f.write(returnArray[-2])
+    #with open('{0}.dict'.format(outputFile),'wb') as f:
+    #    pickle.dump(returnArray[-1],f)
     if onlySynDec:
         returnArray = list(returnArray)
         returnArray[0] = -1
@@ -579,7 +579,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     evaluate2 = 0 if len(observables) == 0 else len(molecules)*1.0/len(observables)
     
     
-    return len(rules),evaluate,evaluate2,len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
+    return len(rules),len(observables),evaluate,evaluate2,len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
     
     '''
     if translator != {}:
@@ -678,7 +678,7 @@ def main():
     #cycles 18,108,109,255,268,392
     for bioNumber in range(1,491):
         
-        if bioNumber in [18,81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
+        if bioNumber in [81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
             continue
     #bioNumber = 175
         logMess.log = []
@@ -693,9 +693,9 @@ def main():
         #                                                  reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
         #                                                    speciesEquivalence=spEquivalence,atomize=True)
         try:
-
-            rlength = reval = reval2 = None
-            rlength, reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'reactionDefinitions/reactionDefinition7.json',
+ 
+            rlength = reval = reval2 = slength = None
+            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'reactionDefinitions/reactionDefinition7.json',
                 False,'config/namingConventions.json','/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
     
             print '++++',bioNumber,rlength,reval,reval2,clength
@@ -707,7 +707,9 @@ def main():
             continue
         finally:  
             if rlength != None:        
-                rulesLength.append([bioNumber,rlength,reval,reval2])
+                rulesLength.append({'index':bioNumber,'nreactions':rlength,
+                'atomization':reval,'compression':reval2,
+                'nspecies':slength})
                 compartmentLength.append(clength)
                 rdfArray.append(getAnnotationsDict(rdf))
             
@@ -720,7 +722,7 @@ def main():
     #print evaluation2
     #sortedCurated = [i for i in enumerate(evaluation), key=lambda x:x[1]]
     print [(idx+1,x) for idx,x in enumerate(rulesLength) if  x > 50]
-    with open('sortedC.dump','wb') as f:
+    with open('sortedD.dump','wb') as f:
         pickle.dump(rulesLength,f)
     with open('annotations.dump','wb') as f:
         pickle.dump(rdfArray,f)
@@ -867,7 +869,7 @@ def processDir(directory,atomize=True):
         if xml not in ['MODEL1310110034.xml'] and len([x for x in blackList if str(x) in xml]) == 0:
             print xml
             try:
-                rlength,reval,reval2,_,_ = analyzeFile(directory + xml,'reactionDefinitions/reactionDefinition7.json',
+                rlength,slength,reval,reval2,_,_ = analyzeFile(directory + xml,'reactionDefinitions/reactionDefinition7.json',
                         False, 'config/namingConventions.json',
                         '/dev/null', speciesEquivalence=None,atomize=True,bioGrid=False)  
                 resultDir[xml] = [rlength,reval,reval2]
@@ -897,7 +899,7 @@ def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False,outp
         outputFile = output
     else:
         outputFile = '{0}.bngl'.format(fileName)
-    rlength, reval, reval2, clength,rdf  = analyzeFile(fileName, reactionDefinitions,
+    rlength, slength,reval, reval2, clength,rdf  = analyzeFile(fileName, reactionDefinitions,
                 useID,namingConventions,outputFile,speciesEquivalence=spEquivalence,atomize=atomize,bioGrid=bioGrid)
 
     if len(logMess.log) > 0:
@@ -938,11 +940,11 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  =16
+    param  =24
     
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
                     False, 'config/namingConventions.json',
-                    'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+                    'complex/output' + str(param) + '.bngl', speciesEquivalence='reactionDefinitions/speciesEquivalence19.json',atomize=True,bioGrid=False)
     
     
     '''

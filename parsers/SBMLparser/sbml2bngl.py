@@ -578,7 +578,7 @@ class SBML2BNGL:
         functionTitle = 'functionRate'
         
         if len(self.model.getListOfReactions()) == 0:
-            logMess('ERROR','Model contains no natural reactions, all reactions are produced by rules')
+            logMess('ERROR:Simulation','Model contains no natural reactions, all reactions are produced by rules')
         for index, reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
             #symmetry factors for components with the same name
@@ -602,7 +602,7 @@ class SBML2BNGL:
                 functionName = finalString
             
             if self.getReactions.functionFlag and 'delay' in rawRules['rates'][0]:
-                logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
+                logMess('ERROR:Simulation','BNG cannot handle delay functions in function %s' % functionName)
             if rawRules['reversible']:
                 if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
