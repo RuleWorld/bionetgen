@@ -111,6 +111,9 @@ def createMetaRule(ruleSet,differences):
             #print metaRule[element],moleculeDict[idx][element]
 
 def groupByReactionCenter(transformationCenter):
+    '''
+    returns:  A Dictionary with 'reactionCenter' keys. 
+    '''
     centerDict = {}
     #extract rules with teh same reaction center
     for idx,rule in enumerate(transformationCenter):
@@ -138,18 +141,45 @@ def groupByReactionCenterAndRateAndActions(rules,centerDict):
             key =  [x.action for x in actionString]
             key.sort()
             #append the rate to the tuple to create a key
-            key.append(rules[rnum][-1])
+            key.append(rules[rnum][-2])
             if tuple(key) not in tmpDict:
                 tmpDict[tuple(key)] = []
             tmpDict[tuple(key)].append(rnum)
         for rate in tmpDict:
-            if len(tmpDict[rate]) > 1:
+            if len(tmpDict[rate]) >= 1:
                 if center not in redundantDict:
                     redundantDict[center] = {}
                 redundantDict[center][rate] = tmpDict[rate]
     return redundantDict
 
-
+def groupByReactionCenterAndRateAndActions2(rules,centerDict):
+    '''
+    group those reactions with the same reaction center on the first level
+    and reaction rate/ actions on the second level
+    '''
+    redundantDict = {}
+    for center in centerDict:
+        tmpDict = {}
+        for rnum in centerDict[center]:
+            actionString = rules[rnum][0].actions
+            key =  [x.action for x in actionString]
+            key.sort()
+            #append the rate to the tuple to create a key
+            key.append(rules[rnum][-2])
+            if tuple(key) not in tmpDict:
+                tmpDict[tuple(key)] = []
+            tmpDict[tuple(key)].append(rnum)
+        for rate in tmpDict:
+            if len(tmpDict[rate]) >= 1:
+                center2 = list(center)
+                center2.extend(rate[:-1])
+                center2 = tuple(center2)
+                if center2 not in redundantDict:
+                    redundantDict[center2] = {}
+                
+                redundantDict[center2][rate[-1]] = tmpDict[rate]
+    return redundantDict
+    
 def obtainDifferences(redundantDict,transformationContext):
     '''
     analize what is different between similar rules (same rc, rate and actions) throw unions 
@@ -284,12 +314,21 @@ def findNewParameters(parameters,bngParameters):
             newPar.append('\t {0} {1}\n'.format(bngp,bngParameters[bngp]))
     return newPar
 
+def spaceCovered(species,numObservables):
+    speciesCount = 0
+    for individualSpecies in species:
+        tmp = 0
+        for component in individualSpecies.components:
+            tmp+=1
+        speciesCount += 2**tmp
+    return speciesCount *1.0/numObservables
+
 def extractRedundantContext(rules,transformationCenter,transformationContext):
     ''''
     
     '''
     centerDict = groupByReactionCenter(transformationCenter)
-    redundantDict = groupByReactionCenterAndRateAndActions(rules,centerDict)
+    redundantDict = groupByReactionCenterAndRateAndActions2(rules,centerDict)
                 #redundantDict['{0}.{1}'.format(element,element2)] = tmpDict[element2]
     redundantListDict = obtainDifferences(redundantDict,transformationContext)
     #todo: remove redundancies from rules

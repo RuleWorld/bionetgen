@@ -15,6 +15,7 @@
 		
 "patterns":{
 "('+ i',)":"iMod",
+"('+ _', '+ I')":"iMod",
 "('+ m',)":"mMod",
 "('+ _', '+ P')":"Phosporylation",
 "('+ P', '+ _')":"Phosporylation",
@@ -29,6 +30,7 @@
 "('+ a', '+ s', '+ t')": "astMod",
 
 "('+ _', '+ c')":"cMod",
+"('+ _', '+ C')":"cMod",
 
 "('+ _', '+ u', '+ b', '+ i', '+ q')":"Ubiquitination"
 

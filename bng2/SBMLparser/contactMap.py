@@ -67,8 +67,8 @@ def main():
     
     for cidx,cluster in enumerate(linkArray):
         #FIXME:only do the first cluster
-        cidx = 1
-        cluster = linkArray[1]
+        cidx = 0
+        cluster = linkArray[0]
         if len(cluster) == 1:
             continue
         annotationsDict = {idx:x for idx,x in enumerate(annotations)}
@@ -95,6 +95,7 @@ def main():
                 for idx in annotationsIncidence[element]:
                     for species in [x for x in annotationsDict[idx] if annotationsDict[idx][x][1] == element]:
                          try:
+                             print speciesEquivalence[idx]
                              if isinstance(speciesEquivalence[idx][species],str):
                                  tmpEdgeList.append('{0}_{1}'.format(idx,speciesEquivalence[idx][species][0:-2]))
                                  names.append(speciesEquivalence[idx][species][0:-2])
@@ -102,7 +103,9 @@ def main():
                                  tmpEdgeList.append('{0}_{1}'.format(idx,speciesEquivalence[idx][species].molecules[0].name))
                                  names.append(speciesEquivalence[idx][species].molecules[0].name)
                          except:
-                            print 'error',idx,species
+                            
+                            print '----','error',idx,species
+                            pass
                 names = [x.lower() for x in names]
                 name =  Counter(names).most_common(5)
                 name = [x for x in name if len(x[0])> 1]
@@ -136,7 +139,7 @@ def main():
                     
     #print nodeDict
 def main2():
-    number = 19
+    number = 48
     species,rules,parameterDict,observableList= readBNGXML.parseXML('output{0}.xml'.format(number))
     graph = nx.Graph()
 

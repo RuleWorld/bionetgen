@@ -85,7 +85,7 @@ def extractTransformations(rules):
             atomic, rc, _ = extractMolecules(action.action, productSites[0], productSites[1], rule.products)
             productElements.append(rc)
             atomicArray.update(atomic)
-            actionName.append('%i-%s' % (index, action.action))
+            actionName.append('%i-%s' % (index, action.action)) 
             r = '+'.join([ str(x) for x in rule.reactants ])
             p = '+'.join([ str(x) for x in rule.products ])
             label.append('->'.join([r, p, '%i-%s' % (index, action.action)]))

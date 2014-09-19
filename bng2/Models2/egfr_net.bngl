@@ -165,10 +165,10 @@ end model
 generate_network({overwrite=>1})
 
 # Equilibration..
-setConcentration("egf(r)",0)
-simulate({method=>"ode",t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1})
+#setConcentration("egf(r)",0)
+#simulate({method=>"ode",t_end=>100000,n_steps=>10,sparse=>1,steady_state=>1})
 
 # Kinetics..
-setConcentration("egf(r)","egf_tot")
-simulate({method=>"ode",t_end=>120,n_steps=>120,atol=>1e-8,rtol=>1e-8,sparse=>1})
+#setConcentration("egf(r)","egf_tot")
+simulate({method=>"ode",t_end=>40,n_steps=>50,atol=>1e-8,rtol=>1e-8,sparse=>1})
 

@@ -8,18 +8,24 @@
    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 	<script>
 	    var count = 2;
+      //once the page is loaded this function is in charge of checking
+      //whether the result is ready
     var timer = setInterval(function() {
         if (--count < 1) {
 
             $.get( "testFile?ticket={{ticket}}", function(data){
             	var obj = jQuery.parseJSON( data);
+              // keep waiting 
             	if (obj.result == -2){
             		count = 5
             		
             	}
+              //this would happen if the user refreshes the download page
             	else if(obj.result == -1){
             		$("#display").text("Your request doesn't exist. Please submit your file again")	
             	}
+
+              //the result is here. display url by calling the WaitFile class.
             	else{
             		$("#content").empty()
             		$.get( "waitFile?ticket={{ticket}}&fileName={{fileName}}", function(data2){
@@ -37,6 +43,7 @@
     }, 1000);
 	</script>
    <script>
+           //this is the roating logo thing
 		var url = "/script/rotate.js";
 		$.getScript(url, function() {
 			var spinner = new Spinner().spin();
@@ -48,20 +55,7 @@
   </head>
   <body>
   	<div id="container">
-  <div id="header">
-    <h1>
-      Site name
-    </h1>
-  </div>
-  <div id="navigation" class="pure-menu pure-menu-open pure-menu-horizontal">
-    <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/translate">Atomizer</a></li>
-      <li><a href="/graph">Bipartite Graph</a></li>
-      <li><a href="/static/contact.html">Contact us</a></li>
-    </ul>
-  </div>
-  <div id="content-container">
+{% include "/header.html" %}  <div id="content-container">
     <div id="content">
       		Please wait a couple seconds while your request is processed...
 

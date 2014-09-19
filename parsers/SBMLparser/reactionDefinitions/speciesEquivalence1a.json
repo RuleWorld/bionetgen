@@ -9,6 +9,7 @@
 	],
 	"complexDefinition" : [
 	["GFP_Smad2", [["GFP","smad2",["b",1]], ["Smad2","gfp",["b",1]]]]
+
 	]
 	,
 	"modificationDefinition": {

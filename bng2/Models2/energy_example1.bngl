@@ -161,7 +161,8 @@ end model
 # Generate the network. Kinetics are computed as the reactions are constructed. 
 generate_network({overwrite=>1})
 # Simulate with ODE or SSA only. NFsim does not yet support energy models =(.
-simulate({method=>"ode",t_start=>0,t_end=>200,n_steps=>1000,atol=>1e-4,rtol=>1e-6})
+writeSBML()
+#simulate({method=>"ode",t_start=>0,t_end=>200,n_steps=>1000,atol=>1e-4,rtol=>1e-6})
 
 # ..and we're done!
 

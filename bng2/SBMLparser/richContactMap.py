@@ -119,17 +119,13 @@ def dictionaryToCounter(redundantPattern):
         for key in element:
             tmp.update(element[key])
     return tmp
-    
-def createBipartiteGraph(fileName):
-    rules = extractRulesfromBNGL(fileName)    
+
+def extractCenterContext(rules):
     transformationCenter = []
     transformationContext = []
     transformationProduct = []
-    actionNames = []
     atomicArray = []
-    
-
-    #extract the context of such reactions
+    actionNames = []
     for idx,rule in enumerate(rules):
         tatomicArray, ttransformationCenter, ttransformationContext, \
                 tproductElements,tactionNames,tlabelArray = extractAtomic.extractTransformations([rule])
@@ -139,9 +135,19 @@ def createBipartiteGraph(fileName):
         actionNames.append(tactionNames)
         atomicArray.append(tatomicArray)
         transformationProduct.append(tproductElements)
+    return transformationCenter,transformationContext, \
+    transformationProduct,atomicArray,actionNames
+    
+def createBipartiteGraph(fileName):
 
-    #tatomicArray, ttransformationCenter, ttransformationContext, \
-    #            tproductElements,tactionNames,tlabelArray = extractAtomic.extractTransformations(rules)
+    rules = extractRulesfromBNGL(fileName)    
+    
+    transformationCenter,transformationContext, \
+    transformationProduct,atomicArray,actionNames= extractCenterContext(rules)
+
+    
+    
+
     redundantDict,patternDictList= contextAnalyzer.extractRedundantContext(rules,transformationCenter,transformationContext)
     reverseRedundantDict = reverseLookup(redundantDict)
     
@@ -155,7 +161,6 @@ def createBipartiteGraph(fileName):
         createRuleBiPartite(rule,center,context,product,action,atom,'img/bipartite{0}'.format(idx),redundantPatternCounter)
         idx+=1
             
-
 
 def matchName(rmolecule,rcomponent,componentList):
         
@@ -235,13 +240,129 @@ def createContactMap(fileName):
 
         createMap(rules[idx],transformationProduct[idx],redundantPatternCounter,'conImg/contatMap{0}'.format(idx))
     
+def constructHistogram(data,fileName):
+    import matplotlib.pyplot as plt
+    plt.clf()
+    plt.hist(data)
+    plt.xlabel('Context Cooperativity',fontsize=18)
+    plt.savefig('{0}coop.png'.format(fileName))
+
+
+def cooperativityAnalysis(fileName):
+    species,rules,par = extractRulesfromBNGL(fileName)    
+    transformationCenter,transformationContext, \
+    transformationProduct,atomicArray,actionNames= extractCenterContext(rules)
+    
+    modifiedContextDistribution = [Counter() for _ in transformationCenter]
+    
+    for idx,contextList in enumerate(transformationContext):
+        for context in contextList[0]:
+            for centerList in transformationCenter:
+                for centerListInstance in centerList:
+                    if context in centerListInstance:
+                        modifiedContextDistribution[idx].update([context])
+    mentions = [sum([x[y] for y in x]) for x in modifiedContextDistribution]
+    constructHistogram([len(x) for x in modifiedContextDistribution],fileName)
+    constructHistogram(mentions,fileName+'edges')
+    
+    
+
+
+def cooperativityAnalysis2(fileName):
+    species,rules,par = extractRulesfromBNGL(fileName)   
+    transformationCenter,transformationContext, \
+    transformationProduct,atomicArray,actionNames= extractCenterContext(rules)
+    #group by reaction center    
+    redundantDict,patternDictList= contextAnalyzer.extractRedundantContext(rules,transformationCenter,transformationContext)
+    totalProcesses  = 0
+    groupedProcesses = 0
+    redundantProcesses=0
+    reverseRedundantDict = reverseLookup(redundantDict)
+    for center in redundantDict:
+        flag = False
+        if len(redundantDict[center])>1:
+            flag = True
+        for rateKey in redundantDict[center]:
+            if len([x for x in center if x not in ['Add','Delete']]) != 0:
+                if (len(redundantDict[center][rateKey])>1) and not flag:
+                    #print '++++',center,rateKey,redundantDict[center][rateKey]
+                    redundantProcesses += len(redundantDict[center][rateKey])
+                elif flag:
+                    #print '----',center,rateKey,redundantDict[center][rateKey]
+                    groupedProcesses += len(redundantDict[center][rateKey])
+            totalProcesses += len(redundantDict[center][rateKey])
+    print groupedProcesses*1.0/totalProcesses,redundantProcesses*1.0/totalProcesses
+    return groupedProcesses*1.0/totalProcesses,redundantProcesses*1.0/totalProcesses
 
 def extractRulesfromBNGL(fileName):
-    console.bngl2xml(fileName)
-    species,rules,par= readBNGXML.parseXML('output5.xml')
-    return rules
+    console.bngl2xml('complex/{0}.bngl'.format(fileName),timeout=10)
+    species,rules,par= readBNGXML.parseXML('{0}.xml'.format(fileName))
+    return species,rules,par
     
+
+import numpy as np
+import scipy.interpolate as interpolate
+
+def inverse_transform_sampling(data, n_bins=40, n_samples=1000):
+    hist, bin_edges = np.histogram(data, bins=n_bins, density=True)
+    cum_values = np.zeros(bin_edges.shape)
+    cum_values[1:] = np.cumsum(hist*np.diff(bin_edges))
+    inv_cdf = interpolate.interp1d(cum_values, bin_edges)
+    r = np.random.rand(n_samples)
+    return inv_cdf(r)
+
+import matplotlib.pyplot as plt
+import cPickle as pickle
+
+def plotresults(results,yvals,fileName):
+    plt.clf()
+    plt.plot( results, yvals )
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('Percentage of grouped processes', fontsize=18)
+    plt.savefig('{0}.png'.format(fileName))
+
     
 if __name__ == "__main__":
-    createBipartiteGraph('complex/output5.bngl')
-    #createContactMap('output/output5.bngl')
+    #createBipartiteGraph('complex/output5.bngl')
+    #species,rules = extractRulesfromBNGL('output19')
+    processList = []
+    with open('sortedD.dump','rb') as f:
+        atomizationStats = pickle.load(f)
+    atomizationDict = {}
+    atomizationList = []
+    groupedDict = []
+    for element in atomizationStats:
+        try:
+            atomizationDict[element['index']] = element['atomization']
+        except:
+            continue
+    for element in range(1,491):
+        
+        try:
+            if element in atomizationDict and atomizationDict[element] > 0:
+                print element,
+                processList.append(cooperativityAnalysis2('output{0}'.format(element)))
+                atomizationList.append(atomizationDict[element])
+                tmp = [element]
+                tmp.extend(processList[-1])
+                groupedDict.append(tmp)
+        except (IOError,IndexError):
+            print
+            continue
+
+    
+    groupedProcess,redundantProcess = zip(*processList)
+    #plt.clf()
+    #plt.scatter(groupedProcess,atomizationList)
+    #plt.show()
+    print groupedDict
+    '''
+    groupedProcess=np.sort( groupedProcess )
+    redundantProcess=np.sort( redundantProcess )
+    yvals=np.arange(len(groupedProcess))/float(len(groupedProcess))
+    plotresults(groupedProcess,yvals,'grouped>0')
+    plotresults(redundantProcess,yvals,'redundant>0')
+    '''
+    #print processList
+    #cooperativityAnalysis2('egfr_net')    
+    #createContactMap(  'output/output5.bngl')

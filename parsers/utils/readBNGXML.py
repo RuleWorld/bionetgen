@@ -24,7 +24,7 @@ def findBond(bondDefinitions, component):
 def createMolecule(molecule, bonds):
     nameDict = {}
     mol = st.Molecule(molecule.get('name'),molecule.get('id'))
-    if molecule.get('compartment') != '':
+    if molecule.get('compartment') not in ['',None]:
         mol.setCompartment(molecule.get('compartment'))
     nameDict[molecule.get('id')] = molecule.get('name')
     listOfComponents =  molecule.find('.//{http://www.sbml.org/sbml/level3}ListOfComponents')
@@ -128,22 +128,33 @@ def parseRule(rule,parameterDict):
     
     #return reactants, products, actions, mappings, nameDict,rateConstantsValue,rateConstants
     return rule,nameDict,rateConstantsValue,rateConstants
+    
 def parseMolecules(molecules):
     '''
     Parses an XML molecule section
     Returns: a molecule structure
     '''
 
-    mol = st.Molecule(molecules.get('name'),molecules.get('id'))
+    mol = st.Molecule(molecules.get('id'),molecules.get('id'))
     components = \
       molecules.find('.//{http://www.sbml.org/sbml/level3}ListOfComponentTypes')
     if components != None:
         for component in components.getchildren():
-            comp = st.Component(component.get('name'),component.get('id'))
+            comp = parseComponent(component)
             mol.addComponent(comp)
     return mol       
         
-
+def parseComponent(component):
+    '''
+    parses  a bngxml molecule types section
+    '''
+    comp = st.Component(component.get('id'),component.get('id'))
+    states = component.find('.//{http://www.sbml.org/sbml/level3}ListOfAllowedStates')
+    if states != None:
+        for state in states.getchildren():
+            comp.addState(state.get('id'))
+    return comp
+    
 def parseXML(xmlFile):
     doc = etree.parse(xmlFile)
     molecules = doc.findall('.//{http://www.sbml.org/sbml/level3}MoleculeType')
@@ -168,5 +179,12 @@ def parseXML(xmlFile):
         ruleDescription.append(parseRule(rule,parameterDict))
     return moleculeList, ruleDescription,parameterDict
         
+def getNumObservablesXML(xmlFile):
+    doc = etree.parse(xmlFile)
+    observables = doc.findall('.//{http://www.sbml.org/sbml/level3}Observable')
+    return len(observables)
+    
 if __name__ == "__main__":
-    parseXML("output19.xml")
+    #mol,rule,par = parseXML("output19.xml")
+    #print [str(x) for x in mol]
+    print getNumObservablesXML('output19.xml')
