@@ -640,6 +640,26 @@ sub makeRuleNetworkGraph_simple
 	return $bpg;
 
 }
+
+sub makeRuleNetworkGraphFromEdges
+{
+	my @edges = @{shift @_};
+	my %nodetype = %{shift @_};
+	my $name = shift @_;
+	
+	my @nodes = uniq(map {$_=~ /^(.*):(.*):.*/; ($1,$2);} @edges);
+	my %types;
+	updateDict(\%types,\%nodetype,\@nodes);
+	my $bpg = NetworkGraph->new();
+	$bpg->{'NodeType'} = \%nodetype;
+	$bpg->{'NodeList'} = \@nodes;
+	$bpg->{'EdgeList'} = \@edges;
+	$bpg->{'Name'} = $name;
+	return $bpg;
+
+}
+
+
 # do things to network graphs
 sub uniqNetworkGraph
 {

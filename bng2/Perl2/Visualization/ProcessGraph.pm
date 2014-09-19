@@ -13,11 +13,29 @@ struct ProcessGraph =>
 {
 	'Processes'	=> '@', 
 	'Edges' => '@',
-	'ReacProds' => '%',
+	'ReacProds' => '%', # to be deprecated
 	'Names' => '%',
 	'Embed' => '%',
 };
 
+struct ProcessGraph2 =>
+{
+	'Nodes'=> '@',
+	'Edges'=> '@',
+	'Embed'=> '@',
+	'Names'=> '@',
+
+};
+sub initializeProcessGraph
+{
+	my $pg = ProcessGraph2->new();
+	$pg->{'Nodes'} = shift @_;
+	$pg->{'Edges'} = shift @_;
+	if(@_) { $pg->{'Embed'} = shift @_; }
+	if(@_) { $pg->{'Names'} = shift @_; }
+	else {my @x = @{$pg->{'Nodes'}}; $pg->{'Names'} = \@x;}
+	return $pg;
+}
 sub printProcessGraph
 {
 	my $pg = shift @_;
@@ -35,6 +53,7 @@ sub makeProcessGraph
 {
 	print "Building process graph for whole model.\n";
 	my $bpg = shift @_;
+	
 	my $mergepairs = @_ ? shift @_ : 0;
 	my $embed = @_ ? shift @_ : 0;
 
@@ -123,6 +142,7 @@ sub makeProcessGraph
 		$pg->{'Names'} = \%names;
 		$pg->{'Edges'} = \@edges2;
 		if($embed) {$pg->{'Embed'} = \%bpgs;}
+		return $pg;
 	}
 
 	# mergepairs needs to be done correctly!
@@ -211,6 +231,273 @@ sub makeProcessGraph
 	
 }
 
+sub reprocessWildcards
+{
+	my @edgelist = @{shift @_};
+	my @wc_edges = grep {$_ =~ /.*:.*:Wildcard$/ } @edgelist ;
+	my @wcs = uniq (map {$_ =~ /^(.*):.*:.*/; $1; } @wc_edges);
+	my @other_edges = grep { not has(\@wc_edges,$_) } @edgelist;
+	
+	my @edges2;
+	foreach my $edge(@other_edges)
+	{
+		$edge =~ /^(.*):(.*):(.*)$/;
+		my ($rule,$pat,$rel) = ($1,$2,$3);
+		if($rel ne 'Context') { push @edges2,$edge; next;}
+		if(not has(\@wcs,$pat)) { push @edges2,$edge; next;}
+		
+		my @matches = uniq( map {$_ =~ /^.*:(.*):.*$/; $1;} grep {$_ =~ /^(.*):.*:.*$/; $1 eq $pat} @wc_edges);
+		foreach my $pat2(@matches) { push @edges2, join(":",($rule,$pat2,$rel)); }
+	}
+	return uniq(@edges2);
+}
+
+sub makeProcessGraph2
+{
+	my $bpg = shift @_;
+	my %nodetype = %{$bpg->{'NodeType'}};
+	my @allnodes = @{$bpg->{'NodeList'}};
+	my @alledges = reprocessWildcards($bpg->{'EdgeList'});
+	
+	
+	my %args = %{shift @_};
+	my @processgrps = ();
+	my $pg;
+	
+	if($args{'groups'}==0)
+	{
+		if($args{'mergepairs'}==0)
+			{
+				my @rules = grep { $nodetype{$_} eq 'Rule' } @allnodes;
+				my @reacprods = map [getRelationships(\@alledges,$_,['Reactant','Product'])],  @rules;
+				my @contexts = map [getRelationship(\@alledges,$_,'Context')],  @rules;
+				
+				my @processes = @rules;
+				my @relations = ();
+				foreach my $i(0..@processes-1)
+				{
+					foreach my $j($i..@processes-1)
+						{
+							if( has_overlap($reacprods[$i],$contexts[$j]) ) 
+								{ push @relations, join(" ",($i,$j));}
+						}
+				}
+				@relations = uniq(@relations);
+				$pg = initializeProcessGraph(\@processes,\@relations,[],\@processes);
+			}
+		else
+			{
+				my @rules = grep { $nodetype{$_} eq 'Rule' } @allnodes;
+				# group rules and their reverses
+				my %revmap;
+				foreach my $rule(@rules)
+					{
+					# stupid naming conventions!
+					if($rule =~ /^(Rule[0-9]{.*})r$/)
+						{
+						my $pair = $1;
+						if(has(\@rules,$pair)) {$revmap{$rule} = $pair;}
+						}
+					elsif($rule =~ /^(.*)\(reverse\)$/)
+						{
+						my $pair = $1;
+						if(has(\@rules,$pair)) {$revmap{$rule} = $pair;}
+						}
+					}
+				my @paired =  (keys %revmap,values %revmap);
+				my @stack = ();
+				foreach my $rule(@rules)
+				{
+					if(not has(\@paired,$rule)) { my @x = ($rule); push @stack, \@x;}
+					if(has([keys %revmap],$rule)) { push @stack, [$revmap{$rule},$rule]; }				
+				}
+				
+				my @processes = @stack;
+				my @reacprods = map {
+									my @x = @$_; 
+									my @y = map getRelationships(\@alledges,$_,['Reactant','Product']),@x;
+									\@y;
+									} @processes;
+				my @contexts = map {
+									my @x = @$_; 
+									my @y = map getRelationship(\@alledges,$_,'Context'),@x;
+									\@y;
+									} @processes;
+				
+				my @relations = ();
+				foreach my $i(0..@processes-1)
+				{
+					foreach my $j($i..@processes-1)
+						{
+							if( has_overlap($reacprods[$i],$contexts[$j]) ) 
+								{ push @relations, join(" ",($i,$j));}
+						}
+				}
+				@relations = uniq(@relations);
+				
+				my @names = map join(",",@$_), @processes;
+				$pg = initializeProcessGraph(\@processes,\@relations,[],\@names);
+			}
+	}
+	
+	if($args{'groups'}==1)
+	{
+		my @rules = grep { $nodetype{$_} eq 'Rule' } @allnodes;
+		my %nodeclass = %{$bpg->{'NodeClass'}};
+		my %extended;
+		foreach my $node(@allnodes)
+		{
+			if(has([keys %nodeclass],$node)) { $extended{$node} = $nodeclass{$node}; }
+			else { $extended{$node} = $node; }
+		}
+		my @processes = uniq( map $extended{$_}, @rules);
+		my @reacprods = map {
+							my $p = $_;
+							my @x = grep {$extended{$_} eq $p} @rules; 
+							my @y = map getRelationships(\@alledges,$_,['Reactant','Product']),@x;
+							my @z = uniq( map {$extended{$_}} @y );
+							\@z;
+							} @processes;
+		my @contexts = map {
+							my $p = $_;
+							my @x = grep {$extended{$_} eq $p} @rules; 
+							my @y = map getRelationship(\@alledges,$_,'Context'),@x;
+							my @z = uniq( map {$extended{$_}} @y );
+							\@z;
+							} @processes;
+
+		if($args{'mergepairs'}==0)
+			{				
+				my @relations = ();
+				foreach my $i(0..@processes-1)
+				{
+					foreach my $j($i..@processes-1)
+						{
+							if( has_overlap($reacprods[$i],$contexts[$j]) ) 
+								{ push @relations, join(" ",($i,$j));}
+						}
+				}
+				@relations = uniq(@relations);
+				
+				my @names = @processes;
+				$pg = initializeProcessGraph(\@processes,\@relations,[],\@names);
+			}
+		else
+			{
+				my @procs2;
+				my @reacprods2;
+				my @contexts2;
+				my %merged;
+				@merged { 0..@processes-1 } = (0) x @processes;
+				foreach my $i(0..@processes-1)
+				{
+					next if ($merged{$i}==1);
+					my @rp1 = sort {$a cmp $b} uniq(@{$reacprods[$i]});
+					foreach my $j(($i+1)..@processes-1)
+						{
+							my @rp2 = sort {$a cmp $b} uniq(@{$reacprods[$j]});
+							if( @rp1 ~~ @rp2 ) 
+							{ 
+								push @procs2, [$processes[$i],$processes[$j]];
+								push @reacprods2, \@rp1;
+								my @x = (@{$contexts[$i]},@{$contexts[$j]});
+								push @contexts2,\@x;
+								$merged{$i} = 1;
+								$merged{$j} = 1;
+							}
+						}
+					if($merged{$i} == 0) 
+						{
+							push @procs2, [$processes[$i]];
+							push @reacprods2, \@rp1;
+							push @contexts2,[uniq(@{$contexts[$i]})];
+						}
+				}
+				my @relations = ();
+				foreach my $i(0..@procs2-1)
+				{
+					foreach my $j($i..@procs2-1)
+						{
+							if( has_overlap($reacprods2[$i],$contexts2[$j]) ) 
+								{ push @relations, join(" ",($i,$j));}
+						}
+				}
+				@relations = uniq(@relations);
+				my @names = map join(",",@$_), @procs2;
+				$pg = initializeProcessGraph(\@procs2,\@relations,[],\@names);
+			}	
+	}
+	return $pg;
+}
+
+sub embedProcessGraph
+{
+	my $pg = shift @_;
+	my $gr = shift @_;
+	my %args = %{shift @_};
+	my $bpg = $gr->{'RuleNetworkCurrent'};
+	my $bpg2;
+	#my $bpg2 = collapseNetworkGraph($bpg);
+	
+	my @nodes = @{$pg->{'Nodes'}};
+	my @names = @{$pg->{'Names'}};
+	my @embed = () x @nodes;
+	my $mergepairs = $args{'mergepairs'};
+	my $groups = $args{'groups'};
+	if($groups) {$bpg2 = collapseNetworkGraph($bpg);}
+	else {$bpg2 = $bpg;}
+	
+	my @reacprods = grep {$_ =~ /^.*:.*:(.*)/; has(['Reactant','Product'],$1);} 
+					@{$bpg2->{'EdgeList'}};
+	my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
+	my @rnames = map {@$_;} flat($gr->{'RuleNames'}); 
+	foreach my $i(0..@nodes-1)
+	{
+		my $node = $nodes[$i];
+		my @arr = ($mergepairs==1) ? @$node : ($node);
+		if($groups==1)
+		{
+			my @edges = map { 
+							my $x = $_;
+							grep {$_ =~ /^(.*):.*:.*/; $1 eq $x} 
+							@reacprods
+							} @arr;
+			@edges = uniq(@edges);
+			$embed[$i] = makeRuleNetworkGraphFromEdges(\@edges,$bpg2->{'NodeType'},$names[$i]);
+		}
+		else
+		{
+			my @rsgs1 = map {
+							my $x = $_;
+							map {$rsgs[$_]}
+							grep {$rnames[$_] eq $x} 0..@rnames-1;
+							} @arr;
+			$embed[$i] = combine2(\@rsgs1);
+		}
+	}
+	$pg->{'Embed'} = \@embed;
+	return;
+}
+sub getRelationship
+{
+	my @edgelist = @{shift @_};
+	my $node = shift @_;
+	my $reltype = shift @_;
+
+	my @edges = grep { $_ =~ /.*:.*:(.*)$/; $1 eq $reltype} @edgelist;
+	my @arr1 = map { $_ =~ /^(.*):.*:.*$/; $1;} grep { $_ =~ /.*:(.*):.*$/; $1 eq $node} @edges;
+	my @arr2 = map { $_ =~ /.*:(.*):.*$/; $1;} grep { $_ =~ /^(.*):.*:.*$/; $1 eq $node} @edges;
+	return (@arr1,@arr2);
+}
+
+sub getRelationships
+{
+	my $edgelist = shift @_;
+	my $node = shift @_;
+	my @reltypes = @{shift @_};
+	my @arr = map {getRelationship($edgelist,$node,$_)} @reltypes;
+	return @arr;
+}
 sub is_reverse_of
 {
 	my @proc1_reac = sort {$a cmp $b} @{shift @_};

@@ -52,7 +52,7 @@ sub simulate_pla
 ###
 
 
-# all purpose simulation method (does not yet support NFsim)
+# all purpose simulation method (supports NFsim by calling 'simulate_nf' if method = "nf")
 sub simulate
 {
     use IPC::Open3;
@@ -167,7 +167,7 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "simulate() requires 'method' parameter (ode, ssa, pla).";  }
+    {  return "simulate() requires 'method' parameter (ode, ssa, pla, nf).";  }
     if ($method =~ /^ode$/){  $method = 'cvode';  } # Support 'ode' as a valid method
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }

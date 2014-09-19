@@ -367,15 +367,20 @@ sub execute_params
 		my %args2 = duplicate_args(\%args);
 		$args2{'type'} = 'regulatory';
 		$args2{'output'} = 0;
-		if($args{'mergepairs'}) {$args2{'groups'}=1;$args{'groups'}=1;}
-		if($args{'groups'}) { $args2{'collapse'}=1; }
+		#$args2{'groups'} = 0;
+		$args2{'collapse'} = 0;
+		$args2{'embed'} = 0;
+		#if($args{'mergepairs'}) {$args2{'groups'}=1;$args{'groups'}=1;}
+		#if($args{'groups'}) { $args2{'collapse'}=1; }
 		execute_params($model,\%args2);
 		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-		my $pg = makeProcessGraph($bpg,$args{'mergepairs'},$args{'embed'});
+		
+		my $pg = makeProcessGraph2($bpg,\%args);
+		if($args{'embed'}==1) {embedProcessGraph($pg,$gr,\%args);} 
 		if($output==1)
 			{
 			if($textonly==1) {$str = printProcessGraph($pg); }
-			else { $str = toGML_process($pg); }
+			else { $str = toGML_process2($pg); }
 			}
 	}
 		

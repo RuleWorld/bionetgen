@@ -7,7 +7,7 @@ package BNGModel;
 #      James R. Faeder    (faeder at pitt dot edu)
 #      Justin S. Hogg     (justinshogg at gmail dot com)
 #      Leonard A. Harris  (lh64 at cornell dot com)
-#      John A. P. Sekar
+#      John A. P. Sekar	  (johnarul dot sekar at gmail dot com)
 #      Jose Juan Tapia
 #      Arshi Arora
 #      Dipak Barua
@@ -2467,16 +2467,12 @@ sub visualize
                                   : $FindBin::RealBin
                                 )
                             ),
-                            'Perl2\Visualization'
+                            'Perl2','Visualization'
                           );
 	use Viz;
 
     my $model       = shift @_;
     my $user_params = @_ ? shift @_ : {};
-	# valid keywords: type=>string, groups=>0/1, background=>0/1, except=>[list], output=>0/1, each=>0/1
-	# background n except are used for detailing which atomic patterns are background
-	# output is for internal use to make visualize() recursive
-	# each for saying if each rule shd be visualized separately
 	my $err = Viz::execute_params($model,$user_params);
 	if ($err) { return $err; }
 	return '';

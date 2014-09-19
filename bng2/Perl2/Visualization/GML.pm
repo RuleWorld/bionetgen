@@ -135,7 +135,12 @@ sub printGML
 			my $somegraph = $node->{'embed'};
 			my $type = ref $somegraph;
 			if($type eq 'StructureGraph') 
-			{ $string3 = toGML_pattern($somegraph);}
+			{
+				if($somegraph->{'Type'} eq 'Rule')
+					{$string3 = toGML_rule_operation($somegraph);}
+				else
+					{$string3 = toGML_pattern($somegraph);}
+			}
 			elsif($type eq 'NetworkGraph') 
 			{ $string3 = toGML_rule_network($somegraph);}
 		}
@@ -721,6 +726,48 @@ sub toGML_process
 		my ($r1,$r2) = split(" ",$edge);
 		my $source = $indhash{$r1};
 		my $target = $indhash{$r2};
+		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
+		styleEdge2($gmledge,'Process');
+		push @gmledges,$gmledge;
+		
+	}
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	return printGML($gmlgraph);
+}
+
+sub toGML_process2
+{
+	my $pg = shift @_;
+	my $embed = (defined $pg->{'Embed'});
+	
+	#my %indhash = indexHash( $pg->{'Processes'} );
+	
+	my @processes = @{$pg->{'Nodes'}};
+	my @names = @{$pg->{'Names'}};
+	my @gmlnodes;
+	foreach my $i(0..@processes-1)
+	{
+		#my $id = $i;
+		#my $name = $names[$i];
+		my $gmlnode = initializeGMLNode($i,$names[$i],$processes[$i]);
+		styleNode2($gmlnode);
+		if($embed)
+			{
+			$gmlnode->{'anchor'} = "t";
+			$gmlnode->{'embed'} = $pg->{'Embed'}->[$i];
+			}
+		push @gmlnodes,$gmlnode;
+	}
+	
+	my @gmledges;
+	foreach my $edge(@{$pg->{'Edges'}})
+	{
+		my ($i,$j) = split(" ",$edge);
+		my $source = $i;
+		my $target = $j;
 		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
 		styleEdge2($gmledge,'Process');
 		push @gmledges,$gmledge;
