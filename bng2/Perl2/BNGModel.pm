@@ -8,7 +8,7 @@ package BNGModel;
 #      Justin S. Hogg     (justinshogg at gmail dot com)
 #      Leonard A. Harris  (lh64 at cornell dot com)
 #      John A. P. Sekar	  (johnarul dot sekar at gmail dot com)
-#      Jose Juan Tapia
+#      Jose Juan Tapia    (jjtapia at gmail dot com)
 #      Arshi Arora
 #      Dipak Barua
 #

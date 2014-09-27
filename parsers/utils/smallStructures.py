@@ -13,8 +13,8 @@ from pyparsing import Word, Suppress, Optional, alphanums, Group, ZeroOrMore
 from collections import Counter
 
 def parseReactions(reaction):
-    components = (Word(alphanums + "_") + Optional(Group('~' + Word(alphanums)))
-    + Optional(Group('!' + Word(alphanums))))
+    components = (Word(alphanums + "_") + Optional(Group('~' + Word(alphanums+"_")))
+    + Optional(Group('!' + Word(alphanums+'+?'))))
     molecule = (Word(alphanums + "_")
     + Optional(Suppress('(')) + Group(components) + ZeroOrMore(Suppress(',') + Group(components))    
     +Suppress(')'))

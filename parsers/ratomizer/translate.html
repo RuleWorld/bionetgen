@@ -8,31 +8,33 @@
  <link rel="stylesheet" type="text/css" href="script/style.css">
   </head>
   <body>
+            <style scoped>
+
+        .button-success,
+        .button-secondary {
+            color: white;
+            border-radius: 4px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-success {
+            background: rgb(28, 184, 65); /* this is a green */
+        }
+
+  
+    </style>
 <div id="container">
-  <div id="header">
-    <h1>
-      Site name
-    </h1>
-  </div>
-  <div id="navigation" class="pure-menu pure-menu-open pure-menu-horizontal">
-    <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/translate">Atomizer</a></li>
-      <li><a href="/graph">Bipartite Graph</a></li>
-      <li><a href="/static/contact.html">Contact us</a></li>
-    </ul>
-  </div>
-  <div id="content-container">
+{% include "/header.html" %}  <div id="content-container">
     <div id="content">
       <h2>
         SBML 2 BNGL
       </h2>
-        <form action="{{ action }}" class="pure-form" method="post" enctype="multipart/form-data">
+     <form action="{{ action }}" class="pure-form-stacked" method="post" enctype="multipart/form-data">
           <fieldset>
     <legend>Model submission: </legend>
        <input type="file" class="pure-button" name="file"><br> 
-      <label for="atomID" class="pure-checkbox">Atomize
-      <div><input id="atomID" type="checkbox" name="atomize" value="atomize"> </div></label>
+      <label for="atomID" class="pure-checkbox">
+      <input id="atomID" type="checkbox" name="atomize" value="atomize"> Atomize</label>
       <!--
       <div><select name=reaction>
         {% for option in reactionDefinition %}
@@ -40,7 +42,7 @@
     {% endfor %}
       </select></div>
       -->
-      <input type="submit" class="pure-button pure-button-primary" value="Submit">
+      <input type="submit" class="button-success pure-button" value="Submit">
     </fieldset>
     </form>
   </div>

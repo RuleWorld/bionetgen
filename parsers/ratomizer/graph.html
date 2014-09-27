@@ -6,34 +6,45 @@
  <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.4.2/pure-min.css">
   </head>
   <body>
+          <style scoped>
+
+        .button-success,
+        .button-secondary {
+            color: white;
+            border-radius: 4px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-success {
+            background: rgb(28, 184, 65); /* this is a green */
+        }
+
+  
+    </style>
+
     <div id="container">
-  <div id="header">
-    <h1>
-      Site name
-    </h1>
-  </div>
-  <div id="navigation" class="pure-menu pure-menu-open pure-menu-horizontal">
-    <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/translate">Atomizer</a></li>
-      <li><a href="/graph">Bipartite Graph</a></li>
-      <li><a href="/static/contact.html">Contact us</a></li>
-    </ul>
-  </div>
-  <div id="content-container">
-        <form action="{{ action }}" class="pure-form" method="post" enctype="multipart/form-data">
+{% include "/header.html" %}
+        <form action="{{ action }}" class="pure-form pure-form-stacked" method="post" enctype="multipart/form-data">
     Model submission: <br>
-      Upload File: <input type="file" name="file"><br> 
+      Upload File: <input type="file" class="pure-button" name="file"><br> 
       
       
-      Return: <select class="pure-input-1-2" name="return">
+      Return: <select class="pure-input" name="return">
       <option>dot</option>
       <option>png</option>
       </select><br/>
-      Include:  <div><input    id="center" type="checkbox" name="center" value="center">Reaction Center </div>
-      <div><input  type="checkbox" id="context" name="context" value="context">Context</div>
-      <div><input  type="checkbox" id="products" name="products" value="products">Products </div>
-      <input class="pure-button pure-button-primary" type="submit" value="Submit">
+      Include: 
+
+      <label for="center" class="pure-checkbox">
+      <input  type="checkbox" id="center" name="center" value="center"> Reaction Center</label>
+
+      <label for="context" class="pure-checkbox">
+      <input  type="checkbox" id="context" name="context" value="context"> Context</label>
+
+      <label for="products" class="pure-checkbox">
+      <input  type="checkbox" id="products" name="products" value="products"> Products</label>
+
+      <input class="button-success pure-button" type="submit" value="Submit">
     </form>
 
     </div>

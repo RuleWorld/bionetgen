@@ -42,14 +42,14 @@ def bnglExecution(bnglFile,settings):
     finally:
         chdir('..')
 
-    return values 
+    return values,settings['absolute'][0]
 
 def parseCSV(fileName,headers):
     with open(fileName,'r') as f:
         inputLines = f.readlines()
     inputLines = [x.strip().split(',') for x in inputLines]
     content =  np.array([[float(y) for y in x] for x in inputLines[1:]])
-    header = inputLines[0]
+    header = [x.strip() for x in inputLines[0]]
     headerIndex = [header.index(x) for x in headers]
     values = content[:,headerIndex]
     return values   
@@ -95,15 +95,16 @@ class TestOne(ParametrizedTestCase):
         return settingsDict
             
     def test_valid(self):
-        print self.param
+        print self.param,
         #deepreload.reload(libsbml2bngl)
         libsbml2bngl.analyzeFile('{0}/{1}/{1}-sbml-l2v4.xml'.format(self.param[0],self.param[1]), '../reactionDefinitions/reactionDefinition7.json',
                     False, '../config/namingConventions.json',
                     'tmp/output' + str(self.param[1]) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
         settings = self.extractSimulationSettings('{0}/{1}/{1}-settings.txt'.format(self.param[0],self.param[1]))
-        bnglValues = bnglExecution('output{0}'.format(self.param[1]),settings)
+        bnglValues,atol = bnglExecution('output{0}'.format(self.param[1]),settings)
         referenceValues = parseCSV('{0}/{1}/{1}-results.csv'.format(self.param[0],self.param[1]),settings['variables'])
-        self.assertAlmostEqual(((bnglValues - referenceValues)**2).mean(),0,delta=1e-4)
+        print float(atol),((bnglValues - referenceValues)**2).mean()
+        self.assertAlmostEqual(((bnglValues - referenceValues)**2).mean(),0,delta=float(atol))
         dirs = [ f for f in listdir('./tmp') if self.param[1] in f]
         for element in dirs:
             os.remove('./tmp/{0}'.format(element))
@@ -118,11 +119,16 @@ class TestValid(ParametrizedTestCase):
     '''
     Test for whether a file is recognized as correct by bng --check
     '''
+    #skip stoichiometry math
+    xdirs = ['00068','00069','00070','00518']
+    xdirs.append('00588')
+    #fast
+    xdirs.extend(['00870','00871','00872','00873','00874','00875'])
     dirs = [ f for f in listdir('./testl2v4')]
     dirs.sort()
-    dirs = ['00198','00199']
+    #dirs = ['00994','00998','01027']
     suite = unittest.TestSuite()
-    for t in dirs:
+    for t in [x for x in dirs if x not in xdirs]:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=['testl2v4',t]))
     unittest.TextTestRunner(verbosity=2).run(suite)
 

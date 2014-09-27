@@ -33,7 +33,7 @@ def levenshtein(s1, s2):
               matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, matrix[zz][sz] + 1)
         return matrix[l2][l1]
 
-def getDifferences(scoreMatrix, speciesName):
+def getDifferences(scoreMatrix, speciesName,threshold):
     '''
     given a list of strings and a scoreMatrix, return the list of difference between
     those strings with a levenshtein difference of less than two
@@ -42,7 +42,6 @@ def getDifferences(scoreMatrix, speciesName):
         differenceList: list of differences between the tuples in namePairs
     '''
     differenceList = []
-    threshold = 3
     namePairs = []
 
     for idx,element in enumerate(scoreMatrix):
@@ -75,12 +74,17 @@ def loadOntology(ontologyFile):
     ontology['patterns'] =  tmp
     return ontology
   
+def findLongestSubstring(speciesA,speciesB):
+    sm = difflib.SequenceMatcher(a=speciesA,b=speciesB)
+    longestMatch = sm.find_longest_match(0,len(speciesA),0,len(speciesB))
+    return speciesA[longestMatch[0]:longestMatch[0]+longestMatch[2]]
 
-
-def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=2):
-    ontology =  loadOntology(ontologyFile)
+def defineEditDistanceMatrix(speciesName,similarityThreshold=3):
+    '''
+    obtains a distance matrix and a pairs of elements that are close 
+    in distance, along with the proposed differences
+    '''
     differenceCounter = Counter()
-    finalDifferenceCounter=Counter()
     scoreMatrix = np.zeros((len(speciesName),len(speciesName)))
     for idx,species in enumerate(speciesName):
         for idx2,species2 in enumerate(speciesName):
@@ -88,10 +92,18 @@ def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},simi
                 continue
             scoreMatrix[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
             scoreMatrix[idx2][idx] = scoreMatrix[idx][idx2]
-    namePairs,differenceList = getDifferences(scoreMatrix, speciesName)
+    namePairs,differenceList = getDifferences(scoreMatrix, speciesName,similarityThreshold)
     differenceCounter.update(differenceList)
+    return namePairs,differenceList,differenceCounter
+    
+def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=3):
     patternClassification = {}
     pairClassification = {}
+
+    ontology =  loadOntology(ontologyFile)
+    finalDifferenceCounter = Counter()
+    namePairs,differenceList,differenceCounter = defineEditDistanceMatrix(speciesName,similarityThreshold)
+    
     for element in differenceCounter:
         if element in ontology['patterns']:
             finalDifferenceCounter[element] = differenceCounter[element]
@@ -145,7 +157,7 @@ def databaseAnalysis(directory,outputFile):
                 scoreMatrix[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
                 scoreMatrix[idx2][idx] = scoreMatrix[idx][idx2]
                 
-        namePairs,differenceList = getDifferences(scoreMatrix, speciesName)
+        namePairs,differenceList = getDifferences(scoreMatrix, speciesName,3)
         differenceCounter.update(differenceList)
         for key,element in zip(differenceList,namePairs):
             if key == ():
@@ -179,7 +191,7 @@ def analyzeTrends(inputFile):
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(keys)
     data = pd.DataFrame(keys)
-    print data.to_excel('name.xls')
+    #print data.to_excel('name.xls')
     '''
     for element in keys:
         print '------------------'

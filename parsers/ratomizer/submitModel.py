@@ -134,7 +134,21 @@ class WaitFileJson(webapp2.RequestHandler):
         resultJson = json.dumps(resultJson)
         self.response.headers.add_header('content-type', 'application/json', charset='utf-8')
         self.response.out.write(resultJson)
-        
+    
+import re
+class generateConfigFile(webapp2.RequestHandler):
+    def processPattern(self,pattern):
+        #speciesDefinition = re.
+        pass
+
+    def get(self):
+        names = self.request.get_all("speciesNames")
+        patterns = self.request.get_all("patterns")
+        results = {'complexDefinition':[],'reactionDefinition':[]}
+
+        for name,pattern in zip(names,patterns):
+            processedPattern = self.processPattern(pattern)
+            #result.
           
 class WaitFile(webapp2.RequestHandler):
     def get(self):
@@ -142,6 +156,7 @@ class WaitFile(webapp2.RequestHandler):
         fileName = self.request.get("fileName")
         s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
         result = s.isready(int(ticket))
+        #the first time it loads the page, if the result isnt immediate it will enter this branch
         if result in [-2,'-2']:
             redirectionURL='waitFile?ticket={0}&fileName={1}'.format(ticket,fileName)
             template_values={
@@ -152,9 +167,12 @@ class WaitFile(webapp2.RequestHandler):
             template =JINJA_ENVIRONMENT.get_template('wait.html')
             self.response.write(template.render(template_values))
         elif result in [-1,'-1']:
+            #bad request
             self.response.write("Your request doesn't exist. Please submit your file again")
             return
+
         else:
+            #when the result is here it will enter this branch
             s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
             result = s.getDict(int(ticket))
             if result in ['-5',-5]:
@@ -183,6 +201,13 @@ class WaitFile(webapp2.RequestHandler):
     def post(self):
         return self.get()
         
+class Refine(webapp2.RequestHandler):
+    def get(self):
+        template_values={
+        
+        }
+        template =JINJA_ENVIRONMENT.get_template('refine.html')
+        self.response.write(template.render(template_values))
 
 
 class Graph(webapp2.RequestHandler):
@@ -266,6 +291,7 @@ app = webapp2.WSGIApplication([
     ('/translate',Translate),
     ('/serve/([^/]+)?', ServeHandler),
     ('/process',ProcessFile),
+    ('/refine',Refine),
     ('/graphp',GraphFile),
     ('/graph',Graph),
     ('/waitFile',WaitFile),

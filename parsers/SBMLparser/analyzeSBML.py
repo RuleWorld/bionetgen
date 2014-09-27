@@ -344,7 +344,7 @@ class SBMLAnalyzer:
         #for now im just going with a simple heuristic that if the species name
         #is long enough, and the changes from a to be are all about modification
         longEnough = 4
-        if len(reactant) > longEnough and len(differenceList) > 0:
+        if len(reactant) >= longEnough and len(differenceList) > 0:
             #one is strictly a subset of the other a,a_b
             if len([x for x in differenceList[0] if '-' in x]) == 0:
                 return ''.join([x[-1] for x in differenceList[0]]),differenceList[0]

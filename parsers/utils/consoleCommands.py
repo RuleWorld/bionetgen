@@ -6,16 +6,19 @@ Created on Mon Sep  2 18:11:35 2013
 """
 
 import pexpect
+import subprocess
 
-def bngl2xml(bnglFile):
-
-    bngconsole = pexpect.spawn('bngdev --console')
-    bngconsole.expect('BNG>')
-    bngconsole.sendline('load {0}'.format(bnglFile))
-    bngconsole.expect('BNG>')
-    bngconsole.sendline('action writeXML()')
-    bngconsole.expect('BNG>')
-    bngconsole.close() 
+def bngl2xml(bnglFile,timeout=60):
+    try:
+        bngconsole = pexpect.spawn('bngdev --console',timeout=timeout)
+        bngconsole.expect('BNG>')
+        bngconsole.sendline('load {0}'.format(bnglFile))
+        bngconsole.expect('BNG>')
+        bngconsole.sendline('action writeXML()')
+        bngconsole.expect('BNG>')
+        bngconsole.close() 
+    except pexpect.TIMEOUT:
+        subprocess.call(['killall','bngdev'])        
     
 def correctness(bnglFile):
     bngconsole = pexpect.spawn('bngdev --console')
@@ -39,4 +42,4 @@ def writeNetwork(bnglFile):
     bngconsole.close() 
     
 if __name__ == "__main__":      
-    print writeNetwork('complex/output19.bngl')
+    print bngl2xml('complex/output61.bngl')

@@ -245,18 +245,30 @@ def main2():
     with open('parsedAnnotations.dump','wb') as f:
         pickle.dump(annotationArray,f)
 
+from collections import defaultdict
+
 def histogram():
     import matplotlib.pyplot as plt
     import numpy as np
-    evaluationFile = open('sortedC.dump','rb')
+    evaluationFile = open('sortedD.dump','rb')
     ev1 =     pickle.load(evaluationFile)
-    number,rulesLength,evaluation,evaluation2 =  zip(*ev1)
+    ev2 = []
+    for x in ev1:
+        try:
+            ev2.append([x['index'],x['nreactions'],x['nspecies'],x['atomization'],x['compression']])
+        except:
+            continue
+    number,rulesLength,speciesLength,evaluation,evaluation2 =  zip(*ev2)
     evaluation20 = []
     evaluationn20 = []
     trueEvaluation = []
     trueRatio = []
     ratio20 = []
     ration20 = []
+
+
+    with open('ratomization.dump','rb') as f:
+        ratomizationDict = pickle.load(f) 
     
     
     problemModels = []
@@ -271,25 +283,55 @@ def histogram():
             if x<10:
                 evaluationn20.append(y)
                 ration20.append(1-w)
-            trueEvaluation.append(y)
+            if 'weight' in ratomizationDict[z]:
+                trueEvaluation.append([max(0,ratomizationDict[z]['length']),y])
+            else:
+                trueEvaluation.append([1,y])
+                
             trueRatio.append(1-w)
             
-            
+    
+    weights,trueEvaluation = zip(*trueEvaluation)
     print '0 atom large models',problemModels
+    print 'largeModels',len(evaluation20),np.median(evaluation20),np.median(ratio20)
+        
     plt.clf()
     plt.hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
     plt.xlabel('Number of reactions',fontsize=18)
     plt.savefig('lengthDistro.png')
+
+    plt.clf()
+    plt.hist(speciesLength,bins=[0,10,20,30,40,50,60,70,80,90,100])
+    plt.xlabel('Number of species',fontsize=18)
+    plt.savefig('speciesDistro.png')
+
     plt.clf()
     plt.hist(trueEvaluation, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
-                                0.8, 0.9, 1.0])
-
-    
+                                0.8, 0.9, 1.0],weights=weights,normed=True)
     plt.xlabel('Atomization Degree ({0} models)'.format(len(trueEvaluation)),fontsize=18)    
     plt.savefig('atomizationDistroHist.png')
 
     plt.clf()
-    plt.hist(evaluation20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+    plt.hist(trueRatio, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+                                0.8, 0.9, 1.0],weights=weights,normed=True)
+    plt.xlabel('Compression Degree ({0} models)'.format(len(trueRatio)),fontsize=18)    
+    plt.savefig('compressionDistroHist.png')
+
+
+    plt.clf()
+    plt.hist(ratio20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+                                0.8, 0.9, 1.0])
+    plt.xlabel('Compression Degree ({0} models)'.format(len(ratio20)),fontsize=18)    
+    plt.savefig('compressionDistroHist10more.png')
+
+    plt.clf()
+    plt.hist(ration20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+                                0.8, 0.9, 1.0])
+    plt.xlabel('Compression Degree ({0} models)'.format(len(ration20)),fontsize=18)    
+    plt.savefig('compressionDistroHist10less.png')
+
+    plt.clf()
+    print plt.hist(evaluation20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                 0.8, 0.9, 1.0])
     plt.xlabel('Atomization Degree >10 reactions ({0} models)'.format(len(evaluation20)), fontsize=18)
     plt.savefig('atomizationDistroHist10ormore.png')
@@ -449,8 +491,7 @@ def extractXMLInfo(fileName):
 
     return metaArray,metaDict,metaDict2
             
-
-    
+       
     
 def biomodelsInteractome():
     directory = 'complex'
@@ -679,6 +720,8 @@ def compareConventions(name1,name2):
         f.write(bnglContent)
     return counter
 
+
+        
 if __name__ == "__main__":
     #bagOfWords()
     #main2()
@@ -710,5 +753,5 @@ if __name__ == "__main__":
     #equivalenceDictionary = {'Ras-GTP':'RasGTP','Ras-GDP':'RasGDP'}
     #biomodelsInteractomeAnalysis()
     #print compareConventions(32,49)
-    #extractXMLInfo('XMLExamples/curated/BIOMD0000000019.xml')
+    #print extractXMLInfo2('XMLExamples/curated/BIOMD0000000019.xml')
     #annotationSharingFinder()

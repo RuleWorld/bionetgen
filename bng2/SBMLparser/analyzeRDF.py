@@ -10,17 +10,18 @@ this method classifies reactants according to the rdf information, and gives
 us information on which reactants are the same, and how do they differ
 (compartment etc)
 '''
+from sbml2bngl import SBML2BNGL
 
 import libsbml
 
-def getAnnotations(parser,stringKey):
+def getAnnotations(parser,stringKey=None):
     annotation = parser.getSpeciesAnnotation()
     annotationDictionary = {}
     for key,value in annotation.items():
         annotationList = []
         if annotation[key] != None:
             for index in range(0,annotation[key].getNumAttributes()):
-                if stringKey in annotation[key].getValue(index):
+                if not stringKey or stringKey in annotation[key].getValue(index):
                     annotationList.append(annotation[key].getValue(index))
             if annotationList == []:
                 continue
@@ -31,6 +32,24 @@ def getAnnotations(parser,stringKey):
                 annotationDictionary[frozenset(annotationList)] = [key]
     return annotationDictionary
 
+
+def getSpeciesAnnotationStructure(parser):
+    model = parser.model
+    for species in model.getListOfSpecies():
+        name = species.getName()
+        speciesId = species.getId()
+        annotation = species.getAnnotation()
+        lista = libsbml.CVTermList()
+        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
+        for idx in range(0,lista.getSize()):
+          for idx2 in range(0, lista.get(idx).getResources().getLength()):
+              resource = lista.get(idx).getResources().getValue(idx2)
+              qualifierType = lista.get(idx).getQualifierType()
+              qualifierDescription= bioqual[lista.get(idx).getBiologicalQualifierType()] if qualifierType \
+              else modqual[lista.get(idx).getModelQualifierType()]
+              #resource = resolveAnnotation(resource)
+    
+    
 def getEquivalence(species,rdf_database):
     '''
     *species* is the species whose equivalence we will go and search
@@ -51,12 +70,12 @@ def getEquivalence(species,rdf_database):
 if __name__ == "__main__":
     reader = libsbml.SBMLReader()
     #BIOMD0000000272
-    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000272.xml')
+    document = reader.readSBMLFromFile('XMLExamples/curated/BIOMD0000000219.xml')
     #document = reader.readSBMLFromFile('XMLExamples/simple4.xml')
     model = document.getModel()        
     parser = SBML2BNGL(model)
-    annotationDictionary =  getAnnotations(parser,'uniprot')
+    annotationDictionary =  getAnnotations(parser)
     print annotationDictionary
-    print getEquivalence('SAv_EpoR',annotationDictionary)
+    #print getEquivalence('SAv_EpoR',annotationDictionary)
     #print annotation
     #print rules    

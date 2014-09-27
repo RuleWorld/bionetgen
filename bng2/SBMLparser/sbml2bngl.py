@@ -5,13 +5,14 @@ Created on Tue Dec  6 17:42:31 2011
 @author: proto
 """
 import libsbml
+from copy import deepcopy
 import bnglWriter as writer
 log = {'species': [], 'reactions': []}
 import re
 from util import logMess
 from scipy.misc import factorial, comb
 from collections import Counter
-    
+from collections import defaultdict
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
 'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
@@ -92,15 +93,21 @@ class SBML2BNGL:
             
         if name == '':
             name = identifier
-        initialConcentration = species.getInitialConcentration()
-        if initialConcentration == 0:
+        if species.isSetInitialConcentration():
+            initialConcentration = species.getInitialConcentration()
+        else:
             initialConcentration = species.getInitialAmount()
-        
         isConstant = species.getConstant()
         isBoundary = species.getBoundaryCondition()
-        if isBoundary:
+        #FIXME: this condition means that a variable/species can be changed
+        #by rules and/or events. this means that we effectively need a variable
+        #changed by a function that tracks this value, and all references
+        #to this observable have to be changed to the referrencing variable.
+        #http://sbml.org/Software/libSBML/docs/java-api/org/sbml/libsbml/Species.html
+        if isBoundary and not isConstant:
             isConstant = True
-            if initialConcentration == 0:
+            if not species.isSetInitialConcentration() \
+                and not species.isSetInitialAmount():
                 initialConcentration = 1
         compartment = species.getCompartment()
         boundaryCondition = species.getBoundaryCondition()
@@ -141,8 +148,16 @@ class SBML2BNGL:
   
     '''
     walks through a series of * nodes and removes the remainder reactant factors
+    arg:remainderPatterns: argumetns to be removed from the tree
+    it also changes references to time variables to the keyword 'Time'
     '''
     def getPrunnedTree(self,math,remainderPatterns):
+        swapDict = {libsbml.AST_NAME_TIME:'Time'}
+        for node in [x for x in math.getLeftChild(),math.getRightChild() if x != None]:
+            if node.getType() in swapDict.keys():
+                node.setName(swapDict[node.getType()])
+        if math.getCharacter() == '+' and math.getNumChildren() == 1:
+            math = math.getLeftChild()
         while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
             if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
@@ -152,7 +167,7 @@ class SBML2BNGL:
                     math.getLeftChild().setValue(1)
             elif libsbml.formulaToString(math.getRightChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getRightChild()))
-                math = math.getLeftChild()            
+                math = math.getLeftChild()
             else:
                 if(math.getLeftChild().getCharacter()) == '*':
                     math.replaceChild(0, self.getPrunnedTree(math.getLeftChild(), remainderPatterns))
@@ -160,12 +175,52 @@ class SBML2BNGL:
                     math.replaceChild(math.getNumChildren() - 1,self.getPrunnedTree(math.getRightChild(), remainderPatterns))
                 break
         return math
+        
+    def getIsTreeNegative(self,math):
+        '''
+        walks through a series of * nodes and detects whether there's a negative factor
+        fixme: we should actually test if the number of negative factors is odd
+        right now we are relying on  the modelers not being malicious
+        when writing their rates laws.
+        '''    
+        if (math.getCharacter() == '*' or math.getCharacter() == '/'):
+            if math.getLeftChild().isUMinus():
+                math.setCharacter('+')
+                #math.getLeftChild().setValue(long(libsbml.formulaToString(math.getLeftChild())[1:]))
+                return True
+            elif math.getLeftChild().getNumChildren() == 0 and libsbml.formulaToString(math.getLeftChild()).startswith('-'):
+                math.getLeftChild().setValue(long(libsbml.formulaToString(math.getLeftChild())[1:]))
+                return True
+            elif math.getRightChild().isUMinus():
+                math.setCharacter('+')
+                #math.getRightChild().setValue(long(libsbml.formulaToString(math.getRightChild())[1:]))
+                return True
+            elif math.getRightChild().getNumChildren() == 0 and libsbml.formulaToString(math.getRightChild()).startswith('-'):
+                math.getRightChild().setValue(long(libsbml.formulaToString(math.getRightChild())[1:]))
+                return True
+
+            else:
+                if(math.getLeftChild().getCharacter()) in ['*','/','-']:
+                    if self.getIsTreeNegative(math.getLeftChild()):
+                        return True
+                if(math.getRightChild().getCharacter()) in ['*','/','-']:
+                    if self.getIsTreeNegative(math.getRightChild()):
+                        return True
+        elif math.getCharacter() == '-' and math.getNumChildren() == 1:
+            math.setCharacter('+')
+            return True
+        return False
+
 
     def getUnitDefinitions(self):
         for unitDefinition in self.model.getListOfUnits():
             pass
         
     def removeFactorFromMath(self, math, reactants, products):
+        '''
+        it also adds symmetry factors. this checks for symmetry in the species names
+        s
+        '''
         ifStack = Counter()
         remainderPatterns = []
         highStoichoiMetryFactor = 1
@@ -184,7 +239,6 @@ class SBML2BNGL:
         #    highStoichoiMetryFactor /= math.factorial(x[1])
         #remainderPatterns = [x[0] for x in reactants]
         math = self.getPrunnedTree(math,remainderPatterns)
-        
         rateR = libsbml.formulaToString(math)
         for element in remainderPatterns:
             ifStack.update([element])
@@ -234,13 +288,32 @@ class SBML2BNGL:
                 
             #remove compartments from expression
             math = self.getPrunnedTree(math, compartmentList)
-    
             if reversible:
                 if math.getCharacter() == '-' and math.getNumChildren() > 1:
                     rateL, nl = (self.removeFactorFromMath(
                     math.getLeftChild().deepCopy(), rReactant, rProduct))
                     rateR, nr = (self.removeFactorFromMath(
                     math.getRightChild().deepCopy(), rProduct, rReactant))
+                elif math.getCharacter() == '+' and math.getNumChildren()> 1:
+                    if(self.getIsTreeNegative(math.getRightChild())):
+                        rateL, nl = (self.removeFactorFromMath(
+                        math.getLeftChild().deepCopy(), rReactant, rProduct))
+                        rateR, nr = (self.removeFactorFromMath(
+                        math.getRightChild().deepCopy(), rProduct, rReactant))
+                    elif(self.getIsTreeNegative(math.getLeftChild())):
+                        rateR, nr = (self.removeFactorFromMath(
+                        math.getLeftChild().deepCopy(), rProduct, rReactant))
+                        rateL, nl = (self.removeFactorFromMath(
+                        math.getRightChild().deepCopy(), rReactant, rProduct))
+                    else:
+                        rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
+                                                              rProduct)
+                        rateL = "if({0}>= 0,{0},0)".format(rateL)
+                        rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
+                                                              rReactant)
+                        rateR = "if({0}< 0,-({0}),0)".format(rateR)
+                        nl, nr = 1,1
+                        
                 else:
                     rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
                                                           rProduct)
@@ -262,7 +335,6 @@ class SBML2BNGL:
                 rateR = self.convertToName(rateR)
             if reversible:
                 pass
-    
             #return compartments if the reaction is unimolecular
             #they were removed in the first palce because its easier to handle
             #around the equation in tree form when it has less terms
@@ -281,16 +353,42 @@ class SBML2BNGL:
                 
         return (reactant, product, parameters, [rateL, rateR],
                 reversible, reaction.getId(), [nl, nr])
+    '''
+    create symmetry factors for reactions with components and species with
+    identical names. This checks for symmetry in the components names then.
+    '''
+    
+    def getReactionCenter(self,reactant,product,translator):
+        rcomponent = Counter()
+        pcomponent = Counter()
         
-    #create symmetry factors for reactions with components and species with
-    #identical names
+        for element in reactant:
+            if element[0] in translator:
+                for molecule in translator[element[0]].molecules:
+                    for component in molecule.components:
+                        molecule.sort()
+                        rcomponent.update(Counter([(molecule.name,component.name,len(component.bonds)>0,component.activeState)]))
+        for element in product:
+            if element[0] in translator:
+                for molecule in translator[element[0]].molecules:
+                    molecule.sort()
+                    for component in molecule.components:
+                        molecule.sort()
+                        pcomponent.update(Counter([(molecule.name,component.name,len(component.bonds)>0,component.activeState)]))
+        reactionCenter = [(x[0],x[1]) for x in rcomponent for y in pcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y and rcomponent[x] != pcomponent[y]]
+        rreactionCenter = [(x[0],x[1]) for x in pcomponent for y in rcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y and pcomponent[x] != rcomponent[y]]
+        return reactionCenter,rreactionCenter
+        
+    def updateComponentCount(self,counterArray,reference,updateValue):
+        for element in counterArray:
+            if reference in counterArray[element]:
+                counterArray[element][reference] += updateValue
     def reduceComponentSymmetryFactors(self,reaction,translator,functions):
-        from copy import deepcopy        
         
         if self.useID:
-            reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
-            for reactant in reaction.getListOfReactants() if
-            reactant.getSpecies() != 'EmptySet']
+            reactant = [(rElement.getSpecies(), rElement.getStoichiometry())
+            for rElement in reaction.getListOfReactants() if
+            rElement.getSpecies() != 'EmptySet']
             product = [(product.getSpecies(), product.getStoichiometry())
             for product in reaction.getListOfProducts() if product.getSpecies()
             != 'EmptySet']
@@ -305,26 +403,48 @@ class SBML2BNGL:
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
-
+        
         #TODO: For some reason creating a deepcopy of this screws everything up, even
         #though its what we should be doing
-        rcomponent = Counter()
-        pcomponent = Counter()
+        rcomponent = defaultdict(Counter)
+        pcomponent = defaultdict(Counter)
         
         #get the total count of components in the reactants and products
         #e.g. components across diffent species
-        for element in rReactant:
+        freactionCenter,breactionCenter = self.getReactionCenter(reactant,product,translator)
+        
+        for element in reactant:
             if element[0] in translator:
-                componentList = Counter([(x.name,component.name,len(component.bonds) > 0) for x in translator[element[0]].molecules for component in x.components])
-                rcomponent.update(componentList)
-        for element in rProduct:
+                
+                for molecule in translator[element[0]].molecules:
+                    for component in molecule.components:
+                        molecule.sort()
+                        componentList = Counter([(molecule.signature(freactionCenter))])
+                        for _ in range(0,int(element[1])):
+                            rcomponent[(molecule.name,component.name,len(component.bonds)>0,component.activeState)].update(componentList)
+                        
+
+        
+        for element in product:
             if element[0] in translator:
-                componentList = Counter([(x.name,component.name,len(component.bonds) > 0) for x in translator[element[0]].molecules for component in x.components])
-                pcomponent.update(componentList)
+                for molecule in translator[element[0]].molecules:
+                    molecule.sort()
+                    for component in molecule.components:
+                        if reaction.getId() == 'v18':
+                            pass
+                        componentList = Counter([(molecule.signature(breactionCenter))])
+                        for _ in range(0,int(element[1])):
+                            pcomponent[(molecule.name,component.name,len(component.bonds)>0,component.activeState)].update(componentList)
+
+        '''
+        only keep information for reaction centers
+        '''
+        reactionCenters = [(x[0],x[1]) for x in rcomponent for y in pcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y]      
+        rcomponent= {x:rcomponent[x] for x in rcomponent if (x[0],x[1]) in reactionCenters}
+        pcomponent= {x:pcomponent[x] for x in pcomponent if (x[0],x[1]) in reactionCenters}
+
         #is the number of components across products and reactants the same?
         #eg is there any DeleteMolecules action
-        pdifference = deepcopy(pcomponent)
-        pdifference.subtract(rcomponent)
         pcorrectionFactor = 1
         rcorrectionFactor = 1
         rStack = []
@@ -335,16 +455,58 @@ class SBML2BNGL:
         pcomponent[element] < rcomponent[element] asks if an specific instance
         of a component decreases in number from a reactant to a product
         for example if there are 3 A(b)'s and one binds, we will have 2 A(b)'s
-        in the product
+        in the product  
         '''
-        for element in [x for x in rcomponent if rcomponent[x] > 1]:
-            if element in pcomponent and pcomponent[element] < rcomponent[element] and set([element[0].lower(),element[1].lower()]) not in rStack:
-                rcorrectionFactor *= comb(rcomponent[element],pcomponent[element],exact=1)
-                rStack.append(set([element[0].lower(),element[1].lower()]))
-        for element in [x for x in pcomponent if pcomponent[x] > 1]:
-            if element in rcomponent and rcomponent[element] < pcomponent[element] and set([element[0].lower(),element[1].lower()]) not in pStack:
-                pcorrectionFactor *= comb(pcomponent[element],rcomponent[element],exact=1)
-                pStack.append(set([element[0].lower(),element[1].lower()]))
+        rcomponentTemp = deepcopy(rcomponent)
+        pcomponentTemp = deepcopy(pcomponent)
+        
+        #calculate actual symmetry factors
+        for key in rcomponent:
+            if key in pcomponent:
+                for element in rcomponent[key]:
+                    if rcomponent[key] ==1:
+                        continue
+                    #if theres a component on one side of the equation that
+                    #appears a different number of times on the other side of the equation
+                    if element in pcomponent[key]:
+                        if pcomponent[key][element] < rcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in rStack:
+                            rcorrectionFactor *= comb(rcomponent[key][element],pcomponent[key][element],exact=1)
+                            rStack.append(set([key[0].lower(),key[1].lower()]))
+                            #once we choose a component for a previous action
+                            #this limits the options for subsequent actions
+                            #although substracting one from the target sites
+                            #may not be the right option. double check.
+                            self.updateComponentCount(pcomponent,element,-1)
+                    else:
+                        for element2 in pcomponent[key]:
+                            if pcomponent[key][element2] < rcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in rStack:
+                                rcorrectionFactor *= comb(rcomponent[key][element],pcomponent[key][element2],exact=1)
+                                rStack.append(set([key[0].lower(),key[1].lower()]))
+                                self.updateComponentCount(pcomponent,element2,-1)
+
+        rcomponent = rcomponentTemp
+        pcomponent = pcomponentTemp
+        
+        if reversible:
+            for key in pcomponent:
+                if key in rcomponent:
+                    for element in pcomponent[key]:
+                        if pcomponent[key] ==1:
+                            continue
+                        if element in rcomponent[key]:
+                            if rcomponent[key][element] < pcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in pStack:
+                                pcorrectionFactor *= comb(pcomponent[key][element],rcomponent[key][element],exact=1)
+                                pStack.append(set([key[0].lower(),key[1].lower()]))
+                                self.updateComponentCount(rcomponent,element,-1)
+
+                        else:
+                            for element2 in rcomponent[key]:
+                                if rcomponent[key][element2] < pcomponent[key][element] and set([key[0].lower(),key[1].lower()]) not in pStack:
+                                    pcorrectionFactor *= comb(pcomponent[key][element],rcomponent[key][element2],exact=1)
+                                    pStack.append(set([key[0].lower(),key[1].lower()]))
+                                    self.updateComponentCount(rcomponent,element2,-1)
+
+
         return rcorrectionFactor,pcorrectionFactor
         
     def convertToName(self, rate):
@@ -415,6 +577,8 @@ class SBML2BNGL:
         functions = []
         functionTitle = 'functionRate'
         
+        if len(self.model.getListOfReactions()) == 0:
+            logMess('ERROR:Simulation','Model contains no natural reactions, all reactions are produced by rules')
         for index, reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
             #symmetry factors for components with the same name
@@ -438,8 +602,7 @@ class SBML2BNGL:
                 functionName = finalString
             
             if self.getReactions.functionFlag and 'delay' in rawRules['rates'][0]:
-                logMess('ERROR','BNG cannot handle delay functions in function %s' % functionName)
-
+                logMess('ERROR:Simulation','BNG cannot handle delay functions in function %s' % functionName)
             if rawRules['reversible']:
                 if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
@@ -622,7 +785,9 @@ class SBML2BNGL:
             if(rawSpecies['returnID'] in translator):
                 if rawSpecies['returnID'] in rawSpeciesName:
                     rawSpeciesName.remove(rawSpecies['returnID'])
-                if translator[rawSpecies['returnID']].getSize()==1 and translator[rawSpecies['returnID']].molecules[0].name not in names:
+                if translator[rawSpecies['returnID']].getSize()==1 \
+                and translator[rawSpecies['returnID']].molecules[0].name not in names \
+                and translator[rawSpecies['returnID']].molecules[0].name not in rawSpeciesName:
                     names.append(translator[rawSpecies['returnID']].molecules[0].name)
                     moleculesText.append(translator[rawSpecies['returnID']].str2())
             else:
@@ -634,8 +799,8 @@ class SBML2BNGL:
                 tmp2 = temp
                 if rawSpecies['returnID'] in self.tags:
                     tmp2 = (self.tags[rawSpecies['returnID']])
-                if rawSpecies['initialConcentration'] > 0.0:
-                    speciesText.append('{0}:{1}{2} {3}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration']))
+                if rawSpecies['initialConcentration'] > 0.0 or rawSpecies['isConstant']:
+                    speciesText.append('{0}:{1}{2} {3} #{4}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration'],rawSpecies['returnID']))
             if rawSpecies['returnID'] == 'e':
                 modifiedName = 'are'
             else:
@@ -650,7 +815,6 @@ class SBML2BNGL:
         #moleculesText.append('NullSpecies()')
         #speciesText.append('$NullSpecies() 1')
         self.speciesMemory = []
-        
         return moleculesText,speciesText,observablesText,speciesTranslationDict
 
     def getInitialAssignments(self,translator,param,zparam,molecules,initialConditions):
@@ -670,12 +834,14 @@ class SBML2BNGL:
         for species in self.model.getListOfSpecies():
             tmp = self.getRawSpecies(species)
             name = species.getName() if species.isSetName() else species.getId()
-            
+            constant = '$' if species.getConstant() or species.getBoundaryCondition() else ''
             if name in  translator:
-                extendedStr = '@{0}:{1}'.format(species.getCompartment(),translator[name])
+                extendedStr = '@{0}:{2}{1}'.format(species.getCompartment(),translator[name],constant)
             else:
-                extendedStr = '@{0}:{1}()'.format(tmp['compartment'],tmp['name'])
-            pparam[species.getId()] = (species.getInitialConcentration(),extendedStr)
+                extendedStr = '@{0}:{2}{1}()'.format(tmp['compartment'],tmp['name'],constant)
+            initConc = species.getInitialConcentration() if \
+            species.isSetInitialConcentration() else species.getInitialAmount()
+            pparam[species.getId()] = (initConc,extendedStr)
         from copy import copy
         for initialAssignment in self.model.getListOfInitialAssignments():
             symbol = initialAssignment.getSymbol()
@@ -684,7 +850,7 @@ class SBML2BNGL:
                 if element in math:
                     math = re.sub(r'(\W|^)({0})(\W|$)'.format(element),
                     r'{0}'.format(pparam[element][0]),math)
-
+            
             param2 = [x for x in param if '{0} '.format(symbol) not in x]
             zparam2 = [x for x in zparam if '{0}'.format(symbol) not in x]
             '''
@@ -698,9 +864,8 @@ class SBML2BNGL:
                 param = param2
                 zparam = zparam2
             else:
-                initialConditions2 = [x for x in initialConditions if '{0}('.format(symbol) not in x]
-                
-                initialConditions2.append('{0} {1}'.format(pparam[symbol][1],math))
+                initialConditions2 = [x for x in initialConditions if '#{0}'.format(symbol) not in x]
+                initialConditions2.append('{0} {1} #{2}'.format(pparam[symbol][1],math,symbol))
                 initialConditions = initialConditions2
         return param,zparam,initialConditions
             
