@@ -311,53 +311,6 @@ sub execute_params
 			}
 		}
 		
-		# printing pattern space
-		if($output == 1 and $collapse ==0)
-		{
-			if($textonly==0)
-			{
-				my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-				my %classes = (defined $bpg->{'NodeClass'}) ? %{$bpg->{'NodeClass'}} : ();
-				my %nodetype = %{$bpg->{'NodeType'}};
-				my @aps = grep {$nodetype{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
-				my @classed = grep { has([keys %classes],$_) } @aps;
-				my @apclasses = uniq map { $classes{$_} } @classed;
-				my @unclassed = grep { not has(\@classed, $_) } @aps;
-				my @pats = ();
-			
-				my $j = -1;
-				foreach my $i(0..@apclasses-1)
-				{
-					$j++;
-					my $apclass = $apclasses[$i];
-					my @grp = grep {$classes{$_} eq $apclass} @classed;
-					my @psgs = map { stringToPatternStructureGraph($grp[$_],$_) } 0..@grp-1;
-					my $psg = combine(\@psgs,$j);
-					my $psg2 = addPatternNode($psg,$j,'',$apclass);
-					push @pats, $psg2;
-				}
-				foreach my $i(0..@unclassed-1)
-				{
-					$j++;
-					my $psg = stringToPatternStructureGraph($unclassed[$i],$j);
-					push @pats, $psg;
-				}
-				
-				my $psg = combine2(\@pats);
-				my $str = toGML_pattern($psg);
-				my %params = ('model'=>$model,'str'=>$str,'suffix'=>'patterns','type'=>$type);
-				writeGML(\%params);
-			}
-			else
-			{
-				my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-				my $str = printNetworkGraph($bpg);
-				my %params = ('model'=>$model,'str'=>$str,'type'=>'regulatory');
-				# this is the whole network, not the pattern space..
-				# too bored to sit n filter this..
-				writeText(\%params);
-			}
-		}
 		
 		if($each==1) {$output = 0;}
 	}
@@ -369,13 +322,14 @@ sub execute_params
 		$args2{'output'} = 0;
 		#$args2{'groups'} = 0;
 		$args2{'collapse'} = 0;
-		$args2{'embed'} = 0;
+		#$args2{'embed'} = 0;
 		#if($args{'mergepairs'}) {$args2{'groups'}=1;$args{'groups'}=1;}
 		#if($args{'groups'}) { $args2{'collapse'}=1; }
 		execute_params($model,\%args2);
 		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
 		
 		my $pg = makeProcessGraph2($bpg,\%args);
+		
 		if($args{'embed'}==1) {embedProcessGraph($pg,$gr,\%args);} 
 		if($output==1)
 			{
