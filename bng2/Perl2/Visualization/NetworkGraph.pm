@@ -6,8 +6,8 @@ no warnings 'redefine';
 # Perl Modules
 use Class::Struct;
 # BNG Modules
-use Viz;
-use StructureGraph;
+use Visualization::Viz;
+use Visualization::StructureGraph;
 use SpeciesGraph;
 
 struct NetworkGraph => 

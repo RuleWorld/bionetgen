@@ -2456,29 +2456,5 @@ sub getOutputDir
 ###
 ###
 
-sub visualize
-{
-# get Perl2 Module directory: look for environment variables BNGPATH or BioNetGenRoot.
-# If neither are defined, use RealBin module
-	use lib File::Spec->catdir( ( exists $ENV{'BNGPATH'}
-                              ? $ENV{'BNGPATH'}
-                              : ( exists $ENV{'BioNetGenRoot'} 
-                                  ? $ENV{'BioNetGenRoot'}
-                                  : $FindBin::RealBin
-                                )
-                            ),
-                            'Perl2','Visualization'
-                          );
-	use Viz;
-
-    my $model       = shift @_;
-    my $user_params = @_ ? shift @_ : {};
-	my $err = Viz::execute_params($model,$user_params);
-	if ($err) { return $err; }
-	return '';
-}
-
-
-
 1;
 

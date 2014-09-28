@@ -3112,4 +3112,59 @@ return();
 ###
 ###
 
+sub visualize
+{
+	use Visualization::Viz;
+	use Visualization::VisOptParse;
+
+    my $model       = shift @_;
+    my $user_params = @_ ? shift @_ : {};
+    
+    # default options
+    my $params =
+    {   'help'         =>  0,
+    		'type'         =>  'regulatory',
+    		'opts'         =>  undef,
+    		'background'   =>  0,
+    		'collapse'     =>  0,
+    		'each'         =>  0,
+    		'groups'       =>  0,
+    		'textonly'     =>  0,
+    		'suffix'       =>  '',
+    		'filter'       =>  0,
+    		'level'        =>  1,
+    		'mergepairs'   =>  0,
+    		'embed'        =>  0
+    };
+    
+    # get user options
+    foreach my $par (keys %$user_params)
+    {
+        my $val = $user_params->{$par};
+        unless ( exists $params->{$par} )
+        {   return "Unrecognized option $par in call to 'visualize'";   }
+		
+		# Special handling for 'opts':
+		# If a single filename is passed, convert $val to an array
+		if ($par eq 'opts'){
+			if (not ref($val)){
+				$val = [$val];
+			}
+		}
+        
+        # overwrite default option
+        $params->{$par} = $val;
+    }
+        
+    if($params->{'help'}) 
+	{
+		defined $user_params->{'type'} ? Viz::display_viz_help(\%$params) : Viz::display_viz_help();
+		return '';
+	}
+    
+	my $err = Viz::execute_params($model, Viz::getExecParams(\%$params));
+	if ($err) { return $err; }
+	return '';
+}
+
 1;
