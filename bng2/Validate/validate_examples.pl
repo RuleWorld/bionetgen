@@ -134,7 +134,7 @@ GetOptions( 'help|h'        => sub { display_help(); exit(0); },
             'bngpath=s'     => \$bngpath,
             'modelpath=s'   => \$modeldir,
             'datpath=s'     => \$datdir,
-            'outpath=s'     => \$outdir,
+#            'outpath=s'     => \$outdir,
             'pvalue=f'      => \$pvalue,
             'nfsim!'        => \$check_nfsim,
             'delete-files!' => \$delete_working_files,
@@ -961,8 +961,8 @@ sub exit_error
 sub display_help
 {
 
-print <<END_HELP
-
+#print <<END_HELP
+print qq{
 Validation script for BioNetGen suite.
 
 SYNOPSIS:
@@ -976,7 +976,6 @@ OPTIONS:
   --bngpath PATH      : BioNetGen path (..)
   --modelpath PATH    : model path ([BNGPATH\\Validate)
   --datpath PATH      : database path (BNGPATH]\\Validate\\DAT_validate)
-  --outpath PATH      : output path (cwd)
   --pvalue VAL        : pvalue for distribution tests (0.01)
   --no-nfsim          : skip NFsim validation
   --no-delete-files   : keep output files after validation
@@ -989,7 +988,9 @@ was a problem running the script.
 A log file named MODEL.log is created for each validation model. If a test
 fails, check the log file for more details.  NOTE: stochastic fluctuations
 will occasionally cause a distribution test to fail.
+}
+#END_HELP
 
-END_HELP
+#  --outpath PATH      : output path (cwd)
 
 }
