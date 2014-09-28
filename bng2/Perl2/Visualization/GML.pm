@@ -8,7 +8,7 @@ no warnings 'redefine';
 use Class::Struct;
 
 # BNG Modules
-use StructureGraph;
+use Visualization::StructureGraph;
 
 # basic structures and methods
 struct GMLNode => 
@@ -752,7 +752,8 @@ sub toGML_process2
 	{
 		#my $id = $i;
 		#my $name = $names[$i];
-		my $gmlnode = initializeGMLNode($i,$names[$i],$processes[$i]);
+		my $name = @names ? $names[$i]: '';
+		my $gmlnode = initializeGMLNode($i,$name,$processes[$i]);
 		styleNode2($gmlnode);
 		if($embed)
 			{
