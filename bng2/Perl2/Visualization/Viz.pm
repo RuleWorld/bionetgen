@@ -6,11 +6,11 @@ no warnings 'redefine';
 
 use Class::Struct;
 use SpeciesGraph;
-use StructureGraph;
-use NetworkGraph;
-use ProcessGraph;
-use ContactMap;
-use GML;
+use Visualization::StructureGraph;
+use Visualization::NetworkGraph;
+use Visualization::ProcessGraph;
+use Visualization::ContactMap;
+use Visualization::GML;
 
 
 struct Graphs =>
@@ -57,7 +57,7 @@ sub execute_params
 	my %args = %{shift @_};
 	
 	my @argkeys = keys %args;
-	my $err = "visualize() error.";
+	my $err = ''; #"visualize() error.";
 	
 	$args{'output'} = 1 if (not has(\@argkeys,'output'));
 	if($args{'output'} == 1) {print "Executing visualize() command.\n"; }
@@ -70,23 +70,32 @@ sub execute_params
 	$args{'embed'} = 0 if(not has(\@argkeys,'embed'));
 	$args{'classes'} = {} if (not has(\@argkeys,'classes'));
 	
-	$args{'background'} = {}
-			if (not has(\@argkeys,'background'));;
+	$args{'background'} = {} if (not has(\@argkeys,'background'));
 	my @argkeys2 = keys %{$args{'background'}};
 	$args{'background'}->{'toggle'} = 1 if(not has(\@argkeys2,'toggle'));
 	$args{'background'}->{'include'} = [] if(not has(\@argkeys2,'include'));
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
 
+	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
 	
 	if (not has(\@argkeys,'type'))
 	{
-		print "Visualization type unspecified. Use visualize({type=>string}).\n";
-		print "string being one of rule_pattern, rule_operation, rule_network, reaction_network, transformation_network, contact, process, processpair.\n";
+		$err =  "Visualization type unspecified. Use visualize({type=>\"string\"}),\n";
+		$err .=	"string being one of (";
+		foreach my $v (@validtypes){
+			$err .= " $v";
+		}
+		$err .= " ).";
 		return $err;
 	}
 	
-	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
+	if (not has(\@validtypes,$args{'type'}) ) 
+	{
+		$err = "Visualization error: '" . $args{'type'} . "' is an invalid type.\n";
+		return $err;
+	}
+
 	my $type = $args{'type'};
 	my $output = $args{'output'};
 	my $each = $args{'each'};
@@ -109,13 +118,19 @@ sub execute_params
 	
 	my @includes = ();
 	my $ref1 = getAtomicPatterns($bkg_include);
-	if(not ref $ref1) { print "\nAtomic Pattern could not be created from ".$ref1."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+	if(not ref $ref1) { 
+		$err = "Atomic Pattern could not be created from ".$ref1."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; 
+		return $err;
+	}
 	else {@includes = @$ref1};
 	
 	
 	my @excludes = ();
 	my $ref2 = getAtomicPatterns($bkg_exclude);
-	if(not ref $ref2) { print "\nAtomic Pattern could not be created from ".$ref2."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+	if(not ref $ref2) { 
+		$err = "Atomic Pattern could not be created from ".$ref2."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; 
+		return $err;
+	}
 	else {@excludes = @$ref2};
 	
 	my %classes;
@@ -123,14 +138,11 @@ sub execute_params
 	{
 		# we're converting class1:[item1,item2] to the form item1:class1, item2:class1
 		my $ref = getAtomicPatterns($classdefs{$name});
-		if(not ref $ref) { print "\nAtomic Pattern could not be created from ".$ref."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+		if(not ref $ref) { 
+			$err = "Atomic Pattern could not be created from ".$ref."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; 
+			return $err;
+		}
 		else {@classes {@$ref} = ($name) x @$ref; }
-	}
-	
-	if (not has(\@validtypes,$type) ) 
-	{
-		print $type." is an invalid type.\n";
-		return $err;
 	}
 	
 	if (not defined $model->VizGraphs) 
@@ -311,53 +323,6 @@ sub execute_params
 			}
 		}
 		
-		# printing pattern space
-		if($output == 1 and $collapse ==0)
-		{
-			if($textonly==0)
-			{
-				my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-				my %classes = (defined $bpg->{'NodeClass'}) ? %{$bpg->{'NodeClass'}} : ();
-				my %nodetype = %{$bpg->{'NodeType'}};
-				my @aps = grep {$nodetype{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
-				my @classed = grep { has([keys %classes],$_) } @aps;
-				my @apclasses = uniq map { $classes{$_} } @classed;
-				my @unclassed = grep { not has(\@classed, $_) } @aps;
-				my @pats = ();
-			
-				my $j = -1;
-				foreach my $i(0..@apclasses-1)
-				{
-					$j++;
-					my $apclass = $apclasses[$i];
-					my @grp = grep {$classes{$_} eq $apclass} @classed;
-					my @psgs = map { stringToPatternStructureGraph($grp[$_],$_) } 0..@grp-1;
-					my $psg = combine(\@psgs,$j);
-					my $psg2 = addPatternNode($psg,$j,'',$apclass);
-					push @pats, $psg2;
-				}
-				foreach my $i(0..@unclassed-1)
-				{
-					$j++;
-					my $psg = stringToPatternStructureGraph($unclassed[$i],$j);
-					push @pats, $psg;
-				}
-				
-				my $psg = combine2(\@pats);
-				my $str = toGML_pattern($psg);
-				my %params = ('model'=>$model,'str'=>$str,'suffix'=>'patterns','type'=>$type);
-				writeGML(\%params);
-			}
-			else
-			{
-				my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-				my $str = printNetworkGraph($bpg);
-				my %params = ('model'=>$model,'str'=>$str,'type'=>'regulatory');
-				# this is the whole network, not the pattern space..
-				# too bored to sit n filter this..
-				writeText(\%params);
-			}
-		}
 		
 		if($each==1) {$output = 0;}
 	}
@@ -369,13 +334,14 @@ sub execute_params
 		$args2{'output'} = 0;
 		#$args2{'groups'} = 0;
 		$args2{'collapse'} = 0;
-		$args2{'embed'} = 0;
+		#$args2{'embed'} = 0;
 		#if($args{'mergepairs'}) {$args2{'groups'}=1;$args{'groups'}=1;}
 		#if($args{'groups'}) { $args2{'collapse'}=1; }
 		execute_params($model,\%args2);
 		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
 		
 		my $pg = makeProcessGraph2($bpg,\%args);
+		
 		if($args{'embed'}==1) {embedProcessGraph($pg,$gr,\%args);} 
 		if($output==1)
 			{

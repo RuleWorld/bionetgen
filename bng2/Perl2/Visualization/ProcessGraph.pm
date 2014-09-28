@@ -5,8 +5,8 @@ use warnings;
 no warnings 'redefine';
 
 use Class::Struct;
-use NetworkGraph;
-use GML;
+use Visualization::NetworkGraph;
+use Visualization::GML;
 
 
 struct ProcessGraph =>
@@ -33,7 +33,8 @@ sub initializeProcessGraph
 	$pg->{'Edges'} = shift @_;
 	if(@_) { $pg->{'Embed'} = shift @_; }
 	if(@_) { $pg->{'Names'} = shift @_; }
-	else {my @x = @{$pg->{'Nodes'}}; $pg->{'Names'} = \@x;}
+	#else {my @x = @{$pg->{'Nodes'}}; $pg->{'Names'} = \@x;}
+	print @{$pg->{'Names'}};
 	return $pg;
 }
 sub printProcessGraph
@@ -280,10 +281,15 @@ sub makeProcessGraph2
 						{
 							if( has_overlap($reacprods[$i],$contexts[$j]) ) 
 								{ push @relations, join(" ",($i,$j));}
+							next if($i == $j);
+							if( has_overlap($reacprods[$j],$contexts[$i]) ) 
+								{ push @relations, join(" ",($j,$i));}
+
 						}
 				}
 				@relations = uniq(@relations);
-				$pg = initializeProcessGraph(\@processes,\@relations,[],\@processes);
+				my @names = ($args{'embed'}==0) ? @processes : () x @processes;
+				$pg = initializeProcessGraph(\@processes,\@relations,[],\@names);
 			}
 		else
 			{
@@ -331,11 +337,15 @@ sub makeProcessGraph2
 						{
 							if( has_overlap($reacprods[$i],$contexts[$j]) ) 
 								{ push @relations, join(" ",($i,$j));}
+							next if($i == $j);
+							if( has_overlap($reacprods[$j],$contexts[$i]) ) 
+								{ push @relations, join(" ",($j,$i));}
 						}
 				}
 				@relations = uniq(@relations);
 				
-				my @names = map join(",",@$_), @processes;
+				my @pr1 = map join(",",@$_), @processes;
+				my @names = ($args{'embed'}==0) ? @pr1 : () x @pr1;
 				$pg = initializeProcessGraph(\@processes,\@relations,[],\@names);
 			}
 	}
@@ -375,11 +385,15 @@ sub makeProcessGraph2
 						{
 							if( has_overlap($reacprods[$i],$contexts[$j]) ) 
 								{ push @relations, join(" ",($i,$j));}
+							next if($i == $j);
+							if( has_overlap($reacprods[$j],$contexts[$i]) ) 
+								{ push @relations, join(" ",($j,$i));}
 						}
 				}
 				@relations = uniq(@relations);
 				
-				my @names = @processes;
+				#my @names = @processes;
+				my @names = ($args{'embed'}==0) ? @processes : () x @processes;
 				$pg = initializeProcessGraph(\@processes,\@relations,[],\@names);
 			}
 		else
@@ -420,10 +434,14 @@ sub makeProcessGraph2
 						{
 							if( has_overlap($reacprods2[$i],$contexts2[$j]) ) 
 								{ push @relations, join(" ",($i,$j));}
+							next if($i == $j);
+							if( has_overlap($reacprods2[$j],$contexts2[$i]) ) 
+								{ push @relations, join(" ",($j,$i));}
 						}
 				}
 				@relations = uniq(@relations);
-				my @names = map join(",",@$_), @procs2;
+				my @pr1 = map join(",",@$_), @procs2;
+				my @names = ($args{'embed'}==0) ? @pr1 : () x @pr1;
 				$pg = initializeProcessGraph(\@procs2,\@relations,[],\@names);
 			}	
 	}
