@@ -316,8 +316,8 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
         output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('generate_network({overwrite=>1})\n')
-    output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
+    #output.write('generate_network({overwrite=>1})\n')
+    #output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     #with open(fileName,'w') as outputFile:
     #    outputFile.write(output.getvalue()) 
@@ -361,7 +361,7 @@ def extendFunction(function, subfunctionName,subfunction):
         return parsedString
     param = subfunction.split(' = ')[0][len(subfunctionName)+1:-1]
     body = subfunction.split(' = ')[1]
-    while re.search(r'{0}\([^)]*\)'.format(subfunctionName),function) != None:
+    while re.search(r'(\W|^){0}\([^)]*\)(\W|$)'.format(subfunctionName),function) != None:
         contentRule = pyparsing.Word(pyparsing.alphanums + '_.') |  ',' | '+' | '-' | '*' | '/' | '^' | '&' | '>' | '<' | '=' | '|'  
         parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
         subfunctionList = parens.parseString('(' + function + ')').asList()

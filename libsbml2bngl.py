@@ -334,8 +334,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     
     with open(outputFile,'w') as f:
         f.write(returnArray[-2])
-    #with open('{0}.dict'.format(outputFile),'wb') as f:
-    #    pickle.dump(returnArray[-1],f)
+    with open('{0}.dict'.format(outputFile),'wb') as f:
+        pickle.dump(returnArray[-1],f)
     if onlySynDec:
         returnArray = list(returnArray)
         returnArray[0] = -1
@@ -940,7 +940,7 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  =24
+    param  = 404
     
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
                     False, 'config/namingConventions.json',
