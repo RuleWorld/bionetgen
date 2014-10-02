@@ -8,7 +8,7 @@ no warnings 'redefine';
 use Class::Struct;
 
 # BNG Modules
-use StructureGraph;
+use Visualization::StructureGraph;
 
 # basic structures and methods
 struct GMLNode => 

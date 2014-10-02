@@ -5,8 +5,8 @@ use warnings;
 no warnings 'redefine';
 
 use Class::Struct;
-use NetworkGraph;
-use GML;
+use Visualization::NetworkGraph;
+use Visualization::GML;
 
 
 struct ProcessGraph =>

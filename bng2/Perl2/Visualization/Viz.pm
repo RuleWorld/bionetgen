@@ -6,11 +6,11 @@ no warnings 'redefine';
 
 use Class::Struct;
 use SpeciesGraph;
-use StructureGraph;
-use NetworkGraph;
-use ProcessGraph;
-use ContactMap;
-use GML;
+use Visualization::StructureGraph;
+use Visualization::NetworkGraph;
+use Visualization::ProcessGraph;
+use Visualization::ContactMap;
+use Visualization::GML;
 
 
 struct Graphs =>
@@ -51,13 +51,97 @@ sub push2ref
 	return;
 }
 
+##########################
+sub initializeExecParams
+{
+	my $toggle1 = 1;
+
+	my @include = ();
+	my @exclude = ();
+	my $background = {'toggle'=>$toggle1,'include'=>\@include,'exclude'=>\@exclude};
+	my $each = 0;
+	my $groups = 0;
+	my $embed = 0;
+	my $classes = {};
+	
+	my $toggle2 = 0;
+	my @items = ();
+	my $level = 1;
+	my $filter = {'toggle'=>$toggle2,'items'=>\@items,'level'=>$level};
+	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter,'embed'=>0);
+	return %x;
+	
+}
+
+sub getExecParams
+{
+	my %args = %{shift @_};
+	my %exec_params = initializeExecParams();
+	my %toggle;
+	my %background;
+	my %classes;
+	
+	foreach my $file(@{$args{'opts'}})
+	{
+		my ($x,$y,$z,$f) = parseOpts($file);
+		my %toggle = %$x;
+		my %background = %$y;
+		my %classes = %$z;
+		my %filter = %$f;
+		
+		# do toggles;
+		foreach my $key(keys %toggle)
+		{
+			if($key eq 'background') 
+			{ $exec_params{'background'}->{'toggle'} = $toggle{$key}; }
+			
+			if(has(['each','groups'],$key)) 
+			{ $exec_params{$key} = $toggle{$key}; }
+		}
+		# do background
+		foreach my $key(keys %background)
+		{
+			my $ref = $exec_params{'background'}->{$key};
+			push2ref($ref,$background{$key});
+		}
+		foreach my $key(keys %classes)
+		{
+			my $classes2 = $exec_params{'classes'};
+			my @arr = ();
+			if(not defined $classes2->{$key}) { $classes2->{$key} = \@arr; }
+			push2ref($classes2->{$key},$classes{$key});
+		}
+		if(defined $filter{'items'}) 
+		{
+			if (not defined $exec_params{'filter'}->{'items'}) {$exec_params{'filter'}->{'items'} = [];};
+			push2ref($exec_params{'filter'}->{'items'},$filter{'items'});
+		}
+		
+	}
+	
+	$exec_params{'type'} = $args{'type'};
+	$exec_params{'background'}->{'toggle'} = $args{'background'};
+	$exec_params{'filter'}->{'toggle'} = $args{'filter'};
+	$exec_params{'each'} = $args{'each'};
+	$exec_params{'groups'} = $args{'groups'};
+	$exec_params{'collapse'} = $args{'collapse'};
+	$exec_params{'textonly'} = $args{'textonly'};
+	$exec_params{'suffix'} = $args{'suffix'};
+	$exec_params{'mergepairs'} = $args{'mergepairs'};
+	$exec_params{'embed'} = $args{'embed'};
+	
+	if(defined $args{'level'}) { $exec_params{'filter'}->{'level'} = $args{'level'} };
+	return \%exec_params;
+}
+##########################
+
 sub execute_params
 {
 	my $model = shift @_;
 	my %args = %{shift @_};
 	
 	my @argkeys = keys %args;
-	my $err = "visualize() error.";
+	my $err = ''; #"visualize() error.";
 	
 	$args{'output'} = 1 if (not has(\@argkeys,'output'));
 	if($args{'output'} == 1) {print "Executing visualize() command.\n"; }
@@ -70,23 +154,32 @@ sub execute_params
 	$args{'embed'} = 0 if(not has(\@argkeys,'embed'));
 	$args{'classes'} = {} if (not has(\@argkeys,'classes'));
 	
-	$args{'background'} = {}
-			if (not has(\@argkeys,'background'));;
+	$args{'background'} = {} if (not has(\@argkeys,'background'));
 	my @argkeys2 = keys %{$args{'background'}};
 	$args{'background'}->{'toggle'} = 1 if(not has(\@argkeys2,'toggle'));
 	$args{'background'}->{'include'} = [] if(not has(\@argkeys2,'include'));
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
 
+	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
 	
 	if (not has(\@argkeys,'type'))
 	{
-		print "Visualization type unspecified. Use visualize({type=>string}).\n";
-		print "string being one of rule_pattern, rule_operation, rule_network, reaction_network, transformation_network, contact, process, processpair.\n";
+		$err =  "Visualization type unspecified. Use visualize({type=>\"string\"}),\n";
+		$err .=	"string being one of (";
+		foreach my $v (@validtypes){
+			$err .= " $v";
+		}
+		$err .= " ).";
 		return $err;
 	}
 	
-	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
+	if (not has(\@validtypes,$args{'type'}) ) 
+	{
+		$err = "Visualization error: '" . $args{'type'} . "' is an invalid type.\n";
+		return $err;
+	}
+
 	my $type = $args{'type'};
 	my $output = $args{'output'};
 	my $each = $args{'each'};
@@ -109,13 +202,19 @@ sub execute_params
 	
 	my @includes = ();
 	my $ref1 = getAtomicPatterns($bkg_include);
-	if(not ref $ref1) { print "\nAtomic Pattern could not be created from ".$ref1."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+	if(not ref $ref1) { 
+		$err = "Atomic Pattern could not be created from ".$ref1."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; 
+		return $err;
+	}
 	else {@includes = @$ref1};
 	
 	
 	my @excludes = ();
 	my $ref2 = getAtomicPatterns($bkg_exclude);
-	if(not ref $ref2) { print "\nAtomic Pattern could not be created from ".$ref2."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+	if(not ref $ref2) { 
+		$err = "Atomic Pattern could not be created from ".$ref2."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; 
+		return $err;
+	}
 	else {@excludes = @$ref2};
 	
 	my %classes;
@@ -123,14 +222,11 @@ sub execute_params
 	{
 		# we're converting class1:[item1,item2] to the form item1:class1, item2:class1
 		my $ref = getAtomicPatterns($classdefs{$name});
-		if(not ref $ref) { print "\nAtomic Pattern could not be created from ".$ref."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
+		if(not ref $ref) { 
+			$err = "Atomic Pattern could not be created from ".$ref."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; 
+			return $err;
+		}
 		else {@classes {@$ref} = ($name) x @$ref; }
-	}
-	
-	if (not has(\@validtypes,$type) ) 
-	{
-		print $type." is an invalid type.\n";
-		return $err;
 	}
 	
 	if (not defined $model->VizGraphs) 
@@ -258,7 +354,6 @@ sub execute_params
 		}
 		if ($each ==1)
 		{
-			
 			my %args2 = duplicate_args(\%args);
 			$args2{'output'} = 0;
 			$args2{'each'} = 0;
@@ -283,7 +378,7 @@ sub execute_params
 				my $grptype = $nodetype{$grp[0]};
 				my $bpg2 = filterNetworkGraphByList($bpg,\@grp,1);
 				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
-				my %params = ('model'=>$model,'str'=>$str,'suffix'=>$grpname,'type'=>$type);
+				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grpname : $grpname),'type'=>$type);
 				if($output==1)
 				{
 					if($textonly==1) { writeText(\%params); }
@@ -302,7 +397,7 @@ sub execute_params
 				# better way is to regenerate the network graph, but then u'll have to apply background n
 				# filter n other things again... boring!
 				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
-				my %params = ('model'=>$model,'str'=>$str,'suffix'=>$grp[0],'type'=>$type);
+				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grp[0] : $grp[0]),'type'=>$type);
 				if($output==1)
 				{
 					if($textonly==1) { writeText(\%params); }
@@ -359,7 +454,7 @@ sub execute_params
 	{
 		my @names = map {@$_;} flat($gr->{'RuleNames'});
 		map { 
-			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>$names[$_],'type'=>$type);
+			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>($suffix ? $suffix.'_'.$names[$_] : $names[$_]),'type'=>$type);
 			writeGML(\%params);
 			}	(0..@names-1);
 	}
@@ -811,4 +906,212 @@ sub duplicate_args
 	map {$args2{$_} = $args{$_}} keys %args;
 	return %args2;
 }
+
+#########################
+sub display_viz_help
+{
+	my $args = @_ ? shift @_ : 0;
+	
+	if($args==0) {
+		print qq{
+---------------------------------------------/ HELP MENU /----------
+ACTION: visualize
+SYNOPSIS:
+
+  visualize({help=>1})                 show this help menu
+  visualize({help=>1,type=>"TYPE"})    show help on visualization of type TYPE
+  visualize({type=>"TYPE"})            make visualization of type TYPE
+  
+  Allowed types: {ruleviz_pattern, ruleviz_operation, regulatory, reaction_network, contactmap, process}
+
+OPTIONS:
+
+  File I/O
+  --------
+  opts=>"FILE"                         use input options file FILE
+  opts=>["FILE1","FILE2",...]          use multiple input options files
+  textonly=>0/1                        disable/enable text-only output of visualization (default: 0)
+  suffix=>"STR"                        add suffix STR to output filename
+
+  Viz config
+  ----------
+  type=>"TYPE"                         create visualization of type TYPE (default: regulatory)
+  background=>0/1                      disable/enable background (default: 0)
+  groups=>0/1                          disable/enable grouping (default: 0)
+  each=>0/1                            disable/endable separate outputs of each rule/group (default: 0)
+}
+	}
+	
+	elsif($args->{'type'} eq 'regulatory')
+	{
+		print qq{
+---------------------------------------------/ HELP MENU /----------
+ACTION: visualize
+TYPE: regulatory
+PURPOSE: Generates a regulatory network of rules and atomic patterns.
+
+OPTIONS SET 1:
+
+visualize({type=>"regulatory", background=>0/1, opts=>[FILE1,FILE2,...], filter=>0/1, level=>INT, groups=>0/1})
+
+background=>0/1 (default: 0)
+----------------------------
+Disable/enable background. When 0, some patterns are determined to 
+be background and removed from network graph. The assignment can be 
+modified using the options file.
+
+opts=>["FILE1","FILE2",...]
+---------------------------
+Specifies option file(s) with the following structure:
+
+	begin background
+			<atomic patterns>
+	end background
+	begin filter
+			<atomic patterns>
+	end filter
+	begin classes
+		begin classname
+			<atomic patterns>
+		end classname
+	end classes
+		
+<atomic patterns> is a whitespace-separated list of patterns.
+'classname' refers to arbitrary names for pattern classes.
+All blocks are optional.
+
+filter=>0/1, level=>INT
+(Defaults: filter=>0, level=>1)
+-------------------------------
+Disable/enable generation of a subgraph starting from a defined 
+set of nodes and propagating along the edges 'level' levels deep. 
+The starting nodes are defined in the options file.
+
+groups=>0/1 (default: 0)
+------------------------
+Disables/enables grouping. Patterns are grouped using classes
+that are provided in the options file. Rules are grouped 
+automatically based on pattern relationships.
+		
+OPTIONS SET 2:
+
+visualize({type=>"regulatory", groups=>0/1, collapse=>0/1, textonly=>0/1})
+
+collapse=>0/1
+-------------
+Disable/enable computation of a smaller network graph where groups of nodes 
+are replaced by a single node representing the group. Requires groups=>1.
+ 
+textonly=>0/1
+-------------
+Disable/enable output of a text-only version of the model network graph.
+		
+OPTIONS SET 3:
+		
+visualize({groups=>0/1, each=>0/1})
+		
+each=>0/1
+---------
+Disable/enable separate output of each rule (or rule group if groups=>1).
+		
+Option sets 2 and 3 are compatible with set 1 but incompatible with each other.
+		
+For help on file input and output options try: visualize({help=>1})
+To start working on a model try:
+		
+visualize({type=>"regulatory", groups=>1})
+}
+	}
+	
+	elsif($args->{'type'} eq 'process')
+	{
+		print qq{
+---------------------------------------------/ HELP MENU /----------
+ACTION: visualize
+TYPE: process
+PURPOSE: Generates a process diagram of rules and atomic patterns.
+
+USAGE:
+
+visualize({type=>"process", background=>0/1, opts=>[FILE1,FILE2,...], groups=>0/1, mergepairs=>0/1, textonly=>0/1})
+
+background=>0/1 (default: 0)
+----------------------------
+Disable/enable background. When 0, some patterns are determined to 
+be background and removed from network graph. The assignment can be 
+modified using the options file.
+
+opts=>["FILE1","FILE2",...]
+---------------------------
+Specifies option file(s) with the following structure:
+
+	begin background
+		<atomic patterns>
+	end background
+	begin filter
+		<atomic patterns>
+	end filter
+	begin classes
+		begin classname
+			<atomic patterns>
+		end classname
+	end classes
+
+<atomic patterns> is a whitespace-separated list of patterns.
+'classname' refers to arbitrary names for pattern classes.
+All blocks are optional.
+
+groups=>0/1 (default: 0)
+------------------------
+Disables/enables grouping. Patterns are grouped using classes
+that are provided in the options file. Rules are grouped 
+automatically based on pattern relationships.
+
+textonly=>0/1
+-------------
+Disable/enable output of a text-only version of the model network graph.
+
+For help on file input and output options try: visualize({help=>1})
+To start working on a model try:
+
+visualize({type=>process, groups=>1})
+}
+	}
+	
+	elsif($args->{'type'} eq 'ruleviz_pattern')
+	{
+		print qq{
+No help yet for 'ruleviz_pattern'. Please check back later.
+}
+	}
+	
+	elsif($args->{'type'} eq 'ruleviz_operation')
+	{
+		print qq{
+No help yet for 'ruleviz_operation'. Please check back later.
+}
+	}
+	
+	elsif($args->{'type'} eq 'reaction_network')
+	{
+		print qq{
+No help yet for 'reaction_network'. Please check back later.
+}
+	}
+	
+	elsif($args->{'type'} eq 'contactmap')
+	{
+		print qq{
+No help yet for 'contactmap'. Please check back later.
+}
+	}
+	
+	else
+	{
+		print $args->{'type'} . " is not a valid visualization type.\n";
+	}
+	
+	return "";
+}
+
 1;

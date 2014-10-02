@@ -5,9 +5,9 @@ use warnings;
 no warnings 'redefine';
 
 use Class::Struct;
-use NetworkGraph;
-use StructureGraph;
-use Viz;
+use Visualization::NetworkGraph;
+use Visualization::StructureGraph;
+use Visualization::Viz;
 
 
 struct ContactMap =>
