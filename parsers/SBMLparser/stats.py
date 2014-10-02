@@ -245,13 +245,91 @@ def main2():
     with open('parsedAnnotations.dump','wb') as f:
         pickle.dump(annotationArray,f)
 
-from collections import defaultdict
 
+def removeTags(taggedInformation):
+        taggedInformation2 = taggedInformation.decode('ascii','ignore')
+        try:
+            goGrammar = pyp.Suppress('<' + pyp.Word(pyp.alphanums) + '>') +  pyp.Word(pyp.alphanums + pyp.alphas8bit + ' .,_-') + pyp.Suppress('</' + pyp.Word(pyp.alphanums) + '>')
+            tmp = goGrammar.parseString(str(taggedInformation2))
+        except pyp.ParseException:
+            tmp = [taggedInformation2]
+        return tmp[0]
+
+def compressionDistroAnalysis():
+    '''
+    analyses the model compression distribution
+    (number of molecule types)/total species
+    acccording to what the model does
+    '''
+    with open('sortedD.dump','rb') as evaluationFile:
+        ev1 =     pickle.load(evaluationFile)
+    ev2 = []
+    for x in ev1:
+        try:
+            ev2.append([x['index'],x['nreactions'],x['nspecies'],x['compression']])
+        except:
+            continue
+    number,rulesLength,speciesLength,evaluation2 =  zip(*ev2)
+    trueRatio = []
+
+
+    #with open('ratomization.dump','rb') as f:
+    #    ratomizationDict = pickle.load(f) 
+    
+    
+    for x,z,w in zip(rulesLength,number,evaluation2):
+        if x>=0:
+            trueRatio.append([z,1-w])
+    
+    bio = bioservices.BioModels()
+    
+    modelAnnotationArray = []
+    for element,compression in trueRatio:
+        try:
+            info = bio.getSimpleModelsByIds('BIOMD%010i' % element)
+            parsedInfo = bioservices.Service('name').easyXML(info)
+            modelName = removeTags(str(parsedInfo['modelname'][0]))
+            modelName = modelName.split(' - ')
+            if len(modelName) > 1:
+                modelName = modelName[1]
+            else:
+                modelName = modelName[0].split('_')
+                if len(modelName) > 1:
+                    modelName = ' '.join(modelName[1:])
+                else:
+                    modelName = modelName[0]
+            modelAnnotationArray.append([element,compression,modelName])
+            print modelAnnotationArray[-1]
+        except:
+            print parsedInfo
+            break
+    with open('compressionAnnotation.dump','wb') as f:
+        pickle.dump(modelAnnotationArray,f)
+        
+def compressionDistroAnalysisCont():
+    '''
+    im splitting this into two functiosn sicne getting the info
+    from biomodels is sooooooo slow
+    '''
+    annotationBinDict = defaultdict(Counter)
+    with open('compressionAnnotation.dump','rb') as f:
+        modelAnnotationArray = pickle.load(f)
+    index,compression,annotations = zip(*modelAnnotationArray)
+    #compression,index,annotation
+    hist,bin_edges = np.histogram(compression,bins=5)
+    binIndexArray = np.digitize(compression,bin_edges)
+    
+    for binIndex,annotation in zip(binIndexArray,annotations):
+        annotationBinDict[binIndex][annotation] +=1
+    print annotationBinDict
+    print hist,bin_edges
+
+from collections import defaultdict
 def histogram():
     import matplotlib.pyplot as plt
     import numpy as np
-    evaluationFile = open('sortedD.dump','rb')
-    ev1 =     pickle.load(evaluationFile)
+    with open('sortedD.dump','rb') as evaluationFile:
+        ev1 =     pickle.load(evaluationFile)
     ev2 = []
     for x in ev1:
         try:
@@ -312,11 +390,17 @@ def histogram():
     plt.savefig('atomizationDistroHist.png')
 
     plt.clf()
-    plt.hist(trueRatio, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
-                                0.8, 0.9, 1.0],weights=weights,normed=True)
+    plt.hist(trueRatio, bins=[ 0.,0.18139535,0.3627907,
+                              0.54418605,0.7255814,0.90697674],weights=weights,normed=True)
+    plt.xlabel('Compression Degree ({0} models)'.format(len(trueRatio)),fontsize=18)    
+    plt.savefig('compressionDistroHistWeighted.png')
+
+    plt.clf()
+    plt.hist(trueRatio, bins=[ 0.,0.18139535,0.3627907,
+                              0.54418605,0.7255814,0.90697674],normed=False)
     plt.xlabel('Compression Degree ({0} models)'.format(len(trueRatio)),fontsize=18)    
     plt.savefig('compressionDistroHist.png')
-
+    
 
     plt.clf()
     plt.hist(ratio20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
@@ -329,6 +413,7 @@ def histogram():
                                 0.8, 0.9, 1.0])
     plt.xlabel('Compression Degree ({0} models)'.format(len(ration20)),fontsize=18)    
     plt.savefig('compressionDistroHist10less.png')
+    
 
     plt.clf()
     print plt.hist(evaluation20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
@@ -726,6 +811,7 @@ if __name__ == "__main__":
     #bagOfWords()
     #main2()
     histogram()
+    #compressionDistroAnalysisCont()
     #rankingAnalysis()
     #print resolveAnnotation('http://identifiers.org/reactome/REACT_9417.3')
     #biomodelsInteractome()

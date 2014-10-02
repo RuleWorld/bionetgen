@@ -138,11 +138,10 @@ if __name__ == "__main__":
     suite3 = unittest.TestSuite()
     
     #ran = [151]
-    ran = range(1,491)
+    ran = range(1,549)
     #ran  = [252]
-    blackList = [18,81,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]
-    #for some reasons thechange the adhoc components break this model
-    blackList.append(151)
+    #ran = [452,453,465,474,492,500,501,504,505,506,510]
+    blackList = []
     ran = [x for x in ran if x not in blackList]
     '''
     ran.remove(175)
@@ -177,27 +176,27 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    ran = [139]
     for index in ran:
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    #validFiles = getValidBNGLFiles('complex') 
-    #validFiles = sorted(validFiles)
+    validFiles = getValidBNGLFiles('complex') 
+    validFiles = sorted(validFiles)
     #validFiles.remove('54')
+    
+    #validFiles = [480]
     '''
-    validFiles = [480]
     for fileNumber in validFiles:
-        index += 1
+        #index += 1
         fileName = 'output{0}.bngl'.format(fileNumber)
         suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./complex/' + fileName))
         #suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     validGdats = getValidGDats('.')
     '''
-    #validFiles = getValidBNGLFiles('raw')
+    #validFiles = getValidBNGLFiles('complex')
     #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)
-    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        

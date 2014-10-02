@@ -214,7 +214,6 @@ class SBMLAnalyzer:
         This method goes through the list of common reactions listed in ruleDictionary
         and tries to find how are they related according to the information in reactionDefinition
         '''  
-        #print reactionDefinition
         result = []
         for idx,element in enumerate(reactionDefinition['reactions']):
             tmp1 = rule[0] if rule[0] not in  ['0',['0']] else []
@@ -237,7 +236,6 @@ class SBMLAnalyzer:
         ruleDictionary = {}
         for idx,rule in enumerate(rules):
             reaction2 = rule #list(parseReactions(rule))
-            #print reaction2
             totalElements =  [item for sublist in reaction2 for item in sublist]
             if tuple(totalElements) in ruleDictionary:
                 ruleDictionary[tuple(totalElements)].append(idx)
@@ -333,9 +331,11 @@ class SBMLAnalyzer:
                 tmpTranslator[element] = []
             tmpTranslator[element].extend(self.userEquivalencesDict[element])
         return tmpTranslator,translationKeys,conventionDict
-        
+    
+    
     def processAdHocNamingConventions(self,reactant,product,
                                       localSpeciesDict,compartmentChangeFlag):
+        import math
         #strippedMolecules = [x.strip('()') for x in molecules]
         molecules = [reactant,product] if len(reactant) < len(product) else [product,reactant]
         similarityThreshold = 10
@@ -364,7 +364,10 @@ class SBMLAnalyzer:
                     #avoid trivial differences
                     if len(validDifferences) < 2:
                         return None,None
-                    componentName =  ''.join([x[0:len(x)/2] for x in validDifferences])
+
+                    #FIXME:here it'd be helpful to come up with a better heuristic
+                    #for inferec component names
+                    componentName =  ''.join([x[0:max(1,len(x)/2)] for x in validDifferences])
                     
                     for namePair,difference in zip(namePairs,differenceList):
                         if len([x for x in difference if '-' in x]) == 0:
@@ -483,7 +486,6 @@ class SBMLAnalyzer:
         for element in ruleDictionary:
             for rule in ruleDictionary[element]:
                 tupleComplianceMatrix[element] += ruleComplianceMatrix[rule]     
-        #print tupleC
 
         #now we will check for the nameConventionMatrix (same thing as before but for naming conventions)
         tupleNameComplianceMatrix = {key:{key2:0 for key2 in equivalenceTranslator} \
@@ -557,7 +559,6 @@ class SBMLAnalyzer:
                         site = reactionDefinition['reactionSite'][alternative['rsi']]
                         state = reactionDefinition['reactionState'][alternative['rst']]
                     except:
-                        #print 'malformed json file in the definitions section, using defaults'
                         site = reactionType
                         state = reactionType[0]
                     reactionTypeProperties[reactionType] = [site,state]
@@ -697,7 +698,6 @@ class SBMLAnalyzer:
         listOfEquivalences = []
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
-        #print zip(reactions,reactionClassification)
         return reactionClassification,listOfEquivalences,equivalenceTranslator, \
                 indirectEquivalenceTranslator,adhocLabelDictionary
         
@@ -713,12 +713,7 @@ class SBMLAnalyzer:
             
         return {-1:processedAnnotations}
     
-    def annotationClassificationHelper(self,reactions,annotations):
-        for reaction in reactions:
-           for annotation in annotations:
-               
-               if ((annotation[0],) in reaction[0] and (annotation[1],) in reaction[1]) or ((annotation[0],) in reaction[1] and (annotation[1],) in reaction[0]):
-                       print reaction,annotation
+
     
     def classifyReactionsWithAnnotations(self,reactions,molecules,annotations,labelDictionary):        
         '''
@@ -798,8 +793,6 @@ class SBMLAnalyzer:
         #it might require us to rename some methods to keep consistency
         for element in self.lexicalSpecies:
             logMess('INFO:Atomization','added induced speciesStructure {0}'.format(str(element)))
-            print element
-            print {x:str(x) for x in dictionary}
             self.userJsonToDataStructure(element,dictionary,labelDictionary,
                                          equivalencesList)
         return dictionary,labelDictionary
