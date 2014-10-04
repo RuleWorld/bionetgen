@@ -122,7 +122,7 @@ sub printGML
 		$string2 = "LabelGraphics [ ".$string2." ]";
 		
 		my $string = "";
-		$string .= "id".$q1.$node->{'ID'}.$q2;
+		$string .= "id ".$node->{'ID'}." ";
 		$string .= "label".$q1.$node->{'label'}.$q2;
 		if ($node->{'isGroup'})
 			{$string .= "isGroup ".$node->{'isGroup'}." ";}
@@ -146,7 +146,7 @@ sub printGML
 		}
 		
 		my $str = join(" ",($string,$string1,$string2,$string3));
-		my $str2= "node [".$str." ]";
+		my $str2= "node [\n".$str."\n ]";
 		#$string = "node [".$string." ".$string1." ".$string2." ".$string2" ]";
 		
 		push @nodestrings, $str2;
@@ -188,8 +188,8 @@ sub printGML
 			$string2 .= "width ".$edge->{'width'}." ";
 		}
 		$string2 = "graphics [ ".$string2." ]";
-		$string .= "source".$q1.$edge->{'source'}.$q2;
-		$string .= "target".$q1.$edge->{'target'}.$q2;
+		$string .= "source ".$edge->{'source'}." ";
+		$string .= "target ".$edge->{'target'}." ";
 		$string = "edge [ ".$string." ".$string2." ]";
 		push @edgestrings,$string;
 	}
