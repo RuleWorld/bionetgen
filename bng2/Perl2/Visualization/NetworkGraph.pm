@@ -540,7 +540,7 @@ sub stringToAtomicPattern
 			}
 		if (scalar @pats != 1) 
 			{
-			return ''
+			return $pat;
 			}
 	return $pats[0];
 }

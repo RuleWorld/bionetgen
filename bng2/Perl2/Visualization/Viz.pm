@@ -112,7 +112,6 @@ sub execute_params
 	if(not ref $ref1) { print "\nAtomic Pattern could not be created from ".$ref1."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
 	else {@includes = @$ref1};
 	
-	
 	my @excludes = ();
 	my $ref2 = getAtomicPatterns($bkg_exclude);
 	if(not ref $ref2) { print "\nAtomic Pattern could not be created from ".$ref2."\n"."An atomic pattern is either \n\tA binding site, e.g. A(b),\n\tAn internal state, e.g. A(b~x),\n\tA bond, e.g. A(b!1).B(a!1), or\n\tA molecule, e.g. A.\n"; return $err;}
@@ -771,7 +770,8 @@ sub getBackground
 		}
 		my @bkg1 = grep { has($exclude,$_)==0; } keys %re;
 		my @bkg2 = grep { has($include,$_)==1; } keys %pr;
-		my @background = (@bkg1,@bkg2);
+		my @bkg3 = grep { has(\@bkg2,$_)==0;} @$include;
+		my @background = (@bkg1,@bkg2,@bkg3);
 		$gr->{'Background'} = \@background;	
 	}
 	

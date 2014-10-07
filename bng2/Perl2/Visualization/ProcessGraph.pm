@@ -34,7 +34,7 @@ sub initializeProcessGraph
 	if(@_) { $pg->{'Embed'} = shift @_; }
 	if(@_) { $pg->{'Names'} = shift @_; }
 	#else {my @x = @{$pg->{'Nodes'}}; $pg->{'Names'} = \@x;}
-	print @{$pg->{'Names'}};
+	#print @{$pg->{'Names'}};
 	return $pg;
 }
 sub printProcessGraph
