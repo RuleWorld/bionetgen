@@ -343,7 +343,7 @@ class SBMLAnalyzer:
         #FIXME:in here we need a smarter heuristic to detect actual modifications
         #for now im just going with a simple heuristic that if the species name
         #is long enough, and the changes from a to be are all about modification
-        longEnough = 4
+        longEnough = 3
         if len(reactant) >= longEnough and len(differenceList) > 0:
             #one is strictly a subset of the other a,a_b
             if len([x for x in differenceList[0] if '-' in x]) == 0:
@@ -430,8 +430,19 @@ class SBMLAnalyzer:
             productfirstHalf = tmpRuleList[1][0][0:matches[0][1]+matches[0][2]]
             productsecondHalf = tmpRuleList[1][0][matches[1][1]:]
             tmpString = tmpRuleList[0][0] + '-' + tmpRuleList[0][1]
-            reactantfirstHalf = tmpString[0:matches[0][0]+matches[0][2]]
-            reactantsecondHalf = tmpString[matches[1][0]:]
+            #reactantfirstHalf = tmpString[0:matches[0][0]+matches[0][2]]
+            #reactantsecondHalf = tmpString[matches[1][0]:]
+            
+            #TODO:experimental change
+            reactantfirstHalf = tmpRuleList[0][0]
+            reactantsecondHalf = tmpRuleList[0][1]
+            
+            #Don't count trailing underscores as part of the species name
+            productfirstHalf = productfirstHalf.strip('_')
+            productsecondHalf = productsecondHalf.strip('_')
+            reactantfirstHalf = reactantfirstHalf.strip('_')
+            reactantsecondHalf = reactantsecondHalf.strip('_')
+            
             #greedymatching
             idx = 0
             while(tmpRuleList[1][0][matches[0][2]+ idx]  in sym):
@@ -449,15 +460,16 @@ class SBMLAnalyzer:
                 productfirstHalf = productfirstHalf.replace(dic[element],element)
                 productsecondHalf = productsecondHalf.replace(dic[element],element)
 
-            difference = difflib.ndiff(reactantfirstHalf,productfirstHalf)
-            difference2 = difflib.ndiff(reactantsecondHalf,productsecondHalf)
+            firstHalf = sorted([reactantfirstHalf,productfirstHalf],key=len)
+            secondHalf = sorted([reactantsecondHalf,productsecondHalf],key=len)
+            difference = difflib.ndiff(*firstHalf)
+            difference2 = difflib.ndiff(*secondHalf)
             difference1 =  [x for x in difference if '+' in x or '-' in x]
             difference2 =  [x for x in difference2 if '+' in x or '-' in x]
         else:
             #TODO: dea with reactions of the kindd a+b ->  c + d
             return [],[],[],[],
-        return difference1,difference2,[reactantfirstHalf,productfirstHalf], \
-                [reactantsecondHalf,productsecondHalf]
+        return difference1,difference2,firstHalf,secondHalf
              
     def getReactionClassification(self,reactionDefinition,rules,equivalenceTranslator,
                                   indirectEquivalenceTranslator,
@@ -588,7 +600,6 @@ class SBMLAnalyzer:
                     matches[index].reverse()
                     transformedPattern = conventionDict[(element[idx1].replace('-','+'),) ]
                     indirectEquivalenceTranslator[transformedPattern].append([[reaction[1][0],reaction[0][index]],reaction[0],matches[index],reaction[1]])
-                    
                 elif idx2 < len(element):
                     if tuple([element[idx1],element[idx2]]) in conventionDict.keys():    
                         pattern = conventionDict[tuple([element[idx1],element[idx2]])]
@@ -606,11 +617,36 @@ class SBMLAnalyzer:
                 idx1+=1
                 idx2+=1
         
+
+        
     def classifyReactions(self,reactions,molecules):
         '''
         classifies a group of reaction according to the information in the json
         config file
         '''
+        def createArtificialNamingConvention(reaction,fuzzyKey,fuzzyDifference):
+            '''
+            Does the actual data-structure filling if
+            a 1-1 reaction shows sign of modification. Returns True if 
+            a change was performed
+            '''
+            #fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
+            if fuzzyKey and fuzzyKey not in translationKeys:
+                logMess('INFO:Atomization','added induced naming convention {0}'.format(str(reaction)))
+                #if our state isnt yet on the dependency graph preliminary data structures
+                if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
+                    equivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
+                    adhocLabelDictionary['{0}mod'.format(fuzzyKey)] = ['{0}mod'.format(fuzzyKey),fuzzyKey.upper()]
+                    
+                #if this same definition doesnt already exist. this is to avoid cycles
+                if tuple(sorted([x[0] for x in reaction],key=len)) not in equivalenceTranslator['{0}mod'.format(fuzzyKey)]:
+                    equivalenceTranslator['{0}mod'.format(fuzzyKey)].append(tuple(sorted([x[0] for x in reaction],key=len)))
+                    newTranslationKeys.append(fuzzyKey)
+                conventionDict[fuzzyDifference] = '{0}mod'.format(fuzzyKey)
+                if '{0}mod'.format(fuzzyKey) not in indirectEquivalenceTranslator:
+                    indirectEquivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
+                return True
+            return False
         
         #load the json config file
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
@@ -634,9 +670,38 @@ class SBMLAnalyzer:
 
         for idx,reaction in enumerate(rawReactions):
             if len(reaction[0]) == 2:
-                self.processFuzzyReaction(reaction,translationKeys,conventionDict,indirectEquivalenceTranslator)
+                               
+                #complex naming conventions, first we need to know how to match them
+                d1,d2,firstMatch,secondMatch= self.approximateMatching(reaction,
+                                                    translationKeys)
+                #then how do they differ
+                fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(firstMatch[0],
+                                firstMatch[1],localSpeciesDict,False)                                                    
+                #fill in 1-1 naming structures
+                createArtificialNamingConvention([[firstMatch[0]],[firstMatch[1]]],
+                                                 fuzzyKey,fuzzyDifference)
+                    #fill in 2-1 relationship structures
+
+                
+                fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(secondMatch[0],secondMatch[1],
+                                    localSpeciesDict,False)
+                createArtificialNamingConvention([[secondMatch[0]],
+                            [secondMatch[1]]],fuzzyKey,fuzzyDifference)
+
+                #basic processing vs known naming conventions
+                self.processFuzzyReaction(reaction,translationKeys,
+                               conventionDict,indirectEquivalenceTranslator)
+
             elif len(reaction[1]) == 2 and len(reaction[0]) == 1:
-                self.processFuzzyReaction([reaction[1],reaction[0]],translationKeys,conventionDict,indirectEquivalenceTranslator)
+                d1,d2,firstMatch,secondMatch= self.approximateMatching([reaction[1],reaction[0]],
+                                                    translationKeys)
+                fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(firstMatch[0],firstMatch[1],localSpeciesDict,False)                                                    
+                createArtificialNamingConvention([[firstMatch[0]],[firstMatch[1]]],fuzzyKey,fuzzyDifference)
+                fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(secondMatch[0],secondMatch[1],localSpeciesDict,False)                                                    
+                createArtificialNamingConvention([[secondMatch[0]],[secondMatch[1]]],fuzzyKey,fuzzyDifference)
+
+                #self.processFuzzyReaction([reaction[1],reaction[0]],translationKeys,conventionDict,indirectEquivalenceTranslator)
+
             elif len(reaction[0]) == 1 and len(reaction[1]) == 1 and '0' not in reaction:
                 #check if this is a change compartment reaction
                 sbmlreactants =  self.modelParser.model.getReaction(long(idx)).getListOfReactants()
@@ -661,6 +726,7 @@ class SBMLAnalyzer:
                     
                 #check if reaction->product shares the same reactant root
                 fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
+                '''
                 if fuzzyKey and fuzzyKey not in translationKeys:
                     logMess('INFO:Atomization','added induced naming convention {0}'.format(str(reaction)))
                     #if our state isnt yet on the dependency graph preliminary data structures
@@ -674,6 +740,8 @@ class SBMLAnalyzer:
                         newTranslationKeys.append(fuzzyKey)
                     conventionDict[fuzzyDifference] = '{0}mod'.format(fuzzyKey)
                     indirectEquivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
+                '''
+                createArtificialNamingConvention(reaction,fuzzyKey,fuzzyDifference)
             #    self.processFuzzyReaction([[reaction[0][0],''],reaction[1]],translationKeys,conventionDict,indirectEquivalenceTranslator)
         translationKeys.extend(newTranslationKeys)
         for species in localSpeciesDict:
@@ -690,7 +758,6 @@ class SBMLAnalyzer:
             definition.append([sdefinition])
             self.lexicalSpecies.append(definition)
                 #definition = [commonRoot,[[commonRoot,componentName,["s",tag]]]]
-                            
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
@@ -698,6 +765,7 @@ class SBMLAnalyzer:
         listOfEquivalences = []
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
+        
         return reactionClassification,listOfEquivalences,equivalenceTranslator, \
                 indirectEquivalenceTranslator,adhocLabelDictionary
         
@@ -774,26 +842,25 @@ class SBMLAnalyzer:
         labelDictionary[userEquivalence[0]] = [tuple(label)]
     def getUserDefinedComplexes(self):
         dictionary = {}
-        labelDictionary = {}
+        userLabelDictionary = {}
         equivalencesList = []
+        lexicalLabelDictionary = {}
         if self.speciesEquivalences != None:
             speciesdictionary =self.loadConfigFiles(self.speciesEquivalences)
             userEquivalences = speciesdictionary['complexDefinition'] \
                 if 'complexDefinition' in speciesdictionary else None
             for element in userEquivalences:
                 self.userJsonToDataStructure(element,dictionary,
-                                             labelDictionary,equivalencesList)
+                                             userLabelDictionary,equivalencesList)
                                              
             complexEquivalences = speciesdictionary['modificationDefinition']
             for element in complexEquivalences:
-                labelDictionary[element] = [tuple(complexEquivalences[element])]
+                userLabelDictionary[element] = [tuple(complexEquivalences[element])]
                 
-        #also add species that were deducted through lexical analysis
-        #im putting it here since it requires the least amount of modification
-        #it might require us to rename some methods to keep consistency
+        #stuff we got from string similarity
         for element in self.lexicalSpecies:
-            logMess('INFO:Atomization','added induced speciesStructure {0}'.format(str(element)))
-            self.userJsonToDataStructure(element,dictionary,labelDictionary,
+            self.userJsonToDataStructure(element,dictionary,lexicalLabelDictionary,
                                          equivalencesList)
-        return dictionary,labelDictionary
+                                         
+        return dictionary,userLabelDictionary,lexicalLabelDictionary
         

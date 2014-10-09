@@ -449,8 +449,21 @@ def reactionBasedAtomization(reactions):
         return 0,0
     return atomizedProcesses,trueProcessesCounter
 
-
-
+def stoichiometryAnalysis(reactions):
+    ato = []
+    nonato = []
+    for reaction in reactions:
+        if '0' in  [str(x) for x in reaction[0].reactants] or '0' in \
+        [str(x) for x in reaction[0].products]:
+            continue
+        signature = ((len(reaction[0].reactants),len(reaction[0].products)))
+        if len([x for x in reaction[0].actions if x.action in ['AddBond','DeleteBond','StateChange']]) > 0:
+            ato.append(signature)
+        else:
+            if signature == (1,2):
+                print str(reaction[0])
+            nonato.append(signature)
+    return ato,nonato
 from collections import defaultdict
 def reactionBasedAtomizationDistro():
     '''
@@ -468,11 +481,19 @@ def reactionBasedAtomizationDistro():
     totalReactions = 0
     totalProcesses = 0
     validFiles= 0
-    for element in range(1,510):
+    atomizedDistro = []
+    nonAtomizedDistro= []
+    interesting = []
+    for element in range(1,549):
         try:
             #console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
-            _,rules,_= readBNGXML.parseXML('output{0}.xml'.format(element))
+            _,rules,_= readBNGXML.parseXML('complex/output{0}.xml'.format(element))
             atomizedProcesses,weight = reactionBasedAtomization(rules)
+            ato,nonato = stoichiometryAnalysis(rules)
+            atomizedDistro.extend(ato)
+            nonAtomizedDistro.extend(nonato)
+            #if (2,1) in nonato:
+            #    interesting.append(element)
             score = atomizedProcesses*1.0/weight if weight != 0 else 0
             totalRatomizedProcesses += atomizedProcesses
             totalReactions += len(rules)
@@ -495,23 +516,28 @@ def reactionBasedAtomizationDistro():
                 ratomizationListl10.append([score,weight,len(rules)])
             print element,ratomizationList[-1]
             validFiles += 1
-        except (IndexError):
+        except (IndexError,ZeroDivisionError):
             syndel += 1
             print
             continue
         except IOError:
+            print 
             continue
     with open('ratomization.dump','wb') as f:
         pickle.dump(ratomizationDict,f)
-    
+        
+    print '-----'
+    print 'atomized',Counter(atomizedDistro)
+    print 'nonatomized',Counter(nonAtomizedDistro)
+    print 'models with 2->1 non atomized reactions',interesting
     ratomization,weights,length = zip(*ratomizationList)
     
     ratomizationm10,weightsm10,lengthm10 = zip(*ratomizationListm10)
     ratomizationl10,weightsl10,lengthl10 = zip(*ratomizationListl10)
     
-    constructHistogram(syndelArray,'syndelHist','Percentage of synthesis and degradation reactions',np.ones(len(syndelArray)),normed=False)
-    constructHistogram(ratomization,'ratomizationHist','Reaction atomization level'.format(len(ratomization)),np.ones(len(ratomization)),normed=False)
-    constructHistogram(ratomizationm10,'ratomizationwHist_m10','Reaction atomization level'.format(len(ratomizationm10)),lengthm10,normed=True)
+    constructHistogram(syndelArray,'syndelHist','Fraction of synthesis and degradation reactions',np.ones(len(syndelArray)),normed=False)
+    constructHistogram(ratomization,'ratomizationHist','Reaction atomization level ({0} models)'.format(len(ratomization)),np.ones(len(ratomization)),normed=False)
+    constructHistogram(ratomizationm10,'ratomizationwHist_m10','Reaction atomization level ({0} models)'.format(len(ratomizationm10)),lengthm10,normed=True)
     weights = np.array(weights)
     length = np.array(length)
     tmp = weights*1.0/length
@@ -569,20 +595,48 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     
     extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
 
+    plt.clf()
+    ax = plt.gca()
+    ax.plot(length,1-tmp,'o',alpha=0.5)    
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.ylabel('Fraction of syndel reactions',fontsize=24)
+    ax.grid(True)
+    ax.set_xscale('log')
+    #ax.set_autoscale_on(False)
+    plt.ylim([-0.1,1.1])
+    #ax.set_yscale('log')
+    plt.savefig('reactionsvsnsyndel.png')
     
+    plt.clf()
+    plt.scatter(length, 1-tmp, s=500, 
+                c=[max(x,0) for x in ratomization])
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.ylabel('Fracion of syndel reactions',fontsize=24)
+
+    ax = plt.gca()
+    #ax.set_xscale('log')
+    ax.grid(True)
+    plt.xlim(xmin=0,xmax=100)
+    plt.gray()
+    cb = plt.colorbar()
+    cb.set_label('Atomization level')
+
+    plt.savefig('reactionsvssyndelwlinear.png')
+    
+
     
     plt.clf()
     plt.imshow(ratomizationHeatmap, 
                extent=extent
                ,aspect='auto',origin='lower',interpolation='nearest')
-    plt.xlabel('Percentage of non syn-del reactionsModel size')
+    plt.xlabel('Fraction of non syn-del reactionsModel size')
     plt.ylabel('Model Size (reactions)')
     cb = plt.colorbar()
     cb.set_label('Atomization level')
     plt.show()  
     plt.savefig('atomizationHeatMap2.png')
-    
 
+        
 
     
     

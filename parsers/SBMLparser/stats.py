@@ -368,13 +368,13 @@ def histogram():
                 
             trueRatio.append(1-w)
             
-    
     weights,trueEvaluation = zip(*trueEvaluation)
     print '0 atom large models',problemModels
     print 'largeModels',len(evaluation20),np.median(evaluation20),np.median(ratio20)
         
     plt.clf()
-    plt.hist(rulesLength,bins=[10,30,50,70,90,110,140,180,250,400])
+    hist,bins = np.histogram(rulesLength,bins=10,density=True)
+    plt.hist(rulesLength,bins=bins)
     plt.xlabel('Number of reactions',fontsize=18)
     plt.savefig('lengthDistro.png')
 
@@ -383,6 +383,49 @@ def histogram():
     plt.xlabel('Number of species',fontsize=18)
     plt.savefig('speciesDistro.png')
 
+
+    plt.clf()
+    ax = plt.gca()
+    ax.plot(rulesLength,speciesLength,'o',alpha=0.5)    
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.ylabel('Number of species',fontsize=24)
+    ax.grid(True)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plt.savefig('reactionsvsspecies.png')
+    plt.clf()
+    plt.scatter(rulesLength, speciesLength, s=500, 
+                c=np.array([min(1,1-x) for x in evaluation2]))
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.ylabel('Number of species',fontsize=24)
+    ax = plt.gca()
+    ax.grid(True)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plt.xlim(xmin=1)
+    ax.grid(True)
+    plt.gray()
+    cb = plt.colorbar()
+    cb.set_label('Compression level')
+    plt.savefig('reactionsvsspeciescomp.png')
+
+    plt.clf()
+    plt.scatter(rulesLength, speciesLength, s=500, 
+                c=np.array([min(1,x) for x in evaluation]))
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.ylabel('Number of species',fontsize=24)
+    ax = plt.gca()
+    ax.grid(True)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plt.xlim(xmin=1)
+    ax.grid(True)
+    plt.gray()
+    cb = plt.colorbar()
+    cb.set_label('Atomization level')
+    plt.savefig('reactionsvsspeciesato.png')
+
+    
     plt.clf()
     plt.hist(trueEvaluation, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                 0.8, 0.9, 1.0],weights=weights,normed=True)
@@ -401,6 +444,7 @@ def histogram():
     plt.xlabel('Compression Degree ({0} models)'.format(len(trueRatio)),fontsize=18)    
     plt.savefig('compressionDistroHist.png')
     
+
 
     plt.clf()
     plt.hist(ratio20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,

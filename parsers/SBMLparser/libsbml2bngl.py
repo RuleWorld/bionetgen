@@ -334,9 +334,9 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     
     with open(outputFile,'w') as f:
         f.write(returnArray[-2])
-    with open('{0}.dict'.format(outputFile),'wb') as f:
-        pickle.dump(returnArray[-1],f)
-    if onlySynDec:
+    #with open('{0}.dict'.format(outputFile),'wb') as f:
+    #    pickle.dump(returnArray[-1],f)
+    if atomize and onlySynDec:
         returnArray = list(returnArray)
         returnArray[0] = -1
     return tuple(returnArray[0:-2])
@@ -676,10 +676,10 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in range(1,491):
+    for bioNumber in range(1,549):
         
-        if bioNumber in [81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
-            continue
+        #if bioNumber in [81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
+        #    continue
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
@@ -705,6 +705,7 @@ def main():
         except:
             print '-------------error--------------',bioNumber
             continue
+        
         finally:  
             if rlength != None:        
                 rulesLength.append({'index':bioNumber,'nreactions':rlength,
@@ -717,6 +718,7 @@ def main():
                 rulesLength.append([bioNumber,-1,0,0])
                 compartmentLength.append(0)
                 rdfArray.append({})
+        
             #classificationArray.append({})
     #print evaluation
     #print evaluation2
@@ -940,11 +942,11 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  = 404
+    param  = 28
     
-    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
+    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
-                    'complex/output' + str(param) + '.bngl', speciesEquivalence='reactionDefinitions/speciesEquivalence19.json',atomize=True,bioGrid=False)
+                    'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     
     
     '''
