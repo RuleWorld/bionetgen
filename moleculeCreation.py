@@ -467,8 +467,6 @@ def getComplexationComponents2(species,bioGridFlag):
             names1 =  [str(x.name) for x in totalComplex[0]]
             names2 =  [str(x.name) for x in totalComplex[1]]
             
-            if 'Ras' in str(species):
-                pass
             dbPair = set([])
             if bioGridFlag:
                 bioGridDict = biogrid.loadBioGridDict()
@@ -581,7 +579,8 @@ reactionProperties[classification[0]][0])
                         deepcopy(species)
                         translator[element[0]] = modifiedSpecies
                     else:
-                        print 'ALERT', element[0], str(modifiedSpecies), str(species)
+                        #print 'ALERT', element[0], str(modifiedSpecies), str(species)
+                        pass
                         #print equivalenceDictionary
             else:
                 #binding
@@ -734,7 +733,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     classifications, equivalenceTranslator, eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
     adhocLabelDictionary=  sbmlAnalyzer.classifyReactions(rules, molecules)
-    
     referenceVariables = [classifications,equivalenceTranslator,
                           eequivalenceTranslator,indirectEquivalenceTranslator,adhocLabelDictionary]
                           
@@ -748,16 +746,17 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
     database.reactionProperties.update(adhocLabelDictionary)
-    database.translator, database.labelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
+    database.translator, database.labelDictionary, \
+    database.lexicalLabelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
     ####dependency graph
     #binding reactions
-
     for reaction, classification in zip(rules, classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
+                        
     
     #catalysis reactions
     for key in eequivalenceTranslator:
@@ -774,24 +773,27 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                         continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
-
-
     #complex catalysis reactions
     for key in indirectEquivalenceTranslator:
         #first remove these entries from the dependencyGraph since 
         #they are not true bindingReactions
         for namingEquivalence in indirectEquivalenceTranslator[key]:
-            tmp = deepcopy(namingEquivalence[1])
-            if tmp in database.dependencyGraph[namingEquivalence[0][0]]:
-                database.dependencyGraph[namingEquivalence[0][0]].remove(tmp)
-            elif tmp in database.dependencyGraph[namingEquivalence[0][1]]:
-                database.dependencyGraph[namingEquivalence[0][1]].remove(tmp)
+            removedElement = ''
+            tmp3 = deepcopy(namingEquivalence[1])
+            if tmp3 in database.dependencyGraph[namingEquivalence[0][0]]:
+                removedElement = namingEquivalence[0][0]
+            elif tmp3 in database.dependencyGraph[namingEquivalence[0][1]]:
+                removedElement = namingEquivalence[0][1]
+
             else:
-                tmp.reverse()
-                if tmp in database.dependencyGraph[namingEquivalence[0][0]]:
-                    database.dependencyGraph[namingEquivalence[0][0]].remove(tmp)
-                elif tmp in database.dependencyGraph[namingEquivalence[0][1]]:
-                    database.dependencyGraph[namingEquivalence[0][1]].remove(tmp)
+                tmp3.reverse()
+                if tmp3 in database.dependencyGraph[namingEquivalence[0][0]]:
+                    removedElement = namingEquivalence[0][0]
+
+                elif tmp3 in database.dependencyGraph[namingEquivalence[0][1]]:
+                    removedElement = namingEquivalence[0][1]
+            
+            
             #then add the new, true dependencies
             #if its not supposed to be a basic element
             tmp = [x for x in namingEquivalence[1] if x not in namingEquivalence[2]]
@@ -799,11 +801,23 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
             tmp2 = deepcopy(tmp)
             tmp2.reverse()
             
+            
             ##TODO: map back for the elements in namingEquivalence[2]
             if tmp not in database.dependencyGraph[namingEquivalence[3][0]] \
                 and tmp2 not in database.dependencyGraph[namingEquivalence[3][0]]:
+                if sorted(tmp) == sorted(tmp3):
+                    continue
                 if all(x in database.dependencyGraph for x in tmp):
+                    if removedElement in database.dependencyGraph:
+                        database.dependencyGraph[removedElement].remove(tmp3)
+                    logMess('INFO:Atomization','Removing {0}={1} and adding {2}={3} instead\
+ from the dependency list since we determined it is not a true binding reaction based on lexical analysis'\
+                    .format(removedElement,tmp3,namingEquivalence[3][0],tmp))
                     database.dependencyGraph[namingEquivalence[3][0]] = [tmp]
+                else:
+                    logMess('WARNING:Atomization','We determined that {0}={1} based on lexical analysis instead of \
+{2}={3} (stoichiometry) but one of the constituent components in {1} is not a molecule so no action was taken'.format(namingEquivalence[3][0],
+tmp,removedElement,tmp3))
 
     #user defined stuff
     for element in database.labelDictionary:
@@ -813,6 +827,23 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         else:
             database.dependencyGraph[element] = [list(
             database.labelDictionary[element][0])]
+    #stuff obtained from string similarity analysis
+    for element in database.lexicalLabelDictionary:
+        #similarity analysis has less priority than anything we discovered
+        #before
+        if element in database.dependencyGraph and \
+        len(database.dependencyGraph[element]) > 0:
+            continue
+
+        if len(database.lexicalLabelDictionary[element][0]) == 0 or element == \
+        database.lexicalLabelDictionary[element][0][0]:
+            addToDependencyGraph(database.dependencyGraph, element, [])
+        else:
+            logMess('INFO:Atomization','added induced speciesStructure {0}={1}'\
+            .format(element,database.lexicalLabelDictionary[element][0]))
+            database.dependencyGraph[element] = [list(
+            database.lexicalLabelDictionary[element][0])]
+            
             
     #pure lexical analysis
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
@@ -820,19 +851,20 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     for species in tmpDependency:
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph,species,instance)
+
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
-    #FIXME: These steps is causing infinite cycles
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
         
     
-    assert(referenceVariables == comparisonVariables)
     #I'm polluting these data structures somewhere. In here
     #im just calling the original generator to recover them.
     #I think it solved itself. I'm leaving an assert just to be sure
     #classifications, equivalenceTranslator, eequivalenceTranslator, \
     #    indirectEquivalenceTranslator,_ = sbmlAnalyzer.classifyReactions(rules,molecules)
+    assert(referenceVariables == comparisonVariables)
+
     
     for element in artificialEquivalenceTranslator:
         if element not in eequivalenceTranslator:

@@ -39,14 +39,14 @@ class TestOne(ParametrizedTestCase):
     '''
     Test for raw translation
     '''
-    '''
+    '''    
     def test_raw(self):
         print self.param
-        call(['python','sbmlTranslator.py','-i',
+        self.assertEqual(call(['python','sbmlTranslator.py','-i',
         'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         '-o','raw/output' + str(self.param) + '.bngl',
         '-c','reactionDefinitions/reactionDefinition7.json',
-        '-n','config/namingConventions.json'])        
+        '-n','config/namingConventions.json']),0)        
     '''
 
     '''
@@ -57,12 +57,12 @@ class TestOne(ParametrizedTestCase):
         #reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
         #spEquivalence = detectCustomDefinitions(bioNumber)
         print self.param
-        call(['python','sbmlTranslator.py','-i',
+        self.assertEqual(call(['python','sbmlTranslator.py','-i',
         'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         '-o','complex/output' + str(self.param) + '.bngl',
         '-c','reactionDefinitions/reactionDefinition7.json',
         '-n','config/namingConventions.json',
-        '-a'])        
+        '-a']),0)        
     
 
 class TestValid(ParametrizedTestCase):
@@ -143,28 +143,7 @@ if __name__ == "__main__":
     #ran = [452,453,465,474,492,500,501,504,505,506,510]
     blackList = []
     ran = [x for x in ran if x not in blackList]
-    '''
-    ran.remove(175)
-    ran.remove(205)
-    
-
-    ran.remove(212)
-    ran.remove(223)
-    ran.remove(235)
-    ran.remove(255)
-    ran.remove(328)
-    ran.remove(370)   
-    ran.remove(404)
-    ran.remove(428)
-    ran.remove(430)
-    ran.remove(431)
-    ran.remove(443)
-    ran.remove(444)
-    ran.remove(452)
-    ran.remove(453)
-    ran.remove(465)
-    ran.remove(469)
-    '''
+    #check 32
     #ran = range(466,470)
     #ran = [229]
     #ran = range(469,491)
@@ -180,7 +159,7 @@ if __name__ == "__main__":
          suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
-    validFiles = getValidBNGLFiles('complex') 
+    validFiles = getValidBNGLFiles('raw') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
     
@@ -189,8 +168,9 @@ if __name__ == "__main__":
     for fileNumber in validFiles:
         #index += 1
         fileName = 'output{0}.bngl'.format(fileNumber)
-        suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./complex/' + fileName))
-        #suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+        #suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./raw/' + fileName))
+        suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+        
     validGdats = getValidGDats('.')
     '''
     #validFiles = getValidBNGLFiles('complex')
