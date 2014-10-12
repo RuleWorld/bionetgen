@@ -449,6 +449,8 @@ def reactionBasedAtomization(reactions):
         return 0,0
     return atomizedProcesses,trueProcessesCounter
 
+from collections import defaultdict
+generalSignature = defaultdict(list)
 def stoichiometryAnalysis(reactions):
     ato = []
     nonato = []
@@ -460,8 +462,7 @@ def stoichiometryAnalysis(reactions):
         if len([x for x in reaction[0].actions if x.action in ['AddBond','DeleteBond','StateChange']]) > 0:
             ato.append(signature)
         else:
-            if signature == (1,2):
-                print str(reaction[0])
+            generalSignature[signature].append(reaction)
             nonato.append(signature)
     return ato,nonato
 from collections import defaultdict
@@ -530,6 +531,8 @@ def reactionBasedAtomizationDistro():
     print 'atomized',Counter(atomizedDistro)
     print 'nonatomized',Counter(nonAtomizedDistro)
     print 'models with 2->1 non atomized reactions',interesting
+    with open('nonatomizedreactions.dump','wb') as f:
+        pickle.dump(generalSignature,f)
     ratomization,weights,length = zip(*ratomizationList)
     
     ratomizationm10,weightsm10,lengthm10 = zip(*ratomizationListm10)
@@ -813,9 +816,29 @@ def analyzeSpaceDistribution(analyzedModels):
             print parsedInfo
             break
     print modelAnnotationBin
+
+import pprint
+def nonAtomizedSpeciesAnalysis():
+    with open('nonatomizedreactions.dump','rb') as f:
+        nonAtomizedList= pickle.load(f)
+    f = open('nonatomizedresults.txt','wt')
+    for signature in nonAtomizedList:
+        count = Counter()
+        reactionList = defaultdict(list)
+        f.write('--------\n')
+        f.write(str(signature) + '\n')
+        for reaction in nonAtomizedList[signature]:
+            count[tuple(sorted([x.action for x in reaction[0].actions]))] += 1
+            reactionList[tuple(sorted([x.action for x in reaction[0].actions]))].append(str(reaction[0]))
+            if signature in [(2,1),(1,2),(1,1)]:
+                f.write(str(count) + '\n')
+                f.write('+++\n')
+                pprint.pprint(dict(reactionList),stream=f)
+    f.close()
 if __name__ == "__main__":
     #spaceCoveredCDF()
-    reactionBasedAtomizationDistro()
+    #reactionBasedAtomizationDistro()
+    nonAtomizedSpeciesAnalysis()
     #createGroupingCDF()
     #analyzeGroupingCDF()
     

@@ -942,7 +942,7 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  = 28
+    param  = 48
     
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',

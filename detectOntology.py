@@ -126,7 +126,8 @@ def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},simi
     patternClassification = {}
     pairClassification = {}
 
-    ontology =  loadOntology(ontologyFile)
+    #ontology =  loadOntology(ontologyFile)
+    ontology= ontologyFile
     finalDifferenceCounter = Counter()
     namePairs,differenceList,differenceCounter = defineEditDistanceMatrix(speciesName,similarityThreshold)
     
