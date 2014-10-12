@@ -60,7 +60,7 @@ class TestOne(ParametrizedTestCase):
         self.assertEqual(call(['python','sbmlTranslator.py','-i',
         'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         '-o','complex/output' + str(self.param) + '.bngl',
-        '-c','reactionDefinitions/reactionDefinition7.json',
+        '-c','config/reactionDefinitions.json',
         '-n','config/namingConventions.json',
         '-a']),0)        
     

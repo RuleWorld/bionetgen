@@ -188,6 +188,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
         #if we have more than one modified element for a single reactant
         #we can try to  choose the one that is most similar to the original
         #reactant
+        #FIXME:Fails if there is a double modification
         newModifiedElements = {}
         for element in modifiedElements:
             if element[0] not in newModifiedElements or element[1] == reactant:
@@ -265,7 +266,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                 if nothing else works and we know the result is a bimolecular 
                 complex and we know which are the basic reactants then try to
                 do fuzzy string matching between the two.
-                FIXME: extend this to more than 2 molecule complexes. 
+                TODO: extend this to more than 2 molecule complexes. 
                 '''
                 if len(tmpCandidates[0]) == 2:
                     tmpmolecules = []
@@ -297,13 +298,15 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
     weights = weightDependencyGraph(prunnedDependencyGraph)
     unevenElementDict = {}
     for element in weights:
-        
         candidates = [x for x in prunnedDependencyGraph[element[0]]]
         #print '-',candidates
         if len(candidates) == 1 and type(candidates[0][0]) == tuple:
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
             try:
+                if element[0] == 'EGF_EGFRm2':
+                    pass
+
                 candidates, uneven = selectBestCandidate(element[0], candidates, prunnedDependencyGraph,sbmlAnalyzer)
             except CycleError:
                 candidates = None
@@ -735,7 +738,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     adhocLabelDictionary=  sbmlAnalyzer.classifyReactions(rules, molecules)
     referenceVariables = [classifications,equivalenceTranslator,
                           eequivalenceTranslator,indirectEquivalenceTranslator,adhocLabelDictionary]
-                          
     comparisonVariables = [deepcopy(x) for x in referenceVariables]
     #####input processing
     #states,components,other user options
@@ -745,9 +747,12 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         pickle.dump(comparisonVariables,f)
         
     database.reactionProperties = sbmlAnalyzer.getReactionProperties()
+    #user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
+    
     database.translator, database.labelDictionary, \
     database.lexicalLabelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
+
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
@@ -774,10 +779,13 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
     #complex catalysis reactions
+    print database.dependencyGraph['__EGF_EGFR__2_PLCg']
+
     for key in indirectEquivalenceTranslator:
         #first remove these entries from the dependencyGraph since 
         #they are not true bindingReactions
         for namingEquivalence in indirectEquivalenceTranslator[key]:
+            print namingEquivalence
             removedElement = ''
             tmp3 = deepcopy(namingEquivalence[1])
             if tmp3 in database.dependencyGraph[namingEquivalence[0][0]]:
@@ -897,15 +905,12 @@ tmp,removedElement,tmp3))
             
             if eq in eequivalenceTranslator[doubleModifications[element]]:
                 eequivalenceTranslator[doubleModifications[element]].remove(eq)
-        
     for modification in tmpEquivalence:
         for candidates in tmpEquivalence[modification]:
             for instance in candidates:
                 addToDependencyGraph(eequivalenceTranslator,modification,instance)
             
     weights = sorted(weights, key=lambda rule: rule[1])
-    #print {x:str(database.translator[x]) for x in database.translator}
-    
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
                                                                 eequivalenceTranslator,bioGridFlag)
     onlySynDec =  len([x for x in classifications if x not in ['Generation','Decay']]) == 0
