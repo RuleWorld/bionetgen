@@ -304,8 +304,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
             try:
-                if element[0] == 'EGF_EGFRm2':
-                    pass
 
                 candidates, uneven = selectBestCandidate(element[0], candidates, prunnedDependencyGraph,sbmlAnalyzer)
             except CycleError:
@@ -779,13 +777,11 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
     #complex catalysis reactions
-    print database.dependencyGraph['__EGF_EGFR__2_PLCg']
 
     for key in indirectEquivalenceTranslator:
         #first remove these entries from the dependencyGraph since 
         #they are not true bindingReactions
         for namingEquivalence in indirectEquivalenceTranslator[key]:
-            print namingEquivalence
             removedElement = ''
             tmp3 = deepcopy(namingEquivalence[1])
             if tmp3 in database.dependencyGraph[namingEquivalence[0][0]]:
