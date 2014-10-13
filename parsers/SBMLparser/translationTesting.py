@@ -172,12 +172,11 @@ if __name__ == "__main__":
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
     suite4 = testtools.ConcurrentStreamTestSuite(lambda: ((case, None) for case in suite))
-    
     validFiles = getValidBNGLFiles('raw') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
     
-    #validFiles = [480]
+    #validFile= [480]
     '''
     for fileNumber in validFiles:
         #index += 1
@@ -194,7 +193,11 @@ if __name__ == "__main__":
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
+
     #unittest.TextTestRunner(verbosity=2).run(suite)
-    suite4.run(testtools.StreamResult())   
+    f = open('logresults.txt','w')
+
+
+    suite4.run(testtools.TextTestResult(f))
     #print len(validFiles)
 

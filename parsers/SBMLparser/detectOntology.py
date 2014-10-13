@@ -79,7 +79,7 @@ def findLongestSubstring(speciesA,speciesB):
     longestMatch = sm.find_longest_match(0,len(speciesA),0,len(speciesB))
     return speciesA[longestMatch[0]:longestMatch[0]+longestMatch[2]]
 
-import concurrent.futures
+#import concurrent.futures
 
 def stringToSet(species,idx,scoreRow,speciesName):
     for idx2,species2 in enumerate(speciesName):
