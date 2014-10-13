@@ -564,6 +564,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     #print outputFile
     
+    logMess('INFO:Summary','File contains {0} molecules out of {1} original SBML species'.format(len(molecules),len(observables)))
     #store a logfile
     try:
         if len(logMess.log) > 0:

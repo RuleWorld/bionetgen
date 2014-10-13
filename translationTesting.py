@@ -4,7 +4,7 @@ Created on Fri May 24 15:41:00 2013
 
 @author: proto
 """
-
+import testtools
 import unittest
 #import libsbml2bngl
 from evaluate import evaluate,validate
@@ -145,8 +145,8 @@ def getValidGDats(directory):
     
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
-    suite2 = unittest.TestSuite()
-    suite3 = unittest.TestSuite()
+    #suite2 = unittest.TestSuite()
+    #suite3 = unittest.TestSuite()
     
     #ran = [151]
     ran = range(1,549)
@@ -169,10 +169,10 @@ if __name__ == "__main__":
     files = getValidXMLFiles('XMLExamples/non_curated/')
     #print files
     for index in files:
-        print index
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-        
+    suite4 = testtools.ConcurrentStreamTestSuite(lambda: ((case, None) for case in suite))
+    
     validFiles = getValidBNGLFiles('raw') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
@@ -194,6 +194,7 @@ if __name__ == "__main__":
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
        
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    #unittest.TextTestRunner(verbosity=2).run(suite)
+    suite4.run(testtools.StreamResult())   
     #print len(validFiles)
 
