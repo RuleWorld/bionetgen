@@ -9,7 +9,7 @@ import unittest
 #import libsbml2bngl
 from evaluate import evaluate,validate
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join,getsize
 import copasi
 from subprocess import call        
 
@@ -58,8 +58,9 @@ class TestOne(ParametrizedTestCase):
         #spEquivalence = detectCustomDefinitions(bioNumber)
         print self.param
         self.assertEqual(call(['python','sbmlTranslator.py','-i',
-        'XMLExamples/curated/BIOMD%010i.xml' % self.param,
-        '-o','complex/output' + str(self.param) + '.bngl',
+        #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
+        self.param,
+        '-o','non_complex/' + str(self.param.split('/')[-1]) + '.bngl',
         '-c','config/reactionDefinitions.json',
         '-n','config/namingConventions.json',
         '-a']),0)        
@@ -119,6 +120,16 @@ def getValidBNGLFiles(directory):
         
     return validNumbers
 
+import operator
+def getValidXMLFiles(directory):
+    """
+    Gets a list of bngl files that could be correctly translated in a given 'directory'
+    """
+    onlyfiles = [ directory + f for f in listdir('./' + directory) if isfile(join('./' + directory, f)) ]
+    
+    onlyfiles = sorted(onlyfiles,key=getsize)
+    return onlyfiles
+
 def getValidGDats(directory):
     onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory, f)) ]
     gdatFiles = [x for x in onlyfiles if 'gdat' in x]
@@ -155,8 +166,11 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    for index in ran:
-         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
+    files = getValidXMLFiles('XMLExamples/non_curated/')
+    #print files
+    for index in files:
+        print index
+        suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
         
     validFiles = getValidBNGLFiles('raw') 
