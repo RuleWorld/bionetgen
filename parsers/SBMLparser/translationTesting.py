@@ -8,7 +8,7 @@ import testtools
 import unittest
 #import libsbml2bngl
 from evaluate import evaluate,validate
-from os import listdir
+from os import listdir,devnull
 from os.path import isfile, join,getsize
 import copasi
 from subprocess import call        
@@ -52,19 +52,27 @@ class TestOne(ParametrizedTestCase):
     '''
     Test for ability to ruleify
     '''
-    
     def test_parsing(self):
         #reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
         #spEquivalence = detectCustomDefinitions(bioNumber)
-        print self.param
-        self.assertEqual(call(['python','sbmlTranslator.py','-i',
-        #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
-        self.param,
-        '-o','non_complex/' + str(self.param.split('/')[-1]) + '.bngl',
-        '-c','config/reactionDefinitions.json',
-        '-n','config/namingConventions.json',
-        '-a']),0)        
-    
+        self.longMessage = True
+        #self.longMessage = True
+        result = -1
+        try:
+            with open(devnull,"w") as f:
+                result = call(['python','sbmlTranslator.py','-i',
+                #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
+                self.param,
+                '-o','path2models/' + str(self.param.split('/')[-1]) + '.bngl',
+                '-c','config/reactionDefinitions.json',
+                '-n','config/namingConventions.json',
+                '-a'],stdout=f)
+        except Exception as e:
+            print '---',self.param
+        finally:        
+            if result != 0:
+                print result,self.param
+            self.assertEqual(result,0,self.param +'\n')
 
 class TestValid(ParametrizedTestCase):
     '''
@@ -120,15 +128,16 @@ def getValidBNGLFiles(directory):
         
     return validNumbers
 
-import operator
+import fnmatch
 def getValidXMLFiles(directory):
     """
     Gets a list of bngl files that could be correctly translated in a given 'directory'
     """
-    onlyfiles = [ directory + f for f in listdir('./' + directory) if isfile(join('./' + directory, f)) ]
-    
-    onlyfiles = sorted(onlyfiles,key=getsize)
-    return onlyfiles
+    matches = []
+    for root, dirnames, filenames in os.walk('biomodels'):
+        for filename in fnmatch.filter(filenames, '*.xml'):
+            matches.append(os.path.join(root, filename))
+    return matches
 
 def getValidGDats(directory):
     onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory, f)) ]
@@ -142,6 +151,35 @@ def getValidGDats(directory):
         
     return validNumbers
 
+
+
+class TracingStreamResult(testtools.StreamResult):
+    def status(self, *args, **kwargs):
+        print('{0[test_id]}: {0[test_status]}'.format(kwargs))
+    
+def split_suite_into_chunks(num_threads, suite):
+    # Compute num_threads such that the number of threads does not exceed the value passed to the function
+    # Keep num_threads to a reasonable number of threads
+    if num_threads < 0: num_threads = 1
+    if num_threads > 8: num_threads = 8
+    num_tests = suite.countTestCases()
+    s = []
+    s_tmp = unittest.TestSuite()
+    n = round(num_tests / num_threads)
+    for case in suite:
+        if n <= 0 and s_tmp.countTestCases() > 0:
+            s.append([s_tmp, None])
+            num_threads -= 1
+            num_tests -= s_tmp.countTestCases()
+            s_tmp = unittest.TestSuite()
+            n = round(num_tests / num_threads)
+        s_tmp.addTest(case)
+        n -= 1
+    if s_tmp.countTestCases() > 0:
+        if s_tmp.countTestCases() > 0: s.append([s_tmp, None])
+        num_tests -= s_tmp.countTestCases()
+    if num_tests != 0: print("Error: num_tests should be 0 but is %s!" % num_tests)
+    return s
     
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
@@ -166,12 +204,13 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    files = getValidXMLFiles('XMLExamples/non_curated/')
+    #files = getValidXMLFiles('XMLExamples/non_curated/')
+    files = getValidXMLFiles('biomodels')
     #print files
     for index in files:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-    suite4 = testtools.ConcurrentStreamTestSuite(lambda: ((case, None) for case in suite))
+    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(8,suite)))
     validFiles = getValidBNGLFiles('raw') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
@@ -192,12 +231,15 @@ if __name__ == "__main__":
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
-       
-
     #unittest.TextTestRunner(verbosity=2).run(suite)
-    f = open('logresults.txt','w')
+    #f = open('logresults.txt','w')
+    result = TracingStreamResult()
+    result.startTestRun()
+    suite4.run(result)
+    result.stopTestRun()    
 
 
-    suite4.run(testtools.TextTestResult(f))
+    #suite4.run(testtools.StreamResult())
+    #suite4.run(testtools.StreamSummary())
     #print len(validFiles)
 
