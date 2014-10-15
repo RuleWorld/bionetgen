@@ -473,7 +473,8 @@ class SBMLAnalyzer:
                 
                 acc=0
                 for idx in range(0,len(matches)-1):
-                    while(tmpRuleList[1][0][matches[idx][2]+ acc]  in sym):
+                    while matches[idx][2]+ acc < len(tmpRuleList[1][0]) \
+                    and tmpRuleList[1][0][matches[idx][2]+ acc]  in sym:
                         productPartitions[idx] += tmpRuleList[1][0][matches[idx][2] + acc]
                         acc += 1
                     
@@ -740,7 +741,7 @@ class SBMLAnalyzer:
                                conventionDict,indirectEquivalenceTranslator)
 
             elif len(reaction[1]) == 2 and len(reaction[0]) == 1:
-                differences,pairedChemical= self.approximateMatching([reaction[1],reaction[0]],
+                differences,pairedChemicals= self.approximateMatching([reaction[1],reaction[0]],
                                                     translationKeys)
                 d1,d2 = differences[0],differences[1]
           
