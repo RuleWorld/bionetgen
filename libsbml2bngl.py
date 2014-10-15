@@ -154,6 +154,7 @@ def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
     fd = []
     for function in functions:
+        #print function,dependencies2[function.split(' = ' )[0].split('(')[0]],function.split(' = ' )[0].split('(')[0],0
         fd.append([function,resolveDependencies(dependencies2,function.split(' = ' )[0].split('(')[0],0)])
     fd = sorted(fd,key= lambda rule:rule[1])
     functions = [x[0] for x in fd]
@@ -944,7 +945,8 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  = 543
+    param  = 450
+    #527
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)

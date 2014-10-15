@@ -465,8 +465,23 @@ def stoichiometryAnalysis(reactions):
             generalSignature[signature].append(reaction)
             nonato.append(signature)
     return ato,nonato
+
+
+
+import fnmatch
+def getValidFiles(directory,extension):
+    """
+    Gets a list of bngl files that could be correctly translated in a given 'directory'
+    """
+    matches = []
+    for root, dirnames, filenames in os.walk(directory):
+        for filename in fnmatch.filter(filenames, '*.{0}'.format(extension)):
+            matches.append(os.path.join(root, filename))
+    return matches
+
+
 from collections import defaultdict
-def reactionBasedAtomizationDistro():
+def reactionBasedAtomizationDistro(directory):
     '''
     calculates a rection atomization based metric:
     ration of atomized reactions (non syndeg) in a model
@@ -485,10 +500,17 @@ def reactionBasedAtomizationDistro():
     atomizedDistro = []
     nonAtomizedDistro= []
     interesting = []
-    for element in range(1,549):
+    
+    bnglFiles = getValidFiles(directory,'bngl')
+    
+    for bngl in bnglFiles:
+        console.bngl2xml(bngl,timeout=10)
+        
+    xmlFiles = getValidFiles('.','xml')
+    for xml in xmlFiles:
         try:
             #console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
-            _,rules,_= readBNGXML.parseXML('complex/output{0}.xml'.format(element))
+            _,rules,_= readBNGXML.parseXML(xml)
             atomizedProcesses,weight = reactionBasedAtomization(rules)
             ato,nonato = stoichiometryAnalysis(rules)
             atomizedDistro.extend(ato)
@@ -837,8 +859,8 @@ def nonAtomizedSpeciesAnalysis():
     f.close()
 if __name__ == "__main__":
     #spaceCoveredCDF()
-    #reactionBasedAtomizationDistro()
-    nonAtomizedSpeciesAnalysis()
+    reactionBasedAtomizationDistro('complex')
+    #nonAtomizedSpeciesAnalysis()
     #createGroupingCDF()
     #analyzeGroupingCDF()
     
