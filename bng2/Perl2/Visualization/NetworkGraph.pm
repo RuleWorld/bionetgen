@@ -139,6 +139,27 @@ sub makeTransformation
 	return $tr;
 }
 
+sub makeTransformationDeleteBond
+{
+	my @nodelist = @{shift @_};
+	my $node = shift @_;
+	my $type = $node->{'Type'};
+	my $name = $node->{'Name'};
+	my $arrow = "->";
+	my $comma = ",";
+	my $tr;
+	if ($name eq 'DeleteBond')
+		{
+		my $bond = findNode(\@nodelist,${$node->{'Parents'}}[0]);
+		my @comps = grep {$_->{'Side'} eq 'both'} map (findNode(\@nodelist,$_), @{$bond->{'Parents'}});
+		my @rightstr = sort map ( makeAtomicPattern(\@nodelist,$_),@comps);
+		my $leftstr = makeAtomicPattern(\@nodelist,$bond);
+		$tr = $leftstr.$arrow.join($comma,@rightstr);
+		}
+	return $tr;
+
+}
+
 sub makeEdge
 {
 	my %shortname = ( 'r'=>"Reactant", 'p'=>"Product", 'c'=>"Context", 's'=>"Syndel", 'w'=>"Wildcard", 'pp'=>"ProcessPair", 'co'=>"Cotransform", 'os'=>"Onsite" );
@@ -568,7 +589,14 @@ sub makeRuleNetworkGraph
 	foreach my $op(@graphop)
 	{
 		my $tr = makeTransformation(\@nodelist,$op);
-		# this is because we are currently not treating wildcard bond deletions
+		if($op->{'Name'} eq 'DeleteBond')
+		{
+			$tr = makeTransformationDeleteBond(\@nodelist,$op);
+			# bond deletion is treated here
+			# if there's a deletemol, AB -> A, then it shows only A as the product
+			# wildcard delete! if A!+ -> A, then this shows A as the product
+		}
+		
 		if(length $tr == 0) { next; }
 		my ($reac,$prod) = getReactantsProducts($tr);
 		push @{$bpg->{'NodeList'}}, @$reac, @$prod;
