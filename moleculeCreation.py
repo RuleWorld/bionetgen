@@ -112,9 +112,9 @@ def bindingReactionsAnalysis(dependencyGraph, reaction, classification):
     for element in totalElements:
         addToDependencyGraph(dependencyGraph, element, [])
         if classification == 'Binding':
-            if len(reaction[0]) == 2 and element not in reaction[0]:
+            if len(reaction[1]) == 1 and element not in reaction[0]:
                 addToDependencyGraph(dependencyGraph, element, reaction[0])
-            elif len(reaction[1]) == 2 and element not in reaction[1]:
+            elif len(reaction[0]) == 1 and element not in reaction[1]:
                 addToDependencyGraph(dependencyGraph, element, reaction[1])
 
 
@@ -851,16 +851,16 @@ tmp,removedElement,tmp3))
             
     #pure lexical analysis
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
-    tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,database.dependencyGraph.keys())          
+    tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,[x.strip('()') for x in molecules])          
     for species in tmpDependency:
+        if tmpDependency[species] == []:
+            addToDependencyGraph(database.dependencyGraph,species,[])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph,species,instance)
-
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
-        
     
     #I'm polluting these data structures somewhere. In here
     #im just calling the original generator to recover them.
