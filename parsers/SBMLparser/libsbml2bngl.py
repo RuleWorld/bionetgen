@@ -947,15 +947,16 @@ if __name__ == "__main__":
     
     param  = 450
     #527
+    '''
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+    ''' 
     
-    '''
-    analyzeFile('XMLExamples/BMID000000142971.xml', 'config/reactionDefinitions.json',
+    analyzeFile('XMLExamples/non_curated/MODEL1006230036.xml', 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/BMID000000142971.xml' + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
-    '''
+    
     
     '''
     param = '00870'
