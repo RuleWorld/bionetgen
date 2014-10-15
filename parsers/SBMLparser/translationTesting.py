@@ -53,6 +53,7 @@ class TestOne(ParametrizedTestCase):
     Test for ability to ruleify
     '''
     def test_parsing(self):
+        print self.param
         #reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
         #spEquivalence = detectCustomDefinitions(bioNumber)
         self.longMessage = True
@@ -63,7 +64,7 @@ class TestOne(ParametrizedTestCase):
                 result = call(['python','sbmlTranslator.py','-i',
                 #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
                 self.param,
-                '-o','path2models/' + str(self.param.split('/')[-1]) + '.bngl',
+                '-o','complex/' + str(self.param.split('/')[-1]) + '.bngl',
                 '-c','config/reactionDefinitions.json',
                 '-n','config/namingConventions.json',
                 '-a'],stdout=f)
@@ -134,7 +135,7 @@ def getValidXMLFiles(directory):
     Gets a list of bngl files that could be correctly translated in a given 'directory'
     """
     matches = []
-    for root, dirnames, filenames in os.walk('biomodels'):
+    for root, dirnames, filenames in os.walk(directory):
         for filename in fnmatch.filter(filenames, '*.xml'):
             matches.append(os.path.join(root, filename))
     return matches
@@ -204,13 +205,13 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    files = getValidXMLFiles('XMLExamples/non_curated/')
+    files = getValidXMLFiles('XMLExamples/curated/')
     #files = getValidXMLFiles('biomodels')
     #print files
     for index in files:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(4,suite)))
+    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(1,suite)))
     validFiles = getValidBNGLFiles('raw') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
@@ -231,12 +232,12 @@ if __name__ == "__main__":
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
-    #unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(suite)
     #f = open('logresults.txt','w')
-    result = TracingStreamResult()
-    result.startTestRun()
-    suite4.run(result)
-    result.stopTestRun()    
+    #result = TracingStreamResult()
+    #result.startTestRun()
+    #suite4.run(result)
+    #result.stopTestRun()    
 
 
     #suite4.run(testtools.StreamResult())
