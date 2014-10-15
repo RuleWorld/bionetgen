@@ -149,7 +149,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
     equivalenceTranslator = {}
     def selectBestCandidate(reactant, candidates, dependencyGraph,sbmlAnalyzer,
                             equivalenceTranslator=equivalenceTranslator):
-        
         tmpCandidates = []
         modifiedElements = []
         unevenElements = []
@@ -243,10 +242,12 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             if reactant != None:
                 pass
             #analyze based on standard modifications
-            lexCandidate,translationKeys,tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,tmpCandidates[0])
+
+            lexCandidate,translationKeys,tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,originalTmpCandidates[0])
             #FIXME: this is iffy. is it always an append modification? could be prepend
 
             if lexCandidate !=None:
+                lexCandidate = tmpCandidates[0][originalTmpCandidates[0].index(lexCandidate)]
                 lexCandidateModification = lexCandidate + translationKeys[0]
                 for element in tmpequivalenceTranslator:
                     if element not in equivalenceTranslator:
@@ -777,7 +778,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
     #complex catalysis reactions
-
     for key in indirectEquivalenceTranslator:
         #first remove these entries from the dependencyGraph since 
         #they are not true bindingReactions
@@ -822,7 +822,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                     logMess('WARNING:Atomization','We determined that {0}={1} based on lexical analysis instead of \
 {2}={3} (stoichiometry) but one of the constituent components in {1} is not a molecule so no action was taken'.format(namingEquivalence[3][0],
 tmp,removedElement,tmp3))
-
+    
     #user defined stuff
     for element in database.labelDictionary:
         if len(database.labelDictionary[element][0]) == 0 or element == \
@@ -848,7 +848,8 @@ tmp,removedElement,tmp3))
             database.dependencyGraph[element] = [list(
             database.lexicalLabelDictionary[element][0])]
             
-            
+    
+    
     #pure lexical analysis
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,[x.strip('()') for x in molecules])          
@@ -857,11 +858,11 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph,species,[])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph,species,instance)
+    
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
-    
     #I'm polluting these data structures somewhere. In here
     #im just calling the original generator to recover them.
     #I think it solved itself. I'm leaving an assert just to be sure

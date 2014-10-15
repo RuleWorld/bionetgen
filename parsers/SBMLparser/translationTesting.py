@@ -204,13 +204,13 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    #files = getValidXMLFiles('XMLExamples/non_curated/')
-    files = getValidXMLFiles('biomodels')
+    files = getValidXMLFiles('XMLExamples/non_curated/')
+    #files = getValidXMLFiles('biomodels')
     #print files
     for index in files:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(8,suite)))
+    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(4,suite)))
     validFiles = getValidBNGLFiles('raw') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
