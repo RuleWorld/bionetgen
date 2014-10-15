@@ -10,6 +10,7 @@ import unittest
 from evaluate import evaluate,validate
 from os import listdir,devnull
 from os.path import isfile, join,getsize
+import os
 import copasi
 from subprocess import call        
 
