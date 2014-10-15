@@ -43,7 +43,7 @@ class SBMLAnalyzer:
     def distanceToModification(self,particle,modifiedElement,translationKeys):
         particlePos = [m.start()+len(particle) for m in re.finditer(particle,modifiedElement)]
         keyPos = [m.start() for m in re.finditer(translationKeys,modifiedElement)]
-        distance = [(y-x) if x<=y else 9999 for x in particlePos for y in keyPos]
+        distance = [abs(y-x) for x in particlePos for y in keyPos]
         distance.append(9999)
         return min(distance)
 
@@ -81,9 +81,20 @@ class SBMLAnalyzer:
             '''
             return None,None,None
         for particle in partialAnalysis:
-            distance = self.distanceToModification(particle,modifiedElement,translationKeys[0])
-            #FIXME:tis is just an ad-hoc parameter in terms of how far a mod is from a species name
-            #use something better
+            distance = 9999
+            if re.search('(_|^){0}(_|$)'.format(particle),modifiedElement) == None:
+                distance = self.distanceToModification(particle,modifiedElement,translationKeys[0])
+                score = difflib.ndiff(particle,modifiedElement)
+            else:
+                #FIXME: make sure we only do a search on those variables that are viable
+                #candidates. this is once again fuzzy string matchign. there should
+                #be a better way of doing this with difflib
+                permutations = set(['_'.join(x) for x in itertools.permutations(partialAnalysis,2) if x[0] == particle])
+                if all([x not in modifiedElement for x in permutations]):
+                    distance = self.distanceToModification(particle,modifiedElement,translationKeys[0])
+                    score = difflib.ndiff(particle,modifiedElement)
+                #FIXME:tis is just an ad-hoc parameter in terms of how far a mod is from a species name
+                #use something better
             if distance < 4:
                 scores.append([particle,distance])
         if len(scores)>0:
@@ -451,7 +462,6 @@ class SBMLAnalyzer:
                 reactantPartitions = tmpRuleList[0]
                 
                 
-                #TODO:experimental change
                 
                 #Don't count trailing underscores as part of the species name
                 #productfirstHalf = productfirstHalf.strip('_')
@@ -602,7 +612,6 @@ class SBMLAnalyzer:
                         state = reactionType[0]
                     reactionTypeProperties[reactionType] = [site,state]
         #TODO: end of delete
-        #reactionDefinition = detectOntology.loadOntology(self.namingConventions)
         reactionDefinition = self.namingConventions
         for idx,reactionType in enumerate(reactionDefinition['modificationList']):
             site = reactionDefinition['reactionSite'][reactionDefinition['definitions'][idx]['rsi']]
@@ -661,7 +670,7 @@ class SBMLAnalyzer:
             a change was performed
             '''
             #fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
-            if fuzzyKey and fuzzyKey not in translationKeys:
+            if fuzzyKey:
                 logMess('INFO:Atomization','added induced naming convention {0}'.format(str(reaction)))
                 #if our state isnt yet on the dependency graph preliminary data structures
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
@@ -685,7 +694,6 @@ class SBMLAnalyzer:
                 if '{0}mod'.format(fuzzyKey) not in indirectEquivalenceTranslator:
                     indirectEquivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
                 return True
-
             return False
         
         #load the json config file
@@ -773,7 +781,7 @@ class SBMLAnalyzer:
                 fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
                 createArtificialNamingConvention(reaction,fuzzyKey,fuzzyDifference)
             #    self.processFuzzyReaction([[reaction[0][0],''],reaction[1]],translationKeys,conventionDict,indirectEquivalenceTranslator)
-            elif len(reaction[1]) == 1 or len(reaction[0]) == 1:
+            elif (len(reaction[1]) == 1 or len(reaction[0]) == 1) and '0' not in reaction:
                 if len(reaction[1]) == 1:
                     difference,pairedChemicals =  self.approximateMatching(reaction,translationKeys)
                 elif len(reaction[0]) == 1:
@@ -811,10 +819,12 @@ class SBMLAnalyzer:
             definition.append([sdefinition])
             self.lexicalSpecies.append(definition)
                 #definition = [commonRoot,[[commonRoot,componentName,["s",tag]]]]
+        
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
                                             translationKeys)
+            
         for element in trueBindingReactions:
             reactionClassification[element] = 'Binding'
         listOfEquivalences = []

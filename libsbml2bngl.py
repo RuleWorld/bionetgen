@@ -948,6 +948,7 @@ if __name__ == "__main__":
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     '''
+    
     analyzeFile('XMLExamples/BMID000000142971.xml', 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/BMID000000142971.xml' + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
