@@ -108,6 +108,8 @@ class SBMLAnalyzer:
     def findClosestModification(self,particles,species):
         equivalenceTranslator = {}
         dependencyGraph = {}
+        localSpeciesDict = defaultdict(lambda : defaultdict(list))
+
         def analyzeByParticle(splitparticle,species,
                               equivalenceTranslator=equivalenceTranslator,
                               dependencyGraph=dependencyGraph):
@@ -120,6 +122,18 @@ class SBMLAnalyzer:
                 splitp = splitparticle[splitpindex]
                 if splitp in species:
                     closestList = [splitp]
+                    similarList = difflib.get_close_matches(splitp,species)
+                    similarList = [x for x in similarList if x != splitp and len(x) < len(splitp)]
+                    similarList = [[x,splitp] for x in similarList]
+                    
+                    if len(similarList) > 0:
+                        for similarity in similarList:
+                            tag,modifier = self.processAdHocNamingConventions(similarity[0],
+                                            similarity[1],localSpeciesDict,False) 
+                            if modifier != None and all(['-' not in x for x in modifier]):
+                                logMess('INFO:Atomization','Lexical relationship inferred between \
+                                {0}, user information confirming it is required'.format(similarity))
+                    
                 else:
                     closestList = difflib.get_close_matches(splitp,species)
                     closestList = [x for x in closestList if len(x) < len(splitp)]
@@ -183,19 +197,26 @@ class SBMLAnalyzer:
                     if flag:
                         composingElements.append(splitp)
             return basicElements,composingElements
-            
+        additionalHandling = []
         for particle in particles:
             composingElements = []
             basicElements = []
             #break it down into small bites
             #TODO: take into account modifiers like _P
             splitparticle = particle.split('_')
+            #print '---',splitparticle
+            splitparticle = [x for x in splitparticle if x]
+            #print splitparticle
             basicElements,composingElements = analyzeByParticle(splitparticle,species)
             if particle not in composingElements and composingElements != []:
                 addToDependencyGraph(dependencyGraph,particle,composingElements)
                 for element in composingElements:
                     if element not in dependencyGraph:
                         addToDependencyGraph(dependencyGraph,element,[])
+                    if element not in particles:
+                        additionalHandling.append(element)
+        #if len(additionalHandling) > 0:
+            #print self.findClosestModification(set(additionalHandling),species)
         return dependencyGraph,equivalenceTranslator
     def parseReactions(self,reaction,specialSymbols=''):
         name = Word(alphanums + '_-') + ':'
@@ -363,7 +384,7 @@ class SBMLAnalyzer:
         #for now im just going with a simple heuristic that if the species name
         #is long enough, and the changes from a to be are all about modification
         longEnough = 3
-        if len(reactant) >= longEnough and len(differenceList) > 0 and len(reactant) >= len(differenceList):
+        if len(reactant) >= longEnough and len(differenceList) > 0 and len(reactant) >= len(differenceList[0]):
             #one is strictly a subset of the other a,a_b
             if len([x for x in differenceList[0] if '-' in x]) == 0:
                 return ''.join([x[-1] for x in differenceList[0]]),differenceList[0]
@@ -373,7 +394,6 @@ class SBMLAnalyzer:
                 if len(commonRoot) > longEnough:
                     molecules = [commonRoot,reactant,product]
                     namePairs,differenceList,_ = detectOntology.defineEditDistanceMatrix(molecules,similarityThreshold=10)  
-
                     #obtain the name of the component from an anagram using the modification letters
                     validDifferences = [''.join([x[-1] 
                         for x in difference]) 
@@ -793,7 +813,7 @@ class SBMLAnalyzer:
                     trueBindingReactions.append(idx)
                 else:
                     #n-order modification reaction
-                    print '--',reaction
+                    #print '--',reaction
                     pass
                     '''
                     for pair in pairedChemicals:
@@ -804,7 +824,8 @@ class SBMLAnalyzer:
                             createArtificialNamingConvention([[pair[0]],[pair[1]]],
                                                              fuzzyKey,fuzzyDifference)
                     '''
-
+            #else:
+                #print '+++',reaction
         translationKeys.extend(newTranslationKeys)
         for species in localSpeciesDict:
             speciesName =  localSpeciesDict[species][localSpeciesDict[species].keys()[0]][0][0]

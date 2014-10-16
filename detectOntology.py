@@ -19,6 +19,19 @@ try:
 except ImportError:
     pd = None
 import numpy as np
+import functools
+
+def memoize(obj):
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
+
 def levenshtein(s1, s2):
         l1 = len(s1)
         l2 = len(s2)
@@ -116,9 +129,9 @@ def defineEditDistanceMatrix(speciesName,similarityThreshold=3,parallel = False)
             if species == species2 or scoreMatrix2[idx][idx2] != 0:
                 continue
             scoreMatrix2[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
-            scoreMatrix2[idx2][idx] = scoreMatrix[idx][idx2]
+            scoreMatrix2[idx2][idx] = scoreMatrix2[idx][idx2]
     
-    namePairs,differenceList = getDifferences(scoreMatrix, speciesName,similarityThreshold)
+    namePairs,differenceList = getDifferences(scoreMatrix2, speciesName,similarityThreshold)
     differenceCounter.update(differenceList)
     return namePairs,differenceList,differenceCounter
     

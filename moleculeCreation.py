@@ -280,12 +280,16 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                     logMess('INFO:Atomization','Used fuzzy string matching from {0} to {1}'.format(reactant,fuzzyCandidateMatch))
                     return [fuzzyCandidateMatch],unevenElements
                 else:
-
+                    #last ditch attempt using straighforward lexical analysis
+                    tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification([reactant],dependencyGraph.keys())
+                    if len(tmpDependency.keys()) > 0:
+                        return tmpDependency[reactant],unevenElements
+                    
                     #the ive no idea whats going on branch
                     modificationCandidates = {}            
                     if modificationCandidates == {}:
                         logMess('CRITICAL:Atomization','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}={1}.'.format(reactant,candidates))
-                        tmpCandidates[0] = [reactant]
+                        tmpCandidates[0] = []
                     for idx, molecule in enumerate(tmpCandidates[0]):
                         if molecule in modificationCandidates:
                             tmpCandidates[0][idx] = modificationCandidates[molecule]
@@ -305,9 +309,9 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
             try:
-
                 candidates, uneven = selectBestCandidate(element[0], candidates, prunnedDependencyGraph,sbmlAnalyzer)
             except CycleError:
+                
                 candidates = None
                 uneven = []
             if uneven != []:
@@ -858,7 +862,6 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph,species,[])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph,species,instance)
-    
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
@@ -870,6 +873,15 @@ tmp,removedElement,tmp3))
     #    indirectEquivalenceTranslator,_ = sbmlAnalyzer.classifyReactions(rules,molecules)
     assert(referenceVariables == comparisonVariables)
 
+
+#    orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
+    #basicSpecies = [x for x in prunnedDependencyGraph if len(prunnedDependencyGraph[x]) ==0 or len(prunnedDependencyGraph[x][0]) == 1]
+    #tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(basicSpecies,[x.strip('()') for x in molecules])          
+    #for species in tmpDependency:
+    #    if tmpDependency[species] == []:
+    #        addToDependencyGraph(database.dependencyGraph,species,[])
+    #    for instance in tmpDependency[species]:
+    #        addToDependencyGraph(database.dependencyGraph,species,instance)
     
     for element in artificialEquivalenceTranslator:
         if element not in eequivalenceTranslator:
