@@ -269,15 +269,18 @@ def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEqui
         finalCompartmentPairs[element[0][0]][tuple([element[0][1],element[1][1]])] = compartmentPairs[element]
     return finalCompartmentPairs
     
-def recursiveSearch(dictionary,element):
+def recursiveSearch(dictionary,element,visitedFunctions=[]):
     tmp = 0
-
+    
     for item in dictionary[element]:
         if dictionary[item] == []:
             tmp +=1
         else:
+            if item in visitedFunctions:
+                raise Exception
+            visitedFunctions.append(item)
             tmp += 1
-            tmp += (recursiveSearch(dictionary,item))
+            tmp += (recursiveSearch(dictionary,item,visitedFunctions))
     return tmp
 
 def reorderFunctions(functions):
@@ -292,10 +295,12 @@ def reorderFunctions(functions):
         functionNames.append(m[0])
     functionNamesDict = {x:[] for x in functionNames}
     for idx,function in enumerate(functions):
+        print function
         tmp = [x for x in functionNames if x in function.split('=')[1] and x!= functionNames[idx]]
         functionNamesDict[functionNames[idx]].extend(tmp)
     newFunctionNamesDict = {}
     for name in functionNamesDict:
+        print name,functionNamesDict[name]
         newFunctionNamesDict[name] = recursiveSearch(functionNamesDict,name)
     functionWeightsDict = {x:newFunctionNamesDict[x] for x in newFunctionNamesDict}
     functionWeights = []
@@ -953,7 +958,7 @@ if __name__ == "__main__":
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     ''' 
     
-    analyzeFile('XMLExamples/non_curated/MODEL1006230036.xml', 'config/reactionDefinitions.json',
+    analyzeFile('XMLExamples/BMID000000142971.xml', 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/BMID000000142971.xml' + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     
