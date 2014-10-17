@@ -119,12 +119,12 @@ def bindingReactionsAnalysis(dependencyGraph, reaction, classification):
 
 
 def weightDependencyGraph(dependencyGraph):
-    def measureGraph(path):
+    def measureGraph(element,path):
         counter = 1
         for x in path:
             if type(x) == list or type(x) == tuple:
-                counter += measureGraph(x)
-            elif x != '0':
+                counter += measureGraph(element,x)
+            elif x != '0' and x!= element:
                 counter += 1
         return counter
 
@@ -132,10 +132,10 @@ def weightDependencyGraph(dependencyGraph):
     for element in dependencyGraph:
 
         path = resolveDependencyGraph(dependencyGraph, element)
-        weight = measureGraph(path)
+        weight = measureGraph(element,path)
         weights.append([element, weight])
 
-    weights = sorted(weights, key=lambda rule: rule[1])
+    weights = sorted(weights, key=lambda rule: (rule[1],len(rule[0])))
     return weights
 
 
@@ -242,6 +242,8 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             if reactant != None:
                 pass
             #analyze based on standard modifications
+            if reactant == '__IL6_gp80_gp130_JAK___ast2':
+                pass
 
             lexCandidate,translationKeys,tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,originalTmpCandidates[0])
             #FIXME: this is iffy. is it always an append modification? could be prepend
@@ -289,7 +291,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                     modificationCandidates = {}            
                     if modificationCandidates == {}:
                         logMess('CRITICAL:Atomization','I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}={1}.'.format(reactant,candidates))
-                        tmpCandidates[0] = []
+                        return None,None
                     for idx, molecule in enumerate(tmpCandidates[0]):
                         if molecule in modificationCandidates:
                             tmpCandidates[0][idx] = modificationCandidates[molecule]
@@ -764,8 +766,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     for reaction, classification in zip(rules, classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
-                        
-    
     #catalysis reactions
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
@@ -826,7 +826,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                     logMess('WARNING:Atomization','We determined that {0}={1} based on lexical analysis instead of \
 {2}={3} (stoichiometry) but one of the constituent components in {1} is not a molecule so no action was taken'.format(namingEquivalence[3][0],
 tmp,removedElement,tmp3))
-    
     #user defined stuff
     for element in database.labelDictionary:
         if len(database.labelDictionary[element][0]) == 0 or element == \
@@ -873,7 +872,6 @@ tmp,removedElement,tmp3))
     #    indirectEquivalenceTranslator,_ = sbmlAnalyzer.classifyReactions(rules,molecules)
     assert(referenceVariables == comparisonVariables)
 
-
 #    orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     #basicSpecies = [x for x in prunnedDependencyGraph if len(prunnedDependencyGraph[x]) ==0 or len(prunnedDependencyGraph[x][0]) == 1]
     #tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(basicSpecies,[x.strip('()') for x in molecules])          
@@ -918,8 +916,8 @@ tmp,removedElement,tmp3))
         for candidates in tmpEquivalence[modification]:
             for instance in candidates:
                 addToDependencyGraph(eequivalenceTranslator,modification,instance)
-            
-    weights = sorted(weights, key=lambda rule: rule[1])
+    weights = sorted(weights, key=lambda rule: (rule[1],len(rule[0])))
+    
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
                                                                 eequivalenceTranslator,bioGridFlag)
     onlySynDec =  len([x for x in classifications if x not in ['Generation','Decay']]) == 0

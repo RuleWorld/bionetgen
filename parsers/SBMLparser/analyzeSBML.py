@@ -22,6 +22,17 @@ from collections import defaultdict
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
 '''
+import functools
+def memoize(obj):
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
 
 
 def addToDependencyGraph(dependencyGraph, label, value):
@@ -41,9 +52,11 @@ class SBMLAnalyzer:
         self.lexicalSpecies= []
         
     def distanceToModification(self,particle,modifiedElement,translationKeys):
-        particlePos = [m.start()+len(particle) for m in re.finditer(particle,modifiedElement)]
+        posparticlePos = [m.start()+len(particle) for m in re.finditer(particle,modifiedElement)]
+        preparticlePos = [m.start() for m in re.finditer(particle,modifiedElement)]
         keyPos = [m.start() for m in re.finditer(translationKeys,modifiedElement)]
-        distance = [abs(y-x) for x in particlePos for y in keyPos]
+        distance = [abs(y-x) for x in posparticlePos for y in keyPos]
+        distance.extend([abs(y-x) for x in preparticlePos for y in keyPos])
         distance.append(9999)
         return min(distance)
 
@@ -82,8 +95,9 @@ class SBMLAnalyzer:
             return None,None,None
         for particle in partialAnalysis:
             distance = 9999
-            if re.search('(_|^){0}(_|$)'.format(particle),modifiedElement) == None:
-                distance = self.distanceToModification(particle,modifiedElement,translationKeys[0])
+            comparisonElement = max(baseElement,modifiedElement,key=len)
+            if re.search('(_|^){0}(_|$)'.format(particle),comparisonElement) == None:
+                distance = self.distanceToModification(particle,comparisonElement,translationKeys[0])
                 score = difflib.ndiff(particle,modifiedElement)
             else:
                 #FIXME: make sure we only do a search on those variables that are viable
@@ -91,7 +105,7 @@ class SBMLAnalyzer:
                 #be a better way of doing this with difflib
                 permutations = set(['_'.join(x) for x in itertools.permutations(partialAnalysis,2) if x[0] == particle])
                 if all([x not in modifiedElement for x in permutations]):
-                    distance = self.distanceToModification(particle,modifiedElement,translationKeys[0])
+                    distance = self.distanceToModification(particle,comparisonElement,translationKeys[0])
                     score = difflib.ndiff(particle,modifiedElement)
                 #FIXME:tis is just an ad-hoc parameter in terms of how far a mod is from a species name
                 #use something better
@@ -187,6 +201,9 @@ class SBMLAnalyzer:
                     flag = False
                     for element in closestList:
                         localEquivalenceTranslator,_,_ =  self.processNamingConventions2([element,splitp])
+                        if len(localEquivalenceTranslator.keys()) == 0:
+                            basicElements = []
+                            composingElements = []
                         for element in localEquivalenceTranslator:
                             if element not in equivalenceTranslator:
                                 equivalenceTranslator[element] = []
@@ -207,6 +224,8 @@ class SBMLAnalyzer:
             #print '---',splitparticle
             splitparticle = [x for x in splitparticle if x]
             #print splitparticle
+            if particle == 'MisP_Ub8':
+                pass
             basicElements,composingElements = analyzeByParticle(splitparticle,species)
             if particle not in composingElements and composingElements != []:
                 addToDependencyGraph(dependencyGraph,particle,composingElements)
@@ -349,7 +368,7 @@ class SBMLAnalyzer:
         return equivalences,modifiedElement        
      
     
-    def processNamingConventions2(self,molecules,threshold=3):
+    def processNamingConventions2(self,molecules,threshold=4):
             
         #normal naming conventions
         strippedMolecules = [x.strip('()') for x in molecules]
@@ -418,7 +437,7 @@ class SBMLAnalyzer:
         return None,None
     
     import itertools
-    def approximateMatching(self,ruleList,differences=[]):
+    def approximateMatching(self,ruleList,differenceParameter=[]):
         def curateString(element,differences,symbolList = ['#','&',';','@','!','?'],equivalenceDict={}):
             '''
             remove compound differencese (>2 characters) and instead represent them with symbols
@@ -427,14 +446,20 @@ class SBMLAnalyzer:
             tmp = element
             for difference in differences:
                 if difference in element:
-                    if difference not in equivalenceDict:
-                        symbol = symbolList.pop()
-                        equivalenceDict[difference] = symbol
-                    else:
-                        symbol = equivalenceDict[difference]
                     if difference.startswith('_'):
+                        if difference not in equivalenceDict:
+                            symbol = symbolList.pop()
+                            equivalenceDict[difference] = symbol
+                        else:
+                            symbol = equivalenceDict[difference]
                         tmp = re.sub(r'{0}(_|$)'.format(difference),r'{0}\1'.format(symbol),tmp)
                     elif difference.endswith('_'):
+                        if difference not in equivalenceDict:
+                            symbol = symbolList.pop()
+                            equivalenceDict[difference] = symbol
+                        else:
+                            symbol = equivalenceDict[difference]
+    
                         tmp = re.sub(r'(_|^){0}'.format(difference),r'{0}\1'.format(symbol),tmp)
             return tmp,symbolList,equivalenceDict
         '''
@@ -442,7 +467,7 @@ class SBMLAnalyzer:
         slightly modified version of a and b, this function will return a list of 
         lexical changes that a and b must undergo to become ~a and ~b.
         '''
-        
+        differences = deepcopy(differenceParameter)
         tmpRuleList = deepcopy(ruleList)
         flag = True
         if len(ruleList[1]) == 1 and ruleList[1] != '0':
@@ -452,6 +477,7 @@ class SBMLAnalyzer:
                 dic = {}
                 for idx,_ in enumerate(tmpRuleList[0]):
                     tmpRuleList[0][idx],sym,dic = curateString(ruleList[0][idx],differences,sym,dic)
+                    
                 tmpRuleList[1][0],sym,dic =  curateString(ruleList[1][0],differences,sym,dic)
                 permutations = [x for x in itertools.permutations(ruleList[0])]
                 tpermutations = [x for x in itertools.permutations(tmpRuleList[0])]
@@ -464,7 +490,6 @@ class SBMLAnalyzer:
                 sym = [dic[x] for x in dic]
                 sym.extend(differences)
                 sym = [x for x in sym if '_' not in x]
-                
                 simplifiedDifference = difflib.SequenceMatcher(lambda x: x in sym,'-'.join(tmpRuleList[0]),tmpRuleList[1][0])
                             
                 matches =  simplifiedDifference.get_matching_blocks()
@@ -478,20 +503,20 @@ class SBMLAnalyzer:
                     if matches[idx][2] != 0:
                         productPartitions.append(tmpRuleList[1][0][
                                 matches[idx][1]:matches[idx][1]+matches[idx][2]])
-                            
                 reactantPartitions = tmpRuleList[0]
                 
                 
                 
                 #Don't count trailing underscores as part of the species name
-                #productfirstHalf = productfirstHalf.strip('_')
-                #productsecondHalf = productsecondHalf.strip('_')
-                #reactantfirstHalf = reactantfirstHalf.strip('_')
-                #reactantsecondHalf = reactantsecondHalf.strip('_')
-                
+                for idx,_ in enumerate(reactantPartitions):
+                    reactantPartitions[idx] = reactantPartitions[idx].strip('_')                    
+                for idx,_ in enumerate(productPartitions):
+                    productPartitions[idx] = productPartitions[idx].strip('_')                    
+
                 #greedymatching
                 
                 acc=0
+                #FIXME:its not properly copying all the string
                 for idx in range(0,len(matches)-1):
                     while matches[idx][2]+ acc < len(tmpRuleList[1][0]) \
                     and tmpRuleList[1][0][matches[idx][2]+ acc]  in sym:
@@ -691,7 +716,8 @@ class SBMLAnalyzer:
             a change was performed
             '''
             #fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
-            if fuzzyKey:
+            
+            if fuzzyKey and fuzzyKey.strip('_') not in strippedMolecules:
                 logMess('INFO:Atomization','added induced naming convention {0}'.format(str(reaction)))
                 #if our state isnt yet on the dependency graph preliminary data structures
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
@@ -704,9 +730,8 @@ class SBMLAnalyzer:
                     self.namingConventions['patterns'][fuzzyDifference] = '{0}mod'.format(fuzzyKey)
                     self.namingConventions['definitions'].append({'rst':len(self.namingConventions['reactionState'])-1,
                             'rsi':len(self.namingConventions['reactionSite'])-1})
-                    key = ''.join([x.strip('+ ') for x in fuzzyKey])
-                    if key not in translationKeys:
-                        translationKeys.append(key)
+                    if fuzzyKey not in translationKeys:
+                        translationKeys.append(fuzzyKey)
                 #if this same definition doesnt already exist. this is to avoid cycles
                 if tuple(sorted([x[0] for x in reaction],key=len)) not in equivalenceTranslator['{0}mod'.format(fuzzyKey)]:
                     equivalenceTranslator['{0}mod'.format(fuzzyKey)].append(tuple(sorted([x[0] for x in reaction],key=len)))
@@ -719,7 +744,7 @@ class SBMLAnalyzer:
         
         #load the json config file
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
-        
+        strippedMolecules = [x.strip('()') for x in molecules]
         #load user defined complexes        
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
@@ -743,6 +768,7 @@ class SBMLAnalyzer:
                 #complex naming conventions, first we need to know how to match them
                 differences,pairedChemicals = self.approximateMatching(reaction,
                                                     translationKeys)
+                
                 d1,d2 = differences[0],differences[1]
                 firstMatch,secondMatch = pairedChemicals[0],pairedChemicals[1]
                 #then how do they differ
@@ -754,7 +780,6 @@ class SBMLAnalyzer:
                         #fill in 1-1 naming structures
                         createArtificialNamingConvention([[pair[0]],[pair[1]]],
                                                          fuzzyKey,fuzzyDifference)
-                    
 
                 #basic processing vs known naming conventions
                 self.processFuzzyReaction(reaction,translationKeys,
@@ -803,10 +828,12 @@ class SBMLAnalyzer:
                 createArtificialNamingConvention(reaction,fuzzyKey,fuzzyDifference)
             #    self.processFuzzyReaction([[reaction[0][0],''],reaction[1]],translationKeys,conventionDict,indirectEquivalenceTranslator)
             elif (len(reaction[1]) == 1 or len(reaction[0]) == 1) and '0' not in reaction:
-                if len(reaction[1]) == 1:
+                if len(reaction[1]) == 1 and len(reaction[0]) <= 4:
                     difference,pairedChemicals =  self.approximateMatching(reaction,translationKeys)
-                elif len(reaction[0]) == 1:
+                elif len(reaction[0]) == 1 and len(reaction[1]) <= 4:
                     difference,pairedChemicals =  self.approximateMatching([reaction[1],reaction[0]],translationKeys)
+                else:
+                    continue
                 #its a simple binding reaction
                 if difference == [y for y in itertools.repeat([],len(reaction[0]))] \
                 and pairedChemicals != [y for y in itertools.repeat([],len(reaction[0]))]:
@@ -846,7 +873,6 @@ class SBMLAnalyzer:
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
                                             translationKeys)
-            
         for element in trueBindingReactions:
             reactionClassification[element] = 'Binding'
         listOfEquivalences = []
