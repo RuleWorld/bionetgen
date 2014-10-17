@@ -271,7 +271,6 @@ def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEqui
     
 def recursiveSearch(dictionary,element,visitedFunctions=[]):
     tmp = 0
-    
     for item in dictionary[element]:
         if dictionary[item] == []:
             tmp +=1
@@ -295,13 +294,11 @@ def reorderFunctions(functions):
         functionNames.append(m[0])
     functionNamesDict = {x:[] for x in functionNames}
     for idx,function in enumerate(functions):
-        print function
         tmp = [x for x in functionNames if x in function.split('=')[1] and x!= functionNames[idx]]
         functionNamesDict[functionNames[idx]].extend(tmp)
     newFunctionNamesDict = {}
     for name in functionNamesDict:
-        print name,functionNamesDict[name]
-        newFunctionNamesDict[name] = recursiveSearch(functionNamesDict,name)
+        newFunctionNamesDict[name] = recursiveSearch(functionNamesDict,name,[])
     functionWeightsDict = {x:newFunctionNamesDict[x] for x in newFunctionNamesDict}
     functionWeights = []
     for name in functionNames:
@@ -950,9 +947,10 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  = 450
+    param  = [151,105,88,588]
+    #use 105 as an example for (2,2) reactions
     #527
-    '''
+    
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
@@ -962,7 +960,7 @@ if __name__ == "__main__":
                     False, 'config/namingConventions.json',
                     'complex/BMID000000142971.xml' + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     
-    
+    '''
     '''
     param = '00870'
     analyzeFile('test/testl2v4/{0}/{0}-sbml-l2v4.xml'.format(param), 'reactionDefinitions/reactionDefinition7.json',

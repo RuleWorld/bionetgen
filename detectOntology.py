@@ -100,7 +100,7 @@ def stringToSet(species,idx,scoreRow,speciesName):
             continue
         scoreRow[idx2] = levenshtein(species,speciesName[idx2])
     return idx,scoreRow
-def defineEditDistanceMatrix(speciesName,similarityThreshold=3,parallel = False):
+def defineEditDistanceMatrix(speciesName,similarityThreshold=4,parallel = False):
         
     '''
     obtains a distance matrix and a pairs of elements that are close 
@@ -135,7 +135,7 @@ def defineEditDistanceMatrix(speciesName,similarityThreshold=3,parallel = False)
     differenceCounter.update(differenceList)
     return namePairs,differenceList,differenceCounter
     
-def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=3):
+def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=4):
     patternClassification = {}
     pairClassification = {}
 

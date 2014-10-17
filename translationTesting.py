@@ -65,7 +65,7 @@ class TestOne(ParametrizedTestCase):
                 result = call(['python','sbmlTranslator.py','-i',
                 #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
                 self.param,
-                '-o','non_complex/' + str(self.param.split('/')[-1]) + '.bngl',
+                '-o','complex/' + str(self.param.split('/')[-1]) + '.bngl',
                 '-c','config/reactionDefinitions.json',
                 '-n','config/namingConventions.json',
                 '-a'],stdout=f)
@@ -206,8 +206,9 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    files = getValidXMLFiles('XMLExamples/non_curated/')
-    files = sorted(files,key=os.path.getsize)
+    files = getValidXMLFiles('XMLExamples/curated/')
+    #files = sorted(files,key=os.path.getsize)
+    files = sorted(files)
     #files = getValidXMLFiles('biomodels')
     #print files
     for index in files:
@@ -234,12 +235,12 @@ if __name__ == "__main__":
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
-    #unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(suite)
     #f = open('logresults.txt','w')
-    result = TracingStreamResult()
-    result.startTestRun()
-    suite4.run(result)
-    result.stopTestRun()    
+    #result = TracingStreamResult()
+    #result.startTestRun()
+    #suite4.run(result)
+    #result.stopTestRun()    
 
 
     #suite4.run(testtools.StreamResult())
