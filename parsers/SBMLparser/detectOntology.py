@@ -128,6 +128,7 @@ def defineEditDistanceMatrix(speciesName,similarityThreshold=4,parallel = False)
         for idx2,species2 in enumerate(speciesName):
             if species == species2 or scoreMatrix2[idx][idx2] != 0:
                 continue
+            #comparison = difflib.SequenceMatcher(None,speciesName[idx],speciesName[idx2])
             scoreMatrix2[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
             scoreMatrix2[idx2][idx] = scoreMatrix2[idx][idx2]
     
