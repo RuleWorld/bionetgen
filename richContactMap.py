@@ -14,6 +14,8 @@ import consoleCommands as console
 import readBNGXML
 import extractAtomic
 import pygraphviz as pgv
+import progressbar
+import glob, os, shutil
 
 
 sys.path.insert(0,'../ContactMap')
@@ -503,14 +505,35 @@ def reactionBasedAtomizationDistro(directory):
     
     bnglFiles = getValidFiles(directory,'bngl')
     
-    for bngl in bnglFiles:
-        console.bngl2xml(bngl,timeout=10)
+    print 'converting bnglfiles'
+    progress = progressbar.ProgressBar()
+    for i in progress(range(len(bnglFiles))):
+        console.bngl2xml(bnglFiles[i],timeout=10)
         
-    xmlFiles = getValidFiles('.','xml')
-    for xml in xmlFiles:
+    print 'moving xml files'
+    files = glob.iglob(os.path.join('.', "*.xml"))
+    for xmlfile in files:
+        if os.path.isfile(xmlfile):
+            shutil.move(xmlfile, directory)
+    
+    print 'reading files'
+    xmlFiles = getValidFiles(directory,'xml')
+    
+    print 'analyzing {0} xml files'.format(len(xmlFiles))
+    progress = progressbar.ProgressBar()
+    ruleslen0 = 0
+    for i in progress(range(len(xmlFiles))):
+    
+        xml = xmlFiles[i]    
+    #for xml in xmlFiles:
         try:
             #console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
-            _,rules,_= readBNGXML.parseXML(xml)
+            try:
+                
+                _,rules,_= readBNGXML.parseXML(xml)
+            except:
+                print xml
+                continue
             atomizedProcesses,weight = reactionBasedAtomization(rules)
             ato,nonato = stoichiometryAnalysis(rules)
             atomizedDistro.extend(ato)
@@ -521,34 +544,38 @@ def reactionBasedAtomizationDistro(directory):
             totalRatomizedProcesses += atomizedProcesses
             totalReactions += len(rules)
             totalProcesses += weight
-            ratomizationDict[element]['score'] = score
-            ratomizationDict[element]['weight'] = weight
-            ratomizationDict[element]['length'] = len(rules)
+            ratomizationDict[xml]['score'] = score
+            ratomizationDict[xml]['weight'] = weight
+            ratomizationDict[xml]['length'] = len(rules)
+            if len(rules) == 0:
+                ruleslen0+= 1
+                continue
             syndelArray.append((len(rules)-weight)*1.0/len(rules))
             if score == -1:
                 syndel += 1
-                print element,'syndel'
                 #ratomizationList.append([0,0,len(rules)])
                 continue
             ratomizationList.append([score,weight,len(rules)])
             if len(rules) > 10:
                 if weight*1.0/len(rules) >=0.1 and score < 0.1:
-                    largeUseless.append(element)
+                    largeUseless.append(xml)
                 ratomizationListm10.append([score,weight,len(rules)])
             else:
                 ratomizationListl10.append([score,weight,len(rules)])
-            print element,ratomizationList[-1]
+            #print xml,ratomizationList[-1]
             validFiles += 1
-        except (IndexError,ZeroDivisionError):
-            syndel += 1
-            print
-            continue
+        #except (IndexError,ZeroDivisionError):
+        #    syndel += 1
+        #    print 'iz'
+        #    continue
         except IOError:
-            print 
+            print 'io'
             continue
-    with open('ratomization.dump','wb') as f:
+    with open('ratomizationp2m.dump','wb') as f:
         pickle.dump(ratomizationDict,f)
         
+    print '{0} models with 0 rules'.format(ruleslen0)
+    print 'generating figures for {0} models'.format(len(ratomizationList))
     print '-----'
     print 'atomized',Counter(atomizedDistro)
     print 'nonatomized',Counter(nonAtomizedDistro)
@@ -568,13 +595,13 @@ def reactionBasedAtomizationDistro(directory):
     tmp = weights*1.0/length
     
     
-    ratomizationWP1 = [x for x,y in zip(ratomization,tmp) if y < 0.1]
-    ratomizationWP10 = [x for x,y,z in zip(ratomization,tmp,length) if y >= 0.1 and z<10]
-    ratomizationWP11 = [x for x,y,z in zip(ratomization,tmp,length) if y >= 0.1 and z>=10]
+    #ratomizationWP1 = [x for x,y in zip(ratomization,tmp) if y < 0.1]
+    #ratomizationWP10 = [x for x,y,z in zip(ratomization,tmp,length) if y >= 0.1 and z<10]
+    #ratomizationWP11 = [x for x,y,z in zip(ratomization,tmp,length) if y >= 0.1 and z>=10]
     
-    constructHistogram(ratomizationWP1,'ratomizationWP1','Reaction atomization level',np.ones(len(ratomizationWP1)),normed=False)
-    constructHistogram(ratomizationWP10,'ratomizationWP10','Reaction atomization level',np.ones(len(ratomizationWP10)),normed=False)
-    constructHistogram(ratomizationWP11,'ratomizationWP11','Reaction atomization level',np.ones(len(ratomizationWP11)),normed=False)
+    #constructHistogram(ratomizationWP1,'ratomizationWP1','Reaction atomization level',np.ones(len(ratomizationWP1)),normed=False)
+    #constructHistogram(ratomizationWP10,'ratomizationWP10','Reaction atomization level',np.ones(len(ratomizationWP10)),normed=False)
+    #constructHistogram(ratomizationWP11,'ratomizationWP11','Reaction atomization level',np.ones(len(ratomizationWP11)),normed=False)
     
     print 'process={0}, rprocess={1}, reactions = {2},syndel={3},valid={4}'.format(totalProcesses,
 totalRatomizedProcesses,totalReactions,syndel,validFiles)
@@ -588,8 +615,7 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     heatmap = np.log2(heatmap)
     
     extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
-    
-    
+    heatmap[heatmap<0] = 0
     plt.clf()
     plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest')
     plt.xlabel('Atomization level')
@@ -598,6 +624,12 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     cb.set_label('log2(Number of models)')
     plt.show()  
     plt.savefig('atomizationHeatMap.png')
+    
+    plt.clf()
+    plt.scatter(tmp,ratomization)
+    plt.ylabel('Atomization level')
+    plt.xlabel('Percentage of non syn=del reactions')
+    plt.savefig('atomizationScatterplot.png')
     
     #heatmap showing average atomization of %syn-def vs model size
     ratomizationHeatmapCounter = defaultdict(lambda : defaultdict(list))
@@ -649,7 +681,6 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     plt.savefig('reactionsvssyndelwlinear.png')
     
 
-    
     plt.clf()
     plt.imshow(ratomizationHeatmap, 
                extent=extent
@@ -664,7 +695,7 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
         
 
     
-    
+    heatmap[heatmap<0] = 0
     plt.clf()
     plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest')
     plt.ylabel('Model size (reactions)')
@@ -673,6 +704,13 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     cb.set_label('log2(Number of models)')
     plt.show()  
     plt.savefig('atomizationHeatMap3.png')
+
+    plt.clf()
+    plt.scatter(length,tmp)
+    plt.xlabel('Number of reactions')
+    plt.xscale('log')
+    plt.ylabel('Atomization level')
+    plt.savefig('scatterreactionsvslevel.png')
 
 
     ratomization=np.sort( ratomization )
@@ -859,7 +897,7 @@ def nonAtomizedSpeciesAnalysis():
     f.close()
 if __name__ == "__main__":
     #spaceCoveredCDF()
-    reactionBasedAtomizationDistro('complex')
+    reactionBasedAtomizationDistro('remoteXML/path2models')
     #nonAtomizedSpeciesAnalysis()
     #createGroupingCDF()
     #analyzeGroupingCDF()

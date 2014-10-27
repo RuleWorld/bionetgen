@@ -277,9 +277,8 @@ def recursiveSearch(dictionary,element,visitedFunctions=[]):
         else:
             if item in visitedFunctions:
                 raise Exception
-            visitedFunctions.append(item)
             tmp += 1
-            tmp += (recursiveSearch(dictionary,item,visitedFunctions))
+            tmp += (recursiveSearch(dictionary,item,[item] + visitedFunctions))
     return tmp
 
 def reorderFunctions(functions):
@@ -947,7 +946,8 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  = [151,105,88,588]
+    #param  = [151,105,88,588]
+    param = 71
     #use 105 as an example for (2,2) reactions
     #527
     

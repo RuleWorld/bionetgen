@@ -242,8 +242,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
             if reactant != None:
                 pass
             #analyze based on standard modifications
-            if reactant == '__IL6_gp80_gp130_JAK___ast2':
-                pass
 
             lexCandidate,translationKeys,tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0],reactant,originalTmpCandidates[0])
             #FIXME: this is iffy. is it always an append modification? could be prepend
@@ -525,6 +523,8 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
     The atomizer's main methods. Receives a dependency graph
     '''
     for idx,element in enumerate(weights):
+        if element == 'Ras_G':
+            pass
         #0 molecule
         if element[0] == '0':
             continue
@@ -591,6 +591,8 @@ reactionProperties[classification[0]][0])
                         pass
                         #print equivalenceDictionary
             else:
+                if element [0] == 'EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP':
+                    pass
                 #binding
                 #print '---',dependencyGraph[element[0]],element
                 '''
@@ -626,6 +628,8 @@ reactionProperties[classification[0]][0])
                             component.bonds.append(idx)
                             flag = True
                             break
+                    if molecule[0].name == 'Ras_G' or molecule[1].name == 'Ras_G':
+                        pass
                     if not flag:
                         #create components if they dont exist already.
                         #Add a bond afterwards
@@ -728,7 +732,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         ---speciesEquivalences:predefined species
     '''
     
-    '''    
+    '''
     pr = cProfile.Profile()
     pr.enable()
     '''
@@ -740,7 +744,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     #classify reactions
     classifications, equivalenceTranslator, eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
-    adhocLabelDictionary=  sbmlAnalyzer.classifyReactions(rules, molecules)
+    adhocLabelDictionary,lexicalDependencyGraph=  sbmlAnalyzer.classifyReactions(rules, molecules)
     referenceVariables = [classifications,equivalenceTranslator,
                           eequivalenceTranslator,indirectEquivalenceTranslator,adhocLabelDictionary]
     comparisonVariables = [deepcopy(x) for x in referenceVariables]
@@ -766,6 +770,11 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     for reaction, classification in zip(rules, classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
+                        
+    for element in lexicalDependencyGraph:
+        database.dependencyGraph[element] = lexicalDependencyGraph[element]
+        
+    
     #catalysis reactions
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
@@ -776,11 +785,14 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
                     if modElement not in database.dependencyGraph or database.dependencyGraph[modElement] == []:
                         database.dependencyGraph[baseElement] = []
                     #do we have a meaningful reverse dependence?
-                    elif all([baseElement not in x for x in database.dependencyGraph[modElement]]):
-                        addToDependencyGraph(database.dependencyGraph,baseElement,[modElement])
-                        continue
+                    #elif all([baseElement not in x for x in database.dependencyGraph[modElement]]):
+                    #    addToDependencyGraph(database.dependencyGraph,baseElement,[modElement])
+                    #    continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
+                    
+    
+    '''
     #complex catalysis reactions
     for key in indirectEquivalenceTranslator:
         #first remove these entries from the dependencyGraph since 
@@ -834,6 +846,8 @@ tmp,removedElement,tmp3))
         else:
             database.dependencyGraph[element] = [list(
             database.labelDictionary[element][0])]
+'''
+    
     #stuff obtained from string similarity analysis
     for element in database.lexicalLabelDictionary:
         #similarity analysis has less priority than anything we discovered
@@ -852,7 +866,6 @@ tmp,removedElement,tmp3))
             database.lexicalLabelDictionary[element][0])]
             
     
-    
     #pure lexical analysis
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,[x.strip('()') for x in molecules])          
@@ -863,6 +876,7 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph,species,instance)
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
+    #print database.dependencyGraph
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
     #I'm polluting these data structures somewhere. In here
