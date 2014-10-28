@@ -127,7 +127,7 @@ sub printGML
 		if ($node->{'isGroup'})
 			{$string .= "isGroup ".$node->{'isGroup'}." ";}
 		if (defined $node->{'gid'} and length($node->{'gid'}) > 0)
-			{$string .= "gid".$q1.$node->{'gid'}.$q2;}
+			{$string .= "gid ".$node->{'gid'}." ";}
 		
 		my $string3 = '';
 		if(defined $node->{'embed'})
