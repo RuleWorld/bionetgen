@@ -542,9 +542,26 @@ sub getContactMap
 	my $model = shift @_;
 	my $gr = $model->VizGraphs;
 	getRuleNetworkGraphs($model);
+	my $mtypes = $model->MoleculeTypesList->MolTypes;
+	my @statepatternlist;
+	foreach my $mname(keys %$mtypes)
+	{
+		my $ctypes = $$mtypes{$mname}->Components;
+		foreach my $comp(@$ctypes)
+			{
+				my $cname = $comp->Name;
+				my @states = @{$comp->States};
+				for(my $i=0; $i<@states; $i++)
+					{
+					my $str = $mname."(".$cname."~".$states[$i].")";
+					push @statepatternlist, $str;
+					}
+			}
+	
+	}
 	if(not defined $gr->{'ContactMap'})
 	{
-		my $psg = makeContactMap( [ flat(@{$gr->{'RuleNetworkGraphs'}}) ] );
+		my $psg = makeContactMap( [ flat(@{$gr->{'RuleNetworkGraphs'}}) ], \@statepatternlist );
 		$gr->{'ContactMap'} = $psg;
 	}
 	return;

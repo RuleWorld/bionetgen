@@ -24,11 +24,17 @@ struct ContactMap =>
 sub makeContactMap
 {
 	my @bpgs = @{shift @_};
+	my @statepatternlist = @{shift @_};
+	
 	my @ap = uniq (map { 
 					my $bpg = $_;
 					grep { $bpg->{'NodeType'}->{$_} eq 'AtomicPattern' }
 					@{$bpg->{'NodeList'}}; 
 				} @bpgs);
+	
+	
+	#my @ap = uniq ((@ap1,@ap2));
+	
 	my %cmap;
 	my @bonds;
 	
@@ -48,10 +54,16 @@ sub makeContactMap
 		my @arr = ();
 		$cmap{$1}{$2} = \@arr;
 	}
+	foreach my $str(@statepatternlist)
+	{
+		$str =~ /(.*)\((.*)~(.*)\)/;
+		my @arr = ();
+		$cmap{$1}{$2} = \@arr;
+	}
 	
 	
 	# assigning comp states
-	my @compstates = grep /~/,@ap;
+	my @compstates = grep /~/,uniq(@ap,@statepatternlist);
 	foreach my $str(@compstates)
 	{
 		$str =~ /(.*)\((.*)~(.*)\)/;
