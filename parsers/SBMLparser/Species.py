@@ -68,7 +68,7 @@ class Species:
 
 def main():
     #s = Species((('SAv', 'EpoR'), [('l', 215)], [('U',), ('I',), ('r', 215)]))
-    s = Species([['SAv',[('l', 215)]],['EpoR',[('r', 215),('U',),('I',)]]])
+    s = Species([['SAv',[('l', 215)]],['EpoR',[('r', 215),('0',),('I',)]]])
     print s
             
 if __name__ == "__main__":

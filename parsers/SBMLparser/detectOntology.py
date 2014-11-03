@@ -32,6 +32,7 @@ def memoize(obj):
         return cache[key]
     return memoizer
 
+
 def levenshtein(s1, s2):
         l1 = len(s1)
         l2 = len(s2)
@@ -49,7 +50,7 @@ def levenshtein(s1, s2):
 def getDifferences(scoreMatrix, speciesName,threshold):
     '''
     given a list of strings and a scoreMatrix, return the list of difference between
-    those strings with a levenshtein difference of less than two
+    those strings with a levenshtein difference of less than threshold
     returns: 
         namePairs: list of tuples containing strings with distance <2
         differenceList: list of differences between the tuples in namePairs
@@ -100,8 +101,21 @@ def stringToSet(species,idx,scoreRow,speciesName):
             continue
         scoreRow[idx2] = levenshtein(species,speciesName[idx2])
     return idx,scoreRow
-def defineEditDistanceMatrix(speciesName,similarityThreshold=4,parallel = False):
+    
+def defineEditDistanceMatrix3(speciesName,similarityThreshold=4,parallel = False):
+    namePairs = []
+    differenceList = []
+    for species in speciesName:
+        closeMatches = difflib.get_close_matches(species,speciesName)
+        closeMatches = [x for x in closeMatches if len(x) < len(species)]
+        for match in closeMatches:
+            difference = [x for x in difflib.ndiff(match,species)]
+            if len([x for x in difference if '-' in x]) == 0:
+                namePairs.append([match,species])
+                differenceList.append(tuple([x for x in difference if  '+' in x]))
+    return namePairs,differenceList,''
         
+def defineEditDistanceMatrix(speciesName,similarityThreshold=4,parallel = False):
     '''
     obtains a distance matrix and a pairs of elements that are close 
     in distance, along with the proposed differences
@@ -128,8 +142,9 @@ def defineEditDistanceMatrix(speciesName,similarityThreshold=4,parallel = False)
         for idx2,species2 in enumerate(speciesName):
             if species == species2 or scoreMatrix2[idx][idx2] != 0:
                 continue
-            #comparison = difflib.SequenceMatcher(None,speciesName[idx],speciesName[idx2])
-            scoreMatrix2[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
+            #comparison = difflib.SequenceMatcher(None,speciesName[idx],speciesName[idx2]).quick_ratio()
+            comparison = levenshtein(speciesName[idx],speciesName[idx2])
+            scoreMatrix2[idx][idx2] = comparison
             scoreMatrix2[idx2][idx] = scoreMatrix2[idx][idx2]
     
     namePairs,differenceList = getDifferences(scoreMatrix2, speciesName,similarityThreshold)

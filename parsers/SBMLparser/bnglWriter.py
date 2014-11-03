@@ -232,7 +232,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor','pow','sqrt','sqr','root','and','or']]):
         argList = parens.parseString('('+ rule + ')').asList()
         rule = constructFromList(argList[0],['floor','ceil','pow','sqrt','sqr','root','and','or'])
-    #TODO:rewrite this to use pyparsing  
     
     
     while 'piecewise' in rule:

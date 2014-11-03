@@ -121,6 +121,8 @@ def getValidBNGLFiles(directory):
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x and 'dict' not in x]
     
     validFiles = [x for x in bnglFiles if x not in errorFiles]
+    return validFiles
+    '''
     import re
     validNumbers = []
     for x in validFiles:
@@ -129,7 +131,7 @@ def getValidBNGLFiles(directory):
             validNumbers.append(number.group(1))
         
     return validNumbers
-
+    '''
 import fnmatch
 def getValidXMLFiles(directory):
     """
@@ -182,7 +184,7 @@ def split_suite_into_chunks(num_threads, suite):
         num_tests -= s_tmp.countTestCases()
     if num_tests != 0: print("Error: num_tests should be 0 but is %s!" % num_tests)
     return s
-    
+    t
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
     #suite2 = unittest.TestSuite()
@@ -214,21 +216,20 @@ if __name__ == "__main__":
     for index in files:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(32,suite)))
-    validFiles = getValidBNGLFiles('raw') 
+    #suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(32,suite)))
+    validFiles = getValidBNGLFiles('complex') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
     
     #validFile= [480]
-    '''
-    for fileNumber in validFiles:
+    #for fileNumber in validFiles:
         #index += 1
-        fileName = 'output{0}.bngl'.format(fileNumber)
+   #     fileName = fileNumber
         #suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./raw/' + fileName))
-        suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+   #     suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
         
     validGdats = getValidGDats('.')
-    '''
+    
     #validFiles = getValidBNGLFiles('complex')
     #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)

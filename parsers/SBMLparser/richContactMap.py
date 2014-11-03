@@ -504,7 +504,7 @@ def reactionBasedAtomizationDistro(directory):
     interesting = []
     
     bnglFiles = getValidFiles(directory,'bngl')
-    
+    '''
     print 'converting bnglfiles'
     progress = progressbar.ProgressBar()
     for i in progress(range(len(bnglFiles))):
@@ -515,7 +515,7 @@ def reactionBasedAtomizationDistro(directory):
     for xmlfile in files:
         if os.path.isfile(xmlfile):
             shutil.move(xmlfile, directory)
-    
+    '''
     print 'reading files'
     xmlFiles = getValidFiles(directory,'xml')
     
@@ -627,8 +627,8 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     
     plt.clf()
     plt.scatter(tmp,ratomization)
-    plt.ylabel('Atomization level')
-    plt.xlabel('Percentage of non syn=del reactions')
+    plt.ylabel('Atomization level',fontsize=24)
+    plt.xlabel('Percentage of non syn=del reactions',fontsize=24)
     plt.savefig('atomizationScatterplot.png')
     
     #heatmap showing average atomization of %syn-def vs model size
@@ -650,7 +650,12 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     heatmap, xedges, yedges = np.histogram2d(length,tmp,bins=5)
     heatmap = np.log2(heatmap)
     
-    extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
+
+    plt.clf()
+    plt.hist(length,bins = 10 ** np.linspace(np.log10(1), np.log10(1000),40))
+    plt.xscale('log')
+    plt.xlabel('Number of reactions ({0} models)'.format(len(length)),fontsize=18)
+    plt.savefig('numberOfReactionsHist.png')
 
     plt.clf()
     ax = plt.gca()
@@ -707,9 +712,9 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
 
     plt.clf()
     plt.scatter(length,tmp)
-    plt.xlabel('Number of reactions')
+    plt.xlabel('Number of reactions',fontsize=24)
     plt.xscale('log')
-    plt.ylabel('Atomization level')
+    plt.ylabel('Atomization level',fontsize=24)
     plt.savefig('scatterreactionsvslevel.png')
 
 
@@ -726,7 +731,6 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     print 'syndel',syndel
     print '>10 with 0',largeUseless
     
-
 def createGroupingCDF():
     '''
     analyzes a group ofatomized files with species atomization > 0
@@ -897,7 +901,7 @@ def nonAtomizedSpeciesAnalysis():
     f.close()
 if __name__ == "__main__":
     #spaceCoveredCDF()
-    reactionBasedAtomizationDistro('remoteXML/path2models')
+    reactionBasedAtomizationDistro('remoteXML/non_complex')
     #nonAtomizedSpeciesAnalysis()
     #createGroupingCDF()
     #analyzeGroupingCDF()

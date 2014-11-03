@@ -292,6 +292,8 @@ class Molecule:
     def __str__(self):
         self.sort()
         tmp = self.name.replace('-','_')
+        if tmp[0].isdigit():
+            tmp = 'm__' + tmp
         return tmp + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment
       
     def signature(self,component):
@@ -307,6 +309,9 @@ class Molecule:
         self.sort()
         self.components = sorted(self.components,key=lambda x:x.name)
         tmp = self.name.replace('-','_')
+        if tmp[0].isdigit():
+            tmp = 'm__' + tmp
+        
         return tmp + '(' + ','.join([x.str2() for x in self.components]) + ')'
         
     def extend(self,molecule):
@@ -347,8 +352,8 @@ class Component:
             self.states.append(state)
         if update:
             self.setActiveState(state)
-        if not 'U' in self.states:
-            self.states.append('U')
+        if not '0' in self.states:
+            self.states.append('0')
         #print 'LALALA',state
     def addStates(self,states,update=True):
         for state in states:
@@ -409,8 +414,8 @@ class Component:
         
     def reset(self):
         self.bonds = []
-        if 'U' in self.states:
-            self.activeState = 'U'
+        if '0' in self.states:
+            self.activeState = '0'
         
         
 class Databases:
