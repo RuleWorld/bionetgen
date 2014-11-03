@@ -145,10 +145,13 @@ def lexicallyIdentifyModificationCandidate(reactant,tmpCandidate,equivalenceTran
     '''
     pass
     
-def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyzer):
+def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
+                               equivalenceDictionary,sbmlAnalyzer):
     equivalenceTranslator = {}
     def selectBestCandidate(reactant, candidates, dependencyGraph,sbmlAnalyzer,
-                            equivalenceTranslator=equivalenceTranslator):
+                            equivalenceTranslator=equivalenceTranslator,equivalenceDictionary=equivalenceDictionary):
+        if reactant == 'Sucvac':
+            pass
         tmpCandidates = []
         modifiedElements = []
         unevenElements = []
@@ -282,9 +285,18 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
                 else:
                     #last ditch attempt using straighforward lexical analysis
                     tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification([reactant],dependencyGraph.keys())
-                    if len(tmpDependency.keys()) > 0:
-                        return tmpDependency[reactant],unevenElements
-                    
+                    if reactant in tmpDependency and tmpDependency[reactant] in tmpCandidates[0]:
+                        for element in tmpDependency:
+                            if element not in dependencyGraph:
+                                dependencyGraph[element] = tmpDependency[element]
+                        for element in tmpEquivalence:
+                            if element not in equivalenceDictionary:
+                                equivalenceDictionary[element] = []
+                            for equivalence in tmpEquivalence[element]:
+                                if equivalence[0] not in equivalenceDictionary[element]:
+                                    equivalenceDictionary[element].append(equivalence[0])
+                        if len(tmpDependency.keys()) > 0:
+                            return tmpDependency[reactant],unevenElements
                     #the ive no idea whats going on branch
                     modificationCandidates = {}            
                     if modificationCandidates == {}:
@@ -303,6 +315,8 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,sbmlAnalyz
     weights = weightDependencyGraph(prunnedDependencyGraph)
     unevenElementDict = {}
     for element in weights:
+        if element[0] == 'Rasi_GTPm':
+            pass
         candidates = [x for x in prunnedDependencyGraph[element[0]]]
         #print '-',candidates
         if len(candidates) == 1 and type(candidates[0][0]) == tuple:
@@ -518,13 +532,11 @@ def getTrueTag(dependencyGraph, molecule):
 
 
 def atomize(dependencyGraph, weights, translator, reactionProperties,
-            equivalenceDictionary,bioGridFlag):
+            equivalenceDictionary,bioGridFlag,sbmlAnalyzer):
     '''
     The atomizer's main methods. Receives a dependency graph
     '''
     for idx,element in enumerate(weights):
-        if element == 'Ras_G':
-            pass
         #0 molecule
         if element[0] == '0':
             continue
@@ -546,9 +558,21 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                     memory = []
                     while dependencyGraph[tmp] != []:
                         #what kind of catalysis are we dealing with
-                        classification = identifyReaction(
-                                                          equivalenceDictionary, 
-                                                          dependencyGraph[tmp][0][0],tmp)
+                        #classification = identifyReaction(
+                        #                                  equivalenceDictionary, 
+                        #                                  dependencyGraph[tmp][0][0],tmp)
+                        classification = sbmlAnalyzer.findMatchingModification(tmp,dependencyGraph[tmp][0][0])
+                        if not classification:
+                            classification = identifyReaction(
+                                                              equivalenceDictionary, 
+                                                              dependencyGraph[tmp][0][0],tmp)
+                        if not classification:
+                            classification = sbmlAnalyzer.findMatchingModification(element[0],dependencyGraph[tmp][0][0])
+                        if not classification:
+                            classification = identifyReaction(
+                                                              equivalenceDictionary, 
+                                                              dependencyGraph[tmp][0][0],element[0])
+
                         if classification is not None and \
                         reactionProperties[classification][0] not in existingComponents:
                             classificationArray.append([classification,
@@ -556,6 +580,8 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                                                         [0][0]])
                             existingComponents.append(reactionProperties[
                             classification][0])
+                        elif classification is None:
+                            raise Exception('unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
                         memory.append(tmp)
                         tmp = dependencyGraph[tmp][0][0]
                         if tmp in memory:
@@ -579,7 +605,7 @@ reactionProperties[classification[0]][0])
 reactionProperties[classification[0]][0])
                             addStateToComponent(species,(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], reactionProperties[classification[0]][1])
                             addStateToComponent(modifiedSpecies, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], reactionProperties[classification[0]][1])
-                            addStateToComponent(species, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], 'U')
+                            addStateToComponent(species, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], '0')
                             
                     #update the base species
                     if len(classificationArray) > 0 and classificationArray[0][0] is not None:
@@ -591,8 +617,6 @@ reactionProperties[classification[0]][0])
                         pass
                         #print equivalenceDictionary
             else:
-                if element [0] == 'EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP':
-                    pass
                 #binding
                 #print '---',dependencyGraph[element[0]],element
                 '''
@@ -670,7 +694,7 @@ def updateSpecies(species, referenceMolecule):
                 count -= [x.name for x in moleculeStructure.components].count(component.name)
                 newComponent = st.Component(component.name)
                 if len(component.states) > 0:
-                    newComponent.addState('U')
+                    newComponent.addState('0')
                 if count > 0:
                     for _ in range(0, count):
                         moleculeStructure.addComponent(deepcopy(newComponent))
@@ -678,13 +702,26 @@ def updateSpecies(species, referenceMolecule):
                     for _ in range(0, -count):
                         referenceMolecule.addComponent(deepcopy(newComponent))
                         flag = True
+                elif count == 0:
+                    localComponents = [x for x in moleculeStructure.components if x.name ==component.name]
+                    referenceComponents = [x for x in referenceMolecule.components if x.name == component.name]
+                    if [x.states for x in localComponents]!=[x.states for x in referenceComponents]:
+                        for lc in localComponents:
+                            for rc in referenceComponents:
+                                for ls in lc.states:
+                                    if ls not in rc.states:
+                                        rc.addState(ls,update=False)
+                                for rs in rc.states:
+                                    if rs not in lc.states:
+                                        lc.addState(rs,update=False)
+                                        
             for component in moleculeStructure.components:
                 count = [x.name for x in referenceMolecule.components].count(component.name)
                 count -= [x.name for x in moleculeStructure.components].count(component.name)
                 newComponent = st.Component(component.name)
                 if len(component.states) > 0:
                     newComponent.addState(component.states[0])
-                    newComponent.addState('U')
+                    newComponent.addState('0')
                 if count > 0:
                     for idx in range(0, count):
                         moleculeStructure.addComponent(deepcopy(newComponent))
@@ -759,9 +796,9 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     #user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
     
+
     database.translator, database.labelDictionary, \
     database.lexicalLabelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
-
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
@@ -770,11 +807,8 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     for reaction, classification in zip(rules, classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
-                        
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
-        
-    
     #catalysis reactions
     for key in eequivalenceTranslator:
         for namingEquivalence in eequivalenceTranslator[key]:
@@ -864,27 +898,29 @@ tmp,removedElement,tmp3))
             .format(element,database.lexicalLabelDictionary[element][0]))
             database.dependencyGraph[element] = [list(
             database.lexicalLabelDictionary[element][0])]
-            
-    
     #pure lexical analysis
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
-    tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,[x.strip('()') for x in molecules])          
+    strippedMolecules = [x.strip('()') for x in molecules]
+    tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,strippedMolecules)          
     for species in tmpDependency:
         if tmpDependency[species] == []:
             addToDependencyGraph(database.dependencyGraph,species,[])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph,species,instance)
+
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     #print database.dependencyGraph
+    
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
-    consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,sbmlAnalyzer)
+    consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,eequivalenceTranslator,sbmlAnalyzer)
+    
     #I'm polluting these data structures somewhere. In here
     #im just calling the original generator to recover them.
     #I think it solved itself. I'm leaving an assert just to be sure
     #classifications, equivalenceTranslator, eequivalenceTranslator, \
     #    indirectEquivalenceTranslator,_ = sbmlAnalyzer.classifyReactions(rules,molecules)
-    assert(referenceVariables == comparisonVariables)
+    #assert(referenceVariables == comparisonVariables)
 
 #    orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     #basicSpecies = [x for x in prunnedDependencyGraph if len(prunnedDependencyGraph[x]) ==0 or len(prunnedDependencyGraph[x][0]) == 1]
@@ -931,11 +967,11 @@ tmp,removedElement,tmp3))
             for instance in candidates:
                 addToDependencyGraph(eequivalenceTranslator,modification,instance)
     weights = sorted(weights, key=lambda rule: (rule[1],len(rule[0])))
-    
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
-                                                                eequivalenceTranslator,bioGridFlag)
+                                                                eequivalenceTranslator,bioGridFlag,sbmlAnalyzer)
     onlySynDec =  len([x for x in classifications if x not in ['Generation','Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
+
     '''
     pr.disable()
     s = StringIO.StringIO()

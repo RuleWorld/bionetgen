@@ -859,14 +859,17 @@ class SBML2BNGL:
                 param = param2
                 zparam = zparam2
             '''
-            if pparam[symbol][1] == None:
-                param2.append('{0} {1}'.format(symbol,math))
-                param = param2
-                zparam = zparam2
-            else:
-                initialConditions2 = [x for x in initialConditions if '#{0}'.format(symbol) not in x]
-                initialConditions2.append('{0} {1} #{2}'.format(pparam[symbol][1],math,symbol))
-                initialConditions = initialConditions2
+            try:
+                if pparam[symbol][1] == None:
+                    param2.append('{0} {1}'.format(symbol,math))
+                    param = param2
+                    zparam = zparam2
+                else:
+                    initialConditions2 = [x for x in initialConditions if '#{0}'.format(symbol) not in x]
+                    initialConditions2.append('{0} {1} #{2}'.format(pparam[symbol][1],math,symbol))
+                    initialConditions = initialConditions2
+            except:
+                continue
         return param,zparam,initialConditions
             
             

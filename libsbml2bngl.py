@@ -8,7 +8,7 @@ Created on Fri Mar  1 16:14:42 2013
 #!/usr/bin/env python
 from collections import OrderedDict
 import time
-#import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt5
 import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
@@ -434,6 +434,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     param,zparam = parser.getParameters()
     molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
+
     param,zparam,initialConditions = parser.getInitialAssignments(translator,param,zparam,molecules,initialConditions)
     compartments = parser.getCompartments()
     functions = []
@@ -773,7 +774,7 @@ def main2():
 
 
 def isActivated(statusVector):
-    if statusVector[0] != '' or statusVector[1] not in ['','U','0']:
+    if statusVector[0] != '' or statusVector[1] not in ['','0']:
         return True
     return False
     
@@ -946,8 +947,9 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    #param  = [151,105,88,588]
-    param = 71
+    #param  = [452]
+    
+    param = 19
     #use 105 as an example for (2,2) reactions
     #527
     
