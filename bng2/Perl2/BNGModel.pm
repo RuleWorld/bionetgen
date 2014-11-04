@@ -2164,6 +2164,13 @@ sub generate_network
         'verbose'    => $params{verbose},
     };
 
+	# make sure 'max_stoich' molecules are valid names
+	foreach my $mol ( keys %{$params{'max_stoich'}} ){
+		if ( not $mol =~ /^[A-Za-z_]\w*$/ ){
+			return "Error in max_stoich: '$mol' is not a valid molecule name.";
+		}
+	}
+	
     # check verbose option
     my $verbose = $params{verbose};
 

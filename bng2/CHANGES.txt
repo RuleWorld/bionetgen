@@ -67,6 +67,10 @@ functions defined in the <big><tt>functions</tt></big> block but not in the
 block would be typed as a 'ConstantExpression'. This would cause simulation to fail since it
 would be placed in the <big><tt>parameters</tt></big> block of the generated NET file.
 
+** Added code to check that molecule names defined in the 'max_stoich' argument to 'generate_network'
+are valid. This is useful since users often specify patterns, such as 'A()', rather than the proper
+molecule 'A'. Without an error message this can cause confusion.
+
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
 
