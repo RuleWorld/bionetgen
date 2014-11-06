@@ -87,8 +87,8 @@ def dbmodel_key(model_name=DATABASE_NAME):
     return ndb.Key('ModelDB', model_name)
     
     
-#remoteServer = "http://54.214.249.43:9000"
-remoteServer = "http://127.0.0.1:9000"
+remoteServer = "http://54.214.249.43:9000"
+#remoteServer = "http://127.0.0.1:9000"
 class Translate(webapp2.RequestHandler):
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
@@ -235,7 +235,9 @@ class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
         if returnType == 'Regulatory Graph':
             graphType = 'regulatory'
         elif returnType == 'Contact map':
-            graphType = 'contactmap'        
+            graphType = 'contactmap'
+        elif returnType == 'SBGN-ER':
+            graphType = 'sbgn_er'
         #https://developers.google.com/appengine/docs/python/urlfetch/fetchfunction
         #https://groups.google.com/forum/#!topic/google-appengine/XbrJvt9LfuI
         s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
