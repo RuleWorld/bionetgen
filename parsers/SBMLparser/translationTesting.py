@@ -184,7 +184,7 @@ def split_suite_into_chunks(num_threads, suite):
         num_tests -= s_tmp.countTestCases()
     if num_tests != 0: print("Error: num_tests should be 0 but is %s!" % num_tests)
     return s
-    t
+
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
     #suite2 = unittest.TestSuite()

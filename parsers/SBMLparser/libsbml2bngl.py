@@ -112,7 +112,8 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
         else:    
             translator={} 
         
-        return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-2]
+        return analyzeHelper(document,reactionDefinitions,
+                             useID,'',speciesEquivalence,atomize,translator)[-2]
     except:
         return -5
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
@@ -948,7 +949,7 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
     #param  = [452]
-    
+    '''
     param = 19
     #use 105 as an example for (2,2) reactions
     #527
@@ -957,7 +958,7 @@ if __name__ == "__main__":
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     ''' 
-    
+    '''
     analyzeFile('XMLExamples/BMID000000142971.xml', 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/BMID000000142971.xml' + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
@@ -977,7 +978,7 @@ if __name__ == "__main__":
     #    r = f.read()
     #print readFromString(r,'config/reactionDefinitions.json',False,None,True)
     #statFiles()
-    #main2()
+    main2()
     #print readFromString('dsfsdf','config/reactionDefinitions.json',False)
     #processFile2()
     #listFiles(50,'./XMLExamples/curated/')

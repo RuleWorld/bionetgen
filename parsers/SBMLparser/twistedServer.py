@@ -11,8 +11,18 @@ import libsbml2bngl
 from twisted.web import xmlrpc, server
 from twisted.internet import reactor
 import threading
+import sys
+sys.path.insert(0, '../utils/')
+import consoleCommands
+import tempfile
+sys.path.insert(0, '../gml2sbgn/')
+
+
 iid = 1
 iid_lock = threading.Lock()
+
+#bngDistro  = '/home/ubuntu/bionetgen/bng2/BNG2.pl'
+bngDistro = '/home/proto/workspace/bionetgen/bng2/BNG2.pl'
 
 def next_id():
     global iid
@@ -43,6 +53,38 @@ class AtomizerServer(xmlrpc.XMLRPC):
         except:
             self.addToDict(ticket,-5)
             print 'failure'
+
+
+    def generateGraph(self,ticket,bnglContents,graphtype):
+        print ticket
+        pointer = tempfile.mkstemp(suffix='.bngl',text=True)
+        with open(pointer[1],'w' ) as f:
+            f.write(bnglContents)
+        try:
+            if graphtype in ['regulatory','contactmap']:
+                consoleCommands.setBngExecutable(bngDistro)
+                consoleCommands.generateGraph(pointer[1],graphtype)
+                name = pointer[1].split('.')[0]
+                with open('{0}_{1}.gml'.format(name,graphtype),'r') as f:
+                    graphContent = f.read()         
+                    self.addToDict(ticket,graphContent)
+                    print 'success',ticket
+            elif graphtype in ['sbgn_er']:
+                pass
+        except:
+            self.addToDict(ticket,-5)
+            print 'failure',ticket
+
+
+    def xmlrpc_generateGraph(self,bbnglFile,graphtype):
+        counter = next_id()
+        bnglFile = bbnglFile.data
+        reactor.callInThread(self.generateGraph,counter,bnglFile,graphtype)
+        processDict[counter] = -2
+        return counter
+        #self.generateGraph(counter,bnglFile,graphtype)
+        #return counter
+
     def xmlrpc_atomize(self, bxmlFile,atomize=False,reaction='config/reactionDefinitions.json',species=None):
         counter = next_id()
         xmlFile = bxmlFile.data

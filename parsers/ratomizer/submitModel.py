@@ -87,8 +87,8 @@ def dbmodel_key(model_name=DATABASE_NAME):
     return ndb.Key('ModelDB', model_name)
     
     
-remoteServer = "http://54.214.249.43:9000"
-#remoteServer = "http://127.0.0.1:9002"
+#remoteServer = "http://54.214.249.43:9000"
+remoteServer = "http://127.0.0.1:9000"
 class Translate(webapp2.RequestHandler):
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
@@ -224,60 +224,26 @@ class Graph(webapp2.RequestHandler):
 
 
 class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
-    def post(self):
+     def post(self):
         
-
         upload_files = self.get_uploads('file')
         blob_info = upload_files[0]
         reader = blob_info.open()
         bnglContent = xmlrpclib.Binary(reader.read())
-        
+
         returnType = self.request.get('return')
-        reactionCenter = True if self.request.get('center') else False
-        context = True if self.request.get('context') else False
-        product = True if self.request.get('products') else False
-        #atomizeString = self.request.get('atomize')
-        #print 'fsdgsdgsd',atomize
-        urlfetch.set_default_fetch_deadline(blob_info.size/300)
-        s = xmlrpclib.ServerProxy('http://54.214.249.43:9100')
-        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9100') 
-        dotResult = s.bipartite(bnglContent,returnType,reactionCenter,context,product).data
-                
-        '''
-        rpc = urlfetch.create_rpc(deadline= 10)
-        urlfetch.make_fetch_call(rpc, "http://54.214.249.43:9100",method='bipartite',headers=[bnglContent,returnType])
-        try:
-            result = rpc.get_result()
-            if result.status_code == 200:
-                dotResult = result.content
-        # ...
-        except urlfetch.DownloadError:
-            dotResult = None
-        '''
-    # Request timed out or failed.
-    # ...
+        if returnType == 'Regulatory Graph':
+            graphType = 'regulatory'
+        elif returnType == 'Contact map':
+            graphType = 'contactmap'        
+        #https://developers.google.com/appengine/docs/python/urlfetch/fetchfunction
+        #https://groups.google.com/forum/#!topic/google-appengine/XbrJvt9LfuI
+        s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
+        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000',GAEXMLRPCTransport())
+        ticket = s.generateGraph(bnglContent,graphType)
         #self.response.write(result)
-
-        file_name = files.blobstore.create(mime_type='application/octet-stream')
         
-        # Open the file and write to it
-        with files.open(file_name, 'a') as f:
-          f.write(dotResult)
-        
-        # Finalize the file. Do this before attempting to read it.
-        files.finalize(file_name)
-        
-        # Get the file's blob key
-        blob_key = files.blobstore.get_blob_key(file_name)
-        
-        ###        
-        #blob_info = blobstore.BlobInfo.get(blob_key)
-        #output = blob_info.open()
-        ###
-        printStatement = '<a href="/serve/{1}.{2}?key={0}">{1}.{2}</a>'.format(blob_key,blob_info.filename,returnType)
-        #p2 = output.read()        
-        self.response.write(printStatement)
-
+        self.redirect('/waitFile?ticket={0}&fileName={1}_{2}.gml'.format(ticket,blob_info.filename,graphType))
 
                 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
