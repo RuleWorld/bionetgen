@@ -16,13 +16,13 @@ sys.path.insert(0, '../utils/')
 import consoleCommands
 import tempfile
 sys.path.insert(0, '../gml2sbgn/')
-
-
+import libsbgn
+import networkx
 iid = 1
 iid_lock = threading.Lock()
 
-#bngDistro  = '/home/ubuntu/bionetgen/bng2/BNG2.pl'
-bngDistro = '/home/proto/workspace/bionetgen/bng2/BNG2.pl'
+bngDistro  = '/home/ubuntu/bionetgen/bng2/BNG2.pl'
+#bngDistro = '/home/proto/workspace/bionetgen/bng2/BNG2.pl'
 
 def next_id():
     global iid
@@ -60,20 +60,29 @@ class AtomizerServer(xmlrpc.XMLRPC):
         pointer = tempfile.mkstemp(suffix='.bngl',text=True)
         with open(pointer[1],'w' ) as f:
             f.write(bnglContents)
-        try:
-            if graphtype in ['regulatory','contactmap']:
-                consoleCommands.setBngExecutable(bngDistro)
-                consoleCommands.generateGraph(pointer[1],graphtype)
-                name = pointer[1].split('.')[0]
-                with open('{0}_{1}.gml'.format(name,graphtype),'r') as f:
-                    graphContent = f.read()         
-                    self.addToDict(ticket,graphContent)
-                    print 'success',ticket
-            elif graphtype in ['sbgn_er']:
-                pass
-        except:
-            self.addToDict(ticket,-5)
-            print 'failure',ticket
+        #try:
+        if graphtype in ['regulatory','contactmap']:
+            consoleCommands.setBngExecutable(bngDistro)
+            consoleCommands.generateGraph(pointer[1],graphtype)
+            name = pointer[1].split('.')[0]
+            with open('{0}_{1}.gml'.format(name,graphtype),'r') as f:
+                graphContent = f.read()         
+                self.addToDict(ticket,graphContent)
+                print 'success',ticket
+        elif graphtype in ['sbgn_er']:
+            consoleCommands.setBngExecutable(bngDistro)
+            consoleCommands.generateGraph(pointer[1],'contactmap')
+            name = pointer[1].split('.')[0]
+            #with open('{0}_{1}.gml'.format(name,'contactmap'),'r') as f:
+            #   graphContent = f.read()
+            graphContent = networkx.read_gml('{0}_{1}.gml'.format(name,'contactmap'))
+            sbgn = libsbgn.createSBNG_ER_gml(graphContent)
+            self.addToDict(ticket,sbgn)
+            print 'success',ticket
+
+        #except:
+        #  self.addToDict(ticket,-5)
+        #    print 'failure',ticket
 
 
     def xmlrpc_generateGraph(self,bbnglFile,graphtype):
