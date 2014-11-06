@@ -32,14 +32,21 @@ compilation tools, you may compile your own binaries from a console as follows:
     ./configure --disable-shared --prefix=<bngpath>
     make
     make install
-    
+
+When compiling binaries for 64-bit Windows (Vista/7), make sure that the 64-bit 
+version of Cygwin is installed including the latest version of required developer tools 
+(gcc,g++,make,autoconf). Compile from the Cygwin prompt as above. The compiled binary 
+can be executed as is from the Cygwin prompt. Executing from the Windows command prompt 
+will throw Missing DLL errors. Copying these DLLs from the Cygwin bin folder to the 
+BioNetGen bin folder should resolve these errors.
+
 Alternatively, binaries can be compiled using CMake. Download CMake from
 http://www.cmake.org/ and add to PATH. Then:
 
 	cd <bngpath>\Network3
 	cp Makefile.cmake Makefile
 	make
-
+	
 Example models are provided in the Models2 folder. To run them, go to
 the Models2 directory, and type:
 
