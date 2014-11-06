@@ -632,8 +632,8 @@ class Component:
         
     def reset(self):
         self.bonds = []
-        if 'U' in self.states:
-            self.activeState = 'U'
+        if '0' in self.states:
+            self.activeState = '0'
             
     def hasWilcardBonds(self):
         if '+' in self.bonds:
