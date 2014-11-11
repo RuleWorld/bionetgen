@@ -129,7 +129,9 @@ sub findComp
 	my @nodelist = @{shift @_};
 	my $molname = shift @_;
 	my $compname = shift @_;
-	my @nodes = grep $_->{'Name'} eq $molname, @nodelist;
+	my @nodes = grep $_->{'Name'} eq $molname, 
+				grep $_->{'Type'} eq 'Mol', 
+				@nodelist;
 	my $mol_id = $nodes[0]->{'ID'};
 	@nodes = grep has($_->{'Parents'},$mol_id),
 				grep $_->{'Name'} eq $compname,
