@@ -150,8 +150,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
     equivalenceTranslator = {}
     def selectBestCandidate(reactant, candidates, dependencyGraph,sbmlAnalyzer,
                             equivalenceTranslator=equivalenceTranslator,equivalenceDictionary=equivalenceDictionary):
-        if reactant == 'Sucvac':
-            pass
         tmpCandidates = []
         modifiedElements = []
         unevenElements = []
@@ -315,8 +313,6 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
     weights = weightDependencyGraph(prunnedDependencyGraph)
     unevenElementDict = {}
     for element in weights:
-        if element[0] == 'Rasi_GTPm':
-            pass
         candidates = [x for x in prunnedDependencyGraph[element[0]]]
         #print '-',candidates
         if len(candidates) == 1 and type(candidates[0][0]) == tuple:
@@ -613,12 +609,9 @@ reactionProperties[classification[0]][0])
                         deepcopy(species)
                         translator[element[0]] = modifiedSpecies
                     else:
-                        #print 'ALERT', element[0], str(modifiedSpecies), str(species)
                         pass
-                        #print equivalenceDictionary
             else:
                 #binding
-                #print '---',dependencyGraph[element[0]],element
                 '''
                 if element[0] not in database:
                     species = st.Species()
@@ -661,8 +654,10 @@ reactionProperties[classification[0]][0])
 
                         molecule[0].components.append(newComponent1)
                         
-                        translator[molecule[0].name].molecules[0]. \
-                        components.append(deepcopy(newComponent1))
+                        if newComponent1.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
+                        components]:
+                            translator[molecule[0].name].molecules[0]. \
+                            components.append(deepcopy(newComponent1))
 
                         molecule[0].components[-1].bonds.append(idx)
                     flag = False
@@ -676,8 +671,11 @@ reactionProperties[classification[0]][0])
                         newComponent2 = st.Component(molecule[0].name.lower())
                         molecule[1].components.append(newComponent2)
                         if molecule[0].name != molecule[1].name:
-                            translator[molecule[1].name].molecules[0].components.append(
-                            deepcopy(newComponent2))
+                            if newComponent2.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
+                            components]:
+
+                                translator[molecule[1].name].molecules[0].components.append(
+                                deepcopy(newComponent2))
                         molecule[1].components[-1].bonds.append(idx)
 
                 #update the translator
@@ -738,6 +736,8 @@ def propagateChanges(translator, dependencyGraph):
     while flag:
         flag = False
         for dependency in dependencyGraph:
+            if dependency == 'RAF_P':
+                pass
             if dependencyGraph[dependency] == []:
                 continue
             for molecule in dependencyGraph[dependency][0]:
@@ -769,10 +769,10 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         ---speciesEquivalences:predefined species
     '''
     
-    '''
+    
     pr = cProfile.Profile()
     pr.enable()
-    '''
+    
     
     _, rules, _ = parser.getReactions(atomize=True)
     molecules, _, _,_ = parser.getSpecies()
@@ -873,6 +873,8 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
 {2}={3} (stoichiometry) but one of the constituent components in {1} is not a molecule so no action was taken'.format(namingEquivalence[3][0],
 tmp,removedElement,tmp3))
     #user defined stuff
+'''
+    
     for element in database.labelDictionary:
         if len(database.labelDictionary[element][0]) == 0 or element == \
         database.labelDictionary[element][0][0]:
@@ -880,7 +882,7 @@ tmp,removedElement,tmp3))
         else:
             database.dependencyGraph[element] = [list(
             database.labelDictionary[element][0])]
-'''
+
     
     #stuff obtained from string similarity analysis
     for element in database.lexicalLabelDictionary:
@@ -898,6 +900,7 @@ tmp,removedElement,tmp3))
             .format(element,database.lexicalLabelDictionary[element][0]))
             database.dependencyGraph[element] = [list(
             database.lexicalLabelDictionary[element][0])]
+    
     #pure lexical analysis
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     strippedMolecules = [x.strip('()') for x in molecules]
@@ -907,11 +910,9 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph,species,[])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph,species,instance)
-
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     #print database.dependencyGraph
-    
     prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,eequivalenceTranslator,sbmlAnalyzer)
     
@@ -966,12 +967,14 @@ tmp,removedElement,tmp3))
         for candidates in tmpEquivalence[modification]:
             for instance in candidates:
                 addToDependencyGraph(eequivalenceTranslator,modification,instance)
+                
+            
     weights = sorted(weights, key=lambda rule: (rule[1],len(rule[0])))
     atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
                                                                 eequivalenceTranslator,bioGridFlag,sbmlAnalyzer)
+    
     onlySynDec =  len([x for x in classifications if x not in ['Generation','Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
-
     '''
     pr.disable()
     s = StringIO.StringIO()

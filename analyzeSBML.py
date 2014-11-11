@@ -228,6 +228,8 @@ class SBMLAnalyzer:
         for particle in particles:
             composingElements = []
             basicElements = []
+            if particle == 'JAK__IFN__':
+                pass
             #break it down into small bites
             splitparticle = particle.split('_')
             #print '---',splitparticle
@@ -245,7 +247,7 @@ class SBMLAnalyzer:
                         logMess('INFO:Atomization','matching {0}={1}'.format(particle,[match]))
                         addToDependencyGraph(dependencyGraph,particle,[match])
                     
-            elif particle not in composingElements and composingElements != []:
+            elif particle not in composingElements and composingElements != [] and all([x in species for x in composingElements]):
                 addToDependencyGraph(dependencyGraph,particle,composingElements)
                 for element in composingElements:
                     if element not in dependencyGraph:
@@ -387,7 +389,7 @@ class SBMLAnalyzer:
         return equivalences,modifiedElement        
      
     
-    def processNamingConventions2(self,molecules,threshold=4):
+    def processNamingConventions2(self,molecules,threshold=4,onlyUser=False):
             
         #normal naming conventions
         strippedMolecules = [x.strip('()') for x in molecules]
@@ -398,9 +400,10 @@ class SBMLAnalyzer:
 
         #FIXME: This line contains the single biggest execution bottleneck in the code
         #we should be able to delete it
-        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions(strippedMolecules,
-                                                                                      self.namingConventions,similarityThreshold=threshold)
-                                                                                      
+
+        if not onlyUser:
+            tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions(strippedMolecules,
+                                                                                          self.namingConventions,similarityThreshold=threshold)
         #user defined naming convention
         if self.userEquivalencesDict == None and hasattr(self,'userEquivalences'):
             self.userEquivalencesDict,self.modifiedElementDictionary = self.analyzeUserDefinedEquivalences(molecules,self.userEquivalences)
@@ -546,15 +549,26 @@ class SBMLAnalyzer:
 
                         tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(treactant2),x).ratio() for x in tailDifferences])
                         hdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(reactant[idx+idx2-1:idx+idx2+1]),x).ratio() for x in tailDifferences])
-                        if tdr > hdr:
+                        if tdr > hdr and tdr > 0.8:
                             treactant = treactant2
                     else:
                         tailDifferences = difflib.get_close_matches('_'.join(treactant2),strippedMolecules)
-                        headDifferences = difflib.get_close_matches('_'.join(reactant[pidx+idx2-1:pidx+idx+1]),strippedMolecules)
+                        headDifferences = difflib.get_close_matches('_'.join(reactant[idx+idx2-1:idx+idx2+1]),strippedMolecules)
                         if len(tailDifferences) == 0:
                             break
                         elif len(headDifferences) == 0:
                             treactant = treactant2
+                        break
+                elif len(reactant) == idx + idx2:
+                    tailDifferences =  difflib.get_close_matches('_'.join(treactant2),strippedMolecules)
+                    if len(tailDifferences) > 0:
+
+                        tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(treactant2),x).ratio() for x in tailDifferences])
+                        if tdr > 0.8:
+                            treactant = treactant2
+                        else:
+                            break
+                    else:
                         break
                 else:
                     treactant = treactant2
@@ -572,16 +586,28 @@ class SBMLAnalyzer:
                     if len(tailDifferences) > 0:
                         tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(tproduct2),x).ratio() for x in tailDifferences])
                         hdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(product[pidx+idx2-1:pidx+idx2+1]),x).ratio() for x in tailDifferences])
-                        if tdr > hdr:
+                        if tdr > hdr and tdr > 0.8:
                             tproduct = tproduct2
                     else:
                         tailDifferences = difflib.get_close_matches('_'.join(tproduct2),strippedMolecules,cutoff=0.8)
                         headDifferences = difflib.get_close_matches('_'.join(product[pidx+idx2-1:pidx+idx2+1]),strippedMolecules,cutoff=0.8)
                         if len(tailDifferences) == 0:
                             break
-                        elif len(headDifferences) == 0:
+                        elif len(headDifferences) == 0 or '_'.join(tproduct2) in tailDifferences:
                             tproduct = tproduct2
                             
+                elif len(product) == pidx + idx2:
+                    tailDifferences =  difflib.get_close_matches('_'.join(tproduct2),strippedMolecules)
+                    if len(tailDifferences) > 0:
+
+                        tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(tproduct2),x).ratio() for x in tailDifferences])
+                        if tdr > 0.8:
+                            tproduct = tproduct2
+                        else:
+                            break
+                    else:
+                        break
+
                 else:
                     tproduct = tproduct2
             break
@@ -988,7 +1014,7 @@ class SBMLAnalyzer:
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
         
         #process straightforward naming conventions
-        equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules)
+        equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules,onlyUser=True)
         newTranslationKeys = []
         adhocLabelDictionary = {}
         #lists of plain reactions
@@ -1001,6 +1027,8 @@ class SBMLAnalyzer:
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
         for idx,reaction in enumerate(rawReactions):
+            if 'MEK_PP' in reaction[0]:
+                pass
             matching,matching2 = self.approximateMatching2(reaction,strippedMolecules,translationKeys)
             flag = True
             if matching:
@@ -1027,7 +1055,6 @@ class SBMLAnalyzer:
                                 if x[1] not in strippedMolecules:
                                     lexicalDependencyGraph[x[1]] = []
                                 
-
         translationKeys.extend(newTranslationKeys)
         for species in localSpeciesDict:
             speciesName =  localSpeciesDict[species][localSpeciesDict[species].keys()[0]][0][0]
@@ -1142,7 +1169,6 @@ class SBMLAnalyzer:
             complexEquivalences = speciesdictionary['modificationDefinition']
             for element in complexEquivalences:
                 userLabelDictionary[element] = [tuple(complexEquivalences[element])]
-                
         #stuff we got from string similarity
         for element in self.lexicalSpecies:
             self.userJsonToDataStructure(element,dictionary,lexicalLabelDictionary,

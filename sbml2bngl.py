@@ -52,10 +52,15 @@ class SBML2BNGL:
       libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
       modelHistory =  self.model.getModelHistory()
       if modelHistory:
-          tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
-          tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
-          metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
-          metaInformation['creatorName'] = "'" + tmp + "'"
+          try:
+              tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
+              tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
+              metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
+              metaInformation['creatorName'] = "'" + tmp + "'"
+          except:
+              metaInformation['creatorEmail'] = "''"
+              metaInformation['creatorName'] = "''"
+              
       for idx in range(lista.getSize()):
           biol,qual =  lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
           if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':

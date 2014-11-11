@@ -698,6 +698,12 @@ def main():
         #rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
         #                                                  reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
         #                                                    speciesEquivalence=spEquivalence,atomize=True)
+        rlength = reval = reval2 = slength = None
+        rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'config/reactionDefinitions.json',
+            False,'config/namingConventions.json','/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
+
+        print '++++',bioNumber,rlength,reval,reval2,clength
+
         try:
  
             rlength = reval = reval2 = slength = None
@@ -767,10 +773,10 @@ def main():
     '''
             
 def main2():
-    with open('XMLExamples/curated/BIOMD0000000001.xml','r') as f:
+    with open('XMLExamples/curated/BIOMD0000000019.xml','r') as f:
         st = f.read()
         print readFromString(st,
-              'reactionDefinitions/reactionDefinition9.json',True,None,True)        
+              'config/reactionDefinitions.json',False,None,True)        
 
 
 
@@ -949,7 +955,7 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
     #param  = [452]
-    '''
+    
     param = 19
     #use 105 as an example for (2,2) reactions
     #527
@@ -957,7 +963,7 @@ if __name__ == "__main__":
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
-    ''' 
+    
     '''
     analyzeFile('XMLExamples/BMID000000142971.xml', 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
@@ -978,7 +984,7 @@ if __name__ == "__main__":
     #    r = f.read()
     #print readFromString(r,'config/reactionDefinitions.json',False,None,True)
     #statFiles()
-    main2()
+    #main2()
     #print readFromString('dsfsdf','config/reactionDefinitions.json',False)
     #processFile2()
     #listFiles(50,'./XMLExamples/curated/')

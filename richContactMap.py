@@ -16,8 +16,9 @@ import extractAtomic
 import pygraphviz as pgv
 import progressbar
 import glob, os, shutil
+import csv
 
-
+import matplotlib.patches as mpatches
 sys.path.insert(0,'../ContactMap')
 import createGraph
 from copy import copy
@@ -302,31 +303,38 @@ def cooperativityAnalysis2(fileName):
     redundantProcesses=0
     reverseRedundantDict = reverseLookup(redundantDict)
     totalSpaceCovered = []
+    both=hetero=homo=0
     for center in redundantDict:
+        processCount = []
         reactionInCenter = len([y for x in redundantDict[center] 
         for y in redundantDict[center][x]])
         if reactionInCenter > 1 and len([x for x in center if x not in ['Add','Delete']]) > 1:
             totalSpace =  analyzeSpace(center,species)
             totalSpaceCovered.append((totalSpace,reactionInCenter))
-        flag = False
-        if len(redundantDict[center])>1:
-            flag = True
+        
+        
+        
         for rateKey in redundantDict[center]:
             if len([x for x in center if x not in ['Add','Delete']]) > 1:
-                if (len(redundantDict[center][rateKey])>1) and not flag:
-                    #print '++++',center,rateKey,redundantDict[center][rateKey]
-                    redundantProcesses += len(redundantDict[center][rateKey])
-                elif flag:
-                    #print '----',center,rateKey,redundantDict[center][rateKey]
-                    groupedProcesses += len(redundantDict[center][rateKey])
+                processCount.append(len(redundantDict[center][rateKey]))
+            
             totalProcesses += len(redundantDict[center][rateKey])
-    #print groupedProcesses*1.0/totalProcesses,redundantProcesses*1.0/totalProcesses
-    
-    return groupedProcesses*1.0/totalProcesses,redundantProcesses*1.0/totalProcesses,totalSpaceCovered
+
+        if len(processCount) > 1 and any([x>1 for x in processCount]):
+            both += sum(processCount)
+        elif len(processCount) > 1:
+            hetero += sum(processCount)
+        elif sum(processCount) > 1:
+            homo += sum(processCount)
+    #totalhetero = hetero*1.0/totalProcesses if totalProcesses > 0 else 0
+    #totalhomo = homo*1.0/totalProcesses if totalProcesses > 0 else 0
+    #totalboth = both*1.0/totalProcesses if totalProcesses > 0 else 0
+    #totalall = (hetero+homo+both)*1.0/totalProcesses if totalProcesses > 0 else 0
+    return hetero,homo,both,totalProcesses,totalSpaceCovered
 
 def extractRulesfromBNGL(fileName):
     #console.bngl2xml('complex/{0}.bngl'.format(fileName),timeout=10)
-    species,rules,par= readBNGXML.parseXML('{0}.xml'.format(fileName))
+    species,rules,par= readBNGXML.parseXML(fileName)
     return species,rules,par
     
 
@@ -509,13 +517,13 @@ def reactionBasedAtomizationDistro(directory):
     progress = progressbar.ProgressBar()
     for i in progress(range(len(bnglFiles))):
         console.bngl2xml(bnglFiles[i],timeout=10)
-        
+    ''' 
     print 'moving xml files'
     files = glob.iglob(os.path.join('.', "*.xml"))
     for xmlfile in files:
         if os.path.isfile(xmlfile):
             shutil.move(xmlfile, directory)
-    '''
+    
     print 'reading files'
     xmlFiles = getValidFiles(directory,'xml')
     
@@ -738,7 +746,8 @@ def createGroupingCDF():
     same reaction center different context/reaction rates
     '''
     processList = []
-    with open('sortedD.dump','rb') as f:
+    '''
+    with open('ratomizationp2m.dump','rb') as f:
         atomizationStats = pickle.load(f)
     atomizationDict = {}
     atomizationList = []
@@ -746,42 +755,85 @@ def createGroupingCDF():
     spaceCoveredDict = {}
     for element in atomizationStats:
         try:
-            atomizationDict[element['index']] = element['atomization']
-        except:
-            continue
-    
-    for element in range(1,491):
-        try:
-            if element in atomizationDict and atomizationDict[element] > 0:
-
-                analysis = cooperativityAnalysis2('output{0}'.format(element))
-                #space analysis                
-                spaceCoveredDict[element] = analysis[-1]
-                print element,analysis[-1]
-                #grouping analysis
-                processList.append(analysis[:-1])
-                atomizationList.append(atomizationDict[element])
-                tmp = [element]
-                tmp.extend(processList[-1])
-                groupedDict.append(tmp)
+            print element,
+            analysis = cooperativityAnalysis2(element)
+            spaceCoveredDict[element] = analysis[-1]
+            print analysis[-1]
+            #grouping analysis
+            processList.append(list(analysis[:-1]))
+            atomizationList.append(atomizationStats[element])
+            tmp = [element]
+            tmp.extend(processList[-1])
+            groupedDict.append(tmp)
         except (IOError,IndexError):
             print
             continue
 
+      
+    
+    with open('groupedProcessList.dump','wb') as f:
+        pickle.dump(processList,f)
     with open('spaceCovered.dump','wb') as f:
         pickle.dump(spaceCoveredDict,f)
     with open('groupedProcessList.dump','wb') as f:
         pickle.dump(groupedDict,f)
-    groupedProcess,redundantProcess = zip(*processList)
+
+    processList = sorted(processList, key=lambda x: x[0])
+
+    with open('groupedProcessList.csv','wb') as f:
+        writer = csv.writer(f, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['file','heterogeneous','homogeneous','mixed','total-processes'])
+        writer.writerows(processList)
+
+    '''
+    
+    with open('groupedProcessList.dump','rb') as f:
+        processList = pickle.load(f)
+
+    
+    _,groupedProcess,redundantProcess,mixedProcess,totalProcess = zip(*processList)
+    
+    processList = [x for x in processList if sum(x[1:4])>0]
+
+    processList = [[float(y)/sum(x[1:4]) for y in x[1:4]] for x in processList]
+    print processList
+    x = np.arange(len(processList)) 
+
+    processList = sorted(processList, key=lambda x: (float(x[2]),float(x[1]),float(x[0])))
+    processList = np.column_stack(processList)
+    processList = [map(float,y) for y in processList]
+
+    print processList
     #plt.clf()
     #plt.scatter(groupedProcess,atomizationList)
     #plt.show()
     #print groupedDict
-    groupedProcess=np.sort( groupedProcess )
-    redundantProcess=np.sort( redundantProcess )
-    yvals=np.arange(len(groupedProcess))/float(len(groupedProcess))
-    plotresults(groupedProcess,yvals,'grouped>0')
-    plotresults(redundantProcess,yvals,'redundant>0')
+    
+    totalProcess=np.sort( totalProcess )
+    #redundantProcess=np.sort( redundantProcess )
+    yvals=np.arange(len(totalProcess))/float(len(totalProcess))
+    plotresults(totalProcess,yvals,'totalGroups','Ratio of reaction groups with more than one member')
+    #plotresults(redundantProcess,yvals,'redundant>0')
+    
+    # this call to 'cumsum' (cumulative sum), passing in your y data, 
+    # is necessary to avoid having to manually order the datasets
+    
+    processList = np.array(processList)
+    y_stack = np.cumsum(processList, axis=0)   # a 3x10 array
+    fig = plt.figure()
+    #ax1 = fig.add_subplot(111)
+    
+    plt.fill_between(x, 0, y_stack[0], facecolor="#CC6666", alpha=.7)
+    plt.fill_between(x, y_stack[0], y_stack[1], facecolor="#1DACD6", alpha=.7)
+    plt.fill_between(x, y_stack[1], y_stack[2], facecolor="#6E5160")
+    hompatch = mpatches.Patch(color='#CC6666', label=' heteogeneous')
+    hetpatch = mpatches.Patch(color='#1DACD6', label='homogeneous')
+    bothpatch = mpatches.Patch(color='#6E5160', label='mixed')
+    plt.legend(handles=[hompatch,hetpatch,bothpatch])
+
+    plt.show()
+    plt.savefig('stackplot.png')
 
 import bioservices
 
@@ -901,9 +953,9 @@ def nonAtomizedSpeciesAnalysis():
     f.close()
 if __name__ == "__main__":
     #spaceCoveredCDF()
-    reactionBasedAtomizationDistro('remoteXML/non_complex')
+    #reactionBasedAtomizationDistro('complex')
     #nonAtomizedSpeciesAnalysis()
-    #createGroupingCDF()
+    createGroupingCDF()
     #analyzeGroupingCDF()
     
     #createSpaceDistribution()
