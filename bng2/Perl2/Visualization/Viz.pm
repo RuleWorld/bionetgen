@@ -208,7 +208,6 @@ sub execute_params
 	}
 	else {@includes = @$ref1};
 	
-	
 	my @excludes = ();
 	my $ref2 = getAtomicPatterns($bkg_exclude);
 	if(not ref $ref2) { 
@@ -638,9 +637,26 @@ sub getContactMap
 	my $model = shift @_;
 	my $gr = $model->VizGraphs;
 	getRuleNetworkGraphs($model);
+	my $mtypes = $model->MoleculeTypesList->MolTypes;
+	my @statepatternlist;
+	foreach my $mname(keys %$mtypes)
+	{
+		my $ctypes = $$mtypes{$mname}->Components;
+		foreach my $comp(@$ctypes)
+			{
+				my $cname = $comp->Name;
+				my @states = @{$comp->States};
+				for(my $i=0; $i<@states; $i++)
+					{
+					my $str = $mname."(".$cname."~".$states[$i].")";
+					push @statepatternlist, $str;
+					}
+			}
+	
+	}
 	if(not defined $gr->{'ContactMap'})
 	{
-		my $psg = makeContactMap( [ flat(@{$gr->{'RuleNetworkGraphs'}}) ] );
+		my $psg = makeContactMap( [ flat(@{$gr->{'RuleNetworkGraphs'}}) ], \@statepatternlist );
 		$gr->{'ContactMap'} = $psg;
 	}
 	return;
@@ -866,7 +882,8 @@ sub getBackground
 		}
 		my @bkg1 = grep { has($exclude,$_)==0; } keys %re;
 		my @bkg2 = grep { has($include,$_)==1; } keys %pr;
-		my @background = (@bkg1,@bkg2);
+		my @bkg3 = grep { has(\@bkg2,$_)==0;} @$include;
+		my @background = (@bkg1,@bkg2,@bkg3);
 		$gr->{'Background'} = \@background;	
 	}
 	
