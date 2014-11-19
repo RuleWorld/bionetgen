@@ -516,6 +516,7 @@ sub toGML_rule_pattern
 		if ($type eq 'Pattern') 
 		{ 
 			$gmlnode->{'isGroup'} = 1; 
+			$gmlnode->{'label'} = '';
 			#$gmlnode->{'gid'} = $node->{'Rule'};
 			$isstruct = 0;
 		}
