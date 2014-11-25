@@ -216,7 +216,7 @@ if __name__ == "__main__":
     for index in files:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-    #suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(32,suite)))
+    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(32,suite)))
     validFiles = getValidBNGLFiles('complex') 
     validFiles = sorted(validFiles)
     #validFiles.remove('54')
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    #unittest.TextTestRunner(verbosity=2).run(suite)
     #f = open('logresults.txt','w')
     #result = TracingStreamResult()
     #result.startTestRun()
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     #result.stopTestRun()    
 
 
-    #suite4.run(testtools.StreamResult())
+    suite4.run(testtools.StreamResult())
     #suite4.run(testtools.StreamSummary())
     #print len(validFiles)
 

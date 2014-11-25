@@ -490,6 +490,65 @@ def getValidFiles(directory,extension):
     return matches
 
 
+def reactionBasedAtomizationFile(xml):
+        ratomizationList = []
+        ratomizationDict = defaultdict(dict)
+        ratomizationListm10 = []
+        ratomizationListl10 = []
+        largeUseless = []
+        syndelArray = []
+        syndel =0
+        totalRatomizedProcesses = 0
+        totalReactions = 0
+        totalProcesses = 0
+        validFiles= 0
+        atomizedDistro = []
+        nonAtomizedDistro= []
+        interesting = []
+
+        try:
+            #console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
+            try:
+                
+                _,rules,_= readBNGXML.parseXML(xml)
+            except:
+                print xml
+            atomizedProcesses,weight = reactionBasedAtomization(rules)
+            ato,nonato = stoichiometryAnalysis(rules)
+            atomizedDistro.extend(ato)
+            nonAtomizedDistro.extend(nonato)
+            #if (2,1) in nonato:
+            #    interesting.append(element)
+            score = atomizedProcesses*1.0/weight if weight != 0 else 0
+            totalRatomizedProcesses += atomizedProcesses
+            totalReactions += len(rules)
+            totalProcesses += weight
+            ratomizationDict[xml]['score'] = score
+            ratomizationDict[xml]['weight'] = weight
+            ratomizationDict[xml]['length'] = len(rules)
+            if len(rules) == 0:
+                ruleslen0+= 1
+            syndelArray.append((len(rules)-weight)*1.0/len(rules))
+            if score == -1:
+                syndel += 1
+                #ratomizationList.append([0,0,len(rules)])
+            ratomizationList.append([score,weight,len(rules)])
+            if len(rules) > 10:
+                if weight*1.0/len(rules) >=0.1 and score < 0.1:
+                    largeUseless.append(xml)
+                ratomizationListm10.append([score,weight,len(rules)])
+            else:
+                ratomizationListl10.append([score,weight,len(rules)])
+            #print xml,ratomizationList[-1]
+            validFiles += 1
+        #except (IndexError,ZeroDivisionError):
+        #    syndel += 1
+        #    print 'iz'
+        #    continue
+        except IOError:
+            print 'io'
+        return ratomizationDict
+
 from collections import defaultdict
 def reactionBasedAtomizationDistro(directory):
     '''
@@ -518,6 +577,7 @@ def reactionBasedAtomizationDistro(directory):
     for i in progress(range(len(bnglFiles))):
         console.bngl2xml(bnglFiles[i],timeout=10)
     ''' 
+
     print 'moving xml files'
     files = glob.iglob(os.path.join('.', "*.xml"))
     for xmlfile in files:
@@ -678,7 +738,7 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     plt.savefig('reactionsvsnsyndel.png')
     
     plt.clf()
-    plt.scatter(length, 1-tmp, s=500, 
+    plt.scatter(length, 1-tmp, s=40, 
                 c=[max(x,0) for x in ratomization])
     plt.xlabel('Number of reactions',fontsize=24)
     plt.ylabel('Fracion of syndel reactions',fontsize=24)
@@ -955,7 +1015,8 @@ if __name__ == "__main__":
     #spaceCoveredCDF()
     #reactionBasedAtomizationDistro('complex')
     #nonAtomizedSpeciesAnalysis()
-    createGroupingCDF()
+    #createGroupingCDF()
+    print reactionBasedAtomizationFile('complex/BIOMD0000000019.xml.xml')
     #analyzeGroupingCDF()
     
     #createSpaceDistribution()
