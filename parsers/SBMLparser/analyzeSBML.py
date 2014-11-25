@@ -1027,7 +1027,7 @@ class SBMLAnalyzer:
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
         for idx,reaction in enumerate(rawReactions):
-            if 'MEK_PP' in reaction[0]:
+            if 'nucleus_Foxo1_Pa0_Pd0_Pe0_pUb0' in reaction[0] and 'nucleus_Foxo1_Pa1_Pd0_Pe0_pUb0' in reaction[1]:
                 pass
             matching,matching2 = self.approximateMatching2(reaction,strippedMolecules,translationKeys)
             flag = True

@@ -345,15 +345,16 @@ def histogram():
     ration20 = []
 
 
-    with open('ratomization.dump','rb') as f:
-        ratomizationDict = pickle.load(f) 
+    #with open('ratomization.dump','rb') as f:
+    #    ratomizationDict = pickle.load(f) 
     
     
     problemModels = []
     print 'syndec',len([x for x in rulesLength if x == -1])
-    for x,y,z,w in zip(rulesLength,evaluation,number,evaluation2):
+    for x,x2,y,z,w in zip(rulesLength,speciesLength,evaluation,number,evaluation2):
         if x>=10:
-            if y <= 0.1:
+            if 1-w <= 0.2:
+                print z,x,x2,y,w
                 problemModels.append(z)
             evaluation20.append(y)
             ratio20.append(1-w)
@@ -361,15 +362,15 @@ def histogram():
             if x<10:
                 evaluationn20.append(y)
                 ration20.append(1-w)
-            if 'weight' in ratomizationDict[z]:
-                trueEvaluation.append([max(0,ratomizationDict[z]['length']),y])
-            else:
-                trueEvaluation.append([1,y])
+            #if 'weight' in ratomizationDict[z]:
+            #    trueEvaluation.append([max(0,ratomizationDict[z]['length']),y])
+            #else:
+            trueEvaluation.append([1,y])
                 
             trueRatio.append(1-w)
             
     weights,trueEvaluation = zip(*trueEvaluation)
-    print '0 atom large models',problemModels
+    #print '0 atom large models',problemModels
     print 'largeModels',len(evaluation20),np.median(evaluation20),np.median(ratio20)
         
     plt.clf()
@@ -393,8 +394,9 @@ def histogram():
     ax.set_xscale('log')
     ax.set_yscale('log')
     plt.savefig('reactionsvsspecies.png')
+    
     plt.clf()
-    plt.scatter(rulesLength, speciesLength, s=500, 
+    plt.scatter(rulesLength, speciesLength, s=40, 
                 c=np.array([min(1,1-x) for x in evaluation2]))
     plt.xlabel('Number of reactions',fontsize=24)
     plt.ylabel('Number of species',fontsize=24)
@@ -410,7 +412,7 @@ def histogram():
     plt.savefig('reactionsvsspeciescomp.png')
 
     plt.clf()
-    plt.scatter(rulesLength, speciesLength, s=500, 
+    plt.scatter(rulesLength, speciesLength, s=40, 
                 c=np.array([min(1,x) for x in evaluation]))
     plt.xlabel('Number of reactions',fontsize=24)
     plt.ylabel('Number of species',fontsize=24)

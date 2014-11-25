@@ -698,22 +698,19 @@ def main():
         #rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
         #                                                  reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
         #                                                    speciesEquivalence=spEquivalence,atomize=True)
-        rlength = reval = reval2 = slength = None
-        rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'config/reactionDefinitions.json',
-            False,'config/namingConventions.json','/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
-
-        print '++++',bioNumber,rlength,reval,reval2,clength
 
         try:
  
             rlength = reval = reval2 = slength = None
-            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'reactionDefinitions/reactionDefinition7.json',
+            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'config/reactionDefinitions.json',
                 False,'config/namingConventions.json','/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
+
     
             print '++++',bioNumber,rlength,reval,reval2,clength
                                                                 
         except IOError:
             print 'couldnt print error file'                                                                
+        
         except:
             print '-------------error--------------',bioNumber
             continue

@@ -752,66 +752,49 @@ def propagateChanges(translator, dependencyGraph):
                     flag = False
 
 #TODO:bm19:Rafi_Rasi_GTP
-
 import cProfile, pstats, StringIO
-
 import cPickle as pickle
-def transformMolecules(parser, database, configurationFile,namingConventions,
+
+def createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=None,bioGridFlag=False):
-    '''
-    main method. Receives a parser configuration, a configurationFile and a
-    list of user defined species equivalences and returns a dictionary
-    containing an atomized version of the model
-    Keywords:
-        ---parser: data structure containing the reactions and species we will use
-        ---database:data structure containing the result of the outgoing translation
-        ---configurationFile
-        ---speciesEquivalences:predefined species
-    '''
-    
-    
-    pr = cProfile.Profile()
-    pr.enable()
-    
-    
     _, rules, _ = parser.getReactions(atomize=True)
     molecules, _, _,_ = parser.getSpecies()
-    sbmlAnalyzer = \
+    database.sbmlAnalyzer = \
     analyzeSBML.SBMLAnalyzer(parser,configurationFile, namingConventions,speciesEquivalences)
     #classify reactions
-    classifications, equivalenceTranslator, eequivalenceTranslator,\
+    database.classifications, equivalenceTranslator, database.eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
-    adhocLabelDictionary,lexicalDependencyGraph=  sbmlAnalyzer.classifyReactions(rules, molecules)
-    referenceVariables = [classifications,equivalenceTranslator,
-                          eequivalenceTranslator,indirectEquivalenceTranslator,adhocLabelDictionary]
+    adhocLabelDictionary,lexicalDependencyGraph=  database.sbmlAnalyzer.classifyReactions(rules, molecules)
+    referenceVariables = [database.classifications,equivalenceTranslator,
+                          database.eequivalenceTranslator,indirectEquivalenceTranslator,adhocLabelDictionary]
     comparisonVariables = [deepcopy(x) for x in referenceVariables]
     #####input processing
     #states,components,other user options
-    with open('temp1.dict','w') as f:
-        pickle.dump(referenceVariables,f)
-    with open('temp2.dict','w') as f:
-        pickle.dump(comparisonVariables,f)
+    #with open('temp1.dict','w') as f:
+    #    pickle.dump(referenceVariables,f)
+    #with open('temp2.dict','w') as f:
+    #    pickle.dump(comparisonVariables,f)
         
-    database.reactionProperties = sbmlAnalyzer.getReactionProperties()
+    database.reactionProperties = database.sbmlAnalyzer.getReactionProperties()
     #user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
     
 
     database.translator, database.labelDictionary, \
-    database.lexicalLabelDictionary = sbmlAnalyzer.getUserDefinedComplexes()
+    database.lexicalLabelDictionary = database.sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
     ####dependency graph
     #binding reactions
-    for reaction, classification in zip(rules, classifications):
+    for reaction, classification in zip(rules, database.classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
     #catalysis reactions
-    for key in eequivalenceTranslator:
-        for namingEquivalence in eequivalenceTranslator[key]:
+    for key in database.eequivalenceTranslator:
+        for namingEquivalence in database.eequivalenceTranslator[key]:
             baseElement = min(namingEquivalence, key=len)
             modElement = max(namingEquivalence, key=len)
             if key != 'Binding':
@@ -904,7 +887,7 @@ tmp,removedElement,tmp3))
     #pure lexical analysis
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     strippedMolecules = [x.strip('()') for x in molecules]
-    tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(orphanedSpecies,strippedMolecules)          
+    tmpDependency,database.tmpEquivalence = database.sbmlAnalyzer.findClosestModification(orphanedSpecies,strippedMolecules)          
     for species in tmpDependency:
         if tmpDependency[species] == []:
             addToDependencyGraph(database.dependencyGraph,species,[])
@@ -913,9 +896,34 @@ tmp,removedElement,tmp3))
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     #print database.dependencyGraph
-    prunnedDependencyGraph, weights, unevenElementDict,artificialEquivalenceTranslator = \
-    consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,eequivalenceTranslator,sbmlAnalyzer)
+    prunnedDependencyGraph, database.weights, unevenElementDict,database.artificialEquivalenceTranslator = \
+    consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,database.eequivalenceTranslator,database.sbmlAnalyzer)
     
+    return prunnedDependencyGraph,database
+    
+    
+
+
+def transformMolecules(parser, database, configurationFile,namingConventions,
+                       speciesEquivalences=None,bioGridFlag=False):
+    '''
+    main method. Receives a parser configuration, a configurationFile and a
+    list of user defined species equivalences and returns a dictionary
+    containing an atomized version of the model
+    Keywords:
+        ---parser: data structure containing the reactions and species we will use
+        ---database:data structure containing the result of the outgoing translation
+        ---configurationFile
+        ---speciesEquivalences:predefined species
+    '''
+    
+    '''
+    pr = cProfile.Profile()
+    pr.enable()
+    '''
+
+    prunnedDependencyGraph,database = createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
+                       speciesEquivalences=None,bioGridFlag=False)    
     #I'm polluting these data structures somewhere. In here
     #im just calling the original generator to recover them.
     #I think it solved itself. I'm leaving an assert just to be sure
@@ -932,10 +940,10 @@ tmp,removedElement,tmp3))
     #    for instance in tmpDependency[species]:
     #        addToDependencyGraph(database.dependencyGraph,species,instance)
     
-    for element in artificialEquivalenceTranslator:
-        if element not in eequivalenceTranslator:
-            eequivalenceTranslator[element] = []
-        eequivalenceTranslator[element].extend(artificialEquivalenceTranslator[element])
+    for element in database.artificialEquivalenceTranslator:
+        if element not in database.eequivalenceTranslator:
+            database.eequivalenceTranslator[element] = []
+        database.eequivalenceTranslator[element].extend(database.artificialEquivalenceTranslator[element])
 
     #special handling for double modifications like double phosporylation
     #FIXME: this needs to be done in a cleaner way(e.g. getting them 
@@ -943,37 +951,38 @@ tmp,removedElement,tmp3))
     doubleModifications = {"Double-Phosporylation":"Phosporylation"}
 
     for element in doubleModifications:
-        if doubleModifications[element] not in eequivalenceTranslator:
+        if doubleModifications[element] not in database.eequivalenceTranslator:
             continue
-        if element not in eequivalenceTranslator:
-            eequivalenceTranslator[element] = []
+        if element not in database.eequivalenceTranslator:
+            database.eequivalenceTranslator[element] = []
         
-        baseElements = [x[0] for x in eequivalenceTranslator[doubleModifications[element]]]
-        modifiedElements = [x[1] for x in eequivalenceTranslator[doubleModifications[element]]]
+        baseElements = [x[0] for x in database.eequivalenceTranslator[doubleModifications[element]]]
+        modifiedElements = [x[1] for x in database.eequivalenceTranslator[doubleModifications[element]]]
         
         #deleteEquivalences = [baseElements.index(x) for x in baseElements if x in modifiedElements]
         
         deleteEquivalences = [(x,modifiedElements[baseElements.index(x)]) for x in baseElements if x in modifiedElements]
         
         for eq in deleteEquivalences:
-            if eq not in eequivalenceTranslator[element]:
-                eequivalenceTranslator[element].append(eq)
+            if eq not in database.eequivalenceTranslator[element]:
+                database.eequivalenceTranslator[element].append(eq)
                 
         for eq in deleteEquivalences:
             
-            if eq in eequivalenceTranslator[doubleModifications[element]]:
-                eequivalenceTranslator[doubleModifications[element]].remove(eq)
-    for modification in tmpEquivalence:
-        for candidates in tmpEquivalence[modification]:
+            if eq in database.eequivalenceTranslator[doubleModifications[element]]:
+                database.eequivalenceTranslator[doubleModifications[element]].remove(eq)
+    for modification in database.tmpEquivalence:
+        for candidates in database.tmpEquivalence[modification]:
             for instance in candidates:
-                addToDependencyGraph(eequivalenceTranslator,modification,instance)
+                addToDependencyGraph(database.eequivalenceTranslator,modification,instance)
                 
             
-    weights = sorted(weights, key=lambda rule: (rule[1],len(rule[0])))
-    atomize(prunnedDependencyGraph, weights, database.translator, database.reactionProperties, 
-                                                                eequivalenceTranslator,bioGridFlag,sbmlAnalyzer)
+    database.weights = sorted(database.weights, key=lambda rule: (rule[1],len(rule[0])))
+    atomize(prunnedDependencyGraph, database.weights, database.translator, database.reactionProperties, 
+                                                                database.eequivalenceTranslator,
+                                                                bioGridFlag,database.sbmlAnalyzer)
     
-    onlySynDec =  len([x for x in classifications if x not in ['Generation','Decay']]) == 0
+    onlySynDec =  len([x for x in database.classifications if x not in ['Generation','Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
     '''
     pr.disable()

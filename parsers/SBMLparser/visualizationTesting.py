@@ -22,7 +22,7 @@ def getValidBNGLFiles(directory):
     errorFiles = []
     #dont skip the files that only have warnings    
     for log in logFiles:    
-        with open(os.path.join(directory, log,'.log'),'r') as f:
+        with open(os.path.join(directory, log) + '.log','r') as f:
             k = f.readlines()
             if 'ERROR' in ','.join(k):
                 errorFiles.append(log)
@@ -71,6 +71,7 @@ class GMLIntegrityTestCase(ParametrizedTestCase):
         return result
         
     def test_gml_contact(self):
+        print self.param
         self.assertEqual(self.generateGraph(self.param,'contactmap'),0)
     def test_gml_regulatory(self):
         self.assertEqual(self.generateGraph(self.param,'regulatory'),0)
@@ -84,7 +85,6 @@ if __name__ == "__main__":
     validFiles = getValidBNGLFiles(directory) 
     validFiles = sorted(validFiles)
     for validf in validFiles:
-        print validf
         suite.addTest(ParametrizedTestCase.parametrize(GMLIntegrityTestCase, 
                                                 param='{1}/{0}'.format(validf,directory)))
     unittest.TextTestRunner(verbosity=2).run(suite)
