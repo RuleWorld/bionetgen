@@ -31,7 +31,7 @@ struct Param =>
 
 # This hash describes the allowed parameter types
 my %allowedTypes = ( Constant           => 1,  # A number or an expression involving only numbers
-                     ConstantExpression => 1,  # An expression involving at least on other Constant or ConstantExpression
+                     ConstantExpression => 1,  # An expression involving at least one other Constant or ConstantExpression
 		             Observable         => 1,  # A variable defined by the name of an Observable - may take a single argument
 		             Function           => 1,  # A function call w/ arguments
                      Local              => 1,  # local arguments to functions

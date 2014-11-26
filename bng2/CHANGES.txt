@@ -18,8 +18,10 @@ values for both forward and reverse directions.
 * Added support for compartments in writeSBML() and upgraded the supported
 version of SBML to Level 2 Version 3.
 
-* Modified 'setConcentration' action to read and retain expressions 
-(rather than evaluating to a number).
+* Modified 'setConcentration' action to retain parameter names in expressions 
+(rather than evaluating to a number). This allows 'setConcentration' to be used 
+with 'parameter_scan'. However, observables and functions are still evaluated to
+numbers.
 
 * Modified 'readFile' to process SBML input files using $BNG_HOME/bin/sbmlTranslator.
 'readFile' will also now throw an error if the input file extension is not any

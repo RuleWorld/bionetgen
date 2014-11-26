@@ -1772,17 +1772,37 @@ sub setConcentration
     # Read expression
     my $expr    = Expression->new();
     my $estring = $value;
-    if ( my $err = $expr->readString( \$estring, $plist ) )
-    {
+    if ( my $err = $expr->readString( \$estring, $plist ) ){
         return '', $err;
     }
+    
+    # Evaluate observable and function names to values and reset
+    # the expression. Don't do this for parameters so that parameter 
+    # scans can be run.
+    my $estring2 = $value;
+    my $variables = $expr->getVariables($plist);
+	foreach my $var ($variables->{'Observable'}){ # Observables
+		foreach my $name (keys %{$var}){
+			my $val = $plist->evaluate($name);
+			$estring2 =~ (s/$name/$val/g);
+		}
+	}
+	foreach my $var ($variables->{'Function'}){ # Functions
+		foreach my $name (keys %{$var}){
+			my $val = $plist->evaluate($name);
+			$estring2 =~ (s/$name(\(\))?/$val/g);
+		}
+	}
+	if ( my $err = $expr->readString( \$estring2, $plist ) ){
+        return '', $err;
+    }
+    
+    # Either evaluate expression or create a new one with prefix 'NewConc'
     my $conc; # = $expr->evaluate($plist);
-    if ( $expr->Type eq 'NUM' )
-    {
+    if ( $expr->Type eq 'NUM' ){
     		$conc = $expr->evaluate();
     }
-    else
-    {
+    else{
         $conc = $expr->getName( $plist, 'NewConc' );
     }
 
