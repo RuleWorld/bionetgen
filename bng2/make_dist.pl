@@ -14,8 +14,8 @@
 #   --version VERS  : version number (overrides VERSION file)
 #   --codename NAME : distribution codename (overrides VERSION file)
 #   --archive       : create distribution archive file
-#   --build         : compile and install binaries (default: 0)
-#   --validate      : validate installation (default: 0)
+#   --build         : compile and install binaries 
+#   --validate      : validate installation 
 #   --overwrite     : overwrite any existing distribution
 #   --help          : display help
 
@@ -28,6 +28,7 @@ use File::Spec;
 use Getopt::Long;
 use Cwd ("getcwd");
 use Config;
+use File::Path qw(remove_tree);
 
 ### PARAMETERS ###
 # BNG root directory
@@ -212,8 +213,12 @@ if ($archive)
 if (-d $dist_dir)
 {
     if ($overwrite)
-    {   # warn using about overwrite
-        print "make_dist.pl warning:\noverwritting distribution directory '${dist_dir}'\n";
+    {   # warn user about overwrite
+        print "make_dist.pl warning:\noverwriting distribution directory '${dist_dir}'\n";
+        unless ( remove_tree($dist_dir) ){
+        		print "make_dist.pl error:\ncannot delete existing distribution directory '${dist_dir}' ($!).\n";
+        		exit -1;
+        }
     }
     else
     {   # overwrite not allowed! exit with error.
@@ -551,8 +556,8 @@ OPTIONS:
    --version VERS  : version number (overrides VERSION file)
    --codename NAME : distribution codename (overrides VERSION file)
    --archive       : create distribution archive file
-   --build         : compile and install binaries (default: 0)
-   --validate      : validate installation (default: 0)
+   --build         : compile and install binaries 
+   --validate      : validate installation 
    --overwrite     : overwrite any existing distribution
    --help          : display help
 
