@@ -7,6 +7,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/run_network.cpp])
 AC_CONFIG_HEADERS([config.h])
 
+# Added on 11/26/14 --LAH
+AC_CONFIG_MACRO_DIR([m4])
+AM_PROG_AR
+
 # Checks for programs.
 AC_PROG_LIBTOOL
 AC_PROG_CXX
