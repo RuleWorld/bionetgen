@@ -35,9 +35,11 @@ extern "C" {
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-#include <cfloat>
 #include "mathutils.h"
 }
+
+#include <cfloat>
+
 /*
  #include <cstdlib>
  #include <cstring>
