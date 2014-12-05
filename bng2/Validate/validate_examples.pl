@@ -100,7 +100,7 @@ my $datdir   = File::Spec->catdir( $bngpath, 'Validate', 'DAT_validate' );
 # directory containing models
 my $modeldir = File::Spec->catdir( $bngpath, 'Validate' );
 # output directory
-my $outdir = File::Spec->curdir();
+my $outdir = $modeldir; #File::Spec->curdir();
 # compare species and rxns script
 my $compare_species = File::Spec->catfile( $modeldir, 'compare_species.pl' );
 my $compare_rxn = File::Spec->catfile( $modeldir, 'compare_rxn.pl' );
@@ -252,7 +252,7 @@ foreach my $model (@models)
     {   # BNG encountered some problem..
         print "!! BioNetGen failed to process $model !!\n"; 
         print "exit status = $exit_status.\n"; 
-        print "see $log_file form more details.\n";
+        print "see $log_file for more details.\n";
         ++$fail_count;
         close $log;
         next MODEL;
@@ -267,7 +267,7 @@ foreach my $model (@models)
         unless ( $exit_status==0)
         {   # compare_species encountered some problem
             print "FAILED!! exit status = $exit_status.\n";
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -282,7 +282,7 @@ foreach my $model (@models)
         unless ( $exit_status==0)
         {   # compare_rxn encountered some problem
             print "FAILED!! exit status = $exit_status.\n"; 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -298,7 +298,7 @@ foreach my $model (@models)
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -315,7 +315,7 @@ foreach my $model (@models)
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -332,7 +332,7 @@ foreach my $model (@models)
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -349,7 +349,7 @@ foreach my $model (@models)
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -366,7 +366,7 @@ foreach my $model (@models)
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -383,7 +383,7 @@ foreach my $model (@models)
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -400,7 +400,7 @@ foreach my $model (@models)
         if ($exit_status ne "")
         {   
             multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -417,7 +417,7 @@ foreach my $model (@models)
         unless ( $exit_status==0)
         {   # compare_species encountered some problem
             print "..FAILED!! exit_status = $exit_status\n"; 
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -433,7 +433,7 @@ foreach my $model (@models)
         unless ( $exit_status==0)
         {   # compare_species encountered some problem
             print "..FAILED!! exit_status = $exit_status\n";
-            print "see $log_file form more details.\n";
+            print "see $log_file for more details.\n";
             close $log;
             ++$fail_count;
             next MODEL;
@@ -451,7 +451,7 @@ foreach my $model (@models)
             if ( defined $exit_status )
             {
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-                print "see $log_file form more details.\n";
+                print "see $log_file for more details.\n";
                 close $log;
                 ++$fail_count;
                 next MODEL;
@@ -472,7 +472,7 @@ foreach my $model (@models)
             if ( defined $exit_status )
             {
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-                print "see $log_file form more details.\n";
+                print "see $log_file for more details.\n";
                 close $log;
                 ++$fail_count;
                 next MODEL;
@@ -492,7 +492,7 @@ foreach my $model (@models)
             if ( defined $exit_status )
             {
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-                print "see $log_file form more details.\n";
+                print "see $log_file for more details.\n";
                 close $log;
                 ++$fail_count;
                 next MODEL;

@@ -406,25 +406,25 @@ if (defined $bindir)
 
     if ($validate)
     {
-        #  make and change to validate workdir
-        my $validate_workdir = "validate_${dist_name}";
-
-        # check if output directory exists..
-        unless (-d $validate_workdir)
-        {
-            # try to make output directory
-            unless ( mkdir $validate_workdir )
-            {
-                print "make_dist.pl error:\ncannot make validation working directory ($!).\n";
-                exit -1;
-            }
-        }
-
-        # change to build_dir
-        unless( chdir $validate_workdir )
-        {   print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
-            exit -1;
-        }
+#        #  make and change to validate workdir
+#        my $validate_workdir = "validate_${dist_name}";
+#
+#        # check if output directory exists..
+#        unless (-d $validate_workdir)
+#        {
+#            # try to make output directory
+#            unless ( mkdir $validate_workdir )
+#            {
+#                print "make_dist.pl error:\ncannot make validation working directory ($!).\n";
+#                exit -1;
+#            }
+#        }
+#
+#        # change to build_dir
+#        unless( chdir $validate_workdir )
+#        {   print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
+#            exit -1;
+#        }
 
         # run validation script
         my $abs_validate_script = File::Spec->catfile( ($abs_dist_dir, $validate_subdir), $validate_script );
@@ -432,7 +432,7 @@ if (defined $bindir)
         my @args = ($sys_perl, $abs_validate_script, @validate_flags );
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
-        {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)";  }
+        {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  }
     }
 }
 
