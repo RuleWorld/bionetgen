@@ -424,7 +424,7 @@ if (defined $bindir)
         unless( chdir $validate_workdir ){   
         		print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
             exit -1;
-        }
+        } 
 
         # run validation script
 #        my $abs_validate_script = File::Spec->catfile( ($abs_dist_dir, $validate_subdir), $validate_script );
