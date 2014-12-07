@@ -395,6 +395,9 @@ sub readSBML
 	        print "Reading from file $filename (level $level)\n";
 	        unless( open FILE, '<', $filename )
 	        {   
+	        		unless (File::Spec->file_name_is_absolute( $filename )){
+	        			$filename = File::Spec->rel2abs( $filename );
+	        		}
 	            $err = "Couldn't read from file $filename: $!";
 	            goto EXIT;
 	        }
