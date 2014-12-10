@@ -246,17 +246,7 @@ foreach my $model (@models)
     multi_print( " -> processing model file with BioNetGen\n", @allFH );
 
     # execute BNGL model;
-    my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file );
-    my $exit_status = run_command( $log, \*STDOUT, @command );
-    unless ( $exit_status==0 )
-    {   # BNG encountered some problem..
-        print "!! BioNetGen failed to process $model !!\n"; 
-        print "exit status = $exit_status.\n"; 
-        print "see $log_file for more details.\n";
-        ++$fail_count;
-        close $log;
-        next MODEL;
-    }
+    run_BNG( $model_file, $model, $log_file, $log, $outdir );
 
     # check species in reaction network
     if ( -e "${datprefix}.net"  and  -e "${outprefix}.net" )
@@ -451,10 +441,21 @@ foreach my $model (@models)
             if ( defined $exit_status )
             {
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-                print "see $log_file for more details.\n";
-                close $log;
-                ++$fail_count;
-                next MODEL;
+                # Try again
+                print "Trying again..\n";
+                run_BNG( $model_file, $model, $log_file, $log, $outdir );
+                $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
+                if ( defined $exit_status )
+            		{
+            			multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+                		print "See $log_file for more details.\n";
+                		close $log;
+                		++$fail_count;
+                		next MODEL;
+            		}
+            		else{
+            			print "..PASSED!!\n";
+            		}
             }
             print $log $SEPARATOR;
         }
@@ -472,10 +473,21 @@ foreach my $model (@models)
             if ( defined $exit_status )
             {
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-                print "see $log_file for more details.\n";
-                close $log;
-                ++$fail_count;
-                next MODEL;
+                # Try again
+                print "Trying again..\n";
+                run_BNG( $model_file, $model, $log_file, $log, $outdir );
+                $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
+                if ( defined $exit_status )
+            		{
+            			multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+                		print "See $log_file for more details.\n";
+                		close $log;
+                		++$fail_count;
+                		next MODEL;
+            		}
+            		else{
+            			print "..PASSED!!\n";
+            		}
             }
             print $log $SEPARATOR;
         }
@@ -492,10 +504,21 @@ foreach my $model (@models)
             if ( defined $exit_status )
             {
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
-                print "see $log_file for more details.\n";
-                close $log;
-                ++$fail_count;
-                next MODEL;
+                # Try again
+                print "Trying again..\n";
+                run_BNG( $model_file, $model, $log_file, $log, $outdir );
+                $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
+                if ( defined $exit_status )
+            		{
+            			multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+                		print "See $log_file for more details.\n";
+                		close $log;
+                		++$fail_count;
+                		next MODEL;
+            		}
+            		else{
+            			print "..PASSED!!\n";
+            		}
             }
             print $log $SEPARATOR;
         }
@@ -510,9 +533,6 @@ foreach my $model (@models)
 }
 
 
-
-
-
 ## Print summary results and exit
 if ($fail_count)
 {   print "\n!! validate_examples failed to validate $fail_count of $test_count test models !!\n\n";   }
@@ -521,13 +541,31 @@ else
 exit($fail_count);
 
 
-
-
-
-
 ###                                                      ###
 ### END OF MAIN SCRIPT. Accessory subroutines are below. ###
 ###                                                      ###
+
+# execute BNGL model;
+sub run_BNG
+{
+	my $model_file = shift @_;
+	my $model      = shift @_;
+	my $log_file   = shift @_;
+	my $log        = shift @_;
+	my $outdir     = shift @_;
+	
+    my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file );
+    my $exit_status = run_command( $log, \*STDOUT, @command );
+    unless ( $exit_status==0 )
+    {   # BNG encountered some problem..
+        print "!! BioNetGen failed to process $model !!\n"; 
+        print "exit status = $exit_status.\n"; 
+        print "see $log_file for more details.\n";
+        ++$fail_count;
+        close $log;
+        next MODEL;
+    }
+}
 
 # script for deleting working files
 sub delete_files
