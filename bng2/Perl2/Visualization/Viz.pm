@@ -875,6 +875,7 @@ sub getBackground
 		my %pr;
 		foreach my $tr(@trs)
 		{	
+			next if($tr eq "");
 			my ($reac,$prod) = getReactantsProducts($tr);
 			# dang, Perl is awesome! 
 			map { $re{$_}++ if(not $added{$_}++); } @$reac;
@@ -1063,11 +1064,19 @@ opts=>["FILE1","FILE2",...]
 Specifies option file(s) with the following structure:
 
 	begin background
-		<atomic patterns>
+		begin include
+			<atomic patterns>
+		end include
+		
+		begin exclude
+			<atomic patterns>
+		end exclude
 	end background
+	
 	begin filter
 		<atomic patterns>
 	end filter
+	
 	begin classes
 		begin classname
 			<atomic patterns>
@@ -1098,15 +1107,35 @@ visualize({type=>process, groups=>1})
 	elsif($args->{'type'} eq 'ruleviz_pattern')
 	{
 		print qq{
-No help yet for 'ruleviz_pattern'. Please check back later.
+---------------------------------------------/ HELP MENU /----------
+ACTION: visualize
+TYPE: ruleviz_pattern
+PURPOSE: Visualizes rules as bipartite graphs with embedded pattern graphs.
+USAGE:
+
+visualize({type=>"ruleviz_pattern", each=>0/1})
+
+each=>0/1 (default: 0)
+---------
+Disable/enable separate output of each rule.
 }
 	}
 	
 	elsif($args->{'type'} eq 'ruleviz_operation')
 	{
 		print qq{
-No help yet for 'ruleviz_operation'. Please check back later.
-}
+---------------------------------------------/ HELP MENU /----------
+ACTION: visualize
+TYPE: ruleviz_operation
+PURPOSE: Visualizes rules as pattern graphs with graph operation nodes.
+USAGE:
+
+visualize({type=>"ruleviz_operation", each=>0/1})
+
+each=>0/1 (default: 0)
+---------
+Disable/enable separate output of each rule.
+
 	}
 	
 	elsif($args->{'type'} eq 'reaction_network')
@@ -1119,7 +1148,17 @@ No help yet for 'reaction_network'. Please check back later.
 	elsif($args->{'type'} eq 'contactmap')
 	{
 		print qq{
-No help yet for 'contactmap'. Please check back later.
+---------------------------------------------/ HELP MENU /----------
+ACTION: visualize
+TYPE: ruleviz_pattern
+PURPOSE: Visualizes rules as bipartite graphs with embedded pattern graphs.
+USAGE:
+
+visualize({type=>"contactmap", each=>0/1})
+
+each=>0/1 (default: 0)
+---------
+Disable/enable separate output of each rule.
 }
 	}
 	
