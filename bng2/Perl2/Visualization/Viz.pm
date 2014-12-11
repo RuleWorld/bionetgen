@@ -11,6 +11,7 @@ use Visualization::NetworkGraph;
 use Visualization::ProcessGraph;
 use Visualization::ContactMap;
 use Visualization::GML;
+use Visualization::DB;
 
 
 struct Graphs =>
@@ -161,7 +162,7 @@ sub execute_params
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory regulatory_db reaction_network contactmap process );
 	
 	if (not has(\@argkeys,'type'))
 	{
@@ -409,6 +410,31 @@ sub execute_params
 		if($each==1) {$output = 0;}
 	}
 	
+	
+	if($type eq 'regulatory_db')
+	{
+		my %args2 = duplicate_args(\%args);
+		$args2{'type'} = 'regulatory';
+		$args2{'output'} = 0;
+		$args2{'groups'} = 0;
+		$args2{'collapse'} = 0;
+		$args{'background'}->{'toggle'} = 1;
+		execute_params($model,\%args2);
+		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
+		my $prefix = $model->getOutputPrefix();
+		my $name = $prefix.".db";
+		my $dbh = newDBFile($name);
+		$dbh = getRegDB($dbh,$bpg);
+		$dbh = getRuleDB($dbh,$model->RxnRules);
+		$dbh->disconnect();
+		print "Writing regulatory graph database as $name\nDone!\n";
+		print "To modify background and grouping, run: sqlite3 $name.\n";
+		print "To generate the regulatory graph,  run: visualize.pl --db $name [--background] [--groups [--collapse]]\n";
+		exit;
+	}
+	
+		
+	
 	if($type eq 'process')
 	{
 		my %args2 = duplicate_args(\%args);
@@ -500,6 +526,39 @@ sub writeGML
 	my $model = $params{'model'};
 	my $str = $params{'str'};
 	my $prefix = $model->getOutputPrefix();
+	my $type = $params{'type'};
+	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
+	
+	my %outputstr = (	'ruleviz_operation' => 'rule(s) with graph operations',
+						'ruleviz_pattern' => 'rule(s) with patterns',
+						'regulatory' => 'network of rules and atomic patterns',
+						'process' => 'process graph of rules',
+						'contactmap' => 'contact map of model'
+						);
+	my $outputmsg = $outputstr{$type};
+	
+	my $file = '';
+	$file .= $prefix;
+	$file .= "_".$type;
+	$file .= "_".$suffix if (length $suffix > 0);
+	$file .= ".gml";
+		
+	# write the string to file
+    my $FH;
+    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+    print $FH $str;
+    close $FH;
+
+    # all done
+    print sprintf( "Wrote %s in GML format to %s.\n", $outputmsg, $file);
+    return undef;
+}
+
+sub writeGML2
+{
+	my %params = %{shift @_};
+	my $str = $params{'str'};
+	my $prefix = $params{'prefix'};
 	my $type = $params{'type'};
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
 	
@@ -738,7 +797,6 @@ sub syncClasses
 		$classes_in->{$wc} = $classes_in->{$matches[0]};
 		#if(scalar(@matches) ==1) { $classes_in->{$wc} = $matches[0]; }
 		}
-	
 	}
 	
 	# update bpg and model using %$classes_in
@@ -798,36 +856,6 @@ sub syncClasses
 		#print $rule.":".join(" ",@reac).":".join(" ",@prod)."\n";
 	}
 	
-	
-	# foreach my $rule(@rules)
-	# {
-		# my $reacprodstr = 	join " ",
-						# sort {$a cmp $b}
-						# uniq map {$temp{$_};}
-						# map {$_ =~ /.*:(.*):.*/; $1;}
-						# grep { $_ =~ /^$rule:/;}
-						# @edges;
-		# my @reac = 		map {$_ =~ /.*:(.*):.*/; $1;}
-						# grep { $_ =~ /^$rule:/;}
-						# @reac_edges;
-
-		# my @reac1 = @reac ? uniq map {$temp{$_}} @reac : ();
-		# my @prod = 		map {$_ =~ /.*:(.*):.*/; $1;}
-						# grep { $_ =~ /^$rule:/;}
-						# @prod_edges;
-		# my @prod1 = @reac ? uniq map {$temp{$_}} @prod : ();
-		# my $reacstr = @reac1 ? join(" ",sort {$a cmp $b}  @reac1) : '';
-		# my $prodstr = @prod1 ? join(" ",sort {$a cmp $b}  @prod1) : '';
-		# $reacprodstr = $reacstr." -> ".$prodstr;
-		
-		# $reacprodhash{unquotemeta $rule} = $reacprodstr;
-		# push @reacprodvals,$reacprodstr;
-		# #$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
-	# }
-	
-	#print map $_."\n",uniq(@reacprodvals);
-	
-	
 	# get reacprodstrings that occur multiple times
 	# if it occurs only once, it doesnt need a group
 	# prune this to delete reacprods that occur only once
@@ -849,6 +877,80 @@ sub syncClasses
 	foreach my $rule(@rules2)
 	{
 		$gr->{'Classes'}->{$rule} = $names{$reacprodhash{$rule}};
+		$bpg->{'NodeClass'}->{$rule} = $names{$reacprodhash{$rule}};
+	}
+	return;
+}
+
+sub makeClasses
+{
+	my $bpg = shift @_;
+	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
+				@{$bpg->{'NodeList'}};
+	# creating temp hash to hold for each AP
+	# either the class (if classed) or 
+	# its name (if unclassed)
+	my @classed = keys %{$bpg->{'NodeClass'}};
+	my @unclassed = grep has(\@classed,$_)==0, @aps;
+	my %temp;
+	@temp { @classed } = @{$bpg->{'NodeClass'}} { @classed };
+	@temp { @unclassed } = @unclassed;
+	
+	# getting rules
+	#my @rules =	map {quotemeta($_)}
+	#			grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+	#				@{$bpg->{'NodeList'}};
+	my @edges =	grep { $_ =~ /Reactant|Product$/ }
+				@{$bpg->{'EdgeList'}};
+	my @reac_edges =	grep { $_ =~ /Reactant$/ }
+				@{$bpg->{'EdgeList'}};
+	my @prod_edges =	grep { $_ =~ /Product$/ }
+				@{$bpg->{'EdgeList'}};
+	my %reacprodhash;
+	# dont wanna lose the order;
+	my @reacprodvals; 
+	my @rules = grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} @{$bpg->{'NodeList'}};
+	foreach my $rule(@rules)
+	{
+		my @reac = 	uniq 
+					sort {$a cmp $b}
+					map { $temp{$_} } 
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@reac_edges;
+		my @prod = 	uniq
+					sort {$a cmp $b}
+					map { $temp{$_} }
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@prod_edges;
+		my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) );
+		my $hasreacprod = @reac ? 1 : @prod ? 1 : 0;
+		my $reacprodstr = $hasreacprod ? $str : '';
+		$reacprodhash{$rule} = $reacprodstr;
+		push @reacprodvals,$reacprodstr;
+		#print $rule.":".join(" ",@reac).":".join(" ",@prod)."\n";
+	}
+	
+	# get reacprodstrings that occur multiple times
+	# if it occurs only once, it doesnt need a group
+	# prune this to delete reacprods that occur only once
+	my @reacprods = grep
+					{
+					my $x = $_;
+					$x ne '' and (scalar (grep { $_ eq $x } values %reacprodhash) >1);
+					} uniq @reacprodvals;
+	return if (scalar @reacprods == 0);
+	my $newname = -1;
+	# assigning names to rule groups
+	my %names;
+	@names{ @reacprods } = map 'RG'.++$newname, @reacprods;
+	
+	# updating model and bpg classdefs for the grouped rules
+	my @rules2 = 	grep { has(\@reacprods,$reacprodhash{$_}) } 
+					map unquotemeta, @rules;
+	foreach my $rule(@rules2)
+	{
 		$bpg->{'NodeClass'}->{$rule} = $names{$reacprodhash{$rule}};
 	}
 	return;

@@ -30,6 +30,7 @@ my %args = ('help'=>0,'background'=>0,'collapse'=>0,'each'=>0,'groups'=>0,'texto
 GetOptions(	\%args,
 			'help!',
 			'bngl=s',
+			'db=s',
 			'type=s',
 			'opts=s@',
 			'background!',
@@ -43,6 +44,26 @@ GetOptions(	\%args,
 			'mergepairs!',
 			'embed!',
 		) or die "Error in command line arguments.";
+		
+if(defined $args{'db'})
+{
+	my $name = $args{'db'};
+	$name =~ /(.*)\.db/;
+	my $prefix = $1;
+	
+	filecheck($name,'DB');
+	my $dbh = newDBFile($name);
+	my $background = $args{'background'};
+	my $groups = $args{'groups'};
+	my $collapse = $args{'collapse'};
+	my $bpg = getBPG($dbh,$background,$groups,$collapse);
+	my $str = toGML_rule_network($bpg);
+	my $suffix = $args{'suffix'};
+	my $type = 'regulatory';
+	my %params = ('str'=>$str,'suffix'=>$suffix,'type'=>$type,'prefix'=>$prefix);
+	writeGML2(\%params);
+	exit;
+}
 
 if($args{'help'}) 
 {

@@ -686,6 +686,7 @@ sub toGML_rule_network
 		my @splits = split(":",$edge);
 		my $source = $indhash{$splits[0]};
 		my $target = $indhash{$splits[1]};
+		#print $source,",",$target,"\n";
 		my $type = $splits[2];
 		my $gmledge = initializeGMLEdge($source,$target,"","",$edge);
 		styleEdge2($gmledge,$type);
