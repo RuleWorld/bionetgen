@@ -29,11 +29,13 @@ The run_network binary will be placed in ../bin/.
 2) If any tests fail, look at the log files for more information.
 
 PLEASE NOTE: Stochastic simulation tests rely on statistical validation.
-Occasionally a validation will fail due to outliers. Run the validation
-script a few times. If a test passes most of the time, it is probably OK.
+Occasionally a validation will fail due to outliers. The current validation
+script only reports stochastic validation failures if they occur TWICE in
+a row. Therefore, if this occurs there is a good chance that something is
+wrong. To confirm, we suggest rerunning the validation at least once.
 Single tests may be run by passing the model basename as argument.
 
 --
-LAST UPDATE: Leonard Harris, 14 April 2013
+LAST UPDATE: Leonard A. Harris, 12 December 201r
 
 

@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 2.6)
 project(Network3)
 
 add_definitions(-DRUN_NETWORK_VERSION=\"3.0\")
-#add_definitions("-stdlib=libstdc++")
 
 set(SUB_DIRS 
     src 
@@ -23,7 +22,7 @@ set(SUB_DIRS
     src/util/rand2
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} include include/cvode include/nvector include/sundials SUB_DIRS)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} include include/cvode include/nvector include/sundials ${SUB_DIRS})
 
 aux_source_directory(src src_files)
 aux_source_directory(src/model model_files)
@@ -62,7 +61,5 @@ set(SRC_FILES
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 link_libraries(libmathutils.a libmuparser.a libsundials_cvode.a libsundials_nvecserial.a)
-
-#set(CMAKE_EXE_LINKER_FLAGS "-stdlib=libstdc++")
 
 add_executable(run_network ${SRC_FILES})

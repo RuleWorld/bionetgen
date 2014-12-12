@@ -1,6 +1,8 @@
 MAKEINCL = make.include
-LIBDIR  = ../lib
-INCDIR  = ../include
+#LIBDIR  = ../lib
+LIBDIR = .
+#INCDIR  = ../include
+INCDIR = .
 MATHLIB = ${LIBDIR}/libmathutils.a
 
 TARFILE= mathutils.tar
@@ -46,9 +48,9 @@ EXEC=  test_transpose testdummy testgram testspline testsvd \
 .PHONY: $(EXEC) clean tar co library
 
 library: $(LIBOBJ) $(OBJ) $(HEADERS)
-	mkdir -p ${LIBDIR} ${INCDIR}
+#	mkdir -p ${LIBDIR} ${INCDIR}
 	ranlib $(MATHLIB)
-	cp $(HEADERS) ${INCDIR}
+#	cp $(HEADERS) ${INCDIR}
 
 all: $(EXEC)
 
