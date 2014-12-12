@@ -94,7 +94,7 @@ sub getModel
 
 sub display_help
 {
-	my $args = @_ ? shift @_ : 0;
+
 	
 		print qq{
 ---------------------------------------------/ HELP MENU /----------
@@ -180,15 +180,7 @@ USAGE:
 	included and excluded in the list of background patterns.
 	Filter block is for listing seed nodes for filtering regulatory graph.
   
-}
-	
-	
-	else
-	{
-		print $args->{'type'} . " is not a valid visualization type.\n";
-	}
-	
-	return "";
-	
+};
+	return "";	
 }
 
