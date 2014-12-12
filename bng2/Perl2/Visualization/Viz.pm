@@ -1137,7 +1137,7 @@ each=>0/1 (default: 0)
 Disable/enable separate output of each rule.
 
 	}
-	
+	}
 	elsif($args->{'type'} eq 'reaction_network')
 	{
 		print qq{
