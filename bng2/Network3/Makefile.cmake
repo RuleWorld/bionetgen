@@ -23,9 +23,9 @@ CVODE = cvode-2.6.0
 MUPARSER = muparser_v2_2_3
 
 # library files
-MATHUTILS_LIB = ${LIBDIR}/libmathutils.a 
-CVODE_LIB = ${LIBDIR}/libsundials_cvode.a ${LIBDIR}/libsundials_nvecserial.a
-MUPARSER_LIB = ${LIBDIR}/libmuparser.a
+MATHUTILS_LIB = $(LIBDIR)/libmathutils.a 
+CVODE_LIB = $(LIBDIR)/libsundials_cvode.a $(LIBDIR)/libsundials_nvecserial.a
+MUPARSER_LIB = $(LIBDIR)/libmuparser.a
 
 # recipes that do not create files
 .PHONY: clean 
@@ -39,17 +39,19 @@ run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 
 # libraries
 $(CVODE_LIB):  
-#$(LIBSOURCE)/$(CVODE).tar.gz
 	mkdir -p $(LIBDIR) $(INCDIR)
-#	rm -rf $(CVODE)
-#	tar -xzf $(LIBSOURCE)/$(CVODE).tar.gz
-	cd $(CVODE);  ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
+	if test -d $(LIBSOURCE) ; then \
+	    rm -rf $(CVODE) ; \
+	    tar -xzf $(LIBSOURCE)/$(CVODE).tar.gz ; \
+	fi;
+	cd $(CVODE); ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install
 
 $(MUPARSER_LIB):  
-#$(LIBSOURCE)/$(MUPARSER).zip
 	mkdir -p $(LIBDIR) $(INCDIR)
-#	rm -rf $(MUPARSER)
-#	unzip $(LIBSOURCE)/$(MUPARSER).zip
+	if test -d $(LIBSOURCE) ; then \
+	    rm -rf $(MUPARSER) ; \
+	    tar -xzf $(LIBSOURCE)/$(MUPARSER).tar.gz ; \
+	fi;
 	cd $(MUPARSER); ./configure --prefix=$(CURDIR) --disable-shared;  make;  make install	
 
 $(MATHUTILS_LIB):  
@@ -61,7 +63,4 @@ $(MATHUTILS_LIB):
 # clean script
 clean:
 	rm -rf $(CVODE) $(MUPARSER) $(NETWORK_BINDIR) $(LIBDIR) $(INCDIR)
-	cd ${MATHUTILS} ; ${MAKE} clean
-
-
-
+	cd $(MATHUTILS) ; $(MAKE) clean
