@@ -58,8 +58,7 @@ my @include_subdirectories = qw/ Perl2 Models2 Network3 PhiBPlot Validate /;
 # directory containing library archives
 my $libarc_subdir = "libsource";
 # include libraries
-#my @include_libraries = ("cvode-2.6.0.tar.gz","muparser_v134.tar.gz");
-my @include_libraries = ("cvode-2.6.0.tar.gz","muparser_v2_2_3.tar.gz");
+my @include_libraries = ("cvode-2.6.0.tar.gz","muparser_v2_2_4.tar.gz");
 # run_network binary
 my $run_network = "run_network";
 
