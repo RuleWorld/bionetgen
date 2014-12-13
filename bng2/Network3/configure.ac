@@ -41,13 +41,9 @@ AC_CONFIG_FILES([
  Makefile
  src/Makefile
 ])
-#AC_CONFIG_SUBDIRS([
-# cvode-2.6.0
-# muparser_v134
-#])
 AC_CONFIG_SUBDIRS([
  cvode-2.6.0
- muparser_v2_2_3
+ muparser_v2_2_4
 ])
 AC_OUTPUT
 
