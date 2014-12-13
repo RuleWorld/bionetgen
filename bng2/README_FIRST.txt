@@ -33,6 +33,11 @@ compilation tools, you may compile your own binaries from a console as follows:
     make
     make install
 
+PLEASE NOTE: This procedure will not work if the directories 'cvode-2.6.0' and 
+'muparser_v2_2_4' do not exist. If that is the case, they can be extracted from
+the archive files in BNGPATH/libsource (available in the repository version of 
+the code at https://code.google.com/p/bionetgen/).
+
 When compiling binaries for 64-bit Windows (Vista/7), make sure that the 64-bit 
 version of Cygwin is installed including the latest version of required developer tools 
 (gcc,g++,make,autoconf). Compile from the Cygwin prompt as above. The compiled binary 
@@ -54,14 +59,16 @@ the Models2 directory, and type:
 
 where <model> is one of the models found in the Models2 directory.
 
-To validate BioNetGen installation:
+To validate the BioNetGen installation:
 1) run the Perl script BNGPATH/Validate/validate_examples.pl.
 2) if any tests fail, look at the log files for more information.
 
-PLEASE NOTE!! Stochastic simulation tests rely on statistical validation.
-Occasionally a validation will fail due to outliers. Run the validation
-script a few times. If a test passes most of the time, it is probably OK.
-Single tests may be run by passing the model basename as argument.
+PLEASE NOTE: Stochastic simulation tests rely on statistical validation.
+Occasionally a validation will fail due to outliers. The current validation
+script only reports stochastic validation failures if they occur TWICE in
+a row. Therefore, if this occurs there is a good chance that something is
+wrong. To confirm, we suggest rerunning the validation script at least once.
+Single tests may be run by passing the model basename as an argument.
 
 TROUBLESHOOTING:
 If you see the message "ABORT: Could not find executable run_network". Try
@@ -70,4 +77,4 @@ BioNetGen installation. Under bash-like shells, this is done by typing:
 "export BNGPATH=<bngpath>", where <bngpath> is the root directory of BNG.
 
 --
-Last modified 24 April 2012 for release 2.2.0-testing
+Last modified 13 December 2014 for release 2.2.6-testing

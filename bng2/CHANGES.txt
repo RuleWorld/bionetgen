@@ -1,8 +1,10 @@
 CHANGES to BioNetGen
-updated 14 August 2014
+updated 13 December 2014
 http://code.google.com/p/bionetgen
 
-== BioNetGen-2.2.6-stable ==
+== BioNetGen-2.2.6-testing ==
+
+* Upgraded muParser to version 2.2.4.
 
 * Added a 'reset_conc' argument to parameter_scan() that suppresses the call to
 resetConcentrations() if set to 0 (default value is 1). This allows simulations in 

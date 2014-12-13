@@ -5,6 +5,11 @@ Installation procedure for Network3:
 If configure script does not exist (developers only):
 0) autoreconf --no-recursive --install
 
+PLEASE NOTE: Autotools assumes the existence of the directories 'cvode-2.6.0' 
+and 'muparser_v2_2_4'. If these do not exist, extract them from the archive 
+files in BNGPATH/libsource (available in the repository version of the code 
+at https://code.google.com/p/bionetgen/).
+
 To configure compile and install Network3 (all users):
 1) ./configure --prefix=BNGPATH --disable-shared
 2) make
@@ -32,10 +37,10 @@ PLEASE NOTE: Stochastic simulation tests rely on statistical validation.
 Occasionally a validation will fail due to outliers. The current validation
 script only reports stochastic validation failures if they occur TWICE in
 a row. Therefore, if this occurs there is a good chance that something is
-wrong. To confirm, we suggest rerunning the validation at least once.
-Single tests may be run by passing the model basename as argument.
+wrong. To confirm, we suggest rerunning the validation script at least once.
+Single tests may be run by passing the model basename as an argument.
 
 --
-LAST UPDATE: Leonard A. Harris, 12 December 201r
+LAST UPDATE: Leonard A. Harris, 13 December 2014
 
 
