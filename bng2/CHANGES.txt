@@ -4,6 +4,8 @@ http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.6-testing ==
 
+* Added new visualization tools: visualize() action and visualize.pl script.
+
 * Upgraded muParser to version 2.2.4.
 
 * Added a 'reset_conc' argument to parameter_scan() that suppresses the call to

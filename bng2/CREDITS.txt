@@ -31,7 +31,7 @@ Ilya Korsunsky
    * Initial deployment of global functions for Network3.
 
 John Sekar <johnarul.sekar@gmail.com>
-   * Development team member.
+   * Visualization - rule visualization, regulatory graphs.
 
 Jose Juan Tapia <jjtapia@pitt.edu>
    * BioNetGen grammars development and implementation

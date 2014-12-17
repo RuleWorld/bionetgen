@@ -38,13 +38,6 @@ PLEASE NOTE: This procedure will not work if the directories 'cvode-2.6.0' and
 the archive files in BNGPATH/libsource (available in the repository version of 
 the code at https://code.google.com/p/bionetgen/).
 
-When compiling binaries for 64-bit Windows (Vista/7), make sure that the 64-bit 
-version of Cygwin is installed including the latest version of required developer tools 
-(gcc,g++,make,autoconf). Compile from the Cygwin prompt as above. The compiled binary 
-can be executed as is from the Cygwin prompt. Executing from the Windows command prompt 
-will throw Missing DLL errors. Copying these DLLs from the Cygwin bin folder to the 
-BioNetGen bin folder should resolve these errors.
-
 Alternatively, binaries can be compiled using CMake. Download CMake from
 http://www.cmake.org/ and add to PATH. Then:
 
@@ -52,6 +45,24 @@ http://www.cmake.org/ and add to PATH. Then:
 	cp Makefile.cmake Makefile
 	make
 	
+Compiling under Windows:
+Make sure Cygwin used is for the appropriate Windows architecture (32/64 bit). 
+Make sure Cygwin has developer tools installed (Select Devel when installing Cygwin).
+Extract folders 'cvode-2.6.0' and 'muparser_v2_2_4' to <bngpath>\Network3 from 
+archives in <bngpath>\libsource.
+In the Cygwin terminal,
+	cd <bngpath>\Network3
+	autoreconf --no-recursive --install
+	./configure --disable-shared --prefix=<bngpath>
+    make
+    make install
+	make clean
+Using BioNetGen from the Windows command prompt can throw Missing DLL errors.
+These DLLs are specific to the Cygwin version used and found in Cygwin\bin.
+Copy them to <bngpath>\bin to resolve these errors. 
+As of 12/16/2014, the required DLLs for 64-bit Windows 7 and later 
+are cygwin1.dll, cygstdc++-6.dll and cyggcc_s-seh-1.dll.
+
 Example models are provided in the Models2 folder. To run them, go to
 the Models2 directory, and type:
 
