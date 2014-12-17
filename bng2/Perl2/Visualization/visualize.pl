@@ -112,7 +112,7 @@ OPTIONS:
 
   File I/O
   --------
-  --bngl FILE						   use BNGL model file (required)
+  --bngl FILE					   use BNGL model file (required)
   --opts FILE1 [--opts FILE2 [..]]     use input options files FILE1 FILE2 .. (optional)
   --suffix "STR"                       add suffix STR to output filename (optional)
 
@@ -126,22 +126,22 @@ USAGE:
   each: enable output of separate gml file for each rule
   
   Visualizing contact map
-  ----------------------------
+  -----------------------
   visualize.pl --type contactmap
   
   Visualizing regulatory graphs of individual rules
-  ----------------------------
+  -------------------------------------------------
   visualize.pl --type regulatory [--each] [--background]
   
   background: turning background on shows all nodes (default is background off)
   each: enable output of a separate gml file for each rule
   
   Visualizing text-only regulatory graph of model
-  ----------------------------
+  -----------------------------------------------
   visualize.pl --type regulatory --background --textonly
   
   Visualizing regulatory graph of model
-  ----------------------------
+  -------------------------------------
   visualize.pl --type regulatory [--background] [--groups [--collapse]] [--filter --level INT] [--opts FILE1 [--opts FILE2 [..] ] ]
   
   background: turning background on shows all nodes (default is background off)

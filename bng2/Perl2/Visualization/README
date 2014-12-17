@@ -6,6 +6,7 @@ They are best viewed using yEd Graph Editor available for free at
 
 Using visualize.pl
 ------------------
+perl visualize.pl --bngl BNGL --type contactmap
 perl visualize.pl --bngl BNGL --type [ruleviz_pattern|ruleviz_operation]
 perl visualize.pl --bngl BNGL --type regulatory [--background] [--groups [--collapse]]
 
