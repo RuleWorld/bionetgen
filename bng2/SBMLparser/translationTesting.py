@@ -4,12 +4,13 @@ Created on Fri May 24 15:41:00 2013
 
 @author: proto
 """
-
+import testtools
 import unittest
 #import libsbml2bngl
 from evaluate import evaluate,validate
-from os import listdir
-from os.path import isfile, join
+from os import listdir,devnull
+from os.path import isfile, join,getsize
+import os
 import copasi
 from subprocess import call        
 
@@ -39,31 +40,41 @@ class TestOne(ParametrizedTestCase):
     '''
     Test for raw translation
     '''
-    '''
+    '''    
     def test_raw(self):
         print self.param
-        call(['python','sbmlTranslator.py','-i',
+        self.assertEqual(call(['python','sbmlTranslator.py','-i',
         'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         '-o','raw/output' + str(self.param) + '.bngl',
         '-c','reactionDefinitions/reactionDefinition7.json',
-        '-n','config/namingConventions.json'])        
+        '-n','config/namingConventions.json']),0)        
     '''
 
     '''
     Test for ability to ruleify
     '''
-    
     def test_parsing(self):
+        print self.param
         #reactionDefinitions, useID = libsbml2bngl.selectReactionDefinitions('BIOMD%010i.xml' % self.param)
         #spEquivalence = detectCustomDefinitions(bioNumber)
-        print self.param
-        call(['python','sbmlTranslator.py','-i',
-        'XMLExamples/curated/BIOMD%010i.xml' % self.param,
-        '-o','complex/output' + str(self.param) + '.bngl',
-        '-c','reactionDefinitions/reactionDefinition7.json',
-        '-n','config/namingConventions.json',
-        '-a'])        
-    
+        self.longMessage = True
+        #self.longMessage = True
+        result = -1
+        try:
+            with open(devnull,"w") as f:
+                result = call(['python','sbmlTranslator.py','-i',
+                #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
+                self.param,
+                '-o','complex/' + str(self.param.split('/')[-1]) + '.bngl',
+                '-c','config/reactionDefinitions.json',
+                '-n','config/namingConventions.json',
+                '-a'],stdout=f)
+        except Exception as e:
+            print '---',self.param
+        finally:        
+            if result != 0:
+                print result,self.param
+            self.assertEqual(result,0,self.param +'\n')
 
 class TestValid(ParametrizedTestCase):
     '''
@@ -110,6 +121,8 @@ def getValidBNGLFiles(directory):
     bnglFiles = [x for x in onlyfiles if 'bngl' in x and 'log' not in x and 'dict' not in x]
     
     validFiles = [x for x in bnglFiles if x not in errorFiles]
+    return validFiles
+    '''
     import re
     validNumbers = []
     for x in validFiles:
@@ -118,6 +131,17 @@ def getValidBNGLFiles(directory):
             validNumbers.append(number.group(1))
         
     return validNumbers
+    '''
+import fnmatch
+def getValidXMLFiles(directory):
+    """
+    Gets a list of bngl files that could be correctly translated in a given 'directory'
+    """
+    matches = []
+    for root, dirnames, filenames in os.walk(directory):
+        for filename in fnmatch.filter(filenames, '*.xml'):
+            matches.append(os.path.join(root, filename))
+    return matches
 
 def getValidGDats(directory):
     onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory, f)) ]
@@ -131,41 +155,48 @@ def getValidGDats(directory):
         
     return validNumbers
 
+
+
+class TracingStreamResult(testtools.StreamResult):
+    def status(self, *args, **kwargs):
+        print('{0[test_id]}: {0[test_status]}'.format(kwargs))
     
+def split_suite_into_chunks(num_threads, suite):
+    # Compute num_threads such that the number of threads does not exceed the value passed to the function
+    # Keep num_threads to a reasonable number of threads
+    if num_threads < 0: num_threads = 1
+    if num_threads > 8: num_threads = 8
+    num_tests = suite.countTestCases()
+    s = []
+    s_tmp = unittest.TestSuite()
+    n = round(num_tests / num_threads)
+    for case in suite:
+        if n <= 0 and s_tmp.countTestCases() > 0:
+            s.append([s_tmp, None])
+            num_threads -= 1
+            num_tests -= s_tmp.countTestCases()
+            s_tmp = unittest.TestSuite()
+            n = round(num_tests / num_threads)
+        s_tmp.addTest(case)
+        n -= 1
+    if s_tmp.countTestCases() > 0:
+        if s_tmp.countTestCases() > 0: s.append([s_tmp, None])
+        num_tests -= s_tmp.countTestCases()
+    if num_tests != 0: print("Error: num_tests should be 0 but is %s!" % num_tests)
+    return s
+
 if __name__ == "__main__":      
     suite = unittest.TestSuite()
-    suite2 = unittest.TestSuite()
-    suite3 = unittest.TestSuite()
+    #suite2 = unittest.TestSuite()
+    #suite3 = unittest.TestSuite()
     
     #ran = [151]
-    ran = range(1,491)
+    ran = range(1,549)
     #ran  = [252]
-    blackList = [18,81,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]
-    #for some reasons thechange the adhoc components break this model
-    blackList.append(151)
+    #ran = [452,453,465,474,492,500,501,504,505,506,510]
+    blackList = []
     ran = [x for x in ran if x not in blackList]
-    '''
-    ran.remove(175)
-    ran.remove(205)
-    
-
-    ran.remove(212)
-    ran.remove(223)
-    ran.remove(235)
-    ran.remove(255)
-    ran.remove(328)
-    ran.remove(370)   
-    ran.remove(404)
-    ran.remove(428)
-    ran.remove(430)
-    ran.remove(431)
-    ran.remove(443)
-    ran.remove(444)
-    ran.remove(452)
-    ran.remove(453)
-    ran.remove(465)
-    ran.remove(469)
-    '''
+    #check 32
     #ran = range(466,470)
     #ran = [229]
     #ran = range(469,491)
@@ -177,30 +208,43 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    ran = [139]
-    for index in ran:
-         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
+    files = getValidXMLFiles('XMLExamples/curated/')
+    #files = sorted(files,key=os.path.getsize)
+    files = sorted(files)
+    #files = getValidXMLFiles('biomodels')
+    #print files
+    for index in files:
+        suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-        
-    #validFiles = getValidBNGLFiles('complex') 
-    #validFiles = sorted(validFiles)
+    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(32,suite)))
+    validFiles = getValidBNGLFiles('complex') 
+    validFiles = sorted(validFiles)
     #validFiles.remove('54')
-    '''
-    validFiles = [480]
-    for fileNumber in validFiles:
-        index += 1
-        fileName = 'output{0}.bngl'.format(fileNumber)
-        suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./complex/' + fileName))
-        #suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+    
+    #validFile= [480]
+    #for fileNumber in validFiles:
+        #index += 1
+   #     fileName = fileNumber
+        #suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./raw/' + fileName))
+   #     suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
+        
     validGdats = getValidGDats('.')
-    '''
-    #validFiles = getValidBNGLFiles('raw')
+    
+    #validFiles = getValidBNGLFiles('complex')
     #for fileNumber in validFiles:
     #    fileName = 'output{0}.bngl'.format(fileNumber)
-    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./raw/' + fileName))
+    #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
-       
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    #unittest.TextTestRunner(verbosity=2).run(suite)
+    #f = open('logresults.txt','w')
+    #result = TracingStreamResult()
+    #result.startTestRun()
+    #suite4.run(result)
+    #result.stopTestRun()    
+
+
+    suite4.run(testtools.StreamResult())
+    #suite4.run(testtools.StreamSummary())
     #print len(validFiles)
 

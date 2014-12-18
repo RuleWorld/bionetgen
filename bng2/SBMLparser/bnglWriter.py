@@ -179,7 +179,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
                     indexArray.append(len(argList[idx+1]))
                     tmpStr = argList[idx+1]
                     for idx2,_ in enumerate(indexArray[0:-1]):
-                        elementArray.append(''.join(tmpStr[indexArray[idx2]+1:indexArray[idx2+1]]))
+                        elementArray.append(constructFromList(tmpStr[indexArray[idx2]+1:indexArray[idx2+1]],optionList))
                     parsedString += symbolDict[argList[idx]].join(elementArray)
                     idx+=1
                 elif argList[idx] == 'lambda':
@@ -232,8 +232,6 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     if any([re.search(r'(\W|^)({0})(\W|$)'.format(x),rule) != None for x in ['ceil','floor','pow','sqrt','sqr','root','and','or']]):
         argList = parens.parseString('('+ rule + ')').asList()
         rule = constructFromList(argList[0],['floor','ceil','pow','sqrt','sqr','root','and','or'])
-
-    #TODO:rewrite this to use pyparsing  
     
     
     while 'piecewise' in rule:
@@ -316,8 +314,8 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
         output.write(sectionTemplate('functions',functions))
     output.write(sectionTemplate('reaction rules',rules))
     output.write('end model\n')
-    output.write('generate_network({overwrite=>1})\n')
-    output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
+    #output.write('generate_network({overwrite=>1})\n')
+    #output.write('simulate({method=>"ode",t_end=>100,n_steps=>100})')
     #output.write('writeXML()\n')
     #with open(fileName,'w') as outputFile:
     #    outputFile.write(output.getvalue()) 
@@ -361,7 +359,7 @@ def extendFunction(function, subfunctionName,subfunction):
         return parsedString
     param = subfunction.split(' = ')[0][len(subfunctionName)+1:-1]
     body = subfunction.split(' = ')[1]
-    while re.search(r'{0}\([^)]*\)'.format(subfunctionName),function) != None:
+    while re.search(r'(\W|^){0}\([^)]*\)(\W|$)'.format(subfunctionName),function) != None:
         contentRule = pyparsing.Word(pyparsing.alphanums + '_.') |  ',' | '+' | '-' | '*' | '/' | '^' | '&' | '>' | '<' | '=' | '|'  
         parens     = pyparsing.nestedExpr( '(', ')', content=contentRule)
         subfunctionList = parens.parseString('(' + function + ')').asList()

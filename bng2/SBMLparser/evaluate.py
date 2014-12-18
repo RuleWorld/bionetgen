@@ -49,7 +49,7 @@ def validate(fileName):
     with open('temp.tmp', "w") as outfile:
         d = open('dummy.tmp','w')
         start = datetime.datetime.now()
-        result = subprocess.Popen(['bngdev','--check', './' + fileName],stderr=outfile,stdout=d)
+        result = subprocess.Popen(['bngdev','--xml', './' + fileName],stderr=outfile,stdout=d)
 
         while result.poll() is None:
             time.sleep(0.1)

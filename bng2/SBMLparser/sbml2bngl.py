@@ -52,10 +52,15 @@ class SBML2BNGL:
       libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
       modelHistory =  self.model.getModelHistory()
       if modelHistory:
-          tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
-          tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
-          metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
-          metaInformation['creatorName'] = "'" + tmp + "'"
+          try:
+              tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
+              tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
+              metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
+              metaInformation['creatorName'] = "'" + tmp + "'"
+          except:
+              metaInformation['creatorEmail'] = "''"
+              metaInformation['creatorName'] = "''"
+              
       for idx in range(lista.getSize()):
           biol,qual =  lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
           if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
@@ -859,14 +864,17 @@ class SBML2BNGL:
                 param = param2
                 zparam = zparam2
             '''
-            if pparam[symbol][1] == None:
-                param2.append('{0} {1}'.format(symbol,math))
-                param = param2
-                zparam = zparam2
-            else:
-                initialConditions2 = [x for x in initialConditions if '#{0}'.format(symbol) not in x]
-                initialConditions2.append('{0} {1} #{2}'.format(pparam[symbol][1],math,symbol))
-                initialConditions = initialConditions2
+            try:
+                if pparam[symbol][1] == None:
+                    param2.append('{0} {1}'.format(symbol,math))
+                    param = param2
+                    zparam = zparam2
+                else:
+                    initialConditions2 = [x for x in initialConditions if '#{0}'.format(symbol) not in x]
+                    initialConditions2.append('{0} {1} #{2}'.format(pparam[symbol][1],math,symbol))
+                    initialConditions = initialConditions2
+            except:
+                continue
         return param,zparam,initialConditions
             
             

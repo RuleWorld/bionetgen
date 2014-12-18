@@ -8,7 +8,7 @@ Created on Fri Mar  1 16:14:42 2013
 #!/usr/bin/env python
 from collections import OrderedDict
 import time
-#import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt5
 import libsbml
 import bnglWriter as writer
 from optparse import OptionParser
@@ -112,7 +112,8 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
         else:    
             translator={} 
         
-        return analyzeHelper(document,reactionDefinitions,useID,'',speciesEquivalence,atomize,translator)[-2]
+        return analyzeHelper(document,reactionDefinitions,
+                             useID,'',speciesEquivalence,atomize,translator)[-2]
     except:
         return -5
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
@@ -154,6 +155,7 @@ def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     '''
     fd = []
     for function in functions:
+        #print function,dependencies2[function.split(' = ' )[0].split('(')[0]],function.split(' = ' )[0].split('(')[0],0
         fd.append([function,resolveDependencies(dependencies2,function.split(' = ' )[0].split('(')[0],0)])
     fd = sorted(fd,key= lambda rule:rule[1])
     functions = [x[0] for x in fd]
@@ -268,14 +270,16 @@ def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEqui
         finalCompartmentPairs[element[0][0]][tuple([element[0][1],element[1][1]])] = compartmentPairs[element]
     return finalCompartmentPairs
     
-def recursiveSearch(dictionary,element):
+def recursiveSearch(dictionary,element,visitedFunctions=[]):
     tmp = 0
     for item in dictionary[element]:
         if dictionary[item] == []:
             tmp +=1
         else:
+            if item in visitedFunctions:
+                raise Exception
             tmp += 1
-            tmp += (recursiveSearch(dictionary,item))
+            tmp += (recursiveSearch(dictionary,item,[item] + visitedFunctions))
     return tmp
 
 def reorderFunctions(functions):
@@ -290,11 +294,11 @@ def reorderFunctions(functions):
         functionNames.append(m[0])
     functionNamesDict = {x:[] for x in functionNames}
     for idx,function in enumerate(functions):
-        tmp = [x for x in functionNames if x in function and x!= functionNames[idx]]
+        tmp = [x for x in functionNames if x in function.split('=')[1] and x!= functionNames[idx]]
         functionNamesDict[functionNames[idx]].extend(tmp)
     newFunctionNamesDict = {}
     for name in functionNamesDict:
-        newFunctionNamesDict[name] = recursiveSearch(functionNamesDict,name)
+        newFunctionNamesDict[name] = recursiveSearch(functionNamesDict,name,[])
     functionWeightsDict = {x:newFunctionNamesDict[x] for x in newFunctionNamesDict}
     functionWeights = []
     for name in functionNames:
@@ -334,9 +338,9 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     
     with open(outputFile,'w') as f:
         f.write(returnArray[-2])
-    with open('{0}.dict'.format(outputFile),'wb') as f:
-        pickle.dump(returnArray[-1],f)
-    if onlySynDec:
+    #with open('{0}.dict'.format(outputFile),'wb') as f:
+    #    pickle.dump(returnArray[-1],f)
+    if atomize and onlySynDec:
         returnArray = list(returnArray)
         returnArray[0] = -1
     return tuple(returnArray[0:-2])
@@ -431,6 +435,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     param,zparam = parser.getParameters()
     molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
+
     param,zparam,initialConditions = parser.getInitialAssignments(translator,param,zparam,molecules,initialConditions)
     compartments = parser.getCompartments()
     functions = []
@@ -564,6 +569,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     #print outputFile
     
+    logMess('INFO:Summary','File contains {0} molecules out of {1} original SBML species'.format(len(molecules),len(observables)))
     #store a logfile
     try:
         if len(logMess.log) > 0:
@@ -676,10 +682,10 @@ def main():
     #18,32,87,88,91,109,253,255,268,338,330
     #normal:51,353
     #cycles 18,108,109,255,268,392
-    for bioNumber in range(1,491):
+    for bioNumber in range(1,549):
         
-        if bioNumber in [81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
-            continue
+        #if bioNumber in [81,151,175,205,212,223,235,255,326,328,347,370,404,428,430,431,443,444,452,453,465,474]:
+        #    continue
     #bioNumber = 175
         logMess.log = []
         logMess.counter = -1
@@ -692,19 +698,23 @@ def main():
         #rlength, reval, reval2, clength,rdf = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 
         #                                                  reactionDefinitions,False,'complex/output' + str(bioNumber) + '.bngl',
         #                                                    speciesEquivalence=spEquivalence,atomize=True)
+
         try:
  
             rlength = reval = reval2 = slength = None
-            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'reactionDefinitions/reactionDefinition7.json',
+            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'config/reactionDefinitions.json',
                 False,'config/namingConventions.json','/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
+
     
             print '++++',bioNumber,rlength,reval,reval2,clength
                                                                 
         except IOError:
             print 'couldnt print error file'                                                                
+        
         except:
             print '-------------error--------------',bioNumber
             continue
+        
         finally:  
             if rlength != None:        
                 rulesLength.append({'index':bioNumber,'nreactions':rlength,
@@ -717,6 +727,7 @@ def main():
                 rulesLength.append([bioNumber,-1,0,0])
                 compartmentLength.append(0)
                 rdfArray.append({})
+        
             #classificationArray.append({})
     #print evaluation
     #print evaluation2
@@ -759,15 +770,15 @@ def main():
     '''
             
 def main2():
-    with open('XMLExamples/curated/BIOMD0000000001.xml','r') as f:
+    with open('XMLExamples/curated/BIOMD0000000019.xml','r') as f:
         st = f.read()
         print readFromString(st,
-              'reactionDefinitions/reactionDefinition9.json',True,None,True)        
+              'config/reactionDefinitions.json',False,None,True)        
 
 
 
 def isActivated(statusVector):
-    if statusVector[0] != '' or statusVector[1] not in ['','U','0']:
+    if statusVector[0] != '' or statusVector[1] not in ['','0']:
         return True
     return False
     
@@ -940,13 +951,22 @@ if __name__ == "__main__":
     #output=48
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
-    param  =24
+    #param  = [452]
     
-    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'reactionDefinitions/reactionDefinition7.json',
+    param = 543
+    #use 105 as an example for (2,2) reactions
+    #527
+    
+    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
                     False, 'config/namingConventions.json',
-                    'complex/output' + str(param) + '.bngl', speciesEquivalence='reactionDefinitions/speciesEquivalence19.json',atomize=True,bioGrid=False)
+                    'complex/output' + str(param) + '.bngl', speciesEquivalence='reactionDefinitions/speciesEquivalences543.json',atomize=True,bioGrid=True)
     
+    '''
+    analyzeFile('XMLExamples/BMID000000142971.xml', 'config/reactionDefinitions.json',
+                    False, 'config/namingConventions.json',
+                    'complex/BMID000000142971.xml' + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     
+    '''
     '''
     param = '00870'
     analyzeFile('test/testl2v4/{0}/{0}-sbml-l2v4.xml'.format(param), 'reactionDefinitions/reactionDefinition7.json',

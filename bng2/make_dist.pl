@@ -51,10 +51,17 @@ my $version = '';
 my $codename = 'stable';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
 my $exclude_files = '(^\.|^_|~$|\.old$|^make_dist\.pl$)';
+
+#same regex exclude but includes files beginning with "_"
+my $python_exclude_files = '(^\.|~$|\.old$|^make_dist\.pl$)';
+
 # file extensions that should get executable flag
 my $executable_suffix = '(pl|py|dll|exe)';
 # subdirectories to include in distribution
 my @include_subdirectories = qw/ Perl2 Models2 Network3 PhiBPlot Validate /;
+#python subdiretories to include (main difference is that they are associated with python_exclude_files instead)
+my @include_python_subdirectories = qw/  SBMLparser /;
+
 # directory containing library archives
 my $libarc_subdir = "libsource";
 # include libraries
@@ -252,6 +259,21 @@ foreach my $dir ( @include_subdirectories )
     }
 }
 
+#and the python ones
+foreach my $dir ( @include_python_subdirectories )
+{   
+    my $source_dir = File::Spec->catdir( $bngpath,  $dir );
+    my $dest_dir   = File::Spec->catdir( $dist_dir, $dir );
+
+    my $recursive = 1;    
+    my $err = copy_dir( $source_dir, $dest_dir, $recursive, $python_exclude_files );
+    if ($err)
+    {
+        print "make_dist.pl error:\n$err\n";
+        exit -1;
+    }
+}
+
 
 # Create VERSION file for the distribution
 my $vh;
@@ -433,9 +455,113 @@ if (defined $bindir)
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
         {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  }
+
+        unless( chdir $cwd )
+       {   print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+        exit -1;
+       }
+
     }
 }
 
+#build SBMLparser
+
+# gather libraries, build configure scripts, and (optionally) compile/install
+{
+    my $sbmlbuild_dir    = File::Spec->catdir( $dist_dir, 'SBMLparser' );
+
+    unless (-d $sbmlbuild_dir)
+    {   # build_dir doesn't exist!
+        print "make_dist.pl error:\nbuild directory '${sbmlbuild_dir}' does not exist.\n";
+        exit -1;
+    }
+
+    # get current directory
+    my $cwd = getcwd();
+    print "current directory ${cwd}.\n";
+    # change to build_dir
+    unless( chdir $sbmlbuild_dir )
+    {   print "make_dist.pl error:\nunable to chdir to build directory '${build_dir}'.\n";
+        exit -1;
+    }
+    
+ 
+ 
+    if ($build)
+    {
+ 
+        {
+            print "making $build_subdir . . .\n";
+            my @args = ($sys_make, @make_flags);
+            print "command: ", join(" ", @args), "\n";
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\nsome problem making ${build_subdir} ($?)";  exit -1; }
+        }
+
+        {
+            print "installing $build_subdir . . .\n";
+            my @args = ($sys_make, "install" );
+            print "command: ", join(" ", @args), "\n";
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\nsome problem installing ${build_subdir} ($?)";  exit -1;  }
+        }
+
+
+        {
+            print "appending arch/OS signature to sbmlparser binary . . .\n";
+            my $arch = $Config{myarchname};
+            my $abs_sbml_translator = File::Spec->catfile(($abs_dist_dir, "bin"), 'sbmlTranslator');
+            
+            unless (-e $abs_sbml_translator)
+            {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
+
+            # append architecture name
+            my $abs_sbml_translator_arch = $abs_sbml_translator . "_${arch}";
+            # rename as architecture specific
+            unless ( rename $abs_sbml_translator, $abs_sbml_translator_arch )
+            {  print "make_dist.pl error:\ncan't find built sbml_translator ($?)";  exit -1;  }
+
+        }
+    }
+
+    # go back to original directory
+    unless( chdir $cwd )
+    {   print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+        exit -1;
+    }
+
+    if ($validate)
+    {
+        #  validate workdir
+        my $validate_workdir = File::Spec->catfile( $abs_dist_dir, $validate_subdir ); #"validate_${dist_name}";
+
+#        # check if output directory exists..
+#        unless (-d $validate_workdir)
+#        {
+#            # try to make output directory
+#            unless ( mkdir $validate_workdir )
+#            {
+#                print "make_dist.pl error:\ncannot make validation working directory ($!).\n";
+#                exit -1;
+#            }
+#        }
+
+        # change to validate workdir
+        unless( chdir $validate_workdir ){
+                print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
+            exit -1;
+        }
+
+        # run validation script
+#        my $abs_validate_script = File::Spec->catfile( ($abs_dist_dir, $validate_subdir), $validate_script );
+        my $abs_validate_script = File::Spec->catfile( $validate_workdir, $validate_script );
+        print "validating ${dist_name} . . .\n";
+        my @args = ($sys_perl, $abs_validate_script, @validate_flags );
+        print "command: ", join(" ", @args), "\n";
+        unless( system(@args)==0 )
+        {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  }
+    }
+}
 
 # compile
 

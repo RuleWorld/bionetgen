@@ -1,6 +1,5 @@
 # -*- mode: python -*-
 a = Analysis(['sbmlTranslator.py'],
-             pathex=['/home/proto/workspace/bionetgen/parsers/SBMLparser'],
              hiddenimports=['_libsbml'],
              hookspath=None,
              runtime_hooks=None,

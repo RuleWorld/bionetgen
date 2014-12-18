@@ -14,8 +14,11 @@ import consoleCommands as console
 import readBNGXML
 import extractAtomic
 import pygraphviz as pgv
+import progressbar
+import glob, os, shutil
+import csv
 
-
+import matplotlib.patches as mpatches
 sys.path.insert(0,'../ContactMap')
 import createGraph
 from copy import copy
@@ -240,33 +243,54 @@ def createContactMap(fileName):
 
         createMap(rules[idx],transformationProduct[idx],redundantPatternCounter,'conImg/contatMap{0}'.format(idx))
     
-def constructHistogram(data,fileName):
+def constructHistogram(data,fileName,legend,weights,normed=True):
     import matplotlib.pyplot as plt
     plt.clf()
-    plt.hist(data)
-    plt.xlabel('Context Cooperativity',fontsize=18)
-    plt.savefig('{0}coop.png'.format(fileName))
+    plt.hist(data,weights=weights,normed=normed)
+    plt.xlabel(legend,fontsize=18)
+    plt.savefig('{0}.png'.format(fileName))
 
 
-def cooperativityAnalysis(fileName):
-    species,rules,par = extractRulesfromBNGL(fileName)    
-    transformationCenter,transformationContext, \
-    transformationProduct,atomicArray,actionNames= extractCenterContext(rules)
-    
-    modifiedContextDistribution = [Counter() for _ in transformationCenter]
-    
-    for idx,contextList in enumerate(transformationContext):
-        for context in contextList[0]:
-            for centerList in transformationCenter:
-                for centerListInstance in centerList:
-                    if context in centerListInstance:
-                        modifiedContextDistribution[idx].update([context])
-    mentions = [sum([x[y] for y in x]) for x in modifiedContextDistribution]
-    constructHistogram([len(x) for x in modifiedContextDistribution],fileName)
-    constructHistogram(mentions,fileName+'edges')
-    
-    
 
+def analyzeSpace(centerString,molecules):
+    #spaceCoveredHelper()
+    totalSpace = 1
+    excludeMolecules = []
+    operators = ['Add','Delete','AddBond','DeleteBond','StateChange','ChangeCompartment']
+    try:            
+        if 'AddBond' in centerString or 'StateChange' in centerString:
+            for centerCandidate in [x for x in centerString if x not in operators]:
+                if len(centerCandidate) >= 2:
+                    moleculeName = [x.split('(')[0] for x in centerCandidate]
+                    moleculeInstance = [x for x in molecules if x.name in moleculeName]
+                    if len(moleculeInstance) == 1: #symmetry
+                        moleculeInstance.append(moleculeInstance[0])
+                    totalSpace *= spaceCoveredHelper(moleculeInstance[0],''
+                                        ,[moleculeInstance[1]],[],molecules)
+                    totalSpace *= spaceCoveredHelper(moleculeInstance[1],'',
+                                         [moleculeInstance[0]],[],molecules)
+    
+                if len(centerCandidate) == 1:
+                    moleculeName = [x.split('(')[0] for x in centerCandidate]
+                    moleculeInstance = [x for x in molecules if x.name in moleculeName]
+                    totalSpace *= spaceCoveredHelper(moleculeInstance[0],'',
+                                                     [],[],molecules)/2
+                                                     
+        if 'DeleteBond' in centerString:
+            for moleculeString in [x for x in centerString if x not in operators]:
+                if len(moleculeString) == 1 and '.' in moleculeString[0]:
+                    moleculeName = [x.split('(')[0] for x in moleculeString[0].split('.')]
+                    moleculeInstance = [x for x in molecules if x.name in moleculeName]
+                    if len(moleculeInstance) == 1: #symmetry
+                        moleculeInstance.append(moleculeInstance[0])
+                    totalSpace *= spaceCoveredHelper(moleculeInstance[0],''
+                                        ,[moleculeName[1]],[],molecules)
+                    totalSpace *= spaceCoveredHelper(moleculeInstance[1],'',
+                                         [moleculeName[0]],[],molecules)
+    except CycleError:
+        return -1
+    return totalSpace
+    
 
 def cooperativityAnalysis2(fileName):
     species,rules,par = extractRulesfromBNGL(fileName)   
@@ -278,91 +302,727 @@ def cooperativityAnalysis2(fileName):
     groupedProcesses = 0
     redundantProcesses=0
     reverseRedundantDict = reverseLookup(redundantDict)
+    totalSpaceCovered = []
+    both=hetero=homo=0
     for center in redundantDict:
-        flag = False
-        if len(redundantDict[center])>1:
-            flag = True
+        processCount = []
+        reactionInCenter = len([y for x in redundantDict[center] 
+        for y in redundantDict[center][x]])
+        if reactionInCenter > 1 and len([x for x in center if x not in ['Add','Delete']]) > 1:
+            totalSpace =  analyzeSpace(center,species)
+            totalSpaceCovered.append((totalSpace,reactionInCenter))
+        
+        
+        
         for rateKey in redundantDict[center]:
-            if len([x for x in center if x not in ['Add','Delete']]) != 0:
-                if (len(redundantDict[center][rateKey])>1) and not flag:
-                    #print '++++',center,rateKey,redundantDict[center][rateKey]
-                    redundantProcesses += len(redundantDict[center][rateKey])
-                elif flag:
-                    #print '----',center,rateKey,redundantDict[center][rateKey]
-                    groupedProcesses += len(redundantDict[center][rateKey])
+            if len([x for x in center if x not in ['Add','Delete']]) > 1:
+                processCount.append(len(redundantDict[center][rateKey]))
+            
             totalProcesses += len(redundantDict[center][rateKey])
-    print groupedProcesses*1.0/totalProcesses,redundantProcesses*1.0/totalProcesses
-    return groupedProcesses*1.0/totalProcesses,redundantProcesses*1.0/totalProcesses
+
+        if len(processCount) > 1 and any([x>1 for x in processCount]):
+            both += sum(processCount)
+        elif len(processCount) > 1:
+            hetero += sum(processCount)
+        elif sum(processCount) > 1:
+            homo += sum(processCount)
+    #totalhetero = hetero*1.0/totalProcesses if totalProcesses > 0 else 0
+    #totalhomo = homo*1.0/totalProcesses if totalProcesses > 0 else 0
+    #totalboth = both*1.0/totalProcesses if totalProcesses > 0 else 0
+    #totalall = (hetero+homo+both)*1.0/totalProcesses if totalProcesses > 0 else 0
+    return hetero,homo,both,totalProcesses,totalSpaceCovered
 
 def extractRulesfromBNGL(fileName):
-    console.bngl2xml('complex/{0}.bngl'.format(fileName),timeout=10)
-    species,rules,par= readBNGXML.parseXML('{0}.xml'.format(fileName))
+    #console.bngl2xml('complex/{0}.bngl'.format(fileName),timeout=10)
+    species,rules,par= readBNGXML.parseXML(fileName)
     return species,rules,par
     
 
 import numpy as np
-import scipy.interpolate as interpolate
 
-def inverse_transform_sampling(data, n_bins=40, n_samples=1000):
-    hist, bin_edges = np.histogram(data, bins=n_bins, density=True)
-    cum_values = np.zeros(bin_edges.shape)
-    cum_values[1:] = np.cumsum(hist*np.diff(bin_edges))
-    inv_cdf = interpolate.interp1d(cum_values, bin_edges)
-    r = np.random.rand(n_samples)
-    return inv_cdf(r)
 
 import matplotlib.pyplot as plt
 import cPickle as pickle
 
-def plotresults(results,yvals,fileName):
+def plotresults(results,yvals,fileName,legend=''):
     plt.clf()
     plt.plot( results, yvals )
     plt.axis([0, 1, 0, 1])
-    plt.xlabel('Percentage of grouped processes', fontsize=18)
+    plt.xlabel(legend, fontsize=18)
     plt.savefig('{0}.png'.format(fileName))
 
+
+class CycleError(Exception):
+     def __init__(self, moleculeName,visitedMolecules):
+         self.moleculeName = moleculeName
+         self.visitedMolecules = visitedMolecules
+     def __str__(self):
+         return repr(self.moleculeName) + ' '  + repr(self.visitedMolecules)
+def spaceCovered(molecules,observablesLen):
     
-if __name__ == "__main__":
-    #createBipartiteGraph('complex/output5.bngl')
-    #species,rules = extractRulesfromBNGL('output19')
-    processList = []
+    print [str(x) for x in molecules]
+    speciesCount = 0
+    excludedMolecules = []
+    
+    for individualMolecule in molecules:
+        print '++++'
+        visitedMolecules = []
+        tmp = spaceCoveredHelper(individualMolecule,'',excludedMolecules,visitedMolecules,molecules)
+        print '--',individualMolecule.name,visitedMolecules,tmp,excludedMolecules
+        excludedMolecules.append(individualMolecule.name)
+        
+        speciesCount += tmp
+    return min(observablesLen*1.0/speciesCount,1.0)
+
+
+
+def spaceCoveredHelper(moleculeInstance,comeFromMolecule,excludedMolecules,visitedMolecules,molecules):
+    multiplier = 1
+    for component in moleculeInstance.components:
+        if len(component.states) > 0:
+            multiplier *= len(component.states)
+        else:
+            for molecule in molecules:
+                if molecule.name.lower() == component.name:
+                    if molecule.name not in excludedMolecules:
+                        if molecule.name not in visitedMolecules or \
+            len([x for x in moleculeInstance.components if x.name.lower() == component.name]) > len([x for x in visitedMolecules if x == moleculeInstance.name]):
+                            tmp = copy(visitedMolecules)
+                            tmp.append(moleculeInstance.name)
+                            multiplier *= 2 * spaceCoveredHelper(molecule,
+                    moleculeInstance.name,excludedMolecules,tmp,molecules)
+                        elif molecule.name != comeFromMolecule \
+                        or len([x for x in visitedMolecules if x == moleculeInstance.name]) > 3:
+                            raise CycleError(molecule.name,visitedMolecules)
+                    else:
+                        multiplier += 0
+    return multiplier
+    
+def spaceCoveredCDF():
+    spaceCoveredArray = []
+    atomizationDict = {}
     with open('sortedD.dump','rb') as f:
         atomizationStats = pickle.load(f)
-    atomizationDict = {}
-    atomizationList = []
-    groupedDict = []
     for element in atomizationStats:
         try:
             atomizationDict[element['index']] = element['atomization']
         except:
             continue
+    
     for element in range(1,491):
-        
         try:
             if element in atomizationDict and atomizationDict[element] > 0:
-                print element,
-                processList.append(cooperativityAnalysis2('output{0}'.format(element)))
-                atomizationList.append(atomizationDict[element])
-                tmp = [element]
-                tmp.extend(processList[-1])
-                groupedDict.append(tmp)
+                console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
+                species,_,_= readBNGXML.parseXML('output{0}.xml'.format(element))
+                observablesLen = readBNGXML.getNumObservablesXML('output{0}.xml'.format(element))
+                try:
+                    spaceCoveredArray.append([atomizationDict[element],spaceCovered(species,observablesLen)])
+                    print element,spaceCoveredArray[-1]
+                except CycleError:
+                    spaceCoveredArray.append([atomizationDict[element],0])
+                    print element,-1
+                
+        except (IOError,IndexError):
+            print
+            continue
+        
+    with open('spaceCovered.dump','wb') as f:
+        pickle.dump(spaceCoveredArray,f)
+    atomization,space = zip(*spaceCoveredArray)
+    heatmap, xedges, yedges = np.histogram2d(space, atomization, bins=8)
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    plt.clf()
+    plt.imshow(heatmap, extent=extent)
+    plt.xlabel('space')
+    plt.ylabel('atomization')
+    plt.show()  
+    
+    plt.savefig('spaceCovered.png')
+    #spaceCoveredArray=np.sort( spaceCoveredArray )
+    #yvals=np.arange(len(spaceCoveredArray))/float(len(spaceCoveredArray))
+    #plotresults(spaceCoveredArray,yvals,'spaceCovered')
+
+
+def reactionBasedAtomization(reactions):
+    atomizedProcesses = 0    
+    trueProcessesCounter = 0
+    for reaction in reactions:
+        if '0' in  [str(x) for x in reaction[0].reactants] or '0' in \
+        [str(x) for x in reaction[0].products]:
+            continue
+        trueProcessesCounter +=1
+        for action in reaction[0].actions:
+            if action.action in ['AddBond','DeleteBond','StateChange','ChangeCompartment']:
+                atomizedProcesses += 1
+                break
+    if trueProcessesCounter ==0:
+        return 0,0
+    return atomizedProcesses,trueProcessesCounter
+
+from collections import defaultdict
+generalSignature = defaultdict(list)
+def stoichiometryAnalysis(reactions):
+    ato = []
+    nonato = []
+    for reaction in reactions:
+        if '0' in  [str(x) for x in reaction[0].reactants] or '0' in \
+        [str(x) for x in reaction[0].products]:
+            continue
+        signature = ((len(reaction[0].reactants),len(reaction[0].products)))
+        if len([x for x in reaction[0].actions if x.action in ['AddBond','DeleteBond','StateChange']]) > 0:
+            ato.append(signature)
+        else:
+            generalSignature[signature].append(reaction)
+            nonato.append(signature)
+    return ato,nonato
+
+
+
+import fnmatch
+def getValidFiles(directory,extension):
+    """
+    Gets a list of bngl files that could be correctly translated in a given 'directory'
+    """
+    matches = []
+    for root, dirnames, filenames in os.walk(directory):
+        for filename in fnmatch.filter(filenames, '*.{0}'.format(extension)):
+            matches.append(os.path.join(root, filename))
+    return matches
+
+
+def reactionBasedAtomizationFile(xml):
+        ratomizationList = []
+        ratomizationDict = defaultdict(dict)
+        ratomizationListm10 = []
+        ratomizationListl10 = []
+        largeUseless = []
+        syndelArray = []
+        syndel =0
+        totalRatomizedProcesses = 0
+        totalReactions = 0
+        totalProcesses = 0
+        validFiles= 0
+        atomizedDistro = []
+        nonAtomizedDistro= []
+        interesting = []
+
+        try:
+            #console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
+            try:
+                
+                _,rules,_= readBNGXML.parseXML(xml)
+            except:
+                print xml
+            atomizedProcesses,weight = reactionBasedAtomization(rules)
+            ato,nonato = stoichiometryAnalysis(rules)
+            atomizedDistro.extend(ato)
+            nonAtomizedDistro.extend(nonato)
+            #if (2,1) in nonato:
+            #    interesting.append(element)
+            score = atomizedProcesses*1.0/weight if weight != 0 else 0
+            totalRatomizedProcesses += atomizedProcesses
+            totalReactions += len(rules)
+            totalProcesses += weight
+            ratomizationDict[xml]['score'] = score
+            ratomizationDict[xml]['weight'] = weight
+            ratomizationDict[xml]['length'] = len(rules)
+            if len(rules) == 0:
+                ruleslen0+= 1
+            syndelArray.append((len(rules)-weight)*1.0/len(rules))
+            if score == -1:
+                syndel += 1
+                #ratomizationList.append([0,0,len(rules)])
+            ratomizationList.append([score,weight,len(rules)])
+            if len(rules) > 10:
+                if weight*1.0/len(rules) >=0.1 and score < 0.1:
+                    largeUseless.append(xml)
+                ratomizationListm10.append([score,weight,len(rules)])
+            else:
+                ratomizationListl10.append([score,weight,len(rules)])
+            #print xml,ratomizationList[-1]
+            validFiles += 1
+        #except (IndexError,ZeroDivisionError):
+        #    syndel += 1
+        #    print 'iz'
+        #    continue
+        except IOError:
+            print 'io'
+        return ratomizationDict
+
+from collections import defaultdict
+def reactionBasedAtomizationDistro(directory):
+    '''
+    calculates a rection atomization based metric:
+    ration of atomized reactions (non syndeg) in a model
+    '''
+    ratomizationList = []
+    ratomizationDict = defaultdict(dict)
+    ratomizationListm10 = []
+    ratomizationListl10 = []
+    largeUseless = []
+    syndelArray = []
+    syndel =0
+    totalRatomizedProcesses = 0
+    totalReactions = 0
+    totalProcesses = 0
+    validFiles= 0
+    atomizedDistro = []
+    nonAtomizedDistro= []
+    interesting = []
+    
+    bnglFiles = getValidFiles(directory,'bngl')
+    '''
+    print 'converting bnglfiles'
+    progress = progressbar.ProgressBar()
+    for i in progress(range(len(bnglFiles))):
+        console.bngl2xml(bnglFiles[i],timeout=10)
+    ''' 
+
+    print 'moving xml files'
+    files = glob.iglob(os.path.join('.', "*.xml"))
+    for xmlfile in files:
+        if os.path.isfile(xmlfile):
+            shutil.move(xmlfile, directory)
+    
+    print 'reading files'
+    xmlFiles = getValidFiles(directory,'xml')
+    
+    print 'analyzing {0} xml files'.format(len(xmlFiles))
+    progress = progressbar.ProgressBar()
+    ruleslen0 = 0
+    for i in progress(range(len(xmlFiles))):
+    
+        xml = xmlFiles[i]    
+    #for xml in xmlFiles:
+        try:
+            #console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
+            try:
+                
+                _,rules,_= readBNGXML.parseXML(xml)
+            except:
+                print xml
+                continue
+            atomizedProcesses,weight = reactionBasedAtomization(rules)
+            ato,nonato = stoichiometryAnalysis(rules)
+            atomizedDistro.extend(ato)
+            nonAtomizedDistro.extend(nonato)
+            #if (2,1) in nonato:
+            #    interesting.append(element)
+            score = atomizedProcesses*1.0/weight if weight != 0 else 0
+            totalRatomizedProcesses += atomizedProcesses
+            totalReactions += len(rules)
+            totalProcesses += weight
+            ratomizationDict[xml]['score'] = score
+            ratomizationDict[xml]['weight'] = weight
+            ratomizationDict[xml]['length'] = len(rules)
+            if len(rules) == 0:
+                ruleslen0+= 1
+                continue
+            syndelArray.append((len(rules)-weight)*1.0/len(rules))
+            if score == -1:
+                syndel += 1
+                #ratomizationList.append([0,0,len(rules)])
+                continue
+            ratomizationList.append([score,weight,len(rules)])
+            if len(rules) > 10:
+                if weight*1.0/len(rules) >=0.1 and score < 0.1:
+                    largeUseless.append(xml)
+                ratomizationListm10.append([score,weight,len(rules)])
+            else:
+                ratomizationListl10.append([score,weight,len(rules)])
+            #print xml,ratomizationList[-1]
+            validFiles += 1
+        #except (IndexError,ZeroDivisionError):
+        #    syndel += 1
+        #    print 'iz'
+        #    continue
+        except IOError:
+            print 'io'
+            continue
+    with open('ratomizationp2m.dump','wb') as f:
+        pickle.dump(ratomizationDict,f)
+        
+    print '{0} models with 0 rules'.format(ruleslen0)
+    print 'generating figures for {0} models'.format(len(ratomizationList))
+    print '-----'
+    print 'atomized',Counter(atomizedDistro)
+    print 'nonatomized',Counter(nonAtomizedDistro)
+    print 'models with 2->1 non atomized reactions',interesting
+    with open('nonatomizedreactions.dump','wb') as f:
+        pickle.dump(generalSignature,f)
+    ratomization,weights,length = zip(*ratomizationList)
+    
+    ratomizationm10,weightsm10,lengthm10 = zip(*ratomizationListm10)
+    ratomizationl10,weightsl10,lengthl10 = zip(*ratomizationListl10)
+    
+    constructHistogram(syndelArray,'syndelHist','Fraction of synthesis and degradation reactions',np.ones(len(syndelArray)),normed=False)
+    constructHistogram(ratomization,'ratomizationHist','Reaction atomization level ({0} models)'.format(len(ratomization)),np.ones(len(ratomization)),normed=False)
+    constructHistogram(ratomizationm10,'ratomizationwHist_m10','Reaction atomization level ({0} models)'.format(len(ratomizationm10)),lengthm10,normed=True)
+    weights = np.array(weights)
+    length = np.array(length)
+    tmp = weights*1.0/length
+    
+    
+    #ratomizationWP1 = [x for x,y in zip(ratomization,tmp) if y < 0.1]
+    #ratomizationWP10 = [x for x,y,z in zip(ratomization,tmp,length) if y >= 0.1 and z<10]
+    #ratomizationWP11 = [x for x,y,z in zip(ratomization,tmp,length) if y >= 0.1 and z>=10]
+    
+    #constructHistogram(ratomizationWP1,'ratomizationWP1','Reaction atomization level',np.ones(len(ratomizationWP1)),normed=False)
+    #constructHistogram(ratomizationWP10,'ratomizationWP10','Reaction atomization level',np.ones(len(ratomizationWP10)),normed=False)
+    #constructHistogram(ratomizationWP11,'ratomizationWP11','Reaction atomization level',np.ones(len(ratomizationWP11)),normed=False)
+    
+    print 'process={0}, rprocess={1}, reactions = {2},syndel={3},valid={4}'.format(totalProcesses,
+totalRatomizedProcesses,totalReactions,syndel,validFiles)
+
+       
+    tmp2 = zip(ratomization,tmp)
+    tmp2.sort(key=lambda x:x[0])
+    
+    #heatmap showing histogram of atomization vs non syn-deg    
+    heatmap, xedges, yedges = np.histogram2d(tmp,ratomization,bins=6)
+    heatmap = np.log2(heatmap)
+    
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    heatmap[heatmap<0] = 0
+    plt.clf()
+    plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest')
+    plt.xlabel('Atomization level')
+    plt.ylabel('Percentage of non syn-del reactions')
+    cb = plt.colorbar()
+    cb.set_label('log2(Number of models)')
+    plt.show()  
+    plt.savefig('atomizationHeatMap.png')
+    
+    plt.clf()
+    plt.scatter(tmp,ratomization)
+    plt.ylabel('Atomization level',fontsize=24)
+    plt.xlabel('Percentage of non syn=del reactions',fontsize=24)
+    plt.savefig('atomizationScatterplot.png')
+    
+    #heatmap showing average atomization of %syn-def vs model size
+    ratomizationHeatmapCounter = defaultdict(lambda : defaultdict(list))
+    _,bin_edges = np.histogram(length,4)
+    digitizedLength = np.digitize(length,bin_edges)
+    _,bin_edges2 = np.histogram(tmp,4)
+    digitizedSynDeg = np.digitize(tmp,bin_edges2)
+    for rat,wei,leng in zip(ratomization,digitizedLength,digitizedSynDeg):
+        ratomizationHeatmapCounter[wei][leng].append(rat)
+    ratomizationHeatmap = np.zeros([5,5])
+    for xelement in ratomizationHeatmapCounter:
+        for yelement in ratomizationHeatmapCounter[xelement]:
+            
+            ratomizationHeatmap[xelement-1][yelement-1] = np.mean(ratomizationHeatmapCounter[xelement][yelement])
+            ratomizationHeatmapCounter[xelement][yelement] = np.mean(ratomizationHeatmapCounter[xelement][yelement])
+
+
+    heatmap, xedges, yedges = np.histogram2d(length,tmp,bins=5)
+    heatmap = np.log2(heatmap)
+    
+
+    plt.clf()
+    plt.hist(length,bins = 10 ** np.linspace(np.log10(1), np.log10(1000),40))
+    plt.xscale('log')
+    plt.xlabel('Number of reactions ({0} models)'.format(len(length)),fontsize=18)
+    plt.savefig('numberOfReactionsHist.png')
+
+    plt.clf()
+    ax = plt.gca()
+    ax.plot(length,1-tmp,'o',alpha=0.5)    
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.ylabel('Fraction of syndel reactions',fontsize=24)
+    ax.grid(True)
+    ax.set_xscale('log')
+    #ax.set_autoscale_on(False)
+    plt.ylim([-0.1,1.1])
+    #ax.set_yscale('log')
+    plt.savefig('reactionsvsnsyndel.png')
+    
+    plt.clf()
+    plt.scatter(length, 1-tmp, s=40, 
+                c=[max(x,0) for x in ratomization])
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.ylabel('Fracion of syndel reactions',fontsize=24)
+
+    ax = plt.gca()
+    #ax.set_xscale('log')
+    ax.grid(True)
+    plt.xlim(xmin=0,xmax=100)
+    plt.gray()
+    cb = plt.colorbar()
+    cb.set_label('Atomization level')
+
+    plt.savefig('reactionsvssyndelwlinear.png')
+    
+
+    plt.clf()
+    plt.imshow(ratomizationHeatmap, 
+               extent=extent
+               ,aspect='auto',origin='lower',interpolation='nearest')
+    plt.xlabel('Fraction of non syn-del reactionsModel size')
+    plt.ylabel('Model Size (reactions)')
+    cb = plt.colorbar()
+    cb.set_label('Atomization level')
+    plt.show()  
+    plt.savefig('atomizationHeatMap2.png')
+
+        
+
+    
+    heatmap[heatmap<0] = 0
+    plt.clf()
+    plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest')
+    plt.ylabel('Model size (reactions)')
+    plt.xlabel('Percentage of non syn-del reactions')
+    cb = plt.colorbar()
+    cb.set_label('log2(Number of models)')
+    plt.show()  
+    plt.savefig('atomizationHeatMap3.png')
+
+    plt.clf()
+    plt.scatter(length,tmp)
+    plt.xlabel('Number of reactions',fontsize=24)
+    plt.xscale('log')
+    plt.ylabel('Atomization level',fontsize=24)
+    plt.savefig('scatterreactionsvslevel.png')
+
+
+    ratomization=np.sort( ratomization )
+    ratomizationm10=np.sort( ratomizationm10 )
+    ratomizationl10=np.sort(ratomizationl10)
+
+    yvals=np.arange(len(ratomization))/float(len(ratomization))
+    plotresults(ratomization,yvals,'ratomizationw','Reaction atomization level ({0} models)'.format(len(ratomizationList)))
+    yvals=np.arange(len(ratomizationm10))   /float(len(ratomizationm10))
+    plotresults(ratomizationm10,yvals,'ratomization_m10w','Reaction atomization level >10 reactions({0} models)'.format(len(ratomizationListm10)))
+    yvals=np.arange(len(ratomizationl10))/float(len(ratomizationl10))
+    plotresults(ratomizationl10,yvals,'ratomization_l10w','Reaction atomization level <=10 reactions({0} models)'.format(len(ratomizationListl10)))
+    print 'syndel',syndel
+    print '>10 with 0',largeUseless
+    
+def createGroupingCDF():
+    '''
+    analyzes a group ofatomized files with species atomization > 0
+    and groups them according to whether they have groups of reaction with 
+    same reaction center different context/reaction rates
+    '''
+    processList = []
+    '''
+    with open('ratomizationp2m.dump','rb') as f:
+        atomizationStats = pickle.load(f)
+    atomizationDict = {}
+    atomizationList = []
+    groupedDict = []
+    spaceCoveredDict = {}
+    for element in atomizationStats:
+        try:
+            print element,
+            analysis = cooperativityAnalysis2(element)
+            spaceCoveredDict[element] = analysis[-1]
+            print analysis[-1]
+            #grouping analysis
+            processList.append(list(analysis[:-1]))
+            atomizationList.append(atomizationStats[element])
+            tmp = [element]
+            tmp.extend(processList[-1])
+            groupedDict.append(tmp)
         except (IOError,IndexError):
             print
             continue
 
+      
     
-    groupedProcess,redundantProcess = zip(*processList)
+    with open('groupedProcessList.dump','wb') as f:
+        pickle.dump(processList,f)
+    with open('spaceCovered.dump','wb') as f:
+        pickle.dump(spaceCoveredDict,f)
+    with open('groupedProcessList.dump','wb') as f:
+        pickle.dump(groupedDict,f)
+
+    processList = sorted(processList, key=lambda x: x[0])
+
+    with open('groupedProcessList.csv','wb') as f:
+        writer = csv.writer(f, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['file','heterogeneous','homogeneous','mixed','total-processes'])
+        writer.writerows(processList)
+
+    '''
+    
+    with open('groupedProcessList.dump','rb') as f:
+        processList = pickle.load(f)
+
+    
+    _,groupedProcess,redundantProcess,mixedProcess,totalProcess = zip(*processList)
+    
+    processList = [x for x in processList if sum(x[1:4])>0]
+
+    processList = [[float(y)/sum(x[1:4]) for y in x[1:4]] for x in processList]
+    print processList
+    x = np.arange(len(processList)) 
+
+    processList = sorted(processList, key=lambda x: (float(x[2]),float(x[1]),float(x[0])))
+    processList = np.column_stack(processList)
+    processList = [map(float,y) for y in processList]
+
+    print processList
     #plt.clf()
     #plt.scatter(groupedProcess,atomizationList)
     #plt.show()
-    print groupedDict
+    #print groupedDict
+    
+    totalProcess=np.sort( totalProcess )
+    #redundantProcess=np.sort( redundantProcess )
+    yvals=np.arange(len(totalProcess))/float(len(totalProcess))
+    plotresults(totalProcess,yvals,'totalGroups','Ratio of reaction groups with more than one member')
+    #plotresults(redundantProcess,yvals,'redundant>0')
+    
+    # this call to 'cumsum' (cumulative sum), passing in your y data, 
+    # is necessary to avoid having to manually order the datasets
+    
+    processList = np.array(processList)
+    y_stack = np.cumsum(processList, axis=0)   # a 3x10 array
+    fig = plt.figure()
+    #ax1 = fig.add_subplot(111)
+    
+    plt.fill_between(x, 0, y_stack[0], facecolor="#CC6666", alpha=.7)
+    plt.fill_between(x, y_stack[0], y_stack[1], facecolor="#1DACD6", alpha=.7)
+    plt.fill_between(x, y_stack[1], y_stack[2], facecolor="#6E5160")
+    hompatch = mpatches.Patch(color='#CC6666', label=' heteogeneous')
+    hetpatch = mpatches.Patch(color='#1DACD6', label='homogeneous')
+    bothpatch = mpatches.Patch(color='#6E5160', label='mixed')
+    plt.legend(handles=[hompatch,hetpatch,bothpatch])
+
+    plt.show()
+    plt.savefig('stackplot.png')
+
+import bioservices
+
+def analyzeGroupingCDF():
+    bio = bioservices.BioModels()
+
+    with open('groupedProcessList.dump','rb') as f:
+        groupedDict = pickle.load(f)
+    elementList,groupedProcessList,redundantProcessList = zip(*groupedDict)
+    hist,bin_edges = np.histogram(redundantProcessList,bins=5)
+    binIndexArray = np.digitize(redundantProcessList,bin_edges)
+    modelAnnotationBin = defaultdict(list)
+    
+    for element,binIndex in zip(elementList,binIndexArray):
+        try:
+            info = bio.getSimpleModelsByIds('BIOMD%010i' % element)
+            parsedInfo = bioservices.Service('name').easyXML(info)
+            modelName = stats.removeTags(str(parsedInfo['modelname'][0]))
+            modelName = modelName.split(' - ')
+            if len(modelName) > 1:
+                modelName = modelName[1]
+            else:
+                modelName = modelName[0].split('_')
+                if len(modelName) > 1:
+                    modelName = ' '.join(modelName[1:])
+                else:
+                    modelName = modelName[0]
+            print element,binIndex
+            modelAnnotationBin[binIndex].append((element,modelName))
+        except:
+            print parsedInfo
+            break
+    print modelAnnotationBin
+    print hist,bin_edges
+
+
+def createSpaceDistribution():
     '''
-    groupedProcess=np.sort( groupedProcess )
-    redundantProcess=np.sort( redundantProcess )
-    yvals=np.arange(len(groupedProcess))/float(len(groupedProcess))
-    plotresults(groupedProcess,yvals,'grouped>0')
-    plotresults(redundantProcess,yvals,'redundant>0')
+    analyzes groups of files that have grouped reaction and creates a 
+    distribution of how much space thse context-sensitive reactions cover
     '''
+    with open('spaceCovered.dump','rb') as f:
+        space = pickle.load(f)
+    infiniteCycles = 0
+    infiniteCyclesFiles = set([])
+    spaceCovered = []
+    groupSize = []
+    modelsWithGroups = []
+    for element in space:
+        for entry in space[element]:
+            if entry[0] == -1:
+                infiniteCycles += 1
+                infiniteCyclesFiles.add(element)
+                continue
+            if entry[1]> entry[0]:
+                continue
+            
+            spaceCovered.append(entry[1]*1.0/entry[0])
+            modelsWithGroups.append((element,spaceCovered[-1]))
+            groupSize.append(entry[0])
+    constructHistogram(spaceCovered,'spaceCovered','Percentage of space covered by\
+reaction groups',np.ones(len(spaceCovered)),False)
+
+    #uncomment if we wish to obtain a list of which model belongs 
+    #to which group
+    #analyzeSpaceDistribution(modelsWithGroups)
+
+import bioservices
+import stats
+
+def analyzeSpaceDistribution(analyzedModels):
+    bio = bioservices.BioModels()
+    number,spaceCovered = zip(*analyzedModels)
+    
+    hist,bin_edges = np.histogram(spaceCovered,bins=5)
+    binIndexArray = np.digitize(spaceCovered,bin_edges)
+    modelAnnotationBin = defaultdict(list)
+    
+    for element,binIndex in zip(number,binIndexArray):
+        try:
+            info = bio.getSimpleModelsByIds('BIOMD%010i' % element)
+            parsedInfo = bioservices.Service('name').easyXML(info)
+            modelName = stats.removeTags(str(parsedInfo['modelname'][0]))
+            modelName = modelName.split(' - ')
+            if len(modelName) > 1:
+                modelName = modelName[1]
+            else:
+                modelName = modelName[0].split('_')
+                if len(modelName) > 1:
+                    modelName = ' '.join(modelName[1:])
+                else:
+                    modelName = modelName[0]
+            print element,binIndex
+            modelAnnotationBin[binIndex].append(modelName)
+        except:
+            print parsedInfo
+            break
+    print modelAnnotationBin
+
+import pprint
+def nonAtomizedSpeciesAnalysis():
+    with open('nonatomizedreactions.dump','rb') as f:
+        nonAtomizedList= pickle.load(f)
+    f = open('nonatomizedresults.txt','wt')
+    for signature in nonAtomizedList:
+        count = Counter()
+        reactionList = defaultdict(list)
+        f.write('--------\n')
+        f.write(str(signature) + '\n')
+        for reaction in nonAtomizedList[signature]:
+            count[tuple(sorted([x.action for x in reaction[0].actions]))] += 1
+            reactionList[tuple(sorted([x.action for x in reaction[0].actions]))].append(str(reaction[0]))
+            if signature in [(2,1),(1,2),(1,1)]:
+                f.write(str(count) + '\n')
+                f.write('+++\n')
+                pprint.pprint(dict(reactionList),stream=f)
+    f.close()
+if __name__ == "__main__":
+    #spaceCoveredCDF()
+    #reactionBasedAtomizationDistro('complex')
+    #nonAtomizedSpeciesAnalysis()
+    #createGroupingCDF()
+    print reactionBasedAtomizationFile('complex/BIOMD0000000019.xml.xml')
+    #analyzeGroupingCDF()
+    
+    #createSpaceDistribution()
+    #createBipartiteGraph('complex/output5.bngl')
+    #species,rules = extractRulesfromBNGL('output19')
+
     #print processList
     #cooperativityAnalysis2('egfr_net')    
     #createContactMap(  'output/output5.bngl')

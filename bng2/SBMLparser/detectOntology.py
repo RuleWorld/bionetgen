@@ -18,25 +18,39 @@ try:
     import pandas as pd
 except ImportError:
     pd = None
+import numpy as np
+import functools
+
+def memoize(obj):
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
+
+
 def levenshtein(s1, s2):
         l1 = len(s1)
         l2 = len(s2)
     
-        matrix = [range(l1 + 1)] * (l2 + 1)
-        for zz in range(l2 + 1):
-          matrix[zz] = range(zz,zz + l1 + 1)
+        #matrix = [range(l1 + 1)] * (l2 + 1)
+        #for zz in range(l2 + 1):
+        #  matrix[zz] = range(zz,zz + l1 + 1)
+        matrix = [range(x,x+l1+1) for x in range(0,l2+1)]
         for zz in range(0,l2):
           for sz in range(0,l1):
-            if s1[sz] == s2[zz]:
-              matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, matrix[zz][sz])
-            else:
-              matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, matrix[zz][sz] + 1)
+            z = matrix[zz][sz] if s1[sz] == s2[zz] else matrix[zz][sz] + 1
+            matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, z)
         return matrix[l2][l1]
 
 def getDifferences(scoreMatrix, speciesName,threshold):
     '''
     given a list of strings and a scoreMatrix, return the list of difference between
-    those strings with a levenshtein difference of less than two
+    those strings with a levenshtein difference of less than threshold
     returns: 
         namePairs: list of tuples containing strings with distance <2
         differenceList: list of differences between the tuples in namePairs
@@ -44,8 +58,8 @@ def getDifferences(scoreMatrix, speciesName,threshold):
     differenceList = []
     namePairs = []
 
-    for idx,element in enumerate(scoreMatrix):
-        for idx2,element2 in enumerate(scoreMatrix[idx]):
+    for idx in range(0,len(scoreMatrix)):
+        for idx2 in range(0,len(scoreMatrix[idx])):
             if scoreMatrix[idx][idx2] <= threshold and  idx < idx2:
                 if len(speciesName[idx])<len(speciesName[idx2]):
                     namePairs.append([speciesName[idx],speciesName[idx2]])
@@ -79,28 +93,70 @@ def findLongestSubstring(speciesA,speciesB):
     longestMatch = sm.find_longest_match(0,len(speciesA),0,len(speciesB))
     return speciesA[longestMatch[0]:longestMatch[0]+longestMatch[2]]
 
-def defineEditDistanceMatrix(speciesName,similarityThreshold=3):
+#import concurrent.futures
+
+def stringToSet(species,idx,scoreRow,speciesName):
+    for idx2,species2 in enumerate(speciesName):
+        if species == species2 or scoreRow[idx2] != 0:
+            continue
+        scoreRow[idx2] = levenshtein(species,speciesName[idx2])
+    return idx,scoreRow
+    
+def defineEditDistanceMatrix3(speciesName,similarityThreshold=4,parallel = False):
+    namePairs = []
+    differenceList = []
+    for species in speciesName:
+        closeMatches = difflib.get_close_matches(species,speciesName)
+        closeMatches = [x for x in closeMatches if len(x) < len(species)]
+        for match in closeMatches:
+            difference = [x for x in difflib.ndiff(match,species)]
+            if len([x for x in difference if '-' in x]) == 0:
+                namePairs.append([match,species])
+                differenceList.append(tuple([x for x in difference if  '+' in x]))
+    return namePairs,differenceList,''
+        
+def defineEditDistanceMatrix(speciesName,similarityThreshold=4,parallel = False):
     '''
     obtains a distance matrix and a pairs of elements that are close 
     in distance, along with the proposed differences
     '''
     differenceCounter = Counter()
+    futures = []
     scoreMatrix = np.zeros((len(speciesName),len(speciesName)))
+    scoreMatrix2 = np.zeros((len(speciesName),len(speciesName)))
+    counter = range(0,len(speciesName))
+    '''
+    for idx,species in enumerate(speciesName):
+    
+        futures = []
+        with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+            futures.append(executor.submit(stringToSet, species,idx,scoreMatrix[idx],speciesName))
+        for future in concurrent.futures.as_completed(futures):
+            idx3,row = future.result()
+            counter.remove(idx3)
+            print len(counter)
+            scoreMatrix[idx3] = row
+    '''
+    
     for idx,species in enumerate(speciesName):
         for idx2,species2 in enumerate(speciesName):
-            if species == species2 or scoreMatrix[idx][idx2] != 0:
+            if species == species2 or scoreMatrix2[idx][idx2] != 0:
                 continue
-            scoreMatrix[idx][idx2] = levenshtein(speciesName[idx],speciesName[idx2])
-            scoreMatrix[idx2][idx] = scoreMatrix[idx][idx2]
-    namePairs,differenceList = getDifferences(scoreMatrix, speciesName,similarityThreshold)
+            #comparison = difflib.SequenceMatcher(None,speciesName[idx],speciesName[idx2]).quick_ratio()
+            comparison = levenshtein(speciesName[idx],speciesName[idx2])
+            scoreMatrix2[idx][idx2] = comparison
+            scoreMatrix2[idx2][idx] = scoreMatrix2[idx][idx2]
+    
+    namePairs,differenceList = getDifferences(scoreMatrix2, speciesName,similarityThreshold)
     differenceCounter.update(differenceList)
     return namePairs,differenceList,differenceCounter
     
-def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=3):
+def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=4):
     patternClassification = {}
     pairClassification = {}
 
-    ontology =  loadOntology(ontologyFile)
+    #ontology =  loadOntology(ontologyFile)
+    ontology= ontologyFile
     finalDifferenceCounter = Counter()
     namePairs,differenceList,differenceCounter = defineEditDistanceMatrix(speciesName,similarityThreshold)
     

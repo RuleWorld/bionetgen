@@ -314,14 +314,6 @@ def findNewParameters(parameters,bngParameters):
             newPar.append('\t {0} {1}\n'.format(bngp,bngParameters[bngp]))
     return newPar
 
-def spaceCovered(species,numObservables):
-    speciesCount = 0
-    for individualSpecies in species:
-        tmp = 0
-        for component in individualSpecies.components:
-            tmp+=1
-        speciesCount += 2**tmp
-    return speciesCount *1.0/numObservables
 
 def extractRedundantContext(rules,transformationCenter,transformationContext):
     ''''

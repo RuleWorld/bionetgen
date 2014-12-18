@@ -27,9 +27,14 @@ version of SBML to Level 2 Version 3.
 with 'parameter_scan'. However, observables and functions are still evaluated to
 numbers.
 
+* Added $BNG_HOME/bin/sbmlTranslator, an SBML to BNGL conversion tool. sbmlTranslator
+can obtain a literal translation of an SBML file. Additionally it can 'atomize' the SBML file,
+ that is, infer components, binding, and modification interactions between the original species.
+
 * Modified 'readFile' to process SBML input files using $BNG_HOME/bin/sbmlTranslator.
 'readFile' will also now throw an error if the input file extension is not any
 of ".bngl", ".net", or ".xml".
+
 
 * Modified 'readFile' to allow specific model blocks to be read using the 'blocks' argument.
 ** Example: <big><tt>readFile({file=>"filename.bngl",blocks=>["parameters","seed species"]})</tt></big>

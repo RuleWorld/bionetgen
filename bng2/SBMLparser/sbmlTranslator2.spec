@@ -1,9 +1,10 @@
 # -*- mode: python -*-
 a = Analysis(['sbmlTranslator.py'],
+             pathex=['/home/proto/workspace/bionetgen/parsers/SBMLparser'],
              hiddenimports=['_libsbml'],
              hookspath=None,
              runtime_hooks=None,
-	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui'])
+	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui','matplotlib','gtk'])
 pyz = PYZ(a.pure)
 
 
