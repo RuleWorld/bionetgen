@@ -1027,8 +1027,6 @@ class SBMLAnalyzer:
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
         for idx,reaction in enumerate(rawReactions):
-            if 'nucleus_Foxo1_Pa0_Pd0_Pe0_pUb0' in reaction[0] and 'nucleus_Foxo1_Pa1_Pd0_Pe0_pUb0' in reaction[1]:
-                pass
             matching,matching2 = self.approximateMatching2(reaction,strippedMolecules,translationKeys)
             flag = True
             if matching:
@@ -1054,7 +1052,6 @@ class SBMLAnalyzer:
                                 #existing molecule instead of trying to create a new one
                                 if x[1] not in strippedMolecules:
                                     lexicalDependencyGraph[x[1]] = []
-                                
         translationKeys.extend(newTranslationKeys)
         for species in localSpeciesDict:
             speciesName =  localSpeciesDict[species][localSpeciesDict[species].keys()[0]][0][0]

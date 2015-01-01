@@ -495,6 +495,7 @@ def getComplexationComponents2(species,bioGridFlag):
             for element in comb:
                 if element[0].upper() in bioGridDict and element[1] in bioGridDict[element[0].upper()] or \
                 element[1].upper() in bioGridDict and element[0] in bioGridDict[element[1].upper()]:
+                    logMess('INFO:Atomization','Biogrid info: {0}:{1}'.format(element[0],element[1]))
                     dbPair.add((element[0],element[1]))
             dbPair = list(dbPair)
             if dbPair != []:
@@ -528,7 +529,7 @@ def getTrueTag(dependencyGraph, molecule):
 
 
 def atomize(dependencyGraph, weights, translator, reactionProperties,
-            equivalenceDictionary,bioGridFlag,sbmlAnalyzer):
+            equivalenceDictionary,bioGridFlag,sbmlAnalyzer,database):
     '''
     The atomizer's main methods. Receives a dependency graph
     '''
@@ -577,7 +578,7 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                             existingComponents.append(reactionProperties[
                             classification][0])
                         elif classification is None:
-                            raise Exception('unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
+                            logMess('ATOMIZATION:CRITICAL','unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
                         memory.append(tmp)
                         tmp = dependencyGraph[tmp][0][0]
                         if tmp in memory:
@@ -921,9 +922,9 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     pr = cProfile.Profile()
     pr.enable()
     '''
-
+    
     prunnedDependencyGraph,database = createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
-                       speciesEquivalences=None,bioGridFlag=False)    
+                       speciesEquivalences=speciesEquivalences,bioGridFlag=bioGridFlag)    
     #I'm polluting these data structures somewhere. In here
     #im just calling the original generator to recover them.
     #I think it solved itself. I'm leaving an assert just to be sure
@@ -976,11 +977,10 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
             for instance in candidates:
                 addToDependencyGraph(database.eequivalenceTranslator,modification,instance)
                 
-            
     database.weights = sorted(database.weights, key=lambda rule: (rule[1],len(rule[0])))
     atomize(prunnedDependencyGraph, database.weights, database.translator, database.reactionProperties, 
                                                                 database.eequivalenceTranslator,
-                                                                bioGridFlag,database.sbmlAnalyzer)
+                                                                bioGridFlag,database.sbmlAnalyzer,database)
     
     onlySynDec =  len([x for x in database.classifications if x not in ['Generation','Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
