@@ -6,23 +6,29 @@ Created on Sat May  3 16:06:41 2014
 """
 
 from os import listdir
-from os.path import isfile, join
-
+import os.path
 import shutil
+
+def resource_path(relative_path):
+    base_path = os.path.abspath(".")
+    convertedPath =  os.path.normpath(os.path.join(base_path, relative_path))
+    return convertedPath
+
 def main():
     directory = '.'
-    onlyfiles = [ f for f in listdir('./' + directory) if isfile(join('./' + directory,f)) ]
-    configFiles =  [ f for f in listdir('./config') if isfile(join('./config',f)) ]   
+    srcDirectory = resource_path('../../parsers/SBMLparser')  
+    onlyfiles = [ f for f in listdir('./' + directory) if os.path.isfile(os.path.join('./' + directory,f)) ]
+    configFiles =  [ f for f in listdir('./config') if os.path.isfile(os.path.join('./config',f)) ]   
     #onlyNotFiles =[ f for f in listdir('./' + directory) if not isfile(join('./' + directory,f)) ]
-    originalFiles = listdir('../../parsers/SBMLparser')         
+    originalFiles = listdir(srcDirectory)
     for element in onlyfiles:
         if element in originalFiles:
             try:
-                shutil.copy('../../parsers/SBMLparser/' + element, '.')
+                shutil.copy(os.path.join(srcDirectory + element), '.')
             except:
                 continue
     for element in configFiles:
-        ('../../parsers/SBMLparser/config' + element, './config')
+        shutil.copy(os.path.join(srcDirectory,'config',element), './config')
     
 if __name__ == "__main__":
     main()

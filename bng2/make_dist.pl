@@ -265,7 +265,29 @@ foreach my $dir ( @include_python_subdirectories )
     my $source_dir = File::Spec->catdir( $bngpath,  $dir );
     my $dest_dir   = File::Spec->catdir( $dist_dir, $dir );
 
-    my $recursive = 1;    
+    my $recursive = 1; 
+    {
+         unless( chdir $source_dir )
+        {   
+        print "make_dist.pl error:\nunable to chdir to build directory '${source_dir}'.\n";
+        exit -1;
+       }
+ 
+        print "copying python source code  to build environment.\n";
+        my @args = ('python', 'updateDistribution.py');
+        print "command: ", join(" ", @args), "\n";
+        unless( system(@args)==0 )
+        {  print "Unable to update distribution";  exit -1; }
+
+        # go back to original directory
+        unless( chdir $bngpath )
+        {   print "make_dist.pl error:\nunable to chdir back to original directory '$bngpath'.\n";
+            exit -1;
+        }
+
+
+    }
+
     my $err = copy_dir( $source_dir, $dest_dir, $recursive, $python_exclude_files );
     if ($err)
     {
@@ -489,7 +511,8 @@ if (defined $bindir)
  
     if ($build)
     {
- 
+
+  
         {
             print "making $build_subdir . . .\n";
             my @args = ($sys_make, @make_flags);

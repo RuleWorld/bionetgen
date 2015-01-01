@@ -10,7 +10,6 @@ all:
 	cp -r ./config ${DIST} ;
 
 install:
-	cp -r ${DIST}/config ../bin ;
 	cp  ${DIST}/sbmlTranslator ../bin ;
 
 clean:
