@@ -4,6 +4,9 @@ a = Analysis(['sbmlTranslator.py'],
              hookspath=None,
              runtime_hooks=None,
 	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui'])
+
+a.datas += [('config/namingConventions.json','config/namingConventions.json','DATA'),
+('config/reactionDefinitions.json','config/reactionDefinitions.json','DATA')]
 pyz = PYZ(a.pure)
 
 
