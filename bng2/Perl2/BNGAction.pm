@@ -680,7 +680,6 @@ sub simulate_nf
     printf "ACTION: simulate_nf( )\n";
 
     # get simulation output prefix
-#    my $prefix  = defined $params->{prefix} ? $params->{prefix} : $model->getOutputPrefix();
     my $prefix  = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
     my $suffix  = defined $params->{suffix} ? $params->{suffix} : "";
 
@@ -1400,6 +1399,7 @@ sub bifurcate
     my @scanfiles = ();
     my ($i,$j,$err);
     
+    # don't reset concentrations after each run
     $params->{reset_conc} = 0;
     
     # update user
@@ -1502,6 +1502,12 @@ sub parameter_scan
         unless ( defined $params->{$key} )
         {   $params->{$key} = $val;   }
     }
+
+	# If resetting concentrations, don't need to read in final state
+	# (important for NFsim simulations, where read can be expensive)
+	if ( $params->{'reset_conc'} ){
+		$params->{'get_final_state'} = 0;
+	}
     
     # Output prefix
    	$params->{prefix} = $model->getOutputPrefix($params->{prefix});

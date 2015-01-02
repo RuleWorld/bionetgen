@@ -12,6 +12,11 @@ http://code.google.com/p/bionetgen
 resetConcentrations() if set to 0 (default value is 1). This allows simulations in 
 the scan to be started from the end point of the previous simulation (see below).
 
+* Modified parameter_scan() to set 'get_final_state=>0' if 'reset_conc=>1' (the default). 
+This prevents BNG from unnecessarily reading in the final species populations at the end 
+of NFsim simulations if they are going to be reset anyway. This is important as the read
+step can be extremely expensive for models with high degrees of symmetry.
+
 * Added a new bifurcate() action that takes the same arguments as parameter_scan() (except
 'reset_conc'). The method automatically runs two scans, one from 'par_min' to 'par_max' and 
 the other in the reverse direction. Each simulation in the scans starts from the end point 
