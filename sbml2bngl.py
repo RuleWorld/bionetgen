@@ -221,6 +221,20 @@ class SBML2BNGL:
         for unitDefinition in self.model.getListOfUnits():
             pass
         
+    def preProcessStoichiometry(self,reactants):
+        '''
+        checks for reactants with the same name in the reactant list. This 
+        is mainly to account for reactants that dont have the stoichiometry
+        flag properly set and instead appear repeated
+        '''
+        uniqueReactantDict = defaultdict(int)
+        for reactant in reactants:
+            uniqueReactantDict[reactant[0]] += reactant[1]
+            
+        
+        return [(x,uniqueReactantDict[x]) for x in uniqueReactantDict]
+        
+        
     def removeFactorFromMath(self, math, reactants, products):
         '''
         it also adds symmetry factors. this checks for symmetry in the species names
@@ -229,7 +243,9 @@ class SBML2BNGL:
         ifStack = Counter()
         remainderPatterns = []
         highStoichoiMetryFactor = 1
-        for x in reactants:
+        processedReactants = self.preProcessStoichiometry(reactants)
+        
+        for x in processedReactants:
             highStoichoiMetryFactor  *= factorial(x[1])
             y = [i[1] for i in products if i[0] == x[0]]
             y = y[0] if len(y) > 0 else 0
@@ -240,6 +256,7 @@ class SBML2BNGL:
                 highStoichoiMetryFactor /= comb(int(x[1]), int(y), exact=True)
             for counter in range(0, int(x[1])):
                 remainderPatterns.append(x[0])
+        
         #for x in products:
         #    highStoichoiMetryFactor /= math.factorial(x[1])
         #remainderPatterns = [x[0] for x in reactants]
@@ -254,6 +271,7 @@ class SBML2BNGL:
                 rateR = 'if({0}>0,{1}/{0},0)'.format(element,rateR)
         if highStoichoiMetryFactor != 1:
             rateR = '{0}*{1}'.format(rateR, int(highStoichoiMetryFactor))
+        
         return rateR,math.getNumChildren()
         
     def __getRawRules(self, reaction,symmetryFactors,functionFlag):
@@ -353,15 +371,12 @@ class SBML2BNGL:
                              rateR = '{0} * {1}'.format(rateR,compartment.getSize())
             '''     
 
+        
         return {'reactants':reactant,'products':product,'parameters':parameters,'rates':[rateL,rateR],
         'reversible':reversible,'reactionID':reaction.getId(),'numbers':[nl,nr]}
                 
         return (reactant, product, parameters, [rateL, rateR],
                 reversible, reaction.getId(), [nl, nr])
-    '''
-    create symmetry factors for reactions with components and species with
-    identical names. This checks for symmetry in the components names then.
-    '''
     
     def getReactionCenter(self,reactant,product,translator):
         rcomponent = Counter()
@@ -389,6 +404,10 @@ class SBML2BNGL:
             if reference in counterArray[element]:
                 counterArray[element][reference] += updateValue
     def reduceComponentSymmetryFactors(self,reaction,translator,functions):
+        '''
+        create symmetry factors for reactions with components and species with
+        identical names. This checks for symmetry in the components names then.
+        '''
         
         if self.useID:
             reactant = [(rElement.getSpecies(), rElement.getStoichiometry())
@@ -435,8 +454,7 @@ class SBML2BNGL:
                 for molecule in translator[element[0]].molecules:
                     molecule.sort()
                     for component in molecule.components:
-                        if reaction.getId() == 'v18':
-                            pass
+
                         componentList = Counter([(molecule.signature(breactionCenter))])
                         for _ in range(0,int(element[1])):
                             pcomponent[(molecule.name,component.name,len(component.bonds)>0,component.activeState)].update(componentList)
@@ -588,6 +606,7 @@ class SBML2BNGL:
             parameterDict = {}
             #symmetry factors for components with the same name
             sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,functions)
+            
             
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
             if len(rawRules['parameters']) >0:
