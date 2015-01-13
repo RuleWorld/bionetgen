@@ -24,8 +24,9 @@ def main():
     for element in onlyfiles:
         if element in originalFiles:
             try:
-                shutil.copy(os.path.join(srcDirectory + element), '.')
+                shutil.copy(os.path.join(srcDirectory,  element), '.')
             except:
+
                 continue
     for element in configFiles:
         shutil.copy(os.path.join(srcDirectory,'config',element), './config')
