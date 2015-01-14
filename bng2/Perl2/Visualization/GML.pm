@@ -98,7 +98,6 @@ sub printGML
 	my $q2 = "\" ";
 	foreach my $node(@nodes)
 	{
-		
 		my $string1= "";
 		# graphics
 		$string1 .= "type".$q1.$node->{'type'}.$q2;
@@ -620,13 +619,15 @@ sub toGML_rule_pattern
 	
 }
 
+
 sub toGML_rule_network
 {
 	my $bpg = shift @_;
 	my $collapsed = $bpg->{'Collapsed'};
 	my $embed = @_ ? shift @_ : 0;
 	
-	my @groups = ();
+	
+	#my @groups = ();
 	#my @groups = @_ ? @{shift @_} : ();
 	#my $closed = @_ ? shift @_ : 0;
 	
@@ -655,9 +656,11 @@ sub toGML_rule_network
 			$nodetype{$grp} = ($type eq 'Rule') ? 'RuleGroup' : 'PatternGroup';
 			}
 	}
-	
-	my %indhash = indexHash( [(@nodelist,@groups)] );
-	foreach my $node(@nodelist)
+	my %nodetypeorder = ( 'AtomicPattern' => 0, 'Rule' => 1, 'PatternGroup' => 2, 'RuleGroup' => 3);
+	my @nodelist2 = sort { $nodetypeorder{$nodetype{$a}} <=> $nodetypeorder{$nodetype{$b}} || $a cmp $b } @nodelist; 
+	#print join "\n",@nodelist2;exit;
+	my %indhash = indexHash( [@nodelist2] );
+	foreach my $node(@nodelist2)
 	{
 		my $id = $indhash{$node};
 		my $name = prettify($node);

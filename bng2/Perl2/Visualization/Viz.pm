@@ -40,7 +40,11 @@ sub unquotemeta(;$) {
 }
 
 sub uniqadd { if (not has($_[0],$_[1]) ) {push @{$_[0]}, $_[1] ; }}
-sub indexHash { my @x = @{$_[0]}; map { $x[$_]=>$_ } 0..@x-1; }
+sub indexHash 
+{ 
+	my @x = @{$_[0]};  
+	map { $x[$_]=>$_ } 0..@x-1;
+}
 
 sub push2ref
 {
