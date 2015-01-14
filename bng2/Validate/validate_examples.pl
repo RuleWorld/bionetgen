@@ -524,6 +524,40 @@ foreach my $model (@models)
         }
     }
 
+	# check visualization outputs
+	if($model eq 'visualize')
+	{
+	multi_print( " -> checking visualization outputs\n", @allFH );
+	my @suffixes = ( 	'_contactmap.gml', '_ruleviz_pattern.gml','_ruleviz_operation.gml',
+						'_regulatory_1.gml', '_regulatory_2.gml',
+						'_regulatory_3.gml', '_regulatory_4.gml', );
+	my %messages = ( 	'_contactmap.gml' => 'contact map',
+						'_ruleviz_pattern.gml' => 'rule visualization using patterns',
+						'_ruleviz_operation.gml' => 'rule visualization using graph operations',
+						'_regulatory_1.gml' => 'regulatory graph',
+						'_regulatory_2.gml' => 'background assignment',
+						'_regulatory_3.gml' => 'group assignment',
+						'_regulatory_4.gml' => 'collapsing groups',  
+						);
+	foreach my $suffix(@suffixes)
+		{
+			if( -e $datprefix.$suffix  and  -e $outprefix.$suffix)
+				{
+				multi_print( " ->-> checking ".$messages{$suffix}."\n", @allFH );
+				my $exit_status = diff_files( $datprefix.$suffix, $outprefix.$suffix );
+				if ($exit_status ne "")
+					{   
+						multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+						print "see $log_file for more details.\n";
+						close $log;
+						++$fail_count;
+						next;
+					}
+				print $log $SEPARATOR;
+				}
+		}
+	}
+	
     if ($delete_working_files)
     {   delete_files($outprefix);   }
 
@@ -578,7 +612,10 @@ sub delete_files
                        _pla_equil.net  _ssa_pla.cdat    _pla_equil.gdat
                        _nf_equil.xml   _nf_equil.gdat   _nf_equil.species                 
                        .m              _mex.m           _mex_cvode.c 
-                       _hpp.bngl       _hpp.xml                        );
+                       _hpp.bngl       _hpp.xml     
+					   _contactmap.gml	_ruleviz_pattern.gml	_ruleviz_operation.gml
+					   _regulatory_1.gml	_regulatory_2.gml	
+					   _regulatory_3.gml    _regulatory_4.gml );
     my @files = ();
     foreach my $suffix (@suffixes)
     {   push @files, ${outprefix}.${suffix};   }
