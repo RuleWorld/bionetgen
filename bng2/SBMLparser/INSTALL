@@ -1,0 +1,21 @@
+Installation procedure for SBMLParser:
+
+Prerequirements:
+
+SBML2BNGL is a tool writen in Python 2.7. The following libraries are needed in order to build the binary from scratch
+
+* numpy 1.8.0 or greater
+* scipy  0.12.0 or greater
+* libsbml 5.10.0  or greater (http://sbml.org/Software/libSBML)
+* pandas for BioGrid functionality (http://pandas.pydata.org/)
+
+
+Building instructions for Linux/MacOSX:
+
+* make
+* make install
+
+This will place a binary called sbmlTranslate-${arch} on the bin directory inside the BioNetGen distrution
+
+
+
