@@ -184,7 +184,7 @@ sub readSBML
 	my $filepath = shift @_;
 	my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
 	$filename =~ s/\.xml//;
-	my $outfile = $model->getOutputDir() . $filename . '.bngl';
+	my $outfile = File::Spec->catpath($model->getOutputDir(), $filename.'.bngl');
     my $user_args = @_ ? shift @_ : {};
     
     # Collect user arguments
