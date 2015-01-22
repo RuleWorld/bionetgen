@@ -1,0 +1,54 @@
+###
+#@notes:'This is a plain translation of an SBML model created on 21/01/2015. The original model has 5 molecules and 6 reactions. The translated model has 5 molecules and 6 rules'
+###
+begin model
+begin parameters
+	k1_f 1.0
+	k1_r 0.1
+	k2_f 1.0
+	k2_r 0.1
+	k3_f 1.0
+	k3_r 0.1
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	A____()
+	B____()
+	C____()
+	D____()
+	AA____()
+end molecule types
+begin seed species
+	@cell:A____() 1.0 #A____
+	@cell:B____() 2.0 #B____
+	@cell:C____() 3.0 #C____
+	@cell:D____() 4.0 #D____
+	@cell:AA____() 5.0 #AA____
+end seed species
+begin observables
+	Species A____ A____() #A()
+	Species B____ B____() #B()
+	Species C____ C____() #C()
+	Species D____ D____() #D()
+	Species AA____ AA____() #AA()
+end observables
+begin functions
+	functionRate4() = 0.5 * k3_f
+	A() = 0 + A____
+	AA() = 0 + AA____
+	C() = 0 + C____
+	B() = 0 + B____
+	D() = 0 + D____
+	dim_r() = k3_r
+end functions
+begin reaction rules
+	R1: A____() + B____() -> C____() k1_f
+	R2: C____() -> A____() + B____() k1_r
+	R3: B____() + C____() -> D____() k2_f
+	R4: D____() -> B____() + C____() k2_r
+	R5: A____() + A____() -> AA____() functionRate4()
+	R6: AA____() -> A____() + A____() dim_r ()
+end reaction rules
+end model

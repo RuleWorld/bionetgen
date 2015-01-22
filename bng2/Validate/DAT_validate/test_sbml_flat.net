@@ -1,0 +1,40 @@
+# Created by BioNetGen 2.2.6
+begin parameters
+    1 k1_f           1.0  # Constant
+    2 k1_r           0.1  # Constant
+    3 k2_f           1.0  # Constant
+    4 k2_r           0.1  # Constant
+    5 k3_f           1.0  # Constant
+    6 k3_r           0.1  # Constant
+end parameters
+begin functions
+    1 functionRate4() 0.5*k3_f
+    2 A() 0+A____
+    3 AA() 0+AA____
+    4 C() 0+C____
+    5 B() 0+B____
+    6 D() 0+D____
+    7 dim_r() k3_r
+end functions
+begin species
+    1 @cell::A____() 1.0
+    2 @cell::B____() 2.0
+    3 @cell::C____() 3.0
+    4 @cell::D____() 4.0
+    5 @cell::AA____() 5.0
+end species
+begin reactions
+    1 1,2 3 1*k1_f #R1 unit_conversion=1/1.0
+    2 3 1,2 k1_r #R2
+    3 2,3 4 1*k2_f #R3 unit_conversion=1/1.0
+    4 4 2,3 k2_r #R4
+    5 1,1 5 0.5*functionRate4 #R5 unit_conversion=1/1.0
+    6 5 1,1 dim_r #R6
+end reactions
+begin groups
+    1 A____                1
+    2 B____                2
+    3 C____                3
+    4 D____                4
+    5 AA____               5
+end groups
