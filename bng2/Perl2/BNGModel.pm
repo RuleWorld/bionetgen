@@ -182,6 +182,8 @@ sub readSBML
 {
 	my $model  = shift @_;
 	my $filepath = shift @_;
+	unless ( -e $filepath )
+    {   return 1, "Could not find '$filepath'";   }
 	my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
 	$filename =~ s/\.xml//;
 	my $outfile = File::Spec->catpath($model->getOutputDir(), $filename.'.bngl');
