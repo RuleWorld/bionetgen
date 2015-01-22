@@ -375,7 +375,7 @@ class Component:
         return True
         
     def getRuleStr(self):
-        tmp = self.name
+        tmp = self.name 
         if len(self.bonds) > 0:
             tmp += '!' + '!'.join([str(x) for x in self.bonds])
         if self.activeState != '':
@@ -390,15 +390,23 @@ class Component:
         
     def __str__(self):
         tmp = self.getRuleStr()
+        #edit to meet bng string requirements
+        if tmp[0].isdigit():
+            tmp = '_' + tmp
         tmp = tmp.replace('-','_')
         return tmp
         
     def str2(self):
         tmp = self.name
+
         if len(self.bonds) > 0:
             tmp += '!' + '!'.join([str(x) for x in self.bonds])
         if len(self.states) > 0:
             tmp += '~' + '~'.join([str(x) for x in self.states])
+
+        if tmp[0].isdigit():
+            tmp = '_' + tmp
+
         return tmp        
         
     def signature(self):
