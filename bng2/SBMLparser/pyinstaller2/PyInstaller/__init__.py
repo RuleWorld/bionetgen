@@ -21,12 +21,21 @@ import sys
 # Fail hard if Python does not have minimum required version
 if sys.version_info < (2, 4):
     raise SystemExit('PyInstaller requires at least Python 2.4, sorry.')
+elif sys.version_info >= (3,):
+    raise SystemExit('Python 3 is not yet supported, sorry.')
 
 
 # Extend PYTHONPATH with 3rd party libraries bundled with PyInstaller.
 # (otherwise e.g. macholib won't work on Mac OS X)
+#
+# Append lib directory at the end of sys.path and not at the beginning.
+# Python will first try necessary libraries from the system and fallback
+# to the lib directory.
+#
+# Some users complained that PyInstaller failed because their apps were
+# using too old versions of some libraries that PyInstaller uses too.
 from PyInstaller import lib
-sys.path.insert(0, lib.__path__[0])
+sys.path.append(lib.__path__[0])
 
 
 from PyInstaller import compat
@@ -34,7 +43,7 @@ from PyInstaller.utils import git
 
 # Uncomment this line for development of version 3.0.
 #VERSION = (3, 0, 0, 'dev', git.get_repo_revision())
-VERSION = (2, 1, 0)
+VERSION = (2, 1, 1, 'dev', git.get_repo_revision())
 
 
 is_py25 = compat.is_py25
@@ -53,10 +62,10 @@ is_freebsd = compat.is_freebsd
 is_unix = compat.is_unix
 
 
-# This ensures PyInstaller will work on Windows with paths containing
-# foreign characters.
 HOMEPATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 if is_win:
+    # This ensures PyInstaller will work on Windows with paths
+    # containing foreign characters.
     try:
         unicode(HOMEPATH)
     except UnicodeDecodeError:
@@ -113,6 +122,6 @@ def get_version():
     if len(VERSION) >= 4 and VERSION[3]:
         version = '%s%s' % (version, VERSION[3])
         # include git revision in version string
-        if VERSION[3] == 'dev' and VERSION[4] > 0:
+        if VERSION[3] == 'dev' and len(VERSION) >= 5 and VERSION[4] > 0:
             version = '%s-%s' % (version, VERSION[4])
     return version

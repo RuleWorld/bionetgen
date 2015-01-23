@@ -34,57 +34,6 @@ UNTRIED = -1
 imptyps = ['top-level', 'conditional', 'delayed', 'delayed, conditional']
 
 
-# TODO Probably just use modulegraph directly in 'assemble()' in build.py
-#      without ImportTracker or with a different api.
-class ImportTrackerModulegraph:
-    """
-    New import tracker based on module 'modulegraph' for resolving
-    dependencies on Python modules.
-
-    PyInstaller is not able to handle some cases of resolving dependencies.
-    Rather try use a module for that than trying to fix current implementation.
-
-    Public api:
-
-        self.analyze_scripts()
-        self.getwarnings()
-    """
-    def __init__(self, xpath=None, hookspath=None, excludes=None):
-        self.warnings = {}
-        if xpath:
-            self.path = xpath
-        self.path.extend(sys.path)
-        self.modules = dict()
-
-        if hookspath:
-            hooks.__path__ = hookspath + hooks.__path__
-        if excludes is None:
-            self.excludes = set()
-        else:
-            self.excludes = set(excludes)
-
-    def analyze_script(self, filenames):
-        """
-        Analyze given scripts and get dependencies on other Python modules.
-
-        return two lists - python modules and python extensions
-        """
-        from modulegraph.find_modules import find_modules, parse_mf_results
-
-        mf = find_modules(filenames, excludes=self.excludes)
-        py_files, extensions = parse_mf_results(mf)
-
-        return py_files, extensions
-
-    def getwarnings(self):
-        warnings = self.warnings.keys()
-        for nm, mod in self.modules.items():
-            if mod:
-                for w in mod.warnings:
-                    warnings.append(w + ' - %s (%s)' % (mod.__name__, mod.__file__))
-        return warnings
-
-
 class ImportTracker:
     # really the equivalent of builtin import
     def __init__(self, xpath=None, hookspath=None, excludes=None, workpath=None):
@@ -124,12 +73,16 @@ class ImportTracker:
             self.metapath = [
                 PyInstaller.depend.impdirector.BuiltinImportDirector(),
                 PyInstaller.depend.impdirector.RegistryImportDirector(),
-                PyInstaller.depend.impdirector.PathImportDirector(self.path)
+                PyInstaller.depend.impdirector.PathImportDirector(self.path),
+                # NamespaceImportDirector must be the last one
+                PyInstaller.depend.impdirector.NamespaceImportDirector(),
             ]
         else:
             self.metapath = [
                 PyInstaller.depend.impdirector.BuiltinImportDirector(),
-                PyInstaller.depend.impdirector.PathImportDirector(self.path)
+                PyInstaller.depend.impdirector.PathImportDirector(self.path),
+                # NamespaceImportDirector must be the last one
+                PyInstaller.depend.impdirector.NamespaceImportDirector(),
             ]
 
         if hookspath:
@@ -174,7 +127,7 @@ class ImportTracker:
         break the name being imported up so we get:
         a.b.c -> [a, b, c] ; ..z -> ['', '', z]
         """
-        #print '## analyze_one', nm, importernm, imptyp, level
+        #print('## analyze_one', nm, importernm, imptyp, level)
         if not nm:
             nm = importernm
             importernm = None
@@ -288,7 +241,7 @@ class ImportTracker:
         Return dict containing collected information about module (
         """
 
-        #print "doimport", nm, ctx, fqname
+        #print("doimport", nm, ctx, fqname)
         # NOTE that nm is NEVER a dotted name at this point
         assert ("." not in nm), nm
         if fqname in self.excludes:
@@ -323,8 +276,14 @@ class ImportTracker:
                 hookmodnm = 'hook-' + fqname
                 m = imp.find_module(hookmodnm, PyInstaller.hooks.__path__)
                 hook = imp.load_module('PyInstaller.hooks.' + hookmodnm, *m)
-            except ImportError:
-                pass
+            except ImportError, e:
+                # Log an error if the hook fails importing some other
+                # module - which is an error the hook should handle.
+                # Unfortunatly the exception does not hold the name of
+                # the module which failed to be imported, but only the
+                # message string.
+                if not hookmodnm in e.args[0]:
+                    raise ImportError('%s in %s' % (e.message, hookmodnm))
             else:
                 logger.info('Processing hook %s' % hookmodnm)
                 mod = self._handle_hook(mod, hook)
@@ -344,18 +303,34 @@ class ImportTracker:
         return mod
 
     def _handle_hook(self, mod, hook):
+        # Function hook(mod) has to be called first because this function
+        # could update other attributes - datas, hiddenimports, etc.
         if hasattr(hook, 'hook'):
             mod = hook.hook(mod)
+
+        # hook.hiddenimports is a list of Python module names that PyInstaller
+        # is not able detect.
         if hasattr(hook, 'hiddenimports'):
             for impnm in hook.hiddenimports:
                 mod.pyinstaller_imports.append((impnm, 0, 0, -1))
+        # hook.attrs is a list of tuples (attr_name, value) where 'attr_name'
+        # is name for Python module attribute that should be set/changed.
+        # 'value' is the value of that attribute. PyInstaller will modify
+        # mod.attr_name and set it to 'value' for the created .exe file.
         if hasattr(hook, 'attrs'):
             for attr, val in hook.attrs:
                 setattr(mod, attr, val)
+        # hook.binaries is a list of files to bundle as binaries.
+        # Binaries are special that PyInstaller will check if they
+        # might depend on other dlls (dynamic libraries).
+        if hasattr(hook, 'binaries'):
+            for bundle_name, pth in hook.binaries:
+                mod.pyinstaller_binaries.append((bundle_name, pth, 'BINARY'))
+
+        # hook.datas is a list of globs of files or
+        # directories to bundle as datafiles. For each
+        # glob, a destination directory is specified.
         if hasattr(hook, 'datas'):
-            # hook.datas is a list of globs of files or
-            # directories to bundle as datafiles. For each
-            # glob, a destination directory is specified.
             def _visit((base, dest_dir, datas), dirname, names):
                 for fn in names:
                     fn = os.path.join(dirname, fn)

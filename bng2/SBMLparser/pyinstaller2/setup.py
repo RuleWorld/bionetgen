@@ -119,7 +119,7 @@ class my_sdist(sdist):
         return res
 
 setup(
-    install_requires=['distribute'],
+    install_requires=['setuptools'],
 
     name='PyInstaller',
     version=get_version(),
@@ -163,6 +163,7 @@ setup(
     pyi-grab_version=PyInstaller.cliutils.grab_version:run
     pyi-make_comserver=PyInstaller.cliutils.make_comserver:run
     pyi-makespec=PyInstaller.cliutils.makespec:run
+    pyi-pprint_toc=PyInstaller.cliutils.pprint_toc:run
     pyi-set_version=PyInstaller.cliutils.set_version:run
     """
 )

@@ -65,6 +65,17 @@ HIDDENIMPORTS = []
 
 rthooks = {}
 
+# place where the loader modules and initialization scripts live
+_init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+_fake_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'fake')
+
+
+_MISSING_BOOTLOADER_ERRORMSG = """
+Fatal error: PyInstaller does not include a pre-compiled bootloader for your
+platform. See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>
+for more details and instructions how to build the bootloader.
+"""
+
 
 def _save_data(filename, data):
     dirname = os.path.dirname(filename)
@@ -192,7 +203,7 @@ def _check_guts_eq(attr, old, new, last_build):
     rebuild is required if values differ
     """
     if old != new:
-        logger.info("building because %s changed", attr)
+        logger.info("Building because %s changed", attr)
         return True
     return False
 
@@ -206,10 +217,10 @@ def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
     """
     for (nm, fnm, typ) in old:
         if mtime(fnm) > last_build:
-            logger.info("building because %s changed", fnm)
+            logger.info("Building because %s changed", fnm)
             return True
         elif pyc and mtime(fnm[:-1]) > last_build:
-            logger.info("building because %s changed", fnm[:-1])
+            logger.info("Building because %s changed", fnm[:-1])
             return True
     return False
 
@@ -258,7 +269,7 @@ def _rmtree(path):
         choice = 'y'
     elif sys.stdout.isatty():
         choice = raw_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+                           'CONTENTS will be REMOVED! Continue? (y/n) ' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '
@@ -320,11 +331,11 @@ class Target(object):
         try:
             data = _load_data(self.out)
         except:
-            logger.info("building because %s %s", os.path.basename(self.out), missing)
+            logger.info("Building because %s %s", os.path.basename(self.out), missing)
             return None
 
         if len(data) != len(self.GUTS):
-            logger.info("building because %s is bad", self.outnm)
+            logger.info("Building because %s is bad", self.outnm)
             return None
         for i, (attr, func) in enumerate(self.GUTS):
             if func is None:
@@ -369,7 +380,7 @@ class Analysis(Target):
         ))
 
     def __init__(self, scripts=None, pathex=None, hiddenimports=None,
-                 hookspath=None, excludes=None, runtime_hooks=[]):
+                 hookspath=None, excludes=None, runtime_hooks=[], cipher=None):
         """
         scripts
                 A list of scripts specified as file names.
@@ -393,7 +404,6 @@ class Analysis(Target):
         sys._PYI_SETTINGS['scripts'] = scripts
 
         # Include initialization Python code in PyInstaller analysis.
-        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
         self.inputs = [
             os.path.join(_init_code_path, '_pyi_bootstrap.py'),
             os.path.join(_init_code_path, 'pyi_importers.py'),
@@ -436,6 +446,31 @@ class Analysis(Target):
         # any existing PyInstaller runtime hooks.
         self.custom_runtime_hooks = runtime_hooks
 
+        if cipher:
+            logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
+
+            # Create a Python module which contains the decryption key which will
+            # be used at runtime by pyi_crypto.PyiBlockCipher.
+            pyi_crypto_key_path = os.path.join(WORKPATH, 'pyi_crypto_key.py')
+
+            with open(pyi_crypto_key_path, 'w') as f:
+                f.write('key = %r\n' % cipher.key)
+
+            # Compile the module so that it ends up in the CArchive and can be
+            # imported by the bootstrap script.
+            import py_compile
+            py_compile.compile(pyi_crypto_key_path)
+
+            logger.info('Adding dependency on pyi_crypto and pyi_crypto_key')
+
+            from PyInstaller.loader import pyi_crypto
+            self.hiddenimports.append(pyi_crypto.HIDDENIMPORT)
+
+            pyi_crypto_path = os.path.join(_init_code_path, 'pyi_crypto.py')
+
+            config['PYZ_dependencies'].append(('pyi_crypto', pyi_crypto_path + 'c', 'PYMODULE'))
+            config['PYZ_dependencies'].append(('pyi_crypto_key', pyi_crypto_key_path + 'c', 'PYMODULE'))
+
         self.excludes = excludes
         self.scripts = TOC()
         self.pure = TOC()
@@ -460,11 +495,11 @@ class Analysis(Target):
 
     def check_guts(self, last_build):
         if last_build == 0:
-            logger.info("building %s because %s non existent", self.__class__.__name__, self.outnm)
+            logger.info("Building %s because %s non existent", self.__class__.__name__, self.outnm)
             return True
         for fnm in self.inputs:
             if mtime(fnm) > last_build:
-                logger.info("building because %s changed", fnm)
+                logger.info("Building because %s changed", fnm)
                 return True
 
         data = Target.get_guts(self, last_build)
@@ -478,72 +513,6 @@ class Analysis(Target):
         self.datas = TOC(datas)
         self.hiddenimports = hiddenimports
         return False
-
-    # TODO implement same functionality as 'assemble()'
-    # TODO convert output from 'modulegraph' to PyInstaller format - self.modules.
-    # TODO handle hooks properly.
-    #def assemble(self):
-    def assemble_modulegraph(self):
-        """
-        New assemble function based on module 'modulegraph' for resolving
-        dependencies on Python modules.
-
-        PyInstaller is not able to handle some cases of resolving dependencies.
-        Rather try use a module for that than trying to fix current implementation.
-        """
-        from modulegraph.modulegraph import ModuleGraph
-        from modulegraph.find_modules import get_implies, find_needed_modules
-        from PyInstaller import hooks
-
-        # Python scripts for analysis.
-        _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-        scripts = [
-            os.path.join(_init_code_path, '_pyi_bootstrap.py'),
-        ]
-
-        #tracker = PyInstaller.depend.imptracker.ImportTrackerModulegraph(
-                #dirs.keys() + self.pathex, self.hookspath, self.excludes)
-
-        # TODO implement the following to get python modules and extension lists:
-        #      process all hooks to get hidden imports and create mapping:
-        def collect_implies():
-            """
-            Collect all hiddenimports from hooks and from modulegraph.
-            """
-            # Dictionary like
-            #   {'mod_name': ['dependent_mod1', dependent_mod2', ...]}
-            implies = get_implies()
-            # TODO implement getting through hooks
-            # TODO use also hook_dir supplied by user
-            hook_dir = os.path.dirname(os.path.abspath(hooks.__file__))
-            files = glob.glob(hook_dir + os.sep + 'hook-*.py')
-            for f in files:
-                # Name of the module this hook is for.
-                mod_name = os.path.basename(f).lstrip('hook-').rstrip('.py')
-                hook_mod_name = 'PyInstaller.hooks.hook-%s' % mod_name
-                # Loaded and initialized hook module.
-                hook_mod = imp.load_source(hook_mod_name, f)
-                if hasattr(hook_mod, 'hiddenimports'):
-                    # Extend the list of implies.
-                    implies[mod_name] = hook_mod.hiddenimports
-            return implies
-
-        #        {'PyQt4.QtGui': ['PyQt4.QtCore', 'sip'], 'another_Mod' ['hidden_import1', 'hidden_import2'], ...}
-        #      supply this mapping as 'implies' keyword to
-        #        modulegraph.modulegraph.ModuleGraph()
-        #      do analysis of scripts - user scripts, pyi_archive, pyi_os_path, pyi_importers, pyi_carchive, _pyi_bootstrap
-        #      find necessary rthooks
-        #      do analysis of rthooks and add it to modulegraph object
-        #      analyze python modules for ctype imports - modulegraph does not do that
-
-        # TODO process other attribute from used pyinstaller hooks.
-        # TODO resolve DLL/so/dylib dependencies.
-        graph = ModuleGraph(
-            path=[_init_code_path] + sys.path,
-            implies=collect_implies(),
-            debug=0)
-        graph = find_needed_modules(graph, scripts=scripts)
-        graph.report()
 
 
     def assemble(self):
@@ -606,7 +575,7 @@ class Analysis(Target):
                 logger.info("Hidden import %r has been found otherwise", modnm)
                 continue
             logger.info("Analyzing hidden import %r", modnm)
-            importTracker.analyze_one(modnm)
+            importTracker.analyze_r(modnm)
             if not modnm in importTracker.modules:
                 logger.error("Hidden import %r not found", modnm)
 
@@ -661,6 +630,10 @@ class Analysis(Target):
             elif isinstance(mod, (PyInstaller.depend.modules.PkgInZipModule, PyInstaller.depend.modules.PyInZipModule)):
                 zipfiles.append(("eggs/" + os.path.basename(str(mod.owner)),
                                  str(mod.owner), 'ZIPFILE'))
+            elif isinstance(mod, PyInstaller.depend.modules.NamespaceModule):
+                pure.append((modnm,
+                             os.path.join(_fake_code_path, 'namespace', '__init__.pyc'),
+                             'PYMODULE'))
             else:
                 # mf.PyModule instances expose a list of binary
                 # dependencies, most probably shared libraries accessed
@@ -676,7 +649,6 @@ class Analysis(Target):
             depmanifest.writeprettyxml()
         self._check_python_library(binaries)
         if zipfiles:
-            _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
             scripts.insert(-1, ('_pyi_egg_install.py', os.path.join(_init_code_path, '_pyi_egg_install.py'), 'PYSOURCE'))
         # Add runtime hooks just before the last script (which is
         # the entrypoint of the application).
@@ -704,7 +676,6 @@ class Analysis(Target):
             return 1
         logger.info("%s no change!", self.out)
         return 0
-
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
@@ -746,7 +717,7 @@ class PYZ(Target):
     """
     typ = 'PYZ'
 
-    def __init__(self, toc, name=None, level=9):
+    def __init__(self, toc, name=None, level=9, cipher=None):
         """
         toc
                 A TOC (Table of Contents), normally an Analysis.pure?
@@ -756,6 +727,8 @@ class PYZ(Target):
         level
                 The Zlib compression level to use. If 0, the zlib module is
                 not required.
+        cipher
+                The block cipher that will be used to encrypt Python bytecode.
         """
         Target.__init__(self)
         self.toc = toc
@@ -765,6 +738,8 @@ class PYZ(Target):
         # Level of zlib compression.
         self.level = level
         self.dependencies = compile_pycos(config['PYZ_dependencies'])
+        # Encryption
+        self.cipher = cipher
         self.__postinit__()
 
     GUTS = (('name', _check_guts_eq),
@@ -774,7 +749,7 @@ class PYZ(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s is missing",
+            logger.info("Rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
             return True
 
@@ -784,8 +759,8 @@ class PYZ(Target):
         return False
 
     def assemble(self):
-        logger.info("building PYZ (ZlibArchive) %s", os.path.basename(self.out))
-        pyz = pyi_archive.ZlibArchive(level=self.level)
+        logger.info("Building PYZ (ZlibArchive) %s", os.path.basename(self.out))
+        pyz = pyi_archive.ZlibArchive(level=self.level, cipher=self.cipher)
         toc = self.toc - config['PYZ_dependencies']
         pyz.build(self.name, toc)
         _save_data(self.out, (self.name, self.level, self.toc))
@@ -838,7 +813,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         cache_index = {}
 
     # Verify if the file we're looking for is present in the cache.
-    basenm = os.path.normcase(os.path.basename(fnm))
+    # Use the dist_mn if given to avoid different extension modules
+    # sharing the same basename get corrupted.
+    if dist_nm:
+        basenm = os.path.normcase(dist_nm)
+    else:
+        basenm = os.path.normcase(os.path.basename(fnm))
     digest = cacheDigest(fnm)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
@@ -874,6 +854,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                strip_options = ["-S"]
             cmd = ["strip"] + strip_options + [cachedfile]
 
+    if not os.path.exists(os.path.dirname(cachedfile)):
+        os.makedirs(os.path.dirname(cachedfile))
     shutil.copy2(fnm, cachedfile)
     os.chmod(cachedfile, 0755)
 
@@ -1017,7 +999,7 @@ class PKG(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s is missing",
+            logger.info("Rebuilding %s because %s is missing",
                         self.outnm, os.path.basename(self.name))
             return 1
 
@@ -1028,7 +1010,7 @@ class PKG(Target):
         return False
 
     def assemble(self):
-        logger.info("building PKG (CArchive) %s", os.path.basename(self.name))
+        logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
         trash = []
         mytoc = []
         seen = {}
@@ -1108,11 +1090,14 @@ class EXE(Target):
                 a version resource from an executable and then edit the output to
                 create your own. (The syntax of version resources is so arcane
                 that I wouldn't attempt to write one from scratch).
+            uac_admin
+                Windows only. Setting to True creates a Manifest with will request
+                elevation upon application restart
+            uac_uiaccess
+                Windows only. Setting to True allows an elevated application to
+                work with Remote Desktop
         """
         Target.__init__(self)
-
-        # TODO could be 'append_pkg' removed? It seems not to be used anymore.
-        self.append_pkg = kwargs.get('append_pkg', True)
 
         # Available options for EXE in .spec files.
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
@@ -1124,6 +1109,13 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        # If ``append_pkg`` is false, the archive will not be appended
+        # to the exe, but copied beside it.
+        self.append_pkg = kwargs.get('append_pkg', True)
+
+        # On Windows allows the exe to request admin privileges.
+        self.uac_admin = kwargs.get('uac_admin', False)
+        self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
 
         if config['hasUPX']: 
            self.upx = kwargs.get('upx', False)
@@ -1159,12 +1151,14 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
+
         if is_win:
             filename = os.path.join(WORKPATH, specnm + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
-                self.console)
+                self.console, self.uac_admin, self.uac_uiaccess)
             self.toc.append((os.path.basename(self.name) + ".manifest", filename,
                 'BINARY'))
+
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
@@ -1185,11 +1179,11 @@ class EXE(Target):
 
     def check_guts(self, last_build):
         if not os.path.exists(self.name):
-            logger.info("rebuilding %s because %s missing",
+            logger.info("Rebuilding %s because %s missing",
                         self.outnm, os.path.basename(self.name))
             return 1
         if not self.append_pkg and not os.path.exists(self.pkgname):
-            logger.info("rebuilding because %s missing",
+            logger.info("Rebuilding because %s missing",
                         os.path.basename(self.pkgname))
             return 1
 
@@ -1204,10 +1198,10 @@ class EXE(Target):
 
         mtm = data[-1]
         if mtm != mtime(self.name):
-            logger.info("rebuilding %s because mtimes don't match", self.outnm)
+            logger.info("Rebuilding %s because mtimes don't match", self.outnm)
             return True
         if mtm < mtime(self.pkg.out):
-            logger.info("rebuilding %s because pkg is more recent", self.outnm)
+            logger.info("Rebuilding %s because pkg is more recent", self.outnm)
             return True
 
         return False
@@ -1217,18 +1211,31 @@ class EXE(Target):
             exe = exe + 'w'
         if self.debug:
             exe = exe + '_d'
-        return os.path.join('PyInstaller', 'bootloader', PLATFORM, exe)
+        return os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
 
     def assemble(self):
-        logger.info("building EXE from %s", os.path.basename(self.out))
+        logger.info("Building EXE from %s", os.path.basename(self.out))
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         outf = open(self.name, 'wb')
         exe = self._bootloader_file('run')
-        exe = os.path.join(HOMEPATH, exe)
         if is_win or is_cygwin:
             exe = exe + '.exe'
+
+        if not os.path.exists(exe):
+            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
+
+        if is_win and not self.exclude_binaries:
+            # Windows and onefile mode - embed manifest into exe.
+            logger.info('Onefile Mode - Embedding Manifest into EXE file')
+            tmpnm = tempfile.mktemp()
+            shutil.copy2(exe, tmpnm)
+            os.chmod(tmpnm, 0755)
+            self.manifest.update_resources(tmpnm, [1]) # 1 for executable
+            trash.append(tmpnm)
+            exe = tmpnm
+
         if config['hasRsrcUpdate'] and (self.icon or self.versrsrc or
                                         self.resources):
             tmpnm = tempfile.mktemp()
@@ -1289,6 +1296,14 @@ class EXE(Target):
             logger.info("Copying archive to %s", self.pkgname)
             shutil.copy2(self.pkg.name, self.pkgname)
         outf.close()
+
+        if is_darwin:
+            # Fix Mach-O header for codesigning on OS X.
+            logger.info("Fixing EXE for code signing %s", self.name)
+            from PyInstaller.utils import osxutils
+            osxutils.fix_exe_for_code_signing(self.name)
+            pass
+
         os.chmod(self.name, 0755)
         guts = (self.name, self.console, self.debug, self.icon,
                 self.versrsrc, self.resources, self.strip, self.upx,
@@ -1316,10 +1331,11 @@ class DLL(EXE):
     need to write your own dll.
     """
     def assemble(self):
-        logger.info("building DLL %s", os.path.basename(self.out))
+        logger.info("Building DLL %s", os.path.basename(self.out))
         outf = open(self.name, 'wb')
-        dll = self._bootloader_file('inprocsrvr')
-        dll = os.path.join(HOMEPATH, dll) + '.dll'
+        dll = self._bootloader_file('inprocsrvr') + '.dll'
+        if not os.path.exists(dll):
+            raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
         self.copy(dll, outf)
         self.copy(self.pkg.name, outf)
         outf.close()
@@ -1392,7 +1408,7 @@ class COLLECT(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("building COLLECT %s", os.path.basename(self.out))
+        logger.info("Building COLLECT %s", os.path.basename(self.out))
         os.makedirs(self.name)
         toc = addSuffixToExtensions(self.toc)
         for inm, fnm, typ in toc:
@@ -1452,6 +1468,12 @@ class BUNDLE(Target):
         self.strip = False
         self.upx = False
 
+        # .app bundle identifier for Code Signing
+        self.bundle_identifier = kws.get('bundle_identifier')
+        if not self.bundle_identifier:
+            # Fallback to appname.
+            self.bundle_identifier = self.appname
+
         self.info_plist = kws.get('info_plist', None)
 
         for arg in args:
@@ -1495,7 +1517,7 @@ class BUNDLE(Target):
     def assemble(self):
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
-        logger.info("building BUNDLE %s", os.path.basename(self.out))
+        logger.info("Building BUNDLE %s", os.path.basename(self.out))
 
         # Create a minimal Mac bundle structure
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
@@ -1511,6 +1533,22 @@ class BUNDLE(Target):
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
                            "CFBundleName": self.appname,
+
+                           # Required by 'codesign' utility.
+                           # The value for CFBundleIdentifier is used as the default unique
+                           # name of your program for Code Signing purposes.
+                           # It even identifies the APP for access to restricted OS X areas
+                           # like Keychain.
+                           #
+                           # The identifier used for signing must be globally unique. The usal
+                           # form for this identifier is a hierarchical name in reverse DNS
+                           # notation, starting with the toplevel domain, followed by the
+                           # company name, followed by the department within the company, and
+                           # ending with the product name. Usually in the form:
+                           #   com.mycompany.department.appname
+                           # Cli option --osx-bundle-identifier sets this value.
+                           "CFBundleIdentifier": self.bundle_identifier,
+
                            # Fix for #156 - 'MacOS' must be in the name - not sure why
                            "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
                            "CFBundleIconFile": os.path.basename(self.icon),
@@ -1556,13 +1594,32 @@ class BUNDLE(Target):
                 os.makedirs(todir)
             shutil.copy2(fnm, tofnm)
 
-        ## For some hooks copy resource to ./Contents/Resources dir.
-        # PyQt4 hook: On Mac Qt requires resources 'qt_menu.nib'.
-        # It is copied from dist directory.
+        logger.info('moving BUNDLE data files to Resource directory')
+
+        ## For some hooks move resource to ./Contents/Resources dir.
+        # PyQt4/PyQt5 hooks: On Mac Qt requires resources 'qt_menu.nib'.
+        # It is moved from MacOS directory to Resources.
         qt_menu_dir = os.path.join(self.name, 'Contents', 'MacOS', 'qt_menu.nib')
         qt_menu_dest = os.path.join(self.name, 'Contents', 'Resources', 'qt_menu.nib')
         if os.path.exists(qt_menu_dir):
-            shutil.copytree(qt_menu_dir, qt_menu_dest)
+            shutil.move(qt_menu_dir, qt_menu_dest)
+
+        # Mac OS X Code Signing does not work when .app bundle contains
+        # data files in dir ./Contents/MacOS.
+        #
+        # Move all directories from ./MacOS/ to ./Resources and create symlinks
+        # in ./MacOS.
+        bin_dir =os.path.join(self.name, 'Contents', 'MacOS')
+        res_dir =os.path.join(self.name, 'Contents', 'Resources')
+        # Qt plugin directories does not contain data files.
+        ignore_dirs = set(['qt4_plugins', 'qt5_plugins'])
+        dirs = os.listdir(bin_dir)
+        for d in dirs:
+            abs_d = os.path.join(bin_dir, d)
+            res_d = os.path.join(res_dir, d)
+            if os.path.isdir(abs_d) and d not in ignore_dirs:
+                shutil.move(abs_d, res_d)
+                os.symlink(res_d, abs_d)
 
         return 1
 
@@ -1587,72 +1644,71 @@ class TOC(UserList.UserList):
     """
     def __init__(self, initlist=None):
         UserList.UserList.__init__(self)
-        self.fltr = {}
+        self.filenames = set()
         if initlist:
-            for tpl in initlist:
-                self.append(tpl)
+            for entry in initlist:
+                self.append(entry)
 
-    def append(self, tpl):
-        try:
-            fn = tpl[0]
-            if tpl[2] == "BINARY":
-                # Normalize the case for binary files only (to avoid duplicates
-                # for different cases under Windows). We can't do that for
-                # Python files because the import semantic (even at runtime)
-                # depends on the case.
-                fn = os.path.normcase(fn)
-            if not self.fltr.get(fn):
-                self.data.append(tpl)
-                self.fltr[fn] = 1
-        except TypeError:
-            logger.info("TOC found a %s, not a tuple", tpl)
-            raise
+    def _normentry(self, entry):
+        if not isinstance(entry, tuple):
+            logger.info("TOC found a %s, not a tuple", entry)
+            raise TypeError("Expected tuple, not %s." % type(entry).__name__)
+        name, path, typecode = entry
+        if typecode == "BINARY":
+            # Normalize the case for binary files only (to avoid duplicates
+            # for different cases under Windows). We can't do that for
+            # Python files because the import semantic (even at runtime)
+            # depends on the case.
+            name = os.path.normcase(name)
+        return (name, path, typecode)
 
-    def insert(self, pos, tpl):
-        fn = tpl[0]
-        if tpl[2] == "BINARY":
-            fn = os.path.normcase(fn)
-        if not self.fltr.get(fn):
-            self.data.insert(pos, tpl)
-            self.fltr[fn] = 1
+    def append(self, entry):
+        name, path, typecode = self._normentry(entry)
+        if name not in self.filenames:
+            self.data.append((name, path, typecode))
+            self.filenames.add(name)
+
+    def insert(self, pos, entry):
+        name, path, typecode = self._normentry(entry)
+        if name not in self.filenames:
+            self.data.insert(pos, (name, path, typecode))
+            self.filenames.add(name)
 
     def __add__(self, other):
-        rslt = TOC(self.data)
-        rslt.extend(other)
-        return rslt
+        result = TOC(self)
+        result.extend(other)
+        return result
 
     def __radd__(self, other):
-        rslt = TOC(other)
-        rslt.extend(self.data)
-        return rslt
+        result = TOC(other)
+        result.extend(self)
+        return result
 
     def extend(self, other):
-        for tpl in other:
-            self.append(tpl)
+        for entry in other:
+            self.append(entry)
 
     def __sub__(self, other):
-        fd = self.fltr.copy()
-        # remove from fd if it's in other
-        for tpl in other:
-            if fd.get(tpl[0], 0):
-                del fd[tpl[0]]
-        rslt = TOC()
-        # return only those things still in fd (preserve order)
-        for tpl in self.data:
-            if fd.get(tpl[0], 0):
-                rslt.append(tpl)
-        return rslt
+        other = TOC(other)
+        filenames = self.filenames - other.filenames
+        result = TOC()
+        for name, path, typecode in self:
+            if name in filenames:
+                result.data.append((name, path, typecode))
+        return result
 
     def __rsub__(self, other):
-        rslt = TOC(other)
-        return rslt.__sub__(self)
+        result = TOC(other)
+        return result.__sub__(self)
 
     def intersect(self, other):
-        rslt = TOC()
-        for tpl in other:
-            if self.fltr.get(tpl[0], 0):
-                rslt.append(tpl)
-        return rslt
+        other = TOC(other)
+        filenames = self.filenames.intersection(other.filenames)
+        result = TOC()
+        for name, path, typecode in other:
+            if name in filenames:
+                result.data.append((name, path, typecode))
+        return result
 
 
 class Tree(Target, TOC):
@@ -1699,7 +1755,7 @@ class Tree(Target, TOC):
         while stack:
             d = stack.pop()
             if mtime(d) > last_build:
-                logger.info("building %s because directory %s changed",
+                logger.info("Building %s because directory %s changed",
                             self.outnm, d)
                 return True
             for nm in os.listdir(d):
@@ -1710,7 +1766,7 @@ class Tree(Target, TOC):
         return False
 
     def assemble(self):
-        logger.info("building Tree %s", os.path.basename(self.out))
+        logger.info("Building Tree %s", os.path.basename(self.out))
         stack = [(self.root, self.prefix)]
         excludes = {}
         xexcludes = {}
@@ -1931,5 +1987,8 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
 
     if config['hasUPX']:
         setupUPXFlags()
+
+    config['ui_admin'] = kw.get('ui_admin', False)
+    config['ui_access'] = kw.get('ui_uiaccess', False)
 
     build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))

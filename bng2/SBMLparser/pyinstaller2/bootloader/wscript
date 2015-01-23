@@ -17,7 +17,12 @@ Bootloader building script.
 import os
 import platform
 import sys
-import sysconfig
+
+# Workaround for Python 2.6. 'sysconfig' is not available in Python 2.6.
+try:
+    import sysconfig
+except ImportError:
+    import distutils.sysconfig as sysconfig
 
 import Utils
 import Options
@@ -134,7 +139,7 @@ def configure(conf):
                 # Manifest file will be added in the phase of packaging python application.
                 conf.env.MSVC_MANIFEST = False
             except Exception, e:
-                print e
+                print(e)
                 Utils.pprint('RED', str(e))
                 Utils.pprint('RED', 'GCC (MinGW) or MSVC compiler not found.')
                 exit(1)
@@ -215,8 +220,27 @@ def configure(conf):
     if myplatform.startswith('sun'):
         conf.env.append_value('CCDEFINES', 'SUNOS')
 
+        if conf.env.CC_NAME == 'gcc':
+            # On Solaris using gcc the linker options for shared and static libraries
+            # are slightly different from other platforms.
+            conf.env['SHLIB_MARKER'] = '-Wl,-Bdynamic'
+            conf.env['STLIB_MARKER'] = '-Wl,-Bstatic'
+
     if myplatform.startswith('aix'):
         conf.env.append_value('CCDEFINES', 'AIX')
+
+        # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
+        # In the case of PyInstaller, we need the AIX specific flag RTLD_MEMBER
+        # for dlopen() which is used to load a shared object from a library
+        # archive. We need to load the Python library like this:
+        #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
+        conf.env.append_value('CCDEFINES', '_ALL_SOURCE')
+
+        if conf.env.CC_NAME == 'gcc':
+            # On AIX using gcc the linker options for shared and static libraries
+            # are slightly different from other platforms.
+            conf.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
+            conf.env['STATICLIB_MARKER'] = '-Wl,-bstatic'
 
     conf.env.append_value('CPPPATH', os.path.join('..', 'common'))
 
@@ -473,12 +497,20 @@ def build(bld):
     else: # linux, darwin (MacOSX), freebsd
 
         libs = ['dl', 'z', 'm']  # 'z' - zlib, 'm' - math,
+        staticlibs = []
         if sys.platform.startswith('freebsd'):
             libs = ['z', 'm']  # freebsd doesn't need libdl
             # check if python has threads: libthr needs
             # to be loaded in the main process
             if sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
                 libs.append('thr')
+        elif sys.platform.startswith('aix'):
+            libs = ['dl', 'm']
+            staticlibs = ['z']
+        elif sys.platform.startswith('sun'):
+            libs = ['dl', 'm']
+            staticlibs = ['z']
+
         if opt.boehmgc:
             libs.append('gc')
 
@@ -489,6 +521,7 @@ def build(bld):
                 target = value,
                 install_path = install_path,
                 lib = libs,
+                staticlib = staticlibs,
                 env = bld.env_of_name(key).copy(),
                 includes = ['common', 'linux'],
             )

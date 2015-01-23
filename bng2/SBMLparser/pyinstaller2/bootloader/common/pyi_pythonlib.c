@@ -20,6 +20,7 @@
     #include <io.h>  // _setmode
     #include <winsock.h>  // ntohl
 #else
+    #include <dlfcn.h>  // dlerror
     #include <limits.h>  // PATH_MAX
     #include <netinet/in.h>  // ntohl
 #endif
@@ -31,6 +32,7 @@
 /* PyInstaller headers. */
 #include "stb.h"
 #include "pyi_global.h"
+#include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
@@ -63,7 +65,9 @@ int pyi_pylib_load(ARCHIVE_STATUS *status)
     pyvers_major = pyvers / 10;
     pyvers_minor = pyvers % 10;
 
-    sprintf(dllname, "(libpython%01d.%01d.so)", pyvers_major, pyvers_minor);
+    sprintf(dllname,
+            "libpython%01d.%01d.a(libpython%01d.%01d.so)",
+            pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
 #else
     strcpy(dllname, status->cookie.pylibname);
 #endif

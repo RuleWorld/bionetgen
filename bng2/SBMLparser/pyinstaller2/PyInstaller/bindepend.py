@@ -21,7 +21,7 @@ from glob import glob
 import zipfile
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_cygwin, is_darwin, is_py26, is_py27, is_freebsd
+from PyInstaller.compat import is_win, is_unix, is_aix, is_solar, is_cygwin, is_darwin, is_py26, is_py27, is_freebsd
 from PyInstaller.depend import dylib
 from PyInstaller.utils import winutils
 import PyInstaller.compat as compat
@@ -436,9 +436,19 @@ def _getImports_ldd(pth):
     """
     rslt = set()
     if is_aix:
-        # Match libs of the form 'archive.a(sharedobject.so)'
+        # Match libs of the form
+        #   'archivelib.a(objectmember.so/.o)'
+        # or
+        #   'sharedlib.so'
         # Will not match the fake lib '/unix'
-        lddPattern = re.compile(r"\s*(.*?)(\(.*\))")
+        lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
+    elif is_solar:
+        # Match libs of the form
+        #   'sharedlib.so => full-path-to-lib
+        # e.g.
+        #   'libpython2.7.so.1.0 => /usr/local/lib/libpython2.7.so.1.0'
+        # Will not match the platform specific libs starting with '/platform'
+        lddPattern = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     else:
         lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
@@ -446,8 +456,18 @@ def _getImports_ldd(pth):
         m = lddPattern.search(line)
         if m:
             if is_aix:
-                lib = m.group(1)
-                name = os.path.basename(lib) + m.group(2)
+                libarchive = m.group('libarchive')
+                if libarchive:
+                    # We matched an archive lib with a request for a particular
+                    # embedded shared object.
+                    #   'archivelib.a(objectmember.so/.o)'
+                    lib = libarchive
+                    name = os.path.basename(lib) + m.group('objectmember')
+                else:
+                    # We matched a stand-alone shared library.
+                    #   'sharedlib.so'
+                    lib = m.group('libshared')
+                    name = os.path.basename(lib)
             else:
                 name, lib = m.group(1), m.group(2)
             if name[:10] in ('linux-gate', 'linux-vdso'):
@@ -661,9 +681,10 @@ def findLibrary(name):
         return None
 
     # Resolve the file name into the soname
-    if is_freebsd:
-        # On FreeBSD objdump doesn't show SONAME, so we just return the lib
-        # we've found
+    if is_freebsd or is_aix:
+        # On FreeBSD objdump doesn't show SONAME,
+        # and on AIX objdump does not exist,
+        # so we just return the lib we've found
         return lib
     else:
         dir = os.path.dirname(lib)
@@ -702,7 +723,7 @@ def get_python_library_path():
     if is_win:
         names = ('python%d%d.dll' % pyver,)
     elif is_cygwin:
-        names = ('libpython%d%d.dll' % pyver,)
+        names = ('libpython%d.%d.dll' % pyver,)
     elif is_darwin:
         names = ('Python', '.Python', 'libpython%d.%d.dylib' % pyver)
     elif is_aix:

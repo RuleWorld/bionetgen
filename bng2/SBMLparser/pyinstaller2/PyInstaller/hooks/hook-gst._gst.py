@@ -29,7 +29,7 @@ import gst
 reg = gst.registry_get_default()
 plug = reg.find_plugin('coreelements')
 pth = plug.get_filename()
-print os.path.dirname(pth)
+print(os.path.dirname(pth))
 """
     plugin_path = exec_statement(statement)
 
@@ -42,6 +42,7 @@ print os.path.dirname(pth)
 
     for f in glob.glob(pattern):
         # 'f' contains absolute path.
+        # TODO fix this hook to use attribute 'binaries'.
         mod.pyinstaller_binaries.append((os.path.join('gst_plugins', os.path.basename(f)),
                 f, 'BINARY'))
 

@@ -40,13 +40,13 @@ def getDescr(fnm):
             return (suffix, mode, typ)
 
 
-class ImportDirector(PyInstaller.depend.owner.Owner):
-    pass
+class ImportDirector():
+    def __str__(self):
+        return self.path
 
 
 class BuiltinImportDirector(ImportDirector):
-    def __init__(self):
-        self.path = 'Builtins'
+    path = 'Builtins'
 
     def getmod(self, nm, isbuiltin=imp.is_builtin):
         if isbuiltin(nm):
@@ -55,9 +55,10 @@ class BuiltinImportDirector(ImportDirector):
 
 
 class RegistryImportDirector(ImportDirector):
+    path = "WindowsRegistry"
+
     # for Windows only
     def __init__(self):
-        self.path = "WindowsRegistry"
         self.map = {}
         try:
             import win32api
@@ -162,3 +163,21 @@ class PathImportDirector(ImportDirector):
                 break
         self.building.remove(path)
         return owner
+
+
+class NamespaceImportDirector(ImportDirector):
+    """
+    Currently only supports namespaces built by `-nspkg.pth`-style
+    mechanisms, as used by e.g. zop.interface.
+    """
+
+    path = 'Namespace'
+
+    def getmod(self, nm):
+        if nm in sys.modules:
+            # the module is in sys.modules, but was not found by any
+            # of the other ImportDirectors. So it is not builtin, and
+            # does not live on any of the pathes. Still it exists. So
+            # we assume it is a namespace-package.
+            pth = sys.modules[nm].__path__
+            return depend.modules.NamespaceModule(nm, pth)
