@@ -6,15 +6,27 @@ SBML2BNGL is a tool written in Python 2.7. The following libraries are needed in
 
 * numpy 1.8.0 or greater
 * scipy  0.12.0 or greater
-* libsbml 5.10.0  or greater (http://sbml.org/Software/libSBML)
+* libsbml 5.10.0  or greater (http://sbml.org/Software/libSBML), with python bindings (can be installed using "pip install python-libsbml")
 * pandas for BioGrid functionality (http://pandas.pydata.org/)
 
-Building instructions for Linux/MacOSX:
+Building instructions for Linux/MacOSX/Cygwin:
 
 * make
 * make install
 
 This will place a binary called sbmlTranslate-${arch} in the bin directory inside the BioNetGen distribution
+
+Troubleshooting:
+
+----- Bootloader related errors
+
+* Prebuilt bootloaders for Windows-cygwin/MacOSX/Linux are included in the BioNetGen  distribution, however in case the building platform is not supported by the bootloaders we have bundled it 
+is necessary to create a custom one.
+* Go to pyinstaller2/bootloader and execute:
+
+  ./waf configure build install
+
+
 
 
 
