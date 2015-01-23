@@ -10,8 +10,13 @@ all:
 	cp -r ./config ${DIST} ;
 
 install:
-	cp  ${DIST}/sbmlTranslator ../bin ;
+ifeq ($(OS),Windows_NT)
+	cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator.exe;
+else
+	cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator;
+endif
 
+	
 clean:
 	if test -d ${BUILD} ; then \
 	    rm -rf ${BUILD} ;          \
@@ -20,5 +25,3 @@ clean:
 	    rm -rf ${DIST} ;          \
 	fi ;
 	rm -rf *pyc
-
-
