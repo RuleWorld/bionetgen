@@ -423,7 +423,6 @@ if (defined $bindir)
             {  print "make_dist.pl error:\nsome problem installing ${build_subdir} ($?)";  exit -1;  }
         }
 
-
         {
             print "appending arch/OS signature to ${run_network} binary . . .\n";
             my $arch = $Config{myarchname};
@@ -442,9 +441,9 @@ if (defined $bindir)
     }
 
     # go back to original directory
-    unless( chdir $cwd )
-    {   print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
-        exit -1;
+    unless( chdir $cwd ){   
+    		print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+    		exit -1;
     }
 
     if ($validate)
@@ -478,9 +477,9 @@ if (defined $bindir)
         unless( system(@args)==0 )
         {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  }
 
-        unless( chdir $cwd )
-       {   print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
-        exit -1;
+        unless( chdir $cwd ){   
+       		print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+       		exit -1;
        }
 
     }
@@ -492,46 +491,40 @@ if (defined $bindir)
 {
     my $sbmlbuild_dir    = File::Spec->catdir( $dist_dir, 'SBMLparser' );
 
-    unless (-d $sbmlbuild_dir)
-    {   # build_dir doesn't exist!
+    unless (-d $sbmlbuild_dir){  # sbmlbuild_dir doesn't exist!
         print "make_dist.pl error:\nbuild directory '${sbmlbuild_dir}' does not exist.\n";
         exit -1;
     }
 
-    # get current directory
+    # remember current directory
     my $cwd = getcwd();
-    print "current directory ${cwd}.\n";
-    # change to build_dir
-    unless( chdir $sbmlbuild_dir )
-    {   print "make_dist.pl error:\nunable to chdir to build directory '${build_dir}'.\n";
-        exit -1;
+
+    # change to sbmlbuild_dir
+    unless( chdir $sbmlbuild_dir ){   
+    		print "make_dist.pl error:\nunable to chdir to build directory '${sbmlbuild_dir}'.\n";
+    		exit -1;
     }
     
- 
- 
     if ($build)
     {
-
-  
         {
-            print "making $build_subdir . . .\n";
+            print "making $sbmlbuild_dir . . .\n";
             my @args = ($sys_make, @make_flags);
             print "command: ", join(" ", @args), "\n";
             unless( system(@args)==0 )
-            {  print "make_dist.pl error:\nsome problem making ${build_subdir} ($?)";  exit -1; }
+            {  print "make_dist.pl error:\nsome problem making ${sbmlbuild_dir} ($?)";  exit -1; }
         }
 
         {
-            print "installing $build_subdir . . .\n";
+            print "installing $sbmlbuild_dir . . .\n";
             my @args = ($sys_make, "install" );
             print "command: ", join(" ", @args), "\n";
             unless( system(@args)==0 )
-            {  print "make_dist.pl error:\nsome problem installing ${build_subdir} ($?)";  exit -1;  }
+            {  print "make_dist.pl error:\nsome problem installing ${sbmlbuild_dir} ($?)";  exit -1;  }
         }
 
-
         {
-            print "appending arch/OS signature to sbmlparser binary . . .\n";
+            print "appending arch/OS signature to sbmlTranslator binary . . .\n";
             my $arch = $Config{myarchname};
             my $abs_sbml_translator = File::Spec->catfile(($abs_dist_dir, "bin"), 'sbmlTranslator');
             
@@ -540,9 +533,10 @@ if (defined $bindir)
 
             # append architecture name
             my $abs_sbml_translator_arch = $abs_sbml_translator . "_${arch}";
+            
             # rename as architecture specific
             unless ( rename $abs_sbml_translator, $abs_sbml_translator_arch )
-            {  print "make_dist.pl error:\ncan't find built sbml_translator ($?)";  exit -1;  }
+            {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
 
         }
     }
