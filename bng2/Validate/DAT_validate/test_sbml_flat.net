@@ -8,7 +8,7 @@ begin parameters
     6 k3_r           0.1  # Constant
 end parameters
 begin functions
-    1 functionRate4() 0.5*k3_f
+    1 functionRate4() (0.5*k3_f)*2
     2 A() 0+A____
     3 AA() 0+AA____
     4 C() 0+C____
