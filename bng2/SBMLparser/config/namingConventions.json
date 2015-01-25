@@ -1,33 +1,15 @@
 {
-"modificationList":["Phosporylation","Double-Phosporylation","iMod","mMod","astMod","cMod",
-"Ubiquitination"],
-"reactionSite": ["phospho","iMod","mMod","astMod","cMod","ubiq"],
-"reactionState":["P","PP","I","M","A","C","UU"],
+"modificationList":["Phosporylation","Double-Phosporylation"],
+"reactionSite": ["phospho"],
+"reactionState":["P","PP"],
 "definitions":[{"rsi":0,"rst":0},
-	       {"rsi":0,"rst":1},
-	       {"rsi":1,"rst":2},
-	       {"rsi":2,"rst":3},
-	       {"rsi":3,"rst":4},
-	       {"rsi":4,"rst":5},
-	       {"rsi":5,"rst":6}
-
+	       {"rsi":0,"rst":1}
               ],
 		
 "patterns":{
-"('+ i',)":"iMod",
-"('+ m',)":"mMod",
-"('+ _', '+ P')":"Phosporylation",
-"('+ P', '+ _')":"Phosporylation",
-"('+ p',)":"Phosporylation",
-"('+ P',)":"Phosporylation",
 "('+ _', '+ P', '+ P')": "Double-Phosporylation",
 "('+ P', '+ P', '+ _')":"Double-Phosporylation",
-"('+ p', '+ p')":"Double-Phosporylation",
-"('+ a', '+ s', '+ t')": "astMod",
-
-"('+ _', '+ c')":"cMod",
-
-"('+ _', '+ u', '+ b', '+ i', '+ q')":"Ubiquitination"
+"('+ p', '+ p')":"Double-Phosporylation"
 
 }
 

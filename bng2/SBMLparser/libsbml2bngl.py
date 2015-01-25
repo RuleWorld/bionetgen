@@ -33,8 +33,18 @@ def handler(signum, frame):
     raise Exception("end of time")
 
 
-        
+import os.path        
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
 
+    return os.path.join(base_path, relative_path)
+    
+    
 
 
 def evaluation(numMolecules,translator):
@@ -62,9 +72,9 @@ def selectReactionDefinitions(bioNumber):
     '''
     #with open('stats4.npy') as f:
     #    db = pickle.load(f)
-    fileName = 'config/reactionDefinitions.json'
+    fileName = resource_path('config/reactionDefinitions.json')
     useID = True
-    naming = 'config/namingConventions.json'
+    naming = resource_path('config/namingConventions.json')
     '''
     for element in db:    
         if element[0] == bioNumber and element[1] != '0':
@@ -105,7 +115,7 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
         if bioGrid:
             loadBioGrid()
         database = structures.Databases()
-        namingConventions = 'config/namingConventions.json'
+        namingConventions = resource_path('config/namingConventions.json')
         
         if atomize:
             translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
@@ -702,8 +712,8 @@ def main():
         try:
  
             rlength = reval = reval2 = slength = None
-            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, 'config/reactionDefinitions.json',
-                False,'config/namingConventions.json','/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
+            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, resource_path('config/reactionDefinitions.json'),
+                False,resource_path('config/namingConventions.json'),'/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
 
     
             print '++++',bioNumber,rlength,reval,reval2,clength
@@ -773,7 +783,7 @@ def main2():
     with open('XMLExamples/curated/BIOMD0000000019.xml','r') as f:
         st = f.read()
         print readFromString(st,
-              'config/reactionDefinitions.json',False,None,True)        
+              resource_path('config/reactionDefinitions.json'),False,None,True)        
 
 
 
@@ -881,7 +891,7 @@ def processDir(directory,atomize=True):
             print xml
             try:
                 rlength,slength,reval,reval2,_,_ = analyzeFile(directory + xml,'reactionDefinitions/reactionDefinition7.json',
-                        False, 'config/namingConventions.json',
+                        False, resource_path('config/namingConventions.json'),
                         '/dev/null', speciesEquivalence=None,atomize=True,bioGrid=False)  
                 resultDir[xml] = [rlength,reval,reval2]
             except:
@@ -897,9 +907,9 @@ def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False,outp
     '''
     logMess.log = []
     logMess.counter = -1
-    reactionDefinitions = 'config/reactionDefinitions.json'
+    reactionDefinitions = resource_path('config/reactionDefinitions.json')
     spEquivalence = customDefinitions
-    namingConventions = 'config/namingConventions.json'
+    namingConventions = resource_path('config/namingConventions.json')
     #spEquivalence = None
     useID = False
     #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
@@ -956,21 +966,27 @@ if __name__ == "__main__":
     param = 543
     #use 105 as an example for (2,2) reactions
     #527
-    
-    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, 'config/reactionDefinitions.json',
-                    False, 'config/namingConventions.json',
+
+    '''    
+    analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, resource_path('config/reactionDefinitions.json'),
+                    False, resource_path('config/namingConventions.json'),
                     'complex/output' + str(param) + '.bngl', speciesEquivalence='reactionDefinitions/speciesEquivalences543.json',atomize=True,bioGrid=True)
-    
+
+    '''    
+    analyzeFile('plain2_sbml.xml', resource_path('config/reactionDefinitions.json'),
+                    False, resource_path('config/namingConventions.json'),
+                    'plain2.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+
     '''
-    analyzeFile('XMLExamples/BMID000000142971.xml', 'config/reactionDefinitions.json',
-                    False, 'config/namingConventions.json',
+    analyzeFile('XMLExamples/BMID000000142971.xml', resource_path('config/reactionDefinitions.json'),
+                    False, resource_path('config/namingConventions.json'),
                     'complex/BMID000000142971.xml' + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     
     '''
     '''
     param = '00870'
     analyzeFile('test/testl2v4/{0}/{0}-sbml-l2v4.xml'.format(param), 'reactionDefinitions/reactionDefinition7.json',
-                    False, 'config/namingConventions.json',
+                    False, resource_path('config/namingConventions.json'),
                     'complex/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
     '''
     #processFile3('XMLExamples/curated/BIOMD0000000048.xml',customDefinitions=None,atomize=True)    
@@ -979,10 +995,10 @@ if __name__ == "__main__":
     #processFile3('hexamer.xml')
     #with open('dimer.xml','r') as f:
     #    r = f.read()
-    #print readFromString(r,'config/reactionDefinitions.json',False,None,True)
+    #print readFromString(r,resource_path('config/reactionDefinitions.json'),False,None,True)
     #statFiles()
     #main2()
-    #print readFromString('dsfsdf','config/reactionDefinitions.json',False)
+    #print readFromString('dsfsdf',resource_path('config/reactionDefinitions.json'),False)
     #processFile2()
     #listFiles(50,'./XMLExamples/curated/')
 #todo: some of the assignmentRules defined must be used instead of parameters. remove from the paraemter

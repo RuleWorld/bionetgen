@@ -922,7 +922,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     pr = cProfile.Profile()
     pr.enable()
     '''
-
+    
     prunnedDependencyGraph,database = createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=speciesEquivalences,bioGridFlag=bioGridFlag)    
     #I'm polluting these data structures somewhere. In here
@@ -977,7 +977,6 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
             for instance in candidates:
                 addToDependencyGraph(database.eequivalenceTranslator,modification,instance)
                 
-            
     database.weights = sorted(database.weights, key=lambda rule: (rule[1],len(rule[0])))
     atomize(prunnedDependencyGraph, database.weights, database.translator, database.reactionProperties, 
                                                                 database.eequivalenceTranslator,
