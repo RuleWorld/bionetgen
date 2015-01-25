@@ -259,7 +259,7 @@ foreach my $dir ( @include_subdirectories )
     }
 }
 
-#and the python ones
+# and the python ones
 foreach my $dir ( @include_python_subdirectories )
 {   
     my $source_dir = File::Spec->catdir( $bngpath,  $dir );
@@ -438,6 +438,57 @@ if (defined $bindir)
             {  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
 
         }
+        
+        #########
+        
+        # Build sbmlTranslator
+
+    		my $sbmlbuild_dir = File::Spec->catdir( $dist_dir, 'SBMLparser' );
+	    unless (-d $sbmlbuild_dir){  # sbmlbuild_dir doesn't exist!
+	        print "make_dist.pl error:\nbuild directory '${sbmlbuild_dir}' does not exist.\n";
+	        exit -1;
+	    }
+	
+	    # change to sbmlbuild_dir
+	    unless( chdir $sbmlbuild_dir ){   
+	    		print "make_dist.pl error:\nunable to chdir to build directory '${sbmlbuild_dir}'.\n";
+	    		exit -1;
+	    }
+	    
+        {
+            print "making $sbmlbuild_dir . . .\n";
+            my @args = ($sys_make, @make_flags);
+            print "command: ", join(" ", @args), "\n";
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\nsome problem making ${sbmlbuild_dir} ($?)";  exit -1; }
+        }
+
+        {
+            print "installing $sbmlbuild_dir . . .\n";
+            my @args = ($sys_make, "install" );
+            print "command: ", join(" ", @args), "\n";
+            unless( system(@args)==0 )
+            {  print "make_dist.pl error:\nsome problem installing ${sbmlbuild_dir} ($?)";  exit -1;  }
+        }
+
+        {
+            print "appending arch/OS signature to sbmlTranslator binary . . .\n";
+            my $arch = $Config{myarchname};
+            my $abs_sbml_translator = File::Spec->catfile(($abs_dist_dir, "bin"), 'sbmlTranslator');
+            
+            unless (-e $abs_sbml_translator)
+            {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
+
+            # append architecture name
+            my $abs_sbml_translator_arch = $abs_sbml_translator . "_${arch}";
+            
+            # rename as architecture specific
+            unless ( rename $abs_sbml_translator, $abs_sbml_translator_arch )
+            {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
+
+        }
+        
+        #########
     }
 
     # go back to original directory
@@ -485,105 +536,6 @@ if (defined $bindir)
     }
 }
 
-#build SBMLparser
-
-# gather libraries, build configure scripts, and (optionally) compile/install
-{
-    my $sbmlbuild_dir    = File::Spec->catdir( $dist_dir, 'SBMLparser' );
-
-    unless (-d $sbmlbuild_dir){  # sbmlbuild_dir doesn't exist!
-        print "make_dist.pl error:\nbuild directory '${sbmlbuild_dir}' does not exist.\n";
-        exit -1;
-    }
-
-    # remember current directory
-    my $cwd = getcwd();
-
-    # change to sbmlbuild_dir
-    unless( chdir $sbmlbuild_dir ){   
-    		print "make_dist.pl error:\nunable to chdir to build directory '${sbmlbuild_dir}'.\n";
-    		exit -1;
-    }
-    
-    if ($build)
-    {
-        {
-            print "making $sbmlbuild_dir . . .\n";
-            my @args = ($sys_make, @make_flags);
-            print "command: ", join(" ", @args), "\n";
-            unless( system(@args)==0 )
-            {  print "make_dist.pl error:\nsome problem making ${sbmlbuild_dir} ($?)";  exit -1; }
-        }
-
-        {
-            print "installing $sbmlbuild_dir . . .\n";
-            my @args = ($sys_make, "install" );
-            print "command: ", join(" ", @args), "\n";
-            unless( system(@args)==0 )
-            {  print "make_dist.pl error:\nsome problem installing ${sbmlbuild_dir} ($?)";  exit -1;  }
-        }
-
-        {
-            print "appending arch/OS signature to sbmlTranslator binary . . .\n";
-            my $arch = $Config{myarchname};
-            my $abs_sbml_translator = File::Spec->catfile(($abs_dist_dir, "bin"), 'sbmlTranslator');
-            
-            unless (-e $abs_sbml_translator)
-            {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
-
-            # append architecture name
-            my $abs_sbml_translator_arch = $abs_sbml_translator . "_${arch}";
-            
-            # rename as architecture specific
-            unless ( rename $abs_sbml_translator, $abs_sbml_translator_arch )
-            {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
-
-        }
-    }
-
-    # go back to original directory
-    unless( chdir $cwd )
-    {   print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
-        exit -1;
-    }
-
-    if ($validate)
-    {
-        #  validate workdir
-        my $validate_workdir = File::Spec->catfile( $abs_dist_dir, $validate_subdir ); #"validate_${dist_name}";
-
-#        # check if output directory exists..
-#        unless (-d $validate_workdir)
-#        {
-#            # try to make output directory
-#            unless ( mkdir $validate_workdir )
-#            {
-#                print "make_dist.pl error:\ncannot make validation working directory ($!).\n";
-#                exit -1;
-#            }
-#        }
-
-        # change to validate workdir
-        unless( chdir $validate_workdir ){
-                print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
-            exit -1;
-        }
-
-        # run validation script
-#        my $abs_validate_script = File::Spec->catfile( ($abs_dist_dir, $validate_subdir), $validate_script );
-        my $abs_validate_script = File::Spec->catfile( $validate_workdir, $validate_script );
-        print "validating ${dist_name} . . .\n";
-        my @args = ($sys_perl, $abs_validate_script, @validate_flags );
-        print "command: ", join(" ", @args), "\n";
-        unless( system(@args)==0 )
-        {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  }
-    }
-}
-
-# compile
-
-
-
 
 if ($archive)
 {
@@ -597,9 +549,6 @@ if ($archive)
 # all done
 print "\nFinished creating distribution.\n";
 exit 0;
-
-
-
 
 
 ##-------------##
