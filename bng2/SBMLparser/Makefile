@@ -24,4 +24,5 @@ clean:
 	if test -d ${DIST} ; then \
 	    rm -rf ${DIST} ;          \
 	fi ;
-	rm -rf *pyc
+	find . -name '*.pyc' -delete
+	
