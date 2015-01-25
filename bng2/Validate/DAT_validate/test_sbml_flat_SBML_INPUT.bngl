@@ -1,5 +1,5 @@
 ###
-#@notes:'This is a plain translation of an SBML model created on 21/01/2015. The original model has 5 molecules and 6 reactions. The translated model has 5 molecules and 6 rules'
+#@notes:'This is a plain translation of an SBML model created on 25/01/2015. The original model has 5 molecules and 6 reactions. The translated model has 5 molecules and 6 rules'
 ###
 begin model
 begin parameters
@@ -35,7 +35,7 @@ begin observables
 	Species AA____ AA____() #AA()
 end observables
 begin functions
-	functionRate4() = 0.5 * k3_f
+	functionRate4() = 0.5 * k3_f*2
 	A() = 0 + A____
 	AA() = 0 + AA____
 	C() = 0 + C____
