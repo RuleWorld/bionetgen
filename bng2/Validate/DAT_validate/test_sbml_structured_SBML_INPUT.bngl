@@ -1,0 +1,41 @@
+###
+#@notes:'This is an atomized translation of an SBML model created on 27/01/2015. The original model has 5 molecules and 5 reactions. The translated model has 2 molecules and 5 rules'
+###
+begin model
+begin parameters
+	k1_f 1.0
+	k1_r 0.1
+	k2_f 1.0
+	k2_r 0.1
+	k3_f 1.0
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	MolA(_Pmod~_P~0,molb)
+	MolB(mola,molb)
+end molecule types
+begin seed species
+	@cell:MolA(_Pmod~0,molb) 1.0 #MolA
+	@cell:MolB(mola,molb) 1.0 #MolB
+end seed species
+begin observables
+	Species MolA MolA(_Pmod~0,molb) #MolA
+	Species MolB MolB(mola,molb) #MolB
+	Species MolA_MolB MolA(_Pmod~0,molb!0).MolB(mola!0,molb) #MolA_MolB
+	Species MolA_P MolA(_Pmod~_P,molb) #MolA-P
+	Species __MolB__2 MolB(mola,molb!0).MolB(mola,molb!0) #(MolB)2
+end observables
+begin functions
+	A____() = MolA + MolA_MolB + MolA_P
+	B____() = MolB + MolA_MolB
+end functions
+begin reaction rules
+	R1: MolA(_Pmod~0,molb) + MolB(mola,molb) -> MolA(_Pmod~0,molb!0).MolB(mola!0,molb) k1_f
+	R2: MolA(_Pmod~0,molb!0).MolB(mola!0,molb) -> MolA(_Pmod~_P,molb) + MolB(mola,molb) k2_f
+	R3: MolA(_Pmod~0,molb!0).MolB(mola!0,molb) -> MolA(_Pmod~0,molb) + MolB(mola,molb) k1_r
+	R4: MolA(_Pmod~_P,molb) + MolB(mola,molb) -> MolA(_Pmod~0,molb!0).MolB(mola!0,molb) k2_r
+	R5: MolB(mola,molb) + MolB(mola,molb) -> MolB(mola,molb!0).MolB(mola,molb!0) k3_f*2
+end reaction rules
+end model
