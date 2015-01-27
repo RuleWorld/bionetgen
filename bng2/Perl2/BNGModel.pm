@@ -210,8 +210,6 @@ sub readSBML
 	$cmd .= ' -o "' . $outfile . '"';
 	if ($args{"atomize"}){
 		$cmd .= ' -a';
-		$cmd .= ' -c "' . $bindir . 'config/reactionDefinitions.json"';
-		$cmd .= ' -n "' . $bindir . 'config/namingConventions.json"';
 	}
 	
 	# Run the translator
