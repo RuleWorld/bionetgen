@@ -296,8 +296,10 @@ sub writeBNGL
 
     my $out = "begin molecule types\n";
     my $index = 1;
-    while ( my ($name, $mt) = each %{$mtlist->MolTypes} )
+#    while ( my ($name, $mt) = each %{$mtlist->MolTypes} )
+	foreach my $key (sort keys %{$mtlist->MolTypes})
     {
+    		my $mt = $mtlist->MolTypes->{$key};
         if ( $user_params->{pretty_formatting} )
         {   # no molecule type index
             $out .= '  ' . $mt->toString($max_length) . "\n";

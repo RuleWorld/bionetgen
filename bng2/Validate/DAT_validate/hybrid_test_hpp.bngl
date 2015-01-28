@@ -1,4 +1,4 @@
-# Created by BioNetGen 2.1.8+
+# Created by BioNetGen 2.2.6
 
 begin model
 begin parameters
@@ -16,10 +16,10 @@ begin parameters
   kp2_2     2*((beta*koff)/Rec_tot)
 end parameters
 begin molecule types
-  R_pop()              population
+  L(r,r,r)           
   L_pop()              population
   R(l,l)             
-  L(r,r,r)           
+  R_pop()              population
 end molecule types
 begin observables
   Molecules Rfree R(l,l) R_pop() R_pop()
@@ -33,8 +33,8 @@ begin observables
   Species R5 R()>4
 end observables
 begin species
-  R_pop()  Rec_tot
-  L_pop()  Lig_tot
+  R_pop() Rec_tot
+  L_pop() Lig_tot
 end species
 begin reaction rules
   Rule1_v1:  L(r!1).R(l!1) -> R(l) + L(r)  koff
@@ -50,6 +50,6 @@ end reaction rules
 end model
 
 
-##  model actions ##
+## model actions ##
 writeXML()
 
