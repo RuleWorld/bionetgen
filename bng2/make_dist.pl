@@ -438,6 +438,12 @@ if (defined $bindir)
             {  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
 
         }
+
+        # go back to original directory
+        unless( chdir $cwd ){   
+            print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+            exit -1;
+        }
         
         #########
         
