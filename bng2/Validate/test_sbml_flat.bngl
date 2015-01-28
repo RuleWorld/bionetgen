@@ -1,3 +1,3 @@
-readFile({file=>"test_sbml_flat_SBML_INPUT.xml"})
+readFile({file=>"INPUT/test_sbml_flat_SBML.xml"})
 generate_network({overwrite=>1})
 simulate({method=>"ode",t_start=>0,t_end=>100,n_steps=>100})
