@@ -8,10 +8,10 @@ use Exporter 'import';
 our @EXPORT_OK = qw(error warning message);
 
 struct BNGMessages => {
-  errors=>      '%',
-  messages=>	'%',
-  warnings=>	'%',
-  lasterror=>   '$'	      
+  errors=>    '%',
+  messages=>	  '%',
+  warnings=>	  '%',
+  lasterror=> '$'	      
 };
 
 #begin error
@@ -39,7 +39,7 @@ sub warning{
 sub message{
     my @msgs= @_;
     for my $msg (@msgs){
-	print STDOUT $msg unless ($main::options->config->{silent});
+	print STDOUT $msg unless (BNGOptions::GetBNGOptions()->config->{silent});
     }
 }
 #end message
