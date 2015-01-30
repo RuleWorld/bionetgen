@@ -117,7 +117,6 @@ def bindingReactionsAnalysis(dependencyGraph, reaction, classification):
             elif len(reaction[0]) == 1 and element not in reaction[1]:
                 addToDependencyGraph(dependencyGraph, element, reaction[1])
 
-
 def weightDependencyGraph(dependencyGraph):
     def measureGraph(element,path):
         counter = 1
@@ -130,9 +129,12 @@ def weightDependencyGraph(dependencyGraph):
 
     weights = []
     for element in dependencyGraph:
-
         path = resolveDependencyGraph(dependencyGraph, element)
-        weight = measureGraph(element,path)
+        try:
+            path2 = resolveDependencyGraph(dependencyGraph, element,True)
+        except CycleError:
+            path2 = []
+        weight = measureGraph(element,path) + len(path2)
         weights.append([element, weight])
 
     weights = sorted(weights, key=lambda rule: (rule[1],len(rule[0])))
@@ -528,6 +530,148 @@ def getTrueTag(dependencyGraph, molecule):
         return getTrueTag(dependencyGraph, dependencyGraph[molecule][0][0])
 
 
+def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
+                       equivalenceDictionary,sbmlAnalyzer,database):
+    '''
+    if it's a catalysis reaction create a new component/state
+    '''
+
+    if dependencyGraph[element[0]][0][0] == element[0]:
+        if element[0] not in translator:
+            translator[element[0]] = createEmptySpecies(element[0])
+    else:                      
+        componentStateArray = []
+        tmp = element[0]
+        existingComponents = []
+        memory = []
+        forceActivationSwitch = False
+        while dependencyGraph[tmp] != []:
+            #what kind of catalysis are we dealing with
+            #classification = identifyReaction(
+            #                                  equivalenceDictionary, 
+            #                                  dependencyGraph[tmp][0][0],tmp)
+            classification = sbmlAnalyzer.findMatchingModification(tmp,dependencyGraph[tmp][0][0])
+            if not classification:
+                classification = identifyReaction(
+                                                  equivalenceDictionary, 
+                                                  dependencyGraph[tmp][0][0],tmp)
+            if not classification:
+                classification = sbmlAnalyzer.findMatchingModification(element[0],dependencyGraph[tmp][0][0])
+            if not classification:
+                classification = identifyReaction(
+                                                  equivalenceDictionary, 
+                                                  dependencyGraph[tmp][0][0],element[0])
+
+            if classification is not None and \
+            reactionProperties[classification][0] not in existingComponents:
+                componentStateArray.append(reactionProperties[classification])
+                #classificationArray.append([classification,
+                #                            tmp,dependencyGraph[tmp]
+                #                            [0][0]])
+                existingComponents.append(reactionProperties[
+                classification][0])
+            elif database.forceModificationFlag and classification is None and not forceActivationSwitch:
+                forceActivationSwitch = True
+                baseName = getTrueTag(dependencyGraph, 
+                                        dependencyGraph[element[0]][0][0])
+                
+                species = createEmptySpecies(baseName)
+                componentStateArray.append(['genericMod',tmp])
+                logMess('ATOMIZATION:WARNING','adding forced transformation: {0}:{1}:{2}'.format(baseName,dependencyGraph[element[0]],element[0]))
+                #return
+            elif classification is None:    
+                logMess('ATOMIZATION:CRITICAL','unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
+            memory.append(tmp)
+            tmp = dependencyGraph[tmp][0][0]
+            if tmp in memory:
+                raise CycleError
+        baseName = getTrueTag(dependencyGraph, 
+                                dependencyGraph[element[0]][0][0])
+
+        species = createEmptySpecies(baseName)
+        #use the already existing structure if its in the
+        #translator,otherwise empty
+        if baseName in translator:
+             species = translator[baseName]
+        modifiedSpecies = deepcopy(species) 
+        for componentState in componentStateArray:                   
+            #if classification[0] != None:
+                addComponentToMolecule(species, baseName, componentState[0])
+                addComponentToMolecule(modifiedSpecies,baseName,
+                    componentState[0])
+                addStateToComponent(species,baseName, 
+                                    componentState[0], componentState[1])
+                addStateToComponent(modifiedSpecies, baseName, 
+                        componentState[0], componentState[1])
+                addStateToComponent(species, baseName, componentState[0], '0')
+                
+        #update the base species
+        if len(componentStateArray) > 0:
+            translator[baseName] = deepcopy(species)
+            translator[element[0]] = modifiedSpecies
+    
+def createBindingRBM(element,translator,dependencyGraph,bioGridFlag):
+    species = st.Species()
+    #go over the sct and reuse existing stuff
+    for molecule in dependencyGraph[element[0]][0]:
+        if molecule in translator:
+            tmpSpecies = translator[molecule]
+            if molecule != getTrueTag(dependencyGraph, molecule):
+                original = translator[getTrueTag(dependencyGraph, molecule)]
+                updateSpecies(tmpSpecies, original.molecules[0])
+            species.addMolecule(deepcopy(tmpSpecies.molecules[0]))
+        else:
+            mol = st.Molecule(molecule)
+            dependencyGraph[molecule] = deepcopy(mol)
+            species.addMolecule(mol)
+    #how do things bind together?
+    moleculePairsList = getComplexationComponents2(species,bioGridFlag)
+        #TODO: update basic molecules with new components
+        #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
+        #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
+    for idx, molecule in enumerate(moleculePairsList):
+        flag = False
+        #add bonds where binding components already exist
+        for component in molecule[0].components:
+            if component.name == molecule[1].name.lower() and \
+            len(component.bonds) == 0:
+                component.bonds.append(idx)
+                flag = True
+                break
+        if not flag:
+            #create components if they dont exist already.
+            #Add a bond afterwards
+            newComponent1 = st.Component(molecule[1].name.lower())
+
+            molecule[0].components.append(newComponent1)
+            
+            if newComponent1.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
+            components]:
+                translator[molecule[0].name].molecules[0]. \
+                components.append(deepcopy(newComponent1))
+
+            molecule[0].components[-1].bonds.append(idx)
+        flag = False
+        #same thing for the other member of the bond
+        for component in molecule[1].components:
+            if component.name == molecule[0].name.lower() and len(component.bonds) == 0:
+                component.bonds.append(idx)
+                flag = True
+                break
+        if not flag:
+            newComponent2 = st.Component(molecule[0].name.lower())
+            molecule[1].components.append(newComponent2)
+            if molecule[0].name != molecule[1].name:
+                if newComponent2.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
+                components]:
+                    translator[molecule[1].name].molecules[0].components.append(
+                    deepcopy(newComponent2))
+            molecule[1].components[-1].bonds.append(idx)
+
+    #update the translator
+    translator[element[0]] = species
+
+    
 def atomize(dependencyGraph, weights, translator, reactionProperties,
             equivalenceDictionary,bioGridFlag,sbmlAnalyzer,database):
     '''
@@ -543,145 +687,11 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                 translator[element[0]] = createEmptySpecies(element[0])
         else:
             if len(dependencyGraph[element[0]][0]) == 1:
-
                 #catalysis
-                if dependencyGraph[element[0]][0][0] == element[0]:
-                    if element[0] not in translator:
-                        translator[element[0]] = createEmptySpecies(element[0])
-                else:                      
-                    classificationArray = []
-                    tmp = element[0]
-                    existingComponents = []
-                    memory = []
-                    while dependencyGraph[tmp] != []:
-                        #what kind of catalysis are we dealing with
-                        #classification = identifyReaction(
-                        #                                  equivalenceDictionary, 
-                        #                                  dependencyGraph[tmp][0][0],tmp)
-                        classification = sbmlAnalyzer.findMatchingModification(tmp,dependencyGraph[tmp][0][0])
-                        if not classification:
-                            classification = identifyReaction(
-                                                              equivalenceDictionary, 
-                                                              dependencyGraph[tmp][0][0],tmp)
-                        if not classification:
-                            classification = sbmlAnalyzer.findMatchingModification(element[0],dependencyGraph[tmp][0][0])
-                        if not classification:
-                            classification = identifyReaction(
-                                                              equivalenceDictionary, 
-                                                              dependencyGraph[tmp][0][0],element[0])
-
-                        if classification is not None and \
-                        reactionProperties[classification][0] not in existingComponents:
-                            classificationArray.append([classification,
-                                                        tmp,dependencyGraph[tmp]
-                                                        [0][0]])
-                            existingComponents.append(reactionProperties[
-                            classification][0])
-                        elif classification is None:
-                            logMess('ATOMIZATION:CRITICAL','unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
-                        memory.append(tmp)
-                        tmp = dependencyGraph[tmp][0][0]
-                        if tmp in memory:
-                            raise CycleError
-                    species = createEmptySpecies(getTrueTag(
-                    dependencyGraph, dependencyGraph[element[0]][0][0]))
-                    #use the already existing structure if its in the
-                    #translator,otherwise empty
-                    if (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])) in translator:
-                         species = translator[(getTrueTag(dependencyGraph, 
-                                                          dependencyGraph[element[0]][0][0]))]
-                    modifiedSpecies = deepcopy(species) 
-                    for classification in classificationArray:                   
-                        if classification[0] != None:
-                            addComponentToMolecule(species, (
-                            getTrueTag(dependencyGraph, 
-                                       dependencyGraph[element[0]][0][0])),
-reactionProperties[classification[0]][0])
-                            addComponentToMolecule(modifiedSpecies, (getTrueTag(dependencyGraph,
-                                                                    dependencyGraph[element[0]][0][0])),
-reactionProperties[classification[0]][0])
-                            addStateToComponent(species,(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], reactionProperties[classification[0]][1])
-                            addStateToComponent(modifiedSpecies, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], reactionProperties[classification[0]][1])
-                            addStateToComponent(species, (getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])), reactionProperties[classification[0]][0], '0')
-                            
-                    #update the base species
-                    if len(classificationArray) > 0 and classificationArray[0][0] is not None:
-                        translator[(getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0]))] = \
-                        deepcopy(species)
-                        translator[element[0]] = modifiedSpecies
-                    else:
-                        pass
+                createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
+                                       equivalenceDictionary,sbmlAnalyzer,database)
             else:
-                #binding
-                '''
-                if element[0] not in database:
-                    species = st.Species()
-                else:
-                    species = database[element[0]]
-                '''
-                species = st.Species()
-                #go over the sct and reuse existing stuff
-                for molecule in dependencyGraph[element[0]][0]:
-                    if molecule in translator:
-                        tmpSpecies = translator[molecule]
-                        if molecule != getTrueTag(dependencyGraph, molecule):
-                            original = translator[getTrueTag(dependencyGraph, molecule)]
-                            updateSpecies(tmpSpecies, original.molecules[0])
-                        species.addMolecule(deepcopy(tmpSpecies.molecules[0]))
-                    else:
-                        mol = st.Molecule(molecule)
-                        dependencyGraph[molecule] = deepcopy(mol)
-                        species.addMolecule(mol)
-                #how do things bind together?
-                moleculePairsList = getComplexationComponents2(species,bioGridFlag)
-                    #TODO: update basic molecules with new components
-                    #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
-                    #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
-                for idx, molecule in enumerate(moleculePairsList):
-                    flag = False
-                    #add bonds where binding components already exist
-                    for component in molecule[0].components:
-                        if component.name == molecule[1].name.lower() and \
-                        len(component.bonds) == 0:
-                            component.bonds.append(idx)
-                            flag = True
-                            break
-                    if molecule[0].name == 'Ras_G' or molecule[1].name == 'Ras_G':
-                        pass
-                    if not flag:
-                        #create components if they dont exist already.
-                        #Add a bond afterwards
-                        newComponent1 = st.Component(molecule[1].name.lower())
-
-                        molecule[0].components.append(newComponent1)
-                        
-                        if newComponent1.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
-                        components]:
-                            translator[molecule[0].name].molecules[0]. \
-                            components.append(deepcopy(newComponent1))
-
-                        molecule[0].components[-1].bonds.append(idx)
-                    flag = False
-                    #same thing for the other member of the bond
-                    for component in molecule[1].components:
-                        if component.name == molecule[0].name.lower() and len(component.bonds) == 0:
-                            component.bonds.append(idx)
-                            flag = True
-                            break
-                    if not flag:
-                        newComponent2 = st.Component(molecule[0].name.lower())
-                        molecule[1].components.append(newComponent2)
-                        if molecule[0].name != molecule[1].name:
-                            if newComponent2.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
-                            components]:
-
-                                translator[molecule[1].name].molecules[0].components.append(
-                                deepcopy(newComponent2))
-                        molecule[1].components[-1].bonds.append(idx)
-
-                #update the translator
-                translator[element[0]] = species
-
+                createBindingRBM(element,translator,dependencyGraph,bioGridFlag)
 
 def updateSpecies(species, referenceMolecule):
     flag = False
@@ -775,12 +785,10 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     #    pickle.dump(referenceVariables,f)
     #with open('temp2.dict','w') as f:
     #    pickle.dump(comparisonVariables,f)
-        
     database.reactionProperties = database.sbmlAnalyzer.getReactionProperties()
     #user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
     
-
     database.translator, database.labelDictionary, \
     database.lexicalLabelDictionary = database.sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
@@ -794,6 +802,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
     #catalysis reactions
+
     for key in database.eequivalenceTranslator:
         for namingEquivalence in database.eequivalenceTranslator[key]:
             baseElement = min(namingEquivalence, key=len)
@@ -808,7 +817,20 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                     #    continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
-                    
+    #non lexical-analysis catalysis reactions
+    if database.forceModificationFlag:
+        for reaction, classification in zip(rules, database.classifications):
+            if classification == 'Transformation':
+                preaction = list(parseReactions(reaction))
+                if preaction[1][0] in preaction[0][0]:
+                    base = preaction[1][0]
+                    mod = preaction[0][0]
+                else:
+                    mod = preaction[1][0]
+                    base = preaction[0][0]
+                if database.dependencyGraph[mod] == []:
+                    database.dependencyGraph[mod]  = [[base]]
+                
     
     '''
     #complex catalysis reactions
@@ -867,7 +889,7 @@ tmp,removedElement,tmp3))
             database.dependencyGraph[element] = [list(
             database.labelDictionary[element][0])]
 
-    
+
     #stuff obtained from string similarity analysis
     for element in database.lexicalLabelDictionary:
         #similarity analysis has less priority than anything we discovered
@@ -897,6 +919,7 @@ tmp,removedElement,tmp3))
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     #print database.dependencyGraph
+    
     prunnedDependencyGraph, database.weights, unevenElementDict,database.artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,database.eequivalenceTranslator,database.sbmlAnalyzer)
     

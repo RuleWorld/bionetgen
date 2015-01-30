@@ -157,6 +157,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
                 elif argList[idx] == 'piecewise':
                     index1 = argList[idx+1].index(',')
                     index2 = argList[idx+1][index1+1:].index(',') + index1+1
+                        
                     try:
                         index3 = argList[idx+1][index2+1:].index(',') + index2+1
                     except ValueError:
