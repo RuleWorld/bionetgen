@@ -19,6 +19,7 @@ def getBngExecutable():
 
 def bngl2xml(bnglFile,timeout=60):
     try:
+        
         bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()),timeout=timeout)
         bngconsole.expect('BNG>')
         bngconsole.sendline('load {0}'.format(bnglFile))

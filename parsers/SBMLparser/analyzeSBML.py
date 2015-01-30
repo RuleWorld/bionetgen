@@ -228,18 +228,16 @@ class SBMLAnalyzer:
         for particle in particles:
             composingElements = []
             basicElements = []
-            if particle == 'JAK__IFN__':
-                pass
             #break it down into small bites
             splitparticle = particle.split('_')
             #print '---',splitparticle
             splitparticle = [x for x in splitparticle if x]
             #print splitparticle
             basicElements,composingElements = analyzeByParticle(splitparticle,species)
+            
             if basicElements == composingElements:
                 closeMatches = difflib.get_close_matches(particle,species)
-                matches = [x for x in closeMatches if len(x) < len(particle)]
-                
+                matches = [x for x in closeMatches if len(x) < len(particle) and len(x) >= 3]
                 for match in matches:
                     difference = difflib.ndiff(match,particle)
                     differenceList = tuple([x for x in difference if '+' in x])
@@ -330,7 +328,6 @@ class SBMLAnalyzer:
         in different ways, but in the context of its tuple partners it can only be classified
         as one
         '''
-        
         ruleResult = np.zeros(len(ruleBook))
         for validTupleIndex in np.nonzero(tupleCompliance):
             for index in validTupleIndex:
@@ -873,7 +870,6 @@ class SBMLAnalyzer:
         #cotains which rules are equal to reactions defined in reactionDefinitions['definitions']
         #use the per tuple classification to obtain a per reaction classification
         ruleDefinitionMatrix = np.zeros((len(rules),len(reactionDefinition['definitions'])))
-
         for key,element in ruleDictionary.items():
             for rule in element:
                 ruleDefinitionMatrix[rule] = self.checkCompliance(ruleComplianceMatrix[rule],
@@ -1027,6 +1023,8 @@ class SBMLAnalyzer:
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
         for idx,reaction in enumerate(rawReactions):
+            if '__EGF_EGFR__2_Shc_Grb2' in reaction[1]:
+                pass
             matching,matching2 = self.approximateMatching2(reaction,strippedMolecules,translationKeys)
             flag = True
             if matching:

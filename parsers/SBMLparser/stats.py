@@ -324,11 +324,27 @@ def compressionDistroAnalysisCont():
     print annotationBinDict
     print hist,bin_edges
 
+
+def getColourTemp(maxVal, minVal, actual):
+    midVal = (maxVal - minVal)/2;
+    intB = 0
+
+    if (actual >= midVal):
+         intR = 1.0
+         intG = abs(((maxVal - actual)*1.0 / (maxVal - midVal)))
+    
+    else:
+        intG = 1
+        intR =  abs((actual - minVal) *1.0/ (midVal - minVal))
+
+    return (intR, intG, intB)
+
+
 from collections import defaultdict
-def histogram():
+def histogram(inputFile):
     import matplotlib.pyplot as plt
     import numpy as np
-    with open('sortedD.dump','rb') as evaluationFile:
+    with open(inputFile,'rb') as evaluationFile:
         ev1 =     pickle.load(evaluationFile)
     ev2 = []
     for x in ev1:
@@ -354,7 +370,7 @@ def histogram():
     for x,x2,y,z,w in zip(rulesLength,speciesLength,evaluation,number,evaluation2):
         if x>=10:
             if 1-w <= 0.2:
-                print z,x,x2,y,w
+                #print z,x,x2,y,w
                 problemModels.append(z)
             evaluation20.append(y)
             ratio20.append(1-w)
@@ -372,7 +388,9 @@ def histogram():
     weights,trueEvaluation = zip(*trueEvaluation)
     #print '0 atom large models',problemModels
     print 'largeModels',len(evaluation20),np.median(evaluation20),np.median(ratio20)
-        
+    print 'models <10 reactions',np.average(evaluationn20), '+/-', np.std(evaluationn20), 'no of models',len(evaluationn20)
+    print 'models >=10 reactions',np.average(evaluation20), '+/-', np.std(evaluation20), 'no of models',len(evaluation20)
+    print 'total models',np.average(trueEvaluation), '+/-', np.std(trueEvaluation), 'no of models',len(trueEvaluation)
     plt.clf()
     hist,bins = np.histogram(rulesLength,bins=10,density=True)
     plt.hist(rulesLength,bins=bins)
@@ -396,8 +414,9 @@ def histogram():
     plt.savefig('reactionsvsspecies.png')
     
     plt.clf()
+    
     plt.scatter(rulesLength, speciesLength, s=40, 
-                c=np.array([min(1,1-x) for x in evaluation2]))
+                c=np.array([getColourTemp(0,1,max(0,x)) for x in evaluation2]),cmap='hot')
     plt.xlabel('Number of reactions',fontsize=24)
     plt.ylabel('Number of species',fontsize=24)
     ax = plt.gca()
@@ -406,14 +425,14 @@ def histogram():
     ax.set_yscale('log')
     plt.xlim(xmin=1)
     ax.grid(True)
-    plt.gray()
-    cb = plt.colorbar()
-    cb.set_label('Compression level')
+    #cb = plt.colorbar()
+    #cb.set_label('Compression level')
     plt.savefig('reactionsvsspeciescomp.png')
 
     plt.clf()
-    plt.scatter(rulesLength, speciesLength, s=40, 
-                c=np.array([min(1,x) for x in evaluation]))
+    cm = plt.cm.get_cmap('YlOrRd')
+    cax= plt.scatter(rulesLength, speciesLength, s=40, 
+                c=evaluation,cmap=cm)
     plt.xlabel('Number of reactions',fontsize=24)
     plt.ylabel('Number of species',fontsize=24)
     ax = plt.gca()
@@ -422,28 +441,41 @@ def histogram():
     ax.set_yscale('log')
     plt.xlim(xmin=1)
     ax.grid(True)
-    plt.gray()
-    cb = plt.colorbar()
+    #plt.gray()
+    cb = plt.colorbar(cax)
     cb.set_label('Atomization level')
+    cb.ax.set_xticklabels(['Low', 'Medium', 'High'])  
+    plt.ylim(1,1000)
     plt.savefig('reactionsvsspeciesato.png')
 
     
     plt.clf()
     plt.hist(trueEvaluation, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
-                                0.8, 0.9, 1.0],weights=weights,normed=True)
+                                0.8, 0.9, 1.0])
     plt.xlabel('Atomization Degree ({0} models)'.format(len(trueEvaluation)),fontsize=18)    
     plt.savefig('atomizationDistroHist.png')
 
     plt.clf()
     plt.hist(trueRatio, bins=[ 0.,0.18139535,0.3627907,
                               0.54418605,0.7255814,0.90697674],weights=weights,normed=True)
-    plt.xlabel('Compression Degree ({0} models)'.format(len(trueRatio)),fontsize=18)    
+    plt.xlabel('Compression Degree ({0} models)'.format(len(trueRatio)),fontsize=18)
     plt.savefig('compressionDistroHistWeighted.png')
 
     plt.clf()
+    fig, ax = plt.subplots()
     plt.hist(trueRatio, bins=[ 0.,0.18139535,0.3627907,
                               0.54418605,0.7255814,0.90697674],normed=False)
     plt.xlabel('Compression Degree ({0} models)'.format(len(trueRatio)),fontsize=18)    
+    plt.ylabel('Number of models',fontsize=18)
+    bin_centers =[ 0.,0.18139535,0.3627907,
+                              0.54418605,0.7255814,0.90697674]
+    for count, x in zip([1,2,3,4,5], bin_centers):
+        # Label the raw counts
+        ax.annotate(str(count), xy=(x, 0), xycoords=('data', 'axes fraction'),
+            xytext=(40, 365), textcoords='offset points', va='top', ha='center',fontsize=22)
+    
+    ax.tick_params(axis='x', pad=10)
+    #plt.subplots_adjust(bottom=0.15)
     plt.savefig('compressionDistroHist.png')
     
 
@@ -451,26 +483,27 @@ def histogram():
     plt.clf()
     plt.hist(ratio20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                 0.8, 0.9, 1.0])
-    plt.xlabel('Compression Degree ({0} models)'.format(len(ratio20)),fontsize=18)    
+    plt.xlabel('Compression Degree '.format(len(ratio20)),fontsize=18)    
     plt.savefig('compressionDistroHist10more.png')
 
     plt.clf()
     plt.hist(ration20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                 0.8, 0.9, 1.0])
-    plt.xlabel('Compression Degree ({0} models)'.format(len(ration20)),fontsize=18)    
+    plt.xlabel('Compression Degree '.format(len(ration20)),fontsize=18)    
     plt.savefig('compressionDistroHist10less.png')
     
 
     plt.clf()
     print plt.hist(evaluation20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                 0.8, 0.9, 1.0])
-    plt.xlabel('Atomization Degree >10 reactions ({0} models)'.format(len(evaluation20)), fontsize=18)
+    plt.xlabel('Atomization Degree '.format(len(evaluation20)), fontsize=18)
+    plt.ylabel('Number of models',fontsize=18)
     plt.savefig('atomizationDistroHist10ormore.png')
 
     plt.clf()
     plt.hist(evaluationn20, bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
                                 0.8, 0.9, 1.0])
-    plt.xlabel('Atomization Degree <=10 reactions ({0} models)'.format(len(evaluationn20)), fontsize=18)
+    plt.xlabel('Atomization Degree'.format(len(evaluationn20)), fontsize=18)
     plt.savefig('atomizationDistroHist10orless.png')
 
     strueEvaluation=np.sort( trueEvaluation )
@@ -856,7 +889,7 @@ def compareConventions(name1,name2):
 if __name__ == "__main__":
     #bagOfWords()
     #main2()
-    histogram()
+    histogram('sortedD.dump')
     #compressionDistroAnalysisCont()
     #rankingAnalysis()
     #print resolveAnnotation('http://identifiers.org/reactome/REACT_9417.3')
