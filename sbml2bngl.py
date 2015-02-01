@@ -16,9 +16,9 @@ from collections import defaultdict
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
 'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
-'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_UNKNOWN']
+'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_HAS_TAXOS','BQB_UNKNOWN']
 
-modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_UNKNOWN']
+modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_IS_INSTANCE_OF','BQM_UNKNOWN']
 
 class SBML2BNGL:
     '''
@@ -49,9 +49,9 @@ class SBML2BNGL:
       metaInformation = {}
       annotation = self.model.getAnnotation()
       lista = libsbml.CVTermList()
-      libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
       modelHistory =  self.model.getModelHistory()
       if modelHistory:
+      libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
           try:
               tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
               tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
