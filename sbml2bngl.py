@@ -49,9 +49,9 @@ class SBML2BNGL:
       metaInformation = {}
       annotation = self.model.getAnnotation()
       lista = libsbml.CVTermList()
+      libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
       modelHistory =  self.model.getModelHistory()
       if modelHistory:
-      libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
           try:
               tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
               tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
