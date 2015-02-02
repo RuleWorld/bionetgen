@@ -358,86 +358,126 @@ class CycleError(Exception):
          self.visitedMolecules = visitedMolecules
      def __str__(self):
          return repr(self.moleculeName) + ' '  + repr(self.visitedMolecules)
+         
 def spaceCovered(molecules,observablesLen):
     
-    print [str(x) for x in molecules]
+    #print [str(x) for x in molecules]
     speciesCount = 0
     excludedMolecules = []
-    
     for individualMolecule in molecules:
-        print '++++'
+        #print '++++'
         visitedMolecules = []
         tmp = spaceCoveredHelper(individualMolecule,'',excludedMolecules,visitedMolecules,molecules)
-        print '--',individualMolecule.name,visitedMolecules,tmp,excludedMolecules
-        excludedMolecules.append(individualMolecule.name)
+        #print '--',individualMolecule.name,visitedMolecules,tmp,excludedMolecules
+        #excludedMolecules.append(individualMolecule.name)
         
         speciesCount += tmp
     return min(observablesLen*1.0/speciesCount,1.0)
 
 
 
-def spaceCoveredHelper(moleculeInstance,comeFromMolecule,excludedMolecules,visitedMolecules,molecules):
+def spaceCoveredHelper(moleculeInstance,comeFromMolecule,excludedMolecules,
+                       visitedMolecules,molecules):
     multiplier = 1
     for component in moleculeInstance.components:
         if len(component.states) > 0:
+            #account for state complexity
             multiplier *= len(component.states)
         else:
+            #account for binding complexity
             for molecule in molecules:
+                #for all molecules which match the component name
                 if molecule.name.lower() == component.name:
+                    #skip those molecules we have considered already in previous complexity interations
+                    #todo: this may be skipping over other complexity considerations
+                    #eg exmol:[b] A-B is not the same as A-C-B
                     if molecule.name not in excludedMolecules:
+                        #exclude molecules we already visited in this session or
+                        #ask if theres more than one way to connect to the root molecule
                         if molecule.name not in visitedMolecules or \
-            len([x for x in moleculeInstance.components if x.name.lower() == component.name]) > len([x for x in visitedMolecules if x == moleculeInstance.name]):
+            len([x for x in moleculeInstance.components if x.name.lower() == \
+            component.name]) > len([x for x in visitedMolecules if x == moleculeInstance.name]):
                             tmp = copy(visitedMolecules)
                             tmp.append(moleculeInstance.name)
                             multiplier *= 2 * spaceCoveredHelper(molecule,
                     moleculeInstance.name,excludedMolecules,tmp,molecules)
-                        elif molecule.name != comeFromMolecule \
-                        or len([x for x in visitedMolecules if x == moleculeInstance.name]) > 3:
+                        #the only way this will go on is if we are checking for 
+                        #dimerization otherwise crash.
+                        elif molecule.name != comeFromMolecule:
+                            raise CycleError(molecule.name,comeFromMolecule)
+                        #if we already passed through the same points more than 3 times
+                        elif len([x for x in visitedMolecules if x == moleculeInstance.name]) > 3:
                             raise CycleError(molecule.name,visitedMolecules)
                     else:
                         multiplier += 0
     return multiplier
     
-def spaceCoveredCDF():
+def spaceCoveredCDF(directory):
+    
     spaceCoveredArray = []
     atomizationDict = {}
-    with open('sortedD.dump','rb') as f:
+    with open(os.path.join(directory,'sortedD.dump'),'rb') as f:
         atomizationStats = pickle.load(f)
     for element in atomizationStats:
         try:
             atomizationDict[element['index']] = element['atomization']
         except:
             continue
+    progress = progressbar.ProgressBar()
+    cycles = []
     
-    for element in range(1,491):
+    #generateBNGXML(directory)
+    for element in progress(range(1,549)):
         try:
             if element in atomizationDict and atomizationDict[element] > 0:
-                console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
-                species,_,_= readBNGXML.parseXML('output{0}.xml'.format(element))
-                observablesLen = readBNGXML.getNumObservablesXML('output{0}.xml'.format(element))
+                #console.bngl2xml('complex/BIOMD%010i.xml.bngl' %element,timeout=10)
+                species,_,_= readBNGXML.parseXML(os.path.join(directory,
+                                            'BIOMD%010i.xml.xml' %element))
+                observablesLen = readBNGXML.getNumObservablesXML(os.path.join(directory,
+                                                'BIOMD%010i.xml.xml' %element))
                 try:
-                    spaceCoveredArray.append([atomizationDict[element],spaceCovered(species,observablesLen)])
-                    print element,spaceCoveredArray[-1]
-                except CycleError:
-                    spaceCoveredArray.append([atomizationDict[element],0])
-                    print element,-1
+                    spaceCoveredArray.append([element,atomizationDict[element],observablesLen,spaceCovered(species,observablesLen)])
+                    #print element,spaceCoveredArray[-1]
+                except CycleError as e:
+                    #print element,-1,e
+                    cycles.append(element)
+                    continue
+                    #spaceCoveredArray.append([atomizationDict[element],0])
+                    
                 
         except (IOError,IndexError):
-            print
+            #print element,-2
             continue
-        
+    print 'molecule cycles encountered', cycles
+    
     with open('spaceCovered.dump','wb') as f:
         pickle.dump(spaceCoveredArray,f)
-    atomization,space = zip(*spaceCoveredArray)
-    heatmap, xedges, yedges = np.histogram2d(space, atomization, bins=8)
-    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    
+    with open('spaceCovered.dump','rb') as f:
+        spaceCoveredArray = pickle.load(f)
+    index,atomization,observables,space = zip(*spaceCoveredArray)
+    
+    for i,a,o,s in spaceCoveredArray:
+        if s > 0.5:
+            print i,a,o,s
+    #heatmap, xedges, yedges = np.histogram2d(space, atomization, bins=8)
+    #extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
     plt.clf()
-    plt.imshow(heatmap, extent=extent)
-    plt.xlabel('space')
-    plt.ylabel('atomization')
+    #plt.imshow(heatmap, extent=extent)
+    cm = plt.cm.get_cmap('YlOrRd')
+    cax= plt.scatter(atomization, observables, s=40, 
+                c=space,cmap=cm)
+
+    plt.xlabel('atomization')
+    plt.ylabel('model size (species)')
+    cb = plt.colorbar(cax)
+    cb.set_label('Coverage')
+    
+
     plt.show()  
     
     plt.savefig('spaceCovered.png')
+    
     #spaceCoveredArray=np.sort( spaceCoveredArray )
     #yvals=np.arange(len(spaceCoveredArray))/float(len(spaceCoveredArray))
     #plotresults(spaceCoveredArray,yvals,'spaceCovered')
@@ -549,6 +589,28 @@ def reactionBasedAtomizationFile(xml):
             print 'io'
         return ratomizationDict
 
+import os.path
+def generateBNGXML(directory):
+    
+    bnglFiles = getValidFiles(directory,'bngl')
+    print 'converting {0} bnglfiles'.format(len(bnglFiles))
+    progress = progressbar.ProgressBar()
+    for i in progress(range(len(bnglFiles))):
+        xmlName= '.'.join(bnglFiles[i].split('.')[:-1]) + '.xml'
+        print xmlName
+
+        if os.path.exists(xmlName):
+            continue
+        console.bngl2xml(bnglFiles[i],timeout=10)
+    
+
+    print 'moving xml files'
+    files = glob.iglob(os.path.join('.', "*.xml"))
+    for xmlfile in files:
+        if os.path.isfile(xmlfile):
+            shutil.move(xmlfile, directory)
+
+    
 from collections import defaultdict
 def reactionBasedAtomizationDistro(directory):
     '''
@@ -570,24 +632,13 @@ def reactionBasedAtomizationDistro(directory):
     nonAtomizedDistro= []
     interesting = []
     
-    bnglFiles = getValidFiles(directory,'bngl')
-    '''
-    print 'converting bnglfiles'
-    progress = progressbar.ProgressBar()
-    for i in progress(range(len(bnglFiles))):
-        console.bngl2xml(bnglFiles[i],timeout=10)
-    ''' 
-
-    print 'moving xml files'
-    files = glob.iglob(os.path.join('.', "*.xml"))
-    for xmlfile in files:
-        if os.path.isfile(xmlfile):
-            shutil.move(xmlfile, directory)
-    
-    print 'reading files'
+    #generate bng-xml
+    generateBNGXML(directory)
+        
+    print 'reading bng-xml files'
     xmlFiles = getValidFiles(directory,'xml')
     
-    print 'analyzing {0} xml files'.format(len(xmlFiles))
+    print 'analyzing {0} bng-xml files'.format(len(xmlFiles))
     progress = progressbar.ProgressBar()
     ruleslen0 = 0
     for i in progress(range(len(xmlFiles))):
@@ -599,7 +650,7 @@ def reactionBasedAtomizationDistro(directory):
             try:
                 
                 _,rules,_= readBNGXML.parseXML(xml)
-            except:
+            except IOError:
                 print xml
                 continue
             atomizedProcesses,weight = reactionBasedAtomization(rules)
@@ -1012,11 +1063,11 @@ def nonAtomizedSpeciesAnalysis():
                 pprint.pprint(dict(reactionList),stream=f)
     f.close()
 if __name__ == "__main__":
-    #spaceCoveredCDF()
-    #reactionBasedAtomizationDistro('complex')
+    #spaceCoveredCDF('complex2')
+    reactionBasedAtomizationDistro('complex2')
     #nonAtomizedSpeciesAnalysis()
     #createGroupingCDF()
-    print reactionBasedAtomizationFile('complex/BIOMD0000000019.xml.xml')
+    #print reactionBasedAtomizationFile('complex/BIOMD0000000019.xml.xml')
     #analyzeGroupingCDF()
     
     #createSpaceDistribution()
