@@ -139,7 +139,6 @@
           </math>
         </kineticLaw>
       </reaction>
-
     </listOfReactions>
   </model>
 </sbml>
