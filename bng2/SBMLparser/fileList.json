@@ -1,0 +1,5 @@
+["stats4.npy", "structures.py", "sbmlTranslator.py", "contextAnalyzer.py"
+, "detectOntology.py", "exec.py", "evaluate.py", "sbmlDatabase.py", "sbml2bngl.py", "sbmlTranslator.spec",
+ "biogrid.py",  "moleculeCreation.py", "analyzeRDF.py", "graph.py",  "mimeTypes.py", "reactionTransformations.py", 
+ "server.py", "sbml2json.py", "__main__.py", "parseAnnotation.py", "Species.py", "util.py", "analyzeSBML.py", 
+ "libsbml2bngl.py", "bnglWriter.py"]

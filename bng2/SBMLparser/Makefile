@@ -9,6 +9,10 @@ all:
 	python pyinstaller2/pyinstaller.py sbmlTranslator.spec ;
 	cp -r ./config ${DIST} ;
 
+update:
+	python updateDistribution.py -c		
+
+
 install:
 ifeq ($(OS),Windows_NT)
 	cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator.exe;
@@ -25,4 +29,4 @@ clean:
 	    rm -rf ${DIST} ;          \
 	fi ;
 	find . -name '*.pyc' -delete
-	
+	python updateDistribution.py -r	
