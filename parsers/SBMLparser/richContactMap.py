@@ -633,7 +633,7 @@ def reactionBasedAtomizationDistro(directory):
     interesting = []
     
     #generate bng-xml
-    generateBNGXML(directory)
+    #generateBNGXML(directory)
         
     print 'reading bng-xml files'
     xmlFiles = getValidFiles(directory,'xml')
@@ -730,18 +730,21 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     tmp2.sort(key=lambda x:x[0])
     
     #heatmap showing histogram of atomization vs non syn-deg    
-    heatmap, xedges, yedges = np.histogram2d(tmp,ratomization,bins=6)
-    heatmap = np.log2(heatmap)
+    heatmap, xedges, yedges = np.histogram2d(tmp,ratomization,bins=12)
+    #heatmap = np.log2(heatmap)
     
     extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
     heatmap[heatmap<0] = 0
     plt.clf()
-    plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest')
+    cm = plt.cm.get_cmap('YlOrRd')
+
+    plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest',cmap=cm)
     plt.xlabel('Atomization level')
     plt.ylabel('Percentage of non syn-del reactions')
     cb = plt.colorbar()
     cb.set_label('log2(Number of models)')
-    plt.show()  
+    #cb.set_ticklabels(['0',''])
+    #plt.show()  
     plt.savefig('atomizationHeatMap.png')
     
     plt.clf()
@@ -771,22 +774,22 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     
 
     plt.clf()
-    plt.hist(length,bins = 10 ** np.linspace(np.log10(1), np.log10(1000),40))
+    plt.hist(length,bins = 30 ** np.linspace(np.log10(1), np.log10(1000),40))
     plt.xscale('log')
     plt.xlabel('Number of reactions ({0} models)'.format(len(length)),fontsize=18)
     plt.savefig('numberOfReactionsHist.png')
 
     plt.clf()
     ax = plt.gca()
-    ax.plot(length,1-tmp,'o',alpha=0.5)    
-    plt.xlabel('Number of reactions',fontsize=24)
-    plt.ylabel('Fraction of syndel reactions',fontsize=24)
+    ax.scatter(1-tmp,[max(x,0) for x in ratomization])    
+    plt.ylabel('Atomization',fontsize=24)
+    plt.xlabel('Fraction of syndel reactions',fontsize=24)
     ax.grid(True)
-    ax.set_xscale('log')
+    #ax.set_xscale('log')
     #ax.set_autoscale_on(False)
     plt.ylim([-0.1,1.1])
     #ax.set_yscale('log')
-    plt.savefig('reactionsvsnsyndel.png')
+    plt.savefig('atomizationvsnsyndel.png')
     
     plt.clf()
     plt.scatter(length, 1-tmp, s=40, 
@@ -813,7 +816,7 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     plt.ylabel('Model Size (reactions)')
     cb = plt.colorbar()
     cb.set_label('Atomization level')
-    plt.show()  
+    #plt.show()  
     plt.savefig('atomizationHeatMap2.png')
 
         
