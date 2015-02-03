@@ -985,7 +985,7 @@ if __name__ == "__main__":
     '''    
     analyzeFile('plain2_sbml.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
-                    'plain2.bngl', speciesEquivalence=None,atomize=True,bioGrid=FaTruelse)
+                    'plain2.bngl', speciesEquivalence=None,atomize=True,bioGrid=True)
 
     '''
     '''
