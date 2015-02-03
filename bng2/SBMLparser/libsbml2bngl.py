@@ -330,7 +330,7 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    
+    database.forceModificationFlag = True
     
     bioGridDict = {}
     if bioGrid:
@@ -587,9 +587,10 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
                 for element in logMess.log:
                     f.write(element + '\n')
     except AttributeError:
-        print "couldn't print error file"
+        print "error"
     except IOError:
-        print "couldn't print error file"
+        pass
+        #print ""
     
     #rate of each classified rule
     evaluate2 = 0 if len(observables) == 0 else len(molecules)*1.0/len(observables)
@@ -669,7 +670,7 @@ def detectCustomDefinitions(bioNumber):
         return '{0}/speciesEquivalence{1}.json'.format(directory,bioNumber)
     return None
 
-
+import pyparsing
 def main():
     jsonFiles = [ f for f in listdir('./reactionDefinitions') if f[-4:-1] == 'jso']
     jsonFiles.sort()
@@ -710,21 +711,29 @@ def main():
         #                                                    speciesEquivalence=spEquivalence,atomize=True)
 
         try:
- 
             rlength = reval = reval2 = slength = None
             rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, resource_path('config/reactionDefinitions.json'),
-                False,resource_path('config/namingConventions.json'),'/dev/null',speciesEquivalence=None,atomize=True,bioGrid=False)
+                False,resource_path('config/namingConventions.json'),
+                #'/dev/null',
+                'complex2/' + 'BIOMD%010i.xml' % bioNumber + '.bngl',
+                speciesEquivalence=None,atomize=True,bioGrid=False)
 
     
-            print '++++',bioNumber,rlength,reval,reval2,clength
+            #print '++++',bioNumber,rlength,reval,reval2,clength
                                                                 
         except IOError:
-            print 'couldnt print error file'                                                                
-        
-        except:
-            print '-------------error--------------',bioNumber
             continue
         
+        except KeyError:
+            print 'keyErrorerror--------------',bioNumber
+            continue
+        except OverflowError:
+            print 'overFlowerror--------------',bioNumber
+            continue
+        except ValueError:
+            print 'valueError',bioNumber
+        except pyparsing.ParseException:
+            print 'pyparsing',bioNumber
         finally:  
             if rlength != None:        
                 rulesLength.append({'index':bioNumber,'nreactions':rlength,
@@ -954,7 +963,7 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     
-    #main()
+    main()
     #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml') 
@@ -962,21 +971,23 @@ if __name__ == "__main__":
     #processFile3('XMLExamples/curated/BIOMD00000000151.xml',bioGrid=False) 
     
     #param  = [452]
-    
-    param = 543
+    '''
+    param = 2
     #use 105 as an example for (2,2) reactions
     #527
 
-    '''    
+    
     analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % param, resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
-                    'complex/output' + str(param) + '.bngl', speciesEquivalence='reactionDefinitions/speciesEquivalences543.json',atomize=True,bioGrid=True)
+                    'complex2/output' + str(param) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
 
+    '''
     '''    
     analyzeFile('plain2_sbml.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
-                    'plain2.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+                    'plain2.bngl', speciesEquivalence=None,atomize=True,bioGrid=True)
 
+    '''
     '''
     analyzeFile('XMLExamples/BMID000000142971.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
