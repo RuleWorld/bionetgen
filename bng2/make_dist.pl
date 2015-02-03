@@ -274,7 +274,7 @@ foreach my $dir ( @include_python_subdirectories )
        }
  
         print "copying python source code  to build environment.\n";
-        my @args = ('python', 'updateDistribution.py');
+        my @args = ('python', 'updateDistribution.py', '-c');
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
         {  print "Unable to update distribution";  exit -1; }
@@ -294,6 +294,30 @@ foreach my $dir ( @include_python_subdirectories )
         print "make_dist.pl error:\n$err\n";
         exit -1;
     }
+
+   {
+         unless( chdir $source_dir )
+        {   
+        print "make_dist.pl error:\nunable to chdir to build directory '${source_dir}'.\n";
+        exit -1;
+       }
+ 
+        print "cleaning  build environment.\n";
+        my @args = ('python', 'updateDistribution.py', '-r');
+        print "command: ", join(" ", @args), "\n";
+        unless( system(@args)==0 )
+        {  print "Unable to clean distribution";  exit -1; }
+
+        # go back to original directory
+        unless( chdir $bngpath )
+        {   print "make_dist.pl error:\nunable to chdir back to original directory '$bngpath'.\n";
+            exit -1;
+        }
+
+
+    }
+
+
 }
 
 
@@ -600,6 +624,7 @@ sub copy_dir
     print "including $source_dir . . .\n";
     foreach my $file (@files)
     {
+
         # TODO: using catfile is questionable, since file may be a subdirectory
         my $source_file = File::Spec->catfile( $source_dir, $file );
         my $dest_file   = File::Spec->catfile( $dest_dir,   $file );
