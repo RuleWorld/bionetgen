@@ -21,7 +21,7 @@ import csv
 import matplotlib.patches as mpatches
 sys.path.insert(0,'../ContactMap')
 import createGraph
-from copy import copy
+from copy import copy,deepcopy
 
 
 def createRuleBiPartite(rule,transformationCenter,transformationContext,
@@ -394,24 +394,50 @@ def spaceCoveredHelper(moleculeInstance,comeFromMolecule,excludedMolecules,
                     if molecule.name not in excludedMolecules:
                         #exclude molecules we already visited in this session or
                         #ask if theres more than one way to connect to the root molecule
-                        if molecule.name not in visitedMolecules or \
-            len([x for x in moleculeInstance.components if x.name.lower() == \
-            component.name]) > len([x for x in visitedMolecules if x == moleculeInstance.name]):
+                        if len([x for x in visitedMolecules if x == moleculeInstance.name]) > 3:
+                            raise CycleError(molecule.name,visitedMolecules)
+                        else:
                             tmp = copy(visitedMolecules)
                             tmp.append(moleculeInstance.name)
-                            multiplier *= 2 * spaceCoveredHelper(molecule,
+                            newMolecule = deepcopy(molecule)
+                            for x in newMolecule.components:
+                                if x.name == moleculeInstance.name.lower():
+                                    newMolecule.components.remove(x)
+                                    break
+                            multiplier *= 2 * spaceCoveredHelper(newMolecule,
                     moleculeInstance.name,excludedMolecules,tmp,molecules)
                         #the only way this will go on is if we are checking for 
                         #dimerization otherwise crash.
-                        elif molecule.name != comeFromMolecule:
-                            raise CycleError(molecule.name,comeFromMolecule)
+                        #elif molecule.name != comeFromMolecule:
+                        #    raise CycleError(molecule.name,comeFromMolecule)
                         #if we already passed through the same points more than 3 times
-                        elif len([x for x in visitedMolecules if x == moleculeInstance.name]) > 3:
-                            raise CycleError(molecule.name,visitedMolecules)
+                        #elif len([x for x in visitedMolecules if x == moleculeInstance.name]) > 3:
+                        #    raise CycleError(molecule.name,visitedMolecules)
                     else:
                         multiplier += 0
     return multiplier
-    
+
+def getReactionTypeProperties(reactions):
+    totalActions = 0
+    actionCounter = [] 
+    for reaction in reactions:
+        for action in reaction[0].actions:
+            if action.action in ['AddBond','DeleteBond']:
+                actionCounter.append('AddBond')
+            elif action.action in ['Add','Delete']:
+                
+                actionCounter.append('Add')
+            elif action.action in ['StateChange']:
+                actionCounter.append('StateChange')
+            elif action.action in ['ChangeCompartment']:
+                
+                actionCounter.append('ChangeCompartment')
+            else:
+                print action
+                raise Exception
+        #actionCounter.extend([x.action for x in reaction[0].actions])
+    actionCounter = Counter(actionCounter)
+    return actionCounter
 def spaceCoveredCDF(directory):
     
     spaceCoveredArray = []
@@ -427,16 +453,18 @@ def spaceCoveredCDF(directory):
     cycles = []
     
     #generateBNGXML(directory)
+    '''
     for element in progress(range(1,549)):
         try:
             if element in atomizationDict and atomizationDict[element] > 0:
                 #console.bngl2xml('complex/BIOMD%010i.xml.bngl' %element,timeout=10)
-                species,_,_= readBNGXML.parseXML(os.path.join(directory,
+                species,reactions,_= readBNGXML.parseXML(os.path.join(directory,
                                             'BIOMD%010i.xml.xml' %element))
+                actionCounter = getReactionTypeProperties(reactions)
                 observablesLen = readBNGXML.getNumObservablesXML(os.path.join(directory,
                                                 'BIOMD%010i.xml.xml' %element))
                 try:
-                    spaceCoveredArray.append([element,atomizationDict[element],observablesLen,spaceCovered(species,observablesLen)])
+                    spaceCoveredArray.append([element,atomizationDict[element],observablesLen,spaceCovered(species,observablesLen),actionCounter])
                     #print element,spaceCoveredArray[-1]
                 except CycleError as e:
                     #print element,-1,e
@@ -448,36 +476,154 @@ def spaceCoveredCDF(directory):
         except (IOError,IndexError):
             #print element,-2
             continue
-    print 'molecule cycles encountered', cycles
-    
+    print 'molecule cycles encountered',len(cycles), cycles
+    #return
     with open('spaceCovered.dump','wb') as f:
         pickle.dump(spaceCoveredArray,f)
+    '''
     
     with open('spaceCovered.dump','rb') as f:
         spaceCoveredArray = pickle.load(f)
-    index,atomization,observables,space = zip(*spaceCoveredArray)
-    
-    for i,a,o,s in spaceCoveredArray:
-        if s > 0.5:
-            print i,a,o,s
+    index,atomization,observables,space,actionCounter = zip(*spaceCoveredArray)
+    #print spaceCoveredArray[0:10]
+    addAction = []
+    modifyAction= []
+    paddAction = []
+    pmodifyAction = []
+    for element in actionCounter:
+        totalActions = len([x for x in element.elements()])
+        atomizedActions = len([x for x in element.elements() if x in ['AddBond','StateChange']])
+        addAction.append(element['AddBond']*1.0/totalActions)
+        modifyAction.append(element['StateChange']*1.0/totalActions)
+        if atomizedActions > 0:
+            paddAction.append(element['AddBond']*1.0/atomizedActions)
+            pmodifyAction.append(element['StateChange']*1.0/atomizedActions)
+        else:
+            paddAction.append(0)
+            pmodifyAction.append(0)
+    #for i,a,o,s,ac in spaceCoveredArray:
+    #    if s > 0.5:
+    #        print i,a,o,s,ac
     #heatmap, xedges, yedges = np.histogram2d(space, atomization, bins=8)
     #extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    
+    #building 2.5plots
+    '''
+    plt.clf()
+    cm = plt.cm.get_cmap('YlOrRd')
+    cax= plt.scatter(addAction, observables, s=40, 
+                c=space,cmap=cm)
+    plt.yscale('log')
+    plt.xlabel('Fraction of AddBond/DeleteBond over total number of actions',fontsize=16)
+    plt.ylabel('Model size (species)',fontsize=18)
+    cb = plt.colorbar(cax)
+    cb.set_label('Coverage')
+    #plt.xlim([-0.01,1.01])
+    #plt.ylim([-0.01,1.01])
+    plt.savefig('addbondvssizecoverage.png')
+
+    plt.clf()
+    cm = plt.cm.get_cmap('YlOrRd')
+    cax= plt.scatter(paddAction, observables, s=40, 
+                c=space,cmap=cm)
+    plt.yscale('log')
+    plt.xlabel('Fraction of AddBond/DeleteBond over atomized actions',fontsize=16)
+    plt.ylabel('Model size (species)',fontsize=18)
+    cb = plt.colorbar(cax)
+    cb.set_label('Coverage')
+    #plt.xlim([-0.01,1.01])
+    #plt.ylim([-0.01,1.01])
+    plt.savefig('partial_addbondvssizecoverage.png')
+
+
     plt.clf()
     #plt.imshow(heatmap, extent=extent)
     cm = plt.cm.get_cmap('YlOrRd')
     cax= plt.scatter(atomization, observables, s=40, 
                 c=space,cmap=cm)
+    plt.yscale('log')
 
-    plt.xlabel('atomization')
-    plt.ylabel('model size (species)')
+
+    plt.xlabel('atomization',fontsize=18)
+    plt.ylabel('model size (species)',fontsize=18)
     cb = plt.colorbar(cax)
     cb.set_label('Coverage')
     
 
-    plt.show()  
+    #plt.show()  
     
-    plt.savefig('spaceCovered.png')
+    plt.savefig('atomizationvsspeciesCov.png')
+    '''
+    #simple scatter plots
+    plt.clf()
+    cax= plt.scatter(observables, space, s=40)
+    plt.xscale('log')
+    plt.xlabel('Model Size (species)',fontsize=18)
+    plt.ylabel('Coverage',fontsize=18)
+    plt.savefig('speciesvscoverage.png')
     
+
+    plt.clf()
+    cax= plt.scatter(atomization, space, s=40)
+    plt.xlabel('Atomization',fontsize=18)
+    plt.ylabel('Coverage',fontsize=18)
+    plt.savefig('atomizationvscoverage.png')
+
+    plt.clf()
+    cax= plt.scatter(addAction, space, s=40)
+    plt.xlabel('Ratio of AddBond actions',fontsize=18)
+    plt.ylabel('Coverage',fontsize=18)
+    plt.savefig('addbondvscoverage.png')
+
+    #now building heatmaps
+    heatmap, xedges, yedges = np.histogram2d(space,np.log10(observables),bins=12)
+    #heatmap = np.log2(heatmap)
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    heatmap[heatmap<0] = 0
+    plt.clf()
+    cm = plt.cm.get_cmap('YlOrRd')
+
+    plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest',cmap=cm)
+    plt.xlabel('log10(Model size (species))',fontsize=18)
+    plt.ylabel('Space coverage',fontsize=18)
+    cb = plt.colorbar()
+    cb.set_label('Number of models',fontsize=18 )
+    #cb.set_ticklabels(['0',''])
+    #plt.show()  
+    plt.savefig('sizevscoveragemap.png')
+
+    heatmap, xedges, yedges = np.histogram2d(space,atomization,bins=12)
+    #heatmap = np.log2(heatmap)
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    heatmap[heatmap<0] = 0
+    plt.clf()
+    cm = plt.cm.get_cmap('YlOrRd')
+
+    plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest',cmap=cm)
+    plt.xlabel('Atomization',fontsize=18)
+    plt.ylabel('Space coverage',fontsize=18)
+    cb = plt.colorbar()
+    cb.set_label('Number of models',fontsize=18 )
+    #cb.set_ticklabels(['0',''])
+    #plt.show()  
+    plt.savefig('atomizationvscoveragemap.png')
+
+    heatmap, xedges, yedges = np.histogram2d(space,addAction,bins=12)
+    heatmap = np.log10(heatmap)
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    heatmap[heatmap<0] = 0
+    plt.clf()
+    cm = plt.cm.get_cmap('YlOrRd')
+
+    plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest',cmap=cm)
+    plt.xlabel('Fraction of AddBond reactions',fontsize=18)
+    plt.ylabel('Space coverage',fontsize=18)
+    cb = plt.colorbar()
+    cb.set_label('log10(Number of models)',fontsize=18 )
+    #cb.set_ticklabels(['0',''])
+    #plt.show()  
+    plt.savefig('addbondvscoveragemap.png')
+
     #spaceCoveredArray=np.sort( spaceCoveredArray )
     #yvals=np.arange(len(spaceCoveredArray))/float(len(spaceCoveredArray))
     #plotresults(spaceCoveredArray,yvals,'spaceCovered')
@@ -739,13 +885,13 @@ totalRatomizedProcesses,totalReactions,syndel,validFiles)
     cm = plt.cm.get_cmap('YlOrRd')
 
     plt.imshow(heatmap, extent=extent,aspect='auto',origin='lower',interpolation='nearest',cmap=cm)
-    plt.xlabel('Atomization level')
-    plt.ylabel('Percentage of non syn-del reactions')
+    plt.xlabel('Atomization level',fontsize=18)
+    plt.ylabel('Percentage of non syn-del reactions',fontsize=18)
     cb = plt.colorbar()
-    cb.set_label('log2(Number of models)')
+    cb.set_label('Number of models',fontsize=18 )
     #cb.set_ticklabels(['0',''])
     #plt.show()  
-    plt.savefig('atomizationHeatMap.png')
+    plt.savefig('atomizationvssyndelHeatmap.png')
     
     plt.clf()
     plt.scatter(tmp,ratomization)
@@ -1066,8 +1212,8 @@ def nonAtomizedSpeciesAnalysis():
                 pprint.pprint(dict(reactionList),stream=f)
     f.close()
 if __name__ == "__main__":
-    #spaceCoveredCDF('complex2')
-    reactionBasedAtomizationDistro('complex2')
+    spaceCoveredCDF('complex2')
+    #reactionBasedAtomizationDistro('complex2')
     #nonAtomizedSpeciesAnalysis()
     #createGroupingCDF()
     #print reactionBasedAtomizationFile('complex/BIOMD0000000019.xml.xml')
