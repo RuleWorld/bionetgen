@@ -186,7 +186,7 @@ sub readSBML
     {   return 1, "Could not find '$filepath'";   }
 	my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
 	$filename =~ s/\.xml//;
-	my $outfile = File::Spec->catpath($model->getOutputDir(), $filename.'.bngl');
+	my $outfile = File::Spec->catpath('', $model->getOutputDir(), $filename.'.bngl');
     my $user_args = @_ ? shift @_ : {};
     
     # Collect user arguments
