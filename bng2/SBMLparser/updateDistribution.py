@@ -30,7 +30,10 @@ def clean_directory():
     with open('fileList.json','r') as f:
         onlyfiles = json.load(f)
     for fileName in onlyfiles:
-        os.remove(fileName)
+        try:
+            os.remove(fileName)
+        except OSError:
+            continue
 
 
 def update_directory():
