@@ -10,7 +10,7 @@ import os.path
 import shutil
 import json
 import argparse
-
+import os
 
 def defineConsole():
     parser = argparse.ArgumentParser(description='SBMLparser file copy script')
@@ -37,11 +37,11 @@ def clean_directory():
 
 
 def update_directory():
-    srcDirectory = resource_path('../../parsers/SBMLparser')  
+    srcDirectory = resource_path(os.path.join('..','..','parsers','SBMLparser'))  
     with open('fileList.json','r') as f:
         onlyfiles = json.load(f)
     #onlyfiles = [ f for f in listdir('./' + directory) if os.path.isfile(os.path.join('./' + directory,f)) ]
-    configFiles =  [ f for f in listdir('./config') if os.path.isfile(os.path.join('./config',f)) ]   
+    configFiles =  [ f for f in listdir(os.path.join('.','config')) if os.path.isfile(os.path.join('.','config',f)) ]   
     #onlyNotFiles =[ f for f in listdir('./' + directory) if not isfile(join('./' + directory,f)) ]
     originalFiles = listdir(srcDirectory)
     for element in onlyfiles:
@@ -52,7 +52,7 @@ def update_directory():
 
                 continue
     for element in configFiles:
-        shutil.copy(os.path.join(srcDirectory,'config',element), './config')
+        shutil.copy(os.path.join(srcDirectory,'config',element), os.path.join('.','config'))
     
 if __name__ == "__main__":
     parser = defineConsole()

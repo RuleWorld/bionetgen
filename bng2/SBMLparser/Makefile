@@ -6,8 +6,16 @@ DIST = ./dist
 
 
 all: 
+ifeq ($(OS),Windows_NT)
+    ifeq ($(shell uname -o),Cygwin)
+    	python pyinstaller2/pyinstaller.py sbmlTranslator.spec ;
+    else
+	    python pyinstaller2/pyinstaller.py sbmlTranslator_windows.spec ;
+    endif
+else
 	python pyinstaller2/pyinstaller.py sbmlTranslator.spec ;
-	cp -r ./config ${DIST} ;
+endif
+
 
 update:
 	python updateDistribution.py -c		
@@ -15,7 +23,11 @@ update:
 
 install:
 ifeq ($(OS),Windows_NT)
-	cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator.exe;
+    ifeq ($(shell uname -o),Cygwin)
+	    cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator.exe;
+    else
+	    cp  ${DIST}/sbmlTranslator.exe ../bin/sbmlTranslator.exe;
+    endif
 else
 	cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator;
 endif
