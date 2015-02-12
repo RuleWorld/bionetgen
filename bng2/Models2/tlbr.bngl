@@ -46,4 +46,4 @@ end reaction rules
 end model
 
 ## actions ##
-simulate_nf({t_start=>0,t_end=>200,n_steps=>200,complex=>1})
+simulate({method=>"nf",t_start=>0,t_end=>200,n_steps=>200})

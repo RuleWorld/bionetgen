@@ -84,7 +84,7 @@ begin actions
     setConcentration("EGF(R)", "0.1*EGF_init")
     simulate({method=>"ode",t_end=>300,n_steps=>40,continue=>1})
 
-    resetConcentrations(); # reverts to saved Concentrations
+    resetConcentrations() # reverts to saved Concentrations
     # Stochastic simulation
     setConcentration("EGF(R)","EGF_init")
     simulate({method=>"ssa",suffix=>"ssa",t_start=>0,t_end=>100,n_steps=>40})

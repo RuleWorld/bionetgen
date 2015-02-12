@@ -1,3 +1,4 @@
+begin model
 begin parameters
   A0     100
   B0     100
@@ -34,11 +35,12 @@ begin reaction rules
   R3a: X(b~Y) + B(x) <-> X(b~Y!1).B(x!1)             kf_B, km_B1
   R3b: X(b~pY) + B(x) <-> X(b~pY!1).B(x!1)           kf_B, km_B2
 end reaction rules
+end model
 
-visualize({type=>'contactmap'})
-visualize({type=>'ruleviz_pattern'})
-visualize({type=>'ruleviz_operation'})
-visualize({type=>'regulatory','background'=>1,suffix=>1})
-visualize({type=>'regulatory','background'=>0,opts=>['visualize_opts1.txt'],suffix=>2})
-visualize({type=>'regulatory','background'=>0,opts=>['visualize_opts1.txt','visualize_opts2.txt'],groups=>1,suffix=>3})
-visualize({type=>'regulatory','background'=>0,opts=>['visualize_opts1.txt','visualize_opts2.txt'],groups=>1,collapse=>1,suffix=>4})
+visualize({type=>"contactmap"})
+visualize({type=>"ruleviz_pattern"})
+visualize({type=>"ruleviz_operation"})
+visualize({type=>"regulatory","background"=>1,suffix=>"1"})
+visualize({type=>"regulatory","background"=>0,opts=>["visualize_opts1.txt"],suffix=>"2"})
+visualize({type=>"regulatory","background"=>0,opts=>["visualize_opts1.txt","visualize_opts2.txt"],groups=>1,suffix=>"3"})
+visualize({type=>"regulatory","background"=>0,opts=>["visualize_opts1.txt","visualize_opts2.txt"],groups=>1,collapse=>1,suffix=>"4"})
