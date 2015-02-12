@@ -92,6 +92,10 @@ complexes larger than the maximum specified could be constructed. Also added cod
 molecule names passed in the argument are valid. This is useful since users often specify patterns, 
 such as 'A()', rather than the actual molecule name 'A'. Without an error message this can cause confusion.
 
+** Fixed a bug where BNG was not passing to NFsim the random seed that it was generating when the
+'seed' argument was not explicitly set by the user. This made it difficult to debug problems in
+NFsim since it was not outputting a random seed in the error messages.
+
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''
 
