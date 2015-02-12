@@ -9,9 +9,9 @@ all:
 ifeq ($(OS),Windows_NT)
 	ifeq ($(shell uname -o),Cygwin)
 		python pyinstaller2/pyinstaller.py sbmlTranslator.spec;
-    else
+	else
 		python pyinstaller2/pyinstaller.py sbmlTranslator_windows.spec ;
-    endif
+	endif
 else
 	python pyinstaller2/pyinstaller.py sbmlTranslator.spec ;
 endif
