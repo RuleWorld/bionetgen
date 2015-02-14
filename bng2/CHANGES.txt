@@ -40,7 +40,6 @@ can obtain a literal translation of an SBML file. Additionally it can 'atomize' 
 'readFile' will also now throw an error if the input file extension is not any
 of ".bngl", ".net", or ".xml".
 
-
 * Modified 'readFile' to allow specific model blocks to be read using the 'blocks' argument.
 ** Example: <big><tt>readFile({file=>"filename.bngl",blocks=>["parameters","seed species"]})</tt></big>
 
@@ -66,6 +65,10 @@ action. This allows NFsim to be used in <big><tt>parameter_scan</tt></big> and
 
 * Modified validate_examples.pl to only report a stochastic validation failure if
 the validation fails twice in a row.
+
+* Added functionality to 'readFile' to convert forward slashes (/) to back slashes (\), 
+and vice versa, in '''''relative''''' paths, depending on the OS. This improves cross-platform 
+portability and makes it easier to share models.
 
 * Bug fixes
 
