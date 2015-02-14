@@ -633,7 +633,7 @@ sub delete_files
 					   _contactmap.gml   _ruleviz_pattern.gml  _ruleviz_operation.gml
 					   _regulatory_1.gml _regulatory_2.gml	
 					   _regulatory_3.gml _regulatory_4.gml 
-					   _xSBML.bngl);
+					   _SBML.bngl);
     my @files = ();
     foreach my $suffix (@suffixes)
     {   push @files, ${outprefix}.${suffix};   }
