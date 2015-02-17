@@ -13,7 +13,7 @@ from os.path import isfile, join,getsize
 import os
 import copasi
 from subprocess import call        
-
+import sys
 ##Taken from: http://eli.thegreenplace.net/2011/08/02/python-unit-testing-parametrized-test-cases/
 
 class ParametrizedTestCase(unittest.TestCase):
@@ -65,7 +65,7 @@ class TestOne(ParametrizedTestCase):
                 result = call(['python','sbmlTranslator.py','-i',
                 #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
                 self.param,
-                '-o','complex/' + str(self.param.split('/')[-1]) + '.bngl',
+                '-o','new_non_curated/' + str(self.param.split('/')[-1]) + '.bngl',
                 '-c','config/reactionDefinitions.json',
                 '-n','config/namingConventions.json',
                 '-a'],stdout=f)
@@ -92,6 +92,7 @@ class TestEval(ParametrizedTestCase):
     def test_eval(self):
         fileName = self.param
         print fileName
+        sys.stdout.flush()
         self.assertEqual(evaluate(fileName),0)
 
 class TestCopasi(ParametrizedTestCase):
@@ -208,7 +209,7 @@ if __name__ == "__main__":
     ''' 
     #ran  = [5,6,7,36,56,107,111,144,195,265,297,306,307,308,309,310,311,312]       
     #ran  = [19]  
-    files = getValidXMLFiles('XMLExamples/curated/')
+    files = getValidXMLFiles('XMLExamples/non_curated/')
     #files = sorted(files,key=os.path.getsize)
     files = sorted(files)
     #files = getValidXMLFiles('biomodels')
@@ -216,18 +217,18 @@ if __name__ == "__main__":
     for index in files:
         suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=index))
     #for fileName in validFiles:
-    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(32,suite)))
-    validFiles = getValidBNGLFiles('complex') 
-    validFiles = sorted(validFiles)
+    suite4 = testtools.ConcurrentStreamTestSuite(lambda: (split_suite_into_chunks(64,suite)))
+    #validFiles = getValidBNGLFiles('non_curated') 
+    #validFiles = sorted(validFiles)
     #validFiles.remove('54')
-    
+    '''
     #validFile= [480]
-    #for fileNumber in validFiles:
+    for fileNumber in validFiles:
         #index += 1
    #     fileName = fileNumber
         #suite.addTest(ParametrizedTestCase.parametrize(TestValid,param='./raw/' + fileName))
-   #     suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
-        
+        suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./non_curated/' + fileNumber))
+    ''' 
     validGdats = getValidGDats('.')
     
     #validFiles = getValidBNGLFiles('complex')
@@ -236,7 +237,7 @@ if __name__ == "__main__":
     #    suite.addTest(ParametrizedTestCase.parametrize(TestEval,param='./complex/' + fileName))
     #for index in validGdats:
     #    suite.addTest(ParametrizedTestCase.parametrize(TestCopasi, param=index))
-    #unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.TextTestRunner(verbosity=2).run(suite)
     #f = open('logresults.txt','w')
     #result = TracingStreamResult()
     #result.startTestRun()
