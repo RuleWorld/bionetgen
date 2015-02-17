@@ -25,10 +25,13 @@ import networkx as nx
 from os import listdir
 from os.path import isfile, join
 import sys
+import concurrent.futures
+
 sys.path.insert(0, '../utils/')
 import pygraphviz as pgv
 import bioservices
 import pprint
+
 
 def main():
     history = np.load('stats3b.npy')
@@ -143,14 +146,14 @@ def resolveAnnotation(annotation):
         resolveAnnotation.db['http://identifiers.org/uniprot/P07006'] = 'http://identifiers.org/uniprot/P06842'
         
     if annotation in resolveAnnotation.db:
-        return resolveAnnotation.db[annotation]
+        return annotation,resolveAnnotation.db[annotation]
     
         
     tAnnotation = annotation.replace('%3A',':')
     tAnnotation = annotation.split('/')[-1]
     #tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
     try:
-        if 'obo.go' in annotation:
+        if 'obo.go' in annotation or '/go/GO' in annotation:
 
             res = resolveAnnotation.qg.Term(tAnnotation)
             tmp = res.findAll('name')
@@ -164,30 +167,31 @@ def resolveAnnotation(annotation):
                     continue
                 
             resolveAnnotation.db[annotation] = finalArray
-            return resolveAnnotation.db[annotation]
+            finalAnnotation =  resolveAnnotation.db[annotation]
     
         elif 'kegg' in annotation:
             
             data = resolveAnnotation.k.get(tAnnotation)
             dict_data =  resolveAnnotation.k.parse(data)
             resolveAnnotation.db[annotation] = dict_data['name']
-            return resolveAnnotation.db[annotation]
+            finalAnnotation = resolveAnnotation.db[annotation]
             
         elif 'uniprot' in annotation:
             identifier = annotation.split('/')[-1]
             result = resolveAnnotation.uni.quick_search(identifier)
             resolveAnnotation.db[annotation] = result[result.keys()[0]]['Protein names']
-            return resolveAnnotation.db[annotation]
+            finalAnnotation = resolveAnnotation.db[annotation]
             
         elif 'chebi' in annotation:
             tmp = annotation.split('/')[-1]
             
             entry = resolveAnnotation.ch.getLiteEntity(tmp)
+            finalAnnotation = ''
             for element in entry:
                 resolveAnnotation.db[annotation] = element['chebiAsciiName']
-                return resolveAnnotation.db[annotation]
+                finalAnnotation =  resolveAnnotation.db[annotation]
         elif 'cco' in annotation or 'pirsf' in annotation or 'pubchem' in annotation or 'omim' in annotation:
-            return annotation
+            finalAnnotation = annotation
         #elif 'taxonomy' in annotation:
             #uniprot stuff for taxonomy
         #    pass
@@ -208,11 +212,12 @@ def resolveAnnotation(annotation):
             page = response.read(200000)
             '''
         else:
-            print 'ERRROERROROERRRO'
+            print 'ERRROERROROERRRO',annotation
             #assert(False)
-            return annotation
-    except:
-        return annotation
+            finalAnnotation = ''
+    except (IOError,KeyError) as e:
+        return annotation,''
+    return annotation,finalAnnotation
     #finally:
 
 #def extractAnnotations(xmlFiles):
@@ -220,28 +225,30 @@ def resolveAnnotation(annotation):
 def main2():
     #go database
     print '---'    
-    annotationArray = []
+    annotationArray = defaultdict(list)
     with open('annotations.dump','rb') as f:
         ar = pickle.load(f)
     modelAnnotations = Counter()
 
-    for idx,element in enumerate(ar):
-        print idx
-        for index  in element:
-            
+    annotationSet = set()
+    futures = []
+
+    for idx, element in enumerate(ar):
+        for index in element:
             for annotation in element[index]:
-                    bioArray = []
-                    #tAnnotation = annotation.replace('%3A',':')
-                    #tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
-                    resultArray = resolveAnnotation(annotation)
-                    if type(resultArray) is list:
-                        for result in resultArray:
-                            modelAnnotations[result] += 1
-                    elif 'http' not in resultArray:
-                        modelAnnotations[resultArray] += 1
+                    annotationSet.add(annotation)
+    print len(annotationSet)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
+        for annotation in annotationSet:
+            futures.append(executor.submit(resolveAnnotation, annotation))
+        for future in concurrent.futures.as_completed(futures):
+            resolvedAnnotation = future.result()
+            if type(resolvedAnnotation) is list:
+                annotationArray[resolvedAnnotation[0]].extend(resolvedAnnotation[1])
+            else:
+                annotationArray[resolvedAnnotation[0]].append(resolvedAnnotation[1])
     
         #annotationArray.append(modelAnnotations)
-    print modelAnnotations
     with open('parsedAnnotations.dump','wb') as f:
         pickle.dump(annotationArray,f)
 
@@ -888,8 +895,8 @@ def compareConventions(name1,name2):
         
 if __name__ == "__main__":
     #bagOfWords()
-    #main2()
-    histogram('sortedD.dump')
+    main2()
+    #histogram('sortedD.dump')
     #compressionDistroAnalysisCont()
     #rankingAnalysis()
     #print resolveAnnotation('http://identifiers.org/reactome/REACT_9417.3')

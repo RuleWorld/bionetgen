@@ -8,12 +8,19 @@ from copy import deepcopy
 import difflib
 import hashlib  
 import numpy
+from collections import Counter
 
+def compareLists(list1,list2):
+    return Counter(list1) == Counter(list2)
+    
 class Species:
     def __init__(self):
         self.molecules = []
         self.bondNumbers = []
     
+    def __eq__(self,other):
+       return str(self) == str(other)
+
     def getBondNumbers(self):
         bondNumbers = [0]
         for element in self.molecules:
@@ -201,7 +208,7 @@ class Species:
     def toString(self):
         return self.__str__()
         
-
+import pickle
 class Molecule:
     def __init__(self,name):
         self.components = []
@@ -211,10 +218,7 @@ class Molecule:
         a = numpy.random.rand(10, 100)
         self.hash = hashlib.sha1(a).digest()
         
-
         
-
-
     def copy(self):
         molecule = Molecule(self.name)
         for element in self.components:
@@ -341,6 +345,7 @@ class Component:
         self.states = []
         self.bonds = []
         self.activeState = ''
+        
         
     def copy(self):
         component = Component(self.name,deepcopy(self.bonds),deepcopy(self.states))
