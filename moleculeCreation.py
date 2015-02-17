@@ -681,6 +681,7 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
         #0 molecule
         if element[0] == '0':
             continue
+
         #undivisible molecules
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
@@ -747,8 +748,6 @@ def propagateChanges(translator, dependencyGraph):
     while flag:
         flag = False
         for dependency in dependencyGraph:
-            if dependency == 'RAF_P':
-                pass
             if dependencyGraph[dependency] == []:
                 continue
             for molecule in dependencyGraph[dependency][0]:
@@ -802,7 +801,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
     #catalysis reactions
-
     for key in database.eequivalenceTranslator:
         for namingEquivalence in database.eequivalenceTranslator[key]:
             baseElement = min(namingEquivalence, key=len)
@@ -926,7 +924,19 @@ tmp,removedElement,tmp3))
     return prunnedDependencyGraph,database
     
     
-
+def sanityCheck(translator):
+    '''
+    checks for critical atomization errors like isomorphism
+    '''
+    repeats = set()
+    for key in range(0,len(translator.keys())-1):
+        for key2 in range(key+1,len(translator.keys())):
+            if translator[translator.keys()[key]] == translator[translator.keys()[key2]]:
+                repeats.add((translator.keys()[key],translator.keys()[key2]))
+    for repeat in repeats:
+        logMess('CRITICAL:Atomization','Elements {0} and {1} produce\
+            the same translation. Emptying {1}.'.format(repeat[0],repeat[1]))
+        translator.pop(max(repeat))
 
 def transformMolecules(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=None,bioGridFlag=False):
@@ -1007,6 +1017,9 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     
     onlySynDec =  len([x for x in database.classifications if x not in ['Generation','Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
+    
+    
+    sanityCheck(database.translator)
     '''
     pr.disable()
     s = StringIO.StringIO()

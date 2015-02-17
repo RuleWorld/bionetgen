@@ -443,7 +443,7 @@ class SBMLAnalyzer:
         #for now im just going with a simple heuristic that if the species name
         #is long enough, and the changes from a to be are all about modification
         longEnough = 3
-        if (len(reactant) > longEnough or reactant in moleculeSet) and len(differenceList) > 0 and len(reactant) >= len(differenceList[0]):
+        if (len(reactant) >= longEnough or reactant in moleculeSet) and len(differenceList) > 0 and len(reactant) >= len(differenceList[0]):
             #one is strictly a subset of the other a,a_b
             if len([x for x in differenceList[0] if '-' in x]) == 0:
                 return [[[[reactant],[product]],''.join([x[-1] for x in differenceList[0]]),differenceList[0]]]
@@ -513,8 +513,15 @@ class SBMLAnalyzer:
             
             if reactant not in product:
                 closeMatch = difflib.get_close_matches(reactant,product)    
-                if len(closeMatch) == 1 and closeMatch[0] in strippedMolecules:
-                    return reactant,closeMatch
+                if len(closeMatch) == 1:
+                    if closeMatch[0] in strippedMolecules:
+                        return reactant,closeMatch
+                    else:
+                        closeMatchToBaseMolecules = difflib.get_close_matches(closeMatch[0],strippedMolecules)
+                        if len(closeMatchToBaseMolecules) == 1:
+                            return reactant,closeMatch
+                        return None,closeMatch
+
                     #pairedMolecules.append((reactant[idx],closeMatch[0]))
                     #product.remove(closeMatch[0])
                     #reactant.remove(reactant[idx])
@@ -979,10 +986,15 @@ class SBMLAnalyzer:
                 #if our state isnt yet on the dependency graph preliminary data structures
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
                     equivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
-                    adhocLabelDictionary['{0}mod'.format(fuzzyKey)] = ['{0}mod'.format(fuzzyKey),fuzzyKey.upper()]
+                    if fuzzyKey == '0':
+                        tmpState = 'ON'
+                    else:
+                        tmpState= fuzzyKey.upper()
+                            
+                    adhocLabelDictionary['{0}mod'.format(fuzzyKey)] = ['{0}mod'.format(fuzzyKey),tmpState]
                     #fill main naming convention data structure                    
                     self.namingConventions['modificationList'].append('{0}mod'.format(fuzzyKey))
-                    self.namingConventions['reactionState'].append(fuzzyKey.upper())
+                    self.namingConventions['reactionState'].append(tmpState)
                     self.namingConventions['reactionSite'].append('{0}mod'.format(fuzzyKey))
                     self.namingConventions['patterns'][fuzzyDifference] = '{0}mod'.format(fuzzyKey)
                     self.namingConventions['definitions'].append({'rst':len(self.namingConventions['reactionState'])-1,
@@ -1023,9 +1035,18 @@ class SBMLAnalyzer:
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
         for idx,reaction in enumerate(rawReactions):
-            if '__EGF_EGFR__2_Shc_Grb2' in reaction[1]:
+            flagstar = False
+            if len(reaction[0]) == 1 and len(reaction[1]) == 1 \
+                and len(reaction[0][0]) > len(reaction[1][0]):
+                    #unmodification
+                    flagstar = True
+                    reaction = [reaction[1],reaction[0]]
+            if reaction[1] == ['cpxERKP_MKP_PPstar']:
                 pass
             matching,matching2 = self.approximateMatching2(reaction,strippedMolecules,translationKeys)
+            if matching and flagstar:
+                logMess('Atomization:Warning','inverting order of {0} for lexical analysis'.format([reaction[1],reaction[0]]))
+
             flag = True
             if matching:
                 for reactant,matches in zip(reaction[1],matching):

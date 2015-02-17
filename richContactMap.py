@@ -9,10 +9,6 @@ import sys
 import contextAnalyzer
 import subprocess
 from collections import Counter
-sys.path.insert(0, '../utils/')
-import consoleCommands as console
-import readBNGXML
-import extractAtomic
 import pygraphviz as pgv
 import progressbar
 import glob
@@ -21,11 +17,15 @@ import shutil
 import csv
 import radarChart
 import matplotlib.patches as mpatches
-sys.path.insert(0, '../ContactMap')
-import createGraph
 from copy import copy, deepcopy
 import scipy.stats
 from scipy import linalg
+sys.path.insert(0, '../utils/')
+import consoleCommands as console
+import readBNGXML
+import extractAtomic
+sys.path.insert(0, '../ContactMap')
+import createGraph
 
 
 def createRuleBiPartite(rule, transformationCenter, transformationContext,
@@ -459,7 +459,7 @@ def getReactionTypeProperties(reactions):
     totalActions = 0
     actionCounter = []
     for reaction in reactions:
-        #if len(reaction[0].actions) ==2 and 'Add' in reaction[0].actions and \
+        # if len(reaction[0].actions) ==2 and 'Add' in reaction[0].actions and \
         #    'Delete' in reaction[0].actions:
         #        actionCounter.append('Add/Delete')
         if '0' in  [str(x) for x in reaction[0].reactants] or '0' in \
@@ -467,7 +467,7 @@ def getReactionTypeProperties(reactions):
             continue
 
         for action in reaction[0].actions:
-            
+
             if action.action in ['AddBond', 'DeleteBond']:
                 actionCounter.append('AddBond')
             elif action.action in ['Add', 'Delete']:
@@ -533,38 +533,40 @@ def modelCompositionCDF(directory):
     index, atomization, observables, space, actionCounter = zip(
         *spaceCoveredArray)
     data = {
-        'labels':['Add','AddBond',\
-                'StateChange']
-            }
-    
-    generalCounter = defaultdict(lambda : defaultdict(list))
+        'labels': ['Add', 'AddBond',
+                   'StateChange']
+    }
+
+    generalCounter = defaultdict(lambda: defaultdict(list))
     counter = 0
-    for iindex,modelSpace,atom,observable,model in zip(index,space,atomization,observables,actionCounter):
+    for iindex, modelSpace, atom, observable, model in zip(index, space, atomization, observables, actionCounter):
         totalActions = len([x for x in model.elements()])
         counter += 1
         for label in data['labels']:
-            
-            #generalCounter[label].append(model[label]*1.0/totalActions)
+
+            # generalCounter[label].append(model[label]*1.0/totalActions)
             if modelSpace < 0.4:
-                generalCounter['l4'][label].append(model[label]*1.0/totalActions)
-            elif modelSpace >=0.4 and modelSpace < 1:
-                generalCounter['l10'][label].append(model[label]*1.0/totalActions)
+                generalCounter['l4'][label].append(
+                    model[label] * 1.0 / totalActions)
+            elif modelSpace >= 0.4 and modelSpace < 1:
+                generalCounter['l10'][label].append(
+                    model[label] * 1.0 / totalActions)
             elif modelSpace == 1:
-                generalCounter['Z10'][label].append(model[label]*1.0/totalActions)
+                generalCounter['Z10'][label].append(
+                    model[label] * 1.0 / totalActions)
         if modelSpace == 1:
-            print iindex,atom,
+            print iindex, atom,
             print generalCounter['Z10']['Add'][-1]
     print counter
     data['Mean process ratio'] = []
     for counter in generalCounter:
-        data['Mean process ratio'].append([np.mean(generalCounter[counter][x]) for x in generalCounter[counter]])
+        data['Mean process ratio'].append(
+            [np.mean(generalCounter[counter][x]) for x in generalCounter[counter]])
     data['labels'] = [x for x in generalCounter['l4']]
     spoke_labels = data.pop('labels')
     print spoke_labels
     N = len(spoke_labels)
     theta = radarChart.radar_factory(N, frame='polygon')
-
-
 
     fig = plt.figure(figsize=(9, 9))
     fig.subplots_adjust(hspace=0, top=0.85, bottom=0.05)
@@ -572,7 +574,7 @@ def modelCompositionCDF(directory):
     colors = ['b', 'r', 'g', 'm', 'y']
     # Plot the four cases from the example data on separate axes
     for n, title in enumerate(data.keys()):
-        ax = fig.add_subplot(1, 1, n+1, projection='radar')
+        ax = fig.add_subplot(1, 1, n + 1, projection='radar')
         plt.rgrids([0.2, 0.4, 0.6, 0.8])
         ax.set_title(title, weight='bold', size=20, position=(0.5, 1.1),
                      horizontalalignment='center', verticalalignment='center')
@@ -581,15 +583,15 @@ def modelCompositionCDF(directory):
             ax.fill(theta, d, facecolor=color, alpha=0.25)
         ax.set_varlabels(spoke_labels)
 
-    
     plt.subplot(1, 1, 1)
-    labels = ('space coverage < 0.4','space coverage < 1', 'space coverage = 1')
+    labels = (
+        'space coverage < 0.4', 'space coverage < 1', 'space coverage = 1')
     legend = plt.legend(labels, loc=(0.65, .85), labelspacing=0.1)
     plt.setp(legend.get_texts(), fontsize=17)
     plt.savefig('actionspaceratio.png')
-    #plt.figtext(0.5, 0.965, '5-Factor Solution Profiles Across Four Scenarios',
+    # plt.figtext(0.5, 0.965, '5-Factor Solution Profiles Across Four Scenarios',
     #            ha='center', color='black', weight='bold', size='large')
-    
+
 
 def spaceCoveredCDF(directory):
 
@@ -815,7 +817,7 @@ def spaceCoveredCDF(directory):
     print 'observable-space correlation', scipy.stats.pearsonr(tobservables, tspacep)
     print 'atomization-space correlation', scipy.stats.pearsonr(tatom, tspacep)
     print 'addBond-space correlation', scipy.stats.pearsonr(taddAction, tspacep)
-    print 'space stats, mean,std',np.mean(tspacep),np.std(tspacep)
+    print 'space stats, mean,std', np.mean(tspacep), np.std(tspacep)
     tmp = np.asarray([tobservables, taddAction, tatom, tspacep])
     tmp = np.transpose(tmp)
     p_corr = partial_corr(tmp)
@@ -840,14 +842,14 @@ def reactionBasedAtomization(reactions):
                 [str(x) for x in reaction[0].products]:
             continue
         trueProcessesCounter += 1
-        #if len([x for x in action.action if x in ['Add','Delete']]) == 0:
+        # if len([x for x in action.action if x in ['Add','Delete']]) == 0:
         #    atomizedProcesses +=1
-        
+
         for action in reaction[0].actions:
             if action.action in ['AddBond', 'DeleteBond', 'StateChange', 'ChangeCompartment']:
                 atomizedProcesses += 1
                 break
-        
+
     if trueProcessesCounter == 0:
         return 0, 0
     return atomizedProcesses, trueProcessesCounter
@@ -955,7 +957,7 @@ def generateBNGXML(directory):
     progress = progressbar.ProgressBar()
     for i in progress(range(len(bnglFiles))):
         xmlName = '.'.join(bnglFiles[i].split('.')[:-1]) + '.xml'
-        print xmlName
+        
 
         if os.path.exists(xmlName):
             continue
@@ -1069,8 +1071,8 @@ def reactionBasedAtomizationDistro(directory):
         len(syndelArray)), normed=False)
     plt.clf()
     plt.hist(ratomization)
-    plt.xlabel('Reaction atomization level',fontsize=18)
-    plt.ylabel('Number of models',fontsize=18)
+    plt.xlabel('Reaction atomization level', fontsize=18)
+    plt.ylabel('Number of models', fontsize=18)
     plt.savefig('ratomizationHist.png')
 
     weights = np.array(weights)
@@ -1438,8 +1440,11 @@ def nonAtomizedSpeciesAnalysis():
                 pprint.pprint(dict(reactionList), stream=f)
     f.close()
 if __name__ == "__main__":
-    spaceCoveredCDF('complex2')
-    #modelCompositionCDF('complex2')
+    # generate bng-xml
+    generateBNGXML('non_curated')
+
+    #spaceCoveredCDF('complex2')
+    # modelCompositionCDF('complex2')
     #reactionBasedAtomizationDistro('complex2')
     # nonAtomizedSpeciesAnalysis()
     # createGroupingCDF()
