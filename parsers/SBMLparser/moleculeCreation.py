@@ -681,7 +681,6 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
         #0 molecule
         if element[0] == '0':
             continue
-
         #undivisible molecules
         if dependencyGraph[element[0]] == []:
             if element[0] not in translator:
@@ -790,6 +789,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     
     database.translator, database.labelDictionary, \
     database.lexicalLabelDictionary = database.sbmlAnalyzer.getUserDefinedComplexes()
+    
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
@@ -815,10 +815,21 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                     #    continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
+                                     
+    for element in database.labelDictionary:
+        if database.labelDictionary[element] == 0:
+            continue
+        elif len(database.labelDictionary[element][0]) == 0 or element == \
+        database.labelDictionary[element][0][0]:
+            addToDependencyGraph(database.dependencyGraph, element, [])
+        else:
+            database.dependencyGraph[element] = [list(
+            database.labelDictionary[element][0])]
+                                     
     #non lexical-analysis catalysis reactions
     if database.forceModificationFlag:
         for reaction, classification in zip(rules, database.classifications):
-            if classification == 'Transformation':
+            if len(reaction[0]) == 1 and len(reaction[1]) == 1:
                 preaction = list(parseReactions(reaction))
                 if preaction[1][0] in preaction[0][0]:
                     base = preaction[1][0]
@@ -827,6 +838,13 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                     mod = preaction[1][0]
                     base = preaction[0][0]
                 if database.dependencyGraph[mod] == []:
+                    if base in database.labelDictionary and \
+                        database.labelDictionary[base]== 0:
+                        continue
+                    if mod in database.labelDictionary and \
+                        database.labelDictionary[mod] == 0:
+                        continue
+                    print base,mod
                     database.dependencyGraph[mod]  = [[base]]
                 
     
@@ -879,13 +897,6 @@ tmp,removedElement,tmp3))
     #user defined stuff
 '''
     
-    for element in database.labelDictionary:
-        if len(database.labelDictionary[element][0]) == 0 or element == \
-        database.labelDictionary[element][0][0]:
-            addToDependencyGraph(database.dependencyGraph, element, [])
-        else:
-            database.dependencyGraph[element] = [list(
-            database.labelDictionary[element][0])]
 
 
     #stuff obtained from string similarity analysis
@@ -906,6 +917,8 @@ tmp,removedElement,tmp3))
             database.lexicalLabelDictionary[element][0])]
     
     #pure lexical analysis
+    
+    
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     strippedMolecules = [x.strip('()') for x in molecules]
     tmpDependency,database.tmpEquivalence = database.sbmlAnalyzer.findClosestModification(orphanedSpecies,strippedMolecules)          
@@ -936,7 +949,8 @@ def sanityCheck(translator):
     for repeat in repeats:
         logMess('CRITICAL:Atomization','Elements {0} and {1} produce\
             the same translation. Emptying {1}.'.format(repeat[0],repeat[1]))
-        translator.pop(max(repeat))
+        if repeat in translator:
+            translator.pop(max(repeat))
 
 def transformMolecules(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=None,bioGridFlag=False):
