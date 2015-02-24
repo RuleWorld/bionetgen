@@ -3,7 +3,7 @@ import concurrent.futures
 import fnmatch
 import os
 from subprocess import call        
-
+import multiprocessing as mp
 
 def callSBML(filename):
     pass
@@ -35,7 +35,8 @@ if __name__ == "__main__":
     directory = 'XMLExamples/non_curated'
     filenameset = getFiles(directory,'xml')
     futures = []
-    with concurrent.futures.ProcessPoolExecutor(max_workers=64) as executor:
+    workers = mp.cpu_count()*2
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
         for filename in filenameset:
           futures.append(executor.submit(callSBMLTranslator, filename))
         for future in concurrent.futures.as_completed(futures,timeout=3000):
