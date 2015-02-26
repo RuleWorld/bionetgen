@@ -19,12 +19,12 @@ def getFiles(directory,extension):
             matches.append(os.path.join(root, filename))
     return matches
 
-def callSBMLTranslator(fileName):
+def callSBMLTranslator(fileName,outputdirectory):
     with open(os.devnull,"w") as f:
         result = call(['python','sbmlTranslator.py','-i',
         #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         fileName,
-        '-o','new_non_curated/' + str(fileName.split('/')[-1]) + '.bngl',
+        '-o',os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '.bngl',
         '-c','config/reactionDefinitions.json',
         '-n','config/namingConventions.json',
         '-a'],stdout=f)
@@ -33,11 +33,20 @@ def callSBMLTranslator(fileName):
 
 if __name__ == "__main__":
     directory = 'XMLExamples/non_curated'
+    outputdirectory = 'new_non_curated'
+    restart = False
     filenameset = getFiles(directory,'xml')
+
+    if not restart:
+        existingset = getFiles(outputdirectory,'bngl')
+        existingset = ['.'.join(x.split('.')[:-1]).split('/')[-1] for x in existingset]
+        filenameset = [x for x in filenameset if x.split('/')[-1] not in existingset]
+
+    print len(filenameset)
     futures = []
     workers = mp.cpu_count()*2
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
         for filename in filenameset:
-          futures.append(executor.submit(callSBMLTranslator, filename))
+          futures.append(executor.submit(callSBMLTranslator, filename,outputdirectory))
         for future in concurrent.futures.as_completed(futures,timeout=3000):
             pass
