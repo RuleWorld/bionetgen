@@ -936,6 +936,9 @@ class SBMLAnalyzer:
     def processFuzzyReaction(self,reaction,translationKeys,conventionDict,indirectEquivalenceTranslator):
         differences,pairedChemicals= self.approximateMatching(reaction,
                                                     translationKeys)
+        #matching,matching2 = self.approximateMatching2(reaction,strippedMolecules,
+        #                                               translationKeys)
+
         d1,d2 = differences[0],differences[1]
         firstMatch,secondMatch = pairedChemicals[0],pairedChemicals[1]
         matches = [firstMatch,secondMatch]
@@ -1041,8 +1044,6 @@ class SBMLAnalyzer:
                     #unmodification
                     flagstar = True
                     reaction = [reaction[1],reaction[0]]
-            if reaction[1] == ['cpxERKP_MKP_PPstar']:
-                pass
             matching,matching2 = self.approximateMatching2(reaction,strippedMolecules,translationKeys)
             if matching and flagstar:
                 logMess('Atomization:Warning','inverting order of {0} for lexical analysis'.format([reaction[1],reaction[0]]))
@@ -1135,6 +1136,9 @@ class SBMLAnalyzer:
         tmp = st.Species()
         label = []
         for molecule in userEquivalence[1]:
+            if molecule[0] == 0:
+                labelDictionary[userEquivalence[0]] = 0
+                return
             tmp2 = st.Molecule(molecule[0])
             for componentIdx in range(1,len(molecule),2):
                 tmp3 = st.Component(molecule[componentIdx])
@@ -1169,6 +1173,8 @@ class SBMLAnalyzer:
         else:
             dictionary[userEquivalence[0]] = deepcopy(tmp)
         labelDictionary[userEquivalence[0]] = [tuple(label)]
+        
+        
     def getUserDefinedComplexes(self):
         dictionary = {}
         userLabelDictionary = {}

@@ -965,13 +965,13 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     
-    main2()
-    '''
-    analyzeFile('XMLExamples/curated/BIOMD0000000474.xml', resource_path('config/reactionDefinitions.json'),
+    #main2()
+    
+    analyzeFile('XMLExamples/curated/BIOMD0000000488.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
-                    'BIOMD0000000474.xml' + '.bngl', 
+                    'BIOMD0000000027.xml' + '.bngl', 
                     speciesEquivalence='reactionDefinitions/speciesEquivalences474.json',atomize=True,bioGrid=False)
-    '''
+    
     #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml') 
