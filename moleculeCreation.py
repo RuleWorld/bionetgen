@@ -72,7 +72,8 @@ def resolveDependencyGraphHelper(dependencyGraph, reactant, memory,
     result = []
     #if type(reactant) == tuple:
     #    return []
-    if reactant not in dependencyGraph or dependencyGraph[reactant] == []:
+    if reactant not in dependencyGraph or dependencyGraph[reactant] == [] or \
+        dependencyGraph[reactant] == [[reactant]]:
         if not withModifications:
             result.append([reactant])
     else:
@@ -276,9 +277,12 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
                     tmpmolecules = []
                     tmpmolecules.extend(originalTmpCandidates[0])
                     tmpmolecules.extend(tmpCandidates[0])
-                                    
-                    fuzzyCandidateMatch = sbmlAnalyzer.fuzzyArtificialReaction(originalTmpCandidates[0],[reactant],tmpmolecules)
-                
+                    if reactant == 'Mdm2_P_Ub3':
+                        pass
+                    #FIXME: Fuzzy artificial reaction is using old methods. Try to fix this
+                    #or maybe not, no one was using it and when it was used it was wrong
+                    #fuzzyCandidateMatch = sbmlAnalyzer.fuzzyArtificialReaction(originalTmpCandidates[0],[reactant],tmpmolecules)
+                    fuzzyCandidateMatch = None
                 if fuzzyCandidateMatch !=None:
                     logMess('INFO:Atomization','Used fuzzy string matching from {0} to {1}'.format(reactant,fuzzyCandidateMatch))
                     return [fuzzyCandidateMatch],unevenElements
@@ -354,10 +358,13 @@ def addStateToComponent(species, moleculeName, componentName, state):
     for molecule in species.molecules:
         if moleculeName == molecule.name:
             for component in molecule.components:
-                if componentName == component.name and state not in component.states:
-                    component.addState(state)
-                elif state in component.states:
-                    component.setActiveState(state)
+                if componentName == component.name:
+                    tmp = component.activeState
+                    if state not in component.states:
+                        component.addState(state)
+                    elif state in component.states:
+                        component.setActiveState(state)
+                    return tmp
 
 
 def addComponentToMolecule(species, moleculeName, componentName):
@@ -366,6 +373,8 @@ def addComponentToMolecule(species, moleculeName, componentName):
             if componentName not in [x.name for x in molecule.components]:
                 component = st.Component(componentName)
                 molecule.addComponent(component)
+                return True
+    return False
 
 
 def addBondToComponent(species, moleculeName, componentName, bond, priority=1):
@@ -593,18 +602,23 @@ def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
         #translator,otherwise empty
         if baseName in translator:
              species = translator[baseName]
-        modifiedSpecies = deepcopy(species) 
+        modifiedSpecies = deepcopy(translator[dependencyGraph[element[0]][0][0]])
         for componentState in componentStateArray:                   
+
             #if classification[0] != None:
                 addComponentToMolecule(species, baseName, componentState[0])
                 addComponentToMolecule(modifiedSpecies,baseName,
                     componentState[0])
-                addStateToComponent(species,baseName, 
+                tmp = addStateToComponent(species,baseName, 
                                     componentState[0], componentState[1])
-                addStateToComponent(modifiedSpecies, baseName, 
-                        componentState[0], componentState[1])
+                if tmp == componentState[1]:
+                    addStateToComponent(species,baseName,componentState[0],
+                            componentState[1]+componentState[1])
+                if addStateToComponent(modifiedSpecies, baseName, 
+                        componentState[0], componentState[1]) == componentState[1]:
+                    addStateToComponent(modifiedSpecies,baseName,componentState[0],
+                            componentState[1]+componentState[1])
                 addStateToComponent(species, baseName, componentState[0], '0')
-                
         #update the base species
         if len(componentStateArray) > 0:
             translator[baseName] = deepcopy(species)
@@ -815,7 +829,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                     #    continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
-                                     
     for element in database.labelDictionary:
         if database.labelDictionary[element] == 0:
             continue
@@ -831,6 +844,9 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
         for reaction, classification in zip(rules, database.classifications):
             if len(reaction[0]) == 1 and len(reaction[1]) == 1:
                 preaction = list(parseReactions(reaction))
+
+                if (preaction[0][0] in [0,'0']) or (preaction[1][0] in [0,'0']):
+                    continue
                 if preaction[1][0] in preaction[0][0]:
                     base = preaction[1][0]
                     mod = preaction[0][0]
@@ -844,10 +860,12 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                     if mod in database.labelDictionary and \
                         database.labelDictionary[mod] == 0:
                         continue
-                    print base,mod
+                    if [mod] in database.dependencyGraph[base]:
+                        continue
                     database.dependencyGraph[mod]  = [[base]]
-                
     
+
+
     '''
     #complex catalysis reactions
     for key in indirectEquivalenceTranslator:
@@ -933,7 +951,7 @@ tmp,removedElement,tmp3))
     
     prunnedDependencyGraph, database.weights, unevenElementDict,database.artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,database.eequivalenceTranslator,database.sbmlAnalyzer)
-    
+	
     return prunnedDependencyGraph,database
     
     

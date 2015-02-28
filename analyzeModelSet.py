@@ -5,6 +5,7 @@ import os
 from subprocess import call        
 import multiprocessing as mp
 import progressbar
+import sys
 def callSBML(filename):
     pass
 
@@ -49,10 +50,12 @@ if __name__ == "__main__":
         filenameset = [x for x in filenameset if x.split('/')[-1] not in existingset]
 
     print(len(filenameset))
+    
     futures = []
     workers = mp.cpu_count()*2
     progress = progressbar.ProgressBar(maxval= len(filenameset)).start()
     i = 0
+    
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
         for filename in filenameset:
           futures.append(executor.submit(callSBMLTranslator, filename,outputdirectory))
@@ -60,3 +63,8 @@ if __name__ == "__main__":
             i+=1
             progress.update(i)
     progress.finish()
+    '''
+    for element in filenameset:
+        sys.stderr.write(element + '\n')
+        callSBMLTranslator(element,outputdirectory)
+    '''

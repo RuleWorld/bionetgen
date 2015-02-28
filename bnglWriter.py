@@ -258,7 +258,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     #change references to time for time()    
     #tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',tmp)
     #tmp =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',tmp)
-    while 'inf' in rule:
+    while re.search(r'(\W|^)inf(\W|$)',tmp) != None:
         tmp =re.sub(r'(\W|^)(inf)(\W|$)',r'\1 1e20 \3',tmp)
     #BNGL has ^ for power. 
     if flag:
