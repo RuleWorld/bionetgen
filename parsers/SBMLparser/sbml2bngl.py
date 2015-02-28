@@ -13,6 +13,7 @@ from util import logMess
 from scipy.misc import factorial, comb
 from collections import Counter
 from collections import defaultdict
+import numpy as np
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
 'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
@@ -269,7 +270,10 @@ class SBML2BNGL:
                 rateR = 'if({0}>0,{1}/({0}^{2}),0)'.format(element,rateR,ifStack[element])
             else:
                 rateR = 'if({0}>0,{1}/{0},0)'.format(element,rateR)
-        if highStoichoiMetryFactor != 1:
+        if np.isinf(highStoichoiMetryFactor):
+            rateR = '{0} * 1e20'.format(rateR)
+            logMess('CRITICAL','Found usage of "inf" inside function {0}'.format(rateR))
+        elif highStoichoiMetryFactor != 1:
             rateR = '{0}*{1}'.format(rateR, int(highStoichoiMetryFactor))
         
         return rateR,math.getNumChildren()

@@ -910,7 +910,7 @@ def processDir(directory,atomize=True):
     with open('evalResults.dump','wb') as f:
         pickle.dump(resultDir,f)
         #except:
-            #continue'
+                #continue'
     
 def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False,output=None):
     '''
@@ -967,7 +967,7 @@ if __name__ == "__main__":
     
     #main2()
     
-    analyzeFile('XMLExamples/curated/BIOMD0000000488.xml', resource_path('config/reactionDefinitions.json'),
+    analyzeFile('XMLExamples/curated/BIOMD0000000353.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
                     'BIOMD0000000027.xml' + '.bngl', 
                     speciesEquivalence='reactionDefinitions/speciesEquivalences474.json',atomize=True,bioGrid=False)
