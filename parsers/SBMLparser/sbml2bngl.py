@@ -706,13 +706,14 @@ class SBML2BNGL:
             #tmp.remove(rawArule[0])
             #newRule = rawArule[1].replace('+',',').strip()
             if rawArule[3] == True:
-                #it is an rate rule
+                #it is a rate rule
                 if rawArule[0] in self.boundaryConditionVariables:
-                    
-                    aParameters[rawArule[0]] = 'arj' + rawArule[0] 
-                    tmp = list(rawArule)
-                    tmp[0] = 'arj' + rawArule[0]
-                    rawArule = tmp
+                    logMess('SIMULATION:CRITICAL','Boundary condition type variables are not properly supported in BioNetGen simulator')
+
+                    #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
+                    #tmp = list(rawArule)
+                    #tmp[0] = 'arj' + rawArule[0]
+                    #rawArule = tmp
 
 
                 rateLaw1 = rawArule[1][0]
@@ -741,11 +742,12 @@ class SBML2BNGL:
                     zRules.remove(rawArule[0])
 
                 if rawArule[0] in self.boundaryConditionVariables:
-                    aParameters[rawArule[0]] = 'arj' + rawArule[0] 
-                    tmp = list(rawArule)
-                    tmp[0] = 'arj' + rawArule[0]
-                    rawArule= tmp
-    
+                    #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
+                    #tmp = list(rawArule)
+                    #tmp[0] = 'arj' + rawArule[0]
+                    #rawArule= tmp
+                    logMess('SIMULATION:CRITICAL','Boundary condition type variables are not properly supported in BioNetGen simulator')
+
 
                 artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
             
@@ -828,7 +830,7 @@ class SBML2BNGL:
                 if rawSpecies['returnID'] in self.tags:
                     tmp2 = (self.tags[rawSpecies['returnID']])
                 if rawSpecies['initialConcentration'] > 0.0 or rawSpecies['isConstant']:
-                    speciesText.append('{0}:{1}{2} {3} #{4}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration'],rawSpecies['returnID']))
+                    speciesText.append('{0}:{1}{2} {3} #{4} #{5}'.format(tmp2, temp, str(tmp), rawSpecies['initialConcentration'],rawSpecies['returnID'],rawSpecies['identifier']))
             if rawSpecies['returnID'] == 'e':
                 modifiedName = 'are'
             else:
@@ -854,7 +856,6 @@ class SBML2BNGL:
         zparam2 = zparam
         initialConditions2 =initialConditions
         pparam = {}
-        
         for element in param:
             pparam[element.split(' ')[0]] =(element.split(' ')[1],None)
         for element in zparam:
@@ -866,7 +867,7 @@ class SBML2BNGL:
             if name in  translator:
                 extendedStr = '@{0}:{2}{1}'.format(species.getCompartment(),translator[name],constant)
             else:
-                extendedStr = '@{0}:{2}{1}()'.format(tmp['compartment'],tmp['name'],constant)
+                extendedStr = '@{0}:{2}{1}()'.format(tmp['compartment'],standardizeName(tmp['name']),constant)
             initConc = species.getInitialConcentration() if \
             species.isSetInitialConcentration() else species.getInitialAmount()
             pparam[species.getId()] = (initConc,extendedStr)
@@ -893,6 +894,7 @@ class SBML2BNGL:
                     param = param2
                     zparam = zparam2
                 else:
+                    
                     initialConditions2 = [x for x in initialConditions if '#{0}'.format(symbol) not in x]
                     initialConditions2.append('{0} {1} #{2}'.format(pparam[symbol][1],math,symbol))
                     initialConditions = initialConditions2
