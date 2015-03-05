@@ -967,7 +967,7 @@ def sanityCheck(translator):
     for repeat in repeats:
         logMess('CRITICAL:Atomization','Elements {0} and {1} produce\
             the same translation. Emptying {1}.'.format(repeat[0],repeat[1]))
-        if repeat in translator:
+        if max(repeat) in translator:
             translator.pop(max(repeat))
 
 def transformMolecules(parser, database, configurationFile,namingConventions,

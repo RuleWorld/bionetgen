@@ -271,23 +271,23 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
         finalString = tmp
     #change references to local parameters
     for parameter in parameterDict:
-        finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1 {0} \3'.format(parameterDict[parameter]),finalString)
+        finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\g<1>{0}\g<3>'.format(parameterDict[parameter]),finalString)
     #change references to reaction Id's to their netflux equivalent
     for reaction in reactionDict:
         if reaction in finalString:
-            finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(reaction),r'\1 {0} \3'.format(reactionDict[reaction]),finalString)
+            finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(reaction),r'\g<1>{0}\g<3>'.format(reactionDict[reaction]),finalString)
     
     #combinations '+ -' break ibonetgen
     finalString = re.sub(r'(\W|^)([-])(\s)+',r'\1-',finalString)
     #changing reference of 't' to time()
     #finalString = re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',finalString)
     #pi
-    finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\1 3.1415926535 \3',finalString)
+    finalString = re.sub(r'(\W|^)(pi)(\W|$)',r'\g<1>3.1415926535\g<3>',finalString)
     #print reactants,finalString
     #log for log 10
     finalString = re.sub(r'(\W|^)log\(',r'\1 ln(',finalString)
     #reserved keyword: e
-    finalString = re.sub(r'(\W|^)(e)(\W|$)',r'\1 are \3',finalString)
+    finalString = re.sub(r'(\W|^)(e)(\W|$)',r'\g<1>are\g<3>',finalString)
     #changing ceil
     #avoiding variables whose name starts with a number
     
@@ -305,12 +305,23 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     #    logMess('WARNING','Removed mass action elements from )
     return finalString
 
+def curateParameters(param):
+    '''
+    The objective of this function is to remove elements extraneous to bionetgen
+    '''
+    for element in range(0,len(param)):
+        tmp = param[element]
+        while re.search(r'(\W|^)inf(\W|$)',tmp) != None:
+            tmp =re.sub(r'(\W|^)(inf)(\W|$)',r'\g<1>1e20\g<3>',tmp)
+        param[element] = tmp
+    return param
     
 def finalText(comments,param,molecules,species,observables,rules,functions,compartments,fileName):
     #output = open(fileName,'w')
     output = StringIO.StringIO()
     output.write(comments.decode('ascii','ignore'))
     output.write('begin model\n')
+    param = curateParameters(param)
     output.write(sectionTemplate('parameters',param))
     if len(compartments) > 0:
         output.write(sectionTemplate('compartments',compartments))          
