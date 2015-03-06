@@ -9,7 +9,10 @@ import pexpect
 import subprocess
 import os
 
-bngExecutable = 'bngdev'
+from os.path import expanduser,join
+home = expanduser("~")
+
+bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 
 def setBngExecutable(executable):
     bngExecutable = executable
@@ -19,7 +22,6 @@ def getBngExecutable():
 
 def bngl2xml(bnglFile,timeout=60):
     try:
-        
         bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()),timeout=timeout)
         bngconsole.expect('BNG>')
         bngconsole.sendline('load {0}'.format(bnglFile))
