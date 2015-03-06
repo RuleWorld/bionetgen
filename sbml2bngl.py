@@ -272,7 +272,7 @@ class SBML2BNGL:
                 rateR = 'if({0}>0,{1}/{0},0)'.format(element,rateR)
         if np.isinf(highStoichoiMetryFactor):
             rateR = '{0} * 1e20'.format(rateR)
-            logMess('CRITICAL','Found usage of "inf" inside function {0}'.format(rateR))
+            logMess('SIMULATION:WARNING','Found usage of "inf" inside function {0}'.format(rateR))
         elif highStoichoiMetryFactor != 1:
             rateR = '{0}*{1}'.format(rateR, int(highStoichoiMetryFactor))
         
@@ -589,7 +589,7 @@ class SBML2BNGL:
     
     def getReactions(self, translator={}, isCompartments=False, extraParameters={},atomize=False):
         '''
-        @returns: a triple containing the parameters,rules,functions
+        @returns: a triple containing the parameters,reactions,functions
         '''
         
         ##@FIXME:this part of the code is there so that we only generate the functions list once through different
@@ -599,7 +599,7 @@ class SBML2BNGL:
         if not hasattr(self.getReactions,'functionFlag'):
             self.getReactions.__func__.functionFlag = False or (not atomize)
 
-        rules = []
+        reactions = []
         parameters = []
         functions = []
         functionTitle = 'functionRate'
@@ -655,10 +655,10 @@ class SBML2BNGL:
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
             reactants = [x for x in rawRules['reactants']]
             products = [x for x in rawRules['products']]
-            rules.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),rawRules['reversible'],reactionName=rawRules['reactionID']))
+            reactions.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),rawRules['reversible'],reactionName=rawRules['reactionID']))
         if atomize:
             self.getReactions.__func__.functionFlag = not self.getReactions.functionFlag
-        return parameters, rules,functions
+        return parameters, reactions,functions
 
     def __getRawAssignmentRules(self,arule):
         variable =   arule.getVariable()
@@ -708,7 +708,8 @@ class SBML2BNGL:
             if rawArule[3] == True:
                 #it is a rate rule
                 if rawArule[0] in self.boundaryConditionVariables:
-                    logMess('SIMULATION:CRITICAL','Boundary condition type variables are not properly supported in BioNetGen simulator')
+                    logMess('SIMULATION:CRITICAL','Boundary condition type variables ({0}) \
+                    are not properly supported in BioNetGen simulator'.format(rawArule[0]))
 
                     #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
                     #tmp = list(rawArule)
@@ -730,23 +731,23 @@ class SBML2BNGL:
                         #TODO: if for whatever reason a rate rule
                         #was defined as a parameter that is not 0
                         #remove it. This might not be exact behavior
-                        logMess("WARNING","A name corresponds both as a non zero parameter \
-                        and a rate rule, verify behavior")
                         if re.search('^{0}\s'.format(rawArule[0]), element):
+                            logMess("WARNING","Parameter {0} corresponds both as a non zero parameter \
+                            and a rate rule, verify behavior".format(element))
                             removeParameters.append(element)
                         
             elif rawArule[2] == True:
                 #it is an assigment rule
-
                 if rawArule[0] in zRules:
                     zRules.remove(rawArule[0])
+                    
 
-                if rawArule[0] in self.boundaryConditionVariables:
                     #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
                     #tmp = list(rawArule)
                     #tmp[0] = 'arj' + rawArule[0]
                     #rawArule= tmp
-                    logMess('SIMULATION:CRITICAL','Boundary condition type variables are not properly supported in BioNetGen simulator')
+                    logMess('SIMULATION:CRITICAL','Boundary condition/assignment type variables ({0}) are not properly \
+                    supported in BioNetGen simulator'.format(rawArule[0]))
 
 
                 artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)

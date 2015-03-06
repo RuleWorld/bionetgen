@@ -13,6 +13,15 @@ from pyparsing import (Literal,CaselessLiteral,Word,Combine,Group,Optional,
 import math
 import operator
 import logging
+import pickle
+import os
+from subprocess import call
+import sys
+import fnmatch
+import progressbar
+
+sys.path.insert(0, '../utils/')
+import consoleCommands as console
 
 
 class NumericStringParser(object):
@@ -135,7 +144,59 @@ def logMess(logType,logMessage):
     logMess.counter += 1
     logMess.log.append("%s.%d: %s"%(logType,logMess.counter,logMessage))
     return logMess.counter
-    
+
+
+
+def testBNGFailure(fileName):
+    with open(os.devnull,"w") as f:
+        result = call(['bngdev',fileName],stdout=f)
+    return result
+
+import os.path
+
+def getValidFiles(directory, extension):
+    """
+    Gets a list of bngl files that could be correctly translated in a given 'directory'
+    """
+    matches = []
+    for root, dirnames, filenames in os.walk(directory):
+        for filename in fnmatch.filter(filenames, '*.{0}'.format(extension)):
+            matches.append(os.path.join(root, filename))
+    for i in xrange(len(matches)):
+        matches[i] = (matches[i], os.path.getsize(matches[i]))
+    matches.sort(key=lambda filename: filename[1], reverse=False)
+    matches = [x[0] for x in matches]
+    return matches
+
+
+def generateBNGXML(directory):
+
+    bnglFiles = getValidFiles(directory, 'bngl')
+    print 'converting {0} bnglfiles'.format(len(bnglFiles))
+    progress = progressbar.ProgressBar()
+    for i in progress(range(len(bnglFiles))):
+        xmlName = '.'.join(bnglFiles[i].split('.')[:-1]) + '.xml'
+        
+
+        if os.path.exists(xmlName):
+            continue
+        console.bngl2xml(bnglFiles[i], timeout=10)
+
+    print 'moving xml files'
+    files = glob.iglob(os.path.join('.', "*.xml"))
+    for xmlfile in files:
+        if os.path.isfile(xmlfile):
+            shutil.move(xmlfile, directory)
+
+
+
 if __name__ == "__main__":
-    a = NumericStringParser()
-    print a.eval('pa(a,b)')
+    '''
+    with open('failure.dump','rb') as f:
+        failedFiles = pickle.load(f)
+    failedFiles.sort()
+    for bng in failedFiles:
+        sys.stderr.write(bng)
+        testBNGFailure(bng)
+    '''
+    generateBNGXML('new_non_curated')

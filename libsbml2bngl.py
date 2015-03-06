@@ -519,10 +519,16 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
             result =validateReactionUsage(molecules[flag],rules)
             if result != None:
                 logMess('ERROR:Simulation','Pseudo observable {0} in reaction {1}'.format(molecules[flag],result))
-            molecules.pop(flag)
+
+            #since we are considering it an observable delete it from the molecule and
+            #initial conditions list
+            s = molecules.pop(flag)
+            initialConditions = [x for x in initialConditions if '$' + s not in x]
         else:
             logMess('WARNING:Simulation','{0} reported as species, but usage is ambiguous.'.format(flag) )
             artificialObservables.pop(flag)
+            
+
     functions.extend(aRules)
     sbmlfunctions = parser.getSBMLFunctions()
     processFunctions(functions,sbmlfunctions,artificialObservables,rateFunctions)
@@ -597,7 +603,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     #rate of each classified rule
     evaluate2 = 0 if len(observables) == 0 else len(molecules)*1.0/len(observables)
     
-    
+        
     return len(rules),len(observables),evaluate,evaluate2,len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
     
     '''
@@ -967,10 +973,10 @@ if __name__ == "__main__":
     
     #main2()
     
-    analyzeFile('XMLExamples/curated/BIOMD0000000353.xml', resource_path('config/reactionDefinitions.json'),
+    analyzeFile('XMLExamples/non_curated/MODEL1112050000.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
                     'BIOMD0000000027.xml' + '.bngl', 
-                    speciesEquivalence='reactionDefinitions/speciesEquivalences474.json',atomize=True,bioGrid=False)
+                    speciesEquivalence=None,atomize=True,bioGrid=False)
     
     #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
