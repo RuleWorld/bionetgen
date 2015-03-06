@@ -37,18 +37,22 @@ def callSBMLTranslator(fileName,outputdirectory):
         '-a'],stdout=f)
     return result
 
+import pickle
 
 if __name__ == "__main__":
     directory = 'XMLExamples/non_curated'
     outputdirectory = 'new_non_curated'
-    restart = False
+    restart = True
     filenameset = getFiles(directory,'xml')
-    
+
     if not restart:
         existingset = getFiles(outputdirectory,'bngl')
         existingset = ['.'.join(x.split('.')[:-1]).split('/')[-1] for x in existingset]
         filenameset = [x for x in filenameset if x.split('/')[-1] not in existingset]
 
+    with open('failure2.dump','rb') as f:
+        filenameset2 = pickle.load(f)
+    filenameset = [x for x in filenameset if x in filenameset2]
     print(len(filenameset))
     
     futures = []
@@ -63,8 +67,10 @@ if __name__ == "__main__":
             i+=1
             progress.update(i)
     progress.finish()
+    
     '''
     for element in filenameset:
         sys.stderr.write(element + '\n')
         callSBMLTranslator(element,outputdirectory)
     '''
+    
