@@ -885,6 +885,10 @@ def getValidFiles(directory, extension):
     for root, dirnames, filenames in os.walk(directory):
         for filename in fnmatch.filter(filenames, '*.{0}'.format(extension)):
             matches.append(os.path.join(root, filename))
+    for i in xrange(len(matches)):
+        matches[i] = (matches[i], os.path.getsize(matches[i]))
+    matches.sort(key=lambda filename: filename[1], reverse=False)
+    matches = [x[0] for x in matches]
     return matches
 
 
@@ -950,18 +954,23 @@ def reactionBasedAtomizationFile(xml):
 import os.path
 
 
-def generateBNGXML(directory):
-
+def generateBNGXML(directory,format='BNGXML'):
     bnglFiles = getValidFiles(directory, 'bngl')
     print 'converting {0} bnglfiles'.format(len(bnglFiles))
     progress = progressbar.ProgressBar()
+
     for i in progress(range(len(bnglFiles))):
         xmlName = '.'.join(bnglFiles[i].split('.')[:-1]) + '.xml'
         
 
-        if os.path.exists(xmlName):
-            continue
-        console.bngl2xml(bnglFiles[i], timeout=10)
+        #if os.path.exists(xmlName):
+        #    continue
+        if format == 'BNGXML':
+            console.bngl2xml(bnglFiles[i], timeout=120)
+        elif format == 'SBML':
+            console.bngl2sbml(bnglFiles[i],timeout=120)
+        else:
+            raise Exception
 
     print 'moving xml files'
     files = glob.iglob(os.path.join('.', "*.xml"))
@@ -1439,10 +1448,17 @@ def nonAtomizedSpeciesAnalysis():
                 f.write('+++\n')
                 pprint.pprint(dict(reactionList), stream=f)
     f.close()
+    bngl = getValidFiles(directory,'bngl')
+    bngxml = getValidFiles(directorcony,'xml')
+    #print bngxml
+    bngxml = ['.'.join(x.split('.')[:-1]) + '.bngl' for x in bngxml]
+    #print bngxml
+    return [x for x in bngl if x not in bngxml]
+
 if __name__ == "__main__":
     # generate bng-xml
-    generateBNGXML('non_curated')
-
+    #generateBNGXML('bnglTest','SBML')
+    #print failures
     #spaceCoveredCDF('complex2')
     # modelCompositionCDF('complex2')
     #reactionBasedAtomizationDistro('complex2')

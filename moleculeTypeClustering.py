@@ -13,7 +13,8 @@ from sklearn.cluster import spectral_clustering
 import difflib
 import fnmatch
 import matplotlib.pyplot as plt
-
+import pandas
+import seaborn as sns
 def extractMoleculeTypesFromFile(fileName):
     species, rules, par = readBNGXML.parseXML(fileName)
     return species
@@ -28,6 +29,9 @@ def getValidFiles(directory, extension):
             matches.append(os.path.join(root, filename))
     return matches
 
+def extractRulesFromFile(fileName):
+    species, rules, par = readBNGXML.parseXML(fileName)
+    return rules
 
 def matchAnnotationsToSpecies(moleculeArray, annotationDictionary):
     '''
@@ -87,8 +91,8 @@ def extractMoleculeTypes(folderName,annotationsFolder,includeAnnotations=True):
     #with open('annotations.dump', 'rb') as f:
     #    annotationsArray = pickle.load(f)
 
-    with open(os.path.join(annotationsFolder,'annotationDictionary.dump'),'rb') as f:
-        annotationsArray = pickle.load(f)
+    #with open(os.path.join(annotationsFolder,'annotationDictionary.dump'),'rb') as f:
+    #    annotationsArray = pickle.load(f)
 
     bngxmlFiles = getValidFiles(folderName,'xml')
     for element in progress(range(0, len(bngxmlFiles))):
@@ -103,10 +107,10 @@ def extractMoleculeTypes(folderName,annotationsFolder,includeAnnotations=True):
                 #                                        annotationsArray[fileName])
                 
                 try:
-                    annotations = annotationsArray['XMLExamples/curated/'+fileName[:-4].split('/')[1]]
+                    annotations = annotationsArray['XMLExamples/non_curated/'+fileName[:-4].split('/')[1]]
                     resolvedAnnotations = resolveAnnotation(annotations)
                 except KeyError:
-                    print fileName
+                    print(fileName)
                     continue
                     
 
@@ -122,6 +126,66 @@ def extractMoleculeTypes(folderName,annotationsFolder,includeAnnotations=True):
             continue
     return moleculeTypesArray
 
+from pandas import Series
+
+def extractProcessDisstribution(folderName):
+    '''
+    return a list of molecule types structures
+    from a group of BNG-XML files in a folder <folderName>
+    '''
+    processArray = []
+    progress = progressbar.ProgressBar()
+    #with open('annotations.dump', 'rb') as f:
+    #    annotationsArray = pickle.load(f)
+
+    #with open(os.path.join(annotationsFolder,'annotationDictionary.dump'),'rb') as f:
+    #    annotationsArray = pickle.load(f)
+
+    bngxmlFiles = getValidFiles(folderName[0],'xml')
+    modelHistogram = collections.defaultdict(list)
+    actionDict = collections.defaultdict(list)
+    for element in progress(range(0, len(bngxmlFiles))):
+        actionHistogram = {'DeleteBond': 0, 'Add': 0, 'StateChange': 0, 
+        'AddBond': 0, 'Delete': 0,'ChangeCompartment':0}
+        fileName = bngxmlFiles[element]
+        try:
+            rules = extractRulesFromFile(fileName)
+            for rule in rules:
+                for action in rule[0].actions:
+                    actionHistogram[action.action] += 1
+            del actionHistogram['ChangeCompartment']
+            totalProcesses = sum([actionHistogram[x] for x in actionHistogram])
+            if totalProcesses == 0:
+                continue
+            actionHistogram = {x:actionHistogram[x]*1.0/totalProcesses for x in actionHistogram}
+            for x in actionHistogram:
+                actionDict['process'].append(x)
+                actionDict['percentage'].append(actionHistogram[x])
+                actionDict['database'].append(folderName[1])
+
+            #actionHistogram.sort(key=lambda x:x[0])
+            for element in actionHistogram:
+                modelHistogram[element].append(actionHistogram[element])
+            
+        except IOError:
+            continue
+
+
+    
+    for x in modelHistogram:
+        modelHistogram[x] = [np.mean(modelHistogram[x]),np.std(modelHistogram[x])]
+
+    return modelHistogram,actionDict
+    '''
+    s = Series([x for x in actionHistogram.elements()])
+    vc = s.value_counts()
+    ax = vc.plot(kind='bar',fontsize=18,rot=0)
+    fig = ax.get_figure()
+    fig.set_size_inches(18.5,12.0)
+    fig.savefig('{0}process.png'.format(folderName))
+    print '{0}process.png'.format(folderName)
+    #print actionHistogram
+    '''
 
 def compareStrings(name1, name2,minThreshold=0.8):
     if len(name1) > 3 and len(name2) > 3:
@@ -225,15 +289,14 @@ def rawAnnotationCoverage(directory):
     #print('no annotation',modelsWithoutAnnotation)
 
 
-def main():
-    directory = 'complex2'
-    directory2 = 'XMLExamples/curated'
-    '''
+def main(directory='new_non_curated',directory2='XMLExamples/non_curated'):
+        
+    
     print('building data structures...')
-    moleculeTypesArray = extractMoleculeTypes(directory,directory2)
+    moleculeTypesArray = extractMoleculeTypes(directory,directory2,False)
     with open(os.path.join(directory,'moleculeTypeDataSet.dump'), 'wb') as f:
         pickle.dump(moleculeTypesArray, f)
-    '''
+    
     with open(os.path.join(directory,'moleculeTypeDataSet.dump'), 'rb') as f:
         moleculeTypesArray = pickle.load(f)
 
@@ -244,10 +307,10 @@ def main():
     similarityMatrix = createSimilarityMatrix(modelMoleculeTypeList)
     with open(os.path.join(directory,'modelMoleculeTypeSimiliarityMatrix'),'wb') as f:
         pickle.dump(similarityMatrix,f)
-    '''
+    
     with open(os.path.join(directory,'modelMoleculeTypeSimiliarityMatrix'),'rb') as f:
         similarityMatrix = pickle.load(f)
-    '''
+    
     print('running clustering algorithm...')
     af = AffinityPropagation(affinity="precomputed",preference=500).fit(similarityMatrix)
     #af = spectral_clustering(affinity="precomputed").fit(similarityMatrix)
@@ -255,32 +318,33 @@ def main():
 
     with open(os.path.join(directory,'clusteringResult.dump'),'wb') as f:
         pickle.dump(af,f)
-    '''
+    
 
     with open(os.path.join(directory,'clusteringResult.dump'),'rb') as f:
         af = pickle.load(f)
-
-    print('final results:')
     cluster_centers_indices = af.cluster_centers_indices_
-    labels = af.labels_
 
-    n_clusters_ = len(cluster_centers_indices)
+    '''    
+    print('final results:')
+    #labels = af.labels_
 
-    print('Estimated number of clusters: %d' % n_clusters_)
+    #n_clusters_ = len(cluster_centers_indices)
+
+    #print('Estimated number of clusters: %d' % n_clusters_)
     print('Original number of molecule types: {0}'.format(len(modelMoleculeTypeList)))
     print('Original number of species: {0}'.format(sum([x[5] for x in moleculeTypesArray])))
     print('Number of molecule types with annotations: {0}'.format(len([x for x in modelMoleculeTypeList if x[4] != []])))
     print('number of models analyzed: {0}'.format(len(moleculeTypesArray)))
     moleculeDictionary = collections.defaultdict(list)
-    for element,label in zip(modelMoleculeTypeList,labels):
-        moleculeDictionary[label].append(element)
+    #for element,label in zip(modelMoleculeTypeList,labels):
+    #    moleculeDictionary[label].append(element)
     
-    print('molecule types without annotations: {0}'.format(([x for x in modelMoleculeTypeList if x[4] == []])))
+    #print('molecule types without annotations: {0}'.format(([x for x in modelMoleculeTypeList if x[4] == []])))
     with open(os.path.join(directory,'finalDictionary'),'wb') as f:
         pickle.dump(moleculeDictionary,f)
 
 
-def componentAnalysis(directory):
+def componentAnalysis(directory,atomizeThreshold=0):
     componentCount = []
     bindingCount = []
     stateCount = []
@@ -299,7 +363,7 @@ def componentAnalysis(directory):
         stateCount.append(modificationComponentCount)
         componentCount.append(modelComponentCount)
     #print [(np.mean(x),np.std(x)) for x in componentCount]
-    interestingCount = [index for index,x in enumerate(componentCount) if np.mean(x) >= 0.3]
+    interestingCount = [index for index,x in enumerate(componentCount) if np.mean(x) >= atomizeThreshold]
     componentCount = np.array(componentCount)
     bindingCount = np.array(bindingCount)
     stateCount = np.array(stateCount)
@@ -311,8 +375,8 @@ def componentAnalysis(directory):
     totalCount = np.array([y for x in componentCount for y in x])
     bindingTotalCount = np.array([y for x in bindingCount for y in x])
     stateTotalCount = np.array([y for x in stateCount for y in x])
-    
-    print 'component summary', np.mean(totalCount),np.std(totalCount),collections.Counter(totalCount),len(totalCount)
+    '''
+    print 'component summary', np.mean(totalCount),np.std(totalCount),len(totalCount)
     print 'binding summary',np.mean(bindingTotalCount),np.std(bindingTotalCount)
     print 'modification summary',np.mean(stateTotalCount),np.std(stateTotalCount)
     plt.clf()
@@ -320,18 +384,113 @@ def componentAnalysis(directory):
     plt.xlabel('Number of components',fontsize=20)
     plt.ylabel('Number of molecules',fontsize=20)
     plt.savefig('componentsvsmolecules.png')
-    
+    '''
     #plt.clf()
     zeroComponents  = [collections.Counter(x)[0] for x in componentCount]
     
     #print sum([x for x in zeroComponents if x > 7]),len([x for x in zeroComponents if x > 7])
-    interestingCount = [index for index,x in enumerate(componentCount) if np.mean(x) >= 0]
-    
+    return totalCount,bindingTotalCount,stateTotalCount
     #plt.show()
 
+def getXMLFailures(directory):
+    bng = getValidFiles(directory,'bngl')
+    bngxml =  getValidFiles(directory,'xml')
 
+    bngxml = ['.'.join(x.split('.')[:-1]) + '.bngl' for x in bngxml]
+    
+    failures = [x for x in bng if x not in bngxml]
+    print len(failures)
+    with open(os.path.join(directory,'failure.dump'),'wb') as f:
+        pickle.dump(failures,f)
+
+def componentDensityPlot():
+    directory = [('bnglTest','BNG control set'),('complex2','BioModels curated'),
+    ('new_non_curated','BioModels non curated')]
+    colors= sns.color_palette("Set1", 3)
+    f, (ax1, ax2,ax3) = plt.subplots(3, 1, sharex=True, figsize=(8, 6))
+    for color,direct in zip(colors,directory):
+        totalCount, bindingCount, modifyCount = componentAnalysis(direct[0],0.1)
+        sns.kdeplot(totalCount, shade=True,color=color,label=direct[1],ax=ax1,clip=(0, 8),bw=0.5)
+        sns.kdeplot(bindingCount, shade=True,color=color,ax=ax2,clip=(0, 8),bw=0.5)
+        sns.kdeplot(modifyCount, shade=True,color=color,ax=ax3,clip=(0, 8),bw=0.5)
+    plt.xlabel('Number of components')
+    ax1.set_title('Components per molecule')
+    ax2.set_title('Binding components per molecule')
+    ax3.set_title('Modification components per molecule')
+    plt.savefig('componentDensity.png')
+
+def processHistogram():
+    directory = [('bnglTest','BNG control set'),('complex2','BioModels curated'),('new_non_curated','BioModels non curated')]
+    processDistro  = []
+    
+    pandasDistro = collections.defaultdict(list)
+
+    processOrder = ['Add','Delete','AddBond','DeleteBond','StateChange']
+
+    '''
+    for direct in directory:
+        process,pandasc = extractProcessDisstribution(direct)
+        processDistro.append(process)
+        for element in pandasc:
+            pandasDistro[element].extend(pandasc[element])
+    
+    pandasDistro = pandas.DataFrame(data=pandasDistro)
+    print pandasDistro
+    with open('processDistro.dump','wb') as f:
+        pickle.dump(processDistro,f)
+        pickle.dump(pandasDistro,f)
+    '''
+
+    with open('processDistro.dump','rb') as f:
+        processDistro = pickle.load(f)
+        pandasDistro = pickle.load(f)
+
+    
+    sns.factorplot("process", "percentage", "database", pandasDistro,kind='bar',x_order=processOrder)
+    plt.savefig('processBarChar2.png')
+    
+
+    f, axs = plt.subplots(3, 2, sharex=True, figsize=(8, 8))
+
+    colors= sns.color_palette("Set1", 3)
+    for color,direct in zip(colors,directory):
+        for index,process in enumerate(processOrder):
+            actions = np.array(pandasDistro[pandasDistro.process==process][pandasDistro.database == direct[1]]['percentage'].values)
+            sns.kdeplot(actions, shade=True,color=color,label=direct[1],ax=axs[index/2][index%2],clip=(0,1),bw=0.5)
+            ax=axs[index/2][index%2].set_title(process)
+    plt.savefig('processDensity.png')
 
 if __name__ == "__main__":
-    componentAnalysis('complex2')
-    #main()
-    # rawAnnotationCoverage('XMLExamples/curated')
+    #directory = 'bnglTest'
+
+    processHistogram()
+
+    #componentDensityPlot()    
+    '''
+    colors = ['r','Y','b']
+    #print processDistro
+    fig, ax = plt.subplots()
+    #print np.arange(len(processDistro[0].keys()))
+    index = 0
+
+    rects = []
+    processList = ['StateChange','AddBond','DeleteBond','Add','Delete']
+    for x,y in enumerate(colors):
+        rects.append(ax.bar(np.arange(len(processDistro[x].keys()))+0.25*x, [processDistro[x][z][0] for z in processList], 0.25, color=y, yerr=[processDistro[x][z][1] for z in processList]))
+        
+    
+
+    ax.set_ylabel('Percentage')
+    ax.set_title('Process percentage by database')
+    ax.set_xticks(np.arange(len(processDistro[x].keys()))+0.35)
+    ax.set_xticklabels( [x for x in processList] )
+
+    ax.legend( (rects[0][0], rects[1][0],rects[2][0]), ('BNG control group', 'BioModels curated','BioModels non curated') )
+    plt.savefig('processBarChar.png')
+    '''
+    #plt.show()
+    #getXMLFailures(directory[0])
+    #
+
+    #main('bnglTest','')
+    # rawAnnotationCoverage('XMLExamples/non_curated')
