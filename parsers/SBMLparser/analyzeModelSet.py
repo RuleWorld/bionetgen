@@ -6,6 +6,10 @@ from subprocess import call
 import multiprocessing as mp
 import progressbar
 import sys
+
+sys.path.insert(0, '../utils/')
+import consoleCommands as console
+
 def callSBML(filename):
     pass
 
@@ -37,9 +41,35 @@ def callSBMLTranslator(fileName,outputdirectory):
         '-a'],stdout=f)
     return result
 
+
+def generateBNGXML(bnglFiles,format='BNGXML'):
+    
+    print 'converting {0} bnglfiles'.format(len(bnglFiles))
+    progress = progressbar.ProgressBar()
+
+    for i in progress(range(len(bnglFiles))):
+        xmlName = '.'.join(bnglFiles[i].split('.')[:-1]) + '.xml'
+        
+
+        #if os.path.exists(xmlName):
+        #    continue
+        if format == 'BNGXML':
+            console.bngl2xml(bnglFiles[i], timeout=120)
+        elif format == 'SBML':
+            console.bngl2sbml(bnglFiles[i],timeout=120)
+        else:
+            raise Exception
+
+    print 'moving xml files'
+    files = glob.iglob(os.path.join('.', "*.xml"))
+    for xmlfile in files:
+        if os.path.isfile(xmlfile):
+            shutil.move(xmlfile, directory)
+
+
 import pickle
 
-if __name__ == "__main__":
+def translate():
     directory = 'XMLExamples/non_curated'
     outputdirectory = 'new_non_curated'
     restart = True
@@ -73,4 +103,10 @@ if __name__ == "__main__":
         sys.stderr.write(element + '\n')
         callSBMLTranslator(element,outputdirectory)
     '''
+
     
+if __name__ == "__main__":
+    #translate()    
+    with open('new_non_curated/failure.dump','rb') as f:
+        s = pickle.load(f)
+    generateBNGXML(s)
