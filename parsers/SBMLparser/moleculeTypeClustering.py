@@ -289,7 +289,7 @@ def rawAnnotationCoverage(directory):
     #print('no annotation',modelsWithoutAnnotation)
 
 
-def main(directory='new_non_curated',directory2='XMLExamples/non_curated'):
+def preliminaryAnalysis(directory='new_non_curated',directory2='XMLExamples/non_curated'):
         
     
     print('building data structures...')
@@ -448,7 +448,7 @@ def processHistogram():
     
     sns.factorplot("process", "percentage", "database", pandasDistro,kind='bar',x_order=processOrder)
     plt.savefig('processBarChar2.png')
-    
+    print processDistro[0]
 
     f, axs = plt.subplots(3, 2, sharex=True, figsize=(8, 8))
 
@@ -456,16 +456,25 @@ def processHistogram():
     for color,direct in zip(colors,directory):
         for index,process in enumerate(processOrder):
             actions = np.array(pandasDistro[pandasDistro.process==process][pandasDistro.database == direct[1]]['percentage'].values)
-            sns.kdeplot(actions, shade=True,color=color,label=direct[1],ax=axs[index/2][index%2],clip=(0,1),bw=0.5)
+            sns.kdeplot(actions, shade=True,color=color,label=direct[1],ax=axs[index/2][index%2],clip=(0,1))
             ax=axs[index/2][index%2].set_title(process)
+            axs[index/2][index%2].set_xlim([0,1])
     plt.savefig('processDensity.png')
 
+    g = sns.FacetGrid(pandasDistro, row="process", col="database", hue="database",
+        margin_titles=True,row_order=processOrder,xlim=(0,1))
+    g.map(sns.kdeplot, "percentage",shade=True,clip=(0,1))
+    plt.savefig('processDensityGrid.png')
+    #plt.show()
+
 if __name__ == "__main__":
+    preliminaryAnalysis(directory='path2models2',directory2='biomodels/non_metabolic')
     #directory = 'bnglTest'
 
-    processHistogram()
+    #processHistogram()
 
     #componentDensityPlot()    
+
     '''
     colors = ['r','Y','b']
     #print processDistro
