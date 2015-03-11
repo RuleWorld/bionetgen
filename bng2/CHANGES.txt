@@ -19,6 +19,8 @@ model or using the visualize.pl script. The output is generated in GML format
 
 * Added /bin/sbmlTranslator, a stand-alone executable that provides the functionality described above along with some extra customization flags.
 
+For more information see the following page: http://bionetgen.org/index.php/SBML2BNGL
+
 
 ===== Other changes =====
 
