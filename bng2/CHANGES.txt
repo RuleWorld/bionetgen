@@ -4,7 +4,17 @@ http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.6-testing ==
 
-* Added new visualization tools: visualize() action and visualize.pl script.
+==== New Features ====
+
+===== Visualization Tools =====
+Visualization tools can be accessed using the visualize() action in a BNG 
+model or using the visualize.pl script. The output is generated in GML format 
+(Graph Modeling Language), which can be processed using graph editors such as yEd 
+(yworks.com/yed) or Cytoscape. Currently supported visualizations are 
+(i) rule visualization as a Petri net, (ii) rule visualization using graph operations, 
+(iii) contact map of the model, and (iv) regulatory graph of the model. 
+
+===== Other changes =====
 
 * Upgraded muParser to version 2.2.4.
 
