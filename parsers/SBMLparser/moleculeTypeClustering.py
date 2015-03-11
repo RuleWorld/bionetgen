@@ -121,7 +121,7 @@ def extractMoleculeTypes(folderName,annotationsFolder,includeAnnotations=True):
                 moleculeTypes)
             moleculeTypesArray.append(
                 [moleculeTypes, annotations, resolvedAnnotations,
-                    neighborhoodDictionary,element,observablesLen])
+                    neighborhoodDictionary,fileName,observablesLen])
         except IOError:
             continue
     return moleculeTypesArray
@@ -466,11 +466,21 @@ def processHistogram():
     g.map(sns.kdeplot, "percentage",shade=True,clip=(0,1))
     plt.savefig('processDensityGrid.png')
     #plt.show()
+    #
+def rankMoleculeTypes(directory):
+    with open(os.path.join(directory,'moleculeTypeDataSet.dump'), 'rb') as f:
+        moleculeTypesArray = pickle.load(f)
+    progress = progressbar.ProgressBar()
+    moleculeTypeTuples = []
+    for element in progress(moleculeTypesArray):
+        for molecule in element[0]:
+            moleculeTypeTuples.append([molecule.name,len(molecule.components),element[4]])
+    moleculeTypesDatabase = pandas.DataFrame(data=moleculeTypeTuples,columns=['molecule','size','files'])    
+    print moleculeTypesDatabase.sort('size',ascending=False).head(30)
 
 if __name__ == "__main__":
-    preliminaryAnalysis(directory='path2models2',directory2='biomodels/non_metabolic')
-    #directory = 'bnglTest'
-
+    #preliminaryAnalysis(directory='new_non_curated',directory2='biomodels/non_metabolic')
+    rankMoleculeTypes('new_non_curated')
     #processHistogram()
 
     #componentDensityPlot()    
