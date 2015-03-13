@@ -526,7 +526,7 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 //				vector<int> param_depend;
 				for (unsigned int i = 0; i < variable_names.size(); i++) {
 					if (param_map.find(variable_names[i]) == param_map.end()) {
-						cout << "Error in parsing function '" << func_name << "'. Could not find variable '"
+						cout << "Error in parsing function '" << func_name << " = " << function_string << "'. Could not find variable '"
 							 << variable_names[i] << "'. Exiting.\n";
 						exit(1);
 					}

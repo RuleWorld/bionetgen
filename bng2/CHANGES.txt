@@ -4,7 +4,25 @@ http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.6-testing ==
 
-* Added new visualization tools: visualize() action and visualize.pl script.
+==== New Features ====
+
+===== Visualization Tools =====
+Visualization tools can be accessed using the visualize() action in a BNG 
+model or using the visualize.pl script. The output is generated in GML format 
+(Graph Modeling Language), which can be processed using graph editors such as yEd 
+(yworks.com/yed) or Cytoscape. Currently supported visualizations are 
+(i) rule visualization as a Petri net, (ii) rule visualization using graph operations, 
+(iii) contact map of the model, and (iv) regulatory graph of the model. 
+
+====== SBML import =====
+* SBML import can be accessed using the readFile action. The SBML import can obtain both a 1:1  translation of SBML's unstructured species. Additionally SBML import also gives the user to 'atomize' the input file that is, to recover the implicit molecular strucure (binding, modification component sites) of the SBML species. The resulting model is placed in a temporary file. Further modification within BioNetGen is possible through the usage of normal BNG actions.
+
+* Added /bin/sbmlTranslator, a stand-alone executable that provides the functionality described above along with some extra customization flags.
+
+For more information see the following page: http://bionetgen.org/index.php/SBML2BNGL
+
+
+===== Other changes =====
 
 * Upgraded muParser to version 2.2.4.
 
@@ -32,14 +50,10 @@ version of SBML to Level 2 Version 3.
 with 'parameter_scan'. However, observables and functions are still evaluated to
 numbers.
 
-* Added $BNG_HOME/bin/sbmlTranslator, an SBML to BNGL conversion tool. sbmlTranslator
-can obtain a literal translation of an SBML file. Additionally it can 'atomize' the SBML file,
- that is, infer components, binding, and modification interactions between the original species.
 
 * Modified 'readFile' to process SBML input files using $BNG_HOME/bin/sbmlTranslator.
 'readFile' will also now throw an error if the input file extension is not any
 of ".bngl", ".net", or ".xml".
-
 
 * Modified 'readFile' to allow specific model blocks to be read using the 'blocks' argument.
 ** Example: <big><tt>readFile({file=>"filename.bngl",blocks=>["parameters","seed species"]})</tt></big>
@@ -67,6 +81,10 @@ action. This allows NFsim to be used in <big><tt>parameter_scan</tt></big> and
 * Modified validate_examples.pl to only report a stochastic validation failure if
 the validation fails twice in a row.
 
+* Added functionality to 'readFile' to convert forward slashes (/) to back slashes (\), 
+and vice versa, in '''''relative''''' paths, depending on the OS. This improves cross-platform 
+portability and makes it easier to share models.
+
 * Bug fixes
 
 ** An error is now thrown if zero-order synthesis products do not have compartments.
@@ -91,6 +109,10 @@ would be placed in the <big><tt>parameters</tt></big> block of the generated NET
 complexes larger than the maximum specified could be constructed. Also added code to check that 
 molecule names passed in the argument are valid. This is useful since users often specify patterns, 
 such as 'A()', rather than the actual molecule name 'A'. Without an error message this can cause confusion.
+
+** Fixed a bug where BNG was not passing to NFsim the random seed that it was generating when the
+'seed' argument was not explicitly set by the user. This made it difficult to debug problems in
+NFsim since it was not outputting a random seed in the error messages.
 
 == BioNetGen-2.2.5-stable ==
 '''''2013 July XX'''''

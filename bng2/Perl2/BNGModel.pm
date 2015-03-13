@@ -36,6 +36,7 @@ use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
 use File::Spec;
+use File::Spec::Win32;
 use POSIX ("floor", "ceil");
 use Scalar::Util ("looks_like_number");
 use Config;
@@ -186,7 +187,7 @@ sub readSBML
     {   return 1, "Could not find '$filepath'";   }
 	my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
 	$filename =~ s/\.xml//;
-	my $outfile = File::Spec->catpath($model->getOutputDir(), $filename.'.bngl');
+	my $outfile = File::Spec->catpath('', $model->getOutputDir(), $filename.'.bngl');
     my $user_args = @_ ? shift @_ : {};
     
     # Collect user arguments
@@ -288,6 +289,15 @@ sub readSBML
             $err = errgen( "'file' parameter is required for action readFile()" );
             goto EXIT;
         }
+        
+		# if file path is relative, change Unix path to Windows path, and vice versa,
+		# based on OS (improves cross-platform portability --LAH)
+		if ( not File::Spec::Win32->file_name_is_absolute( $filename ) ){
+			if ($Config{myarchname} =~ /MSWin32/)
+			{ $filename =~ s/\//\\/g; }
+			else
+			{ $filename =~ s/\\/\//g; }
+		}
 
         # increment level
         ++$level;

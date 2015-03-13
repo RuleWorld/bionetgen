@@ -19,6 +19,7 @@ from collections import defaultdict
 import itertools
 import math
 
+
 '''
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
@@ -536,7 +537,14 @@ class SBMLAnalyzer:
                 return None,[reactant]
         
 
+    @memoize
+    def get_close_matches(self,match,dataset,cutoff=0.6):
+        return difflib.get_close_matches(match,dataset,cutoff=cutoff)
+
     def growString(self,reactant,product,rp,pp,idx,strippedMolecules):
+        '''
+        currently this is the slowest method in the system because of all those calls to difflib
+        '''
         idx2 = 2
         treactant = [rp]
         tproduct = pp
@@ -548,7 +556,7 @@ class SBMLAnalyzer:
                 break
             if treactant2[-1] not in strippedMolecules:
                 if len(reactant) > idx + idx2:                    
-                    tailDifferences =  difflib.get_close_matches(treactant2[-1],strippedMolecules)
+                    tailDifferences =  self.get_close_matches(treactant2[-1],strippedMolecules)
                     if len(tailDifferences) > 0:
 
                         tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(treactant2),x).ratio() for x in tailDifferences])
@@ -556,8 +564,8 @@ class SBMLAnalyzer:
                         if tdr > hdr and tdr > 0.8:
                             treactant = treactant2
                     else:
-                        tailDifferences = difflib.get_close_matches('_'.join(treactant2),strippedMolecules)
-                        headDifferences = difflib.get_close_matches('_'.join(reactant[idx+idx2-1:idx+idx2+1]),strippedMolecules)
+                        tailDifferences = self.get_close_matches('_'.join(treactant2),strippedMolecules)
+                        headDifferences = self.get_close_matches('_'.join(reactant[idx+idx2-1:idx+idx2+1]),strippedMolecules)
                         if len(tailDifferences) == 0:
                             break
                         elif len(headDifferences) == 0:
@@ -593,8 +601,8 @@ class SBMLAnalyzer:
                         if tdr > hdr and tdr > 0.8:
                             tproduct = tproduct2
                     else:
-                        tailDifferences = difflib.get_close_matches('_'.join(tproduct2),strippedMolecules,cutoff=0.8)
-                        headDifferences = difflib.get_close_matches('_'.join(product[pidx+idx2-1:pidx+idx2+1]),strippedMolecules,cutoff=0.8)
+                        tailDifferences = self.get_close_matches('_'.join(tproduct2),strippedMolecules,cutoff=0.8)
+                        headDifferences = self.get_close_matches('_'.join(product[pidx+idx2-1:pidx+idx2+1]),strippedMolecules,cutoff=0.8)
                         if len(tailDifferences) == 0:
                             break
                         elif len(headDifferences) == 0 or '_'.join(tproduct2) in tailDifferences:

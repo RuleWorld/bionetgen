@@ -67,7 +67,7 @@ def loadBioGridDict(fileName='BioGridPandas.h5'):
         loadBioGrid.db = {}
     else:
         try:
-            loadBioGrid.db = pd.read_hdf('BioGridPandas.h5','biogrid')
+            loadBioGrid.db = pd.read_hdf(fileName,'biogrid')
         except:
             print 'Biogrid database not found'
             loadBioGrid.db = {}
