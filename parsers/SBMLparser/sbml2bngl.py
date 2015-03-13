@@ -905,7 +905,7 @@ class SBML2BNGL:
             
             
     def getSpeciesAnnotation(self):
-        speciesAnnotation = {}
+        speciesAnnotation = defaultdict(list)
 
         for species in self.model.getListOfSpecies():
             rawSpecies = self.getRawSpecies(species)
@@ -915,7 +915,8 @@ class SBML2BNGL:
             if lista.getSize() == 0:
                 speciesAnnotation[rawSpecies['returnID']] =  None
             else:
-                speciesAnnotation[rawSpecies['returnID']] = lista.get(0).getResources()
+                for idx in range(lista.getSize()):
+                    speciesAnnotation[rawSpecies['returnID']].append(lista.get(idx).getResources())
         return speciesAnnotation
 
     def getModelAnnotation(self):
