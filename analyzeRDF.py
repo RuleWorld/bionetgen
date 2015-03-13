@@ -13,23 +13,22 @@ us information on which reactants are the same, and how do they differ
 from sbml2bngl import SBML2BNGL
 
 import libsbml
+import collections
 
 def getAnnotations(parser,stringKey=None):
     annotation = parser.getSpeciesAnnotation()
-    annotationDictionary = {}
+    annotationDictionary = collections.defaultdict(set)
     for key,value in annotation.items():
         annotationList = []
         if annotation[key] != None:
-            for index in range(0,annotation[key].getNumAttributes()):
-                if not stringKey or stringKey in annotation[key].getValue(index):
-                    annotationList.append(annotation[key].getValue(index))
-            if annotationList == []:
-                continue
-            if frozenset(annotationList) in annotationDictionary:
-                annotationDictionary[frozenset(annotationList)].append(key)
-                annotationDictionary[frozenset(annotationList)].sort(lambda x,y: cmp(len(x), len(y)))
-            else:
-                annotationDictionary[frozenset(annotationList)] = [key]
+            for element in annotation[key]:
+                for index in range(0,element.getNumAttributes()):
+                    if not stringKey or stringKey in element.getValue(index):
+                        annotationList.append(element.getValue(index))
+                if annotationList == []:
+                    continue
+                annotationDictionary[key].add(tuple(annotationList))
+                #annotationDictionary[frozenset(annotationList)].sort(lambda x,y: cmp(len(x), len(y)))
     return annotationDictionary
 
 

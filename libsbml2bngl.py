@@ -971,6 +971,7 @@ if __name__ == "__main__":
     #identifyNamingConvention()
     #processDatabase()
     
+<<<<<<< HEAD
     #main2()
     
     analyzeFile('XMLExamples/curated/BIOMD0000000019.xml', resource_path('config/reactionDefinitions.json'),
@@ -978,6 +979,9 @@ if __name__ == "__main__":
                     'BIOMD0000000027.xml' + '.bngl', 
                     speciesEquivalence=None,atomize=True,bioGrid=False)
     
+=======
+    main()
+>>>>>>> 2_2_6_testing
     #processFile3('XMLExamples/noncurated/MODEL2463576061.x5ml')
     #processFile3('XMLExamples/jws/dupreez2.xml')
     #processFile3('XMLExamples/non_curated/MODEL1012220002.xml') 
@@ -999,7 +1003,11 @@ if __name__ == "__main__":
     '''    
     analyzeFile('plain2_sbml.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
+<<<<<<< HEAD
                     'plain2.bngl', speciesEquivalence=None,atomize=True,bioGrid=FaTruelse)
+=======
+                    'plain2.bngl', speciesEquivalence=None,atomize=True,bioGrid=True)
+>>>>>>> 2_2_6_testing
 
     '''
     '''
