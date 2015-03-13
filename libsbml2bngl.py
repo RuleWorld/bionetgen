@@ -973,7 +973,7 @@ if __name__ == "__main__":
     
     #main2()
     
-    analyzeFile('XMLExamples/non_curated/MODEL1112050000.xml', resource_path('config/reactionDefinitions.json'),
+    analyzeFile('XMLExamples/curated/BIOMD0000000019.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
                     'BIOMD0000000027.xml' + '.bngl', 
                     speciesEquivalence=None,atomize=True,bioGrid=False)
