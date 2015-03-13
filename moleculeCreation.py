@@ -19,7 +19,23 @@ import structures as st
 from util import logMess
 import biogrid
 from copy import deepcopy
+import marshal
+import functools
 
+def memoize(obj):
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        #key = str(args) + str(kwargs)
+        key = marshal.dumps([args,kwargs])
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
+
+
+@memoize
 def parseReactions(reaction):
     name = Word(alphanums + '_-') + ':'
 
@@ -41,15 +57,6 @@ def parseReactions(reaction):
     return result
 
 
-class Memoize:
-    def __init__(self, function):
-        self.function = function
-        self.memo = {}
-
-    def __call__(self, *args):
-        if not args in self.memo:
-            self.memo[args] = self.function(*args)
-        return self.memo[args]
 
 
 def resolveDependencyGraph(dependencyGraph, reactant, withModifications=False):
@@ -806,7 +813,8 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
-    rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
+    #rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
+    siteAnnotations = analyzeRDF.getAnnotations(parser,'interpro')
     ####dependency graph
     #binding reactions
     for reaction, classification in zip(rules, database.classifications):
@@ -959,10 +967,11 @@ def sanityCheck(translator):
     '''
     checks for critical atomization errors like isomorphism
     '''
+    stringrep = {x:str(translator[x]) for x in translator}
     repeats = set()
     for key in range(0,len(translator.keys())-1):
         for key2 in range(key+1,len(translator.keys())):
-            if translator[translator.keys()[key]] == translator[translator.keys()[key2]]:
+            if stringrep[translator.keys()[key]] == stringrep[translator.keys()[key2]]:
                 repeats.add((translator.keys()[key],translator.keys()[key2]))
     for repeat in repeats:
         logMess('CRITICAL:Atomization','Elements {0} and {1} produce\
@@ -982,12 +991,10 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         ---configurationFile
         ---speciesEquivalences:predefined species
     '''
-    
     '''
     pr = cProfile.Profile()
     pr.enable()
     '''
-    
     prunnedDependencyGraph,database = createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=speciesEquivalences,bioGridFlag=bioGridFlag)    
     #I'm polluting these data structures somewhere. In here
