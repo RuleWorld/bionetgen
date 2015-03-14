@@ -2,6 +2,11 @@ CHANGES to BioNetGen
 updated 14 March 2015
 http://code.google.com/p/bionetgen
 
+== BioNetGen-2.2.6-stable ==
+
+==== Bug Fixes ====
+* An error is now thrown if an unrecognized block name is encountered.
+
 == BioNetGen-2.2.6-testing ==
 '''''2015 March 3'''''
 

@@ -471,7 +471,8 @@ sub readSBML
 #	                $bngdata{$name} = 1;
 	                
 	                # Move on if block has been suppressed by the user
-					unless ($blocks{$name}) { next; }
+	                # (if the block name is not recognized, continue so an error will be thrown)
+					if (exists $blocks{$name} and $blocks{$name}==0) { next; }
 	
 	                ### Read Parameters Block
 	                if ( $name eq 'parameters' )
