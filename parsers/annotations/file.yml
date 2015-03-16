@@ -1,0 +1,38 @@
+---
+EC:
+  associated_geometry: cube
+  description: 'Extra celular matrix/Bounding box'
+EGF:
+  description: 'Molecule type defining Epidermal Growth Factors'
+  external_database:
+    - http://identifiers.org/uniprot/P01133
+  name: 'Epidermal Growth Factor'
+PM:
+  associated_geometry: sphere
+  description: 'Plasma membrane'
+  location: center
+actions:
+  simulate:
+    description: 'ode solver to see how things work'
+component2:
+  description: 'EGFR dimerization domain is now occupied'
+dimer:
+  description: 'observable counts the number of EGFR-EGFR dimers in the system'
+k1:
+  description: 'forward parameter describing the binding rate of EGF to EGFR'
+  units: um^3/s
+kr1:
+  description: 'backward parameter describing the unbinding rate of an EGF-EGFR complex'
+model:
+  author: 'Jose Juan  Tapia'
+  date: 'March, 12 2015'
+  description: 'This is an example of model annotation'
+  email: jjtapia@gmail.com
+  units:
+    area: um^2
+    reaction_rates:
+      unimolecular: '/s'
+    species: molecule_counts
+    volume: um^3
+reactant2:
+  description: 'EGFR needs to be bound to EGF for it to dimerize'
