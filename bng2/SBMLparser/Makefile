@@ -18,8 +18,11 @@ endif
 
 
 update:
+
+	if ! test -d pyinstaller2 ; then \
+		unzip pyinstaller2.zip;   \
+	fi ;
 	python updateDistribution.py -c;
-	unzip pyintaller2.zip
 
 
 install:

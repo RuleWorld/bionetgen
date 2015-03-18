@@ -63,9 +63,10 @@ def update_directory():
 
     for element in configFiles:
         shutil.copy(os.path.join(srcDirectory,'config',element), os.path.join('.','config'))
-
-    shutil.copytree(os.path.join(srcDirectory), 'SBMLparser')
-
+    try:
+        shutil.copytree(os.path.join(srcDirectory), 'SBMLparser')
+    except OSError:
+        print('SBMLparser directory already exists')
     
 if __name__ == "__main__":
     parser = defineConsole()
