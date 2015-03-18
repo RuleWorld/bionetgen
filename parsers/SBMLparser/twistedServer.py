@@ -57,23 +57,26 @@ class AtomizerServer(xmlrpc.XMLRPC):
             print 'failure'
 
     def generateAnnotation(self,ticket,xmlFile):
-        try:
+
             print ticket
+            reaction = 'config/reactionDefinitions.json'
+
             pointer = tempfile.mkstemp(suffix='.xml',text=True)
             with open(pointer[1],'w' ) as f:
                 f.write(xmlFile)
-            
+            '''
             call(['python','annotationExtender.py',
             '-i',pointer[1],
             '-o',pointer[1]+'.xml'])
             with open(pointer[1]+'.xml','r') as f:
                 result = f.read()
-            #result = annotationExtender.expandAnnotation(pointer[1])
+            '''
+            bnglFile = libsbml2bngl.readFromString(xmlFile,
+                                                 reaction,False,None,True)
+
+            result = annotationExtender.expandAnnotation(pointer[1],bnglFile)
             self.addToDict(ticket,result)
-            print 'sucess',result
-        except:
-            self.addToDict(ticket,-5)
-            print 'failure'
+            print 'success',
 
 
     def generateGraph(self,ticket,bnglContents,graphtype):

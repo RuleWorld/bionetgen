@@ -7,14 +7,14 @@ Created on Fri Nov 14 18:17:20 2014
 
 import libsbml
 from util import logMess
-from sbml2bngl import SBML2BNGL
+from sbml2bngl import SBML2BNGL as  SBML2BNGL
 import structures
-import moleculeCreation as mc
+import atomizer.moleculeCreation as mc
 import os
 from subprocess import call        
 import tempfile
 import sys
-sys.path.insert(0, '../utils/')
+#sys.path.insert(0, '../utils/')
 import consoleCommands
 import readBNGXML
 import argparse
@@ -263,7 +263,7 @@ def obtainSCT(fileName,reactionDefinitions,useID,namingConventions):
     
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    
+    database.forceModificationFlag = True
     
     sct,database = mc.createSpeciesCompositionGraph(parser, database, reactionDefinitions,namingConventions,
                        speciesEquivalences=None,bioGridFlag=False)
@@ -278,22 +278,15 @@ def writeSBML(document,fileName):
     writer = libsbml.SBMLWriter()
     writer.writeSBMLToFile(document,fileName)
 
-def createDataStructures(fileName):
+def createDataStructures(bnglContent):
     '''
     create an atomized biomodels in a temporary file to obtain relevant 
     bng information
     '''    
     
     pointer = tempfile.mkstemp(suffix='.bngl',text=True)
-    
-    with open(os.devnull,"w") as f:
-        result = call(['python','sbmlTranslator.py','-i',
-        #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
-        fileName,
-        '-o',pointer[1],
-        '-c','config/reactionDefinitions.json',
-        '-n','config/namingConventions.json',
-        '-a'],stdout=f)
+    with open(pointer[1],'w') as f:
+        f.write(bnglContent)    
     retval = os.getcwd()
     os.chdir(tempfile.tempdir)
     consoleCommands.bngl2xml(pointer[1])
@@ -301,11 +294,11 @@ def createDataStructures(fileName):
     os.chdir(retval)
     return readBNGXML.parseXML(xmlfilename)
 
-def expandAnnotation(fileName):
+def expandAnnotation(fileName,bnglFile):
 
     sct,database,sbmlDocument = obtainSCT(fileName,'config/reactionDefinitions.json'
     ,False,'config/namingConventions.json')
-    species,rules,par= createDataStructures(fileName)
+    species,rules,par= createDataStructures(bnglFile)
     
     
     annotationDict,speciesNameDict = buildAnnotationDict(sbmlDocument)
