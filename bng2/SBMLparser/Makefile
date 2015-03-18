@@ -40,5 +40,8 @@ clean:
 	if test -d ${DIST} ; then \
 	    rm -rf ${DIST} ;          \
 	fi ;
+	if test -d SBMLparser ; then \
+	    rm -rf SBMLparser ;          \
+	fi ;	
 	find . -name '*.pyc' -delete
-	python updateDistribution.py -r	
+	

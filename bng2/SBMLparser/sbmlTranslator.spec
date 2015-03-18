@@ -1,9 +1,9 @@
 # -*- mode: python -*-
-a = Analysis(['sbmlTranslator.py'],
+a = Analysis(['SBMLparser/sbmlTranslator.py'],
              hiddenimports=['_libsbml'],
              hookspath=None,
              runtime_hooks=None,
-	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui','matplotlib','IPython','PIL'])
+	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui','matplotlib','IPython','PIL','X11','gtk'])
 
 a.datas += [('config/namingConventions.json','config/namingConventions.json','DATA'),
 ('config/reactionDefinitions.json','config/reactionDefinitions.json','DATA')]
@@ -17,7 +17,6 @@ exe = EXE(pyz,
           a.scripts + [('O','','OPTION')],
 	  a.binaries,
 	  Tree('./reactionDefinitions', prefix = 'reactionDefinitions'),
-	  [('stats4.npy', 'stats4.npy', 'DATA')],
 	  a.zipfiles,
           a.datas,
           name='sbmlTranslator',

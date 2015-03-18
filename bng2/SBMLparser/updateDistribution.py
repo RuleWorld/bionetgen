@@ -27,6 +27,7 @@ def resource_path(relative_path):
 
 
 def clean_directory():
+    '''
     with open('fileList.json','r') as f:
         onlyfiles = json.load(f)
     for fileName in onlyfiles:
@@ -34,16 +35,20 @@ def clean_directory():
             os.remove(fileName)
         except OSError:
             continue
-
+    '''
+    shutil.rmtree(os.path.join('.','SBMLparser'))
 
 def update_directory():
-    srcDirectory = resource_path(os.path.join('..','..','parsers','SBMLparser'))  
+    srcDirectory = resource_path(os.path.join('..','..','parsers','SBMLparser','SBMLparser'))  
+
+    '''
     with open('fileList.json','r') as f:
         onlyfiles = json.load(f)
     #onlyfiles = [ f for f in listdir('./' + directory) if os.path.isfile(os.path.join('./' + directory,f)) ]
     configFiles =  [ f for f in listdir(os.path.join('.','config')) if os.path.isfile(os.path.join('.','config',f)) ]   
     #onlyNotFiles =[ f for f in listdir('./' + directory) if not isfile(join('./' + directory,f)) ]
     originalFiles = listdir(srcDirectory)
+    print onlyfiles
     for element in onlyfiles:
         if element in originalFiles:
             try:
@@ -53,6 +58,14 @@ def update_directory():
                 continue
     for element in configFiles:
         shutil.copy(os.path.join(srcDirectory,'config',element), os.path.join('.','config'))
+    '''
+    configFiles =  [ f for f in listdir(os.path.join('.','config')) if os.path.isfile(os.path.join('.','config',f)) ]   
+
+    for element in configFiles:
+        shutil.copy(os.path.join(srcDirectory,'config',element), os.path.join('.','config'))
+
+    shutil.copytree(os.path.join(srcDirectory), 'SBMLparser')
+
     
 if __name__ == "__main__":
     parser = defineConsole()
