@@ -1,6 +1,0 @@
-ERROR:Atomization.0: dependency cycle detected on InactiveheterotrimericG_protein
-ERROR:Atomization.1: dependency cycle detected on G_alpha_GDP
-ERROR:Atomization.2: dependency cycle detected on G_alpha_GTP
-ERROR:Atomization.3: dependency cycle detected on G_alpha_GDP
-ATOMIZATION:WARNING.4: adding forced transformation: G_alpha_GTP:[['G_alpha_GTP']]:G_alpha_GDP
-INFO:Summary.5: File contains 4 molecules out of 7 original SBML species

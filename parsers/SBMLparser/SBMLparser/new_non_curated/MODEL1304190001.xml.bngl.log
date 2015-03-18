@@ -1,8 +1,0 @@
-ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
-ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
-INFO.2: Exchanging reference to compartment cell for its dimensions
-INFO.3: Exchanging reference to compartment cell for its dimensions
-INFO.4: Exchanging reference to compartment cell for its dimensions
-INFO.5: Exchanging reference to compartment cell for its dimensions
-INFO.6: Exchanging reference to compartment cell for its dimensions
-INFO:Summary.7: File contains 4 molecules out of 4 original SBML species

@@ -1,4 +1,0 @@
-Atomization:Warning.0: inverting order of [['auxinTIR1VENUS'], ['auxinTIR1']] for lexical analysis
-INFO:Atomization.1: Lexical relationship inferred between                                     ['auxinTIR1', 'auxinTIR1VENUS'], user information confirming it is required
-CRITICAL:Atomization.2: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate auxinTIR1VENUS=[['auxinTIR1']].
-INFO:Summary.3: File contains 4 molecules out of 5 original SBML species
