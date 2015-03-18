@@ -4,17 +4,17 @@ Created on Fri May 2 16:56:13 2014
 
 @author: proto
 """
+import sys
+sys.path.insert(0, 'SBMLparser')
 
-
-import libsbml2bngl
-import annotationExtender
+import SBMLparser.libsbml2bngl as libsbml2bngl
+import SBMLparser.utils.annotationExtender as annotationExtender
 # Restrict to a particular path.
 from twisted.web import xmlrpc, server
 from twisted.internet import reactor
 import threading
-import sys
-sys.path.insert(0, '../utils/')
-import consoleCommands
+import SBMLparser.utils.consoleCommands as consoleCommands
+
 import tempfile
 sys.path.insert(0, '../gml2sbgn/')
 import libsbgn
