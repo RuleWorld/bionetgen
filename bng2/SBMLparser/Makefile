@@ -18,7 +18,8 @@ endif
 
 
 update:
-	python updateDistribution.py -c		
+	python updateDistribution.py -c;
+	unzip pyintaller2.zip
 
 
 install:
@@ -43,5 +44,9 @@ clean:
 	if test -d SBMLparser ; then \
 	    rm -rf SBMLparser ;          \
 	fi ;	
+	if test -d pyinstaller2 ; then \
+	    rm -rf pyinstaller2 ;          \
+	fi ;	
+
 	find . -name '*.pyc' -delete
 	
