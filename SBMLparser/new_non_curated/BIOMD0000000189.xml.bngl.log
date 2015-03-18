@@ -1,0 +1,17 @@
+INFO:Atomization.0: added induced naming convention [['p53'], ['p53deg']]
+INFO:Atomization.1: common root Mdm2=Mdm2_mRNA:Mdm2mRNAsyn
+INFO:Atomization.2: Lexical relationship inferred between                                     ['Mdm2_mRNA', 'Mdm2mRNAsyn'], user information confirming it is required
+INFO:Atomization.3: Lexical relationship inferred between                                     ['Mdm2_mRNA', 'Mdm2mRNAsyn'], user information confirming it is required
+INFO:Atomization.4: Lexical relationship inferred between                                     ['p53', 'p53syn'], user information confirming it is required
+INFO:Atomization.5: Lexical relationship inferred between                                     ['damDNA', 'totdamDNA'], user information confirming it is required
+INFO:Atomization.6: common root Mdm2=Mdm2_mRNA:Mdm2mRNAdeg
+INFO:Atomization.7: Lexical relationship inferred between                                     ['Mdm2_mRNA', 'Mdm2mRNAdeg'], user information confirming it is required
+INFO:Atomization.8: Lexical relationship inferred between                                     ['Mdm2_mRNA', 'Mdm2mRNAdeg'], user information confirming it is required
+INFO:Atomization.9: matching Mdm2mRNAdeg=['Mdm2_mRNA']
+CRITICAL:Atomization.10: I dont know how to process these candidates and I have no way to make an educated guess. Politely refusing to translate p53=[['p53']].
+CRITICAL:Atomization.11: I dont know how to process these candidates and I have no way to make an educated guess. Politely refusing to translate damDNA=[['damDNA']].
+CRITICAL:Atomization.12: I dont know how to process these candidates and I have no way to make an educated guess. Politely refusing to translate Mdm2_mRNA=[['Mdm2_mRNA']].
+ATOMIZATION:WARNING.13: adding forced transformation: Mdm2_mRNA:[['Mdm2_mRNA']]:Sink
+WARNING:Simulation.14: totMdm2() reported as function, but usage is ambiguous
+WARNING:Simulation.15: totp53() reported as function, but usage is ambiguous
+INFO:Summary.16: File contains 11 molecules out of 16 original SBML species

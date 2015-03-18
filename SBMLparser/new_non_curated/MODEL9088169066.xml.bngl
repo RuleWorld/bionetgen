@@ -1,0 +1,38 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/10493814', 'http://identifiers.org/biomodels.db/MODEL9088169066']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 5 molecules and 2 reactions. The translated model has 4 molecules and 2 rules'
+###
+begin model
+begin parameters
+	r1_kf 0.000000
+	r1_kb 0.000000
+	r2_kf 0.000000
+	r2_kb 0.000000
+end parameters
+begin compartments
+	default_compartment  3  1e-18
+	geometry  3  1.6667e-18
+	cell 3 1.0
+end compartments
+begin molecule types
+	Im_minus_nNOS()
+	Imidazole(nnos_minus_nm_minus_arginine)
+	NM_minus_Arginine()
+	nNOS_minus_NM_minus_Arginine(imidazole)
+end molecule types
+begin seed species
+	@geometry:Im_minus_nNOS() 1.0 #Im_minus_nNOS #Im_minus_nNOS
+	@geometry:NM_minus_Arginine() 6000.0 #NM_minus_Arginine #NM_minus_Arginine
+end seed species
+begin observables
+	Species Im_minus_nNOS Im_minus_nNOS() #Im_minus_nNOS
+	Species Imidazole Imidazole(nnos_minus_nm_minus_arginine) #Imidazole
+	Species NM_minus_Arginine NM_minus_Arginine() #NM_minus_Arginine
+	Species nNOS_minus_NM_minus_Arginine nNOS_minus_NM_minus_Arginine(imidazole) #nNOS_minus_NM_minus_Arginine
+	Species Im_minus_nNOS_minus_NM_minus_Arginine Imidazole(nnos_minus_nm_minus_arginine!0).nNOS_minus_NM_minus_Arginine(imidazole!0) #Im_minus_nNOS_minus_NM_minus_Arginine
+end observables
+begin reaction rules
+	Imidazole_release: Imidazole(nnos_minus_nm_minus_arginine!0)@geometry.nNOS_minus_NM_minus_Arginine(imidazole!0)@geometry <-> nNOS_minus_NM_minus_Arginine(imidazole)@geometry + Imidazole(nnos_minus_nm_minus_arginine)@geometry r1_kf,r1_kb
+	NM_minus_Arginine_binding: NM_minus_Arginine()@geometry + Im_minus_nNOS()@geometry <-> Imidazole(nnos_minus_nm_minus_arginine!0)@geometry.nNOS_minus_NM_minus_Arginine(imidazole!0)@geometry r2_kf,r2_kb
+end reaction rules
+end model

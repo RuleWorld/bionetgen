@@ -1,0 +1,64 @@
+INFO:Atomization.0: added induced naming convention [['F6P'], ['F16bP']]
+Atomization:Warning.1: inverting order of [['GLCx'], ['GLC']] for lexical analysis
+INFO:Atomization.2: added induced naming convention [['GLC'], ['GLCx']]
+Atomization:Warning.3: inverting order of [['Ru5P'], ['R5P']] for lexical analysis
+INFO:Atomization.4: added induced naming convention [['R5P'], ['Ru5P']]
+INFO:Atomization.5: added induced naming convention [['NADP'], ['NADPH']]
+Atomization:Warning.6: inverting order of [['NADPH'], ['NADP']] for lexical analysis
+INFO:Atomization.7: added induced naming convention [['NADP'], ['NADPH']]
+INFO:Atomization.8: Lexical relationship inferred between                                     ['NAD', 'NADH'], user information confirming it is required
+INFO:Atomization.9: matching NADH=['NAD']
+INFO:Atomization.10: Lexical relationship inferred between                                     ['NAD', 'NADP'], user information confirming it is required
+WARNING:Atomization.11: Are these actually the same? F16bP=[['DHAP', 'GAP'], ['F6P']].
+ATOMIZATION:WARNING.12: adding forced transformation: P3G:[['P3G']]:P2G
+ATOMIZATION:WARNING.13: adding forced transformation: ADP:[['ADP']]:ATP
+ATOMIZATION:WARNING.14: adding forced transformation: DHAP:[['DHAP']]:G3P
+ATOMIZATION:WARNING.15: adding forced transformation: DHAP:[['DHAP']]:GAP
+ATOMIZATION:WARNING.16: adding forced transformation: UDP:[['UDP']]:UTP
+ATOMIZATION:WARNING.17: adding forced transformation: GLC:[['GLC']]:G6P
+ATOMIZATION:WARNING.18: adding forced transformation: PYR:[['PYR']]:AcAld
+ATOMIZATION:WARNING.19: adding forced transformation: P3G:[['P2G']]:PEP
+ATOMIZATION:CRITICAL.20: unregistered modification: PEP:[['P2G']]
+ATOMIZATION:WARNING.21: adding forced transformation: GLC:[['G6P']]:T6P
+ATOMIZATION:CRITICAL.22: unregistered modification: T6P:[['G6P']]
+ATOMIZATION:WARNING.23: adding forced transformation: DHAP:[['G3P']]:GLY
+ATOMIZATION:CRITICAL.24: unregistered modification: GLY:[['G3P']]
+ATOMIZATION:WARNING.25: adding forced transformation: R5P:[['Ru5P']]:X5P
+ATOMIZATION:WARNING.26: adding forced transformation: DHAP:[['GAP']]:BPG
+ATOMIZATION:CRITICAL.27: unregistered modification: BPG:[['GAP']]
+ATOMIZATION:WARNING.28: adding forced transformation: GLC:[['G6P']]:G1P
+ATOMIZATION:CRITICAL.29: unregistered modification: G1P:[['G6P']]
+ATOMIZATION:WARNING.30: adding forced transformation: GLC:[['G6P']]:G6L
+ATOMIZATION:CRITICAL.31: unregistered modification: G6L:[['G6P']]
+ATOMIZATION:WARNING.32: adding forced transformation: PYR:[['AcAld']]:ACE
+ATOMIZATION:CRITICAL.33: unregistered modification: ACE:[['AcAld']]
+ATOMIZATION:WARNING.34: adding forced transformation: GLC:[['G6P']]:F6P
+ATOMIZATION:CRITICAL.35: unregistered modification: F6P:[['G6P']]
+ATOMIZATION:WARNING.36: adding forced transformation: PYR:[['AcAld']]:EtOH
+ATOMIZATION:CRITICAL.37: unregistered modification: EtOH:[['AcAld']]
+ATOMIZATION:WARNING.38: adding forced transformation: GLC:[['G6L']]:P6G
+ATOMIZATION:CRITICAL.39: unregistered modification: P6G:[['G6L']]
+ATOMIZATION:CRITICAL.40: unregistered modification: P6G:[['G6L']]
+ATOMIZATION:WARNING.41: adding forced transformation: GLC:[['T6P']]:TRH
+ATOMIZATION:CRITICAL.42: unregistered modification: TRH:[['T6P']]
+ATOMIZATION:CRITICAL.43: unregistered modification: TRH:[['T6P']]
+INFO.44: Exchanging reference to compartment cell for its dimensions
+INFO.45: Exchanging reference to compartment cell for its dimensions
+INFO.46: Exchanging reference to compartment cell for its dimensions
+INFO.47: Exchanging reference to compartment cell for its dimensions
+INFO.48: Exchanging reference to compartment cell for its dimensions
+INFO.49: Exchanging reference to compartment cell for its dimensions
+INFO.50: Exchanging reference to compartment cell for its dimensions
+INFO.51: Exchanging reference to compartment cell for its dimensions
+INFO.52: Exchanging reference to compartment cell for its dimensions
+INFO.53: Exchanging reference to compartment cell for its dimensions
+INFO.54: Exchanging reference to compartment cell for its dimensions
+INFO.55: Exchanging reference to compartment cell for its dimensions
+INFO.56: Exchanging reference to compartment cell for its dimensions
+INFO.57: Exchanging reference to compartment cell for its dimensions
+INFO.58: Exchanging reference to compartment cell for its dimensions
+INFO.59: Exchanging reference to compartment cell for its dimensions
+INFO.60: Exchanging reference to compartment cell for its dimensions
+WARNING:Simulation.61: AMP() reported as function, but usage is ambiguous
+ERROR:Simulation.62: Pseudo observable AMP() in reaction AK: ADP(genericMod~0)@cell + ADP(genericMod~0)@cell <-> ADP(genericMod~ATP)@cell + AMP()@cell functionRate1(),functionRate1m() 
+INFO:Summary.63: File contains 50 molecules out of 75 original SBML species

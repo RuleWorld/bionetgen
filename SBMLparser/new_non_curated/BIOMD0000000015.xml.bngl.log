@@ -1,0 +1,38 @@
+INFO:Atomization.0: common root phosphate=inosinemonophosphate:xanthosinemonophosphate
+ERROR:Atomization.1: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.2: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.3: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.4: dependency cycle detected on adenine
+ERROR:Atomization.5: dependency cycle detected on s_adenosyl_L_methionine
+ERROR:Atomization.6: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.7: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.8: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.9: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.10: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.11: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.12: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.13: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.14: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.15: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.16: dependency cycle detected on ATP_ADP_AMP_Ado
+ERROR:Atomization.17: dependency cycle detected on adenine
+ERROR:Atomization.18: dependency cycle detected on ATP_ADP_AMP_Ado
+CRITICAL:Atomization.19: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate dIno_Ino_HX=[['ATP_ADP_AMP_Ado']].
+CRITICAL:Atomization.20: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate dATP_dADP_dAMP_dAdo=[['ATP_ADP_AMP_Ado']].
+CRITICAL:Atomization.21: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate s_adenosyl_L_methionine=[['ATP_ADP_AMP_Ado']].
+CRITICAL:Atomization.22: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate adenylosuccinate=[['inosinemonophosphate']].
+INFO:Atomization.23: Lexical relationship inferred between                                     ['inosinemonophosphate', 'xanthosinemonophosphate'], user information confirming it is required
+INFO:Atomization.24: Lexical relationship inferred between                                     ['inosinemonophosphate', 'xanthosinemonophosphate'], user information confirming it is required
+CRITICAL:Atomization.25: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate xanthosinemonophosphate=[['inosinemonophosphate']].
+ATOMIZATION:WARNING.26: adding forced transformation: DNA:[['DNA']]:dGTP_dGDP_dGMP
+ATOMIZATION:WARNING.27: adding forced transformation: ribose_5_phosphate:[['ribose_5_phosphate']]:phosphoribosylpyrophosphate
+ATOMIZATION:WARNING.28: adding forced transformation: DNA:[['dGTP_dGDP_dGMP']]:guanine
+ATOMIZATION:CRITICAL.29: unregistered modification: guanine:[['dGTP_dGDP_dGMP']]
+ATOMIZATION:WARNING.30: adding forced transformation: DNA:[['guanine']]:xanthine
+ATOMIZATION:CRITICAL.31: unregistered modification: xanthine:[['guanine']]
+ATOMIZATION:CRITICAL.32: unregistered modification: xanthine:[['guanine']]
+ATOMIZATION:WARNING.33: adding forced transformation: DNA:[['xanthine']]:uricacid
+ATOMIZATION:CRITICAL.34: unregistered modification: uricacid:[['xanthine']]
+ATOMIZATION:CRITICAL.35: unregistered modification: uricacid:[['xanthine']]
+ATOMIZATION:CRITICAL.36: unregistered modification: uricacid:[['xanthine']]
+INFO:Summary.37: File contains 10 molecules out of 18 original SBML species

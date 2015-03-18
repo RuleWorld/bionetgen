@@ -1,0 +1,50 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/4334846', 'http://identifiers.org/biomodels.db/MODEL0911231713']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 3 molecules and 3 rules'
+###
+begin model
+begin parameters
+	QAO 5.00707
+	PA 103.525
+	POT 35.1148
+	PPA 15.6376
+	HSL 1.0
+	Z13 0.625
+	HSR 1.0
+	DHDTR 0.05
+	tu 1.0
+end parameters
+begin compartments
+	Compartment  3  1.0
+end compartments
+begin molecule types
+	HPL
+	HPR
+	HMD1
+end molecule types
+begin seed species
+	HPL@Compartment 1.00163
+	HPR@Compartment 1.00237
+	HMD1@Compartment 1.0
+end seed species
+begin observables
+	Species HPL HPL
+	Species HPR HPR
+	Species HMD1 HMD1
+end observables
+begin functions
+	HMD() = if((HMD1>1),(1),(HMD1))
+	DHM() = (POT -10) * DHDTR
+	arRateHPL() = (((PA*QAO/(500*HSL)) ^ (Z13))-HPL)/57600
+	armRateHPL() = 0
+	arRateHPR() = (((PPA*QAO/(75*HSR)) ^ (Z13))-HPR)/57600
+	armRateHPR() = 0
+	armRateHMD1() = 0
+	arRateHMD1() = ((POT -10) * DHDTR) / tu
+end functions
+begin reaction rules
+	0  <-> HPL() arRateHPL,armRateHPL #rateLaw
+	0  <-> HPR() arRateHPR,armRateHPR #rateLaw
+	0  <-> HMD1() arRateHMD1,armRateHMD1 #rateLaw
+end reaction rules
+end model

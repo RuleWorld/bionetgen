@@ -1,0 +1,9 @@
+ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
+ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
+WARNING.2: Parameter AHY 0.301963 corresponds both as a non zero parameter                             and a rate rule, verify behavior
+SIMULATION:CRITICAL.3: Boundary condition/assignment type variables (AHZ1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.4: Boundary condition/assignment type variables (AHZ) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.5: Boundary condition/assignment type variables (AH7) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.6: Boundary condition/assignment type variables (ATRRFB) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.7: Boundary condition/assignment type variables (ATRVFB) are not properly                     supported in BioNetGen simulator
+INFO:Summary.8: File contains 1 molecules out of 1 original SBML species

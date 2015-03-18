@@ -1,0 +1,15 @@
+INFO:Atomization.0: added induced naming convention [['MKKK'], ['MKKK_P']]
+INFO:Atomization.1: added induced naming convention [['MKK'], ['MKK_P']]
+INFO:Atomization.2: added induced naming convention [['MKK_P'], ['MKK_PP']]
+INFO:Atomization.3: added induced naming convention [['M_P'], ['M_PP']]
+Atomization:Warning.4: inverting order of [['MKKK_P'], ['MKKK']] for lexical analysis
+INFO:Atomization.5: added induced naming convention [['MKKK'], ['MKKK_P']]
+Atomization:Warning.6: inverting order of [['MKK_PP'], ['MKK_P']] for lexical analysis
+INFO:Atomization.7: added induced naming convention [['MKK_P'], ['MKK_PP']]
+Atomization:Warning.8: inverting order of [['MKK_P'], ['MKK']] for lexical analysis
+INFO:Atomization.9: added induced naming convention [['MKK'], ['MKK_P']]
+Atomization:Warning.10: inverting order of [['M_PP'], ['M_P']] for lexical analysis
+INFO:Atomization.11: added induced naming convention [['M_P'], ['M_PP']]
+Atomization:Warning.12: inverting order of [['M_P'], ['M']] for lexical analysis
+INFO:Atomization.13: Lexical relationship inferred between                                     ['MKK', 'MKKK'], user information confirming it is required
+INFO:Summary.14: File contains 6 molecules out of 11 original SBML species

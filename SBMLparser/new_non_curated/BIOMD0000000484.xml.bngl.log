@@ -1,0 +1,4 @@
+Atomization:Warning.0: inverting order of [['ES'], ['S']] for lexical analysis
+INFO:Atomization.1: added induced naming convention [['S'], ['ES']]
+INFO:Atomization.2: added induced naming convention [['S'], ['ES']]
+INFO:Summary.3: File contains 1 molecules out of 2 original SBML species

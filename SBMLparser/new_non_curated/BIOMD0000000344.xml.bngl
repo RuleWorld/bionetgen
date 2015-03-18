@@ -1,0 +1,353 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0042592']
+#@creatorEmail:'viji@ebi.ac.uk'
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 54 molecules and 80 reactions. The translated model has 19 molecules and 80 rules'
+#@creatorName:'Chelliah Vijayalakshmi'
+#@BQB_HAS_TAXON:['http://identifiers.org/taxonomy/7711', 'http://identifiers.org/pubmed/21779370', 'http://identifiers.org/biomodels.db/BIOMD0000000091', 'http://identifiers.org/biomodels.db/MODEL1005280000', 'http://identifiers.org/biomodels.db/BIOMD0000000344']
+#@BQB_HAS_PROPERTY:['http://identifiers.org/mamo/MAMO_0000046']
+###
+begin model
+begin parameters
+	ksynNatP 0.042
+	kmisfold 2e-06
+	kbinMisPProt 1e-07
+	kdegMisP 0.01
+	kagg 1e-08
+	kseqagg 7e-07
+	kbinAggPProt 1e-05
+	kbinHspMisp 8e-06
+	krelHspMisp 8e-05
+	krefold 0.00055
+	kbinHsf1Hsp90 0.02
+	krelHsf1Hsp90 0.5
+	kdimerHsf1 8e-05
+	ktrimerHsf1 0.01
+	kdetrimerHsf1 0.5
+	kdedimerHsf1 0.5
+	kbinHSEHsf1 0.05
+	krelHSEHsf1 0.08
+	kupregHsp 0.2
+	kbasalsynHsp70 0.008
+	kbasalsynHsp90 0.008
+	kbinHsp70Prot 1.2e-08
+	kbinHsp90Prot 1e-08
+	kdegHsp70 0.01
+	kdegHsp90 0.01
+	kgenROS 0.01
+	kremROS 0.001
+	kbinHsp70client 0.0002
+	krelHsp70client 5.0
+	kbinHsp90client 0.0002
+	krelHsp90client 5.0
+	kphosJnk 0.02
+	kdephosJnkMkp1 0.05
+	kbinHsp70Ppx 0.2
+	krelHsp70Ppx 5.0
+	kphosHsf1 0.03
+	kdephosHsf1 0.01
+	kbinHSEPhosTriH 0.1
+	krelHSEPhosTriH 0.08
+	kphosp38 0.02
+	kdephosp38Mkp1 0.05
+	kgenROSAggP 1e-06
+	ksynAkt 0.0015
+	kbinAktHsp90 0.00037
+	krelAktHsp90 7.0
+	kbinAktProt 6e-08
+	krelAktProt 1e-08
+	kdegAkt 0.01
+	kbinCHIP 2e-07
+	krelCHIP 1e-08
+	ksynMkp1 1e-05
+	kbinMkp1Prot 9.6e-09
+	kdegMkp1 0.01
+	kphosMkp1 0.02
+	kdephosMkp1 0.001
+	kgenROSp38 0.0001
+	kdamHsp 1e-08
+	kp38death 1.5e-07
+	kJnkdeath 1.5e-07
+	kPIdeath 2e-08
+	kp38act 1.0
+	kalive 1.0
+end parameters
+begin compartments
+	cytosol  3  1.0
+	nucleus  3  1.0
+	cell 3 1.0
+end compartments
+begin molecule types
+	Hsp70Client(source)
+	Hsp90Client(source)
+	CHIP(source)
+	Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)
+	Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90)
+	HSEHsp70(hsf1,hsf1_hsf1_hsf1_p)
+	HSEHsp90(hsf1,hsf1_hsf1_hsf1_p)
+	Jnk(_Pmod~_P~0)
+	Ppx(source)
+	Pkc()
+	p38(_Pmod~_P~0)
+	Proteasome(source)
+	ATP()
+	ADP()
+	Source(_Pmod~_P~0,_dammod~_DAM~0,chip,genericMod~ROS~0~Akt~Mkp1~NatP~Hsp90~Hsp70~Sink~MisP~Hsp90Hsp90~Hsp70Hsp70~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)
+	p38Death()
+	JNKDeath()
+	PIDeath()
+	CellDeath()
+end molecule types
+begin seed species
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~NatP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 17600.0 #NatP #NatP
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 1400.0 #Hsp70 #Hsp70
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 1850.0 #Hsp90 #Hsp90
+	@cytosol:Hsp70Client(source) 490.0 #Hsp70Client #Hsp70Client
+	@cytosol:Hsp90Client(source) 590.0 #Hsp90Client #Hsp90Client
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client!0,hsp90client,ppx,proteasome,source,source).Hsp70Client(source!0) 10.0 #Hsp70_Hsp70Client #Hsp70_Hsp70Client
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client!0,ppx,proteasome,source,source).Hsp90Client(source!0) 10.0 #Hsp90_Hsp90Client #Hsp90_Hsp90Client
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 340.0 #Akt #Akt
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source) 30.0 #Akt_Hsp90 #Akt_Hsp90
+	@cytosol:CHIP(source) 255.0 #CHIP #CHIP
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip!1,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).CHIP(source!1) 80.0 #Akt_CHIP_Hsp90 #Akt_CHIP_Hsp90
+	@cytosol:Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source) 5.0 #Hsf1 #Hsf1
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1!0,hsp70client,hsp90client,ppx,proteasome,source,source).Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source!0) 95.0 #Hsf1_Hsp90 #Hsf1_Hsp90
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source) 470.0 #Hsp90_MisP #Hsp90_MisP
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source) 410.0 #Hsp70_MisP #Hsp70_MisP
+	@nucleus:HSEHsp70(hsf1,hsf1_hsf1_hsf1_p) 2.0 #HSEHsp70 #HSEHsp70
+	@nucleus:HSEHsp90(hsf1,hsf1_hsf1_hsf1_p) 2.0 #HSEHsp90 #HSEHsp90
+	@cytosol:Jnk(_Pmod~0) 100.0 #Jnk #Jnk
+	@cytosol:Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 100.0 #Mkp1_P #Mkp1_P
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx!0,proteasome,source,source).Ppx(source!0) 100.0 #Hsp70_Ppx #Hsp70_Ppx
+	@cytosol:Pkc() 100.0 #Pkc #Pkc
+	@cytosol:p38(_Pmod~0) 100.0 #p38 #p38
+	@cytosol:Proteasome(source) 500.0 #Proteasome #Proteasome
+	@cytosol:Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 10.0 #ROS #ROS
+	@cytosol:$ATP() 10000.0 #ATP #ATP
+	@cytosol:$ADP() 1000.0 #ADP #ADP
+	@cytosol:$Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 1.0 #Source #Source
+	@cytosol:$Source(_Pmod~0,_dammod~0,chip,genericMod~Sink,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) 1.0 #Sink #Sink
+end seed species
+begin observables
+	Species NatP Source(_Pmod~0,_dammod~0,chip,genericMod~NatP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #NatP
+	Species MisP Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #MisP
+	Species Hsp70 Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Hsp70
+	Species Hsp90 Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Hsp90
+	Species Hsp70_dam Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp70Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Hsp70_dam
+	Species Hsp90_dam Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp90Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Hsp90_dam
+	Species Hsp90_Proteasome Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source).Proteasome(source!0) #Hsp90_Proteasome
+	Species Hsp70_Proteasome Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source).Proteasome(source!0) #Hsp70_Proteasome
+	Species Hsp70Client Hsp70Client(source) #Hsp70Client
+	Species Hsp90Client Hsp90Client(source) #Hsp90Client
+	Species Hsp70_Hsp70Client Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client!0,hsp90client,ppx,proteasome,source,source).Hsp70Client(source!0) #Hsp70_Hsp70Client
+	Species Hsp90_Hsp90Client Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client!0,ppx,proteasome,source,source).Hsp90Client(source!0) #Hsp90_Hsp90Client
+	Species Akt Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Akt
+	Species Akt_Hsp90 Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source) #Akt_Hsp90
+	Species CHIP CHIP(source) #CHIP
+	Species Akt_CHIP_Hsp90 Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip!1,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).CHIP(source!1) #Akt_CHIP_Hsp90
+	Species Akt_Proteasome Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source).Proteasome(source!0) #Akt_Proteasome
+	Species Hsf1 Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source) #Hsf1
+	Species Hsf1_Hsp90 Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1!0,hsp70client,hsp90client,ppx,proteasome,source,source).Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source!0) #Hsf1_Hsp90
+	Species Hsp90_MisP Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source) #Hsp90_MisP
+	Species Hsp70_MisP Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source) #Hsp70_MisP
+	Species Hsf1_Hsf1_Hsf1 Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source).Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source).Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source) #Hsf1_Hsf1_Hsf1
+	Species Hsf1_Hsf1_Hsf1_P Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90) #Hsf1_Hsf1_Hsf1_P
+	Species Hsf1_Hsf1 Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source).Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source) #Hsf1_Hsf1
+	Species HSEHsp70 HSEHsp70(hsf1,hsf1_hsf1_hsf1_p) #HSEHsp70
+	Species HSEHsp90 HSEHsp90(hsf1,hsf1_hsf1_hsf1_p) #HSEHsp90
+	Species HSEHsp70_Hsf1_Hsf1_Hsf1 Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source).Hsf1(hsehsp70!1,hsehsp90,hsf1!0,hsf1!2,source).Hsf1(hsehsp70,hsehsp90,hsf1!2,hsf1,source).HSEHsp70(hsf1!1,hsf1_hsf1_hsf1_p) #HSEHsp70_Hsf1_Hsf1_Hsf1
+	Species HSEHsp70_Hsf1_Hsf1_Hsf1_P HSEHsp70(hsf1,hsf1_hsf1_hsf1_p!0).Hsf1_Hsf1_Hsf1_P(hsehsp70!0,hsehsp90) #HSEHsp70_Hsf1_Hsf1_Hsf1_P
+	Species HSEHsp90_Hsf1_Hsf1_Hsf1 Hsf1(hsehsp70,hsehsp90!1,hsf1!0,hsf1!2,source).Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source).Hsf1(hsehsp70,hsehsp90,hsf1!2,hsf1,source).HSEHsp90(hsf1!1,hsf1_hsf1_hsf1_p) #HSEHsp90_Hsf1_Hsf1_Hsf1
+	Species HSEHsp90_Hsf1_Hsf1_Hsf1_P HSEHsp90(hsf1,hsf1_hsf1_hsf1_p!0).Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90!0) #HSEHsp90_Hsf1_Hsf1_Hsf1_P
+	Species Jnk Jnk(_Pmod~0) #Jnk
+	Species Jnk_P Jnk(_Pmod~_P) #Jnk_P
+	Species Ppx Ppx(source) #Ppx
+	Species Mkp1 Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Mkp1
+	Species Mkp1_P Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Mkp1_P
+	Species Mkp1_Proteasome Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source).Proteasome(source!0) #Mkp1_Proteasome
+	Species Hsp70_Ppx Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx!0,proteasome,source,source).Ppx(source!0) #Hsp70_Ppx
+	Species Pkc Pkc() #Pkc
+	Species p38 p38(_Pmod~0) #p38
+	Species p38_P p38(_Pmod~_P) #p38_P
+	Species Proteasome Proteasome(source) #Proteasome
+	Species MisP_Proteasome Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source).Proteasome(source!0) #MisP_Proteasome
+	Species AggP Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source) #AggP
+	Species SeqAggP Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1).Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source).Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source) #SeqAggP
+	Species AggP_Proteasome Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source!1,source).Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source).Proteasome(source!0) #AggP_Proteasome
+	Species ROS Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #ROS
+	Species ATP ATP() #ATP
+	Species ADP ADP() #ADP
+	Species Source Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Source
+	Species Sink Source(_Pmod~0,_dammod~0,chip,genericMod~Sink,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source) #Sink
+	Species p38Death p38Death() #p38Death
+	Species JNKDeath JNKDeath() #JNKDeath
+	Species PIDeath PIDeath() #PIDeath
+	Species CellDeath CellDeath() #CellDeath
+end observables
+begin functions
+	functionRate0() = ksynNatP * kalive
+	functionRate1() = kmisfold * kalive
+	functionRate2() = kbinHspMisp * kalive
+	functionRate3() = (krelHspMisp * kalive)/2
+	functionRate4() = (krefold * kalive / (5000 + ATP))/2
+	functionRate5() = kbinHspMisp * kalive
+	functionRate6() = (krelHspMisp * kalive)/2
+	functionRate7() = (krefold * kalive / (5000 + ATP))/2
+	functionRate8() = kbinHsp70client * kalive
+	functionRate9() = krelHsp70client * kalive
+	functionRate10() = kbinHsp90client * kalive
+	functionRate11() = krelHsp90client * kalive
+	functionRate12() = kbinHsf1Hsp90 * kalive
+	functionRate13() = krelHsf1Hsp90 * kalive
+	functionRate14() = (if(Hsf1>0,(Hsf1 -1) * kdimerHsf1 * kalive / 2/Hsf1,0)*2)/6
+	functionRate15() = ktrimerHsf1 * kalive
+	functionRate16() = kdetrimerHsf1 * kalive
+	functionRate17() = kdedimerHsf1 * kalive
+	functionRate18() = (kbinHSEHsf1 * kalive)/12
+	functionRate19() = krelHSEHsf1 * kalive
+	functionRate20() = (kbinHSEHsf1 * kalive)/6
+	functionRate21() = krelHSEHsf1 * kalive
+	functionRate22() = kphosHsf1 * kalive
+	functionRate23() = kdephosHsf1 * kalive
+	functionRate24() = kbinHSEPhosTriH * kalive
+	functionRate25() = krelHSEPhosTriH * kalive
+	functionRate26() = kbinHSEPhosTriH * kalive
+	functionRate27() = krelHSEPhosTriH * kalive
+	functionRate28() = if(Source>0,kbasalsynHsp90 * kalive/Source,0)
+	functionRate29() = kupregHsp * kalive
+	functionRate30() = kbinHsp90Prot * kalive
+	functionRate31() = kdegHsp90 * kalive / (5000 + ATP)
+	functionRate32() = if(Source>0,kbasalsynHsp70 * kalive/Source,0)
+	functionRate33() = kupregHsp * kalive
+	functionRate34() = kbinHsp70Prot * kalive
+	functionRate35() = kdegHsp70 * kalive / (5000 + ATP)
+	functionRate36() = (kbinMisPProt * kalive)/2
+	functionRate37() = (kbinMisPProt * kalive)/2
+	functionRate38() = kdegMisP * kalive / (5000 + ATP)
+	functionRate39() = kgenROS * kalive
+	functionRate40() = kremROS * kalive
+	functionRate41() = kbinHsp70Ppx * kalive
+	functionRate42() = krelHsp70Ppx * kalive
+	functionRate43() = kphosJnk * kalive
+	functionRate44() = kdephosJnkMkp1 * kalive
+	functionRate45() = kphosp38 * kalive
+	functionRate46() = kdephosp38Mkp1 * kalive
+	functionRate47() = (if(MisP>0,kagg * (MisP -1) * 0.5 * kalive/MisP,0)*2)/6
+	functionRate48() = kagg * kalive
+	functionRate49() = kseqagg * kalive
+	functionRate50() = (kbinAggPProt * kalive)/2
+	functionRate51() = kgenROSAggP * kalive
+	functionRate52() = kgenROSAggP * kalive
+	functionRate53() = ksynAkt * kalive
+	functionRate54() = (kbinAktHsp90 * kalive)/6
+	functionRate55() = (krelAktHsp90 * kalive)/2
+	functionRate56() = (kbinCHIP * kalive)/2
+	functionRate57() = krelCHIP * kalive
+	functionRate58() = (kbinAktProt * kalive)/4
+	functionRate59() = krelAktProt * kalive
+	functionRate60() = kdegAkt * kalive / (5000 + ATP)
+	functionRate61() = ksynMkp1 * kalive
+	functionRate62() = kbinMkp1Prot * kalive
+	functionRate63() = kdegMkp1 * kalive / (5000 + ATP)
+	functionRate64() = kphosMkp1 * kalive
+	functionRate65() = kdephosMkp1 * kalive
+	functionRate66() = kgenROSp38 * kalive * kp38act
+	functionRate67() = kdamHsp * kalive
+	functionRate68() = kdamHsp * kalive
+	functionRate69() = kbinHsp70Prot * kalive
+	functionRate70() = kbinHsp90Prot * kalive
+	functionRate71() = (if(Hsp70_dam>0,kagg * (Hsp70_dam -1) * 0.5 * kalive/Hsp70_dam,0)*2)/6
+	functionRate72() = kagg * kalive
+	functionRate73() = (if(Hsp90_dam>0,kagg * (Hsp90_dam -1) * 0.5 * kalive/Hsp90_dam,0)*2)/6
+	functionRate74() = kagg * kalive
+	functionRate75() = kseqagg * kalive
+	functionRate76() = kseqagg * kalive
+	functionRate77() = kp38death * kalive * kp38act
+	functionRate78() = kJnkdeath * kalive
+	functionRate79() = kPIdeath * kalive
+	tot_MisP() = MisP + Hsp70_MisP + Hsp90_MisP
+	tot_Hsp70() = Hsp70 + Hsp70_dam + Hsp70_Proteasome + Hsp70_Hsp70Client + Hsp70_MisP + Hsp70_Ppx
+	tot_Hsp90() = Hsp90 + Hsp90_dam + Hsp90_Proteasome + Hsp90_Hsp90Client + Akt_Hsp90 + Akt_CHIP_Hsp90 + Hsf1_Hsp90 + Hsp90_MisP
+end functions
+begin reaction rules
+	ProteinSynthesis: Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~NatP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate0()
+	Misfolding: Source(_Pmod~0,_dammod~0,chip,genericMod~NatP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate1()
+	Hsp90MisPBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol functionRate2()
+	Hsp90unsuccessulRefolding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate3()
+	Hsp90refolding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol + ATP()@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~NatP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + ADP()@cytosol functionRate4()
+	Hsp70MisPBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol functionRate5()
+	Hsp70unsuccessulRefolding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate6()
+	Hsp70refolding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol + ATP()@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~NatP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + ADP()@cytosol functionRate7()
+	Hsp70ClientBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Hsp70Client(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client!0,hsp90client,ppx,proteasome,source,source)@cytosol.Hsp70Client(source!0)@cytosol functionRate8()
+	Hsp70ClientRelease: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client!0,hsp90client,ppx,proteasome,source,source)@cytosol.Hsp70Client(source!0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Hsp70Client(source)@cytosol functionRate9()
+	Hsp90ClientBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Hsp90Client(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client!0,ppx,proteasome,source,source)@cytosol.Hsp90Client(source!0)@cytosol functionRate10()
+	Hsp90ClientRelease: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client!0,ppx,proteasome,source,source)@cytosol.Hsp90Client(source!0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Hsp90Client(source)@cytosol functionRate11()
+	Hsp90HSF1Binding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1!0,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol.Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source!0)@cytosol functionRate12()
+	Hsp90HSF1Release: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1!0,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol.Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source!0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol functionRate13()
+	dimerisation: Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol + Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol -> Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol functionRate14()
+	trimerisation: Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol + Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol -> Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus functionRate15()
+	deTrimerisation: Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus -> Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol + Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol functionRate16()
+	deDimerisation: Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@cytosol -> Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol + Hsf1(hsehsp70,hsehsp90,hsf1,hsf1,source)@cytosol functionRate17()
+	HSE70TriHBinding: Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus + HSEHsp70(hsf1,hsf1_hsf1_hsf1_p)@nucleus -> Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70!1,hsehsp90,hsf1!0,hsf1!2,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!2,hsf1,source)@nucleus.HSEHsp70(hsf1!1,hsf1_hsf1_hsf1_p)@nucleus functionRate18()
+	HSE70TriHRelease: Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70!1,hsehsp90,hsf1!0,hsf1!2,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!2,hsf1,source)@nucleus.HSEHsp70(hsf1!1,hsf1_hsf1_hsf1_p)@nucleus -> HSEHsp70(hsf1,hsf1_hsf1_hsf1_p)@nucleus + Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus functionRate19()
+	HSE90TriHBinding: Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus + HSEHsp90(hsf1,hsf1_hsf1_hsf1_p)@nucleus -> Hsf1(hsehsp70,hsehsp90!1,hsf1!0,hsf1!2,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!2,hsf1,source)@nucleus.HSEHsp90(hsf1!1,hsf1_hsf1_hsf1_p)@nucleus functionRate20()
+	HSE90TriHRelease: Hsf1(hsehsp70,hsehsp90!1,hsf1!0,hsf1!2,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!2,hsf1,source)@nucleus.HSEHsp90(hsf1!1,hsf1_hsf1_hsf1_p)@nucleus -> HSEHsp90(hsf1,hsf1_hsf1_hsf1_p)@nucleus + Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus functionRate21()
+	Hsf1_Hsf1_Hsf1Phosphorylation: Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus + Pkc()@cytosol -> Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90)@nucleus + Pkc()@cytosol functionRate22()
+	Hsf1_Hsf1_Hsf1DePhosphorylation: Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90)@nucleus + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx!0,proteasome,source,source)@cytosol.Ppx(source!0)@cytosol -> Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!0,hsf1!1,source)@nucleus.Hsf1(hsehsp70,hsehsp90,hsf1!1,hsf1,source)@nucleus + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx!0,proteasome,source,source)@cytosol.Ppx(source!0)@cytosol functionRate23()
+	HSE70PhosTriHBinding: Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90)@nucleus + HSEHsp70(hsf1,hsf1_hsf1_hsf1_p)@nucleus -> HSEHsp70(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70!0,hsehsp90)@nucleus functionRate24()
+	HSE70PhosTriHRelease: HSEHsp70(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70!0,hsehsp90)@nucleus -> Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90)@nucleus + HSEHsp70(hsf1,hsf1_hsf1_hsf1_p)@nucleus functionRate25()
+	HSE90PhosTriHBinding: Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90)@nucleus + HSEHsp90(hsf1,hsf1_hsf1_hsf1_p)@nucleus -> HSEHsp90(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90!0)@nucleus functionRate26()
+	HSE90PhosTriHRelease: HSEHsp90(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90!0)@nucleus -> Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90)@nucleus + HSEHsp90(hsf1,hsf1_hsf1_hsf1_p)@nucleus functionRate27()
+	Hsp90BasalSynthesis: Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate28()
+	Hsp90Upregulation: HSEHsp90(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90!0)@nucleus -> HSEHsp90(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70,hsehsp90!0)@nucleus + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate29()
+	Hsp90ProteasomeBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol functionRate30()
+	Hsp90Degradation: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + ATP()@cytosol -> Proteasome(source)@cytosol + ADP()@cytosol functionRate31()
+	Hsp70BasalSynthesis: Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate32()
+	Hsp70Upregulation: HSEHsp70(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70!0,hsehsp90)@nucleus -> HSEHsp70(hsf1,hsf1_hsf1_hsf1_p!0)@nucleus.Hsf1_Hsf1_Hsf1_P(hsehsp70!0,hsehsp90)@nucleus + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate33()
+	Hsp70ProteasomeBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol functionRate34()
+	Hsp70Degradation: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + ATP()@cytosol -> Proteasome(source)@cytosol + ADP()@cytosol functionRate35()
+	MisPProteasomeBinding1: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate36()
+	MisPProteasomeBinding2: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate37()
+	MisPDegradation: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + ATP()@cytosol -> Proteasome(source)@cytosol + ADP()@cytosol functionRate38()
+	radicalFormation: Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate39()
+	radicalScavenging: Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Sink,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate40()
+	Hsp70_PpxBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Ppx(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx!0,proteasome,source,source)@cytosol.Ppx(source!0)@cytosol functionRate41()
+	Hsp70_PPXRelease: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx!0,proteasome,source,source)@cytosol.Ppx(source!0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Ppx(source)@cytosol functionRate42()
+	JnkPhosphorylation: Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Jnk(_Pmod~0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Jnk(_Pmod~_P)@cytosol functionRate43()
+	JNKDephosphorylatioByMkp1: Jnk(_Pmod~_P)@cytosol + Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Jnk(_Pmod~0)@cytosol + Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate44()
+	p38Phosphorylation: Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + p38(_Pmod~0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + p38(_Pmod~_P)@cytosol functionRate45()
+	p38DePhosphorylationByMkp1: p38(_Pmod~_P)@cytosol + Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> p38(_Pmod~0)@cytosol + Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate46()
+	Aggregation1: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol functionRate47()
+	SequesteringOfAggregate: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol functionRate48()
+	InclusionGrowth: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol functionRate49()
+	ProteasomeInhibtion: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source!1,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol.Proteasome(source!0)@cytosol functionRate50()
+	ROSgenerationSmallAggP: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate51()
+	ROSgenerationAggPProteasome: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source!1,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol.Proteasome(source!0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source!1,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol.Proteasome(source!0)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate52()
+	AktSynthesis: Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate53()
+	Hsp90AktBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol functionRate54()
+	Hsp90AktRelease: Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate55()
+	CHIPbinding: CHIP(source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip!1,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.CHIP(source!1)@cytosol functionRate56()
+	CHIPrelease: Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip!1,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.CHIP(source!1)@cytosol -> CHIP(source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol functionRate57()
+	AktProteasomeBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip!1,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.CHIP(source!1)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + CHIP(source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate58()
+	AktProteasomeRelease: Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Proteasome(source)@cytosol functionRate59()
+	AktDegradation: Source(_Pmod~0,_dammod~0,chip,genericMod~Akt,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + ATP()@cytosol -> Proteasome(source)@cytosol + ADP()@cytosol functionRate60()
+	Mkp1Synthesis: Source(_Pmod~0,_dammod~0,chip,genericMod~0,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate61()
+	Mkp1ProteasomeBinding: Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol functionRate62()
+	Mkp1Degradation: Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol + ATP()@cytosol -> Proteasome(source)@cytosol + ADP()@cytosol functionRate63()
+	Mkp1Phosphorylation: Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate64()
+	Mkp1Dephosphorylation: Source(_Pmod~_P,_dammod~0,chip,genericMod~Mkp1Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Mkp1,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate65()
+	p38ROSproduction: p38(_Pmod~_P)@cytosol -> p38(_Pmod~_P)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate66()
+	Hsp70Damage: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp70Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate67()
+	Hsp90Damage: Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp90Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~ROS,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol functionRate68()
+	Hsp70DamProteasomeBinding: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp70Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol functionRate69()
+	Hsp90DamProteasomeBinding: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp90Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Proteasome(source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source,source)@cytosol.Proteasome(source!0)@cytosol functionRate70()
+	Hsp70DamAggregation1: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp70Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp70Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol functionRate71()
+	Hsp70DamInclusionFormation: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp70Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol functionRate72()
+	Hsp90DamAggregation: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp90Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp90Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol functionRate73()
+	Hsp90DamInclusionFormation: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp90Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol functionRate74()
+	Hsp70DamSequestering: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp70Hsp70,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol functionRate75()
+	Hsp90DamSequestering: Source(_Pmod~0,_dammod~_DAM,chip,genericMod~Hsp90Hsp90,hsf1,hsp70client,hsp90client,ppx,proteasome,source,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol + Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source!1)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!0,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol functionRate76()
+	p38CellDeath: p38(_Pmod~_P)@cytosol -> p38(_Pmod~_P)@cytosol + p38Death()@cytosol + CellDeath()@cytosol functionRate77()
+	JnkCellDeath: Jnk(_Pmod~_P)@cytosol -> Jnk(_Pmod~_P)@cytosol + JNKDeath()@cytosol + CellDeath()@cytosol functionRate78()
+	PICellDeath: Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source!1,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol.Proteasome(source!0)@cytosol -> Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome!0,source!1,source)@cytosol.Source(_Pmod~0,_dammod~0,chip,genericMod~MisP,hsf1,hsp70client,hsp90client,ppx,proteasome,source!1,source)@cytosol.Proteasome(source!0)@cytosol + PIDeath()@cytosol + CellDeath()@cytosol functionRate79()
+end reaction rules
+end model

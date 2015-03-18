@@ -1,0 +1,28 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL0911270006', 'http://identifiers.org/pubmed/4334846']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 0 molecules and 0 rules'
+###
+begin model
+begin parameters
+	QLO 4.9943
+	AUR 1.3
+	PRA 0.00852183
+	HMD 1.0
+	PR1LL 0
+end parameters
+begin molecule types
+end molecule types
+begin seed species
+end seed species
+begin observables
+end observables
+begin functions
+	AUHR() = 72 * AUR
+	HDHR() = (HMD -1) * 0.5 + 1
+	PRHR() = ((PR1LL) ^ (0.5))*5
+	HR() = ((72 * AUR) + (((PR1LL) ^ (0.5))*5)) * ((HMD -1) * 0.5 + 1)
+	SVO() = QLO / (((72 * AUR) + (((PR1LL) ^ (0.5))*5)) * ((HMD -1) * 0.5 + 1))
+end functions
+begin reaction rules
+end reaction rules
+end model

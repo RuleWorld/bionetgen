@@ -1,0 +1,67 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/11226623', 'http://identifiers.org/biomodels.db/MODEL1201140003']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 5 molecules and 5 rules'
+###
+begin model
+begin parameters
+	r1 0.15
+	r2 0.12
+	c1 0.1
+	r3 0.05
+	r4 0.03
+	c2 0.1
+	c3 0.005
+	r5 0.09
+	r6 0.1
+	r7 0.05
+	z_ 1.01
+	y_ 1.08
+	delta 0.01
+	omega 0.05
+	epsilon 0.1
+	time_environment 0
+end parameters
+begin compartments
+	COMpartment  3  1.0
+end compartments
+begin molecule types
+	x
+	y
+	z
+	u
+	v
+end molecule types
+begin seed species
+	x@COMpartment 5.0
+	y@COMpartment 0
+	z@COMpartment 1.0
+	u@COMpartment 1.0
+	v@COMpartment 0
+end seed species
+begin observables
+	Species x x
+	Species y y
+	Species z z
+	Species u u
+	Species v v
+end observables
+begin functions
+	arRatex() = z * (r1 * y + -r2 * x + c1)
+	armRatex() = 0
+	arRatey() = epsilon * (r3 / z + -r4 * x + c2 + c3 * u)
+	armRatey() = 0
+	arRatez() = epsilon * delta * (r5 * (y -y_) * (z_ -z) + r6 * z * (z_ -z) -r7 * z)
+	armRatez() = 0
+	arRateu() = -omega * v
+	armRateu() = 0
+	arRatev() = omega * u
+	armRatev() = 0
+end functions
+begin reaction rules
+	0  <-> x() arRatex,armRatex #rateLaw
+	0  <-> y() arRatey,armRatey #rateLaw
+	0  <-> z() arRatez,armRatez #rateLaw
+	0  <-> u() arRateu,armRateu #rateLaw
+	0  <-> v() arRatev,armRatev #rateLaw
+end reaction rules
+end model

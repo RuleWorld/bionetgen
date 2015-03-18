@@ -1,0 +1,47 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/1668715', 'http://identifiers.org/biomodels.db/MODEL0479926177']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 3 molecules and 3 rules'
+###
+begin model
+begin parameters
+	alpha 0.5
+	D 0.8228
+	a 8.1252
+	beta 0.38
+	gamma 0.6
+	omega 2.0
+	b 1.091
+end parameters
+begin compartments
+	Compartment  3  1.0
+end compartments
+begin molecule types
+	x
+	y
+	z
+end molecule types
+begin seed species
+	x@Compartment 0
+	y@Compartment 0
+	z@Compartment 0
+end seed species
+begin observables
+	Species x x
+	Species y y
+	Species z z
+end observables
+begin functions
+	u() = cos(omega * time())
+	armRatex() = alpha
+	arRatey() = beta*x*exp(b*(1-((z) ^ (2))))
+	armRatey() = beta
+	arRatez() = gamma * y
+	armRatez() = gamma
+	arRatex() = alpha*exp(a*(1-((z) ^ (2)))+b*(1-((y) ^ (2))))+D*(cos(omega * time()))
+end functions
+begin reaction rules
+	0  <-> x() arRatex,armRatex #rateLaw
+	0  <-> y() arRatey,armRatey #rateLaw
+	0  <-> z() arRatez,armRatez #rateLaw
+end reaction rules
+end model

@@ -1,0 +1,62 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0010468']
+#@creatorName:'Le Novre Nicolas'
+#@creatorEmail:'n.lenovere@gmail.com'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1408130000', 'http://identifiers.org/taxonomy/131567', 'http://identifiers.org/pubmed/16241483', 'http://identifiers.org/biomodels.db/BIOMD0000000539']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 6 molecules and 11 reactions. The translated model has 4 molecules and 11 rules'
+###
+begin model
+begin parameters
+	theta 0.04
+	alpha 0.001
+	rhob 5.0
+	rhof 0.1
+	deltar 0.03
+	rhoA 100.0
+	gamma 1.0
+	deltaA 0.01
+	deltaB 0.01
+	beta 3.0
+	deltaAB 0.01
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	A(b,gb)
+	gB(a)
+	rB()
+	B(a)
+end molecule types
+begin seed species
+	@cell:A(b,gb) 40.0 #A #A
+	@cell:gB(a) 1.0 #gB #gB
+end seed species
+begin observables
+	Species A A(b,gb) #A
+	Species AgB A(b,gb!0).gB(a!0) #AgB
+	Species gB gB(a) #gB
+	Species rB rB() #rB
+	Species B B(a) #B
+	Species AB A(b!0,gb).B(a!0) #AB
+end observables
+begin functions
+	functionRate2() =   ( rhof )   * ( gB )    
+	functionRate3() =   ( rhob )   * ( AgB )    
+	functionRate5() =   ( rhoA )    
+	functionRate7() =   ( beta )   * ( rB )    
+end functions
+begin reaction rules
+	A_binds_gB: A(b,gb) + gB(a) -> A(b,gb!0).gB(a!0) alpha
+	gB_releases_A: A(b,gb!0).gB(a!0) -> A(b,gb) + gB(a) theta
+	basal_transcription_B: 0  -> rB()@cell functionRate2()
+	stim_transcription_B: 0  -> rB()@cell functionRate3()
+	degradation_mRNA_B: rB()@cell -> 0  deltar
+	production_A: 0  -> A(b,gb)@cell functionRate5()
+	degradation_A: A(b,gb)@cell -> 0  deltaA
+	translation_B: 0  -> B(a)@cell functionRate7()
+	degradation_B: B(a)@cell -> 0  deltaB
+	formation_dimer: A(b,gb) + B(a) -> A(b!0,gb).B(a!0) gamma
+	degradation_dimer: A(b!0,gb)@cell.B(a!0)@cell -> 0  deltaAB
+end reaction rules
+end model

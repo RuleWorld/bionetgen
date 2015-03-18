@@ -1,0 +1,145 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0007173']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/40674', 'http://identifiers.org/cl/CL:0000047']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 23 molecules and 10 reactions. The translated model has 15 molecules and 10 rules'
+#@creatorEmail:'viji@ebi.ac.uk'
+#@creatorName:'Chelliah Vijayalakshmi'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/BIOMD0000000394', 'http://identifiers.org/pubmed/21978399', 'http://identifiers.org/biomodels.db/MODEL1101270003', 'http://identifiers.org/panther.pathway/P00018']
+###
+begin model
+begin parameters
+	kcatp_r8_s124 0.511
+	kM_r8_s124_s23 0.47
+	kcatn_r8_s124 1.083
+	kM_r8_s124_s24 0.786
+	kcatp_r8_s31 0.727
+	kM_r8_s31_s23 0.614
+	kcatn_r8_s31 0.636
+	kM_r8_s31_s24 1.367
+	kI_r8_s22 0.583
+	kI_r8_s29 1.219
+	kI_r8_s33 0.293
+	kcatp_r9 2.0
+	kM_r9_s25 0.626
+	kcatn_r9 0.693
+	kM_r9_s26 0.463
+	kcatp_r11 0.787
+	kM_r11_s29 1.459
+	kcatn_r11 0.566
+	kM_r11_s30 1.021
+	kcatp_r14 0.558
+	kM_r14_s27 0.038
+	kcatn_r14 0.725
+	kM_r14_s28 1.65
+	kass_r15 2.0
+	kdiss_r15 0.074
+	kass_r17_s3 0.73
+	kdiss_r17_s3 1.13
+	kI_re11_s142 1.0
+	kass_r6_s144 1.0
+	kdiss_r6_s144 1.0
+	kass_r7_s144 1.0
+	kdiss_r7_s144 1.0
+	kass_r4_s144 1.0
+	kdiss_r4_s144 1.0
+	Vp_re11 1.0
+	kM_re11_s129 1.0
+	kM_re11_s147 1.0
+	ki_re11_s129 1.0
+end parameters
+begin compartments
+	default  3  1.0
+	c2  3  1.0
+	cell 3 1.0
+end compartments
+begin molecule types
+	Akt(genericMod~Akt_s22~0)
+	MEK1_minus_2(genericMod~MEK1_minus_2_s26~0)
+	ERK1_minus_2(genericMod~ERK1_minus_2_s28~0~Mitogenesis_br_Differentiation)
+	RKIP(_s30mod~_S30~0)
+	PP2A()
+	s14_minus_3_minus_3()
+	Raf_minus_1(genericMod~Raf_minus_1_s24~0)
+	EGF()
+	EGFR(complex__grb2____plc__,egfr)
+	Ras()
+	GDP()
+	GTP()
+	PKC()
+	erlotinib()
+	Complex__Grb2____PLC__(egfr)
+end molecule types
+begin seed species
+	@c2:Akt(genericMod~0) 5.0 #Akt #s21
+	@c2:MEK1_minus_2(genericMod~0) 5.0 #MEK1_minus_2 #s25
+	@c2:ERK1_minus_2(genericMod~0) 5.0 #ERK1_minus_2 #s27
+	@c2:RKIP(_s30mod~0) 5.0 #RKIP #s29
+	@c2:PP2A() 5.0 #PP2A #s31
+	@c2:s14_minus_3_minus_3() 5.0 #s14_minus_3_minus_3 #s33
+	@c2:ERK1_minus_2(genericMod~Mitogenesis_br_Differentiation) 1.0 #Mitogenesis_br_Differentiation #s34
+	@c2:Raf_minus_1(genericMod~0) 5.0 #Raf_minus_1 #s23
+	@default:EGF() 5.0 #EGF #s3
+	@c2:EGFR(complex__grb2____plc__,egfr) 5.0 #EGFR #s123
+	@c2:Ras() 5.0 #Ras #s124
+	@c2:GDP() 0.5 #GDP #s125
+	@c2:PKC() 2.0 #PKC #s127
+	@default:erlotinib() 0.5 #erlotinib #s142
+	@c2:Complex__Grb2____PLC__(egfr) 5.0 #Complex__Grb2____PLC__ #s147
+end seed species
+begin observables
+	Species Akt Akt(genericMod~0) #Akt
+	Species Akt_s22 Akt(genericMod~Akt_s22) #Akt
+	Species MEK1_minus_2 MEK1_minus_2(genericMod~0) #MEK1_minus_2
+	Species MEK1_minus_2_s26 MEK1_minus_2(genericMod~MEK1_minus_2_s26) #MEK1_minus_2
+	Species ERK1_minus_2 ERK1_minus_2(genericMod~0) #ERK1_minus_2
+	Species ERK1_minus_2_s28 ERK1_minus_2(genericMod~ERK1_minus_2_s28) #ERK1_minus_2
+	Species RKIP RKIP(_s30mod~0) #RKIP
+	Species RKIP_s30 RKIP(_s30mod~_S30) #RKIP
+	Species PP2A PP2A() #PP2A
+	Species s14_minus_3_minus_3 s14_minus_3_minus_3() #14_minus_3_minus_3
+	Species Mitogenesis_br_Differentiation ERK1_minus_2(genericMod~Mitogenesis_br_Differentiation) #Mitogenesis_br_Differentiation
+	Species Raf_minus_1 Raf_minus_1(genericMod~0) #Raf_minus_1
+	Species Raf_minus_1_s24 Raf_minus_1(genericMod~Raf_minus_1_s24) #Raf_minus_1
+	Species EGF EGF() #EGF
+	Species EGFR EGFR(complex__grb2____plc__,egfr) #EGFR
+	Species Ras Ras() #Ras
+	Species GDP GDP() #GDP
+	Species GTP GTP() #GTP
+	Species PKC PKC() #PKC
+	Species EGFR_s129 EGFR(complex__grb2____plc__,egfr!0).EGFR(complex__grb2____plc__,egfr!0) #EGFR
+	Species erlotinib erlotinib() #erlotinib
+	Species Complex_br___EGFR_____br_GAP__ EGFR(complex__grb2____plc__!1,egfr!0).EGFR(complex__grb2____plc__,egfr!0).Complex__Grb2____PLC__(egfr!1) #Complex_br_(EGFR/../_br_GAP)
+	Species Complex__Grb2____PLC__ Complex__Grb2____PLC__(egfr) #Complex(Grb2/../PLC)
+end observables
+begin functions
+	functionRate0() = if(if(Raf_minus_1>0,kI_r8_s22 / (kI_r8_s22 + Akt_s22) * (kI_r8_s29 / (kI_r8_s29 + RKIP)) * (kI_r8_s33 / (kI_r8_s33 + s14_minus_3_minus_3)) * (Ras * ((kcatp_r8_s124 / kM_r8_s124_s23 * Raf_minus_1 -kcatn_r8_s124 / kM_r8_s124_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s124_s23 + Raf_minus_1_s24 / kM_r8_s124_s24)) + PP2A * ((kcatp_r8_s31 / kM_r8_s31_s23 * Raf_minus_1 -kcatn_r8_s31 / kM_r8_s31_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s31_s23 + Raf_minus_1_s24 / kM_r8_s31_s24)))/Raf_minus_1,0)>= 0,if(Raf_minus_1>0,kI_r8_s22 / (kI_r8_s22 + Akt_s22) * (kI_r8_s29 / (kI_r8_s29 + RKIP)) * (kI_r8_s33 / (kI_r8_s33 + s14_minus_3_minus_3)) * (Ras * ((kcatp_r8_s124 / kM_r8_s124_s23 * Raf_minus_1 -kcatn_r8_s124 / kM_r8_s124_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s124_s23 + Raf_minus_1_s24 / kM_r8_s124_s24)) + PP2A * ((kcatp_r8_s31 / kM_r8_s31_s23 * Raf_minus_1 -kcatn_r8_s31 / kM_r8_s31_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s31_s23 + Raf_minus_1_s24 / kM_r8_s31_s24)))/Raf_minus_1,0),0)
+	functionRate0m() = if(if(Raf_minus_1_s24>0,kI_r8_s22 / (kI_r8_s22 + Akt_s22) * (kI_r8_s29 / (kI_r8_s29 + RKIP)) * (kI_r8_s33 / (kI_r8_s33 + s14_minus_3_minus_3)) * (Ras * ((kcatp_r8_s124 / kM_r8_s124_s23 * Raf_minus_1 -kcatn_r8_s124 / kM_r8_s124_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s124_s23 + Raf_minus_1_s24 / kM_r8_s124_s24)) + PP2A * ((kcatp_r8_s31 / kM_r8_s31_s23 * Raf_minus_1 -kcatn_r8_s31 / kM_r8_s31_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s31_s23 + Raf_minus_1_s24 / kM_r8_s31_s24)))/Raf_minus_1_s24,0)< 0,-(if(Raf_minus_1_s24>0,kI_r8_s22 / (kI_r8_s22 + Akt_s22) * (kI_r8_s29 / (kI_r8_s29 + RKIP)) * (kI_r8_s33 / (kI_r8_s33 + s14_minus_3_minus_3)) * (Ras * ((kcatp_r8_s124 / kM_r8_s124_s23 * Raf_minus_1 -kcatn_r8_s124 / kM_r8_s124_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s124_s23 + Raf_minus_1_s24 / kM_r8_s124_s24)) + PP2A * ((kcatp_r8_s31 / kM_r8_s31_s23 * Raf_minus_1 -kcatn_r8_s31 / kM_r8_s31_s24 * Raf_minus_1_s24) / (1 + Raf_minus_1 / kM_r8_s31_s23 + Raf_minus_1_s24 / kM_r8_s31_s24)))/Raf_minus_1_s24,0)),0)
+	functionRate1() = if(if(MEK1_minus_2>0,Raf_minus_1_s24 * ((kcatp_r9 / kM_r9_s25 * MEK1_minus_2 -kcatn_r9 / kM_r9_s26 * MEK1_minus_2_s26) / (1 + MEK1_minus_2 / kM_r9_s25 + MEK1_minus_2_s26 / kM_r9_s26))/MEK1_minus_2,0)>= 0,if(MEK1_minus_2>0,Raf_minus_1_s24 * ((kcatp_r9 / kM_r9_s25 * MEK1_minus_2 -kcatn_r9 / kM_r9_s26 * MEK1_minus_2_s26) / (1 + MEK1_minus_2 / kM_r9_s25 + MEK1_minus_2_s26 / kM_r9_s26))/MEK1_minus_2,0),0)
+	functionRate1m() = if(if(MEK1_minus_2_s26>0,Raf_minus_1_s24 * ((kcatp_r9 / kM_r9_s25 * MEK1_minus_2 -kcatn_r9 / kM_r9_s26 * MEK1_minus_2_s26) / (1 + MEK1_minus_2 / kM_r9_s25 + MEK1_minus_2_s26 / kM_r9_s26))/MEK1_minus_2_s26,0)< 0,-(if(MEK1_minus_2_s26>0,Raf_minus_1_s24 * ((kcatp_r9 / kM_r9_s25 * MEK1_minus_2 -kcatn_r9 / kM_r9_s26 * MEK1_minus_2_s26) / (1 + MEK1_minus_2 / kM_r9_s25 + MEK1_minus_2_s26 / kM_r9_s26))/MEK1_minus_2_s26,0)),0)
+	functionRate2() = if(if(RKIP>0,PKC * ((kcatp_r11 / kM_r11_s29 * RKIP -kcatn_r11 / kM_r11_s30 * RKIP_s30) / (1 + RKIP / kM_r11_s29 + RKIP_s30 / kM_r11_s30))/RKIP,0)>= 0,if(RKIP>0,PKC * ((kcatp_r11 / kM_r11_s29 * RKIP -kcatn_r11 / kM_r11_s30 * RKIP_s30) / (1 + RKIP / kM_r11_s29 + RKIP_s30 / kM_r11_s30))/RKIP,0),0)
+	functionRate2m() = if(if(RKIP_s30>0,PKC * ((kcatp_r11 / kM_r11_s29 * RKIP -kcatn_r11 / kM_r11_s30 * RKIP_s30) / (1 + RKIP / kM_r11_s29 + RKIP_s30 / kM_r11_s30))/RKIP_s30,0)< 0,-(if(RKIP_s30>0,PKC * ((kcatp_r11 / kM_r11_s29 * RKIP -kcatn_r11 / kM_r11_s30 * RKIP_s30) / (1 + RKIP / kM_r11_s29 + RKIP_s30 / kM_r11_s30))/RKIP_s30,0)),0)
+	functionRate3() = if(if(ERK1_minus_2>0,MEK1_minus_2_s26 * ((kcatp_r14 / kM_r14_s27 * ERK1_minus_2 -kcatn_r14 / kM_r14_s28 * ERK1_minus_2_s28) / (1 + ERK1_minus_2 / kM_r14_s27 + ERK1_minus_2_s28 / kM_r14_s28))/ERK1_minus_2,0)>= 0,if(ERK1_minus_2>0,MEK1_minus_2_s26 * ((kcatp_r14 / kM_r14_s27 * ERK1_minus_2 -kcatn_r14 / kM_r14_s28 * ERK1_minus_2_s28) / (1 + ERK1_minus_2 / kM_r14_s27 + ERK1_minus_2_s28 / kM_r14_s28))/ERK1_minus_2,0),0)
+	functionRate3m() = if(if(ERK1_minus_2_s28>0,MEK1_minus_2_s26 * ((kcatp_r14 / kM_r14_s27 * ERK1_minus_2 -kcatn_r14 / kM_r14_s28 * ERK1_minus_2_s28) / (1 + ERK1_minus_2 / kM_r14_s27 + ERK1_minus_2_s28 / kM_r14_s28))/ERK1_minus_2_s28,0)< 0,-(if(ERK1_minus_2_s28>0,MEK1_minus_2_s26 * ((kcatp_r14 / kM_r14_s27 * ERK1_minus_2 -kcatn_r14 / kM_r14_s28 * ERK1_minus_2_s28) / (1 + ERK1_minus_2 / kM_r14_s27 + ERK1_minus_2_s28 / kM_r14_s28))/ERK1_minus_2_s28,0)),0)
+	functionRate5() = if(if(EGFR>0,EGF*(kass_r17_s3*((EGFR) ^ (2))-kdiss_r17_s3*EGFR_s129)/(EGFR^2),0)*2>=0,if(EGFR>0,EGF*(kass_r17_s3*((EGFR) ^ (2))-kdiss_r17_s3*EGFR_s129)/(EGFR^2),0)*2,0)
+	functionRate5m() = if(if(EGFR_s129>0,EGF*(kass_r17_s3*((EGFR) ^ (2))-kdiss_r17_s3*EGFR_s129)/EGFR_s129,0)<0,-(if(EGFR_s129>0,EGF*(kass_r17_s3*((EGFR) ^ (2))-kdiss_r17_s3*EGFR_s129)/EGFR_s129,0)),0)
+	functionRate6() = if(if(PKC>0,Complex_br___EGFR_____br_GAP__ * (kass_r6_s144 * PKC -kdiss_r6_s144 * PKC)/PKC,0)>= 0,if(PKC>0,Complex_br___EGFR_____br_GAP__ * (kass_r6_s144 * PKC -kdiss_r6_s144 * PKC)/PKC,0),0)
+	functionRate6m() = if(if(PKC>0,Complex_br___EGFR_____br_GAP__ * (kass_r6_s144 * PKC -kdiss_r6_s144 * PKC)/PKC,0)< 0,-(if(PKC>0,Complex_br___EGFR_____br_GAP__ * (kass_r6_s144 * PKC -kdiss_r6_s144 * PKC)/PKC,0)),0)
+	functionRate7() = if(if(Akt>0,Complex_br___EGFR_____br_GAP__ * (kass_r7_s144 * Akt -kdiss_r7_s144 * Akt_s22)/Akt,0)>= 0,if(Akt>0,Complex_br___EGFR_____br_GAP__ * (kass_r7_s144 * Akt -kdiss_r7_s144 * Akt_s22)/Akt,0),0)
+	functionRate7m() = if(if(Akt_s22>0,Complex_br___EGFR_____br_GAP__ * (kass_r7_s144 * Akt -kdiss_r7_s144 * Akt_s22)/Akt_s22,0)< 0,-(if(Akt_s22>0,Complex_br___EGFR_____br_GAP__ * (kass_r7_s144 * Akt -kdiss_r7_s144 * Akt_s22)/Akt_s22,0)),0)
+	functionRate8() = if(if(GDP>0,if(Ras>0,Complex_br___EGFR_____br_GAP__ * (kass_r4_s144 * Ras * GDP -kdiss_r4_s144 * Ras * GTP)/Ras,0)/GDP,0)>= 0,if(GDP>0,if(Ras>0,Complex_br___EGFR_____br_GAP__ * (kass_r4_s144 * Ras * GDP -kdiss_r4_s144 * Ras * GTP)/Ras,0)/GDP,0),0)
+	functionRate8m() = if(if(Ras>0,if(GTP>0,Complex_br___EGFR_____br_GAP__ * (kass_r4_s144 * Ras * GDP -kdiss_r4_s144 * Ras * GTP)/GTP,0)/Ras,0)< 0,-(if(Ras>0,if(GTP>0,Complex_br___EGFR_____br_GAP__ * (kass_r4_s144 * Ras * GDP -kdiss_r4_s144 * Ras * GTP)/GTP,0)/Ras,0)),0)
+	functionRate9() = (if(Complex__Grb2____PLC__>0,if(EGFR_s129>0,kI_re11_s142 / (kI_re11_s142 + erlotinib) * (Vp_re11 * EGFR_s129 * Complex__Grb2____PLC__ / (ki_re11_s129 * kM_re11_s147 + kM_re11_s147 * EGFR_s129 + kM_re11_s129 * Complex__Grb2____PLC__ + EGFR_s129 * Complex__Grb2____PLC__))/EGFR_s129,0)/Complex__Grb2____PLC__,0))/2
+end functions
+begin reaction rules
+	r8: Raf_minus_1(genericMod~0)@c2 <-> Raf_minus_1(genericMod~Raf_minus_1_s24)@c2 functionRate0(),functionRate0m()
+	r9: MEK1_minus_2(genericMod~0)@c2 <-> MEK1_minus_2(genericMod~MEK1_minus_2_s26)@c2 functionRate1(),functionRate1m()
+	r11: RKIP(_s30mod~0)@c2 <-> RKIP(_s30mod~_S30)@c2 functionRate2(),functionRate2m()
+	r14: ERK1_minus_2(genericMod~0)@c2 <-> ERK1_minus_2(genericMod~ERK1_minus_2_s28)@c2 functionRate3(),functionRate3m()
+	r15: ERK1_minus_2(genericMod~ERK1_minus_2_s28)@c2 <-> ERK1_minus_2(genericMod~Mitogenesis_br_Differentiation)@c2 kass_r15,kdiss_r15
+	r17: EGFR(complex__grb2____plc__,egfr)@c2 + EGFR(complex__grb2____plc__,egfr)@c2 <-> EGFR(complex__grb2____plc__,egfr!0)@c2.EGFR(complex__grb2____plc__,egfr!0)@c2 functionRate5(),functionRate5m()
+	r6: PKC()@c2 <-> PKC()@c2 functionRate6(),functionRate6m()
+	r7: Akt(genericMod~0)@c2 <-> Akt(genericMod~Akt_s22)@c2 functionRate7(),functionRate7m()
+	r4: Ras()@c2 + GDP()@c2 <-> Ras()@c2 + GTP()@c2 functionRate8(),functionRate8m()
+	re11: EGFR(complex__grb2____plc__,egfr!0)@c2.EGFR(complex__grb2____plc__,egfr!0)@c2 + Complex__Grb2____PLC__(egfr)@c2 -> EGFR(complex__grb2____plc__!1,egfr!0)@c2.EGFR(complex__grb2____plc__,egfr!0)@c2.Complex__Grb2____PLC__(egfr!1)@c2 functionRate9()
+end reaction rules
+end model

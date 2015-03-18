@@ -1,0 +1,146 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/obo.go/GO:0019379']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/4932']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 26 molecules and 21 reactions. The translated model has 11 molecules and 21 rules'
+#@creatorEmail:'raim@tbi.univie.ac.at'
+#@creatorName:'Machne Rainer'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL9728951048', 'http://identifiers.org/pubmed/11423122', 'http://identifiers.org/biomodels.db/BIOMD0000000090']
+###
+begin model
+begin parameters
+	k_v0 1.6
+	k2 0.2
+	k3 0.2
+	k4 0.2
+	k5 0.1
+	k6 0.12
+	k7 10.0
+	k8 10.0
+	k9 10.0
+	k_v10 80.0
+	k11 10.0
+	k12 5.0
+	k_v13 4.0
+	k14 10.0
+	k15 5.0
+	k16 10.0
+	k17 0.02
+	k18 1.0
+	n 4.0
+	m 4.0
+	Ka 1.0
+	Kc 0.1
+	a 0.1
+	Ac 2.0
+	Am 2.0
+	S 2.0
+	N 2.0
+	Kh 0.5
+end parameters
+begin compartments
+	c0  3  1.0
+	c1  3  1.0
+	c2  3  1.0
+	cell 3 1.0
+end compartments
+begin molecule types
+	O2(_exmod~_EX~0)
+	H2O()
+	ATP(genericMod~ADP~0~ADP_mit)
+	PPi()
+	SO4(Pmod~P~0~PP,_exmod~_EX~0,etoh,genericMod~APS~0~H2S~APSAPS)
+	EtOH(_exmod~_EX~0,genericMod~AcCoA~0~OAH,s2,so4)
+	NADH()
+	S2(etoh)
+	C1(genericMod~C2~0)
+	ATP_mit()
+	Ho(genericMod~Hm~0)
+end molecule types
+begin seed species
+	@c0:$SO4(Pmod~0,_exmod~_EX,etoh,genericMod~0) 0.0 #SO4_ex #sul_ex
+	@c0:$EtOH(_exmod~_EX,genericMod~0,s2,so4) 0.0 #EtOH_ex #eth_ex
+	@c0:$O2(_exmod~_EX) 0.0 #O2_ex #oxy_ex
+	@c2:O2(_exmod~0) 7.0 #O2 #oxy
+	@c2:$H2O() 0.0 #H2O #H2O
+	@c1:ATP(genericMod~0) 1.5 #ATP #A3c
+	@c1:SO4(Pmod~0,_exmod~0,etoh,genericMod~APS) 0.5 #APS #aps
+	@c1:$PPi() 0.0 #PPi #PPi
+	@c1:SO4(Pmod~P,_exmod~0,etoh,genericMod~APSAPS) 0.4 #PAPS #pap
+	@c1:SO4(Pmod~0,_exmod~0,etoh,genericMod~0) 0.4 #SO4 #sul
+	@c1:EtOH(_exmod~0,genericMod~0,s2,so4) 4.0 #EtOH #eth
+	@c1:$ATP(genericMod~ADP) 0.5 #ADP #A2c
+	@c1:SO4(Pmod~PP,_exmod~0,etoh,genericMod~H2S) 0.5 #H2S #hyd
+	@c1:EtOH(_exmod~0,genericMod~OAH,s2,so4!0).SO4(Pmod~PP,_exmod~0,etoh!0,genericMod~H2S) 0.3 #CYS #cys
+	@c1:NADH() 2.0 #NADH #N2
+	@c1:EtOH(_exmod~0,genericMod~AcCoA,s2,so4) 0.3 #AcCoA #aco
+	@c1:EtOH(_exmod~0,genericMod~OAH,s2,so4) 1.5 #OAH #oah
+	@c2:EtOH(_exmod~0,genericMod~AcCoA,s2!0,so4).S2(etoh!0) 1.5 #S1 #S1
+	@c2:$S2(etoh) 0.5 #S2 #S2
+	@c2:$C1(genericMod~0) 0.0 #C1 #C1
+	@c2:$C1(genericMod~C2) 0.0 #C2 #C2
+	@c2:$ATP(genericMod~ADP_mit) 0.5 #ADP_mit #A2m
+	@c2:ATP_mit() 1.5 #ATP_mit #A3m
+	@c1:$Ho(genericMod~0) 0.0 #Ho #Ho
+	@c2:$Ho(genericMod~Hm) 0.0 #Hm #Hm
+end seed species
+begin observables
+	Species SO4_ex SO4(Pmod~0,_exmod~_EX,etoh,genericMod~0) #SO4_ex
+	Species EtOH_ex EtOH(_exmod~_EX,genericMod~0,s2,so4) #EtOH_ex
+	Species O2_ex O2(_exmod~_EX) #O2_ex
+	Species O2 O2(_exmod~0) #O2
+	Species H2O H2O() #H2O
+	Species ATP ATP(genericMod~0) #ATP
+	Species APS SO4(Pmod~0,_exmod~0,etoh,genericMod~APS) #APS
+	Species PPi PPi() #PPi
+	Species PAPS SO4(Pmod~P,_exmod~0,etoh,genericMod~APSAPS) #PAPS
+	Species SO4 SO4(Pmod~0,_exmod~0,etoh,genericMod~0) #SO4
+	Species EtOH EtOH(_exmod~0,genericMod~0,s2,so4) #EtOH
+	Species ADP ATP(genericMod~ADP) #ADP
+	Species H2S SO4(Pmod~PP,_exmod~0,etoh,genericMod~H2S) #H2S
+	Species CYS EtOH(_exmod~0,genericMod~OAH,s2,so4!0).SO4(Pmod~PP,_exmod~0,etoh!0,genericMod~H2S) #CYS
+	Species NADH NADH() #NADH
+	Species AcCoA EtOH(_exmod~0,genericMod~AcCoA,s2,so4) #AcCoA
+	Species OAH EtOH(_exmod~0,genericMod~OAH,s2,so4) #OAH
+	Species S1 EtOH(_exmod~0,genericMod~AcCoA,s2!0,so4).S2(etoh!0) #S1
+	Species S2 S2(etoh) #S2
+	Species C1 C1(genericMod~0) #C1
+	Species C2 C1(genericMod~C2) #C2
+	Species ADP_mit ATP(genericMod~ADP_mit) #ADP_mit
+	Species ATP_mit ATP_mit() #ATP_mit
+	Species Ho Ho(genericMod~0) #Ho
+	Species Hm Ho(genericMod~Hm) #Hm
+end observables
+begin functions
+	functionRate0() = if(SO4_ex>0,k_v0/(1+((CYS/Kc) ^ (n)))/SO4_ex,0)
+	functionRate15() = if(Hm>0,if(C1>0,k11*O2/((a*NADH+O2)*(1+((H2S/Kh) ^ (m))))/C1,0)/Hm,0)
+	functionRate16() = if(C2>0,k11*NADH/((a*NADH+O2)*(1+((H2S/Kh) ^ (m))))/C2,0)
+	ADP_mit() = Am -ATP_mit
+	NAD() = N -NADH
+	ADP() = Ac -ATP
+	S2() = S -S1
+	functionRate18() = if(Ho>0, 1.0 *3*k11*NADH*O2/((a*NADH+O2)*(1+((H2S/Kh) ^ (m))))/(Ka+(Am -ATP_mit))/Ho,0)
+end functions
+begin reaction rules
+	v1: SO4(Pmod~0,_exmod~_EX,etoh,genericMod~0)@c0 -> SO4(Pmod~0,_exmod~0,etoh,genericMod~0)@c1 functionRate0()
+	v13: EtOH(_exmod~_EX,genericMod~0,s2,so4)@c0 -> EtOH(_exmod~0,genericMod~0,s2,so4)@c1 if(EtOH_ex>0,k_v13/EtOH_ex,0)
+	v2: SO4(Pmod~0,_exmod~0,etoh,genericMod~0)@c1 + ATP(genericMod~0)@c1 -> SO4(Pmod~0,_exmod~0,etoh,genericMod~APS)@c1 + PPi()@c1 k2
+	v10: O2(_exmod~_EX)@c0 -> O2(_exmod~0)@c2 if(O2_ex>0,k_v10/O2_ex,0)
+	v14: O2(_exmod~0)@c2 -> O2(_exmod~_EX)@c0 k14
+	v3: SO4(Pmod~0,_exmod~0,etoh,genericMod~APS)@c1 + ATP(genericMod~0)@c1 -> SO4(Pmod~P,_exmod~0,etoh,genericMod~APSAPS)@c1 + ATP(genericMod~ADP)@c1 k3
+	v4: SO4(Pmod~P,_exmod~0,etoh,genericMod~APSAPS)@c1 + NADH()@c1 + NADH()@c1 + NADH()@c1 -> SO4(Pmod~PP,_exmod~0,etoh,genericMod~H2S)@c1 + NAD()@c1 + NAD()@c1 + NAD()@c1 if(NADH>0,k4/(NADH^2),0)*6
+	v5: SO4(Pmod~PP,_exmod~0,etoh,genericMod~H2S)@c1 + EtOH(_exmod~0,genericMod~OAH,s2,so4)@c1 -> EtOH(_exmod~0,genericMod~OAH,s2,so4!0)@c1.SO4(Pmod~PP,_exmod~0,etoh!0,genericMod~H2S)@c1 k5
+	v6: EtOH(_exmod~0,genericMod~OAH,s2,so4!0)@c1.SO4(Pmod~PP,_exmod~0,etoh!0,genericMod~H2S)@c1 -> 0  k6
+	v7: EtOH(_exmod~0,genericMod~0,s2,so4)@c1 + NAD()@c1 + NAD()@c1 -> EtOH(_exmod~0,genericMod~AcCoA,s2,so4)@c1 + NADH()@c1 + NADH()@c1 if(NAD>0,k7/NAD,0)*2
+	v15: EtOH(_exmod~0,genericMod~AcCoA,s2,so4)@c1 -> EtOH(_exmod~0,genericMod~OAH,s2,so4)@c1 k15
+	v17: SO4(Pmod~PP,_exmod~0,etoh,genericMod~H2S)@c1 -> 0  k17
+	v18: EtOH(_exmod~0,genericMod~OAH,s2,so4)@c1 -> 0  k18
+	v8: S2(etoh)@c2 + EtOH(_exmod~0,genericMod~AcCoA,s2,so4)@c1 -> EtOH(_exmod~0,genericMod~AcCoA,s2!0,so4)@c2.S2(etoh!0)@c2 k8
+	v9: EtOH(_exmod~0,genericMod~AcCoA,s2!0,so4)@c2.S2(etoh!0)@c2 + NAD()@c1 + NAD()@c1 + NAD()@c1 + NAD()@c1 -> S2(etoh)@c2 + NADH()@c1 + NADH()@c1 + NADH()@c1 + NADH()@c1 if(NAD>0,k9/(NAD^3),0)*24
+	v11a: C1(genericMod~0)@c2 + Ho(genericMod~Hm)@c2 + NADH()@c1 -> C1(genericMod~C2)@c2 + Ho(genericMod~0)@c1 + NAD()@c1 functionRate15()
+	v11a2: C1(genericMod~C2)@c2 + O2(_exmod~0)@c2 -> C1(genericMod~0)@c2 + H2O()@c2 functionRate16()
+	v16: ATP(genericMod~ADP)@c1 + ATP_mit()@c2 -> ATP(genericMod~ADP_mit)@c2 + ATP(genericMod~0)@c1 k16
+	v11b: Ho(genericMod~0)@c1 + ATP(genericMod~ADP_mit)@c2 -> Ho(genericMod~Hm)@c2 + ATP_mit()@c2 functionRate18()
+	vLEAK: Ho(genericMod~0)@c1 -> Ho(genericMod~Hm)@c2 if(Ho>0,0/Ho,0)
+	v12: ATP(genericMod~0)@c1 -> ATP(genericMod~ADP)@c1 k12
+end reaction rules
+end model

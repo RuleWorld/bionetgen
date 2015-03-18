@@ -1,0 +1,64 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0019372']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/3847']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 10 molecules and 5 reactions. The translated model has 8 molecules and 5 rules'
+#@creatorEmail:'viji@ebi.ac.uk'
+#@creatorName:'Chelliah Vijayalakshmi'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1203230000', 'http://identifiers.org/pubmed/21535565', 'http://identifiers.org/biomodels.db/BIOMD0000000415']
+###
+begin model
+begin parameters
+	parameter_1 0.49
+	parameter_2 0.00825
+	parameter_3 0.49
+	parameter_4 0.039
+	parameter_5 0.49
+	parameter_6 0.00255
+	parameter_7 0.05
+	parameter_8 0.285
+	#parameter_9 0.038475
+end parameters
+begin compartments
+	compartment_1  3  1000.0
+end compartments
+begin molecule types
+	LA(genericMod~s13HOD_S__Z_E__~0~nHexanal)
+	s13HOD_R__Z_E__()
+	s13HOD_S__E_E__()
+	s13HOD_R__E_E__()
+	s9HOD_S__Z_E__()
+	s9HOD_R__Z_E__()
+	s9HOD_S__E_E__()
+	s9HOD_R__E_E__()
+end molecule types
+begin seed species
+	@compartment_1:LA(genericMod~0) 6.69999967736e-05 #LA #species_1
+end seed species
+begin observables
+	Species LA LA(genericMod~0) #LA
+	Species s13HOD_S__Z_E__ LA(genericMod~s13HOD_S__Z_E__) #13HOD-S(Z,E)
+	Species s13HOD_R__Z_E__ s13HOD_R__Z_E__() #13HOD-R(Z,E)
+	Species s13HOD_S__E_E__ s13HOD_S__E_E__() #13HOD-S(E,E)
+	Species s13HOD_R__E_E__ s13HOD_R__E_E__() #13HOD-R(E,E)
+	Species s9HOD_S__Z_E__ s9HOD_S__Z_E__() #9HOD-S(Z,E)
+	Species s9HOD_R__Z_E__ s9HOD_R__Z_E__() #9HOD-R(Z,E)
+	Species s9HOD_S__E_E__ s9HOD_S__E_E__() #9HOD-S(E,E)
+	Species s9HOD_R__E_E__ s9HOD_R__E_E__() #9HOD-R(E,E)
+	Species nHexanal LA(genericMod~nHexanal) #nHexanal
+end observables
+begin functions
+	functionRate0() = if(LA>0,  ( parameter_2 )   * ( LA )   /( ( parameter_1 )   + ( LA )   ) /LA,0)
+	functionRate1() = if(LA>0,  ( parameter_4 )   * ( LA )   /( ( parameter_3 )   + ( LA )   ) /LA,0)
+	functionRate2() = if(LA>0,  ( parameter_6 )   * ( LA )   /( ( parameter_5 )   + ( LA )   ) /LA,0)
+	functionRate3() = if(s13HOD_S__Z_E__>0,  ( parameter_8 )   * ( s13HOD_S__Z_E__ )   /( ( parameter_7 )   + ( s13HOD_S__Z_E__ )   ) /s13HOD_S__Z_E__,0)
+	parameter_9() = 0.135 * parameter_8
+	functionRate4() = if(s13HOD_R__Z_E__>0,  ( (0.135 * parameter_8) )   * ( s13HOD_R__Z_E__ )   /( ( parameter_7 )   + ( s13HOD_R__Z_E__ )   ) /s13HOD_R__Z_E__,0)
+end functions
+begin reaction rules
+	reaction_1: LA(genericMod~0) -> LA(genericMod~s13HOD_S__Z_E__) + s13HOD_R__Z_E__() + s13HOD_S__E_E__() + s13HOD_R__E_E__() + s9HOD_S__Z_E__() + s9HOD_R__Z_E__() + s9HOD_S__E_E__() + s9HOD_R__E_E__() functionRate0()
+	reaction_2: LA(genericMod~0) -> LA(genericMod~s13HOD_S__Z_E__) + s13HOD_R__Z_E__() + s13HOD_S__E_E__() + s13HOD_R__E_E__() + s9HOD_S__Z_E__() + s9HOD_R__Z_E__() + s9HOD_S__E_E__() + s9HOD_R__E_E__() functionRate1()
+	reaction_3: LA(genericMod~0) -> LA(genericMod~s13HOD_S__Z_E__) + s13HOD_R__Z_E__() + s13HOD_S__E_E__() + s13HOD_R__E_E__() + s9HOD_S__Z_E__() + s9HOD_R__Z_E__() + s9HOD_S__E_E__() + s9HOD_R__E_E__() functionRate2()
+	reaction_4: LA(genericMod~s13HOD_S__Z_E__) -> LA(genericMod~nHexanal) functionRate3()
+	reaction_5: s13HOD_R__Z_E__() -> LA(genericMod~nHexanal) functionRate4()
+end reaction rules
+end model

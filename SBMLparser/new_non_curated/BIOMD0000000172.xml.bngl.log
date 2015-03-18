@@ -1,0 +1,19 @@
+INFO:Atomization.0: added induced naming convention [['Glc__'], ['Glc__ext__']]
+INFO:Atomization.1: added induced naming convention [['Glc__'], ['Glc__int__']]
+ATOMIZATION:WARNING.2: adding forced transformation: glyceronephosphate:[['glyceronephosphate']]:NAD
+ATOMIZATION:WARNING.3: adding forced transformation: ATP:[['ATP']]:ADP
+ATOMIZATION:WARNING.4: adding forced transformation: glyceronephosphate:[['glyceronephosphate']]:Gra3P
+ATOMIZATION:WARNING.5: adding forced transformation: Gri3P:[['Gri3P']]:Gri2P
+ATOMIZATION:WARNING.6: adding forced transformation: pyruvate:[['pyruvate']]:acetaldehyde
+ATOMIZATION:WARNING.7: adding forced transformation: glyceronephosphate:[['NAD']]:NADH
+ATOMIZATION:CRITICAL.8: unregistered modification: NADH:[['NAD']]
+ATOMIZATION:WARNING.9: adding forced transformation: Glc__:[['Glc__int__']]:Glu6P
+ATOMIZATION:WARNING.10: adding forced transformation: glyceronephosphate:[['Gra3P']]:Gri2_3P2
+ATOMIZATION:CRITICAL.11: unregistered modification: Gri2_3P2:[['Gra3P']]
+ATOMIZATION:WARNING.12: adding forced transformation: Gri3P:[['Gri2P']]:phosphoenolpyruvate
+ATOMIZATION:CRITICAL.13: unregistered modification: phosphoenolpyruvate:[['Gri2P']]
+ATOMIZATION:WARNING.14: adding forced transformation: Glc__:[['Glu6P']]:Fru6_P
+ATOMIZATION:CRITICAL.15: unregistered modification: Fru6_P:[['Glu6P']]
+INFO.16: Exchanging reference to compartment ext for its dimensions
+INFO.17: Exchanging reference to compartment ext for its dimensions
+INFO:Summary.18: File contains 13 molecules out of 25 original SBML species

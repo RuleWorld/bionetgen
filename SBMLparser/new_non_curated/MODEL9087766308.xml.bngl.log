@@ -1,0 +1,5 @@
+WARNING:Atomization.0: Are these actually the same? Im_minus_nNOS_minus_L_minus_Arginine=[['L_minus_Arginine', 'Im_minus_nNOS'], ['nNOS_minus_L_minus_Arginine', 'Imidazole']].
+WARNING:Atomization.1: Are these actually the same? Im_minus_nNOS_minus_L_minus_Arginine=[['L_minus_Arginine', 'Im_minus_nNOS'], ['nNOS_minus_L_minus_Arginine', 'Imidazole']].
+WARNING:Atomization.2: Are these actually the same? Im_minus_nNOS_minus_L_minus_Arginine=[['L_minus_Arginine', 'Im_minus_nNOS'], ['nNOS_minus_L_minus_Arginine', 'Imidazole']].
+WARNING:Atomization.3: Are these actually the same? Im_minus_nNOS_minus_L_minus_Arginine=[['L_minus_Arginine', 'Im_minus_nNOS'], ['nNOS_minus_L_minus_Arginine', 'Imidazole']].
+INFO:Summary.4: File contains 4 molecules out of 5 original SBML species

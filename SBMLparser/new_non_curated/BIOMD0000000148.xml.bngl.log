@@ -1,0 +1,4 @@
+SIMULATION:CRITICAL.0: Boundary condition/assignment type variables (gamma) are not properly                     supported in BioNetGen simulator
+WARNING:Simulation.1: Steadystateosteoblast() reported as function, but usage is ambiguous
+WARNING:Simulation.2: Steadystateosteoclast() reported as function, but usage is ambiguous
+INFO:Summary.3: File contains 5 molecules out of 5 original SBML species

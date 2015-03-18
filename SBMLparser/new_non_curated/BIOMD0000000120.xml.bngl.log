@@ -1,0 +1,18 @@
+INFO:Atomization.0: added induced naming convention [['ctivelck'], ['Activelck']]
+INFO:Atomization.1: added induced naming convention [['ctivelck'], ['Inactivelck']]
+Atomization:Warning.2: inverting order of [['Inactivelck'], ['Activelck']] for lexical analysis
+INFO:Atomization.3: added induced naming convention [['ctivelck'], ['Activelck']]
+INFO:Atomization.4: added induced naming convention [['ctivelck'], ['Inactivelck']]
+Atomization:Warning.5: inverting order of [['Inactivelck'], ['Activelck']] for lexical analysis
+INFO:Atomization.6: added induced naming convention [['ctivelck'], ['Activelck']]
+INFO:Atomization.7: added induced naming convention [['ctivelck'], ['Inactivelck']]
+Atomization:Warning.8: inverting order of [['Inactivephosphatase'], ['Activephosphatase']] for lexical analysis
+INFO:Atomization.9: added induced naming convention [['ctivephosphatase'], ['Activephosphatase']]
+INFO:Atomization.10: added induced naming convention [['ctivephosphatase'], ['Inactivephosphatase']]
+Atomization:Warning.11: inverting order of [['Inactivephosphatase'], ['Activephosphatase']] for lexical analysis
+INFO:Atomization.12: added induced naming convention [['ctivephosphatase'], ['Activephosphatase']]
+INFO:Atomization.13: added induced naming convention [['ctivephosphatase'], ['Inactivephosphatase']]
+INFO:Atomization.14: added induced naming convention [['ctivephosphatase'], ['Activephosphatase']]
+INFO:Atomization.15: added induced naming convention [['ctivephosphatase'], ['Inactivephosphatase']]
+WARNING:Simulation.16: Totalkinase() reported as function, but usage is ambiguous
+INFO:Summary.17: File contains 2 molecules out of 4 original SBML species

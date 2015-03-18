@@ -1,0 +1,6 @@
+ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
+ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
+WARNING.2: Parameter x 5.0 corresponds both as a non zero parameter                             and a rate rule, verify behavior
+WARNING.3: Parameter z 1.0 corresponds both as a non zero parameter                             and a rate rule, verify behavior
+WARNING.4: Parameter u 1.0 corresponds both as a non zero parameter                             and a rate rule, verify behavior
+INFO:Summary.5: File contains 5 molecules out of 5 original SBML species

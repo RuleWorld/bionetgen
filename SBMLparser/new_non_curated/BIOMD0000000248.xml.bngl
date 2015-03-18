@@ -1,0 +1,128 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0015671']
+#@creatorName:'Lai Nicola'
+#@creatorEmail:'nicola.lai@case.edu'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/BIOMD0000000248', 'http://identifiers.org/pubmed/17380394', 'http://identifiers.org/taxonomy/9606', 'http://identifiers.org/biomodels.db/MODEL1004170000', 'http://identifiers.org/pubmed/16636861']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 9 molecules and 5 reactions. The translated model has 6 molecules and 7 rules'
+###
+begin model
+begin parameters
+	#Katpase 0.3207601
+	KatpaseW 0.3207601
+	Kadp 0.058
+	Kia 0.135
+	Kiq 3.5
+	Kib 3.9
+	Kp 3.8
+	Kb 1.11
+	Km 0.0007
+	VfCK 6000.0
+	VrCK 3008.65837589
+	QRm 0.688
+	QWm 3.118
+	#Qm 3.118
+	Qc 8.0
+	PSR 134.2828
+	PSE 20000.0
+	#PSm 5338.8
+	nH 2.7
+	Hct 0.45
+	Wmc 0.8064
+	CmcMb 0.5
+	CrbcHb 5.18
+	KMb 308.642
+	KHb 7800.7
+	tE 3.0
+	CTart 9.199981
+	#Vmax 23.11702
+	VmaxM 53.5150933
+	VmaxH 34.68714
+	VmaxVH 23.11702
+	#KatpaseE 3.3423645
+	KatpaseM 1.71080439029
+	KatpaseH 2.2581564
+	KatpaseVH 3.3423645
+	#dQMm 12.74981
+	dQMmM 7.9167374
+	dQMmH 9.42198
+	dQMmVH 12.74981
+	#tauQm 0.42
+	tauQmM 0.32
+	tauQmH 0.396
+	tauQmVH 0.42
+	StO2mW 81.17123516
+	exercise_level 3.0
+end parameters
+begin compartments
+	Capillary  3  2.0979
+	Tissue  3  27.8721
+	cell 3 1.0
+end compartments
+begin molecule types
+	ATP(genericMod~ADP~0)
+	Cr(Pmod~P~0)
+	Pi()
+	CTcap(genericMod~CTtis~0)
+	CFcap()
+	CFtis()
+end molecule types
+begin seed species
+	@Tissue:ATP(genericMod~0) 8.198857 #ATP #ATP
+	@Tissue:Cr(Pmod~P) 40.98942 #PCr #PCr
+	@Tissue:ATP(genericMod~ADP) 0.001142 #ADP #ADP
+	@Tissue:Cr(Pmod~0) 1.01056 #Cr #Cr
+	@Tissue:Pi() 0.5 #Pi #Pi
+	@Capillary:CTcap(genericMod~0) 5.281527 #CTcap #CTcap
+	@Tissue:CTcap(genericMod~CTtis) 0.4084824 #CTtis #CTtis
+	@Capillary:$CFcap() 0.03969 #CFcap #CFcap
+	@Tissue:$CFtis() 0.0374 #CFtis #CFtis
+end seed species
+begin observables
+	Species ATP ATP(genericMod~0) #ATP
+	Species PCr Cr(Pmod~P) #PCr
+	Species ADP ATP(genericMod~ADP) #ADP
+	Species Cr Cr(Pmod~0) #Cr
+	Species Pi Pi() #Pi
+	Species CTcap CTcap(genericMod~0) #CTcap
+	Species CTtis CTcap(genericMod~CTtis) #CTtis
+	Species CFcap CFcap() #CFcap
+	Species CFtis CFtis() #CFtis
+end observables
+begin functions
+	functionRate4() = if(if(ADP>0,if(PCr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/PCr,0)/ADP,0)>= 0,if(ADP>0,if(PCr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/PCr,0)/ADP,0),0)
+	functionRate4m() = if(if(ATP>0,if(Cr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/Cr,0)/ATP,0)< 0,-(if(ATP>0,if(Cr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/Cr,0)/ATP,0)),0)
+	Katpase() = if((time()<=tE),(KatpaseW),(KatpaseE()))
+	dQMm() = if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH))))
+	tauQm() = if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))
+	StO2m() = 100*(Hct*CrbcHb*KHb*((CFcap) ^ (nH))/(1+KHb*((CFcap) ^ (nH)))* 2.0979 +Wmc*CmcMb*KMb*CFtis/(1+KMb*CFtis)* 27.8721 )/(CrbcHb*Hct* 2.0979 +CmcMb*Wmc* 27.8721 )
+	Vmax() = if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))
+	Qm() = if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH)))))))))
+	KatpaseE() = if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH))))
+	armRateCFcap() = 0
+	armRateCFtis() = 0
+	functionRate0() = if((if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH))))))))>= 0,(if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH)))))))),0)
+	functionRate0m() = if(if(ADP>0,(if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH)))))))) * ATP/ADP,0)< 0,-(if(ADP>0,(if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH)))))))) * ATP/ADP,0)),0)
+	functionRate1() = if(if(CTtis>0,if(ADP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) / (Kadp + ADP)/(ADP^5),0)/CTtis,0)*720>= 0,if(CTtis>0,if(ADP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) / (Kadp + ADP)/(ADP^5),0)/CTtis,0)*720,0)
+	functionRate1m() = if(if(ATP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) * ADP / (Kadp + ADP)/(ATP^6),0)*720< 0,-(if(ATP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) * ADP / (Kadp + ADP)/(ATP^6),0)*720),0)
+	functionRate2() = if((if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH)))))))))) * (CTart -CTcap)>= 0,(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH)))))))))) * (CTart -CTcap),0)
+	functionRate2m() = if(if(CTcap>0,(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH)))))))))) * (CTart -CTcap)/CTcap,0)< 0,-(if(CTcap>0,(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH)))))))))) * (CTart -CTcap)/CTcap,0)),0)
+	PSm() = PSR + (PSE -PSR) * (1 -exp((QRm -(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))) / Qc))
+	RStO2m() = (100*(Hct*CrbcHb*KHb*((CFcap) ^ (nH))/(1+KHb*((CFcap) ^ (nH)))* 2.0979 +Wmc*CmcMb*KMb*CFtis/(1+KMb*CFtis)* 27.8721 )/(CrbcHb*Hct* 2.0979 +CmcMb*Wmc* 27.8721 )) / StO2mW -1
+	functionRate3() = if(if(CTcap>0,(PSR + (PSE -PSR) * (1 -exp((QRm -(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))) / Qc))) * (CFcap -CFtis)/CTcap,0)>= 0,if(CTcap>0,(PSR + (PSE -PSR) * (1 -exp((QRm -(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))) / Qc))) * (CFcap -CFtis)/CTcap,0),0)
+	functionRate3m() = if(if(CTtis>0,(PSR + (PSE -PSR) * (1 -exp((QRm -(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))) / Qc))) * (CFcap -CFtis)/CTtis,0)< 0,-(if(CTtis>0,(PSR + (PSE -PSR) * (1 -exp((QRm -(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))) / Qc))) * (CFcap -CFtis)/CTtis,0)),0)
+	CK_flux_mM() = 1 * (((if(if(ADP>0,if(PCr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/PCr,0)/ADP,0)>= 0,if(ADP>0,if(PCr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/PCr,0)/ADP,0),0)) -(if(if(ATP>0,if(Cr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/Cr,0)/ATP,0)< 0,-(if(ATP>0,if(Cr>0,(VfCK * ADP * PCr / (Kb * Kia) -VrCK * Cr * ATP / (Kiq * Kp)) / ((Kia + ADP) / Kia + ATP / Kiq + PCr / Kib + ADP * PCr / (Kb * Kia) + Cr * ATP / (Kiq * Kp))/Cr,0)/ATP,0)),0))) /  27.8721 )
+	arRateCFcap() = ((if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))*(CTart-CTcap)-(PSR + (PSE -PSR) * (1 -exp((QRm -(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))) / Qc)))*(CFcap-CFtis))*(1/ 2.0979 )/(1+4*Hct*CrbcHb*KHb*nH*((CFcap) ^ (nH-1))/((1+KHb*((CFcap) ^ (nH))) ^ (2)))
+	arRateCFtis() = ((PSR + (PSE -PSR) * (1 -exp((QRm -(if((time()<=tE),(QWm),(QWm+(if((exercise_level==1),(dQMmM),(if((exercise_level==2),(dQMmH),(dQMmVH)))))*(1-exp((tE-time())/(if((exercise_level==1),(tauQmM),(if((exercise_level==2),(tauQmH),(tauQmVH))))))))))) / Qc)))*(CFcap-CFtis)/ 27.8721 -(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH)))))*(CFtis/(Km+CFtis)*ADP/(Kadp+ADP)))/(1+Wmc*CmcMb*KMb/((1+KMb*CFtis) ^ (2)))
+	ATPase_flux_mM() = ((if((if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH))))))))>= 0,(if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH)))))))),0)) -(if(if(ADP>0,(if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH)))))))) * ATP/ADP,0)< 0,-(if(ADP>0,(if((time()<=tE),(KatpaseW),((if((exercise_level==1),(KatpaseM),(if((exercise_level==2),(KatpaseH),(KatpaseVH)))))))) * ATP/ADP,0)),0))) /  27.8721 
+	oxygen_phosph() = ((if(if(CTtis>0,if(ADP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) / (Kadp + ADP)/(ADP^5),0)/CTtis,0)*720>= 0,if(CTtis>0,if(ADP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) / (Kadp + ADP)/(ADP^5),0)/CTtis,0)*720,0)) -(if(if(ATP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) * ADP / (Kadp + ADP)/(ATP^6),0)*720< 0,-(if(ATP>0,(if((exercise_level==1),(VmaxM),(if((exercise_level==2),(VmaxH),(VmaxVH))))) * (CFtis / (Km + CFtis)) * ADP / (Kadp + ADP)/(ATP^6),0)*720),0))) /  27.8721  * 6
+end functions
+begin reaction rules
+	ATPase: ATP(genericMod~0)@Tissue <-> ATP(genericMod~ADP)@Tissue functionRate0(),functionRate0m()
+	OxidativePhosphorylation: ATP(genericMod~ADP)@Tissue + ATP(genericMod~ADP)@Tissue + ATP(genericMod~ADP)@Tissue + ATP(genericMod~ADP)@Tissue + ATP(genericMod~ADP)@Tissue + ATP(genericMod~ADP)@Tissue + CTcap(genericMod~CTtis)@Tissue <-> ATP(genericMod~0)@Tissue + ATP(genericMod~0)@Tissue + ATP(genericMod~0)@Tissue + ATP(genericMod~0)@Tissue + ATP(genericMod~0)@Tissue + ATP(genericMod~0)@Tissue functionRate1(),functionRate1m()
+	ConvectionTransport: 0  <-> CTcap(genericMod~0)@Capillary functionRate2(),functionRate2m()
+	DiffusionTransport: CTcap(genericMod~0)@Capillary <-> CTcap(genericMod~CTtis)@Tissue functionRate3(),functionRate3m()
+	CreatineKinase: ATP(genericMod~ADP)@Tissue + Cr(Pmod~P)@Tissue <-> ATP(genericMod~0)@Tissue + Cr(Pmod~0)@Tissue functionRate4(),functionRate4m()
+	#0  <-> CFcap()@Capillary arRateCFcap,armRateCFcap #rateLaw
+	#0  <-> CFtis()@Tissue arRateCFtis,armRateCFtis #rateLaw
+end reaction rules
+end model

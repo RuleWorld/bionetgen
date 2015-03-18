@@ -1,0 +1,57 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/obo.go/GO:0031684']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/4932']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 7 molecules and 7 reactions. The translated model has 4 molecules and 7 rules'
+#@creatorEmail:'enuo.he@wolfson.ox.ac.uk'
+#@creatorName:'He Enuo'
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/12960402', 'http://identifiers.org/biomodels.db/MODEL9468910329', 'http://identifiers.org/biomodels.db/BIOMD0000000072']
+###
+begin model
+begin parameters
+	r1_k1 0.000000
+	r1_k2 0.010000
+	r2_v 4.000000
+	r3_k1 0.000400
+	r4_k1 1.000000
+	r5_k1 0.000010
+	r6_k1 0.004000
+	r7_k1 0.110000
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	Ligand(receptor)
+	Receptor(ligand)
+	FreelevelsofG_beta_gamma(g_alpha_gtp)
+	G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~G_alpha_GDP~0)
+end molecule types
+begin seed species
+	@cell:Ligand(receptor) 6.02e+17 #Ligand #L
+	@cell:Receptor(ligand) 10000.0 #Receptor #R
+	@cell:G_alpha_GTP(freelevelsofg_beta_gamma!0,genericMod~G_alpha_GDP).FreelevelsofG_beta_gamma(g_alpha_gtp!0) 7000.0 #InactiveheterotrimericG_protein #G
+	@cell:FreelevelsofG_beta_gamma(g_alpha_gtp) 3000.0 #FreelevelsofG_beta_gamma #Gbg
+	@cell:G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~G_alpha_GDP) 3000.0 #G_alpha_GDP #Gd
+end seed species
+begin observables
+	Species Ligand Ligand(receptor) #Ligand
+	Species Receptor Receptor(ligand) #Receptor
+	Species InactiveheterotrimericG_protein G_alpha_GTP(freelevelsofg_beta_gamma!0,genericMod~G_alpha_GDP).FreelevelsofG_beta_gamma(g_alpha_gtp!0) #Inactive heterotrimeric G-protein
+	Species FreelevelsofG_beta_gamma FreelevelsofG_beta_gamma(g_alpha_gtp) #Free levels of G-beta-gamma
+	Species G_alpha_GDP G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~G_alpha_GDP) #G-alpha-GDP
+	Species G_alpha_GTP G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~0) #G-alpha-GTP
+	Species Receptor_Ligand Ligand(receptor!0).Receptor(ligand!0) #Receptor-Ligand
+end observables
+begin functions
+	functionRate4() = 1e-05 * Receptor_Ligand
+end functions
+begin reaction rules
+	reaction_0: Ligand(receptor) + Receptor(ligand) <-> Ligand(receptor!0).Receptor(ligand!0) r1_k1,r1_k2
+	reaction_1: 0  -> Receptor(ligand)@cell r2_v
+	reaction_2: Receptor(ligand)@cell -> 0  r3_k1
+	reaction_3: G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~G_alpha_GDP) + FreelevelsofG_beta_gamma(g_alpha_gtp) -> G_alpha_GTP(freelevelsofg_beta_gamma!0,genericMod~G_alpha_GDP).FreelevelsofG_beta_gamma(g_alpha_gtp!0) r4_k1
+	reaction_4: G_alpha_GTP(freelevelsofg_beta_gamma!0,genericMod~G_alpha_GDP).FreelevelsofG_beta_gamma(g_alpha_gtp!0) -> G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~0) + FreelevelsofG_beta_gamma(g_alpha_gtp) functionRate4()
+	reaction_5: Ligand(receptor!0)@cell.Receptor(ligand!0)@cell -> 0  r6_k1
+	reaction_6: G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~0) -> G_alpha_GTP(freelevelsofg_beta_gamma,genericMod~G_alpha_GDP) r7_k1
+end reaction rules
+end model

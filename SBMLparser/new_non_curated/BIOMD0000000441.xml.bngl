@@ -1,0 +1,91 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0000165']
+#@creatorName:'Juty Nick'
+#@creatorEmail:'juty@ebi.ac.uk'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1112190004', 'http://identifiers.org/taxonomy/131567', 'http://identifiers.org/biomodels.db/BIOMD0000000441', 'http://identifiers.org/pubmed/22694947', 'http://identifiers.org/biomodels.db/BIOMD0000000009']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 11 molecules and 10 reactions. The translated model has 6 molecules and 10 rules'
+###
+begin model
+begin parameters
+	r1_A 100.000000
+	r1_K1 15.000000
+	r1_Ka 500.000000
+	r1_V1 6.000000
+	r2_K3 20.000000
+	r2_KI 9.000000
+	r2_k3 0.100000
+	r3_K4 20.000000
+	r3_KI 9.000000
+	r3_k4 0.100000
+	r4_K7 20.000000
+	r4_k7 0.100000
+	r5_K8 20.000000
+	r5_k8 0.100000
+	r6_K2 100.000000
+	r6_k2 0.100000
+	r7_K5 20.000000
+	r7_k5 0.020000
+	r8_K6 20.000000
+	r8_k6 0.020000
+	r9_K9 20.000000
+	r9_k9 0.020000
+	r10_K10 20.000000
+	r10_k10 0.020000
+end parameters
+begin compartments
+	compartment_0  3  1.0
+end compartments
+begin molecule types
+	MKKK(_Pmod~_P~0)
+	MKK(Pmod~P~0,_Pmod~_P~0~_P_P)
+	M(Pmod~P~0,_Pmod~_P~0~_P_P)
+	P1()
+	P2()
+	P3()
+end molecule types
+begin seed species
+	@compartment_0:MKKK(_Pmod~0) 999.999903689 #MKKK #species_0
+	@compartment_0:MKK(Pmod~0,_Pmod~0) 3999.99961476 #MKK #species_2
+	@compartment_0:M(Pmod~0,_Pmod~0) 999.999903689 #M #species_5
+	@compartment_0:P1() 99.9999903689 #P1 #species_8
+	@compartment_0:P2() 499.999951844 #P2 #species_9
+	@compartment_0:P3() 499.999951844 #P3 #species_10
+end seed species
+begin observables
+	Species MKKK MKKK(_Pmod~0) #MKKK
+	Species MKKK_P MKKK(_Pmod~_P) #MKKK_P
+	Species MKK MKK(Pmod~0,_Pmod~0) #MKK
+	Species MKK_P MKK(Pmod~0,_Pmod~_P) #MKK_P
+	Species MKK_PP MKK(Pmod~P,_Pmod~_P_P) #MKK_PP
+	Species M M(Pmod~0,_Pmod~0) #M
+	Species M_P M(Pmod~0,_Pmod~_P) #M_P
+	Species M_PP M(Pmod~P,_Pmod~_P_P) #M_PP
+	Species P1 P1() #P1
+	Species P2 P2() #P2
+	Species P3 P3() #P3
+end observables
+begin functions
+	functionRate0() = if(MKKK>0,  ( 6.0 )   * ( MKKK )   / ( 15.0 )   /(1+ ( MKKK )   / ( 15.0 )   )*((1+ ( 100.0 )   * ( M_PP )   / ( 500.0 )   )/(1+ ( M_PP )   / ( 500.0 )   )) /MKKK,0)
+	functionRate1() = if(MKK>0,  ( 0.1 )   * ( MKKK_P )   * ( MKK )   / ( 20.0 )   /((1+ ( MKK )   / ( 20.0 )   + ( MKK_P )   / ( 20.0 )   )*(1+ ( M_PP )   / ( 9.0 )   )) /MKK,0)
+	functionRate2() = if(MKK_P>0,  ( 0.1 )   * ( MKKK_P )   * ( MKK_P )   / ( 20.0 )   /((1+ ( MKK )   / ( 20.0 )   + ( MKK_P )   / ( 20.0 )   )*(1+ ( M_PP )   / ( 9.0 )   )) /MKK_P,0)
+	functionRate3() = if(M>0,  ( 0.1 )   * ( MKK_PP )   * ( M )   / ( 20.0 )   /(1+ ( M )   / ( 20.0 )   + ( M_P )   / ( 20.0 )   ) /M,0)
+	functionRate4() = if(M_P>0,  ( 0.1 )   * ( MKK_PP )   * ( M_P )   / ( 20.0 )   /(1+ ( M )   / ( 20.0 )   + ( M_P )   / ( 20.0 )   ) /M_P,0)
+	functionRate5() = if(MKKK_P>0,  ( 0.1 )   * ( P1 )   * ( MKKK_P )   / ( 100.0 )   /(1+ ( MKKK_P )   / ( 100.0 )   ) /MKKK_P,0)
+	functionRate6() = if(MKK_PP>0,  ( 0.02 )   * ( P2 )   * ( MKK_PP )   / ( 20.0 )   /(1+ ( MKK_PP )   / ( 20.0 )   + ( MKK_P )   / ( 20.0 )   ) /MKK_PP,0)
+	functionRate7() = if(MKK_P>0,  ( 0.02 )   * ( P2 )   * ( MKK_P )   / ( 20.0 )   /(1+ ( MKK_PP )   / ( 20.0 )   + ( MKK_P )   / ( 20.0 )   ) /MKK_P,0)
+	functionRate8() = if(M_PP>0,  ( 0.02 )   * ( P3 )   * ( M_PP )   / ( 20.0 )   /(1+ ( M_PP )   / ( 20.0 )   + ( M_P )   / ( 20.0 )   ) /M_PP,0)
+	functionRate9() = if(M_P>0,  ( 0.02 )   * ( P3 )   * ( M_P )   / ( 20.0 )   /(1+ ( M_PP )   / ( 20.0 )   + ( M_P )   / ( 20.0 )   ) /M_P,0)
+end functions
+begin reaction rules
+	reaction_0: MKKK(_Pmod~0) -> MKKK(_Pmod~_P) functionRate0()
+	reaction_1: MKK(Pmod~0,_Pmod~0) -> MKK(Pmod~0,_Pmod~_P) functionRate1()
+	reaction_2: MKK(Pmod~0,_Pmod~_P) -> MKK(Pmod~P,_Pmod~_P_P) functionRate2()
+	reaction_3: M(Pmod~0,_Pmod~0) -> M(Pmod~0,_Pmod~_P) functionRate3()
+	reaction_4: M(Pmod~0,_Pmod~_P) -> M(Pmod~P,_Pmod~_P_P) functionRate4()
+	reaction_5: MKKK(_Pmod~_P) -> MKKK(_Pmod~0) functionRate5()
+	reaction_6: MKK(Pmod~P,_Pmod~_P_P) -> MKK(Pmod~0,_Pmod~_P) functionRate6()
+	reaction_7: MKK(Pmod~0,_Pmod~_P) -> MKK(Pmod~0,_Pmod~0) functionRate7()
+	reaction_8: M(Pmod~P,_Pmod~_P_P) -> M(Pmod~0,_Pmod~_P) functionRate8()
+	reaction_9: M(Pmod~0,_Pmod~_P) -> M(Pmod~0,_Pmod~0) functionRate9()
+end reaction rules
+end model

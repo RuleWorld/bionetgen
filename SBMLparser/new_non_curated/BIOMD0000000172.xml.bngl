@@ -1,0 +1,219 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0006096']
+#@creatorEmail:'lukas@ebi.ac.uk'
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 25 molecules and 19 reactions. The translated model has 13 molecules and 19 rules'
+#@BQB_IS_PART_OF:['http://identifiers.org/kegg.pathway/sce00010']
+#@creatorName:'Endler Lukas'
+#@BQB_HAS_TAXON:['http://identifiers.org/taxonomy/4932', 'http://identifiers.org/pubmed/12180966', 'http://identifiers.org/biomodels.db/BIOMD0000000064', 'http://identifiers.org/biomodels.db/BIOMD0000000172', 'http://identifiers.org/biomodels.db/MODEL8293171637']
+###
+begin model
+begin parameters
+	r1_Vmax_1 97.240000
+	r1_Kglc_1 1.191800
+	r1_Ki_1 0.910000
+	r2_Vmax_2 236.700000
+	r2_Kglc_2 0.080000
+	r2_Katp_2 0.150000
+	r2_Keq_2 2000.000000
+	r2_Kg6p_2 30.000000
+	r2_Kadp_2 0.230000
+	r3_Vmax_3 1056.000000
+	r3_Kg6p_3 1.400000
+	r3_Keq_3 0.290000
+	r3_Kf6p_3 0.300000
+	r4_Vmax_4 110.000000
+	r4_gR_4 5.120000
+	r4_Kf6p_4 0.100000
+	r4_Katp_4 0.710000
+	r4_L0_4 0.660000
+	r4_Ciatp_4 100.000000
+	r4_Kiatp_4 0.650000
+	r4_Camp_4 0.084500
+	r4_Kamp_4 0.099500
+	r4_Cf26_4 0.017400
+	r4_Kf26_4 0.000682
+	r4_Cf16_4 0.397000
+	r4_Kf16_4 0.111000
+	r4_Catp_4 3.000000
+	r5_Vmax_5 94.690000
+	r5_Kf16bp_5 0.300000
+	r5_Keq_5 0.069000
+	r5_Kdhap_5 2.000000
+	r5_Kgap_5 2.400000
+	r5_Kigap_5 10.000000
+	r6_k1_6 450000.000000
+	r6_k2_6 10000000.000000
+	r7_C_7 1.000000
+	r7_Vmaxf_7 1152.000000
+	r7_Kgap_7 0.210000
+	r7_Knad_7 0.090000
+	r7_Vmaxr_7 6719.000000
+	r7_Kbpg_7 0.009800
+	r7_Knadh_7 0.060000
+	r8_Vmax_8 1288.000000
+	r8_Keq_8 3200.000000
+	r8_Kp3g_8 0.530000
+	r8_Katp_8 0.300000
+	r8_Kbpg_8 0.003000
+	r8_Kadp_8 0.200000
+	r9_Vmax_9 2585.000000
+	r9_Kp3g_9 1.200000
+	r9_Keq_9 0.190000
+	r9_Kp2g_9 0.080000
+	r10_Vmax_10 201.600000
+	r10_Kp2g_10 0.040000
+	r10_Keq_10 6.700000
+	r10_Kpep_10 0.500000
+	r11_Vmax_11 1000.000000
+	r11_Kpep_11 0.140000
+	r11_Kadp_11 0.530000
+	r11_Keq_11 6500.000000
+	r11_Kpyr_11 21.000000
+	r11_Katp_11 1.500000
+	r12_Vmax_12 857.800000
+	r12_Kpyr_12 4.330000
+	r12_nH_12 1.900000
+	r13_Vmax_13 209.500000
+	r13_Ketoh_13 17.000000
+	r13_Kinad_13 0.920000
+	r13_Keq_13 0.000069
+	r13_Knad_13 0.170000
+	r13_Knadh_13 0.110000
+	r13_Kinadh_13 0.031000
+	r13_Kacald_13 1.110000
+	r13_Kiacald_13 1.100000
+	r13_Kietoh_13 90.000000
+	r14_Katpase_14 39.500000
+	r15_k1_15 45.000000
+	r15_k2_15 100.000000
+	r16_Vmax_16 47.110000
+	r16_Kdhap_16 0.400000
+	r16_Knadh_16 0.023000
+	r16_Keq_16 4300.000000
+	r16_Kglycerol_16 1.000000
+	r16_Knad_16 0.930000
+	r17_KGLYCOGEN_17 6.000000
+	r18_Ktrehalose_18 2.400000
+	r19_k_19 21.400000
+end parameters
+begin compartments
+	cell  3  1.0
+	ext  3  1.0
+	cell 3 1.0
+end compartments
+begin molecule types
+	ATP(genericMod~ADP~0)
+	AMP()
+	Fru2_6_P2()
+	glyceronephosphate(genericMod~NAD~0~Gra3P~NADH~Gri2_3P2,glyceronephosphate)
+	Gri3P(genericMod~Gri2P~0~phosphoenolpyruvate)
+	pyruvate(genericMod~acetaldehyde~0)
+	CO2()
+	ethanol()
+	glycerol()
+	glycogen()
+	trehalose()
+	succinate()
+	Glc__(ext__mod~EXT__~0,genericMod~Glu6P~0~Fru6_P,int__mod~INT__~0~INT__INT__)
+end molecule types
+begin seed species
+	@ext:$Glc__(ext__mod~EXT__,genericMod~0,int__mod~0) 2.0 #Glc__ext__ #GLCo
+	@cell:Glc__(ext__mod~0,genericMod~0,int__mod~INT__) 0.0976522310646 #Glc__int__ #GLCi
+	@cell:ATP(genericMod~0) 2.52512746499 #ATP #ATP
+	@cell:Glc__(ext__mod~0,genericMod~Glu6P,int__mod~INT__INT__) 2.67504014045 #Glu6P #G6P
+	@cell:ATP(genericMod~ADP) 1.28198768169 #ADP #ADP
+	@cell:Glc__(ext__mod~0,genericMod~Fru6_P,int__mod~INT__) 0.624976405532 #Fru6_P #F6P
+	@cell:glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0).glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0) 6.22132076069 #Fru1_6_P2 #F16bP
+	@cell:AMP() 0.29288485332 #AMP #AMP
+	@cell:$Fru2_6_P2() 0.02 #Fru2_6_P2 #F26bP
+	@cell:glyceronephosphate(genericMod~0,glyceronephosphate) 1.004152549 #glyceronephosphate #DHAP
+	@cell:glyceronephosphate(genericMod~Gra3P,glyceronephosphate) 0.0451809175781 #Gra3P #GAP
+	@cell:glyceronephosphate(genericMod~NAD,glyceronephosphate) 1.50329030202 #NAD #NAD
+	@cell:glyceronephosphate(genericMod~Gri2_3P2,glyceronephosphate) 0.000736873499866 #Gri2_3P2 #BPG
+	@cell:glyceronephosphate(genericMod~NADH,glyceronephosphate) 0.0867096979847 #NADH #NADH
+	@cell:Gri3P(genericMod~0) 0.885688538361 #Gri3P #P3G
+	@cell:Gri3P(genericMod~Gri2P) 0.127695817387 #Gri2P #P2G
+	@cell:Gri3P(genericMod~phosphoenolpyruvate) 0.0632352144937 #phosphoenolpyruvate #PEP
+	@cell:pyruvate(genericMod~0) 1.81531251193 #pyruvate #PYR
+	@cell:pyruvate(genericMod~acetaldehyde) 0.178140579851 #acetaldehyde #AcAld
+	@cell:$CO2() 1.0 #CO2 #CO2
+	@cell:$ethanol() 50.0 #ethanol #EtOH
+	@cell:$glycerol() 0.15 #glycerol #Glycerol
+	@cell:$glycogen() 0.0 #glycogen #Glycogen
+	@cell:$trehalose() 0.0 #trehalose #Trehalose
+	@cell:$succinate() 0.0 #succinate #Succinate
+end seed species
+begin observables
+	Species Glc__ext__ Glc__(ext__mod~EXT__,genericMod~0,int__mod~0) #Glc(ext)
+	Species Glc__int__ Glc__(ext__mod~0,genericMod~0,int__mod~INT__) #Glc(int)
+	Species ATP ATP(genericMod~0) #ATP
+	Species Glu6P Glc__(ext__mod~0,genericMod~Glu6P,int__mod~INT__INT__) #Glu6P
+	Species ADP ATP(genericMod~ADP) #ADP
+	Species Fru6_P Glc__(ext__mod~0,genericMod~Fru6_P,int__mod~INT__) #Fru6-P
+	Species Fru1_6_P2 glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0).glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0) #Fru1,6-P2
+	Species AMP AMP() #AMP
+	Species Fru2_6_P2 Fru2_6_P2() #Fru2,6-P2
+	Species glyceronephosphate glyceronephosphate(genericMod~0,glyceronephosphate) #glycerone phosphate
+	Species Gra3P glyceronephosphate(genericMod~Gra3P,glyceronephosphate) #Gra3P
+	Species NAD glyceronephosphate(genericMod~NAD,glyceronephosphate) #NAD
+	Species Gri2_3P2 glyceronephosphate(genericMod~Gri2_3P2,glyceronephosphate) #Gri2,3P2
+	Species NADH glyceronephosphate(genericMod~NADH,glyceronephosphate) #NADH
+	Species Gri3P Gri3P(genericMod~0) #Gri3P
+	Species Gri2P Gri3P(genericMod~Gri2P) #Gri2P
+	Species phosphoenolpyruvate Gri3P(genericMod~phosphoenolpyruvate) #phosphoenolpyruvate
+	Species pyruvate pyruvate(genericMod~0) #pyruvate
+	Species acetaldehyde pyruvate(genericMod~acetaldehyde) #acetaldehyde
+	Species CO2 CO2() #CO2
+	Species ethanol ethanol() #ethanol
+	Species glycerol glycerol() #glycerol
+	Species glycogen glycogen() #glycogen
+	Species trehalose trehalose() #trehalose
+	Species succinate succinate() #succinate
+end observables
+begin functions
+	functionRate0() = if(if(Glc__ext__>0,97.24*(Glc__ext__-Glc__int__)/1.1918/(1+(Glc__ext__+Glc__int__)/1.1918+0.91*Glc__ext__*Glc__int__/((1.1918) ^ (2)))/Glc__ext__,0)>=0,if(Glc__ext__>0,97.24*(Glc__ext__-Glc__int__)/1.1918/(1+(Glc__ext__+Glc__int__)/1.1918+0.91*Glc__ext__*Glc__int__/((1.1918) ^ (2)))/Glc__ext__,0),0)
+	functionRate0m() = if(if(Glc__int__>0,97.24*(Glc__ext__-Glc__int__)/1.1918/(1+(Glc__ext__+Glc__int__)/1.1918+0.91*Glc__ext__*Glc__int__/((1.1918) ^ (2)))/Glc__int__,0)<0,-(if(Glc__int__>0,97.24*(Glc__ext__-Glc__int__)/1.1918/(1+(Glc__ext__+Glc__int__)/1.1918+0.91*Glc__ext__*Glc__int__/((1.1918) ^ (2)))/Glc__int__,0)),0)
+	functionRate1() = if(if(ATP>0,if(Glc__int__>0,236.7 * (Glc__int__ * ATP / (0.08 * 0.15) -Glu6P * ADP / (0.08 * 0.15 * 2000.0)) / ((1 + Glc__int__ / 0.08 + Glu6P / 30.0) * (1 + ATP / 0.15 + ADP / 0.23))/Glc__int__,0)/ATP,0)>= 0,if(ATP>0,if(Glc__int__>0,236.7 * (Glc__int__ * ATP / (0.08 * 0.15) -Glu6P * ADP / (0.08 * 0.15 * 2000.0)) / ((1 + Glc__int__ / 0.08 + Glu6P / 30.0) * (1 + ATP / 0.15 + ADP / 0.23))/Glc__int__,0)/ATP,0),0)
+	functionRate1m() = if(if(ADP>0,if(Glu6P>0,236.7 * (Glc__int__ * ATP / (0.08 * 0.15) -Glu6P * ADP / (0.08 * 0.15 * 2000.0)) / ((1 + Glc__int__ / 0.08 + Glu6P / 30.0) * (1 + ATP / 0.15 + ADP / 0.23))/Glu6P,0)/ADP,0)< 0,-(if(ADP>0,if(Glu6P>0,236.7 * (Glc__int__ * ATP / (0.08 * 0.15) -Glu6P * ADP / (0.08 * 0.15 * 2000.0)) / ((1 + Glc__int__ / 0.08 + Glu6P / 30.0) * (1 + ATP / 0.15 + ADP / 0.23))/Glu6P,0)/ADP,0)),0)
+	functionRate2() = if(if(Glu6P>0,1056.0 * (Glu6P / 1.4 -Fru6_P / (1.4 * 0.29)) / (1 + Glu6P / 1.4 + Fru6_P / 0.3)/Glu6P,0)>= 0,if(Glu6P>0,1056.0 * (Glu6P / 1.4 -Fru6_P / (1.4 * 0.29)) / (1 + Glu6P / 1.4 + Fru6_P / 0.3)/Glu6P,0),0)
+	functionRate2m() = if(if(Fru6_P>0,1056.0 * (Glu6P / 1.4 -Fru6_P / (1.4 * 0.29)) / (1 + Glu6P / 1.4 + Fru6_P / 0.3)/Fru6_P,0)< 0,-(if(Fru6_P>0,1056.0 * (Glu6P / 1.4 -Fru6_P / (1.4 * 0.29)) / (1 + Glu6P / 1.4 + Fru6_P / 0.3)/Fru6_P,0)),0)
+	functionRate3() = if(Fru6_P>0,if(ATP>0,110.0*(5.12*(Fru6_P/0.1)*(ATP/0.71)*(1+Fru6_P/0.1+ATP/0.71+5.12*Fru6_P/0.1*ATP/0.71)/(((1+Fru6_P/0.1+ATP/0.71+5.12*Fru6_P/0.1*ATP/0.71) ^ (2))+0.66*(((1+100.0*ATP/0.65)/(1+ATP/0.65)) ^ (2))*(((1+0.0845*AMP/0.0995)/(1+AMP/0.0995)) ^ (2))*(((1+0.0174*Fru2_6_P2/0.000682+0.397*Fru1_6_P2/0.111)/(1+Fru2_6_P2/0.000682+Fru1_6_P2/0.111)) ^ (2))*((1+3.0*ATP/0.71) ^ (2))))/ATP,0)/Fru6_P,0)
+	functionRate4() = (if(if(Fru1_6_P2>0,94.69 * (Fru1_6_P2 / 0.3 -glyceronephosphate * Gra3P / (0.3 * 0.069)) / (1 + Fru1_6_P2 / 0.3 + glyceronephosphate / 2.0 + Gra3P / 2.4 + Fru1_6_P2 * Gra3P / (0.3 * 10.0) + glyceronephosphate * Gra3P / (2.0 * 2.4))/Fru1_6_P2,0)>= 0,if(Fru1_6_P2>0,94.69 * (Fru1_6_P2 / 0.3 -glyceronephosphate * Gra3P / (0.3 * 0.069)) / (1 + Fru1_6_P2 / 0.3 + glyceronephosphate / 2.0 + Gra3P / 2.4 + Fru1_6_P2 * Gra3P / (0.3 * 10.0) + glyceronephosphate * Gra3P / (2.0 * 2.4))/Fru1_6_P2,0),0))/2
+	functionRate4m() = if(if(Gra3P>0,if(glyceronephosphate>0,94.69 * (Fru1_6_P2 / 0.3 -glyceronephosphate * Gra3P / (0.3 * 0.069)) / (1 + Fru1_6_P2 / 0.3 + glyceronephosphate / 2.0 + Gra3P / 2.4 + Fru1_6_P2 * Gra3P / (0.3 * 10.0) + glyceronephosphate * Gra3P / (2.0 * 2.4))/glyceronephosphate,0)/Gra3P,0)< 0,-(if(Gra3P>0,if(glyceronephosphate>0,94.69 * (Fru1_6_P2 / 0.3 -glyceronephosphate * Gra3P / (0.3 * 0.069)) / (1 + Fru1_6_P2 / 0.3 + glyceronephosphate / 2.0 + Gra3P / 2.4 + Fru1_6_P2 * Gra3P / (0.3 * 10.0) + glyceronephosphate * Gra3P / (2.0 * 2.4))/glyceronephosphate,0)/Gra3P,0)),0)
+	functionRate6() = if(if(Gra3P>0,if(NAD>0,1.0 * (1152.0 * Gra3P * NAD / (0.21 * 0.09) -6719.0 * Gri2_3P2 * NADH / (0.0098 * 0.06)) / ((1 + Gra3P / 0.21 + Gri2_3P2 / 0.0098) * (1 + NAD / 0.09 + NADH / 0.06))/NAD,0)/Gra3P,0)>= 0,if(Gra3P>0,if(NAD>0,1.0 * (1152.0 * Gra3P * NAD / (0.21 * 0.09) -6719.0 * Gri2_3P2 * NADH / (0.0098 * 0.06)) / ((1 + Gra3P / 0.21 + Gri2_3P2 / 0.0098) * (1 + NAD / 0.09 + NADH / 0.06))/NAD,0)/Gra3P,0),0)
+	functionRate6m() = if(if(Gri2_3P2>0,if(NADH>0,1.0 * (1152.0 * Gra3P * NAD / (0.21 * 0.09) -6719.0 * Gri2_3P2 * NADH / (0.0098 * 0.06)) / ((1 + Gra3P / 0.21 + Gri2_3P2 / 0.0098) * (1 + NAD / 0.09 + NADH / 0.06))/NADH,0)/Gri2_3P2,0)< 0,-(if(Gri2_3P2>0,if(NADH>0,1.0 * (1152.0 * Gra3P * NAD / (0.21 * 0.09) -6719.0 * Gri2_3P2 * NADH / (0.0098 * 0.06)) / ((1 + Gra3P / 0.21 + Gri2_3P2 / 0.0098) * (1 + NAD / 0.09 + NADH / 0.06))/NADH,0)/Gri2_3P2,0)),0)
+	functionRate7() = if(if(Gri2_3P2>0,if(ADP>0,1288.0 * ((3200.0 * Gri2_3P2 * ADP -Gri3P * ATP) / (0.53 * 0.3)) / ((1 + Gri2_3P2 / 0.003 + Gri3P / 0.53) * (1 + ADP / 0.2 + ATP / 0.3))/ADP,0)/Gri2_3P2,0)>= 0,if(Gri2_3P2>0,if(ADP>0,1288.0 * ((3200.0 * Gri2_3P2 * ADP -Gri3P * ATP) / (0.53 * 0.3)) / ((1 + Gri2_3P2 / 0.003 + Gri3P / 0.53) * (1 + ADP / 0.2 + ATP / 0.3))/ADP,0)/Gri2_3P2,0),0)
+	functionRate7m() = if(if(ATP>0,if(Gri3P>0,1288.0 * ((3200.0 * Gri2_3P2 * ADP -Gri3P * ATP) / (0.53 * 0.3)) / ((1 + Gri2_3P2 / 0.003 + Gri3P / 0.53) * (1 + ADP / 0.2 + ATP / 0.3))/Gri3P,0)/ATP,0)< 0,-(if(ATP>0,if(Gri3P>0,1288.0 * ((3200.0 * Gri2_3P2 * ADP -Gri3P * ATP) / (0.53 * 0.3)) / ((1 + Gri2_3P2 / 0.003 + Gri3P / 0.53) * (1 + ADP / 0.2 + ATP / 0.3))/Gri3P,0)/ATP,0)),0)
+	functionRate8() = if(if(Gri3P>0,2585.0 * (Gri3P / 1.2 -Gri2P / (1.2 * 0.19)) / (1 + Gri3P / 1.2 + Gri2P / 0.08)/Gri3P,0)>= 0,if(Gri3P>0,2585.0 * (Gri3P / 1.2 -Gri2P / (1.2 * 0.19)) / (1 + Gri3P / 1.2 + Gri2P / 0.08)/Gri3P,0),0)
+	functionRate8m() = if(if(Gri2P>0,2585.0 * (Gri3P / 1.2 -Gri2P / (1.2 * 0.19)) / (1 + Gri3P / 1.2 + Gri2P / 0.08)/Gri2P,0)< 0,-(if(Gri2P>0,2585.0 * (Gri3P / 1.2 -Gri2P / (1.2 * 0.19)) / (1 + Gri3P / 1.2 + Gri2P / 0.08)/Gri2P,0)),0)
+	functionRate9() = if(if(Gri2P>0,201.6 * (Gri2P / 0.04 -phosphoenolpyruvate / (0.04 * 6.7)) / (1 + Gri2P / 0.04 + phosphoenolpyruvate / 0.5)/Gri2P,0)>= 0,if(Gri2P>0,201.6 * (Gri2P / 0.04 -phosphoenolpyruvate / (0.04 * 6.7)) / (1 + Gri2P / 0.04 + phosphoenolpyruvate / 0.5)/Gri2P,0),0)
+	functionRate9m() = if(if(phosphoenolpyruvate>0,201.6 * (Gri2P / 0.04 -phosphoenolpyruvate / (0.04 * 6.7)) / (1 + Gri2P / 0.04 + phosphoenolpyruvate / 0.5)/phosphoenolpyruvate,0)< 0,-(if(phosphoenolpyruvate>0,201.6 * (Gri2P / 0.04 -phosphoenolpyruvate / (0.04 * 6.7)) / (1 + Gri2P / 0.04 + phosphoenolpyruvate / 0.5)/phosphoenolpyruvate,0)),0)
+	functionRate10() = if(if(ADP>0,if(phosphoenolpyruvate>0,1000.0 * (phosphoenolpyruvate * ADP / (0.14 * 0.53) -pyruvate * ATP / (0.14 * 0.53 * 6500.0)) / ((1 + phosphoenolpyruvate / 0.14 + pyruvate / 21.0) * (1 + ADP / 0.53 + ATP / 1.5))/phosphoenolpyruvate,0)/ADP,0)>= 0,if(ADP>0,if(phosphoenolpyruvate>0,1000.0 * (phosphoenolpyruvate * ADP / (0.14 * 0.53) -pyruvate * ATP / (0.14 * 0.53 * 6500.0)) / ((1 + phosphoenolpyruvate / 0.14 + pyruvate / 21.0) * (1 + ADP / 0.53 + ATP / 1.5))/phosphoenolpyruvate,0)/ADP,0),0)
+	functionRate10m() = if(if(ATP>0,if(pyruvate>0,1000.0 * (phosphoenolpyruvate * ADP / (0.14 * 0.53) -pyruvate * ATP / (0.14 * 0.53 * 6500.0)) / ((1 + phosphoenolpyruvate / 0.14 + pyruvate / 21.0) * (1 + ADP / 0.53 + ATP / 1.5))/pyruvate,0)/ATP,0)< 0,-(if(ATP>0,if(pyruvate>0,1000.0 * (phosphoenolpyruvate * ADP / (0.14 * 0.53) -pyruvate * ATP / (0.14 * 0.53 * 6500.0)) / ((1 + phosphoenolpyruvate / 0.14 + pyruvate / 21.0) * (1 + ADP / 0.53 + ATP / 1.5))/pyruvate,0)/ATP,0)),0)
+	functionRate11() = if(pyruvate>0,857.8*((pyruvate/4.33) ^ (1.9))/(1+((pyruvate/4.33) ^ (1.9)))/pyruvate,0)
+	functionRate12() = if(if(ethanol>0,if(NAD>0,209.5 * (ethanol * NAD / (17.0 * 0.92) -acetaldehyde * NADH / (17.0 * 0.92 * 6.9e-05)) / (1 + NAD / 0.92 + ethanol * 0.17 / (0.92 * 17.0) + acetaldehyde * 0.11 / (0.031 * 1.11) + NADH / 0.031 + ethanol * NAD / (0.92 * 17.0) + NAD * acetaldehyde * 0.11 / (0.92 * 0.031 * 1.11) + ethanol * NADH * 0.17 / (0.92 * 0.031 * 17.0) + acetaldehyde * NADH / (1.11 * 0.031) + ethanol * NAD * acetaldehyde / (0.92 * 1.1 * 17.0) + ethanol * acetaldehyde * NADH / (90.0 * 0.031 * 1.11))/NAD,0)/ethanol,0)>= 0,if(ethanol>0,if(NAD>0,209.5 * (ethanol * NAD / (17.0 * 0.92) -acetaldehyde * NADH / (17.0 * 0.92 * 6.9e-05)) / (1 + NAD / 0.92 + ethanol * 0.17 / (0.92 * 17.0) + acetaldehyde * 0.11 / (0.031 * 1.11) + NADH / 0.031 + ethanol * NAD / (0.92 * 17.0) + NAD * acetaldehyde * 0.11 / (0.92 * 0.031 * 1.11) + ethanol * NADH * 0.17 / (0.92 * 0.031 * 17.0) + acetaldehyde * NADH / (1.11 * 0.031) + ethanol * NAD * acetaldehyde / (0.92 * 1.1 * 17.0) + ethanol * acetaldehyde * NADH / (90.0 * 0.031 * 1.11))/NAD,0)/ethanol,0),0)
+	functionRate12m() = if(if(acetaldehyde>0,if(NADH>0,209.5 * (ethanol * NAD / (17.0 * 0.92) -acetaldehyde * NADH / (17.0 * 0.92 * 6.9e-05)) / (1 + NAD / 0.92 + ethanol * 0.17 / (0.92 * 17.0) + acetaldehyde * 0.11 / (0.031 * 1.11) + NADH / 0.031 + ethanol * NAD / (0.92 * 17.0) + NAD * acetaldehyde * 0.11 / (0.92 * 0.031 * 1.11) + ethanol * NADH * 0.17 / (0.92 * 0.031 * 17.0) + acetaldehyde * NADH / (1.11 * 0.031) + ethanol * NAD * acetaldehyde / (0.92 * 1.1 * 17.0) + ethanol * acetaldehyde * NADH / (90.0 * 0.031 * 1.11))/NADH,0)/acetaldehyde,0)< 0,-(if(acetaldehyde>0,if(NADH>0,209.5 * (ethanol * NAD / (17.0 * 0.92) -acetaldehyde * NADH / (17.0 * 0.92 * 6.9e-05)) / (1 + NAD / 0.92 + ethanol * 0.17 / (0.92 * 17.0) + acetaldehyde * 0.11 / (0.031 * 1.11) + NADH / 0.031 + ethanol * NAD / (0.92 * 17.0) + NAD * acetaldehyde * 0.11 / (0.92 * 0.031 * 1.11) + ethanol * NADH * 0.17 / (0.92 * 0.031 * 17.0) + acetaldehyde * NADH / (1.11 * 0.031) + ethanol * NAD * acetaldehyde / (0.92 * 1.1 * 17.0) + ethanol * acetaldehyde * NADH / (90.0 * 0.031 * 1.11))/NADH,0)/acetaldehyde,0)),0)
+	functionRate15() = if(glyceronephosphate>0,if(NADH>0,47.11 * (glyceronephosphate / 0.4 * (NADH / 0.023) -glycerol / 0.4 * (NAD / 0.023) * (1 / 4300.0)) / ((1 + glyceronephosphate / 0.4 + glycerol / 1.0) * (1 + NADH / 0.023 + NAD / 0.93))/NADH,0)/glyceronephosphate,0)
+end functions
+begin reaction rules
+	HXT: Glc__(ext__mod~EXT__,genericMod~0,int__mod~0)@ext <-> Glc__(ext__mod~0,genericMod~0,int__mod~INT__)@cell functionRate0(),functionRate0m()
+	HK: Glc__(ext__mod~0,genericMod~0,int__mod~INT__)@cell + ATP(genericMod~0)@cell <-> Glc__(ext__mod~0,genericMod~Glu6P,int__mod~INT__INT__)@cell + ATP(genericMod~ADP)@cell functionRate1(),functionRate1m()
+	PGI: Glc__(ext__mod~0,genericMod~Glu6P,int__mod~INT__INT__)@cell <-> Glc__(ext__mod~0,genericMod~Fru6_P,int__mod~INT__)@cell functionRate2(),functionRate2m()
+	PFK: ATP(genericMod~0)@cell + Glc__(ext__mod~0,genericMod~Fru6_P,int__mod~INT__)@cell -> ATP(genericMod~ADP)@cell + glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0)@cell.glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0)@cell functionRate3()
+	ALD: glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0)@cell.glyceronephosphate(genericMod~Gra3P,glyceronephosphate!0)@cell <-> glyceronephosphate(genericMod~0,glyceronephosphate)@cell + glyceronephosphate(genericMod~Gra3P,glyceronephosphate)@cell functionRate4(),functionRate4m()
+	TPI: glyceronephosphate(genericMod~0,glyceronephosphate)@cell <-> glyceronephosphate(genericMod~Gra3P,glyceronephosphate)@cell r6_k1_6,r6_k2_6
+	GAPDH: glyceronephosphate(genericMod~Gra3P,glyceronephosphate)@cell + glyceronephosphate(genericMod~NAD,glyceronephosphate)@cell <-> glyceronephosphate(genericMod~Gri2_3P2,glyceronephosphate)@cell + glyceronephosphate(genericMod~NADH,glyceronephosphate)@cell functionRate6(),functionRate6m()
+	PGK: ATP(genericMod~ADP)@cell + glyceronephosphate(genericMod~Gri2_3P2,glyceronephosphate)@cell <-> ATP(genericMod~0)@cell + Gri3P(genericMod~0)@cell functionRate7(),functionRate7m()
+	PGM: Gri3P(genericMod~0)@cell <-> Gri3P(genericMod~Gri2P)@cell functionRate8(),functionRate8m()
+	ENO: Gri3P(genericMod~Gri2P)@cell <-> Gri3P(genericMod~phosphoenolpyruvate)@cell functionRate9(),functionRate9m()
+	PYK: ATP(genericMod~ADP)@cell + Gri3P(genericMod~phosphoenolpyruvate)@cell <-> ATP(genericMod~0)@cell + pyruvate(genericMod~0)@cell functionRate10(),functionRate10m()
+	PDC: pyruvate(genericMod~0)@cell -> pyruvate(genericMod~acetaldehyde)@cell + CO2()@cell functionRate11()
+	ADH: glyceronephosphate(genericMod~NAD,glyceronephosphate)@cell + ethanol()@cell <-> glyceronephosphate(genericMod~NADH,glyceronephosphate)@cell + pyruvate(genericMod~acetaldehyde)@cell functionRate12(),functionRate12m()
+	ATPase: ATP(genericMod~0)@cell -> ATP(genericMod~ADP)@cell r14_Katpase_14
+	AK: ATP(genericMod~ADP)@cell + ATP(genericMod~ADP)@cell <-> ATP(genericMod~0)@cell + AMP()@cell r15_k1_15*2,r15_k2_15
+	G3PDH: glyceronephosphate(genericMod~0,glyceronephosphate)@cell + glyceronephosphate(genericMod~NADH,glyceronephosphate)@cell -> glyceronephosphate(genericMod~NAD,glyceronephosphate)@cell + glycerol()@cell functionRate15()
+	Glycogen_Branch: ATP(genericMod~0)@cell + Glc__(ext__mod~0,genericMod~Glu6P,int__mod~INT__INT__)@cell -> ATP(genericMod~ADP)@cell + glycogen()@cell if(ATP>0,if(Glu6P>0,r17_KGLYCOGEN_17/Glu6P,0)/ATP,0)
+	Trehalose_Branch: ATP(genericMod~0)@cell + Glc__(ext__mod~0,genericMod~Glu6P,int__mod~INT__INT__)@cell + Glc__(ext__mod~0,genericMod~Glu6P,int__mod~INT__INT__)@cell -> ATP(genericMod~ADP)@cell + trehalose()@cell if(ATP>0,if(Glu6P>0,r18_Ktrehalose_18/(Glu6P^2),0)/ATP,0)*2
+	Succinate_Branch: glyceronephosphate(genericMod~NAD,glyceronephosphate)@cell + glyceronephosphate(genericMod~NAD,glyceronephosphate)@cell + glyceronephosphate(genericMod~NAD,glyceronephosphate)@cell + pyruvate(genericMod~acetaldehyde)@cell + pyruvate(genericMod~acetaldehyde)@cell -> glyceronephosphate(genericMod~NADH,glyceronephosphate)@cell + glyceronephosphate(genericMod~NADH,glyceronephosphate)@cell + glyceronephosphate(genericMod~NADH,glyceronephosphate)@cell + succinate()@cell if(NAD>0,if(acetaldehyde>0,r19_k_19/acetaldehyde,0)/(NAD^3),0)*12
+end reaction rules
+end model

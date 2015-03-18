@@ -1,0 +1,11 @@
+INFO:Atomization.0: added induced naming convention [['Bid'], ['tBid']]
+CRITICAL:Atomization.1: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate p43=[['DISCp55']].
+CRITICAL:Atomization.2: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate p30=[['DISCp55']].
+ATOMIZATION:WARNING.3: adding forced transformation: p43:[['p43']]:p18
+ATOMIZATION:WARNING.4: adding forced transformation: FADD:[['FADD']]:DISC
+ATOMIZATION:WARNING.5: adding forced transformation: PrER:[['PrER']]:PrER_mGFP
+ATOMIZATION:WARNING.6: adding forced transformation: PrNES:[['PrNES']]:PrNES_mCherry
+ATOMIZATION:WARNING.7: adding forced transformation: p43:[['p18']]:p18inactive
+ATOMIZATION:CRITICAL.8: unregistered modification: p18inactive:[['p18']]
+SIMULATION:CRITICAL.9: Boundary condition/assignment type variables (CD95act) are not properly                     supported in BioNetGen simulator
+INFO:Summary.10: File contains 11 molecules out of 18 original SBML species

@@ -1,0 +1,47 @@
+###
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 3 molecules and 3 rules'
+#@creatorName:'Choi Ethan'
+#@creatorEmail:'mcho099@aucklanduni.ac.nz'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1006230050', 'http://identifiers.org/pubmed/8600540']
+###
+begin model
+begin parameters
+	lambda 1.0
+	d 0.01
+	beta 0.05
+	a 0.5
+	k 1.0
+	u 1.0
+end parameters
+begin compartments
+	COMpartment  3  1.0
+end compartments
+begin molecule types
+	x
+	y
+	v
+end molecule types
+begin seed species
+	x@COMpartment 100.0
+	y@COMpartment 0
+	v@COMpartment 5.0
+end seed species
+begin observables
+	Species x x
+	Species y y
+	Species v v
+end observables
+begin functions
+	arRatex() = lambda -d * x
+	armRatex() = if(x>0,(beta * x * v)/x,0)
+	arRatey() = beta * x * v
+	armRatey() = a
+	arRatev() = k * y
+	armRatev() = u
+end functions
+begin reaction rules
+	0  <-> x() arRatex,armRatex #rateLaw
+	0  <-> y() arRatey,armRatey #rateLaw
+	0  <-> v() arRatev,armRatev #rateLaw
+end reaction rules
+end model

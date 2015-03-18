@@ -1,0 +1,47 @@
+###
+#@BQB_OCCURS_IN:['http://identifiers.org/bto/BTO:0000093']
+#@BQB_IS_PART_OF:['http://identifiers.org/kegg.pathway/hsa04115']
+#@creatorName:'Dharuri Harish'
+#@creatorEmail:'hdharuri@cds.caltech.edu'
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 2 molecules and 5 reactions. The translated model has 2 molecules and 5 rules'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/BIOMD0000000154', 'http://identifiers.org/taxonomy/9606', 'http://identifiers.org/pubmed/16773083', 'http://identifiers.org/biomodels.db/MODEL0076334056', 'http://identifiers.org/pubmed/11016968']
+#@BQB_HAS_PROPERTY:['http://identifiers.org/mamo/MAMO_0000046']
+###
+begin model
+begin parameters
+	beta_x 2.3
+	psi 1.0
+	alpha_xy 120.0
+	beta_y 24.0
+	alpha_y 24.0
+	tau 3.3
+	alpha_x 0
+end parameters
+begin compartments
+	compartment  3  1.0
+end compartments
+begin molecule types
+	p53()
+	Mdm2()
+end molecule types
+begin seed species
+	@compartment:p53() 0.02 #p53 #x
+	@compartment:Mdm2() 0.02 #Mdm2 #y
+end seed species
+begin observables
+	Species p53 p53() #p53
+	Species Mdm2 Mdm2() #Mdm2
+end observables
+begin functions
+	functionRate0() = beta_x * psi
+	functionRate2() = alpha_xy * Mdm2
+	functionRate3() = beta_y * psi * delay(p53, tau)
+end functions
+begin reaction rules
+	R1: 0  -> p53()@compartment functionRate0()
+	R2: p53()@compartment -> 0  alpha_x
+	R3: p53()@compartment -> 0  functionRate2()
+	R4: 0  -> Mdm2()@compartment functionRate3()
+	R5: Mdm2()@compartment -> 0  alpha_y
+end reaction rules
+end model

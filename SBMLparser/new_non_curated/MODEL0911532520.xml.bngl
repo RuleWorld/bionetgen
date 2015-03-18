@@ -1,0 +1,39 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL0911532520', 'http://identifiers.org/pubmed/5861813']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 2 molecules and 2 rules'
+###
+begin model
+begin parameters
+	ai 72.0
+	bi 2.0
+	Ai 36.0
+	ki 1.0
+	alpha_i 1.0
+	beta_i 0
+end parameters
+begin compartments
+	Compartment  3  1.0
+end compartments
+begin molecule types
+	Xi
+	Yi
+end molecule types
+begin seed species
+	Xi@Compartment 7.0
+	Yi@Compartment -10.0
+end seed species
+begin observables
+	Species Xi Xi
+	Species Yi Yi
+end observables
+begin functions
+	arRateXi() = ai / (Ai + ki * Yi)
+	armRateXi() = if(Xi>0,(bi)/Xi,0)
+	arRateYi() = alpha_i * Xi
+	armRateYi() = if(Yi>0,(beta_i)/Yi,0)
+end functions
+begin reaction rules
+	0  <-> Xi() arRateXi,armRateXi #rateLaw
+	0  <-> Yi() arRateYi,armRateYi #rateLaw
+end reaction rules
+end model
