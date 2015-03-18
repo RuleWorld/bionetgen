@@ -87,8 +87,8 @@ def dbmodel_key(model_name=DATABASE_NAME):
     return ndb.Key('ModelDB', model_name)
     
     
-remoteServer = "http://54.214.249.43:9000"
-#remoteServer = "http://127.0.0.1:9000"
+#remoteServer = "http://54.214.249.43:9000"
+remoteServer = "http://127.0.0.1:9000"
 class Translate(webapp2.RequestHandler):
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
@@ -181,6 +181,7 @@ class WaitFile(webapp2.RequestHandler):
             file_name = files.blobstore.create(mime_type='application/octet-stream')
             
             # Open the file and write to it
+            result = result.encode('ascii', 'ignore')
             with files.open(file_name, 'a') as f:
               f.write(result)
             
@@ -223,6 +224,36 @@ class Graph(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 
+class ExpandAnnotation(webapp2.RequestHandler):
+    def get(self):
+        upload_url = blobstore.create_upload_url('/eannotation')
+        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9100')
+        
+        template_values={
+            'action' : upload_url,
+            #'reactionDefinition' : ['1','2','3','4','5','6','7','8','9','10','a','b','c']
+        }
+        template =JINJA_ENVIRONMENT.get_template('annotation.html')
+        self.response.write(template.render(template_values))
+
+class ExpandAnnotationMethod(blobstore_handlers.BlobstoreUploadHandler):
+     def post(self):
+        
+        upload_files = self.get_uploads('file')
+        blob_info = upload_files[0]
+        reader = blob_info.open()
+        sbmlContent = xmlrpclib.Binary(reader.read())
+
+        #https://developers.google.com/appengine/docs/python/urlfetch/fetchfunction
+        #https://groups.google.com/forum/#!topic/google-appengine/XbrJvt9LfuI
+        s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
+        #s = xmlrpclib.ServerProxy('http://127.0.0.1:9000',GAEXMLRPCTransport())
+        ticket = s.generateAnnotations(sbmlContent)
+        #self.response.write(result)
+        
+        self.redirect('/waitFile?ticket={0}&fileName={1}.xml'.format(ticket,blob_info.filename))
+
+
 class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
      def post(self):
         
@@ -260,6 +291,8 @@ app = webapp2.WSGIApplication([
     ('/serve/([^/]+)?', ServeHandler),
     ('/process',ProcessFile),
     ('/refine',Refine),
+    ('/annotation',ExpandAnnotation),
+    ('/eannotation',ExpandAnnotationMethod),
     ('/graphp',GraphFile),
     ('/graph',Graph),
     ('/waitFile',WaitFile),
