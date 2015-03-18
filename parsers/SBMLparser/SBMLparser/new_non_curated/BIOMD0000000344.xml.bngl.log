@@ -1,0 +1,41 @@
+INFO:Atomization.0: added induced naming convention [['Jnk'], ['Jnk_P']]
+INFO:Atomization.1: added induced naming convention [['Jnk'], ['Jnk_P']]
+INFO:Atomization.2: added induced naming convention [['p38'], ['p38_P']]
+INFO:Atomization.3: added induced naming convention [['p38'], ['p38_P']]
+INFO:Atomization.4: added induced naming convention [['Mkp1'], ['Mkp1_P']]
+INFO:Atomization.5: added induced naming convention [['Mkp1'], ['Mkp1_P']]
+INFO:Atomization.6: added induced naming convention [['Hsp70'], ['Hsp70_dam']]
+INFO:Atomization.7: added induced naming convention [['Hsp90'], ['Hsp90_dam']]
+INFO:Atomization.8: added induced naming convention [['Hsp70'], ['Hsp70_dam']]
+INFO:Atomization.9: added induced naming convention [['Hsp90'], ['Hsp90_dam']]
+INFO:Atomization.10: Lexical relationship inferred between                                     ['Hsp90', 'HSEHsp90'], user information confirming it is required
+INFO:Atomization.11: Lexical relationship inferred between                                     ['Hsp70', 'HSEHsp70'], user information confirming it is required
+INFO:Atomization.12: Lexical relationship inferred between                                     ['PIDeath', 'CellDeath'], user information confirming it is required
+INFO:Atomization.13: Lexical relationship inferred between                                     ['PIDeath', 'CellDeath'], user information confirming it is required
+INFO:Atomization.14: Lexical relationship inferred between                                     ['PIDeath', 'JNKDeath'], user information confirming it is required
+INFO:Atomization.15: Lexical relationship inferred between                                     ['PIDeath', 'JNKDeath'], user information confirming it is required
+CRITICAL:Atomization.16: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate Hsf1_Hsf1_Hsf1_P=[['Hsf1_Hsf1_Hsf1']].
+ATOMIZATION:WARNING.17: adding forced transformation: Source:[['Source']]:ROS
+ATOMIZATION:WARNING.18: adding forced transformation: Source:[['Source']]:Akt
+ATOMIZATION:WARNING.19: adding forced transformation: Source:[['Source']]:Mkp1
+ATOMIZATION:WARNING.20: adding forced transformation: Source:[['Source']]:NatP
+ATOMIZATION:WARNING.21: adding forced transformation: Source:[['Source']]:Hsp90
+ATOMIZATION:WARNING.22: adding forced transformation: Source:[['Source']]:Hsp70
+ATOMIZATION:WARNING.23: adding forced transformation: Source:[['ROS']]:Sink
+ATOMIZATION:CRITICAL.24: unregistered modification: Sink:[['ROS']]
+ATOMIZATION:WARNING.25: adding forced transformation: Source:[['NatP']]:MisP
+ATOMIZATION:CRITICAL.26: unregistered modification: MisP:[['NatP']]
+ATOMIZATION:WARNING.27: adding forced transformation: Source:[['Mkp1']]:Mkp1_P
+ATOMIZATION:WARNING.28: adding forced transformation: Source:[['Hsp90']]:Hsp90_dam
+ATOMIZATION:WARNING.29: adding forced transformation: Source:[['Hsp70']]:Hsp70_dam
+WARNING:Atomization.30: We don't know how ['Hsf1', 'Hsf1'] and ['Hsf1'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Atomization.31: We don't know how ['Source', 'Source'] and ['CHIP'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Atomization.32: We don't know how ['Hsf1', 'Hsf1'] and ['HSEHsp90'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Atomization.33: We don't know how ['Hsf1', 'HSEHsp90', 'Hsf1'] and ['Hsf1'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Atomization.34: We don't know how ['Hsf1', 'Hsf1'] and ['HSEHsp70'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Atomization.35: We don't know how ['Hsf1', 'HSEHsp70', 'Hsf1'] and ['Hsf1'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Atomization.36: We don't know how ['Source', 'Source'] and ['Source'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+SIMULATION:CRITICAL.37: Boundary condition/assignment type variables (tot_Hsp90) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.38: Boundary condition/assignment type variables (tot_Hsp70) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.39: Boundary condition/assignment type variables (tot_MisP) are not properly                     supported in BioNetGen simulator
+INFO:Summary.40: File contains 19 molecules out of 54 original SBML species

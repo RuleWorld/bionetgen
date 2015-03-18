@@ -1,0 +1,30 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0040008']
+#@creatorEmail:'juty@ebi.ac.uk'
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 2 molecules and 2 reactions. The translated model has 1 molecules and 2 rules'
+#@creatorName:'Juty Nick'
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/21054005', 'http://identifiers.org/taxonomy/131567', 'http://identifiers.org/biomodels.db/BIOMD0000000484', 'http://identifiers.org/biomodels.db/MODEL1308080004', 'http://identifiers.org/pubmed/23862966']
+#@BQB_HAS_PROPERTY:['http://identifiers.org/mamo/MAMO_0000046']
+###
+begin model
+begin parameters
+	k1 1.0
+	k2 0.025
+end parameters
+begin compartments
+	default  3  1.0
+end compartments
+begin molecule types
+	S(Emod~E~0)
+end molecule types
+begin seed species
+end seed species
+begin observables
+	Species S S(Emod~0) #S
+	Species ES S(Emod~E) #ES
+end observables
+begin reaction rules
+	re2: S(Emod~E) -> S(Emod~0) if(ES>0,k1/ES,0)
+	re12: S(Emod~0) -> S(Emod~E) k2
+end reaction rules
+end model

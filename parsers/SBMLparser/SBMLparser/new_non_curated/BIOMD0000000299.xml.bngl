@@ -1,0 +1,56 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/obo.go/GO:0042752']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/5141']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 3 molecules and 0 reactions. The translated model has 3 molecules and 3 rules'
+#@creatorEmail:'c.lloyd@auckland.ac.nz'
+#@creatorName:'Lloyd Catherine'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/BIOMD0000000299', 'http://identifiers.org/biomodels.db/MODEL1101140000', 'http://identifiers.org/pubmed/10643740']
+###
+begin model
+begin parameters
+	vs 1.6
+	vm 0.505
+	Km 0.5
+	KI 1.0
+	n 4.0
+	ks 0.5
+	vd 1.4
+	Kd 0.13
+	k1 0.5
+	k2 0.6
+end parameters
+begin compartments
+	Cytoplasm  3  1.0
+	Nucleus  3  1.0
+	cell 3 1.0
+end compartments
+begin molecule types
+	M()
+	FC()
+	FN()
+end molecule types
+begin seed species
+	@Nucleus:M() 0.1 #M #M
+	@Cytoplasm:FC() 0.1 #FC #FC
+	@Nucleus:FN() 0.1 #FN #FN
+end seed species
+begin observables
+	Species M M() #M
+	Species FC FC() #FC
+	Species FN FN() #FN
+end observables
+begin functions
+	Ft() = FC + FN
+	arRateM() = vs*(((KI) ^ (n))/(((KI) ^ (n))+((FN) ^ (n))))
+	armRateM() = if(M>0,(vm * (M / (Km + M)))/M,0)
+	arRateFC() = ks * M + k2 * FN
+	armRateFC() = if(FC>0,(vd * (FC / (Kd + FC)) + k1 * FC)/FC,0)
+	arRateFN() = k1 * FC
+	armRateFN() = k2
+end functions
+begin reaction rules
+	0  <-> M()@Nucleus arRateM,armRateM #rateLaw
+	0  <-> FC()@Cytoplasm arRateFC,armRateFC #rateLaw
+	0  <-> FN()@Nucleus arRateFN,armRateFN #rateLaw
+end reaction rules
+end model

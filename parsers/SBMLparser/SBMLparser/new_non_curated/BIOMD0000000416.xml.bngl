@@ -1,0 +1,170 @@
+###
+#@creatorEmail:'viji@ebi.ac.uk'
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 32 molecules and 20 reactions. The translated model has 20 molecules and 20 rules'
+#@BQB_HAS_PART:['http://identifiers.org/go/GO:0080036']
+#@creatorName:'Chelliah Vijayalakshmi'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1203080000', 'http://identifiers.org/pubmed/20135237', 'http://identifiers.org/taxonomy/3702', 'http://identifiers.org/biomodels.db/BIOMD0000000416', 'http://identifiers.org/pubmed/21640126']
+#@BQB_HAS_PROPERTY:['http://identifiers.org/mamo/MAMO_0000046']
+###
+begin model
+begin parameters
+	eps 0.01
+	lambda1 0.1
+	lambda3 0.02
+	alphaAux 1.0
+	alphaTIR1 1.0
+	alphaARF 1.0
+	phiIAAp 100.0
+	phiARp 2.0
+	phiPINp 100.0
+	deltaIAAp 1.0
+	deltaARp 1.0
+	deltaPINp 1.0
+	muAux 0.1
+	muIAAs 1.0
+	etaAuxTIR1 10.0
+	etaARFIAA 1.0
+	la 0.5
+	ld 0.1
+	pa 10.0
+	pd 10.0
+	ka 100.0
+	kd 1.0
+	qa 1.0
+	qd 1.0
+	thetaARF 0.1
+	thetaARF2 0.01
+	thARFIAA 0.1
+	thetaIAAp 0.1
+	thetaARp 0.1
+	psiARFIAA 0.1
+	psiARF 0.1
+	alphaCk 1.0
+	alphaARRB 2.0
+	alphaAHK 1.0
+	alphaPH 1.0
+	phiCRp 2.0
+	phiARRAp 100.0
+	deltaCRp 1.0
+	deltaARRAp 1.0
+	muCk 0.1
+	etaAHKph 1.0
+	etaCkPh 1.0
+	ra 1.0
+	rd 1.0
+	ua 1.0
+	ud 1.0
+	sa 1.0
+	sd 1.0
+	thARRAph 0.1
+	thARRBph 0.1
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	IAAm()
+	IAAp()
+	AuxTIR1()
+	AuxTIAA()
+	IAAs()
+	ARFIAA()
+	ARF2()
+	Aux()
+	PINm()
+	PINp()
+	ARm()
+	ARp()
+	CRm()
+	CRp()
+	AHKph()
+	Ck()
+	ARRBph()
+	ARRAph()
+	ARRAm()
+	ARRAp()
+end molecule types
+begin seed species
+	@cell:Aux() 1.0 #Aux #Aux
+	@cell:AHKph() 1.0 #AHKph #AHKph
+	@cell:Ck() 1.0 #Ck #Ck
+end seed species
+begin observables
+	Species IAAm IAAm() #IAAm
+	Species IAAp IAAp() #IAAp
+	Species AuxTIR1 AuxTIR1() #AuxTIR1
+	Species AuxTIAA AuxTIAA() #AuxTIAA
+	Species IAAs IAAs() #IAAs
+	Species ARFIAA ARFIAA() #ARFIAA
+	Species ARF2 ARF2() #ARF2
+	Species Aux Aux() #Aux
+	Species PINm PINm() #PINm
+	Species PINp PINp() #PINp
+	Species ARm ARm() #ARm
+	Species ARp ARp() #ARp
+	Species CRm CRm() #CRm
+	Species CRp CRp() #CRp
+	Species AHKph AHKph() #AHKph
+	Species Ck Ck() #Ck
+	Species ARRBph ARRBph() #ARRBph
+	Species ARRAph ARRAph() #ARRAph
+	Species ARRAm ARRAm() #ARRAm
+	Species ARRAp ARRAp() #ARRAp
+end observables
+begin functions
+	functionRate3() = 1 / eps * (la * IAAp * AuxTIR1 -(ld + 1) * AuxTIAA)
+	functionRate4() = 1 / eps * (AuxTIAA -muIAAs * IAAs)
+	functionRate9() = 1 / eps * (deltaPINp * PINm -PINp)
+	functionRate11() = 1 / eps * (deltaARp * ARm -ARp)
+	functionRate13() = 1 / eps * (deltaCRp * CRm -CRp)
+	CkAHKph() = alphaPH -AHKph -ARRAph -ARRBph
+	F4() = ARRBph / thARRBph / (1 + ARRAph / thARRAph + ARRBph / thARRBph)
+	ARF() = alphaARF -2 * ARF2 -ARFIAA
+	F6() = ARp / thetaARp / (1 + ARp / thetaARp)
+	TIR1() = alphaTIR1 -AuxTIR1 -AuxTIAA
+	ARRBp() = alphaARRB -etaAHKph * ARRBph
+	functionRate1() = 1 / eps * (deltaIAAp * IAAm -la * IAAp * AuxTIR1 + ld * AuxTIAA) + etaARFIAA * (pd * ARFIAA -pa * IAAp * (alphaARF -2 * ARF2 -ARFIAA))
+	functionRate2() = 1 / eps * (ka * Aux * (alphaTIR1 -AuxTIR1 -AuxTIAA) -kd * AuxTIR1 + (ld + 1) * AuxTIAA -la * AuxTIR1 * IAAp)
+	functionRate5() = pa * (alphaARF -2 * ARF2 -ARFIAA) * IAAp -pd * ARFIAA
+	functionRate6() = qa*(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))-qd*ARF2
+	functionRate7() = muAux * (alphaAux -Aux) -1 / eps * etaAuxTIR1 * (ka * Aux * (alphaTIR1 -AuxTIR1 -AuxTIAA) -kd * AuxTIR1)
+	functionRate12() = phiCRp * (ARRBph / thARRBph / (1 + ARRAph / thARRAph + ARRBph / thARRBph)) -CRm
+	functionRate14() = 1 / eps * (rd * (alphaPH -AHKph -ARRAph -ARRBph) -ra * AHKph * Ck)
+	functionRate15() = muCk * (alphaCk -Ck) -etaCkPh / eps * (ra * AHKph * Ck -rd * (alphaPH -AHKph -ARRAph -ARRBph))
+	functionRate18() = phiARRAp * (ARp / thetaARp / (1 + ARp / thetaARp)) -ARRAm
+	F1() = (alphaARF -2 * ARF2 -ARFIAA)/thetaARF/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF+ARRBph/thARRBph)
+	F2() = (ARF2/thetaARF2+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF+ARRBph/thARRBph)
+	F3() = ARRBph/thARRBph/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF+ARRBph/thARRBph)
+	F5b() = (ARF2/thetaARF2+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)
+	F5a() = (alphaARF -2 * ARF2 -ARFIAA)/thetaARF/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)
+	CkAHK() = alphaAHK -etaAHKph * (AHKph + (alphaPH -AHKph -ARRAph -ARRBph))
+	functionRate17() = 1 / eps * (sa * (alphaPH -AHKph -ARRAph -ARRBph) * ARRAp -sd * (alphaAHK -etaAHKph * (AHKph + (alphaPH -AHKph -ARRAph -ARRBph))) * ARRAph)
+	functionRate19() = 1 / eps * (deltaARRAp * ARRAm -ARRAp + etaAHKph * (sd * (alphaAHK -etaAHKph * (AHKph + (alphaPH -AHKph -ARRAph -ARRBph))) * ARRAph -sa * (alphaPH -AHKph -ARRAph -ARRBph) * ARRAp))
+	functionRate8() = phiPINp * (lambda1 * ((alphaARF -2 * ARF2 -ARFIAA)/thetaARF/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)) + ((ARF2/thetaARF2+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF))) -PINm
+	functionRate10() = phiARp * (lambda1 * ((alphaARF -2 * ARF2 -ARFIAA)/thetaARF/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)) + ((ARF2/thetaARF2+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF))) -ARm
+	functionRate16() = 1 / eps * (ua * (alphaPH -AHKph -ARRAph -ARRBph) * (alphaARRB -etaAHKph * ARRBph) -ud * (alphaAHK -etaAHKph * (AHKph + (alphaPH -AHKph -ARRAph -ARRBph))) * ARRBph)
+	functionRate0() = phiIAAp * (lambda1 * ((alphaARF -2 * ARF2 -ARFIAA)/thetaARF/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF+ARRBph/thARRBph)) + ((ARF2/thetaARF2+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF)/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF+ARRBph/thARRBph)) + lambda3 * (ARRBph/thARRBph/(1+(alphaARF -2 * ARF2 -ARFIAA)/thetaARF+ARF2/thetaARF2+ARFIAA/thARFIAA+(alphaARF -2 * ARF2 -ARFIAA)*IAAp/psiARFIAA+(((alphaARF -2 * ARF2 -ARFIAA)) ^ (2))/psiARF+ARRBph/thARRBph))) -IAAm
+end functions
+begin reaction rules
+	r1: 0  -> IAAm()@cell functionRate0()
+	r2: 0  -> IAAp()@cell functionRate1()
+	r3: 0  -> AuxTIR1()@cell functionRate2()
+	r4: 0  -> AuxTIAA()@cell functionRate3()
+	r5: 0  -> IAAs()@cell functionRate4()
+	r6: 0  -> ARFIAA()@cell functionRate5()
+	r7: 0  -> ARF2()@cell functionRate6()
+	r8: 0  -> Aux()@cell functionRate7()
+	r9: 0  -> PINm()@cell functionRate8()
+	r10: 0  -> PINp()@cell functionRate9()
+	r11: 0  -> ARm()@cell functionRate10()
+	r12: 0  -> ARp()@cell functionRate11()
+	r13: 0  -> CRm()@cell functionRate12()
+	r14: 0  -> CRp()@cell functionRate13()
+	r15: 0  -> AHKph()@cell functionRate14()
+	r16: 0  -> Ck()@cell functionRate15()
+	r17: 0  -> ARRBph()@cell functionRate16()
+	r18: 0  -> ARRAph()@cell functionRate17()
+	r19: 0  -> ARRAm()@cell functionRate18()
+	r20: 0  -> ARRAp()@cell functionRate19()
+end reaction rules
+end model

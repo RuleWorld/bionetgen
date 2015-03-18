@@ -1,0 +1,51 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/10882558', 'http://identifiers.org/biomodels.db/MODEL1201140005']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 4 molecules and 4 rules'
+###
+begin model
+begin parameters
+	k1 1000000.0
+	k1_ 0.0004
+	k2 1000000.0
+	k2_ 0.04
+	time_environment 0
+end parameters
+begin compartments
+	COMpartment  3  1.0
+end compartments
+begin molecule types
+	x1
+	x2
+	x3
+	x4
+end molecule types
+begin seed species
+	x1@COMpartment 1000.0
+	x2@COMpartment 0.1
+	x3@COMpartment 0
+	x4@COMpartment 0
+end seed species
+begin observables
+	Species x1 x1
+	Species x2 x2
+	Species x3 x3
+	Species x4 x4
+end observables
+begin functions
+	scatchard() = (x3 + x4) / x1
+	arRatex1() = k1_ * x3 -k1 * x1 * x2 + k2_ * x4
+	armRatex1() = if(x1>0,(k2 * x1 * x3)/x1,0)
+	arRatex2() = k1_ * x3
+	armRatex2() = k1 * x1
+	arRatex3() = k1 * x1 * x2 -k1_ * x3 + k2_ * x4
+	armRatex3() = k2 * x1
+	arRatex4() = k2 * x1 * x3
+	armRatex4() = k2_
+end functions
+begin reaction rules
+	0  <-> x1() arRatex1,armRatex1 #rateLaw
+	0  <-> x2() arRatex2,armRatex2 #rateLaw
+	0  <-> x3() arRatex3,armRatex3 #rateLaw
+	0  <-> x4() arRatex4,armRatex4 #rateLaw
+end reaction rules
+end model

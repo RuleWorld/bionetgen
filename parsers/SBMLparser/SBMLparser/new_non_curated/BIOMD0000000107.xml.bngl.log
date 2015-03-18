@@ -1,0 +1,22 @@
+ATOMIZATION:WARNING.0: adding forced transformation: cyclin:[['cyclin']]:cyclin_cdc2dimer
+ATOMIZATION:WARNING.1: adding forced transformation: cyclin:[['cyclin_cdc2dimer']]:Tyr15phosphorylateddimer
+ATOMIZATION:CRITICAL.2: unregistered modification: Tyr15phosphorylateddimer:[['cyclin_cdc2dimer']]
+ATOMIZATION:WARNING.3: adding forced transformation: cyclin:[['cyclin_cdc2dimer']]:Thr161phosphorylateddimer__activeMPF__
+ATOMIZATION:CRITICAL.4: unregistered modification: Thr161phosphorylateddimer__activeMPF__:[['cyclin_cdc2dimer']]
+ATOMIZATION:WARNING.5: adding forced transformation: cyclin:[['Tyr15phosphorylateddimer']]:Thr161_Tyr15phosphorylateddimer
+ATOMIZATION:CRITICAL.6: unregistered modification: Thr161_Tyr15phosphorylateddimer:[['Tyr15phosphorylateddimer']]
+ATOMIZATION:CRITICAL.7: unregistered modification: Thr161_Tyr15phosphorylateddimer:[['Tyr15phosphorylateddimer']]
+SIMULATION:CRITICAL.8: Boundary condition/assignment type variables (k25) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.9: Boundary condition/assignment type variables (kwee) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.10: Boundary condition/assignment type variables (k2) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.11: Boundary condition/assignment type variables (total_cyclin) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.12: Boundary condition/assignment type variables (Y15P) are not properly                     supported in BioNetGen simulator
+WARNING:Simulation.13: ubiquitinconjugatingenzyme_UbE() reported as function, but usage is ambiguous
+WARNING:Simulation.14: intermediaryenzyme() reported as function, but usage is ambiguous
+ERROR:Simulation.15: Pseudo observable intermediaryenzyme() in reaction R21: 0  -> phosphorylatedintermediaryenzyme()@cytoplasm functionRate19() 
+WARNING:Simulation.16: wee1() reported as function, but usage is ambiguous
+ERROR:Simulation.17: Pseudo observable wee1() in reaction R19: 0  -> phosphorylatedwee1()@cytoplasm functionRate17() 
+WARNING:Simulation.18: cdc25() reported as function, but usage is ambiguous
+ERROR:Simulation.19: Pseudo observable cdc25() in reaction R17: 0  -> phosphorylatedcdc25()@cytoplasm functionRate15() 
+WARNING:Simulation.20: cdc2() reported as function, but usage is ambiguous
+INFO:Summary.21: File contains 5 molecules out of 9 original SBML species

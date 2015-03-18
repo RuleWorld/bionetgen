@@ -1,0 +1,9 @@
+ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
+ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
+SIMULATION:CRITICAL.2: Boundary condition/assignment type variables (AUHR) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.3: Boundary condition/assignment type variables (PRHR) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.4: Boundary condition/assignment type variables (HDHR) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.5: Boundary condition/assignment type variables (HR) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.6: Boundary condition/assignment type variables (SVO) are not properly                     supported in BioNetGen simulator
+ERROR:Simulation.7: The file contains no reactions
+INFO:Summary.8: File contains 0 molecules out of 0 original SBML species

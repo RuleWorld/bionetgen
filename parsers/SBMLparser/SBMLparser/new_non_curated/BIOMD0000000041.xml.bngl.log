@@ -1,0 +1,15 @@
+INFO:Atomization.0: added induced naming convention [['Cri'], ['PCri']]
+INFO:Atomization.1: added induced naming convention [['Cr'], ['PCr']]
+Atomization:Warning.2: inverting order of [['Pii'], ['Pi']] for lexical analysis
+INFO:Atomization.3: added induced naming convention [['Pi'], ['Pii']]
+Atomization:Warning.4: inverting order of [['Cri'], ['Cr']] for lexical analysis
+INFO:Atomization.5: added induced naming convention [['Cr'], ['Cri']]
+Atomization:Warning.6: inverting order of [['ADPi'], ['ADP']] for lexical analysis
+INFO:Atomization.7: added induced naming convention [['ADP'], ['ADPi']]
+Atomization:Warning.8: inverting order of [['PCri'], ['PCr']] for lexical analysis
+INFO:Atomization.9: added induced naming convention [['PCr'], ['PCri']]
+Atomization:Warning.10: inverting order of [['ATPi'], ['ATP']] for lexical analysis
+INFO:Atomization.11: added induced naming convention [['ATP'], ['ATPi']]
+ATOMIZATION:WARNING.12: adding forced transformation: ATP:[['ATP']]:ADP
+ATOMIZATION:WARNING.13: adding forced transformation: ATP:[['ADP']]:ADPi
+INFO:Summary.14: File contains 3 molecules out of 10 original SBML species

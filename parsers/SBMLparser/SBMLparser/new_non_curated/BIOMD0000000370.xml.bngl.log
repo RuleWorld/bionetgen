@@ -1,0 +1,21 @@
+ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
+ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
+SIMULATION:CRITICAL.2: Boundary condition/assignment type variables (PP_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.3: Boundary condition/assignment type variables (V2_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.4: Boundary condition/assignment type variables (V6_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.5: Boundary condition/assignment type variables (Vdsic_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.6: Boundary condition/assignment type variables (Vacdh_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.7: Boundary condition/assignment type variables (Vicdh_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.8: Boundary condition/assignment type variables (Vaswi_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.9: Boundary condition/assignment type variables (Viswi_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.10: Boundary condition/assignment type variables (Vd_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.11: Boundary condition/assignment type variables (Vp_1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.12: Boundary condition/assignment type variables (Vexp_1) are not properly                     supported in BioNetGen simulator
+WARNING:Simulation.13: Cdc14c() reported as function, but usage is ambiguous
+WARNING:Simulation.14: Net1() reported as function, but usage is ambiguous
+WARNING:Simulation.15: Esp1() reported as function, but usage is ambiguous
+WARNING:Simulation.16: Pds1() reported as function, but usage is ambiguous
+WARNING:Simulation.17: Sic1() reported as function, but usage is ambiguous
+WARNING:Simulation.18: Clb5() reported as function, but usage is ambiguous
+WARNING:Simulation.19: Clb2() reported as function, but usage is ambiguous
+INFO:Summary.20: File contains 25 molecules out of 25 original SBML species

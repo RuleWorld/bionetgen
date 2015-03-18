@@ -1,0 +1,5 @@
+ATOMIZATION:WARNING.0: adding forced transformation: CaER:[['CaER']]:Ca_Cyt
+SIMULATION:CRITICAL.1: Boundary condition/assignment type variables (p1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.2: Boundary condition/assignment type variables (p2) are not properly                     supported in BioNetGen simulator
+WARNING.3: Parameter p3 0.95 corresponds both as a non zero parameter                             and a rate rule, verify behavior
+INFO:Summary.4: File contains 2 molecules out of 3 original SBML species

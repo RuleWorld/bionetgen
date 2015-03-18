@@ -1,0 +1,444 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/reactome/REACT_9417.3']
+#@BQB_HAS_VERSION:['http://identifiers.org/go/GO:0007265']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/9606']
+#@creatorName:'Le Novre Nicolas'
+#@creatorEmail:'lenov@ebi.ac.uk'
+#@notes:'This is an atomized translation of an SBML model created on 28/02/2015. The original model has 100 molecules and 125 reactions. The translated model has 20 molecules and 125 rules'
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/11923843', 'http://identifiers.org/biomodels.db/BIOMD0000000019', 'http://identifiers.org/biomodels.db/MODEL6617455076']
+###
+begin model
+begin parameters
+	k1 0.003
+	kr1 0.228
+	kr2 6.0
+	k2 0.001
+	k3 60.0
+	kr3 0.6
+	k4 1.038e-05
+	kr4 0.0996
+	k6 0.003
+	kr6 0.3
+	k7 0.003
+	k8 0.0001
+	kr8 12.0
+	k10 3.25581
+	kr10 0.66
+	kr11 6.0
+	k11 0.001
+	kr12 0.6
+	k12 60.0
+	k13 130.2
+	k14 0.0001
+	kr14 12.0
+	k15 600000.0
+	kr16 16.5
+	k16 0.001
+	kr17 3.6
+	k17 0.001
+	kr18 78.0
+	k18 0.0015
+	kr19 1e-05
+	k19 30.0
+	kr20 24.0
+	k20 0.00021
+	k21 1.38
+	kr21 2.2e-05
+	k22 0.0021
+	kr22 6.0
+	k23 360.0
+	kr23 36.0
+	k24 0.001
+	kr24 33.0
+	kr25 1.284
+	k25 0.001
+	k28 0.0001
+	kr28 0.318
+	k29 60.0
+	kr29 7e-05
+	kr32 2.4e-05
+	k32 6.0
+	k33 12.0
+	kr33 0.0021
+	k34 1.8
+	kr34 0.00045
+	k35 0.09
+	kr35 0.00045
+	Vm36 61200.0
+	Km36 2e+14
+	k37 18.0
+	kr37 9e-05
+	k40 0.003
+	kr40 3.84
+	kr41 2.574
+	k41 0.003
+	k42 0.0071
+	kr42 12.0
+	k43 60.0
+	kr44 1.0998
+	k44 0.00111
+	k45 210.0
+	k47 174.0
+	kr48 48.0
+	k48 0.00143
+	k49 3.48
+	kr50 30.0
+	k50 2.5e-05
+	k52 0.00534
+	kr52 1.98
+	k53 960.0
+	k55 342.0
+	kr56 36.0
+	k56 0.00145
+	k57 16.2
+	kr58 30.0
+	k58 0.0005
+	k59 18.0
+	k60 0.04002
+	k61 0.01002
+	RT 50000.0
+end parameters
+begin compartments
+	c1  3  1.0
+	c2  3  1.0
+	c3  3  4.3e-06
+	cell 3 1.0
+end compartments
+begin molecule types
+	EGF(degmod~DEG~0,egfr,imod~I~0~II)
+	EGFR(degmod~DEG~0,egf,egfr,gap,grb2,imod~I~0~II,mmod~M~0~MM,prot,ras_g,shc)
+	Prot(egfr,imod~I~0)
+	GAP(egfr)
+	Grb2(egfr,shc,sos)
+	Sos(grb2)
+	Shc(egfr,grb2,mmod~M~0)
+	Raf(imod~I~0~II,mek,mmod~M~0,phosphotase1,ras_g)
+	Phosphotase1(raf)
+	MEK(Pmod~P~0,_Pmod~_P~0~_P_P,erk,imod~I~0~II,phosphatase2,raf)
+	Phosphatase2(mek)
+	ERK(Pmod~P~0,_Pmod~_P~0~_P_P,imod~I~0~II,mek,phosphotase3)
+	Phosphotase3(erk)
+	t_Rafm()
+	t_Ras_GTP()
+	t_MEK_PP()
+	t_ERK_PP()
+	t_SHC_P_t()
+	t_EGF_EGFRm()
+	Ras_G(DPmod~DP~0,TPmod~TP~0~TPTP,egfr,imod~I~0~II,mmod~M~0,raf)
+end molecule types
+begin seed species
+	@c1:$EGF(degmod~0,egfr,imod~0) 4962.0 #EGF
+	@c1:EGFR(degmod~0,egf,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc) 50000.0 #EGFR
+	@c2:Prot(egfr,imod~0) 81000.0 #Prot
+	@c2:GAP(egfr) 12000.0 #GAP
+	@c2:Grb2(egfr,shc,sos) 11000.0 #Grb2
+	@c2:Sos(grb2) 26300.0 #Sos
+	@c2:Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf) 72000.0 #Ras_GDP
+	@c2:Grb2(egfr,shc,sos!0).Sos(grb2!0) 40000.0 #Grb2_Sos
+	@c2:Shc(egfr,grb2,mmod~0) 101000.0 #Shc
+	@c2:Raf(imod~0,mek,mmod~0,phosphotase1,ras_g) 40000.0 #Raf
+	@c2:Phosphotase1(raf) 40000.0 #Phosphotase1
+	@c2:MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf) 22000000.0 #MEK
+	@c2:Phosphatase2(mek) 40000.0 #Phosphatase2
+	@c2:ERK(Pmod~0,_Pmod~0,imod~0,mek,phosphotase3) 21000000.0 #ERK
+	@c2:Phosphotase3(erk) 10000000.0 #Phosphotase3
+	@c2:$t_Rafm() 0.0 #t_Rafm
+	@c2:$t_Ras_GTP() 0.0 #t_Ras_GTP
+	@c2:$t_MEK_PP() 0.0 #t_MEK_PP
+	@c2:$t_ERK_PP() 0.0 #t_ERK_PP
+	@c2:$t_SHC_P_t() 0.0 #t_SHC_P_t
+	@c2:$t_EGF_EGFRm() 0.0 #t_EGF_EGFRm
+end seed species
+begin observables
+	Species EGF EGF(degmod~0,egfr,imod~0) #EGF
+	Species EGFR EGFR(degmod~0,egf,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc) #EGFR
+	Species EGF_EGFR EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0) #EGF-EGFR
+	Species EGF_EGFR2 EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~0,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~0,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0) #EGF-EGFR^2
+	Species EGF_EGFRm2 EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0) #EGF-EGFR*^2
+	Species EGFRi EGFR(degmod~0,egf,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc) #EGFRi
+	Species EGF_EGFRm2_GAP_Grb2_Prot EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot!5,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos).Prot(egfr!5,imod~0).GAP(egfr!3) #EGF-EGFR*^2-GAP-Grb2-Prot
+	Species EGF_EGFRim2 EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0) #EGF-EGFRi*^2
+	Species Proti Prot(egfr,imod~I) #Proti
+	Species EGF_EGFRi EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0) #EGF-EGFRi
+	Species EGF_EGFRi2 EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~0,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~0,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0) #EGF-EGFRi^2
+	Species Prot Prot(egfr,imod~0) #Prot
+	Species EGFideg EGF(degmod~DEG,egfr,imod~II) #EGFideg
+	Species GAP GAP(egfr) #GAP
+	Species EGF_EGFRm2_GAP EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).GAP(egfr!3) #EGF-EGFR*^2-GAP
+	Species EGFi EGF(degmod~0,egfr,imod~I) #EGFi
+	Species EGF_EGFRim2_GAP EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).GAP(egfr!3) #EGF-EGFRi*^2-GAP
+	Species EGF_EGFRim2_GAP_Grb2 EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~I,mmod~MM,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos).GAP(egfr!3) #EGF-EGFRi*^2-GAP-Grb2
+	Species EGF_EGFRim2_GAP_Grb2_Sos EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Sos(grb2!3).GAP(egfr!5) #EGF-EGFRi*^2-GAP-Grb2-Sos
+	Species EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc).Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Sos(grb2!3).GAP(egfr!5) #EGF-EGFRi*^2-GAP-Grb2-Sos-Ras-GDP
+	Species EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc).Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Sos(grb2!3).GAP(egfr!5) #EGF-EGFRi*^2-GAP-Grb2-Sos-Ras-GTP
+	Species Grb2 Grb2(egfr,shc,sos) #Grb2
+	Species EGF_EGFRm2_GAP_Grb2 EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos).GAP(egfr!3) #EGF-EGFR*^2-GAP-Grb2
+	Species Sos Sos(grb2) #Sos
+	Species EGF_EGFRm2_GAP_Grb2_Sos EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Sos(grb2!3).GAP(egfr!5) #EGF-EGFR*^2-GAP-Grb2-Sos
+	Species Ras_GDP Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf) #Ras-GDP
+	Species EGF_EGFRm2_GAP_Grb2_Sos_Ras_GDP EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc).Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Sos(grb2!3).GAP(egfr!5) #EGF-EGFR*^2-GAP-Grb2-Sos-Ras-GDP
+	Species Ras_GTP Ras_G(DPmod~0,TPmod~TP,egfr,imod~0,mmod~0,raf) #Ras-GTP
+	Species EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Sos(grb2!3).GAP(egfr!5) #EGF-EGFR*^2-GAP-Grb2-Sos-Ras-GTP
+	Species Grb2_Sos Grb2(egfr,shc,sos!0).Sos(grb2!0) #Grb2-Sos
+	Species Shc Shc(egfr,grb2,mmod~0) #Shc
+	Species EGF_EGFRm2_GAP_Shc EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!4).EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Shc(egfr!4,grb2,mmod~0).GAP(egfr!3) #EGF-EGFR*^2-GAP-Shc
+	Species EGF_EGFRm2_GAP_Shcm EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc!4).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Shc(egfr!4,grb2,mmod~M).GAP(egfr!3) #EGF-EGFR*^2-GAP-Shc*
+	Species EGF_EGFRm2_GAP_Shcm_Grb2 EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc!4).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!3,sos).Shc(egfr!4,grb2!3,mmod~M).GAP(egfr!5) #EGF-EGFR*^2-GAP-Shc*-Grb2
+	Species EGF_EGFRm2_GAP_Shcm_Grb2_Sos EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5).EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Sos(grb2!3).GAP(egfr!6) #EGF-EGFR*^2-GAP-Shc*-Grb2-Sos
+	Species EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc!5).Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Sos(grb2!3).GAP(egfr!6) #EGF-EGFR*^2-GAP-Shc*-Grb2-Sos-Ras-GDP
+	Species EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5).EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc).Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Sos(grb2!3).GAP(egfr!6) #EGF-EGFR*^2-GAP-Shc*-Grb2-Sos-Ras-GTP
+	Species Shcm_Grb2_Sos Grb2(egfr,shc!1,sos!0).Shc(egfr,grb2!1,mmod~M).Sos(grb2!0) #Shc*-Grb2-Sos
+	Species Shcm_Grb2 Grb2(egfr,shc!0,sos).Shc(egfr,grb2!0,mmod~M) #Shc*-Grb2
+	Species Shcm Shc(egfr,grb2,mmod~M) #Shc*
+	Species Raf Raf(imod~0,mek,mmod~0,phosphotase1,ras_g) #Raf
+	Species Raf_Ras_GTP Ras_G(DPmod~0,TPmod~TP,egfr,imod~0,mmod~0,raf!0).Raf(imod~0,mek,mmod~0,phosphotase1,ras_g!0) #Raf-Ras-GTP
+	Species Ras_GTPm Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~0,mmod~M,raf) #Ras-GTP*
+	Species Phosphotase1 Phosphotase1(raf) #Phosphotase1
+	Species Rafm Raf(imod~0,mek,mmod~M,phosphotase1,ras_g) #Raf*
+	Species Rafm_Pase Raf(imod~0,mek,mmod~M,phosphotase1!0,ras_g).Phosphotase1(raf!0) #Raf*-P'ase
+	Species MEK MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf) #MEK
+	Species MEK_Rafm MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf!0).Raf(imod~0,mek!0,mmod~M,phosphotase1,ras_g) #MEK-Raf*
+	Species MEK_P MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf) #MEK-P
+	Species MEK_P_Rafm MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf!0).Raf(imod~0,mek!0,mmod~M,phosphotase1,ras_g) #MEK-P-Raf*
+	Species MEK_PP MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2,raf) #MEK-PP
+	Species MEK_PP_Pase2 MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2!0,raf).Phosphatase2(mek!0) #MEK-PP-P'ase2
+	Species Phosphatase2 Phosphatase2(mek) #Phosphatase2
+	Species MEK_P_Pase2 MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2!0,raf).Phosphatase2(mek!0) #MEK-P-P'ase2
+	Species ERK ERK(Pmod~0,_Pmod~0,imod~0,mek,phosphotase3) #ERK
+	Species ERK_MEK_PP MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~0,phosphatase2,raf).ERK(Pmod~0,_Pmod~0,imod~0,mek!0,phosphotase3) #ERK-MEK-PP
+	Species ERK_P ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3) #ERK-P
+	Species ERK_P_MEK_PP MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~0,phosphatase2,raf).ERK(Pmod~0,_Pmod~_P,imod~0,mek!0,phosphotase3) #ERK-P-MEK-PP
+	Species ERK_PP ERK(Pmod~P,_Pmod~_P_P,imod~0,mek,phosphotase3) #ERK-PP
+	Species Phosphotase3 Phosphotase3(erk) #Phosphotase3
+	Species ERK_PP_Pase3 ERK(Pmod~P,_Pmod~_P_P,imod~0,mek,phosphotase3!0).Phosphotase3(erk!0) #ERK-PP-P'ase3
+	Species ERK_P_Pase3 ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3!0).Phosphotase3(erk!0) #ERK-P-P'ase3
+	Species EGF_EGFRim2_GAP_Shc EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Shc(egfr!4,grb2,mmod~0).GAP(egfr!3) #EGF-EGFRi*^2-GAP-Shc
+	Species EGF_EGFRim2_GAP_Shcm EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Shc(egfr!4,grb2,mmod~M).GAP(egfr!3) #EGF-EGFRi*^2-GAP-Shc*
+	Species EGF_EGFRim2_GAP_Shcm_Grb2 EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc!4).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!3,sos).Shc(egfr!4,grb2!3,mmod~M).GAP(egfr!5) #EGF-EGFRi*^2-GAP-Shc*-Grb2
+	Species EGF_EGFRim2_GAP_Shcm_Grb2_Sos EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Sos(grb2!3).GAP(egfr!6) #EGF-EGFRi*^2-GAP-Shc*-Grb2-Sos
+	Species EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GDP EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc).Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Sos(grb2!3).GAP(egfr!6) #EGF-EGFRi*^2-GAP-Shc*-Grb2-Sos-Ras-GDP
+	Species EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GTP EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5).EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc).Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Sos(grb2!3).GAP(egfr!6) #EGF-EGFRi*^2-GAP-Shc*-Grb2-Sos-Ras-GTP
+	Species Rasi_GTP Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~I,mmod~0,raf) #Rasi-GTP
+	Species Rafi_Rasi_GTP Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~I,mmod~0,raf!0).Raf(imod~I,mek,mmod~0,phosphotase1,ras_g!0) #Rafi-Rasi-GTP
+	Species Rasi_GTPm Ras_G(DPmod~0,TPmod~TP,egfr,imod~II,mmod~M,raf) #Rasi-GTP*
+	Species Rafim Raf(imod~II,mek,mmod~M,phosphotase1,ras_g) #Rafi*
+	Species Rafim_Pase Raf(imod~II,mek,mmod~M,phosphotase1!0,ras_g).Phosphotase1(raf!0) #Rafi*-P'ase
+	Species MEKi_Rafim MEK(Pmod~0,_Pmod~0,erk,imod~I,phosphatase2,raf!0).Raf(imod~II,mek!0,mmod~M,phosphotase1,ras_g) #MEKi-Rafi*
+	Species MEKi_P MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf) #MEKi-P
+	Species MEKi_P_Rafim MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf!0).Raf(imod~II,mek!0,mmod~M,phosphotase1,ras_g) #MEKi-P-Rafi*
+	Species MEKi_PP MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2,raf) #MEKi-PP
+	Species MEKi_PP_Pase2i MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2!0,raf).Phosphatase2(mek!0) #MEKi-PP-P'ase2i
+	Species MEKi_P_Pase2i MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2!0,raf).Phosphatase2(mek!0) #MEKi-P-P'ase2i
+	Species ERKi_MEKi_PP MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~I,phosphatase2,raf).ERK(Pmod~0,_Pmod~0,imod~I,mek!0,phosphotase3) #ERKi-MEKi-PP
+	Species ERKi_P ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3) #ERKi-P
+	Species ERKi_P_MEKi_PP MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~I,phosphatase2,raf).ERK(Pmod~0,_Pmod~_P,imod~II,mek!0,phosphotase3) #ERKi-P-MEKi-PP
+	Species ERKi_PP ERK(Pmod~P,_Pmod~_P_P,imod~I,mek,phosphotase3) #ERKi-PP
+	Species ERKi_PP_Pase3i ERK(Pmod~P,_Pmod~_P_P,imod~I,mek,phosphotase3!0).Phosphotase3(erk!0) #ERKi-PP-P'ase3i
+	Species ERKi_P_Pase3i ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3!0).Phosphotase3(erk!0) #ERKi-P-P'ase3i
+	Species EGFRideg EGFR(degmod~DEG,egf,egfr,gap,grb2,imod~II,mmod~0,prot,ras_g,shc) #EGFRideg
+	Species EGF_EGFRim2deg EGFR(degmod~DEG,egf!0,egfr!2,gap,grb2,imod~II,mmod~M,prot,ras_g,shc).EGFR(degmod~DEG,egf!1,egfr!2,gap,grb2,imod~II,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0) #EGF-EGFRi*^2deg
+	Species EGF_EGFRm2_GAP_Grb2_Sos_Prot EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Prot(egfr!6,imod~0).Sos(grb2!3).GAP(egfr!5) #EGF-EGFR*^2-GAP-Grb2-Sos-Prot
+	Species EGF_EGFRm2_GAP_Grb2_Sos_Ras_GDP_Prot EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g!7,shc).Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Prot(egfr!6,imod~0).Sos(grb2!3).GAP(egfr!5) #EGF-EGFR*^2-GAP-Grb2-Sos-Ras-GDP-Prot
+	Species EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP_Prot EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g!7,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr!4,shc,sos!3).Prot(egfr!6,imod~0).Sos(grb2!3).GAP(egfr!5) #EGF-EGFR*^2-GAP-Grb2-Sos-Ras-GTP-Prot
+	Species EGF_EGFRm2_GAP_Shcm_Grb2_Prot EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot!6,ras_g,shc!4).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!3,sos).Shc(egfr!4,grb2!3,mmod~M).Prot(egfr!6,imod~0).GAP(egfr!5) #EGF-EGFR*^2-GAP-Shc*-Grb2-Prot
+	Species EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Prot EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~0,mmod~M,prot!7,ras_g,shc!5).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Prot(egfr!7,imod~0).Sos(grb2!3).GAP(egfr!6) #EGF-EGFR*^2-GAP-Shc*-Grb2-Sos-Prot
+	Species EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP_Prot EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc).EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot!7,ras_g!8,shc!5).Ras_G(DPmod~DP,TPmod~0,egfr!8,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Prot(egfr!7,imod~0).Sos(grb2!3).GAP(egfr!6) #EGF-EGFR*^2-GAP-Shc*-Grb2-Sos-Ras-GDP-Prot
+	Species EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!8,shc).EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot!7,ras_g,shc!5).Ras_G(DPmod~0,TPmod~TP,egfr!8,imod~0,mmod~0,raf).EGF(degmod~0,egfr!0,imod~0).EGF(degmod~0,egfr!1,imod~0).Grb2(egfr,shc!4,sos!3).Shc(egfr!5,grb2!4,mmod~M).Prot(egfr!7,imod~0).Sos(grb2!3).GAP(egfr!6) #EGF-EGFR*^2-GAP-Shc*-Grb2-Sos-Ras-GTP-Prot
+	Species t_Rafm t_Rafm() #t_Raf*
+	Species t_Ras_GTP t_Ras_GTP() #t_Ras_GTP
+	Species t_MEK_PP t_MEK_PP() #t_MEK_PP
+	Species t_ERK_PP t_ERK_PP() #t_ERK_PP
+	Species t_SHC_P_t t_SHC_P_t() #t_SHC_P_t
+	Species t_EGF_EGFRm t_EGF_EGFRm() #t_EGF_EGFR*
+end observables
+begin functions
+	functionRate35() = Vm36 / (Km36 + Shcm)
+	functionRate42() = if(k43>= 0,k43,0)
+	functionRate42m() = if(if(Raf>0,if(Phosphotase1>0,k43 * Rafm_Pase/Phosphotase1,0)/Raf,0)< 0,-(if(Raf>0,if(Phosphotase1>0,k43 * Rafm_Pase/Phosphotase1,0)/Raf,0)),0)
+	functionRate44() = if(k45>= 0,k45,0)
+	functionRate44m() = if(if(MEK_P>0,if(Rafm>0,k45 * MEK_Rafm/Rafm,0)/MEK_P,0)< 0,-(if(MEK_P>0,if(Rafm>0,k45 * MEK_Rafm/Rafm,0)/MEK_P,0)),0)
+	functionRate46() = if(k47>= 0,k47,0)
+	functionRate46m() = if(if(MEK_PP>0,if(Rafm>0,k47 * MEK_P_Rafm/Rafm,0)/MEK_PP,0)< 0,-(if(MEK_PP>0,if(Rafm>0,k47 * MEK_P_Rafm/Rafm,0)/MEK_PP,0)),0)
+	functionRate48() = if(k49>= 0,k49,0)
+	functionRate48m() = if(if(Phosphatase2>0,if(MEK_P>0,k49 * MEK_PP_Pase2/MEK_P,0)/Phosphatase2,0)< 0,-(if(Phosphatase2>0,if(MEK_P>0,k49 * MEK_PP_Pase2/MEK_P,0)/Phosphatase2,0)),0)
+	functionRate50() = if(k49>= 0,k49,0)
+	functionRate50m() = if(if(Phosphatase2>0,if(MEK>0,k49 * MEK_P_Pase2/MEK,0)/Phosphatase2,0)< 0,-(if(Phosphatase2>0,if(MEK>0,k49 * MEK_P_Pase2/MEK,0)/Phosphatase2,0)),0)
+	functionRate52() = if(k53>= 0,k53,0)
+	functionRate52m() = if(if(MEK_PP>0,if(ERK_P>0,k53 * ERK_MEK_PP/ERK_P,0)/MEK_PP,0)< 0,-(if(MEK_PP>0,if(ERK_P>0,k53 * ERK_MEK_PP/ERK_P,0)/MEK_PP,0)),0)
+	functionRate54() = if(k55>= 0,k55,0)
+	functionRate54m() = if(if(MEK_PP>0,if(ERK_PP>0,k55 * ERK_P_MEK_PP/ERK_PP,0)/MEK_PP,0)< 0,-(if(MEK_PP>0,if(ERK_PP>0,k55 * ERK_P_MEK_PP/ERK_PP,0)/MEK_PP,0)),0)
+	functionRate56() = if(k57>= 0,k57,0)
+	functionRate56m() = if(if(ERK_P>0,if(Phosphotase3>0,k57 * ERK_PP_Pase3/Phosphotase3,0)/ERK_P,0)< 0,-(if(ERK_P>0,if(Phosphotase3>0,k57 * ERK_PP_Pase3/Phosphotase3,0)/ERK_P,0)),0)
+	functionRate58() = if(k59>= 0,k59,0)
+	functionRate58m() = if(if(Phosphotase3>0,if(ERK>0,k59 * ERK_P_Pase3/ERK,0)/Phosphotase3,0)< 0,-(if(Phosphotase3>0,if(ERK>0,k59 * ERK_P_Pase3/ERK,0)/Phosphotase3,0)),0)
+	functionRate84() = if(k43>= 0,k43,0)
+	functionRate84m() = if(if(Raf>0,if(Phosphotase1>0,k43 * Rafim_Pase/Phosphotase1,0)/Raf,0)< 0,-(if(Raf>0,if(Phosphotase1>0,k43 * Rafim_Pase/Phosphotase1,0)/Raf,0)),0)
+	functionRate86() = if(k45>= 0,k45,0)
+	functionRate86m() = if(if(Rafim>0,if(MEKi_P>0,k45 * MEKi_Rafim/MEKi_P,0)/Rafim,0)< 0,-(if(Rafim>0,if(MEKi_P>0,k45 * MEKi_Rafim/MEKi_P,0)/Rafim,0)),0)
+	functionRate88() = if(k47>= 0,k47,0)
+	functionRate88m() = if(if(Rafim>0,if(MEKi_PP>0,k47 * MEKi_P_Rafim/MEKi_PP,0)/Rafim,0)< 0,-(if(Rafim>0,if(MEKi_PP>0,k47 * MEKi_P_Rafim/MEKi_PP,0)/Rafim,0)),0)
+	functionRate90() = if(k49>= 0,k49,0)
+	functionRate90m() = if(if(Phosphatase2>0,if(MEKi_P>0,k49 * MEKi_PP_Pase2i/MEKi_P,0)/Phosphatase2,0)< 0,-(if(Phosphatase2>0,if(MEKi_P>0,k49 * MEKi_PP_Pase2i/MEKi_P,0)/Phosphatase2,0)),0)
+	functionRate92() = if(k49>= 0,k49,0)
+	functionRate92m() = if(if(Phosphatase2>0,if(MEK>0,k49 * MEKi_P_Pase2i/MEK,0)/Phosphatase2,0)< 0,-(if(Phosphatase2>0,if(MEK>0,k49 * MEKi_P_Pase2i/MEK,0)/Phosphatase2,0)),0)
+	functionRate94() = if(k53>= 0,k53,0)
+	functionRate94m() = if(if(ERKi_P>0,if(MEKi_PP>0,k53 * ERKi_MEKi_PP/MEKi_PP,0)/ERKi_P,0)< 0,-(if(ERKi_P>0,if(MEKi_PP>0,k53 * ERKi_MEKi_PP/MEKi_PP,0)/ERKi_P,0)),0)
+	functionRate96() = if(k55>= 0,k55,0)
+	functionRate96m() = if(if(MEKi_PP>0,if(ERKi_PP>0,k55 * ERKi_P_MEKi_PP/ERKi_PP,0)/MEKi_PP,0)< 0,-(if(MEKi_PP>0,if(ERKi_PP>0,k55 * ERKi_P_MEKi_PP/ERKi_PP,0)/MEKi_PP,0)),0)
+	functionRate98() = if(k57>= 0,k57,0)
+	functionRate98m() = if(if(ERKi_P>0,if(Phosphotase3>0,k57 * ERKi_PP_Pase3i/Phosphotase3,0)/ERKi_P,0)< 0,-(if(ERKi_P>0,if(Phosphotase3>0,k57 * ERKi_PP_Pase3i/Phosphotase3,0)/ERKi_P,0)),0)
+	functionRate100() = if(k59>= 0,k59,0)
+	functionRate100m() = if(if(Phosphotase3>0,if(ERK>0,k59 * ERKi_P_Pase3i/ERK,0)/Phosphotase3,0)< 0,-(if(Phosphotase3>0,if(ERK>0,k59 * ERKi_P_Pase3i/ERK,0)/Phosphotase3,0)),0)
+	C() = RT / (kr1 / (k1 * EGF) + 1)
+	arjt_Ras_GTP() = Raf_Ras_GTP + Ras_GTP + Rafi_Rasi_GTP + Rasi_GTP
+	arjt_EGF_EGFRm() = EGF_EGFRm2 + EGF_EGFRm2_GAP_Grb2_Prot + EGF_EGFRm2_GAP + EGF_EGFRm2_GAP_Grb2 + EGF_EGFRm2_GAP_Grb2_Sos + EGF_EGFRm2_GAP_Grb2_Sos_Ras_GDP + EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP + EGF_EGFRm2_GAP_Shc + EGF_EGFRm2_GAP_Shcm + EGF_EGFRm2_GAP_Shcm_Grb2 + EGF_EGFRm2_GAP_Shcm_Grb2_Sos + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP + EGF_EGFRm2_GAP_Grb2_Sos_Prot + EGF_EGFRm2_GAP_Grb2_Sos_Ras_GDP_Prot + EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP_Prot + EGF_EGFRm2_GAP_Shcm_Grb2_Prot + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Prot + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP_Prot + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot + EGF_EGFRim2 + EGF_EGFRi2 + EGF_EGFRim2_GAP + EGF_EGFRim2_GAP_Grb2 + EGF_EGFRim2_GAP_Grb2_Sos + EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP + EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP + EGF_EGFRim2_GAP_Shc + EGF_EGFRim2_GAP_Shcm + EGF_EGFRim2_GAP_Shcm_Grb2 + EGF_EGFRim2_GAP_Shcm_Grb2_Sos + EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GDP + EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GTP
+	arjt_MEK_PP() = MEK_PP + MEKi_PP
+	arjt_ERK_PP() = ERK_PP + ERKi_PP
+	arjt_SHC_P_t() = EGF_EGFRm2_GAP_Shcm + EGF_EGFRm2_GAP_Shcm_Grb2 + EGF_EGFRm2_GAP_Shcm_Grb2_Sos + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP + Shcm_Grb2_Sos + Shcm_Grb2 + Shcm + EGF_EGFRm2_GAP_Shcm_Grb2_Prot + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Prot + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP_Prot + EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot + EGF_EGFRim2_GAP_Shcm + EGF_EGFRim2_GAP_Shcm_Grb2 + EGF_EGFRim2_GAP_Shcm_Grb2_Sos + EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GDP + EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GTP
+	arjt_Rafm() = Rafm + Rafm_Pase + MEK_Rafm + MEK_P_Rafm + Rafim + Rafim_Pase + MEKi_Rafim + MEKi_P_Rafim
+	k5() = if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))
+	functionRate4() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate4m() = if(if(Proti>0,if(EGF_EGFRim2_GAP_Grb2>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Prot/EGF_EGFRim2_GAP_Grb2,0)/Proti,0)< 0,-(if(Proti>0,if(EGF_EGFRim2_GAP_Grb2>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Prot/EGF_EGFRim2_GAP_Grb2,0)/Proti,0)),0)
+	functionRate106() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate106m() = if(if(Proti>0,if(EGF_EGFRim2_GAP_Grb2_Sos>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Sos_Prot/EGF_EGFRim2_GAP_Grb2_Sos,0)/Proti,0)< 0,-(if(Proti>0,if(EGF_EGFRim2_GAP_Grb2_Sos>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Sos_Prot/EGF_EGFRim2_GAP_Grb2_Sos,0)/Proti,0)),0)
+	functionRate109() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate109m() = if(if(EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Sos_Ras_GDP_Prot/Proti,0)/EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP,0)< 0,-(if(EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Sos_Ras_GDP_Prot/Proti,0)/EGF_EGFRim2_GAP_Grb2_Sos_Ras_GDP,0)),0)
+	functionRate112() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate112m() = if(if(EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP_Prot/Proti,0)/EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP,0)< 0,-(if(EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Grb2_Sos_Ras_GTP_Prot/Proti,0)/EGF_EGFRim2_GAP_Grb2_Sos_Ras_GTP,0)),0)
+	functionRate115() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate115m() = if(if(EGF_EGFRim2_GAP_Shcm_Grb2>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Prot/Proti,0)/EGF_EGFRim2_GAP_Shcm_Grb2,0)< 0,-(if(EGF_EGFRim2_GAP_Shcm_Grb2>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Prot/Proti,0)/EGF_EGFRim2_GAP_Shcm_Grb2,0)),0)
+	functionRate118() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate118m() = if(if(EGF_EGFRim2_GAP_Shcm_Grb2_Sos>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Prot/Proti,0)/EGF_EGFRim2_GAP_Shcm_Grb2_Sos,0)< 0,-(if(EGF_EGFRim2_GAP_Shcm_Grb2_Sos>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Prot/Proti,0)/EGF_EGFRim2_GAP_Shcm_Grb2_Sos,0)),0)
+	functionRate121() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate121m() = if(if(EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GDP>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP_Prot/Proti,0)/EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GDP,0)< 0,-(if(EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GDP>0,if(Proti>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GDP_Prot/Proti,0)/EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GDP,0)),0)
+	functionRate124() = if((if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55))))>= 0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))),0)
+	functionRate124m() = if(if(Proti>0,if(EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GTP>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot/EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GTP,0)/Proti,0)< 0,-(if(Proti>0,if(EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GTP>0,(if(((RT / (kr1 / (k1 * EGF) + 1))<3100),(1.55),if(((RT / (kr1 / (k1 * EGF) + 1))>100000),(0.2),((RT / (kr1 / (k1 * EGF) + 1))*-1.350000e-05+1.55)))) * EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot/EGF_EGFRim2_GAP_Shcm_Grb2_Sos_Ras_GTP,0)/Proti,0)),0)
+end functions
+begin reaction rules
+	v1: EGF(degmod~0,egfr,imod~0)@c1 + EGFR(degmod~0,egf,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c1 <-> EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2 k1,kr1
+	v2: EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2 + EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 k2*2,kr2
+	v3: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 k3,kr3
+	v4: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot!5,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.Prot(egfr!5,imod~0)@c2.GAP(egfr!3)@c2 k4,kr4
+	v5: EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot!5,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.Prot(egfr!5,imod~0)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 + Prot(egfr,imod~I)@c2 functionRate4(),functionRate4m()
+	v6: EGFR(degmod~0,egf,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c1 <-> EGFR(degmod~0,egf,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2 k6,kr6
+	v7: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 -> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 k7
+	v8: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 + GAP(egfr)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 (k8)/2,kr8
+	v9: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 -> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 k7
+	v10: EGFR(degmod~0,egf,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2 + EGF(degmod~0,egfr,imod~I)@c2 <-> EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2 k10,kr10
+	v11: EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2 + EGFR(degmod~0,egf!0,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 k2*2,kr2
+	v12: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 k3,kr3
+	v13: 0  -> EGFR(degmod~0,egf,egfr,gap,grb2,imod~0,mmod~0,prot,ras_g,shc)@c1 k13
+	v14: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 + GAP(egfr)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 (k14)/2,kr14
+	v15: Prot(egfr,imod~I)@c2 -> Prot(egfr,imod~0)@c2 k15
+	v16: Grb2(egfr,shc,sos)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 k16,kr16
+	v17: Sos(grb2)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k17,kr17
+	v18: Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k18,kr18
+	v19: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> Ras_G(DPmod~0,TPmod~TP,egfr,imod~0,mmod~0,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k19,kr19
+	v20: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 + Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~0,mmod~M,raf)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k20,kr20
+	v21: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 + Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 k21,kr21
+	v22: Shc(egfr,grb2,mmod~0)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~0)@c2.GAP(egfr!3)@c2 k22,kr22
+	v23: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~0)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 k23,kr23
+	v24: Grb2(egfr,shc,sos)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 k24,kr24
+	v25: Sos(grb2)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k25,kr25
+	v26: Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc!5)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k18,kr18
+	v27: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc!5)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Ras_G(DPmod~0,TPmod~TP,egfr,imod~0,mmod~0,raf)@c2 k19,kr19
+	v28: Ras_G(DPmod~0,TPmod~TP,egfr,imod~0,mmod~0,raf)@c2 + Raf(imod~0,mek,mmod~0,phosphotase1,ras_g)@c2 <-> Ras_G(DPmod~0,TPmod~TP,egfr,imod~0,mmod~0,raf!0)@c2.Raf(imod~0,mek,mmod~0,phosphotase1,ras_g!0)@c2 k28,kr28
+	v29: Ras_G(DPmod~0,TPmod~TP,egfr,imod~0,mmod~0,raf!0)@c2.Raf(imod~0,mek,mmod~0,phosphotase1,ras_g!0)@c2 <-> Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~0,mmod~M,raf)@c2 + Raf(imod~0,mek,mmod~M,phosphotase1,ras_g)@c2 k29,kr29
+	v30: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~0,mmod~M,raf)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k20,kr20
+	v31: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 k21,kr21
+	v32: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 + Grb2(egfr,shc!1,sos!0)@c2.Shc(egfr,grb2!1,mmod~M)@c2.Sos(grb2!0)@c2 k32,kr32
+	v33: Grb2(egfr,shc!1,sos!0)@c2.Shc(egfr,grb2!1,mmod~M)@c2.Sos(grb2!0)@c2 <-> Shc(egfr,grb2,mmod~M)@c2 + Grb2(egfr,shc,sos!0)@c2.Sos(grb2!0)@c2 k33,kr33
+	v34: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 + Grb2(egfr,shc,sos!0)@c2.Sos(grb2!0)@c2 k34,kr34
+	v35: Grb2(egfr,shc,sos!0)@c2.Sos(grb2!0)@c2 <-> Sos(grb2)@c2 + Grb2(egfr,shc,sos)@c2 k35,kr35
+	v36: Shc(egfr,grb2,mmod~M)@c2 -> Shc(egfr,grb2,mmod~0)@c2 functionRate35()
+	v37: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 + Shc(egfr,grb2,mmod~M)@c2 k37,kr37
+	v38: Grb2(egfr,shc,sos)@c2 + Shc(egfr,grb2,mmod~M)@c2 <-> Grb2(egfr,shc!0,sos)@c2.Shc(egfr,grb2!0,mmod~M)@c2 k24,kr24
+	v39: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 + Grb2(egfr,shc!0,sos)@c2.Shc(egfr,grb2!0,mmod~M)@c2 k37,kr37
+	v40: Sos(grb2)@c2 + Grb2(egfr,shc!0,sos)@c2.Shc(egfr,grb2!0,mmod~M)@c2 <-> Grb2(egfr,shc!1,sos!0)@c2.Shc(egfr,grb2!1,mmod~M)@c2.Sos(grb2!0)@c2 k40,kr40
+	v41: Grb2(egfr,shc,sos!0)@c2.Sos(grb2!0)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k41,kr41
+	v42: Phosphotase1(raf)@c2 + Raf(imod~0,mek,mmod~M,phosphotase1,ras_g)@c2 <-> Raf(imod~0,mek,mmod~M,phosphotase1!0,ras_g)@c2.Phosphotase1(raf!0)@c2 k42,kr42
+	v43: Raf(imod~0,mek,mmod~M,phosphotase1!0,ras_g)@c2.Phosphotase1(raf!0)@c2 <-> Raf(imod~0,mek,mmod~0,phosphotase1,ras_g)@c2 + Phosphotase1(raf)@c2 functionRate42(),functionRate42m()
+	v44: MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf)@c2 + Raf(imod~0,mek,mmod~M,phosphotase1,ras_g)@c2 <-> MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf!0)@c2.Raf(imod~0,mek!0,mmod~M,phosphotase1,ras_g)@c2 k44,kr44
+	v45: MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf!0)@c2.Raf(imod~0,mek!0,mmod~M,phosphotase1,ras_g)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf)@c2 + Raf(imod~0,mek,mmod~M,phosphotase1,ras_g)@c2 functionRate44(),functionRate44m()
+	v46: MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf)@c2 + Raf(imod~0,mek,mmod~M,phosphotase1,ras_g)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf!0)@c2.Raf(imod~0,mek!0,mmod~M,phosphotase1,ras_g)@c2 k44,kr44
+	v47: MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf!0)@c2.Raf(imod~0,mek!0,mmod~M,phosphotase1,ras_g)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2,raf)@c2 + Raf(imod~0,mek,mmod~M,phosphotase1,ras_g)@c2 functionRate46(),functionRate46m()
+	v48: MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2,raf)@c2 + Phosphatase2(mek)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 k48,kr48
+	v49: MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf)@c2 + Phosphatase2(mek)@c2 functionRate48(),functionRate48m()
+	v50: Phosphatase2(mek)@c2 + MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2,raf)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 k50,kr50
+	v51: MEK(Pmod~0,_Pmod~_P,erk,imod~0,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 <-> MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf)@c2 + Phosphatase2(mek)@c2 functionRate50(),functionRate50m()
+	v52: ERK(Pmod~0,_Pmod~0,imod~0,mek,phosphotase3)@c2 + MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2,raf)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~0,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~0,imod~0,mek!0,phosphotase3)@c2 k52,kr52
+	v53: MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~0,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~0,imod~0,mek!0,phosphotase3)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2,raf)@c2 + ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3)@c2 functionRate52(),functionRate52m()
+	v54: MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2,raf)@c2 + ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~0,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~_P,imod~0,mek!0,phosphotase3)@c2 k52,kr52
+	v55: MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~0,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~_P,imod~0,mek!0,phosphotase3)@c2 <-> ERK(Pmod~P,_Pmod~_P_P,imod~0,mek,phosphotase3)@c2 + MEK(Pmod~P,_Pmod~_P_P,erk,imod~0,phosphatase2,raf)@c2 functionRate54(),functionRate54m()
+	v56: ERK(Pmod~P,_Pmod~_P_P,imod~0,mek,phosphotase3)@c2 + Phosphotase3(erk)@c2 <-> ERK(Pmod~P,_Pmod~_P_P,imod~0,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 k56,kr56
+	v57: ERK(Pmod~P,_Pmod~_P_P,imod~0,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 <-> ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3)@c2 + Phosphotase3(erk)@c2 functionRate56(),functionRate56m()
+	v58: Phosphotase3(erk)@c2 + ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3)@c2 <-> ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 k58,kr58
+	v59: ERK(Pmod~0,_Pmod~_P,imod~0,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 <-> ERK(Pmod~0,_Pmod~0,imod~0,mek,phosphotase3)@c2 + Phosphotase3(erk)@c2 functionRate58(),functionRate58m()
+	v60: EGFR(degmod~0,egf,egfr,gap,grb2,imod~I,mmod~0,prot,ras_g,shc)@c2 -> EGFR(degmod~DEG,egf,egfr,gap,grb2,imod~II,mmod~0,prot,ras_g,shc)@c2 k60
+	v61: EGF(degmod~0,egfr,imod~I)@c2 -> EGF(degmod~DEG,egfr,imod~II)@c3 k61
+	v62: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 -> EGFR(degmod~DEG,egf!0,egfr!2,gap,grb2,imod~II,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~DEG,egf!1,egfr!2,gap,grb2,imod~II,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2 k60
+	v63: EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 + Grb2(egfr,shc,sos)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 k16,kr16
+	v64: Sos(grb2)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k17,kr17
+	v65: Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k18,kr18
+	v66: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~I,mmod~0,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k19,kr19
+	v67: Ras_G(DPmod~0,TPmod~TP,egfr,imod~II,mmod~M,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k20,kr20
+	v68: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 + Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 k21,kr21
+	v69: Shc(egfr,grb2,mmod~0)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~0)@c2.GAP(egfr!3)@c2 k22,kr22
+	v70: EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~0)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 k23,kr23
+	v71: Grb2(egfr,shc,sos)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 k24,kr24
+	v72: Sos(grb2)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k25,kr25
+	v73: Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k18,kr18
+	v74: EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~I,mmod~0,raf)@c2 k19,kr19
+	v75: Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~I,mmod~0,raf)@c2 + Raf(imod~0,mek,mmod~0,phosphotase1,ras_g)@c2 <-> Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~I,mmod~0,raf!0)@c2.Raf(imod~I,mek,mmod~0,phosphotase1,ras_g!0)@c2 k28,kr28
+	v76: Ras_G(DPmod~0,TPmod~TPTP,egfr,imod~I,mmod~0,raf!0)@c2.Raf(imod~I,mek,mmod~0,phosphotase1,ras_g!0)@c2 <-> Ras_G(DPmod~0,TPmod~TP,egfr,imod~II,mmod~M,raf)@c2 + Raf(imod~II,mek,mmod~M,phosphotase1,ras_g)@c2 k29,kr29
+	v77: Ras_G(DPmod~0,TPmod~TP,egfr,imod~II,mmod~M,raf)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k20,kr20
+	v78: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Ras_G(DPmod~DP,TPmod~0,egfr,imod~0,mmod~0,raf)@c2 k21,kr21
+	v79: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 + Grb2(egfr,shc!1,sos!0)@c2.Shc(egfr,grb2!1,mmod~M)@c2.Sos(grb2!0)@c2 k32,kr32
+	v80: EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 + Grb2(egfr,shc,sos!0)@c2.Sos(grb2!0)@c2 k34,kr34
+	v81: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 + Shc(egfr,grb2,mmod~M)@c2 k37,kr37
+	v82: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 + Grb2(egfr,shc!0,sos)@c2.Shc(egfr,grb2!0,mmod~M)@c2 k37,kr37
+	v83: Grb2(egfr,shc,sos!0)@c2.Sos(grb2!0)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k41,kr41
+	v84: Phosphotase1(raf)@c2 + Raf(imod~II,mek,mmod~M,phosphotase1,ras_g)@c2 <-> Raf(imod~II,mek,mmod~M,phosphotase1!0,ras_g)@c2.Phosphotase1(raf!0)@c2 k42,kr42
+	v85: Raf(imod~II,mek,mmod~M,phosphotase1!0,ras_g)@c2.Phosphotase1(raf!0)@c2 <-> Raf(imod~0,mek,mmod~0,phosphotase1,ras_g)@c2 + Phosphotase1(raf)@c2 functionRate84(),functionRate84m()
+	v86: MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf)@c2 + Raf(imod~II,mek,mmod~M,phosphotase1,ras_g)@c2 <-> MEK(Pmod~0,_Pmod~0,erk,imod~I,phosphatase2,raf!0)@c2.Raf(imod~II,mek!0,mmod~M,phosphotase1,ras_g)@c2 k44,kr44
+	v87: MEK(Pmod~0,_Pmod~0,erk,imod~I,phosphatase2,raf!0)@c2.Raf(imod~II,mek!0,mmod~M,phosphotase1,ras_g)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf)@c2 + Raf(imod~II,mek,mmod~M,phosphotase1,ras_g)@c2 functionRate86(),functionRate86m()
+	v88: Raf(imod~II,mek,mmod~M,phosphotase1,ras_g)@c2 + MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf!0)@c2.Raf(imod~II,mek!0,mmod~M,phosphotase1,ras_g)@c2 k44,kr44
+	v89: MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf!0)@c2.Raf(imod~II,mek!0,mmod~M,phosphotase1,ras_g)@c2 <-> Raf(imod~II,mek,mmod~M,phosphotase1,ras_g)@c2 + MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2,raf)@c2 functionRate88(),functionRate88m()
+	v90: MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2,raf)@c2 + Phosphatase2(mek)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 k48,kr48
+	v91: MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf)@c2 + Phosphatase2(mek)@c2 functionRate90(),functionRate90m()
+	v92: Phosphatase2(mek)@c2 + MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2,raf)@c2 <-> MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 k50,kr50
+	v93: MEK(Pmod~0,_Pmod~_P,erk,imod~II,phosphatase2!0,raf)@c2.Phosphatase2(mek!0)@c2 <-> MEK(Pmod~0,_Pmod~0,erk,imod~0,phosphatase2,raf)@c2 + Phosphatase2(mek)@c2 functionRate92(),functionRate92m()
+	v94: ERK(Pmod~0,_Pmod~0,imod~0,mek,phosphotase3)@c2 + MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2,raf)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~I,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~0,imod~I,mek!0,phosphotase3)@c2 k52,kr52
+	v95: MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~I,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~0,imod~I,mek!0,phosphotase3)@c2 <-> ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3)@c2 + MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2,raf)@c2 functionRate94(),functionRate94m()
+	v96: MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2,raf)@c2 + ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3)@c2 <-> MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~I,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~_P,imod~II,mek!0,phosphotase3)@c2 k52,kr52
+	v97: MEK(Pmod~P,_Pmod~_P_P,erk!0,imod~I,phosphatase2,raf)@c2.ERK(Pmod~0,_Pmod~_P,imod~II,mek!0,phosphotase3)@c2 <-> ERK(Pmod~P,_Pmod~_P_P,imod~I,mek,phosphotase3)@c2 + MEK(Pmod~P,_Pmod~_P_P,erk,imod~I,phosphatase2,raf)@c2 functionRate96(),functionRate96m()
+	v98: ERK(Pmod~P,_Pmod~_P_P,imod~I,mek,phosphotase3)@c2 + Phosphotase3(erk)@c2 <-> ERK(Pmod~P,_Pmod~_P_P,imod~I,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 k56,kr56
+	v99: ERK(Pmod~P,_Pmod~_P_P,imod~I,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 <-> ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3)@c2 + Phosphotase3(erk)@c2 functionRate98(),functionRate98m()
+	v100: Phosphotase3(erk)@c2 + ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3)@c2 <-> ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 k58,kr58
+	v101: ERK(Pmod~0,_Pmod~_P,imod~II,mek,phosphotase3!0)@c2.Phosphotase3(erk!0)@c2 <-> ERK(Pmod~0,_Pmod~0,imod~0,mek,phosphotase3)@c2 + Phosphotase3(erk)@c2 functionRate100(),functionRate100m()
+	v102: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c3.EGF(degmod~0,egfr!0,imod~0)@c3.EGF(degmod~0,egfr!1,imod~0)@c3.GAP(egfr!3)@c3 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.GAP(egfr!3)@c2 k6,kr6
+	v103: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~0)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~0)@c2.GAP(egfr!3)@c2 k6,kr6
+	v104: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!3,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Shc(egfr!4,grb2,mmod~M)@c2.GAP(egfr!3)@c2 k6,kr6
+	v105: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k6,kr6
+	v106: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Prot(egfr!6,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k4,kr4
+	v107: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Prot(egfr!6,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> Prot(egfr,imod~I)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 functionRate106(),functionRate106m()
+	v108: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k6,kr6
+	v109: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g!7,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Prot(egfr!6,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k4,kr4
+	v110: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g!7,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Prot(egfr!6,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> Prot(egfr,imod~I)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 functionRate109(),functionRate109m()
+	v111: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k6,kr6
+	v112: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g!7,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Prot(egfr!6,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 k4,kr4
+	v113: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2!4,imod~0,mmod~M,prot!6,ras_g!7,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Prot(egfr!6,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 <-> Prot(egfr,imod~I)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g!6,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2!4,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!6,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr!4,shc,sos!3)@c2.Sos(grb2!3)@c2.GAP(egfr!5)@c2 functionRate112(),functionRate112m()
+	v114: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 k6,kr6
+	v115: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot!6,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.Prot(egfr!6,imod~0)@c2.GAP(egfr!5)@c2 k4,kr4
+	v116: EGFR(degmod~0,egf!0,egfr!2,gap!5,grb2,imod~0,mmod~M,prot!6,ras_g,shc!4)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.Prot(egfr!6,imod~0)@c2.GAP(egfr!5)@c2 <-> Prot(egfr,imod~I)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!5,grb2,imod~I,mmod~MM,prot,ras_g,shc!4)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!3,sos)@c2.Shc(egfr!4,grb2!3,mmod~M)@c2.GAP(egfr!5)@c2 functionRate115(),functionRate115m()
+	v117: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k6,kr6
+	v118: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~0,mmod~M,prot!7,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Prot(egfr!7,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k4,kr4
+	v119: EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~0,mmod~M,prot!7,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Prot(egfr!7,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> Prot(egfr,imod~I)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc!5)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 functionRate118(),functionRate118m()
+	v120: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc!5)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k6,kr6
+	v121: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc!5)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot!7,ras_g!8,shc!5)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!8,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Prot(egfr!7,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k4,kr4
+	v122: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot!7,ras_g!8,shc!5)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!8,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Prot(egfr!7,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> Prot(egfr,imod~I)@c2 + EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~DP,TPmod~0,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 functionRate121(),functionRate121m()
+	v123: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k6,kr6
+	v124: EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~0,mmod~M,prot,ras_g,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!7,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Prot(egfr,imod~0)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!8,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot!7,ras_g,shc!5)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!8,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Prot(egfr!7,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 k4,kr4
+	v125: EGFR(degmod~0,egf!0,egfr!2,gap!6,grb2,imod~0,mmod~M,prot,ras_g!8,shc)@c2.EGFR(degmod~0,egf!1,egfr!2,gap,grb2,imod~0,mmod~M,prot!7,ras_g,shc!5)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!8,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Prot(egfr!7,imod~0)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 <-> EGFR(degmod~0,egf!0,egfr!2,gap,grb2,imod~I,mmod~MM,prot,ras_g!7,shc!5)@c2.EGFR(degmod~0,egf!1,egfr!2,gap!6,grb2,imod~I,mmod~MM,prot,ras_g,shc)@c2.Ras_G(DPmod~0,TPmod~TP,egfr!7,imod~0,mmod~0,raf)@c2.EGF(degmod~0,egfr!0,imod~0)@c2.EGF(degmod~0,egfr!1,imod~0)@c2.Grb2(egfr,shc!4,sos!3)@c2.Shc(egfr!5,grb2!4,mmod~M)@c2.Sos(grb2!3)@c2.GAP(egfr!6)@c2 + Prot(egfr,imod~I)@c2 functionRate124(),functionRate124m()
+end reaction rules
+end model

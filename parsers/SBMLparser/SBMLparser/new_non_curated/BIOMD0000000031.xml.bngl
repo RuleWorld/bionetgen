@@ -1,0 +1,56 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/obo.go/GO:0000165']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/8355']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 6 molecules and 4 reactions. The translated model has 4 molecules and 4 rules'
+#@creatorEmail:'lenov@ebi.ac.uk'
+#@creatorName:'Le Novre Nicolas'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/BIOMD0000000031', 'http://identifiers.org/pubmed/14744999', 'http://identifiers.org/biomodels.db/MODEL6618738800']
+###
+begin model
+begin parameters
+	k1cat 0.01
+	Km1 50.0
+	k2cat 15.0
+	Km2 500.0
+	k3cat 0.084
+	Km3 5.0
+	k4cat 0.06
+	Km4 18.0
+	Km5 78.0
+end parameters
+begin compartments
+	uVol  3  1.0
+end compartments
+begin molecule types
+	M(pmod~P~0~PP)
+	MAPKK1()
+	MAPKK2()
+	MKP3()
+end molecule types
+begin seed species
+	@uVol:M(pmod~0) 500.0 #M #M
+	@uVol:$MAPKK1() 100.0 #MAPKK1 #MAPKK1
+	@uVol:$MAPKK2() 1.0 #MAPKK2 #MAPKK2
+	@uVol:$MKP3() 100.0 #MKP3 #MKP3
+end seed species
+begin observables
+	Species M M(pmod~0) #M
+	Species Mp M(pmod~P) #Mp
+	Species Mpp M(pmod~PP) #Mpp
+	Species MAPKK1 MAPKK1() #MAPKK1
+	Species MAPKK2 MAPKK2() #MAPKK2
+	Species MKP3 MKP3() #MKP3
+end observables
+begin functions
+	functionRate0() = if(M>0,k1cat * MAPKK1 * M / Km1 / (1 + M / Km1)/M,0)
+	functionRate1() = if(Mp>0,k2cat * MAPKK2 * Mp / Km2 / (1 + Mp / Km2)/Mp,0)
+	functionRate2() = if(Mpp>0,k3cat * MKP3 * Mpp / Km3 / (1 + Mpp / Km3 + Mp / Km4 + M / Km5)/Mpp,0)
+	functionRate3() = if(Mp>0,k4cat * MKP3 * Mp / Km4 / (1 + Mpp / Km3 + Mp / Km4 + M / Km5)/Mp,0)
+end functions
+begin reaction rules
+	v1: M(pmod~0) -> M(pmod~P) functionRate0()
+	v2: M(pmod~P) -> M(pmod~PP) functionRate1()
+	v3: M(pmod~PP) -> M(pmod~P) functionRate2()
+	v4: M(pmod~P) -> M(pmod~0) functionRate3()
+end reaction rules
+end model

@@ -1,0 +1,67 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/4334846', 'http://identifiers.org/biomodels.db/MODEL0912160001']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 4 molecules and 4 rules'
+###
+begin model
+begin parameters
+	AMK 1.037
+	TVD 0.000980838
+	NOD 0.0959449
+	STH 0.977181
+	KOD 0.0804374
+	VUD 0.000989
+	NID 0.1
+	ALCLK 0.3
+	KID 0.08
+	VIDML 0.01
+	TRPL 0
+end parameters
+begin compartments
+	Compartment  3  1.0
+end compartments
+begin molecule types
+	NAE
+	KTOT
+	VIC
+	VTW
+end molecule types
+begin seed species
+	NAE@Compartment 2109.91
+	KTOT@Compartment 3622.54
+	VIC@Compartment 25.0404
+	VTW@Compartment 39.8952
+end seed species
+begin observables
+	Species NAE NAE
+	Species KTOT KTOT
+	Species VIC VIC
+	Species VTW VTW
+end observables
+begin functions
+	NED() = NID * STH -NOD + TRPL * 142
+	KTOTD() = KID -KOD
+	VEC() = VTW -VIC
+	AMK1() = (AMK -1) * ALCLK + 1
+	armRateNAE() = 0
+	armRateKTOT() = 0
+	armRateVIC() = 0
+	arRateVTW() = TVD
+	armRateVTW() = if(VTW>0,(VUD)/VTW,0)
+	KE() = (KTOT -3000) / (((AMK -1) * ALCLK + 1) * 9.3333)
+	CNA() = NAE / (VTW -VIC)
+	arRateNAE() = (NID * STH -NOD + TRPL * 142)
+	arRateKTOT() = (KID -KOD)
+	KI() = KTOT -((KTOT -3000) / (((AMK -1) * ALCLK + 1) * 9.3333))
+	CKE() = ((KTOT -3000) / (((AMK -1) * ALCLK + 1) * 9.3333)) / (VTW -VIC)
+	CKI() = (KTOT -((KTOT -3000) / (((AMK -1) * ALCLK + 1) * 9.3333))) / VIC
+	CCD() = ((KTOT -((KTOT -3000) / (((AMK -1) * ALCLK + 1) * 9.3333))) / VIC) -(NAE / (VTW -VIC))
+	VID() = (((KTOT -((KTOT -3000) / (((AMK -1) * ALCLK + 1) * 9.3333))) / VIC) -(NAE / (VTW -VIC))) * VIDML
+	arRateVIC() = ((((KTOT -((KTOT -3000) / (((AMK -1) * ALCLK + 1) * 9.3333))) / VIC) -(NAE / (VTW -VIC))) * VIDML)
+end functions
+begin reaction rules
+	0  <-> NAE() arRateNAE,armRateNAE #rateLaw
+	0  <-> KTOT() arRateKTOT,armRateKTOT #rateLaw
+	0  <-> VIC() arRateVIC,armRateVIC #rateLaw
+	0  <-> VTW() arRateVTW,armRateVTW #rateLaw
+end reaction rules
+end model

@@ -1,0 +1,57 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/12881417', 'http://identifiers.org/biomodels.db/MODEL0912160005']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 3 molecules and 3 rules'
+###
+begin model
+begin parameters
+	k1_stim 0.359
+	k2 0.147
+	k3 0.06
+	k4 0.035
+	stim_wavelength 3.0
+	stim_duration 0.5
+	time_before_stim 1.0
+	time_model 0
+	k1_unstim 0
+end parameters
+begin compartments
+	COMpartment  3  1.0
+end compartments
+begin molecule types
+	NFATP_cyt
+	NFAT_cyt
+	NFAT_nuc
+end molecule types
+begin seed species
+	NFATP_cyt@COMpartment 5000.0
+	NFAT_cyt@COMpartment 0
+	NFAT_nuc@COMpartment 0
+end seed species
+begin observables
+	Species NFATP_cyt NFATP_cyt
+	Species NFAT_cyt NFAT_cyt
+	Species NFAT_nuc NFAT_nuc
+end observables
+begin functions
+	NFAT_tot() = NFATP_cyt + NFAT_cyt + NFAT_nuc
+	Jtranslocate() = k3 * NFAT_cyt
+	Jexport() = k4 * NFAT_nuc
+	stim_on() = if((time_model>=time_before_stim&&time_model-time_before_stim-min(rint(((time_model-time_before_stim)/stim_wavelength)-0.5),rint(((time_model-time_before_stim)/stim_wavelength)+0.5))*stim_wavelength<=stim_duration),(1),(0))
+	percentage_NFAT_nuc() = NFAT_nuc * 100 / (NFATP_cyt + NFAT_cyt + NFAT_nuc)
+	percentage_NFATP_cyt() = NFATP_cyt * 100 / (NFATP_cyt + NFAT_cyt + NFAT_nuc)
+	k1() = if(((if((time_model>=time_before_stim&&time_model-time_before_stim-min(rint(((time_model-time_before_stim)/stim_wavelength)-0.5),rint(((time_model-time_before_stim)/stim_wavelength)+0.5))*stim_wavelength<=stim_duration),(1),(0)))==1),(k1_stim),(k1_unstim))
+	percentage_NFAT_cyt() = NFAT_cyt * 100 / (NFATP_cyt + NFAT_cyt + NFAT_nuc)
+	arRateNFATP_cyt() = (k4 * NFAT_nuc)
+	armRateNFAT_cyt() = if(NFAT_cyt>0,((k3 * NFAT_cyt))/NFAT_cyt,0)
+	arRateNFAT_nuc() = (k3 * NFAT_cyt)
+	armRateNFAT_nuc() = if(NFAT_nuc>0,((k4 * NFAT_nuc))/NFAT_nuc,0)
+	Jdephosphorylation() = (if(((if((time_model>=time_before_stim&&time_model-time_before_stim-min(rint(((time_model-time_before_stim)/stim_wavelength)-0.5),rint(((time_model-time_before_stim)/stim_wavelength)+0.5))*stim_wavelength<=stim_duration),(1),(0)))==1),(k1_stim),(k1_unstim))) * NFATP_cyt -k2 * NFAT_cyt
+	armRateNFATP_cyt() = if(NFATP_cyt>0,(((if(((if((time_model>=time_before_stim&&time_model-time_before_stim-min(rint(((time_model-time_before_stim)/stim_wavelength)-0.5),rint(((time_model-time_before_stim)/stim_wavelength)+0.5))*stim_wavelength<=stim_duration),(1),(0)))==1),(k1_stim),(k1_unstim))) * NFATP_cyt -k2 * NFAT_cyt))/NFATP_cyt,0)
+	arRateNFAT_cyt() = ((if(((if((time_model>=time_before_stim&&time_model-time_before_stim-min(rint(((time_model-time_before_stim)/stim_wavelength)-0.5),rint(((time_model-time_before_stim)/stim_wavelength)+0.5))*stim_wavelength<=stim_duration),(1),(0)))==1),(k1_stim),(k1_unstim))) * NFATP_cyt -k2 * NFAT_cyt)
+end functions
+begin reaction rules
+	0  <-> NFATP_cyt() arRateNFATP_cyt,armRateNFATP_cyt #rateLaw
+	0  <-> NFAT_cyt() arRateNFAT_cyt,armRateNFAT_cyt #rateLaw
+	0  <-> NFAT_nuc() arRateNFAT_nuc,armRateNFAT_nuc #rateLaw
+end reaction rules
+end model

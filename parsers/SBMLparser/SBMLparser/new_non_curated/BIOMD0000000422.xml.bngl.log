@@ -1,0 +1,34 @@
+Atomization:Warning.0: inverting order of [['GA12_source'], ['GA12']] for lexical analysis
+Atomization:Warning.1: inverting order of [['GA4_GID_closed'], ['GA4_GID']] for lexical analysis
+Atomization:Warning.2: inverting order of [['DELLA_source'], ['DELLA']] for lexical analysis
+Atomization:Warning.3: inverting order of [['GA20ox_source'], ['GA20ox']] for lexical analysis
+Atomization:Warning.4: inverting order of [['GA3ox_source'], ['GA3ox']] for lexical analysis
+Atomization:Warning.5: inverting order of [['GID_source'], ['GID']] for lexical analysis
+Atomization:Warning.6: inverting order of [['ga20ox_source'], ['ga20ox']] for lexical analysis
+Atomization:Warning.7: inverting order of [['gid_source'], ['gid']] for lexical analysis
+Atomization:Warning.8: inverting order of [['della_source'], ['della']] for lexical analysis
+Atomization:Warning.9: inverting order of [['ga3ox_source'], ['ga3ox']] for lexical analysis
+Atomization:Warning.10: inverting order of [['GA4_source'], ['GA4']] for lexical analysis
+INFO:Atomization.11: Lexical relationship inferred between                                     ['GA4', 'GA24'], user information confirming it is required
+INFO:Atomization.12: Lexical relationship inferred between                                     ['DELLA', 'DELLA_U'], user information confirming it is required
+ERROR:Atomization.13: dependency cycle detected on GA4_GID_closed
+ERROR:Atomization.14: dependency cycle detected on GA4_GID_closed
+ERROR:Atomization.15: dependency cycle detected on GA4_GID_DELLA1
+ERROR:Atomization.16: dependency cycle detected on GA4_GID_closed
+ATOMIZATION:WARNING.17: adding forced transformation: GID:[['GID']]:GID_source
+ATOMIZATION:WARNING.18: adding forced transformation: gid:[['gid']]:gid_source
+ATOMIZATION:WARNING.19: adding forced transformation: GA4:[['GA4']]:GA4_source
+ATOMIZATION:WARNING.20: adding forced transformation: GA12:[['GA12']]:GA12_source
+ATOMIZATION:WARNING.21: adding forced transformation: GA12:[['GA12']]:sa5_degraded
+ATOMIZATION:WARNING.22: adding forced transformation: ga3ox:[['ga3ox']]:ga3ox_source
+ATOMIZATION:WARNING.23: adding forced transformation: GA15:[['GA15']]:sa6_degraded
+ATOMIZATION:WARNING.24: adding forced transformation: della:[['della']]:della_source
+ATOMIZATION:WARNING.25: adding forced transformation: GA24:[['GA24']]:sa7_degraded
+ATOMIZATION:WARNING.26: adding forced transformation: GA9:[['GA9']]:sa8_degraded
+ATOMIZATION:WARNING.27: adding forced transformation: DELLA:[['DELLA']]:DELLA_source
+ATOMIZATION:WARNING.28: adding forced transformation: GA4:[['GA4']]:sa1_degraded
+ATOMIZATION:WARNING.29: adding forced transformation: GA3ox:[['GA3ox']]:GA3ox_source
+ATOMIZATION:WARNING.30: adding forced transformation: ga20ox:[['ga20ox']]:ga20ox_source
+ATOMIZATION:WARNING.31: adding forced transformation: GA20ox:[['GA20ox']]:GA20ox_source
+CRITICAL:Atomization.32: Elements GA4_GID_DELLA1 and GA4_GID_DELLA2 produce            the same translation. Emptying GA4_GID_DELLA2.
+INFO:Summary.33: File contains 16 molecules out of 37 original SBML species

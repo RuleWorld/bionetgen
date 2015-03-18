@@ -1,0 +1,56 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/go/GO:0090354']
+#@creatorEmail:'viji@ebi.ac.uk'
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 5 molecules and 9 reactions. The translated model has 4 molecules and 9 rules'
+#@creatorName:'Chelliah Vijayalakshmi'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/BIOMD0000000413', 'http://identifiers.org/pubmed/22393022', 'http://identifiers.org/biomodels.db/MODEL1203230002', 'http://identifiers.org/taxonomy/3701']
+#@BQB_HAS_PROPERTY:['http://identifiers.org/mamo/MAMO_0000046']
+###
+begin model
+begin parameters
+	kd 0.334
+	ka 0.000822
+	mu 0.79
+	ld 4.49
+	lm 0.175
+	la 1.15
+	delta 0.486
+	lambda 0.00316
+	TIR1T 18.5
+	alpha_tr 30.5
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	auxin(tir1)
+	TIR1(auxin)
+	auxinTIR1VENUS()
+	VENUS()
+end molecule types
+begin seed species
+	@cell:auxin(tir1) 7.38 #auxin #auxin
+	@cell:TIR1(auxin) 15.4 #TIR1 #TIR1
+	@cell:TIR1(auxin!0).auxin(tir1!0) 0.28 #auxinTIR1 #auxinTIR1
+	@cell:auxinTIR1VENUS() 2.78 #auxinTIR1VENUS #auxinTIR1VENUS
+	@cell:VENUS() 40.4 #VENUS #VENUS
+end seed species
+begin observables
+	Species auxin auxin(tir1) #auxin
+	Species TIR1 TIR1(auxin) #TIR1
+	Species auxinTIR1 TIR1(auxin!0).auxin(tir1!0) #auxinTIR1
+	Species auxinTIR1VENUS auxinTIR1VENUS() #auxinTIR1VENUS
+	Species VENUS VENUS() #VENUS
+end observables
+begin reaction rules
+	auxin_TIR1association: auxin(tir1) + TIR1(auxin) -> TIR1(auxin!0).auxin(tir1!0) ka
+	auxin_TIR1dissociation: TIR1(auxin!0).auxin(tir1!0) -> auxin(tir1) + TIR1(auxin) kd
+	auxin_TIR1_VENUSassociation: TIR1(auxin!0).auxin(tir1!0) + VENUS() -> auxinTIR1VENUS() la
+	auxin_TIR1_VENUSdissociation: auxinTIR1VENUS() -> TIR1(auxin!0).auxin(tir1!0) + VENUS() ld
+	auxin_TIR1_VENUSdissociationleadingtoubiquitination: auxinTIR1VENUS() -> TIR1(auxin!0).auxin(tir1!0) lm
+	auxinproduction: 0  -> auxin(tir1)@cell alpha_tr
+	auxindecay: auxin(tir1)@cell -> 0  mu
+	VENUSproduction: 0  -> VENUS()@cell delta
+	VENUSphotobleachingdecay: VENUS()@cell -> 0  lambda
+end reaction rules
+end model

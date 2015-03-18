@@ -1,0 +1,4 @@
+WARNING:Atomization.0: We don't know how ['R', 'H'] and ['R', 'H'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Atomization.1: We don't know how ['H', 'H', 'R', 'R'] and ['GQ'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+WARNING:Simulation.2: CHO() reported as function, but usage is ambiguous
+INFO:Summary.3: File contains 4 molecules out of 7 original SBML species

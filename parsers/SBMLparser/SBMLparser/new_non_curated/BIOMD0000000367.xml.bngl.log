@@ -1,0 +1,7 @@
+ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
+ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
+SIMULATION:CRITICAL.2: Boundary condition type variables (x)                     are not properly supported in BioNetGen simulator
+SIMULATION:CRITICAL.3: Boundary condition type variables (y)                     are not properly supported in BioNetGen simulator
+SIMULATION:CRITICAL.4: Boundary condition type variables (z)                     are not properly supported in BioNetGen simulator
+WARNING.5: Parameter mu_z 0.4 corresponds both as a non zero parameter                             and a rate rule, verify behavior
+INFO:Summary.6: File contains 4 molecules out of 4 original SBML species

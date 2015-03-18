@@ -1,0 +1,21 @@
+ERROR:Atomization.0: dependency cycle detected on EmptySet
+ERROR:Atomization.1: dependency cycle detected on EmptySet
+ERROR:Atomization.2: dependency cycle detected on EmptySet
+ERROR:Atomization.3: dependency cycle detected on Per_cyt
+ERROR:Atomization.4: dependency cycle detected on EmptySet
+ERROR:Atomization.5: dependency cycle detected on EmptySet
+ERROR:Atomization.6: dependency cycle detected on Per_Tim_cyt
+ERROR:Atomization.7: dependency cycle detected on EmptySet
+ERROR:Atomization.8: dependency cycle detected on Per_Tim_cyt
+ERROR:Atomization.9: dependency cycle detected on EmptySet
+ERROR:Atomization.10: dependency cycle detected on EmptySet
+ERROR:Atomization.11: dependency cycle detected on Per_Tim_cyt
+ERROR:Atomization.12: dependency cycle detected on Per_Tim_cyt
+ERROR:Atomization.13: dependency cycle detected on Per_Tim_cyt
+CRITICAL:Atomization.14: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate Per_mRNA=[['EmptySet']].
+CRITICAL:Atomization.15: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate Clk_mRNA=[['EmptySet']].
+CRITICAL:Atomization.16: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate Tim_mRNA=[['EmptySet']].
+CRITICAL:Atomization.17: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate EmptySet=[['Per_Tim_cyt']].
+CRITICAL:Atomization.18: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate Per_Tim_nuc=[['Per_Tim_cyt']].
+CRITICAL:Atomization.19: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate Clk_Cyc_nuc=[['Clk_Cyc_cyt']].
+INFO:Summary.20: File contains 11 molecules out of 13 original SBML species

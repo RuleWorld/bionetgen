@@ -1,0 +1,22 @@
+INFO:Atomization.0: added induced naming convention [['Bc'], ['Bcp']]
+INFO:Atomization.1: added induced naming convention [['Cc'], ['Ccp']]
+INFO:Atomization.2: added induced naming convention [['Pc'], ['Pcp']]
+INFO:Atomization.3: added induced naming convention [['PCc'], ['PCcp']]
+INFO:Atomization.4: added induced naming convention [['PCn'], ['PCnp']]
+INFO:Atomization.5: added induced naming convention [['Bn'], ['Bnp']]
+Atomization:Warning.6: inverting order of [['Bcp'], ['Bc']] for lexical analysis
+INFO:Atomization.7: added induced naming convention [['Bc'], ['Bcp']]
+Atomization:Warning.8: inverting order of [['Bnp'], ['Bn']] for lexical analysis
+INFO:Atomization.9: added induced naming convention [['Bn'], ['Bnp']]
+Atomization:Warning.10: inverting order of [['Ccp'], ['Cc']] for lexical analysis
+INFO:Atomization.11: added induced naming convention [['Cc'], ['Ccp']]
+Atomization:Warning.12: inverting order of [['Pcp'], ['Pc']] for lexical analysis
+INFO:Atomization.13: added induced naming convention [['Pc'], ['Pcp']]
+Atomization:Warning.14: inverting order of [['PCnp'], ['PCn']] for lexical analysis
+INFO:Atomization.15: added induced naming convention [['PCn'], ['PCnp']]
+Atomization:Warning.16: inverting order of [['PCcp'], ['PCc']] for lexical analysis
+INFO:Atomization.17: added induced naming convention [['PCc'], ['PCcp']]
+CRITICAL:Atomization.18: I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate PCn=[['PCc']].
+ATOMIZATION:WARNING.19: adding forced transformation: Bc:[['Bc']]:Bn
+ATOMIZATION:WARNING.20: adding forced transformation: Bc:[['Bn']]:Bnp
+INFO:Summary.21: File contains 7 molecules out of 16 original SBML species

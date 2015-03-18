@@ -1,0 +1,61 @@
+###
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 2 molecules and 5 reactions. The translated model has 1 molecules and 5 rules'
+#@creatorName:'Smallbone Kieran'
+#@creatorEmail:'kieran.smallbone@manchester.ac.uk'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1105180000', 'http://identifiers.org/pubmed/19490860']
+###
+begin model
+begin parameters
+	r1_LOWER_BOUND 0.000000
+	r1_UPPER_BOUND 1.000000
+	r1_OBJECTIVE_COEFFICIENT 0.000000
+	r1_FLUX_VALUE 1.000000
+	r2_LOWER_BOUND -1e20
+	r2_UPPER_BOUND 1e20
+	r2_OBJECTIVE_COEFFICIENT 0.000000
+	r2_FLUX_VALUE 0.333333
+	r3_LOWER_BOUND -1e20
+	r3_UPPER_BOUND 1e20
+	r3_OBJECTIVE_COEFFICIENT 0.000000
+	r3_FLUX_VALUE 0.333333
+	r4_LOWER_BOUND -1e20
+	r4_UPPER_BOUND 1e20
+	r4_OBJECTIVE_COEFFICIENT 0.000000
+	r4_FLUX_VALUE 0.333333
+	r5_LOWER_BOUND 0.000000
+	r5_UPPER_BOUND 1e20
+	r5_OBJECTIVE_COEFFICIENT 1.000000
+	r5_FLUX_VALUE 1.000000
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	A(genericMod~B~0)
+end molecule types
+begin seed species
+end seed species
+begin observables
+	Species A A(genericMod~0) #A
+	Species B A(genericMod~B) #B
+end observables
+begin functions
+	functionRate0() = if(1.0>= 0,1.0,0)
+	functionRate0m() = if(if(A>0,1.0/A,0)< 0,-(if(A>0,1.0/A,0)),0)
+	functionRate1() = if(if(A>0,0.333333333333/A,0)>= 0,if(A>0,0.333333333333/A,0),0)
+	functionRate1m() = if(if(B>0,0.333333333333/B,0)< 0,-(if(B>0,0.333333333333/B,0)),0)
+	functionRate2() = if(if(A>0,0.333333333333/A,0)>= 0,if(A>0,0.333333333333/A,0),0)
+	functionRate2m() = if(if(B>0,0.333333333333/B,0)< 0,-(if(B>0,0.333333333333/B,0)),0)
+	functionRate3() = if(if(A>0,0.333333333333/A,0)>= 0,if(A>0,0.333333333333/A,0),0)
+	functionRate3m() = if(if(B>0,0.333333333333/B,0)< 0,-(if(B>0,0.333333333333/B,0)),0)
+	functionRate4() = if(if(B>0,1.0/B,0)>= 0,if(B>0,1.0/B,0),0)
+	functionRate4m() = if(1.0< 0,-(1.0),0)
+end functions
+begin reaction rules
+	v1: 0  <-> A(genericMod~0)@cell functionRate0(),functionRate0m()
+	v2: A(genericMod~0) <-> A(genericMod~B) functionRate1(),functionRate1m()
+	v3: A(genericMod~0) <-> A(genericMod~B) functionRate2(),functionRate2m()
+	v4: A(genericMod~0) <-> A(genericMod~B) functionRate3(),functionRate3m()
+	v5: A(genericMod~B)@cell <-> 0  functionRate4(),functionRate4m()
+end reaction rules
+end model

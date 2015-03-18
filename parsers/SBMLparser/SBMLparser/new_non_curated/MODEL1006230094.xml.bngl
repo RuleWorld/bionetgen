@@ -1,0 +1,60 @@
+###
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 4 molecules and 4 rules'
+#@creatorName:'Lloyd Catherine'
+#@creatorEmail:'c.lloyd@auckland.ac.nz'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1006230094', 'http://identifiers.org/pubmed/12706524']
+###
+begin model
+begin parameters
+	k 10.0
+	r 0.5
+	d 0.1
+	gamma 1.0
+	lambda 1.0
+	delta_1 0.1
+	delta_2 1.5
+	eta 2.0
+	epsilon 1.0
+	q 0.5
+	mu 0.1
+	alpha 0.05
+end parameters
+begin compartments
+	COMpartment  3  1.0
+end compartments
+begin molecule types
+	T
+	A
+	A_star
+	C
+end molecule types
+begin seed species
+	T@COMpartment 0.1
+	A@COMpartment 1.0
+	A_star@COMpartment 2.0
+	C@COMpartment 0.015
+end seed species
+begin observables
+	Species T T
+	Species A A
+	Species A_star A_star
+	Species C C
+end observables
+begin functions
+	R() = C * A_star / (q * 1 * T)
+	arRateT() = r * T * (1 -T * 1 / k) -d * T
+	armRateT() = if(T>0,(gamma * T * C)/T,0)
+	arRateA() = lambda -delta_1 * A
+	armRateA() = if(A>0,(alpha * A * T)/A,0)
+	arRateA_star() = alpha * A * T
+	armRateA_star() = delta_2
+	arRateC() = eta * A_star * C / (epsilon * C + 1) -q * T * C
+	armRateC() = mu
+end functions
+begin reaction rules
+	0  <-> T() arRateT,armRateT #rateLaw
+	0  <-> A() arRateA,armRateA #rateLaw
+	0  <-> A_star() arRateA_star,armRateA_star #rateLaw
+	0  <-> C() arRateC,armRateC #rateLaw
+end reaction rules
+end model

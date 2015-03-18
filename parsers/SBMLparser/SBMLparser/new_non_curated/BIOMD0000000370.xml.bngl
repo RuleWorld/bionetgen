@@ -1,0 +1,279 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/obo.go/GO:0000278']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/4932']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 32 molecules and 0 reactions. The translated model has 25 molecules and 24 rules'
+#@creatorEmail:'viji@ebi.ac.uk'
+#@creatorName:'Chelliah Vijayalakshmi'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1111030000', 'http://identifiers.org/biomodels.db/BIOMD0000000370', 'http://identifiers.org/pubmed/21288956', 'http://identifiers.org/biomodels.db/BIOMD0000000409']
+###
+begin model
+begin parameters
+	PPT_1 1.0
+	kpp_1 0.1
+	ki_1 40.0
+	kdclb2_1 0.02
+	kdclb2_2 0.1
+	kdclb2_3 0.4
+	kdclb5_1 0.01
+	kdclb5_2 1.0
+	kdsic_1 2.0
+	kdsic_2 2.0
+	kdsic_3 0.04
+	kdsic_4 1.5
+	kdcdh_1 0.03
+	kdcdh_2 0.3
+	kpcdh_1 0.001
+	kpcdh_2 0.04
+	kpcdh_3 0.75
+	kaswi_1 0.2
+	kaswi_2 1.0
+	kiswi_1 0.01
+	kiswi_2 0.5
+	kiswi_3 0.75
+	kd_1 0.1
+	kd_2 0.45
+	Jnet_1 0.05
+	Net1T_1 1.0
+	kp_3 0.2
+	kp_4 3.0
+	kexp_1 0.01
+	kexp_2 20.0
+	ksclb2_1 0.015
+	ksclb2_2 0.005
+	ksclb5_1 0.01
+	ksclb5_2 0.002
+	kscln_1 0.1
+	kscln_2 0.01
+	kdcln_1 0.25
+	ks20_1 0.05
+	ks20_2 0.001
+	kd20_1 0.1
+	kd20_2 1.0
+	Jcdh_1 0.01
+	kssic_1 0.2
+	kssic_2 0.004
+	kasic2_1 40.0
+	kdsic2_1 0.1
+	kasic5_1 10.0
+	kdsic5_1 0.1
+	Jswi_1 0.1
+	ksmcm_1 1.0
+	ksmcm_3 0.01
+	kdmcm_1 0.25
+	Jmcm_1 0.01
+	Jmbf_1 0.01
+	kambf_1 0.1
+	kimbf_1 0.5
+	kimbf_3 0.5
+	kspds_1 0.01
+	kspds_2 0.006
+	kdpds_1 0.01
+	kdpds_2 2.0
+	ksesp_1 0.001
+	kdesp_1 0.004
+	lapds_1 500.0
+	ldpds_1 1.0
+	kspolo_1 0.05
+	kspolo_2 0.001
+	kdpolo_1 0.05
+	kdpolo_2 0.5
+	Jpolo_1 0.1
+	kapolo_2 1.0
+	kipolo_1 0.1
+	kp_1 2.0
+	lanet_1 500.0
+	ldnet_1 1.0
+	kimp_1 1.0
+	Jtem1_1 0.005
+	katem_2 0.6
+	kitem_1 20.0
+	kitem_2 1.0
+	kitem_3 0.1
+	Jcdc15_1 1.0
+	kac15_1 0.03
+	kac15_2 0.5
+	kic15_1 0.03
+	kic15_2 0.2
+	lamen_1 100.0
+	ldmen_1 0.1
+	Cdc14T_1 0.5
+	Swi5T_1 1.0
+	kimbf_2 0
+	kapolo_1 0
+	katem_1 0
+	Clb2nd_1 0
+end parameters
+begin compartments
+	cell_1  3  1.0
+end compartments
+begin molecule types
+	Clb2T()
+	Clb5T()
+	Cln()
+	Cdc20()
+	Cdh1()
+	Sic1T()
+	Trim2()
+	Trim5()
+	Swi5()
+	Mcm()
+	MBF()
+	Pds1T()
+	Esp1T()
+	PoloT()
+	Polo()
+	Net1dep()
+	Net1pp()
+	RENT()
+	RENTp()
+	Cdc14n()
+	Tem1()
+	Cdc15()
+	MEN()
+	Esp1b()
+	Net1p()
+end molecule types
+begin seed species
+	@cell_1:Clb2T() 0.999107 #Clb2T #Clb2T_1
+	@cell_1:Clb5T() 0.201977 #Clb5T #Clb5T_1
+	@cell_1:Cln() 0.04079 #Cln #Cln_1
+	@cell_1:Sic1T() 0.001683 #Sic1T #Sic1T_1
+	@cell_1:Trim2() 0.00145 #Trim2 #Trim2_1
+	@cell_1:Mcm() 0.996743 #Mcm #Mcm_1
+	@cell_1:MBF() 0.001977 #MBF #MBF_1
+	@cell_1:Pds1T() 0.601977 #Pds1T #Pds1T_1
+	@cell_1:Esp1T() 0.25 #Esp1T #Esp1T_1
+	@cell_1:PoloT() 1.0 #PoloT #PoloT_1
+	@cell_1:Polo() 1.0 #Polo #Polo_1
+	@cell_1:Net1dep() 0.0119 #Net1dep #Net1dep_1
+	@cell_1:Net1pp() 0.0119 #Net1pp #Net1pp_1
+	@cell_1:RENT() 0.483 #RENT #RENT_1
+	@cell_1:RENTp() 0.014 #RENTp #RENTp_1
+	@cell_1:Cdc14n() 0.00214 #Cdc14n #Cdc14n_1
+	@cell_1:Tem1() 1.0 #Tem1 #Tem1_1
+	@cell_1:Cdc15() 0.933 #Cdc15 #Cdc15_1
+	@cell_1:Esp1b() 0.24857 #Esp1b #Esp1b_1
+	@cell_1:Net1p() 0.013 #Net1p #Net1p_1
+end seed species
+begin observables
+	Species Clb2T Clb2T() #Clb2T
+	Species Clb5T Clb5T() #Clb5T
+	Species Cln Cln() #Cln
+	Species Cdc20 Cdc20() #Cdc20
+	Species Cdh1 Cdh1() #Cdh1
+	Species Sic1T Sic1T() #Sic1T
+	Species Trim2 Trim2() #Trim2
+	Species Trim5 Trim5() #Trim5
+	Species Swi5 Swi5() #Swi5
+	Species Mcm Mcm() #Mcm
+	Species MBF MBF() #MBF
+	Species Pds1T Pds1T() #Pds1T
+	Species Esp1T Esp1T() #Esp1T
+	Species PoloT PoloT() #PoloT
+	Species Polo Polo() #Polo
+	Species Net1dep Net1dep() #Net1dep
+	Species Net1pp Net1pp() #Net1pp
+	Species RENT RENT() #RENT
+	Species RENTp RENTp() #RENTp
+	Species Cdc14n Cdc14n() #Cdc14n
+	Species Tem1 Tem1() #Tem1
+	Species Cdc15 Cdc15() #Cdc15
+	Species MEN MEN() #MEN
+	Species Esp1b Esp1b() #Esp1b
+	Species Net1p Net1p() #Net1p
+end observables
+begin functions
+	V2_1() = kdclb2_1 + kdclb2_2 * Cdc20 + kdclb2_3 * Cdh1
+	Cdc14c() = Cdc14T_1 -Cdc14n -RENT
+	Sic1() = Sic1T -Trim2 -Trim5
+	Clb2() = Clb2T + Clb2nd_1 -Trim2
+	Clb5() = Clb5T -Trim5
+	Pds1() = Pds1T -Esp1b
+	Esp1() = Esp1T -Esp1b
+	Vexp_1() = kexp_1 + kexp_2 * MEN
+	V6_1() = kdclb5_1 + kdclb5_2 * Cdc20
+	Net1() = Net1T_1 -Net1p -RENT -Net1pp
+	arRateClb2T() = ksclb2_1 + ksclb2_2 * Mcm
+	arRateClb5T() = ksclb5_2 + ksclb5_1 * MBF
+	arRateCln() = kscln_2 + kscln_1 * MBF
+	armRateCln() = kdcln_1
+	arRateCdc20() = ks20_2 + ks20_1 * Mcm
+	armRateCdc20() = kd20_1 + kd20_2 * Cdh1
+	arRateSic1T() = kssic_2 + kssic_1 * Swi5
+	armRateMcm() = if(Mcm>0,(kdmcm_1 * Mcm / (Jmcm_1 + Mcm))/Mcm,0)
+	arRateMBF() = kambf_1 * (1 -MBF) / (Jmbf_1 + 1 -MBF)
+	arRatePds1T() = kspds_2 + kspds_1 * MBF
+	armRatePds1T() = kdpds_1 + kdpds_2 * Cdc20
+	arRateEsp1T() = ksesp_1
+	armRateEsp1T() = kdesp_1
+	armRateEsp1b() = ldpds_1 + kdesp_1 + kdpds_1 + kdpds_2 * Cdc20
+	arRatePoloT() = kspolo_2 + kspolo_1 * Mcm
+	armRatePoloT() = kdpolo_1 + kdpolo_2 * Cdh1
+	armRatePolo() = kdpolo_1 + kdpolo_2 * Cdh1
+	arRateNet1pp() = kp_1 * Polo * (Net1T_1 -Net1dep -Net1pp)
+	arRateRENT() = lanet_1 * (Net1T_1 -Net1pp -RENT) * Cdc14n -ldnet_1 * RENT
+	armRateRENT() = if(RENT>0,(kp_1 * Polo * RENTp)/RENT,0)
+	armRateRENTp() = kp_1 * Polo
+	armRateCdc14n() = 0
+	arRateTem1() = (katem_1 + katem_2 * Polo) * (1 -Tem1) / (Jtem1_1 + 1 -Tem1)
+	Vacdh_1() = kdcdh_1 * Cdc14n + kdcdh_2 * (Cdc14T_1 -Cdc14n -RENT)
+	PP_1() = PPT_1 * ((1 + kpp_1 * ki_1 * (Esp1T -Esp1b)) / (1 + ki_1 + (Esp1T -Esp1b)))
+	Vp_1() = (kp_3 * (Clb2T + Clb2nd_1 -Trim2) + kp_4 * MEN) / (Jnet_1 + Net1dep)
+	Vaswi_1() = kaswi_1 * Cdc14n + kaswi_2 * (Cdc14T_1 -Cdc14n -RENT)
+	armRateClb2T() = (kdclb2_1 + kdclb2_2 * Cdc20 + kdclb2_3 * Cdh1)
+	armRateClb5T() = (kdclb5_1 + kdclb5_2 * Cdc20)
+	arRateMcm() = (ksmcm_3 + ksmcm_1 * (Clb2T + Clb2nd_1 -Trim2)) * (1 -Mcm) / (Jmcm_1 + 1 -Mcm)
+	arRatePolo() = (kapolo_1 + kapolo_2 * (Clb2T + Clb2nd_1 -Trim2)) * (PoloT -Polo) / (Jpolo_1 + PoloT -Polo) -kipolo_1 * Polo / (Jpolo_1 + Polo)
+	armRateTem1() = (kitem_3 + kitem_2 / (1 + kitem_1 * (Esp1T -Esp1b))) / (Jtem1_1 + Tem1)
+	arRateCdc15() = (kac15_1 + kac15_2 * (Cdc14T_1 -Cdc14n -RENT)) * (1 -Cdc15) / (Jcdc15_1 + 1 -Cdc15)
+	armRateCdc15() = if(Cdc15>0,((kic15_1 + kic15_2 * (Clb2T + Clb2nd_1 -Trim2)) * Cdc15 / (Jcdc15_1 + Cdc15))/Cdc15,0)
+	arRateMEN() = lamen_1 * (Tem1 -MEN) * (Cdc15 -MEN) -ldmen_1 * MEN -(kitem_3 + kitem_2 / (1 + kitem_3 * (Esp1T -Esp1b))) / (Jtem1_1 + Tem1) * MEN
+	armRateMEN() = (kic15_1 + kic15_2 * (Clb2T + Clb2nd_1 -Trim2)) / (Jcdc15_1 + Cdc15)
+	Vdsic_1() = kdsic_3 + kdsic_1 * (Clb5T -Trim5) + kdsic_2 * (Clb2T + Clb2nd_1 -Trim2) + kdsic_4 * Cln
+	Vd_1() = (kd_2 * (PPT_1 * ((1 + kpp_1 * ki_1 * (Esp1T -Esp1b)) / (1 + ki_1 + (Esp1T -Esp1b)))) + kd_1 * Cdc14n) / (Jnet_1 + Net1T_1 -Net1dep)
+	Viswi_1() = kiswi_1 + kiswi_2 * (Clb2T + Clb2nd_1 -Trim2) + kiswi_3 * (Clb5T -Trim5)
+	Vicdh_1() = kpcdh_1 + kpcdh_2 * (Clb2T + Clb2nd_1 -Trim2) + kpcdh_3 * (Clb5T -Trim5)
+	arRateCdh1() = (kdcdh_1 * Cdc14n + kdcdh_2 * (Cdc14T_1 -Cdc14n -RENT)) * (1 -Cdh1) / (Jcdh_1 + 1 -Cdh1)
+	arRateTrim2() = kasic2_1 * (Clb2T + Clb2nd_1 -Trim2) * (Sic1T -Trim2 -Trim5)
+	arRateTrim5() = kasic5_1 * (Clb5T -Trim5) * (Sic1T -Trim2 -Trim5)
+	arRateSwi5() = (kaswi_1 * Cdc14n + kaswi_2 * (Cdc14T_1 -Cdc14n -RENT)) * (Swi5T_1 -Swi5) / (Jswi_1 + Swi5T_1 -Swi5)
+	armRateMBF() = if(MBF>0,((kimbf_1 * (Clb2T + Clb2nd_1 -Trim2) + kimbf_3 * (Clb5T -Trim5)) * MBF / (Jmbf_1 + MBF))/MBF,0)
+	arRateEsp1b() = lapds_1 * (Pds1T -Esp1b) * (Esp1T -Esp1b)
+	armRateNet1dep() = ((kp_3 * (Clb2T + Clb2nd_1 -Trim2) + kp_4 * MEN) / (Jnet_1 + Net1dep))
+	arRateCdc14n() = kp_1 * Polo * RENTp -lanet_1 * (Net1T_1 -Net1pp -RENT) * Cdc14n + ldnet_1 * RENT -(kexp_1 + kexp_2 * MEN) * Cdc14n + kimp_1 * (Cdc14T_1 -Cdc14n -RENT)
+	armRateCdh1() = if(Cdh1>0,((kpcdh_1 + kpcdh_2 * (Clb2T + Clb2nd_1 -Trim2) + kpcdh_3 * (Clb5T -Trim5)) * Cdh1 / (Jcdh_1 + Cdh1))/Cdh1,0)
+	armRateSic1T() = (kdsic_3 + kdsic_1 * (Clb5T -Trim5) + kdsic_2 * (Clb2T + Clb2nd_1 -Trim2) + kdsic_4 * Cln)
+	armRateSwi5() = if(Swi5>0,((kiswi_1 + kiswi_2 * (Clb2T + Clb2nd_1 -Trim2) + kiswi_3 * (Clb5T -Trim5)) * Swi5 / (Jswi_1 + Swi5))/Swi5,0)
+	arRateNet1dep() = ((kd_2 * (PPT_1 * ((1 + kpp_1 * ki_1 * (Esp1T -Esp1b)) / (1 + ki_1 + (Esp1T -Esp1b)))) + kd_1 * Cdc14n) / (Jnet_1 + Net1T_1 -Net1dep)) * (Net1T_1 -Net1dep)
+	armRateNet1pp() = ((kd_2 * (PPT_1 * ((1 + kpp_1 * ki_1 * (Esp1T -Esp1b)) / (1 + ki_1 + (Esp1T -Esp1b)))) + kd_1 * Cdc14n) / (Jnet_1 + Net1T_1 -Net1dep))
+	armRateTrim2() = kdsic2_1 + (kdclb2_1 + kdclb2_2 * Cdc20 + kdclb2_3 * Cdh1) + (kdsic_3 + kdsic_1 * (Clb5T -Trim5) + kdsic_2 * (Clb2T + Clb2nd_1 -Trim2) + kdsic_4 * Cln)
+	armRateTrim5() = kdsic5_1 + (kdclb5_1 + kdclb5_2 * Cdc20) + (kdsic_3 + kdsic_1 * (Clb5T -Trim5) + kdsic_2 * (Clb2T + Clb2nd_1 -Trim2) + kdsic_4 * Cln)
+	arRateRENTp() = ((kp_3 * (Clb2T + Clb2nd_1 -Trim2) + kp_4 * MEN) / (Jnet_1 + Net1dep)) * (RENT -RENTp) -((kd_2 * (PPT_1 * ((1 + kpp_1 * ki_1 * (Esp1T -Esp1b)) / (1 + ki_1 + (Esp1T -Esp1b)))) + kd_1 * Cdc14n) / (Jnet_1 + Net1T_1 -Net1dep)) * RENTp + lanet_1 * (Net1T_1 -Net1dep -Net1pp -RENTp) * Cdc14n -ldnet_1 * RENTp
+end functions
+begin reaction rules
+	0  <-> Clb2T()@cell_1 arRateClb2T,armRateClb2T #rateLaw
+	0  <-> Clb5T()@cell_1 arRateClb5T,armRateClb5T #rateLaw
+	0  <-> Cln()@cell_1 arRateCln,armRateCln #rateLaw
+	0  <-> Cdc20()@cell_1 arRateCdc20,armRateCdc20 #rateLaw
+	0  <-> Cdh1()@cell_1 arRateCdh1,armRateCdh1 #rateLaw
+	0  <-> Sic1T()@cell_1 arRateSic1T,armRateSic1T #rateLaw
+	0  <-> Trim2()@cell_1 arRateTrim2,armRateTrim2 #rateLaw
+	0  <-> Trim5()@cell_1 arRateTrim5,armRateTrim5 #rateLaw
+	0  <-> Swi5()@cell_1 arRateSwi5,armRateSwi5 #rateLaw
+	0  <-> Mcm()@cell_1 arRateMcm,armRateMcm #rateLaw
+	0  <-> MBF()@cell_1 arRateMBF,armRateMBF #rateLaw
+	0  <-> Pds1T()@cell_1 arRatePds1T,armRatePds1T #rateLaw
+	0  <-> Esp1T()@cell_1 arRateEsp1T,armRateEsp1T #rateLaw
+	0  <-> Esp1b()@cell_1 arRateEsp1b,armRateEsp1b #rateLaw
+	0  <-> PoloT()@cell_1 arRatePoloT,armRatePoloT #rateLaw
+	0  <-> Polo()@cell_1 arRatePolo,armRatePolo #rateLaw
+	0  <-> Net1dep()@cell_1 arRateNet1dep,armRateNet1dep #rateLaw
+	0  <-> Net1pp()@cell_1 arRateNet1pp,armRateNet1pp #rateLaw
+	0  <-> RENT()@cell_1 arRateRENT,armRateRENT #rateLaw
+	0  <-> RENTp()@cell_1 arRateRENTp,armRateRENTp #rateLaw
+	0  <-> Cdc14n()@cell_1 arRateCdc14n,armRateCdc14n #rateLaw
+	0  <-> Tem1()@cell_1 arRateTem1,armRateTem1 #rateLaw
+	0  <-> Cdc15()@cell_1 arRateCdc15,armRateCdc15 #rateLaw
+	0  <-> MEN()@cell_1 arRateMEN,armRateMEN #rateLaw
+end reaction rules
+end model

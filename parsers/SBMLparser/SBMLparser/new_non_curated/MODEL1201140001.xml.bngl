@@ -1,0 +1,64 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1201140001', 'http://identifiers.org/pubmed/11497161']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 2 molecules and 2 rules'
+###
+begin model
+begin parameters
+	G 5.0
+	x 0.1
+	V 3.8
+	D_G 6.6e-06
+	D_I 2.1e-06
+	#J_infinity 2.1e-06
+	J_tau 20.0
+	K_inh 1e-06
+	Vm 0.24
+	Km 9.8
+	V1 120.0
+	K1 1.4
+	Ki 4e-05
+	V2 32.0
+	K2 17.0
+	Vs 0.034
+	Ks 0.13
+	L 0.01
+	time_environment 0
+	rho 0
+	A 0
+	B 0
+	I 0
+	C 0
+	D 0
+	Jm 0
+end parameters
+begin compartments
+	COMpartment  3  1.0
+end compartments
+begin molecule types
+	G_i
+	J
+end molecule types
+begin seed species
+	G_i@COMpartment 0
+	J@COMpartment 0
+end seed species
+begin observables
+	Species G_i G_i
+	Species J J
+end observables
+begin functions
+	Rm() = rho * (Vm * G_i / (Km + G_i))
+	J_infinity() = K_inh / (K_inh + I)
+	R1() = rho * (V1 * (G -G_i) / ((K1 + G_i) * (1 + G / K1))) * (I / (Ki + I))
+	R2() = rho * (V2 * (G * Jm -G_i) / ((K2 + G_i) * (1 + G / K2)))
+	armRateG_i() = 0
+	armRateJ() = 0
+	Rs() = Vs*((((rho * (Vm * G_i / (Km + G_i)))) ^ (4))+((rho) ^ (4))*((L) ^ (4)))/((((rho * (Vm * G_i / (Km + G_i)))) ^ (4))+((rho) ^ (4))*((Ks) ^ (4))+((rho) ^ (4))*((L) ^ (4)))
+	arRateJ() = J_tau * ((K_inh / (K_inh + I)) -J)
+	arRateG_i() = ((rho * (V1 * (G -G_i) / ((K1 + G_i) * (1 + G / K1))) * (I / (Ki + I))) + (rho * (V2 * (G * Jm -G_i) / ((K2 + G_i) * (1 + G / K2)))) -(rho * (Vm * G_i / (Km + G_i)))) / rho
+end functions
+begin reaction rules
+	0  <-> G_i() arRateG_i,armRateG_i #rateLaw
+	0  <-> J() arRateJ,armRateJ #rateLaw
+end reaction rules
+end model

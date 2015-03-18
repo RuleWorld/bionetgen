@@ -1,0 +1,49 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/reactome/REACT_2137.2']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/9606']
+#@BQB_IS_PART_OF:['http://identifiers.org/kegg.pathway/hsa04110']
+#@creatorName:'Endler Lukas'
+#@creatorEmail:'lukas@ebi.ac.uk'
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 5 molecules and 3 reactions. The translated model has 3 molecules and 3 rules'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL1667525941', 'http://identifiers.org/pubmed/18295960', 'http://identifiers.org/biomodels.db/BIOMD0000000194']
+###
+begin model
+begin parameters
+	eta_T 0.01
+	gamma_T 1000000000.0
+	alpha_T 200000.0
+	beta_T 0.2
+	u 1.0
+	const_val_1 1.0
+	const_val_0 0
+end parameters
+begin compartments
+	Cytoplasm  3  1.0
+end compartments
+begin molecule types
+	Mad1_C_Mad2(o_mad2)
+	O_Mad2(mad1_c_mad2)
+	Cdc20(genericMod~Cdc20_C_Mad2~0)
+end molecule types
+begin seed species
+	@Cytoplasm:Mad1_C_Mad2(o_mad2) 5e-08 #Mad1_C_Mad2 #Mad1_CMad2
+	@Cytoplasm:O_Mad2(mad1_c_mad2) 1.5e-07 #O_Mad2 #OMad2
+	@Cytoplasm:Cdc20(genericMod~0) 2.2e-07 #Cdc20 #Cdc20
+end seed species
+begin observables
+	Species Mad1_C_Mad2 Mad1_C_Mad2(o_mad2) #Mad1:C-Mad2
+	Species O_Mad2 O_Mad2(mad1_c_mad2) #O-Mad2
+	Species Mad1_C_Mad2_O_Mad2m Mad1_C_Mad2(o_mad2!0).O_Mad2(mad1_c_mad2!0) #Mad1:C-Mad2:O-Mad2*
+	Species Cdc20 Cdc20(genericMod~0) #Cdc20
+	Species Cdc20_C_Mad2 Cdc20(genericMod~Cdc20_C_Mad2) #Cdc20:C-Mad2
+end observables
+begin functions
+	functionRate0() = u * alpha_T
+	functionRate1() = u * gamma_T
+end functions
+begin reaction rules
+	R6: Mad1_C_Mad2(o_mad2) + O_Mad2(mad1_c_mad2) <-> Mad1_C_Mad2(o_mad2!0).O_Mad2(mad1_c_mad2!0) functionRate0(),beta_T
+	R7: Mad1_C_Mad2(o_mad2!0).O_Mad2(mad1_c_mad2!0) + Cdc20(genericMod~0) -> Mad1_C_Mad2(o_mad2) + Cdc20(genericMod~Cdc20_C_Mad2) functionRate1()
+	R8: Cdc20(genericMod~Cdc20_C_Mad2) -> Cdc20(genericMod~0) + O_Mad2(mad1_c_mad2) eta_T
+end reaction rules
+end model

@@ -1,0 +1,8 @@
+ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
+ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
+SIMULATION:CRITICAL.2: Boundary condition/assignment type variables (y1) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.3: Boundary condition/assignment type variables (y2) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.4: Boundary condition/assignment type variables (x1_bar) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.5: Boundary condition/assignment type variables (x2_bar) are not properly                     supported in BioNetGen simulator
+SIMULATION:CRITICAL.6: Boundary condition/assignment type variables (gamma) are not properly                     supported in BioNetGen simulator
+INFO:Summary.7: File contains 3 molecules out of 3 original SBML species

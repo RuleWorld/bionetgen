@@ -1,0 +1,50 @@
+Atomization:Warning.0: inverting order of [['IKKIkBa'], ['IKK']] for lexical analysis
+Atomization:Warning.1: inverting order of [['IKKIkBb'], ['IKK']] for lexical analysis
+Atomization:Warning.2: inverting order of [['IKKIkBe'], ['IKK']] for lexical analysis
+Atomization:Warning.3: inverting order of [['IkBanNFkBn'], ['IkBaNFkB']] for lexical analysis
+INFO:Atomization.4: added induced naming convention [['IkBaNFkB'], ['IkBanNFkBn']]
+Atomization:Warning.5: inverting order of [['IkBaNFkB'], ['NFkB']] for lexical analysis
+Atomization:Warning.6: inverting order of [['IkBan'], ['IkBa']] for lexical analysis
+INFO:Atomization.7: added induced naming convention [['IkBa'], ['IkBan']]
+INFO:Atomization.8: added induced naming convention [['IkBa'], ['IkBan']]
+Atomization:Warning.9: inverting order of [['IkBbnNFkBn'], ['IkBbNFkB']] for lexical analysis
+INFO:Atomization.10: added induced naming convention [['IkBbNFkB'], ['IkBbnNFkBn']]
+Atomization:Warning.11: inverting order of [['IkBbNFkB'], ['NFkB']] for lexical analysis
+Atomization:Warning.12: inverting order of [['IkBbn'], ['IkBb']] for lexical analysis
+INFO:Atomization.13: added induced naming convention [['IkBb'], ['IkBbn']]
+INFO:Atomization.14: added induced naming convention [['IkBb'], ['IkBbn']]
+Atomization:Warning.15: inverting order of [['IkBenNFkBn'], ['IkBeNFkB']] for lexical analysis
+INFO:Atomization.16: added induced naming convention [['IkBeNFkB'], ['IkBenNFkBn']]
+Atomization:Warning.17: inverting order of [['IkBeNFkB'], ['NFkB']] for lexical analysis
+Atomization:Warning.18: inverting order of [['IkBen'], ['IkBe']] for lexical analysis
+INFO:Atomization.19: added induced naming convention [['IkBe'], ['IkBen']]
+INFO:Atomization.20: added induced naming convention [['IkBe'], ['IkBen']]
+Atomization:Warning.21: inverting order of [['NFkBn'], ['NFkB']] for lexical analysis
+INFO:Atomization.22: added induced naming convention [['NFkB'], ['NFkBn']]
+INFO:Atomization.23: added induced naming convention [['NFkB'], ['NFkBn']]
+WARNING:Atomization.24: Are these actually the same? IKKIkBeNFkB=[['NFkB', 'IKKIkBe'], ['IKK', 'IkBeNFkB']].
+WARNING:Atomization.25: Are these actually the same? IKKIkBaNFkB=[['NFkB', 'IKKIkBa'], ['IkBaNFkB', 'IKK']].
+WARNING:Atomization.26: Are these actually the same? IKKIkBbNFkB=[['IKKIkBb', 'NFkB'], ['IkBbNFkB', 'IKK']].
+ATOMIZATION:WARNING.27: adding forced transformation: source:[['source']]:IkBa
+ATOMIZATION:WARNING.28: adding forced transformation: source:[['source']]:IkBe
+ATOMIZATION:WARNING.29: adding forced transformation: source:[['source']]:IkBb
+ATOMIZATION:WARNING.30: adding forced transformation: source:[['source']]:IkBbt
+ATOMIZATION:WARNING.31: adding forced transformation: source:[['source']]:IkBat
+ATOMIZATION:WARNING.32: adding forced transformation: source:[['source']]:IkBet
+ATOMIZATION:WARNING.33: adding forced transformation: NFkB:[['NFkB']]:IkBeNFkB
+ATOMIZATION:WARNING.34: adding forced transformation: source:[['IkBat']]:sink
+ATOMIZATION:CRITICAL.35: unregistered modification: sink:[['IkBat']]
+ATOMIZATION:WARNING.36: adding forced transformation: source:[['IkBb']]:IkBbn
+ATOMIZATION:WARNING.37: adding forced transformation: source:[['IkBa']]:IkBan
+ATOMIZATION:WARNING.38: adding forced transformation: source:[['IkBe']]:IkBen
+ATOMIZATION:WARNING.39: adding forced transformation: source:[['IkBa']]:IkBaNFkB
+ATOMIZATION:CRITICAL.40: unregistered modification: IkBaNFkB:[['IkBa']]
+ATOMIZATION:WARNING.41: adding forced transformation: source:[['IkBb']]:IkBbNFkB
+ATOMIZATION:CRITICAL.42: unregistered modification: IkBbNFkB:[['IkBb']]
+ATOMIZATION:WARNING.43: adding forced transformation: NFkB:[['IkBeNFkB']]:IkBenNFkBn
+ATOMIZATION:WARNING.44: adding forced transformation: source:[['IkBbNFkB']]:IkBbnNFkBn
+ATOMIZATION:CRITICAL.45: unregistered modification: IkBbnNFkBn:[['IkBbNFkB']]
+ATOMIZATION:WARNING.46: adding forced transformation: source:[['IkBaNFkB']]:IkBanNFkBn
+ATOMIZATION:CRITICAL.47: unregistered modification: IkBanNFkBn:[['IkBaNFkB']]
+WARNING:Atomization.48: We don't know how ['IKK', 'source'] and ['NFkB'] bind together and there's no relevant BioGrid information. Defaulting to largest molecule
+INFO:Summary.49: File contains 3 molecules out of 26 original SBML species

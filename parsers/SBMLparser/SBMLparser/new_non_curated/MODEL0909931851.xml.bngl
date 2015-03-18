@@ -1,0 +1,39 @@
+###
+#@BQB_HAS_TAXON:['http://identifiers.org/pubmed/4334846', 'http://identifiers.org/biomodels.db/MODEL0909931851']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 0 molecules and 0 reactions. The translated model has 1 molecules and 1 rules'
+###
+begin model
+begin parameters
+	PRA 0.00852183
+	AH10 0.333
+	AH11 1000.0
+	AH9 1.0
+	tu 1.0
+	ATRFBM 0
+	ATRVM 0
+end parameters
+begin compartments
+	Compartment  3  1.0
+end compartments
+begin molecule types
+	AHY
+end molecule types
+begin seed species
+	AHY@Compartment 0.301963
+end seed species
+begin observables
+	Species AHY AHY
+end observables
+begin functions
+	AHZ1() = ((abs(PRA)) ^ (AH10))*AH9
+	armRateAHY() = 0
+	AHZ() = if((PRA<0),(-(((abs(PRA)) ^ (AH10))*AH9)),((((abs(PRA)) ^ (AH10))*AH9)))
+	AH7() = (if((PRA<0),(-(((abs(PRA)) ^ (AH10))*AH9)),((((abs(PRA)) ^ (AH10))*AH9)))) -AHY
+	arRateAHY() = ((if((PRA<0),(-(((abs(PRA)) ^ (AH10))*AH9)),((((abs(PRA)) ^ (AH10))*AH9)))) -AHY) / AH11 / tu
+	ATRVFB() = ((if((PRA<0),(-(((abs(PRA)) ^ (AH10))*AH9)),((((abs(PRA)) ^ (AH10))*AH9)))) -AHY) * ATRVM
+	ATRRFB() = ((if((PRA<0),(-(((abs(PRA)) ^ (AH10))*AH9)),((((abs(PRA)) ^ (AH10))*AH9)))) -AHY) * ATRFBM + 1
+end functions
+begin reaction rules
+	0  <-> AHY() arRateAHY,armRateAHY #rateLaw
+end reaction rules
+end model

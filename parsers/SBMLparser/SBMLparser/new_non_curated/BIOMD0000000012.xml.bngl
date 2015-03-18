@@ -1,0 +1,75 @@
+###
+#@BQB_IS_VERSION_OF:['http://identifiers.org/obo.go/GO:0040029']
+#@BQB_OCCURS_IN:['http://identifiers.org/taxonomy/562']
+#@notes:'This is an atomized translation of an SBML model created on 17/03/2015. The original model has 6 molecules and 12 reactions. The translated model has 6 molecules and 12 rules'
+#@creatorEmail:'lenov@ebi.ac.uk'
+#@creatorName:'Le Novre Nicolas'
+#@BQB_HAS_TAXON:['http://identifiers.org/biomodels.db/MODEL6615351360', 'http://identifiers.org/biomodels.db/BIOMD0000000012', 'http://identifiers.org/pubmed/10659856']
+###
+begin model
+begin parameters
+	#beta 0.2
+	#alpha0 0.2164
+	#alpha 216.404
+	eff 20.0
+	n 2.0
+	KM 40.0
+	tau_mRNA 2.0
+	tau_prot 10.0
+	ps_a 0.5
+	ps_0 0.0005
+end parameters
+begin compartments
+	cell  3  1.0
+end compartments
+begin molecule types
+	LacIprotein()
+	TetRprotein()
+	cIprotein()
+	LacImRNA()
+	TetRmRNA()
+	cImRNA()
+end molecule types
+begin seed species
+	@cell:TetRmRNA() 20.0 #TetRmRNA #Y
+end seed species
+begin observables
+	Species LacIprotein LacIprotein() #LacI protein
+	Species TetRprotein TetRprotein() #TetR protein
+	Species cIprotein cIprotein() #cI protein
+	Species LacImRNA LacImRNA() #LacI mRNA
+	Species TetRmRNA TetRmRNA() #TetR mRNA
+	Species cImRNA cImRNA() #cI mRNA
+end observables
+begin functions
+	a0_tr() = ps_0 * 60
+	t_ave() = tau_mRNA /  ln(2)
+	beta() = tau_mRNA / tau_prot
+	a_tr() = (ps_a -ps_0) * 60
+	kd_prot() =  ln(2) / tau_prot
+	kd_mRNA() =  ln(2) / tau_mRNA
+	k_tl() = eff / (tau_mRNA /  ln(2))
+	alpha0() = (ps_0 * 60) * eff * tau_prot / ( ln(2) * KM)
+	alpha() = ((ps_a -ps_0) * 60) * eff * tau_prot / ( ln(2) * KM)
+	functionRate3() = (eff / (tau_mRNA /  ln(2))) * LacImRNA
+	functionRate4() = (eff / (tau_mRNA /  ln(2))) * TetRmRNA
+	functionRate5() = (eff / (tau_mRNA /  ln(2))) * cImRNA
+	functionRate9() = (ps_0 * 60)+((ps_a -ps_0) * 60)*((KM) ^ (n))/(((KM) ^ (n))+((cIprotein) ^ (n)))
+	functionRate10() = (ps_0 * 60)+((ps_a -ps_0) * 60)*((KM) ^ (n))/(((KM) ^ (n))+((LacIprotein) ^ (n)))
+	functionRate11() = (ps_0 * 60)+((ps_a -ps_0) * 60)*((KM) ^ (n))/(((KM) ^ (n))+((TetRprotein) ^ (n)))
+end functions
+begin reaction rules
+	Reaction1: LacImRNA()@cell -> 0  kd_mRNA ()
+	Reaction2: TetRmRNA()@cell -> 0  kd_mRNA ()
+	Reaction3: cImRNA()@cell -> 0  kd_mRNA ()
+	Reaction4: 0  -> LacIprotein()@cell functionRate3()
+	Reaction5: 0  -> TetRprotein()@cell functionRate4()
+	Reaction6: 0  -> cIprotein()@cell functionRate5()
+	Reaction7: LacIprotein()@cell -> 0  kd_prot ()
+	Reaction8: TetRprotein()@cell -> 0  kd_prot ()
+	Reaction9: cIprotein()@cell -> 0  kd_prot ()
+	Reaction10: 0  -> LacImRNA()@cell functionRate9()
+	Reaction11: 0  -> TetRmRNA()@cell functionRate10()
+	Reaction12: 0  -> cImRNA()@cell functionRate11()
+end reaction rules
+end model
