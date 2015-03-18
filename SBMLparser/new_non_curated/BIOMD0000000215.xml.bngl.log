@@ -1,6 +1,0 @@
-INFO:Atomization.0: Lexical relationship inferred between                                     ['Rec_Prot', 'Tbet_Prot'], user information confirming it is required
-INFO:Atomization.1: Lexical relationship inferred between                                     ['Rec_Prot', 'Tbet_Prot'], user information confirming it is required
-INFO:Atomization.2: Lexical relationship inferred between                                     ['Rec_mRNA', 'Tbet_mRNA'], user information confirming it is required
-INFO:Atomization.3: Lexical relationship inferred between                                     ['Rec_mRNA', 'Tbet_mRNA'], user information confirming it is required
-WARNING:Simulation.4: Ag() reported as function, but usage is ambiguous
-INFO:Summary.5: File contains 6 molecules out of 6 original SBML species

@@ -1,7 +1,0 @@
-INFO:Atomization.0: added induced naming convention [['Y'], ['Yp']]
-Atomization:Warning.1: inverting order of [['Yp'], ['Y']] for lexical analysis
-INFO:Atomization.2: added induced naming convention [['Y'], ['Yp']]
-INFO:Atomization.3: added induced naming convention [['R'], ['Rp']]
-Atomization:Warning.4: inverting order of [['Rp'], ['R']] for lexical analysis
-INFO:Atomization.5: added induced naming convention [['R'], ['Rp']]
-INFO:Summary.6: File contains 4 molecules out of 6 original SBML species

@@ -1,5 +1,0 @@
-ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
-ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
-WARNING.2: Parameter VV7 0.00366525 corresponds both as a non zero parameter                             and a rate rule, verify behavior
-WARNING.3: Parameter VV6 0.0101913 corresponds both as a non zero parameter                             and a rate rule, verify behavior
-INFO:Summary.4: File contains 2 molecules out of 2 original SBML species

@@ -1,4 +1,0 @@
-ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
-ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
-SIMULATION:CRITICAL.2: Boundary condition/assignment type variables (Ft) are not properly                     supported in BioNetGen simulator
-INFO:Summary.3: File contains 3 molecules out of 3 original SBML species

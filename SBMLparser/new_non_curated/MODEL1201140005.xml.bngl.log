@@ -1,6 +1,0 @@
-ERROR:Simulation.0: Model contains no natural reactions, all reactions are produced by rules
-ERROR:Simulation.1: Model contains no natural reactions, all reactions are produced by rules
-WARNING.2: Parameter x1 1000.0 corresponds both as a non zero parameter                             and a rate rule, verify behavior
-WARNING.3: Parameter x2 0.1 corresponds both as a non zero parameter                             and a rate rule, verify behavior
-SIMULATION:CRITICAL.4: Boundary condition/assignment type variables (scatchard) are not properly                     supported in BioNetGen simulator
-INFO:Summary.5: File contains 4 molecules out of 4 original SBML species
