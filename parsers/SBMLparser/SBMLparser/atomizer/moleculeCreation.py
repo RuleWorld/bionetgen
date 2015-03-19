@@ -850,9 +850,8 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     #non lexical-analysis catalysis reactions
     if database.forceModificationFlag:
         for reaction, classification in zip(rules, database.classifications):
-            if len(reaction[0]) == 1 and len(reaction[1]) == 1:
-                preaction = list(parseReactions(reaction))
-
+            preaction = list(parseReactions(reaction))
+            if len(preaction[0]) == 1 and len(preaction[1]) == 1:
                 if (preaction[0][0] in [0,'0']) or (preaction[1][0] in [0,'0']):
                     continue
                 if preaction[1][0] in preaction[0][0]:
