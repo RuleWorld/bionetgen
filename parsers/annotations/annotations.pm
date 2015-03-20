@@ -4,7 +4,7 @@ use warnings;
 use YAML::Tiny;
 
 # Open the config
-my $yaml = YAML::Tiny->read( 'sample_annotations.yml' );
+my $yaml = YAML::Tiny->read( 'sample.yml' );
 
 
 for my $key ( keys %{ $yaml->[0] } ){

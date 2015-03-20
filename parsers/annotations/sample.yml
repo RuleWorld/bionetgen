@@ -27,10 +27,15 @@ PM:
   location: center
 
 EGF:
+  element: molecule type
   description: Molecule type defining Epidermal Growth Factors
   name: Epidermal Growth Factor
   external_database:
     - "http://identifiers.org/uniprot/P01133"
+
+EGF:
+  element: observable
+  description: observable counts the number of EGF in the system
 
 dimer:
   description: observable counts the number of EGFR-EGFR dimers in the system
@@ -40,6 +45,9 @@ reactant2:
 
 component2: #tags can be placed at any level
   description: EGFR dimerization domain is now occupied
+
+initialization1:
+  description: initializes the system with 10 egf molecules
 
 actions:
   simulate:

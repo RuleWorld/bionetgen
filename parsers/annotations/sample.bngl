@@ -1,34 +1,35 @@
 begin model
 begin parameters
-%%%k1:k1 10
-%%%kr1:kr1 10
+k1 10
+kr1 10
 k2 10
 kr2 10
 end parameters
 
 begin molecule types
-%%%EGF:EGF(egfr)
+EGF(egfr)
 EGFR(egf,egfr)
 end molecule types
 
 begin seed species
-@EC:EGF(egfr) 10
+@EC:EGF%%(egfr) 10 #%%initialization1
 @PM:EGFR(egf,egfr) 10
 end seed species
 
 begin compartments
-%%%EC:EC 3 1
-%%%PM:PM 2 0.5 EC
+EC 3 1
+PM 2 0.5 EC
 end compartments
 
 
 begin observables
-Species %%%dimer:dimer EGFR(egfr!1).EGFR(egfr!1)
+Species dimer EGFR(egfr!1).EGFR(egfr!1)
+Species EGF EGF
 end observables
 
 begin reaction rules
-EGF(egfr) + EGFR(egf,egfr) <-> EGF(egfr!1)EGFR(egf!1,egfr) k1,kr1
-EGFR(egf!+,egfr) + %%%reactant2:EGFR(egf!+,egfr) <-> EGFR(egf!+,egfr!1)EGFR(egf%%%component2!+,egfr!1) k2,kr2
+Rule1: EGF(egfr) + EGFR(egf,egfr) <-> EGF(egfr!1)EGFR(egf!1,egfr) k1,kr1
+EGFR(egf!+,egfr) + EGFR%%(egf!+,egfr) <-> EGFR(egf!+,egfr!1)EGFR(egf%%!+,egfr!1) k2,kr2 #%%[reactant2,component2]
 end reaction rules
 
 end model
