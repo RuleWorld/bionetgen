@@ -154,12 +154,14 @@ class SBML2BNGL:
 
 
   
-    '''
-    walks through a series of * nodes and removes the remainder reactant factors
-    arg:remainderPatterns: argumetns to be removed from the tree
-    it also changes references to time variables to the keyword 'Time'
-    '''
+
     def getPrunnedTree(self,math,remainderPatterns):
+        """
+        walks through a series of * nodes and removes the remainder reactant factors
+        arg:remainderPatterns: argumetns to be removed from the tree
+        it also changes references to time variables to the keyword 'Time'
+        """
+
         swapDict = {libsbml.AST_NAME_TIME:'Time'}
         for node in [x for x in math.getLeftChild(),math.getRightChild() if x != None]:
             if node.getType() in swapDict.keys():
@@ -279,6 +281,65 @@ class SBML2BNGL:
             rateR = '{0}*{1}'.format(rateR, int(highStoichoiMetryFactor))
         
         return rateR,math.getNumChildren()
+
+
+    def analyzeReactionRate(self,math,compartmentList,reversible,rReactant,rProduct):
+        """
+        This functions attempts to obtain the left and right hand sides of a rate reaction 
+        function. It also removes compartments and chemical factors from the function
+
+        Keyword arguments:
+            math -- the MathML math object
+            imag -- compartmentList: a list of all the compartments in the system
+            reversible -- a boolean indicated whether there's should be a backward rate
+            rReactant -- a string list of the reactants.
+            rProduct -- a string list of the products.
+        """
+        math = self.getPrunnedTree(math, compartmentList)
+        if reversible:
+            if math.getCharacter() == '-': 
+                if math.getNumChildren() > 1:
+                    rateL, nl = (self.removeFactorFromMath(
+                    math.getLeftChild().deepCopy(), rReactant, rProduct))
+                    rateR, nr = (self.removeFactorFromMath(
+                    math.getRightChild().deepCopy(), rProduct, rReactant))
+                else:
+                    rateR,rateL,nr,nl = self.analyzeReactionRate(math.getChild(0),compartmentList,reversible,rProduct,rReactant)
+            elif math.getCharacter() == '+' and math.getNumChildren()> 1:
+
+                if(self.getIsTreeNegative(math.getRightChild())):
+                    rateL, nl = (self.removeFactorFromMath(
+                    math.getLeftChild().deepCopy(), rReactant, rProduct))
+                    rateR, nr = (self.removeFactorFromMath(
+                    math.getRightChild().deepCopy(), rProduct, rReactant))
+                elif(self.getIsTreeNegative(math.getLeftChild())):
+                    rateR, nr = (self.removeFactorFromMath(
+                    math.getLeftChild().deepCopy(), rProduct, rReactant))
+                    rateL, nl = (self.removeFactorFromMath(
+                    math.getRightChild().deepCopy(), rReactant, rProduct))
+                else:
+                    rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
+                                                          rProduct)
+                    rateL = "if({0}>= 0,{0},0)".format(rateL)
+                    rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
+                                                          rReactant)
+                    rateR = "if({0}< 0,-({0}),0)".format(rateR)
+                    nl, nr = 1,1
+                    
+            else:
+                rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
+                                                      rProduct)
+                rateL = "if({0}>= 0,{0},0)".format(rateL)
+                rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
+                                                      rReactant)
+                rateR = "if({0}< 0,-({0}),0)".format(rateR)
+                nl, nr = 1,1
+        else:
+            rateL, nl = (self.removeFactorFromMath(math.deepCopy(),
+                                                 rReactant,rProduct))
+            rateR, nr = '0', '-1'
+        return rateL,rateR,nl,nr
+
         
     def __getRawRules(self, reaction,symmetryFactors,functionFlag):
         if self.useID:
@@ -315,46 +376,9 @@ class SBML2BNGL:
             for compartment in (self.model.getListOfCompartments()):
                 compartmentList.append(compartment.getId())
                 
-            #remove compartments from expression
-            math = self.getPrunnedTree(math, compartmentList)
-            if reversible:
-                if math.getCharacter() == '-' and math.getNumChildren() > 1:
-                    rateL, nl = (self.removeFactorFromMath(
-                    math.getLeftChild().deepCopy(), rReactant, rProduct))
-                    rateR, nr = (self.removeFactorFromMath(
-                    math.getRightChild().deepCopy(), rProduct, rReactant))
-                elif math.getCharacter() == '+' and math.getNumChildren()> 1:
-                    if(self.getIsTreeNegative(math.getRightChild())):
-                        rateL, nl = (self.removeFactorFromMath(
-                        math.getLeftChild().deepCopy(), rReactant, rProduct))
-                        rateR, nr = (self.removeFactorFromMath(
-                        math.getRightChild().deepCopy(), rProduct, rReactant))
-                    elif(self.getIsTreeNegative(math.getLeftChild())):
-                        rateR, nr = (self.removeFactorFromMath(
-                        math.getLeftChild().deepCopy(), rProduct, rReactant))
-                        rateL, nl = (self.removeFactorFromMath(
-                        math.getRightChild().deepCopy(), rReactant, rProduct))
-                    else:
-                        rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
-                                                              rProduct)
-                        rateL = "if({0}>= 0,{0},0)".format(rateL)
-                        rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
-                                                              rReactant)
-                        rateR = "if({0}< 0,-({0}),0)".format(rateR)
-                        nl, nr = 1,1
-                        
-                else:
-                    rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
-                                                          rProduct)
-                    rateL = "if({0}>= 0,{0},0)".format(rateL)
-                    rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
-                                                          rReactant)
-                    rateR = "if({0}< 0,-({0}),0)".format(rateR)
-                    nl, nr = 1,1
-            else:
-                rateL, nl = (self.removeFactorFromMath(math.deepCopy(),
-                                                     rReactant,rProduct))
-                rateR, nr = '0', '-1'
+            #remove compartments from expression. also separate left hand and right hand side
+            rateL,rateR,nl,nr = self.analyzeReactionRate(math,compartmentList,
+                reversible,rReactant,rProduct)           
             if symmetryFactors[0] > 1:
                 rateL = '({0})/{1}'.format(rateL,symmetryFactors[0])
             if symmetryFactors[1] > 1:
