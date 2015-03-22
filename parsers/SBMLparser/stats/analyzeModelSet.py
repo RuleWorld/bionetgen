@@ -6,9 +6,9 @@ from subprocess import call
 import multiprocessing as mp
 import progressbar
 import sys
+import glob
+import shutil
 
-import sys
-import os
 sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
 
@@ -71,13 +71,11 @@ def generateBNGXML(bnglFiles,format='BNGXML'):
             shutil.move(xmlfile, directory)
 
 
-import pickle
 
-def translate():
-    directory = 'XMLExamples/curated'
-    outputdirectory = 'complex2'
+
+def translate(inputdirectory,outputdirectory):
     restart = True
-    filenameset = getFiles(directory,'xml')
+    filenameset = getFiles(inputdirectory,'xml')
 
     if not restart:
         existingset = getFiles(outputdirectory,'bngl')
@@ -90,7 +88,7 @@ def translate():
     print(len(filenameset))
     
     futures = []
-    workers = mp.cpu_count()*2
+    workers = mp.cpu_count()-1
     progress = progressbar.ProgressBar(maxval= len(filenameset)).start()
     i = 0
     
@@ -110,7 +108,7 @@ def translate():
 
     
 if __name__ == "__main__":
-    #translate()    
+    translate('XMLExamples/curated','complex2')    
     #with open('new_non_curated/failure.dump','rb') as f:
     #    s = pickle.load(f)
     filenameset = getFiles('complex2','bngl')
