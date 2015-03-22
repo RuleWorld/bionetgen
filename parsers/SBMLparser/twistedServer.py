@@ -4,17 +4,17 @@ Created on Fri May 2 16:56:13 2014
 
 @author: proto
 """
+import sys
+sys.path.insert(0, 'SBMLparser')
 
-
-import libsbml2bngl
-import annotationExtender
+import SBMLparser.libsbml2bngl as libsbml2bngl
+import SBMLparser.utils.annotationExtender as annotationExtender
 # Restrict to a particular path.
 from twisted.web import xmlrpc, server
 from twisted.internet import reactor
 import threading
-import sys
-sys.path.insert(0, '../utils/')
-import consoleCommands
+import SBMLparser.utils.consoleCommands as consoleCommands
+
 import tempfile
 sys.path.insert(0, '../gml2sbgn/')
 import libsbgn
@@ -57,23 +57,26 @@ class AtomizerServer(xmlrpc.XMLRPC):
             print 'failure'
 
     def generateAnnotation(self,ticket,xmlFile):
-        try:
+
             print ticket
+            reaction = 'config/reactionDefinitions.json'
+
             pointer = tempfile.mkstemp(suffix='.xml',text=True)
             with open(pointer[1],'w' ) as f:
                 f.write(xmlFile)
-            
+            '''
             call(['python','annotationExtender.py',
             '-i',pointer[1],
             '-o',pointer[1]+'.xml'])
             with open(pointer[1]+'.xml','r') as f:
                 result = f.read()
-            #result = annotationExtender.expandAnnotation(pointer[1])
+            '''
+            bnglFile = libsbml2bngl.readFromString(xmlFile,
+                                                 reaction,False,None,True)
+
+            result = annotationExtender.expandAnnotation(pointer[1],bnglFile)
             self.addToDict(ticket,result)
-            print 'sucess',result
-        except:
-            self.addToDict(ticket,-5)
-            print 'failure'
+            print 'success',
 
 
     def generateGraph(self,ticket,bnglContents,graphtype):

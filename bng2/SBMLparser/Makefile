@@ -18,7 +18,11 @@ endif
 
 
 update:
-	python updateDistribution.py -c		
+
+	if ! test -d pyinstaller2 ; then \
+		unzip pyinstaller2.zip;   \
+	fi ;
+	python updateDistribution.py -c;
 
 
 install:
@@ -40,5 +44,12 @@ clean:
 	if test -d ${DIST} ; then \
 	    rm -rf ${DIST} ;          \
 	fi ;
+	if test -d SBMLparser ; then \
+	    rm -rf SBMLparser ;          \
+	fi ;	
+	if test -d pyinstaller2 ; then \
+	    rm -rf pyinstaller2 ;          \
+	fi ;	
+
 	find . -name '*.pyc' -delete
-	python updateDistribution.py -r	
+	

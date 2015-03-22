@@ -1,0 +1,54 @@
+model:
+  description: This is an example of model annotation
+  author: Jose Juan  Tapia
+  email: jjtapia@gmail.com
+  date: "March, 12 2015"
+  units: #model level units
+    species: molecule_counts
+    volume: um^3
+    area: um^2
+    reaction_rates:
+      unimolecular: /s
+
+k1:
+  description: forward parameter describing the binding rate of EGF to EGFR
+  units: um^3/s #overrides model level unit definition
+
+kr1:
+  description: backward parameter describing the unbinding rate of an EGF-EGFR complex
+
+EC:
+  description: Extra celular matrix/Bounding box
+  associated_geometry: cube
+
+PM:
+  description: Plasma membrane
+  associated_geometry: sphere
+  location: center
+
+EGF:
+  element: molecule type
+  description: Molecule type defining Epidermal Growth Factors
+  name: Epidermal Growth Factor
+  external_database:
+    - "http://identifiers.org/uniprot/P01133"
+
+EGF:
+  element: observable
+  description: observable counts the number of EGF in the system
+
+dimer:
+  description: observable counts the number of EGFR-EGFR dimers in the system
+
+reactant2:
+  description: EGFR needs to be bound to EGF for it to dimerize
+
+component2: #tags can be placed at any level
+  description: EGFR dimerization domain is now occupied
+
+initialization1:
+  description: initializes the system with 10 egf molecules
+
+actions:
+  simulate:
+    description: ode solver to see how things work
