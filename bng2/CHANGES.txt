@@ -1,121 +1,109 @@
 CHANGES to BioNetGen
-updated 13 December 2014
+updated 14 March 2015
 http://code.google.com/p/bionetgen
 
+== BioNetGen-2.2.6-stable ==
+
+==== Bug Fixes ====
+* An error is now thrown if an unrecognized block name is encountered.
+
 == BioNetGen-2.2.6-testing ==
+'''''2015 March 3'''''
 
 ==== New Features ====
 
+===== SBML-to-BNGL Translator =====
+* The SBML-to-BNGL translator can perform both a flat (one-to-one) translation 
+of an SBML model in terms of unstructured species and an "atomized" translation 
+that recovers the implicit molecular structure (binding sites and states) of the 
+species within the model. The translator can be accessed in the following three ways:
+# Using the readFile() BioNetGen action: The 'atomize' argument specifies whether a 
+flat or atomized translation is to be performed (default is flat, i.e., 
+<big><tt>atomize=>0</tt></big>). The translated model is written to [sbml_filename].bngl, 
+which is then read and loaded into memory. This allows additional actions [e.g., simulate(), 
+parameter_scan()] to be performed on the model if desired.  See the 
+[[BioNetGen_Actions_and_Arguments | BioNetGen Actions & Arguments Guide]] for a comprehensive 
+listing of all actions and arguments, including readFile().
+# Running the <big><tt>[BNGPATH]/bin/sbmlTranslator</tt></big> executable directly: 
+This provides the functionality described above along with additional customization flags. 
+Run <big><tt>./sbmlTranslator --help</tt></big> for a complete list of options with descriptions.
+# As a standalone web application at [http://ratomizer.appspot.com/translate http://ratomizer.appspot.com/translate].
+
+For further information, see the [[SBML2BNGL | SBML-to-BNGL documentation]].
+
 ===== Visualization Tools =====
-Visualization tools can be accessed using the visualize() action in a BNG 
-model or using the visualize.pl script. The output is generated in GML format 
-(Graph Modeling Language), which can be processed using graph editors such as yEd 
-(yworks.com/yed) or Cytoscape. Currently supported visualizations are 
-(i) rule visualization as a Petri net, (ii) rule visualization using graph operations, 
-(iii) contact map of the model, and (iv) regulatory graph of the model. 
+* Visualization tools can be accessed by calling the visualize() action in a BNGL model file 
+or running the <big><tt>visualize.pl</tt></big> script included in 
+<big><tt>[BNGPATH]/Perl2/Visualization</tt></big>. The output is generated in Graph Modeling 
+Language (GML) format, which can be processed by graph editors such as yEd 
+([http://www.yworks.com/yed www.yworks.com/yed]) and Cytoscape 
+([http://www.cytoscape.org www.cytoscape.org]). Currently supported visualizations are:
+** Model visualization as a contact map: <big><tt>visualize({type=>"contactmap"})</tt></big>
+** Model visualization as a regulatory graph: <big><tt>visualize({type=>"regulatory"})</tt></big>
+** Rule visualization as a Petri net: <big><tt>visualize({type=>"ruleviz_pattern"})</tt></big>
+** Rule visualization using graph operations: <big><tt>visualize({type=>"ruleviz_operation"})</tt></big>
 
-====== SBML import =====
-* SBML import can be accessed using the readFile action. The SBML import can obtain both a 1:1  translation of SBML's unstructured species. Additionally SBML import also gives the user to 'atomize' the input file that is, to recover the implicit molecular strucure (binding, modification component sites) of the SBML species. The resulting model is placed in a temporary file. Further modification within BioNetGen is possible through the usage of normal BNG actions.
+For further information, call <big><tt>visualize({help=>1})</tt></big> or run <big><tt>./visualize.pl --help</tt></big>.
 
-* Added /bin/sbmlTranslator, a stand-alone executable that provides the functionality described above along with some extra customization flags.
+===== Actions & Arguments =====
+* Added a 'reset_conc' argument to parameter_scan() that suppresses the call to resetConcentrations() 
+if set to 0 (default value is 1). This allows simulations in the scan to be started from the end point 
+of the previous simulation (used in bifurcate(); see below).
+* Added a new bifurcate() action that takes the same arguments as parameter_scan() (except 'reset_conc'). 
+The method automatically runs two scans, one from 'par_min' to 'par_max' and the other in the reverse 
+direction. Each simulation in the scans starts from the end point of the previous simulation by passing 
+<big><tt>reset_conc=>0</tt></big> to parameter_scan(). Output files are then generated for each observable 
+containing the parameter values vs. final observable values for both forward and reverse directions.
+* Modified readFile() to allow specific model blocks to be read using the 'blocks' argument.
+** Example: <big><tt>readFile({file=>"mymodel.bngl",blocks=>["parameters","seed species"]})</tt></big>
+* Added support for <big><tt>method=>"nf"</tt></big> in simulate(). This allows NFsim to be used in 
+parameter_scan() and bifurcate() as well.
+* Added support for compartments in writeSBML() and upgraded the supported version of SBML to Level 2 Version 3.
 
-For more information see the following page: http://bionetgen.org/index.php/SBML2BNGL
+==== Minor Changes ====
+* Upgraded muParser ([http://muparser.beltoforion.de http://muparser.beltoforion.de]) to version 2.2.4.
+* Modified parameter_scan() to set <big><tt>get_final_state=>0</tt></big> if <big><tt>reset_conc=>1</tt></big> 
+(the default). This prevents BNG from unnecessarily reading in the final species populations at the end of 
+NFsim simulations if they are going to be reset anyway. This is important as the read step can be extremely 
+expensive for models with high degrees of symmetry.
+* Modified setConcentration() to retain parameter names in expressions (rather than evaluating to a number). 
+This allows setConcentration() to be used with parameter_scan(). However, observables and functions are 
+still evaluated to numbers.
+* Modified NET file output to list all rules that generate a given reaction in the comment following each 
+line of the <big><tt>reactions</tt></big> block. This is useful when a reaction is generated by multiple 
+different rules. Often this is unintentional and can be problematic since BNG multiplies the rate constant 
+by the number of duplicates generated. Listing all rules that generate a reaction can help identify and 
+debug situations like this.
+* Added a default PLA configuration for <big><tt>simulate(method=>"pla")</tt></big>. If the 'pla_config' 
+argument is not defined, the configuration is set to <big><tt>fEuler|pre-neg:sb|eps=0.03</tt></big>, i.e., 
+a standard tau-leaping method (1st order) with species-based preleap tau calculations, negative-population 
+postleap checking, and error control parameter 'eps' of 0.03.
+* Modified <big><tt>validate_examples.pl</tt></big> to only report a stochastic validation failure if the 
+validation fails twice in a row.
+* Added functionality to readFile() to convert forward slashes (/) to back slashes (\), and vice versa, 
+in '''''relative''''' paths, depending on the OS. This improves cross-platform portability and makes it 
+easier to share models.
 
-
-===== Other changes =====
-
-* Upgraded muParser to version 2.2.4.
-
-* Added a 'reset_conc' argument to parameter_scan() that suppresses the call to
-resetConcentrations() if set to 0 (default value is 1). This allows simulations in 
-the scan to be started from the end point of the previous simulation (see below).
-
-* Modified parameter_scan() to set 'get_final_state=>0' if 'reset_conc=>1' (the default). 
-This prevents BNG from unnecessarily reading in the final species populations at the end 
-of NFsim simulations if they are going to be reset anyway. This is important as the read
-step can be extremely expensive for models with high degrees of symmetry.
-
-* Added a new bifurcate() action that takes the same arguments as parameter_scan() (except
-'reset_conc'). The method automatically runs two scans, one from 'par_min' to 'par_max' and 
-the other in the reverse direction. Each simulation in the scans starts from the end point 
-of the previous simulation by passing 'reset_conc=>1' to parameter_scan(). Output files are
-then generated for each observable containing the parameter values vs. final observable
-values for both forward and reverse directions.
-
-* Added support for compartments in writeSBML() and upgraded the supported
-version of SBML to Level 2 Version 3.
-
-* Modified 'setConcentration' action to retain parameter names in expressions 
-(rather than evaluating to a number). This allows 'setConcentration' to be used 
-with 'parameter_scan'. However, observables and functions are still evaluated to
-numbers.
-
-
-* Modified 'readFile' to process SBML input files using $BNG_HOME/bin/sbmlTranslator.
-'readFile' will also now throw an error if the input file extension is not any
-of ".bngl", ".net", or ".xml".
-
-* Modified 'readFile' to allow specific model blocks to be read using the 'blocks' argument.
-** Example: <big><tt>readFile({file=>"filename.bngl",blocks=>["parameters","seed species"]})</tt></big>
-
-* Modified NET file output to list all rules that generate a given 
-reaction in the comment following each line of the "reactions" block.
-This is useful when a reaction is generated by multiple different rules.
-Often this is unintentional and can be problematic since BNG multiplies 
-the rate constant by the number of duplicates generated. Listing all rules 
-that generate a reaction can help identify and debug situations like this.
-
-* Added instructions to Makefile.cmake for Mac OS X 10.9+ users regarding
-modifications that must be made to build Network3.
-
-* Added a default PLA configuration to 'simulate'. If 'method=>"pla"' and 
-'pla_config' is not defined, the configuration is set to "fEuler|pre-neg:sb|eps=0.03", 
-i.e., a standard tau-leaping method (1st order) with species-based preleap tau
-calculations, negative-population postleap checking, and error control parameter 
-'eps' of 0.03.
-
-* Added support for <big><tt>method=>"nf"</tt></big> in <big><tt>simulate</tt></big>
-action. This allows NFsim to be used in <big><tt>parameter_scan</tt></big> and
-<big><tt>bifurcate</tt></big> actions as well.
-
-* Modified validate_examples.pl to only report a stochastic validation failure if
-the validation fails twice in a row.
-
-* Added functionality to 'readFile' to convert forward slashes (/) to back slashes (\), 
-and vice versa, in '''''relative''''' paths, depending on the OS. This improves cross-platform 
-portability and makes it easier to share models.
-
-* Bug fixes
-
-** An error is now thrown if zero-order synthesis products do not have compartments.
-
-** An error is now thrown if an unrecognized block name is encountered.
-
-** BNG will no longer switch to "compartmental" mode if the <big><tt>compartments</tt></big> 
-block is empty.
-
-** Expressions for compartment volumes are now correctly evaluated when generating a BNG-XML file.
-
-** Fixed an inconsistency where forward referencing of parameters/observables was allowed for
-functions defined in the <big><tt>functions</tt></big> block but not in the 
-<big><tt>reaction rules</tt></big> block. 
-
-** Fixed a bug where in rare cases a function defined in the <big><tt>reaction rules</tt></big> 
-block would be typed as a 'ConstantExpression'. This would cause simulation to fail since it
-would be placed in the <big><tt>parameters</tt></big> block of the generated NET file.
-
-** Fixed a bug in the handling of max_stoich constraints. In versions 2.2.3, 2.2.4, and
-2.2.5, the constraints were sometimes ignored during network generation and
-complexes larger than the maximum specified could be constructed. Also added code to check that 
-molecule names passed in the argument are valid. This is useful since users often specify patterns, 
-such as 'A()', rather than the actual molecule name 'A'. Without an error message this can cause confusion.
-
-** Fixed a bug where BNG was not passing to NFsim the random seed that it was generating when the
-'seed' argument was not explicitly set by the user. This made it difficult to debug problems in
-NFsim since it was not outputting a random seed in the error messages.
+==== Bug Fixes ====
+* An error is now thrown if zero-order synthesis products do not have compartments.
+* BNG will no longer switch to "compartmental" mode if the <big><tt>compartments</tt></big> block is empty.
+* Expressions for compartment volumes are now correctly evaluated when generating a BNG-XML file.
+* Fixed an inconsistency where forward referencing of parameters/observables was allowed for functions 
+defined in the <big><tt>functions</tt></big> block but not in the <big><tt>reaction rules</tt></big> block. 
+* Fixed a bug where in rare cases a function defined in the <big><tt>reaction rules</tt></big> block would 
+be typed as a 'ConstantExpression'. This would cause simulation to fail since it would be placed in the 
+<big><tt>parameters</tt></big> block of the generated NET file.
+* Fixed a bug in the handling of 'max_stoich' constraints. In versions 2.2.3, 2.2.4, and 2.2.5, the 
+constraints were sometimes ignored during network generation and complexes larger than the maximum 
+specified could be constructed. Also added code to check that molecule names passed in the argument are 
+valid. This is useful since users often specify patterns, such as 'A()', rather than the actual molecule 
+name 'A'. Without an error message this can cause confusion.
+* Fixed a bug where BNG was not passing to NFsim the random seed that it was generating when the 'seed' 
+argument was not explicitly set by the user. This made it difficult to debug problems in NFsim since it 
+was not outputting a random seed in the error messages.
 
 == BioNetGen-2.2.5-stable ==
-'''''2013 July XX'''''
+'''''2013 July 30'''''
 
 ==== New Features ====
 
