@@ -53,11 +53,9 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         job_name = "jjtv_atomizer_{1}".format(outputdirectory,idx)
         walltime = "1:00:00"
         processors = "nodes=1:ppn={0}".format(queue_list[queue])
-        command = ['python analyzeModelSet','-i',pointer[1],
+        command = ['python stats/analyzeModelSet','-s',pointer[1],
             #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
-            '-c','config/reactionDefinitions.json',
-            '-n','config/namingConventions.json',
-            '-a']
+        ]
         command = ' '.join(command)
         job_string = """#!/bin/bash
         #PBS -N %s
@@ -82,13 +80,13 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         input.close()
         
         # Print your job and the system response to the screen as it's submitted
-        print(job_string)
-        print(output.read())
+        #print(job_string)
+        #print(output.read())
         
         time.sleep(0.05)
 
 if __name__ == "__main__":
     xmlfiles = getFiles("XMLExamples/curated","xml")
-    start_queue(xmlfiles,"complex3",'noc_64_core',128)
+    start_queue(xmlfiles[0:100],"complex3",'serial_queue',10)
 
 
