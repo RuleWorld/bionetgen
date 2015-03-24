@@ -67,8 +67,8 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
     echo Running on `hostname`
     echo workdir $PBS_O_WORKDIR
 
-	# #PBS -M jjtapia@gmail.com
-	# #PBS -m abe  # (a = abort, b = begin, e = end)
+	#PBS -M jjtapia@gmail.com
+	#PBS -m abe  # (a = abort, b = begin, e = end)
     PYTHONPATH=$PYTHONPATH:./:./SBMLparser
 	PATH=/usr/local/anaconda/bin:$PATH
         cd $PBS_O_WORKDIR
@@ -81,12 +81,13 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         
         # Print your job and the system response to the screen as it's submitted
         #print(job_string)
-        #print(output.read())
+        print(output.read())
         
         time.sleep(0.05)
 
 if __name__ == "__main__":
-    xmlfiles = getFiles("XMLExamples/curated","xml")
-    start_queue(xmlfiles[0:100],"complex3",'serial_queue',10)
+    xmlfiles = getFiles("XMLExamples/non_curated","xml")
+    queue = 'serial_queue'
+    start_queue(xmlfiles,"non_curated",queue,20)
 
 
