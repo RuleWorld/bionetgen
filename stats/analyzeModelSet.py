@@ -111,12 +111,13 @@ def loadFilesFromYAML(yamlFile):
         yamlsettings = yaml.load(f)
 
     print yamlsettings
-    return yamlsettings['inputfiles'],yamlsettings['outputdirectory']
+    return yamlsettings['inputfiles']
 
 
 def defineConsole():
     parser = argparse.ArgumentParser(description='SBML to BNGL translator')
     parser.add_argument('-s','--settings',type=str,help='settings file')
+    parser.add_argument('-o','--output',type=str,help='output directory')
 
     return parser    
 
@@ -125,7 +126,8 @@ if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
     if namespace.settings != None:
-        filenameset,outputdirectory = loadFilesFromYAML(namespace.settings)
+        filenameset = loadFilesFromYAML(namespace.settings)
+        outputdirectory = namespace.output
     else:
         filenameset = getFiles('XMLExamples/curated','xml')
         outputdirectory = 'complex2'

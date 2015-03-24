@@ -41,7 +41,6 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
     	fileNameSubset = fileNameSet[idx:min(idx+batchSize,len(fileNameSet))]
         settings = {}
         settings['inputfiles'] = fileNameSubset
-        settings['outputdirectory'] = outputdirectory
 
         pointer = tempfile.mkstemp(suffix='.yml',text=True,dir='./tmp')
         with open(pointer[1],'w') as f:
@@ -53,7 +52,7 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         job_name = "jjtv_atomizer_{1}".format(outputdirectory,idx)
         walltime = "1:00:00"
         processors = "nodes=1:ppn={0}".format(queue_list[queue])
-        command = ['python stats/analyzeModelSet.py','-s',pointer[1],
+        command = ['python stats/analyzeModelSet.py','-s',pointer[1],'-o','${SCRDIR}/'
             #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         ]
         command = ' '.join(command)
@@ -61,19 +60,30 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         #PBS -N %s
         #PBS -l walltime=%s
         #PBS -l %s
-	#$ -cwd
-	#PBS -q %s
+    	#$ -cwd
+    	#PBS -q %s
 
-    echo Running on `hostname`
-    echo workdir $PBS_O_WORKDIR
+        echo Running on `hostname`
+        echo workdir $PBS_O_WORKDIR
 
-	#PBS -M jjtapia@gmail.com
-	#PBS -m abe  # (a = abort, b = begin, e = end)
-    PYTHONPATH=$PYTHONPATH:./:./SBMLparser
-	PATH=/usr/local/anaconda/bin:$PATH
+        #PBS -M jjtapia@gmail.com
+        #PBS -m abe  # (a = abort, b = begin, e = end)
+        PYTHONPATH=$PYTHONPATH:./:./SBMLparser
+        PATH=/usr/local/anaconda/bin:$PATH
+        SCRDIR=/scr/$PBS_JOBID
+
+        #if the scratch drive doesn't exist (it shouldn't) make it.
+        if [[ ! -e $SCRDIR ]]; then
+                mkdir $SCRDIR
+        fi
+
         cd $PBS_O_WORKDIR
-	    cp $PBS_O_WORKDIR/
-        %s""" % (job_name, walltime, processors, queue,command)
+        echo scratch drive ${SCRDIR}
+
+        trap "mv * $PBS_O_WORKDIR/%s" EXIT
+        %s
+        cd ${SCRDIR}
+        """ % (job_name, walltime, processors, queue,outputdirectory,command)
         
         # Send job_string to qsub
         input.write(job_string)
