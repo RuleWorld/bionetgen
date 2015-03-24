@@ -64,15 +64,18 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         #PBS -l walltime=%s
         #PBS -l %s
 	#$ -cwd
-	#PBS -q noc_64_core
+	#PBS -q %s
+
+    echo Running on `hostname`
+    echo workdir $PBS_O_WORKDIR
+
 	# #PBS -M jjtapia@gmail.com
 	# #PBS -m abe  # (a = abort, b = begin, e = end)
     PYTHONPATH=$PYTHONPATH:./:./SBMLparser
 	PATH=/usr/local/anaconda/bin:$PATH
         cd /home/mscbio/jjtapia/workspace/bionetgen/parsers/SBMLparser/
 	
-        %s""" % (job_name, walltime, processors, 
-	 command)
+        %s""" % (job_name, walltime, processors, queue,command)
         
         # Send job_string to qsub
         input.write(job_string)
