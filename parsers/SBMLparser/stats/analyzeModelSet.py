@@ -8,10 +8,10 @@ import progressbar
 import sys
 import glob
 import shutil
-
+import yaml
 sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
-
+import argparse
 import SBMLparser.utils.consoleCommands as console
 
 def callSBML(filename):
@@ -73,9 +73,8 @@ def generateBNGXML(bnglFiles,format='BNGXML'):
 
 
 
-def translate(inputdirectory,outputdirectory):
+def translate(filenameset,outputdirectory):
     restart = True
-    filenameset = getFiles(inputdirectory,'xml')
 
     if not restart:
         existingset = getFiles(outputdirectory,'bngl')
@@ -91,7 +90,7 @@ def translate(inputdirectory,outputdirectory):
     workers = mp.cpu_count()-1
     progress = progressbar.ProgressBar(maxval= len(filenameset)).start()
     i = 0
-    
+    print 'running in {0} cores'.format(workers)
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
         for filename in filenameset:
           futures.append(executor.submit(callSBMLTranslator, filename,outputdirectory))
@@ -106,10 +105,33 @@ def translate(inputdirectory,outputdirectory):
         callSBMLTranslator(element,outputdirectory)
     '''
 
-    
+
+def loadFilesFromYAML(yamlFile):
+    with open(yamlFile,'r') as f:
+        yamlsettings = yaml.load(f)
+
+    print yamlsettings
+    return yamlsettings['inputfiles'],yamlsettings['outputdirectory']
+
+
+def defineConsole():
+    parser = argparse.ArgumentParser(description='SBML to BNGL translator')
+    parser.add_argument('-s','--settings',type=str,help='settings file')
+
+    return parser    
+
+
 if __name__ == "__main__":
-    translate('XMLExamples/curated','complex2')    
+    parser = defineConsole()
+    namespace = parser.parse_args()
+    if namespace.settings != None:
+        filenameset,outputdirectory = loadFilesFromYAML(namespace.settings)
+    else:
+        filenameset = getFiles('XMLExamples/curated','xml')
+        outputdirectory = 'complex2'
+
+    translate(filenameset,outputdirectory)    
     #with open('new_non_curated/failure.dump','rb') as f:
     #    s = pickle.load(f)
-    filenameset = getFiles('complex2','bngl')
-    generateBNGXML(filenameset)
+    #filenameset = getFiles('complex2','bngl')
+    #generateBNGXML(filenameset)

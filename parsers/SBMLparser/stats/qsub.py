@@ -3,7 +3,7 @@
 
 from popen2 import popen2
 import time
-
+    
 # If you want to be emailed by the system, include these in job_string:
 #PBS -M your_email@address
 #PBS -m abe  # (a = abort, b = begin, e = end)
@@ -29,24 +29,32 @@ def getFiles(directory,extension):
 
     return matches
 
+queue_list= {'noc_64_core':64,'serial_queue':1}
 import progressbar
-
-def start_queue(fileNameSet,outputdirectory):
+import tempfile
+import yaml
+def start_queue(fileNameSet,outputdirectory,queue,batchSize):
     print len(fileNameSet)
     progress = progressbar.ProgressBar()
-    for idx in progress(range(len(fileNameSet))):
-	fileName = fileNameSet[idx]
+    settings = 'settings.yaml'
+    for idx in progress(range(0,len(fileNameSet),batchSize)):
+    	fileNameSubset = fileNameSet[idx:min(idx+batchSize,len(fileNameSet))]
+        settings = {}
+        settings['inputfiles'] = fileNameSubset
+        settings['outputdirectory'] = outputdirectory
+
+        pointer = tempfile.mkstemp(suffix='.yml',text=True)
+        with open(pointer[1],'w') as f:
+            f.write(yaml.dump(settings))
         # Open a pipe to the qsub command.
         output, input = popen2('qsub')
         
         # Customize your options here
-        job_name = "jjtv_atomizer_{0}".format(fileName.split('/')[-1])
+        job_name = "jjtv_atomizer_{1}".format(outputdirectory,idx)
         walltime = "1:00:00"
-        processors = "nodes=1:ppn=1"
-        command = ['python -m sbmlTranslator','-i',
+        processors = "nodes=1:ppn={0}".format(queue_list[queue])
+        command = ['python analyzeModelSet','-i',pointer[1],
             #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
-            fileName,
-            '-o',os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '.bngl',
             '-c','config/reactionDefinitions.json',
             '-n','config/namingConventions.json',
             '-a']
@@ -56,11 +64,12 @@ def start_queue(fileNameSet,outputdirectory):
         #PBS -l walltime=%s
         #PBS -l %s
 	#$ -cwd
-	#PBS -q serial_queue
+	#PBS -q noc_64_core
 	# #PBS -M jjtapia@gmail.com
 	# #PBS -m abe  # (a = abort, b = begin, e = end)
+    PYTHONPATH=$PYTHONPATH:./:./SBMLparser
 	PATH=/usr/local/anaconda/bin:$PATH
-        cd /home/mscbio/jjtapia/workspace/bionetgen/parsers/SBMLparser/SBMLparser
+        cd /home/mscbio/jjtapia/workspace/bionetgen/parsers/SBMLparser/
 	
         %s""" % (job_name, walltime, processors, 
 	 command)
@@ -70,13 +79,13 @@ def start_queue(fileNameSet,outputdirectory):
         input.close()
         
         # Print your job and the system response to the screen as it's submitted
-        #print(job_string)
-        #print(output.read())
+        print(job_string)
+        print(output.read())
         
         time.sleep(0.05)
 
 if __name__ == "__main__":
-    xmlfiles = getFiles("../XMLExamples/biomodels/non_metabolic","xml")
-    start_queue(xmlfiles,"../non_metabolic")
+    xmlfiles = getFiles("XMLExamples/curated","xml")
+    start_queue(xmlfiles,"complex3",'noc_64_core',128)
 
 
