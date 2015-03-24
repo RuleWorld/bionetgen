@@ -43,7 +43,7 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         settings['inputfiles'] = fileNameSubset
         settings['outputdirectory'] = outputdirectory
 
-        pointer = tempfile.mkstemp(suffix='.yml',text=True)
+        pointer = tempfile.mkstemp(suffix='.yml',text=True,dir='./tmp')
         with open(pointer[1],'w') as f:
             f.write(yaml.dump(settings))
         # Open a pipe to the qsub command.
@@ -53,7 +53,7 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         job_name = "jjtv_atomizer_{1}".format(outputdirectory,idx)
         walltime = "1:00:00"
         processors = "nodes=1:ppn={0}".format(queue_list[queue])
-        command = ['python stats/analyzeModelSet','-s',pointer[1],
+        command = ['python stats/analyzeModelSet.py','-s',pointer[1],
             #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         ]
         command = ' '.join(command)
@@ -71,8 +71,8 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
 	# #PBS -m abe  # (a = abort, b = begin, e = end)
     PYTHONPATH=$PYTHONPATH:./:./SBMLparser
 	PATH=/usr/local/anaconda/bin:$PATH
-        cd /home/mscbio/jjtapia/workspace/bionetgen/parsers/SBMLparser/
-	
+        cd $PBS_O_WORKDIR
+	    cp $PBS_O_WORKDIR/
         %s""" % (job_name, walltime, processors, queue,command)
         
         # Send job_string to qsub
