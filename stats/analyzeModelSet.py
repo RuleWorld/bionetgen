@@ -53,17 +53,16 @@ def generateBNGXML(bnglFiles,format='BNGXML'):
     print 'converting {0} bnglfiles'.format(len(bnglFiles))
     futures = []
     workers = mp.cpu_count()-1
-    convertXML(bnglFiles[0])
     progress = progressbar.ProgressBar(maxval= len(bnglFiles)).start()
     i = 0
     print 'running in {0} cores'.format(workers)
-    #with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
 
-    for bngl in progress(range(len(bnglFiles))):
+        for bngl in progress(range(len(bnglFiles))):
             convertXML(bnglFiles[bngl])
-        #   futures.append(executor.submit(convertXML, bnglFiles[bngl]))
-        #for future in concurrent.futures.as_completed(futures,timeout=3600):
-        #    i+=1
+            futures.append(executor.submit(convertXML, bnglFiles[bngl]))
+        for future in concurrent.futures.as_completed(futures,timeout=3600):
+            i+=1
             progress.update(bngl)
     progress.finish()
 
@@ -133,11 +132,11 @@ if __name__ == "__main__":
         filenameset = loadFilesFromYAML(namespace.settings)
         outputdirectory = namespace.output
     else:
-        filenameset = getFiles('complex3','bngl')
+        filenameset = getFiles('complex2','bngl')
         outputdirectory = 'complex2'
 
     #translate(filenameset,outputdirectory)    
     #with open('new_non_curated/failure.dump','rb') as f:
     #    s = pickle.load(f)
     #filenameset = getFiles('complex2','bngl')
-    generateBNGXML(filenameset)
+    generateBNGXML(filenameset[0:2])
