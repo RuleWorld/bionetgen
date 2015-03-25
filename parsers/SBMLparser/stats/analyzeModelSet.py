@@ -45,22 +45,26 @@ def callSBMLTranslator(fileName,outputdirectory):
         '-a'],stdout=f)
     return result
 
+def convertXML(bnglfile):
+    console.bngl2xml(bnglfile,timeout=3600)
 
 def generateBNGXML(bnglFiles,format='BNGXML'):
     
     print 'converting {0} bnglfiles'.format(len(bnglFiles))
-
+    futures = []
     workers = mp.cpu_count()-1
-    progress = progressbar.ProgressBar(maxval= len(filenameset)).start()
+    convertXML(bnglFiles[0])
+    progress = progressbar.ProgressBar(maxval= len(bnglFiles)).start()
     i = 0
     print 'running in {0} cores'.format(workers)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+    #with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
 
-        for i in progress(range(len(bnglFiles))):
-           futures.append(executor.submit(console.bngl2xml, bnglFiles[i],3600))
-        for future in concurrent.futures.as_completed(futures,timeout=3600):
-            i+=1
-            progress.update(i)
+    for bngl in progress(range(len(bnglFiles))):
+            convertXML(bnglFiles[bngl])
+        #   futures.append(executor.submit(convertXML, bnglFiles[bngl]))
+        #for future in concurrent.futures.as_completed(futures,timeout=3600):
+        #    i+=1
+            progress.update(bngl)
     progress.finish()
 
     '''
@@ -129,7 +133,7 @@ if __name__ == "__main__":
         filenameset = loadFilesFromYAML(namespace.settings)
         outputdirectory = namespace.output
     else:
-        filenameset = getFiles('XMLExamples/curated','xml')
+        filenameset = getFiles('complex3','bngl')
         outputdirectory = 'complex2'
 
     #translate(filenameset,outputdirectory)    
