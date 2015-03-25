@@ -97,7 +97,8 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
 
 if __name__ == "__main__":
     xmlfiles = getFiles("XMLExamples/non_curated","xml")
+    bnglfiles = getFiles("complex3","bngl")
     queue = 'serial_queue'
-    start_queue(xmlfiles,"non_curated",queue,20)
+    start_queue(bnglfiles,"complex3",queue,20)
 
 
