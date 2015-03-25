@@ -9,10 +9,14 @@ import sys
 import glob
 import shutil
 import yaml
+from os.path import expanduser,join
+
 sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
 import argparse
 import SBMLparser.utils.consoleCommands as console
+home = expanduser("~")
+bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 
 def callSBML(filename):
     pass
@@ -46,7 +50,8 @@ def callSBMLTranslator(fileName,outputdirectory):
     return result
 
 def convertXML(bnglfile):
-    console.bngl2xml(bnglfile,timeout=3600)
+    with open(os.devnull,"w") as f:
+        result = call([bngExecutable,'--xml',bnglfile],stdout=f)
 
 def generateBNGXML(bnglFiles,format='BNGXML'):
     
@@ -132,11 +137,11 @@ if __name__ == "__main__":
         filenameset = loadFilesFromYAML(namespace.settings)
         outputdirectory = namespace.output
     else:
-        filenameset = getFiles('complex2','bngl')
+        filenameset = getFiles('complex3','bngl')
         outputdirectory = 'complex2'
 
     #translate(filenameset,outputdirectory)    
     #with open('new_non_curated/failure.dump','rb') as f:
     #    s = pickle.load(f)
     #filenameset = getFiles('complex2','bngl')
-    generateBNGXML(filenameset[0:2])
+    generateBNGXML(filenameset)
