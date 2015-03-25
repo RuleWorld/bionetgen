@@ -80,9 +80,9 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize):
         cd $PBS_O_WORKDIR
         echo scratch drive ${SCRDIR}
 
-        trap "mv * $PBS_O_WORKDIR/%s" EXIT
+        #trap "mv *xml $PBS_O_WORKDIR/%s" EXIT
         %s
-        cd ${SCRDIR}
+        #cd ${SCRDIR}
         """ % (job_name, walltime, processors, queue,outputdirectory,command)
         
         # Send job_string to qsub
