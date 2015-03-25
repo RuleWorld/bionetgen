@@ -49,27 +49,27 @@ def callSBMLTranslator(fileName,outputdirectory):
 def generateBNGXML(bnglFiles,format='BNGXML'):
     
     print 'converting {0} bnglfiles'.format(len(bnglFiles))
-    progress = progressbar.ProgressBar()
 
-    for i in progress(range(len(bnglFiles))):
-        xmlName = '.'.join(bnglFiles[i].split('.')[:-1]) + '.xml'
-        
+    workers = mp.cpu_count()-1
+    progress = progressbar.ProgressBar(maxval= len(filenameset)).start()
+    i = 0
+    print 'running in {0} cores'.format(workers)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
 
-        #if os.path.exists(xmlName):
-        #    continue
-        if format == 'BNGXML':
-            console.bngl2xml(bnglFiles[i], timeout=120)
-        elif format == 'SBML':
-            console.bngl2sbml(bnglFiles[i],timeout=120)
-        else:
-            raise Exception
+        for i in progress(range(len(bnglFiles))):
+           futures.append(executor.submit(console.bngl2xml, bnglFiles[i],3600))
+        for future in concurrent.futures.as_completed(futures,timeout=3600):
+            i+=1
+            progress.update(i)
+    progress.finish()
 
+    '''
     print 'moving xml files'
     files = glob.iglob(os.path.join('.', "*.xml"))
     for xmlfile in files:
         if os.path.isfile(xmlfile):
             shutil.move(xmlfile, directory)
-
+    '''
 
 
 
@@ -132,8 +132,8 @@ if __name__ == "__main__":
         filenameset = getFiles('XMLExamples/curated','xml')
         outputdirectory = 'complex2'
 
-    translate(filenameset,outputdirectory)    
+    #translate(filenameset,outputdirectory)    
     #with open('new_non_curated/failure.dump','rb') as f:
     #    s = pickle.load(f)
     #filenameset = getFiles('complex2','bngl')
-    #generateBNGXML(filenameset)
+    generateBNGXML(filenameset)
