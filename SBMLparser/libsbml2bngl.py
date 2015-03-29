@@ -446,6 +446,12 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     #translator = {}
     param,zparam = parser.getParameters()
+    rawSpecies = {}
+    for species in parser.model.getListOfSpecies():
+            rawtemp = parser.getRawSpecies(species,[x.split(' ')[0] for x in param])
+            rawSpecies[rawtemp['identifier']] = rawtemp
+    parser.reset()
+    
     molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
 
@@ -455,7 +461,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     assigmentRuleDefinedParameters = []
     reactionParameters,rules,rateFunctions = parser.getReactions(translator,len(compartments)>1,atomize=atomize)
     functions.extend(rateFunctions)
-    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
+    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,rawSpecies)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
     param = [x for x in param if x not in removeParams]
