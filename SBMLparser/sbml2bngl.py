@@ -46,7 +46,7 @@ class SBML2BNGL:
         self.speciesMemory = []
         self.getSpecies()
         self.reactionDictionary = {}
-                
+
     def static_var(varname, value):
         def decorate(func):
             setattr(func, varname, value)
@@ -786,8 +786,10 @@ class SBML2BNGL:
 
                 else:
                     if rawArule[0] in molecules:
-                        artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
-                        continue
+                        if molecules[rawArule[0]]['isBoundary']:
+                            artificialObservables[rawArule[0]+'_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+                            continue
+
                 artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
 
             

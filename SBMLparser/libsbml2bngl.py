@@ -529,8 +529,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
 
             #since we are considering it an observable delete it from the molecule and
             #initial conditions list
-            s = molecules.pop(flag)
-            initialConditions = [x for x in initialConditions if '$' + s not in x]
+            #s = molecules.pop(flag)
+            #initialConditions = [x for x in initialConditions if '$' + s not in x]
         else:
             logMess('WARNING:Simulation','{0} reported as species, but usage is ambiguous.'.format(flag) )
             artificialObservables.pop(flag)
