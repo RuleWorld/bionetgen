@@ -38,7 +38,15 @@ class SBML2BNGL:
         self.getSpecies()
         self.reactionDictionary = {}
         
-        
+
+    def reset(self):
+        self.tags = {}
+        self.boundaryConditionVariables = []
+        self.speciesDictionary = {}
+        self.speciesMemory = []
+        self.getSpecies()
+        self.reactionDictionary = {}
+                
     def static_var(varname, value):
         def decorate(func):
             setattr(func, varname, value)
@@ -717,6 +725,7 @@ class SBML2BNGL:
         require special handling since rules are often both defined as rules 
         and parameters initialized as 0, so they need to be removed from the parameters list
         '''
+
         compartmentList = [['cell',1]]
         compartmentList.extend([[self.__getRawCompartments(x)[0], self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
 
@@ -734,7 +743,7 @@ class SBML2BNGL:
             if rawArule[3] == True:
                 #it is a rate rule
                 if rawArule[0] in self.boundaryConditionVariables:
-                    logMess('SIMULATION:CRITICAL','Boundary condition type variables ({0}) \
+                    logMess('SIMULATION:CRITICAL','rate rules ({0}) \
                     are not properly supported in BioNetGen simulator'.format(rawArule[0]))
 
                     #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
@@ -766,7 +775,7 @@ class SBML2BNGL:
                 #it is an assigment rule
                 if rawArule[0] in zRules:
                     zRules.remove(rawArule[0])
-                    
+                    #print rawArule[0]
 
                     #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
                     #tmp = list(rawArule)
@@ -775,8 +784,12 @@ class SBML2BNGL:
                     logMess('SIMULATION:CRITICAL','Boundary condition/assignment type variables ({0}) are not properly \
                     supported in BioNetGen simulator'.format(rawArule[0]))
 
-
+                else:
+                    if rawArule[0] in molecules:
+                        artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+                        continue
                 artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+
             
             else:
                 '''

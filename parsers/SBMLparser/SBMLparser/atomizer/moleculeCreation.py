@@ -996,21 +996,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     '''
     prunnedDependencyGraph,database = createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=speciesEquivalences,bioGridFlag=bioGridFlag)    
-    #I'm polluting these data structures somewhere. In here
-    #im just calling the original generator to recover them.
-    #I think it solved itself. I'm leaving an assert just to be sure
-    #classifications, equivalenceTranslator, eequivalenceTranslator, \
-    #    indirectEquivalenceTranslator,_ = sbmlAnalyzer.classifyReactions(rules,molecules)
-    #assert(referenceVariables == comparisonVariables)
 
-#    orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
-    #basicSpecies = [x for x in prunnedDependencyGraph if len(prunnedDependencyGraph[x]) ==0 or len(prunnedDependencyGraph[x][0]) == 1]
-    #tmpDependency,tmpEquivalence = sbmlAnalyzer.findClosestModification(basicSpecies,[x.strip('()') for x in molecules])          
-    #for species in tmpDependency:
-    #    if tmpDependency[species] == []:
-    #        addToDependencyGraph(database.dependencyGraph,species,[])
-    #    for instance in tmpDependency[species]:
-    #        addToDependencyGraph(database.dependencyGraph,species,instance)
     
     for element in database.artificialEquivalenceTranslator:
         if element not in database.eequivalenceTranslator:

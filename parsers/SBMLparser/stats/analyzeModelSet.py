@@ -14,7 +14,6 @@ from os.path import expanduser,join
 sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
 import argparse
-import SBMLparser.utils.consoleCommands as console
 home = expanduser("~")
 bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 
@@ -49,11 +48,14 @@ def callSBMLTranslator(fileName,outputdirectory):
         '-a'],stdout=f)
     return result
 
-def convertXML(bnglfile):
+def convertXML(bnglfile,output):
     with open(os.devnull,"w") as f:
+        retval = os.getcwd()
+        os.chdir(output)
         result = call([bngExecutable,'--xml',bnglfile],stdout=f)
+        os.chdir(retval)
 
-def generateBNGXML(bnglFiles,format='BNGXML'):
+def generateBNGXML(bnglFiles,output,format='BNGXML'):
     
     print 'converting {0} bnglfiles'.format(len(bnglFiles))
     futures = []
@@ -65,7 +67,7 @@ def generateBNGXML(bnglFiles,format='BNGXML'):
 
         for bngl in progress(range(len(bnglFiles))):
             convertXML(bnglFiles[bngl])
-            futures.append(executor.submit(convertXML, bnglFiles[bngl]))
+            futures.append(executor.submit(convertXML, bnglFiles[bngl],output))
         for future in concurrent.futures.as_completed(futures,timeout=3600):
             i+=1
             progress.update(bngl)
@@ -137,11 +139,12 @@ if __name__ == "__main__":
         filenameset = loadFilesFromYAML(namespace.settings)
         outputdirectory = namespace.output
     else:
-        filenameset = getFiles('complex3','bngl')
-        outputdirectory = 'complex2'
+        filenameset = getFiles('curated','bngl')
+        #filenameset = getFiles('complex2','bngl')
+        outputdirectory = 'curated'
 
     #translate(filenameset,outputdirectory)    
     #with open('new_non_curated/failure.dump','rb') as f:
     #    s = pickle.load(f)
     #filenameset = getFiles('complex2','bngl')
-    generateBNGXML(filenameset)
+    generateBNGXML(filenameset,output= outputdirectory)
