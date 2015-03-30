@@ -172,6 +172,57 @@ sub resetLabels
 ###
 ###
 
+sub getRuleName
+{
+	my $string = shift @_;
+	my $linenum = shift @_;
+	my $rule; my $name; my $msg;
+	if ($string =~ /:/)
+	{
+		if($string =~ /^([\w\s]*\w)\s*:\s*(.*)$/)
+		{
+			$name = $1; $rule = $2;
+			if($name =~ /\s+/)
+			{
+			$msg = "Reaction rule label '$name' contains spaces. Replacing with underscore. \n Spaces in labels are deprecated since BioNetGen 2.2.3.";
+			$name =~ s/\s+/_/g;
+			BNGUtils::line_warning($msg,$linenum);
+			}	
+			if ($name =~ /^\d+/)
+			{
+			$msg = "Reaction rule label '$name' begins with a number. Appending R at the start. \n Labels beginning with numbers are deprecated since BioNetGen 2.2.6.";
+			$name = "R".$name;
+			BNGUtils::line_warning($msg,$linenum);
+			}
+		}
+		elsif($string !~ /^0\s*(\+|->|<->)/)
+		{
+			if ($string =~ /^(\d+)\s+(.*)/)
+			{
+			$name = $1; $rule = $2;
+			$msg = "Reaction rule label '$name' begins with a number. Appending R at the start. \n Labels beginning with numbers are deprecated since BioNetGen 2.2.6.";
+			$name = "R".$name;
+			BNGUtils::line_warning($msg,$linenum);
+			}
+		}
+		else
+		{
+		$msg = "Reaction rule label could not be read. Possibly disallowed characters present. \n Only alphanumeric and underscore characters allowed in reaction rule labels since BioNetGen 2.2.6.";
+		BNGUtils::line_warning($msg,$linenum);
+		}
+		if(defined $name)
+		{
+		if ($name =~ /^(.*)_r$/)
+			{
+			$msg = "Reaction rule label cannot end in _r. This is reserved for reverse rules since BioNetGen 2.2.6.";
+			$name = $1;
+			BNGUtils::line_warning($msg,$linenum);
+			}
+		
+		}
+	}
+	return (defined $name) ? ($rule,$name) : ($string);
+}	
 
 
 sub newRxnRule
@@ -197,6 +248,10 @@ sub newRxnRule
 
     # save original text of rule for displaying warnings
     (my $rule_text = $string) =~ s/\s+/ /g;
+	
+	my @temp = getRuleName($string,$linenum);
+	$string = $temp[0];
+	if( scalar @temp == 2) {$name = $temp[1];}
 
     # Check for a ReactionRule label or index at the beginning of the string
 	if ( $string =~ s/^([\w\s]*\w)\s*:\s*// )
@@ -686,7 +741,8 @@ sub newRxnRule
 	if ($reversible)
 	{
 		$rr = RxnRule->new();
-		if ( defined $name ) { $rr->Name("${name}(reverse)"); }
+		#if ( defined $name ) { $rr->Name("${name}(reverse)"); }
+		if ( defined $name ) { $rr->Name("${name}_r"); }
 		$rr->Reactants( [@prod] );
 		$rr->Products(  [@reac] );
 		$rr->Priority($priority);

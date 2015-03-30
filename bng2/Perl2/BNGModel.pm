@@ -650,11 +650,17 @@ sub readSBML
 	                            push @$rrules, $rrs;
 	                            # give names, if not defined
 	                            unless ( $rrs->[0]->Name )
-	                            {   $rrs->[0]->Name( 'Rule' . scalar @$rrules );   }
+	                            {   
+								#$rrs->[0]->Name( 'Rule' . scalar @$rrules );   
+								$rrs->[0]->Name( 'R' . scalar @$rrules );   
+								}
 	                            if ( @$rrs > 1 )
 	                            {
 	                                unless ($rrs->[1]->Name)
-	                                {   $rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );   }
+	                                {   
+									#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );   
+									$rrs->[1]->Name( 'R' . scalar @$rrules . '_r' );   
+									}
 	                            }
 	                        }
 	                    }
