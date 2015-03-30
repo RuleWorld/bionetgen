@@ -461,7 +461,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     assigmentRuleDefinedParameters = []
     reactionParameters,rules,rateFunctions = parser.getReactions(translator,len(compartments)>1,atomize=atomize)
     functions.extend(rateFunctions)
-    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,rawSpecies)
+    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,rawSpecies,observables)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
     param = [x for x in param if x not in removeParams]
