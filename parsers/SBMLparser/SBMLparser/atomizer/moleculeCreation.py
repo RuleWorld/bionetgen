@@ -578,14 +578,15 @@ def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
                                                   equivalenceDictionary, 
                                                   dependencyGraph[tmp][0][0],element[0])
 
-            if classification is not None and \
-            reactionProperties[classification][0] not in existingComponents:
+            #if we know what classification it is then add the corresponding components and states
+            if classification is not None:
                 componentStateArray.append(reactionProperties[classification])
                 #classificationArray.append([classification,
                 #                            tmp,dependencyGraph[tmp]
                 #                            [0][0]])
                 existingComponents.append(reactionProperties[
                 classification][0])
+            #if we don't know we can create a force 1:1 modification
             elif database.forceModificationFlag and classification is None and not forceActivationSwitch:
                 forceActivationSwitch = True
                 baseName = getTrueTag(dependencyGraph, 
@@ -595,6 +596,7 @@ def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
                 componentStateArray.append(['genericMod',tmp])
                 logMess('ATOMIZATION:WARNING','adding forced transformation: {0}:{1}:{2}'.format(baseName,dependencyGraph[element[0]],element[0]))
                 #return
+            #bail out if we couldn't figure out what modification it is
             elif classification is None:    
                 logMess('ATOMIZATION:CRITICAL','unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
             memory.append(tmp)
@@ -609,7 +611,7 @@ def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
         #translator,otherwise empty
         if baseName in translator:
              species = translator[baseName]
-        modifiedSpecies = deepcopy(translator[dependencyGraph[element[0]][0][0]])
+        modifiedSpecies = deepcopy(translator[baseName])
         for componentState in componentStateArray:                   
 
             #if classification[0] != None:
