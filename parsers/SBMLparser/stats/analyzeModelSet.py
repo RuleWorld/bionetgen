@@ -66,7 +66,6 @@ def generateBNGXML(bnglFiles,output,format='BNGXML'):
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
 
         for bngl in progress(range(len(bnglFiles))):
-            convertXML(bnglFiles[bngl])
             futures.append(executor.submit(convertXML, bnglFiles[bngl],output))
         for future in concurrent.futures.as_completed(futures,timeout=3600):
             i+=1
@@ -128,7 +127,7 @@ def defineConsole():
     parser = argparse.ArgumentParser(description='SBML to BNGL translator')
     parser.add_argument('-s','--settings',type=str,help='settings file')
     parser.add_argument('-o','--output',type=str,help='output directory')
-
+    parser.add_argument('-t','--type',type=str,help='atomize or convert to bng-xml')
     return parser    
 
 
@@ -139,12 +138,16 @@ if __name__ == "__main__":
         filenameset = loadFilesFromYAML(namespace.settings)
         outputdirectory = namespace.output
     else:
-        filenameset = getFiles('curated','bngl')
-        #filenameset = getFiles('complex2','bngl')
-        outputdirectory = 'curated'
+        filenameset = getFiles('XMLExamples/curated','xml')
+        outputdirectory = 'complex3'
 
-    #translate(filenameset,outputdirectory)    
+    if namespace.type == 'atomize':
+        translate(filenameset,outputdirectory)    
+    elif namespace.type == 'bngxml':
+        generateBNGXML(filenameset,output= outputdirectory)   
+    else:
+        raise Exception('Invalid output type')
     #with open('new_non_curated/failure.dump','rb') as f:
     #    s = pickle.load(f)
     #filenameset = getFiles('complex2','bngl')
-    generateBNGXML(filenameset,output= outputdirectory)
+    #generateBNGXML(filenameset,output= outputdirectory)
