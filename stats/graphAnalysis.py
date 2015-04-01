@@ -8,16 +8,10 @@ import sys
 sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
 import SBMLparser.utils.consoleCommands as consoleCommands
+import concurrent.futures
+import multiprocessing as mp
+import progressbar
 
-
-def generateGraph(bngfile,timeout=180,graphtype='regulatory'):
-    """
-    Generates a bng-xml file via the bng console
-    """
-    consoleCommands.generateGraph(bngfile,graphtype)
-
-    graphname = '.'.join(bngfile.split('.')[:-1]) + '_{0}.gml'.format(graphtype)
-    return graphname
 
 def loadGraph(graphname):
     """
@@ -29,7 +23,7 @@ def loadGraph(graphname):
 
 def getFiles(directory,extension,abspath=False):
     """
-    Gets a list of bngl files that could be correctly translated in a given 'directory'
+    Gets a list of <extension> files that could be correctly translated in a given 'directory'
 
     Keyword arguments:
     directory -- The directory we will recurseviley get files from
@@ -50,11 +44,13 @@ def getFiles(directory,extension,abspath=False):
 
     return matches
 
+from collections import Counter
 
 class ProcessGraph:
     def __init__(self,graph):
         self.graph = graph
         graphics = {x:self.graph.node[x]['graphics']['type'] for x in self.graph.node}
+        #print {x:self.graph.node[x]['graphics'] for x in self.graph.node}
         self.nodes = pandas.DataFrame.from_dict(self.graph.node,orient='index')
         self.nodes['graphics'] = pandas.Series(graphics)
         self.nodes['graphics'] = self.nodes['graphics'].map({'roundrectangle': 'species', 'hexagon': 'process'})
@@ -65,7 +61,7 @@ class ProcessGraph:
 
         """
         dist = np.asarray(dist)
-        ent = np.nansum( dist *  np.log2( 1/dist ) )
+        ent = np.nansum( dist *  np.log2( 1/dist ) )/np.log2(len(dist))
         return ent
 
     def centrality_distribution(self,node_type):
@@ -78,7 +74,9 @@ class ProcessGraph:
         """
         centrality = self.nodes[self.nodes.graphics == node_type]['centrality'].values
         centrality = np.asarray(centrality)
+
         centrality /= centrality.sum()
+     
         return centrality
 
     def centrality(self):
@@ -92,7 +90,6 @@ class ProcessGraph:
         outdegree = pandas.Series(nx.out_degree_centrality(self.graph))
 
 
-
         self.nodes['centrality'] =  centrality
         self.nodes['closeness'] = closeness
         self.nodes['indegree'] = indegree
@@ -101,16 +98,53 @@ class ProcessGraph:
         #print self.nodes.sort(column='load',ascending=False).head(20)
         #
  
+def generateGraph(bngfile,timeout=180,graphtype='regulatory',options = []):
+    """
+    Generates a bng-xml file via the bng console
+    """
+    consoleCommands.generateGraph(bngfile,graphtype,options)
+
+    graphname = '.'.join(bngfile.split('.')[:-1]) + '_{0}.gml'.format(graphtype)
+    graphname = graphname.split('/')[-1]
+    return graphname
+
+
+def getGraphEntropy(graphname,nodeType):
+    graph = loadGraph(graphname)
+    process = ProcessGraph(graph)
+    process.centrality()
+    dist = process.centrality_distribution(node_type=nodeType)
+    return graphname,nodeType,process.entropy(dist)
+
+
+import shutil
+
+def createGMLFiles(directory,options):
+    bngfiles= getFiles(directory,'bngl')
+    for bngfile in bngfiles:
+        for option in options:
+            print bngfile,options[option]
+            graphname = generateGraph(bngfile,options = options[option])
+            shutil.move(graphname, os.path.join(directory,option))    
 
 if __name__ == "__main__":
-    #bngfile = 'output19raw.bngl'
-    #graphname = generateGraph(bngfile)
+    #bngfile = 'egfr_net.bngl'
+    options = {'groups_collapsed': ['groups','collapse'],'pure_regulatory':[]}
+    #createGMLFiles('egfr',options)
     graphnames = getFiles('egfr','gml')
-    for nodeType in ['process','species']:
-        print '-----',nodeType
-        for graphname in graphnames:
-            graph = loadGraph(graphname)
-            process = ProcessGraph(graph)
-            process.centrality()
-            dist = process.centrality_distribution(node_type=nodeType)
-            print graphname, process.entropy(dist)
+    nodeTypes = ['species','process']
+    #getGraphEntropy('egfr/egfr_net_regulatory.gml','species')
+    #raise Exception
+    futures = []
+    workers = mp.cpu_count()-1
+    results = pandas.DataFrame(index=graphnames,columns=nodeTypes)
+    results = results.fillna(0)
+    counter = 1
+    for idx in (range(len(nodeTypes))):
+        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+            for gidx in range(len(graphnames)):
+                futures.append(executor.submit(getGraphEntropy,graphnames[gidx],nodeTypes[idx]))
+    for future in concurrent.futures.as_completed(futures,timeout=3600):
+        partialResults = future.result()
+        results.set_value(partialResults[0],partialResults[1],partialResults[2])
+    print results 
