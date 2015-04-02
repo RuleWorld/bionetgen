@@ -35,7 +35,7 @@ def getFiles(directory,extension):
 
     return matches
 
-queue_list= {'noc_64_core':64,'serial_queue':1,'dept_24_core':24,'dmz_core36':36,'bahar_64_core':64}
+queue_list= {'noc_64_core':64,'serial_queue':1,'dept_24_core':24,'dmz_core36':36,'bahar_64_core':64,'bahar_12_core':12}
 import progressbar
 import tempfile
 import yaml
@@ -163,6 +163,10 @@ if __name__ == "__main__":
         if namespace.resume:
             bngxmlfiles = getFiles(inputfolder,"xml")
             finalfiles = restart(finalfiles,bngxmlfiles,'.bngl')
+
+    elif namespace.type =='graph':
+        finalfiles = getFiles(inputfolder,"bngl")
+
     #print len(finalfiles)
     
     start_queue(finalfiles,outputfolder,queue,batchsize,namespace.type)
