@@ -68,16 +68,16 @@ def writeNetwork(bnglFile):
     bngconsole.close() 
 
 
-def generateGraph(bnglFile,graphType):
+def generateGraph(bnglFile,graphType,options=[]):
     directory = os.sep.join(bnglFile.split(os.sep)[:-1])
-    os.chdir(directory)
-    print directory
     bngconsole = pexpect.spawn('{0} --console'.format(getBngExecutable()))
     bngconsole.expect('BNG>')
     bngconsole.sendline('load {0}'.format(bnglFile))
     bngconsole.expect('BNG>')
+    options = ['{0}=>1'.format(x) for x in options]
+    options = ', '.join(options)
     if graphType == "regulatory":
-        bngconsole.sendline('action visualize()')
+        bngconsole.sendline('action visualize({{{0}}})'.format(options))
     elif graphType == "contactmap":
         bngconsole.sendline('action visualize({type=>"contactmap"})')        
     else:
