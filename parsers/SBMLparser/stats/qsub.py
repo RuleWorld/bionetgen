@@ -12,7 +12,7 @@ import time
 import os.path
 import fnmatch
 import argparse
-
+import re
 
 def getFiles(directory,extension):
     """
@@ -166,6 +166,10 @@ if __name__ == "__main__":
 
     elif namespace.type =='graph':
         finalfiles = getFiles(inputfolder,"bngl")
+        if namespace.resume:
+            gmlfiles = getFiles(inputfolder,"gml")
+
+            finalfiles = restart(finalfiles,bngxmlfiles,'.bngl')
 
     #print len(finalfiles)
     
