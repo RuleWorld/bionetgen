@@ -824,6 +824,11 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                         list(parseReactions(reaction)),classification)
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
+        #Check if I'm using a molecule that hasn't been used yet
+        for dependencyCandidate in database.dependencyGraph[element]:
+            for molecule in [x for x in dependencyCandidate if x not in database.dependencyGraph]:
+                database.dependencyGraph[molecule] = []
+
     #catalysis reactions
     for key in database.eequivalenceTranslator:
         for namingEquivalence in database.eequivalenceTranslator[key]:
@@ -982,7 +987,7 @@ def sanityCheck(translator):
 
 def transformMolecules(parser, database, configurationFile,namingConventions,
                        speciesEquivalences=None,bioGridFlag=False):
-    '''
+    """
     main method. Receives a parser configuration, a configurationFile and a
     list of user defined species equivalences and returns a dictionary
     containing an atomized version of the model
@@ -991,7 +996,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         ---database:data structure containing the result of the outgoing translation
         ---configurationFile
         ---speciesEquivalences:predefined species
-    '''
+    """
     '''
     pr = cProfile.Profile()
     pr.enable()
@@ -1010,6 +1015,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
     # from a file instead of being hardcoded)
     doubleModifications = {"Double-Phosporylation":"Phosporylation"}
 
+    
     for element in doubleModifications:
         if doubleModifications[element] not in database.eequivalenceTranslator:
             continue
