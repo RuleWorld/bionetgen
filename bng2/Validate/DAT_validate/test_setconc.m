@@ -114,7 +114,7 @@ param_labels = { 'NA', 'V', 'L0', 'R0', 'km' };
 [expressions] = calc_expressions( parameters );
 
 % set ODE integrator options
-opts = odeset( 'RelTol',   1e-08,   ...
+opts = odeset( 'RelTol',   1e-008,   ...
                'AbsTol',   0.0001,   ...
                'Stats',    'off',  ...
                'BDF',      'off',    ...
@@ -218,7 +218,7 @@ function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 
 end
 
-% Calculate species derivates
+% Calculate species derivatives
 function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
     
     % initialize derivative vector

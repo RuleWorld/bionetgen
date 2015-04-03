@@ -35,13 +35,13 @@ node [
 id 10 label "R1a"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1a" anchor "c"  ] 
  ]
 node [
-id 11 label "R1a(reverse)"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1a(reverse)" anchor "c"  ] 
+id 11 label "R1a_r"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1a_r" anchor "c"  ] 
  ]
 node [
 id 12 label "R1b"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1b" anchor "c"  ] 
  ]
 node [
-id 13 label "R1b(reverse)"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1b(reverse)" anchor "c"  ] 
+id 13 label "R1b_r"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1b_r" anchor "c"  ] 
  ]
 node [
 id 14 label "R2a"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R2a" anchor "c"  ] 
@@ -53,13 +53,13 @@ node [
 id 16 label "R3a"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3a" anchor "c"  ] 
  ]
 node [
-id 17 label "R3a(reverse)"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3a(reverse)" anchor "c"  ] 
+id 17 label "R3a_r"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3a_r" anchor "c"  ] 
  ]
 node [
 id 18 label "R3b"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3b" anchor "c"  ] 
  ]
 node [
-id 19 label "R3b(reverse)"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3b(reverse)" anchor "c"  ] 
+id 19 label "R3b_r"  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3b_r" anchor "c"  ] 
  ]
 edge [ source 10 target 1  graphics [ fill "#5e3c58" arrow "first" width 1  ] ]
 edge [ source 10 target 6  graphics [ fill "#5e3c58" arrow "first" width 1  ] ]
