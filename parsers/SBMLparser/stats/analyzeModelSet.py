@@ -10,6 +10,8 @@ import glob
 import shutil
 import yaml
 from os.path import expanduser,join
+import readBNGXML
+import pandas
 
 sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
@@ -17,7 +19,7 @@ import argparse
 home = expanduser("~")
 bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 visualizeExecutable = join(home,'workspace','bionetgen','bng2','Perl2','Visualization','visualize.pl')
-
+graphAnalysis = '/net/antonin/home/mscbio/jjtapia/workspace/bionetgen/parsers/SBMLparser/stats/graphAnalysis.py'
 
 
 
@@ -84,7 +86,7 @@ def generateGraph(bnglfile,outputdirectory,options):
 
     """
 
-    command = [visualizeExecutable,'--bngl',bnglfile]
+    command = [visualizeExecutable,'--bngl',bnglfile,'--groups','--collapse']
     command.extend(options)
     with open(os.devnull,"w") as f:
         retval = os.getcwd()
@@ -105,7 +107,10 @@ def generateBNGXML(bnglFiles,output,format='BNGXML'):
     parallelHandling(bnglFiles,convertXML,output)
 
 
-def parallelHandling(files,function,outputDir,options = []):
+def dummy(result,output):
+    pass
+
+def parallelHandling(files,function,outputDir,options = [],postExecutionFunction=dummy):
     futures = []
     workers = mp.cpu_count()-1
     progress = progressbar.ProgressBar(maxval= len(files)).start()
@@ -115,6 +120,7 @@ def parallelHandling(files,function,outputDir,options = []):
         for fileidx in progress(range(len(files))):
             futures.append(executor.submit(function, files[fileidx],outputDir,options))
         for future in concurrent.futures.as_completed(futures,timeout=3600):
+            postExecutionFunction(future.result(),outputDir)
             i+=1
             progress.update(fileidx)
     progress.finish()
@@ -150,6 +156,56 @@ def defineConsole():
     return parser    
 
 
+def reactionBasedAtomizationFile(xmlFile,outputDataFrame,options):
+    """
+    get atomization metrics from a bng-xml file
+    """
+    ratomizationDict = {}
+
+    try:
+            # console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
+        molecules, reactions, _ = readBNGXML.parseXML(xmlFile)
+
+        atomizedProcesses = 0
+        trueProcessesCounter = 0
+        for reaction in reactions:
+            if '0' in  [str(x) for x in reaction[0].reactants] or '0' in \
+                    [str(x) for x in reaction[0].products]:
+                continue
+            trueProcessesCounter += 1
+            # if len([x for x in action.action if x in ['Add','Delete']]) == 0:
+            #    atomizedProcesses +=1
+
+            for action in reaction[0].actions:
+                if action.action in ['AddBond', 'DeleteBond', 'StateChange', 'ChangeCompartment']:
+                    atomizedProcesses += 1
+                    break
+
+
+        #ato, nonato = stoichiometryAnalysis(rules)
+        #atomizedDistro.extend(ato)
+        #nonAtomizedDistro.extend(nonato)
+        score = atomizedProcesses * 1.0 / trueProcessesCounter if trueProcessesCounter != 0 else 0
+
+        #outputDataFrame = outputDataFrame.set_value(xmlFile,'score',score)
+        #outputDataFrame = outputDataFrame.set_value(xmlFile,'lenght',len(rules))
+        return xmlFile,score,len(reactions),len(molecules)*1.0/readBNGXML.getNumObservablesXML(xmlFile)
+        #ratomizationDict['score'] = score
+        #ratomizationDict['weight'] = weight
+        #ratomizationDict['length'] = len(rules)
+    except IOError:
+        print 'io',xmlFile
+
+def saveToDataframe(result,dataframe):
+    """
+    Store xml-analysis results in dataframe
+    """
+    filename = result[0].split('/')[-1]
+    filename = '.'.join(filename.split('.')[:-1]) + '_regulatory.gml'
+    dataframe = dataframe.set_value(filename,'atomization',result[1])
+    dataframe = dataframe.set_value(filename,'weight',result[2])
+    dataframe = dataframe.set_value(filename,'compression',result[3])
+
 if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
@@ -163,9 +219,9 @@ if __name__ == "__main__":
         else:
             options = []
     else:
-        filenameset = getFiles('curated','bngl')
+        filenameset = getFiles('curated/atomized','xml')
         outputdirectory = 'curated'
-        ttype = 'graph'
+        ttype = 'atomizationScore'
         options = []
 
     if ttype == 'atomize':
@@ -174,6 +230,13 @@ if __name__ == "__main__":
         generateBNGXML(filenameset,output= outputdirectory)
     elif ttype == 'graph':
         generateGraphs(filenameset,output=outputdirectory,options = options)
+    elif ttype == 'entropy':
+        call(['python',graphAnalysis,'-s',namespace.settings,'-o',outputdirectory])
+    elif ttype == 'atomizationScore':
+        print 'calculating score for {0} bng-xml files'.format(len(filenameset))
+        atomizationScore = pandas.DataFrame()
+        parallelHandling(filenameset,reactionBasedAtomizationFile,atomizationScore,postExecutionFunction=saveToDataframe)
+        atomizationScore.to_hdf('atomizationResults.h5','atomization')
     else:
         raise Exception('Invalid output type')
     #with open('new_non_curated/failure.dump','rb') as f:
