@@ -1,17 +1,21 @@
 import networkx as nx
+from networkx.algorithms import bipartite
 import numpy as np
 import pandas
 import os
 import fnmatch
 import sys
-
+import yaml
+import scipy
 sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
-import SBMLparser.utils.consoleCommands as consoleCommands
+#import SBMLparser.utils.consoleCommands as consoleCommands
 import concurrent.futures
 import multiprocessing as mp
 import progressbar
+import argparse
 
+import os.path
 
 def loadGraph(graphname):
     """
@@ -47,6 +51,10 @@ def getFiles(directory,extension,abspath=False):
 from collections import Counter
 
 class ProcessGraph:
+    """
+    creates a pandas dataframe from a gml file containing several graph metrics
+    like centrality and wiener index
+    """
     def __init__(self,graph):
         self.graph = graph
         graphics = {x:self.graph.node[x]['graphics']['type'] for x in self.graph.node}
@@ -54,7 +62,7 @@ class ProcessGraph:
         self.nodes = pandas.DataFrame.from_dict(self.graph.node,orient='index')
         self.nodes['graphics'] = pandas.Series(graphics)
         self.nodes['graphics'] = self.nodes['graphics'].map({'roundrectangle': 'species', 'hexagon': 'process'})
-
+        
     def entropy(self,dist):
         """
         Returns the entropy of `dist` in bits (base-2).
@@ -72,28 +80,69 @@ class ProcessGraph:
         centralities. Note, this assumes the graph is simple.
 
         """
-        centrality = self.nodes[self.nodes.graphics == node_type]['centrality'].values
+        centrality = self.nodes[self.nodes.graphics == node_type]['communicability'].values
         centrality = np.asarray(centrality)
-
         centrality /= centrality.sum()
-     
         return centrality
+
+    def removeContext(self):
+        context2 = []
+        context3 = []
+        edges = self.graph.edges(data=True)
+        for source,destination,data in edges:
+                if 'graphics' in data:
+                    if data['graphics']['fill'] ==  u'#798e87':
+                        context2.append((source,destination))
+                else:
+                    for idx in data:
+                        if 'graphics' in data[idx]:
+                            if data[idx]['graphics']['fill'] ==  u'#798e87':
+                                context3.append((source,destination,idx))
+        self.graph.remove_edges_from(context2)
+        self.graph.remove_edges_from(context3)
+
+    def wiener(self):
+        g2 = nx.Graph(self.graph)
+        speciesnodes =  set(n for n, d in self.graph.nodes(data=True) if d['graphics']['type']=='roundrectangle')
+        wienerIndex = []
+        connected = 0
+        for node1 in speciesnodes:
+            wiener = 0
+            for node2 in speciesnodes:
+                if node1 == node2:
+                    continue
+                try:
+                    wiener += len(nx.shortest_path(g2,node1,node2)) - 1
+                    connected += 1
+                except nx.exception.NetworkXNoPath:
+                    continue
+            wienerIndex.append(wiener)
+        if connected ==0:
+            return 0,1
+        return sum(wienerIndex)*1.0/connected,self.entropy(np.asarray(wienerIndex)*1.0/sum(wienerIndex))
+
+    def graphMeasures(self):
+        """
+        calculates several graph measures
+        """
+
+        #average_degree_connectivity = nx.average_degree_connectivity(self.graph)
+        #average_neighbor_degree = nx.average_neighbor_degree(self.graph)
+        average_node_connectivity = nx.average_node_connectivity(self.graph)
+
+        return [average_node_connectivity]
 
     def centrality(self):
         """
         calculates several measures of node centrality and stores them in the general node table
         """
+        speciesnodes =  set(n for n, d in self.graph.nodes(data=True) if d['graphics']['type']=='roundrectangle')
 
-        centrality = pandas.Series(nx.degree_centrality(self.graph))
-        closeness = pandas.Series(nx.closeness_centrality(self.graph))
-        indegree = pandas.Series(nx.in_degree_centrality(self.graph))
-        outdegree = pandas.Series(nx.out_degree_centrality(self.graph))
-
-
-        self.nodes['centrality'] =  centrality
-        self.nodes['closeness'] = closeness
-        self.nodes['indegree'] = indegree
-        self.nodes['outdegree'] = outdegree
+        g2 = nx.Graph(self.graph)
+        self.nodes['degree'] = pandas.Series(bipartite.degree_centrality(self.graph,speciesnodes))
+        self.nodes['closeness'] = pandas.Series(bipartite.closeness_centrality(self.graph,speciesnodes))
+        self.nodes['betweenness'] = pandas.Series(bipartite.betweenness_centrality(self.graph,speciesnodes))
+        self.nodes['communicability'] = pandas.Series(nx.communicability_centrality(g2))
 
         #print self.nodes.sort(column='load',ascending=False).head(20)
         #
@@ -102,7 +151,7 @@ def generateGraph(bngfile,timeout=180,graphtype='regulatory',options = []):
     """
     Generates a bng-xml file via the bng console
     """
-    consoleCommands.generateGraph(bngfile,graphtype,options)
+    #consoleCommands.generateGraph(bngfile,graphtype,options)
 
     graphname = '.'.join(bngfile.split('.')[:-1]) + '_{0}.gml'.format(graphtype)
     graphname = graphname.split('/')[-1]
@@ -110,12 +159,25 @@ def generateGraph(bngfile,timeout=180,graphtype='regulatory',options = []):
 
 
 def getGraphEntropy(graphname,nodeType):
-    graph = loadGraph(graphname)
-    process = ProcessGraph(graph)
-    process.centrality()
-    dist = process.centrality_distribution(node_type=nodeType)
-    return graphname,nodeType,process.entropy(dist)
+    """
+    given a filename pointing to a gml file it will return a series of metrics describing
+    the properties of the graph
+    """
+    #try:
+        graph = loadGraph(graphname)
+        process = ProcessGraph(graph)
+        process.removeContext()
+        try:
+            process.centrality()
+            dist = process.centrality_distribution(node_type=nodeType)
+            centropy = process.entropy(dist)
+        except ZeroDivisionError:
+            centropy = 1
+        #print process.wiener()
 
+        return graphname,nodeType,process.wiener(),centropy,process.graphMeasures(),[len(process.nodes[process.nodes.graphics =='process']),len(process.nodes[process.nodes.graphics=='species'])]
+    #except:
+    #    return graphname,nodeType,-1
 
 import shutil
 
@@ -127,24 +189,59 @@ def createGMLFiles(directory,options):
             graphname = generateGraph(bngfile,options = options[option])
             shutil.move(graphname, os.path.join(directory,option))    
 
-if __name__ == "__main__":
-    #bngfile = 'egfr_net.bngl'
-    options = {'groups_collapsed': ['groups','collapse'],'pure_regulatory':[]}
-    #createGMLFiles('egfr',options)
-    graphnames = getFiles('egfr','gml')
-    nodeTypes = ['species','process']
-    #getGraphEntropy('egfr/egfr_net_regulatory.gml','species')
-    #raise Exception
+def defineConsole():
+    parser = argparse.ArgumentParser(description='SBML to BNGL translator')
+    parser.add_argument('-s','--settings',type=str,help='settings file')
+    parser.add_argument('-o','--output',type=str,help='output directory')
+    return parser    
+
+def loadFilesFromYAML(yamlFile):
+    with open(yamlFile,'r') as f:
+        yamlsettings = yaml.load(f)
+
+    print yamlsettings
+    return yamlsettings
+
+def getEntropyMeasures(graphnames):
+    """
+    batch process returns a distribution of metrics for fileset <graphnames>
+    """
     futures = []
     workers = mp.cpu_count()-1
-    results = pandas.DataFrame(index=graphnames,columns=nodeTypes)
-    results = results.fillna(0)
-    counter = 1
-    for idx in (range(len(nodeTypes))):
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-            for gidx in range(len(graphnames)):
-                futures.append(executor.submit(getGraphEntropy,graphnames[gidx],nodeTypes[idx]))
-    for future in concurrent.futures.as_completed(futures,timeout=3600):
-        partialResults = future.result()
-        results.set_value(partialResults[0],partialResults[1],partialResults[2])
-    print results 
+    results = pandas.DataFrame()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+        for gidx in range(len(graphnames)):
+            futures.append(executor.submit(getGraphEntropy,graphnames[gidx],'species'))
+        for future in concurrent.futures.as_completed(futures,timeout=3600):
+            partialResults = future.result()
+            row = partialResults[0].split('/')[-1]
+            column = partialResults[0].split('/')[-2]
+            results = results.set_value(row,column + '_wiener',partialResults[2][0])
+            results = results.set_value(row,column + '_entropy',partialResults[2][1])
+            results = results.set_value(row,column + '_ccentropy',partialResults[3])
+            results = results.set_value(row,column + '_nconn',partialResults[4][0])
+            results = results.set_value(row,column + '_nprocess',partialResults[5][0])
+            results = results.set_value(row,column + '_nspecies',partialResults[5][1])
+
+    return results     
+
+if __name__ == "__main__":
+
+    parser = defineConsole()
+    namespace = parser.parse_args()
+    if namespace.settings != None:
+        settings = loadFilesFromYAML(namespace.settings)
+        graphnames = settings['inputfiles']
+        outputdirectory = namespace.output
+        outputfile = 'entropy_{0}.h5'.format(namespace.settings.split('/')[-1].split('.')[-2])
+    else:
+        graphnames = getFiles('egfr','gml')
+        outputdirectory = 'egfr'
+        outputfile = 'entropy_test.h5'
+
+    #bngfile = 'egfr_net.bngl'
+    #createGMLFiles('egfr',options)
+    nodeTypes = ['species','process']
+    results = getEntropyMeasures(graphnames)
+    results.to_hdf(os.path.join(outputdirectory,outputfile),'entropy')
+    #raise Exception
