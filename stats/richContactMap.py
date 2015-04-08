@@ -11,7 +11,6 @@ from collections import Counter
 import pygraphviz as pgv
 import progressbar
 import glob
-import os
 import shutil
 import csv
 import radarChart
@@ -841,6 +840,11 @@ def spaceCoveredCDF(directory):
 
 
 def reactionBasedAtomization(reactions):
+    """
+    based on a group of reactions obtain the model's atomization metric
+    a reaction is considered atomized when it contains at least one atomic
+    operation
+    """
     atomizedProcesses = 0
     trueProcessesCounter = 0
     for reaction in reactions:
@@ -865,6 +869,9 @@ generalSignature = defaultdict(list)
 
 
 def stoichiometryAnalysis(reactions):
+    """
+    divides a model into two sets of atomic and non-atomic reactions
+    """
     ato = []
     nonato = []
     for reaction in reactions:
@@ -899,65 +906,23 @@ def getValidFiles(directory, extension):
 
 
 def reactionBasedAtomizationFile(xml):
-    ratomizationList = []
-    ratomizationDict = defaultdict(dict)
-    ratomizationListm10 = []
-    ratomizationListl10 = []
-    largeUseless = []
-    syndelArray = []
-    syndel = 0
-    totalRatomizedProcesses = 0
-    totalReactions = 0
-    totalProcesses = 0
-    validFiles = 0
-    atomizedDistro = []
-    nonAtomizedDistro = []
-    interesting = []
+    ratomizationDict = {}
 
     try:
             # console.bngl2xml('complex/output{0}.bngl'.format(element),timeout=10)
-        try:
-
-            _, rules, _ = readBNGXML.parseXML(xml)
-        except:
-            print xml
+        _, rules, _ = readBNGXML.parseXML(xml)
         atomizedProcesses, weight = reactionBasedAtomization(rules)
-        ato, nonato = stoichiometryAnalysis(rules)
-        atomizedDistro.extend(ato)
-        nonAtomizedDistro.extend(nonato)
-        # if (2,1) in nonato:
-        #    interesting.append(element)
+        #ato, nonato = stoichiometryAnalysis(rules)
+        #atomizedDistro.extend(ato)
+        #nonAtomizedDistro.extend(nonato)
         score = atomizedProcesses * 1.0 / weight if weight != 0 else 0
-        totalRatomizedProcesses += atomizedProcesses
-        totalReactions += len(rules)
-        totalProcesses += weight
-        ratomizationDict[xml]['score'] = score
-        ratomizationDict[xml]['weight'] = weight
-        ratomizationDict[xml]['length'] = len(rules)
-        if len(rules) == 0:
-            ruleslen0 += 1
-        syndelArray.append((len(rules) - weight) * 1.0 / len(rules))
-        if score == -1:
-            syndel += 1
-            # ratomizationList.append([0,0,len(rules)])
-        ratomizationList.append([score, weight, len(rules)])
-        if len(rules) > 10:
-            if weight * 1.0 / len(rules) >= 0.1 and score < 0.1:
-                largeUseless.append(xml)
-            ratomizationListm10.append([score, weight, len(rules)])
-        else:
-            ratomizationListl10.append([score, weight, len(rules)])
-        # print xml,ratomizationList[-1]
-        validFiles += 1
-    # except (IndexError,ZeroDivisionError):
-    #    syndel += 1
-    #    print 'iz'
-    #    continue
+        ratomizationDict['score'] = score
+        ratomizationDict['weight'] = weight
+        ratomizationDict['length'] = len(rules)
     except IOError:
         print 'io'
     return ratomizationDict
 
-import os.path
 
 
 def generateBNGXML(directory,format='BNGXML'):
@@ -1370,10 +1335,10 @@ def analyzeGroupingCDF():
 
 
 def createSpaceDistribution():
-    '''
+    """
     analyzes groups of files that have grouped reaction and creates a 
     distribution of how much space thse context-sensitive reactions cover
-    '''
+    """
     with open('spaceCovered.dump', 'rb') as f:
         space = pickle.load(f)
     infiniteCycles = 0
@@ -1463,14 +1428,14 @@ def nonAtomizedSpeciesAnalysis():
 
 if __name__ == "__main__":
     # generate bng-xml
-    generateBNGXML('complex2','BNGXML')
+    #generateBNGXML('complex2','BNGXML')
     #print failures
     #spaceCoveredCDF('complex2')
     # modelCompositionCDF('complex2')
     #reactionBasedAtomizationDistro('complex2')
     # nonAtomizedSpeciesAnalysis()
     # createGroupingCDF()
-    # print reactionBasedAtomizationFile('complex/BIOMD0000000019.xml.xml')
+    print reactionBasedAtomizationFile('complex2/BIOMD0000000019.xml.xml')
     # analyzeGroupingCDF()
 
     # createSpaceDistribution()
