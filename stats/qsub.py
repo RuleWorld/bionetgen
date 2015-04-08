@@ -39,7 +39,7 @@ queue_list= {'noc_64_core':64,'serial_queue':1,'dept_24_core':24,'dmz_core36':36
 import progressbar
 import tempfile
 import yaml
-def start_queue(fileNameSet,outputdirectory,queue,batchSize,outputtype):
+def start_queue(fileNameSet,outputdirectory,queue,batchSize,outputtype,nodes=1):
     """
     sends a batch job with the qsub queue and executes a command over it.
     using PBS commands
@@ -65,9 +65,9 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize,outputtype):
         output, input = popen2('qsub')
         
         # Customize your options here
-        job_name = "jjtv_atomizer_{1}".format(outputdirectory,idx)
-        walltime = "24:00:00"
-        processors = "nodes=1:ppn={0}".format(queue_list[queue])
+        job_name = "jjtv_{0}_{1}".format(outputtype,idx)
+        walltime = "10:00:00"
+        processors = "nodes={1}:ppn={0}".format(min(queue_list[queue],batchSize),nodes)
         analyzer = os.path.abspath('stats/analyzeModelSet.py')
         command = ['python {0}'.format(analyzer),'-s',pointer,'-o','${SCRDIR}/',
         '-t',outputtype
@@ -94,8 +94,8 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize,outputtype):
         echo Running on `hostname`
         echo workdir $PBS_O_WORKDIR
 
-        #PBS -M jjtapia@gmail.com
-        #PBS -m abe  # (a = abort, b = begin, e = end)
+        ##PBS -M jjtapia@gmail.com
+        ##PBS -m abe  # (a = abort, b = begin, e = end)
         PYTHONPATH=$PYTHONPATH:./:./SBMLparser
         PATH=/usr/local/anaconda/bin:$PATH
         SCRDIR=/scr/$PBS_JOBID
@@ -118,7 +118,6 @@ def start_queue(fileNameSet,outputdirectory,queue,batchSize,outputtype):
         input.close()
         
         # Print your job and the system response to the screen as it's submitted
-        #print(job_string)
         #print(output.read())
         
         time.sleep(0.05)
@@ -141,6 +140,7 @@ def defineConsole():
     parser.add_argument('-b','--batch',type=int,help='batch size')
     parser.add_argument('-i','--input',type=str)
     parser.add_argument('-o','--output',type=str)
+    parser.add_argument('-n','--nodes',type=int)
 
     return parser    
 
@@ -152,6 +152,7 @@ if __name__ == "__main__":
     inputfolder = namespace.input
     queue = namespace.queue
     batchsize = namespace.batch
+    nodes = namespace.nodes
     if namespace.type == 'atomize':
         finalfiles = getFiles(inputfolder,"xml")
         if namespace.resume:
@@ -168,10 +169,14 @@ if __name__ == "__main__":
         finalfiles = getFiles(inputfolder,"bngl")
         if namespace.resume:
             gmlfiles = getFiles(inputfolder,"gml")
+            gmlfiles = [x.replace('_regulatory','') for x in gmlfiles]
+            finalfiles = restart(finalfiles,gmlfiles,'.bngl')
 
-            finalfiles = restart(finalfiles,bngxmlfiles,'.bngl')
-
+    elif namespace.type =='entropy':
+        finalfiles = getFiles(inputfolder,"gml")
+    elif namespace.type == 'atomizationScore':
+        finalfiles = getFiles(inputfolder,"xml")
     #print len(finalfiles)
     
-    start_queue(finalfiles,outputfolder,queue,batchsize,namespace.type)
+    start_queue(finalfiles,outputfolder,queue,batchsize,namespace.type,namespace.nodes)
 

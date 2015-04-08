@@ -6,7 +6,6 @@ Created on Wed May 30 11:44:17 2012
 """
 from copy import deepcopy
 from lxml import etree
-import pygraphviz as pgv
 import re
 from random import randint
 from pyparsing import Word, Suppress, Optional, alphanums, Group, ZeroOrMore
