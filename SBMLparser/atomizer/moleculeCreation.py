@@ -792,7 +792,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     _, rules, _ = parser.getReactions(atomize=True)
     molecules, _, _,_ = parser.getSpecies()
     database.sbmlAnalyzer = \
-    analyzeSBML.SBMLAnalyzer(parser,configurationFile, namingConventions,speciesEquivalences)
+    analyzeSBML.SBMLAnalyzer(parser,configurationFile, namingConventions,speciesEquivalences,conservationOfMass=True)
     #classify reactions
     database.classifications, equivalenceTranslator, database.eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
@@ -822,6 +822,8 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     for reaction, classification in zip(rules, database.classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
+
+
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
         #Check if I'm using a molecule that hasn't been used yet
@@ -962,10 +964,8 @@ tmp,removedElement,tmp3))
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
     #print database.dependencyGraph
-    
     prunnedDependencyGraph, database.weights, unevenElementDict,database.artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,database.eequivalenceTranslator,database.sbmlAnalyzer)
-	
     return prunnedDependencyGraph,database
     
     
