@@ -45,14 +45,15 @@ def addToDependencyGraph(dependencyGraph, label, value):
 
 class SBMLAnalyzer:
     
-    def __init__(self,modelParser,configurationFile,namingConventions,speciesEquivalences=None):
+    def __init__(self,modelParser,configurationFile,namingConventions,speciesEquivalences=None,conservationOfMass = True):
         self.modelParser = modelParser        
         self.configurationFile = configurationFile
         self.namingConventions = detectOntology.loadOntology(namingConventions)
         self.speciesEquivalences= speciesEquivalences
         self.userEquivalencesDict = None
         self.lexicalSpecies= []
-        
+        self.conservationOfMass = conservationOfMass        
+
     def distanceToModification(self,particle,modifiedElement,translationKeys):
         posparticlePos = [m.start()+len(particle) for m in re.finditer(particle,modifiedElement)]
         preparticlePos = [m.start() for m in re.finditer(particle,modifiedElement)]
@@ -508,8 +509,17 @@ class SBMLAnalyzer:
                     #product.remove(closeMatch[0])
                     #reactant.remove(reactant[idx])
                     return (reactant,closeMatch)
+                elif len(closeMatch) > 0:
+                    s = difflib.SequenceMatcher()
+                    s.set_seq1(reactant)
+                    scoreDictionary = []
+                    for match in closeMatch:
+                        s.set_seq2(match)
+                        scoreDictionary.append((s.ratio(),match))
+                    scoreDictionary.sort(reverse=True)
+                    return reactant,[closeMatch[0]]
                 else:
-                    return None,closeMatch
+                    return None,[]
         else:
             
             if reactant not in product:
@@ -675,7 +685,10 @@ class SBMLAnalyzer:
                             #if reactant[idx] == pp[0]:
                                 treactant,tproduct = self.growString(reactant,product,
                                                                 reactant[idx],pp,idx,strippedMolecules)
-                                if '_'.join(treactant) in strippedMolecules or '_'.join(tproduct) in strippedMolecules:
+                                #FIXME: this comparison is pretty nonsensical. treactant and tproduct are not
+                                #guaranteed to be in teh right order. why are we comparing them both at the same time
+                                print reaction,treactant,tproduct
+                                if (len(treactant) > 1 and '_'.join(treactant) in strippedMolecules) or (len(tproduct)>1 and '_'.join(tproduct) in strippedMolecules):
                                     pairedMolecules[stoch2].append(('_'.join(treactant),'_'.join(tproduct)))
                                     pairedMolecules2[stoch].append(('_'.join(tproduct),'_'.join(treactant)))
                                     for x in treactant:
@@ -707,8 +720,8 @@ class SBMLAnalyzer:
                                             product.remove(x)
                                         idx = -1
                                         break
-                    
-        if sum(len(x) for x in reactantString+productString)> 0:
+        
+        if sum(len(x) for x in reactantString+productString)> 0 and self.conservationOfMass:
             return None,None
         else:
             return pairedMolecules,pairedMolecules2
@@ -1074,6 +1087,7 @@ class SBMLAnalyzer:
                                                                  
                     if flag and sorted([x[1] for x in matches]) not in lexicalDependencyGraph[reactant]:
                         if [x[1] for x in matches] != [reactant]:
+
                             lexicalDependencyGraph[reactant].append(sorted([x[1] for x in matches]))
                             for x in matches:
                                 #TODO(Oct14): it would be better to try to map this to an
