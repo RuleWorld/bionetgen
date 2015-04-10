@@ -171,11 +171,6 @@ def parseXML(xmlFile):
         moleculeList.append(parseMolecules(molecule))
         
     for rule in rules:
-        description = parseRule(rule,parameterDict)
-        #if 'reverse' in description[0].label:
-        #    ruleDescription[-1][0].bidirectional= True
-        #    ruleDescription[-1][0].rates.append(description[0].rates[0])
-        #else:
         ruleDescription.append(parseRule(rule,parameterDict))
     return moleculeList, ruleDescription,parameterDict
         

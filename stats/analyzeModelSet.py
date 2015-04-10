@@ -19,8 +19,8 @@ import argparse
 home = expanduser("~")
 bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 visualizeExecutable = join(home,'workspace','bionetgen','bng2','Perl2','Visualization','visualize.pl')
-graphAnalysis = '/net/antonin/home/mscbio/jjtapia/workspace/bionetgen/parsers/SBMLparser/stats/graphAnalysis.py'
-
+graphAnalysis = join(home,'workspace','bionetgen','parsers','SBMLparser','stats','graphAnalysis.py')
+collapsedContact = join(home,'workspace','bionetgen','parsers','SBMLparser','stats','collapsedContactMap.py')
 
 
 def getFiles(directory,extension):
@@ -196,6 +196,19 @@ def reactionBasedAtomizationFile(xmlFile,outputDataFrame,options):
     except IOError:
         print 'io',xmlFile
 
+
+def createCollapsedContact(xmlfile,outputdirectory,options=[]):
+    """
+    create a collapsed contact map for a given file
+    """
+    with open(os.devnull,"w") as f:
+        result = call(['python',collapsedContact,'-i',
+        #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
+        xmlfile,
+        '-o',os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '._collapsed.gml',
+        ],stdout=f)
+    return result
+
 def saveToDataframe(result,dataframe):
     """
     Store xml-analysis results in dataframe
@@ -237,6 +250,8 @@ if __name__ == "__main__":
         atomizationScore = pandas.DataFrame()
         parallelHandling(filenameset,reactionBasedAtomizationFile,atomizationScore,postExecutionFunction=saveToDataframe)
         atomizationScore.to_hdf('atomizationResults.h5','atomization')
+    elif ttype =='collapsedContact':
+        parallelHandling(filenameset,createCollapsedContact,outputdirectory)
     else:
         raise Exception('Invalid output type')
     #with open('new_non_curated/failure.dump','rb') as f:
