@@ -4,22 +4,24 @@ Created on Fri May 2 16:56:13 2014
 
 @author: proto
 """
+import sys
+sys.path.insert(0, 'SBMLparser')
 
-
-import libsbml2bngl
+import SBMLparser.libsbml2bngl as libsbml2bngl
+import SBMLparser.utils.annotationExtender as annotationExtender
 # Restrict to a particular path.
 from twisted.web import xmlrpc, server
 from twisted.internet import reactor
 import threading
-import sys
-sys.path.insert(0, '../utils/')
-import consoleCommands
+import SBMLparser.utils.consoleCommands as consoleCommands
+
 import tempfile
 sys.path.insert(0, '../gml2sbgn/')
 import libsbgn
 import networkx
 iid = 1
 iid_lock = threading.Lock()
+from subprocess import call 
 
 bngDistro  = '/home/ubuntu/bionetgen/bng2/BNG2.pl'
 #bngDistro = '/home/proto/workspace/bionetgen/bng2/BNG2.pl'
@@ -53,6 +55,28 @@ class AtomizerServer(xmlrpc.XMLRPC):
         except:
             self.addToDict(ticket,-5)
             print 'failure'
+
+    def generateAnnotation(self,ticket,xmlFile):
+
+            print ticket
+            reaction = 'config/reactionDefinitions.json'
+
+            pointer = tempfile.mkstemp(suffix='.xml',text=True)
+            with open(pointer[1],'w' ) as f:
+                f.write(xmlFile)
+            '''
+            call(['python','annotationExtender.py',
+            '-i',pointer[1],
+            '-o',pointer[1]+'.xml'])
+            with open(pointer[1]+'.xml','r') as f:
+                result = f.read()
+            '''
+            bnglFile = libsbml2bngl.readFromString(xmlFile,
+                                                 reaction,False,None,True)
+
+            result = annotationExtender.expandAnnotation(pointer[1],bnglFile)
+            self.addToDict(ticket,result)
+            print 'success',
 
 
     def generateGraph(self,ticket,bnglContents,graphtype):
@@ -94,6 +118,15 @@ class AtomizerServer(xmlrpc.XMLRPC):
         #self.generateGraph(counter,bnglFile,graphtype)
         #return counter
 
+    def xmlrpc_generateAnnotations(self,bxmlFile):
+        counter = next_id()
+        xmlFile = bxmlFile.data
+        reactor.callInThread(self.generateAnnotation,counter,xmlFile)
+        #reactor.callInThread(self.atomize,counter,xmlFile,False)
+
+        processDict[counter] = -2
+        return counter
+
     def xmlrpc_atomize(self, bxmlFile,atomize=False,reaction='config/reactionDefinitions.json',species=None):
         counter = next_id()
         xmlFile = bxmlFile.data
@@ -124,3 +157,6 @@ if __name__ == '__main__':
     r = AtomizerServer()
     reactor.listenTCP(9000, server.Site(r))
     reactor.run() 
+    #f = open('XMLExamples/curated/BIOMD0000000019.xml')
+    #s = f.read()
+    #r.generateAnnotation(1,s)

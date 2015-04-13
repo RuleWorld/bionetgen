@@ -527,7 +527,7 @@ sub toCVodeString
         else
         {   # handle all other species...
             # add rates and stoich for each reaction that influences this speices
-            foreach my $i_rxn ( keys %$species_vector )
+            foreach my $i_rxn ( sort { $a <=> $b } keys %$species_vector )
             {
                 # get species stoichiometry under this reaction
                 my $stoich = $species_vector->{$i_rxn};
@@ -595,7 +595,7 @@ sub toMatlabString
         else
         {   # handle all other species...
             # add rates and stoich for each reaction that influences this speices
-            foreach my $i_rxn ( keys %$species_vector )
+            foreach my $i_rxn ( sort { $a <=> $b } keys %$species_vector )
             {
                 # get species stoichiometry under this reaction
                 my $stoich = $species_vector->{$i_rxn};

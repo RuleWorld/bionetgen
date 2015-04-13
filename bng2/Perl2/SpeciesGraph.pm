@@ -1315,7 +1315,7 @@ sub removeRedundantLabels
 
         while ( @set1 )
         {   # get molecule 1
-            my ($ip1,$im1) = split /\./, shift @set1;
+            my ($ip1,$im1) = split (/\./, shift @set1);
             my $mol1 = $sgs1->[$ip1]->Molecules->[$im1];
 
             my $found_match = 0;  # true if we found a map for obj1
@@ -1324,7 +1324,7 @@ sub removeRedundantLabels
             my $idx2 = 0;
             while ( $idx2 < @set2 )
             {   # get molecule 2
-                my ($ip2,$im2) = split /\./, $set2[$idx2];
+                my ($ip2,$im2) = split (/\./, $set2[$idx2]);
                 my $mol2 = $sgs2->[$ip2]->Molecules->[$im2];
 
                 if ( defined $mol1->Label  and  defined $mol2->Label )
@@ -1381,7 +1381,7 @@ sub removeRedundantLabels
         # handle product molecules without a match on the reactant side
         while (@set2)
         {   # get molecule 2
-            my ($ip2,$im2) = split /\./, shift @set2;
+            my ($ip2,$im2) = split (/\./, shift @set2);
             my $mol2 = $sgs2->[$ip2]->Molecules->[$im2];
 
             if ( defined $mol2->Label and exists $temp_labels->{$mol2->Label})

@@ -36,6 +36,7 @@ use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
 use File::Spec;
+use File::Spec::Win32;
 use POSIX ("floor", "ceil");
 use Scalar::Util ("looks_like_number");
 use Config;
@@ -182,9 +183,11 @@ sub readSBML
 {
 	my $model  = shift @_;
 	my $filepath = shift @_;
+	unless ( -e $filepath )
+    {   return 1, "Could not find '$filepath'";   }
 	my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
 	$filename =~ s/\.xml//;
-	my $outfile = $model->getOutputDir() . $filename . '.bngl';
+	my $outfile = File::Spec->catpath('', $model->getOutputDir(), $filename.'.bngl');
     my $user_args = @_ ? shift @_ : {};
     
     # Collect user arguments
@@ -208,8 +211,6 @@ sub readSBML
 	$cmd .= ' -o "' . $outfile . '"';
 	if ($args{"atomize"}){
 		$cmd .= ' -a';
-		$cmd .= ' -c "' . $bindir . 'config/reactionDefinitions.json"';
-		$cmd .= ' -n "' . $bindir . 'config/namingConventions.json"';
 	}
 	
 	# Run the translator
@@ -288,6 +289,15 @@ sub readSBML
             $err = errgen( "'file' parameter is required for action readFile()" );
             goto EXIT;
         }
+        
+		# if file path is relative, change Unix path to Windows path, and vice versa,
+		# based on OS (improves cross-platform portability --LAH)
+		if ( not File::Spec::Win32->file_name_is_absolute( $filename ) ){
+			if ($Config{myarchname} =~ /MSWin32/)
+			{ $filename =~ s/\//\\/g; }
+			else
+			{ $filename =~ s/\\/\//g; }
+		}
 
         # increment level
         ++$level;
@@ -395,6 +405,9 @@ sub readSBML
 	        print "Reading from file $filename (level $level)\n";
 	        unless( open FILE, '<', $filename )
 	        {   
+	        		unless (File::Spec->file_name_is_absolute( $filename )){
+	        			$filename = File::Spec->rel2abs( $filename );
+	        		}
 	            $err = "Couldn't read from file $filename: $!";
 	            goto EXIT;
 	        }
@@ -458,7 +471,8 @@ sub readSBML
 #	                $bngdata{$name} = 1;
 	                
 	                # Move on if block has been suppressed by the user
-					unless ($blocks{$name}) { next; }
+	                # (if the block name is not recognized, continue so an error will be thrown)
+					if (exists $blocks{$name} and $blocks{$name}==0) { next; }
 	
 	                ### Read Parameters Block
 	                if ( $name eq 'parameters' )
@@ -1772,17 +1786,37 @@ sub setConcentration
     # Read expression
     my $expr    = Expression->new();
     my $estring = $value;
-    if ( my $err = $expr->readString( \$estring, $plist ) )
-    {
+    if ( my $err = $expr->readString( \$estring, $plist ) ){
         return '', $err;
     }
+    
+    # Evaluate observable and function names to values and reset
+    # the expression. Don't do this for parameters so that parameter 
+    # scans can be run.
+    my $estring2 = $value;
+    my $variables = $expr->getVariables($plist);
+	foreach my $var ($variables->{'Observable'}){ # Observables
+		foreach my $name (keys %{$var}){
+			my $val = $plist->evaluate($name);
+			$estring2 =~ (s/$name/$val/g);
+		}
+	}
+	foreach my $var ($variables->{'Function'}){ # Functions
+		foreach my $name (keys %{$var}){
+			my $val = $plist->evaluate($name);
+			$estring2 =~ (s/$name(\(\))?/$val/g);
+		}
+	}
+	if ( my $err = $expr->readString( \$estring2, $plist ) ){
+        return '', $err;
+    }
+    
+    # Either evaluate expression or create a new one with prefix 'NewConc'
     my $conc; # = $expr->evaluate($plist);
-    if ( $expr->Type eq 'NUM' )
-    {
+    if ( $expr->Type eq 'NUM' ){
     		$conc = $expr->evaluate();
     }
-    else
-    {
+    else{
         $conc = $expr->getName( $plist, 'NewConc' );
     }
 

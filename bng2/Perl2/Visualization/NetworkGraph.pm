@@ -355,7 +355,8 @@ sub addWildcards
 # get methods
 sub getReactantsProducts
 {
-	my $string = unprettify(shift @_);
+	my $in = shift @_;
+	my $string = unprettify($in);
 	my @splits = split '->',$string;
 	my @reac = ();
 	my @prod = ();

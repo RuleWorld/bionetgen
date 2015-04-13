@@ -118,7 +118,7 @@ calc_ratelaws ( N_Vector ratelaws, N_Vector species, N_Vector expressions, N_Vec
 }
 
 
-/* Calculate species derivates */
+/* Calculate species derivatives */
 int
 calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data )
 {
@@ -143,13 +143,13 @@ calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * 
     /* calculate ratelaws */
     calc_ratelaws( ratelaws, species, expressions, observables );
                         
-    /* calculate derivates */
-    NV_Ith_S(Dspecies,0) = NV_Ith_S(ratelaws,5) -NV_Ith_S(ratelaws,1);
-    NV_Ith_S(Dspecies,1) = -NV_Ith_S(ratelaws,7) +NV_Ith_S(ratelaws,5) +NV_Ith_S(ratelaws,10) +NV_Ith_S(ratelaws,8) -NV_Ith_S(ratelaws,1) -NV_Ith_S(ratelaws,4);
-    NV_Ith_S(Dspecies,2) = NV_Ith_S(ratelaws,3) +NV_Ith_S(ratelaws,0) -NV_Ith_S(ratelaws,2) +NV_Ith_S(ratelaws,6) +NV_Ith_S(ratelaws,9);
+    /* calculate derivatives */
+    NV_Ith_S(Dspecies,0) = -NV_Ith_S(ratelaws,1) +NV_Ith_S(ratelaws,5);
+    NV_Ith_S(Dspecies,1) = -NV_Ith_S(ratelaws,1) -NV_Ith_S(ratelaws,4) +NV_Ith_S(ratelaws,5) -NV_Ith_S(ratelaws,7) +NV_Ith_S(ratelaws,8) +NV_Ith_S(ratelaws,10);
+    NV_Ith_S(Dspecies,2) = NV_Ith_S(ratelaws,0) -NV_Ith_S(ratelaws,2) +NV_Ith_S(ratelaws,3) +NV_Ith_S(ratelaws,6) +NV_Ith_S(ratelaws,9);
     NV_Ith_S(Dspecies,3) = 0;
-    NV_Ith_S(Dspecies,4) = -NV_Ith_S(ratelaws,5) +NV_Ith_S(ratelaws,8) +NV_Ith_S(ratelaws,1) -NV_Ith_S(ratelaws,4);
-    NV_Ith_S(Dspecies,5) = -NV_Ith_S(ratelaws,7) +NV_Ith_S(ratelaws,10) -NV_Ith_S(ratelaws,8) +NV_Ith_S(ratelaws,4);
+    NV_Ith_S(Dspecies,4) = NV_Ith_S(ratelaws,1) -NV_Ith_S(ratelaws,4) -NV_Ith_S(ratelaws,5) +NV_Ith_S(ratelaws,8);
+    NV_Ith_S(Dspecies,5) = NV_Ith_S(ratelaws,4) -NV_Ith_S(ratelaws,7) -NV_Ith_S(ratelaws,8) +NV_Ith_S(ratelaws,10);
     NV_Ith_S(Dspecies,6) = NV_Ith_S(ratelaws,7) -NV_Ith_S(ratelaws,10);
 
 

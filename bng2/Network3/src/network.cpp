@@ -35,9 +35,11 @@ extern "C" {
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-#include <cfloat>
 #include "mathutils.h"
 }
+
+#include <cfloat>
+
 /*
  #include <cstdlib>
  #include <cstring>
@@ -499,7 +501,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// Erase '()' from end of function name
 				func_name.erase(func_name.length()-2,func_name.length());
-//				cout << func_name << ": " << function_string << endl;
+				/*
+				cout << func_name << ": " << function_string << endl;
+				//*/
 
 				// Make sure the function isn't named "time", just to be safe
 				if (func_name == "time"){
@@ -511,16 +515,18 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				// link it to rates and observables (spec_groups)
 				process_function_names(function_string); // Remove parentheses from variable names
 				vector<string> variable_names = find_variables(function_string); // Extract variable names
-//    			for (unsigned int i=0;i < variable_names.size();i++){
-//    				cout << "\t" << variable_names[i] << endl;
-//    			}
+				/*
+				for (unsigned int i=0;i < variable_names.size();i++){
+					cout << "\t" << variable_names[i] << endl;
+				}
+				//*/
 
 				// Identify dependencies
 //				vector<int> observ_depend;
 //				vector<int> param_depend;
 				for (unsigned int i = 0; i < variable_names.size(); i++) {
 					if (param_map.find(variable_names[i]) == param_map.end()) {
-						cout << "Error in parsing function '" << func_name << "'. Could not find variable '"
+						cout << "Error in parsing function '" << func_name << " = " << function_string << "'. Could not find variable '"
 							 << variable_names[i] << "'. Exiting.\n";
 						exit(1);
 					}
@@ -541,7 +547,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				}
 
 				// evaluate it and store value
-//				cout << function_string << endl;
+				/*
+				cout << function_string << endl;
+				//*/
 				/*size_t found;
 				while ((found = function_string.find("&&")) != string::npos){
 					function_string.replace(found,2,"and");
@@ -549,8 +557,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 				while ((found = function_string.find("||")) != string::npos){
 					function_string.replace(found,2,"or");
 				}*/
-
-//				cout << function_string << endl;
+				/*
+				cout << function_string << endl;
+				//*/
 				parser.SetExpr(function_string);
 //				double new_val = parser.Eval();
 			}
@@ -742,6 +751,9 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 					}
 				}
 				parser.p.SetExpr(expr); //parser.p.SetExpr(tokens[n_tok]);
+				/*
+				cout << expr << endl;
+				//*/
 				try
 				{
 					parser.val = parser.p.Eval();

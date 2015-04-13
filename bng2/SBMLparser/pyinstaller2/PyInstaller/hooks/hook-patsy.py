@@ -1,2 +1,0 @@
-
-hiddenimports = ['patsy.builtins']

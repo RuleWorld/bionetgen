@@ -1449,7 +1449,7 @@ function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 $calc_ratelaws_string
 end
 
-% Calculate species derivates
+% Calculate species derivatives
 function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
     
     % initialize derivative vector
@@ -1833,7 +1833,7 @@ $calc_ratelaws_string
 }
 
 
-/* Calculate species derivates */
+/* Calculate species derivatives */
 int
 calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data )
 {
@@ -1858,7 +1858,7 @@ calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * 
     /* calculate ratelaws */
     calc_ratelaws( ratelaws, species, expressions, observables );
                         
-    /* calculate derivates */
+    /* calculate derivatives */
 $calc_derivs_string
 
     return(0);
@@ -3023,7 +3023,7 @@ function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 $calc_ratelaws_string
 end
 
-% Calculate species derivates
+% Calculate species derivatives
 function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
     
     % initialize derivative vector

@@ -7,6 +7,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/run_network.cpp])
 AC_CONFIG_HEADERS([config.h])
 
+# Added on 11/26/14 --LAH
+AC_CONFIG_MACRO_DIR([m4])
+AM_PROG_AR
+
 # Checks for programs.
 AC_PROG_LIBTOOL
 AC_PROG_CXX
@@ -37,13 +41,9 @@ AC_CONFIG_FILES([
  Makefile
  src/Makefile
 ])
-#AC_CONFIG_SUBDIRS([
-# cvode-2.6.0
-# muparser_v134
-#])
 AC_CONFIG_SUBDIRS([
  cvode-2.6.0
- muparser_v2_2_3
+ muparser_v2_2_4
 ])
 AC_OUTPUT
 

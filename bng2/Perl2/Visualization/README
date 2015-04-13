@@ -1,0 +1,14 @@
+VISUALIZATION TOOL
+
+The visualize() action and the visualize.pl tool generate GML files. 
+They are best viewed using yEd Graph Editor available for free at 
+(http://www.yworks.com/en/products_yed_download.html).
+
+Using visualize.pl
+------------------
+perl visualize.pl --bngl BNGL --type contactmap
+perl visualize.pl --bngl BNGL --type [ruleviz_pattern|ruleviz_operation]
+perl visualize.pl --bngl BNGL --type regulatory [--background] [--groups [--collapse]]
+
+For additional help, try:
+perl visualize.pl --help

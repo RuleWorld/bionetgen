@@ -115,109 +115,93 @@ sub getModel
 
 sub display_help
 {
-	my $args = @_ ? shift @_ : 0;
-	my $str;
+
 	
-	if($args==0) {
-		$str .= "\n visualize.pl \n";
-		$str .= " ---------------------------------------------/ HELP MENU /----------\n";
-		$str .= " SYNOPSIS\n                                                            \n";
-		$str .= "   visualize.pl                           show this help menu                   \n";
-		$str .= "   visualize.pl -h                                \"                   \n";
-		$str .= "   visualize.pl -help                             \"                   \n";
-		$str .= "   visualize.pl --type TYPE [OPTIONS]     make visualization of type TYPE       \n";
-		$str .= "   visualize.pl --type TYPE --help        show help on a specific visualization \n";
-		$str .= "   TYPE = rule_network, rule_pattern, rule_operation or process\n";
-		$str .= "\n OPTIONS                                                             \n";
-		$str .= "\n File I/O                                                          \n\n";
-		$str .= "   --bngl BNGL     use BioNetGen model file                          \n";
-		$str .= "   --opts FILE     use Options text file                             \n";
-		$str .= "   --textonly      Ouputs Text-only version of visualization (default is GML)\n";
-		$str .= "   --suffix STR    Adds suffix to output filename\n";
-		$str .= "\n Visualization config                                                  \n\n";
-		$str .= "   --type TYPE     create visualization of a certain type \n";
-		$str .= "   --background    turn background ON (default OFF)                  \n";
-		$str .= "   --groups        turn grouping ON (default OFF)                    \n";
-		$str .= "   --each          output each rule/group separately (default OFF)	  \n";
-		$str .= "\n try: visualize.pl --type regulatory --help\n";
+		print qq{
+---------------------------------------------/ HELP MENU /----------
+
+SYNOPSIS:
+
+  visualize.pl --help                	show this help menu
+  visualize.pl --help --type TYPE    	show help on visualization of type TYPE
+  visualize.pl --type TYPE              make visualization of type TYPE
+  
+  Allowed types: {ruleviz_pattern, ruleviz_operation, regulatory, contactmap }
+  Default type when --type is not used: regulatory
+
+OPTIONS:
+
+  File I/O
+  --------
+  --bngl FILE					   use BNGL model file (required)
+  --opts FILE1 [--opts FILE2 [..]]     use input options files FILE1 FILE2 .. (optional)
+  --suffix "STR"                       add suffix STR to output filename (optional)
+
+USAGE:
+  Visualizing individual rules
+  ----------------------------
+  visualize.pl --type ruleviz_pattern|ruleviz_operation [--each]
+  
+  ruleviz_pattern: rules are visualized as bipartite graphs with embedded pattern graphs
+  ruleviz_operation: rules are visualized as pattern graphs with graph operation nodes
+  each: enable output of separate gml file for each rule
+  
+  Visualizing contact map
+  -----------------------
+  visualize.pl --type contactmap
+  
+  Visualizing regulatory graphs of individual rules
+  -------------------------------------------------
+  visualize.pl --type regulatory [--each] [--background]
+  
+  background: turning background on shows all nodes (default is background off)
+  each: enable output of a separate gml file for each rule
+  
+  Visualizing text-only regulatory graph of model
+  -----------------------------------------------
+  visualize.pl --type regulatory --background --textonly
+  
+  Visualizing regulatory graph of model
+  -------------------------------------
+  visualize.pl --type regulatory [--background] [--groups [--collapse]] [--filter --level INT] [--opts FILE1 [--opts FILE2 [..] ] ]
+  
+  background: turning background on shows all nodes (default is background off)
+  groups: enable automated grouping of rules and user-assisted grouping of patterns
+  collapse: replace groups of nodes by a single node representative node
+  filter: filter regulatory graph starting from seed nodes and traversing edges upto an integer level deep
+  opts: one or more options files 
+  
+  groups, background and filter options can be defined in options files which have the following structure:
+   
+	begin background
+		begin include
+			<atomic patterns>
+		end include
 		
-		print $str;
-		return;
-	}
+		begin exclude
+			<atomic patterns>
+		end exclude
+	end background
 	
-	if($args->{'type'} eq 'regulatory')
-	{
-		$str .= "\n visualize.pl --type regulatory\n";
-		$str .= " ---------------------------------------------/ HELP MENU /----------\n";
-		$str .= " PURPOSE\n\n";
-		$str .= " Used to generate a regulatory network of rules and atomic patterns.\n";
-		$str .= "\n OPTIONS SET ONE\n\n";
-		$str .= " visualize.pl [--type regulatory] [--background] [--opts FILE] [--filter [--level INT]] [--groups] \n\n";
-		$str .= " --type is assumed as regulatory if not provided.\n";
-		$str .= " --background turns background ON (OFF by default). When OFF, some patterns are\n";
-		$str .= " determined to be background and removed from network graph. The assignment can\n";
-		$str .= " be modified using the options file.\n";
-		$str .= " --filter generates a subgraph starting from a defined set of nodes and \n";
-		$str .= " propagating along the edges INT levels deep (default 1). The starting nodes are\n";
-		$str .= " defined using the options file.\n";
-		$str .= " --groups turns grouping ON (OFF by default). Patterns are grouped using classes\n";
-		$str .= " that are provided in the options file. Rules are grouped automatically based on\n";
-		$str .= " pattern relationships.\n";
-		$str .= " --opts FILE inputs an option file with the following structure:\n\n";
-		$str .= "\tbegin background \n\t\t <atomic patterns>\n\tend background\n\n";
-		$str .= "\tbegin filter \n\t\t<atomic patterns>\n\tend filter\n\n";
-		$str .= "\tbegin classes \n\t\t< begin classname \n\t\t\t<atomic patterns>\n\t\tend classname >\n\tend classes\n\n";
-		$str .= " <object> indicates whitespace\\return separated list of objects. All blocks are optional.\n";
-		$str .= " classname refers to arbitrary names for pattern classes.\n";
-		
-		$str .= "\n OPTIONS SET TWO\n\n";
-		$str .= " visualize.pl --groups [--collapse] [--textonly]   \n\n";
-		$str .= " --collapse computes a smaller network graph where groups of nodes are replaced\n";
-		$str .= " by a single node representing the group. Requires --groups.\n"; 
-		$str .= " --textonly provides a text-only version of the model network graph.\n";
-		
-		$str .= "\n OPTIONS SET THREE\n\n";
-		$str .= " visualize.pl [--groups] --each   \n\n";
-		$str .= " --each prints out each rule or rule group (if --groups is present).\n\n";
-		
-		$str .= " Option sets TWO and THREE are incompatible with each other, but compatible with ONE.\n";
-		$str .= " Option sets TWO and THREE are incompatible with process graph (see --type process).\n\n";
-		$str .= " For help on file input and output options try: visualize.pl --help \n";
-		$str .= " To start working on a model try:\n\n";
-		$str .= " visualize.pl --bngl BNGL --type regulatory --groups \n";
-		print $str;
-		return;
-	}
+	begin filter
+		<atomic patterns>
+	end filter
 	
-	if($args->{'type'} eq 'process')
-	{
-		$str .= "\n visualize.pl --type process\n";
-		$str .= " ---------------------------------------------/ HELP MENU /----------\n";
-		$str .= " PURPOSE\n\n";
-		$str .= " Used to generate a regulatory network of rules and atomic patterns.\n";
-		$str .= "\n USAGE\n\n";
-		$str .= " visualize.pl --type process [--textonly] [--background] [--opts FILE] [--groups [--mergepairs]]\n\n";
-		$str .= " --type is assumed as regulatory if not provided.\n";
-		$str .= " --textonly provides a text-only version of the model network graph.\n";
-		$str .= " --background turns background ON (OFF by default). When OFF, some patterns are\n";
-		$str .= " determined to be background and removed from network graph. The assignment can\n";
-		$str .= " be modified using the options file.\n";
-		$str .= " --groups turns grouping ON (OFF by default). Patterns are grouped using classes\n";
-		$str .= " that are provided in the options file. Rules are grouped automatically based on\n";
-		$str .= " pattern relationships.\n";
-		$str .= " --opts FILE inputs an option file with the following structure:\n\n";
-		$str .= "\tbegin background \n\t\t <atomic patterns>\n\tend background\n\n";
-		$str .= "\tbegin filter \n\t\t<atomic patterns>\n\tend filter\n\n";
-		$str .= "\tbegin classes \n\t\t< begin classname \n\t\t\t<atomic patterns>\n\t\tend classname >\n\tend classes\n\n";
-		$str .= " <object> indicates whitespace\\return separated list of objects. All blocks are optional.\n";
-		$str .= " classname refers to arbitrary names for pattern classes.\n";
+	begin classes
+		begin classname
+			<atomic patterns>
+		end classname
+	end classes
+
+	<atomic patterns> is a whitespace-separated list of patterns.
+	'classname' refers to arbitrary names for pattern classes.
+	All blocks are optional. 
 	
-		$str .= " visualize.pl --bngl BNGL --type process --groups \n";
-		print $str;
-		return;
-	}
-	
-	print $args->{'type'}." is not a valid type.\n";
-	return;
+	Include and exclude blocks determine which patterns are
+	included and excluded in the list of background patterns.
+	Filter block is for listing seed nodes for filtering regulatory graph.
+  
+};
+	return "";	
 }
 

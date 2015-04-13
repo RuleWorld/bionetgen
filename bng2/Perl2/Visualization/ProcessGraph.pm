@@ -410,7 +410,7 @@ sub makeProcessGraph2
 					foreach my $j(($i+1)..@processes-1)
 						{
 							my @rp2 = sort {$a cmp $b} uniq(@{$reacprods[$j]});
-							if( @rp1 ~~ @rp2 ) 
+							if( arrayEquals(\@rp1,\@rp2) ) 
 							{ 
 								push @procs2, [$processes[$i],$processes[$j]];
 								push @reacprods2, \@rp1;
@@ -523,8 +523,8 @@ sub is_reverse_of
 	my @proc2_reac = sort {$a cmp $b} @{shift @_};
 	my @proc2_prod = sort {$a cmp $b} @{shift @_};
 	my $ret = 0;
-	$ret = 1 if(scalar @proc1_reac and @proc1_reac~~@proc2_prod);
-	$ret = 1 if(scalar @proc1_prod and @proc1_prod~~@proc2_reac);
+	$ret = 1 if(scalar @proc1_reac and arrayEquals(\@proc1_reac,\@proc2_prod));
+	$ret = 1 if(scalar @proc1_prod and arrayEquals(\@proc1_prod,\@proc2_reac));
 	return $ret;
 }
 
@@ -567,5 +567,18 @@ sub make_name
 	my $arrow = (scalar @procs > 1) ? "<->" : "->";
 	#return $str1."\n".$str2.$arrow.$str3;
 	return $str2.$arrow.$str3;
+}
+
+sub arrayEquals
+{
+	my @arr1 = sort {$a cmp $b} @{shift @_};
+	my @arr2 = sort {$a cmp $b} @{shift @_};
+	
+	return 0 if (scalar @arr1 != scalar @arr2);
+	foreach my $i(0..@arr1-1)
+		{
+			return 0 if ($arr1[$i] ne $arr2[$i]);
+		}
+	return 1;
 }
 1;

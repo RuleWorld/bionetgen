@@ -6,10 +6,13 @@ Created on Tue Aug 19 00:46:05 2014
 """
 
 import unittest
-from os import listdir,chdir,remove
+import os
 import sys
+
 sys.path.insert(0, '..')
-import libsbml2bngl
+sys.path.insert(0, os.path.join('..','SBMLparser'))
+
+import SBMLparser.libsbml2bngl as libsbml2bngl
 import numpy as np
 import pexpect
 import types
@@ -18,7 +21,7 @@ from IPython.lib import deepreload
 
         
 def bnglExecution(bnglFile,settings):
-    chdir('tmp')
+    os.chdir('tmp')
     try:
         bngconsole = pexpect.spawn('bngdev --console')
         bngconsole.expect('BNG>')
@@ -40,7 +43,7 @@ def bnglExecution(bnglFile,settings):
         headerIndex = [header.index(x) for x in settings['variables']]
         values = values[:,headerIndex]
     finally:
-        chdir('..')
+        os.chdir('..')
 
     return values,settings['absolute'][0]
 
@@ -105,12 +108,12 @@ class TestOne(ParametrizedTestCase):
         referenceValues = parseCSV('{0}/{1}/{1}-results.csv'.format(self.param[0],self.param[1]),settings['variables'])
         print float(atol),((bnglValues - referenceValues)**2).mean()
         self.assertAlmostEqual(((bnglValues - referenceValues)**2).mean(),0,delta=float(atol))
-        dirs = [ f for f in listdir('./tmp') if self.param[1] in f]
+        dirs = [ f for f in os.listdir('./tmp') if self.param[1] in f]
         for element in dirs:
             os.remove('./tmp/{0}'.format(element))
 
     def tearDown(self):
-        dirs = [ f for f in listdir('./tmp') if not f.endswith('bngl')]
+        dirs = [ f for f in os.listdir('./tmp') if not f.endswith('bngl')]
         for element in dirs:
             os.remove('./tmp/{0}'.format(element))
         pass
@@ -124,8 +127,9 @@ class TestValid(ParametrizedTestCase):
     xdirs.append('00588')
     #fast
     xdirs.extend(['00870','00871','00872','00873','00874','00875'])
-    dirs = [ f for f in listdir('./testl2v4')]
+    dirs = [ f for f in os.listdir('./testl2v4')]
     dirs.sort()
+    dirs = ['01061']
     #dirs = ['00994','00998','01027']
     suite = unittest.TestSuite()
     for t in [x for x in dirs if x not in xdirs]:

@@ -503,9 +503,9 @@ sub toXML
     $string.= $indent2."<ListOfReferences>\n";
     my $vhash= $fun->Expr->getVariables($plist);
   
-    foreach my $type (keys %{$vhash})
+    foreach my $type (sort keys %{$vhash})
     {
-        foreach my $var (keys %{$vhash->{$type}})
+        foreach my $var (sort keys %{$vhash->{$type}})
         {
             #print "$type $var\n";
             $string .= $indent3 . ($vhash->{$type}->{$var})->toXMLReference('Reference', '', $plist);

@@ -67,7 +67,8 @@ sub makeContactMap
 	foreach my $str(@compstates)
 	{
 		$str =~ /(.*)\((.*)~(.*)\)/;
-		push $cmap{$1}{$2}, $3;
+		#push $cmap{$1}{$2}, $3;
+		push2ref($cmap{$1}{$2},$3);
 	}
 
 	# getting bonds
@@ -88,12 +89,12 @@ sub makeContactMap
 	# building the contact map
 	my @new_nodes = ();
 	my $mol_ind = -1;
-	foreach my $mol(keys %cmap)
+	foreach my $mol(sort keys %cmap)
 	{
 		$mol_ind++;
 		push @new_nodes, makeNode('Mol',$mol,$mol_ind);
 		my $comp_ind = -1;
-		foreach my $comp (keys $cmap{$mol})
+		foreach my $comp (sort keys %{$cmap{$mol}})
 		{
 			$comp_ind++;
 			my $c_id = $mol_ind.".".$comp_ind;

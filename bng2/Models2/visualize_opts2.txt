@@ -1,0 +1,7 @@
+begin classes
+begin A_X
+  A1(x!1).X(a!1)
+  A2(x!1).X(a!1)
+end A_X
+end classes
+	

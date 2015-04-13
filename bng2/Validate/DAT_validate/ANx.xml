@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.5  -->
+<!-- Created by BioNetGen 2.2.6  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="ANx">
     <ListOfParameters>
@@ -1551,15 +1551,15 @@
           <Argument id="x"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="R3" type="Observable"/>
+          <Reference name="x" type="Local"/>
           <Reference name="R1" type="Observable"/>
-          <Reference name="R7" type="Observable"/>
-          <Reference name="R6" type="Observable"/>
+          <Reference name="R2" type="Observable"/>
+          <Reference name="R3" type="Observable"/>
           <Reference name="R4" type="Observable"/>
           <Reference name="R5" type="Observable"/>
-          <Reference name="R2" type="Observable"/>
+          <Reference name="R6" type="Observable"/>
+          <Reference name="R7" type="Observable"/>
           <Reference name="R8" type="Observable"/>
-          <Reference name="x" type="Local"/>
         </ListOfReferences>
         <Expression> (((((((1*R1(x))+(2*R2(x)))+(3*R3(x)))+(4*R4(x)))+(5*R5(x)))+(6*R6(x)))+(7*R7(x)))+(8*R8(x)) </Expression>
       </Function>
@@ -1568,32 +1568,32 @@
           <Argument id="x"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="R3" type="Observable"/>
+          <Reference name="AspConc" type="Constant"/>
+          <Reference name="Asp_Koff_TAR" type="Constant"/>
+          <Reference name="Asp_Koff_TSR" type="Constant"/>
+          <Reference name="Asp_Kon_TAR" type="Constant"/>
+          <Reference name="Asp_Kon_TSR" type="Constant"/>
+          <Reference name="TAR_COUNT" type="Constant"/>
+          <Reference name="TSR_COUNT" type="Constant"/>
+          <Reference name="e0" type="Constant"/>
+          <Reference name="e1" type="Constant"/>
+          <Reference name="e2" type="Constant"/>
+          <Reference name="e3" type="Constant"/>
+          <Reference name="e4" type="Constant"/>
+          <Reference name="e5" type="Constant"/>
+          <Reference name="e6" type="Constant"/>
+          <Reference name="e7" type="Constant"/>
+          <Reference name="e8" type="Constant"/>
+          <Reference name="x" type="Local"/>
+          <Reference name="R0" type="Observable"/>
           <Reference name="R1" type="Observable"/>
-          <Reference name="R7" type="Observable"/>
-          <Reference name="R6" type="Observable"/>
+          <Reference name="R2" type="Observable"/>
+          <Reference name="R3" type="Observable"/>
           <Reference name="R4" type="Observable"/>
           <Reference name="R5" type="Observable"/>
-          <Reference name="R0" type="Observable"/>
+          <Reference name="R6" type="Observable"/>
+          <Reference name="R7" type="Observable"/>
           <Reference name="R8" type="Observable"/>
-          <Reference name="R2" type="Observable"/>
-          <Reference name="e2" type="Constant"/>
-          <Reference name="Asp_Kon_TSR" type="Constant"/>
-          <Reference name="e6" type="Constant"/>
-          <Reference name="e0" type="Constant"/>
-          <Reference name="TAR_COUNT" type="Constant"/>
-          <Reference name="AspConc" type="Constant"/>
-          <Reference name="Asp_Koff_TSR" type="Constant"/>
-          <Reference name="TSR_COUNT" type="Constant"/>
-          <Reference name="e4" type="Constant"/>
-          <Reference name="Asp_Kon_TAR" type="Constant"/>
-          <Reference name="e3" type="Constant"/>
-          <Reference name="e5" type="Constant"/>
-          <Reference name="e1" type="Constant"/>
-          <Reference name="e8" type="Constant"/>
-          <Reference name="e7" type="Constant"/>
-          <Reference name="Asp_Koff_TAR" type="Constant"/>
-          <Reference name="x" type="Local"/>
         </ListOfReferences>
         <Expression> 1/(1+((exp((((((((((e0*R0(x))+(e1*R1(x)))+(e2*R2(x)))+(e3*R3(x)))+(e4*R4(x)))+(e5*R5(x)))+(e6*R6(x)))+(e7*R7(x)))+(e8*R8(x))))*(((1.0+(AspConc/Asp_Koff_TAR))/(1.0+(AspConc/Asp_Kon_TAR)))^TAR_COUNT))*(((1.0+(AspConc/Asp_Koff_TSR))/(1.0+(AspConc/Asp_Kon_TSR)))^TSR_COUNT))) </Expression>
       </Function>
@@ -1602,8 +1602,8 @@
           <Argument id="y"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="y" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="y" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(y)) </Expression>
       </Function>
@@ -1612,8 +1612,8 @@
           <Argument id="y"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="y" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="y" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*MethLevel(y) </Expression>
       </Function>
@@ -1622,8 +1622,8 @@
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="r" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="r" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(r)) </Expression>
       </Function>
@@ -1632,8 +1632,8 @@
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="r" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="r" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(r)) </Expression>
       </Function>
@@ -1642,8 +1642,8 @@
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="r" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="r" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*(8-MethLevel(r)) </Expression>
       </Function>
@@ -1652,8 +1652,8 @@
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="r" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="r" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*MethLevel(r) </Expression>
       </Function>
@@ -1662,8 +1662,8 @@
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="r" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="r" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*MethLevel(r) </Expression>
       </Function>
@@ -1672,8 +1672,8 @@
           <Argument id="r"/>
         </ListOfArguments>
         <ListOfReferences>
-          <Reference name="r" type="Local"/>
           <Reference name="MethLevel" type="Function"/>
+          <Reference name="r" type="Local"/>
         </ListOfReferences>
         <Expression> 1000*MethLevel(r) </Expression>
       </Function>
@@ -1683,8 +1683,8 @@
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="kr" type="Constant"/>
-          <Reference name="x" type="Local"/>
           <Reference name="pOn" type="Function"/>
+          <Reference name="x" type="Local"/>
         </ListOfReferences>
         <Expression> kr*(1-pOn(x)) </Expression>
       </Function>
@@ -1694,8 +1694,8 @@
         </ListOfArguments>
         <ListOfReferences>
           <Reference name="kb" type="Constant"/>
-          <Reference name="x" type="Local"/>
           <Reference name="pOn" type="Function"/>
+          <Reference name="x" type="Local"/>
         </ListOfReferences>
         <Expression> kb*pOn(x) </Expression>
       </Function>

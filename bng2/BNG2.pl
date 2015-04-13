@@ -7,7 +7,7 @@
 #      James R. Faeder    (faeder at pitt dot edu)
 #      Justin S. Hogg     (justinshogg at gmail dot com)
 #      Leonard A. Harris  (lh64 at cornell dot com)
-#      John A. P. Sekar
+#      John A. P. Sekar   (johnarul dot sekar at gmail dot com)
 #      Jose Juan Tapia
 #      Arshi Arora
 #

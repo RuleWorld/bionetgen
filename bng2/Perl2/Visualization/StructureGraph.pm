@@ -7,7 +7,7 @@ use warnings;
 use Class::Struct;
 # BNG Modules
 use SpeciesGraph;
-use Visualization::Viz;
+#use Visualization::Viz;
 
 struct Node => 
 { 

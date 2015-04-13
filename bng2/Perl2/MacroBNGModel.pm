@@ -601,7 +601,7 @@ my ($dpp_site) = @_;
     }
     for $bsite (@b) {          # SH2 U                  
       $keyr = $name.':'.($bsite);           # Lyn:SH2 
-      if ( defined(@{$m_kv{$keyr}}) ) {
+      if ( @{$m_kv{$keyr}} ) {
         @a = @{$m_kv{$keyr}};  # set @a=SH2 U
         foreach (@a) {
           if (!$tab_site{$_}) {
@@ -811,14 +811,14 @@ my ($lis1, $nm2_site, $lis1h, $dpp_site) = @_;
        $key_dubl = $name.':'.$n_site.":2";    # L:l:2
      }
      $key_l = $key_d;                         # R:a
-     if ( defined(@{$dpp_site->{$key_d}}) ) {
+     if ( @{$dpp_site->{$key_d}} ) {
         @rxd = @{$dpp_site->{$key_d}};        # a b g
      }
      foreach (@rxd) {                         # a b g
        if (!&inc_elt($_,\@dep_sit)) {  push(@dep_sit,$_)  }
      }
      @{$dpp_site->{$key_d}} = @dep_sit;      
-     if ( defined(@{$lis1h->{$key_l}}) ) {
+     if ( @{$lis1h->{$key_l}} ) {
        @rxl = @{$lis1h->{$key_l}};        
      }
      foreach (@rxl) {

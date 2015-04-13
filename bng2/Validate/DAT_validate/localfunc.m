@@ -237,7 +237,7 @@ function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
 
 end
 
-% Calculate species derivates
+% Calculate species derivatives
 function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
     
     % initialize derivative vector
@@ -250,12 +250,12 @@ function [ Dspecies ] = calc_species_deriv ( time, species, expressions )
     [ ratelaws ] = calc_ratelaws( species, expressions, observables );
                         
     % calculate derivatives
-    Dspecies(1) = ratelaws(6) -ratelaws(2);
-    Dspecies(2) = -ratelaws(8) +ratelaws(6) +ratelaws(11) +ratelaws(9) -ratelaws(2) -ratelaws(5);
-    Dspecies(3) = ratelaws(4) +ratelaws(1) -ratelaws(3) +ratelaws(7) +ratelaws(10);
+    Dspecies(1) = -ratelaws(2) +ratelaws(6);
+    Dspecies(2) = -ratelaws(2) -ratelaws(5) +ratelaws(6) -ratelaws(8) +ratelaws(9) +ratelaws(11);
+    Dspecies(3) = ratelaws(1) -ratelaws(3) +ratelaws(4) +ratelaws(7) +ratelaws(10);
     Dspecies(4) = 0.0;
-    Dspecies(5) = -ratelaws(6) +ratelaws(9) +ratelaws(2) -ratelaws(5);
-    Dspecies(6) = -ratelaws(8) +ratelaws(11) -ratelaws(9) +ratelaws(5);
+    Dspecies(5) = ratelaws(2) -ratelaws(5) -ratelaws(6) +ratelaws(9);
+    Dspecies(6) = ratelaws(5) -ratelaws(8) -ratelaws(9) +ratelaws(11);
     Dspecies(7) = ratelaws(8) -ratelaws(11);
 
 end

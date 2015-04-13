@@ -1,0 +1,27 @@
+Installation procedure for SBMLParser
+
+Prerequisites
+-------------
+SBMLParser is a tool written in Python 2.7. The following libraries are needed in order to build the binary from scratch:
+
+* numpy 1.8.0 or greater
+* scipy  0.12.0 or greater
+* libsbml 5.10.0  or greater (http://sbml.org/Software/libSBML), with python bindings (can be installed using "pip install python-libsbml")
+* pandas 0.12.0 or greater for BioGrid functionality (http://pandas.pydata.org/, can also be installed using "pip install pandas")
+
+Build instructions for Linux/MacOSX/Windows-Cygwin:
+
+* make
+* make install
+
+This will place a binary called 'sbmlTranslator' in the 'bin' directory inside the BioNetGen main directory.
+
+Troubleshooting
+---------------
+Bootloader related errors:
+
+* Prebuilt bootloaders for Linux/MacOSX/Windows-Cygwin are included in the BioNetGen distribution. 
+However, if your platform is not supported by the bootloaders we have bundled, it is necessary to 
+create a custom one. To do so, in a command prompt navigate to 'pyinstaller2/bootloader' and execute:
+
+  ./waf configure build install
