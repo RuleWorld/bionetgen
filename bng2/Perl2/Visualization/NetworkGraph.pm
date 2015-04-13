@@ -653,7 +653,28 @@ sub makeRuleNetworkGraph
 	
 }
 
-
+sub makeRxnNetworkGraph
+{
+	my $rxn = shift @_;
+	my @reac = map {$_->SpeciesGraph->toString()} @{$rxn->Reactants};
+	my @prod = map {$_->SpeciesGraph->toString()} @{$rxn->Products};
+	my $name = "Rxn".$rxn->Index;
+	my @nodes = uniq($name,@reac,@prod);
+	my %nodetype;
+	$nodetype{$name} = "Rule";
+	map {$nodetype{$_} = "AtomicPattern"} (@reac,@prod);
+	my @edges = ();
+	foreach my $sp(@reac)
+	{
+		push @edges, makeEdge($name,$sp,"r");
+	}
+	foreach my $sp(@prod)
+	{
+		push @edges, makeEdge($name,$sp,"p");
+	}
+	my $bpg = makeRuleNetworkGraph_simple(\@nodes,\@edges,\%nodetype);
+	return $bpg;
+}
 sub makeRuleNetworkGraph_simple
 {
 	my @nodes = @{shift @_};

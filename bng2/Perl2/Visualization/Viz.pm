@@ -462,7 +462,15 @@ sub execute_params
 			}
 	}
 		
-		
+	if($type eq 'reaction_network')
+	{
+		$BNGModel::GLOBAL_MODEL = $model;
+		my $err = $model->generate_network({write=>0,TextReaction=>1});
+		my @bpgs = map {makeRxnNetworkGraph($_)} @{$model->RxnList->Array};
+		my $bpg = mergeNetworkGraphs(flat(\@bpgs));
+		$bpg->{'Merged'} = 1;
+		$str = toGML_rule_network($bpg);
+	}
 		
 	
 	if($textonly==1 and $each==0)
@@ -537,7 +545,8 @@ sub writeGML
 						'ruleviz_pattern' => 'rule(s) with patterns',
 						'regulatory' => 'network of rules and atomic patterns',
 						'process' => 'process graph of rules',
-						'contactmap' => 'contact map of model'
+						'contactmap' => 'contact map of model',
+						'reaction_network' => 'reaction network of model'
 						);
 	my $outputmsg = $outputstr{$type};
 	
