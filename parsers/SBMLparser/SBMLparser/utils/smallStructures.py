@@ -305,7 +305,7 @@ class Species:
                 speciesStructure.addMolecule(moleculeStructure)
                 #atomicPatterns[str(speciesStructure)] = speciesStructure
                 if len(component.bonds) == 0:
-                    if component.activeState == '':
+                    #if component.activeState == '':
                         atomicPatterns[str(speciesStructure)] = speciesStructure
                 else:
                     if component.bonds[0] != '+':

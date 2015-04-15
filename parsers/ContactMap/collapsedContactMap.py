@@ -1,6 +1,6 @@
 from readBNGXML import parseXML
 import networkx as nx
-import argparse
+
 
 def extractMolecules(action,site1,site2,chemicalArray):
     '''
@@ -17,7 +17,7 @@ def extractMolecules(action,site1,site2,chemicalArray):
     atomicPatterns = {}
     reactionCenter = set()
     context = set()
-
+    
     for reactant in chemicalArray:
         ta,tr,tc = reactant.extractAtomicPatterns(action,site1,site2)
         #for element in ta:
@@ -131,10 +131,8 @@ def createCollapsedContact(rules,species,transformations,fileName):
                 bondpartners = [x.split('(')[0] for x in transformationCenter[idx]]
                 if len(bondpartners) == 2:
                     graph.add_edge(bondpartners[0],bondpartners[1],graphics={'fill':"#000000"})
-                elif len(bondpartners) == 1:
-                    graph.add_edge(bondpartners[0],bondpartners[0],graphics={'fill':"#000000"})
                 else:
-                    nonatomicset = True
+                    graph.add_edge(bondpartners[0],bondpartners[0],graphics={'fill':"#000000"})
                 for x in bondpartners:
                     if x in activeReactants:
                         activeReactants.remove(x)
@@ -143,7 +141,7 @@ def createCollapsedContact(rules,species,transformations,fileName):
             elif rule.actions[idx].action in ['StateChange']:
                 molecule = [x.split('(')[0] for x in transformationCenter[idx]]
                 state = [x.split('(')[1].split('~')[0] for x in transformationCenter[idx]]
-                graph.add_node(molecule[0] +'_'+state[0],graphics={'type': "circle",'fill':"#CCFFCC"},LabelGraphics={'text':state[0]})
+                graph.add_node(molecule[0] +'_'+state[0],graphics={'type': "circle",'fill':"#CCFFCC"})
                 processNodes.append(state[0])
                 graph.add_edge(molecule[0]+'_'+state[0],molecule[0],graphics={'fill':"#000000"})
                 if molecule[0] in activeReactants:
@@ -159,27 +157,26 @@ def createCollapsedContact(rules,species,transformations,fileName):
                 graph.add_edge(element,mainidx,graphics={'targetArrow': "standard"})
             for element in activeProducts:
                 graph.add_edge(mainidx,element)
-    nx.write_gml(graph,fileName)
 
-
-def defineConsole():
-    parser = argparse.ArgumentParser(description='SBML to BNGL translator')
-    parser.add_argument('-i','--input',type=str,help='settings file',required=True)
-    parser.add_argument('-o','--output',type=str,help='output directory')
-    return parser    
+    nx.write_gml(graph,'%s.gml' %fileName)
+    #graph.write('%s.dot' % fileName)
+    #graph = pgv.AGraph('%s.dot' % fileName)
+    #graph.layout(prog='fdp')
+    #graph.draw('%s.png' % fileName)
+    #subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
 
 
 def main(fileName,outputfilename):
     molecules,rules,_ = parseXML(fileName)
+    #print '---',rules
+    #createBiPartite(rules,None,'simple', 
+    #                       reactionCenter=True, context=True, products=True)
+    #              
     createCollapsedContact(rules,molecules,[1],outputfilename)         
 
 if __name__ == "__main__":
-    parser = defineConsole()
-    namespace = parser.parse_args()
-    inputFile = namespace.input
-    if namespace.output != None:
-        outputFile = namespace.output
-    else:
-        outputFile = inputFile + '.gml'
-    main(inputFile,outputFile)
+    #main("output9.xml")
+    #bngl2xml('output19_raw.bngl')
+    #main("BIOMD0000000002.xml.xml")
+    main('output19_raw.xml','schoeberl_raw')
     #addAnnotations('fceri_ji')
