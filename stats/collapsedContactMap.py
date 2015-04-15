@@ -17,7 +17,7 @@ def extractMolecules(action,site1,site2,chemicalArray):
     atomicPatterns = {}
     reactionCenter = set()
     context = set()
-    
+
     for reactant in chemicalArray:
         ta,tr,tc = reactant.extractAtomicPatterns(action,site1,site2)
         #for element in ta:
@@ -131,8 +131,10 @@ def createCollapsedContact(rules,species,transformations,fileName):
                 bondpartners = [x.split('(')[0] for x in transformationCenter[idx]]
                 if len(bondpartners) == 2:
                     graph.add_edge(bondpartners[0],bondpartners[1],graphics={'fill':"#000000"})
-                else:
+                elif len(bondpartners) == 1:
                     graph.add_edge(bondpartners[0],bondpartners[0],graphics={'fill':"#000000"})
+                else:
+                    nonatomicset = True
                 for x in bondpartners:
                     if x in activeReactants:
                         activeReactants.remove(x)
@@ -157,13 +159,7 @@ def createCollapsedContact(rules,species,transformations,fileName):
                 graph.add_edge(element,mainidx,graphics={'targetArrow': "standard"})
             for element in activeProducts:
                 graph.add_edge(mainidx,element)
-    print fileName
     nx.write_gml(graph,fileName)
-    #graph.write('%s.dot' % fileName)
-    #graph = pgv.AGraph('%s.dot' % fileName)
-    #graph.layout(prog='fdp')
-    #graph.draw('%s.png' % fileName)
-    #subprocess.call(['dot', '-Tsvg', '{0}.dot'.format(fileName),'-o{0}.svg'.format(fileName)])
 
 
 def defineConsole():
@@ -175,10 +171,6 @@ def defineConsole():
 
 def main(fileName,outputfilename):
     molecules,rules,_ = parseXML(fileName)
-    #print '---',rules
-    #createBiPartite(rules,None,'simple', 
-    #                       reactionCenter=True, context=True, products=True)
-    #              
     createCollapsedContact(rules,molecules,[1],outputfilename)         
 
 if __name__ == "__main__":
