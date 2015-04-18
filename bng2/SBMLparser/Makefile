@@ -25,7 +25,7 @@ update:
 
 
 install:
-mkdir -p ../bin
+	mkdir -p ../bin
 ifeq ($(OS),Windows_NT)
     ifeq ($(shell uname -o),Cygwin)
 	    cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator.exe;
