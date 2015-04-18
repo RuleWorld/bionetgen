@@ -5,7 +5,10 @@ DIST = ./dist
 .PHONY: all install clean
 
 
-all: 
+all:
+	if ! test -d pyinstaller2 ; then \
+		unzip pyinstaller2.zip;   \
+	fi ;
 ifeq ($(OS),Windows_NT)
 ifeq ($(shell uname -o),Cygwin)
 		python pyinstaller2/pyinstaller.py sbmlTranslator.spec;
@@ -18,14 +21,11 @@ endif
 
 
 update:
-
-	if ! test -d pyinstaller2 ; then \
-		unzip pyinstaller2.zip;   \
-	fi ;
 	python updateDistribution.py -c;
 
 
 install:
+mkdir -p ../bin
 ifeq ($(OS),Windows_NT)
     ifeq ($(shell uname -o),Cygwin)
 	    cp  ${DIST}/sbmlTranslator ../bin/sbmlTranslator.exe;
