@@ -465,7 +465,15 @@ sub execute_params
 	if($type eq 'reaction_network')
 	{
 		$BNGModel::GLOBAL_MODEL = $model;
-		my $err = $model->generate_network({write=>0,TextReaction=>1});
+		if(-e $model.".net")
+		{
+		my $err = $model->readNetwork({file=>$model.".net"});
+		print @{$model->RxnList->Array};
+		}
+		else
+			{
+			my $err = $model->generate_network({write=>0,TextReaction=>1});
+			}
 		my @bpgs = map {makeRxnNetworkGraph($_)} @{$model->RxnList->Array};
 		my $bpg = mergeNetworkGraphs(flat(\@bpgs));
 		$bpg->{'Merged'} = 1;
