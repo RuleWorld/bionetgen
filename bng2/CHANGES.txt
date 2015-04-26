@@ -4,6 +4,13 @@ http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.6-stable ==
 
+==== New Language Conventions ====
+* Whitespace is no longer allowed in rule names.
+* All labels and BNG objects (except for bonds and states) must begin with a letter or 
+underscore character.
+* Labels must now be followed by a colon (':') with no intervening whitespace.
+** Example: <big><tt>RuleX: A(s~0) -> A(s~1) k</tt></big>
+
 ==== Bug Fixes ====
 * An error is now thrown if an unrecognized block name is encountered.
 * An error is now thrown if duplicate rule names are detected.
