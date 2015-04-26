@@ -630,33 +630,37 @@ sub readSBML
 	                ### Read Reaction Rules Block
 	                elsif ( $name eq 'reaction rules' )
 	                {
-	                    # Read reaction rules
-	                    my $nerr = 0;
+	                		# Read reaction rules
+	                		my $nerr = 0;
 #						my $rrules = [];
-#	                    $model->RxnRules( $rrules );
-	                    my $rrules = $model->RxnRules;
-	                    my $counter = 1;
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ($entry, $lno) = @$line;
-	                        # create new rule
-	                        (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
-	                        if ($err)
-	                        {   # some error encountered
-	                            $err = errgen( $err, $lno );
-	                            printf "ERROR: $err\n";
-	                            ++$nerr;
-	                        }
-	                        # check rule name (if given)
-	                        elsif ( $rrs->[0]->Name ){
-		                        foreach my $r (@$rrules){
-									if ($rrs->[0]->Name eq $r->[0]->Name){ # duplicate rule name
-										$err = "Duplicate rule name detected (\"" . $rrs->[0]->Name . "\").";
-										$err = errgen( $err, $lno );
-										printf "ERROR: $err\n";
-										++$nerr;
-										last;
-									}
+#	                    	$model->RxnRules( $rrules );
+	                    	my $rrules = $model->RxnRules;
+	                    	my $counter = 1;
+	                    	foreach my $line ( @$block_dat )
+	                    	{
+	                    		my ($entry, $lno) = @$line;
+	                        	# create new rule
+	                        	(my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
+	                        	if ($err)
+	                        	{   # some error encountered
+	                        		$err = errgen( $err, $lno );
+	                            	printf "ERROR: $err\n";
+	                            	++$nerr;
+	                        	}
+	                        	# check rule name (if given)
+	                        	elsif ( $rrs->[0]->Name ){
+	                            	foreach my $r (@$rrules){    # loop over all existing rules
+		                            	foreach my $x (@$rrs){   # consider forward and reverse (if exists) for new rule
+		                                	foreach my $y (@$r){ # consider forward and reverse (if exists) for existing rule
+		                                		if ( $x->Name eq $y->Name ){ # duplicate rule name found
+												$err = "Duplicate rule name detected (\"" . $x->Name . "\").";
+												$err = errgen( $err, $lno );
+												printf "ERROR: $err\n";
+												++$nerr;
+												last;
+											}
+		                        			}
+		                        		}
 								}
 	                        }
 	                        unless ($err)
