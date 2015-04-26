@@ -18,7 +18,7 @@ import os
 from subprocess import call
 import sys
 import fnmatch
-import progressbar
+# import progressbar
 
 #sys.path.insert(0, '../utils/')
 #import consoleCommands as console
