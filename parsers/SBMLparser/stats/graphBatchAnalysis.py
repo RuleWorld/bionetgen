@@ -47,7 +47,6 @@ def loadDataFrames(directory,subdirectories):
     frames = []
     for subdirectory in subdirectories:
         frames.append(assembleSingleColumnDataFrame(os.path.join(directory,subdirectory)))
-
     finalFrames = pandas.concat(frames,axis=1)
     return finalFrames
 
@@ -76,6 +75,8 @@ def create1Ddensityplot(data,outputfilename):
     plt.savefig(outputfilename)
 
 
+
+
 def analyzeDataSet(folder):
     
     finalFrames = loadDataFrames(folder,['raw','atom'])
@@ -83,6 +84,8 @@ def analyzeDataSet(folder):
     
 
     atomizationInfo = pandas.read_hdf('atomizationResults.h5','atomization')
+    atomizationInfo.rename(index=lambda x: x.replace('_regulatory','_collapsed'),inplace=True)
+
     finalFrames = pandas.read_hdf('full_reg_comp.h5','entropy')
     substract = finalFrames['atomized_wiener']/finalFrames['raw_wiener']
     substract2 = np.array([x for x in substract.values if x >=-10])
@@ -102,8 +105,16 @@ def analyzeDataSet(folder):
     plt.savefig('{0}/entropyDifference.png'.format(folder))
     #plt.clf()
     
-    print len(substract)
-    print len(atomizationInfo)
+    #print len(substract)
+    atomizationInfo2 =  pandas.concat([atomizationInfo,finalFrames],axis=1)
+    atomizationInfo2['wiener ration'] = substract
+    atomizationInfo2['compression'] = 1 - atomizationInfo2['compression']
+    atomizationInfo2['centropy_ratio'] = atomizationInfo2['raw_ccentropy']/atomizationInfo2['atomized_ccentropy']
+    atomizationInfo2['compression2'] = atomizationInfo2['atomized_nprocess']*1.0/atomizationInfo2['weight']
+    atomizationInfo2['size'] = atomizationInfo2['weight'].map(divideBySize )
+
+
+    '''
     atomizationInfo['wiener ratio'] = substract
     atomizationInfo['compression'] = 1 - atomizationInfo['compression']
     atomizationInfo['wiener index'] = finalFrames['atomized_wiener']
@@ -117,14 +128,17 @@ def analyzeDataSet(folder):
     atomizationInfo['atomized_nconn'] = finalFrames['atomized_nconn']
     atomizationInfo['raw_nconn'] = finalFrames['raw_nconn']
     atomizationInfo['compression2'] = finalFrames['atomized_nprocess']*1.0/atomizationInfo['weight']
+    '''
+
     #print atomizationInfo.to_string()
 
-    atomizationInfo.dropna()
-    create1Ddensityplot(atomizationInfo['compression2'],'{0}/compression2density.png'.format(folder))
-    create2DdensityPlot(atomizationInfo,["compression","rwiener index"],'{0}/compressionvswiener.png'.format(folder))
-    create2DdensityPlot(atomizationInfo,["compression","centropy"],'{0}/compressionvscentropy.png'.format(folder))
-    create2DdensityPlot(atomizationInfo,["compression","raw_centropy"],'{0}/compressionvsrcentropy.png'.format(folder))
-    create2DdensityPlot(atomizationInfo,["raw_centropy","centropy"],'{0}/rcentropyvsccentropy.png'.format(folder))
+    #atomizationInfo.dropna()
+    create1Ddensityplot(atomizationInfo2['compression2'],'{0}/compression2density.png'.format(folder))
+
+    create2DdensityPlot(atomizationInfo2,["compression","raw_wiener"],'{0}/compressionvswiener.png'.format(folder))
+    create2DdensityPlot(atomizationInfo2,["compression","atomized_ccentropy"],'{0}/compressionvscentropy.png'.format(folder))
+    create2DdensityPlot(atomizationInfo2,["compression","raw_ccentropy"],'{0}/compressionvsrcentropy.png'.format(folder))
+    create2DdensityPlot(atomizationInfo2,["raw_ccentropy","atomized_ccentropy"],'{0}/rcentropyvsccentropy.png'.format(folder))
 
 
     '''
@@ -142,7 +156,7 @@ def analyzeDataSet(folder):
     plt.clf()
     f,ax1 = plt.subplots(1,1)
     cmap = sns.diverging_palette(220, 10, as_cmap=True)
-    sns.corrplot(atomizationInfo, annot=True, sig_stars=False,
+    sns.corrplot(atomizationInfo2, annot=True, sig_stars=False,
              diag_names=False, cmap=cmap, ax=ax1)
     f.tight_layout()
     plt.savefig('{0}/corrmatrix.png'.format(folder))
@@ -150,10 +164,10 @@ def analyzeDataSet(folder):
     plt.clf()
     f,ax1 = plt.subplots(1,1)
     cmap = sns.diverging_palette(220, 10, as_cmap=True)
-    sns.corrplot(atomizationInfo[["compression","centropy","raw_centropy","wiener index"]], annot=True, sig_stars=False,
+    sns.corrplot(atomizationInfo2[["compression","atomized_ccentropy","raw_ccentropy","atomized_wiener"]], annot=True, sig_stars=False,
              diag_names=False, cmap=cmap, ax=ax1)
     f.tight_layout()
     plt.savefig('{0}/corrmatrix_subset.png'.format(folder))    
 
 if __name__ == "__main__":
-    analyzeDataSet('wocontext') 
+    analyzeDataSet('ccollapsed') 

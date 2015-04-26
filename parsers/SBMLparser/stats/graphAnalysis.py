@@ -80,7 +80,7 @@ class ProcessGraph:
         centralities. Note, this assumes the graph is simple.
 
         """
-        centrality = self.nodes[self.nodes.graphics == node_type]['communicability'].values
+        centrality = self.nodes[self.nodes.graphics == node_type]['degree'].values
         centrality = np.asarray(centrality)
         centrality /= centrality.sum()
         return centrality
@@ -129,7 +129,7 @@ class ProcessGraph:
         #average_degree_connectivity = nx.average_degree_connectivity(self.graph)
         #average_neighbor_degree = nx.average_neighbor_degree(self.graph)
         average_node_connectivity = nx.average_node_connectivity(self.graph)
-
+        #average_node_connectivity =  1
         return [average_node_connectivity]
 
     def centrality(self):
@@ -139,9 +139,9 @@ class ProcessGraph:
         speciesnodes =  set(n for n, d in self.graph.nodes(data=True) if d['graphics']['type']=='roundrectangle')
 
         g2 = nx.Graph(self.graph)
-        self.nodes['degree'] = pandas.Series(bipartite.degree_centrality(self.graph,speciesnodes))
-        self.nodes['closeness'] = pandas.Series(bipartite.closeness_centrality(self.graph,speciesnodes))
-        self.nodes['betweenness'] = pandas.Series(bipartite.betweenness_centrality(self.graph,speciesnodes))
+        self.nodes['degree'] = pandas.Series(nx.degree_centrality(self.graph))
+        self.nodes['closeness'] = pandas.Series(nx.closeness_centrality(self.graph))
+        self.nodes['betweenness'] = pandas.Series(nx.betweenness_centrality(self.graph))
         self.nodes['communicability'] = pandas.Series(nx.communicability_centrality(g2))
 
         #print self.nodes.sort(column='load',ascending=False).head(20)
@@ -164,19 +164,27 @@ def getGraphEntropy(graphname,nodeType):
     the properties of the graph
     """
     #try:
-        graph = loadGraph(graphname)
-        process = ProcessGraph(graph)
-        process.removeContext()
-        try:
-            process.centrality()
-            dist = process.centrality_distribution(node_type=nodeType)
-            centropy = process.entropy(dist)
-        except ZeroDivisionError:
-            centropy = 1
-        #print process.wiener()
+    graph = loadGraph(graphname)
+    process = ProcessGraph(graph)
+    #process.removeContext()
+    try:
+        process.centrality()
+        dist = process.centrality_distribution(node_type=nodeType)
+        centropy = process.entropy(dist)
+        #centropy = 1
+    except ZeroDivisionError:
+        centropy = 1
+    #print process.wiener()
 
-        return graphname,nodeType,process.wiener(),centropy,process.graphMeasures(),[len(process.nodes[process.nodes.graphics =='process']),len(process.nodes[process.nodes.graphics=='species'])]
-    #except:
+    #return graphname,nodeType,process.wiener(),centropy,process.graphMeasures(),
+    #[len(process.nodes[process.nodes.graphics =='process']),len(process.nodes[process.nodes.graphics=='species']),len(graph.edges)]
+
+    return {'graphname':graphname,'nodeType':nodeType,
+            'wiener':process.wiener(),'centropy':centropy,
+            'measures': process.graphMeasures(),
+            'graphstats':[len(process.nodes[process.nodes.graphics =='process']),len(process.nodes[process.nodes.graphics=='species']),len(graph.edges())]
+    }
+#except:
     #    return graphname,nodeType,-1
 
 import shutil
@@ -185,7 +193,6 @@ def createGMLFiles(directory,options):
     bngfiles= getFiles(directory,'bngl')
     for bngfile in bngfiles:
         for option in options:
-            print bngfile,options[option]
             graphname = generateGraph(bngfile,options = options[option])
             shutil.move(graphname, os.path.join(directory,option))    
 
@@ -214,15 +221,15 @@ def getEntropyMeasures(graphnames):
             futures.append(executor.submit(getGraphEntropy,graphnames[gidx],'species'))
         for future in concurrent.futures.as_completed(futures,timeout=3600):
             partialResults = future.result()
-            row = partialResults[0].split('/')[-1]
-            column = partialResults[0].split('/')[-2]
-            results = results.set_value(row,column + '_wiener',partialResults[2][0])
-            results = results.set_value(row,column + '_entropy',partialResults[2][1])
-            results = results.set_value(row,column + '_ccentropy',partialResults[3])
-            results = results.set_value(row,column + '_nconn',partialResults[4][0])
-            results = results.set_value(row,column + '_nprocess',partialResults[5][0])
-            results = results.set_value(row,column + '_nspecies',partialResults[5][1])
-
+            row = partialResults['graphname'].split('/')[-1]
+            column = partialResults['graphname'].split('/')[-3]
+            results = results.set_value(row,column + '_wiener',partialResults['wiener'][0])
+            results = results.set_value(row,column + '_entropy',partialResults['wiener'][1])
+            results = results.set_value(row,column + '_ccentropy',partialResults['centropy'])
+            results = results.set_value(row,column + '_nconn',partialResults['measures'][0])
+            results = results.set_value(row,column + '_nprocess',partialResults['graphstats'][0])
+            results = results.set_value(row,column + '_nspecies',partialResults['graphstats'][1])
+            results = results.set_value(row,column + '_nedges',partialResults['graphstats'][2])
     return results     
 
 if __name__ == "__main__":
@@ -235,7 +242,7 @@ if __name__ == "__main__":
         outputdirectory = namespace.output
         outputfile = 'entropy_{0}.h5'.format(namespace.settings.split('/')[-1].split('.')[-2])
     else:
-        graphnames = getFiles('egfr','gml')
+        graphnames = getFiles('egfr/collapsed_contact','gml')
         outputdirectory = 'egfr'
         outputfile = 'entropy_test.h5'
 
