@@ -638,6 +638,7 @@ sub readSBML
 	                    foreach my $line ( @$block_dat )
 	                    {
 	                        my ($entry, $lno) = @$line;
+	                        # create new rule
 	                        (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
 	                        if ($err)
 	                        {   # some error encountered
@@ -645,21 +646,35 @@ sub readSBML
 	                            printf "ERROR: $err\n";
 	                            ++$nerr;
 	                        }
-	                        else
-	                        {   # rule is ok
+	                        # check rule name (if given)
+	                        elsif ( $rrs->[0]->Name ){
+		                        foreach my $r (@$rrules){
+									if ($rrs->[0]->Name eq $r->[0]->Name){ # duplicate rule name
+										$err = "Duplicate rule name detected (\"" . $rrs->[0]->Name . "\").";
+										$err = errgen( $err, $lno );
+										printf "ERROR: $err\n";
+										++$nerr;
+										last;
+									}
+								}
+	                        }
+	                        unless ($err)
+	                        {
+	                        		# rule is ok
 	                            push @$rrules, $rrs;
+
 	                            # give names, if not defined
 	                            unless ( $rrs->[0]->Name )
 	                            {   
-								#$rrs->[0]->Name( 'Rule' . scalar @$rrules );   
-								$rrs->[0]->Name( 'R' . scalar @$rrules );   
+									#$rrs->[0]->Name( 'Rule' . scalar @$rrules );   
+									$rrs->[0]->Name( 'R' . scalar @$rrules );   
 								}
 	                            if ( @$rrs > 1 )
 	                            {
 	                                unless ($rrs->[1]->Name)
 	                                {   
-									#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );   
-									$rrs->[1]->Name( 'R' . scalar @$rrules . '_r' );   
+										#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );   
+										$rrs->[1]->Name( 'R' . scalar @$rrules . '_r' );   
 									}
 	                            }
 	                        }
