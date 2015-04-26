@@ -60,7 +60,7 @@
       </Species>
     </ListOfSpecies>
     <ListOfReactionRules>
-      <ReactionRule id="RR1" name="R1" symmetry_factor="1">
+      <ReactionRule id="RR1" name="_R1" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR1_RP1">
             <ListOfMolecules>
@@ -118,7 +118,7 @@
           <AddBond site1="RR1_RP1_M1_C1" site2="RR1_RP2_M1_C1"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR2" name="R2" symmetry_factor="1">
+      <ReactionRule id="RR2" name="_R2" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR2_RP1">
             <ListOfMolecules>
@@ -176,7 +176,7 @@
           <DeleteBond site1="RR2_RP1_M1_C1" site2="RR2_RP1_M2_C1"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR3" name="R3" symmetry_factor="1">
+      <ReactionRule id="RR3" name="_R3" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR3_RP1">
             <ListOfMolecules>
@@ -235,7 +235,7 @@
           <DeleteBond site1="RR3_RP1_M1_C1" site2="RR3_RP1_M2_C1"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR4" name="R4" symmetry_factor="1">
+      <ReactionRule id="RR4" name="_R4" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR4_RP1">
             <ListOfMolecules>

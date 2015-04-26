@@ -635,6 +635,7 @@ sub readSBML
 #						my $rrules = [];
 #	                    $model->RxnRules( $rrules );
 	                    my $rrules = $model->RxnRules;
+	                    my $counter = 1;
 	                    foreach my $line ( @$block_dat )
 	                    {
 	                        my ($entry, $lno) = @$line;
@@ -666,15 +667,23 @@ sub readSBML
 	                            # give names, if not defined
 	                            unless ( $rrs->[0]->Name )
 	                            {   
-									#$rrs->[0]->Name( 'Rule' . scalar @$rrules );   
-									$rrs->[0]->Name( 'R' . scalar @$rrules );   
-								}
+									#$rrs->[0]->Name( 'Rule' . scalar @$rrules );
+									my $rname = '_R' . $counter++;
+									# avoid duplicate names (just to be safe)
+									for (my $i=0; $i < @$rrules-1; $i++){
+										if ($rname eq @$rrules[$i]->[0]->Name){ # duplicate rule name
+											$rname = '_R' . $counter++;
+											$i = -1; # start over
+										}
+									}
+									$rrs->[0]->Name( $rname );
+	                            }
 	                            if ( @$rrs > 1 )
 	                            {
 	                                unless ($rrs->[1]->Name)
 	                                {   
-										#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );   
-										$rrs->[1]->Name( 'R' . scalar @$rrules . '_r' );   
+										#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );
+										$rrs->[1]->Name( $rrs->[0]->Name . '_r' );
 									}
 	                            }
 	                        }

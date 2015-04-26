@@ -9,6 +9,8 @@ http://code.google.com/p/bionetgen
 * An error is now thrown if duplicate rule names are detected.
 
 ==== Minor Changes ====
+* Unnamed rules are now given automatic names beginning with "_R" (e.g., "_R1", "_R2", etc.).
+* Reverse rules are now appended with "_r" (rather than "(reverse)").
 * validate_examples.pl now ignores trailing comments in file comparisons.
 
 == BioNetGen-2.2.6-testing ==
