@@ -9,6 +9,7 @@ http://code.google.com/p/bionetgen
 * An error is now thrown if duplicate rule names are detected.
 
 ==== Minor Changes ====
+* validate_examples.pl now ignores trailing comments in file comparisons.
 
 == BioNetGen-2.2.6-testing ==
 '''''2015 March 3'''''
