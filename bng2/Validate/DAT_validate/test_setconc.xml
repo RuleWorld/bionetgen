@@ -3,11 +3,11 @@
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="test_setconc">
     <ListOfParameters>
-      <Parameter id="NA" type="Constant" value="6.0221e+023"/>
-      <Parameter id="V" type="Constant" value="1e-009"/>
-      <Parameter id="L0" type="Constant" value="1e-009"/>
-      <Parameter id="R0" type="Constant" value="1e-009"/>
-      <Parameter id="kp" type="Constant" value="1.6605503e-009"/>
+      <Parameter id="NA" type="Constant" value="6.0221e+23"/>
+      <Parameter id="V" type="Constant" value="1e-9"/>
+      <Parameter id="L0" type="Constant" value="1e-9"/>
+      <Parameter id="R0" type="Constant" value="1e-9"/>
+      <Parameter id="kp" type="Constant" value="1.6605503e-9"/>
       <Parameter id="km" type="Constant" value="0.1"/>
       <Parameter id="_InitialConc1" type="Constant" value="602210"/>
       <Parameter id="_InitialConc2" type="Constant" value="602210"/>

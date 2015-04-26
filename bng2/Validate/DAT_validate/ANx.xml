@@ -3,8 +3,8 @@
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="ANx">
     <ListOfParameters>
-      <Parameter id="Vol" type="Constant" value="1.41e-015"/>
-      <Parameter id="Na" type="Constant" value="6.02e+023"/>
+      <Parameter id="Vol" type="Constant" value="1.41e-15"/>
+      <Parameter id="Na" type="Constant" value="6.02e+23"/>
       <Parameter id="konR" type="Constant" value="0.003298697"/>
       <Parameter id="konB" type="Constant" value="0.003298697"/>
       <Parameter id="koffR" type="Constant" value="0.1"/>

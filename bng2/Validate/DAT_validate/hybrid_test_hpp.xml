@@ -8,11 +8,11 @@
       <Parameter id="cTot" type="Constant" value="2.7"/>
       <Parameter id="beta" type="Constant" value="16.8"/>
       <Parameter id="koff" type="Constant" value="0.01"/>
-      <Parameter id="kp1" type="Constant" value="1.8e-007"/>
-      <Parameter id="kp2" type="Constant" value="5.6e-005"/>
+      <Parameter id="kp1" type="Constant" value="1.8e-7"/>
+      <Parameter id="kp2" type="Constant" value="5.6e-5"/>
       <Parameter id="k_gather" type="Constant" value="100000"/>
-      <Parameter id="kp1_1" type="Constant" value="5.4e-007"/>
-      <Parameter id="kp1_2" type="Constant" value="1.08e-006"/>
+      <Parameter id="kp1_1" type="Constant" value="5.4e-7"/>
+      <Parameter id="kp1_2" type="Constant" value="1.08e-6"/>
       <Parameter id="kp2_1" type="Constant" value="0.000112"/>
       <Parameter id="kp2_2" type="Constant" value="0.000112"/>
     </ListOfParameters>
