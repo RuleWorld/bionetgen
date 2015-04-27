@@ -44,8 +44,8 @@ begin reaction rules
   _R3_v2:  L(r!+,r,r) + R_pop() -> L(r!+,r!1,r).R(l!1,l)  kp2_1
   _R4_v1:  L(r!+,r!+,r) + R(l) -> L(r!+,r!+,r!1).R(l!1)  kp2
   _R4_v2:  L(r!+,r!+,r) + R_pop() -> L(r!+,r!+,r!1).R(l!1,l)  kp2_2
-  MapRule0:  L(r,r,r) -> L_pop()  k_gather
-  MapRule1:  R(l,l) -> R_pop()  k_gather
+  _MapRule0:  L(r,r,r) -> L_pop()  k_gather
+  _MapRule1:  R(l,l) -> R_pop()  k_gather
 end reaction rules
 end model
 

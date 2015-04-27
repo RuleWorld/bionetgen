@@ -449,7 +449,7 @@
           <Delete id="RR7_RP2" DeleteMolecules="0"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR8" name="MapRule0" symmetry_factor="1">
+      <ReactionRule id="RR8" name="_MapRule0" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR8_RP1">
             <ListOfMolecules>
@@ -486,7 +486,7 @@
           <Delete id="RR8_RP1" DeleteMolecules="0"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR9" name="MapRule1" symmetry_factor="1">
+      <ReactionRule id="RR9" name="_MapRule1" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR9_RP1">
             <ListOfMolecules>
