@@ -48,7 +48,11 @@ sub readString
     }
 
     # Remove leading label, if exists
-    $entry =~ s/^\s*\w+\s*:\s+//;
+    $entry =~ s/^\s*(\w+)\s*:\s+//;
+	
+	# Check label for leading number
+	my $label = $1;
+	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
   
     # Next token is string for species graph
     $entry =~ s/^\s*//;
