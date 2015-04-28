@@ -158,12 +158,13 @@ sub readString
     $string =~ s/^\s*//;
 	
 	# Remove leading label, if any
-	$string =~ s/^\s*(\w+)\s*:\s+//;
-    
-    # Check label for leading number
-	my $label = $1;
-	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
-
+	if ($string =~ s/^\s*(\w+)\s*:\s+//)
+	{
+	    # Check label for leading number
+		my $label = $1;
+		if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
+	}
+	
     # Read name (required argument), check for starting number
     $string =~ s/^([A-Za-z_]\w*)//   or return "Invalid compartment name in '$string' (must begin with a letter or underscore)";
     my $name = $1;

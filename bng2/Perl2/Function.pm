@@ -201,18 +201,16 @@ sub readString
     $string =~ s/^\s*//;
 
     # Check if first token is an index
-    if ( $string =~ s/^\s*\d+\s+// )
-    {
-        # This index will be ignored
-    }
+    $string =~ s/^\s*\d+\s+//; # Can't deprecate this because indices used in NET files
 
     # Remove leading label, if exists
-    $string =~ s/^\s*(\w+)\s*:\s+//;
+    if ( $string =~ s/^\s*(\w+)\s*:\s+// )
+    {
+	    # Check label for leading number
+		my $label = $1;
+		if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
+    }
     
-    # Check label for leading number
-	my $label = $1;
-	if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
-	
 	# Check name for leading number
 	my $string_left = $string;
 	unless ( $string_left =~ s/^([A-Za-z_]\w*)// )

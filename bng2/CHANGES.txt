@@ -10,6 +10,12 @@ http://code.google.com/p/bionetgen
 underscore character.
 * Labels must now be followed by a colon (':') with no intervening whitespace.
 ** Example: <big><tt>RuleX: A(s~0) -> A(s~1) k</tt></big>
+* Leading indices in the <big><tt>molecule types</tt></big>, <big><tt>observables</tt></big>,
+and <big><tt>energy patterns</tt></big> blocks have been deprecated.
+** '''Note''': These are not yet formally deprecated for the <big><tt>parameters</tt></big>, 
+<big><tt>species</tt></big>, and <big><tt>functions</tt></big> blocks because they exist
+within BNG-generated NET files, which can be read in using <big><tt>readFile</tt></big>.
+Deprecating them completely will thus require changing the format of NET files.
 
 ==== Bug Fixes ====
 * An error is now thrown if an unrecognized block name is encountered.
@@ -17,7 +23,7 @@ underscore character.
 
 ==== Minor Changes ====
 * Unnamed rules are now given automatic names beginning with "_R" (e.g., "_R1", "_R2", etc.).
-* Reverse rules are now appended with "_r" (rather than "(reverse)").
+* Reverse rules are now [...]
 * validate_examples.pl now ignores trailing comments in file comparisons.
 
 == BioNetGen-2.2.6-testing ==
