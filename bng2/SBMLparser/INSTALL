@@ -16,6 +16,18 @@ Build instructions for Linux/MacOSX/Windows-Cygwin:
 
 This will place a binary called 'sbmlTranslator' in the 'bin' directory inside the BioNetGen main directory.
 
+Build instructions for Windows
+
+* In addition to the Python packages listed above, Microsoft Visual C++ 2008 Redistributable Package is also required.
+* "pip install python-libsbml" may not work windows installed python. 
+* You can manually download it from (http://sbml.org/Software/libSBML/docs/python-api/libsbml-downloading.html)
+
+* powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('pyinstaller2.zip', 'pyinstaller2'); }"
+* python updateDistribution.py -c
+* python pyinstaller2\pyinstaller.py sbmlTranslator_windows.spec
+* copy dist\sbmlTranslator.exe ..\bin\sbmlTranslator.exe
+
+
 Troubleshooting
 ---------------
 Bootloader related errors:
