@@ -691,7 +691,7 @@ sub newRxnRule
 	{
 		$rr = RxnRule->new();
 		#if ( defined $name ) { $rr->Name("${name}(reverse)"); }
-		if ( defined $name ) { $rr->Name("${name}_r"); }
+		if ( defined $name ) { $rr->Name("_reverse_${name}"); }
 		$rr->Reactants( [@prod] );
 		$rr->Products(  [@reac] );
 		$rr->Priority($priority);

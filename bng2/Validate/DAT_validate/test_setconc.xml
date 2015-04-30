@@ -120,7 +120,7 @@
           <AddBond site1="RR1_RP1_M1_C1" site2="RR1_RP2_M1_C1"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR2" name="_R1_r" symmetry_factor="1">
+      <ReactionRule id="RR2" name="_reverse__R1" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR2_RP1">
             <ListOfMolecules>

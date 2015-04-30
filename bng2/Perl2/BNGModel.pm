@@ -649,18 +649,16 @@ sub readSBML
 	                        	}
 	                        	# check rule name (if given)
 	                        	elsif ( $rrs->[0]->Name ){
-	                            	foreach my $r (@$rrules){    # loop over all existing rules
-		                            	foreach my $x (@$rrs){   # consider forward and reverse (if exists) for new rule
-		                                	foreach my $y (@$r){ # consider forward and reverse (if exists) for existing rule
-		                                		if ( $x->Name eq $y->Name ){ # duplicate rule name found
-												$err = "Duplicate rule name detected (\"" . $x->Name . "\").";
-												$err = errgen( $err, $lno );
-												printf "ERROR: $err\n";
-												++$nerr;
-												last;
-											}
-		                        			}
-		                        		}
+	                            	foreach my $r (@$rrules){ # loop over all existing rules
+	                            		foreach my $x (@$r){  # consider forward and reverse (if exists) for existing rule (just to be safe)
+	                                		if ( $rrs->[0]->Name eq $x->Name ){ # duplicate rule name found
+											$err = "Duplicate rule name detected (\"" . $rrs->[0]->Name . "\").";
+											$err = errgen( $err, $lno );
+											printf "ERROR: $err\n";
+											++$nerr;
+											last;
+										}
+	                            		}
 								}
 	                        }
 	                        unless ($err)
@@ -687,16 +685,16 @@ sub readSBML
 	                                unless ($rrs->[1]->Name)
 	                                {   
 										#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );
-										$rrs->[1]->Name( $rrs->[0]->Name . '_r' );
+										$rrs->[1]->Name( '_reverse_' . $rrs->[0]->Name);
 									}
 	                            }
 	                        }
-	                    }
-	                    if ($nerr)
-	                    {
-	                        $err = "Reaction rule list could not be read because of errors";
-	                        goto EXIT;
-	                    }
+		                    if ($nerr)
+		                    {
+		                        $err = "Reaction rule list could not be read because of errors.";
+		                        goto EXIT;
+		                    }
+	                    	}
 	                    # update user
 	                    printf "Read %d reaction rule(s).\n", scalar @{$model->RxnRules};
 	                }
@@ -2440,19 +2438,19 @@ sub findExec
     my $prog = shift @_;
 
     my $base = BNGpath( "bin", $prog );
-    # Currently recognized values of $arch are
-    # i686-linux, ppc-darwin, MSWin32
     my $arch = $Config{myarchname};
-
-    my $exec = $base;
-    if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
     
     # First look for generic binary in BNGpath
+    my $exec = $base;
+    if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
     if (-x $exec) { return $exec; }
 
-    # Then look for os specific binary
+    # Then look for OS-specific binary
     $exec = "${base}_${arch}";
-    if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
+    if ($arch =~ /MSWin32/){
+    		my $bitness = $Config{longsize}*8;
+    		$exec .= "-${bitness}bit" . ".exe";
+    }
 
     if (-x $exec) { return $exec; }
     else

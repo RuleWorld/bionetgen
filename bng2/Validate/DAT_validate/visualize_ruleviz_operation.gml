@@ -35,7 +35,7 @@ node [
 id 12 label "DeleteBond" gid 13  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "DeleteBond" anchor "c" fontStyle "italic"  ] 
  ]
 node [
-id 13 label "R1a_r" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "R1a_r" anchor "t"  ] 
+id 13 label "_reverse_R1a" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "_reverse_R1a" anchor "t"  ] 
  ]
 node [
 id 14 label "X" isGroup 1 gid 20  graphics [ type "roundrectangle" fill "#D2D2D2" outline "#000000"  ] LabelGraphics [ text "X" anchor "t" fontStyle "bold"  ] 
@@ -71,7 +71,7 @@ node [
 id 26 label "DeleteBond" gid 27  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "DeleteBond" anchor "c" fontStyle "italic"  ] 
  ]
 node [
-id 27 label "R1b_r" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "R1b_r" anchor "t"  ] 
+id 27 label "_reverse_R1b" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "_reverse_R1b" anchor "t"  ] 
  ]
 node [
 id 28 label "X" isGroup 1 gid 37  graphics [ type "roundrectangle" fill "#D2D2D2" outline "#000000"  ] LabelGraphics [ text "X" anchor "t" fontStyle "bold"  ] 
@@ -167,7 +167,7 @@ node [
 id 62 label "DeleteBond" gid 63  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "DeleteBond" anchor "c" fontStyle "italic"  ] 
  ]
 node [
-id 63 label "R3a_r" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "R3a_r" anchor "t"  ] 
+id 63 label "_reverse_R3a" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "_reverse_R3a" anchor "t"  ] 
  ]
 node [
 id 64 label "X" isGroup 1 gid 71  graphics [ type "roundrectangle" fill "#D2D2D2" outline "#000000"  ] LabelGraphics [ text "X" anchor "t" fontStyle "bold"  ] 
@@ -209,7 +209,7 @@ node [
 id 78 label "DeleteBond" gid 79  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "DeleteBond" anchor "c" fontStyle "italic"  ] 
  ]
 node [
-id 79 label "R3b_r" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "R3b_r" anchor "t"  ] 
+id 79 label "_reverse_R3b" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "_reverse_R3b" anchor "t"  ] 
  ]
 edge [ source 29 target 33  graphics [ fill "#000000"  ] ]
 edge [ source 39 target 43  graphics [ fill "#000000"  ] ]

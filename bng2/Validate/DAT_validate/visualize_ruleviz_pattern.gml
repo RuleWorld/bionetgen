@@ -71,7 +71,7 @@ node [
 id 24 label "P1.1" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "P1.1" anchor "t"  ] 
  ]
 node [
-id 25 label "R1a_r"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "R1a_r" anchor "c" fontStyle "italic"  ] 
+id 25 label "_reverse_R1a"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "_reverse_R1a" anchor "c" fontStyle "italic"  ] 
  ]
 node [
 id 26 label "X" isGroup 1 gid 28  graphics [ type "roundrectangle" fill "#D2D2D2" outline "#000000"  ] LabelGraphics [ text "X" anchor "t" fontStyle "bold"  ] 
@@ -143,7 +143,7 @@ node [
 id 50 label "P1.1" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "P1.1" anchor "t"  ] 
  ]
 node [
-id 51 label "R1b_r"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "R1b_r" anchor "c" fontStyle "italic"  ] 
+id 51 label "_reverse_R1b"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "_reverse_R1b" anchor "c" fontStyle "italic"  ] 
  ]
 node [
 id 52 label "X" isGroup 1 gid 59  graphics [ type "roundrectangle" fill "#D2D2D2" outline "#000000"  ] LabelGraphics [ text "X" anchor "t" fontStyle "bold"  ] 
@@ -317,7 +317,7 @@ node [
 id 114 label "P1.1" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "P1.1" anchor "t"  ] 
  ]
 node [
-id 115 label "R3a_r"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "R3a_r" anchor "c" fontStyle "italic"  ] 
+id 115 label "_reverse_R3a"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "_reverse_R3a" anchor "c" fontStyle "italic"  ] 
  ]
 node [
 id 116 label "X" isGroup 1 gid 119  graphics [ type "roundrectangle" fill "#D2D2D2" outline "#000000"  ] LabelGraphics [ text "X" anchor "t" fontStyle "bold"  ] 
@@ -401,7 +401,7 @@ node [
 id 144 label "P1.1" isGroup 1  graphics [ type "roundrectangle" fill "#FFFFFF" outline "#000000" outlineStyle "dotted"  ] LabelGraphics [ text "P1.1" anchor "t"  ] 
  ]
 node [
-id 145 label "R3b_r"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "R3b_r" anchor "c" fontStyle "italic"  ] 
+id 145 label "_reverse_R3b"  graphics [ type "hexagon" fill "#CC99FF" outline "#000000"  ] LabelGraphics [ text "_reverse_R3b" anchor "c" fontStyle "italic"  ] 
  ]
 edge [ source 7 target 9  graphics [ fill "#000000"  ] ]
 edge [ source 14 target 16  graphics [ fill "#000000"  ] ]

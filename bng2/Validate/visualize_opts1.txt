@@ -6,10 +6,10 @@ begin include
   A1(x)
   A2(x)
   B(x)
-  R1a_r
-  R1b_r
-  R3a_r
-  R3b_r
+  _reverse_R1a
+  _reverse_R1b
+  _reverse_R3a
+  _reverse_R3b
 end include
 begin exclude
   A1(x!1).X(a!1)

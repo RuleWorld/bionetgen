@@ -568,7 +568,7 @@ foreach my $model (@models)
 					print "see $log_file for more details.\n";
 					close $log;
 					++$fail_count;
-					next;
+					next MODEL;
 				}
 				print $log $SEPARATOR;
 			}
