@@ -61,7 +61,7 @@ Using BioNetGen from the Windows command prompt can throw Missing DLL errors.
 These DLLs are specific to the Cygwin version used and found in Cygwin\bin.
 Copy them to <bngpath>\bin to resolve these errors. 
 As of 12/16/2014, the required DLLs for 64-bit Windows 7 and later 
-are cygwin1.dll, cygstdc++-6.dll and cyggcc_s-seh-1.dll.
+are cygwin1.dll, cygstdc++-6.dll , cygz.dll, and cyggcc_s-seh-1.dll.
 
 Example models are provided in the Models2 folder. To run them, go to
 the Models2 directory, and type:
