@@ -3,6 +3,7 @@ updated 14 March 2015
 http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.6-stable ==
+'''''2015 XXXX XX'''''
 
 ==== New Language Conventions ====
 * Whitespace is no longer allowed in rule names.
@@ -16,15 +17,18 @@ and <big><tt>energy patterns</tt></big> blocks have been deprecated.
 <big><tt>species</tt></big>, and <big><tt>functions</tt></big> blocks because they exist
 within BNG-generated NET files, which can be read in using <big><tt>readFile</tt></big>.
 Deprecating them completely will thus require changing the format of NET files.
+* Unnamed rules are now given automatic names beginning with "<big><tt>_R</tt></big>" followed by a
+digit (e.g., "<big><tt>_R1</tt></big>", "<big><tt>_R2</tt></big>", etc.).
+* Reverse rules are now named by prepending "<big><tt>_reverse_</tt></big>" to the forward rule name.
 
 ==== Bug Fixes ====
 * An error is now thrown if an unrecognized block name is encountered.
 * An error is now thrown if duplicate rule names are detected.
 
 ==== Minor Changes ====
-* Unnamed rules are now given automatic names beginning with "_R" (e.g., "_R1", "_R2", etc.).
-* Reverse rules are now [...]
 * validate_examples.pl now ignores trailing comments in file comparisons.
+* Windows executables now contain the bitness of the architecture in their names 
+(e.g., <big><tt>run_network_MSWin32-64bit.exe</tt></big>).
 
 == BioNetGen-2.2.6-testing ==
 '''''2015 March 3'''''
