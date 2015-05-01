@@ -1437,7 +1437,8 @@ sub writeBNGL
 
     # Header
     my $version = BNGversion();
-    $out .= "# Created by BioNetGen $version\n";
+    my $codename = BNGcodename();
+    $out .= "# Created by BioNetGen ${version}-${codename}\n";
 
     # Version requirements
     unless ( $model->Version eq '' )

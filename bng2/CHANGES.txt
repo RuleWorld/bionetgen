@@ -26,6 +26,8 @@ digit (e.g., "<big><tt>_R1</tt></big>", "<big><tt>_R2</tt></big>", etc.).
 * An error is now thrown if duplicate rule names are detected.
 
 ==== Minor Changes ====
+* Both the BioNetGen version and codename (e.g., "<big><tt>2.2.6-stable</tt></big>") are now included 
+in the headers of files written with <big><tt>writeBNGL</tt></big> (e.g., NET files).
 * validate_examples.pl now ignores trailing comments in file comparisons.
 * Windows executables now contain the bitness of the architecture in their names 
 (e.g., <big><tt>run_network_MSWin32-64bit.exe</tt></big>).
