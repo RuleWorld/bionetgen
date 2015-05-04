@@ -192,14 +192,15 @@ def createCollapsedContact(rules,species,transformations,fileName,extendedInform
                 if len(bondpartners) == 2:
                     dummyNode,label1,fill1 =   getDummyNode(bondpartners[0],bondpartners[1],collapsedComponents)
                     dummyNode2,label2,fill2 = getDummyNode(bondpartners[1],bondpartners[0],collapsedComponents)
+
                     graph.add_node(dummyNode,
                         graphics={'type': "circle",'fill':fill1},LabelGraphics={'text':label1})
                     graph.add_node(dummyNode2,
                         graphics={'type': "circle",'fill':fill2},LabelGraphics={'text':label2})
 
-                    graph.add_edge(bondpartners[0],dummyNode,graphics={'fill':"#000000"},weight=1)
+                    graph.add_edge(bondpartners[0],dummyNode,graphics={'fill':"#000000",'width':3},weight=1)
                     graph.add_edge(dummyNode,dummyNode2,graphics={'fill':"#000000"},weight=1)
-                    graph.add_edge(bondpartners[1],dummyNode2,graphics={'fill':"#000000"},weight=1)
+                    graph.add_edge(bondpartners[1],dummyNode2,graphics={'fill':"#000000",'width':3},weight=1)
                 elif len(bondpartners) == 1:
                     dummyNode = '{0}_{0}'.format(bondpartners[0])
                     graph.add_node(dummyNode,
@@ -223,6 +224,7 @@ def createCollapsedContact(rules,species,transformations,fileName,extendedInform
                     activeReactants.remove(molecule[0])
                 if molecule[0] in activeProducts:
                     activeProducts.remove(molecule[0])
+        nonatomicset = False
         if nonatomicset:
             graph.add_node(mainidx,graphics={'type': "hexagon" })
             processNodes.append(mainidx)
@@ -248,16 +250,18 @@ def createCollapsedContact(rules,species,transformations,fileName,extendedInform
                 else:
                     requirement1 = requirement[0][0]
                     requirement2 = requirement[1][0]
+
                 index1 = [i for i,x in enumerate(speciesName) if x.lower() == requirement1]
                 index2 = [i for i,x in enumerate(speciesName) if x.lower() == requirement2]
                 node1 = 1 if len(index1) > 0 else '{0}_{1}'.format(molecule,requirement1)
                 node2 = 1 if len(index2) > 0 else '{0}_{1}'.format(molecule,requirement2)
                 if node1 == 1:
-                    node1,_,_ = getDummyNode(molecule,speciesName[index1[0]],collapsedComponents)
+                    node1,label,_ = getDummyNode(molecule,speciesName[index1[0]],collapsedComponents)
                 if node2 == 1:
-                    node2,_,_ = getDummyNode(molecule,speciesName[index2[0]],collapsedComponents)
+                    node2,label,_ = getDummyNode(molecule,speciesName[index2[0]],collapsedComponents)
                 if relationship != 'mutualExclusion':  
                     #pass
+                    #print node1,node2
                     graph.add_edge(node1,node2,graphics={'fill':color[relationship],'style':"dashed",'targetArrow':"standard"},weight=0.1)
                 else:
                     #if relationship == 'exclusion':
@@ -297,7 +301,6 @@ if __name__ == "__main__":
         extendedInformation = componentGroups.getContextRequirements(inputFile)   
     else:
         extendedInformation = {}
-    #print extendedInformation['EGFR']
     main(inputFile,outputFile,extendedInformation)
     
     #addAnnotations('fceri_ji')
