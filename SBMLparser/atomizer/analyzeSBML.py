@@ -687,7 +687,6 @@ class SBMLAnalyzer:
                                                                 reactant[idx],pp,idx,strippedMolecules)
                                 #FIXME: this comparison is pretty nonsensical. treactant and tproduct are not
                                 #guaranteed to be in teh right order. why are we comparing them both at the same time
-                                print reaction,treactant,tproduct
                                 if (len(treactant) > 1 and '_'.join(treactant) in strippedMolecules) or (len(tproduct)>1 and '_'.join(tproduct) in strippedMolecules):
                                     pairedMolecules[stoch2].append(('_'.join(treactant),'_'.join(tproduct)))
                                     pairedMolecules2[stoch].append(('_'.join(tproduct),'_'.join(treactant)))

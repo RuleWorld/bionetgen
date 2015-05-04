@@ -424,7 +424,7 @@ def getComplexationComponents2(species,bioGridFlag):
     speciesDict = {}
     #this array will contain all molecules that bind together
     pairedMolecules = []
-    for x in species.molecules:
+    for x in sorted(species.molecules,key=lambda x:len(x.components),reverse=True):
         for y in x.components:
             if y.name not in speciesDict:
                 speciesDict[y.name] = []
@@ -433,7 +433,7 @@ def getComplexationComponents2(species,bioGridFlag):
     orphanedMolecules = [x for x in species.molecules]
     #determine how molecules bind together
     redundantBonds = []
-    for x in species.molecules:
+    for x in sorted(species.molecules,key=lambda x:len(x.components),reverse=True):
         for component in [y for y in x.components if y.name.lower()
                           in speciesDict.keys()]:
             if x.name.lower() in speciesDict:
@@ -580,6 +580,7 @@ def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
 
             #if we know what classification it is then add the corresponding components and states
             if classification is not None:
+			    #and  reactionProperties[classification][0] not in existingComponents:
                 componentStateArray.append(reactionProperties[classification])
                 #classificationArray.append([classification,
                 #                            tmp,dependencyGraph[tmp]
@@ -611,6 +612,10 @@ def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
         #translator,otherwise empty
         if baseName in translator:
              species = translator[baseName]
+        #modifiedSpecies = deepcopy(translator[dependencyGraph[element[0]][0][0]])
+
+        #modified species needs to start from the base speceis sine componentStateArray should contain the full set of modifications
+        #check that this works correctly for double modifications
         modifiedSpecies = deepcopy(translator[baseName])
         for componentState in componentStateArray:                   
 
@@ -685,7 +690,7 @@ def createBindingRBM(element,translator,dependencyGraph,bioGridFlag):
             newComponent2 = st.Component(molecule[0].name.lower())
             molecule[1].components.append(newComponent2)
             if molecule[0].name != molecule[1].name:
-                if newComponent2.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
+                if newComponent2.name not in [x.name for x in translator[molecule[1].name].molecules[0]. \
                 components]:
                     translator[molecule[1].name].molecules[0].components.append(
                     deepcopy(newComponent2))
@@ -718,7 +723,6 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
 
 def updateSpecies(species, referenceMolecule):
     flag = False
-    #print '--',str(species),str(referenceMolecule)
     for moleculeStructure in species.molecules:
         if moleculeStructure.name == referenceMolecule.name:
             for component in referenceMolecule.components:
@@ -963,7 +967,7 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph,species,instance)
     #####sct
     #FIXME: wtf was unevenelementdict supposed to be for
-    #print database.dependencyGraph
+    
     prunnedDependencyGraph, database.weights, unevenElementDict,database.artificialEquivalenceTranslator = \
     consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator,database.eequivalenceTranslator,database.sbmlAnalyzer)
     return prunnedDependencyGraph,database
