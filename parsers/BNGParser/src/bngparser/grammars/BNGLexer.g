@@ -58,6 +58,7 @@ INCLUDE_REACTANTS: 'include_reactants'; // To be deprecated
 INCLUDE_PRODUCTS: 'include_products';
 EXCLUDE_REACTANTS: 'exclude_reactants'; // To be deprecated
 EXCLUDE_PRODUCTS: 'exclude_products';
+TOTALRATE: 'TotalRate';
 
 VERSION: 'version';
 SET_OPTION: 'setOption';
@@ -73,6 +74,7 @@ MAX_AGG: 'max_agg';
 MAX_ITER: 'max_iter';
 MAX_STOICH: 'max_stoich';
 PRINT_ITER: 'print_iter';
+CHECK_ISO: 'check_iso';
 
 GENERATEHYBRIDMODEL: 'generate_hybrid_model';
 SAFE: 'safe';
@@ -146,6 +148,10 @@ TYPE: 'type';
 BACKGROUND: 'background';
 COLLAPSE: 'collapse';
 OPTS: 'opts';
+
+//SSC
+WRITESSC: 'writeSSC';
+WRITESSCCFG: 'writeSSCcfg';
 
 //WRITEFILE: 'writeFile';
 //WRITENET: 'writeNET';
