@@ -140,6 +140,13 @@ FILE: 'file';
 ATOMIZE: 'atomize';
 BLOCKS: 'blocks';
 
+//visualize commands
+VISUALIZE: 'visualize';
+TYPE: 'type';
+BACKGROUND: 'background';
+COLLAPSE: 'collapse';
+OPTS: 'opts';
+
 //WRITEFILE: 'writeFile';
 //WRITENET: 'writeNET';
 WRITEMODEL: 'writeModel';
@@ -152,6 +159,7 @@ PRETTY_FORMATTING: 'pretty_formatting';
 EVALUATE_EXPRESSIONS: 'evaluate_expressions';
 TEXTREACTION: 'TextReaction';
 TEXTSPECIES: 'TextSpecies';
+
 
 WRITEMFILE: 'writeMfile';
 WRITEMEXFILE: 'writeMexfile';
@@ -172,6 +180,7 @@ SETPARAMETER: 'setParameter';
 SAVEPARAMETERS: 'saveParameters';
 RESETPARAMETERS: 'resetParameters';
 QUIT: 'quit';
+
 
 //ELE: 'Ele';
 SAT: 'Sat';
