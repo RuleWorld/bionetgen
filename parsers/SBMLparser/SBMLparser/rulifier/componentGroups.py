@@ -133,9 +133,14 @@ def printDependencyLog(dependencies):
                 if requirementType == 'requirement':
                     log.write('Molecule {0} needs component {1} to {2} for component {3} to {4}\n'.format(molecule,baseMolecule[0][0],
                        formatComponent(baseMolecule[0][1:],'past'),baseMolecule[1][0],formatComponent(baseMolecule[1][1:],'present')))
+<<<<<<< HEAD
                 elif requirementType == 'exclusion':
                     log.write('In molecule {0} component {1} is exclusive of component {2}\n'.format(molecule,baseMolecule[0][0],
                         baseMolecule[1][0]))
+=======
+
+
+>>>>>>> 55102bd40d9053cffd0ad2ed9ece03b4c0dd8421
     return log.getvalue()
 
 def getContextRequirements(inputfile):
@@ -150,6 +155,10 @@ def getContextRequirements(inputfile):
     dependencies = detectDependencies(stateDictionary,molecules)
     #getMutualExclusions(dependencies)
     removeIndirectDependencies(dependencies,stateDictionary)
+<<<<<<< HEAD
+=======
+    #print printDependencyLog(dependencies)
+>>>>>>> 55102bd40d9053cffd0ad2ed9ece03b4c0dd8421
     return dependencies
 
 def defineConsole():
@@ -167,7 +176,11 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     inputFile = namespace.input
 
+<<<<<<< HEAD
     dependencies = getContextRequirements(inputFile)
     print printDependencyLog(dependencies)
+=======
+    getContextRequirements(inputFile)
+>>>>>>> 55102bd40d9053cffd0ad2ed9ece03b4c0dd8421
     
 
