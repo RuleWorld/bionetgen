@@ -198,9 +198,12 @@ def createCollapsedContact(rules,species,transformations,fileName,extendedInform
                     graph.add_node(dummyNode2,
                         graphics={'type': "circle",'fill':fill2},LabelGraphics={'text':label2})
 
-                    graph.add_edge(bondpartners[0],dummyNode,graphics={'fill':"#000000",'width':3},weight=1)
-                    graph.add_edge(dummyNode,dummyNode2,graphics={'fill':"#000000"},weight=1)
-                    graph.add_edge(bondpartners[1],dummyNode2,graphics={'fill':"#000000",'width':3},weight=1)
+                    if (dummyNode,bondpartners[0]) not in graph.edges():
+                        graph.add_edge(bondpartners[0],dummyNode,graphics={'fill':"#000000",'width':3},weight=1)
+                    if (dummyNode2,dummyNode) not in graph.edges():
+                        graph.add_edge(dummyNode,dummyNode2,graphics={'fill':"#000000"},weight=1)
+                    if (dummyNode2,bondpartners[1]) not in graph.edges():
+                        graph.add_edge(bondpartners[1],dummyNode2,graphics={'fill':"#000000",'width':3},weight=1)
                 elif len(bondpartners) == 1:
                     dummyNode = '{0}_{0}'.format(bondpartners[0])
                     graph.add_node(dummyNode,
@@ -245,7 +248,7 @@ def createCollapsedContact(rules,species,transformations,fileName,extendedInform
                 if relationship == 'mutualExclusion':
                     requirement1 = list(requirement)[0]
                     requirement2 = list(requirement)[1]
-                elif relationship == 'nullexclusion':
+                elif relationship in ['nullexclusion','independent','nullrequirement']:
                     continue
                 else:
                     requirement1 = requirement[0][0]
