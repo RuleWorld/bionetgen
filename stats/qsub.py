@@ -154,19 +154,19 @@ if __name__ == "__main__":
     batchsize = namespace.batch
     nodes = namespace.nodes
     if namespace.type == 'atomize':
-        finalfiles = getFiles(inputfolder,"xml")
+        finalfiles = getFiles(inputfolder, "xml")
         if namespace.resume:
-            bnglfiles = getFiles(outputfolder,"bngl")
-            finalfiles = restart(finalfiles,bnglfiles,'')
+            bnglfiles = getFiles(outputfolder, "bngl")
+            finalfiles = restart(finalfiles, bnglfiles, '')
             
     elif namespace.type =='bngxml':
-        finalfiles = getFiles(inputfolder,"bngl")
+        finalfiles = getFiles(inputfolder, "bngl")
         if namespace.resume:
-            bngxmlfiles = getFiles(inputfolder,"xml")
-            finalfiles = restart(finalfiles,bngxmlfiles,'.bngl')
+            bngxmlfiles = getFiles(inputfolder, "xml")
+            finalfiles = restart(finalfiles, bngxmlfiles, '.bngl')
 
     elif namespace.type =='graph':
-        finalfiles = getFiles(inputfolder,"bngl")
+        finalfiles = getFiles(inputfolder, "bngl")
         if namespace.resume:
             gmlfiles = getFiles(inputfolder,"gml")
             gmlfiles = [x.replace('_regulatory','') for x in gmlfiles]
