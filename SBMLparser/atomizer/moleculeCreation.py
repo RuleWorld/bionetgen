@@ -21,7 +21,8 @@ import biogrid
 from copy import deepcopy
 import marshal
 import functools
-
+import utils.pathwaycommons as pwcm
+from collections import Counter 
 def memoize(obj):
     cache = obj.cache = {}
 
@@ -406,13 +407,13 @@ def addBondToComponent(species, moleculeName, componentName, bond, priority=1):
                 order += 1
 
 
-def getComplexationComponents2(species,bioGridFlag):
+def getComplexationComponents2(species,bioGridFlag,pathwaycommonsFlag=False):
     '''
     method used during the atomization process. It determines how molecules
     in a species bind together
     '''
     def getBiggestMolecule(array):
-        sortedMolecule = sorted(array, key=lambda rule: (len(rule.components),len(str(rule)),str(rule)))
+        sortedMolecule = sorted(array, key=lambda molecule: (len(molecule.components),len(str(molecule)),str(molecule)))
         #sortedMolecule = sorted(sortedMolecule, key=lambda rule: len(rule.components))
         
         return sortedMolecule[-1]
@@ -515,11 +516,43 @@ def getComplexationComponents2(species,bioGridFlag):
                 element[1].upper() in bioGridDict and element[0] in bioGridDict[element[1].upper()]:
                     logMess('INFO:Atomization','Biogrid info: {0}:{1}'.format(element[0],element[1]))
                     dbPair.add((element[0],element[1]))
+                elif pathwaycommonsFlag:
+                    if pwcm.isInComplexWith(element[0],element[1]):
+                        dbPair.add((element[0],element[1]))
             dbPair = list(dbPair)
             if dbPair != []:
                 logMess('WARNING:Atomization',"More than one interaction was found in {0}".format(dbPair))
-                mol1 = getNamedMolecule(totalComplex[0],dbPair[0][0])
-                mol2 = getNamedMolecule(totalComplex[1],dbPair[0][1])
+                mol1 = mol2 = None
+                #select the best candidate if there's many ways to bind (in general one that doesn't overlap with an already exising pair)
+                finalDBpair = []
+                if len(dbPair) > 1:
+                    for element in dbPair:
+                        mset1 = Counter(element)
+                        mset2 = Counter(names1)
+                        mset3 = Counter(names2)
+
+                        intersection1 = mset1 & mset2
+                        intersection2 = mset1 & mset3
+                        intersection1 = list(intersection1.elements())
+                        intersection2 = list(intersection2.elements())
+
+                        if len(intersection1) < 2 and len(intersection2) <2:
+                            finalDBpair.append(element)
+                        dbPair = finalDBpair
+
+
+                if len(dbPair) > 1:                    
+                    logMess('WARNING:Atomization',"There's more than one way to bind {0} and {1} together: {2}. Defaulting to largest molecules".format(names1,names2,dbPair))
+                    tmpComplexSubset1 = [getNamedMolecule(totalComplex[0],element[0]) for element in dbPair]
+                    tmpComplexSubset2 = [getNamedMolecule(totalComplex[1],element[1]) for element in dbPair]
+
+                    mol1 = getBiggestMolecule(tmpComplexSubset1)
+                    mol2 = getBiggestMolecule(tmpComplexSubset2)
+
+                else:
+                    mol1 = getNamedMolecule(totalComplex[0],dbPair[0][0])
+                    mol2 = getNamedMolecule(totalComplex[1],dbPair[0][1])
+
             else:
                 logMess('WARNING:Atomization',"We don't know how {0} and {1} bind together and there's \
 no relevant BioGrid information. Defaulting to largest molecule".format(
@@ -638,7 +671,7 @@ def createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
             translator[baseName] = deepcopy(species)
             translator[element[0]] = modifiedSpecies
     
-def createBindingRBM(element,translator,dependencyGraph,bioGridFlag):
+def createBindingRBM(element,translator,dependencyGraph,bioGridFlag,pathwaycommonsFlag):
     species = st.Species()
     #go over the sct and reuse existing stuff
     for molecule in dependencyGraph[element[0]][0]:
@@ -653,7 +686,7 @@ def createBindingRBM(element,translator,dependencyGraph,bioGridFlag):
             dependencyGraph[molecule] = deepcopy(mol)
             species.addMolecule(mol)
     #how do things bind together?
-    moleculePairsList = getComplexationComponents2(species,bioGridFlag)
+    moleculePairsList = getComplexationComponents2(species,bioGridFlag,pathwaycommonsFlag)
         #TODO: update basic molecules with new components
         #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
         #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
@@ -719,7 +752,7 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                 createCatalysisRBM(dependencyGraph,element,translator,reactionProperties,
                                        equivalenceDictionary,sbmlAnalyzer,database)
             else:
-                createBindingRBM(element,translator,dependencyGraph,bioGridFlag)
+                createBindingRBM(element,translator,dependencyGraph,bioGridFlag,database.pathwaycommons)
 
 def updateSpecies(species, referenceMolecule):
     flag = False
@@ -813,14 +846,14 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     database.reactionProperties = database.sbmlAnalyzer.getReactionProperties()
     #user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
-    
+
     database.translator, database.labelDictionary, \
     database.lexicalLabelDictionary = database.sbmlAnalyzer.getUserDefinedComplexes()
-    
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     #rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
     siteAnnotations = analyzeRDF.getAnnotations(parser,'interpro')
+
     ####dependency graph
     #binding reactions
     for reaction, classification in zip(rules, database.classifications):
@@ -834,7 +867,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
         for dependencyCandidate in database.dependencyGraph[element]:
             for molecule in [x for x in dependencyCandidate if x not in database.dependencyGraph]:
                 database.dependencyGraph[molecule] = []
-
     #catalysis reactions
     for key in database.eequivalenceTranslator:
         for namingEquivalence in database.eequivalenceTranslator[key]:
@@ -855,7 +887,8 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
             continue
         elif len(database.labelDictionary[element][0]) == 0 or element == \
         database.labelDictionary[element][0][0]:
-            addToDependencyGraph(database.dependencyGraph, element, [])
+    
+            database.dependencyGraph[element] = []
         else:
             database.dependencyGraph[element] = [list(
             database.labelDictionary[element][0])]
