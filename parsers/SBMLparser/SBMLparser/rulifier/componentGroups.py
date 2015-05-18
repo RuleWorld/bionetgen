@@ -2,6 +2,8 @@ from utils import readBNGXML
 import argparse
 from collections import defaultdict
 from cStringIO import StringIO
+from utils import extractAtomic
+
 
 def molecule2stateTuples(molecule):
     """
@@ -14,6 +16,25 @@ def molecule2stateTuples(molecule):
         componentDefinition.append('' if len(component.states) == 0 else component.activeState)
         tupleList.append(tuple(componentDefinition))
     return tupleList
+
+def extractCenterContext(rules):
+    transformationCenter = []
+    transformationContext = []
+    transformationProduct = []
+    atomicArray = []
+    actionNames = []
+    for idx, rule in enumerate(rules):
+        tatomicArray, ttransformationCenter, ttransformationContext, \
+            tproductElements, tactionNames, tlabelArray = extractAtomic.extractTransformations(
+                [rule])
+        transformationCenter.append(ttransformationCenter)
+        transformationContext.append(ttransformationContext)
+        actionNames.append(tactionNames)
+        atomicArray.append(tatomicArray)
+        transformationProduct.append(tproductElements)
+    return transformationCenter, transformationContext, \
+        transformationProduct, atomicArray, actionNames
+
 
 def getChemicalStates(rules):
     """
@@ -30,6 +51,52 @@ def getChemicalStates(rules):
                     chemicalStates[molecule.name].append(stateTuple)
 
     return chemicalStates 
+
+
+def patternsFromString(chemicalString):
+    patterndict = defaultdict(list)
+    molecules =  chemicalString.split('.')
+    for molecule in molecules:
+        partitions = molecule.split('(')
+        if '!' in partitions[1]:
+            componentName = partitions[1].split('!')[0]
+            patterndict[partitions[0]].append((componentName,1,''))
+        elif '~' in partitions[1]:
+            componentName = partitions[1].split('~')[0]
+            stateName = partitions[1].split('~')[1][:-1]
+            patterndict[partitions[0]].append((componentName,0,stateName))
+        else:
+            componentName = partitions[1][:-1]
+            patterndict[partitions[0]].append((componentName,0,''))
+    return patterndict
+
+def getRestrictedChemicalStates(products,contexts):
+    """
+    goes through a list of reaction center and their associated context and creates a dictionary of molecules
+    of possible chemical states
+    """
+    sortedChemicalStates = defaultdict(lambda : defaultdict(lambda :defaultdict(set)))
+
+    for product,context in zip(products,contexts):
+        for indvproduct,indvcontext in zip(product,context):
+            pDict = defaultdict(list)
+            cDict = defaultdict(list)
+            for p in indvproduct:
+                result = patternsFromString(p)
+                for molecule in result:
+                    for pattern in result[molecule]:
+                        pDict[molecule].append(pattern)
+            for c in indvcontext:
+                result = patternsFromString(c)
+                for molecule in result:
+                    for pattern in result[molecule]:
+                        cDict[molecule].append(pattern)
+            for molecule in pDict:
+                for componentState in pDict[molecule]:
+                    #FIXME: This is to account for dimers where or places where there is more than one components with the same name. Truly this should be enother kind of classification
+                    for componentState2 in [x for x in cDict[molecule] if x[0] != componentState[0]]:
+                        sortedChemicalStates[molecule][componentState][componentState2[0]].add(componentState2[1:])
+    return sortedChemicalStates
 
 def sortChemicalStates(chemicalStates):
     """
@@ -69,11 +136,10 @@ def analyzeDependencies(componentStateCollection,state,moleculeName,molecules,de
             if isActive((state[1],state[2])) and isActive(activeState):
                 dependencies[moleculeName]['requirement'].add(((componentName,activeState[0],activeState[1]),state))
             elif isActive((state[1],state[2])) and not isActive(activeState):
-                dependencies[moleculeName]['exclusion'].add(((state,(componentName,activeState[0],activeState[1]))))
-            elif (not isActive((state[1],state[2]))) and not isActive(activeState):
-                dependencies[moleculeName]['nullrequirement'].add(((state,(componentName,activeState[0],activeState[1]))))
+                dependencies[moleculeName]['nullrequirement'].add((((componentName,activeState[0],activeState[1])),state))
             elif (not isActive((state[1],state[2]))) and isActive(activeState):
-                dependencies[moleculeName]['exclusion'].add((((componentName,activeState[0],activeState[1])),state))
+                dependencies[moleculeName]['nullrequirement'].add(((state,(componentName,activeState[0],activeState[1]))))
+
 def detectDependencies(stateDictionary,molecules):
     dependencies = defaultdict(lambda: defaultdict(set))
     for moleculeName in stateDictionary:
@@ -81,11 +147,29 @@ def detectDependencies(stateDictionary,molecules):
             analyzeDependencies(stateDictionary[moleculeName][state],state,moleculeName,molecules,dependencies)
     return dependencies
 
-def getMutualExclusions(stateDictionary):
-    mutualExclusion = []
+from collections import Counter 
+
+def reverseState(moleculeName,state,molecules):
+    if isActive(state[1:]):
+        return (state[0],0,'')
+    else:
+        for molecule in molecules:
+            if molecule.name == moleculeName:
+                for component in molecule.components:
+                    if component.name == state[0]:
+                        if len(component.states) <= 1:
+                            return (state[0],1,'')
+                        else:
+                            return (state[0],0,[x for x in component.states if x != '0'][0])
+
+
+def getMutualExclusions(stateDictionary,molecules):
     for molecule in stateDictionary:
-        for partner in stateDictionary[molecule]['exclusion']:
-                print molecule,partner
+        stateDictionary[molecule]['exclusion'] = [x for x in stateDictionary[molecule]['nullrequirement'] if 
+                                                (reverseState(molecule,x[1],molecules),reverseState(molecule,x[0],molecules)) 
+                                                in stateDictionary[molecule]['nullrequirement']]
+        stateDictionary[molecule]['nullrequirement'] = [x for x in stateDictionary[molecule]['nullrequirement'] if x not in stateDictionary[molecule]['exclusion']]
+
 
 def removeIndirectDependencies(dependencies,stateSpace):
     """
@@ -127,16 +211,17 @@ def printDependencyLog(dependencies):
     log = StringIO()
     for molecule in dependencies:
         for requirementType in dependencies[molecule]:
-            if requirementType in ['independent','nullrequirement']:
+            if requirementType in ['independent']:
                 continue
             for baseMolecule in dependencies[molecule][requirementType]:
                 if requirementType == 'requirement':
                     log.write('Molecule {0} needs component {1} to {2} for component {3} to {4}\n'.format(molecule,baseMolecule[0][0],
                        formatComponent(baseMolecule[0][1:],'past'),baseMolecule[1][0],formatComponent(baseMolecule[1][1:],'present')))
                 elif requirementType == 'exclusion':
-                    log.write('In molecule {0} component {1} is exclusive of component {2}\n'.format(molecule,baseMolecule[0][0],
+                    log.write('In molecule {0} component {1} is mutually exclusive of component {2}\n'.format(molecule,baseMolecule[0][0],
                         baseMolecule[1][0]))
-
+                if requirementType == 'nullrequirement':
+                    pass
     return log.getvalue()
 
 def getContextRequirements(inputfile):
@@ -144,14 +229,20 @@ def getContextRequirements(inputfile):
     Receives a BNG-XML file and returns the contextual dependencies implied by this file
     """
     molecules, rules, _ = readBNGXML.parseXML(inputfile)
+    center,context,product,atomicArray,actions = extractCenterContext(rules)
 
-    chemicalStates = getChemicalStates(rules)
-    stateDictionary = sortChemicalStates(chemicalStates)
+    reactionCenterStateDictionary = getRestrictedChemicalStates(product,context)
+    #chemicalStates = getChemicalStates(rules)
+    #totalStateDictionary = sortChemicalStates(chemicalStates)
     
-    dependencies = detectDependencies(stateDictionary,molecules)
-    #getMutualExclusions(dependencies)
-    removeIndirectDependencies(dependencies,stateDictionary)
-    return dependencies
+    requirementDependencies = detectDependencies(reactionCenterStateDictionary,molecules)
+    removeIndirectDependencies(requirementDependencies,reactionCenterStateDictionary)
+    getMutualExclusions(requirementDependencies,molecules)
+
+
+
+
+    return requirementDependencies
 
 def defineConsole():
     """
@@ -169,6 +260,6 @@ if __name__ == "__main__":
     inputFile = namespace.input
 
     dependencies = getContextRequirements(inputFile)
-    print printDependencyLog(dependencies)
-    
+    #print printDependencyLog(dependencies)
+   
 
