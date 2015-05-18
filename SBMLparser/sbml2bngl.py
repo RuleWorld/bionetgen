@@ -8,13 +8,24 @@ from copy import deepcopy
 import writer.bnglWriter as writer
 log = {'species': [], 'reactions': []}
 import re
-from scipy.misc import factorial, comb
 from collections import Counter
 from collections import defaultdict
 import numpy as np
 
 from utils.util import logMess
 import libsbml
+
+def factorial(x):
+    temp = x
+    acc = 1
+    while temp > 0:
+        acc *= temp
+        temp -= 1
+    return acc
+
+def comb(x,y,exact=True):
+    return factorial(x)/(factorial(y) * factorial(x-y))
+
 
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
            'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
