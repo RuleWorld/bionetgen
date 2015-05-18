@@ -113,11 +113,14 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
         parser =SBML2BNGL(document.getModel(),useID)
         
         bioGrid = False
+        pathwaycommons = False
         if bioGrid:
             loadBioGrid()
         database = structures.Databases()
         database.forceModificationFlag = True
-
+        database.pathwaycommons = False
+        if pathwaycommons:
+            database.pathwaycommons = True
         namingConventions = resource_path('config/namingConventions.json')
         
         if atomize:
@@ -259,7 +262,7 @@ def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEqui
     
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    
+    database.pathwaycommons = False
     #call the atomizer (or not)
     #if atomize:
     translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
@@ -322,7 +325,7 @@ def reorderFunctions(functions):
     
     
 def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile,
-                speciesEquivalence=None,atomize=False,bioGrid=False):
+                speciesEquivalence=None,atomize=False,bioGrid=False,pathwaycommons=False):
     '''
     one of the library's main entry methods. Process data from a file
     '''
@@ -334,7 +337,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     database.forceModificationFlag = True
-    
+    database.pathwaycommons = pathwaycommons
+
     bioGridDict = {}
     if bioGrid:
         bioGridDict = loadBioGrid()

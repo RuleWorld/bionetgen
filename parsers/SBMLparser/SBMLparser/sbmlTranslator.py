@@ -22,6 +22,8 @@ def defineConsole():
     but more bngl friendly. Use only if the generated BNGL has syntactic errors')
     parser.add_argument('-a','--atomize',action='store_true',help='Infer molecular structure')
     parser.add_argument('-b','--biogrid',action='store_true',help='Use biogrid database to infer molecules')
+    parser.add_argument('-p','--pathwaycommons',action='store_true',help='Use pathway commons to infer molecule binding. This setting requires an internet connection and will query the pathway commons web service.')
+
     return parser    
 
 def checkInput(namespace):
@@ -37,6 +39,7 @@ def checkInput(namespace):
     options['useId'] = namespace.molecule_id
     options['atomize'] = namespace.atomize
     options['biogrid'] = namespace.biogrid
+    options['pathwaycommons'] = namespace.pathwaycommons
     return options
 
 def main():
@@ -47,7 +50,7 @@ def main():
     
     ls2b.analyzeFile(options['inputFile'],options['conventionFile'],options['useId'],options['namingConventions'],
                      options['outputFile'],speciesEquivalence=options['userStructure'],
-                     atomize=options['atomize'],bioGrid=options['biogrid'])
+                     atomize=options['atomize'],bioGrid=options['biogrid'],pathwaycommons=options['pathwaycommons'])
     
     
     

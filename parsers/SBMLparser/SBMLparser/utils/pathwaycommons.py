@@ -1,8 +1,22 @@
 import urllib
 import urllib2
 from bioservices import UniProt
+import functools
+import marshal
 
 u = UniProt(verbose=False)
+
+def memoize(obj):
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        #key = str(args) + str(kwargs)
+        key = marshal.dumps([args,kwargs])
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
 
 def name2uniprot(nameStr):
     """
@@ -56,7 +70,7 @@ def getReactomeBondByUniprot(uniprot1,uniprot2):
     return ppi
 
 
-
+@memoize
 def getReactomeBondByName(name1,name2):
     """
     resolves the uniprot id of parameters *name1* and *name2* and obtains whether they
@@ -66,7 +80,15 @@ def getReactomeBondByName(name1,name2):
     uniprot2 = name2uniprot(name2)
     return getReactomeBondByUniprot(uniprot1,uniprot2)
 
+def isInComplexWith(name1,name2):
+    nameset = sorted([name1,name2])
+    result = getReactomeBondByName(nameset[0],nameset[1])
+    if result:
+        return any([x[1]== 'in-complex-with' for x in  result])
+    return False
+
 if __name__ == "__main__":
-    results =  getReactomeBondByName('GAP','Ras')
-    print results
+    #results =  isInComplexWith('GAP','Ras')
+    print getReactomeBondByName('EGFR', 'Grb2')
+    #print results
     #print getReactomeBondByUniprot('P20936','P01112')
