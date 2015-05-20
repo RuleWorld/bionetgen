@@ -18,7 +18,7 @@ def factorial(x):
         temp -= 1
     return acc
 
-def comb(x,y):
+def comb(x,y,exact=True):
     return factorial(x)/(factorial(y) * factorial(x-y))
 
 
