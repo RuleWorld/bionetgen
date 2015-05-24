@@ -329,6 +329,11 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     '''
     one of the library's main entry methods. Process data from a file
     '''
+    '''
+    import cProfile, pstats, StringIO
+    pr = cProfile.Profile()
+    pr.enable()
+    '''
     logMess.log = []
     logMess.counter = -1
     reader = libsbml.SBMLReader()
@@ -351,6 +356,14 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
         translator={} 
 
     #process other sections of the sbml file (functions reactions etc.)    
+    '''
+    pr.disable()
+    s = StringIO.StringIO()
+    sortby = 'cumulative'
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats(10)
+    print s.getvalue()
+    '''
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     
     with open(outputFile,'w') as f:
@@ -984,7 +997,7 @@ if __name__ == "__main__":
     
     #main2()
     
-    analyzeFile('../XMLExamples/curated/BIOMD0000000019.xml', resource_path('config/reactionDefinitions.json'),
+    analyzeFile('../XMLExamples/curated/BIOMD0000000011.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
                     'BIOMD0000000027.xml' + '.bngl', 
                     speciesEquivalence=None,atomize=True,bioGrid=False)

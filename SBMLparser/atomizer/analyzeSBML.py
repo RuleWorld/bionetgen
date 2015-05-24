@@ -41,6 +41,24 @@ def memoize(obj):
 def get_close_matches(match,dataset,cutoff=0.6):
     return difflib.get_close_matches(match,dataset,cutoff=cutoff)
 
+name = Word(alphanums + '_-') + ':'
+species = (Word(alphanums + "_" + ":#-") 
++ Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_" + ":#-") 
++ Suppress("()"))
+rate = Word(alphanums + "()")
+grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
+
+
+@memoize
+def parseReactions(reaction,specialSymbols=''):
+    
+    result =  grammar.parseString(reaction).asList()
+    if len(result) < 2:    
+        result = [result,[]]
+    if '<->' in reaction and len(result[0]) == 1 and len(result[1]) == 2:
+        result.reverse()
+    return result
+
 
 def addToDependencyGraph(dependencyGraph, label, value):
     if label not in dependencyGraph:
@@ -263,21 +281,6 @@ class SBMLAnalyzer:
             #print self.findClosestModification(set(additionalHandling),species)
         return dependencyGraph,equivalenceTranslator
 
-    def parseReactions(self,reaction,specialSymbols=''):
-        name = Word(alphanums + '_-') + ':'
-        species =  (Word(alphanums+"_"+":#-") 
-        + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums+"_"+":#-") 
-        + Suppress("()"))
-        rate = Word(alphanums +     "()")
-        grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
-        
-        result =  grammar.parseString(reaction).asList()
-        if len(result) < 2:    
-            result = [result,[]]
-        if '<->' in reaction and len(result[0]) == 1 and len(result[1]) == 2:
-            result2 = [result[1],result[0]]
-            result = result2
-        return result
     
     
     
@@ -1079,7 +1082,7 @@ class SBMLAnalyzer:
         newTranslationKeys = []
         adhocLabelDictionary = {}
         #lists of plain reactions
-        rawReactions = [self.parseReactions(x) for x in reactions]
+        rawReactions = [parseReactions(x) for x in reactions]
         #process fuzzy naming conventions based on reaction information
         indirectEquivalenceTranslator= {x:[] for x in equivalenceTranslator}
         localSpeciesDict = defaultdict(lambda : defaultdict(list))
@@ -1198,7 +1201,7 @@ class SBMLAnalyzer:
         this model will go through the list of reactions and assign a 'modification' tag to those reactions where
         some kind of modification goes on aided through annotation information
         '''
-        rawReactions = [self.parseReactions(x) for x in reactions]
+        rawReactions = [parseReactions(x) for x in reactions]
         equivalenceTranslator = self.processAnnotations(molecules,annotations)     
         for reactionIndex in range(0,len(rawReactions)):
             for reactantIndex in range(0,len(rawReactions[reactionIndex])):
