@@ -36,19 +36,20 @@ def memoize(obj):
     return memoizer
 
 
+speciesNameGrammar = (Word(alphanums + "_:#-")
++ Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_:#-")
++ Suppress("()"))
+nameGrammar = Word(alphanums + '_-') + ':'
+
+rateGrammar = Word(alphanums + "()")
+
+grammar = Suppress(Optional(nameGrammar)) + ((Group(speciesNameGrammar) | '0') + Suppress(Optional("<") + "->") +
+          (Group(speciesNameGrammar) | '0') + Suppress(rateGrammar)) \
+          ^ (speciesNameGrammar + Suppress(Optional("<") + "->") + Suppress(rateGrammar))
+
 @memoize
 def parseReactions(reaction):
-    name = Word(alphanums + '_-') + ':'
 
-    species = (Word(alphanums + "_:#-")
-    + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_:#-")
-    + Suppress("()"))
-
-    rate = Word(alphanums + "()")
-    
-    grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") +
-              (Group(species) | '0') + Suppress(rate)) \
-              ^ (species + Suppress(Optional("<") + "->") + Suppress(rate))
     result = grammar.parseString(reaction).asList()
     if len(result) < 2:
         result = [result, []]
@@ -821,7 +822,6 @@ def propagateChanges(translator, dependencyGraph):
                     flag = False
 
 #TODO:bm19:Rafi_Rasi_GTP
-import cProfile, pstats, StringIO
 import cPickle as pickle
 
 def createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
@@ -1042,6 +1042,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         ---speciesEquivalences:predefined species
     """
     '''
+    import cProfile, pstats, StringIO
     pr = cProfile.Profile()
     pr.enable()
     '''
