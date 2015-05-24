@@ -830,13 +830,11 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     molecules, _, _,_ = parser.getSpecies()
     database.sbmlAnalyzer = \
     analyzeSBML.SBMLAnalyzer(parser,configurationFile, namingConventions,speciesEquivalences,conservationOfMass=True)
+    
     #classify reactions
     database.classifications, equivalenceTranslator, database.eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
-    adhocLabelDictionary,lexicalDependencyGraph=  database.sbmlAnalyzer.classifyReactions(rules, molecules)
-    referenceVariables = [database.classifications,equivalenceTranslator,
-                          database.eequivalenceTranslator,indirectEquivalenceTranslator,adhocLabelDictionary]
-    comparisonVariables = [deepcopy(x) for x in referenceVariables]
+    adhocLabelDictionary,lexicalDependencyGraph=  database.sbmlAnalyzer.classifyReactions(rules, molecules,{})
     #####input processing
     #states,components,other user options
     #with open('temp1.dict','w') as f:
@@ -847,12 +845,11 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
     #user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
 
-    database.translator, database.labelDictionary, \
+    database.translator, database.userLabelDictionary, \
     database.lexicalLabelDictionary = database.sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
     #analyzeSBML.analyzeNamingConventions(molecules)
     #rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
-    siteAnnotations = analyzeRDF.getAnnotations(parser,'interpro')
 
     ####dependency graph
     #binding reactions
@@ -860,13 +857,22 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)),classification)
 
-
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
         #Check if I'm using a molecule that hasn't been used yet
         for dependencyCandidate in database.dependencyGraph[element]:
             for molecule in [x for x in dependencyCandidate if x not in database.dependencyGraph]:
                 database.dependencyGraph[molecule] = []
+
+
+    #try analyzing catalysis now with binding information
+    database.classifications, equivalenceTranslator, database.eequivalenceTranslator,\
+    indirectEquivalenceTranslator, \
+    adhocLabelDictionary,lexicalDependencyGraph=  database.sbmlAnalyzer.classifyReactions(rules, molecules,database.dependencyGraph)
+
+    database.reactionProperties.update(adhocLabelDictionary)
+
+
     #catalysis reactions
     for key in database.eequivalenceTranslator:
         for namingEquivalence in database.eequivalenceTranslator[key]:
@@ -882,17 +888,20 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                     #    continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
-    for element in database.labelDictionary:
-        if database.labelDictionary[element] == 0:
+
+    #try analyzing 
+    for element in database.userLabelDictionary:
+        if database.userLabelDictionary[element] == 0:
             continue
-        elif len(database.labelDictionary[element][0]) == 0 or element == \
-        database.labelDictionary[element][0][0]:
+        elif len(database.userLabelDictionary[element][0]) == 0 or element == \
+        database.userLabelDictionary[element][0][0]:
     
             database.dependencyGraph[element] = []
         else:
             database.dependencyGraph[element] = [list(
-            database.labelDictionary[element][0])]
-                                     
+            database.userLabelDictionary[element][0])]
+                                 
+
     #non lexical-analysis catalysis reactions
     if database.forceModificationFlag:
         for reaction, classification in zip(rules, database.classifications):
@@ -907,11 +916,11 @@ def createSpeciesCompositionGraph(parser, database, configurationFile,namingConv
                     mod = preaction[1][0]
                     base = preaction[0][0]
                 if database.dependencyGraph[mod] == []:
-                    if base in database.labelDictionary and \
-                        database.labelDictionary[base]== 0:
+                    if base in database.userLabelDictionary and \
+                        database.userLabelDictionary[base]== 0:
                         continue
-                    if mod in database.labelDictionary and \
-                        database.labelDictionary[mod] == 0:
+                    if mod in database.userLabelDictionary and \
+                        database.userLabelDictionary[mod] == 0:
                         continue
                     if [mod] in database.dependencyGraph[base]:
                         continue
@@ -988,8 +997,6 @@ tmp,removedElement,tmp3))
             database.lexicalLabelDictionary[element][0])]
     
     #pure lexical analysis
-    
-    
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     strippedMolecules = [x.strip('()') for x in molecules]
     tmpDependency,database.tmpEquivalence = database.sbmlAnalyzer.findClosestModification(orphanedSpecies,strippedMolecules)          
