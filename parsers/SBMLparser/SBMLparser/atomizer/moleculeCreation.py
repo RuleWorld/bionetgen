@@ -821,7 +821,6 @@ def propagateChanges(translator, dependencyGraph):
                     flag = False
 
 #TODO:bm19:Rafi_Rasi_GTP
-import cProfile, pstats, StringIO
 import cPickle as pickle
 
 def createSpeciesCompositionGraph(parser, database, configurationFile,namingConventions,
@@ -1042,6 +1041,7 @@ def transformMolecules(parser, database, configurationFile,namingConventions,
         ---speciesEquivalences:predefined species
     """
     '''
+    import cProfile, pstats, StringIO
     pr = cProfile.Profile()
     pr.enable()
     '''
