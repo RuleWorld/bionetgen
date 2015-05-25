@@ -820,6 +820,11 @@ def propagateChanges(translator, dependencyGraph):
                     'Species is not being properly propagated')
                     flag = False
 
+<<<<<<< HEAD
+=======
+#TODO:bm19:Rafi_Rasi_GTP
+import cPickle as pickle
+>>>>>>> ba922d983d1243dd32ac5140035e517ff611015d
 
 def createSpeciesCompositionGraph(parser, database, configurationFile, namingConventions,
                        speciesEquivalences=None, bioGridFlag=False):
