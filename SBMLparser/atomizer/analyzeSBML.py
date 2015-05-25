@@ -1081,6 +1081,7 @@ class SBMLAnalyzer:
         equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules,onlyUser=True)
         newTranslationKeys = []
         adhocLabelDictionary = {}
+
         #lists of plain reactions
         rawReactions = [parseReactions(x) for x in reactions]
         #process fuzzy naming conventions based on reaction information
@@ -1088,8 +1089,13 @@ class SBMLAnalyzer:
         localSpeciesDict = defaultdict(lambda : defaultdict(list))
 
         trueBindingReactions = []
+
+        #the lexical dependencyGraph merely applies lexical analysis to detect which components in the left hand size
+        #matches to different ones in the right hand size of a given reaction
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
+
+    
         for idx,reaction in enumerate(rawReactions):
             flagstar = False
             if len(reaction[0]) == 1 and len(reaction[1]) == 1 \
@@ -1125,6 +1131,7 @@ class SBMLAnalyzer:
                 #and unlike lexical pattern matching we are not going to go around trying to increase string size
                 reactantString,productString = self.removeExactMatches(reactantString,productString)
 
+    
             matching,matching2 = self.approximateMatching2(reactantString,productString,strippedMolecules,translationKeys)
             if matching and flagstar:
                 logMess('Atomization:Warning','inverting order of {0} for lexical analysis'.format([reaction[1],reaction[0]]))
@@ -1170,6 +1177,7 @@ class SBMLAnalyzer:
             definition.append([sdefinition])
             self.lexicalSpecies.append(definition)
                 #definition = [commonRoot,[[commonRoot,componentName,["s",tag]]]]
+
         reactionClassification = self.getReactionClassification(reactionDefinition,
                                             rawReactions,equivalenceTranslator,
                                             indirectEquivalenceTranslator,
