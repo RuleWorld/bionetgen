@@ -27,8 +27,11 @@ import utils.structures as structures
 import atomizer.analyzeRDF
 from utils.util import logMess
 from sbml2bngl import SBML2BNGL
-from biogrid import loadBioGridDict as loadBioGrid
+#from biogrid import loadBioGridDict as loadBioGrid
 
+def loadBioGrid():
+    pass
+    
 def handler(signum, frame):
     print "Forever is over!"
     raise Exception("end of time")
@@ -997,7 +1000,7 @@ if __name__ == "__main__":
     
     #main2()
     
-    analyzeFile('../XMLExamples/curated/BIOMD0000000011.xml', resource_path('config/reactionDefinitions.json'),
+    analyzeFile('../XMLExamples/curated/BIOMD0000000048.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
                     'BIOMD0000000027.xml' + '.bngl', 
                     speciesEquivalence=None,atomize=True,bioGrid=False)

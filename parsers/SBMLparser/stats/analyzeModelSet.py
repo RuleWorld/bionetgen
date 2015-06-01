@@ -205,7 +205,7 @@ def createCollapsedContact(xmlfile,outputdirectory,options=[]):
         result = call(['python',collapsedContact,'-i',
         #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         xmlfile,
-        '-o',os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '._collapsed.gml',
+        '-o',os.path.join(outputdirectory, str(xmlfile.split('/')[-1])) + '._collapsed.gml',
         ],stdout=f)
     return result
 
