@@ -14,12 +14,9 @@ import ast
 import pickle
 from os import listdir
 from os.path import isfile, join
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
 import numpy as np
 import functools
+
 
 def memoize(obj):
     cache = obj.cache = {}
@@ -232,7 +229,12 @@ def databaseAnalysis(directory,outputFile):
             #pickle.dump(differenceDict,f)
             pickle.dump(fileCounter,f)
         
-        
+'''        
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 def analyzeTrends(inputFile):
     with open(inputFile,'rb') as f:
         counter = pickle.load(f)
@@ -248,12 +250,12 @@ def analyzeTrends(inputFile):
     pp.pprint(keys)
     data = pd.DataFrame(keys)
     #print data.to_excel('name.xls')
-    '''
-    for element in keys:
-        print '------------------'
-        print element
-        pp.pprint(dictionary[element[0]])
-    ''' 
+    
+    #for element in keys:
+    #    print '------------------'
+    #    print element
+    #    pp.pprint(dictionary[element[0]])
+''' 
     
 if __name__ == "__main__":
     bioNumber= 19

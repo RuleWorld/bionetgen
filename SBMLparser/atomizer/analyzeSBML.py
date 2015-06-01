@@ -553,10 +553,8 @@ class SBMLAnalyzer:
                 #    if close in [x for x in reaction[0]]:
                 #        return None,[close]
                 return None,[reactant]
-        
 
-
-    def growString(self,reactant,product,rp,pp,idx,strippedMolecules):
+    def growString(self, reactant, product, rp, pp, idx, strippedMolecules):
         '''
         currently this is the slowest method in the system because of all those calls to difflib
         '''
@@ -565,32 +563,32 @@ class SBMLAnalyzer:
         tproduct = pp
         pidx = product.index(pp[0])
         while idx + idx2 <= len(reactant):
-            treactant2 = reactant[idx:min(len(reactant),idx+idx2)]
+            treactant2 = reactant[idx:min(len(reactant), idx + idx2)]
             #if treactant2 != tproduct2:
             if treactant2[-1] in strippedMolecules:
                 break
-            if treactant2[-1] not in strippedMolecules:
-                if len(reactant) > idx + idx2:                    
-                    tailDifferences =  get_close_matches(treactant2[-1],strippedMolecules)
+            else:
+                if len(reactant) > idx + idx2:
+                    tailDifferences = get_close_matches(treactant2[-1], strippedMolecules)
                     if len(tailDifferences) > 0:
 
-                        tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(treactant2),x).ratio() for x in tailDifferences])
-                        hdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(reactant[idx+idx2-1:idx+idx2+1]),x).ratio() for x in tailDifferences])
+                        tdr = max([0] + [difflib.SequenceMatcher(None, '_'.join(treactant2), x).ratio() for x in tailDifferences])
+                        hdr = max([0] + [difflib.SequenceMatcher(None, '_'.join(reactant[idx + idx2 - 1:idx + idx2 + 1]), x).ratio() for x in tailDifferences])
                         if tdr > hdr and tdr > 0.8:
                             treactant = treactant2
                     else:
-                        tailDifferences = get_close_matches('_'.join(treactant2),strippedMolecules)
-                        headDifferences = get_close_matches('_'.join(reactant[idx+idx2-1:idx+idx2+1]),strippedMolecules)
+                        tailDifferences = get_close_matches('_'.join(treactant2), strippedMolecules)
+                        headDifferences = get_close_matches('_'.join(reactant[idx + idx2 - 1:idx + idx2 + 1]), strippedMolecules)
                         if len(tailDifferences) == 0:
                             break
                         elif len(headDifferences) == 0:
                             treactant = treactant2
                         break
                 elif len(reactant) == idx + idx2:
-                    tailDifferences =  get_close_matches('_'.join(treactant2),strippedMolecules)
+                    tailDifferences = get_close_matches('_'.join(treactant2), strippedMolecules)
                     if len(tailDifferences) > 0:
 
-                        tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(treactant2),x).ratio() for x in tailDifferences])
+                        tdr = max([0] + [difflib.SequenceMatcher(None, '_'.join(treactant2), x).ratio() for x in tailDifferences])
                         if tdr > 0.8:
                             treactant = treactant2
                         else:
@@ -600,34 +598,35 @@ class SBMLAnalyzer:
                 else:
                     treactant = treactant2
             break
-            idx2+=1
-        idx2=2
+            idx2 += 1
+
+        idx2 = 2
         while pidx + idx2 <= len(product):
-            tproduct2 = product[pidx:min(len(product),pidx+ idx2)]
+            tproduct2 = product[pidx:min(len(product), pidx + idx2)]
             if tproduct2[-1] in strippedMolecules:
                 break
 
             if tproduct2[-1] not in strippedMolecules:
                 if len(product) > pidx + idx2:
-                    tailDifferences =  get_close_matches(tproduct2[-1],strippedMolecules)
+                    tailDifferences = get_close_matches(tproduct2[-1], strippedMolecules)
                     if len(tailDifferences) > 0:
-                        tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(tproduct2),x).ratio() for x in tailDifferences])
-                        hdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(product[pidx+idx2-1:pidx+idx2+1]),x).ratio() for x in tailDifferences])
+                        tdr = max([0] + [difflib.SequenceMatcher(None, '_'.join(tproduct2), x).ratio() for x in tailDifferences])
+                        hdr = max([0] + [difflib.SequenceMatcher(None, '_'.join(product[pidx + idx2 - 1:pidx + idx2 + 1]), x).ratio() for x in tailDifferences])
                         if tdr > hdr and tdr > 0.8:
                             tproduct = tproduct2
                     else:
-                        tailDifferences = get_close_matches('_'.join(tproduct2),strippedMolecules,cutoff=0.8)
-                        headDifferences = get_close_matches('_'.join(product[pidx+idx2-1:pidx+idx2+1]),strippedMolecules,cutoff=0.8)
+                        tailDifferences = get_close_matches('_'.join(tproduct2), strippedMolecules, cutoff=0.8)
+                        headDifferences = get_close_matches('_'.join(product[pidx + idx2 - 1:pidx + idx2 + 1]), strippedMolecules, cutoff=0.8)
                         if len(tailDifferences) == 0:
                             break
                         elif len(headDifferences) == 0 or '_'.join(tproduct2) in tailDifferences:
                             tproduct = tproduct2
-                            
+
                 elif len(product) == pidx + idx2:
-                    tailDifferences =  get_close_matches('_'.join(tproduct2),strippedMolecules)
+                    tailDifferences = get_close_matches('_'.join(tproduct2), strippedMolecules)
                     if len(tailDifferences) > 0:
 
-                        tdr =  max([0] + [difflib.SequenceMatcher(None,'_'.join(tproduct2),x).ratio() for x in tailDifferences])
+                        tdr = max([0] + [difflib.SequenceMatcher(None, '_'.join(tproduct2), x).ratio() for x in tailDifferences])
                         if tdr > 0.8:
                             tproduct = tproduct2
                         else:
@@ -644,9 +643,9 @@ class SBMLAnalyzer:
             #else:
                 
             idx2 += 1
-        return treactant,tproduct
+        return treactant, tproduct
     
-    def approximateMatching2(self,reactantString,productString,strippedMolecules,differenceParameter):
+    def approximateMatching2(self, reactantString, productString, strippedMolecules, differenceParameter):
         
         
         #reactantString = [x.split('_') for x in reaction[0]]
@@ -663,10 +662,10 @@ class SBMLAnalyzer:
                 idx += 1
                 for stoch2,product in enumerate(productString):
                     #print idx2,product in enumerate(element3):
-                    rp,pp = self.compareStrings(reactant[idx],product,strippedMolecules)
+                    rp,pp = self.compareStrings(reactant[idx], product, strippedMolecules)
                     if rp and rp != pp[0]:
-                        pairedMolecules[stoch2].append((rp,pp[0]))
-                        pairedMolecules2[stoch].append((pp[0],rp))
+                        pairedMolecules[stoch2].append((rp, pp[0]))
+                        pairedMolecules2[stoch].append((pp[0], rp))
                         product.remove(pp[0])
                         reactant.remove(rp)
                         #product.remove(pp)
@@ -674,10 +673,10 @@ class SBMLAnalyzer:
                         idx = -1
                         break
                     elif rp:
-                        treactant,tproduct = self.growString(reactant,product,
-                                                        rp,pp,idx,strippedMolecules)
-                        pairedMolecules[stoch2].append(('_'.join(treactant),'_'.join(tproduct)))
-                        pairedMolecules2[stoch].append(('_'.join(tproduct),'_'.join(treactant)))
+                        treactant,tproduct = self.growString(reactant, product,
+                                                        rp, pp, idx, strippedMolecules)
+                        pairedMolecules[stoch2].append(('_'.join(treactant), '_'.join(tproduct)))
+                        pairedMolecules2[stoch].append(('_'.join(tproduct), '_'.join(treactant)))
                         for x in treactant:
                             reactant.remove(x)
                         for x in tproduct:
@@ -688,13 +687,13 @@ class SBMLAnalyzer:
                         flag = False
                         if pp not in [[],None]:
                             #if reactant[idx] == pp[0]:
-                                treactant,tproduct = self.growString(reactant,product,
-                                                                reactant[idx],pp,idx,strippedMolecules)
+                                treactant,tproduct = self.growString(reactant, product,
+                                                                reactant[idx], pp, idx, strippedMolecules)
                                 #FIXME: this comparison is pretty nonsensical. treactant and tproduct are not
                                 #guaranteed to be in teh right order. why are we comparing them both at the same time
                                 if (len(treactant) > 1 and '_'.join(treactant) in strippedMolecules) or (len(tproduct)>1 and '_'.join(tproduct) in strippedMolecules):
-                                    pairedMolecules[stoch2].append(('_'.join(treactant),'_'.join(tproduct)))
-                                    pairedMolecules2[stoch].append(('_'.join(tproduct),'_'.join(treactant)))
+                                    pairedMolecules[stoch2].append(('_'.join(treactant), '_'.join(tproduct)))
+                                    pairedMolecules2[stoch].append(('_'.join(tproduct), '_'.join(treactant)))
                                     for x in treactant:
                                         reactant.remove(x)
                                     for x in tproduct:
@@ -1129,10 +1128,14 @@ class SBMLAnalyzer:
         
                 #remove those chemicals that match exactly on both sides since those are not interesting.
                 #and unlike lexical pattern matching we are not going to go around trying to increase string size
+
                 reactantString,productString = self.removeExactMatches(reactantString,productString)
 
     
+            if  '__IFN_R_JAK__2m_STAT1C_SHP2' in reaction[1]:
+                pass
             matching,matching2 = self.approximateMatching2(reactantString,productString,strippedMolecules,translationKeys)
+
             if matching and flagstar:
                 logMess('Atomization:Warning','inverting order of {0} for lexical analysis'.format([reaction[1],reaction[0]]))
         
