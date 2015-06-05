@@ -59,7 +59,6 @@ def createSpecies(pattern):
         tmpDict.update(nameDict)
     return species, tmpDict
     
-    
 
 def parseRule(rule,parameterDict):
     '''
@@ -154,7 +153,80 @@ def parseComponent(component):
         for state in states.getchildren():
             comp.addState(state.get('id'))
     return comp
+
+def parseObservable(observable):
+    nameDict = {}
+    name = observable.get('name')
+    otype = observable.get('type')
+    rp = observable.find('.//{http://www.sbml.org/sbml/level3}ListOfPatterns')
+
+    patternList = []
+    for pattern in rp:
+        elm, tmpDict = createSpecies(pattern)
+        patternList.append(elm)
+
+    return name,otype,patternList
+
     
+
+def parseObservables(observables):
+    observableDescription = []
+    
+    for observable in observables:
+        observableDescription.append(parseObservable(observable))
+    return observableDescription
+
+def parseFunction(function):
+    referenceList = []
+    name = function.get('id')
+    #expression = function.find('.//{http://www.sbml.org/sbml/level3}Expression')
+    expression = function.findtext('.//{http://www.sbml.org/sbml/level3}Expression')
+
+    references = function.find('.//{http://www.sbml.org/sbml/level3}ListOfReferences')
+    for reference in references:
+        referenceList.append([reference.get('name'),reference.get('type')])
+
+    return name,expression,referenceList
+
+def parseFunctions(functions):
+    
+    functionDescription = []
+    
+    for function in functions:
+        functionDescription.append(parseFunction(function))
+    return functionDescription
+
+
+
+def parseFullXML(xmlFile):
+    doc = etree.parse(xmlFile)
+    molecules = doc.findall('.//{http://www.sbml.org/sbml/level3}MoleculeType')
+    rules = doc.findall('.//{http://www.sbml.org/sbml/level3}ReactionRule')
+    functions = doc.findall('.//{http://www.sbml.org/sbml/level3}Function') 
+    ruleDescription = []
+    moleculeList = []
+    observables = doc.findall('.//{http://www.sbml.org/sbml/level3}Observable') 
+    parameters = doc.findall('.//{http://www.sbml.org/sbml/level3}Parameter')
+
+    parameterDict = {}
+    for parameter in parameters:
+        parameterDict[parameter.get('id')] = parameter.get('value')
+
+    for molecule in molecules:
+        moleculeList.append(parseMolecules(molecule))
+        
+    for rule in rules:
+        description = parseRule(rule,parameterDict)
+        #if 'reverse' in description[0].label:
+        #    ruleDescription[-1][0].bidirectional= True
+        #    ruleDescription[-1][0].rates.append(description[0].rates[0])
+        #else:
+        ruleDescription.append(parseRule(rule,parameterDict))
+    functionList = parseFunctions(functions)
+    observableList = parseObservables(observables)
+    return moleculeList, ruleDescription,parameterDict,functionList,observableList
+    
+
 def parseXML(xmlFile):
     doc = etree.parse(xmlFile)
     molecules = doc.findall('.//{http://www.sbml.org/sbml/level3}MoleculeType')

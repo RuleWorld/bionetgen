@@ -27,8 +27,11 @@ import utils.structures as structures
 import atomizer.analyzeRDF
 from utils.util import logMess
 from sbml2bngl import SBML2BNGL
-from biogrid import loadBioGridDict as loadBioGrid
+#from biogrid import loadBioGridDict as loadBioGrid
 
+def loadBioGrid():
+    pass
+    
 def handler(signum, frame):
     print "Forever is over!"
     raise Exception("end of time")
@@ -113,11 +116,14 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
         parser =SBML2BNGL(document.getModel(),useID)
         
         bioGrid = False
+        pathwaycommons = False
         if bioGrid:
             loadBioGrid()
         database = structures.Databases()
         database.forceModificationFlag = True
-
+        database.pathwaycommons = False
+        if pathwaycommons:
+            database.pathwaycommons = True
         namingConventions = resource_path('config/namingConventions.json')
         
         if atomize:
@@ -259,7 +265,7 @@ def extractCompartmentStatistics(bioNumber,useID,reactionDefinitions,speciesEqui
     
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
-    
+    database.pathwaycommons = False
     #call the atomizer (or not)
     #if atomize:
     translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
@@ -322,9 +328,14 @@ def reorderFunctions(functions):
     
     
 def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile,
-                speciesEquivalence=None,atomize=False,bioGrid=False):
+                speciesEquivalence=None,atomize=False,bioGrid=False,pathwaycommons=False):
     '''
     one of the library's main entry methods. Process data from a file
+    '''
+    '''
+    import cProfile, pstats, StringIO
+    pr = cProfile.Profile()
+    pr.enable()
     '''
     logMess.log = []
     logMess.counter = -1
@@ -334,7 +345,8 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     database.forceModificationFlag = True
-    
+    database.pathwaycommons = pathwaycommons
+
     bioGridDict = {}
     if bioGrid:
         bioGridDict = loadBioGrid()
@@ -347,6 +359,14 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
         translator={} 
 
     #process other sections of the sbml file (functions reactions etc.)    
+    '''
+    pr.disable()
+    s = StringIO.StringIO()
+    sortby = 'cumulative'
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats(10)
+    print s.getvalue()
+    '''
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
     
     with open(outputFile,'w') as f:
@@ -446,6 +466,12 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     #translator = {}
     param,zparam = parser.getParameters()
+    rawSpecies = {}
+    for species in parser.model.getListOfSpecies():
+            rawtemp = parser.getRawSpecies(species,[x.split(' ')[0] for x in param])
+            rawSpecies[rawtemp['identifier']] = rawtemp
+    parser.reset()
+    
     molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
 
@@ -455,7 +481,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     assigmentRuleDefinedParameters = []
     reactionParameters,rules,rateFunctions = parser.getReactions(translator,len(compartments)>1,atomize=atomize)
     functions.extend(rateFunctions)
-    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,molecules)
+    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,rawSpecies,observables)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
     param = [x for x in param if x not in removeParams]
@@ -523,8 +549,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
 
             #since we are considering it an observable delete it from the molecule and
             #initial conditions list
-            s = molecules.pop(flag)
-            initialConditions = [x for x in initialConditions if '$' + s not in x]
+            #s = molecules.pop(flag)
+            #initialConditions = [x for x in initialConditions if '$' + s not in x]
         else:
             logMess('WARNING:Simulation','{0} reported as species, but usage is ambiguous.'.format(flag) )
             artificialObservables.pop(flag)
@@ -974,7 +1000,7 @@ if __name__ == "__main__":
     
     #main2()
     
-    analyzeFile('XMLExamples/curated/BIOMD0000000019.xml', resource_path('config/reactionDefinitions.json'),
+    analyzeFile('../XMLExamples/curated/BIOMD0000000048.xml', resource_path('config/reactionDefinitions.json'),
                     False, resource_path('config/namingConventions.json'),
                     'BIOMD0000000027.xml' + '.bngl', 
                     speciesEquivalence=None,atomize=True,bioGrid=False)

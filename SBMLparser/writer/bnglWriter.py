@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+import sys
+reload(sys)
+sys.setdefaultencoding("ISO-8859-1")
+
 import re
 from copy import deepcopy
 from utils.util import logMess
@@ -338,6 +342,7 @@ def finalText(comments,param,molecules,species,observables,rules,functions,compa
     #with open(fileName,'w') as outputFile:
     #    outputFile.write(output.getvalue()) 
     #output.close()
+    
     return output.getvalue()
 def sectionTemplate(name,content):
     section = 'begin %s\n' % name
