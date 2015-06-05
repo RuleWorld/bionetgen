@@ -8,7 +8,6 @@ Created on Fri Mar  1 16:14:42 2013
 #!/usr/bin/env python
 from collections import OrderedDict
 import time
-#import matplotlib.pyplot as plt5
 import libsbml
 import writer.bnglWriter as writer
 from optparse import OptionParser
@@ -37,7 +36,7 @@ def handler(signum, frame):
     raise Exception("end of time")
 
 
-import os.path        
+import os.path
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -47,11 +46,9 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
-    
-    
 
 
-def evaluation(numMolecules,translator):
+def evaluation(numMolecules, translator):
     originalElements = (numMolecules)
     nonStructuredElements = len([1 for x in translator if '()' in str(translator[x])])
     if originalElements > 0:
@@ -90,16 +87,17 @@ def selectReactionDefinitions(bioNumber):
     return fileName,useID,naming
 
 
-def resolveDependencies(dictionary,key,idx):
+def resolveDependencies(dictionary, key, idx):
     counter = 0
     for element in dictionary[key]:
         if idx < 20:
-            counter += resolveDependencies(dictionary,element,idx+1)
+            counter += resolveDependencies(dictionary, element, idx + 1)
         else:
             counter += 1
-    return len(dictionary[key]) + counter    
-    
-def validateReactionUsage(reactant,reactions):
+    return len(dictionary[key]) + counter
+
+
+def validateReactionUsage(reactant, reactions):
     for element in reactions:
         if reactant in element:
             return element

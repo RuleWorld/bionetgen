@@ -19,42 +19,43 @@ from collections import defaultdict
 import itertools
 import math
 from collections import Counter
-
 '''
 This file in general classifies rules according to the information contained in
 the json config file for classyfying rules according to their reactants/products
 '''
 import functools
 import marshal
+
+
 def memoize(obj):
     cache = obj.cache = {}
-
     @functools.wraps(obj)
     def memoizer(*args, **kwargs):
-        key = marshal.dumps([args,kwargs])
+        key = marshal.dumps([args, kwargs])
         if key not in cache:
             cache[key] = obj(*args, **kwargs)
         return cache[key]
     return memoizer
 
+
 @memoize
-def get_close_matches(match,dataset,cutoff=0.6):
-    return difflib.get_close_matches(match,dataset,cutoff=cutoff)
+def get_close_matches(match, dataset, cutoff=0.6):
+    return difflib.get_close_matches(match, dataset, cutoff=cutoff)
 
 name = Word(alphanums + '_-') + ':'
-species = (Word(alphanums + "_" + ":#-") 
-+ Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_" + ":#-") 
-+ Suppress("()"))
+species = (Word(alphanums + "_" + ":#-")
+           + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_" + ":#-")
+                                          + Suppress("()"))
 rate = Word(alphanums + "()")
-grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))  
+grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))
 
 
 @memoize
-def parseReactions(reaction,specialSymbols=''):
-    
-    result =  grammar.parseString(reaction).asList()
-    if len(result) < 2:    
-        result = [result,[]]
+def parseReactions(reaction, specialSymbols=''):
+
+    result = grammar.parseString(reaction).asList()
+    if len(result) < 2:
+        result = [result, []]
     if '<->' in reaction and len(result[0]) == 1 and len(result[1]) == 2:
         result.reverse()
     return result
@@ -68,7 +69,7 @@ def addToDependencyGraph(dependencyGraph, label, value):
 
 class SBMLAnalyzer:
     
-    def __init__(self,modelParser,configurationFile,namingConventions,speciesEquivalences=None,conservationOfMass = True):
+    def __init__(self, modelParser, configurationFile, namingConventions, speciesEquivalences=None, conservationOfMass = True):
         self.modelParser = modelParser        
         self.configurationFile = configurationFile
         self.namingConventions = detectOntology.loadOntology(namingConventions)

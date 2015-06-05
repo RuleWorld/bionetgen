@@ -1065,6 +1065,7 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
     pr = cProfile.Profile()
     pr.enable()
     '''
+
     prunnedDependencyGraph, database = createSpeciesCompositionGraph(parser, database, configurationFile, namingConventions,
                        speciesEquivalences=speciesEquivalences, bioGridFlag=bioGridFlag)
 
@@ -1102,12 +1103,11 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
     for modification in database.tmpEquivalence:
         for candidates in database.tmpEquivalence[modification]:
             for instance in candidates:
-                addToDependencyGraph(database.eequivalenceTranslator,modification,instance)
+                addToDependencyGraph(database.eequivalenceTranslator, modification, instance)
 
     database.weights = sorted(database.weights, key=lambda rule: (rule[1], len(rule[0])))
-    atomize(prunnedDependencyGraph, database.weights, database.translator, database.reactionProperties, 
-                                                                database.eequivalenceTranslator,
-                                                                bioGridFlag, database.sbmlAnalyzer, database)
+    atomize(prunnedDependencyGraph, database.weights, database.translator, database.reactionProperties,
+            database.eequivalenceTranslator, bioGridFlag, database.sbmlAnalyzer, database)
 
     onlySynDec = len([x for x in database.classifications if x not in ['Generation', 'Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
@@ -1120,5 +1120,6 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
     ps.print_stats(10)
     print s.getvalue()
-    '''
-    return database.translator,onlySynDec
+    ''' 
+
+    return database.translator, onlySynDec

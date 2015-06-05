@@ -4,7 +4,6 @@ import functools
 import marshal
 
 
-
 def memoize(obj):
     cache = obj.cache = {}
 
@@ -35,7 +34,8 @@ def name2uniprot(nameStr):
     return [x[1] for x in parsedData if len(x) == 2]
 '''
 
-@memoize 
+
+@memoize
 def name2uniprot(nameStr):
     url = 'http://www.uniprot.org/uniprot/?'
     xparams = 'query={0}+AND+organism:9606&columns=entry name,id&format=tab&limit=5&sort=score'.format(nameStr)
@@ -44,7 +44,7 @@ def name2uniprot(nameStr):
         response = urllib2.urlopen(url, xparams).read()
     except urllib2.HTTPError:
         return None
-    if response in ['',None]:
+    if response in ['', None]:
         url = 'http://www.uniprot.org/uniprot/?'
         xparams = 'query={0}&columns=entry name,id&format=tab&limit=10'.format(nameStr)
 
@@ -65,7 +65,7 @@ def getReactomeBondByUniprot(uniprot1, uniprot2):
     url = 'http://www.pathwaycommons.org/pc2/graph'
     source = '&'.join(['source={0}'.format(x) for x in uniprot1])
     target = '&'.join(['target={0}'.format(x) for x in uniprot2])
-    xparams = '{0}&{1}&kind=PATHSFROMTO&format=EXTENDED_BINARY_SIF'.format(source,target)
+    xparams = '{0}&{1}&kind=PATHSFROMTO&format=EXTENDED_BINARY_SIF'.format(source, target)
 
     # query reactome
     try:
@@ -102,6 +102,7 @@ def getReactomeBondByName(name1, name2):
     uniprot1 = name2uniprot(name1)
     uniprot2 = name2uniprot(name2)
     return getReactomeBondByUniprot(uniprot1, uniprot2)
+
 
 @memoize
 def isInComplexWith(name1, name2):
