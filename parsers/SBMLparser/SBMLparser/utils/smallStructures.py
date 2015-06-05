@@ -6,7 +6,6 @@ Created on Wed May 30 11:44:17 2012
 """
 from copy import deepcopy
 from lxml import etree
-import pygraphviz as pgv
 import re
 from random import randint
 from pyparsing import Word, Suppress, Optional, alphanums, Group, ZeroOrMore
@@ -273,26 +272,33 @@ class Species:
     def toString(self):
         return self.__str__()
     
-    def extractAtomicPatterns(self,action,site1,site2):
+    def extractAtomicPatterns(self, action, site1, site2, differentiateDimers=False):
         atomicPatterns = {}
         bondedPatterns = {}
         reactionCenter = []
         context = []
         #one atomic pattern for the state, one for the bond
+        nameCounter = Counter([x.name for x in self.molecules])
+        nameCounterCopy = Counter([x.name for x in self.molecules])
         for molecule in self.molecules:
+            moleculeCounter = nameCounter[molecule.name] - nameCounterCopy[molecule.name]
+            nameCounterCopy[molecule.name] -= 1
             for component in molecule.components:
                 if component.activeState != '':
                     speciesStructure = Species()
-                    #one atomic pattern for the states
+                    # one atomic pattern for the states
                     speciesStructure.bonds = self.bonds
-                    moleculeStructure = Molecule(molecule.name,molecule.idx)
-                    componentStructure = Component(component.name,component.idx)
+                    if differentiateDimers:
+                        moleculeStructure = Molecule(molecule.name + '%{0}'.format(moleculeCounter), molecule.idx)
+                    else:
+                        moleculeStructure = Molecule(molecule.name, molecule.idx)
+                    componentStructure = Component(component.name, component.idx)
 
                     componentStructure.addState(component.activeState)
                     componentStructure.activeState = component.activeState
                     moleculeStructure.addComponent(componentStructure)
                     speciesStructure.addMolecule(moleculeStructure)
-                    if componentStructure.idx in [site1,site2] and action == 'StateChange':
+                    if componentStructure.idx in [site1, site2] and action == 'StateChange':
                         reactionCenter.append((speciesStructure))
                     else:
                         context.append((speciesStructure))
@@ -300,13 +306,17 @@ class Species:
                 speciesStructure = Species()
                 #one atomic pattern for the bonds
                 speciesStructure.bonds = self.bonds
-                moleculeStructure = Molecule(molecule.name,molecule.idx)
-                componentStructure = Component(component.name,component.idx)
+                if differentiateDimers:
+                    moleculeStructure = Molecule(molecule.name + '%{0}'.format(moleculeCounter), molecule.idx)
+                else:
+                    moleculeStructure = Molecule(molecule.name, molecule.idx)
+
+                componentStructure = Component(component.name, component.idx)
                 moleculeStructure.addComponent(componentStructure)
                 speciesStructure.addMolecule(moleculeStructure)
                 #atomicPatterns[str(speciesStructure)] = speciesStructure
                 if len(component.bonds) == 0:
-                    if component.activeState == '':
+                    #if component.activeState == '':
                         atomicPatterns[str(speciesStructure)] = speciesStructure
                 else:
                     if component.bonds[0] != '+':
@@ -316,20 +326,20 @@ class Species:
                     if component.bonds[0] not in bondedPatterns:
                         bondedPatterns[component.bonds[0]] = speciesStructure
                     elif '+' not in component.bonds[0] or \
-                      len(bondedPatterns[component.bonds[0]].molecules) == 0: 
+                      len(bondedPatterns[component.bonds[0]].molecules) == 0:
                         bondedPatterns[component.bonds[0]].addMolecule(moleculeStructure)
                 if componentStructure.idx in [site1,site2] and action != 'StateChange':
                     reactionCenter.append((speciesStructure))
                 elif len(component.bonds) > 0 or component.activeState == '':
-                    context.append((speciesStructure))      
+                    context.append((speciesStructure))
         for element in bondedPatterns:
             atomicPatterns[str(bondedPatterns[element])] = bondedPatterns[element]
-            
-        reactionCenter = [str(x) for x in reactionCenter 
-            if str(x) in atomicPatterns]
-        context =  [str(x) for x in context if str(x) in atomicPatterns]
-        
-        return atomicPatterns,reactionCenter,context
+
+        reactionCenter = [str(x) for x in reactionCenter
+                          if str(x) in atomicPatterns]
+        context = [str(x) for x in context if str(x) in atomicPatterns]
+
+        return atomicPatterns, reactionCenter, context
                 
                     
                     
