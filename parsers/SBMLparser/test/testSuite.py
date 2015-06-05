@@ -102,7 +102,7 @@ class TestOne(ParametrizedTestCase):
         #deepreload.reload(libsbml2bngl)
         libsbml2bngl.analyzeFile('{0}/{1}/{1}-sbml-l2v4.xml'.format(self.param[0],self.param[1]), '../reactionDefinitions/reactionDefinition7.json',
                     False, '../config/namingConventions.json',
-                    'tmp/output' + str(self.param[1]) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
+                    outputFile='tmp/output' + str(self.param[1]) + '.bngl', speciesEquivalence=None,atomize=True,bioGrid=False)
         settings = self.extractSimulationSettings('{0}/{1}/{1}-settings.txt'.format(self.param[0],self.param[1]))
         bnglValues,atol = bnglExecution('output{0}'.format(self.param[1]),settings)
         referenceValues = parseCSV('{0}/{1}/{1}-results.csv'.format(self.param[0],self.param[1]),settings['variables'])
@@ -127,12 +127,13 @@ class TestValid(ParametrizedTestCase):
     xdirs.append('00588')
     #fast
     xdirs.extend(['00870','00871','00872','00873','00874','00875'])
-    dirs = [ f for f in os.listdir('./testl2v4')]
+    dirs = [ f for f in os.listdir('./semantic')]
     dirs.sort()
     dirs = ['01061']
     #dirs = ['00994','00998','01027']
     suite = unittest.TestSuite()
     for t in [x for x in dirs if x not in xdirs]:
-        suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=['testl2v4',t]))
+        suite.addTest(ParametrizedTestCase.parametrize(TestOne, param=['semantic',t]))
+
     unittest.TextTestRunner(verbosity=2).run(suite)
 

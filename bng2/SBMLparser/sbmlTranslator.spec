@@ -3,7 +3,7 @@ a = Analysis(['SBMLparser/sbmlTranslator.py'],
              hiddenimports=['_libsbml'],
              hookspath=None,
              runtime_hooks=None,
-	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui','matplotlib','IPython','PIL','X11','gtk'])
+	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui','matplotlib','IPython','PIL','X11','gtk','pandas','scipy'])
 
 a.datas += [('config/namingConventions.json','config/namingConventions.json','DATA'),
 ('config/reactionDefinitions.json','config/reactionDefinitions.json','DATA')]

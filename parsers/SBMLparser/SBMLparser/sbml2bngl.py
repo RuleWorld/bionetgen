@@ -8,13 +8,24 @@ from copy import deepcopy
 import writer.bnglWriter as writer
 log = {'species': [], 'reactions': []}
 import re
-from scipy.misc import factorial, comb
 from collections import Counter
 from collections import defaultdict
 import numpy as np
 
 from utils.util import logMess
 import libsbml
+
+def factorial(x):
+    temp = x
+    acc = 1
+    while temp > 0:
+        acc *= temp
+        temp -= 1
+    return acc
+
+def comb(x,y,exact=True):
+    return factorial(x)/(factorial(y) * factorial(x-y))
+
 
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
            'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
@@ -38,7 +49,15 @@ class SBML2BNGL:
         self.getSpecies()
         self.reactionDictionary = {}
         
-        
+
+    def reset(self):
+        self.tags = {}
+        self.boundaryConditionVariables = []
+        self.speciesDictionary = {}
+        self.speciesMemory = []
+        self.getSpecies()
+        self.reactionDictionary = {}
+
     def static_var(varname, value):
         def decorate(func):
             setattr(func, varname, value)
@@ -711,12 +730,13 @@ class SBML2BNGL:
         #print arule.isAssignment(),arule.isRate()
         return variable,[rateL, rateR], arule.isAssignment(), arule.isRate()
         
-    def getAssignmentRules(self, zparams, parameters, molecules):
+    def getAssignmentRules(self, zparams, parameters, molecules,observables):
         '''
         this method obtains an SBML rate rules and assignment rules. They
         require special handling since rules are often both defined as rules 
         and parameters initialized as 0, so they need to be removed from the parameters list
         '''
+
         compartmentList = [['cell',1]]
         compartmentList.extend([[self.__getRawCompartments(x)[0], self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
 
@@ -734,7 +754,7 @@ class SBML2BNGL:
             if rawArule[3] == True:
                 #it is a rate rule
                 if rawArule[0] in self.boundaryConditionVariables:
-                    logMess('SIMULATION:CRITICAL','Boundary condition type variables ({0}) \
+                    logMess('SIMULATION:CRITICAL','rate rules ({0}) \
                     are not properly supported in BioNetGen simulator'.format(rawArule[0]))
 
                     #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
@@ -763,10 +783,11 @@ class SBML2BNGL:
                             removeParameters.append(element)
                         
             elif rawArule[2] == True:
+
                 #it is an assigment rule
                 if rawArule[0] in zRules:
                     zRules.remove(rawArule[0])
-                    
+                    #print rawArule[0]
 
                     #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
                     #tmp = list(rawArule)
@@ -775,8 +796,24 @@ class SBML2BNGL:
                     logMess('SIMULATION:CRITICAL','Boundary condition/assignment type variables ({0}) are not properly \
                     supported in BioNetGen simulator'.format(rawArule[0]))
 
-
+                elif rawArule[0] in molecules:
+                        if molecules[rawArule[0]]['isBoundary']:
+                            artificialObservables[rawArule[0]+'_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+                            continue
+                else:
+                    #check if it is defined as an observable
+                    candidates =  [idx for idx,x in enumerate(observables) if rawArule[0] in x]
+                    assigObsFlag = False
+                    for idx in candidates:
+                        if re.search('\s{0}\s'.format(rawArule[0]),observables[idx]):
+                            artificialObservables[rawArule[0]+ '_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+                            assigObsFlag = True
+                            break
+                    if assigObsFlag:
+                        continue
+                #if its not a param/species/observable
                 artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+
             
             else:
                 '''

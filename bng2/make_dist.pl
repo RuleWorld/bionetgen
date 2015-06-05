@@ -274,7 +274,7 @@ foreach my $dir ( @include_python_subdirectories )
        }
  
         print "copying python source code  to build environment.\n";
-        my @args = ('python', 'updateDistribution.py', '-c');
+        my @args = ('make','update');
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
         {  print "Unable to update distribution";  exit -1; }

@@ -68,6 +68,34 @@ def getAnnotationsFromFile(fileName):
 
     return annotationDictionary
 
+bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
+          'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
+'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
+'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_UNKNOWN']
+
+modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_UNKNOWN']
+
+
+from collections import defaultdict
+def getModelAnnotationFromFile(fileName):
+    reader = libsbml.SBMLReader()
+    document = reader.readSBMLFromFile(fileName)
+    model = document.getModel()
+    annotationXML = model.getAnnotation()
+    lista = libsbml.CVTermList()
+    libsbml.RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
+    metaDict = []
+
+    for idx in range(lista.getSize()):
+      for idx2 in range(0, lista.get(idx).getResources().getLength()):
+          resource = lista.get(idx).getResources().getValue(idx2)
+          qualifierType = lista.get(idx).getQualifierType()
+          qualifierDescription= bioqual[lista.get(idx).getBiologicalQualifierType()] if qualifierType \
+          else modqual[lista.get(idx).getModelQualifierType()]
+          #resource = resolveAnnotation(resource)
+          if 'BQB' in qualifierDescription:
+            metaDict.append(resource)
+    return metaDict
 
 def getAnnotationFromFolder(directory):
     validFiles = getValidFiles(directory, 'xml')
@@ -80,7 +108,17 @@ def getAnnotationFromFolder(directory):
     with open(os.path.join(directory,'annotationDictionary.dump'), 'wb') as f:
         pickle.dump(annotationDict,f)
 
+def getModelAnnotationFromFolder(directory):
+    validFiles = getValidFiles(directory, 'xml')
+    annotationDict = {}
+    progress  = progressbar.ProgressBar()
+    print('Processing model annotations from directory {0}'.format(directory))
+    for index in progress(range(0,len(validFiles))):
+        annotationDict[validFiles[index]] = getModelAnnotationFromFile(validFiles[index])
+
+    with open(os.path.join(directory,'modelAnnotationDictionary.dump'), 'wb') as f:
+        pickle.dump(annotationDict,f)
 
 if __name__ == "__main__":
-    getAnnotationFromFolder('XMLExamples/non_curated')
-    #print getAnnotationsFromFile('XMLExamples/curated/BIOMD0000000019.xml')
+    getModelAnnotationFromFolder('XMLExamples/curated')
+    #print getModelAnnotationFromFile('XMLExamples/curated/BIOMD0000000019.xml')
