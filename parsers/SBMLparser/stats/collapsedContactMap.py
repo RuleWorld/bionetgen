@@ -149,7 +149,17 @@ def getDummyNode(bondpartner1, bondpartner2, collapsedComponents):
     return '_'.join([bondpartner1, bondpartner2]), bondpartner2.lower(), "#FFFFFF"
 
 
-def createCollapsedContact(rules, species, transformations, fileName, extendedInformation):
+
+def getCounter():
+    if not hasattr(getCounter, 'counter'):
+        getCounter.counter = 0
+        
+
+    getCounter.counter += 1
+    return getCounter.counter
+
+
+def createCollapsedContact(rules, species, transformations, fileName, extendedInformation, contextOnlyFlag):
     '''
     creates a collapsed bipartite graph given a list of rules
     collapsed bipartite means that molecules are represented as structureless nodes and
@@ -162,12 +172,24 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
     or product in our ouput file
     '''
 
+    def createNode(graph, name,  graphicsDict,  labelGraphicsDict,isGroup,gid):
+        idNumber = getCounter()
+
+        if contextOnlyFlag:
+            if isGroup:
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,isGroup=isGroup,id=idNumber)
+            else:
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid,id=idNumber)
+        else:
+            graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
+
     graph = nx.DiGraph()
-    speciesNodes = []
     processNodes = []
+    counter = 1
     for speciesUnit in species:
-        graph.add_node(speciesUnit.name, graphics={'type': 'roundrectangle', 'fill': '#FFCC00'})
-        speciesNodes.append(speciesUnit.name)
+        createNode(graph, speciesUnit.name, {'type': 'roundrectangle', 'fill': '#FFCC00'},{}, 1,0)
+
+        
     mainidx = 0
     speciesName = [x.name for x in species]
     collapsedComponents = processExtendedInformation(extendedInformation)
@@ -189,25 +211,25 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                 if len(bondpartners) == 2:
                     dummyNode, label1, fill1 = getDummyNode(bondpartners[0], bondpartners[1], collapsedComponents)
                     dummyNode2, label2, fill2 = getDummyNode(bondpartners[1], bondpartners[0], collapsedComponents)
+                    createNode(graph, dummyNode, {'type': "circle", 'fill': fill1}, {'text': label1}, 0, graph.node[bondpartners[0]]['id'])
+                    createNode(graph, dummyNode2, {'type': "circle", 'fill': fill2}, {'text': label2}, 0, graph.node[bondpartners[1]]['id'])
 
-                    graph.add_node(dummyNode,
-                                   graphics={'type': "circle", 'fill': fill1}, LabelGraphics={'text': label1})
-                    graph.add_node(dummyNode2,
-                                   graphics={'type': "circle", 'fill': fill2}, LabelGraphics={'text': label2})
+                    if not contextOnlyFlag:
+                        if (dummyNode, bondpartners[0]) not in graph.edges():
+                            graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                        if (dummyNode2, dummyNode) not in graph.edges():
+                            graph.add_edge(dummyNode, dummyNode2, graphics={'fill': "#000000"}, weight=1)
+                        if (dummyNode2, bondpartners[1]) not in graph.edges():
+                            graph.add_edge(bondpartners[1], dummyNode2, graphics={'fill': "#000000", 'width': 3}, weight=1)
 
-                    if (dummyNode, bondpartners[0]) not in graph.edges():
-                        graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000", 'width': 3}, weight=1)
-                    if (dummyNode2, dummyNode) not in graph.edges():
-                        graph.add_edge(dummyNode, dummyNode2, graphics={'fill': "#000000"}, weight=1)
-                    if (dummyNode2, bondpartners[1]) not in graph.edges():
-                        graph.add_edge(bondpartners[1], dummyNode2, graphics={'fill': "#000000", 'width': 3}, weight=1)
+
                 elif len(bondpartners) == 1:
                     dummyNode = '{0}_{0}'.format(bondpartners[0])
-                    graph.add_node(dummyNode,
-                                   graphics={'type': "circle", 'fill': "#FFFFFF"},
-                                   LabelGraphics={'text': bondpartners[0]})
-                    graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000"}, weight=1)
-                    graph.add_edge(dummyNode, bondpartners[0], graphics={'fill': "#000000"}, weight=1)
+                    createNode(graph, dummyNode, {'type': "circle", 'fill': "#FFFFFF"}, {'text': bondpartners[0]}, 0,graph.node[bondpartners[0]]['id'])
+                    if not contextOnlyFlag:
+                        graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000"}, weight=1)
+                        graph.add_edge(dummyNode, bondpartners[0], graphics={'fill': "#000000"}, weight=1)
+
                 else:
                     nonatomicset = True
                 for x in bondpartners:
@@ -218,9 +240,12 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
             elif rule.actions[idx].action in ['StateChange']:
                 molecule = [x.split('(')[0] for x in transformationCenter[idx]]
                 state = [x.split('(')[1].split('~')[0] for x in transformationCenter[idx]]
-                graph.add_node(molecule[0] + '_' + state[0], graphics={'type': "circle", 'fill': "#CCFFCC"}, LabelGraphics={'text': state[0]})
+
+                createNode(graph, molecule[0] + '_' + state[0], {'type': "circle", 'fill': "#CCFFCC"}, {'text': state[0]}, 0, graph.node[molecule[0]]['id'])
+                if not contextOnlyFlag:
+                    graph.add_edge(molecule[0] + '_' + state[0], molecule[0], graphics={'fill': "#000000"}, weight=0.7)
+
                 processNodes.append(state[0])
-                graph.add_edge(molecule[0] + '_' + state[0], molecule[0], graphics={'fill': "#000000"}, weight=0.7)
                 if molecule[0] in activeReactants:
                     activeReactants.remove(molecule[0])
                 if molecule[0] in activeProducts:
@@ -265,29 +290,31 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                     #print node1,node2
 
                     if node1 not in graph.nodes():
-                        graph.add_node(node1,
-                                       graphics={'type': "circle", 'fill': fill1}, LabelGraphics={'text': label1})
-                        graph.add_edge(molecule, node1, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                        createNode(graph, node1, {'type': "circle", 'fill': fill1}, {'text': label1}, 0, graph.node[molecule]['id'])
+                        if not contextOnlyFlag:
+                            graph.add_edge(molecule, node1, graphics={'fill': "#000000", 'width': 3}, weight=1)
                         node1m, label1m, fill1m = getDummyNode(speciesName[index1[0]], molecule, collapsedComponents)
                         if 'mod' not in label1m:
                             if node1m not in graph.nodes():
-                                graph.add_node(node1m,
-                                               graphics={'type': "circle", 'fill': fill1m}, LabelGraphics={'text': label1m})
-                                graph.add_edge(speciesName[index1[0]], node1m, graphics={'fill': "#000000", 'width': 3}, weight=1)
-                            graph.add_edge(node1, node1m, graphics={'fill': "#000000"}, weight=1)
-
+                                createNode(graph, node1m, {'type': "circle", 'fill': fill1m}, {'text': label1m}, 0, graph.node[speciesName[index1[0]]]['id'])
+                                if not contextOnlyFlag:
+                                    if node1m not in graph.nodes():
+                                        graph.add_edge(speciesName[index1[0]], node1m, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                                    graph.add_edge(node1, node1m, graphics={'fill': "#000000"}, weight=1)
+    
                     if node2 not in graph.nodes():
-                        graph.add_node(node2,
-                                       graphics={'type': "circle", 'fill': fill2}, LabelGraphics={'text': label2})
-                        graph.add_edge(molecule, node2, graphics={'fill': "#000000", 'width': 3}, weight=1)
-
-                        node2m, label1m, fill1m = getDummyNode(speciesName[index1[0]], molecule, collapsedComponents)
-                        if 'mod' not in label1m:
+                        createNode(graph, node2, {'type': "circle", 'fill': fill2}, {'text': label2}, 0, graph.node[molecule]['id'])
+                        if not contextOnlyFlag:
+                            graph.add_edge(molecule, node2, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                        node2m, label2m, fill2m = getDummyNode(speciesName[index1[0]], molecule, collapsedComponents)
+                        if 'mod' not in label2m:
                             if node2m not in graph.nodes():
-                                graph.add_node(node2m,
-                                               graphics={'type': "circle", 'fill': fill1m}, LabelGraphics={'text': label1m+'+++++'})
-                                graph.add_edge(speciesName[index1[0]], node2m, graphics={'fill': "#000000", 'width': 3}, weight=1)
-                            graph.add_edge(node2, node2m, graphics={'fill': "#000000"}, weight=1)
+                                createNode(graph, node2m, {'type': "circle", 'fill': fill2m}, {'text': label2m}, 0, graph.node[speciesName[index1[0]]]['id'])
+                                if not contextOnlyFlag:
+                                    if node2m not in graph.nodes():
+                                        graph.add_edge(speciesName[index1[0]], node2m, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                                    graph.add_edge(node2, node2m, graphics={'fill': "#000000"}, weight=1)
+
 
 
                     graph.add_edge(node1, node2, graphics={'fill': color[relationship], 'style': "dashed", 'targetArrow': "standard"}, weight=0.1)
@@ -307,14 +334,14 @@ def defineConsole():
     parser = argparse.ArgumentParser(description='SBML to BNGL translator')
     parser.add_argument('-i', '--input', type=str, help='settings file',required=True)
     parser.add_argument('-o', '--output', type=str, help='output directory')
-
+    parser.add_argument('-c', '--context-only',action='store_true')
     parser.add_argument('-r', '--rulify', action='store_true')
     return parser    
 
 
-def main(fileName,outputfilename,extendedInformation):
+def main(fileName,outputfilename,extendedInformation,contextOnlyFlag):
     molecules,rules,_ = parseXML(fileName)
-    createCollapsedContact(rules,molecules,[1],outputfilename,extendedInformation)         
+    createCollapsedContact(rules,molecules,[1],outputfilename,extendedInformation,contextOnlyFlag)         
 
 
 if __name__ == "__main__":
@@ -329,6 +356,6 @@ if __name__ == "__main__":
         extendedInformation = componentGroups.getContextRequirements(inputFile)   
     else:
         extendedInformation = {}
-    main(inputFile,outputFile,extendedInformation)
+    main(inputFile,outputFile,extendedInformation, namespace.context_only)
     
     #addAnnotations('fceri_ji')

@@ -5,9 +5,9 @@ Created on Thu Nov 28 17:17:12 2013
 @author: proto
 """
 import sys
-sys.path.insert(0, '../utils/')
-import consoleCommands as console
-import readBNGXML
+#sys.path.insert(0, '../utils/')
+import utils.consoleCommands as console
+import utils.readBNGXML
 import networkx as nx
 import cPickle as pickle
 from copy import copy

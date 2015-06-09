@@ -1130,15 +1130,12 @@ class SBMLAnalyzer:
                 #remove those chemicals that match exactly on both sides since those are not interesting.
                 #and unlike lexical pattern matching we are not going to go around trying to increase string size
 
-                reactantString,productString = self.removeExactMatches(reactantString,productString)
+                reactantString, productString = self.removeExactMatches(reactantString, productString)
 
-    
-            if  '__IFN_R_JAK__2m_STAT1C_SHP2' in reaction[1]:
-                pass
-            matching,matching2 = self.approximateMatching2(reactantString,productString,strippedMolecules,translationKeys)
+            matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
 
             if matching and flagstar:
-                logMess('Atomization:Warning','inverting order of {0} for lexical analysis'.format([reaction[1],reaction[0]]))
+                logMess('Atomization:Warning', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
         
             flag = True
             if matching:

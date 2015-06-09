@@ -116,16 +116,6 @@ def getRestrictedChemicalStates(products, contexts):
                     for pattern in result[molecule]:
                         cDict[molecule].append(pattern)
 
-            '''                  
-            comparison = ('shp2',1,'')
-            #comparison = ('mmod',0,'M')
-            if any(['JAK' in x for x in pDict.keys()]):
-                if comparison in pDict['JAK%1']:
-                    print cDict['JAK%1']
-                elif comparison in pDict['JAK%0']:
-                    print cDict['JAK%0']
-            '''
-
             for molecule in pDict:
                 for componentState in pDict[molecule]:
                     # FIXME: This is to account for dimers where or places where there is more than one components with the same name. Truly this should be enother kind of classification
