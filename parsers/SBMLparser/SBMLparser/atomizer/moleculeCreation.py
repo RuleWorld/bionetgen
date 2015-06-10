@@ -355,7 +355,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
         if candidates is None:
             prunnedDependencyGraph[element[0]] = []
         else:
-            prunnedDependencyGraph[element[0]] = candidates
+            prunnedDependencyGraph[element[0]] = [sorted(x) for x in candidates]
     weights = weightDependencyGraph(prunnedDependencyGraph)
     return prunnedDependencyGraph, weights, unevenElementDict, equivalenceTranslator
 
@@ -424,8 +424,13 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False):
     method used during the atomization process. It determines how molecules
     in a species bind together
     '''
+
+    def sortMolecules(array,reverse):
+        return sorted(array, key=lambda molecule: (len(molecule.components), len([y for x in molecule.components for y in x.states if y != 0]),len(str(molecule)),str(molecule)),reverse=reverse)
     def getBiggestMolecule(array):
-        sortedMolecule = sorted(array, key=lambda molecule: (len(molecule.components),len(str(molecule)),str(molecule)))
+        sortedMolecule = sortMolecules(array,reverse=False)
+
+        
         #sortedMolecule = sorted(sortedMolecule, key=lambda rule: len(rule.components))
 
         return sortedMolecule[-1]
@@ -438,7 +443,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False):
     speciesDict = {}
     # this array will contain all molecules that bind together
     pairedMolecules = []
-    for x in sorted(species.molecules, key=lambda x: len(x.components), reverse=True):
+    for x in sortMolecules(species.molecules,reverse=True):
         for y in x.components:
             if y.name not in speciesDict:
                 speciesDict[y.name] = []
@@ -447,7 +452,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False):
     orphanedMolecules = [x for x in species.molecules]
     # determine how molecules bind together
     redundantBonds = []
-    for x in sorted(species.molecules, key=lambda x: len(x.components), reverse=True):
+    for x in sortMolecules(species.molecules,reverse=True):
         for component in [y for y in x.components if y.name.lower()
                           in speciesDict.keys()]:
             if x.name.lower() in speciesDict:
@@ -561,6 +566,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False):
 
                     mol1 = getBiggestMolecule(tmpComplexSubset1)
                     mol2 = getBiggestMolecule(tmpComplexSubset2)
+
 
                 else:
                     mol1 = getNamedMolecule(totalComplex[0], dbPair[0][0])
@@ -688,6 +694,7 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
 def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwaycommonsFlag):
     species = st.Species()
     # go over the sct and reuse existing stuff
+
     for molecule in dependencyGraph[element[0]][0]:
         if molecule in translator:
             tmpSpecies = translator[molecule]
