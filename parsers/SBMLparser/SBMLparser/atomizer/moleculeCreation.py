@@ -21,7 +21,7 @@ import marshal
 import functools
 import utils.pathwaycommons as pwcm
 from collections import Counter
-
+from operator import itemgetter
 
 
 def memoize(obj):
@@ -426,7 +426,10 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False):
     '''
 
     def sortMolecules(array,reverse):
-        return sorted(array, key=lambda molecule: (len(molecule.components), len([y for x in molecule.components for y in x.states if y != 0]),len(str(molecule)),str(molecule)),reverse=reverse)
+        return sorted(array, key=lambda molecule: (len(molecule.components), 
+                                                   len([x for x in molecule.components if x.activeState not in [0, '0']]),
+                                                   len(str(molecule)),str(molecule)),
+                      reverse=reverse)
     def getBiggestMolecule(array):
         sortedMolecule = sortMolecules(array,reverse=False)
 
@@ -582,6 +585,7 @@ no relevant BioGrid/Pathway commons information. Defaulting to largest molecule"
         totalComplex[0] = totalComplex[0].union(totalComplex[1])
         totalComplex.pop(1)
     #totalComplex.extend(orphanedMolecules)
+
     return pairedMolecules
 
 
@@ -708,6 +712,10 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             species.addMolecule(mol)
     # how do things bind together?
     moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag)
+    
+    moleculePairsList.sort(key=itemgetter(1,0))
+
+
         #TODO: update basic molecules with new components
         #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
         #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))

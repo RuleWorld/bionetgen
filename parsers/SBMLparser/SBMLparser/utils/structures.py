@@ -191,7 +191,18 @@ class Species:
         
 
     def sort(self):
-        self.molecules.sort(key=lambda x:(-len(x.components),x.evaluateMolecule(),x.name))
+        """
+        Sort molecules by number of components, then number of bonded components, then the negative sum of the bond index, then number
+        of active states, then string length
+        """
+        self.molecules.sort(key=lambda molecule: (len(molecule.components),
+                                                  len([x for x in molecule.components if len(x.bonds) > 0]),
+                                                  -sum([int(y) for x in molecule.components for y in x.bonds]),
+                                                  len([x for x in molecule.components if x.activeState not in [0, '0']]),
+                                                  len(str(molecule)),
+                                                  str(molecule)),
+                            reverse=True)
+        #self.molecules.sort(key=lambda x:(-len(x.components),x.evaluateMolecule(),x.name))
         
     def __str__(self):
         self.sort()
