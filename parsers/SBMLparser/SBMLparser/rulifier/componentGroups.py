@@ -5,6 +5,7 @@ from cStringIO import StringIO
 from utils import extractAtomic
 from copy import deepcopy
 
+
 def molecule2stateTuples(molecule):
     """
     Receives a molecule structure, returns a tuple detailing the state of the contained states
@@ -37,7 +38,7 @@ def extractCenterContext(rules):
         transformationProduct, atomicArray, actionNames
 
 
-def askQuestions(inputfile, molecule, center,context=None):
+def askQuestions(inputfile, molecule, center, context=None):
     _, rules, _ = readBNGXML.parseXML(inputfile)
 
     transformationCenter = []
@@ -48,15 +49,15 @@ def askQuestions(inputfile, molecule, center,context=None):
     for idx, rule in enumerate(rules):
         tatomicArray, ttransformationCenter, ttransformationContext, \
             tproductElements, tactionNames, tlabelArray = extractAtomic.extractTransformations(
-                [rule],True)
-        
-        if any([molecule in y  and center in y for x in ttransformationCenter for y in x]):
+                [rule], True)
+
+        if any([molecule in y and center in y for x in ttransformationCenter for y in x]):
             if context:
                 print str(rule[0]).split(':')[0]
                 print [y for x in ttransformationContext for y in x if context in y and molecule in y]
             else:
                 print rule
-        
+
 
 def getChemicalStates(rules):
     """
@@ -101,6 +102,7 @@ def getRestrictedChemicalStates(products, contexts):
     """
 
     sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
+    counter = 1
     for product, context in zip(products, contexts):
         for indvproduct, indvcontext in zip(product, context):
             pDict = defaultdict(list)
@@ -118,6 +120,10 @@ def getRestrictedChemicalStates(products, contexts):
 
             for molecule in pDict:
                 for componentState in pDict[molecule]:
+
+                    #if componentState ==('shc',1,'') and 'EGFR' in molecule:
+                    #    print molecule,[x for x in indvcontext if 'Pmod' in x and 'EGFR' in x]
+                    #    print '----',counte
                     # FIXME: This is to account for dimers where or places where there is more than one components with the same name. Truly this should be enother kind of classification
                     for componentState2 in [x for x in cDict[molecule] if x[0] != componentState[0]]:
                         sortedChemicalStates[molecule][componentState][componentState2[0]].add(componentState2[1:])
@@ -185,15 +191,18 @@ from collections import Counter
 
 
 def reverseState(moleculeName, state, molecules):
-    if isActive(state[1:]):
-        return (state[0], 0, '')
-    else:
-        for molecule in molecules:
-            if molecule.name == moleculeName:
-                for component in molecule.components:
-                    if component.name == state[0]:
-                        if len(component.states) <= 1:
+    for molecule in molecules:
+        if molecule.name == moleculeName:
+            for component in molecule.components:
+                if component.name == state[0]:
+                    if len(component.states) <= 1:
+                        if isActive(state[1:]):
+                            return (state[0], 0, '')
+                        else:
                             return (state[0], 1, '')
+                    else:
+                        if isActive(state[1:]):
+                            return (state[0], 0, '0')
                         else:
                             return (state[0], 0, [x for x in component.states if x != '0'][0])
 
@@ -283,10 +292,9 @@ def getContextRequirements(inputfile):
     """
     molecules, rules, _ = readBNGXML.parseXML(inputfile)
     center, context, product, atomicArray, actions = extractCenterContext(rules)
-
     reactionCenterStateDictionary = getRestrictedChemicalStates(product, context)
+
     backupstatedictionary = deepcopy(reactionCenterStateDictionary)
-    #print reactionCenterStateDictionary['STAT3%0']
 
     #chemicalStates = getChemicalStates(rules)
     #totalStateDictionary = sortChemicalStates(chemicalStates)
@@ -312,7 +320,7 @@ if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
     inputFile = namespace.input
-    #askQuestions(inputFile, 'JAK', 'shp2)','gp130')
-
+    askQuestions(inputFile, 'Shc', '_Pmod~_P','egfr')
+    
     dependencies = getContextRequirements(inputFile)
-    #print printDependencyLog(dependencies)
+    print printDependencyLog(dependencies)
