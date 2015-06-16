@@ -255,7 +255,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
             while flag:
                 flag = False
                 for idx, chemical in enumerate(tmpCandidates[0]):
-                    if chemical in newModifiedElements and newModifiedElements[chemical] in reactant:
+                    if chemical in newModifiedElements: #and newModifiedElements[chemical] in reactant:
                         tmpCandidates[0][idx] = newModifiedElements[chemical]
                         flag = True
                         break
@@ -345,6 +345,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
             prunnedDependencyGraph[element[0]] = []
         if len(candidates) >= 1:
             try:
+
                 candidates, uneven = selectBestCandidate(element[0], candidates, prunnedDependencyGraph, sbmlAnalyzer)
             except CycleError:
 
@@ -1039,6 +1040,7 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph, species, [])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph, species, instance)
+
 
     prunnedDependencyGraph, database.weights, unevenElementDict, database.artificialEquivalenceTranslator = \
         consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator, database.eequivalenceTranslator, database.sbmlAnalyzer)

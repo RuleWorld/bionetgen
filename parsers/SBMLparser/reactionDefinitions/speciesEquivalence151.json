@@ -2,18 +2,24 @@
 	"reactionDefinition" : [
 	],
 	"complexDefinition" : [
-	["gp130_JAK__ast2",[["gp130_JAK","astMod",["s","A"]]]],
-	["STAT3",[["STAT3","cMod",["s","U"],"nMod",["s","U"]]]],
-	["STAT3C",[["STAT3","cMod",["s","C"]]]],
-	["STAT3N",[["STAT3","nMod",["s","N"]]]]    
+    ["STAT3",[["STAT3","Cmod",["s","0"],"Nmod",["s","0"]]]],
+    ["JAK",[["JAK","astmod",["s","ast"],"stat3",[]]]],
+    ["gp80",[["gp80","gp130",[],"gp80",[]]]],
+    ["IL6",[["IL6"]]],
+    ["gp130",[["gp130","gp80",[]]]],
+    ["SHP2",[["SHP2"]]]
+
 	]
 	,
 	"modificationDefinition": {
-	"__IL6_gp80_gp130_JAK__ast2_STAT3C_SHP2":["IL6_gp80","IL6_gp80","STAT3C","SHP2","gp130_JAK__ast2","gp130_JAK__ast2"],
+	"JAK_ast":["JAK"],
+	"IL6_gp80":["IL6","gp80"],
+	"gp130_JAK":["gp130","JAK"],
+	"__IL6_gp80_gp130_JAK__ast2_STAT3C_SHP2":["IL6_gp80","IL6_gp80","STAT3C","SHP2","gp130","gp130","JAK_ast","JAK"],
 	"STAT3Cast_STAT3Cast":["STAT3Cast","STAT3Cast"],
 	"IL6_gp80_gp130_JAK":["IL6_gp80","gp130_JAK"],
-    "__IL6_gp80_gp130_JAK___ast2":["IL6_gp80","IL6_gp80","gp130_JAK__ast2","gp130_JAK__ast2"],
-    "__IL6_gp80_gp130_JAK__ast2_JAK":["IL6_gp80","IL6_gp80","gp130_JAK__ast2","gp130_JAK__ast2","SHP2"]
+    "__IL6_gp80_gp130_JAK___ast2":["IL6_gp80","IL6_gp80","gp130","gp130","JAK_ast","JAK"],
+    "__IL6_gp80_gp130_JAK__ast2_SHP2ast_Grb2_SOS_Ras_GTP":["__IL6_gp80_gp130_JAK___ast2","SHP2ast","Grb2","SOS","Ras_GTP"]
 	}
 	
 	

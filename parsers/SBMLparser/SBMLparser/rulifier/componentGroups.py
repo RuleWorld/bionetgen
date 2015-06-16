@@ -25,7 +25,9 @@ def extractCenterContext(rules):
     transformationProduct = []
     atomicArray = []
     actionNames = []
+    label = []
     for idx, rule in enumerate(rules):
+        label.append(rule[0].label)
         tatomicArray, ttransformationCenter, ttransformationContext, \
             tproductElements, tactionNames, tlabelArray = extractAtomic.extractTransformations(
                 [rule], True)
@@ -34,7 +36,7 @@ def extractCenterContext(rules):
         actionNames.append(tactionNames)
         atomicArray.append(tatomicArray)
         transformationProduct.append(tproductElements)
-    return transformationCenter, transformationContext, \
+    return label,transformationCenter, transformationContext, \
         transformationProduct, atomicArray, actionNames
 
 
@@ -46,6 +48,9 @@ def askQuestions(inputfile, molecule, center, context=None):
     transformationProduct = []
     atomicArray = []
     actionNames = []
+
+    ruleArray = []
+    contextArray = []
     for idx, rule in enumerate(rules):
         tatomicArray, ttransformationCenter, ttransformationContext, \
             tproductElements, tactionNames, tlabelArray = extractAtomic.extractTransformations(
@@ -53,10 +58,11 @@ def askQuestions(inputfile, molecule, center, context=None):
 
         if any([molecule in y and center in y for x in ttransformationCenter for y in x]):
             if context:
-                print str(rule[0]).split(':')[0]
-                print [y for x in ttransformationContext for y in x if context in y and molecule in y]
+                ruleArray.append(str(rule[0]).split(':')[0])
+                contextArray.append([y for x in ttransformationContext for y in x if context in y and molecule in y])
             else:
                 print rule
+    return ruleArray,contextArray
 
 
 def getChemicalStates(rules):
@@ -95,15 +101,16 @@ def patternsFromString(chemical):
     return patterndict
 
 
-def getRestrictedChemicalStates(products, contexts):
+def getRestrictedChemicalStates(labelArray, products, contexts):
     """
     goes through a list of reaction center and their associated context and creates a dictionary of molecules
     of possible chemical states
     """
 
-    sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
+    #sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
+    sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
     counter = 1
-    for product, context in zip(products, contexts):
+    for label,product, context in zip(labelArray,products, contexts):
         for indvproduct, indvcontext in zip(product, context):
             pDict = defaultdict(list)
             cDict = defaultdict(list)
@@ -121,12 +128,10 @@ def getRestrictedChemicalStates(products, contexts):
             for molecule in pDict:
                 for componentState in pDict[molecule]:
 
-                    #if componentState ==('shc',1,'') and 'EGFR' in molecule:
-                    #    print molecule,[x for x in indvcontext if 'Pmod' in x and 'EGFR' in x]
-                    #    print '----',counte
                     # FIXME: This is to account for dimers where or places where there is more than one components with the same name. Truly this should be enother kind of classification
                     for componentState2 in [x for x in cDict[molecule] if x[0] != componentState[0]]:
-                        sortedChemicalStates[molecule][componentState][componentState2[0]].add(componentState2[1:])
+                        sortedChemicalStates[molecule][componentState][componentState2[0]][componentState2[1:]].append(label)
+                        #sortedChemicalStates[molecule][componentState][componentState2[0]].add(componentState2[1:])
     return sortedChemicalStates
 
 
@@ -166,9 +171,7 @@ def analyzeDependencies(componentStateCollection, state, moleculeName, molecules
         if stateSize == len(componentStateCollection[componentName]):
             dependencies[moleculeName]['independent'].add((state, componentName))
         elif len(componentStateCollection[componentName]) == 1:
-
             activeState = list(componentStateCollection[componentName])[0]
-
 
             if isActive((state[1], state[2])) and isActive(activeState):
                 dependencies[moleculeName]['requirement'].add(((componentName, activeState[0], activeState[1]), state))
@@ -182,7 +185,13 @@ def detectDependencies(stateDictionary, molecules):
     dependencies = defaultdict(lambda: defaultdict(set))
     for moleculeName in stateDictionary:
         parsedMoleculeName = moleculeName.split('%')[0]
+        #parsedMoleculeName = moleculeName
         for state in stateDictionary[moleculeName]:
+            #if parsedMoleculeName == 'JAK' and state[0] in ['ras_gdp','shp2']:
+            #    print moleculeName
+            #    print state
+            #    print stateDictionary[moleculeName][state]['shp2']
+            #    print stateDictionary[moleculeName][state]['ras_gdp']
             analyzeDependencies(stateDictionary[moleculeName][state], state, parsedMoleculeName, molecules, dependencies)
 
     return dependencies
@@ -291,21 +300,30 @@ def getContextRequirements(inputfile):
     Receives a BNG-XML file and returns the contextual dependencies implied by this file
     """
     molecules, rules, _ = readBNGXML.parseXML(inputfile)
-    center, context, product, atomicArray, actions = extractCenterContext(rules)
-    reactionCenterStateDictionary = getRestrictedChemicalStates(product, context)
-
+    label,center, context, product, atomicArray, actions = extractCenterContext(rules)
+    reactionCenterStateDictionary = getRestrictedChemicalStates(label, product, context)
+    '''
+    print reactionCenterStateDictionary['JAK%0'][('ras_gtp',1,'')]['shp2']
+    print reactionCenterStateDictionary['JAK%1'][('ras_gtp',1,'')]['shp2']
+    print '----'
+    print reactionCenterStateDictionary['JAK%0'][('shp2',1,'')]['ras_gtp']
+    print reactionCenterStateDictionary['JAK%1'][('shp2',1,'')]['ras_gtp']
+    '''
     backupstatedictionary = deepcopy(reactionCenterStateDictionary)
 
     #chemicalStates = getChemicalStates(rules)
     #totalStateDictionary = sortChemicalStates(chemicalStates)
     requirementDependencies = detectDependencies(reactionCenterStateDictionary, molecules)
+    #print requirementDependencies['JAK']['requirement']
+    #print '000'
+    #print [x for x in requirementDependencies['JAK']['nullrequirement'] if 'ras_gdp' in x[0][0] or 'ras_gdp' == x[1][0]]
     removeIndirectDependencies(requirementDependencies, backupstatedictionary)
 
     getMutualExclusions(requirementDependencies, molecules)
 
     #requirementDependencies = removeCounter(requirementDependencies)\
     #raise Exception
-    return requirementDependencies
+    return requirementDependencies,backupstatedictionary
 
 
 def defineConsole():
@@ -320,7 +338,7 @@ if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
     inputFile = namespace.input
-    askQuestions(inputFile, 'Shc', '_Pmod~_P','egfr')
+    #askQuestions(inputFile, 'JAK', 'ras_gtp','shp2')
     
     dependencies = getContextRequirements(inputFile)
     print printDependencyLog(dependencies)

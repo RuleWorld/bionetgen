@@ -1,0 +1,34 @@
+{
+    "reactionDefinition" : [
+    ],
+    "complexDefinition" : [
+    ["STAT1", [["STAT1"]]],
+    ["STAT3",[["STAT3","Cmod",["s","0"],"Nmod",["s","0"],"mmod",["s","M"]]]],
+    ["JAKm",[["JAK","mmod",["s","M"]]]],
+    ["gp80",[["gp80","gp130",[],"gp80",[]]]],
+    ["IL6",[["IL6"]]],
+    ["gp130",[["gp130","gp80",[]]]],
+    ["SHP2",[["SHP2"]]]
+
+    ]
+    ,
+    "modificationDefinition": {
+    "JAK__IL_6__":["JAK","IL6"],
+    "JAK__IFN__":["JAK","IFN"],
+    "ERK_PP":["ERK_P"],
+    "MEK_PP":["MEK_P"],
+    "STAT1C":["STAT1"],
+    "STAT1m":["STAT1"],
+    "STAT3m":["STAT3"],
+    "STAT1Cm":["STAT1C"],
+    "STAT1Nm":["STAT1N"],
+    "STAT3Nm":["STAT3N"],
+    "STAT3Cm":["STAT3C"],    
+    "__IL6_gp80_gp130_JAK__2m":["IL6_gp80","IL6_gp80","gp130","gp130","JAKm","JAKm"],
+    "__IL6_gp80_gp130_JAK__2m_STAT1C":["__IL6_gp80_gp130_JAK__2m","STAT1C"],
+    "__IFN_R_JAK__2m":["IFN","IFN","R","R","JAKm","JAKm"],
+    "__IFN_R_JAK__2m_STAT1C_SHP2":["__IFN_R_JAK__2m","STAT1C","SHP2"]
+    }
+    
+    
+}
