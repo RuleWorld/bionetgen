@@ -4,10 +4,8 @@ Prerequisites
 -------------
 SBMLParser is a tool written in Python 2.7. The following libraries are needed in order to build the binary from scratch:
 
-* numpy 1.8.0 or greater
-* scipy  0.12.0 or greater
+* numpy 1.8.0 or greater (can be installed through pip install numpy)
 * libsbml 5.10.0  or greater (http://sbml.org/Software/libSBML), with python bindings (can be installed using "pip install python-libsbml")
-* pandas 0.12.0 or greater for BioGrid functionality (http://pandas.pydata.org/, can also be installed using "pip install pandas")
 
 Additionally you also need libblas and liblapack. This libraries are automatically installed by most package managers when
 you install scipy, but if you are installing manually make sure you install these.
