@@ -34,7 +34,7 @@ in the headers of files written with <big><tt>writeBNGL</tt></big> (e.g., NET fi
 * validate_examples.pl now ignores trailing comments in file comparisons.
 * Windows executables now contain the bitness of the architecture in their names 
 (e.g., <big><tt>run_network_MSWin32-64bit.exe</tt></big>).
-* The run_network and sbmlTranslator executables no longer contain the architecture they are build for within the file name definition.
+* The run_network and sbmlTranslator executables no longer contain the architecture they are built for within the file name definition.
 
 ==== Bug Fixes ====
 * An error is now thrown if an unrecognized block name is encountered.
