@@ -245,9 +245,24 @@ class Species:
         
         for element in newSpecies.molecules:
             self.molecules.append(deepcopy(element))              
-        
+ 
+    
+    def sort(self):
+        """
+        Sort molecules by number of components, then number of bonded components, then the negative sum of the bond index, then number
+        of active states, then string length
+        """
+        self.molecules.sort(key=lambda molecule: (len(molecule.components),
+                                                  len([x for x in molecule.components if len(x.bonds) > 0]),
+                                                  -sum([int(y) for x in molecule.components for y in x.bonds]),
+                                                  len([x for x in molecule.components if x.activeState not in [0, '0']]),
+                                                  len(str(molecule)),
+                                                  str(molecule)),
+                            reverse=True)
+
+       
     def __str__(self):
-        self.molecules.sort(key= lambda molecule: molecule.name)
+        self.sort()
         name= '.'.join([x.toString() for x in self.molecules])
         '''
         name = name.replace('~','')
@@ -280,6 +295,7 @@ class Species:
         #one atomic pattern for the state, one for the bond
         nameCounter = Counter([x.name for x in self.molecules])
         nameCounterCopy = Counter([x.name for x in self.molecules])
+        self.sort()
         for molecule in self.molecules:
             moleculeCounter = nameCounter[molecule.name] - nameCounterCopy[molecule.name]
             nameCounterCopy[molecule.name] -= 1

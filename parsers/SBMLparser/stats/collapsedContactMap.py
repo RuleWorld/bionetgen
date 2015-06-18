@@ -126,6 +126,7 @@ def processExtendedInformation(extendedInformation):
         tmpmutualExclusion = []
         idx = 0
         exclusionList = list(extendedInformation[molecule]['mutualExclusion'])
+
         while idx < len(exclusionList):
             intersection = testForIntersection(list(exclusionList[idx]), exclusionList, tmpmutualExclusion)
             if not intersection:
@@ -359,7 +360,7 @@ def defineConsole():
 
 def main(fileName, outputfilename, extendedInformation, contextOnlyFlag, nullContextFlag, separateGraphsFlag):
     molecules, rules, _ = parseXML(fileName)
-    createCollapsedContact(rules, molecules, [1], outputfilename, extendedInformation, contextOnlyFlag, nullContextFlag, separateGraphsFlag)         
+    createCollapsedContact(rules, molecules, [1], outputfilename, extendedInformation, contextOnlyFlag, nullContextFlag, separateGraphsFlag)
 
 
 if __name__ == "__main__":
@@ -371,7 +372,7 @@ if __name__ == "__main__":
     else:
         outputFile = inputFile + '.gml'
     if namespace.rulify:
-        extendedInformation = componentGroups.getContextRequirements(inputFile)   
+        extendedInformation,_ = componentGroups.getContextRequirements(inputFile)   
     else:
         extendedInformation = {}
     main(inputFile,outputFile,extendedInformation, namespace.context_only, namespace.null_context,namespace.separate_graphs)

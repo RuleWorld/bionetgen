@@ -295,7 +295,7 @@ def removeCounter(requirementDependencies):
     return finalDependencies
 
 
-def getContextRequirements(inputfile):
+def getContextRequirements(inputfile,collapse=True):
     """
     Receives a BNG-XML file and returns the contextual dependencies implied by this file
     """
@@ -317,7 +317,8 @@ def getContextRequirements(inputfile):
     #print requirementDependencies['JAK']['requirement']
     #print '000'
     #print [x for x in requirementDependencies['JAK']['nullrequirement'] if 'ras_gdp' in x[0][0] or 'ras_gdp' == x[1][0]]
-    removeIndirectDependencies(requirementDependencies, backupstatedictionary)
+    if collapse:
+        removeIndirectDependencies(requirementDependencies, backupstatedictionary)
 
     getMutualExclusions(requirementDependencies, molecules)
 
