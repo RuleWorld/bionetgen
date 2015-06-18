@@ -1555,7 +1555,7 @@ sub parameter_scan
 			my $par_value = $par_min + $k*$delta;
 	        if ( $params->{log_scale} )
 	        {   $par_value = exp $par_value;   }
-	        push $params->{par_scan_vals}, $par_value;
+	        push @{$params->{par_scan_vals}}, $par_value;
 		}
 	}
 	
