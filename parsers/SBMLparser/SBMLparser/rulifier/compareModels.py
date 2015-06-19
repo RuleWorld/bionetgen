@@ -4,10 +4,13 @@ from utils import readBNGXML
 import utils.structures as st
 from collections import defaultdict
 import pprint
+import yaml
 
-moleculemapping = {'Epidermal_Growth_Factor': 'EGF'}
-componentmapping = {'Raf': {'mmod': 'astMod'}, 'JAK': {'mmod': 'genericMod'}}
+#moleculemapping = {'Epidermal_Growth_Factor': 'EGF'}
+#componentmapping = {'Raf': {'mmod': 'astMod'}, 'JAK': {'mmod': 'genericMod'}}
 
+moleculemapping = {}
+componentmapping = {}
 
 from collections import defaultdict
 
@@ -161,13 +164,13 @@ def obtainContextDifferences(fileName1, fileName2, moleculeNameIntersection, com
 
     differences = discoverDifferences(contextMatrix1, fileName1, fileName2)
     relationshipGraphDict = {fileName1: relationshipGraph1, fileName2: relationshipGraph2}
-    fileContextDict = {fileName1: file1Context,fileName2: file2Context}
+    fileContextDict = {fileName1: file1Context, fileName2: file2Context}
 
 
     for molecule in differences:
         for componentPair in differences[molecule]:
             counter = 0
-            hypothesis =  hypothesisGenerator(componentPair, fileName1, fileName2)
+            hypothesis = hypothesisGenerator(componentPair, fileName1, fileName2)
             experimentResults = prettyDict(list)
             for experiment in hypothesis:
                 trueExperiment = convertExperimentNames(componentNameIntersection, molecule, experiment, experiment[0] == fileName1)
@@ -183,14 +186,17 @@ def evaluateDifferences(differences, fileName1, fileName2, fileName1raw, fileNam
             pass
 
 
-def main(fileName1, fileName2, fileName1raw, fileName2raw):
+def compareModelsContext(fileName1, fileName2, outputfile):
 
     moleculeNameIntersection, componentNameIntersection = compareModelsStructurally(fileName1, fileName2, moleculemapping, componentmapping)
-    
+    #print len(moleculeNameIntersection)
+    #print len([y for x in componentNameIntersection for y in componentNameIntersection[x].items()])
     differences = obtainContextDifferences(fileName1, fileName2, moleculeNameIntersection, componentNameIntersection)
 
     #evaluateDifferences(differences, fileName1, fileName2, fileName1raw, fileName2raw)
-    pprint.pprint(differences)
+    with open(outputfile, 'w') as f:
+        f.write(yaml.dump(differences))
+    return differences
 
 
 def defineConsole():
@@ -200,15 +206,11 @@ def defineConsole():
     parser = argparse.ArgumentParser(description='SBML to BNGL translator')
     parser.add_argument('-f1', '--file1', type=str, help='reference file', required=True)
     parser.add_argument('-f2', '--file2', type=str, help='comparison file', required=True)
-    parser.add_argument('-f1aux', '--file1-aux', type=str, help='reference file', required=True)
-    parser.add_argument('-f2aux', '--file2-aux', type=str, help='comparison file', required=True)
-
+    parser.add_argument('-o', '--output', type=str, help='output file', required=True)
     return parser
-
 
 
 if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
-
-    main(namespace.file1, namespace.file2,namespace.file1_aux,namespace.file2_aux)
+    result = compareModelsContext(namespace.file1, namespace.file2, namespace.output)

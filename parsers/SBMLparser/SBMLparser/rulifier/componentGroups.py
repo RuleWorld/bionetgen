@@ -335,11 +335,12 @@ def defineConsole():
     parser.add_argument('-i', '--input', type=str, help='settings file', required=True)
     return parser
 
+
 if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
     inputFile = namespace.input
     #askQuestions(inputFile, 'JAK', 'ras_gtp','shp2')
     
-    dependencies = getContextRequirements(inputFile)
+    dependencies,backup = getContextRequirements(inputFile)
     print printDependencyLog(dependencies)
