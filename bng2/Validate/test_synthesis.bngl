@@ -7,17 +7,16 @@ A()
 B()
 C()
 Source()
+Source2()
 end molecule types
 begin seed species
-A() 0
-B() 0
-C() 0
 $Source 1
+Source2 1
 end seed species
 begin reaction rules
 0 -> A() k1
 Source() -> B() k1
-Source() -> Source() + C() k1
+Source2() -> Source2() + C() k1
 end reaction rules
 begin observables
 Molecules add_molecule A()
