@@ -198,28 +198,32 @@ sub newRxnRule
     # save original text of rule for displaying warnings
     (my $rule_text = $string) =~ s/\s+/ /g;
 
-    # Check for a ReactionRule label or index at the beginning of the string
-	if ( $string =~ s/^([\w\s]*\w)\s*:\s*// )
-	{
-	    # We found an alphanumeric label
-		$name = $1;
+    # Check for a label at the beginning of the string
+    if ( $string =~ s/^([\w\s]*\w)\s*:\s*// )
+    {
+        $name = $1;
 
+        # Check for whitespace
         if ( $1 =~ /\s/ )
-        {  BNGUtils::line_warning(
-               "Reaction rule label '$name' contains white space. This is deprecated (BioNetGen >= 2.2.3).", $linenum);  
+        {  
+                BNGUtils::line_error("Reaction rule label '$name' contains white space. This is deprecated (BioNetGen >= 2.2.3).", $linenum);  
         }
-
-	}
-	elsif ( $string =~ /^0\s*(\+|->|<->)/ )
-	{   # We found a numerical token that appears to be a species pattern (perhaps the null pattern?).
+        
+        # Check for a leading number
+        if ( $1 =~ /^\d/ )
+        {  
+                BNGUtils::line_error("Reaction rule label '$name' begins with a number.", $linenum);
+        }
+    }
+    elsif ( $string =~ /^0\s*(\+|->|<->)/ )
+    {   # We found a numerical token that appears to be a species pattern (perhaps the null pattern?).
         #  Don't strip this token!
-	}
+    }
     elsif ( $string =~ s/^(\d+)\s+// )
     {   # We found a numerical token that appears to be a Reaction Rule index.
         #  Strip the index and assign it as the name.
         $name = $1;
     }
-
 
 	# read reactant patterns
 	my @reac   = ();
@@ -686,7 +690,8 @@ sub newRxnRule
 	if ($reversible)
 	{
 		$rr = RxnRule->new();
-		if ( defined $name ) { $rr->Name("${name}(reverse)"); }
+        #if ( defined $name ) { $rr->Name("${name}(reverse)"); }
+        if ( defined $name ) { $rr->Name("_reverse_${name}"); }
 		$rr->Reactants( [@prod] );
 		$rr->Products(  [@reac] );
 		$rr->Priority($priority);
