@@ -3,42 +3,11 @@ updated 14 March 2015
 http://code.google.com/p/bionetgen
 
 == BioNetGen-2.2.6-stable ==
-'''''2015 XXXX XX'''''
-
-==== New Language Conventions ====
-* Whitespace is no longer allowed in rule names.
-* All labels and BNG objects (except for bonds and states) must begin with a letter or 
-underscore character.
-* Labels must now be followed by a colon (':') with no intervening whitespace.
-** Example: <big><tt>RuleX: A(s~0) -> A(s~1) k</tt></big>
-* Leading indices in the <big><tt>molecule types</tt></big>, <big><tt>observables</tt></big>,
-and <big><tt>energy patterns</tt></big> blocks have been deprecated.
-** '''Note''': These are not yet formally deprecated for the <big><tt>parameters</tt></big>, 
-<big><tt>species</tt></big>, and <big><tt>functions</tt></big> blocks because they exist
-within BNG-generated NET files, which can be read in using <big><tt>readFile</tt></big>.
-Deprecating them completely will thus require changing the format of NET files.
-* Unnamed rules are now given automatic names beginning with "<big><tt>_R</tt></big>" followed by a
-digit (e.g., "<big><tt>_R1</tt></big>", "<big><tt>_R2</tt></big>", etc.).
-* Reverse rules are now named by prepending "<big><tt>_reverse_</tt></big>" to the forward rule name.
-
-===== Actions & Arguments =====
-* Added a new argument, <big><tt>par_scan_vals</tt></big>, to the <big><tt>parameter_scan</tt></big>
-action to allow parameter scans over unevenly spaced intervals.
-** Example: <big><tt>parameter_scan({method=>"ode", t_end=>20, parameter=>"k1", par_scan_vals=>[1,5,20]})</tt></big>
-** NOTE: If <big><tt>par_min</tt></big>, <big><tt>par_max</tt></big>, and <big><tt>n_scan_pts</tt></big> 
-are all defined, they will take precedence over <big><tt>par_scan_vals</tt></big> if it is defined.
-
-==== Minor Changes ====
-* Both the BioNetGen version and codename (e.g., "<big><tt>2.2.6-stable</tt></big>") are now included 
-in the headers of files written with <big><tt>writeBNGL</tt></big> (e.g., NET files).
-* validate_examples.pl now ignores trailing comments in file comparisons.
-* Windows executables now contain the bitness of the architecture in their names 
-(e.g., <big><tt>run_network_MSWin32-64bit.exe</tt></big>).
-* The run_network and sbmlTranslator executables no longer contain the architecture they are built for within the file name definition.
+'''''2015 June 22'''''
 
 ==== Bug Fixes ====
 * An error is now thrown if an unrecognized block name is encountered.
-* An error is now thrown if duplicate rule names are detected.
+* Fixes a case where synthesis rules in cBNGL would fail if the product used the compartment prefix notation.
 
 == BioNetGen-2.2.6-testing ==
 '''''2015 March 3'''''
@@ -52,31 +21,31 @@ that recovers the implicit molecular structure (binding sites and states) of the
 species within the model. The translator can be accessed in the following three ways:
 # Using the readFile() BioNetGen action: The 'atomize' argument specifies whether a 
 flat or atomized translation is to be performed (default is flat, i.e., 
-<big><tt>atomize=>0</tt></big>). The translated model is written to [sbml_filename].bngl, 
+atomize). The translated model is written to [sbml_filename].bngl, 
 which is then read and loaded into memory. This allows additional actions [e.g., simulate(), 
 parameter_scan()] to be performed on the model if desired.  See the 
 [[BioNetGen_Actions_and_Arguments | BioNetGen Actions & Arguments Guide]] for a comprehensive 
 listing of all actions and arguments, including readFile().
-# Running the <big><tt>[BNGPATH]/bin/sbmlTranslator</tt></big> executable directly: 
+# Running the [BNGPATH]/bin/sbmlTranslator executable directly: 
 This provides the functionality described above along with additional customization flags. 
-Run <big><tt>./sbmlTranslator --help</tt></big> for a complete list of options with descriptions.
+Run ./sbmlTranslator --help> for a complete list of options with descriptions.
 # As a standalone web application at [http://ratomizer.appspot.com/translate http://ratomizer.appspot.com/translate].
 
-For further information, see the [[SBML2BNGL | SBML-to-BNGL documentation]].
+For further information, see the SBML-to-BNGL documentation.
 
 ===== Visualization Tools =====
 * Visualization tools can be accessed by calling the visualize() action in a BNGL model file 
-or running the <big><tt>visualize.pl</tt></big> script included in 
-<big><tt>[BNGPATH]/Perl2/Visualization</tt></big>. The output is generated in Graph Modeling 
+or running the visualize.pl script included in 
+[BNGPATH]/Perl2/Visualization. The output is generated in Graph Modeling 
 Language (GML) format, which can be processed by graph editors such as yEd 
 ([http://www.yworks.com/yed www.yworks.com/yed]) and Cytoscape 
 ([http://www.cytoscape.org www.cytoscape.org]). Currently supported visualizations are:
-** Model visualization as a contact map: <big><tt>visualize({type=>"contactmap"})</tt></big>
-** Model visualization as a regulatory graph: <big><tt>visualize({type=>"regulatory"})</tt></big>
-** Rule visualization as a Petri net: <big><tt>visualize({type=>"ruleviz_pattern"})</tt></big>
-** Rule visualization using graph operations: <big><tt>visualize({type=>"ruleviz_operation"})</tt></big>
+** Model visualization as a contact map: >visualize({type=>"contactmap"})
+** Model visualization as a regulatory graph: visualize({type=>"regulatory"})
+** Rule visualization as a Petri net: visualize({type=>"ruleviz_pattern"})
+** Rule visualization using graph operations: visualize({type=>"ruleviz_operation"})
 
-For further information, call <big><tt>visualize({help=>1})</tt></big> or run <big><tt>./visualize.pl --help</tt></big>.
+For further information, call visualize({help=>1}) or run ./visualize.pl --help.
 
 ===== Actions & Arguments =====
 * Added a 'reset_conc' argument to parameter_scan() that suppresses the call to resetConcentrations() 
