@@ -1,0 +1,30 @@
+# Created by BioNetGen 2.2.6-stable
+begin parameters
+    1 k1         1  # Constant
+end parameters
+begin species
+    1 @PM::surface_receptor(Y!1).volume_molecule1(t!1)@CP 0
+    2 @PM::surface_receptor(Y!1).volume_molecule2(t!1)@CP 0
+    3 @PM::surface_molecule1(t!1).surface_receptor(Y!1) 0
+    4 @PM::surface_molecule2(t!1).surface_receptor(Y!1) 0
+    5 @CP::volume_molecule3(t!1).volume_receptor(Y!1) 0
+    6 @CP::volume_molecule4(t!1).volume_receptor(Y!1) 0
+    7 @PM::$Source_PM() 1
+    8 @CP::$Source_CP() 1
+end species
+begin reactions
+    1 7 1 k1 #_R1
+    2 7 2 k1 #_R2
+    3 7 3 k1 #_R3
+    4 7 4 k1 #_R4
+    5 8 5 k1 #_R5
+    6 8 6 k1 #_R6
+end reactions
+begin groups
+    1 vs_suffix            1
+    2 vs_prefix            2
+    3 ss_suffix            3
+    4 ss_prefix            4
+    5 vv_suffix            5
+    6 vv_prefix            6
+end groups

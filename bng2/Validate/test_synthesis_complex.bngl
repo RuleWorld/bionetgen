@@ -1,0 +1,32 @@
+begin model
+begin parameters
+k1 1
+end parameters
+begin molecule types
+A(t)
+B(t)
+C(t)
+Receptor(Y)
+Source()
+Source2()
+end molecule types
+begin seed species
+$Source 1
+Source2 1
+end seed species
+begin reaction rules
+0 -> A(t!1).Receptor(Y!1) k1
+Source() -> B(t!1).Receptor(Y!1) k1
+Source2() -> Source2() + C(t!1).Receptor(Y!1) k1
+end reaction rules
+begin observables
+Molecules add_molecule A(t!+)
+Molecules constant_source B(t!+)
+Molecules non_constant_source C(t!+)
+Molecules Receptor Receptor(Y!+)
+end observables
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_start=>0,t_end=>40,n_steps=>100})
