@@ -1,6 +1,6 @@
 CHANGES to BioNetGen
-updated 14 March 2015
-http://code.google.com/p/bionetgen
+updated 22 June 2015
+https://github.com/RuleWorld/bionetgen/
 
 == BioNetGen-2.2.6-stable ==
 '''''2015 June 22'''''
