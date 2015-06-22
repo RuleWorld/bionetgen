@@ -208,10 +208,22 @@ sub readString
     $$sptr =~ s/^\s*//;
     
     # Remove leading numeric index, if any
-    $$sptr =~ s/^\d+\s+//;
+    $$sptr =~ s/^\d+\s+//; # Can't deprecate this because indices used in NET files
     
     # Remove leading label, if any
-    $$sptr =~ s/^\w+\s*:\s+//;
+	if ( $$sptr =~ s/^(\w+)\s*:\s+// )
+	{
+		# Check label for leading number
+		my $label = $1;
+		if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
+	}
+		
+	# Check name for leading number
+	my $sptr_left = $$sptr;
+	unless ( $sptr_left =~ s/^([A-Za-z_]\w*)// )
+	{ 
+		return "Syntax error (parameter name begins with a number) at '$$sptr'";
+	}
 
     # Convert non assignment format to assignment
     unless ( $$sptr =~ /^\w+\s*=/ )
@@ -603,14 +615,7 @@ sub writeBNGL
         }
         else
         {   # include parameter type
-            if ($param->Type eq 'ConstantExpression')
-            {
-                $out .= "  # " . $param->Type . " " . $param->evaluate([], $plist). "\n";
-            }
-            else{
-                $out .= "  # " . $param->Type . "\n";
-            }
-            
+            $out .= "  # " . $param->Type . "\n";
         }
 
         ++$iparam; 

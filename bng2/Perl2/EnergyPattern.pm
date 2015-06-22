@@ -38,14 +38,31 @@ sub readString
 
     my $err;
 
-    # Check if first token is an index (This index will be ignored)
-    $string =~ s/^\s*\d+\s+//;
-    # strip any leading whitesace
+	# strip any leading whitesace
     $string =~ s/^\s+//;
-    
-    # Remove leading label, if exists
-    $string =~ s/^\s*\w+:\s+//;
 
+    # Check if first token is an index (This index will be ignored)
+    # DEPRECATED as of BNG 2.2.6
+    if($string =~ s/^\s*\d+\s+//)
+    {
+    		return "Leading index detected at '$string'. This is deprecated as of BNG 2.2.6.";
+    }
+
+    # Remove leading label, if exists
+    if ($string =~ s/^\s*(\w+)\s*:\s+//)
+    {
+	    # Check label for leading number
+		my $label = $1;
+		if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
+    }
+    
+	# Check name for leading number
+	my $string_left = $string;
+	unless ( $string_left =~ s/^([A-Za-z_]\w*)// )
+	{ 
+		return "Syntax error (pattern name begins with a number) at $string.";
+	}
+    
     # Next read the SpeciesGraph that will define the Energy Pattern
     my $sep = '^\s+';
     my $sg = SpeciesGraph->new();
