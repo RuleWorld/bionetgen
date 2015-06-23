@@ -128,15 +128,17 @@ def convertExperimentNames(componentNameIntersection, molecule, experiment, firs
 
     return trueExperiment
 
-def obtainContextDifferences(fileName1, fileName2, moleculeNameIntersection, componentNameIntersection):
-    file1Context, relationshipGraph1 = componentGroups.getContextRequirements(fileName1,False)
-    file2Context, relationshipGraph2 = componentGroups.getContextRequirements(fileName2,False)   
+def obtainContextDifferences(fileName1, fileName2, moleculeNameIntersection, componentNameIntersection, context1, context2):
+    file1Context, relationshipGraph1 = context1  # componentGroups.getContextRequirements(fileName1,False)
+    file2Context, relationshipGraph2 = context2  # componentGroups.getContextRequirements(fileName2,False)
 
     #contextMatrix1 = {molecule:[[0]*len(componentNameIntersection[molecule]) for x in componentNameIntersection[molecule]]  for molecule in moleculeNameIntersection}
     contextMatrix1 = prettyDict(lambda: prettyDict(lambda: prettyDict(dict)))
     #contextMatrix2 = prettyDict(lambda: prettyDict(lambda: prettyDict(list)))
 
     for key in moleculeNameIntersection:
+        if key not in file1Context or moleculeNameIntersection[key] not in file2Context:
+            continue
         for relationship in file1Context[key]:
             for element in file1Context[key][relationship]:
                 if relationship == 'independent':
@@ -149,7 +151,6 @@ def obtainContextDifferences(fileName1, fileName2, moleculeNameIntersection, com
 
                 if moleculePair[0].lower() in componentNameIntersection[moleculeNameIntersection[key]] and moleculePair[1].lower() in componentNameIntersection[moleculeNameIntersection[key]]:
                     contextMatrix1[moleculeNameIntersection[key]][componentNameIntersection[moleculeNameIntersection[key]][moleculePair[1].lower()]][componentNameIntersection[moleculeNameIntersection[key]][moleculePair[0].lower()]][fileName1] = relationship
-
         for relationship in file2Context[moleculeNameIntersection[key]]:
             for element in file2Context[moleculeNameIntersection[key]][relationship]:
                 if relationship == 'independent':
@@ -186,16 +187,14 @@ def evaluateDifferences(differences, fileName1, fileName2, fileName1raw, fileNam
             pass
 
 
-def compareModelsContext(fileName1, fileName2, outputfile):
+def compareModelsContext(fileName1, fileName2, outputfile, context1, context2):
 
     moleculeNameIntersection, componentNameIntersection = compareModelsStructurally(fileName1, fileName2, moleculemapping, componentmapping)
-    #print len(moleculeNameIntersection)
-    #print len([y for x in componentNameIntersection for y in componentNameIntersection[x].items()])
-    differences = obtainContextDifferences(fileName1, fileName2, moleculeNameIntersection, componentNameIntersection)
+    differences = obtainContextDifferences(fileName1, fileName2, moleculeNameIntersection, componentNameIntersection,context1,context2)
 
     #evaluateDifferences(differences, fileName1, fileName2, fileName1raw, fileName2raw)
-    with open(outputfile, 'w') as f:
-        f.write(yaml.dump(differences))
+    #with open(outputle, 'w') as f:
+    #    f.write(yaml.dump(differences))
     return differences
 
 
