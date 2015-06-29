@@ -4,30 +4,22 @@ https://github.com/RuleWorld/bionetgen/
 
 ==== New Language Conventions ====
 * Whitespace is no longer allowed in rule names.
-* All labels and BNG objects (except for bonds and states) must begin with a letter or 
-underscore character.
+* All labels and BNG objects (except for bonds and states) must begin with a letter or underscore character.
 * Labels must now be followed by a colon (':') with no intervening whitespace.
 ** Example: <big><tt>RuleX: A(s~0) -> A(s~1) k</tt></big>
-* Leading indices in the <big><tt>molecule types</tt></big>, <big><tt>observables</tt></big>,
-and <big><tt>energy patterns</tt></big> blocks have been deprecated.
-** '''Note''': These are not yet formally deprecated for the <big><tt>parameters</tt></big>, 
-<big><tt>species</tt></big>, and <big><tt>functions</tt></big> blocks because they exist
-within BNG-generated NET files, which can be read in using <big><tt>readFile</tt></big>.
-Deprecating them completely will thus require changing the format of NET files.
-* Unnamed rules are now given automatic names beginning with "<big><tt>_R</tt></big>" followed by a
-digit (e.g., "<big><tt>_R1</tt></big>", "<big><tt>_R2</tt></big>", etc.).
+* Leading indices in the <big><tt>molecule types</tt></big>, <big><tt>observables</tt></big>, and <big><tt>energy patterns</tt></big> blocks have been deprecated.
+** '''Note''': These are not yet formally deprecated for the <big><tt>parameters</tt></big>, <big><tt>species</tt></big>, and <big><tt>functions</tt></big> blocks because they exist within BNG-generated NET files, which can be read in using <big><tt>readFile</tt></big>. Deprecating them completely will thus require changing the format of NET files.
+* Unnamed rules are now given automatic names beginning with "<big><tt>_R</tt></big>" followed by a digit (e.g., "<big><tt>_R1</tt></big>", "<big><tt>_R2</tt></big>", etc.).
 * Reverse rules are now named by prepending "<big><tt>_reverse_</tt></big>" to the forward rule name.
 
 ===== Actions & Arguments =====
-* Added a new argument, <big><tt>par_scan_vals</tt></big>, to the <big><tt>parameter_scan</tt></big>
-action to allow parameter scans over unevenly spaced intervals.
+* Added a new argument, <big><tt>par_scan_vals</tt></big>, to the <big><tt>parameter_scan</tt></big> action to allow parameter scans over unevenly spaced intervals.
 ** Example: <big><tt>parameter_scan({method=>"ode", t_end=>20, parameter=>"k1", par_scan_vals=>[1,5,20]})</tt></big>
 ** NOTE: If <big><tt>par_min</tt></big>, <big><tt>par_max</tt></big>, and <big><tt>n_scan_pts</tt></big> 
 are all defined, they will take precedence over <big><tt>par_scan_vals</tt></big> if it is defined.
 
 ==== Minor Changes ====
-* Both the BioNetGen version and codename (e.g., "<big><tt>2.2.6-stable</tt></big>") are now included 
-in the headers of files written with <big><tt>writeBNGL</tt></big> (e.g., NET files).
+* Both the BioNetGen version and codename (e.g., "<big><tt>2.2.6-stable</tt></big>") are now included in the headers of files written with <big><tt>writeBNGL</tt></big> (e.g., NET files).
 * validate_examples.pl now ignores trailing comments in file comparisons.
 * Windows executables now contain the bitness of the architecture in their names 
 (e.g., <big><tt>run_network_MSWin32-64bit.exe</tt></big>).
