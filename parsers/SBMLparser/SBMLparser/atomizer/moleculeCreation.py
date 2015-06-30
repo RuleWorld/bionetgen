@@ -77,11 +77,29 @@ class CycleError(Exception):
     def __init__(self, memory):
         self.memory = memory
 
+def getAnnotations(annotation):
+    annotationDictionary = []
+    if annotation == [] or annotation is None:
+        return []
+    for index in range(0, annotation.getNumAttributes()):
+        annotationDictionary.append(annotation.getValue(index))
+    return annotationDictionary
 
-def isInComplexWith(moleculeSet):
+def getURIFromSBML(moleculeName,parser):
+    annotationList = []
+    if parser:
+        annotations = parser.getSpeciesAnnotation()
+        if annotations[moleculeName]:
+            for annotation in annotations[moleculeName]:
+                annotationList.extend(getAnnotations(annotation))
+    return [x for x in annotationList if 'uniprot' in x]
+
+def isInComplexWith(moleculeSet,parser=None):
     validPairs = []
     for element in moleculeSet:
-        if pwcm.isInComplexWith(element[0], element[1]):
+        name1 = getURIFromSBML(element[0],parser)
+        name2 = getURIFromSBML(element[1],parser)
+        if pwcm.isInComplexWith([element[0], name1], [element[1], name2]):
             validPairs.append(element)
     return validPairs
 
@@ -420,7 +438,95 @@ def addBondToComponent(species, moleculeName, componentName, bond, priority=1):
                 order += 1
 
 
-def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False):
+def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
+    '''
+    given two binding complexes it will attempt to find the ways in which they bind using different criteria
+
+    '''
+    def sortMolecules(array, reverse):
+        return sorted(array, key=lambda molecule: (len(molecule.components), 
+                                                   len([x for x in molecule.components if x.activeState not in [0, '0']]),
+                                                   len(str(molecule)), str(molecule)), reverse=reverse)
+
+    def getBiggestMolecule(array):
+        sortedMolecule = sortMolecules(array,reverse=False)
+
+        
+        #sortedMolecule = sorted(sortedMolecule, key=lambda rule: len(rule.components))
+
+        return sortedMolecule[-1]
+
+    def getNamedMolecule(array, name):
+
+        for molecule in array:
+            if molecule.name == name:
+                return molecule
+
+    names1 = [str(x.name) for x in totalComplex[0]]
+    names2 = [str(x.name) for x in totalComplex[1]]
+
+    bioGridDict = {}
+    # find all pairs of molecules
+    comb = set([(x, y) for x in names1 for y in names2])
+    dbPair = set([])
+
+    # restrict molecules to those in the same compartment
+
+    # search pathway commons for binding candidates
+    if pathwaycommonsFlag:
+        dbPair = isInComplexWith(comb, parser)
+    else:
+        for element in comb:
+            if element[0].upper() in bioGridDict and element[1] in bioGridDict[element[0].upper()] or \
+                    element[1].upper() in bioGridDict and element[0] in bioGridDict[element[1].upper()]:
+                logMess('INFO:Atomization', 'Biogrid info: {0}:{1}'.format(element[0], element[1]))
+                dbPair.add((element[0], element[1]))
+        #elif pathwaycommonsFlag:
+        #    if pwcm.isInComplexWith(element[0], element[1]):
+        #        dbPair.add((element[0], element[1]))
+    dbPair = list(dbPair)
+    if dbPair != []:
+        mol1 = mol2 = None
+        # select the best candidate if there's many ways to bind (in general one that doesn't overlap with an already exising pair)
+        finalDBpair = []
+        if len(dbPair) > 1:
+            logMess('WARNING:Atomization', "More than one interaction was found in {0}".format(dbPair))
+            for element in dbPair:
+                mset1 = Counter(element)
+                mset2 = Counter(names1)
+                mset3 = Counter(names2)
+                intersection1 = mset1 & mset2
+                intersection2 = mset1 & mset3
+                intersection1 = list(intersection1.elements())
+                intersection2 = list(intersection2.elements())
+                if len(intersection1) < 2 and len(intersection2) < 2:
+                    finalDBpair.append(element)
+        if len(finalDBpair) > 0:
+            dbPair = finalDBpair
+
+        if len(dbPair) > 1:
+            logMess('WARNING:Atomization', "There's more than one way to bind {0} and {1} together: {2}. Defaulting to largest molecules".format(names1, names2, dbPair))
+            tmpComplexSubset1 = [getNamedMolecule(totalComplex[0], element[0]) for element in dbPair]
+            tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[1]) for element in dbPair]
+
+            mol1 = getBiggestMolecule(tmpComplexSubset1)
+            mol2 = getBiggestMolecule(tmpComplexSubset2)
+
+        else:
+            mol1 = getNamedMolecule(totalComplex[0], dbPair[0][0])
+            mol2 = getNamedMolecule(totalComplex[1], dbPair[0][1])
+
+    else:
+        logMess('WARNING:Atomization', "We don't know how {0} and {1} bind together and there's \
+no relevant BioGrid/Pathway commons information. Defaulting to largest molecule".format(
+        [x.name for x in totalComplex[0]], [x.name for x in totalComplex[1]]))
+        mol1 = getBiggestMolecule(totalComplex[0])
+        mol2 = getBiggestMolecule(totalComplex[1])
+
+    return mol1, mol2
+
+
+def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,parser=None):
     '''
     method used during the atomization process. It determines how molecules
     in a species bind together
@@ -521,67 +627,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False):
             mol1 = list(totalComplex[0])[0]
             mol2 = list(totalComplex[1])[0]
         else:
-            names1 = [str(x.name) for x in totalComplex[0]]
-            names2 = [str(x.name) for x in totalComplex[1]]
-
-            dbPair = set([])
-            if bioGridFlag:
-                bioGridDict = biogrid.loadBioGridDict()
-            else:
-                bioGridDict = {}
-            comb = set([])
-            comb = [(x, y) for x in names1 for y in names2]
-            dbPair = set([])
-            if pathwaycommonsFlag:
-                dbPair = isInComplexWith(comb)
-            else:
-                for element in comb:
-                    if element[0].upper() in bioGridDict and element[1] in bioGridDict[element[0].upper()] or \
-                            element[1].upper() in bioGridDict and element[0] in bioGridDict[element[1].upper()]:
-                        logMess('INFO:Atomization', 'Biogrid info: {0}:{1}'.format(element[0], element[1]))
-                        dbPair.add((element[0], element[1]))
-                #elif pathwaycommonsFlag:
-                #    if pwcm.isInComplexWith(element[0], element[1]):
-                #        dbPair.add((element[0], element[1]))
-            dbPair = list(dbPair)
-            if dbPair != []:
-                mol1 = mol2 = None
-                # select the best candidate if there's many ways to bind (in general one that doesn't overlap with an already exising pair)
-                finalDBpair = []
-                if len(dbPair) > 1:
-                    logMess('WARNING:Atomization', "More than one interaction was found in {0}".format(dbPair))
-                    for element in dbPair:
-                        mset1 = Counter(element)
-                        mset2 = Counter(names1)
-                        mset3 = Counter(names2)
-                        intersection1 = mset1 & mset2
-                        intersection2 = mset1 & mset3
-                        intersection1 = list(intersection1.elements())
-                        intersection2 = list(intersection2.elements())
-                        if len(intersection1) < 2 and len(intersection2) < 2:
-                            finalDBpair.append(element)
-                if len(finalDBpair) > 0:
-                    dbPair = finalDBpair
-
-                if len(dbPair) > 1:
-                    logMess('WARNING:Atomization', "There's more than one way to bind {0} and {1} together: {2}. Defaulting to largest molecules".format(names1,names2,dbPair))
-                    tmpComplexSubset1 = [getNamedMolecule(totalComplex[0], element[0]) for element in dbPair]
-                    tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[1]) for element in dbPair]
-
-                    mol1 = getBiggestMolecule(tmpComplexSubset1)
-                    mol2 = getBiggestMolecule(tmpComplexSubset2)
-
-
-                else:
-                    mol1 = getNamedMolecule(totalComplex[0], dbPair[0][0])
-                    mol2 = getNamedMolecule(totalComplex[1], dbPair[0][1])
-
-            else:
-                logMess('WARNING:Atomization', "We don't know how {0} and {1} bind together and there's \
-no relevant BioGrid/Pathway commons information. Defaulting to largest molecule".format(
-                [x.name for x in totalComplex[0]], [x.name for x in totalComplex[1]]))
-                mol1 = getBiggestMolecule(totalComplex[0])
-                mol2 = getBiggestMolecule(totalComplex[1])
+            mol1, mol2 = solveComplexBinding(totalComplex, pathwaycommonsFlag, parser)
         pairedMolecules.append([mol1, mol2])
         totalComplex[0] = totalComplex[0].union(totalComplex[1])
         totalComplex.pop(1)
@@ -696,7 +742,7 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
             translator[element[0]] = modifiedSpecies
 
 
-def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwaycommonsFlag):
+def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwaycommonsFlag,parser):
     species = st.Species()
     # go over the sct and reuse existing stuff
 
@@ -712,7 +758,7 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             dependencyGraph[molecule] = deepcopy(mol)
             species.addMolecule(mol)
     # how do things bind together?
-    moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag)
+    moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag,parser)
     
     moleculePairsList.sort(key=itemgetter(1,0))
 
@@ -764,7 +810,7 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
 
 
 def atomize(dependencyGraph, weights, translator, reactionProperties,
-            equivalenceDictionary, bioGridFlag, sbmlAnalyzer, database):
+            equivalenceDictionary, bioGridFlag, sbmlAnalyzer, database, parser):
     '''
     The atomizer's main methods. Receives a dependency graph
     '''
@@ -782,7 +828,7 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                 createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
                                    equivalenceDictionary, sbmlAnalyzer, database)
             else:
-                createBindingRBM(element, translator, dependencyGraph, bioGridFlag, database.pathwaycommons)
+                createBindingRBM(element, translator, dependencyGraph, bioGridFlag, database.pathwaycommons,parser)
 
 
 def updateSpecies(species, referenceMolecule):
@@ -1117,6 +1163,7 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
 
             if eq in database.eequivalenceTranslator[doubleModifications[element]]:
                 database.eequivalenceTranslator[doubleModifications[element]].remove(eq)
+
     for modification in database.tmpEquivalence:
         for candidates in database.tmpEquivalence[modification]:
             for instance in candidates:
@@ -1124,12 +1171,12 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
 
     database.weights = sorted(database.weights, key=lambda rule: (rule[1], len(rule[0])))
     atomize(prunnedDependencyGraph, database.weights, database.translator, database.reactionProperties,
-            database.eequivalenceTranslator, bioGridFlag, database.sbmlAnalyzer, database)
+            database.eequivalenceTranslator, bioGridFlag, database.sbmlAnalyzer, database,parser)
 
     onlySynDec = len([x for x in database.classifications if x not in ['Generation', 'Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
 
-    sanityCheck(database.translator)
+    #sanityCheck(database.translator)
     '''
     pr.disable()
     s = StringIO.StringIO()

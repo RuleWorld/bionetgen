@@ -93,31 +93,37 @@ def getReactomeBondByUniprot(uniprot1, uniprot2):
     ppi = [x[0:3] for x in ppi if len([y for y in includedElements1 if y in x]) == 1 and len([y for y in includedElements2 if y in x]) == 1]
     return ppi
 
-
-def getReactomeBondByName(name1, name2):
+@memoize
+def getReactomeBondByName(name1, name2, sbmlURI, sbmlURI2):
     """
     resolves the uniprot id of parameters *name1* and *name2* and obtains whether they
     can be bound in the same complex or not based on reactome information
     """
-    uniprot1 = name2uniprot(name1)
-    uniprot2 = name2uniprot(name2)
+    if len(sbmlURI) > 0:
+        uniprot1 = [x.split('/')[-1] for x in sbmlURI]
+    else:
+        uniprot1 = name2uniprot(name1)
+    if len(sbmlURI2) > 0:
+        uniprot2 = [x.split('/')[-1] for x in sbmlURI2]
+    else:
+        uniprot2 = name2uniprot(name2)
     return getReactomeBondByUniprot(uniprot1, uniprot2)
 
 
-@memoize
-def isInComplexWith(name1, name2):
-    nameset = sorted([name1, name2])
+def isInComplexWith(name1, name2,sbmlURI=[], sbmlURI2=[]):
+    nameset = sorted([name1, name2], key=lambda x : x[0])
     result = None
     retry = 0
     while retry < 3:
-        result = getReactomeBondByName(nameset[0], nameset[1])
+        result = getReactomeBondByName(nameset[0][0], nameset[1][0], nameset[0][1], nameset[1][1])
         retry += 1
-    if result:
-        return any([x[1] == 'in-complex-with' for x in result])
+        if result:
+            return any([x[1] == 'in-complex-with' for x in result])
     return False
 
 if __name__ == "__main__":
     #results =  isInComplexWith('GAP','Ras')
-    print getReactomeBondByName('EGFR', 'Grb2')
+    print getReactomeBondByName('EGF', 'EGFR')
+    #print name2uniprot('MEKK1')
     #print results
     #print getReactomeBondByUniprot('P20936','P01112')

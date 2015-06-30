@@ -48,7 +48,7 @@ class SBML2BNGL:
         self.speciesMemory = []
         self.getSpecies()
         self.reactionDictionary = {}
-        
+        self.speciesAnnotation = None        
 
     def reset(self):
         self.tags = {}
@@ -104,7 +104,7 @@ class SBML2BNGL:
       metaString += '###\n'
           #if biol 
       return metaString
-    def getRawSpecies(self, species,parameters=[]):
+    def getRawSpecies(self, species,parameters=[], logEntries=True):
         '''
         *species* is the element whose SBML information we will extract
         this method gets information directly
@@ -150,11 +150,13 @@ class SBML2BNGL:
         if standardizedName[:1].isdigit():
             standardizedName = 's' + standardizedName
         
-        if standardizedName in self.speciesMemory:
-            standardizedName += '_' + species.getId()
-            
-                        
-        self.speciesMemory.append(standardizedName)
+        if logEntries:
+            if standardizedName in self.speciesMemory:
+                standardizedName += '_' + species.getId()
+                
+                            
+            self.speciesMemory.append(standardizedName)
+
         if boundaryCondition:
             self.boundaryConditionVariables.append(standardizedName)
         self.speciesDictionary[identifier] = standardizedName
@@ -596,9 +598,11 @@ class SBML2BNGL:
         '''
         name = compartment.getId()
         size = compartment.getSize()
+        dimensions = compartment.getSpatialDimensions()
         #if size != 1:
         #    print '!',
-        return name,3,size
+        #return name,3,size
+        return name, dimensions, size
         
     def __getRawFunctions(self,function):
         math= function[1].getMath()
@@ -968,19 +972,23 @@ class SBML2BNGL:
             
             
     def getSpeciesAnnotation(self):
-        speciesAnnotation = defaultdict(list)
+        if self.speciesAnnotation:
+            return self.speciesAnnotation
+        
+        self.speciesAnnotation = defaultdict(list)
 
         for species in self.model.getListOfSpecies():
-            rawSpecies = self.getRawSpecies(species)
+            rawSpecies = self.getRawSpecies(species,logEntries=False)
             annotationXML = species.getAnnotation()
             lista = libsbml.CVTermList()
             libsbml.RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
             if lista.getSize() == 0:
-                speciesAnnotation[rawSpecies['returnID']] =  None
+                self.speciesAnnotation[rawSpecies['returnID']] =  None
             else:
                 for idx in range(lista.getSize()):
-                    speciesAnnotation[rawSpecies['returnID']].append(lista.get(idx).getResources())
-        return speciesAnnotation
+                    self.speciesAnnotation[rawSpecies['returnID']].append(lista.get(idx).getResources())
+       
+        return self.speciesAnnotation
 
     def getModelAnnotation(self):
         modelAnnotation = []
