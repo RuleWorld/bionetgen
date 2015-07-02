@@ -1521,20 +1521,51 @@ sub parameter_scan
     unless ( defined $params->{parameter} )
     {   return "Error in parameter_scan: 'parameter' is not defined.";   }
 
-    unless ( defined $params->{par_min} )
-    {   return "Error in parameter_scan: 'par_min' is not defined.";   }
+	unless ( defined $params->{par_scan_vals} ){
+		
+	    unless ( defined $params->{par_min} )
+	    {   return "Error in parameter_scan: 'par_min' must be defined if 'par_scan_vals' is not.";   }
+	
+	    unless ( defined $params->{par_max} )
+	    {   return "Error in parameter_scan: 'par_max' must be defined if 'par_scan_vals' is not.";   }
+	    
+	    unless ( defined $params->{n_scan_pts} )
+	    {   return "Error in parameter_scan: 'n_scan_pts' must be defined if 'par_scan_vals' is not.";   }
+	    
+	    if ($params->{par_max} == $params->{par_min}){
+		    	if ($params->{n_scan_pts} < 1){
+		    		return "Error in parameter_scan: 'n_scan_pts' must be >= 1 if 'par_max' = 'par_min'.";
+		    	}
+	    }
+	    elsif ($params->{n_scan_pts} <= 1){
+		    	return "Error in parameter_scan: 'n_scan_pts' must be > 1 if 'par_max' != 'par_min'.";
+	    }
+	}
 
-    unless ( defined $params->{par_max} )
-    {   return "Error in parameter_scan: 'par_max' is not defined.";   }
-    
-    unless ( defined $params->{n_scan_pts} )
-    {   return "Error in parameter_scan: 'n_scan_pts' is not defined.";   }
-
+	# defined min/max takes precedence over par_scan_vals
+	if ( defined $params->{par_min} and defined $params->{par_max} and defined $params->{n_scan_pts} ){
+		# define parameter scan range
+	    my $par_min = $params->{log_scale} ? log $params->{par_min} : $params->{par_min};
+	    my $par_max = $params->{log_scale} ? log $params->{par_max} : $params->{par_max};
+	    my $delta = ($par_max - $par_min) / ($params->{n_scan_pts} - 1); # note that this may be negative if par_max < par_min (not a problem)
+		
+		# add parameter values to 'par_scan_vals'
+		$params->{par_scan_vals} = ();
+		for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k ){
+			my $par_value = $par_min + $k*$delta;
+	        if ( $params->{log_scale} )
+	        {   $par_value = exp $par_value;   }
+	        push @{$params->{par_scan_vals}}, $par_value;
+		}
+	}
+	
+	# array of parameter scan values
+	my @par_scan_vals = @{$params->{par_scan_vals}};
 
     # update user
-    printf "ACTION: parameter_scan(par: $params->{parameter}, min: $params->{par_min}, max: $params->{par_max}, ";
-    printf "n_pts: $params->{n_scan_pts}, log: $params->{log_scale})\n";
-
+#    printf "ACTION: parameter_scan(par: $params->{parameter}, min: $params->{par_min}, max: $params->{par_max}, ";
+#    printf "n_pts: $params->{n_scan_pts}, log: $params->{log_scale})\n";
+	printf "ACTION: parameter_scan( )";
 
     # define basename for scan results
     my $basename = $params->{prefix};
@@ -1550,7 +1581,6 @@ sub parameter_scan
     # define file prefix for output results
     my ($vol, $dir, $file_prefix) = File::Spec->splitpath( $basename );
 
-
     # create working directory
     if (-d $workdir)
     {   # delete working directory
@@ -1561,37 +1591,17 @@ sub parameter_scan
     else
     {   mkdir $workdir;   }
 
-
-    # define parameter scan range
-    my $par_min = $params->{log_scale} ? log $params->{par_min} : $params->{par_min};
-    my $par_max = $params->{log_scale} ? log $params->{par_max} : $params->{par_max};
-    my $delta;
-    if ($par_max == $par_min){
-	    	if ($params->{n_scan_pts} < 1){
-	    		return "Error in parameter_scan: 'n_scan_pts' must be >= 1 if 'par_max' = 'par_min'.";
-	    	}
-	    	$delta = 0.0;
-    }
-    elsif ($params->{n_scan_pts} <= 1){
-	    	return "Error in parameter_scan: 'n_scan_pts' must be > 1 if 'par_max' != 'par_min'.";
-    }
-    else{
-	    	$delta = ($par_max - $par_min) / ($params->{n_scan_pts} - 1); # note that this may be negative if par_max < par_min (not a problem)
-    }   
-
     # remember concentrations!
     $model->saveConcentrations("SCAN");
 
     # loop over scan points
-    for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k )
+	for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
     {
         # define prefix
         my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
     	
         # define parameter value
-        my $par_value = $par_min + $k*$delta;
-        if ( $params->{log_scale} )
-        {   $par_value = exp $par_value;   }
+        my $par_value = $par_scan_vals[$k];
 
         # set parameter
         $model->setParameter( $params->{parameter}, $par_value );
@@ -1626,11 +1636,9 @@ sub parameter_scan
     unless ( open $ofh, '>', $outfile )
     {   return "Error in parameter_scan: problem opening parameter scan output file $outfile";   }
 
-    for ( my $k = 0;  $k < $params->{n_scan_pts};  ++$k )
+    for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
     {
-        my $par_value = $par_min + $k*$delta;
-        if ( $params->{log_scale} )
-        {   $par_value = exp $par_value;   }
+        my $par_value = $par_scan_vals[$k];
 
         # Get data from gdat file
         my $data_file = File::Spec->catfile( ($workdir), sprintf("%s_%05d.gdat", $file_prefix, $k+1) );

@@ -1,0 +1,56 @@
+begin model
+begin parameters
+k1 1
+end parameters
+begin molecule types
+volume_molecule1(t)
+volume_molecule2(t)
+
+surface_molecule1(t)
+surface_molecule2(t)
+
+volume_molecule3(t)
+volume_molecule4(t)
+
+volume_receptor(Y)
+surface_receptor(Y)
+end molecule types
+begin compartments
+PM 2 1
+CP 3 1 PM
+end compartments
+
+begin seed species
+#volume-surface
+volume_molecule1(t!1)@CP.surface_receptor(Y!1)@PM 0
+@PM:volume_molecule2(t!1)@CP.surface_receptor(Y!1) 0
+#surface-surface
+surface_molecule1(t!1)@PM.surface_receptor(Y!1)@PM 0
+@PM:surface_molecule2(t!1).surface_receptor(Y!1) 0
+#volume-volume
+volume_molecule3(t!1)@CP.volume_receptor(Y!1)@CP 0
+@CP:volume_molecule4(t!1).volume_receptor(Y!1) 0
+end seed species
+
+begin reaction rules
+0 -> volume_molecule1(t!1)@CP.surface_receptor(Y!1)@PM k1
+0 -> @PM:volume_molecule2(t!1)@CP.surface_receptor(Y!1) k1
+0 -> surface_molecule1(t!1)@PM.surface_receptor(Y!1)@PM k1
+0 -> @PM:surface_molecule2(t!1).surface_receptor(Y!1) k1
+0 -> volume_molecule3(t!1)@CP.volume_receptor(Y!1)@CP k1
+0 -> @CP:volume_molecule4(t!1).volume_receptor(Y!1)  k1
+end reaction rules
+
+begin observables
+Molecules vs_suffix volume_molecule1(t!1)@CP.surface_receptor(Y!1)@PM 
+Molecules vs_prefix @PM:volume_molecule2(t!1)@CP.surface_receptor(Y!1)
+Molecules ss_suffix surface_molecule1(t!1)@PM.surface_receptor(Y!1)@PM
+Molecules ss_prefix @PM:surface_molecule2(t!1).surface_receptor(Y!1) 
+Molecules vv_suffix volume_molecule3(t!1)@CP.volume_receptor(Y!1)@CP 
+Molecules vv_prefix @CP:volume_molecule4(t!1).volume_receptor(Y!1)
+end observables
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_start=>0,t_end=>40,n_steps=>100})

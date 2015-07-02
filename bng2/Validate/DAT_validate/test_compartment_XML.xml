@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.5  -->
+<!-- Created by BioNetGen 2.2.6  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="test_compartment_XML">
     <ListOfParameters>
@@ -46,7 +46,7 @@
       </Species>
     </ListOfSpecies>
     <ListOfReactionRules>
-      <ReactionRule id="RR1" name="Rule1" symmetry_factor="0.5">
+      <ReactionRule id="RR1" name="_R1" symmetry_factor="0.5">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR1_RP1">
             <ListOfMolecules>
@@ -101,7 +101,7 @@
           <AddBond site1="RR1_RP1_M1_C1" site2="RR1_RP2_M1_C1"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR2" name="Rule1r" symmetry_factor="0.5">
+      <ReactionRule id="RR2" name="_reverse__R1" symmetry_factor="0.5">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR2_RP1">
             <ListOfMolecules>

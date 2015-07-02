@@ -93,12 +93,31 @@ sub readString
 
     # set output true (by default)
     $obs->Output(1);
+    
+    # Remove leading whitespace
+    $string =~ s/^\s*//;
 
     # Check if first token is an index (This index will be ignored)
-    $string =~ s/^\s*\d+\s+//;
+    # DEPRECATED as of BNG 2.2.6
+    if ( $string =~ s/^\s*\d+\s+// )
+    {
+    		return "Leading index detected at '$string'. This is deprecated as of BNG 2.2.6.";
+    }
     
     # Remove leading label, if exists
-    $string =~ s/^\s*\w+\s*:\s+//;
+    if ( $string =~ s/^\s*(\w+)\s*:\s+// )
+    {
+	    # Check label for leading number
+		my $label = $1;
+		if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'";  }
+    }
+    
+	# Check name for leading number
+	my $string_left = $string;
+	unless ( $string_left =~ s/^([A-Za-z_]\w*)// )
+	{ 
+		return "Syntax error (observable name begins with a number) at '$string'";
+	}
 
     # Check if next token is observable type
     #  Adding Counter and Population types  --Justin, 5nov2010

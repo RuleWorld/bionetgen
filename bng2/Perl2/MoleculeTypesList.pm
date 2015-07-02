@@ -41,15 +41,20 @@ sub readString
     my $entry = shift;
 
     # Check if token is an index
+    # DEPRECATED as of BNG 2.2.6
     if ($entry=~ s/^\s*(\d+)\s+//)
     {
-        # This index will be ignored
-        my $index = $1;
+        return "Leading index detected at '$entry'. This is deprecated as of BNG 2.2.6.";
     }
 
     # Remove leading label, if exists
-    $entry =~ s/^\s*\w+\s*:\s+//;
-  
+    if ($entry =~ s/^\s*(\w+)\s*:\s+//)
+    {
+		# Check label for leading number
+		my $label = $1;
+		if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'.";  }
+    }
+    
     # Next token is string for species graph
     $entry =~ s/^\s*//;
     my $mt = MoleculeType->new;

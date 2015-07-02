@@ -568,7 +568,7 @@ foreach my $model (@models)
 					print "see $log_file for more details.\n";
 					close $log;
 					++$fail_count;
-					next;
+					next MODEL;
 				}
 				print $log $SEPARATOR;
 			}
@@ -898,10 +898,11 @@ sub chi_square
 
 
 
-# A simple method for file difference detection
-# returns emtpy string if files are the same,
-# otherwise returns string describing the first differnce.
-# Ignores blank lines and differences in whitespace
+# A simple method for file difference detection.
+# Returns empty string if files are the same,
+# otherwise returns string describing the first difference.
+# Ignores blank lines, differences in whitespace, and
+# trailing comments.
 #
 sub diff_files
 {
@@ -963,6 +964,9 @@ sub diff_files
         # remove trailing whitespace
         $line1 =~ s/\s+$//;
         $line2 =~ s/\s+$//;
+        # remove trailing comments
+        $line1 =~ s/#.*//;
+        $line2 =~ s/#.*//;
 
         # Special fix for MSWin32
         # ..exponents are written with 3 digits in Windows rather than the standard 2.

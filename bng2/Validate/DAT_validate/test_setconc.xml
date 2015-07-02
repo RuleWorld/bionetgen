@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.5  -->
+<!-- Created by BioNetGen 2.2.6  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="test_setconc">
     <ListOfParameters>
       <Parameter id="NA" type="Constant" value="6.0221e+23"/>
-      <Parameter id="V" type="Constant" value="1e-09"/>
-      <Parameter id="L0" type="Constant" value="1e-09"/>
-      <Parameter id="R0" type="Constant" value="1e-09"/>
-      <Parameter id="kp" type="Constant" value="1.6605503e-09"/>
+      <Parameter id="V" type="Constant" value="1e-9"/>
+      <Parameter id="L0" type="Constant" value="1e-9"/>
+      <Parameter id="R0" type="Constant" value="1e-9"/>
+      <Parameter id="kp" type="Constant" value="1.6605503e-9"/>
       <Parameter id="km" type="Constant" value="0.1"/>
       <Parameter id="_InitialConc1" type="Constant" value="602210"/>
       <Parameter id="_InitialConc2" type="Constant" value="602210"/>
@@ -65,7 +65,7 @@
       </Species>
     </ListOfSpecies>
     <ListOfReactionRules>
-      <ReactionRule id="RR1" name="Rule1" symmetry_factor="1">
+      <ReactionRule id="RR1" name="_R1" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR1_RP1">
             <ListOfMolecules>
@@ -120,7 +120,7 @@
           <AddBond site1="RR1_RP1_M1_C1" site2="RR1_RP2_M1_C1"/>
         </ListOfOperations>
       </ReactionRule>
-      <ReactionRule id="RR2" name="Rule1r" symmetry_factor="1">
+      <ReactionRule id="RR2" name="_reverse__R1" symmetry_factor="1">
         <ListOfReactantPatterns>
           <ReactantPattern id="RR2_RP1">
             <ListOfMolecules>
