@@ -21,7 +21,8 @@ bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 visualizeExecutable = join(home,'workspace','bionetgen','bng2','Perl2','Visualization','visualize.pl')
 graphAnalysis = join(home,'workspace','bionetgen','parsers','SBMLparser','stats','graphAnalysis.py')
 collapsedContact = join(home,'workspace','bionetgen','parsers','SBMLparser','stats','collapsedContactMap.py')
-
+compareModels = join(home, 'workspace', 'bionetgen', 'parsers', 'SBMLparser', 'SBMLparser', 'rulifier', 'compareModels.py')    
+sbmlparserhome = join(home, 'workspace', 'bionetgen', 'parsers', 'SBMLparser', 'SBMLparser')
 
 def getFiles(directory,extension):
     """
@@ -209,6 +210,19 @@ def createCollapsedContact(xmlfile,outputdirectory,options=[]):
         ],stdout=f)
     return result
 
+def compareModelsContext(xmlfilepair,outputdirectory,options=[]):
+    """
+    compares a pair of models and returns their differences (if any) and the significance of those differences
+    """
+    with open(os.devnull, "w") as f:
+        result = call(['python', '-m', sbmlparserhome, collapsedContact, '-f1', xmlfilepair[0], '-f2', xmlfilepair[1],
+        #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
+                       '-o', os.path.join(outputdirectory, '{0}-{1}.yaml'.format(namespace.file1, namespace.file2)),
+                       ], stdout=f)
+    return result        
+
+
+
 def saveToDataframe(result,dataframe):
     """
     Store xml-analysis results in dataframe
@@ -252,6 +266,8 @@ if __name__ == "__main__":
         atomizationScore.to_hdf('atomizationResults.h5','atomization')
     elif ttype =='collapsedContact':
         parallelHandling(filenameset,createCollapsedContact,outputdirectory)
+    elif type=='contextComparison':
+        parallelHandling(filenameset, compareModelsContext, outputDirectory)
     else:
         raise Exception('Invalid output type')
     #with open('new_non_curated/failure.dump','rb') as f:

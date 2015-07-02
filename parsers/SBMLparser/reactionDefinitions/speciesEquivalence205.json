@@ -1,0 +1,26 @@
+{
+    "reactionDefinition" : [
+
+    ],
+    "complexDefinition" : [
+    ["RasGDP", [["RasGDP"]]],
+    ["RasGTP", [["RasGTP"]]],
+    ["RacGDP", [["RacGDP"]]],
+    ["RacGTP", [["RacGTP"]]],
+    ["RasGAP",[["RasGAP"]]],
+    ["RhoGAP",[["RhoGAP"]]],
+    ["RhoGDP",[["RhoGDP"]]],
+    ["RhoGTP",[["RhoGTP"]]],
+    ["ppERK",[["ERK","ppmod",["s","PP"]]]]
+    ],
+    "modificationDefinition": {
+        "EGF_pEGFR_2":["EGF","EGF","EGFR","pEGFR"],
+        "EGF_pEGFR_2_RasGAP":["EGF_pEGFR_2","RasGAP"],
+        "EGF_pEGFR_2_Grb2_MEKK1aRafbcdRhoGTPef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","Raf","RhoGTP"],
+        "EGF_pEGFR_2_pShc_Grb2_MEKK1aRafbcdRhoGTPef":["EGF_pEGFR_2_Grb2_MEKK1aRafbcdRhoGTPef","pShc"],
+        "pRhoGAP":["RhoGAP"],
+        "EGF_pEGFR2_RasGAP":["EGF_pEGFR_2","RasGAP"]
+    }
+    
+    
+}

@@ -6,6 +6,8 @@
 	]
 	,
 	"modificationDefinition": {
+		"Shc_Grb2":["Shc_P","Grb2"],
+		"Shc_Grb2_SOS":["Shc_P","Grb2","SOS"]
 	}
 	
 	

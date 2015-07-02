@@ -15,6 +15,8 @@
     "modificationDefinition": {
     "JAK__IL_6__":["JAK","IL6"],
     "JAK__IFN__":["JAK","IFN"],
+    "gp130_JAK":["JAK","gp130"],
+    "R_JAK":["R","JAK"],
     "ERK_PP":["ERK_P"],
     "MEK_PP":["MEK_P"],
     "STAT1C":["STAT1"],
@@ -23,7 +25,17 @@
     "STAT1Cm":["STAT1C"],
     "STAT1Nm":["STAT1N"],
     "STAT3Nm":["STAT3N"],
-    "STAT3Cm":["STAT3C"],    
+    "STAT3Cm":["STAT3C"],
+    "STAT1Cm_2":["STAT1Cm","STAT1Cm"],
+    "STAT1Nm_2":["STAT1Nm","STAT1Nm"],
+    "STAT3Cm_2":["STAT3Cm","STAT3Cm"],
+    "STAT3Nm_2":["STAT3Nm","STAT3Nm"],
+
+    "__STAT1Cm__2":["STAT1Cm","STAT1Cm"],
+    "__STAT1Nm__2":["STAT1Nm","STAT1Nm"],
+    "__STAT3Cm__2":["STAT3Cm","STAT3Cm"],
+    "__STAT3Nm__2":["STAT3Nm","STAT3Nm"],
+
     "__IL6_gp80_gp130_JAK__2m":["IL6_gp80","IL6_gp80","gp130","gp130","JAKm","JAKm"],
     "__IL6_gp80_gp130_JAK__2m_STAT1C":["__IL6_gp80_gp130_JAK__2m","STAT1C"],
     "__IFN_R_JAK__2m":["IFN","IFN","R","R","JAKm","JAKm"],

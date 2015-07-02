@@ -4,10 +4,12 @@
     ],
     "complexDefinition" : [
     ["Ras_GDP", [["Ras_GDP"]]],
-    ["Ras_GTP", [["Ras_GTP"]]],
-    ["RasGAP",[["Ras_GAP"]]]
+    ["Ras_GTP", [["Ras_GTP"]]]
+
     ],
     "modificationDefinition": {
+        "EGF_EGFR2":["EGF_EGFR","EGF_EGFR"],
+        "Raf1active":["Raf1"]
     }
     
     

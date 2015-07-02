@@ -125,7 +125,7 @@ def processExtendedInformation(extendedInformation):
     for molecule in extendedInformation:
         tmpmutualExclusion = []
         idx = 0
-        exclusionList = list(extendedInformation[molecule]['mutualExclusion'])
+        exclusionList = list(extendedInformation[molecule]['mutualExclusion']) if 'mutualExclusion' in extendedInformation[molecule] else []
 
         while idx < len(exclusionList):
             intersection = testForIntersection(list(exclusionList[idx]), exclusionList, tmpmutualExclusion)
@@ -214,7 +214,6 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                     dummyNode2, label2, fill2 = getDummyNode(bondpartners[1], bondpartners[0], collapsedComponents)
                     createNode(graph, dummyNode, {'type': "circle", 'fill': fill1}, {'text': label1}, 0, graph.node[bondpartners[0]]['id'])
                     createNode(graph, dummyNode2, {'type': "circle", 'fill': fill2}, {'text': label2}, 0, graph.node[bondpartners[1]]['id'])
-
                     if not contextOnlyFlag:
                         if (dummyNode, bondpartners[0]) not in graph.edges():
                             graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000", 'width': 3}, weight=1)
@@ -273,7 +272,6 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
             graphDictionary[relationship] = graph
     for molecule in extendedInformation:
         for relationship in extendedInformation[molecule]:
-
             for requirement in extendedInformation[molecule][relationship]:
                 if relationship == 'mutualExclusion':
                     requirement1 = list(requirement)[0]
@@ -340,11 +338,12 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
 
     #layout nx.spring_layout(graph)
     #for element in graph.nodes():
-    if separateGraphsFlag:
-        for graphObject in graphDictionary:
-            nx.write_gml(graphDictionary[graphObject], '{0}_{1}.gml'.format(fileName.split('.')[0], graphObject))
-    else:
-        nx.write_gml(graph, fileName)
+    return graph,graphDictionary
+    #if separateGraphsFlag:
+    #    for graphObject in graphDictionary:
+    #        nx.write_gml(graphDictionary[graphObject], '{0}_{1}.gml'.format(fileName.split('.')[0], graphObject))
+    #else:
+    #    nx.write_gml(graph, fileName)
 
 
 def defineConsole():
@@ -360,7 +359,15 @@ def defineConsole():
 
 def main(fileName, outputfilename, extendedInformation, contextOnlyFlag, nullContextFlag, separateGraphsFlag):
     molecules, rules, _ = parseXML(fileName)
-    createCollapsedContact(rules, molecules, [1], outputfilename, extendedInformation, contextOnlyFlag, nullContextFlag, separateGraphsFlag)
+    graph, graphDictionary = createCollapsedContact(rules, molecules, [1], outputfilename, extendedInformation, 
+                                                    contextOnlyFlag, nullContextFlag, separateGraphsFlag)
+
+    if separateGraphsFlag:
+        for graphObject in graphDictionary:
+            nx.write_gml(graphDictionary[graphObject], '{0}_{1}.gml'.format(fileName.split('.')[0], graphObject))
+    else:
+        nx.write_gml(graph, outputfilename)
+
 
 
 if __name__ == "__main__":

@@ -526,7 +526,7 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
         else:
             mol1 = getNamedMolecule(totalComplex[0], dbPair[0][0])
             mol2 = getNamedMolecule(totalComplex[1], dbPair[0][1])
-            logMess('DEBUG:Atomization', 'Binding information found for {0}-{1}'.format(mol1.name,mol2.name))
+            logMess('DEBUG:Atomization', 'Binding information found in pathwaycommons for for {0}-{1}'.format(mol1.name,mol2.name))
 
     else:
         mol1 = getBiggestMolecule(totalComplex[0])

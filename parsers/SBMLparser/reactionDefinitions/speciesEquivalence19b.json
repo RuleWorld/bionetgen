@@ -3,9 +3,9 @@
 
     ],
     "complexDefinition" : [
-    ["Ras_GDP", [["Ras_GDP"]]],
-    ["Ras_GTP", [["Ras_GTP"]]],
-    ["RasGAP",[["Ras_GAP"]]]
+    ["Ras_GDP", [["Ras_GDP","gap",[]]]],
+    ["Ras_GTP", [["Ras_GTP","gap",[]]]]
+
     ],
     "modificationDefinition": {
     }
