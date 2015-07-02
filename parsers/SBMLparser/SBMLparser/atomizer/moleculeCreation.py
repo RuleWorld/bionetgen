@@ -77,7 +77,11 @@ class CycleError(Exception):
     def __init__(self, memory):
         self.memory = memory
 
+
 def getAnnotations(annotation):
+    """
+    parses a libsbml.XMLAttributes annotation object into a list of annotations
+    """
     annotationDictionary = []
     if annotation == [] or annotation is None:
         return []
@@ -85,7 +89,11 @@ def getAnnotations(annotation):
         annotationDictionary.append(annotation.getValue(index))
     return annotationDictionary
 
-def getURIFromSBML(moleculeName,parser):
+
+def getURIFromSBML(moleculeName, parser):
+    """
+    filters a list of URI's so that we get only uniprot ID's
+    """
     annotationList = []
     if parser:
         annotations = parser.getSpeciesAnnotation()
@@ -94,11 +102,16 @@ def getURIFromSBML(moleculeName,parser):
                 annotationList.extend(getAnnotations(annotation))
     return [x for x in annotationList if 'uniprot' in x]
 
-def isInComplexWith(moleculeSet,parser=None):
+
+def isInComplexWith(moleculeSet, parser=None):
+    """
+    given a list of binding candidates, it gets the uniprot ID from annotation and queries
+    the pathway commons class to see if there's known binding information for those two
+    """
     validPairs = []
     for element in moleculeSet:
-        name1 = getURIFromSBML(element[0],parser)
-        name2 = getURIFromSBML(element[1],parser)
+        name1 = getURIFromSBML(element[0], parser)
+        name2 = getURIFromSBML(element[1], parser)
         if pwcm.isInComplexWith([element[0], name1], [element[1], name2]):
             validPairs.append(element)
     return validPairs
@@ -469,8 +482,7 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
     # find all pairs of molecules
     comb = set([(x, y) for x in names1 for y in names2])
     dbPair = set([])
-
-    # restrict molecules to those in the same compartment
+    combTemp = set()
 
     # search pathway commons for binding candidates
     if pathwaycommonsFlag:
@@ -490,7 +502,6 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
         # select the best candidate if there's many ways to bind (in general one that doesn't overlap with an already exising pair)
         finalDBpair = []
         if len(dbPair) > 1:
-            logMess('WARNING:Atomization', "More than one interaction was found in {0}".format(dbPair))
             for element in dbPair:
                 mset1 = Counter(element)
                 mset2 = Counter(names1)
@@ -505,23 +516,28 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
             dbPair = finalDBpair
 
         if len(dbPair) > 1:
-            logMess('WARNING:Atomization', "There's more than one way to bind {0} and {1} together: {2}. Defaulting to largest molecules".format(names1, names2, dbPair))
+            
             tmpComplexSubset1 = [getNamedMolecule(totalComplex[0], element[0]) for element in dbPair]
             tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[1]) for element in dbPair]
-
             mol1 = getBiggestMolecule(tmpComplexSubset1)
             mol2 = getBiggestMolecule(tmpComplexSubset2)
+            logMess('INFO:Atomization', "There's more than one way to bind {0} and {1} together: {2}. Defaulting to {3}-{4}".format(names1, names2, dbPair,mol1.name,mol2.name))
 
         else:
             mol1 = getNamedMolecule(totalComplex[0], dbPair[0][0])
             mol2 = getNamedMolecule(totalComplex[1], dbPair[0][1])
+            logMess('DEBUG:Atomization', 'Binding information found for {0}-{1}'.format(mol1.name,mol2.name))
 
     else:
-        logMess('WARNING:Atomization', "We don't know how {0} and {1} bind together and there's \
-no relevant BioGrid/Pathway commons information. Defaulting to largest molecule".format(
-        [x.name for x in totalComplex[0]], [x.name for x in totalComplex[1]]))
         mol1 = getBiggestMolecule(totalComplex[0])
         mol2 = getBiggestMolecule(totalComplex[1])
+        if pathwaycommonsFlag:
+            logMess('WARNING:Atomization', "We don't know how {0} and {1} bind together and there's no relevant BioGrid/Pathway commons information. Defaulting to largest pair : {2}-{3}".format(
+        [x.name for x in totalComplex[0]], [x.name for x in totalComplex[1]],mol1.name,mol2.name))
+        else:
+            logMess('WARNING:Atomization', "We don't know how {0} and {1} bind together. Defaulting to largest pair : {2}-{3}".format(
+        [x.name for x in totalComplex[0]], [x.name for x in totalComplex[1]],mol1.name,mol2.name))
+
 
     return mol1, mol2
 
@@ -587,6 +603,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,pa
     #    print [[x[0].name,x[1].name] for x in redundantBonds],str(species)
     totalComplex = [set(x) for x in pairedMolecules]
     isContinuousFlag = True
+
     # iterate over orphaned and find unidirectional interactions
     # e.g. if a molecule has a previous known interaction with the
     # same kind of molecule, even if it has no available components
@@ -934,7 +951,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
         for dependencyCandidate in database.dependencyGraph[element]:
             for molecule in [x for x in dependencyCandidate if x not in database.dependencyGraph]:
                 database.dependencyGraph[molecule] = []
-
     # database.eequivalence translator contains 1:1 equivalences
     # FIXME: do we need this update step or is it enough with the later one?
     # catalysis reactions
@@ -952,7 +968,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
                     #    continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
-
 
     #recalculate 1:1 equivalences now with binding information 
     _, _, database.eequivalenceTranslator2,\
@@ -987,7 +1002,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
         else:
             database.dependencyGraph[element] = [list(
             database.userLabelDictionary[element][0])]
-
     # non lexical-analysis catalysis reactions
     if database.forceModificationFlag:
         for reaction, classification in zip(rules, database.classifications):

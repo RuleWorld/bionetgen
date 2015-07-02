@@ -88,7 +88,26 @@ def loadOntology(ontologyFile):
 def findLongestSubstring(speciesA,speciesB):
     sm = difflib.SequenceMatcher(a=speciesA,b=speciesB)
     longestMatch = sm.find_longest_match(0,len(speciesA),0,len(speciesB))
-    return speciesA[longestMatch[0]:longestMatch[0]+longestMatch[2]]
+
+    longestMatchStr = speciesA[longestMatch[0]:longestMatch[0]+longestMatch[2]]
+    #trim around '_' separators for more natural name cuts
+    trimIndex = [0,0]
+    _index = [i for i,x in enumerate(speciesA) if x == '_']
+    if '_' in speciesA:
+        if not any([longestMatch[0] + longestMatch[2] == x for x in _index]):
+            for idx in range(0,len(_index)):
+                if idx +1 == len(_index):
+                    trimIndex[1] = _index[idx]
+                elif idx == 0:
+                    continue
+                elif _index[idx] - longestMatch[0] > 0:
+                    trimIndex[1] = _index[idx-1]
+            longestMatchStr = speciesA[trimIndex[0]:trimIndex[1]]
+
+    
+
+
+    return longestMatchStr
 
 #import concurrent.futures
 

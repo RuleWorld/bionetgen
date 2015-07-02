@@ -461,7 +461,7 @@ class SBMLAnalyzer:
             #string share a common subset but they contain mutually exclusive appendixes: a_b,a_c
             else:
                 commonRoot = detectOntology.findLongestSubstring(reactant,product)
-                if len(commonRoot) > longEnough:
+                if len(commonRoot) > longEnough or commonRoot in moleculeSet:
                     mostSimilarRealMolecules =  get_close_matches(commonRoot,[x for x in moleculeSet if x not in [reactant,product]])
                     for commonMolecule in mostSimilarRealMolecules:
                         if commonMolecule in reactant and commonMolecule in product:
@@ -1029,6 +1029,9 @@ class SBMLAnalyzer:
         '''
         classifies a group of reaction according to the information in the json
         config file
+        
+        FIXME:This function is currently the biggest bottleneck in atomizer, taking up 
+        to 80% of the time without conting pathwaycommons querying.
         '''
         def createArtificialNamingConvention(reaction,fuzzyKey,fuzzyDifference):
             '''
@@ -1038,7 +1041,7 @@ class SBMLAnalyzer:
             '''
             #fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
             if fuzzyKey and fuzzyKey.strip('_') not in strippedMolecules:
-                logMess('INFO:Atomization','added induced naming convention {0}'.format(str(reaction)))
+                logMess('DEBUG:Atomization','added induced naming convention {0}'.format(str(reaction)))
                 #if our state isnt yet on the dependency graph preliminary data structures
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
                     equivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
@@ -1131,14 +1134,13 @@ class SBMLAnalyzer:
                 #and unlike lexical pattern matching we are not going to go around trying to increase string size
 
                 reactantString, productString = self.removeExactMatches(reactantString, productString)
-
             matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
-
             if matching and flagstar:
-                logMess('Atomization:Warning', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
+                logMess('DEBUG:Atomization', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
         
             flag = True
             if matching:
+
                 for reactant,matches in zip(reaction[1],matching):
                     for match in matches:
                         pair = list(match)
@@ -1163,7 +1165,6 @@ class SBMLAnalyzer:
                                 if x[1] not in strippedMolecules:
                                     lexicalDependencyGraph[x[1]] = []
         translationKeys.extend(newTranslationKeys)
-
         for species in localSpeciesDict:
             speciesName =  localSpeciesDict[species][localSpeciesDict[species].keys()[0]][0][0]
             definition = [species]
