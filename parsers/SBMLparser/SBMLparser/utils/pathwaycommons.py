@@ -2,7 +2,7 @@ import urllib
 import urllib2
 import functools
 import marshal
-
+from util import logMess
 
 def memoize(obj):
     cache = obj.cache = {}
@@ -22,7 +22,7 @@ u = UniProt(verbose=False)
 @memoize
 def name2uniprot(nameStr):
     """
-    get the uniprot id for a given biologican name. gives preference to human data
+    get the uniprot id for a given biological name. gives preference to human data
     """
     data = u.search('{0}+AND+organism:9606'.format(nameStr), limit=5, columns="entry name,id")
 
@@ -43,7 +43,9 @@ def name2uniprot(nameStr):
     try:
         response = urllib2.urlopen(url, xparams).read()
     except urllib2.HTTPError:
+        logMess('ERROR:pathwaycommons','A connection could not be established to uniprot')
         return None
+        
     if response in ['', None]:
         url = 'http://www.uniprot.org/uniprot/?'
         xparams = 'query={0}&columns=entry name,id&format=tab&limit=10'.format(nameStr)
@@ -71,6 +73,7 @@ def getReactomeBondByUniprot(uniprot1, uniprot2):
     try:
         response = urllib2.urlopen(url, xparams).read()
     except urllib2.HTTPError:
+        #logMess('ERROR:pathwaycommons','A connection could not be established to pathwaycommons')
         return None
 
     # divide by line

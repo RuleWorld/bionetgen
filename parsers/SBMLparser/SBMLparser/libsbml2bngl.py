@@ -24,9 +24,12 @@ from collections import Counter
 
 import utils.structures as structures
 import atomizer.analyzeRDF
-from utils.util import logMess
+from utils.util import logMess, setupLog
 from sbml2bngl import SBML2BNGL
 #from biogrid import loadBioGridDict as loadBioGrid
+import logging
+
+
 
 def loadBioGrid():
     pass
@@ -335,11 +338,16 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     pr = cProfile.Profile()
     pr.enable()
     '''
+    setupLog(outputFile + '.log', logging.DEBUG)
+
     logMess.log = []
     logMess.counter = -1
     reader = libsbml.SBMLReader()
     document = reader.readSBMLFromFile(bioNumber)
-    
+
+    if document.getModel() == None:
+        print 'File {0} could not be recognized as a valid SBML file'.format(bioNumber)
+        return
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     database.forceModificationFlag = True
@@ -443,6 +451,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     taking the atomized dictionary and a series of data structure, this method
     does the actual string output.
     '''
+
     useArtificialRules = False
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
@@ -541,8 +550,8 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         
         if deleteMoleculesFlag:
             logMess('WARNING:Simulation','{0} reported as function, but usage is ambiguous'.format(molecules[flag]) )
-            result =validateReactionUsage(molecules[flag],rules)
-            if result != None:
+            result = validateReactionUsage(molecules[flag], rules)
+            if result is not None:
                 logMess('ERROR:Simulation','Pseudo observable {0} in reaction {1}'.format(molecules[flag],result))
 
             #since we are considering it an observable delete it from the molecule and
@@ -614,6 +623,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     
     logMess('INFO:Summary','File contains {0} molecules out of {1} original SBML species'.format(len(molecules),len(observables)))
     #store a logfile
+    '''
     try:
         if len(logMess.log) > 0:
             with open(outputFile + '.log', 'w') as f:
@@ -624,7 +634,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     except IOError:
         pass
         #print ""
-    
+    '''
     #rate of each classified rule
     evaluate2 = 0 if len(observables) == 0 else len(molecules)*1.0/len(observables)
     

@@ -137,13 +137,28 @@ def defaultReactionDefinition():
     with open('reactionDefinition.json','w') as fp:
         json.dump(final,fp)
  
-def logMess(logType,logMessage):
-    if not hasattr(logMess, "log"):
-        logMess.log = []
-        logMess.counter = -1
-    logMess.counter += 1
-    logMess.log.append("%s.%d: %s"%(logType,logMess.counter,logMessage))
-    return logMess.counter
+
+
+def setupLog(fileName, level):
+    logging.basicConfig(filename=fileName,level=level,filemode='w')
+
+def logMess(logType, logMessage):
+    
+
+    level = logType.split(':')[0]
+    module = logType.split(':')[1]
+    logger = logging.getLogger(module)
+    if level == 'INFO':
+        logger.info(logMessage)
+    elif level == 'DEBUG':
+        logger.debug(logMessage)
+    elif level == 'WARNING':
+        logger.warning(logMessage)
+    elif level == 'CRITICAL':
+        logger.critical(logMessage)
+    elif level == 'ERROR':
+        logger.error(logMessage)
+
 
 
 

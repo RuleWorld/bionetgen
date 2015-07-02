@@ -49,6 +49,7 @@ class SBML2BNGL:
         self.getSpecies()
         self.reactionDictionary = {}
         self.speciesAnnotation = None        
+        self.speciesCompartments = None
 
     def reset(self):
         self.tags = {}
@@ -143,18 +144,17 @@ class SBML2BNGL:
         if standardizedName in parameters:
             standardizedName = 'sp_{0}'.format(standardizedName)
             
-        #two speceis cannot have the same name. Ids are unique but less
-        #informative
         
-        #it cannot start with a number
+        
+        # it cannot start with a number
         if standardizedName[:1].isdigit():
             standardizedName = 's' + standardizedName
         
+        # two species cannot have the same name. Ids are unique but less informative
         if logEntries:
             if standardizedName in self.speciesMemory:
                 standardizedName += '_' + species.getId()
-                
-                            
+
             self.speciesMemory.append(standardizedName)
 
         if boundaryCondition:
@@ -797,7 +797,7 @@ class SBML2BNGL:
                     #tmp = list(rawArule)
                     #tmp[0] = 'arj' + rawArule[0]
                     #rawArule= tmp
-                    logMess('SIMULATION:CRITICAL','Boundary condition/assignment type variables ({0}) are not properly \
+                    logMess('Error:Simulation', 'Boundary condition/assignment type variables ({0}) are not properly \
                     supported in BioNetGen simulator'.format(rawArule[0]))
 
                 elif rawArule[0] in molecules:
