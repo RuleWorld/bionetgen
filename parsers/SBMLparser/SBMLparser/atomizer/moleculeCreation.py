@@ -21,8 +21,6 @@ import marshal
 import functools
 import utils.pathwaycommons as pwcm
 from collections import Counter
-from operator import itemgetter
-
 
 def memoize(obj):
     cache = obj.cache = {}
@@ -776,13 +774,12 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             species.addMolecule(mol)
     # how do things bind together?
     moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag,parser)
-    
-    moleculePairsList.sort(key=itemgetter(1,0))
 
+    moleculePairsList.sort(key=lambda x: (str(x[1]), str(x[0])))
 
-        #TODO: update basic molecules with new components
-        #translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
-        #translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
+    # TODO: update basic molecules with new components
+    # translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
+    # translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
     for idx, molecule in enumerate(moleculePairsList):
         flag = False
         # add bonds where binding components already exist
@@ -926,7 +923,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
     database.classifications, equivalenceTranslator, database.eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
         adhocLabelDictionary, lexicalDependencyGraph = database.sbmlAnalyzer.classifyReactions(rules, molecules,{})
-
     database.reactionProperties = database.sbmlAnalyzer.getReactionProperties()
     # user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
@@ -939,11 +935,14 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
 
     ####dependency graph
     # binding reactions
+
     for reaction, classification in zip(rules, database.classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)), classification)
 
-    # lexical dependency graph contains lexically induced binding compositions. atomizer gives preferene to binding obtained this way as opposed to stoichiometry
+
+
+    # lexical dependency graph contains lexically induced binding compositions. atomizer gives preference to binding obtained this way as opposed to stoichiometry
     # stronger bounds on stoichiometry based binding can be defined in reactionDefinitions.json.
     for element in lexicalDependencyGraph:
         database.dependencyGraph[element] = lexicalDependencyGraph[element]
@@ -951,6 +950,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
         for dependencyCandidate in database.dependencyGraph[element]:
             for molecule in [x for x in dependencyCandidate if x not in database.dependencyGraph]:
                 database.dependencyGraph[molecule] = []
+
     # database.eequivalence translator contains 1:1 equivalences
     # FIXME: do we need this update step or is it enough with the later one?
     # catalysis reactions
@@ -966,8 +966,10 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
                     #elif all([baseElement not in x for x in database.dependencyGraph[modElement]]):
                     #    addToDependencyGraph(database.dependencyGraph,baseElement,[modElement])
                     #    continue
+
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
+
 
     #recalculate 1:1 equivalences now with binding information 
     _, _, database.eequivalenceTranslator2,\
@@ -988,6 +990,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
                     # elif all([baseElement not in x for x in database.dependencyGraph[modElement]]):
                     #    addToDependencyGraph(database.dependencyGraph,baseElement,[modElement])
                     #    continue
+
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
 
@@ -1002,6 +1005,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
         else:
             database.dependencyGraph[element] = [list(
             database.userLabelDictionary[element][0])]
+
     # non lexical-analysis catalysis reactions
     if database.forceModificationFlag:
         for reaction, classification in zip(rules, database.classifications):
@@ -1100,7 +1104,6 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph, species, [])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph, species, instance)
-
 
     prunnedDependencyGraph, database.weights, unevenElementDict, database.artificialEquivalenceTranslator = \
         consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator, database.eequivalenceTranslator, database.sbmlAnalyzer)

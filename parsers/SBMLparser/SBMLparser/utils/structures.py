@@ -6,46 +6,47 @@ Created on Wed May 30 11:44:17 2012
 """
 from copy import deepcopy
 import difflib
-import hashlib  
+import hashlib
 import numpy
 from collections import Counter
 
-def compareLists(list1,list2):
+
+def compareLists(list1, list2):
     return Counter(list1) == Counter(list2)
-    
+
+
 class Species:
     def __init__(self):
         self.molecules = []
         self.bondNumbers = []
-    
-    def __eq__(self,other):
-       return str(self) == str(other)
+
+    def __eq__(self, other):
+        return str(self) == str(other)
 
     def getBondNumbers(self):
         bondNumbers = [0]
         for element in self.molecules:
             bondNumbers.extend(element.getBondNumbers())
-        return bondNumbers        
-        
+        return bondNumbers
+
     def copy(self):
         species = Species()
         for molecule in self.molecules:
             species.molecules.append(molecule.copy())
         return species
-    
-    def addMolecule(self,molecule,concatenate=False,iteration = 1):
+
+    def addMolecule(self, molecule, concatenate=False, iteration=1):
         if not concatenate:
             self.molecules.append(molecule)
         else:
             counter = 1
             for element in self.molecules:
-                
                 if element.name == molecule.name:
                     if iteration == counter:
                         element.extend(molecule)
                         return
                     else:
-                        counter +=1
+                        counter += 1
             self.molecules.append(molecule)
             #self.molecules.append(molecule)
             #for element in self.molecules:
@@ -173,7 +174,7 @@ class Species:
                 '''
                 for index in range(0,len(component.bonds)):
                     if int(component.bonds[index]) in intersection:
-                        
+
                         if component.bonds[index] in correspondence:
                             component.bonds[index] = correspondence[component.bonds[index]]
                         else:
@@ -181,47 +182,49 @@ class Species:
                             component.bonds[index] = max(intersection) + 1
                 '''
                         #intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
-    
-    def append(self,species):
+
+    def append(self, species):
         newSpecies = (deepcopy(species))
         newSpecies.updateBonds(self.getBondNumbers())
-        
+
         for element in newSpecies.molecules:
-            self.molecules.append(deepcopy(element))              
-        
+            self.molecules.append(deepcopy(element))
 
     def sort(self):
         """
-        Sort molecules by number of components, then number of bonded components, then the negative sum of the bond index, then number
-        of active states, then string length
+        Sort molecules by number of components, then number of bonded components, then lowest numbered bond,
+        then the negative sum of the bond index, then number of active states, then string length
         """
+
         self.molecules.sort(key=lambda molecule: (len(molecule.components),
-                                                  len([x for x in molecule.components if len(x.bonds) > 0]),
+                                                  -min([int(y) for x in molecule.components for y in x.bonds] + [999]),
                                                   -sum([int(y) for x in molecule.components for y in x.bonds]),
+                                                  -len([x for x in molecule.components if len(x.bonds) > 0]),
                                                   len([x for x in molecule.components if x.activeState not in [0, '0']]),
                                                   len(str(molecule)),
                                                   str(molecule)),
                             reverse=True)
         #self.molecules.sort(key=lambda x:(-len(x.components),x.evaluateMolecule(),x.name))
-        
+
     def __str__(self):
         self.sort()
-        return '.'.join([x.toString().replace('-','_') for x in self.molecules])
-        
+        return '.'.join([x.toString().replace('-', '_') for x in self.molecules])
+
     def str2(self):
         self.sort()
-        return '.'.join([x.str2().replace('-','_') for x in self.molecules])
-        
+        return '.'.join([x.str2().replace('-', '_') for x in self.molecules])
+
     def reset(self):
         for element in self.molecules:
             element.reset()
-            
+
     def toString(self):
         return self.__str__()
-        
+
+
 import pickle
 class Molecule:
-    def __init__(self,name):
+    def __init__(self, name):
         self.components = []
         self.name = name
         self.compartment = ''
