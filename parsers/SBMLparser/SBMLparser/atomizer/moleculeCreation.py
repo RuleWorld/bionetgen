@@ -20,7 +20,7 @@ from utils.util import logMess
 import marshal
 import functools
 import utils.pathwaycommons as pwcm
-from collections import Counter
+from collections import Counter,defaultdict
 
 def memoize(obj):
     cache = obj.cache = {}
@@ -757,7 +757,21 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
             translator[element[0]] = modifiedSpecies
 
 
-def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwaycommonsFlag,parser):
+globalNumberGenerator = []
+
+
+def getBondNumber(molecule1, molecule2):
+    """
+    keeps a model-level registry of of all the molecule pairs and returns a unique index
+    """
+    moleculeList = tuple(sorted([molecule1, molecule2]))
+    if moleculeList not in globalNumberGenerator:
+        globalNumberGenerator.append(moleculeList)
+
+    return globalNumberGenerator.index(moleculeList)
+
+
+def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwaycommonsFlag, parser):
     species = st.Species()
     # go over the sct and reuse existing stuff
 
@@ -773,20 +787,31 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             dependencyGraph[molecule] = deepcopy(mol)
             species.addMolecule(mol)
     # how do things bind together?
-    moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag,parser)
-
+    moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag, parser)
     moleculePairsList.sort(key=lambda x: (str(x[1]), str(x[0])))
 
     # TODO: update basic molecules with new components
     # translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
     # translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
+    moleculeCounter = defaultdict(list)
+
     for idx, molecule in enumerate(moleculePairsList):
         flag = False
+
+        #create an index on m0 and m1 depending on their name and repeats in the species
+        if molecule[0] not in moleculeCounter[molecule[0].name]:
+            moleculeCounter[molecule[0].name].append(molecule[0])
+        if molecule[1] not in moleculeCounter[molecule[1].name]:
+            moleculeCounter[molecule[1].name].append(molecule[1])
+        m0index = moleculeCounter[molecule[0].name].index(molecule[0])
+        m1index = moleculeCounter[molecule[1].name].index(molecule[1])
+        bondIdx = getBondNumber('{0}{1}'.format(molecule[0].name, m0index), '{0}{1}'.format(molecule[1].name, m1index))
+
         # add bonds where binding components already exist
         for component in molecule[0].components:
             if component.name == molecule[1].name.lower() and \
             len(component.bonds) == 0:
-                component.bonds.append(idx)
+                component.bonds.append(bondIdx)
                 flag = True
                 break
         if not flag:
@@ -801,12 +826,12 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
                 translator[molecule[0].name].molecules[0]. \
                 components.append(deepcopy(newComponent1))
 
-            molecule[0].components[-1].bonds.append(idx)
+            molecule[0].components[-1].bonds.append(bondIdx)
         flag = False
         #same thing for the other member of the bond
         for component in molecule[1].components:
             if component.name == molecule[0].name.lower() and len(component.bonds) == 0:
-                component.bonds.append(idx)
+                component.bonds.append(bondIdx)
                 flag = True
                 break
         if not flag:
@@ -817,7 +842,7 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
                 components]:
                     translator[molecule[1].name].molecules[0].components.append(
                     deepcopy(newComponent2))
-            molecule[1].components[-1].bonds.append(idx)
+            molecule[1].components[-1].bonds.append(bondIdx)
 
     #update the translator
     translator[element[0]] = species
