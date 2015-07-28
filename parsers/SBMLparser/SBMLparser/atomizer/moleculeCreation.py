@@ -469,7 +469,7 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
 
     def getNamedMolecule(array, name):
 
-        for molecule in array:
+        for molecule in sortMolecules(array, True):
             if molecule.name == name:
                 return molecule
 
@@ -567,7 +567,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,pa
     speciesDict = {}
     # this array will contain all molecules that bind together
     pairedMolecules = []
-    for x in sortMolecules(species.molecules,reverse=True):
+    for x in sortMolecules(species.molecules, reverse=True):
         for y in x.components:
             if y.name not in speciesDict:
                 speciesDict[y.name] = []
@@ -576,7 +576,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,pa
     orphanedMolecules = [x for x in species.molecules]
     # determine how molecules bind together
     redundantBonds = []
-    for x in sortMolecules(species.molecules,reverse=True):
+    for x in sortMolecules(species.molecules, reverse=True):
         for component in [y for y in x.components if y.name.lower()
                           in speciesDict.keys()]:
             if x.name.lower() in speciesDict:
@@ -787,8 +787,10 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             dependencyGraph[molecule] = deepcopy(mol)
             species.addMolecule(mol)
     # how do things bind together?
+
     moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag, parser)
     moleculePairsList.sort(key=lambda x: (str(x[1]), str(x[0])))
+
 
     # TODO: update basic molecules with new components
     # translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
@@ -843,6 +845,7 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
                     translator[molecule[1].name].molecules[0].components.append(
                     deepcopy(newComponent2))
             molecule[1].components[-1].bonds.append(bondIdx)
+
 
     #update the translator
     translator[element[0]] = species

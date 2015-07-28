@@ -1135,18 +1135,19 @@ class SBMLAnalyzer:
 
                 reactantString, productString = self.removeExactMatches(reactantString, productString)
             matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
+
             if matching and flagstar:
                 logMess('DEBUG:Atomization', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
-        
+     
             flag = True
             if matching:
-
                 for reactant,matches in zip(reaction[1],matching):
                     for match in matches:
                         pair = list(match)
                         pair.sort(key=len)
                         fuzzyList = self.processAdHocNamingConventions(pair[0],
                                             pair[1],localSpeciesDict,False,strippedMolecules)
+
                         for fuzzyReaction,fuzzyKey,fuzzyDifference in fuzzyList:
                             if fuzzyKey == None and fuzzyReaction[0] != fuzzyReaction[1]:
                                 flag= False

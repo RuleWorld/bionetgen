@@ -31,6 +31,7 @@ def extractCenterContext(rules):
         tatomicArray, ttransformationCenter, ttransformationContext, \
             tproductElements, tactionNames, tlabelArray = extractAtomic.extractTransformations(
                 [rule], True)
+
         transformationCenter.append(ttransformationCenter)
         transformationContext.append(ttransformationContext)
         actionNames.append(tactionNames)
@@ -110,7 +111,7 @@ def getRestrictedChemicalStates(labelArray, products, contexts):
     #sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
     sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
     counter = 1
-    for label,product, context in zip(labelArray,products, contexts):
+    for label, product, context in zip(labelArray,products, contexts):
         for indvproduct, indvcontext in zip(product, context):
             pDict = defaultdict(list)
             cDict = defaultdict(list)
@@ -124,7 +125,6 @@ def getRestrictedChemicalStates(labelArray, products, contexts):
                 for molecule in result:
                     for pattern in result[molecule]:
                         cDict[molecule].append(pattern)
-
             for molecule in pDict:
                 for componentState in pDict[molecule]:
 
@@ -187,10 +187,10 @@ def detectDependencies(stateDictionary, molecules):
         parsedMoleculeName = moleculeName.split('%')[0]
         #parsedMoleculeName = moleculeName
         for state in stateDictionary[moleculeName]:
-            #if parsedMoleculeName == 'JAK' and state[0] in ['ras_gdp','shp2']:
+            #if parsedMoleculeName == 'EGFR' and state[0] in ['egf']:
             #    print moleculeName
             #    print state
-            #    print stateDictionary[moleculeName][state]['shp2']
+            #    print stateDictionary[moleculeName][state]['egfr']
             #    print stateDictionary[moleculeName][state]['ras_gdp']
             analyzeDependencies(stateDictionary[moleculeName][state], state, parsedMoleculeName, molecules, dependencies)
 
@@ -295,26 +295,20 @@ def removeCounter(requirementDependencies):
     return finalDependencies
 
 
-def getContextRequirements(inputfile,collapse=True):
+def getContextRequirements(inputfile, collapse=True):
     """
     Receives a BNG-XML file and returns the contextual dependencies implied by this file
     """
     molecules, rules, _ = readBNGXML.parseXML(inputfile)
-    label,center, context, product, atomicArray, actions = extractCenterContext(rules)
+    label, center, context, product, atomicArray, actions = extractCenterContext(rules)
     reactionCenterStateDictionary = getRestrictedChemicalStates(label, product, context)
-    '''
-    print reactionCenterStateDictionary['JAK%0'][('ras_gtp',1,'')]['shp2']
-    print reactionCenterStateDictionary['JAK%1'][('ras_gtp',1,'')]['shp2']
-    print '----'
-    print reactionCenterStateDictionary['JAK%0'][('shp2',1,'')]['ras_gtp']
-    print reactionCenterStateDictionary['JAK%1'][('shp2',1,'')]['ras_gtp']
-    '''
     backupstatedictionary = deepcopy(reactionCenterStateDictionary)
-
+    #print reactionCenterStateDictionary['EGFR%1'][('grb2',1,'')]['pmod']
+    #print reactionCenterStateDictionary['EGFR%0'][('grb2',1,'')]['pmod']
+    #return
     #chemicalStates = getChemicalStates(rules)
     #totalStateDictionary = sortChemicalStates(chemicalStates)
     requirementDependencies = detectDependencies(reactionCenterStateDictionary, molecules)
-    #print requirementDependencies['JAK']['requirement']
     #print '000'
     #print [x for x in requirementDependencies['JAK']['nullrequirement'] if 'ras_gdp' in x[0][0] or 'ras_gdp' == x[1][0]]
     if collapse:
@@ -324,7 +318,7 @@ def getContextRequirements(inputfile,collapse=True):
 
     #requirementDependencies = removeCounter(requirementDependencies)\
     #raise Exception
-    return requirementDependencies,backupstatedictionary
+    return requirementDependencies, backupstatedictionary
 
 
 def defineConsole():
@@ -341,6 +335,5 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     inputFile = namespace.input
     #askQuestions(inputFile, 'JAK', 'ras_gtp','shp2')
-    
-    dependencies,backup = getContextRequirements(inputFile)
+    dependencies, backup = getContextRequirements(inputFile)
     print printDependencyLog(dependencies)
