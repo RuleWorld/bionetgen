@@ -13,7 +13,6 @@ use Getopt::Long;
 sub parseGML
 {
 	my $filename = shift @_;
-	my $filename = $ARGV[0];
 	open(my $fh, "<", $filename) 
 		or die "cannot open < ${filename}: $!";
 	my @lines = <$fh>;
