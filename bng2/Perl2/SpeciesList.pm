@@ -202,8 +202,16 @@ sub readString
     my $name = '';
 
     # remove leading index
-    if ( $string =~ s/^\s*(\d+)\s+// ) {}
-
+    $string =~ s/^\s*\d+\s+//; # Can't deprecate this because indices used in NET files
+    
+    # Remove leading label, if any
+	if ($string =~ s/^\s*(\w+)\s*:\s+//)
+	{
+		# Check label for leading number
+		my $label = $1;
+		if ($label =~ /^\d/) {  return "Syntax error (label begins with a number) at '$label'.";  }
+	}
+	
     # Read species string
     $sg = SpeciesGraph->new;
     $string =~ s/^\s+//;

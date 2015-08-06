@@ -1,0 +1,24 @@
+# Created by BioNetGen 2.2.6-stable
+begin parameters
+    1 k1                   1  # Constant
+end parameters
+begin species
+    1 @EC::$Source() 1
+    2 @EC::Source2() 1
+    3 @EC::A() 0
+    4 @EC::A2() 0
+    5 @EC::B() 0
+    6 @EC::C() 0
+end species
+begin reactions
+    1 0 3 1*k1 #_R1 unit_conversion=1
+    2 0 4 1*k1 #_R2 unit_conversion=1
+    3 1 5 k1 #_R3
+    4 2 2,6 k1 #_R4
+end reactions
+begin groups
+    1 compartment_suffix   3
+    2 compartment_preffix  4
+    3 constant_source      5
+    4 non_constant_source  6
+end groups

@@ -84,7 +84,14 @@ sub makeContactMap
 		my $mol2 = $1; 
 		my $comp2 = $2;
 		push @bonds, $mol1." ".$comp1." ".$mol2." ".$comp2;
+		
+		if(!exists $cmap{$mol1}) {$cmap{$mol1} = {};}
+		if(!exists $cmap{$mol2}) {$cmap{$mol1} = {};}
+		if(!exists $cmap{$mol1}{$comp1}) { my @arr = (); $cmap{$mol1}{$comp1} = \@arr;}
+		if(!exists $cmap{$mol2}{$comp2}) { my @arr = (); $cmap{$mol2}{$comp2} = \@arr;}
+		
 	}
+	
 	
 	# building the contact map
 	my @new_nodes = ();
@@ -110,6 +117,7 @@ sub makeContactMap
 			}
 		}
 	}
+	
 	foreach my $bond(@bonds)
 	{
 		my @splits = split " ",$bond;

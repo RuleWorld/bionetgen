@@ -7,8 +7,6 @@ Created on Mon Oct  8 14:16:25 2012
 """
 import numpy as np
 import libsbml
-import MySQLdb
-from SOAPpy import WSDL,Types
 import pickle
 import re
 #from wordcloud import cloudText
@@ -29,7 +27,6 @@ from os.path import isfile, join
 import sys
 import concurrent.futures
 
-import pygraphviz as pgv
 import bioservices
 import pprint
 
@@ -140,7 +137,7 @@ def resolveAnnotation(annotation):
         resolveAnnotation.db = {}
         resolveAnnotation.ch = bioservices.ChEBI(verbose=False)
         resolveAnnotation.uni = bioservices.UniProt(verbose=False)
-        resolveAnnotation.k = bioservices.kegg.KeggParser(verbose=False)
+        resolveAnnotation.k = bioservices.kegg.KEGGParser(verbose=False)
         resolveAnnotation.qg = bioservices.QuickGO(verbose=False)
         resolveAnnotation.db['http://identifiers.org/uniprot/P62988'] = 'http://identifiers.org/uniprot/P62988'
         resolveAnnotation.db['http://identifiers.org/uniprot/P06842'] = 'http://identifiers.org/uniprot/P06842'
@@ -157,6 +154,7 @@ def resolveAnnotation(annotation):
         if 'obo.go' in annotation or '/go/GO' in annotation:
 
             res = resolveAnnotation.qg.Term(tAnnotation)
+            res = bioservices.Service('name').easyXML(res)            
             tmp = res.findAll('name')
             finalArray = []
             for x in tmp:
@@ -213,7 +211,7 @@ def resolveAnnotation(annotation):
             page = response.read(200000)
             '''
         else:
-            print 'ERRROERROROERRRO',annotation
+            return annotation,''
             #assert(False)
             finalAnnotation = ''
     except (IOError,KeyError) as e:

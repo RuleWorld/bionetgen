@@ -49,7 +49,7 @@ sub newPopulation
     
     unless ( defined $rr->Name )
     {   # give map rule a name
-        $rr->Name( 'MapRule' . $index );
+        $rr->Name( '_MapRule' . $index );
     }
     
     # define population

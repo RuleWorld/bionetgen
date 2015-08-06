@@ -630,39 +630,71 @@ sub readSBML
 	                ### Read Reaction Rules Block
 	                elsif ( $name eq 'reaction rules' )
 	                {
-	                    # Read reaction rules
-	                    my $nerr = 0;
+	                		# Read reaction rules
+	                		my $nerr = 0;
 #						my $rrules = [];
-#	                    $model->RxnRules( $rrules );
-	                    my $rrules = $model->RxnRules;
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ($entry, $lno) = @$line;
-	                        (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
-	                        if ($err)
-	                        {   # some error encountered
-	                            $err = errgen( $err, $lno );
-	                            printf "ERROR: $err\n";
-	                            ++$nerr;
+#	                    	$model->RxnRules( $rrules );
+	                    	my $rrules = $model->RxnRules;
+	                    	my $counter = 1;
+	                    	foreach my $line ( @$block_dat )
+	                    	{
+	                    		my ($entry, $lno) = @$line;
+	                        	# create new rule
+	                        	(my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
+	                        	if ($err)
+	                        	{   # some error encountered
+	                        		$err = errgen( $err, $lno );
+	                            	printf "ERROR: $err\n";
+	                            	++$nerr;
+	                        	}
+	                        	# check rule name (if given)
+	                        	elsif ( $rrs->[0]->Name ){
+	                            	foreach my $r (@$rrules){ # loop over all existing rules
+	                            		foreach my $x (@$r){  # consider forward and reverse (if exists) for existing rule (just to be safe)
+	                                		if ( $rrs->[0]->Name eq $x->Name ){ # duplicate rule name found
+											$err = "Duplicate rule name detected (\"" . $rrs->[0]->Name . "\").";
+											$err = errgen( $err, $lno );
+											printf "ERROR: $err\n";
+											++$nerr;
+											last;
+										}
+	                            		}
+								}
 	                        }
-	                        else
-	                        {   # rule is ok
+	                        unless ($err)
+	                        {
+	                        		# rule is ok
 	                            push @$rrules, $rrs;
+
 	                            # give names, if not defined
 	                            unless ( $rrs->[0]->Name )
-	                            {   $rrs->[0]->Name( 'Rule' . scalar @$rrules );   }
+	                            {   
+									#$rrs->[0]->Name( 'Rule' . scalar @$rrules );
+									my $rname = '_R' . $counter++;
+									# avoid duplicate names (just to be safe)
+									for (my $i=0; $i < @$rrules-1; $i++){
+										if ($rname eq @$rrules[$i]->[0]->Name){ # duplicate rule name
+											$rname = '_R' . $counter++;
+											$i = -1; # start over
+										}
+									}
+									$rrs->[0]->Name( $rname );
+	                            }
 	                            if ( @$rrs > 1 )
 	                            {
 	                                unless ($rrs->[1]->Name)
-	                                {   $rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );   }
+	                                {   
+										#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );
+										$rrs->[1]->Name( '_reverse_' . $rrs->[0]->Name);
+									}
 	                            }
 	                        }
-	                    }
-	                    if ($nerr)
-	                    {
-	                        $err = "Reaction rule list could not be read because of errors";
-	                        goto EXIT;
-	                    }
+		                    if ($nerr)
+		                    {
+		                        $err = "Reaction rule list could not be read because of errors.";
+		                        goto EXIT;
+		                    }
+	                    	}
 	                    # update user
 	                    printf "Read %d reaction rule(s).\n", scalar @{$model->RxnRules};
 	                }
@@ -1405,7 +1437,8 @@ sub writeBNGL
 
     # Header
     my $version = BNGversion();
-    $out .= "# Created by BioNetGen $version\n";
+    my $codename = BNGcodename();
+    $out .= "# Created by BioNetGen ${version}-${codename}\n";
 
     # Version requirements
     unless ( $model->Version eq '' )
@@ -2411,19 +2444,19 @@ sub findExec
     my $prog = shift @_;
 
     my $base = BNGpath( "bin", $prog );
-    # Currently recognized values of $arch are
-    # i686-linux, ppc-darwin, MSWin32
     my $arch = $Config{myarchname};
-
-    my $exec = $base;
-    if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
     
     # First look for generic binary in BNGpath
+    my $exec = $base;
+    if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
     if (-x $exec) { return $exec; }
 
-    # Then look for os specific binary
+    # Then look for OS-specific binary
     $exec = "${base}_${arch}";
-    if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
+    if ($arch =~ /MSWin32/){
+    		my $bitness = $Config{longsize}*8;
+    		$exec .= "-${bitness}bit" . ".exe";
+    }
 
     if (-x $exec) { return $exec; }
     else

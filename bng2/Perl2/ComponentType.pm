@@ -20,14 +20,17 @@ sub readString{
   my $strptr= shift;
 
   my $string_left=$$strptr;
-
-  # Get component name
-  if ($string_left=~ s/^([A-Za-z0-9_]*)//){
-    $ctype->Name($1);
-  } else {
-    return("Invalid ComponentType name");
+  
+  # Get component name (cannot start with a number)
+  if ( $string_left =~ s/^([A-Za-z_]\w*)// )
+  {
+  	$ctype->Name($1);
   }
-
+  else
+  {
+	return undef, "Invalid component name in '$string_left' (must begin with a letter or underscore).";
+  }
+	
   # Get component state (marked by ~) edges (marked by !)
   my @states=();
   my @compartments=();

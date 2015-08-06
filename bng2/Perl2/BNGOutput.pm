@@ -536,6 +536,7 @@ sub toXML
 		if ( $param->Type =~ /^Constant/ )
 		{
 			$value = ($evaluate_expressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toString($plist);
+			$value =~ s/(e[+-])0+(\d+)/$1$2/; # strip any leading zeros in exponent (improves cross-platform portability)
 			$type  = ($evaluate_expressions) ? "Constant" : $param->Type;
 			$do_print = 1;
 		}
@@ -1126,6 +1127,8 @@ sub writeMfile
                               ."               'BDF',      '$odeset_bdf',    ...\n"
                               ."               'MaxOrder', $odeset_maxorder   );\n";    
     }
+    # strip any leading zeros in exponent (improves cross-platform portability)
+    $mscript_call_odeset =~ s/(e[+-])0+(\d+)/$1$2/g;
 
     # Index parameters associated with Constants, ConstantExpressions and Observables
     ($err) = $plist->indexParams();

@@ -32,7 +32,7 @@ public class ChangeableChannelTokenStream extends CommonTokenStream
 	     if ( p == -1 ) setup();
 	     	p++;
 	     	sync(p);
-	     while ( !channels.contains(tokens.get(p).getChannel()) ) {
+	     while ( !channels.contains(((Token)(tokens.get(p))).getChannel())) {
 	         p++;
 	         sync(p);
 	     }

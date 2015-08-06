@@ -274,7 +274,7 @@ foreach my $dir ( @include_python_subdirectories )
        }
  
         print "copying python source code  to build environment.\n";
-        my @args = ('python', 'updateDistribution.py', '-c');
+        my @args = ('make','update');
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
         {  print "Unable to update distribution";  exit -1; }
@@ -448,7 +448,7 @@ if (defined $bindir)
         }
 
         {
-            print "appending arch/OS signature to ${run_network} binary . . .\n";
+            #print "appending arch/OS signature to ${run_network} binary . . .\n";
             my $arch = $Config{myarchname};
             my $abs_run_network = File::Spec->catfile(($abs_dist_dir, "bin"), $run_network);
             
@@ -456,10 +456,10 @@ if (defined $bindir)
             {  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
 
             # append architecture name
-            my $abs_run_network_arch = $abs_run_network . "_${arch}";
+            #my $abs_run_network_arch = $abs_run_network . "_${arch}";
             # rename as architecture specific
-            unless ( rename $abs_run_network, $abs_run_network_arch )
-            {  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
+            #unless ( rename $abs_run_network, $abs_run_network_arch )
+            #{  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
 
         }
 
@@ -510,11 +510,11 @@ if (defined $bindir)
             {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
 
             # append architecture name
-            my $abs_sbml_translator_arch = $abs_sbml_translator . "_${arch}";
+            #my $abs_sbml_translator_arch = $abs_sbml_translator . "_${arch}";
             
             # rename as architecture specific
-            unless ( rename $abs_sbml_translator, $abs_sbml_translator_arch )
-            {  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
+            #unless ( rename $abs_sbml_translator, $abs_sbml_translator_arch )
+            #{  print "make_dist.pl error:\ncan't find built sbmlTranslator ($?)";  exit -1;  }
 
         }
         

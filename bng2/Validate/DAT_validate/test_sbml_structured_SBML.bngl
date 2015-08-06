@@ -1,5 +1,5 @@
 ###
-#@notes:'This is an atomized translation of an SBML model created on 27/01/2015. The original model has 5 molecules and 5 reactions. The translated model has 2 molecules and 5 rules'
+#@notes:'This is an atomized translation of an SBML model created on 16/06/2015. The original model has 5 molecules and 5 reactions. The translated model has 2 molecules and 5 rules'
 ###
 begin model
 begin parameters
@@ -17,8 +17,8 @@ begin molecule types
 	MolB(mola,molb)
 end molecule types
 begin seed species
-	@cell:MolA(_Pmod~0,molb) 1.0 #MolA
-	@cell:MolB(mola,molb) 1.0 #MolB
+	@cell:MolA(_Pmod~0,molb) 1.0 #MolA #S1
+	@cell:MolB(mola,molb) 1.0 #MolB #S2
 end seed species
 begin observables
 	Species MolA MolA(_Pmod~0,molb) #MolA

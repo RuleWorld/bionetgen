@@ -6,9 +6,21 @@ Created on Mon Jun 17 11:19:37 2013
 """
 
 import libsbml
-from scipy.misc import factorial, comb
 import json
 from optparse import OptionParser
+
+
+def factorial(x):
+    temp = x
+    acc = 1
+    while temp > 0:
+        acc *= temp
+        temp -= 1
+    return acc
+
+def comb(x,y,exact=True):
+    return factorial(x)/(factorial(y) * factorial(x-y))
+
 
 
 class SBML2JSON:
