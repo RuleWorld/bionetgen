@@ -8,7 +8,7 @@ from copy import deepcopy
 import difflib
 import hashlib
 import numpy
-from collections import Counter
+from collections import Counter, defaultdict
 
 
 def compareLists(list1, list2):
@@ -52,7 +52,7 @@ class Species:
             #for element in self.molecules:
             #    if element.name == molecule.name:
                 
-    def addCompartment(self,tags):
+    def addCompartment(self, tags):
         for molecule in self.molecules:
             molecule.setCompartment(tags)
     
@@ -163,14 +163,14 @@ class Species:
                                 comp.addState(state,update)
                     
     
-    def updateBonds(self,bondNumbers):
+    def updateBonds(self, bondNumbers):
         newBondNumbers = deepcopy(bondNumbers)
         correspondence = {}
         intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
-        newBase = max(bondNumbers) +1
+        newBase = max(bondNumbers) + 1
         for element in self.molecules:
             for component in element.components:
-                component.bonds = [int(x)+newBase for x in component.bonds]
+                component.bonds = [int(x) + newBase for x in component.bonds]
                 '''
                 for index in range(0,len(component.bonds)):
                     if int(component.bonds[index]) in intersection:
@@ -182,6 +182,15 @@ class Species:
                             component.bonds[index] = max(intersection) + 1
                 '''
                         #intersection = [int(x) for x in newBondNumbers if x in self.getBondNumbers()]
+
+    def deleteBond(self, moleculePair):
+        for molecule in self.molecules:
+            if molecule.name in moleculePair:
+                moleculePairCopy = deepcopy(moleculePair)
+                moleculePairCopy.remove(molecule.name)
+                for component in molecule.components:
+                    if component.name in [x.lower() for x in moleculePairCopy]:
+                        component.bonds = []
 
     def append(self, species):
         newSpecies = (deepcopy(species))
@@ -256,8 +265,8 @@ class Molecule:
                     compo.addState(state)
         self.components = sorted(self.components,key=lambda x:x.name)
     
-    def setCompartment(self,compartment):
-        self.compartment = compartment   
+    def setCompartment(self, compartment):
+        self.compartment = compartment
              
     def getBondNumbers(self):
         bondNumbers = []
@@ -265,12 +274,12 @@ class Molecule:
                 bondNumbers.extend([int(x) for x in element.bonds])
         return bondNumbers
         
-    def getComponent(self,componentName):
+    def getComponent(self, componentName):
         for component in self.components:
             if componentName == component.getName():
                 return component
                 
-    def removeComponent(self,componentName):
+    def removeComponent(self, componentName):
         x = [x for x in self.components if x.name == componentName]
         if x != []:
             self.components.remove(x[0])
@@ -447,12 +456,14 @@ class Component:
         
 class Databases:
     def __init__(self):
-        self.translator ={}
+        # dictionary contains molecule vs bionetgen structure defitions
+        self.translator = {}
         self.synthesisDatabase = {}
         self.catalysisDatabase = {}
         self.rawDatabase = {}
         self.labelDictionary = {}
         self.synthesisDatabase2 = {}
+        self.assumptions = defaultdict(list)
         
     def getRawDatabase(self):
         return self.rawDatabase
@@ -460,12 +471,12 @@ class Databases:
     def getLabelDictionary(self):
         return self.labelDictionary
         
-    def add2LabelDictionary(self,key,value):
+    def add2LabelDictionary(self, key, value):
         temp = tuple(key)
         temp = temp.sort()
         self.labelDictionary[temp] = value
 
-    def add2RawDatabase(self,rawDatabase):
+    def add2RawDatabase(self, rawDatabase):
         pass
     
     def getTranslator(self):

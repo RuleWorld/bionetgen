@@ -14,8 +14,10 @@ home = expanduser("~")
 
 bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 
+
 def setBngExecutable(executable):
     bngExecutable = executable
+
 
 def getBngExecutable():
     return bngExecutable

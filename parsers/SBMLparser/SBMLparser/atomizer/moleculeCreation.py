@@ -64,6 +64,13 @@ def resolveDependencyGraph(dependencyGraph, reactant, withModifications=False):
     return topCandidate
 
 
+assumptions = defaultdict(set)
+
+
+def addAssumptions(assumptionType, assumption):
+    assumptions[assumptionType].add(assumption)
+
+
 class CycleError(Exception):
     """Exception raised for errors in the input.
 
@@ -532,15 +539,17 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
         if pathwaycommonsFlag:
             logMess('WARNING:Atomization', "We don't know how {0} and {1} bind together and there's no relevant BioGrid/Pathway commons information. Defaulting to largest pair : {2}-{3}".format(
         [x.name for x in totalComplex[0]], [x.name for x in totalComplex[1]],mol1.name,mol2.name))
+            addAssumptions('unknownBond',(mol1.name,mol2.name))
         else:
             logMess('WARNING:Atomization', "We don't know how {0} and {1} bind together. Defaulting to largest pair : {2}-{3}".format(
         [x.name for x in totalComplex[0]], [x.name for x in totalComplex[1]],mol1.name,mol2.name))
+            addAssumptions('unknownBond',(mol1.name,mol2.name))
 
 
     return mol1, mol2
 
 
-def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,parser=None):
+def getComplexationComponents2(moleculeName, species, bioGridFlag, pathwaycommonsFlag=False, parser=None):
     '''
     method used during the atomization process. It determines how molecules
     in a species bind together
@@ -590,6 +599,19 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,pa
                             if x not in orphanedMolecules and mol not in orphanedMolecules:
                                 # FIXME: is it necessary to remove double bonds in complexes?
                                 redundantBonds.append([x, mol])
+                                lhs = set([])
+                                rhs = set([])
+                                for pair in pairedMolecules:
+                                    if x in pair:
+                                        lhs.add(pair[0])
+                                        lhs.add(pair[1])
+                                    elif mol in pair:
+                                        rhs.add(pair[0])
+                                        rhs.add(pair[1])
+                                intersection = lhs.intersection(rhs)
+                                
+                                redundantBonds[-1].extend(list(intersection))
+
                                 # continue
                             pairedMolecules.append([x, mol])
 
@@ -597,8 +619,12 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,pa
                                 orphanedMolecules.remove(x)
                             if mol in orphanedMolecules:
                                 orphanedMolecules.remove(mol)
-    #if len(redundantBonds) > 0:
-    #    print [[x[0].name,x[1].name] for x in redundantBonds],str(species)
+    if len(redundantBonds) > 0:
+        for x in redundantBonds:
+            addAssumptions('redundantBonds', tuple(sorted([y.name for y in x])))
+            addAssumptions('redundantBondsMolecules', (tuple(sorted([y.name for y in x])), moleculeName))
+            logMess('WARNING:Atomization', 'Redundant bonds detected between molecules {0} in species {1}'.format([y.name for y in x],moleculeName))
+        
     totalComplex = [set(x) for x in pairedMolecules]
     isContinuousFlag = True
 
@@ -612,7 +638,7 @@ def getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag=False,pa
             if individualMolecule in orphanedMolecules:
                 candidatePartner = [x for x in species.molecules if x.name.lower() == element and x != individualMolecule]
                 if len(candidatePartner) == 1:
-                    pairedMolecules.append([candidatePartner[0],individualMolecule])
+                    pairedMolecules.append([candidatePartner[0], individualMolecule])
                     orphanedMolecules.remove(individualMolecule)
     #determine which pairs form a continuous chain
 
@@ -713,11 +739,11 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
 
                 species = createEmptySpecies(baseName)
                 componentStateArray.append(['genericMod', tmp])
-                logMess('ATOMIZATION:WARNING', 'adding forced transformation: {0}:{1}:{2}'.format(baseName,dependencyGraph[element[0]],element[0]))
+                logMess('WARNING:ATOMIZATION', 'adding forced transformation: {0}:{1}:{2}'.format(baseName,dependencyGraph[element[0]],element[0]))
                 #return
             # bail out if we couldn't figure out what modification it is
             elif classification is None:
-                logMess('ATOMIZATION:CRITICAL', 'unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
+                logMess('CRITICAL:ATOMIZATION', 'unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
             memory.append(tmp)
             tmp = dependencyGraph[tmp][0][0]
             if tmp in memory:
@@ -774,7 +800,6 @@ def getBondNumber(molecule1, molecule2):
 def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwaycommonsFlag, parser):
     species = st.Species()
     # go over the sct and reuse existing stuff
-
     for molecule in dependencyGraph[element[0]][0]:
         if molecule in translator:
             tmpSpecies = translator[molecule]
@@ -788,9 +813,8 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             species.addMolecule(mol)
     # how do things bind together?
 
-    moleculePairsList = getComplexationComponents2(species, bioGridFlag, pathwaycommonsFlag, parser)
+    moleculePairsList = getComplexationComponents2(element[0], species, bioGridFlag, pathwaycommonsFlag, parser)
     moleculePairsList.sort(key=lambda x: (str(x[1]), str(x[0])))
-
 
     # TODO: update basic molecules with new components
     # translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
@@ -822,15 +846,14 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             newComponent1 = st.Component(molecule[1].name.lower())
 
             molecule[0].components.append(newComponent1)
-            
-            if newComponent1.name not in [x.name for x in translator[molecule[0].name].molecules[0]. \
-            components]:
-                translator[molecule[0].name].molecules[0]. \
-                components.append(deepcopy(newComponent1))
+
+            if newComponent1.name not in [x.name for x in translator[molecule[0].name].molecules[0].
+                                          components]:
+                translator[molecule[0].name].molecules[0].components.append(deepcopy(newComponent1))
 
             molecule[0].components[-1].bonds.append(bondIdx)
         flag = False
-        #same thing for the other member of the bond
+        # same thing for the other member of the bond
         for component in molecule[1].components:
             if component.name == molecule[0].name.lower() and len(component.bonds) == 0:
                 component.bonds.append(bondIdx)
@@ -840,10 +863,9 @@ def createBindingRBM(element, translator, dependencyGraph, bioGridFlag, pathwayc
             newComponent2 = st.Component(molecule[0].name.lower())
             molecule[1].components.append(newComponent2)
             if molecule[0].name != molecule[1].name:
-                if newComponent2.name not in [x.name for x in translator[molecule[1].name].molecules[0]. \
-                components]:
-                    translator[molecule[1].name].molecules[0].components.append(
-                    deepcopy(newComponent2))
+                if newComponent2.name not in [x.name for x in translator[molecule[1].name].molecules[0].
+                                              components]:
+                    translator[molecule[1].name].molecules[0].components.append(deepcopy(newComponent2))
             molecule[1].components[-1].bonds.append(bondIdx)
 
 
@@ -1230,5 +1252,5 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
     ps.print_stats(10)
     print s.getvalue()
     ''' 
-
+    database.assumptions = assumptions
     return database.translator, onlySynDec

@@ -20,16 +20,20 @@ import pickle
 from copy import copy
 log = {'species': [], 'reactions': []}
 import signal
-from collections import Counter
+from collections import Counter,namedtuple
 
 import utils.structures as structures
 import atomizer.analyzeRDF
 from utils.util import logMess, setupLog
+from utils import consoleCommands
 from sbml2bngl import SBML2BNGL
 #from biogrid import loadBioGridDict as loadBioGrid
 import logging
+from rulifier import postAnalysis
 
 
+#returntype for the sbml analyzer translator and helper functions
+AnalysisResults = namedtuple('AnalysisResults', ['rlength', 'slength', 'reval', 'reval2', 'clength', 'rdf', 'finalString', 'speciesDict', 'database'])
 
 def loadBioGrid():
     pass
@@ -132,8 +136,8 @@ def readFromString(inputString,reactionDefinitions,useID,speciesEquivalence=None
         else:    
             translator={} 
         
-        return analyzeHelper(document,reactionDefinitions,
-                             useID,'',speciesEquivalence,atomize,translator)[-2]
+        return analyzeHelper(document, reactionDefinitions,
+                             useID,'', speciesEquivalence, atomize, translator).finalString
     except:
         return -5
 def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
@@ -302,34 +306,64 @@ def recursiveSearch(dictionary,element,visitedFunctions=[]):
             tmp += (recursiveSearch(dictionary,item,[item] + visitedFunctions))
     return tmp
 
+
 def reorderFunctions(functions):
-    ''''
-    Analyze a list of sbml functions and make sure there are no forward dependencies. 
+    """
+    Analyze a list of sbml functions and make sure there are no forward dependencies.
     Reorder if necessary
-    '''    
+    """
     functionNames = []
     tmp = []
     for function in functions:
         m = re.split('(?<=\()[\w)]', function)
         functionNames.append(m[0])
-    functionNamesDict = {x:[] for x in functionNames}
-    for idx,function in enumerate(functions):
+    functionNamesDict = {x: [] for x in functionNames}
+    for idx, function in enumerate(functions):
         tmp = [x for x in functionNames if x in function.split('=')[1] and x!= functionNames[idx]]
         functionNamesDict[functionNames[idx]].extend(tmp)
     newFunctionNamesDict = {}
     for name in functionNamesDict:
         newFunctionNamesDict[name] = recursiveSearch(functionNamesDict,name,[])
-    functionWeightsDict = {x:newFunctionNamesDict[x] for x in newFunctionNamesDict}
+    functionWeightsDict = {x: newFunctionNamesDict[x] for x in newFunctionNamesDict}
     functionWeights = []
     for name in functionNames:
         functionWeights.append(functionWeightsDict[name])
-    tmp = zip(functions,functionWeights)
-    idx = sorted(tmp,key=lambda x:x[1])
+    tmp = zip(functions, functionWeights)
+    idx = sorted(tmp, key=lambda x: x[1])
     return [x[0] for x in idx]
-    
-    
-def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile,
-                speciesEquivalence=None,atomize=False,bioGrid=False,pathwaycommons=False):
+
+
+def postAnalyzeFile(outputFile, bngLocation, database):
+    """
+    Performs a postcreation file analysis based on context information
+    """
+    #print('Transforming generated BNG file to BNG-XML representation for analysis')
+    consoleCommands.setBngExecutable(bngLocation)
+    consoleCommands.bngl2xml(outputFile)
+    bngxmlFile = '.'.join(outputFile.split('.')[:-1]) + '.xml'
+    #print('Sending BNG-XML file to context analysis engine')
+    contextAnalysis = postAnalysis.ModelLearning(bngxmlFile)
+    # analysis of redundant bonds
+
+    deleteBonds = contextAnalysis.analyzeRedundantBonds(database.assumptions['redundantBonds'])
+    modificationFlag = True
+
+    for molecule in database.assumptions['redundantBondsMolecules']:
+        if molecule[0] in deleteBonds:
+            for bond in deleteBonds[molecule[0]]:
+                database.translator[molecule[1]].deleteBond(bond)
+                logMess('INFO:Atomization', 'Used context information to determine that the bond {0} in species {1} is not likely'.format(bond,molecule[1]))
+
+    returnArray = analyzeHelper(database.document, database.reactionDefinitions, database.useID, 
+        outputFile, database.speciesEquivalence, database.atomize, database.translator)
+    with open(outputFile,'w') as f:
+        f.write(returnArray.finalString)
+        
+    # score hypothetical bonds
+    #contextAnalysis.scoreHypotheticalBonds(assumptions['unknownBond'])
+
+def analyzeFile(bioNumber, reactionDefinitions, useID, namingConventions, outputFile,
+                speciesEquivalence=None, atomize=False, bioGrid=False, pathwaycommons=False):
     '''
     one of the library's main entry methods. Process data from a file
     '''
@@ -360,10 +394,9 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     #call the atomizer (or not). structured molecules are contained in translator
     #onlysyndec is a boolean saying if a model is just synthesis of decay reactions
     if atomize:
-        translator,onlySynDec = mc.transformMolecules(parser,database,reactionDefinitions,namingConventions,speciesEquivalence,bioGrid)
+        translator,onlySynDec = mc.transformMolecules(parser, database, reactionDefinitions, namingConventions, speciesEquivalence,bioGrid)
     else:    
         translator={} 
-
     #process other sections of the sbml file (functions reactions etc.)    
     '''
     pr.disable()
@@ -373,16 +406,22 @@ def analyzeFile(bioNumber,reactionDefinitions,useID,namingConventions,outputFile
     ps.print_stats(10)
     print s.getvalue()
     '''
+    database.document = document
+    database.reactionDefinitions = reactionDefinitions
+    database.useID = useID
+    database.speciesEquivalence = speciesEquivalence
+    database.atomize = atomize
+
     returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
-    
     with open(outputFile,'w') as f:
-        f.write(returnArray[-2])
+        f.write(returnArray.finalString)
     #with open('{0}.dict'.format(outputFile),'wb') as f:
     #    pickle.dump(returnArray[-1],f)
     if atomize and onlySynDec:
         returnArray = list(returnArray)
-        returnArray[0] = -1
-    return tuple(returnArray[0:-2])
+        returnArray.translator = -1
+    returnArray = AnalysisResults(*(list(returnArray[0:-1]) + [database]))
+    return returnArray
 
 def correctRulesWithParenthesis(rules,parameters):
     '''
@@ -453,7 +492,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     '''
 
     useArtificialRules = False
-    parser =SBML2BNGL(document.getModel(),useID)
+    parser = SBML2BNGL(document.getModel(), useID)
     database = structures.Databases()
     #translator,log,rdf = m2c.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence)
         
@@ -463,10 +502,10 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     #    bioGridDict = biogrid()
     #if atomize:
     #    translator = mc.transformMolecules(parser,database,reactionDefinitions,speciesEquivalence,bioGridDict)
-    #else:    
-    #    translator={} 
+    #else:
+    #    translator={}
     
-    parser =SBML2BNGL(document.getModel(),useID)
+    parser = SBML2BNGL(document.getModel(), useID)
     #except:
     #    print 'failure'
     #    return None,None,None,None
@@ -479,16 +518,17 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
             rawSpecies[rawtemp['identifier']] = rawtemp
     parser.reset()
     
-    molecules,initialConditions,observables,speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
-    #finally, adjust parameters and initial concentrations according to whatever  initialassignments say
+    molecules, initialConditions, observables, speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
 
-    param,zparam,initialConditions = parser.getInitialAssignments(translator,param,zparam,molecules,initialConditions)
+    # finally, adjust parameters and initial concentrations according to whatever  initialassignments say
+    param, zparam, initialConditions = parser.getInitialAssignments(translator, param, zparam, molecules, initialConditions)
+
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
-    reactionParameters,rules,rateFunctions = parser.getReactions(translator,len(compartments)>1,atomize=atomize)
+    reactionParameters, rules, rateFunctions = parser.getReactions(translator, len(compartments) > 1, atomize=atomize)
     functions.extend(rateFunctions)
-    aParameters,aRules,nonzparam,artificialRules,removeParams,artificialObservables = parser.getAssignmentRules(zparam,param,rawSpecies,observables)
+    aParameters, aRules, nonzparam, artificialRules, removeParams, artificialObservables = parser.getAssignmentRules(zparam, param, rawSpecies, observables)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
     param = [x for x in param if x not in removeParams]
@@ -502,7 +542,7 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
     ##Comment out those parameters that are defined with assignment rules
     ##TODO: I think this is correct, but it may need to be checked
     tmpParams = []
-    for idx,parameter in enumerate(param):
+    for idx, parameter in enumerate(param):
         for key in artificialObservables:
             
             if re.search('^{0}\s'.format(key),parameter)!= None:
@@ -635,12 +675,12 @@ def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalen
         pass
         #print ""
     '''
-    #rate of each classified rule
+    # rate of each classified rule
     evaluate2 = 0 if len(observables) == 0 else len(molecules)*1.0/len(observables)
-    
-        
-    return len(rules),len(observables),evaluate,evaluate2,len(compartments), parser.getSpeciesAnnotation(),finalString,speciesDict
-    
+
+    return AnalysisResults(len(rules), len(observables), evaluate, evaluate2, len(compartments),
+                          parser.getSpeciesAnnotation(), finalString, speciesDict,None)
+
     '''
     if translator != {}:
         for element in database.classifications:
@@ -755,13 +795,13 @@ def main():
 
         try:
             rlength = reval = reval2 = slength = None
-            rlength, slength,reval, reval2, clength,rdf  = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, resource_path('config/reactionDefinitions.json'),
+            analysisResults = analyzeFile('XMLExamples/curated/BIOMD%010i.xml' % bioNumber, resource_path('config/reactionDefinitions.json'),
                 False,resource_path('config/namingConventions.json'),
                 #'/dev/null',
                 'complex2/' + 'BIOMD%010i.xml' % bioNumber + '.bngl',
                 speciesEquivalence=None,atomize=True,bioGrid=False)
 
-    
+            #rlength, slength,reval, reval2, clength,rdf, _, _ = analysisResults
             #print '++++',bioNumber,rlength,reval,reval2,clength
                                                                 
         except IOError:
@@ -778,12 +818,12 @@ def main():
         except pyparsing.ParseException:
             print 'pyparsing',bioNumber
         finally:  
-            if rlength != None:        
-                rulesLength.append({'index':bioNumber,'nreactions':rlength,
-                'atomization':reval,'compression':reval2,
-                'nspecies':slength})
-                compartmentLength.append(clength)
-                rdfArray.append(getAnnotationsDict(rdf))
+            if analysisResults.rlength != None:        
+                rulesLength.append({'index':bioNumber,'nreactions': analysisResults.rlength,
+                'atomization':analysisResults.reval,'compression': analysisResults.reval2,
+                'nspecies':analysisResults.slength})
+                compartmentLength.append(analysisResults.clength)
+                rdfArray.append(getAnnotationsDict(analysisResults.rdf))
             
             else:
                 rulesLength.append([bioNumber,-1,0,0])
@@ -832,7 +872,7 @@ def main():
     '''
             
 def main2():
-    with open('XMLExamples/curated/BIOMD0000000019.xml','r') as f:
+    with open('../XMLExamples/curated/BIOMD0000000019.xml','r') as f:
         st = f.read()
         print readFromString(st,
               resource_path('config/reactionDefinitions.json'),False,None,True)        
@@ -942,12 +982,12 @@ def processDir(directory,atomize=True):
         if xml not in ['MODEL1310110034.xml'] and len([x for x in blackList if str(x) in xml]) == 0:
             print xml
             try:
-                rlength,slength,reval,reval2,_,_ = analyzeFile(directory + xml,'reactionDefinitions/reactionDefinition7.json',
+                analysisResults = analyzeFile(directory + xml,'reactionDefinitions/reactionDefinition7.json',
                         False, resource_path('config/namingConventions.json'),
                         '/dev/null', speciesEquivalence=None,atomize=True,bioGrid=False)  
-                resultDir[xml] = [rlength,reval,reval2]
+                resultDir[xml] = [analysisResults.rlength,analysisResults.reval,analysisResults.reval2]
             except:
-                resultDir[xml] = [-1,0,0]
+                resultDir[xml] = [-1, 0, 0]
     with open('evalResults.dump','wb') as f:
         pickle.dump(resultDir,f)
         #except:
@@ -965,21 +1005,21 @@ def processFile3(fileName,customDefinitions=None,atomize=True,bioGrid=False,outp
     #spEquivalence = None
     useID = False
     #reactionDefinitions = 'reactionDefinitions/reactionDefinition9.json'
-    rlength = -1
-    reval = -1
-    reval2 = -1
+    #rlength = -1
+    #reval = -1
+    #reval2 = -1
     if output:
         outputFile = output
     else:
         outputFile = '{0}.bngl'.format(fileName)
-    rlength, slength,reval, reval2, clength,rdf  = analyzeFile(fileName, reactionDefinitions,
+    analysisResults = analyzeFile(fileName, reactionDefinitions,
                 useID,namingConventions,outputFile,speciesEquivalence=spEquivalence,atomize=atomize,bioGrid=bioGrid)
 
     if len(logMess.log) > 0:
         with open(fileName + '.log', 'w') as f:
             for element in logMess.log:
                 f.write(element + '\n')
-    return rlength,reval,reval2
+    return analysisResults.rlength, analysisResults.reval, analysisResults.reval2
     
     
 def listFiles(minReactions,directory):

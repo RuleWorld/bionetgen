@@ -31,6 +31,10 @@ def extractCenterContext(rules):
         tatomicArray, ttransformationCenter, ttransformationContext, \
             tproductElements, tactionNames, tlabelArray = extractAtomic.extractTransformations(
                 [rule], True)
+        #if label[-1] == 'v9':
+        #    print str(rule[0])
+        #    print tproductElements
+        #    print ttransformationContext
 
         transformationCenter.append(ttransformationCenter)
         transformationContext.append(ttransformationContext)
@@ -170,9 +174,9 @@ def analyzeDependencies(componentStateCollection, state, moleculeName, molecules
         stateSize = componentStateSize(molecules, moleculeName, componentName)
         if stateSize == len(componentStateCollection[componentName]):
             dependencies[moleculeName]['independent'].add((state, componentName))
+            #print moleculeName,state,componentName,componentStateCollection[componentName]
         elif len(componentStateCollection[componentName]) == 1:
             activeState = list(componentStateCollection[componentName])[0]
-
             if isActive((state[1], state[2])) and isActive(activeState):
                 dependencies[moleculeName]['requirement'].add(((componentName, activeState[0], activeState[1]), state))
             elif isActive((state[1], state[2])) and not isActive(activeState):
@@ -193,7 +197,6 @@ def detectDependencies(stateDictionary, molecules):
             #    print stateDictionary[moleculeName][state]['egfr']
             #    print stateDictionary[moleculeName][state]['ras_gdp']
             analyzeDependencies(stateDictionary[moleculeName][state], state, parsedMoleculeName, molecules, dependencies)
-
     return dependencies
 
 from collections import Counter
@@ -271,8 +274,8 @@ def printDependencyLog(dependencies):
     log = StringIO()
     for molecule in dependencies:
         for requirementType in dependencies[molecule]:
-            if requirementType in ['independent']:
-                continue
+            #if requirementType in ['independent']:
+            #    continue
             for baseMolecule in dependencies[molecule][requirementType]:
                 if requirementType == 'requirement':
                     log.write('Molecule {0} needs component {1} to {2} for component {3} to {4}\n'.format(molecule, baseMolecule[0][0],
@@ -283,6 +286,8 @@ def printDependencyLog(dependencies):
                                                                                                               baseMolecule[1][0]))
                 if requirementType == 'nullrequirement':
                     pass
+                if requirementType == 'independent':
+                    log.write('The setting of {0} to {1} in molecule {3} is independent from {2}\n'.format(baseMolecule[0][0],baseMolecule[0][1],baseMolecule[1],molecule))
     return log.getvalue()
 
 
@@ -303,23 +308,46 @@ def getContextRequirements(inputfile, collapse=True):
     label, center, context, product, atomicArray, actions = extractCenterContext(rules)
     reactionCenterStateDictionary = getRestrictedChemicalStates(label, product, context)
     backupstatedictionary = deepcopy(reactionCenterStateDictionary)
-    #print reactionCenterStateDictionary['EGFR%1'][('grb2',1,'')]['pmod']
-    #print reactionCenterStateDictionary['EGFR%0'][('grb2',1,'')]['pmod']
+    #print reactionCenterStateDictionary['EGFR%1'][('_Pmod',0,'_P')]
+    #print reactionCenterStateDictionary['EGFR%0'][('_Pmod',0,'_P')]
     #return
     #chemicalStates = getChemicalStates(rules)
     #totalStateDictionary = sortChemicalStates(chemicalStates)
     requirementDependencies = detectDependencies(reactionCenterStateDictionary, molecules)
+
     #print '000'
-    #print [x for x in requirementDependencies['JAK']['nullrequirement'] if 'ras_gdp' in x[0][0] or 'ras_gdp' == x[1][0]]
+    #print [x for x in requirementDependencies['EGFR']['nullrequirement'] if 'egf' in x[0][0] or 'egf' == x[1][0]]
     if collapse:
         removeIndirectDependencies(requirementDependencies, backupstatedictionary)
-
     getMutualExclusions(requirementDependencies, molecules)
 
     #requirementDependencies = removeCounter(requirementDependencies)\
     #raise Exception
     return requirementDependencies, backupstatedictionary
 
+
+def reverseContextDict(dependencies):
+    """
+    returns a molecule/component pair/relationship hierarchy
+    @param a molecule/relationship/component pair hierarchy
+    """
+    reverseDependencies = defaultdict(lambda: defaultdict(str))
+
+    for molecule in dependencies:
+        for dependencyType in dependencies[molecule]:
+            if dependencyType == 'independent':
+                for relationship in dependencies[molecule][dependencyType]:
+                    if relationship[0][1] == 1 or relationship[0][2] not in ['0', 0, '']:
+                        reverseDependencies[molecule][(relationship[0][0], relationship[1])] = 'independent'
+            else:
+                for relationship in dependencies[molecule][dependencyType]:
+
+                    if dependencyType == 'exclusion':
+                        reverseDependencies[molecule][(relationship[1][0], relationship[0][0])] = 'nullrequirement'
+                        reverseDependencies[molecule][(relationship[0][0], relationship[1][0])] = 'nullrequirement'
+                    else:
+                        reverseDependencies[molecule][(relationship[1][0], relationship[0][0])] = dependencyType
+    return reverseDependencies
 
 def defineConsole():
     """
@@ -329,11 +357,12 @@ def defineConsole():
     parser.add_argument('-i', '--input', type=str, help='settings file', required=True)
     return parser
 
-
 if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
     inputFile = namespace.input
-    #askQuestions(inputFile, 'JAK', 'ras_gtp','shp2')
+    #print askQuestions(inputFile, 'EGFR', 'shc','grb2')
     dependencies, backup = getContextRequirements(inputFile)
-    print printDependencyLog(dependencies)
+    #print pprint.pprint(dict(dependencies['EGFR']))
+    #print printDependencyLog(dependencies)
+    

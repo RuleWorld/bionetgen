@@ -4,7 +4,7 @@ Created on Tue Dec  6 17:42:31 2011
 
 @author: proto
 """
-from copy import deepcopy
+from copy import deepcopy,copy
 import writer.bnglWriter as writer
 log = {'species': [], 'reactions': []}
 import re
@@ -362,7 +362,7 @@ class SBML2BNGL:
         return rateL,rateR,nl,nr
 
         
-    def __getRawRules(self, reaction,symmetryFactors,functionFlag):
+    def __getRawRules(self, reaction, symmetryFactors, functionFlag):
         if self.useID:
             reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
             for reactant in reaction.getListOfReactants() if
@@ -380,38 +380,38 @@ class SBML2BNGL:
             return {'reactants':reactant,'products':product,'parameters':[],'rates':['0','0'],
             'reversible':reversible,'reactionID':reaction.getId(),'numbers':[0,0]}
 
-
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
         parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
 
-        rateL=rateR=nl=nr= None
-        if functionFlag:
-        #TODO: For some reason creating a deepcopy of this screws everything up, even
-        #though its what we should be doing
-            math = kineticLaw.getMath()
+        rateL = rateR = nl = nr = None
+        if True:
+            # TODO: For some reason creating a deepcopy of this screws everything up, even
+            # though its what we should be doing
+            # apparently the solution was to use copy instead of deepcopy. Go figure.
+            math = copy(kineticLaw.getMath())
             
-            #get a list of compartments so that we can remove them
-            compartmentList  = []
+            # get a list of compartments so that we can remove them
+            compartmentList = []
             for compartment in (self.model.getListOfCompartments()):
                 compartmentList.append(compartment.getId())
                 
-            #remove compartments from expression. also separate left hand and right hand side
-            rateL,rateR,nl,nr = self.analyzeReactionRate(math,compartmentList,
-                reversible,rReactant,rProduct)           
+            # remove compartments from expression. also separate left hand and right hand side
+            rateL, rateR, nl, nr = self.analyzeReactionRate(math, compartmentList,
+                reversible, rReactant, rProduct)
             if symmetryFactors[0] > 1:
-                rateL = '({0})/{1}'.format(rateL,symmetryFactors[0])
+                rateL = '({0})/{1}'.format(rateL, symmetryFactors[0])
             if symmetryFactors[1] > 1:
-                rateR = '({0})/{1}'.format(rateR,symmetryFactors[1])
+                rateR = '({0})/{1}'.format(rateR, symmetryFactors[1])
             if not self.useID:
                 rateL = self.convertToName(rateL)
                 rateR = self.convertToName(rateR)
             if reversible:
                 pass
-            #return compartments if the reaction is unimolecular
-            #they were removed in the first palce because its easier to handle
-            #around the equation in tree form when it has less terms
+            # return compartments if the reaction is unimolecular
+            # they were removed in the first palce because its easier to handle
+            # around the equation in tree form when it has less terms
             '''
             if len(self.model.getListOfCompartments()) > 0:
                 for compartment in (self.model.getListOfCompartments()):
@@ -654,12 +654,11 @@ class SBML2BNGL:
         functionTitle = 'functionRate'
         
         if len(self.model.getListOfReactions()) == 0:
-            logMess('ERROR:Simulation','Model contains no natural reactions, all reactions are produced by rules')
+            logMess('ERROR:Simulation','Model contains no natural reactions, all reactions are produced by SBML rules')
         for index, reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
             #symmetry factors for components with the same name
-            sl,sr = self.reduceComponentSymmetryFactors(reaction,translator,functions)
-            
+            sl, sr = self.reduceComponentSymmetryFactors(reaction, translator, functions)
             
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
             if len(rawRules['parameters']) >0:
@@ -706,7 +705,7 @@ class SBML2BNGL:
             products = [x for x in rawRules['products']]
             reactions.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),rawRules['reversible'],reactionName=rawRules['reactionID']))
         if atomize:
-            self.getReactions.__func__.functionFlag = not self.getReactions.functionFlag
+            self.getReactions.__func__.functionFlag = True
         return parameters, reactions,functions
 
     def __getRawAssignmentRules(self,arule):
