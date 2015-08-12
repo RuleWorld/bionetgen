@@ -3,22 +3,22 @@
 
     ],
     "complexDefinition" : [
-    ["RasGDP", [["RasGDP"]]],
-    ["RasGTP", [["RasGTP","mekk1abcdef",[]]]],
-    ["RacGDP", [["RacGDP"]]],
-    ["RacGTP", [["RacGTP"]]],
-    ["RasGAP",[["RasGAP"]]],
-    ["RhoGAP",[["RhoGAP"]]],
-    ["RhoGDP",[["RhoGDP"]]],
-    ["RhoGTP",[["RhoGTP","mekk1abcdef",[]]]],
-    ["ppERK",[["ERK","ppmod",["s","PP"]]]],
-    ["MEKK1abcdef",[["MEKK1abcdef","raf",[],"mek",[],"rhogtp",[],"rasgtp",[],"erk",[]]]],
+    ["Ras",[["Ras"]]],
+    ["Rac",[["Rac"]]],
+    ["MEKK1abcdef",[["MEKK1abcdef","raf",[],"mek",[],"rhogtp",[],"ras",[],"erk",[]]]],
     ["Raf",[["Raf","mekk1abcdef",[]]]],
     ["MEK",[["MEK","mekk1abcdef",[]]]],
-    ["ERK",[["ERK","mekk1abcdef",[]]]]
-
+    ["ERK",[["ERK","mekk1abcdef",[],"sos",[]]]],
+    ["RhoGAP",[["RhoGAP"]]],
+    ["RhoGDP",[["RhoGDP"]]],
+    ["RhoGTP",[["RhoGTP","mekk1abcdef",[]]]]
+   
     ],
     "modificationDefinition": {
+        "RasGTP":["Ras"],
+        "RasGDP":["Ras"],
+        "RacGTP":["Rac"],
+        "RacGDP":["Rac"],
         "EGF_pEGFR_2":["EGF","EGF","EGFR","pEGFR"],
         "EGF_pEGFR_2_RasGAP":["EGF_pEGFR_2","RasGAP"],
         "EGF_pEGFR_2_Grb2_MEKK1aRafbcdRhoGTPef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","Raf","RhoGTP"],

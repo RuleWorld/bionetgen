@@ -48,8 +48,10 @@ class SBML2BNGL:
         self.speciesMemory = []
         self.getSpecies()
         self.reactionDictionary = {}
-        self.speciesAnnotation = None        
+        self.speciesAnnotation = None    
         self.speciesCompartments = None
+        self.getUnitDefinitions()
+        self.convertSubstanceUnits = False
 
     def reset(self):
         self.tags = {}
@@ -66,45 +68,48 @@ class SBML2BNGL:
         return decorate
 
 
-    def getMetaInformation(self,additionalNotes):
-      #import stats
+    def getMetaInformation(self, additionalNotes):
 
-      metaInformation = {}
-      annotation = self.model.getAnnotation()
-      lista = libsbml.CVTermList()
-      libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
-      modelHistory =  self.model.getModelHistory()
-      if modelHistory:
-          try:
-              tmp =  libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
-              tmp +=  ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
-              metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
-              metaInformation['creatorName'] = "'" + tmp + "'"
-          except:
-              metaInformation['creatorEmail'] = "''"
-              metaInformation['creatorName'] = "''"
+        # get unit information
+        unitList = self.getUnitDefinitions()
+
+        metaInformation = {}
+        annotation = self.model.getAnnotation()
+        lista = libsbml.CVTermList()
+        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
+        modelHistory = self.model.getModelHistory()
+        if modelHistory:
+            try:
+                tmp = libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
+                tmp += ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
+                metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
+                metaInformation['creatorName'] = "'" + tmp + "'"
+            except:
+                metaInformation['creatorEmail'] = "''"
+                metaInformation['creatorName'] = "''"
               
-      for idx in range(lista.getSize()):
-          biol,qual =  lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
-          if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
+        for idx in range(lista.getSize()):
+            biol,qual = lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
+            if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
               index = modqual[qual]
-          else:
+            else:
               index = bioqual[biol]
-          if index not in metaInformation:
+            if index not in metaInformation:
               metaInformation[index] = set([])
-          resource = lista.get(idx).getResources().getValue(0)
-          #print stats.resolveAnnotation(resource)
-          metaInformation[index].add(resource)
+            resource = lista.get(idx).getResources().getValue(0)
+            #print stats.resolveAnnotation(resource)
+            metaInformation[index].add(resource)
           
-      metaInformation.update(additionalNotes)
-      metaString = '###\n'
-      for element in metaInformation:
+        metaInformation.update(additionalNotes)
+
+        metaString = '###\n'
+        for element in metaInformation:
           if type(metaInformation[element]) == set:
               metaInformation[element] = list(metaInformation[element])
           metaString += '#@{0}:{1}\n'.format(element,(metaInformation[element]))
-      metaString += '###\n'
+        metaString += '###\n'
           #if biol 
-      return metaString
+        return metaString
     def getRawSpecies(self, species,parameters=[], logEntries=True):
         '''
         *species* is the element whose SBML information we will extract
@@ -118,7 +123,6 @@ class SBML2BNGL:
         identifier = species.getId()
         name = species.getName()
         
-            
         if name == '':
             name = identifier
         if species.isSetInitialConcentration():
@@ -207,13 +211,13 @@ class SBML2BNGL:
                 break
         return math
         
-    def getIsTreeNegative(self,math):
+    def getIsTreeNegative(self, math):
         '''
         walks through a series of * nodes and detects whether there's a negative factor
         fixme: we should actually test if the number of negative factors is odd
         right now we are relying on  the modelers not being malicious
         when writing their rates laws.
-        '''    
+        '''
         if (math.getCharacter() == '*' or math.getCharacter() == '/'):
             if math.getLeftChild().isUMinus():
                 math.setCharacter('+')
@@ -231,10 +235,10 @@ class SBML2BNGL:
                 return True
 
             else:
-                if(math.getLeftChild().getCharacter()) in ['*','/','-']:
+                if(math.getLeftChild().getCharacter()) in ['*', '/', '-']:
                     if self.getIsTreeNegative(math.getLeftChild()):
                         return True
-                if(math.getRightChild().getCharacter()) in ['*','/','-']:
+                if(math.getRightChild().getCharacter()) in ['*', '/', '-']:
                     if self.getIsTreeNegative(math.getRightChild()):
                         return True
         elif math.getCharacter() == '-' and math.getNumChildren() == 1:
@@ -242,25 +246,30 @@ class SBML2BNGL:
             return True
         return False
 
-
     def getUnitDefinitions(self):
-        for unitDefinition in self.model.getListOfUnits():
-            pass
-        
-    def preProcessStoichiometry(self,reactants):
+        self.unitDictionary = {}
+        for unitDefinition in self.model.getListOfUnitDefinitions():
+            unitList = []
+            for unit in unitDefinition.getListOfUnits():
+                correctedUnit = libsbml.Unit.convertToSI(unit)
+                #unitList.append({'kind':unit.getKind(), 'scale':unit.getScale(),'multiplier':unit.getMultiplier(), 'exponent': unit.getExponent(), 'name':name})
+
+                for unit2 in correctedUnit.getListOfUnits():
+                    name = unit.getName() if unit.getName() else unitDefinition.getName()
+                    unitList.append({'kind':unit2.getKind(), 'scale': unit2.getScale(), 'multiplier':unit2.getMultiplier(), 'exponent': unit2.getExponent(), 'name':name})
+            self.unitDictionary[unitDefinition.getId()] = unitList
+
+    def preProcessStoichiometry(self, reactants):
         '''
-        checks for reactants with the same name in the reactant list. This 
+        checks for reactants with the same name in the reactant list. This
         is mainly to account for reactants that dont have the stoichiometry
         flag properly set and instead appear repeated
         '''
         uniqueReactantDict = defaultdict(int)
         for reactant in reactants:
             uniqueReactantDict[reactant[0]] += reactant[1]
-            
-        
-        return [(x,uniqueReactantDict[x]) for x in uniqueReactantDict]
-        
-        
+        return [(x, uniqueReactantDict[x]) for x in uniqueReactantDict]
+
     def removeFactorFromMath(self, math, reactants, products):
         '''
         it also adds symmetry factors. this checks for symmetry in the species names
@@ -270,14 +279,14 @@ class SBML2BNGL:
         remainderPatterns = []
         highStoichoiMetryFactor = 1
         processedReactants = self.preProcessStoichiometry(reactants)
-        
+
         for x in processedReactants:
             highStoichoiMetryFactor  *= factorial(x[1])
             y = [i[1] for i in products if i[0] == x[0]]
             y = y[0] if len(y) > 0 else 0
-            #TODO: check if this actually keeps the correct dynamics
+            # TODO: check if this actually keeps the correct dynamics
             # this is basically there to address the case where theres more products
-            #than reactants (synthesis)
+            # than reactants (synthesis)
             if x[1] > y:
                 highStoichoiMetryFactor /= comb(int(x[1]), int(y), exact=True)
             for counter in range(0, int(x[1])):
@@ -383,7 +392,7 @@ class SBML2BNGL:
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
-        parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
+        parameters = [(parameter.getId(), parameter.getValue(),parameter.getUnits()) for parameter in kineticLaw.getListOfParameters()]
 
         rateL = rateR = nl = nr = None
         if True:
@@ -663,6 +672,13 @@ class SBML2BNGL:
             rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
             if len(rawRules['parameters']) >0:
                 for parameter in rawRules['parameters']:
+                    """
+                    if self.convertSubstanceUnits:
+                        #newParameter = self.convertToStandardUnits(parameter[1],self.unitDictionary)
+                        parameters.append('r%d_%s %f' % (index+1, parameter[0], parameter[1]))
+                        parameterDict[parameter[0]] = parameter[1]
+                    else:
+                    """
                     parameters.append('r%d_%s %f' % (index+1, parameter[0], parameter[1]))
                     parameterDict[parameter[0]] = parameter[1]
             compartmentList = [['cell',1]]
@@ -814,14 +830,13 @@ class SBML2BNGL:
                             break
                     if assigObsFlag:
                         continue
-                #if its not a param/species/observable
+                # if its not a param/species/observable
                 artificialObservables[rawArule[0]] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
 
-            
             else:
                 '''
                 if for whatever reason you have a rule that is not assigment
-                or rate and it is initialized as a non zero parameter, give it 
+                or rate and it is initialized as a non zero parameter, give it
                 a new name
                 '''
                 if rawArule[0] not in zparams:
@@ -829,7 +844,7 @@ class SBML2BNGL:
                 else:
                     ruleName = rawArule[0]
                     zRules.remove(rawArule[0])
-                arules.append(writer.bnglFunction(rawArule[1][0],ruleName,[],compartments=compartmentList,reactionDict=self.reactionDictionary))
+                arules.append(writer.bnglFunction(rawArule[1][0], ruleName, [], compartments=compartmentList, reactionDict=self.reactionDictionary))
                 aParameters[rawArule[0]] = 'ar' + rawArule[0]
             '''
             elif rawArule[2] == True:
@@ -838,20 +853,39 @@ class SBML2BNGL:
                         print '////',rawArule[0]
             '''
             #arules.append('%s = %s' %(rawArule[0],newRule))
-        return aParameters,arules,zRules,artificialReactions,removeParameters,artificialObservables
+        return aParameters, arules, zRules, artificialReactions, removeParameters, artificialObservables
+
+    def convertToStandardUnits(self, parameterValue, unitDefinition):
+
+        for factor in unitDefinition:
+            parameterValue *= 10 ** int(factor['scale'])
+            parameterValue /= int(factor['multiplier'])
+            parameterValue **= int(factor['exponent'])
+        return parameterValue
 
     def getParameters(self):
         parameters = []
         zparam = []
         for parameter in self.model.getListOfParameters():
-            parameterSpecs = (parameter.getId(),parameter.getValue(),parameter.getConstant())
+            parameterSpecs = (parameter.getId(), parameter.getValue(), parameter.getConstant(), parameter.getUnits())
+            #print parameterSpecs
             #reserved keywords
             if parameterSpecs[0] == 'e':
-                parameterSpecs = ('are',parameterSpecs[1])
+                parameterSpecs = ('are', parameterSpecs[1])
             if parameterSpecs[1] == 0:
                 zparam.append(parameterSpecs[0])
             else:
-                parameters.append('{0} {1}'.format(parameterSpecs[0], parameterSpecs[1]))
+                """
+                if self.convertSubstanceUnits:
+                    newParameterSpecs = [parameterSpecs[0], self.convertToStandardUnits(parameterSpecs[1], self.unitDictionary[parameterSpecs[3]]), parameterSpecs[2], parameterSpecs[3]]
+                    parameters.append('{0} {1} #original units:{2}={3}'.format(newParameterSpecs[0], newParameterSpecs[1], newParameterSpecs[3],parameterSpecs[1]))
+
+                else:
+                """
+                if parameterSpecs[3] != '':
+                    parameters.append('{0} {1} #units:{2}'.format(parameterSpecs[0], parameterSpecs[1], parameterSpecs[3]))
+                else:
+                    parameters.append('{0} {1}'.format(parameterSpecs[0], parameterSpecs[1]))
 
         #return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters() if parameter.getValue() != 0], [x.getId() for x in self.model.getListOfParameters() if x.getValue() == 0]
         return parameters,zparam

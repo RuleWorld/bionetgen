@@ -33,9 +33,9 @@ def getFiles(directory,extension):
 
 def defineConsole():
     parser = argparse.ArgumentParser(description='SBML to BNGL translator')
-    parser.add_argument('-i','--input',type=str,help='input directory',required=True)
-    parser.add_argument('-o','--output',type=str,help='output directory',required=True)
-    return parser    
+    parser.add_argument('-i', '--input',type=str,help='input directory',required=True)
+    parser.add_argument('-o', '--output',type=str,help='output directory',required=True)
+    return parser
 
 
 def default_to_regular(d):
@@ -44,16 +44,19 @@ def default_to_regular(d):
     return d
 
 def createContextInformation(inputDirectory,outputDirectory):
-    bngxml = getFiles(inputDirectory,'xml')
+    bngxml = getFiles(inputDirectory, 'xml')
     progress = progressbar.ProgressBar()
+    fullContextDict = {}
     for idx in progress(range(len(bngxml))):
         fileName = bngxml[idx]
         #molecules,rules,_ = parseXML(fileName)
-        extendedInformation, backup = componentGroups.getContextRequirements(fileName,False)   
-        with open(os.path.join(outputDirectory, '{0}.dump'.format(fileName.split('/')[-1])),'w') as f:
+        extendedInformation, backup = componentGroups.getContextRequirements(fileName,False)
+        fullContextDict[fileName] = extendedInformation
+        with open(os.path.join(outputDirectory, '{0}.dump'.format(fileName.split('/')[-1])), 'w') as f:
             pickle.dump(default_to_regular(extendedInformation), f)
             pickle.dump(default_to_regular(backup), f)
         #collapsedContactMap.createCollapsedContact(rules,molecules,[1],fileName + '.gml',extendedInformation    )         
+    with open(os.path.join(outputDirectory, '{0}.dump'.format(inputDirectory), 'w')) as f:
 
 
 

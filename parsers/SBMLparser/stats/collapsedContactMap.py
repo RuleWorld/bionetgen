@@ -262,7 +262,7 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
             for element in activeProducts:
                 graph.add_edge(mainidx, element)
 
-    color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000','nullrequirement':'#FF00FF'}
+    color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000', 'nullrequirement': '#FF00FF', 'independent': '#00FF00'}
     # deal with information in extendedInformation
     graphDictionary = {}
     for relationship in color.keys():
@@ -272,13 +272,14 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
             graphDictionary[relationship] = graph
     for molecule in extendedInformation:
         for relationship in extendedInformation[molecule]:
+
             for requirement in extendedInformation[molecule][relationship]:
                 if relationship == 'mutualExclusion':
                     requirement1 = list(requirement)[0]
                     requirement2 = list(requirement)[1]
                 elif relationship in ['nullexclusion', 'independent', 'nullrequirement']:
 
-                    if nullContextFlag and relationship == 'nullrequirement':
+                    if nullContextFlag and relationship in ['nullrequirement', 'independent']:
                         requirement1 = requirement[0][0]
                         requirement2 = requirement[1][0]
                     else:
@@ -354,6 +355,7 @@ def defineConsole():
     parser.add_argument('-r', '--rulify', action='store_true',help="Includes context edges")
     parser.add_argument('-n', '--null-context',action='store_true',help="Include null context arrows")
     parser.add_argument('-s', '--separate-graphs',action='store_true')
+    parser.add_argument('-e', '--expand',action='store_true')
     return parser    
 
 
@@ -378,10 +380,12 @@ if __name__ == "__main__":
         outputFile = namespace.output
     else:
         outputFile = inputFile + '.gml'
+    collapseFlag = False if namespace.expand else True
     if namespace.rulify:
-        extendedInformation,_ = componentGroups.getContextRequirements(inputFile)   
+        extendedInformation, _ = componentGroups.getContextRequirements(inputFile, collapse=collapseFlag)
     else:
         extendedInformation = {}
-    main(inputFile,outputFile,extendedInformation, namespace.context_only, namespace.null_context,namespace.separate_graphs)
+
+    main(inputFile, outputFile, extendedInformation, namespace.context_only, namespace.null_context,namespace.separate_graphs)
     
     #addAnnotations('fceri_ji')
