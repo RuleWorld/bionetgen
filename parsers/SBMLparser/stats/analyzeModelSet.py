@@ -52,7 +52,7 @@ def callSBMLTranslator(fileName,outputdirectory,options=[]):
     outputdirectory -- The directory where the resulting bngl will be placed
     """
     with open(os.devnull,"w") as f:
-        result = call([sbmlTranslator,'-api',
+        result = call(['python', sbmlTranslator, '-api',
         #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         fileName,
         '-o', os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '.bngl',
