@@ -394,10 +394,10 @@ def analyzeFile(bioNumber, reactionDefinitions, useID, namingConventions, output
     #call the atomizer (or not). structured molecules are contained in translator
     #onlysyndec is a boolean saying if a model is just synthesis of decay reactions
     if atomize:
-        translator,onlySynDec = mc.transformMolecules(parser, database, reactionDefinitions, namingConventions, speciesEquivalence,bioGrid)
+        translator, onlySynDec = mc.transformMolecules(parser, database, reactionDefinitions, namingConventions, speciesEquivalence,bioGrid)
     else:    
-        translator={} 
-    #process other sections of the sbml file (functions reactions etc.)    
+        translator={}
+    #process other sections of the sbml file (functions reactions etc.)
     '''
     pr.disable()
     s = StringIO.StringIO()
@@ -419,14 +419,14 @@ def analyzeFile(bioNumber, reactionDefinitions, useID, namingConventions, output
     #    pickle.dump(returnArray[-1],f)
     if atomize and onlySynDec:
         returnArray = list(returnArray)
-        returnArray.translator = -1
+        #returnArray.translator = -1
     returnArray = AnalysisResults(*(list(returnArray[0:-1]) + [database]))
     return returnArray
 
 def correctRulesWithParenthesis(rules,parameters):
     '''
     helper function. Goes through a list of rules and adds a parenthesis
-    to the reaction rates of those functions whose rate is in list 
+    to the reaction rates of those functions whose rate is in list
     'parameters'
     '''
     for idx in range(len(rules)):
@@ -435,7 +435,7 @@ def correctRulesWithParenthesis(rules,parameters):
             rules[idx].strip()
             rules[idx] += '()'
     
-def changeNames(functions,dictionary):
+def changeNames(functions, dictionary):
     '''
     changes instances of keys in dictionary appeareing in functions to their corresponding
     alternatives
