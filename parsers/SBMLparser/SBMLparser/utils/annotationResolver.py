@@ -3,13 +3,35 @@ import bioservices
 import pyparsing as pyp
 goGrammar = pyp.Suppress(pyp.Literal('<name>')) +  pyp.Word(pyp.alphanums + ' -_/') + pyp.Suppress(pyp.Literal('</name>')) 
 
+from contextlib import contextmanager
+import sys, os
+
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+
+           
 def resolveAnnotation(annotation):
+    with suppress_stdout():
+        return resolveAnnotationHelper(annotation)
+
+def resolveAnnotationHelper(annotation):
     if not hasattr(resolveAnnotation, 'db'):
         resolveAnnotation.db = {}
         resolveAnnotation.ch = bioservices.ChEBI(verbose=False)
         resolveAnnotation.uni = bioservices.UniProt(verbose=False)
         resolveAnnotation.k = bioservices.kegg.KEGG(verbose=False)
         resolveAnnotation.qg = bioservices.QuickGO(verbose=False)
+        resolveAnnotation.t = bioservices.Taxon()
         resolveAnnotation.db['http://identifiers.org/uniprot/P62988'] = 'http://identifiers.org/uniprot/P62988'
         resolveAnnotation.db['http://identifiers.org/uniprot/P06842'] = 'http://identifiers.org/uniprot/P06842'
         resolveAnnotation.db['http://identifiers.org/uniprot/P07006'] = 'http://identifiers.org/uniprot/P06842'
@@ -72,9 +94,11 @@ def resolveAnnotation(annotation):
                 finalAnnotation = resolveAnnotation.db[annotation]
         elif 'cco' in annotation or 'pirsf' in annotation or 'pubchem' in annotation or 'omim' in annotation:
             finalAnnotation = ''
-        #elif 'taxonomy' in annotation:
+        elif 'taxonomy' in annotation:
             #uniprot stuff for taxonomy
-        #    pass
+            result = resolveAnnotation.t.search_by_taxon(tAnnotation)
+            resolveAnnotation.db[annotation] = result['Scientific Name']
+            finalAnnotation = resolveAnnotation.db[annotation]
             '''
             url = 'http://www.uniprot.org/taxonomy/'
             params = {
@@ -100,5 +124,5 @@ def resolveAnnotation(annotation):
     return annotation,finalAnnotation
 
 if __name__ == "__main__":
-    print resolveAnnotation('http://identifiers.org/go/GO:0030119')
+    print resolveAnnotation('http://identifiers.org/taxonomy/10116')
     #print resolveAnnotation('http://identifiers.org/uniprot/P01133')

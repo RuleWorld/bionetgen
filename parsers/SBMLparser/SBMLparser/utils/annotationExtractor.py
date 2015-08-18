@@ -21,7 +21,7 @@ import argparse
 bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
 'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
-'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_UNKNOWN']
+'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_HAS_TAXON','BQB_UNKNOWN']
 
 modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_UNKNOWN']
 
@@ -214,6 +214,21 @@ class AnnotationExtractor:
         self.buildAnnotationTree(annotationDict, self.sct, self.database)
 
         return annotationDict
+
+    def getModelAnnotations(self):
+        model = self.sbmlDocument.getModel()
+        annotationXML = model.getAnnotation()
+        lista = libsbml.CVTermList()
+        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotationXML, lista)
+        modelAnnotations = []
+        for idx in range(lista.getSize()):
+            for idx2 in range(lista.get(idx).getResources().getLength()):
+                if(lista.get(idx).getQualifierType()):
+                    modelAnnotations.append([bioqual[lista.get(idx).getBiologicalQualifierType()],lista.get(idx).getResources().getValue(idx2)])
+                else:
+                    modelAnnotations.append([modqual[lista.get(idx).getModelQualifierType()],lista.get(idx).getResources().getValue(idx2)])
+                    
+        return modelAnnotations
     
 
 
@@ -229,7 +244,7 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     #input_file = '/home/proto/workspace/bionetgen/parsers/SBMLparser/XMLExamples/curated/BIOMD%010i.xml' % 19
     annotationExtractor = AnnotationExtractor(namespace.input_file)
-    
-    elementalMolecules = [x for x in annotationExtractor.sct if annotationExtractor.sct[x] == []]
-    print {x:annotationExtractor.getAnnotationSystem()[x] for x in elementalMolecules}
+    annotationExtractor.getModelAnnotations()
+    #elementalMolecules = [x for x in annotationExtractor.sct if annotationExtractor.sct[x] == []]
+    #print {x:annotationExtractor.getAnnotationSystem()[x] for x in elementalMolecules}
 
