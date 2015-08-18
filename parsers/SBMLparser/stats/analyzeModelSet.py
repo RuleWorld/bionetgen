@@ -17,6 +17,7 @@ sys.path.insert(0, '.')
 sys.path.insert(0, os.path.join('.','SBMLparser'))
 import argparse
 home = expanduser("~")
+sbmlTranslator = join(home, 'workspace', 'bionetgen', 'parsers', 'SBMLparser', 'SBMLparser', 'sbmlTranslator.py')
 bngExecutable = join(home,'workspace','bionetgen','bng2','BNG2.pl')
 visualizeExecutable = join(home,'workspace','bionetgen','bng2','Perl2','Visualization','visualize.pl')
 graphAnalysis = join(home,'workspace','bionetgen','parsers','SBMLparser','stats','graphAnalysis.py')
@@ -51,16 +52,17 @@ def callSBMLTranslator(fileName,outputdirectory,options=[]):
     outputdirectory -- The directory where the resulting bngl will be placed
     """
     with open(os.devnull,"w") as f:
-        result = call(['python','SBMLparser/sbmlTranslator.py','-i',
+        result = call([sbmlTranslator,'-api',
         #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
         fileName,
-        '-o',os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '.bngl',
-        '-c','config/reactionDefinitions.json',
-        '-n','config/namingConventions.json'
+        '-o', os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '.bngl',
+        '-c', 'config/reactionDefinitions.json',
+        '-n', 'config/namingConventions.json',
+        '-b', '/net/antonin/home/mscbio/jjtapia/workspace/bionetgen/bng2/BNG2.pl'
         ],stdout=f)
     return result
 
-def convertXML(bnglfile,output,options=[]):
+def convertXML(bnglfile, output, options=[]):
     """
     Convert a BNGL file into bng-xml
 

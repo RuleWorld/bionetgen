@@ -107,7 +107,9 @@ class ModelLearning:
         """
         TODO: we need some way to evaluate the confidence in a bond based on context information
         """
-        #for hypotheticalBond in assumptions:
+        pass
+
+    def getComplexReactions(self, threshold=2):
         pass
 
 
