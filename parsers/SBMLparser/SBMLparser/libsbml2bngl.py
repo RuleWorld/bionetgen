@@ -301,7 +301,7 @@ def recursiveSearch(dictionary,element,visitedFunctions=[]):
             tmp +=1
         else:
             if item in visitedFunctions:
-                raise Exception
+                raise Exception("Recursive function search landed twice in the same function")
             tmp += 1
             tmp += (recursiveSearch(dictionary,item,[item] + visitedFunctions))
     return tmp

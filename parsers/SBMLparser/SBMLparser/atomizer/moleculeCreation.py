@@ -34,9 +34,10 @@ def memoize(obj):
     return memoizer
 
 
-speciesNameGrammar = (Word(alphanums + "_:#-")
-                      + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_:#-")
-                                                     + Suppress("()"))
+speciesNameGrammar = (Word(alphanums + "_" + ":#-")
+           + Suppress('()') + Optional(Suppress('@' + Word(alphanums + '_-')))) + ZeroOrMore(Suppress('+') + Word(alphanums + "_" + ":#-")
+                                          + Suppress("()") + Optional(Suppress('@' + Word(alphanums + '_-'))))
+
 nameGrammar = Word(alphanums + '_-') + ':'
 
 rateGrammar = Word(alphanums + "()")

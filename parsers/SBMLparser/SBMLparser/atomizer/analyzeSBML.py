@@ -44,8 +44,8 @@ def get_close_matches(match, dataset, cutoff=0.6):
 
 name = Word(alphanums + '_-') + ':'
 species = (Word(alphanums + "_" + ":#-")
-           + Suppress('()')) + ZeroOrMore(Suppress('+') + Word(alphanums + "_" + ":#-")
-                                          + Suppress("()"))
+           + Suppress('()') + Optional(Suppress('@' + Word(alphanums + '_-')))) + ZeroOrMore(Suppress('+') + Word(alphanums + "_" + ":#-")
+                                          + Suppress("()") + Optional(Suppress('@' + Word(alphanums + '_-'))))
 rate = Word(alphanums + "()")
 grammar = Suppress(Optional(name)) + ((Group(species) | '0') + Suppress(Optional("<") + "->") + (Group(species) | '0') + Suppress(rate))
 

@@ -225,7 +225,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
             for x in functionList:
                 rule  = re.sub('({0})\(([^,]+),([^)]+)\)'.format(x),function,rule)
             if rule == oldrule:
-                logMess('ERROR','Malformed pow or root function %s' % rule)
+                logMess('ERROR:Translation','Malformed pow or root function %s' % rule)
                 print 'meep'
         return rule
 
@@ -261,7 +261,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
         if compartment[0] in tmp:
             tmp =re.sub(r'(\W|^)({0})(\W|$)'.format(compartment[0]),r'\1 {0} \3'.format(str(compartment[1])),tmp)
             #tmp = re.sub(r'(\W)({0})(\W)'.format(compartment[0]),r'\1%s\3' % str(compartment[1]),tmp)
-            logMess('INFO','Exchanging reference to compartment %s for its dimensions' % compartment[0])
+            logMess('INFO:Translation','Exchanging reference to compartment %s for its dimensions' % compartment[0])
     
     #change references to time for time()    
     #tmp =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',tmp)

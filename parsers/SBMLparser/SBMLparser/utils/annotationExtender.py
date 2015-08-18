@@ -252,9 +252,11 @@ def reactionAnnotationsToSBML(sbmlDocument,annotationDict):
         annotation.addChild(rdfAnnotation)
         reaction.setAnnotation(annotation)
 
-def obtainSCT(fileName,reactionDefinitions,useID,namingConventions):
+def obtainSCT(fileName, reactionDefinitions, useID, namingConventions):
     '''
     one of the library's main entry methods. Process data from a file
+    to obtain the species composition table, a dictionary describing
+    the chemical history of different elements in the system
     '''
     logMess.log = []
     logMess.counter = -1
@@ -296,15 +298,12 @@ def createDataStructures(bnglContent):
 
 def expandAnnotation(fileName,bnglFile):
 
-    sct,database,sbmlDocument = obtainSCT(fileName,'config/reactionDefinitions.json'
-    ,False,'config/namingConventions.json')
-    species,rules,par= createDataStructures(bnglFile)
+    sct, database, sbmlDocument = obtainSCT(fileName, 'config/reactionDefinitions.json', False, 'config/namingConventions.json')
+    annotationDict, speciesNameDict = buildAnnotationDict(sbmlDocument)
+    buildAnnotationTree(annotationDict, sct, database)    
     
-    
-    annotationDict,speciesNameDict = buildAnnotationDict(sbmlDocument)
-    buildAnnotationTree(annotationDict,sct,database)    
     speciesAnnotationsToSBML(sbmlDocument,annotationDict,speciesNameDict)
-    
+    species, rules, par = createDataStructures(bnglFile)
     reactionAnnotationDict = buildReactionAnnotationDict(rules)
     reactionAnnotationsToSBML(sbmlDocument,reactionAnnotationDict)
     #reactionAnnotationsToSBML(sbmlDocument,reactionAnnotation)
@@ -324,7 +323,7 @@ if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
     #input_file = '/home/proto/workspace/bionetgen/parsers/SBMLparser/XMLExamples/curated/BIOMD%010i.xml' % 19
-    expandedString = expandAnnotation(namespace.input_file)
+    expandedString = expandAnnotation(namespace.input_file,'')
     print 'Writing extended annotation SBML to {0}'.format(namespace.input_file + '.xml')    
     with open(namespace.output_file,'w') as f:
         f.write(expandedString)
