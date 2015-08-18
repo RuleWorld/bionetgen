@@ -797,7 +797,7 @@ class SBML2BNGL:
                         #was defined as a parameter that is not 0
                         #remove it. This might not be exact behavior
                         if re.search('^{0}\s'.format(rawArule[0]), element):
-                            logMess("WARNING","Parameter {0} corresponds both as a non zero parameter \
+                            logMess("WARNING:Translation","Parameter {0} corresponds both as a non zero parameter \
                             and a rate rule, verify behavior".format(element))
                             removeParameters.append(element)
                         
