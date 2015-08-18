@@ -54,11 +54,11 @@ def callSBMLTranslator(fileName,outputdirectory,options=[]):
     with open(os.devnull,"w") as f:
         result = call(['python', sbmlTranslator, '-api',
         #'XMLExamples/curated/BIOMD%010i.xml' % self.param,
-        fileName,
-        '-o', os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '.bngl',
-        '-c', 'config/reactionDefinitions.json',
-        '-n', 'config/namingConventions.json',
-        '-b', '/net/antonin/home/mscbio/jjtapia/workspace/bionetgen/bng2/BNG2.pl'
+                       fileName,
+                       '-o', os.path.join(outputdirectory, str(fileName.split('/')[-1])) + '.bngl',
+                       '-c', '{0}/config/reactionDefinitions.json'.format(sbmlparserhome),
+                       '-n', '{0}/config/namingConventions.json'.format(sbmlparserhome),
+                       '-b', '/net/antonin/home/mscbio/jjtapia/workspace/bionetgen/bng2/BNG2.pl'
         ],stdout=f)
     return result
 
