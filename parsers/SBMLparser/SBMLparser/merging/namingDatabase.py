@@ -100,7 +100,10 @@ class NamingDatabase:
                 changeFlag = False
                 for idx in range(0, len(fileSpecies) - 1):
                     for idx2 in range(idx+1, len(fileSpecies)):
-                        if fileSpecies[idx]['name'].intersection(fileSpecies[idx2]['name']) or fileSpecies[idx]['annotation'].intersection(fileSpecies[idx2]['annotation']) or fileSpecies[idx]['annotationName'].intersection(fileSpecies[idx2]['annotationName']):
+                        if (len(fileSpecies[idx]['name']) > 2 and fileSpecies[idx]['name'].intersection(fileSpecies[idx2]['name'])) \
+                            or fileSpecies[idx]['annotation'].intersection(fileSpecies[idx2]['annotation']) \
+                                or fileSpecies[idx]['annotationName'].intersection(fileSpecies[idx2]['annotationName']):
+
                             #print 'hello',fileSpecies[idx]['annotationName'],fileSpecies[idx2]['annotationName']
                             fileSpeciesCopy[idx]['name'] = fileSpeciesCopy[idx]['name'].union(fileSpeciesCopy[idx2]['name'])
                             fileSpeciesCopy[idx]['annotation'] = fileSpeciesCopy[idx]['annotation'].union(fileSpeciesCopy[idx2]['annotation'])
@@ -132,32 +135,33 @@ class NamingDatabase:
 def isFileInDatabase(databaseName, fileName):
     connection = sqlite3.connect(databaseName)
     cursor = connection.cursor()
-    queryStatement = 'select file from moleculeNames WHERE file == "{0}"'.format(fileName)
+    queryStatement = 'select file from biomodels WHERE file == "{0}"'.format(fileName)
     matchingFileNames = [x[0] for x in cursor.execute(queryStatement)]
     connection.close()
     return len(matchingFileNames) > 0
 
 
-
 def setupDatabase(databaseName):
     connection = sqlite3.connect(databaseName)
     cursor = connection.cursor()
-    cursor.execute('''CREATE TABLE moleculeNames(file,name)''')
-    cursor.execute('''CREATE TABLE annotation(annotationURI,annotationName)''')
-    cursor.execute('''CREATE TABLE identifier(annotationID INT, qualifier, speciesID INT, FOREIGN KEY(speciesID) REFERENCES moleculeName(ROWID), FOREIGN KEY(annotationID) references annotation(ROWID))''')
+    cursor.execute('''CREATE TABLE biomodels(file UNIQUE, organismID INT, FOREIGN KEY(organismID) REFERENCES annotation(ROWID))''')
+    cursor.execute('''CREATE TABLE moleculeNames(fileId INT,name, FOREIGN KEY(fileID) REFERENCES biomodels(file))''')
+    cursor.execute('''CREATE TABLE annotation(annotationURI UNIQUE ON CONFLICT IGNORE,annotationName)''')
+    cursor.execute('''CREATE TABLE identifier(annotationID INT, qualifier, speciesID INT, FOREIGN KEY(speciesID) \
+                   REFERENCES moleculeName(ROWID), FOREIGN KEY(annotationID) references annotation(ROWID))''')
     connection.commit()
     connection.close()
 
 
 def extractBasicAnnotations(fileName, userDefinitions=None):
-    annotations = utils.annotationExtractor.AnnotationExtractor(fileName,  userDefinitions)
+    annotations = utils.annotationExtractor.AnnotationExtractor(fileName, userDefinitions)
     elementalMolecules = [x for x in annotations.sct if annotations.sct[x] == []]
-    return {x: annotations.getAnnotationSystem()[x] for x in elementalMolecules}
+    speciesAnnotations = {x: annotations.getAnnotationSystem()[x] for x in elementalMolecules}
+    modelAnnotations = annotations.getModelAnnotations()
+    return speciesAnnotations, modelAnnotations
 
 
-
-
-def populateDatabaseFromFile(fileName, databaseName,  userDefinitions=None):
+def populateDatabaseFromFile(fileName, databaseName, userDefinitions=None):
     """
     Insert annotations from file <fileName>
     """
@@ -170,15 +174,36 @@ def populateDatabaseFromFile(fileName, databaseName,  userDefinitions=None):
     connection = sqlite3.connect(databaseName)
     cursor = connection.cursor()
 
-    basicModelAnnotations = extractBasicAnnotations(fileName, userDefinitions)
+    basicModelAnnotations, generalModelAnnotations = extractBasicAnnotations(fileName, userDefinitions)
 
     moleculeNames = []
     annotationNames = []
     moleculeAnnotations = []
 
+
+    modelSpecies = ''
+    # insert model description
+    for annotation in generalModelAnnotations:
+        if 'taxonomy' in annotation[1]:
+            modelSpecies = annotation
+            break
+
+
+    annotationNames.append(utils.annotationResolver.resolveAnnotation(annotation[1]))
+
+    cursor.executemany("INSERT into annotation(annotationURI,annotationName) values (?, ?)", annotationNames)
+
+    connection.commit()
+    annotationID = [x for x in cursor.execute('select ROWID from annotation WHERE annotationURI == "{0}"'.format(annotationNames[-1][0]))][0][0]
+    annotationNames = []
+    cursor.executemany("INSERT into biomodels(file,organismID) values (?,?)", [[fileName2, annotationID]])
+    connection.commit()
+
+    modelID = [x for x in cursor.execute('select ROWID from biomodels WHERE file == "{0}"'.format(fileName2))][0][0]
+
     # insert moleculeNames
     for molecule in basicModelAnnotations:
-        moleculeNames.append([fileName2, molecule])
+        moleculeNames.append([modelID, molecule])
 
     annotationIDs = {x[1]: x[0] for x in cursor.execute("select ROWID,annotationURI from annotation")}
 
@@ -192,14 +217,14 @@ def populateDatabaseFromFile(fileName, databaseName,  userDefinitions=None):
 
     cursor.executemany("insert into annotation(annotationURI,annotationName) values (?, ?)", annotationNames)
     connection.commit()
-    cursor.executemany("insert into moleculeNames(file,name) values (?, ?)", moleculeNames)
+    cursor.executemany("insert into moleculeNames(fileId,name) values (?, ?)", moleculeNames)
     connection.commit()
 
 
 
 
 
-    moleculeIDs = {x[1]: x[0] for x in cursor.execute("select ROWID,name from moleculeNames WHERE moleculeNames.file == '{0}'".format(fileName2))}
+    moleculeIDs = {x[1]: x[0] for x in cursor.execute("select ROWID,name from moleculeNames WHERE moleculeNames.fileId == '{0}'".format(modelID))}
     annotationIDs = {x[1]: x[0] for x in cursor.execute("select ROWID,annotationURI from annotation")}
 
     for molecule in basicModelAnnotations:
