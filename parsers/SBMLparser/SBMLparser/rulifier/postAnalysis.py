@@ -4,22 +4,36 @@ import pprint
 from collections import defaultdict
 import itertools
 from copy import copy
+from utils import readBNGXML
 
 
-def defineConsole():
-    """
-    defines the program console line commands
-    """
-    parser = argparse.ArgumentParser(description='SBML to BNGL translator')
-    parser.add_argument('-i', '--input', type=str, help='settings file', required=True)
-    return parser
 
 
 class ModelLearning:
-    def __init__(self, fileName):
+    def __init__(self, fileName,rawFileName=None):
+        self.molecules, self.rules, _ = readBNGXML.parseXML(fileName)
         self.dependencies, self.patternXreactions = componentGroups.getContextRequirements(fileName, collapse=False)
+        self.transposePatternsReactions()
         self.reverseDependencies = componentGroups.reverseContextDict(self.dependencies)
         self.moleculeMotifDict, self.motifMoleculeDict = self.classifyPairsByMotif(self.reverseDependencies)
+
+        if rawFileName:
+            self.processRawSBML(rawFileName)
+        else:
+            self.rawRules = {}
+
+    def processRawSBML(self,inputfile):
+        _, rawrules, _ = readBNGXML.parseXML(inputfile)
+        self.rawRules = {x[0].label: x[0] for x in rawrules}
+
+    def transposePatternsReactions(self):
+        self.reactionsXpatterns = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        for product in self.patternXreactions:
+            for reactionCenter in self.patternXreactions[product]:
+                for contextcomponent in self.patternXreactions[product][reactionCenter]:
+                    for contextState in self.patternXreactions[product][reactionCenter][contextcomponent]:
+                        for reaction in self.patternXreactions[product][reactionCenter][contextcomponent][contextState]:
+                            self.reactionsXpatterns[reaction][product][reactionCenter].append((contextcomponent, contextState))
 
     def classifyPairsByMotif(self, reverseDependencies):
         """
@@ -110,7 +124,72 @@ class ModelLearning:
         pass
 
     def getComplexReactions(self, threshold=2):
-        pass
+        complexRules = []
+        for rule in self.rules:
+            if len([x for x in rule[0].actions if x.action not in ['ChangeCompartment']]) >= threshold:
+                complexRules.append(rule)
+        return complexRules
+
+    def analyzeComplexReactions(self, threshold=2):
+        def getActionableComponentPartners(actions, molecule):
+
+            actionableComponents = []
+            for action in actions:
+                if action[1] and action[1] in molecule.lower():
+                    actionableComponents.append(action[2])
+                if action[2] and action[2] in molecule.lower():
+                    actionableComponents.append(action[1])
+            return actionableComponents
+        for reaction in self.getComplexReactions():
+            #analyze reactions with cis-allostery (e.g. two actions sites are on the same molecule)
+            if len([x for x in self.reactionsXpatterns[reaction[0].label] if len(self.reactionsXpatterns[reaction[0].label][x]) > 1]) ==0:
+                continue
+            print '----------'
+            if reaction[0].label in self.rawRules:
+                print str(self.rawRules[reaction[0].label])
+                print '>>>>>>'
+                print str(reaction[0])
+            else:
+                print str(reaction[0].label)
+            #print str(reaction[0])
+            resolvedActions = []
+            print 'Actions:'
+            changeFlag = 0
+            for action in reaction[0].actions:
+                molecule1 = reaction[-3]['_'.join(action.site1.split('_')[:-1])] if action.site1 else ''
+                molecule2 = reaction[-3]['_'.join(action.site2.split('_')[:-1])] if action.site2 else ''
+                site1 = reaction[-3][action.site1] if action.site1 else ''
+                site2 = reaction[-3][action.site2] if action.site2 else ''
+                print '\t{0}= {1}({2}), {3}({4})'.format(action.action,molecule1,site1,molecule2,site2)
+                if action.action == 'DeleteBond':
+                    changeFlag = 1
+                resolvedActions.append([action.action,site1,site2])
+
+            print 'Context:'
+            for reactionCenter in self.reactionsXpatterns[reaction[0].label]:
+                #cys rules
+
+                if len(self.reactionsXpatterns[reaction[0].label][reactionCenter]) > 1:
+                    for state in self.reactionsXpatterns[reaction[0].label][reactionCenter]:
+                        #we will focus on statechange actions for now
+                        if state[2] not in ['']:
+                            #print self.patternXreactions[reactionCenter]
+                            actionableComponents = getActionableComponentPartners([x for x in resolvedActions if x[0] in ['AddBond', 'DeleteBond']],reactionCenter)
+                            for component in actionableComponents:
+                                print '\treaction center <{0}>, context <{1}> in molecule <{2}>:'.format(component,state[0],reactionCenter)
+                                print '\t', {x: dict(self.patternXreactions[reactionCenter][(component, changeFlag, '')][x]) \
+                                for x in self.patternXreactions[reactionCenter][(component, changeFlag, '')] if x in [state[0],state[0].lower()]}
+                            
+            print '+++++++++'
+
+def defineConsole():
+    """
+    defines the program console line commands
+    """
+    parser = argparse.ArgumentParser(description='SBML to BNGL translator')
+    parser.add_argument('-i', '--input', type=str, help='sbml file', required=True)
+    parser.add_argument('-r', '--raw', type=str, help='raw sbml file')
+    return parser
 
 
 if __name__ == "__main__":
@@ -118,7 +197,11 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     inputFile = namespace.input
 
-    modelLearning = ModelLearning(namespace.input)
+    modelLearning = ModelLearning(namespace.input, namespace.raw)
     #print modelLearning.getMotifFromPair('EGFR','grb2','shc')
     #print modelLearning.getMotifFromPair('Shc','grb2','egfr')
-    pprint.pprint(modelLearning.getPairsFromMotif('independent', 'nullrequirement'))
+    modelLearning.analyzeComplexReactions()
+
+    #for rule in complexRules:
+    #    print str(rule[0])
+    #pprint.pprint(modelLearning.getPairsFromMotif('independent', 'nullrequirement'))
