@@ -7,6 +7,11 @@ from copy import copy
 import pprint
 import fnmatch
 import progressbar
+import enum
+import utils.readBNGXML
+
+Query = enum.Enum('Query', 'all organism species family')
+organismFamilies = {'mammals': ['Homo sapiens', 'Mammalia', 'Mus musculus', 'Rattus norvegicus', 'Rattus rattus']}
 
 
 def getFiles(directory, extension):
@@ -39,12 +44,36 @@ class NamingDatabase:
         return queryResult
 
     def getFileNameFromSpecies(self, speciesName):
+        """
+        species name refers to a molecular species
+        """
         connection = sqlite3.connect(self.databaseName)
         cursor = connection.cursor()
-        queryStatement = 'SELECT DISTINCT file from moleculeNames WHERE name == "{0}"'.format(speciesName)
+        queryStatement = 'SELECT B.file,M.name from moleculeNames as M join biomodels as B on B.ROWID == M.fileID WHERE M.name == "{0}"'.format(speciesName)
         queryResult = [x[0] for x in cursor.execute(queryStatement)]
         connection.close()
         return queryResult
+
+    def getFileNameFromOrganism(self, organismName):
+        """
+        pass
+        """
+        connection = sqlite3.connect(self.databaseName)
+        cursor = connection.cursor()
+        queryStatement = 'SELECT B.file,A.annotationName from biomodels as B join annotation as A on B.organismID == A.ROWID WHERE A.annotationName == "{0}"'.format(organismName)
+        queryResult = [x[0] for x in cursor.execute(queryStatement)]
+        connection.close()
+        return queryResult
+
+    def getOrganismNames(self):
+        connection = sqlite3.connect(self.databaseName)
+        cursor = connection.cursor()
+        queryStatement = 'SELECT DISTINCT A.annotationName from biomodels as B join annotation as A on B.organismID == A.ROWID'
+        queryResult = [x[0] for x in cursor.execute(queryStatement)]
+        connection.close()
+        return queryResult
+
+
 
     def getSpeciesFromAnnotations(self, annotation):
         connection = sqlite3.connect(self.databaseName)
@@ -57,7 +86,7 @@ class NamingDatabase:
     def getFilesInDatabase(self):
         connection = sqlite3.connect(self.databaseName)
         cursor = connection.cursor()
-        queryStatement = 'SELECT DISTINCT file from moleculeNames'
+        queryStatement = 'SELECT file from biomodels'
         queryResult = [x[0] for x in cursor.execute(queryStatement)]
         connection.close()
         return queryResult
@@ -65,9 +94,13 @@ class NamingDatabase:
     def getSpeciesFromFileName(self, fileName):
         connection = sqlite3.connect(self.databaseName)
         cursor = connection.cursor()
-        queryStatement = 'SELECT file,name,A.annotationURI,A.annotationName,qualifier from moleculeNames as M join identifier as I ON M.ROWID == I.speciesID \
-                            join annotation as A on A.ROWID == I.annotationID and M.file == "{0}" and I.qualifier != "BQB_HAS_PART" and \
-                            I.qualifier != "BQB_HAS_VERSION" AND I.qualifier != "BQB_HAS_PROPERTY"'.format(fileName)
+        queryStatement = 'SELECT B.file,name,A.annotationURI,A.annotationName,qualifier from moleculeNames as M join identifier as I ON M.ROWID == I.speciesID \
+                            join annotation as A on A.ROWID == I.annotationID join biomodels as B on B.ROWID == M.fileID and B.file == "{0}" and \
+                            (I.qualifier == "BQB_IS" or I.qualifier == "BQM_IS" or I.qualifier == "BQB_IS_VERSION_OF")'.format(fileName)
+
+
+                            #I.qualifier != "BQB_HAS_PART" and \
+                            #I.qualifier != "BQB_HAS_VERSION" AND I.qualifier != "BQB_HAS_PROPERTY"'.format(fileName)
 
         speciesList = [x[1:] for x in cursor.execute(queryStatement)]
         tmp = {x[0]: set([]) for x in speciesList}
@@ -119,17 +152,15 @@ class NamingDatabase:
         #fileSpecies = [[x['name'], len(x['fileName'])] for x in fileSpecies]
         fileSpecies.sort(key=lambda x: len(x['fileName']), reverse=True)
 
-        import pickle
+        #import pickle
 
-        with open('results.dump','wb') as f:
-            pickle.dump(fileSpecies,f)
+        #with open('results.dump','wb') as f:
+        #    pickle.dump(fileSpecies,f)
 
         return fileSpecies
 
     def isFileInDatabase(self, fileName):
         return isFileInDatabase(self.databaseName, fileName)
-
-
 
 
 def isFileInDatabase(databaseName, fileName):
@@ -149,6 +180,8 @@ def setupDatabase(databaseName):
     cursor.execute('''CREATE TABLE annotation(annotationURI UNIQUE ON CONFLICT IGNORE,annotationName)''')
     cursor.execute('''CREATE TABLE identifier(annotationID INT, qualifier, speciesID INT, FOREIGN KEY(speciesID) \
                    REFERENCES moleculeName(ROWID), FOREIGN KEY(annotationID) references annotation(ROWID))''')
+    cursor.execute('''CREATE TABLE bond(fileName INT, moleculeID1 INT, moleculeID2 INT, FOREIGN KEY(fileName) REFERENCES biomodels(ROWID), \
+                      FOREIGN KEY(moleculeID1) REFERENCES moleculeNames(ROWID), FOREIGN KEY(moleculeID2) REFERENCES moleculeNames(ROWID))''')
     connection.commit()
     connection.close()
 
@@ -188,7 +221,6 @@ def populateDatabaseFromFile(fileName, databaseName, userDefinitions=None):
             modelSpecies = annotation
             break
 
-
     annotationNames.append(utils.annotationResolver.resolveAnnotation(annotation[1]))
 
     cursor.executemany("INSERT into annotation(annotationURI,annotationName) values (?, ?)", annotationNames)
@@ -207,7 +239,7 @@ def populateDatabaseFromFile(fileName, databaseName, userDefinitions=None):
 
     annotationIDs = {x[1]: x[0] for x in cursor.execute("select ROWID,annotationURI from annotation")}
 
-    #insert annotations
+    # insert annotations
     for molecule in basicModelAnnotations:
         for annotationType in basicModelAnnotations[molecule]:
             for annotation in basicModelAnnotations[molecule][annotationType]:
@@ -215,14 +247,10 @@ def populateDatabaseFromFile(fileName, databaseName, userDefinitions=None):
                     annotationName = utils.annotationResolver.resolveAnnotation(annotation)
                     annotationNames.append([annotation, annotationName[1]])
 
-    cursor.executemany("insert into annotation(annotationURI,annotationName) values (?, ?)", annotationNames)
+    cursor.executemany("INSERT into annotation(annotationURI,annotationName) values (?, ?)", annotationNames)
     connection.commit()
-    cursor.executemany("insert into moleculeNames(fileId,name) values (?, ?)", moleculeNames)
+    cursor.executemany("INSERT into moleculeNames(fileId,name) values (?, ?)", moleculeNames)
     connection.commit()
-
-
-
-
 
     moleculeIDs = {x[1]: x[0] for x in cursor.execute("select ROWID,name from moleculeNames WHERE moleculeNames.fileId == '{0}'".format(modelID))}
     annotationIDs = {x[1]: x[0] for x in cursor.execute("select ROWID,annotationURI from annotation")}
@@ -231,45 +259,76 @@ def populateDatabaseFromFile(fileName, databaseName, userDefinitions=None):
         for annotationType in basicModelAnnotations[molecule]:
             for annotation in basicModelAnnotations[molecule][annotationType]:
                 moleculeAnnotations.append([annotationIDs[annotation], moleculeIDs[molecule], annotationType])
-    
     cursor.executemany("insert into identifier(annotationID,speciesID, qualifier) values (?, ?, ?)", moleculeAnnotations)
     connection.commit()
     connection.close()
 
 
+def populateBondDatabaseFromFile(fileName, databaseName):
+    pass
+
+
 def defineConsole():
     parser = argparse.ArgumentParser(description='SBML to BNGL translator')
-    parser.add_argument('-c', '--create',action='store_true',help='Create database tables')
-    parser.add_argument('-d', '--database',type=str,help='database to modify',required=True)
-    parser.add_argument('-i', '--input-file',type=str,help='input SBML file')
-    parser.add_argument('-u', '--user_conventions',type=str,help='Use user convention definitions for SCT calculation')
-    parser.add_argument('-q', '--query',action='store_true',help='Query a database for its common namespace')
+    parser.add_argument('-c', '--create', action='store_true', help='Create database tables')
+    parser.add_argument('-d', '--database', type=str, help='database to modify', required=True)
+    parser.add_argument('-i', '--input-file', type=str, help='input SBML file')
+    parser.add_argument('-u', '--user_conventions', type=str, help='Use user convention definitions for SCT calculation')
+    parser.add_argument('-q', '--query', type=str, help='Query a database for its common namespace')
     parser.add_argument('-s', '--specific_query', type=str, help='search for models with a given molecule')
-    parser.add_argument('-r','--directory',type=str,help='Add SBML models in directory "directory" to database')
+    parser.add_argument('-r', '--directory', type=str, help='Add SBML models in directory "directory" to database')
     #parser.add_argument('-o','--output-file',type=str,help='output SBML file',required=True)
-    return parser    
+    return parser
 
 
-def query(moleculeQuery):
-    db = NamingDatabase('namingConventions.db')
+def query(database, queryType, queryOptions):
+    db = NamingDatabase(database)
     #db.getAnnotationsFromSpecies('EGFR')
     #db.getSpeciesFromAnnotations('http://identifiers.org/uniprot/P00533')
     #print db.getSpeciesFromFileName('BIOMD0000000048.xml')
-    if moleculeQuery:
-        selectedFiles = db.getFileNameFromSpecies(moleculeQuery)
-        result = db.findOverlappingNamespace(selectedFiles)
-    else:
-        result = db.findOverlappingNamespace([])
+    try:
+        if Query[queryType] == Query.species:
+            if queryOptions is None:
+                print "Species query must indicate a species to search for using the '-s' flag"
+                return
+            selectedFiles = db.getFileNameFromSpecies(queryOptions)
+            result = db.findOverlappingNamespace(selectedFiles)
+        elif Query[queryType] == Query.organism:
+            if queryOptions is not None:
+                selectedFiles = db.getFileNameFromOrganism(queryOptions)
+                if selectedFiles != []:
+                    result = db.findOverlappingNamespace(selectedFiles)
+                else:
+                    result = []
+            else:
+                result = {}
+                organismNames = db.getOrganismNames()
+                for organism in organismNames:
+                    selectedFiles = db.getFileNameFromOrganism(organism)
+                    print organism, len(selectedFiles)
+                    result[organism] = db.findOverlappingNamespace(selectedFiles)
+        elif Query[queryType] == Query.family:
+            result = {}
+            if queryOptions is None:
+                selectedFiles = []
+                for family in organismFamilies:
+                    selectedFiles.extend(db.getFileNameFromSpecies(family))
+                    result['mammalsFamily'] = db.findOverlappingNamespace(selectedFiles)
 
-    pprint.pprint([[x['name'], len(x['fileName'])] for x in result])
+        elif Query[queryType] == Query.all:
+            result = db.findOverlappingNamespace([])
+        #pprint.pprint([[x['name'], len(x['fileName'])] for x in result])
+        import pickle
+        with open('resultsMammals.dump', 'wb') as f:
+            pickle.dump(result, f)
+    except KeyError:
+        print 'Query operation not supported'
 
 if __name__ == "__main__":
-    
-    
     parser = defineConsole()
     namespace = parser.parse_args()
     if namespace.query:
-        query(namespace.specific_query)
+        query(namespace.database, namespace.query, namespace.specific_query)
     else:
         if namespace.create:
             setupDatabase(namespace.database)
@@ -282,4 +341,3 @@ if __name__ == "__main__":
             progress = progressbar.ProgressBar(maxval=len(sbmlFiles)).start()
             for idx in progress(range(len(sbmlFiles))):
                 populateDatabaseFromFile(sbmlFiles[idx], namespace.database, None)
-

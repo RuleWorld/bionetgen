@@ -412,8 +412,8 @@ def analyzeFile(bioNumber, reactionDefinitions, useID, namingConventions, output
     database.speciesEquivalence = speciesEquivalence
     database.atomize = atomize
 
-    returnArray= analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator)
-    with open(outputFile,'w') as f:
+    returnArray = analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquivalence, atomize, translator)
+    with open(outputFile, 'w') as f:
         f.write(returnArray.finalString)
     #with open('{0}.dict'.format(outputFile),'wb') as f:
     #    pickle.dump(returnArray[-1],f)
@@ -434,7 +434,8 @@ def correctRulesWithParenthesis(rules,parameters):
         if len(tmp) > 0:
             rules[idx].strip()
             rules[idx] += '()'
-    
+
+
 def changeNames(functions, dictionary):
     '''
     changes instances of keys in dictionary appeareing in functions to their corresponding
@@ -443,29 +444,31 @@ def changeNames(functions, dictionary):
     tmpArray = []
     for function in functions:
         tmp = function.split(' = ')
-        #hack to avoid problems with less than equal or more than equal
-        #in equations
-        tmp = [tmp[0],''.join(tmp[1:])] 
+        # hack to avoid problems with less than equal or more than equal
+        # in equations
+        tmp = [tmp[0], ''.join(tmp[1:])]
         for key in [x for x in dictionary if x in tmp[1]]:
-            tmp[1] = re.sub(r'(\W|^){0}(\W|$)'.format(key),r'\1{0}\2'.format(dictionary[key]),tmp[1])
-        tmpArray.append('{0} = {1}'.format(tmp[0],tmp[1]))
+            tmp[1] = re.sub(r'(\W|^){0}(\W|$)'.format(key), r'\1{0}\2'.format(dictionary[key]), tmp[1])
+        tmpArray.append('{0} = {1}'.format(tmp[0], tmp[1]))
     return tmpArray
-    
-def changeRates(reactions,dictionary):
+
+
+def changeRates(reactions, dictionary):
     tmpArray = []
     tmp = None
     for reaction in reactions:
         tmp = reaction.strip().split(' ')
         for key in [x for x in dictionary if x in tmp[-1]]:
-            tmp[-1] = re.sub(r'(\W|^){0}(\W|$)'.format(key),r'\1{0}\2'.format(dictionary[key]),tmp[-1])
+            tmp[-1] = re.sub(r'(\W|^){0}(\W|$)'.format(key), r'\1{0}\2'.format(dictionary[key]), tmp[-1])
         tmpArray.append(' '.join(tmp))
     if tmp:
         tmpArray.append(' '.join(tmp))
     return tmpArray
-    
+
+
 def unrollFunctions(functions):
     flag = True
-    #bngl doesnt accept nested function calling
+    # bngl doesnt accept nested function calling
     while(flag):
         dictionary = OrderedDict()
         flag = False
@@ -473,19 +476,17 @@ def unrollFunctions(functions):
             tmp = function.split(' = ')
             for key in dictionary:
                 if key in tmp[1]:
-                    tmp[1] = re.sub(r'(\W|^){0}\(\)(\W|$)'.format(key),r'\1({0})\2'.format(dictionary[key]),tmp[1])
+                    tmp[1] = re.sub(r'(\W|^){0}\(\)(\W|$)'.format(key), r'\1({0})\2'.format(dictionary[key]), tmp[1])
                     flag = False
             dictionary[tmp[0].split('()')[0]] = tmp[1]
         tmp = []
         for key in dictionary:
-            tmp.append('{0}() = {1}'.format(key,dictionary[key]))
+            tmp.append('{0}() = {1}'.format(key, dictionary[key]))
         functions = tmp
     return functions
-            
-        
-            
-    
-def analyzeHelper(document,reactionDefinitions,useID,outputFile,speciesEquivalence,atomize,translator,bioGrid = False):
+
+
+def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquivalence, atomize, translator, bioGrid=False):
     '''
     taking the atomized dictionary and a series of data structure, this method
     does the actual string output.
