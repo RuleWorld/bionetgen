@@ -1030,7 +1030,7 @@ class SBMLAnalyzer:
         classifies a group of reaction according to the information in the json
         config file
         
-        FIXME:This function is currently the biggest bottleneck in atomizer, taking up 
+        FIXME:classifiyReactions function is currently the biggest bottleneck in atomizer, taking up 
         to 80% of the time without conting pathwaycommons querying.
         '''
         def createArtificialNamingConvention(reaction,fuzzyKey,fuzzyDifference):
@@ -1041,9 +1041,16 @@ class SBMLAnalyzer:
             '''
             #fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
             if fuzzyKey and fuzzyKey.strip('_') not in strippedMolecules:
-                logMess('DEBUG:Atomization','added induced naming convention {0}'.format(str(reaction)))
                 #if our state isnt yet on the dependency graph preliminary data structures
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
+                    #print '---','{0}mod'.format(fuzzyKey),equivalenceTranslator.keys()
+                    # check if there is a combination of existing keys that deals with this modification without the need of creation a new one
+                    for i in xrange(1, 3):
+                        combinations = itertools.permutations([x[:-3] for x in self.namingConventions['modificationList'][2:]], i)
+                        validKeys = list(itertools.ifilter(lambda x: (''.join(x)).upper() == fuzzyKey.upper(), combinations))
+                        if (validKeys):
+                            return
+                    logMess('DEBUG:Atomization', 'added induced naming convention {0}'.format(str(reaction)))
                     equivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
                     if fuzzyKey == '0':
                         tmpState = 'ON'
@@ -1135,7 +1142,6 @@ class SBMLAnalyzer:
 
                 reactantString, productString = self.removeExactMatches(reactantString, productString)
             matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
-
             if matching and flagstar:
                 logMess('DEBUG:Atomization', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
      

@@ -893,7 +893,7 @@ def atomize(dependencyGraph, weights, translator, reactionProperties,
                 createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
                                    equivalenceDictionary, sbmlAnalyzer, database)
             else:
-                createBindingRBM(element, translator, dependencyGraph, bioGridFlag, database.pathwaycommons,parser)
+                createBindingRBM(element, translator, dependencyGraph, bioGridFlag, database.pathwaycommons, parser)
 
 
 def updateSpecies(species, referenceMolecule):
@@ -984,7 +984,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
     #analyzeSBML.analyzeNamingConventions(molecules)
     #rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
 
-    ####dependency graph
+    # ###dependency graph
     # binding reactions
 
     for reaction, classification in zip(rules, database.classifications):
@@ -992,16 +992,33 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
                         list(parseReactions(reaction)), classification)
 
 
-
     # lexical dependency graph contains lexically induced binding compositions. atomizer gives preference to binding obtained this way as opposed to stoichiometry
     # stronger bounds on stoichiometry based binding can be defined in reactionDefinitions.json.
+
     for element in lexicalDependencyGraph:
-        database.dependencyGraph[element] = lexicalDependencyGraph[element]
+
+        if element in database.dependencyGraph:
+            if len(lexicalDependencyGraph[element]) == 0:
+                continue
+            oldDependency = database.dependencyGraph[element]
+            if sorted(lexicalDependencyGraph[element][0]) in [sorted(x) for x in oldDependency]:
+                #if len(oldDependency) > 1:
+                #    logMess('DEBUG:Atomization', 'Species {0} was confirmed to be {1} based on lexical information'.format(element,lexicalDependencyGraph[element]))
+                database.dependencyGraph[element] = lexicalDependencyGraph[element]
+            else:
+                pass
+                logMess('INFO:Atomization', 'Species {0} was determined to be {1} instead of {2} based on \
+lexical information'.format(element, lexicalDependencyGraph[element], oldDependency))
+                database.dependencyGraph[element] = lexicalDependencyGraph[element]
+                addAssumptions('lexicalVsstoch', (('stoch', str(oldDependency)), ('lexical', str(database.dependencyGraph[element]))))
+        else:
+            database.dependencyGraph[element] = lexicalDependencyGraph[element]
+
         # Check if I'm using a molecule that hasn't been used yet
         for dependencyCandidate in database.dependencyGraph[element]:
             for molecule in [x for x in dependencyCandidate if x not in database.dependencyGraph]:
                 database.dependencyGraph[molecule] = []
-
+        
     # database.eequivalence translator contains 1:1 equivalences
     # FIXME: do we need this update step or is it enough with the later one?
     # catalysis reactions
@@ -1045,7 +1062,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
 
-    #include user label information. 
+    # include user label information. 
     for element in database.userLabelDictionary:
         if database.userLabelDictionary[element] == 0:
             continue
@@ -1102,16 +1119,14 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
 
                 elif tmp3 in database.dependencyGraph[namingEquivalence[0][1]]:
                     removedElement = namingEquivalence[0][1]
-            
-            
+
+
             #then add the new, true dependencies
             #if its not supposed to be a basic element
             tmp = [x for x in namingEquivalence[1] if x not in namingEquivalence[2]]
             tmp.extend([x for x in namingEquivalence[2] if x not in namingEquivalence[1]])
             tmp2 = deepcopy(tmp)
             tmp2.reverse()
-            
-            
             ##TODO: map back for the elements in namingEquivalence[2]
             if tmp not in database.dependencyGraph[namingEquivalence[3][0]] \
                 and tmp2 not in database.dependencyGraph[namingEquivalence[3][0]]:
@@ -1130,6 +1145,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
 tmp,removedElement,tmp3))
     #user defined stuff
 '''
+
     # stuff obtained from string similarity analysis
     for element in database.lexicalLabelDictionary:
         # similarity analysis has less priority than anything we discovered before
@@ -1145,7 +1161,6 @@ tmp,removedElement,tmp3))
                     .format(element, database.lexicalLabelDictionary[element][0]))
             database.dependencyGraph[element] = [list(
                 database.lexicalLabelDictionary[element][0])]
-
     # pure lexical analysis for the remaining orphaned molecules
     orphanedSpecies = [x for x in database.dependencyGraph if database.dependencyGraph[x] == []]
     strippedMolecules = [x.strip('()') for x in molecules]
@@ -1155,7 +1170,6 @@ tmp,removedElement,tmp3))
             addToDependencyGraph(database.dependencyGraph, species, [])
         for instance in tmpDependency[species]:
             addToDependencyGraph(database.dependencyGraph, species, instance)
-
     prunnedDependencyGraph, database.weights, unevenElementDict, database.artificialEquivalenceTranslator = \
         consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator, database.eequivalenceTranslator, database.sbmlAnalyzer)
 
@@ -1198,7 +1212,7 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
     '''
 
     prunnedDependencyGraph, database = createSpeciesCompositionGraph(parser, database, configurationFile, namingConventions,
-                       speciesEquivalences=speciesEquivalences, bioGridFlag=bioGridFlag)
+                                                                     speciesEquivalences=speciesEquivalences, bioGridFlag=bioGridFlag)
 
     for element in database.artificialEquivalenceTranslator:
         if element not in database.eequivalenceTranslator:
@@ -1206,7 +1220,7 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
         database.eequivalenceTranslator[element].extend(database.artificialEquivalenceTranslator[element])
 
     # special handling for double modifications like double phosporylation
-    #FIXME: this needs to be done in a cleaner way(e.g. getting them
+    # FIXME: this needs to be done in a cleaner way(e.g. getting them
     # from a file instead of being hardcoded)
     doubleModifications = {"Double-Phosporylation": "Phosporylation"}
 
@@ -1239,7 +1253,7 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
 
     database.weights = sorted(database.weights, key=lambda rule: (rule[1], len(rule[0])))
     atomize(prunnedDependencyGraph, database.weights, database.translator, database.reactionProperties,
-            database.eequivalenceTranslator, bioGridFlag, database.sbmlAnalyzer, database,parser)
+            database.eequivalenceTranslator, bioGridFlag, database.sbmlAnalyzer, database, parser)
 
     onlySynDec = len([x for x in database.classifications if x not in ['Generation', 'Decay']]) == 0
     propagateChanges(database.translator, prunnedDependencyGraph)
