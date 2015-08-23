@@ -727,7 +727,6 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
     '''
     if it's a catalysis reaction create a new component/state
     '''
-
     if dependencyGraph[element[0]][0][0] == element[0]:
         if element[0] not in translator:
             translator[element[0]] = createEmptySpecies(element[0])
@@ -742,27 +741,25 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
             #classification = identifyReaction(
             #                                  equivalenceDictionary,
             #                                  dependencyGraph[tmp][0][0],tmp)
-            classification = sbmlAnalyzer.findMatchingModification(tmp, dependencyGraph[tmp][0][0])
-            if not classification:
-                classification = identifyReaction(
+            classifications = sbmlAnalyzer.findMatchingModification(tmp, dependencyGraph[tmp][0][0])
+            if not classifications:
+                classifications = [identifyReaction(
                                                   equivalenceDictionary,
-                                                  dependencyGraph[tmp][0][0], tmp)
-            if not classification:
-                classification = sbmlAnalyzer.findMatchingModification(element[0], dependencyGraph[tmp][0][0])
-            if not classification:
-                classification = identifyReaction(
+                                                  dependencyGraph[tmp][0][0], tmp)]
+            if not classifications:
+                classifications = sbmlAnalyzer.findMatchingModification(element[0], dependencyGraph[tmp][0][0])
+            if not classifications:
+                classifications = [identifyReaction(
                                                   equivalenceDictionary,
-                                                  dependencyGraph[tmp][0][0], element[0])
-
+                                                  dependencyGraph[tmp][0][0], element[0])]
             # if we know what classification it is then add the corresponding components and states
-            if classification is not None:
-			    #and  reactionProperties[classification][0] not in existingComponents:
-                componentStateArray.append(reactionProperties[classification])
-                #classificationArray.append([classification,
-                #                            tmp,dependencyGraph[tmp]
-                #                            [0][0]])
-                existingComponents.append(reactionProperties[
-                classification][0])
+            if classifications is not None:
+                for classification in classifications:
+                    componentStateArray.append(reactionProperties[classification])
+                    #classificationArray.append([classification,
+                    #                            tmp,dependencyGraph[tmp]
+                    #                            [0][0]])
+                    existingComponents.append(reactionProperties[classification][0])
             # if we don't know we can create a force 1:1 modification
             elif database.forceModificationFlag and classification is None and not forceActivationSwitch:
                 forceActivationSwitch = True
@@ -771,11 +768,11 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
 
                 species = createEmptySpecies(baseName)
                 componentStateArray.append(['genericMod', tmp])
-                logMess('WARNING:ATOMIZATION', 'adding forced transformation: {0}:{1}:{2}'.format(baseName,dependencyGraph[element[0]],element[0]))
+                logMess('WARNING:ATOMIZATION', 'adding forced transformation: {0}:{1}:{2}'.format(baseName, dependencyGraph[element[0]], element[0]))
                 #return
             # bail out if we couldn't figure out what modification it is
             elif classification is None:
-                logMess('CRITICAL:ATOMIZATION', 'unregistered modification: {0}:{1}'.format(element[0],dependencyGraph[element[0]]))
+                logMess('CRITICAL:ATOMIZATION', 'unregistered modification: {0}:{1}'.format(element[0], dependencyGraph[element[0]]))
             memory.append(tmp)
             tmp = dependencyGraph[tmp][0][0]
             if tmp in memory:

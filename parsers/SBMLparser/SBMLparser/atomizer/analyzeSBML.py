@@ -147,11 +147,23 @@ class SBMLAnalyzer:
         return None,None,None
 
     def findMatchingModification(self,particle,species):
-        difference = difflib.ndiff(species,particle)
-        differenceList = tuple([x for x in difference if '+' in x])
-        if differenceList in self.namingConventions['patterns']:
-            return self.namingConventions['patterns'][differenceList]
-        return None
+        @memoize
+        def findMatchingModificationHelper(particle,species):
+            difference = difflib.ndiff(species,particle)
+            differenceList = tuple([x for x in difference if '+' in x])
+            if differenceList in self.namingConventions['patterns']:
+                return [self.namingConventions['patterns'][differenceList]]
+            fuzzyKey = ''.join([x[2:] for x in differenceList])
+            differenceList = self.testAgainstExistingConventions(fuzzyKey)
+            #can we state the modification as the combination of multiple modifications
+            if differenceList:
+                classificationList = []
+                for x in differenceList[0]:
+                    differenceKey = tuple(['+ {0}'.format(letter) for letter in x])
+                    classificationList.append(self.namingConventions['patterns'][differenceKey])
+                return classificationList
+            return None
+        return findMatchingModificationHelper(particle,species)
         
     def findClosestModification(self,particles,species):
         equivalenceTranslator = {}
@@ -268,16 +280,24 @@ class SBMLAnalyzer:
                     difference = difflib.ndiff(match,particle)
                     differenceList = tuple([x for x in difference if '+' in x])
                     if differenceList in self.namingConventions['patterns']:
-                        logMess('INFO:Atomization','matching {0}={1}'.format(particle,[match]))
+                        logMess('INFO:Atomization', 'matching {0}={1}'.format(particle, [match]))
                         addToDependencyGraph(dependencyGraph,particle,[match])
                     
             elif particle not in composingElements and composingElements != [] and all([x in species for x in composingElements]):
-                addToDependencyGraph(dependencyGraph,particle,composingElements)
+                addToDependencyGraph(dependencyGraph, particle, composingElements)
                 for element in composingElements:
                     if element not in dependencyGraph:
-                        addToDependencyGraph(dependencyGraph,element,[])
+                        addToDependencyGraph(dependencyGraph, element, [])
                     if element not in particles:
                         additionalHandling.append(element)
+            else:
+                for basicElement in basicElements:
+                    if basicElement in particle and basicElement != particle:
+                        fuzzyList = self.processAdHocNamingConventions(basicElement,particle,localSpeciesDict,False,species)
+                        if self.testAgainstExistingConventions(fuzzyList[0][1]):
+                            addToDependencyGraph(dependencyGraph,particle,[basicElement])
+                            logMess('INFO:Atomization', '{0} can be mapped to {1} through existing naming conventions'.format(particle,[basicElement]))
+                            break
         #if len(additionalHandling) > 0:
             #print self.findClosestModification(set(additionalHandling),species)
         return dependencyGraph,equivalenceTranslator
@@ -429,8 +449,8 @@ class SBMLAnalyzer:
             tmpTranslator[element].extend(self.userEquivalencesDict[element])
         return tmpTranslator,translationKeys,conventionDict
     
-    def processAdHocNamingConventions(self,reactant,product,
-                                      localSpeciesDict,compartmentChangeFlag,moleculeSet):
+    def processAdHocNamingConventions(self, reactant, product,
+                                      localSpeciesDict, compartmentChangeFlag, moleculeSet):
         '''
         1-1 string comparison. This method will attempt to detect if there's
         a modifiation relatinship between string <reactant> and <product>
@@ -1086,7 +1106,19 @@ class SBMLAnalyzer:
         productList = self.findBiggestActionable(reaction[1],validCandidatesProducts)
 
         #print '\t\t+++++',reactantList,productList
-        return reactantList,productList 
+        return reactantList,productList
+
+    def testAgainstExistingConventions(self, fuzzyKey, threshold=4):
+        @memoize
+        def testAgainstExistingConventionsHelper(fuzzyKey, threshold):
+            for i in xrange(1, threshold):
+                combinations = itertools.permutations([x[:-3] for x in self.namingConventions['modificationList'][2:]], i)
+                validKeys = list(itertools.ifilter(lambda x: (''.join(x)).upper() == fuzzyKey.upper(), combinations))
+                if (validKeys):
+                    return validKeys
+            return None
+        return testAgainstExistingConventionsHelper(fuzzyKey,threshold)
+
     def classifyReactions(self, reactions, molecules, externalDependencyGraph={}):
         '''
         classifies a group of reaction according to the information in the json
@@ -1107,11 +1139,9 @@ class SBMLAnalyzer:
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
                     # print '---','{0}mod'.format(fuzzyKey),equivalenceTranslator.keys()
                     # check if there is a combination of existing keys that deals with this modification without the need of creation a new one
-                    for i in xrange(1, 3):
-                        combinations = itertools.permutations([x[:-3] for x in self.namingConventions['modificationList'][2:]], i)
-                        validKeys = list(itertools.ifilter(lambda x: (''.join(x)).upper() == fuzzyKey.upper(), combinations))
-                        if (validKeys):
-                            return
+                    if self.testAgainstExistingConventions(fuzzyKey):
+                        return
+
                     logMess('DEBUG:Atomization', 'added induced naming convention {0}'.format(str(reaction)))
                     equivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
                     if fuzzyKey == '0':
@@ -1206,9 +1236,8 @@ class SBMLAnalyzer:
                 #remove those chemicals that match exactly on both sides since those are not interesting.
                 #and unlike lexical pattern matching we are not going to go around trying to increase string size
 
+
                 reactantString, productString = self.removeExactMatches(reactantString, productString)
-            if reaction == [['Grb2_SOS', '__EGF_EGFR__2_P'], ['__EGF_EGFR__2_Grb2_SOS']]:
-                pass
             matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
             if matching and flagstar:
                 logMess('DEBUG:Atomization', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
