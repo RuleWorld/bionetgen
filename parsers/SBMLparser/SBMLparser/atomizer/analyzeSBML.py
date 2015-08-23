@@ -555,7 +555,7 @@ class SBMLAnalyzer:
                 #        return None,[close]
                 return None,[reactant]
 
-    def growString(self, reactant, product, rp, pp, idx, strippedMolecules):
+    def growString(self, reactant, product, rp, pp, idx, strippedMolecules,continuityFlag):
         '''
         currently this is the slowest method in the system because of all those calls to difflib
         '''
@@ -563,10 +563,11 @@ class SBMLAnalyzer:
         treactant = [rp]
         tproduct = pp
         pidx = product.index(pp[0])
+        #print reactant,rself.breakByActionableUnit([reactant,product],strippedMolecules)
         while idx + idx2 <= len(reactant):
             treactant2 = reactant[idx:min(len(reactant), idx + idx2)]
             #if treactant2 != tproduct2:
-            if treactant2[-1] in strippedMolecules:
+            if treactant2[-1] in strippedMolecules and continuityFlag:
                 break
             else:
                 if len(reactant) > idx + idx2:
@@ -604,10 +605,10 @@ class SBMLAnalyzer:
         idx2 = 2
         while pidx + idx2 <= len(product):
             tproduct2 = product[pidx:min(len(product), pidx + idx2)]
-            if tproduct2[-1] in strippedMolecules:
+            if tproduct2[-1] in strippedMolecules and continuityFlag:
                 break
 
-            if tproduct2[-1] not in strippedMolecules:
+            else:
                 if len(product) > pidx + idx2:
                     tailDifferences = get_close_matches(tproduct2[-1], strippedMolecules)
                     if len(tailDifferences) > 0:
@@ -647,23 +648,26 @@ class SBMLAnalyzer:
         return treactant, tproduct
     
     def approximateMatching2(self, reactantString, productString, strippedMolecules, differenceParameter):
-        
+        """
+        The meat of the naming convention matching between reactant and product is done here
+        tl;dr naming conventions are hard
+        """
         
         #reactantString = [x.split('_') for x in reaction[0]]
         #reactantString = [[y for y in x if y!=''] for x in reactantString]
         #productString = [x.split('_') for x in reaction[1]]
-        #productString = [[y for y in x if y!=''] for x in productString]        
+        #productString = [[y for y in x if y!=''] for x in productString]
 
         pairedMolecules = [[] for _ in range(len(productString))]
         pairedMolecules2 = [[] for _ in range(len(reactantString))]
-        
-        for stoch,reactant in enumerate(reactantString):
+
+        for stoch, reactant in enumerate(reactantString):
             idx = -1
-            while idx +1 < len(reactant):
+            while idx + 1 < len(reactant):
                 idx += 1
-                for stoch2,product in enumerate(productString):
+                for stoch2, product in enumerate(productString):
                     #print idx2,product in enumerate(element3):
-                    rp,pp = self.compareStrings(reactant[idx], product, strippedMolecules)
+                    rp, pp = self.compareStrings(reactant[idx], product, strippedMolecules)
                     if rp and rp != pp[0]:
                         pairedMolecules[stoch2].append((rp, pp[0]))
                         pairedMolecules2[stoch].append((pp[0], rp))
@@ -674,8 +678,8 @@ class SBMLAnalyzer:
                         idx = -1
                         break
                     elif rp:
-                        treactant,tproduct = self.growString(reactant, product,
-                                                        rp, pp, idx, strippedMolecules)
+                        treactant, tproduct = self.growString(reactant, product,
+                                                             rp, pp, idx, strippedMolecules,continuityFlag=True)
                         pairedMolecules[stoch2].append(('_'.join(treactant), '_'.join(tproduct)))
                         pairedMolecules2[stoch].append(('_'.join(tproduct), '_'.join(treactant)))
                         for x in treactant:
@@ -686,10 +690,10 @@ class SBMLAnalyzer:
                         break
                     else:
                         flag = False
-                        if pp not in [[],None]:
+                        if pp not in [[], None]:
                             #if reactant[idx] == pp[0]:
-                                treactant,tproduct = self.growString(reactant, product,
-                                                                reactant[idx], pp, idx, strippedMolecules)
+                                treactant, tproduct = self.growString(reactant, product,
+                                                                     reactant[idx], pp, idx, strippedMolecules,continuityFlag=False)
                                 #FIXME: this comparison is pretty nonsensical. treactant and tproduct are not
                                 #guaranteed to be in teh right order. why are we comparing them both at the same time
                                 if (len(treactant) > 1 and '_'.join(treactant) in strippedMolecules) or (len(tproduct)>1 and '_'.join(tproduct) in strippedMolecules):
@@ -1025,25 +1029,83 @@ class SBMLAnalyzer:
 
         return newReactant,newProduct
 
-    def classifyReactions(self,reactions,molecules,externalDependencyGraph={}):
+
+
+
+    def findBiggestActionable(self,chemicalList, chemicalCandidatesList):
+        actionableList = []
+        for chemical,chemicalCandidates in zip(chemicalList,chemicalCandidatesList):
+            if len(chemicalCandidates) == 0:
+                return None
+            if len(chemicalCandidates) == 1:
+                actionableList.append([chemical])
+                continue
+            # find all combinations
+            scoreDict = []
+            result = 0
+            try:
+                for i in xrange(1, len(chemicalCandidates)+1):
+                    combinations = list(itertools.permutations(chemicalCandidates,i))
+                    for x in combinations:
+
+                        score = difflib.SequenceMatcher(None,'_'.join(x), chemical).quick_ratio()
+                        if score == 1:
+                            result = x
+                            raise IOError
+                        elif score > 0:
+                            scoreDict.append([x, score])
+            except IOError:
+                scoreDict =  [[result,1.0]]
+            scoreDict.sort(key=lambda x:[x[1],-len(x[0])], reverse=True)
+            if len(scoreDict) > 0:
+                actionableList.append(list(scoreDict[0][0]))
+            else:
+                print actionableList
+                raise Exception
+        return actionableList
+
+    def breakByActionableUnit(self, reaction, strippedMolecules):
+        #find valid actionable units from the list of molecules in the system
+        validCandidatesReactants = [[y for y in strippedMolecules if y in x] for x in reaction[0]]
+        validCandidatesProducts = [[y for y in strippedMolecules if y in x] for x in reaction[1]]
+
+        # find the subset of intersection parts between reactants and products
+        intermediateVector = [list(itertools.ifilter(lambda x: any([len([z for z in difflib.ndiff(x,y) if '+' in z[0] or '-' in z[0]]) <= 3 for z in validCandidatesProducts for y in z]), sublist)) for sublist in validCandidatesReactants] 
+        intermediateVector = [list(itertools.ifilter(lambda x: any([len([z for z in difflib.ndiff(x,y) if '+' in z[0] or '-' in z[0]]) <= 3 for z in intermediateVector for y in z]), sublist)) for sublist in validCandidatesProducts] 
+
+        tmpReactant = [[list(itertools.ifilter(lambda y:len([x for x in intermediateVector[0] if y in x]) == 1, reactant))] for reactant in validCandidatesReactants]
+        tmpProduct = [[list(itertools.ifilter(lambda y:len([x for x in intermediateVector[0] if y in x]) == 1, reactant))] for reactant in validCandidatesProducts]
+
+        #print validCandidatesReactants,validCandidatesProducts,intermediateVector
+        #print '......',reaction
+        #print '\t......',validCandidatesReactants,validCandidatesProducts
+
+        #find biggest subset of actionable units
+
+        reactantList = self.findBiggestActionable(reaction[0],validCandidatesReactants)
+        productList = self.findBiggestActionable(reaction[1],validCandidatesProducts)
+
+        #print '\t\t+++++',reactantList,productList
+        return reactantList,productList 
+    def classifyReactions(self, reactions, molecules, externalDependencyGraph={}):
         '''
         classifies a group of reaction according to the information in the json
         config file
-        
-        FIXME:classifiyReactions function is currently the biggest bottleneck in atomizer, taking up 
+
+        FIXME:classifiyReactions function is currently the biggest bottleneck in atomizer, taking up
         to 80% of the time without conting pathwaycommons querying.
         '''
-        def createArtificialNamingConvention(reaction,fuzzyKey,fuzzyDifference):
+        def createArtificialNamingConvention(reaction, fuzzyKey, fuzzyDifference):
             '''
             Does the actual data-structure filling if
-            a 1-1 reaction shows sign of modification. Returns True if 
+            a 1-1 reaction shows sign of modification. Returns True if
             a change was performed
             '''
             #fuzzyKey,fuzzyDifference = self.processAdHocNamingConventions(reaction[0][0],reaction[1][0],localSpeciesDict,compartmentChangeFlag)
             if fuzzyKey and fuzzyKey.strip('_') not in strippedMolecules:
-                #if our state isnt yet on the dependency graph preliminary data structures
+                # if our state isnt yet on the dependency graph preliminary data structures
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
-                    #print '---','{0}mod'.format(fuzzyKey),equivalenceTranslator.keys()
+                    # print '---','{0}mod'.format(fuzzyKey),equivalenceTranslator.keys()
                     # check if there is a combination of existing keys that deals with this modification without the need of creation a new one
                     for i in xrange(1, 3):
                         combinations = itertools.permutations([x[:-3] for x in self.namingConventions['modificationList'][2:]], i)
@@ -1055,7 +1117,7 @@ class SBMLAnalyzer:
                     if fuzzyKey == '0':
                         tmpState = 'ON'
                     else:
-                        tmpState= fuzzyKey.upper()
+                        tmpState = fuzzyKey.upper()
                             
                     adhocLabelDictionary['{0}mod'.format(fuzzyKey)] = ['{0}mod'.format(fuzzyKey),tmpState]
                     #fill main naming convention data structure                    
@@ -1077,45 +1139,49 @@ class SBMLAnalyzer:
                 return True
             return False
         
-        #load the json config file
+        # load the json config file
         reactionDefinition = self.loadConfigFiles(self.configurationFile)
         strippedMolecules = [x.strip('()') for x in molecules]
-        #load user defined complexes        
+        # load user defined complexes     
         if self.speciesEquivalences != None:
             self.userEquivalences = self.loadConfigFiles(self.speciesEquivalences)['reactionDefinition']
-        #determines if two molecules have a relationship according to the naming convention section
+        # determines if two molecules have a relationship according to the naming convention section
         #equivalenceTranslator is a dictionary of actual modifications
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
         
         #process straightforward naming conventions
-        equivalenceTranslator,translationKeys,conventionDict = self.processNamingConventions2(molecules,onlyUser=True)
+        equivalenceTranslator, translationKeys, conventionDict = self.processNamingConventions2(molecules,onlyUser=True)
         newTranslationKeys = []
         adhocLabelDictionary = {}
 
-        #lists of plain reactions
+        # lists of plain reactions
         rawReactions = [parseReactions(x) for x in reactions]
-        #process fuzzy naming conventions based on reaction information
-        indirectEquivalenceTranslator= {x:[] for x in equivalenceTranslator}
-        localSpeciesDict = defaultdict(lambda : defaultdict(list))
+        # process fuzzy naming conventions based on reaction information
+        indirectEquivalenceTranslator = {x: [] for x in equivalenceTranslator}
+        localSpeciesDict = defaultdict(lambda: defaultdict(list))
 
         trueBindingReactions = []
 
-        #the lexical dependencyGraph merely applies lexical analysis to detect which components in the left hand size
-        #matches to different ones in the right hand size of a given reaction
+        # the lexical dependencyGraph merely applies lexical analysis to detect which components in the left hand size
+        # matches to different ones in the right hand size of a given reaction
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
 
-    
         for idx,reaction in enumerate(rawReactions):
             flagstar = False
             if len(reaction[0]) == 1 and len(reaction[1]) == 1 \
                 and len(reaction[0][0]) > len(reaction[1][0]):
-                    #unmodification
+                    #unmodification/relaxatopn
                     flagstar = True
-                    reaction = [reaction[1],reaction[0]]
+                    reaction = [reaction[1], reaction[0]]
 
             #should we reuse information obtained from other methods?
+            #FIXME: instead of doing a simple split by '_' we should be comparing against the molecules in stripped molecules and split by smallest actionable units.
             if externalDependencyGraph == {}:
+                #print '-----',reaction
+                #reactantString, productString = self.breakByActionableUnit(reaction, strippedMolecules)
+                #print '...',reaction, reactantString, productString
+                #if not reactantString or not productString:
                 reactantString = [x.split('_') for x in reaction[0]]
                 reactantString = [[y for y in x if y!=''] for x in reactantString]
                 productString = [x.split('_') for x in reaction[1]]
@@ -1141,6 +1207,8 @@ class SBMLAnalyzer:
                 #and unlike lexical pattern matching we are not going to go around trying to increase string size
 
                 reactantString, productString = self.removeExactMatches(reactantString, productString)
+            if reaction == [['Grb2_SOS', '__EGF_EGFR__2_P'], ['__EGF_EGFR__2_Grb2_SOS']]:
+                pass
             matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
             if matching and flagstar:
                 logMess('DEBUG:Atomization', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
@@ -1160,7 +1228,7 @@ class SBMLAnalyzer:
                                 #logMess('Warning:ATOMIZATION','We could not  a meaningful \
                                 #mapping in {0} when lexically analyzing {1}.'.format(pair,reactant))
                             createArtificialNamingConvention(fuzzyReaction,
-                                                                 fuzzyKey,fuzzyDifference)
+                                                                 fuzzyKey, fuzzyDifference)
                                                                  
                     if flag and sorted([x[1] for x in matches]) not in lexicalDependencyGraph[reactant]:
                         if [x[1] for x in matches] != [reactant]:
