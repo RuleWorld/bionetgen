@@ -136,6 +136,7 @@ sub getExecParams
 	$exec_params{'embed'} = $args{'embed'};
 	
 	if(defined $args{'level'}) { $exec_params{'filter'}->{'level'} = $args{'level'} };
+	if(defined $args{'reset'}) { $exec_params{'reset'} = $args{'reset'} };
 	return \%exec_params;
 }
 ##########################
@@ -164,6 +165,8 @@ sub execute_params
 	$args{'background'}->{'toggle'} = 1 if(not has(\@argkeys2,'toggle'));
 	$args{'background'}->{'include'} = [] if(not has(\@argkeys2,'include'));
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
+	
+	$args{'reset'} = 0 if(not has (\@argkeys,'reset'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
 	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory regulatory_db reaction_network contactmap process );
@@ -202,6 +205,8 @@ sub execute_params
 	my $bkg_toggle = $bkg->{'toggle'};
 	my $bkg_include = $bkg->{'include'};
 	my $bkg_exclude = $bkg->{'exclude'};
+	
+	my $reset = $args{'reset'};
 	
 	#my $closed = $args{'closed'};
 	
@@ -309,6 +314,12 @@ sub execute_params
 		# printing rule network (using each or without each)
 		getRuleNetwork($model);
 		applyRuleNetworkCurrent($model,$model->VizGraphs->{'RuleNetwork'});
+		if($reset==1) 
+			{
+			applyRuleNetworkCurrent($model,$model->VizGraphs->{'RuleNetwork'});
+			undef $model->VizGraphs->{'Background'};
+			undef $model->VizGraphs->{'Classes'};
+			}
 		if ($each==0)
 		{
 			if ($filter->{'toggle'}==1 and defined $filter->{'items'})
