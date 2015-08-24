@@ -3137,7 +3137,8 @@ sub visualize
     		'filter'       =>  0,
     		'level'        =>  1,
     		'mergepairs'   =>  0,
-    		'embed'        =>  0
+    		'embed'        =>  0,
+			'reset'		   =>  1,
     };
     
     # get user options
