@@ -154,7 +154,7 @@ class SBMLAnalyzer:
             if differenceList in self.namingConventions['patterns']:
                 return [self.namingConventions['patterns'][differenceList]]
             fuzzyKey = ''.join([x[2:] for x in differenceList])
-            differenceList = self.testAgainstExistingConventions(fuzzyKey)
+            differenceList = self.testAgainstExistingConventions(fuzzyKey,self.namingConventions['modificationList'])
             #can we state the modification as the combination of multiple modifications
             if differenceList:
                 classificationList = []
@@ -294,7 +294,7 @@ class SBMLAnalyzer:
                 for basicElement in basicElements:
                     if basicElement in particle and basicElement != particle:
                         fuzzyList = self.processAdHocNamingConventions(basicElement,particle,localSpeciesDict,False,species)
-                        if self.testAgainstExistingConventions(fuzzyList[0][1]):
+                        if self.testAgainstExistingConventions(fuzzyList[0][1],self.namingConventions['modificationList']):
                             addToDependencyGraph(dependencyGraph,particle,[basicElement])
                             logMess('INFO:Atomization', '{0} can be mapped to {1} through existing naming conventions'.format(particle,[basicElement]))
                             break
@@ -1108,17 +1108,18 @@ class SBMLAnalyzer:
         #print '\t\t+++++',reactantList,productList
         return reactantList,productList
 
-    def testAgainstExistingConventions(self, fuzzyKey, threshold=4):
-        def testAgainstExistingConventionsHelper(fuzzyKey, threshold):
+    def testAgainstExistingConventions(self, fuzzyKey, modificationList, threshold=4):
+        @memoize
+        def testAgainstExistingConventionsHelper(fuzzyKey, modificationList, threshold):
             if not fuzzyKey:
                 return None
             for i in xrange(1, threshold):
-                combinations = itertools.permutations([x[:-3] for x in self.namingConventions['modificationList'][2:]], i)
+                combinations = itertools.permutations([x[:-3] for x in modificationList[2:]], i)
                 validKeys = list(itertools.ifilter(lambda x: (''.join(x)).upper() == fuzzyKey.upper(), combinations))
                 if (validKeys):
                     return validKeys
             return None
-        return testAgainstExistingConventionsHelper(fuzzyKey,threshold)
+        return testAgainstExistingConventionsHelper(fuzzyKey, modificationList, threshold)
 
     def classifyReactions(self, reactions, molecules, externalDependencyGraph={}):
         '''
@@ -1140,7 +1141,7 @@ class SBMLAnalyzer:
                 if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
                     # print '---','{0}mod'.format(fuzzyKey),equivalenceTranslator.keys()
                     # check if there is a combination of existing keys that deals with this modification without the need of creation a new one
-                    if self.testAgainstExistingConventions(fuzzyKey):
+                    if self.testAgainstExistingConventions(fuzzyKey,self.namingConventions['modificationList']):
                         return
 
                     logMess('DEBUG:Atomization', 'added induced naming convention {0}'.format(str(reaction)))
