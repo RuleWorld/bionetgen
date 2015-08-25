@@ -4,7 +4,7 @@ Created on Tue Dec  6 17:42:31 2011
 
 @author: proto
 """
-from copy import deepcopy,copy
+from copy import deepcopy, copy
 import writer.bnglWriter as writer
 log = {'species': [], 'reactions': []}
 import re
@@ -15,6 +15,7 @@ import numpy as np
 from utils.util import logMess
 import libsbml
 
+
 def factorial(x):
     temp = x
     acc = 1
@@ -23,16 +24,18 @@ def factorial(x):
         temp -= 1
     return acc
 
-def comb(x,y,exact=True):
-    return factorial(x)/(factorial(y) * factorial(x-y))
+
+def comb(x, y, exact=True):
+    return factorial(x) / (factorial(y) * factorial(x - y))
 
 
-bioqual = ['BQB_IS','BQB_HAS_PART','BQB_IS_PART_OF','BQB_IS_VERSION_OF',
-           'BQB_HAS_VERSION','BQB_IS_HOMOLOG_TO',
-           'BQB_IS_DESCRIBED_BY','BQB_IS_ENCODED_BY','BQB_ENCODES','BQB_OCCURS_IN',
-           'BQB_HAS_PROPERTY','BQB_IS_PROPERTY_OF','BQB_HAS_TAXON','BQB_UNKNOWN']
+bioqual = ['BQB_IS', 'BQB_HAS_PART', 'BQB_IS_PART_OF', 'BQB_IS_VERSION_OF',
+           'BQB_HAS_VERSION', 'BQB_IS_HOMOLOG_TO',
+           'BQB_IS_DESCRIBED_BY', 'BQB_IS_ENCODED_BY', 'BQB_ENCODES', 'BQB_OCCURS_IN',
+           'BQB_HAS_PROPERTY', 'BQB_IS_PROPERTY_OF', 'BQB_HAS_TAXON', 'BQB_UNKNOWN']
 
-modqual = ['BQM_IS','BQM_IS_DESCRIBED_BY','BQM_IS_DERIVED_FROM','BQM_IS_INSTANCE_OF', 'BQM_HAS_INSTANCE', 'BQM_UNKNOWN']
+modqual = ['BQM_IS', 'BQM_IS_DESCRIBED_BY', 'BQM_IS_DERIVED_FROM', 'BQM_IS_INSTANCE_OF', 'BQM_HAS_INSTANCE', 'BQM_UNKNOWN']
+
 
 class SBML2BNGL:
     '''
@@ -67,7 +70,6 @@ class SBML2BNGL:
             return func
         return decorate
 
-
     def getMetaInformation(self, additionalNotes):
 
         # get unit information
@@ -76,26 +78,26 @@ class SBML2BNGL:
         metaInformation = {}
         annotation = self.model.getAnnotation()
         lista = libsbml.CVTermList()
-        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation,lista)
+        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation, lista)
         modelHistory = self.model.getModelHistory()
         if modelHistory:
             try:
-                tmp = libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getFamilyName()
-                tmp += ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getGivenName()
-                metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(),0).getEmail() + "'"
+                tmp = libsbml.ModelHistory.getCreator(self.model.getModelHistory(), 0).getFamilyName()
+                tmp += ' ' + libsbml.ModelHistory.getCreator(self.model.getModelHistory(), 0).getGivenName()
+                metaInformation['creatorEmail'] = "'" + libsbml.ModelHistory.getCreator(self.model.getModelHistory(), 0).getEmail() + "'"
                 metaInformation['creatorName'] = "'" + tmp + "'"
             except:
                 metaInformation['creatorEmail'] = "''"
                 metaInformation['creatorName'] = "''"
               
         for idx in range(lista.getSize()):
-            biol,qual = lista.get(idx).getBiologicalQualifierType(),lista.get(idx).getModelQualifierType()
+            biol,qual = lista.get(idx).getBiologicalQualifierType(), lista.get(idx).getModelQualifierType()
             if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
-              index = modqual[qual]
+                index = modqual[qual]
             else:
-              index = bioqual[biol]
+                index = bioqual[biol]
             if index not in metaInformation:
-              metaInformation[index] = set([])
+                metaInformation[index] = set([])
             resource = lista.get(idx).getResources().getValue(0)
             #print stats.resolveAnnotation(resource)
             metaInformation[index].add(resource)
@@ -808,7 +810,7 @@ class SBML2BNGL:
                     zRules.remove(rawArule[0])
                     #print rawArule[0]
 
-                    #aParameters[rawArule[0]] = 'arj' + rawArule[0] 
+                    #aParameters[rawArule[0]] = 'arj' + rawArule[0]
                     #tmp = list(rawArule)
                     #tmp[0] = 'arj' + rawArule[0]
                     #rawArule= tmp
@@ -882,21 +884,21 @@ class SBML2BNGL:
 
                 else:
                 """
-                if parameterSpecs[3] != '':
-                    parameters.append('{0} {1} #units:{2}'.format(parameterSpecs[0], parameterSpecs[1], parameterSpecs[3]))
+                if parameter.getUnits() != '':
+                    parameters.append('{0} {1} #units:{2}'.format(parameterSpecs[0], parameterSpecs[1], parameter.getUnits()))
                 else:
                     parameters.append('{0} {1}'.format(parameterSpecs[0], parameterSpecs[1]))
 
         #return ['%s %f' %(parameter.getId(),parameter.getValue()) for parameter in self.model.getListOfParameters() if parameter.getValue() != 0], [x.getId() for x in self.model.getListOfParameters() if x.getValue() == 0]
-        return parameters,zparam
+        return parameters, zparam
 
-    def getSpecies(self,translator = {},parameters = []):
+    def getSpecies(self, translator={}, parameters=[]):
         '''
         in sbml parameters and species have their own namespace. not so in
         bionetgen, so we need to rename things if they share the same name
         '''
 
-        moleculesText  = []
+        moleculesText = []
         speciesText = []
         observablesText = []
         names = []
@@ -908,7 +910,7 @@ class SBML2BNGL:
             compartmentDict[compartment.getId()] = compartment.getSize()
 
         for species in self.model.getListOfSpecies():
-            rawSpecies = self.getRawSpecies(species,parameters)
+            rawSpecies = self.getRawSpecies(species, parameters)
             #if rawSpecies['returnID'] in self.boundaryConditionVariables:
             #    continue
             if (rawSpecies['compartment'] != ''):
