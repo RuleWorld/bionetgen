@@ -743,15 +743,21 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
             #                                  dependencyGraph[tmp][0][0],tmp)
             classifications = sbmlAnalyzer.findMatchingModification(tmp, dependencyGraph[tmp][0][0])
             if not classifications:
-                classifications = [identifyReaction(
+                classifications = identifyReaction(
                                                   equivalenceDictionary,
-                                                  dependencyGraph[tmp][0][0], tmp)]
+                                                  dependencyGraph[tmp][0][0], tmp)
+                if classifications is not None:
+                    classifications = [classifications]
+
             if not classifications:
                 classifications = sbmlAnalyzer.findMatchingModification(element[0], dependencyGraph[tmp][0][0])
             if not classifications:
-                classifications = [identifyReaction(
+                classifications = identifyReaction(
                                                   equivalenceDictionary,
-                                                  dependencyGraph[tmp][0][0], element[0])]
+                                                  dependencyGraph[tmp][0][0], element[0])
+                if classifications is not None:
+                    classifications = [classifications]
+
             # if we know what classification it is then add the corresponding components and states
             if classifications is not None:
                 for classification in classifications:
@@ -761,7 +767,7 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
                     #                            [0][0]])
                     existingComponents.append(reactionProperties[classification][0])
             # if we don't know we can create a force 1:1 modification
-            elif database.forceModificationFlag and classification is None and not forceActivationSwitch:
+            elif database.forceModificationFlag and classifications is None and not forceActivationSwitch:
                 forceActivationSwitch = True
                 baseName = getTrueTag(dependencyGraph,
                                       dependencyGraph[element[0]][0][0])
@@ -771,7 +777,7 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
                 logMess('WARNING:ATOMIZATION', 'adding forced transformation: {0}:{1}:{2}'.format(baseName, dependencyGraph[element[0]], element[0]))
                 #return
             # bail out if we couldn't figure out what modification it is
-            elif classification is None:
+            elif classifications is None:
                 logMess('CRITICAL:ATOMIZATION', 'unregistered modification: {0}:{1}'.format(element[0], dependencyGraph[element[0]]))
             memory.append(tmp)
             tmp = dependencyGraph[tmp][0][0]
