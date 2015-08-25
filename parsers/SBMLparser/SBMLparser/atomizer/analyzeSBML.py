@@ -132,23 +132,23 @@ class SBMLAnalyzer:
                 #be a better way of doing this with difflib
                 permutations = set(['_'.join(x) for x in itertools.permutations(partialAnalysis,2) if x[0] == particle])
                 if all([x not in modifiedElement for x in permutations]):
-                    distance = self.distanceToModification(particle,comparisonElement,translationKeys[0])
-                    score = difflib.ndiff(particle,modifiedElement)
+                    distance = self.distanceToModification(particle, comparisonElement, translationKeys[0])
+                    score = difflib.ndiff(particle, modifiedElement)
                 #FIXME:tis is just an ad-hoc parameter in terms of how far a mod is from a species name
                 #use something better
             if distance < 4:
-                scores.append([particle,distance])
+                scores.append([particle, distance])
         if len(scores)>0:
             winner = scores[[x[1] for x in scores].index(min([x[1] for x in scores]))][0]   
         else:
             winner = None
         if winner:
-            return winner,translationKeys,equivalenceTranslator
-        return None,None,None
+            return winner, translationKeys, equivalenceTranslator
+        return None, None, None
 
-    def findMatchingModification(self,particle,species):
+    def findMatchingModification(self, particle, species):
         @memoize
-        def findMatchingModificationHelper(particle,species):
+        def findMatchingModificationHelper(particle, species):
             difference = difflib.ndiff(species,particle)
             differenceList = tuple([x for x in difference if '+' in x])
             if differenceList in self.namingConventions['patterns']:
@@ -1109,8 +1109,9 @@ class SBMLAnalyzer:
         return reactantList,productList
 
     def testAgainstExistingConventions(self, fuzzyKey, threshold=4):
-        @memoize
         def testAgainstExistingConventionsHelper(fuzzyKey, threshold):
+            if not fuzzyKey:
+                return None
             for i in xrange(1, threshold):
                 combinations = itertools.permutations([x[:-3] for x in self.namingConventions['modificationList'][2:]], i)
                 validKeys = list(itertools.ifilter(lambda x: (''.join(x)).upper() == fuzzyKey.upper(), combinations))
