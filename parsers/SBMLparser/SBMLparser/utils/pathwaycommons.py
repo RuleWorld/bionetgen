@@ -75,7 +75,6 @@ def getReactomeBondByUniprot(uniprot1, uniprot2):
     except urllib2.HTTPError:
         #logMess('ERROR:pathwaycommons','A connection could not be established to pathwaycommons')
         return None
-
     # divide by line
     parsedResponse = [x.split('\t') for x in response.split('\n')]
 
@@ -93,7 +92,8 @@ def getReactomeBondByUniprot(uniprot1, uniprot2):
     includedElements2 = [x[0] for x in includedElements2]
 
     # filter protein interaction by those uniprot ids and names we truly care about
-    ppi = [x[0:3] for x in ppi if len([y for y in includedElements1 if y in x]) == 1 and len([y for y in includedElements2 if y in x]) == 1]
+    ppi = [x[0:3] for x in ppi if (len([y for y in includedElements1 if y == x[0]]) == 1 and len([y for y in includedElements2 if y == x[2]]) == 1) \
+                                or (len([y for y in includedElements1 if y == x[2]]) == 1 and len([y for y in includedElements2 if y == x[0]]) == 1)]
     return ppi
 
 @memoize
@@ -126,7 +126,8 @@ def isInComplexWith(name1, name2,sbmlURI=[], sbmlURI2=[]):
 
 if __name__ == "__main__":
     #results =  isInComplexWith('GAP','Ras')
-    print getReactomeBondByName('EGF', 'EGFR')
+    print getReactomeBondByName('EGFR', 'EGFR',['Q9QX70'],['Q9QX70'])
     #print name2uniprot('MEKK1')
     #print results
-    #print getReactomeBondByUniprot('P20936','P01112')
+    print getReactomeBondByUniprot('Q9QX70','Q9QX70')
+    print getReactomeBondByUniprot('P07522','P07522')

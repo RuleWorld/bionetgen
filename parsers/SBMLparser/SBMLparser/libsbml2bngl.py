@@ -30,14 +30,16 @@ from sbml2bngl import SBML2BNGL
 #from biogrid import loadBioGridDict as loadBioGrid
 import logging
 from rulifier import postAnalysis
+import pprint
 
-
-#returntype for the sbml analyzer translator and helper functions
+# returntype for the sbml analyzer translator and helper functions
 AnalysisResults = namedtuple('AnalysisResults', ['rlength', 'slength', 'reval', 'reval2', 'clength', 'rdf', 'finalString', 'speciesDict', 'database'])
+
 
 def loadBioGrid():
     pass
-    
+
+
 def handler(signum, frame):
     print "Forever is over!"
     raise Exception("end of time")
@@ -146,7 +148,8 @@ def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
     sbml elements that are extraneous to bngl
     '''
     
-    for idx in range(0,len(functions)):
+    # reformat time function
+    for idx in range(0, len(functions)):
         for sbml in sbmlfunctions:
             if sbml in functions[idx]:
                 functions[idx] = writer.extendFunction(functions[idx],sbml,sbmlfunctions[sbml])
@@ -354,10 +357,26 @@ def postAnalyzeFile(outputFile, bngLocation, database):
                 database.translator[molecule[1]].deleteBond(bond)
                 logMess('INFO:Atomization', 'Used context information to determine that the bond {0} in species {1} is not likely'.format(bond,molecule[1]))
 
-    returnArray = analyzeHelper(database.document, database.reactionDefinitions, database.useID, 
-        outputFile, database.speciesEquivalence, database.atomize, database.translator)
-    with open(outputFile,'w') as f:
+    returnArray = analyzeHelper(database.document, database.reactionDefinitions, database.useID,
+                                outputFile, database.speciesEquivalence, database.atomize, database.translator)
+    with open(outputFile, 'w') as f:
         f.write(returnArray.finalString)
+    # recompute bng-xml file
+    consoleCommands.bngl2xml(outputFile)
+    bngxmlFile = '.'.join(outputFile.split('.')[:-1]) + '.xml'
+    # recompute context information
+    contextAnalysis = postAnalysis.ModelLearning(bngxmlFile)
+
+    # get those species patterns that follow uncommon motifs
+    motifSpecies, motifDefinitions = contextAnalysis.processContextMotifInformation(database.assumptions['lexicalVsstoch'], database)
+    #motifSpecies, motifDefinitions = contextAnalysis.processAllContextInformation()
+    if len(motifDefinitions) > 0:
+        logMess('WARNING:ContextAnalysis', 'Species with suspect context information were found. Information is being dumped to {0}_context.log'.format(outputFile))
+        with open('{0}_context.log'.format(outputFile), 'w') as f:
+            pprint.pprint(dict(motifSpecies), stream=f)
+            pprint.pprint(motifDefinitions, stream=f)
+
+
         
     # score hypothetical bonds
     #contextAnalysis.scoreHypotheticalBonds(assumptions['unknownBond'])
@@ -523,13 +542,13 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
 
     # finally, adjust parameters and initial concentrations according to whatever  initialassignments say
     param, zparam, initialConditions = parser.getInitialAssignments(translator, param, zparam, molecules, initialConditions)
-
+    aParameters, aRules, nonzparam, artificialRules, removeParams, artificialObservables = parser.getAssignmentRules(zparam, param, rawSpecies, observables)
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
-    reactionParameters, rules, rateFunctions = parser.getReactions(translator, len(compartments) > 1, atomize=atomize)
+    reactionParameters, rules, rateFunctions = parser.getReactions(translator, len(compartments) > 1,
+                                                                   atomize=atomize, parameterFunctions=artificialObservables)
     functions.extend(rateFunctions)
-    aParameters, aRules, nonzparam, artificialRules, removeParams, artificialObservables = parser.getAssignmentRules(zparam, param, rawSpecies, observables)
     for element in nonzparam:
         param.append('{0} 0'.format(element))
     param = [x for x in param if x not in removeParams]
@@ -607,6 +626,7 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
     functions.extend(aRules)
     sbmlfunctions = parser.getSBMLFunctions()
     processFunctions(functions,sbmlfunctions,artificialObservables,rateFunctions)
+
     for interation in range(0,3):
         for sbml2 in sbmlfunctions:
             for sbml in sbmlfunctions:
@@ -618,8 +638,8 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
 
     functions = changeNames(functions,aParameters)
 #     print [x for x in functions if 'functionRate60' in x]
-
     functions = unrollFunctions(functions)
+
     rules = changeRates(rules,aParameters)
     
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:

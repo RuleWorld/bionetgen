@@ -303,41 +303,44 @@ class SBML2BNGL:
             ifStack.update([element])
         for element in ifStack:
             if ifStack[element] > 1:
-                rateR = 'if({0}>0,{1}/({0}^{2}),0)'.format(element,rateR,ifStack[element])
+                rateR = 'if({0}>0, {1}/({0}^{2}),0)'.format(element, rateR, ifStack[element])
             else:
-                rateR = 'if({0}>0,{1}/{0},0)'.format(element,rateR)
+                rateR = 'if({0}>0, {1}/{0},0)'.format(element, rateR)
         if np.isinf(highStoichoiMetryFactor):
             rateR = '{0} * 1e20'.format(rateR)
-            logMess('SIMULATION:WARNING','Found usage of "inf" inside function {0}'.format(rateR))
+            logMess('WARNING:SIMULATION','Found usage of "inf" inside function {0}'.format(rateR))
         elif highStoichoiMetryFactor != 1:
-            rateR = '{0}*{1}'.format(rateR, int(highStoichoiMetryFactor))
+            rateR = '{0} * {1}'.format(rateR, int(highStoichoiMetryFactor))
         
         return rateR,math.getNumChildren()
 
 
-    def analyzeReactionRate(self,math,compartmentList,reversible,rReactant,rProduct):
+    def analyzeReactionRate(self, math, compartmentList, reversible, rReactant, rProduct, reactionID, parameterFunctions):
         """
         This functions attempts to obtain the left and right hand sides of a rate reaction 
-        function. It also removes compartments and chemical factors from the function
+        function given a MathML tree. It also removes compartments and chemical factors from the function
 
         Keyword arguments:
             math -- the MathML math object
-            imag -- compartmentList: a list of all the compartments in the system
+            compartmentList -- a list of all the compartments in the system
             reversible -- a boolean indicated whether there's should be a backward rate
             rReactant -- a string list of the reactants.
             rProduct -- a string list of the products.
         """
         math = self.getPrunnedTree(math, compartmentList)
         if reversible:
-            if math.getCharacter() == '-': 
+            if math.getCharacter() == '-':
                 if math.getNumChildren() > 1:
                     rateL, nl = (self.removeFactorFromMath(
-                    math.getLeftChild().deepCopy(), rReactant, rProduct))
+                                 math.getLeftChild().deepCopy(), rReactant,
+                                 rProduct))
                     rateR, nr = (self.removeFactorFromMath(
-                    math.getRightChild().deepCopy(), rProduct, rReactant))
+                                 math.getRightChild().deepCopy(), rProduct,
+                                 rReactant))
                 else:
-                    rateR,rateL,nr,nl = self.analyzeReactionRate(math.getChild(0),compartmentList,reversible,rProduct,rReactant)
-            elif math.getCharacter() == '+' and math.getNumChildren()> 1:
+                    rateR, rateL, nr, nl = self.analyzeReactionRate(math.getChild(0), compartmentList,
+                                                                    reversible, rProduct, rReactant, reactionID, parameterFunctions)
+            elif math.getCharacter() == '+' and math.getNumChildren() > 1:
 
                 if(self.getIsTreeNegative(math.getRightChild())):
                     rateL, nl = (self.removeFactorFromMath(
@@ -356,40 +359,61 @@ class SBML2BNGL:
                     rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
                                                           rReactant)
                     rateR = "if({0}< 0,-({0}),0)".format(rateR)
-                    nl, nr = 1,1
-                    
+                    nl, nr = 1, 1
+
             else:
+                # reaction is bidirectional but i can't separate function into
+                # left hand side and right hand side
                 rateL, nl = self.removeFactorFromMath(math.deepCopy(), rReactant,
                                                       rProduct)
-                rateL = "if({0}>= 0,{0},0)".format(rateL)
                 rateR, nr = self.removeFactorFromMath(math.deepCopy(), rProduct,
                                                       rReactant)
-                rateR = "if({0}< 0,-({0}),0)".format(rateR)
-                nl, nr = 1,1
+                if nl > 0:
+                    if nr == 0 and rateR not in parameterFunctions:
+                        rateL = '0'
+                        nl = -1
+                        logMess('WARNING:Simulation', 'In reaction {0}, the left hand side has been determined \
+to never activate and has been to rate 0'.format(reactionID))
+                    else:
+                        rateL = "if({0} >= 0, {0}, 0)".format(rateL)
+                        nl = 1
+                if nr > 0:
+                    if nl == 0 and rateL not in parameterFunctions:
+                        rateR = '0'
+                        nr = -1
+                        logMess('WARNING:Simulation', 'In reaction {0}, the right hand side has been determined \
+to never activate (rate is never negative), setting reaction to unidirectional'.format(reactionID))
+                    else:
+                        rateR = "if({0} < 0, -({0}), 0)".format(rateR)
+                        nr = 1
+                if ((nl == 0 and nr > 0) or (nr == 0 and nl > 0)) and (rateL in parameterFunctions or rateR in parameterFunctions):
+                    logMess('WARNING:Simulation', 'In reaction {0}, rates cannot be divided into left hand side and right hand side \
+but reaction is marked as reversible'.format(reactionID))
+
+                #nl, nr = 1,1
         else:
             rateL, nl = (self.removeFactorFromMath(math.deepCopy(),
-                                                 rReactant,rProduct))
+                                                 rReactant, rProduct))
             rateR, nr = '0', '-1'
-        return rateL,rateR,nl,nr
+        return rateL, rateR, nl, nr
 
-        
-    def __getRawRules(self, reaction, symmetryFactors, functionFlag):
+    def __getRawRules(self, reaction, symmetryFactors, parameterFunctions):
         if self.useID:
             reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
-            for reactant in reaction.getListOfReactants() if
-            reactant.getSpecies() != 'EmptySet']
+                        for reactant in reaction.getListOfReactants() if
+                        reactant.getSpecies() != 'EmptySet']
             product = [(product.getSpecies(), product.getStoichiometry())
-            for product in reaction.getListOfProducts() if product.getSpecies()
-            != 'EmptySet']
+                       for product in reaction.getListOfProducts() if product.getSpecies()
+                       != 'EmptySet']
         else:
             reactant = [(self.speciesDictionary[rElement.getSpecies()], rElement.getStoichiometry()) for rElement in reaction.getListOfReactants()]
             product = [(self.speciesDictionary[rProduct.getSpecies()], rProduct.getStoichiometry()) for rProduct in reaction.getListOfProducts()]
         kineticLaw = reaction.getKineticLaw()
         reversible = reaction.getReversible()
 
-        if kineticLaw == None:
-            return {'reactants':reactant,'products':product,'parameters':[],'rates':['0','0'],
-            'reversible':reversible,'reactionID':reaction.getId(),'numbers':[0,0]}
+        if kineticLaw is None:
+            return {'reactants': reactant, 'products': product, 'parameters': [], 'rates': ['0', '0'],
+                    'reversible': reversible, 'reactionID': reaction.getId(), 'numbers': [0, 0]}
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
@@ -400,17 +424,20 @@ class SBML2BNGL:
         if True:
             # TODO: For some reason creating a deepcopy of this screws everything up, even
             # though its what we should be doing
-            # apparently the solution was to use copy instead of deepcopy. Go figure.
+            # update: apparently the solution was to use copy instead of deepcopy. This is because
+            # the underlying swig code in c was causing conflicts when copied. make sure this actually works
             math = copy(kineticLaw.getMath())
-            
+
             # get a list of compartments so that we can remove them
             compartmentList = []
             for compartment in (self.model.getListOfCompartments()):
                 compartmentList.append(compartment.getId())
-                
+
             # remove compartments from expression. also separate left hand and right hand side
             rateL, rateR, nl, nr = self.analyzeReactionRate(math, compartmentList,
-                reversible, rReactant, rProduct)
+                reversible, rReactant, rProduct, reaction.getId(), parameterFunctions)
+            if rateR == '0':
+                reversible = False
             if symmetryFactors[0] > 1:
                 rateL = '({0})/{1}'.format(rateL, symmetryFactors[0])
             if symmetryFactors[1] > 1:
@@ -433,13 +460,12 @@ class SBML2BNGL:
                              rateR = '{0} * {1}'.format(rateR,compartment.getSize())
             '''     
 
-        
-        return {'reactants':reactant,'products':product,'parameters':parameters,'rates':[rateL,rateR],
-        'reversible':reversible,'reactionID':reaction.getId(),'numbers':[nl,nr]}
-                
+        return {'reactants': reactant, 'products': product, 'parameters': parameters, 'rates': [rateL, rateR],
+                'reversible': reversible, 'reactionID': reaction.getId(), 'numbers': [nl, nr]}
+
         return (reactant, product, parameters, [rateL, rateR],
                 reversible, reaction.getId(), [nl, nr])
-    
+
     def getReactionCenter(self,reactant,product,translator):
         rcomponent = Counter()
         pcomponent = Counter()
@@ -461,16 +487,17 @@ class SBML2BNGL:
         rreactionCenter = [(x[0],x[1]) for x in pcomponent for y in rcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y and pcomponent[x] != rcomponent[y]]
         return reactionCenter,rreactionCenter
         
-    def updateComponentCount(self,counterArray,reference,updateValue):
+    def updateComponentCount(self, counterArray, reference, updateValue):
         for element in counterArray:
             if reference in counterArray[element]:
                 counterArray[element][reference] += updateValue
-    def reduceComponentSymmetryFactors(self,reaction,translator,functions):
+
+    def reduceComponentSymmetryFactors(self, reaction, translator, functions):
         '''
         create symmetry factors for reactions with components and species with
         identical names. This checks for symmetry in the components names then.
         '''
-        
+
         if self.useID:
             reactant = [(rElement.getSpecies(), rElement.getStoichiometry())
             for rElement in reaction.getListOfReactants() if
@@ -484,14 +511,14 @@ class SBML2BNGL:
         kineticLaw = reaction.getKineticLaw()
         reversible = reaction.getReversible()
 
-        if kineticLaw == None:
-            return 1,1
+        if kineticLaw is None:
+            return 1, 1
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
         
-        #TODO: For some reason creating a deepcopy of this screws everything up, even
-        #though its what we should be doing
+        # TODO: For some reason creating a deepcopy of this screws everything up, even
+        # though its what we should be doing
         rcomponent = defaultdict(Counter)
         pcomponent = defaultdict(Counter)
         
@@ -524,9 +551,9 @@ class SBML2BNGL:
         '''
         only keep information for reaction centers
         '''
-        reactionCenters = [(x[0],x[1]) for x in rcomponent for y in pcomponent if (x[0],x[1]) == (y[0],y[1]) and x!= y]      
-        rcomponent= {x:rcomponent[x] for x in rcomponent if (x[0],x[1]) in reactionCenters}
-        pcomponent= {x:pcomponent[x] for x in pcomponent if (x[0],x[1]) in reactionCenters}
+        reactionCenters = [(x[0],x[1]) for x in rcomponent for y in pcomponent if (x[0], x[1]) == (y[0], y[1]) and x != y]    
+        rcomponent= {x:rcomponent[x] for x in rcomponent if (x[0], x[1]) in reactionCenters}
+        pcomponent= {x:pcomponent[x] for x in pcomponent if (x[0], x[1]) in reactionCenters}
 
         #is the number of components across products and reactants the same?
         #eg is there any DeleteMolecules action
@@ -640,39 +667,40 @@ class SBML2BNGL:
             compartments.append("%s  %d  %s" % (name, compartmentInfo[1], compartmentInfo[2]))
         return compartments
 
-    def updateFunctionReference(self,reaction,updatedReferences):
+    def updateFunctionReference(self, reaction, updatedReferences):
         newRate = reaction[3]
         for reference in updatedReferences:
-            newRate = re.sub(r'(\W|^)({0})(\W|$)'.format(reference),r'\1{0}\3'.format(updatedReferences[reference]),newRate)
-            
+            newRate = re.sub(r'(\W|^)({0})(\W|$)'.format(reference), r'\1{0}\3'.format(updatedReferences[reference]), newRate)
+
         return newRate
-    
-    def getReactions(self, translator={}, isCompartments=False, extraParameters={},atomize=False):
+
+    def getReactions(self, translator={}, isCompartments=False, extraParameters={}, atomize=False, parameterFunctions={}):
         '''
         @returns: a triple containing the parameters,reactions,functions
         '''
-        
-        ##@FIXME:this part of the code is there so that we only generate the functions list once through different
-        #iterations of this call. This is because we cannot create a clone of the 'math' object for this
-        #reaction and it is being permanently changed every call. It's ugly but it works. Change for something
-        #better when we figure out how to clone the math object
-        if not hasattr(self.getReactions,'functionFlag'):
+
+        # @FIXME:this part of the code is there so that we only generate the functions list once through different
+        # iterations of this call. This is because we cannot create a clone of the 'math' object for this
+        # reaction and it is being permanently changed every call. It's ugly but it works. Change for something
+        # better when we figure out how to clone the math object
+        if not hasattr(self.getReactions, 'functionFlag'):
             self.getReactions.__func__.functionFlag = False or (not atomize)
 
         reactions = []
+        reactionStructure = []
         parameters = []
         functions = []
         functionTitle = 'functionRate'
         
         if len(self.model.getListOfReactions()) == 0:
-            logMess('ERROR:Simulation','Model contains no natural reactions, all reactions are produced by SBML rules')
+            logMess('ERROR:Simulation', 'Model contains no natural reactions, all reactions are produced by SBML rules')
         for index, reaction in enumerate(self.model.getListOfReactions()):
             parameterDict = {}
-            #symmetry factors for components with the same name
+            # symmetry factors for components with the same name
             sl, sr = self.reduceComponentSymmetryFactors(reaction, translator, functions)
             
-            rawRules =  self.__getRawRules(reaction,[sl,sr],self.getReactions.functionFlag)
-            if len(rawRules['parameters']) >0:
+            rawRules = self.__getRawRules(reaction, [sl, sr], parameterFunctions)
+            if len(rawRules['parameters']) > 0:
                 for parameter in rawRules['parameters']:
                     """
                     if self.convertSubstanceUnits:
@@ -681,55 +709,64 @@ class SBML2BNGL:
                         parameterDict[parameter[0]] = parameter[1]
                     else:
                     """
-                    parameters.append('r%d_%s %f' % (index+1, parameter[0], parameter[1]))
+                    parameters.append('r%d_%s %f' % (index + 1, parameter[0], parameter[1]))
                     parameterDict[parameter[0]] = parameter[1]
-            compartmentList = [['cell',1]]
-            compartmentList.extend([[self.__getRawCompartments(x)[0],self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
+            compartmentList = [['cell', 1]]
+            compartmentList.extend([[self.__getRawCompartments(x)[0], self.__getRawCompartments(x)[2]] for x in self.model.getListOfCompartments()])
             threshold = 0
-            if rawRules['numbers'][0] > threshold:  
-                functionName = '%s%d()' % (functionTitle,index)
+            if rawRules['numbers'][0] > threshold:
+                functionName = '%s%d()' % (functionTitle, index)
             else:
-                #append reactionNumbers to parameterNames 
+                # append reactionNumbers to parameterNames
                 finalString = str(rawRules['rates'][0])
                 for parameter in parameterDict:
-                    finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter), r'\1{0}\3'.format('r{0}_{1}'.format(index+1,parameter)), finalString)
+                    finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),
+                                         r'\1{0}\3'.format('r{0}_{1}'.format(index + 1, parameter)),
+                                         finalString)
                 functionName = finalString
-            
+
             if self.getReactions.functionFlag and 'delay' in rawRules['rates'][0]:
-                logMess('ERROR:Simulation','BNG cannot handle delay functions in function %s' % functionName)
+                logMess('ERROR:Simulation', 'BNG cannot handle delay functions in function %s' % functionName)
             if rawRules['reversible']:
                 if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
                         functions.append(writer.bnglFunction(rawRules['rates'][0], functionName, rawRules['reactants'], compartmentList, parameterDict, self.reactionDictionary))
                 if rawRules['numbers'][1] > threshold:
-                    functionName2 = '%s%dm()' % (functionTitle,index)    
+                    functionName2 = '%s%dm()' % (functionTitle, index)
                     if self.getReactions.functionFlag:
-                        functions.append(writer.bnglFunction(rawRules['rates'][1],functionName2,rawRules['reactants'],compartmentList,parameterDict,self.reactionDictionary))
-                    self.reactionDictionary[rawRules['reactionID']] = '({0} - {1})'.format(functionName, functionName2)                
+                        functions.append(writer.bnglFunction(rawRules['rates'][1], functionName2, rawRules['reactants'],
+                                         compartmentList, parameterDict, self.reactionDictionary))
+                    self.reactionDictionary[rawRules['reactionID']] = '({0} - {1})'.format(functionName, functionName2)
                     functionName = '{0},{1}'.format(functionName, functionName2)
                 else:
                     finalString = str(rawRules['rates'][1])
                     for parameter in parameterDict:
-                        finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),r'\1{0}\3'.format('r{0}_{1}'.format(index+1,parameter)),finalString)
-                    functionName = '{0},{1}'.format(functionName,finalString)
+                        finalString = re.sub(r'(\W|^)({0})(\W|$)'.format(parameter),
+                                             r'\1{0}\3'.format('r{0}_{1}'.format(index + 1, parameter)),
+                                             finalString)
+                    functionName = '{0},{1}'.format(functionName, finalString)
             else:
                 if rawRules['numbers'][0] > threshold:
                     if self.getReactions.functionFlag:
-                        functions.append(writer.bnglFunction(rawRules['rates'][0], functionName, rawRules['reactants'], compartmentList, parameterDict,self.reactionDictionary))
+                        functions.append(writer.bnglFunction(rawRules['rates'][0], functionName, rawRules['reactants'],
+                                                             compartmentList, parameterDict, self.reactionDictionary))
                     self.reactionDictionary[rawRules['reactionID']] = '{0}'.format(functionName)
             #reactants = [x for x in rawRules[0] if x[0] not in self.boundaryConditionVariables]
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
             reactants = [x for x in rawRules['reactants']]
             products = [x for x in rawRules['products']]
-            reactions.append(writer.bnglReaction(reactants,products,functionName,self.tags,translator,(isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),rawRules['reversible'],reactionName=rawRules['reactionID']))
+            reactions.append(writer.bnglReaction(reactants, products, functionName, self.tags, translator,
+                             (isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),
+                             rawRules['reversible'], reactionName=rawRules['reactionID']))
+
         if atomize:
             self.getReactions.__func__.functionFlag = True
-        return parameters, reactions,functions
+        return parameters, reactions, functions
 
-    def __getRawAssignmentRules(self,arule):
-        variable =   arule.getVariable()
+    def __getRawAssignmentRules(self, arule):
+        variable = arule.getVariable()
         
-        #try to separate into positive and negative sections
+        # try to separate into positive and negative sections
         if arule.getMath().getCharacter() == '-' and arule.getMath().getNumChildren() > 1 and not arule.isAssignment():
             rateL = libsbml.formulaToString(arule.getMath().getLeftChild())
             if(arule.getMath().getRightChild().getCharacter()) == '*':
@@ -738,9 +775,9 @@ class SBML2BNGL:
                 elif libsbml.formulaToString(arule.getMath().getRightChild().getRightChild()) == variable:
                     rateR = libsbml.formulaToString(arule.getMath().getRightChild().getLeftChild())
                 else:
-                    rateR = 'if({0}>0,({1})/{0},0)'.format(variable,libsbml.formulaToString(arule.getMath().getRightChild()))
+                    rateR = 'if({0}>0,({1})/{0},0)'.format(variable, libsbml.formulaToString(arule.getMath().getRightChild()))
             else:
-                rateR = 'if({0}>0,({1})/{0},0)'.format(variable,libsbml.formulaToString((arule.getMath().getRightChild())))
+                rateR = 'if({0}>0,({1})/{0},0)'.format(variable, libsbml.formulaToString((arule.getMath().getRightChild())))
         else:
             rateL = libsbml.formulaToString(arule.getMath())
             rateR = '0'
@@ -1024,6 +1061,32 @@ class SBML2BNGL:
                     self.speciesAnnotation[rawSpecies['returnID']].append(lista.get(idx).getResources())
        
         return self.speciesAnnotation
+
+    def getFullAnnotation(self):
+        if self.speciesAnnotation:
+            return self.speciesAnnotation
+        
+        speciesAnnotationDict = defaultdict(lambda: defaultdict(list))
+
+        for species in self.model.getListOfSpecies():
+            rawSpecies = self.getRawSpecies(species,logEntries=False)
+            annotationXML = species.getAnnotation()
+            lista = libsbml.CVTermList()
+            libsbml.RDFAnnotationParser.parseRDFAnnotation(annotationXML,lista)
+            if lista.getSize() == 0:
+                speciesAnnotationDict[rawSpecies['returnID']] =  {}
+            else:
+                for idx in range(lista.getSize()):
+                    for idx2 in range(0, lista.get(idx).getResources().getLength()):
+                        resource = lista.get(idx).getResources().getValue(idx2)
+                        qualifierType = lista.get(idx).getQualifierType()
+                        qualifierDescription = bioqual[lista.get(idx).getBiologicalQualifierType()] if qualifierType \
+                        else modqual[lista.get(idx).getModelQualifierType()]
+                        speciesAnnotationDict[rawSpecies['returnID']][qualifierDescription].append(resource)
+
+       
+
+        return speciesAnnotationDict
 
     def getModelAnnotation(self):
         modelAnnotation = []

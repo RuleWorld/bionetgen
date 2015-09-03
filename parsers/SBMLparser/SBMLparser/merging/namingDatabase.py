@@ -128,13 +128,14 @@ class NamingDatabase:
         changeFlag = True
         fileSpeciesCopy = copy(fileSpecies)
         print 'finished processing files, obtained {0} groups'.format(len(fileSpecies))
+        #progress = progressbar.ProgressBar(maxval=len((fileSpecies - 1) * (fileSpecies -1))).start()
         while changeFlag:
             try:
                 changeFlag = False
                 for idx in range(0, len(fileSpecies) - 1):
                     for idx2 in range(idx+1, len(fileSpecies)):
-                        if (len(fileSpecies[idx]['name']) > 2 and fileSpecies[idx]['name'].intersection(fileSpecies[idx2]['name'])) \
-                            or fileSpecies[idx]['annotation'].intersection(fileSpecies[idx2]['annotation']) \
+                        #if (len(fileSpecies[idx]['name']) > 2 and fileSpecies[idx]['name'].intersection(fileSpecies[idx2]['name'])) \
+                        if fileSpecies[idx]['annotation'].intersection(fileSpecies[idx2]['annotation']) \
                                 or fileSpecies[idx]['annotationName'].intersection(fileSpecies[idx2]['annotationName']):
 
                             #print 'hello',fileSpecies[idx]['annotationName'],fileSpecies[idx2]['annotationName']
@@ -319,7 +320,7 @@ def query(database, queryType, queryOptions):
             result = db.findOverlappingNamespace([])
         #pprint.pprint([[x['name'], len(x['fileName'])] for x in result])
         import pickle
-        with open('resultsMammals.dump', 'wb') as f:
+        with open('resultsMammals2.dump', 'wb') as f:
             pickle.dump(result, f)
     except KeyError:
         print 'Query operation not supported'

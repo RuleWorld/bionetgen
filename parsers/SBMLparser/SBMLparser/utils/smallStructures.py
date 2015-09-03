@@ -15,8 +15,8 @@ def parseReactions(reaction):
     components = (Word(alphanums + "_") + Optional(Group('~' + Word(alphanums+"_")))
     + Optional(Group('!' + Word(alphanums+'+?'))))
     molecule = (Word(alphanums + "_")
-    + Optional(Suppress('(')) + Group(components) + ZeroOrMore(Suppress(',') + Group(components))    
-    +Suppress(')'))
+    + Optional(Suppress('(') + Group(components) + ZeroOrMore(Suppress(',') + Group(components))    
+    +Suppress(')')))
     
     species = Group(molecule) + ZeroOrMore(Suppress('.') + Group(molecule))
 
@@ -88,7 +88,7 @@ class Species:
         self.molecules = []
         self.bondNumbers = []
         self.bonds = []
-        self.identifier = randint(0,100000)
+        self.identifier = randint(0, 100000)
         self.idx = ''
     
 
