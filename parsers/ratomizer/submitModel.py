@@ -317,8 +317,8 @@ class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
     resource = str(urllib.unquote(self.request.get('key')))
-    blob_info = blobstore.BlobInfo.get(resource)
-    self.send_blob(blob_info)
+    #blob_info = blobstore.BlobInfo.get(resource)
+    self.send_blob(resource)
     
 app = webapp2.WSGIApplication([
     ('/', MainPage),
