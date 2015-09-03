@@ -12,15 +12,18 @@ import os
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import blobstore
 from google.appengine.ext import ndb
+
 import xmlrpclib
 import urllib
 import json
 from google.appengine.api import files
+from google.appengine.api import app_identity
 
 
 from google.appengine.api import urlfetch
 urlfetch.set_default_fetch_deadline(60)
 import logging
+import cloudstorage as gcs
 
 
 class GAEXMLRPCTransport(object):
@@ -87,8 +90,8 @@ def dbmodel_key(model_name=DATABASE_NAME):
     return ndb.Key('ModelDB', model_name)
     
     
-#remoteServer = "http://54.214.249.43:9000"
-remoteServer = "http://127.0.0.1:9000"
+remoteServer = "http://54.214.249.43:9000"
+#remoteServer = "http://127.0.0.1:9000"
 class Translate(webapp2.RequestHandler):
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
@@ -149,7 +152,29 @@ class generateConfigFile(webapp2.RequestHandler):
         for name,pattern in zip(names,patterns):
             processedPattern = self.processPattern(pattern)
             #result.
-          
+
+def CreateFile(filename,content):
+    """Create a GCS file with GCS client lib.
+
+    Args:
+    filename: GCS filename.
+
+    Returns:
+    The corresponding string blobkey for this GCS file.
+    """
+    # Create a GCS file with GCS client.
+    with gcs.open(filename, 'w') as f:
+        f.write(content.encode('utf-8', 'replace'))
+
+    # Blobstore API requires extra /gs to distinguish against blobstore files.
+    blobstore_filename = '/gs' + filename
+    # This blob_key works with blobstore APIs that do not expect a
+    # corresponding BlobInfo in datastore.
+    bk =  blobstore.create_gs_key(blobstore_filename)
+    if not isinstance(bk, blobstore.BlobKey):
+        bk = blobstore.BlobKey(bk)
+    return bk
+
 class WaitFile(webapp2.RequestHandler):
     def get(self):
         ticket = self.request.get("ticket")
@@ -178,6 +203,9 @@ class WaitFile(webapp2.RequestHandler):
             if result in ['-5',-5]:
                 self.response.write("There was an error processing your request")
                 return
+
+            #old create a file using the files api
+            '''    
             file_name = files.blobstore.create(mime_type='application/octet-stream')
             
             # Open the file and write to it
@@ -190,7 +218,14 @@ class WaitFile(webapp2.RequestHandler):
             
             # Get the file's blob key
             blob_key = files.blobstore.get_blob_key(file_name)
-            
+            '''
+
+            bucket_name = os.environ.get('BUCKET_NAME',
+                                         app_identity.get_default_gcs_bucket_name())
+
+            gcs_filename = '/{1}/{0}.bngl'.format(fileName, bucket_name)
+            blob_key = CreateFile(gcs_filename, result.decode('utf-8', 'replace'))
+
             ###        
             #blob_info = blobstore.BlobInfo.get(blob_key)
             #output = blob_info.open()
