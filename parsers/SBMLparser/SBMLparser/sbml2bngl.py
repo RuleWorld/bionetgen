@@ -70,15 +70,29 @@ class SBML2BNGL:
             return func
         return decorate
 
+    def extractModelAnnotation(self):
+        metaInformation = {}
+        annotation = self.model.getAnnotation()
+        lista = libsbml.CVTermList()
+        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation, lista)
+        for idx in range(lista.getSize()):
+            #biol,qual = lista.get(idx).getBiologicalQualifierType(), lista.get(idx).getModelQualifierType()
+            qualifierType = lista.get(idx).getQualifierType()
+            qualifierDescription = bioqual[lista.get(idx).getBiologicalQualifierType()] if qualifierType \
+                else modqual[lista.get(idx).getModelQualifierType()]
+            if qualifierDescription not in metaInformation:
+                metaInformation[qualifierDescription] = set([])
+            for idx2 in range(0, lista.get(idx).getResources().getLength()):
+                resource = lista.get(idx).getResources().getValue(idx2)
+                metaInformation[qualifierDescription].add(resource)
+        return metaInformation
+
     def getMetaInformation(self, additionalNotes):
 
         # get unit information
         unitList = self.getUnitDefinitions()
 
-        metaInformation = {}
-        annotation = self.model.getAnnotation()
-        lista = libsbml.CVTermList()
-        libsbml.RDFAnnotationParser.parseRDFAnnotation(annotation, lista)
+        metaInformation = self.extractModelAnnotation()
         modelHistory = self.model.getModelHistory()
         if modelHistory:
             try:
@@ -89,29 +103,17 @@ class SBML2BNGL:
             except:
                 metaInformation['creatorEmail'] = "''"
                 metaInformation['creatorName'] = "''"
-              
-        for idx in range(lista.getSize()):
-            biol,qual = lista.get(idx).getBiologicalQualifierType(), lista.get(idx).getModelQualifierType()
-            if biol >= len(bioqual) or bioqual[biol] == 'BQB_UNKNOWN':
-                index = modqual[qual]
-            else:
-                index = bioqual[biol]
-            if index not in metaInformation:
-                metaInformation[index] = set([])
-            resource = lista.get(idx).getResources().getValue(0)
-            #print stats.resolveAnnotation(resource)
-            metaInformation[index].add(resource)
-          
+
         metaInformation.update(additionalNotes)
 
         metaString = '###\n'
         for element in metaInformation:
-          if type(metaInformation[element]) == set:
-              metaInformation[element] = list(metaInformation[element])
-          metaString += '#@{0}:{1}\n'.format(element,(metaInformation[element]))
+            if type(metaInformation[element]) == set:
+                metaInformation[element] = list(metaInformation[element])
+            metaString += '#@{0}:{1}\n'.format(element,(metaInformation[element]))
         metaString += '###\n'
-          #if biol 
         return metaString
+
     def getRawSpecies(self, species,parameters=[], logEntries=True):
         '''
         *species* is the element whose SBML information we will extract
@@ -1097,7 +1099,7 @@ but reaction is marked as reversible'.format(reactionID))
             modelAnnotations = []
         else:
             tempDict = {}
-            for element in [2,3,4,5,6]:
+            for element in [2, 3, 4, 5, 6]:
                 if lista.get(element) == None:
                     continue
                 tempDict[lista.get(element).getBiologicalQualifierType()] = lista.get(element)

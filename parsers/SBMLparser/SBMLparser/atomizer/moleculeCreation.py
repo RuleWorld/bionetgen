@@ -110,9 +110,9 @@ def getURIFromSBML(moleculeName, parser, filterString=None):
             for annotation in annotations[moleculeName]:
                 annotationList.extend(getAnnotations(annotation))
     if filterString:
-        return [x for x in annotationList if filterString in x]
-    else:
-        return annotationList
+        annotationList = [x for x in annotationList if any(filterstr in x for filterstr in filterString)]
+
+    return annotationList
 
 def isInComplexWith(moleculeSet, parser=None):
     """
@@ -121,9 +121,15 @@ def isInComplexWith(moleculeSet, parser=None):
     """
     validPairs = []
     for element in moleculeSet:
-        name1 = getURIFromSBML(element[0], parser, 'uniprot')
-        name2 = getURIFromSBML(element[1], parser, 'uniprot')
-        if pwcm.isInComplexWith([element[0], name1], [element[1], name2]):
+        if element[0] == element[1]:
+            return []
+
+        name1 = getURIFromSBML(element[0], parser, ['uniprot', 'go'])
+        name2 = getURIFromSBML(element[1], parser, ['uniprot', 'go'])
+        modelAnnotation = parser.extractModelAnnotation()
+        modelOrganism = modelAnnotation['BQB_OCCURS_IN'] if 'BQB_OCCURS_IN' in modelAnnotation else None
+        bindingResults = pwcm.isInComplexWith([element[0], name1], [element[1], name2], organism=modelOrganism)
+        if bindingResults:
             validPairs.append(element)
     return validPairs
 
@@ -511,7 +517,7 @@ def addBondToComponent(species, moleculeName, componentName, bond, priority=1):
                 order += 1
 
 
-def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
+def solveComplexBinding(totalComplex, pathwaycommonsFlag, parser):
     '''
     given two binding complexes it will attempt to find the ways in which they bind using different criteria
 
@@ -539,7 +545,7 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
     names2 = [str(x.name) for x in totalComplex[1]]
     bioGridDict = {}
     # find all pairs of molecules
-    comb = set([(x, y) for x in names1 for y in names2])
+    comb = set([tuple(sorted([x, y])) for x in names1 for y in names2])
     dbPair = set([])
     combTemp = set()
 
@@ -577,9 +583,10 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag,parser):
             dbPair = finalDBpair
 
         if len(dbPair) > 1:
-            
-            tmpComplexSubset1 = [getNamedMolecule(totalComplex[0], element[0]) for element in dbPair]
-            tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[1]) for element in dbPair]
+            # @FIXME: getNamedMolecule should never receive parameters that cause it to return null, but somehow that's what is happening
+            # when you receive a malformed user definition file. The error should be caught way before we reach this point
+            tmpComplexSubset1 = [getNamedMolecule(totalComplex[0], element[0]) for element in dbPair if getNamedMolecule(totalComplex[0], element[0]) is not None]
+            tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[1]) for element in dbPair if getNamedMolecule(totalComplex[1], element[1]) is not None]
             mol1 = getBiggestMolecule(tmpComplexSubset1)
             mol2 = getBiggestMolecule(tmpComplexSubset2)
             logMess('INFO:Atomization', "There's more than one way to bind {0} and {1} together: {2}. Defaulting to {3}-{4}".format(names1, names2, dbPair,mol1.name,mol2.name))
@@ -669,7 +676,8 @@ def getComplexationComponents2(moleculeName, species, bioGridFlag, pathwaycommon
                                 intersection = lhs.intersection(rhs)
                                 
                                 redundantBonds[-1].extend(list(intersection))
-
+                                if len(redundantBonds[-1]) < 3:
+                                    redundantBonds.pop()
                                 # continue
                             pairedMolecules.append([x, mol])
 

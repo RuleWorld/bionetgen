@@ -113,7 +113,7 @@ class SBMLAnalyzer:
         (this method is called after the creation and resolving of the dependency
         graph)
         '''
-        equivalenceTranslator,translationKeys,conventionDict =  self.processNamingConventions2([baseElement,modifiedElement])
+        equivalenceTranslator,translationKeys,conventionDict =  self.processNamingConventions2([baseElement, modifiedElement])
         scores = []
         if len(translationKeys) == 0:
             '''
@@ -185,13 +185,13 @@ class SBMLAnalyzer:
                     similarList = get_close_matches(splitp,species)
                     similarList = [x for x in similarList if x != splitp and len(x) < len(splitp)]
                     similarList = [[x,splitp] for x in similarList]
-                    
                     if len(similarList) > 0:
                         for similarity in similarList:
+
+                            #compare close lexical proximity
                             fuzzyList = self.processAdHocNamingConventions(similarity[0],
                                             similarity[1],localSpeciesDict,False,species) 
                             for reaction,tag,modifier in fuzzyList:
-
                                 if modifier != None and all(['-' not in x for x in modifier]):
                                     logMess('INFO:Atomization','Lexical relationship inferred between \
                                     {0}, user information confirming it is required'.format(similarity))
@@ -263,6 +263,8 @@ class SBMLAnalyzer:
                         composingElements.append(splitp)
             return basicElements,composingElements
         additionalHandling = []
+
+        #lexical handling
         for particle in particles:
             composingElements = []
             basicElements = []
@@ -272,7 +274,6 @@ class SBMLAnalyzer:
             splitparticle = [x for x in splitparticle if x]
             #print splitparticle
             basicElements,composingElements = analyzeByParticle(splitparticle,species)
-            
             if basicElements == composingElements:
                 closeMatches = get_close_matches(particle,species)
                 matches = [x for x in closeMatches if len(x) < len(particle) and len(x) >= 3]
@@ -1183,6 +1184,7 @@ class SBMLAnalyzer:
         
         #process straightforward naming conventions
         equivalenceTranslator, translationKeys, conventionDict = self.processNamingConventions2(molecules,onlyUser=True)
+
         newTranslationKeys = []
         adhocLabelDictionary = {}
 
@@ -1240,6 +1242,7 @@ class SBMLAnalyzer:
 
 
                 reactantString, productString = self.removeExactMatches(reactantString, productString)
+
             matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
             if matching and flagstar:
                 logMess('DEBUG:Atomization', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
@@ -1250,9 +1253,9 @@ class SBMLAnalyzer:
                     for match in matches:
                         pair = list(match)
                         pair.sort(key=len)
+
                         fuzzyList = self.processAdHocNamingConventions(pair[0],
                                             pair[1],localSpeciesDict,False,strippedMolecules)
-
                         for fuzzyReaction,fuzzyKey,fuzzyDifference in fuzzyList:
                             if fuzzyKey == None and fuzzyReaction[0] != fuzzyReaction[1]:
                                 flag= False
@@ -1270,6 +1273,7 @@ class SBMLAnalyzer:
                                 #existing molecule instead of trying to create a new one
                                 if x[1] not in strippedMolecules:
                                     lexicalDependencyGraph[x[1]] = []
+
         translationKeys.extend(newTranslationKeys)
         for species in localSpeciesDict:
             speciesName =  localSpeciesDict[species][localSpeciesDict[species].keys()[0]][0][0]

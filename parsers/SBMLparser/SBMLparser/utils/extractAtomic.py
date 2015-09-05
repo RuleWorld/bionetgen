@@ -92,3 +92,16 @@ def extractTransformations(rules, differentiateDimers=False):
 
     solveWildcards(atomicArray)
     return (atomicArray, transformationCenter, transformationContext, productElements, actionName, label)
+
+
+if __name__ == "__main__":
+    import readBNGXML
+    _, rules, _ = readBNGXML.parseXML('output205_test.xml')
+    for idx, rule in enumerate(rules):
+        tatomicArray, ttransformationCenter, ttransformationContext, \
+            tproductElements, tactionNames, tlabelArray = extractTransformations(
+                [rule], True)
+        if rule[0].label == 'reaction_3':
+            print ttransformationContext
+            print tproductElements
+            raise Exception

@@ -203,10 +203,10 @@ class AnnotationExtractor:
         parser = SBML2BNGL(document.getModel(),useID)
         database = structures.Databases()
         database.forceModificationFlag = True
-        sct,database = mc.createSpeciesCompositionGraph(parser, database, reactionDefinitions,namingConventions,
+        database = mc.createSpeciesCompositionGraph(parser, database, reactionDefinitions,namingConventions,
                            speciesEquivalences=speciesEquivalences,bioGridFlag=False)
 
-        return sct,database,document
+        return database.prunnedDependencyGraph, database,document
 
     def getAnnotationSystem(self):
 

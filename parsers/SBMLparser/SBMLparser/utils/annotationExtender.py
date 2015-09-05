@@ -266,11 +266,10 @@ def obtainSCT(fileName, reactionDefinitions, useID, namingConventions):
     parser =SBML2BNGL(document.getModel(),useID)
     database = structures.Databases()
     database.forceModificationFlag = True
-    
-    sct,database = mc.createSpeciesCompositionGraph(parser, database, reactionDefinitions,namingConventions,
+    database = mc.createSpeciesCompositionGraph(parser, database, reactionDefinitions,namingConventions,
                        speciesEquivalences=None,bioGridFlag=False)
                        
-    return sct,database,document
+    return database.prunnedDependencyGraph,database,document
 
 import tempfile
 
