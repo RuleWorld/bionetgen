@@ -18,7 +18,7 @@ import os
 sys.path.insert(0, os.getcwd())
 sys.path.insert(0, os.path.join(os.getcwd(),'SBMLparser'))
 
-import SBMLparser.utils.readBNGXML
+import SBMLparser.utils.readBNGXML as readBNGXML
 import SBMLparser.utils.smallStructures as smallStructures
 
 def extractMoleculeTypesFromFile(fileName):
@@ -134,7 +134,7 @@ def extractMoleculeTypes(folderName,annotationsFolder,includeAnnotations=True):
 
 from pandas import Series
 
-def extractProcessDisstribution(folderName):
+def extractProcessDistribution(folderName, cluster=False):
     '''
     return a list of molecule types structures
     from a group of BNG-XML files in a folder <folderName>
@@ -151,14 +151,25 @@ def extractProcessDisstribution(folderName):
     modelHistogram = collections.defaultdict(list)
     actionDict = collections.defaultdict(list)
     for element in progress(range(0, len(bngxmlFiles))):
-        actionHistogram = {'DeleteBond': 0, 'Add': 0, 'StateChange': 0, 
-        'AddBond': 0, 'Delete': 0,'ChangeCompartment':0}
+        if not cluster:
+            actionHistogram = {'DeleteBond': 0, 'Add': 0, 'StateChange': 0, 
+            'AddBond': 0, 'Delete': 0,'ChangeCompartment':0}
+        else:
+            actionHistogram = {'Add/Delete': 0, '(Add/Delete)Bond':0, 'StateChange':0, 'ChangeCompartment':0}
         fileName = bngxmlFiles[element]
         try:
             rules = extractRulesFromFile(fileName)
             for rule in rules:
                 for action in rule[0].actions:
-                    actionHistogram[action.action] += 1
+                    if not cluster:
+                        actionHistogram[action.action] += 1
+                    else:
+                        if action.action in ['Add', 'Delete']:
+                            actionHistogram['Add/Delete'] += 1
+                        elif action.action in ['AddBond', 'DeleteBond']:
+                            actionHistogram['(Add/Delete)Bond'] += 1
+                        else:
+                            actionHistogram[action.action] += 1
             del actionHistogram['ChangeCompartment']
             totalProcesses = sum([actionHistogram[x] for x in actionHistogram])
             if totalProcesses == 0:
@@ -166,7 +177,7 @@ def extractProcessDisstribution(folderName):
             actionHistogram = {x:actionHistogram[x]*1.0/totalProcesses for x in actionHistogram}
             for x in actionHistogram:
                 actionDict['process'].append(x)
-                actionDict['percentage'].append(actionHistogram[x])
+                actionDict['fraction'].append(actionHistogram[x])
                 actionDict['database'].append(folderName[1])
 
             #actionHistogram.sort(key=lambda x:x[0])
@@ -410,8 +421,8 @@ def getXMLFailures(directory):
         pickle.dump(failures,f)
 
 def componentDensityPlot():
-    directory = [('bnglTest','BNG control set'),('complex2','BioModels curated'),
-    ('new_non_curated','BioModels non curated')]
+    directory = [('bnglTest','BNG control set'),('curated','BioModels curated'),('non_curated', 'BioModels non curated')]
+    #('new_non_curated','BioModels non curated')]
     colors= sns.color_palette("Set1", 3)
     f, (ax1, ax2,ax3) = plt.subplots(3, 1, sharex=True, figsize=(8, 6))
     for color,direct in zip(colors,directory):
@@ -426,50 +437,72 @@ def componentDensityPlot():
     plt.savefig('componentDensity.png')
 
 def processHistogram():
-    directory = [('bnglTest','BNG control set'),('complex2','BioModels curated'),('new_non_curated','BioModels non curated')]
+    def getsubplot(axs, index, dimensions):
+        if 1 in dimensions:
+            return axs[index]
+        else:
+            return axs[index / dimensions[1]][index%dimensions[0]]
+    #directory = [('bnglTest','BNG control set'),('complex2','BioModels curated'),('new_non_curated','BioModels non curated')]
+    directory = [('bnglTest', 'BNG control set'), ('curated', 'BioModels curated'), ('non_curated', 'BioModels non curated')]
     processDistro  = []
     
+    cluster = True
+
     pandasDistro = collections.defaultdict(list)
+    
 
-    processOrder = ['Add','Delete','AddBond','DeleteBond','StateChange']
-
+    
+    if not cluster:
+        processFile = 'processDistro.dump'
+        processOrder = ['Add','Delete','AddBond','DeleteBond','StateChange']
+    else:
+        processFile = 'processDistroCluster.dump'
+        processOrder = ['Add/Delete','(Add/Delete)Bond','StateChange']
     '''
     for direct in directory:
-        process,pandasc = extractProcessDisstribution(direct)
+        process,pandasc = extractProcessDistribution(direct,cluster=cluster)
         processDistro.append(process)
         for element in pandasc:
             pandasDistro[element].extend(pandasc[element])
     
     pandasDistro = pandas.DataFrame(data=pandasDistro)
-    print pandasDistro
-    with open('processDistro.dump','wb') as f:
-        pickle.dump(processDistro,f)
-        pickle.dump(pandasDistro,f)
+    #print pandasDistro
+    with open(processFile, 'wb') as f:
+        pickle.dump(processDistro, f)
+        pickle.dump(pandasDistro, f)
+    
     '''
-
-    with open('processDistro.dump','rb') as f:
+    with open(processFile, 'rb') as f:
         processDistro = pickle.load(f)
         pandasDistro = pickle.load(f)
 
     
-    sns.factorplot("process", "percentage", "database", pandasDistro,kind='bar',x_order=processOrder)
+    sns.factorplot("process", "fraction", "database", pandasDistro,kind='bar',x_order=processOrder)
     plt.savefig('processBarChar2.png')
+
+    # place in here the subplot grid size
     print processDistro[0]
+    dimensions = [3,1]
+    f, axs = plt.subplots(dimensions[0], dimensions[1], sharex=True, figsize=(8, 8))
+    sns.set_context('talk', font_scale=1, rc={"lines.linewidth": 2.5})    
+    colors = sns.color_palette("Set1", 3)
+    for color, direct in zip(colors,directory):
+        for index, process in enumerate(processOrder):
+            legend = False
+            if index == len(processOrder) -1:
+                legend = True
+            actions = np.array(pandasDistro[pandasDistro.process==process][pandasDistro.database == direct[1]]['fraction'].values)
+            sns.kdeplot(actions, shade=True,color=color,label=direct[1],ax=getsubplot(axs, index, dimensions),clip=(0,1),cumulative=True,legend=legend)
+            ax = getsubplot(axs, index, dimensions).set_title(process)
+            getsubplot(axs, index, dimensions).set_xlim([0, 1])
 
-    f, axs = plt.subplots(3, 2, sharex=True, figsize=(8, 8))
 
-    colors= sns.color_palette("Set1", 3)
-    for color,direct in zip(colors,directory):
-        for index,process in enumerate(processOrder):
-            actions = np.array(pandasDistro[pandasDistro.process==process][pandasDistro.database == direct[1]]['percentage'].values)
-            sns.kdeplot(actions, shade=True,color=color,label=direct[1],ax=axs[index/2][index%2],clip=(0,1))
-            ax=axs[index/2][index%2].set_title(process)
-            axs[index/2][index%2].set_xlim([0,1])
+    plt.suptitle('CDF for the fraction of <x> process to the total number of processes in a model for different datasets')
     plt.savefig('processDensity.png')
 
     g = sns.FacetGrid(pandasDistro, row="process", col="database", hue="database",
         margin_titles=True,row_order=processOrder,xlim=(0,1))
-    g.map(sns.kdeplot, "percentage",shade=True,clip=(0,1))
+    g.map(sns.kdeplot, "fraction",shade=True,clip=(0,1))
     plt.savefig('processDensityGrid.png')
     #plt.show()
     #
@@ -480,18 +513,19 @@ def rankMoleculeTypes(directory):
     moleculeTypeTuples = []
     for element in progress(moleculeTypesArray):
         for molecule in element[0]:
-            moleculeTypeTuples.append([molecule.name,len(molecule.components),element[4]])
-    moleculeTypesDatabase = pandas.DataFrame(data=moleculeTypeTuples,columns=['molecule','size','files'])    
-    print moleculeTypesDatabase.sort('size',ascending=False).head(30)
+            moleculeTypeTuples.append([molecule.name, len(molecule.components),element[4]])
+    moleculeTypesDatabase = pandas.DataFrame(data=moleculeTypeTuples, columns=['molecule', 'size', 'files'])    
+    print moleculeTypesDatabase.sort('size', ascending=False).head(30)
 
 if __name__ == "__main__":
-    #preliminaryAnalysis(directory='new_non_curated',directory2='biomodels/non_metabolic')
-    rankMoleculeTypes('new_non_curated')
-    #processHistogram()
+    #preliminaryAnalysis(directory='non_curated',directory2='XMLExamples/non_curated')
+    #preliminaryAnalysis(directory='bnglTest')
+    #rankMoleculeTypes('curated')
+    processHistogram()
 
     #componentDensityPlot()    
 
-    '''
+    
     colors = ['r','Y','b']
     #print processDistro
     fig, ax = plt.subplots()
@@ -500,6 +534,7 @@ if __name__ == "__main__":
 
     rects = []
     processList = ['StateChange','AddBond','DeleteBond','Add','Delete']
+    '''
     for x,y in enumerate(colors):
         rects.append(ax.bar(np.arange(len(processDistro[x].keys()))+0.25*x, [processDistro[x][z][0] for z in processList], 0.25, color=y, yerr=[processDistro[x][z][1] for z in processList]))
         

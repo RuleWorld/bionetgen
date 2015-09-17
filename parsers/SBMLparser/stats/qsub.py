@@ -179,6 +179,9 @@ if __name__ == "__main__":
     elif namespace.type == 'collapsedContact':
         finalfiles = getFiles(inputfolder,"xml")
 
+    elif namespace.type == 'timmings':
+        finalfiles = getFiles(inputfolder, "bngl")
+
     #print len(finalfiles)
     
     start_queue(finalfiles,outputfolder,queue,batchsize,namespace.type,namespace.nodes)

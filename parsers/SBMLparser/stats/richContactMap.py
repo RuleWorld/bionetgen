@@ -919,6 +919,8 @@ def reactionBasedAtomizationFile(xml):
         ratomizationDict['score'] = score
         ratomizationDict['weight'] = weight
         ratomizationDict['length'] = len(rules)
+        ratomizationDict['atomizedProcesses'] = atomizedProcesses
+        ratomizationDict['totalProcesses'] = weight
     except IOError:
         print 'io'
     return ratomizationDict
@@ -1435,7 +1437,8 @@ if __name__ == "__main__":
     #reactionBasedAtomizationDistro('complex2')
     # nonAtomizedSpeciesAnalysis()
     # createGroupingCDF()
-    print reactionBasedAtomizationFile('complex2/BIOMD0000000019.xml.xml')
+    #print reactionBasedAtomizationFile('curated/BIOMD0000000019.xml.xml')
+    print reactionBasedAtomizationFile('SBMLparser/nonchang.xml')
     # analyzeGroupingCDF()
 
     # createSpaceDistribution()
