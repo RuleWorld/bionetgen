@@ -1,0 +1,6 @@
+os:
+  - linux
+language: c++
+compiler:
+  - gcc
+script: cd ./bng2 && perl make_dist.pl --build --test
