@@ -12,7 +12,7 @@ from utils import readBNGXML
 class ModelLearning:
     def __init__(self, fileName,rawFileName=None):
         self.molecules, self.rules, _ = readBNGXML.parseXML(fileName)
-        self.dependencies, self.patternXreactions = componentGroups.getContextRequirements(fileName, collapse=False)
+        self.dependencies, self.patternXreactions,_ = componentGroups.getContextRequirements(fileName, collapse=False)
         self.transposePatternsReactions()
         self.reverseDependencies = componentGroups.reverseContextDict(self.dependencies)
         self.moleculeMotifDict, self.motifMoleculeDict = self.classifyPairsByMotif(self.reverseDependencies)
@@ -198,6 +198,8 @@ class ModelLearning:
                                     alternativeDifference = [x for x in alternativeCandidate if x not in candidate and molecule in self.resolveEntry(database.prunnedDependencyGraph, [x])[0]]
 
                                     # get the difference patterns for the two species
+                                    if not difference or not alternativeDifference:
+                                        continue
                                     componentDifference = self.getDifference(difference[0], alternativeDifference[0], database.translator)
 
                                 # make sure that the current motif candidate intersects with the difference pattern

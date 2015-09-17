@@ -4,7 +4,7 @@ from collections import defaultdict
 from cStringIO import StringIO
 from utils import extractAtomic
 from copy import deepcopy
-
+import networkx as nx
 
 def molecule2stateTuples(molecule):
     """
@@ -19,7 +19,7 @@ def molecule2stateTuples(molecule):
     return tupleList
 
 
-def extractCenterContext(rules):
+def extractCenterContext(rules, excludeReverse=False):
     transformationCenter = []
     transformationContext = []
     transformationProduct = []
@@ -27,6 +27,8 @@ def extractCenterContext(rules):
     actionNames = []
     label = []
     for idx, rule in enumerate(rules):
+        if excludeReverse and rule[0].label.endswith('_reverse_'):
+            continue
         label.append(rule[0].label)
         tatomicArray, ttransformationCenter, ttransformationContext, \
             tproductElements, tactionNames, tlabelArray = extractAtomic.extractTransformations(
@@ -38,6 +40,7 @@ def extractCenterContext(rules):
 
         transformationCenter.append(ttransformationCenter)
         transformationContext.append(ttransformationContext)
+
         actionNames.append(tactionNames)
         atomicArray.append(tatomicArray)
         transformationProduct.append(tproductElements)
@@ -172,6 +175,7 @@ def componentStateSize(molecules, moleculeName, componentName):
 def analyzeDependencies(componentStateCollection, state, moleculeName, molecules, dependencies):
     for componentName in componentStateCollection:
         stateSize = componentStateSize(molecules, moleculeName, componentName)
+
         if stateSize == len(componentStateCollection[componentName]):
             dependencies[moleculeName]['independent'].add((state, componentName))
             #print moleculeName,state,componentName,componentStateCollection[componentName]
@@ -187,16 +191,16 @@ def analyzeDependencies(componentStateCollection, state, moleculeName, molecules
 
 def detectDependencies(stateDictionary, molecules):
     dependencies = defaultdict(lambda: defaultdict(set))
+    preprocessing = defaultdict(lambda :defaultdict(dict))
+    #preprocess for dimer information
     for moleculeName in stateDictionary:
         parsedMoleculeName = moleculeName.split('%')[0]
         #parsedMoleculeName = moleculeName
         for state in stateDictionary[moleculeName]:
-            #if parsedMoleculeName == 'EGFR' and state[0] in ['egf']:
-            #    print moleculeName
-            #    print state
-            #    print stateDictionary[moleculeName][state]['egfr']
-            #    print stateDictionary[moleculeName][state]['ras_gdp']
-            analyzeDependencies(stateDictionary[moleculeName][state], state, parsedMoleculeName, molecules, dependencies)
+            preprocessing[parsedMoleculeName][state].update(stateDictionary[moleculeName][state])
+    for moleculeName in preprocessing:
+        for state in preprocessing[moleculeName]:
+            analyzeDependencies(preprocessing[moleculeName][state], state, moleculeName, molecules, dependencies)
     return dependencies
 
 from collections import Counter
@@ -225,6 +229,29 @@ def getMutualExclusions(stateDictionary, molecules):
                                                   (reverseState(molecule, x[1], molecules), reverseState(molecule, x[0], molecules))
                                                   in stateDictionary[molecule]['nullrequirement']]
         stateDictionary[molecule]['nullrequirement'] = [x for x in stateDictionary[molecule]['nullrequirement'] if x not in stateDictionary[molecule]['exclusion']]
+
+
+def getMotifRelationships(stateDictionary, molecules):
+    motifDictionary = defaultdict(lambda: defaultdict(list))
+    for molecule in stateDictionary:
+        motifDictionary[molecule]['exclusion'] = set([tuple(sorted([x[0][0], x[1][0]])) for x in stateDictionary[molecule]['nullrequirement'] if
+                                                  (reverseState(molecule, x[1], molecules), reverseState(molecule, x[0], molecules))
+                                                  in stateDictionary[molecule]['nullrequirement']])
+        motifDictionary[molecule]['ordering'] = [[x[0][0], x[1][0]] for x in stateDictionary[molecule]['requirement'] if
+                                                    (reverseState(molecule,x[1],molecules), x[0])
+                                                    in stateDictionary[molecule]['nullrequirement']]
+        motifDictionary[molecule]['fullIndependence'] = set([tuple(sorted([x[0][0],x[1]])) for x in stateDictionary[molecule]['independent'] if isActive(x[0][1:]) and
+                                                         any(x[1] == y[0][0] and x[0][0] == y[1] and isActive(y[0][1:]) for y in stateDictionary[molecule]['independent'])])
+
+        motifDictionary[molecule]['partialIndependence+'] = set([tuple([x[0][0], x[1]]) for x in stateDictionary[molecule]['independent'] if isActive(x[0][1:]) and
+                                                         any(x[1] in y[1] and x[0][0] in y[0] for y in stateDictionary[molecule]['requirement'])])
+
+        motifDictionary[molecule]['partialIndependence-'] = set([tuple([x[0][0], x[1]]) for x in stateDictionary[molecule]['independent'] if isActive(x[0][1:]) and
+                                                         any(x[1] in y[1] and x[0][0] in y[0] for y in stateDictionary[molecule]['nullrequirement'])])
+
+    
+    return motifDictionary
+        #stateDictionary[molecule]['nullrequirement'] = [x for x in stateDictionary[molecule]['nullrequirement'] if x not in stateDictionary[molecule]['exclusion']]
 
 
 def removeIndirectDependencies(dependencies, stateSpace):
@@ -286,8 +313,8 @@ def printDependencyLog(dependencies):
                                                                                                               baseMolecule[1][0]))
                 if requirementType == 'nullrequirement':
                     pass
-                if requirementType == 'independent':
-                    log.write('The setting of {0} to {1} in molecule {3} is independent from {2}\n'.format(baseMolecule[0][0],baseMolecule[0][1],baseMolecule[1],molecule))
+                #if requirementType == 'independent':
+                #    log.write('The setting of {0} to {1} in molecule {3} is independent from {2}\n'.format(baseMolecule[0][0],baseMolecule[0][1],baseMolecule[1],molecule))
     return log.getvalue()
 
 
@@ -299,14 +326,41 @@ def removeCounter(requirementDependencies):
             finalDependencies[req2][dependencies] = finalDependencies[req2][dependencies].union(requirementDependencies[requirement][dependencies])
     return finalDependencies
 
+def getExclusionClusters(requirementDependencies):
+    graphExclusionCliques = {x:[] for x in requirementDependencies.keys()}
+    for molecule in requirementDependencies.keys():
+        g = nx.Graph()
+        gmod = nx.Graph()
+        for exclusionRelationship in requirementDependencies[molecule]['exclusion']:
+            if not exclusionRelationship[0].lower().endswith('mod') and not exclusionRelationship[1].lower().endswith('mod'):
+                g.add_edge(exclusionRelationship[0], exclusionRelationship[1])
+            elif exclusionRelationship[0].lower().endswith('mod') and exclusionRelationship[1].lower().endswith('mod'):
+                gmod.add_edge(exclusionRelationship[0], exclusionRelationship[1])
+        for graph in [g,gmod]:
+            if(graph.nodes()):
+                while len(graph.nodes()) > 1:
+                    cliques = sorted(list(nx.find_cliques(graph)), key=len, reverse=True)
+                    if len(cliques[0]) > 1:
+                        graphExclusionCliques[molecule].append(cliques[0])
+                    else:
+                        break
+                    #graphExclusionCliques[molecule] = cliques
+                    for node in cliques[0]:
+                        graph.remove_node(node)
+    return graphExclusionCliques    
+    #for exclusionRequirement in requirementDependencies:
 
-def getContextRequirements(inputfile, collapse=True):
+
+def getContextRequirements(inputfile, collapse=True, motifFlag=False):
     """
     Receives a BNG-XML file and returns the contextual dependencies implied by this file
     """
     molecules, rules, _ = readBNGXML.parseXML(inputfile)
-    label, center, context, product, atomicArray, actions = extractCenterContext(rules)
+    label, center, context, product, atomicArray, actions = extractCenterContext(rules,excludeReverse=True)
     reactionCenterStateDictionary = getRestrictedChemicalStates(label, product, context)
+    print reactionCenterStateDictionary['Ras%0'][('sos',1,'')]['Ras_GDPmod']
+    print '--'
+    print reactionCenterStateDictionary['Ras%0'][('Ras_GDPmod',0,'Ras_GDP')]['sos']
     backupstatedictionary = deepcopy(reactionCenterStateDictionary)
     #print reactionCenterStateDictionary['EGFR%1'][('_Pmod',0,'_P')]
     #print reactionCenterStateDictionary['EGFR%0'][('_Pmod',0,'_P')]
@@ -319,11 +373,19 @@ def getContextRequirements(inputfile, collapse=True):
     #print [x for x in requirementDependencies['EGFR']['nullrequirement'] if 'egf' in x[0][0] or 'egf' == x[1][0]]
     if collapse:
         removeIndirectDependencies(requirementDependencies, backupstatedictionary)
-    getMutualExclusions(requirementDependencies, molecules)
 
+    if motifFlag:
+        requirementDependencies = getMotifRelationships(requirementDependencies, molecules)
+        exclusionCliques = getExclusionClusters(requirementDependencies)
+    else:
+        getMutualExclusions(requirementDependencies, molecules)
+        exclusionCliques = {}
+    
     #requirementDependencies = removeCounter(requirementDependencies)\
     #raise Exception
-    return requirementDependencies, backupstatedictionary
+    
+    return requirementDependencies, backupstatedictionary, exclusionCliques
+
 
 
 def reverseContextDict(dependencies):
@@ -362,7 +424,10 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     inputFile = namespace.input
     #print askQuestions(inputFile, 'EGFR', 'shc','grb2')
-    dependencies, backup = getContextRequirements(inputFile)
-    #print pprint.pprint(dict(dependencies['EGFR']))
+    dependencies, backup, _ = getContextRequirements(inputFile, collapse=True, motifFlag=True)
+    
+    #print dependencies
+    #print(dict(dependencies['EGFR']))
+    #print backup
     #print printDependencyLog(dependencies)
     
