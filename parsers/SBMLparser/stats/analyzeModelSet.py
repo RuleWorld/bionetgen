@@ -125,7 +125,7 @@ def parallelHandling(files,function,outputDir,options = [],postExecutionFunction
         for future in concurrent.futures.as_completed(futures,timeout=3600):
             postExecutionFunction(future.result(),outputDir)
             i+=1
-            progress.update(fileidx)
+            progress.update(i)
     progress.finish()
 
 
@@ -248,9 +248,10 @@ if __name__ == "__main__":
         else:
             options = []
     else:
-        filenameset = getFiles('curated/atomized','xml')
-        outputdirectory = 'curated'
-        ttype = 'atomizationScore'
+        #filenameset = getFiles('curated/atomized','xml')
+        filenameset = getFiles('XMLExamples/curated','xml')
+        outputdirectory = 'raw'
+        ttype = 'atomize'
         options = []
 
     if ttype == 'atomize':
