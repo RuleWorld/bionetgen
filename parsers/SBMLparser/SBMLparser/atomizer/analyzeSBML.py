@@ -1143,6 +1143,13 @@ class SBMLAnalyzer:
                     # print '---','{0}mod'.format(fuzzyKey),equivalenceTranslator.keys()
                     # check if there is a combination of existing keys that deals with this modification without the need of creation a new one
                     if self.testAgainstExistingConventions(fuzzyKey,self.namingConventions['modificationList']):
+                        logMess('DEBUG:Atomization', 'added relationship to existing convention {0}'.format(str(reaction)))
+                        if '{0}mod'.format(fuzzyKey) not in equivalenceTranslator:
+                            equivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
+                        if '{0}mod'.format(fuzzyKey) not in indirectEquivalenceTranslator:
+                            indirectEquivalenceTranslator['{0}mod'.format(fuzzyKey)] = []
+                        if tuple(sorted([x[0] for x in reaction],key=len)) not in equivalenceTranslator['{0}mod'.format(fuzzyKey)]:
+                            equivalenceTranslator['{0}mod'.format(fuzzyKey)].append(tuple(sorted([x[0] for x in reaction],key=len)))
                         return
 
                     logMess('DEBUG:Atomization', 'added induced naming convention {0}'.format(str(reaction)))
@@ -1281,7 +1288,8 @@ class SBMLAnalyzer:
             sdefinition = [speciesName]
             for component in localSpeciesDict[species]:
                 cdefinition = []
-                states = [["s",state[1]] for state in localSpeciesDict[species][component]]
+                states = [["s",state[1]] for state in 
+                localSpeciesDict[species][component]]
                 for state in states:
                     cdefinition.extend(state)
                 cdefinition = [component,cdefinition]
@@ -1331,7 +1339,7 @@ class SBMLAnalyzer:
                 rawReactions[reactionIndex][reactantIndex] = tmp
         #self.annotationClassificationHelper(rawReactions,equivalenceTranslator[-1])         
     
-    def userJsonToDataStructure(self,userEquivalence,dictionary,
+    def userJsonToDataStructure(self, patternName, userEquivalence, dictionary,
                                 labelDictionary,equivalencesList):
         '''
         converts a user defined species to an internal representation
@@ -1340,7 +1348,7 @@ class SBMLAnalyzer:
         label = []
         for molecule in userEquivalence[1]:
             if molecule[0] == 0:
-                labelDictionary[userEquivalence[0]] = 0
+                labelDictionary[patterName] = 0
                 return
             tmp2 = st.Molecule(molecule[0])
             for componentIdx in range(1,len(molecule),2):
@@ -1351,7 +1359,7 @@ class SBMLAnalyzer:
                     elif molecule[componentIdx+1][bindStateIdx] == "s":
                         tmp3.addState('0')
                         tmp3.addState(molecule[componentIdx+1][bindStateIdx+1])
-                        equivalencesList.append([userEquivalence[0],molecule[0]])
+                        equivalencesList.append([patterName,molecule[0]])
                 
                 #tmp3.addState(molecule[2][2])
             
@@ -1371,15 +1379,16 @@ class SBMLAnalyzer:
             #    if component.name == molecule[1]:
             #        component.setActiveState(molecule[2][1])
             tmp.addMolecule(tmp2)
-        if userEquivalence[0] in dictionary:
-            dictionary[userEquivalence[0]].extend(deepcopy(tmp))
+        if patternName in dictionary:
+            dictionary[patternName].extend(deepcopy(tmp))
         else:
-            dictionary[userEquivalence[0]] = deepcopy(tmp)
-        labelDictionary[userEquivalence[0]] = [tuple(label)]
+            dictionary[patternName] = deepcopy(tmp)
+        labelDictionary[patternName] = [tuple(label)]
         
         
     def getUserDefinedComplexes(self):
         dictionary = {}
+        partialDictionary = {}
         userLabelDictionary = {}
         equivalencesList = []
         lexicalLabelDictionary = {}
@@ -1388,16 +1397,23 @@ class SBMLAnalyzer:
             userEquivalences = speciesdictionary['complexDefinition'] \
                 if 'complexDefinition' in speciesdictionary else None
             for element in userEquivalences:
-                self.userJsonToDataStructure(element,dictionary,
+                self.userJsonToDataStructure(element[0], element,dictionary,
                                              userLabelDictionary,equivalencesList)
                                              
             complexEquivalences = speciesdictionary['modificationDefinition']
             for element in complexEquivalences:
                 userLabelDictionary[element] = [tuple(complexEquivalences[element])]
+
+            partialUserEquivalences = speciesdictionary['partialComplexDefinition'] \
+                if 'partialComplexDefinition' in speciesdictionary else None
+
+            for element in partialUserEquivalences:
+                self.userJsonToDataStructure(tuple(sorted(element[0])), element,partialDictionary,
+                                             {},[])
+        
         #stuff we got from string similarity
         for element in self.lexicalSpecies:
-            self.userJsonToDataStructure(element,dictionary,lexicalLabelDictionary,
+            self.userJsonToDataStructure(element[0], element,dictionary,lexicalLabelDictionary,
                                          equivalencesList)
-                                         
-        return dictionary,userLabelDictionary,lexicalLabelDictionary
+        return dictionary,userLabelDictionary,lexicalLabelDictionary, partialDictionary
         

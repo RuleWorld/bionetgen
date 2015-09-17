@@ -446,10 +446,12 @@ def correctRulesWithParenthesis(rules,parameters):
     '''
     helper function. Goes through a list of rules and adds a parenthesis
     to the reaction rates of those functions whose rate is in list
-    'parameters'
+    'parameters'. 
     '''
     for idx in range(len(rules)):
         tmp = [x for x in parameters if x + ' ' in rules[idx]]
+        #for tmpparameter in tmp:
+        #    re.sub(r'(\W|^){0}(\W|$)'.format(tmpparameter), r'\1{0}\2'.format(dictionary[key]), tmp[1])
         if len(tmp) > 0:
             rules[idx].strip()
             rules[idx] += '()'
