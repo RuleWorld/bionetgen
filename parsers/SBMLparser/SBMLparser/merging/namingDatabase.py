@@ -95,23 +95,29 @@ class NamingDatabase:
         connection = sqlite3.connect(self.databaseName)
         cursor = connection.cursor()
         queryStatement = 'SELECT B.file,name,A.annotationURI,A.annotationName,qualifier from moleculeNames as M join identifier as I ON M.ROWID == I.speciesID \
-                            join annotation as A on A.ROWID == I.annotationID join biomodels as B on B.ROWID == M.fileID and B.file == "{0}" and \
-                            (I.qualifier == "BQB_IS" or I.qualifier == "BQM_IS" or I.qualifier == "BQB_IS_VERSION_OF")'.format(fileName)
+                            join annotation as A on A.ROWID == I.annotationID join biomodels as B on B.ROWID == M.fileID and B.file == "{0}"'.format(fileName)
 
 
                             #I.qualifier != "BQB_HAS_PART" and \
                             #I.qualifier != "BQB_HAS_VERSION" AND I.qualifier != "BQB_HAS_PROPERTY"'.format(fileName)
 
         speciesList = [x[1:] for x in cursor.execute(queryStatement)]
+
+
         tmp = {x[0]: set([]) for x in speciesList}
         tmp2 = {x[0]: set([]) for x in speciesList}
         tmp3 = {x[0]: set([]) for x in speciesList}
+        tmp4 = {x[0]: set([]) for x in speciesList}
         for x in speciesList:
-            tmp[x[0]].add(x[1])
-            if x[2] != '':
-                tmp2[x[0]].add(x[2])
-            tmp3[x[0]].add(x[3])
-        tmp = [{'name': set([x]), 'annotation': set(tmp[x]), 'annotationName': set(tmp2[x]), 'fileName': set([fileName]), 'qualifier': tmp3[x]} for x in tmp]
+            if x[3] in ["BQB_IS", "BQM_IS", "BQB_IS_VERSION_OF"]:
+                tmp[x[0]].add(x[1])
+                if x[2] != '':
+                    tmp2[x[0]].add(x[2])
+                tmp3[x[0]].add(x[3])
+            else:
+                tmp4[x[0]].add((x[1], x[3]))
+
+        tmp = [{'name': set([x]), 'annotation': set(tmp[x]), 'annotationName': set(tmp2[x]), 'fileName': set([fileName]), 'qualifier': tmp3[x], 'otherAnnotation':[tmp4[x]] if tmp4[x] else []} for x in tmp]
         return tmp
 
     def findOverlappingNamespace(self, fileList):
@@ -144,6 +150,7 @@ class NamingDatabase:
                             fileSpeciesCopy[idx]['annotationName'] = fileSpeciesCopy[idx]['annotationName'].union(fileSpeciesCopy[idx2]['annotationName'])
                             fileSpeciesCopy[idx]['fileName'] = fileSpeciesCopy[idx]['fileName'].union(fileSpeciesCopy[idx2]['fileName'])
                             fileSpeciesCopy[idx]['qualifier'] = fileSpeciesCopy[idx]['qualifier'].union(fileSpeciesCopy[idx2]['qualifier'])
+                            fileSpeciesCopy[idx]['otherAnnotation'].extend(fileSpeciesCopy[idx2]['otherAnnotation'])
                             del fileSpeciesCopy[idx2]
                             fileSpecies = fileSpeciesCopy
                             raise IOError
@@ -320,7 +327,7 @@ def query(database, queryType, queryOptions):
             result = db.findOverlappingNamespace([])
         #pprint.pprint([[x['name'], len(x['fileName'])] for x in result])
         import pickle
-        with open('resultsMammals2.dump', 'wb') as f:
+        with open('results2.dump', 'wb') as f:
             pickle.dump(result, f)
     except KeyError:
         print 'Query operation not supported'
