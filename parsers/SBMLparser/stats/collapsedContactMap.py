@@ -160,7 +160,112 @@ def getCounter():
     return getCounter.counter
 
 
-def createCollapsedContact(rules, species, transformations, fileName, extendedInformation, contextOnlyFlag, nullContextFlag,separateGraphsFlag):
+def fillContextGraphInformation(graphDictionary, extendedInformation, speciesName, collapsedComponents,
+                                nullContextFlag, separateGraphsFlag, motifFlag, contextOnlyFlag):
+    def createNode(graph, name, graphicsDict, labelGraphicsDict, isGroup, gid):
+        idNumber = getCounter()
+        if contextOnlyFlag:
+            if isGroup:
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,isGroup=isGroup,id=idNumber)
+            else:
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid,id=idNumber)
+        else:
+            if isGroup:
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,isGroup=isGroup,id=idNumber)
+            else:
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid,id=idNumber)
+
+            #graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
+    if not motifFlag:
+        color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000', 'nullrequirement': '#993366', 'independent': '#008000'}
+    else:
+        color = {'ordering': '#0000FF', 'exclusion': '#FF0000', 'partialIndependence-': '#993366',
+                 'fullIndependence': '#008000', 'partialIndependence+': '#993366'}
+
+    for molecule in extendedInformation['extendedInformation']:
+        for relationship in extendedInformation['extendedInformation'][molecule]:
+            for requirement in extendedInformation['extendedInformation'][molecule][relationship]:
+                if not motifFlag:
+                    if relationship == 'mutualExclusion':
+                        requirement1 = list(requirement)[0]
+                        requirement2 = list(requirement)[1]
+                    elif relationship in ['nullexclusion', 'independent', 'nullrequirement']:
+
+                        if nullContextFlag and relationship in ['nullrequirement']:
+                            requirement1 = requirement[0][0]
+                            requirement2 = requirement[1][0]
+                        elif nullContextFlag and relationship in ['independent']:
+                            requirement1 = requirement[0][0]
+                            requirement2 = requirement[1]
+                        else:
+                            continue
+                    else:
+                        requirement1 = requirement[0][0]
+                        requirement2 = requirement[1][0]
+                else:
+                    requirement1 = requirement[0]
+                    requirement2 = requirement[1]
+
+                index1 = [i for i, x in enumerate(speciesName) if x.lower() == requirement1]
+                index2 = [i for i, x in enumerate(speciesName) if x.lower() == requirement2]
+                node1 = 1 if len(index1) > 0 else '{0}_{1}'.format(molecule, requirement1)
+                node2 = 1 if len(index2) > 0 else '{0}_{1}'.format(molecule, requirement2)
+                if node1 == 1:
+                    node1, label1, fill1 = getDummyNode(molecule, speciesName[index1[0]], collapsedComponents)
+                if node2 == 1:
+                    node2, label2, fill2 = getDummyNode(molecule, speciesName[index2[0]], collapsedComponents)
+                if relationship != 'mutualExclusion':
+                    if node1 not in graphDictionary[relationship].nodes():
+                        createNode(graphDictionary[relationship], node1, {'type': "circle", 'fill': fill1}, {'text': label1}, 0, graphDictionary[relationship].node[molecule]['id'])
+                        #if not contextOnlyFlag:
+                        #    graphDictionary[relationship].add_edge(molecule, node1, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                        if len(index1) > 0:
+                            node1m, label1m, fill1m = getDummyNode(speciesName[index1[0]], molecule, collapsedComponents)
+                            if 'mod' not in label1m:
+                                if node1m not in graphDictionary[relationship].nodes():
+                                    createNode(graphDictionary[relationship], node1m, {'type': "circle", 'fill': fill1m}, {'text': label1m}, 0, graphDictionary[relationship].node[speciesName[index1[0]]]['id'])
+                                    #if not contextOnlyFlag:
+                                        #if node1m not in graphDictionary[relationship].nodes():
+                                        #    graphDictionary[relationship].add_edge(speciesName[index1[0]], node1m, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                                    #    graphDictionary[relationship].add_edge(node1, node1m, graphics={'fill': "#000000"}, weight=1)
+    
+                    if node2 not in graphDictionary[relationship].nodes():
+                        createNode(graphDictionary[relationship], node2, {'type': "circle", 'fill': 'fill2'}, {'text': label2}, 0, graphDictionary[relationship].node[molecule]['id'])
+                        #if not contextOnlyFlag:
+                        #    graphDictionary[relationship].add_edge(molecule, node2, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                        if len(index1) > 0:
+                            node2m, label2m, fill2m = getDummyNode(speciesName[index1[0]], molecule, collapsedComponents)
+                            if 'mod' not in label2m:
+                                if node2m not in graphDictionary[relationship].nodes():
+                                    createNode(graphDictionary[relationship], node2m, {'type': "circle", 'fill': fill2m}, {'text': label2m}, 0, graphDictionary[relationship].node[speciesName[index1[0]]]['id'])
+                                    if not contextOnlyFlag:
+                                        #if node2m not in graphDictionary[relationship].nodes():
+                                        #    graphDictionary[relationship].add_edge(speciesName[index1[0]], node2m, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                                        graphDictionary[relationship].add_edge(node2, node2m, graphics={'fill': "#000000"}, weight=1)
+
+                    if relationship in ['exclusion']:
+                        edgeColor = True
+                        if relationship == 'exclusion':
+                            for exclusionClique in extendedInformation['exclusionCliques'][molecule]:
+                                if requirement1.lower() in exclusionClique and requirement2.lower() in exclusionClique:
+                                    edgeColor = False
+                                elif requirement1 in exclusionClique and requirement2 in exclusionClique:
+                                    edgeColor = False
+                        if edgeColor:
+                            graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
+                                                               'style': "dashed"}, weight=0.1)
+                    elif relationship not in ['fullIndependence']:
+                        graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
+                                                               'style': "dashed", 'targetArrow': "standard"}, weight=0.1)
+                else:
+                    #if relationship == 'exclusion':
+                    pass
+                    #graph.add_edge(node1,node2,graphics={'fill':color[relationship],'style':"dashed"},weight=0.1)
+
+
+
+def createCollapsedContact(rules, species, transformations, fileName, extendedInformation, contextOnlyFlag,
+                           nullContextFlag, separateGraphsFlag, motifFlag):
     '''
     creates a collapsed bipartite graph given a list of rules
     collapsed bipartite means that molecules are represented as structureless nodes and
@@ -173,27 +278,36 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
     or product in our ouput file
     '''
 
-    def createNode(graph, name,  graphicsDict,  labelGraphicsDict,isGroup,gid):
+    def createNode(graph, name, graphicsDict, labelGraphicsDict, isGroup, gid):
         idNumber = getCounter()
 
-        if contextOnlyFlag:
-            if isGroup:
-                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,isGroup=isGroup,id=idNumber)
+        if isGroup:
+            if gid != 0:
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid, isGroup=isGroup, id=idNumber)
             else:
-                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid,id=idNumber)
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,isGroup=isGroup,id=idNumber)
         else:
-            graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
+            graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid,id=idNumber)
+
+            #graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
 
     graph = nx.DiGraph()
     processNodes = []
     counter = 1
     for speciesUnit in species:
-        createNode(graph, speciesUnit.name, {'type': 'roundrectangle', 'fill': '#FFCC00'},{}, 1,0)
+        createNode(graph, speciesUnit.name, {'type': 'roundrectangle', 'fill': '#FFDD99'}, {'fontSize': 16, 'fontStyle': "bold",
+                                             'alignment': "right", 'autoSizePolicy': "node_size"}, 1, 0)
+
+        if speciesUnit.name in extendedInformation['exclusionCliques']:
+
+            for exclusionClique in extendedInformation['exclusionCliques'][speciesUnit.name]:
+                createNode(graph, '{0}_{1}_clique'.format(speciesUnit.name, '_'.join(exclusionClique)),
+                           {'fill': '#FF9999'}, {"visible": 0}, 1, graph.node[speciesUnit.name]['id'])
 
         
     mainidx = 0
     speciesName = [x.name for x in species]
-    collapsedComponents = processExtendedInformation(extendedInformation)
+    collapsedComponents = processExtendedInformation(extendedInformation['extendedInformation'])
     for rule, _, _, _ in rules:
         mainidx += 1
         nonatomicset = False
@@ -212,23 +326,40 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                 if len(bondpartners) == 2:
                     dummyNode, label1, fill1 = getDummyNode(bondpartners[0], bondpartners[1], collapsedComponents)
                     dummyNode2, label2, fill2 = getDummyNode(bondpartners[1], bondpartners[0], collapsedComponents)
-                    createNode(graph, dummyNode, {'type': "circle", 'fill': fill1}, {'text': label1}, 0, graph.node[bondpartners[0]]['id'])
-                    createNode(graph, dummyNode2, {'type': "circle", 'fill': fill2}, {'text': label2}, 0, graph.node[bondpartners[1]]['id'])
+                    parentNode1 = graph.node[bondpartners[0]]['id']
+                    parentNode2 = graph.node[bondpartners[1]]['id']
+                    if bondpartners[0] in extendedInformation['exclusionCliques']:
+                        for exclusionClique in extendedInformation['exclusionCliques'][bondpartners[0]]:
+                            if bondpartners[1].lower() in exclusionClique:
+                                parentNode1 = graph.node['{0}_{1}_clique'.format(bondpartners[0], '_'.join(exclusionClique))]['id']
+                                break
+
+                    if bondpartners[1] in extendedInformation['exclusionCliques']:
+                        for exclusionClique in extendedInformation['exclusionCliques'][bondpartners[1]]:
+                            if bondpartners[0].lower() in exclusionClique:
+                                parentNode2 = graph.node['{0}_{1}_clique'.format(bondpartners[1], '_'.join(exclusionClique))]['id']
+                                break
+
+
+                    createNode(graph, dummyNode, {'type': "circle", 'fill': fill1}, {'text': label1}, 0, parentNode1)
+                    createNode(graph, dummyNode2, {'type': "circle", 'fill': fill2}, {'text': label2}, 0, parentNode2)
                     if not contextOnlyFlag:
-                        if (dummyNode, bondpartners[0]) not in graph.edges():
-                            graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                        #if (dummyNode, bondpartners[0]) not in graph.edges():
+                        #    graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000", 'width': 3}, weight=1)
                         if (dummyNode2, dummyNode) not in graph.edges():
                             graph.add_edge(dummyNode, dummyNode2, graphics={'fill': "#000000"}, weight=1)
-                        if (dummyNode2, bondpartners[1]) not in graph.edges():
-                            graph.add_edge(bondpartners[1], dummyNode2, graphics={'fill': "#000000", 'width': 3}, weight=1)
+                        #if (dummyNode2, bondpartners[1]) not in graph.edges():
+                        #    graph.add_edge(bondpartners[1], dummyNode2, graphics={'fill': "#000000", 'width': 3}, weight=1)
 
 
                 elif len(bondpartners) == 1:
                     dummyNode = '{0}_{0}'.format(bondpartners[0])
                     createNode(graph, dummyNode, {'type': "circle", 'fill': "#FFFFFF"}, {'text': bondpartners[0]}, 0,graph.node[bondpartners[0]]['id'])
                     if not contextOnlyFlag:
-                        graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000"}, weight=1)
-                        graph.add_edge(dummyNode, bondpartners[0], graphics={'fill': "#000000"}, weight=1)
+                    #    graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000"}, weight=1)
+                    #    graph.add_edge(dummyNode, bondpartners[0], graphics={'fill': "#000000"}, weight=1)
+                         #graph.add_edge(bondpartners[0], bondpartners[0], graphics={'fill': "#000000"}, weight=1)
+                         pass
 
                 else:
                     nonatomicset = True
@@ -240,10 +371,20 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
             elif rule.actions[idx].action in ['StateChange']:
                 molecule = [x.split('(')[0] for x in transformationCenter[idx]]
                 state = [x.split('(')[1].split('~')[0] for x in transformationCenter[idx]]
-
-                createNode(graph, molecule[0] + '_' + state[0], {'type': "circle", 'fill': "#CCFFCC"}, {'text': state[0]}, 0, graph.node[molecule[0]]['id'])
-                if not contextOnlyFlag:
-                    graph.add_edge(molecule[0] + '_' + state[0], molecule[0], graphics={'fill': "#000000"}, weight=0.7)
+                stateName = state[0]
+                stateName = stateName.strip('_')
+                if stateName.endswith('mod') or stateName.endswith('Mod'):
+                    stateName = stateName[:-3]
+                stateName = '~' + stateName.upper()
+                parentNode1 = graph.node[molecule[0]]['id']
+                if molecule[0] in extendedInformation['exclusionCliques']:
+                    for exclusionClique in extendedInformation['exclusionCliques'][molecule[0]]:
+                        if state[0] in exclusionClique:
+                            parentNode1 = graph.node['{0}_{1}_clique'.format(molecule[0], '_'.join(exclusionClique))]['id']
+                            break
+                createNode(graph, molecule[0] + '_' + state[0], {'type': "circle", 'fill': "#CCFFCC"}, {'text': stateName}, 0, parentNode1)
+                #if not contextOnlyFlag:
+                #    graph.add_edge(molecule[0] + '_' + state[0], molecule[0], graphics={'fill': "#000000"}, weight=0.7)
 
                 processNodes.append(state[0])
                 if molecule[0] in activeReactants:
@@ -261,15 +402,22 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                 graph.add_edge(element, mainidx, graphics={'targetArrow': "standard"})
             for element in activeProducts:
                 graph.add_edge(mainidx, element)
-
-    color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000', 'nullrequirement': '#FF00FF', 'independent': '#00FF00'}
     # deal with information in extendedInformation
     graphDictionary = {}
+    if not motifFlag:
+        color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000', 'nullrequirement': '#FF00FF', 'independent': '#008000'}
+    else:
+        color = {'ordering': '#0000FF', 'exclusion': '#FF0000', 'partialIndependence-': '#ffcc00',
+                 'fullIndependence': '#008000', 'partialIndependence+': '#ffcc00'}
+
     for relationship in color.keys():
         if separateGraphsFlag:
             graphDictionary[relationship] = deepcopy(graph)
         else:
             graphDictionary[relationship] = graph
+    fillContextGraphInformation(graphDictionary, extendedInformation, speciesName, collapsedComponents, 
+                                nullContextFlag, separateGraphsFlag, motifFlag, contextOnlyFlag)
+    '''
     for molecule in extendedInformation:
         for relationship in extendedInformation[molecule]:
 
@@ -336,7 +484,7 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                     pass
                     #graph.add_edge(node1,node2,graphics={'fill':color[relationship],'style':"dashed"},weight=0.1)
 
-
+    '''
     #layout nx.spring_layout(graph)
     #for element in graph.nodes():
     return graph,graphDictionary
@@ -356,13 +504,14 @@ def defineConsole():
     parser.add_argument('-n', '--null-context',action='store_true',help="Include null context arrows")
     parser.add_argument('-s', '--separate-graphs',action='store_true')
     parser.add_argument('-e', '--expand',action='store_true')
+    parser.add_argument('-m', '--motifs',action='store_true',help='Calculate context motif (bidirectional) relationships')
     return parser    
 
 
-def main(fileName, outputfilename, extendedInformation, contextOnlyFlag, nullContextFlag, separateGraphsFlag):
+def main(fileName, outputfilename, extendedInformation, contextOnlyFlag, nullContextFlag, separateGraphsFlag,motifFlag):
     molecules, rules, _ = parseXML(fileName)
     graph, graphDictionary = createCollapsedContact(rules, molecules, [1], outputfilename, extendedInformation, 
-                                                    contextOnlyFlag, nullContextFlag, separateGraphsFlag)
+                                                    contextOnlyFlag, nullContextFlag, separateGraphsFlag,motifFlag)
 
     if separateGraphsFlag:
         for graphObject in graphDictionary:
@@ -382,10 +531,11 @@ if __name__ == "__main__":
         outputFile = inputFile + '.gml'
     collapseFlag = False if namespace.expand else True
     if namespace.rulify:
-        extendedInformation, _ = componentGroups.getContextRequirements(inputFile, collapse=collapseFlag)
+        extendedInformation, _, exclusionCliques = componentGroups.getContextRequirements(inputFile, collapse=collapseFlag, motifFlag=namespace.motifs)
     else:
         extendedInformation = {}
-
-    main(inputFile, outputFile, extendedInformation, namespace.context_only, namespace.null_context,namespace.separate_graphs)
+    extendedInformationDict = {'extendedInformation': extendedInformation, 'exclusionCliques': exclusionCliques}
+    main(inputFile, outputFile, extendedInformationDict, namespace.context_only, namespace.null_context,
+         namespace.separate_graphs, namespace.motifs)
     
     #addAnnotations('fceri_ji')
