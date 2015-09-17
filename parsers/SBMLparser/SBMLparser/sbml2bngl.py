@@ -419,6 +419,7 @@ but reaction is marked as reversible'.format(reactionID))
 
         rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
         rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
+        rModifiers = [x.getSpecies() for x in reaction.getListOfModifiers() if x.getSpecies() != 'EmptySet']
         #rReactant = [reactant for reactant in reaction.getListOfReactants()]
         parameters = [(parameter.getId(), parameter.getValue(),parameter.getUnits()) for parameter in kineticLaw.getListOfParameters()]
 
@@ -463,12 +464,9 @@ but reaction is marked as reversible'.format(reactionID))
             '''     
 
         return {'reactants': reactant, 'products': product, 'parameters': parameters, 'rates': [rateL, rateR],
-                'reversible': reversible, 'reactionID': reaction.getId(), 'numbers': [nl, nr]}
+                'reversible': reversible, 'reactionID': reaction.getId(), 'numbers': [nl, nr],'modifiers':rModifiers}
 
-        return (reactant, product, parameters, [rateL, rateR],
-                reversible, reaction.getId(), [nl, nr])
-
-    def getReactionCenter(self,reactant,product,translator):
+    def getReactionCenter(self, reactant, product, translator):
         rcomponent = Counter()
         pcomponent = Counter()
         
@@ -757,9 +755,10 @@ but reaction is marked as reversible'.format(reactionID))
             #products = [x for x in rawRules[1] if x[0] not in self.boundaryConditionVariables]
             reactants = [x for x in rawRules['reactants']]
             products = [x for x in rawRules['products']]
+            modifierComment = '#Modifiers({0})'.format(', '.join(rawRules['modifiers'])) if rawRules['modifiers'] else ''
             reactions.append(writer.bnglReaction(reactants, products, functionName, self.tags, translator,
                              (isCompartments or ((len(reactants) == 0 or len(products) == 0) and self.getReactions.__func__.functionFlag)),
-                             rawRules['reversible'], reactionName=rawRules['reactionID']))
+                             rawRules['reversible'], reactionName=rawRules['reactionID'], comment=modifierComment))
 
         if atomize:
             self.getReactions.__func__.functionFlag = True

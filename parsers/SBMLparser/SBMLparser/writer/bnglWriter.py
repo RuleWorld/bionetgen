@@ -17,7 +17,8 @@ import pyparsing as pyp
 def evaluatePiecewiseFunction(function):
     pass
 
-def bnglReaction(reactant,product,rate,tags,translator=[],isCompartments=False,reversible=True,comment='',reactionName=None):
+def bnglReaction(reactant, product, rate, tags, translator=[], isCompartments=False,
+                 reversible=True, comment='', reactionName=None):
     finalString = ''
     #if translator != []:
     #    translator = balanceTranslator(reactant,product,translator)

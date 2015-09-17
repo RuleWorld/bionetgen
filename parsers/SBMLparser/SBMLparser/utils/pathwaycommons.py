@@ -46,21 +46,18 @@ def name2uniprot(nameStr, organism):
         try:
             response = urllib2.urlopen(url, xparams).read()
         except urllib2.HTTPError:
-            logMess('ERROR:pathwaycommons','A connection could not be established to uniprot')
+            logMess('ERROR:pathwaycommons', 'A connection could not be established to uniprot')
             return None
-        
+
     if response in ['', None]:
         url = 'http://www.uniprot.org/uniprot/?'
-        xparams = 'query={0}&columns=entry name,id&format=tab&limit=10'.format(nameStr)
-
-        try:    
+        xparams = 'query={0}&columns=entry name,id&format=tab&limit=5&sort=score'.format(nameStr)
+        try:
             response = urllib2.urlopen(url, xparams).read()
         except urllib2.HTTPError:
             return None
     parsedData = [x.split('\t') for x in response.split('\n')][1:]
-    print nameStr,organism
-    print [x for x in parsedData if len(x) == 2 and nameStr in x[0].split('_')[0]]
-    return [x[1] for x in parsedData if len(x) == 2 and nameStr in x[0].split('_')[0]]
+    return [x[1] for x in parsedData if len(x) == 2 and any(nameStr.lower() in z for z in [y.lower() for y in x[0].split('_')])]
 
 @memoize
 def getReactomeBondByUniprot(uniprot1, uniprot2):
@@ -113,6 +110,8 @@ def getReactomeBondByName(name1, name2, sbmlURI, sbmlURI2, organism=None):
         uniprot2 = [x.split('/')[-1] for x in sbmlURI2]
     else:
         uniprot2 = name2uniprot(name2, organism)
+    uniprot1 = uniprot1 if len(uniprot1) > 0 else [name1]
+    uniprot2 = uniprot2 if len(uniprot1) > 0 else [name2]
     return getReactomeBondByUniprot(uniprot1, uniprot2)
 
 
@@ -130,7 +129,7 @@ def isInComplexWith(name1, name2, sbmlURI=[], sbmlURI2=[], organism=None):
 if __name__ == "__main__":
     #results =  isInComplexWith('GAP','Ras')
     print getReactomeBondByName('EGFR', 'EGFR', ['Q9QX70'], ['Q9QX70'])
-    print getReactomeBondByName('EGF', 'EGF', ['P07522'], ['P07522'])
+    #print getReactomeBondByName('EGF', 'EGF', ['P07522'], ['P07522'])
     #print name2uniprot('MEKK1')
     #print results
     #print getReactomeBondByUniprot('Q9QX70','Q9QX70')
