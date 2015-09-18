@@ -6,6 +6,7 @@ addons:
     packages:
     - python-pip
     - python-dev
+    - python-numpy
     - libxml2-dev
     - zlib1g-dev
     - libbz2-dev
