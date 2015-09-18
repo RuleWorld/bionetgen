@@ -1,10 +1,6 @@
 os:
   - linux
-  - osx
 language: c++
-compiler:
-  - gcc
-  - clang
 sudo: false
 addons:
   apt:
