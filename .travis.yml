@@ -11,11 +11,11 @@ addons:
     - libxml2-dev
     - zlib1g-dev
     - libbz2-dev
-    - python-networkx
     - python-lxml
 compiler:
   - gcc
 before_install: 
+ - pip install --user networkx
  - pip install --user pexpect
  - pip install --user python-libsbml
 notifications:
