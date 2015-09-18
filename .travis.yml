@@ -3,4 +3,6 @@ os:
 language: c++
 compiler:
   - gcc
-script: cd ./bng2 && perl make_dist.pl --build --test
+notifications:
+  slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
+script: cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
