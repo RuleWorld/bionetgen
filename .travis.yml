@@ -15,7 +15,7 @@ addons:
 compiler:
   - gcc
 before_install: 
- - pip install --user networkx
+ - pip install --user networkx==1.9.1
  - pip install --user pexpect
  - pip install --user python-libsbml
 notifications:
