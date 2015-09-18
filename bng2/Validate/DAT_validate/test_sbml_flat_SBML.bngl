@@ -35,7 +35,7 @@ begin observables
 	Species AA____ AA____() #AA()
 end observables
 begin functions
-	functionRate4() = 0.5 * k3_f*2
+	functionRate4() = 0.5 * k3_f * 2
 	A() = 0 + A____
 	AA() = 0 + AA____
 	C() = 0 + C____
