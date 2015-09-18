@@ -556,7 +556,10 @@ if (defined $bindir)
         my @args = ($sys_perl, $abs_validate_script, @validate_flags );
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
-        {  print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  }
+        {  
+            print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  
+            exit -1;
+        }
 
         unless( chdir $cwd ){   
        		print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
