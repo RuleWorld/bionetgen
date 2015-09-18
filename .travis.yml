@@ -3,6 +3,8 @@ os:
 language: c++
 compiler:
   - gcc
-notifications:
-  slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
+before_install:  
+ - sudo apt-get update  
+ - sudo apt-get install python-pip
+ - pip install --user python-libsbml
 script: cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
