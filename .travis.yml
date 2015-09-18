@@ -1,6 +1,7 @@
 os:
   - linux
 language: c++
+sudo: false
 addons:
   apt:
     packages:
@@ -13,7 +14,7 @@ addons:
 compiler:
   - gcc
 before_install:  
- - sudo pip install python-libsbml
+ - pip install --user python-libsbml
 notifications:
   slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
 after_failure: "cat /home/travis/build/RuleWorld/bionetgen/bng2/BioNetGen-2.2.6-stable/Validate/test_sbml_flat.log"
