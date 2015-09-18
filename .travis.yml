@@ -15,4 +15,5 @@ before_install:
  - sudo pip install python-libsbml
 notifications:
   slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
+after_failure: "cat /home/travis/build/RuleWorld/bionetgen/bng2/BioNetGen-2.2.6-stable/Validate/test_sbml_flat.log"
 script: cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
