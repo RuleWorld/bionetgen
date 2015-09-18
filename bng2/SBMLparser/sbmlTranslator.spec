@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 a = Analysis(['SBMLparser/sbmlTranslator.py'],
-             hiddenimports=['_libsbml'],
+             hiddenimports=['_libsbml','libsbml'],
              hookspath=None,
              runtime_hooks=None,
 	      excludes=['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui','matplotlib','IPython','PIL','X11','gtk','pandas','scipy'])

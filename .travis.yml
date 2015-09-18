@@ -1,19 +1,18 @@
 os:
   - linux
 language: c++
-sudo: false
 addons:
   apt:
     packages:
     - python-pip
     - python-dev
     - libxml2-dev
-    - libz-dev
+    - zlib1g-dev
     - libbz2-dev
 compiler:
   - gcc
 before_install:  
- - pip install --user python-libsbml
+ - sudo pip install python-libsbml
 notifications:
   slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
 script: cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
