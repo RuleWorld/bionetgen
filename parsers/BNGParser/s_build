@@ -1,0 +1,108 @@
+#!/bin/bash
+# #########################################################################
+#   Build Script for BNGParser
+# #########################################################################
+
+#  /bin/rm -r -f  bionetgen
+#  git clone https://github.com/RuleWorld/bionetgen.git
+#  /bin/cp -r bionetgen.safe  bionetgen
+#  cd bionetgen/parsers/BNGParser/src/bngparser/grammars
+
+cd src/bngparser/grammars
+
+#   /home/roc60/eclipse_bngparser/plugins/antlr4ide.core_0.3.5.jar  \
+#antlr4ide.ui_0.3.5.jar
+#org.antlr.runtime_3.2.0.v201101311130.jar
+#antlr4ide.core_0.3.5.jar
+#org.apache.ant_1.9.2.v201404171502/lib/ant-antlr.jar
+
+echo '-------------------------------------------------------------------'
+echo ' Generate grammars'
+echo '-------------------------------------------------------------------'
+
+java -jar   /home/roc60/build_BNGParser/bionetgen/parsers/BNGParser/src/antlr-3.3-complete.jar BNGLexer.g
+java -jar   /home/roc60/build_BNGParser/bionetgen/parsers/BNGParser/src/antlr-3.3-complete.jar BNGGrammar.g
+
+
+cd ../..
+cp /home/roc60/build_BNGParser/ANTLR/antlr-4.5-complete.jar .
+
+#  javac  -Xlint:deprecation -Xlint:unchecked \
+
+echo '-------------------------------------------------------------------'
+echo ' Compile grammars'
+echo '-------------------------------------------------------------------'
+#javac    -classpath  bngparser/grammars:bngparser/methods:bngparser/models:bngparser/dataType:bngparser/exceptions:antlr-4.5-complete.jar:antlr-3.3-complete.jar:/home/roc60/build_BNGParser/Apache/commons-lang3-3.4/commons-lang3-3.4.jar:. \
+#      -sourcepath . $jfile
+
+
+for jfile in $(ls bngparser/grammars/*.java)
+do
+echo $jfile
+javac    -classpath  bngparser/grammars:bngparser/methods:bngparser/models:bngparser/dataType:bngparser/exceptions:antlr-3.3-complete.jar:../commons-lang3-3.1.jar:.  -sourcepath . $jfile
+done
+
+echo '-------------------------------------------------------------------'
+echo ' Compiling methods '
+echo '-------------------------------------------------------------------'
+
+for jfile in $(ls bngparser/methods/*.java)
+do
+  echo $jfile
+javac    -classpath  bngparser/grammars:bngparser/methods:bngparser/models:bngparser/dataType:bngparser/exceptions:antlr-3.3-complete.jar:../commons-lang3-3.1.jar:.  -sourcepath . $jfile
+done
+
+echo '-------------------------------------------------------------------'
+echo ' Compiling dataType '
+echo '-------------------------------------------------------------------'
+
+for jfile in $(ls bngparser/dataType/*.java)
+do
+  echo $jfile
+javac    -classpath  bngparser/grammars:bngparser/methods:bngparser/models:bngparser/dataType:bngparser/exceptions:antlr-3.3-complete.jar:../commons-lang3-3.1.jar:.  -sourcepath . $jfile
+done
+
+
+echo '-------------------------------------------------------------------'
+echo ' Compiling exceptions '
+echo '-------------------------------------------------------------------'
+
+for jfile in $(ls bngparser/exceptions/*.java)
+do
+  echo $jfile
+javac    -classpath  bngparser/grammars:bngparser/methods:bngparser/models:bngparser/dataType:bngparser/exceptions:antlr-3.3-complete.jar:../commons-lang3-3.1.jar:.  -sourcepath . $jfile
+done
+
+echo '-------------------------------------------------------------------'
+echo ' Compiling bngparser '
+echo '-------------------------------------------------------------------'
+
+for jfile in $(ls bngparser/*.java)
+do
+  if [ $jfile != 'bngparser/MCellTranslatorTester.java' ];
+then
+echo $jfile
+javac    -classpath  bngparser/grammars:bngparser/methods:bngparser/models:bngparser/dataType:bngparser/exceptions:antlr-3.3-complete.jar:../commons-lang3-3.1.jar:.  -sourcepath . $jfile
+fi
+done
+
+echo '-------------------------------------------------------------------'
+echo ' Creating jar '
+echo '-------------------------------------------------------------------'
+
+cp ../xml.stg .
+jar cf  BNGParser.jar bngparser  xml.stg
+
+echo '-------------------------------------------------------------------'
+echo ' Running a Test '
+echo '-------------------------------------------------------------------'
+
+cp ../commons-lang3-3.1.jar .
+javac -cp antlr-3.3-complete.jar:BNGParser.jar:commons-lang3-3.1.jar:. \
+    bngparser/Tester.java 
+java  -cp antlr-3.3-complete.jar:BNGParser.jar:commons-lang3-3.1.jar:. \
+    bngparser/Tester
+
+echo '-------------------------------------------------------------------'
+echo ' Done '
+echo '-------------------------------------------------------------------'

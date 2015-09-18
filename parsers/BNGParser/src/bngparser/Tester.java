@@ -48,7 +48,7 @@ public class Tester {
 		
 		List<String> inputFileList = new ArrayList<String>();
 //		inputFileList.add("testModels/Parente.bngl");
-		inputFileList = getFileNames("testModels");
+		inputFileList = getFileNames("bngparser/models");
 		String outputFile = "output.xml";
 		
 		if(args.length > 0){

@@ -50,6 +50,7 @@ action
   write_mfile {actions.add($write_mfile.st);} | 
   write_mexfile {actions.add($write_mexfile.st);} | 
   write_mdl {actions.add($write_mdl.st);} |
+  write_ssc {actions.add($write_ssc.st);} | 
   set_concentration {actions.add($set_concentration.st);} | 
   add_concentration {actions.add($add_concentration.st);} |
   save_concentrations {actions.add($save_concentrations.st);} | 
@@ -57,6 +58,7 @@ action
   set_parameter {actions.add($set_parameter.st);}  |
   save_parameters {actions.add($save_parameters.st);} | 
   reset_parameters {actions.add($reset_parameters.st);} |
+  visualize {actions.add($visualize.st);} |
   quit {actions.add($quit.st);}
 ;
 
@@ -85,7 +87,8 @@ gn_action_par_def[Map<String,String> map]
   (MAX_ITER ASSIGNS i5=INT {map.put($MAX_ITER.text,$i5.text);}) | 
   (MAX_STOICH ASSIGNS hash_value) | 
   (TEXTSPECIES ASSIGNS i6=INT {map.put($TEXTSPECIES.text,$i6.text);})  |
-  (TEXTREACTION ASSIGNS i7=INT {map.put($TEXTREACTION.text,$i7.text);})
+  (TEXTREACTION ASSIGNS i7=INT {map.put($TEXTREACTION.text,$i7.text);}) | 
+  (CHECK_ISO ASSIGNS i8=INT {map.put($CHECK_ISO.text,$i8.text);})
 ;
 
 generate_hybrid_model
@@ -392,6 +395,21 @@ write_mdl_args
   ps_par_def
 ;
 
+
+write_ssc
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $write_ssc::actions = new HashMap<String,String>();
+}
+: 
+  (WRITESSC | WRITESSCCFG)
+  (LPAREN 
+  RPAREN)? SEMI? 
+  -> action(id={$WRITESSC.text})
+;
+
 set_concentration 
 scope{
   Map<String,String> options;
@@ -624,6 +642,33 @@ pscan_par_def[Map<String,String> map]
 //    } 
 //  }
 //;
+
+visualize
+scope{
+  Map<String,String> actions;
+}
+@init{
+  $visualize::actions = new HashMap<String,String>();
+}
+:
+   VISUALIZE LPAREN 
+  (LBRACKET 
+  (visualize_args (COMMA visualize_args)*)? 
+  RBRACKET)?
+  RPAREN SEMI? 
+  -> action(id={$VISUALIZE.text})
+   
+;
+
+visualize_args
+:
+  TYPE ASSIGNS DBQUOTES STRING DBQUOTES |
+  SUFFIX ASSIGNS DBQUOTES (~DBQUOTES)* DBQUOTES |
+  COLLAPSE ASSIGNS INT | 
+  OPTS ASSIGNS LSBRACKET DBQUOTES (~DBQUOTES)* DBQUOTES (COMMA DBQUOTES (~DBQUOTES)* DBQUOTES)* RSBRACKET |
+  BACKGROUND ASSIGNS INT | 
+  GROUPS ASSIGNS INT
+;
      
 method_definition 
 :

@@ -1,0 +1,37 @@
+begin model
+begin parameters
+k1 1
+end parameters
+begin molecule types
+A()
+A2()
+B()
+C()
+Source()
+Source2()
+end molecule types
+begin compartments
+	EC 3 1
+end compartments
+begin seed species
+$Source@EC 1
+Source2@EC 1
+end seed species
+begin reaction rules
+0 -> A@EC() k1
+0 -> @EC:A2() k1
+Source() -> B() k1
+Source2() -> Source2() + C() k1
+end reaction rules
+begin observables
+Molecules compartment_suffix A()
+Molecules compartment_preffix A2()
+Molecules constant_source B()
+Molecules non_constant_source C()
+
+end observables
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_start=>0,t_end=>40,n_steps=>100})

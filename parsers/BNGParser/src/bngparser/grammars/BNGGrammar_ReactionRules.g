@@ -124,7 +124,7 @@ scope{
       $secondRate="0";
     $reaction_rule_def::text += " " + StringEscapeUtils.escapeXml($rate_list.text);
   }
-  (modif_command)* (DELETEMOLECULES)? (MOVECONNECTED)?
+  (modif_command)* (opt_modifiers)* 
   {
     $reaction_rule_def::text = $reaction_rule_def::text.replaceAll("<","&lt;");
     $reaction_rule_def::text = $reaction_rule_def::text.replaceAll(">","&gt;");
@@ -331,6 +331,11 @@ modif_command
 : 
   include_command | 
   exclude_command
+;
+
+opt_modifiers
+:
+DELETEMOLECULES |MOVECONNECTED | TOTALRATE
 ;
         
 //are the patterns same in include and exclude?

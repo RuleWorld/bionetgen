@@ -1,36 +1,23 @@
-# Created by BioNetGen 2.2.0
-substanceUnits("Number");
+# Created by BioNetGen 2.2.6
 begin parameters
-    1 NA            6.0221e23  # Constant
-    2 V             1e-9  # Constant
-    3 L0            1e-9  # Constant
-    4 R0            1e-9  # Constant
-    5 kp            1.66055030637153e-09  # ConstantExpression
-    6 km            0.1  # Constant
-    7 InitialConc1  602210  # ConstantExpression
-    8 InitialConc2  602210  # ConstantExpression
+    1 NA             6.0221e23  # Constant
+    2 V              1e-9  # Constant
+    3 L0             1e-9  # Constant
+    4 R0             1e-9  # Constant
+    5 kp             (1e6/NA)/V  # ConstantExpression 1.66055030637153e-009
+    6 km             0.1  # Constant
+    7 _InitialConc1  (L0*NA)*V  # ConstantExpression 602210
+    8 _InitialConc2  (R0*NA)*V  # ConstantExpression 602210
+    9 NewConc1       (2e-9*NA)*V  # ConstantExpression 1204420
 end parameters
-begin molecule types
-    1 R(l)
-    2 L(r)
-end molecule types
-begin observables
-    1 Species LR {MatchOnce}R(l!1).L(r!1)
-end observables
 begin species
-    1 L(r)           5.963056327490e+05
-    2 R(l)           5.963056327490e+05
-    3 L(r!1).R(l!1)  5.904367251040e+03
+    1 L(r) 5.963056327490e+05
+    2 R(l) 5.963056327490e+05
+    3 L(r!1).R(l!1) 5.904367251040e+03
 end species
-begin reaction rules
-  Rule1:  R(l) + L(r) <-> R(l!1).L(r!1)  kp, km
-  # Bind(0.0.0,0.1.0)
-  # Reverse
-  # Unbind(0.0.0,0.1.0)
-end reaction rules
 begin reactions
-    1 1,2 3 kp #Rule1
-    2 3 1,2 km #Rule1r
+    1 1,2 3 kp #R1
+    2 3 1,2 km #R1_r
 end reactions
 begin groups
     1 LR                   3
