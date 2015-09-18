@@ -13,7 +13,8 @@ addons:
     - libbz2-dev
 compiler:
   - gcc
-before_install:  
+before_install: 
+ - pip install --user pexpect
  - pip install --user python-libsbml
 notifications:
   slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
