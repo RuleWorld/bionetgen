@@ -253,7 +253,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
         if len(tmpCandidates) == 0:
             logMess('CRITICAL:Atomization', 'I dont know how to process these candidates and I have no \
                 way to make an educated guess. Politely refusing to translate {0}={1}.'.format(reactant, candidates))
-            return None, None
+            return None, None,None
         originalTmpCandidates = deepcopy(tmpCandidates)
         # if we have more than one modified element for a single reactant
         # we can try to  choose the one that is most similar to the original
@@ -379,10 +379,14 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
                     # the ive no idea whats going on branch
                     #modificationCandidates = {}
                     #if modificationCandidates == {}:
-
-                    logMess('CRITICAL:Atomization', 'I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}={1}={2}.'.format(reactant,candidates,tmpCandidates))
-                    #print database.userLabelDictionary
-                    return None, None, None
+                    if len(tmpCandidates) != 1:
+                        logMess('CRITICAL:Atomization', 'I dont know how this is modified and I have no way to make an educated guess. Politely refusing to translate {0}={1}={2}.'.format(reactant,candidates,tmpCandidates))
+                        #print database.userLabelDictionary
+                        return None, None, None
+                    else:
+                        # if theres only one candidate let the modification go through.
+                        logMess('WARNING:Atomization', 'Introducing a forced change between {0}={1}={2}.'.format(reactant,candidates,tmpCandidates))
+                        #print database.userLabelDictionary')
                     #return [tmpCandidates[0]], unevenElements
         elif len(tmpCandidates) > 1:
             #all candidates are equal/consistent
@@ -597,8 +601,13 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag, parser):
 
         else:
             mol1 = getNamedMolecule(totalComplex[0], dbPair[0][0])
-            mol2 = getNamedMolecule(totalComplex[1], dbPair[0][1])
-            logMess('DEBUG:Atomization', 'Binding information found in pathwaycommons for for {0}-{1}'.format(mol1.name,mol2.name))
+            if not mol1:
+                mol1 = getNamedMolecule(totalComplex[1], dbPair[0][0])
+                mol2 = getNamedMolecule(totalComplex[0], dbPair[0][1])
+            else:
+                mol2 = getNamedMolecule(totalComplex[1], dbPair[0][1])
+
+            logMess('DEBUG:Atomization', 'Binding information found in pathwaycommons for for {0}-{1}'.format(mol1.name, mol2.name))
 
     else:
 
@@ -643,7 +652,7 @@ def getComplexationComponents2(moleculeName, species, bioGridFlag, pathwaycommon
 
     def getNamedMolecule(array, name):
 
-        for molecule in array:
+        for molecule in sortMolecules(array, True):
             if molecule.name == name:
                 return molecule
     speciesDict = {}
@@ -663,9 +672,6 @@ def getComplexationComponents2(moleculeName, species, bioGridFlag, pathwaycommon
 
     # determine how molecules bind together
     redundantBonds = []
-    if moleculeName in ['EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot']:
-        print [y.name for y in orphanedMolecules]
-        print [[y.name for y in x] for x in pairedMolecules]
 
     for x in sortMolecules(species.molecules, reverse=True):
         for component in [y for y in x.components if y.name.lower()
@@ -702,11 +708,6 @@ def getComplexationComponents2(moleculeName, species, bioGridFlag, pathwaycommon
                             if mol in orphanedMolecules:
                                 orphanedMolecules.remove(mol)
 
-    if moleculeName in ['EGF_EGFRm2_GAP_Shcm_Grb2_Sos_Ras_GTP_Prot']:
-        print '---',moleculeName
-        print bondExclusion
-        print [str(x) for x in orphanedMolecules]
-        print [[y.name for y in x] for x in pairedMolecules]
     if len(redundantBonds) > 0:
         for x in redundantBonds:
             addAssumptions('redundantBonds', tuple(sorted([y.name for y in x])))
@@ -795,22 +796,21 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
             #classification = identifyReaction(
             #                                  equivalenceDictionary,
             #                                  dependencyGraph[tmp][0][0],tmp)
-            classifications = sbmlAnalyzer.findMatchingModification(tmp, dependencyGraph[tmp][0][0])
+
+            classifications = None
             if not classifications:
                 classifications = identifyReaction(
                                                   equivalenceDictionary,
                                                   dependencyGraph[tmp][0][0], tmp)
+                classifications = classifications if classifications in reactionProperties else None
                 if classifications is not None:
                     classifications = [classifications]
+            if not classifications:
+                classifications = sbmlAnalyzer.findMatchingModification(tmp, dependencyGraph[tmp][0][0])
+
 
             if not classifications:
                 classifications = sbmlAnalyzer.findMatchingModification(element[0], dependencyGraph[tmp][0][0])
-            if not classifications:
-                classifications = identifyReaction(
-                                                  equivalenceDictionary,
-                                                  dependencyGraph[tmp][0][0], element[0])
-                if classifications is not None:
-                    classifications = [classifications]
 
             # if we know what classification it is then add the corresponding components and states
             if classifications is not None:
@@ -1156,7 +1156,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
     # classify reactions
     database.classifications, equivalenceTranslator, database.eequivalenceTranslator,\
     indirectEquivalenceTranslator, \
-        adhocLabelDictionary, lexicalDependencyGraph = database.sbmlAnalyzer.classifyReactions(rules, molecules,{})
+        adhocLabelDictionary, lexicalDependencyGraph, userEquivalenceTranslator = database.sbmlAnalyzer.classifyReactions(rules, molecules,{})
     database.reactionProperties = database.sbmlAnalyzer.getReactionProperties()
     # user defined and lexical analysis naming conventions are stored here
     database.reactionProperties.update(adhocLabelDictionary)
@@ -1165,12 +1165,9 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
     database.lexicalLabelDictionary, database.partialUserLabelDictionary = database.sbmlAnalyzer.getUserDefinedComplexes()
     database.dependencyGraph = {}
     database.alternativeDependencyGraph = {}
-    #analyzeSBML.analyzeNamingConventions(molecules)
-    #rdfAnnotations = analyzeRDF.getAnnotations(parser,'uniprot')
 
     # ###dependency graph
     # binding reactions
-
     for reaction, classification in zip(rules, database.classifications):
         bindingReactionsAnalysis(database.dependencyGraph,
                         list(parseReactions(reaction)), classification)
@@ -1193,11 +1190,20 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
         else:
             database.dependencyGraph[element] = lexicalDependencyGraph[element]
 
+
         # Check if I'm using a molecule that hasn't been used yet
         for dependencyCandidate in database.dependencyGraph[element]:
             for molecule in [x for x in dependencyCandidate if x not in database.dependencyGraph]:
                 database.dependencyGraph[molecule] = []
-
+    #user defined transformations
+    for key in userEquivalenceTranslator:
+        for namingEquivalence in userEquivalenceTranslator[key]:
+            baseElement = min(namingEquivalence, key=len)
+            modElement = max(namingEquivalence, key=len)
+            if baseElement not in database.dependencyGraph:
+                database.dependencyGraph[baseElement] = []
+            addToDependencyGraph(database.dependencyGraph, modElement,
+                                 [baseElement])
     # database.eequivalence translator contains 1:1 equivalences
     # FIXME: do we need this update step or is it enough with the later one?
     # catalysis reactions
@@ -1216,7 +1222,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
 
                         addToDependencyGraph(database.dependencyGraph, modElement,
                                              [baseElement])
- 
     # include user label information. 
     for element in database.userLabelDictionary:
         if database.userLabelDictionary[element] == 0:
@@ -1228,18 +1233,25 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
         else:
             database.dependencyGraph[element] = [list(
             database.userLabelDictionary[element][0])]
+            # If the user is introducing a new molecule term, add it to the SCT
+            if database.userLabelDictionary[element][0][0] not in database.dependencyGraph:
+                database.dependencyGraph[database.userLabelDictionary[element][0][0]] = []
+
+
 
     #recalculate 1:1 equivalences now with binding information 
     _, _, database.eequivalenceTranslator2,\
-         _, adhocLabelDictionary, _ =  database.sbmlAnalyzer.classifyReactions(rules, molecules,database.dependencyGraph)
+         _, adhocLabelDictionary, _, _ =  database.sbmlAnalyzer.classifyReactions(rules, molecules,database.dependencyGraph)
     database.reactionProperties.update(adhocLabelDictionary)
+
     #update catalysis equivalences
     #catalysis reactions
     for key in database.eequivalenceTranslator2:
         for namingEquivalence in database.eequivalenceTranslator2[key]:
             baseElement = min(namingEquivalence, key=len)
             modElement = max(namingEquivalence, key=len)
-            if key != 'Binding':
+            # dont overwrite user information
+            if key != 'Binding' and modElement not in database.userLabelDictionary:
                 if baseElement not in database.dependencyGraph or database.dependencyGraph[baseElement] == []:
                     if modElement not in database.dependencyGraph or database.dependencyGraph[modElement] == []:
                         database.dependencyGraph[baseElement] = []
@@ -1249,7 +1261,6 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
                     #    continue
                 addToDependencyGraph(database.dependencyGraph, modElement,
                                      [baseElement])
-
 
 
     # non lexical-analysis catalysis reactions

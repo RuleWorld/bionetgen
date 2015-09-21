@@ -10,7 +10,7 @@ import numpy as np
 import json
 import itertools
 import utils.structures as st
-from copy import deepcopy
+from copy import deepcopy,copy
 import detectOntology
 import re
 import difflib
@@ -73,6 +73,7 @@ class SBMLAnalyzer:
         self.modelParser = modelParser        
         self.configurationFile = configurationFile
         self.namingConventions = detectOntology.loadOntology(namingConventions)
+        self.userNamingConventions = copy(self.namingConventions)
         self.speciesEquivalences= speciesEquivalences
         self.userEquivalencesDict = None
         self.lexicalSpecies= []
@@ -429,7 +430,7 @@ class SBMLAnalyzer:
 
         #FIXME: This line contains the single biggest execution bottleneck in the code
         #we should be able to delete it
-
+        #user defined equivalence
         if not onlyUser:
             tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions(strippedMolecules,
                                                                                           self.namingConventions,similarityThreshold=threshold)
@@ -439,7 +440,7 @@ class SBMLAnalyzer:
         else: 
             if self.userEquivalencesDict ==None:            
                 self.userEquivalencesDict = {}
-        
+
         #for name in self.userEquivalencesDict:
         #    equivalenceTranslator[name] = self.userEquivalencesDict[name]
 
@@ -466,7 +467,6 @@ class SBMLAnalyzer:
             return [[[[reactant],[product]],None,None]]
             
         namePairs,differenceList,_ = detectOntology.defineEditDistanceMatrix(molecules,similarityThreshold=similarityThreshold)
-        
         #print '+++',namePairs,differenceList
         #print '---',detectOntology.defineEditDistanceMatrix2(molecules,similarityThreshold=similarityThreshold)
         
@@ -1160,7 +1160,7 @@ class SBMLAnalyzer:
                         tmpState = fuzzyKey.upper()
                             
                     adhocLabelDictionary['{0}mod'.format(fuzzyKey)] = ['{0}mod'.format(fuzzyKey),tmpState]
-                    #fill main naming convention data structure                    
+                    #fill main naming convention data structure
                     self.namingConventions['modificationList'].append('{0}mod'.format(fuzzyKey))
                     self.namingConventions['reactionState'].append(tmpState)
                     self.namingConventions['reactionSite'].append('{0}mod'.format(fuzzyKey))
@@ -1190,8 +1190,17 @@ class SBMLAnalyzer:
         #example {'Phosporylation':[['A','A_p'],['B','B_p']]}
         
         #process straightforward naming conventions
-        equivalenceTranslator, translationKeys, conventionDict = self.processNamingConventions2(molecules,onlyUser=True)
+        #XXX: we should take this function out of processNamingConventions2 and all process that calls it
+        tmpTranslator,translationKeys,conventionDict =  detectOntology.analyzeNamingConventions(strippedMolecules,
+                                                                              self.userNamingConventions,similarityThreshold=10)
 
+        userEquivalenceTranslator, _, _ = self.processNamingConventions2(molecules,onlyUser=True)
+        for element in tmpTranslator:
+            if element in userEquivalenceTranslator:
+                userEquivalenceTranslator[element].extend(tmpTranslator[element])
+            else:
+                userEquivalenceTranslator[element] = tmpTranslator[element]
+        equivalenceTranslator = copy(userEquivalenceTranslator)
         newTranslationKeys = []
         adhocLabelDictionary = {}
 
@@ -1207,7 +1216,6 @@ class SBMLAnalyzer:
         # matches to different ones in the right hand size of a given reaction
         lexicalDependencyGraph = defaultdict(list)
         strippedMolecules = [x.strip('()') for x in molecules]
-
         for idx,reaction in enumerate(rawReactions):
             flagstar = False
             if len(reaction[0]) == 1 and len(reaction[1]) == 1 \
@@ -1227,6 +1235,7 @@ class SBMLAnalyzer:
                 reactantString = [[y for y in x if y!=''] for x in reactantString]
                 productString = [x.split('_') for x in reaction[1]]
                 productString = [[y for y in x if y!=''] for x in productString]        
+
             else:
                 reactantString = []
                 productString = []
@@ -1308,7 +1317,8 @@ class SBMLAnalyzer:
         for element in equivalenceTranslator:
             listOfEquivalences.extend(equivalenceTranslator[element])
         return reactionClassification,listOfEquivalences,equivalenceTranslator, \
-                indirectEquivalenceTranslator,adhocLabelDictionary,lexicalDependencyGraph
+                indirectEquivalenceTranslator,adhocLabelDictionary,lexicalDependencyGraph, \
+                userEquivalenceTranslator
         
     
  
@@ -1405,7 +1415,7 @@ class SBMLAnalyzer:
                 userLabelDictionary[element] = [tuple(complexEquivalences[element])]
 
             partialUserEquivalences = speciesdictionary['partialComplexDefinition'] \
-                if 'partialComplexDefinition' in speciesdictionary else None
+                if 'partialComplexDefinition' in speciesdictionary else []
 
             for element in partialUserEquivalences:
                 self.userJsonToDataStructure(tuple(sorted(element[0])), element,partialDictionary,

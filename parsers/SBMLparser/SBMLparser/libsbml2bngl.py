@@ -475,6 +475,10 @@ def changeNames(functions, dictionary):
 
 
 def changeRates(reactions, dictionary):
+    """
+    changes instances of keys in dictionary appeareing in reaction rules to their corresponding
+    alternatives
+    """
     tmpArray = []
     tmp = None
     for reaction in reactions:
@@ -541,9 +545,10 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
     parser.reset()
     
     molecules, initialConditions, observables, speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
-
     # finally, adjust parameters and initial concentrations according to whatever  initialassignments say
     param, zparam, initialConditions = parser.getInitialAssignments(translator, param, zparam, molecules, initialConditions)
+
+    # FIXME: this method is a mess, improve handling of assignmentrules since we can actually handle those
     aParameters, aRules, nonzparam, artificialRules, removeParams, artificialObservables = parser.getAssignmentRules(zparam, param, rawSpecies, observables)
     compartments = parser.getCompartments()
     functions = []
