@@ -110,8 +110,8 @@ def getReactomeBondByName(name1, name2, sbmlURI, sbmlURI2, organism=None):
         uniprot2 = [x.split('/')[-1] for x in sbmlURI2]
     else:
         uniprot2 = name2uniprot(name2, organism)
-    uniprot1 = uniprot1 if len(uniprot1) > 0 else [name1]
-    uniprot2 = uniprot2 if len(uniprot1) > 0 else [name2]
+    uniprot1 = uniprot1 if uniprot1 else [name1]
+    uniprot2 = uniprot2 if uniprot2 else [name2]
     return getReactomeBondByUniprot(uniprot1, uniprot2)
 
 

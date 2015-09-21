@@ -26,8 +26,8 @@ def bnglReaction(reactant, product, rate, tags, translator=[], isCompartments=Fa
         finalString += '0 '
     for index in range(0,len(reactant)):
         tag = ''
-        if reactant[index][0] in tags and isCompartments:
-            tag = tags[reactant[index][0]]
+        if reactant[index][2] in tags and isCompartments:
+            tag = tags[reactant[index][2]]
         finalString += printTranslate(reactant[index],tag,translator)
         if index < len(reactant) -1:
             finalString += ' + '
@@ -40,8 +40,8 @@ def bnglReaction(reactant, product, rate, tags, translator=[], isCompartments=Fa
     for index in range(0,len(product)):
         tag = ''
         if isCompartments:
-            if product[index][0] in tags:
-                tag = tags[product[index][0]]
+            if product[index][2] in tags:
+                tag = tags[product[index][2]]
         finalString +=  printTranslate(product[index],tag,translator) 
         if index < len(product) -1:
             finalString += ' + '
@@ -259,6 +259,7 @@ def bnglFunction(rule,functionTitle,reactants,compartments=[],parameterDict={},r
     for compartment in compartments:
         tmp = re.sub('^{0}\s*[*]'.format(compartment[0]),'',tmp)
         tmp = re.sub('([*]\s*{0})$'.format(compartment[0]),'',tmp)
+
         if compartment[0] in tmp:
             tmp =re.sub(r'(\W|^)({0})(\W|$)'.format(compartment[0]),r'\1 {0} \3'.format(str(compartment[1])),tmp)
             #tmp = re.sub(r'(\W)({0})(\W)'.format(compartment[0]),r'\1%s\3' % str(compartment[1]),tmp)
