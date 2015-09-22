@@ -8,7 +8,7 @@ If configure script does not exist (developers only):
 PLEASE NOTE: Autotools assumes the existence of the directories 'cvode-2.6.0' 
 and 'muparser_v2_2_4'. If these do not exist, extract them from the archive 
 files in BNGPATH/libsource (available in the repository version of the code 
-at https://code.google.com/p/bionetgen/).
+at https://github.com/RuleWorld/bionetgen).
 
 To configure compile and install Network3 (all users):
 1) ./configure --prefix=BNGPATH --disable-shared
