@@ -544,7 +544,7 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
             rawSpecies[rawtemp['identifier']] = rawtemp
     parser.reset()
     
-    molecules, initialConditions, observables, speciesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
+    molecules, initialConditions, observables, speciesDict, observablesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     # finally, adjust parameters and initial concentrations according to whatever  initialassignments say
     param, zparam, initialConditions = parser.getInitialAssignments(translator, param, zparam, molecules, initialConditions)
 
@@ -643,11 +643,13 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
                     sbmlfunctions[sbml2] = writer.extendFunction(sbmlfunctions[sbml2],sbml,sbmlfunctions[sbml])
     functions = reorderFunctions(functions)
 
-    functions = changeNames(functions,aParameters)
+    functions = changeNames(functions, aParameters)
+    # change reference for observables with compartment name
+    functions = changeNames(functions, observablesDict)
 #     print [x for x in functions if 'functionRate60' in x]
     functions = unrollFunctions(functions)
 
-    rules = changeRates(rules,aParameters)
+    rules = changeRates(rules, aParameters)
     
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
         compartments.append('cell 3 1.0')
@@ -721,7 +723,7 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
 
 def processFile(translator, parser, outputFile):
     param2 = parser.getParameters()
-    molecules, species, observables = parser.getSpecies(translator)
+    molecules, species, observables, observablesDict = parser.getSpecies(translator)
     compartments = parser.getCompartments()
     param, rules, functions = parser.getReactions(translator, True)
     param += param2

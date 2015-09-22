@@ -1149,7 +1149,7 @@ def fillSCTwithAnnotationInformation(orphanedSpecies, annotationDict, database,l
 def createSpeciesCompositionGraph(parser, database, configurationFile, namingConventions,
                        speciesEquivalences=None, bioGridFlag=False):
     _, rules, _ = parser.getReactions(atomize=True)
-    molecules, _, _,_ = parser.getSpecies()
+    molecules, _, _, _, _ = parser.getSpecies()
     database.sbmlAnalyzer = \
     analyzeSBML.SBMLAnalyzer(parser, configurationFile, namingConventions, speciesEquivalences, conservationOfMass=True)
 

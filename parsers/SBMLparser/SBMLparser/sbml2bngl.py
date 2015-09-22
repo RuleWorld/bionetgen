@@ -956,6 +956,7 @@ but reaction is marked as reversible'.format(reactionID))
         moleculesText = []
         speciesText = []
         observablesText = []
+        observablesDict = {}
         names = []
         rawSpeciesName = translator.keys()
         speciesTranslationDict = {}
@@ -993,10 +994,12 @@ but reaction is marked as reversible'.format(reactionID))
                 modifiedName = 'are'
             else:
                 modifiedName = rawSpecies['returnID']
-            if rawSpecies['compartment'] != '' and len(list(self.model.getListOfCompartments())) > 1:
-                observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
-            else:
-                observablesText.append('Species {0} {1} #{2}'.format(modifiedName, tmp,rawSpecies['name']))
+            #if rawSpecies['compartment'] != '' and len(list(self.model.getListOfCompartments())) > 1:
+            observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
+
+            observablesDict[modifiedName] = '{0}_{1}'.format(modifiedName,rawSpecies['compartment'])
+            #else:
+            #    observablesText.append('Species {0} {1} #{2}'.format(modifiedName, tmp,rawSpecies['name']))
             speciesTranslationDict[rawSpecies['identifier']] = tmp
         sorted(rawSpeciesName,key=len)
         for species in rawSpeciesName:
@@ -1006,7 +1009,7 @@ but reaction is marked as reversible'.format(reactionID))
         #moleculesText.append('NullSpecies()')
         #speciesText.append('$NullSpecies() 1')
         self.speciesMemory = []
-        return moleculesText,speciesText,observablesText,speciesTranslationDict
+        return moleculesText,speciesText,observablesText,speciesTranslationDict, observablesDict
 
     def getInitialAssignments(self,translator,param,zparam,molecules,initialConditions):
         '''
