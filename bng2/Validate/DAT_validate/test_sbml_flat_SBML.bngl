@@ -1,5 +1,5 @@
 ###
-#@notes:'This is a plain translation of an SBML model created on 21/09/2015. The original model has 5 molecules and 6 reactions. The translated model has 5 molecules and 6 rules'
+#@notes:'This is a plain translation of an SBML model created on 22/09/2015. The original model has 5 molecules and 6 reactions. The translated model has 5 molecules and 6 rules'
 ###
 begin model
 begin parameters
@@ -28,19 +28,19 @@ begin seed species
 	@cell:AA____() 5.0 #AA____ #S5
 end seed species
 begin observables
-	Species A_____cell A____() #A()
-	Species B_____cell B____() #B()
-	Species C_____cell C____() #C()
-	Species D_____cell D____() #D()
-	Species AA_____cell AA____() #AA()
+	Species A_____cell @cell:A____() #A()
+	Species B_____cell @cell:B____() #B()
+	Species C_____cell @cell:C____() #C()
+	Species D_____cell @cell:D____() #D()
+	Species AA_____cell @cell:AA____() #AA()
 end observables
 begin functions
 	functionRate4() = 0.5 * k3_f * 2
-	A() = 0 + A____
-	AA() = 0 + AA____
-	C() = 0 + C____
-	B() = 0 + B____
-	D() = 0 + D____
+	A() = 0 + A_____cell
+	AA() = 0 + AA_____cell
+	C() = 0 + C_____cell
+	B() = 0 + B_____cell
+	D() = 0 + D_____cell
 	dim_r() = k3_r
 end functions
 begin reaction rules

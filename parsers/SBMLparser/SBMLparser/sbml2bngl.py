@@ -855,7 +855,9 @@ but reaction is marked as reversible'.format(reactionID))
                  and observables dict keeps track of that. however when a species is defined by an assignment function we wish to 
                  keep track of reference <speciesName> that points to a standard BNGL function
                 '''
-                del observablesDict[rawArule[0]]
+                if rawArule[0] in observablesDict:
+                    del observablesDict[rawArule[0]]
+
                 # it was originially defined as a zero parameter, so delete it from the parameter list definition                
                 if rawArule[0] in zRules:
                     # dont show assignment rules as parameters
