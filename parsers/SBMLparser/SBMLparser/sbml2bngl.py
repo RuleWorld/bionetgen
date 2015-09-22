@@ -321,8 +321,7 @@ class SBML2BNGL:
             logMess('WARNING:SIMULATION','Found usage of "inf" inside function {0}'.format(rateR))
         elif highStoichoiMetryFactor != 1:
             rateR = '{0} * {1}'.format(rateR, int(highStoichoiMetryFactor))
-        
-        return rateR,math.getNumChildren()
+        return rateR, max(math.getNumChildren(), len(ifStack))
 
 
     def analyzeReactionRate(self, math, compartmentList, reversible, rReactant, rProduct, reactionID, parameterFunctions):
@@ -404,6 +403,7 @@ but reaction is marked as reversible'.format(reactionID))
         else:
             rateL, nl = (self.removeFactorFromMath(math.deepCopy(),
                                                  rReactant, rProduct, parameterFunctions))
+
             rateR, nr = '0', '-1'
         return rateL, rateR, nl, nr
 
@@ -796,7 +796,7 @@ but reaction is marked as reversible'.format(reactionID))
         #print arule.isAssignment(),arule.isRate()
         return variable,[rateL, rateR], arule.isAssignment(), arule.isRate()
         
-    def getAssignmentRules(self, zparams, parameters, molecules,observables):
+    def getAssignmentRules(self, zparams, parameters, molecules, observablesDict):
         '''
         this method obtains an SBML rate rules and assignment rules. They
         require special handling since rules are often both defined as rules 
@@ -847,10 +847,16 @@ but reaction is marked as reversible'.format(reactionID))
                             logMess("WARNING:Translation", "Parameter {0} corresponds both as a non zero parameter \
                             and a rate rule, verify behavior".format(element))
                             removeParameters.append(element)
-                        
-            elif rawArule[2] == True:
+            # it is an assigment rule
+            elif rawArule[2] is True:
 
-                #it is an assigment rule
+                '''
+                 normal species observables references in functions keep the format <speciesName>_<compartment> in function references,
+                 and observables dict keeps track of that. however when a species is defined by an assignment function we wish to 
+                 keep track of reference <speciesName> that points to a standard BNGL function
+                '''
+                del observablesDict[rawArule[0]]
+                # it was originially defined as a zero parameter, so delete it from the parameter list definition                
                 if rawArule[0] in zRules:
                     # dont show assignment rules as parameters
                     zRules.remove(rawArule[0])
@@ -873,18 +879,19 @@ but reaction is marked as reversible'.format(reactionID))
                             continue
 
                 elif rawArule[0] in molecules:
-                        if molecules[rawArule[0]]['isBoundary']:
-                            artificialObservables[rawArule[0]+'_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
-                            continue
+
+                    if molecules[rawArule[0]]['isBoundary']:
+                        artificialObservables[rawArule[0]+'_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+                        continue
                 else:
                     #check if it is defined as an observable
-                    candidates =  [idx for idx,x in enumerate(observables) if rawArule[0] in x]
+                    candidates =  [idx for idx,x in enumerate(observablesDict) if rawArule[0] == x]
                     assigObsFlag = False
                     for idx in candidates:
-                        if re.search('\s{0}\s'.format(rawArule[0]),observables[idx]):
-                            artificialObservables[rawArule[0]+ '_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
-                            assigObsFlag = True
-                            break
+                        #if re.search('\s{0}\s'.format(rawArule[0]),observables[idx]):
+                        artificialObservables[rawArule[0]+ '_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
+                        assigObsFlag = True
+                        break
                     if assigObsFlag:
                         continue
                 # if its not a param/species/observable
@@ -984,7 +991,7 @@ but reaction is marked as reversible'.format(reactionID))
             temp = '$' if rawSpecies['isConstant'] != 0 else ''
             tmp = translator[str(rawSpecies['returnID'])] if rawSpecies['returnID'] in translator \
                 else rawSpecies['returnID'] + '()'
-            if rawSpecies['initialConcentration']>=0:
+            if rawSpecies['initialConcentration'] >= 0:
                 tmp2 = temp
                 if rawSpecies['identifier'] in self.tags:
                     tmp2 = (self.tags[rawSpecies['identifier']])
@@ -997,7 +1004,8 @@ but reaction is marked as reversible'.format(reactionID))
             if rawSpecies['compartment'] != '' and len(list(self.model.getListOfCompartments())) > 1:
                 observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
             else:
-                observablesText.append('Species {0}_{3} {1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))         
+                observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
+            observablesDict[modifiedName] = '{0}_{1}'.format(modifiedName,rawSpecies['compartment'])
             speciesTranslationDict[rawSpecies['identifier']] = tmp
         sorted(rawSpeciesName,key=len)
         for species in rawSpeciesName:

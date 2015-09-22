@@ -156,6 +156,11 @@ def processFunctions(functions,sbmlfunctions,artificialObservables,tfunc):
         functions[idx] =re.sub(r'(\W|^)(time)(\W|$)',r'\1time()\3',functions[idx])
         functions[idx] =re.sub(r'(\W|^)(Time)(\W|$)',r'\1time()\3',functions[idx])
         functions[idx] =re.sub(r'(\W|^)(t)(\W|$)',r'\1time()\3',functions[idx])
+
+        #remove true and false
+        functions[idx] =re.sub(r'(\W|^)(true)(\W|$)',r'\1 1\3',functions[idx])
+        functions[idx] =re.sub(r'(\W|^)(false)(\W|$)',r'\1 0\3',functions[idx])
+
     #functions.extend(sbmlfunctions)
     dependencies2 = {}
     for idx in range(0,len(functions)):
@@ -469,7 +474,8 @@ def changeNames(functions, dictionary):
         # in equations
         tmp = [tmp[0], ''.join(tmp[1:])]
         for key in [x for x in dictionary if x in tmp[1]]:
-            tmp[1] = re.sub(r'(\W|^){0}(\W|$)'.format(key), r'\1{0}\2'.format(dictionary[key]), tmp[1])
+            while re.search(r'([\W,]|^){0}([\W,]|$)'.format(key), tmp[1]):
+                tmp[1] = re.sub(r'([\W,]|^){0}([\W,]|$)'.format(key), r'\1{0}\2'.format(dictionary[key]), tmp[1])
         tmpArray.append('{0} = {1}'.format(tmp[0], tmp[1]))
     return tmpArray
 
@@ -547,9 +553,8 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
     molecules, initialConditions, observables, speciesDict, observablesDict = parser.getSpecies(translator,[x.split(' ')[0] for x in param])
     # finally, adjust parameters and initial concentrations according to whatever  initialassignments say
     param, zparam, initialConditions = parser.getInitialAssignments(translator, param, zparam, molecules, initialConditions)
-
     # FIXME: this method is a mess, improve handling of assignmentrules since we can actually handle those
-    aParameters, aRules, nonzparam, artificialRules, removeParams, artificialObservables = parser.getAssignmentRules(zparam, param, rawSpecies, observables)
+    aParameters, aRules, nonzparam, artificialRules, removeParams, artificialObservables = parser.getAssignmentRules(zparam, param, rawSpecies, observablesDict)
     compartments = parser.getCompartments()
     functions = []
     assigmentRuleDefinedParameters = []
@@ -648,9 +653,7 @@ def analyzeHelper(document, reactionDefinitions, useID, outputFile, speciesEquiv
     functions = changeNames(functions, observablesDict)
 #     print [x for x in functions if 'functionRate60' in x]
     functions = unrollFunctions(functions)
-
     rules = changeRates(rules, aParameters)
-    
     if len(compartments) > 1 and 'cell 3 1.0' not in compartments:
         compartments.append('cell 3 1.0')
 
