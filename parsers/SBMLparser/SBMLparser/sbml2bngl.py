@@ -994,12 +994,10 @@ but reaction is marked as reversible'.format(reactionID))
                 modifiedName = 'are'
             else:
                 modifiedName = rawSpecies['returnID']
-            #if rawSpecies['compartment'] != '' and len(list(self.model.getListOfCompartments())) > 1:
-            observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
-
-            observablesDict[modifiedName] = '{0}_{1}'.format(modifiedName,rawSpecies['compartment'])
-            #else:
-            #    observablesText.append('Species {0} {1} #{2}'.format(modifiedName, tmp,rawSpecies['name']))
+            if rawSpecies['compartment'] != '' and len(list(self.model.getListOfCompartments())) > 1:
+                observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
+            else:
+                observablesText.append('Species {0}_{3} {1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))         
             speciesTranslationDict[rawSpecies['identifier']] = tmp
         sorted(rawSpeciesName,key=len)
         for species in rawSpeciesName:

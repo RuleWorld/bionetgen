@@ -21,15 +21,15 @@ begin seed species
 	@cell:MolB(mola,molb) 1.0 #MolB #S2
 end seed species
 begin observables
-	Species MolA_cell @cell:MolA(_Pmod~0,molb) #MolA
-	Species MolB_cell @cell:MolB(mola,molb) #MolB
-	Species MolA_MolB_cell @cell:MolA(_Pmod~0,molb!1).MolB(mola!1,molb) #MolA_MolB
-	Species MolA_P_cell @cell:MolA(_Pmod~_P,molb) #MolA-P
-	Species __MolB__2_cell @cell:MolB(mola,molb!0).MolB(mola,molb!0) #(MolB)2
+	Species MolA_cell MolA(_Pmod~0,molb) #MolA
+	Species MolB_cell MolB(mola,molb) #MolB
+	Species MolA_MolB_cell MolA(_Pmod~0,molb!1).MolB(mola!1,molb) #MolA_MolB
+	Species MolA_P_cell MolA(_Pmod~_P,molb) #MolA-P
+	Species __MolB__2_cell MolB(mola,molb!0).MolB(mola,molb!0) #(MolB)2
 end observables
 begin functions
-	A____() = MolA_cell + MolA_MolB_cell + MolA_P_cell
-	B____() = MolB_cell + MolA_MolB_cell
+	A____() = MolA + MolA_MolB + MolA_P
+	B____() = MolB + MolA_MolB
 end functions
 begin reaction rules
 	R1: MolA(_Pmod~0,molb) + MolB(mola,molb) -> MolA(_Pmod~0,molb!1).MolB(mola!1,molb) k1_f
