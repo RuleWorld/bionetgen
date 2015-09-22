@@ -852,7 +852,8 @@ but reaction is marked as reversible'.format(reactionID))
 
                 #it is an assigment rule
                 if rawArule[0] in zRules:
-                    #zRules.remove(rawArule[0])
+                    # dont show assignment rules as parameters
+                    zRules.remove(rawArule[0])
                     #zRules.append([rawArule[0] + '_assignment', rawArule[1], rawArule[2], rawArule[3]])
 
                     #aParameters[rawArule[0]] = 'arj' + rawArule[0]
