@@ -3,7 +3,7 @@ import urllib2
 import functools
 import marshal
 from util import logMess
-
+import json
 def memoize(obj):
     cache = obj.cache = {}
 
@@ -33,6 +33,42 @@ def name2uniprot(nameStr):
         return [x[1] for x in parsedData if nameStr in x[0]]
     return [x[1] for x in parsedData if len(x) == 2]
 '''
+@memoize
+def queryBioGridByName(name1, name2, organism=None):
+    url = 'http://webservice.thebiogrid.org/interactions/?'
+    response = None
+    if organism:
+        organismExtract = list(organism)[0].split('/')[-1]
+        xparams = 'geneList={0}&includeInteractors=false&accesskey=59764eb62ca572de5949062a1ba75e5d&format=json&taxId={1}'.format('|'.join([name1,name2]),'|'.join(organism))
+        try:
+            response = urllib2.urlopen(url, xparams).read()
+        except urllib2.HTTPError:
+            logMess('ERROR:biogrid', 'A connection could not be established to biogrid while testing with taxon {1} and genes {0}'.format('|'.join([name1, name2]), '|'.join(organism)))
+            return -1
+    if not response:
+        xparams = 'geneList={0}&includeInteractors=false&accesskey=59764eb62ca572de5949062a1ba75e5d&format=json'.format('|'.join([name1,name2]))        
+        try:
+            response = urllib2.urlopen(url, xparams).read()
+        except urllib2.HTTPError:
+            logMess('ERROR:biogrid', 'A connection could not be established to biogrid')
+            return -1
+    results = json.loads(response)
+    for result in results:
+        resultName1 = results[result]['OFFICIAL_SYMBOL_A'].lower()
+        resultName2 = results[result]['OFFICIAL_SYMBOL_B'].lower()
+        synonymName1 = results[result]['SYNONYMS_A'].split('|')
+        synonymName1 = [x.lower() for x in synonymName1]
+        synonymName2 = results[result]['SYNONYMS_B'].split('|')
+        synonymName2 = [x.lower() for x in synonymName2]
+        name1 = name1.lower()
+        name2 = name2.lower()
+        if (name1 == resultName1 or name1 in synonymName1) and (name2 == resultName2 or name2 in synonymName2):
+            return True
+        if (name2 == resultName1 or name2 in synonymName1) and (name1 == resultName2 or name1 in synonymName2):
+            return True
+
+    return False
+
 
 
 @memoize
@@ -112,7 +148,8 @@ def getReactomeBondByName(name1, name2, sbmlURI, sbmlURI2, organism=None):
         uniprot2 = name2uniprot(name2, organism)
     uniprot1 = uniprot1 if uniprot1 else [name1]
     uniprot2 = uniprot2 if uniprot2 else [name2]
-    return getReactomeBondByUniprot(uniprot1, uniprot2)
+    result = getReactomeBondByUniprot(uniprot1, uniprot2)
+    return result
 
 
 def isInComplexWith(name1, name2, sbmlURI=[], sbmlURI2=[], organism=None):
@@ -127,8 +164,8 @@ def isInComplexWith(name1, name2, sbmlURI=[], sbmlURI2=[], organism=None):
     return False
 
 if __name__ == "__main__":
-    #results =  isInComplexWith('GAP','Ras')
-    print getReactomeBondByName('EGFR', 'EGFR', ['Q9QX70'], ['Q9QX70'])
+    #results =  isInComplexWith('Crk','Ras')
+    print getReactomeBondByName('Crk', 'pro_TrkA', [], [])
     #print getReactomeBondByName('EGF', 'EGF', ['P07522'], ['P07522'])
     #print name2uniprot('MEKK1')
     #print results

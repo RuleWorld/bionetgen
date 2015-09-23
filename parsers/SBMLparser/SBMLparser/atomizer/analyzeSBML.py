@@ -1348,9 +1348,9 @@ class SBMLAnalyzer:
                     tmp.extend(list(labelDictionary[rawReactions[reactionIndex][reactantIndex][chemicalIndex]]))
                 rawReactions[reactionIndex][reactantIndex] = tmp
         #self.annotationClassificationHelper(rawReactions,equivalenceTranslator[-1])         
-    
+
     def userJsonToDataStructure(self, patternName, userEquivalence, dictionary,
-                                labelDictionary,equivalencesList):
+                                labelDictionary, equivalencesList):
         '''
         converts a user defined species to an internal representation
         '''
@@ -1361,15 +1361,15 @@ class SBMLAnalyzer:
                 labelDictionary[patterName] = 0
                 return
             tmp2 = st.Molecule(molecule[0])
-            for componentIdx in range(1,len(molecule),2):
+            for componentIdx in range(1, len(molecule), 2):
                 tmp3 = st.Component(molecule[componentIdx])
-                for bindStateIdx in range(0,len(molecule[componentIdx+1]),2):
-                    if molecule[componentIdx+1][bindStateIdx] == "b":
-                        tmp3.addBond(molecule[componentIdx+1][bindStateIdx+1])
-                    elif molecule[componentIdx+1][bindStateIdx] == "s":
+                for bindStateIdx in range(0, len(molecule[componentIdx + 1]), 2):
+                    if molecule[componentIdx + 1][bindStateIdx] == "b":
+                        tmp3.addBond(molecule[componentIdx + 1][bindStateIdx + 1])
+                    elif molecule[componentIdx + 1][bindStateIdx] == "s":
                         tmp3.addState('0')
-                        tmp3.addState(molecule[componentIdx+1][bindStateIdx+1])
-                        equivalencesList.append([patterName,molecule[0]])
+                        tmp3.addState(molecule[componentIdx + 1][bindStateIdx + 1])
+                        equivalencesList.append([patternName, molecule[0]])
                 
                 #tmp3.addState(molecule[2][2])
             
@@ -1377,7 +1377,7 @@ class SBMLAnalyzer:
             stmp = st.Species()
             stmp.addMolecule(deepcopy(tmp2))
             stmp.reset()
-            #in case one definition overlaps another
+            # in case one definition overlaps another
             if molecule[0] in dictionary:
                 dictionary[molecule[0]].extend(deepcopy(stmp))
             else:

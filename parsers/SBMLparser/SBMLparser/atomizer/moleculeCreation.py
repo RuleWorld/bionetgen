@@ -121,16 +121,38 @@ def isInComplexWith(moleculeSet, parser=None):
     """
     validPairs = []
     for element in moleculeSet:
-        if element[0] == element[1]:
-            return []
+        #if element[0] == element[1]:
+        #    return []
 
         name1 = getURIFromSBML(element[0], parser, ['uniprot', 'go'])
         name2 = getURIFromSBML(element[1], parser, ['uniprot', 'go'])
         modelAnnotation = parser.extractModelAnnotation()
         modelOrganism = modelAnnotation['BQB_OCCURS_IN'] if 'BQB_OCCURS_IN' in modelAnnotation else None
-        bindingResults = pwcm.isInComplexWith([element[0], name1], [element[1], name2], organism=modelOrganism)
+        molecule1 = name1[0].split('/')[-1] if name1 else element[0]
+        molecule2 = name2[0].split('/')[-1] if name2 else element[1]
+
+        simpleOrganism = [x.split('/')[-1] for x in modelOrganism] if modelOrganism else None
+        bindingResults = pwcm.queryBioGridByName(molecule1,molecule2,simpleOrganism)
+        if not bindingResults:
+            bindingResults = pwcm.queryBioGridByName(element[0],element[1],simpleOrganism)
+        #bindingResults = None
+        #bindingResults = pwcm.isInComplexWith([element[0], name1], [element[1], name2], organism=modelOrganism)
         if bindingResults:
             validPairs.append(element)
+    #use pathway commosn as fallback since its much slower
+    if not validPairs:
+        for element in moleculeSet:
+            #if element[0] == element[1]:
+            #    return []
+
+            name1 = getURIFromSBML(element[0], parser, ['uniprot', 'go'])
+            name2 = getURIFromSBML(element[1], parser, ['uniprot', 'go'])
+            modelAnnotation = parser.extractModelAnnotation()
+            modelOrganism = modelAnnotation['BQB_OCCURS_IN'] if 'BQB_OCCURS_IN' in modelAnnotation else None
+            bindingResults = pwcm.isInComplexWith([element[0], name1], [element[1], name2], organism=modelOrganism)
+            if bindingResults:
+                validPairs.append(element)
+
     return validPairs
 
 @memoize
@@ -591,14 +613,20 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag, parser):
             dbPair = finalDBpair
 
         if len(dbPair) > 1:
+
             # @FIXME: getNamedMolecule should never receive parameters that cause it to return null, but somehow that's what is happening
             # when you receive a malformed user definition file. The error should be caught way before we reach this point
             tmpComplexSubset1 = [getNamedMolecule(totalComplex[0], element[0]) for element in dbPair if getNamedMolecule(totalComplex[0], element[0]) is not None]
-            tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[1]) for element in dbPair if getNamedMolecule(totalComplex[1], element[1]) is not None]
+            if not tmpComplexSubset1:
+                tmpComplexSubset1 = [getNamedMolecule(totalComplex[0], element[1]) for element in dbPair if getNamedMolecule(totalComplex[0], element[1]) is not None]
+                tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[0]) for element in dbPair if getNamedMolecule(totalComplex[1], element[0]) is not None]
+            else:
+                tmpComplexSubset2 = [getNamedMolecule(totalComplex[1], element[1]) for element in dbPair if getNamedMolecule(totalComplex[1], element[1]) is not None]
+
             mol1 = getBiggestMolecule(tmpComplexSubset1)
             mol2 = getBiggestMolecule(tmpComplexSubset2)
-            logMess('INFO:Atomization', "There's more than one way to bind {0} and {1} together: {2}. Defaulting to {3}-{4}".format(names1, names2, dbPair,mol1.name,mol2.name))
-
+            logMess('INFO:Atomization', "According to BioGrid/Pathwaycommons there's more than one way to bind {0} and {1} together: {2}. Defaulting to {3}-{4}".format(names1, names2, dbPair,
+                                                                                                                                    mol1.name, mol2.name))
         else:
             mol1 = getNamedMolecule(totalComplex[0], dbPair[0][0])
             if not mol1:
@@ -607,7 +635,7 @@ def solveComplexBinding(totalComplex, pathwaycommonsFlag, parser):
             else:
                 mol2 = getNamedMolecule(totalComplex[1], dbPair[0][1])
 
-            logMess('DEBUG:Atomization', 'Binding information found in pathwaycommons for for {0}-{1}'.format(mol1.name, mol2.name))
+            logMess('DEBUG:Atomization', 'Binding information found in BioGrid/Pathwaycommons for for {0}-{1}'.format(mol1.name, mol2.name))
 
     else:
 

@@ -135,11 +135,11 @@ class SBML2BNGL:
             initialConcentration = species.getInitialAmount()
         isConstant = species.getConstant()
         isBoundary = species.getBoundaryCondition()
-        #FIXME: this condition means that a variable/species can be changed
-        #by rules and/or events. this means that we effectively need a variable
-        #changed by a function that tracks this value, and all references
-        #to this observable have to be changed to the referrencing variable.
-        #http://sbml.org/Software/libSBML/docs/java-api/org/sbml/libsbml/Species.html
+        # FIXME: this condition means that a variable/species can be changed
+        # by rules and/or events. this means that we effectively need a variable
+        # changed by a function that tracks this value, and all references
+        # to this observable have to be changed to the referrencing variable.
+        # http://sbml.org/Software/libSBML/docs/java-api/org/sbml/libsbml/Species.html
         if isBoundary and not isConstant:
             isConstant = True
             if not species.isSetInitialConcentration() \
@@ -148,16 +148,14 @@ class SBML2BNGL:
         compartment = species.getCompartment()
         boundaryCondition = species.getBoundaryCondition()
         standardizedName = standardizeName(name)
-        
+
         if standardizedName in parameters:
             standardizedName = 'sp_{0}'.format(standardizedName)
-            
-        
-        
+
         # it cannot start with a number
         if standardizedName[:1].isdigit():
             standardizedName = 's' + standardizedName
-        
+
         # two species cannot have the same name. Ids are unique but less informative, however typically species can be differentiated
         # by compartment
         if logEntries:
@@ -170,8 +168,8 @@ class SBML2BNGL:
             self.boundaryConditionVariables.append(standardizedName)
         self.speciesDictionary[identifier] = standardizedName
         returnID = identifier if self.useID else \
-        self.speciesDictionary[identifier]
-        
+            self.speciesDictionary[identifier]
+
         values = {}
         values['returnID'] = returnID
         values['initialConcentration'] = initialConcentration
@@ -182,10 +180,7 @@ class SBML2BNGL:
         values['identifier'] = identifier
         return values
 
-
-  
-
-    def getPrunnedTree(self,math,remainderPatterns, artificialObservables={}):
+    def getPrunnedTree(self, math, remainderPatterns, artificialObservables={}):
         """
         walks through a series of * nodes and removes the remainder reactant factors
         arg:remainderPatterns: argumetns to be removed from the tree
@@ -870,7 +865,6 @@ but reaction is marked as reversible'.format(reactionID))
                     #rawArule= tmp
                     matches = [molecules[x] for x in molecules if molecules[x]['name'] == rawArule[0]]
                     if matches:
-                        zRules.remove(rawArule[0])
                         if matches[0]['isBoundary']:
                             artificialObservables[rawArule[0] + '_ar'] = writer.bnglFunction(rawArule[1][0],rawArule[0]+'_ar()',[],compartments=compartmentList,reactionDict=self.reactionDictionary)
                             continue
