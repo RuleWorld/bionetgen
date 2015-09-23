@@ -358,9 +358,9 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
     molecules, rules, _ = readBNGXML.parseXML(inputfile)
     label, center, context, product, atomicArray, actions = extractCenterContext(rules,excludeReverse=True)
     reactionCenterStateDictionary = getRestrictedChemicalStates(label, product, context)
-    print reactionCenterStateDictionary['Ras%0'][('sos',1,'')]['Ras_GDPmod']
-    print '--'
-    print reactionCenterStateDictionary['Ras%0'][('Ras_GDPmod',0,'Ras_GDP')]['sos']
+    #print reactionCenterStateDictionary['Ras%0'][('sos',1,'')]['Ras_GDPmod']
+    #print '--'
+    #print reactionCenterStateDictionary['Ras%0'][('Ras_GDPmod',0,'Ras_GDP')]['sos']
     backupstatedictionary = deepcopy(reactionCenterStateDictionary)
     #print reactionCenterStateDictionary['EGFR%1'][('_Pmod',0,'_P')]
     #print reactionCenterStateDictionary['EGFR%0'][('_Pmod',0,'_P')]
