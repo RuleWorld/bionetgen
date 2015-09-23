@@ -1,0 +1,63 @@
+{
+    "reactionDefinition" : [
+        ["ErbB1","ErbB1_h","hMod"]
+    ],
+    "complexDefinition" : [
+    ],
+    "modificationDefinition": {
+        "Ras": [],
+        "PI":[],
+        "PIP3":["PI"],
+        "PIP2":["PI"],
+        "Ras_GTP":["Ras"],
+        "Ras_GDP":["Ras"],
+        "ErbB1_P":["ErbB1"],
+        "ErbB3_P":["ErbB3"],
+        "ErbB2_P":["ErbB2"],
+        "ErbB4_P":["ErbB4"],       
+        "__MEK_P___i" :["MEK"],
+        "__ERK_P___i":["ERK"],
+        "s2__ErbB2__":["ErbB2","ErbB2"],
+        "s2__ErbB2___P":["ErbB2_P","ErbB2_P"],
+        "s2__ErbB1___P":["ErbB1_P","ErbB1_P"],
+        "s2__ErbB3___P":["ErbB3_P","ErbB3_P"],
+        "s2__ErbB4___P":["ErbB4_P","ErbB4_P"],
+        "__ErbB3_ErbB2__":["ErbB3","ErbB2"],
+        "EGF_ErbB1_P":["EGF","ErbB1_P"],
+        "Ras_activated_GTP":["Ras_GTP"],
+        "__HRG_ErbB4__":["HRG","ErbB4"],
+        "__Ras_GTP___i":["Ras_GTP"],
+        "__Ras_activated_GTP___i":["Ras_activated_GTP"],
+        "__ErbB1_ErbB2___P":["EGF_ErbB1_P", "ErbB2_P"],
+        "__ErbB1_ErbB3___P":["EGF_ErbB1_P", "ErbB3_P"],
+        "__ErbB1_ErbB4___P":["EGF_ErbB1_P", "ErbB4_P"],
+        "__ErbB4_ErbB2__":["ErbB4","ErbB2"],
+        "s2__EGF_ErbB1___ATP":["ATP1_2e9", "ATP1_2e9", "ATP1_2e9", "EGF", "EGF", "ErbB1", "ErbB1"],
+        "s2__EGF_ErbB1___P_GAP_Grb2_Sos___Ras_GDP__": ["EGF_ErbB1_P", "EGF_ErbB1_P", "GAP", "Grb2", "Ras_GDP", "Sos"],
+        "__HRG_ErbB3_ErbB1___ATP":["ATP1_2e9", "ATP1_2e9", "ErbB3", "ErbB1", "HRG"],
+        "__HRG_ErbB4___ErbB2_ATP":["ATP1_2e9", "ErbB2", "ErbB4", "HRG"],
+        "s2__EGF_ErbB1___P_GAP_Grb2_Gab1_P_PI3K_PIP2":["EGF", "EGF", "ErbB1_P", "ErbB1_P", "GAP", "Gab1_P", "Grb2", "PI3K", "PIP2"],
+        "Gab1_P":["Gab1"],
+        "Gab1_Pm":["Gab1_P"],
+        "s2__ErbB2__2_Gab1_Psh":["s2__ErbB2__","Gab1_Pm"],
+        "s2__EGF_ErbB1___Gab1_Psh":["EGF","EGF","ErbB1","ErbB1","Gab1_Pm"],
+        "s2__EGF_ErbB1___Gab1_Psh_Pase9t":["s2__EGF_ErbB1___Gab1_Psh", "Pase9t"],
+        "s2__EGF_ErbB1___P_GAP_Grb2___Gab1_P___ERK_PP":["EGF", "EGF", "ERK_PP", "ErbB1_P", "ErbB1_P", "GAP", "Gab1_P", "Grb2"],
+        "__ErbB3_ErbB2___P_GAP_Grb2_Gab1_P_ERK_PP":["ERK_PP", "ErbB2_P", "ErbB3", "GAP", "Gab1_P", "Grb2"],
+        "s2__ErbB2__2_Gab1_Psh_Pase9t":["s2__ErbB2__","Gab1_Pm","Pase9t"],
+        "s2__ErbB2___P_GAP_Grb2_Gab1_P_ERK_PP":["s2__ErbB2___P","GAP","Grb2","Gab1_P","ERK_PP"],
+        "ErbB1_ErbB_Gab1_Psh":["ErbB1","ErbB2","Gab1_Pm"],
+        "ErbB1_ErbB_Gab1_Psh_Pase9t":["ErbB1_ErbB_Gab1_Psh","Pase9t"],
+        "ErbB3_4_ErbB2_Gab1_Psh_Pase9t":["ErbB3_4_ErbB2_Gab1_Psh", "Pase9t"],
+        "__ErbB1_ErbB2___P_GAP_Grb2_Gab1_P_ERK_PP":["ERK_PP", "ErbB2_P", "ErbB1", "GAP", "Gab1_P", "Grb2"],
+        "__ErbB1_ErbB2___P_GAP_Grb2_Gab1_P_ERK_PP_i":["__ERK_PP___i", "ErbB2_P", "ErbB1", "GAP", "Gab1_P", "Grb2"],
+        "__ErbB3_ErbB2___P_GAP_Grb2_Gab1_P_ERK_PP_i":["__ERK_PP___i", "ErbB2_P", "ErbB3", "GAP", "Gab1_P", "Grb2"],
+        "__ErbB4_ErbB2___P_GAP_Grb2_Gab1_P_PI3K_Ras_GDP":["ErbB2_P", "ErbB4", "GAP", "Gab1_P", "Grb2", "PI3K", "Ras_GDP"]
+
+    },
+    "partialUserEquivalences":[
+
+    ]
+    
+    
+}

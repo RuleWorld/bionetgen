@@ -3,11 +3,15 @@
 
     ],
     "complexDefinition" : [
-    ["Ras_GDP", [["Ras_GDP"]]],
-    ["Ras_GTP", [["Ras_GTP"]]],
-    ["RasGAP",[["Ras_GAP"]]]
     ],
     "modificationDefinition": {
+        "Ras":[],
+        "c_Cbl_ubiq":["c_Cbl"],
+        "Ras_GDP":["Ras"],
+        "Ras_GTP":["Ras"],
+        "FRS2_dpEGFR_c_Cbl_ubiq":["FRS2", "L_dpEGFR", "c_Cbl_ubiq"],
+        "Grb2_SOS_pShc_dpEGFR_c_Cbl_ubiq":["Grb2", "L_dpEGFR", "SOS", "pShc", "c_Cbl_ubiq"]
+        
     }
     
     

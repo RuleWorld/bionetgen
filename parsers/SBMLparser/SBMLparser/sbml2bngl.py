@@ -402,17 +402,19 @@ but reaction is marked as reversible'.format(reactionID))
             rateR, nr = '0', '-1'
         return rateL, rateR, nl, nr
 
-    def __getRawRules(self, reaction, symmetryFactors, parameterFunctions):
+    def __getRawRules(self, reaction, symmetryFactors, parameterFunctions, translator):
         if self.useID:
             reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
                         for reactant in reaction.getListOfReactants() if
-                        reactant.getSpecies() != 'EmptySet']
+                        reactant.getSpecies() not in ['EmptySet']]
             product = [(product.getSpecies(), product.getStoichiometry())
                        for product in reaction.getListOfProducts() if product.getSpecies()
-                       != 'EmptySet']
+                       not in ['EmptySet']]
         else:
-            reactant = [(self.speciesDictionary[rElement.getSpecies()], rElement.getStoichiometry(),rElement.getSpecies()) for rElement in reaction.getListOfReactants()]
-            product = [(self.speciesDictionary[rProduct.getSpecies()], rProduct.getStoichiometry(), rProduct.getSpecies()) for rProduct in reaction.getListOfProducts()]
+            reactant = [(self.speciesDictionary[rElement.getSpecies()], rElement.getStoichiometry(),rElement.getSpecies())
+                        for rElement in reaction.getListOfReactants() if rElement.getSpecies() not in ['EmptySet']]
+            product = [(self.speciesDictionary[rProduct.getSpecies()], rProduct.getStoichiometry(), rProduct.getSpecies())
+                       for rProduct in reaction.getListOfProducts() if rProduct.getSpecies() not in ['EmptySet']]
         kineticLaw = reaction.getKineticLaw()
         reversible = reaction.getReversible()
 
@@ -420,10 +422,27 @@ but reaction is marked as reversible'.format(reactionID))
             return {'reactants': reactant, 'products': product, 'parameters': [], 'rates': ['0', '0'],
                     'reversible': reversible, 'reactionID': reaction.getId(), 'numbers': [0, 0]}
 
-        rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
-        rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
+        rReactant = []
+        rProduct = []
+
+        # in case a given species was defined as the zero molecule don't include it in the rate correction method
+        for x in reaction.getListOfReactants():
+            if x.getSpecies() not in ['EmptySet']:
+                speciesName = self.speciesDictionary[x.getSpecies()] if x.getSpecies() in self.speciesDictionary else ''
+                if speciesName in translator and str(translator[speciesName]) == '0':
+                    continue
+                rReactant.append((x.getSpecies(), x.getStoichiometry()))
+
+        for x in reaction.getListOfProducts():
+            if x.getSpecies() not in ['EmptySet']:
+                speciesName = self.speciesDictionary[x.getSpecies()] if x.getSpecies() in self.speciesDictionary else ''
+                if speciesName in translator and str(translator[speciesName]) == '0':
+                    continue
+                rProduct.append((x.getSpecies(), x.getStoichiometry()))
+
+        #rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() not in ['EmptySet']]
+        #rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() not in ['EmptySet']]
         rModifiers = [x.getSpecies() for x in reaction.getListOfModifiers() if x.getSpecies() != 'EmptySet']
-        #rReactant = [reactant for reactant in reaction.getListOfReactants()]
         parameters = [(parameter.getId(), parameter.getValue(),parameter.getUnits()) for parameter in kineticLaw.getListOfParameters()]
 
         rateL = rateR = nl = nr = None
@@ -701,7 +720,7 @@ but reaction is marked as reversible'.format(reactionID))
             # symmetry factors for components with the same name
             sl, sr = self.reduceComponentSymmetryFactors(reaction, translator, functions)
             
-            rawRules = self.__getRawRules(reaction, [sl, sr], parameterFunctions)
+            rawRules = self.__getRawRules(reaction, [sl, sr], parameterFunctions,translator)
             if len(rawRules['parameters']) > 0:
                 for parameter in rawRules['parameters']:
                     """
@@ -997,12 +1016,14 @@ but reaction is marked as reversible'.format(reactionID))
                 modifiedName = 'are'
             else:
                 modifiedName = rawSpecies['returnID']
-            if rawSpecies['compartment'] != '' and len(list(self.model.getListOfCompartments())) > 1:
-                observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
-            else:
-                observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
-            observablesDict[modifiedName] = '{0}_{1}'.format(modifiedName,rawSpecies['compartment'])
-            speciesTranslationDict[rawSpecies['identifier']] = tmp
+            # user defined zero molecuels are not included in the observable list
+            if str(tmp) != '0':
+                if rawSpecies['compartment'] != '' and len(list(self.model.getListOfCompartments())) > 1:
+                    observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
+                else:
+                    observablesText.append('Species {0}_{3} @{3}:{1} #{2}'.format(modifiedName, tmp,rawSpecies['name'],rawSpecies['compartment']))
+                observablesDict[modifiedName] = '{0}_{1}'.format(modifiedName,rawSpecies['compartment'])
+                speciesTranslationDict[rawSpecies['identifier']] = tmp
         sorted(rawSpeciesName,key=len)
         for species in rawSpeciesName:
             if translator[species].getSize()==1 and translator[species].molecules[0].name not in names:

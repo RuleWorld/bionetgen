@@ -316,8 +316,11 @@ class Molecule:
     def sort(self):
         self.components.sort(key=lambda x:(x.name,self.evaluateBonds(x.bonds)))
     def __str__(self):
+
         self.sort()
         tmp = self.name.replace('-','_')
+        if tmp == '0':
+            return tmp
         if tmp[0].isdigit():
             tmp = 'm__' + tmp
         return tmp + '(' + ','.join([str(x) for x in self.components]) + ')' + self.compartment

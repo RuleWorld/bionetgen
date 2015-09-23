@@ -270,36 +270,51 @@ class SBMLAnalyzer:
             composingElements = []
             basicElements = []
             #break it down into small bites
-            splitparticle = particle.split('_')
-            #print '---',splitparticle
-            splitparticle = [x for x in splitparticle if x]
-            #print splitparticle
-            basicElements,composingElements = analyzeByParticle(splitparticle,species)
-            if basicElements == composingElements:
-                closeMatches = get_close_matches(particle,species)
-                matches = [x for x in closeMatches if len(x) < len(particle) and len(x) >= 3]
-                for match in matches:
-                    difference = difflib.ndiff(match,particle)
-                    differenceList = tuple([x for x in difference if '+' in x])
-                    if differenceList in self.namingConventions['patterns']:
-                        logMess('INFO:Atomization', 'matching {0}={1}'.format(particle, [match]))
-                        addToDependencyGraph(dependencyGraph,particle,[match])
-                    
-            elif particle not in composingElements and composingElements != [] and all([x in species for x in composingElements]):
-                addToDependencyGraph(dependencyGraph, particle, composingElements)
-                for element in composingElements:
-                    if element not in dependencyGraph:
-                        addToDependencyGraph(dependencyGraph, element, [])
-                    if element not in particles:
-                        additionalHandling.append(element)
+            if '_' in particle:
+                splitparticle = particle.split('_')
+                #print '---',splitparticle
+                splitparticle = [x for x in splitparticle if x]
+                #print splitparticle
+
+                basicElements,composingElements = analyzeByParticle(splitparticle,species)
+
+                if basicElements == composingElements and basicElements:
+                    closeMatches = get_close_matches(particle,species)
+                    matches = [x for x in closeMatches if len(x) < len(particle) and len(x) >= 3]
+                    for match in matches:
+                        difference = difflib.ndiff(match,particle)
+                        differenceList = tuple([x for x in difference if '+' in x])
+                        if differenceList in self.namingConventions['patterns']:
+                            logMess('INFO:Atomization', 'matching {0}={1}'.format(particle, [match]))
+                            addToDependencyGraph(dependencyGraph,particle,[match])
+                        
+                elif particle not in composingElements and composingElements != [] and all([x in species for x in composingElements]):
+                    addToDependencyGraph(dependencyGraph, particle, composingElements)
+                    for element in composingElements:
+                        if element not in dependencyGraph:
+                            addToDependencyGraph(dependencyGraph, element, [])
+                        if element not in particles:
+                            additionalHandling.append(element)
+                else:
+                    for basicElement in basicElements:
+                        if basicElement in particle and basicElement != particle:
+                            fuzzyList = self.processAdHocNamingConventions(basicElement,particle,localSpeciesDict,False,species)
+                            if self.testAgainstExistingConventions(fuzzyList[0][1],self.namingConventions['modificationList']):
+                                addToDependencyGraph(dependencyGraph,particle,[basicElement])
+                                logMess('INFO:Atomization', '{0} can be mapped to {1} through existing naming conventions'.format(particle,[basicElement]))
+                                break
             else:
-                for basicElement in basicElements:
-                    if basicElement in particle and basicElement != particle:
-                        fuzzyList = self.processAdHocNamingConventions(basicElement,particle,localSpeciesDict,False,species)
+                for comparisonParticle in particles:
+                    if particle == comparisonParticle:
+                        continue
+                    # try to map remaining orphaned molecules to each other based on simple, but known modifications
+                    if comparisonParticle in particle:
+                        fuzzyList = self.processAdHocNamingConventions(particle,comparisonParticle,localSpeciesDict, False, species)
                         if self.testAgainstExistingConventions(fuzzyList[0][1],self.namingConventions['modificationList']):
-                            addToDependencyGraph(dependencyGraph,particle,[basicElement])
-                            logMess('INFO:Atomization', '{0} can be mapped to {1} through existing naming conventions'.format(particle,[basicElement]))
-                            break
+                            addToDependencyGraph(dependencyGraph,particle,[comparisonParticle])
+                            logMess('INFO:Atomization', '{0} can be mapped to {1} through existing naming conventions'.format(particle, [comparisonParticle]))
+                            break           
+                            
         #if len(additionalHandling) > 0:
             #print self.findClosestModification(set(additionalHandling),species)
         return dependencyGraph,equivalenceTranslator
@@ -1258,12 +1273,15 @@ class SBMLAnalyzer:
 
 
                 reactantString, productString = self.removeExactMatches(reactantString, productString)
-
+            if [0] in reactantString or [0] in productString:
+                continue
             matching, matching2 = self.approximateMatching2(reactantString, productString, strippedMolecules, translationKeys)
             if matching and flagstar:
                 logMess('DEBUG:Atomization', 'inverting order of {0} for lexical analysis'.format([reaction[1], reaction[0]]))
      
             flag = True
+            
+    
             if matching:
                 for reactant,matches in zip(reaction[1],matching):
                     for match in matches:
@@ -1285,8 +1303,8 @@ class SBMLAnalyzer:
 
                             lexicalDependencyGraph[reactant].append(sorted([x[1] for x in matches]))
                             for x in matches:
-                                #TODO(Oct14): it would be better to try to map this to an
-                                #existing molecule instead of trying to create a new one
+                                # TODO(Oct14): it would be better to try to map this to an
+                                # existing molecule instead of trying to create a new one
                                 if x[1] not in strippedMolecules:
                                     lexicalDependencyGraph[x[1]] = []
 

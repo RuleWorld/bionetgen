@@ -13,13 +13,15 @@
     ]
     ,
     "modificationDefinition": {
+    "Ras":[],
+    "Ras_GDP":["Ras"],
+    "Ras_GTP":["Ras"],
     "JAK__IL_6__":["JAK","IL6"],
     "JAK__IFN__":["JAK","IFN"],
     "gp130_JAK":["JAK","gp130"],
     "R_JAK":["R","JAK"],
     "ERK_PP":["ERK_P"],
     "MEK_PP":["MEK_P"],
-    "STAT1C":["STAT1"],
     "STAT1m":["STAT1"],
     "STAT3m":["STAT3"],
     "STAT1Cm":["STAT1C"],

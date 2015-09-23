@@ -3,8 +3,6 @@
 
     ],
     "complexDefinition" : [
-    ["Ras",[["Ras"]]],
-    ["Rac",[["Rac"]]],
     ["MEKK1abcdef",[["MEKK1abcdef","raf",[],"mek",[],"rhogtp",[],"ras",[],"erk",[]]]],
     ["Raf",[["Raf","mekk1abcdef",[]]]],
     ["MEK",[["MEK","mekk1abcdef",[]]]],
@@ -17,18 +15,18 @@
    
     ],
     "modificationDefinition": {
+        "Ras":[],
+        "Rac":[],
         "RasGTP":["Ras"],
         "RasGDP":["Ras"],
         "RacGTP":["Rac"],
         "RacGDP":["Rac"],
-        "Rafp":["Raf"],
-        "Rafpp":["Raf"],
         "EGF_pEGFR_2":["EGF","EGF","EGFR","pEGFR"],
         "EGF_pEGFR_2_RasGAP":["EGF_pEGFR_2","RasGAP"],
-        "EGF_pEGFR_2_Grb2_MEKK1apRafbpMEKcdef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","Rafp","MEK"],
-        "EGF_pEGFR_2_Grb2_MEKK1apRafbppMEKcdef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","Rafpp","MEK"],
-        "EGF_pEGFR_2_pShc_Grb2_MEKK1apRafbpMEKcdef":["EGF_pEGFR_2","pShc","Grb2","MEKK1abcdef","Rafp","MEK"],
-        "EGF_pEGFR_2_pShc_Grb2_MEKK1apRafbppMEKcdef":["EGF_pEGFR_2","pShc","Grb2","MEKK1abcdef","Rafpp","MEK"],
+        "EGF_pEGFR_2_Grb2_MEKK1apRafbpMEKcdef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","pMEK"],
+        "EGF_pEGFR_2_Grb2_MEKK1apRafbppMEKcdef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","ppMEK"],
+        "EGF_pEGFR_2_pShc_Grb2_MEKK1apRafbpMEKcdef":["EGF_pEGFR_2","pShc","Grb2","MEKK1abcdef","Raf","pMEK"],
+        "EGF_pEGFR_2_pShc_Grb2_MEKK1apRafbppMEKcdef":["EGF_pEGFR_2","pShc","Grb2","MEKK1abcdef","Raf","ppMEK"],
         "EGF_pEGFR_2_Grb2_MEKK1aRafbcdRhoGTPef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","Raf","RhoGTP"],
         "EGF_pEGFR_2_pShc_Grb2_MEKK1aRafbcdRhoGTPef":["EGF_pEGFR_2_Grb2_MEKK1aRafbcdRhoGTPef","pShc"],
         "pRhoGAP":["RhoGAP"],

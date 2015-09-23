@@ -1,0 +1,22 @@
+{
+	"reactionDefinition" : [
+	],
+	"complexDefinition" : [
+	]
+	,
+	"modificationDefinition": {
+		"BRafActive":["BRaf"],
+		"MekActive":["Mek"],
+		"SosActive":["Sos"],
+		"Raf1Active":["Raf1"],
+		"RasActive":["Ras"],
+		"ErkActive":["Erk"],
+		"PI3KActive":["PI3K"],
+		"AktActive":["Akt"],
+		"C3GActive":["C3G"],
+		"Rap1Active":["Rap1"],
+		"PP2Active":["PP2"]
+	}
+
+	
+}
