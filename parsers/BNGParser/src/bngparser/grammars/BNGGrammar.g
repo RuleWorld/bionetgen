@@ -241,27 +241,38 @@ compartment
 
 energy_patterns_block
 scope{
-  List molecules;
-  BondList bonds;
   int patternCounter;
 }
 @init{
-  $energy_patterns_block::molecules = new ArrayList();
-  $energy_patterns_block::bonds = new BondList();
   $energy_patterns_block::patternCounter = 1;
 }
 :
   BEGIN ENERGY PATTERNS LB+
-    ((STRING COLON)? 
-    species_def[$energy_patterns_block::molecules,
-                $energy_patterns_block::bonds,
-                "P" + $energy_patterns_block::patternCounter]
+    (
+    energy_species_def[$energy_patterns_block::patternCounter]
     {
       $energy_patterns_block::patternCounter++;
     } 
     expression[memory] 
     LB+)*
   END ENERGY PATTERNS LB+
+;
+
+energy_species_def[int counter]
+scope
+{
+  List molecules;
+  BondList bonds;
+}
+@init{
+  $energy_species_def::molecules = new ArrayList();
+  $energy_species_def::bonds = new BondList();
+}
+:
+    (STRING COLON)? 
+    species_def[$energy_species_def::molecules,
+                $energy_species_def::bonds,
+                "E" + counter]
 ;
 
 label returns [String label]
