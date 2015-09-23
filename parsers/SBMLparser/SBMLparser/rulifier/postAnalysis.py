@@ -87,8 +87,9 @@ class ModelLearning:
         """
         Analyzes a system of molecules with redundant bonds between them (more than one path between any two nodes in the system). The function
         attemps to score the bonds by looking out for partial competition relationships (e.g. the presence of one component
-        excludes the activation of another, but in the other direction we see independence) which are less likely than a fully independence
-        relationship. The method will thus nominate such edges for deletion if the nodes still form a fully connected graph after their removal
+        excludes the activation of another, but in the other direction we see independence) which are less likely to occur than a fully independence
+        relationship. The method will thus nominate such edges for deletion if the overall systems  still forms
+        a fully connected graph after the bond removal.
         """
 
         def fullyConnectedGraph(nodes, edges):
@@ -112,7 +113,8 @@ class ModelLearning:
             for molecule in redundantBondSet:
                 for x in itertools.combinations([x for x in redundantBondSet if x != molecule], 2):
                     contextMotif = self.getMotifFromPair(molecule, x[0].lower(), x[1].lower())
-                    if 'independent' in contextMotif and not ('requirement' in contextMotif or 'nullrequirement' in contextMotif):
+                    if ('independent' in contextMotif and not ('requirement' in contextMotif or 'nullrequirement' in contextMotif)) \
+                            or set(contextMotif) == set(['requirement', 'nullrequirement']):
                         conserveBonds.append(sorted([molecule, x[0]]))
                         conserveBonds.append(sorted([molecule, x[1]]))
             if fullyConnectedGraph(redundantBondSet, conserveBonds):

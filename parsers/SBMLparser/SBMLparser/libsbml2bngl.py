@@ -347,13 +347,19 @@ def postAnalyzeFile(outputFile, bngLocation, database):
     """
     #print('Transforming generated BNG file to BNG-XML representation for analysis')
     consoleCommands.setBngExecutable(bngLocation)
-    consoleCommands.bngl2xml(outputFile)
+    outputDir = os.sep.join(outputFile.split(os.sep)[:-1])
+    if outputDir != '':
+        retval = os.getcwd()
+        os.chdir(outputDir)
+    consoleCommands.bngl2xml(outputFile.split(os.sep)[-1])
+    if outputDir != '':
+        os.chdir(retval)
     bngxmlFile = '.'.join(outputFile.split('.')[:-1]) + '.xml'
     #print('Sending BNG-XML file to context analysis engine')
     contextAnalysis = postAnalysis.ModelLearning(bngxmlFile)
     # analysis of redundant bonds
-
     deleteBonds = contextAnalysis.analyzeRedundantBonds(database.assumptions['redundantBonds'])
+
     modificationFlag = True
 
     for molecule in database.assumptions['redundantBondsMolecules']:
