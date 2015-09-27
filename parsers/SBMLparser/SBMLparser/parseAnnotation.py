@@ -1,7 +1,9 @@
-import sys, string
+import sys
+import string
 from xml.dom import minidom, Node
 
-def walk(parent, outFile, level,database):                               # [1]
+
+def walk(parent, outFile, level, database):                               # [1]
     for node in parent.childNodes:
         if node.nodeType == Node.ELEMENT_NODE:
             # Write out the element name.
@@ -14,9 +16,9 @@ def walk(parent, outFile, level,database):                               # [1]
                 attrValue = attrNode.nodeValue
                 printLevel(outFile, level + 2)
                 if attrName == 'rdf:resource':
-                	database.append(attrValue)
-                
-               # outFile.write('Attribute -- Name: %s  Value: %s\n' % \
+                    database.append(attrValue)
+
+           # outFile.write('Attribute -- Name: %s  Value: %s\n' % \
                 #    (attrName, attrValue))
             # Walk over any text nodes in the current node.
             content = []                                        # [3]
@@ -26,18 +28,21 @@ def walk(parent, outFile, level,database):                               # [1]
             if content:
                 strContent = string.join(content)
                 printLevel(outFile, level)
-               # outFile.write('Content: "')
-               # outFile.write(strContent)
-               # outFile.write('"\n')
+           # outFile.write('Content: "')
+           # outFile.write(strContent)
+           # outFile.write('"\n')
             # Walk the child nodes.
-            walk(node, outFile, level+1,database)
+            walk(node, outFile, level+1, database)
+
 
 def printLevel(outFile, level):
     for idx in range(level):
         #outFile.write('    ')
         pass
 
-def parseAnnotation(XMLString):                                            # [5]
+
+# [5]
+def parseAnnotation(XMLString):
     outFile = ''
     if XMLString == '':
         return []
@@ -45,8 +50,9 @@ def parseAnnotation(XMLString):                                            # [5]
     rootNode = doc.documentElement
     level = 0
     database = []
-    walk(rootNode, outFile, level,database)
+    walk(rootNode, outFile, level, database)
     return database
+
 
 def main():
     args = sys.argv[1:]

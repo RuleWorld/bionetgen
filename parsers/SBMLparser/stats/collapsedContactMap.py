@@ -180,7 +180,8 @@ def fillContextGraphInformation(graphDictionary, extendedInformation, speciesNam
         color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000', 'nullrequirement': '#993366', 'independent': '#008000'}
     else:
         color = {'ordering': '#0000FF', 'exclusion': '#FF0000', 'partialIndependence-': '#993366',
-                 'fullIndependence': '#008000', 'partialIndependence+': '#993366'}
+                 'fullIndependence': '#008000', 'partialIndependence+': '#993366', 
+                 'doubleActivation': '#000000', 'doubleRepression': '#000000', 'reprordering': '#000000'}
 
     for molecule in extendedInformation['extendedInformation']:
         for relationship in extendedInformation['extendedInformation'][molecule]:
@@ -254,6 +255,13 @@ def fillContextGraphInformation(graphDictionary, extendedInformation, speciesNam
                         if edgeColor:
                             graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
                                                                'style': "dashed"}, weight=0.1)
+                    elif relationship in ['doubleActivation']:
+                        graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
+                                                               'style': "dashed", 'targetArrow': "diamond"}, weight=0.1)
+                    elif relationship in ['reprordering']:
+                        graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
+                                                               'style': "dashed", 'targetArrow': "standard", 'sourceArrow': "dash"}, weight=0.1)
+
                     elif relationship not in ['fullIndependence']:
                         graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
                                                                'style': "dashed", 'targetArrow': "standard"}, weight=0.1)
@@ -291,7 +299,7 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
 
             #graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
 
-    graph = nx.DiGraph()
+    graph = nx.MultiDiGraph()
     processNodes = []
     counter = 1
     for speciesUnit in species:
@@ -346,7 +354,7 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                     if not contextOnlyFlag:
                         #if (dummyNode, bondpartners[0]) not in graph.edges():
                         #    graph.add_edge(bondpartners[0], dummyNode, graphics={'fill': "#000000", 'width': 3}, weight=1)
-                        if (dummyNode2, dummyNode) not in graph.edges():
+                        if (dummyNode2, dummyNode) not in graph.edges() and (dummyNode, dummyNode2) not in graph.edges():
                             graph.add_edge(dummyNode, dummyNode2, graphics={'fill': "#000000"}, weight=1)
                         #if (dummyNode2, bondpartners[1]) not in graph.edges():
                         #    graph.add_edge(bondpartners[1], dummyNode2, graphics={'fill': "#000000", 'width': 3}, weight=1)
@@ -408,7 +416,8 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
         color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000', 'nullrequirement': '#FF00FF', 'independent': '#008000'}
     else:
         color = {'ordering': '#0000FF', 'exclusion': '#FF0000', 'partialIndependence-': '#ffcc00',
-                 'fullIndependence': '#008000', 'partialIndependence+': '#ffcc00'}
+                 'fullIndependence': '#008000', 'partialIndependence+': '#ffcc00',
+                 'doubleActivation': '#000000', 'doubleRepression': '#000000', 'reprordering': '#000000'}
 
     for relationship in color.keys():
         if separateGraphsFlag:

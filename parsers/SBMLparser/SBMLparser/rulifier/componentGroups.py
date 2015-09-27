@@ -26,8 +26,9 @@ def extractCenterContext(rules, excludeReverse=False):
     atomicArray = []
     actionNames = []
     label = []
+    doubleModificationRules = []
     for idx, rule in enumerate(rules):
-        if excludeReverse and rule[0].label.endswith('_reverse_'):
+        if excludeReverse and '_reverse_' in rule[0].label and len([x for x in tactionNames if 'ChangeCompartment' not in x]) > 1:
             continue
         label.append(rule[0].label)
         tatomicArray, ttransformationCenter, ttransformationContext, \
@@ -37,7 +38,8 @@ def extractCenterContext(rules, excludeReverse=False):
         #    print str(rule[0])
         #    print tproductElements
         #    print ttransformationContext
-
+        if len([x for x in tactionNames if 'ChangeCompartment' not in x]) > 1:
+            doubleModificationRules.append(rule[0].label)
         transformationCenter.append(ttransformationCenter)
         transformationContext.append(ttransformationContext)
 
@@ -45,7 +47,7 @@ def extractCenterContext(rules, excludeReverse=False):
         atomicArray.append(tatomicArray)
         transformationProduct.append(tproductElements)
     return label,transformationCenter, transformationContext, \
-        transformationProduct, atomicArray, actionNames
+        transformationProduct, atomicArray, actionNames, doubleModificationRules
 
 
 def askQuestions(inputfile, molecule, center, context=None):
@@ -109,7 +111,7 @@ def patternsFromString(chemical):
     return patterndict
 
 
-def getRestrictedChemicalStates(labelArray, products, contexts):
+def getRestrictedChemicalStates(labelArray, products, contexts, doubleAction):
     """
     goes through a list of reaction center and their associated context and creates a dictionary of molecules
     of possible chemical states
@@ -117,8 +119,28 @@ def getRestrictedChemicalStates(labelArray, products, contexts):
 
     #sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
     sortedChemicalStates = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
+    doubleActionDict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
     counter = 1
     for label, product, context in zip(labelArray,products, contexts):
+
+        # reaction centers are also the context for other reaction centers. We deal with them separately
+        if label in doubleAction:
+            pDict = defaultdict(list)
+            for referenceProduct in product:
+                for p in referenceProduct:
+                    result = patternsFromString(p)
+                    for molecule in result:
+                        for pattern in result[molecule]:
+                            pDict[molecule].append(pattern)
+            pDict2 = deepcopy(pDict)
+            for molecule in pDict:
+                for componentState in pDict[molecule]:
+                    for componentState2 in [x for x in pDict2[molecule] if x[0] != componentState[0]]:
+                        isActive1 = componentState[1] == 1 or componentState[2] not in ['','0']
+                        isActive2 = componentState2[1] == 1 or componentState2[2] not in ['','0']
+                        moleculeName = molecule.split('%')[0]
+                        doubleActionDict[moleculeName][componentState[0]][isActive1][componentState2[0]][isActive2].append(label)
+
         for indvproduct, indvcontext in zip(product, context):
             pDict = defaultdict(list)
             cDict = defaultdict(list)
@@ -139,7 +161,7 @@ def getRestrictedChemicalStates(labelArray, products, contexts):
                     for componentState2 in [x for x in cDict[molecule] if x[0] != componentState[0]]:
                         sortedChemicalStates[molecule][componentState][componentState2[0]][componentState2[1:]].append(label)
                         #sortedChemicalStates[molecule][componentState][componentState2[0]].add(componentState2[1:])
-    return sortedChemicalStates
+    return sortedChemicalStates, doubleActionDict
 
 
 def sortChemicalStates(chemicalStates):
@@ -185,6 +207,7 @@ def analyzeDependencies(componentStateCollection, state, moleculeName, molecules
                 dependencies[moleculeName]['requirement'].add(((componentName, activeState[0], activeState[1]), state))
             elif isActive((state[1], state[2])) and not isActive(activeState):
                 dependencies[moleculeName]['nullrequirement'].add((((componentName, activeState[0], activeState[1])), state))
+
             #elif (not isActive((state[1], state[2]))) and isActive(activeState):
             #    dependencies[moleculeName]['nullrequirement'].add(((state, (componentName, activeState[0], activeState[1]))))
 
@@ -200,6 +223,8 @@ def detectDependencies(stateDictionary, molecules):
             preprocessing[parsedMoleculeName][state].update(stateDictionary[moleculeName][state])
     for moleculeName in preprocessing:
         for state in preprocessing[moleculeName]:
+            if moleculeName == 'Ras' and state == ('mmod',0,'0'):
+                print preprocessing[moleculeName][state]
             analyzeDependencies(preprocessing[moleculeName][state], state, moleculeName, molecules, dependencies)
     return dependencies
 
@@ -237,9 +262,9 @@ def getMotifRelationships(stateDictionary, molecules):
         motifDictionary[molecule]['exclusion'] = set([tuple(sorted([x[0][0], x[1][0]])) for x in stateDictionary[molecule]['nullrequirement'] if
                                                   (reverseState(molecule, x[1], molecules), reverseState(molecule, x[0], molecules))
                                                   in stateDictionary[molecule]['nullrequirement']])
-        motifDictionary[molecule]['ordering'] = [[x[0][0], x[1][0]] for x in stateDictionary[molecule]['requirement'] if
+        motifDictionary[molecule]['ordering'] = set([tuple([x[0][0], x[1][0]]) for x in stateDictionary[molecule]['requirement'] if
                                                     (reverseState(molecule,x[1],molecules), x[0])
-                                                    in stateDictionary[molecule]['nullrequirement']]
+                                                    in stateDictionary[molecule]['nullrequirement']])
         motifDictionary[molecule]['fullIndependence'] = set([tuple(sorted([x[0][0],x[1]])) for x in stateDictionary[molecule]['independent'] if isActive(x[0][1:]) and
                                                          any(x[1] == y[0][0] and x[0][0] == y[1] and isActive(y[0][1:]) for y in stateDictionary[molecule]['independent'])])
 
@@ -249,7 +274,6 @@ def getMotifRelationships(stateDictionary, molecules):
         motifDictionary[molecule]['partialIndependence-'] = set([tuple([x[0][0], x[1]]) for x in stateDictionary[molecule]['independent'] if isActive(x[0][1:]) and
                                                          any(x[1] in y[1] and x[0][0] in y[0] for y in stateDictionary[molecule]['nullrequirement'])])
 
-    
     return motifDictionary
         #stateDictionary[molecule]['nullrequirement'] = [x for x in stateDictionary[molecule]['nullrequirement'] if x not in stateDictionary[molecule]['exclusion']]
 
@@ -356,8 +380,8 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
     Receives a BNG-XML file and returns the contextual dependencies implied by this file
     """
     molecules, rules, _ = readBNGXML.parseXML(inputfile)
-    label, center, context, product, atomicArray, actions = extractCenterContext(rules,excludeReverse=True)
-    reactionCenterStateDictionary = getRestrictedChemicalStates(label, product, context)
+    label, center, context, product, atomicArray, actions, doubleAction = extractCenterContext(rules,excludeReverse=True)
+    reactionCenterStateDictionary, doubleActionDict = getRestrictedChemicalStates(label, product, context, doubleAction)
     #print reactionCenterStateDictionary['Ras%0'][('sos',1,'')]['Ras_GDPmod']
     #print '--'
     #print reactionCenterStateDictionary['Ras%0'][('Ras_GDPmod',0,'Ras_GDP')]['sos']
@@ -369,8 +393,12 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
     #totalStateDictionary = sortChemicalStates(chemicalStates)
     requirementDependencies = detectDependencies(reactionCenterStateDictionary, molecules)
 
+    
     #print '000'
     #print [x for x in requirementDependencies['EGFR']['nullrequirement'] if 'egf' in x[0][0] or 'egf' == x[1][0]]
+
+
+
     if collapse:
         removeIndirectDependencies(requirementDependencies, backupstatedictionary)
 
@@ -380,7 +408,50 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
     else:
         getMutualExclusions(requirementDependencies, molecules)
         exclusionCliques = {}
+
+    #repression
+    '''
+    for molecule in reactionCenterStateDictionary:
+        for element in reactionCenterStateDictionary[molecule]:
+            if not isActive(element[1:]):
+                moleculeName = molecule.split('%')[0]
+                for partner in reactionCenterStateDictionary[molecule][element]:
+                    for state in reactionCenterStateDictionary[molecule][element][partner]:
+                        if isActive(state):
+                            if (partner,element[0]) not in requirementDependencies[moleculeName]['ordering']:
+                                print moleculeName,element,'---',partner,state,reactionCenterStateDictionary[molecule][element][partner][state],requirementDependencies[moleculeName]['ordering']
+    '''
     
+    # double interactions
+    doubleInteractions = defaultdict(lambda : defaultdict(lambda : defaultdict(list)))
+    for molecule in [x for x in requirementDependencies if x in doubleActionDict]:
+        for motif in requirementDependencies[molecule]:
+            for relationship in requirementDependencies[molecule][motif]:
+                for combination1 in [True, False]:
+                    for combination2 in [True, False]:
+                        if len(doubleActionDict[molecule][relationship[0]][combination1][relationship[1]][combination2]) > 0 and (combination1 or combination2):
+                            doubleInteractions[molecule][tuple(relationship)][motif].append((combination1, combination2))
+
+    for molecule in doubleInteractions:
+        for relationship in doubleInteractions[molecule]:
+            for motif in doubleInteractions[molecule][relationship]:
+                if motif in ['partialIndependence-', 'partialIndependence+', 'fullIndependence']:
+                    requirementDependencies[molecule][motif].remove(relationship)
+                for combination in doubleInteractions[molecule][relationship][motif]:
+                    if combination[0] and combination[1]:
+                        requirementDependencies[molecule]['doubleActivation'].append(relationship)
+        
+                    elif not combination[0] and combination[1]:
+                        if motif == 'ordering':
+                            requirementDependencies[molecule][motif].remove(relationship)
+                        requirementDependencies[molecule]['reprordering'].append(relationship)
+                    elif not combination[0] and not combination[1]:
+                        if motif == 'repression':
+                            requirementDependencies[molecule][motif].remove(relationship)
+                        requirementDependencies[molecule]['doublerepression'].append(relationship)
+
+
+
     #requirementDependencies = removeCounter(requirementDependencies)\
     #raise Exception
     
