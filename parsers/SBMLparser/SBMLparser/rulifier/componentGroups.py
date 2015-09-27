@@ -223,8 +223,6 @@ def detectDependencies(stateDictionary, molecules):
             preprocessing[parsedMoleculeName][state].update(stateDictionary[moleculeName][state])
     for moleculeName in preprocessing:
         for state in preprocessing[moleculeName]:
-            if moleculeName == 'Ras' and state == ('mmod',0,'0'):
-                print preprocessing[moleculeName][state]
             analyzeDependencies(preprocessing[moleculeName][state], state, moleculeName, molecules, dependencies)
     return dependencies
 
@@ -411,17 +409,16 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
 
     #repression
     '''
-    for molecule in reactionCenterStateDictionary:
+    for molecpule in reactionCenterStateDictionary:
         for element in reactionCenterStateDictionary[molecule]:
             if not isActive(element[1:]):
                 moleculeName = molecule.split('%')[0]
                 for partner in reactionCenterStateDictionary[molecule][element]:
                     for state in reactionCenterStateDictionary[molecule][element][partner]:
                         if isActive(state):
-                            if (partner,element[0]) not in requirementDependencies[moleculeName]['ordering']:
-                                print moleculeName,element,'---',partner,state,reactionCenterStateDictionary[molecule][element][partner][state],requirementDependencies[moleculeName]['ordering']
-    '''
-    
+                            print moleculeName,element,'---',partner,state,reactionCenterStateDictionary[molecule][element][partner][state],requirementDependencies[moleculeName]['ordering']
+    ''' 
+
     # double interactions
     doubleInteractions = defaultdict(lambda : defaultdict(lambda : defaultdict(list)))
     for molecule in [x for x in requirementDependencies if x in doubleActionDict]:
@@ -448,7 +445,7 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
                     elif not combination[0] and not combination[1]:
                         if motif == 'repression':
                             requirementDependencies[molecule][motif].remove(relationship)
-                        requirementDependencies[molecule]['doublerepression'].append(relationship)
+                        requirementDependencies[molecule]['doubleRepression'].append(relationship)
 
 
 

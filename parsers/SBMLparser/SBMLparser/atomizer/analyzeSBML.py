@@ -1130,8 +1130,9 @@ class SBMLAnalyzer:
             if not fuzzyKey:
                 return None
             for i in xrange(1, threshold):
-                combinations = itertools.permutations([x[:-3] for x in modificationList[2:]], i)
+                combinations = itertools.permutations([x[:-3] for x in modificationList], i)
                 validKeys = list(itertools.ifilter(lambda x: (''.join(x)).upper() == fuzzyKey.upper(), combinations))
+
                 if (validKeys):
                     return validKeys
             return None
