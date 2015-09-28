@@ -300,16 +300,16 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
 
         if isGroup:
             if gid != 0:
-                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid, isGroup=isGroup, id=idNumber)
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict, gid=gid, isGroup=isGroup, id=idNumber)
             else:
-                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,isGroup=isGroup,id=idNumber)
+                graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict, isGroup=isGroup, id=idNumber)
         else:
-            graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict,gid=gid,id=idNumber)
+            graph.add_node(name, graphics=graphicsDict, LabelGraphics=labelGraphicsDict, gid=gid, id=idNumber)
 
-            #graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
+            # graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
 
     graph = nx.MultiDiGraph()
-    
+
     processNodes = []
     counter = 1
     for speciesUnit in species:
