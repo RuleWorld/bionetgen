@@ -209,7 +209,8 @@ def analyzeDependencies(componentStateCollection, state, moleculeName, molecules
                 dependencies[moleculeName]['nullrequirement'].add((((componentName, activeState[0], activeState[1])), state))
 
             #elif (not isActive((state[1], state[2]))) and isActive(activeState):
-            #    dependencies[moleculeName]['nullrequirement'].add(((state, (componentName, activeState[0], activeState[1]))))
+            #    print moleculeName, componentName,activeState,state
+                #dependencies[moleculeName]['nullrequirement'].add(((state, (componentName, activeState[0], activeState[1]))))
 
 
 def detectDependencies(stateDictionary, molecules):
@@ -271,7 +272,7 @@ def getMotifRelationships(stateDictionary, molecules):
 
         motifDictionary[molecule]['partialIndependence-'] = set([tuple([x[0][0], x[1]]) for x in stateDictionary[molecule]['independent'] if isActive(x[0][1:]) and
                                                          any(x[1] in y[1] and x[0][0] in y[0] for y in stateDictionary[molecule]['nullrequirement'])])
-
+        motifDictionary[molecule]['repression'] = set([tuple([x[0],x[1]]) for x in stateDictionary[molecule]['repression']])
     return motifDictionary
         #stateDictionary[molecule]['nullrequirement'] = [x for x in stateDictionary[molecule]['nullrequirement'] if x not in stateDictionary[molecule]['exclusion']]
 
@@ -389,6 +390,7 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
     #return
     #chemicalStates = getChemicalStates(rules)
     #totalStateDictionary = sortChemicalStates(chemicalStates)
+    #print reactionCenterStateDictionary['Shc%0'][('egfr', 0, '')]['mmod']
     requirementDependencies = detectDependencies(reactionCenterStateDictionary, molecules)
 
     
@@ -396,9 +398,23 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
     #print [x for x in requirementDependencies['EGFR']['nullrequirement'] if 'egf' in x[0][0] or 'egf' == x[1][0]]
 
 
+    for molecule in reactionCenterStateDictionary:
+        moleculeName = molecule.split('%')[0]
+        for element in reactionCenterStateDictionary[molecule]:
+            if not isActive(element[1:]):
+                for partner in reactionCenterStateDictionary[molecule][element]:
+                    for state in reactionCenterStateDictionary[molecule][element][partner]:
+                        if isActive(state):
+                            repressiveState = (partner,state[0],state[1])
+                            if (reverseState(moleculeName,element,molecules), repressiveState) in requirementDependencies[moleculeName]['requirement'] \
+                                or (repressiveState,element[0]) in requirementDependencies[moleculeName]['independent']:
+                                requirementDependencies[moleculeName]['repression'].add((repressiveState[0],element[0]))
+
 
     if collapse:
         removeIndirectDependencies(requirementDependencies, backupstatedictionary)
+
+
 
     if motifFlag:
         requirementDependencies = getMotifRelationships(requirementDependencies, molecules)
@@ -407,17 +423,12 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
         getMutualExclusions(requirementDependencies, molecules)
         exclusionCliques = {}
 
+        
     #repression
-    '''
-    for molecpule in reactionCenterStateDictionary:
-        for element in reactionCenterStateDictionary[molecule]:
-            if not isActive(element[1:]):
-                moleculeName = molecule.split('%')[0]
-                for partner in reactionCenterStateDictionary[molecule][element]:
-                    for state in reactionCenterStateDictionary[molecule][element][partner]:
-                        if isActive(state):
-                            print moleculeName,element,'---',partner,state,reactionCenterStateDictionary[molecule][element][partner][state],requirementDependencies[moleculeName]['ordering']
-    ''' 
+
+    
+
+    #print requirementDependencies['Ras']['repression']
 
     # double interactions
     doubleInteractions = defaultdict(lambda : defaultdict(lambda : defaultdict(list)))
@@ -426,7 +437,7 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
             for relationship in requirementDependencies[molecule][motif]:
                 for combination1 in [True, False]:
                     for combination2 in [True, False]:
-                        if len(doubleActionDict[molecule][relationship[0]][combination1][relationship[1]][combination2]) > 0 and (combination1 or combination2):
+                        if len(doubleActionDict[molecule][relationship[0]][combination1][relationship[1]][combination2]) > 0:
                             doubleInteractions[molecule][tuple(relationship)][motif].append((combination1, combination2))
 
     for molecule in doubleInteractions:
@@ -439,13 +450,16 @@ def getContextRequirements(inputfile, collapse=True, motifFlag=False):
                         requirementDependencies[molecule]['doubleActivation'].append(relationship)
         
                     elif not combination[0] and combination[1]:
-                        if motif == 'ordering':
+                        if motif in ['ordering']:
                             requirementDependencies[molecule][motif].remove(relationship)
+                        elif motif in ['repression']:
+                            requirementDependencies[molecule][motif].remove((relationship[1],relationship[0]))
                         requirementDependencies[molecule]['reprordering'].append(relationship)
                     elif not combination[0] and not combination[1]:
+                    #    print molecule,motif,relationship
                         if motif == 'repression':
                             requirementDependencies[molecule][motif].remove(relationship)
-                        requirementDependencies[molecule]['doubleRepression'].append(relationship)
+                            requirementDependencies[molecule]['doubleRepression'].append(relationship)
 
 
 

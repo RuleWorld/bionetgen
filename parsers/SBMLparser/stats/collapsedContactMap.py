@@ -309,6 +309,7 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
             #graph.add_node(name, graphics=graphicsDict,LabelGraphics=labelGraphicsDict, id=idNumber)
 
     graph = nx.MultiDiGraph()
+    
     processNodes = []
     counter = 1
     for speciesUnit in species:
