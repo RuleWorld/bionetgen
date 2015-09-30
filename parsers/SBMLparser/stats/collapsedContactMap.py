@@ -259,6 +259,7 @@ def fillContextGraphInformation(graphDictionary, extendedInformation, speciesNam
                                                                                            'style': "dashed"}, weight=0.1)
                     elif relationship in ['doubleActivation']:
                         if bipartiteFlag:
+                            label = extendedInformation['processNodes'][molecule][relationship][(requirement1,requirement2)]
                             createNode(graphDictionary[relationship], '{0}_{1}_{2}'.format(node1, node2, relationship),
                                        {'type': "diamond", 'fill': fill2, "w": 15, "h": 15}, {'text': ' '}, 0, graphDictionary[relationship].node[molecule]['id'])
                             graphDictionary[relationship].add_edge(node1, '{0}_{1}_{2}'.format(node1, node2, relationship), graphics={
@@ -273,6 +274,7 @@ def fillContextGraphInformation(graphDictionary, extendedInformation, speciesNam
                                                                    'style': "dashed", 'targetArrow': "diamond"}, weight=0.1)
                     elif relationship in ['reprordering']:
                         if bipartiteFlag:
+			    label = extendedInformation['processNodes'][molecule][relationship][(requirement1,requirement2)]
                             createNode(graphDictionary[relationship], '{0}_{1}_{2}'.format(node1, node2, relationship),
                                        {'type': "diamond", 'fill': fill2, "w": 15, "h": 15}, {'text': ' '}, 0, graphDictionary[relationship].node[molecule]['id'])
                             graphDictionary[relationship].add_edge(node1, '{0}_{1}_{2}'.format(node1, node2, relationship), graphics={
@@ -581,17 +583,18 @@ if __name__ == "__main__":
     parser = defineConsole()
     namespace = parser.parse_args()
     inputFile = namespace.input
-    if namespace.output != None:
+    if namespace.output is not None:
         outputFile = namespace.output
     else:
         outputFile = inputFile + '.gml'
     collapseFlag = False if namespace.expand else True
     if namespace.rulify:
-        extendedInformation, _, exclusionCliques = componentGroups.getContextRequirements(inputFile, collapse=collapseFlag,
+        extendedInformation, _, exclusionCliques, processNodes = componentGroups.getContextRequirements(inputFile, collapse=collapseFlag,
                                                                                           motifFlag=namespace.motifs, excludeReverse=True)
     else:
         extendedInformation = {}
-    extendedInformationDict = {'extendedInformation': extendedInformation, 'exclusionCliques': exclusionCliques}
+    extendedInformationDict = {'extendedInformation': extendedInformation,
+                               'exclusionCliques': exclusionCliques, 'processNodes': processNodes}
     main(inputFile, outputFile, extendedInformationDict, namespace.context_only, namespace.null_context,
          namespace.separate_graphs, namespace.motifs, namespace.bipartite)
     #addAnnotations('fceri_ji')
