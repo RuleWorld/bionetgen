@@ -151,7 +151,7 @@ def groupByReactionCenterAndRateAndActions(rules,centerDict):
                 redundantDict[center][rate] = tmpDict[rate]
     return redundantDict
 
-def groupByReactionCenterAndRateAndActions2(rules,centerDict):
+def groupByReactionCenterAndRateAndActions2(rules, centerDict):
     '''
     group those reactions with the same reaction center on the first level
     and reaction rate/ actions on the second level

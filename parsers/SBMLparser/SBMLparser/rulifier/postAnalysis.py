@@ -12,7 +12,7 @@ from utils import readBNGXML
 class ModelLearning:
     def __init__(self, fileName,rawFileName=None):
         self.molecules, self.rules, _ = readBNGXML.parseXML(fileName)
-        self.dependencies, self.patternXreactions,_ = componentGroups.getContextRequirements(fileName, collapse=False)
+        self.dependencies, self.patternXreactions, _, _ = componentGroups.getContextRequirements(fileName, collapse=False)
         self.transposePatternsReactions()
         self.reverseDependencies = componentGroups.reverseContextDict(self.dependencies)
         self.moleculeMotifDict, self.motifMoleculeDict = self.classifyPairsByMotif(self.reverseDependencies)

@@ -166,33 +166,34 @@ def defineEditDistanceMatrix(speciesName,similarityThreshold=4,parallel = False)
     namePairs,differenceList = getDifferences(scoreMatrix2, speciesName,similarityThreshold)
     differenceCounter.update(differenceList)
     return namePairs,differenceList,differenceCounter
-    
-def analyzeNamingConventions(speciesName,ontologyFile,ontologyDictionary={},similarityThreshold=4):
+
+
+def analyzeNamingConventions(speciesName, ontologyFile, ontologyDictionary={}, similarityThreshold=4):
     patternClassification = {}
     pairClassification = {}
 
     #ontology =  loadOntology(ontologyFile)
     ontology= ontologyFile
     finalDifferenceCounter = Counter()
-    namePairs,differenceList,differenceCounter = defineEditDistanceMatrix(speciesName,similarityThreshold)
-    
+    namePairs, differenceList, differenceCounter = defineEditDistanceMatrix(speciesName, similarityThreshold)
+
     for element in differenceCounter:
         if element in ontology['patterns']:
             finalDifferenceCounter[element] = differenceCounter[element]
             patternClassification[element] = ontology['patterns'][element]
-    for pair,difference in zip(namePairs,differenceList):
+    for pair, difference in zip(namePairs, differenceList):
         if difference in patternClassification:
             if patternClassification[difference] not in pairClassification:
                 pairClassification[patternClassification[difference]] = []
             pairClassification[patternClassification[difference]].append(tuple(pair))
     keys = finalDifferenceCounter.keys()
-    tmp = {key:'' for key in keys}
+    tmp = {key: '' for key in keys}
     for key in tmp:
         tmp[key] = ontology['patterns'][key]
-    keys =  [''.join(x).replace('+ ','') for x in keys]
+    keys = [''.join(x).replace('+ ', '') for x in keys]
     #print ontology
-    
-    return pairClassification,keys,tmp
+
+    return pairClassification, keys, tmp
 
 
 def main(fileName):

@@ -27,7 +27,6 @@ def moleculeIntersection(nameSet1, nameSet2, mapping):
             intersection[name1] = mapping[name1]
     return intersection
 
-
 class ModelComparison:
     def compareModelsStructurally(self, fileName1, fileName2, mapping,componentMapping):
         molecules, _, _ = readBNGXML.parseXML(fileName1)
