@@ -13,6 +13,7 @@
 	,
 	"modificationDefinition": {
     "Ras":[],
+    "Rafast":["Raf"],
     "Ras_GDP":["Ras"],
     "Ras_GTP":["Ras"],
 	"JAK_ast":["JAK"],
