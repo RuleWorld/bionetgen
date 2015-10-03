@@ -295,6 +295,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
         # actually modify elements and store final version in tmpCandidates
         #if tmpCandidates[1:] == tmpCandidates[:-1] or len(tmpCandidates) == 1:
 
+
         for tmpCandidate, modifiedElementsCounter in zip(tmpCandidates, modifiedElementsCounters):
             flag = True
             while flag:
@@ -326,6 +327,7 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
 
         if len(tmpCandidates) == 0:
             return None,None,None
+
 
         # FIXME: I have no idea wtf this is doing so im commenting it out. i think it's old code that is no longer ncessary
         '''
@@ -365,11 +367,17 @@ def consolidateDependencyGraph(dependencyGraph, equivalenceTranslator,
                 candidates[0][0] != reactant and len(tmpCandidates[0]) > 1:
             if reactant is not None:
                 pass
+            if reactant == 'EGF_pEGFR_2_Grb2_MEKK1abpMEKcdef':
+                pass
 
             # analyze based on standard modifications
-            lexCandidate, translationKeys, tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0], reactant, originalTmpCandidates[0])
-            # FIXME: this is iffy. is it always an append modification? could be prepend
+            #lexCandidate, translationKeys, tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0], reactant, originalTmpCandidates[0])
+            #print lexCandidate
+            #print '++++'
+            lexCandidate, translationKeys, tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification2(candidates[0][0], reactant, originalTmpCandidates[0])
 
+            #lexCandidate, translationKeys, tmpequivalenceTranslator = sbmlAnalyzer.analyzeSpeciesModification(candidates[0][0], reactant, tmpCandidates[0])            # FIXME: this is iffy. is it always an append modification? could be prepend
+            #lexCandidate = None
             if lexCandidate is not None:
                 lexCandidate = tmpCandidates[0][originalTmpCandidates[0].index(lexCandidate)]
                 lexCandidateModification = lexCandidate + translationKeys[0]
@@ -870,7 +878,6 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
                 classifications = sbmlAnalyzer.findMatchingModification(element[0], dependencyGraph[tmp][0][0])
 
             # if we know what classification it is then add the corresponding components and states
-
             if classifications is not None:
                 for classification in classifications:
                     componentStateArray.append(reactionProperties[classification])
@@ -896,35 +903,37 @@ def createCatalysisRBM(dependencyGraph, element, translator, reactionProperties,
             tmp = dependencyGraph[tmp][0][0]
             if tmp in memory:
                 raise CycleError
-        baseName = getTrueTag(dependencyGraph, 
-                                dependencyGraph[element[0]][0][0])
+        baseName = getTrueTag(dependencyGraph, dependencyGraph[element[0]][0][0])
 
         species = createEmptySpecies(baseName)
-        #use the already existing structure if its in the
-        #translator,otherwise empty
+        # use the already existing structure if its in the
+        # translator,otherwise empty
         if baseName in translator:
              species = translator[baseName]
         #modifiedSpecies = deepcopy(translator[dependencyGraph[element[0]][0][0]])
 
-        #modified species needs to start from the base speceis sine componentStateArray should contain the full set of modifications
-        #check that this works correctly for double modifications
+        # modified species needs to start from the base speceis sine componentStateArray should contain the full set of modifications
+        # check that this works correctly for double modifications
         modifiedSpecies = deepcopy(translator[baseName])
+        # this counter is here for multi level modification events (e.g. double phosporylation)
+        modificationCounter = {componentState[0]:2 for componentState in componentStateArray}
         for componentState in componentStateArray:
-
-            #if classification[0] != None:
-                addComponentToMolecule(species, baseName, componentState[0])
-                addComponentToMolecule(modifiedSpecies, baseName,
-                    componentState[0])
-                tmp = addStateToComponent(species, baseName,
-                                    componentState[0], componentState[1])
-                if tmp == componentState[1]:
-                    addStateToComponent(species, baseName, componentState[0],
-                            componentState[1] + componentState[1])
-                if addStateToComponent(modifiedSpecies, baseName,
-                        componentState[0], componentState[1]) == componentState[1]:
-                    addStateToComponent(modifiedSpecies, baseName, componentState[0],
-                            componentState[1] + componentState[1])
-                addStateToComponent(species, baseName, componentState[0], '0')
+            addComponentToMolecule(species, baseName, componentState[0])
+            addComponentToMolecule(modifiedSpecies, baseName, componentState[0])
+            tmp = addStateToComponent(species, baseName,
+                                      componentState[0], componentState[1])
+            if tmp == componentState[1]:
+                addStateToComponent(species, baseName, componentState[0],
+                                    componentState[1] + componentState[1])
+            # this modification was already activated so create a second modification component
+            if addStateToComponent(modifiedSpecies, baseName,
+                                   componentState[0], componentState[1]) == componentState[1]:
+                componentName = '{0}{1}mod'.format(componentState[0].split('mod')[0],  modificationCounter[componentState[0]])
+                modificationCounter[componentState[0]] += 1
+                addComponentToMolecule(modifiedSpecies, baseName, componentName)
+                addStateToComponent(modifiedSpecies, baseName, componentName,
+                                    componentState[1])
+            addStateToComponent(species, baseName, componentState[0], '0')
         # update the base species
         if len(componentStateArray) > 0:
             translator[baseName] = deepcopy(species)
@@ -1308,6 +1317,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
          _, adhocLabelDictionary, _, _ =  database.sbmlAnalyzer.classifyReactions(rules, molecules,database.dependencyGraph)
     database.reactionProperties.update(adhocLabelDictionary)
 
+
     #update catalysis equivalences
     #catalysis reactions
     for key in database.eequivalenceTranslator2:
@@ -1350,6 +1360,7 @@ def createSpeciesCompositionGraph(parser, database, configurationFile, namingCon
                     if [mod] in database.dependencyGraph[base]:
                         continue
                     database.dependencyGraph[mod] = [[base]]
+
 
     '''
     #complex catalysis reactions
@@ -1423,25 +1434,23 @@ tmp,removedElement,tmp3))
     annotationDict = parser.getFullAnnotation()
     annotationDependencyGraph, _ = fillSCTwithAnnotationInformation(orphanedSpecies, annotationDict, database)
     for annotatedSpecies in annotationDependencyGraph:
-        addToDependencyGraph(database.dependencyGraph, annotatedSpecies, annotationDependencyGraph[annotatedSpecies][0])
+        if len(annotationDependencyGraph[annotatedSpecies]) > 0:
+            addToDependencyGraph(database.dependencyGraph, annotatedSpecies, annotationDependencyGraph[annotatedSpecies][0])
 
     # TODO: merge both lists and use them as a tiebreaker for consolidation
     #completeAnnotationDependencyGraph, completePartialMatches = fillSCTwithAnnotationInformation(strippedMolecules, annotationDict, database, False)
 
     # pure lexical analysis for the remaining orphaned molecules
 
-    
     tmpDependency, database.tmpEquivalence = database.sbmlAnalyzer.findClosestModification(orphanedSpecies, strippedMolecules)
     for species in tmpDependency:
-
-        if tmpDependency[species] == []:
-            addToDependencyGraph(database.dependencyGraph, species, [])
-        for instance in tmpDependency[species]:
-            addToDependencyGraph(database.dependencyGraph, species, instance)
+        if species not in database.userLabelDictionary:
+            if tmpDependency[species] == []:
+                addToDependencyGraph(database.dependencyGraph, species, [])
+            for instance in tmpDependency[species]:
+                addToDependencyGraph(database.dependencyGraph, species, instance)
 
     # initialize and remove zero elements
-
-
     database.prunnedDependencyGraph, database.weights, unevenElementDict, database.artificialEquivalenceTranslator = \
         consolidateDependencyGraph(database.dependencyGraph, equivalenceTranslator, database.eequivalenceTranslator, database.sbmlAnalyzer, database)
     return database
@@ -1496,6 +1505,7 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
     doubleModifications = {"Double-Phosporylation": "Phosporylation"}
 
     for element in doubleModifications:
+
         if doubleModifications[element] not in database.eequivalenceTranslator:
             continue
         if element not in database.eequivalenceTranslator:
@@ -1503,7 +1513,6 @@ def transformMolecules(parser, database, configurationFile, namingConventions,
 
         baseElements = [x[0] for x in database.eequivalenceTranslator[doubleModifications[element]]]
         modifiedElements = [x[1] for x in database.eequivalenceTranslator[doubleModifications[element]]]
-
         #deleteEquivalences = [baseElements.index(x) for x in baseElements if x in modifiedElements]
 
         deleteEquivalences = [(x, modifiedElements[baseElements.index(x)]) for x in baseElements if x in modifiedElements]
