@@ -1,0 +1,19 @@
+{
+	"reactionDefinition" : [
+	["Smad2","Smad2_n","nMod"],
+	["Smad2","Smad2_c","cMod"],
+	["Smad4","Smad4_n","nMod"],
+	["Smad4","Smad4_c","cMod"],
+	["GFP_Smad2","GFP_Smad2_c","cMod"],
+	["GFP_Smad2","GFP_Smad2_n","nMod"]
+	],
+	"complexDefinition" : [
+	["GFP_Smad2", [["GFP","smad2",["b",1]], ["Smad2","gfp",["b",1]]]]
+
+	]
+	,
+	"modificationDefinition": {
+	}
+	
+	
+}

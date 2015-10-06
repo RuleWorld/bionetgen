@@ -1,0 +1,12 @@
+{
+	"reactionDefinition" : [
+	],
+	"complexDefinition" : [
+	["PLCgP_I",[["PLCg","iMod",["s","I"],"phospho",["s","P"]]]]
+	]
+	,
+	"modificationDefinition": {
+	}
+	
+	
+}

@@ -1,0 +1,7 @@
+{"reactions": [[["S0", "S1"], ["S2"]], [["S2"], ["S0", "S1"]], [[],["S0"]],[["S0"],[]]],
+"reactionsNames": ["Binding","Generation","Decay","Phosporylation","Double-Phosporylation"],
+ "namingConvention":[["suffix","__P"],["suffix","__PP"],["infix","_"]],
+"reactionSite":["phospho","modI","modM"],
+"reactionState":["P","PP","I","M"],
+ "definitions": [[{"r":[0]},{"n":[2]}],[{"r":[2]}],[{"r":[3]}],[{"n":[0],"rsi":0,"rst":0}],[{"n":[1],"rsi":0,"rst":1}]]
+ }
