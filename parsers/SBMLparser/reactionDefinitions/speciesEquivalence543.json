@@ -3,13 +3,16 @@
     ],
     "complexDefinition" : [
     ["STAT1", [["STAT1"]]],
-    ["STAT3",[["STAT3","Cmod",["s","0"],"Nmod",["s","0"],"mmod",["s","M"]]]],
+    ["STAT3",[["STAT3","Cmod",["s","0"],"Nmod",["s","0"],"mmod",["s","M"],"socs3",[]]]],
+    ["SOCS3",[["SOCS3", "stat3",[]]]],
     ["JAKm",[["JAK","mmod",["s","M"]]]],
-    ["gp80",[["gp80","gp130",[],"gp80",[]]]],
-    ["IL6",[["IL6"]]],
+    ["R",[["R","r",[],"ifn",[],"socs1",[]]]],
+    ["IFN",[["IFN","r",[]]]],
+    ["gp80",[["gp80","gp130",[],"gp80",[],"il6",[]]]],
+    ["IL6",[["IL6","gp80",[]]]],
     ["gp130",[["gp130","gp80",[]]]],
-    ["SHP2",[["SHP2"]]]
-
+    ["SHP2",[["SHP2"]]],
+    ["SOCS1",[["SOCS1","r",[]]]]
     ]
     ,
     "modificationDefinition": {

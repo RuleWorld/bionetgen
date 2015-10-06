@@ -28,8 +28,8 @@
         "EGF_pEGFR_2":["EGF","EGF","EGFR","pEGFR"],    
         "pShc_Grb2_SOS":["pShc","Grb2","SOS"],
         "EGF_pEGFR2_RasGAP":["EGF_pEGFR_2","RasGAP"],
-        "EGF_pEGFR_2_Grb2_MEKK1abppMEKcdRhoGTPef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","MEK","RhoGTP"],
-        "EGF_pEGFR_2_pShc_Grb2_MEKK1abppMEKcdRhoGTPef":["EGF_pEGFR_2","pShc","Grb2","MEKK1abcdef","MEK","RhoGTP"],
+        "EGF_pEGFR_2_Grb2_MEKK1abppMEKcdRhoGTPef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","ppMEK","RhoGTP"],
+        "EGF_pEGFR_2_pShc_Grb2_MEKK1abppMEKcdRhoGTPef":["EGF_pEGFR_2","pShc","Grb2","MEKK1abcdef","ppMEK","RhoGTP"],
         "EGF_pEGFR_2_Grb2_MEKK1aRafbcdRhoGTPef":["EGF_pEGFR_2","Grb2","MEKK1abcdef","Raf","RhoGTP"],
         "EGF_pEGFR_2_pShc_Grb2_MEKK1aRafbcdRhoGTPef":["EGF_pEGFR_2","pShc","Grb2","MEKK1abcdef","Raf","RhoGTP"]
 

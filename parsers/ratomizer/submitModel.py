@@ -93,6 +93,9 @@ def dbmodel_key(model_name=DATABASE_NAME):
 remoteServer = "http://54.214.249.43:9000"
 #remoteServer = "http://127.0.0.1:9000"
 class Translate(webapp2.RequestHandler):
+    """
+    Class frontend manager for the translate page. Calls the template that the user sees.
+    """
     def get(self):
         upload_url = blobstore.create_upload_url('/process')
         
@@ -109,7 +112,10 @@ class Translate(webapp2.RequestHandler):
 
 class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
     def post(self):
-        
+        """
+        Process the file translation form contained in translate.html. Calls a remove service defined
+        in <remoteServer>, and sends it a file and an atomization flag.
+        """
         upload_files = self.get_uploads('file')
         blob_info = upload_files[0]
         reader = blob_info.open()
@@ -127,8 +133,8 @@ class ProcessFile(blobstore_handlers.BlobstoreUploadHandler):
         
         self.redirect('/waitFile?ticket={0}&fileName={1}'.format(ticket,blob_info.filename))
 
+
 class WaitFileJson(webapp2.RequestHandler):
-    
     def get(self):
         ticket = self.request.get("ticket")
         s = xmlrpclib.ServerProxy(remoteServer,GAEXMLRPCTransport())
@@ -140,18 +146,19 @@ class WaitFileJson(webapp2.RequestHandler):
     
 import re
 class generateConfigFile(webapp2.RequestHandler):
-    def processPattern(self,pattern):
+    def processPattern(self, pattern):
         #speciesDefinition = re.
         pass
 
     def get(self):
         names = self.request.get_all("speciesNames")
         patterns = self.request.get_all("patterns")
-        results = {'complexDefinition':[],'reactionDefinition':[]}
+        results = {'complexDefinition': [], 'reactionDefinition': []}
 
         for name,pattern in zip(names,patterns):
             processedPattern = self.processPattern(pattern)
             #result.
+
 
 def CreateFile(filename,content):
     """Create a GCS file with GCS client lib.
@@ -176,6 +183,10 @@ def CreateFile(filename,content):
     return bk
 
 class WaitFile(webapp2.RequestHandler):
+    """
+    manages the waiting between the time a file is sent to the remote server and the time the json is received. prints the status to
+    the user (sucess, still watiing, error)
+    """
     def get(self):
         ticket = self.request.get("ticket")
         fileName = self.request.get("fileName")

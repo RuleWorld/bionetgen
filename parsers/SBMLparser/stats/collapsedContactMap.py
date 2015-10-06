@@ -182,8 +182,8 @@ def fillContextGraphInformation(graphDictionary, extendedInformation, speciesNam
         color = {'requirement': '#0000FF', 'exclusion': '#FF0000', 'mutualExclusion': '#FF0000',
                  'nullrequirement': '#993366', 'independent': '#008000', 'repression': '#008000'}
     else:
-        color = {'ordering': '#0000FF', 'exclusion': '#FF0000', 'inclusion': '#FF0000', 'partialIndependence-': '#993366',
-                 'fullIndependence': '#008000', 'partialIndependence+': '#993366', 
+        color = {'ordering': '#0000FF', 'exclusion': '#FF0000', 'inclusion': '#FF0000', 'partialIndependence-': '#606060',
+                 'fullIndependence': '#008000', 'partialIndependence+': '#606060',
                  'doubleActivation': '#000080', 'doubleRepression': '#008000', 'reprordering': '#008080', 'repression': '#00FF00'}
 
     for molecule in extendedInformation['extendedInformation']:
@@ -248,7 +248,7 @@ def fillContextGraphInformation(graphDictionary, extendedInformation, speciesNam
                                         #    graphDictionary[relationship].add_edge(speciesName[index1[0]], node2m, graphics={'fill': "#000000", 'width': 3}, weight=1)
                                         graphDictionary[relationship].add_edge(node2, node2m, graphics={'fill': "#000000"}, weight=1)
 
-                    if relationship in ['exclusion','inclusion']:
+                    if relationship in ['exclusion', 'inclusion']:
                         edgeColor = True
                         for exclusionClique in extendedInformation['exclusionCliques'][molecule]:
                             if requirement1.lower() in exclusionClique and requirement2.lower() in exclusionClique:
@@ -322,10 +322,10 @@ def fillContextGraphInformation(graphDictionary, extendedInformation, speciesNam
                             graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
                                                                    'style': "dashed", 'targetArrow': "crows_foot_one_mandatory"}, weight=0.1)
                     elif relationship in ['partialIndependence-', 'partialIndependence+']:
-                        pass
-                        # graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
-                        #                                       'style': "dashed", 'targetArrow': "white_delta"}, weight=0.1)
-                    elif relationship not in ['fullIndependence']:
+                        graphDictionary[relationship].add_edge(node2, node1, graphics={'fill': color[relationship],
+                                                               'style': "dashed", 'targetArrow': "diamond"}, weight=0.1)
+                    #elif relationship not in ['fullIndependence']:
+                    else:
                         graphDictionary[relationship].add_edge(node1, node2, graphics={'fill': color[relationship],
                                                                'style': "dashed", 'targetArrow': "standard"}, weight=0.1)
                 else:
@@ -364,10 +364,9 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
     graph = nx.MultiDiGraph()
 
     processNodes = []
-    counter = 1
     for speciesUnit in species:
-        createNode(graph, speciesUnit.name, {'type': 'roundrectangle', 'fill': '#FFDD99'}, {'fontSize': 16, 'fontStyle': "bold",
-                                             'alignment': "right", 'autoSizePolicy': "node_size"}, 1, 0)
+        createNode(graph, speciesUnit.name, {'type': 'roundrectangle', 'fill': '#FFDD99'},
+                   {'fontSize': 16, 'fontStyle': "bold", 'alignment': "right", 'autoSizePolicy': "node_size"}, 1, 0)
 
         if speciesUnit.name in extendedInformation['exclusionCliques']:
 
@@ -409,7 +408,6 @@ def createCollapsedContact(rules, species, transformations, fileName, extendedIn
                             if bondpartners[0].lower() in exclusionClique:
                                 parentNode2 = graph.node['{0}_{1}_clique'.format(bondpartners[1], '_'.join(exclusionClique))]['id']
                                 break
-
 
                     createNode(graph, dummyNode, {'type': "circle", 'fill': fill1}, {'text': label1}, 0, parentNode1)
                     createNode(graph, dummyNode2, {'type': "circle", 'fill': fill2}, {'text': label2}, 0, parentNode2)
