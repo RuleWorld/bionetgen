@@ -1,7 +1,10 @@
 os:
+  - osx
   - linux
+
 language: c++
 sudo: false
+
 addons:
   apt:
     packages:
@@ -11,10 +14,15 @@ addons:
     - libxml2-dev
     - zlib1g-dev
     - libbz2-dev
-compiler:
-  - gcc
-before_install:  
- - pip install --user python-libsbml
+    
+before_install:
+    - source osx_install.sh
+    - pip install --user python-libsbml
+
 notifications:
-  slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
-script: cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
+  - slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
+   
+script:
+  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
+  
+  
