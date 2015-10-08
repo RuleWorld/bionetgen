@@ -20,7 +20,7 @@ before_install:
     - pip install --user python-libsbml
 
 notifications:
-    - slack: faederlab:ihDgCLMiQw3hdS63HuzJ2aYs
+  slack: faederlab:l0waIGp58v8ZV74N7QmXGoWs
    
 script:
   - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
