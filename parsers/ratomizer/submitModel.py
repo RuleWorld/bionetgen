@@ -241,7 +241,7 @@ class WaitFile(webapp2.RequestHandler):
             #blob_info = blobstore.BlobInfo.get(blob_key)
             #output = blob_info.open()
             ###
-            printStatement = '<a href="/serve/{1}.bngl?key={0}">{1}.bngl</a>'.format(blob_key,fileName)
+            printStatement = '<a href="/serve/{1}?key={0}">{1}</a>'.format(blob_key,fileName)
             #p2 = output.read()        
             self.response.write(printStatement)
                     #modelSubmission.put()
@@ -297,7 +297,7 @@ class ExpandAnnotationMethod(blobstore_handlers.BlobstoreUploadHandler):
         ticket = s.generateAnnotations(sbmlContent)
         #self.response.write(result)
         
-        self.redirect('/waitFile?ticket={0}&fileName={1}.xml'.format(ticket,blob_info.filename))
+        self.redirect('/waitFile?ticket={0}&fileName={1}'.format(ticket,blob_info.filename))
 
 
 class GraphFile(blobstore_handlers.BlobstoreUploadHandler):
