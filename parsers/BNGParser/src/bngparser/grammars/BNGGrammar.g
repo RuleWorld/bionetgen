@@ -277,8 +277,8 @@ scope
 
 label returns [String label]
 :
-//  MOD l1=(STRING | INT) {$label = $l1.text;}
-  MOD STRING {$label = $STRING.text;}
+  MOD l1=(STRING | INT) {$label = $l1.text;} //labels can be either strings or integers according to 10/19/2015 #bionetgen-dev slack discussion
+  //MOD STRING {$label = $STRING.text;}
 ;
 
 dereference returns [String label]
