@@ -2036,6 +2036,16 @@ sub findMap
 {
 	my $rr     = shift @_;    # reaction rule
 	my $mtlist = shift @_;    # molecule-types list
+	
+	my $aut = 0; # write automorphism calculations as output for each rule
+	# added by John Sekar 11/17/2015
+	my $autfile;
+	if($aut) 
+	{
+		my $name = $rr->Name.".txt";
+		open($autfile,">".$name) or die;
+		print $autfile $rr->toString()."\n";
+	}
 
     # clear out transformations
     @{$rr->MolDel}  = ();
@@ -2050,6 +2060,11 @@ sub findMap
 	my ($rg) = SpeciesGraph::copymerge( @{$rr->Reactants} );
 	my ($pg) = SpeciesGraph::copymerge( @{$rr->Products}  );
 
+	if($aut) 
+	{ 
+	print $autfile "Reactants: ".$rg->toString()."\n";
+	print $autfile "Products:  ".$pg->toString()."\n";
+	}
 
     # Set up mapping between molecules of aggregate graphs and molecules of patterns
 	my @aggMapR = ();
@@ -2074,6 +2089,13 @@ sub findMap
 	# Find map between reactant and product graphs
 	my $map = $rg->findMaps($pg);
 	unless (defined $map) {  return "No valid mapping could be found for this rule.";  }
+	
+	if($aut)
+	{
+	print $autfile "Correspondence Map (map:R->P)\n";
+	print $autfile $map->toString()."\n";
+	}
+	
 
 
 	# Molecules that are destroyed
@@ -2689,6 +2711,14 @@ sub findMap
 	my @r_auto   = $rg->isomorphicToSubgraph($rg);
 	# Find product graph automorphisms
 	my @p_auto   = $pg->isomorphicToSubgraph($pg);
+	
+	if($aut)
+	{
+	print $autfile "Reactant Automorphisms (autoR:R->R)\n";
+	map { print $autfile $_->toString()."\n"; } @r_auto;
+	print $autfile "Product Automorphisms (autoP:P->P)\n";
+	map { print $autfile $_->toString()."\n"; } @p_auto;
+	}
 
 	# Set up product automorphism hash (includes identity - trivial autmorphism)
 	my %p_auto_hash = ();
@@ -2706,17 +2736,30 @@ sub findMap
 	#
 	# See "getInducedPermutation" for more notes.
 	my @RuleGroup = ();
+	my @candP = ();
 	foreach my $auto ( @r_auto )
 	{
 	    my ($permP, $err) = $auto->get_induced_permutation( $map );
+		push @candP,$permP;
 	    if ( exists $p_auto_hash{ $permP->toString() } )
 	    {   push @RuleGroup, $auto;   }
+	}
+	
+	if($aut)
+	{
+		print $autfile "Candidate Product Automorphisms (candP = map o autoR o map^-1, candP:P->P)\n";
+		map { print $autfile $_->toString()."\n"; } @candP;
+		print $autfile "Rule Group (common to candP and autoP)\n";
+		map { print $autfile $_->toString()."\n"; } @RuleGroup;
+		print $autfile "|RG|: ".scalar(@RuleGroup)."\n";
 	}
 
 	# next find the Stabilizer of the Reaction Center
 	# i.e. the automorphisms in RG that preserve the reaction center
 	#  Stab(RxnCntr) = { f in RG | f(x) = x  for all x in RxnCenter }
 	my @StabRxnCntr = ();
+	
+	
 
     RG_LOOP:
     # check each automorphism
@@ -2778,6 +2821,12 @@ sub findMap
         push @StabRxnCntr, $auto;
     }
 
+	if($aut)
+	{
+		print $autfile "\nStabilizer of the Reaction Center: \nRG autos that are identity functions on the reaction center\n";
+		map {print $autfile $_->toString()."\n"} @StabRxnCntr;
+		print $autfile "|Stab|: ".scalar(@StabRxnCntr)."\n";
+	}
 
     # determine is any reactant graphs are pure context
     my @context_rgs = ();
@@ -2789,9 +2838,11 @@ sub findMap
         }
     }
 
+	
     # count the instances of each unqiue context graph (up-to-isomorphism)
     #  and calculuate the permutations of the context graph set
     my $crg_permutations = 1;
+	my %crg_instances;
     while ( my $crg = shift @context_rgs )
     {
         my $instances = 1;
@@ -2807,11 +2858,34 @@ sub findMap
             else
             {   ++$iR;   }
         }
+		$crg_instances{$crg->toString()} = $instances;
         $crg_permutations *= RxnRule::factorial($instances);
     }
+	
+	if($aut)
+	{
+		print $autfile "\nPure Context Graphs\n";
+		my @k = keys %crg_instances;
+		if (not @k) {print $autfile "None\n|Crg|: 1"}
+		else
+		{
+			my @k = keys %crg_instances;
+			map {print $autfile $_." ".$crg_instances{$_}."\n"} @k;
+			print $autfile "|Crg|: ".join('',map {$crg_instances{$_}."!"} @k)." = ".$crg_permutations."\n";
+		}
+	}
+	
 
 	my $multScale = 1 / (@RuleGroup/@StabRxnCntr) / $crg_permutations;
+	my $multinv = (@RuleGroup/@StabRxnCntr)*$crg_permutations;
 	$rr->MultScale($multScale);
+	
+	if($aut)
+	{
+		print $autfile "\n1/StatFactor = (|RG|/|Stab|)*|Crg| = ".$multinv."\n";
+		print $autfile "StatFactor = ".$multScale."\n";
+		close($aut);
+	}
 	
 	## debug symmetry output
 #	print $rr->toString(), "\n";
