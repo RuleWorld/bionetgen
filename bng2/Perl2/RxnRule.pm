@@ -2037,7 +2037,7 @@ sub findMap
 	my $rr     = shift @_;    # reaction rule
 	my $mtlist = shift @_;    # molecule-types list
 	
-	my $aut = 0; # write automorphism calculations as output for each rule
+	my $aut = 1; # write automorphism calculations as output for each rule
 	# added by John Sekar 11/17/2015
 	my $autfile;
 	if($aut) 
@@ -2884,7 +2884,7 @@ sub findMap
 	{
 		print $autfile "\n1/StatFactor = (|RG|/|Stab|)*|Crg| = ".$multinv."\n";
 		print $autfile "StatFactor = ".$multScale."\n";
-		close($aut);
+		close($autfile);
 	}
 	
 	## debug symmetry output
@@ -2974,10 +2974,14 @@ sub initializeRule
 	    my $species_list = shift @_;          # apply rules with these new species
 	    my $model        = shift @_;          # model
         my $user_params  = (@_) ? shift : {};
+		
+		# for write_autos
 
 	    # overwrite defaults with user params
 	    while ( my ($opt,$val) = each %$user_params )
 	    {   $params->{$opt} = $val;   }
+		
+	
 
         # define return values
         my $err = undef;
