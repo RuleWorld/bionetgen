@@ -89,8 +89,11 @@ sub add
                 	    $rxn2->StatFactor( $rxn2->StatFactor + $rxn->StatFactor );
                 	    $add_rxn = 0;
 						
-						# For write_autos output - John Sekar 
-						++$rxn2->InstanceHash->{$rxn2->RxnRule->Name};
+						# For write_autos output (see BNG2.pl user options) - John Sekar 
+						if($BNGModel::GLOBAL_MODEL->Params->{'write_autos'}==1) 
+							{
+							++$rxn2->InstanceHash->{$rxn2->RxnRule->Name};
+							}
                 	    
                 	    # Check if different rules are generating the same rxn 
                 	   	if ($rxn->RxnRule != $rxn2->RxnRule){
@@ -155,8 +158,11 @@ sub add
     # Add new entry
     if ($add_rxn)
     {
-		# For write_autos output - John Sekar 
-		++$rxn->InstanceHash->{$rxn->RxnRule->Name};
+		# For write_autos output (see BNG2.pl user options) - John Sekar 
+		if($BNGModel::GLOBAL_MODEL->Params->{'write_autos'}==1)
+			{
+			++$rxn->InstanceHash->{$rxn->RxnRule->Name};
+			}
 		
         push @{ $rlist->Array }, $rxn;
         $rxn->Index(scalar @{$rlist->Array});
