@@ -134,18 +134,6 @@ sub initialize
 }
 
 
-sub setAsGlobalModel
-{
-    my $model = shift @_;
-    $BNGModel::GlobalModel = $model;
-}
-
-
-###
-###
-###
-
-
 # read Model from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readModel
