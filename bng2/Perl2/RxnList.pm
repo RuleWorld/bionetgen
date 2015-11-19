@@ -156,7 +156,7 @@ sub add
     if ($add_rxn)
     {
 		# For write_autos output - John Sekar 
-		++$rxn2->InstanceHash->{$rxn2->RxnRule->Name};
+		++$rxn->InstanceHash->{$rxn->RxnRule->Name};
 		
         push @{ $rlist->Array }, $rxn;
         $rxn->Index(scalar @{$rlist->Array});
