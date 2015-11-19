@@ -2824,9 +2824,8 @@ sub findMap
 	# NAME YOUR RULES FIRST!
 	# - JOHN SEKAR
 	
-	my $aut = 0; 
+	my $aut = $BNGModel::GLOBAL_MODEL->Params->{'write_autos'};
 	my $autfile;
-	
 	if($aut==1) 
 	{
 		my $name = $rr->Name.".txt";

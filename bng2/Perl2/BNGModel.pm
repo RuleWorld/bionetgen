@@ -2396,12 +2396,14 @@ sub generate_network
     my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
 	
-	# STATISTICAL FACTOR - DEBUGGING
+	# STATISTICAL FACTOR FOR REACTIONS- DEBUGGING
 	# OUTPUTS A FILE FOR EACH RULE 
 	# SHOWING REACTION INSTANCES AND LUMPING
+	# DURING generate_network()
 	# NAME YOUR RULES FIRST!
 	# - JOHN SEKAR
-	my $aut = 0;
+	
+	my $aut = $BNGModel::GLOBAL_MODEL->Params->{'write_autos'};
 	if($aut==1)
 	{
 	foreach my $rxn(@{$model->RxnList->Array})
