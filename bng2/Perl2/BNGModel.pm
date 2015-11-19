@@ -2395,6 +2395,30 @@ sub generate_network
     # Print result to netfile
     my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
+	
+	# STATISTICAL FACTOR - DEBUGGING
+	# OUTPUTS A FILE FOR EACH RULE 
+	# SHOWING REACTION INSTANCES AND LUMPING
+	# NAME YOUR RULES FIRST!
+	# - JOHN SEKAR
+	my $aut = 0;
+	if($aut==1)
+	{
+	foreach my $rxn(@{$model->RxnList->Array})
+		{
+		my $str = $rxn->toString(1);
+		my %inst = %{$rxn->InstanceHash};
+		my @k = keys %inst;
+		foreach my $rule(@k)
+			{
+			open(my $autfile,">>",$rule.".txt") or die "Not found!";
+			print $autfile "\nReaction\n".$str;
+			print $autfile "\nLumpFactor ".$inst{$rule};
+			print $autfile "\nReactionStatFactor: RuleStatFactor*LumpFactor = ".$rxn->StatFactor."\n";
+			close($autfile);
+			}
+		}
+	}
 
     return '';
 

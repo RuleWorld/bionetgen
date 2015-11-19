@@ -2037,16 +2037,6 @@ sub findMap
 	my $rr     = shift @_;    # reaction rule
 	my $mtlist = shift @_;    # molecule-types list
 	
-	my $aut = 1; # write automorphism calculations as output for each rule
-	# added by John Sekar 11/17/2015
-	my $autfile;
-	if($aut) 
-	{
-		my $name = $rr->Name.".txt";
-		open($autfile,">".$name) or die;
-		print $autfile $rr->toString()."\n";
-	}
-
     # clear out transformations
     @{$rr->MolDel}  = ();
 	@{$rr->MolAdd}  = ();    
@@ -2060,12 +2050,7 @@ sub findMap
 	my ($rg) = SpeciesGraph::copymerge( @{$rr->Reactants} );
 	my ($pg) = SpeciesGraph::copymerge( @{$rr->Products}  );
 
-	if($aut) 
-	{ 
-	print $autfile "Reactants: ".$rg->toString()."\n";
-	print $autfile "Products:  ".$pg->toString()."\n";
-	}
-
+	
     # Set up mapping between molecules of aggregate graphs and molecules of patterns
 	my @aggMapR = ();
 	foreach my $ipatt ( 0 .. $#{$rr->Reactants} )
@@ -2089,14 +2074,6 @@ sub findMap
 	# Find map between reactant and product graphs
 	my $map = $rg->findMaps($pg);
 	unless (defined $map) {  return "No valid mapping could be found for this rule.";  }
-	
-	if($aut)
-	{
-	print $autfile "Correspondence Map (map:R->P)\n";
-	print $autfile $map->toString()."\n";
-	}
-	
-
 
 	# Molecules that are destroyed
 	# map comments (jhogg): this can be based soley on mapF
@@ -2603,7 +2580,6 @@ sub findMap
 	}    # done handling species transport
 
 
-
 	# (2) Molecule Transport
 	# only allowed between adjacent compartments or compartments
 	# separated by a surface
@@ -2712,14 +2688,6 @@ sub findMap
 	# Find product graph automorphisms
 	my @p_auto   = $pg->isomorphicToSubgraph($pg);
 	
-	if($aut)
-	{
-	print $autfile "Reactant Automorphisms (autoR:R->R)\n";
-	map { print $autfile $_->toString()."\n"; } @r_auto;
-	print $autfile "Product Automorphisms (autoP:P->P)\n";
-	map { print $autfile $_->toString()."\n"; } @p_auto;
-	}
-
 	# Set up product automorphism hash (includes identity - trivial autmorphism)
 	my %p_auto_hash = ();
 	foreach my $auto (@p_auto)
@@ -2745,22 +2713,12 @@ sub findMap
 	    {   push @RuleGroup, $auto;   }
 	}
 	
-	if($aut)
-	{
-		print $autfile "Candidate Product Automorphisms (candP = map o autoR o map^-1, candP:P->P)\n";
-		map { print $autfile $_->toString()."\n"; } @candP;
-		print $autfile "Rule Group (common to candP and autoP)\n";
-		map { print $autfile $_->toString()."\n"; } @RuleGroup;
-		print $autfile "|RG|: ".scalar(@RuleGroup)."\n";
-	}
-
+	
 	# next find the Stabilizer of the Reaction Center
 	# i.e. the automorphisms in RG that preserve the reaction center
 	#  Stab(RxnCntr) = { f in RG | f(x) = x  for all x in RxnCenter }
 	my @StabRxnCntr = ();
 	
-	
-
     RG_LOOP:
     # check each automorphism
     foreach my $auto (@RuleGroup)
@@ -2821,12 +2779,6 @@ sub findMap
         push @StabRxnCntr, $auto;
     }
 
-	if($aut)
-	{
-		print $autfile "\nStabilizer of the Reaction Center: \nRG autos that are identity functions on the reaction center\n";
-		map {print $autfile $_->toString()."\n"} @StabRxnCntr;
-		print $autfile "|Stab|: ".scalar(@StabRxnCntr)."\n";
-	}
 
     # determine is any reactant graphs are pure context
     my @context_rgs = ();
@@ -2862,30 +2814,61 @@ sub findMap
         $crg_permutations *= RxnRule::factorial($instances);
     }
 	
-	if($aut)
-	{
-		print $autfile "\nPure Context Graphs\n";
-		my @k = keys %crg_instances;
-		if (not @k) {print $autfile "None\n|Crg|: 1"}
-		else
-		{
-			my @k = keys %crg_instances;
-			map {print $autfile $_." ".$crg_instances{$_}."\n"} @k;
-			print $autfile "|Crg|: ".join('',map {$crg_instances{$_}."!"} @k)." = ".$crg_permutations."\n";
-		}
-	}
-	
-
 	my $multScale = 1 / (@RuleGroup/@StabRxnCntr) / $crg_permutations;
 	my $multinv = (@RuleGroup/@StabRxnCntr)*$crg_permutations;
 	$rr->MultScale($multScale);
+
+	# STATISTICAL FACTOR - DEBUGGING
+	# OUTPUTS A FILE FOR EACH RULE 
+	# SHOWING AUTOMORPHISM CALCULATIONS
+	# NAME YOUR RULES FIRST!
+	# - JOHN SEKAR
 	
-	if($aut)
+	my $aut = 0; 
+	my $autfile;
+	
+	if($aut==1) 
 	{
-		print $autfile "\n1/StatFactor = (|RG|/|Stab|)*|Crg| = ".$multinv."\n";
-		print $autfile "StatFactor = ".$multScale."\n";
+		my $name = $rr->Name.".txt";
+		open($autfile,">".$name) or die;
+		print $autfile $rr->toString()."\n";
+		print $autfile "Reactants: ".$rg->toString()."\n";
+		print $autfile "Products:  ".$pg->toString()."\n";
+		print $autfile "Correspondence Map (map:R->P)\n";
+		print $autfile $map->toString()."\n";
+		print $autfile "Reactant Automorphisms (autoR:R->R)\n";
+		map { print $autfile $_->toString()."\n"; } @r_auto;
+		print $autfile "Product Automorphisms (autoP:P->P)\n";
+		map { print $autfile $_->toString()."\n"; } @p_auto;
+		print $autfile "Candidate Product Automorphisms (candP = map o autoR o map^-1, candP:P->P)\n";
+		map { print $autfile $_->toString()."\n"; } @candP;
+		print $autfile "Rule Group (common to candP and autoP)\n";
+		map { print $autfile $_->toString()."\n"; } @RuleGroup;
+		print $autfile "|RG|: ".scalar(@RuleGroup)."\n";
+		print $autfile "\nStabilizer of the Reaction Center: \nRG autos that are identity functions on the reaction center\n";
+		map {print $autfile $_->toString()."\n"} @StabRxnCntr;
+		print $autfile "|Stab|: ".scalar(@StabRxnCntr)."\n";
+		print $autfile "\nPure Context Graphs\n";
+		my @k = keys %crg_instances;
+		if (not @k) {print $autfile "None\n|Crg|: 0! = 1\n"}
+		else
+		{
+			map {print $autfile $_." ".$crg_instances{$_}."\n"} @k;
+			my $calc = join('',map {$crg_instances{$_}."!"} @k);
+			print $autfile "|Crg|: ".$calc." = ".$crg_permutations."\n";
+		}
+		print $autfile "\n1/RuleStatFactor = (|RG|/|Stab|)*|Crg| = ".$multinv."\n";
+		print $autfile "RuleStatFactor = ".$multScale."\n";
 		close($autfile);
 	}
+
+	
+
+	
+
+
+	
+	
 	
 	## debug symmetry output
 #	print $rr->toString(), "\n";
@@ -2975,14 +2958,10 @@ sub initializeRule
 	    my $model        = shift @_;          # model
         my $user_params  = (@_) ? shift : {};
 		
-		# for write_autos
-
 	    # overwrite defaults with user params
 	    while ( my ($opt,$val) = each %$user_params )
 	    {   $params->{$opt} = $val;   }
 		
-	
-
         # define return values
         my $err = undef;
         my $n_new_rxns = 0;
@@ -3028,6 +3007,7 @@ sub initializeRule
             {
                 # apply rule to reactant set and get the resulting reaction
                 my $rxn = $rr->build_reaction( $rule_instance, $model, $params );
+				
                 if (defined $rxn)
                 {   $n_new_rxns += $model->RxnList->add( $rxn, 0, $model->ParamList );   }
             }
@@ -3373,7 +3353,8 @@ sub build_reaction
 	# Create reaction
 	my $rxn = Rxn->new( Reactants=>$reactant_species, Products=>$product_species,
                         RateLaw=>undef, Priority=>$rr->Priority, RxnRule=>$rr, RxnRuleArray=>[$rr],
-                        StatFactor=>$rr->MultScale );
+                        StatFactor=>$rr->MultScale, 
+						InstanceHash=> {$rr->Name => 0} );
 
     # evaluate ratelaw in local context    
     my $rl = $rr->RateLaw->evaluate_local($rxn, $local_refs, $model);
