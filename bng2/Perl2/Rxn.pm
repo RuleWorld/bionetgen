@@ -28,6 +28,7 @@ struct Rxn => {
   RxnRule        => '$',         # RxnRule that generated this Rxn
   RxnRuleArray   => '@',         # Stores all RxnRules that generate this Rxn (can be more than one)
   Index          => '$',         # Reaction Index for writing network output
+  InstanceHash   => '$',		 # Keeps track of instances generated from rules. (#John Sekar)
 };
 
 
