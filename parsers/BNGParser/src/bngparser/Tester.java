@@ -47,8 +47,10 @@ public class Tester {
 		String inputFile2 = "testModels/CaOscillate_Func.bngl";
 		
 		List<String> inputFileList = new ArrayList<String>();
-//		inputFileList.add("testModels/Parente.bngl");
-		inputFileList = getFileNames("bngparser/models");
+		inputFileList.add("parsers/BNGParser/testModels/robbug.bngl");
+		inputFileList.add("parsers/BNGParser/testModels/MWC.bngl");
+		
+		//inputFileList = getFileNames("parsers/BNGParser/testModels");
 		String outputFile = "output.xml";
 		
 		if(args.length > 0){
@@ -76,7 +78,7 @@ public class Tester {
 				
 			
 			//parser.addOptions("DNA(a)", map);
-			StringTemplateGroup template = new StringTemplateGroup(new FileReader("xml.stg"),AngleBracketTemplateLexer.class);
+			StringTemplateGroup template = new StringTemplateGroup(new FileReader("parsers/BNGParser/xml.stg"),AngleBracketTemplateLexer.class);
 			parser.setTemplateLib(template);
 			RuleReturnScope r=null,r2=null;
 			
