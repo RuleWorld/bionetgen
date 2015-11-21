@@ -1,7 +1,0 @@
-{"reactions": [[["S0", "S1"], ["S2"]], [["S2"], ["S0", "S1"]], [[],["S0"]],[["S0"],[]]],
-"reactionsNames": ["Binding","Generation","Decay","Ach","Ach2"],
- "namingConvention":[["suffix","ACh"],["suffix","ACh2"]],
-  "reactionSite":["mod"],
-"reactionState":["A","A2"],
- "definitions": [[{"r":[0]}],[{"r":[2]}],[{"r":[3]}],[{"n":[0],"rsi":0,"rst":0}],[{"n":[1],"rsi":0,"rst":1}]]
- }
