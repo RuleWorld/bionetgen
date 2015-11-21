@@ -1,0 +1,3 @@
+[submodule "bng2/atomizer"]
+	path = bng2/atomizer
+	url = git://github.com/RuleWorld/atomizer.git

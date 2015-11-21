@@ -60,7 +60,7 @@ my $executable_suffix = '(pl|py|dll|exe)';
 # subdirectories to include in distribution
 my @include_subdirectories = qw/ Perl2 Models2 Network3 PhiBPlot Validate /;
 #python subdiretories to include (main difference is that they are associated with python_exclude_files instead)
-my @include_python_subdirectories = qw/  SBMLparser /;
+my @include_python_subdirectories = qw/  atomizer /;
 
 # directory containing library archives
 my $libarc_subdir = "libsource";
@@ -197,6 +197,18 @@ unless (-d $outdir)
     }
 }
 
+#first initialize git submodules
+my @args = ('git', 'submodule', 'update', '--init');
+print "command: ", join(" ", @args), "\n";
+unless( system(@args)==0 )
+{  print "Unable to initialize git submodules";  exit -1; }
+
+#then update to latest versions
+my @args = ('git', 'submodule', 'foreach', 'git', 'pull', 'origin', 'master');
+print "command: ", join(" ", @args), "\n";
+unless( system(@args)==0 )
+{  print "Unable to update git submodules to latest version";  exit -1; }
+
 
 if ($archive)
 {   # check if archive file already exists..
@@ -273,11 +285,11 @@ foreach my $dir ( @include_python_subdirectories )
         exit -1;
        }
  
-        print "copying python source code  to build environment.\n";
-        my @args = ('make','update');
-        print "command: ", join(" ", @args), "\n";
-        unless( system(@args)==0 )
-        {  print "Unable to update distribution";  exit -1; }
+        #print "copying python source code  to build environment.\n";
+        #my @args = ('make','update');
+        #print "command: ", join(" ", @args), "\n";
+        #unless( system(@args)==0 )
+        #{  print "Unable to update distribution";  exit -1; }
 
         # go back to original directory
         unless( chdir $bngpath )
@@ -302,11 +314,11 @@ foreach my $dir ( @include_python_subdirectories )
         exit -1;
        }
  
-        print "cleaning  build environment.\n";
-        my @args = ('python', 'updateDistribution.py', '-r');
-        print "command: ", join(" ", @args), "\n";
-        unless( system(@args)==0 )
-        {  print "Unable to clean distribution";  exit -1; }
+        #print "cleaning  build environment.\n";
+        #my @args = ('python', 'updateDistribution.py', '-r');
+        #print "command: ", join(" ", @args), "\n";
+        #unless( system(@args)==0 )
+        #{  print "Unable to clean distribution";  exit -1; }
 
         # go back to original directory
         unless( chdir $bngpath )
@@ -383,7 +395,7 @@ if (defined $bindir)
         exit -1;
     }
     
-    print "preparing libaries . . .\n";
+    print "preparing libraries . . .\n";
     foreach my $libfile (@include_libraries)
     {
         # get absolute path of libfile
@@ -473,7 +485,8 @@ if (defined $bindir)
         
         # Build sbmlTranslator
 
-    		my $sbmlbuild_dir = File::Spec->catdir( $dist_dir, 'SBMLparser' );
+
+    		my $sbmlbuild_dir = File::Spec->catdir( $dist_dir, 'atomizer' );
 	    unless (-d $sbmlbuild_dir){  # sbmlbuild_dir doesn't exist!
 	        print "make_dist.pl error:\nbuild directory '${sbmlbuild_dir}' does not exist.\n";
 	        exit -1;
@@ -484,6 +497,7 @@ if (defined $bindir)
 	    		print "make_dist.pl error:\nunable to chdir to build directory '${sbmlbuild_dir}'.\n";
 	    		exit -1;
 	    }
+
 	    
         {
             print "making $sbmlbuild_dir . . .\n";
@@ -493,12 +507,22 @@ if (defined $bindir)
             {  print "make_dist.pl error:\nsome problem making ${sbmlbuild_dir} ($?)";  exit -1; }
         }
 
+        #{
+            #print "installing $sbmlbuild_dir . . .\n";
+            #my @args = ($sys_make, "install" );
+            #print "command: ", join(" ", @args), "\n";
+            #unless( system(@args)==0 )
+            #{  print "make_dist.pl error:\nsome problem installing ${sbmlbuild_dir} ($?)";  exit -1;  }
+        #}
+
         {
-            print "installing $sbmlbuild_dir . . .\n";
-            my @args = ($sys_make, "install" );
-            print "command: ", join(" ", @args), "\n";
-            unless( system(@args)==0 )
-            {  print "make_dist.pl error:\nsome problem installing ${sbmlbuild_dir} ($?)";  exit -1;  }
+            print "moving binary to main binary dir . . .\n";
+            #my @args = ('mv', './bin/*', '../bin');
+            my $err = copy_dir( './dist', '../bin', 0, '$exclude_files');
+            #print "command: ", join(" ", @args), "\n";
+            if($err)
+            {  print "make_dist.pl error:\nsome problem making ${sbmlbuild_dir} ($?)";  exit -1; }
+
         }
 
         {
