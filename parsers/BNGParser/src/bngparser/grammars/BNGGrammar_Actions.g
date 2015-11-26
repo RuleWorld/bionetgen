@@ -140,8 +140,8 @@ scope{
 simulate[Map<String,String> map]
 : 
   SIMULATE LPAREN (LBRACKET 
-  ((simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map])
-  (COMMA (simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]))*)? 
+  ((simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|simulate_nf_par_def[map])
+  (COMMA (simulate_par_method[map]|ps_par_def|simulate_par_def[map]|simulate_ode_par_def[map]|simulate_pla_par_def[map]|simulate_nf_par_def[map]))*)? 
   RBRACKET)? RPAREN SEMI?
 ;
 

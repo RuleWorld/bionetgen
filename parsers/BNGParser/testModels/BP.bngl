@@ -1,0 +1,81 @@
+begin model
+
+begin parameters
+
+f 0.1 # dimensionless
+NA 6.02214e23 # molecule per mol
+cellDensity 1e9 # cells per L
+Vecf=f/cellDensity # L per cell
+a 7e-6 # m
+D 5e-11 # m^2/s (NB: arbitrary setting)
+pi 3.14159265359 # dimensionless
+kp1 5e6/(NA*Vecf) # /M/s converted to /(molecule/cell)/s
+km1 0.05 # /s
+K2RT 10 # dimensionless
+km2=km1
+RT 3e5*f # copies per cell
+K2=K2RT/RT
+kp2=K2*km2 # /(molecule/cell)/s
+LT_conc_nM 1 # nM
+LT_conc=LT_conc_nM*1e-9 # M
+LT=LT_conc*(NA*Vecf) # molecule per cell
+
+end parameters
+
+begin molecule types
+
+L1(s,s,s)
+R1(s,s)
+
+L2(s,s,s)
+R2(s,s)
+
+end molecule types
+
+begin seed species
+
+L1(s,s,s) LT
+R1(s,s) RT
+
+L2(s,s,s) LT
+R2(s,s) RT
+
+end seed species
+
+begin observables
+
+Molecules freeFab_1 R1(s)
+Molecules freeFab_2 R2(s)
+
+#Molecules LRbonds_2 L2(s!1).R2(s!1)
+
+end observables
+
+begin functions
+
+# The factor 3 below corresponds to the valence of the (trivalent) ligand.
+# The factor 1e-3 below is a unit conversion factor (1e-3 m^3 per L).
+kf() kp1/(1+3*(freeFab_2/f)*kp1*Vecf*1e-3/(4*pi*D*a)) # mind the units, f, and the observable
+kr() km1/(1+3*(freeFab_2/f)*kp1*Vecf*1e-3/(4*pi*D*a)) # mind the units, f, and the observable
+
+end functions
+
+begin reaction rules
+
+# Model 1: TLBR
+L1(s,s,s)+R1(s)<->L1(s,s,s!1).R1(s!1) kp1,km1
+L1(s!+,s)+R1(s)<->L1(s!+,s!1).R1(s!1) kp2,km2
+
+# Model 2: TLBR with Berg-Purcell rate laws for ligand capture/release
+L2(s,s,s)+R2(s)<->L2(s,s,s!1).R2(s!1) kf(),kr()
+L2(s!+,s)+R2(s)<->L2(s!+,s!1).R2(s!1) kp2,km2
+
+end reaction rules
+
+end model
+
+begin actions
+
+simulate({method=>"nf",complex=>1,gml=>1000000,t_start=>0,t_end=>10,n_steps=>100,get_final_state=>0,print_functions=>0})
+
+end actions
