@@ -43,7 +43,8 @@ action
   generate_hybrid_model {actions.add($generate_hybrid_model.st);} |
   simulate_method {actions.add($simulate_method.st);} | 
 //  read_file {actions.add($read_file.st);} | 
-  write_model {actions.add($write_model.st);} | 
+  write_model {actions.add($write_model.st);} |
+  write_file{actions.add($write_file.st);} |  
   write_xml {actions.add($write_xml.st);} | 
   write_network {actions.add($write_network.st);} |
   write_sbml {actions.add($write_sbml.st);} |
@@ -210,6 +211,30 @@ bifurcate[Map<String,String> map]
 //  RPAREN SEMI? 
 //  -> action(id={$READFILE.text},optionMap={$read_file::actions})
 //;
+
+write_file
+: 
+  WRITEFILE LPAREN LBRACKET
+  (write_file_args (COMMA write_file_args)*)?
+  RBRACKET RPAREN SEMI?
+;
+
+write_file_args
+:
+    (FORMAT ASSIGNS DBQUOTES STRING DBQUOTES) | (PREFIX ASSIGNS DBQUOTES STRING DBQUOTES) |
+    (SUFFIX ASSIGNS DBQUOTES STRING DBQUOTES) | (INCLUDE_MODEL ASSIGNS INT) | (INCLUDE_NETWORK ASSIGNS INT) |
+    (OVERWRITE ASSIGNS INT) | (TEXTREACTION ASSIGNS INT) | (TEXTSPECIES ASSIGNS INT) | 
+    (PRETTY_FORMATTING ASSIGNS INT) | (EVALUATE_EXPRESSIONS ASSIGNS INT)    
+    
+;
+
+filename
+:
+//  (STRING|DOT|DIV|MINUS|FLOAT)+
+  (~DBQUOTES)+
+;
+
+
 
 write_model
 scope{
