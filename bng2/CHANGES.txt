@@ -1,6 +1,13 @@
 CHANGES to BioNetGen
-updated 22 June 2015
+updated 9 December 2015
 https://github.com/RuleWorld/bionetgen/
+
+== BioNetGen-2.3.0 (testing release) ==
+'''''2015 June 22'''''
+
+==== Bug Fixes ====
+* Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.
+* Fixed a bug where a regex meant to remove the equality operator '=' in functions was inadvertently also removing the assignment operator '=='.
 
 == BioNetGen-2.2.6-stable ==
 '''''2015 June 22'''''
