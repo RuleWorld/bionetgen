@@ -42,7 +42,7 @@ Molecules Tot_f A(f~on),C(f~on),E(f~on)
 end observables
 begin reaction rules
 A(f%t1) + B() <-> C(f%t1) kpAB, kmAB
-C(f%t1) + D() <-> E(f%t1) kpCD, kmCD
+C(f%1) + D() <-> E(f%1) kpCD, kmCD
 A(f~off) + I <-> A(f~on) kpI, kmI
 end reaction rules
 

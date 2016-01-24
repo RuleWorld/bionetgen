@@ -19,7 +19,7 @@
  sparse                 0                   # Default is 0
  steady_state           0                   # Default is 0
  #seed                  10                  # Default is floor(rand(2**31))
- pla_config             fEuler|post-eps:sb|eps=0.03|Network3/ButcherTableau.bt  # No default (required if method is "pla")
+ pla_config             fEuler|post-eps:sb|eps=0.03|Models2/ButcherTableau.txt  # No default (required if method is "pla")
  pla_output             0                   # Default is 0 (PLA-specific output, i.e., classifications)
  print_CDAT             1                   # Default is 1 (set to 0 to suppress CDAT printing)
  print_functions        0                   # Default is 0

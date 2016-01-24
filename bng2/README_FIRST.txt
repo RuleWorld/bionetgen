@@ -36,7 +36,7 @@ compilation tools, you may compile your own binaries from a console as follows:
 PLEASE NOTE: This procedure will not work if the directories 'cvode-2.6.0' and 
 'muparser_v2_2_4' do not exist. If that is the case, they can be extracted from
 the archive files in BNGPATH/libsource (available in the repository version of 
-the code at https://code.google.com/p/bionetgen/).
+the code at https://github.com/RuleWorld/bionetgen).
 
 Alternatively, binaries can be compiled using CMake. Download CMake from
 http://www.cmake.org/ and add to PATH. Then:

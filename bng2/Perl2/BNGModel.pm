@@ -134,18 +134,6 @@ sub initialize
 }
 
 
-sub setAsGlobalModel
-{
-    my $model = shift @_;
-    $BNGModel::GlobalModel = $model;
-}
-
-
-###
-###
-###
-
-
 # read Model from file
 # $err = $model->readModel({file=>FILENAME}) 
 sub readModel
@@ -1753,8 +1741,9 @@ sub resetParameters
     my $label = @_ ? shift @_ : Cache::DEFAULT_LABEL;
 
     return '' if $NO_EXEC;
-
-    my $saved_paramlist = $model->ParameterCache->browse($label);
+    
+	# get a COPY so that subsequent 'setParameter' calls don't modify the saved list
+    my $saved_paramlist = $model->ParameterCache->browse($label)->copyConstant();
 
     unless (defined $saved_paramlist)
     {   return "resetParameters(): cannot find saved parameters";   }

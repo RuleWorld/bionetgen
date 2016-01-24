@@ -270,8 +270,8 @@ sub readString
         $fun->Args( [@Args] );
     }
 
-    # Remove '=' if present
-    $string=~ s/[=]\s*//;
+    # Remove '=' if present (but NOT '==')
+    $string=~ s/(?<!=)[=](?!=)\s*//;# use lookarounds to avoid matching '=='
 
     # Read expression defining function.  Function arguments are "local" variables
     my $expr = Expression->new();

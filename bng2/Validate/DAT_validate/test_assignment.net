@@ -1,0 +1,21 @@
+# Created by BioNetGen 2.2.6-stable
+begin parameters
+    1 param1       1  # Constant
+    2 param2       2  # Constant
+    3 param3       3  # Constant
+    4 __R1_local1  if((0==1),param1,if((0>0),param2,if((0>0),param3,0)))  # ConstantExpression
+end parameters
+begin species
+    1 A() 1
+    2 B() 0
+    3 C() 0
+    4 X() 100
+end species
+begin reactions
+    1 4 0 __R1_local1 #_R1
+end reactions
+begin groups
+    1 Obs1                 1
+    2 Obs2                 2
+    3 Obs3                 3
+end groups
