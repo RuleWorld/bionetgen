@@ -794,6 +794,7 @@ sub syncClasses
 	my $model = shift @_;
 	my $bpg = shift @_;
 	my $classes_in = @_ ? shift @_ : undef;
+	my $strictcontext = @_ ? shift @_ : 1;
 	#print map $_." ".$$classes_in{$_}."\n", keys %$classes_in;
 	
 	my $gr = $model->VizGraphs;
@@ -888,8 +889,10 @@ sub syncClasses
 					map { $_ =~ /.*:(.*):.*/; $1; }
 					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
 					@cont_edges;
-		#my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) );
-		my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) );
+		my $str;
+		if($strictcontext == 1) { $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) ); }
+		else { $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) ); }
+		#my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) );
 		my $hasreacprod = @reac ? 1 : @prod ? 1 : 0;
 		my $reacprodstr = $hasreacprod ? $str : '';
 		$reacprodhash{$rule} = $reacprodstr;
