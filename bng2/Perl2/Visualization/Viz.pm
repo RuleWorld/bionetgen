@@ -862,6 +862,8 @@ sub syncClasses
 				@{$bpg->{'EdgeList'}};
 	my @prod_edges =	grep { $_ =~ /Product$/ }
 				@{$bpg->{'EdgeList'}};
+	my @cont_edges =	grep { $_ =~ /Context$/ }
+				@{$bpg->{'EdgeList'}};
 	my %reacprodhash;
 	# dont wanna lose the order;
 	my @reacprodvals; 
@@ -880,7 +882,14 @@ sub syncClasses
 					map { $_ =~ /.*:(.*):.*/; $1; }
 					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
 					@prod_edges;
-		my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) );
+		my @cont =  uniq
+					sort {$a cmp $b}
+					map { $temp{$_} }
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@cont_edges;
+		#my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) );
+		my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) );
 		my $hasreacprod = @reac ? 1 : @prod ? 1 : 0;
 		my $reacprodstr = $hasreacprod ? $str : '';
 		$reacprodhash{$rule} = $reacprodstr;
