@@ -11,7 +11,7 @@ use Visualization::NetworkGraph;
 use Visualization::ProcessGraph;
 use Visualization::ContactMap;
 use Visualization::GML;
-use Visualization::DB;
+#use Visualization::DB;
 
 
 struct Graphs =>
@@ -169,7 +169,7 @@ sub execute_params
 	$args{'reset'} = 0 if(not has (\@argkeys,'reset'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory regulatory_db reaction_network contactmap process );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
 	
 	if (not has(\@argkeys,'type'))
 	{
@@ -425,28 +425,28 @@ sub execute_params
 		if($each==1) {$output = 0;}
 	}
 	
-	
-	if($type eq 'regulatory_db')
-	{
-		my %args2 = duplicate_args(\%args);
-		$args2{'type'} = 'regulatory';
-		$args2{'output'} = 0;
-		$args2{'groups'} = 0;
-		$args2{'collapse'} = 0;
-		$args{'background'}->{'toggle'} = 1;
-		execute_params($model,\%args2);
-		my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
-		my $prefix = $model->getOutputPrefix();
-		my $name = $prefix.".db";
-		my $dbh = newDBFile($name);
-		$dbh = getRegDB($dbh,$bpg);
-		$dbh = getRuleDB($dbh,$model->RxnRules);
-		$dbh->disconnect();
-		print "Writing regulatory graph database as $name\nDone!\n";
-		print "To modify background and grouping, run: sqlite3 $name.\n";
-		print "To generate the regulatory graph,  run: visualize.pl --db $name [--background] [--groups [--collapse]]\n";
-		exit;
-	}
+	#
+	#if($type eq 'regulatory_db')
+	#{
+	#	my %args2 = duplicate_args(\%args);
+	#	$args2{'type'} = 'regulatory';
+	#	$args2{'output'} = 0;
+	#	$args2{'groups'} = 0;
+	#	$args2{'collapse'} = 0;
+	#	$args{'background'}->{'toggle'} = 1;
+	#	execute_params($model,\%args2);
+	#	my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
+	#	my $prefix = $model->getOutputPrefix();
+	#	my $name = $prefix.".db";
+	#	my $dbh = newDBFile($name);
+	#	$dbh = getRegDB($dbh,$bpg);
+	#	$dbh = getRuleDB($dbh,$model->RxnRules);
+	#	$dbh->disconnect();
+	#	print "Writing regulatory graph database as $name\nDone!\n";
+	#	print "To modify background and grouping, run: sqlite3 $name.\n";
+	#	print "To generate the regulatory graph,  run: visualize.pl --db $name [--background] [--groups [--collapse]]\n";
+	#	exit;
+	#}
 	
 		
 	

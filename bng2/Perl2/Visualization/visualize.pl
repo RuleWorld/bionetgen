@@ -45,25 +45,25 @@ GetOptions(	\%args,
 			'embed!',
 		) or die "Error in command line arguments.";
 		
-if(defined $args{'db'})
-{
-	my $name = $args{'db'};
-	$name =~ /(.*)\.db/;
-	my $prefix = $1;
-	
-	filecheck($name,'DB');
-	my $dbh = newDBFile($name);
-	my $background = $args{'background'};
-	my $groups = $args{'groups'};
-	my $collapse = $args{'collapse'};
-	my $bpg = getBPG($dbh,$background,$groups,$collapse);
-	my $str = toGML_rule_network($bpg);
-	my $suffix = $args{'suffix'};
-	my $type = 'regulatory';
-	my %params = ('str'=>$str,'suffix'=>$suffix,'type'=>$type,'prefix'=>$prefix);
-	writeGML2(\%params);
-	exit;
-}
+#if(defined $args{'db'})
+#{
+#	my $name = $args{'db'};
+#	$name =~ /(.*)\.db/;
+#	my $prefix = $1;
+#	
+#	filecheck($name,'DB');
+#	my $dbh = newDBFile($name);
+#	my $background = $args{'background'};
+#	my $groups = $args{'groups'};
+#	my $collapse = $args{'collapse'};
+#	my $bpg = getBPG($dbh,$background,$groups,$collapse);
+#	my $str = toGML_rule_network($bpg);
+#	my $suffix = $args{'suffix'};
+#	my $type = 'regulatory';
+#	my %params = ('str'=>$str,'suffix'=>$suffix,'type'=>$type,'prefix'=>$prefix);
+#	writeGML2(\%params);
+#	exit;
+#}
 
 if($args{'help'}) 
 {
