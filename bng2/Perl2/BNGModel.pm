@@ -67,6 +67,9 @@ use EnergyPattern;
 use Observable;
 use PopulationList;
 
+#Variables that determine whether the network has been generated
+my $NetFlag = 0; 
+my $GenNet = ''; #Stores users generate_network command and executes it if appropriate
 
 # A place to store a reference to the current active model.
 # Useful when other classes need to find the model.
@@ -1002,13 +1005,70 @@ sub readSBML
 	
 	                # execute action
 	                my $command = sprintf "\$model->%s(%s);", $action, $options;
-	                my $t_start = cpu_time(0);
-	                $err = eval $command;
-	                if ($@)   { $err = errgen($@);    goto EXIT; }
-	                if ($err) { $err = errgen($err);  goto EXIT; }
-	                my $t_elapsed = cpu_time($t_start);
-	                printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
-	            }
+			
+			#Save the user supplied generate_network command to be executed if needed
+			if($action eq "generate_network"){$GenNet = $command;}
+			my $method_name;
+			if ($action eq "simulate" && $NetFlag == 0)
+			{
+				#Extract method
+				$method_name = $options;
+				$method_name =~ s/(.*)method(\s*)=>(\s*)'//;
+				$method_name  =~ s/'(.*)//;
+				if($method_name =~ /^(ode|ssa|pla)$/)
+				{
+				 my $t_start = cpu_time(0);	
+				
+					#The simulation method requires a network
+					if ($GenNet eq '')
+					{
+						#The user has not supplied a command. Use defaults
+						 my $cmd = sprintf "\$model->%s(%s);", "generate_network", "({overwrite=>1})";
+                                                 $err = eval $cmd;
+					}
+					else{$err = eval $GenNet;} #The user has supplied a command.
+					
+                                 if ($@)   { $err = errgen($@);    goto EXIT; }
+                                 if ($err) { $err = errgen($err);  goto EXIT; }
+                                 my $t_elapsed = cpu_time($t_start);
+                                 printf "CPU TIME: %s %.2f s.\n","generate_network", $t_elapsed;
+				 $NetFlag = 1;
+				}
+			
+			}
+
+			if ($action =~ /^(simulate_ode|simulate_ssa|simulate_pla)$/ && $NetFlag == 0)
+                        {
+				my $t_start = cpu_time(0);
+                                        # The simulation method requires a network and the user has not generated one
+                                        if ($GenNet eq '')
+                                        {
+                                                my $cmd = sprintf "\$model->%s(%s);", "generate_network", "({overwrite=>1})";
+                                                $err = eval $cmd;
+                                        }
+                                        # The simulation method requires a network and the user has supplied a command
+                                        else
+                                        { $err = eval $GenNet;}                                        
+ 				 
+				 if ($@)   { $err = errgen($@);    goto EXIT; }	 
+				 if ($err) { $err = errgen($err);  goto EXIT; }
+                                 my $t_elapsed = cpu_time($t_start);
+				 printf "CPU TIME: %s %.2f s.\n","generate_network", $t_elapsed;
+			         $NetFlag = 1;
+                        }
+
+
+	                #Evaluate all commands except the generate network command
+			if ($action ne 'generate_network')
+			{
+				my $t_start = cpu_time(0);
+	                	$err = eval $command;
+	                	if ($@)   { $err = errgen($@);    goto EXIT; }
+	                	if ($err) { $err = errgen($err);  goto EXIT; }
+	                	my $t_elapsed = cpu_time($t_start);
+	                	printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+	            	}
+		    }
 	            else
 	            {   # Try to execute general PERL code (Dangerous!!)
 	                if ( $model->Params->{allow_perl} )
