@@ -358,9 +358,7 @@ sub execute_params
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				print "Creating classes of atomic patterns and rules.\n";
-				my $strictcontext = $args{'doNotUseContextWhenGrouping'}==1 ? 0 : 1;
-				print "\nStrict Context is ".$args{'doNotUseContextWhenGrouping'}."\n";
-				syncClasses($model,$bpg,\%classes,$strictcontext);
+				syncClasses($model,$bpg,\%classes,$args{'doNotUseContextWhenGrouping'});
 				if($collapse==1)
 					{ 
 					print "Collapsing network graph using equivalence classes.\n";
@@ -809,7 +807,7 @@ sub syncClasses
 	my $model = shift @_;
 	my $bpg = shift @_;
 	my $classes_in = @_ ? shift @_ : undef;
-	my $strictcontext = @_ ? shift @_ : 1;
+	my $doNotUseContextWhenGrouping = @_ ? shift @_ : 0;
 	#print map $_." ".$$classes_in{$_}."\n", keys %$classes_in;
 	
 	my $gr = $model->VizGraphs;
@@ -905,7 +903,7 @@ sub syncClasses
 					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
 					@cont_edges;
 		my $str;
-		if($strictcontext == 1) { $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) ); }
+		if($doNotUseContextWhenGrouping == 0) { $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) ); }
 		else { $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) ); }
 		#my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) );
 		my $hasreacprod = @reac ? 1 : @prod ? 1 : 0;
