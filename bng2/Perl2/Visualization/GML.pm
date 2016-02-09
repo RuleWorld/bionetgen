@@ -186,10 +186,24 @@ sub printGML
 		{
 			$string2 .= "width ".$edge->{'width'}." ";
 		}
+		
+		#my $string3 = "";
+		if ($edge->{'arrowhead'} eq 'inhibition' and $edge->{'targetArrow'})
+		{
+		$string2 .= "targetArrow	\"crows_foot_one\"";
+		}
+		if ($edge->{'arrowhead'} eq 'inhibition' and $edge->{'sourceArrow'})
+		{
+		$string2 .= "sourceArrow	\"crows_foot_one\"";
+		}
+		
+		
 		$string2 = "graphics [ ".$string2." ]";
 		$string .= "source ".$edge->{'source'}." ";
 		$string .= "target ".$edge->{'target'}." ";
+		
 		$string = "edge [ ".$string." ".$string2." ]";
+		
 		push @edgestrings,$string;
 	}
 
@@ -867,13 +881,14 @@ sub styleEdge2
 	my $type = @_ ? shift @_: undef;
 	my %properties =
 		(
-		'Reactant' =>	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>1},
-		'Product' => 	{'color'=>'#5e3c58','source'=>0,'target'=>1,'width'=>1},
-		'Wildcard' => 	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>1},
-		'Context' => 	{'color'=>'#798e87','source'=>1,'target'=>0,'width'=>1},
-		'Process' => 	{'color'=>'#000000','source'=>0,'target'=>1,'width'=>1},
+		'Reactant' =>	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>1,'arrowhead'=>'standard'},
+		'Product' => 	{'color'=>'#5e3c58','source'=>0,'target'=>1,'width'=>1,'arrowhead'=>'standard'},
+		'Wildcard' => 	{'color'=>'#5e3c58','source'=>1,'target'=>0,'width'=>1,'arrowhead'=>'standard'},
+		'Context' => 	{'color'=>'#798e87','source'=>1,'target'=>0,'width'=>1,'arrowhead'=>'standard'},
+		'Process' => 	{'color'=>'#000000','source'=>0,'target'=>1,'width'=>1,'arrowhead'=>'standard'},
+		'Inhibition' => {'color'=>'#5e3c58','source'=>0,'target'=>1,'width'=>1,'arrowhead'=>'inhibition'},
 		);
-	my %keywords = ('color'=>'fill','source'=>'sourceArrow','target'=>'targetArrow','width'=>'width');
+	my %keywords = ('color'=>'fill','source'=>'sourceArrow','target'=>'targetArrow','width'=>'width','arrowhead'=>'arrowhead');
 	
 	if(defined $type)
 	{
@@ -882,6 +897,7 @@ sub styleEdge2
 		$gmledge->{$keywords{$prop}} = $properties{$type}->{$prop};
 		}
 	}
+	
 	return;
 	
 }
