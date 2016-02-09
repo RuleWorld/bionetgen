@@ -43,6 +43,10 @@ GetOptions(	\%args,
 			'level=i',
 			'mergepairs!',
 			'embed!',
+			'doNotUseContextWhenGrouping!',
+			'removeBindingContext!',
+			'makeInhibitionEdges!',
+			'removeProcessNodes!',
 		) or die "Error in command line arguments.";
 		
 #if(defined $args{'db'})

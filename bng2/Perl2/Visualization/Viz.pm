@@ -85,7 +85,7 @@ sub getExecParams
 	my %toggle;
 	my %background;
 	my %classes;
-	
+	#print "\nARGKEYS ".join(" ",keys %args)."\n";
 	foreach my $file(@{$args{'opts'}})
 	{
 		my ($x,$y,$z,$f) = parseOpts($file);
@@ -135,8 +135,15 @@ sub getExecParams
 	$exec_params{'mergepairs'} = $args{'mergepairs'};
 	$exec_params{'embed'} = $args{'embed'};
 	
+	
 	if(defined $args{'level'}) { $exec_params{'filter'}->{'level'} = $args{'level'} };
 	if(defined $args{'reset'}) { $exec_params{'reset'} = $args{'reset'} };
+	
+	# pass along remaining parameters
+	if(defined $args{'doNotUseContextWhenGrouping'}) { $exec_params{'doNotUseContextWhenGrouping'} = $args{'doNotUseContextWhenGrouping'}; }
+	if(defined $args{'removeBindingContext'}) { $exec_params{'removeBindingContext'} = $args{'removeBindingContext'}; }
+	if(defined $args{'makeInhibitionEdges'}) { $exec_params{'makeInhibitionEdges'} = $args{'makeInhibitionEdges'}; }
+	if(defined $args{'removeProcessNodes'}) { $exec_params{'removeProcessNodes'} = $args{'removeProcessNodes'}; }
 	return \%exec_params;
 }
 ##########################
@@ -147,6 +154,8 @@ sub execute_params
 	my %args = %{shift @_};
 	
 	my @argkeys = keys %args;
+	
+	#print "\n".join(" ",@argkeys)."\n";
 	my $err = ''; #"visualize() error.";
 	
 	$args{'output'} = 1 if (not has(\@argkeys,'output'));
@@ -167,6 +176,10 @@ sub execute_params
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
 	
 	$args{'reset'} = 0 if(not has (\@argkeys,'reset'));
+	$args{'doNotUseContextWhenGrouping'} = 0 if(not has(\@argkeys,'doNotUseContextWhenGrouping'));
+	$args{'removeBindingContext'} = 0 if(not has(\@argkeys,'removeBindingContext'));
+	$args{'makeInhibitionEdges'} = 0 if(not has(\@argkeys,'makeInhibitionEdges'));
+	$args{'removeProcessNodes'} = 0 if(not has(\@argkeys,'removeProcessNodes'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
 	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
@@ -250,7 +263,7 @@ sub execute_params
 	my $str = '';
 	my @strs = ();
 	my @groups;
-	
+
 	getRuleNames($model);
 	if ($type eq 'ruleviz_operation')
 	{
@@ -345,7 +358,9 @@ sub execute_params
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				print "Creating classes of atomic patterns and rules.\n";
-				syncClasses($model,$bpg,\%classes);
+				my $strictcontext = $args{'doNotUseContextWhenGrouping'}==1 ? 0 : 1;
+				print "\nStrict Context is ".$args{'doNotUseContextWhenGrouping'}."\n";
+				syncClasses($model,$bpg,\%classes,$strictcontext);
 				if($collapse==1)
 					{ 
 					print "Collapsing network graph using equivalence classes.\n";
