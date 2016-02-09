@@ -382,6 +382,15 @@ sub execute_params
 				$bpg = removeReactantContext($bpg);
 				applyRuleNetworkCurrent($model,$bpg);
 				}
+			if($args{'makeInhibitionEdges'} ==1)
+				{
+				##### THIS IS AN AESTHETIC MOD, i.e. IT HAS NO EFFECT ON GROUPING
+				#### IT IS PERFORMED AFTER GROUPING, BUT BEFORE COLLAPSING
+				my $bpg = $gr->{'RuleNetworkCurrent'};
+				print "Removing redundant context from reactants.\n";
+				$bpg = makeInhibitionEdges($bpg);
+				applyRuleNetworkCurrent($model,$bpg);
+				}
 			
 			if($groups==1 and $collapse==1)
 				{
@@ -1152,6 +1161,19 @@ sub removeReactantContext
 		}
 	return $bpg2;
 }
+
+sub makeInhibitionEdges
+{
+	my $bpg = shift @_;
+	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
+				@{$bpg->{'NodeList'}};
+	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+				@{$bpg->{'NodeList'}};
+	my @reac_edges =	grep { $_ =~ /Reactant$/ }
+				@{$bpg->{'EdgeList'}};
+	return $bpg;
+}
+
 sub duplicate_args
 {
 	my %args = %{shift @_};
