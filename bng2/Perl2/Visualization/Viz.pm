@@ -73,7 +73,10 @@ sub initializeExecParams
 	my @items = ();
 	my $level = 1;
 	my $filter = {'toggle'=>$toggle2,'items'=>\@items,'level'=>$level};
-	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter,'embed'=>0);
+	
+	my @inhibition = ();
+	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter,'embed'=>0,'inhibition'=>\@inhibition);
+	
 	return %x;
 	
 }
@@ -88,11 +91,12 @@ sub getExecParams
 	#print "\nARGKEYS ".join(" ",keys %args)."\n";
 	foreach my $file(@{$args{'opts'}})
 	{
-		my ($x,$y,$z,$f) = parseOpts($file);
+		my ($x,$y,$z,$f,$inh) = parseOpts($file);
 		my %toggle = %$x;
 		my %background = %$y;
 		my %classes = %$z;
 		my %filter = %$f;
+		my @inhibition= @$inh;
 		
 		# do toggles;
 		foreach my $key(keys %toggle)
@@ -121,6 +125,10 @@ sub getExecParams
 			if (not defined $exec_params{'filter'}->{'items'}) {$exec_params{'filter'}->{'items'} = [];};
 			push2ref($exec_params{'filter'}->{'items'},$filter{'items'});
 		}
+		if(@inhibition)
+		{
+			push2ref($exec_params{'inhibition'},\@inhibition);
+		}
 		
 	}
 	
@@ -144,6 +152,9 @@ sub getExecParams
 	if(defined $args{'removeReactantContext'}) { $exec_params{'removeReactantContext'} = $args{'removeReactantContext'}; }
 	if(defined $args{'makeInhibitionEdges'}) { $exec_params{'makeInhibitionEdges'} = $args{'makeInhibitionEdges'}; }
 	if(defined $args{'removeProcessNodes'}) { $exec_params{'removeProcessNodes'} = $args{'removeProcessNodes'}; }
+	
+	if(defined $args{'inhibition'}) { $exec_params{'inhibition'} = $args{'inhibition'}; }
+	
 	return \%exec_params;
 }
 ##########################
@@ -180,6 +191,7 @@ sub execute_params
 	$args{'removeReactantContext'} = 0 if(not has(\@argkeys,'removeReactantContext'));
 	$args{'makeInhibitionEdges'} = 0 if(not has(\@argkeys,'makeInhibitionEdges'));
 	$args{'removeProcessNodes'} = 0 if(not has(\@argkeys,'removeProcessNodes'));
+	$args{'inhibition'} = [] if(not has(\@argkeys,'inhibition'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
 	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
@@ -1101,8 +1113,9 @@ sub removeReactantContext
 				@{$bpg->{'NodeList'}};
 	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
 				@{$bpg->{'NodeList'}};
-	my @classed = grep {has(\@aps,$_);} keys $bpg->{'NodeClass'};
 	my %classes = %{$bpg->{'NodeClass'}};
+	my @classed = grep {has(\@aps,$_);} keys %classes;
+	
 
 	my @reac_edges =	grep { $_ =~ /Reactant$/ }
 				@{$bpg->{'EdgeList'}};
