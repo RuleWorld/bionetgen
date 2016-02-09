@@ -359,13 +359,15 @@ sub execute_params
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				print "Creating classes of atomic patterns and rules.\n";
 				syncClasses($model,$bpg,\%classes,$args{'doNotUseContextWhenGrouping'});
-				if($collapse==1)
-					{ 
-					print "Collapsing network graph using equivalence classes.\n";
-					$bpg = collapseNetworkGraph($bpg); 
-					}
 				applyRuleNetworkCurrent($model,$bpg);
 			}
+			if($groups==1 and $collapse==1)
+				{
+				my $bpg = $gr->{'RuleNetworkCurrent'};				
+				print "Collapsing network graph using equivalence classes.\n";
+				$bpg = collapseNetworkGraph($bpg);
+				applyRuleNetworkCurrent($model,$bpg);					
+				}
 			if($output==1)
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
