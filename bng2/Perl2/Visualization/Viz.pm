@@ -361,6 +361,16 @@ sub execute_params
 				syncClasses($model,$bpg,\%classes,$args{'doNotUseContextWhenGrouping'});
 				applyRuleNetworkCurrent($model,$bpg);
 			}
+			if($args{'removeReactantContext'} ==1)
+				{
+				##### THIS IS AN AESTHETIC MOD, i.e. IT HAS NO EFFECT ON GROUPING
+				#### IT IS PERFORMED AFTER GROUPING, BUT BEFORE COLLAPSING
+				my $bpg = $gr->{'RuleNetworkCurrent'};
+				print "Removing redundant context from reactants.\n";
+				$bpg = removeReactantContext($bpg);
+				applyRuleNetworkCurrent($model,$bpg);
+				}
+			
 			if($groups==1 and $collapse==1)
 				{
 				my $bpg = $gr->{'RuleNetworkCurrent'};				
@@ -368,6 +378,7 @@ sub execute_params
 				$bpg = collapseNetworkGraph($bpg);
 				applyRuleNetworkCurrent($model,$bpg);					
 				}
+			
 			if($output==1)
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
@@ -775,6 +786,7 @@ sub applyRuleNetworkCurrent
 	$model->VizGraphs->{'RuleNetworkCurrent'} = $bpg;
 	return;
 }
+
 sub getRuleGroups
 {
 	my $model = shift @_;
@@ -1077,7 +1089,56 @@ sub getBackground
 	return;
 }
 
+sub removeReactantContext
+{
+	# for each rule R1, each reactant X and its group Gr(X)
+	# remove all context edges from Y in Gr(X) 
+	# 	as long as Y neq X
+	# 	and Y is not a reactant to R1,
+	
+	my $bpg = shift @_;
+	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
+				@{$bpg->{'NodeList'}};
+	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+				@{$bpg->{'NodeList'}};
+	my @classed = grep {has(\@aps,$_);} keys $bpg->{'NodeClass'};
+	my %classes = %{$bpg->{'NodeClass'}};
 
+	my @reac_edges =	grep { $_ =~ /Reactant$/ }
+				@{$bpg->{'EdgeList'}};
+	my @cont_edges =	grep { $_ =~ /Context$/ }
+				@{$bpg->{'EdgeList'}};
+	my @edges_to_remove;
+	
+	foreach my $rule(@rules)
+	{
+		my @reacs = grep {has(\@classed,$_);}
+					map {$_ =~ /.*:(.*):.*/; $1;}  
+					grep {$_ =~ /(.*):.*:.*/; $rule eq $1;}  
+					@reac_edges;
+		#print $rule." ".join(" ",@reacs)." ";
+		#print "\n" if (scalar @reacs ==0);
+		next if (scalar @reacs ==0);
+		my @reac_classes = uniq map {$classes{$_}} @reacs;
+		#print join(" ",@reac_classes)." ";
+		my @relevant_cont_edges =	
+					grep {$_ =~ /.*:(.*):.*/; has(\@reac_classes,$classes{$1});}
+					grep {$_ =~ /.*:(.*):.*/; has(\@classed,$1);}
+					grep {$_ =~ /.*:(.*):.*/; not has(\@reacs,$1);}
+					grep {$_ =~ /(.*):.*:.*/; $rule eq $1;}  
+					@cont_edges;
+		#print join(" ",@relevant_cont_edges)."\n";
+		push @edges_to_remove, @relevant_cont_edges;
+	}
+	
+	my $bpg2 = duplicateNetworkGraph($bpg);
+	if(scalar @edges_to_remove)
+		{
+		my @new_edges = grep {not has(\@edges_to_remove,$_);} @{$bpg2->{'EdgeList'}};
+		$bpg2->{'EdgeList'} = \@new_edges;
+		}
+	return $bpg2;
+}
 sub duplicate_args
 {
 	my %args = %{shift @_};
