@@ -387,7 +387,7 @@ sub execute_params
 				##### THIS IS AN AESTHETIC MOD, i.e. IT HAS NO EFFECT ON GROUPING
 				#### IT IS PERFORMED AFTER GROUPING, BUT BEFORE COLLAPSING
 				my $bpg = $gr->{'RuleNetworkCurrent'};
-				print "Removing redundant context from reactants.\n";
+				print "Making inhibition edges.\n";
 				$bpg = makeInhibitionEdges($bpg);
 				applyRuleNetworkCurrent($model,$bpg);
 				}
