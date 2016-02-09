@@ -849,7 +849,7 @@ sub collapseNetworkGraph
 		my $y = $2;
 		my $z = $3;
 		
-		if(has([qw(Reactant Product Context)],$z) )
+		if(has([qw(Reactant Product Context Inhibition)],$z) )
 		{
 			if(has(\@classed_rules,$x)) { $x = $classes{$x}; }
 			if(has(\@classed_patterns,$y)) { $y = $classes{$y}; }
