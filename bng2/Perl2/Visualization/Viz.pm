@@ -231,6 +231,8 @@ sub execute_params
 	my $bkg_include = $bkg->{'include'};
 	my $bkg_exclude = $bkg->{'exclude'};
 	
+	my $inhibition = $args{'inhibition'};
+	
 	my $reset = $args{'reset'};
 	
 	#my $closed = $args{'closed'};
@@ -388,7 +390,7 @@ sub execute_params
 				#### IT IS PERFORMED AFTER GROUPING, BUT BEFORE COLLAPSING
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				print "Making inhibition edges.\n";
-				$bpg = makeInhibitionEdges($bpg);
+				$bpg = makeInhibitionEdges($bpg,$inhibition);
 				applyRuleNetworkCurrent($model,$bpg);
 				}
 			
@@ -1165,12 +1167,15 @@ sub removeReactantContext
 sub makeInhibitionEdges
 {
 	my $bpg = shift @_;
+	my @inh = @{shift @_};
 	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
 				@{$bpg->{'NodeList'}};
 	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
 				@{$bpg->{'NodeList'}};
 	my @reac_edges =	grep { $_ =~ /Reactant$/ }
 				@{$bpg->{'EdgeList'}};
+				
+	#print join("\n",@inh);
 	return $bpg;
 }
 
