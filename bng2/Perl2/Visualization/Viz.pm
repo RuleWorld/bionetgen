@@ -1174,7 +1174,26 @@ sub makeInhibitionEdges
 				@{$bpg->{'NodeList'}};
 	my @reac_edges =	grep { $_ =~ /Reactant$/ }
 				@{$bpg->{'EdgeList'}};
-				
+	
+
+	foreach my $line(@inh)
+	{
+		my @ar = split(":",$line);
+		my $line_error = 0;
+		$line_error = 1 if(scalar (@ar) != 2);
+		$line_error = 1 if(scalar (@ar) == 2 and not has(\@rules,$ar[0]) );
+		$line_error = 1 if(scalar (@ar) == 2 and not has(\@aps,$ar[1]) );
+		if($line_error==1)
+			{
+			print "ERROR processing line ".$line." in inhibition block. \nEither bad format or rule or atomic pattern was not present in foreground. Use RuleName:AtomicPattern. Skipping...\n";
+			next;
+			}
+		if( not has(\@reac_edges,$line.":Reactant") )
+			{
+			print "ERROR processing line ".$line." in inhibition block. \nCould not find relevant reactant edge. Skipping...\n";
+			next;
+			}
+	}
 	#print join("\n",@inh);
 	return $bpg;
 }
