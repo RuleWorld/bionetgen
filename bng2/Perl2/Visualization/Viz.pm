@@ -141,7 +141,7 @@ sub getExecParams
 	
 	# pass along remaining parameters
 	if(defined $args{'doNotUseContextWhenGrouping'}) { $exec_params{'doNotUseContextWhenGrouping'} = $args{'doNotUseContextWhenGrouping'}; }
-	if(defined $args{'removeBindingContext'}) { $exec_params{'removeBindingContext'} = $args{'removeBindingContext'}; }
+	if(defined $args{'removeReactantContext'}) { $exec_params{'removeReactantContext'} = $args{'removeReactantContext'}; }
 	if(defined $args{'makeInhibitionEdges'}) { $exec_params{'makeInhibitionEdges'} = $args{'makeInhibitionEdges'}; }
 	if(defined $args{'removeProcessNodes'}) { $exec_params{'removeProcessNodes'} = $args{'removeProcessNodes'}; }
 	return \%exec_params;
@@ -177,7 +177,7 @@ sub execute_params
 	
 	$args{'reset'} = 0 if(not has (\@argkeys,'reset'));
 	$args{'doNotUseContextWhenGrouping'} = 0 if(not has(\@argkeys,'doNotUseContextWhenGrouping'));
-	$args{'removeBindingContext'} = 0 if(not has(\@argkeys,'removeBindingContext'));
+	$args{'removeReactantContext'} = 0 if(not has(\@argkeys,'removeReactantContext'));
 	$args{'makeInhibitionEdges'} = 0 if(not has(\@argkeys,'makeInhibitionEdges'));
 	$args{'removeProcessNodes'} = 0 if(not has(\@argkeys,'removeProcessNodes'));
 

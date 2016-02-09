@@ -44,7 +44,7 @@ GetOptions(	\%args,
 			'mergepairs!',
 			'embed!',
 			'doNotUseContextWhenGrouping!',
-			'removeBindingContext!',
+			'removeReactantContext!',
 			'makeInhibitionEdges!',
 			'removeProcessNodes!',
 		) or die "Error in command line arguments.";

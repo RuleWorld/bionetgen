@@ -3140,7 +3140,7 @@ sub visualize
     		'embed'        =>  0,
 			'reset'		   =>  1,
 			'doNotUseContextWhenGrouping' => 0,
-			'removeBindingContext' => 0,
+			'removeReactantContext' => 0,
 			'makeInhibitionEdges' => 0,
 			'removeProcessNodes' => 0,
     };
