@@ -1167,7 +1167,7 @@ sub removeReactantContext
 sub makeInhibitionEdges
 {
 	my $bpg = shift @_;
-	my @inh = @{shift @_};
+	my @inh = uniq @{shift @_};
 	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
 				@{$bpg->{'NodeList'}};
 	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
@@ -1175,7 +1175,8 @@ sub makeInhibitionEdges
 	my @reac_edges =	grep { $_ =~ /Reactant$/ }
 				@{$bpg->{'EdgeList'}};
 	
-
+	my @edges_to_remove;
+	my @edges_to_add;
 	foreach my $line(@inh)
 	{
 		my @ar = split(":",$line);
@@ -1193,9 +1194,18 @@ sub makeInhibitionEdges
 			print "ERROR processing line ".$line." in inhibition block. \nCould not find relevant reactant edge. Skipping...\n";
 			next;
 			}
+		push @edges_to_remove, $line.":Reactant";
+		push @edges_to_add, $line.":Inhibition";
 	}
-	#print join("\n",@inh);
-	return $bpg;
+	
+	my $bpg2 = duplicateNetworkGraph($bpg);
+	if(scalar @edges_to_remove)
+		{
+		my @new_edges = grep {not has(\@edges_to_remove,$_);} @{$bpg2->{'EdgeList'}};
+		push @new_edges, @edges_to_add;
+		$bpg2->{'EdgeList'} = \@new_edges;
+		}
+	return $bpg2;
 }
 
 sub duplicate_args
