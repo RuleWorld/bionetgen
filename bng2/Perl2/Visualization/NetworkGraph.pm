@@ -151,6 +151,7 @@ sub makeTransformationDeleteBond
 	if ($name eq 'DeleteBond')
 		{
 		my $bond = findNode(\@nodelist,${$node->{'Parents'}}[0]);
+		return $tr if ($bond->{'Name'} eq '?');
 		my @comps = grep {$_->{'Side'} eq 'both'} map (findNode(\@nodelist,$_), @{$bond->{'Parents'}});
 		my @rightstr = sort map ( makeAtomicPattern(\@nodelist,$_),@comps);
 		my $leftstr = makeAtomicPattern(\@nodelist,$bond);
@@ -596,8 +597,9 @@ sub makeRuleNetworkGraph
 			# bond deletion is treated here
 			# if there's a deletemol, AB -> A, then it shows only A as the product
 			# wildcard delete! if A!+ -> A, then this shows A as the product
+			# if A!? -> 0, ignore. Is this bad form? Testing needed.
 		}
-		
+		if(not defined $tr) { next; }
 		if(length $tr == 0) { next; }
 		my ($reac,$prod) = getReactantsProducts($tr);
 		push @{$bpg->{'NodeList'}}, @$reac, @$prod;
