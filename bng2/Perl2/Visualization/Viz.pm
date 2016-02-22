@@ -764,6 +764,7 @@ sub getRuleNetwork
 	{
 		print "Compiling network graph for whole model.\n";
 		$bpg = mergeNetworkGraphs(flat(@{$gr->{'RuleNetworkGraphs'}}));
+		$bpg = resolveWildcards($bpg);
 		$bpg->{'Merged'} = 1;
 		$bpg->{'Collapsed'} = 0;
 		$gr->{'RuleNetwork'} = $bpg;

@@ -730,6 +730,60 @@ sub mergeNetworkGraphs
 	$bpg->{'Merged'} =1;
 	return $bpg;
 }
+sub resolveWildcards
+{
+	my $bpg = shift @_;
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my %nodetype = %{$bpg->{'NodeType'}};
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @wc_edges = grep {$_ =~ /Wildcard$/} @edgelist;
+	# don't do any work if there are no wildcards
+	return $bpg if( not @wc_edges );
+	
+	print "Resolving wildcard edges.\n";
+	
+	my @wcs = 	grep { index($_,'!+') != -1 } 
+				grep { $nodetype{$_} eq 'AtomicPattern'}
+				@nodelist;
+	my @wc_context = grep {$_ =~ /.*:(.*):.*/; my $x = $1; index($1,'!+') != -1;} 
+					grep {$_ =~ /Context$/} 
+					@edgelist;
+	my @new_edges;
+	foreach my $wc(@wcs)
+	{
+		my @r = map { $_ =~ /(.*):.*:.*/; $1; }
+				grep { $_ =~ /.*:(.*):.*/; my $x = $1; index($x,$wc) != -1; } 
+				@wc_context;
+		my @b = map { $_ =~ /.*:(.*):.*/; $1; } 
+				grep { $_ =~ /^(.*):.*:.*/; my $x = $1; index($x,$wc) != -1; } 
+				@wc_edges;
+		foreach my $rule(@r)
+		{
+			foreach  my $bond(@b)
+				{
+				push @new_edges, join(":",($rule,$bond,'Context'));
+				}
+		}
+	}
+	
+	my @nodelist2 = grep { not has(\@wcs,$_); } @nodelist;
+	my @edges_to_remove = (@wc_edges,@wc_context);
+	my @edgelist2 = grep { not has(\@edges_to_remove,$_); } @edgelist;
+	push @edgelist2,@new_edges;
+	
+	@nodelist2=  uniq(@nodelist2);
+	@edgelist2 = uniq(@edgelist2);
+	
+	my %nodetype2;
+	updateDict(\%nodetype2,\%nodetype,\@nodelist2);
+	
+	my $bpg2 = NetworkGraph->new();
+	$bpg2->{'NodeList'} = \@nodelist2;
+	$bpg2->{'EdgeList'} = \@edgelist2;
+	$bpg2->{'NodeType'} = \%nodetype2;
+	
+	return $bpg2;
+}
 
 sub filterNetworkGraph
 {
