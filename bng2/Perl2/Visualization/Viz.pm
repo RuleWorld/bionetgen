@@ -75,7 +75,8 @@ sub initializeExecParams
 	my $filter = {'toggle'=>$toggle2,'items'=>\@items,'level'=>$level};
 	
 	my @inhibition = ();
-	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter,'embed'=>0,'inhibition'=>\@inhibition);
+	my %motifs = ();
+	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter,'embed'=>0,'inhibition'=>\@inhibition,'motifs'=>\%motifs);
 	
 	return %x;
 	
@@ -91,13 +92,13 @@ sub getExecParams
 	#print "\nARGKEYS ".join(" ",keys %args)."\n";
 	foreach my $file(@{$args{'opts'}})
 	{
-		my ($x,$y,$z,$f,$inh) = parseOpts($file);
+		my ($x,$y,$z,$f,$inh,$mot) = parseOpts($file);
 		my %toggle = %$x;
 		my %background = %$y;
 		my %classes = %$z;
 		my %filter = %$f;
 		my @inhibition= @$inh;
-		
+		my %motifs = %$mot;
 		# do toggles;
 		foreach my $key(keys %toggle)
 		{
@@ -129,6 +130,14 @@ sub getExecParams
 		{
 			push2ref($exec_params{'inhibition'},\@inhibition);
 		}
+
+		foreach my $key(keys %motifs)
+			{
+			my $motifs2 = $exec_params{'motifs'};
+			my @arr = ();
+			if(not defined $motifs2->{$key}) { $motifs2->{$key} = \@arr; }
+			push2ref($motifs2->{$key},$motifs{$key});
+			}
 		
 	}
 	
@@ -152,9 +161,10 @@ sub getExecParams
 	if(defined $args{'removeReactantContext'}) { $exec_params{'removeReactantContext'} = $args{'removeReactantContext'}; }
 	if(defined $args{'makeInhibitionEdges'}) { $exec_params{'makeInhibitionEdges'} = $args{'makeInhibitionEdges'}; }
 	if(defined $args{'removeProcessNodes'}) { $exec_params{'removeProcessNodes'} = $args{'removeProcessNodes'}; }
+	if(defined $args{'compressRuleMotifs'}) { $exec_params{'compressRuleMotifs'} = $args{'compressRuleMotifs'}; }
 	
 	if(defined $args{'inhibition'}) { $exec_params{'inhibition'} = $args{'inhibition'}; }
-	if(defined $args{'compressRuleMotifs'}) { $exec_params{'compressRuleMotifs'} = $args{'compressRuleMotifs'}; }
+	if(defined $args{'motifs'}) {$exec_params{'motifs'} = $args{'motifs'}};
 	
 	return \%exec_params;
 }
@@ -193,6 +203,7 @@ sub execute_params
 	$args{'makeInhibitionEdges'} = 0 if(not has(\@argkeys,'makeInhibitionEdges'));
 	$args{'removeProcessNodes'} = 0 if(not has(\@argkeys,'removeProcessNodes'));
 	$args{'inhibition'} = [] if(not has(\@argkeys,'inhibition'));
+	$args{'motifs'} = {} if(not has(\@argkeys,'motifs'));
 	$args{'compressRuleMotifs'} = 0 if (not has(\@argkeys,'compressRuleMotifs'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
@@ -234,6 +245,7 @@ sub execute_params
 	my $bkg_exclude = $bkg->{'exclude'};
 	
 	my $inhibition = $args{'inhibition'};
+	my $motifs = $args{'motifs'};
 	
 	my $reset = $args{'reset'};
 	
@@ -360,7 +372,12 @@ sub execute_params
 				$bpg = filterNetworkGraphByList($bpg,\@items,$level);
 				applyRuleNetworkCurrent($model,$bpg);
 			}
-			
+			if($args{'compressRuleMotifs'} == 1)
+			{
+				my $bpg = $gr->{'RuleNetworkCurrent'};
+				$bpg = compressRuleMotifs($bpg,$args{'motifs'});
+				applyRuleNetworkCurrent($model,$bpg);
+			}
 			if ($bkg_toggle==0)
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
@@ -979,6 +996,7 @@ sub syncClasses
 	return;
 }
 
+
 sub makeClasses
 {
 	my $bpg = shift @_;
@@ -1052,7 +1070,12 @@ sub makeClasses
 	}
 	return;
 }
-
+sub compressRuleMotifs
+{
+	my $bpg = shift @_;
+	my %motifs = %{shift @_};
+	return $bpg;
+}
 sub getBackground
 {
 	print "Computing background.\n";
