@@ -47,6 +47,7 @@ GetOptions(	\%args,
 			'removeReactantContext!',
 			'makeInhibitionEdges!',
 			'removeProcessNodes!',
+			'compressRuleMotifs!',
 		) or die "Error in command line arguments.";
 		
 #if(defined $args{'db'})

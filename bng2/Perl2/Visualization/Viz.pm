@@ -154,6 +154,7 @@ sub getExecParams
 	if(defined $args{'removeProcessNodes'}) { $exec_params{'removeProcessNodes'} = $args{'removeProcessNodes'}; }
 	
 	if(defined $args{'inhibition'}) { $exec_params{'inhibition'} = $args{'inhibition'}; }
+	if(defined $args{'compressRuleMotifs'}) { $exec_params{'compressRuleMotifs'} = $args{'compressRuleMotifs'}; }
 	
 	return \%exec_params;
 }
@@ -192,6 +193,7 @@ sub execute_params
 	$args{'makeInhibitionEdges'} = 0 if(not has(\@argkeys,'makeInhibitionEdges'));
 	$args{'removeProcessNodes'} = 0 if(not has(\@argkeys,'removeProcessNodes'));
 	$args{'inhibition'} = [] if(not has(\@argkeys,'inhibition'));
+	$args{'compressRuleMotifs'} = 0 if (not has(\@argkeys,'compressRuleMotifs'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
 	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
