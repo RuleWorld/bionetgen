@@ -372,10 +372,16 @@ sub execute_params
 				$bpg = filterNetworkGraphByList($bpg,\@items,$level);
 				applyRuleNetworkCurrent($model,$bpg);
 			}
+			
+			my $remap_pairs = [];
 			if($args{'compressRuleMotifs'} == 1)
 			{
+				# Compressing motifs of rules (i.e. groups of rules that form a motif)
+				# This is performed BEFORE Background Removal
+				# IT IS PERMANENT AND IRREVERSIBLE
 				my $bpg = $gr->{'RuleNetworkCurrent'};
-				$bpg = compressRuleMotifs($bpg,$args{'motifs'});
+				print "Compressing defined motifs of rules.\n";
+				($bpg,$remap_pairs) = compressRuleMotifs($bpg,$args{'motifs'});
 				applyRuleNetworkCurrent($model,$bpg);
 			}
 			if ($bkg_toggle==0)
@@ -409,7 +415,7 @@ sub execute_params
 				#### IT IS PERFORMED AFTER GROUPING, BUT BEFORE COLLAPSING
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				print "Making inhibition edges.\n";
-				$bpg = makeInhibitionEdges($bpg,$inhibition);
+				$bpg = makeInhibitionEdges($bpg,$inhibition,$remap_pairs);
 				applyRuleNetworkCurrent($model,$bpg);
 				}
 			
@@ -1073,9 +1079,73 @@ sub makeClasses
 sub compressRuleMotifs
 {
 	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my %nodetype = %{$bpg->{'NodeType'}};
+	
 	my %motifs = %{shift @_};
-	return $bpg;
+	my @motifnames = keys %motifs;
+	my @rules_to_remove = uniq map { @{$motifs{$_}} } @motifnames;
+	
+	
+	# this is an array of strings, 2-member arrays, remap from member[0] to member [1]
+	my @remap_pairs;
+	foreach my $name(@motifnames)
+	{
+		my @x = @{$motifs{$name}};
+		push @remap_pairs, map {$_.":".$name;} @x;
+	}
+	my @edges_to_remove = grep { $_=~/^(.*):.*:.*/; has(\@rules_to_remove,$1); } @edgelist;
+	my @new_edges = remapEdges(\@edges_to_remove,\@remap_pairs,0);
+	
+	my @nodelist2;
+	my @edgelist2;
+	my %nodetype2;
+	
+	map { push @nodelist2, $_ if(not has(\@rules_to_remove,$_));} @nodelist;
+	map { my $x = $_; $nodetype2{$x} = $nodetype{$x}; } @nodelist2;
+	push @nodelist2,@motifnames;
+	map { my $x = $_; $nodetype2{$x} = 'Rule'; } @motifnames;
+	
+	map { push @edgelist2, $_ if(not has(\@edges_to_remove,$_));} @edgelist;
+	push @edgelist2,@new_edges;
+	
+	my $bpg2 = duplicateNetworkGraph($bpg);
+	if(scalar @rules_to_remove > 0)
+	{
+	$bpg2->{'NodeList'} = \@nodelist2;
+	$bpg2->{'EdgeList'} = \@edgelist2;
+	$bpg2->{'NodeType'} = \%nodetype2;
+	}
+	uniqNetworkGraph($bpg2);
+	return $bpg2,\@remap_pairs;
 }
+
+sub remapEdges
+{
+	my @edges_to_remap = @{shift @_};
+	my @remap_pairs = @{shift @_};
+	my $element_index_to_remap = shift @_;
+	# edges are x:y:z, $element_index_to_remap = 0 remaps x, 1 remaps y, 2 remaps z
+	my @remapped_edges = ();
+	foreach my $edge(@edges_to_remap)
+	{
+		my $elem_to_remap = getElementInEdge($edge,$element_index_to_remap);
+		foreach my $remap_pair(@remap_pairs)
+		{
+			my @x = split(':',$remap_pair);
+			if ($elem_to_remap eq $x[$element_index_to_remap])
+				{
+				push @remapped_edges, replaceElementInEdge($edge,$element_index_to_remap,$x[1]);
+				}
+		}
+	}
+	return @remapped_edges;
+}
+
+sub getElementInEdge { my @x = split(':',$_[0]); $x[$_[1]];}  # @_ = (edgestr,0/1/2)
+sub replaceElementInEdge { my @x = split(':',$_[0]); $x[$_[1]] = $_[2]; join(':',@x);} # @_ = (edgestr,0/1/2,new_elem)
+
 sub getBackground
 {
 	print "Computing background.\n";
@@ -1194,6 +1264,8 @@ sub makeInhibitionEdges
 {
 	my $bpg = shift @_;
 	my @inh = uniq @{shift @_};
+	my @remap_pairs = @{shift @_};
+	
 	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
 				@{$bpg->{'NodeList'}};
 	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
@@ -1201,27 +1273,39 @@ sub makeInhibitionEdges
 	my @reac_edges =	grep { $_ =~ /Reactant$/ }
 				@{$bpg->{'EdgeList'}};
 	
+
+	my %remaps;
+	my @remapped;
+	map {	my $x = $_; my @y = split(':',$x); 
+			$remaps{$y[0]} = $y[1]; 
+			push @remapped,$y[0]; } @remap_pairs;
+	
 	my @edges_to_remove;
 	my @edges_to_add;
+	
 	foreach my $line(@inh)
 	{
 		my @ar = split(":",$line);
 		my $line_error = 0;
 		$line_error = 1 if(scalar (@ar) != 2);
-		$line_error = 1 if(scalar (@ar) == 2 and not has(\@rules,$ar[0]) );
-		$line_error = 1 if(scalar (@ar) == 2 and not has(\@aps,$ar[1]) );
+		if( scalar (@ar) == 2 )
+		{
+			$line_error = 1 if(not has(\@rules,$ar[0]) and not has(\@remapped,$ar[0]) );
+			$line_error = 1 if(not has(\@aps,$ar[1]) );
+		}
 		if($line_error==1)
 			{
 			print "ERROR processing line ".$line." in inhibition block. \nEither bad format or rule or atomic pattern was not present in foreground. Use RuleName:AtomicPattern. Skipping...\n";
 			next;
 			}
-		if( not has(\@reac_edges,$line.":Reactant") )
+		my $findline = has(\@remapped,$ar[0]) ? $remaps{$ar[0]}.":".$ar[1] : $line;
+		if( not has(\@reac_edges,$findline.":Reactant") )
 			{
 			print "ERROR processing line ".$line." in inhibition block. \nCould not find relevant reactant edge. Skipping...\n";
 			next;
 			}
-		push @edges_to_remove, $line.":Reactant";
-		push @edges_to_add, $line.":Inhibition";
+		push @edges_to_remove, $findline.":Reactant";
+		push @edges_to_add, $findline.":Inhibition";
 	}
 	
 	my $bpg2 = duplicateNetworkGraph($bpg);
