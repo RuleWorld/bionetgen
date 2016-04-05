@@ -5,19 +5,6 @@ os:
 language: c++
 sudo: false
 
-addons:
-  apt:
-    packages:
-    - python-pip
-    - python-dev
-    - python-numpy
-    - libxml2-dev
-    - zlib1g-dev
-    - libbz2-dev
-    
-before_install:
-    - source osx_install.sh
-    - pip install --user python-libsbml
 
 notifications:
   slack: faederlab:l0waIGp58v8ZV74N7QmXGoWs
