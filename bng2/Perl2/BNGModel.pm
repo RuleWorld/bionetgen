@@ -376,6 +376,11 @@ sub readSBML
         # SBML translator
 		if ( $filename =~ /\.xml$/ )
 		{
+            if ( $model->Params->{no_atomizer} )
+            {
+                send_warning( "readFile(): BNG processing was halted. Attempted to import XML file with 'no-atomizer' flag activated.");
+                exit(0);
+            }
 			my $out;
 			($err, $out) = $model->readSBML($filename,$model->Params);
 			if ($err){
