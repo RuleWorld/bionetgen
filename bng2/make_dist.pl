@@ -407,18 +407,6 @@ if (defined $bindir)
             exit -1;
         }
         
-        #########
-        
-        # Build sbmlTranslator
-
-    		my $sbmlbuild_dir = File::Spec->catdir( $dist_dir, 'SBMLparser' );
-	    unless (-d $sbmlbuild_dir){  # sbmlbuild_dir doesn't exist!
-	        print "make_dist.pl error:\nbuild directory '${sbmlbuild_dir}' does not exist.\n";
-	        exit -1;
-	    }
-	
-        
-        #########
     }
 
     # go back to original directory
