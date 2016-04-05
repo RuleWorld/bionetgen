@@ -1,5 +1,0 @@
-{"reactions": [[["S0", "S1"], ["S2"]], [["S2"], ["S0", "S1"]], [[],["S0"]],[["S0"],[]]],
-"reactionsNames": ["Binding","Generation","Decay","Phosporylation","Double-Phosporylation","iMod","mMod","Ubiquitination"],
- "definitions": [[{"r":[0]},{"n":[]}],[{"r":[2]}],[{"r":[3]}],[{"n":[0]}],
- [{"n":[]}],[{"n":[]}],[{"n":[]}],[{"n":[]}]]
- }
