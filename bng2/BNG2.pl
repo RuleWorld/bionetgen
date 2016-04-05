@@ -93,6 +93,7 @@ my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'skip_actions'  => 0,  'action_skip_warn' => 1,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
+                             'no_atomizer'   => 0,
                              'output_dir'    => File::Spec->curdir()
                            );
 # Default params for Console mode
@@ -101,6 +102,7 @@ my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'skip_actions'  => 1,  'action_skip_warn' => 1,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
+                             'no_atomizer'   => 0,
                              'output_dir'    => File::Spec->curdir()
                            );
 
@@ -124,6 +126,7 @@ GetOptions( \%user_args,
             'findbin=s',
             'skip_actions|check',
             'no_nfsim|no-nfsim',
+            'no_atomizer|no-atomizer',
             'output_dir|outdir=s',
             'logging|log',
             'generate_network|netgen',

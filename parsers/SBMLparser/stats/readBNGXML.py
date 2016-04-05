@@ -1,1 +1,0 @@
-../SBMLparser/utils/readBNGXML.py
