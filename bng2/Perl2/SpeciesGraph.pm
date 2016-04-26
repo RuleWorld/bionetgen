@@ -316,7 +316,8 @@ sub readString
 	}
 	else
 	{
-	    $err = $sg->updateEdges( ALLOW_DANGLING_BONDS ); 
+	     $err = $sg->updateEdges();
+	#    $err = $sg->updateEdges( ALLOW_DANGLING_BONDS ); #Uncomment this line to allow dangling bonds
 		if ($err) {  return $err;  }
 	}
 
