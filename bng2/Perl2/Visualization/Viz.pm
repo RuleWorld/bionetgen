@@ -1098,6 +1098,23 @@ sub compressRuleMotifs
 	my @edges_to_remove = grep { $_=~/^(.*):.*:.*/; has(\@rules_to_remove,$1); } @edgelist;
 	my @new_edges = remapEdges(\@edges_to_remove,\@remap_pairs,0);
 	
+	# context edges from the input and output states of the motif will be removed
+	# this was done looking at mtorc.bngl results.
+	# THIS IS AN ASSUMPTION. There could be edge cases where this would miss out
+	# on some relevant context
+	# NEEDS TESTING! esp on fceri_ji
+	
+	my @edges_to_remove2;
+	foreach my $name(@motifnames)
+	{
+	my @reacprods = uniq
+					map { $_ =~ /^.*:(.*):.*$/; $1; }
+					grep { $_ =~ /^(.*):.*:.*$/; $1 eq $name;  } 
+					grep { $_ =~ /^.*:.*:(Reactant|Product)$/;  } 
+					@new_edges;
+	push @edges_to_remove2, map { my @x = ($name,$_,'Context'); join(':',@x);} @reacprods;
+	}
+	
 	my @nodelist2;
 	my @edgelist2;
 	my %nodetype2;
@@ -1108,7 +1125,8 @@ sub compressRuleMotifs
 	map { my $x = $_; $nodetype2{$x} = 'Rule'; } @motifnames;
 	
 	map { push @edgelist2, $_ if(not has(\@edges_to_remove,$_));} @edgelist;
-	push @edgelist2,@new_edges;
+	map { push @edgelist2, $_ if(not has(\@edges_to_remove2,$_));} @new_edges;
+	#push @edgelist2,@new_edges;
 	
 	my $bpg2 = duplicateNetworkGraph($bpg);
 	if(scalar @rules_to_remove > 0)
