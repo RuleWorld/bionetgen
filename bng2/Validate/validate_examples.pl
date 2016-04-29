@@ -604,6 +604,8 @@ sub run_BNG
 	my $log_file   = shift @_;
 	my $log        = shift @_;
 	my $outdir     = shift @_;
+	# passing other arguments to BNG - John Sekar
+	if(@_) { push @bngargs, @_; }
 	
     my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file );
     my $exit_status = run_command( $log, \*STDOUT, @command );
