@@ -605,8 +605,6 @@ sub run_BNG
 	my $log        = shift @_;
 	my $outdir     = shift @_;
 	
-	if(@_) { push @bngargs, @_; }
-	
     my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file );
     my $exit_status = run_command( $log, \*STDOUT, @command );
     unless ( $exit_status==0 )
