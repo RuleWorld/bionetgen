@@ -2401,7 +2401,10 @@ sub generate_network
 		my @k = keys %inst;
 		foreach my $rule(@k)
 			{
-			open(my $autfile,">>",$rule.".txt") or die "Not found!";
+			my $modelname = $BNGModel::GLOBAL_MODEL->Name;
+			my $rulename = $rule;
+			my $filename = join("_",($modelname,$rulename,"StatFactorCalculation")).".txt";
+			open(my $autfile,">>",$filename) or die "Not found!";
 			print $autfile "\nReaction\n".$str;
 			print $autfile "\nLumpFactor ".$inst{$rule};
 			print $autfile "\nReactionStatFactor: RuleStatFactor*LumpFactor = ".$rxn->StatFactor."\n";
