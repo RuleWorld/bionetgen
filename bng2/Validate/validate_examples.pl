@@ -244,9 +244,12 @@ foreach my $model (@models)
     print "\n";   # add blank line to console output
     multi_print( "[validate ${model}]\n", @allFH );
     multi_print( " -> processing model file with BioNetGen\n", @allFH );
+	
+	# adding additional flags if necessary
+	my $flags = [];
 
     # execute BNGL model;
-    run_BNG( $model_file, $model, $log_file, $log, $outdir );
+    run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags );
 
 	# check SBML import
     if ( -e "${datprefix}_SBML.bngl"  and  -e "${outprefix}_SBML.bngl" )
@@ -604,8 +607,10 @@ sub run_BNG
 	my $log_file   = shift @_;
 	my $log        = shift @_;
 	my $outdir     = shift @_;
+	my $flags      = shift @_;
 	
-    my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file );
+    my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file, @$flags );
+	
     my $exit_status = run_command( $log, \*STDOUT, @command );
     unless ( $exit_status==0 )
     {   # BNG encountered some problem..
