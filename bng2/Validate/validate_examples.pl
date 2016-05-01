@@ -247,6 +247,7 @@ foreach my $model (@models)
 	
 	# adding additional flags if necessary
 	my $flags = [];
+	if($model eq "statfactor") { push @$flags, "--write_autos"; }
 
     # execute BNGL model;
     run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags );
@@ -578,6 +579,30 @@ foreach my $model (@models)
 		}
 	}
 	
+	# check statistical factor calculation outputs
+	if($model eq 'statfactor')
+	{
+		my @suffixes = ('_R1_StatFactorCalculation.txt','_R2_StatFactorCalculation.txt','_R3_StatFactorCalculation.txt',
+						'__reverse_R1_StatFactorCalculation.txt','__reverse_R2_StatFactorCalculation.txt','__reverse_R3_StatFactorCalculation.txt');
+		multi_print( " -> checking statistical factor calculation outputs\n", @allFH );
+		foreach my $suffix(@suffixes)
+		{
+			if( -e $datprefix.$suffix  and  -e $outprefix.$suffix)
+			{
+				my $exit_status = diff_files( $datprefix.$suffix, $outprefix.$suffix );
+				if ($exit_status ne "")
+				{   
+					multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+					print "see $log_file for more details.\n";
+					close $log;
+					++$fail_count;
+					next MODEL;
+				}
+				print $log $SEPARATOR;
+			}
+		}
+	}
+	
     if ($delete_working_files)
     {   delete_files($outprefix);   }
 
@@ -638,7 +663,14 @@ sub delete_files
 					   _contactmap.gml   _ruleviz_pattern.gml  _ruleviz_operation.gml
 					   _regulatory_1.gml _regulatory_2.gml	
 					   _regulatory_3.gml _regulatory_4.gml 
-					   _SBML.bngl);
+					   _SBML.bngl
+					   _R1_StatFactorCalculation.txt
+					   _R2_StatFactorCalculation.txt 
+					   _R3_StatFactorCalculation.txt 
+					   __reverse_R1_StatFactorCalculation.txt
+					   __reverse_R2_StatFactorCalculation.txt
+					   __reverse_R3_StatFactorCalculation.txt 
+					   );
     my @files = ();
     foreach my $suffix (@suffixes)
     {   push @files, ${outprefix}.${suffix};   }

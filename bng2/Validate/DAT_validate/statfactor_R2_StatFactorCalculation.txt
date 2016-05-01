@@ -1,0 +1,31 @@
+R2:  A(b~0) + B() -> A(b~1) + B()  k
+Reactants: A(b~0).B()
+Products:  A(b~1).B()
+Correspondence Map (map:R->P)
+ 1->1( 1->1) 2->2()
+Reactant Automorphisms (autoR:R->R)
+ 1->1( 1->1) 2->2()
+Product Automorphisms (autoP:P->P)
+ 1->1( 1->1) 2->2()
+Candidate Product Automorphisms (candP = map o autoR o map^-1, candP:P->P)
+ 1->1( 1->1) 2->2()
+Rule Group (common to candP and autoP)
+ 1->1( 1->1) 2->2()
+|RG|: 1
+
+Stabilizer of the Reaction Center: 
+RG autos that are identity functions on the reaction center
+ 1->1( 1->1) 2->2()
+|Stab|: 1
+
+Pure Context Graphs
+B() 1
+|Crg|: 1! = 1
+
+1/RuleStatFactor = (|RG|/|Stab|)*|Crg| = 1
+RuleStatFactor = 1
+
+Reaction
+A(b~0) + B() -> A(b~1) + B() k #R2
+LumpFactor 1
+ReactionStatFactor: RuleStatFactor*LumpFactor = 1

@@ -1,0 +1,29 @@
+# Created by BioNetGen 2.2.6-stable
+begin parameters
+    1 k  1  # Constant
+    2 C  1  # Constant
+end parameters
+begin species
+    1 A(b~0) C
+    2 A(b~1) C
+    3 B() C
+    4 A(b~0!1).A(b~0!1) 0
+    5 A(b~0!1).A(b~1!1) 0
+    6 A(b~1!1).A(b~1!1) 0
+end species
+begin reactions
+    1 1,1 4 0.5*k #R1
+    2 1,2 5 k #R1
+    3 2,2 6 0.5*k #R1
+    4 1,3 2,3 k #R2
+    5 2,3 1,3 k #_reverse_R2
+    6 1,1,3,3 3,3,4 0.25*k #R3
+    7 1,2,3,3 3,3,5 0.5*k #R3
+    8 2,2,3,3 3,3,6 0.25*k #R3
+    9 4 1,1 k #_reverse_R1
+   10 5 1,2 k #_reverse_R1
+   11 6 2,2 k #_reverse_R1
+   12 3,3,4 1,1,3,3 0.5*k #_reverse_R3
+   13 3,3,5 1,2,3,3 0.5*k #_reverse_R3
+   14 3,3,6 2,2,3,3 0.5*k #_reverse_R3
+end reactions
