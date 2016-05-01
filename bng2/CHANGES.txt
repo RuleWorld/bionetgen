@@ -2,6 +2,9 @@ CHANGES to BioNetGen
 updated 22 June 2015
 https://github.com/RuleWorld/bionetgen/
 
+==== New Features ====
+* Show graph automorphisms and statistical factor calculations for rules and reactions: BNG2.pl model.bngl --write_autos (or) BNG2.pl model.bngl --autos
+
 == BioNetGen-2.2.6-stable ==
 '''''2015 June 22'''''
 
