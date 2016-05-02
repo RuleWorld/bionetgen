@@ -2441,6 +2441,35 @@ sub generate_network
     # Print result to netfile
     my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
+	
+	# STATISTICAL FACTOR FOR REACTIONS- DEBUGGING
+	# OUTPUTS A FILE FOR EACH RULE 
+	# SHOWING REACTION INSTANCES AND LUMPING
+	# DURING generate_network()
+	# NAME YOUR RULES FIRST!
+	# - JOHN SEKAR
+	
+	my $aut = $BNGModel::GLOBAL_MODEL->Params->{'write_autos'};
+	if($aut==1)
+	{
+	foreach my $rxn(@{$model->RxnList->Array})
+		{
+		my $str = $rxn->toString(1);
+		my %inst = %{$rxn->InstanceHash};
+		my @k = keys %inst;
+		foreach my $rule(@k)
+			{
+			my $modelname = $BNGModel::GLOBAL_MODEL->Name;
+			my $rulename = $rule;
+			my $filename = join("_",($modelname,$rulename,"StatFactorCalculation")).".txt";
+			open(my $autfile,">>",$filename) or die "Not found!";
+			print $autfile "\nReaction\n".$str;
+			print $autfile "\nLumpFactor ".$inst{$rule};
+			print $autfile "\nReactionStatFactor: RuleStatFactor*LumpFactor = ".$rxn->StatFactor."\n";
+			close($autfile);
+			}
+		}
+	}
 
     return '';
 
