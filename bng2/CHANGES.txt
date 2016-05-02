@@ -1,9 +1,13 @@
 CHANGES to BioNetGen
-updated 9 December 2015
+updated 1 May 2016
 https://github.com/RuleWorld/bionetgen/
 
+=======
 == BioNetGen-2.3.0 (testing release) ==
-'''''2015 June 22'''''
+'''''date tbd'''''
+
+==== New Features ====
+* Show graph automorphisms and statistical factor calculations for rules and reactions: BNG2.pl model.bngl --write_autos (or) BNG2.pl model.bngl --autos
 
 ==== Bug Fixes ====
 * Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.

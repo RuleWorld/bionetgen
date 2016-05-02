@@ -1,0 +1,28 @@
+begin parameters
+	k 	1
+	C	1
+end parameters
+
+begin molecule types
+	A(b~0~1)
+	B()
+end molecule types
+
+begin seed species
+	A(b~0)	C
+	A(b~1)	C
+	B()		C
+	
+end seed species
+begin reaction rules
+	# A simple symmetrical binding rule
+	R1: A(b) + A(b) <-> A(b!1).A(b!1) k,k
+	
+	# A simple rule with patterns that are pure context
+	R2: A(b~0) + B() <-> A(b~1) + B() k,k
+	
+	# An unnecessarily complicated rule with multiple symmetries and context
+	R3:	A(b) + A(b) + B() + B() <-> A(b!1).A(b!1) + B() + B()	k,k
+end reaction rules
+
+generate_network({overwrite=>1})

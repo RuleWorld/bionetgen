@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#nf!/usr/bin/perl
 # Validation script for BioNetGen suite.
 # 
 # SYNOPSIS:
@@ -117,6 +117,9 @@ our $SEPARATOR = "-" x 79 . "\n";
 my $pvalue = 0.01;
 # try to validate NFsim?                  
 my $check_nfsim = 1;
+# try to validate SBMLtranslator?   
+my $check_atomizer = 1;
+
 # arguments for BNG
 my @bngargs = ();
 # models to exclude
@@ -137,6 +140,7 @@ GetOptions( 'help|h'        => sub { display_help(); exit(0); },
 #            'outpath=s'     => \$outdir,
             'pvalue=f'      => \$pvalue,
             'nfsim!'        => \$check_nfsim,
+            'atomizer!'     => \$check_atomizer,
             'delete-files!' => \$delete_working_files,
             'exclude:s'     => \@exclude
           )
@@ -207,6 +211,28 @@ else
     push @bngargs, '--no-nfsim';
 }
     
+if ($check_atomizer)
+{
+    print " -> checking for sbmlTranslator executable\n";
+    my @args = ( $perlbin, $bngexec, '--findbin', 'sbmlTranslator' ); 
+    system(@args);
+    if ($? == -1) {  exit_error("failed to execute ($!)");  }
+    # check return value: 0 means NFsim was found successfully
+    if ( ($?>>8)==0 )
+    {
+        print "    ..found Atomizer\n";
+    }
+    else
+    {  
+        print "WARNING: validate_examples cannot find sbmlTranslator binary!\n";
+        print "Continuing, but will not validate sbmlTranslator.\n";
+        push @bngargs, '--no-atomizer';
+    }
+}
+else
+{   # tell BNG to not run NFsim
+    push @bngargs, '--no-atomizer';
+}
 
 
 # count number of tests and failures
@@ -244,9 +270,13 @@ foreach my $model (@models)
     print "\n";   # add blank line to console output
     multi_print( "[validate ${model}]\n", @allFH );
     multi_print( " -> processing model file with BioNetGen\n", @allFH );
+	
+	# adding additional flags if necessary
+	my $flags = [];
+	if($model eq "statfactor") { push @$flags, "--write_autos"; }
 
     # execute BNGL model;
-    run_BNG( $model_file, $model, $log_file, $log, $outdir );
+    run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags );
 
 	# check SBML import
     if ( -e "${datprefix}_SBML.bngl"  and  -e "${outprefix}_SBML.bngl" )
@@ -575,6 +605,30 @@ foreach my $model (@models)
 		}
 	}
 	
+	# check statistical factor calculation outputs
+	if($model eq 'statfactor')
+	{
+		my @suffixes = ('_R1_StatFactorCalculation.txt','_R2_StatFactorCalculation.txt','_R3_StatFactorCalculation.txt',
+						'__reverse_R1_StatFactorCalculation.txt','__reverse_R2_StatFactorCalculation.txt','__reverse_R3_StatFactorCalculation.txt');
+		multi_print( " -> checking statistical factor calculation outputs\n", @allFH );
+		foreach my $suffix(@suffixes)
+		{
+			if( -e $datprefix.$suffix  and  -e $outprefix.$suffix)
+			{
+				my $exit_status = diff_files( $datprefix.$suffix, $outprefix.$suffix );
+				if ($exit_status ne "")
+				{   
+					multi_print( "..FAILED!! $exit_status\n", @allFH ); 
+					print "see $log_file for more details.\n";
+					close $log;
+					++$fail_count;
+					next MODEL;
+				}
+				print $log $SEPARATOR;
+			}
+		}
+	}
+	
     if ($delete_working_files)
     {   delete_files($outprefix);   }
 
@@ -604,8 +658,10 @@ sub run_BNG
 	my $log_file   = shift @_;
 	my $log        = shift @_;
 	my $outdir     = shift @_;
+	my $flags      = shift @_;
 	
-    my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file );
+    my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file, @$flags );
+	
     my $exit_status = run_command( $log, \*STDOUT, @command );
     unless ( $exit_status==0 )
     {   # BNG encountered some problem..
@@ -633,7 +689,14 @@ sub delete_files
 					   _contactmap.gml   _ruleviz_pattern.gml  _ruleviz_operation.gml
 					   _regulatory_1.gml _regulatory_2.gml	
 					   _regulatory_3.gml _regulatory_4.gml 
-					   _SBML.bngl);
+					   _SBML.bngl
+					   _R1_StatFactorCalculation.txt
+					   _R2_StatFactorCalculation.txt 
+					   _R3_StatFactorCalculation.txt 
+					   __reverse_R1_StatFactorCalculation.txt
+					   __reverse_R2_StatFactorCalculation.txt
+					   __reverse_R3_StatFactorCalculation.txt 
+					   );
     my @files = ();
     foreach my $suffix (@suffixes)
     {   push @files, ${outprefix}.${suffix};   }

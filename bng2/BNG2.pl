@@ -93,7 +93,9 @@ my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'skip_actions'  => 0,  'action_skip_warn' => 1,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
-                             'output_dir'    => File::Spec->curdir()
+                             'output_dir'    => File::Spec->curdir(),
+                             'no_atomizer'   => 0,
+							 'write_autos'   => 0
                            );
 # Default params for Console mode
 my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
@@ -101,7 +103,9 @@ my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'skip_actions'  => 1,  'action_skip_warn' => 1,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
-                             'output_dir'    => File::Spec->curdir()
+                             'output_dir'    => File::Spec->curdir(),
+                             'no_atomizer'   => 0,
+							 'write_autos'   => 0
                            );
 
 
@@ -124,12 +128,14 @@ GetOptions( \%user_args,
             'findbin=s',
             'skip_actions|check',
             'no_nfsim|no-nfsim',
+            'no_atomizer|no-atomizer',
             'output_dir|outdir=s',
             'logging|log',
             'generate_network|netgen',
             'write_SBML|sbml',
             'write_mfile|mfile',
-            'write_xml|xml'
+            'write_xml|xml',
+			'write_autos|autos'
           )
 or die "Error in command line arguments (try: BNG2.pl --help)";
 

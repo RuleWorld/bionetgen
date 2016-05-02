@@ -1,0 +1,45 @@
+_reverse_R1:  A(b!1).A(b!1) -> A(b) + A(b)  k
+Reactants: A(b!1).A(b!1)
+Products:  A(b).A(b)
+Correspondence Map (map:R->P)
+ 1->1( 1->1) 2->2( 1->1)
+Reactant Automorphisms (autoR:R->R)
+ 1->1( 1->1) 2->2( 1->1)
+ 1->2( 1->1) 2->1( 1->1)
+Product Automorphisms (autoP:P->P)
+ 1->1( 1->1) 2->2( 1->1)
+ 1->2( 1->1) 2->1( 1->1)
+Candidate Product Automorphisms (candP = map o autoR o map^-1, candP:P->P)
+ 1->1( 1->1) 2->2( 1->1)
+ 1->2( 1->1) 2->1( 1->1)
+Rule Group (common to candP and autoP)
+ 1->1( 1->1) 2->2( 1->1)
+ 1->2( 1->1) 2->1( 1->1)
+|RG|: 2
+
+Stabilizer of the Reaction Center: 
+RG autos that are identity functions on the reaction center
+ 1->1( 1->1) 2->2( 1->1)
+|Stab|: 1
+
+Pure Context Graphs
+None
+|Crg|: 0! = 1
+
+1/RuleStatFactor = (|RG|/|Stab|)*|Crg| = 2
+RuleStatFactor = 0.5
+
+Reaction
+A(b~0!1).A(b~0!1) -> A(b~0) + A(b~0) k #_reverse_R1
+LumpFactor 2
+ReactionStatFactor: RuleStatFactor*LumpFactor = 1
+
+Reaction
+A(b~0!1).A(b~1!1) -> A(b~0) + A(b~1) k #_reverse_R1
+LumpFactor 2
+ReactionStatFactor: RuleStatFactor*LumpFactor = 1
+
+Reaction
+A(b~1!1).A(b~1!1) -> A(b~1) + A(b~1) k #_reverse_R1
+LumpFactor 2
+ReactionStatFactor: RuleStatFactor*LumpFactor = 1

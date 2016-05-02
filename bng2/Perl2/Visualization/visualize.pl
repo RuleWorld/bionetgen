@@ -109,6 +109,7 @@ sub getModel
 	#print $filename;
 	my $model = BNGModel->new();
 	$model->initialize();
+	$BNGModel::GLOBAL_MODEL = $model;
 	
 	#print "Opening file: ".$filename."\n";
 	my $err = $model->readModel(\%args) ;

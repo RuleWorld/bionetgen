@@ -1,0 +1,54 @@
+R3:  A(b) + A(b) + B() + B() -> A(b!1).A(b!1) + B() + B()  k
+Reactants: A(b).A(b).B().B()
+Products:  A(b!1).A(b!1).B().B()
+Correspondence Map (map:R->P)
+ 1->1( 1->1) 2->2( 1->1) 3->3() 4->4()
+Reactant Automorphisms (autoR:R->R)
+ 1->1( 1->1) 2->2( 1->1) 3->3() 4->4()
+ 1->1( 1->1) 2->2( 1->1) 3->4() 4->3()
+ 1->2( 1->1) 2->1( 1->1) 3->3() 4->4()
+ 1->2( 1->1) 2->1( 1->1) 3->4() 4->3()
+Product Automorphisms (autoP:P->P)
+ 1->1( 1->1) 2->2( 1->1) 3->3() 4->4()
+ 1->1( 1->1) 2->2( 1->1) 3->4() 4->3()
+ 1->2( 1->1) 2->1( 1->1) 3->3() 4->4()
+ 1->2( 1->1) 2->1( 1->1) 3->4() 4->3()
+Candidate Product Automorphisms (candP = map o autoR o map^-1, candP:P->P)
+ 1->1( 1->1) 2->2( 1->1) 3->3() 4->4()
+ 1->1( 1->1) 2->2( 1->1) 3->4() 4->3()
+ 1->2( 1->1) 2->1( 1->1) 3->3() 4->4()
+ 1->2( 1->1) 2->1( 1->1) 3->4() 4->3()
+Rule Group (common to candP and autoP)
+ 1->1( 1->1) 2->2( 1->1) 3->3() 4->4()
+ 1->1( 1->1) 2->2( 1->1) 3->4() 4->3()
+ 1->2( 1->1) 2->1( 1->1) 3->3() 4->4()
+ 1->2( 1->1) 2->1( 1->1) 3->4() 4->3()
+|RG|: 4
+
+Stabilizer of the Reaction Center: 
+RG autos that are identity functions on the reaction center
+ 1->1( 1->1) 2->2( 1->1) 3->3() 4->4()
+ 1->1( 1->1) 2->2( 1->1) 3->4() 4->3()
+|Stab|: 2
+
+Pure Context Graphs
+B() 2
+|Crg|: 2! = 2
+
+1/RuleStatFactor = (|RG|/|Stab|)*|Crg| = 4
+RuleStatFactor = 0.25
+
+Reaction
+A(b~0) + A(b~0) + B() + B() -> A(b~0!1).A(b~0!1) + B() + B() 0.25*k #R3
+LumpFactor 1
+ReactionStatFactor: RuleStatFactor*LumpFactor = 0.25
+
+Reaction
+A(b~0) + A(b~1) + B() + B() -> A(b~0!1).A(b~1!1) + B() + B() 0.5*k #R3
+LumpFactor 2
+ReactionStatFactor: RuleStatFactor*LumpFactor = 0.5
+
+Reaction
+A(b~1) + A(b~1) + B() + B() -> A(b~1!1).A(b~1!1) + B() + B() 0.25*k #R3
+LumpFactor 1
+ReactionStatFactor: RuleStatFactor*LumpFactor = 0.25

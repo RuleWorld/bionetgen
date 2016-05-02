@@ -1,34 +1,34 @@
-# Created by BioNetGen 2.2.6
+# Created by BioNetGen 2.2.6-stable
 begin parameters
-    1 k1_f       1.0  # Constant
-    2 k1_r       0.1  # Constant
-    3 k2_f       1.0  # Constant
-    4 k2_r       0.1  # Constant
-    5 k3_f       1.0  # Constant
-    6 _rateLaw1  k3_f*2  # ConstantExpression 2
+    1 k1_f            1.0  # Constant
+    2 k1_r            0.1  # Constant
+    3 k2_f            1.0  # Constant
+    4 k2_r            0.1  # Constant
+    5 k3_f            1.0  # Constant
 end parameters
 begin functions
-    1 A____() (MolA+MolA_MolB)+MolA_P
-    2 B____() MolB+MolA_MolB
+    1 functionRate4() k3_f*2
+    2 A____() (MolA_cell+MolA_MolB_cell)+MolA_P_cell
+    3 B____() MolB_cell+MolA_MolB_cell
 end functions
 begin species
-    1 @cell::MolA(_Pmod~0,molb) 1.0
+    1 @cell::MolA(_p~0,molb) 1.0
     2 @cell::MolB(mola,molb) 1.0
-    3 @cell::MolA(_Pmod~0,molb!1).MolB(mola!1,molb) 0
+    3 @cell::MolA(_p~0,molb!1).MolB(mola!1,molb) 0
     4 @cell::MolB(mola,molb!1).MolB(mola,molb!1) 0
-    5 @cell::MolA(_Pmod~_P,molb) 0
+    5 @cell::MolA(_p~_P,molb) 0
 end species
 begin reactions
     1 1,2 3 1*k1_f #R1 unit_conversion=1/1.0
-    2 2,2 4 0.5*_rateLaw1 #R5 unit_conversion=1/1.0
+    2 2,2 4 0.5*functionRate4 #R5 unit_conversion=1/1.0
     3 3 2,5 k2_f #R2
     4 3 1,2 k1_r #R3
     5 2,5 3 1*k2_r #R4 unit_conversion=1/1.0
 end reactions
 begin groups
-    1 MolA                 1
-    2 MolB                 2
-    3 MolA_MolB            3
-    4 MolA_P               5
-    5 __MolB__2            4
+    1 MolA_cell            1
+    2 MolB_cell            2
+    3 MolA_MolB_cell       3
+    4 MolA_P_cell          5
+    5 __MolB__2_cell       4
 end groups

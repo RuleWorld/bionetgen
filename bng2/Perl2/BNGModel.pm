@@ -67,6 +67,8 @@ use EnergyPattern;
 use Observable;
 use PopulationList;
 
+#Variables that determine whether the network has been generated
+my $NetFlag = 0; 
 
 # A place to store a reference to the current active model.
 # Useful when other classes need to find the model.
@@ -376,6 +378,11 @@ sub readSBML
         # SBML translator
 		if ( $filename =~ /\.xml$/ )
 		{
+            if ( $model->Params->{no_atomizer} )
+            {
+                send_warning( "readFile(): BNG processing was halted. Attempted to import XML file with 'no-atomizer' flag activated.");
+                exit(0);
+            }
 			my $out;
 			($err, $out) = $model->readSBML($filename,$model->Params);
 			if ($err){
@@ -1002,13 +1009,63 @@ sub readSBML
 	
 	                # execute action
 	                my $command = sprintf "\$model->%s(%s);", $action, $options;
-	                my $t_start = cpu_time(0);
-	                $err = eval $command;
-	                if ($@)   { $err = errgen($@);    goto EXIT; }
-	                if ($err) { $err = errgen($err);  goto EXIT; }
-	                my $t_elapsed = cpu_time($t_start);
-	                printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
-	            }
+		
+			#Check if the network is being read from a file
+			if($action eq "readFile")
+			{
+				my $file_name = $options;
+				$file_name  =~ s/(.*)file(\s*)=>(\s*)("|')//;
+                                $file_name  =~ s/("|')(.*)//;
+				$file_name =~ s/(.*)\.//;
+				if($file_name eq 'net'){$NetFlag = 1;}
+			}
+					
+			#The user has generated the network
+			if($action eq "generate_network"){$NetFlag = 1;}
+			my $method_name;
+			if ($action eq "simulate" && $NetFlag == 0)
+			{
+				#Extract method
+				$method_name = $options;
+				$method_name =~ s/(.*)method(\s*)=>(\s*)('|")//;
+				$method_name  =~ s/("|')(.*)//;
+				if($method_name =~ /^(ode|ssa|pla)$/)
+				{
+				 	my $t_start = cpu_time(0);					
+					#The simulation method requires a network
+					#The user has not supplied a command. Use defaults
+					my $cmd = sprintf "\$model->%s(%s);", "generate_network", "({overwrite=>1})";
+                                	$err = eval $cmd;
+                                	if ($@)   { $err = errgen($@);    goto EXIT; }
+                                 	if ($err) { $err = errgen($err);  goto EXIT; }
+                                 	my $t_elapsed = cpu_time($t_start);
+                                 	printf "CPU TIME: %s %.2f s.\n","generate_network", $t_elapsed;
+				 	$NetFlag = 1;
+				}
+			
+			}
+
+			if ($action =~ /^(simulate_ode|simulate_ssa|simulate_pla)$/ && $NetFlag == 0)
+                        {
+				 #The simulation method requires a network and the user has not generated one
+				 my $t_start = cpu_time(0); 
+                                 my $cmd = sprintf "\$model->%s(%s);", "generate_network", "({overwrite=>1})";
+                                 $err = eval $cmd;
+				 if ($@)   { $err = errgen($@);    goto EXIT; }	 
+				 if ($err) { $err = errgen($err);  goto EXIT; }
+                                 my $t_elapsed = cpu_time($t_start);
+				 printf "CPU TIME: %s %.2f s.\n","generate_network", $t_elapsed;
+			         $NetFlag = 1;
+                        }
+
+				my $t_start = cpu_time(0);
+	                	$err = eval $command;
+	                	if ($@)   { $err = errgen($@);    goto EXIT; }
+	                	if ($err) { $err = errgen($err);  goto EXIT; }
+	                	my $t_elapsed = cpu_time($t_start);
+	                	printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+
+		    }
 	            else
 	            {   # Try to execute general PERL code (Dangerous!!)
 	                if ( $model->Params->{allow_perl} )
@@ -2389,6 +2446,35 @@ sub generate_network
     # Print result to netfile
     my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
+	
+	# STATISTICAL FACTOR FOR REACTIONS- DEBUGGING
+	# OUTPUTS A FILE FOR EACH RULE 
+	# SHOWING REACTION INSTANCES AND LUMPING
+	# DURING generate_network()
+	# NAME YOUR RULES FIRST!
+	# - JOHN SEKAR
+	
+	my $aut = $BNGModel::GLOBAL_MODEL->Params->{'write_autos'};
+	if($aut==1)
+	{
+	foreach my $rxn(@{$model->RxnList->Array})
+		{
+		my $str = $rxn->toString(1);
+		my %inst = %{$rxn->InstanceHash};
+		my @k = keys %inst;
+		foreach my $rule(@k)
+			{
+			my $modelname = $BNGModel::GLOBAL_MODEL->Name;
+			my $rulename = $rule;
+			my $filename = join("_",($modelname,$rulename,"StatFactorCalculation")).".txt";
+			open(my $autfile,">>",$filename) or die "Not found!";
+			print $autfile "\nReaction\n".$str;
+			print $autfile "\nLumpFactor ".$inst{$rule};
+			print $autfile "\nReactionStatFactor: RuleStatFactor*LumpFactor = ".$rxn->StatFactor."\n";
+			close($autfile);
+			}
+		}
+	}
 
     return '';
 
