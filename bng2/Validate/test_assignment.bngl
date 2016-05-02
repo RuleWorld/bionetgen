@@ -1,0 +1,32 @@
+begin model
+begin parameters
+  param1 1
+  param2 2
+  param3 3
+end parameters
+begin molecule types
+  A()
+  B()
+  C()
+  X()
+end molecule types
+begin seed species
+  A() 1
+  B() 0
+  C() 0
+  X() 100
+end seed species
+begin observables
+  Molecules Obs1 A()
+  Molecules Obs2 B()
+  Molecules Obs3 C()
+end observables
+begin functions
+  func(x) if(Obs1(x)==1,param1,if(Obs2(x)>0,param2,if(Obs3(x)>0,param3,0)))
+end functions
+begin reaction rules
+  X()%x -> 0  func(x)
+end reaction rules
+end model
+#actions
+generate_network({overwrite=>1})

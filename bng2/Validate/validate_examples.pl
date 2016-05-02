@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#nf!/usr/bin/perl
 # Validation script for BioNetGen suite.
 # 
 # SYNOPSIS:
@@ -117,6 +117,9 @@ our $SEPARATOR = "-" x 79 . "\n";
 my $pvalue = 0.01;
 # try to validate NFsim?                  
 my $check_nfsim = 1;
+# try to validate SBMLtranslator?   
+my $check_atomizer = 1;
+
 # arguments for BNG
 my @bngargs = ();
 # models to exclude
@@ -137,6 +140,7 @@ GetOptions( 'help|h'        => sub { display_help(); exit(0); },
 #            'outpath=s'     => \$outdir,
             'pvalue=f'      => \$pvalue,
             'nfsim!'        => \$check_nfsim,
+            'atomizer!'     => \$check_atomizer,
             'delete-files!' => \$delete_working_files,
             'exclude:s'     => \@exclude
           )
@@ -207,6 +211,28 @@ else
     push @bngargs, '--no-nfsim';
 }
     
+if ($check_atomizer)
+{
+    print " -> checking for sbmlTranslator executable\n";
+    my @args = ( $perlbin, $bngexec, '--findbin', 'sbmlTranslator' ); 
+    system(@args);
+    if ($? == -1) {  exit_error("failed to execute ($!)");  }
+    # check return value: 0 means NFsim was found successfully
+    if ( ($?>>8)==0 )
+    {
+        print "    ..found Atomizer\n";
+    }
+    else
+    {  
+        print "WARNING: validate_examples cannot find sbmlTranslator binary!\n";
+        print "Continuing, but will not validate sbmlTranslator.\n";
+        push @bngargs, '--no-atomizer';
+    }
+}
+else
+{   # tell BNG to not run NFsim
+    push @bngargs, '--no-atomizer';
+}
 
 
 # count number of tests and failures

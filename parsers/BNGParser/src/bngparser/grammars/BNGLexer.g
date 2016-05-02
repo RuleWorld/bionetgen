@@ -152,8 +152,8 @@ OPTS: 'opts';
 //SSC
 WRITESSC: 'writeSSC';
 WRITESSCCFG: 'writeSSCcfg';
-
-//WRITEFILE: 'writeFile';
+FORMAT: 'format';
+WRITEFILE: 'writeFile';
 //WRITENET: 'writeNET';
 WRITEMODEL: 'writeModel';
 WRITEXML: 'writeXML';
@@ -161,6 +161,7 @@ WRITENETWORK: 'writeNetwork';
 WRITESBML: 'writeSBML';
 WRITEMDL: 'writeMDL';
 INCLUDE_MODEL: 'include_model';
+INCLUDE_NETWORK: 'include_network';
 PRETTY_FORMATTING: 'pretty_formatting';
 EVALUATE_EXPRESSIONS: 'evaluate_expressions';
 TEXTREACTION: 'TextReaction';

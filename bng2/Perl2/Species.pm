@@ -93,7 +93,8 @@ sub writeMDL
     #$py_string .= "'name':"."'s".$spec->Index." /* ".$spec->SpeciesGraph->toString()."* /',";
     $py_string .= "\"name\":"."\"s".$spec->Index."\",";
     $py_string .= "\"type\":"."\"".sprintf("%dD",$cdimension)."\",";
-    $py_string .= "\"dif\":"."\"".sprintf("%s", $difconst)."\"" ;
+    $py_string .= "\"dif\":"."\"".sprintf("%s", $difconst)."\"," ;
+    $py_string .= "\"extendedName\":"."\"".sprintf("%s", $spec->SpeciesGraph->toString())."\"";
     $py_string .= "}";
     
     push(@{$py_species},$py_string);

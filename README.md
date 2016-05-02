@@ -1,5 +1,6 @@
 # bionetgen
 Rule-based modeling framework
+[![Build Status](https://travis-ci.org/RuleWorld/bionetgen.svg?branch=master)](https://travis-ci.org/RuleWorld/bionetgen)
 
 BioNetGen is software for the specification and simulation of rule-based models of biochemical systems, including signal transduction, metabolic, and genetic regulatory networks. The BioNetGen language has recently been extended to include explicit representation of compartments. A recent review of methods for rule-based modeling is available in L. A. Chylek et al. (2013) Wiley Interdiscip. Rev. Syst. Biol. Med., 6, 13–36.
 
