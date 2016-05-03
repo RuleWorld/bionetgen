@@ -9,9 +9,18 @@ https://github.com/RuleWorld/bionetgen/
 ==== New Features ====
 * Show graph automorphisms and statistical factor calculations for rules and reactions: BNG2.pl model.bngl --write_autos (or) BNG2.pl model.bngl --autos
 
+==== SBML-to-BNGL Translator ====
+* Atomizer will now query BioGrid and PathWay commons when determining the active or binding site in a complex. Include the 'pathwaycommons' flag during model import to active this option
+* Several bugfixes to the lexical analysis engine
+* The SBML-to-BNGL translator was moved to its own repository@https://github.com/RuleWorld/atomizer. The Atomizer source code can also be found in the XXX directory within the BioNetGen distribution
+
 ==== Bug Fixes ====
 * Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.
 * Fixed a bug where a regex meant to remove the equality operator '=' in functions was inadvertently also removing the assignment operator '=='.
+
+==== Minor changes ===
+* BioNetGen will now automatically run the generate_network command if one of simulate_pla/simulate_ode/simulate_ssa methods are called and a network wasn't loaded into the system otherwise
+* Dangling bonds graph specifications of the kind A(b!1) are no longer allowed.
 
 == BioNetGen-2.2.6-stable ==
 '''''2015 June 22'''''
