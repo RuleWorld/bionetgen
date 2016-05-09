@@ -328,7 +328,7 @@ sub readString
     $rxn->Priority(0);
 
     # Create new Rxn entry in RxnList
-    my $n_add = $rlist->add($rxn);
+    my $n_add = $rlist->add($rxn,0,$plist);
 
     return ('');
 }
