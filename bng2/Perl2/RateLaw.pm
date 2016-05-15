@@ -938,7 +938,7 @@ sub toXML
 
     if ( $rl->Type eq "Arrhenius" )
     {   # not implemented since NFsim doesn't know how to use Arrhenius RateLaw!
-        warn "RateLaw::toXML does not yet support Arrhenius RateLaw!";
+        send_warning("RateLaw::toXML does not yet support Arrhenius RateLaw!");
         return "";
     }   
 
