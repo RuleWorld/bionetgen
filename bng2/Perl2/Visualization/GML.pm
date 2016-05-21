@@ -640,7 +640,7 @@ sub toGML_rule_network
 	my $bpg = shift @_;
 	my $collapsed = $bpg->{'Collapsed'};
 	my $embed = @_ ? shift @_ : 0;
-	
+	my $ruleNames = @_ ? shift @_: 0;
 	
 	#my @groups = ();
 	#my @groups = @_ ? @{shift @_} : ();
@@ -678,7 +678,8 @@ sub toGML_rule_network
 	foreach my $node(@nodelist2)
 	{
 		my $id = $indhash{$node};
-		my $name = prettify($node);
+		my $name = (has(['Rule','RuleGroup'],$nodetype{$node}) and not $ruleNames) ? "": prettify($node);
+		#my $name = prettify($node);
 		my $gmlnode = initializeGMLNode($id,$name,$node);
 		$gmlnode->{'gid'} = $indhash{$classes{$node}} if (has(\@classed,$node)==1);
 		$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);

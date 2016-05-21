@@ -155,6 +155,7 @@ sub getExecParams
 	
 	if(defined $args{'level'}) { $exec_params{'filter'}->{'level'} = $args{'level'} };
 	if(defined $args{'reset'}) { $exec_params{'reset'} = $args{'reset'} };
+	if(defined $args{'ruleNames'}) { $exec_params{'ruleNames'} = $args{'ruleNames'} };
 	
 	# pass along remaining parameters
 	if(defined $args{'doNotUseContextWhenGrouping'}) { $exec_params{'doNotUseContextWhenGrouping'} = $args{'doNotUseContextWhenGrouping'}; }
@@ -198,6 +199,7 @@ sub execute_params
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
 	
 	$args{'reset'} = 0 if(not has (\@argkeys,'reset'));
+	$args{'ruleNames'} = 0 if(not has (\@argkeys,'ruleNames'));
 	$args{'doNotUseContextWhenGrouping'} = 0 if(not has(\@argkeys,'doNotUseContextWhenGrouping'));
 	$args{'removeReactantContext'} = 0 if(not has(\@argkeys,'removeReactantContext'));
 	$args{'makeInhibitionEdges'} = 0 if(not has(\@argkeys,'makeInhibitionEdges'));
@@ -437,7 +439,7 @@ sub execute_params
 				}
 				else
 				{
-					$str = toGML_rule_network($bpg,$embed);
+					$str = toGML_rule_network($bpg,$embed,$args{'ruleNames'});
 				}
 			}
 		}
@@ -466,7 +468,7 @@ sub execute_params
 				my @grp = grep { $classes{$_} eq $grpname } keys %classes;
 				my $grptype = $nodetype{$grp[0]};
 				my $bpg2 = filterNetworkGraphByList($bpg,\@grp,1);
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'});
 				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grpname : $grpname),'type'=>$type);
 				if($output==1)
 				{
@@ -485,7 +487,7 @@ sub execute_params
 				# right now this is not efficient
 				# better way is to regenerate the network graph, but then u'll have to apply background n
 				# filter n other things again... boring!
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'});
 				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grp[0] : $grp[0]),'type'=>$type);
 				if($output==1)
 				{
@@ -562,7 +564,7 @@ sub execute_params
 		my @bpgs = map {makeRxnNetworkGraph($_)} @{$model->RxnList->Array};
 		my $bpg = mergeNetworkGraphs(flat(\@bpgs));
 		$bpg->{'Merged'} = 1;
-		$str = toGML_rule_network($bpg);
+		$str = toGML_rule_network($bpg,$args{'ruleNames'});
 	}
 		
 	

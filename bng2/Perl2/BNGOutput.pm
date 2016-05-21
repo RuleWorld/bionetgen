@@ -3139,6 +3139,7 @@ sub visualize
     		'mergepairs'   =>  0,
     		'embed'        =>  0,
 			'reset'		   =>  1,
+			'ruleNames'	   =>  0,
 			'doNotUseContextWhenGrouping' => 0,
 			'removeReactantContext' => 0,
 			'makeInhibitionEdges' => 0,
