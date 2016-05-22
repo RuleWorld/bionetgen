@@ -44,6 +44,135 @@ struct GMLGraph =>
 	'Edges'=>'@',
 };
 
+# new versions of things
+struct NodeGML =>
+{
+	'ID' => '$',
+	'label' => '$',
+	'gid' => '$',
+	'isGroup' => '$',
+
+	'graphics' => '$',
+	'LabelGraphics' => '$',
+	
+	'object' =>'$'
+};
+
+struct NodeGraphicsGML =>
+{
+	'hasOutline' => '$',
+	'type' => '$',
+	'fill' => '$',
+};
+
+struct LabelGraphicsGML =>
+{
+	'text' => '$',
+	'fontSize' => '$',
+	'fontName' => '$',
+	'anchor' => '$',
+};
+
+struct EdgeGML =>
+{
+	'source'=> '$',
+	'target'=> '$',
+};
+
+sub newnode
+{
+	my ($id,$label,$object) = @_;
+	my $gmlnode = NodeGML->new();
+	$gmlnode->{'ID'} = $id;
+	$gmlnode->{'label'} = $label;
+	$gmlnode->{'object'} = $object;
+	$gmlnode->{'isGroup'} = 0;
+	$gmlnode->{'gid'} = "";
+	my $graphics = NodeGraphicsGML->new();
+	$graphics->{'hasOutline'} = "0";
+	$graphics->{'type'} = "ellipse";
+	$graphics->{'fill'} = "#CCCCFF";
+	$gmlnode->{'graphics'} = $graphics;
+	my $labelgraphics = LabelGraphicsGML->new();
+	$labelgraphics->{'text'} = $label;
+	$labelgraphics->{'fontSize'} = "12";
+	$labelgraphics->{'fontName'} = "Dialog";
+	$labelgraphics->{'anchor'} = "c";
+	$gmlnode->{'LabelGraphics'} = $labelgraphics;
+	return $gmlnode;
+};
+
+sub printnode
+{
+	my $node = shift @_;
+	my $q0 = " ";
+	my $q1 = " \"";
+	my $q2 = "\" ";
+	my $q3 = " [ ";
+	my $q4 = " ] ";
+	my @nodestrs;
+	my @strs = ();
+	push @strs,"id".$q0.$node->{'ID'}.$q0;
+	push @strs,"label".$q1.$node->{'label'}.$q2;
+	push @strs,"isGroup".$q0.$node->{'isGroup'}.$q0;
+	push @strs,"gid".$q1.$node->{'gid'}.$q2;
+	push @nodestrs, join(" ",@strs);
+	@strs = ();
+	my $graphics = $node->{'graphics'};
+	push @strs,"type".$q1.$graphics->{'type'}.$q2;
+	push @strs,"fill".$q1.$graphics->{'fill'}.$q2;
+	push @strs,"hasOutline".$q0.$graphics->{'hasOutline'}.$q0;
+	push @nodestrs, "graphics".$q3.join(" ",@strs).$q4;
+	@strs = ();
+	my $labelgraphics = $node->{'LabelGraphics'};
+	push @strs,"text".$q1.$labelgraphics->{'text'}.$q2;
+	push @strs,"fontSize".$q0.$labelgraphics->{'fontSize'}.$q0;
+	push @strs,"fontName".$q1.$labelgraphics->{'fontName'}.$q2;
+	push @strs,"anchor".$q1.$labelgraphics->{'anchor'}.$q2;
+	push @nodestrs, "LabelGraphics".$q3.join(" ",@strs).$q4;
+	my $str = "node [\n".join(" ",@nodestrs)."\n ]";
+	return $str;
+}
+
+sub newedge
+{
+	my ($source,$target,$object) = @_;
+	my $gmledge = EdgeGML->new();
+	$gmledge->{'source'} = $source;
+	$gmledge->{'target'} = $target;
+	return $gmledge;
+};
+
+sub style_node_rule_network
+{
+	my $node = shift @_;
+	my $nodetype = @_ ?  shift @_ : 'Default';
+	my %defaults = ('hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFFFF");
+	my %rule = ('hasOutline'=>"0",'type'=>"ellipse",'fill'=>"#CCCCFF");
+	my %pattern = ('hasOutline'=>"0",'type'=>"ellipse",'fill'=>"#FFD4C3");
+	my %properties = (
+	'Default'=> copyhash(%defaults),
+	'Rule' => copyhash(%rule),
+	'AtomicPattern' => copyhash(%pattern),
+	'RuleGroup' => copyhash(%rule),
+	'PatternGroup' => copyhash(%pattern)
+	);
+	my %prop = %{$properties{$nodetype}};
+	foreach my $key(keys %prop)
+		{
+		$node->{'graphics'}->{$key} = $prop{$key};
+		}
+	return $node;
+};
+
+sub copyhash
+{
+	my %hash = @_;
+	my %newhash = %hash;
+	return \%newhash;
+};
+
+# old versions
 sub initializeGMLNode
 {
 	my $id = shift @_;
@@ -698,6 +827,23 @@ sub toGML_rule_network
 		push @gmlnodes, $gmlnode;
 	}
 	
+	# GMLv2 new stuff 5/22/2016
+	my @gmlnodes2 = ();
+	foreach my $node(@nodelist2)
+	{
+	my $id = $indhash{$node};
+	my $name = (has(['Rule','RuleGroup'],$nodetype{$node}) and not $ruleNames) ? "": prettify($node);
+	
+	my $gmlnode = newnode($id,$name,$node);
+	$gmlnode->{'gid'} = $indhash{$classes{$node}} if (has(\@classed,$node)==1);
+	$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);
+	style_node_rule_network($gmlnode,$nodetype{$node});
+	printnode($gmlnode);
+	push @gmlnodes2,$gmlnode;
+	}
+	#@gmlnodes = @gmlnodes2;
+	
+	
 	my @gmledges = ();
 	foreach my $edge( @edgelist )
 	{
@@ -715,7 +861,21 @@ sub toGML_rule_network
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
 	return printGML($gmlgraph);
+	#return printGML2($gmlgraph);
 	
+}
+
+sub printGML2
+{
+	my $gmlgraph = shift @_;
+	my @nodes = @{$gmlgraph->{'Nodes'}};
+	my @edges = @{$gmlgraph->{'Edges'}};
+	my @nodestrings = map { printnode($_) } @nodes;
+	
+	my $string = "graph\n[\n directed 1\n";
+	$string .= join("\n",@nodestrings)."\n";
+	$string .= "]\n";	
+	return $string;
 }
 
 sub toGML_process
@@ -911,6 +1071,7 @@ sub styleEdge
 	$gmledge->{'fill'} = "#000000";
 	return;
 }
+
 
 
 1;
