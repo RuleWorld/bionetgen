@@ -9,7 +9,6 @@ use Class::Struct;
 
 # BNG Modules
 use Visualization::StructureGraph;
-use Visualization::GML2;
 
 # basic structures and methods
 struct GMLNode => 
