@@ -55,14 +55,18 @@ struct NodeGML =>
 	'graphics' => '$',
 	'LabelGraphics' => '$',
 	
-	'object' =>'$'
+	'object' =>'$',
+	'embed' => '$'
 };
 
 struct NodeGraphicsGML =>
 {
-	'hasOutline' => '$',
 	'type' => '$',
 	'fill' => '$',
+	'hasOutline' => '$',
+	'outlineWidth' => '$',
+	'outlineStyle' => '$',
+	'outline' => '$',
 };
 
 struct LabelGraphicsGML =>
@@ -70,6 +74,7 @@ struct LabelGraphicsGML =>
 	'text' => '$',
 	'fontSize' => '$',
 	'fontName' => '$',
+	'fontStyle' => '$',
 	'anchor' => '$',
 };
 
@@ -77,6 +82,17 @@ struct EdgeGML =>
 {
 	'source'=> '$',
 	'target'=> '$',
+	'object'=> '$',
+	'graphics' => '$'
+};
+
+struct EdgeGraphicsGML =>
+{
+	'width' => '$',
+	'style' => '$',
+	'fill' => '$',
+	'sourceArrow' => '$',
+	'targetArrow' => '$'
 };
 
 sub newnode
@@ -89,10 +105,13 @@ sub newnode
 	$gmlnode->{'isGroup'} = 0;
 	$gmlnode->{'gid'} = "";
 	my $graphics = NodeGraphicsGML->new();
-	$graphics->{'hasOutline'} = "0";
 	$graphics->{'type'} = "ellipse";
 	$graphics->{'fill'} = "#CCCCFF";
 	$gmlnode->{'graphics'} = $graphics;
+	$graphics->{'hasOutline'} = "0";
+	$graphics->{'outlineWidth'} = "1";
+	$graphics->{'outlineStyle'} = "line";
+	$graphics->{'outline'} = "#CCCCFF";
 	my $labelgraphics = LabelGraphicsGML->new();
 	$labelgraphics->{'text'} = $label;
 	$labelgraphics->{'fontSize'} = "12";
@@ -115,19 +134,23 @@ sub printnode
 	push @strs,"id".$q0.$node->{'ID'}.$q0;
 	push @strs,"label".$q1.$node->{'label'}.$q2;
 	push @strs,"isGroup".$q0.$node->{'isGroup'}.$q0;
-	push @strs,"gid".$q1.$node->{'gid'}.$q2;
+	push @strs,($node->{'gid'} ne "") ? "gid".$q0.$node->{'gid'}.$q0 : "gid".$q1.$q2;
 	push @nodestrs, join(" ",@strs);
 	@strs = ();
 	my $graphics = $node->{'graphics'};
 	push @strs,"type".$q1.$graphics->{'type'}.$q2;
 	push @strs,"fill".$q1.$graphics->{'fill'}.$q2;
 	push @strs,"hasOutline".$q0.$graphics->{'hasOutline'}.$q0;
+	push @strs,"outlineWidth".$q0.$graphics->{'outlineWidth'}.$q0;
+	push @strs,"outlineStyle".$q1.$graphics->{'outlineStyle'}.$q2;
+	push @strs,"outline".$q1.$graphics->{'outline'}.$q2;
 	push @nodestrs, "graphics".$q3.join(" ",@strs).$q4;
 	@strs = ();
 	my $labelgraphics = $node->{'LabelGraphics'};
 	push @strs,"text".$q1.$labelgraphics->{'text'}.$q2;
 	push @strs,"fontSize".$q0.$labelgraphics->{'fontSize'}.$q0;
 	push @strs,"fontName".$q1.$labelgraphics->{'fontName'}.$q2;
+	push @strs,"fontStyle".$q1.$labelgraphics->{'fontStyle'}.$q2;
 	push @strs,"anchor".$q1.$labelgraphics->{'anchor'}.$q2;
 	push @nodestrs, "LabelGraphics".$q3.join(" ",@strs).$q4;
 	my $str = "node [\n".join(" ",@nodestrs)."\n ]";
@@ -136,35 +159,181 @@ sub printnode
 
 sub newedge
 {
-	my ($source,$target,$object) = @_;
+	my ($source,$target,$forwardarrow,$reversearrow,$object) = @_;
 	my $gmledge = EdgeGML->new();
 	$gmledge->{'source'} = $source;
 	$gmledge->{'target'} = $target;
+	$gmledge->{'object'} = $object;
+	my $graphics = EdgeGraphicsGML->new();
+	$graphics->{'width'} = "1";
+	$graphics->{'style'} = "line";
+	$graphics->{'fill'} = "#000000";
+	$graphics->{'sourceArrow'} = $reversearrow ? "standard" : "none";
+	$graphics->{'targetArrow'} = $forwardarrow ? "standard" : "none";
+	$gmledge->{'graphics'} = $graphics;
 	return $gmledge;
 };
+
+sub printedge
+{
+	my $edge = shift @_;
+	my $q0 = " ";
+	my $q1 = " \"";
+	my $q2 = "\" ";
+	my $q3 = " [ ";
+	my $q4 = " ] ";
+	my @edgestrs;
+	my @strs = ();
+	push @strs,"source".$q0.$edge->{'source'}.$q0;
+	push @strs,"target".$q0.$edge->{'target'}.$q0;
+	push @edgestrs, @strs;
+	@strs = ();
+	my $graphics = $edge->{'graphics'};
+	push @strs,"width".$q0.$graphics->{'width'}.$q0;
+	push @strs,"style".$q1.$graphics->{'style'}.$q2;
+	push @strs,"fill".$q1.$graphics->{'fill'}.$q2;
+	push @strs,"sourceArrow".$q1.$graphics->{'sourceArrow'}.$q2;
+	push @strs,"targetArrow".$q1.$graphics->{'targetArrow'}.$q2;
+	push @edgestrs, "graphics".$q3.join(" ",@strs).$q4;
+	my $str = "edge [\n".join(" ",@edgestrs)."\n ]";
+	return $str;
+}
 
 sub style_node_rule_network
 {
 	my $node = shift @_;
-	my $nodetype = @_ ?  shift @_ : 'Default';
-	my %defaults = ('hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFFFF");
-	my %rule = ('hasOutline'=>"0",'type'=>"ellipse",'fill'=>"#CCCCFF");
-	my %pattern = ('hasOutline'=>"0",'type'=>"ellipse",'fill'=>"#FFD4C3");
-	my %properties = (
-	'Default'=> copyhash(%defaults),
-	'Rule' => copyhash(%rule),
-	'AtomicPattern' => copyhash(%pattern),
-	'RuleGroup' => copyhash(%rule),
-	'PatternGroup' => copyhash(%pattern)
-	);
-	my %prop = %{$properties{$nodetype}};
-	foreach my $key(keys %prop)
+	my $nodetype = shift @_;
+	my $graphtype = shift @_;
+	my $prop = load_rule_network_nodestyledefaults($nodetype,$graphtype);
+	foreach my $key(keys %$prop)
 		{
-		$node->{'graphics'}->{$key} = $prop{$key};
+		$node->{'graphics'}->{$key} = $prop->{$key};
+		}
+	$prop = load_rule_network_labelstyledefaults($nodetype,$graphtype);
+	foreach my $key(keys %$prop)
+		{
+		$node->{'LabelGraphics'}->{$key} = $prop->{$key};
 		}
 	return $node;
 };
+sub style_edge_rule_network
+{
+	my $edge = shift @_;
+	my $edgetype = shift @_;
+	my $graphtype = shift @_;
+	my $prop = load_rule_network_edgestyledefaults($edgetype,$graphtype);
+	
+	foreach my $key(keys %$prop)
+		{
+		$edge->{'graphics'}->{$key} = $prop->{$key};
+		}
 
+	return $edge;
+};
+
+sub load_rule_network_nodestyledefaults
+{
+	my $nodetype = shift @_;
+	my $graphtype = shift @_;
+	
+	my %normal = 
+	(
+		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
+		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
+		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
+		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
+	);
+	my %grouped = 
+	(
+		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
+		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
+		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
+		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
+	);
+	my %collapsed = 
+	(
+		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
+		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
+		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
+		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
+	);
+	
+	my %prophash = ('Normal'=>\%normal,'Grouped'=>\%grouped,'Collapsed'=>\%collapsed);
+	
+	return $prophash{$graphtype}->{$nodetype};
+};
+sub load_rule_network_labelstyledefaults
+{
+	my $nodetype = shift @_;
+	my $graphtype = shift @_;
+	
+	my %normal = 
+	(
+		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'RuleGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"c"},
+		'AtomicPattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'PatternGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"c"},
+	);
+	my %grouped = 
+	(
+		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'RuleGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+		'AtomicPattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'PatternGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+	);
+	my %collapsed = 
+	(
+		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'RuleGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'AtomicPattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'PatternGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+	);
+	
+	my %prophash = ('Normal'=>\%normal,'Grouped'=>\%grouped,'Collapsed'=>\%collapsed);
+	
+	return $prophash{$graphtype}->{$nodetype};
+};
+sub load_rule_network_edgestyledefaults
+{
+	my $edgetype = shift @_;
+	my $graphtype = shift @_;
+	my %normal = 
+	(
+		'Reactant' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Product' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Context' => {'width'=>"1",'style'=>"line",'fill'=>"#AAAAAA",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Inhibition' => {'width'=>"1",'style'=>"line",'fill'=>"#FF0000",'sourceArrow'=>"none",'targetArrow'=>"crows_foot_one"},
+	);
+	my %grouped = 
+	(
+		'Reactant' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Product' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Context' => {'width'=>"1",'style'=>"line",'fill'=>"#AAAAAA",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Inhibition' => {'width'=>"1",'style'=>"line",'fill'=>"#FF0000",'sourceArrow'=>"none",'targetArrow'=>"crows_foot_one"},
+	);
+	my %collapsed = 
+	(
+		'Reactant' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Product' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Context' => {'width'=>"1",'style'=>"line",'fill'=>"#AAAAAA",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Inhibition' => {'width'=>"1",'style'=>"line",'fill'=>"#FF0000",'sourceArrow'=>"none",'targetArrow'=>"crows_foot_one"},
+	);
+	my %prophash = ('Normal'=>\%normal,'Grouped'=>\%grouped,'Collapsed'=>\%collapsed);
+	
+	return $prophash{$graphtype}->{$edgetype};
+};
 sub copyhash
 {
 	my %hash = @_;
@@ -768,6 +937,7 @@ sub toGML_rule_network
 {
 	my $bpg = shift @_;
 	my $collapsed = $bpg->{'Collapsed'};
+	my $grouped = defined $bpg->{'NodeClass'} ? 1 : 0;
 	my $embed = @_ ? shift @_ : 0;
 	my $ruleNames = @_ ? shift @_: 0;
 	
@@ -804,6 +974,8 @@ sub toGML_rule_network
 	my @nodelist2 = sort { $nodetypeorder{$nodetype{$a}} <=> $nodetypeorder{$nodetype{$b}} || $a cmp $b } @nodelist; 
 	#print join "\n",@nodelist2;exit;
 	my %indhash = indexHash( [@nodelist2] );
+	
+	# OLD gmlnode & gmledge
 	foreach my $node(@nodelist2)
 	{
 		my $id = $indhash{$node};
@@ -826,24 +998,6 @@ sub toGML_rule_network
 			}
 		push @gmlnodes, $gmlnode;
 	}
-	
-	# GMLv2 new stuff 5/22/2016
-	my @gmlnodes2 = ();
-	foreach my $node(@nodelist2)
-	{
-	my $id = $indhash{$node};
-	my $name = (has(['Rule','RuleGroup'],$nodetype{$node}) and not $ruleNames) ? "": prettify($node);
-	
-	my $gmlnode = newnode($id,$name,$node);
-	$gmlnode->{'gid'} = $indhash{$classes{$node}} if (has(\@classed,$node)==1);
-	$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);
-	style_node_rule_network($gmlnode,$nodetype{$node});
-	printnode($gmlnode);
-	push @gmlnodes2,$gmlnode;
-	}
-	#@gmlnodes = @gmlnodes2;
-	
-	
 	my @gmledges = ();
 	foreach my $edge( @edgelist )
 	{
@@ -856,12 +1010,52 @@ sub toGML_rule_network
 		styleEdge2($gmledge,$type);
 		push @gmledges,$gmledge;
 	}
+	
+	# GMLv2 new nodegml and edgegml 5/22/2016 
+	my @gmlnodes2 = ();
+	foreach my $node(@nodelist2)
+	{
+		my $id = $indhash{$node};
+		my $name = (has(['Rule','RuleGroup'],$nodetype{$node}) and not $ruleNames) ? "": prettify($node);
+		
+		my $gmlnode = newnode($id,$name,$node);
+		$gmlnode->{'gid'} = $indhash{$classes{$node}} if (has(\@classed,$node)==1);
+		$gmlnode->{'isGroup'} = 1 if (has(\@classnodes,$node)==1);
+		
+		my $graphtype = $collapsed ? 'Collapsed' : $grouped ? 'Grouped' : 'Normal';
+		style_node_rule_network($gmlnode,$nodetype{$node},$graphtype);
+		push @gmlnodes2,$gmlnode;
+	}
+	@gmlnodes = @gmlnodes2;
+	my @gmledges2 = ();
+	foreach my $edge( @edgelist )
+	{
+		my ($r,$p,$type) = split(":",$edge);
+		my $source;
+		my $target;
+		if( ($type eq "Reactant") or ($type eq "Context") )
+			{
+			$source = $indhash{$p}; $target = $indhash{$r};
+			}
+		else
+			{
+			$source = $indhash{$r}; $target = $indhash{$p};
+			}
+		my $gmledge = newedge($source,$target,1,0,$edge);
+		
+		my $graphtype = $collapsed ? 'Collapsed' : $grouped ? 'Grouped' : 'Normal';
+		style_edge_rule_network($gmledge,$type,$graphtype);
+		push @gmledges2,$gmledge;
+	}
+	@gmledges = @gmledges2;
+	
 
+	
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
-	return printGML($gmlgraph);
-	#return printGML2($gmlgraph);
+	#return printGML($gmlgraph);
+	return printGML2($gmlgraph);
 	
 }
 
@@ -871,9 +1065,11 @@ sub printGML2
 	my @nodes = @{$gmlgraph->{'Nodes'}};
 	my @edges = @{$gmlgraph->{'Edges'}};
 	my @nodestrings = map { printnode($_) } @nodes;
+	my @edgestrings = map { printedge($_) } @edges;
 	
 	my $string = "graph\n[\n directed 1\n";
 	$string .= join("\n",@nodestrings)."\n";
+	$string .= join("\n",@edgestrings)."\n";
 	$string .= "]\n";	
 	return $string;
 }
