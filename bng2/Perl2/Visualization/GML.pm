@@ -417,16 +417,18 @@ sub load_rule_network_nodestyledefaults
 {
 	my $nodetype = shift @_;
 	my $graphtype = shift @_;
-	
+	#FFD4C3
+	#CCCCFF
+	#FFD391
 	my %normal = 
 	(
-		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CC99FF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
-		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
+		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CC99FF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
-		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFE9C7",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
-		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
+		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFE9C7",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
 	);
 	return $normal{$nodetype};
