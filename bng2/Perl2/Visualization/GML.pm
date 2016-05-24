@@ -247,32 +247,7 @@ sub load_rule_network_nodestyledefaults
 		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
 	);
-	my %grouped = 
-	(
-		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
-		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
-		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
-		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
-	);
-	my %collapsed = 
-	(
-		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
-		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CCCCFF",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#7777FD"},
-		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
-		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFD4C3",
-					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#FFAE8E"},
-	);
-	
-	my %prophash = ('Normal'=>\%normal,'Grouped'=>\%grouped,'Collapsed'=>\%collapsed);
-	
-	return $prophash{$graphtype}->{$nodetype};
+	return $normal{$nodetype};
 };
 sub load_rule_network_labelstyledefaults
 {
@@ -286,24 +261,8 @@ sub load_rule_network_labelstyledefaults
 		'AtomicPattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
 		'PatternGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"c"},
 	);
-	my %grouped = 
-	(
-		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'RuleGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
-		'AtomicPattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'PatternGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
-	);
-	my %collapsed = 
-	(
-		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'RuleGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'AtomicPattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'PatternGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-	);
-	
-	my %prophash = ('Normal'=>\%normal,'Grouped'=>\%grouped,'Collapsed'=>\%collapsed);
-	
-	return $prophash{$graphtype}->{$nodetype};
+
+	return $normal{$nodetype};
 };
 sub load_rule_network_edgestyledefaults
 {
@@ -316,23 +275,7 @@ sub load_rule_network_edgestyledefaults
 		'Context' => {'width'=>"1",'style'=>"line",'fill'=>"#AAAAAA",'sourceArrow'=>"none",'targetArrow'=>"standard"},
 		'Inhibition' => {'width'=>"1",'style'=>"line",'fill'=>"#FF0000",'sourceArrow'=>"none",'targetArrow'=>"crows_foot_one"},
 	);
-	my %grouped = 
-	(
-		'Reactant' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
-		'Product' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
-		'Context' => {'width'=>"1",'style'=>"line",'fill'=>"#AAAAAA",'sourceArrow'=>"none",'targetArrow'=>"standard"},
-		'Inhibition' => {'width'=>"1",'style'=>"line",'fill'=>"#FF0000",'sourceArrow'=>"none",'targetArrow'=>"crows_foot_one"},
-	);
-	my %collapsed = 
-	(
-		'Reactant' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
-		'Product' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
-		'Context' => {'width'=>"1",'style'=>"line",'fill'=>"#AAAAAA",'sourceArrow'=>"none",'targetArrow'=>"standard"},
-		'Inhibition' => {'width'=>"1",'style'=>"line",'fill'=>"#FF0000",'sourceArrow'=>"none",'targetArrow'=>"crows_foot_one"},
-	);
-	my %prophash = ('Normal'=>\%normal,'Grouped'=>\%grouped,'Collapsed'=>\%collapsed);
-	
-	return $prophash{$graphtype}->{$edgetype};
+	return $normal{$edgetype};
 };
 sub copyhash
 {
@@ -529,6 +472,7 @@ sub toGML_rule_operation
 
 	my @structnodes = grep ( { $_->{'Type'} ne 'BondState' and $_->{'Type'} ne 'GraphOp'} @nodelist);
 	my @gmlnodes = ();
+	# old GML
 	foreach my $node(@nodelist)
 	{
 		my $id = $node->{'ID'};
@@ -589,7 +533,6 @@ sub toGML_rule_operation
 	
 	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
 	my @gmledges = ();
-	
 	# make edges for bonds
 	foreach my $node (@bondnodes)
 	{
@@ -682,6 +625,11 @@ sub toGML_rule_operation
 	{
 	styleEdge($edge);
 	}
+	
+	# new gml nodes and edges 
+	my @gmlnodes2 = ();
+	
+	
 	
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
