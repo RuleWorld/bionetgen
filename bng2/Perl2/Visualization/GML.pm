@@ -247,7 +247,7 @@ sub style_node_rule_operation
 		$node->{'LabelGraphics'}->{$key} = $prop->{$key};
 		}
 	return $node;
-}
+};
 
 sub style_edge_rule_operation
 {
@@ -262,7 +262,98 @@ sub style_edge_rule_operation
 		}
 
 	return $edge;
+};
+
+sub style_node_rule_pattern
+{
+	my $node = shift @_;
+	my $nodetype = shift @_;
+	my $prop = load_rule_pattern_nodestyledefaults($nodetype);
+	foreach my $key(keys %$prop)
+		{
+		$node->{'graphics'}->{$key} = $prop->{$key};
+		}
+	$prop = load_rule_pattern_labelstyledefaults($nodetype);
+	return $node if ($nodetype eq 'Pattern');
+	foreach my $key(keys %$prop)
+		{
+		$node->{'LabelGraphics'}->{$key} = $prop->{$key};
+		}
+	return $node;
 }
+sub style_edge_rule_pattern
+{
+	my $edge = shift @_;
+	my $edgetype = shift @_;
+	
+	my $prop = load_rule_pattern_edgestyledefaults($edgetype);
+	
+	foreach my $key(keys %$prop)
+		{
+		$edge->{'graphics'}->{$key} = $prop->{$key};
+		}
+
+	return $edge;
+};
+
+sub load_rule_pattern_nodestyledefaults
+{
+	my $nodetype = shift @_;
+	my %convert = ('Mol'=>'Molecule',
+	'Comp'=>'Component',
+	'CompState'=>'InternalState',
+	'Pattern'=>'Pattern',
+	'Rule'=>'Rule' );
+	
+	my %normal = 
+	(
+		'Molecule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#EFEFEF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
+		'Component' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFFFFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
+		'InternalState' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFF0A7",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
+		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CC99FF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
+		'Pattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFFFFF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
+	);
+	return $normal{$convert{$nodetype}};
+}
+
+sub load_rule_pattern_labelstyledefaults
+{
+	my $nodetype = shift @_;
+	my %convert = ('Mol'=>'Molecule',
+	'Comp'=>'Component',
+	'CompState'=>'InternalState',
+	'Pattern'=>'Pattern',
+	'Rule'=>'Rule' );
+	my %normal = 
+	(
+		'Molecule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+		'Component' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
+		'InternalState' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'Pattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+	);
+
+	return $normal{$convert{$nodetype}};
+
+}
+
+sub load_rule_pattern_edgestyledefaults
+{
+	my $edgetype = shift @_;
+	my %normal = 
+	(
+		'Bond' => {'width'=>"1",'style'=>"line",'fill'=>"#999999",'sourceArrow'=>"none",'targetArrow'=>"none"},
+		'Reactant' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Product' => {'width'=>"1",'style'=>"line",'fill'=>"#000000",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+	);
+	return $normal{$edgetype};
+}
+
 
 sub load_rule_operation_nodestyledefaults
 {
@@ -302,7 +393,7 @@ sub load_rule_operation_labelstyledefaults
 		'Molecule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
 		'Component' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
 		'InternalState' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'GraphOp' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"italic",'anchor'=>"c"},
+		'GraphOperation' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
 		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
 	);
 
@@ -987,6 +1078,7 @@ sub toGML_rule_pattern
 	#print scalar @nodelist; print "\n";
 	#print scalar @structnodes; print "\n";
 	
+	# old gml nodes and edges
 	my @gmlnodes = ();
 	foreach my $node(@nodelist)
 	{
@@ -1037,7 +1129,6 @@ sub toGML_rule_pattern
 		}
 		push @gmlnodes, $gmlnode;
 	}
-	
 	my @gmledges = ();
 	# draw the bonds
 	my @bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
@@ -1103,10 +1194,120 @@ sub toGML_rule_pattern
 	styleEdge($edge);
 	}
 	
+	# new gml rules and edges
+	my @gmlnodes2 = ();
+	foreach my $node(@nodelist)
+	{
+		my $id = $node->{'ID'};
+		my $name = $node->{'Name'};
+		my $type = $node->{'Type'};
+				
+		# ignore if it is a bond with two parents
+		if ( $type eq 'BondState' and scalar @{$node->{'Parents'}} == 2) 
+		{ next; }
+		$name = '' if ($type eq 'Pattern');
+		my $gmlnode = newnode($id,$name,$node);
+		my $isstruct = 1;
+		
+		# treat patterns
+		if ($type eq 'Pattern') 
+		{ 
+			$gmlnode->{'isGroup'} = 1; 
+			#$gmlnode->{'label'} = '';
+			#$gmlnode->{'graphics'}->{'text'} = '';
+			#$gmlnode->{'gid'} = $node->{'Rule'};
+			$isstruct = 0;
+		}
+		
+		# treat wildcard bonds
+		if ($type eq 'BondState') 
+		{
+			my @comps = @{$node->{'Parents'}};
+			my $comp = findNode(\@nodelist,$comps[0]);
+			my @mols = @{$comp->{'Parents'}};
+			my $mol = findNode(\@nodelist,$mols[0]);
+			my @sp = @{$mol->{'Parents'}};
+			$gmlnode->{'gid'} = $sp[0]; 
+			$isstruct = 0; 
+		}
+		if ($isstruct)
+		{
+			if ($node->{'Parents'})
+			{
+				foreach my $parent_id(@{$node->{'Parents'}}) 
+				{ 
+					$gmlnode->{'gid'} = $parent_id;
+				}
+			}
+			if (hasChildren(\@structnodes,$node))
+			{
+				$gmlnode->{'isGroup'} = 1;
+			}
+		}
+		my $nodestyletype = ($type eq 'BondState') ? 'Comp' : $type;
+		style_node_rule_pattern($gmlnode,$nodestyletype);
+		push @gmlnodes2, $gmlnode;
+	}
+	my @gmledges2 = ();
+	# draw the bonds
+	@bondnodes = grep ( { $_->{'Type'} eq 'BondState' } @nodelist);
+	foreach my $node(@bondnodes)
+	{
+		my @parents = @{$node->{'Parents'}};
+		my $source;
+		my $target;
+		if (scalar @parents == 1)
+		{
+			$source = $node->{'ID'};
+			$target = $parents[0];
+		}
+		else
+		{
+			$source = $parents[0];
+			$target = $parents[1];		
+		}
+		my $gmledge = newedge($source,$target,0,0,'');
+		style_edge_rule_pattern($gmledge,'Bond');
+		push @gmledges2,$gmledge;
+		
+	}
+	# draw edges to rules
+	
+	@rulenodes = grep ( { $_->{'Type'} eq 'Rule' } @nodelist);
+	@patterns = grep ( { $_->{'Type'} eq 'Pattern' } @nodelist);
+	foreach my $rule(@rulenodes)
+	{
+	#find the participating species
+	my $id = $rule->{'ID'};
+	my @participating = grep ( { $_->{'Rule'} eq $id } @patterns);
+	my @reac = grep ( { index($_->{'Name'},'R')==0 } @participating);
+	my @prod = grep ( { index($_->{'Name'},'P')==0} @participating);
+	my $targetarrow = 1;
+	my $sourcearrow = $rule->{'Reversible'} ? 1 : 0;
+	foreach my $patt(@reac)
+		{
+		my $source = $patt->{'ID'};
+		my $target = $id;
+		my $gmledge = newedge($source,$target,1,0,'');
+		style_edge_rule_pattern($gmledge,'Reactant');
+		push @gmledges2,$gmledge;
+		}
+	foreach my $patt(@prod)
+		{
+		my $source = $id;
+		my $target = $patt->{'ID'};
+		my $gmledge = newedge($source,$target,1,0,'');
+		style_edge_rule_pattern($gmledge,'Product');
+		push @gmledges2,$gmledge;
+		}
+	}
+	@gmlnodes = @gmlnodes2;
+	@gmledges = @gmledges2;
+	
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
-	return printGML($gmlgraph);
+	return printGML2($gmlgraph);
 	
 }
 
