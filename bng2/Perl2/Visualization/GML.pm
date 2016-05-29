@@ -307,9 +307,9 @@ sub load_rule_pattern_nodestyledefaults
 	
 	my %normal = 
 	(
-		'Molecule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#EFEFEF",
+		'Molecule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFFFFF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
-		'Component' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFFFFF",
+		'Component' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#EFEFEF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
 		'InternalState' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFF0A7",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
@@ -394,7 +394,7 @@ sub load_rule_operation_labelstyledefaults
 		'Component' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
 		'InternalState' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
 		'GraphOperation' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
 	);
 
 	return $normal{$convert{$nodetype}};
