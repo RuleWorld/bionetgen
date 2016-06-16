@@ -338,7 +338,7 @@ sub load_rule_pattern_nodestyledefaults
 	
 	my %normal = 
 	(
-		'Molecule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFFFFF",
+		'Molecule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#EFEFEF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
 		'Component' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#EFEFEF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
@@ -399,7 +399,7 @@ sub load_rule_operation_nodestyledefaults
 	(
 		'Molecule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#EFEFEF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
-		'Component' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFFFFF",
+		'Component' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#EFEFEF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
 		'InternalState' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#FFF0A7",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
@@ -448,18 +448,15 @@ sub load_rule_network_nodestyledefaults
 {
 	my $nodetype = shift @_;
 	my $graphtype = shift @_;
-	#FFD4C3
-	#CCCCFF
-	#FFD391
 	my %normal = 
 	(
 		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CC99FF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
-		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CC99FF",
+		'RuleGroup' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#E5CBFF",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
 		'AtomicPattern' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFE9C7",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
-		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFE9C7",
+		'PatternGroup' => {'hasOutline'=>"1",'type'=>"roundrectangle",'fill'=>"#FFF4E3",
 					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
 	);
 	return $normal{$nodetype};
