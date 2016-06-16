@@ -296,6 +296,37 @@ sub style_edge_rule_pattern
 	return $edge;
 };
 
+sub style_node_rinf
+{
+	my $node = shift @_;
+	my $nodetype = shift @_;
+	my $prop = load_rinf_nodestyledefaults($nodetype);
+	foreach my $key(keys %$prop)
+		{
+		$node->{'graphics'}->{$key} = $prop->{$key};
+		}
+	$prop = load_rinf_labelstyledefaults($nodetype);
+	foreach my $key(keys %$prop)
+		{
+		$node->{'LabelGraphics'}->{$key} = $prop->{$key};
+		}
+	return $node;
+};
+sub style_edge_rinf
+{
+	my $edge = shift @_;
+	my $edgetype = shift @_;
+	my $prop = load_rinf_edgestyledefaults($edgetype);
+	
+	foreach my $key(keys %$prop)
+		{
+		$edge->{'graphics'}->{$key} = $prop->{$key};
+		}
+
+	return $edge;
+};
+
+
 sub load_rule_pattern_nodestyledefaults
 {
 	my $nodetype = shift @_;
@@ -461,6 +492,42 @@ sub load_rule_network_edgestyledefaults
 	);
 	return $normal{$edgetype};
 };
+
+
+sub load_rinf_nodestyledefaults
+{
+	my $nodetype = shift @_;
+	my %normal = 
+	(
+		'Rule' => {'hasOutline'=>"1",'type'=>"ellipse",'fill'=>"#CC99FF",
+					'outlineWidth'=>"1",'outlineStyle'=>"line",'outline'=>"#999999"},
+	);
+	return $normal{$nodetype};
+};
+sub load_rinf_labelstyledefaults
+{
+	my $nodetype = shift @_;
+	my %normal = 
+	(
+		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+	);
+
+	return $normal{$nodetype};
+};
+sub load_rinf_edgestyledefaults
+{
+	my $edgetype = shift @_;
+	my %normal = 
+	(
+		'Activation' => {'width'=>"1",'style'=>"line",'fill'=>"#66FF66",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Inhibition' => {'width'=>"1",'style'=>"line",'fill'=>"#FF9999",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+		'Modulation' => {'width'=>"1",'style'=>"line",'fill'=>"#999999",'sourceArrow'=>"none",'targetArrow'=>"standard"},
+	);
+	return $normal{$edgetype};
+};
+
+
+
 sub copyhash
 {
 	my %hash = @_;
@@ -1438,6 +1505,45 @@ sub toGML_rule_network
 	#return printGML($gmlgraph);
 	return printGML2($gmlgraph);
 	
+}
+
+sub toGML_rinf
+{
+	my $rinf = shift @_;
+	my @nodelist = @{$rinf->{'Nodes'}};
+	my @edgelist = @{$rinf->{'Edges'}};
+	my @gmlnodes2 = ();
+	my %indhash = indexHash( [@nodelist] );
+	foreach my $node(@nodelist)
+	{
+		my $id = $indhash{$node};
+		my $name = $node;
+		my $gmlnode = newnode($id,$name,$node);
+		style_node_rinf($gmlnode,'Rule');
+		push @gmlnodes2,$gmlnode;
+	}
+	my @gmlnodes = @gmlnodes2;
+	my @gmledges2 = ();
+	foreach my $edge( @edgelist )
+	{
+		my ($from,$to,$type) = split(":",$edge);
+		my $source = $indhash{$from};
+		my $target = $indhash{$to};
+		my $gmledge = newedge($source,$target,1,0,$edge);
+		style_edge_rinf($gmledge,$type);
+		push @gmledges2,$gmledge;
+	}
+	my @gmledges = @gmledges2;
+	
+
+	
+	my $gmlgraph = GMLGraph->new();
+	$gmlgraph->{'Nodes'} = \@gmlnodes;
+	$gmlgraph->{'Edges'} =\@gmledges;
+	#return printGML($gmlgraph);
+	return printGML2($gmlgraph);
+
+	return '';
 }
 
 sub printGML2

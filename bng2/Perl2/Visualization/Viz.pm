@@ -11,6 +11,7 @@ use Visualization::NetworkGraph;
 use Visualization::ProcessGraph;
 use Visualization::ContactMap;
 use Visualization::GML;
+use Visualization::RINF;
 #use Visualization::DB;
 
 
@@ -209,7 +210,7 @@ sub execute_params
 	$args{'compressRuleMotifs'} = 0 if (not has(\@argkeys,'compressRuleMotifs'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process rinf );
 	
 	if (not has(\@argkeys,'type'))
 	{
@@ -295,6 +296,14 @@ sub execute_params
 	my @groups;
 
 	getRuleNames($model);
+	if($type eq 'rinf')
+	{
+		getRuleNetwork($model);
+		my $bpg = $gr->{'RuleNetwork'};
+		my $rinf = makeRINF($bpg,$model);
+		$str = toGML_rinf($rinf);
+	
+	}
 	if ($type eq 'ruleviz_operation')
 	{
 		getRuleStructureGraphs($model);
@@ -641,7 +650,8 @@ sub writeGML
 						'regulatory' => 'network of rules and atomic patterns',
 						'process' => 'process graph of rules',
 						'contactmap' => 'contact map of model',
-						'reaction_network' => 'reaction network of model'
+						'reaction_network' => 'reaction network of model',
+						'rinf' => 'rule influence diagram of model'
 						);
 	my $outputmsg = $outputstr{$type};
 	
