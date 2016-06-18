@@ -54,6 +54,8 @@ foreach my $bngl(@bngls)
 	my @rpgs = flat @{$gr->{'RulePatternGraphs'}};
 	my %lstathash; my %rstathash; # hash in which values are stathashes
 	# left and right merged pattern structure graphs
+	# example of how to access data
+	# print $rstathash{'R19'}->{'UnboundComponents'};
 	foreach my $rpg(@rpgs)
 	{
 		my ($lstats,$rstats) =  getPSGstats($rpg);
@@ -65,6 +67,45 @@ foreach my $bngl(@bngls)
 	# example of how to access data
 	# print $rstathash{'R19'}->{'UnboundComponents'};
 	
+	getRuleStructureGraphs($model);
+	my @rsgs = flat @{$gr->{'RuleStructureGraphs'}};
+	my %rsg_stathash;
+	foreach my $rsg(@rsgs)
+	{
+		my $stats = getRSGstats($rsg);
+		my $name = $stats->{'RuleName'};
+		$rsg_stathash{$name} = $stats;
+	}
+	
+	# rule size (as defined in syntax)
+	my %rulesize;
+	foreach my $rule(@rules)
+	{
+		my %lhash = %{$lstathash{$rule}};
+		my %rhash = %{$rstathash{$rule}};
+		my @arr = qw(Molecules Components UnboundComponents Bonds WildcardBonds InternalStates);
+		my $size = 0;
+		map { $size = $size + $lhash{$_} + $rhash{$_}} @arr;
+		$rulesize{$rule} = $size;
+		#print $modelname." ".$rule." ".$rulesize{$rule}."\n";
+	}
+	
+	# rsg size
+	my %rsgsize;
+	foreach my $rule(@rules)
+	{
+		my %stat = %{$rsg_stathash{$rule}};
+		my @arr = qw(Molecules Components UnboundComponents Bonds WildcardBonds InternalStates);
+		my $size = 0;
+		map { $size = $size + $stat{$_} } @arr;
+		$rsgsize{$rule} = $size;
+	}
+	
+	foreach my $rule(@rules)
+	{
+		print join(" ",$rulesize{$rule},$rsgsize{$rule},"\n");
+	}
+
 }
 
 # Individual rules
@@ -75,7 +116,7 @@ foreach my $bngl(@bngls)
 # RSG-Nodes - rule structure graph
 # RRG-Nodes - rule regulatory graph
 
-sub newStatsHash
+sub new_PSG_StatsHash
 {
 	return (
 	'RuleName' => $_[0],
@@ -89,7 +130,24 @@ sub newStatsHash
 	'WildcardBonds' => $_[8],
 	'InternalStates' => $_[9],
 	);
-};
+}
+
+sub new_RSG_StatsHash
+{
+	return (
+	'RuleName' => $_[0],
+	'Molecules' => $_[1],
+	'Components' => $_[2],
+	'BoundComponents' => $_[3],
+	'UnboundComponents' => $_[4],
+	'Bonds' => $_[5],
+	'WildcardBonds' => $_[6],
+	'InternalStates' => $_[7],
+	'BondOperations'=> $_[8],
+	'StateOperations'=>$_[9],
+	'MoleculeOperations'=>$_[10],
+	);
+}
 
 sub initializeGraphsObject
 {
@@ -109,8 +167,8 @@ sub getPSGstats
 	# node ids are like this
 	# RuleNum.[Re=0/Pr=1].PattNum.PattNum.MolNum.CompNum.[IntState=0,BondState=1]
 	# No idea why PattNum is repeated. Clean this up later.
-	my %lstat = newStatsHash(); $lstat{'Side'} = 'Reactant';
-	my %rstat = newStatsHash(); $rstat{'Side'} = 'Product';
+	my %lstat = new_PSG_StatsHash(); $lstat{'Side'} = 'Reactant';
+	my %rstat = new_PSG_StatsHash(); $rstat{'Side'} = 'Product';
 	
 	# partition left nodes versus right nodes versus rule node
 	my @rule_arr = grep { /^\d+$/ } @ids; # should be array of size 1
@@ -146,15 +204,51 @@ sub getPSGstats
 	
 	my @arr = ($rulename,scalar(@rule_arr),scalar(@left),scalar(@right),$leftpatts,$rightpatts,$leftmols,$rightmols,$leftcomps,$rightcomps,$leftints,$rightints,$leftbonds,$rightbonds,$leftwcs,$rightwcs,$leftbonds,$rightbonds,$lboundcomps,$rboundcomps,$l_unboundcomps,$r_unboundcomps);
 	
-	my %lstats = newStatsHash($rulename,'Reactant',$leftpatts,$leftmols,$leftcomps,$lboundcomps,$l_unboundcomps,$leftbonds,$leftwcs,$leftints);
-	my %rstats = newStatsHash($rulename,'Product',$rightpatts,$rightmols,$rightcomps,$rboundcomps,$r_unboundcomps,$rightbonds,$rightwcs,$rightints);
+	my %lstats = new_PSG_StatsHash($rulename,'Reactant',$leftpatts,$leftmols,$leftcomps,$lboundcomps,$l_unboundcomps,$leftbonds,$leftwcs,$leftints);
+	my %rstats = new_PSG_StatsHash($rulename,'Product',$rightpatts,$rightmols,$rightcomps,$rboundcomps,$r_unboundcomps,$rightbonds,$rightwcs,$rightints);
 	
 	return (\%lstats,\%rstats);
 }
 
-sub getRSGNodes
+sub getRSGstats
 {
+	my $rsg = shift @_;
+	#print printStructureGraph($rsg)."\n\n";
+	
+	my @nodelist = @{$rsg->{'NodeList'}};
+	my @ids = map { $_->{'ID'}; } @nodelist;
+	# node ids are like this
+	# RuleNum.PattNum.PattNum.MolNum.CompNum.[IntState=0,BondState=1]
+	# RuleNum.GraphOp
+	# No idea why PattNum is repeated. Clean this up later.
+	# PattNum is meaningless in RSG, but it remains over from merging of PSGs
+	
+	my @rule_arr = grep { /^\d+$/ } @ids; # should be array of size 1
+	
+	my $rule_id = $rule_arr[0];
+	my $rulename = join "", map {$_->{'Name'}} grep {$_->{'ID'} eq $rule_id; } @nodelist;
+	my $mols = scalar grep { /^\d+[.]\d+[.]\d+[.]\d+$/} @ids;
+	my $comps = scalar grep { /^\d+[.]\d+[.]\d+[.]\d+[.]\d+$/} @ids;
+	my $ints = scalar grep { /^\d+[.]\d+[.]\d+[.]\d+[.]\d+[.]0$/} @ids;
+	
+	my @bond_ids =  grep { /^\d+[.]\d+[.]\d+[.]\d+[.]\d+[.]1$/} @ids;
+	
+	my @bondnodes = grep { has(\@bond_ids,$_->{'ID'})==1 } @nodelist;
+	my $wcs = scalar grep { scalar(@{$_->{'Parents'}}) == 1 } @bondnodes;
+	my $bonds_num = scalar grep { scalar(@{$_->{'Parents'}}) == 2 } @bondnodes;
+	my $boundcomps = scalar uniq map { @{$_->{'Parents'}} } @bondnodes;
+	my $unboundcomps = $comps - $boundcomps;
 
+	
+	my @graphops = map {$_->{'Name'}} grep {$_->{'Type'} eq "GraphOp"} @nodelist;
+	my $bond_ops = scalar grep { $_ =~ /Bond/} @graphops;
+	my $mol_ops = scalar grep { $_ =~ /Mol/} @graphops;
+	my $state_ops = scalar grep { $_ =~ /State/} @graphops;
+	
+	my @arr = ($rulename,$mols,$comps,$boundcomps,$unboundcomps,$bonds_num,$wcs,$ints,$bond_ops,$state_ops,$mol_ops);
+	my %stat = new_RSG_StatsHash(@arr); 
+	return \%stat;
+	
 }
 
 sub getRRGNodes
