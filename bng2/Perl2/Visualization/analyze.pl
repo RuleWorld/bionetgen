@@ -34,7 +34,11 @@ my @bngls;
 while(my $file = readdir(DIR))
 	{ if ($file=~ /.bngl$/) {push @bngls, $file;} }
 closedir DIR;
-@bngls = ('Faeder2003.bngl');
+#@bngls = ('Faeder2003.bngl');
+my $outfile = "data_rules.csv";
+open(my $fh, ">", $outfile) or die "Cannot open";
+print $fh "Model,RuleName,RuleSize,RuleStructSize,RuleRegSize\n";
+
 
 foreach my $bngl(@bngls)
 {
@@ -77,6 +81,21 @@ foreach my $bngl(@bngls)
 		$rsg_stathash{$name} = $stats;
 	}
 	
+	getRuleNetworkGraphs($model);
+	my @rrgs = flat @{$gr->{'RuleNetworkGraphs'}};
+	my %rrgsize;
+	foreach my $rrg(@rrgs)
+	{
+		
+		my %nodetype = %{$rrg->{'NodeType'}};
+		my @nodelist = @{$rrg->{'NodeList'}};
+	
+		my $name = join "", grep {$nodetype{$_} eq 'Rule'} @nodelist;
+		my $size = scalar @nodelist;
+		$rrgsize{$name} = $size;
+	}
+	
+	
 	# rule size (as defined in syntax)
 	my %rulesize;
 	foreach my $rule(@rules)
@@ -101,13 +120,18 @@ foreach my $bngl(@bngls)
 		$rsgsize{$rule} = $size;
 	}
 	
+	#my $outfile = "data_rules.csv";
+	#open(my $fh, ">", $outfile) or die "Cannot open";
+	#print $fh "Model,RuleName,RuleSize,RuleStructSize,RuleRegSize\n";
+	
 	foreach my $rule(@rules)
 	{
-		print join(" ",$rulesize{$rule},$rsgsize{$rule},"\n");
+		print $fh join(",",$modelname,$rule,$rulesize{$rule},$rsgsize{$rule},$rrgsize{$rule})."\n";
 	}
+	
 
 }
-
+close $fh;
 # Individual rules
 # Model-Name 
 # Rule-Name
@@ -251,10 +275,7 @@ sub getRSGstats
 	
 }
 
-sub getRRGNodes
-{
 
-}
 
 
 # Models
