@@ -296,6 +296,14 @@ sub execute_params
 	my @groups;
 
 	getRuleNames($model);
+	
+	if($type eq 'opts')
+	{
+		getRuleNetwork($model);
+		my $bpg = $model->VizGraphs->{'RuleNetwork'};
+		$str = writeExampleOpts($bpg,$model); 
+	}
+	
 	if($type eq 'rinf')
 	{
 		getRuleNetwork($model);
@@ -577,7 +585,7 @@ sub execute_params
 	}
 		
 	
-	if($textonly==1 and $each==0)
+	if(( ($textonly==1) or ($type eq 'opts') ) and $each==0)
 	{
 		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);	
 		writeText(\%params);
@@ -616,7 +624,8 @@ sub writeText
 	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
 						'rule_pattern' => 'rule(s) with patterns',
 						'regulatory' => 'network of rules and atomic patterns',
-						'patterns' => 'atomic patterns',);
+						'patterns' => 'atomic patterns',
+						'opts' => 'example options file');
 	my $outputmsg = $outputstr{$type};
 	
 	my $file = '';
@@ -632,7 +641,8 @@ sub writeText
     close $FH;
 
     # all done
-    print sprintf( "Wrote %s in TXT format to %s.\n", $outputmsg, $file);
+    
+	print sprintf( "Wrote %s in TXT format to %s.\n", $outputmsg, $file);
     return undef;
 }
 
@@ -1599,6 +1609,11 @@ Disable/enable separate output of each rule.
 		print $args->{'type'} . " is not a valid visualization type.\n";
 	}
 	
+	return "";
+}
+
+sub writeExampleOpts
+{
 	return "";
 }
 
