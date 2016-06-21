@@ -210,7 +210,7 @@ sub execute_params
 	$args{'compressRuleMotifs'} = 0 if (not has(\@argkeys,'compressRuleMotifs'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process rinf );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process rinf opts);
 	
 	if (not has(\@argkeys,'type'))
 	{
@@ -651,7 +651,8 @@ sub writeGML
 						'process' => 'process graph of rules',
 						'contactmap' => 'contact map of model',
 						'reaction_network' => 'reaction network of model',
-						'rinf' => 'rule influence diagram of model'
+						'rinf' => 'rule influence diagram of model',
+						'opts' => 'example options file for regulatory graph of model'
 						);
 	my $outputmsg = $outputstr{$type};
 	
