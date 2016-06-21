@@ -301,7 +301,8 @@ sub execute_params
 	{
 		getRuleNetwork($model);
 		my $bpg = $model->VizGraphs->{'RuleNetwork'};
-		$str = writeExampleOpts($bpg,$model); 
+		my $mtypes = $model->MoleculeTypesList->MolTypes;
+		$str = writeExampleOpts($bpg,$mtypes); 
 	}
 	
 	if($type eq 'rinf')
@@ -1614,7 +1615,98 @@ Disable/enable separate output of each rule.
 
 sub writeExampleOpts
 {
-	return "";
+	my $bpg = shift @_;
+	my %mtypes = %{shift @_};
+	my @aps = grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
+	my @rules = grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} @{$bpg->{'NodeList'}};
+	
+	my @reverse_rules = grep {/^_reverse_/}  @rules;
+	my @other_rules = grep {not /^_reverse_/} @rules;
+	
+	my @freebindingsites = grep { /\(/ and not /\~/ and not /\!/ } @aps;
+	my @bonds = grep {/\!/} @aps;
+	my @internalstates = grep {/\~/} @aps;
+	my @mol_aps =  grep {not /\(/ and not /\~/ and not /\!/ } @aps;
+	
+	# categorizing similarity of components
+	my @comps = @freebindingsites;
+	my %internalstatesignature = map {$_=>-1} @comps;
+	# background-foreground
+	my @bkg_is = ();
+	foreach my $comp (@comps)
+	{
+		$comp =~ /^(.*)\((.*)\)$/;
+		my ($m,$c) = ($1,$2);
+		my @istates = uniq map {@{$_->States}} grep {$_->Name eq $c} @{$mtypes{$m}->Components};
+		push @bkg_is,$m."(".$c."~".$istates[0].")" if (scalar @istates > 1);
+	}
+	
+	# compiling foreground and background
+	my @t = (@reverse_rules,@freebindingsites,@bkg_is);
+	my @background = grep { has(\@t,$_)==1 } (@aps,@rules);
+	my @foreground = grep { has(\@background,$_)==0 } (@aps,@rules);
+	
+	# assigning atomic pattern groups
+	my %groups;
+	# assigning bonds to groups
+	my @bnds = grep {has(\@foreground,$_)} @bonds;
+	foreach my $bond(@bnds) { 
+		$bond =~ /^(.*)\(.*\)[.](.*)\(.*\)$/; 
+		my $x = join "|", sort ($1,$2);
+		$groups{$bond} = $x;
+		}
+	# assigning internal states to groups
+	my @ints = grep { has(\@foreground,$_)} @internalstates;
+	foreach my $int(@ints) {
+		$int =~ /^(.*)\(.*\~(.*)\)$/;
+		my $x = $1."_".$2;
+		$groups{$int} = $x;
+	}
+	
+	# building output string
+	# included
+	my @ap1 = sort grep {has(\@background,$_)} @aps;
+	my @rule1 = sort grep {has(\@background,$_)} @rules;
+	my $inclstr = "\t\t".join("\n\t\t", map {join(" ",@$_)} (natatime2(@ap1),natatime2(@rule1)));
+	
+	# excluded
+	my @ap2 = sort grep {not has(\@background,$_)} @aps;
+	my @rule2 = sort grep {not has(\@background,$_)} @rules;
+	my $exclstr = "\t\t".join("\n\t\t", map {join(" ",@$_)} (natatime2(@ap2),natatime2(@rule2)));
+	
+	
+	# groups
+	my @grpstrs = ();
+	my @ap3 = keys %groups;
+	my @ap4 = grep {has(\@ap3,$_)} @ap2;
+	foreach my $grp(values %groups)
+	{
+		my @ap5 = grep {$groups{$_} eq $grp} @ap4;
+		my @strlist = ("\tbegin ",$grp,"\n\t\t",join(" ",@ap5),"\n\tend ",$grp);
+		my $str = join("",@strlist);
+		push @grpstrs,$str; 
+	}
+	my $grpstr = join("\n",@grpstrs);
+	
+	my @retstrs = ();
+	push @retstrs, "begin background","\tbegin include",$inclstr,"\tend include";
+	push @retstrs, "\tbegin exclude",$exclstr,"\tend exclude","end background";
+	push @retstrs, "begin classes",$grpstr,"end classes";
+	my $ret = join("\n",@retstrs);
+	return $ret;
 }
+
+sub natatime2 {
+	# n at a time
+    my $n = 5;
+    my @list = @_;
+	my @ret = ();
+	while (my @x = splice @list, 0, $n)
+		{ push @ret,\@x;}
+	# Array of arrayrefs
+	return @ret;
+}
+
+
 
 1;
