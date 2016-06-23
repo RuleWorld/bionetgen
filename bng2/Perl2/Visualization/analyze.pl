@@ -29,17 +29,14 @@ use Class::Struct;
 
 # Get list of bngls
 my $dir = getcwd;
-opendir (DIR, $dir) or die $!;
-my @bngls;
-while(my $file = readdir(DIR))
-	{ if ($file=~ /.bngl$/) {push @bngls, $file;} }
-closedir DIR;
-#@bngls = ('Faeder2003.bngl');
+my @bngls = getModelsList($dir);
+
+#@bngls = ();
+
+
 my $outfile = "data_rules.csv";
 open(my $fh, ">", $outfile) or die "Cannot open";
 print $fh "Model,RuleName,RuleSize,RuleStructSize,RuleRegSize\n";
-
-
 foreach my $bngl(@bngls)
 {
 	$bngl =~ /^(.*).bngl$/;
@@ -70,7 +67,6 @@ foreach my $bngl(@bngls)
 	
 	# example of how to access data
 	# print $rstathash{'R19'}->{'UnboundComponents'};
-	
 	getRuleStructureGraphs($model);
 	my @rsgs = flat @{$gr->{'RuleStructureGraphs'}};
 	my %rsg_stathash;
@@ -94,7 +90,6 @@ foreach my $bngl(@bngls)
 		my $size = scalar @nodelist;
 		$rrgsize{$name} = $size;
 	}
-	
 	
 	# rule size (as defined in syntax)
 	my %rulesize;
@@ -129,17 +124,175 @@ foreach my $bngl(@bngls)
 		print $fh join(",",$modelname,$rule,$rulesize{$rule},$rsgsize{$rule},$rrgsize{$rule})."\n";
 	}
 	
+	undef $gr,$model;
 
 }
 close $fh;
-# Individual rules
-# Model-Name 
-# Rule-Name
-# LMPSG-Nodes - left merged pattern structure graph
-# RMPSG-Nodes - right merged pattern structure graph
-# RSG-Nodes - rule structure graph
-# RRG-Nodes - rule regulatory graph
 
+# model-wide statistics
+my $outfile2 = "data_models.csv";
+open(my $fh2, ">", $outfile2) or die "Cannot open";
+print $fh2 "Model,RInf,CMap,ConvRule,CompactRule,SimmuneNet,RxnNet,FullReg,RegNoBkg,RegGrps,RegGrpsNoCtxt\n";
+#@bngls = ('Faeder2003.bngl');
+#@bngls = ('An2009.bngl');
+#@bngls = ('Faeder2003.bngl','An2009.bngl','Ligon2014.bngl');
+my %rinfnodes; my %rinfedges;
+my %cmapnodes; my %cmapedges;
+my %convrulenodes; my %convruleedges;
+my %compactrulenodes; my %compactruleedges;
+my %fullregnodes; my %fullregedges;
+my %regnobkgnodes; my %regnobkgedges;
+my %reggrpsnodes; my %reggrpsedges;
+my %reggrpsnoctxtnodes; my %reggrpsnoctxtedges; 
+foreach my $bngl(@bngls) 
+{
+	$bngl =~ /^(.*).bngl$/;
+	my $modelname = $1;
+	my $model = getModel($bngl);
+	initializeGraphsObject($model);
+	my $gr = $model->VizGraphs;
+	getRuleNames($model);
+	getRuleNetwork($model);
+	
+	# RINF
+	my $bpg = $gr->{'RuleNetwork'};
+	my $rinf = makeRINF($bpg);
+	$rinfnodes{$modelname} = scalar @{$rinf->{'Nodes'}};
+	$rinfedges{$modelname} = scalar @{$rinf->{'Edges'}};
+	
+	# CMap
+	my $mtypes = $model->MoleculeTypesList->MolTypes;
+	my @cmapstats = getCMAPStats($mtypes,$bpg);
+	$cmapnodes{$modelname} = $cmapstats[0];
+	$cmapedges{$modelname} = $cmapstats[1];
+	
+	# ConvRule
+	getRulePatternGraphs($model);
+	my ($convnodes,$convedges) = getConvRuleStats($gr->{'RulePatternGraphs'},$gr->{'RuleNames'});
+	$convrulenodes{$modelname} = $convnodes;
+	$convruleedges{$modelname} = $convedges;
+	
+	# CompactRule
+	getRuleStructureGraphs($model);
+	my ($comprulenodes,$compruleedges) = getCompactRulesStats($gr->{'RuleStructureGraphs'});
+	$compactrulenodes{$modelname} = $comprulenodes;
+	$compactruleedges{$modelname} = $compruleedges;
+	
+	# FullReg
+	getRuleNetwork($model);
+	$bpg = $gr->{'RuleNetwork'};
+	$fullregnodes{$modelname} = scalar @{$bpg->{'NodeList'}};
+	$fullregedges{$modelname} = scalar @{$bpg->{'EdgeList'}};
+	
+	# OptsFileOut
+	my %q = initializeExecParams(); 
+	$q{'type'} = 'opts';
+	execute_params($model,\%q);
+	
+	# RegNoBkg
+	my %p = initializeExecParams();
+	my $optsname = $modelname."_opts.txt";
+	$p{'background'} = 0;$p{'opts'} = [$optsname]; $p{'groups'} = 0; $p{'collapse'}=0;$p{'type'}='regulatory';
+	my @x = parseOpts($optsname);
+	my %bkg = %{$x[1]}; my %cls = %{$x[2]};
+	$bpg = filterNetworkGraph($bpg,$bkg{'include'});
+	$regnobkgnodes{$modelname} = scalar @{$bpg->{'NodeList'}};
+	$regnobkgedges{$modelname} = scalar @{$bpg->{'EdgeList'}};
+	
+	# RegGrps
+	my $bpg2 = $bpg;
+	my $donotusecontext = 0;
+	my %classes_in;
+	foreach my $grpname(keys %cls)
+	{
+		map {$classes_in{$_} = $grpname;} @{$cls{$grpname}};
+	}
+	syncClasses($model,$bpg2,\%classes_in,$donotusecontext);
+	$bpg2 = collapseNetworkGraph($bpg2);
+	$reggrpsnodes{$modelname} = scalar @{$bpg2->{'NodeList'}};
+	$reggrpsedges{$modelname} = scalar @{$bpg2->{'EdgeList'}};
+	
+	# RegGrpsNoCtxt
+	$bpg2 = $bpg; $donotusecontext = 1;
+	$model->VizGraphs->{'Classes'} = {};
+	syncClasses($model,$bpg2,\%classes_in,$donotusecontext);
+	$bpg2 = collapseNetworkGraph($bpg2);
+	$reggrpsnoctxtnodes{$modelname} = scalar @{$bpg2->{'NodeList'}};
+	$reggrpsnoctxtedges{$modelname} = scalar @{$bpg2->{'EdgeList'}};
+
+}
+close $fh2;
+
+sub getCompactRulesStats
+{
+	my @rsgs = flat(@{shift @_});
+	my $n = 0; my $e = 0;
+	foreach my $rsg(@rsgs)
+	{
+		$n++; $e++;
+		my %stats = %{getRSGstats($rsg)};
+		$n = $n + $stats{'Molecules'} + $stats{'Components'} + $stats{'InternalStates'};
+		$e = $e + $stats{'Components'} + $stats{'InternalStates'};
+		$n = $n + $stats{'WildcardBonds'};
+		$e = $e + $stats{'WildcardBonds'};
+		$e = $e + $stats{'Bonds'} - $stats{'BondOperations'};
+		$n = $n + $stats{'BondOperations'} + $stats{'StateOperations'} + $stats{'MoleculeOperations'};
+		$e = $e + 2*$stats{'BondOperations'} + 2*$stats{'StateOperations'} + $stats{'MoleculeOperations'};	
+	}
+	return ($n,$e);
+}
+sub getConvRuleStats
+{
+	my @rrs = @{shift @_};
+	my @rnames = flat(@{shift @_});
+	my $n = 0; my $e = 0;
+	$n = $n + scalar(@rnames);
+	foreach my $rr(@rrs)
+	{
+		my $rule  = $rr->[0];
+		my $hasrev = scalar(@$rr) - 1;
+		my $rname = $rule->{'Name'};
+		my ($lstats,$rstats) = getPSGstats($rule);
+		$n = $n + $lstats->{'Patterns'} + $rstats->{'Patterns'};
+		$e = $e + $lstats->{'Patterns'} + $rstats->{'Patterns'};
+		if($hasrev) {$e = $e + $lstats->{'Patterns'} + $rstats->{'Patterns'};}
+		$n = $n + $lstats->{'Molecules'} + $lstats->{'Components'} + $lstats->{'InternalStates'};
+		$n = $n + $rstats->{'Molecules'} + $rstats->{'Components'} + $rstats->{'InternalStates'};
+		$e = $e + $lstats->{'Components'} + $lstats->{'InternalStates'};
+		$e = $e + $rstats->{'Components'} + $rstats->{'InternalStates'};
+		$n = $n + $lstats->{'WildcardBonds'} + $rstats->{'WildcardBonds'};
+		$e = $e + $lstats->{'WildcardBonds'} + $rstats->{'WildcardBonds'} + $lstats->{'Bonds'} + $rstats->{'Bonds'};;
+	}
+	return ($n,$e);
+}
+sub getCMAPStats
+{
+	my %mtypes = %{shift @_};
+	my $bpg = shift @_;
+	my $n=0; my $e = 0; my %stoich;
+	foreach my $mname(keys %mtypes)
+	{
+		$n++;
+		my $ctypes = $mtypes{$mname}->Components;
+		foreach my $comp(@$ctypes)
+			{
+				$n++;$e++;
+				my $cname = $comp->Name; $stoich{$mname.".".$cname}++;
+				my @states = @{$comp->States};
+				for(my $i=0; $i<@states; $i++) { $n++;$e++;}
+			}
+	}
+	my @bonds = grep { /\!/} @{$bpg->{'NodeList'}};
+	foreach my $bond(@bonds)
+	{
+		$bond =~ /^(.*)\((.*)\!1\)[.](.*)\((.*)\!1\)$/;
+		my $c1 = $1.".".$2;
+		my $c2 = $3.".".$4;
+		my $count = $stoich{$c1}*$stoich{$c2};
+		$e = $e + $count;
+	}
+	return ($n,$e);
+}
 sub new_PSG_StatsHash
 {
 	return (
@@ -276,7 +429,15 @@ sub getRSGstats
 }
 
 
-
+sub getModelsList
+{
+	opendir (DIR, shift @_) or die $!;
+	my @bngls;
+	while(my $file = readdir(DIR))
+	{ if ($file=~ /.bngl$/) {push @bngls, $file;} }
+	closedir DIR;
+	return @bngls;
+}
 
 # Models
 # Model-Name
