@@ -33,7 +33,6 @@ my @bngls = getModelsList($dir);
 
 #@bngls = ();
 
-
 my $outfile = "data_rules.csv";
 open(my $fh, ">", $outfile) or die "Cannot open";
 print $fh "Model,RuleName,RuleSize,RuleStructSize,RuleRegSize\n";
@@ -124,8 +123,7 @@ foreach my $bngl(@bngls)
 		print $fh join(",",$modelname,$rule,$rulesize{$rule},$rsgsize{$rule},$rrgsize{$rule})."\n";
 	}
 	
-	undef $gr,$model;
-
+	#undef $gr,$model;
 }
 close $fh;
 
@@ -144,6 +142,7 @@ my %fullregnodes; my %fullregedges;
 my %regnobkgnodes; my %regnobkgedges;
 my %reggrpsnodes; my %reggrpsedges;
 my %reggrpsnoctxtnodes; my %reggrpsnoctxtedges; 
+my %simmunenodes; my %simmuneedges;
 foreach my $bngl(@bngls) 
 {
 	$bngl =~ /^(.*).bngl$/;
@@ -219,6 +218,11 @@ foreach my $bngl(@bngls)
 	$bpg2 = collapseNetworkGraph($bpg2);
 	$reggrpsnoctxtnodes{$modelname} = scalar @{$bpg2->{'NodeList'}};
 	$reggrpsnoctxtedges{$modelname} = scalar @{$bpg2->{'EdgeList'}};
+	
+	# SimmuneNet
+	my ($sim_n,$sim_e) = getSimmuneNetworkStats($model->RxnRules,$model->MoleculeTypesList->MolTypes);
+	$simmunenodes{$modelname} = $sim_n; 
+	$simmuneedges{$modelname} = $sim_e;
 
 }
 close $fh2;
@@ -307,6 +311,50 @@ sub new_PSG_StatsHash
 	'WildcardBonds' => $_[8],
 	'InternalStates' => $_[9],
 	);
+}
+sub getSimmuneNetworkStats
+{
+	my @rules = flat(@{shift @_});
+	my %mtypes = %{shift @_};
+	my %reacprods;
+	my @patts;
+	my $n= 0; my $e = 0;
+	foreach my $rule(@rules)
+	{
+		# strip away components and bonds, leaving only molecules
+		my @reac = 	sort map {my $x = $_; $x =~ s/\(.*?\)//g; join ".", sort split /[.]/,$x;} 
+					map {$_->toString()} 
+					@{$rule->Reactants};
+		my @prod = 	sort map {my $x = $_; $x =~ s/\(.*?\)//g; join ".", sort split /[.]/,$x;}
+					map {$_->toString()} 
+					@{$rule->Products};
+		push @patts, (@reac,@prod);
+		# each rule is a node
+		$n++;
+		# each reactant and product needs an edge
+		$e = $e + scalar(@reac) + scalar(@prod);		
+	}
+	
+	@patts = uniq @patts;
+	my %bindingsitenum; my %internalstatenum;
+	foreach my $mname(keys %mtypes)
+	{
+		$bindingsitenum{$mname} = scalar @{$mtypes{$mname}->Components};
+		$internalstatenum{$mname} = scalar map {@{$_->States}} @{$mtypes{$mname}->Components};
+	}
+	foreach my $patt(@patts)
+	{
+		my @mols = split /[.]/,$patt;
+		# node for each molecule
+		map {$n += 1} @mols;
+		# node for each binding site and internal state
+		# edge for each binding site and internal state (hierarchical relation to molecule)
+		map {$n += $bindingsitenum{$_}+$internalstatenum{$_}} @mols;
+		map {$e += $bindingsitenum{$_}+$internalstatenum{$_}} @mols;
+		# edge for each bond, which is 1 less than number of molecules
+		map {$e += 1} @mols; $e = $e-1;
+	}
+	return ($n,$e);
 }
 
 sub new_RSG_StatsHash
