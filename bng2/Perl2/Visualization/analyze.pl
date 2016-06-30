@@ -33,9 +33,9 @@ my @bngls = getModelsList($dir);
 
 #@bngls = ();
 
-my $outfile = "data_rules.csv";
-open(my $fh, ">", $outfile) or die "Cannot open";
-print $fh "Model,RuleName,RuleSize,RuleStructSize,RuleRegSize\n";
+my $outfile1 = "data_rules.csv";
+open(my $fh1, ">", $outfile1) or die "Cannot open";
+print $fh1 "Model,RuleName,RuleSize,RuleStructSize,RuleRegSize\n";
 foreach my $bngl(@bngls)
 {
 	$bngl =~ /^(.*).bngl$/;
@@ -120,17 +120,20 @@ foreach my $bngl(@bngls)
 	
 	foreach my $rule(@rules)
 	{
-		print $fh join(",",$modelname,$rule,$rulesize{$rule},$rsgsize{$rule},$rrgsize{$rule})."\n";
+		print $fh1 join(",",$modelname,$rule,$rulesize{$rule},$rsgsize{$rule},$rrgsize{$rule})."\n";
 	}
 	
 	#undef $gr,$model;
 }
-close $fh;
+close $fh1;
 
 # model-wide statistics
-my $outfile2 = "data_models.csv";
+my $outfile2 = "data_models_nodes.csv";
+my $outfile3 = "data_models_edges.csv";
 open(my $fh2, ">", $outfile2) or die "Cannot open";
-print $fh2 "Model,RInf,CMap,ConvRule,CompactRule,SimmuneNet,RxnNet,FullReg,RegNoBkg,RegGrps,RegGrpsNoCtxt\n";
+open(my $fh3, ">", $outfile3) or die "Cannot open";
+print $fh2 "Model,RInf,CMap,ConvRule,CompactRule,SimmuneNet,FullReg,RegNoBkg,RegGrps,RegGrpsNoCtxt\n";
+print $fh3 "Model,RInf,CMap,ConvRule,CompactRule,SimmuneNet,FullReg,RegNoBkg,RegGrps,RegGrpsNoCtxt\n";
 #@bngls = ('Faeder2003.bngl');
 #@bngls = ('An2009.bngl');
 #@bngls = ('Faeder2003.bngl','An2009.bngl','Ligon2014.bngl');
@@ -143,6 +146,7 @@ my %regnobkgnodes; my %regnobkgedges;
 my %reggrpsnodes; my %reggrpsedges;
 my %reggrpsnoctxtnodes; my %reggrpsnoctxtedges; 
 my %simmunenodes; my %simmuneedges;
+#my %rxnnetnodes; my %rxnnetedges;
 foreach my $bngl(@bngls) 
 {
 	$bngl =~ /^(.*).bngl$/;
@@ -223,10 +227,92 @@ foreach my $bngl(@bngls)
 	my ($sim_n,$sim_e) = getSimmuneNetworkStats($model->RxnRules,$model->MoleculeTypesList->MolTypes);
 	$simmunenodes{$modelname} = $sim_n; 
 	$simmuneedges{$modelname} = $sim_e;
+	
+	# reaction network - old
+	#if( -e $modelname.".net") {
+	#my ($rxn_n,$rxn_e)  = getRxnNetStats($modelname);
+	#$rxnnetnodes{$modelname} = $rxn_n;  
+	#$rxnnetedges{$modelname} = $rxn_e;
+	#}
+	#else
+	#{
+	#$rxnnetnodes{$modelname} = "NaN";  
+	#$rxnnetedges{$modelname} = "NaN";
+	#}
+	my @str1 = ($modelname,$rinfnodes{$modelname},$cmapnodes{$modelname},
+		$convrulenodes{$modelname},$compactrulenodes{$modelname},$simmunenodes{$modelname},
+		$fullregnodes{$modelname},$regnobkgnodes{$modelname},
+		$reggrpsnodes{$modelname},$reggrpsnoctxtnodes{$modelname});
+	my @str2 = ($modelname,$rinfedges{$modelname},$cmapedges{$modelname},
+		$convruleedges{$modelname},$compactruleedges{$modelname},$simmuneedges{$modelname},
+		$fullregedges{$modelname},$regnobkgedges{$modelname},
+		$reggrpsedges{$modelname},$reggrpsnoctxtedges{$modelname});
 
+	print $fh2 join(",",@str1)."\n";
+	print $fh3 join(",",@str2)."\n";
 }
 close $fh2;
+close $fh3;
+#@bngls = ('Faeder2003.bngl');
 
+# rule vs rxnnet statistics
+my $outfile4 = "data_models_rxns.csv";
+open(my $fh4, ">", $outfile4) or die "Cannot open";
+print $fh4 "Model,Patterns,Rules,Species,Reactions\n";
+foreach my $bngl(@bngls)
+{
+	$bngl =~ /^(.*).bngl$/;
+	my $modelname = $1;
+	next unless (-e $modelname.".net");
+	my $model = getModel($bngl);
+	initializeGraphsObject($model);
+	getRuleNames($model);
+	getRulePatternGraphs($model);
+	my ($patt,$rules) = getConvRuleStats2($model->VizGraphs->{'RulePatternGraphs'});
+	my ($sp,$rxn) = getRxnNetStats($modelname);
+	my @x = ($modelname,$patt,$rules,$sp,$rxn);
+	print $fh4 join(",",@x)."\n";
+}
+close $fh4;
+
+sub getConvRuleStats2
+{
+	# this only counts patterns and rules
+	my @rrs = @{shift @_};
+	my $patt=0; my $rules=0;
+	foreach my $rr(@rrs)
+	{
+		my $rule = $rr->[0];
+		my ($lstats,$rstats) = getPSGstats($rule);
+		my $hasrev = scalar(@$rr) - 1;
+		$patt += $lstats->{'Patterns'} + $rstats->{'Patterns'};
+		$rules += 1;
+		if($hasrev) {$rules+=1;}
+	}
+	return ($patt,$rules);	
+}
+
+sub getRxnNetStats
+{
+	my $modelname = shift @_; my $outfile = $modelname.".net";
+	open(my $fh, "<", $outfile) or die "Cannot open";
+	my @lines = <$fh>;
+	close $fh;
+
+	# counters for species and reactions
+	my $sp = 0; my $rxn = 0;
+	# toggles
+	my $is_rxn = 0; my $is_sp = 0;
+	foreach my $line(@lines)
+	{
+		if($line =~ /begin reactions/) {$is_rxn = 1; $is_sp = 0; next;}
+		if($line =~ /begin species/) {$is_rxn = 0; $is_sp = 1; next;}
+		if($line =~ /end reactions/ or $line =~ /end species/  ) {$is_rxn = 0; $is_sp = 0; next;}	
+		if($is_rxn==1) {$rxn++;}
+		if($is_sp==1) {$sp++;}
+	}
+	return ($sp,$rxn);
+}
 sub getCompactRulesStats
 {
 	my @rsgs = flat(@{shift @_});
@@ -356,6 +442,37 @@ sub getSimmuneNetworkStats
 	}
 	return ($n,$e);
 }
+
+sub getRxnNetStats_old
+{
+	my $modelname = shift @_; my $outfile = $modelname.".net";
+	open(my $fh, "<", $outfile) or die "Cannot open";
+	my @lines = <$fh>;
+	close $fh;
+
+	# counters for species, reactions and edges
+	my $n = 0; my $e = 0;
+	# toggles
+	my $is_rxn = 0; my $is_sp = 0;
+	foreach my $line (@lines)
+	{
+		if($line =~ /begin reactions/) {$is_rxn = 1; $is_sp = 0; next;}
+		if($line =~ /begin species/) {$is_rxn = 0; $is_sp = 1; next;}
+		if($line =~ /end reactions/ or $line =~ /end species/  ) {$is_rxn = 0; $is_sp = 0; next;}	
+		if($is_rxn==1 or $is_sp==1) { $n++;}
+		if($is_rxn==1) 
+		{
+			$line =~ s/#.*//g;
+			my @commas = $line =~ /[,]/;
+			my @zeros = $line =~ /\s[0]\s/;
+			$e = $e + 2 + scalar(@commas) - scalar(@zeros); 
+		}
+	}
+	return ($n,$e);
+}
+
+
+
 
 sub new_RSG_StatsHash
 {
