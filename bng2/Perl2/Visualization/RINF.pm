@@ -79,8 +79,8 @@ sub makeRINF
 		my @opts = ([0,2],[1,2]); #re->co, pr->co
 		my @overlaps = map {my @opt = @$_; has_overlap($arr->[$opt[0]],$arr->[$opt[1]]); } @opts; 
 		my $act = 0; my $inh = 0;
-		$act = ($overlaps[0]==1) ? 1 :0;
-		$inh = ($overlaps[1]==1) ? 1 :0;
+		$act = ($overlaps[1]==1) ? 1 :0;
+		$inh = ($overlaps[0]==1) ? 1 :0;
 		unless ($inh==0 and $act==0) 
 				{
 					push @edges, join(":",($rules[$i],$rules[$i],$typehash{$act.$inh}));
