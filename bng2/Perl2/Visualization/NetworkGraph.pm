@@ -932,7 +932,7 @@ sub collapseNetworkGraph
 	}
 	
 	@nodelist2=  uniq(@nodelist2);
-	@edgelist2 = uniq(@edgelist2);
+	if ($doNotCollapseEdges==0) { @edgelist2 = uniq(@edgelist2);}
 	
 	
 	my $bpg2 = NetworkGraph->new();
