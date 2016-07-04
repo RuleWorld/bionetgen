@@ -49,6 +49,7 @@ GetOptions(	\%args,
 			'makeInhibitionEdges!',
 			'removeProcessNodes!',
 			'compressRuleMotifs!',
+			'doNotCollapseEdges!',
 		) or die "Error in command line arguments.";
 		
 #if(defined $args{'db'})

@@ -883,6 +883,7 @@ sub collapseNetworkGraph
 {
 	
 	my $bpg = shift @_;
+	my $doNotCollapseEdges = @_ ? shift @_ : 0;
 	my %classes = %{$bpg->{'NodeClass'}};
 	
 	

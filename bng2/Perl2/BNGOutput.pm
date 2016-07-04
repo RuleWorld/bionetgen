@@ -3144,7 +3144,8 @@ sub visualize
 			'removeReactantContext' => 0,
 			'makeInhibitionEdges' => 0,
 			'removeProcessNodes' => 0,
-			'compressRuleMotifs' => 0
+			'compressRuleMotifs' => 0,
+			'doNotCollapseEdges' => 0,
     };
     
     # get user options

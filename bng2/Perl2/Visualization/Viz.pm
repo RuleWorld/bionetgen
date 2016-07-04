@@ -164,6 +164,7 @@ sub getExecParams
 	if(defined $args{'makeInhibitionEdges'}) { $exec_params{'makeInhibitionEdges'} = $args{'makeInhibitionEdges'}; }
 	if(defined $args{'removeProcessNodes'}) { $exec_params{'removeProcessNodes'} = $args{'removeProcessNodes'}; }
 	if(defined $args{'compressRuleMotifs'}) { $exec_params{'compressRuleMotifs'} = $args{'compressRuleMotifs'}; }
+	if(defined $args{'doNotCollapseEdges'}) { $exec_params{'doNotCollapseEdges'} = $args{'doNotCollapseEdges'}; }
 	
 	if(defined $args{'inhibition'}) { $exec_params{'inhibition'} = $args{'inhibition'}; }
 	if(defined $args{'motifs'}) {$exec_params{'motifs'} = $args{'motifs'}};
@@ -208,6 +209,7 @@ sub execute_params
 	$args{'inhibition'} = [] if(not has(\@argkeys,'inhibition'));
 	$args{'motifs'} = {} if(not has(\@argkeys,'motifs'));
 	$args{'compressRuleMotifs'} = 0 if (not has(\@argkeys,'compressRuleMotifs'));
+	$args{'doNotCollapseEdges'} = 0 if (not has(\@argkeys,'doNotCollapseEdges'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
 	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process rinf opts);
@@ -443,7 +445,7 @@ sub execute_params
 				{
 				my $bpg = $gr->{'RuleNetworkCurrent'};				
 				print "Collapsing network graph using equivalence classes.\n";
-				$bpg = collapseNetworkGraph($bpg);
+				$bpg = collapseNetworkGraph($bpg,$args{'doNotCollapseEdges'});
 				applyRuleNetworkCurrent($model,$bpg);					
 				}
 			
