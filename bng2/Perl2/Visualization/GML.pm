@@ -362,11 +362,11 @@ sub load_rule_pattern_labelstyledefaults
 	'Rule'=>'Rule' );
 	my %normal = 
 	(
-		'Molecule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
-		'Component' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
-		'InternalState' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'Pattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+		'Molecule' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+		'Component' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
+		'InternalState' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'Rule' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'Pattern' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
 	);
 
 	return $normal{$convert{$nodetype}};
@@ -421,11 +421,11 @@ sub load_rule_operation_labelstyledefaults
 	'Rule'=>'Rule' );
 	my %normal = 
 	(
-		'Molecule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
-		'Component' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
-		'InternalState' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'GraphOperation' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
+		'Molecule' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"t"},
+		'Component' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
+		'InternalState' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'GraphOperation' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'Rule' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"t"},
 	);
 
 	return $normal{$convert{$nodetype}};
@@ -468,10 +468,10 @@ sub load_rule_network_labelstyledefaults
 	
 	my %normal = 
 	(
-		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'RuleGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"c"},
-		'AtomicPattern' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
-		'PatternGroup' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"c"},
+		'Rule' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'RuleGroup' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"c"},
+		'AtomicPattern' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'PatternGroup' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"bold",'anchor'=>"c"},
 	);
 
 	return $normal{$nodetype};
@@ -506,7 +506,7 @@ sub load_rinf_labelstyledefaults
 	my $nodetype = shift @_;
 	my %normal = 
 	(
-		'Rule' => {'fontSize'=>"12",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
+		'Rule' => {'fontSize'=>"14",'fontName'=>"Dialog",'fontStyle'=>"plain",'anchor'=>"c"},
 	);
 
 	return $normal{$nodetype};
