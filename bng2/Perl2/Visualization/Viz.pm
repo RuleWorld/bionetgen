@@ -1681,7 +1681,7 @@ sub writeExampleOpts
 	my @grpstrs = ();
 	my @ap3 = keys %groups;
 	my @ap4 = grep {has(\@ap3,$_)} @ap2;
-	foreach my $grp(values %groups)
+	foreach my $grp(uniq values %groups)
 	{
 		my @ap5 = grep {$groups{$_} eq $grp} @ap4;
 		my @strlist = ("\tbegin ",$grp,"\n\t\t",join(" ",@ap5),"\n\tend ",$grp);
