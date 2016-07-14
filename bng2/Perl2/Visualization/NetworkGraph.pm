@@ -574,6 +574,8 @@ sub makeRuleNetworkGraph
 	# from a rule structure graph
 	my $rsg = shift @_;
 	my $name = shift @_;
+	# process name so that it doesnt begin with a number
+	$name = ($name =~ /^[0-9]/) ? "_".$name : $name;
 	
 	my @nodelist = @{$rsg->{'NodeList'}};
 	
