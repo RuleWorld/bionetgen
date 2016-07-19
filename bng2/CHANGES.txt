@@ -22,8 +22,8 @@ https://github.com/RuleWorld/bionetgen/
 ==== Visualization ====
 * New styles for visualization.
 * Updates to visualization algorithms.
-* Supported types: conventional, compact, regulatory, ppts, contactmap, reaction_network
-* Supported regulatory graph options: background, opts, groups, collapse, doNotUseContextWhenGrouping, doNotCollapseEdges
+* Supported types: conventional, compact, regulatory, ppts, contactmap, reaction_network.
+* Supported regulatory graph options: background, opts, groups, collapse, doNotUseContextWhenGrouping, doNotCollapseEdges.
 
 ==== Minor changes ===
 * BioNetGen will now automatically run the generate_network command if one of simulate_pla/simulate_ode/simulate_ssa methods are called and a network wasn't loaded into the system otherwise
