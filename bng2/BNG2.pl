@@ -95,7 +95,7 @@ my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
                              'output_dir'    => File::Spec->curdir(),
                              'no_atomizer'   => 0,
-							 'write_autos'   => 0
+							               'write_autos'   => 0, 'write_SBMLmulti'   => 0
                            );
 # Default params for Console mode
 my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
@@ -104,8 +104,8 @@ my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
                              'output_dir'    => File::Spec->curdir(),
-                             'no_atomizer'   => 0,
-							 'write_autos'   => 0
+                             'no_atomizer'   => 0,   'write_autos'     => 0,
+                             'write_SBMLmulti' => 0
                            );
 
 
@@ -135,6 +135,7 @@ GetOptions( \%user_args,
             'write_SBML|sbml',
             'write_mfile|mfile',
             'write_xml|xml',
+            'write_SBMLmulti|sbmlmulti',
 			'write_autos|autos'
           )
 or die "Error in command line arguments (try: BNG2.pl --help)";

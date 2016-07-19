@@ -1747,7 +1747,8 @@ sub toString
 	# get arguments
 	my $print_edges      = @_ ? shift @_ : TRUE;   # if true, egde labels are printed
 	my $print_attributes = @_ ? shift @_ : TRUE;   # if true, species attributes are printed (don't use this for Canonical labeling!!)
-
+    #special output handling
+    my $print_options = @_ ? shift @_: ();
 	# initialize string
 	my $string = '';
 
@@ -1792,7 +1793,7 @@ sub toString
 	foreach my $mol ( @{$sg->Molecules} )
 	{
 		if ($imol > 0) { $string .= '.'; }
-		$string .= $mol->toString( $print_edges, $print_attributes, $sg->Compartment );
+		$string .= $mol->toString( $print_edges, $print_attributes, $sg->Compartment, $print_options );
 		++$imol;
 	}
 
@@ -2002,6 +2003,218 @@ sub toXML
 ###
 ###
 
+
+sub toSBMLMultiSpecies
+{
+    my $sg         = shift @_;
+    my $indent     = shift @_;
+    my $type       = shift @_;
+    my $id         = shift @_;
+    my $attributes_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+
+    my $string = $indent . "<$type";
+
+    # Attributes
+    # id
+    $string .= " id=\"" . $id . "\"";
+
+    # other attributes
+    #unless ( $attributes eq '' ) { $string .= ' ' . $attributes; }
+    for my $attrkey (keys %{$attributes_ref}){
+        $string .= sprintf(' %s="%s"', $attrkey, $attributes_ref->{$attrkey});
+    }
+
+    # Compartment
+    if ( $sg->Compartment )
+    {
+        #$string .= " compartment=\"" . $sg->Compartment->Name . "\"";
+        $string .= " compartment=\"any\"";
+    }
+
+    if($sg->StringExact)
+    {
+        $string .= sprintf(" name=\"%s\"", $sg->StringExact);
+    }
+
+
+    # add support for Fixed
+    if ( $sg->Fixed )
+    {
+        $string .= "boundaryCondition=\"true\"";
+    }
+
+    #multi:speciesType="st_cps_000001"
+
+    # Objects contained
+    my $indent2 = '  ' . $indent;
+    my $ostring = '';
+
+    my %sbmlMultiSpeciesInfo;
+
+    # Molecules
+    if ( @{$sg->Molecules} )
+    {
+        
+
+        my $index = 1;
+        foreach my $mol ( @{$sg->Molecules} )
+        {
+            $mol->getSBMLMultiSpeciesFields("  " . $indent2, $id, $index, \%sbmlMultiSpeciesInfo, $speciesIdHash_ref);
+            ++$index;
+        }
+
+
+    }
+
+
+
+
+    my $outbonds = "";
+    my $features = "";
+
+
+    foreach my $ostr (@{$sbmlMultiSpeciesInfo{'outwardbonds'}}){
+        $outbonds = $outbonds . $ostr;
+    }
+    if(! $outbonds eq ""){
+        $ostring = $ostring . $indent2 . "<multi:listOfOutwardBindingSites>\n";
+        $ostring .= $outbonds;
+        $ostring = $ostring . $indent2 . "</multi:listOfOutwardBindingSites>\n";
+    }
+    foreach my $ostr (@{$sbmlMultiSpeciesInfo{'speciesFeature'}}){
+        $features = $features . $ostr;
+    }
+    if (! $features eq ""){
+        $ostring = $ostring . $indent2 . "<multi:listOfSpeciesFeatures>\n";
+        $ostring .= $features;
+        $ostring = $ostring . $indent2 . "</multi:listOfSpeciesFeatures>\n";
+    }
+    # Termination
+    if ($ostring)
+    {
+        $string .= ">\n";                    # terminate tag opening
+        $string .= $ostring;
+        $string .= $indent . "</$type>\n";
+    }
+    else
+    {
+        $string .= "/>\n";                   # short tag termination
+    }
+
+    return $string;
+}
+
+sub toSBMLMultiSpeciesType
+{
+    my $sg         = shift @_;
+    my $mtlist     = shift @_;
+    my $indent     = shift @_;
+    my $type       = shift @_;
+    my $id         = shift @_;
+    my $attributes = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    
+    my $attributes_str = '';
+    for my $attrkey (keys %{$attributes}){
+        $attributes_str .= sprintf(' %s="%s"', $attrkey, $attributes->{$attrkey});
+    }
+
+    my $string = $indent . sprintf("<%s multi:id=\"ST%s\" %s multi:compartment=\"%s\">\n", $type, $id, $attributes_str, "any"); #$sg->Compartment->Name);
+    my $indent2 = $indent. "     ";
+    $speciesIdHash_ref->{'Species'}->{$attributes->{"multi:name"}} = sprintf("ST%s",$id);
+    #get species features and species type instances from the molecule type lists
+    if ($mtlist)
+    {
+        $string .= $mtlist->toSBMLMultiSpeciesType($sg, "ST" . $id, $indent2, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref);
+    }
+
+    my $mcounter = 1;
+    my $stid = "ST$id";
+
+    # foreach my $mol (@{$sg->Molecules}){
+    #     my $mid = "${stid}_M${mcounter}";
+    #     my $ccounter = 1;
+    #     my $parent = $speciesIdHash_ref->{'Molecules'}->{$mol->toString()};
+    #     foreach my $comp (@{$mol->Components}){
+    #         my $cid = $speciesIdHash_ref->{'Components'}->{sprintf("%s(%s)",$mol->Name,$comp->Name)};
+            
+            
+    #         $speciesIdHash_ref->{'References'}->{sprintf("ST%s",$id)}->{'Components'}->{$cid}->{'id'} = sprintf("%sI_M", $stid) . "$mcounter" ."_C$ccounter";
+    #         $speciesIdHash_ref->{'References'}->{sprintf("ST%s",$id)}->{'Components'}->{$cid}->{'parent'} = "s";
+    #         $ccounter +=1;
+    #     }
+    #     $mcounter += 1;
+    # }
+  
+    $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
+    foreach my $molkey (keys $speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}){
+        foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
+            $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $molkey);
+        }
+
+    }
+
+    foreach my $compkey (keys $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}){
+        my $centry = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'id'};
+        my $parent = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parent'};
+        my $multiref = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parentMulti'};
+        $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\" multi:identifyingParent=\"%s\"/>\n", $centry, $multiref, $parent);
+    }
+
+    $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
+    # technically this is only necessary for symmetric stuff but its easier to just index everything
+
+
+        # <multi:listOfSpeciesTypeComponentIndexes>
+        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_1_mol_000001" multi:component="st_mol_000001"/>
+        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_1_mol_000001_mcp_000001" multi:component="st_mcp_000001" multi:identifyingParent="sti_cps_000002_1_mol_000001"/>
+        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_1_mol_000001_bst_000001" multi:component="st_bst_000001" multi:identifyingParent="sti_cps_000002_1_mol_000001"/>
+        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_2_mol_000001" multi:component="st_mol_000001"/>
+        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_2_mol_000001_mcp_000001" multi:component="st_mcp_000001" multi:identifyingParent="sti_cps_000002_2_mol_000001"/>
+        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_2_mol_000001_bst_000001" multi:component="st_bst_000001" multi:identifyingParent="sti_cps_000002_2_mol_000001"/>
+        # </multi:listOfSpeciesTypeComponentIndexes>
+    # now get inspecies bonds
+    # Bonds
+
+    if ( @{$sg->Edges} )
+    {
+        my $bstring = '';
+        my $index   = 1;
+        my $indent3 = '  ' . $indent2;
+
+        my $bid1 = '';
+        my $bid2 = '';
+        foreach my $edge ( @{$sg->Edges} )
+        {
+            my ($p1, $p2) = split ' ', $edge;
+            next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
+            $bid1 = sprintf("%s_ist",p_to_label($p1 ,$id));
+            $bid2 = sprintf("%s_ist",p_to_label($p2 ,$id));
+            $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
+            ++$index;
+        }
+        if ($bstring)
+        {
+            $string .=   $indent2 . "<multi:listOfInSpeciesTypeBonds>\n"
+                        . $bstring
+                        . $indent2 . "</multi:listOfInSpeciesTypeBonds>\n";
+        }
+    }
+
+    $string .= sprintf("%s</%s>\n", $indent, $type);
+
+
+    return $string;
+
+
+}
+
+
+###
+###
+###
 
 
 sub addEdge

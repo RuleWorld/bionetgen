@@ -1094,6 +1094,7 @@ sub readSBML
         {   
             # if we're back at level 0, perform any required actions
             if ($level == 0)
+
             {
                 if ( $model->Params->{'write_xml'} )
                 {  $model->writeXML();  }
@@ -1106,6 +1107,10 @@ sub readSBML
 
                 if ( $model->Params->{'write_sbml'} )
                 {  $model->writeSBML();  }
+
+                if ( $model->Params->{'write_SBMLmulti'} )
+                {  $model->writeSBMLMulti();  }
+
             }
 
             # indicate that we're finished

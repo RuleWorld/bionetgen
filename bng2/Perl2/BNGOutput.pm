@@ -611,6 +611,271 @@ sub toXML
 ###
 ###
 
+# generate SBML-Multi string representing the BNGL model
+sub writeSBMLMulti
+{
+
+    my $model  = shift @_;
+    my $params = @_ ? shift @_ : {};
+    my $indent = "    ";
+
+    #return '' if $BNGModel::NO_EXEC;
+
+    # get parameter list
+    my $plist = $model->ParamList;
+
+    # get model name
+    my $model_name = $model->Name;
+
+    # Strip prefixed path
+    my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
+    my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : 'sbml';
+#   unless ( $suffix eq '' )
+#    {   
+        $prefix .= "_${suffix}";   
+#    }
+
+    # define file name
+    my $file = "${prefix}_sbmlmulti.xml";
+
+    # open file
+
+    # get BNG version
+    my $version = BNGUtils::BNGversion();
+
+
+    # 0. HEADER
+#   print $SBML <<"EOF";
+#<?xml version="1.0" encoding="UTF-8"?>
+#<!-- Created by BioNetGen $version  -->
+#<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+#  <model id="$model_name">
+#EOF
+    my $xml =  qq{<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen $version  -->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model id="$model_name">
+};
+
+
+    # 1. Compartments
+#   print $SBML <<"EOF";
+#    <listOfCompartments>
+#      <compartment id="cell" size="1"/>
+#    </listOfCompartments>
+#EOF
+    
+    if ($model->CompartmentList->Used) { # @a is not empty...
+        $xml = $xml . "    <listOfCompartments>\n";
+        foreach my $comp (@{$model->CompartmentList->Array})
+        {
+                $xml = $xml . $comp->toXML("      ", $plist);
+        }
+        $xml = $xml . "    </listOfCompartments>\n";
+        #printf $SBML "%s",$model->CompartmentList->toXML("     ");
+    } 
+    else { # @a is empty
+        $xml = $xml . qq{    <listOfCompartments>
+          <compartment id="cell" size="1"/>
+        </listOfCompartments>
+        };
+    }
+
+
+    # stores a hash indexed by quasy labels containing a (counter, speciesgraph, sbmlmulti type string) typle
+    my %speciesSet = ();
+    # store sbml multi species types in a hash indexed by the sbmlmulti string containing a (speciesTypeID, speciesgraph) tuple
+    my %speciesTypeSet = ();
+    # hash containing bng string to sbml multi id information
+    my %speciesIdHash;
+    # 1.5 Get total list of species patterns in the system
+    $model->extractAllSpeciesGraphs(\%speciesSet, \%speciesTypeSet);
+
+
+    #1.7 calculate species type information and string ahead of time since we will reuse this information
+    #in species definition
+    my $sbmlTypeStr;
+    $sbmlTypeStr .= $indent . "<multi:ListOfSpeciesTypes>\n";
+    #iterate over the species by id
+    my %sbmlMultiSpeciesTypeInfo;
+
+    foreach my $speciesStr (sort {$speciesTypeSet{$a}[0] <=> $speciesTypeSet{$b}[0]} keys %speciesTypeSet)
+    {
+        my $sid = $speciesTypeSet{$speciesStr}[0]; 
+        my $sg = $speciesTypeSet{$speciesStr}[1];
+        my %attributes = ('multi:name', $speciesStr);
+
+        $sbmlTypeStr .= $sg->toSBMLMultiSpeciesType($model->MoleculeTypesList, $indent, 'multi:speciesType', $sid, \%attributes, \%sbmlMultiSpeciesTypeInfo, \%speciesIdHash);
+    }
+
+    # 2. walk through the total model species llist and fill in information
+    $xml .= $indent . "<ListOfSpecies>\n";
+    #iterate over the species by id
+    foreach my $speciesStr (sort {$speciesSet{$a}[0] <=> $speciesSet{$b}[0]} keys %speciesSet)
+    {
+        my $index = $speciesSet{$speciesStr}[0]; 
+        my $sg = $speciesSet{$speciesStr}[1];
+        my $speciesType = $speciesSet{$speciesStr}[2];
+        my %attributes = ();
+
+        # Attributes
+        # concentration
+        $attributes{"concentration"} = "0";
+        $attributes{"multi:speciesType"} = "ST".$speciesType;
+        $xml .= $sg->toSBMLMultiSpecies("     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);
+    }
+
+    $xml .= $indent."</ListOfSpecies>\n";
+
+
+
+
+    # Reaction rules
+    my $string = $indent . "<ListOfReactionRules>\n";
+    my $indent2 = "  " . $indent;
+    my $rindex  = 1;
+    foreach my $rset ( @{$model->RxnRules} )
+    {
+        foreach my $rr ( @$rset )
+        {
+            $string .= $rr->toXML( $indent2, $rindex, $plist );
+            ++$rindex;
+        }
+    }
+    $string .= $indent . "</ListOfReactionRules>\n";
+    $xml .= $string;
+
+    # Observables
+    $string  = $indent . "<ListOfObservables>\n";
+    $indent2 = "  " . $indent;
+    my $oindex  = 1;
+    foreach my $obs ( @{$model->Observables} )
+    {
+        $string .= $obs->toXML( $indent2, $oindex );
+        ++$oindex;
+    }
+    $string .= $indent . "</ListOfObservables>\n";
+    $xml .= $string;
+
+    # Functions
+    $xml .= $indent . "<ListOfFunctions>\n";
+    $indent2 = "  " . $indent;
+    foreach my $param ( @{$plist->Array} )
+    {
+        next unless ( $param->Type eq "Function" );
+        $xml .= $param->Ref->toXML( $plist, $indent2 );
+    }
+    $xml .= $indent . "</ListOfFunctions>\n";
+
+    # print sbml:multi species types
+    #$xml .= $model->SpeciesList->toSBMLMultiType($model->MoleculeTypesList, $indent);
+
+    # finally append species type information
+    # top level species type
+    $xml .= $sbmlTypeStr;
+    # and child nodes species types
+    foreach my $speciesStr (sort {$sbmlMultiSpeciesTypeInfo{$a}[0] cmp $sbmlMultiSpeciesTypeInfo{$b}[0]} keys %sbmlMultiSpeciesTypeInfo)
+    {
+        $xml .= "  " . $indent . $sbmlMultiSpeciesTypeInfo{$speciesStr}[1];
+    }
+
+
+    $xml .= $indent."</multi:ListOfSpeciesTypes>\n";
+
+
+    # FOOTER
+    $xml .=  "  </model>\n"
+            ."</sbml>\n";
+
+
+    my $FH;
+    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+    print $FH $xml;
+    close $FH;
+
+    return $xml;
+}
+
+
+sub extractAllSpeciesGraphs
+{
+    my $model  = shift @_;
+    my $speciesSet = shift @_;
+    my $speciesTypeSet = shift @_;
+
+    my $speciesCounter = 1;
+    my $speciesTypeCounter = 1;
+
+    my %print_options = (
+        "sbml_multi",  "1",
+    );
+
+    foreach my $rset ( @{$model->RxnRules} )
+    {
+        foreach my $rr ( @$rset )
+        {
+            foreach my $reactant (@{$rr->Reactants})
+            {
+                $reactant->labelQuasi();
+                if (! defined $speciesSet->{$reactant->StringExact}){
+                    my $speciesTypeId = 0;
+                    push @{$speciesSet->{$reactant->StringExact}}, $speciesCounter;
+                    push @{$speciesSet->{$reactant->StringExact}}, $reactant;
+                    # calculate species type and add it to our set as necessary
+                    my $sbmlMultiSpeciesTypeStr = $reactant->toString(1, 1, \%print_options);
+                    if(exists $speciesTypeSet->{$sbmlMultiSpeciesTypeStr})
+                    {
+                        $speciesTypeId = $speciesTypeSet->{$sbmlMultiSpeciesTypeStr};
+                    }
+                    else
+                    {
+                        push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $speciesTypeCounter;
+                        push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $reactant;
+                        $speciesTypeId = $speciesTypeCounter;
+                        $speciesTypeCounter++;
+                    }
+
+                    push @{$speciesSet->{$reactant->StringExact}}, @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}[0];                    
+                    $speciesCounter += 1;
+                }
+            }
+            foreach my $product (@{$rr->Products})
+            {
+                $product->labelQuasi();
+                if (! defined $speciesSet->{$product->StringExact}){
+                    my $speciesTypeId = 0;
+                    push @{$speciesSet->{$product->StringExact}}, $speciesCounter;
+                    push @{$speciesSet->{$product->StringExact}}, $product;
+
+                    # calculate species type and add it to our set as necessary
+                    my $sbmlMultiSpeciesTypeStr = $product->toString(1, 1, \%print_options);
+                    if(exists $speciesTypeSet->{$sbmlMultiSpeciesTypeStr})
+                    {
+                        $speciesTypeId = $speciesTypeSet->{$sbmlMultiSpeciesTypeStr};
+                    }
+                    else
+                    {
+                        push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $speciesTypeCounter;
+                        push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $product;
+                        $speciesTypeId = $speciesTypeCounter;
+                        $speciesTypeCounter++;
+                    }
+
+                    push @{$speciesSet->{$product->StringExact}}, @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}[0];                    
+
+                    $speciesCounter += 1;
+                }    
+
+            }
+        }
+    }
+
+}
+
+
+###
+###
+###
 
 
 # write reaction network to SBML Level 2 Version 3 format

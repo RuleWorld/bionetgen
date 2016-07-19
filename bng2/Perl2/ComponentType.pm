@@ -107,6 +107,74 @@ sub toStringSSC{
   return($string);
 }
 
+#####
+# information used to create speciestype object in sbml multi
+#####
+sub toSBMLMultiSpeciesTypeFeatures
+{
+    my $ctype = shift @_; 
+    my $cid = shift @_;
+    my $mName = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    my $indent = shift @_;
+
+    my $ostring = '';
+    my $ststring = '';
+
+    #this parameter should eventually be sent from outside for symmetric components
+    my $occur = 1;
+
+
+    if (@{$ctype->States}){
+      my $fullname = sprintf("%s(%s)", $mName, $ctype->Name);
+      my $indent2  = "    ".$indent;
+      my $indent3  = "    ".$indent2;
+      my $sid = '';
+
+
+      $ostring.= sprintf("%s<multi:speciesFeatureType multi:id=\"%s\" multi:name=\"%s\" multi:occur=\"%d\">\n", $indent, $cid, $ctype->Name, $occur);
+      $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
+      $ostring.= $indent2."<multi:listOfPossibleSpeciesFeatureValues>\n";
+      for my $state (@{$ctype->States}){
+        $sid = sprintf("%s_%s",$cid, $state);
+        $ostring .= sprintf("%s<multi:possibleSpeciesFeatureValue multi:id=\"%s\" multi:name=\"%s\"/>\n",$indent3, $sid, $state);
+      }
+      $ostring.= $indent2."</multi:listOfPossibleSpeciesFeatureValues>\n";
+      $ostring.= $indent . "</multi:speciesFeatureType>\n";
+    }
+    return $ostring;
+}
+
+sub toSBMLMultiSpeciesTypeBinding
+{
+    my $ctype = shift @_; 
+    my $cid = shift @_;
+    my $mName = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    my $indent = shift @_;
+
+    my $ostring = '';
+    my $fullname = sprintf("%s(%s)", $mName, $ctype->Name);
+    if (!@{$ctype->States}){
+        $ostring .= sprintf("%s<multi:speciesTypeInstance multi:id=\"%s_ist\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n", $indent, $cid, $ctype->Name, $cid);
+        my $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\"/>\n", $cid, $fullname);
+        $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
+        push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $cid;
+        push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $ststring;
+
+    }
+
+    return $ostring;
+}
+
+
+#####
+#####
+#####
+#####
+
 sub toXML{
   my $ctype= shift;
   my $indent= shift;

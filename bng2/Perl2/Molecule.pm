@@ -232,6 +232,7 @@ sub toString
 	my $print_edges        = @_ ? shift @_ : TRUE;
 	my $print_attributes   = @_ ? shift @_ : TRUE;
 	my $speciesCompartment = @_ ? shift @_ : undef;
+    my $print_options      = @_ ? shift @_ : ();
 
 	my $string .= $mol->Name;
 
@@ -266,8 +267,20 @@ sub toString
 		{
 			if ($icomp)
 			{   $string .= ',';   }
-			$string .= $comp->toString($print_edges, $print_attributes);
-			++$icomp;
+            if(exists $print_options->{'sbml_multi'})
+            {
+                my $tmpstr .= $comp->toSBMLMultiSpeciesTypeString();
+                if(!$tmpstr eq ''){
+                    $string .= $tmpstr;
+                    ++$icomp;
+                }
+            }
+            else
+            {
+			    $string .= $comp->toString($print_edges, $print_attributes);
+                ++$icomp;
+            }
+
 		}
 		$string .= ")";
 	}
@@ -474,7 +487,45 @@ sub toStringMCell
 ###
 ###
 
+########
+# returns information for the speciesFeature and outwardBindingSite belonging to species in sbml multi
+######
+sub getSBMLMultiSpeciesFields
+{
+    my $mol    = shift @_;
+    my $indent = shift @_;
+    my $id     = shift @_;
+    my $index  = (@_) ? shift @_ : '';
 
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+
+    # Component information
+    my $mid = sprintf "${id}_M%d", $index;
+
+    if ( @{$mol->Components} )
+    {
+        my $cindex = 1;
+
+        foreach my $comp ( @{$mol->Components} )
+        {
+            my $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref );
+            ++$cindex;
+            my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref );
+            if(not $outwardbonds eq ''){
+                push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
+                #push @{$sbmlMultiSpeciesInfo{'outwardbonds'}}, $outwardbonds;
+            }
+            if(not $speciesfeatures eq''){
+                push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
+                #push @{$sbmlMultiSpeciesInfo{'speciesFeature'}}, $speciesfeatures;
+            }
+            ++$cindex;
+        }
+    }
+
+
+}
 
 sub toXML
 {
@@ -531,6 +582,8 @@ sub toXML
     {   # short tag termination
 		$string .= "/>\n";
 	}
+
+    return $string;
 }
 
 

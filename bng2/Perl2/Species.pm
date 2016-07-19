@@ -52,6 +52,54 @@ sub toXML
     return $string;
 }
 
+###
+###
+###
+
+
+sub toSBMLMulti
+{
+    my $spec = shift @_;
+    my $indent = @_ ? shift @_ : "";
+    my $id = @_ ? shift : "S".$spec->Index; 
+    my $conc   = @_ ? shift @_ : $spec->Concentration;
+
+
+    my $type = 'species';
+    my $attributes = '';
+
+    # Attributes
+    # concentration
+    $attributes .= " concentration=\"" . $conc . "\"";
+    # name
+    $attributes .= " name=\"" . $spec->SpeciesGraph->toString() . "\"";
+
+    # Objects contained
+    my $string = $spec->SpeciesGraph->toSBMLMultiSpecies($indent,$type,$id,$attributes);
+
+    return $string;
+}
+
+sub toSBMLMultiType
+{
+    my $spec = shift @_;
+    my $mtlist = shift @_;
+    my $indent = @_ ? shift @_ : "";
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+
+    my $id = @_ ? shift : "ST".$spec->Index; 
+
+    my $type = 'multi:speciesType';
+    my $attributes = '';
+
+
+    my $string = $spec->SpeciesGraph->toSBMLMultiSpeciesType($mtlist, $indent,$type,$id,$sbmlMultiSpeciesInfo_ref);
+
+
+
+    return $string;
+
+}
 
 ###
 ###

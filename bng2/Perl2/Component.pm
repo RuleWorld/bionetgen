@@ -188,6 +188,41 @@ sub toString
     return $string;
 }
 
+sub toSBMLMultiSpeciesTypeString
+{
+    my $comp = shift @_;
+    my $attributesString = '';
+    my $bondsString = '';
+    if (defined $comp->State )
+    {   
+        $attributesString .= " ";
+        #$attributesString .= sprintf "~%s", $comp->State;   
+    }
+    if (defined $comp->Edges )
+    {
+        foreach my $edge (@{$comp->Edges})
+        {
+            if ($edge=~ /^\d+$/)
+            {   $bondsString .= sprintf "!%d", $edge+1;   }
+            else
+            {   
+                # we dont care about wildcards for sbml multi species types
+                return '';
+            }
+        }
+    }
+
+    # we might have to do something about multiplebonds/states
+    my $tailStr = $attributesString . $bondsString;
+    if($tailStr eq ''){
+        return ''
+    }
+    else{
+        return $comp->Name . $attributesString . $bondsString;    
+    }
+    
+}
+
 
 
 ###
@@ -255,12 +290,110 @@ sub toStringSSC
 
 
 
+
+
+########
+# returns information for the  outwardBindingSite belonging to species in sbml multi
+######
+sub getSBMLMultiOutwardBonds
+{
+    my $comp   = shift @_;
+    my $indent = shift @_;
+    my $mName     = shift @_;
+    my $index  = shift @_;
+    my $speciesIdHash_ref = shift @_;
+
+    my $string = "";
+    my $fullstring = sprintf("%s(%s)",$mName, $comp->Name);
+    my $externalId = $speciesIdHash_ref->{'Components'}->{$fullstring};
+
+    # Attributes
+    # id
+
+    # NumberOfBonds
+    my $nbonds = 0;
+    my $bindingstatus = '';
+    foreach my $edge (@{$comp->Edges})
+    {
+        if ($edge=~ /^[?+]$/)
+        {
+            $bindingstatus = "either";
+        }
+        else
+        {
+            ++$nbonds;
+        }
+    }
+    
+    if ($nbonds == 0)
+    {
+        $bindingstatus = "unbound";
+    }
+    
+    if($nbonds > 1 )
+    {
+        print "Can't handle components with more than one bond, skipping\n";
+        return "";
+        #sbml multi cant handle components with more than one bond. we should somehow return an error
+    }    
+    if($nbonds == 1 && (defined $comp->State)){
+        print "Can't handle components with states and bonds, skipping\n";
+        return "";
+    }
+    if($nbonds == 0 && (defined $comp->State)){
+        return "";
+    }
+
+    if (! $bindingstatus eq "" )
+    {
+        my $indent2 = '  ' . $indent;
+        $string = $indent2 . sprintf("<multi:outwardBindingSite multi:bindingStatus=\"%s\" multi:component=\"%s\"/>\n", $bindingstatus, $externalId);
+        # Objects contained
+    }
+    
+    return $string;
+}
+
+####
+# returns a string containg the speciesfeature properties associated with this compartment
+# for construction of a sbml species object in an sbml-multi file
+#####
+sub getSBMLMultiSpeciesFeature
+{
+    my $comp   = shift @_;
+    my $indent = shift @_;
+    my $mName     = shift @_;
+    my $index  = shift @_;
+    my $speciesIdHash_ref = shift @_;
+
+    my $string = "";
+    # state
+    if (defined $comp->State)
+    {
+        my $fullstring = sprintf("%s(%s)",$mName, $comp->Name);
+        my $externalId = $speciesIdHash_ref->{'Components'}->{$fullstring};
+        
+        my $indent2 = '  ' . $indent;
+        $string = $indent2 . sprintf("<multi:speciesFeature id=\"%s\" multi:speciesFeatureType=\"%s\" multi:occur=\"%d\">\n",$index, $externalId, 1);
+        my $indent3 = "  " . $indent2;
+        # Objects contained
+        my $stateDefStr = $indent3 . "<multi:listOfSpeciesFeatureValues>\n";
+        $stateDefStr = $stateDefStr. $indent3 . "    " . sprintf("<multi:speciesFeatureValue multi:value=\"%s\"/>\n",$comp->State);
+        $stateDefStr = $stateDefStr. $indent3 . "</multi:listOfSpeciesFeatureValues>\n";
+
+        $string = $string . $stateDefStr;
+    }
+    
+    # Attributes
+    # id
+    
+    return $string;
+}
+
+
 ###
 ###
 ###
-
-
-
 sub toXML
 {
     my $comp   = shift @_;
@@ -325,6 +458,8 @@ sub toXML
     {   # short tag termination
         $string .= "/>\n"; 
     }
+
+    return $string;
 }
 
 
