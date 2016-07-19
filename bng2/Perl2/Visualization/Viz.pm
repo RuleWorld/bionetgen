@@ -214,6 +214,9 @@ sub execute_params
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
 	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process rinf opts);
 	
+	# simplifying input types
+	push @validtypes, qw(conventional compact);
+	
 	if (not has(\@argkeys,'type'))
 	{
 		$err =  "Visualization type unspecified. Use visualize({type=>\"string\"}),\n";
@@ -230,8 +233,13 @@ sub execute_params
 		$err = "Visualization error: '" . $args{'type'} . "' is an invalid type.\n";
 		return $err;
 	}
-
+	
 	my $type = $args{'type'};
+	# simplifying type inputs, aliasing to existing types
+	if( $args{'type'} eq 'conventional') { $type = 'ruleviz_pattern';}
+	if( $args{'type'} eq 'compact') { $type = 'ruleviz_operation';}
+
+	
 	my $output = $args{'output'};
 	my $each = $args{'each'};
 	my $groups = $args{'groups'};
@@ -590,7 +598,7 @@ sub execute_params
 	
 	if(( ($textonly==1) or ($type eq 'opts') ) and $each==0)
 	{
-		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);	
+		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'argstype'=>$args{'type'});	
 		writeText(\%params);
 		$output=0;
 	}
@@ -598,7 +606,7 @@ sub execute_params
 	if ($output==1 and $each==0)
 	{
 		my $suffix = $args{'suffix'};
-		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'groups'=>$groups);
+		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'groups'=>$groups,'argstype'=>$args{'type'});
 		writeGML(\%params);
 	}
 
@@ -606,7 +614,7 @@ sub execute_params
 	{
 		my @names = map {@$_;} flat($gr->{'RuleNames'});
 		map { 
-			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>($suffix ? $suffix.'_'.$names[$_] : $names[$_]),'type'=>$type);
+			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>($suffix ? $suffix.'_'.$names[$_] : $names[$_]),'type'=>$type,'argstype'=>$args{'type'});
 			writeGML(\%params);
 			}	(0..@names-1);
 	}
@@ -622,6 +630,7 @@ sub writeText
 	my $str = $params{'str'};
 	my $prefix = $model->getOutputPrefix();
 	my $type = $params{'type'};
+	my $argstype = (defined $params{'argstype'}) ? $params{'argstype'} : $type;
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
 	
 	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
@@ -633,7 +642,8 @@ sub writeText
 	
 	my $file = '';
 	$file .= $prefix;
-	$file .= "_".$type;
+	#$file .= "_".$type;
+	$file .= "_".$params{'argstype'};
 	$file .= "_".$suffix if (length $suffix > 0);
 	$file .= ".txt";
 		
@@ -656,6 +666,7 @@ sub writeGML
 	my $str = $params{'str'};
 	my $prefix = $model->getOutputPrefix();
 	my $type = $params{'type'};
+	my $argstype = (defined $params{'argstype'}) ? $params{'argstype'} : $type;
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
 	
 	my %outputstr = (	'ruleviz_operation' => 'rule(s) with graph operations',
@@ -671,7 +682,8 @@ sub writeGML
 	
 	my $file = '';
 	$file .= $prefix;
-	$file .= "_".$type;
+	#$file .= "_".$type;
+	$file .= "_".$argstype;
 	$file .= "_".$suffix if (length $suffix > 0);
 	$file .= ".gml";
 		
