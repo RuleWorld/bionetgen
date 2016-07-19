@@ -11,6 +11,8 @@ use Visualization::NetworkGraph;
 use Visualization::ProcessGraph;
 use Visualization::ContactMap;
 use Visualization::GML;
+use Visualization::RINF;
+#use Visualization::DB;
 
 
 struct Graphs =>
@@ -72,7 +74,11 @@ sub initializeExecParams
 	my @items = ();
 	my $level = 1;
 	my $filter = {'toggle'=>$toggle2,'items'=>\@items,'level'=>$level};
-	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter,'embed'=>0);
+	
+	my @inhibition = ();
+	my %motifs = ();
+	my %x = ('background'=>$background,'each'=>$each,'groups'=>$groups,'classes'=>$classes,'filter'=>$filter,'embed'=>0,'inhibition'=>\@inhibition,'motifs'=>\%motifs);
+	
 	return %x;
 	
 }
@@ -84,15 +90,16 @@ sub getExecParams
 	my %toggle;
 	my %background;
 	my %classes;
-	
+	#print "\nARGKEYS ".join(" ",keys %args)."\n";
 	foreach my $file(@{$args{'opts'}})
 	{
-		my ($x,$y,$z,$f) = parseOpts($file);
+		my ($x,$y,$z,$f,$inh,$mot) = parseOpts($file);
 		my %toggle = %$x;
 		my %background = %$y;
 		my %classes = %$z;
 		my %filter = %$f;
-		
+		my @inhibition= @$inh;
+		my %motifs = %$mot;
 		# do toggles;
 		foreach my $key(keys %toggle)
 		{
@@ -120,6 +127,18 @@ sub getExecParams
 			if (not defined $exec_params{'filter'}->{'items'}) {$exec_params{'filter'}->{'items'} = [];};
 			push2ref($exec_params{'filter'}->{'items'},$filter{'items'});
 		}
+		if(@inhibition)
+		{
+			push2ref($exec_params{'inhibition'},\@inhibition);
+		}
+
+		foreach my $key(keys %motifs)
+			{
+			my $motifs2 = $exec_params{'motifs'};
+			my @arr = ();
+			if(not defined $motifs2->{$key}) { $motifs2->{$key} = \@arr; }
+			push2ref($motifs2->{$key},$motifs{$key});
+			}
 		
 	}
 	
@@ -134,8 +153,22 @@ sub getExecParams
 	$exec_params{'mergepairs'} = $args{'mergepairs'};
 	$exec_params{'embed'} = $args{'embed'};
 	
+	
 	if(defined $args{'level'}) { $exec_params{'filter'}->{'level'} = $args{'level'} };
 	if(defined $args{'reset'}) { $exec_params{'reset'} = $args{'reset'} };
+	if(defined $args{'ruleNames'}) { $exec_params{'ruleNames'} = $args{'ruleNames'} };
+	
+	# pass along remaining parameters
+	if(defined $args{'doNotUseContextWhenGrouping'}) { $exec_params{'doNotUseContextWhenGrouping'} = $args{'doNotUseContextWhenGrouping'}; }
+	if(defined $args{'removeReactantContext'}) { $exec_params{'removeReactantContext'} = $args{'removeReactantContext'}; }
+	if(defined $args{'makeInhibitionEdges'}) { $exec_params{'makeInhibitionEdges'} = $args{'makeInhibitionEdges'}; }
+	if(defined $args{'removeProcessNodes'}) { $exec_params{'removeProcessNodes'} = $args{'removeProcessNodes'}; }
+	if(defined $args{'compressRuleMotifs'}) { $exec_params{'compressRuleMotifs'} = $args{'compressRuleMotifs'}; }
+	if(defined $args{'doNotCollapseEdges'}) { $exec_params{'doNotCollapseEdges'} = $args{'doNotCollapseEdges'}; }
+	
+	if(defined $args{'inhibition'}) { $exec_params{'inhibition'} = $args{'inhibition'}; }
+	if(defined $args{'motifs'}) {$exec_params{'motifs'} = $args{'motifs'}};
+	
 	return \%exec_params;
 }
 ##########################
@@ -146,6 +179,8 @@ sub execute_params
 	my %args = %{shift @_};
 	
 	my @argkeys = keys %args;
+	
+	#print "\n".join(" ",@argkeys)."\n";
 	my $err = ''; #"visualize() error.";
 	
 	$args{'output'} = 1 if (not has(\@argkeys,'output'));
@@ -166,9 +201,21 @@ sub execute_params
 	$args{'background'}->{'exclude'} = [] if(not has(\@argkeys2,'exclude'));
 	
 	$args{'reset'} = 0 if(not has (\@argkeys,'reset'));
+	$args{'ruleNames'} = 0 if(not has (\@argkeys,'ruleNames'));
+	$args{'doNotUseContextWhenGrouping'} = 0 if(not has(\@argkeys,'doNotUseContextWhenGrouping'));
+	$args{'removeReactantContext'} = 0 if(not has(\@argkeys,'removeReactantContext'));
+	$args{'makeInhibitionEdges'} = 0 if(not has(\@argkeys,'makeInhibitionEdges'));
+	$args{'removeProcessNodes'} = 0 if(not has(\@argkeys,'removeProcessNodes'));
+	$args{'inhibition'} = [] if(not has(\@argkeys,'inhibition'));
+	$args{'motifs'} = {} if(not has(\@argkeys,'motifs'));
+	$args{'compressRuleMotifs'} = 0 if (not has(\@argkeys,'compressRuleMotifs'));
+	$args{'doNotCollapseEdges'} = 0 if (not has(\@argkeys,'doNotCollapseEdges'));
 
 	#my @validtypes = qw (rule_pattern rule_operation rule_network reaction_network transformation_network contact process processpair );
-	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process );
+	my @validtypes = qw (ruleviz_pattern ruleviz_operation regulatory reaction_network contactmap process rinf opts);
+	
+	# simplifying input types
+	push @validtypes, qw(conventional compact);
 	
 	if (not has(\@argkeys,'type'))
 	{
@@ -186,8 +233,13 @@ sub execute_params
 		$err = "Visualization error: '" . $args{'type'} . "' is an invalid type.\n";
 		return $err;
 	}
-
+	
 	my $type = $args{'type'};
+	# simplifying type inputs, aliasing to existing types
+	if( $args{'type'} eq 'conventional') { $type = 'ruleviz_pattern';}
+	if( $args{'type'} eq 'compact') { $type = 'ruleviz_operation';}
+
+	
 	my $output = $args{'output'};
 	my $each = $args{'each'};
 	my $groups = $args{'groups'};
@@ -204,6 +256,9 @@ sub execute_params
 	my $bkg_toggle = $bkg->{'toggle'};
 	my $bkg_include = $bkg->{'include'};
 	my $bkg_exclude = $bkg->{'exclude'};
+	
+	my $inhibition = $args{'inhibition'};
+	my $motifs = $args{'motifs'};
 	
 	my $reset = $args{'reset'};
 	
@@ -249,8 +304,25 @@ sub execute_params
 	my $str = '';
 	my @strs = ();
 	my @groups;
-	
+
 	getRuleNames($model);
+	
+	if($type eq 'opts')
+	{
+		getRuleNetwork($model);
+		my $bpg = $model->VizGraphs->{'RuleNetwork'};
+		my $mtypes = $model->MoleculeTypesList->MolTypes;
+		$str = writeExampleOpts($bpg,$mtypes); 
+	}
+	
+	if($type eq 'rinf')
+	{
+		getRuleNetwork($model);
+		my $bpg = $gr->{'RuleNetwork'};
+		my $rinf = makeRINF($bpg,$model);
+		$str = toGML_rinf($rinf);
+	
+	}
 	if ($type eq 'ruleviz_operation')
 	{
 		getRuleStructureGraphs($model);
@@ -331,6 +403,17 @@ sub execute_params
 				applyRuleNetworkCurrent($model,$bpg);
 			}
 			
+			my $remap_pairs = [];
+			if($args{'compressRuleMotifs'} == 1)
+			{
+				# Compressing motifs of rules (i.e. groups of rules that form a motif)
+				# This is performed BEFORE Background Removal
+				# IT IS PERMANENT AND IRREVERSIBLE
+				my $bpg = $gr->{'RuleNetworkCurrent'};
+				print "Compressing defined motifs of rules.\n";
+				($bpg,$remap_pairs) = compressRuleMotifs($bpg,$args{'motifs'});
+				applyRuleNetworkCurrent($model,$bpg);
+			}
 			if ($bkg_toggle==0)
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
@@ -344,14 +427,36 @@ sub execute_params
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
 				print "Creating classes of atomic patterns and rules.\n";
-				syncClasses($model,$bpg,\%classes);
-				if($collapse==1)
-					{ 
-					print "Collapsing network graph using equivalence classes.\n";
-					$bpg = collapseNetworkGraph($bpg); 
-					}
+				syncClasses($model,$bpg,\%classes,$args{'doNotUseContextWhenGrouping'});
 				applyRuleNetworkCurrent($model,$bpg);
 			}
+			if($args{'removeReactantContext'} ==1)
+				{
+				##### THIS IS AN AESTHETIC MOD, i.e. IT HAS NO EFFECT ON GROUPING
+				#### IT IS PERFORMED AFTER GROUPING, BUT BEFORE COLLAPSING
+				my $bpg = $gr->{'RuleNetworkCurrent'};
+				print "Removing redundant context from reactants.\n";
+				$bpg = removeReactantContext($bpg);
+				applyRuleNetworkCurrent($model,$bpg);
+				}
+			if($args{'makeInhibitionEdges'} ==1)
+				{
+				##### THIS IS AN AESTHETIC MOD, i.e. IT HAS NO EFFECT ON GROUPING
+				#### IT IS PERFORMED AFTER GROUPING, BUT BEFORE COLLAPSING
+				my $bpg = $gr->{'RuleNetworkCurrent'};
+				print "Making inhibition edges.\n";
+				$bpg = makeInhibitionEdges($bpg,$inhibition,$remap_pairs);
+				applyRuleNetworkCurrent($model,$bpg);
+				}
+			
+			if($groups==1 and $collapse==1)
+				{
+				my $bpg = $gr->{'RuleNetworkCurrent'};				
+				print "Collapsing network graph using equivalence classes.\n";
+				$bpg = collapseNetworkGraph($bpg,$args{'doNotCollapseEdges'});
+				applyRuleNetworkCurrent($model,$bpg);					
+				}
+			
 			if($output==1)
 			{
 				my $bpg = $gr->{'RuleNetworkCurrent'};
@@ -362,7 +467,7 @@ sub execute_params
 				}
 				else
 				{
-					$str = toGML_rule_network($bpg,$embed);
+					$str = toGML_rule_network($bpg,$embed,$args{'ruleNames'});
 				}
 			}
 		}
@@ -391,7 +496,7 @@ sub execute_params
 				my @grp = grep { $classes{$_} eq $grpname } keys %classes;
 				my $grptype = $nodetype{$grp[0]};
 				my $bpg2 = filterNetworkGraphByList($bpg,\@grp,1);
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'});
 				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grpname : $grpname),'type'=>$type);
 				if($output==1)
 				{
@@ -410,7 +515,7 @@ sub execute_params
 				# right now this is not efficient
 				# better way is to regenerate the network graph, but then u'll have to apply background n
 				# filter n other things again... boring!
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'});
 				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grp[0] : $grp[0]),'type'=>$type);
 				if($output==1)
 				{
@@ -423,6 +528,31 @@ sub execute_params
 		
 		if($each==1) {$output = 0;}
 	}
+	
+	#
+	#if($type eq 'regulatory_db')
+	#{
+	#	my %args2 = duplicate_args(\%args);
+	#	$args2{'type'} = 'regulatory';
+	#	$args2{'output'} = 0;
+	#	$args2{'groups'} = 0;
+	#	$args2{'collapse'} = 0;
+	#	$args{'background'}->{'toggle'} = 1;
+	#	execute_params($model,\%args2);
+	#	my $bpg = $model->VizGraphs->{'RuleNetworkCurrent'};
+	#	my $prefix = $model->getOutputPrefix();
+	#	my $name = $prefix.".db";
+	#	my $dbh = newDBFile($name);
+	#	$dbh = getRegDB($dbh,$bpg);
+	#	$dbh = getRuleDB($dbh,$model->RxnRules);
+	#	$dbh->disconnect();
+	#	print "Writing regulatory graph database as $name\nDone!\n";
+	#	print "To modify background and grouping, run: sqlite3 $name.\n";
+	#	print "To generate the regulatory graph,  run: visualize.pl --db $name [--background] [--groups [--collapse]]\n";
+	#	exit;
+	#}
+	
+		
 	
 	if($type eq 'process')
 	{
@@ -447,12 +577,28 @@ sub execute_params
 			}
 	}
 		
-		
+	if($type eq 'reaction_network')
+	{
+		$BNGModel::GLOBAL_MODEL = $model;
+		if(-e $model.".net")
+		{
+		my $err = $model->readNetwork({file=>$model.".net"});
+		print @{$model->RxnList->Array};
+		}
+		else
+			{
+			my $err = $model->generate_network({write=>0,TextReaction=>1});
+			}
+		my @bpgs = map {makeRxnNetworkGraph($_)} @{$model->RxnList->Array};
+		my $bpg = mergeNetworkGraphs(flat(\@bpgs));
+		$bpg->{'Merged'} = 1;
+		$str = toGML_rule_network($bpg,$args{'ruleNames'});
+	}
 		
 	
-	if($textonly==1 and $each==0)
+	if(( ($textonly==1) or ($type eq 'opts') ) and $each==0)
 	{
-		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);	
+		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'argstype'=>$args{'type'});	
 		writeText(\%params);
 		$output=0;
 	}
@@ -460,7 +606,7 @@ sub execute_params
 	if ($output==1 and $each==0)
 	{
 		my $suffix = $args{'suffix'};
-		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'groups'=>$groups);
+		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'groups'=>$groups,'argstype'=>$args{'type'});
 		writeGML(\%params);
 	}
 
@@ -468,7 +614,7 @@ sub execute_params
 	{
 		my @names = map {@$_;} flat($gr->{'RuleNames'});
 		map { 
-			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>($suffix ? $suffix.'_'.$names[$_] : $names[$_]),'type'=>$type);
+			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>($suffix ? $suffix.'_'.$names[$_] : $names[$_]),'type'=>$type,'argstype'=>$args{'type'});
 			writeGML(\%params);
 			}	(0..@names-1);
 	}
@@ -484,17 +630,20 @@ sub writeText
 	my $str = $params{'str'};
 	my $prefix = $model->getOutputPrefix();
 	my $type = $params{'type'};
+	my $argstype = (defined $params{'argstype'}) ? $params{'argstype'} : $type;
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
 	
 	my %outputstr = (	'rule_operation' => 'rule(s) with graph operations',
 						'rule_pattern' => 'rule(s) with patterns',
 						'regulatory' => 'network of rules and atomic patterns',
-						'patterns' => 'atomic patterns',);
+						'patterns' => 'atomic patterns',
+						'opts' => 'example options file');
 	my $outputmsg = $outputstr{$type};
 	
 	my $file = '';
 	$file .= $prefix;
-	$file .= "_".$type;
+	#$file .= "_".$type;
+	$file .= "_".$params{'argstype'};
 	$file .= "_".$suffix if (length $suffix > 0);
 	$file .= ".txt";
 		
@@ -505,7 +654,8 @@ sub writeText
     close $FH;
 
     # all done
-    print sprintf( "Wrote %s in TXT format to %s.\n", $outputmsg, $file);
+    
+	print sprintf( "Wrote %s in TXT format to %s.\n", $outputmsg, $file);
     return undef;
 }
 
@@ -515,6 +665,44 @@ sub writeGML
 	my $model = $params{'model'};
 	my $str = $params{'str'};
 	my $prefix = $model->getOutputPrefix();
+	my $type = $params{'type'};
+	my $argstype = (defined $params{'argstype'}) ? $params{'argstype'} : $type;
+	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
+	
+	my %outputstr = (	'ruleviz_operation' => 'rule(s) with graph operations',
+						'ruleviz_pattern' => 'rule(s) with patterns',
+						'regulatory' => 'network of rules and atomic patterns',
+						'process' => 'process graph of rules',
+						'contactmap' => 'contact map of model',
+						'reaction_network' => 'reaction network of model',
+						'rinf' => 'rule influence diagram of model',
+						'opts' => 'example options file for regulatory graph of model'
+						);
+	my $outputmsg = $outputstr{$type};
+	
+	my $file = '';
+	$file .= $prefix;
+	#$file .= "_".$type;
+	$file .= "_".$argstype;
+	$file .= "_".$suffix if (length $suffix > 0);
+	$file .= ".gml";
+		
+	# write the string to file
+    my $FH;
+    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+    print $FH $str;
+    close $FH;
+
+    # all done
+    print sprintf( "Wrote %s in GML format to %s.\n", $outputmsg, $file);
+    return undef;
+}
+
+sub writeGML2
+{
+	my %params = %{shift @_};
+	my $str = $params{'str'};
+	my $prefix = $params{'prefix'};
 	my $type = $params{'type'};
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
 	
@@ -639,6 +827,7 @@ sub getRuleNetwork
 	{
 		print "Compiling network graph for whole model.\n";
 		$bpg = mergeNetworkGraphs(flat(@{$gr->{'RuleNetworkGraphs'}}));
+		$bpg = resolveWildcards($bpg);
 		$bpg->{'Merged'} = 1;
 		$bpg->{'Collapsed'} = 0;
 		$gr->{'RuleNetwork'} = $bpg;
@@ -684,6 +873,7 @@ sub applyRuleNetworkCurrent
 	$model->VizGraphs->{'RuleNetworkCurrent'} = $bpg;
 	return;
 }
+
 sub getRuleGroups
 {
 	my $model = shift @_;
@@ -718,6 +908,7 @@ sub syncClasses
 	my $model = shift @_;
 	my $bpg = shift @_;
 	my $classes_in = @_ ? shift @_ : undef;
+	my $doNotUseContextWhenGrouping = @_ ? shift @_ : 0;
 	#print map $_." ".$$classes_in{$_}."\n", keys %$classes_in;
 	
 	my $gr = $model->VizGraphs;
@@ -753,7 +944,6 @@ sub syncClasses
 		$classes_in->{$wc} = $classes_in->{$matches[0]};
 		#if(scalar(@matches) ==1) { $classes_in->{$wc} = $matches[0]; }
 		}
-	
 	}
 	
 	# update bpg and model using %$classes_in
@@ -768,6 +958,94 @@ sub syncClasses
 	
 	}
 	
+	# creating temp hash to hold for each AP
+	# either the class (if classed) or 
+	# its name (if unclassed)
+	my @classed = keys %{$bpg->{'NodeClass'}};
+	my @unclassed = grep has(\@classed,$_)==0, @aps;
+	my %temp;
+	@temp { @classed } = @{$bpg->{'NodeClass'}} { @classed };
+	@temp { @unclassed } = @unclassed;
+	
+	# getting rules
+	#my @rules =	map {quotemeta($_)}
+	#			grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+	#				@{$bpg->{'NodeList'}};
+	my @edges =	grep { $_ =~ /Reactant|Product$/ }
+				@{$bpg->{'EdgeList'}};
+	my @reac_edges =	grep { $_ =~ /Reactant$/ }
+				@{$bpg->{'EdgeList'}};
+	my @prod_edges =	grep { $_ =~ /Product$/ }
+				@{$bpg->{'EdgeList'}};
+	my @cont_edges =	grep { $_ =~ /Context$/ }
+				@{$bpg->{'EdgeList'}};
+	my %reacprodhash;
+	# dont wanna lose the order;
+	my @reacprodvals; 
+	my @rules = grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} @{$bpg->{'NodeList'}};
+	foreach my $rule(@rules)
+	{
+		my @reac = 	uniq 
+					sort {$a cmp $b}
+					map { $temp{$_} } 
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@reac_edges;
+		my @prod = 	uniq
+					sort {$a cmp $b}
+					map { $temp{$_} }
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@prod_edges;
+		my @cont =  uniq
+					sort {$a cmp $b}
+					map { $temp{$_} }
+					map { $_ =~ /.*:(.*):.*/; $1; }
+					grep { $_ =~ /^(.*):.*:.*/; $1 eq $rule; } 
+					@cont_edges;
+		my $str;
+		if($doNotUseContextWhenGrouping == 0) { $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) ); }
+		else { $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod) ); }
+		#my $str = join(" -> ", map { join(" + ", @$_); } (\@reac,\@prod,\@cont) );
+		my $hasreacprod = @reac ? 1 : @prod ? 1 : 0;
+		my $reacprodstr = $hasreacprod ? $str : '';
+		$reacprodhash{$rule} = $reacprodstr;
+		push @reacprodvals,$reacprodstr;
+		#print $rule.":".join(" ",@reac).":".join(" ",@prod)."\n";
+	}
+	
+	# get reacprodstrings that occur multiple times
+	# if it occurs only once, it doesnt need a group
+	# prune this to delete reacprods that occur only once
+	my @reacprods = grep
+					{
+					my $x = $_;
+					$x ne '' and (scalar (grep { $_ eq $x } values %reacprodhash) >1);
+					} uniq @reacprodvals;
+	return if (scalar @reacprods == 0);
+	$gr->{'NewName'} = -1 if (not defined $gr->{'NewName'}); 
+	
+	# assigning names to rule groups
+	my %names;
+	@names{ @reacprods } = map 'RG'.++$gr->{'NewName'}, @reacprods;
+	
+	# updating model and bpg classdefs for the grouped rules
+	my @rules2 = 	grep { has(\@reacprods,$reacprodhash{$_}) } 
+					map unquotemeta, @rules;
+	foreach my $rule(@rules2)
+	{
+		$gr->{'Classes'}->{$rule} = $names{$reacprodhash{$rule}};
+		$bpg->{'NodeClass'}->{$rule} = $names{$reacprodhash{$rule}};
+	}
+	return;
+}
+
+
+sub makeClasses
+{
+	my $bpg = shift @_;
+	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
+				@{$bpg->{'NodeList'}};
 	# creating temp hash to hold for each AP
 	# either the class (if classed) or 
 	# its name (if unclassed)
@@ -813,36 +1091,6 @@ sub syncClasses
 		#print $rule.":".join(" ",@reac).":".join(" ",@prod)."\n";
 	}
 	
-	
-	# foreach my $rule(@rules)
-	# {
-		# my $reacprodstr = 	join " ",
-						# sort {$a cmp $b}
-						# uniq map {$temp{$_};}
-						# map {$_ =~ /.*:(.*):.*/; $1;}
-						# grep { $_ =~ /^$rule:/;}
-						# @edges;
-		# my @reac = 		map {$_ =~ /.*:(.*):.*/; $1;}
-						# grep { $_ =~ /^$rule:/;}
-						# @reac_edges;
-
-		# my @reac1 = @reac ? uniq map {$temp{$_}} @reac : ();
-		# my @prod = 		map {$_ =~ /.*:(.*):.*/; $1;}
-						# grep { $_ =~ /^$rule:/;}
-						# @prod_edges;
-		# my @prod1 = @reac ? uniq map {$temp{$_}} @prod : ();
-		# my $reacstr = @reac1 ? join(" ",sort {$a cmp $b}  @reac1) : '';
-		# my $prodstr = @prod1 ? join(" ",sort {$a cmp $b}  @prod1) : '';
-		# $reacprodstr = $reacstr." -> ".$prodstr;
-		
-		# $reacprodhash{unquotemeta $rule} = $reacprodstr;
-		# push @reacprodvals,$reacprodstr;
-		# #$reacprodhash{unquotemeta $rule} = $reacstr." -> ".$prodstr;
-	# }
-	
-	#print map $_."\n",uniq(@reacprodvals);
-	
-	
 	# get reacprodstrings that occur multiple times
 	# if it occurs only once, it doesnt need a group
 	# prune this to delete reacprods that occur only once
@@ -852,22 +1100,107 @@ sub syncClasses
 					$x ne '' and (scalar (grep { $_ eq $x } values %reacprodhash) >1);
 					} uniq @reacprodvals;
 	return if (scalar @reacprods == 0);
-	$gr->{'NewName'} = -1 if (not defined $gr->{'NewName'}); 
-	
+	my $newname = -1;
 	# assigning names to rule groups
 	my %names;
-	@names{ @reacprods } = map 'RG'.++$gr->{'NewName'}, @reacprods;
+	@names{ @reacprods } = map 'RG'.++$newname, @reacprods;
 	
 	# updating model and bpg classdefs for the grouped rules
 	my @rules2 = 	grep { has(\@reacprods,$reacprodhash{$_}) } 
 					map unquotemeta, @rules;
 	foreach my $rule(@rules2)
 	{
-		$gr->{'Classes'}->{$rule} = $names{$reacprodhash{$rule}};
 		$bpg->{'NodeClass'}->{$rule} = $names{$reacprodhash{$rule}};
 	}
 	return;
 }
+sub compressRuleMotifs
+{
+	my $bpg = shift @_;
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my %nodetype = %{$bpg->{'NodeType'}};
+	
+	my %motifs = %{shift @_};
+	my @motifnames = keys %motifs;
+	my @rules_to_remove = uniq map { @{$motifs{$_}} } @motifnames;
+	
+	
+	# this is an array of strings, 2-member arrays, remap from member[0] to member [1]
+	my @remap_pairs;
+	foreach my $name(@motifnames)
+	{
+		my @x = @{$motifs{$name}};
+		push @remap_pairs, map {$_.":".$name;} @x;
+	}
+	my @edges_to_remove = grep { $_=~/^(.*):.*:.*/; has(\@rules_to_remove,$1); } @edgelist;
+	my @new_edges = remapEdges(\@edges_to_remove,\@remap_pairs,0);
+	
+	# context edges from the input and output states of the motif will be removed
+	# this was done looking at mtorc.bngl results.
+	# THIS IS AN ASSUMPTION. There could be edge cases where this would miss out
+	# on some relevant context
+	# NEEDS TESTING! esp on fceri_ji
+	
+	my @edges_to_remove2;
+	foreach my $name(@motifnames)
+	{
+	my @reacprods = uniq
+					map { $_ =~ /^.*:(.*):.*$/; $1; }
+					grep { $_ =~ /^(.*):.*:.*$/; $1 eq $name;  } 
+					grep { $_ =~ /^.*:.*:(Reactant|Product)$/;  } 
+					@new_edges;
+	push @edges_to_remove2, map { my @x = ($name,$_,'Context'); join(':',@x);} @reacprods;
+	}
+	
+	my @nodelist2;
+	my @edgelist2;
+	my %nodetype2;
+	
+	map { push @nodelist2, $_ if(not has(\@rules_to_remove,$_));} @nodelist;
+	map { my $x = $_; $nodetype2{$x} = $nodetype{$x}; } @nodelist2;
+	push @nodelist2,@motifnames;
+	map { my $x = $_; $nodetype2{$x} = 'Rule'; } @motifnames;
+	
+	map { push @edgelist2, $_ if(not has(\@edges_to_remove,$_));} @edgelist;
+	map { push @edgelist2, $_ if(not has(\@edges_to_remove2,$_));} @new_edges;
+	#push @edgelist2,@new_edges;
+	
+	my $bpg2 = duplicateNetworkGraph($bpg);
+	if(scalar @rules_to_remove > 0)
+	{
+	$bpg2->{'NodeList'} = \@nodelist2;
+	$bpg2->{'EdgeList'} = \@edgelist2;
+	$bpg2->{'NodeType'} = \%nodetype2;
+	}
+	uniqNetworkGraph($bpg2);
+	return $bpg2,\@remap_pairs;
+}
+
+sub remapEdges
+{
+	my @edges_to_remap = @{shift @_};
+	my @remap_pairs = @{shift @_};
+	my $element_index_to_remap = shift @_;
+	# edges are x:y:z, $element_index_to_remap = 0 remaps x, 1 remaps y, 2 remaps z
+	my @remapped_edges = ();
+	foreach my $edge(@edges_to_remap)
+	{
+		my $elem_to_remap = getElementInEdge($edge,$element_index_to_remap);
+		foreach my $remap_pair(@remap_pairs)
+		{
+			my @x = split(':',$remap_pair);
+			if ($elem_to_remap eq $x[$element_index_to_remap])
+				{
+				push @remapped_edges, replaceElementInEdge($edge,$element_index_to_remap,$x[1]);
+				}
+		}
+	}
+	return @remapped_edges;
+}
+
+sub getElementInEdge { my @x = split(':',$_[0]); $x[$_[1]];}  # @_ = (edgestr,0/1/2)
+sub replaceElementInEdge { my @x = split(':',$_[0]); $x[$_[1]] = $_[2]; join(':',@x);} # @_ = (edgestr,0/1/2,new_elem)
 
 sub getBackground
 {
@@ -931,6 +1264,115 @@ sub getBackground
 	return;
 }
 
+sub removeReactantContext
+{
+	# for each rule R1, each reactant X and its group Gr(X)
+	# remove all context edges from Y in Gr(X) 
+	# 	as long as Y neq X
+	# 	and Y is not a reactant to R1,
+	
+	my $bpg = shift @_;
+	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
+				@{$bpg->{'NodeList'}};
+	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+				@{$bpg->{'NodeList'}};
+	my %classes = %{$bpg->{'NodeClass'}};
+	my @classed = grep {has(\@aps,$_);} keys %classes;
+	
+
+	my @reac_edges =	grep { $_ =~ /Reactant$/ }
+				@{$bpg->{'EdgeList'}};
+	my @cont_edges =	grep { $_ =~ /Context$/ }
+				@{$bpg->{'EdgeList'}};
+	my @edges_to_remove;
+	
+	foreach my $rule(@rules)
+	{
+		my @reacs = grep {has(\@classed,$_);}
+					map {$_ =~ /.*:(.*):.*/; $1;}  
+					grep {$_ =~ /(.*):.*:.*/; $rule eq $1;}  
+					@reac_edges;
+		#print $rule." ".join(" ",@reacs)." ";
+		#print "\n" if (scalar @reacs ==0);
+		next if (scalar @reacs ==0);
+		my @reac_classes = uniq map {$classes{$_}} @reacs;
+		#print join(" ",@reac_classes)." ";
+		my @relevant_cont_edges =	
+					grep {$_ =~ /.*:(.*):.*/; has(\@reac_classes,$classes{$1});}
+					grep {$_ =~ /.*:(.*):.*/; has(\@classed,$1);}
+					grep {$_ =~ /.*:(.*):.*/; not has(\@reacs,$1);}
+					grep {$_ =~ /(.*):.*:.*/; $rule eq $1;}  
+					@cont_edges;
+		#print join(" ",@relevant_cont_edges)."\n";
+		push @edges_to_remove, @relevant_cont_edges;
+	}
+	
+	my $bpg2 = duplicateNetworkGraph($bpg);
+	if(scalar @edges_to_remove)
+		{
+		my @new_edges = grep {not has(\@edges_to_remove,$_);} @{$bpg2->{'EdgeList'}};
+		$bpg2->{'EdgeList'} = \@new_edges;
+		}
+	return $bpg2;
+}
+
+sub makeInhibitionEdges
+{
+	my $bpg = shift @_;
+	my @inh = uniq @{shift @_};
+	my @remap_pairs = @{shift @_};
+	
+	my @aps = 	grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} 
+				@{$bpg->{'NodeList'}};
+	my @rules = 	grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} 
+				@{$bpg->{'NodeList'}};
+	my @reac_edges =	grep { $_ =~ /Reactant$/ }
+				@{$bpg->{'EdgeList'}};
+	
+
+	my %remaps;
+	my @remapped;
+	map {	my $x = $_; my @y = split(':',$x); 
+			$remaps{$y[0]} = $y[1]; 
+			push @remapped,$y[0]; } @remap_pairs;
+	
+	my @edges_to_remove;
+	my @edges_to_add;
+	
+	foreach my $line(@inh)
+	{
+		my @ar = split(":",$line);
+		my $line_error = 0;
+		$line_error = 1 if(scalar (@ar) != 2);
+		if( scalar (@ar) == 2 )
+		{
+			$line_error = 1 if(not has(\@rules,$ar[0]) and not has(\@remapped,$ar[0]) );
+			$line_error = 1 if(not has(\@aps,$ar[1]) );
+		}
+		if($line_error==1)
+			{
+			print "ERROR processing line ".$line." in inhibition block. \nEither bad format or rule or atomic pattern was not present in foreground. Use RuleName:AtomicPattern. Skipping...\n";
+			next;
+			}
+		my $findline = has(\@remapped,$ar[0]) ? $remaps{$ar[0]}.":".$ar[1] : $line;
+		if( not has(\@reac_edges,$findline.":Reactant") )
+			{
+			print "ERROR processing line ".$line." in inhibition block. \nCould not find relevant reactant edge. Skipping...\n";
+			next;
+			}
+		push @edges_to_remove, $findline.":Reactant";
+		push @edges_to_add, $findline.":Inhibition";
+	}
+	
+	my $bpg2 = duplicateNetworkGraph($bpg);
+	if(scalar @edges_to_remove)
+		{
+		my @new_edges = grep {not has(\@edges_to_remove,$_);} @{$bpg2->{'EdgeList'}};
+		push @new_edges, @edges_to_add;
+		$bpg2->{'EdgeList'} = \@new_edges;
+		}
+	return $bpg2;
+}
 
 sub duplicate_args
 {
@@ -1184,5 +1626,103 @@ Disable/enable separate output of each rule.
 	
 	return "";
 }
+
+sub writeExampleOpts
+{
+	my $bpg = shift @_;
+	my %mtypes = %{shift @_};
+	my @aps = grep {$bpg->{'NodeType'}->{$_} eq 'AtomicPattern'} @{$bpg->{'NodeList'}};
+	my @rules = grep {$bpg->{'NodeType'}->{$_} eq 'Rule'} @{$bpg->{'NodeList'}};
+	
+	my @reverse_rules = grep {/^_reverse_/}  @rules;
+	my @other_rules = grep {not /^_reverse_/} @rules;
+	
+	my @freebindingsites = grep { /\(/ and not /\~/ and not /\!/ } @aps;
+	my @bonds = grep {/\!/} @aps;
+	my @internalstates = grep {/\~/} @aps;
+	my @mol_aps =  grep {not /\(/ and not /\~/ and not /\!/ } @aps;
+	
+	# categorizing similarity of components
+	my @comps = @freebindingsites;
+	my %internalstatesignature = map {$_=>-1} @comps;
+	# background-foreground
+	my @bkg_is = ();
+	foreach my $comp (@comps)
+	{
+		$comp =~ /^(.*)\((.*)\)$/;
+		my ($m,$c) = ($1,$2);
+		my @istates = uniq map {@{$_->States}} grep {$_->Name eq $c} @{$mtypes{$m}->Components};
+		push @bkg_is,$m."(".$c."~".$istates[0].")" if (scalar @istates > 1);
+	}
+	
+	# compiling foreground and background
+	my @t = (@reverse_rules,@freebindingsites,@bkg_is);
+	my @background = grep { has(\@t,$_)==1 } (@aps,@rules);
+	my @foreground = grep { has(\@background,$_)==0 } (@aps,@rules);
+	
+	# assigning atomic pattern groups
+	my %groups;
+	# assigning bonds to groups
+	my @bnds = grep {has(\@foreground,$_)} @bonds;
+	foreach my $bond(@bnds) { 
+		$bond =~ /^(.*)\(.*\)[.](.*)\(.*\)$/; 
+		my $x = join "|", sort ($1,$2);
+		$groups{$bond} = $x;
+		}
+	# assigning internal states to groups
+	my @ints = grep { has(\@foreground,$_)} @internalstates;
+	foreach my $int(@ints) {
+		$int =~ /^(.*)\(.*\~(.*)\)$/;
+		my $x = $1."_".$2;
+		$groups{$int} = $x;
+	}
+	
+	# building output string
+	# included
+	my @ap1 = sort grep {has(\@background,$_)} @aps;
+	my @rule1 = sort grep {has(\@background,$_)} @rules;
+	my $inclstr = "\t\t".join("\n\t\t", map {join(" ",@$_)} (natatime2(@ap1),natatime2(@rule1)));
+	
+	# excluded
+	my @ap2 = sort grep {not has(\@background,$_)} @aps;
+	my @rule2 = sort grep {not has(\@background,$_)} @rules;
+	my $exclstr = "\t\t".join("\n\t\t", map {join(" ",@$_)} (natatime2(@ap2),natatime2(@rule2)));
+	
+	
+	# groups
+	my @grpstrs = ();
+	my @ap3 = keys %groups;
+	my @ap4 = grep {has(\@ap3,$_)} @ap2;
+	my @grpnames = uniq values %groups;
+	
+	foreach my $grp(sort @grpnames)
+	{
+		my @ap5 = grep {$groups{$_} eq $grp} @ap4;
+		my @strlist = ("\tbegin ",$grp,"\n\t\t",join(" ",@ap5),"\n\tend ",$grp);
+		my $str = join("",@strlist);
+		push @grpstrs,$str; 
+	}
+	my $grpstr = join("\n",@grpstrs);
+	
+	my @retstrs = ();
+	push @retstrs, "begin background","\tbegin include",$inclstr,"\tend include";
+	push @retstrs, "\tbegin exclude",$exclstr,"\tend exclude","end background";
+	push @retstrs, "begin classes",$grpstr,"end classes";
+	my $ret = join("\n",@retstrs);
+	return $ret;
+}
+
+sub natatime2 {
+	# n at a time
+    my $n = 5;
+    my @list = @_;
+	my @ret = ();
+	while (my @x = splice @list, 0, $n)
+		{ push @ret,\@x;}
+	# Array of arrayrefs
+	return @ret;
+}
+
+
 
 1;

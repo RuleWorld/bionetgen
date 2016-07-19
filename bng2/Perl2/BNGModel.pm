@@ -2235,7 +2235,8 @@ sub generate_network
         'print_iter'   => 0,
         'TextSpecies'  => 1,
         'TextReaction' => 0,
-        'verbose'      => 0
+        'verbose'      => 0,
+		'write'		   => 1
     );
 
     # overwrite default params with user params
@@ -2413,7 +2414,7 @@ sub generate_network
         last if ( $model->SpeciesList->size() == scalar @species );
 
         # Print network after current iteration to netfile
-        if ( $params{print_iter} )
+        if ( $params{print_iter} and $params{write} )
         {
             $params_writeNetwork->{prefix} = "${prefix}_${niter}";
             my $err = $model->writeNetwork($params_writeNetwork);
@@ -2438,6 +2439,10 @@ sub generate_network
     my $eff = ($n_tot) ? $t_tot / $n_tot : 0.0;
     printf "Total   : %5d reactions %.2e CPU s %.2e CPU s/rxn\n", $n_tot, $t_tot, $eff;
 
+	
+	# this is used in visualization, where a network is generated, but not written.
+	return if ($params{write}==0);
+	
     # Print result to netfile
     my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
