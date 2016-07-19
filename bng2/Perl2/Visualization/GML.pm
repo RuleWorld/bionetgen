@@ -677,15 +677,17 @@ sub printGML
 		}
 		
 		#my $string3 = "";
-		if ($edge->{'arrowhead'} eq 'inhibition' and $edge->{'targetArrow'})
+		if(defined $edge->{'arrowhead'})
 		{
-		$string2 .= "targetArrow	\"crows_foot_one\"";
+			if ($edge->{'arrowhead'} eq 'inhibition' and $edge->{'targetArrow'})
+			{
+			$string2 .= "targetArrow	\"crows_foot_one\"";
+			}
+			if ($edge->{'arrowhead'} eq 'inhibition' and $edge->{'sourceArrow'})
+			{
+			$string2 .= "sourceArrow	\"crows_foot_one\"";
+			}
 		}
-		if ($edge->{'arrowhead'} eq 'inhibition' and $edge->{'sourceArrow'})
-		{
-		$string2 .= "sourceArrow	\"crows_foot_one\"";
-		}
-		
 		
 		$string2 = "graphics [ ".$string2." ]";
 		$string .= "source ".$edge->{'source'}." ";
