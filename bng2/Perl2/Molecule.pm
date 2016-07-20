@@ -494,24 +494,24 @@ sub getSBMLMultiSpeciesFields
 {
     my $mol    = shift @_;
     my $indent = shift @_;
-    my $id     = shift @_;
-    my $index  = (@_) ? shift @_ : '';
-
+    my $stid = shift @_;
+    my $mid     = shift @_;
     my $sbmlMultiSpeciesInfo_ref = shift @_;
     my $speciesIdHash_ref = shift @_;
-
+    # list of references to sbml multi species type objects for this species
+    my $multiComponentHash_ref = shift @_;
     # Component information
-    my $mid = sprintf "${id}_M%d", $index;
+    #my $mid = sprintf "${id}_M%d", $index;
 
     if ( @{$mol->Components} )
     {
         my $cindex = 1;
-
         foreach my $comp ( @{$mol->Components} )
         {
-            my $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref );
+
+            my $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
             ++$cindex;
-            my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref );
+            my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
             if(not $outwardbonds eq ''){
                 push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
                 #push @{$sbmlMultiSpeciesInfo{'outwardbonds'}}, $outwardbonds;

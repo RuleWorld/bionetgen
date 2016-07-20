@@ -2006,6 +2006,8 @@ sub toXML
 
 sub toSBMLMultiSpecies
 {
+    use Storable qw(dclone);
+
     my $sg         = shift @_;
     my $indent     = shift @_;
     my $type       = shift @_;
@@ -2058,9 +2060,12 @@ sub toSBMLMultiSpecies
         
 
         my $index = 1;
+        # clone the list of references we need for this particular species
+        my %multicomponentHash = %{dclone(\%{$speciesIdHash_ref->{'References'}->{${attributes_ref}->{'multi:speciesType'}}})};
         foreach my $mol ( @{$sg->Molecules} )
         {
-            $mol->getSBMLMultiSpeciesFields("  " . $indent2, $id, $index, \%sbmlMultiSpeciesInfo, $speciesIdHash_ref);
+            $mol->getSBMLMultiSpeciesFields("  " . $indent2, ${attributes_ref}->{'multi:speciesType'}, sprintf("%s_M%d", $id, $index), 
+                                            \%sbmlMultiSpeciesInfo, $speciesIdHash_ref, \%multicomponentHash);
             ++$index;
         }
 
@@ -2133,7 +2138,7 @@ sub toSBMLMultiSpeciesType
     my $mcounter = 1;
     my $stid = "ST$id";
 
-    # foreach my $mol (@{$sg->Molecules}){
+# foreach my $mol (@{$sg->Molecules}){
     #     my $mid = "${stid}_M${mcounter}";
     #     my $ccounter = 1;
     #     my $parent = $speciesIdHash_ref->{'Molecules'}->{$mol->toString()};
@@ -2147,16 +2152,18 @@ sub toSBMLMultiSpeciesType
     #     }
     #     $mcounter += 1;
     # }
-  
+
+    # TODO: we should only include fully specified full bonds and states. other stuff doesnt need to be here
+    # technically this is only necessary for symmetric stuff but its easier to just index everything
     $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
-    foreach my $molkey (keys $speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}){
+    foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
         foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
             $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $molkey);
         }
 
     }
 
-    foreach my $compkey (keys $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}){
+    foreach my $compkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}}){
         my $centry = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'id'};
         my $parent = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parent'};
         my $multiref = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parentMulti'};
@@ -2164,7 +2171,6 @@ sub toSBMLMultiSpeciesType
     }
 
     $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
-    # technically this is only necessary for symmetric stuff but its easier to just index everything
 
 
         # <multi:listOfSpeciesTypeComponentIndexes>
@@ -2190,8 +2196,8 @@ sub toSBMLMultiSpeciesType
         {
             my ($p1, $p2) = split ' ', $edge;
             next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
-            $bid1 = sprintf("%s_ist",p_to_label($p1 ,$id));
-            $bid2 = sprintf("%s_ist",p_to_label($p2 ,$id));
+            $bid1 = $sg->p_to_label($p1 ,"ST${id}I");
+            $bid2 = $sg->p_to_label($p2 ,"ST${id}I");
             $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
             ++$index;
         }

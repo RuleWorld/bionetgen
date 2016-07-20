@@ -124,19 +124,19 @@ sub toSBMLMultiSpeciesTypeFeatures
 
     #this parameter should eventually be sent from outside for symmetric components
     my $occur = 1;
-
-
+    my $fullname = '';
     if (@{$ctype->States}){
-      my $fullname = sprintf("%s(%s)", $mName, $ctype->Name);
+      
       my $indent2  = "    ".$indent;
       my $indent3  = "    ".$indent2;
       my $sid = '';
 
 
       $ostring.= sprintf("%s<multi:speciesFeatureType multi:id=\"%s\" multi:name=\"%s\" multi:occur=\"%d\">\n", $indent, $cid, $ctype->Name, $occur);
-      $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
       $ostring.= $indent2."<multi:listOfPossibleSpeciesFeatureValues>\n";
       for my $state (@{$ctype->States}){
+        $fullname = sprintf("%s(%s~", $mName, $ctype->Name). "${state})";
+        $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
         $sid = sprintf("%s_%s",$cid, $state);
         $ostring .= sprintf("%s<multi:possibleSpeciesFeatureValue multi:id=\"%s\" multi:name=\"%s\"/>\n",$indent3, $sid, $state);
       }
@@ -157,14 +157,25 @@ sub toSBMLMultiSpeciesTypeBinding
 
     my $ostring = '';
     my $fullname = sprintf("%s(%s)", $mName, $ctype->Name);
-    if (!@{$ctype->States}){
-        $ostring .= sprintf("%s<multi:speciesTypeInstance multi:id=\"%s_ist\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n", $indent, $cid, $ctype->Name, $cid);
-        my $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\"/>\n", $cid, $fullname);
-        $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
-        push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $cid;
-        push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $ststring;
+    $ostring .= sprintf("%s<multi:speciesTypeInstance multi:id=\"%s_ist\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n", $indent, $cid, $ctype->Name, $cid);
+    my $strstring;
 
+    # pure binding site
+    if (!@{$ctype->States}){
+      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\"/>\n", $cid, $fullname);
     }
+    # this binding site also has states!
+    else{
+      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\">\n", $cid, $fullname);
+      $ststring .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
+      $ststring .= $ctype->toSBMLMultiSpeciesTypeFeatures($cid."_ft",$mName,$sbmlMultiSpeciesInfo_ref,$speciesIdHash_ref,$indent);
+      $ststring .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";
+      $ststring .= $indent. "</multi:bindingSiteSpeciesType>\n";
+    }
+    $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
+    push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $cid;
+    push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $ststring;
+
 
     return $ostring;
 }

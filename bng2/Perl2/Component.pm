@@ -302,10 +302,13 @@ sub getSBMLMultiOutwardBonds
     my $mName     = shift @_;
     my $index  = shift @_;
     my $speciesIdHash_ref = shift @_;
+    my $multiComponentHash_ref = shift @_;
+
 
     my $string = "";
     my $fullstring = sprintf("%s(%s)",$mName, $comp->Name);
     my $externalId = $speciesIdHash_ref->{'Components'}->{$fullstring};
+
 
     # Attributes
     # id
@@ -346,8 +349,16 @@ sub getSBMLMultiOutwardBonds
 
     if (! $bindingstatus eq "" )
     {
+        #get a component from the component pool
+        my $reverseReference = $multiComponentHash_ref->{'reverseReferences'}->{$fullstring}[0];
+
+        #get a speciestype id based on that component
+        my $externalComponentId =  $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'};
+        #we used this component so remove it from the pool
+        splice(@{$multiComponentHash_ref->{'reverseReferences'}->{$fullstring}}, 0, 1);
+
         my $indent2 = '  ' . $indent;
-        $string = $indent2 . sprintf("<multi:outwardBindingSite multi:bindingStatus=\"%s\" multi:component=\"%s\"/>\n", $bindingstatus, $externalId);
+        $string = $indent2 . sprintf("<multi:outwardBindingSite multi:bindingStatus=\"%s\" multi:component=\"%s\"/>\n", $bindingstatus, $externalComponentId);
         # Objects contained
     }
     
@@ -365,16 +376,28 @@ sub getSBMLMultiSpeciesFeature
     my $mName     = shift @_;
     my $index  = shift @_;
     my $speciesIdHash_ref = shift @_;
+    # list of references to sbml multi species type objects for this species
+    my $multiComponentHash_ref = shift @_;
 
     my $string = "";
     # state
     if (defined $comp->State)
     {
-        my $fullstring = sprintf("%s(%s)",$mName, $comp->Name);
-        my $externalId = $speciesIdHash_ref->{'Components'}->{$fullstring};
+        my $fullstring = sprintf("%s(%s~", $mName, $comp->Name). ${comp}->State . ")";
         
+        #my $fullstring = sprintf("%s(%s~%s)",$mName, $comp->Name, $comp->State);
+        #calculate external id
+
+        #get a component from the component queue
+        my $reverseReference = $multiComponentHash_ref->{'reverseReferences'}->{$fullstring}[0];
+        # get the species type id associated with this top level component
+        my $externalComponentId =  $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'};
+
+        splice(@{$multiComponentHash_ref->{'reverseReferences'}->{$fullstring}}, 0, 1);
+        #get an id  to the species type associated component based on the reverse reference
+        my $externalId = $speciesIdHash_ref->{'Components'}->{$fullstring};
         my $indent2 = '  ' . $indent;
-        $string = $indent2 . sprintf("<multi:speciesFeature id=\"%s\" multi:speciesFeatureType=\"%s\" multi:occur=\"%d\">\n",$index, $externalId, 1);
+        $string = $indent2 . sprintf("<multi:speciesFeature id=\"%s\" multi:speciesFeatureType=\"%s\" multi:occur=\"%d\" multi:component=\"%s\">\n",$index, $externalId, 1, $externalComponentId);
         my $indent3 = "  " . $indent2;
         # Objects contained
         my $stateDefStr = $indent3 . "<multi:listOfSpeciesFeatureValues>\n";
