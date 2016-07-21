@@ -387,7 +387,7 @@ sub toSBMLMultiSpeciesType
     }else{
         $stinstance_string = sprintf("%s<multi:speciesTypeInstance multi:id=\"%s\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n",$indent, $mid, $mtype->Name, $stid);
     }
-    my $st_string = sprintf("<multi:speciesType multi:id=\"%s\" multi:name=\"%s\" multi:compartment=\"%s\">\n", $stid, $mtype->toString(), "any");
+    my $st_string = sprintf("<multi:speciesType multi:id=\"%s\" multi:name=\"%s\" multi:compartment=\"%s\">\n", $stid, $mtype->toString(), "cell");
 
     # add id information
 
@@ -422,9 +422,9 @@ sub toSBMLMultiSpeciesType
                     $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parentMulti'} = $cid;
 
                     $st_string .= $tempstr;
-                    $counter += 1;    
                 }
             }
+            $counter += 1;    
             
         }
         $counter = 0;
@@ -435,8 +435,8 @@ sub toSBMLMultiSpeciesType
     
         $st_string .= $indent."</multi:listOfSpeciesTypeInstances>\n";
 
-
-        $st_string .= $indent."<multi:listOfSpeciesFeatureTypes>\n";
+        $counter = 1;
+        my $featuretypes ='';
         foreach my $comp (@{$mtype->Components})
         {
             # only check things that are not binding sites. Hybrids are alraedy accoutned for
@@ -449,17 +449,22 @@ sub toSBMLMultiSpeciesType
                         push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~%s)", $mtype->Name, $comp->Name, $state)}}, $mid . "_C${counter}";
                     }
                     push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s)", $mtype->Name, $comp->Name)}}, $mid . "_C$counter";
-                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("%sI_M", $sid) . "$index" ."_C$counter";
-                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;
-                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parentMulti'} = $cid;
-
-                    $st_string .= $tempstr;
-                    $counter += 1;
+                    #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("%sI_M", $sid) . "$index" ."_C$counter";
+                    #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;
+                    #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parentMulti'} = $cid;
+                    $featuretypes .= $tempstr;
                 }
             }
+            $counter += 1;
             
         }
-        $st_string .= $indent."</multi:listOfSpeciesFeatureTypes>\n";
+      if(! $featuretypes eq ''){
+        $st_string .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
+        $st_string .= $featuretypes;
+        $st_string .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";
+
+      }
+
 
 
 

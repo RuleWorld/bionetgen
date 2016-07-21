@@ -653,8 +653,8 @@ sub writeSBMLMulti
 #EOF
     my $xml =  qq{<?xml version="1.0" encoding="UTF-8"?>
 <!-- Created by BioNetGen $version  -->
-<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
-  <model id="$model_name">
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">  
+  <model>
 };
 
 
@@ -664,6 +664,9 @@ sub writeSBMLMulti
 #      <compartment id="cell" size="1"/>
 #    </listOfCompartments>
 #EOF
+
+
+    $xml .= $model->writeSBMLParameters();
     
     if ($model->CompartmentList->Used) { # @a is not empty...
         $xml = $xml . "    <listOfCompartments>\n";
@@ -675,8 +678,9 @@ sub writeSBMLMulti
         #printf $SBML "%s",$model->CompartmentList->toXML("     ");
     } 
     else { # @a is empty
+ 
         $xml = $xml . qq{    <listOfCompartments>
-          <compartment id="cell" size="1"/>
+          <compartment id="cell" size="1" constant="true" multi:isType="false"/>
         </listOfCompartments>
         };
     }
@@ -694,6 +698,7 @@ sub writeSBMLMulti
     $model->extractAllSpeciesGraphs(\%speciesSet, \%speciesTypeSet);
     $model->extractBindingComponents(\%speciesSet, \%bindingComponents);
 
+    use Data::Dumper;
     $speciesIdHash{'BindingInformation'} = \%bindingComponents;
 
     #1.7 calculate species type information and string ahead of time since we will reuse this information
@@ -712,7 +717,7 @@ sub writeSBMLMulti
     }
 
     # 2. walk through the total model species llist and fill in information
-    $xml .= $indent . "<ListOfSpecies>\n";
+    $xml .= $indent . "<listOfSpecies>\n";
     #iterate over the species by id
     foreach my $speciesStr (sort {$speciesSet{$a}[0] <=> $speciesSet{$b}[0]} keys %speciesSet)
     {
@@ -723,57 +728,20 @@ sub writeSBMLMulti
 
         # Attributes
         # concentration
-        $attributes{"concentration"} = "0";
+        $attributes{"initialConcentration"} = "0";
         $attributes{"multi:speciesType"} = "ST".$speciesType;
         $xml .= $sg->toSBMLMultiSpecies("     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);
     }
 
-    $xml .= $indent."</ListOfSpecies>\n";
-
+    $xml .= $indent."</listOfSpecies>\n";
 
 
 
     # Reaction rules
-    my $string = $indent . "<ListOfReactionRules>\n";
-    my $indent2 = "  " . $indent;
-    my $rindex  = 1;
-    foreach my $rset ( @{$model->RxnRules} )
-    {
-        foreach my $rr ( @$rset )
-        {
-            $string .= $rr->toXML( $indent2, $rindex, $plist );
-            ++$rindex;
-        }
-    }
-    $string .= $indent . "</ListOfReactionRules>\n";
-    $xml .= $string;
+    $xml .= $model->writeSBMLReactions(\%speciesTypeSet);
 
-    # Observables
-    $string  = $indent . "<ListOfObservables>\n";
-    $indent2 = "  " . $indent;
-    my $oindex  = 1;
-    foreach my $obs ( @{$model->Observables} )
-    {
-        $string .= $obs->toXML( $indent2, $oindex );
-        ++$oindex;
-    }
-    $string .= $indent . "</ListOfObservables>\n";
-    $xml .= $string;
 
-    # Functions
-    $xml .= $indent . "<ListOfFunctions>\n";
-    $indent2 = "  " . $indent;
-    foreach my $param ( @{$plist->Array} )
-    {
-        next unless ( $param->Type eq "Function" );
-        $xml .= $param->Ref->toXML( $plist, $indent2 );
-    }
-    $xml .= $indent . "</ListOfFunctions>\n";
-
-    # print sbml:multi species types
-    #$xml .= $model->SpeciesList->toSBMLMultiType($model->MoleculeTypesList, $indent);
-
-    $sbmlTypeStr .= $indent . "<multi:ListOfSpeciesTypes>\n";
+    $xml .= $indent . "<multi:listOfSpeciesTypes>\n";
 
     # finally append species type information
     # top level species type
@@ -785,7 +753,7 @@ sub writeSBMLMulti
     }
 
 
-    $xml .= $indent."</multi:ListOfSpeciesTypes>\n";
+    $xml .= $indent."</multi:listOfSpeciesTypes>\n";
 
 
     # FOOTER

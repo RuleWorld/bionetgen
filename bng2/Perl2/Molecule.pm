@@ -502,14 +502,16 @@ sub getSBMLMultiSpeciesFields
     my $multiComponentHash_ref = shift @_;
     # Component information
     #my $mid = sprintf "${id}_M%d", $index;
-
+    use Data::Dumper;
     if ( @{$mol->Components} )
     {
         my $cindex = 1;
         foreach my $comp ( @{$mol->Components} )
         {
-
-            my $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+            my $outwardbonds = '';
+            if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
+                $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+            }
             ++$cindex;
             my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
             if(not $outwardbonds eq ''){

@@ -401,7 +401,26 @@ sub p_to_label
 	return ($string);
 }
 
+sub p_to_multi_label
+{
+    my $sg = shift @_;
+    my $p = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    my $stid = shift @_;
+    
+    my @inds = split( '\.', $p );
+    my $fullstring = sprintf("%s(%s)", @{$sg->Molecules}[$inds[0]]->Name, @{@{$sg->Molecules}[$inds[0]]->Components}[$inds[1]]->Name);
 
+
+    my $mid = sprintf("ST%s_M%d",$stid,$p+1);
+    foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
+
+        if (index($comp, $mid) != -1){
+            return $speciesIdHash_ref->{'Components'}->{$comp}->{'id'};
+        }
+    }
+
+}
 
 ###
 ###
@@ -2030,8 +2049,12 @@ sub toSBMLMultiSpecies
     # Compartment
     if ( $sg->Compartment )
     {
-        #$string .= " compartment=\"" . $sg->Compartment->Name . "\"";
-        $string .= " compartment=\"any\"";
+        $string .= " compartment=\"" . $sg->Compartment->Name . "\"";
+        
+    }
+    else
+    {
+        $string .= " compartment=\"cell\"";
     }
 
     if($sg->StringExact)
@@ -2043,7 +2066,10 @@ sub toSBMLMultiSpecies
     # add support for Fixed
     if ( $sg->Fixed )
     {
-        $string .= "boundaryCondition=\"true\"";
+        $string .= "boundaryCondition=\"true\" constant=\"true\"";
+    }
+    else{
+        $string .= ' hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"';
     }
 
     #multi:speciesType="st_cps_000001"
@@ -2126,7 +2152,7 @@ sub toSBMLMultiSpeciesType
         $attributes_str .= sprintf(' %s="%s"', $attrkey, $attributes->{$attrkey});
     }
 
-    my $string = $indent . sprintf("<%s multi:id=\"ST%s\" %s multi:compartment=\"%s\">\n", $type, $id, $attributes_str, "any"); #$sg->Compartment->Name);
+    my $string = $indent . sprintf("<%s multi:id=\"ST%s\" %s multi:compartment=\"%s\">\n", $type, $id, $attributes_str, "cell"); #$sg->Compartment->Name);
     my $indent2 = $indent. "     ";
     $speciesIdHash_ref->{'Species'}->{$attributes->{"multi:name"}} = sprintf("ST%s",$id);
     #get species features and species type instances from the molecule type lists
@@ -2171,19 +2197,6 @@ sub toSBMLMultiSpeciesType
     }
 
     $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
-
-
-        # <multi:listOfSpeciesTypeComponentIndexes>
-        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_1_mol_000001" multi:component="st_mol_000001"/>
-        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_1_mol_000001_mcp_000001" multi:component="st_mcp_000001" multi:identifyingParent="sti_cps_000002_1_mol_000001"/>
-        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_1_mol_000001_bst_000001" multi:component="st_bst_000001" multi:identifyingParent="sti_cps_000002_1_mol_000001"/>
-        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_2_mol_000001" multi:component="st_mol_000001"/>
-        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_2_mol_000001_mcp_000001" multi:component="st_mcp_000001" multi:identifyingParent="sti_cps_000002_2_mol_000001"/>
-        #   <multi:speciesTypeComponentIndex multi:id="stci_cps_000002_2_mol_000001_bst_000001" multi:component="st_bst_000001" multi:identifyingParent="sti_cps_000002_2_mol_000001"/>
-        # </multi:listOfSpeciesTypeComponentIndexes>
-    # now get inspecies bonds
-    # Bonds
-
     if ( @{$sg->Edges} )
     {
         my $bstring = '';
@@ -2196,8 +2209,8 @@ sub toSBMLMultiSpeciesType
         {
             my ($p1, $p2) = split ' ', $edge;
             next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
-            $bid1 = $sg->p_to_label($p1 ,"ST${id}I");
-            $bid2 = $sg->p_to_label($p2 ,"ST${id}I");
+            $bid1 = $sg->p_to_multi_label($p1 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
+            $bid2 = $sg->p_to_multi_label($p2 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
             $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
             ++$index;
         }

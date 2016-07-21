@@ -167,9 +167,14 @@ sub toSBMLMultiSpeciesTypeBinding
     # this binding site also has states!
     else{
       $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\">\n", $cid, $fullname);
-      $ststring .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
-      $ststring .= $ctype->toSBMLMultiSpeciesTypeFeatures($cid."_ft",$mName,$sbmlMultiSpeciesInfo_ref,$speciesIdHash_ref,$indent);
-      $ststring .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";
+      my $featuretypes .= $ctype->toSBMLMultiSpeciesTypeFeatures($cid."_ft",$mName,$sbmlMultiSpeciesInfo_ref,$speciesIdHash_ref,$indent);
+
+      if(! $featuretypes eq ''){
+        $ststring .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
+        $ststring .= $featuretypes;
+        $ststring .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";
+
+      }
       $ststring .= $indent. "</multi:bindingSiteSpeciesType>\n";
     }
     $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
