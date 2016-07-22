@@ -2040,6 +2040,7 @@ sub toSBMLMultiSpecies
     # id
     $string .= " id=\"" . $id . "\"";
 
+    $speciesIdHash_ref->{'Species'}->{$sg->StringExact} = $id;
     # other attributes
     #unless ( $attributes eq '' ) { $string .= ' ' . $attributes; }
     for my $attrkey (keys %{$attributes_ref}){
@@ -2154,7 +2155,7 @@ sub toSBMLMultiSpeciesType
 
     my $string = $indent . sprintf("<%s multi:id=\"ST%s\" %s multi:compartment=\"%s\">\n", $type, $id, $attributes_str, "cell"); #$sg->Compartment->Name);
     my $indent2 = $indent. "     ";
-    $speciesIdHash_ref->{'Species'}->{$attributes->{"multi:name"}} = sprintf("ST%s",$id);
+    $speciesIdHash_ref->{'SpeciesType'}->{$attributes->{"multi:name"}} = sprintf("ST%s",$id);
     #get species features and species type instances from the molecule type lists
     if ($mtlist)
     {

@@ -698,9 +698,8 @@ sub writeSBMLMulti
     $model->extractAllSpeciesGraphs(\%speciesSet, \%speciesTypeSet);
     $model->extractBindingComponents(\%speciesSet, \%bindingComponents);
 
-    use Data::Dumper;
-    $speciesIdHash{'BindingInformation'} = \%bindingComponents;
 
+    $speciesIdHash{'BindingInformation'} = \%bindingComponents;
     #1.7 calculate species type information and string ahead of time since we will reuse this information
     #in species definition
     my $sbmlTypeStr;
@@ -736,9 +735,8 @@ sub writeSBMLMulti
     $xml .= $indent."</listOfSpecies>\n";
 
 
-
     # Reaction rules
-    $xml .= $model->writeSBMLReactions(\%speciesTypeSet);
+    $xml .= $model->writeSBMLReactions(\%speciesIdHash);
 
 
     $xml .= $indent . "<multi:listOfSpeciesTypes>\n";

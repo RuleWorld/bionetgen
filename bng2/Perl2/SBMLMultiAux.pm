@@ -187,7 +187,7 @@ sub writeSBMLParameters
 sub writeSBMLReactions
 {
     my $model = shift @_;
-    my $speciesTypeSet_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
     my $SBML = '';
     my %print_options = (
         "sbml_multi",  "1",
@@ -207,8 +207,10 @@ sub writeSBMLReactions
         my @rindices = ();
         foreach my $spec ( @{$rxn->Reactants} )
         {
-            my $sbmlMultiSpeciesTypeStr = $spec->toString(1, 1, \%print_options);
-            push @rindices, $speciesTypeSet_ref->{$sbmlMultiSpeciesTypeStr}[0] #$spec->Index;
+            my $rid = $speciesIdHash_ref->{'Species'}->{$spec->StringExact};
+            $rid = substr($rid, 1, length($rid));
+
+            push @rindices, $rid #$spec->Index;
         }
         @rindices = sort { $a <=> $b } @rindices;
 
@@ -216,8 +218,10 @@ sub writeSBMLReactions
         my @pindices = ();
         foreach my $spec ( @{$rxn->Products} )
         {
-            my $sbmlMultiSpeciesTypeStr = $spec->toString(1, 1, \%print_options);
-            push @pindices, $speciesTypeSet_ref->{$sbmlMultiSpeciesTypeStr}[0] #$spec->Index;
+            my $pid = $speciesIdHash_ref->{'Species'}->{$spec->StringExact};
+            $pid = substr($pid, 1, length($pid));
+
+            push @pindices, $pid #$spec->Index;
 
         }
         @pindices = sort { $a <=> $b } @pindices;
@@ -236,6 +240,32 @@ sub writeSBMLReactions
             foreach my $i (@pindices)
             {
                 $SBML .= sprintf  "          <speciesReference species=\"S%d\" constant=\"false\"/>\n", $i;
+          # <speciesReference species="sp_cpx_000002" constant="false">
+          #   <multi:listOfSpeciesTypeComponentMapsInProduct>
+          #     <multi:speciesTypeComponentMapInProduct multi:reactant="spr1_cpx_000001" multi:reactantComponent="st_mol_000001" multi:productComponent="stci_cps_000002_1_mol_000001"/>
+          #     <multi:speciesTypeComponentMapInProduct multi:reactant="spr2_cpx_000001" multi:reactantComponent="st_mol_000001" multi:productComponent="stci_cps_000002_2_mol_000001"/>
+          #   </multi:listOfSpeciesTypeComponentMapsInProduct>
+          # </speciesReference>
+
+    # {
+    #     $ostring .= $indent2 . "<Map>\n";
+    #     my $index = 1;
+    #     foreach my $source ( sort keys %{ $rr->MapF } )
+    #     {
+    #         $ostring .= $indent3 . "<MapItem";
+    #         my $target = $rr->MapF->{$source};
+    #         $ostring .=
+    #             " sourceID=\"" . pointer_to_ID( $id . "_R", $source ) . "\"";
+    #         $target = pointer_to_ID( $id . "_P", $target );
+    #         if ( $target ne "Null" ) {
+    #             $ostring .= " targetID=\"" . $target . "\"";
+    #         }
+    #         $ostring .= "/>\n";
+    #         ++$index;
+    #     }
+    #     $ostring .= $indent2 . "</Map>\n";
+    # }
+
             }
             $SBML .=  "        </listOfProducts>\n";
         }
