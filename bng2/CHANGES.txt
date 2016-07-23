@@ -18,6 +18,7 @@ https://github.com/RuleWorld/bionetgen/
 * Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.
 * Fixed a bug where a regex meant to remove the equality operator '=' in functions was inadvertently also removing the assignment operator '=='.
 * Fixed a bug causing an error when reading a .net file with 'readFile' when multiple reactions with functional rate laws have identical stoichiometries.
+* <big><tt>simulate_nf</tt></big> now throws an error if <big><tt>continue=>1</tt></big> is defined (previously threw a warning).
 
 ==== Visualization ====
 * New styles for visualization.

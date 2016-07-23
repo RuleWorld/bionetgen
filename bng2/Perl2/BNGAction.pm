@@ -789,7 +789,8 @@ sub simulate_nf
 
     if ($params->{continue})
     {   # warn user that continue is not supported
-        send_warning("simulate_nf(): NFsim does not support 'continue' option. NFsim will overwrite any existing trajectories.");
+#        send_warning("simulate_nf(): NFsim does not support 'continue' option. NFsim will overwrite any existing trajectories.");
+        return "NFsim does not support 'continue' option.";
     }
 
     my $t_end;
