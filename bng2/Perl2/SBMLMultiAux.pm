@@ -186,6 +186,8 @@ sub writeSBMLParameters
 # needs to be modified to iterate over rules instead of reactions
 sub writeSBMLReactions
 {
+    use Storable qw(dclone);
+
     my $model = shift @_;
     my $speciesIdHash_ref = shift @_;
     my $SBML = '';
@@ -200,6 +202,10 @@ sub writeSBMLReactions
     {
         foreach my $rxn ( @$rset )
         {
+        #keeps track of the species components ids that we will use in this reaction mapping
+
+
+
         ++$index;
         $SBML .= sprintf  "      <reaction id=\"R%d\" reversible=\"false\" fast=\"false\">\n", $index;
 
@@ -219,52 +225,102 @@ sub writeSBMLReactions
         foreach my $spec ( @{$rxn->Products} )
         {
             my $pid = $speciesIdHash_ref->{'Species'}->{$spec->StringExact};
-            $pid = substr($pid, 1, length($pid));
+            $pid = substr($pid, 1, length($pid)); #extract the id without the 'S'
 
             push @pindices, $pid #$spec->Index;
 
         }
         @pindices = sort { $a <=> $b } @pindices;
+        
+        #define a reaction hash that contains a speciesIdHash clone corresponding to each reactant in the list
+        my %reactantHashHash;
+        my $localCounter = 0;
 
         if (scalar(@rindices) > 0){
             $SBML .=  "        <listOfReactants>\n";
             foreach my $i (@rindices)
             {
-                $SBML .= sprintf  "          <speciesReference species=\"S%d\" constant=\"false\"/>\n", $i;
+                $SBML .= sprintf  "          <speciesReference id=\"RR%d_R%d\" species=\"S%d\" constant=\"false\"/>\n", $index,$localCounter+1, $i;
+                $reactantHashHash{$localCounter}{'id'} = sprintf("RR%d_R%d",$index,$localCounter+1);
+                $reactantHashHash{$localCounter}{'sg'} = \%{dclone(\%{$speciesIdHash_ref->{'References'}})};
+                $localCounter += 1;
             }
             $SBML .=  "        </listOfReactants>\n";
         }
+
         
         if (scalar(@pindices) > 0){
             $SBML .=  "        <listOfProducts>\n";
+            my $dots;
+            my $target;
+            my $sfirstdot;
+            my $tfirstdot;
+            my $counter = 0;
             foreach my $i (@pindices)
             {
-                $SBML .= sprintf  "          <speciesReference species=\"S%d\" constant=\"false\"/>\n", $i;
-          # <speciesReference species="sp_cpx_000002" constant="false">
-          #   <multi:listOfSpeciesTypeComponentMapsInProduct>
-          #     <multi:speciesTypeComponentMapInProduct multi:reactant="spr1_cpx_000001" multi:reactantComponent="st_mol_000001" multi:productComponent="stci_cps_000002_1_mol_000001"/>
-          #     <multi:speciesTypeComponentMapInProduct multi:reactant="spr2_cpx_000001" multi:reactantComponent="st_mol_000001" multi:productComponent="stci_cps_000002_2_mol_000001"/>
-          #   </multi:listOfSpeciesTypeComponentMapsInProduct>
-          # </speciesReference>
 
-    # {
-    #     $ostring .= $indent2 . "<Map>\n";
-    #     my $index = 1;
-    #     foreach my $source ( sort keys %{ $rr->MapF } )
-    #     {
-    #         $ostring .= $indent3 . "<MapItem";
-    #         my $target = $rr->MapF->{$source};
-    #         $ostring .=
-    #             " sourceID=\"" . pointer_to_ID( $id . "_R", $source ) . "\"";
-    #         $target = pointer_to_ID( $id . "_P", $target );
-    #         if ( $target ne "Null" ) {
-    #             $ostring .= " targetID=\"" . $target . "\"";
-    #         }
-    #         $ostring .= "/>\n";
-    #         ++$index;
-    #     }
-    #     $ostring .= $indent2 . "</Map>\n";
-    # }
+                my %productHash = %{dclone(\%{$speciesIdHash_ref->{'References'}})};
+
+                $SBML .= sprintf  "          <speciesReference id=\"RR%d_P%d\" species=\"S%d\" constant=\"false\">\n", $index, $counter+1, $i;
+                $SBML .= sprintf  "            <multi:listOfSpeciesTypeComponentMapsInProduct>\n";
+                #FIXME: If i want to be efficient i should be constructing this outside of the loop and making a 
+                #hash containg this information
+                foreach my $source ( sort keys %{ $rxn->MapF } )
+                {
+                    my $dots = $source =~ tr/././; #number of dots
+                    if($dots == 1){
+                        my $target = $rxn->MapF->{$source};
+                        my $sfirstdot = index($source, ".");
+                        my $smolecule = substr($source, $sfirstdot+1, length($source));
+                        $source = substr($source, 0, $sfirstdot);
+                        
+                        my $tfirstdot = index($target, ".");
+                        my $tmolecule = substr($target, $sfirstdot+1, length($target));
+                        $target = substr($target, 0, $tfirstdot);
+                        
+                        if($target == $counter){
+                            #the species graph for the reactant-product graph pattern pair
+                            my $reactant = @{$rxn->Reactants}[$source];
+                            my $product = @{$rxn->Products}[$target];
+                            my $indent4 = "              ";
+                            my $sbmlMultiSpeciesTypeStr = $reactant->toString(1, 1, \%print_options);
+                            my $psbmlMultiSpeciesTypeStr = $product->toString(1, 1, \%print_options);
+                            #get the multi species type id associated with this graph pattern
+                            my $rspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$sbmlMultiSpeciesTypeStr};
+                            my $pspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$psbmlMultiSpeciesTypeStr};
+
+                            #get the species hash associated with this reatant element
+                            my $reactantHash = $reactantHashHash{$source}{'sg'};
+                            my $reactantId = $reactantHashHash{$source}{'id'};
+
+                            my $reactantName = @{$reactant->Molecules}[$smolecule]->Name;
+                            my $productName = @{$product->Molecules}[$tmolecule]->Name;
+                            #use Data::Dumper;
+                            #print Dumper $reactantHashHash{$source}{'sg'},'...';
+                            # fixme: this shouldnt be zero, we should actually index the component we want, important if there are labels that change mapping order
+                            # that said, the index here is a $local$ index within the repeated elements of the same molecule type in a species
+
+                            #get the sbml multi id associated with this graph pattern's component id in the species type
+                            my $rreverseReference = $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[0];
+                            my $preverseReference = $productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}[0];
+
+                            #fixme: once again it is not necessarely the first one that we are removing
+                            #we used this component so remove it from the available components pool
+                            splice(@{$reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}}, 0, 1);
+                            splice(@{$productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}}, 0, 1);
+
+
+                            $SBML .= sprintf "${indent4}<multi:speciesTypeComponentMapInProduct multi:reactant=\"$reactantId\" multi:reactantComponent=\"cmp_${rreverseReference}\" multi:productComponent=\"cmp_${preverseReference}\"/>\n";
+
+                        }
+                        
+
+                    }
+                }
+                $counter += 1;
+                $SBML .= sprintf  "            </multi:listOfSpeciesTypeComponentMapsInProduct>\n";
+                $SBML .= "          </speciesReference>\n";
+
 
             }
             $SBML .=  "        </listOfProducts>\n";
@@ -282,6 +338,7 @@ sub writeSBMLReactions
 
         $SBML .=  "      </reaction>\n";
     }
+
     }
     $SBML .=  "    </listOfReactions>\n";
     return $SBML;

@@ -394,7 +394,7 @@ sub getSBMLMultiSpeciesFeature
             # we do it a little hack~ish here by manipulating the $reverseReference id to point to the molecule id instaed
             # this expects an id that follows the sid_mid_cid convention
             my @splitArray = split(/_/, $reverseReference);
-            @splitArray[0] =$splitArray[0] ."I";
+            @splitArray[0] ="cmp_" . $splitArray[0];
             $externalComponentId  = join('_', @splitArray[0..$#splitArray-1]);
         }
         #regardless we used up this component hash reference so pop it to flag its been used

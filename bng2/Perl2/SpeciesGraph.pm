@@ -2087,7 +2087,7 @@ sub toSBMLMultiSpecies
         
 
         my $index = 1;
-        # clone the list of references we need for this particular species
+        # clone the list of references we need for this particular species (since we will be modifying it)
         my %multicomponentHash = %{dclone(\%{$speciesIdHash_ref->{'References'}->{${attributes_ref}->{'multi:speciesType'}}})};
         foreach my $mol ( @{$sg->Molecules} )
         {

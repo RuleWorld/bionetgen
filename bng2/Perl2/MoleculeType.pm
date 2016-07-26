@@ -393,7 +393,9 @@ sub toSBMLMultiSpeciesType
 
     $speciesIdHash_ref->{'Molecules'}->{$mtype->toString()} = $stid;
     
-    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'Molecules'}->{$stid}}, sprintf("%sI_M", $sid) . "$index";
+    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'Molecules'}->{$stid}}, sprintf("cmp_%s_M", $sid) . "$index";
+    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'moleculeReverseReferences'}->{$mtype->Name()}}, $mid ;
+
     if (@{$mtype->Components})
     {
         my $indent2 = "   ".$indent;
@@ -417,7 +419,7 @@ sub toSBMLMultiSpeciesType
                         push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~%s)", $mtype->Name, $comp->Name, $state)}}, $mid . "_C${counter}";
                     }
                     push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s)", $mtype->Name, $comp->Name)}}, $mid . "_C$counter";
-                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("%sI_M", $sid) . "$index" ."_C$counter";
+                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("cmp_%s_M", $sid) . "$index" ."_C$counter";
                     $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;
                     $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parentMulti'} = $cid;
 
@@ -427,7 +429,7 @@ sub toSBMLMultiSpeciesType
             $counter += 1;    
             
         }
-        $counter = 0;
+        $counter = 1;
         foreach my $comp (@{$mtype->Components}){
             $cid = sprintf("%s_C%d",$mid, $counter);
             $counter +=1;
@@ -441,7 +443,9 @@ sub toSBMLMultiSpeciesType
         {
             # only check things that are not binding sites. Hybrids are alraedy accoutned for
             if (! exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$comp->Name}){
+
                 $cid = sprintf("%s_C%d",$stid, $counter);
+
                 $tempstr = $comp->toSBMLMultiSpeciesTypeFeatures($cid, $mtype->Name, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref, $indent2);
                 if($tempstr ne ''){
                     for my $state (@{$comp->States})
