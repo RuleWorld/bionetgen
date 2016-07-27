@@ -8,13 +8,13 @@ notifications:
 script:
 - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
 before_deploy:
-- cd .. && mv ./bng2/BioNetGen-2.3.0 $TRAVIS_OS_NAME
+- cd BioNetGen-2.3.0/Network3 && make clean && cd ../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME
 deploy:
   provider: s3
   access_key_id: AKIAJPQVKWM4FKVDRPZA
   bucket: bionetgen
   skip_cleanup: true
-  local_dir: "$TRAVIS_OS_NAME"
+  local_dir: "dist"
   on:
     branch: release
   secret_access_key:
