@@ -13,7 +13,7 @@ script:
   - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
   
 before_deploy:
-  - mv ./bng2/BioNetGen-2.3.0 $TRAVIS_OS_NAME
+  - cd .. && mv ./bng2/BioNetGen-2.3.0 $TRAVIS_OS_NAME
 
 deploy:
   provider: s3
