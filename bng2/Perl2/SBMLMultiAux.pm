@@ -1,6 +1,6 @@
 package BNGModel;
 
-
+use Storable qw(dclone);
 # pragmas
 use strict;
 use warnings;
@@ -186,7 +186,6 @@ sub writeSBMLParameters
 # needs to be modified to iterate over rules instead of reactions
 sub writeSBMLReactions
 {
-    use Storable qw(dclone);
 
     my $model = shift @_;
     my $speciesIdHash_ref = shift @_;
