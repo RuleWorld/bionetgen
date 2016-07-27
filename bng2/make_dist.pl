@@ -321,7 +321,7 @@ if (defined $bindir)
         exit -1;
     }
     
-    print "preparing libaries . . .\n";
+    print "preparing libraries . . .\n";
     foreach my $libfile (@include_libraries)
     {
         # get absolute path of libfile
