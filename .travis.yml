@@ -1,28 +1,21 @@
 os:
-  - osx
-  - linux
-
+- osx
+- linux
 language: c++
 sudo: false
-
-
 notifications:
   slack: faederlab:l0waIGp58v8ZV74N7QmXGoWs
-   
 script:
-  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
-  
+- cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
 before_deploy:
-  - cd .. && mv ./bng2/BioNetGen-2.3.0 $TRAVIS_OS_NAME
-
+- cd .. && mv ./bng2/BioNetGen-2.3.0 $TRAVIS_OS_NAME
 deploy:
   provider: s3
-  access_key_id:
-    secure: ctz/+kLFTn38ccVJpChZ8D8VKqrV7DGaLAxKKZaIAuvW/f3Cvccou5V98T8yJRHStfBCILZ/hkmnXMWLNayzvGTtffzNNL0U8X+IY9NFkplB89+7mZ1+16mc2wos2cFzlu7Mj9yBZm2rPGfmg69uWreo6xW17+aZdqVXw1bXbHQYdKlxCw1N5FwZu8GYtdmnMMk7HXssqrh7Xyo90iiFY3upKlhu2gCZz4OU3T77GGVNKR0ABv4lCriJxMMnz3jVKgZYvBYFBP6qKYCElBim1bv4r/jxZvhXZUN6DJ0HvKvFBXsq8vuZNT3sjBDbb6upIdmsaPDAh1ZTFOXkdLoL8M5TLq7F4aUSCp4tvKW/Ckk5KKQRwuh7h+LVzi+0Qo9HPysF/QWxfRzzhRgNhwR7E+qYtEwjNsh0hk1blJzCU8FrigZ/3zJNgGAaXS8HVodXhrQ0VDUrEuu28yBoPdjUvlgt15tyWAeHby0VxxMz5hOQtCjKEIECbNBpG2g7dC6s3C+jE2O+VMtEktxFQF5aZzLeqoMvOacCE85IC9Sv9WTgihdmURORI0JlKOG+M+UJdAjZUK6DSO8PenbgHH5CKiKiF2TPVesXKnw0tAmHtfsJWBkq5mBHfBpB9SLi+bsGWBkR4j86GSZ/q+K6Kxi444vm1CFXcF3J6oJLVRnHPas=
-  secret_access_key:
-    secure: IHOpj+ZIB9+8ES4q0/cUHuc5Pby7JYsLtkMSeo6k2jZQh9mb1GQ/kkpdfzKnLp2Tvlt+I7wCIsx3NqsaBNwa0OHVgREIHjtTtC+I8ueVBiPsn0hEZ5RHJA+2DRzAaXoq1fHd4IC92j3RT4qLQKjc9ochlB0FhCHs7N/RM62dtlFLYGWv9lPk9ZbI0OZHI25vDnG8aaaVwYeqIe71kHo/GgSUhM2NSFKvQkmlktKeb1a5hTc0X8x0S5XuFGnKzAV3rpgIj7bVDnuraTV2wtuleT8klwNqCJhIAVkz39hhIWPNVumzq77RnDvgsH9BuSHNia+NDUcEq9judODxTmsF0BIxCQb13LfDRbl+zRwnhrHGv+vk33zsQ6Zom3A3skJqLftv01y72FplLuJSp4jvw4J1wuAPWUpkeriHfgJSl1ZWOl4cLBL+/LeYm2NI5KdCguslVErLF/FuJbC2QUlqEl7a9HHmyOuk5CPvrMUKkAW8cue9AJDtW20yyWqXqZAryCQD3KX8C7EnYxxy5kACSIkGB5TBgcdP3r9OmkWtj9vE5EA49qMAr97l5UYc7TDLkdh6hhaIZzsA9NfhvAx/++lNVn7tiwXPUU+XeKQKDw0zY+6c1e8oNE0k/8kOCU/qgjcw+UZWERQPC4+M0jCRSl0Na5AirpjmyD2onHedIa8=
+  access_key_id: AKIAJPQVKWM4FKVDRPZA
   bucket: bionetgen
   skip_cleanup: true
-  local_dir: $TRAVIS_OS_NAME
+  local_dir: "$TRAVIS_OS_NAME"
   on:
     branch: release
+  secret_access_key:
+    secure: hmR9Krh4wlbzaGc8o9QTsi8RSujHUzA//7LcIJ7ZPannWCXrKTYwuVrdhakhJTtD9WN/jgDNp5Axolt+EiuehnkLdvhI+OXsQV1EazFsgNtZonA+FO0Uv+E6WN3A44fQ5EzPf49aZMi8BRpz+bsS7/y/TcirhOYqfmtHcWwk0cr2kfvtm6lJGjswLkbH0X7NxDXYK9er0hjYHxzh+dnlzKGkGCAEO1SdFJaWOdJ9I0+Uwnu6GA/lI0pFSwWjcCafE2BADw7jp5XGc+NRpE5v2Czo7+yCw1Km1vxZSqGLTBgQ3KSNOHpE5RW7BQpwXVKecwfO93TSqFT1vwHBwKSLrSsQlHTls6k5+izETSBbNyWpP5UL34k0Ta+H/mhNTYYyuuYB31Ikdac/2krOPble2u61ZgvmGmkEm1jRBAocBvYSnRf7vBXm1Z5DPbKCvysatk/FNkvq5L/3XvFpkQMOFIowXLu1t8z22z0UycWlf0hrrQIJEQQ8H+JDyYQkKK5yNIX8FUUV70QHVJ1qJ3aYJDtKEuLBXSuhXWC39gXbD2O0MQeUCe5rfX79/basMlQuKY6hdYA7xK10bPS6/Y04YLVSFF+H0se0eCpkaaOYSScAPgcdcxyJF+XVvNXJ1LwlGZmuzRTfuGzcP4Q1CdHi9rNankLTR4vPJYNm+45EZYg=
