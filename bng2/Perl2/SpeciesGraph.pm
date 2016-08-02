@@ -2147,84 +2147,89 @@ sub toSBMLMultiSpeciesType
     my $attributes = shift @_;
     my $sbmlMultiSpeciesInfo_ref = shift @_;
     my $speciesIdHash_ref = shift @_;
+    my $n_mol = scalar( @{ $sg->Molecules } );
     
     my $attributes_str = '';
+
     for my $attrkey (keys %{$attributes}){
         $attributes_str .= sprintf(' %s="%s"', $attrkey, $attributes->{$attrkey});
     }
 
-    my $string = $indent . sprintf("<%s multi:id=\"ST%s\" %s multi:compartment=\"%s\">\n", $type, $id, $attributes_str, "cell"); #$sg->Compartment->Name);
-    my $indent2 = $indent. "     ";
-    $speciesIdHash_ref->{'SpeciesType'}->{$attributes->{"multi:name"}} = sprintf("ST%s",$id);
+    my $string = '';
+    my $indent2 = $indent;
+
+    if ($n_mol > 1){
+        $string .= sprintf("<%s multi:id=\"ST%s\" %s multi:compartment=\"%s\">\n", $type, $id, $attributes_str, "cell"); #$sg->Compartment->Name);
+        $indent2 .= "     ";
+        $speciesIdHash_ref->{'SpeciesType'}->{$attributes->{"multi:name"}} = sprintf("ST%s",$id);
+    }
+    #else{
+    #    my $stid = "ST_M" . keys(%$sbmlMultiSpeciesInfo_ref);
+    #    $speciesIdHash_ref->{'SpeciesType'}->{$attributes->{"multi:name"}} = $stid;
+    #}
+
     #get species features and species type instances from the molecule type lists
     if ($mtlist)
     {
-        $string .= $mtlist->toSBMLMultiSpeciesType($sg, "ST" . $id, $indent2, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref);
+
+        my $tmp = $mtlist->toSBMLMultiSpeciesType($sg, "ST" . $id, $indent2, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref);
+        if ($n_mol > 1){
+            $string .= $tmp;
+        }
     }
 
     my $mcounter = 1;
     my $stid = "ST$id";
 
-# foreach my $mol (@{$sg->Molecules}){
-    #     my $mid = "${stid}_M${mcounter}";
-    #     my $ccounter = 1;
-    #     my $parent = $speciesIdHash_ref->{'Molecules'}->{$mol->toString()};
-    #     foreach my $comp (@{$mol->Components}){
-    #         my $cid = $speciesIdHash_ref->{'Components'}->{sprintf("%s(%s)",$mol->Name,$comp->Name)};
-            
-            
-    #         $speciesIdHash_ref->{'References'}->{sprintf("ST%s",$id)}->{'Components'}->{$cid}->{'id'} = sprintf("%sI_M", $stid) . "$mcounter" ."_C$ccounter";
-    #         $speciesIdHash_ref->{'References'}->{sprintf("ST%s",$id)}->{'Components'}->{$cid}->{'parent'} = "s";
-    #         $ccounter +=1;
-    #     }
-    #     $mcounter += 1;
-    # }
+
 
     # TODO: we should only include fully specified full bonds and states. other stuff doesnt need to be here
     # technically this is only necessary for symmetric stuff but its easier to just index everything
-    $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
-    foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
-        foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
-            $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $molkey);
+
+    if($n_mol > 1){
+        $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
+        foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
+            foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
+                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $molkey);
+            }
+
         }
 
-    }
+        foreach my $compkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}}){
+            my $centry = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'id'};
+            my $parent = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parent'};
+            my $multiref = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parentMulti'};
+            $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\" multi:identifyingParent=\"%s\"/>\n", $centry, $multiref, $parent);
+        }
 
-    foreach my $compkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}}){
-        my $centry = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'id'};
-        my $parent = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parent'};
-        my $multiref = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parentMulti'};
-        $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\" multi:identifyingParent=\"%s\"/>\n", $centry, $multiref, $parent);
-    }
-
-    $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
-    if ( @{$sg->Edges} )
-    {
-        my $bstring = '';
-        my $index   = 1;
-        my $indent3 = '  ' . $indent2;
-
-        my $bid1 = '';
-        my $bid2 = '';
-        foreach my $edge ( @{$sg->Edges} )
+        $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
+        if ( @{$sg->Edges} )
         {
-            my ($p1, $p2) = split ' ', $edge;
-            next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
-            $bid1 = $sg->p_to_multi_label($p1 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
-            $bid2 = $sg->p_to_multi_label($p2 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
-            $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
-            ++$index;
+            my $bstring = '';
+            my $index   = 1;
+            my $indent3 = '  ' . $indent2;
+
+            my $bid1 = '';
+            my $bid2 = '';
+            foreach my $edge ( @{$sg->Edges} )
+            {
+                my ($p1, $p2) = split ' ', $edge;
+                next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
+                $bid1 = $sg->p_to_multi_label($p1 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
+                $bid2 = $sg->p_to_multi_label($p2 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
+                $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
+                ++$index;
+            }
+            if ($bstring)
+            {
+                $string .=   $indent2 . "<multi:listOfInSpeciesTypeBonds>\n"
+                            . $bstring
+                            . $indent2 . "</multi:listOfInSpeciesTypeBonds>\n";
+            }
         }
-        if ($bstring)
-        {
-            $string .=   $indent2 . "<multi:listOfInSpeciesTypeBonds>\n"
-                        . $bstring
-                        . $indent2 . "</multi:listOfInSpeciesTypeBonds>\n";
-        }
+
+        $string .= sprintf("%s</%s>\n", $indent, $type);
     }
-
-    $string .= sprintf("%s</%s>\n", $indent, $type);
-
 
     return $string;
 

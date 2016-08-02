@@ -718,17 +718,28 @@ sub writeSBMLMulti
     # 2. walk through the total model species llist and fill in information
     $xml .= $indent . "<listOfSpecies>\n";
     #iterate over the species by id
+    my %print_options = (
+        "sbml_multi",  "1",
+    );
+
     foreach my $speciesStr (sort {$speciesSet{$a}[0] <=> $speciesSet{$b}[0]} keys %speciesSet)
     {
         my $index = $speciesSet{$speciesStr}[0]; 
         my $sg = $speciesSet{$speciesStr}[1];
-        my $speciesType = $speciesSet{$speciesStr}[2];
+        my $speciesType;
+
+        if(exists($speciesIdHash{'SpeciesType'}{$sg->toString(1, 1, \%print_options)})){
+            $speciesType = $speciesIdHash{'SpeciesType'}{$sg->toString(1, 1, \%print_options)};
+        }
+        else{
+            $speciesType = $speciesIdHash{'Molecules'}{@{$sg->Molecules}[0]->Name};
+        }
         my %attributes = ();
 
         # Attributes
         # concentration
         $attributes{"initialConcentration"} = "0";
-        $attributes{"multi:speciesType"} = "ST".$speciesType;
+        $attributes{"multi:speciesType"} = $speciesType;
         $xml .= $sg->toSBMLMultiSpecies("     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);
     }
 

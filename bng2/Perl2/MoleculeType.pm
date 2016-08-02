@@ -370,12 +370,13 @@ sub toSBMLMultiSpeciesType
 {
     my $mtype = shift @_;
     my $sid = shift @_;
+    my $mid = shift @_;    
     my $index = shift @_;
     my $indent = shift @_;
     my $sbmlMultiSpeciesInfo_ref = shift @_;
     my $speciesIdHash_ref = shift @_;
 
-    my $mid = sprintf("%s_M%s", $sid, $index);
+    
 
     # appends the length of the $sbmlMultiSpeciesInfo_ref hash
     my $stid = "ST_M" . keys(%$sbmlMultiSpeciesInfo_ref);
@@ -391,7 +392,7 @@ sub toSBMLMultiSpeciesType
 
     # add id information
 
-    $speciesIdHash_ref->{'Molecules'}->{$mtype->toString()} = $stid;
+    $speciesIdHash_ref->{'Molecules'}->{$mtype->Name} = $stid;
     
     push @{$speciesIdHash_ref->{'References'}->{$sid}->{'Molecules'}->{$stid}}, sprintf("cmp_%s_M", $sid) . "$index";
     push @{$speciesIdHash_ref->{'References'}->{$sid}->{'moleculeReverseReferences'}->{$mtype->Name()}}, $mid ;

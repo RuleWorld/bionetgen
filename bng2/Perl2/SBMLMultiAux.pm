@@ -278,40 +278,61 @@ sub writeSBMLReactions
                         $target = substr($target, 0, $tfirstdot);
                         
                         if($target == $counter){
+                            my $rspeciesType;
+                            my $pspeciesType;
+
                             #the species graph for the reactant-product graph pattern pair
                             my $reactant = @{$rxn->Reactants}[$source];
                             my $product = @{$rxn->Products}[$target];
                             my $indent4 = "              ";
                             my $sbmlMultiSpeciesTypeStr = $reactant->toString(1, 1, \%print_options);
                             my $psbmlMultiSpeciesTypeStr = $product->toString(1, 1, \%print_options);
-                            #get the multi species type id associated with this graph pattern
-                            my $rspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$sbmlMultiSpeciesTypeStr};
-                            my $pspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$psbmlMultiSpeciesTypeStr};
-
-                            #get the species hash associated with this reatant element
-                            my $reactantHash = $reactantHashHash{$source}{'sg'};
+                            my $rreverseReference;
+                            my $preverseReference;
                             my $reactantId = $reactantHashHash{$source}{'id'};
+                            #get the multi species type id associated with this graph pattern
+                            if(scalar(@{$reactant->Molecules}) > 1){
+                                $rspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$sbmlMultiSpeciesTypeStr};
 
-                            my $reactantName = @{$reactant->Molecules}[$smolecule]->Name;
-                            my $productName = @{$product->Molecules}[$tmolecule]->Name;
-                            #use Data::Dumper;
-                            #print Dumper $reactantHashHash{$source}{'sg'},'...';
-                            # fixme: this shouldnt be zero, we should actually index the component we want, important if there are labels that change mapping order
-                            # that said, the index here is a $local$ index within the repeated elements of the same molecule type in a species
+                                #get the species hash associated with this reatant element
+                                my $reactantHash = $reactantHashHash{$source}{'sg'};
+                                
+                                my $reactantName = @{$reactant->Molecules}[$smolecule]->Name;
 
-                            #get the sbml multi id associated with this graph pattern's component id in the species type
-                            my $rreverseReference = $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[0];
-                            my $preverseReference = $productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}[0];
+                                # fixme: this shouldnt be zero, we should actually index the component we want, important if there are labels that change mapping order
+                                # that said, the index here is a $local$ index within the repeated elements of the same molecule type in a species
+                                #get the sbml multi id associated with this graph pattern's component id in the species type
+                                $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[0];
 
-                            #fixme: once again it is not necessarely the first one that we are removing
-                            #we used this component so remove it from the available components pool
-                            splice(@{$reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}}, 0, 1);
-                            splice(@{$productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}}, 0, 1);
+                                #fixme: once again it is not necessarely the first one that we are removing
+                                #we used this component so remove it from the available components pool
+                                splice(@{$reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}}, 0, 1);
+                            }
+                            else{
+                                $rreverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$reactant->Molecules}[0]->Name};
+                            }
+
+                            if(scalar(@{$product->Molecules}) > 1){
+                                $pspeciesType = $speciesIdHash_ref->{'SpeciesType'}->{$psbmlMultiSpeciesTypeStr};
+                                my $productName = @{$product->Molecules}[$tmolecule]->Name;
+                                $preverseReference = "cmp_" . $productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}[0];
+                                splice(@{$productHash{$pspeciesType}{'moleculeReverseReferences'}{$productName}}, 0, 1);
+                            }
+                            else{
+                                $preverseReference =  $speciesIdHash_ref->{'Molecules'}->{@{$product->Molecules}[0]->Name};   
+                                
+                            }
 
 
-                            $SBML .= sprintf "${indent4}<multi:speciesTypeComponentMapInProduct multi:reactant=\"$reactantId\" multi:reactantComponent=\"cmp_${rreverseReference}\" multi:productComponent=\"cmp_${preverseReference}\"/>\n";
+                                #use Data::Dumper;
+                                #print Dumper $reactantHashHash{$source}{'sg'},'...';
+
+
+
+                            $SBML .= sprintf "${indent4}<multi:speciesTypeComponentMapInProduct multi:reactant=\"$reactantId\" multi:reactantComponent=\"${rreverseReference}\" multi:productComponent=\"${preverseReference}\"/>\n";
 
                         }
+
                         
 
                     }
