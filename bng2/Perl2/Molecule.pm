@@ -493,6 +493,7 @@ sub toStringMCell
 sub getSBMLMultiSpeciesFields
 {
     my $mol    = shift @_;
+    my $mtlist = shift @_;
     my $indent = shift @_;
     my $stid = shift @_;
     my $mid     = shift @_;
@@ -502,28 +503,68 @@ sub getSBMLMultiSpeciesFields
     my $multiComponentHash_ref = shift @_;
     # Component information
     #my $mid = sprintf "${id}_M%d", $index;
-    use Data::Dumper;
-    if ( @{$mol->Components} )
-    {
-        my $cindex = 1;
-        foreach my $comp ( @{$mol->Components} )
-        {
+
+    # create an emtpy compartment list for use below
+    my $clist = CompartmentList->new('Used'=>0);
+
+    my $cindex = 1;
+    my $mtype = $mtlist->MolTypes->{$mol->Name};
+    foreach my $ctype (@{$mtype->Components}){
+        my $componentFlag = 0;
+        if(@{$mol->Components}){
+            foreach my $comp ( @{$mol->Components} )
+            {
+                if($comp->Name eq $ctype->Name){
+                    my $outwardbonds = '';
+                    if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
+                        $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+                    }
+                    ++$cindex;
+                    my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+                    if(not $outwardbonds eq ''){
+                        push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
+                    }
+                    if(not $speciesfeatures eq''){
+                        push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
+                    }
+                    ++$cindex;
+                    $componentFlag = 1;
+                    last;
+                }
+            }
+        }
+        #even if a component is not explicitly included in the species graph specification we still need to generate some specoes multi information about it
+        if ($componentFlag == 0){
+            my $sg = SpeciesGraph->new;
+            my $string = '';
+            if(exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$ctype->Name}){
+                $string = sprintf("%s(%s!?)", $mtype->Name, $ctype->Name);
+            }
+            else{
+                $string = sprintf("%s(%s)", $mtype->Name, $ctype->Name);
+            }
+            
+            $string =~ s/^\s+//;
+            #create a dummy species graph with the component we need
+            my $err = $sg->readString( \$string, $clist, 1, '^\s+', $mtlist );
+            my $cnew = @{@{$sg->Molecules}[0]->Components}[0];
+
             my $outwardbonds = '';
-            if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
-                $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+            if(exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$cnew->Name}){
+                $outwardbonds = $cnew->getSBMLMultiOutwardBonds( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
             }
             ++$cindex;
-            my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+            my $speciesfeatures = $cnew->getSBMLMultiSpeciesFeature( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
             if(not $outwardbonds eq ''){
                 push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
-                #push @{$sbmlMultiSpeciesInfo{'outwardbonds'}}, $outwardbonds;
             }
             if(not $speciesfeatures eq''){
                 push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
-                #push @{$sbmlMultiSpeciesInfo{'speciesFeature'}}, $speciesfeatures;
             }
             ++$cindex;
+
         }
+        
     }
 
 

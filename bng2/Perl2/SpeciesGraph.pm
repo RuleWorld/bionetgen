@@ -2028,6 +2028,7 @@ sub toSBMLMultiSpecies
     use Storable qw(dclone);
 
     my $sg         = shift @_;
+    my $mtlist     = shift @_;
     my $indent     = shift @_;
     my $type       = shift @_;
     my $id         = shift @_;
@@ -2091,7 +2092,7 @@ sub toSBMLMultiSpecies
         my %multicomponentHash = %{dclone(\%{$speciesIdHash_ref->{'References'}->{${attributes_ref}->{'multi:speciesType'}}})};
         foreach my $mol ( @{$sg->Molecules} )
         {
-            $mol->getSBMLMultiSpeciesFields("  " . $indent2, ${attributes_ref}->{'multi:speciesType'}, sprintf("%s_M%d", $id, $index), 
+            $mol->getSBMLMultiSpeciesFields($mtlist, "  " . $indent2, ${attributes_ref}->{'multi:speciesType'}, sprintf("%s_M%d", $id, $index), 
                                             \%sbmlMultiSpeciesInfo, $speciesIdHash_ref, \%multicomponentHash);
             ++$index;
         }

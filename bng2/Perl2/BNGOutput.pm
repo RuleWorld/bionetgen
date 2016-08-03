@@ -740,7 +740,7 @@ sub writeSBMLMulti
         # concentration
         $attributes{"initialConcentration"} = "0";
         $attributes{"multi:speciesType"} = $speciesType;
-        $xml .= $sg->toSBMLMultiSpecies("     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);
+        $xml .= $sg->toSBMLMultiSpecies($model->MoleculeTypesList, "     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);
     }
 
     $xml .= $indent."</listOfSpecies>\n";
