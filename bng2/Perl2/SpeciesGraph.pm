@@ -2763,7 +2763,7 @@ sub isomorphicToSubgraph
 					if ( defined $ci1->Compartment )
                     {
                         next unless ( defined $ci2->Compartment );
-						next unless ( $ci1->Compartment == $ci2->Compartment );
+						next unless ( $ci1->Compartment eq $ci2->Compartment );
 					}
 
 	                # Number of component edges must match (primarily used to look for free
