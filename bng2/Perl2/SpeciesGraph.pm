@@ -2755,6 +2755,7 @@ sub isomorphicToSubgraph
 					# Component state only if present in sg1
 					if ( defined $ci1->State )
                     {
+                    	next unless ( defined $ci2->State);
 						unless ( $ci1->State eq "?" )
                         {   next unless ( $ci1->State eq $ci2->State );   }
 					}
