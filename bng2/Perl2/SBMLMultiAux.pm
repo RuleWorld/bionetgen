@@ -229,7 +229,7 @@ sub writeSBMLReactions
             push @pindices, $pid #$spec->Index;
 
         }
-        @pindices = sort { $a <=> $b } @pindices;
+        #@pindices = sort { $a <=> $b } @pindices;
         
         #define a reaction hash that contains a speciesIdHash clone corresponding to each reactant in the list
         my %reactantHashHash;
@@ -267,16 +267,17 @@ sub writeSBMLReactions
                 foreach my $source ( sort keys %{ $rxn->MapF } )
                 {
                     my $dots = $source =~ tr/././; #number of dots
+                    #molecule information (2 dots is for component information)
                     if($dots == 1){
                         my $target = $rxn->MapF->{$source};
                         my $sfirstdot = index($source, ".");
                         my $smolecule = substr($source, $sfirstdot+1, length($source));
                         $source = substr($source, 0, $sfirstdot);
                         
+
                         my $tfirstdot = index($target, ".");
                         my $tmolecule = substr($target, $sfirstdot+1, length($target));
                         $target = substr($target, 0, $tfirstdot);
-                        
                         if($target == $counter){
                             my $rspeciesType;
                             my $pspeciesType;

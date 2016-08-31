@@ -162,11 +162,11 @@ sub toSBMLMultiSpeciesTypeBinding
 
     # pure binding site
     if (!@{$ctype->States}){
-      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\"/>\n", $cid, $fullname);
+      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\"/>\n", $cid, $ctype->Name);
     }
     # this binding site also has states!
     else{
-      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\">\n", $cid, $fullname);
+      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\">\n", $cid, $ctype->Name);
       my $featuretypes .= $ctype->toSBMLMultiSpeciesTypeFeatures($cid."_ft",$mName,$sbmlMultiSpeciesInfo_ref,$speciesIdHash_ref,$indent);
 
       if(! $featuretypes eq ''){

@@ -524,7 +524,7 @@ sub getSBMLMultiSpeciesFields
                     if(not $outwardbonds eq ''){
                         push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
                     }
-                    if(not $speciesfeatures eq''){
+                    if(not $speciesfeatures eq ''){
                         push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
                     }
                     ++$cindex;

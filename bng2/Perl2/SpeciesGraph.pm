@@ -410,15 +410,17 @@ sub p_to_multi_label
     
     my @inds = split( '\.', $p );
     my $fullstring = sprintf("%s(%s)", @{$sg->Molecules}[$inds[0]]->Name, @{@{$sg->Molecules}[$inds[0]]->Components}[$inds[1]]->Name);
-
-
-    my $mid = sprintf("ST%s_M%d",$stid,$p+1);
-    foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
-
-        if (index($comp, $mid) != -1){
-            return $speciesIdHash_ref->{'Components'}->{$comp}->{'id'};
-        }
-    }
+    
+    my $multiid = sprintf "ST${stid}_M%d_C%d" , ($inds[0]+1) , $inds[1] + 1;
+    use Data::Dumper;
+    return $speciesIdHash_ref->{'Components'}->{$multiid}->{'id'};
+    
+    # my $mid = sprintf("ST%s_M%d",$stid,$p+1);
+    # foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
+    #     if (index($comp, $mid) != -1){
+    #         return $speciesIdHash_ref->{'Components'}->{$comp}->{'id'};
+    #     }
+    # }
 
 }
 
@@ -2181,17 +2183,21 @@ sub toSBMLMultiSpeciesType
 
     my $mcounter = 1;
     my $stid = "ST$id";
-
+    my @parentEntry;
 
 
     # TODO: we should only include fully specified full bonds and states. other stuff doesnt need to be here
     # technically this is only necessary for symmetric stuff but its easier to just index everything
-
+        
     if($n_mol > 1){
         $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
         foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
             foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
-                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $molkey);
+                #remove the cmp prefix to get the parent sbml_id. 
+                @parentEntry = split(/_/,$entry);
+                my $parentEntryStr = join('_',@parentEntry[1..$#parentEntry]);
+
+                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $parentEntryStr);
             }
 
         }

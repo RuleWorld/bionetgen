@@ -388,7 +388,7 @@ sub toSBMLMultiSpeciesType
     }else{
         $stinstance_string = sprintf("%s<multi:speciesTypeInstance multi:id=\"%s\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n",$indent, $mid, $mtype->Name, $stid);
     }
-    my $st_string = sprintf("<multi:speciesType multi:id=\"%s\" multi:name=\"%s\" multi:compartment=\"%s\">\n", $stid, $mtype->toString(), "cell");
+    my $st_string = sprintf("<multi:speciesType multi:id=\"%s\" multi:name=\"%s\" multi:compartment=\"%s\">\n", $stid, $mtype->Name, "cell");
 
     # add id information
 
@@ -415,10 +415,7 @@ sub toSBMLMultiSpeciesType
                 # store the species id for use in the species section
                 $tempstr = $comp->toSBMLMultiSpeciesTypeBinding($cid, $mtype->Name, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref, $indent2);
                 if($tempstr ne ''){
-                    for my $state (@{$comp->States})
-                    {
-                        push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~%s)", $mtype->Name, $comp->Name, $state)}}, $mid . "_C${counter}";
-                    }
+                    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~", $mtype->Name, $comp->Name)}}, $mid . "_C${counter}";
                     push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s)", $mtype->Name, $comp->Name)}}, $mid . "_C$counter";
                     $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("cmp_%s_M", $sid) . "$index" ."_C$counter";
                     $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;
@@ -449,10 +446,7 @@ sub toSBMLMultiSpeciesType
 
                 $tempstr = $comp->toSBMLMultiSpeciesTypeFeatures($cid, $mtype->Name, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref, $indent2);
                 if($tempstr ne ''){
-                    for my $state (@{$comp->States})
-                    {
-                        push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~%s)", $mtype->Name, $comp->Name, $state)}}, $mid . "_C${counter}";
-                    }
+                    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~", $mtype->Name, $comp->Name)}}, $mid . "_C${counter}";
                     push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s)", $mtype->Name, $comp->Name)}}, $mid . "_C$counter";
                     #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("%sI_M", $sid) . "$index" ."_C$counter";
                     #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;

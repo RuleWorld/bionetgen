@@ -377,24 +377,25 @@ sub getSBMLMultiSpeciesFeature
     my $speciesIdHash_ref = shift @_;
     # list of references to sbml multi species type objects for this species
     my $multiComponentHash_ref = shift @_;
-
+    
     my $string = "";
     # state
     if (defined $comp->State)
     {
         my $fullstring = sprintf("%s(%s~", $mName, $comp->Name). ${comp}->State . ")";
-        
+        my $partialtring = sprintf("%s(%s~", $mName, $comp->Name);
         #my $fullstring = sprintf("%s(%s~%s)",$mName, $comp->Name, $comp->State);
         #calculate external id
 
         #get a component from the component queue
-        my $reverseReference = $multiComponentHash_ref->{'reverseReferences'}->{$fullstring}[0];
+        my $reverseReference = $multiComponentHash_ref->{'reverseReferences'}->{$partialtring}[0];
         my $externalComponentId;
 
         my $externalId = $speciesIdHash_ref->{'Components'}->{$fullstring};
         my $indent2 = '  ' . $indent;
 
         if(defined $reverseReference){
+
             # get the species type id associated with this top level component
             if(exists $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'}){
                 $externalComponentId =  $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'};
@@ -406,12 +407,14 @@ sub getSBMLMultiSpeciesFeature
                 my @splitArray = split(/_/, $reverseReference);
                 $splitArray[0] ="cmp_" . $splitArray[0];
                 $externalComponentId  = join('_', @splitArray[0..$#splitArray-1]);
+
             }
             #regardless we used up this component hash reference so pop it to flag its been used
-            splice(@{$multiComponentHash_ref->{'reverseReferences'}->{$fullstring}}, 0, 1);
+            splice(@{$multiComponentHash_ref->{'reverseReferences'}->{$partialtring}}, 0, 1);
             #get an id  to the species type associated component based on the reverse reference
             
             $string = $indent2 . sprintf("<multi:speciesFeature id=\"%s\" multi:speciesFeatureType=\"%s\" multi:occur=\"%d\" multi:component=\"%s\">\n",$index, $externalId, 1, $externalComponentId);
+            
         }
         else{
             $string = $indent2 . sprintf("<multi:speciesFeature id=\"%s\" multi:speciesFeatureType=\"%s\" multi:occur=\"%d\">\n",$index, $externalId, 1);
