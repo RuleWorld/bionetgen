@@ -10,6 +10,8 @@ use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
 use List::Util qw(min max sum);
+use Storable qw(dclone);
+
 
 # BNG Modules
 use Molecule;
@@ -410,17 +412,18 @@ sub p_to_multi_label
     
     my @inds = split( '\.', $p );
     my $fullstring = sprintf("%s(%s)", @{$sg->Molecules}[$inds[0]]->Name, @{@{$sg->Molecules}[$inds[0]]->Components}[$inds[1]]->Name);
-    
+     
     my $multiid = sprintf "ST${stid}_M%d_C%d" , ($inds[0]+1) , $inds[1] + 1;
-    use Data::Dumper;
-    return $speciesIdHash_ref->{'Components'}->{$multiid}->{'id'};
+
     
-    # my $mid = sprintf("ST%s_M%d",$stid,$p+1);
-    # foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
+    #print Dumper $speciesIdHash_ref;    
+    #my $mid = sprintf("ST%s_M%d",$stid,$p+1);
+    #foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
     #     if (index($comp, $mid) != -1){
     #         return $speciesIdHash_ref->{'Components'}->{$comp}->{'id'};
     #     }
     # }
+    return $speciesIdHash_ref->{'Components'}->{$multiid}->{'id'};
 
 }
 
@@ -2027,7 +2030,6 @@ sub toXML
 
 sub toSBMLMultiSpecies
 {
-    use Storable qw(dclone);
 
     my $sg         = shift @_;
     my $mtlist     = shift @_;
@@ -2092,6 +2094,8 @@ sub toSBMLMultiSpecies
         my $index = 1;
         # clone the list of references we need for this particular species (since we will be modifying it)
         my %multicomponentHash = %{dclone(\%{$speciesIdHash_ref->{'References'}->{${attributes_ref}->{'multi:speciesType'}}})};
+        #print $sg->toString() ."\n";
+        #print Dumper \%multicomponentHash;
         foreach my $mol ( @{$sg->Molecules} )
         {
             $mol->getSBMLMultiSpeciesFields($mtlist, "  " . $indent2, ${attributes_ref}->{'multi:speciesType'}, sprintf("%s_M%d", $id, $index), 
@@ -2209,6 +2213,22 @@ sub toSBMLMultiSpeciesType
             $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\" multi:identifyingParent=\"%s\"/>\n", $centry, $multiref, $parent);
         }
 
+        my %rreferenceClone = %{dclone(\%{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'reverseReferences'}})};
+        
+        my $mindex =0;
+        foreach my $molecule (@{$sg->Molecules}){
+            my $cindex = 0;
+            foreach my $component(@{$molecule->Components}){
+                my $fullstring = sprintf("%s(%s)", $molecule->Name, $component->Name);
+                $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{"$mindex.$cindex"} = $rreferenceClone{$fullstring}[0];
+                splice(@{$rreferenceClone{$fullstring}}, 0, 1);
+
+                #push @{$edgeHash{$edge}}, (sprintf "ST%d_M%d_C%d", $id, $mindex+1, $cindex+1);
+                $cindex += 1;
+            }
+
+            $mindex += 1;
+        }
         $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
         if ( @{$sg->Edges} )
         {
@@ -2218,12 +2238,13 @@ sub toSBMLMultiSpeciesType
 
             my $bid1 = '';
             my $bid2 = '';
+
             foreach my $edge ( @{$sg->Edges} )
             {
                 my ($p1, $p2) = split ' ', $edge;
                 next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
-                $bid1 = $sg->p_to_multi_label($p1 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
-                $bid2 = $sg->p_to_multi_label($p2 ,$speciesIdHash_ref->{'References'}->{"ST".$id},$id);
+                $bid1 = "cmp_". $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p1};
+                $bid2 = "cmp_" . $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
                 $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
                 ++$index;
             }

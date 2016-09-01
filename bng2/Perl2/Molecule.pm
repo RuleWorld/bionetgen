@@ -501,6 +501,8 @@ sub getSBMLMultiSpeciesFields
     my $speciesIdHash_ref = shift @_;
     # list of references to sbml multi species type objects for this species
     my $multiComponentHash_ref = shift @_;
+
+    my $componentIndexes = shift @_;
     # Component information
     #my $mid = sprintf "${id}_M%d", $index;
 
@@ -519,18 +521,18 @@ sub getSBMLMultiSpeciesFields
                     if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
                         $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
                     }
-                    ++$cindex;
-                    my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+                    my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref, () );
                     if(not $outwardbonds eq ''){
                         push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
                     }
                     if(not $speciesfeatures eq ''){
                         push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
                     }
-                    ++$cindex;
+
                     $componentFlag = 1;
                     last;
                 }
+
             }
         }
         #even if a component is not explicitly included in the species graph specification we still need to generate some specoes multi information about it
@@ -553,7 +555,6 @@ sub getSBMLMultiSpeciesFields
             if(exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$cnew->Name}){
                 $outwardbonds = $cnew->getSBMLMultiOutwardBonds( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
             }
-            ++$cindex;
             my $speciesfeatures = $cnew->getSBMLMultiSpeciesFeature( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
             if(not $outwardbonds eq ''){
                 push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
@@ -561,10 +562,11 @@ sub getSBMLMultiSpeciesFields
             if(not $speciesfeatures eq''){
                 push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
             }
-            ++$cindex;
 
         }
         
+        $cindex += 1;
+
     }
 
 

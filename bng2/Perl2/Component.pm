@@ -377,8 +377,9 @@ sub getSBMLMultiSpeciesFeature
     my $speciesIdHash_ref = shift @_;
     # list of references to sbml multi species type objects for this species
     my $multiComponentHash_ref = shift @_;
-    
     my $string = "";
+    
+    my @indexArray = split(/_/, $index);
     # state
     if (defined $comp->State)
     {
@@ -395,18 +396,23 @@ sub getSBMLMultiSpeciesFeature
         my $indent2 = '  ' . $indent;
 
         if(defined $reverseReference){
-
+            my @splitArray = split(/_/, $reverseReference);
             # get the species type id associated with this top level component
             if(exists $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'}){
-                $externalComponentId =  $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'};
+                $externalComponentId = sprintf("cmp_%s_M%d_C%d", $splitArray[0], substr($indexArray[1], 1), substr($indexArray[2], 1));
+                #$externalComponentId =  $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'};
             }
             else{
                 # if its a state-only component it doesnt have a explicit speciestype reference so we refer to its parent molecule instead
                 # we do it a little hack~ish here by manipulating the $reverseReference id to point to the molecule id instaed
                 # this expects an id that follows the sid_mid_cid convention
-                my @splitArray = split(/_/, $reverseReference);
-                $splitArray[0] ="cmp_" . $splitArray[0];
-                $externalComponentId  = join('_', @splitArray[0..$#splitArray-1]);
+                
+
+                #$splitArray[0] ="cmp_" . $splitArray[0];
+                #$externalComponentId  = join('_', @splitArray[0..$#splitArray-1]);
+
+                $externalComponentId = sprintf("cmp_%s_M%d", $splitArray[0], substr($indexArray[1], 1));
+                
 
             }
             #regardless we used up this component hash reference so pop it to flag its been used
