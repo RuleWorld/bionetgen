@@ -8,6 +8,9 @@ use warnings;
 #####
 # Extracts a hash containg all the species graphs in the system and enumerates them
 #####
+
+
+
 sub extractAllSpeciesGraphs
 {
     my $model  = shift @_;
@@ -22,17 +25,20 @@ sub extractAllSpeciesGraphs
     );
     foreach my $rset ( @{$model->RxnRules} )
     {
+
         foreach my $rr ( @$rset )
         {
             foreach my $reactant (@{$rr->Reactants})
             {
-                $reactant->labelQuasi();
+                $reactant->labelHNauty();
+                
+
                 if (! defined $speciesSet->{$reactant->StringExact}){
                     my $speciesTypeId = 0;
                     push @{$speciesSet->{$reactant->StringExact}}, $speciesCounter;
                     push @{$speciesSet->{$reactant->StringExact}}, $reactant;
                     # calculate species type and add it to our set as necessary
-                    my $sbmlMultiSpeciesTypeStr = $reactant->toString(1, 1, \%print_options);
+                    my $sbmlMultiSpeciesTypeStr = $reactant->getMultiSpeciesTypeStr();
                     if(exists $speciesTypeSet->{$sbmlMultiSpeciesTypeStr})
                     {
                         $speciesTypeId = $speciesTypeSet->{$sbmlMultiSpeciesTypeStr};
@@ -51,14 +57,18 @@ sub extractAllSpeciesGraphs
             }
             foreach my $product (@{$rr->Products})
             {
-                $product->labelQuasi();
+                $product->labelHNauty();
+                
+                
+
+                
                 if (! defined $speciesSet->{$product->StringExact}){
                     my $speciesTypeId = 0;
                     push @{$speciesSet->{$product->StringExact}}, $speciesCounter;
                     push @{$speciesSet->{$product->StringExact}}, $product;
 
                     # calculate species type and add it to our set as necessary
-                    my $sbmlMultiSpeciesTypeStr = $product->toString(1, 1, \%print_options);
+                    my $sbmlMultiSpeciesTypeStr = $product->getMultiSpeciesTypeStr();
                     if(exists $speciesTypeSet->{$sbmlMultiSpeciesTypeStr})
                     {
                         $speciesTypeId = $speciesTypeSet->{$sbmlMultiSpeciesTypeStr};
@@ -204,7 +214,7 @@ sub writeSBMLReactions
         #keeps track of the species components ids that we will use in this reaction mapping
 
 
-
+        $rxn->findMap($model->MoleculeTypesList);
         ++$index;
         $SBML .= sprintf  "      <reaction id=\"R%d\" reversible=\"false\" fast=\"false\">\n", $index;
 
@@ -217,7 +227,7 @@ sub writeSBMLReactions
 
             push @rindices, $rid #$spec->Index;
         }
-        @rindices = sort { $a <=> $b } @rindices;
+        #@rindices = sort { $a <=> $b } @rindices;
 
         #Get indices of products
         my @pindices = ();
@@ -266,10 +276,14 @@ sub writeSBMLReactions
                 #hash containg this information
                 foreach my $source ( sort keys %{ $rxn->MapF } )
                 {
+
                     my $dots = $source =~ tr/././; #number of dots
+
                     #molecule information (2 dots is for component information)
                     if($dots == 1){
+
                         my $target = $rxn->MapF->{$source};
+
                         my $sfirstdot = index($source, ".");
                         my $smolecule = substr($source, $sfirstdot+1, length($source));
                         $source = substr($source, 0, $sfirstdot);
@@ -277,8 +291,11 @@ sub writeSBMLReactions
 
                         my $tfirstdot = index($target, ".");
                         my $tmolecule = substr($target, $sfirstdot+1, length($target));
+
                         $target = substr($target, 0, $tfirstdot);
+
                         if($target == $counter){
+
                             my $rspeciesType;
                             my $pspeciesType;
 
@@ -286,8 +303,8 @@ sub writeSBMLReactions
                             my $reactant = @{$rxn->Reactants}[$source];
                             my $product = @{$rxn->Products}[$target];
                             my $indent4 = "              ";
-                            my $sbmlMultiSpeciesTypeStr = $reactant->toString(1, 1, \%print_options);
-                            my $psbmlMultiSpeciesTypeStr = $product->toString(1, 1, \%print_options);
+                            my $sbmlMultiSpeciesTypeStr = $reactant->getMultiSpeciesTypeStr(); #toString(1, 1, \%print_options);
+                            my $psbmlMultiSpeciesTypeStr = $product->getMultiSpeciesTypeStr(); #toString(1, 1, \%print_options);
                             my $rreverseReference;
                             my $preverseReference;
                             my $reactantId = $reactantHashHash{$source}{'id'};
@@ -303,8 +320,9 @@ sub writeSBMLReactions
                                 # fixme: this shouldnt be zero, we should actually index the component we want, important if there are labels that change mapping order
                                 # that said, the index here is a $local$ index within the repeated elements of the same molecule type in a species
                                 #get the sbml multi id associated with this graph pattern's component id in the species type
-                                $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[0];
 
+                                $rreverseReference = "cmp_" . $reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}[0];
+                                
                                 #fixme: once again it is not necessarely the first one that we are removing
                                 #we used this component so remove it from the available components pool
                                 splice(@{$reactantHash->{$rspeciesType}{'moleculeReverseReferences'}{$reactantName}}, 0, 1);

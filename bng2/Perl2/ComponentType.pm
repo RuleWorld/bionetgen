@@ -6,6 +6,8 @@ package ComponentType;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
+use List::MoreUtils qw(first_index);
+
 
 struct ComponentType=> {
   Name=> '$',
@@ -134,9 +136,13 @@ sub toSBMLMultiSpeciesTypeFeatures
 
       $ostring.= sprintf("%s<multi:speciesFeatureType multi:id=\"%s\" multi:name=\"%s\" multi:occur=\"%d\">\n", $indent, $cid, $ctype->Name, $occur);
       $ostring.= $indent2."<multi:listOfPossibleSpeciesFeatureValues>\n";
+      my $exists;
       for my $state (@{$ctype->States}){
         $fullname = sprintf("%s(%s~", $mName, $ctype->Name). "${state})";
-        $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
+        $exists = first_index {$_  eq $cid } @{$speciesIdHash_ref->{'Components'}{$fullname}};
+        if ($exists == -1){
+          push @{$speciesIdHash_ref->{'Components'}{$fullname}}, $cid;
+        }
         $sid = sprintf("%s_%s",$cid, $state);
         $ostring .= sprintf("%s<multi:possibleSpeciesFeatureValue multi:id=\"%s\" multi:name=\"%s\"/>\n",$indent3, $sid, $state);
       }
@@ -177,7 +183,10 @@ sub toSBMLMultiSpeciesTypeBinding
       }
       $ststring .= $indent. "</multi:bindingSiteSpeciesType>\n";
     }
-    $speciesIdHash_ref->{'Components'}{$fullname} = $cid;
+    my $exists = first_index {$_  eq $cid } @{$speciesIdHash_ref->{'Components'}{$fullname}};
+    if ($exists == -1){
+      push @{$speciesIdHash_ref->{'Components'}{$fullname}}, $cid;  
+    }
     push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $cid;
     push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $ststring;
 

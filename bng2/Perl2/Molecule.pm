@@ -10,6 +10,8 @@ use warnings;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
+use Storable qw(dclone);
+
 
 # BNG Modules
 use Component;
@@ -511,26 +513,35 @@ sub getSBMLMultiSpeciesFields
 
     my $cindex = 1;
     my $mtype = $mtlist->MolTypes->{$mol->Name};
+    my @visitedComponents = ();
+    my %componentCopy = %{dclone(\%{$speciesIdHash_ref->{'Components'}})};
     foreach my $ctype (@{$mtype->Components}){
         my $componentFlag = 0;
         if(@{$mol->Components}){
             foreach my $comp ( @{$mol->Components} )
             {
-                if($comp->Name eq $ctype->Name){
-                    my $outwardbonds = '';
-                    if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
-                        $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
-                    }
-                    my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref, () );
-                    if(not $outwardbonds eq ''){
-                        push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
-                    }
-                    if(not $speciesfeatures eq ''){
-                        push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
-                    }
+                #if we already used this component skip it
+                unless(grep {$_ eq $comp} @visitedComponents) {
 
-                    $componentFlag = 1;
-                    last;
+                    if($comp->Name eq $ctype->Name){
+                        # mark this component as visited
+                        push @visitedComponents, $comp;
+                        my $outwardbonds = '';
+
+                        if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
+                            $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
+                        }
+                        my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref, () );
+                        if(not $outwardbonds eq ''){
+                            push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
+                        }
+                        if(not $speciesfeatures eq ''){
+                            push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
+                        }
+
+                        $componentFlag = 1;
+                        last;
+                    }
                 }
 
             }
@@ -553,9 +564,9 @@ sub getSBMLMultiSpeciesFields
 
             my $outwardbonds = '';
             if(exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$cnew->Name}){
-                $outwardbonds = $cnew->getSBMLMultiOutwardBonds( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+                $outwardbonds = $cnew->getSBMLMultiOutwardBonds( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
             }
-            my $speciesfeatures = $cnew->getSBMLMultiSpeciesFeature( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, $speciesIdHash_ref, $multiComponentHash_ref );
+            my $speciesfeatures = $cnew->getSBMLMultiSpeciesFeature( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
             if(not $outwardbonds eq ''){
                 push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
             }
@@ -568,7 +579,6 @@ sub getSBMLMultiSpeciesFields
         $cindex += 1;
 
     }
-
 
 }
 
