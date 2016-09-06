@@ -2299,6 +2299,10 @@ sub toSBMLMultiSpeciesType
                 my $a_bid1 = substr($bid1,4);
                 my $a_bid2 = substr($bid2,4);
                 foreach my $mol2 (keys %{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}}){
+                    #if this is a state reference dont do anything
+                    if(substr($mol2,-1) eq "~"){
+                        next;
+                    }
                     #remove components that can't possibly be outward bonds (because they are inward bonds) from the list of reverseReferences
                     my $index2  = first_index {$_  eq $a_bid1 } @{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}};
                     if ($index2 >=0){
