@@ -722,12 +722,27 @@ sub writeSBMLMulti
         "sbml_multi",  "1",
     );
 
+    my $idx = 0;
+    my %speciesConcentrationHash;
+    foreach my $spec (@{$model->SpeciesList->Array})
+    {
+        my $sname;
+        my $sexact= $spec->SpeciesGraph->StringExact;
+        my $c = $model->Concentrations->[$idx];
+        ++$idx;
+        $speciesConcentrationHash{$sexact} = $c;
+    }
+
+
     foreach my $speciesStr (sort {$speciesSet{$a}[0] <=> $speciesSet{$b}[0]} keys %speciesSet)
     {
         my $index = $speciesSet{$speciesStr}[0]; 
         my $sg = $speciesSet{$speciesStr}[1];
         my $speciesType;
-
+        my $conc = "0";
+        if (exists $speciesConcentrationHash{$speciesStr}){
+            $conc = $speciesConcentrationHash{$speciesStr};
+        }
         if(exists($speciesIdHash{'SpeciesType'}{$sg->getMultiSpeciesTypeStr()})){
             $speciesType = $speciesIdHash{'SpeciesType'}{$sg->getMultiSpeciesTypeStr()};
         }
@@ -738,7 +753,8 @@ sub writeSBMLMulti
 
         # Attributes
         # concentration
-        $attributes{"initialConcentration"} = "0";
+        
+        $attributes{"initialConcentration"} = $conc;
         $attributes{"multi:speciesType"} = $speciesType;
 
         $xml .= $sg->toSBMLMultiSpecies($model->MoleculeTypesList, "     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);

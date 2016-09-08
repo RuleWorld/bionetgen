@@ -405,8 +405,9 @@ sub toSBMLMultiSpeciesType
         my $tempstr = '';
         my $cid = '';
 
-        $st_string .= $indent."<multi:listOfSpeciesTypeInstances>\n";
-
+        
+        my $tmp_string = '';
+        
         foreach my $comp (@{$mtype->Components})
         {
             $cid = sprintf("%s_C%d",$stid, $counter);
@@ -421,7 +422,7 @@ sub toSBMLMultiSpeciesType
                     $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;
                     $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parentMulti'} = $cid;
 
-                    $st_string .= $tempstr;
+                    $tmp_string .= $tempstr;
                 }
             }
             $counter += 1;    
@@ -432,8 +433,12 @@ sub toSBMLMultiSpeciesType
             $cid = sprintf("%s_C%d",$mid, $counter);
             $counter +=1;
         }
-    
-        $st_string .= $indent."</multi:listOfSpeciesTypeInstances>\n";
+        unless ($tmp_string eq ''){
+            $st_string .= $indent."<multi:listOfSpeciesTypeInstances>\n";    
+            $st_string .= $tmp_string;
+            $st_string .= $indent."</multi:listOfSpeciesTypeInstances>\n";
+        }
+        
 
         $counter = 1;
         my $featuretypes ='';

@@ -270,10 +270,9 @@ sub writeSBMLReactions
 
                 my %productHash = %{dclone(\%{$speciesIdHash_ref->{'References'}})};
 
-                $SBML .= sprintf  "          <speciesReference id=\"RR%d_P%d\" species=\"S%d\" constant=\"false\">\n", $index, $counter+1, $i;
-                $SBML .= sprintf  "            <multi:listOfSpeciesTypeComponentMapsInProduct>\n";
                 #FIXME: If i want to be efficient i should be constructing this outside of the loop and making a 
                 #hash containg this information
+                my $tmpSBML = '';
                 foreach my $source ( sort keys %{ $rxn->MapF } )
                 {
 
@@ -293,7 +292,9 @@ sub writeSBMLReactions
                         my $tmolecule = substr($target, $sfirstdot+1, length($target));
 
                         $target = substr($target, 0, $tfirstdot);
-
+                        unless ($target =~ /^\d+?$/) {
+                           next;
+                        }
                         if($target == $counter){
 
                             my $rspeciesType;
@@ -348,7 +349,7 @@ sub writeSBMLReactions
 
 
 
-                            $SBML .= sprintf "${indent4}<multi:speciesTypeComponentMapInProduct multi:reactant=\"$reactantId\" multi:reactantComponent=\"${rreverseReference}\" multi:productComponent=\"${preverseReference}\"/>\n";
+                            $tmpSBML .= sprintf "${indent4}<multi:speciesTypeComponentMapInProduct multi:reactant=\"$reactantId\" multi:reactantComponent=\"${rreverseReference}\" multi:productComponent=\"${preverseReference}\"/>\n";
 
                         }
 
@@ -356,9 +357,19 @@ sub writeSBMLReactions
 
                     }
                 }
-                $counter += 1;
-                $SBML .= sprintf  "            </multi:listOfSpeciesTypeComponentMapsInProduct>\n";
-                $SBML .= "          </speciesReference>\n";
+
+                unless ($tmpSBML eq ''){
+                    $SBML .= sprintf  "          <speciesReference id=\"RR%d_P%d\" species=\"S%d\" constant=\"false\">\n", $index, $counter+1, $i;
+                    $SBML .= sprintf  "            <multi:listOfSpeciesTypeComponentMapsInProduct>\n";
+                    $SBML .= $tmpSBML;
+                    $counter += 1;
+                    $SBML .= sprintf  "            </multi:listOfSpeciesTypeComponentMapsInProduct>\n";
+                    $SBML .= "          </speciesReference>\n";
+
+                }
+                else{
+                    $SBML .= sprintf  "          <speciesReference id=\"RR%d_P%d\" species=\"S%d\" constant=\"false\"/>\n", $index, $counter+1, $i;
+                }
 
 
             }
