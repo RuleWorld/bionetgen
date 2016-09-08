@@ -722,17 +722,15 @@ sub writeSBMLMulti
         "sbml_multi",  "1",
     );
 
-    my $idx = 0;
     my %speciesConcentrationHash;
+
     foreach my $spec (@{$model->SpeciesList->Array})
     {
         my $sname;
         my $sexact= $spec->SpeciesGraph->StringExact;
-        my $c = $model->Concentrations->[$idx];
-        ++$idx;
+        my $c = $spec->Concentration;
         $speciesConcentrationHash{$sexact} = $c;
     }
-
 
     foreach my $speciesStr (sort {$speciesSet{$a}[0] <=> $speciesSet{$b}[0]} keys %speciesSet)
     {
