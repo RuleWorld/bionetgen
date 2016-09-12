@@ -2,54 +2,69 @@ graph
 [
  directed 1
 node [
-id 0 label "A1(x!1).X(a!1)" gid 10  graphics [ type "roundrectangle" fill "#f4bbb8" outline "#000000"  ] LabelGraphics [ text "A1(x!1).X(a!1)" anchor "c"  ] 
+id 0  label "A1(x!1).X(a!1)"  isGroup 0  gid 10  graphics [ type "roundrectangle"  fill "#FFE9C7"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text "A1(x!1).X(a!1)"  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 1 label "A2(x!1).X(a!1)" gid 10  graphics [ type "roundrectangle" fill "#f4bbb8" outline "#000000"  ] LabelGraphics [ text "A2(x!1).X(a!1)" anchor "c"  ] 
+id 1  label "A2(x!1).X(a!1)"  isGroup 0  gid 10  graphics [ type "roundrectangle"  fill "#FFE9C7"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text "A2(x!1).X(a!1)"  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 2 label "B(x!1).X(b!1)"  graphics [ type "roundrectangle" fill "#f4bbb8" outline "#000000"  ] LabelGraphics [ text "B(x!1).X(b!1)" anchor "c"  ] 
+id 2  label "B(x!1).X(b!1)"  isGroup 0  gid ""  graphics [ type "roundrectangle"  fill "#FFE9C7"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text "B(x!1).X(b!1)"  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 3 label "X(b~pY)"  graphics [ type "roundrectangle" fill "#f4bbb8" outline "#000000"  ] LabelGraphics [ text "X(b~pY)" anchor "c"  ] 
+id 3  label "X(b~pY)"  isGroup 0  gid ""  graphics [ type "roundrectangle"  fill "#FFE9C7"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text "X(b~pY)"  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 4 label "R1a" gid 11  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1a" anchor "c"  ] 
+id 4  label ""  isGroup 0  gid 11  graphics [ type "ellipse"  fill "#CC99FF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 5 label "R1b" gid 11  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R1b" anchor "c"  ] 
+id 5  label ""  isGroup 0  gid 11  graphics [ type "ellipse"  fill "#CC99FF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 6 label "R2a" gid 12  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R2a" anchor "c"  ] 
+id 6  label ""  isGroup 0  gid 12  graphics [ type "ellipse"  fill "#CC99FF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 7 label "R2b" gid 12  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R2b" anchor "c"  ] 
+id 7  label ""  isGroup 0  gid 12  graphics [ type "ellipse"  fill "#CC99FF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 8 label "R3a" gid 13  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3a" anchor "c"  ] 
+id 8  label ""  isGroup 0  gid ""  graphics [ type "ellipse"  fill "#CC99FF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 9 label "R3b" gid 13  graphics [ type "hexagon" fill "#bbb8f4" outline "#000000"  ] LabelGraphics [ text "R3b" anchor "c"  ] 
+id 9  label ""  isGroup 0  gid ""  graphics [ type "ellipse"  fill "#CC99FF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "plain"  anchor "c"  ] 
  ]
 node [
-id 10 label "A_X" isGroup 1  graphics [ type "roundrectangle" fill "#fee4e5" outline "#000000"  ] LabelGraphics [ text "A_X" anchor "t"  ] 
+id 10  label "A_X"  isGroup 1  gid ""  graphics [ type "roundrectangle"  fill "#FFF4E3"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text "A_X"  fontSize 14  fontName "Dialog"  fontStyle "bold"  anchor "c"  ] 
  ]
 node [
-id 11 label "RG0" isGroup 1  graphics [ type "roundrectangle" fill "#eae9fb" outline "#000000"  ] LabelGraphics [ text "RG0" anchor "t"  ] 
+id 11  label ""  isGroup 1  gid ""  graphics [ type "ellipse"  fill "#E5CBFF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "bold"  anchor "c"  ] 
  ]
 node [
-id 12 label "RG1" isGroup 1  graphics [ type "roundrectangle" fill "#eae9fb" outline "#000000"  ] LabelGraphics [ text "RG1" anchor "t"  ] 
+id 12  label ""  isGroup 1  gid ""  graphics [ type "ellipse"  fill "#E5CBFF"  hasOutline 1  outlineWidth 1  outlineStyle "line"  outline "#999999"  ]  LabelGraphics [ text ""  fontSize 14  fontName "Dialog"  fontStyle "bold"  anchor "c"  ] 
  ]
-node [
-id 13 label "RG2" isGroup 1  graphics [ type "roundrectangle" fill "#eae9fb" outline "#000000"  ] LabelGraphics [ text "RG2" anchor "t"  ] 
+edge [
+source 4  target 0  graphics [ width 1  style "line"  fill "#000000"  sourceArrow "none"  targetArrow "standard"  ] 
  ]
-edge [ source 4 target 0  graphics [ fill "#5e3c58" arrow "last" width 1  ] ]
-edge [ source 5 target 1  graphics [ fill "#5e3c58" arrow "last" width 1  ] ]
-edge [ source 6 target 3  graphics [ fill "#5e3c58" arrow "last" width 1  ] ]
-edge [ source 6 target 0  graphics [ fill "#798e87" arrow "first" width 1  ] ]
-edge [ source 7 target 3  graphics [ fill "#5e3c58" arrow "last" width 1  ] ]
-edge [ source 7 target 1  graphics [ fill "#798e87" arrow "first" width 1  ] ]
-edge [ source 8 target 2  graphics [ fill "#5e3c58" arrow "last" width 1  ] ]
-edge [ source 9 target 2  graphics [ fill "#5e3c58" arrow "last" width 1  ] ]
-edge [ source 9 target 3  graphics [ fill "#798e87" arrow "first" width 1  ] ]
+edge [
+source 5  target 1  graphics [ width 1  style "line"  fill "#000000"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
+edge [
+source 6  target 3  graphics [ width 1  style "line"  fill "#000000"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
+edge [
+source 0  target 6  graphics [ width 1  style "line"  fill "#AAAAAA"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
+edge [
+source 7  target 3  graphics [ width 1  style "line"  fill "#000000"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
+edge [
+source 1  target 7  graphics [ width 1  style "line"  fill "#AAAAAA"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
+edge [
+source 8  target 2  graphics [ width 1  style "line"  fill "#000000"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
+edge [
+source 9  target 2  graphics [ width 1  style "line"  fill "#000000"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
+edge [
+source 3  target 9  graphics [ width 1  style "line"  fill "#AAAAAA"  sourceArrow "none"  targetArrow "standard"  ] 
+ ]
 ]

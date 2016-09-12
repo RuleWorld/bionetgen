@@ -151,6 +151,7 @@ sub makeTransformationDeleteBond
 	if ($name eq 'DeleteBond')
 		{
 		my $bond = findNode(\@nodelist,${$node->{'Parents'}}[0]);
+		return $tr if ($bond->{'Name'} eq '?');
 		my @comps = grep {$_->{'Side'} eq 'both'} map (findNode(\@nodelist,$_), @{$bond->{'Parents'}});
 		my @rightstr = sort map ( makeAtomicPattern(\@nodelist,$_),@comps);
 		my $leftstr = makeAtomicPattern(\@nodelist,$bond);
@@ -573,6 +574,8 @@ sub makeRuleNetworkGraph
 	# from a rule structure graph
 	my $rsg = shift @_;
 	my $name = shift @_;
+	# process name so that it doesnt begin with a number
+	$name = ($name =~ /^[0-9]/) ? "_".$name : $name;
 	
 	my @nodelist = @{$rsg->{'NodeList'}};
 	
@@ -596,8 +599,9 @@ sub makeRuleNetworkGraph
 			# bond deletion is treated here
 			# if there's a deletemol, AB -> A, then it shows only A as the product
 			# wildcard delete! if A!+ -> A, then this shows A as the product
+			# if A!? -> 0, ignore. Is this bad form? Testing needed.
 		}
-		
+		if(not defined $tr) { next; }
 		if(length $tr == 0) { next; }
 		my ($reac,$prod) = getReactantsProducts($tr);
 		push @{$bpg->{'NodeList'}}, @$reac, @$prod;
@@ -653,7 +657,28 @@ sub makeRuleNetworkGraph
 	
 }
 
-
+sub makeRxnNetworkGraph
+{
+	my $rxn = shift @_;
+	my @reac = map {$_->SpeciesGraph->toString()} @{$rxn->Reactants};
+	my @prod = map {$_->SpeciesGraph->toString()} @{$rxn->Products};
+	my $name = "Rxn".$rxn->Index;
+	my @nodes = uniq($name,@reac,@prod);
+	my %nodetype;
+	$nodetype{$name} = "Rule";
+	map {$nodetype{$_} = "AtomicPattern"} (@reac,@prod);
+	my @edges = ();
+	foreach my $sp(@reac)
+	{
+		push @edges, makeEdge($name,$sp,"r");
+	}
+	foreach my $sp(@prod)
+	{
+		push @edges, makeEdge($name,$sp,"p");
+	}
+	my $bpg = makeRuleNetworkGraph_simple(\@nodes,\@edges,\%nodetype);
+	return $bpg;
+}
 sub makeRuleNetworkGraph_simple
 {
 	my @nodes = @{shift @_};
@@ -706,6 +731,60 @@ sub mergeNetworkGraphs
 	uniqNetworkGraph($bpg);
 	$bpg->{'Merged'} =1;
 	return $bpg;
+}
+sub resolveWildcards
+{
+	my $bpg = shift @_;
+	my @edgelist = @{$bpg->{'EdgeList'}};
+	my %nodetype = %{$bpg->{'NodeType'}};
+	my @nodelist = @{$bpg->{'NodeList'}};
+	my @wc_edges = grep {$_ =~ /Wildcard$/} @edgelist;
+	# don't do any work if there are no wildcards
+	return $bpg if( not @wc_edges );
+	
+	print "Resolving wildcard edges.\n";
+	
+	my @wcs = 	grep { index($_,'!+') != -1 } 
+				grep { $nodetype{$_} eq 'AtomicPattern'}
+				@nodelist;
+	my @wc_context = grep {$_ =~ /.*:(.*):.*/; my $x = $1; index($1,'!+') != -1;} 
+					grep {$_ =~ /Context$/} 
+					@edgelist;
+	my @new_edges;
+	foreach my $wc(@wcs)
+	{
+		my @r = map { $_ =~ /(.*):.*:.*/; $1; }
+				grep { $_ =~ /.*:(.*):.*/; my $x = $1; index($x,$wc) != -1; } 
+				@wc_context;
+		my @b = map { $_ =~ /.*:(.*):.*/; $1; } 
+				grep { $_ =~ /^(.*):.*:.*/; my $x = $1; index($x,$wc) != -1; } 
+				@wc_edges;
+		foreach my $rule(@r)
+		{
+			foreach  my $bond(@b)
+				{
+				push @new_edges, join(":",($rule,$bond,'Context'));
+				}
+		}
+	}
+	
+	my @nodelist2 = grep { not has(\@wcs,$_); } @nodelist;
+	my @edges_to_remove = (@wc_edges,@wc_context);
+	my @edgelist2 = grep { not has(\@edges_to_remove,$_); } @edgelist;
+	push @edgelist2,@new_edges;
+	
+	@nodelist2=  uniq(@nodelist2);
+	@edgelist2 = uniq(@edgelist2);
+	
+	my %nodetype2;
+	updateDict(\%nodetype2,\%nodetype,\@nodelist2);
+	
+	my $bpg2 = NetworkGraph->new();
+	$bpg2->{'NodeList'} = \@nodelist2;
+	$bpg2->{'EdgeList'} = \@edgelist2;
+	$bpg2->{'NodeType'} = \%nodetype2;
+	
+	return $bpg2;
 }
 
 sub filterNetworkGraph
@@ -806,6 +885,7 @@ sub collapseNetworkGraph
 {
 	
 	my $bpg = shift @_;
+	my $doNotCollapseEdges = @_ ? shift @_ : 0;
 	my %classes = %{$bpg->{'NodeClass'}};
 	
 	
@@ -828,7 +908,7 @@ sub collapseNetworkGraph
 		my $y = $2;
 		my $z = $3;
 		
-		if(has([qw(Reactant Product Context)],$z) )
+		if(has([qw(Reactant Product Context Inhibition)],$z) )
 		{
 			if(has(\@classed_rules,$x)) { $x = $classes{$x}; }
 			if(has(\@classed_patterns,$y)) { $y = $classes{$y}; }
@@ -854,7 +934,7 @@ sub collapseNetworkGraph
 	}
 	
 	@nodelist2=  uniq(@nodelist2);
-	@edgelist2 = uniq(@edgelist2);
+	if ($doNotCollapseEdges==0) { @edgelist2 = uniq(@edgelist2);}
 	
 	
 	my $bpg2 = NetworkGraph->new();

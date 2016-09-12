@@ -2755,6 +2755,7 @@ sub isomorphicToSubgraph
 					# Component state only if present in sg1
 					if ( defined $ci1->State )
                     {
+                    	next unless ( defined $ci2->State);
 						unless ( $ci1->State eq "?" )
                         {   next unless ( $ci1->State eq $ci2->State );   }
 					}
@@ -2762,7 +2763,7 @@ sub isomorphicToSubgraph
 					if ( defined $ci1->Compartment )
                     {
                         next unless ( defined $ci2->Compartment );
-						next unless ( $ci1->Compartment == $ci2->Compartment );
+						next unless ( $ci1->Compartment eq $ci2->Compartment );
 					}
 
 	                # Number of component edges must match (primarily used to look for free

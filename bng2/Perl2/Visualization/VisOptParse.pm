@@ -14,12 +14,14 @@ sub parseOpts
 	print "Processing Opts file ".$file."\n";
 	@lines = clean(\@lines);
 	# parsing main block
-	my ($names,$arrs) = getblocks(\@lines,['background','classes','toggle','filter']);
+	my ($names,$arrs) = getblocks(\@lines,['background','classes','toggle','filter','inhibition','motifs']);
 	my %toggle;
 	#my %background = {'include'=>[],'exclude'=>[]};
 	my %background;
 	my %classes;
 	my %filter;
+	my @inhibition;
+	my %motifs;
 	foreach my $i(0..@$names-1)
 		{
 		my $name = $names->[$i];
@@ -50,14 +52,30 @@ sub parseOpts
 				$classes{$nm} = \@ar;
 				}
 			}
+		if ($name eq 'motifs')
+			{
+			my ($names2,$arrs2) = getblocks(\@arr);
+			foreach my $j(0..@$names2-1)
+				{
+				my $nm = $names2->[$j];
+				my @ar = genlist($arrs2->[$j]);
+				$motifs{$nm} = \@ar;
+				}
+			}
 		if($name eq 'filter')
 			{
 			my @ar = genlist(\@arr);
 			$filter{'items'} =\@ar;
 			}
+		if($name eq 'inhibition')
+			{
+			@inhibition = genlist(\@arr);
+			}
+			
 		}
 	#print map { $_.":".join(",",@{$classes{$_}})."\n"; } keys %classes;
-	return (\%toggle,\%background,\%classes,\%filter);
+	
+	return (\%toggle,\%background,\%classes,\%filter,\@inhibition,\%motifs);
 }
 
 sub clean

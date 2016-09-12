@@ -1,5 +1,5 @@
 CHANGES to BioNetGen
-updated 1 May 2016
+updated 25 May 2016
 https://github.com/RuleWorld/bionetgen/
 
 =======
@@ -17,10 +17,19 @@ https://github.com/RuleWorld/bionetgen/
 ==== Bug Fixes ====
 * Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.
 * Fixed a bug where a regex meant to remove the equality operator '=' in functions was inadvertently also removing the assignment operator '=='.
+* Fixed a bug causing an error when reading a .net file with 'readFile' when multiple reactions with functional rate laws have identical stoichiometries.
+* <big><tt>simulate_nf</tt></big> now throws an error if <big><tt>continue=>1</tt></big> is defined (previously threw a warning).
+
+==== Visualization ====
+* New styles for visualization.
+* Updates to visualization algorithms.
+* Supported types: conventional, compact, regulatory, opts, contactmap, reaction_network.
+* Supported regulatory graph options: background, opts, groups, collapse, ruleNames, doNotUseContextWhenGrouping, doNotCollapseEdges.
 
 ==== Minor changes ===
 * BioNetGen will now automatically run the generate_network command if one of simulate_pla/simulate_ode/simulate_ssa methods are called and a network wasn't loaded into the system otherwise
 * Dangling bonds graph specifications of the kind A(b!1) are no longer allowed.
+* Added support for the <big><tt>atomize</tt></big> and <big><tt>blocks</tt></big> arguments of the <big><tt>readFile</tt></big> action to the BNGConsole <big><tt>load</tt></big> command, e.g., <big><tt>load path_to_model/sbml_model.xml --atomize 1</tt></big>
 
 == BioNetGen-2.2.6-stable ==
 '''''2015 June 22'''''

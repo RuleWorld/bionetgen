@@ -30,6 +30,7 @@ my %args = ('help'=>0,'background'=>0,'collapse'=>0,'each'=>0,'groups'=>0,'texto
 GetOptions(	\%args,
 			'help!',
 			'bngl=s',
+			'db=s',
 			'type=s',
 			'opts=s@',
 			'background!',
@@ -42,7 +43,34 @@ GetOptions(	\%args,
 			'level=i',
 			'mergepairs!',
 			'embed!',
+			'ruleNames!',
+			'doNotUseContextWhenGrouping!',
+			'removeReactantContext!',
+			'makeInhibitionEdges!',
+			'removeProcessNodes!',
+			'compressRuleMotifs!',
+			'doNotCollapseEdges!',
 		) or die "Error in command line arguments.";
+		
+#if(defined $args{'db'})
+#{
+#	my $name = $args{'db'};
+#	$name =~ /(.*)\.db/;
+#	my $prefix = $1;
+#	
+#	filecheck($name,'DB');
+#	my $dbh = newDBFile($name);
+#	my $background = $args{'background'};
+#	my $groups = $args{'groups'};
+#	my $collapse = $args{'collapse'};
+#	my $bpg = getBPG($dbh,$background,$groups,$collapse);
+#	my $str = toGML_rule_network($bpg);
+#	my $suffix = $args{'suffix'};
+#	my $type = 'regulatory';
+#	my %params = ('str'=>$str,'suffix'=>$suffix,'type'=>$type,'prefix'=>$prefix);
+#	writeGML2(\%params);
+#	exit;
+#}
 
 if($args{'help'}) 
 {
@@ -95,7 +123,62 @@ sub getModel
 
 sub display_help
 {
+	print qq{
+---------------------------------------------/ HELP MENU /----------
+SYNOPSIS:
 
+  visualize.pl --help                	   show this help menu
+  visualize.pl --bngl MODEL --type TYPE    make visualization of type TYPE for bngl model MODEL
+  TYPE "regulatory" is used as default if --type is not used.
+  
+  -----------------------
+  Allowed values for TYPE
+  -----------------------
+  conventional                         conventional rule visualization
+  compact                              compact rule visualization (using graph operation nodes)
+  regulatory                           rule-derived regulatory graph
+  opts                                 options template for regulatory graph
+  contactmap                           contact map
+  reaction_network                     reaction network
+  
+OPTIONS:
+
+  --------------
+  Common Options
+  --------------
+  --suffix STR                         add suffix STR to output filename
+ 
+  --------------------------------------------------------
+  Options for TYPE "conventional", "compact", "regulatory"
+  --------------------------------------------------------
+  --each                               show all rules in separate GML files (default: 0)
+  
+  -----------------------------
+  Options for TYPE "regulatory"
+  -----------------------------
+  --opts FILE                          import options file named FILE 
+  --opts FILE1 --opts FILE2            import multiple options files
+  --background                         enable background (default: disabled)
+  --groups                             enable groups (default: disabled)
+  --collapse                           enable collapsing of groups (default: disabled)
+  --ruleNames                          enable display of rule names (default: disabled)
+  --doNotUseContextWhenGrouping 	   use permissive edge signature (default: strict)
+  --doNotCollapseEdges                 when collapsing nodes, retain duplicate edges (default: removed)
+  
+NOTES:
+  (i)   To obtain a template options file for a model, use TYPE "opts". 
+        You can edit this file and import it as --opts FILE.
+  (ii)  To obtain full model regulatory graph, use --background and all other options set to default.
+  (iii) To show rule names and rule group names on the regulatory graph, use --ruleNames.
+  
+  }
+  
+}
+
+
+
+sub display_help_old
+{
 	
 		print qq{
 ---------------------------------------------/ HELP MENU /----------
@@ -103,7 +186,6 @@ sub display_help
 SYNOPSIS:
 
   visualize.pl --help                	show this help menu
-  visualize.pl --help --type TYPE    	show help on visualization of type TYPE
   visualize.pl --type TYPE              make visualization of type TYPE
   
   Allowed types: {ruleviz_pattern, ruleviz_operation, regulatory, contactmap }
