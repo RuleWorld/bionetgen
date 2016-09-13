@@ -665,9 +665,9 @@ sub writeSBMLMulti
 #    </listOfCompartments>
 #EOF
 
+    my %paramHash = ();
+    $xml .= $model->writeSBMLParameters(\%paramHash);
 
-    $xml .= $model->writeSBMLParameters();
-    
     if ($model->CompartmentList->Used) { # @a is not empty...
         $xml = $xml . "    <listOfCompartments>\n";
         foreach my $comp (@{$model->CompartmentList->Array})
@@ -729,6 +729,9 @@ sub writeSBMLMulti
         my $sname;
         my $sexact= $spec->SpeciesGraph->StringExact;
         my $c = $spec->Concentration;
+        if(exists $paramHash{$c}){
+            $c = $paramHash{$c};
+        }
         $speciesConcentrationHash{$sexact} = $c;
     }
 

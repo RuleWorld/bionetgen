@@ -23,6 +23,37 @@ sub extractAllSpeciesGraphs
     my %print_options = (
         "sbml_multi",  "1",
     );
+
+    foreach my $spec (@{$model->SpeciesList->Array})
+    {
+
+        $spec->SpeciesGraph->labelHNauty();
+        if( !defined $speciesSet->{$spec->SpeciesGraph->StringExact}){
+            my $speciesTypeId = 0;
+            push @{$speciesSet->{$spec->SpeciesGraph->StringExact}}, $speciesCounter;
+            push @{$speciesSet->{$spec->SpeciesGraph->StringExact}}, $spec->SpeciesGraph;
+
+            # calculate species type and add it to our set as necessary
+            my $sbmlMultiSpeciesTypeStr = $spec->SpeciesGraph->getMultiSpeciesTypeStr();
+            if(exists $speciesTypeSet->{$sbmlMultiSpeciesTypeStr})
+            {
+                $speciesTypeId = $speciesTypeSet->{$sbmlMultiSpeciesTypeStr};
+            }
+            else
+            {
+                push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $speciesTypeCounter;
+                push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $spec->SpeciesGraph;
+                $speciesTypeId = $speciesTypeCounter;
+                $speciesTypeCounter++;
+            }
+
+            push @{$speciesSet->{$spec->SpeciesGraph->StringExact}}, @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}[0];                    
+        $speciesCounter += 1;
+
+        }
+
+    }
+
     foreach my $rset ( @{$model->RxnRules} )
     {
 
@@ -123,6 +154,7 @@ sub extractBindingComponents
 sub writeSBMLParameters
 {
     my $model = shift @_;
+    my $paramHash = shift @_;
     my $plist   = $model->ParamList;
     my $SBML = '';
 
@@ -133,6 +165,7 @@ sub writeSBMLParameters
         $SBML .= "      <!-- Independent variables -->\n";
         foreach my $param ( @{$plist->Array} )
         {
+            $paramHash->{$param->Name} = $param->evaluate([], $plist);
             next unless ( $param->Type eq 'Constant' );
             $SBML .= sprintf("      <parameter id=\"%s\" constant=\"false\" value=\"%.8g\"/>\n", $param->Name, $param->evaluate([], $plist));
         }
