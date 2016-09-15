@@ -344,10 +344,7 @@ sub getSBMLMultiOutwardBonds
         return "";
         #sbml multi cant handle components with more than one bond. we should somehow return an error
     }    
-    # if($nbonds == 1 && (defined $comp->State)){
-    #     print "Can't handle components with states and bonds, skipping\n";
-    #     return "";
-    # }
+
     if (! $bindingstatus eq "" )
     {
         #get a component from the component pool

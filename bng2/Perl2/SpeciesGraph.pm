@@ -2115,7 +2115,7 @@ sub toSBMLMultiSpecies
         $string .= "boundaryCondition=\"true\" constant=\"true\"";
     }
     else{
-        $string .= ' hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"';
+        $string .= ' boundaryCondition="false" constant="false"';
     }
 
     #multi:speciesType="st_cps_000001"

@@ -1700,7 +1700,8 @@ sub setOption
         }
         else
         {
-            return "Unrecognized option $arg in setOption";
+            $model->Options->{$arg} = $val;
+            #return "Unrecognized option $arg in setOption";
         }
     }
 

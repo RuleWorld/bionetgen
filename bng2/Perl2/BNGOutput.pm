@@ -657,6 +657,28 @@ sub writeSBMLMulti
   <model>
 };
 
+    # 0. units
+    if(defined $model->Options("units")){
+        my $unitstr = '';
+        foreach my $option (keys %{$model->Options}){
+            if ($option=~ /Units$/){
+                my $optionName = substr($option,0,-5);
+                my $unit = %{$model->Options}{$option};
+                $unitstr .= qq{      <unitDefinition id="${optionName}" name="${unit}">
+        <listOfUnits>
+          <unit kind="${unit}"/>
+        </listOfUnits>
+      </unitDefinition>
+};
+            }
+        }
+
+        if (! $unitstr eq ''){
+            $xml .= "      <listOfUnitDefinitions>\n";
+            $xml .= $unitstr;
+            $xml .= "      </listOfUnitDefinitions>\n";
+        }
+    }
 
     # 1. Compartments
 #   print $SBML <<"EOF";
@@ -754,8 +776,15 @@ sub writeSBMLMulti
 
         # Attributes
         # concentration
+        if (defined $model->Options->{"substanceUnits"}){
+            $attributes{"initialAmount"} = $conc;    
+            $attributes{"hasOnlySubstanceUnits"} ="true";
+        }
+        else{
+            $attributes{"initialConcentration"} = $conc;    
+            $attributes{"hasOnlySubstanceUnits"} ="false";
+        }
         
-        $attributes{"initialConcentration"} = $conc;
         $attributes{"multi:speciesType"} = $speciesType;
 
         $xml .= $sg->toSBMLMultiSpecies($model->MoleculeTypesList, "     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);
