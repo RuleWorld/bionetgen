@@ -1698,10 +1698,19 @@ sub setOption
             {   return "Invalid option for or $arg (valid options are 'CountUnique' and 'CountAll')";   }
             $model->Options->{$arg} = $val;
         }
+        elsif ($arg =~ /Units$/)
+        {
+            my %unithash;
+            $unithash{'unit'} = $val;
+            $unithash{'exponent'} = 1;
+            $unithash{'scale'} = 0;
+            $unithash{'multiplier'} = 1;
+            $model->Options->{$arg} = \%unithash;
+            #return "Unrecognized option $arg in setOption";
+        }
         else
         {
             $model->Options->{$arg} = $val;
-            #return "Unrecognized option $arg in setOption";
         }
     }
 

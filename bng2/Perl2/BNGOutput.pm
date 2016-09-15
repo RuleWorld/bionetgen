@@ -663,10 +663,13 @@ sub writeSBMLMulti
         foreach my $option (keys %{$model->Options}){
             if ($option=~ /Units$/){
                 my $optionName = substr($option,0,-5);
-                my $unit = %{$model->Options}{$option};
+                my $unit = %{%{$model->Options}{$option}}{"unit"};
+                my $exponent = %{%{$model->Options}{$option}}{"exponent"};
+                my $scale = %{%{$model->Options}{$option}}{"scale"};
+                my $multiplier = %{%{$model->Options}{$option}}{"multiplier"};
                 $unitstr .= qq{      <unitDefinition id="${optionName}" name="${unit}">
         <listOfUnits>
-          <unit kind="${unit}"/>
+          <unit kind="${unit}" exponent="${exponent}" scale="${scale}" multiplier="${multiplier}"/>
         </listOfUnits>
       </unitDefinition>
 };
