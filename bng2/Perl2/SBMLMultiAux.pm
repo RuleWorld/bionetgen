@@ -249,7 +249,8 @@ sub writeSBMLReactions
 
         $rxn->findMap($model->MoleculeTypesList);
         ++$index;
-        $SBML .= sprintf  "      <reaction id=\"R%d\" reversible=\"false\" fast=\"false\">\n", $index;
+
+        $SBML .= sprintf  "      <reaction id=\"R%d\" reversible=\"false\" fast=\"false\" name=\"%s\">\n", $index, $rxn->toString();
 
         #Get indices of reactants
         my @rindices = ();
