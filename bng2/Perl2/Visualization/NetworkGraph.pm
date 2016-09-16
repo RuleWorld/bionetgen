@@ -287,7 +287,7 @@ sub prettify
 			return join(" , ", @splits); 
 		}
 	} 
-	if ($string =~ /$0^/) { return $string; } 
+	#if ($string =~ /$0^/) { return $string; } 
 	#if ($string =~ /\(/)  { return $string; }
 	#else { return $string."\(\)"; }
 	return $string;
