@@ -96,6 +96,9 @@ sub getMultiSpeciesTypeStr
 
             if($componentFlag)
             {
+                if(defined $comp->State){
+                    $comp->State(undef);
+                }
                 push @multistcomponents, $comp;
             }
 
