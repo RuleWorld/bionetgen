@@ -656,7 +656,6 @@ sub writeSBMLMulti
 <sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">  
   <model>
 };
-
     # 0. units
     if(defined $model->Options("units")){
         my $unitstr = '';
@@ -693,6 +692,25 @@ sub writeSBMLMulti
 
     my %paramHash = ();
     $xml .= $model->writeSBMLParameters(\%paramHash);
+
+    # 4. Assignment rules (for observables and functions)
+    if ( @{$model->Observables} or $plist->countType('Function') ){
+        $xml .= "    <listOfRules>\n";
+        if ($plist->countType('Function')){
+            $xml .= "      <!-- Global functions -->\n";
+            foreach my $param ( @{$plist->Array} )
+            {
+                next unless ( $param->Type eq 'Function');
+                next if ( @{$param->Ref->Args} ); # Don't print local functions
+                $xml .= sprintf("      <assignmentRule variable=\"%s\">\n", $param->Name);
+
+                $xml .= $param->toMathMLString( $plist, "        " );
+                $xml .= "      </assignmentRule>\n";
+            }
+        }
+        $xml .= "    </listOfRules>\n";
+    }
+
 
     if ($model->CompartmentList->Used) { # @a is not empty...
         $xml = $xml . "    <listOfCompartments>\n";
@@ -886,7 +904,6 @@ sub writeSBML
 <sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="$model_name">
 };
-
 
 	# 1. Compartments
 #	print $SBML <<"EOF";
