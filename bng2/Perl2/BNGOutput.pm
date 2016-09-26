@@ -814,6 +814,7 @@ sub writeSBMLMulti
                 $xml .= "              <apply>\n";
                 $xml .= "                <plus/>\n";
                 my $n_elt = $obs->sizeOfGroup();
+                
                 if ($n_elt<=1)
                 {
                     $xml .= sprintf "                <cn> 0 </cn>\n";
@@ -821,7 +822,7 @@ sub writeSBMLMulti
 
                 foreach my $patt (@{$obs->Patterns}){
                     $patt->labelHNauty();
-                    $xml .= sprintf "                <ci> S%d </ci>\n", @{%speciesSet{$patt->StringExact}}[0];
+                    $xml .= sprintf "                <ci> S%d </ci>\n", @{$speciesSet{$patt->StringExact}}[0];
 
                 }
                 
