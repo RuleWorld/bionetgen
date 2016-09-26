@@ -693,24 +693,6 @@ sub writeSBMLMulti
     my %paramHash = ();
     $xml .= $model->writeSBMLParameters(\%paramHash);
 
-    # 4. Assignment rules (for observables and functions)
-    if ( @{$model->Observables} or $plist->countType('Function') ){
-        $xml .= "    <listOfRules>\n";
-        if ($plist->countType('Function')){
-            $xml .= "      <!-- Global functions -->\n";
-            foreach my $param ( @{$plist->Array} )
-            {
-                next unless ( $param->Type eq 'Function');
-                next if ( @{$param->Ref->Args} ); # Don't print local functions
-                $xml .= sprintf("      <assignmentRule variable=\"%s\">\n", $param->Name);
-
-                $xml .= $param->toMathMLString( $plist, "        " );
-                $xml .= "      </assignmentRule>\n";
-            }
-        }
-        $xml .= "    </listOfRules>\n";
-    }
-
 
     if ($model->CompartmentList->Used) { # @a is not empty...
         $xml = $xml . "    <listOfCompartments>\n";
@@ -758,6 +740,10 @@ sub writeSBMLMulti
 
         $sbmlTypeStr .= $sg->toSBMLMultiSpeciesType($model->MoleculeTypesList, $indent, 'multi:speciesType', $sid, \%attributes, \%sbmlMultiSpeciesTypeInfo, \%speciesIdHash);
     }
+
+
+
+
 
     # 2. walk through the total model species llist and fill in information
     $xml .= $indent . "<listOfSpecies>\n";
@@ -814,6 +800,62 @@ sub writeSBMLMulti
 
     $xml .= $indent."</listOfSpecies>\n";
 
+
+    # 4. Assignment rules (for observables and functions)
+    if ( @{$model->Observables} or $plist->countType('Function') ){
+        $xml .= "<listOfRules>\n";
+        if ( @{$model->Observables} ){
+            $xml .= "      <!-- Observables -->\n";
+            foreach my $obs ( @{$model->Observables} )
+            {
+                $xml .= sprintf("      <assignmentRule variable=\"%s\">\n", $obs->Name);
+                $xml .= "            <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+
+                $xml .= "              <apply>\n";
+                $xml .= "                <plus/>\n";
+                my $n_elt = $obs->sizeOfGroup();
+                if ($n_elt<=1)
+                {
+                    $xml .= sprintf "                <cn> 0 </cn>\n";
+                }
+
+                foreach my $patt (@{$obs->Patterns}){
+                    $patt->labelHNauty();
+                    $xml .= sprintf "                <ci> S%d </ci>\n", @{%speciesSet{$patt->StringExact}}[0];
+
+                }
+                
+                if ($n_elt==0)
+                {
+                    $xml .= "                <cn> 0 </cn>\n";
+                }
+
+                $xml .= "              </apply>\n";
+                $xml .= "            </math>\n";
+
+                #my ( $ostring, $err ) = $obs->toMathMLString();
+                #if ($err) { return $err; }
+                #foreach my $line ( split "\n", $ostring )
+                #{
+                #    $xml .= "          $line\n";
+                #}
+                $xml .= "      </assignmentRule>\n";
+            }
+        }
+        if ($plist->countType('Function')){
+            $xml .= "      <!-- Global functions -->\n";
+            foreach my $param ( @{$plist->Array} )
+            {
+                next unless ( $param->Type eq 'Function');
+                next if ( @{$param->Ref->Args} ); # Don't print local functions
+                $xml .= sprintf("      <assignmentRule variable=\"%s\">\n", $param->Name);
+
+                $xml .= $param->toMathMLString( $plist, "        " );
+                $xml .= "      </assignmentRule>\n";
+            }
+        }
+        $xml .= "    </listOfRules>\n";
+    }
 
     # Reaction rules
     $xml .= $model->writeSBMLReactions(\%speciesIdHash);

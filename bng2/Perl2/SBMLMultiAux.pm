@@ -54,6 +54,38 @@ sub extractAllSpeciesGraphs
 
     }
 
+    # observable patterns
+    if ( @{$model->Observables} ){
+        foreach my $obs ( @{$model->Observables} )
+        {
+            foreach my $patt (@{$obs->Patterns}){
+                $patt->labelHNauty();
+                if (! defined $speciesSet->{$patt->StringExact}){
+                    my $speciesTypeId = 0;
+                    push @{$speciesSet->{$patt->StringExact}}, $speciesCounter;
+                    push @{$speciesSet->{$patt->StringExact}}, $patt;
+                    # calculate species type and add it to our set as necessary
+                    my $sbmlMultiSpeciesTypeStr = $patt->getMultiSpeciesTypeStr();
+                    if(exists $speciesTypeSet->{$sbmlMultiSpeciesTypeStr})
+                    {
+                        $speciesTypeId = $speciesTypeSet->{$sbmlMultiSpeciesTypeStr};
+                    }
+                    else
+                    {
+                        push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $speciesTypeCounter;
+                        push @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}, $patt;
+                        $speciesTypeId = $speciesTypeCounter;
+                        $speciesTypeCounter++;
+                    }
+
+                    push @{$speciesSet->{$patt->StringExact}}, @{$speciesTypeSet->{$sbmlMultiSpeciesTypeStr}}[0];                    
+                    $speciesCounter += 1;
+                }
+            }
+        }
+    }
+
+
     foreach my $rset ( @{$model->RxnRules} )
     {
 
@@ -140,6 +172,13 @@ sub extractBindingComponents
                 if (@{$comp->Edges}){
                     $bindingComponents_ref->{$mol->Name}->{$comp->Name}  = 1;
                 }
+                #elsif(defined($comp->State) and $bindingComponents_ref->{$mol->Name}->{$comp->Name} != 1){
+                #    $bindingComponents_ref->{$mol->Name}->{$comp->Name}  = -1;
+                #}
+
+                #elsif(! defined($comp->State) and $bindingComponents_ref->{$mol->Name}->{$comp->Name} != 1 and $bindingComponents_ref->{$mol->Name}->{$comp->Name} != -1){
+                #    $bindingComponents_ref->{$mol->Name}->{$comp->Name}  = 0;
+                #}
 
             }
 
