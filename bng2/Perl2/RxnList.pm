@@ -90,11 +90,13 @@ sub add
                 	    $add_rxn = 0;
 						
 						# For write_autos output (see BNG2.pl user options) - John Sekar 
+						if(defined $BNGModel::GLOBAL_MODEL->Params->{'write_autos'}==1)
+						{
 						if($BNGModel::GLOBAL_MODEL->Params->{'write_autos'}==1) 
 							{
 							++$rxn2->InstanceHash->{$rxn2->RxnRule->Name};
 							}
-                	    
+                	    }
                 	    # Check if different rules are generating the same rxn 
                 	   	if ($rxn->RxnRule != $rxn2->RxnRule){
                 	   		# Add ref to new RxnRule to array of RxnRules
@@ -159,10 +161,13 @@ sub add
     if ($add_rxn)
     {
 		# For write_autos output (see BNG2.pl user options) - John Sekar 
+		if (defined $BNGModel::GLOBAL_MODEL->Params->{'write_autos'}==1)
+		{
 		if($BNGModel::GLOBAL_MODEL->Params->{'write_autos'}==1)
 			{
 			++$rxn->InstanceHash->{$rxn->RxnRule->Name};
 			}
+		}
 		
         push @{ $rlist->Array }, $rxn;
         $rxn->Index(scalar @{$rlist->Array});
@@ -328,7 +333,7 @@ sub readString
     $rxn->Priority(0);
 
     # Create new Rxn entry in RxnList
-    my $n_add = $rlist->add($rxn);
+    my $n_add = $rlist->add($rxn,0,$plist);
 
     return ('');
 }

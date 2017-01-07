@@ -3406,7 +3406,7 @@ sub visualize
 
     my $model       = shift @_;
     my $user_params = @_ ? shift @_ : {};
-    
+	
     # default options
     my $params =
     {   'help'         =>  0,
@@ -3423,14 +3423,21 @@ sub visualize
     		'mergepairs'   =>  0,
     		'embed'        =>  0,
 			'reset'		   =>  1,
+			'ruleNames'	   =>  0,
+			'doNotUseContextWhenGrouping' => 0,
+			'removeReactantContext' => 0,
+			'makeInhibitionEdges' => 0,
+			'removeProcessNodes' => 0,
+			'compressRuleMotifs' => 0,
+			'doNotCollapseEdges' => 0,
     };
     
     # get user options
     foreach my $par (keys %$user_params)
     {
         my $val = $user_params->{$par};
-        unless ( exists $params->{$par} )
-        {   return "Unrecognized option $par in call to 'visualize'";   }
+        #unless ( exists $params->{$par} )
+        #{   return "Unrecognized option $par in call to 'visualize'";   }
 		
 		# Special handling for 'opts':
 		# If a single filename is passed, convert $val to an array
@@ -3443,7 +3450,7 @@ sub visualize
         # overwrite default option
         $params->{$par} = $val;
     }
-        
+    
     if($params->{'help'}) 
 	{
 		defined $user_params->{'type'} ? Viz::display_viz_help(\%$params) : Viz::display_viz_help();

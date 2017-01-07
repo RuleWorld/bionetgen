@@ -490,7 +490,7 @@ foreach my $model (@models)
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
                 # Try again
                 print "Trying again..\n";
-                run_BNG( $model_file, $model, $log_file, $log, $outdir );
+                run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags );
                 $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
                 if ( defined $exit_status )
             		{
@@ -522,7 +522,7 @@ foreach my $model (@models)
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
                 # Try again
                 print "Trying again..\n";
-                run_BNG( $model_file, $model, $log_file, $log, $outdir );
+                run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags );
                 $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
                 if ( defined $exit_status )
             		{
@@ -553,7 +553,7 @@ foreach my $model (@models)
                 multi_print( "..FAILED!! $exit_status\n", @allFH ); 
                 # Try again
                 print "Trying again..\n";
-                run_BNG( $model_file, $model, $log_file, $log, $outdir );
+                run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags );
                 $exit_status = validate_equilibrium_data( $datfile, $statfile, $pvalue );
                 if ( defined $exit_status )
             		{

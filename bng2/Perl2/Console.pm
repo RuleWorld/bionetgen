@@ -69,7 +69,8 @@ sub BNGconsole
                 }
     
                 # get filename
-                my $filename = $linein;
+                $linein =~ s/^(\S+)\s*//;
+                my $filename = $1;
                 unless ($filename and -e $filename)
                 {
                     send_warning( "Attempted to load model, but file '$filename' was not found." );
@@ -80,6 +81,29 @@ sub BNGconsole
                 my $local_params = { %$params };
                 # add filename to params
                 $local_params->{file} = $filename;
+
+                # process long args ('atomize' and 'blocks')
+                while ( $linein ){
+					my ($key, $val);
+					# --atomize INT
+					if ( $linein =~ s/\s*--(\w+)\s+(\w+)// ){ 
+						$key = $1;
+						$val = $2;
+					}
+					# --blocks ["STRING", "STRING", ...]
+					elsif( $linein =~ s/\s*--(\w+)\s+\[(.+)\]// ){ 
+						$key = $1;
+						$val = [ split( '\s*,\s*', $2 ) ];
+						foreach my $v (@$val){
+							$v = eval $v; # need to evaluate each entry to a string
+						}
+					}
+					else{
+	                    send_warning( "Error processing command line arguments: " . $linein );
+	                    last PROCESS_INPUT;
+	                }
+					$local_params->{$key} = $val;
+                }
 
                 # create BNGModel object
                 $model = BNGModel->new();
@@ -178,10 +202,14 @@ sub BNGconsole
             {
                 print "HELP menu for BNG console\n";
                 print "/-----------------------------------------------\n";
-                print "  load MODEL    : load a BNG model file         \n";
-                print "  done          : leave BNG console             \n";
-                print "  clear         : clear BNG model               \n";
-                print "  action ACTION : execute ACTION on loaded model\n";
+                print "  load MODEL [OPTS] : load a BNG model file         \n";
+                print "  done              : leave BNG console             \n";
+                print "  clear             : clear BNG model               \n";
+                print "  action ACTION     : execute ACTION on loaded model\n";
+                print "\n";
+                print "  OPTS:\n";
+                print "    --atomize INT\n";
+                print "    --blocks [\"STRING\", \"STRING\", ...]\n";
                 print "-----------------------------------------------/\n";
             }
 
