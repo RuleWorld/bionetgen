@@ -11,7 +11,7 @@ use FindBin;
 use lib $FindBin::Bin;
 use List::Util qw(min max sum);
 use Storable qw(dclone);
-use List::MoreUtils qw(first_index);
+#use List::MoreUtils qw(first_index);
 
 # BNG Modules
 use Molecule;
@@ -66,6 +66,15 @@ my $SpeciesLabel_MaxMols = 0;
 ###
 ###
 ###
+#copied from list::moreutils since it doesnt come standard
+sub first_index (&@) {
+    my $f = shift;
+    foreach my $i ( 0 .. $#_ ) {
+        local *_ = \$_[$i];
+        return $i if $f->();
+    }
+    return -1;
+}
 
 sub getMultiSpeciesTypeStr
 {
