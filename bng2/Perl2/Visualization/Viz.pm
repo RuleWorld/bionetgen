@@ -1383,7 +1383,62 @@ sub duplicate_args
 }
 
 #########################
+
 sub display_viz_help
+{
+	print qq{
+---------------------------------------------/ HELP MENU /----------
+SYNOPSIS:
+
+  visualize({help=>1})                 show this help menu
+  visualize({type=>"TYPE"})            make visualization of type TYPE
+  TYPE "regulatory" is used as default if --type is not used.
+  
+  -----------------------
+  Allowed values for TYPE
+  -----------------------
+  conventional                         conventional rule visualization
+  compact                              compact rule visualization (using graph operation nodes)
+  regulatory                           rule-derived regulatory graph
+  opts                                 options template for regulatory graph
+  contactmap                           contact map
+  reaction_network                     reaction network
+  
+OPTIONS:
+
+  ------------------------
+  Common Action Parameters
+  ------------------------
+  suffix=>"STR"                        add suffix STR to output filename
+ 
+  -----------------------------------------------------------------
+  Action Parameters for TYPE "conventional", "compact","regulatory"
+  -----------------------------------------------------------------
+  each=>0/1                            show all rules in the same/separate GML files (default: 0)
+  
+  ---------------------------------------
+  Action Parameters for TYPE "regulatory"
+  ---------------------------------------
+  opts=>"FILE"                         import options file named FILE
+  opts=>["FILE1","FILE2",...]          import multiple options files
+  background=>0/1                      disable/enable background (default: 0)
+  groups=>0/1                          disable/enable groups (default: 0)
+  collapse=>0/1                        disable/enable collapsing of groups (default: 0)
+  ruleNames=>0/1                       disable/enable display of rule names (default: 0)
+  doNotUseContextWhenGrouping=>0/1	   use strict/permissive edge signature (default: 0)
+  doNotCollapseEdges=>0/1              when collapsing nodes, remove/retain duplicate edges (default: 0)
+  
+NOTES:
+  (i)   To obtain a template options file for a model, use TYPE "opts". 
+        You can edit this file and import it as opts=>"FILE".
+  (ii)  To obtain full model regulatory graph, use background=>1 and all other options set to default.
+  (iii) To show rule names and rule group names on the regulatory graph, use ruleNames=>1.
+  
+  }
+  
+}
+
+sub display_viz_help_old
 {
 	my $args = @_ ? shift @_ : 0;
 	
