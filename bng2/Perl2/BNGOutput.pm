@@ -1028,6 +1028,9 @@ sub writeMfile
 	my $model = shift @_;
 	my $params = @_ ? shift @_ : {};
 
+	#Extract method if specified, else default to ODE 
+	my $method = defined $params->{method} ? $params->{method} : "ode";
+
     # a place to hold errors
     my $err;
 
@@ -1209,7 +1212,7 @@ sub writeMfile
 	($mscript_species_names, $mscript_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $model );
     if ($err) { return $err }; 
 
-
+    if($method eq "ode"){
     ## Set up MATLAB Plot
     # fontsizes
     my $title_fontsize = 14;
@@ -1475,6 +1478,193 @@ EOF
 	close(Mscript);
 	print "Wrote M-file script $mscript_path.\n";
 	return ();	
+}
+elsif($method eq "ssa")
+{
+    my $directory = "${filebase}" ;
+	unless(mkdir $directory) {
+        print "Unable to create $directory\n";
+    }
+    $path = $path."/".$directory."/";
+    #Create reaction definition string
+	my $matlabrxnstring = '{';
+    my $irxn = 1;   
+    foreach my $rxn ( @{ $model->RxnList->Array } )
+    {
+		$matlabrxnstring = $matlabrxnstring.'{[';
+		my $nr = @{$rxn->Reactants};
+		if( $nr != 0)
+		{
+			foreach my $r (@{$rxn->Reactants})
+			{
+				$matlabrxnstring = $matlabrxnstring.$r->Index.',';
+			}
+		$matlabrxnstring = substr($matlabrxnstring, 0, -1).'],[';
+		}
+		else{
+			$matlabrxnstring = $matlabrxnstring.'],[';
+		}	
+		my $np = @{$rxn->Products};
+		if ($np != 0)
+		{
+			foreach my $p (@{$rxn->Products})
+			{
+				$matlabrxnstring = $matlabrxnstring.$p->Index.',';
+			}
+			$matlabrxnstring = substr($matlabrxnstring, 0, -1).']},';
+		}
+		else{
+			$matlabrxnstring = $matlabrxnstring.']},';
+		}
+        ++$irxn;
+    }
+    $matlabrxnstring = substr($matlabrxnstring, 0, -1).'}';
+ 	my $f1_path    = File::Spec->catpath($vol,$path,"calc_expressions.m");   
+ 	open( f1, ">$f1_path" ) || die "Couldn't open $mscript_path: $!\n";
+    print f1 <<EOT;
+% Calculate expressions
+function [ expressions ] = calc_expressions ( parameters )
+    expressions = zeros(1,$n_expressions);
+$calc_expressions_string   
+end
+
+EOT
+ 	my $f2_path    = File::Spec->catpath($vol,$path,"calc_observables.m");   
+ 	open( f2, ">$f2_path" ) || die "Couldn't open $mscript_path: $!\n";
+    print f2 <<EOT;
+% Calculate observables
+function [ observables ] = calc_observables ( species, expressions )
+
+    observables = zeros(1,$n_observables);
+$calc_observables_string
+end
+
+EOT
+close(f2);
+ 	my $f3_path    = File::Spec->catpath($vol,$path,"calc_ratelaws.m");   
+ 	open( f3, ">$f3_path" ) || die "Couldn't open $mscript_path: $!\n";
+    print f3 <<EOT;
+% Calculate ratelaws
+function [ ratelaws ] = calc_ratelaws ( species, expressions, observables )
+
+    ratelaws = zeros(1,$n_observables);
+$calc_ratelaws_string
+end
+
+EOT
+close(f3);
+my $f4_path = File::Spec->catpath($vol,$path,"updateSpecies.m"); 
+open( f4, ">$f4_path" ) || die "Couldn't open $mscript_path: $!\n";
+    print f4 <<EOT;
+% Calculate species
+function newSpecies = updateSpecies(rxn,species)
+    newSpecies = species;
+    reactants = rxn{1};
+    products = rxn{2};    
+    reactant_indicies = unique(reactants);
+    for i = 1:length(reactant_indicies)
+        r = reactant_indicies(i);
+        nr = length(find(reactants ==r));
+        if nr>0
+            newSpecies(r) = newSpecies(r)-nr;
+        end
+    end    
+    product_indicies = unique(products);
+    for i = 1:length(product_indicies)
+        p = product_indicies(i);
+        np = length(find(products ==p));
+        if np>0
+            newSpecies(p) = newSpecies(p)+np;
+        end
+    end
+end
+EOT
+close(f4);  
+my $f5_path = File::Spec->catpath($vol,$path,"initialize_species.m"); 
+open( f5, ">$f5_path" ) || die "Couldn't open $mscript_path: $!\n";
+    print f5 <<EOT;
+% initialize species function
+function [species_init] = initialize_species( params )
+
+    species_init = zeros(1,$n_species);
+$mscript_species_init
+end
+EOT
+
+my $f6_path = File::Spec->catpath($vol,$path,"GillespieSimulator.m"); 
+open( f6, ">$f6_path" ) || die "Couldn't open $mscript_path: $!\n";
+    print f6 <<EOT;
+% Basic Gillespie simulator
+function [trajectory,timesteps,err] = GillespieSimulator(tstart,tend,species_init,rxns,parameters)
+
+if (isempty(tstart))
+	tstart = $t_start;
+end
+
+if (isempty(tend))
+	tend = $t_end;
+end
+% setup default parameters, if necessary
+if ( isempty(parameters) )
+   parameters = [ $mscript_param_values ];
+end
+% check that parameters has proper dimensions
+if (  size(parameters,1) ~= 1  ||  size(parameters,2) ~= $n_parameters  )
+    fprintf( 1, 'Error: size of parameter argument is invalid! Correct size = [1 $n_parameters].\\n' );
+    err = 1;
+    return;
+end
+
+% setup default initial values, if necessary
+if ( isempty(species_init) )
+   species_init = initialize_species( parameters );
+end
+% check that species_init has proper dimensions
+if (  size(species_init,1) ~= 1  ||  size(species_init,2) ~= $n_species  )
+    fprintf( 1, 'Error: size of species_init argument is invalid! Correct size = [1 $n_species].\\n' );
+    err = 1;
+    return;
+end
+if (isempty(rxns))
+	rxns = $matlabrxnstring;
+end
+
+
+[expressions] = calc_expressions ( parameters );
+[ observables ] = calc_observables( species_init, expressions );
+counter = 1;
+t = tstart;
+timesteps(counter) = t;
+trajectory(:,counter) = species_init;
+while(t<tend)
+    display(t)
+    currentspecies = trajectory(:,counter);
+    prop = calc_ratelaws(currentspecies,expressions,observables);
+    reaction_index = getNextReaction(prop);
+    newSpecies = updateSpecies(rxns{reaction_index},currentspecies);
+    [ observables ] = calc_observables( newSpecies, expressions );
+    t = t-log(rand())/sum(prop); %time to next reaction
+    counter = counter + 1;    
+    trajectory(:,counter) = newSpecies;
+    timesteps(counter) = t;
+end
+end
+EOT
+my $f7_path = File::Spec->catpath($vol,$path,"getNextReaction.m"); 
+open( f7, ">$f7_path" ) || die "Couldn't open $mscript_path: $!\n";
+    print f7 <<EOT;
+function reaction_index = getNextReaction(prop)
+    r = rand();
+    % sort the propensities
+    [sprop,sorder] = sort(prop);
+    cprop = cumsum(sprop)/sum(sprop);
+    tmp = sorder(r<cprop);
+    reaction_index = tmp(1);
+end
+EOT
+	print "Wrote M-file SSA scripts $mscript_path.\n";
+	return()
+}
 }
 
 
