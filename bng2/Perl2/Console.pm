@@ -69,8 +69,19 @@ sub BNGconsole
                 }
     
                 # get filename
-                $linein =~ s/^(\S+)\s*//;
-                my $filename = $1;
+                # $linein =~ s/^(\S+)\s*//;
+                # my $filename = $1;
+		
+	        my $filename = $linein;
+                if ($filename =~ m/.*--.*/) {
+                  $filename =~ s/^(.*?)(--.*)//;
+                  $linein   = $2;
+                  $filename = $1;
+                } else {
+                  $linein = "";
+                }
+                $filename =~ s/^\s+//; $filename =~ s/\s+$//;
+		
                 unless ($filename and -e $filename)
                 {
                     send_warning( "Attempted to load model, but file '$filename' was not found." );
