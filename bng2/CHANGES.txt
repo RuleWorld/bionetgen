@@ -2,11 +2,12 @@ CHANGES to BioNetGen
 updated 20 April 2017
 https://github.com/RuleWorld/bionetgen/
 
-== BioNetGen-2.3.0 (stable release) ==
+== BioNetGen-2.3.1 ==
 '''''date tbd'''''
 
 === Bug Fixes ===
 * Fixed a bug in the <big><tt>BNGConsole</tt></big> to allow filenames with spaces in them.
+* Fixed a bug in BNGUtils::readVersionFile() that was setting the codename equal to the version number if the codename didn't exist.
 
 == BioNetGen-2.3.0 (testing release) ==
 '''''date tbd'''''
