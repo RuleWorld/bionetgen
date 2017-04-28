@@ -1551,15 +1551,27 @@ sub toMatlabString
             unless (defined $local_fcn) { die "Error in Expression->toMatlabString(): some problem evaluating anonymous function"; }
             $string = $local_fcn->Expr->toMatlabString($plist, $level+1, $expand);
         }
-        elsif ( exists $functions{ $expr->Arglist->[0] } )
+        elsif ( isBuiltIn($fcn_name) )
         {
-            # handle built-ins with 1 argument that have the same name in Matlab
-            if ( $fcn_name =~ /^(sin|cos|exp|log|abs|sqrt|floor|ceil)$/ )
+        		# convert '_pi()' to 'pi'
+            if ($fcn_name eq '_pi'){ $string = 'pi'; }
+            
+        		# convert '_e()' to 'exp(1)'
+            elsif ( $fcn_name eq '_e' ){ $string = "exp(1)"; }
+            
+            # handle the 'rint' built-in with 1 argument
+            elsif ( $fcn_name eq 'rint' )
             {
-                my @sarr = ( map {$_->toMatlabString($plist, $level+1, $expand)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
-                $string = $fcn_name .'('. join( ',', @sarr ) .')';
+            		my @sarr = ( map {$_->toMatlabString($plist, $level+1)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
+            		if ( @sarr == 1)
+            		{
+            			$string = sprintf( "floor(%s+0.5)", $sarr[0] );
+            		}
+            		else
+                {   die "Error in Expression->toMatlabString():  built-in function 'rint' must have one argument!";   } 
             }
-            # handle the 'if' built-in with 3 arguments
+            
+        		# handle the 'if' built-in with 3 arguments
             elsif ( $fcn_name eq 'if' )
             {   
                 # substitute the "?" operator for the if function
@@ -1572,9 +1584,15 @@ sub toMatlabString
                 else
                 {   die "Error in Expression->toMatlabString():  built-in function 'if' must have three arguments!";   }    
             }
-            # fatal error if the built-in is not handled above
+            
+            # all other built-ins
             else
-            {   die "Error in Expression->toMatlabString():  don't know how to handle built-in function $fcn_name!";   }
+            {
+				if ($fcn_name eq 'ln'){ $fcn_name = 'log'; } # change 'ln' to 'log'
+				if ($fcn_name eq 'avg'){ $fcn_name = 'mean'; } # change 'avg' to 'mean'
+                my @sarr = ( map {$_->toMatlabString($plist, $level+1, $expand)} @{$expr->Arglist}[1..$#{$expr->Arglist}] );
+                $string = $fcn_name .'('. join( ',', @sarr ) .')';
+            }
         }
         else
         {   # this is a user-defined function or observable
