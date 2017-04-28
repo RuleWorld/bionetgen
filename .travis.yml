@@ -1,15 +1,21 @@
 os:
-  - osx
-  - linux
-
+- osx
+- linux
 language: c++
 sudo: false
-
-
 notifications:
   slack: faederlab:l0waIGp58v8ZV74N7QmXGoWs
-   
 script:
-  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
-  
-  
+- cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
+before_deploy:
+- cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
+deploy:
+  provider: s3
+  access_key_id: AKIAJPQVKWM4FKVDRPZA
+  bucket: bionetgen
+  skip_cleanup: true
+  local_dir: "dist"
+  on:
+    branch: release
+  secret_access_key:
+    secure: hmR9Krh4wlbzaGc8o9QTsi8RSujHUzA//7LcIJ7ZPannWCXrKTYwuVrdhakhJTtD9WN/jgDNp5Axolt+EiuehnkLdvhI+OXsQV1EazFsgNtZonA+FO0Uv+E6WN3A44fQ5EzPf49aZMi8BRpz+bsS7/y/TcirhOYqfmtHcWwk0cr2kfvtm6lJGjswLkbH0X7NxDXYK9er0hjYHxzh+dnlzKGkGCAEO1SdFJaWOdJ9I0+Uwnu6GA/lI0pFSwWjcCafE2BADw7jp5XGc+NRpE5v2Czo7+yCw1Km1vxZSqGLTBgQ3KSNOHpE5RW7BQpwXVKecwfO93TSqFT1vwHBwKSLrSsQlHTls6k5+izETSBbNyWpP5UL34k0Ta+H/mhNTYYyuuYB31Ikdac/2krOPble2u61ZgvmGmkEm1jRBAocBvYSnRf7vBXm1Z5DPbKCvysatk/FNkvq5L/3XvFpkQMOFIowXLu1t8z22z0UycWlf0hrrQIJEQQ8H+JDyYQkKK5yNIX8FUUV70QHVJ1qJ3aYJDtKEuLBXSuhXWC39gXbD2O0MQeUCe5rfX79/basMlQuKY6hdYA7xK10bPS6/Y04YLVSFF+H0se0eCpkaaOYSScAPgcdcxyJF+XVvNXJ1LwlGZmuzRTfuGzcP4Q1CdHi9rNankLTR4vPJYNm+45EZYg=

@@ -6,11 +6,11 @@
       <compartment id="cell" size="1"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="S1" compartment="cell" initialConcentration="1" name="A()"/>
-      <species id="S2" compartment="cell" initialConcentration="2" name="B()"/>
-      <species id="S3" compartment="cell" initialConcentration="3" name="C()"/>
-      <species id="S4" compartment="cell" initialConcentration="4" name="D()"/>
-      <species id="S5" compartment="cell" initialConcentration="5" name="AA()"/>
+      <species id="S1" compartment="cell" initialAmount="1" name="A()"/>
+      <species id="S2" compartment="cell" initialAmount="2" name="B()"/>
+      <species id="S3" compartment="cell" initialAmount="3" name="C()"/>
+      <species id="S4" compartment="cell" initialAmount="4" name="D()"/>
+      <species id="S5" compartment="cell" initialAmount="5" name="AA()"/>
     </listOfSpecies>
     <listOfParameters>
       <!-- Independent variables -->

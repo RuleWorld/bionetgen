@@ -48,7 +48,7 @@ my $overwrite = 0;
 # distribution version (default undefined)
 my $version = '';
 # distribution codename (default="stable")
-my $codename = 'stable';
+my $codename = '';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
 my $exclude_files = '(^\.|^_|~$|\.old$|^make_dist\.pl$)';
 
@@ -321,7 +321,7 @@ if (defined $bindir)
         exit -1;
     }
     
-    print "preparing libaries . . .\n";
+    print "preparing libraries . . .\n";
     foreach my $libfile (@include_libraries)
     {
         # get absolute path of libfile
