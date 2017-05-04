@@ -13,16 +13,16 @@ QUESTIONS?
 Email the developers at bionetgen.help@gmail.com
 
 To install BioNetGen, unzip the BioNetGen distribution file, 
-e.g. BioNetGen-2.2.0-stable.tar.gz, in the directory where you would like
+e.g. BioNetGen-2.3-MacOSX.tar.gz, in the directory where you would like
 BioNetGen installed:
 
     cd <installdir>
-    tar -zxvf BioNetGen-2.2.0-stable.tar.gz
+    tar -zxvf BioNetGen-2.3-MacOSX.tar.gz
 
 Running BNG2.pl requires a Perl interpreter. If you have Linux or Mac OS/X,
-an adequate perl is already installed. If you have Windows, try ActivePerl
-(see http://aspn.activestate.com/ASPN/Downloads/ActivePerl/). Perl is also
-available for Windows users within the Cygwin environment.
+an adequate perl is already installed. If you have Windows, try Strawberry 
+Perl, (see http://strawberryperl.com/). Perl is also available for Windows 
+users within the Cygwin environment.
 
 Pre-compiled binaries (executables) for the ODE, SSA and PLA engines are
 provided for Linux, OS/X, and Windows. If your system is equipped with suitable
@@ -88,4 +88,4 @@ BioNetGen installation. Under bash-like shells, this is done by typing:
 "export BNGPATH=<bngpath>", where <bngpath> is the root directory of BNG.
 
 --
-Last modified 13 December 2014 for release 2.2.6-testing
+Last modified 4 May 2017 for release 2.3
