@@ -23,7 +23,7 @@ https://github.com/RuleWorld/bionetgen/
 * BioNetGen will now automatically run the generate_network command if one of simulate_pla/simulate_ode/simulate_ssa methods are called and a network wasn't loaded into the system otherwise
 * Dangling bonds graph specifications of the kind A(b!1) are no longer allowed.
 * Added support for the <big><tt>atomize</tt></big> and <big><tt>blocks</tt></big> arguments of the <big><tt>readFile</tt></big> action to the BNGConsole <big><tt>load</tt></big> command, e.g., <big><tt>load path_to_model/sbml_model.xml --atomize 1</tt></big>
-* Added support for all built-in functions to <big><tt>writeMfile</tt></big>.
+* Added support for all built-in functions to <big><tt>writeMfile</tt></big> and <big><tt>writeMexfile</tt></big>.
 
 ==== Bug Fixes ====
 * Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.
