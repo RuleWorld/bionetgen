@@ -431,6 +431,8 @@ if (defined $bindir)
     system(" make clean ");
     chdir "..";
     chdir "..";
+    print "Current working directory is now: \n";
+    system("pwd");
 
     if ($validate)
     {
