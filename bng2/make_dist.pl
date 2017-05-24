@@ -421,6 +421,9 @@ if (defined $bindir)
     		exit -1;
     }
 
+    print "Current working directory is now: \n";
+    system("pwd");
+
     if ($validate)
     {
         #  validate workdir
