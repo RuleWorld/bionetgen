@@ -94,7 +94,7 @@ sub write_html {
     $zip_type = ".tar.gz";  $travis_os = "linux";
   } else {
     if ($platform eq "MacOSX") {
-    $zip_type = ".tar.gz";  $travis_os = "linux";
+    $zip_type = ".tar.gz";  $travis_os = "osx";
     } else {
       if ($platform eq "Windows") {
         $zip_type = ".zip";  $travis_os = "windows";
