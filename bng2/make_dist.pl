@@ -423,7 +423,7 @@ if (defined $bindir)
 
     print "Current working directory is now: \n";
     system("pwd");
-    system(" cd ".${dist_name}."/Network3");
+    system(" cd ".$dist_name."/Network3");
     system(" make clean ");
     system(" cd ../.. ");
 
