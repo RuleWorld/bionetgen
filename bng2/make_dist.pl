@@ -423,9 +423,14 @@ if (defined $bindir)
 
     print "Current working directory is now: \n";
     system("pwd");
-    system(" chdir ".$dist_name."/Network3");
+    chdir $dist_name;
+    chdir "Network3";
+    print "Current working directory is now: \n";
+    system("pwd");
+
     system(" make clean ");
-    system(" chdir ../.. ");
+    chdir "..";
+    chdir "..";
 
     if ($validate)
     {
