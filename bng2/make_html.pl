@@ -91,13 +91,13 @@ sub write_html {
   my $zip_type  = '';
   my $travis_os = '';
   if ($platform eq "Linux") {
-    $zip_type = ".tar.gz";  $travis_os = "linux";
+    $zip_type = ".tar.gz";  $travis_os = "Linux";
   } else {
     if ($platform eq "MacOSX") {
-    $zip_type = ".tar.gz";  $travis_os = "osx";
+    $zip_type = ".tar.gz";  $travis_os = "MacOSX";
     } else {
       if ($platform eq "Windows") {
-        $zip_type = ".zip";  $travis_os = "windows";
+        $zip_type = ".zip";  $travis_os = "Windows";
       } else {
         print "Invalid platform: ".$platform."\n";
         exit;
