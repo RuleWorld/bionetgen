@@ -106,7 +106,7 @@ sub write_html {
   }
 
 
-my  $date_stamp,$sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst;
+my $date_stamp; my $sec; my $min; my $hour; my $mday; my $mon; my $year; my $wday; my $yday; my $isdst;
 open(FNEW,">$ofile_name");
   print FNEW "<html>\n";
   print FNEW "<head>\n";
@@ -133,7 +133,7 @@ open(FNEW,">$ofile_name");
   print FNEW "<font color=\"red\">WARNING:</font> This is not the download \n";
   print FNEW "site for BioNetGen.  If you wish to download the latest \n";
   print FNEW "version of BioNetGen, please visit: \n";
-  print FNEW "<center><h1><a href=\"bionetgen.org\">bionetgen.org</a></h1></center>\n";
+  print FNEW "<center><h1><a href=\"http://bionetgen.org\">bionetgen.org</a></h1></center>\n";
   print FNEW "<br>\n";
   print FNEW "<br>\n";
   print FNEW "<br>\n";
