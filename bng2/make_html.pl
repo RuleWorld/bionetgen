@@ -106,8 +106,7 @@ sub write_html {
   }
 
 
-
-
+my  $date_stamp,$sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst;
 open(FNEW,">$ofile_name");
   print FNEW "<html>\n";
   print FNEW "<head>\n";
