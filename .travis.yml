@@ -21,16 +21,17 @@ notifications:
        - "Build: <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>)  %{result} in %{duration}"
        - "Author: %{author}   Repository@Branch: %{repository}@%{branch}"
        - "Distribution Package:  https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html"
+       - "Dont forget make clean in the network3 directory for BioNetGen"
        - "Build details:  %{build_url} "
    
   
 script:
-  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
+  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive --overwrite
 
 
 after_success:
-  - cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
-#  - source dist_package.sh
+#  - cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
+  - source dist_package.sh
 
 
 #deploy:
