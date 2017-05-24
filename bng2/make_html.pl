@@ -139,12 +139,18 @@ open(FNEW,">$ofile_name");
   print FNEW "<br>\n";
   print FNEW "<br>\n";
 
+  ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+  $date_stamp          = sprintf "%4d-%02d-%02d %02d:%02d\n",$year+1900,$mon+1,$mday,$hour,$min;
 
   print FNEW "If you are a BioNetGen developer, and you wish to get \n";
   print FNEW "access to beta release ".$relevel." for ".$platform.", please click here: <br>\n";
   print FNEW "<center><h1>\n";
   print FNEW "<a href=\"BioNetGen-".$relevel."-".$travis_os.$zip_type."\">\n";
   print FNEW "BioNetGen-".$relevel."-".$travis_os.$zip_type."</a>\n";
+  print FNEW "</center>\n";
+  print FNEW "<center>\n";
+  print FNEW "<a href=\"BioNetGen-".$relevel."-".$travis_os.$zip_type."\">\n";
+  print FNEW "Time Stamp: ".$date_stamp."</a>\n";
   print FNEW "</h1></center>\n";
   print FNEW "<br>\n";
   print FNEW "<br>\n";
