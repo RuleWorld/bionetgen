@@ -125,7 +125,7 @@ open(FNEW,">$ofile_name");
 
 
   print FNEW "</head>\n";
-  print FNEW "<body bgcolor=\"DeepSkyBlue\">\n";
+  print FNEW "<body bgcolor=\"LightSkyBlue\">\n";
 
   print FNEW "<font size=\"4\">\n"; 
   print FNEW "<center><h1>".$platform." Beta Site for BioNetGen-".$relevel."</h1></center>\n";
