@@ -1,5 +1,5 @@
 os:
-#- osx
+- osx
 - linux
 
 
@@ -20,8 +20,8 @@ notifications:
      template:
        - "Build: <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>)  %{result} in %{duration}"
        - "Author: %{author}   Repository@Branch: %{repository}@%{branch}"
-       - "Distribution Package:  https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html"
-       - "Dont forget make clean in the network3 directory for BioNetGen"
+       - "Download Distribution Package Here:"
+       - "https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html"
        - "Build details:  %{build_url} "
    
   
