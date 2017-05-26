@@ -23,7 +23,6 @@ else
   rall=$vbase"-MacOSX.tar.gz" 
   platform="MacOSX"
 fi
-lall=$vbase".tar.gz" 
 
 #  Get the NFsim and Atomizer files that are needed
 cd  $vbase
@@ -34,8 +33,9 @@ rm  -f   NFsim-source-$platform.tar.gz
 cd ..
 
 
-tar -cvf $lall $vbase
-gzip     $lall
+tar -cvf $vbase.tar $vbase
+gzip     $vbase.tar
+lall=$vbase".tar.gz" 
 
 echo " Local name of package is " $lall
 echo " Remote name of package is " $rall
