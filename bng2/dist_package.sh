@@ -33,7 +33,7 @@ rm  -f   NFsim-source-$platform.tar.gz
 cd ..
 
 
-tar -czvf $vbase.tar $vbase
+tar -czvf $vbase.tar.gz $vbase
 lall=$vbase".tar.gz" 
 
 echo " Local name of package is " $lall
