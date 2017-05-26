@@ -30,8 +30,11 @@ fi
 cd  $vbase
 curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-$platform_travis
 curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform_travis.tar.gz
-tar  xvf NFsim-source-$platform_travis.tar.gz
-rm  -f   NFsim-source-$platform_travis.tar.gz
+mkdir source_NFsim
+cd    source_NFsim
+tar  xvf ../NFsim-source-$platform_travis.tar.gz
+rm  -f   ../NFsim-source-$platform_travis.tar.gz
+cd ..
 cd ..
 
 
