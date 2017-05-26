@@ -28,12 +28,12 @@ fi
 cd  $vbase
 curl -O  http://www.midcapsignals.com/midcap/junk/NFsim.$platform
 curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform.tar.gz
-tar -xvf NFsim-source-$platform.tar.gz
+tar  xvf NFsim-source-$platform.tar.gz
 rm  -f   NFsim-source-$platform.tar.gz
 cd ..
 
 
-tar -czvf $vbase.tar.gz $vbase
+tar  czvf $vbase.tar.gz $vbase
 lall=$vbase".tar.gz" 
 
 echo " Local name of package is " $lall
