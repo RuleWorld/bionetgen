@@ -26,6 +26,7 @@ else
   platform_travis="osx"
 fi
 
+
 #  Get the NFsim and Atomizer files that are needed
 cd  $vbase
 curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-$platform_travis
@@ -38,6 +39,23 @@ tar  xvf ../NFsim-source-$platform_travis.tar.gz
 rm  -f   ../NFsim-source-$platform_travis.tar.gz
 cd ..
 cd ..
+
+
+
+#  Get the NFsim and Atomizer files that are needed
+cd  $vbase
+curl -O  http://www.midcapsignals.com/midcap/junk/sbmlTranslator-$platform_travis
+mv       sbmlTranslator-$platform_travis  ./bin/sbmlTranslator
+chmod    +x                               ./bin/sbmlTranslator
+curl -O  http://www.midcapsignals.com/midcap/junk/Atomizer-source-$platform_travis.tar.gz
+mkdir source_Atomizer
+cd    source_Atomizer
+tar  xvf ../Atomizer-source-$platform_travis.tar.gz
+rm  -f   ../Atomizer-source-$platform_travis.tar.gz
+cd ..
+cd ..
+
+
 
 
 tar  cvf $vbase.tar $vbase
