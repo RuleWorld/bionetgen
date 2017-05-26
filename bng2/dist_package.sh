@@ -27,8 +27,8 @@ lall=$vbase".tar.gz"
 
 #  Get the NFsim and Atomizer files that are needed
 cd  $vbase
-curl -u roberthclark:P1ttsburgh -o  http://www.midcapsignals.com/midcap/junk/NFsim.$platform
-curl -u roberthclark:P1ttsburgh -o  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform.tar.gz
+curl -o  http://www.midcapsignals.com/midcap/junk/NFsim.$platform
+curl -o  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform.tar.gz
 tar -xvf NFsim-source-$platform.tar.gz
 rm  -f   NFsim-source-$platform.tar.gz
 cd ..
