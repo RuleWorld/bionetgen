@@ -19,17 +19,19 @@ done < "$input"
 if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
   rall=$vbase"-Linux.tar.gz" 
   platform="Linux"
+  platform_travis="linux"
 else
   rall=$vbase"-MacOSX.tar.gz" 
   platform="MacOSX"
+  platform_travis="osx"
 fi
 
 #  Get the NFsim and Atomizer files that are needed
 cd  $vbase
-curl -O  http://www.midcapsignals.com/midcap/junk/NFsim.$platform
-curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform.tar.gz
-tar  xvf NFsim-source-$platform.tar.gz
-rm  -f   NFsim-source-$platform.tar.gz
+curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-$platform_travis
+curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform_travis.tar.gz
+tar  xvf NFsim-source-$platform_travis.tar.gz
+rm  -f   NFsim-source-$platform_travis.tar.gz
 cd ..
 
 
