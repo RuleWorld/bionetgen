@@ -26,11 +26,11 @@ notifications:
    
   
 script:
-  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive --overwrite
+  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate 
 
 
 after_success:
-#  Add the make clean step into make_dist.pl
+#  The make clean step has been added to make_dist.pl
 #  - cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
   - source dist_package.sh
 
