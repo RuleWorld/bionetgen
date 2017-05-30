@@ -153,6 +153,15 @@ open(FNEW,">$ofile_name");
   print FNEW "</center>\n";
   print FNEW "<br>\n";
   print FNEW "<br>\n";
+  
+  print FNEW "<table style=\"width:100%\">\n";
+  print FNEW "<tr>\n";
+  print FNEW "<td><center>If you would like to download only the NFsim executable, click here:</center>\n";
+  print FNEW "    <center><font size=\"+2\">NFsim-".$travis_os."</font></center></td>\n";
+  print FNEW "<td><center>If you would like to download only the Atomizer executable, click here:</center>\n";
+  print FNEW "    <center><font size=\"+2\">sbmlTranslator-".$travis_os."</font></center></td>\n";
+  print FNEW "</tr>\n";
+  print FNEW "</table>\n";
 
   print FNEW "</font></body></html>\n";
   
