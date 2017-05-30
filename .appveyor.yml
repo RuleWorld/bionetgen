@@ -1,0 +1,37 @@
+os: unstable
+
+environment:
+  matrix:
+    - JULIAVERSION: "WOWOWEWO"
+branches:
+  only:
+    - master
+
+#notifications:
+#  - provider: Email
+#    on_build_success: false
+#    on_build_failure: false
+#    on_build_status_changed: false
+
+before_build:
+  - cmd: ECHO this is batch  %APPVEYOR_ACCOUNT_NAME%
+  - ls -l
+  - uname -a
+
+platform: x86
+#build:
+#  - ls -l
+#  - PS: Exit-AppVeyorBuild
+  
+install:
+  - appveyor DownloadFile https://cygwin.com/setup-x86.exe -FileName C:\cygwin\setup-x86.exe
+  - C:\cygwin\setup-x86.exe -qnNdO -R C:/cygwin -s http://cygwin.mirror.constant.com -l C:/cygwin/var/cache/setup -P mingw64-i686-gcc-g++ -P mingw64-x86_64-gcc-g++  -P autotools -P autoconf -P autoreconf -P automake -P bison -P libtool -P make -P gettext-devel -P intltool -P libiconv -P pkg-config 
+  - cmd: SET PATH=C:\cygwin\bin;%PATH%
+  - cmd: ECHO %PATH% 
+  
+build_script:
+  - perl -version
+  - cd ./bng2/Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
+before_deploy:
+  - cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
+#deploy:
