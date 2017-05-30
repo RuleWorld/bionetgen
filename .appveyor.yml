@@ -20,7 +20,6 @@ before_build:
 
 platform: x86
 #build:
-#  - ls -l
 #  - PS: Exit-AppVeyorBuild
   
 install:
