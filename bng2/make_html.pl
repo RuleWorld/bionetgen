@@ -91,13 +91,13 @@ sub write_html {
   my $zip_type  = '';
   my $travis_os = '';
   if ($platform eq "Linux") {
-    $zip_type = ".tar.gz";  $travis_os = "Linux";
+    $zip_type = ".tar.gz";  $travis_os = "linux";
   } else {
     if ($platform eq "MacOSX") {
-    $zip_type = ".tar.gz";  $travis_os = "MacOSX";
+    $zip_type = ".tar.gz";  $travis_os = "osx";
     } else {
       if ($platform eq "Windows") {
-        $zip_type = ".zip";  $travis_os = "Windows";
+        $zip_type = ".zip";  $travis_os = "windows";
       } else {
         print "Invalid platform: ".$platform."\n";
         exit;
@@ -144,11 +144,11 @@ open(FNEW,">$ofile_name");
   print FNEW "If you are a BioNetGen developer, and you wish to get \n";
   print FNEW "access to beta release ".$relevel." for ".$platform.", please click here: <br>\n";
   print FNEW "<center><h1>\n";
-  print FNEW "<a href=\"BioNetGen-".$relevel."-".$travis_os.$zip_type."\">\n";
-  print FNEW "BioNetGen-".$relevel."-".$travis_os.$zip_type."</a>\n";
+  print FNEW "<a href=\"BioNetGen-".$relevel."-".$platform.$zip_type."\">\n";
+  print FNEW "BioNetGen-".$relevel."-".$platform.$zip_type."</a>\n";
   print FNEW "</h1></center>\n";
   print FNEW "<center>\n";
-  print FNEW "<a href=\"BioNetGen-".$relevel."-".$travis_os.$zip_type."\">\n";
+  print FNEW "<a href=\"BioNetGen-".$relevel."-".$platform.$zip_type."\">\n";
   print FNEW "Time Stamp: ".$date_stamp."</a>\n";
   print FNEW "</center>\n";
   print FNEW "<br>\n";
@@ -160,10 +160,10 @@ open(FNEW,">$ofile_name");
   print FNEW "<tr>\n";
   print FNEW "<td><center>If you would like to download only the NFsim executable, click here:</center>\n";
   print FNEW "<br><center>\n";
-  print FNEW "<a href=\"NFsim-".$platform.".html\"><font size=\"+2\">NFsim-".$platform."</font></a></center></td>\n";
+  print FNEW "<a href=\"NFsim-".$travis_os.".html\"><font size=\"+2\">NFsim-".$travis_os."</font></a></center></td>\n";
   print FNEW "<td><center>If you would like to download only the Atomizer executable, click here:</center>\n";
   print FNEW "<br><center>\n";
-  print FNEW "<a href=\"sbmlTranslator-".$platform.".html\"><font size=\"+2\">sbmlTranslator-".$platform."</font></a></center></td>\n";
+  print FNEW "<a href=\"sbmlTranslator-".$travis_os.".html\"><font size=\"+2\">sbmlTranslator-".$travis_os."</font></a></center></td>\n";
   print FNEW "</tr>\n";
   print FNEW "</table>\n";
 
