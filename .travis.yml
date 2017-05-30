@@ -18,8 +18,8 @@ notifications:
      rooms:
        - faederlab:l0waIGp58v8ZV74N7QmXGoWs      
      template:
-       - "Build: <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>)  %{result} in %{duration}"
-       - "Author: %{author}   Repository@Branch: %{repository}@%{branch}"
+       - "BioNetGen build: %{result} in %{duration}"
+       - "Build: <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>)   Author: %{author}"
        - "Download Distribution Package Here:"
        - "https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html"
        - "Build details:  %{build_url} "
