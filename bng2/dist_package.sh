@@ -36,8 +36,8 @@ curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform_travis.
 mkdir source_NFsim
 cd    source_NFsim
 tar  xvf ../NFsim-source-$platform_travis.tar.gz
-rm  -f    ./source_NFsim/validate/*.tar.gz   
-rm  -f    ./source_NFsim/validate/*.tar.bz2
+rm  -f    ./validate/*.tar.gz   
+rm  -f    ./validate/*.tar.bz2
 rm  -f   ../NFsim-source-$platform_travis.tar.gz
 cd ..
 cd ..
