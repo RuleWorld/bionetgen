@@ -34,6 +34,8 @@ mv       NFsim-$platform_travis  ./bin/NFsim
 chmod    +x                      ./bin/NFsim
 curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform_travis.tar.gz
 mkdir source_NFsim
+rm  -f ./source_NFsim/validate/*.tar.gz   
+rm  -f ./source_NFsim/validate/*.tar.bz2
 cd    source_NFsim
 tar  xvf ../NFsim-source-$platform_travis.tar.gz
 rm  -f   ../NFsim-source-$platform_travis.tar.gz
