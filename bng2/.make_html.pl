@@ -164,7 +164,12 @@ open(FNEW,">$ofile_name");
   print FNEW "<tr>\n";
   print FNEW "<td><center>If you would like to download only the NFsim executable, click here:</center>\n";
   print FNEW "<br><center>\n";
-  print FNEW "<a href=\"../build/NFsim-".$travis_os.".html\"><font size=\"+2\">NFsim-".$travis_os."</font></a></center></td>\n";
+  if (($travis_os eq "linux") || ($travis_os eq "osx")) {
+    print FNEW "<a href=\"./NFsim-".$travis_os.".html\"><font size=\"+2\">NFsim-".$travis_os."</font></a></center></td>\n";
+  }
+  if (($travis_os eq "Win32") || ($travis_os eq "Win64")) {
+    print FNEW "<a href=\"../build/NFsim-".$travis_os.".html\"><font size=\"+2\">NFsim-".$travis_os."</font></a></center></td>\n";
+  }
   print FNEW "<td><center>If you would like to download only the Atomizer executable, click here:</center>\n";
   print FNEW "<br><center>\n";
   print FNEW "<a href=\"sbmlTranslator-".$travis_os.".html\"><font size=\"+2\">sbmlTranslator-".$travis_os."</font></a></center></td>\n";
