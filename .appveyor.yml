@@ -5,11 +5,13 @@ environment:
     - builder: cygwin
       platform: x86
              
-    - builder: cygwin 
-      platform: x64
+#    - builder: cygwin 
+#      platform: x64
+      
 branches:
   only:
     - master
+    - release
 
 
 notifications:
@@ -53,6 +55,9 @@ artifacts:
   - path: './bng2/BioNetGen*.zip'
     name:  BioNetGen
   
+  - path: './bng2/BioNetGen*.html'
+    name:  BioNetGenhtml
+  
 deploy:
   provider: FTP
   protocol: ftp
@@ -61,4 +66,4 @@ deploy:
   username: roberthclark
   password:
     secure: K22E4pSAup6/htlGmoSBMw==  
-  artifact: /BioNetGen.*zip/   
+#  artifact: /BioNetGen.*zip/   
