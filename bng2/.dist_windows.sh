@@ -15,7 +15,7 @@ do
   vname=$var
 done < "$input"
 
-if [ "$1" = "Win32" ]; then
+if [ "$1" = "x86" ]; then
   rall=$vbase"-Win32.zip" 
   platform="Win32"
   platform_travis="win32"
