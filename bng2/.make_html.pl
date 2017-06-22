@@ -96,11 +96,15 @@ sub write_html {
     if ($platform eq "MacOSX") {
     $zip_type = ".tar.gz";  $travis_os = "osx";
     } else {
-      if ($platform eq "Windows") {
-        $zip_type = ".zip";  $travis_os = "windows";
+      if ($platform eq "Win32") {
+        $zip_type = ".zip";  $travis_os = "Win32";
       } else {
-        print "Invalid platform: ".$platform."\n";
-        exit;
+        if ($platform eq "Win64") {
+          $zip_type = ".zip";  $travis_os = "Win64";
+        } else {
+          print "Invalid platform: ".$platform."\n";
+          exit;
+        }
       }
     }
   }
