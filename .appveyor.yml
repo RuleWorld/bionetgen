@@ -13,9 +13,9 @@ branches:
 
 #notifications:
 #  - provider: Email
-#    on_build_success: false
-#    on_build_failure: false
-#    on_build_status_changed: false
+#    on_build_success:  false
+#    on_build_failure:  false
+#    on_build_status_changed:  false
 
 before_build:
   - cmd: ECHO this is batch  %APPVEYOR_ACCOUNT_NAME%
