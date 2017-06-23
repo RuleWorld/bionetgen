@@ -46,8 +46,8 @@ cd ..
 
 #  Get the NFsim and Atomizer files that are needed
 cd  $vbase
-curl -O  http://www.midcapsignals.com/midcap/dist/sbmlTranslator.exe
-mv       sbmlTranslator.exe                 ./bin/sbmlTranslator.exe
+curl -O  http://www.midcapsignals.com/midcap/dist/sbmlTranslator-$platform.exe
+mv       sbmlTranslator-$platform.exe                 ./bin/sbmlTranslator.exe
 cd ..
 
 
