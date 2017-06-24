@@ -5,8 +5,8 @@ environment:
     - builder: cygwin
       platform: x86
              
-    - builder: cygwin 
-      platform: x64
+#    - builder: cygwin 
+#      platform: x64
       
 branches:
   only:
