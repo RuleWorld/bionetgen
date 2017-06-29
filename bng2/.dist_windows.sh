@@ -41,8 +41,8 @@ cd  $vbase
 curl -O  http://www.midcapsignals.com/midcap/d_appveyor/build/NFsim-$platform.exe
 dir      NFsim-$platform.exe
 mv       NFsim-$platform.exe  ./bin/NFsim.exe
-curl -O  http://www.midcapsignals.com/midcap/d_appveyor/build/$platform-libgcc_s_dw2-1.dll
-mv       $platform-libgcc_s_dw2-1.dll ./bin/libgcc_s_dw2-1.dll
+#curl -O  http://www.midcapsignals.com/midcap/d_appveyor/build/$platform-libgcc_s_dw2-1.dll
+#mv       $platform-libgcc_s_dw2-1.dll ./bin/libgcc_s_dw2-1.dll
 cd ..
 
 
