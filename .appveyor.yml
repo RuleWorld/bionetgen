@@ -32,8 +32,6 @@ before_build:
   - uname -a
   - where bash  
 
-
-# platform: x86
   
 install:
 #  - appveyor DownloadFile https://cygwin.com/setup-x86.exe -FileName C:\cygwin\setup-x86.exe
