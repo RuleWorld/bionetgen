@@ -1,6 +1,6 @@
 os:
   - linux
-  - osx
+#  - osx
 
 
 language: c++
@@ -35,13 +35,3 @@ after_success:
   - source .dist_package.sh
 
 
-#deploy:
-#  provider: s3
-#  access_key_id: AKIAJPQVKWM4FKVDRPZA
-#  bucket: bionetgen
-#  skip_cleanup: true
-#  local_dir: "dist"
-#  on:
-#    branch: release
-#  secret_access_key:
-#    secure: hmR9Krh4wlbzaGc8o9QTsi8RSujHUzA//7LcIJ7ZPannWCXrKTYwuVrdhakhJTtD9WN/jgDNp5Axolt+EiuehnkLdvhI+OXsQV1EazFsgNtZonA+FO0Uv+E6WN3A44fQ5EzPf49aZMi8BRpz+bsS7/y/TcirhOYqfmtHcWwk0cr2kfvtm6lJGjswLkbH0X7NxDXYK9er0hjYHxzh+dnlzKGkGCAEO1SdFJaWOdJ9I0+Uwnu6GA/lI0pFSwWjcCafE2BADw7jp5XGc+NRpE5v2Czo7+yCw1Km1vxZSqGLTBgQ3KSNOHpE5RW7BQpwXVKecwfO93TSqFT1vwHBwKSLrSsQlHTls6k5+izETSBbNyWpP5UL34k0Ta+H/mhNTYYyuuYB31Ikdac/2krOPble2u61ZgvmGmkEm1jRBAocBvYSnRf7vBXm1Z5DPbKCvysatk/FNkvq5L/3XvFpkQMOFIowXLu1t8z22z0UycWlf0hrrQIJEQQ8H+JDyYQkKK5yNIX8FUUV70QHVJ1qJ3aYJDtKEuLBXSuhXWC39gXbD2O0MQeUCe5rfX79/basMlQuKY6hdYA7xK10bPS6/Y04YLVSFF+H0se0eCpkaaOYSScAPgcdcxyJF+XVvNXJ1LwlGZmuzRTfuGzcP4Q1CdHi9rNankLTR4vPJYNm+45EZYg=
