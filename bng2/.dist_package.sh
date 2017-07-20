@@ -28,35 +28,24 @@ fi
 
 
 #  Get the NFsim and Atomizer files that are needed
+git clone https://github.com/ruleworld/nfsim.git
+#  curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform_travis.tar.gz
 cd  $vbase
-curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-$platform_travis
-mv       NFsim-$platform_travis  ./bin/NFsim
-chmod    +x                      ./bin/NFsim
-curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-source-$platform_travis.tar.gz
 mkdir source_NFsim
-cd    source_NFsim
-tar  xvf ../NFsim-source-$platform_travis.tar.gz
-rm  -f    ./validate/*.tar.gz   
-rm  -f    ./validate/*.tar.bz2
-rm  -f   ../NFsim-source-$platform_travis.tar.gz
+cd ../nfsim
+cp -r bin doc models src test tools validate CMakeLists.txt LICENSE.txt README.txt makefile NFsim_manual_v1.12.pdf ../$vbase/sourceNFsim
+cd ../$vbase/source_NFsim
+  rm  -f    ./validate/*.tar.bz2
+  cd ..
+  if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+    # curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-$platform_travis
+    curl -O  ftp://15260@www.drivehq.com/d_data/d_travis/NFsim-$platform_travis
+  else
+    curl -O  ftp://15261@www.drivehq.com/d_data/d_travis/NFsim-$platform_travis
+  fi
+  mv       NFsim-$platform_travis  ./bin/NFsim
+  chmod    +x                      ./bin/NFsim
 cd ..
-cd ..
-
-
-
-#  Get the NFsim and Atomizer files that are needed
-cd  $vbase
-curl -O  http://www.midcapsignals.com/midcap/junk/sbmlTranslator-$platform_travis
-mv       sbmlTranslator-$platform_travis  ./bin/sbmlTranslator
-chmod    +x                               ./bin/sbmlTranslator
-curl -O  http://www.midcapsignals.com/midcap/junk/Atomizer-source-$platform_travis.tar.gz
-mkdir source_Atomizer
-cd    source_Atomizer
-tar  xvf ../Atomizer-source-$platform_travis.tar.gz
-rm  -f   ../Atomizer-source-$platform_travis.tar.gz
-cd ..
-cd ..
-
 
 
 
@@ -69,8 +58,3 @@ echo " Remote name of package is " $rall
 
 ls -l $lall
 curl -T $lall  -u roberthclark:P1ttsburgh ftp://ftp.midcapsignals.com/midcap/junk/$rall
-
-# Move a simple HTML page over to the server, to provide a pointer to the distribution package
-perl .make_html.pl  --version $vname  --platform $platform
-html_name="BioNetGen-"$platform".html"
-curl -T $html_name -u roberthclark:P1ttsburgh ftp://ftp.midcapsignals.com/midcap/junk/
