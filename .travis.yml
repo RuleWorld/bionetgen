@@ -27,14 +27,8 @@ notifications:
   
 script:
   - cd ./bng2
-  - mkdir mount_nfsim_atomizer
-  - cd    mount_nfsim_atomizer
-  - git clone https://github.com/rhclark/nfsim-rhclark.git
-  - git clone https://github.com/rhclark/atomizer.git
-  - ls
-  - ls nfsim-rhclark
-  - ls atomizer  
-  - cd ..
+  - mkdir bindir_nfsim_atomizer
+  - source get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer
   - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate 
 
 
