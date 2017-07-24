@@ -8,8 +8,8 @@
   else
     curl -O  ftp://15261@www.drivehq.com/d_data/d_travis/NFsim-$platform_travis
   fi
-  mv       NFsim-$platform_travis  ./bin/NFsim
-  chmod +x ./bin/NFsim
+  mv       NFsim-$platform_travis  $1/NFsim
+  chmod +x $1/NFsim
 
 
 # Next get Atomizer
