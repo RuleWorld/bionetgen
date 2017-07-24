@@ -58,5 +58,10 @@ lall=$vbase".tar.gz"
 echo " Local name of package is " $lall
 echo " Remote name of package is " $rall
 
+
+echo '  '
+echo ' Uploading ' $rall
+echo '  '
+
 ls -l $lall
 curl -T $lall  -u roberthclark:P1ttsburgh ftp://ftp.midcapsignals.com/midcap/junk/$rall
