@@ -21,15 +21,15 @@
   
   
   if [ "$2" = "x86" ]; then
-    curl -v -u 15262:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/NFsim-Win32.exe
-    curl -v -u 15262:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/sbmlTranslator-Win32.exe
+    curl -v -u 15262:aeh68ucxtH3lcVxawmcx8g==  -O ftp://ftp.drivehq.com/d_data/d_travis/NFsim-Win32.exe
+    curl -v -u 15262:aeh68ucxtH3lcVxawmcx8g==  -O ftp://ftp.drivehq.com/d_data/d_travis/sbmlTranslator-Win32.exe
     mv       NFsim-Win32.exe           $1/NFsim.exe
     mv       sbmlTranslator-Win32.exe  $1/sbmlTranslator.exe
   fi
 
   if [ "$2" = "x64" ]; then
-    curl -v -u 15263:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/NFsim-Win64.exe
-    curl -v -u 15263:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/sbmlTranslator-Win64.exe
+    curl -v -u 15263:aeh68ucxtH3lcVxawmcx8g==  -O ftp://ftp.drivehq.com/d_data/d_travis/NFsim-Win64.exe
+    curl -v -u 15263:aeh68ucxtH3lcVxawmcx8g==  -O ftp://ftp.drivehq.com/d_data/d_travis/sbmlTranslator-Win64.exe
     mv       NFsim-Win64.exe           $1/NFsim.exe
     mv       sbmlTranslator-Win64.exe  $1/sbmlTranslator.exe
   fi
