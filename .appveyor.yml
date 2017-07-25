@@ -49,7 +49,7 @@ install:
 
 build_script:
   - git clone https://github.com/ruleworld/nfsim.git
-  - dir nfsim  
+  - git clone https://github.com/ruleworld/atomizer.git
   - cd ./bng2 
   - mkdir bindir_nfsim_atomizer
   - bash .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer  %platform%   %ftp_password%
