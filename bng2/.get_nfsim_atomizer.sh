@@ -25,7 +25,7 @@
 #    curl -v -u 15262:$3  -O ftp://ftp.drivehq.com/d_data/d_appveyor/dist/sbmlTranslator-Win32.exe
     mv       NFsim-Win32.exe           $1/NFsim.exe
 #    mv       sbmlTranslator-Win32.exe  $1/sbmlTranslator.exe
-    mv ./atomizer/Win32/sbmlTranslator.exe  $1/sbmlTranslator.exe
+    mv ../atomizer/Win32/sbmlTranslator.exe  $1/sbmlTranslator.exe
   fi
 
   if [ "$2" = "x64" ]; then
