@@ -3,6 +3,7 @@
 #  Read the VERSION file and construct the name of the installation package.
 uname -a
 echo " Windows Environment = " $1
+echo "  pwd = " ; pwd
 
 echo '  '
 echo '  '
