@@ -55,7 +55,14 @@ mv       sbmlTranslator-$platform.exe                 ./bin/sbmlTranslator.exe
 cd ..
 
 
-
+echo '  '
+echo '  '
+ls 
+echo '  '
+echo '  '
+ls ..
+echo '  '
+echo '  '
 
 
 #  Get the NFsim files that are needed
