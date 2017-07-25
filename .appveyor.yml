@@ -48,7 +48,7 @@ install:
 build_script:
   - cd ./bng2 
   - mkdir bindir_nfsim_atomizer
-  - bash .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer  %platform%
+  - bash .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer  %platform%   aeh68ucxtH3lcVxawmcx8g==
   - cd   ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
   - bash .dist_windows.sh %platform%  
   
