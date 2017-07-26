@@ -35,6 +35,7 @@ notifications:
    
   
 script:
+  - curl -v --ftp-ssl -u $FAEDER_USER:$FAEDER_PASSWORD ftp://ftp.box.com/BioNetGen_Beta
   - cd ./bng2
   - mkdir bindir_nfsim_atomizer
   - source .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer
