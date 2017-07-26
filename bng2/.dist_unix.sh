@@ -64,4 +64,4 @@ echo ' Uploading ' $rall
 echo '  '
 
 ls -l $lall
-curl -T $lall  --ftp-ssl  -u $FAEDER_USER:$FAEDER_PASSWORD   ftp://ftp.box.com/BioNetGen_Beta/$rall
+curl -v  --ftp-ssl  -u $FAEDER_USER:$FAEDER_PASSWORD   -T $lall  ftp://ftp.box.com/BioNetGen_Beta/$rall
