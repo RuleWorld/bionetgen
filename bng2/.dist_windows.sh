@@ -37,24 +37,6 @@ else
 fi
 
 
-#  Get the NFsim and Atomizer files that are needed
-cd  $vbase
-curl -O  http://www.midcapsignals.com/midcap/d_appveyor/build/NFsim-$platform.exe
-ls -l   
-mv       NFsim-$platform.exe  ./bin/NFsim.exe
-#curl -O  http://www.midcapsignals.com/midcap/d_appveyor/build/$platform-libgcc_s_dw2-1.dll
-#mv       $platform-libgcc_s_dw2-1.dll ./bin/libgcc_s_dw2-1.dll
-cd ..
-
-
-
-#  Get the NFsim and Atomizer files that are needed
-cd  $vbase
-curl -O  http://www.midcapsignals.com/midcap/dist/sbmlTranslator-$platform.exe
-mv       sbmlTranslator-$platform.exe                 ./bin/sbmlTranslator.exe
-cd ..
-
-
 
 #  Get the NFsim files that are needed
 #  git clone https://github.com/ruleworld/nfsim.git  This clone command had to be moved to an earlier spot in YAML.
@@ -83,9 +65,10 @@ pwd
 ls
 
 cd $vbase
-pwd
 echo '-----------------------------------------------------------------------------------------'
+pwd
 ls
+echo '-----------------------------------------------------------------------------------------'
 ls ./bin
 echo '-----------------------------------------------------------------------------------------'
 ls source_NFsim
