@@ -44,7 +44,7 @@ fi
 cd  $vbase
 mkdir source_NFsim
 cd ../../nfsim
-cp -r bin doc models src test tools validate CMakeLists.txt LICENSE.txt README.txt makefile NFsim_manual_v1.12.pdf ../bng2/$vbase/source_NFsim
+cp -r bin doc models src test tools validate CMakeLists.txt CMakeLists.x86.txt LICENSE.txt README.txt makefile NFsim_manual_v1.12.pdf ../bng2/$vbase/source_NFsim
 cd ../bng2/$vbase/source_NFsim
   rm  -f    ./validate/*.tar.bz2
 cd ../..
@@ -60,29 +60,9 @@ cp -r appveyor  Makefile requirements.txt  twistedServer.py config  SBMLparser  
 cp -r dist reactionDefinitions  stats  gml2sbgn  README.md   test  XMLExamples        ../bng2/$vbase/source_Atomizer
 cd ../bng2
 
-echo ' pwd: '
-pwd
-ls
-
-cd $vbase
-echo '-----------------------------------------------------------------------------------------'
-pwd
-ls
-echo '-----------------------------------------------------------------------------------------'
-ls ./bin
-echo '-----------------------------------------------------------------------------------------'
-ls source_NFsim
-echo '-----------------------------------------------------------------------------------------'
-ls source_Atomizer
-cd ..
 
 zip -r -q  $rall $vbase
 
 echo " Version base name is      " $vbase
 echo " Remote name of package is " $rall
-
-ls -l 
-# I believe that curl can be installed on Appveyor, but it's more natural to use the
-# native Appveyor deployment system, which permits you to use ftp.
-#curl -T $rall  -u roberthclark:xxxxxxxxxx ftp://ftp.midcapsignals.com/midcap/junk/$rall
 
