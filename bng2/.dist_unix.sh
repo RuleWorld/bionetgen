@@ -64,4 +64,4 @@ echo ' Uploading ' $rall
 echo '  '
 
 ls -l $lall
-curl -T $lall  -u roberthclark:P1ttsburgh ftp://ftp.midcapsignals.com/midcap/junk/$rall
+curl -T $lall  --ftp-ssl  -u $FAEDER_USER:$FAEDER_PASSWORD   ftp://ftp.box.com/BioNetGen_Beta/$rall
