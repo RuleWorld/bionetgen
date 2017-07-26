@@ -78,7 +78,9 @@ cp -r appveyor  Makefile requirements.txt  twistedServer.py config  SBMLparser  
 cp -r dist reactionDefinitions  stats  gml2sbgn  README.md   test  XMLExamples        ../bng2/$vbase/source_Atomizer
 cd ../..
 
-
+echo ' pwd: '
+pwd
+ls
 
 zip -r -q  $rall $vbase
 
