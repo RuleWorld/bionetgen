@@ -65,7 +65,7 @@ cd ../../nfsim
 cp -r bin doc models src test tools validate CMakeLists.txt LICENSE.txt README.txt makefile NFsim_manual_v1.12.pdf ../bng2/$vbase/source_NFsim
 cd ../bng2/$vbase/source_NFsim
   rm  -f    ./validate/*.tar.bz2
-cd ../../..
+cd ../..
 
 
 #  Get the Atomizer files that are needed
