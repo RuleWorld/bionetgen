@@ -26,14 +26,18 @@
 
 #    curl -v -u 15262:$3  -O ftp://ftp.drivehq.com/d_data/d_appveyor/dist/sbmlTranslator-Win32.exe
 #    mv       sbmlTranslator-Win32.exe  $1/sbmlTranslator.exe
-    curl -v -u 15262:$3  -O ftp://ftp.drivehq.com/Win32/sbmlTranslator.exe
-    mv ./sbmlTranslator.exe  $1/sbmlTranslator.exe
+
+#    curl -v -u 15262:$3  -O ftp://ftp.drivehq.com/Win32/sbmlTranslator.exe
+#    mv ./sbmlTranslator.exe  $1/sbmlTranslator.exe
   fi
 
   if [ "$2" = "x64" ]; then
     curl -v -u 15263:$3  -O ftp://ftp.drivehq.com/d_data/d_appveyor/build/NFsim-Win64.exe
-    curl -v -u 15263:$3  -O ftp://ftp.drivehq.com/d_data/d_appveyor/dist/sbmlTranslator-Win64.exe
     mv       NFsim-Win64.exe           $1/NFsim.exe
-    mv       sbmlTranslator-Win64.exe  $1/sbmlTranslator.exe
+
+#    curl -v -u 15263:$3  -O ftp://ftp.drivehq.com/d_data/d_appveyor/dist/sbmlTranslator-Win64.exe
+#    mv       sbmlTranslator-Win64.exe  $1/sbmlTranslator.exe
+    curl -v -u 15262:$3  -O ftp://ftp.drivehq.com/Win32/sbmlTranslator.exe
+    mv ./sbmlTranslator.exe  $1/sbmlTranslator.exe
   fi
 
