@@ -76,7 +76,7 @@ mkdir source_Atomizer
 cd ../../atomizer
 cp -r appveyor  Makefile requirements.txt  twistedServer.py config  SBMLparser  utils ../bng2/$vbase/source_Atomizer
 cp -r dist reactionDefinitions  stats  gml2sbgn  README.md   test  XMLExamples        ../bng2/$vbase/source_Atomizer
-cd ../..
+cd ../bng2
 
 echo ' pwd: '
 pwd
