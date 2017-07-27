@@ -61,7 +61,8 @@ cp -r dist reactionDefinitions  stats  gml2sbgn  README.md   test  XMLExamples  
 cd ../bng2
 
 
-zip -r -q  $rall $vbase
+zip -r   $rall $vbase
+cp $rall ../.
 
 echo " Version base name is      " $vbase
 echo " Remote name of package is " $rall
