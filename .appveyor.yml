@@ -65,10 +65,10 @@ artifacts:
   
 deploy:
   provider: FTP
-  protocol: ftp
+  protocol: ftps
   skip_cleanup: true
-  host: ftp.midcapsignals.com/midcap/d_appveyor
-  username: roberthclark
+  host: ftp.box.com/BioNetGen_Beta
+  username: roc60@pitt.edu
   password:
-    secure: K22E4pSAup6/htlGmoSBMw==  
+    secure: Pkm2pZETP0TuR6288x+1Ww==
 #  artifact: /BioNetGen.*zip/   
