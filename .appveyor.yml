@@ -25,7 +25,7 @@ notifications:
        "<{{buildUrl}}|{{projectName}} build {{status}}> on {{commitDate}}:_{{commitMessage}}_\n
         Build: {{buildVersion}} (<{{commitUrl}}|{{commitId}}>)   Author: {{commitAuthor}}\n         
         Download Executable Here:\n
-        <https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html|https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html>\n
+        <https://rawgit.com/RuleWorld/bionetgen/master/.BioNetGen_Beta.html|https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html>\n
         Build Details:\n
         <{{buildUrl}}|{{buildUrl}}>"
 
@@ -33,7 +33,6 @@ notifications:
 before_build:
   - cmd: ECHO this is batch  %APPVEYOR_ACCOUNT_NAME%
   - uname -a
-  - where bash  
 
   
 install:
@@ -50,19 +49,8 @@ install:
 build_script:
   - git clone https://github.com/ruleworld/nfsim.git
   - git clone https://github.com/ruleworld/atomizer.git
-  - dir  
   - cd ./bng2 
   - mkdir bindir_nfsim_atomizer
-  
-  
-  - dir /cygdrive/c/cygwin64/bin  
-  - dir /cygdrive/c/cygwin32/bin  
-#  - cp /cygdrive/c/cygwin64/bin/cygwin*dll  
-#  - cp /cygdrive/c/cygwin64/bin/cygstdc*dll 
-#  - cp /cygdrive/c/cygwin64/bin/cygz*dll    
-#  - cp /cygdrive/c/cygwin64/bin/cyggcc*dll  
-  
-  
   - bash .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer  %platform%   %ftp_password%
   - cd   ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate   --bindir ./bindir_nfsim_atomizer
   - bash .dist_windows.sh %platform%  
