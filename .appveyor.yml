@@ -53,8 +53,17 @@ build_script:
   - dir  
   - cd ./bng2 
   - mkdir bindir_nfsim_atomizer
+  
+  
+  - dir /cygdrive/c/cygwin64/bin  
+  - dir /cygdrive/c/cygwin32/bin  
+#  - cp /cygdrive/c/cygwin64/bin/cygwin*dll  
+#  - cp /cygdrive/c/cygwin64/bin/cygstdc*dll 
+#  - cp /cygdrive/c/cygwin64/bin/cygz*dll    
+#  - cp /cygdrive/c/cygwin64/bin/cyggcc*dll  
+  
+  
   - bash .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer  %platform%   %ftp_password%
-  - CMD: .\bindir_nfsim_atomizer\sbmlTranslator.exe  
   - cd   ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate   --bindir ./bindir_nfsim_atomizer
   - bash .dist_windows.sh %platform%  
   
