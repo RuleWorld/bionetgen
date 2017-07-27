@@ -59,7 +59,7 @@ build_script:
   - bash .dist_windows.sh %platform%  
   
 artifacts:
-  - path: './bng2/BioNetGen*.zip'
+  - path: './BioNetGen*.zip'
     name:  BioNetGen
   
   
@@ -67,7 +67,7 @@ deploy:
   provider: FTP
   protocol: ftps
   skip_cleanup: true
-  host: ftp.box.com/BioNetGen_Beta
+  host: ftp.box.com/BioNetGen_Beta/
   username: roc60@pitt.edu
   password:
     secure: Pkm2pZETP0TuR6288x+1Ww==
