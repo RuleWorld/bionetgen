@@ -25,7 +25,7 @@ notifications:
        "<{{buildUrl}}|{{projectName}} build {{status}}> on {{commitDate}}:_{{commitMessage}}_\n
         Build: {{buildVersion}} (<{{commitUrl}}|{{commitId}}>)   Author: {{commitAuthor}}\n         
         Download Executable Here:\n
-        <https://rawgit.com/RuleWorld/bionetgen/master/.BioNetGen_Beta.html|https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html>\n
+        <https://rawgit.com/RuleWorld/bionetgen/master/.BioNetGen_Beta.html|https://rawgit.com/RuleWorld/bionetgen/master/.BioNetGen_Beta.html>\n
         Build Details:\n
         <{{buildUrl}}|{{buildUrl}}>"
 
