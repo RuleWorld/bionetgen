@@ -45,6 +45,6 @@ script:
 
 after_success:
 #  The make clean step has been added to make_dist.pl
-#  - cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
+#  -  cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
 
 
