@@ -16,15 +16,15 @@
     chmod +x $1/sbmlTranslator
   fi
   if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-    curl -v -u $FTP_USER_1:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/NFsim-${TRAVIS_OS_NAME}
+    curl -v -u $FTP_USER_5:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/NFsim-${TRAVIS_OS_NAME}
     mv       NFsim-${TRAVIS_OS_NAME}  $1/NFsim
     chmod +x $1/NFsim
     
-#    curl -v -u $FTP_USER_1:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/sbmlTranslator-${TRAVIS_OS_NAME}
+#    curl -v -u $FTP_USER_5:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/sbmlTranslator-${TRAVIS_OS_NAME}
 #    mv       sbmlTranslator-${TRAVIS_OS_NAME}  $1/sbmlTranslator
 #    chmod +x $1/sbmlTranslator
 
-    curl -v -u $FTP_USER_1:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/MacOSX/sbmlTranslator
+    curl -v -u $FTP_USER_5:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/MacOSX/sbmlTranslator
     mv       sbmlTranslator               $1/sbmlTranslator
     chmod +x $1/sbmlTranslator
   fi
