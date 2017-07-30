@@ -1,6 +1,13 @@
 #!/bin/bash
 
 
+
+#  This script reflects the fact that as of  July 30, 2017, none of the Atomizer executables are working.  So for each
+#  platform, the code that captures the latest NFsim executable, is followed by code for capturing the sbmlTranslator
+#  that has been commented out.  The comment is then followed by temporary code that captures a version of sbmlTranslator
+#  that is knownn to work and that has been squirreled away on the ftp server for the particular platform.
+
+
   if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
     # curl -O  http://www.midcapsignals.com/midcap/junk/NFsim-$platform_travis
     curl -v -u $FTP_USER_4:$FTP_PASSWORD  -O ftp://ftp.drivehq.com/d_data/d_travis/NFsim-${TRAVIS_OS_NAME}
