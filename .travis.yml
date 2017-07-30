@@ -36,7 +36,7 @@ notifications:
    
   
 script:
-  - cd ./bng2
+  -  cd ./bng2
   - mkdir bindir_nfsim_atomizer
   - source .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer
   - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate  --bindir ./bindir_nfsim_atomizer
