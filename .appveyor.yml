@@ -65,7 +65,7 @@ deploy:
   protocol: ftps
   skip_cleanup: true
   host: ftp.box.com/BioNetGen_Beta/
-  username: roc60@pitt.edu
+  username: faeder@pitt.edu
   password:
-    secure: Pkm2pZETP0TuR6288x+1Ww==
+    secure: 6Nty9ed5OWZl0aW/VoiI7Q==
 #  artifact: /BioNetGen.*zip/   
