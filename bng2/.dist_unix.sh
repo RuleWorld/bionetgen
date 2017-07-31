@@ -47,7 +47,7 @@ cd  $vbase
 mkdir source_Atomizer
 cd ../atomizer
 cp -r appveyor  Makefile requirements.txt  twistedServer.py config  SBMLparser  utils ../$vbase/source_Atomizer
-cp -r dist reactionDefinitions  stats  gml2sbgn  README.md   test  XMLExamples        ../$vbase/source_Atomizer
+cp -r dist reactionDefinitions  stats  gml2sbgn  README.md     ../$vbase/source_Atomizer
 #  The   test,XMLExamples   directories have been removed to save space.
 cd ..
 
