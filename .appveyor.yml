@@ -2,7 +2,7 @@ os: unstable
 
 environment:
   ftp_password:
-    secure: aeh68ucxtH3lcVxawmcx8g==
+    secure: Pkm2pZETP0TuR6288x+1Ww==
   matrix:
     - builder: cygwin
       platform: x86
