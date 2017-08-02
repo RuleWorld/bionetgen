@@ -39,24 +39,24 @@
   
   
   if [ "$2" = "x86" ]; then
-    curl -v --ftp-ssl -u $FTP_USER:$FTP_PASSWORD  -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_appveyor/build/NFsim-Win32.exe
+    curl -v --ftp-ssl -u roc60@pitt.edu:$3 -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_appveyor/build/NFsim-Win32.exe
     mv       NFsim-Win32.exe           $1/NFsim.exe
 
 #    curl -v -u 15262:$3  -O ftp://ftp.drivehq.com/d_data/d_appveyor/dist/sbmlTranslator-Win32.exe
 #    mv       sbmlTranslator-Win32.exe  $1/sbmlTranslator.exe
 
-    curl -v --ftp-ssl -u $FTP_USER:$FTP_PASSWORD -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_bin-2.3.0/Win32/sbmlTranslator.exe
+    curl -v --ftp-ssl -u roc60@pitt.edu:$3 -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_bin-2.3.0/Win32/sbmlTranslator.exe
     mv ./sbmlTranslator.exe  $1/sbmlTranslator_64.exe
   fi
 
   if [ "$2" = "x64" ]; then
-    curl -v --ftp-ssl -u $FTP_USER:$FTP_PASSWORD -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_appveyor/build/NFsim-Win64.exe
+    curl -v --ftp-ssl -u roc60@pitt.edu:$3 -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_appveyor/build/NFsim-Win64.exe
     mv       NFsim-Win64.exe           $1/NFsim.exe
 
 #    curl -v -u 15263:$3  -O ftp://ftp.drivehq.com/d_data/d_appveyor/dist/sbmlTranslator-Win64.exe
 #    mv       sbmlTranslator-Win64.exe  $1/sbmlTranslator.exe
 
-    curl -v --ftp-ssl -u $FTP_USER:$FTP_PASSWORD -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_bin-2.3.0/Win64/sbmlTranslator.exe
+    curl -v --ftp-ssl -u roc60@pitt.edu:$3 -O ftp://ftp.box.com/BioNetGen_Beta/d_data/d_bin-2.3.0/Win64/sbmlTranslator.exe
     mv ./sbmlTranslator.exe  $1/sbmlTranslator.exe
   fi
 
