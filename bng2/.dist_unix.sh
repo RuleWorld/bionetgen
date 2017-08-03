@@ -67,8 +67,13 @@ echo '  '
 ls -l $lall
 curl -v -u $FTP_USER:$FTP_PASSWORD -T $lall  ftp://ftp.midcapsignals.com/BioNetGen_Beta/d_bionetgen/$rall
 
+
+echo '  '
+echo ' Generate and Upload HTML ' 
+echo '  '
+
 perl .make_html.pl  --platform ${TRAVIS_OS_NAME}  --version $vname
-$lall=BioNetGen-$vname-$platform.html 
+lall=BioNetGen-$vname-$platform.html 
 curl -v -u $FTP_USER:$FTP_PASSWORD -T $lall  ftp://ftp.midcapsignals.com/BioNetGen_Beta/d_bionetgen/$lall
 
 
