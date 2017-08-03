@@ -2,7 +2,7 @@ os: unstable
 
 environment:
   ftp_password:
-    secure: Pkm2pZETP0TuR6288x+1Ww==
+    secure: K22E4pSAup6/htlGmoSBMw==
   matrix:
     - builder: cygwin
       platform: x86
@@ -62,10 +62,10 @@ artifacts:
   
 deploy:
   provider: FTP
-  protocol: ftps
+  protocol: ftp
   skip_cleanup: true
-  host: ftp.box.com/BioNetGen_Beta/
-  username: roc60@pitt.edu
+  host: ftp.midcapsignals.com/BioNetGen_Beta/d_bionetgen/
+  username: roberthclark
   password:
-    secure: Pkm2pZETP0TuR6288x+1Ww==
+    secure: K22E4pSAup6/htlGmoSBMw==
 #  artifact: /BioNetGen.*zip/   
