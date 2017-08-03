@@ -36,8 +36,6 @@ else
   cp /cygdrive/c/cygwin64/bin/cyggcc*dll  $vbase/bin
 fi
 
-perl .make_html.pl --platform $platform  --version $vname
-
 
 
 #  Get the NFsim files that are needed
@@ -63,8 +61,15 @@ cp -r dist reactionDefinitions  stats  gml2sbgn  README.md   ../bng2/$vbase/sour
 cd ../bng2
 
 
+
+
+
 zip -r   $rall $vbase
 cp $rall ../.
+
+perl .make_html.pl --platform $platform  --version $vname
+cp *.html ../.
+
 
 echo " Version base name is      " $vbase
 echo " Remote name of package is " $rall
