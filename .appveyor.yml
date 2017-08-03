@@ -58,6 +58,8 @@ build_script:
 artifacts:
   - path: './BioNetGen*.zip'
     name:  BioNetGen
+  - path: './BioNetGen*.html'
+    name:  BioNetGenHTML
   
   
 deploy:
