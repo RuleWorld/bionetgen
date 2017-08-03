@@ -36,6 +36,8 @@ else
   cp /cygdrive/c/cygwin64/bin/cyggcc*dll  $vbase/bin
 fi
 
+perl .make_html.pl --platform $platform  --version $vname
+
 
 
 #  Get the NFsim files that are needed
