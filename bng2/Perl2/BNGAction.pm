@@ -11,8 +11,6 @@ use warnings;
 ###
 ###
 
-
-
 sub simulate_ode
 {
     my $model = shift @_;
@@ -789,8 +787,7 @@ sub simulate_nf
 
     if ($params->{continue})
     {   # warn user that continue is not supported
-#        send_warning("simulate_nf(): NFsim does not support 'continue' option. NFsim will overwrite any existing trajectories.");
-        return "NFsim does not support 'continue' option.";
+        send_warning("simulate_nf(): NFsim does not support 'continue' option. NFsim will overwrite any existing trajectories.");
     }
 
     my $t_end;
@@ -1694,6 +1691,226 @@ sub parameter_scan
 ###
 ###
 
+sub parameter_estimation
+{
+
+    use List::MoreUtils 'pairwise';
+    use List::Util qw(sum);
+
+    my $model = shift @_;
+    my $params = @_ ? shift @_ : {};
+
+    # check for required parameters
+    unless ( defined $params->{parameter} )
+    {   return "Error in parameter_scan: 'parameter' is not defined.";   }
+
+    unless ( defined $params->{par_min} )
+    {   return "Error in parameter_scan: 'par_min' must be defined.";   }
+
+    unless ( defined $params->{par_max} )
+    {   return "Error in parameter_scan: 'par_max' must be defined.";   }
+    
+    unless ( defined $params->{n_scan_pts} )
+    {   return "Error in parameter_scan: 'n_scan_pts' must be defined.";   }
+
+    unless ( defined $params->{method} )
+    {   return "Error in parameter_scan: 'method' must be defined.";   }
+
+    # read data file
+    open my $expt_data_file,'<',$params->{data_file};
+    chomp(my @lines = <$expt_data_file>);
+    close $expt_data_file;
+    #For now we are assuming that the data file has two columns, one for time, the second for a single species of interest. And that the first row is a header.
+    my @expt;
+    my $counter = 0;
+    foreach (@lines) {
+        my @tmp = split(' ',$_);
+        if($counter > 0) { $expt[$counter-1] = $tmp[1];}
+        $counter = $counter + 1;
+    }
+
+    #my $method = $params->{method};
+    my $parameter = $params->{parameter};
+    my $par_min = $params->{par_min};
+    my $par_max = $params->{par_max};
+    my $init_par_value = $params->{initial_value};
+    my $nsteps = $params->{n_scan_pts};
+    my $ss = $params->{step_size};
+
+    #define base name for parameter estimation results
+    my $basename = $params->{prefix};
+    #define working directory for simulation data
+    my $workdir = $basename.'parameter_estimation/';
+    #create working directory
+    mkdir $workdir;
+
+    #remember concentrations
+    $model->saveConcentrations("SCAN");
+
+    printf "ACTION: parameter_estimation( )";
+
+    #initialization
+    $model->setParameter($parameter,$init_par_value);
+    my $local_params;
+    %$local_params = %$params;
+    $local_params->{prefix} = $workdir.'step_0';
+
+    my $err = $model->simulate_ode($local_params);
+    if ($err)
+    {
+        $err = "Error in parameter estimation starting point: $err";
+        return $err;
+    }
+
+    #read starting point simulation results
+
+    open my $simulated_data,'<',$local_params->{prefix}.'.gdat';
+    chomp(my @simulated_lines = <$simulated_data>);
+    close $simulated_data;
+
+    my @simdata;
+    my $counter = 0;
+    foreach (@simulated_lines) {
+        my @tmp = split(' ',$_);
+        if($counter > 0)
+        {
+            @simdata[$counter-1] = @tmp[1];
+            
+        }
+        $counter = $counter + 1;
+    }
+    #calculate loss
+    my $lss = loss(\@expt,\@simdata);
+    print "\ninitial loss=",$lss,"\n";
+    $model->resetConcentrations("SCAN");
+
+    my $curr = $init_par_value;
+    my $current_loss = $lss;
+    my @param_chain;
+    my @energy_chain;
+
+    $param_chain[0] = $curr;
+    $energy_chain[0] = $current_loss;
+
+    for(my $k=0;$k<$nsteps;$k++)
+    {
+        #propose a parameter
+        my $proposed_parameter = proposal_fcn($curr,$ss);
+        #Run simulation with proposed parameter
+        $model->setParameter( $params->{parameter}, $proposed_parameter );
+        $local_params->{prefix} = $workdir.'proposal'.$k;# $local_prefix;
+        delete $local_params->{suffix};
+        my $err = $model->simulate_ode( $local_params );
+        if ( $err )
+        {   # return error message
+            $err = "Error in parameter_estimation (step " . ($k+1) . "): $err";
+            return $err;
+        }
+
+        $model->resetConcentrations("SCAN");
+        
+        #read simulation results
+        open my $simulated_data,'<',$local_params->{prefix}.'.gdat';
+        chomp(my @simulated_lines = <$simulated_data>);
+        close $simulated_data;
+
+        my @simdata;
+        my $counter = 0;
+        foreach (@simulated_lines) {
+            my @tmp = split(' ',$_);
+            if($counter > 0)
+            {
+                @simdata[$counter-1] = @tmp[1];
+            }
+            $counter = $counter + 1;
+        }
+
+        #calculate loss
+        my $proposed_loss = loss(\@expt,\@simdata);      
+        #check if the proposed parameter is within the prior range
+
+        if($proposed_parameter>$par_max || $proposed_parameter<$par_min)
+        {
+            $proposed_loss = 1e29;
+        }
+
+        #accept or reject the move
+        my $energy_diff = $proposed_loss-$current_loss;
+        print "\n\n iteration ",($k+1);
+        print "\n\n proposed parameter",$proposed_parameter,"\n\n";
+        print "\n\n current parameter",$curr,"\n\n";
+        print "\n\n current loss",$current_loss,"\n\n";
+        print "\n\n proposed loss",$proposed_loss,"\n\n";
+
+        if($energy_diff<0)
+        {
+            print "\n\nACCEPTING\n\n";
+            $curr = $proposed_parameter;
+            $current_loss = $proposed_loss;
+        }
+        else
+        {
+            my $r = rand;
+            my $acceptance_probability = exp -$energy_diff;
+            if($r<$acceptance_probability)
+            {
+                print "\n\nACCEPTING\n\n";
+                $curr = $proposed_parameter;
+                $current_loss = $proposed_loss;
+            }
+        }
+        #simulate model with current parameters for record keeping
+        $model->setParameter( $params->{parameter}, $curr );
+        $local_params->{prefix} = $workdir.'step'.($k+1);# $local_prefix;
+        delete $local_params->{suffix};
+        my $err = $model->simulate_ode( $local_params );
+        $model->resetConcentrations("SCAN");
+        if ( $err )
+        {   # return error message
+            $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
+            return $err;
+        }
+        $param_chain[$k+1] = $curr;
+        $energy_chain[$k+1] = $current_loss;
+    }
+
+    # print the MCMC chain to a file
+
+    for(my $i=0;$i<$nsteps;$i++)
+    {
+        print "step ",$i,' parameter ',@param_chain[$i],' energy ',@energy_chain[$i],"\n";
+    }
+
+    sub proposal_fcn #random walk proposal function
+    {
+        my $curr = $_[0];
+        my $ss = $_[1];
+        my $proposal = 0;
+        my $r = rand;
+        if($r>0.5)
+        {
+            $proposal = $curr + $ss;
+        }
+        else
+        {
+            $proposal = $curr - $ss;
+        }
+    }
+
+    #normalized sum of squared error cost function
+    sub loss
+    {
+        my @data1 = @{$_[0]};
+        my @data2 = @{$_[1]};
+        my @diff = pairwise {$a - $b} @data1,@data2; 
+        my @norm_diff = pairwise {$a/($b+0.00000000001)} @diff, @data1;
+        my @sq_diff = map {$_*$_} @norm_diff;
+        my $sum_sq_diff = sum @sq_diff;
+        return $sum_sq_diff;
+    }
+
+    return;
+}
 
 
 sub LinearParameterSensitivity
