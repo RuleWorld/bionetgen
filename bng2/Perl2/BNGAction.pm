@@ -1876,10 +1876,12 @@ sub parameter_estimation
 
     # print the MCMC chain to a file
 
+    open my $fh,'>',$workdir.'mcmc.txt' or die "Couldnt open file to write mcmc chain";  
     for(my $i=0;$i<$nsteps;$i++)
     {
-        print "step ",$i,' parameter ',@param_chain[$i],' energy ',@energy_chain[$i],"\n";
+        print $fh "step ".$i.' parameter '.@param_chain[$i].' energy '.@energy_chain[$i]."\n";
     }
+    close $fh;
 
     sub proposal_fcn #random walk proposal function
     {
