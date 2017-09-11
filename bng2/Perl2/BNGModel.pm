@@ -66,6 +66,7 @@ use RxnRule;
 use EnergyPattern;
 use Observable;
 use PopulationList;
+use ParameterPrior;
 
 #Variables that determine whether the network has been generated
 my $NetFlag = 0; 
@@ -104,6 +105,7 @@ struct BNGModel =>
     ParameterCache      => 'Cache',   
     ConcentrationCache  => 'Cache',
 	VizGraphs			=> '$',
+	ParameterPrior      => '@'
 };
 
 
@@ -133,6 +135,7 @@ sub initialize
     $model->SubstanceUnits('');
     $model->ConcentrationCache( Cache->new() );
     $model->ParameterCache( Cache->new() );
+  
 }
 
 
@@ -254,6 +257,7 @@ sub readSBML
 			'reactions' => 1,
 			'groups' => 1,
 			'actions' => 1,
+			'parameter priors'=>1
 		);
 
 		# user-specified list of blocks to read
@@ -603,8 +607,24 @@ sub readSBML
 	            				printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
 	                    }
 	                }
-	                
-	                    
+
+	                ### read parameter priors block
+	                elsif ( $name eq 'parameter priors')
+	                {
+	                	my ($entry,$lno);
+	                	my @priors;
+	                	my $prior_counter = 0;
+
+	                	foreach my $line (@$block_dat)
+	                	{
+	                		($entry,$lno) = @$line;
+	                		my $tmp = ParameterPrior->new();
+ 							$priors[$prior_counter] = $tmp->readString($entry);
+	                	}            		
+	                	$model->{ParameterPriors} = @priors;
+	                }
+
+
 	                ### Read Species/Seed Species Block
 	                elsif ( ($name eq 'species') or ($name eq 'seed species') )
 	                {
