@@ -1692,14 +1692,12 @@ sub parameter_scan
 ###
 
 sub parameter_estimation
-{
-
+{ 
     use List::MoreUtils 'pairwise';
     use List::Util qw(sum);
 
     my $model = shift @_;
     my $params = @_ ? shift @_ : {};
-
     # check for required parameters
     unless ( defined $params->{parameter} )
     {   return "Error in parameter_scan: 'parameter' is not defined.";   }
@@ -1715,6 +1713,7 @@ sub parameter_estimation
 
     unless ( defined $params->{method} )
     {   return "Error in parameter_scan: 'method' must be defined.";   }
+
 
     # read data file
     open my $expt_data_file,'<',$params->{data_file};
@@ -1738,7 +1737,7 @@ sub parameter_estimation
     my $ss = $params->{step_size};
 
     #define base name for parameter estimation results
-    my $basename = $params->{prefix};
+    my $basename = '';#$params->{prefix};
     #define working directory for simulation data
     my $workdir = $basename.'parameter_estimation/';
     #create working directory
@@ -1769,12 +1768,12 @@ sub parameter_estimation
     close $simulated_data;
 
     my @simdata;
-    my $counter = 0;
+    $counter = 0;
     foreach (@simulated_lines) {
         my @tmp = split(' ',$_);
         if($counter > 0)
         {
-            @simdata[$counter-1] = @tmp[1];
+            $simdata[$counter-1] = $tmp[1];
             
         }
         $counter = $counter + 1;
@@ -1820,7 +1819,7 @@ sub parameter_estimation
             my @tmp = split(' ',$_);
             if($counter > 0)
             {
-                @simdata[$counter-1] = @tmp[1];
+                $simdata[$counter-1] = $tmp[1];
             }
             $counter = $counter + 1;
         }
@@ -1863,7 +1862,7 @@ sub parameter_estimation
         $model->setParameter( $params->{parameter}, $curr );
         $local_params->{prefix} = $workdir.'step'.($k+1);# $local_prefix;
         delete $local_params->{suffix};
-        my $err = $model->simulate_ode( $local_params );
+        $err = $model->simulate_ode( $local_params );
         $model->resetConcentrations("SCAN");
         if ( $err )
         {   # return error message
@@ -1879,7 +1878,7 @@ sub parameter_estimation
     open my $fh,'>',$workdir.'mcmc.txt' or die "Couldnt open file to write mcmc chain";  
     for(my $i=0;$i<$nsteps;$i++)
     {
-        print $fh "step ".$i.' parameter '.@param_chain[$i].' energy '.@energy_chain[$i]."\n";
+        print $fh "step ".$i.' parameter '.$param_chain[$i].' energy '.$energy_chain[$i]."\n";
     }
     close $fh;
 
@@ -1914,7 +1913,102 @@ sub parameter_estimation
     return;
 }
 
+sub multiparameter_estimation
+{  
+    use List::MoreUtils 'pairwise';
+    use List::Util qw(sum);
 
+    my $model = shift @_;
+    my $params = @_ ? shift @_ : {};
+
+    # read data file
+    open my $expt_data_file,'<',$params->{data_file};
+    chomp(my @lines = <$expt_data_file>);
+    close $expt_data_file;
+    #For now we are assuming that the data file has two columns, one for time, the second for a single species of interest. And that the first row is a header.
+    my @expt;
+    my $counter = 0;
+    foreach (@lines) {
+        my @tmp = split(' ',$_);
+        if($counter > 0) { $expt[$counter-1] = $tmp[1];}
+        $counter = $counter + 1;
+    }
+    # get parameter info from parameter prior block
+    my $variable_parameter_ref = $model->{ParameterPriors};
+    my @variable_parameters = @{$variable_parameter_ref};   
+    # number of parameters to estimate
+    my $num_par = scalar(@variable_parameters);
+    #define base name for parameter estimation results
+    my $basename = './';#$params->{prefix};
+    #define working directory for simulation data
+    my $workdir = $basename.'parameter_estimation/';
+    #create working directory
+    mkdir $workdir;
+    #remember concentrations
+    $model->saveConcentrations("SCAN");
+    my $method = $params->{method};
+
+    #Approximate Bayesian Computation
+    if($method eq "abc")
+    {
+        $workdir = $workdir.'abc/';
+        mkdir $workdir;
+        my $local_params;
+        %$local_params = %$params;
+        my $thresh = $params->{thresh};
+        my $npts   = $params->{npts};
+
+        for(my $pt=0;$pt<$npts;$pt++)
+        {   
+            for(my $par=0;$par<$num_par;$par++)
+            {
+                my $parameter_of_interest = $variable_parameters[$par];
+                my $prior_type = $parameter_of_interest->{prior_type};
+                my $parameter1 = $parameter_of_interest->{parameter1};
+                my $parameter2 = $parameter_of_interest->{parameter2};
+                my $sampled_point = sample_distribution($parameter1,$parameter2,$prior_type);
+                $model->setParameter($parameter_of_interest ->{name},$sampled_point);
+            }
+            $local_params->{prefix} = $workdir.'step_'.$pt;
+            my $err = $model->simulate_ode($local_params);
+            if ($err)
+            {
+                $err = "Error in parameter estimation starting point: $err";
+                return $err;
+            }
+            $model->resetConcentrations("SCAN");
+        }
+
+    }
+    sub sample_distribution
+    {
+        my $parameter1 = $_[0];
+        my $parameter2 = $_[1];
+        my $distribution_name = $_[2];
+        if($distribution_name eq "uniform")
+        {
+            return $parameter1 + ($parameter2-$parameter1)*rand();
+        }
+
+    }
+=comment
+    #initialize
+    for(my $i =0;$i<$num_par;$i++)
+    {
+        $model->setParameter($variable_parameters[$i]->{name},$variable_parameters[$i]->{initial_value});
+    }
+    my $local_params;
+    %$local_params = %$params;
+    $local_params->{prefix} = $workdir.'step_0';
+    my $err = $model->simulate_ode($local_params);
+    if ($err)
+    {
+        $err = "Error in parameter estimation starting point: $err";
+        return $err;
+    }
+=cut 
+    return
+}
 sub LinearParameterSensitivity
 {
     #This function will perform a brute force linear sensitivity analysis
