@@ -1,0 +1,50 @@
+## title: Simple model of enzyme kinetics that includes enzyme synthesis and degradation
+## author: Jim Faeder
+## date: 30Mar2016
+## note: Revised to use units consistent with uM for concentration, um^3=fL for volume
+begin model
+begin parameters
+    # Cell volume
+    V    1 # units: um^3
+    # Conversion factor from uM to 1/um^3
+    NaV  602*V
+    # Rate constants
+    kp1  1.0/(NaV) # 1/uM 1/s -> 1/molecules 1/s
+    km1  -1 # 1/s
+    k2   -2 # 1/s
+
+   # Initial concentrations
+    E0   0.01*NaV # uM -> molecules/cell
+    S0   1.0*NaV  # uM -> molecules/cell
+end parameters
+begin molecule types
+    E(s)
+    S(Y~0~P)
+end molecule types
+
+begin parameter priors
+km1 uniform -5 5 0
+k2  uniform -5 5 0
+end parameter priors
+
+begin seed species
+    E(s) E0
+    S(Y~0) S0
+end seed species
+begin observables
+#    Molecules SU S(Y~0)
+    Molecules SP S(Y~P)
+#    Molecules ES E(s!1).S(Y!1)
+end observables
+begin reaction rules
+    ESbind: E(s) + S(Y~0) <-> E(s!1).S(Y~0!1) kp1,10^km1
+    ESconvert: E(s!1).S(Y~0!1) -> E(s) + S(Y~P) 10^k2
+end reaction rules
+end model
+
+# expand the reaction network
+generate_network({})
+#visualize({type=>"ruleviz_operation"})
+# simulate the expanded network use ODE's
+#simulate({method=>"ode", t_end=>20000,n_steps=>10})
+multiparameter_estimation({method=>"abc",thresh=>0.1,npts=>10,data_file=>"/Users/sanjanagupta/M_Cell/bionetgen_parameter_estimation/bionetgen/bng2/noisydata.gdat",t_end=>20000,n_steps=>10})
