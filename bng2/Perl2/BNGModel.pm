@@ -620,8 +620,9 @@ sub readSBML
 	                		($entry,$lno) = @$line;
 	                		my $tmp = ParameterPrior->new();
  							$priors[$prior_counter] = $tmp->readString($entry);
-	                	}            		
-	                	$model->{ParameterPriors} = @priors;
+ 							$model->{ParameterPriors}[$prior_counter] = $priors[$prior_counter];
+	                		$prior_counter = $prior_counter+1;
+	                	}     
 	                }
 
 
