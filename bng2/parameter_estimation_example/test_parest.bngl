@@ -47,4 +47,4 @@ generate_network({})
 #visualize({type=>"ruleviz_operation"})
 # simulate the expanded network use ODE's
 #simulate({method=>"ode", t_end=>20000,n_steps=>10})
-multiparameter_estimation({method=>"abc",thresh=>0.1,npts=>10,data_file=>"/Users/sanjanagupta/M_Cell/bionetgen_parameter_estimation/bionetgen/bng2/noisydata.gdat",t_end=>20000,n_steps=>10})
+multiparameter_estimation({method=>"abc",thresh=>10,npts=>1000,data_file=>"/home/sag134/parameter_estimation2/bionetgen/bng2/parameter_estimation_example/noisydata.gdat",t_end=>20000,n_steps=>10})

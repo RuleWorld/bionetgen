@@ -1897,7 +1897,6 @@ sub parameter_estimation
             $proposal = $curr - $ss;
         }
     }
-
     #normalized sum of squared error cost function
     sub loss
     {
@@ -1909,7 +1908,6 @@ sub parameter_estimation
         my $sum_sq_diff = sum @sq_diff;
         return $sum_sq_diff;
     }
-
     return;
 }
 
@@ -1951,13 +1949,14 @@ sub multiparameter_estimation
     #Approximate Bayesian Computation
     if($method eq "abc")
     {
-        $workdir = $workdir.'abc/';
+        $workdir = $workdir.'abc_thresh'.$params->{thresh}.'/';
         mkdir $workdir;
+        open my $fh,'>',$workdir.'abc_estimated_parameters.txt' or die "Couldnt open file to write mcmc chain";
         my $local_params;
         %$local_params = %$params;
         my $thresh = $params->{thresh};
         my $npts   = $params->{npts};
-
+        my @param_matrix;
         for(my $pt=0;$pt<$npts;$pt++)
         {   
             for(my $par=0;$par<$num_par;$par++)
@@ -1967,6 +1966,7 @@ sub multiparameter_estimation
                 my $parameter1 = $parameter_of_interest->{parameter1};
                 my $parameter2 = $parameter_of_interest->{parameter2};
                 my $sampled_point = sample_distribution($parameter1,$parameter2,$prior_type);
+                $param_matrix[$pt][$par] = $sampled_point;
                 $model->setParameter($parameter_of_interest ->{name},$sampled_point);
             }
             $local_params->{prefix} = $workdir.'step_'.$pt;
@@ -1978,8 +1978,67 @@ sub multiparameter_estimation
             }
             $model->resetConcentrations("SCAN");
         }
-
+        #calculate error for each simulation, and mark simulations that are within the threshold error  
+        my @estimated_parameter_sets;
+        my $counter = 0;
+        for(my $pt=0;$pt<$npts;$pt++)
+        {
+            my $filename = $workdir.'step_'.$pt.'.gdat';
+            my @simulation_results = read_results_file($filename);
+            my $loss = absolute_loss(\@expt,\@simulation_results);
+            if($loss<$thresh)
+            {   print $loss,"\n";
+                $estimated_parameter_sets[$counter] = $pt;
+                $counter++;
+            }
+        }
+        print "\n\nESTIMATED PARAMETER SET INDICES:\t",join("\t",@estimated_parameter_sets),"\t\n\n";
+        print $fh "\n\nESTIMATED PARAMETER SET INDICES:".join("\t",@estimated_parameter_sets)."\t\n\n";
+        #write estimated parameters to file  
+        for(my $par=0;$par<$num_par;$par++)
+        {
+            my $parameter_of_interest = $variable_parameters[$par];
+            print $fh $parameter_of_interest->{name}."\t\t\t";
+        }
+        print $fh "\n";
+        for(my $pt=0;$pt<$npts;$pt++)
+        {
+            for(my $par=0;$par<$num_par;$par++)
+            {
+                print $fh $param_matrix[$pt][$par]."\t\t";
+            }
+            print $fh "\n";
+        }
     }
+
+    sub absolute_loss
+    {
+        my @data1 = @{$_[0]};
+        my @data2 = @{$_[1]};
+        my @diff = pairwise {$a - $b} @data1,@data2; 
+        my @norm_diff = pairwise {$a/($b+0.00000000001)} @diff, @data1;
+        my @abs_diff = map {abs($_)} @norm_diff;
+        my $sum_abs_diff = sum @abs_diff;
+        return $sum_abs_diff;
+    }
+
+    sub read_results_file
+    {
+        my $filename = shift @_;
+        open my $results_file,'<',$filename;
+        chomp(my @lines = <$results_file>);
+        close $results_file;
+        #For now we are assuming that the data file has two columns, one for time, the second for a single species of interest. And that the first row is a header.
+        my @results;
+        my $counter = 0;
+        foreach (@lines) {
+            my @tmp = split(' ',$_);
+            if($counter > 0) { $results[$counter-1] = $tmp[1];}
+            $counter = $counter + 1;
+        }
+        return @results;
+    }
+
     sub sample_distribution
     {
         my $parameter1 = $_[0];
