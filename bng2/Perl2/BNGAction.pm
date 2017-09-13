@@ -1931,6 +1931,9 @@ sub multiparameter_estimation
         if($counter > 0) { $expt[$counter-1] = $tmp[1];}
         $counter = $counter + 1;
     }
+    
+    #Additional option of reading in random number text file.
+    print "\n\nEXISTS\n\n " if exists $params->{randstream};
     # get parameter info from parameter prior block
     my $variable_parameter_ref = $model->{ParameterPriors};
     my @variable_parameters = @{$variable_parameter_ref};   
@@ -1939,7 +1942,7 @@ sub multiparameter_estimation
     #define base name for parameter estimation results
     my $basename = './';#$params->{prefix};
     #define working directory for simulation data
-    my $workdir = $basename.'parameter_estimation/';
+    my $workdir = $basename.'parameter_estimation_results/';
     #create working directory
     mkdir $workdir;
     #remember concentrations
@@ -1949,9 +1952,10 @@ sub multiparameter_estimation
     #Approximate Bayesian Computation
     if($method eq "abc")
     {
-        $workdir = $workdir.'abc_thresh'.$params->{thresh}.'/';
+        mkdir $workdir.'abc/';
+        $workdir = $workdir.'abc/thresh'.$params->{thresh}.'/';
         mkdir $workdir;
-        open my $fh,'>',$workdir.'abc_estimated_parameters.txt' or die "Couldnt open file to write mcmc chain";
+        open my $fh,'>',$workdir.'abc_estimated_parameters.txt' or die "Couldnt open file to write abc results";
         my $local_params;
         %$local_params = %$params;
         my $thresh = $params->{thresh};
@@ -1980,6 +1984,7 @@ sub multiparameter_estimation
         }
         #calculate error for each simulation, and mark simulations that are within the threshold error  
         my @estimated_parameter_sets;
+        my @accepted_loss;
         my $counter = 0;
         for(my $pt=0;$pt<$npts;$pt++)
         {
@@ -1987,26 +1992,31 @@ sub multiparameter_estimation
             my @simulation_results = read_results_file($filename);
             my $loss = absolute_loss(\@expt,\@simulation_results);
             if($loss<$thresh)
-            {   print $loss,"\n";
+            {   $accepted_loss[$counter] =  $loss;
                 $estimated_parameter_sets[$counter] = $pt;
                 $counter++;
             }
         }
+        my $num_accepted_parameters = $counter;
         print "\n\nESTIMATED PARAMETER SET INDICES:\t",join("\t",@estimated_parameter_sets),"\t\n\n";
-        print $fh "\n\nESTIMATED PARAMETER SET INDICES:".join("\t",@estimated_parameter_sets)."\t\n\n";
+        print $num_accepted_parameters, " parameters accepted out of ", $npts, " sampled \n";
+        open my $fh0,'>',$workdir.'abc_accepted_parameter_indices.txt' or die "Couldnt open file to write accepted parameter indices chain";
+        print $fh0 "\n\nESTIMATED PARAMETER SET INDICES:".join("\t",@estimated_parameter_sets)."\t\n\n";
         #write estimated parameters to file  
         for(my $par=0;$par<$num_par;$par++)
         {
             my $parameter_of_interest = $variable_parameters[$par];
             print $fh $parameter_of_interest->{name}."\t\t\t";
         }
+        print $fh "loss\t\t";
         print $fh "\n";
-        for(my $pt=0;$pt<$npts;$pt++)
+        for(my $pt=0;$pt<$num_accepted_parameters;$pt++)
         {
             for(my $par=0;$par<$num_par;$par++)
             {
-                print $fh $param_matrix[$pt][$par]."\t\t";
+                print $fh $param_matrix[$estimated_parameter_sets[$pt]][$par]."\t\t";
             }
+            print $fh $accepted_loss[$pt];
             print $fh "\n";
         }
     }
