@@ -1916,6 +1916,7 @@ sub multiparameter_estimation
     use List::MoreUtils 'pairwise';
     use List::Util qw(sum);
     use List::Util qw[min max];
+    use Math::Random; # this has to be installed independently
 
     my $model = shift @_;
     my $params = @_ ? shift @_ : {};
@@ -2030,15 +2031,23 @@ sub multiparameter_estimation
         my @current_parameters; #array of length num_par
         my $current_energy; #scalar
 
-        my $nsteps =500;# $params->{npts};
-        my $ss = 0.5;#$params->{step_size};
-        my $beta = $params->{beta};
+        my $nsteps = 1000;# $params->{npts};
+        my $ss = 0.2;#$params->{step_size};
+        my $beta = 1;#$params->{beta};
 
+        # get seed
+        my $seed = "1";
+        my $sampling_method = "batch";#$params->{sampling_method}; #batch/cyclic
+        # determine how many random numbers are going to be needed and initialize them all in advance
+        random_set_seed_from_phrase($seed);
+        my @walk_random_stream = random_normal($nsteps*$num_par);
+        my @accept_random_stream = random_uniform($nsteps);
+
+        # creatte working directory
         mkdir $workdir.'mcmc/';
         $workdir = $workdir.'mcmc/step_size'.$ss.'/';
         mkdir $workdir;
-        # initialize
-
+        
         #remember concentrations
         $model->saveConcentrations("SCAN");
         printf "ACTION: MCMC parameter_estimation( )";
@@ -2049,7 +2058,6 @@ sub multiparameter_estimation
             $model->setParameter($parameter_of_interest->{name},$parameter_of_interest->{initial_value});
             $current_parameters[$i] = $parameter_of_interest->{initial_value};
             $param_chain[$i][0] = $parameter_of_interest->{initial_value};
-
         }
 
         my $local_params;
@@ -2075,116 +2083,231 @@ sub multiparameter_estimation
         my @rand_stream;
         my @proposal_chain;
         my @proposed_energy_chain;
-        for(my $k = 1;$k<=$nsteps;$k++)
+
+        sub gaussian_batch_proposal_fcn
         {
-            # pick a parameter to vary
-            my $parameter_to_vary = $parameter_index;#int(rand($num_par));
+            my @current_parameters = @{$_[0]};
+            my $ss = $_[1];
+            my @walk_random_stream = @{$_[2]};
 
-            $parameter_index = $parameter_index+1;
-            if($parameter_index>$num_par-1)
+            my @tmp = map {$_ * $ss} @walk_random_stream;
+            my @proposal = pairwise { $a + $b } @current_parameters,@tmp;
+            return \@proposal;
+        }
+
+
+        my $lb = 0;
+        my $ub = $num_par - 1;
+        for(my $k = 1;$k< $nsteps+1;$k++)
+        {
+            if($sampling_method eq "batch")
             {
-                $parameter_index= 0;
-            }
-            print "varying parameter ",$parameter_to_vary,"\n";
-            # propose a new value for the parameter
-            my $proposal = random_walk_proposal_fcn($current_parameters[$parameter_to_vary],$ss);
-            print "PROPOSAL\n\n",$proposal,"\n\n";
-            my @proposed_parameter_set = @current_parameters;
+                # propose new parameter set
+                my @truncated_random_walk = @walk_random_stream[$lb..$ub];
+                my $proposal_ref = gaussian_batch_proposal_fcn(\@current_parameters,$ss,\@truncated_random_walk);
+                $lb = $lb + $num_par;
+                $ub = $ub + $num_par;
 
-            $proposed_parameter_set[$parameter_to_vary] = $proposal;
+                my @proposal = @{$proposal_ref};
 
-            for(my $i=0;$i<$num_par;$i++)
-            {
-                $proposal_chain[$i][$k-1] = $proposed_parameter_set[$i];
-            }
-
-            #run simulation
-            my $parameter_of_interest = $variable_parameters[$parameter_to_vary];
-            $model->setParameter($parameter_of_interest->{name},$proposal);
-            $local_params->{prefix} = $workdir.'step_'.($k);
-            my $err = $model->simulate_ode( $local_params );
-            if ( $err )
-            {   # return error message
-                $err = "Error in parameter_estimation (step ".($k)."): $err";
-                return $err;
-            }      
-            $model->resetConcentrations("SCAN");
-            my $filename = $workdir.'step_'.($k).'.gdat';
-
-            my @simulation_results = read_results_file($filename);
-
-            # calculate new log likelihood
-            my $proposed_energy = energy_gaussian(\@expt,\@simulation_results,\@proposed_parameter_set,\@variable_parameters);
-
-            $proposed_energy_chain[$k-1] = $proposed_energy;
-
-            # calculate difference from old log likelihood
-            my $energy_diff = $proposed_energy-$current_energy;
-            # accept or reject move
-            my $h = min(1,exp -$beta*$energy_diff);
-            $rand_stream[$k-1] = rand();
-            if($rand_stream[$k-1]<$h)
-            {
-                #update chain
-                $current_energy = $proposed_energy;
-                print "\nACCEPTED\n";
-                if(abs($proposed_parameter_set[$parameter_to_vary]-$current_parameters[$parameter_to_vary]) > $ss+1e-10)
-                {   
-                    print abs($proposed_parameter_set[$parameter_to_vary]-$current_parameters[$parameter_to_vary]),"\n";
-                    print $ss,"\n";
-                    print "big problem\n";
-                    print $parameter_to_vary,"\n";
-                    print $proposed_parameter_set[$parameter_to_vary],"\n";
-                    print $current_parameters[$parameter_to_vary],"\n";
-                    return
+                # set model parameters to proposed values
+                for(my $i=0;$i<$num_par;$i++)
+                {
+                    $model->setParameter($variable_parameters[$i]->{name},$proposal[$i]);
                 }
-                @current_parameters = @proposed_parameter_set;
+                #simulate model
+                $local_params->{prefix} = $workdir.'proposal_step_'.($k); #Save simulation results with the prefix "proposal". This is mainly just for book keeping, so we have appropriate gdat files for each step.
+                my $err = $model->simulate_ode( $local_params );
+                if ( $err )
+                {   # return error message
+                    $err = "Error in parameter_estimation (step ".($k)."): $err";
+                    return $err;
+                }      
+                $model->resetConcentrations("SCAN");
+                #read results
+                my $filename = $workdir.'proposal_step_'.($k).'.gdat';
+                my @simulation_results = read_results_file($filename);
+                #use results to determine proposed energy
+                my $proposed_energy = energy_gaussian(\@expt,\@simulation_results,\@proposal,\@variable_parameters);
+                # accept/reject
+                my $r = $accept_random_stream[$k-1];
+                my $energy_diff = $proposed_energy-$current_energy;
+                my $h = min(1,exp -$beta*$energy_diff);
+                if($r<$h)
+                {
+                    #accept proposal!
+                    @current_parameters = @proposal;
+                    $current_energy = $proposed_energy;            
+                }
+                else
+                {
+                    #reject proposal. reset model paramters to original values for next step.
+                    for(my $i=0;$i<$num_par;$i++)
+                    {
+                        $model->setParameter($variable_parameters[$i]->{name},$current_parameters[$i]);
+                    }
+                }
+
+                #Resimulate with the accepted parameter values. This is mainly just for book keeping, so we have appropriate gdat files for each step.
+                $local_params->{prefix} = $workdir.'step_'.($k); #Save simulation results without the prefix "proposal". 
+                $err = $model->simulate_ode( $local_params );
+                if ( $err )
+                {   # return error message
+                    $err = "Error in parameter_estimation (step ".($k)."): $err";
+                    return $err;
+                }      
+                $model->resetConcentrations("SCAN");
+
+                #update chain
+                $energy_chain[$k] = $current_energy;
+                for(my $i=0;$i<$num_par;$i++)
+                {   
+                    $param_chain[$i][$k] = $current_parameters[$i];
+                }
+                # save proposal chain also              
+                $proposed_energy_chain[$k-1] = $proposed_energy;
+                for(my $i=0;$i<$num_par;$i++)
+                {   
+                    $proposal_chain[$i][$k-1] = $proposal[$i];
+                }
+                #print "\n\n",scalar @current_parameters,"\n\n";
             }
-            else
+
+            if($sampling_method eq "cyclic")
             {
-                #set the parameter back to what it was
-                $model->setParameter($parameter_of_interest->{name},$current_parameters[$parameter_to_vary]);
-            }
-            #update chain
-            $energy_chain[$k] = $current_energy;
-            for(my $i=0;$i<$num_par;$i++)
-            {   
-                $param_chain[$i][$k] = $current_parameters[$i];
+                # pick a parameter to vary
+                my $parameter_to_vary = $parameter_index;#int(rand($num_par));
+
+                $parameter_index = $parameter_index+1;
+                if($parameter_index>$num_par-1)
+                {
+                    $parameter_index= 0;
+                }
+                print "varying parameter ",$parameter_to_vary,"\n";
+                # propose a new value for the parameter
+                my $proposal = random_walk_proposal_fcn($current_parameters[$parameter_to_vary],$ss);
+                print "PROPOSAL\n\n",$proposal,"\n\n";
+                my @proposed_parameter_set = @current_parameters;
+
+                $proposed_parameter_set[$parameter_to_vary] = $proposal;
+
+                for(my $i=0;$i<$num_par;$i++)
+                {
+                    $proposal_chain[$i][$k-1] = $proposed_parameter_set[$i];
+                }
+                #run simulation
+                my $parameter_of_interest = $variable_parameters[$parameter_to_vary];
+                $model->setParameter($parameter_of_interest->{name},$proposal);
+                $local_params->{prefix} = $workdir.'step_'.($k);
+                my $err = $model->simulate_ode( $local_params );
+                if ( $err )
+                {   # return error message
+                    $err = "Error in parameter_estimation (step ".($k)."): $err";
+                    return $err;
+                }      
+                $model->resetConcentrations("SCAN");
+                my $filename = $workdir.'step_'.($k).'.gdat';
+
+                my @simulation_results = read_results_file($filename);
+
+                # calculate new log likelihood
+                my $proposed_energy = energy_gaussian(\@expt,\@simulation_results,\@proposed_parameter_set,\@variable_parameters);
+
+                $proposed_energy_chain[$k-1] = $proposed_energy;
+
+                # calculate difference from old log likelihood
+                my $energy_diff = $proposed_energy-$current_energy;
+                # accept or reject move
+                my $h = min(1,exp -$beta*$energy_diff);
+                $rand_stream[$k-1] = rand();
+                if($rand_stream[$k-1]<$h)
+                {
+                    #update chain
+                    $current_energy = $proposed_energy;
+                    print "\nACCEPTED\n";
+                    if(abs($proposed_parameter_set[$parameter_to_vary]-$current_parameters[$parameter_to_vary]) > $ss+1e-10)
+                    {   
+                        print abs($proposed_parameter_set[$parameter_to_vary]-$current_parameters[$parameter_to_vary]),"\n";
+                        print $ss,"\n";
+                        print "big problem\n";
+                        print $parameter_to_vary,"\n";
+                        print $proposed_parameter_set[$parameter_to_vary],"\n";
+                        print $current_parameters[$parameter_to_vary],"\n";
+                        return
+                    }
+                    @current_parameters = @proposed_parameter_set;
+                }
+                else
+                {
+                    #set the parameter back to what it was
+                    $model->setParameter($parameter_of_interest->{name},$current_parameters[$parameter_to_vary]);
+                }
+                #update chain
+                $energy_chain[$k] = $current_energy;
+                for(my $i=0;$i<$num_par;$i++)
+                {   
+                    $param_chain[$i][$k] = $current_parameters[$i];
+                }
             }
 
         }
-
+        # Save energy chain to file
         open my $fh,'>',$workdir.'energy_chain.txt' or die "Couldnt open file to write energy chain";  
         for(my $i=0;$i<$nsteps+1;$i++)
         {
             print $fh $energy_chain[$i]."\n";
-            print $energy_chain[$i]."\n";
         }
         close $fh;
-
-        for(my $k=0;$k<$num_par;$k++)
+        # Save proposed energy chain to file
+        open $fh,'>',$workdir.'proposed_energy_chain.txt' or die "Couldnt open file to write proposed energy chain";  
+        for(my $i=0;$i<$nsteps;$i++)
         {
-            open my $fh,'>',$workdir.'parameter'.$k.'.txt' or die "Couldnt open file to write parameter $k chain";  
-            for(my $i=0;$i<$nsteps+1;$i++)
-            {
-                print $fh $param_chain[$k][$i]."\n";
-
-                #print $k,"\t",$rand_stream[$i-1],"\t","\t",$param_chain[$k][$i]."\n";
-            }
-            close $fh;
+            print $fh $proposed_energy_chain[$i]."\n";
         }
-
-            for(my $i=0;$i<$nsteps+1;$i++)
-            {
-                for(my$k=0;$k<$num_par;$k++)
+        close $fh;
+        # Save random number streams to file
+        open $fh,'>',$workdir.'walk_random_stream.txt' or die "Couldnt open file to write walk random stream";  
+        $lb = 0;
+        $ub = $num_par-1;
+        for(my $i=0;$i<$nsteps*$num_par;$i++)
+        {
+                print $fh $walk_random_stream[$i]."\t\t\t\t";
+                if($i==$ub)
                 {
-                    print $k,"\t",$rand_stream[$i-1],"\t","\t",$param_chain[$k][$i],"\t",$proposal_chain[$k][$i-1],"\t";
-                }
-                print "\n";
+                    print $fh "\n";
+                    $ub = $ub + $num_par;
+                }    
+        }
+        close $fh;
+        open $fh,'>',$workdir.'accept_random_stream.txt' or die "Couldnt open file to write walk random stream";  
+        for(my $i=0;$i<$nsteps;$i++)
+        {
+            print $fh $accept_random_stream[$i]."\n";
+        }
+        close $fh;    
+        # Save parameter chain to a file
+        open $fh,'>',$workdir.'parameter_chain.txt' or die "Couldnt open file to write parameter chain"; 
+        for(my $i=0;$i<$nsteps+1;$i++)
+        {
+            for(my $k=0;$k<$num_par;$k++)
+            {      
+                print $fh $param_chain[$k][$i]."\t\t\t\t";
             }
-
+            print $fh "\n";
+        }
+        close $fh;
+        # Save parameter chain to a file
+        open $fh,'>',$workdir.'proposed_parameter_chain.txt' or die "Couldnt open file to write parameter chain"; 
+        for(my $i=0;$i<$nsteps;$i++)
+        {
+            for(my $k=0;$k<$num_par;$k++)
+            {      
+                print $fh $proposal_chain[$k][$i]."\t\t\t\t";
+            }
+            print $fh "\n";
+        }
+        close $fh;
     } 
-
     sub energy_gaussian
     {   
         my @experimental_data = @{$_[0]};
@@ -2193,9 +2316,11 @@ sub multiparameter_estimation
         my @variable_parameters = @{$_[3]};
         my $stdev = 0.05;#$_[4];
         my $energy = 0;
+
         #check prior probability on parameters
         for(my $i=0;$i<scalar(@parameter_set);$i++)
         {
+            
             my $parameter_of_interest = $variable_parameters[$i];
             my $prior_type = $parameter_of_interest->{prior_type};
             my $p1 = $parameter_of_interest->{parameter1};
@@ -2237,6 +2362,18 @@ sub multiparameter_estimation
         {
             return 0;
         }
+
+    }
+
+    sub gaussian_proposal_fcn
+    {
+        my @current_parameters = @{$_[0]}; # dereference current list of parameters
+        my $ss = $_[1]; #step size
+
+        my $num_par = scalar @current_parameters; # number of parameters
+        #generate num_par number of Gaussian random numbers
+
+
 
     }
 
@@ -2324,6 +2461,7 @@ sub multiparameter_estimation
         return $err;
     }
 =cut 
+
     return
 }
 sub LinearParameterSensitivity
