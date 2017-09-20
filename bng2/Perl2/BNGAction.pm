@@ -1493,6 +1493,7 @@ sub bifurcate
 
 sub parameter_scan
 {
+    use POSIX;
     my $model = shift @_;
     my $params = @_ ? shift @_ : {};
 
@@ -1595,36 +1596,79 @@ sub parameter_scan
     # remember concentrations!
     $model->saveConcentrations("SCAN");
 
+    $params->{parallel}=1;
     # loop over scan points
-	for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
+    if($params->{parallel}==0)
     {
-        # define prefix
-        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
-    	
-        # define parameter value
-        my $par_value = $par_scan_vals[$k];
+    	for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
+        {
+            # define prefix
+            my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
+        	
+            # define parameter value
+            my $par_value = $par_scan_vals[$k];
 
-        # set parameter
-        $model->setParameter( $params->{parameter}, $par_value );
+            # set parameter
+            $model->setParameter( $params->{parameter}, $par_value );
 
-        # reset concentrations
-        if ( $params->{reset_conc} ){
-        		$model->resetConcentrations("SCAN");
+            # reset concentrations
+            if ( $params->{reset_conc} ){
+            		$model->resetConcentrations("SCAN");
+            }
+
+            # define local params
+            my $local_params;
+            %$local_params = %$params;
+            $local_params->{prefix} = $local_prefix;
+            delete $local_params->{suffix};
+
+            # run simulation
+            my $err = $model->simulate( $local_params );
+            if ( $err )
+            {   # return error message
+                $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
+                return $err;
+            }   
         }
+    }
 
-        # define local params
-        my $local_params;
-        %$local_params = %$params;
-        $local_params->{prefix} = $local_prefix;
-        delete $local_params->{suffix};
-
-        # run simulation
-        my $err = $model->simulate( $local_params );
-        if ( $err )
-        {   # return error message
-            $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
-            return $err;
-        }   
+    if($params->{parallel}==1)
+    {
+        my $num_cores = $params->{num_cores};
+        my $num_pts = scalar(@par_scan_vals);
+        my $num_batches = floor($num_pts/$num_cores);
+        for my $batch (0..$num_cores)
+        {
+            if(fork==0)
+            {
+                for my $k($num_batches*$batch .. $num_batches*($batch+1)-1)
+                {
+                    my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );                    
+                    # define parameter value
+                    my $par_value = $par_scan_vals[$k];
+                    # set parameter
+                    $model->setParameter( $params->{parameter}, $par_value );
+                    #reset concentrations
+                    if ( $params->{reset_conc} ){
+                        $model->resetConcentrations("SCAN");
+                    }
+                    # define local params
+                    my $local_params;
+                    %$local_params = %$params;
+                    $local_params->{prefix} = $local_prefix;
+                    delete $local_params->{suffix};
+                    # run simulation
+                    my $err = $model->simulate( $local_params );
+                    if ( $err )
+                    {   # return error message
+                        $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
+                        return $err;
+                    } 
+                }
+                exit;
+            }          
+        }
+        while((wait()) > 0) {};
     }
 
     # recover concentrations
