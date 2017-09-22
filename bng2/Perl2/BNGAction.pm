@@ -1494,6 +1494,7 @@ sub bifurcate
 sub parameter_scan
 {
     use POSIX;
+    use List::Util qw[min max];
     my $model = shift @_;
     my $params = @_ ? shift @_ : {};
 
@@ -1596,9 +1597,8 @@ sub parameter_scan
     # remember concentrations!
     $model->saveConcentrations("SCAN");
 
-    $params->{parallel}=1;
     # loop over scan points
-    if($params->{parallel}==0)
+    if(!(defined $params->{parallel}) or $params->{parallel}==0)
     {
     	for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
         {
@@ -1632,15 +1632,16 @@ sub parameter_scan
         }
     }
 
-    if($params->{parallel}==1)
+    if((defined $params->{parallel}) and $params->{parallel}==1)
     {
         my $num_cores = $params->{num_cores};
         my $num_pts = scalar(@par_scan_vals);
-        my $num_batches = floor($num_pts/$num_cores);
-        for my $batch (0..$num_cores)
+        my $num_batches = ceil($num_pts/$num_cores);
+        for my $batch (0..$num_cores-1)
         {
             if(fork==0)
             {
+                my $end_point = min($num_batches*($batch+1)-1,$num_pts-1);
                 for my $k($num_batches*$batch .. $num_batches*($batch+1)-1)
                 {
                     my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );                    
