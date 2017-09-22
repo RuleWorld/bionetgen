@@ -1,0 +1,31 @@
+## title: Simple Lotka-Volterra model
+## author: Jim Faeder
+## date: 22April2015
+
+begin parameters
+ NA 6.02e23
+  V 0.5*0.5*0.01*1e-15 # volume in cubic microns 
+ k1 1.29e5 # 1/s
+ k2 (1e8)/(NA*V)  # 1/molecules 1/s 
+ k3 1.3e5  # 1/s
+end parameters
+
+begin species
+  S() 1000
+  W() 500
+end species
+
+begin observables
+  Molecules Stot S()
+  Molecules Wtot W()
+end observables
+
+begin reaction rules
+  S() -> S() + S() k1
+  S() + W() -> W() + W() k2
+  W() -> 0 k3
+end reaction rules
+
+generate_network()
+#simulate({method=>"ode",t_end=>0.001,n_steps=>1000})
+parameter_scan({method=>"ode",parameter=>"k3",par_min=>1.3e4,par_max=>1.3e6,n_scan_pts =>50,log_scale=>1,t_end=>0.1,n_steps=>10000,parallel=>1,num_cores=>8})
