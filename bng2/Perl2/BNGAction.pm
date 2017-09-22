@@ -11,6 +11,30 @@ use warnings;
 ###
 ###
 
+sub simulate_protocol
+{
+    my $model = shift @_;
+    my $simulation_protocol_ref = $model->{simulation_protocol};
+    my @simulation_protocol = @{$simulation_protocol_ref};
+    my $num_commands = scalar(@simulation_protocol);
+
+    print "\n\nexecuting $num_commands commands in protocol\n\n";
+    for(my $k=0;$k<$num_commands;$k++)
+    {
+        my $action = $model->{simulation_protocol}[$k]->{action};
+        my $options = $model->{simulation_protocol}[$k]->{options};
+
+        my $command = sprintf "\$model->%s(%s);", $action, $options;
+        my $t_start = cpu_time(0);
+        my $err = eval $command;
+        if ($@)   { $err = errgen($@);    goto EXIT; }
+        if ($err) { $err = errgen($err);  goto EXIT; }
+        my $t_elapsed = cpu_time($t_start);
+        printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+    }
+    return;
+}
+
 
 
 sub simulate_ode
