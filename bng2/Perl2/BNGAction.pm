@@ -14,6 +14,8 @@ use warnings;
 sub simulate_protocol
 {
     my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+
     my $simulation_protocol_ref = $model->{simulation_protocol};
     my @simulation_protocol = @{$simulation_protocol_ref};
     my $num_commands = scalar(@simulation_protocol);
@@ -23,14 +25,32 @@ sub simulate_protocol
     {
         my $action = $model->{simulation_protocol}[$k]->{action};
         my $options = $model->{simulation_protocol}[$k]->{options};
+        my $modified_options;
+        if(index($action,"simulate") != -1)
+        {
+            my $hash_opts_ref = eval($options);
+            #modifying hash with local prefix
+            $hash_opts_ref->{prefix} = $params->{prefix};
+            #deleting suffix
+            delete $hash_opts_ref->{suffix};
+            print $params->{prefix};
+            print "\n",$hash_opts_ref->{method},"\n";
+            my $err = $model->simulate($hash_opts_ref);
+            print "\n",$err,"\n";
+        }
+        else
+        {
+            $modified_options = $options;
+            my $command = sprintf "\$model->%s(%s);", $action, $modified_options;
+            my $t_start = cpu_time(0);
+            my $err = eval $command;
+            #if ($@)   { $err = errgen($@);    goto EXIT; }
+            #if ($err) { $err = errgen($err);  goto EXIT; }
+            my $t_elapsed = cpu_time($t_start);
+            printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+        }
 
-        my $command = sprintf "\$model->%s(%s);", $action, $options;
-        my $t_start = cpu_time(0);
-        my $err = eval $command;
-        if ($@)   { $err = errgen($@);    goto EXIT; }
-        if ($err) { $err = errgen($err);  goto EXIT; }
-        my $t_elapsed = cpu_time($t_start);
-        printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+        print "\nreached here","\n";
     }
     return;
 }
@@ -85,6 +105,7 @@ sub simulate
     my $model  = shift @_;
     my $params = (@_) ? shift @_ : {};
     my $err;
+
 
     my $METHODS =
     {
@@ -194,6 +215,8 @@ sub simulate
 	}
 	my $seed        = $params->{seed};
 
+    print "\n\n method: ",$method,"\n\n";
+    print exists $METHODS->{$method}; 
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla, nf).";  }
@@ -1626,6 +1649,7 @@ sub parameter_scan
     {
     	for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
         {
+
             # define prefix
             my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
         	
@@ -1647,7 +1671,17 @@ sub parameter_scan
             delete $local_params->{suffix};
 
             # run simulation
-            my $err = $model->simulate( $local_params );
+            my $err;
+            if($params->{method} eq "protocol")
+            {
+                print "here","\n";
+                $model->simulate_protocol($local_params);
+            }
+            else
+            {
+                 $err = $model->simulate( $local_params );
+            }
+            
             if ( $err )
             {   # return error message
                 $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
