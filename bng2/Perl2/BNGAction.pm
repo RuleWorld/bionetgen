@@ -52,7 +52,7 @@ sub simulate_protocol
 
         print "\nreached here","\n";
     }
-    return;
+    return $err;
 }
 
 
@@ -1675,7 +1675,7 @@ sub parameter_scan
             if($params->{method} eq "protocol")
             {
                 print "here","\n";
-                $model->simulate_protocol($local_params);
+                $err = model->simulate_protocol($local_params);
             }
             else
             {
