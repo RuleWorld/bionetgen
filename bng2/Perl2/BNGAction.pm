@@ -21,11 +21,15 @@ sub simulate_protocol
     my $num_commands = scalar(@simulation_protocol);
 
     print "\n\nexecuting $num_commands commands in protocol\n\n";
+
+    my $err;
+
     for(my $k=0;$k<$num_commands;$k++)
     {
         my $action = $model->{simulation_protocol}[$k]->{action};
         my $options = $model->{simulation_protocol}[$k]->{options};
         my $modified_options;
+
         if(index($action,"simulate") != -1)
         {
             my $hash_opts_ref = eval($options);
@@ -33,24 +37,21 @@ sub simulate_protocol
             $hash_opts_ref->{prefix} = $params->{prefix};
             #deleting suffix
             delete $hash_opts_ref->{suffix};
-            print $params->{prefix};
-            print "\n",$hash_opts_ref->{method},"\n";
-            my $err = $model->simulate($hash_opts_ref);
-            print "\n",$err,"\n";
+            $err = $model->simulate($hash_opts_ref);
+
         }
         else
         {
             $modified_options = $options;
             my $command = sprintf "\$model->%s(%s);", $action, $modified_options;
             my $t_start = cpu_time(0);
-            my $err = eval $command;
+            $err = eval $command;
             #if ($@)   { $err = errgen($@);    goto EXIT; }
             #if ($err) { $err = errgen($err);  goto EXIT; }
             my $t_elapsed = cpu_time($t_start);
             printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
         }
 
-        print "\nreached here","\n";
     }
     return $err;
 }
@@ -215,8 +216,6 @@ sub simulate
 	}
 	my $seed        = $params->{seed};
 
-    print "\n\n method: ",$method,"\n\n";
-    print exists $METHODS->{$method}; 
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla, nf).";  }
@@ -1674,8 +1673,8 @@ sub parameter_scan
             my $err;
             if($params->{method} eq "protocol")
             {
-                print "here","\n";
-                $err = model->simulate_protocol($local_params);
+        
+                $err = $model->simulate_protocol($local_params);
             }
             else
             {
