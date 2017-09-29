@@ -2023,6 +2023,121 @@ sub multiparameter_estimation
         }
     }
 
+
+    if($method eq "abc-smc")
+    {
+        use List::Util qw(sum);
+
+        my $local_params;
+        %$local_params = %$params;
+
+        mkdir $workdir.'abc_smc/';
+        my @thresholds = @{$params->{thresh}};
+        my $num_thresh = scalar(@thresholds);
+        my $npts   = $params->{npts};
+        my $ss = $params->{step_size};
+        my @param_matrix;
+        my @weight_matrix;
+
+        for(my $i=0;$i<$num_thresh;$i++)
+        {
+            print "\n","Threshold :",$thresholds[$i],"\n";
+            my $localdir = $workdir.'abc_smc/thresh'.$thresholds[$i].'/';
+            mkdir $localdir;
+            open my $fh,'>',$localdir.'abc_estimated_parameters.txt' or die "Couldnt open file to write abc results";
+
+            if($i==0)
+            {
+                #this is the same as ABC, sample N pts from the prior distribution
+                my $pt =0;
+                my $step = 0;
+                while($pt<$npts) # We need a total of $npts accepted points
+                {   
+                    my @sampled_point;
+                    for(my $par=0;$par<$num_par;$par++) # we need to sample from each parameter's prior
+                    {
+                        my $parameter_of_interest = $variable_parameters[$par];
+                        my $prior_type = $parameter_of_interest->{prior_type};
+                        my $parameter1 = $parameter_of_interest->{parameter1};
+                        my $parameter2 = $parameter_of_interest->{parameter2};
+                        $sampled_point[$par] = sample_distribution($parameter1,$parameter2,$prior_type); 
+                        $model->setParameter($parameter_of_interest ->{name},$sampled_point[$par]);
+                    }
+                    $local_params->{prefix} = $workdir.'step_'.$step;
+                    my $err = $model->simulate_ode($local_params); # run simulation with proposed particle
+                    if ($err)
+                    {
+                        $err = "Error in parameter estimation starting point: $err";
+                        return $err;
+                    }
+                    $model->resetConcentrations("SCAN");
+                    #set weight for point
+
+                    #calculate loss
+                    my $filename = $workdir.'step_'.$step.'.gdat';
+                    my @simulation_results = read_results_file($filename);
+                    my $loss = absolute_loss(\@expt,\@simulation_results);
+                    if($loss<$thresholds[$i])
+                    {   
+                        #Accept the particle by saving it
+                        for(my $par = 0;$par<$num_par;$par++)
+                        {
+                            $param_matrix[$i][$pt][$par] = $sampled_point[$par];
+                        }
+                        $weight_matrix[$i][$pt] = 1;
+                        $pt++;
+                    }
+
+                }
+            }
+            else
+            {
+                print "nothing for now","\n";
+                my @proposed_index;
+                #sample npts from the previous distribution according to the weights in $weight_matrix[$i-1][:]
+                my @cumulative_weights;
+                
+                my $normalizing_factor = sum(@{$weight_matrix[0]});
+
+                my $mid;
+                for(my $j=0;$j<$npts;$j++)
+                {
+                    $mid += $weight_matrix[0][$j]/$normalizing_factor;
+                    #print $mid,"\t";
+                    push(@cumulative_weights,$mid);
+
+                }
+                for(my $pt=0;$pt<$npts;$pt++)
+                {
+                    my $r = rand;
+                    for(my $j=0;$j<$npts;$j++)
+                    {
+                        if($r<$cumulative_weights[$j])
+                        {
+                            $proposed_index[$pt] = $j;
+                            last;  
+                        }
+                    }
+                    print "$r\t$proposed_index[$pt]\n";
+                }
+
+                #generate the proposed
+            }
+
+        }
+
+        sub perturbation_function
+        {
+            my @current_parameters = @{$_[0]};
+            my $ss = $_[1];
+            my @walk_random_stream = @{$_[2]};
+
+            my @tmp = map {$_ * $ss} @walk_random_stream;
+            my @proposal = pairwise { $a + $b } @current_parameters,@tmp;
+            return \@proposal;
+        }
+    }
+
     if($method eq "mcmc")
     {
     
