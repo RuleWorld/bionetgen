@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.2.6  -->
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">  
+  <model>
+    <listOfParameters>
+      <!-- Independent variables -->
+      <parameter id="kp1" constant="false" value="0.001"/>
+      <parameter id="kp2" constant="false" value="0.01"/>
+      <parameter id="koff" constant="false" value="0.1"/>
+      <!-- Observables -->
+      <parameter id="Ltot" constant="false" value="0" />
+      <parameter id="L0" constant="false" value="0" />
+      <parameter id="L1" constant="false" value="0" />
+      <parameter id="L2" constant="false" value="0" />
+      <parameter id="L3" constant="false" value="0" />
+      <parameter id="Rtot" constant="false" value="0" />
+      <parameter id="MR0" constant="false" value="0" />
+      <parameter id="MR1" constant="false" value="0" />
+      <parameter id="MR2" constant="false" value="0" />
+    </listOfParameters>
+    <listOfCompartments>
+          <compartment id="cell" size="1" constant="true" multi:isType="false"/>
+        </listOfCompartments>
+            <listOfSpecies>
+         <species id="S1" hasOnlySubstanceUnits="false" multi:speciesType="ST_M0" initialConcentration="300" compartment="cell" name="R(l,l)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S2" initialConcentration="1200" multi:speciesType="ST_M3" hasOnlySubstanceUnits="false" compartment="cell" name="L(r,r,r)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M3_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M3_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M3_C3"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S3" hasOnlySubstanceUnits="false" multi:speciesType="ST_M3" initialConcentration="0" compartment="cell" name="L()" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M3_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M3_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M3_C3"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S4" initialConcentration="0" multi:speciesType="ST_M3" hasOnlySubstanceUnits="false" compartment="cell" name="L(r!+,r,r)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M3_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M3_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M3_C3"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S5" hasOnlySubstanceUnits="false" multi:speciesType="ST_M3" initialConcentration="0" compartment="cell" name="L(r!+,r!+,r)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M3_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M3_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M3_C3"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S6" hasOnlySubstanceUnits="false" multi:speciesType="ST_M3" initialConcentration="0" compartment="cell" name="L(r!+,r!+,r!+)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M3_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M3_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M3_C3"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S7" hasOnlySubstanceUnits="false" multi:speciesType="ST_M0" initialConcentration="0" compartment="cell" name="R()" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M0_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M0_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S8" initialConcentration="0" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" compartment="cell" name="R(l!+,l)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M0_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S9" initialConcentration="0" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" compartment="cell" name="R(l!+,l!+)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M0_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M0_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S10" initialConcentration="0" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" compartment="cell" name="R(l)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M0_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S11" initialConcentration="0" multi:speciesType="ST3" hasOnlySubstanceUnits="false" compartment="cell" name="L(r,r,r!1).R(l!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST3_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST3_M1_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST3_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S12" initialConcentration="0" multi:speciesType="ST3" hasOnlySubstanceUnits="false" compartment="cell" name="L(r!+,r,r!1).R(l!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="cmp_ST3_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST3_M1_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST3_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S13" hasOnlySubstanceUnits="false" multi:speciesType="ST3" initialConcentration="0" compartment="cell" name="L(r!+,r!+,r!1).R(l!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="cmp_ST3_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="cmp_ST3_M1_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST3_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+    </listOfSpecies>
+<listOfRules>
+      <!-- Observables -->
+      <assignmentRule variable="Ltot">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S3 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="L0">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S2 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="L1">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S4 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="L2">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S5 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="L3">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S6 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="Rtot">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S7 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="MR0">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S1 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="MR1">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S8 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+      <assignmentRule variable="MR2">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <ci> S9 </ci>
+                <cn> 0 </cn>
+              </apply>
+            </math>
+      </assignmentRule>
+    </listOfRules>
+    <listOfReactions>
+      <reaction id="R1" reversible="false" fast="false" name="_R1:  R(l) + L(r,r,r) -> L(r,r,r!1).R(l!1)  kp1">
+        <listOfReactants>
+          <speciesReference id="RR1_R1" species="S10" constant="false"/>
+          <speciesReference id="RR1_R2" species="S2" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR1_P1" species="S11" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R1" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST3_M2"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R2" multi:reactantComponent="ST_M3" multi:productComponent="cmp_ST3_M1"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kp1 </ci>
+              <ci> S10 </ci>
+              <ci> S2 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R2" reversible="false" fast="false" name="_reverse__R1:  L(r,r,r!1).R(l!1) -> R(l) + L(r,r,r)  koff">
+        <listOfReactants>
+          <speciesReference id="RR2_R1" species="S11" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR2_P1" species="S10" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR2_R1" multi:reactantComponent="cmp_ST3_M2" multi:productComponent="ST_M0"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+          <speciesReference id="RR2_P2" species="S2" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR2_R1" multi:reactantComponent="cmp_ST3_M1" multi:productComponent="ST_M3"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> koff </ci>
+              <ci> S11 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R3" reversible="false" fast="false" name="_R2:  R(l) + L(r!+,r,r) -> L(r!+,r,r!1).R(l!1)  kp2">
+        <listOfReactants>
+          <speciesReference id="RR3_R1" species="S10" constant="false"/>
+          <speciesReference id="RR3_R2" species="S4" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR3_P1" species="S12" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR3_R1" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST3_M2"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR3_R2" multi:reactantComponent="ST_M3" multi:productComponent="cmp_ST3_M1"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kp2 </ci>
+              <ci> S10 </ci>
+              <ci> S4 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R4" reversible="false" fast="false" name="_reverse__R2:  L(r!+,r,r!1).R(l!1) -> R(l) + L(r!+,r,r)  koff">
+        <listOfReactants>
+          <speciesReference id="RR4_R1" species="S12" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR4_P1" species="S10" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR4_R1" multi:reactantComponent="cmp_ST3_M2" multi:productComponent="ST_M0"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+          <speciesReference id="RR4_P2" species="S4" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR4_R1" multi:reactantComponent="cmp_ST3_M1" multi:productComponent="ST_M3"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> koff </ci>
+              <ci> S12 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R5" reversible="false" fast="false" name="_R3:  R(l) + L(r!+,r!+,r) -> L(r!+,r!+,r!1).R(l!1)  kp2">
+        <listOfReactants>
+          <speciesReference id="RR5_R1" species="S10" constant="false"/>
+          <speciesReference id="RR5_R2" species="S5" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR5_P1" species="S13" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR5_R1" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST3_M2"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR5_R2" multi:reactantComponent="ST_M3" multi:productComponent="cmp_ST3_M1"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> kp2 </ci>
+              <ci> S10 </ci>
+              <ci> S5 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R6" reversible="false" fast="false" name="_reverse__R3:  L(r!+,r!+,r!1).R(l!1) -> R(l) + L(r!+,r!+,r)  koff">
+        <listOfReactants>
+          <speciesReference id="RR6_R1" species="S13" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR6_P1" species="S10" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR6_R1" multi:reactantComponent="cmp_ST3_M2" multi:productComponent="ST_M0"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+          <speciesReference id="RR6_P2" species="S5" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR6_R1" multi:reactantComponent="cmp_ST3_M1" multi:productComponent="ST_M3"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> koff </ci>
+              <ci> S13 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <multi:listOfSpeciesTypes>
+<multi:speciesType multi:id="ST3"  multi:name="L(r!1).R(l!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST3_M1" multi:name="L" multi:speciesType="ST_M3"/>
+           <multi:speciesTypeInstance multi:id="ST3_M2" multi:name="R" multi:speciesType="ST_M0"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2" multi:component="ST3_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1" multi:component="ST3_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1_C2" multi:component="ST_M3_C2" multi:identifyingParent="ST3_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2_C2" multi:component="ST_M0_C2" multi:identifyingParent="ST3_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST3_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1_C3" multi:component="ST_M3_C3" multi:identifyingParent="ST3_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1_C1" multi:component="ST_M3_C1" multi:identifyingParent="ST3_M1"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST3_M1_C3" multi:bindingSite2="cmp_ST3_M2_C1"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+      <multi:speciesType multi:id="ST_M0" multi:name="R" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M0_C1_ist" multi:name="l" multi:speciesType="ST_M0_C1"/>
+         <multi:speciesTypeInstance multi:id="ST_M0_C2_ist" multi:name="l" multi:speciesType="ST_M0_C2"/>
+      </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M0_C1" multi:name="l"/>
+      <multi:bindingSiteSpeciesType multi:id="ST_M0_C2" multi:name="l"/>
+      <multi:speciesType multi:id="ST_M3" multi:name="L" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M3_C1_ist" multi:name="r" multi:speciesType="ST_M3_C1"/>
+         <multi:speciesTypeInstance multi:id="ST_M3_C2_ist" multi:name="r" multi:speciesType="ST_M3_C2"/>
+         <multi:speciesTypeInstance multi:id="ST_M3_C3_ist" multi:name="r" multi:speciesType="ST_M3_C3"/>
+      </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M3_C1" multi:name="r"/>
+      <multi:bindingSiteSpeciesType multi:id="ST_M3_C2" multi:name="r"/>
+      <multi:bindingSiteSpeciesType multi:id="ST_M3_C3" multi:name="r"/>
+    </multi:listOfSpeciesTypes>
+  </model>
+</sbml>

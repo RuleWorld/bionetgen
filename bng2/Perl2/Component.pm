@@ -188,6 +188,41 @@ sub toString
     return $string;
 }
 
+sub toSBMLMultiSpeciesTypeString
+{
+    my $comp = shift @_;
+    my $attributesString = '';
+    my $bondsString = '';
+    # if (defined $comp->State )
+    # {   
+    #     $attributesString .= " ";
+    #     #$attributesString .= sprintf "~%s", $comp->State;   
+    # }
+    if (defined $comp->Edges )
+    {
+        foreach my $edge (@{$comp->Edges})
+        {
+            if ($edge=~ /^\d+$/)
+            {   $bondsString .= sprintf "!%d", $edge+1;   }
+            else
+            {   
+                # we dont care about wildcards for sbml multi species types
+                return '';
+            }
+        }
+    }
+
+    # we might have to do something about multiplebonds/states
+    my $tailStr = $attributesString . $bondsString;
+    if($tailStr eq ''){
+        return ''
+    }
+    else{
+        return $comp->Name . $attributesString . $bondsString;    
+    }
+    
+}
+
 
 
 ###
@@ -255,12 +290,170 @@ sub toStringSSC
 
 
 
+
+
+########
+# returns information for the  outwardBindingSite belonging to species in sbml multi
+######
+sub getSBMLMultiOutwardBonds
+{
+    my $comp   = shift @_;
+    my $indent = shift @_;
+    my $mName     = shift @_;
+    my $index  = shift @_;
+    my $componentList_ref = shift @_;
+    my $multiComponentHash_ref = shift @_;
+
+    my $string = "";
+    my $fullstring = sprintf("%s(%s)",$mName, $comp->Name);
+    my $externalId = $componentList_ref->{$fullstring}[0];
+    splice(@{$componentList_ref->{$fullstring}}, 0, 1);
+    my @indexArray = split(/_/, $index);
+
+    # Attributes
+    # id
+
+    # NumberOfBonds
+    my $nbonds = 0;
+    my $bindingstatus = '';
+    foreach my $edge (@{$comp->Edges})
+    {
+        if ($edge=~ /^[?]$/)
+        {
+            $bindingstatus = "either";
+        }
+        elsif ($edge=~ /^[+]$/)
+        {
+            $bindingstatus = "bound";
+        }
+
+        else
+        {
+            ++$nbonds;
+        }
+    }
+    
+    if ($nbonds == 0 && $bindingstatus eq '')
+    {
+        $bindingstatus = "unbound";
+    }
+    
+    if($nbonds > 1 )
+    {
+        print "Can't handle components with more than one bond, skipping\n";
+        return "";
+        #sbml multi cant handle components with more than one bond. we should somehow return an error
+    }    
+
+    if (! $bindingstatus eq "" )
+    {
+        #get a component from the component pool
+        my $reverseReference = $multiComponentHash_ref->{'reverseReferences'}->{$fullstring}[0];
+        my $indent2 = '  ' . $indent;
+        #get a speciestype id based on that component
+        if(defined $reverseReference){
+            my $externalComponentId =  $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'};
+            #my @splitArray = split(/_/, $reverseReference);
+            #my $externalComponentId = sprintf("cmp_%s_M%d_C%d", $splitArray[0], substr($indexArray[1], 1), substr($indexArray[2], 1));
+
+            #we used this component so remove it from the pool
+            splice(@{$multiComponentHash_ref->{'reverseReferences'}->{$fullstring}}, 0, 1);
+
+            
+            $string = $indent2 . sprintf("<multi:outwardBindingSite multi:bindingStatus=\"%s\" multi:component=\"%s\"/>\n", $bindingstatus, $externalComponentId);
+        }
+        else{
+            $string = $indent2 . sprintf("<multi:outwardBindingSite multi:bindingStatus=\"%s\" multi:component=\"%s\"/>\n", $bindingstatus, $externalId);
+        }
+        # Objects contained
+    }
+    return $string;
+}
+
+####
+# returns a string containg the speciesfeature properties associated with this compartment
+# for construction of a sbml species object in an sbml-multi file
+#####
+sub getSBMLMultiSpeciesFeature
+{
+    my $comp   = shift @_;
+    my $indent = shift @_;
+    my $mName     = shift @_;
+    my $index  = shift @_;
+    my $componentList_ref = shift @_;
+    # list of references to sbml multi species type objects for this species
+    my $multiComponentHash_ref = shift @_;
+    my $string = "";
+    
+    my @indexArray = split(/_/, $index);
+    # state
+    if (defined $comp->State)
+    {
+        my $fullstring = sprintf("%s(%s~", $mName, $comp->Name). ${comp}->State . ")";
+        my $partialtring = sprintf("%s(%s~", $mName, $comp->Name);
+        #my $fullstring = sprintf("%s(%s~%s)",$mName, $comp->Name, $comp->State);
+        #calculate external id
+
+        #get a component from the component queue
+        my $reverseReference = $multiComponentHash_ref->{'reverseReferences'}->{$partialtring}[0];
+        my $externalComponentId;
+
+        my $externalId = $componentList_ref->{$fullstring}[0];
+        splice(@{$componentList_ref->{$fullstring}}, 0, 1);
+        my $indent2 = '  ' . $indent;
+
+        if(defined $reverseReference){
+            my @splitArray = split(/_/, $reverseReference);
+            # get the species type id associated with this top level component
+            if(exists $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'}){
+                #FIXME: the species graph signature may not match between species type and spcies, which makes this matching obsolete
+                $externalComponentId = sprintf("cmp_%s_M%d_C%d", $splitArray[0], substr($indexArray[1], 1), substr($indexArray[2], 1));
+                #$externalComponentId =  $multiComponentHash_ref->{'Components'}->{$reverseReference}{'id'};
+            }
+            else{
+                # if its a state-only component it doesnt have a explicit speciestype reference so we refer to its parent molecule instead
+                # we do it a little hack~ish here by manipulating the $reverseReference id to point to the molecule id instaed
+                # this expects an id that follows the sid_mid_cid convention
+                
+
+                #$splitArray[0] ="cmp_" . $splitArray[0];
+                #$externalComponentId  = join('_', @splitArray[0..$#splitArray-1]);
+
+                $externalComponentId = sprintf("cmp_%s_M%d", $splitArray[0], substr($indexArray[1], 1));
+                
+
+            }
+            #regardless we used up this component hash reference so pop it to flag its been used
+            splice(@{$multiComponentHash_ref->{'reverseReferences'}->{$partialtring}}, 0, 1);
+            #get an id  to the species type associated component based on the reverse reference
+            
+            $string = $indent2 . sprintf("<multi:speciesFeature id=\"%s\" multi:speciesFeatureType=\"%s\" multi:occur=\"%d\" multi:component=\"%s\">\n",$index, $externalId, 1, $externalComponentId);
+            
+        }
+        else{
+            $string = $indent2 . sprintf("<multi:speciesFeature id=\"%s\" multi:speciesFeatureType=\"%s\" multi:occur=\"%d\">\n",$index, $externalId, 1);
+        }
+        
+        my $indent3 = "  " . $indent2;
+        # Objects contained
+        my $stateDefStr = $indent3 . "<multi:listOfSpeciesFeatureValues>\n";
+        $stateDefStr = $stateDefStr. $indent3 . "    " . sprintf("<multi:speciesFeatureValue multi:value=\"%s\"/>\n",$externalId ."_" .$comp->State);
+        $stateDefStr = $stateDefStr. $indent3 . "</multi:listOfSpeciesFeatureValues>\n";
+
+        $string = $string . $stateDefStr;
+        $string = $string . $indent2 . "</multi:speciesFeature>\n";
+    }
+    
+    # Attributes
+    # id
+    
+    return $string;
+}
+
+
 ###
 ###
 ###
-
-
-
 sub toXML
 {
     my $comp   = shift @_;
@@ -325,6 +518,8 @@ sub toXML
     {   # short tag termination
         $string .= "/>\n"; 
     }
+
+    return $string;
 }
 
 

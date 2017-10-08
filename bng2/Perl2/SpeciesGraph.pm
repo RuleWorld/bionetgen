@@ -10,6 +10,8 @@ use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
 use List::Util qw(min max sum);
+use Storable qw(dclone);
+#use List::MoreUtils qw(first_index);
 
 # BNG Modules
 use Molecule;
@@ -64,6 +66,58 @@ my $SpeciesLabel_MaxMols = 0;
 ###
 ###
 ###
+#copied from list::moreutils since it doesnt come standard
+sub first_index (&@) {
+    my $f = shift;
+    foreach my $i ( 0 .. $#_ ) {
+        local *_ = \$_[$i];
+        return $i if $f->();
+    }
+    return -1;
+}
+
+sub getMultiSpeciesTypeStr
+{
+    my $speciesGraph = shift @_;
+    my $sg = dclone($speciesGraph);
+
+    foreach my $molecule (@{$sg->Molecules})
+    {
+        my @multistcomponents  = ();
+        foreach my $comp (@{$molecule->Components})
+        {
+            my $componentFlag = 0;
+            if (defined $comp->Edges )
+            {
+
+                foreach my $edge (@{$comp->Edges})
+                {
+                    if ($edge=~ /^\d+$/)
+                    {   
+                        $componentFlag = 1;
+                        last;   
+                    }
+                }
+            }
+            else{
+                print $comp->toString();
+            }
+
+            if($componentFlag)
+            {
+                if(defined $comp->State){
+                    $comp->State(undef);
+                }
+                push @multistcomponents, $comp;
+            }
+
+        }
+        $molecule->Components(\@multistcomponents);
+        
+    }
+    $sg->labelHNauty();
+    return $sg->StringExact;
+}
 
 
 
@@ -401,7 +455,29 @@ sub p_to_label
 	return ($string);
 }
 
+sub p_to_multi_label
+{
+    my $sg = shift @_;
+    my $p = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    my $stid = shift @_;
+    
+    my @inds = split( '\.', $p );
+    my $fullstring = sprintf("%s(%s)", @{$sg->Molecules}[$inds[0]]->Name, @{@{$sg->Molecules}[$inds[0]]->Components}[$inds[1]]->Name);
+     
+    my $multiid = sprintf "ST${stid}_M%d_C%d" , ($inds[0]+1) , $inds[1] + 1;
 
+    
+    #print Dumper $speciesIdHash_ref;    
+    #my $mid = sprintf("ST%s_M%d",$stid,$p+1);
+    #foreach my $comp (@{$speciesIdHash_ref->{'reverseReferences'}->{$fullstring}}){
+    #     if (index($comp, $mid) != -1){
+    #         return $speciesIdHash_ref->{'Components'}->{$comp}->{'id'};
+    #     }
+    # }
+    return $speciesIdHash_ref->{'Components'}->{$multiid}->{'id'};
+
+}
 
 ###
 ###
@@ -1747,7 +1823,8 @@ sub toString
 	# get arguments
 	my $print_edges      = @_ ? shift @_ : TRUE;   # if true, egde labels are printed
 	my $print_attributes = @_ ? shift @_ : TRUE;   # if true, species attributes are printed (don't use this for Canonical labeling!!)
-
+    #special output handling
+    my $print_options = @_ ? shift @_: ();
 	# initialize string
 	my $string = '';
 
@@ -1792,7 +1869,7 @@ sub toString
 	foreach my $mol ( @{$sg->Molecules} )
 	{
 		if ($imol > 0) { $string .= '.'; }
-		$string .= $mol->toString( $print_edges, $print_attributes, $sg->Compartment );
+		$string .= $mol->toString( $print_edges, $print_attributes, $sg->Compartment, $print_options );
 		++$imol;
 	}
 
@@ -2002,6 +2079,282 @@ sub toXML
 ###
 ###
 
+
+sub toSBMLMultiSpecies
+{
+
+    my $sg         = shift @_;
+    my $mtlist     = shift @_;
+    my $indent     = shift @_;
+    my $type       = shift @_;
+    my $id         = shift @_;
+    my $attributes_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+
+    my $string = $indent . "<$type";
+
+    # Attributes
+    # id
+    $string .= " id=\"" . $id . "\"";
+
+    $speciesIdHash_ref->{'Species'}->{$sg->StringExact} = $id;
+    # other attributes
+    #unless ( $attributes eq '' ) { $string .= ' ' . $attributes; }
+    for my $attrkey (keys %{$attributes_ref}){
+        $string .= sprintf(' %s="%s"', $attrkey, $attributes_ref->{$attrkey});
+    }
+
+    # Compartment
+    if ( $sg->Compartment )
+    {
+        $string .= " compartment=\"" . $sg->Compartment->Name . "\"";
+        
+    }
+    else
+    {
+        $string .= " compartment=\"cell\"";
+    }
+
+    if($sg->StringExact)
+    {
+        $string .= sprintf(" name=\"%s\"", $sg->StringExact);
+    }
+
+
+    # add support for Fixed
+    if ( $sg->Fixed )
+    {
+        $string .= "boundaryCondition=\"true\" constant=\"true\"";
+    }
+    else{
+        $string .= ' boundaryCondition="false" constant="false"';
+    }
+
+    #multi:speciesType="st_cps_000001"
+
+    # Objects contained
+    my $indent2 = '  ' . $indent;
+    my $ostring = '';
+
+    my %sbmlMultiSpeciesInfo;
+
+    # Molecules
+    if ( @{$sg->Molecules} )
+    {
+        
+
+        my $index = 1;
+        # clone the list of references we need for this particular species (since we will be modifying it)
+        my %multicomponentHash = %{dclone(\%{$speciesIdHash_ref->{'References'}->{${attributes_ref}->{'multi:speciesType'}}})};
+        #print $sg->toString() ."\n";
+        #print Dumper \%multicomponentHash;
+        foreach my $mol ( @{$sg->Molecules} )
+        {
+            $mol->getSBMLMultiSpeciesFields($mtlist, "  " . $indent2, ${attributes_ref}->{'multi:speciesType'}, sprintf("%s_M%d", $id, $index), 
+                                            \%sbmlMultiSpeciesInfo, $speciesIdHash_ref, \%multicomponentHash);
+            ++$index;
+        }
+
+
+    }
+
+
+
+
+    my $outbonds = "";
+    my $features = "";
+
+
+    foreach my $ostr (@{$sbmlMultiSpeciesInfo{'outwardbonds'}}){
+        $outbonds = $outbonds . $ostr;
+    }
+    if(! $outbonds eq ""){
+        $ostring = $ostring . $indent2 . "<multi:listOfOutwardBindingSites>\n";
+        $ostring .= $outbonds;
+        $ostring = $ostring . $indent2 . "</multi:listOfOutwardBindingSites>\n";
+    }
+    foreach my $ostr (@{$sbmlMultiSpeciesInfo{'speciesFeature'}}){
+        $features = $features . $ostr;
+    }
+    if (! $features eq ""){
+        $ostring = $ostring . $indent2 . "<multi:listOfSpeciesFeatures>\n";
+        $ostring .= $features;
+        $ostring = $ostring . $indent2 . "</multi:listOfSpeciesFeatures>\n";
+    }
+    # Termination
+    if ($ostring)
+    {
+        $string .= ">\n";                    # terminate tag opening
+        $string .= $ostring;
+        $string .= $indent . "</$type>\n";
+    }
+    else
+    {
+        $string .= "/>\n";                   # short tag termination
+    }
+
+    return $string;
+}
+
+sub toSBMLMultiSpeciesType
+{
+    my $sg         = shift @_;
+    my $mtlist     = shift @_;
+    my $indent     = shift @_;
+    my $type       = shift @_;
+    my $id         = shift @_;
+    my $attributes = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    my $n_mol = scalar( @{ $sg->Molecules } );
+    
+    my $attributes_str = '';
+
+    for my $attrkey (keys %{$attributes}){
+        $attributes_str .= sprintf(' %s="%s"', $attrkey, $attributes->{$attrkey});
+    }
+
+    my $string = '';
+    my $indent2 = $indent;
+
+    if ($n_mol > 1){
+        $string .= sprintf("<%s multi:id=\"ST%s\" %s multi:compartment=\"%s\">\n", $type, $id, $attributes_str, "cell"); #$sg->Compartment->Name);
+        $indent2 .= "     ";
+        $speciesIdHash_ref->{'SpeciesType'}->{$attributes->{"multi:name"}} = sprintf("ST%s",$id);
+    }
+    #else{
+    #    my $stid = "ST_M" . keys(%$sbmlMultiSpeciesInfo_ref);
+    #    $speciesIdHash_ref->{'SpeciesType'}->{$attributes->{"multi:name"}} = $stid;
+    #}
+
+    #get species features and species type instances from the molecule type lists
+    if ($mtlist)
+    {
+
+        my $tmp = $mtlist->toSBMLMultiSpeciesType($sg, "ST" . $id, $indent2, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref);
+        if ($n_mol > 1){
+            $string .= $tmp;
+        }
+    }
+
+    my $mcounter = 1;
+    my $stid = "ST$id";
+    my @parentEntry;
+
+
+    # TODO: we should only include fully specified full bonds and states. other stuff doesnt need to be here
+    # technically this is only necessary for symmetric stuff but its easier to just index everything
+        
+    if($n_mol > 1){
+        $string .= $indent . "<multi:listOfSpeciesTypeComponentIndexes>\n";
+        foreach my $molkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Molecules'}}){
+            foreach my $entry (@{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'Molecules'}->{$molkey}}){
+                #remove the cmp prefix to get the parent sbml_id. 
+                @parentEntry = split(/_/,$entry);
+                my $parentEntryStr = join('_',@parentEntry[1..$#parentEntry]);
+
+                $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\"/>\n", $entry, $parentEntryStr);
+            }
+
+        }
+
+        foreach my $compkey (keys %{$speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}}){
+            my $centry = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'id'};
+            my $parent = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parent'};
+            my $multiref = $speciesIdHash_ref->{'References'}->{"ST".$id}{'Components'}{$compkey}{'parentMulti'};
+            $string .= $indent2. sprintf("<multi:speciesTypeComponentIndex multi:id=\"%s\" multi:component=\"%s\" multi:identifyingParent=\"%s\"/>\n", $centry, $multiref, $parent);
+        }
+
+        my %rreferenceClone = %{dclone(\%{$speciesIdHash_ref->{'References'}->{"ST".$id}->{'reverseReferences'}})};
+        
+        my $mindex =0;
+        foreach my $molecule (@{$sg->Molecules}){
+            my $cindex = 0;
+            foreach my $component(@{$molecule->Components}){
+                my $fullstring = sprintf("%s(%s)", $molecule->Name, $component->Name);
+                $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{"$mindex.$cindex"} = $rreferenceClone{$fullstring}[0];
+                splice(@{$rreferenceClone{$fullstring}}, 0, 1);
+
+                #push @{$edgeHash{$edge}}, (sprintf "ST%d_M%d_C%d", $id, $mindex+1, $cindex+1);
+                $cindex += 1;
+            }
+            # discard molecule references we no longer need
+            foreach my $key (%rreferenceClone){
+                while(defined($rreferenceClone{$key}) and @{$rreferenceClone{$key}} and index(@{$rreferenceClone{$key}}[0], sprintf("M%d", $mindex + 1)) >= 0) {
+                    splice(@{$rreferenceClone{$key}},0,1);
+                }
+            }
+            $mindex += 1;
+        }
+        $string .= $indent . "</multi:listOfSpeciesTypeComponentIndexes>\n";
+        #print $sg->toString()."\n";
+        #print $sg->StringExact."\n";
+        #print Dumper $sg->Edges;
+        #print Dumper $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'};
+        if ( @{$sg->Edges} )
+        {
+            
+            my $bstring = '';
+            my $index   = 1;
+            my $indent3 = '  ' . $indent2;
+
+            my $bid1 = '';
+            my $bid2 = '';
+
+            foreach my $edge ( @{$sg->Edges} )
+            {
+                my ($p1, $p2) = split ' ', $edge;
+                next unless (defined $p2); # Only print full bonds; half-bonds handled by BindingState variable in Components
+                $bid1 = "cmp_". $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p1};
+                $bid2 = "cmp_" . $speciesIdHash_ref->{'References'}->{"ST".$id}->{'bng2multi'}->{$p2};
+                
+                my $a_bid1 = substr($bid1,4);
+                my $a_bid2 = substr($bid2,4);
+                foreach my $mol2 (keys %{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}}){
+                    #if this is a state reference dont do anything
+                    if(substr($mol2,-1) eq "~"){
+                        next;
+                    }
+                    #remove components that can't possibly be outward bonds (because they are inward bonds) from the list of reverseReferences
+                    my $index2  = first_index {$_  eq $a_bid1 } @{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}};
+                    if ($index2 >=0){
+                        splice(@{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}}, $index2, 1); 
+                    }
+
+                    $index2  = first_index {$_  eq $a_bid2 } @{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}};
+                    if ($index2 >= 0){
+                        splice(@{$speciesIdHash_ref->{'References'}->{"ST" . $id}->{'reverseReferences'}->{$mol2}}, $index2, 1); 
+                    }
+
+
+                    #;
+                }
+                
+                
+                $bstring .= sprintf("%s<multi:inSpeciesTypeBond multi:bindingSite1=\"%s\" multi:bindingSite2=\"%s\"/>\n", $indent3, $bid1, $bid2);
+
+                ++$index;
+            }
+            if ($bstring)
+            {
+                $string .=   $indent2 . "<multi:listOfInSpeciesTypeBonds>\n"
+                            . $bstring
+                            . $indent2 . "</multi:listOfInSpeciesTypeBonds>\n";
+            }
+        }
+
+        $string .= sprintf("%s</%s>\n", $indent, $type);
+    }
+
+    return $string;
+
+
+}
+
+
+###
+###
+###
 
 
 sub addEdge

@@ -1094,6 +1094,7 @@ sub readSBML
         {   
             # if we're back at level 0, perform any required actions
             if ($level == 0)
+
             {
                 if ( $model->Params->{'write_xml'} )
                 {  $model->writeXML();  }
@@ -1106,6 +1107,10 @@ sub readSBML
 
                 if ( $model->Params->{'write_sbml'} )
                 {  $model->writeSBML();  }
+
+                if ( $model->Params->{'write_SBMLmulti'} )
+                {  $model->writeSBMLMulti();  }
+
             }
 
             # indicate that we're finished
@@ -1695,9 +1700,19 @@ sub setOption
             {   return "Invalid option for or $arg (valid options are 'CountUnique' and 'CountAll')";   }
             $model->Options->{$arg} = $val;
         }
+        elsif ($arg =~ /Units$/)
+        {
+            my %unithash;
+            $unithash{'unit'} = $val;
+            $unithash{'exponent'} = 1;
+            $unithash{'scale'} = 0;
+            $unithash{'multiplier'} = 1;
+            $model->Options->{$arg} = \%unithash;
+            #return "Unrecognized option $arg in setOption";
+        }
         else
         {
-            return "Unrecognized option $arg in setOption";
+            $model->Options->{$arg} = $val;
         }
     }
 
