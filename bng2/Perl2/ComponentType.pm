@@ -6,7 +6,18 @@ package ComponentType;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
-use List::MoreUtils qw(first_index);
+#use List::MoreUtils qw(first_index);
+
+
+#copied from list::moreutils since it doesnt come standard
+sub first_index (&@) {
+    my $f = shift;
+    foreach my $i ( 0 .. $#_ ) {
+        local *_ = \$_[$i];
+        return $i if $f->();
+    }
+    return -1;
+}
 
 
 struct ComponentType=> {
