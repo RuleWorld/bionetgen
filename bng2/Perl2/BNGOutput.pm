@@ -886,8 +886,7 @@ sub writeSBMLMulti
     open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
     print $FH $xml;
     close $FH;
-
-    return $xml;
+    return;
 }
 
 
