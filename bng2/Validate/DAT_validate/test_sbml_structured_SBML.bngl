@@ -1,5 +1,5 @@
 ###
-#@notes:'This is an atomized translation of an SBML model created on 04/04/2016. The original model has 5 molecules and 5 reactions. The translated model has 2 molecules and 5 rules'
+#@notes:'This is an atomized translation of an SBML model created on 09/08/2016. The original model has 5 molecules and 5 reactions. The translated model has 2 molecules and 5 rules'
 ###
 begin model
 begin parameters
@@ -10,6 +10,7 @@ begin parameters
 	k3_f 1.0
 end parameters
 begin compartments
+	#volume units: L
 	cell  3  1.0
 end compartments
 begin molecule types
@@ -33,10 +34,10 @@ begin functions
 	B____() = MolB_cell + MolA_MolB_cell
 end functions
 begin reaction rules
-	R1: MolA(_p~0,molb) + MolB(mola,molb) -> MolA(_p~0,molb!1).MolB(mola!1,molb) k1_f
-	R2: MolA(_p~0,molb!1).MolB(mola!1,molb) -> MolA(_p~_P,molb) + MolB(mola,molb) k2_f
-	R3: MolA(_p~0,molb!1).MolB(mola!1,molb) -> MolA(_p~0,molb) + MolB(mola,molb) k1_r
-	R4: MolA(_p~_P,molb) + MolB(mola,molb) -> MolA(_p~0,molb!1).MolB(mola!1,molb) k2_r
-	R5: MolB(mola,molb) + MolB(mola,molb) -> MolB(mola,molb!0).MolB(mola,molb!0) functionRate4()
+	R1: MolA(_p~0,molb)@cell + MolB(mola,molb)@cell -> MolA(_p~0,molb!1)@cell.MolB(mola!1,molb)@cell k1_f
+	R2: MolA(_p~0,molb!1)@cell.MolB(mola!1,molb)@cell -> MolA(_p~_P,molb)@cell + MolB(mola,molb)@cell k2_f
+	R3: MolA(_p~0,molb!1)@cell.MolB(mola!1,molb)@cell -> MolA(_p~0,molb)@cell + MolB(mola,molb)@cell k1_r
+	R4: MolA(_p~_P,molb)@cell + MolB(mola,molb)@cell -> MolA(_p~0,molb!1)@cell.MolB(mola!1,molb)@cell k2_r
+	R5: MolB(mola,molb)@cell + MolB(mola,molb)@cell -> MolB(mola,molb!0)@cell.MolB(mola,molb!0)@cell functionRate4()
 end reaction rules
 end model

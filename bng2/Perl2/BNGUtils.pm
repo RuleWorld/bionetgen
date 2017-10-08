@@ -97,18 +97,17 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
                 # get first line of file
                 my $version_string = <$fh>;
 	            close $fh;
-	            
+
                 # extract version number
-   				$version_string =~ s/^\s*(\d+\.\d+\.\d+)\s*//;
-	            
-                $BNG_VERSION = $1;
-                unless ( defined $BNG_VERSION )
+   				if ($version_string =~ s/^\s*(\d+\.\d+\.\d+)\s*//)
+   				{	$BNG_VERSION = $1;   }
+	            else
                 {   $BNG_VERSION = DEFAULT_VERSION;   }
 
                 # extract codename (if any)
-                $version_string =~ s/^(\w+)//;
-                $BNG_CODENAME = $1;
-                unless ( defined $BNG_VERSION )
+                if ($version_string =~ s/^(\w+)//)
+                {   $BNG_CODENAME = $1;   }
+                else
                 {   $BNG_CODENAME = DEFAULT_CODENAME;   }
             } 
             else

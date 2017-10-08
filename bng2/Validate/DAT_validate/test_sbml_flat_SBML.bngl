@@ -1,5 +1,5 @@
 ###
-#@notes:'This is a plain translation of an SBML model created on 04/04/2016. The original model has 5 molecules and 6 reactions. The translated model has 5 molecules and 6 rules'
+#@notes:'This is a plain translation of an SBML model created on 09/08/2016. The original model has 5 molecules and 6 reactions. The translated model has 5 molecules and 6 rules'
 ###
 begin model
 begin parameters
@@ -11,6 +11,7 @@ begin parameters
 	k3_r 0.1
 end parameters
 begin compartments
+	#volume units: L
 	cell  3  1.0
 end compartments
 begin molecule types
@@ -44,11 +45,11 @@ begin functions
 	dim_r() = k3_r
 end functions
 begin reaction rules
-	R1: A____() + B____() -> C____() k1_f
-	R2: C____() -> A____() + B____() k1_r
-	R3: B____() + C____() -> D____() k2_f
-	R4: D____() -> B____() + C____() k2_r
-	R5: A____() + A____() -> AA____() functionRate4()
-	R6: AA____() -> A____() + A____() dim_r ()
+	R1: A____()@cell + B____()@cell -> C____()@cell k1_f
+	R2: C____()@cell -> A____()@cell + B____()@cell k1_r
+	R3: B____()@cell + C____()@cell -> D____()@cell k2_f
+	R4: D____()@cell -> B____()@cell + C____()@cell k2_r
+	R5: A____()@cell + A____()@cell -> AA____()@cell functionRate4()
+	R6: AA____()@cell -> A____()@cell + A____()@cell dim_r ()
 end reaction rules
 end model

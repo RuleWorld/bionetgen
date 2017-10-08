@@ -48,7 +48,7 @@ my $overwrite = 0;
 # distribution version (default undefined)
 my $version = '';
 # distribution codename (default="stable")
-my $codename = 'stable';
+my $codename = '';
 # regex for excluding files (exclude make_dist.pl itself and all files beginning with "." or "_" or ending in "~")
 my $exclude_files = '(^\.|^_|~$|\.old$|^make_dist\.pl$)';
 
@@ -164,6 +164,12 @@ else
     print "version: $version  codename: $codename\n";
 }
 
+if ($codename ne "")
+{   #  codename no longer permitted
+        print "make_dist.pl error:\nSorry, codename (like stable or beta) is no longer used.";
+        print "\nYour input shows codename=".$codename."\n";
+        exit -1;
+}
 
 # define distribution name, directory and archive file
 my $dist_name    = "BioNetGen-${version}" . (($codename eq '') ? '' : "-${codename}");
@@ -321,7 +327,7 @@ if (defined $bindir)
         exit -1;
     }
     
-    print "preparing libaries . . .\n";
+    print "preparing libraries . . .\n";
     foreach my $libfile (@include_libraries)
     {
         # get absolute path of libfile
@@ -415,6 +421,19 @@ if (defined $bindir)
     		exit -1;
     }
 
+    print "Current working directory is now: \n";
+    system("pwd");
+    chdir $dist_name;
+    chdir "Network3";
+    print "Current working directory is now: \n";
+    system("pwd");
+
+    system(" make clean ");
+    chdir "..";
+    chdir "..";
+    print "Current working directory is now: \n";
+    system("pwd");
+
     if ($validate)
     {
         #  validate workdir
@@ -445,8 +464,11 @@ if (defined $bindir)
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
         {  
-            print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n";  
-            exit -1;
+            print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n\n\n\n";
+            
+            # Let's remove this exit command, so that an installation package will be generated, even if the validation
+            # test fails.
+            # exit -1;
         }
 
         unless( chdir $cwd ){   

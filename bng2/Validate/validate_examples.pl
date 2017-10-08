@@ -1,4 +1,4 @@
-#nf!/usr/bin/perl
+#!/usr/bin/perl
 # Validation script for BioNetGen suite.
 # 
 # SYNOPSIS:

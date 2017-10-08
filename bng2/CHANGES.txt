@@ -1,9 +1,8 @@
 CHANGES to BioNetGen
-updated 25 May 2016
+updated 20 April 2017
 https://github.com/RuleWorld/bionetgen/
 
-=======
-== BioNetGen-2.3.0 (testing release) ==
+== BioNetGen-2.3.0 ==
 '''''date tbd'''''
 
 ==== New Features ====
@@ -13,12 +12,6 @@ https://github.com/RuleWorld/bionetgen/
 * Atomizer will now query BioGrid and PathWay commons when determining the active or binding site in a complex. Include the 'pathwaycommons' flag during model import to active this option
 * Several bugfixes to the lexical analysis engine
 * The SBML-to-BNGL translator was moved to its own repository@https://github.com/RuleWorld/atomizer. The Atomizer source code can also be found in the XXX directory within the BioNetGen distribution
-
-==== Bug Fixes ====
-* Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.
-* Fixed a bug where a regex meant to remove the equality operator '=' in functions was inadvertently also removing the assignment operator '=='.
-* Fixed a bug causing an error when reading a .net file with 'readFile' when multiple reactions with functional rate laws have identical stoichiometries.
-* <big><tt>simulate_nf</tt></big> now throws an error if <big><tt>continue=>1</tt></big> is defined (previously threw a warning).
 
 ==== Visualization ====
 * New styles for visualization.
@@ -30,6 +23,15 @@ https://github.com/RuleWorld/bionetgen/
 * BioNetGen will now automatically run the generate_network command if one of simulate_pla/simulate_ode/simulate_ssa methods are called and a network wasn't loaded into the system otherwise
 * Dangling bonds graph specifications of the kind A(b!1) are no longer allowed.
 * Added support for the <big><tt>atomize</tt></big> and <big><tt>blocks</tt></big> arguments of the <big><tt>readFile</tt></big> action to the BNGConsole <big><tt>load</tt></big> command, e.g., <big><tt>load path_to_model/sbml_model.xml --atomize 1</tt></big>
+* Added support for all built-in functions to <big><tt>writeMfile</tt></big> and <big><tt>writeMexfile</tt></big>.
+
+==== Bug Fixes ====
+* Fixed a bug where <big><tt>resetParameters</tt></big> was not restoring parameters to their original values after calls to <big><tt>setParameter</tt></big>.
+* Fixed a bug where a regex meant to remove the equality operator '=' in functions was inadvertently also removing the assignment operator '=='.
+* Fixed a bug causing an error when reading a .net file with 'readFile' when multiple reactions with functional rate laws have identical stoichiometries.
+* <big><tt>simulate_nf</tt></big> now throws an error if <big><tt>continue=>1</tt></big> is defined (previously threw a warning).
+* Fixed a bug in the <big><tt>BNGConsole</tt></big> to allow filenames with spaces in them.
+* Fixed a bug in BNGUtils::readVersionFile() that was setting the codename equal to the version number if the codename didn't exist.
 
 == BioNetGen-2.2.6-stable ==
 '''''2015 June 22'''''

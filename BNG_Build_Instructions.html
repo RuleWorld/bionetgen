@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- This website is a beta download site for BioNetGen. -->
+<html>
+<head>
+<title>BioNetGen Build Instructions</title>
+<META NAME="ROBOTS" CONTENT="NOINDEX,NOFOLLOW"/>
+<style>
+body {
+   margin-top: 100px;
+   margin-bottom: 100px;
+   margin-right: 100px;
+   margin-left: 100px;
+}
+</style>    
+</head>
+<body bgcolor="LightSkyBlue">
+<font size="4">
+<center><h1>BioNetGen Build Instructions</h1></center>
+<br>
+<br>
+<br>
+These instructions are stored in the top level of the master branch for
+BioNetGen on GitHub.  To view the instructions in a browser click:
+<a href="https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html"> https://rawgit.com/RuleWorld/bionetgen/master/BNG_Build_Instructions.html </a>
+<br>
+<br>
+<br>
+My hope is that much of the build process is natural, and therefore
+not documented here.  Furthermore, I expect that much of the process is
+hidden as a result of our automation.  
+
+<br>
+<br>
+Some details of the build process, particularly managing the inter-server
+authentication, are deficult to learn through the online documentation, so
+those details are documented here in no particular order:
+
+
+<ul>
+  <li> <b>Launching a BioNetGen Build</b><br>
+     To launch a build, all you need to do it log into GitHub, make a small
+     change to one of the files on the Master branch, and commit the change.
+     This will start a build on all four platforms.
+     <br>
+     <br> 
+     It seems that after launching a build, it will complete on its own,
+     and there is no need for you to log onto the build servers.
+     After it has finished, notifications on slack.com 
+     from Appveyor and Travis should tell you whether or not the build was
+     successful.
+     <br> 
+     <br> 
+     But if you wish to observe the build as it progresses in real time,
+     you will want to get an account on Travis (travis-ci.org). 
+     Note that opening the 
+     account is almost trivial if you click on "Login with GitHub." The next 
+     step is to get a listing of the the GitHub repositories for which you
+     have commit access.  From that list, make sure that  BioNetGen, Atomizer
+     and NFsim are switched on.  The final step now, is to click on "Sync
+     Account."  From now on, whenevery to go to travis-ci.org you will see
+     any job that is currently running.  Click on the penguin or the apple 
+     to see the output scroll past.  The builds for the two UNIX platforms
+     are done on Travis.  The builds for Win32 and Win64 are done on 
+     Appveyor (appveyor.com).  The process for getting an account on
+     Appveyor is almost identical to the the process for Travis.  And just
+     like Travis, you will need to bring up a list of repositories for which
+     you have commit access.  After switching those repositories on, you then
+     can watch builds in real time.
+
+  <li> <b>Encrypting passwords on Appveyor</b>
+    <ol> 
+      <li> Log on to Appveyor 
+      <li>  In the upper right hand corner of any page, click on the down arrow next to your username to get a list of options.
+      <li>  Select "Encrypt data"
+      <li>  Enter the password under "Value to encrypt" and click "Encrypt".
+      <li>  The password that you get may be used for the ftp password in
+            the appveyor.yml file.
+    </ol>
+  </li>
+  <li> <b>Encrypting passwords on Travis</b>
+       This is a bit more involved than encrypting passwords on Appveyor.
+       This is because passwords for Travis are encrypted by running a little
+       utility.  When Rob Clark left the group, he left a large tar file
+       with the Eclipse Delta Pack, Jave runtime environments, and 
+       a script that runs the Travis encryption tool, among other things.  
+       This particular tool runs on Linux, but I would assume that the tool 
+       is available for other platforms.
+       <br><br>
+       Installation instructions and how-to instructions are here:<br>
+       <a href="https://www.npmjs.com/package/travis-encrypt">
+       https://www.npmjs.com/package/travis-encrypt </a>
+  </li>
+  <li> <b>Creating Notifications for Slack</b>
+     Step 1 is to go here 
+     https://faederlab.slack.com/apps/A0F7XDUAZ-incoming-webhooks
+     Notice the "Add Configuration" button in the left margin.  You would 
+     click on the green button if you wanted to create a notification that
+     came from another source, like Twitter.  Notice also the little pencil
+     symbol that you can click to edit the existing web hook.  When you
+     click on it and scroll down a bit, you will eventually find a web hook
+     URL.  That URL can be encrypted using the encryption utility of
+     Travis or Appveyor, and the resulting string string is included in
+     the notification section of travis.yml or appveyor.yml.
+  </li>
+</ul>
+</font>
+</body>
+</html>
+
