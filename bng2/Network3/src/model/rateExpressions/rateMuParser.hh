@@ -9,7 +9,7 @@
 #define RATEMUPARSER_HH_
 
 #include "../rateExpression.hh"
-#include "../include/muParser.h"
+#include "muParser.h"
 
 namespace network3{
 

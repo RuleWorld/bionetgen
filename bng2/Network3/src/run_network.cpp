@@ -34,7 +34,6 @@ extern "C" {
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
-#include <sys/times.h>
 #include <limits.h>
 #include "mathutils.h"
 }
@@ -44,6 +43,8 @@ extern "C" {
 #include <list>
 
 #include "network3.hh"
+#include "muParser.h"
+#include "cputime.hh"
 
 #ifndef RUN_NETWORK_VERSION
 #define RUN_NETWORK_VERSION "3.0"
@@ -56,25 +57,23 @@ struct program_times{
 };
 
 struct program_times t_elapsed(){
-	static double t_last = 0.0;
 	static double real_start_time;
 	static int initflag = 1;
 	double t_new;
 	struct program_times t_elapsed;
-	struct tms times_buffer;
 
 	if (initflag) {
 		real_start_time = (double)time(NULL);
+		t_elapsed.total_cpu = 0.0;
+		getCPUTime();
 		initflag = 0;
 	}
 	/* total elapsed time */
 	t_elapsed.total_real = (double)time(NULL) - real_start_time;
 
 	/* cpu time--- user + system */
-	times(&times_buffer);
-	t_elapsed.total_cpu = t_new = (times_buffer.tms_utime + times_buffer.tms_stime) / (double)sysconf(_SC_CLK_TCK);
-	t_elapsed.cpu = t_new - t_last;
-	t_last = t_new;
+	t_elapsed.cpu = t_new = getCPUTime();
+	t_elapsed.total_cpu += t_new;
 
 	return (t_elapsed);
 }
