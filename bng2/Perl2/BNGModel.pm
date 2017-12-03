@@ -2543,6 +2543,12 @@ sub findExec
     if ($arch =~ /MSWin32/) { $exec .= ".exe"; }
     if (-x $exec) { return $exec; }
 
+    # Try looking for batch file on Windows
+    if ($arch =~ /MSWin32/) {
+        $exec = $base . ".bat";
+        if (-x $exec) { return $exec; }
+    }
+
     # Then look for OS-specific binary
     $exec = "${base}_${arch}";
     if ($arch =~ /MSWin32/){
