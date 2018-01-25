@@ -62,12 +62,12 @@ artifacts:
     name:  BioNetGenHTML
   
   
-deploy:
-  provider: FTP
-  protocol: ftp
-  skip_cleanup: true
-  host: ftp.midcapsignals.com/BioNetGen_Beta/d_bionetgen/
-  username: roberthclark
-  password:
-    secure: K22E4pSAup6/htlGmoSBMw==
+#deploy:
+# provider: FTP
+#  protocol: ftp
+#  skip_cleanup: true
+#  host: ftp.midcapsignals.com/BioNetGen_Beta/d_bionetgen/
+#  username: roberthclark
+#  password:
+#    secure: K22E4pSAup6/htlGmoSBMw==
 #  artifact: /BioNetGen.*zip/   
