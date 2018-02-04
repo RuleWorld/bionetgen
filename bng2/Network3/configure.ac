@@ -37,13 +37,7 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor pow rint sqrt strchr strdup strpbrk])
 
-AC_CONFIG_FILES([
- Makefile
- src/Makefile
-])
-AC_CONFIG_SUBDIRS([
- cvode-2.6.0
- muparser_v2_2_4
-])
+AC_CONFIG_FILES([ Makefile src/Makefile ])
+AC_CONFIG_SUBDIRS([ cvode-2.6.0 ])
 AC_OUTPUT
 

@@ -11,14 +11,14 @@ double RANDOM( double min, double max){
     /* seed random number generator from the current time */
     if (initflag){
 	/* default seed based on time */
-	srandom( (int) time(NULL));
+	srand( (int) time(NULL));
 	initflag=0;
     }
 
-    return( (max-min)*ONE_RAND_MAX*random() + min);
+    return( (max-min)*ONE_RAND_MAX*rand() + min);
 }
 
 void SEED_RANDOM( int seed){
-    srandom( seed);
+    srand( seed);
     initflag = 0;
 }
