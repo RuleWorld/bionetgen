@@ -1,0 +1,99 @@
+[validate test_ANG_parscan_synthesis_simple]
+ -> processing model file with BioNetGen
+running command:
+/usr/bin/perl /home/sag134/Spring2018/bionetgen/bng2/BNG2.pl --no-nfsim --no-atomizer --outdir /home/sag134/Spring2018/bionetgen/bng2/Validate /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.bngl
+[child process ID is: 4041]
+BioNetGen version 2.3.1
+Reading from file /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.bngl (level 0)
+Read 2 parameters.
+Read 5 molecule types.
+Read 2 species.
+Read 3 reaction rule(s).
+Read 3 observable(s).
+ACTION: parameter_scan( )Saved current species concentrations with label "SCAN"
+WARNING: Changing value of previously defined variable 'dummy'
+Set parameter dummy to value 1
+Reset species concentrations to "SCAN" saved values.
+ACTION: simulate( method=>"cvode" )
+ACTION: generate_network( test_ANG_parscan_synthesis_simple )
+Iteration   0:     2 species      0 rxns  0.00e+00 CPU s
+Iteration   1:     5 species      3 rxns  0.00e+00 CPU s
+Iteration   2:     5 species      3 rxns  0.00e+00 CPU s
+Cumulative CPU time for each rule
+Rule   1:     1 reactions 0.00e+00 CPU s 0.00e+00 CPU s/rxn
+Rule   2:     1 reactions 0.00e+00 CPU s 0.00e+00 CPU s/rxn
+Rule   3:     1 reactions 0.00e+00 CPU s 0.00e+00 CPU s/rxn
+Total   :     3 reactions 0.00e+00 CPU s 0.00e+00 CPU s/rxn
+Wrote network in net format to /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.net.
+Network simulation using cvode
+Wrote network in net format to /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.net.
+Running run_network on forseti
+full command: /home/sag134/Spring2018/bionetgen/bng2/bin/run_network -o /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001 -p cvode -a 1e-08 -r 1e-08 --cdat 1 --fdat 0 -g /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.net /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.net 0.4 100
+[simulation PID is: 4043]
+run_network 3.0
+Read 2 parameters
+$Source() is a fixed (boundaryCondition) variable
+Read 5 species
+Read 3 group(s) from /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.net
+Read 0 function(s)
+Found species with index 0 at line 14: assuming this is the null species.
+Read 3 reaction(s)
+3 reaction(s) have nonzero rate
+Initialization took 0.00 CPU seconds
+Propagating with cvode using dense LU
+Time course of concentrations written to file /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.cdat.
+Time course of groups written to file /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.gdat.
+Propagation took 0.00e+00 CPU seconds
+Program times:  0.00 CPU s 0.00 clock s 
+Updating species concentrations from /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.cdat
+WARNING: Changing value of previously defined variable 'dummy'
+Set parameter dummy to value 3
+Reset species concentrations to "SCAN" saved values.
+ACTION: simulate( method=>"cvode" )
+Network simulation using cvode
+Wrote network in net format to /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.net.
+Running run_network on forseti
+full command: /home/sag134/Spring2018/bionetgen/bng2/bin/run_network -o /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002 -p cvode -a 1e-08 -r 1e-08 --cdat 1 --fdat 0 -g /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.net /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.net 0.4 100
+[simulation PID is: 4045]
+run_network 3.0
+Read 2 parameters
+$Source() is a fixed (boundaryCondition) variable
+Read 5 species
+Read 3 group(s) from /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.net
+Read 0 function(s)
+Found species with index 0 at line 14: assuming this is the null species.
+Read 3 reaction(s)
+3 reaction(s) have nonzero rate
+Initialization took 0.00 CPU seconds
+Propagating with cvode using dense LU
+Time course of concentrations written to file /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.cdat.
+Time course of groups written to file /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.gdat.
+Propagation took 0.00e+00 CPU seconds
+Program times:  0.00 CPU s 0.00 clock s 
+Updating species concentrations from /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.cdat
+Reset species concentrations to "SCAN" saved values.
+Extracting observable trajectory from /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.gdat
+Extracting observable trajectory from /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.gdat
+CPU TIME: parameter_scan 0.00 s.
+Finished processing file /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.bngl.
+CPU TIME: total 0.01 s.
+-------------------------------------------------------------------------------
+ -> checking species in .NET file
+running command:
+/usr/bin/perl /home/sag134/Spring2018/bionetgen/bng2/Validate/compare_species.pl /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.net /home/sag134/Spring2018/bionetgen/bng2/Validate/DAT_validate/test_ANG_parscan_synthesis_simple.net
+[child process ID is: 4046]
+Testing Species..
+command:  /home/sag134/Spring2018/bionetgen/bng2/Validate/compare_species.pl /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.net /home/sag134/Spring2018/bionetgen/bng2/Validate/DAT_validate/test_ANG_parscan_synthesis_simple.net 
+/home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.net and /home/sag134/Spring2018/bionetgen/bng2/Validate/DAT_validate/test_ANG_parscan_synthesis_simple.net passed species test.
+
+-------------------------------------------------------------------------------
+ -> checking reactions in .NET file
+running command:
+/usr/bin/perl /home/sag134/Spring2018/bionetgen/bng2/Validate/compare_rxn.pl /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.net /home/sag134/Spring2018/bionetgen/bng2/Validate/DAT_validate/test_ANG_parscan_synthesis_simple.net
+[child process ID is: 4047]
+Testing Reaction Network..
+command:  /home/sag134/Spring2018/bionetgen/bng2/Validate/compare_rxn.pl /home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.net /home/sag134/Spring2018/bionetgen/bng2/Validate/DAT_validate/test_ANG_parscan_synthesis_simple.net 
+/home/sag134/Spring2018/bionetgen/bng2/Validate/test_ANG_parscan_synthesis_simple.net and /home/sag134/Spring2018/bionetgen/bng2/Validate/DAT_validate/test_ANG_parscan_synthesis_simple.net passed reaction network test.
+
+-------------------------------------------------------------------------------
+test_ANG_parscan_synthesis_simple passed all validation tests.
