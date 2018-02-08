@@ -58,7 +58,7 @@ my $python_exclude_files = '(^\.|~$|\.old$|^make_dist\.pl$)';
 # file extensions that should get executable flag
 my $executable_suffix = '(pl|py|dll|exe)';
 # subdirectories to include in distribution
-my @include_subdirectories = qw/ Perl2 Models2 Network3 PhiBPlot Validate /;
+my @include_subdirectories = qw/ Perl2 Models2 Network3 Validate /;
 #python subdiretories to include (main difference is that they are associated with python_exclude_files instead)
 #my @include_python_subdirectories = qw/  SBMLparser /;
 
