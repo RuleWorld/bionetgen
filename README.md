@@ -45,8 +45,7 @@ compilation tools, you may compile your own binaries from a console as follows:
 
 PLEASE NOTE: This procedure will not work if the directories 'cvode-2.6.0' and 
 'muparser_v2_2_4' do not exist. If that is the case, they can be extracted from
-the archive files in BNGPATH/libsource (available in the repository version of 
-the code at https://github.com/RuleWorld/bionetgen).
+the archive files in ./bionetgen/bng2/libsource.
 
 Alternatively, binaries can be compiled using CMake. Download CMake from
 http://www.cmake.org/ and add to PATH. Then:
@@ -137,7 +136,7 @@ Email the developers at bionetgen.help@gmail.com
 
 ## Troubleshooting
 
-If you see the message "ABORT: Could not find executable run_network". Try
+If you see the message `ABORT: Could not find executable run_network`, try
 setting the environment variable "BNGPATH" to the root directory of your 
 BioNetGen installation. Under bash-like shells, this is done by typing:
-"export BNGPATH=<bngpath>", where <bngpath> is the root directory of BNG.
+`export BNGPATH=<bngpath>`, where <bngpath> is the root directory of BNG.
