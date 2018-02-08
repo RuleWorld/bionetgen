@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 # SYNOPSIS:
-#   make_dist.pl [OPTS] 
+#   make_dist.pl [OPTS]
 #
 # DESCRIPTION:
 #   Create a BioNetGen distribution from the repository. By default, attempts
@@ -14,8 +14,8 @@
 #   --version VERS  : version number (overrides VERSION file)
 #   --codename NAME : distribution codename (overrides VERSION file)
 #   --archive       : create distribution archive file
-#   --build         : compile and install binaries 
-#   --validate      : validate installation 
+#   --build         : compile and install binaries
+#   --validate      : validate installation
 #   --overwrite     : overwrite any existing distribution
 #   --help          : display help
 
@@ -76,7 +76,7 @@ my @copybin_flags = (); #("-d");
 # chmod
 my $sys_chmod = "chmod";
 my $chmod_flags = "+x";
-# system shell 
+# system shell
 my $sys_shell = "sh";
 # autoreconf
 my $build_subdir = "Network3";
@@ -234,7 +234,7 @@ if (-d $dist_dir)
     }
     else
     {   # overwrite not allowed! exit with error.
-        print "make_dist.pl error:\ntarget distribution directory '${dist_dir}' already exists.\n"; 
+        print "make_dist.pl error:\ntarget distribution directory '${dist_dir}' already exists.\n";
         exit -1;
     }
 }
@@ -252,11 +252,11 @@ if ($err)
 
 # Include subdirectories..
 foreach my $dir ( @include_subdirectories )
-{   
+{
     my $source_dir = File::Spec->catdir( $bngpath,  $dir );
     my $dest_dir   = File::Spec->catdir( $dist_dir, $dir );
 
-    my $recursive = 1;    
+    my $recursive = 1;
     my $err = copy_dir( $source_dir, $dest_dir, $recursive, $exclude_files );
     if ($err)
     {
@@ -270,7 +270,7 @@ my $vh;
 my $vstring = "$version" . (($codename) eq "" ? "" : " ${codename}" );
 unless( open($vh, ">", File::Spec->catfile($dist_dir, "VERSION")) )
 {
-    print "make_dist.pl error:\ncould not create VERSION file ($!).\n"; 
+    print "make_dist.pl error:\ncould not create VERSION file ($!).\n";
     exit -1;
 }
 print $vh $vstring;
@@ -326,7 +326,7 @@ if (defined $bindir)
     {   print "make_dist.pl error:\nunable to chdir to build directory '${build_dir}'.\n";
         exit -1;
     }
-    
+
     print "preparing libraries . . .\n";
     foreach my $libfile (@include_libraries)
     {
@@ -343,7 +343,7 @@ if (defined $bindir)
 
         my $new_install = 1;
         #if (-d $extract_libdir)
-        #{   # check if libfile is newer than 
+        #{   # check if libfile is newer than
         #    my $modtime_libfile = (stat $abs_libfile)[9];
         #    my $modtime_libdir  = (stat $extract_libdir)[9];
         #    $new_install = ($modtime_libdir > $modtime_libdir) ? 1 : 0;
@@ -395,7 +395,7 @@ if (defined $bindir)
             #print "appending arch/OS signature to ${run_network} binary . . .\n";
             my $arch = $Config{myarchname};
             my $abs_run_network = File::Spec->catfile(($abs_dist_dir, "bin"), $run_network);
-            
+
             unless (-e $abs_run_network)
             {  print "make_dist.pl error:\ncan't find built run_network ($?)";  exit -1;  }
 
@@ -408,15 +408,15 @@ if (defined $bindir)
         }
 
         # go back to original directory
-        unless( chdir $cwd ){   
+        unless( chdir $cwd ){
             print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
             exit -1;
         }
-        
+
     }
 
     # go back to original directory
-    unless( chdir $cwd ){   
+    unless( chdir $cwd ){
     		print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
     		exit -1;
     }
@@ -463,15 +463,15 @@ if (defined $bindir)
         my @args = ($sys_perl, $abs_validate_script, @validate_flags );
         print "command: ", join(" ", @args), "\n";
         unless( system(@args)==0 )
-        {  
+        {
             print "make_dist.pl error:\nsome problem validating ${dist_name} ($?)\n\n\n\n";
-            
+
             # Let's remove this exit command, so that an installation package will be generated, even if the validation
             # test fails.
             # exit -1;
         }
 
-        unless( chdir $cwd ){   
+        unless( chdir $cwd ){
        		print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
        		exit -1;
        }
@@ -527,7 +527,7 @@ sub copy_dir
 
     # create directory, unless it exists
     unless ( -d $dest_dir )
-    {   
+    {
         unless ( mkdir $dest_dir )
         {   # return error
             return "copy_dir: cannot create directory '$dest_dir' ($!)";
@@ -543,13 +543,13 @@ sub copy_dir
         my $dest_file   = File::Spec->catfile( $dest_dir,   $file );
 
         if ( -d $source_file )
-        {   
+        {
             if ($recursive)
             {   # copy subdirectory
                 my $err = copy_dir( $source_file, $dest_file, $recursive, $exclude_files, @copy_flags );
                 if (defined $err) {  return $err;  }
             }
-        }   
+        }
         else
         {   # copy file
             #print "  $file\n";
@@ -579,7 +579,7 @@ print <<END_HELP
 make_dist.pl
 
 SYNOPSIS:
-   make_dist.pl [OPTS] 
+   make_dist.pl [OPTS]
 
 DESCRIPTION:
    Create a BioNetGen distribution from the repository. By default, attempts
@@ -592,8 +592,8 @@ OPTIONS:
    --version VERS  : version number (overrides VERSION file)
    --codename NAME : distribution codename (overrides VERSION file)
    --archive       : create distribution archive file
-   --build         : compile and install binaries 
-   --validate      : validate installation 
+   --build         : compile and install binaries
+   --validate      : validate installation
    --overwrite     : overwrite any existing distribution
    --help          : display help
 

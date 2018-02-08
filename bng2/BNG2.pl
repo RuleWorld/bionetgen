@@ -22,7 +22,7 @@
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # pragmas
 use strict;
@@ -39,7 +39,7 @@ use IO::Handle;
 # If neither are defined, use RealBin module
 use lib File::Spec->catdir( ( exists $ENV{'BNGPATH'}
                               ? $ENV{'BNGPATH'}
-                              : ( exists $ENV{'BioNetGenRoot'} 
+                              : ( exists $ENV{'BioNetGenRoot'}
                                   ? $ENV{'BioNetGenRoot'}
                                   : $FindBin::RealBin
                                 )
@@ -121,7 +121,7 @@ my %user_args = ( 'console' => \$console,
                 );
 
 # parse command line arguments
-GetOptions( \%user_args, 
+GetOptions( \%user_args,
             'help|h',
             'version|v',
             'console',
@@ -235,8 +235,8 @@ sub display_help
           ."  SYNOPSIS                                                          \n"
           ."    process MODEL:      BNG2.pl [OPTION]... MODEL...                \n"
           ."    start BNG console:  BNG2.pl --console                           \n"
-          ."    display help:       BNG2.pl -h                                  \n" 
-          ."    display version:    BNG2.pl -v                                  \n"           
+          ."    display help:       BNG2.pl -h                                  \n"
+          ."    display version:    BNG2.pl -v                                  \n"
           ."                                                                    \n"
           ."  OPTIONS                                                           \n"
           ."    --log          write log to file MODEL.log (default is STDOUT)  \n"
