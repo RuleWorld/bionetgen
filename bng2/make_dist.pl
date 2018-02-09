@@ -228,8 +228,8 @@ if (-d $dist_dir)
     {   # warn user about overwrite
         print "make_dist.pl warning:\noverwriting distribution directory '${dist_dir}'\n";
         unless ( remove_tree($dist_dir) ){
-        		print "make_dist.pl error:\ncannot delete existing distribution directory '${dist_dir}' ($!).\n";
-        		exit -1;
+            print "make_dist.pl error:\ncannot delete existing distribution directory '${dist_dir}' ($!).\n";
+            exit -1;
         }
     }
     else
@@ -417,8 +417,8 @@ if (defined $bindir)
 
     # go back to original directory
     unless( chdir $cwd ){
-    		print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
-    		exit -1;
+        print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+        exit -1;
     }
 
     print "Current working directory is now: \n";
@@ -452,7 +452,7 @@ if (defined $bindir)
 
         # change to validate workdir
         unless( chdir $validate_workdir ){
-        		print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
+            print "make_dist.pl error:\nunable to chdir to validation working directory '${validate_workdir}'.\n";
             exit -1;
         }
 
@@ -472,8 +472,8 @@ if (defined $bindir)
         }
 
         unless( chdir $cwd ){
-       		print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
-       		exit -1;
+           print "make_dist.pl error:\nunable to chdir back to original directory '$cwd'.\n";
+           exit -1;
        }
 
     }
