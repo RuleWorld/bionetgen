@@ -18,34 +18,32 @@ is currently implemented in Perl, the network simulator is C++, and a new
 SBML-to-BNGL translator is implemented in Python. In addition, a new language
 parser is currently being developed in ANTLR.
 
-## Installation 
+## Installation of Distribution 
+
+Most users should simply download BioNetGen from www.bionetgen.org and get the
+appropriate distribution for their OS. To install BioNetGen, unzip the
+BioNetGen distribution file, e.g.  BioNetGen-2.3-MacOSX.tar.gz, in the
+directory where you would like BioNetGen installed. 
+
+## Compilation from Source
+
+The distribution mentioned above comes with pre-compiled binaries (executables)
+for the ODE, SSA and PLA engines. However, developers can compile their own
+binaries assuming they have appropriate compilation tools (autoconf, etc).
 
 ### Linux and OSX
 
-To install BioNetGen, unzip the BioNetGen distribution file, 
-e.g. BioNetGen-2.3-MacOSX.tar.gz, in the directory where you would like
-BioNetGen installed:
-
-    cd <installdir>
-    tar -zxvf BioNetGen-2.3-MacOSX.tar.gz
-
-Running BNG2.pl requires a Perl interpreter. If you have Linux or Mac OS/X,
-an adequate perl is already installed. If you have Windows, try Strawberry 
-Perl, (see http://strawberryperl.com/). Perl is also available for Windows 
-users within the Cygwin environment.
-
-Pre-compiled binaries (executables) for the ODE, SSA and PLA engines are
-provided for Linux, OS/X, and Windows. If your system is equipped with suitable
-compilation tools, you may compile your own binaries from a console as follows:
+From a terminal type:
 
     cd <bngpath>\Network3
+    autoreconf --no-recursive --install
     ./configure --disable-shared --prefix=<bngpath>
     make
     make install
 
-PLEASE NOTE: This procedure will not work if the directories 'cvode-2.6.0' and 
-'muparser_v2_2_4' do not exist. If that is the case, they can be extracted from
-the archive files in ./bionetgen/bng2/libsource.
+PLEASE NOTE: This procedure will not work if the directories `cvode-2.6.0` and
+`muparser_v2_2_4` do not exist. If that is the case, they can be extracted from
+the archive files in `./bionetgen/bng2/libsource`
 
 Alternatively, binaries can be compiled using CMake. Download CMake from
 http://www.cmake.org/ and add to PATH. Then:
@@ -56,11 +54,14 @@ http://www.cmake.org/ and add to PATH. Then:
 	
 ### Windows
 
-Compiling under Windows:
-Make sure Cygwin used is for the appropriate Windows architecture (32/64 bit). 
-Make sure Cygwin has developer tools installed (Select Devel when installing Cygwin).
-Extract folders 'cvode-2.6.0' and 'muparser_v2_2_4' to <bngpath>\Network3 from 
-archives in <bngpath>\libsource. In the Cygwin terminal:
+If you have Windows, try Strawberry Perl, (see http://strawberryperl.com/).
+Perl is also available for Windows users within the Cygwin environment.
+
+Make sure Cygwin used is for the appropriate Windows architecture (32/64 bit).
+Make sure Cygwin has developer tools installed (Select Devel when installing
+Cygwin).  Extract folders `cvode-2.6.0` and `muparser_v2_2_4` to
+`<bngpath>\Network3` from archives in `<bngpath>\libsource`. In the Cygwin
+terminal:
 
     cd <bngpath>\Network3
     autoreconf --no-recursive --install
@@ -71,7 +72,7 @@ archives in <bngpath>\libsource. In the Cygwin terminal:
 
 Using BioNetGen from the Windows command prompt can throw Missing DLL errors.
 These DLLs are specific to the Cygwin version used and found in Cygwin\bin.
-Copy them to <bngpath>\bin to resolve these errors.  As of 12/16/2014, the
+Copy them to `<bngpath>\bin` to resolve these errors.  As of 12/16/2014, the
 required DLLs for 64-bit Windows 7 and later are cygwin1.dll, cygstdc++-6.dll,
 cygz.dll, and cyggcc_s-seh-1.dll.
 
@@ -87,7 +88,7 @@ where <model> is one of the models found in the Models2 directory.
 ## Validation
 
 To validate the BioNetGen installation:
-1) run the Perl script BNGPATH/Validate/validate_examples.pl.
+1) run the Perl script `<bngpath>/Validate/validate_examples.pl`.
 2) if any tests fail, look at the log files for more information.
 
 PLEASE NOTE: Stochastic simulation tests rely on statistical validation.
