@@ -31,6 +31,12 @@ The distribution mentioned above comes with pre-compiled binaries (executables)
 for the ODE, SSA and PLA engines. However, developers can compile their own
 binaries assuming they have appropriate compilation tools (autoconf, etc).
 
+First, you'll need to pull in or update the git submodules. To do this, enter
+the following at the terminal:
+
+    git submodule init
+    git submodule update
+
 ### Linux and OSX
 
 From a terminal type:
