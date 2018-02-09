@@ -101,7 +101,7 @@ struct BNGModel =>
     Params              => '%',  # run-time parameters (not to be saved)
     ParameterCache      => 'Cache',   
     ConcentrationCache  => 'Cache',
-	VizGraphs			=> '$',
+    VizGraphs            => '$',
 };
 
 
@@ -144,7 +144,7 @@ sub readModel
     my %args = ();
     # copy user_params into pass_params structures
     while ( my ($key,$val) = each %$user_args )
-    {   $args{$key} = $val;    }
+    { $args{$key} = $val; }
 
     # writeFile will generate the output
     return $model->readFile( \%args );
@@ -161,7 +161,7 @@ sub readNetwork
     my %args = ();
     # copy user_params into pass_params structures
     while ( my ($key,$val) = each %$user_args )
-    {   $args{$key} = $val;    }
+    { $args{$key} = $val; }
 
     # writeFile will generate the output
     return $model->readFile( \%args );
@@ -169,21 +169,21 @@ sub readNetwork
 
 sub readSBML
 {
-	my $model  = shift @_;
-	my $filepath = shift @_;
-	unless ( -e $filepath )
+    my $model  = shift @_;
+    my $filepath = shift @_;
+    unless ( -e $filepath )
     {   return 1, "Could not find '$filepath'";   }
-	my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
-	$filename =~ s/\.xml//;
-	my $outfile = File::Spec->catpath('', $model->getOutputDir(), $filename.'.bngl');
+    my ($vol, $dir, $filename) = File::Spec->splitpath( $filepath );
+    $filename =~ s/\.xml//;
+    my $outfile = File::Spec->catpath('', $model->getOutputDir(), $filename.'.bngl');
     my $user_args = @_ ? shift @_ : {};
     
     # Collect user arguments
-	my %args = ();
+    my %args = ();
     while ( my ($key,$val) = each %$user_args )
     {   
-    		$args{$key} = $val;
-#    	printf "$key=>$val\n";
+        $args{$key} = $val;
+#        printf "$key=>$val\n";
     }
     
     # Find program and save path to directory
@@ -191,22 +191,22 @@ sub readSBML
     unless ( $program = findExec("sbmlTranslator") )
     {   return 1, "Could not find executable 'sbmlTranslator'";   }
     ($vol, $dir, my $bin) = File::Spec->splitpath( $program );
-	my $bindir = File::Spec->catpath($vol, $dir);
+    my $bindir = File::Spec->catpath($vol, $dir);
 
     # Begin writing command: start with 'program'
     my $cmd = $program;
-	$cmd .= ' -i "' . $filepath .'"';
-	$cmd .= ' -o "' . $outfile . '"';
-	if ($args{"atomize"}){
-		$cmd .= ' -a';
-	}
-	
-	# Run the translator
-	printf "SBML translation: $cmd\n";
-	system($cmd);
-	
-	# Return full path to generated BNGL file
-	return 0, $outfile
+    $cmd .= ' -i "' . $filepath .'"';
+    $cmd .= ' -o "' . $outfile . '"';
+    if ($args{"atomize"}){
+        $cmd .= ' -a';
+    }
+    
+    # Run the translator
+    printf "SBML translation: $cmd\n";
+    system($cmd);
+    
+    # Return full path to generated BNGL file
+    return 0, $outfile
 }
 
 
@@ -236,36 +236,36 @@ sub readSBML
         my $model  = shift @_;
         my $params = @_ ? shift @_ : {};
 
-		# supported blocks
-		my %blocks = (
-			'parameters' => 1,
-			'compartments' => 1,
-			'molecule types' => 1,
-			'species' => 1,
-			'seed species' => 1,
-			'observables' => 1,
-			'functions' => 1,
-			'energy patterns' => 1,
-			'population types' => 1,
-			'population maps' => 1,
-			'reaction rules' => 1,
-			'reactions' => 1,
-			'groups' => 1,
-			'actions' => 1,
-		);
+        # supported blocks
+        my %blocks = (
+            'parameters' => 1,
+            'compartments' => 1,
+            'molecule types' => 1,
+            'species' => 1,
+            'seed species' => 1,
+            'observables' => 1,
+            'functions' => 1,
+            'energy patterns' => 1,
+            'population types' => 1,
+            'population maps' => 1,
+            'reaction rules' => 1,
+            'reactions' => 1,
+            'groups' => 1,
+            'actions' => 1,
+        );
 
-		# user-specified list of blocks to read
-		if (exists $params->{blocks}){
-			my %tmp;
-			foreach my $block (@{$params->{blocks}}){
-				$tmp{$block} = 1;
-			}
-			foreach (keys %blocks){
-				unless (exists $tmp{$_}){
-					$blocks{$_} = 0;
-				}
-			}
-		}
+        # user-specified list of blocks to read
+        if (exists $params->{blocks}){
+            my %tmp;
+            foreach my $block (@{$params->{blocks}}){
+                $tmp{$block} = 1;
+            }
+            foreach (keys %blocks){
+                unless (exists $tmp{$_}){
+                    $blocks{$_} = 0;
+                }
+            }
+        }
 
         # a place for error messages
         my $err;
@@ -278,14 +278,14 @@ sub readSBML
             goto EXIT;
         }
         
-		# if file path is relative, change Unix path to Windows path, and vice versa,
-		# based on OS (improves cross-platform portability --LAH)
-		if ( not File::Spec::Win32->file_name_is_absolute( $filename ) ){
-			if ($Config{myarchname} =~ /MSWin32/)
-			{ $filename =~ s/\//\\/g; }
-			else
-			{ $filename =~ s/\\/\//g; }
-		}
+        # if file path is relative, change Unix path to Windows path, and vice versa,
+        # based on OS (improves cross-platform portability --LAH)
+        if ( not File::Spec::Win32->file_name_is_absolute( $filename ) ){
+            if ($Config{myarchname} =~ /MSWin32/)
+            { $filename =~ s/\//\\/g; }
+            else
+            { $filename =~ s/\\/\//g; }
+        }
 
         # increment level
         ++$level;
@@ -314,7 +314,7 @@ sub readSBML
                 else
                 {   # determine model basename from filename
                     my ($vol, $dir, $fn) = File::Spec->splitpath( $filename );
-					
+                    
                     my $basename;
                     # file = basename.ext
                     if ( $fn =~ /^(.+)\.([^\.]+)$/ )
@@ -374,670 +374,670 @@ sub readSBML
         }
 
         # SBML translator
-		if ( $filename =~ /\.xml$/ )
-		{
+        if ( $filename =~ /\.xml$/ )
+        {
             if ( $model->Params->{no_atomizer} )
             {
                 send_warning( "readFile(): BNG processing was halted. Attempted to import XML file with 'no-atomizer' flag activated.");
                 exit(0);
             }
-			my $out;
-			($err, $out) = $model->readSBML($filename,$model->Params);
-			if ($err){
-				$err = $out;
-				goto EXIT;
-			}
-			$filename = $out
-			# Generated BNGL file will now be read in below
-		}
-		
-		# Read BNGL or NET file
-		if ( $filename =~ /\.bngl$/ || $filename =~ /\.net$/ )
-		{
-	        # Read BNG model data        
-	        print "Reading from file $filename (level $level)\n";
-	        unless( open FILE, '<', $filename )
-	        {   
-	        		unless (File::Spec->file_name_is_absolute( $filename )){
-	        			$filename = File::Spec->rel2abs( $filename );
-	        		}
-	            $err = "Couldn't read from file $filename: $!";
-	            goto EXIT;
-	        }
-	        # read all lines of the file into an array at $file_data
-	        $file_data = [<FILE>];
-	        # close file
-	        close FILE;
-	
-	
-	        # Read data from file into data hash
-	        $line_number = 0;
-	        my $begin_model = 0;
-	        my $in_model    = 1;
-	        while ( my $string = get_line() )
-	        {
-	            # chop leading spaces
-	            $string =~ s/^\s+//;
-	
-	            if ( $string =~ /^begin\s+model\s*$/ )
-	            {
-	                ++$begin_model;
-	                if ( $begin_model > 1 )
-	                {
-	                    $err = errgen("Only one model definition allowed per file");
-	                    goto EXIT;
-	                }
-	                $in_model = 1;
-	                next;
-	            }
-	            elsif ( $string =~ /^end\s+model\s*$/ )
-	            {
-	                unless ($in_model)
-	                {
-	                    $err = errgen("end model encountered without enclosing begin model");
-	                    goto EXIT;
-	                }
-	                $in_model = 0;
-	                next;
-	            }
-	
-	            # Process multi-line block
-	            if ( $string =~ s/^begin\s*// )
-	            {
-	                # get block name
-	                my $name = $string;
-	                # Remove trailing white space
-	                $name =~ s/\s*$//;
-	                # Remove repeated white space
-	                $name =~ s/\s+/ /g;
-	
-	                unless ($in_model or ($name eq 'actions'))
-	                {
-	                    $err = errgen("$name cannot be defined outside of a model");
-	                    goto EXIT;
-	                }
-	
-	                # Read block data
-	                my $block_dat;
-	                ( $block_dat, $err ) = read_block_array($name);
-	                if ($err) {  goto EXIT;  }
-#	                $bngdata{$name} = 1;
-	                
-	                # Move on if block has been suppressed by the user
-	                # (if the block name is not recognized, continue so an error will be thrown)
-					if (exists $blocks{$name} and $blocks{$name}==0) { next; }
-	
-	                ### Read Parameters Block
-	                if ( $name eq 'parameters' )
-	                {
-	                    # Read model parameters
-	                    my $plast = $model->ParamList->getNumParams();
-	                    my ($entry, $lno);
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        ($entry, $lno) = @$line;
-	                        $err = $model->ParamList->readString($entry);
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
-	                    }
-	                    # check parameter list
-	                    if ( $err = $model->ParamList->check() )
-	                    {
-	                        $err = errgen( $err, $lno );
-	                        goto EXIT;
-	                    }
-	                    # sort parameters
-	                    if ( $err = $model->ParamList->sort() )    
-	                    {
-	                        $err = errgen( $err, $lno );
-	                        goto EXIT;
-	                    }
-	                    # update user
-	                    printf "Read %d $name.\n", $model->ParamList->getNumParams() - $plast;
-	                }
-	
-	                    
-	                ### Read Functions Block
-	                elsif ( $name eq 'functions' )
-	                {
-	                    # Model functions
-	                    my $nread = 0;
-	                    my ($entry, $lno);
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        ($entry, $lno) = @{$line};
-	                        my $fun = Function->new();
-	                        $err = $fun->readString( $entry, $model );
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
-	                        ++$nread;
-	                    }
-	                    
-	                    # check paramlist for unresolved dependency, etc
-	                    #   GIVE warning here, don't terminate!
-	                    if ( $err = $model->ParamList->check() )
-	                    {
-	                        $err = errgen( $err, $lno );
-	                        print "Warning: $err\n"
-	                             ."  (if parameter is defined in a subsequent block,\n"
-	                             ."  then this warning can be safely ignored.)\n";
-	                    }                            
-	                    # update user
-	                    printf "Read %d ${name}.\n", $nread;
-	                }
-	                
-	    
-	                ### Read Molecule Types block
-	                elsif ( $name eq 'molecule types' )
-	                {
-	                    # read MoleculeTypes
-	                    $model->MoleculeTypesList->StrictTyping(1);
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ( $entry, $lno ) = @$line;
-	                        $err = $model->MoleculeTypesList->readString($entry);
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
-	                    }
-	                    # update user
-	                    printf "Read %d molecule types.\n", $model->MoleculeTypesList->getNumMolTypes();
-	                }
-	
-	
-	                ### Read Population Types block
-	                elsif ( $name eq 'population types' )
-	                {
-	                    # read PopulationTypes
-	                    $model->PopulationTypesList->StrictTyping(1);
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ( $entry, $lno ) = @$line;
-	                        $err = $model->PopulationTypesList->readString($entry);
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
-	                    }
-	                    # update user
-	                    printf "Read %d population types.\n", $model->PopulationTypesList->getNumMolTypes();
-	                }
-	
-	
-	                ### Read Population Maps block
-	                elsif ( $name eq 'population maps' )
-	                {
-	                    unless ( $model->MoleculeTypesList->StrictTyping )
-	                    {
-	                        $err = errgen("A $name block cannot be defined unless molecule types are defined explicitly");
-	                        goto EXIT;        
-	                    }
-	                    # read Population Maps
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ($entry, $lno) = @$line;
-	                        $err = $model->PopulationList->readString($entry,$model);
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
-	                    }
-	                    # update user
-	                    printf "Read %d population maps.\n", $model->PopulationList->getNumPopulations;
-	                }
-	                
-	                    
-	                ### Read Compartments Block
-	                elsif ( $name eq 'compartments' )
-	                {	
-	                    # Read Compartments
-	                    my ($entry, $lno);
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        ($entry, $lno) = @$line;
-	                        $err = $model->CompartmentList->readString( $entry, $model->ParamList );
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
-	                    }
-	                    # validate compartments
-	                    if ( $err = $model->CompartmentList->validate() )
-	                    {
-	                        $err = errgen( $err, $lno );
-	                        goto EXIT;
-	                    }
-	                    if ($model->CompartmentList->getNumCompartments() > 0){
-	                    		# set flag to indicate compartments are being used
-	            				$model->CompartmentList->Used(1);
-	            				# update user
-	            				printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
-	                    }
-	                }
-	                
-	                    
-	                ### Read Species/Seed Species Block
-	                elsif ( ($name eq 'species') or ($name eq 'seed species') )
-	                {
-	                    # read Species
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ($entry, $lno) = @$line;
-	                        $err = $model->SpeciesList->readString( $entry, $model->ParamList,
-	                                                                $model->CompartmentList,
-	                                                                $model->MoleculeTypesList );
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }                            
-	                    }
-	                    # update user
-	                    printf "Read %d species.\n", $model->SpeciesList->getNumSpecies();
-	                }
-	                
-	
-	                ### Read Reaction Rules Block
-	                elsif ( $name eq 'reaction rules' )
-	                {
-	                		# Read reaction rules
-	                		my $nerr = 0;
-#						my $rrules = [];
-#	                    	$model->RxnRules( $rrules );
-	                    	my $rrules = $model->RxnRules;
-	                    	my $counter = 1;
-	                    	foreach my $line ( @$block_dat )
-	                    	{
-	                    		my ($entry, $lno) = @$line;
-	                        	# create new rule
-	                        	(my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
-	                        	if ($err)
-	                        	{   # some error encountered
-	                        		$err = errgen( $err, $lno );
-	                            	printf "ERROR: $err\n";
-	                            	++$nerr;
-	                        	}
-	                        	# check rule name (if given)
-	                        	elsif ( $rrs->[0]->Name ){
-	                            	foreach my $r (@$rrules){ # loop over all existing rules
-	                            		foreach my $x (@$r){  # consider forward and reverse (if exists) for existing rule (just to be safe)
-	                                		if ( $rrs->[0]->Name eq $x->Name ){ # duplicate rule name found
-											$err = "Duplicate rule name detected (\"" . $rrs->[0]->Name . "\").";
-											$err = errgen( $err, $lno );
-											printf "ERROR: $err\n";
-											++$nerr;
-											last;
-										}
-	                            		}
-								}
-	                        }
-	                        unless ($err)
-	                        {
-	                        		# rule is ok
-	                            push @$rrules, $rrs;
+            my $out;
+            ($err, $out) = $model->readSBML($filename,$model->Params);
+            if ($err){
+                $err = $out;
+                goto EXIT;
+            }
+            $filename = $out
+            # Generated BNGL file will now be read in below
+        }
+        
+        # Read BNGL or NET file
+        if ( $filename =~ /\.bngl$/ || $filename =~ /\.net$/ )
+        {
+            # Read BNG model data        
+            print "Reading from file $filename (level $level)\n";
+            unless( open FILE, '<', $filename )
+            {   
+                    unless (File::Spec->file_name_is_absolute( $filename )){
+                        $filename = File::Spec->rel2abs( $filename );
+                    }
+                $err = "Couldn't read from file $filename: $!";
+                goto EXIT;
+            }
+            # read all lines of the file into an array at $file_data
+            $file_data = [<FILE>];
+            # close file
+            close FILE;
+    
+    
+            # Read data from file into data hash
+            $line_number = 0;
+            my $begin_model = 0;
+            my $in_model    = 1;
+            while ( my $string = get_line() )
+            {
+                # chop leading spaces
+                $string =~ s/^\s+//;
+    
+                if ( $string =~ /^begin\s+model\s*$/ )
+                {
+                    ++$begin_model;
+                    if ( $begin_model > 1 )
+                    {
+                        $err = errgen("Only one model definition allowed per file");
+                        goto EXIT;
+                    }
+                    $in_model = 1;
+                    next;
+                }
+                elsif ( $string =~ /^end\s+model\s*$/ )
+                {
+                    unless ($in_model)
+                    {
+                        $err = errgen("end model encountered without enclosing begin model");
+                        goto EXIT;
+                    }
+                    $in_model = 0;
+                    next;
+                }
+    
+                # Process multi-line block
+                if ( $string =~ s/^begin\s*// )
+                {
+                    # get block name
+                    my $name = $string;
+                    # Remove trailing white space
+                    $name =~ s/\s*$//;
+                    # Remove repeated white space
+                    $name =~ s/\s+/ /g;
+    
+                    unless ($in_model or ($name eq 'actions'))
+                    {
+                        $err = errgen("$name cannot be defined outside of a model");
+                        goto EXIT;
+                    }
+    
+                    # Read block data
+                    my $block_dat;
+                    ( $block_dat, $err ) = read_block_array($name);
+                    if ($err) {  goto EXIT;  }
+#                    $bngdata{$name} = 1;
+                    
+                    # Move on if block has been suppressed by the user
+                    # (if the block name is not recognized, continue so an error will be thrown)
+                    if (exists $blocks{$name} and $blocks{$name}==0) { next; }
+    
+                    ### Read Parameters Block
+                    if ( $name eq 'parameters' )
+                    {
+                        # Read model parameters
+                        my $plast = $model->ParamList->getNumParams();
+                        my ($entry, $lno);
+                        foreach my $line ( @$block_dat )
+                        {
+                            ($entry, $lno) = @$line;
+                            $err = $model->ParamList->readString($entry);
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                        }
+                        # check parameter list
+                        if ( $err = $model->ParamList->check() )
+                        {
+                            $err = errgen( $err, $lno );
+                            goto EXIT;
+                        }
+                        # sort parameters
+                        if ( $err = $model->ParamList->sort() )    
+                        {
+                            $err = errgen( $err, $lno );
+                            goto EXIT;
+                        }
+                        # update user
+                        printf "Read %d $name.\n", $model->ParamList->getNumParams() - $plast;
+                    }
+    
+                        
+                    ### Read Functions Block
+                    elsif ( $name eq 'functions' )
+                    {
+                        # Model functions
+                        my $nread = 0;
+                        my ($entry, $lno);
+                        foreach my $line ( @$block_dat )
+                        {
+                            ($entry, $lno) = @{$line};
+                            my $fun = Function->new();
+                            $err = $fun->readString( $entry, $model );
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                            ++$nread;
+                        }
+                        
+                        # check paramlist for unresolved dependency, etc
+                        #   GIVE warning here, don't terminate!
+                        if ( $err = $model->ParamList->check() )
+                        {
+                            $err = errgen( $err, $lno );
+                            print "Warning: $err\n"
+                                 ."  (if parameter is defined in a subsequent block,\n"
+                                 ."  then this warning can be safely ignored.)\n";
+                        }                            
+                        # update user
+                        printf "Read %d ${name}.\n", $nread;
+                    }
+                    
+        
+                    ### Read Molecule Types block
+                    elsif ( $name eq 'molecule types' )
+                    {
+                        # read MoleculeTypes
+                        $model->MoleculeTypesList->StrictTyping(1);
+                        foreach my $line ( @$block_dat )
+                        {
+                            my ( $entry, $lno ) = @$line;
+                            $err = $model->MoleculeTypesList->readString($entry);
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                        }
+                        # update user
+                        printf "Read %d molecule types.\n", $model->MoleculeTypesList->getNumMolTypes();
+                    }
+    
+    
+                    ### Read Population Types block
+                    elsif ( $name eq 'population types' )
+                    {
+                        # read PopulationTypes
+                        $model->PopulationTypesList->StrictTyping(1);
+                        foreach my $line ( @$block_dat )
+                        {
+                            my ( $entry, $lno ) = @$line;
+                            $err = $model->PopulationTypesList->readString($entry);
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                        }
+                        # update user
+                        printf "Read %d population types.\n", $model->PopulationTypesList->getNumMolTypes();
+                    }
+    
+    
+                    ### Read Population Maps block
+                    elsif ( $name eq 'population maps' )
+                    {
+                        unless ( $model->MoleculeTypesList->StrictTyping )
+                        {
+                            $err = errgen("A $name block cannot be defined unless molecule types are defined explicitly");
+                            goto EXIT;        
+                        }
+                        # read Population Maps
+                        foreach my $line ( @$block_dat )
+                        {
+                            my ($entry, $lno) = @$line;
+                            $err = $model->PopulationList->readString($entry,$model);
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                        }
+                        # update user
+                        printf "Read %d population maps.\n", $model->PopulationList->getNumPopulations;
+                    }
+                    
+                        
+                    ### Read Compartments Block
+                    elsif ( $name eq 'compartments' )
+                    {    
+                        # Read Compartments
+                        my ($entry, $lno);
+                        foreach my $line ( @$block_dat )
+                        {
+                            ($entry, $lno) = @$line;
+                            $err = $model->CompartmentList->readString( $entry, $model->ParamList );
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                        }
+                        # validate compartments
+                        if ( $err = $model->CompartmentList->validate() )
+                        {
+                            $err = errgen( $err, $lno );
+                            goto EXIT;
+                        }
+                        if ($model->CompartmentList->getNumCompartments() > 0){
+                                # set flag to indicate compartments are being used
+                                $model->CompartmentList->Used(1);
+                                # update user
+                                printf "Read %d compartments.\n", $model->CompartmentList->getNumCompartments;
+                        }
+                    }
+                    
+                        
+                    ### Read Species/Seed Species Block
+                    elsif ( ($name eq 'species') or ($name eq 'seed species') )
+                    {
+                        # read Species
+                        foreach my $line ( @$block_dat )
+                        {
+                            my ($entry, $lno) = @$line;
+                            $err = $model->SpeciesList->readString( $entry, $model->ParamList,
+                                                                    $model->CompartmentList,
+                                                                    $model->MoleculeTypesList );
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }                            
+                        }
+                        # update user
+                        printf "Read %d species.\n", $model->SpeciesList->getNumSpecies();
+                    }
+                    
+    
+                    ### Read Reaction Rules Block
+                    elsif ( $name eq 'reaction rules' )
+                    {
+                            # Read reaction rules
+                            my $nerr = 0;
+                            #my $rrules = [];
+                            #$model->rxnrules( $rrules );
+                            my $rrules = $model->RxnRules;
+                            my $counter = 1;
+                            foreach my $line ( @$block_dat )
+                            {
+                                my ($entry, $lno) = @$line;
+                                # create new rule
+                                (my $rrs, $err) = RxnRule::newRxnRule( $entry, $model, $lno );
+                                if ($err)
+                                {   # some error encountered
+                                    $err = errgen( $err, $lno );
+                                    printf "ERROR: $err\n";
+                                    ++$nerr;
+                                }
+                                # check rule name (if given)
+                                elsif ( $rrs->[0]->Name ){
+                                    foreach my $r (@$rrules){ # loop over all existing rules
+                                        foreach my $x (@$r){  # consider forward and reverse (if exists) for existing rule (just to be safe)
+                                            if ( $rrs->[0]->Name eq $x->Name ){ # duplicate rule name found
+                                            $err = "Duplicate rule name detected (\"" . $rrs->[0]->Name . "\").";
+                                            $err = errgen( $err, $lno );
+                                            printf "ERROR: $err\n";
+                                            ++$nerr;
+                                            last;
+                                        }
+                                        }
+                                }
+                            }
+                            unless ($err)
+                            {
+                                    # rule is ok
+                                push @$rrules, $rrs;
 
-	                            # give names, if not defined
-	                            unless ( $rrs->[0]->Name )
-	                            {   
-									#$rrs->[0]->Name( 'Rule' . scalar @$rrules );
-									my $rname = '_R' . $counter++;
-									# avoid duplicate names (just to be safe)
-									for (my $i=0; $i < @$rrules-1; $i++){
-										if ($rname eq @$rrules[$i]->[0]->Name){ # duplicate rule name
-											$rname = '_R' . $counter++;
-											$i = -1; # start over
-										}
-									}
-									$rrs->[0]->Name( $rname );
-	                            }
-	                            if ( @$rrs > 1 )
-	                            {
-	                                unless ($rrs->[1]->Name)
-	                                {   
-										#$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );
-										$rrs->[1]->Name( '_reverse_' . $rrs->[0]->Name);
-									}
-	                            }
-	                        }
-		                    if ($nerr)
-		                    {
-		                        $err = "Reaction rule list could not be read because of errors.";
-		                        goto EXIT;
-		                    }
-	                    	}
-	                    # update user
-	                    printf "Read %d reaction rule(s).\n", scalar @{$model->RxnRules};
-	                }
-	                
-	
-	                ### Read Reactions Block
-	                elsif ( $name eq 'reactions' )
-	                {
-	                    # Reactions (when reading NET file)
-	                    my $rlist = RxnList->new;
-	                    foreach my $line ( @{$block_dat} )
-	                    {
-	                        my ( $entry, $lno ) = @{$line};
-	                        $err = $rlist->readString( $entry,
-	                                                   $model->SpeciesList,
-	                                                   $model->ParamList    );
-	                        if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
-	                    }
-	                    printf "Read %d reaction(s).\n", scalar( @{$block_dat} );
-	                    $model->RxnList($rlist);
-	                }
-	
-	
-	                ### Read Groups Block
-	                elsif ( $name eq 'groups' )
-	                {
-	                	my $iobs = 0;
-	                    if ( @{$model->Observables} )
-	                    {   # Associate groups with exisiting observables
-	                        # my $iobs   = 0;
-	                        foreach my $line ( @$block_dat )
-	                        {
-	                            my ($entry, $lno) = @$line;
-	                    
-	                            # split into tokens (note: using ' ' is different than / /, see perlfunc)
-	                            my @tokens = split ' ', $entry;
-	
-	                            # Skip first entry if it's an index
-	                            if ( $tokens[0] =~ /^\d+$/ ) {  shift @tokens;  }
-	     
-	                            if ( $iobs >= @{$model->Observables} )
-	                            {   # more groups than observables!
-	                                $err = errgen( "More groups than observables", $lno );
-	                                goto EXIT;
-	                            }
-	
-	                            # get observable
-	                            my $obs = $model->Observables->[$iobs];
-	
-	                            # Check that Observable and Group names match
-	                            my $group_name = @tokens ? shift @tokens : '';
-	                            unless ( $group_name eq $obs->Name )
-	                            {
-	                                $err = errgen("Group named '$tokens[0]' is not compatible with any observable", $lno );
-	                                goto EXIT;
-	                            }
-	
-	                            # get group weights
-	                            my @group_weights = split (/,/, $tokens[0]);
-	
-	                            # Zero the weights (TODO..)
-	                            @{$obs->Weights} = (0) x scalar @{$obs->Weights};
-	                            my ($weight, $species_idx);
-	                            foreach my $component (@group_weights)
-	                            {
-	                                if ( $component =~ m/^(\d+)\*(\d+)$/ )
-	                                {
-	                                    $weight = $1;
-	                                    $species_idx = $2;
-	                                }
-	                                elsif ( $component =~ m/^(\d+)$/ )
-	                                {
-	                                    $weight = 1;
-	                                    $species_idx = $1;
-	                                }
-	                                else
-	                                {
-	                                    $err = errgen( "Invalid group entry: $component", $lno );
-	                                    goto EXIT;
-	                                }
-	                                $obs->Weights->[$species_idx] += $weight;
-	                            }
-	                            ++$iobs;
-	                        }
-	                    }
-	                    else
-	                    {   # create a dummy observable for each group
-	                        send_warning("Found 'groups' block before 'observables': creating observables.");
-	
-	                        # get the number of species
-	                        my $n_species = $model->SpeciesList->getNumSpecies();
-	
-	                        #my $iobs   = 0;
-	                        foreach my $line ( @$block_dat )
-	                        {
-	                            my ($entry, $lno) = @$line;
-	                    
-	                            # split into tokens (note: using ' ' is different than / /, see perlfunc)
-	                            my @tokens = split ' ', $entry;
-	
-	                            # Skip first entry if it's an index
-	                            if ( $tokens[0] =~ /^\d+$/ ) {  shift @tokens;  }
-	
-	                            # Group name is next token
-	                            my $group_name = @tokens ? shift @tokens : '';
-	                            unless ( $group_name =~ /^\w+$/ )
-	                            {
-	                                $err = errgen("Invalid group name '$group_name'", $lno );
-	                                goto EXIT;
-	                            }                        
-	
-	                            # create dummy observable
-	                            my $obs = Observable->new( Name=>$group_name, Patterns=>[], Weights=>[], Type=>"Molecule", Output=>1 );
-	                            push @{$model->Observables}, $obs;
-	
-	                            # Add paramter to observable list
-	                            if ( $model->ParamList->set( $obs->Name, "0", 1, "Observable", $obs) )
-	                            {
-	                          	    my $name = $obs->Name;
-	                                $err = errgen( "Observable name $name matches previously defined Observable or Parameter", $lno );
-	                                goto EXIT;
-	                            }
-	
-	                            # get group weights
-	                            my @group_weights = ($tokens[0]) ? split( /,/ , $tokens[0] ) : ();
-	                            
-	                            # Zero the weights
-	                            @{$obs->Weights} = (0) x ($n_species+1);
-	                            my ($weight, $species_idx);
-	                            foreach my $component (@group_weights)
-	                            {
-	                                if ( $component =~ /^(\d+)\*(\d+)$/ )
-	                                {
-	                                    $weight = $1;
-	                                    $species_idx = $2;
-	                                }
-	                                elsif ( $component =~ /^(\d+)$/ )
-	                                {
-	                                    $weight = 1;
-	                                    $species_idx = $1;
-	                                }
-	                                else
-	                                {
-	                                    $err = errgen( "Invalid group entry: $component", $lno );
-	                                    goto EXIT;
-	                                }
-	                                $obs->Weights->[$species_idx] += $weight;
-	                            }
-	                            ++$iobs;
-	                        }
-	                    }
-	                    # update user
-	                    printf "Read %d group(s).\n", $iobs;
-	                }
-	
-	
-	                ### Read Observables Block
-	                elsif ( $name eq 'observables' )
-	                {
-	                    # Read observables
-	                    my ($entry, $lno );
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        ($entry, $lno ) = @$line;
-	                        my $obs = Observable->new();
-	                        $err = $obs->readString($entry, $model);
-	                        if ($err)
-	                        {
-	                            $err = errgen( $err, $lno );
-	                            goto EXIT;
-	                        }
-	                        push @{$model->Observables}, $obs;
-	                    }    
-	
-	                    # check paramlist for unresolved dependency, etc
-	                    #   GIVE warning here, don't terminate!                    
-	                    if ( $err = $model->ParamList->check() )
-	                    {
-	                        $err = errgen( $err, $lno );
-	                        print "Warning: $err\n"
-	                             ."  (if parameter is defined in a subsequent block,\n"
-	                             ."  then this warning can be safely ignored.)\n";
-	                    }                    
-	                    # update user            
-	                    printf "Read %d observable(s).\n", scalar @{$model->Observables};
-	                }
-	
-	                
-	                ### Read Energy Patterns Block
-	                elsif ( $name eq 'energy patterns' )
-	                {
-	                    # read energy patterns
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ($entry, $lno) = @$line;
-	                        my $epatt = EnergyPattern->new();
-	                        $err = $epatt->readString( $entry, $model );
-	                        if ($err) {  $err = errgen($err, $lno);  goto EXIT;  }
-	                        push @{$model->EnergyPatterns}, $epatt;
-	                    }
-	                    # update 
-	                    printf "Read %d energy patterns(s).\n", scalar @{$model->EnergyPatterns};  
-	                
-	                }                    
-	
-	                
-	                ### Read Actions Block
-	                elsif ( $name eq 'actions' )
-	                {
-	                    if ($model->Params->{'skip_actions'})
-	                    {
-	                        unless ($model->Params->{'action_skip_warn'})
-	                        {   send_warning( err_gen("Skipping actions") );   }
-	                        next;
-	                    }
-	                    # Read actions
-	                    foreach my $line ( @$block_dat )
-	                    {
-	                        my ($entry, $lno) = @$line;
-	                        # Remove (and ignore) leading index from line
-	                        $entry =~ s/^\d+\s+//;
-	                        # Get action and options
-	                        my ($action, $options);
-	                        if ( $entry =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
-	                        {
-	                            $action  = $1;
-	                            $options = $2;
-	                            # replace double quotes with single quotes so that Perl won't
-	                            #  try to interpret special characters.    
-	                            $options =~ s/"/'/g;
-	                        }
-	                        else                        
-	                        {
-	                            $err = "Line $entry does not appear to contain a command";
-	                            $err = errgen( $err, $lno );
-	                        }
-	
-	                        # TODO: validate action                        
-	                        # TODO: validate option syntax
-	
-	                        # Perform self-consistency checks before operations are performed on model
-	                        if ( $err = $model->ParamList->check() )
-	                        {
-	                            $err = errgen($err);
-	                            goto EXIT;
-	                        }
-	
-	                        # execute action        
-	                        my $command = sprintf "\$model->%s(%s);", $action, $options;
-	                        my $t_start = cpu_time(0);
-	                        $err = eval $command;
-	                        if ($@)   { $err = errgen($@);    goto EXIT; }
-	                        if ($err) { $err = errgen($err);  goto EXIT; }
-	                        my $t_elapsed = cpu_time($t_start);
-	                        printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
-	                    }
-	                }
-	                
-	
-	                ### Try to read any other Block type (probably an error)
-	                else
-	                {   # exit
-	                    $err = errgen("Could not process block type '$name'");
-	                    goto EXIT;
-	                }
-	            }
-	
-	            elsif ( $string =~ /^\s*(setOption)\s*\((.*)\);?\s*$/ )
-	            {   # special action: setOption(opts)
-	                my $action = $1;
-	                my $options = $2;
-	                
-	                # Perform self-consistency checks before operations are performed on model
-	                if ( $err = $model->ParamList->check() )
-	                {  $err = errgen($err);  goto EXIT;  }
-	
-	                # call to methods associated with $model
-	                my $command = '$model->' . $action . '(' . $options . ');';
-	                $err = eval $command;
-	                if ($@)   {  $err = errgen($@);    goto EXIT;  }
-	                if ($err) {  $err = errgen($err);  goto EXIT;  }
-	            }
-	
-	            elsif ( $string =~ s/^\s*(parameter|param|par)\s+//i )
-	            {   # Define a parameter outside of the Parameter block
-	                unless ($in_model)
-	                {
-	                    $err = errgen("Parameter cannot be defined outside of a model");
-	                    goto EXIT;
-	                }
-	                # read parameter
-	                $err = $model->ParamList->readString($string);
-	                if ($err) {  $err = errgen($err);  goto EXIT;  }
-	            }
-	
-	            elsif ( $string =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
-	            {   # execute an Action:  "action(options)"
-	                my $action = $1;
-	                my $options = $2;
-	                # replace double quotes with single quotes so that Perl won't
-	                #  try to interpret special characters.    
-	                $options =~ s/"/'/g;
-	
-	                if ($model->Params->{'skip_actions'})
-	                {
-	                    unless ($model->Params->{'action_skip_warn'})
-	                    {   send_warning( errgen("Skipping actions") );   }
-	                    next;
-	                }
-	
-	                # Perform self-consistency checks before operations are performed on model
-	                if ( $err = $model->ParamList->check() )
-	                {
-	                    $err = errgen($err);
-	                    goto EXIT;
-	                }
-	
-	                # execute action
-	                my $command = sprintf "\$model->%s(%s);", $action, $options;
-	
-				 	my $t_start = cpu_time(0);					
-                	$err = eval $command;
-                	if ($@)   { $err = errgen($@);    goto EXIT; }
-                	if ($err) { $err = errgen($err);  goto EXIT; }
-                	my $t_elapsed = cpu_time($t_start);
-                	printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+                                # give names, if not defined
+                                unless ( $rrs->[0]->Name )
+                                {   
+                                    #$rrs->[0]->Name( 'Rule' . scalar @$rrules );
+                                    my $rname = '_R' . $counter++;
+                                    # avoid duplicate names (just to be safe)
+                                    for (my $i=0; $i < @$rrules-1; $i++){
+                                        if ($rname eq @$rrules[$i]->[0]->Name){ # duplicate rule name
+                                            $rname = '_R' . $counter++;
+                                            $i = -1; # start over
+                                        }
+                                    }
+                                    $rrs->[0]->Name( $rname );
+                                }
+                                if ( @$rrs > 1 )
+                                {
+                                    unless ($rrs->[1]->Name)
+                                    {   
+                                        #$rrs->[1]->Name( 'Rule' . scalar @$rrules . 'r' );
+                                        $rrs->[1]->Name( '_reverse_' . $rrs->[0]->Name);
+                                    }
+                                }
+                            }
+                            if ($nerr)
+                            {
+                                $err = "Reaction rule list could not be read because of errors.";
+                                goto EXIT;
+                            }
+                            }
+                        # update user
+                        printf "Read %d reaction rule(s).\n", scalar @{$model->RxnRules};
+                    }
+                    
+    
+                    ### Read Reactions Block
+                    elsif ( $name eq 'reactions' )
+                    {
+                        # Reactions (when reading NET file)
+                        my $rlist = RxnList->new;
+                        foreach my $line ( @{$block_dat} )
+                        {
+                            my ( $entry, $lno ) = @{$line};
+                            $err = $rlist->readString( $entry,
+                                                       $model->SpeciesList,
+                                                       $model->ParamList    );
+                            if ($err) {  $err = errgen( $err, $lno );  goto EXIT;  }
+                        }
+                        printf "Read %d reaction(s).\n", scalar( @{$block_dat} );
+                        $model->RxnList($rlist);
+                    }
+    
+    
+                    ### Read Groups Block
+                    elsif ( $name eq 'groups' )
+                    {
+                        my $iobs = 0;
+                        if ( @{$model->Observables} )
+                        {   # Associate groups with exisiting observables
+                            # my $iobs   = 0;
+                            foreach my $line ( @$block_dat )
+                            {
+                                my ($entry, $lno) = @$line;
+                        
+                                # split into tokens (note: using ' ' is different than / /, see perlfunc)
+                                my @tokens = split ' ', $entry;
+    
+                                # Skip first entry if it's an index
+                                if ( $tokens[0] =~ /^\d+$/ ) {  shift @tokens;  }
+         
+                                if ( $iobs >= @{$model->Observables} )
+                                {   # more groups than observables!
+                                    $err = errgen( "More groups than observables", $lno );
+                                    goto EXIT;
+                                }
+    
+                                # get observable
+                                my $obs = $model->Observables->[$iobs];
+    
+                                # Check that Observable and Group names match
+                                my $group_name = @tokens ? shift @tokens : '';
+                                unless ( $group_name eq $obs->Name )
+                                {
+                                    $err = errgen("Group named '$tokens[0]' is not compatible with any observable", $lno );
+                                    goto EXIT;
+                                }
+    
+                                # get group weights
+                                my @group_weights = split (/,/, $tokens[0]);
+    
+                                # Zero the weights (TODO..)
+                                @{$obs->Weights} = (0) x scalar @{$obs->Weights};
+                                my ($weight, $species_idx);
+                                foreach my $component (@group_weights)
+                                {
+                                    if ( $component =~ m/^(\d+)\*(\d+)$/ )
+                                    {
+                                        $weight = $1;
+                                        $species_idx = $2;
+                                    }
+                                    elsif ( $component =~ m/^(\d+)$/ )
+                                    {
+                                        $weight = 1;
+                                        $species_idx = $1;
+                                    }
+                                    else
+                                    {
+                                        $err = errgen( "Invalid group entry: $component", $lno );
+                                        goto EXIT;
+                                    }
+                                    $obs->Weights->[$species_idx] += $weight;
+                                }
+                                ++$iobs;
+                            }
+                        }
+                        else
+                        {   # create a dummy observable for each group
+                            send_warning("Found 'groups' block before 'observables': creating observables.");
+    
+                            # get the number of species
+                            my $n_species = $model->SpeciesList->getNumSpecies();
+    
+                            #my $iobs   = 0;
+                            foreach my $line ( @$block_dat )
+                            {
+                                my ($entry, $lno) = @$line;
+                        
+                                # split into tokens (note: using ' ' is different than / /, see perlfunc)
+                                my @tokens = split ' ', $entry;
+    
+                                # Skip first entry if it's an index
+                                if ( $tokens[0] =~ /^\d+$/ ) {  shift @tokens;  }
+    
+                                # Group name is next token
+                                my $group_name = @tokens ? shift @tokens : '';
+                                unless ( $group_name =~ /^\w+$/ )
+                                {
+                                    $err = errgen("Invalid group name '$group_name'", $lno );
+                                    goto EXIT;
+                                }                        
+    
+                                # create dummy observable
+                                my $obs = Observable->new( Name=>$group_name, Patterns=>[], Weights=>[], Type=>"Molecule", Output=>1 );
+                                push @{$model->Observables}, $obs;
+    
+                                # Add paramter to observable list
+                                if ( $model->ParamList->set( $obs->Name, "0", 1, "Observable", $obs) )
+                                {
+                                      my $name = $obs->Name;
+                                    $err = errgen( "Observable name $name matches previously defined Observable or Parameter", $lno );
+                                    goto EXIT;
+                                }
+    
+                                # get group weights
+                                my @group_weights = ($tokens[0]) ? split( /,/ , $tokens[0] ) : ();
+                                
+                                # Zero the weights
+                                @{$obs->Weights} = (0) x ($n_species+1);
+                                my ($weight, $species_idx);
+                                foreach my $component (@group_weights)
+                                {
+                                    if ( $component =~ /^(\d+)\*(\d+)$/ )
+                                    {
+                                        $weight = $1;
+                                        $species_idx = $2;
+                                    }
+                                    elsif ( $component =~ /^(\d+)$/ )
+                                    {
+                                        $weight = 1;
+                                        $species_idx = $1;
+                                    }
+                                    else
+                                    {
+                                        $err = errgen( "Invalid group entry: $component", $lno );
+                                        goto EXIT;
+                                    }
+                                    $obs->Weights->[$species_idx] += $weight;
+                                }
+                                ++$iobs;
+                            }
+                        }
+                        # update user
+                        printf "Read %d group(s).\n", $iobs;
+                    }
+    
+    
+                    ### Read Observables Block
+                    elsif ( $name eq 'observables' )
+                    {
+                        # Read observables
+                        my ($entry, $lno );
+                        foreach my $line ( @$block_dat )
+                        {
+                            ($entry, $lno ) = @$line;
+                            my $obs = Observable->new();
+                            $err = $obs->readString($entry, $model);
+                            if ($err)
+                            {
+                                $err = errgen( $err, $lno );
+                                goto EXIT;
+                            }
+                            push @{$model->Observables}, $obs;
+                        }    
+    
+                        # check paramlist for unresolved dependency, etc
+                        #   GIVE warning here, don't terminate!                    
+                        if ( $err = $model->ParamList->check() )
+                        {
+                            $err = errgen( $err, $lno );
+                            print "Warning: $err\n"
+                                 ."  (if parameter is defined in a subsequent block,\n"
+                                 ."  then this warning can be safely ignored.)\n";
+                        }                    
+                        # update user            
+                        printf "Read %d observable(s).\n", scalar @{$model->Observables};
+                    }
+    
+                    
+                    ### Read Energy Patterns Block
+                    elsif ( $name eq 'energy patterns' )
+                    {
+                        # read energy patterns
+                        foreach my $line ( @$block_dat )
+                        {
+                            my ($entry, $lno) = @$line;
+                            my $epatt = EnergyPattern->new();
+                            $err = $epatt->readString( $entry, $model );
+                            if ($err) {  $err = errgen($err, $lno);  goto EXIT;  }
+                            push @{$model->EnergyPatterns}, $epatt;
+                        }
+                        # update 
+                        printf "Read %d energy patterns(s).\n", scalar @{$model->EnergyPatterns};  
+                    
+                    }                    
+    
+                    
+                    ### Read Actions Block
+                    elsif ( $name eq 'actions' )
+                    {
+                        if ($model->Params->{'skip_actions'})
+                        {
+                            unless ($model->Params->{'action_skip_warn'})
+                            {   send_warning( err_gen("Skipping actions") );   }
+                            next;
+                        }
+                        # Read actions
+                        foreach my $line ( @$block_dat )
+                        {
+                            my ($entry, $lno) = @$line;
+                            # Remove (and ignore) leading index from line
+                            $entry =~ s/^\d+\s+//;
+                            # Get action and options
+                            my ($action, $options);
+                            if ( $entry =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
+                            {
+                                $action  = $1;
+                                $options = $2;
+                                # replace double quotes with single quotes so that Perl won't
+                                #  try to interpret special characters.    
+                                $options =~ s/"/'/g;
+                            }
+                            else                        
+                            {
+                                $err = "Line $entry does not appear to contain a command";
+                                $err = errgen( $err, $lno );
+                            }
+    
+                            # TODO: validate action                        
+                            # TODO: validate option syntax
+    
+                            # Perform self-consistency checks before operations are performed on model
+                            if ( $err = $model->ParamList->check() )
+                            {
+                                $err = errgen($err);
+                                goto EXIT;
+                            }
+    
+                            # execute action        
+                            my $command = sprintf "\$model->%s(%s);", $action, $options;
+                            my $t_start = cpu_time(0);
+                            $err = eval $command;
+                            if ($@)   { $err = errgen($@);    goto EXIT; }
+                            if ($err) { $err = errgen($err);  goto EXIT; }
+                            my $t_elapsed = cpu_time($t_start);
+                            printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+                        }
+                    }
+                    
+    
+                    ### Try to read any other Block type (probably an error)
+                    else
+                    {   # exit
+                        $err = errgen("Could not process block type '$name'");
+                        goto EXIT;
+                    }
+                }
+    
+                elsif ( $string =~ /^\s*(setOption)\s*\((.*)\);?\s*$/ )
+                {   # special action: setOption(opts)
+                    my $action = $1;
+                    my $options = $2;
+                    
+                    # Perform self-consistency checks before operations are performed on model
+                    if ( $err = $model->ParamList->check() )
+                    {  $err = errgen($err);  goto EXIT;  }
+    
+                    # call to methods associated with $model
+                    my $command = '$model->' . $action . '(' . $options . ');';
+                    $err = eval $command;
+                    if ($@)   {  $err = errgen($@);    goto EXIT;  }
+                    if ($err) {  $err = errgen($err);  goto EXIT;  }
+                }
+    
+                elsif ( $string =~ s/^\s*(parameter|param|par)\s+//i )
+                {   # Define a parameter outside of the Parameter block
+                    unless ($in_model)
+                    {
+                        $err = errgen("Parameter cannot be defined outside of a model");
+                        goto EXIT;
+                    }
+                    # read parameter
+                    $err = $model->ParamList->readString($string);
+                    if ($err) {  $err = errgen($err);  goto EXIT;  }
+                }
+    
+                elsif ( $string =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
+                {   # execute an Action:  "action(options)"
+                    my $action = $1;
+                    my $options = $2;
+                    # replace double quotes with single quotes so that Perl won't
+                    #  try to interpret special characters.    
+                    $options =~ s/"/'/g;
+    
+                    if ($model->Params->{'skip_actions'})
+                    {
+                        unless ($model->Params->{'action_skip_warn'})
+                        {   send_warning( errgen("Skipping actions") );   }
+                        next;
+                    }
+    
+                    # Perform self-consistency checks before operations are performed on model
+                    if ( $err = $model->ParamList->check() )
+                    {
+                        $err = errgen($err);
+                        goto EXIT;
+                    }
+    
+                    # execute action
+                    my $command = sprintf "\$model->%s(%s);", $action, $options;
+    
+                     my $t_start = cpu_time(0);                    
+                    $err = eval $command;
+                    if ($@)   { $err = errgen($@);    goto EXIT; }
+                    if ($err) { $err = errgen($err);  goto EXIT; }
+                    my $t_elapsed = cpu_time($t_start);
+                    printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
 
-		    }
-	            else
-	            {   # Try to execute general PERL code (Dangerous!!)
-	                if ( $model->Params->{allow_perl} )
-	                {
-	                    # General Perl code
-	                    eval $string;
-	                    if ($@) { $err = errgen($@);  goto EXIT; }
-	                }
-	                else
-	                {
-	                    send_warning( errgen("Unidentified input! Will not attempt to execute as Perl.") );
-	                    next;
-	                }
-	            }
-	        }
-    		} # end read BNGL or NET
-		else{
-			printf "$filename\n";
-			$filename =~ /(\.\w+)$/;
-			$err = errgen("Cannot read file $filename. Unknown file extension '$1'.");
-			goto EXIT;
-		}
+            }
+                else
+                {   # Try to execute general PERL code (Dangerous!!)
+                    if ( $model->Params->{allow_perl} )
+                    {
+                        # General Perl code
+                        eval $string;
+                        if ($@) { $err = errgen($@);  goto EXIT; }
+                    }
+                    else
+                    {
+                        send_warning( errgen("Unidentified input! Will not attempt to execute as Perl.") );
+                        next;
+                    }
+                }
+            }
+            } # end read BNGL or NET
+        else{
+            printf "$filename\n";
+            $filename =~ /(\.\w+)$/;
+            $err = errgen("Cannot read file $filename. Unknown file extension '$1'.");
+            goto EXIT;
+        }
 
       EXIT:
         unless ($err)
@@ -1438,9 +1438,9 @@ sub writeBNGL
     # Header
     my $version = BNGversion();
     my $codename = BNGcodename();
-	if ($codename) 
-	{	$codename = '-' . $codename;   }
-	$out .= "# Created by BioNetGen ${version}${codename}\n";
+    if ($codename) 
+    {    $codename = '-' . $codename;   }
+    $out .= "# Created by BioNetGen ${version}${codename}\n";
 
     # Version requirements
     unless ( $model->Version eq '' )
@@ -1766,7 +1766,7 @@ sub resetParameters
 
     return '' if $NO_EXEC;
     
-	# get a COPY so that subsequent 'setParameter' calls don't modify the saved list
+    # get a COPY so that subsequent 'setParameter' calls don't modify the saved list
     my $saved_paramlist = $model->ParameterCache->browse($label)->copyConstant();
 
     unless (defined $saved_paramlist)
@@ -1841,26 +1841,26 @@ sub setConcentration
     # scans can be run.
     my $estring2 = $value;
     my $variables = $expr->getVariables($plist);
-	foreach my $var ($variables->{'Observable'}){ # Observables
-		foreach my $name (keys %{$var}){
-			my $val = $plist->evaluate($name);
-			$estring2 =~ (s/$name/$val/g);
-		}
-	}
-	foreach my $var ($variables->{'Function'}){ # Functions
-		foreach my $name (keys %{$var}){
-			my $val = $plist->evaluate($name);
-			$estring2 =~ (s/$name(\(\))?/$val/g);
-		}
-	}
-	if ( my $err = $expr->readString( \$estring2, $plist ) ){
+    foreach my $var ($variables->{'Observable'}){ # Observables
+        foreach my $name (keys %{$var}){
+            my $val = $plist->evaluate($name);
+            $estring2 =~ (s/$name/$val/g);
+        }
+    }
+    foreach my $var ($variables->{'Function'}){ # Functions
+        foreach my $name (keys %{$var}){
+            my $val = $plist->evaluate($name);
+            $estring2 =~ (s/$name(\(\))?/$val/g);
+        }
+    }
+    if ( my $err = $expr->readString( \$estring2, $plist ) ){
         return '', $err;
     }
     
     # Either evaluate expression or create a new one with prefix 'NewConc'
     my $conc; # = $expr->evaluate($plist);
     if ( $expr->Type eq 'NUM' ){
-    		$conc = $expr->evaluate();
+            $conc = $expr->evaluate();
     }
     else{
         $conc = $expr->getName( $plist, 'NewConc' );
@@ -1876,7 +1876,7 @@ sub setConcentration
     $model->UpdateNet(1);
 
     printf "Set concentration of species %s to value %s\n", $spec->SpeciesGraph->StringExact, 
-    		($expr->Type eq 'NUM' ? $conc : $expr->toString());
+            ($expr->Type eq 'NUM' ? $conc : $expr->toString());
     return undef;
 }
 
@@ -2203,7 +2203,7 @@ sub generate_network
         'TextSpecies'  => 1,
         'TextReaction' => 0,
         'verbose'      => 0,
-		'write'		   => 1
+        'write'           => 1
     );
 
     # overwrite default params with user params
@@ -2220,7 +2220,7 @@ sub generate_network
     
     # Output prefix
     if (defined $user_params->{prefix}){
-    	$params{prefix} = $model->getOutputPrefix($user_params->{prefix});
+        $params{prefix} = $model->getOutputPrefix($user_params->{prefix});
     }
     
     # add optional suffix to output prefix
@@ -2245,13 +2245,13 @@ sub generate_network
         'verbose'    => $params{verbose},
     };
 
-	# make sure 'max_stoich' molecules are valid names
-	foreach my $mol ( keys %{$params{'max_stoich'}} ){
-		if ( not $mol =~ /^[A-Za-z_]\w*$/ ){
-			return "Error in max_stoich: '$mol' is not a valid molecule name.";
-		}
-	}
-	
+    # make sure 'max_stoich' molecules are valid names
+    foreach my $mol ( keys %{$params{'max_stoich'}} ){
+        if ( not $mol =~ /^[A-Za-z_]\w*$/ ){
+            return "Error in max_stoich: '$mol' is not a valid molecule name.";
+        }
+    }
+    
     # check verbose option
     my $verbose = $params{verbose};
 
@@ -2406,42 +2406,42 @@ sub generate_network
     my $eff = ($n_tot) ? $t_tot / $n_tot : 0.0;
     printf "Total   : %5d reactions %.2e CPU s %.2e CPU s/rxn\n", $n_tot, $t_tot, $eff;
 
-	
-	# this is used in visualization, where a network is generated, but not written.
-	return if ($params{write}==0);
-	
+    
+    # this is used in visualization, where a network is generated, but not written.
+    return if ($params{write}==0);
+    
     # Print result to netfile
     my $err = $model->writeNetwork($params_writeNetwork);
     if ($err) { return $err; }
-	
-	# STATISTICAL FACTOR FOR REACTIONS- DEBUGGING
-	# OUTPUTS A FILE FOR EACH RULE 
-	# SHOWING REACTION INSTANCES AND LUMPING
-	# DURING generate_network()
-	# NAME YOUR RULES FIRST!
-	# - JOHN SEKAR
-	
-	my $aut = $BNGModel::GLOBAL_MODEL->Params->{'write_autos'};
-	if($aut==1)
-	{
-	foreach my $rxn(@{$model->RxnList->Array})
-		{
-		my $str = $rxn->toString(1);
-		my %inst = %{$rxn->InstanceHash};
-		my @k = keys %inst;
-		foreach my $rule(@k)
-			{
-			my $modelname = $BNGModel::GLOBAL_MODEL->Name;
-			my $rulename = $rule;
-			my $filename = join("_",($modelname,$rulename,"StatFactorCalculation")).".txt";
-			open(my $autfile,">>",$filename) or die "Not found!";
-			print $autfile "\nReaction\n".$str;
-			print $autfile "\nLumpFactor ".$inst{$rule};
-			print $autfile "\nReactionStatFactor: RuleStatFactor*LumpFactor = ".$rxn->StatFactor."\n";
-			close($autfile);
-			}
-		}
-	}
+    
+    # STATISTICAL FACTOR FOR REACTIONS- DEBUGGING
+    # OUTPUTS A FILE FOR EACH RULE 
+    # SHOWING REACTION INSTANCES AND LUMPING
+    # DURING generate_network()
+    # NAME YOUR RULES FIRST!
+    # - JOHN SEKAR
+    
+    my $aut = $BNGModel::GLOBAL_MODEL->Params->{'write_autos'};
+    if($aut==1)
+    {
+    foreach my $rxn(@{$model->RxnList->Array})
+        {
+        my $str = $rxn->toString(1);
+        my %inst = %{$rxn->InstanceHash};
+        my @k = keys %inst;
+        foreach my $rule(@k)
+            {
+            my $modelname = $BNGModel::GLOBAL_MODEL->Name;
+            my $rulename = $rule;
+            my $filename = join("_",($modelname,$rulename,"StatFactorCalculation")).".txt";
+            open(my $autfile,">>",$filename) or die "Not found!";
+            print $autfile "\nReaction\n".$str;
+            print $autfile "\nLumpFactor ".$inst{$rule};
+            print $autfile "\nReactionStatFactor: RuleStatFactor*LumpFactor = ".$rxn->StatFactor."\n";
+            close($autfile);
+            }
+        }
+    }
 
     return '';
 
@@ -2496,8 +2496,8 @@ sub findExec
     # Then look for OS-specific binary
     $exec = "${base}_${arch}";
     if ($arch =~ /MSWin32/){
-    		my $bitness = $Config{longsize}*8;
-    		$exec .= "-${bitness}bit" . ".exe";
+            my $bitness = $Config{longsize}*8;
+            $exec .= "-${bitness}bit" . ".exe";
     }
 
     if (-x $exec) { return $exec; }

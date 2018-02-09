@@ -203,7 +203,7 @@ else
     # Process any files
     while ( my $file = shift @ARGV )
     {
-        # create BNGMOdel object
+        # create BNGModel object
         my $model = BNGModel->new();
         $model->initialize();
         $BNGModel::GLOBAL_MODEL = $model;
