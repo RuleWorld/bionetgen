@@ -1,0 +1,3 @@
+[submodule "bng2/Network3/nfsim_src"]
+	path = bng2/Network3/nfsim_src
+	url = https://github.com/ruleworld/nfsim.git
