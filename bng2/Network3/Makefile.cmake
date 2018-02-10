@@ -30,10 +30,13 @@ MUPARSER_LIB = $(LIBDIR)/libmuparser.a
 NFSIM_BIN = NFsim
 NFSIM_DIR = nfsim_src
 
+SBML_TRANSLATOR_BIN = sbmlTranslator
+SBML_TRANSLATOR_DIR = atomizer
+
 # recipes that do not create files
 .PHONY: clean 
 
-all: run_network $(NFSIM_BIN)
+all: run_network $(NFSIM_BIN) $(SBML_TRANSLATOR_BIN)
 # run_network executable
 run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(NETWORK_BINDIR)
@@ -66,7 +69,11 @@ $(MATHUTILS_LIB):
 
 $(NFSIM_BIN):
 	cd $(NFSIM_DIR)/bin; make
-	cp $(NFSIM_DIR)/bin/$(NFSIM_BIN) $(NETWORK_BINDIR)
+	cp $(NFSIM_DIR)/bin/$(NFSIM_BIN) $(BNG_BINDIR)
+
+$(SBML_TRANSLATOR_BIN):
+	cd $(SBML_TRANSLATOR_DIR); make
+	cp $(SBML_TRANSLATOR_DIR)/dist/$(SBML_TRANSLATOR_BIN) $(BNG_BINDIR)
 
 # clean script
 clean:
