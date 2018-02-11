@@ -3,3 +3,8 @@ bng2/Perl2/Visualization/temp/patt.gml
 *.swp
 *~
 tags
+bng2/Network3/muparser_v2_2_4
+bng2/Network3/lib
+bng2/Network3/include
+bng2/Network3/cvode-2.6.0
+bng2/Network3/bin
