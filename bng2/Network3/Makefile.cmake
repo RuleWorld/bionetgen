@@ -68,10 +68,12 @@ $(MATHUTILS_LIB):
 	cp mathutils.h $(CMAKELISTS_DIR)/$(INCDIR)
 
 $(NFSIM_BIN):
-	cd $(NFSIM_DIR)/bin; make
-	cp $(NFSIM_DIR)/bin/$(NFSIM_BIN) $(BNG_BINDIR)
+	git submodule init; git submodule update
+	mkdir -p $(NFSIM_DIR)/lib; cd $(NFSIM_DIR)/lib; cmake ..; make
+	cp $(NFSIM_DIR)/lib/$(NFSIM_BIN) $(BNG_BINDIR)
 
 $(SBML_TRANSLATOR_BIN):
+	git submodule init; git submodule update
 	cd $(SBML_TRANSLATOR_DIR); make
 	cp $(SBML_TRANSLATOR_DIR)/dist/$(SBML_TRANSLATOR_BIN) $(BNG_BINDIR)
 
