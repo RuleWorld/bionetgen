@@ -27,16 +27,10 @@ MATHUTILS_LIB = $(LIBDIR)/libmathutils.a
 CVODE_LIB = $(LIBDIR)/libsundials_cvode.a $(LIBDIR)/libsundials_nvecserial.a
 MUPARSER_LIB = $(LIBDIR)/libmuparser.a
 
-NFSIM_BIN = NFsim
-NFSIM_DIR = nfsim_src
-
-SBML_TRANSLATOR_BIN = sbmlTranslator
-SBML_TRANSLATOR_DIR = atomizer
-
 # recipes that do not create files
 .PHONY: clean 
 
-all: run_network sundials-config $(NFSIM_BIN) $(SBML_TRANSLATOR_BIN)
+all: run_network sundials-config
 # run_network executable
 run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(NETWORK_BINDIR)
@@ -70,18 +64,7 @@ $(MATHUTILS_LIB):
 	mv libmathutils.a $(CMAKELISTS_DIR)/$(LIBDIR); \
 	cp mathutils.h $(CMAKELISTS_DIR)/$(INCDIR)
 
-$(NFSIM_BIN):
-	git submodule init; git submodule update
-	mkdir -p $(NFSIM_DIR)/lib; cd $(NFSIM_DIR)/lib; cmake ..; make
-	cp $(NFSIM_DIR)/lib/$(NFSIM_BIN) $(BNG_BINDIR)
-
-$(SBML_TRANSLATOR_BIN):
-	git submodule init; git submodule update
-	cd $(SBML_TRANSLATOR_DIR); make
-	cp $(SBML_TRANSLATOR_DIR)/dist/$(SBML_TRANSLATOR_BIN) $(BNG_BINDIR)
-
 # clean script
 clean:
 	rm -rf $(CVODE) $(MUPARSER) $(NETWORK_BINDIR) $(LIBDIR) $(INCDIR)
 	cd $(MATHUTILS) ; $(MAKE) clean
-	cd $(NFSIM_DIR) ; $(MAKE) clean
