@@ -35,7 +35,11 @@ notifications:
 script:
   - cd ./bng2
   # build NFsim and atomizer
-  - make
+  - make NFsim
+  - cd ./atomizer
+  - pip2 install -r requirements.txt
+  - python2 pyinstaller2/pyinstaller.py utils/sbmlTranslator.spec
+  - cp dist/sbmlTranslator ../bin
   # build cvode
   - cd ../Network3
   - cp Makefile.cmake Makefile
