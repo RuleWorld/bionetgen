@@ -4,6 +4,8 @@ os:
 
 
 language: c++
+python:
+  - '2.7'
 sudo: false
 
 
@@ -29,11 +31,19 @@ notifications:
   
 script:
   - cd ./bng2
-  - make
-  - cd ./Network3
+  # build NFsim
+  - make NFsim
+  # build atomizer
+  - cd atomizer
+  - pip install -r requirements.txt 
+  - python pyinstaller2/pyinstaller.py utils/sbmlTranslator.spec
+  - cp ./dist/sbmlTranslator ../bin
+  # build cvode
+  - cd ../Network3
   - cp Makefile.cmake Makefile
   - make
   - cd ..
+  # build final distribution and validate
   - perl make_dist.pl --build --validate  --bindir ./bin
   #- source .dist_unix.sh
 
