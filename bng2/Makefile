@@ -21,11 +21,13 @@ all: $(NFSIM_BIN) $(SBML_TRANSLATOR_BIN)
 $(NFSIM_BIN):
 	git submodule init; git submodule update
 	mkdir -p $(NFSIM_DIR)/lib; cd $(NFSIM_DIR)/lib; cmake ..; make
+	mkdir -p $(FINAL_BINDIR)
 	cp $(NFSIM_DIR)/lib/$(NFSIM_BIN) $(FINAL_BINDIR)
 
 $(SBML_TRANSLATOR_BIN):
 	git submodule init; git submodule update
 	cd $(SBML_TRANSLATOR_DIR); make
+	mkdir -p $(FINAL_BINDIR)
 	cp $(SBML_TRANSLATOR_DIR)/dist/$(SBML_TRANSLATOR_BIN) $(FINAL_BINDIR)
 
 # clean script
