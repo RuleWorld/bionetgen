@@ -37,7 +37,7 @@ script:
   # build NFsim and atomizer
   - make NFsim
   - cd ./atomizer
-  - pip2 install -r requirements.txt
+  - pip install --user -r requirements.txt
   - python2 pyinstaller2/pyinstaller.py utils/sbmlTranslator.spec
   - cp dist/sbmlTranslator ../bin
   # build cvode
