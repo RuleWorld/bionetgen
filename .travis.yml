@@ -37,6 +37,7 @@ script:
   # build NFsim and atomizer
   - make NFsim
   - cd ./atomizer
+  - source osx_install.sh
   - pip install --user -r requirements.txt
   - unzip utils/pyinstaller2.zip
   - python2 pyinstaller2/pyinstaller.py utils/sbmlTranslator.spec
