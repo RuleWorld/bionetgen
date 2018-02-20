@@ -3461,4 +3461,655 @@ sub visualize
 	return '';
 }
 
+
+sub writeCfile
+{
+	my $model = shift;
+	my $params = (@_) ? shift : {};
+
+    # a place to hold errors
+    my $err;
+
+    # nothing to do if NO_EXEC is true
+	return '' if $BNGModel::NO_EXEC;
+
+    # nothing to do if there are no reactions
+	if ( @{$model->RxnList->Array}==0 )
+	{
+	    return "writeMexfile() has nothing to do: no reactions in current model. "
+	          ."Did you remember to call generate_network() before attempting to "
+	          ."write network output?";
+	}
+
+    # get reference to parameter list
+	my $plist = $model->ParamList;
+	
+	# get model name
+	my $model_name = $model->Name;
+    
+	# Strip prefixed path
+	my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
+	my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : undef;
+	if ( $suffix )
+	{   $prefix .= "_${suffix}";   }
+	
+    # split prefix into volume, path and filebase
+    my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
+
+	# define mexfile name
+    my $mex_filebase = "${filebase}_cvode";
+	my $mex_filename = "${mex_filebase}.c";
+    my $mex_path     = File::Spec->catpath($vol,$path,$mex_filename);
+    
+	# define m-script files name
+    my $mscript_filebase = "${filebase}";
+    my $mscript_filename = "${mscript_filebase}.m";
+	my $mscript_path     = File::Spec->catpath($vol,$path,$mscript_filename);
+    my $mscript_filebase_caps = uc $mscript_filebase;
+
+    # configure options
+    my $cvode_abstol = 1e-6;
+    if ( exists $params->{'atol'} )
+    {   $cvode_abstol = $params->{'atol'};  }
+    
+    my $cvode_reltol = 1e-8;
+    if ( exists $params->{'rtol'} )
+    {   $cvode_reltol = $params->{'rtol'};  }    
+
+    my $cvode_max_num_steps = 2000;
+    if ( exists $params->{'max_num_steps'} )
+    {   $cvode_max_num_steps = $params->{'max_num_steps'};  }  
+
+    my $cvode_max_err_test_fails = 7;
+    if ( exists $params->{'max_err_test_fails'} )
+    {   $cvode_max_err_test_fails = $params->{'max_err_test_fails'};  }  
+
+    my $cvode_max_conv_fails = 10;
+    if ( exists $params->{'max_conv_fails'} )
+    {   $cvode_max_conv_fails = $params->{'max_conv_fails'};  }  
+
+    my $cvode_max_step = '0.0';
+    if ( exists $params->{'max_step'} )
+    {   $cvode_max_step = $params->{'max_step'};  }
+
+    # Stiff = CV_BDF,CV_NEWTON (Default); Non-stiff = CV_ADAMS,CV_FUNCTIONAL
+    my $cvode_linear_multistep = 'CV_BDF';
+    my $cvode_nonlinear_solver = 'CV_NEWTON';
+    if ( exists $params->{'stiff'} )
+    {   
+        # if stiff is FALSE, then change to CV_ADAMS and CV_FUNCTIONAL
+        unless ( $params->{'stiff'} )
+        {
+            $cvode_linear_multistep = 'CV_ADAMS';    
+            $cvode_nonlinear_solver = 'CV_FUNCTIONAL';
+        }
+    }
+
+    # set sparse option (only permitted with CV_NEWTON)
+    my $cvode_linear_solver;
+    if ( ($cvode_nonlinear_solver eq 'CV_NEWTON')  and  ($params->{'sparse'}) )
+    {
+        $cvode_linear_solver =     "flag = CVSpgmr(cvode_mem, PREC_NONE, 0);\n"
+                              ."    if (check_flag(&flag, \"CVSpgmr\", 1))";
+    }
+    else
+    {
+        $cvode_linear_solver =     "flag = CVDense(cvode_mem, __N_SPECIES__);\n"
+                              ."    if (check_flag(&flag, \"CVDense\", 1))";
+    }
+
+    # time options for mscript
+    my $t_start = 0;
+    if ( exists $params->{'t_start'} )
+    {   $t_start = $params->{'t_start'};  }  
+
+    my $t_end = 10;
+    if ( exists $params->{'t_end'} )
+    {   $t_end = $params->{'t_end'};  } 
+
+    my $n_steps = 20;
+    if ( exists $params->{'n_steps'} )
+    {   $n_steps = $params->{'n_steps'};  } 
+
+    # code snippet for cleaning up dynamic memory before exiting CVODE-MEX
+    my $cvode_cleanup_memory =     "{                                  \n"
+                              ."        N_VDestroy_Serial(expressions);\n"
+                              ."        N_VDestroy_Serial(observables);\n"
+                              ."        N_VDestroy_Serial(ratelaws);   \n"
+                              ."        N_VDestroy_Serial(species);    \n"
+                              ."        CVodeFree(&cvode_mem);         \n"
+                              ."        return_status[0] = 1;          \n"
+                              ."        return;                        \n"
+                              ."    }                                  ";
+
+    # Index parameters associated with Constants, ConstantExpressions and Observables
+    ($err) = $plist->indexParams();
+    if ($err) { return $err };
+
+    # and retrieve a string of expression definitions
+    my $n_parameters = $plist->countType( 'Constant' );
+    my $n_expressions = $plist->countType( 'ConstantExpression' ) + $n_parameters;
+    (my $calc_expressions_string, $err) = $plist->getCVodeExpressionDefs();    
+    if ($err) { return $err };
+
+    # get list of parameter names and defintions for matlab
+	my $mscript_param_names;
+	my $mscript_param_values;
+	($mscript_param_names, $mscript_param_values, $err) = $plist->getMatlabConstantNames();
+    if ($err) { return $err };
+
+
+    # generate CVode references for species
+    # (Do this now, because we need references to CVode species for Observable definitions and Rxn Rates)
+    my $n_species = scalar @{$model->SpeciesList->Array};
+    
+     
+	# retrieve a string of observable definitions
+    my $n_observables = scalar @{$model->Observables};
+    my $calc_observables_string;
+    ($calc_observables_string, $err) = $plist->getCVodeObservableDefs();
+    if ($err) { return $err };    
+    
+    # get list of observable names for matlab
+	my $mscript_observable_names;
+	($mscript_observable_names, $err) = $plist->getMatlabObservableNames();
+    if ($err) { return $err };
+    
+    # Construct user-defined functions
+    my $user_fcn_declarations = '';
+    my $user_fcn_definitions = '';
+	foreach my $param ( @{ $model->ParamList->Array } )
+	{
+		if ( $param->Type eq 'Function' )
+		{
+		    # get reference to the actual Function
+		    my $fcn = $param->Ref;
+		    
+		    # don't write function if it depends on a local observable evaluation (this is useless
+		    #   since CVode can't do local evaluations)
+		    next if ( $fcn->checkLocalDependency($plist) );
+		    		    
+		    # get function declaration, add it to the user_fcn_declarations string
+		    $user_fcn_declarations .= $fcn->toCVodeString( $plist, {fcn_mode=>'declare',indent=>''} );
+		    
+		    # get function definition			    
+		    my $fcn_defn = $fcn->toCVodeString( $plist, {fcn_mode=>'define', indent=>''} );
+
+		    # add definition to the user_fcn_definitions string
+		    $user_fcn_definitions .= $fcn_defn . "\n";
+        }
+	}
+	
+    # index reactions
+    ($err) = $model->RxnList->updateIndex( $plist );
+    if ($err) { return $err };
+
+	# retrieve a string of reaction rate definitions
+	my $n_reactions = scalar @{$model->RxnList->Array};
+    my $calc_ratelaws_string;
+    ($calc_ratelaws_string, $err) = $model->RxnList->getCVodeRateDefs( $plist );
+    if ($err) { return $err };
+    
+
+    # get stoichiometry matrix (sparse encoding in a hashmap)
+	my $stoich_hash = {};
+	($err) = $model->RxnList->calcStoichMatrix( $stoich_hash );
+
+	# retrieve a string of species deriv definitions
+    my $calc_derivs_string;
+    ($calc_derivs_string, $err) = $model->SpeciesList->toCVodeString( $model->RxnList, $stoich_hash, $plist );
+    if ($err) { return $err };   	
+
+
+
+    # get list of species names and initial value expressions for matlab
+	my $mscript_species_names;
+	my $mscript_species_init;
+	($mscript_species_names, $mscript_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $model );
+    if ($err) { return $err };
+
+
+    ## Set up MATLAB Plot
+    # fontsizes
+    my $title_fontsize = 14;
+    my $axislabel_fontsize = 12;
+    my $legend_fontsize = 10;
+
+    # generate code snippets for plotting observables or species
+    my $mscript_plot_labels;
+    my $mscript_make_plot;
+
+    # get ylabel (either Number of Concentration)
+    my $ylabel;
+    if ( $model->SubstanceUnits eq 'Number' )
+    {   $ylabel = 'number';   }
+    elsif ( $model->SubstanceUnits eq 'Concentration' )
+    {   $ylabel = 'concentration';   }
+    else
+    {   $ylabel = 'number or concentration';   }
+
+    
+    if ( @{$model->Observables} )
+    {   # plot observables
+        $mscript_plot_labels = "    observable_labels = { $mscript_observable_names };\n";
+        
+        $mscript_make_plot = "    plot(timepoints,observables_out);\n"
+                            ."    title('${mscript_filebase} observables','fontSize',${title_fontsize},'Interpreter','none');\n"
+                            ."    axis([${t_start} timepoints(end) 0 inf]);\n"
+                            ."    legend(observable_labels,'fontSize',${legend_fontsize},'Interpreter','none');\n"
+                            ."    xlabel('time','fontSize',${axislabel_fontsize},'Interpreter','none');\n"
+                            ."    ylabel('${ylabel}','fontSize',${axislabel_fontsize},'Interpreter','none');\n";
+    
+    }
+    else
+    {   # plot species
+        $mscript_plot_labels = "    species_labels = { $mscript_species_names };\n";
+    
+        $mscript_make_plot = "    plot(timepoints,species_out);\n"
+                            ."    title('${mscript_filebase} species','fontSize',${title_fontsize},'Interpreter','none');\n"
+                            ."    axis([${t_start} timepoints(end) 0 inf]);\n"
+                            ."    legend(species_labels,'fontSize',${legend_fontsize},'Interpreter','none');\n"
+                            ."    xlabel('time','fontSize',${axislabel_fontsize},'Interpreter','none');\n"
+                            ."    ylabel('${ylabel}','fontSize',${axislabel_fontsize},'Interpreter','none');\n";
+    }
+
+
+    # open Mexfile and begin printing...
+	open( Mexfile, ">$mex_path" ) or die "Couldn't open $mex_path: $!\n";
+    print Mexfile <<"EOF";
+/*   
+**   ${mex_filename}
+**	 
+**   Cvode-Mex implementation of BioNetGen model '$model_name'.
+**
+**   Code Adapted from templates provided by Mathworks and Sundials.
+**   QUESTIONS about the code generator?  Email justinshogg\@gmail.com
+**
+**   Requires the CVODE libraries:  sundials_cvode and sundials_nvecserial.
+**   https://computation.llnl.gov/casc/sundials/main.html
+**
+**-----------------------------------------------------------------------------
+**
+**   COMPILE in MATLAB:
+**   mex -L<path_to_cvode_libraries> -I<path_to_cvode_includes>  ...
+**          -lsundials_nvecserial -lsundials_cvode -lm ${mex_filename}
+**
+**   note1: if cvode is in your library path, you can omit path specifications.
+**
+**   note2: if linker complains about lib stdc++, try removing "-lstdc++"
+**     from the mex configuration file "gccopts.sh".  This should be in the
+**     matlab bin folder.
+** 
+**-----------------------------------------------------------------------------
+**
+**   EXECUTE in MATLAB:
+**   [error_status, species_out, observables_out]
+**        = ${mex_filebase}( timepoints, species_init, parameters )
+**
+**   timepoints      : column vector of time points returned by integrator.
+**   parameters      : row vector of $n_parameters parameters.
+**   species_init    : row vector of $n_species initial species populations.
+**
+**   error_status    : 0 if the integrator exits without error, non-zero otherwise.
+**   species_out     : species population trajectories
+**                        (columns correspond to states, rows correspond to time).
+**   observables_out : observable trajectories
+**                        (columns correspond to observables, rows correspond to time).
+*/
+
+/* Library headers */
+#include "mex.h"
+#include "matrix.h"
+#include <stdlib.h>
+#include <math.h>
+#include <cvode/cvode.h>             /* prototypes for CVODE  */
+#include <nvector/nvector_serial.h>  /* serial N_Vector       */
+#include <cvode/cvode_dense.h>       /* prototype for CVDense */
+#include <cvode/cvode_spgmr.h>       /* prototype for CVSpgmr */
+
+/* Problem Dimensions */
+#define __N_PARAMETERS__   $n_parameters
+#define __N_EXPRESSIONS__  $n_expressions
+#define __N_OBSERVABLES__  $n_observables
+#define __N_RATELAWS__     $n_reactions
+#define __N_SPECIES__      $n_species
+
+/* core function declarations */
+void  mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] );
+int   check_flag  ( void *flagvalue, char *funcname, int opt );
+void  calc_expressions ( N_Vector expressions, double * parameters );
+void  calc_observables ( N_Vector observables, N_Vector species, N_Vector expressions );
+void  calc_ratelaws    ( N_Vector ratelaws,  N_Vector species, N_Vector expressions, N_Vector observables );
+int   calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data );
+
+/* user-defined function declarations */
+$user_fcn_declarations
+
+/* user-defined function definitions  */
+$user_fcn_definitions
+
+/* Calculate expressions */
+void
+calc_expressions ( N_Vector expressions, double * parameters )
+{
+$calc_expressions_string   
+}
+
+/* Calculate observables */
+void
+calc_observables ( N_Vector observables, N_Vector species, N_Vector expressions )
+{
+$calc_observables_string
+}
+
+/* Calculate ratelaws */
+void
+calc_ratelaws ( N_Vector ratelaws, N_Vector species, N_Vector expressions, N_Vector observables )
+{  
+$calc_ratelaws_string
+}
+
+
+/* Calculate species derivatives */
+int
+calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data )
+{
+    int         return_val;
+    N_Vector *  temp_data;
+    
+    N_Vector    expressions;
+    N_Vector    observables;
+    N_Vector    ratelaws;
+
+    /* cast temp_data */
+    temp_data = (N_Vector*)f_data;
+     
+    /* sget ratelaws Vector */
+    expressions = temp_data[0];
+    observables = temp_data[1];
+    ratelaws    = temp_data[2];
+       
+    /* calculate observables */
+    calc_observables( observables, species, expressions );
+    
+    /* calculate ratelaws */
+    calc_ratelaws( ratelaws, species, expressions, observables );
+                        
+    /* calculate derivatives */
+$calc_derivs_string
+
+    return(0);
+}
+
+
+/*
+**   ========
+**   main MEX
+**   ========
+*/
+void mexFunction( int nlhs, mxArray * plhs[], int nrhs, const mxArray * prhs[] )
+{
+    /* variables */
+    double *  return_status;
+    double *  species_out;
+    double *  observables_out;    
+    double *  parameters;
+    double *  species_init;
+    double *  timepoints; 
+    size_t    n_timepoints;
+    size_t    i;
+    size_t    j;
+
+    /* intermediate data vectors */
+    N_Vector  expressions;
+    N_Vector  observables;
+    N_Vector  ratelaws;
+
+    /* array to hold pointers to data vectors */
+    N_Vector  temp_data[3];
+    
+    /* CVODE specific variables */
+    realtype  reltol;
+    realtype  abstol;
+    realtype  time;
+    N_Vector  species;
+    void *    cvode_mem;
+    int       flag;
+
+    /* check number of input/output arguments */
+    if (nlhs != 3)
+    {  mexErrMsgTxt("syntax: [err_flag, species_out, obsv_out] = network_mex( timepoints, species_init, params )");  }
+    if (nrhs != 3)
+    {  mexErrMsgTxt("syntax: [err_flag, species_out, obsv_out] = network_mex( timepoints, species_init, params )");  }
+
+
+    /* make sure timepoints has correct dimensions */
+    if ( (mxGetM(prhs[0]) < 2)  ||  (mxGetN(prhs[0]) != 1) )
+    {  mexErrMsgTxt("TIMEPOINTS must be a column vector with 2 or more elements.");  }
+
+    /* make sure species_init has correct dimensions */
+    if ( (mxGetM(prhs[1]) != 1)  ||  (mxGetN(prhs[1]) != __N_SPECIES__) )
+    {  mexErrMsgTxt("SPECIES_INIT must be a row vector with $n_species elements.");  } 
+
+    /* make sure params has correct dimensions */
+    if ( (mxGetM(prhs[2]) != 1)  ||  (mxGetN(prhs[2]) != __N_PARAMETERS__) )
+    {  mexErrMsgTxt("PARAMS must be a column vector with $n_parameters elements.");  }
+
+    /* get pointers to input arrays */
+    timepoints   = mxGetPr(prhs[0]);
+    species_init = mxGetPr(prhs[1]);
+    parameters   = mxGetPr(prhs[2]);
+
+    /* get number of timepoints */
+    n_timepoints = mxGetM(prhs[0]);
+
+    /* Create an mxArray for output trajectories */
+    plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL );
+    plhs[1] = mxCreateDoubleMatrix(n_timepoints, __N_SPECIES__, mxREAL);
+    plhs[2] = mxCreateDoubleMatrix(n_timepoints, __N_OBSERVABLES__, mxREAL);
+
+    /* get pointers to output arrays */
+    return_status   = mxGetPr(plhs[0]);
+    species_out     = mxGetPr(plhs[1]);
+    observables_out = mxGetPr(plhs[2]);    
+   
+    /* initialize intermediate data vectors */
+    expressions  = NULL;
+    expressions = N_VNew_Serial(__N_EXPRESSIONS__);
+    if (check_flag((void *)expressions, "N_VNew_Serial", 0))
+    {
+        return_status[0] = 1;
+        return;
+    }
+
+    observables = NULL;
+    observables = N_VNew_Serial(__N_OBSERVABLES__);
+    if (check_flag((void *)observables, "N_VNew_Serial", 0))
+    {
+        N_VDestroy_Serial(expressions);
+        return_status[0] = 1;
+        return;
+    }
+
+    ratelaws    = NULL; 
+    ratelaws = N_VNew_Serial(__N_RATELAWS__);
+    if (check_flag((void *)ratelaws, "N_VNew_Serial", 0))
+    {   
+        N_VDestroy_Serial(expressions);
+        N_VDestroy_Serial(observables);        
+        return_status[0] = 1;
+        return;
+    }
+    
+    /* set up pointers to intermediate data vectors */
+    temp_data[0] = expressions;
+    temp_data[1] = observables;
+    temp_data[2] = ratelaws;
+
+    /* calculate expressions (expressions are constant, so only do this once!) */
+    calc_expressions( expressions, parameters );
+
+        
+    /* SOLVE model equations! */
+    species   = NULL;
+    cvode_mem = NULL;
+
+    /* Set the scalar relative tolerance */
+    reltol = $cvode_reltol;
+    abstol = $cvode_abstol;
+
+    /* Create serial vector for Species */
+    species = N_VNew_Serial(__N_SPECIES__);
+    if (check_flag((void *)species, "N_VNew_Serial", 0))
+    {  
+        N_VDestroy_Serial(expressions);
+        N_VDestroy_Serial(observables);
+        N_VDestroy_Serial(ratelaws);
+        return_status[0] = 1;
+        return;
+    }
+    for ( i = 0; i < __N_SPECIES__; i++ )
+    {   NV_Ith_S(species,i) = species_init[i];   }
+    
+    /* write initial species populations into species_out */
+    for ( i = 0; i < __N_SPECIES__; i++ )
+    {   species_out[i*n_timepoints] = species_init[i];   }
+    
+    /* write initial observables populations into species_out */ 
+    calc_observables( observables, species, expressions );  
+    for ( i = 0; i < __N_OBSERVABLES__; i++ )
+    {   observables_out[i*n_timepoints] = NV_Ith_S(observables,i);   }
+
+    /*   Call CVodeCreate to create the solver memory:    
+     *   CV_ADAMS or CV_BDF is the linear multistep method
+     *   CV_FUNCTIONAL or CV_NEWTON is the nonlinear solver iteration
+     *   A pointer to the integrator problem memory is returned and stored in cvode_mem.
+     */
+    cvode_mem = CVodeCreate($cvode_linear_multistep, $cvode_nonlinear_solver);
+    if (check_flag((void *)cvode_mem, "CVodeCreate", 0))
+    $cvode_cleanup_memory
+
+
+
+    /*   Call CVodeInit to initialize the integrator memory:     
+     *   cvode_mem is the pointer to the integrator memory returned by CVodeCreate
+     *   rhs_func  is the user's right hand side function in y'=f(t,y)
+     *   T0        is the initial time
+     *   y         is the initial dependent variable vector
+     */
+    flag = CVodeInit(cvode_mem, calc_species_deriv, timepoints[0], species);
+    if (check_flag(&flag, "CVodeInit", 1))
+    $cvode_cleanup_memory
+   
+    /* Set scalar relative and absolute tolerances */
+    flag = CVodeSStolerances(cvode_mem, reltol, abstol);
+    if (check_flag(&flag, "CVodeSStolerances", 1))
+    $cvode_cleanup_memory   
+   
+    /* pass params to rhs_func */
+    flag = CVodeSetUserData(cvode_mem, &temp_data);
+    if (check_flag(&flag, "CVodeSetFdata", 1))
+    $cvode_cleanup_memory
+    
+    /* select linear solver */
+    $cvode_linear_solver
+    $cvode_cleanup_memory
+    
+    flag = CVodeSetMaxNumSteps(cvode_mem, $cvode_max_num_steps);
+    if (check_flag(&flag, "CVodeSetMaxNumSteps", 1))
+    $cvode_cleanup_memory
+
+    flag = CVodeSetMaxErrTestFails(cvode_mem, $cvode_max_err_test_fails);
+    if (check_flag(&flag, "CVodeSetMaxErrTestFails", 1))
+    $cvode_cleanup_memory
+
+    flag = CVodeSetMaxConvFails(cvode_mem, $cvode_max_conv_fails);
+    if (check_flag(&flag, "CVodeSetMaxConvFails", 1))
+    $cvode_cleanup_memory
+
+    flag = CVodeSetMaxStep(cvode_mem, $cvode_max_step);
+    if (check_flag(&flag, "CVodeSetMaxStep", 1))
+    $cvode_cleanup_memory
+
+    /* integrate to each timepoint */
+    for ( i=1;  i < n_timepoints;  i++ )
+    {
+        flag = CVode(cvode_mem, timepoints[i], species, &time, CV_NORMAL);
+        if (check_flag(&flag, "CVode", 1))
+        {
+            N_VDestroy_Serial(expressions);
+            N_VDestroy_Serial(observables);           
+            N_VDestroy_Serial(ratelaws);
+            N_VDestroy_Serial(species);
+            CVodeFree(&cvode_mem);
+            return_status[0] = 1; 
+            return;
+        }
+
+        /* copy species output from nvector to matlab array */
+        for ( j = 0; j < __N_SPECIES__; j++ )
+        {   species_out[j*n_timepoints + i] = NV_Ith_S(species,j);   }
+        
+        /* copy observables output from nvector to matlab array */
+        calc_observables( observables, species, expressions );         
+        for ( j = 0; j < __N_OBSERVABLES__; j++ )
+        {   observables_out[j*n_timepoints + i] = NV_Ith_S(observables,j);   }      
+    }
+ 
+    /* Free vectors */
+    N_VDestroy_Serial(expressions);
+    N_VDestroy_Serial(observables);  
+    N_VDestroy_Serial(ratelaws);        
+    N_VDestroy_Serial(species);
+
+    /* Free integrator memory */
+    CVodeFree(&cvode_mem);
+
+    return;
+}
+
+
+/*  Check function return value...
+ *   opt == 0 means SUNDIALS function allocates memory so check if
+ *            returned NULL pointer
+ *   opt == 1 means SUNDIALS function returns a flag so check if
+ *            flag >= 0
+ *   opt == 2 means function allocates memory so check if returned
+ *            NULL pointer 
+ */
+int check_flag(void *flagvalue, char *funcname, int opt)
+{
+    int *errflag;
+
+    /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
+    if (opt == 0 && flagvalue == NULL)
+    {
+        mexPrintf( "\\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\\n", funcname );    
+        return(1);
+    }
+
+    /* Check if flag < 0 */
+    else if (opt == 1)
+    {
+        errflag = (int *) flagvalue;
+        if (*errflag < 0)
+        {
+            mexPrintf( "\\nSUNDIALS_ERROR: %s() failed with flag = %d\\n", funcname, *errflag );
+            return(1);
+        }
+    }
+
+    /* Check if function returned NULL pointer - no memory allocated */
+    else if (opt == 2 && flagvalue == NULL)
+    {
+        mexPrintf( "\\nMEMORY_ERROR: %s() failed - returned NULL pointer\\n", funcname );
+        return(1);
+    }
+
+    return(0);
+}
+EOF
+	close(Mexfile);
+}
+
 1;
