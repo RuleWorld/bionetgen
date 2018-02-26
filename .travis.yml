@@ -28,8 +28,6 @@ notifications:
      template:
        - "BioNetGen build: %{result} in %{duration}"
        - "Build: <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>)    Author: %{author}"
-       - "Download Distribution Package Here:"
-       - "https://rawgit.com/RuleWorld/bionetgen/master/.BioNetGen_Beta.html"
        - "Build details:  %{build_url} "
    
 script:
