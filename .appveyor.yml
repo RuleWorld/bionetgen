@@ -24,8 +24,7 @@ notifications:
     template: 
        "<{{buildUrl}}|{{projectName}} build {{status}}> on {{commitDate}}:_{{commitMessage}}_\n
         Build: {{buildVersion}} (<{{commitUrl}}|{{commitId}}>)   Author: {{commitAuthor}}\n         
-        Build Details:\n
-        <{{buildUrl}}|{{buildUrl}}>"
+        Build Details: <{{buildUrl}}|{{buildUrl}}>"
 
 
 before_build:
