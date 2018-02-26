@@ -2767,7 +2767,13 @@ EOF
 ###
 ###
 
-
+sub writeLaTeXfile
+{
+	my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+	$model->writeLatex( $params );
+    return;
+}
 
 sub writeLatex
 {
