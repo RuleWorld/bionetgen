@@ -276,7 +276,8 @@ foreach my $model (@models)
 	if($model eq "statfactor") { push @$flags, "--write_autos"; }
 
     # execute BNGL model;
-    run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags );
+    run_BNG( $model_file, $model, $log_file, $log, $outdir, $flags ); 
+
 
 	# check SBML import
     if ( -e "${datprefix}_SBML.bngl"  and  -e "${outprefix}_SBML.bngl" )
@@ -474,6 +475,26 @@ foreach my $model (@models)
             close $log;
             ++$fail_count;
             next MODEL;
+        }
+    }
+
+    #check scan files
+    {
+        my @datfiles = glob("${datprefix}*.scan"); 
+        my @outfiles = glob("${outprefix}*.scan");
+        if(scalar(@datfiles)==1 and scalar(@outfiles)==1) #assuming one scan file for the model
+        {
+            multi_print( " -> checking parameter scan file\n", @allFH );
+            my @command = ( $perlbin, $verifyexec, $datfiles[0], $outfiles[0] );
+            my $exit_status = run_command( $log, \*STDOUT, @command );
+            unless ( $exit_status==0)
+            {   # compare_species encountered some problem
+                print "..FAILED!! exit_status = $exit_status\n";
+                print "see $log_file for more details.\n";
+                close $log;
+                ++$fail_count;
+                next MODEL;
+            }           
         }
     }
 
