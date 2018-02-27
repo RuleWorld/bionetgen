@@ -1,0 +1,484 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#        This is the model for testing the heterogeneous adaptive scaling     #
+#        method                                                               #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+begin model
+
+begin parameters
+  
+  # ---- General model settings -----------------------------------------------
+  #
+  EGF  10             # EGF ligand concentration [pg/ml]; influences the EGFR
+                      # activation rate (a1); this parameter assumes various
+                      # values, as specified in the simulation protocol (see
+                      # bottom of this file)
+
+  ERKpp_SOS1_FB  1.0  # strength of the ERK~PP--SOS negative feedback
+  ERKpp_MEK_FB   1.0  # strength of the ERK~PP--MEK negative feedback
+  ERKpp_RAF1_FB  1.0  # strength of the ERK~PP--RAF negative feedback
+
+  BIMOL 1.0         # scaling of bimolecular reactions; in order to simulate 
+                      # a fraction f of the system, 0 < f < 1, set BIMOL = f;
+                      # changing value of this parameters affects only
+                      # stochastic simulations
+
+  RAS_t0_active  0    # initial condition: fraction of RAS active at t=0
+  
+  
+  # ---- Protein abundances (copy numbers per cell) ---------------------------
+  
+  # -- Plasma membrane proteins:
+  #
+  EGFR_tot   3e5 * BIMOL
+  RAS_tot    6e4 * BIMOL
+  SOS_tot    1e5 * BIMOL
+  RasGAP_tot 6e3 * BIMOL
+  
+  # -- Cytoplasmic proteins:
+  #
+  RAF_tot    5e5 * BIMOL
+  MEK_tot    2e5 * BIMOL
+  ERK_tot    3e6 * BIMOL
+  
+  # -- Experimental read-out:
+  #
+  EKAR3_tot  1e6 * BIMOL
+  ERKTR_tot  1e6 * BIMOL
+  
+  
+  # ---- Kinetic rates --------------------------------------------------------
+  
+  # Kinetic parameters naming convention:
+  #
+  #     a -- activation      <->  d -- deactivation,
+  #     b -- binding         <->  u -- unbinding,
+  #     p -- phosphorylation <->  q -- dephosphorylation,
+  #     k -- catalysis
+  
+  
+  # -- Receptor activity:
+  #
+  a1   5e-5*EGF   # EGFR   activation due to EGF   binding
+  d1   1e-2       # EGFR deactivation due to EGF unbinding
+  
+  
+  # -- Positive feedback through RAS & SOS:
+  #
+  b1   1e-5/BIMOL # EGFR--SOS   binding; EGFR is EGF-bound, SOS~U
+  u1a  1e-2       # EGFR--SOS unbinding; EGFR is EGF-bound, SOS~U
+  u1b  1e+2       # EGFR--SOS unbinding; EGFR is EGF-free,  SOS~P+; FAST
+  #
+  b2a  1e-6/BIMOL # SOS(rem)--RAS~GTP   binding
+  u2a  1          # SOS(rem)--RAS~GTP unbinding
+  b2b  1e-7/BIMOL # SOS(rem)--RAS~GDP   binding
+  u2b  1          # SOS(rem)--RAS~GDP unbinding
+  #
+  k2a  1e-4/BIMOL # SOS max nt-exchanger activity;
+  #               # SOS allosterically strongly upregulated by RAS~GTP
+  k2b  1e-5/BIMOL # SOS med nt-exchanger activity; 
+  #               # SOS allosterically moderately upregulated by RAS~GDP
+# k2c   0  /BIMOL # SOS low nt-exchanger activity;
+#                 # SOS not bound to RAS at REM domain; negligible rate 
+#                                                       => commented out
+  
+  # -- RasGAP activity:
+  #
+  b3   1e-5/BIMOL # RasGAP--RAS(sos,g~GTP)   binding
+  u3   1e-2       # RasGAP--RAS(sos,g~GDP) unbinding
+  k3   1e+2       # FAST RAS signaling inactivation by bound RasGAP
+  #               # (through RasGAP-assisted ~GTP -> ~GDP hydrolysis)
+  
+  
+  # -- Signal transduction through RAF, MEK, and ERK:
+  #
+  a2   1e-7/BIMOL # RAF   activation by RAS~GTP
+  d2   1e-2       # RAF inactivation ("spontaneous")
+  #
+  p1   1e-7/BIMOL #   phosphorylation of MEK on activation sites by RAF
+  q1   1e-2       # dephosphorylation of MEK on activation sites ("spontaneous")
+  p2   3e-6/BIMOL #   phosphorylation of ERK  on activation sites by MEK
+  q2   1e-2       # dephosphorylation of ERK  on activation sites ("spontaneous")
+  
+  
+  # -- Negative feedback to SOS (4 phospho-sites, phosphorylation of any 
+  #                              sufficies for inhibition):
+  #
+  p3   3e-9/BIMOL*ERKpp_SOS1_FB # feedback phosphorylation of SOS by active ERK
+  #
+  q3   3e-4       # dephosphorylation of the SOS feedback site ("spontaneous")
+  
+  
+  # -- Negative feedback to MEK (MEK1's Thr292):
+  #
+  p4   6e-10/BIMOL*ERKpp_MEK_FB # feedback phosphorylation of MEK (Thr292) by ERK
+  #
+  q4   3e-4       # dephosphorylation of the MEK feedback site (Thr292) ("spontaneous")
+  #
+  q5   1e+2       # FAST dephosphorylation of MEK on activation sites
+  #               # ("spontaneous" due to the known MEK's phosphatase, PHP,
+  #               #  which binds to MEK's Thr292~P and is implicit in the model)
+  
+
+  # -- Negative feedback to RAF (hyperphosphorylation):
+  #
+  p6   6e-10/BIMOL*ERKpp_RAF1_FB  # (hyper)phosphorylation rate 
+  q6   3e-4                       # de(hyper)phosphorylation rate 
+  
+  
+  # -- ERK_pp reporters activation/deactivation:
+  #
+  a0_ekar3  3e-9/BIMOL
+  d0_ekar3  1e-3
+  #
+  a0_erktr  1e-9/BIMOL
+  d0_erktr  2e-3
+
+end parameters
+
+
+begin molecule types
+
+  ## EGFR, epidermal growth factor receptor:
+  #
+  #  egf -- indicates whether the receptor is bound (A) or not (I) to EGF ligand,
+  #            ligand-bound receptor is active.
+  #  sos -- a site for binding SOS.
+  #
+  # ASSUMING: direct binding of EGFR to SOS (in fact, Grb2 and/or Shc mediate
+  #           this interaction, but these details are irrelevent to the model).
+  #
+  EGFR(egf~I~A,sos)
+
+  ## SOS, assumed to be the main RAS GEF:
+  #
+  #  egfr -- EGFR-binding site (simplification; realistically, PXXP region
+  #            binds Grb2, which binds EGFR).
+  #
+  #  rem -- allosteric RAS-binding site.
+  #
+  #  S -- indicates whether SOS is: dephosphorylated (U), monophosphorylated (P),
+  #            double phosphorylated (PP), triple phosphorylated(PPP) or  
+  #            quadruple phosphorylated (PPPP).
+  #
+  # ASSUMING: Fast binding/unbinding kinetics at the primary RAS binding site,
+  #           GEF (a.k.a CDC25-HD) => GEF domain is absent in the model.
+  # 
+  # ASSUMING: no steric hindrance for simultaneous binding at egfr and rem sites
+  #           (REM domain and PXXP region in SOS structure are separated by 
+  #           CDC25-HD).
+  # 
+  SOS(rem,egfr,S~U~P~PP~PPP~PPPP)
+
+  ## RAS, which accounts for RAS all isoforms (mainly for K-RAS, usually most 
+  #           abundant).
+  #
+  #  sos -- used to indicate whether SOS is bound.
+  #  g -- used to idicate whether RAS is bound to GDP or GTP nucleotide;
+  #            is is ASSUMED that RAS is nt-free for a very short time,
+  #            thus it is not represented in the model. 
+  #
+  RAS(sos,g~GDP~GTP)
+  
+  ## A RAS activating protein (Ras GAP, e.g. RASA1):
+  #
+  #  ras -- a site to bind RAS.
+  #
+  RasGAP(ras)
+
+  ## RAF kinase:
+  #
+  #  S -- indicates whether RAF is:  not inactived (I), actived (A), inactivated
+  #            due to hyperphosphorylation (P).
+  #
+  RAF(S~A~I~P)
+
+  ## Mek1 kinase:
+  #
+  #  d  -- MEK homo- and heterodimerization domain.
+  #
+  #  S1 -- indicates whether Mek1 is unphosphorylated (Y), monophosphorylated
+  #            (Yp) or double phosphorylated (Ypp); double phosphorylation 
+  #            is considered activating.
+  #
+  #  T292 -- represents Thr292 residue, which undergoes feedback phosphorylation
+  #            (Yp) by ERK; when phosphorylated, it becomes a binding domain 
+  #            for PHP phosphatase.    
+  #
+  # ASSUMING: the presence of only the MEK isoform; MEK2 does not receive the
+  #            negative feedback from active ERK.
+  #
+  MEK(T292~U~P,S~U~P~PP)
+
+  ## ERK kinase, which account for both isoforms, ERK1 and ERK2:
+  #
+  #  S1 -- indicates whether Erk is unphosphorylated (Y), monophosphorylated 
+  #            (Yp) or double phosphorylated (Ypp); double phosphorylation is
+  #            considered activating.
+  # 
+  ERK(S~U~P~PP)
+
+  ## ERK_pp reporters:
+  #
+  EKAR3(act~I~A)
+  ERKTR(act~I~A)
+  
+end molecule types
+
+
+begin seed species
+  
+  EGFR(egf~I,sos)    EGFR_tot
+  RAS(sos,g~GDP)     RAS_tot *(1 - RAS_t0_active)
+  RAS(sos,g~GTP)     RAS_tot * RAS_t0_active
+  SOS(rem,egfr,S~U)  SOS_tot
+  RasGAP(ras)        RasGAP_tot
+  RAF(S~I)           RAF_tot
+  MEK(T292~U,S~U)    MEK_tot
+  ERK(S~U)           ERK_tot
+
+  EKAR3(act~I)       EKAR3_tot  
+  ERKTR(act~I)       ERKTR_tot  
+  
+end seed species
+
+
+begin reaction rules
+
+  # -- EGF Receptor activation due to (monomeric) EGF ligand binding:
+  #
+  EGFR(egf~I) <-> EGFR(egf~A)  a1,d1
+
+
+  # -- EGFR interactions with SOS:
+  #
+  # Active EGFR--SOS binding/unbinding:
+  EGFR(egf~A,sos) + SOS(rem,egfr,S~U)    <-> \
+  EGFR(egf~A,sos!1).SOS(rem,egfr!1,S~U) b1,u1a
+  #
+  # Inactive EGFR--SOS unbinding:
+  EGFR(egf~I,sos!1).SOS(rem,egfr!1) -> \
+  EGFR(egf~I,sos) + SOS(rem,egfr)   u1b
+  #
+  # ASSUMING: REM domain of SOS is unbound when SOS is binding to EGFR
+  #           (SOS is recruited to the membrane).
+  #
+  # ASSUMING: REM domain of SOS is unbound when SOS is unbinding from EGFR
+  #           (SOS decisively no longer active on the membrane).           
+  #
+  # ASSUMING: the phosphorylation state of SOS influences only its unbinding  
+  #           from *active* EGFR (== phosphorylation status of SOS is irrelevant
+  #           when it dissociates from inactive EGFR).
+
+
+  # -- SOS interactions with RAS:
+  #
+  # SOS--active RAS binding/unbinding => strong allosteric up-regulation of 
+  # SOS's GEF activity:
+  SOS(rem,egfr!+) + RAS(sos,g~GTP)     <-> \
+  SOS(rem!1,egfr!+).RAS(sos!1,g~GTP) b2a,u2a
+  #
+  # SOS--inactive RAS binding/unbinding => moderate allosteric up-regulation
+  # of SOS's GEF activity:
+  SOS(rem,egfr!+) + RAS(sos,g~GDP)     <-> \
+  SOS(rem!1,egfr!+).RAS(sos!1,g~GDP) b2b,u2b
+  #
+  # SOS complexed with active RAS (and thus allosterically strongly up-regulated) 
+  # helps another RAS with nucleotide exchange:
+  SOS(rem!1,egfr!+).RAS(sos!1,g~GTP) + RAS(sos,g~GDP) -> \
+  SOS(rem!1,egfr!+).RAS(sos!1,g~GTP) + RAS(sos,g~GTP) k2a
+  #
+  # SOS complexed with inactive RAS (and thus allosterically moderately up-regulated)
+  # helps another RAS with nucleotide exchange:
+  SOS(rem!1,egfr!+).RAS(sos!1,g~GDP) + RAS(sos,g~GDP) -> \
+  SOS(rem!1,egfr!+).RAS(sos!1,g~GDP) + RAS(sos,g~GTP) k2b
+  #  
+  # When SOS is not allosterically upregulated, it cannot accelerate nucleotide
+  # exchange. Therefore, kinetic rate is 0 (the reaction below is commented out 
+  # on purpose):
+  #
+# SOS(rem,EGFR!+) + RAS(sos,g~GDP) -> \
+# SOS(rem,EGFR!+) + RAS(sos,g~GTP) k2c
+
+
+  # -- RasGAP & RAS interactions:
+  #
+  #  Catalytic activation of G-protein => inhibition of signaling.
+  #  Michaelis--Menten-like kinetics introduces nonlinearity.
+  #  (This is not exactly M--M, as the active complex cannot dissociate
+  #   until the substrate is transformed.)
+  #  
+  RasGAP(ras) + RAS(sos,g~GTP)   -> \
+  RasGAP(ras!1).RAS(sos,g~GTP!1) b3
+  # 
+  RasGAP(ras!1).RAS(sos,g~GTP!1) -> \
+  RasGAP(ras!1).RAS(sos,g~GDP!1) k3
+  #
+  RasGAP(ras!1).RAS(sos,g~GDP!1) -> \
+  RasGAP(ras) + RAS(sos,g~GDP)   u3
+
+
+  # -- Activity of RAF:
+  #
+  # Activation of RAF on active RAS (complex formation, RAF dimerization neglected):
+  RAS(sos,g~GTP) + RAF(S~I)  ->  \
+  RAS(sos,g~GTP) + RAF(S~A)  a2
+  #
+  # RAF deactivation:
+  RAF(S~A) -> RAF(S~I)  d2        
+
+
+  # -- Activity of MEK:
+  #
+  # Phosphorylation of MEK on activating sites by RAF:
+  RAF(S~A) + MEK(S~U)   ->  \
+  RAF(S~A) + MEK(S~P)   p1*2
+  #
+  RAF(S~A) + MEK(S~P)   ->  \
+  RAF(S~A) + MEK(S~PP)  p1
+  #               
+  # Dephosphorylation of MEK on activating sites:
+  MEK(S~PP) -> MEK(S~P)  q1*2     
+  MEK(S~P)  -> MEK(S~U)  q1 
+
+
+  # -- Activity of ERK:
+  #
+  # Activation of ERK by MEK:
+  MEK(S~PP) + ERK(S~U)  ->  \
+  MEK(S~PP) + ERK(S~P)  p2*2
+  #
+  # Activation of ERK by MEK, further:
+  MEK(S~PP) + ERK(S~P)   ->  \
+  MEK(S~PP) + ERK(S~PP)  p2
+  #
+  # dephosphorylation of ERK on activating sites:
+  ERK(S~PP) -> ERK(S~P)   q2*2
+  ERK(S~P)  -> ERK(S~U)   q2
+
+
+  # -- Negative feedback phosphorylation of SOS by doubly phosphorylated ERK:
+  #
+  # Phosphorylation of SOS by ERK:
+  ERK(S~PP) + SOS(egfr,S~U)  ->  \
+  ERK(S~PP) + SOS(egfr,S~P)  p3*4
+  #
+  # Phosphorylation of SOS1 by ERK, further:   
+  ERK(S~PP) + SOS(egfr,S~P)   ->  \
+  ERK(S~PP) + SOS(egfr,S~PP)  p3*3
+  #
+  # Phosphorylation of SOS by ERK, even further:
+  ERK(S~PP) + SOS(egfr,S~PP)   ->  \
+  ERK(S~PP) + SOS(egfr,S~PPP)  p3*2
+  #
+  # Phosphorylation of SOS by ERK, even much further:
+  ERK(S~PP) + SOS(egfr,S~PPP)   ->  \
+  ERK(S~PP) + SOS(egfr,S~PPPP)  p3
+
+
+  # -- Dephosphorylation of (ERK-mediated negative feedback site of) SOS:
+  #
+  SOS(egfr,S~P)   -> SOS(egfr,S~U)   q3
+  SOS(egfr,S~PP)  -> SOS(egfr,S~P)   q3*2
+  SOS(egfr,S~PPP) -> SOS(egfr,S~PP)  q3*3
+  SOS(egfr,S~PPPP)-> SOS(egfr,S~PPP) q3*4
+
+
+  # -- Negative feedback phosphorylation of MEK by ERK (ERK1) on Thr292:
+  #
+  ERK(S~PP) + MEK(T292~U)  ->  \ 
+  ERK(S~PP) + MEK(T292~P)  p4
+
+
+  # -- Dephosphorylation of MEK on the negative feedback site (Thr292).
+  #
+  MEK(T292~P) -> MEK(T292~U)  q4
+
+  
+  # -- Dephosphorylation at MEK's activating site:
+  #
+  MEK(T292~P,S~PP) ->  MEK(T292~P,S~P)  q5*2
+  MEK(T292~P,S~P)  ->  MEK(T292~P,S~U)  q5
+
+  
+  # -- Negative feedback to RAF from ERKpp, and RAF recirculation:
+  #
+  ERK(S~PP) + RAF(S~A)  ->  \ 
+  ERK(S~PP) + RAF(S~P)  p6
+  #
+  ERK(S~PP) + RAF(S~I)  ->  \ 
+  ERK(S~PP) + RAF(S~P)  p6
+  #
+  RAF(S~P) -> RAF(S~I)  q6 
+  
+  
+  ## -- ERK_pp sensors' dynamics:
+  #
+  ERK(S~PP) + EKAR3(act~I)  -> \
+  ERK(S~PP) + EKAR3(act~A)      a0_ekar3
+  #
+  EKAR3(act~A) -> EKAR3(act~I)  d0_ekar3
+  #
+  #
+  ERK(S~PP) + ERKTR(act~I)  -> \
+  ERK(S~PP) + ERKTR(act~A)       a0_erktr
+  #
+  ERKTR(act~A) -> ERKTR(act~I)   d0_erktr
+
+end reaction rules
+
+
+begin observables
+
+Molecules S0 EGFR(egf~I,sos) 
+Molecules S1 RAS(g~GDP,sos) 
+Molecules S2 RAS(g~GTP,sos) 
+Molecules S3 SOS(S~U,egfr,rem) 
+Molecules S4 RasGAP(ras) 
+Molecules S5 RAF(S~I) 
+Molecules S6 MEK(S~U,T292~U)
+Molecules S7 ERK(S~U) 
+Molecules S8 EKAR3(act~I) 
+Molecules S9 ERKTR(act~I) 
+Molecules S10 EGFR(egf~A,sos) 
+Molecules S11 RAS(g~GTP!1,sos).RasGAP(ras!1) 
+Molecules S12 RAF(S~A) 
+Molecules S13 EGFR(egf~A,sos!1).SOS(S~U,egfr!1,rem) 
+Molecules S14 RAS(g~GDP!1,sos).RasGAP(ras!1) 
+Molecules S15 MEK(S~P,T292~U) 
+Molecules S16 EGFR(egf~I,sos!1).SOS(S~U,egfr!1,rem) 
+Molecules S17 EGFR(egf~A,sos!1).RAS(g~GTP,sos!2).SOS(S~U,egfr!1,rem!2)
+Molecules S18 EGFR(egf~A,sos!1).RAS(g~GDP,sos!2).SOS(S~U,egfr!1,rem!2)
+Molecules S19 MEK(S~PP,T292~U) 
+Molecules S20 EGFR(egf~I,sos!1).RAS(g~GTP,sos!2).SOS(S~U,egfr!1,rem!2)
+Molecules S21 EGFR(egf~I,sos!1).RAS(g~GDP,sos!2).SOS(S~U,egfr!1,rem!2)
+Molecules S22 ERK(S~P) 
+Molecules S23 ERK(S~PP)
+Molecules S24 SOS(S~P,egfr,rem) 
+Molecules S25 MEK(S~U,T292~P) 
+Molecules S26 MEK(S~P,T292~P) 
+Molecules S27 MEK(S~PP,T292~P)
+Molecules S28 RAF(S~P)
+Molecules S29 EKAR3(act~A)
+Molecules S30 ERKTR(act~A)
+Molecules S31 SOS(S~PP,egfr,rem)
+Molecules S32 SOS(S~PPP,egfr,rem) 
+Molecules S33 SOS(S~PPPP,egfr,rem)
+
+end observables
+
+end model
+
+
+
+begin actions
+  
+  generate_network({overwrite=>1});
+  setParameter("EGF",20);
+  #simulate({method=>"ssa",suffix=>"ssa_no_scaling",t_end=>24*60*6,n_steps=>1000});
+  #simulate({method=>"has",suffix=>"has_no_scaling",t_end=>24*60*6,n_steps=>1000,scalelevel=>0});
+  #simulate({method=>"ssa",suffix=>"ssa_scaleto1e2",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>0});
+  #simulate({method=>"has",suffix=>"has_scaleto1e2",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>0});
+  simulate({method=>"has",suffix=>"test_heterogeneous_adaptive_scaling",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>1,seed=>1});
+  #simulate({method=>"has",suffix=>"has_scaleto1e2_checkproduct",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>1});
+end actions
