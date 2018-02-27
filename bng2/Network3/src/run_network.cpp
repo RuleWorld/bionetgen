@@ -120,10 +120,12 @@ int main(int argc, char *argv[]){
 //  extern int optind, opterr;
     //
     // Allowed propagator types
-    enum {SSA, CVODE, EULER, RKCS, PLA};
+    enum {SSA, CVODE, EULER, RKCS, PLA, HAS};
     int propagator = CVODE;
     int SOLVER = DENSE;
     int outtime = -1;
+    double scalelevel = 0.0;
+    bool pScaleChecker = false;
     //
     double maxSteps = INFINITY;//LONG_MAX;//-1;
     double stepInterval = INFINITY;//LONG_MAX;// -1;
@@ -190,7 +192,7 @@ int main(int argc, char *argv[]){
     		outpre = argv[iarg++];
     		break;
     	case 'p':
-    		if (strcmp(argv[iarg],"ssa") == 0) propagator= SSA;
+    		if (strcmp(argv[iarg],"ssa") == 0 || strcmp(argv[iarg],"has") == 0) propagator= SSA;
     		else if (strcmp(argv[iarg],"cvode") == 0) propagator= CVODE;
     		else if (strcmp(argv[iarg],"euler") == 0) propagator= EULER;
     		else if (strcmp(argv[iarg],"rkcs") == 0) propagator= RKCS;
@@ -272,6 +274,23 @@ int main(int argc, char *argv[]){
 			else if (long_opt == "pla_output"){
 				if (atoi(argv[iarg]) > 0){
 					additional_pla_output = true;
+				}
+			}
+			else if (long_opt == "scalelevel"){
+                scalelevel = rint(atof(argv[iarg]));
+				if (scalelevel <= 1.0){
+                    cout << "Scaling target is too small (<= 1), using SSA without any scaling" << endl;
+                    propagator = SSA;
+				}
+                else {
+                    propagator = HAS;
+                    cout << "Using scaling method to accelerate simulation" << endl;
+                }
+			}
+			else if (long_opt == "check_product_scale"){
+				if (atoi(argv[iarg]) != 0){
+                    cout << "The heterogeneous adaptive scaling method is also checking the scale of products (right hand side)" << endl;
+                    pScaleChecker = true;
 				}
 			}
 			else if (long_opt == "stop_cond"){
@@ -481,7 +500,7 @@ int main(int argc, char *argv[]){
 	init_network(reactions, rates, species, spec_groups, network_name);
 
 	// Round species populations if propagator is SSA or PLA
-	if (propagator == SSA || propagator == PLA){
+	if (propagator == SSA || propagator == PLA || propagator == HAS){
 		for (int i=0;i < network.species->n_elt;i++) {
 			network.species->elt[i]->val = floor(network.species->elt[i]->val + 0.5);
 		}
@@ -490,6 +509,10 @@ int main(int argc, char *argv[]){
 	/* Initialize SSA */
 	if (propagator == SSA){
 		init_gillespie_direct_network(gillespie_update_interval,seed);
+	}
+    /* Initialize HAS */
+	if (propagator == HAS){
+		init_adaptive_scaling_network(gillespie_update_interval,seed,scalelevel,pScaleChecker);
 	}
 
 	/* Save network to file */
@@ -552,7 +575,7 @@ int main(int argc, char *argv[]){
 	if (print_flux){
 		flux_file = init_print_flux_network(outpre);
 		int discrete = 0;
-		if (propagator == SSA || propagator == PLA) discrete = 1;
+		if (propagator == SSA || propagator == PLA || propagator == HAS) discrete = 1;
 		print_flux_network(flux_file,t,discrete);
 	}
 
@@ -734,6 +757,22 @@ int main(int argc, char *argv[]){
 						);
 			}
 		break;
+		case HAS:
+			fprintf(stdout, "Stochastic simulation using heterogenous adaptive scaling method\n");
+			if (verbose){
+				fprintf(stdout, "%15s %8s %12s %7s %7s %10s %7s\n", "time", "n_steps", "n_rate_calls",
+								 "% spec", "% rxn", "n_species", "n_rxns");
+				fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d\n",
+						t,
+						gillespie_n_steps() - n_steps_last,
+						n_rate_calls_network() - (int)n_rate_calls_last,
+						100 * gillespie_frac_species_active(),
+						100 * gillespie_frac_rxns_active(),
+						n_species_network(),
+						n_rxns_network()
+						);
+			}
+		break;
 		case CVODE:
 			fprintf(stdout, "Propagating with cvode");
 			if (SOLVER == GMRES) fprintf(stdout, " using GMRES\n");
@@ -815,6 +854,43 @@ int main(int argc, char *argv[]){
 					forceQuit = true;
 					forceQuit_message = "Maximum step limit (" + Util::toString(maxSteps) +
 							") reached in Gillespie simulation.";
+				}
+				break;
+			case HAS:
+				if (gillespie_n_steps() >= stepLimit - network3::TOL){
+					// Error check
+					if (gillespie_n_steps() > stepLimit + network3::TOL){
+						cout << "Uh oh, step limit exceeded in HAS (step limit = " << stepLimit << ", current step = "
+							 << gillespie_n_steps() << "). This shouldn't happen. Exiting." << endl;
+						exit(1);
+					}
+					// Continue
+					stepLimit = min(stepLimit+stepInterval,maxSteps);
+				}
+				error = adaptive_scaling_network(&t, dt, scalelevel, pScaleChecker, 0x0, 0x0, stepLimit-network3::TOL,stop_condition);
+				if (verbose){
+//					fprintf(stdout, "%15.6f %8ld %12d %7.3f %7.3f %10d %7d",
+					fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d",
+							t,
+							gillespie_n_steps() - n_steps_last,
+							n_rate_calls_network() - (int)n_rate_calls_last,
+							100 * gillespie_frac_species_active(),
+							100 * gillespie_frac_rxns_active(),
+							n_species_network(),
+							n_rxns_network()
+							);
+				}
+				n_steps_last = gillespie_n_steps();
+				if (error == -1) n -= 1; // stepLimit reached in propagation
+				if (error == -2){ // Stop condition satisfied
+					forceQuit = true;
+					forceQuit_message = "Stopping condition " + stop_condition.GetExpr() +
+							"met in Gillespie simulation with heterogenous adaptive scaling.";
+				}
+				if (gillespie_n_steps() >= maxSteps - network3::TOL){ // maxSteps limit reached
+					forceQuit = true;
+					forceQuit_message = "Maximum step limit (" + Util::toString(maxSteps) +
+							") reached in Gillespie simulation with heterogenous adpative scaling.";
 				}
 				break;
 			case CVODE:
