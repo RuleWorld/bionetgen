@@ -399,6 +399,58 @@ sub toXML
     return $string;
 }
 
+sub toSBMLMulti
+{
+    my $slist  = shift @_;
+    my $indent = @_ ? shift @_ : "";
+    my $conc   = @_ ? shift @_ : [];
+
+    # this method loads @$conc with initial conditions (if @$conc is empty)
+    #  OR checks that @$conc is okay (if @$conc has elements)
+    $slist->checkOrInitConcentrations($conc);
+    my $string = $indent . "<ListOfSpecies>\n";
+
+    my $i=0;
+    foreach my $spec (@{$slist->Array})
+    {
+        $string.= $spec->toSBMLMulti("     ".$indent, $conc->[$i], $i);
+        ++$i;
+    }
+
+    $string .= $indent."</ListOfSpecies>\n";
+    return $string;
+
+}
+
+sub toSBMLMultiType
+{
+    my $slist  = shift @_;
+    my $mtlist = shift @_;
+    my $indent = @_ ? shift @_ : "";
+
+    my $string = $indent . "<multi:listOfSpeciesTypes>\n";
+    my $i=0;
+
+    my %sbmlMultiSpeciesTypeInfo;
+
+    foreach my $spec (@{$slist->Array})
+    {
+        #each call returns the individual species type entry for this string and associated species
+        $string.= $spec->toSBMLMultiType($mtlist, "  ".$indent, \%sbmlMultiSpeciesTypeInfo);
+        #attach child species types
+
+        ++$i;
+
+    }
+    foreach my $ostr (@{$sbmlMultiSpeciesTypeInfo{'speciesType'}}){
+        $string .= "  " . $indent . $ostr;
+    }
+
+    #walk through sbmlmultispeciesinfo and write species type
+    $string .= $indent."</multi:listOfSpeciesTypes>\n";
+    return $string;
+}
+
 
 ###
 ###

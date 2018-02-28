@@ -6,7 +6,7 @@ package BNGModel;
 # pragmas
 use strict;
 use warnings;
-
+use SBMLMultiAux;
 
 ###
 ###
@@ -611,6 +611,290 @@ sub toXML
 ###
 ###
 
+# generate SBML-Multi string representing the BNGL model
+sub writeSBMLMulti
+{
+
+    my $model  = shift @_;
+    my $params = @_ ? shift @_ : {};
+    my $indent = "    ";
+
+    #return '' if $BNGModel::NO_EXEC;
+
+    # get parameter list
+    my $plist = $model->ParamList;
+
+    # get model name
+    my $model_name = $model->Name;
+
+    # Strip prefixed path
+    my $prefix = defined $params->{prefix} ? $model->getOutputPrefix( $params->{prefix} ) : $model->getOutputPrefix();
+    my $suffix = ( defined $params->{suffix} ) ? $params->{suffix} : 'sbml';
+#   unless ( $suffix eq '' )
+#    {   
+        $prefix .= "_${suffix}";   
+#    }
+
+    # define file name
+    my $file = "${prefix}_sbmlmulti.xml";
+
+    # open file
+
+    # get BNG version
+    my $version = BNGUtils::BNGversion();
+
+
+    # 0. HEADER
+#   print $SBML <<"EOF";
+#<?xml version="1.0" encoding="UTF-8"?>
+#<!-- Created by BioNetGen $version  -->
+#<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+#  <model id="$model_name">
+#EOF
+    my $xml =  qq{<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen $version  -->
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">  
+  <model>
+};
+    # 0. units
+    if(defined $model->Options("units")){
+        my $unitstr = '';
+        foreach my $option (keys %{$model->Options}){
+            if ($option=~ /Units$/){
+                my $optionName = substr($option,0,-5);
+                my $hashref = \%{$model->Options};
+                my $unit = $hashref->{$option}{"unit"};
+                my $exponent = $hashref->{$option}{"exponent"};
+                my $scale = $hashref->{$option}{"scale"};
+                my $multiplier = $hashref->{$option}{"multiplier"};
+                $unitstr .= qq{      <unitDefinition id="${optionName}" name="${unit}">
+        <listOfUnits>
+          <unit kind="${unit}" exponent="${exponent}" scale="${scale}" multiplier="${multiplier}"/>
+        </listOfUnits>
+      </unitDefinition>
+};
+            }
+        }
+
+        if (! $unitstr eq ''){
+            $xml .= "      <listOfUnitDefinitions>\n";
+            $xml .= $unitstr;
+            $xml .= "      </listOfUnitDefinitions>\n";
+        }
+    }
+
+    # 1. Compartments
+#   print $SBML <<"EOF";
+#    <listOfCompartments>
+#      <compartment id="cell" size="1"/>
+#    </listOfCompartments>
+#EOF
+
+    my %paramHash = ();
+    $xml .= $model->writeSBMLParameters(\%paramHash);
+
+
+    if ($model->CompartmentList->Used) { # @a is not empty...
+        $xml = $xml . "    <listOfCompartments>\n";
+        foreach my $comp (@{$model->CompartmentList->Array})
+        {
+                $xml = $xml . $comp->toXML("      ", $plist);
+        }
+        $xml = $xml . "    </listOfCompartments>\n";
+        #printf $SBML "%s",$model->CompartmentList->toXML("     ");
+    } 
+    else { # @a is empty
+ 
+        $xml = $xml . qq{    <listOfCompartments>
+          <compartment id="cell" size="1" constant="true" multi:isType="false"/>
+        </listOfCompartments>
+        };
+    }
+
+
+    # stores a hash indexed by quasy labels containing a (counter, speciesgraph, sbmlmulti type string) typle
+    my %speciesSet = ();
+    # store sbml multi species types in a hash indexed by the sbmlmulti string containing a (speciesTypeID, speciesgraph) tuple
+    my %speciesTypeSet = ();
+    # hash containing bng string to sbml multi id information
+    my %speciesIdHash;
+    # hash containing binding components in the model
+    my %bindingComponents;
+    # 1.5 Get total list of species patterns in the system
+    $model->extractAllSpeciesGraphs(\%speciesSet, \%speciesTypeSet);
+    $model->extractBindingComponents(\%speciesSet, \%bindingComponents);
+
+
+    $speciesIdHash{'BindingInformation'} = \%bindingComponents;
+    #1.7 calculate species type information and string ahead of time since we will reuse this information
+    #in species definition
+    my $sbmlTypeStr;
+    #iterate over the species by id
+    my %sbmlMultiSpeciesTypeInfo;
+
+    foreach my $speciesStr (sort {$speciesTypeSet{$a}[0] <=> $speciesTypeSet{$b}[0]} keys %speciesTypeSet)
+    {
+        my $sid = $speciesTypeSet{$speciesStr}[0]; 
+        my $sg = $speciesTypeSet{$speciesStr}[1];
+        my %attributes = ('multi:name', $speciesStr);
+
+        $sbmlTypeStr .= $sg->toSBMLMultiSpeciesType($model->MoleculeTypesList, $indent, 'multi:speciesType', $sid, \%attributes, \%sbmlMultiSpeciesTypeInfo, \%speciesIdHash);
+    }
+
+
+
+
+
+    # 2. walk through the total model species llist and fill in information
+    $xml .= $indent . "<listOfSpecies>\n";
+    #iterate over the species by id
+    my %print_options = (
+        "sbml_multi",  "1",
+    );
+
+    my %speciesConcentrationHash;
+
+    foreach my $spec (@{$model->SpeciesList->Array})
+    {
+        my $sname;
+        my $sexact= $spec->SpeciesGraph->StringExact;
+        my $c = $spec->Concentration;
+        if(exists $paramHash{$c}){
+            $c = $paramHash{$c};
+        }
+        $speciesConcentrationHash{$sexact} = $c;
+    }
+
+    foreach my $speciesStr (sort {$speciesSet{$a}[0] <=> $speciesSet{$b}[0]} keys %speciesSet)
+    {
+        my $index = $speciesSet{$speciesStr}[0]; 
+        my $sg = $speciesSet{$speciesStr}[1];
+        my $speciesType;
+        my $conc = "0";
+        if (exists $speciesConcentrationHash{$speciesStr}){
+            $conc = $speciesConcentrationHash{$speciesStr};
+        }
+        if(exists($speciesIdHash{'SpeciesType'}{$sg->getMultiSpeciesTypeStr()})){
+            $speciesType = $speciesIdHash{'SpeciesType'}{$sg->getMultiSpeciesTypeStr()};
+        }
+        else{
+            $speciesType = $speciesIdHash{'Molecules'}{@{$sg->Molecules}[0]->Name};
+        }
+        my %attributes = ();
+
+        # Attributes
+        # concentration
+        if (defined $model->Options->{"substanceUnits"}){
+            $attributes{"initialAmount"} = $conc;    
+            $attributes{"hasOnlySubstanceUnits"} ="true";
+        }
+        else{
+            $attributes{"initialConcentration"} = $conc;    
+            $attributes{"hasOnlySubstanceUnits"} ="false";
+        }
+        
+        $attributes{"multi:speciesType"} = $speciesType;
+
+        $xml .= $sg->toSBMLMultiSpecies($model->MoleculeTypesList, "     ".$indent, "species", "S".$index, \%attributes, \%speciesIdHash);
+    }
+
+    $xml .= $indent."</listOfSpecies>\n";
+
+
+    # 4. Assignment rules (for observables and functions)
+    if ( @{$model->Observables} or $plist->countType('Function') ){
+        $xml .= "<listOfRules>\n";
+        if ( @{$model->Observables} ){
+            $xml .= "      <!-- Observables -->\n";
+            foreach my $obs ( @{$model->Observables} )
+            {
+                $xml .= sprintf("      <assignmentRule variable=\"%s\">\n", $obs->Name);
+                $xml .= "            <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+
+                $xml .= "              <apply>\n";
+                $xml .= "                <plus/>\n";
+                my $n_elt = $obs->sizeOfGroup();
+                
+                if ($n_elt<=1)
+                {
+                    $xml .= sprintf "                <cn> 0 </cn>\n";
+                }
+
+                foreach my $patt (@{$obs->Patterns}){
+                    $patt->labelHNauty();
+                    $xml .= sprintf "                <ci> S%d </ci>\n", @{$speciesSet{$patt->StringExact}}[0];
+
+                }
+                
+                if ($n_elt==0)
+                {
+                    $xml .= "                <cn> 0 </cn>\n";
+                }
+
+                $xml .= "              </apply>\n";
+                $xml .= "            </math>\n";
+
+                #my ( $ostring, $err ) = $obs->toMathMLString();
+                #if ($err) { return $err; }
+                #foreach my $line ( split "\n", $ostring )
+                #{
+                #    $xml .= "          $line\n";
+                #}
+                $xml .= "      </assignmentRule>\n";
+            }
+        }
+        if ($plist->countType('Function')){
+            $xml .= "      <!-- Global functions -->\n";
+            foreach my $param ( @{$plist->Array} )
+            {
+                next unless ( $param->Type eq 'Function');
+                next if ( @{$param->Ref->Args} ); # Don't print local functions
+                $xml .= sprintf("      <assignmentRule variable=\"%s\">\n", $param->Name);
+
+                $xml .= $param->toMathMLString( $plist, "        " );
+                $xml .= "      </assignmentRule>\n";
+            }
+        }
+        $xml .= "    </listOfRules>\n";
+    }
+
+    # Reaction rules
+    $xml .= $model->writeSBMLReactions(\%speciesIdHash);
+
+
+    $xml .= $indent . "<multi:listOfSpeciesTypes>\n";
+
+    # finally append species type information
+    # top level species type
+    $xml .= $sbmlTypeStr;
+    # and child nodes species types
+    foreach my $speciesStr (sort {$sbmlMultiSpeciesTypeInfo{$a}[0] cmp $sbmlMultiSpeciesTypeInfo{$b}[0]} keys %sbmlMultiSpeciesTypeInfo)
+    {
+        $xml .= "  " . $indent . $sbmlMultiSpeciesTypeInfo{$speciesStr}[1];
+    }
+
+
+    $xml .= $indent."</multi:listOfSpeciesTypes>\n";
+
+
+    # FOOTER
+    $xml .=  "  </model>\n"
+            ."</sbml>\n";
+
+
+    my $FH;
+    open($FH, '>', $file)  or  return "Couldn't write to $file: $!\n";
+    print $FH $xml;
+    close $FH;
+    return;
+}
+
+
+
+
+###
+###
+###
 
 
 # write reaction network to SBML Level 2 Version 3 format
@@ -662,7 +946,6 @@ sub writeSBML
 <sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="$model_name">
 };
-
 
 	# 1. Compartments
 #	print $SBML <<"EOF";
@@ -1485,7 +1768,13 @@ EOF
 
 
 
-
+sub writeMEXfile
+{
+    my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+    my $err = $model->writeMexfile( $params );
+    return $err;
+}
 
 
 sub writeMexfile
@@ -2484,7 +2773,13 @@ EOF
 ###
 ###
 
-
+sub writeLaTeXfile
+{
+	my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+	$model->writeLatex( $params );
+    return;
+}
 
 sub writeLatex
 {

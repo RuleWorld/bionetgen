@@ -1958,10 +1958,17 @@ sub toXML
 	# Edge Deletion
 	foreach my $ed ( @{ $rr->EdgeDel } )
 	{
-		( my $p1, my $p2 ) = @{$ed};
+		( my $rp1, my $rp2, my $pp1, my $pp2) = @{$ed};
+        my ($p1, $m1) = split (/\./, $pp1);
+        my ($p2, $m2) = split (/\./, $pp2);
+
 		$ostring .= $indent3 . "<DeleteBond";
-		$ostring .= " site1=\"" . pointer_to_ID( $id . "_R", $p1 ) . "\"";
-		$ostring .= " site2=\"" . pointer_to_ID( $id . "_R", $p2 ) . "\"";
+		$ostring .= " site1=\"" . pointer_to_ID( $id . "_R", $rp1 ) . "\"";
+		$ostring .= " site2=\"" . pointer_to_ID( $id . "_R", $rp2 ) . "\"";
+        # only fire if graph is still connected after deleting the bond
+        if($p1 == $p2){
+            $ostring .= " ensureConnected=\"1\"";
+        }
 		$ostring .= "/>\n";
 	}
 
@@ -2167,6 +2174,9 @@ sub findMap
 		#  get molecule and component index (within reactant aggregate)
 		my ( $im1, $ic1 ) = split (/\./, $p1R);
 		my ( $im2, $ic2 ) = split (/\./, $p2R);
+        #JJT: and product information
+        my ( $pim1, $pic1 ) = split (/\./, $p1P);
+        my ( $pim2, $pic2 ) = split (/\./, $p2P);
 		
 		# Check if either molecule is deleted.
 		#  if so, the egde is removed as a side-effect and we don't need to
@@ -2177,8 +2187,10 @@ sub findMap
 		my ($ip1) = split (/\./, $aggMapR[$im1]);
 		next if ( grep {$_ eq $ip1 } @{$rr->MolDel} );	        
 
-        # edge delete operation points to the reactant molecules
-		push @{$rr->EdgeDel}, [ $aggMapR[$im1] . ".$ic1", $aggMapR[$im2] . ".$ic2" ];
+        # edge delete operation points to the reactant molecules. 
+        # JJT: added product information so that it can be encoded in bng-xml
+		push @{$rr->EdgeDel}, [ $aggMapR[$im1] . ".$ic1", $aggMapR[$im2] . ".$ic2", $aggMapP[$pim1] . ".$pic1", $aggMapP[$pim2] . ".$pic2"];
+
 	}
 
 
@@ -3906,10 +3918,10 @@ sub apply_operations
 			my @targs_canonical = ();
 
 			# loop over components connected to the edge
-			foreach my $ref ( @$edel )
+            #jjt: only iterate over reactants
+			foreach my $ref ( @$edel[0..1] )
 			{
 				my ( $ip, $im, $ic ) = split (/\./, $ref);
-
 				# permute reactants
 				if ( defined $permute ) { $ip = $permute->[$ip]; }
 
@@ -3924,8 +3936,8 @@ sub apply_operations
 			}
 
 			#print "Deleting edge $comps[0] $comps[1]\n";
+            my ($ns, $sg) = $g->findConnected();
 			$g->deleteEdge(@targs);
-
 			# sort components for canonical ordering
 			@targs_canonical = ( sort cmp_pointer @targs_canonical );
 			push @$stack, join( ',', @targs_canonical );

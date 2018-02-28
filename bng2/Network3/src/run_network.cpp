@@ -385,7 +385,8 @@ int main(int argc, char *argv[]){
 	}
 
 	/* Assign network_name based on netfile_name */
-	network_name = chop_suffix(netfile_name,".net");
+	network_name = strdup(netfile_name);
+	chop_suffix(network_name,".net");
 	if (!outpre){
 		outpre = network_name;
 	}
@@ -393,11 +394,7 @@ int main(int argc, char *argv[]){
 	/* Rate constants and concentration parameters should now be placed in the parameters block. */
 	net_line_number = 0;
 	rates = read_Elt_array(netfile, &net_line_number, (char*)"parameters", &n_read, 0x0);
-	fprintf(stdout, "Read %d parameters\n", n_read);
-//	if (n_read < 1) {
-//		fprintf(stderr,"ERROR: Reaction network must have parameters defined to be used as rate constants.\n");
-//		exit(1);
-//	}
+	fprintf(stdout, "Read %d parameters from %s\n", n_read, netfile_name);
 	rewind(netfile);
 	net_line_number = 0;
 
@@ -406,7 +403,9 @@ int main(int argc, char *argv[]){
     	fprintf(stderr,"ERROR: Couldn't read rates array.\n");
     	exit(1);
     }
-    fprintf(stdout, "Read %d species\n", n_read);
+    fprintf(stdout, "Read %d species from %s\n", n_read, netfile_name);
+	rewind(netfile);
+	net_line_number = 0;
 
 	/* Read optional groups */
 	if (group_input_file_name){
@@ -424,15 +423,11 @@ int main(int argc, char *argv[]){
     map<string, double*> param_map = init_param_map(rates,spec_groups);
     map<string, int> observ_index_map = init_observ_index_map(spec_groups);
     map<string, int> param_index_map = init_param_index_map(rates);
-//    vector<vector<int> > func_observ_depend;
-//    vector<vector<int> > func_param_depend;
 
-    char* netfile_name_tmp = netfile_name; 
-    sprintf(netfile_name_tmp, "%s%s", netfile_name_tmp, ".net");
-    read_functions_array(netfile_name_tmp,rates,param_map,param_index_map,observ_index_map,&t);
+    read_functions_array(netfile_name,rates,param_map,param_index_map,observ_index_map,&t);
     int n_func = network.functions.size();
     if (n_func > 0) n_func--; // Subtract off 'time' function
-    cout << "Read " << n_func << " function(s)" << endl;
+    cout << "Read " << n_func << " function(s) from " << netfile_name << endl;
 	if (!rates){ // Error if the 'rates' array doesn't exist (means 0 parameters, 0 functions)
 		fprintf(stderr,"ERROR: Reaction network must have parameters and/or functions defined to be used as rate laws.\n");
 		exit(1);
@@ -441,9 +436,6 @@ int main(int argc, char *argv[]){
     // Create stop condition
 	process_function_names(stop_string); // Remove parentheses from variable names
 	vector<string> variable_names = find_variables(stop_string); // Extract variable names
-//	size_t found;
-//	while ((found = stop_string.find("&&")) != string::npos) stop_string.replace(found,2,"and"); // Replace && with 'and'
-//	while ((found = stop_string.find("||")) != string::npos) stop_string.replace(found,2,"or");  // Replace || with 'or'
 	for (unsigned int i=0;i < variable_names.size();i++){
 		// Error check
 		if (param_map.find(variable_names[i]) == param_map.end()) {
@@ -453,19 +445,17 @@ int main(int argc, char *argv[]){
 		}
 		// Define variable
 		else {
-//			cout << variable_names[i] << " = " << *param_map[variable_names[i]] << endl;
 			stop_condition.DefineVar(_T(variable_names[i]),param_map[variable_names[i]]);
 		}
 	}
 	stop_condition.SetExpr(stop_string);
 
     /* Read reactions */
-//	if (!(reactions = read_Rxn_array(netfile,&net_line_number,&n_read,species,rates,network.is_func_map,remove_zero))){
 	if (!(reactions = read_Rxn_array(netfile,&net_line_number,&n_read,species,rates,network.is_func_map))){
 		fprintf(stderr, "ERROR: No reactions in the network.\n");
 		exit(1);
 	}
-	fprintf(stdout, "Read %d reaction(s)\n", n_read);
+	fprintf(stdout, "Read %d reaction(s) from %s\n", n_read, netfile_name);
 	if (remove_zero) {
 		remove_zero_rate_rxns(&reactions, rates);
 		int n_rxn = 0;

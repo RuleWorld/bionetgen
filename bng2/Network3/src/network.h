@@ -37,10 +37,6 @@ using namespace std;
 #include "muParserInt.h"
 #include "util/util.hh"
 
-#include <cmath>
-
-extern "C" int isnan(double);
-
 // Reaction types
 enum {ELEMENTARY, SATURATION, MICHAELIS_MENTEN, HILL, FUNCTIONAL};
 

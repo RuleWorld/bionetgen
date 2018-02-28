@@ -10,6 +10,8 @@ use warnings;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
+use Storable qw(dclone);
+
 
 # BNG Modules
 use Component;
@@ -232,6 +234,7 @@ sub toString
 	my $print_edges        = @_ ? shift @_ : TRUE;
 	my $print_attributes   = @_ ? shift @_ : TRUE;
 	my $speciesCompartment = @_ ? shift @_ : undef;
+    my $print_options      = @_ ? shift @_ : ();
 
 	my $string .= $mol->Name;
 
@@ -266,8 +269,20 @@ sub toString
 		{
 			if ($icomp)
 			{   $string .= ',';   }
-			$string .= $comp->toString($print_edges, $print_attributes);
-			++$icomp;
+            if(exists $print_options->{'sbml_multi'})
+            {
+                my $tmpstr .= $comp->toSBMLMultiSpeciesTypeString();
+                if(!$tmpstr eq ''){
+                    $string .= $tmpstr;
+                    ++$icomp;
+                }
+            }
+            else
+            {
+			    $string .= $comp->toString($print_edges, $print_attributes);
+                ++$icomp;
+            }
+
 		}
 		$string .= ")";
 	}
@@ -474,7 +489,98 @@ sub toStringMCell
 ###
 ###
 
+########
+# returns information for the speciesFeature and outwardBindingSite belonging to species in sbml multi
+######
+sub getSBMLMultiSpeciesFields
+{
+    my $mol    = shift @_;
+    my $mtlist = shift @_;
+    my $indent = shift @_;
+    my $stid = shift @_;
+    my $mid     = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    # list of references to sbml multi species type objects for this species
+    my $multiComponentHash_ref = shift @_;
 
+    my $componentIndexes = shift @_;
+    # Component information
+    #my $mid = sprintf "${id}_M%d", $index;
+
+    # create an emtpy compartment list for use below
+    my $clist = CompartmentList->new('Used'=>0);
+
+    my $cindex = 1;
+    my $mtype = $mtlist->MolTypes->{$mol->Name};
+    my @visitedComponents = ();
+    my %componentCopy = %{dclone(\%{$speciesIdHash_ref->{'Components'}})};
+    foreach my $ctype (@{$mtype->Components}){
+        my $componentFlag = 0;
+        if(@{$mol->Components}){
+            foreach my $comp ( @{$mol->Components} )
+            {
+                #if we already used this component skip it
+                unless(grep {$_ eq $comp} @visitedComponents) {
+
+                    if($comp->Name eq $ctype->Name){
+                        # mark this component as visited
+                        push @visitedComponents, $comp;
+                        my $outwardbonds = '';
+
+                        if(exists $speciesIdHash_ref->{'BindingInformation'}{$mol->Name}{$comp->Name}){
+                            $outwardbonds = $comp->getSBMLMultiOutwardBonds( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
+                        }
+                        my $speciesfeatures = $comp->getSBMLMultiSpeciesFeature( '  ' . $indent, $mol->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref, () );
+                        if(not $outwardbonds eq ''){
+                            push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
+                        }
+                        if(not $speciesfeatures eq ''){
+                            push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
+                        }
+
+                        $componentFlag = 1;
+                        last;
+                    }
+                }
+
+            }
+        }
+        #even if a component is not explicitly included in the species graph specification we still need to generate some specoes multi information about it
+        if ($componentFlag == 0){
+            my $sg = SpeciesGraph->new;
+            my $string = '';
+            if(exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$ctype->Name}){
+                $string = sprintf("%s(%s!?)", $mtype->Name, $ctype->Name);
+            }
+            else{
+                $string = sprintf("%s(%s)", $mtype->Name, $ctype->Name);
+            }
+            
+            $string =~ s/^\s+//;
+            #create a dummy species graph with the component we need
+            my $err = $sg->readString( \$string, $clist, 1, '^\s+', $mtlist );
+            my $cnew = @{@{$sg->Molecules}[0]->Components}[0];
+
+            my $outwardbonds = '';
+            if(exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$cnew->Name}){
+                $outwardbonds = $cnew->getSBMLMultiOutwardBonds( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
+            }
+            my $speciesfeatures = $cnew->getSBMLMultiSpeciesFeature( '  ' . $indent, $mtype->Name,$mid."_C". $cindex, \%componentCopy, $multiComponentHash_ref );
+            if(not $outwardbonds eq ''){
+                push @{$sbmlMultiSpeciesInfo_ref->{'outwardbonds'}}, $outwardbonds;
+            }
+            if(not $speciesfeatures eq''){
+                push @{$sbmlMultiSpeciesInfo_ref->{'speciesFeature'}}, $speciesfeatures;
+            }
+
+        }
+        
+        $cindex += 1;
+
+    }
+
+}
 
 sub toXML
 {
@@ -531,6 +637,8 @@ sub toXML
     {   # short tag termination
 		$string .= "/>\n";
 	}
+
+    return $string;
 }
 
 

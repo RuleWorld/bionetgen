@@ -30,6 +30,7 @@ MUPARSER_LIB = $(LIBDIR)/libmuparser.a
 # recipes that do not create files
 .PHONY: clean 
 
+all: run_network sundials-config
 # run_network executable
 run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(NETWORK_BINDIR)
@@ -37,9 +38,12 @@ run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(BNG_BINDIR)
 	cp -f $(NETWORK_BINDIR)/run_network $(BNG_BINDIR)
 
+sundials-config: $(CVODE_LIB)
+	cp -f $(NETWORK_BINDIR)/sundials-config $(BNG_BINDIR)
+
 # libraries
 $(CVODE_LIB):
-	mkdir -p $(LIBDIR) $(INCDIR)
+	mkdir -p $(LIBDIR) $(INCDIR) $(BNG_BINDIR)
 	if test -d $(LIBSOURCE); then \
 	    rm -rf $(CVODE); \
 	    tar -xzf $(LIBSOURCE)/$(CVODE).tar.gz; \

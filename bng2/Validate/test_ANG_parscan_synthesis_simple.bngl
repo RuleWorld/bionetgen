@@ -1,0 +1,31 @@
+#Testing automatic  network generation for parameter scan
+begin model
+begin parameters
+k1 1
+dummy 1
+end parameters
+begin molecule types
+A()
+B()
+C()
+Source()
+Source2()
+end molecule types
+begin seed species
+$Source 1
+Source2 1
+end seed species
+begin reaction rules
+0 -> A() k1
+Source() -> B() k1
+Source2() -> Source2() + C() k1
+end reaction rules
+begin observables
+Molecules add_molecule A()
+Molecules constant_source B()
+Molecules non_constant_source C()
+end observables
+
+end model
+
+parameter_scan({method=>"ode",t_start=>0,t_end=>40,n_steps=>100,parameter=>"dummy",par_min=>1,par_max=>3,n_scan_pts=>2})

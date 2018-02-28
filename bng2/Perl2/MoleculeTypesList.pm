@@ -322,11 +322,51 @@ sub writeBNGL
 }
 
 
+#####
+# information used to create speciestype object in sbml multi
+#####
+sub toSBMLMultiSpeciesType
+{
+    my $mtl = shift @_;
+    my $sg = shift @_;
+    my $sid = shift @_;
+    my $indent = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+
+    my $index = 1;
+    my $ostring = '';
+    my $mtype;
+    my $mid = '';
+    my $n_mol = scalar( @{ $sg->Molecules } );
+    # molecules can only contain speciestype instances so we dont have to worry about species-level feature type for now
+
+   $ostring .= $indent . "<multi:listOfSpeciesTypeInstances>\n";
+   foreach my $mol (@{$sg->Molecules})
+    {
+        if($mtype = $mtl->MolTypes->{$mol->Name}){
+            $mid = sprintf("%s_M%s", $sid, $index);
+            # if($n_mol > 1) {
+            #     $mid = sprintf("%s_M%s", $sid, $index);
+            # }
+            # else{
+            #     $mid = $sid;
+            # }
+            $ostring .= $mtype->toSBMLMultiSpeciesType($sid, $mid, $index, "  ". $indent, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref);    
+        }
+
+        $index += 1;
+    }
+   $ostring .= $indent . "</multi:listOfSpeciesTypeInstances>\n";
+
+    return $ostring;
+
+}
+
 
 ###
 ###
 ###
-
 
 
 sub toXML

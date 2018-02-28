@@ -22,7 +22,7 @@
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # pragmas
 use strict;
@@ -39,7 +39,7 @@ use IO::Handle;
 # If neither are defined, use RealBin module
 use lib File::Spec->catdir( ( exists $ENV{'BNGPATH'}
                               ? $ENV{'BNGPATH'}
-                              : ( exists $ENV{'BioNetGenRoot'} 
+                              : ( exists $ENV{'BioNetGenRoot'}
                                   ? $ENV{'BioNetGenRoot'}
                                   : $FindBin::RealBin
                                 )
@@ -95,7 +95,7 @@ my %default_args         = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
                              'output_dir'    => File::Spec->curdir(),
                              'no_atomizer'   => 0,
-							 'write_autos'   => 0
+							               'write_autos'   => 0, 'write_SBMLmulti'   => 0
                            );
 # Default params for Console mode
 my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
@@ -104,8 +104,8 @@ my %default_args_console = ( 'write_xml'     => 0,  'write_mfile'      => 0,
                              'logging'       => 0,  'no_exec'          => 0,
                              'allow_perl'    => 0,  'no_nfsim'         => 0,
                              'output_dir'    => File::Spec->curdir(),
-                             'no_atomizer'   => 0,
-							 'write_autos'   => 0
+                             'no_atomizer'   => 0,   'write_autos'     => 0,
+                             'write_SBMLmulti' => 0
                            );
 
 
@@ -121,7 +121,7 @@ my %user_args = ( 'console' => \$console,
                 );
 
 # parse command line arguments
-GetOptions( \%user_args, 
+GetOptions( \%user_args,
             'help|h',
             'version|v',
             'console',
@@ -135,6 +135,7 @@ GetOptions( \%user_args,
             'write_SBML|sbml',
             'write_mfile|mfile',
             'write_xml|xml',
+            'write_SBMLmulti|sbmlmulti',
 			'write_autos|autos'
           )
 or die "Error in command line arguments (try: BNG2.pl --help)";
@@ -202,7 +203,7 @@ else
     # Process any files
     while ( my $file = shift @ARGV )
     {
-        # create BNGMOdel object
+        # create BNGModel object
         my $model = BNGModel->new();
         $model->initialize();
         $BNGModel::GLOBAL_MODEL = $model;
@@ -234,8 +235,8 @@ sub display_help
           ."  SYNOPSIS                                                          \n"
           ."    process MODEL:      BNG2.pl [OPTION]... MODEL...                \n"
           ."    start BNG console:  BNG2.pl --console                           \n"
-          ."    display help:       BNG2.pl -h                                  \n" 
-          ."    display version:    BNG2.pl -v                                  \n"           
+          ."    display help:       BNG2.pl -h                                  \n"
+          ."    display version:    BNG2.pl -v                                  \n"
           ."                                                                    \n"
           ."  OPTIONS                                                           \n"
           ."    --log          write log to file MODEL.log (default is STDOUT)  \n"

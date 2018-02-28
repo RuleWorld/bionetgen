@@ -225,6 +225,15 @@ sub simulate
 
     printf "ACTION: simulate( method=>\"%s\" )\n", $method;
 
+    #if the method is ode or ssa or pla, check if the reaction network has been generated, and if not, generate it.
+    if ($method =~ /^(cvode|ssa|pla)$/)
+    {
+        if($model->RxnList->size()==0)
+        {
+            if ($err = $model->generate_network()){return $err;};
+        }
+    }
+
     # add optional suffix to output prefix
     if ( defined $suffix )
     {  $prefix .= "_" . $suffix;  }

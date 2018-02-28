@@ -299,7 +299,7 @@ sub makeProcessGraph2
 				foreach my $rule(@rules)
 					{
 					# stupid naming conventions!
-					if($rule =~ /^(Rule[0-9]{.*})r$/)
+					if($rule =~ /^(Rule[0-9].*)r$/)
 						{
 						my $pair = $1;
 						if(has(\@rules,$pair)) {$revmap{$rule} = $pair;}

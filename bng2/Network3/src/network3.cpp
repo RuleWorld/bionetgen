@@ -718,7 +718,7 @@ int Network3::run_PLA(double& time, double maxTime, double sampleTime,
 					pops[j] = SPECIES[j]->population;
 				}
 				set_conc_network(pops);
-				delete pops;
+				delete[] pops;
 				// Print network w/ current species populations using network::print_network()
 				char buf[1000];
 				sprintf(buf, "%s_save.net", prefix);

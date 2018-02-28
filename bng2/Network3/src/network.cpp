@@ -430,6 +430,11 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 	string line;
 	ifstream infile(netfile);
+	if (infile.fail()){
+		cout << "ERROR: Unable to open netfile " << netfile << endl;
+		exit(1);
+	}
+
 	bool foundBegin = false;
 	int index;
 	string dummy_string, func_name;

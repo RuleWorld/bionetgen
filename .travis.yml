@@ -4,6 +4,12 @@ os:
 
 
 language: c++
+python:
+  - '2.7'
+addons:
+  apt:
+    packages:
+      - python-pip
 sudo: false
 
 
@@ -22,17 +28,27 @@ notifications:
      template:
        - "BioNetGen build: %{result} in %{duration}"
        - "Build: <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>)    Author: %{author}"
-       - "Download Distribution Package Here:"
-       - "https://rawgit.com/RuleWorld/bionetgen/master/.BioNetGen_Beta.html"
        - "Build details:  %{build_url} "
    
-  
 script:
-  -  cd ./bng2
-  - mkdir bindir_nfsim_atomizer
-  - source .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer
-  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate  --bindir ./bindir_nfsim_atomizer
-  - source .dist_unix.sh
+  - cd ./bng2
+  # build NFsim and atomizer
+  - make NFsim
+  - cd ./atomizer
+  - source osx_install.sh
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew unlink python && brew link python; fi
+  - pip install --user -r requirements.txt
+  - unzip utils/pyinstaller2.zip
+  - python2 pyinstaller2/pyinstaller.py utils/sbmlTranslator.spec
+  - cp dist/sbmlTranslator ../bin
+  # build cvode
+  - cd ../Network3
+  - cp Makefile.cmake Makefile
+  - make
+  - cd ..
+  # build final distribution and validate
+  - perl make_dist.pl --build --validate  --bindir ./bin
+  #- source .dist_unix.sh
 
 
 after_success:

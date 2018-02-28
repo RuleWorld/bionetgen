@@ -6,6 +6,19 @@ package ComponentType;
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
+#use List::MoreUtils qw(first_index);
+
+
+#copied from list::moreutils since it doesnt come standard
+sub first_index (&@) {
+    my $f = shift;
+    foreach my $i ( 0 .. $#_ ) {
+        local *_ = \$_[$i];
+        return $i if $f->();
+    }
+    return -1;
+}
+
 
 struct ComponentType=> {
   Name=> '$',
@@ -106,6 +119,97 @@ sub toStringSSC{
   }
   return($string);
 }
+
+#####
+# information used to create speciestype object in sbml multi
+#####
+sub toSBMLMultiSpeciesTypeFeatures
+{
+    my $ctype = shift @_; 
+    my $cid = shift @_;
+    my $mName = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    my $indent = shift @_;
+
+    my $ostring = '';
+    my $ststring = '';
+
+    #this parameter should eventually be sent from outside for symmetric components
+    my $occur = 1;
+    my $fullname = '';
+    if (@{$ctype->States}){
+      
+      my $indent2  = "    ".$indent;
+      my $indent3  = "    ".$indent2;
+      my $sid = '';
+
+
+      $ostring.= sprintf("%s<multi:speciesFeatureType multi:id=\"%s\" multi:name=\"%s\" multi:occur=\"%d\">\n", $indent, $cid, $ctype->Name, $occur);
+      $ostring.= $indent2."<multi:listOfPossibleSpeciesFeatureValues>\n";
+      my $exists;
+      for my $state (@{$ctype->States}){
+        $fullname = sprintf("%s(%s~", $mName, $ctype->Name). "${state})";
+        $exists = first_index {$_  eq $cid } @{$speciesIdHash_ref->{'Components'}{$fullname}};
+        if ($exists == -1){
+          push @{$speciesIdHash_ref->{'Components'}{$fullname}}, $cid;
+        }
+        $sid = sprintf("%s_%s",$cid, $state);
+        $ostring .= sprintf("%s<multi:possibleSpeciesFeatureValue multi:id=\"%s\" multi:name=\"%s\"/>\n",$indent3, $sid, $state);
+      }
+      $ostring.= $indent2."</multi:listOfPossibleSpeciesFeatureValues>\n";
+      $ostring.= $indent . "</multi:speciesFeatureType>\n";
+    }
+    return $ostring;
+}
+
+sub toSBMLMultiSpeciesTypeBinding
+{
+    my $ctype = shift @_; 
+    my $cid = shift @_;
+    my $mName = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+    my $indent = shift @_;
+
+    my $ostring = '';
+    my $fullname = sprintf("%s(%s)", $mName, $ctype->Name);
+    $ostring .= sprintf("%s<multi:speciesTypeInstance multi:id=\"%s_ist\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n", $indent, $cid, $ctype->Name, $cid);
+    my $strstring;
+
+    # pure binding site
+    if (!@{$ctype->States}){
+      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\"/>\n", $cid, $ctype->Name);
+    }
+    # this binding site also has states!
+    else{
+      $ststring = sprintf("<multi:bindingSiteSpeciesType multi:id=\"%s\" multi:name=\"%s\">\n", $cid, $ctype->Name);
+      my $featuretypes .= $ctype->toSBMLMultiSpeciesTypeFeatures($cid."_ft",$mName,$sbmlMultiSpeciesInfo_ref,$speciesIdHash_ref,$indent);
+
+      if(! $featuretypes eq ''){
+        $ststring .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
+        $ststring .= $featuretypes;
+        $ststring .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";
+
+      }
+      $ststring .= $indent. "</multi:bindingSiteSpeciesType>\n";
+    }
+    my $exists = first_index {$_  eq $cid } @{$speciesIdHash_ref->{'Components'}{$fullname}};
+    if ($exists == -1){
+      push @{$speciesIdHash_ref->{'Components'}{$fullname}}, $cid;  
+    }
+    push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $cid;
+    push @{$sbmlMultiSpeciesInfo_ref->{$cid}}, $ststring;
+
+
+    return $ostring;
+}
+
+
+#####
+#####
+#####
+#####
 
 sub toXML{
   my $ctype= shift;

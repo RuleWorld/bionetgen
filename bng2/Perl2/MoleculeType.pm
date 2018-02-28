@@ -111,6 +111,32 @@ sub readString
 
     if (@components)
     {
+		### Make sure identical components have identical states ###
+		# Loop over component i
+		for (my $i=0; $i < scalar(@components); $i++){
+			# Loop over component j > i
+			for (my $j=$i+1; $j < scalar(@components); $j++){
+				# Check if names are the same
+				if ($components[$i]->Name eq $components[$j]->Name){
+					# Quit if components have unequal numbers of states
+					if (scalar @{$components[$i]->States} ne scalar @{$components[$j]->States}){
+						return ("Invalid MoleculeType specification $$strptr");
+					}
+					# Compare state values element-by-element
+					else{
+						# Sort component states
+						@{$components[$i]->States} = sort @{$components[$i]->States};
+						@{$components[$j]->States} = sort @{$components[$j]->States};
+						for (my $k=0; $k < scalar @{$components[$i]->States}; $k++){
+							# Quit if elements are different
+							if (@{$components[$i]->States}[$k] ne @{$components[$j]->States}[$k]){
+								return ("Invalid MoleculeType specification $$strptr");
+							}
+						}
+					}
+				}
+			}
+		}
         $mtype->Components([@components]);
     }
     $$strptr = $string_left;
@@ -188,6 +214,7 @@ sub check
     my $InheritList          = exists $params->{InheritList}   ? $params->{InheritList}   : 0;
 
     my @ctypes = @{$mtype->Components};
+
     foreach my $comp (@{$mol->Components})
     {
         my $found=0;
@@ -361,6 +388,128 @@ sub toStringSSC
     return $string;
 }
 
+
+#####
+# information used to create speciestype object in sbml multi
+#####
+sub toSBMLMultiSpeciesType
+{
+    my $mtype = shift @_;
+    my $sid = shift @_;
+    my $mid = shift @_;    
+    my $index = shift @_;
+    my $indent = shift @_;
+    my $sbmlMultiSpeciesInfo_ref = shift @_;
+    my $speciesIdHash_ref = shift @_;
+
+    
+
+    # appends the length of the $sbmlMultiSpeciesInfo_ref hash
+    my $stid = "ST_M" . keys(%$sbmlMultiSpeciesInfo_ref);
+    my $stinstance_string = '';
+    if (exists $sbmlMultiSpeciesInfo_ref->{$mtype->toString()} ){
+        $stid = $sbmlMultiSpeciesInfo_ref->{$mtype->toString()}[0];
+        $stinstance_string = sprintf("%s<multi:speciesTypeInstance multi:id=\"%s\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n",$indent, $mid, $mtype->Name, $stid);
+
+    }else{
+        $stinstance_string = sprintf("%s<multi:speciesTypeInstance multi:id=\"%s\" multi:name=\"%s\" multi:speciesType=\"%s\"/>\n",$indent, $mid, $mtype->Name, $stid);
+    }
+    my $st_string = sprintf("<multi:speciesType multi:id=\"%s\" multi:name=\"%s\" multi:compartment=\"%s\">\n", $stid, $mtype->Name, "cell");
+
+    # add id information
+
+    $speciesIdHash_ref->{'Molecules'}->{$mtype->Name} = $stid;
+    
+    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'Molecules'}->{$stid}}, sprintf("cmp_%s_M", $sid) . "$index";
+    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'moleculeReverseReferences'}->{$mtype->Name()}}, $mid ;
+
+    if (@{$mtype->Components})
+    {
+        my $indent2 = "   ".$indent;
+        my $counter = 1;
+
+        my $tempstr = '';
+        my $cid = '';
+
+        
+        my $tmp_string = '';
+        
+        foreach my $comp (@{$mtype->Components})
+        {
+            $cid = sprintf("%s_C%d",$stid, $counter);
+            # only check things that are explicit binding sites
+            if (exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$comp->Name}){
+                # store the species id for use in the species section
+                $tempstr = $comp->toSBMLMultiSpeciesTypeBinding($cid, $mtype->Name, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref, $indent2);
+                if($tempstr ne ''){
+                    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~", $mtype->Name, $comp->Name)}}, $mid . "_C${counter}";
+                    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s)", $mtype->Name, $comp->Name)}}, $mid . "_C$counter";
+                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("cmp_%s_M", $sid) . "$index" ."_C$counter";
+                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;
+                    $speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parentMulti'} = $cid;
+
+                    $tmp_string .= $tempstr;
+                }
+            }
+            $counter += 1;    
+            
+        }
+        $counter = 1;
+        foreach my $comp (@{$mtype->Components}){
+            $cid = sprintf("%s_C%d",$mid, $counter);
+            $counter +=1;
+        }
+        unless ($tmp_string eq ''){
+            $st_string .= $indent."<multi:listOfSpeciesTypeInstances>\n";    
+            $st_string .= $tmp_string;
+            $st_string .= $indent."</multi:listOfSpeciesTypeInstances>\n";
+        }
+        
+
+        $counter = 1;
+        my $featuretypes ='';
+        foreach my $comp (@{$mtype->Components})
+        {
+            # only check things that are not binding sites. Hybrids are alraedy accoutned for
+            if (! exists $speciesIdHash_ref->{'BindingInformation'}{$mtype->Name}{$comp->Name}){
+
+                $cid = sprintf("%s_C%d",$stid, $counter);
+
+                $tempstr = $comp->toSBMLMultiSpeciesTypeFeatures($cid, $mtype->Name, $sbmlMultiSpeciesInfo_ref, $speciesIdHash_ref, $indent2);
+                if($tempstr ne ''){
+                    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s~", $mtype->Name, $comp->Name)}}, $mid . "_C${counter}";
+                    push @{$speciesIdHash_ref->{'References'}->{$sid}->{'reverseReferences'}->{sprintf("%s(%s)", $mtype->Name, $comp->Name)}}, $mid . "_C$counter";
+                    #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'id'} = sprintf("%sI_M", $sid) . "$index" ."_C$counter";
+                    #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parent'} = $mid;
+                    #$speciesIdHash_ref->{'References'}->{$sid}->{'Components'}->{$mid . "_C$counter"}->{'parentMulti'} = $cid;
+                    $featuretypes .= $tempstr;
+                }
+            }
+            $counter += 1;
+            
+        }
+      if(! $featuretypes eq ''){
+        $st_string .= $indent. "<multi:listOfSpeciesFeatureTypes>\n";
+        $st_string .= $featuretypes;
+        $st_string .= $indent. "</multi:listOfSpeciesFeatureTypes>\n";
+
+      }
+
+
+
+
+
+    }
+
+
+    $st_string .= $indent. "</multi:speciesType>\n";
+    if (! exists $sbmlMultiSpeciesInfo_ref->{$mtype->toString()} ){
+
+        push @{$sbmlMultiSpeciesInfo_ref->{$mtype->toString()}}, $stid;
+        push @{$sbmlMultiSpeciesInfo_ref->{$mtype->toString()}}, $st_string;
+    }
+    return $stinstance_string;
+}
 
 ###
 ###
