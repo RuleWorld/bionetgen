@@ -1,0 +1,183 @@
+# Created by BioNetGen 2.3.1
+begin parameters
+    1 TNF_wt               52  # Constant
+    2 TNF_conc             0.01923077  # Constant
+    3 NaV_cyt              50000/0.04  # Constant
+    4 NaV_PM               50000/(0.04*3.3)  # Constant
+    5 Tot_NFKB             log10(50000)  # Constant
+    6 IKK_N                log10(50000)  # Constant
+    7 R                    2  # Constant
+    8 K_N                  log10(1e+5)  # Constant
+    9 comp                 0  # Constant
+   10 hn1                  log10(2)  # Constant
+   11 hn2                  log10(2)  # Constant
+   12 hn3                  log10(2)  # Constant
+   13 hn4                  log10(2)  # Constant
+   14 hc1                  log10(2)  # Constant
+   15 hc2                  log10(2)  # Constant
+   16 hc3                  log10(2)  # Constant
+   17 kv                   3.3  # Constant
+   18 c_deg                log10(2e-4)  # Constant
+   19 k_b                  log10(1.2e-5)  # Constant
+   20 k_f                  log10(1.2e-3)  # Constant
+   21 k_a                  log10(1e-5)  # Constant
+   22 k_A20                log10(1e+5)  # Constant
+   23 k_i                  log10(1e-2)  # Constant
+   24 k_1                  log10(6e-10)  # Constant
+   25 k_2                  log10(1e+4)  # Constant
+   26 k_3                  log10(2e-3)  # Constant
+   27 k_4                  log10(1e-3)  # Constant
+   28 k_5                  log10(1e-3)  # Constant
+   29 ka1a                 log10(0.5)  # Constant
+   30 kd1a                 log10(0.05)  # Constant
+   31 kc1a                 log10(0.074)  # Constant
+   32 kc2a                 log10(0.370)  # Constant
+   33 ki1                  log10(0.0026)  # Constant
+   34 ke1                  log10(0.00052)  # Constant
+   35 ki3a                 log10(0.00067)  # Constant
+   36 ke3a                 log10(0.000335)  # Constant
+   37 ke2a                 log10(0.01)  # Constant
+   38 c1                   log10((2*(10^-7)))  # Constant
+   39 c1_t                 log10((2*(10^-7)))  # Constant
+   40 K                    log10(((0.065*50000)/(0.04*3.3)))  # Constant
+   41 Kn1                  log10(((0.065*50000)/(0.04*3.3)))  # Constant
+   42 Kn2                  log10(((0.065*50000)/(0.04*3.3)))  # Constant
+   43 Kn3                  log10(((0.065*50000)/(0.04*3.3)))  # Constant
+   44 Kn4                  log10(((0.065*50000)/(0.04*3.3)))  # Constant
+   45 K2                   log10(((0.065*50000)/0.04))  # Constant
+   46 K3                   log10((((0.065/2)*50000)/0.04))  # Constant
+   47 K4                   log10(((0.065*50000)/0.04))  # Constant
+   48 c2a_comp             log10(0.5)  # Constant
+   49 c2a_ikb              log10(0.5)  # Constant
+   50 c3_a20               log10(0.0004)  # Constant
+   51 c3_t                 log10(0.0004)  # Constant
+   52 c4a                  log10(0.0005)  # Constant
+   53 c4a_comp             log10(0.0005)  # Constant
+   54 kt1a                 log10(0.1)  # Constant
+   55 kt2a                 log10(0.1)  # Constant
+   56 c3a                  log10(0.0003)  # Constant
+   57 c1a                  log10((1.4*(10^-7)))  # Constant
+   58 c1a_comp             log10((1.4*(10^-7)))  # Constant
+   59 c2                   log10(0.5)  # Constant
+   60 c4                   log10(0.0045)  # Constant
+   61 c5a                  log10(0.000022)  # Constant
+   62 c6a                  log10(4.285e-5)  # Constant
+   63 _InitialConc1        10^Tot_NFKB  # ConstantExpression
+   64 _InitialConc2        10^IKK_N  # ConstantExpression
+   65 _InitialConc3        10^R  # ConstantExpression
+   66 _InitialConc4        10^K_N  # ConstantExpression
+   67 _rateLaw1            10^c_deg  # ConstantExpression
+   68 _rateLaw2            (10^k_b)/(((1/52)*50000)/0.04)  # ConstantExpression
+   69 _rateLaw3            10^k_f  # ConstantExpression
+   70 _rateLaw4            10^k_i  # ConstantExpression
+   71 _rateLaw5            10^k_4  # ConstantExpression
+   72 _rateLaw6            (10^kc1a)/NaV_cyt  # ConstantExpression
+   73 _rateLaw7            (10^ka1a)/NaV_cyt  # ConstantExpression
+   74 _rateLaw8            10^kd1a  # ConstantExpression
+   75 _rateLaw9            (10^kc2a)/NaV_cyt  # ConstantExpression
+   76 _rateLaw10           10^ki1  # ConstantExpression
+   77 _rateLaw11           10^ke1  # ConstantExpression
+   78 _rateLaw12           10^ki3a  # ConstantExpression
+   79 _rateLaw13           10^ke3a  # ConstantExpression
+   80 _rateLaw14           10^c4a  # ConstantExpression
+   81 _rateLaw15           10^kt1a  # ConstantExpression
+   82 _rateLaw16           10^kt2a  # ConstantExpression
+   83 _rateLaw17           10^c5a  # ConstantExpression
+   84 _rateLaw18           (10^ka1a)/NaV_PM  # ConstantExpression
+   85 _rateLaw19           10^kd1a  # ConstantExpression
+   86 _rateLaw20           10^c3_a20  # ConstantExpression
+   87 _rateLaw21           10^c3a  # ConstantExpression
+   88 _rateLaw22           10^c2  # ConstantExpression
+   89 _rateLaw23           10^c4  # ConstantExpression
+   90 _rateLaw24           10^c2a_ikb  # ConstantExpression
+   91 _rateLaw25           10^c4a  # ConstantExpression
+   92 _rateLaw26           10^ke2a  # ConstantExpression
+end parameters
+begin functions
+    1 ra20() ((NaV_cyt*(10^c1))*((nNFKB/(10^Kn1))^((10^hn1)+1)))/((((nNFKB/(10^Kn1))^((10^hn1)+1))+(comp*((oComp/(10^K2))^((10^hc1)+1))))+1)
+    2 rComp() 0
+    3 rikba() ((NaV_cyt*(10^c1a))*((nNFKB/(10^Kn4))^(10^hn4)))/(1+((nNFKB/(10^Kn4))^(10^hn4)))
+    4 k_IKKKactivation() ((TNFR_a*(10^k_a))*(10^k_A20))/((10^k_A20)+oA20)
+    5 k_IKKactivation() ((10^k_1)*IKKK_a)*IKKK_a
+    6 k_IKKintermetiation() ((10^k_3)/(10^k_2))*((10^k_2)+oA20)
+end functions
+begin species
+    1 nfkb(ikba,loc~c) 1.941191737470e+04
+    2 ikba(loc~c,nfkb,s~o) 8.792908662026e+04
+    3 ikba(loc~c,nfkb!1,s~o).nfkb(ikba!1,loc~c) 1.453531985427e+04
+    4 nfkb(ikba,loc~n) 1.160965080139e+04
+    5 ikba(loc~n,nfkb,s~o) 1.739171074182e+04
+    6 ikba(loc~n,nfkb!1,s~o).nfkb(ikba!1,loc~n) 4.442084706743e+03
+    7 tikba() 1.060400367588e+02
+    8 ikk(s~N) 4.995017807433e+04
+    9 ikk(s~A) 2.414756219987e+01
+   10 ikk(s~I) 2.567436347197e+01
+   11 tA20() 5.924673303895e+01
+   12 A20() 6.582635409962e+03
+   13 ikba(loc~c,nfkb,s~p) 1.242867399517e+00
+   14 ikba(loc~c,nfkb!1,s~p).nfkb(ikba!1,loc~c) 1.027273098505e+00
+   15 tTarget() 0.000000000000e+00
+   16 tcompetitor() 0.000000000000e+00
+   17 competitor() 0.000000000000e+00
+   18 TNFR(st~a) 6.564185950590e-01
+   19 TNFR(st~i) 9.934358140494e+01
+   20 IKKK(st~n) 9.994025245987e+04
+   21 IKKK(st~a) 5.974754013480e+01
+   22 TNF() 0
+end species
+begin reactions
+    1 22 0 _rateLaw1 #_R1
+    2 19,22 18,22 _rateLaw2 #_R2
+    3 18 19 _rateLaw3 #_R3
+    4 20 21 k_IKKKactivation #_R4
+    5 21 20 _rateLaw4 #_R5
+    6 8 9 k_IKKactivation #_R6
+    7 9 10 k_IKKintermetiation #_R7
+    8 10 8 _rateLaw5 #_R8
+    9 2,9 9,13 _rateLaw6 #_R9
+   10 1,2 3 _rateLaw7 #_R10
+   11 3 1,2 _rateLaw8 #_reverse__R10
+   12 3,9 9,14 _rateLaw9 #_R11
+   13 1 4 _rateLaw10 #_R12
+   14 4 1 _rateLaw11 #_reverse__R12
+   15 2 5 _rateLaw12 #_R13
+   16 5 2 _rateLaw13 #_reverse__R13
+   17 2 0 _rateLaw14 #_R14
+   18 13 0 _rateLaw15 #_R15
+   19 14 1 _rateLaw16 #_R16
+   20 3 1 _rateLaw17 #_R17
+   21 4,5 6 _rateLaw18 #_R18
+   22 6 4,5 _rateLaw19 #_reverse__R18
+   23 0 11 ra20 #_R19
+   24 11 0 _rateLaw20 #_reverse__R19
+   25 0 7 rikba #_R20
+   26 7 0 _rateLaw21 #_reverse__R20
+   27 11 11,12 _rateLaw22 #_R21
+   28 12 0 _rateLaw23 #_R22
+   29 7 2,7 _rateLaw24 #_R23
+   30 5 0 _rateLaw25 #_R24
+   31 6 3 _rateLaw26 #_R25
+end reactions
+begin groups
+    1 nNFKB                4
+    2 cNFKB                1
+    3 cikba                2
+    4 Ccomplex             3
+    5 nikba                5
+    6 ncomplex             6
+    7 tIKBA                7
+    8 ikkN                 8
+    9 ikka                 9
+   10 ikkai                10
+   11 transcriptA20        11
+   12 oA20                 12
+   13 pIKBA                13
+   14 pIKBANFKB            14
+   15 transcriptTarget     15
+   16 tComp                16
+   17 oComp                17
+   18 TNFR_a               18
+   19 TNFR_i               19
+   20 IKKK_a               21
+   21 TNF                  22
+end groups
