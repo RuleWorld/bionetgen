@@ -1,0 +1,27 @@
+## title: Simple model of enzyme kinetics that includes enzyme synthesis and degradation
+## author: Jim Faeder
+## date: 30Mar2016
+## note: Revised to use units consistent with uM for concentration, um^3=fL for volume
+begin model
+begin parameters
+	k1 1
+	k2 1
+end parameters
+begin molecule types
+	A()
+end molecule types
+begin seed species
+	A() 0
+end seed species
+begin observables
+	Molecules A A()
+end observables
+begin reaction rules
+0 <-> A() k1,k2
+end reaction rules
+end model
+
+generate_network({})
+writeCfile({})
+
+
