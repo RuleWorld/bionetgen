@@ -101,7 +101,8 @@ struct BNGModel =>
     Params              => '%',  # run-time parameters (not to be saved)
     ParameterCache      => 'Cache',   
     ConcentrationCache  => 'Cache',
-    VizGraphs            => '$',
+	VizGraphs			=> '$',
+	simulation_protocol => '@',
 };
 
 
@@ -945,8 +946,56 @@ sub readSBML
                             printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
                         }
                     }
-                    
-    
+                     ### Read protocol Block
+	                elsif ( $name eq 'protocol' )
+	                {
+	                	struct protocol =>
+                      {
+                        action  => '$',
+                        options => '$',
+                      };
+	                    if ($model->Params->{'skip_actions'})
+	                    {
+	                        unless ($model->Params->{'action_skip_warn'})
+	                        {   send_warning( err_gen("Skipping actions") );   }
+	                        next;
+	                    }
+	                    my $command_counter = 0;
+	                    # Read actions
+	                    foreach my $line ( @$block_dat )
+	                    {
+	                        my ($entry, $lno) = @$line;
+	                        # Remove (and ignore) leading index from line
+	                        $entry =~ s/^\d+\s+//;
+	                        # Get action and options
+	                        my ($action, $options);
+	                        if ( $entry =~ /^\s*(\w+)\s*\((.*)\);?\s*$/ )
+	                        {
+	                            $action  = $1;
+	                            $options = $2;
+
+	                            # replace double quotes with single quotes so that Perl won't
+	                            #  try to interpret special characters.    
+	                            $options =~ s/"/'/g;
+
+    							            my $protocol_command = protocol->new();
+                              $protocol_command->{action} = $action;
+                              $protocol_command->{options} = $options;
+                              $model->{simulation_protocol}[$command_counter] = $protocol_command;
+                              $command_counter = $command_counter + 1;
+	                        }
+	                        else                        
+	                        {
+	                            $err = "Line $entry does not appear to contain a command";
+	                            $err = errgen( $err, $lno );
+	                        }
+	                        # Perform self-consistency checks before operations are performed on model
+	                        if ( $err = $model->ParamList->check() )
+	                        {
+	                            $err = errgen($err);
+	                            goto EXIT;
+	                        }
+	                    }    
                     ### Try to read any other Block type (probably an error)
                     else
                     {   # exit
