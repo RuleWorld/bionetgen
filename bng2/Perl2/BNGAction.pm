@@ -91,6 +91,17 @@ sub simulate_pla
 }
 
 
+sub simulate_has
+{
+    my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+
+    $params->{method} = 'has';
+    my $err = $model->simulate( $params );
+    return $err;
+}
+
+
 
 ###
 ###
@@ -116,6 +127,8 @@ sub simulate
                    options=>{ seed=>1 }                                      },
         pla   => { binary=>'run_network', type=>'Network', input=>'net',
                    options=>{ seed=>1 }                                      },
+        has   => { binary=>'run_network', type=>'Network', input=>'net', 
+                   options=>{ seed=>1}                          },
         nf    => { binary=>'NFsim', type=>'NetworkFree', input=>'xml',
                    options=>{ seed=>1 }                                      }
     };
@@ -218,7 +231,7 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "simulate() requires 'method' parameter (ode, ssa, pla, nf).";  }
+    {  return "simulate() requires 'method' parameter (ode, ssa, pla, has, nf).";  }
     if ($method =~ /^ode$/){  $method = 'cvode';  } # Support 'ode' as a valid method
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }
@@ -226,7 +239,7 @@ sub simulate
     printf "ACTION: simulate( method=>\"%s\" )\n", $method;
 
     #if the method is ode or ssa or pla, check if the reaction network has been generated, and if not, generate it.
-    if ($method =~ /^(cvode|ssa|pla)$/)
+    if ($method =~ /^(cvode|ssa|pla|has)$/)
     {
         if($model->RxnList->size()==0)
         {
@@ -309,7 +322,29 @@ sub simulate
         		push @command, "--pla_output", $params->{pla_output};
         }
     }
-    
+
+    # heterogeneous adaptive scaling method - specific arguments
+    if ($method eq 'has')
+    {
+        if (!exists $params->{scalelevel}) {
+            $params->{scalelevel} = "100";
+            send_warning("'scalelevel' not defined, using default scaling targert: $params->{scalelevel}");
+        }
+        push @command, "--scalelevel", $params->{scalelevel};
+        if (exists $params->{check_product_scale}) {
+            push @command, "--check_product_scale", $params->{check_product_scale};
+        }
+    }
+    if ($method eq 'ssa')
+    {
+        if ( exists $params->{scalelevel} ) {
+            push @command, "--scalelevel", $params->{scalelevel};
+            if (exists $params->{check_product_scale}) {
+                push @command, "--check_product_scale", $params->{check_product_scale};
+            }
+        }
+    }
+
     # add method options
     {
         my $opts = $METHODS->{$method}->{options};
