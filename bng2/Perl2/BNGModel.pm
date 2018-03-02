@@ -452,7 +452,7 @@ sub readSBML
                     # Remove repeated white space
                     $name =~ s/\s+/ /g;
     
-                    unless ($in_model or ($name eq 'actions'))
+                    unless ($in_model or ($name eq 'actions') or ($name eq 'protocol'))
                     {
                         $err = errgen("$name cannot be defined outside of a model");
                         goto EXIT;
