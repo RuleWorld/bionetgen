@@ -111,6 +111,32 @@ sub readString
 
     if (@components)
     {
+		### Make sure identical components have identical states ###
+		# Loop over component i
+		for (my $i=0; $i < scalar(@components); $i++){
+			# Loop over component j > i
+			for (my $j=$i+1; $j < scalar(@components); $j++){
+				# Check if names are the same
+				if ($components[$i]->Name eq $components[$j]->Name){
+					# Quit if components have unequal numbers of states
+					if (scalar @{$components[$i]->States} ne scalar @{$components[$j]->States}){
+						return ("Invalid MoleculeType specification $$strptr");
+					}
+					# Compare state values element-by-element
+					else{
+						# Sort component states
+						@{$components[$i]->States} = sort @{$components[$i]->States};
+						@{$components[$j]->States} = sort @{$components[$j]->States};
+						for (my $k=0; $k < scalar @{$components[$i]->States}; $k++){
+							# Quit if elements are different
+							if (@{$components[$i]->States}[$k] ne @{$components[$j]->States}[$k]){
+								return ("Invalid MoleculeType specification $$strptr");
+							}
+						}
+					}
+				}
+			}
+		}
         $mtype->Components([@components]);
     }
     $$strptr = $string_left;

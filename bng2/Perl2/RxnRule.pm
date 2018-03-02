@@ -3919,10 +3919,9 @@ sub apply_operations
 
 			# loop over components connected to the edge
             #jjt: only iterate over reactants
-			foreach my $ref ( @$edel[0..2] )
+			foreach my $ref ( @$edel[0..1] )
 			{
 				my ( $ip, $im, $ic ) = split (/\./, $ref);
-
 				# permute reactants
 				if ( defined $permute ) { $ip = $permute->[$ip]; }
 

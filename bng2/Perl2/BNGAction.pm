@@ -11,6 +11,51 @@ use warnings;
 ###
 ###
 
+sub simulate_protocol
+{
+    my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+
+    my $simulation_protocol_ref = $model->{simulation_protocol};
+    my @simulation_protocol = @{$simulation_protocol_ref};
+    my $num_commands = scalar(@simulation_protocol);
+
+    print "\n\nexecuting $num_commands commands in protocol\n\n";
+
+    my $err;
+
+    for(my $k=0;$k<$num_commands;$k++)
+    {
+        my $action = $model->{simulation_protocol}[$k]->{action};
+        my $options = $model->{simulation_protocol}[$k]->{options};
+        my $modified_options;
+
+        if(index($action,"simulate") != -1)
+        {
+            my $hash_opts_ref = eval($options);
+            #modifying hash with local prefix
+            $hash_opts_ref->{prefix} = $params->{prefix};
+            #deleting suffix
+            delete $hash_opts_ref->{suffix};
+            $err = $model->simulate($hash_opts_ref);
+
+        }
+        else
+        {
+            $modified_options = $options;
+            my $command = sprintf "\$model->%s(%s);", $action, $modified_options;
+            my $t_start = cpu_time(0);
+            $err = eval $command;
+            #if ($@)   { $err = errgen($@);    goto EXIT; }
+            #if ($err) { $err = errgen($err);  goto EXIT; }
+            my $t_elapsed = cpu_time($t_start);
+            printf "CPU TIME: %s %.2f s.\n", $action, $t_elapsed;
+        }
+
+    }
+    return $err;
+}
+
 
 
 sub simulate_ode
@@ -46,6 +91,17 @@ sub simulate_pla
 }
 
 
+sub simulate_has
+{
+    my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+
+    $params->{method} = 'has';
+    my $err = $model->simulate( $params );
+    return $err;
+}
+
+
 
 ###
 ###
@@ -62,6 +118,7 @@ sub simulate
     my $params = (@_) ? shift @_ : {};
     my $err;
 
+
     my $METHODS =
     {
         cvode => { binary=>'run_network', type=>'Network', input=>'net',
@@ -70,6 +127,8 @@ sub simulate
                    options=>{ seed=>1 }                                      },
         pla   => { binary=>'run_network', type=>'Network', input=>'net',
                    options=>{ seed=>1 }                                      },
+        has   => { binary=>'run_network', type=>'Network', input=>'net', 
+                   options=>{ seed=>1}                          },
         nf    => { binary=>'NFsim', type=>'NetworkFree', input=>'xml',
                    options=>{ seed=>1 }                                      }
     };
@@ -172,7 +231,7 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "simulate() requires 'method' parameter (ode, ssa, pla, nf).";  }
+    {  return "simulate() requires 'method' parameter (ode, ssa, pla, has, nf).";  }
     if ($method =~ /^ode$/){  $method = 'cvode';  } # Support 'ode' as a valid method
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }
@@ -180,7 +239,7 @@ sub simulate
     printf "ACTION: simulate( method=>\"%s\" )\n", $method;
 
     #if the method is ode or ssa or pla, check if the reaction network has been generated, and if not, generate it.
-    if ($method =~ /^(cvode|ssa|pla)$/)
+    if ($method =~ /^(cvode|ssa|pla|has)$/)
     {
         if($model->RxnList->size()==0)
         {
@@ -263,7 +322,29 @@ sub simulate
         		push @command, "--pla_output", $params->{pla_output};
         }
     }
-    
+
+    # heterogeneous adaptive scaling method - specific arguments
+    if ($method eq 'has')
+    {
+        if (!exists $params->{scalelevel}) {
+            $params->{scalelevel} = "100";
+            send_warning("'scalelevel' not defined, using default scaling targert: $params->{scalelevel}");
+        }
+        push @command, "--scalelevel", $params->{scalelevel};
+        if (exists $params->{check_product_scale}) {
+            push @command, "--check_product_scale", $params->{check_product_scale};
+        }
+    }
+    if ($method eq 'ssa')
+    {
+        if ( exists $params->{scalelevel} ) {
+            push @command, "--scalelevel", $params->{scalelevel};
+            if (exists $params->{check_product_scale}) {
+                push @command, "--check_product_scale", $params->{check_product_scale};
+            }
+        }
+    }
+
     # add method options
     {
         my $opts = $METHODS->{$method}->{options};
@@ -1502,6 +1583,8 @@ sub bifurcate
 
 sub parameter_scan
 {
+    use POSIX;
+    use List::Util qw[min max];
     my $model = shift @_;
     my $params = @_ ? shift @_ : {};
 
@@ -1605,35 +1688,89 @@ sub parameter_scan
     $model->saveConcentrations("SCAN");
 
     # loop over scan points
-	for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
+    if(!(defined $params->{parallel}) or $params->{parallel}==0)
     {
-        # define prefix
-        my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
-    	
-        # define parameter value
-        my $par_value = $par_scan_vals[$k];
+    	for ( my $k = 0;  $k < @par_scan_vals;  ++$k )
+        {
 
-        # set parameter
-        $model->setParameter( $params->{parameter}, $par_value );
+            # define prefix
+            my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );
+        	
+            # define parameter value
+            my $par_value = $par_scan_vals[$k];
 
-        # reset concentrations
-        if ( $params->{reset_conc} ){
-        		$model->resetConcentrations("SCAN");
+            # set parameter
+            $model->setParameter( $params->{parameter}, $par_value );
+
+            # reset concentrations
+            if ( $params->{reset_conc} ){
+            		$model->resetConcentrations("SCAN");
+            }
+
+            # define local params
+            my $local_params;
+            %$local_params = %$params;
+            $local_params->{prefix} = $local_prefix;
+            delete $local_params->{suffix};
+
+            # run simulation
+            my $err;
+            if($params->{method} eq "protocol")
+            {
+        
+                $err = $model->simulate_protocol($local_params);
+            }
+            else
+            {
+                 $err = $model->simulate( $local_params );
+            }
+            
+            if ( $err )
+            {   # return error message
+                $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
+                return $err;
+            }   
         }
+    }
 
-        # define local params
-        my $local_params;
-        %$local_params = %$params;
-        $local_params->{prefix} = $local_prefix;
-        delete $local_params->{suffix};
-
-        # run simulation
-        my $err = $model->simulate( $local_params );
-        if ( $err )
-        {   # return error message
-            $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
-            return $err;
-        }   
+    if((defined $params->{parallel}) and $params->{parallel}==1)
+    {
+        my $num_cores = $params->{num_cores};
+        my $num_pts = scalar(@par_scan_vals);
+        my $num_batches = ceil($num_pts/$num_cores);
+        for my $batch (0..$num_cores-1)
+        {
+            if(fork==0)
+            {
+                my $end_point = min($num_batches*($batch+1)-1,$num_pts-1);
+                for my $k($num_batches*$batch .. $num_batches*($batch+1)-1)
+                {
+                    my $local_prefix = File::Spec->catfile( ($workdir), sprintf("%s_%05d", $file_prefix, $k+1) );                    
+                    # define parameter value
+                    my $par_value = $par_scan_vals[$k];
+                    # set parameter
+                    $model->setParameter( $params->{parameter}, $par_value );
+                    #reset concentrations
+                    if ( $params->{reset_conc} ){
+                        $model->resetConcentrations("SCAN");
+                    }
+                    # define local params
+                    my $local_params;
+                    %$local_params = %$params;
+                    $local_params->{prefix} = $local_prefix;
+                    delete $local_params->{suffix};
+                    # run simulation
+                    my $err = $model->simulate( $local_params );
+                    if ( $err )
+                    {   # return error message
+                        $err = "Error in parameter_scan (step " . ($k+1) . "): $err";
+                        return $err;
+                    } 
+                }
+                exit;
+            }          
+        }
+        while((wait()) > 0) {};
     }
 
     # recover concentrations

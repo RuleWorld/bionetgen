@@ -2312,6 +2312,406 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 	return (rate);
 }
 
+/* Return the rate of rxn with scaled -- for internal use only */
+static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScaling, double scalelevel, bool pScaleChecker) {
+	double rate;
+	int *iarr, *index;
+	int ig, /*i1, i2,*/n_denom;
+	int q, i;
+	double *param, x, xn, kn;
+	double St, Et, kcat, Km, S, b;
+	double scalingExp = 0.0;
+	double tempPop = 1.0;
+	double upperBound = 2 * scalelevel;
+
+
+	/* Don't calculate rate of null reactions */
+	if (!rxn)
+		return (0.0);
+
+	++network.n_rate_calls;
+
+	switch (rxn->rateLaw_type) {
+
+	case ELEMENTARY:
+        // tempScaling = 1.0;
+		// v= k1*X1...Xn
+		rate = rxn->stat_factor * rxn->rateLaw_params[0];
+		iarr = rxn->r_index;
+		// Handle reactions with discrete molecules with multiple copies of the same reactants.
+		// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
+		//       automatically by BNG).
+		if (discrete) {
+			if (iarr) {
+				if (X[*iarr] < upperBound) {
+					tempPop = scalelevel;
+				} else {
+					tempPop = X[*iarr];
+					for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
+						if (X[*index] < upperBound) {
+							tempPop = scalelevel;
+							break;
+						} else {
+							if (X[*index] < tempPop) {
+								tempPop = X[*index];
+							}
+						}
+					}
+					// check the product to get the smallest scaling factor
+					if (pScaleChecker && tempPop >= upperBound) {
+						int pi = 0;
+						for (i = 0; i < rxn->n_products; ++i) {
+							pi = rxn->p_index[i];
+							if (X[pi] < upperBound) {
+								tempPop = scalelevel;
+								break;
+							} else {
+								if (X[pi] < tempPop) {
+									tempPop = X[pi];
+								}
+							}
+						}
+					}
+				}
+				iScaling = floor(tempPop / scalelevel);
+				if (iScaling < 1.0) {
+					iScaling = 1.0;
+				}
+			} else {
+                iScaling = scalelevel;
+            }
+			double n = 0.0;
+			//rate*= X[*iarr]; // NOTE: This assumes at least one reactant species (no zeroth-order rxns)
+			//for (index=iarr+1; index<iarr+rxn->n_reactants; ++index){
+            for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+                scalingExp += 1.0;
+                if (index > iarr) {
+                    if (*index == *(index-1)) {
+                        n += 1.0;
+                    } else {
+                        n = 0.0;
+                    }
+                }
+                rate *= (X[*index] / iScaling - n);
+            }
+			rate = rate * pow(iScaling, (scalingExp - 1.0));
+		}
+		// Continuous case
+		else {
+			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+				rate *= X[*index];
+			}
+		}
+		break;
+
+	case MICHAELIS_MENTEN:
+		/* Second rate, if present, is Michaelis-Menten Km */
+		St = X[rxn->r_index[0]];
+		kcat = rxn->rateLaw_params[0];
+		Km = rxn->rateLaw_params[1];
+		/* S + E + ... -> P + E + .. */
+		for (q = 1, Et = 0; q < rxn->n_reactants; ++q) {
+			Et += X[rxn->r_index[q]];
+		}
+        tempPop = min(St, Et);
+		if (tempPop < upperBound) {
+			tempPop = scalelevel;
+		}
+		// check the product to get the smallest scaling factor
+		if (pScaleChecker && tempPop >= upperBound) {
+			int pi = 0;
+			for (i = 0; i < rxn->n_products; ++i) {
+				pi = rxn->p_index[i];
+				if (X[pi] < upperBound) {
+					tempPop = scalelevel;
+					break;
+				} else {
+					if (X[pi] < tempPop) {
+						tempPop = X[pi];
+					}
+				}
+			}
+		}
+		iScaling = floor(tempPop / scalelevel);
+		if (iScaling < 1.0) {
+			iScaling = 1.0;
+		}
+
+		b = (St - Km - Et) / iScaling;
+		S = 0.5 * (b + sqrt(b * b + 4.0 * St / iScaling * Km / iScaling));
+		rate = rxn->stat_factor * kcat * Et / iScaling * S / (Km / iScaling + S);
+		/* NOTE: the scaling method for MM equation is not 100% accurate, more nonlinearity brings more error */
+		break;
+
+	case SATURATION:
+		param = rxn->rateLaw_params;
+		/* if dim(param)==1
+		 rate= stat_factor*param[0], a zeroth order rate law
+		 else
+		 rate = stat_factor*param[0]*R1...Rn/((R1+param[1])*(R2+param[2])...
+		 where terms in denominator are only calculated if param[n] is defined
+		 */
+		rate = rxn->stat_factor * param[0];
+		iarr = rxn->r_index;
+		++param;
+		n_denom = rxn->n_rateLaw_params - 1;
+		if (n_denom > 0) {
+			// Handle reactions with discrete molecules with multiple copies of the same reactants.
+			// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
+			//       automatically by BNG).
+			if (discrete) {
+				if (X[*iarr] < upperBound) {
+					tempPop = scalelevel;
+				} else {
+					tempPop = X[*iarr];
+					for (ig = 1; ig < n_denom; ++ig) {
+						if (X[ig] < upperBound) {
+							tempPop = scalelevel;
+							break;
+						} else {
+							if (X[ig] < tempPop) {
+								tempPop = X[ig];
+							}
+						}
+					}
+				}
+				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
+					if (tempPop >= upperBound) {
+						if (X[ig] < upperBound) {
+							tempPop = scalelevel;
+							break;
+						} else {
+							if (X[ig] < tempPop) {
+								tempPop = X[ig];
+							}
+						}
+					}
+				}
+				// check the product to get the smallest scaling factor
+				if (pScaleChecker && tempPop >= upperBound) {
+					int pi = 0;
+					for (i = 0; i < rxn->n_products; ++i) {
+						pi = rxn->p_index[i];
+						if (X[pi] < upperBound) {
+							tempPop = scalelevel;
+							break;
+						} else {
+							if (X[pi] < tempPop) {
+								tempPop = X[pi];
+							}
+						}
+					}
+				}
+				iScaling = floor(tempPop / scalelevel);
+				if (iScaling < 1.0) {
+					iScaling = 1.0;
+				}
+				double n = 0.0;
+				/* Compute contributions to rate from species appearing in both numerator
+				   and denominator */
+				for (ig = 0; ig < n_denom; ++ig) {
+					if (ig > 0) {
+						if (iarr[ig] == iarr[ig - 1]) {
+							n += 1.0;
+						} else {
+							n = 0.0;
+						}
+					}
+					x = X[iarr[ig]];
+					// rate *= (x  / iScaling - n) / ((param[ig] + x) / iScaling);
+					rate *= (x - iScaling * n) / (param[ig] + x);
+				}
+				/* Compute contributions to rate from species appearing only in numerator */
+				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
+					if (iarr[ig] == iarr[ig - 1]) {
+						n += 1.0;
+					} else {
+						n = 0.0;
+					}
+					rate *= (X[iarr[ig]] / iScaling - n);
+					scalingExp += 1.0;
+				}
+                if (scalingExp != 0.0) {
+                    rate = rate * pow(iScaling, (scalingExp - 1.0));
+                }
+			}
+			// Continuous case
+			else {
+				/* Compute contributions to rate from species appearing in both numerator and denominator */
+				for (ig = 0; ig < n_denom; ++ig) {
+					x = X[iarr[ig]];
+					rate *= x / (param[ig] + x);
+				}
+
+				/* Compute contributions to rate from species appearing only in numerator */
+				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
+					rate *= X[iarr[ig]];
+				}
+			}
+		}
+		break;
+
+	case HILL:
+		param = rxn->rateLaw_params;
+		iarr = rxn->r_index;
+		x = X[iarr[0]];
+		if (x < upperBound) {
+			tempPop = scalelevel;
+		} else {
+			tempPop = x;
+		}
+		xn = pow(x, param[2]);
+		kn = pow(param[1], param[2]);
+		rate = rxn->stat_factor * param[0] * xn / (kn + xn);
+		// Handle reactions with discrete molecules with multiple copies of the same reactants.
+		// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
+		//       automatically by BNG).
+		if (discrete) {
+			for (ig = 1; ig < rxn->n_reactants; ++ig) {
+				if (tempPop >= upperBound) {
+					if (X[ig] < upperBound) {
+						tempPop = scalelevel;
+						break;
+					} else {
+						if (X[ig] < tempPop) {
+							tempPop = X[ig];
+						}
+					}
+				}
+			}
+			// check the product to get the smallest scaling factor
+			if (pScaleChecker && tempPop >= upperBound) {
+				int pi = 0;
+				for (i = 0; i < rxn->n_products; ++i) {
+					pi = rxn->p_index[i];
+					if (X[pi] < upperBound) {
+						tempPop = scalelevel;
+						break;
+					} else {
+						if (X[pi] < tempPop) {
+							tempPop = X[pi];
+						}
+					}
+				}
+			}
+			iScaling = floor(tempPop / scalelevel);
+			if (iScaling < 1.0) {
+				iScaling = 1.0;
+			}
+			double n = 0.0;
+			/* Compute contributions to rate from species appearing only in numerator */
+			for (ig = 1; ig < rxn->n_reactants; ++ig) {
+				if (iarr[ig] == iarr[ig-1]) {
+					n += 1.0;
+				} else {
+					n = 0.0;
+				}
+				rate *= (X[iarr[ig]] / iScaling - n);
+				scalingExp += 1.0;
+			}
+            if (scalingExp != 0.0) {
+                rate = rate * pow(iScaling, (scalingExp - 1.0));
+            }
+		}
+		// Continuous case
+		else {
+			/* Compute contributions to rate from species appearing only in numerator */
+			for (ig = 1; ig < rxn->n_reactants; ++ig) {
+				rate *= X[iarr[ig]];
+			}
+		}
+		break;
+
+	case FUNCTIONAL:
+		// v= k1*X1...Xn
+		rate = rxn->stat_factor*network.rates->elt[rxn->rateLaw_indices[0]-1]->val;
+//		rate = rxn->stat_factor*rxn->rateLaw_params[0];
+		iarr = rxn->r_index;
+		// Handle reactions with discrete molecules with multiple copies of the same reactants.
+		// NOTE: Will only apply correct formula if repeated species are grouped together (which is done
+		//       automatically by BNG).
+		if (discrete && rxn->n_reactants) { // Make sure the rxn has reactants (not pure synth)
+			if (X[*iarr] < upperBound) {
+				tempPop = scalelevel;
+			} else {
+				tempPop = X[*iarr];
+				for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
+					if (X[*index] < upperBound) {
+						tempPop = scalelevel;
+						break;
+					} else {
+						if (X[*index] < tempPop) {
+							tempPop = X[*index];
+						}
+					}
+				}
+			}
+			// check the product to get the smallest scaling factor
+			if (pScaleChecker && tempPop >= upperBound) {
+				int pi = 0;
+				for (i = 0; i < rxn->n_products; ++i) {
+					pi = rxn->p_index[i];
+					if (X[pi] < upperBound) {
+						tempPop = scalelevel;
+						break;
+					} else {
+						if (X[pi] < tempPop) {
+							tempPop = X[pi];
+						}
+					}
+				}
+			}
+			iScaling = floor(tempPop / scalelevel);
+			if (iScaling < 1.0) {
+				iScaling = 1.0;
+			}
+
+			double n = 0.0;
+			rate *= X[*iarr] / iScaling;
+			for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
+				if (*index == *(index-1)) {
+					n += 1.0;
+				} else {
+					n = 0.0;
+				}
+				rate *= (X[*index] / iScaling - n);
+				scalingExp += 1.0;
+			}
+			rate = rate * pow(iScaling, scalingExp);
+		}
+		// Continuous case
+		else {
+			for (index = iarr; index < iarr + rxn->n_reactants; ++index) {
+				rate *= X[*index];
+			}
+		}
+		break;
+	}
+
+	// Exit if running SSA and negative rate detected
+	if (discrete && rate < 0.0){
+		cout << "Error: Negative rate detected in rxn_rate() (rate = " << rate << "). Exiting." << endl;
+		// Print rxn string
+		cout << "R" << rxn->index << ": " << *rxn->toString;
+		if (rxn->rateLaw_type == ELEMENTARY) cout << " (ELEMENTARY)" << endl;
+		else if (rxn->rateLaw_type == MICHAELIS_MENTEN) cout << " (MICHAELIS_MENTEN)" << endl;
+		else if (rxn->rateLaw_type == SATURATION) cout << " (SATURATION)" << endl;
+		else if (rxn->rateLaw_type == HILL) cout << " (HILL)" << endl;
+		else if (rxn->rateLaw_type == FUNCTIONAL) cout << " (FUNCTIONAL)" << endl;
+		else cout << " (UNKNOWN)" << endl;
+		// Print reactant populations
+		for (int j=0;j < rxn->n_reactants;j++){
+			cout << "S" << rxn->r_index[j]-network.species->offset << ": " <<
+					network.species->elt[rxn->r_index[j]-network.species->offset]->name << ": " <<
+					X[rxn->r_index[j]] << endl;
+		}
+		cout << endl;
+		exit(1);
+	}
+	//
+	return (rate);
+}
+
 /* Returns the rate of each reaction in the network in #/unit time. */
 int rxn_rates_network(double* rxn_rates, int discrete) {
 
@@ -3915,6 +4315,7 @@ static struct {
 	int* ever_populated; /* array of length nc: element is 1 if corresponding species was ever populated, 0 otherwise --justin */
 	double* c_offset; /* Offset pointer for passing to routines that use species element indices */
 	double* a; /* reaction rates */
+    double* s; /* scaling factor for each reaction */
 	double a_tot; /* total reaction rate */
 	double t_next; /* time to next reaction */
 	int nc; /* number of species */
@@ -4488,6 +4889,78 @@ int init_gillespie_direct_network(int update_interval, int seed) {
 	return (0);
 }
 
+int init_adaptive_scaling_network(int update_interval, int seed, double scalelevel, bool pScaleChecker) {
+	int i;
+	Rxn** rarray;
+
+	// Initialize random number generator
+	if (seed >= 0) {
+		SEED_RANDOM(seed);
+	}
+	else{
+//   	cout << "pid: " << getpid() << endl;
+		SEED_RANDOM(getpid());
+	}
+
+	GSP.n_steps = 0;
+
+	/* Initialize reaction number and species number */
+	GSP.nc = n_species_network();
+	GSP.na = n_rxns_network();
+
+	/* Initialize concentration array */
+	GSP.c = ALLOC_VECTOR(GSP.nc);
+	get_conc_network(GSP.c);
+	GSP.c_offset = GSP.c - network.species->offset;
+
+	/* Round all concentrations to nearest integer */
+	for (i = 0; i < GSP.nc; ++i) {
+		GSP.c[i] = rint(GSP.c[i]);
+	}
+	set_conc_network(GSP.c);
+
+	/* initialize ever_populated array */
+	GSP.ever_populated = IALLOC_VECTOR(GSP.nc);
+	for (i = 0; i < GSP.nc; ++i) {
+		GSP.ever_populated[i] = (GSP.c[i] > 0.0 ? 1 : 0);
+	}
+
+	/* Initialize reaction rate array */
+	GSP.a = ALLOC_VECTOR(GSP.na);
+	/* Initialize reaction rate scale levels */
+	GSP.s = ALLOC_VECTOR(GSP.na);
+	/* rxn_rates_network( GSP.a); */
+//	rarray = network.reactions->rxn;
+	for (i = 0; i < GSP.na; ++i) {
+//		GSP.a[i] = rxn_rate(rarray, GSP.c_offset, 1);
+		// GSP.s[i] = 1.0;
+		GSP.a[i] = rxn_rate_scaled(network.reactions->rxn[i], GSP.c_offset, 1, GSP.s[i], scalelevel, pScaleChecker);
+		GSP.a_tot += GSP.a[i];
+	}
+
+	// if (update_interval > 0) {
+	// 	GSP.rxn_rate_update_interval = update_interval;
+	// 	printf("rxn_rate_update_interval=%d\n", update_interval);
+	// }
+	// else{
+		GSP.rxn_rate_update_interval = 1;
+	// }
+
+	// Initialize list of propensities used to speed up next rxn selection
+	for (i = 0; i < GSP.na; i++){
+		GSP.prop.push_back(i);
+	}
+
+	// Arrays used in creating the update lists
+	GSP.included = new GSP_included_arrays;
+
+	// Create the update lists
+	create_update_lists();
+
+	return (0);
+}
+
+
 int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 	int i;
 	int nc_old, na_old;
@@ -4519,6 +4992,190 @@ int update_gillespie_direct_network(int n_spec_new, int n_rxns_new) {
 		GSP.a = REALLOC_VECTOR(GSP.a, GSP.na);
 		for (i = na_old; i < GSP.na; ++i) {
 			GSP.a[i] = 0.0;
+		}
+	}
+
+	// Propensities used to speed up next rxn selection
+	for (i = na_old;i < GSP.na;i++){
+		GSP.prop.push_back(i);
+	}
+
+	// Arrays used in creating the update lists
+	delete_GSP_included();
+	GSP.included = new GSP_included_arrays;
+
+	// Update lists
+	// TODO: Append update lists instead of recreating them from scratch
+	create_update_lists();
+
+/*	// Append update lists
+	iarray_add_rows(arl = GSP.as_reactant_list, GSP.nc - 1);
+	iarray_add_rows(apl = GSP.as_product_list, GSP.nc - 1);
+	iarray_add_rows(rul = GSP.rxn_update_list, GSP.na - 1);
+
+	offset = network.species->offset;
+	rarray = network.reactions->rxn;
+
+	// Create species update list by looping over reactions adding rxn to each species
+	// that appears as reactant
+	for (i = na_old; i < GSP.na; ++i) {
+		if (!(rxn = rarray[i]))
+			continue;
+		// loop over reactant indices for reaction
+		for (ir = 0; ir < rxn->n_reactants; ++ir) {
+			r_index = rxn->r_index[ir] - offset;
+			iarray_add_elt(arl, r_index, i);
+		}
+		for (ip = 0; ip < rxn->n_products; ++ip) {
+			p_index = rxn->p_index[ip] - offset;
+			iarray_add_elt(apl, p_index, i);
+		}
+	}
+
+	// This method is far more straightforward than the (in principle) more optimized
+	// method that is commented out below.
+	rxn_dep = IALLOC_VECTOR(GSP.na);
+	for (i = 0; i < GSP.na; ++i) {
+		int ilower;
+		if (!(rxn = rarray[i]))
+			continue;
+		IINIT_VECTOR(rxn_dep, 0, GSP.na);
+		// loop over reactant indices for reaction
+		for (ir = 0; ir < rxn->n_reactants; ++ir) {
+			r_index = rxn->r_index[ir] - offset;
+			// loop over reactions in species update list for this species
+			for (is = 0; is < arl->l_arr[r_index]; ++is) {
+				++rxn_dep[arl->arr[r_index][is]];
+			}
+		}
+
+		// loop over product indices for reaction
+		for (ip = 0; ip < rxn->n_products; ++ip) {
+			p_index = rxn->p_index[ip] - offset;
+			// loop over reactions in species update list for this species
+			for (is = 0; is < arl->l_arr[p_index]; ++is) {
+				++rxn_dep[arl->arr[p_index][is]];
+			}
+		}
+
+		// loop over elements of rxn_dep adding nonzero elts to rxn update list for this reaction
+		ilower = (i >= na_old) ? 0 : na_old;
+		for (irxn = ilower; irxn < GSP.na; ++irxn) {
+			if (rxn_dep[irxn]) {
+				iarray_add_elt(rul, i, irxn);
+				++GSP.rxn_update_size;
+			}
+		}
+	}
+	free(rxn_dep);
+*/
+
+#ifdef COMMENT
+	/* Create reaction update list by looping over reactants for each reaction
+	 and adding all reactions that appear on species update lists */
+	rxn_dep= IALLOC_VECTOR(GSP.na);
+	rxn_dep2= IALLOC_VECTOR(GSP.na);
+	rxn_dep3= IALLOC_VECTOR(GSP.na);
+	for(i=na_old; i<GSP.na; ++i) {
+		if (!(rxn=rarray[i])) continue;
+		IINIT_VECTOR(rxn_dep, 0, GSP.na);
+		IINIT_VECTOR(rxn_dep2, 0, GSP.na);
+		IINIT_VECTOR(rxn_dep3, 0, GSP.na);
+
+		/* loop over reactant indices for reaction */
+		for(ir=0; ir<rxn->n_reactants;++ir) {
+			r_index= rxn->r_index[ir]-offset;
+			/* loop over reactions in which reactant species appears as reactant */
+			for(is=0; is<arl->l_arr[r_index]; ++is) {
+				++rxn_dep[arl->arr[r_index][is]];
+			}
+			/* loop over reactions in which reactant species appears as product */
+			for(is=0; is<apl->l_arr[r_index]; ++is) {
+				++rxn_dep2[apl->arr[r_index][is]];
+			}
+		}
+
+		/* loop over product indices for reaction */
+		for(ip=0; ip<rxn->n_products;++ip) {
+			p_index= rxn->p_index[ip]-offset;
+			/* loop over reactions in which product species appears as reactant */
+			for(is=0; is<arl->l_arr[p_index]; ++is) {
+				++rxn_dep3[arl->arr[p_index][is]];
+			}
+		}
+
+		/* Add new dependencies for old reactions and dependencies for new reactions involving old reactions */
+		for(irxn=0; irxn<na_old; ++irxn) {
+			if (rxn_dep[irxn]) {
+				iarray_add_elt(rul, i, irxn);
+				++GSP.rxn_update_size;
+				iarray_add_elt(rul, irxn, i);
+				++GSP.rxn_update_size;
+			} else {
+				if (rxn_dep2[irxn]) {
+					iarray_add_elt(rul, irxn, i);
+					++GSP.rxn_update_size;
+				}
+				if (rxn_dep3[irxn]) {
+					iarray_add_elt(rul, i, irxn);
+					++GSP.rxn_update_size;
+				}
+			}
+		}
+		/* Add dependencies for new reactions involving new reactions */
+		for(irxn=na_old; irxn<GSP.na; ++irxn) {
+			if (rxn_dep[irxn]||rxn_dep3[irxn]) {
+				iarray_add_elt(rul, i, irxn);
+				++GSP.rxn_update_size;
+			}
+		}
+	}
+	free(rxn_dep);
+	free(rxn_dep2);
+	free(rxn_dep3);
+#endif
+
+	/*   printf("RUL_size: %d\n", GSP.rxn_update_size); */
+
+	/*   print_rxn_update_list( stdout); */
+
+	return (0);
+}
+
+
+int update_adaptive_scaling_network(int n_spec_new, int n_rxns_new) {
+	int i;
+	int nc_old, na_old;
+	int ip, ir, is, irxn;
+	//	int err=0;
+	int *rxn_dep/*, *rxn_dep2, *rxn_dep3*/; /* boolean arrays to keep track of dependent
+											   reactions in creating rxn update list */
+
+	iarray *arl, *apl, *rul; /* species and reaction update lists */
+	int offset, r_index, p_index;
+	Rxn **rarray, *rxn;
+
+	/* Add space for new species and reaction rates and initialize*/
+	nc_old = GSP.nc;
+	if (n_spec_new) {
+		GSP.nc += n_spec_new;
+		GSP.c = REALLOC_VECTOR(GSP.c, GSP.nc);
+		GSP.ever_populated = REIALLOC_VECTOR(GSP.ever_populated, GSP.nc);
+		GSP.c_offset = GSP.c - network.species->offset;
+		for (i = nc_old; i < GSP.nc; ++i) {
+			GSP.c[i] = 0.0;
+			GSP.ever_populated[i] = 0; //(GSP.c[i] > 0.0 ? 1 : 0);
+		}
+	}
+
+	na_old = GSP.na;
+	if (n_rxns_new) {
+		GSP.na += n_rxns_new;
+		GSP.a = REALLOC_VECTOR(GSP.a, GSP.na);
+		GSP.s = REALLOC_VECTOR(GSP.s, GSP.na);
+		for (i = na_old; i < GSP.na; ++i) {
+			GSP.a[i] = 0.0;
+            GSP.s[i] = 1.0;
 		}
 	}
 
@@ -4859,6 +5516,154 @@ int update_concentrations(int irxn) {
 	return (force_update);
 }
 
+int update_concentrations_has(int irxn) {
+	int i;
+	int offset;
+	int force_update = 0;
+	Rxn* rxn;
+	Elt** spec;
+	iarray* spec_newpop = 0x0;
+	const int thresh_occ = 10;
+	static int n_spec_act = 0;
+	static int initialize = 1;
+
+	if (initialize) {
+		n_spec_act = n_species_active();
+		initialize = 0;
+	}
+
+	rxn = network.reactions->rxn[irxn];
+	offset = network.species->offset;
+
+	/* loop over reactants */
+	spec = network.species->elt;
+	for (i = 0; i < rxn->n_reactants; ++i) {
+		int ri = rxn->r_index[i] - offset;
+		if (!spec[ri]->fixed) {
+            if (GSP.s[irxn] < 1.0) {
+                fprintf(stderr, "ERROR: scaling factor of %d th reaction < 1\n", ri);
+                exit(1);
+            }
+			GSP.c[ri] -= GSP.s[irxn];
+			double newpop = GSP.c[ri];
+			if (newpop < 1.0){
+				GSP.c[ri] = 0.0; // This must be done to avoid negative concentrations!
+			}
+			if (newpop < thresh_occ){
+				force_update = 1;
+			}
+		}
+	}
+
+	/* loop over products */
+	for (i = 0; i < rxn->n_products; ++i) {
+		int pi = rxn->p_index[i] - offset;
+		if (!spec[pi]->fixed) {
+            if (GSP.s[irxn] < 1.0) {
+                fprintf(stderr, "ERROR: scaling factor of %d th reaction < 1\n", pi);
+                exit(1);
+            }
+			GSP.c[pi] += GSP.s[irxn];
+			double newpop = GSP.c[pi];
+			if (newpop <= thresh_occ)
+				force_update = 1;
+			/* Handle species populated for first time */
+			if (GSP.ever_populated[pi] == 0) {
+				if (GSP.as_reactant_list->l_arr[pi] == 0) {
+					if (!spec_newpop)
+						spec_newpop = new_iarray(1, 10);
+					/* Check if reactions have already been generated for this
+					 species and if not, call network generator to generate all
+					 reactions arising either from this species or at this level,
+					 as determined by network generator */
+					iarray_add_elt(spec_newpop, 0, pi + offset);
+				}
+				GSP.ever_populated[pi] = 1;
+			}
+		}
+	}
+
+	/* Create new reactions and species arising from newly populated species */
+	if (spec_newpop) {
+		char* line;
+		int ispec;
+		int line_number = 0, n_spec_new = 0, n_rxns_new = 0, n_groups_updated;
+		Elt** elt;
+//    	Rxn** rxn;
+		Elt_array *spec_new;
+		Rxn_array *rxns_new;
+		int nspec_newpop = spec_newpop->l_arr[0];
+		int* ispec_newpop = spec_newpop->arr[0];
+
+		++n_spec_act;
+		/* Call network generator with index and name of newly populated species */
+		elt = network.species->elt - network.species->offset;
+		printf("edgepop:");
+		for (i = 0; i < nspec_newpop; ++i) {
+			ispec = ispec_newpop[i];
+			printf(" %s", elt[ispec]->name);
+		}
+		printf("\n");
+		fflush(stdout);
+		/* Process return data */
+		line = get_line(stdin);
+		/* Only read data preceded by read command, otherwise continue */
+		if (strncmp("read", line, 4) == 0) {
+			/* Read new species */
+			spec_new = read_Elt_array(stdin, &line_number, (char*)"species", &n_spec_new, 0x0);
+			append_Elt_array(network.species, spec_new);
+			/*cout << "n_spec_new: " << n_spec_new << endl;
+			if (n_spec_new > 0){
+				for (Elt* e = spec_new->list;e != NULL;e = e->next){
+					cout << e->name << endl;
+				}
+			}*/
+
+			/* Read new reactions */
+//			int remove_rxns;
+//			rxns_new = read_Rxn_array(stdin, &line_number, &n_rxns_new, network.species, network.rates,
+//					network.is_func_map, remove_rxns);
+			rxns_new = read_Rxn_array(stdin, &line_number, &n_rxns_new, network.species, network.rates,
+					network.is_func_map);
+			append_Rxn_array(network.reactions, rxns_new);
+			/*cout << "n_rxns_new: " << n_rxns_new << endl;
+			if (n_rxns_new > 0){
+				for (Rxn* r = rxns_new->list;r != NULL;r = r->next){
+					cout << *r->toString << endl;
+				}
+			}*/
+
+			/* Update species and reaction dependency lists */
+			if (n_rxns_new)
+				update_adaptive_scaling_network(n_spec_new, n_rxns_new);
+
+			/* Read group updates */
+			read_Groups(network.spec_groups, stdin, network.species, &line_number, (char*)"groups", &n_groups_updated);
+
+			printf( "At step %d added %d new species (%d total %d active) %d new reactions (%d total)\n",
+					(int)(GSP.n_steps+0.5), n_spec_new, GSP.nc, n_spec_act, n_rxns_new, GSP.na );
+			/* 	if (n_groups_updated){
+			 	  printf("  and updated %d groups.", n_groups_updated);
+			 	}
+			 	printf("\n"); */
+		}
+		else {
+			printf("Population of species ");
+			for (i = 0; i < nspec_newpop; ++i) {
+				ispec = ispec_newpop[i];
+				printf("%s", elt[ispec]->name);
+			}
+			printf(" did not produce new reactions or species.\n");
+		}
+		fflush(stdout);
+		if (line)
+			free(line);
+		free_iarray(spec_newpop);
+	}
+
+	return (force_update);
+}
+
 void update_rxn_rates(int irxn) {
 	//iarray *iarr;
 	Rxn** rarray;
@@ -4899,6 +5704,70 @@ void update_rxn_rates(int irxn) {
 	for (j = 0; j < GSP.rxn_update_rxn[irxn].size(); j++) {
 		jrxn = GSP.rxn_update_rxn[irxn][j];
 		anew = rxn_rate(rarray[jrxn], GSP.c_offset, 1);
+		GSP.a_tot += anew - a[jrxn];
+		a[jrxn] = anew;
+	}
+
+	// Error check
+	if (GSP.a_tot < 0.0){
+//		cout << "WARNING: a_tot = " << GSP.a_tot << ". Recalculating a_tot to see if it is really negative." << endl;
+		GSP.a_tot = 0.0;
+		for (int i = 0; i < GSP.na; ++i) {
+			GSP.a_tot += GSP.a[i];
+		}
+		if (GSP.a_tot < 0.0){ // Throw an error if it's still negative
+			cout << "Error in update_rxn_rates(): GSP.a_tot < 0 (" << GSP.a_tot << "). Shouldn't happen. Exiting." << endl;
+			exit(1);
+		}
+		else{
+//			cout << "Problem resolved. Recalculated a_tot = " << GSP.a_tot << "." << endl;
+		}
+	}
+
+	return;
+}
+
+
+void update_rxn_rates_has(int irxn, double scalelevel, bool pScaleChecker) {
+	//iarray *iarr;
+	Rxn** rarray;
+	unsigned int j;
+	int jrxn; //, n_rxns, *rxns;
+	double *a, anew, *c;
+
+	if (network.has_functions){
+		// Update observables
+//		cout << "Rxn " << (irxn+1) << ": ";
+		for (unsigned int i=0; i < GSP.rxn_observ_affect[irxn].size(); i++){
+			int g = GSP.rxn_observ_affect[irxn][i]-1; // actual (base 0) index of group
+//			cout << network.spec_groups_vec[g]->name << ": old = " << network.spec_groups_vec[g]->total_val;
+			network.spec_groups_vec[g]->total_val = 0.0;
+			for (int j=0; j < network.spec_groups_vec[g]->n_elt; j++){
+				network.spec_groups_vec[g]->total_val +=
+						network.spec_groups_vec[g]->elt_factor[j] *
+						GSP.c[network.spec_groups_vec[g]->elt_index[j]-1];
+			}
+//			cout << ", new = " << network.spec_groups_vec[g]->total_val << " | ";
+		}
+//		cout << endl;
+
+		// Update variable parameters
+//		cout << "Rxn " << (irxn+1) << ": functions ";
+		for (unsigned int i=0; i < GSP.rxn_update_func[irxn].size(); i++){
+//			cout << GSP.rxn_update_func[irxn][i]-1 << " ";
+			network.rates->elt[GSP.func_param_affect[GSP.rxn_update_func[irxn][i]-1]-1]->val =
+					network.functions[GSP.rxn_update_func[irxn][i]-1].Eval();
+		}
+//		cout << endl;
+	}
+
+	// Loop over reactions in rxn update list updating both reaction and total rate
+	rarray = network.reactions->rxn;
+	c = GSP.c_offset;
+	a = GSP.a;
+	for (j = 0; j < GSP.rxn_update_rxn[irxn].size(); j++) {
+		jrxn = GSP.rxn_update_rxn[irxn][j];
+		anew = rxn_rate_scaled(rarray[jrxn], GSP.c_offset, 1, GSP.s[jrxn], scalelevel, pScaleChecker);
 		GSP.a_tot += anew - a[jrxn];
 		a[jrxn] = anew;
 	}
@@ -5003,6 +5872,101 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 		// Need to update time(), functions that depend on time(), and rates that depend on time()
 		if (network.has_functions){
 			update_rxn_rates(0); // All rxns have the necessary update lists, so just call any of them
+		}
+	}
+	else{ // t_remain might be > 0 if maxSteps reached
+//		*t += (delta_t - t_remain);
+		*t = t_end - t_remain;
+	}
+
+	/* Set final network concentrations */
+	set_conc_network(GSP.c);
+
+//  exit:
+	return (error);
+}
+
+int adaptive_scaling_network(double* t, double delta_t, double scalelevel, bool pScaleChecker, double* C_avg, double* C_sig, double maxStep,
+		mu::Parser& stop_condition) {
+
+	double t_remain, t_end;
+	double rnd;
+	int irxn;
+	int error = 0;
+	int rxn_rate_update;
+	double tau;
+
+	/* Initialize times */
+	t_remain = delta_t;
+	t_end = *t + delta_t;
+
+	if (!GSP.c || !GSP.s) {
+		fprintf(stderr,"adaptive_scaling_network called without initialization.\n");
+		exit(1);
+	}
+
+	while (1){
+		// Don't exceed maxStep limit
+		if (GSP.n_steps >= maxStep){
+			error = -1; // Step limit reached
+			break;
+		}
+
+		/* Determine time to next reaction */
+//		if (GSP.a_tot <= 0.0) break; // Don't do this, let t_remain go to -INFINITY.
+		rnd = RANDOM(0.0, 1.0);
+		while (rnd == 0.0 || rnd == 1.0){ // avoid taking log of 0.0 or 1.0
+			rnd = RANDOM(0.0, 1.0);
+		}
+		tau = -log(rnd) / GSP.a_tot;
+//		cout << "tau : " << tau << endl;
+		t_remain -= tau;
+		if (network.has_functions){ // Only do this if time() function exists
+			*t += tau;
+//			cout << *t << endl;
+		}
+
+		// Don't fire the next reaction if it occurs past the current integration endpoint
+		if (t_remain < 0.0) break;
+
+		/* Select next reaction to fire */
+		irxn = select_next_rxn();
+		if (irxn == GSP.na) break; // This can happen if a_tot = 0.0
+
+		/* fire rule by updating concentrations */
+		rxn_rate_update = update_concentrations_has(irxn);
+		++GSP.n_steps;
+
+		/* update rxn rates */
+		double GSP_interval = (double)GSP.rxn_rate_update_interval;
+		double fmod = GSP.n_steps - (double)((long)(GSP.n_steps/GSP_interval))*GSP_interval;
+//		if (rxn_rate_update || ((long)GSP.n_steps % GSP.rxn_rate_update_interval == 0)){
+		if (rxn_rate_update || fmod <= 1e-12){ // Use 1e-12 as a tolerance
+			update_rxn_rates_has(irxn, scalelevel, pScaleChecker);
+		}
+		/* Floating-point modulus
+		double a = 200000.0;
+		double b = 100000.0;
+		double fmod = a - (double)((long)(a/b))*b;
+		cout << a << " % " << b << " = " << fmod << endl;
+		if (fmod == 0.0) cout << "yup" << endl;
+		else cout << "nope" << endl;
+		exit(1);*/
+
+		// Check stopping condition
+		if (stop_condition.Eval()){
+			error = -2; // Stop condition satisfied
+			break;
+		}
+	}
+
+	/* Back up to return time */
+	if (t_remain < 0.0){ // No rxn fired
+//		*t += delta_t;
+		*t = t_end;
+		// Need to update time(), functions that depend on time(), and rates that depend on time()
+		if (network.has_functions){
+			update_rxn_rates_has(0, scalelevel, pScaleChecker); // All rxns have the necessary update lists, so just call any of them
 		}
 	}
 	else{ // t_remain might be > 0 if maxSteps reached

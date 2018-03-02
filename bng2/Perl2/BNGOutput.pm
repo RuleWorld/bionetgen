@@ -1768,7 +1768,13 @@ EOF
 
 
 
-
+sub writeMEXfile
+{
+    my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+    my $err = $model->writeMexfile( $params );
+    return $err;
+}
 
 
 sub writeMexfile
@@ -2767,7 +2773,13 @@ EOF
 ###
 ###
 
-
+sub writeLaTeXfile
+{
+	my $model = shift @_;
+    my $params = (@_) ? shift @_ : {};
+	$model->writeLatex( $params );
+    return;
+}
 
 sub writeLatex
 {
