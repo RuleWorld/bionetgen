@@ -225,7 +225,7 @@ ikba(loc~n,s~o,nfkb!1).nfkb(loc~n,ikba!1) -> ikba(loc~c,s~o,nfkb!1).nfkb(loc~c,i
 
 
 end reaction rules
-
+end model
 begin protocol
 #Equilibration
 simulate({method=>"ode",t_start=>0,t_end=>50000,n_steps=>1,atol=>1.0E-10,rtol=>1.0E-12})
@@ -235,7 +235,7 @@ simulate({method=>"ode",t_start=>0,t_end=>1200,n_steps=>100,atol=>1.0E-10,rtol=>
 setConcentration("TNF()",0)
 simulate({method=>"ode",t_end=>3600*5,n_steps=>100,atol=>1.0E-10,rtol=>1.0E-12,continue=>1})
 end protocol
-end model
+
 generate_network({})
 
 parameter_scan({method=>"protocol",parameter=>"R",par_scan_vals=>[2,3.4,4,5]})
