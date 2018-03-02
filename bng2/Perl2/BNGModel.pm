@@ -995,7 +995,8 @@ sub readSBML
 	                            $err = errgen($err);
 	                            goto EXIT;
 	                        }
-	                    }    
+	                    }   
+                        } 
                     ### Try to read any other Block type (probably an error)
                     else
                     {   # exit
