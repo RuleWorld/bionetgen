@@ -1,0 +1,247 @@
+# 3 state IKK. A20 acts by inhibiting the activation of IKKK, and accelerating the converstion of active to inactive IKK
+begin model
+begin molecule types
+TNFR(st~a~i)             # active/inactive TNFR1 receptors 
+IKKK(st~n~a)          # neutral/active  form of IKKK 
+TNF()
+ikk(s~N~I~A)
+ikba(loc~c~n,s~o~p,nfkb) # ikba is found in the cytoplasm/nucleus, Phosphorylated/unphosphorylated, and has a binding site for nfkb
+nfkb(loc~c~n,ikba)
+A20()
+competitor()
+tA20()
+tTarget()
+tcompetitor()
+tikba()
+end molecule types
+
+begin parameters
+
+#Constants
+	TNF_wt 52 #kDa
+TNF_conc 0.01923077 # micromolar
+
+NaV_cyt = 50000/0.04
+NaV_PM = 50000/(0.04*3.3) 
+
+Tot_NFKB log10(50000)
+IKK_N log10(50000)
+R         log10(3e+3)       # median number of receptors 
+K_N       log10(1e+5)       # number of IKKK molecules 
+comp = 0 
+#h = log10(2)
+hn1 = log10(2)
+hn2 = log10(2)
+hn3 = log10(2)
+hn4 = log10(2)
+hc1 = log10(2)
+hc2 = log10(2)
+hc3 = log10(2)
+kv = 3.3
+######################################
+#Lipniacki parameters
+c_deg         log10(2e-4)  
+k_b         log10(1.2e-5)#	* (1/conv)
+k_f         log10(1.2e-3) 
+k_a           log10(1e-5)
+k_A20     	  log10(1e+5)
+k_i           log10(1e-2) 
+k_1           log10(6e-10)
+k_2           log10(1e+4)
+k_3           log10(2e-3) 
+k_4           log10(1e-3) 
+k_5			  log10(1e-3)
+#Robin's parameters
+ka1a = log10(0.5) #per micromolar-second
+kd1a = log10(0.05) # per second
+kc1a = log10(0.074) # per second
+kc2a = log10(0.370) # per second
+ki1 = log10(0.0026) # per se cond
+ke1 = log10(0.00052) #per second
+ki3a = log10(0.00067) # per second
+ke3a = log10(0.000335) # per second
+ke2a = log10(0.01) # per second
+c1 = log10(2*10^-7)  # per molecule second
+c1_t = log10(2*10^-7) 
+K = log10(0.065*50000/(0.04*3.3))
+Kn1 = log10(0.065*50000/(0.04*3.3))
+Kn2 = log10(0.065*50000/(0.04*3.3))
+Kn3 = log10(0.065*50000/(0.04*3.3))
+Kn4 = log10(0.065*50000/(0.04*3.3))
+K2 = log10(0.065*50000/0.04)
+K3 = log10((0.065/2)*50000/0.04) 
+K4 = log10(0.065*50000/0.04)
+c2a_comp = log10(0.5) # per second
+c2a_ikb = log10(0.5) # per second
+c3_a20 = log10(0.0004) # per second
+c3_t = log10(0.0004) # per second
+c4a = log10(0.0005) # per second
+c4a_comp = log10(0.0005) # per second
+kt1a = log10(0.1) # per second
+kt2a = log10(0.1) # per second
+c3a = log10(0.0003) # per second
+c1a = log10(1.4 * 10^-7) # per molecule second
+c1a_comp = log10(1.4*10^-7)  #per molecule second
+c2 = log10(0.5) # per second
+c4 = log10(0.0045) # per second
+c5a = log10(0.000022) # per second
+#c6a = c3a/7 # per second
+c6a = log10(4.285e-5) # per second
+end parameters
+
+begin observables
+
+Molecules nNFKB nfkb(loc~n,ikba) #nuclear nfkb
+Molecules cNFKB nfkb(loc~c,ikba) #cytoplasmic nfkb
+Molecules cikba ikba(loc~c,s~o,nfkb) #cytoplasmic ikba
+Species Ccomplex nfkb(loc~c,ikba!1).ikba(loc~c,s~o,nfkb!1) #cytoplasmic ikba-nfkb complex
+Molecules nikba ikba(loc~n,s~o,nfkb) #nuclear ikba
+Species ncomplex nfkb(loc~n,ikba!1).ikba(loc~n,s~o,nfkb!1) #nuclear ikba-nfkb
+Molecules tIKBA tikba() #ikba transcript
+Molecules ikkN ikk(s~N) #neutral ikk
+Molecules ikka ikk(s~A) #activated ikk
+Molecules ikkai ikk(s~I) #inhibited IKK
+Molecules transcriptA20 tA20() #A20 transcript
+Molecules oA20 A20() #A20 protein
+Molecules pIKBA ikba(loc~c,s~p,nfkb) #phosphorylated cytosolic ikba
+Species pIKBANFKB nfkb(loc~c,ikba!1).ikba(loc~c,s~p,nfkb!1) #phosphorylated cytosolic nfkb-ikba complex
+Molecules transcriptTarget tTarget() # induced target transcript
+Molecules tComp tcompetitor() #competitor transcript 
+Molecules oComp competitor() #competitor protein
+Molecules TNFR_a TNFR(st~a)
+Molecules TNFR_i TNFR(st~i)
+Molecules IKKK_a IKKK(st~a)
+Molecules TNF TNF()
+end observables
+
+begin functions
+#Transcriptional rates
+ra20() = NaV_cyt*10^c1*(nNFKB/(10^Kn1))^(10^hn1+1) /((nNFKB/(10^Kn1))^(10^hn1+1) + comp*(oComp/10^K2)^(10^hc1+1)+1)
+
+rComp() = 0#comp*NaV_cyt*10^c1a_comp*(nNFKB/10^Kn2)^(10^hn2+1) /((nNFKB/10^Kn2)^(10^hn2+1) + comp*(oComp/10^K4)^(10^hc2+1)+1)
+
+#rtT() = NaV_cyt*10^c1_t*(nNFKB/10^Kn3)^(10^hn3+1) /((nNFKB/10^Kn3)^(10^hn3+1) + comp*(oComp/10^K3)^(10^hc3+1)+1)
+
+rikba() = NaV_cyt*10^c1a*(nNFKB/10^Kn4)^(10^hn4)/(1+(nNFKB/10^Kn4)^(10^hn4))
+
+
+k_IKKKactivation()     TNFR_a*(10^k_a)*(10^k_A20)/(10^k_A20+oA20) 
+k_IKKactivation()      10^k_1*IKKK_a*IKKK_a 
+k_IKKintermetiation()  (10^k_3/10^k_2)*(10^k_2+oA20) 
+end functions
+
+begin seed species
+nfkb(loc~c,ikba) 0
+ikba(loc~c,s~o,nfkb) 0
+nfkb(loc~c,ikba!1).ikba(loc~c,s~o,nfkb!1)   10^Tot_NFKB
+nfkb(loc~n,ikba) 0 #nuclear nfkb
+ikba(loc~n,s~o,nfkb) 0 #nuclear ikba
+nfkb(loc~n,ikba!1).ikba(loc~n,s~o,nfkb!1) 0#nuclear ikba-nfkb
+tikba() 0 #ikba transcript
+ikk(s~N) 10^IKK_N #neutral ikk
+ikk(s~A) 0 #activated ikk
+ikk(s~I) 0 #inhibited IKK
+tA20() 0 #A20 transcript
+A20() 0 #A20 protein
+ikba(loc~c,s~p,nfkb) 0 #phosphorylated cytosolic ikba
+nfkb(loc~c,ikba!1).ikba(loc~c,s~p,nfkb!1) 0 #phosphorylated cytosolic nfkb-ikba complex
+tTarget() 0 # induced target transcript
+tcompetitor() 0 #competitor transcript 
+competitor() 0
+TNFR(st~a)           0 
+TNFR(st~i)           10^R 
+IKKK(st~n)         10^K_N 
+IKKK(st~a)           0 
+TNF() 			0
+end seed species
+
+
+
+begin reaction rules
+
+#Cytosolic reactions
+
+TNF()               ->  0                  10^c_deg 
+TNFR(st~i) + TNF()  ->  TNFR(st~a)  + TNF() (10^k_b)/((1/52)*50000/0.04) 
+TNFR(st~a)               ->  TNFR(st~i)               (10^k_f) 
+IKKK(st~n)               ->  IKKK(st~a)               k_IKKKactivation() 
+IKKK(st~a)               ->  IKKK(st~n)               10^(k_i) 
+ikk(s~N)                ->  ikk(s~A)                k_IKKactivation() 
+ikk(s~A)                ->  ikk(s~I)              k_IKKintermetiation()
+ikk(s~I)                ->  ikk(s~N)               10^(k_4) 
+
+
+# 4. IKK mediated phosphorylation of IKBA
+ikba(loc~c,s~o,nfkb) + ikk(s~A) -> ikba(loc~c,s~p,nfkb) + ikk(s~A) (10^kc1a)/NaV_cyt
+
+# 5. IKBA reversibly binds with NFKB to form a complex
+ikba(loc~c,s~o,nfkb) + nfkb(loc~c,ikba) <-> ikba(loc~c,s~o,nfkb!1).nfkb(loc~c,ikba!1) 10^(ka1a)/NaV_cyt,10^kd1a
+
+# 6. Ikk mediated phosphorylation of the ikba-nfkb complex
+ikba(loc~c,s~o,nfkb!1).nfkb(loc~c,ikba!1) + ikk(s~A) -> ikba(loc~c,s~p,nfkb!1).nfkb(loc~c,ikba!1)  + ikk(s~A) (10^kc2a)/NaV_cyt
+
+# 8. shuttling of nfkb between the cytoplasm and the nucleus
+nfkb(loc~c,ikba) <-> nfkb(loc~n,ikba) (10^ki1),(10^ke1) 
+
+# 9. shuttling of ikba between the cytoplasm and the nucleus
+ikba(loc~c,s~o,nfkb) <-> ikba(loc~n,s~o,nfkb) (10^ki3a),(10^ke3a)
+
+
+# 10. degradation of cytosolic free ikba
+ikba(loc~c,s~o,nfkb) -> 0 10^c4a
+# 11. degradation of free cytosolic phosphorylated ikba
+ikba(loc~c,s~p,nfkb) -> 0 10^kt1a
+#12. degradation of phosphorylated ikba-nfkb complex
+nfkb(loc~c,ikba!1).ikba(loc~c,s~p,nfkb!1) -> nfkb(loc~c,ikba) 10^kt2a
+# degradation of ikba-nfkb complex
+nfkb(loc~c,ikba!1).ikba(loc~c,s~o,nfkb!1) -> nfkb(loc~c,ikba) 10^c5a
+
+#Nuclear reactions
+
+# 1. Reversible formation of nfkb - ikba complex in the nucleus
+nfkb(loc~n,ikba) + ikba(loc~n,s~o,nfkb) <-> nfkb(loc~n,ikba!1).ikba(loc~n,s~o,nfkb!1) (10^ka1a)/NaV_PM,10^kd1a
+# 2. Transcription and degradation of tA20()
+0 <-> tA20() ra20(),10^c3_a20
+# 3. Transcription and degradation of tTarget()
+#0 <-> tTarget()  rtT(),10^c3_t
+# 4. Transcription and degradation of tCompetitor()
+#0 <-> tcompetitor() rComp(),10^c6a 
+# 5. Production of competitor protein
+#tcompetitor() -> tcompetitor() + competitor() 10^c2a_comp
+# 6. Degradation of competitor protein
+#competitor() -> 0 10^c4a_comp
+# 7. Transcription and degradation of tikba
+0 <-> tikba() rikba(),10^c3a
+# 8. Production of A20 protein
+tA20() -> A20() + tA20() 10^c2
+# 9. Degradation of A20 protein
+A20() -> 0 10^c4
+# 10. Production of ikba protein, translation occurs in the cytoplasm
+tikba() -> tikba() + ikba(loc~c,s~o,nfkb) 10^c2a_ikb
+# 11. Degradation of ikba in the nucleus
+ikba(loc~n,s~o,nfkb) -> 0 10^c4a
+# 12. Export of nfkb.ikba complex
+ikba(loc~n,s~o,nfkb!1).nfkb(loc~n,ikba!1) -> ikba(loc~c,s~o,nfkb!1).nfkb(loc~c,ikba!1) 10^ke2a
+
+
+end reaction rules
+
+
+
+begin protocol
+#Equilibration
+simulate({method=>"ode",t_start=>0,t_end=>50000,n_steps=>1,atol=>1.0E-10,rtol=>1.0E-12})
+#Simulate 
+setConcentration("TNF()",((1/52)*50000/0.04))
+simulate({method=>"ode",t_start=>0,t_end=>1200,n_steps=>100,atol=>1.0E-10,rtol=>1.0E-12})
+end protocol
+end model
+
+generate_network({})
+parameter_scan({method=>"protocol",parameter=>"R",par_scan_vals=>[2,3.4,4,5]})
+
+
+
+
+
+
