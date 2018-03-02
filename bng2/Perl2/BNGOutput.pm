@@ -3618,19 +3618,20 @@ sub writeCfile
 	($c_param_names, $c_param_values, $err) = $plist->getMatlabConstantNames();
     if ($err) { return $err };
     # get number of species
-    my $n_species = scalar @{$model->SpeciesList->Array};
+    #my $n_species = scalar @{$model->SpeciesList->Array};
     # time options
+    my $protocol_opts =  eval($model->{simulation_protocol}[0]->{options});
     my $t_start = 0;
-    if ( exists $params->{'t_start'} )
-    {   $t_start = $params->{'t_start'};  }  
+    if ( exists $protocol_opts->{'t_start'} )
+    {   $t_start = $protocol_opts->{'t_start'};  }  
 
     my $t_end = 10;
-    if ( exists $params->{'t_end'} )
-    {   $t_end = $params->{'t_end'};  } 
+    if ( exists $protocol_opts->{options}->{'t_end'} )
+    {   $t_end = $protocol_opts->{'t_end'};  } 
 
     my $n_steps = 20;
-    if ( exists $params->{'n_steps'} )
-    {   $n_steps = $params->{'n_steps'};  } 
+    if ( exists $protocol_opts->{'n_steps'} )
+    {   $n_steps = $protocol_opts->{'n_steps'};  } 
 
     # open Cfile and begin printing...
 	open( c_file, ">$c_path" ) or die "Couldn't open $c_path: $!\n";
@@ -3889,15 +3890,15 @@ double * integrate(double* timepoints, double* species_init, double* params, int
     }                   
     //initializing output species array. First column will be time.               
     species_out[counter] = timepoints[0]; 
-    //printf("%.16e\t",species_out[counter]);
+    //printf("%.16e\\t",species_out[counter]);
     counter++;
     for(j=0;j<__N_SPECIES__;j++)
     {
         species_out[counter] = NV_Ith_S(species,j);
-        //printf("%.16e\t",species_out[counter]);
+        //printf("%.16e\\t",species_out[counter]);
         counter++;
     }
-    //printf("\n");
+    //printf("\\n");
     /* integrate to each timepoint */
     for ( i=1;  i <= n_timepoints;  i++ )
     {
@@ -3912,15 +3913,15 @@ double * integrate(double* timepoints, double* species_init, double* params, int
             //return 1;
         }  
         species_out[counter] = timepoints[i];
-        //printf("%.16e\t",species_out[counter]);
+        //printf("%.16e\\t",species_out[counter]);
         counter++;
         for(j=0;j<__N_SPECIES__;j++)
         {
             species_out[counter] = NV_Ith_S(species,j);
-            //printf("%.16e\t",species_out[counter]);
+            //printf("%.16e\\t",species_out[counter]);
             counter++;
         }
-        //printf("\n");
+        //printf("\\n");
     }
     /* Free vectors */
     N_VDestroy_Serial(expressions);
@@ -3989,10 +3990,10 @@ int main(int argc,char** argv)
     {
         for(j=0;j<nspecies+1;j++)
         {
-            printf("%.16e\t",species_out[counter]);
+            printf("%.16e\\t",species_out[counter]);
             counter++;
         }
-        printf("\n");
+        printf("\\n");
     }
     return 0;
 }
