@@ -3617,21 +3617,98 @@ sub writeCfile
 	my $c_param_values;
 	($c_param_names, $c_param_values, $err) = $plist->getMatlabConstantNames();
     if ($err) { return $err };
+
+    # get list of species names and initial value expressions for matlab
+	my $c_species_names;
+	my $c_species_init;
+	($c_species_names, $c_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $model );
+    if ($err) { return $err }; 
     # get number of species
     #my $n_species = scalar @{$model->SpeciesList->Array};
-    # time options
-    my $protocol_opts =  eval($model->{simulation_protocol}[0]->{options});
+    my $simulation_protocol_ref = $model->{simulation_protocol};
+    my @simulation_protocol = @{$simulation_protocol_ref};
+    my $num_commands = scalar(@simulation_protocol);
+    my @protocol_strings;
     my $t_start = 0;
-    if ( exists $protocol_opts->{'t_start'} )
-    {   $t_start = $protocol_opts->{'t_start'};  }  
-
     my $t_end = 10;
-    if ( exists $protocol_opts->{options}->{'t_end'} )
-    {   $t_end = $protocol_opts->{'t_end'};  } 
-
     my $n_steps = 20;
-    if ( exists $protocol_opts->{'n_steps'} )
-    {   $n_steps = $protocol_opts->{'n_steps'};  } 
+    for(my $protocol=0;$protocol<$num_commands;$protocol++)
+    {
+	    my $action = $model->{simulation_protocol}[$protocol]->{action};
+    	if($action eq 'simulate')
+	    {	
+	    	my $protocol_opts =  eval($model->{simulation_protocol}[$protocol]->{options});	    		    
+		    if ( exists $protocol_opts->{'t_start'} )
+		    {   $t_start = $protocol_opts->{'t_start'};  }  		    
+		    if ( exists $protocol_opts->{'t_end'} )
+		    {   $t_end = $protocol_opts->{'t_end'};  } 		   
+		    if ( exists $protocol_opts->{'n_steps'} )
+		    {   $n_steps = $protocol_opts->{'n_steps'};  } 
+		    my $start_counter='0';
+		    if($protocol>0)
+		    {
+		    	$start_counter='nspecies+1';
+		    }
+	        print 
+    	    "
+    	    //protocol step $protocol
+    	    t0 = $t_start;
+    	    tend = $t_end;
+    	    n_timepoints = $n_steps;
+    	    timepoints[0] = t0;
+		    for(i=1;i<=n_timepoints;i++)
+		    {
+		        timepoints[i] = t0+i*tend/(n_timepoints);
+		    }
+		    species_init = initialize_species(params,nspecies);
+		    species_out = integrate(timepoints, species_init, params,nspecies,n_timepoints);
+		    for(j=$start_counter;j<(nspecies+1)*(n_timepoints+1);j++)
+		    {
+		        species_print[gcounter] = species_out[j];
+		        gcounter++;
+		    }
+		    for(i=0;i<nspecies;i++)
+		    {
+		        species_init[i] = species_out[(nspecies+1)*(n_timepoints+1)-nspecies+i];
+		    }
+		    ";		    
+		}
+		elsif($action eq 'setConcentration')
+		{
+			my @protocol_opts =  eval($model->{simulation_protocol}[$protocol]->{options});	
+			my $species_name = $protocol_opts[0];
+			my $species_val = $protocol_opts[1];
+			my @species = split ',',$c_species_names;
+			my $index = 0;
+			for(my $scount=0;$scount<$n_species;$scount++)
+			{
+				if(index($species[$scount],$species_name) != -1)
+				{
+					print "// protocol step $protocol
+		species_init[$scount] = $species_val
+					";				
+				}
+			}
+		}
+		elsif($action eq 'setParameter')
+		{
+			my @protocol_opts =  eval($model->{simulation_protocol}[$protocol]->{options});	
+			my $param_name = $protocol_opts[0];
+			my $param_val = $protocol_opts[1];
+			my @params = split ',',$c_param_names;
+			my $index = 0;
+			for(my $pcount=0;$pcount<$n_parameters;$pcount++)
+			{
+				if(index($params[$pcount],$param_name) != -1)
+				{
+					print "// protocol step $protocol
+		params[$pcount] = $param_val
+					";				
+				}
+			}
+
+		}		
+	}
 
     # open Cfile and begin printing...
 	open( c_file, ">$c_path" ) or die "Couldn't open $c_path: $!\n";
