@@ -3612,19 +3612,15 @@ sub writeCfile
     my $calc_derivs_string;
     ($calc_derivs_string, $err) = $model->SpeciesList->toCVodeString( $model->RxnList, $stoich_hash, $plist );
     if ($err) { return $err };   
-
 	my $c_param_names;
 	my $c_param_values;
 	($c_param_names, $c_param_values, $err) = $plist->getMatlabConstantNames();
     if ($err) { return $err };
-
     # get list of species names and initial value expressions for matlab
 	my $c_species_names;
 	my $c_species_init;
 	($c_species_names, $c_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $model );
     if ($err) { return $err }; 
-    # get number of species
-    #my $n_species = scalar @{$model->SpeciesList->Array};
     my $simulation_protocol_ref = $model->{simulation_protocol};
     my @simulation_protocol = @{$simulation_protocol_ref};
     my $num_commands = scalar(@simulation_protocol);
@@ -3632,6 +3628,31 @@ sub writeCfile
     my $t_start = 0;
     my $t_end = 10;
     my $n_steps = 20;
+    my $trajectory_length=0;
+    for(my $protocol=0;$protocol<$num_commands;$protocol++)
+    {	
+    	my $action = $model->{simulation_protocol}[$protocol]->{action};
+    	if($action eq 'simulate')
+	    {	
+	    	my $protocol_opts =  eval($model->{simulation_protocol}[$protocol]->{options});	 
+		    if ( exists $protocol_opts->{'n_steps'} )
+		    {   $trajectory_length = $trajectory_length+$protocol_opts->{'n_steps'};  } 
+		}
+    }
+    my $bng_protocol_string = '';
+	$bng_protocol_string .= "double* bng_protocol(double* params)
+	    {
+	    int trajectory_length = $trajectory_length;
+	    double t0;
+	    double tend;
+	    size_t n_timepoints;    
+	    double timepoints[trajectory_length];
+	    int nspecies = $n_species;
+	    int i,j;
+	    double* species_init;
+	    double* species_out;
+	    double* species_print = (double *)malloc((trajectory_length+1)*(nspecies+1)* sizeof(double));
+	    int gcounter = 0;";
     for(my $protocol=0;$protocol<$num_commands;$protocol++)
     {
 	    my $action = $model->{simulation_protocol}[$protocol]->{action};
@@ -3649,16 +3670,15 @@ sub writeCfile
 		    {
 		    	$start_counter='nspecies+1';
 		    }
-	        print 
+	        $bng_protocol_string .= 
     	    "
     	    //protocol step $protocol
     	    t0 = $t_start;
     	    tend = $t_end;
     	    n_timepoints = $n_steps;
-    	    timepoints[0] = t0;
-		    for(i=1;i<=n_timepoints;i++)
+		    for(i=0;i<=n_timepoints;i++)
 		    {
-		        timepoints[i] = t0+i*tend/(n_timepoints);
+		        timepoints[i] = t0+i*(tend-t0)/(n_timepoints);
 		    }
 		    species_init = initialize_species(params,nspecies);
 		    species_out = integrate(timepoints, species_init, params,nspecies,n_timepoints);
@@ -3684,8 +3704,8 @@ sub writeCfile
 			{
 				if(index($species[$scount],$species_name) != -1)
 				{
-					print "// protocol step $protocol
-		species_init[$scount] = $species_val
+					$bng_protocol_string .= "// protocol step $protocol
+		species_init[$scount] = $species_val;
 					";				
 				}
 			}
@@ -3701,15 +3721,16 @@ sub writeCfile
 			{
 				if(index($params[$pcount],$param_name) != -1)
 				{
-					print "// protocol step $protocol
-		params[$pcount] = $param_val
+					$bng_protocol_string .= "// protocol step $protocol
+		params[$pcount] = $param_val;
 					";				
 				}
 			}
+		}	
 
-		}		
 	}
-
+	$bng_protocol_string .= "return species_print;
+	}";	
     # open Cfile and begin printing...
 	open( c_file, ">$c_path" ) or die "Couldn't open $c_path: $!\n";
     print c_file <<"EOF";
@@ -3736,6 +3757,7 @@ void  calc_ratelaws    ( N_Vector ratelaws,  N_Vector species, N_Vector expressi
 int   calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data );
 double* initialize_species(double* params,int nspecies);
 double * integrate(double* timepoints, double* species_init, double* params, int num_eq, int n_timepoints);
+double* bng_protocol(double* params);
 /* user-defined function declarations */
 $user_fcn_declarations
 
@@ -4010,6 +4032,8 @@ double * integrate(double* timepoints, double* species_init, double* params, int
     return species_out;
 }
 
+$bng_protocol_string
+
 double* initialize_species(double* params,int nspecies)
 {
     double* species_init = malloc(nspecies*sizeof(*species_init));
@@ -4050,19 +4074,11 @@ int main(int argc,char** argv)
     double *  timepoints = timepoints_array; 
     */
     double params[$n_parameters] = {$c_param_values};
-    double t0 = $t_start;
-    double tend = $t_end;
-    size_t n_timepoints = $n_steps;
-    double timepoints[n_timepoints];
-    int nspecies = $n_species;
-    for(i=1;i<=n_timepoints;i++)
-    {
-        timepoints[i] = t0+i*tend/(n_timepoints);
-    }
-    double *species_init = initialize_species(params,nspecies);
-    double *species_out = integrate(timepoints, species_init, params,nspecies,n_timepoints);
     int j;
     int counter=0;
+    double* species_out = bng_protocol(params);
+    int nspecies = 1;
+    size_t n_timepoints = 20;
     for(i=0;i<n_timepoints+1;i++)
     {
         for(j=0;j<nspecies+1;j++)
