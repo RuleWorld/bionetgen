@@ -910,6 +910,9 @@ sub simulate_nf
         return "No simulation output requested: set n_steps>0";
     }
 
+    if ( defined $params->{scalelevel} ) {
+        push @command, "-scalelevel", $params->{scalelevel};
+    }
 
     # Append the other command line arguments
     push @command, @args;
