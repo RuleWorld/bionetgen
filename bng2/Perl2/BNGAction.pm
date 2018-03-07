@@ -912,6 +912,7 @@ sub simulate_nf
 
     if ( defined $params->{scalelevel} ) {
         push @command, "-scalelevel", $params->{scalelevel};
+    }
 
     # Append the other command line arguments
     push @command, @args;
