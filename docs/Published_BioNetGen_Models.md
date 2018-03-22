@@ -1,6 +1,6 @@
 # Published BioNetGen Models
 
-This page links to publications that have applied a BioNetGen rule-based model to a specific biological system.
+This page links to publications that have applied a BioNetGen rule-based model to a specific biological system. *Note: This list is a work in progress and may not be complete.*
 
 ## 2016
 * [Modelling intracellular competition for calcium: kinetic and thermodynamic control of different molecular modes of signal decoding.](http://www.ncbi.nlm.nih.gov/pubmed/27033299) *Sci. Rep.*
