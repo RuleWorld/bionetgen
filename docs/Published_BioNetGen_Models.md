@@ -67,5 +67,8 @@ This page links to publications that have applied a BioNetGen rule-based model t
 ## 2006
 * [A network model of early events in epidermal growth factor receptor signaling that accounts for combinatorial complexity.](http://www.ncbi.nlm.nih.gov/pubmed/16233948) *Biosystems*
 
+## 2005
+* [Combinatorial complexity and dynamical restriction of network flows in signal transduction.](http://www.ncbi.nlm.nih.gov/pubmed/17091578) *IET Syst. Biol.*
+
 ## 2003 
-[Investigation of early events in FcεRI-mediated signaling using a detailed mathematical model.](http://www.ncbi.nlm.nih.gov/pubmed/12646643) *J. Immunol.*
+* [Investigation of early events in FcεRI-mediated signaling using a detailed mathematical model.](http://www.ncbi.nlm.nih.gov/pubmed/12646643) *J. Immunol.*
