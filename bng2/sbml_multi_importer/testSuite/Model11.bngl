@@ -1,0 +1,28 @@
+#Simple trimolecular association. No symmetry.
+#Degradation
+
+begin model
+begin parameters
+k1 1
+k2 2
+end parameters
+
+begin molecule types
+A(a,a)
+B(b)
+end molecule types
+
+begin seed species
+A(a,a) 100
+B(b) 50
+end seed species
+
+begin reaction rules
+A(a) + B(b)  -> A(a!1).B(b!1) k1
+A(a!+,a) -> 0 k2
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+

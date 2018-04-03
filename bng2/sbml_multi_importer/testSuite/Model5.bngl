@@ -1,0 +1,25 @@
+#Bimolecular association of identical molecules in different states
+#Degradation
+
+begin model
+begin parameters
+k1 1
+end parameters
+
+begin molecule types
+A(a,b~0~p)
+end molecule types
+
+begin seed species
+A(a,b~0) 100
+A(a,b~p) 100
+end seed species
+
+begin reaction rules
+A(a,b~0) + A(a,b~p) -> A(a!1,b~0).A(a!1,b~p) k1
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+

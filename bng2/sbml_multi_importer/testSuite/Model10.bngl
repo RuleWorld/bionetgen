@@ -1,0 +1,24 @@
+#Testing observables
+
+begin model
+begin parameters
+k1 1
+end parameters
+
+begin molecule types
+A(b~0~p,a)
+end molecule types
+
+begin seed species
+A(b~0,a) 100
+A(b~p,a) 100
+end seed species
+
+begin reaction rules
+A(b~0,a) + A(b~p,a) -> A(b~0!1,a).A(b~p!1,a) k1
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+

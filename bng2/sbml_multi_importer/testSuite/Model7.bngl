@@ -1,0 +1,24 @@
+#Testing binding sites with features
+
+begin model
+begin parameters
+k1 1
+end parameters
+
+begin molecule types
+A(b~0~p)
+end molecule types
+
+begin seed species
+A(b~0) 100
+A(b~p) 100
+end seed species
+
+begin reaction rules
+A(b~0) + A(b~p) -> A(b~0!1).A(b~p!1) k1
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+
