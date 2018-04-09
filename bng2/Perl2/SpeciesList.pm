@@ -697,6 +697,62 @@ sub toMatlabString
 ###
 ###
 
+sub getCSpeciesNames
+{
+    my $slist = shift @_;
+    my $model = shift @_;
+    
+    my $plist = $model->ParamList;
+
+    my $err;
+    my $species_names = '';
+    my $species_init = '';
+    my $indent = '    ';
+    
+    # TODO: this matlab output is a hack.  improve this.  --justin
+
+    # generate a map from param names to matlab references
+    my $ref_map = {};
+    my $m_idx = 0;
+    foreach my $param ( @{$plist->Array} )
+    {
+        if ( $param->Type eq 'Constant' )
+        {
+            $ref_map->{ $param->Name } = "params($m_idx)";
+            ++$m_idx;
+        }
+    }
+    
+    # gather names and init expressions for all species
+    $m_idx = 0;
+    my @species_names = ();    
+    foreach my $species ( @{ $slist->Array } )
+    {
+        push @species_names, "'" . $species->SpeciesGraph->StringExact . "'";    
+        (my $param) = $plist->lookup( $species->Concentration );    
+    
+        if ( $param )
+        {   # initial concentration is given by a Parameter
+            # expand the expression (recursively past parameters!)
+            $species_init .= $indent . "species_init[$m_idx] = " . $param->toString( $plist, 0, 2 ) . ";\n";          
+        }
+        else
+        {   # initial concentration is a number
+            $species_init .= $indent . "species_init[$m_idx] = " . $species->Concentration . ";\n";
+        }  
+        ++$m_idx;
+    }
+    
+    # replace param names with Matlab references   
+    foreach my $pname ( keys %$ref_map )
+    {
+        my $matlab_ref = $ref_map->{$pname};
+        my $regex = 
+        $species_init =~ s/(^|\W)$pname(\W|$)/$1$matlab_ref$2/g;
+    }
+    
+    return (  join(', ', @species_names), $species_init, $err );
+}
 
 # get names of species and formulas for initial concentrations for matlab
 #  NOTE: this method ALWAYS writes the original initial concentration definitions
@@ -746,7 +802,6 @@ sub getMatlabSpeciesNames
         }  
         ++$m_idx;
     }
-    
     # replace param names with Matlab references   
     foreach my $pname ( keys %$ref_map )
     {
