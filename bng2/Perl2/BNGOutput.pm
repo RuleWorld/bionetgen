@@ -3473,7 +3473,6 @@ sub visualize
 	return '';
 }
 
-
 sub writeCfile
 {
 	my $model = shift;
@@ -3500,7 +3499,7 @@ sub writeCfile
 	{   $prefix .= "_${suffix}";   }	
     # split prefix into volume, path and filebase
     my ($vol, $path, $filebase) = File::Spec->splitpath($prefix);
-	# define mexfile name
+	# define cfile name
 	my $c_filename = "${filebase}.c";
     my $c_path     = File::Spec->catpath($vol,$path,$c_filename);
     # configure options
@@ -4132,6 +4131,95 @@ int check_flag(void *flagvalue, char *funcname, int opt)
 }
 EOF
 	close(c_file);
+
+    #Check if swig files are required
+    my $swg = 0;
+    if (exists $params->{'swig'})
+	{
+		$swg = $params->{'swig'};
+	}
+	if($swg==1)
+	{
+		my $swig_filename = "${filebase}.i";
+		my $swig_path     = File::Spec->catpath($vol,$path,$swig_filename);
+
+	    # open swig file and begin printing...
+		open( swig_file, ">$swig_path" ) or die "Couldn't open $swig_path: $!\n";
+	    print swig_file <<"EOF";
+%module $filebase
+%include "cpointer.i"
+%pointer_class(int,intp);
+%pointer_functions(int, intp1);
+%pointer_cast(int *, unsigned int *, int_to_uint);
+%include "carrays.i"
+%array_functions(double, doubleArray);
+%array_class(double, doubleArrayClass);
+%{
+/* Library headers */
+#include <stdlib.h>
+#include <math.h>
+#include <cvode/cvode.h>             /* prototypes for CVODE  */
+#include <nvector/nvector_serial.h>  /* serial N_Vector       */
+#include <cvode/cvode_dense.h>       /* prototype for CVDense */
+#include <cvode/cvode_spgmr.h>       /* prototype for CVSpgmr */
+
+/* Problem Dimensions */
+#define __N_PARAMETERS__   $n_parameters
+#define __N_EXPRESSIONS__  $n_expressions
+#define __N_OBSERVABLES__  $n_observables
+#define __N_RATELAWS__     $n_reactions
+#define __N_SPECIES__      $n_species
+
+/* core function declarations */
+int   check_flag  ( void *flagvalue, char *funcname, int opt );
+void  calc_expressions ( N_Vector expressions, double * parameters );
+void  calc_observables ( N_Vector observables, N_Vector species, N_Vector expressions );
+void  calc_ratelaws    ( N_Vector ratelaws,  N_Vector species, N_Vector expressions, N_Vector observables );
+int   calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data );
+double* initialize_species(double* params,int nspecies);
+double * integrate(double* timepoints, double* species_init, double* params, int num_eq, int n_timepoints);
+double* bng_protocol(double* params);
+%}
+/* Library headers */
+#include <stdlib.h>
+#include <math.h>
+#include <cvode/cvode.h>             /* prototypes for CVODE  */
+#include <nvector/nvector_serial.h>  /* serial N_Vector       */
+#include <cvode/cvode_dense.h>       /* prototype for CVDense */
+#include <cvode/cvode_spgmr.h>       /* prototype for CVSpgmr */
+
+/* Problem Dimensions */
+#define __N_PARAMETERS__   $n_parameters
+#define __N_EXPRESSIONS__  $n_expressions
+#define __N_OBSERVABLES__  $n_observables
+#define __N_RATELAWS__     $n_reactions
+#define __N_SPECIES__      $n_species
+
+/* core function declarations */
+int   check_flag  ( void *flagvalue, char *funcname, int opt );
+void  calc_expressions ( N_Vector expressions, double * parameters );
+void  calc_observables ( N_Vector observables, N_Vector species, N_Vector expressions );
+void  calc_ratelaws    ( N_Vector ratelaws,  N_Vector species, N_Vector expressions, N_Vector observables );
+int   calc_species_deriv ( realtype time, N_Vector species, N_Vector Dspecies, void * f_data );
+double* initialize_species(double* params,int nspecies);
+double * integrate(double* timepoints, double* species_init, double* params, int num_eq, int n_timepoints);
+double* bng_protocol(double* params);
+EOF
+
+		close(swig_file);
+		my $run_swig_filename = "swigrun.sh";
+		my $run_swig_path     = File::Spec->catpath($vol,$path,$run_swig_filename);
+	    # open swig file and begin printing...
+		open( run_swig_file, ">$run_swig_path" ) or die "Couldn't open $swig_path: $!\n";
+	    print run_swig_file <<"EOF";
+#!/bin/bash
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:./lib/
+swig -python ${filebase}.i
+gcc -c -fPIC `pkg-config --cflags --libs python`  ${filebase}.c ${filebase}_wrap.c
+ld -shared ${filebase}.o ${filebase}_wrap.o  /usr/local/MATLAB/R2017a/bin/glnxa64/libsundials_cvode.so.1 /usr/local/MATLAB/R2017a/bin/glnxa64/libsundials_nvecserial.so.0 -lm -o _MM.so
+EOF
+		close(run_swig_file)
+}
 	return(0);
 }
 
