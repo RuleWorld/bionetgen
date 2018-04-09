@@ -3619,7 +3619,7 @@ sub writeCfile
     # get list of species names and initial value expressions for matlab
 	my $c_species_names;
 	my $c_species_init;
-	($c_species_names, $c_species_init, $err) = $model->SpeciesList->getMatlabSpeciesNames( $model );
+	($c_species_names, $c_species_init, $err) = $model->SpeciesList->getCSpeciesNames( $model );
     if ($err) { return $err }; 
     my $simulation_protocol_ref = $model->{simulation_protocol};
     my @simulation_protocol = @{$simulation_protocol_ref};
@@ -4037,7 +4037,7 @@ $bng_protocol_string
 double* initialize_species(double* params,int nspecies)
 {
     double* species_init = malloc(nspecies*sizeof(*species_init));
-    species_init[0] = 0;
+    $c_species_init
     return species_init;
 }
 int main(int argc,char** argv)
@@ -4077,8 +4077,8 @@ int main(int argc,char** argv)
     int j;
     int counter=0;
     double* species_out = bng_protocol(params);
-    int nspecies = 1;
-    size_t n_timepoints = 20;
+    int nspecies = $n_species;
+    size_t n_timepoints = $n_steps;
     for(i=0;i<n_timepoints+1;i++)
     {
         for(j=0;j<nspecies+1;j++)
