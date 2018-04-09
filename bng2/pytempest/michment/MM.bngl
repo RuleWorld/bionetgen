@@ -1,0 +1,41 @@
+## title: Simple model of enzyme kinetics that includes enzyme synthesis and degradation
+## author: Jim Faeder
+## date: 30Mar2016
+## note: Revised to use units consistent with uM for concentration, um^3=fL for volume
+begin model
+begin parameters 
+    # Rate constants
+    kp1  -2.77
+    km1 -1
+    k2  -2
+   # Initial concentrations
+    E0   6.02 
+    S0   602
+end parameters
+begin molecule types
+    E(s)
+    S(Y~0~P)
+end molecule types
+begin seed species
+    E(s) E0
+    S(Y~0) S0
+end seed species
+begin observables
+#    Molecules SU S(Y~0)
+    Molecules SP S(Y~P)
+#    Molecules ES E(s!1).S(Y!1)
+end observables
+begin reaction rules
+    ESbind: E(s) + S(Y~0) <-> E(s!1).S(Y~0!1) 10^kp1,10^km1
+    ESconvert: E(s!1).S(Y~0!1) -> E(s) + S(Y~P) 10^k2
+end reaction rules
+end model
+
+begin protocol
+simulate({method=>"ode", t_end=>20000,n_steps=>10})
+end protocol
+
+generate_network({overwrite=>1})
+writeCfile({})
+
+
