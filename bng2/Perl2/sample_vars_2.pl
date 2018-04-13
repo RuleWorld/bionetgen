@@ -192,6 +192,11 @@ unless (@mandatory_args== 2 + 3*$n_dims)
 my $file = $mandatory_args[0];
 my $n_pts = $mandatory_args[1 + 3*$n_dims];
 my $offset;
+my $division;
+if ($samplingMethod eq "\"grid\"") {
+    $division = $n_pts - 1;
+    $n_pts = $n_pts**$n_dims
+}
 if ($samplingMethod eq "\"latin\"") {
     $offset = 1;
 } elsif ($samplingMethod eq "\"random\"" | $samplingMethod eq "\"grid\"") {
@@ -280,6 +285,7 @@ my @val;
 
 {
     srand(5.014);
+    my @count = (0)x$n_dims;
     foreach my $run (1..$n_pts)
     {
         if ($samplingMethod eq "\"random\"") {
@@ -293,16 +299,20 @@ my @val;
                 }
             } else {
                 my $carry = 1;
+                #my $division = ($n_pts - 3)**(1/$n_dims) - 1;
                 for ($i = 0; $i < $n_dims; $i++) {
                     if ($carry) {
                         #my $range = $mandatory_args[3*$i + 3]-$mandatory_args[3*$i + 2];
                         #my $division = $n_pts**(1/$n_dims);
                         #my $increment = $range/$division;
                         #print("$range $division $increment\n");
-                        $val[$i] = $val[$i] + ($mandatory_args[3*$i + 3]-$mandatory_args[3*$i + 2])/(($n_pts - 3)**(1/$n_dims) - 1);
-                        if ($val[$i] > $mandatory_args[3*$i + 3]) {
+                        $val[$i] = $val[$i] + ($mandatory_args[3*$i + 3]-$mandatory_args[3*$i + 2])/$division;
+                        $count[$i]++;
+                        my $difference = $division - $count[$i];
+                        if ($count[$i] > $division) {
                             #$val[$i] = $val[$i] - ($mandatory_args[3*$i + 3]-$mandatory_args[3*$i + 2]);
                             $val[$i] = $mandatory_args[3*$i + 2];
+                            $count[$i] = 0;
                         } else {
                             $carry = 0;
                         }
@@ -328,8 +338,8 @@ my @val;
         #print("$run @val\n");
         my $srun = sprintf "%05d", $run;
         if ($run > 1){
-            print BNGL "resetConcentrations()\n";
-            print "resetConcentrations()\n";
+            #print BNGL "resetConcentrations()\n";
+            #print "resetConcentrations()\n";
         }
         for my $i (0 .. $#val) {
             my $x = $val[$i];
@@ -351,7 +361,9 @@ my @val;
         	$opt .= ",verbose=>1";
         }
         printf BNGL "simulate({$opt})\n"; #"simulate_ode({$opt})\n";
-        printf "simulate({$opt})\n";
+        printf BNGL "resetConcentrations()\n";
+        printf "simulate({$opt})\n"; #"simulate_ode({$opt})\n";
+        printf "resetConcentrations()\n";
     }  
 }
 close(BNGL);
@@ -360,7 +372,7 @@ close(BNGL);
 
 
 # Run BioNetGen on ScanModel file
-print "Running BioNetGen on $scanmodel\n";
+#print "Running BioNetGen on $scanmodel\n";
 my @command = ($perlbin, $bngexec, "--outdir", $prefix, $scanmodel);
 print("@command\n");
 
@@ -375,24 +387,23 @@ if ($@) { die $@; }
 
 # remember child PID
 $::CHILD_PID = $pid;
-print "[child process ID is: $pid]\n";
+#print "[child process ID is: $pid]\n";
 
 # monitor output of child process
 while( my $line = <$child_out> )
-{     
+{
     if ( $line =~ /^ABORT/ )
     {   # some problem
         print $logFH $line;
         print $logFH "Problem running BioNetGen on ${scanmodel}.";
         # also write message to STDOUT
-        print $line;
         die "Problem running BioNetGen on $scanmodel";
     }
     else
     {   # write message to log
         print $logFH $line;
 		if ($verbose){
-			print $line; # to STDOUT
+            #print $line; # to STDOUT
 		}
     }
 }
@@ -487,7 +498,6 @@ open(OUT,">", $outfile) or die "Couldn't open $outfile for output ($!)";
         } elsif ($varMeasured eq "\"peakRatio\"") {
             for $i (0 .. $#dat) {
                 $dat[$i] = ($max[$i] + DBL_EPSILON*100)/($last[$i] + DBL_EPSILON*100);
-                #print("$i $max[$i] $last[$i] $dat[$i]\n");
             }
         } elsif ($varMeasured eq "\"peakIntegral\"") {
             @dat = @peakInt;
