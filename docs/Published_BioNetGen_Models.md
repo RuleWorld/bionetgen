@@ -2,8 +2,9 @@
 
 This page links to publications that have applied a BioNetGen rule-based model to a specific biological system. *Note: This list is a work in progress and may not be complete.*
 
-## 2018 *Hot off the presses*
+## 2018 
 * [NF-κB-Chromatin Interactions Drive Diverse Phenotypes by Modulating Transcriptional Noise.](http://www.ncbi.nlm.nih.gov/pubmed/29346759) *Cell Reports*
+* ...
 
 ## 2017
 * Needs updated
