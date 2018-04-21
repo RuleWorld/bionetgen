@@ -5,19 +5,10 @@ from SpeciesTypes import *
 import re
 import copy
 
-def Reactions(tree):
-	pmap = parameterBlockString(tree)['pmap']
-	prefix = '{http://www.sbml.org/sbml/level3/version1/core}'
-	root = tree.getroot()
-	el = [x for x in root[0]]
-	elTag = [x.tag for x in root[0]]
-	match = [i for i in range(0,len(elTag)) if 'listOfReactions' in elTag[i]]
-	if len(match)>1:
-		print 'Problem. >1 match. Breaking'
-		sys.exit()
-	else:
-		match = match[0]
-	rxns = el[match]
+def Reactions(model):
+	plist = parameterBlockString(model)['plist']
+	par = [x.id for x in plist]
+	rxns = model.getListOfReactions()
 	reactants = {}
 	products = {}
 	parameters = {}
@@ -27,45 +18,51 @@ def Reactions(tree):
 		tmp = {}
 		rxn = rxns[i]
 		reactant = []
-		if 'name' in dict(rxn.attrib).keys():
-			tmp['annotation'] = dict(rxn.attrib)['name']
-		else:
-			tmp['annotation'] = ''
-		tmp['reversible'] = dict(rxn.attrib)['reversible']
+		tmp['annotation'] = rxn.getName()
+		tmp['reversible'] = rxn.getReversible()
 		tmp['reactants'] = []
 		tmp['products'] = []
 		tmp['parameters'] = []
+		lreact = rxn.getListOfReactants()
+		lprod = rxn.getListOfProducts()
+		klaw = rxn.getKineticLaw()
+		for reactant in lreact:
+			tmp['reactants'].append(reactant.getSpecies())
+		for product in lprod:
+			tmp['products'].append(product.getSpecies())
+		''' FIX
 		flag = 0
 		for j in rxn:
-			if j.tag == prefix+'listOfReactants':
-				for k in j:
-					tmp['reactants'].append(dict(k.attrib)['species'])
-			elif j.tag == prefix+'listOfProducts':
-				for k in j:
-					tmp['products'].append(dict(k.attrib)['species'])
 			elif j.tag == prefix+'kineticLaw':
 				for k in j:
 					if k.tag == prefix+'listOfLocalParameters':
 						flag = 1
 						for q in k:
 							tmp['full_parameters'].append({dict(q.attrib)['id']:dict(q.attrib)['value']})
+		'''
+		'''
 		if flag == 0:
 			for j in rxn:
 				for k in j:
 					if 'math' in k.tag:
 						for ci in k[0]:
 							if ci.text != None and ci.text.strip() not in tmp['reactants']: 
-								tmp['parameters'].append({ci.text:[pmap[ci.text.strip()]]})
+								tmp['parameters'].append({ci.text:[pmap[ci.text.strip()]]})'''
 
-		ReactionList.append(tmp)					
+		klaw_formula = klaw.getFormula()
+		klcomp = klaw_formula.split('*')
+		for i in klcomp:
+			if i.strip() not in tmp['reactants']:
+				tmp['parameters'].append(i.strip())
+		ReactionList.append(tmp)				
 	return ReactionList
 
 
-def rxnstring(RL,tree):
-	s = SpeciesTypes(tree)['Species']
-	m = SpeciesTypes(tree)['Molecules']
-	c = SpeciesTypes(tree)['Complexes']
-	b = SpeciesTypes(tree)['fullBindingSites']
+def rxnstring(RL,res):
+	s = res['Species']
+	m = res['Molecules']
+	c = res['Complexes']
+	b = res['fullBindingSites']
 	result = PartialMolecule(s,m,c,b)
 	pm = result['pm']
 	pc = result['pc']
@@ -105,9 +102,8 @@ def rxnstring(RL,tree):
 		for pattern in productpatterns[i]:
 			rxnstring = rxnstring+pattern+' + '
 		rxnstring = rxnstring[:-2]+'\t'
-		for parameters in RL[i]['parameters']:
-			for key in parameters.keys():
-				rxnstring = rxnstring+key+','
+		for parameter in RL[i]['parameters']:
+			rxnstring = rxnstring+parameter+','
 		rxnstring = rxnstring[:-1]+'\n'
 	rxnstring = rxnstring+'end reaction rules \n'
 	return rxnstring
@@ -471,25 +467,14 @@ def SeedSpeciesString(s,m,c,b):
 			seedspecies = seedspecies + str(s[i]['ic'])+'\n'
 	return seedspecies+'end seed species \n'
 
-def parameterBlockString(tree):
+def parameterBlockString(model):
 	pblock = 'begin parameters\n'
-	root = tree.getroot()
-	el = [x for x in root[0]]
-	elTag = [x.tag for x in root[0]]
-	match = [i for i in range(0,len(elTag)) if 'listOfParameters' in elTag[i]]
-	if len(match) == 1:
-		match = match[0]
-	elif len(match)>1:
-		print 'Problem.'
-		sys.exit()
-	par = el[match]
-	pmap = {}
-	for i in par:
-		if 'value' in dict(i.attrib).keys():
-			pmap[dict(i.attrib)['id']] = dict(i.attrib)['value']
-			pblock = pblock + dict(i.attrib)['id'] +'\t'+dict(i.attrib)['value']+'\n'
+	plist = model.getListOfParameters()
+	for i in plist:
+		pblock = pblock + plist[0].id +'\t'+str(plist[0].value)+'\n'
 	pblock = pblock + 'end parameters\n'
-	return {'pblock':pblock,'pmap':pmap}
+	return {'pblock':pblock,'plist':plist}
+
 
 def GetBNGFile(path):
 	print path

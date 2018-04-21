@@ -3,7 +3,7 @@ import time
 import os
 import os.path
 from libsbml import *
-from ReactantTypes import *
+from sbml_multi_aux import *
 
 def SpeciesTypes(mplugin,model):
 	speciesTypes = mplugin.getListOfMultiSpeciesTypes()
@@ -82,8 +82,6 @@ def SpeciesTypes(mplugin,model):
 	for i in range(0,nmol):
 		key = keys[i]
 		Molecules[key]['SpeciesTypes'] = [{tuple(x):full_bindingSite[tuple(x)]} for x in Molecules[key]['SpeciesTypes'] if len(x)>0]
-	#print Molecules	
-	print MolTypesString(Molecules)
 	Complexes = {} #Considering Complexes, i.e. species with InsSpecies bonds
 	for i in complexes:
 		full_complex = (i.id,i.name)
@@ -115,33 +113,24 @@ def SpeciesTypes(mplugin,model):
 				elif component_name == bond[1]:
 					Complexes[full_complex]['bonds'][bondcounter][1] = [component[1],component[2]]
 				bondcounter = bondcounter + 1
-		print Complexes
-
 	speciesList = model.getListOfSpecies()
 	ModelSpecies = {}
 	for sp in speciesList:
 		sp_plugin = sp.getPlugin('multi')
+		id_ = sp.getId()
 		ModelSpecies[id_] = {'name':sp.name,'speciesType':sp_plugin.getSpeciesType(),'bindingsites':[],'features':[],'wildcards':[],'ic':sp.getInitialConcentration()}
 		outwardbindingsites = sp_plugin.getListOfOutwardBindingSites()
 		speciesfeatures = sp_plugin.getListOfSpeciesFeatures()
+		#outward binding sites are binding sites not involved in in species bonds.
 		for q in  outwardbindingsites:
-			if q.getBindingStatus == 1:#!= 'either':
+			if q.getBindingStatus() == 1: # 1 signifies an "unbound" bindingStatus, 0 signifies bound and 2 signifies either/don't care state
 				ModelSpecies[id_]['bindingsites'].append(q.getComponent())
-				'''
-			FIX
-			elif dict(q.attrib)[prefix+'bindingStatus'] == 'bound':#!= 'either':
-				wc_index = dict(q.attrib)[prefix+'component']
-				#print wc_index,'wc_index'
-				#wc = [{x:full_bindingSite[x]} for x in full_bindingSite.keys() if x[0] == wc_index]
-					ModelSpecies[id_]['wildcards'].append(wc_index)
+			elif q.getBindingStatus() == 0:
+				ModelSpecies[id_]['wildcards'].append(q.getComponent())
 		for q in speciesfeatures:
-			if prefix+'component' in dict(q.attrib).keys():
-				ModelSpecies[id_]['features'].append([dict(q.attrib)[prefix+'speciesFeatureType'],dict(q[0][0].attrib)[prefix+'value'],dict(q.attrib)[prefix+'component']])
-			else:
-				ModelSpecies[id_]['features'].append([dict(q.attrib)[prefix+'speciesFeatureType'],dict(q[0][0].attrib)[prefix+'value']])
-	#print ModelSpecies
-	#print "COMPLEXES",Complexes
-	Result = {'Molecules':Molecules,'Complexes':Complexes,'Species':ModelSpecies,'fullBindingSites':full_bindingSite}'''
+			spfl = q.getListOfSpeciesFeatureValues()
+			ModelSpecies[id_]['features'].append([q.getSpeciesFeatureType(),spfl[0].getValue(),q.getComponent()])
+	Result = {'Molecules':Molecules,'Complexes':Complexes,'Species':ModelSpecies,'fullBindingSites':full_bindingSite}
 	return Result
 	
 def parameterBlockString(model):
@@ -171,7 +160,11 @@ if __name__ == "__main__":
 	mst = mplugin.getListOfMultiSpeciesTypes()
 	mst1 = model.getListOfSpeciesTypes()
 	#print model.getListOfSpecies()
-	SpeciesTypes(mplugin,model)
+	result = SpeciesTypes(mplugin,model)
+	RL = Reactions(model)
+	rxnstring(RL,result)
+	#print  MolTypesString(result['Molecules'])
+	#print SeedSpeciesString(result['Species'],result['Molecules'],result['Complexes'],result['fullBindingSites'])#PartialMolecule(result['Species'],result['Molecules'],result['Complexes'],result['fullBindingSites'])
 	#print mplugin.BindingSiteSpeciesType
  	#tmp = parameterBlockString(model)
  	#print tmp['pblock']

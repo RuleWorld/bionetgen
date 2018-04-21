@@ -1,20 +1,15 @@
 import sys
-import xml.etree.ElementTree as ET
-from converter import toString
+import time
+import os
+import os.path
+from libsbml import *
 
-def SpeciesTypes(tree):
-	#This is a function to parse the xml file and return dictionary definitions of Molecule types, Complex types, model species and full binding sites
-	root = tree.getroot()
-	el = [x for x in root[0]]
-	elTag = [x.tag for x in root[0]]
-	str1 = 'listOfSpeciesTypes' #Look for list of species type in the xml file
-	match = [i for i in range(0,len(elTag)) if str1 in elTag[i]]
-	if len(match)>1:
-		print 'Problem. >1 match. Breaking'
-		sys.exit()
-	else:
-		match = match[0]
-	speciesTypes = el[match]
+def SpeciesTypes(model):
+	print model.getListOfSpeciesTypes()
+	speciesTypes = model.getListOfSpeciesTypes()
+	print len(speciesTypes)
+	Result = 0
+	'''
 	str2 = 'speciesType' #This block has two kinds of definitions - species and binding sites. Look for both.
 	str3 = 'bindingSiteSpeciesType'
 	species = [x for x in speciesTypes if str2 in x.tag]
@@ -198,19 +193,18 @@ def SpeciesTypes(tree):
 	#print ModelSpecies
 	#print "COMPLEXES",Complexes
 	Result = {'Molecules':Molecules,'Complexes':Complexes,'Species':ModelSpecies,'fullBindingSites':full_bindingSite}
+	'''
 	return Result
 
-def FlattenDict(x):
-	for i in x.keys():
-		if x[i] in x.keys():
-			x[i] = x[x[i]]
-	return x			
 
-if __name__ == '__main__':
-	#TESTING
-	#Parse sbml file
-	filename = sys.argv[1]
-	tree = ET.parse(filename)
-	result = SpeciesTypes(tree)
-	Molecules = result['Molecules']
-	print Molecules
+if __name__ == "__main__":
+
+	print SBMLExtensionRegistry.isPackageEnabled("multi")
+
+	filename = sys.argv[1];
+	reader = SBMLReader()
+	document = reader.readSBML(filename);
+	errors = document.getNumErrors();
+	model = document.getModel()
+	MultiModelPlugin
+	#SpeciesTypes(model)
