@@ -1,10 +1,10 @@
 begin model
 begin parameters
 k1	1.0
-k1	1.0
-k1	1.0
-k1	1.0
-k1	1.0
+k2	2.0
+A	0.0
+B	0.0
+rate	nan
 end parameters
 begin molecule types 
 B(b)
