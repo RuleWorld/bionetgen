@@ -151,6 +151,7 @@ def MolTypesString(m):
 	
 if __name__ == "__main__":
 	filename = sys.argv[1];
+	base = filename.split('.')
 	reader = SBMLReader()
 	document = reader.readSBML(filename);
 	errors = document.getNumErrors();
@@ -163,6 +164,10 @@ if __name__ == "__main__":
 	result = SpeciesTypes(mplugin,model)
 	RL = Reactions(model)
 	rxnstring(RL,result)
+	bng = GetBNGFile(model,result)
+	f = open(base[0]+'.bngl','w')
+	f.write(bng)
+	f.close()
 	#print  MolTypesString(result['Molecules'])
 	#print SeedSpeciesString(result['Species'],result['Molecules'],result['Complexes'],result['fullBindingSites'])#PartialMolecule(result['Species'],result['Molecules'],result['Complexes'],result['fullBindingSites'])
 	#print mplugin.BindingSiteSpeciesType

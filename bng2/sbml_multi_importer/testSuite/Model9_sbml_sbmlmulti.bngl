@@ -1,0 +1,21 @@
+begin model
+begin parameters
+k1	1.0
+k1	1.0
+k1	1.0
+k1	1.0
+k1	1.0
+end parameters
+begin molecule types 
+B(b)
+A(a)
+end molecule types 
+begin seed species
+B(b)	50.0
+A(a)	100.0
+end seed species 
+begin reaction rules 
+A(a) + B(b)  <-> A(a!1).B(b!1) 	rate
+A(a)  <-> 0 	k1
+end reaction rules 
+end model

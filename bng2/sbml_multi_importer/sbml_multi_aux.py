@@ -261,7 +261,6 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 			mind = mol_id.index(st) #Locate the molecule index in the list of species
 			key = Molecules.keys()[mind] #The molecule keys are (id,name) pairs
 			pname = (i,key[1]) #Species ID, Molecule Name
-			print pname
 			partialMolecule[pname] = {'SpeciesTypes' : [], 'FeatureTypes':{},'wildcards': []} #Define the partial molecule with free binding sites, features and wild cards
 			for wc_index in wc:
 				wc_instance = [{x:full_bindingSite[x]} for x in full_bindingSite.keys() if x[0] == wc_index]
@@ -476,32 +475,22 @@ def parameterBlockString(model):
 	return {'pblock':pblock,'plist':plist}
 
 
-def GetBNGFile(path):
-	print path
-	tree = ET.parse(path)
-	RL = Reactions(tree)
-	s = SpeciesTypes(tree)['Species']
-	m = SpeciesTypes(tree)['Molecules']
-	c = SpeciesTypes(tree)['Complexes']
-	b = SpeciesTypes(tree)['fullBindingSites']
-	#print m
-	#print c
-	#print 'str',toString(m)
+def GetBNGFile(model,res):
+	s = res['Species']
+	m = res['Molecules']
+	c = res['Complexes']
+	b = res['fullBindingSites']
+	RL = Reactions(model)
 	Results = PartialMolecule(s,m,c,b)
-	#print toString(Results['pm'])
-	#print Complex2String(Results['pc'])
-#	print MolTypesString(m)
-
-	#print '\n',s
 	modelString = 'begin model\n'
-	parameter_string = parameterBlockString(tree)['pblock']
+	parameter_string = parameterBlockString(model)['pblock']
 	molecules_string = MolTypesString(m)
 	seedspecies_string = SeedSpeciesString(s,m,c,b)
- 	reactions_string = rxnstring(RL,tree)
+ 	reactions_string = rxnstring(RL,res)
 
  	modelString = modelString+parameter_string+molecules_string+seedspecies_string+reactions_string
  	modelString = modelString +'end model\n'
- 	#print modelString
+ 	print modelString
  	return modelString
 
 if __name__ == '__main__':

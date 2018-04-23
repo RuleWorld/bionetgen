@@ -15,12 +15,12 @@
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
            </multi:listOfOutwardBindingSites>
          </species>
-         <species id="S2" initialConcentration="50" hasOnlySubstanceUnits="false" multi:speciesType="ST_M2" compartment="cell" name="B(b)" boundaryCondition="false" constant="false">
+         <species id="S2" initialConcentration="50" multi:speciesType="ST_M2" hasOnlySubstanceUnits="false" compartment="cell" name="B(b)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
            </multi:listOfOutwardBindingSites>
          </species>
-         <species id="S3" multi:speciesType="ST3" hasOnlySubstanceUnits="false" initialConcentration="0" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
+         <species id="S3" initialConcentration="0" hasOnlySubstanceUnits="false" multi:speciesType="ST3" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfReactions>
       <reaction id="R1" reversible="false" fast="false" name="_R1:  A(a) + B(b) -> A(a!1).B(b!1)  k">
