@@ -156,7 +156,6 @@ if __name__ == "__main__":
 	document = reader.readSBML(filename);
 	errors = document.getNumErrors();
 	model = document.getModel()
-
 	mplugin = model.getPlugin("multi")
 	mst = mplugin.getListOfMultiSpeciesTypes()
 	mst1 = model.getListOfSpeciesTypes()
