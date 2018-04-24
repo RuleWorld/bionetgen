@@ -5,6 +5,51 @@ from SpeciesTypes import *
 import re
 import copy
 
+def getRules(model,res):
+	s = res['Species']
+	m = res['Molecules']
+	c = res['Complexes']
+	b = res['fullBindingSites']
+	result = PartialMolecule(s,m,c,b)
+	pm = result['pm']
+	pc = result['pc']
+
+	pmstr = toString(pm)
+	pcstr = Complex2String(pc)
+
+	rules = model.getListOfRules()
+	rulevar = []
+	for rule in rules:
+		rulevar.append(rule.variable)
+	functionstring = 'begin functions\n'
+	observablesstring = 'begin observables\n'
+	for rule in rules: #iterate through assignment rules
+		rf = rule.getMath()		
+		l = rf.getListOfNodes()
+		possible_observable = []
+		counter=0
+		for i in range(0,l.getSize()): #all the nodes in the assignment rule
+			a= l.get(i)
+			if a.isName(): #If the node type has a string name, i.e. a variable name
+				#If all the node names appear as previously defined function names, then according to BNG syntax this is a function
+				counter = counter+1 #count the number of variables
+				if a.getName() in rulevar:
+					flag = 1
+				else:
+					flag = 0
+					possible_observable.append(a.getName())
+		if flag==1:
+			functionstring = functionstring+rule.variable+'() '+rule.getFormula()+'\n'
+		elif flag==0:
+			#Some additional checks to make sure this is a bionetgen observable
+			if counter==1: #An observable formula should only have one variable (CHECK!)
+				observable_species = possible_observable[0]
+				if observable_species in pmstr.keys():
+					observablesstring = observablesstring+'Molecules '+rule.variable+' '+pmstr[observable_species]+'\n'
+	observablesstring = observablesstring + 'end observables\n'
+	functionstring = functionstring+'end functions\n'
+	return {'functions':functionstring,'observables':observablesstring}
+
 def Reactions(model):
 	plist = parameterBlockString(model)['plist']
 	par = [x.id for x in plist]
@@ -74,7 +119,8 @@ def rxnstring(RL,res):
 	for i in RL:
 		rpattern = []
 		ppattern = []	
-		if i['reversible'] != 'false':
+		print i['reversible']
+		if i['reversible'] != False:
 			reversible.append(' <-> ')
 		else:
 			reversible.append(' -> ')
@@ -487,8 +533,10 @@ def GetBNGFile(model,res):
 	molecules_string = MolTypesString(m)
 	seedspecies_string = SeedSpeciesString(s,m,c,b)
  	reactions_string = rxnstring(RL,res)
-
- 	modelString = modelString+parameter_string+molecules_string+seedspecies_string+reactions_string
+ 	rulesstring = getRules(model,res)
+ 	functions_string = rulesstring['functions']
+ 	observables_string = rulesstring['observables']
+ 	modelString = modelString+parameter_string+molecules_string+observables_string+functions_string+seedspecies_string+reactions_string
  	modelString = modelString +'end model\n'
  	print modelString
  	return modelString

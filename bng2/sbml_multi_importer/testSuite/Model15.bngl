@@ -1,0 +1,36 @@
+#Testing functions
+
+begin model
+begin parameters
+k1 1
+k2 2
+end parameters
+
+begin molecule types
+A(a)
+B(b)
+end molecule types
+
+begin observables
+Molecules A A(a)
+Molecules B B(b)
+end observables
+
+begin functions
+rate() A*(A+B)
+end functions
+
+begin seed species
+A(a) 100
+B(b) 50
+end seed species
+
+begin reaction rules
+A(a) + B(b) -> A(a!1).B(b!1) rate()
+A(a) -> 0 k1
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+
