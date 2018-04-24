@@ -1,7 +1,4 @@
 import sys
-import xml.etree.ElementTree as ET
-#from converter import toString
-from SpeciesTypes import *
 import re
 import copy
 
@@ -119,7 +116,6 @@ def rxnstring(RL,res):
 	for i in RL:
 		rpattern = []
 		ppattern = []	
-		print i['reversible']
 		if i['reversible'] != False:
 			reversible.append(' <-> ')
 		else:
@@ -157,7 +153,6 @@ def rxnstring(RL,res):
 def toString(Molecules):
 	mol_string = {}
 	for i in  Molecules:
-		#print Molecules[i]
 		mol_name = i[1]
 		m = mol_name+'('
 		st = Molecules[i]['SpeciesTypes']
@@ -216,6 +211,73 @@ def toString(Molecules):
 			m = m[:-1]+')'
 		mol_string[i[0]] = m
 	#print mol_string
+	return mol_string
+
+def Mol2String(Molecules):
+	mol_string = {}
+	for mol in  Molecules:
+		mol_order = mol[2] #order in which molecule should be printed
+		mol_name = mol[1] #Get molecule name
+		m = mol_name+'('
+		st = Molecules[mol]['SpeciesTypes'] #List of binding site dictionaries. 
+		ft = Molecules[mol]['FeatureTypes'] #Dictionary of feature sites. Key: (site ID, site name) Value: list of value ID,value pairs
+		if 'wildcards' in Molecules[mol].keys():
+			wc = Molecules[mol]['wildcards']
+		else:
+			wc = []
+		list_of_st = []
+		flag = 0
+		for site in st:
+			#site is a dictionary of with one key and one value. 
+			#Key = (site id, site name) Value: Dictionary of features {feature ID: [[feature value ID 1, feature value 1],...[feature value ID N, feature value N]]}
+			site_def = site.keys()[0]
+			site_features = site.values()[0] #This is a dictionary of length 1. key is the feature ID, value is list of feature value ID,value pairs
+			j = site
+			tmp = j[j.keys()[0]]
+			if len(site_features) ==0: #binding site has no features
+				if site_def[1] != '': #Binding site has a name
+					m = m+site_def[1] +','
+				else: #Use the binding site ID instead of the name
+					m = m + site_def[0] +','
+				flag = 1
+			else: #binding site does have features
+				feature_values = site_features.values()[0]
+				m = m +site_def[1] #binding site name
+				for fv in feature_values:
+					m = m + '~' +fv[1] #feature values separated by BNG connector syntax
+				m = m+',' #Comma separats sites
+				flag = 1
+		if len(wc)>0:
+			for j in wc:
+				tmp = j[j.keys()[0]]
+				if len(tmp)==0:
+					if j.keys()[0][1] != '':
+						m = m+j.keys()[0][1] +'!+,'
+					else:
+						m = m + j.keys()[0][0] +'!+,'
+					flag = 1
+				else:
+					feature_values = tmp[tmp.keys()[0]]
+					m = m +j.keys()[0][1]
+					for fv in feature_values:
+						m = m + '~' +fv[1]
+					m = m+'!+ '
+					flag = 1
+		for site in ft.keys():
+			m = m+site[1] #site name
+			if any(isinstance(el, list) for el in ft[site]): #Making sure that elements are lists 
+				for featureval in ft[site]:
+					m = m+'~'+featureval[1]
+			else:
+				m = m +'~'+ft[j][1]
+			m = m+','
+			flag = 1
+		if flag == 0: #No sites in the molecule
+			m = m+')'
+		else:
+			m = m[:-1]+')'
+		mol_string[(mol[0],mol_order)] = m
+		mol_order += 1
 	return mol_string
 
 def Complex2String(complexes):
@@ -486,9 +548,11 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 	return {'pm':partialMolecule,'pc':partialComplex}
 	
 def MolTypesString(m):
-	s = toString(m)
+	s = Mol2String(m)
+	skeys = s.keys()
+	skeys.sort(key=lambda x:x[1]) #obtain sorted list of keys so we can print in order
 	moltypes = 'begin molecule types \n'
-	for j in s:
+	for j in skeys:
 		moltypes = moltypes + s[j]+'\n'
 	moltypes = moltypes + 'end molecule types \n'
 	return moltypes

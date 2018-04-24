@@ -16,17 +16,17 @@
           <compartment id="cell" size="1" constant="true" multi:isType="false"/>
         </listOfCompartments>
             <listOfSpecies>
-         <species id="S1" multi:speciesType="ST_M0" initialConcentration="100" hasOnlySubstanceUnits="false" compartment="cell" name="A(a)" boundaryCondition="false" constant="false">
+         <species id="S1" hasOnlySubstanceUnits="false" multi:speciesType="ST_M0" initialConcentration="100" compartment="cell" name="A(a)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
            </multi:listOfOutwardBindingSites>
          </species>
-         <species id="S2" multi:speciesType="ST_M2" initialConcentration="50" hasOnlySubstanceUnits="false" compartment="cell" name="B(b)" boundaryCondition="false" constant="false">
+         <species id="S2" multi:speciesType="ST_M2" hasOnlySubstanceUnits="false" initialConcentration="50" compartment="cell" name="B(b)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
            </multi:listOfOutwardBindingSites>
          </species>
-         <species id="S3" initialConcentration="0" hasOnlySubstanceUnits="false" multi:speciesType="ST3" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
+         <species id="S3" hasOnlySubstanceUnits="false" multi:speciesType="ST3" initialConcentration="0" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
 <listOfRules>
       <!-- Observables -->

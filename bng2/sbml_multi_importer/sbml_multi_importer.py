@@ -29,8 +29,10 @@ def SpeciesTypes(mplugin,model):
 				for featureVal in feature.getListOfPossibleSpeciesFeatureValues():
 					full_bindingSite[siteDescriptor][feature.id].append([featureVal.id,featureVal.name]) 			
 	Molecules = {} #A dictionary of the form key: (moelcule_id, molecule_name) value: {dictionary of SpeciesTypes (binding sites) dictionary and FeatureTypes dictionary}	
+	mol_order_index = 0
 	for i in molecules:
-			full_molecule = (i.id,i.name) 
+			full_molecule = (i.id,i.name,mol_order_index)
+			mol_order_index+1 #Adding an ordering term so we can print in the right order later. Dictionary does not necessarily preserve order. 
 			Molecules[full_molecule] = {'SpeciesTypes':[],'FeatureTypes':{}} #Molecule types have species types - which are binding sites, and feature types
 			list_speciestypeinstances = i.getListOfSpeciesTypeInstances()
 			list_speciesfeaturetypes = i.getListOfSpeciesFeatureTypes()
@@ -49,6 +51,7 @@ def SpeciesTypes(mplugin,model):
 						id_ = q.id
 						name_ = q.name
 						Molecules[full_molecule]['FeatureTypes'][feature].append([id_,name_])						
+			mol_order_index+=1
 	nmol = len(Molecules)
 	keys = Molecules.keys()
 	'''

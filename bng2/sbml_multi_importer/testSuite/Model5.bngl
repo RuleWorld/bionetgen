@@ -7,16 +7,16 @@ k1 1
 end parameters
 
 begin molecule types
-A(a,b~0~p)
+A(b~0~p,a)
 end molecule types
 
 begin seed species
-A(a,b~0) 100
-A(a,b~p) 100
+A(b~0,a) 100
+A(b~p,a) 100
 end seed species
 
 begin reaction rules
-A(a,b~0) + A(a,b~p) -> A(a!1,b~0).A(a!1,b~p) k1
+A(b~0,a) + A(b~p,a) -> A(b~0,a!1).A(b~p,a!1) k1
 end reaction rules
 end model
 
