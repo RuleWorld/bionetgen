@@ -1,0 +1,855 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.3.2  -->
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">  
+  <model>
+    <listOfParameters>
+      <!-- Independent variables -->
+      <parameter id="k1" constant="false" value="1"/>
+      <parameter id="k2" constant="false" value="2"/>
+      <parameter id="k3" constant="false" value="3"/>
+    </listOfParameters>
+    <listOfCompartments>
+          <compartment id="cell" size="1" constant="true" multi:isType="false"/>
+        </listOfCompartments>
+            <listOfSpecies>
+         <species id="S1" hasOnlySubstanceUnits="false" initialConcentration="100" multi:speciesType="ST_M0" compartment="cell" name="A(a)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S2" hasOnlySubstanceUnits="false" initialConcentration="50" multi:speciesType="ST_M2" compartment="cell" name="B(a~0,b,d,e~0,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S2_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S2_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S3" multi:speciesType="ST_M6" initialConcentration="1000" hasOnlySubstanceUnits="false" compartment="cell" name="C(c)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M6_C1"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S4" initialConcentration="0" multi:speciesType="ST4" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~0,b!1,d,e~0,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S4_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S4_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S5" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST5" compartment="cell" name="B(a~0,b!1,d,e~0,f).C(c!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S5_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S5_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S6" hasOnlySubstanceUnits="false" multi:speciesType="ST_M2" initialConcentration="0" compartment="cell" name="B(a~0,b,d,e~p,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S6_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S6_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S7" hasOnlySubstanceUnits="false" multi:speciesType="ST_M2" initialConcentration="0" compartment="cell" name="B(a~p,b,d,e~0,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S7_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S7_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S8" hasOnlySubstanceUnits="false" multi:speciesType="ST6" initialConcentration="0" compartment="cell" name="A(a!1).B(a~0,b,d,e~0,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S8_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S8_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S9" hasOnlySubstanceUnits="false" multi:speciesType="ST4" initialConcentration="0" compartment="cell" name="A(a!1).B(a~0,b!1,d,e~p,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S9_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S9_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S10" multi:speciesType="ST4" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~p,b!1,d,e~0,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S10_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S10_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S11" hasOnlySubstanceUnits="false" multi:speciesType="ST7" initialConcentration="0" compartment="cell" name="A(a!1).A(a!2).B(a~0,b!2,d,e~0,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST7_M3_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S11_M3_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S11_M3_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S12" initialConcentration="0" multi:speciesType="ST5" hasOnlySubstanceUnits="false" compartment="cell" name="B(a~0,b!1,d,e~p,f).C(c!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S12_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S12_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S13" initialConcentration="0" multi:speciesType="ST5" hasOnlySubstanceUnits="false" compartment="cell" name="B(a~p,b!1,d,e~0,f).C(c!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S13_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S13_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S14" multi:speciesType="ST8" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~0,b!2,d,e~0,f!1).C(c!2)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST8_M2_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S14_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S14_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S15" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST_M2" compartment="cell" name="B(a~p,b,d,e~p,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S15_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S15_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S16" initialConcentration="0" multi:speciesType="ST6" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~0,b,d,e~p,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S16_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S16_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S17" hasOnlySubstanceUnits="false" multi:speciesType="ST6" initialConcentration="0" compartment="cell" name="A(a!1).B(a~p,b,d,e~0,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S17_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S17_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S18" multi:speciesType="ST4" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~p,b!1,d,e~p,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST4_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S18_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S18_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST4_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S19" hasOnlySubstanceUnits="false" multi:speciesType="ST7" initialConcentration="0" compartment="cell" name="A(a!1).A(a!2).B(a~0,b!2,d,e~p,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST7_M3_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S19_M3_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S19_M3_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S20" hasOnlySubstanceUnits="false" multi:speciesType="ST7" initialConcentration="0" compartment="cell" name="A(a!1).A(a!2).B(a~p,b!2,d,e~0,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST7_M3_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S20_M3_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S20_M3_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S21" multi:speciesType="ST5" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="B(a~p,b!1,d,e~p,f).C(c!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST5_M1_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S21_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S21_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST5_M1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S22" initialConcentration="0" multi:speciesType="ST8" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~0,b!2,d,e~p,f!1).C(c!2)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST8_M2_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S22_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S22_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S23" multi:speciesType="ST8" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~p,b!2,d,e~0,f!1).C(c!2)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST8_M2_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S23_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S23_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S24" initialConcentration="0" multi:speciesType="ST6" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(a~p,b,d,e~p,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST6_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S24_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S24_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST6_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S25" initialConcentration="0" multi:speciesType="ST7" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).A(a!2).B(a~p,b!2,d,e~p,f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST7_M3_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S25_M3_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S25_M3_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST7_M3">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S26" hasOnlySubstanceUnits="false" multi:speciesType="ST8" initialConcentration="0" compartment="cell" name="A(a!1).B(a~p,b!2,d,e~p,f!1).C(c!2)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="cmp_ST8_M2_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S26_M2_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+                 <multi:speciesFeature id="S26_M2_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1" multi:component="cmp_ST8_M2">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S27" initialConcentration="0" multi:speciesType="ST_M2" hasOnlySubstanceUnits="false" compartment="cell" name="B(b)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S28" multi:speciesType="ST4" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST4_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST4_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S29" initialConcentration="0" multi:speciesType="ST5" hasOnlySubstanceUnits="false" compartment="cell" name="B(b!1).C(c!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST5_M1_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST5_M1_C5"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S30" initialConcentration="0" multi:speciesType="ST_M2" hasOnlySubstanceUnits="false" compartment="cell" name="B(b!+,d)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S31" hasOnlySubstanceUnits="false" multi:speciesType="ST_M8" initialConcentration="0" compartment="cell" name="D(d)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M8_C1"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S32" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST10" compartment="cell" name="B(b!+,d!1).D(d!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="bound" multi:component="cmp_ST10_M1_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST10_M1_C5"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S33" hasOnlySubstanceUnits="false" multi:speciesType="ST_M2" initialConcentration="0" compartment="cell" name="B(b,d,e~0,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S33_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S34" multi:speciesType="ST_M2" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="B(b,d,e~p,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S34_M1_C3" multi:speciesFeatureType="ST_M2_C3" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C3_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S35" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST_M2" compartment="cell" name="B(a~0,b,d,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S35_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_0"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S36" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST_M2" compartment="cell" name="B(a~p,b,d,f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S36_M1_C4" multi:speciesFeatureType="ST_M2_C4" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M2_C4_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S37" hasOnlySubstanceUnits="false" multi:speciesType="ST_M2" initialConcentration="0" compartment="cell" name="B(f)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="ST_M2_C2"/>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C5"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S38" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST6" compartment="cell" name="A(a!1).B(f!1)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST6_M2_C1"/>
+                 <multi:outwardBindingSite multi:bindingStatus="either" multi:component="cmp_ST6_M2_C2"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="R1" reversible="false" fast="false" name="_R1:  A(a) + B(b) -> A(a!1).B(b!1)  k1">
+        <listOfReactants>
+          <speciesReference id="RR1_R1" species="S1" constant="false"/>
+          <speciesReference id="RR1_R2" species="S27" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR1_P1" species="S28" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R1" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST4_M1"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R2" multi:reactantComponent="ST_M2" multi:productComponent="cmp_ST4_M2"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k1 </ci>
+              <ci> S1 </ci>
+              <ci> S27 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R2" reversible="false" fast="false" name="_R2:  C(c) + B(b) -> B(b!1).C(c!1)  k1">
+        <listOfReactants>
+          <speciesReference id="RR2_R1" species="S3" constant="false"/>
+          <speciesReference id="RR2_R2" species="S27" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR2_P1" species="S29" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR2_R1" multi:reactantComponent="ST_M6" multi:productComponent="cmp_ST5_M2"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR2_R2" multi:reactantComponent="ST_M2" multi:productComponent="cmp_ST5_M1"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k1 </ci>
+              <ci> S3 </ci>
+              <ci> S27 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R3" reversible="false" fast="false" name="_R3:  B(b!+,d) + D(d) -> B(b!+,d!1).D(d!1)  k2">
+        <listOfReactants>
+          <speciesReference id="RR3_R1" species="S30" constant="false"/>
+          <speciesReference id="RR3_R2" species="S31" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR3_P1" species="S32" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR3_R1" multi:reactantComponent="ST_M2" multi:productComponent="cmp_ST10_M1"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR3_R2" multi:reactantComponent="ST_M8" multi:productComponent="cmp_ST10_M2"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k2 </ci>
+              <ci> S30 </ci>
+              <ci> S31 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R4" reversible="false" fast="false" name="_R4:  B(b,d,e~0,f) -> B(b,d,e~p,f)  k3">
+        <listOfReactants>
+          <speciesReference id="RR4_R1" species="S33" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR4_P1" species="S34" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR4_R1" multi:reactantComponent="ST_M2" multi:productComponent="ST_M2"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k3 </ci>
+              <ci> S33 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R5" reversible="false" fast="false" name="_R5:  B(a~0,b,d,f) -> B(a~p,b,d,f)  k3">
+        <listOfReactants>
+          <speciesReference id="RR5_R1" species="S35" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR5_P1" species="S36" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR5_R1" multi:reactantComponent="ST_M2" multi:productComponent="ST_M2"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k3 </ci>
+              <ci> S35 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R6" reversible="false" fast="false" name="_R6:  B(f) + A(a) -> A(a!1).B(f!1)  k1">
+        <listOfReactants>
+          <speciesReference id="RR6_R1" species="S37" constant="false"/>
+          <speciesReference id="RR6_R2" species="S1" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR6_P1" species="S38" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR6_R1" multi:reactantComponent="ST_M2" multi:productComponent="cmp_ST6_M2"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR6_R2" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST6_M1"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k1 </ci>
+              <ci> S37 </ci>
+              <ci> S1 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <multi:listOfSpeciesTypes>
+<multi:speciesType multi:id="ST4"  multi:name="A(a!1).B(b!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST4_M1" multi:name="A" multi:speciesType="ST_M0"/>
+           <multi:speciesTypeInstance multi:id="ST4_M2" multi:name="B" multi:speciesType="ST_M2"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST4_M2" multi:component="ST4_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST4_M1" multi:component="ST4_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST4_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST4_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST4_M2_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST4_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST4_M2_C2" multi:component="ST_M2_C2" multi:identifyingParent="ST4_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST4_M2_C5" multi:component="ST_M2_C5" multi:identifyingParent="ST4_M2"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST4_M1_C1" multi:bindingSite2="cmp_ST4_M2_C2"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+<multi:speciesType multi:id="ST5"  multi:name="B(b!1).C(c!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST5_M1" multi:name="B" multi:speciesType="ST_M2"/>
+           <multi:speciesTypeInstance multi:id="ST5_M2" multi:name="C" multi:speciesType="ST_M6"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST5_M1" multi:component="ST5_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST5_M2" multi:component="ST5_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST5_M1_C2" multi:component="ST_M2_C2" multi:identifyingParent="ST5_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST5_M1_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST5_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST5_M2_C1" multi:component="ST_M6_C1" multi:identifyingParent="ST5_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST5_M1_C5" multi:component="ST_M2_C5" multi:identifyingParent="ST5_M1"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST5_M1_C2" multi:bindingSite2="cmp_ST5_M2_C1"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+<multi:speciesType multi:id="ST6"  multi:name="A(a!1).B(f!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST6_M1" multi:name="A" multi:speciesType="ST_M0"/>
+           <multi:speciesTypeInstance multi:id="ST6_M2" multi:name="B" multi:speciesType="ST_M2"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST6_M1" multi:component="ST6_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST6_M2" multi:component="ST6_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST6_M2_C5" multi:component="ST_M2_C5" multi:identifyingParent="ST6_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST6_M2_C2" multi:component="ST_M2_C2" multi:identifyingParent="ST6_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST6_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST6_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST6_M2_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST6_M2"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST6_M1_C1" multi:bindingSite2="cmp_ST6_M2_C5"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+<multi:speciesType multi:id="ST7"  multi:name="A(a!1).A(a!2).B(b!2,f!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST7_M1" multi:name="A" multi:speciesType="ST_M0"/>
+           <multi:speciesTypeInstance multi:id="ST7_M2" multi:name="A" multi:speciesType="ST_M0"/>
+           <multi:speciesTypeInstance multi:id="ST7_M3" multi:name="B" multi:speciesType="ST_M2"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M1" multi:component="ST7_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M2" multi:component="ST7_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M3" multi:component="ST7_M3"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M3_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST7_M3"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M3_C5" multi:component="ST_M2_C5" multi:identifyingParent="ST7_M3"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M3_C2" multi:component="ST_M2_C2" multi:identifyingParent="ST7_M3"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST7_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST7_M2_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST7_M2"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST7_M1_C1" multi:bindingSite2="cmp_ST7_M3_C5"/>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST7_M2_C1" multi:bindingSite2="cmp_ST7_M3_C2"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+<multi:speciesType multi:id="ST8"  multi:name="A(a!1).B(b!2,f!1).C(c!2)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST8_M1" multi:name="A" multi:speciesType="ST_M0"/>
+           <multi:speciesTypeInstance multi:id="ST8_M2" multi:name="B" multi:speciesType="ST_M2"/>
+           <multi:speciesTypeInstance multi:id="ST8_M3" multi:name="C" multi:speciesType="ST_M6"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M1" multi:component="ST8_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M2" multi:component="ST8_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M3" multi:component="ST8_M3"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M3_C1" multi:component="ST_M6_C1" multi:identifyingParent="ST8_M3"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M2_C2" multi:component="ST_M2_C2" multi:identifyingParent="ST8_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M2_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST8_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST8_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST8_M2_C5" multi:component="ST_M2_C5" multi:identifyingParent="ST8_M2"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST8_M1_C1" multi:bindingSite2="cmp_ST8_M2_C5"/>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST8_M2_C2" multi:bindingSite2="cmp_ST8_M3_C1"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+<multi:speciesType multi:id="ST10"  multi:name="B(d!1).D(d!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST10_M1" multi:name="B" multi:speciesType="ST_M2"/>
+           <multi:speciesTypeInstance multi:id="ST10_M2" multi:name="D" multi:speciesType="ST_M8"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST10_M2" multi:component="ST10_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST10_M1" multi:component="ST10_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST10_M1_C2" multi:component="ST_M2_C2" multi:identifyingParent="ST10_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST10_M2_C1" multi:component="ST_M8_C1" multi:identifyingParent="ST10_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST10_M1_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST10_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST10_M1_C5" multi:component="ST_M2_C5" multi:identifyingParent="ST10_M1"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST10_M1_C1" multi:bindingSite2="cmp_ST10_M2_C1"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+      <multi:speciesType multi:id="ST_M0" multi:name="A" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M0_C1_ist" multi:name="a" multi:speciesType="ST_M0_C1"/>
+      </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M0_C1" multi:name="a"/>
+      <multi:speciesType multi:id="ST_M2" multi:name="B" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M2_C1_ist" multi:name="d" multi:speciesType="ST_M2_C1"/>
+         <multi:speciesTypeInstance multi:id="ST_M2_C2_ist" multi:name="b" multi:speciesType="ST_M2_C2"/>
+         <multi:speciesTypeInstance multi:id="ST_M2_C5_ist" multi:name="f" multi:speciesType="ST_M2_C5"/>
+      </multi:listOfSpeciesTypeInstances>
+      <multi:listOfSpeciesFeatureTypes>
+         <multi:speciesFeatureType multi:id="ST_M2_C3" multi:name="e" multi:occur="1">
+             <multi:listOfPossibleSpeciesFeatureValues>
+                 <multi:possibleSpeciesFeatureValue multi:id="ST_M2_C3_0" multi:name="0"/>
+                 <multi:possibleSpeciesFeatureValue multi:id="ST_M2_C3_p" multi:name="p"/>
+             </multi:listOfPossibleSpeciesFeatureValues>
+         </multi:speciesFeatureType>
+         <multi:speciesFeatureType multi:id="ST_M2_C4" multi:name="a" multi:occur="1">
+             <multi:listOfPossibleSpeciesFeatureValues>
+                 <multi:possibleSpeciesFeatureValue multi:id="ST_M2_C4_0" multi:name="0"/>
+                 <multi:possibleSpeciesFeatureValue multi:id="ST_M2_C4_p" multi:name="p"/>
+             </multi:listOfPossibleSpeciesFeatureValues>
+         </multi:speciesFeatureType>
+      </multi:listOfSpeciesFeatureTypes>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M2_C1" multi:name="d"/>
+      <multi:bindingSiteSpeciesType multi:id="ST_M2_C2" multi:name="b"/>
+      <multi:bindingSiteSpeciesType multi:id="ST_M2_C5" multi:name="f"/>
+      <multi:speciesType multi:id="ST_M6" multi:name="C" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M6_C1_ist" multi:name="c" multi:speciesType="ST_M6_C1"/>
+      </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M6_C1" multi:name="c"/>
+      <multi:speciesType multi:id="ST_M8" multi:name="D" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M8_C1_ist" multi:name="d" multi:speciesType="ST_M8_C1"/>
+      </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M8_C1" multi:name="d"/>
+    </multi:listOfSpeciesTypes>
+  </model>
+</sbml>

@@ -1,0 +1,35 @@
+#Testing Wild cards
+
+begin model
+begin parameters
+k1 1
+k2 2
+k3 3
+end parameters
+
+begin molecule types
+A(a)
+B(d,b,e~0~p,a~0~p,f) #b,d,f are binding sites. e is a feature site
+C(c)
+D(d)
+end molecule types
+
+begin seed species
+A(a) 100
+B(b,d,e~0,a~0,f) 50
+C(c) 1000
+end seed species
+
+begin reaction rules
+A(a) + B(b) -> A(a!1).B(b!1) k1
+C(c) + B(b) -> C(c!1).B(b!1) k1
+B(d,b!+) + D(d) -> B(b!+,d!1).D(d!1) k2
+B(d,b,e~0,f) -> B(b,d,e~p,f) k3
+B(d,b,a~0,f) -> B(b,d,a~p,f) k3
+B(f) + A(a) -> B(f!1).A(a!1) k1
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+

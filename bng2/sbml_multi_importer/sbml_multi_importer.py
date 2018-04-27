@@ -2,6 +2,7 @@ import sys
 import time
 import os
 import os.path
+import copy
 from libsbml import *
 from sbml_multi_aux import *
 
@@ -21,26 +22,31 @@ def SpeciesTypes(mplugin,model):
 			bindingsites.append(i)
 	full_bindingSite={}
 	for site in bindingsites:
-		siteDescriptor = (site.id,site.name)
+		#siteDescriptor = site.id#
+		siteDescriptor =(site.id,site.name)
+		print siteDescriptor
 		full_bindingSite[siteDescriptor] = {}
 		if len(site.getListOfSpeciesFeatureTypes())>0:
 			for feature in site.getListOfSpeciesFeatureTypes():
 				full_bindingSite[siteDescriptor][feature.id] = []		
 				for featureVal in feature.getListOfPossibleSpeciesFeatureValues():
 					full_bindingSite[siteDescriptor][feature.id].append([featureVal.id,featureVal.name]) 			
-	Molecules = {} #A dictionary of the form key: (moelcule_id, molecule_name) value: {dictionary of SpeciesTypes (binding sites) dictionary and FeatureTypes dictionary}	
+	Molecules = {} #A dictionary of the form key: (molecule_id, molecule_name) value: {dictionary of SpeciesTypes (binding sites) dictionary and FeatureTypes dictionary}	
 	mol_order_index = 0
 	for i in molecules:
 			full_molecule = (i.id,i.name,mol_order_index)
-			mol_order_index+1 #Adding an ordering term so we can print in the right order later. Dictionary does not necessarily preserve order. 
+			mol_order_index+1 #Adding an ordering term so we can print in the right order later. Dictionary does not preserve order. 
 			Molecules[full_molecule] = {'SpeciesTypes':[],'FeatureTypes':{}} #Molecule types have species types - which are binding sites, and feature types
 			list_speciestypeinstances = i.getListOfSpeciesTypeInstances()
 			list_speciesfeaturetypes = i.getListOfSpeciesFeatureTypes()
+			species_type_order = 0
+			feature_type_order = 0
 			if len(list_speciestypeinstances)>0:
 				for k in list_speciestypeinstances:
 					id_ = k.getSpeciesType()
 					name_ = k.getName()
 					Molecules[full_molecule]['SpeciesTypes'].append([id_,name_])
+					species_type_order+=1
 			if len(list_speciesfeaturetypes)>0:
 				for k in list_speciesfeaturetypes:
 					id_ = k.id
@@ -50,40 +56,54 @@ def SpeciesTypes(mplugin,model):
 					for q in k.getListOfPossibleSpeciesFeatureValues():
 						id_ = q.id
 						name_ = q.name
-						Molecules[full_molecule]['FeatureTypes'][feature].append([id_,name_])						
+						Molecules[full_molecule]['FeatureTypes'][feature].append([id_,name_])
+						feature_type_order+=1						
 			mol_order_index+=1
+	print full_bindingSite
 	nmol = len(Molecules)
 	keys = Molecules.keys()
 	'''
-	SIMUNE RELATED. NEEDS FIXING
+	#Simmune adds an extra layer of hierarchy. Molecule-component-bindingsite instead of molecule-bindingsite. Need to flatten for BNG
+	bindingsiteID = full_bindingSite.keys()
 	for i in range(0,nmol):
-		key = keys[i]
-		st = Molecules[key]['SpeciesTypes']
-		#print st,'st'
-		nst = len(st)
-		for j in range(0,nst):
-			spt = st[j]
-			#Check if the species type is a binding site
-			spt_id = spt[0]
-		#	print spt_id
-			if spt_id not in bindingsiteID: #If the species type is not a binding site, flatten things. #FIX!!
-				#spt_id must appear as a key 
-				tkey = [x[0] for x in keys]
-				if spt_id not in tkey:
-					print 'Something is wrong'
-					return
-				index = tkey.index(spt_id)
-				#Replace j in st with species types
-				stnew = Molecules[keys[index]]['SpeciesTypes']
-				Molecules[key]['SpeciesTypes'][j] = []
-				for x in stnew:
-					Molecules[key]['SpeciesTypes'].append(x)
-				ftnew = Molecules[keys[index]]['FeatureTypes']
-				Molecules[key]['FeatureTypes'].update(ftnew)	
-	'''
+		molecule = keys[i]
+		if molecule in Molecules.keys():
+			speciestype_list = copy.copy(Molecules[molecule]['SpeciesTypes'])
+			num_st = len(speciestype_list)
+			for speciestype in speciestype_list:
+				speciestype_index = speciestype_list.index(speciestype)
+				#Check if the species type is a binding site
+				speciestypeID = speciestype[0]
+				if speciestypeID not in bindingsiteID: #If the species type is not a binding site, flatten things. 
+					#speciestypeID must appear as a key
+					moleculeID = [x[0] for x in keys]
+					if speciestypeID not in moleculeID:
+						print 'Something is wrong'
+						return
+					#Get index of the component definition
+					index = moleculeID.index(speciestypeID)
+					#Replace species types
+					speciestypes_new = Molecules[keys[index]]['SpeciesTypes']
+					Molecules[molecule]['SpeciesTypes'].remove(speciestype)
+					for x in speciestypes_new:
+						x[1] = keys[index][1] + '_'+x[1]+'_'+'bs'
+						Molecules[molecule]['SpeciesTypes'].append(x)
+					ftnew = Molecules[keys[index]]['FeatureTypes']
+					ftnew_modified = {}
+					for ft in ftnew:
+						ftnew_modified[tuple([ft[0],keys[index][1]+'_'+ft[1]+'_ft'])] = ftnew[ft]
+					Molecules[molecule]['FeatureTypes'].update(ftnew_modified)	
+					#Delete component from dictionary. Don't want it to show up in Molecule types
+					Molecules.pop(keys[index])
+	print full_bindingSite
 	#Update the binding site species types in the Molecules definition with the full binding site dictionary definition
+	'''
+	keys = Molecules.keys()
+	nmol = len(keys)
+	print full_bindingSite
 	for i in range(0,nmol):
 		key = keys[i]
+		#Molecules[key]['SpeciesTypes'] = [{tuple(x):full_bindingSite[x[0]]} for x in Molecules[key]['SpeciesTypes'] if len(x)>0]
 		Molecules[key]['SpeciesTypes'] = [{tuple(x):full_bindingSite[tuple(x)]} for x in Molecules[key]['SpeciesTypes'] if len(x)>0]
 	Complexes = {} #Considering Complexes, i.e. species with InsSpecies bonds
 	for i in complexes:

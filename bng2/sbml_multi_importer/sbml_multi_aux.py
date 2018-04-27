@@ -107,6 +107,7 @@ def rxnstring(RL,res):
 	b = res['fullBindingSites']
 	result = PartialMolecule(s,m,c,b)
 	pm = result['pm']
+	print pm
 	pc = result['pc']
 	string_pm = toString(pm)
 	string_pc = Complex2String(pc)

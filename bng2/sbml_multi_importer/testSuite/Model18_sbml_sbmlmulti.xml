@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.3.2  -->
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">  
+  <model>
+    <listOfParameters>
+      <!-- Independent variables -->
+      <parameter id="_rateLaw1" constant="false" value="1"/>
+      <parameter id="_rateLaw2" constant="false" value="1"/>
+    </listOfParameters>
+    <listOfCompartments>
+          <compartment id="cell" size="1" constant="true" multi:isType="false"/>
+        </listOfCompartments>
+            <listOfSpecies>
+         <species id="S1" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" initialConcentration="1" compartment="cell" name="A(y~u)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S1_M1_C1" multi:speciesFeatureType="ST_M0_C1_ft" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M0_C1_ft_u"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S2" multi:speciesType="ST2" initialConcentration="1" hasOnlySubstanceUnits="false" compartment="cell" name="A(y~p!1).B(a!1)" boundaryCondition="false" constant="false">
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S2_M1_C1" multi:speciesFeatureType="ST_M0_C1_ft" multi:occur="1" multi:component="cmp_ST2_M1_C1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M0_C1_ft_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S3" multi:speciesType="ST2" hasOnlySubstanceUnits="false" initialConcentration="0" compartment="cell" name="A(y~u!1).B(a!1)" boundaryCondition="false" constant="false">
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S3_M1_C1" multi:speciesFeatureType="ST_M0_C1_ft" multi:occur="1" multi:component="cmp_ST2_M1_C1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M0_C1_ft_u"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+         <species id="S4" multi:speciesType="ST_M0" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="A(y~p)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
+           </multi:listOfOutwardBindingSites>
+           <multi:listOfSpeciesFeatures>
+                 <multi:speciesFeature id="S4_M1_C1" multi:speciesFeatureType="ST_M0_C1_ft" multi:occur="1">
+                   <multi:listOfSpeciesFeatureValues>
+                       <multi:speciesFeatureValue multi:value="ST_M0_C1_ft_p"/>
+                   </multi:listOfSpeciesFeatureValues>
+                 </multi:speciesFeature>
+           </multi:listOfSpeciesFeatures>
+         </species>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="R1" reversible="false" fast="false" name="r1:  A(y~u) + A(y~p!1).B(a!1) -> A(y~u!1).B(a!1) + A(y~p)  _rateLaw1">
+        <listOfReactants>
+          <speciesReference id="RR1_R1" species="S1" constant="false"/>
+          <speciesReference id="RR1_R2" species="S2" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR1_P1" species="S3" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R1" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST2_M1"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R2" multi:reactantComponent="cmp_ST2_M2" multi:productComponent="cmp_ST2_M2"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+          <speciesReference id="RR1_P2" species="S4" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R2" multi:reactantComponent="cmp_ST2_M1" multi:productComponent="ST_M0"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> _rateLaw1 </ci>
+              <ci> S1 </ci>
+              <ci> S2 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R2" reversible="false" fast="false" name="r2:  A(y~u) + A(y~p!1).B(a!1) -> A(y~p) + A(y~u!1).B(a!1)  _rateLaw2">
+        <listOfReactants>
+          <speciesReference id="RR2_R1" species="S1" constant="false"/>
+          <speciesReference id="RR2_R2" species="S2" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR2_P1" species="S4" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR2_R1" multi:reactantComponent="ST_M0" multi:productComponent="ST_M0"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+          <speciesReference id="RR2_P2" species="S3" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR2_R2" multi:reactantComponent="cmp_ST2_M1" multi:productComponent="cmp_ST2_M1"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR2_R2" multi:reactantComponent="cmp_ST2_M2" multi:productComponent="cmp_ST2_M2"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> _rateLaw2 </ci>
+              <ci> S1 </ci>
+              <ci> S2 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <multi:listOfSpeciesTypes>
+<multi:speciesType multi:id="ST2"  multi:name="A(y!1).B(a!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST2_M1" multi:name="A" multi:speciesType="ST_M0"/>
+           <multi:speciesTypeInstance multi:id="ST2_M2" multi:name="B" multi:speciesType="ST_M2"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M1" multi:component="ST2_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M2" multi:component="ST2_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M2_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST2_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST2_M1"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST2_M1_C1" multi:bindingSite2="cmp_ST2_M2_C1"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+      <multi:speciesType multi:id="ST_M0" multi:name="A" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M0_C1_ist" multi:name="y" multi:speciesType="ST_M0_C1"/>
+      </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M0_C1" multi:name="y">
+         <multi:listOfSpeciesFeatureTypes>
+         <multi:speciesFeatureType multi:id="ST_M0_C1_ft" multi:name="y" multi:occur="1">
+             <multi:listOfPossibleSpeciesFeatureValues>
+                 <multi:possibleSpeciesFeatureValue multi:id="ST_M0_C1_ft_u" multi:name="u"/>
+                 <multi:possibleSpeciesFeatureValue multi:id="ST_M0_C1_ft_p" multi:name="p"/>
+             </multi:listOfPossibleSpeciesFeatureValues>
+         </multi:speciesFeatureType>
+         </multi:listOfSpeciesFeatureTypes>
+         </multi:bindingSiteSpeciesType>
+      <multi:speciesType multi:id="ST_M2" multi:name="B" multi:compartment="cell">
+           <multi:listOfSpeciesTypeInstances>
+              <multi:speciesTypeInstance multi:id="ST_M2_C1_ist" multi:name="a" multi:speciesType="ST_M2_C1"/>
+           </multi:listOfSpeciesTypeInstances>
+           </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M2_C1" multi:name="a"/>
+    </multi:listOfSpeciesTypes>
+  </model>
+</sbml>

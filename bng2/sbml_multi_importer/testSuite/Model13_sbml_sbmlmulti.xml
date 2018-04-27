@@ -21,7 +21,7 @@
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
            </multi:listOfOutwardBindingSites>
          </species>
-         <species id="S3" multi:speciesType="ST3" initialConcentration="0" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
+         <species id="S3" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST3" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfReactions>
       <reaction id="R1" reversible="false" fast="false" name="_R1:  A(a) + B(b) -> A(a!1).B(b!1)  k">
@@ -82,8 +82,8 @@
            <multi:speciesTypeInstance multi:id="ST3_M2" multi:name="B" multi:speciesType="ST_M2"/>
          </multi:listOfSpeciesTypeInstances>
     <multi:listOfSpeciesTypeComponentIndexes>
-         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2" multi:component="ST3_M2"/>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1" multi:component="ST3_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2" multi:component="ST3_M2"/>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST3_M1"/>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST3_M2"/>
     </multi:listOfSpeciesTypeComponentIndexes>
