@@ -12,16 +12,7 @@ addons:
       - python-pip
 sudo: false
 
-
-env:
-  global:
-#       FTP_USER
-    - secure: "PXnvyBIVb3fRv22muWIua/wVfbG/GMh3lp737axHlFQhLkBWIkMAh/ayyI0jHcaAc+dhBkPsex9XNaV5vG7iPWoo10GnQHW2GHafQ6QpoJFH2v/x6AuOBswtSGOSR7aaP9EaKvqUsF0BPZdUm1C5IWa6a4Q6hnclkDgumvROtivQBOu2HbxHQd258N+SAdv3KRv7J0j2CdZR8GzTpRvrERalfWMT6gu5GD0q5sl0FzhHXcnNSRmiHp79fgaVo2P/U2YiyZHPOonirqOySFMij+emuWce0XFp+foMtAewH8S33TTuSEJD/NKVbJhp2TX8IvwVFG5JX4Ut64JkACHJXNQvKAozBNc19jsV2scQRngdEnPe2rdLOxEnloFN27ovf15eVyGoAKfA0Gj/C52WZuLZgvZSAjZi94G5DVEQlaYKeFrMIrs33BLaZmhdL2oBQxQqgHc8POMIlGsb7enyk+DMojekC8/EZt91GxGUkkypw1roJReLZBquHNYpO2ZYobe/ne38D1gJlS41XkWrKBDU1hKb0LOitMdh5MoLyhIv+oBecsjqDXRtjRv7e0IlWS6Mh6OVW5zRtmQFXePKXEotPojZsqA9JA7AMiqxgNKbQsQbFSx8KO2Y5v+zaVAXKSwlJc8q4HLMs+ihXF+ILFNTTmw/r16MBOoP0ImajTY="
-#       FTP_PASSWORD
-    - secure: "FRC9J/IfS1I9vzOEXkfIPWjP5FGFUuXSqEItd95AhANUwXYFPxXfip1YeCXkm5iZsRpysy37e189/mmEkcaVXVd6cgPNtOTop54cdM+uc7K+/ZBTzN7FYcJJMkYskHZYHWEFn6iJgaiCo37drxK5JZ/Ml6YztkWGMVKorYmjS/k/kIvFf00QQw6RpYB/uOdnn6VHAtqiVrF5F197ncWZyM1vzcjknMxqPwUkvjHV8YM8q5/pi1cVX0Fm0vjlbEVdYZaCZ/QeSXzWJdoNB4eEvMlgfxWjArFv3Th2xab7AWsdzvjCRADeAVzkozfWDbdWQKS80sk2Hivpz+hTp4dkKjMlqXOrjT7BKSPFPMVDfD70wuBZ5nK+fhhdjUDEc6Cy2GPWS2Fxiy0lHCYpm6SHaquIujwKa/QeBamnj/l4N7qB3CC2XANNSk9MoelslgllESgJhhQA0jAOH1i0v046UYfjIIaaGdmpOZM39M8hp53wd5I1U2U48SRDd43/Dsvoe6PmvZcYes33/gHzOlauHp9Fbt8VLjMq9VyIKTR3PKxg4188jxx3j3ZIT8PetuezS7+kPfKW66H20LSJtxlXe93OuAvXER7FW17nORdDv5K3sajUH/yZiy7voH08bAiwOE+s/Sljt1IndCl7yUwhpFjiCrPkgELJMgiE1Ly/G68="
-
-
-notifications:   
+-notifications:   
    slack: 
      rooms:
        - faederlab:l0waIGp58v8ZV74N7QmXGoWs      
@@ -29,7 +20,7 @@ notifications:
        - "BioNetGen build: %{result} in %{duration}"
        - "Build: <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>)    Author: %{author}"
        - "Build details:  %{build_url} "
-   
+
 script:
   - cd ./bng2
   # build NFsim (easy)
@@ -47,14 +38,3 @@ script:
   - cd ..
   # build final distribution and validate
   - perl make_dist.pl --build --validate  --bindir ./bin
-  #- source .dist_unix.sh
-
-
-after_success:
-#  The .dist_unix.sh script used to be called here.  The problem with having it here, is that if any tests fail, no
-#  distribution package is generated, and developers have no executable to work with to do further debugging.
-
-#  The make clean step has been added to make_dist.pl
-#  -  cd BioNetGen-2.3.0/Network3 && make clean && cd ../../.. && mkdir dist && mv ./bng2/BioNetGen-2.3.0 ./dist/$TRAVIS_OS_NAME && cd dist && tar cf $TRAVIS_OS_NAME.tar $TRAVIS_OS_NAME && gzip $TRAVIS_OS_NAME.tar && rm -rf $TRAVIS_OS_NAME && cd ..
-
-
