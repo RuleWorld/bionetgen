@@ -28,7 +28,7 @@ $(SBML_TRANSLATOR_BIN):
 	git submodule init; git submodule update
 	cd $(SBML_TRANSLATOR_DIR); make
 	mkdir -p $(FINAL_BINDIR)
-	cp $(SBML_TRANSLATOR_DIR)/dist/$(SBML_TRANSLATOR_BIN) $(FINAL_BINDIR)
+	cp $(SBML_TRANSLATOR_DIR)/SBMLparser/dist/$(SBML_TRANSLATOR_BIN) $(FINAL_BINDIR)
 
 # clean script
 clean:
