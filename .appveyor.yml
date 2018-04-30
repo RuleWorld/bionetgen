@@ -1,10 +1,10 @@
 os: unstable
 
 environment:
+  PYTHON: "C:\\Python36-x64"
   ftp_password:
     secure: K22E4pSAup6/htlGmoSBMw==
   matrix:
-    - PYTHON: "C:\\Python36-x64"
 
     - builder: cygwin
       platform: x86
