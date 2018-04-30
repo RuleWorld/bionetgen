@@ -32,15 +32,14 @@ notifications:
    
 script:
   - cd ./bng2
-  # build NFsim and atomizer
+  # build NFsim (easy)
   - make NFsim
-  - cd ./atomizer
-  - source osx_install.sh
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew unlink python && brew link python; fi
-  - pip install --user -r requirements.txt
-  - unzip utils/pyinstaller2.zip
-  - python2 pyinstaller2/pyinstaller.py utils/sbmlTranslator.spec
-  - cp dist/sbmlTranslator ../bin
+  # build atomizer (a little less easy...)
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y python3-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y python3.4-venv; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python; fi
+  - make atomizer
   # build cvode
   - cd ../Network3
   - cp Makefile.cmake Makefile
