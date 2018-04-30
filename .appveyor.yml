@@ -4,6 +4,8 @@ environment:
   ftp_password:
     secure: K22E4pSAup6/htlGmoSBMw==
   matrix:
+    - PYTHON: "C:\\Python36-x64"
+
     - builder: cygwin
       platform: x86
              
@@ -42,17 +44,15 @@ install:
 
 
 build_script:
-  - git clone https://github.com/ruleworld/nfsim.git
-  - git clone https://github.com/ruleworld/atomizer.git
-  - cd ./bng2 
-  - mkdir bindir_nfsim_atomizer
-  - bash .get_nfsim_atomizer.sh  ./bindir_nfsim_atomizer  %platform%   %ftp_password%
-  - cd   ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate   --bindir ./bindir_nfsim_atomizer
-  - bash .dist_windows.sh %platform%  
-  
-artifacts:
-  - path: './BioNetGen*.zip'
-    name:  BioNetGen
-  - path: './BioNetGen*.html'
-    name:  BioNetGenHTML
-  
+  - git submodule init
+  - git submodule update
+  - cd ./bng2
+  - mkdir bin
+  - cd ./atomizer/SBMLparser
+  - "%PYTHON%\\python.exe -m pip install --user -r ./requirements_win.txt"
+  - "%PYTHON%\\python.exe -m pip install --target=. python-libsbml"
+  - "%PYTHON%\\python.exe -m PyInstaller ./sbmlTranslator.spec"
+  - mv ./dist/sbmlTranslator.exe ../../bin
+  - cd ../..
+  #- cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --bindir ./bindir_nfsim_atomizer
+  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
