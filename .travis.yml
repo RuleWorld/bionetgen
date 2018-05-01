@@ -40,7 +40,10 @@ deploy:
   file: "./bintray.json"
   user: jczech
   key:
-    secure: mim54ge1ziCzoD+CpBy6F+Se2aR6KF0TNA/ML6wj5rWk6/qzG7LLrdN6udOAD/LFV3l52awn0GmsEMQzdMmHKtxCqkdgt+FCrN85y/sZBx0w+ul26uByJoc0W5O6s61FyVStEauMxHC0t4PFYf0KmRnO0Sj1e237ceyTvuzqGIGLlQlu1s+zlMnpW1JNhT2QceWwiuML7PYQU1t76QXiNkE72DKX9k7umaaeB3mFRI3h+pWPOozzIjS/3iFaI5olLgnSF6rm02Xj46TTXiq6WqkvqK00XU+WIs6BLm5Qyz49gFVnTB9C8vldOoUwLiKAJiVO3JfdwWKVr3c/iN7Bnt8clhgPHGLtsTrpfQRsw0oz9Q5aNY/ZV5DKSi+4TRse/633MHHTaP93Eb7sdzJJ0cDN8Hx7/hUEiodYc1JIFALD3tLBfO9wI9yDUhgtMcHsSd8MlK+StwXTy/xtxfiQpYxlhBpw47VxhE0JHkjRZdKmuneruoq7fKqBcwi/yERWKr7VNEKmFJ1pNBqCXEk4T+FZCnUv2sUWQMbW/vdBDlVPp2SfO0EEE6spbM3n5GNzZfupJoqTUrATNSrecoTDrp4qC5sTiOUt2Bu0+ViPW9qKCsNSMTg1VfZgSRTg84H8tH20iE6FdEurKTcYvh0XniVPvH19HIlSAtClie4n4a0=
+    # If you need to regenrate this for some reason, here's what you do:
+    # travis encrypt <YOUR BINTRAY API KEY> --add deploy.key
+    # Get BINTRAY API KEY from https://bintray.com/profile/edit under "API Key" section
+    secure: Fy2jOUE+HwCMo219mmdu9p0l/+p28DQ0VQORhER6xan59U4pMYYWeNZ1g1YXFsDulEcedMNqbcI2Voeh5U8m9evsIanKp7/181TZ6ZX0K1kdpPuUmtuAPTRMVz7u1cYVgk2nzsBGI1OAj/guUThfCQBUumrJp52zB28dnlBiAwFPf1neO8M9khqRjzx98KCj2p4lMTj9z7KLSehtqNpMRU5bo+HaWca5XyKHcetRL0qpwRVhb0TcrL9z9ryCD4aXeRx3A3f2KQBQjV67F2xXbHLvljUdKW20nLQPwtFrRHn2HCEkYVZHq5zqsPlc1iDV6irDNbno+XHRpigriAoixx2C5Xb5Ah5+qD61eG719OXab5eYG/dye9mqjvPojwHN5Gd53sRbI707w3rT1YbqeN7wnEYHK7lgkyCx1D9vInp0THrLxyC/rJ0R+xneK7odHrWhLNtQWE3ZV9adDFrZuNVn3X28iJDWyfxNDgEoffZ9QSuinWlv/ITK+kYYYkQT73gH0QEtQC5Yzby73w1lK/SRbJeyBUYvR1xXKev8ToSD84VL3yMOz4Mi2ouRmJYmIlJiuv+q5ibNduD9CCi1t0arsPG15PTEaKAgQ8BELDO3V5HQkjM//4ftrchNW3WmiPwNwMisP8UDi63kS3BGr1v4QWYXmxCJu0WyF9pH+2c=
   skip_cleanup: true
   on:
     all_branches: true
