@@ -32,7 +32,7 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python; fi
   - make sbmlTranslator
   # build final distribution and validate
-  - perl make_dist.pl --build --validate  --bindir ./bin
+  - perl make_dist.pl --build --validate  --bindir ./bin --archive
 
 deploy:
   provider: bintray
