@@ -33,6 +33,7 @@ script:
   - make sbmlTranslator
   # build final distribution and validate
   - perl make_dist.pl --build --validate  --bindir ./bin --archive
+  - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-{TRAVIS_OS_NAME}.tar.gz"
   - cd ..
 
 deploy:

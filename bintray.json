@@ -13,14 +13,14 @@
     },
 
     "version": {
-      "name": "2.3.2",
+      "name": "1.0",
       "desc": "The latest release of bionetgen",
       "gpgSign": false
     },
 
 		"files":
 				[
-        {"includePattern": "bng2/(BioNetGen-2.3.2.tar.gz)", "uploadPattern": "/$1",
+        {"includePattern": "bng2/(BioNetGen-2.3.2-.*tar.gz)", "uploadPattern": "/$1",
 				"matrixParams": {
 						"override": 1 }
 				}
