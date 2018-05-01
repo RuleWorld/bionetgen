@@ -54,8 +54,7 @@ build_script:
   - "%PYTHON%\\python.exe -m PyInstaller ./sbmlTranslator.spec"
   - mv ./dist/sbmlTranslator.exe ../../bin
   - cd ../..
-  #- cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --bindir ./bindir_nfsim_atomizer
-  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive
+  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive --bindir ./bin 
 
 artifacts:
   - path: ./bng2/BioNetGen-2.3.2.tar.gz
