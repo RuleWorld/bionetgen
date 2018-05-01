@@ -56,3 +56,20 @@ build_script:
   - cd ../..
   #- cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --bindir ./bindir_nfsim_atomizer
   - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
+
+artifacts:
+  - path: ./bng2/BioNetGen-2.3.2.tar.gz
+    name: bionetgen
+
+deploy:
+- provider: BinTray
+  username: jczech
+  api_key:
+    secure: XzrXGPWsRRrx8DZTJSNJpLkMZrxlXF2vdeao4CCBiXUtKBuxR7Nj2CQIBy3L3bSB
+  subject: jczech
+  repo: bionetgen
+  package: bionetgen
+  publish: true
+  override: true
+  artifact: bionetgen
+
