@@ -55,7 +55,7 @@ build_script:
   - mv ./dist/sbmlTranslator.exe ../../bin
   - cd ../..
   #- cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --bindir ./bindir_nfsim_atomizer
-  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate
+  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive
 
 artifacts:
   - path: ./bng2/BioNetGen-2.3.2.tar.gz
