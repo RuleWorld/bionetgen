@@ -20,11 +20,11 @@ def SpeciesTypes(mplugin,model):
 				molecules.append(i)
 		elif i.getElementName() == 'bindingSiteSpeciesType':
 			bindingsites.append(i)
+	bindingIDNameHash = {}
 	full_bindingSite={}
 	for site in bindingsites:
-		#siteDescriptor = site.id#
-		siteDescriptor =(site.id,site.name)
-		print siteDescriptor
+		bindingIDNameHash[site.id] = site.name
+		siteDescriptor = site.id
 		full_bindingSite[siteDescriptor] = {}
 		if len(site.getListOfSpeciesFeatureTypes())>0:
 			for feature in site.getListOfSpeciesFeatureTypes():
@@ -59,10 +59,8 @@ def SpeciesTypes(mplugin,model):
 						Molecules[full_molecule]['FeatureTypes'][feature].append([id_,name_])
 						feature_type_order+=1						
 			mol_order_index+=1
-	print full_bindingSite
 	nmol = len(Molecules)
-	keys = Molecules.keys()
-	'''
+	keys = Molecules.keys()	
 	#Simmune adds an extra layer of hierarchy. Molecule-component-bindingsite instead of molecule-bindingsite. Need to flatten for BNG
 	bindingsiteID = full_bindingSite.keys()
 	for i in range(0,nmol):
@@ -95,16 +93,13 @@ def SpeciesTypes(mplugin,model):
 					Molecules[molecule]['FeatureTypes'].update(ftnew_modified)	
 					#Delete component from dictionary. Don't want it to show up in Molecule types
 					Molecules.pop(keys[index])
-	print full_bindingSite
-	#Update the binding site species types in the Molecules definition with the full binding site dictionary definition
-	'''
+	#Update the binding site species types in the Molecules definition with the full binding site dictionary definition	
 	keys = Molecules.keys()
 	nmol = len(keys)
-	print full_bindingSite
 	for i in range(0,nmol):
 		key = keys[i]
-		#Molecules[key]['SpeciesTypes'] = [{tuple(x):full_bindingSite[x[0]]} for x in Molecules[key]['SpeciesTypes'] if len(x)>0]
-		Molecules[key]['SpeciesTypes'] = [{tuple(x):full_bindingSite[tuple(x)]} for x in Molecules[key]['SpeciesTypes'] if len(x)>0]
+		Molecules[key]['SpeciesTypes'] = [{tuple(x):full_bindingSite[x[0]]} for x in Molecules[key]['SpeciesTypes'] if len(x)>0]
+		#Molecules[key]['SpeciesTypes'] = [{tuple(x):full_bindingSite[tuple(x)]} for x in Molecules[key]['SpeciesTypes'] if len(x)>0]
 	Complexes = {} #Considering Complexes, i.e. species with InsSpecies bonds
 	for i in complexes:
 		full_complex = (i.id,i.name)
@@ -138,6 +133,12 @@ def SpeciesTypes(mplugin,model):
 				bondcounter = bondcounter + 1
 	speciesList = model.getListOfSpecies()
 	ModelSpecies = {}
+
+	bindingsite_features = {}
+	for site in full_bindingSite.keys():
+		if len(full_bindingSite[site])>0:
+			bindingsite_features[full_bindingSite[site].keys()[0]] = site
+
 	for sp in speciesList:
 		sp_plugin = sp.getPlugin('multi')
 		id_ = sp.getId()
@@ -146,14 +147,18 @@ def SpeciesTypes(mplugin,model):
 		speciesfeatures = sp_plugin.getListOfSpeciesFeatures()
 		#outward binding sites are binding sites not involved in in species bonds.
 		for q in  outwardbindingsites:
+			bs_id = q.getComponent() #binding site ID
 			if q.getBindingStatus() == 1: # 1 signifies an "unbound" bindingStatus, 0 signifies bound and 2 signifies either/don't care state
-				ModelSpecies[id_]['bindingsites'].append(q.getComponent())
+				#ModelSpecies[id_]['bindingsites'][bs_id]=[] 
+				ModelSpecies[id_]['bindingsites'].append(bs_id)
 			elif q.getBindingStatus() == 0:
-				ModelSpecies[id_]['wildcards'].append(q.getComponent())
+				ModelSpecies[id_]['wildcards'].append(bs_id)
+				#ModelSpecies[id_]['wildcards'].append((bs_id,bindingIDNameHash[bs_id]))
 		for q in speciesfeatures:
 			spfl = q.getListOfSpeciesFeatureValues()
 			ModelSpecies[id_]['features'].append([q.getSpeciesFeatureType(),spfl[0].getValue(),q.getComponent()])
 	Result = {'Molecules':Molecules,'Complexes':Complexes,'Species':ModelSpecies,'fullBindingSites':full_bindingSite}
+	PartialMolecule(ModelSpecies,Molecules,Complexes,full_bindingSite)
 	return Result
 	
 def parameterBlockString(model):

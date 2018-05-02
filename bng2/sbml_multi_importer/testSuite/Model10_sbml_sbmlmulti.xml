@@ -10,7 +10,7 @@
           <compartment id="cell" size="1" constant="true" multi:isType="false"/>
         </listOfCompartments>
             <listOfSpecies>
-         <species id="S1" hasOnlySubstanceUnits="false" initialConcentration="100" multi:speciesType="ST_M0" compartment="cell" name="A(a,b~0)" boundaryCondition="false" constant="false">
+         <species id="S1" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" initialConcentration="100" compartment="cell" name="A(a,b~0)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
            </multi:listOfOutwardBindingSites>
@@ -22,7 +22,7 @@
                  </multi:speciesFeature>
            </multi:listOfSpeciesFeatures>
          </species>
-         <species id="S2" multi:speciesType="ST_M0" initialConcentration="100" hasOnlySubstanceUnits="false" compartment="cell" name="A(a,b~p)" boundaryCondition="false" constant="false">
+         <species id="S2" hasOnlySubstanceUnits="false" initialConcentration="100" multi:speciesType="ST_M0" compartment="cell" name="A(a,b~p)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
            </multi:listOfOutwardBindingSites>

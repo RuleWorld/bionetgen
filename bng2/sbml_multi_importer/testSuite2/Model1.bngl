@@ -1,0 +1,27 @@
+#Simple bimolecular association. No symmetry
+begin model
+
+begin parameters
+k 1
+end parameters
+
+begin molecule types
+A(a,c~o~p)
+B(b,c~o~p)
+end molecule types
+
+begin seed species
+A(a,c~o) 100
+B(b,c~o) 50
+end seed species
+
+begin reaction rules
+A(a,c~o) + B(b,c~o) -> A(a!1,c~o).B(b!1,c~o) k
+A(a,c~p) + B(b,c~p) -> A(a!1,c~p).B(b,c~p!1) k
+end reaction rules
+
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+

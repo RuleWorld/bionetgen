@@ -107,7 +107,6 @@ def rxnstring(RL,res):
 	b = res['fullBindingSites']
 	result = PartialMolecule(s,m,c,b)
 	pm = result['pm']
-	print pm
 	pc = result['pc']
 	string_pm = toString(pm)
 	string_pc = Complex2String(pc)
@@ -177,7 +176,7 @@ def toString(Molecules):
 				m = m +j.keys()[0][1]
 				for fv in feature_values:
 					m = m + '~' +fv[1]
-				m = m+' '
+				m = m+','
 				flag = 1
 
 		if len(wc)>0:
@@ -211,7 +210,6 @@ def toString(Molecules):
 		else:
 			m = m[:-1]+')'
 		mol_string[i[0]] = m
-	#print mol_string
 	return mol_string
 
 def Mol2String(Molecules):
@@ -283,74 +281,57 @@ def Mol2String(Molecules):
 
 def Complex2String(complexes):
 	complex_string = {}
-	for i in complexes:
-		#print complexes[i]
+	for cmplex in complexes:
 		c = ''
-		#print complexes[i]
-		for j in complexes[i]['molecules']:
-			mname = toString(j).values()[0] #Participating molecule e.g.X(y,z)
-			#print mname
-			mol = j.keys()[0][1]
-			mol  = mol.replace('(','\(')
-			mol = mol.replace(')','\)') #Participating molecule name, e.g. X
+		for participating_mol in complexes[cmplex]['molecules']:
+			molecule_name = toString(participating_mol).values()[0] #Participating molecule e.g.X(y,z)
+			mol = participating_mol.keys()[0][1]#Participating molecule name, e.g. X
+			#mol  = mol.replace('(','\(')
+			#mol = mol.replace(')','\)') 
 			counter = 0
 			bondCounter = {}
-			for b in complexes[i]['bonds']:
-			#	print b
+			for b in complexes[cmplex]['bonds']: #iterate through bonds in complex 
+				#b is a list of the two binding sites ([site id, site name, parent ID]) in this bond. 
 				counter = counter + 1
-				st = [list(x.keys()[0]) for x in j[j.keys()[0]]['SpeciesTypes']]
-				bondCounter[(b[0][0],b[1][0])] = counter
-			#	print bondCounter				
-				for bond in b:
-				#	print [bond[0],bond[1]],'bond'
-					#print st,'st'
-					#print j.keys()[0][2],bond[2]
-					if [bond[0],bond[1]] in st and bond[2] == j.keys()[0][2]:
-						bst = bond[1]
-						#print 'here'
-						m = re.search(mol+'\(\s*'+bst+'\s*[\,\)]',mname) #e.g a in A(a, ...)
-
-						#print bst
-						#print mname
-						#print mol
-						if m==None: # e.g. b in A(a,b,...) or b in A(a,b)
-							m = re.search(mol+'\(.*\,\s*'+bst+'\s*[\,\)]',mname)
+				#get list of binding sites on participating molecule
+				st = [list(x.keys()[0]) for x in participating_mol[participating_mol.keys()[0]]['SpeciesTypes']]
+				bondCounter[(b[0][0],b[1][0])] = counter #key of the bondCounter dict is a tuple of binding site IDs			
+				for bindingsite in b:
+					#if the binding site is in the participating molecule binding site list
+					#and the parent ID matches the participating molecule ID
+					if [bindingsite[0],bindingsite[1]] in st and bindingsite[2] == participating_mol.keys()[0][2]:
+						bst = bindingsite[1] #get binding site name
+						#find the binding site name in the molecule name string
+						m = re.search(mol+'\(\s*'+bst+'\s*[\,\)]',molecule_name) #e.g a in A(a, ...) Instace of binding site such as molecule name ( white space binding site name white space either comma or )
+						if m==None: # e.g. b in A(a,b, or b in A(a,b)
+							m = re.search(mol+'\(.*\,\s*'+bst+'\s*[\,\)]',molecule_name)
 						if m!=None:
-							index = mname.find(m.group(0))+len(m.group(0))	
-							#print m.group(0)
-							#print index					
-							tmp = bondCounter.keys()
-							#print 'tmp',tmp
+							index = molecule_name.find(m.group(0))+len(m.group(0)) #find the index at which to insert the bond character					
+							tmp = bondCounter.keys() #binding sites in bond
 							ind = 1e29
 							for tmp1 in tmp:
-								if bond[0] == tmp1[0] or bond[0] == tmp1[1]:
-									ind = bondCounter[tmp1]
+								if bindingsite[0] == tmp1[0] or bindingsite[0] == tmp1[1]: #if the binding site is in the list of binding sites
+									ind = bondCounter[tmp1] #get the bond index
 									break
-							mname_new = mname[0:index-1]+'!'+str(ind)+mname[index-1:]
-							mname = mname_new
+							molecule_name_new = molecule_name[0:index-1]+'!'+str(ind)+molecule_name[index-1:]
+							molecule_name = molecule_name_new
 						else: #e.g. b in A(a,b~0~p)
-							m = re.search(mol+'\(\s*'+bst+'\s*\~\w+\s*[\,\)]',mname) #A(a~0)
+							m = re.search(mol+'\(\s*'+bst+'\s*\~\w+\s*[\,\)]',molecule_name) #A(a~0)
 							if m == None:
-								m = re.search(mol+'\(.*\,\s*'+bst+'\s*\~\w+\s*[\~,\)]',mname) #A(a,b~0)								
+								m = re.search(mol+'\(.*\,\s*'+bst+'\s*\~\w+\s*[\~,\)]',molecule_name) #A(a,b~0)								
 							if m != None:
-								#print m.group(0)
-								index = mname.find(m.group(0))+len(m.group(0))	
-								#print m.group(0)
-								#print index					
+								index = molecule_name.find(m.group(0))+len(m.group(0))					
 								tmp = bondCounter.keys()
-								#print 'tmp',tmp
 								ind = 1e29
 								for tmp1 in tmp:
-									if bond[0] == tmp1[0] or bond[0] == tmp1[1]:
+									if bindingsite[0] == tmp1[0] or bindingsite[0] == tmp1[1]:
 										ind = bondCounter[tmp1]
 										break
-								mname_new = mname[0:index-1]+'!'+str(ind)+mname[index-1:]
-								mname = mname_new							
-						#print mname
-
-			c = c+mname_new+'.'
+								molecule_name_new = molecule_name[0:index-1]+'!'+str(ind)+molecule_name[index-1:]
+								molecule_name = molecule_name_new	
+			c = c+molecule_name_new+'.'
 		c = c[:-1]
-		complex_string[i[0]] = c
+		complex_string[cmplex[0]] = c
 	return complex_string
 
 
@@ -360,9 +341,9 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 	partialMolecule = {}
 	partialComplex = {}
 	for i in Species.keys(): #This is the list of model species
-		st = Species[i]['speciesType']
+		st = Species[i]['speciesType'] #This 'speciesType' does not refer to binding sites!
 		f = Species[i]['features']
-		bs = Species[i]['bindingsites']
+		bs = Species[i]['bindingsites'] #These are free binding sites
 		wc = Species[i]['wildcards']
 		pf_id = [x[0] for x in f] #speciesFeatureType
 		pf_val_id = [x[1] for x in f] #speciesFeatureValue
@@ -371,10 +352,7 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 			key = Molecules.keys()[mind] #The molecule keys are (id,name) pairs
 			pname = (i,key[1]) #Species ID, Molecule Name
 			partialMolecule[pname] = {'SpeciesTypes' : [], 'FeatureTypes':{},'wildcards': []} #Define the partial molecule with free binding sites, features and wild cards
-			for wc_index in wc:
-				wc_instance = [{x:full_bindingSite[x]} for x in full_bindingSite.keys() if x[0] == wc_index]
-				partialMolecule[pname]['wildcards'].append(wc_instance[0])
-
+			#Features
 			full_molecule = Molecules[key]
 			full_features = full_molecule['FeatureTypes']
 			for ff in full_features.keys(): #Complete feature list
@@ -384,167 +362,190 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 					for j in fval:
 						if j[0] in pf_val_id:
 							partialMolecule[pname]['FeatureTypes'][ff] = j
+			#Free binding sites
 			full_binding = full_molecule['SpeciesTypes']
-			for binding in full_binding:
+			for binding in full_binding: #Go through free binding sites in the full molecule
 				site = {}
-				if binding.keys()[0][0] in bs:
-					site[binding.keys()[0]] = {}
-					if len(binding[binding.keys()[0]])>0:
-						f_bs = binding[binding.keys()[0]].keys()[0]
-						site[binding.keys()[0]][f_bs] = []
-						if f_bs in pf_id:
-							index = pf_id.index(f_bs)
-							fvals_bs = [x for x in binding[binding.keys()[0]][f[index][0]] if x[0] ==f[index][1]]
+				if binding.keys()[0][0] in bs: #if the binding site ID (binding.keys()[0][0]) is in the list of binding site IDs for the species
+					site[binding.keys()[0]] = {} #define the binding site dictionary with the ID,Name tuple as key
+					if len(binding[binding.keys()[0]])>0: #If the binding site in the full molecule has features
+						f_bs = binding[binding.keys()[0]].keys()[0] #f_bs is the feature ID of the full molecule feature #CHECK can there be >1
+						site[binding.keys()[0]][f_bs] = [] #Add this feature to the partial molecule
+						if f_bs in pf_id: #if the feature ID is in the list of feature IDs for the partial molecule
+							index = pf_id.index(f_bs) #find out where it is
+							#f is a list of [feature ID, feature value ID,component] lists
+							fvals_bs = [x for x in binding[binding.keys()[0]][f[index][0]] if x[0] ==f[index][1]] #Get the feature value in the full molecule corresponding to the right feature value ID
 							site[binding.keys()[0]][f_bs].append(fvals_bs[0])
 					partialMolecule[pname]['SpeciesTypes'].append(site)	
-		if st in complex_id:
-			#print "sp",Species[i]
+
+				elif binding.keys()[0][0] in wc:
+					site[binding.keys()[0]] = {} #define the wild card dictionary with the ID,Name tuple as key
+					if len(binding[binding.keys()[0]])>0: #If the binding site in the full molecule has features
+						f_bs = binding[binding.keys()[0]].keys()[0] #f_bs is the feature ID of the full molecule feature #CHECK can there be >1
+						site[binding.keys()[0]][f_bs] = [] #Add this feature to the partial molecule
+						if f_bs in pf_id: #if the feature ID is in the list of feature IDs for the partial molecule
+							index = pf_id.index(f_bs) #find out where it is
+							#f is a list of [feature ID, feature value ID,component] lists
+							fvals_bs = [x for x in binding[binding.keys()[0]][f[index][0]] if x[0] ==f[index][1]] #Get the feature value in the full molecule corresponding to the right feature value ID
+							site[binding.keys()[0]][f_bs].append(fvals_bs[0])
+					partialMolecule[pname]['wildcards'].append(site)	
+			'''
+			#Wild cards
+			for wc_index in wc:
+				wc_instance = [{x:full_bindingSite[x]} for x in full_bindingSite.keys() if x == wc_index]
+				partialMolecule[pname]['wildcards'].append(wc_instance[0])'''
+
+
+		if st in complex_id: #Find the full complex definition
 			cid = complex_id.index(st)
 			key = Complexes.keys()[cid]
-			cname = (i,key[1])
-			pmolecules = Complexes[key]['molecules']
-
-			pcomponents = Complexes[key]['components']
-			#print pcomponents,'PPPPPP'
-			component_names = [x[0] for x in pcomponents]
+			cname = (i,key[1]) 
+			pmolecules = Complexes[key]['molecules'] #Participating molecules in the full complex
+			pcomponents = Complexes[key]['components'] #Components are defined as a list of [component id, component name, parent iD] lists
+			component_ids = [x[0] for x in pcomponents]
 			#Go through participating molecules
 			wildcards = Species[i]['wildcards']
 			features = Species[i]['features']
-			bindingsites = Species[i]['bindingsites']
-			ft = [x[0] for x in features]
-			partialComplex[cname] = {'molecules':[],'bonds':[]}
 			bst = Species[i]['bindingsites']
+			ft = [x[0] for x in features]
+			partialComplex[cname] = {'molecules':[],'bonds':[]} #Construct partial complex definition based on partial molecule definitions		
 			bt = [x[0] for x in bst]			
 			bonds = Complexes[key]['bonds']
-			#print pmolecules
-			for j in pmolecules:
-				pid = mol_id.index(j[0])
-				#print j[0],'PPIIIIII'
-				molecule =  Molecules[Molecules.keys()[pid]]
-				#print "MOOL",molecule
+			for mol in pmolecules:
+				#Get full definition of participating molecule
+				pid = mol_id.index(mol[0])
+				full_molecule =  Molecules[Molecules.keys()[pid]]
+				#Construct the partial molecule
 				moleculeCopy = {}
-				moleculeCopy[tuple(j)] = {'SpeciesTypes':[],'FeatureTypes':{},'wildcards':[]}
-
+				moleculeCopy[tuple(mol)] = {'SpeciesTypes':[],'FeatureTypes':{},'wildcards':[]}
+				'''
 				for wc_index in wc:
 					if wc_index in component_names:
 						ti = component_names.index(wc_index)
 						if pcomponents[ti][2] == j[2]:
 							wc_instance = [{x:full_bindingSite[x]} for x in full_bindingSite.keys() if x[0] == pcomponents[ti][1]]					
-							moleculeCopy[tuple(j)]['wildcards'].append(wc_instance[0])
+							moleculeCopy[tuple(j)]['wildcards'].append(wc_instance)'''
 				#Edit the molecule based on features provided
-				mft =  [x[0] for x in molecule['FeatureTypes'].keys()]
-				mst = [x.keys()[0][0] for x in molecule['SpeciesTypes']]
-				for f in features:
+				mft =  [x[0] for x in full_molecule['FeatureTypes'].keys()] #Get features present in full molecule 
+				mst = [x.keys()[0][0] for x in full_molecule['SpeciesTypes']] # Get binding sites present in full molecule
+				for f in features: #iterate through complex instance features: [feature id, feature value ID, component] lists
+					#Go through the list of complex components and find the component that matches the feature component
+					#Basically finding the component on the complex that contains the feature
 					parent_id = [x[1] for x in pcomponents if x[0] ==f[2]]
-					if f[0] in mft and parent_id[0]==j[2]:
-						fid = mft.index(f[0])
-						sft = molecule['FeatureTypes'].keys()[fid]
-						fvalues = molecule['FeatureTypes'][sft]
-						fval = features[ft.index(f[0])][1]
-						newfval = [x for x in fvalues if x[0] == fval]
-						newfval = [x for x in fvalues if x[0] == f[1]]
-						moleculeCopy[tuple(j)]['FeatureTypes'][sft] = newfval[0]
-
-				for bond in bonds:
-					b1 = bond[0]
-					b2 = bond[1]
-				#	print b1,b2
-					if b1[0] in mst and b1[1]==j[2]:
+					#If the feature ID exists in the full molecule feature list, and the parent ID matches the molecule component 
+					if f[0] in mft and parent_id[0]==mol[2]:
+						fid = mft.index(f[0]) #get index of feature ID
+						#Get full feature definition (feature ID, feature name)
+						sft = full_molecule['FeatureTypes'].keys()[fid]
+						#Get possible feature values
+						fvalues = full_molecule['FeatureTypes'][sft]
+						#get feature value ID of this species
+						fval = f[1]
+						newfval = [x for x in fvalues if x[0] == fval] #newfval is the feature val ID, feature val name pair
+						moleculeCopy[tuple(mol)]['FeatureTypes'][sft] = newfval[0] #This [0] is only to get rid of an additional nesting layer
+				
+				for bond in bonds: #iterate through bonds in the full complex
+					b1 = bond[0] #component name, identifying parent
+					b2 = bond[1] #component name, identifying parent
+					#If the component matches something in the list of speciestypes in the participating molecule
+					#and the identifying parent is the ID of the participating molecule
+					if b1[0] in mst and b1[1]==mol[2]:
+						#find this binding site in the list of species type indices for the participating molecule
 						b_index = mst.index(b1[0])
-						full_site = molecule['SpeciesTypes'][b_index]
+						#get full site info
+						full_site = full_molecule['SpeciesTypes'][b_index]
 						site_name = full_site.keys()[0]
-				#		print site_name
 						#Check to see if the site has feature values
-						fs_fvals = full_site[full_site.keys()[0]]
-				#		print fs_fvals
+						fs_fvals = full_site[full_site.keys()[0]] #fullsite_featurevals
 						if len(fs_fvals)>0:
-							#Check for the parent molecule of the bond
-
-				#			print 'HERE1'
+							#Check for the parent molecule ID of the bond
 							bond_parent = b1[1]
 							#Check components corresponding to that parent
 							component_parent = [x[0] for x in pcomponents if x[2] == bond_parent]
-				#			print component_parent
 							#Check feature corresponding to this component
-				#			print features
 							feature_parent = [[x[0],x[1]] for x in features if x[2] in component_parent]
 							#These are the feature values we need to keep
-				#			print feature_parent,'fp'
 							fp_id = [x[0] for x in feature_parent]
-							#print fp_id
 							if fs_fvals.keys()[0] in fp_id:
-				#				print 'here',molecule['SpeciesTypes'][b_index]
 								site = {site_name:{fp_id[0]:{}}}
 								vals = fs_fvals.values()[0]
 								site[site_name][fp_id[0]] = [x for x in vals if x[0] == feature_parent[0][1]]
 						else:
 							site = {site_name:{}}
-
-					if b2[0] in mst and b2[1] ==j[2]:
-				#		print 'HERE'
+					
+					if b2[0] in mst and b2[1] ==mol[2]:
 						b_index = mst.index(b2[0])
-						full_site = molecule['SpeciesTypes'][b_index]
+						full_site = full_molecule['SpeciesTypes'][b_index]
 						site_name = full_site.keys()[0]
 						#Check to see if the site has feature values
 						fs_fvals = full_site[full_site.keys()[0]]
-				#		print fs_fvals
 						if len(fs_fvals)>0:
-							#Check for the parent molecule of the bond
+							#Check for the parent molecule of the binding site
 							bond_parent = b2[1]
 							#Check components corresponding to that parent
+							#x[2] is the identifying parent of the component
+							#x[0] is the component ID
 							component_parent = [x[0] for x in pcomponents if x[2] == bond_parent]
-				#			print component_parent
-							#Check feature corresponding to this component
-				#			print features
+							#Check features in the model species instance corresponding to this component
 							feature_parent = [[x[0],x[1]] for x in features if x[2] in component_parent]
 							#These are the feature values we need to keep
-							#print feature_parent,'fp'
-							fp_id = [x[0] for x in feature_parent]
-							#print fp_id
+							fp_id = [x[0] for x in feature_parent][0] #0 here is the remove extraneous nesting
 							if fs_fvals.keys()[0] in fp_id:
-				#				print molecule['SpeciesTypes'][b_index]
-								site = {site_name:{fp_id[0]:{}}}
-								vals = fs_fvals.values()[0]
-								site[site_name][fp_id[0]] = [x for x in vals if x[0] == feature_parent[0][1]]
+								site = {site_name:{fp_id:{}}}
+								vals = fs_fvals.values()[0] #0 here is the remove extraneous nesting
+								site[site_name][fp_id] = [x for x in vals if x[0] == feature_parent[0][1]] #feature parent [0][1] is the feature value ID
 						else:
 							site = {site_name:{}}
 					if b1[0] in mst or b2[0] in mst:
-
-				#		print 'site',site
-						if site not in moleculeCopy[tuple(j)]['SpeciesTypes']:
-							moleculeCopy[tuple(j)]['SpeciesTypes'].append(site)
-				#print moleculeCopy[tuple(j)]
+						#add the created site to the list of molecule species types
+						if site not in moleculeCopy[tuple(mol)]['SpeciesTypes']:
+							moleculeCopy[tuple(mol)]['SpeciesTypes'].append(site)
+				#outward binding sites. Binding sites not participating in bonds
 				for bt_instance in bst:
-					if bt_instance in component_names:
-						bt_index = component_names.index(bt_instance)
-						comp = pcomponents[bt_index][1]
-						if comp in mst:
+					if bt_instance in component_ids: #if the binding site is in the list of component ids for the full complex
+						bt_index = component_ids.index(bt_instance) #find its index
+						comp = pcomponents[bt_index][1] #get the component name
+						if comp in mst:#if the component name is a binding site of the full molecule 
 							mst_bt_index = mst.index(comp)
-							site = molecule['SpeciesTypes'][mst_bt_index]
-							if site not in moleculeCopy[tuple(j)]['SpeciesTypes']:
-								moleculeCopy[tuple(j)]['SpeciesTypes'].append(site)
-				#				print site
+							#need to identify features of the site
+							full_site = full_molecule['SpeciesTypes'][mst_bt_index] #get the full site definition
+							site_name = full_site.keys()[0]
+							#Check to see if the site has feature values
+							fs_fvals = full_site[full_site.keys()[0]]
+							if len(fs_fvals)>0:
+								component_parent = bt_instance
+								#Check features in the model species instance corresponding to this component
+								feature_parent = [[x[0],x[1]] for x in features if x[2] in component_parent]
+								fp_id = [x[0] for x in feature_parent][0] #0 here is the remove extraneous nesting
+								if fs_fvals.keys()[0] in fp_id:
+									site = {site_name:{fp_id:{}}}
+									vals = fs_fvals.values()[0] #0 here is the remove extraneous nesting
+									site[site_name][fp_id] = [x for x in vals if x[0] == feature_parent[0][1]] #feature parent [0][1] is the feature value ID
+							else:
+								site = {site_name:{}}
+							if site not in moleculeCopy[tuple(mol)]['SpeciesTypes']: #append the site to the list of species types
+								moleculeCopy[tuple(mol)]['SpeciesTypes'].append(site)
 				partialComplex[cname]['molecules'].append(moleculeCopy)
-
 			for bond in bonds:
 				b1 = bond[0]
 				b2 = bond[1]
-				tmp = []
-				for j in pmolecules:
-					pid = mol_id.index(j[0])
-					molecule =  Molecules[Molecules.keys()[pid]]
-					mst = [x.keys()[0][0] for x in molecule['SpeciesTypes']]
-					if b1[0] in mst and b1[1]==j[2]:
+				tmp = [] #list of binding sites (id,name) pairs involved in the bond
+				for mol in pmolecules: #go through participating molecules
+					pid = mol_id.index(mol[0]) #index of participating molecule
+					full_molecule =  Molecules[Molecules.keys()[pid]]
+					mst = [x.keys()[0][0] for x in full_molecule['SpeciesTypes']] #get list of species type IDs for participating molecule
+					#if the binding site is in the participating molecule (b1[0] in mst) and the identifying parent matches the participating molecule ID
+					if b1[0] in mst and b1[1]==mol[2]:
 						b_index = mst.index(b1[0])
-						site = list(copy.copy(molecule['SpeciesTypes'][b_index]).keys()[0])
-						site.append(b1[1])
-					if b2[0] in mst and b2[1] == j[2]:
+						#get the site, i.e. the (binding site ID,name) pair as a list
+						site = list(copy.copy(full_molecule['SpeciesTypes'][b_index]).keys()[0])
+						site.append(b1[1]) #append the identifying parent ID
+					if b2[0] in mst and b2[1] == mol[2]:
 						b_index = mst.index(b2[0])
-						site = list(copy.copy(molecule['SpeciesTypes'][b_index]).keys()[0])
+						site = list(copy.copy(full_molecule['SpeciesTypes'][b_index]).keys()[0])
 						site.append(b2[1])
 					if (b1[0] in mst or b2[0] in mst) and site not in tmp:
 						tmp.append(site)
-
 				partialComplex[cname]['bonds'].append(tmp)
 	return {'pm':partialMolecule,'pc':partialComplex}
 	

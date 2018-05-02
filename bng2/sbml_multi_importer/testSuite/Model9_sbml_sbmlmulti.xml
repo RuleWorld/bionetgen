@@ -16,17 +16,17 @@
           <compartment id="cell" size="1" constant="true" multi:isType="false"/>
         </listOfCompartments>
             <listOfSpecies>
-         <species id="S1" multi:speciesType="ST_M0" initialConcentration="100" hasOnlySubstanceUnits="false" compartment="cell" name="A(a)" boundaryCondition="false" constant="false">
+         <species id="S1" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" initialConcentration="100" compartment="cell" name="A(a)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
            </multi:listOfOutwardBindingSites>
          </species>
-         <species id="S2" multi:speciesType="ST_M2" initialConcentration="50" hasOnlySubstanceUnits="false" compartment="cell" name="B(b)" boundaryCondition="false" constant="false">
+         <species id="S2" initialConcentration="50" multi:speciesType="ST_M2" hasOnlySubstanceUnits="false" compartment="cell" name="B(b)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M2_C1"/>
            </multi:listOfOutwardBindingSites>
          </species>
-         <species id="S3" hasOnlySubstanceUnits="false" initialConcentration="0" multi:speciesType="ST3" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
+         <species id="S3" initialConcentration="0" multi:speciesType="ST3" hasOnlySubstanceUnits="false" compartment="cell" name="A(a!1).B(b!1)" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
 <listOfRules>
       <!-- Observables -->
@@ -106,10 +106,10 @@
            <multi:speciesTypeInstance multi:id="ST3_M2" multi:name="B" multi:speciesType="ST_M2"/>
          </multi:listOfSpeciesTypeInstances>
     <multi:listOfSpeciesTypeComponentIndexes>
-         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1" multi:component="ST3_M1"/>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2" multi:component="ST3_M2"/>
-         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST3_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1" multi:component="ST3_M1"/>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M2_C1" multi:component="ST_M2_C1" multi:identifyingParent="ST3_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST3_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST3_M1"/>
     </multi:listOfSpeciesTypeComponentIndexes>
          <multi:listOfInSpeciesTypeBonds>
            <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST3_M1_C1" multi:bindingSite2="cmp_ST3_M2_C1"/>

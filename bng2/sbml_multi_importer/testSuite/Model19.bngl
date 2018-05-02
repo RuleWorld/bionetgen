@@ -1,0 +1,27 @@
+#Testing Wild cards
+
+begin model
+begin parameters
+k1 1
+k2 2
+end parameters
+
+begin molecule types
+A(a)
+B(b,d)
+end molecule types
+
+begin seed species
+A(a) 100
+B(b,d) 50
+end seed species
+
+begin reaction rules
+A(a) + B(b) -> A(a!1).B(b!1) k1
+B(b!+,d) -> 0 k2
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+

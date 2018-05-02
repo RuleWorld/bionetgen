@@ -10,7 +10,7 @@
           <compartment id="cell" size="1" constant="true" multi:isType="false"/>
         </listOfCompartments>
             <listOfSpecies>
-         <species id="S1" hasOnlySubstanceUnits="false" multi:speciesType="ST_M0" initialConcentration="100" compartment="cell" name="A(b~0)" boundaryCondition="false" constant="false">
+         <species id="S1" initialConcentration="100" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" compartment="cell" name="A(b~0)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
            </multi:listOfOutwardBindingSites>
@@ -22,7 +22,7 @@
                  </multi:speciesFeature>
            </multi:listOfSpeciesFeatures>
          </species>
-         <species id="S2" hasOnlySubstanceUnits="false" initialConcentration="100" multi:speciesType="ST_M0" compartment="cell" name="A(b~p)" boundaryCondition="false" constant="false">
+         <species id="S2" initialConcentration="100" hasOnlySubstanceUnits="false" multi:speciesType="ST_M0" compartment="cell" name="A(b~p)" boundaryCondition="false" constant="false">
            <multi:listOfOutwardBindingSites>
                  <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
            </multi:listOfOutwardBindingSites>
@@ -34,7 +34,7 @@
                  </multi:speciesFeature>
            </multi:listOfSpeciesFeatures>
          </species>
-         <species id="S3" hasOnlySubstanceUnits="false" multi:speciesType="ST2" initialConcentration="0" compartment="cell" name="A(b~p!1).A(b~0!1)" boundaryCondition="false" constant="false">
+         <species id="S3" initialConcentration="0" multi:speciesType="ST2" hasOnlySubstanceUnits="false" compartment="cell" name="A(b~p!1).A(b~0!1)" boundaryCondition="false" constant="false">
            <multi:listOfSpeciesFeatures>
                  <multi:speciesFeature id="S3_M1_C1" multi:speciesFeatureType="ST_M0_C1_ft" multi:occur="1" multi:component="cmp_ST2_M1_C1">
                    <multi:listOfSpeciesFeatureValues>
@@ -84,8 +84,8 @@
     <multi:listOfSpeciesTypeComponentIndexes>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M1" multi:component="ST2_M1"/>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M2" multi:component="ST2_M2"/>
-         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M2_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST2_M2"/>
          <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST2_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M2_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST2_M2"/>
     </multi:listOfSpeciesTypeComponentIndexes>
          <multi:listOfInSpeciesTypeBonds>
            <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST2_M1_C1" multi:bindingSite2="cmp_ST2_M2_C1"/>
