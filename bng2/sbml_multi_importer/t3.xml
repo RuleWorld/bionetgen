@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">
+  <model>
+    <listOfUnitDefinitions>
+      <unitDefinition id="micron_square_per_sec">
+        <listOfUnits>
+          <unit kind="metre" exponent="2" scale="-6" multiplier="1"/>
+          <unit kind="second" exponent="-1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="per_sec">
+        <listOfUnits>
+          <unit kind="second" exponent="-1" scale="0" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment id="free_diffusing" name="free diffusing" spatialDimensions="3" constant="true" multi:isType="true"/>
+      <compartment id="any" name="any" constant="true" multi:isType="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="cpx_000001" name="A.A_1" compartment="any" hasOnlySubstanceUnits="true" boundaryCondition="true" constant="false" multi:speciesType="cps_000001">
+        <multi:listOfSpeciesFeatures>
+          <multi:speciesFeature multi:speciesFeatureType="mcp_000001_f" multi:occur="1" multi:component="stci_cps_000001_2_mol_000001_mcp_000001">
+            <multi:listOfSpeciesFeatureValues>
+              <multi:speciesFeatureValue multi:value="mcp_000001_f_off"/>
+            </multi:listOfSpeciesFeatureValues>
+          </multi:speciesFeature>
+        </multi:listOfSpeciesFeatures>
+      </species>
+      <species id="cpx_000002" name="A.A_2" compartment="any" hasOnlySubstanceUnits="true" boundaryCondition="true" constant="false" multi:speciesType="cps_000001">
+        <multi:listOfSpeciesFeatures>
+          <multi:speciesFeature multi:speciesFeatureType="mcp_000001_f" multi:occur="1" multi:component="stci_cps_000001_2_mol_000001_mcp_000001">
+            <multi:listOfSpeciesFeatureValues>
+              <multi:speciesFeatureValue multi:value="mcp_000001_f_on"/>
+            </multi:listOfSpeciesFeatureValues>
+          </multi:speciesFeature>
+        </multi:listOfSpeciesFeatures>
+      </species>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="par_1" value="100" units="micron_square_per_sec" constant="true"/>
+    </listOfParameters>
+    <listOfReactions>
+      <reaction id="trn_000001" name="[A.A_1]-transform" reversible="false" fast="false">
+        <listOfReactants>
+          <speciesReference id="spr_cpx_000001" species="cpx_000001" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="cpx_000002" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="spr_cpx_000001" multi:reactantComponent="stci_cps_000001_1_mol_000001" multi:productComponent="stci_cps_000001_1_mol_000001"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="spr_cpx_000001" multi:reactantComponent="stci_cps_000001_2_mol_000001" multi:productComponent="stci_cps_000001_2_mol_000001"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k </ci>
+              <ci> cpx_000001 </ci>
+            </apply>
+          </math>
+          <listOfLocalParameters>
+            <localParameter id="k" value="4" units="per_sec"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <multi:listOfSpeciesTypes>
+      <multi:speciesType multi:id="mol_000001" multi:name="A" multi:compartment="free_diffusing">
+        <annotation>diffusionCoefficient:par_1</annotation>
+        <multi:listOfSpeciesTypeInstances>
+          <multi:speciesTypeInstance multi:id="sti_mcp_000001" multi:name="A" multi:speciesType="mcp_000001"/>
+        </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:speciesType multi:id="mcp_000001" multi:name="A" multi:compartment="free_diffusing">
+        <multi:listOfSpeciesFeatureTypes>
+          <multi:speciesFeatureType multi:id="mcp_000001_f" multi:name="f" multi:occur="1">
+            <multi:listOfPossibleSpeciesFeatureValues>
+              <multi:possibleSpeciesFeatureValue multi:id="mcp_000001_f_on" multi:name="on"/>
+              <multi:possibleSpeciesFeatureValue multi:id="mcp_000001_f_off" multi:name="off"/>
+            </multi:listOfPossibleSpeciesFeatureValues>
+          </multi:speciesFeatureType>
+        </multi:listOfSpeciesFeatureTypes>
+        <multi:listOfSpeciesTypeInstances>
+          <multi:speciesTypeInstance multi:id="sti_bst_000001" multi:name="b" multi:speciesType="bst_000001"/>
+        </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="bst_000001" multi:name="b"/>
+      <multi:speciesType multi:id="cps_000001" multi:name="A.A">
+        <multi:listOfSpeciesTypeInstances>
+          <multi:speciesTypeInstance multi:id="sti_cps_000001_1_mol_000001" multi:name="A" multi:speciesType="mol_000001"/>
+          <multi:speciesTypeInstance multi:id="sti_cps_000001_2_mol_000001" multi:name="A" multi:speciesType="mol_000001"/>
+        </multi:listOfSpeciesTypeInstances>
+        <multi:listOfSpeciesTypeComponentIndexes>
+          <multi:speciesTypeComponentIndex multi:id="stci_cps_000001_1_mol_000001" multi:component="mol_000001"/>
+          <multi:speciesTypeComponentIndex multi:id="stci_cps_000001_1_mol_000001_mcp_000001" multi:component="mcp_000001" multi:identifyingParent="sti_cps_000001_1_mol_000001"/>
+          <multi:speciesTypeComponentIndex multi:id="stci_cps_000001_1_mol_000001_bst_000001" multi:component="bst_000001" multi:identifyingParent="sti_cps_000001_1_mol_000001"/>
+          <multi:speciesTypeComponentIndex multi:id="stci_cps_000001_2_mol_000001" multi:component="mol_000001"/>
+          <multi:speciesTypeComponentIndex multi:id="stci_cps_000001_2_mol_000001_mcp_000001" multi:component="mcp_000001" multi:identifyingParent="sti_cps_000001_2_mol_000001"/>
+          <multi:speciesTypeComponentIndex multi:id="stci_cps_000001_2_mol_000001_bst_000001" multi:component="bst_000001" multi:identifyingParent="sti_cps_000001_2_mol_000001"/>
+        </multi:listOfSpeciesTypeComponentIndexes>
+        <multi:listOfInSpeciesTypeBonds>
+          <multi:inSpeciesTypeBond multi:bindingSite1="stci_cps_000001_2_mol_000001_bst_000001" multi:bindingSite2="stci_cps_000001_1_mol_000001_bst_000001"/>
+        </multi:listOfInSpeciesTypeBonds>
+      </multi:speciesType>
+    </multi:listOfSpeciesTypes>
+  </model>
+</sbml>

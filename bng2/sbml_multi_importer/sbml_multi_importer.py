@@ -5,7 +5,7 @@ import os.path
 import copy
 from libsbml import *
 from sbml_multi_aux import *
-
+import math 
 def SpeciesTypes(mplugin,model):
 	speciesTypes = mplugin.getListOfMultiSpeciesTypes()
 	s =  speciesTypes[0]
@@ -142,7 +142,10 @@ def SpeciesTypes(mplugin,model):
 	for sp in speciesList:
 		sp_plugin = sp.getPlugin('multi')
 		id_ = sp.getId()
-		ModelSpecies[id_] = {'name':sp.name,'speciesType':sp_plugin.getSpeciesType(),'bindingsites':[],'features':[],'wildcards':[],'ic':sp.getInitialConcentration()}
+		ic = sp.getInitialConcentration()
+		if math.isnan(ic):
+			ic = 0
+		ModelSpecies[id_] = {'name':sp.name,'speciesType':sp_plugin.getSpeciesType(),'bindingsites':[],'features':[],'wildcards':[],'ic':ic}
 		outwardbindingsites = sp_plugin.getListOfOutwardBindingSites()
 		speciesfeatures = sp_plugin.getListOfSpeciesFeatures()
 		#outward binding sites are binding sites not involved in in species bonds.
