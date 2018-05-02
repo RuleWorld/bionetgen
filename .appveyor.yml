@@ -47,6 +47,7 @@ build_script:
   - git submodule update
   - cd ./bng2
   - mkdir bin
+
   # build atomizer
   - cd ./atomizer/SBMLparser
   - "%PYTHON%\\python.exe -m pip install --user -r ./requirements_win.txt"
@@ -54,23 +55,21 @@ build_script:
   - "%PYTHON%\\python.exe -m PyInstaller ./sbmlTranslator.spec"
   - mv ./dist/sbmlTranslator.exe ../../bin
   - cd ../..
+
   # build nfsim
   - cd ./nfsim_src
   - mkdir build
-
   # build the 32bit nfsim executable
   - if "%platform%"=="x86" ( move CMakeLists.txt      CMakeLists.x64.txt )
   - if "%platform%"=="x86" ( copy CMakeLists.x86.txt  .\CMakeLists.txt )
   - if "%platform%"=="x86" ( cd build )
   - if "%platform%"=="x86" ( copy C:\cygwin\bin\gcc.exe C:\cygwin\bin\cc.exe )
-  
   # build the 64bit nfsim executable
   - if "%platform%"=="x64" ( cd build )
   - if "%platform%"=="x64" ( copy C:\cygwin64\bin\gcc.exe C:\cygwin64\bin\cc.exe )
-
   - cmake -G "Ninja" ..
   - ninja
-  - copy NFsim.exe ../../bin
+  - cp NFsim.exe ..\..\bin
   - cd ../..
   - cmd: ECHO %PATH% 
   - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive --bindir ./bin 
