@@ -38,6 +38,7 @@ install:
   - if "%builder%"=="cygwin" ( if "%platform%"=="x64"  ( C:\cygwin64\setup-x86_64.exe -qnNdO -R C:/cygwin64 -s http://cygwin.mirror.constant.com -l C:/cygwin64/var/cache/setup -P openssl-devel -P libiodbc-devel -P libiodbc2 -P odbc-mysql -P odbc-pgsql -P odbc-sqlite3 -P libmysqlclient-devel -P libsqlite3-devel -P libcrypt-devel -P zip))
   - if "%builder%"=="cygwin" ( if "%platform%"=="x86"  ( set "PATH=C:\cygwin\bin;%PATH%"   ; set "TRAVIS_OS_NAME=Win32" ))
   - if "%builder%"=="cygwin" ( if "%platform%"=="x64"  ( set "PATH=C:\cygwin64\bin;%PATH%" ; set "TRAVIS_OS_NAME=Win64"  ))
+  - choco install -r -y ninja
   - cmd: ECHO %PATH% 
 
 
@@ -46,12 +47,32 @@ build_script:
   - git submodule update
   - cd ./bng2
   - mkdir bin
+  # build atomizer
   - cd ./atomizer/SBMLparser
   - "%PYTHON%\\python.exe -m pip install --user -r ./requirements_win.txt"
   - "%PYTHON%\\python.exe -m pip install --target=. python-libsbml"
   - "%PYTHON%\\python.exe -m PyInstaller ./sbmlTranslator.spec"
   - mv ./dist/sbmlTranslator.exe ../../bin
   - cd ../..
+  # build nfsim
+  - cd ./nfsim_src
+  - mkdir build
+
+  # build the 32bit nfsim executable
+  - if "%platform%"=="x86" ( move CMakeLists.txt      CMakeLists.x64.txt )
+  - if "%platform%"=="x86" ( copy CMakeLists.x86.txt  .\CMakeLists.txt )
+  - if "%platform%"=="x86" ( cd build )
+  - if "%platform%"=="x86" ( copy C:\cygwin\bin\gcc.exe C:\cygwin\bin\cc.exe )
+  
+  # build the 64bit nfsim executable
+  - if "%platform%"=="x64" ( cd build )
+  - if "%platform%"=="x64" ( copy C:\cygwin64\bin\gcc.exe C:\cygwin64\bin\cc.exe )
+
+  - cmake -G "Ninja" ..
+  - ninja
+  - copy NFsim.exe ../../bin
+  - cd ../..
+  - cmd: ECHO %PATH% 
   - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive --bindir ./bin 
   - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-win-%platform%.tar.gz"
 
