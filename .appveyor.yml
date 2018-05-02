@@ -2,8 +2,6 @@ os: unstable
 
 environment:
   PYTHON: "C:\\Python36-x64"
-  ftp_password:
-    secure: K22E4pSAup6/htlGmoSBMw==
   matrix:
 
     - builder: cygwin
@@ -55,20 +53,24 @@ build_script:
   - mv ./dist/sbmlTranslator.exe ../../bin
   - cd ../..
   - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive --bindir ./bin 
+  - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-win-%platform%.tar.gz"
 
 artifacts:
   - path: ./bng2/BioNetGen-2.3.2.tar.gz
     name: bionetgen
 
 deploy:
-- provider: BinTray
-  username: jczech
-  api_key:
-    secure: XzrXGPWsRRrx8DZTJSNJpLkMZrxlXF2vdeao4CCBiXUtKBuxR7Nj2CQIBy3L3bSB
-  subject: jczech
-  repo: bionetgen
-  package: bionetgen
-  publish: true
-  override: true
-  artifact: bionetgen
+  - provider: BinTray
+    username: jczech
+    subject: jczech
+    api_key:
+      # api key from https://bintray.com/profile/edit
+      # encrypted in https://ci.appveyor.com/tools/encrypt
+      secure: XzrXGPWsRRrx8DZTJSNJpLkMZrxlXF2vdeao4CCBiXUtKBuxR7Nj2CQIBy3L3bSB
+    repo: bionetgen
+    package: bionetgen
+    version: 1.0
+    artifact: bionetgen
+    publish: true
+    override: true
 
