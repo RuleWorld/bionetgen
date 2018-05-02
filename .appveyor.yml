@@ -56,7 +56,7 @@ build_script:
   - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-win-%platform%.tar.gz"
 
 artifacts:
-  - path: ./bng2/BioNetGen-2.3.2.tar.gz
+  - path: "./bng2/BioNetGen-2.3.2-win-%platform%.tar.gz"
     name: bionetgen
 
 deploy:
