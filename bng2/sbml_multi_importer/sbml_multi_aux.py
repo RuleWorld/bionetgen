@@ -56,6 +56,7 @@ def Reactions(model):
 	parameters = {}
 	nrxns = len(rxns)	
 	ReactionList = []
+	localparlist = []
 	for i in range(0,nrxns):
 		tmp = {}
 		rxn = rxns[i]
@@ -72,7 +73,10 @@ def Reactions(model):
 			tmp['reactants'].append(reactant.getSpecies())
 		for product in lprod:
 			tmp['products'].append(product.getSpecies())
-		''' FIX
+		localpar = klaw.getListOfLocalParameters()
+		for p in localpar:
+			localparlist.append([p.getId(),p.getValue()])
+		'''
 		flag = 0
 		for j in rxn:
 			elif j.tag == prefix+'kineticLaw':
@@ -80,8 +84,8 @@ def Reactions(model):
 					if k.tag == prefix+'listOfLocalParameters':
 						flag = 1
 						for q in k:
-							tmp['full_parameters'].append({dict(q.attrib)['id']:dict(q.attrib)['value']})
-		'''
+							tmp['full_parameters'].append({dict(q.attrib)['id']:dict(q.attrib)['value']})'''
+		
 		'''
 		if flag == 0:
 			for j in rxn:
@@ -580,9 +584,21 @@ def SeedSpeciesString(s,m,c,b):
 
 def parameterBlockString(model):
 	pblock = 'begin parameters\n'
+
+	rxns = model.getListOfReactions()
+	nrxns = len(rxns)	
+	localparlist = []
+	for i in range(0,nrxns):
+		rxn = rxns[i]
+		klaw = rxn.getKineticLaw()
+		localpar = klaw.getListOfLocalParameters()
+		for p in localpar:
+			localparlist.append([p.getId(),p.getValue()])		
 	plist = model.getListOfParameters()
 	for i in plist:
 		pblock = pblock + i.id +'\t'+str(i.value)+'\n'
+	for i in localparlist:
+		pblock = pblock + i[0]+'\t'+str(i[1])+'\n'
 	pblock = pblock + 'end parameters\n'
 	return {'pblock':pblock,'plist':plist}
 

@@ -164,7 +164,7 @@ def SpeciesTypes(mplugin,model):
 	PartialMolecule(ModelSpecies,Molecules,Complexes,full_bindingSite)
 	return Result
 	
-def parameterBlockString(model):
+def parameterBlockString(model,localpar):
 	pblock = 'begin parameters\n'
 	plist = model.getListOfParameters()
 	for i in plist:
