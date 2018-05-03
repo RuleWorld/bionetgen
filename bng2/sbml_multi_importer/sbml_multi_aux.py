@@ -401,24 +401,28 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 
 
 		if st in complex_id: #Find the full complex definition
+			print st
 			cid = complex_id.index(st)
 			key = Complexes.keys()[cid]
 			cname = (i,key[1]) 
-			pmolecules = Complexes[key]['molecules'] #Participating molecules in the full complex
+			pmolecules = Complexes[key]['molecules'] #Participating molecules in the full complex [species type, name, ID]
 			pcomponents = Complexes[key]['components'] #Components are defined as a list of [component id, component name, parent iD] lists
 			component_ids = [x[0] for x in pcomponents]
 			#Go through participating molecules
 			wildcards = Species[i]['wildcards']
-			features = Species[i]['features']
+			features = Species[i]['features'] #a feature is [feature ID, feature value ID, component]
 			bst = Species[i]['bindingsites']
 			ft = [x[0] for x in features]
 			partialComplex[cname] = {'molecules':[],'bonds':[]} #Construct partial complex definition based on partial molecule definitions		
 			bt = [x[0] for x in bst]			
 			bonds = Complexes[key]['bonds']
+			print "FEATURES",features
 			for mol in pmolecules:
+				print "\n\nMOL",mol
 				#Get full definition of participating molecule
 				pid = mol_id.index(mol[0])
 				full_molecule =  Molecules[Molecules.keys()[pid]]
+				print full_molecule
 				#Construct the partial molecule
 				moleculeCopy = {}
 				moleculeCopy[tuple(mol)] = {'SpeciesTypes':[],'FeatureTypes':{},'wildcards':[]}
@@ -435,9 +439,17 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 				for f in features: #iterate through complex instance features: [feature id, feature value ID, component] lists
 					#Go through the list of complex components and find the component that matches the feature component
 					#Basically finding the component on the complex that contains the feature
+					#print f
+					#print mft
+					print "F2",f[2]
 					parent_id = [x[1] for x in pcomponents if x[0] ==f[2]]
+					#print "PID",parent_id,mol[2]
 					#If the feature ID exists in the full molecule feature list, and the parent ID matches the molecule component 
-					if f[0] in mft and parent_id[0]==mol[2]:
+					print "parent ID",parent_id
+					print mol[2]
+					if f[0] in mft: #and parent_id[0]==mol[2]: CHECK to make sure you don't need this check!!
+						print "reached"
+						#print "FID",fid
 						fid = mft.index(f[0]) #get index of feature ID
 						#Get full feature definition (feature ID, feature name)
 						sft = full_molecule['FeatureTypes'].keys()[fid]
@@ -551,6 +563,8 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 					if (b1[0] in mst or b2[0] in mst) and site not in tmp:
 						tmp.append(site)
 				partialComplex[cname]['bonds'].append(tmp)
+	#print partialComplex,"\n\n"
+	print Complex2String(partialComplex)
 	return {'pm':partialMolecule,'pc':partialComplex}
 	
 def MolTypesString(m):
@@ -584,7 +598,6 @@ def SeedSpeciesString(s,m,c,b):
 
 def parameterBlockString(model):
 	pblock = 'begin parameters\n'
-
 	rxns = model.getListOfReactions()
 	nrxns = len(rxns)	
 	localparlist = []
