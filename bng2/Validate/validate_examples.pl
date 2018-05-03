@@ -682,6 +682,7 @@ sub run_BNG
     my $flags      = shift @_;
     
     my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file, @$flags );
+    print @command;
     
     my $exit_status = run_command( $log, \*STDOUT, @command );
     unless ( $exit_status==0 )
@@ -691,6 +692,7 @@ sub run_BNG
         print "see $log_file for more details.\n";
         ++$fail_count;
         close $log;
+        system( "cat", $log_file );
         next MODEL;
     }
 }
