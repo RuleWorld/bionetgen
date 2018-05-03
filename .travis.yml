@@ -35,9 +35,11 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python; fi
   - make sbmlTranslator
   # build final distribution and validate
-  - perl make_dist.pl --build --validate  --bindir ./bin --archive
+  - perl make_dist.pl --build --bindir ./bin --archive
   - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-${TRAVIS_OS_NAME}.tar.gz"
-  - cd ..
+  - cd Validate
+  - perl validate_examples.pl
+  - cd ../..
 
 deploy:
   provider: bintray
