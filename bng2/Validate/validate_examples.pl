@@ -118,7 +118,10 @@ my $pvalue = 0.01;
 # try to validate NFsim?                  
 my $check_nfsim = 1;
 # try to validate SBMLtranslator?   
-my $check_atomizer = 1;
+# The atomizer checks are currently too aggressive, because they mark a test as
+# failing even when the only difference is a time stamp at the top of the file
+# or the ordering of species definitions.
+my $check_atomizer = 0;
 
 # arguments for BNG
 my @bngargs = ();
@@ -682,7 +685,6 @@ sub run_BNG
     my $flags      = shift @_;
     
     my @command = ( $perlbin, $bngexec, @bngargs, "--outdir", $outdir, $model_file, @$flags );
-    print @command;
     
     my $exit_status = run_command( $log, \*STDOUT, @command );
     unless ( $exit_status==0 )
@@ -692,7 +694,6 @@ sub run_BNG
         print "see $log_file for more details.\n";
         ++$fail_count;
         close $log;
-        system( "cat", $log_file );
         next MODEL;
     }
 }
