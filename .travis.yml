@@ -37,9 +37,9 @@ script:
   # build final distribution and validate
   - perl make_dist.pl --build --bindir ./bin --archive
   - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-${TRAVIS_OS_NAME}.tar.gz"
-  - cd Validate
-  - perl validate_examples.pl --bngpath ../BioNetGen-2.3.2/
-  - cd ../..
+  - cd ./BioNetGen-2.3.2/Validate
+  - perl validate_examples.pl --bngpath ..
+  - cd ../../..
 
 deploy:
   provider: bintray
