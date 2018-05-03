@@ -1,4 +1,4 @@
-#Testing observables and functions
+#Testing Wild cards
 
 begin model
 begin parameters
@@ -8,26 +8,21 @@ end parameters
 
 begin molecule types
 A(a)
-B(b)
+B(b,d)
+C(c)
+D(d)
 end molecule types
-
-begin observables
-Molecules A A(a)
-Molecules B B(b)
-end observables
-
-begin functions
-rate() A+B
-end functions
 
 begin seed species
 A(a) 100
-B(b) 50
+B(b,d) 50
+C(c) 1000
 end seed species
 
 begin reaction rules
-A(a) + B(b) -> A(a!1).B(b!1) rate()
-A(a) -> 0 k1
+A(a) + B(b) -> A(a!1).B(b!1) k1
+C(c) + B(b) -> C(c!1).B(b!1) k1
+B(b!+,d) + D(d) -> B(b!+,d!1).D(d!1) k2
 end reaction rules
 end model
 

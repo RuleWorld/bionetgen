@@ -1,0 +1,18 @@
+begin model
+begin parameters
+k1	1.0
+end parameters
+
+begin molecule types 
+A(a,a)
+end molecule types 
+
+begin seed species
+A(a,a)	100.0
+end seed species 
+
+begin reaction rules 
+A(a,a) + A(a,a)  -> A(a!1,a).A(a!1,a) 	k1
+end reaction rules 
+
+end model

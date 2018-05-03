@@ -1,33 +1,21 @@
-#Testing observables and functions
+#Testing binding sites with features
 
 begin model
 begin parameters
 k1 1
-k2 2
 end parameters
 
 begin molecule types
-A(a)
-B(b)
+A(b~0~p)
 end molecule types
 
-begin observables
-Molecules A A(a)
-Molecules B B(b)
-end observables
-
-begin functions
-rate() A+B
-end functions
-
 begin seed species
-A(a) 100
-B(b) 50
+A(b~0) 100
+A(b~p) 100
 end seed species
 
 begin reaction rules
-A(a) + B(b) -> A(a!1).B(b!1) rate()
-A(a) -> 0 k1
+A(b~0) + A(b~p) -> A(b~0!1).A(b~p!1) k1
 end reaction rules
 end model
 

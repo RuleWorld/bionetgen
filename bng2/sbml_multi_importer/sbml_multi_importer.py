@@ -197,9 +197,9 @@ if __name__ == "__main__":
 	#RL = Reactions(model)
 	#rxnstring(RL,result)
 	bng = GetBNGFile(model,result)
-	#f = open(base[0]+'.bngl','w')
-	#f.write(bng)
-	#f.close()
+	f = open(base[0]+'.bngl','w')
+	f.write(bng)
+	f.close()
 	#print  MolTypesString(result['Molecules'])
 	#print SeedSpeciesString(result['Species'],result['Molecules'],result['Complexes'],result['fullBindingSites'])#PartialMolecule(result['Species'],result['Molecules'],result['Complexes'],result['fullBindingSites'])
 	#print mplugin.BindingSiteSpeciesType

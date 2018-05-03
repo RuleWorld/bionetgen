@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.3.2  -->
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:multi="http://www.sbml.org/sbml/level3/version1/multi/version1" level="3" version="1" multi:required="true">  
+  <model>
+    <listOfParameters>
+      <!-- Independent variables -->
+      <parameter id="k1" constant="false" value="1"/>
+    </listOfParameters>
+    <listOfCompartments>
+          <compartment id="cell" size="1" constant="true" multi:isType="false"/>
+        </listOfCompartments>
+            <listOfSpecies>
+         <species id="S1" multi:speciesType="ST_M0" hasOnlySubstanceUnits="false" initialConcentration="100" compartment="cell" name="A(a)" boundaryCondition="false" constant="false">
+           <multi:listOfOutwardBindingSites>
+                 <multi:outwardBindingSite multi:bindingStatus="unbound" multi:component="ST_M0_C1"/>
+           </multi:listOfOutwardBindingSites>
+         </species>
+         <species id="S2" multi:speciesType="ST2" hasOnlySubstanceUnits="false" initialConcentration="0" compartment="cell" name="A(a!1).A(a!1)" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="R1" reversible="false" fast="false" name="_R1:  A(a) + A(a) -> A(a!1).A(a!1)  k1">
+        <listOfReactants>
+          <speciesReference id="RR1_R1" species="S1" constant="false"/>
+          <speciesReference id="RR1_R2" species="S1" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference id="RR1_P1" species="S2" constant="false">
+            <multi:listOfSpeciesTypeComponentMapsInProduct>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R1" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST2_M1"/>
+              <multi:speciesTypeComponentMapInProduct multi:reactant="RR1_R2" multi:reactantComponent="ST_M0" multi:productComponent="cmp_ST2_M2"/>
+            </multi:listOfSpeciesTypeComponentMapsInProduct>
+          </speciesReference>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k1 </ci>
+              <ci> S1 </ci>
+              <ci> S1 </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <multi:listOfSpeciesTypes>
+<multi:speciesType multi:id="ST2"  multi:name="A(a!1).A(a!1)" multi:compartment="cell">
+         <multi:listOfSpeciesTypeInstances>
+           <multi:speciesTypeInstance multi:id="ST2_M1" multi:name="A" multi:speciesType="ST_M0"/>
+           <multi:speciesTypeInstance multi:id="ST2_M2" multi:name="A" multi:speciesType="ST_M0"/>
+         </multi:listOfSpeciesTypeInstances>
+    <multi:listOfSpeciesTypeComponentIndexes>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M1" multi:component="ST2_M1"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M2" multi:component="ST2_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M2_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST2_M2"/>
+         <multi:speciesTypeComponentIndex multi:id="cmp_ST2_M1_C1" multi:component="ST_M0_C1" multi:identifyingParent="ST2_M1"/>
+    </multi:listOfSpeciesTypeComponentIndexes>
+         <multi:listOfInSpeciesTypeBonds>
+           <multi:inSpeciesTypeBond multi:bindingSite1="cmp_ST2_M1_C1" multi:bindingSite2="cmp_ST2_M2_C1"/>
+         </multi:listOfInSpeciesTypeBonds>
+    </multi:speciesType>
+      <multi:speciesType multi:id="ST_M0" multi:name="A" multi:compartment="cell">
+      <multi:listOfSpeciesTypeInstances>
+         <multi:speciesTypeInstance multi:id="ST_M0_C1_ist" multi:name="a" multi:speciesType="ST_M0_C1"/>
+      </multi:listOfSpeciesTypeInstances>
+      </multi:speciesType>
+      <multi:bindingSiteSpeciesType multi:id="ST_M0_C1" multi:name="a"/>
+    </multi:listOfSpeciesTypes>
+  </model>
+</sbml>

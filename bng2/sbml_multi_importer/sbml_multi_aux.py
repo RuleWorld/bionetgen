@@ -16,6 +16,8 @@ def getRules(model,res):
 
 	rules = model.getListOfRules()
 	rulevar = []
+	flag_string_func = 0
+	flag_string_obsv = 0
 	for rule in rules:
 		rulevar.append(rule.variable)
 	functionstring = 'begin functions\n'
@@ -37,14 +39,20 @@ def getRules(model,res):
 					possible_observable.append(a.getName())
 		if flag==1:
 			functionstring = functionstring+rule.variable+'() '+rule.getFormula()+'\n'
+			flag_string_func = 1
 		elif flag==0:
 			#Some additional checks to make sure this is a bionetgen observable
 			if counter==1: #An observable formula should only have one variable (CHECK!)
 				observable_species = possible_observable[0]
 				if observable_species in pmstr.keys():
 					observablesstring = observablesstring+'Molecules '+rule.variable+' '+pmstr[observable_species]+'\n'
+					flag_string_obsv = 1
 	observablesstring = observablesstring + 'end observables\n'
 	functionstring = functionstring+'end functions\n'
+	if flag_string_obsv==0:
+		observablesstring = ''
+	if flag_string_func==0:
+		functionstring = ''
 	return {'functions':functionstring,'observables':observablesstring}
 
 def Reactions(model):
@@ -117,6 +125,7 @@ def rxnstring(RL,res):
 	reactantpatterns = []
 	productpatterns = []
 	reversible = []
+	flag = 0
 	for i in RL:
 		rpattern = []
 		ppattern = []	
@@ -140,6 +149,7 @@ def rxnstring(RL,res):
 		productpatterns.append(ppattern)
 	rxnstring = 'begin reaction rules \n'
 	for i in range(0,len(RL)):
+		flag = 1
 		if RL[i]['annotation'] == '':
 			RL[i]['annotation'] = 'R'+str(i)
 		for pattern in reactantpatterns[i]:
@@ -151,7 +161,9 @@ def rxnstring(RL,res):
 		for parameter in RL[i]['parameters']:
 			rxnstring = rxnstring+parameter+','
 		rxnstring = rxnstring[:-1]+'\n'
-	rxnstring = rxnstring+'end reaction rules \n'
+	rxnstring = rxnstring+'end reaction rules \n\n'
+	if flag==0:
+		rxnstring = ''
 	return rxnstring
 
 def toString(Molecules):
@@ -401,7 +413,7 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 
 
 		if st in complex_id: #Find the full complex definition
-			print st
+			#print st
 			cid = complex_id.index(st)
 			key = Complexes.keys()[cid]
 			cname = (i,key[1]) 
@@ -416,13 +428,13 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 			partialComplex[cname] = {'molecules':[],'bonds':[]} #Construct partial complex definition based on partial molecule definitions		
 			bt = [x[0] for x in bst]			
 			bonds = Complexes[key]['bonds']
-			print "FEATURES",features
+			#print "FEATURES",features
 			for mol in pmolecules:
-				print "\n\nMOL",mol
+				#print "\n\nMOL",mol
 				#Get full definition of participating molecule
 				pid = mol_id.index(mol[0])
 				full_molecule =  Molecules[Molecules.keys()[pid]]
-				print full_molecule
+				#print full_molecule
 				#Construct the partial molecule
 				moleculeCopy = {}
 				moleculeCopy[tuple(mol)] = {'SpeciesTypes':[],'FeatureTypes':{},'wildcards':[]}
@@ -441,14 +453,14 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 					#Basically finding the component on the complex that contains the feature
 					#print f
 					#print mft
-					print "F2",f[2]
+					#print "F2",f[2]
 					parent_id = [x[1] for x in pcomponents if x[0] ==f[2]]
 					#print "PID",parent_id,mol[2]
 					#If the feature ID exists in the full molecule feature list, and the parent ID matches the molecule component 
-					print "parent ID",parent_id
-					print mol[2]
+					#print "parent ID",parent_id
+					#print mol[2]
 					if f[0] in mft: #and parent_id[0]==mol[2]: CHECK to make sure you don't need this check!!
-						print "reached"
+						#print "reached"
 						#print "FID",fid
 						fid = mft.index(f[0]) #get index of feature ID
 						#Get full feature definition (feature ID, feature name)
@@ -564,7 +576,7 @@ def PartialMolecule(Species,Molecules,Complexes,full_bindingSite):
 						tmp.append(site)
 				partialComplex[cname]['bonds'].append(tmp)
 	#print partialComplex,"\n\n"
-	print Complex2String(partialComplex)
+	#print Complex2String(partialComplex)
 	return {'pm':partialMolecule,'pc':partialComplex}
 	
 def MolTypesString(m):
@@ -572,9 +584,13 @@ def MolTypesString(m):
 	skeys = s.keys()
 	skeys.sort(key=lambda x:x[1]) #obtain sorted list of keys so we can print in order
 	moltypes = 'begin molecule types \n'
+	flag = 0
 	for j in skeys:
+		flag = 1
 		moltypes = moltypes + s[j]+'\n'
-	moltypes = moltypes + 'end molecule types \n'
+	moltypes = moltypes + 'end molecule types \n\n'
+	if flag==0:
+		moltypes = ''
 	return moltypes
 
 def SeedSpeciesString(s,m,c,b):
@@ -583,24 +599,31 @@ def SeedSpeciesString(s,m,c,b):
 	pc = result['pc']
 	string_pm = toString(pm)
 	string_pc = Complex2String(pc)
+	flag = 0
 	seedspecies = 'begin seed species\n'
 	for i in s:
 		if float(s[i]['ic']) != 0:
 			if i in string_pm.keys():
+				flag = 1
 				seedspecies = seedspecies + string_pm[i] +'\t'
 			elif i in string_pc.keys():
+				flag = 1
 				seedspecies = seedspecies + string_pc[i] +'\t'
 			else:
+				flag = 0
 				print 'error, can\'t find species'
 				return
 			seedspecies = seedspecies + str(s[i]['ic'])+'\n'
-	return seedspecies+'end seed species \n'
+	if flag==0:
+		seedspecies = ''
+	return seedspecies+'end seed species \n\n'
 
 def parameterBlockString(model):
 	pblock = 'begin parameters\n'
 	rxns = model.getListOfReactions()
 	nrxns = len(rxns)	
 	localparlist = []
+	flag = 0
 	for i in range(0,nrxns):
 		rxn = rxns[i]
 		klaw = rxn.getKineticLaw()
@@ -610,9 +633,13 @@ def parameterBlockString(model):
 	plist = model.getListOfParameters()
 	for i in plist:
 		pblock = pblock + i.id +'\t'+str(i.value)+'\n'
+		flag=1
 	for i in localparlist:
 		pblock = pblock + i[0]+'\t'+str(i[1])+'\n'
-	pblock = pblock + 'end parameters\n'
+		flag=1
+	pblock = pblock + 'end parameters\n\n'
+	if flag==0:
+		pblock = ''
 	return {'pblock':pblock,'plist':plist}
 
 

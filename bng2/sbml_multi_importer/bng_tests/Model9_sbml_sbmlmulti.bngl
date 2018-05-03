@@ -1,0 +1,32 @@
+begin model
+begin parameters
+k1	1.0
+k2	2.0
+A	0.0
+B	0.0
+rate	nan
+end parameters
+
+begin molecule types 
+A(a)
+B(b)
+end molecule types 
+
+begin observables
+Molecules A A(a)
+Molecules B B(b)
+end observables
+begin functions
+rate() A + B
+end functions
+begin seed species
+B(b)	50.0
+A(a)	100.0
+end seed species 
+
+begin reaction rules 
+A(a) + B(b)  -> A(a!1).B(b!1) 	rate
+A(a)  -> 0 	k1
+end reaction rules 
+
+end model
