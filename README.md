@@ -25,6 +25,16 @@ appropriate distribution for their OS. To install BioNetGen, unzip the
 BioNetGen distribution file, e.g.  BioNetGen-2.3-MacOSX.tar.gz, in the
 directory where you would like BioNetGen installed. 
 
+## Download Latest Test Builds
+
+These builds are the from the head of master and are not guaranteed to be
+stable. Use at your own risk.
+
+[Linux](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-linux.tar.gz)
+[OSX](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-osx.tar.gz)
+[Windows x64](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-win-x64.tar.gz)
+[Windows x86](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-win-x86.tar.gz)
+
 ## Compilation from Source
 
 The distribution mentioned above comes with pre-compiled binaries (executables)
