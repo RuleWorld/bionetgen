@@ -7,9 +7,9 @@ for i in range(0,5):
 c = bng_protocol(a)
 d = doubleArrayClass_frompointer(c)
 for i in range(0,55):
-	print d[i]
+	print(d[i])
 	if i+1%5==0:
-		print "\n"
+		print("\n")
 
 
 

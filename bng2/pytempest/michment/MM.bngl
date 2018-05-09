@@ -36,6 +36,6 @@ simulate({method=>"ode", t_end=>20000,n_steps=>10})
 end protocol
 
 generate_network({overwrite=>1})
-writeCfile({})
+writeCfile({swig=>1})
 
 

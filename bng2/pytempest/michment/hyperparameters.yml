@@ -1,0 +1,14 @@
+pt_config_options:
+ adapt_beta_rate: 0.04
+ beta_adapt_last: 250
+ adapt_beta_interval: 100
+ optimal_swap_acceptance: 0.24
+ min_beta_adaptation_factor: 0.8
+ max_beta_adaptation_factor: 1.25
+ adapt_last: 240
+ adapt_relstep_interval: 100
+ adapt_relstep_rate: 0.2
+ optimal_step_acceptance: 0.24
+ min_adaptation_factor: 0.8
+ max_adaptation_factor: 1.25
+
