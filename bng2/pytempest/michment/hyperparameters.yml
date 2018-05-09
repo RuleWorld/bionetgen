@@ -12,3 +12,25 @@ pt_config_options:
  min_adaptation_factor: 0.8
  max_adaptation_factor: 1.25
 
+data_options:
+ stdev: 0.01
+
+model_parameter_options:
+ k1:
+  prior: uniform
+  p1: -3
+  p2: -2
+ k2:
+  prior: uniform
+  p1: -2
+  p2: 0
+ k3:
+  prior: uniform
+  p1: -3
+  p2: -1
+ E0:
+  prior: point
+  value: 6.02
+ S0:
+  prior: point
+  value: 602

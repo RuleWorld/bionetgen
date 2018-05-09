@@ -4,7 +4,6 @@ import random
 from matplotlib import pyplot as plt
 import numpy
 import copy
-from ExampleModels import *
 import time
 #NOTES: In ptempest, the temperature and step sizes never adapt on the same iteration. If temperature is adapting, step size does not. Is this necessary? It seems arbitrary
 #Chain and PT classes are instantiated with full random number streams for repeatability. This is a good idea, right? Or is it better to instantiate them with seeds and generate the streams inside?
@@ -71,7 +70,7 @@ class chain:
 		tt = time.clock()
 		self.relstep_history.append(self.relstep)
 		new = self.propose(self.current,self.iteration,self.relstep,self.r_walk)
-		print self.r_walk[self.iteration]
+		print(self.r_walk[self.iteration])
 		logpn,logcn = new.energy(),self.energy_curr
 		r = self.r_accept[self.iteration]
 		dE = logpn-logcn
@@ -80,24 +79,24 @@ class chain:
 		except OverflowError:
 			h = float('inf')
 		if flag==1:
-			print "current parameter: ",self.current.x," current energy ",logcn,"\n"
-			print "proposed parameter: ",new.x," proposed energy ",logpn,"\n"
-			print "Energy difference (dE = logpn-logcn): ",logpn-logcn,"\n";
+			print("current parameter: ",self.current.x," current energy ",logcn,"\n")
+			print("proposed parameter: ",new.x," proposed energy ",logpn,"\n")
+			print("Energy difference (dE = logpn-logcn): ",logpn-logcn,"\n")
 			try:
-				print "Random number: ",r," exp(-dE)",math.exp(-dE),"\n"
+				print("Random number: ",r," exp(-dE)",math.exp(-dE),"\n")
 			except OverflowError:
-				print "Random number: ",r," exp(-dE)",float('inf'),"\n"
-			print "Acceptance probability (h) = min(1,exp(-dE)): ",h,"\n"
+				print("Random number: ",r," exp(-dE)",float('inf'),"\n")
+			print("Acceptance probability (h) = min(1,exp(-dE)): ",h,"\n")
 		if r<h:
 			if flag==1:
-				print "Accepted","\n\n"
+				print("Accepted","\n\n")
 			self.current = new
 			self.energy_curr = logpn
 			self.step_acceptance.append(1)
 			self.steps_accepted_current_run = self.steps_accepted_current_run + 1
 		else:
 			if flag==1:
-				print "Rejected","\n\n"
+				print("Rejected","\n\n")
 			self.step_acceptance.append(0)
 		#self.states.append(self.current)
 		#self.energy_chain.append(self.energy_curr)
@@ -109,7 +108,7 @@ class chain:
 		adaptation_factor = min(max(self.min_adaptation_factor,adaptation_factor),self.max_adaptation_factor)
 		self.relstep = [x*adaptation_factor for x in old_relstep]
 		if flag==1:
-			print "\n Adapting step size, old step size: " + str(old_relstep) +" new step size: "+str(self.relstep)+"\n"
+			print("\n Adapting step size, old step size: " + str(old_relstep) +" new step size: "+str(self.relstep)+"\n")
 	def run(self,n,*argv):
 		flag = 0
 		self.steps_accepted_current_run = 0
@@ -119,7 +118,7 @@ class chain:
 		n = n+self.iteration
 		for i in xrange(self.iteration,n):
 			if flag==1:
-				print "step number ",i,"--------------------------------\n"
+				print("step number ",i,"--------------------------------\n")
 			self.step(flag)
 			if self.adapt_relstep ==1 and (self.iteration+1)%self.adapt_relstep_interval==0 and self.iteration<self.adapt_last:
 				self.adapt_step_size(flag)
@@ -193,11 +192,11 @@ class parallel_tempering:
 			dE = self.c[i].energy_curr - self.c[i-1].energy_curr
 			dB = self.c[i].beta -self.c[i-1].beta
 			if flag==1:
-				print "Trying to swap chains "+str(i+1)+" and "+str(i)
-				print "Energy "+str(i)+": "+str(self.c[i].energy_curr)
-				print "Energy "+str(i-1)+": "+str(self.c[i-1].energy_curr)
-				print "dE: "+str(dE)+" dB: "+str(dB)
-				print "h: "+str(math.log(self.r_swap[self.swap_counter][i-1]))+" dB*dE: "+str(dB*dE)
+				print("Trying to swap chains "+str(i+1)+" and "+str(i))
+				print("Energy "+str(i)+": "+str(self.c[i].energy_curr))
+				print("Energy "+str(i-1)+": "+str(self.c[i-1].energy_curr))
+				print("dE: "+str(dE)+" dB: "+str(dB))
+				print("h: "+str(math.log(self.r_swap[self.swap_counter][i-1]))+" dB*dE: "+str(dB*dE))
 			if math.log(self.r_swap[self.swap_counter][i-1]) < dB*dE: #random.uniform(0,1)
 				#swap chains
 				energy_tmp = self.c[i].energy_curr
@@ -208,17 +207,17 @@ class parallel_tempering:
 				self.c[i-1].current = param_tmp
 				self.swap_history[self.swap_counter][i-1] = 1
 				if flag==1:
-					print "swap accepted \n"
-					print "Parameter set for chain "+str(i+1)+ "is "
-					print [x for x in self.c[i].current.x]
+					print("swap accepted \n")
+					print("Parameter set for chain "+str(i+1)+ "is ")
+					print([x for x in self.c[i].current.x])
 			else:
 				self.swap_history[self.swap_counter][i-1] = 0
 				if flag==1:
-					print "swap rejected \n"
+					print("swap rejected \n")
 	def adapt_step_size(self,flag):
 		num_chains = len(self.c)
 		if flag==1:
-			print 'Adapting relative step sizes'
+			print('Adapting relative step sizes')
 		for chain_idx in range(0,num_chains):
 			chain = self.c[chain_idx]
 			step_acceptance = copy.copy([x[chain_idx] for x in self.pt_step_acceptance[self.swap_counter+1-self.adapt_relstep_interval:self.swap_counter+1]])
@@ -235,11 +234,11 @@ class parallel_tempering:
 			else:
 				self.c[chain_idx].relstep = copy.copy(tmp1)
 			if flag==1:
-				print "\n Adapting step size, old step size: " + str(old_relstep) +" new step size: "+str(self.c[chain_idx].relstep )+"\n"
+				print("\n Adapting step size, old step size: " + str(old_relstep) +" new step size: "+str(self.c[chain_idx].relstep )+"\n")
 	def adapt_beta(self,flag):
 		num_chains = len(self.c)
 		if flag==1:
-			print 'Adapting chain temperatures'
+			print('Adapting chain temperatures')
 		for chain_idx in range(1,num_chains): 
 			#chain 1 has fixed temperature. adjust chains in order of coolest to hottest. Whenever a temperature changes, we proportionally increase the temperature of the hotter chains as well.
 			chain = self.c[chain_idx]
@@ -254,7 +253,7 @@ class parallel_tempering:
 			for chain_idx2 in range(chain_idx,num_chains):
 				self.c[chain_idx2].beta = self.c[chain_idx2].beta/adaptation_factor
 			if flag==1:
-				print "Chain "+str(chain_idx+1)+ ":\told temperature: "+str(1.0/old_beta)+"\tnew temperature: "+str(1.0/self.c[chain_idx].beta)
+				print("Chain "+str(chain_idx+1)+ ":\told temperature: "+str(1.0/old_beta)+"\tnew temperature: "+str(1.0/self.c[chain_idx].beta))
 	def run(self,*argv):
 		flag =0
 		for arg in argv:
@@ -263,7 +262,7 @@ class parallel_tempering:
 		self.nswap = self.nswap+self.swap_counter
 		self.pt_step_acceptance = [[0 for x in range(0,self.nchains)] for y in range(0,self.nswap)] 
 		for i in range(self.swap_counter,self.nswap):
-			print "Iteration: "+str(self.swap_counter)+"\n"
+			print("Iteration: "+str(self.swap_counter)+"\n")
 			t1 = time.clock()
 			for j in range(0,self.nchains):
 				self.c[j].run(self.nstep,'verbose') #MCMC steps		
@@ -276,10 +275,10 @@ class parallel_tempering:
 			self.energy_chain.append(self.energy_curr)
 			#print self.c[2].beta
 			for j in range(0,len(self.c)):
-				print "Chain ",j+1," Energy: ",self.energy_curr[j]#,"\n"
-				print "Parameter set for chain "+str(j+1)+ "is "
-				print [x for x in self.c[j].current.x]
-			print "\n" 
+				print("Chain ",j+1," Energy: ",self.energy_curr[j])#,"\n"
+				print("Parameter set for chain "+str(j+1)+ "is ")
+				print([x for x in self.c[j].current.x])
+			print("\n") 
 			#Not allowing temperature and steps to adapt on the same iteration is a ptempest quirk that I am leaving in here for now. Probably can be removed.
 			if (self.swap_counter+1)%self.adapt_relstep_interval==0 and (self.swap_counter+1)%self.adapt_beta_interval!=0 and self.swap_counter<self.adapt_last:
 				self.adapt_step_size(flag)
@@ -296,7 +295,7 @@ class parallel_tempering:
 		attr = vars(self)
 		f = open('miscellaneous_pt_scalars.txt','w')
 		for key in attr.keys():
-			print key			
+			#print key			
 			val = attr[key]
 			if isinstance(val,list):
 				#Check list element type
@@ -330,3 +329,9 @@ def gaussian_proposal(s,itr,relstep,r_walk):
 	return state_vector(loc,s.prior,s.p1,s.p2,s.simulate_function,s.likelihood_model,s.data)	
 def energy_gaussian(par,simulate,data):
 	y = simulate(par)
+def loglikelihood_gaussian(par,simulate,data):
+	y = simulate(par)
+	numerator = [x**2 for x in (y-data['mean'])]
+	denominator = [2*(x**2) for x in data['stdev']]
+	loglikelihood = sum([numerator[i]/denominator[i] for i in range(0,len(y))])
+	return -loglikelihood
