@@ -718,7 +718,7 @@ sub getCSpeciesNames
     {
         if ( $param->Type eq 'Constant' )
         {
-            $ref_map->{ $param->Name } = "params($m_idx)";
+            $ref_map->{ $param->Name } = "params[$m_idx]";
             ++$m_idx;
         }
     }
