@@ -69,15 +69,26 @@ build_script:
   - if "%platform%"=="x64" ( copy C:\cygwin64\bin\gcc.exe C:\cygwin64\bin\cc.exe )
   - cmake -G "Ninja" ..
   - ninja
+
+  - if "%platform%"=="x86" (cp C:\cygwin\bin\cygwin1.dll ..\..\bin)
+  - if "%platform%"=="x86" (cp C:\cygwin\bin\cygstdc++-6.dll ..\..\bin)
+  - if "%platform%"=="x86" (cp C:\cygwin\bin\cygz.dll ..\..\bin)
+
+  - if "%platform%"=="x64" (cp C:\cygwin64\bin\cygwin1.dll ..\..\bin)
+  - if "%platform%"=="x64" (cp C:\cygwin64\bin\cygstdc++-6.dll ..\..\bin)
+  - if "%platform%"=="x64" (cp C:\cygwin64\bin\cygz.dll ..\..\bin)
+  - if "%platform%"=="x64" (cp C:\cygwin64\bin\cyggcc_s-seh-1.dll ..\..\bin)
+
   - cp NFsim.exe ..\..\bin
   - cd ../..
   - cmd: ECHO %PATH% 
-  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --archive --bindir ./bin 
-  - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-win-%platform%.tar.gz"
+  - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --bindir ./bin 
+  - 7z a ./BioNetGen-2.3.2-Win-%platform%.zip ./BioNetGen-2.3.2
 
 artifacts:
-  - path: "./bng2/BioNetGen-2.3.2-win-%platform%.tar.gz"
+  - path: "./bng2/BioNetGen-2.3.2-Win-%platform%.zip"
     name: bionetgen
+    type: zip
 
 deploy:
   - provider: BinTray
