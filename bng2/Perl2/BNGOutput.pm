@@ -3484,7 +3484,7 @@ sub writeCfile
     # nothing to do if there are no reactions
 	if ( @{$model->RxnList->Array}==0 )
 	{
-		if ($err = $model->generate_network()){return $err;};
+		if ($err = $model->generate_network({'overwrite'=>1})){return $err;};
 	}
     # get reference to parameter list
 	my $plist = $model->ParamList;
@@ -3651,13 +3651,15 @@ sub writeCfile
 	    double* species_print = (double *)malloc((trajectory_length+1)*(nspecies+1)* sizeof(double));
 	    int gcounter = 0;";
     for(my $protocol=0;$protocol<$num_commands;$protocol++)
-    {
+    {	
 	    my $action = $model->{simulation_protocol}[$protocol]->{action};
     	if($action eq 'simulate')
 	    {	
 	    	my $protocol_opts =  eval($model->{simulation_protocol}[$protocol]->{options});	    		    
 		    if ( exists $protocol_opts->{'t_start'} )
-		    {   $t_start = $protocol_opts->{'t_start'};  }  		    
+		    {   $t_start = $protocol_opts->{'t_start'};  } 
+		    elsif(exists $protocol_opts->{'continue'})
+		    {	$t_start = $t_end } 		    
 		    if ( exists $protocol_opts->{'t_end'} )
 		    {   $t_end = $protocol_opts->{'t_end'};  } 		   
 		    if ( exists $protocol_opts->{'n_steps'} )
@@ -3677,7 +3679,10 @@ sub writeCfile
 		    {
 		        timepoints[i] = t0+i*(tend-t0)/(n_timepoints);
 		    }
-		    species_init = initialize_species(params,nspecies);
+		    if($protocol==0)
+		    {
+		    	species_init = initialize_species(params,nspecies); // initialize from scratch the first time
+		    }
 		    species_out = integrate(timepoints, species_init, params,nspecies,n_timepoints);
 		    for(j=$start_counter;j<(nspecies+1)*(n_timepoints+1);j++)
 		    {
@@ -3697,10 +3702,28 @@ sub writeCfile
 			my $species_val = $protocol_opts[1];
 			my @species = split ',',$c_species_names;
 			my $index = 0;
+
+			my @params_list = split ',',$c_param_names;
+			my @params_vals_list = split ',',$c_param_values;
+
+
+				for(my $pcount=0;$pcount<$n_parameters;$pcount++)
+				{
+					if(index($params_list[$pcount],$species_val) != -1)
+					{
+						$species_val = $params_vals_list[$pcount];
+						last;			
+					}
+				}
+
+
+
 			for(my $scount=0;$scount<$n_species;$scount++)
 			{
 				if(index($species[$scount],$species_name) != -1)
 				{
+					print $species[$scount],"\n";
+					print $species_val,"\n";
 					$bng_protocol_string .= "// protocol step $protocol
 		species_init[$scount] = $species_val;
 					";				
@@ -3866,8 +3889,8 @@ double * integrate(double* timepoints, double* species_init, double* params, int
     species   = NULL;
     cvode_mem = NULL;
     /* Set the scalar relative tolerance */
-    reltol = 1e-08;
-    abstol = 1e-06;
+    reltol = 1e-10;
+    abstol = 1e-10;
     /* Create serial vector for Species */
     species = N_VNew_Serial(__N_SPECIES__);
     if (check_flag((void *)species, "N_VNew_Serial", 0))
@@ -4211,10 +4234,10 @@ EOF
 		open( run_swig_file, ">$run_swig_path" ) or die "Couldn't open $swig_path: $!\n";
 	    print run_swig_file <<"EOF";
 #!/bin/bash
-export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:./lib/
+#export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:./lib/
 swig -python ${filebase}.i
-gcc -c -fPIC `pkg-config --cflags --libs python`  ${filebase}.c ${filebase}_wrap.c
-ld -shared ${filebase}.o ${filebase}_wrap.o  /usr/local/MATLAB/R2017a/bin/glnxa64/libsundials_cvode.so.1 /usr/local/MATLAB/R2017a/bin/glnxa64/libsundials_nvecserial.so.0 -lm -o _MM.so
+gcc -c -fPIC -I/home/sag134/anaconda3/include/python3.6m  ${filebase}.c ${filebase}_wrap.c
+ld -shared ${filebase}.o ${filebase}_wrap.o  /usr/local/MATLAB/R2017a/bin/glnxa64/libsundials_cvode.so.1 /usr/local/MATLAB/R2017a/bin/glnxa64/libsundials_nvecserial.so.0 -lm -o _${filebase}.so
 EOF
 		close(run_swig_file)
 }

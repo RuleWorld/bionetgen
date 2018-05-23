@@ -7,8 +7,8 @@
 #include <cvode/cvode_spgmr.h>       /* prototype for CVSpgmr */
 
 /* Problem Dimensions */
-#define __N_PARAMETERS__   3
-#define __N_EXPRESSIONS__  3
+#define __N_PARAMETERS__   4
+#define __N_EXPRESSIONS__  4
 #define __N_OBSERVABLES__  2
 #define __N_RATELAWS__     3
 #define __N_SPECIES__      2
@@ -35,6 +35,7 @@ calc_expressions ( N_Vector expressions, double * parameters )
     NV_Ith_S(expressions,0) = parameters[0];
     NV_Ith_S(expressions,1) = parameters[1];
     NV_Ith_S(expressions,2) = parameters[2];
+    NV_Ith_S(expressions,3) = parameters[3];
    
 }
 
@@ -143,8 +144,8 @@ double * integrate(double* timepoints, double* species_init, double* params, int
     species   = NULL;
     cvode_mem = NULL;
     /* Set the scalar relative tolerance */
-    reltol = 1e-10;
-    abstol = 1e-10;
+    reltol = 1e-08;
+    abstol = 1e-08;
     /* Create serial vector for Species */
     species = N_VNew_Serial(__N_SPECIES__);
     if (check_flag((void *)species, "N_VNew_Serial", 0))
@@ -342,7 +343,7 @@ double* bng_protocol(double* params)
 		        species_init[i] = species_out[(nspecies+1)*(n_timepoints+1)-nspecies+i];
 		    }
 		    // protocol step 1
-		params[0] = 150000;
+		species_init[0] = 100;
 					
     	    //protocol step 2
     	    t0 = 0.01;
@@ -410,7 +411,7 @@ int main(int argc,char** argv)
     }
     double *  timepoints = timepoints_array; 
     */
-    double params[3] = {1.29e5, 66.4451, 1.3e5};
+    double params[4] = {1.29e5, 66.4451, 1.3e5, 1000.0};
     int j;
     int counter=0;
     double* species_out = bng_protocol(params);
