@@ -1,0 +1,38 @@
+## title: Simple Lotka-Volterra model
+## author: Jim Faeder
+## date: 22April2015
+begin model
+begin parameters
+
+
+ k1 1.29e5 # 1/s
+ k2 66.4451 # 1/molecules 1/s 
+ k3 1.3e5  # 1/s
+end parameters
+
+begin species
+  S() 1000
+  W() 500
+end species
+
+begin observables
+  Molecules Stot S()
+  Molecules Wtot W()
+end observables
+
+begin reaction rules
+  S() -> S() + S() k1
+  S() + W() -> W() + W() k2
+  W() -> 0 k3
+end reaction rules
+end model
+
+begin protocol
+simulate({method=>"ode",t_end=>0.01,n_steps=>100})
+
+setParameter("k1",1.5e5)
+
+simulate({continue=>1,method=>"ode",t_end=>0.02,n_steps=>100})
+end protocol
+
+writeCfile({swig=>1})                    
