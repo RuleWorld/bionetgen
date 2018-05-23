@@ -3484,9 +3484,7 @@ sub writeCfile
     # nothing to do if there are no reactions
 	if ( @{$model->RxnList->Array}==0 )
 	{
-	    return "writeCfile() has nothing to do: no reactions in current model. "
-	          ."Did you remember to call generate_network() before attempting to "
-	          ."write network output?";
+		if ($err = $model->generate_network()){return $err;};
 	}
     # get reference to parameter list
 	my $plist = $model->ParamList;
