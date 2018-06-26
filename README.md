@@ -109,8 +109,8 @@ terminal:
     cd <bngpath>\Network3
     autoreconf --no-recursive --install
     ./configure --disable-shared --prefix=<bngpath>
-      make
-      make install
+    make
+    make install
     make clean
 
 Using BioNetGen from the Windows command prompt can throw Missing DLL errors.
@@ -122,6 +122,16 @@ Copy them to `<bngpath>\bin` to resolve these errors. The required DLLs for the
 * cygstdc++-6.dll
 * cygz.dll
 * cyggcc_s-seh-1.dll.
+
+## Creating a Distribution
+
+Developers preparing a new distribution can simply run the following command:
+
+    cd <bngpath>
+    make all
+    perl make_dist.pl --build --bindir ./bin --archive
+
+This will create a tarball called '<bngpath>/BioNetGen-<version>.tar.gz'.
 
 ## Examples
 
