@@ -16,7 +16,7 @@ SBML_TRANSLATOR_BIN = sbmlTranslator
 SBML_TRANSLATOR_DIR = atomizer
 
 # recipes that do not create files
-.PHONY: clean 
+.PHONY: clean test
 
 
 all: $(NFSIM_BIN) $(SBML_TRANSLATOR_BIN) $(NETWORK_BIN)
@@ -55,3 +55,5 @@ clean:
 	cd $(NETWORK_DIR) ; $(MAKE) clean
 	cd $(GROUP_BINDIR); rm $(NETWORK_BIN); rm $(SBML_TRANSLATOR_BIN); rm $(NFSIM_BIN)
 
+test: $(NFSIM_BIN) $(SBML_TRANSLATOR_BIN) $(NETWORK_BIN)
+	cd Validate; perl validate_examples.pl
