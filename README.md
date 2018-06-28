@@ -48,32 +48,9 @@ atomizer). To do this, enter the following at the terminal:
 
 ### Linux and OSX
 
-#### NFsim and atomizer
-
 At a terminal, type the following to build NFsim and atomizer:
 
     cd <bngpath>
-    make
-
-#### CVODE and muparser (autoconf method)
-
-    cd <bngpath>\Network3
-    autoreconf --no-recursive --install
-    ./configure --disable-shared --prefix=<bngpath>
-    make
-    make install
-
-PLEASE NOTE: This procedure will not work if the directories `cvode-2.6.0` and
-`muparser_v2_2_4` do not exist. If that is the case, they can be extracted from
-the archive files in `./bionetgen/bng2/libsource`
-
-#### CVODE and muparser (alternative CMake build method)
-
-Alternatively, binaries can be compiled using CMake. Download CMake from
-http://www.cmake.org/ and add to PATH. Then:
-
-    cd <bngpath>\Network3
-    cp Makefile.cmake Makefile
     make
 	
 ### Windows
@@ -128,10 +105,9 @@ Copy them to `<bngpath>\bin` to resolve these errors. The required DLLs for the
 Developers preparing a new distribution can simply run the following command:
 
     cd <bngpath>
-    make all
-    perl make_dist.pl --build --bindir ./bin --archive
+    make dist
 
-This will create a tarball called '<bngpath>/BioNetGen-<version>.tar.gz'.
+This will create a tarball called '<bngpath>/BioNetGen-<version>.tgz'.
 
 ## Examples
 
