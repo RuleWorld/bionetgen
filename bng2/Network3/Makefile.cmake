@@ -34,7 +34,7 @@ all: run_network sundials-config
 # run_network executable
 run_network: $(MATHUTILS_LIB) $(CVODE_LIB) $(MUPARSER_LIB)
 	mkdir -p $(NETWORK_BINDIR)
-	cd $(NETWORK_BINDIR); cmake $(CMAKELISTS_DIR); make;
+	cd $(NETWORK_BINDIR); cmake -DCMAKE_CXX_FLAGS=-pg -DCMAKE_EXE_LINKER_FLAGS=-pg $(CMAKELISTS_DIR); make;
 	mkdir -p $(BNG_BINDIR)
 	cp -f $(NETWORK_BINDIR)/run_network $(BNG_BINDIR)
 
