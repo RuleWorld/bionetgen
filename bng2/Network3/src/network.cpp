@@ -3032,14 +3032,17 @@ int print_rates_network(FILE* out, int discrete) {
 
 #include "sundials/sundials_types.h"
 #include "cvode/cvode.h"
+#include "cvode/cvode_direct.h"
 #include "nvector/nvector_serial.h"
 
-#include "cvode/cvode_dense.h"
 #include "sundials/sundials_dense.h"
 #include "sundials/sundials_direct.h"
+#include "sunmatrix/sunmatrix_sparse.h"
 
-#include "cvode/cvode_spgmr.h"
-#include "sundials/sundials_spgmr.h"
+#include "sunlinsol/sunlinsol_dense.h"
+#include "sunlinsol/sunlinsol_spgmr.h"
+
+
 
 typedef struct jacnode* jacnode_ref;
 
@@ -3391,6 +3394,8 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 	static N_Vector y;
 	static void* cvode_mem;
 	static int initflag = 0;
+	static SUNMatrix A;
+	static SUNLinearSolver LS;
 	long int cvode_maxnumsteps = 2000;
 
 	/* Initializations at the beginning of new propagation */
@@ -3423,18 +3428,26 @@ int propagate_cvode_network(double* t, double delta_t, double* n_steps, double* 
 		 * Jacobian vs finite difference
 		 */
 		if (SOLVER == GMRES || SOLVER == GMRES_J) {
-			CVSpgmr(cvode_mem, PREC_NONE, 0);
 			if (SOLVER == GMRES_J) {
 				cout << "ERROR: Jacobian no longer supported for GMRES solver" << endl;
 				exit(1);
 			}
+
+			//			CVSpgmr(cvode_mem, PREC_NONE, 0);
+			A = SUNSparseMatrix(n_species, n_species, 0, CSC_MAT);
+			LS = SUNSPGMR(y, PREC_NONE, 0);
+			CVDlsSetLinearSolver(cvode_mem, LS, A);
 		}
 		else if (SOLVER == DENSE || SOLVER == DENSE_J) {
-			CVDense(cvode_mem, n_species);
 			if (SOLVER == DENSE_J) {
 				cout << "ERROR: Jacobian no longer supported for dense solver" << endl;
 				exit(1);
 			}
+
+			//		  CVDense(cvode_mem, n_species);
+			A = SUNDenseMatrix(n_species, n_species);
+			LS = SUNDenseLinearSolver(y, A);
+			CVDlsSetLinearSolver(cvode_mem, LS, A);
 		}
 		else {
 			fprintf(stderr, "ERROR: Invalid CVODE solver.\n");
