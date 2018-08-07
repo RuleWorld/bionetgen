@@ -27,3 +27,5 @@ bng2/Models2/parameter_scan_with_protocol.ipynb
 bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.net
 bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00002.net
 bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.net
+bng2/BioNetGen-*/
+bng2/BioNetGen-*.tgz
