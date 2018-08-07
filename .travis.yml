@@ -33,7 +33,7 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python; fi
   # build sbmltranslator, nfsim, distribution and validate
   - make dist
-  - "mv ./BioNetGen-2.3.2.tar.gz ./BioNetGen-2.3.2-${TRAVIS_OS_NAME}.tar.gz"
+  - "mv ./BioNetGen-2.3.2.tgz ./BioNetGen-2.3.2-${TRAVIS_OS_NAME}.tgz"
   - make test
   - cd ..
 
