@@ -4,7 +4,7 @@ This page links to publications that have applied a BioNetGen rule-based model t
 
 ## 2018 
 * [NF-κB-Chromatin Interactions Drive Diverse Phenotypes by Modulating Transcriptional Noise.](http://www.ncbi.nlm.nih.gov/pubmed/29346759) *Cell Reports*
-* ...
+* [Computational modeling of synergistic interaction between αVβ3 integrin and VEGFR2 in endothelial cells: Implications for the mechanism of action of angiogenesis-modulating integrin-binding peptides.](https://www.ncbi.nlm.nih.gov/pubmed/30036530) *J. Theor. Biol.*
 
 ## 2017
 * Needs updated
