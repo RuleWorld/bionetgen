@@ -2,6 +2,15 @@ CHANGES to BioNetGen
 updated 20 April 2017
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.3.2 ==
+'''''date tbd'''''
+
+==== Bug Fixes ====
+* Small change to <big><tt>Expression::getName()</tt></big> to not create a new local function if the rate law already starts with the <big><tt>_rateLaw</tt></big> prefix. This prevents BNG from continually making new functions every time a model is read back in.
+
+== BioNetGen-2.3.1 ==
+'''''date tbd'''''
+
 == BioNetGen-2.3.0 ==
 '''''date tbd'''''
 
