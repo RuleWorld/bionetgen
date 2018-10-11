@@ -25,40 +25,54 @@ appropriate distribution for their OS. To install BioNetGen, unzip the
 BioNetGen distribution file, e.g.  BioNetGen-2.3-MacOSX.tar.gz, in the
 directory where you would like BioNetGen installed. 
 
+## Download Latest Test Builds
+
+These builds are the from the head of master and are not guaranteed to be
+stable. Use at your own risk.
+
+* [Linux](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-linux.tar.gz)
+* [OSX](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-osx.tar.gz)
+* [Windows x64](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-Win-x64.zip)
+
 ## Compilation from Source
 
 The distribution mentioned above comes with pre-compiled binaries (executables)
 for the ODE, SSA and PLA engines. However, developers can compile their own
 binaries assuming they have appropriate compilation tools (autoconf, etc).
 
-First, you'll need to pull in or update the git submodules. To do this, enter
-the following at the terminal:
+First, you'll need to pull in or update the git submodules (currently NFsim and
+atomizer). To do this, enter the following at the terminal:
 
     git submodule init
     git submodule update
 
 ### Linux and OSX
 
-From a terminal type:
+At a terminal, type the following to build NFsim and atomizer:
 
-    cd <bngpath>\Network3
-    autoreconf --no-recursive --install
-    ./configure --disable-shared --prefix=<bngpath>
-    make
-    make install
-
-PLEASE NOTE: This procedure will not work if the directories `cvode-2.6.0` and
-`muparser_v2_2_4` do not exist. If that is the case, they can be extracted from
-the archive files in `./bionetgen/bng2/libsource`
-
-Alternatively, binaries can be compiled using CMake. Download CMake from
-http://www.cmake.org/ and add to PATH. Then:
-
-    cd <bngpath>\Network3
-    cp Makefile.cmake Makefile
+    cd <bngpath>
     make
 	
 ### Windows
+
+#### NFsim and atomizer
+
+Make sure you have Ninja, CMake, and Anaconda installed and that Python is in
+your path. For more detailed information, please see the NFsim and atomizer
+repos. From a PowerShell prompt, type the following:
+
+    cd <bngpath>/atomizer/SBMLparser
+    python.exe -m pip install --user -r ./requirements_win.txt
+    python.exe -m pip install --target=. python-libsbml
+    python.exe -m PyInstaller ./sbmlTranslator.spec
+    mv ./dist/sbmlTranslator.exe ../../bin
+    cd ../../nfsim_src
+    mkdir build
+    cd build
+    cmake -G "Ninja" ..
+    ninja
+
+#### CVODE and muparser
 
 If you have Windows, try Strawberry Perl, (see http://strawberryperl.com/).
 Perl is also available for Windows users within the Cygwin environment.
@@ -72,15 +86,28 @@ terminal:
     cd <bngpath>\Network3
     autoreconf --no-recursive --install
     ./configure --disable-shared --prefix=<bngpath>
-      make
-      make install
+    make
+    make install
     make clean
 
 Using BioNetGen from the Windows command prompt can throw Missing DLL errors.
 These DLLs are specific to the Cygwin version used and found in Cygwin\bin.
-Copy them to `<bngpath>\bin` to resolve these errors.  As of 12/16/2014, the
-required DLLs for 64-bit Windows 7 and later are cygwin1.dll, cygstdc++-6.dll,
-cygz.dll, and cyggcc_s-seh-1.dll.
+Copy them to `<bngpath>\bin` to resolve these errors. The required DLLs for the
+64-bit version are:
+
+* cygwin1.dll
+* cygstdc++-6.dll
+* cygz.dll
+* cyggcc_s-seh-1.dll.
+
+## Creating a Distribution
+
+Developers preparing a new distribution can simply run the following command:
+
+    cd <bngpath>
+    make dist
+
+This will create a tarball called '<bngpath>/BioNetGen-<version>.tgz'.
 
 ## Examples
 
