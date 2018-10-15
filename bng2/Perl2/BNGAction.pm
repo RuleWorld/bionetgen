@@ -1658,7 +1658,7 @@ sub parameter_scan
     # update user
 #    printf "ACTION: parameter_scan(par: $params->{parameter}, min: $params->{par_min}, max: $params->{par_max}, ";
 #    printf "n_pts: $params->{n_scan_pts}, log: $params->{log_scale})\n";
-	printf "ACTION: parameter_scan( )";
+	printf "ACTION: parameter_scan( )\n";
 
     # define basename for scan results
     my $basename = $params->{prefix};
