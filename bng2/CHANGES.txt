@@ -6,7 +6,6 @@ https://github.com/RuleWorld/bionetgen/
 
 ==== New Features ====
 * Heterogeneous adaptive scaling method is implemented
-* Parameter scanning can now be done in parallel, an IPython notebook example is available under bng2/Models2 folder
 * Support for exporting multi state and multi component SBML files added
 
 ==== Minor changes ===
