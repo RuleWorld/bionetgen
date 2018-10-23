@@ -1,8 +1,8 @@
 CHANGES to BioNetGen
-updated 17 October 2018
+updated 23 October 2018
 https://github.com/RuleWorld/bionetgen/
 
-== BioNetGen-2.3.2 ==
+== BioNetGen-2.4.0 ==
 
 ==== New Features ====
 * Heterogeneous adaptive scaling method is implemented
@@ -13,6 +13,7 @@ https://github.com/RuleWorld/bionetgen/
 
 ==== Bug Fixes ====
 * Small change to <big><tt>Expression::getName()</tt></big> to not create a new local function if the rate law already starts with the <big><tt>_rateLaw</tt></big> prefix. This prevents BNG from continually making new functions every time a model is read back in.
+* Fixed a bug with reactants or the products that are just "0" not being correctly written in the reactions block of output .net files.
 
 == BioNetGen-2.3.1 ==
 
