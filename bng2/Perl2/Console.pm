@@ -18,8 +18,6 @@ our @EXPORT = qw( BNGconsole );
 use BNGUtils;
 use BNGModel;
 
-
-
 # global variables
 my $BNG_PROMPT = 'BNG> ';
 
@@ -81,6 +79,12 @@ sub BNGconsole
                   $linein = "";
                 }
                 $filename =~ s/^\s+//; $filename =~ s/\s+$//;
+
+                # ASinan
+                # Making sure this is not a URL
+                if (BNGUtils::checkIfURL($filename)) {
+                    $filename = BNGUtils::getFileFromWeb($filename);
+                }
 		
                 unless ($filename and -e $filename)
                 {

@@ -8,6 +8,10 @@ use File::Spec;
 use Cwd;
 use List::Util ("sum");
 
+# ASinan
+# Testing download feature
+use LWP::Simple;
+
 use constant VERSION_FILENAME => "VERSION";
 use constant DEFAULT_VERSION  => "UNKNOWN";
 use constant DEFAULT_CODENAME => "";
@@ -162,7 +166,6 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
         return ( @version1 ? 1 : (@version2 ? -1 : 0) );
     }
 }
-
 
 # Determine if a string corresponds to a float or a double
 sub isReal{
@@ -594,5 +597,44 @@ sub MIN{
 }
 
 sub bynum {$a<=>$b;}
+
+# ASinan
+sub getFileFromWeb{
+   # We want a single argument
+   my $URLToGet=shift;
+   # We should additionally check if it's directly under github
+   if (substr($URLToGet, 0, 18) eq "https://github.com") { 
+       # If it is, we want to get the RAW file instead of the original
+       # the location is a bit different, parsing to remove "/blob" in the 
+       # original link
+       # TODO: Check if this is consistent with ever repo
+       my $restURL = substr($URLToGet, 19, length($URLToGet));
+       my @spltURL = split("/", $restURL);
+       $URLToGet = join("/", "https://raw.githubusercontent.com", $spltURL[0], $spltURL[1], 
+                        $spltURL[3], $spltURL[4], $spltURL[5], $spltURL[6]);
+   }
+   printf "Downloading $URLToGet \n";
+   # Get the file name, we'll assume it's the last field 
+   my @splt = split("/", $URLToGet);
+   my $lsplt = @splt;
+   my $filename= $splt[$lsplt-1];
+   # Use the LWP::Simple lib to get the file
+   getstore($URLToGet, $filename);
+
+   return $filename;
+}
+
+sub checkIfURL {
+    # TODO: Check if URL with a regex and not this method
+    # following regex should work for the most part
+    # my url_re = "@^(https?|ftp)://[^\s/$.?#].[^\s]*$@iS"
+    printf "Checking if filename is a URL \n";
+    my $varToTest = shift;
+    if (substr($varToTest, 0, 7) eq "http://" || 
+        substr($varToTest, 0, 8) eq "https://") {
+        return 1;
+    }
+    return 0;
+}
 
 1;

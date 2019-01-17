@@ -278,6 +278,12 @@ sub readSBML
             $err = errgen( "'file' parameter is required for action readFile()" );
             goto EXIT;
         }
+
+        # ASinan
+        # Making sure this is not a URL
+        if (BNGUtils::checkIfURL($filename)) {
+            $filename = BNGUtils::getFileFromWeb($filename);
+        }
         
         # if file path is relative, change Unix path to Windows path, and vice versa,
         # based on OS (improves cross-platform portability --LAH)
