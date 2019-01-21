@@ -1701,7 +1701,7 @@ end
 
 % Define if function to allow nested if statements in user-defined functions
 function [val] = if__fun (cond, valT, valF)
-% IF_FUN Select between two possible return values depending on the boolean
+% IF__FUN Select between two possible return values depending on the boolean
 % variable COND.
     if (cond)
         val = valT;
