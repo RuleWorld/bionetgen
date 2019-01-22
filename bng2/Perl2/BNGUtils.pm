@@ -602,6 +602,18 @@ sub bynum {$a<=>$b;}
 sub getFileFromWeb{
    # We want a single argument
    my $URLToGet=shift;
+   # First check if it's from RuleHub
+   if (substr($URLToGet, 0, 8) eq "RuleHub:") {
+       # Assumption is that the file is specified fully
+       # e.g. RuleHub:Published:Faeder2003:fceri_ji.bngl
+       my @spltURL = split(":", $URLToGet);
+       my $filename = $spltURL[3];
+       $URLToGet = join("/", "https://raw.githubusercontent.com", "RuleWorld", $spltURL[0], "master",
+                        $spltURL[1], $spltURL[2], $spltURL[3]);
+       printf "Downloading $URLToGet to $filename \n";
+       getstore($URLToGet, $filename);
+       return $filename;
+   }
    # We should additionally check if it's directly under github
    if (substr($URLToGet, 0, 18) eq "https://github.com") { 
        # If it is, we want to get the RAW file instead of the original
@@ -613,11 +625,11 @@ sub getFileFromWeb{
        $URLToGet = join("/", "https://raw.githubusercontent.com", $spltURL[0], $spltURL[1], 
                         $spltURL[3], $spltURL[4], $spltURL[5], $spltURL[6]);
    }
-   printf "Downloading $URLToGet \n";
    # Get the file name, we'll assume it's the last field 
    my @splt = split("/", $URLToGet);
    my $lsplt = @splt;
-   my $filename= $splt[$lsplt-1];
+   my $filename = $splt[$lsplt-1];
+   printf "Downloading $URLToGet to $filename \n";
    # Use the LWP::Simple lib to get the file
    getstore($URLToGet, $filename);
 
@@ -625,15 +637,22 @@ sub getFileFromWeb{
 }
 
 sub checkIfURL {
-    # TODO: Check if URL with a regex and not this method
-    # following regex should work for the most part
-    # my url_re = "@^(https?|ftp)://[^\s/$.?#].[^\s]*$@iS"
-    printf "Checking if filename is a URL \n";
     my $varToTest = shift;
-    if (substr($varToTest, 0, 7) eq "http://" || 
-        substr($varToTest, 0, 8) eq "https://") {
-        return 1;
+
+    if (!-e $varToTest) {
+      printf "File doesn't exist\n";
+      printf "Checking if filename is a URL \n";
+      if (substr($varToTest, 0, 7) eq "http://" || 
+          substr($varToTest, 0, 8) eq "https://") {
+          return 1;
+      }
+      printf "Checking if it's a RuleHub repo \n";
+      if (substr($varToTest, 0, 8) eq "RuleHub:") {
+          return 1;
+      }
     }
+    
+
     return 0;
 }
 
