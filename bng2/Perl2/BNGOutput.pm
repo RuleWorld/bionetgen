@@ -1540,7 +1540,9 @@ sub writeMfile
 
 
     # open Mexfile and begin printing...
-	open( Mscript, ">$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
+    #	popen( Mscript, "sed 's/_rateLaw/rateLaw/g' >$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
+    # open( Mscript, "| sed 's/_rateLaw/rateLaw__/g' >$mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
+	  open( Mscript, "| perl -pi.bak -e 's/_rateLaw/rateLaw__/g' $mscript_path" ) || die "Couldn't open $mscript_path: $!\n";
     print Mscript <<"EOF";
 function [err, timepoints, species_out, observables_out] = ${mscript_filebase}( timepoints, species_init, parameters, suppress_plot )
 %${mscript_filebase_caps} Integrate reaction network and plot observables.
@@ -1698,6 +1700,16 @@ end
 % END of main script! %
 %~~~~~~~~~~~~~~~~~~~~~%
 
+% Define if function to allow nested if statements in user-defined functions
+function [val] = if__fun (cond, valT, valF)
+% IF__FUN Select between two possible return values depending on the boolean
+% variable COND.
+    if (cond)
+        val = valT;
+    else
+        val = valF;
+    end
+end
 
 % initialize species function
 function [species_init] = initialize_species( params )
@@ -1757,6 +1769,8 @@ EOF
 
 	close(Mscript);
 	print "Wrote M-file script $mscript_path.\n";
+  my $toRemove = $mscript_path . ".bak";
+  unlink($toRemove);
 	return ();	
 }
 
