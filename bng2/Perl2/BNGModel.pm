@@ -282,7 +282,13 @@ sub readSBML
         # ASinan
         # Making sure this is not a URL
         if (BNGUtils::checkIfURL($filename)) {
-            $filename = BNGUtils::getFileFromWeb($filename);
+            my $myProxy = exists $params->{setProxy} ? $params->{setProxy} : undef;
+            if (defined $myProxy) {
+                printf "Sending along proxy server $myProxy\n";
+                $filename = BNGUtils::getFileFromWeb($filename, $myProxy);
+            } else {
+                $filename = BNGUtils::getFileFromWeb($filename);
+            }
         }
         
         # if file path is relative, change Unix path to Windows path, and vice versa,
