@@ -57,6 +57,29 @@ sub BNGconsole
 
         PROCESS_INPUT:
         {
+            # ASinan
+            # adding a download option separate from loading
+            # and reading
+            if ( $linein =~ s/^download\s+// )
+            {
+              # download the URL given
+	        		my $url = $linein;
+              printf "given url is: $url \n";
+                if ($url =~ m/.*--.*/) {
+                  $url=~ s/^(.*?)(--.*)//;
+                  $linein   = $2;
+                  $url = $1;
+                } else {
+                  $linein = "";
+                }
+                $url =~ s/^\s+//; $url =~ s/\s+$//;
+
+                printf "url is: $url \n";
+                # Making sure this is not a URL
+                if (BNGUtils::checkIfURL($url)) {
+                    $url = BNGUtils::getFileFromWeb($url);
+                }
+            }
             # READ a model
             if ( $linein =~ s/^load\s+// )
             {
@@ -80,12 +103,6 @@ sub BNGconsole
                 }
                 $filename =~ s/^\s+//; $filename =~ s/\s+$//;
 
-                # ASinan
-                # Making sure this is not a URL
-                if (BNGUtils::checkIfURL($filename)) {
-                    $filename = BNGUtils::getFileFromWeb($filename);
-                }
-		
                 unless ($filename and -e $filename)
                 {
                     send_warning( "Attempted to load model, but file '$filename' was not found." );
@@ -217,6 +234,7 @@ sub BNGconsole
             {
                 print "HELP menu for BNG console\n";
                 print "/-----------------------------------------------\n";
+                print "  download URL      : download a URL                \n";
                 print "  load MODEL [OPTS] : load a BNG model file         \n";
                 print "  done              : leave BNG console             \n";
                 print "  clear             : clear BNG model               \n";
