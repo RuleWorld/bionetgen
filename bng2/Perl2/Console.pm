@@ -234,7 +234,7 @@ sub BNGconsole
             {
                 print "HELP menu for BNG console\n";
                 print "/-----------------------------------------------\n";
-                print "  download URL      : download a URL                \n";
+                print "  download URL      : download file from a source   \n";
                 print "  load MODEL [OPTS] : load a BNG model file         \n";
                 print "  done              : leave BNG console             \n";
                 print "  clear             : clear BNG model               \n";

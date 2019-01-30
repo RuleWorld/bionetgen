@@ -599,9 +599,9 @@ sub MIN{
 sub bynum {$a<=>$b;}
 
 # ASinan
-sub getFileFromWeb{
-   # We want a single argument
+sub getFileFromSource{
    my $URLToGet=shift;
+   my $target=shift;
    my $myProxy=shift;
    if (defined $myProxy) {
        printf "Setting proxy to $myProxy\n";
@@ -612,9 +612,9 @@ sub getFileFromWeb{
        # Assumption is that the file is specified fully
        # e.g. RuleHub:Published:Faeder2003:fceri_ji.bngl
        my @spltURL = split(":", $URLToGet);
-       my $filename = $spltURL[3];
        $URLToGet = join("/", "https://raw.githubusercontent.com", "RuleWorld", $spltURL[0], "master",
                         $spltURL[1], $spltURL[2], $spltURL[3]);
+       my $filename = defined $target ? $target : $spltURL[3];
        printf "Downloading $URLToGet to $filename \n";
        getstore($URLToGet, $filename);
        return $filename;
@@ -624,7 +624,7 @@ sub getFileFromWeb{
        # If it is, we want to get the RAW file instead of the original
        # the location is a bit different, parsing to remove "/blob" in the 
        # original link
-       # TODO: Check if this is consistent with ever repo
+       # TODO: Check if this is consistent with every repo
        my $restURL = substr($URLToGet, 19, length($URLToGet));
        my @spltURL = split("/", $restURL);
        $URLToGet = join("/", "https://raw.githubusercontent.com", $spltURL[0], $spltURL[1], 
@@ -633,25 +633,25 @@ sub getFileFromWeb{
    # Get the file name, we'll assume it's the last field 
    my @splt = split("/", $URLToGet);
    my $lsplt = @splt;
-   my $filename = $splt[$lsplt-1];
+   my $filename = defined $target ? $target : $splt[$lsplt-1];
    printf "Downloading $URLToGet to $filename \n";
    # Use the LWP::Simple lib to get the file
    getstore($URLToGet, $filename);
 
-   return $filename;
+   return 0;
 }
 
 sub checkIfURL {
     my $varToTest = shift;
 
     if (!-e $varToTest) {
-      printf "File doesn't exist\n";
-      printf "Checking if filename is a URL \n";
+      printf "Source doesn't exist in the file system\n";
+      printf "Checking if source is a URL \n";
       if (substr($varToTest, 0, 7) eq "http://" || 
           substr($varToTest, 0, 8) eq "https://") {
           return 1;
       }
-      printf "Checking if it's a RuleHub repo \n";
+      printf "Checking if source is a RuleHub repo \n";
       if (substr($varToTest, 0, 8) eq "RuleHub:") {
           return 1;
       }
