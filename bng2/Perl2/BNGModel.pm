@@ -210,6 +210,45 @@ sub readSBML
     return 0, $outfile
 }
 
+# ASinan
+# adding download file option
+sub downloadFile 
+{
+    my $model       = shift @_;
+    my $params = @_ ? shift @_ : {};
+
+    # Copied from readFile
+    # a place for error messages
+    my $err;
+
+    # get the downloading source 
+    my $source = exists $params->{source} ? $params->{source} : undef;
+    unless ( defined $source )
+    {   # source argument is mandatory
+        $err = errgen( "'source' parameter is required for action downloadFile()" );
+        goto EXIT;
+    }
+    
+    # Making sure this is a valid source
+    if (BNGUtils::checkIfURL($source)) {
+        my $myProxy = exists $params->{proxy} ? $params->{proxy} : undef;
+        my $target = exists $params->{target} ? $params->{target} : undef;
+        if (defined $target) {
+            if (-e $target) {
+                $err = errgen( "Target file already exists" );
+                goto EXIT;
+            }
+        }
+        my $dls = BNGUtils::getFileFromSource($source, $target, $myProxy);
+    } else {
+        $err = errgen( "Not a valid source" );
+        goto EXIT;
+    }
+    EXIT: 
+        # TODO: Do we need to do anything that depends on
+        # level for this method?
+        return $err;
+}
 
 # Read bionetgen data in blocks enclosed by begin param end param
 # lines.  Prevents overwriting of variables possible with eval.
@@ -231,45 +270,6 @@ sub readSBML
     my $t_start;
     my $stdout_handle;
 
-    # ASinan
-    # adding download file option
-    sub downloadFile 
-    {
-        my $model       = shift @_;
-        my $params = @_ ? shift @_ : {};
-
-        # Copied from readFile
-        # a place for error messages
-        my $err;
-
-        # get the filename
-        my $source = exists $params->{source} ? $params->{source} : undef;
-        unless ( defined $source )
-        {   # URL argument is mandatory
-            # TODO: Failing here doesn't work? Figure out how to fail correctly
-            print "trying to fail \n";
-            $err = errgen( "'source' parameter is required for action downloadFile()" );
-            goto EXIT;
-        }
-        
-        printf "We have a source \n";
-
-        # Making sure this is a valid source
-        if (BNGUtils::checkIfURL($source)) {
-            my $myProxy = exists $params->{proxy} ? $params->{proxy} : undef;
-            my $target = exists $params->{target} ? $params->{target} : undef;
-            if (defined $target) {
-                if (-e $target) {
-                    $err = errgen( "Target file already exists" );
-                    goto EXIT;
-                }
-            }
-            my $dlsucc = BNGUtils::getFileFromSource($source, $target, $myProxy);
-        } else {
-            $err = errgen( "Not a valid source" );
-            goto EXIT;
-        }
-    }
 
     sub readFile
     {
