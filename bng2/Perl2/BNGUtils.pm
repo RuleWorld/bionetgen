@@ -10,7 +10,7 @@ use List::Util ("sum");
 
 # ASinan
 # Testing download feature
-use LWP::Simple qw( $ua getstore );
+use HTTP::Tiny;
 
 use constant VERSION_FILENAME => "VERSION";
 use constant DEFAULT_VERSION  => "UNKNOWN";
@@ -616,8 +616,19 @@ sub getFileFromSource{
                         $spltURL[1], $spltURL[2], $spltURL[3]);
        my $filename = defined $target ? $target : $spltURL[3];
        printf "Downloading $URLToGet to $filename \n";
-       getstore($URLToGet, $filename);
-       return $filename;
+       my $response = HTTP::Tiny->new->get($URLToGet);
+       if ($response->{success}){
+           open my $fh, '>', "$filename" or die "Cannot open $filename: $!";
+           # TODO: Do we need parsing on the response?
+           # for rawgithub links we don't seem to need it
+           print $fh join ("\n", $response->{content});
+           close $fh; # Not necessary, but nice to do
+       } else {
+           # TODO: We need better error reporting, probably return
+           # an error text here and parse correctly later
+           return 1;
+       }
+       return 0;
    }
    # We should additionally check if it's directly under github
    if (substr($URLToGet, 0, 18) eq "https://github.com") { 
@@ -635,8 +646,16 @@ sub getFileFromSource{
    my $lsplt = @splt;
    my $filename = defined $target ? $target : $splt[$lsplt-1];
    printf "Downloading $URLToGet to $filename \n";
-   # Use the LWP::Simple lib to get the file
-   getstore($URLToGet, $filename);
+   my $response = HTTP::Tiny->new->get($URLToGet);
+   if ($response->{success}){
+       open my $fh, '>', "$filename" or die "Cannot open $filename: $!";
+       print $fh join ("\n", $response->{content});
+       close $fh; # Not necessary, but nice to do
+   } else {
+       # TODO: We need better error reporting, probably return
+       # an error text here and parse correctly later
+       return 1;
+   }
 
    return 0;
 }
