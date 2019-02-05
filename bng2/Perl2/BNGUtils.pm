@@ -10,6 +10,7 @@ use List::Util ("sum");
 
 # ASinan
 # Testing download feature
+#use LWP::Simple qw( $ua getstore );
 use HTTP::Tiny;
 
 use constant VERSION_FILENAME => "VERSION";
@@ -605,7 +606,7 @@ sub getFileFromSource{
    my $myProxy=shift;
    if (defined $myProxy) {
        printf "Setting proxy to $myProxy\n";
-       $ua->proxy(['http','https'], $myProxy);
+       $ENV{all_proxy} = $myProxy;
    }
    # First check if it's from RuleHub
    if (substr($URLToGet, 0, 8) eq "RuleHub:") {
