@@ -233,10 +233,15 @@ sub downloadFile
     if (BNGUtils::checkIfURL($source)) {
         my $myProxy = exists $params->{proxy} ? $params->{proxy} : undef;
         my $target = exists $params->{target} ? $params->{target} : undef;
+        my $overwrite = exists $params->{overwrite} ? $params->{overwrite} : 0;
         if (defined $target) {
             if (-e $target) {
-                $err = errgen( "Target file already exists" );
-                goto EXIT;
+                if ($overwrite == 1) {
+                  printf "Overwriting file\n";
+                } else {
+                  $err = errgen( "Target file already exists" );
+                  goto EXIT;
+                }
             }
         }
         my $dls = BNGUtils::getFileFromSource($source, $target, $myProxy);

@@ -604,20 +604,26 @@ sub getFileFromSource{
    my $URLToGet=shift;
    my $target=shift;
    my $myProxy=shift;
+   my $getter;
    if (defined $myProxy) {
        printf "Setting proxy to $myProxy\n";
-       $ENV{all_proxy} = $myProxy;
+       $getter = HTTP::Tiny->new(proxy=>$myProxy);
+       #$ENV{all_proxy} = $myProxy;
+   } else {
+       $getter = HTTP::Tiny->new();
    }
    # First check if it's from RuleHub
    if (substr($URLToGet, 0, 8) eq "RuleHub:") {
        # Assumption is that the file is specified fully
        # e.g. RuleHub:Published:Faeder2003:fceri_ji.bngl
+       printf "Trying to use RuleHub syntax\n";
        my @spltURL = split(":", $URLToGet);
        $URLToGet = join("/", "https://raw.githubusercontent.com", "RuleWorld", $spltURL[0], "master",
                         $spltURL[1], $spltURL[2], $spltURL[3]);
        my $filename = defined $target ? $target : $spltURL[3];
        printf "Downloading $URLToGet to $filename \n";
-       my $response = HTTP::Tiny->new->get($URLToGet);
+       #my $response = HTTP::Tiny->new->get($URLToGet);
+       my $response = $getter->get($URLToGet);
        if ($response->{success}){
            open my $fh, '>', "$filename" or die "Cannot open $filename: $!";
            # TODO: Do we need parsing on the response?
@@ -647,7 +653,7 @@ sub getFileFromSource{
    my $lsplt = @splt;
    my $filename = defined $target ? $target : $splt[$lsplt-1];
    printf "Downloading $URLToGet to $filename \n";
-   my $response = HTTP::Tiny->new->get($URLToGet);
+   my $response = $getter->get($URLToGet);
    if ($response->{success}){
        open my $fh, '>', "$filename" or die "Cannot open $filename: $!";
        print $fh join ("\n", $response->{content});
