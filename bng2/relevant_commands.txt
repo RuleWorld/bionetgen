@@ -1,0 +1,1 @@
+gcc birthdeath_test.c -lm /usr/local/lib/libsundials_cvode.a /usr/local/lib/libsundials_nvecserial.a -lm
