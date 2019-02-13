@@ -633,6 +633,7 @@ sub getFileFromSource{
        } else {
            # TODO: We need better error reporting, probably return
            # an error text here and parse correctly later
+           print "failed to download the file!\n";
            return 1;
        }
        return 0;
@@ -661,6 +662,7 @@ sub getFileFromSource{
    } else {
        # TODO: We need better error reporting, probably return
        # an error text here and parse correctly later
+       print "failed to download the file!\n";
        return 1;
    }
 
