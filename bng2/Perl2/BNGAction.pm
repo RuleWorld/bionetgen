@@ -421,13 +421,14 @@ sub simulate
 
     # Set start time for trajectory
     my $t_start;
+    my $tol=1e-15;
     if ( defined $params->{t_start} )
     {
         $t_start = $params->{t_start};        
         # if this is a continuation, check that model time equals t_start
         if ($continue)
         {
-            unless ( defined($model->Time)  and  ($model->Time == $t_start) )
+            unless ( defined($model->Time)  and  (abs($model->Time - $t_start) < $tol) )
             {  return "t_start must equal current model time for continuation.";  }
         }
     }
@@ -1658,7 +1659,7 @@ sub parameter_scan
     # update user
 #    printf "ACTION: parameter_scan(par: $params->{parameter}, min: $params->{par_min}, max: $params->{par_max}, ";
 #    printf "n_pts: $params->{n_scan_pts}, log: $params->{log_scale})\n";
-	printf "ACTION: parameter_scan( )";
+	printf "ACTION: parameter_scan( )\n";
 
     # define basename for scan results
     my $basename = $params->{prefix};

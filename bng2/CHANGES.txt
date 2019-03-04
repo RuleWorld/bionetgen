@@ -1,18 +1,23 @@
 CHANGES to BioNetGen
-updated 24 September 2018
+updated 23 October 2018
 https://github.com/RuleWorld/bionetgen/
 
-== BioNetGen-2.3.2 ==
-'''''date tbd'''''
+== BioNetGen-2.4.0 ==
+
+==== New Features ====
+* Heterogeneous adaptive scaling method is implemented
+* Support for exporting multi state and multi component SBML files added
+
+==== Minor changes ===
+* Reworked the build process and added instructions
 
 ==== Bug Fixes ====
 * Small change to <big><tt>Expression::getName()</tt></big> to not create a new local function if the rate law already starts with the <big><tt>_rateLaw</tt></big> prefix. This prevents BNG from continually making new functions every time a model is read back in.
+* Fixed a bug with reactants or the products that are just "0" not being correctly written in the reactions block of output .net files.
 
 == BioNetGen-2.3.1 ==
-'''''date tbd'''''
 
 == BioNetGen-2.3.0 ==
-'''''date tbd'''''
 
 ==== New Features ====
 * Show graph automorphisms and statistical factor calculations for rules and reactions: BNG2.pl model.bngl --write_autos (or) BNG2.pl model.bngl --autos

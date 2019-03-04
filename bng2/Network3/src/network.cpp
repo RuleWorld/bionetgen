@@ -1929,14 +1929,22 @@ void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species, Elt_ar
 		fprintf(out, "%5d ", rxn->index);
 
 		/* print reactant indices */
-		fprintf(out, "%d", rxn->r_index[0]);
+		if (rxn->n_reactants==0){
+		   fprintf(out, "0");
+		} else {
+		   fprintf(out, "%d", rxn->r_index[0]);
+		}
 		for (i = 1; i < rxn->n_reactants; ++i) {
 			fprintf(out, ",%d", rxn->r_index[i]);
 		}
 
 		/* print product indices */
 		fprintf(out, " ");
-		fprintf(out, "%d", rxn->p_index[0]);
+		if (rxn->n_products==0){
+		   fprintf(out, "0");
+		} else {
+   		   fprintf(out, "%d", rxn->p_index[0]);
+		}
 		for (i = 1; i < rxn->n_products; ++i) {
 			fprintf(out, ",%d", rxn->p_index[i]);
 		}

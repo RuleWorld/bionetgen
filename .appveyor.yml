@@ -69,10 +69,10 @@ build_script:
   - cd ../..
   - cmd: ECHO %PATH% 
   - cd ./Network3 && mkdir -p m4 && cd .. && perl make_dist.pl --build --validate --bindir ./bin 
-  - 7z a ./BioNetGen-2.3.2-Win-%platform%.zip ./BioNetGen-2.3.2
+  - 7z a ./BioNetGen-2.4.0-Win-%platform%.zip ./BioNetGen-2.4.0
 
 artifacts:
-  - path: "./bng2/BioNetGen-2.3.2-Win-%platform%.zip"
+  - path: "./bng2/BioNetGen-2.4.0-Win-%platform%.zip"
     name: bionetgen
     type: zip
 
