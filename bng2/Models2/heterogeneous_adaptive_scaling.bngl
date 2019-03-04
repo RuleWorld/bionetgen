@@ -475,9 +475,9 @@ begin actions
   
   generate_network({overwrite=>1});
   #simulate({method=>"ssa",suffix=>"ssa_no_scaling",t_end=>24*60*6,n_steps=>1000});
-  #simulate({method=>"has",suffix=>"has_no_scaling",t_end=>24*60*6,n_steps=>1000,scalelevel=>0});
+  #simulate({method=>"psa",suffix=>"has_no_scaling",t_end=>24*60*6,n_steps=>1000,scalelevel=>0});
   #simulate({method=>"ssa",suffix=>"ssa_scaleto1e2",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>0});
-  #simulate({method=>"has",suffix=>"has_scaleto1e2",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>0});
-  simulate({method=>"has",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>1,seed=>1});
-  #simulate({method=>"has",suffix=>"has_scaleto1e2_checkproduct",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>1});
+  #simulate({method=>"psa",suffix=>"has_scaleto1e2",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>0});
+  simulate({method=>"psa",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>1,seed=>1});
+  #simulate({method=>"psa",suffix=>"has_scaleto1e2_checkproduct",t_end=>24*60*6,n_steps=>1000,scalelevel=>100,check_product_scale=>1});
 end actions
