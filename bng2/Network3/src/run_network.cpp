@@ -192,7 +192,7 @@ int main(int argc, char *argv[]){
     		outpre = argv[iarg++];
     		break;
     	case 'p':
-    		if (strcmp(argv[iarg],"ssa") == 0 || strcmp(argv[iarg],"has") == 0) propagator= SSA;
+    		if (strcmp(argv[iarg],"ssa") == 0 || strcmp(argv[iarg],"psa") == 0) propagator= SSA;
     		else if (strcmp(argv[iarg],"cvode") == 0) propagator= CVODE;
     		else if (strcmp(argv[iarg],"euler") == 0) propagator= EULER;
     		else if (strcmp(argv[iarg],"rkcs") == 0) propagator= RKCS;

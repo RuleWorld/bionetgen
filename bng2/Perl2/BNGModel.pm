@@ -49,7 +49,7 @@ use Cwd;
 use BNGOutput;
 
 # BNGAction contains BNGModel action methods
-#  e.g. simulate, simulate_pla, simulate_nf, simulate_has, parameter_scan, generate_hybrid_model...
+#  e.g. simulate, simulate_pla, simulate_nf, simulate_psa, parameter_scan, generate_hybrid_model...
 #  Note that some core actions are contained here: generate_network, setParameter, etc.
 use BNGAction;
 

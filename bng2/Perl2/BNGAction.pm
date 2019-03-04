@@ -91,12 +91,12 @@ sub simulate_pla
 }
 
 
-sub simulate_has
+sub simulate_psa
 {
     my $model = shift @_;
     my $params = (@_) ? shift @_ : {};
 
-    $params->{method} = 'has';
+    $params->{method} = 'psa';
     my $err = $model->simulate( $params );
     return $err;
 }
@@ -127,7 +127,7 @@ sub simulate
                    options=>{ seed=>1 }                                      },
         pla   => { binary=>'run_network', type=>'Network', input=>'net',
                    options=>{ seed=>1 }                                      },
-        has   => { binary=>'run_network', type=>'Network', input=>'net', 
+        psa   => { binary=>'run_network', type=>'Network', input=>'net', 
                    options=>{ seed=>1}                          },
         nf    => { binary=>'NFsim', type=>'NetworkFree', input=>'xml',
                    options=>{ seed=>1 }                                      }
@@ -231,7 +231,7 @@ sub simulate
 
     # check method
     unless ( $method )
-    {  return "simulate() requires 'method' parameter (ode, ssa, pla, has, nf).";  }
+    {  return "simulate() requires 'method' parameter (ode, ssa, pla, psa, nf).";  }
     if ($method =~ /^ode$/){  $method = 'cvode';  } # Support 'ode' as a valid method
     unless ( exists $METHODS->{$method} )
     {  return "Simulation method '$method' is not a valid option.";  }
@@ -239,7 +239,7 @@ sub simulate
     printf "ACTION: simulate( method=>\"%s\" )\n", $method;
 
     #if the method is ode or ssa or pla, check if the reaction network has been generated, and if not, generate it.
-    if ($method =~ /^(cvode|ssa|pla|has)$/)
+    if ($method =~ /^(cvode|ssa|pla|psa)$/)
     {
         if($model->RxnList->size()==0)
         {
@@ -324,7 +324,7 @@ sub simulate
     }
 
     # heterogeneous adaptive scaling method - specific arguments
-    if ($method eq 'has')
+    if ($method eq 'psa')
     {
         if (!exists $params->{scalelevel}) {
             $params->{scalelevel} = "100";
