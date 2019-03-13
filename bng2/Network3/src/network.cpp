@@ -2321,7 +2321,7 @@ static double rxn_rate(Rxn* rxn, double* X, int discrete) {
 }
 
 /* Return the rate of rxn with scaled -- for internal use only */
-static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScaling, double scalelevel, bool pScaleChecker) {
+static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScaling, double poplevel, bool pScaleChecker) {
 	double rate;
 	int *iarr, *index;
 	int ig, /*i1, i2,*/n_denom;
@@ -2330,7 +2330,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 	double St, Et, kcat, Km, S, b;
 	double scalingExp = 0.0;
 	double tempPop = 1.0;
-	double upperBound = 2 * scalelevel;
+	double upperBound = 2 * poplevel;
 
 
 	/* Don't calculate rate of null reactions */
@@ -2352,12 +2352,12 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 		if (discrete) {
 			if (iarr) {
 				if (X[*iarr] < upperBound) {
-					tempPop = scalelevel;
+					tempPop = poplevel;
 				} else {
 					tempPop = X[*iarr];
 					for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
 						if (X[*index] < upperBound) {
-							tempPop = scalelevel;
+							tempPop = poplevel;
 							break;
 						} else {
 							if (X[*index] < tempPop) {
@@ -2371,7 +2371,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 						for (i = 0; i < rxn->n_products; ++i) {
 							pi = rxn->p_index[i];
 							if (X[pi] < upperBound) {
-								tempPop = scalelevel;
+								tempPop = poplevel;
 								break;
 							} else {
 								if (X[pi] < tempPop) {
@@ -2381,12 +2381,12 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 						}
 					}
 				}
-				iScaling = floor(tempPop / scalelevel);
+				iScaling = floor(tempPop / poplevel);
 				if (iScaling < 1.0) {
 					iScaling = 1.0;
 				}
 			} else {
-                iScaling = scalelevel;
+                iScaling = poplevel;
             }
 			double n = 0.0;
 			//rate*= X[*iarr]; // NOTE: This assumes at least one reactant species (no zeroth-order rxns)
@@ -2423,7 +2423,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 		}
         tempPop = min(St, Et);
 		if (tempPop < upperBound) {
-			tempPop = scalelevel;
+			tempPop = poplevel;
 		}
 		// check the product to get the smallest scaling factor
 		if (pScaleChecker && tempPop >= upperBound) {
@@ -2431,7 +2431,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 			for (i = 0; i < rxn->n_products; ++i) {
 				pi = rxn->p_index[i];
 				if (X[pi] < upperBound) {
-					tempPop = scalelevel;
+					tempPop = poplevel;
 					break;
 				} else {
 					if (X[pi] < tempPop) {
@@ -2440,7 +2440,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 				}
 			}
 		}
-		iScaling = floor(tempPop / scalelevel);
+		iScaling = floor(tempPop / poplevel);
 		if (iScaling < 1.0) {
 			iScaling = 1.0;
 		}
@@ -2469,12 +2469,12 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 			//       automatically by BNG).
 			if (discrete) {
 				if (X[*iarr] < upperBound) {
-					tempPop = scalelevel;
+					tempPop = poplevel;
 				} else {
 					tempPop = X[*iarr];
 					for (ig = 1; ig < n_denom; ++ig) {
 						if (X[ig] < upperBound) {
-							tempPop = scalelevel;
+							tempPop = poplevel;
 							break;
 						} else {
 							if (X[ig] < tempPop) {
@@ -2486,7 +2486,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 				for (ig = n_denom; ig < rxn->n_reactants; ++ig) {
 					if (tempPop >= upperBound) {
 						if (X[ig] < upperBound) {
-							tempPop = scalelevel;
+							tempPop = poplevel;
 							break;
 						} else {
 							if (X[ig] < tempPop) {
@@ -2501,7 +2501,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 					for (i = 0; i < rxn->n_products; ++i) {
 						pi = rxn->p_index[i];
 						if (X[pi] < upperBound) {
-							tempPop = scalelevel;
+							tempPop = poplevel;
 							break;
 						} else {
 							if (X[pi] < tempPop) {
@@ -2510,7 +2510,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 						}
 					}
 				}
-				iScaling = floor(tempPop / scalelevel);
+				iScaling = floor(tempPop / poplevel);
 				if (iScaling < 1.0) {
 					iScaling = 1.0;
 				}
@@ -2564,7 +2564,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 		iarr = rxn->r_index;
 		x = X[iarr[0]];
 		if (x < upperBound) {
-			tempPop = scalelevel;
+			tempPop = poplevel;
 		} else {
 			tempPop = x;
 		}
@@ -2578,7 +2578,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 			for (ig = 1; ig < rxn->n_reactants; ++ig) {
 				if (tempPop >= upperBound) {
 					if (X[ig] < upperBound) {
-						tempPop = scalelevel;
+						tempPop = poplevel;
 						break;
 					} else {
 						if (X[ig] < tempPop) {
@@ -2593,7 +2593,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 				for (i = 0; i < rxn->n_products; ++i) {
 					pi = rxn->p_index[i];
 					if (X[pi] < upperBound) {
-						tempPop = scalelevel;
+						tempPop = poplevel;
 						break;
 					} else {
 						if (X[pi] < tempPop) {
@@ -2602,7 +2602,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 					}
 				}
 			}
-			iScaling = floor(tempPop / scalelevel);
+			iScaling = floor(tempPop / poplevel);
 			if (iScaling < 1.0) {
 				iScaling = 1.0;
 			}
@@ -2640,12 +2640,12 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 		//       automatically by BNG).
 		if (discrete && rxn->n_reactants) { // Make sure the rxn has reactants (not pure synth)
 			if (X[*iarr] < upperBound) {
-				tempPop = scalelevel;
+				tempPop = poplevel;
 			} else {
 				tempPop = X[*iarr];
 				for (index = iarr + 1; index < iarr + rxn->n_reactants; ++index) {
 					if (X[*index] < upperBound) {
-						tempPop = scalelevel;
+						tempPop = poplevel;
 						break;
 					} else {
 						if (X[*index] < tempPop) {
@@ -2660,7 +2660,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 				for (i = 0; i < rxn->n_products; ++i) {
 					pi = rxn->p_index[i];
 					if (X[pi] < upperBound) {
-						tempPop = scalelevel;
+						tempPop = poplevel;
 						break;
 					} else {
 						if (X[pi] < tempPop) {
@@ -2669,7 +2669,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 					}
 				}
 			}
-			iScaling = floor(tempPop / scalelevel);
+			iScaling = floor(tempPop / poplevel);
 			if (iScaling < 1.0) {
 				iScaling = 1.0;
 			}
@@ -4897,7 +4897,7 @@ int init_gillespie_direct_network(int update_interval, int seed) {
 	return (0);
 }
 
-int init_adaptive_scaling_network(int update_interval, int seed, double scalelevel, bool pScaleChecker) {
+int init_adaptive_scaling_network(int update_interval, int seed, double poplevel, bool pScaleChecker) {
 	int i;
 	Rxn** rarray;
 
@@ -4942,7 +4942,7 @@ int init_adaptive_scaling_network(int update_interval, int seed, double scalelev
 	for (i = 0; i < GSP.na; ++i) {
 //		GSP.a[i] = rxn_rate(rarray, GSP.c_offset, 1);
 		// GSP.s[i] = 1.0;
-		GSP.a[i] = rxn_rate_scaled(network.reactions->rxn[i], GSP.c_offset, 1, GSP.s[i], scalelevel, pScaleChecker);
+		GSP.a[i] = rxn_rate_scaled(network.reactions->rxn[i], GSP.c_offset, 1, GSP.s[i], poplevel, pScaleChecker);
 		GSP.a_tot += GSP.a[i];
 	}
 
@@ -5736,7 +5736,7 @@ void update_rxn_rates(int irxn) {
 }
 
 
-void update_rxn_rates_has(int irxn, double scalelevel, bool pScaleChecker) {
+void update_rxn_rates_has(int irxn, double poplevel, bool pScaleChecker) {
 	//iarray *iarr;
 	Rxn** rarray;
 	unsigned int j;
@@ -5775,7 +5775,7 @@ void update_rxn_rates_has(int irxn, double scalelevel, bool pScaleChecker) {
 	a = GSP.a;
 	for (j = 0; j < GSP.rxn_update_rxn[irxn].size(); j++) {
 		jrxn = GSP.rxn_update_rxn[irxn][j];
-		anew = rxn_rate_scaled(rarray[jrxn], GSP.c_offset, 1, GSP.s[jrxn], scalelevel, pScaleChecker);
+		anew = rxn_rate_scaled(rarray[jrxn], GSP.c_offset, 1, GSP.s[jrxn], poplevel, pScaleChecker);
 		GSP.a_tot += anew - a[jrxn];
 		a[jrxn] = anew;
 	}
@@ -5894,7 +5894,7 @@ int gillespie_direct_network(double* t, double delta_t, double* C_avg, double* C
 	return (error);
 }
 
-int adaptive_scaling_network(double* t, double delta_t, double scalelevel, bool pScaleChecker, double* C_avg, double* C_sig, double maxStep,
+int adaptive_scaling_network(double* t, double delta_t, double poplevel, bool pScaleChecker, double* C_avg, double* C_sig, double maxStep,
 		mu::Parser& stop_condition) {
 
 	double t_remain, t_end;
@@ -5950,7 +5950,7 @@ int adaptive_scaling_network(double* t, double delta_t, double scalelevel, bool 
 		double fmod = GSP.n_steps - (double)((long)(GSP.n_steps/GSP_interval))*GSP_interval;
 //		if (rxn_rate_update || ((long)GSP.n_steps % GSP.rxn_rate_update_interval == 0)){
 		if (rxn_rate_update || fmod <= 1e-12){ // Use 1e-12 as a tolerance
-			update_rxn_rates_has(irxn, scalelevel, pScaleChecker);
+			update_rxn_rates_has(irxn, poplevel, pScaleChecker);
 		}
 		/* Floating-point modulus
 		double a = 200000.0;
@@ -5974,7 +5974,7 @@ int adaptive_scaling_network(double* t, double delta_t, double scalelevel, bool 
 		*t = t_end;
 		// Need to update time(), functions that depend on time(), and rates that depend on time()
 		if (network.has_functions){
-			update_rxn_rates_has(0, scalelevel, pScaleChecker); // All rxns have the necessary update lists, so just call any of them
+			update_rxn_rates_has(0, poplevel, pScaleChecker); // All rxns have the necessary update lists, so just call any of them
 		}
 	}
 	else{ // t_remain might be > 0 if maxSteps reached
