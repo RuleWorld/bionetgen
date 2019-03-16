@@ -166,6 +166,16 @@ end
 % END of main script! %
 %~~~~~~~~~~~~~~~~~~~~~%
 
+% Define if function to allow nested if statements in user-defined functions
+function [val] = if__fun (cond, valT, valF)
+% IF__FUN Select between two possible return values depending on the boolean
+% variable COND.
+    if (cond)
+        val = valT;
+    else
+        val = valF;
+    end
+end
 
 % initialize species function
 function [species_init] = initialize_species( params )
