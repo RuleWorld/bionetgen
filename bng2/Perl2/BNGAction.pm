@@ -229,6 +229,13 @@ sub simulate
 	}
 	my $seed        = $params->{seed};
 
+    # Default to HAS method if scalelevel is defined
+    # note, this needs to be changed once the name changes
+    # to PLA/poplevel/popscale occur
+    if(defined $params->{scalelevel}){
+      $method="has"
+    }
+
     # check method
     unless ( $method )
     {  return "simulate() requires 'method' parameter (ode, ssa, pla, has, nf).";  }
