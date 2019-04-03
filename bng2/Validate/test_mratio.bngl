@@ -1,0 +1,40 @@
+begin model
+begin parameters
+  AT = 1000
+  BT = 10000
+  Keq = 1e-4
+  #
+  n = min(AT,BT)
+  m = max(AT,BT)
+  a = -n
+  b = m-n+1
+  z = -1/Keq
+  #
+  U1_U0 = (-1./b)*mratio(a,b,z)
+  U2_U1 = (-1./(b+1))*mratio(a+1,b+1,z)
+  C_mean = -a*(1-z*U1_U0)
+  C_sdev = sqrt(a*(a+1)*z*z*U2_U1*U1_U0-a*z*U1_U0*(1.0+a*z*U1_U0))
+end parameters
+begin molecule types
+  A(b)
+  B(a)
+end molecule types
+begin seed species
+  A(b) AT
+  B(a) BT
+end seed species
+begin observables
+  Molecules C_obs A(b!1).B(a!1)
+end observables
+begin functions
+  C_theory() = C_mean
+  C_upper() = C_mean + 2*C_sdev
+  C_lower() = C_mean - 2*C_sdev
+end functions
+begin reaction rules
+  A(b) + B(a) <-> A(b!1).B(a!1) Keq,1
+end reaction rules
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>10,n_steps=>1000,print_functions=>1})

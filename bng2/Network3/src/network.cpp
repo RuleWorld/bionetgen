@@ -331,8 +331,9 @@ bool isMuParserFunction(string in_string) {
 		in_string == "max"   ||
 		in_string == "sum"   ||
 		in_string == "avg"   ||
-		in_string == "_pi"   || // muParser.cpp 311: DefineConst(_T("_pi"), (value_type)PARSER_CONST_PI);
-		in_string == "_e"       // muParser.cpp 312: DefineConst(_T("_e"), (value_type)PARSER_CONST_E);
+		in_string == "_pi"   || // muParser.cpp 321: DefineConst(_T("_pi"), (value_type)PARSER_CONST_PI);
+		in_string == "_e"    || // muParser.cpp 322: DefineConst(_T("_e"), (value_type)PARSER_CONST_E);
+		in_string == "mratio"   // Implemented as static Mratio() in network.h
 //		in_string == "or"    || deprecated in muParser
 //		in_string == "and"   || deprecated in muParser
 //		in_string == "xor"      deprecated in muParser
@@ -471,8 +472,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 			vector<int> observ_depend;
 			vector<int> param_depend;
 
-			// Define if() function as reference to static If() in network.h
-			parser.DefineFun(_T("if"), If);
+			// muParser custom functions
+			parser.DefineFun(_T("if"), If); // static If() in network.h
+			parser.DefineFun(_T("mratio"), Mratio); // static Mratio() in network.h
 
 			// Functions block exists, create 'time' function
 			if (dummy_string == "functions"){
@@ -736,6 +738,7 @@ Elt_array* read_Elt_array(FILE* datfile, int* line_number, char* name, int* n_re
 				myParser parser;
 				parser.name = elt_name;
 				parser.p.DefineFun(_T("if"), If); // Define if() function as reference to static If() in network.h
+				parser.p.DefineFun(_T("mratio"), Mratio); // Define mratio() function as reference to static Mratio() in network.h
 				string expr(tokens[n_tok]);
 				process_function_names(expr); // Remove parentheses from _pi() and _e()
 				vector<string> v = find_variables(expr); //find_variables(tokens[n_tok]);

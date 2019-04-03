@@ -82,7 +82,135 @@ my %functions =
   "max"   => { FPTR => sub { max(@_) },              NARGS => scalar(@_) }, # <max/>
   "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) }, # <sum/>
   "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) }, # <mean/>
+  "mratio" => { FPTR => sub { Mratio($_[0],$_[1],$_[2]) }, NARGS => 3 },
 );
+
+sub Mratio
+{
+	# Original Fortran code written by William Hlavacek (2018)
+	# Converted to Python and then Perl by Leonard A. Harris (2019)
+	my $a = shift @_;
+	my $b = shift @_;
+	my $z = shift @_;
+	# c This routine calculates the ratio M(a+1,b+1,z)/M(a,b,z) 
+	# c as a continued fraction f in the class of Gauss's continued fraction 
+	# c [Gauss CF (1813)]
+	# c using the modified method of Lentz WJ (1976) [Applied Optics 15:668-671]
+	# c [Thompson IJ, Barnett AR (1986) J Comput Phys 64: 490-509].
+	# c M(a,b,z) = {}_1F_1(a;b;z) is Kummer's (confluent hypergeometric) function 
+	# c [Kummer EE (1837) Crelle's Journal 17:228-242].
+	# c In general, we take f to have the following form:
+	# c f = q_0 + \frac{p_1}{q_1 +} \frac{p_2}{q_2 +} \frac{p_3}{q_3 +} \cdots
+	# c For the ratio of interest,
+	# c p_1 = 1
+	# c p_2 = z*[a-(b+0)]/[(b+0)*(b+1)]
+	# c p_3 = z*(a+1)    /[(b+1)*(b+2)]
+	# c p_4 = z*[a-(b+1)]/[(b+2)*(b+3)]
+	# c p_5 = z*(a+2)    /[(b+3)*(b+4)]
+	# c q_0 = 0
+	# c q_j = 1 for j = 1, 2, ...
+	# c [Van Vleck EB (1901) Ann Math 3: 1-18].
+	#       implicit none
+	# c argument
+	#       double precision a,b,z
+	# c parameter
+	#       double precision eps,tiny
+	#       parameter(eps=1.0d-16,tiny=1.0d-32)
+    my $eps = 1e-16;
+    my $tiny = 1e-32;
+	# c local
+	#       integer j,iodd,ieven
+	#       integer odd,oddsave,even,evensave
+	#       double precision f,fsave,C,Csave,D,Dsave,err
+	#       double precision p,q,num,den,Delta
+	# 
+	# c initialize
+	# c In general, we set f_0 = q_0. 
+	# c However, if q_0 = 0, we set f_0 = tiny instead.
+	# c We then set C_0 = f_0 and D_0 = 0.
+    my $fsave = $tiny;
+    my $Csave = $fsave;
+    my $Dsave = 0.0;
+      
+	# c We set err to a value greater than eps.
+    my $err = 1.0 + $eps;
+           
+    my $odd= 1;
+    my $even= 0;
+    my $iodd= 0;
+    my $ieven= 0;
+    my $j=0;
+    my $f; # return value
+    while($err > $eps){
+        $j=$j+1;
+        my $p;
+		# c calculate p_j and q_j
+		#         
+		# c p_1 = 1
+		# c p_j = num_j/den_j for j = 2, 3, ...
+		# c den_j = [b+(j-2)]*[b+(j-1)] for j = 2, 3, ...
+		# c if j>1 is even, then num_j = z*[a-(b+(j-2)/2)] = z*(a-(b+ieven-1))
+		# c if j>1 is odd, then num_j = z*[a+(j-1)/2] = z*(a+iodd)
+        if($j == 1){
+            $p=1.0;
+        }
+        elsif($j > 1){
+            my $den=($b+($j-2))*($b+($j-1));
+            my $num;
+            if($odd == 1){
+                $iodd=$iodd+1;
+                $num=$z*($a+$iodd);
+            }
+            elsif($even == 1){
+                $ieven=$ieven+1;
+                $num=$z*($a-($b+($ieven-1)));
+            }
+            else{
+                print "Error: iodd=$iodd, ieven=$ieven\n";
+                exit 1;
+            }
+            $p=$num/$den;
+        }
+        else{
+            print "Error: j=$j\n";
+            exit 1;
+        }
+        
+		# c q_j = 1 for j = 1, 2, ...  
+        my $q=1.0;
+        
+		# c calculate jth terms in recurrence relations
+		# c C_j = q_j + p_j/C_{j-1}
+		# c D_j = 1/(q_j + p_j*D_{j-1}) 
+        my $D=$q+$p*$Dsave;
+        if(abs($D) < $tiny){
+            $D=$tiny;
+        }
+        my $C=$q+$p/$Csave;
+        if(abs($C) < $tiny){
+            $C=$tiny;
+        }
+        $D=1.0/$D; 
+        
+		# c current approximation
+		# c f_j = C_j*D_j*f_{j-1}
+        my $Delta=$C*$D;
+        $f=$Delta*$fsave;
+        
+		# c if Delta is sufficiently close to 1, then the current approximation is acceptable.
+        $err=abs($Delta-1.0);
+
+		# c prepare for next iteration
+        $fsave=$f;
+        $Csave=$C;
+        $Dsave=$D;
+        my $oddsave=$odd;
+        my $evensave=$even;
+        $odd=$evensave;
+        $even=$oddsave;
+    }
+    return $f;
+}
 
 my $MAX_LEVEL = 500;    # Prevent infinite loop due to dependency loops
 
