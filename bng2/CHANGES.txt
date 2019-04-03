@@ -11,6 +11,7 @@ https://github.com/RuleWorld/bionetgen/
 === Minor Changes ===
 
 === Bug Fixes ===
+* Fixed a bug in run_network.cpp so that the code now quits if an unrecognized command line argument is encountered.
 
 == BioNetGen-2.4.0 ==
 

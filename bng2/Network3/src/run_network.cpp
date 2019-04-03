@@ -306,7 +306,8 @@ int main(int argc, char *argv[]){
 			//...
 			else{
 //				cout << endl;
-				cout << "Sorry, don't recognize your long option " << argv[iarg-1] << ". Please try again." << endl;
+				cout << "Sorry, don't recognize your long option '" << argv[iarg-1] << "'. Please try again." << endl;
+				exit(1);
 			}
 			iarg++;
     		//
