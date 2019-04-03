@@ -1,0 +1,33 @@
+# Created by BioNetGen 2.4.0
+begin parameters
+    1 AT         1000  # Constant
+    2 BT         10000  # Constant
+    3 Keq        1e-4  # Constant
+    4 n          min(AT,BT)  # ConstantExpression
+    5 m          max(AT,BT)  # ConstantExpression
+    6 a          -n  # ConstantExpression
+    7 b          (m-n)+1  # ConstantExpression
+    8 z          -1/Keq  # ConstantExpression
+    9 U1_U0      (-1.0/b)*mratio(a,b,z)  # ConstantExpression
+   10 U2_U1      (-1.0/(b+1))*mratio((a+1),(b+1),z)  # ConstantExpression
+   11 C_mean     (-a)*(1-(z*U1_U0))  # ConstantExpression
+   12 C_sdev     sqrt(((((((a*(a+1))*z)*z)*U2_U1)*U1_U0)-(((a*z)*U1_U0)*(1.0+((a*z)*U1_U0)))))  # ConstantExpression
+   13 _rateLaw1  1  # Constant
+end parameters
+begin functions
+    1 C_theory() C_mean
+    2 C_upper() C_mean+(2*C_sdev)
+    3 C_lower() C_mean-(2*C_sdev)
+end functions
+begin species
+    1 A(b) AT
+    2 B(a) BT
+    3 A(b!1).B(a!1) 0
+end species
+begin reactions
+    1 1,2 3 Keq #_R1
+    2 3 1,2 _rateLaw1 #_reverse__R1
+end reactions
+begin groups
+    1 C_obs                3
+end groups
