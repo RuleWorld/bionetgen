@@ -326,19 +326,19 @@ sub simulate
     # heterogeneous adaptive scaling method - specific arguments
     if ($method eq 'psa')
     {
-        if (!exists $params->{popscale}) {
-            $params->{popscale} = "100";
-            send_warning("'popscale' not defined, using default scaling targert: $params->{popscale}");
+        if (!exists $params->{poplevel}) {
+            $params->{poplevel} = "100";
+            send_warning("'poplevel' not defined, using default scaling targert: $params->{poplevel}");
         }
-        push @command, "--popscale", $params->{popscale};
+        push @command, "--poplevel", $params->{poplevel};
         if (exists $params->{check_product_scale}) {
             push @command, "--check_product_scale", $params->{check_product_scale};
         }
     }
     if ($method eq 'ssa')
     {
-        if ( exists $params->{popscale} ) {
-            push @command, "--popscale", $params->{popscale};
+        if ( exists $params->{poplevel} ) {
+            push @command, "--poplevel", $params->{poplevel};
             if (exists $params->{check_product_scale}) {
                 push @command, "--check_product_scale", $params->{check_product_scale};
             }
