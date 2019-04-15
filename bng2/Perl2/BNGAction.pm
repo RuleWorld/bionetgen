@@ -232,8 +232,8 @@ sub simulate
     # Default to HAS method if scalelevel is defined
     # note, this needs to be changed once the name changes
     # to PLA/poplevel/popscale occur
-    if(defined $params->{scalelevel}){
-      $method="has"
+    if(defined $params->{poplevel}){
+      $method="psa"
     }
 
     # check method
