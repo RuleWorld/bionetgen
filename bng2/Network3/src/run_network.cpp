@@ -124,8 +124,8 @@ int main(int argc, char *argv[]){
     int propagator = CVODE;
     int SOLVER = DENSE;
     int outtime = -1;
-    double scalelevel = 0.0;
-    bool pScaleChecker = false;
+    double poplevel = 0.0;
+    bool pScaleChecker = true;
     //
     double maxSteps = INFINITY;//LONG_MAX;//-1;
     double stepInterval = INFINITY;//LONG_MAX;// -1;
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]){
     		outpre = argv[iarg++];
     		break;
     	case 'p':
-    		if (strcmp(argv[iarg],"ssa") == 0 || strcmp(argv[iarg],"has") == 0) propagator= SSA;
+    		if (strcmp(argv[iarg],"ssa") == 0 || strcmp(argv[iarg],"psa") == 0) propagator= SSA;
     		else if (strcmp(argv[iarg],"cvode") == 0) propagator= CVODE;
     		else if (strcmp(argv[iarg],"euler") == 0) propagator= EULER;
     		else if (strcmp(argv[iarg],"rkcs") == 0) propagator= RKCS;
@@ -276,9 +276,9 @@ int main(int argc, char *argv[]){
 					additional_pla_output = true;
 				}
 			}
-			else if (long_opt == "scalelevel"){
-                scalelevel = rint(atof(argv[iarg]));
-				if (scalelevel <= 1.0){
+			else if (long_opt == "poplevel"){
+                poplevel = rint(atof(argv[iarg]));
+				if (poplevel <= 1.0){
                     cout << "Scaling target is too small (<= 1), using SSA without any scaling" << endl;
                     propagator = SSA;
 				}
@@ -513,7 +513,7 @@ int main(int argc, char *argv[]){
 	}
     /* Initialize HAS */
 	if (propagator == HAS){
-		init_adaptive_scaling_network(gillespie_update_interval,seed,scalelevel,pScaleChecker);
+		init_adaptive_scaling_network(gillespie_update_interval,seed,poplevel,pScaleChecker);
 	}
 
 	/* Save network to file */
@@ -868,7 +868,7 @@ int main(int argc, char *argv[]){
 					// Continue
 					stepLimit = min(stepLimit+stepInterval,maxSteps);
 				}
-				error = adaptive_scaling_network(&t, dt, scalelevel, pScaleChecker, 0x0, 0x0, stepLimit-network3::TOL,stop_condition);
+				error = adaptive_scaling_network(&t, dt, poplevel, pScaleChecker, 0x0, 0x0, stepLimit-network3::TOL,stop_condition);
 				if (verbose){
 //					fprintf(stdout, "%15.6f %8ld %12d %7.3f %7.3f %10d %7d",
 					fprintf(stdout, "%15.6f %8.0f %12d %7.3f %7.3f %10d %7d",
