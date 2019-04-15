@@ -20,7 +20,7 @@ parser is currently being developed in ANTLR.
 
 ## Installation of Distribution 
 
-Most users should simply download BioNetGen from www.bionetgen.org and get the
+Most users should simply download BioNetGen from the [releases page](https://github.com/RuleWorld/bionetgen/releases) and get the
 appropriate distribution for their OS. To install BioNetGen, unzip the
 BioNetGen distribution file, e.g.  BioNetGen-2.3-MacOSX.tar.gz, in the
 directory where you would like BioNetGen installed. 
@@ -30,9 +30,9 @@ directory where you would like BioNetGen installed.
 These builds are the from the head of master and are not guaranteed to be
 stable. Use at your own risk.
 
-* [Linux](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-linux.tar.gz)
-* [OSX](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-osx.tar.gz)
-* [Windows x64](https://bintray.com/jczech/bionetgen/download_file?file_path=BioNetGen-2.3.2-Win-x64.zip)
+* [Linux](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.4.0%2Bwin-shared-libs/BioNetGen-2.4.0+win-shared-libs-Linux.tgz)
+* [OSX](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.4.0%2Bwin-shared-libs/BioNetGen-2.4.0+win-shared-libs-OSX.tgz)
+* [Windows x64](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.4.0%2Bwin-shared-libs/BioNetGen-2.4.0+win-shared-libs-Win.zip)
 
 ## Compilation from Source
 
