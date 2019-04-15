@@ -36,7 +36,7 @@ stable. Use at your own risk.
 
 ## Compilation from Source
 
-Please see [compilation instructions here](to_compilation_instructions.md)
+Please see [compilation instructions here](https://github.com/RuleWorld/bionetgen/blob/master/compilation_instructions.md)
 
 ## BioNetGen History and Support
 
