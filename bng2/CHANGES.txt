@@ -1,19 +1,28 @@
 CHANGES to BioNetGen
-updated 3 April 2019
+updated 11 June 2019
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.5.1==
+'''''TDB'''''
+
+=== Bug Fixes ===
+* Fixed a bug in 'RxnRule::build_reaction' so that BNG now quits if an explicit Species Compartment in a rule is not compatible with the inferred Species Compartment.
+
 == BioNetGen-2.5.0==
-'''''Release date TBD'''''
+'''''2019 May 6'''''
 
 === New Features ===
 * Added a new built-in function <big><tt>mratio(a,b,z)</tt></big> that calculates the ratio of Kummer hypergeometric functions M(a+1,b+1,z)/M(a,b,z) to within a small tolerance. The function can be used in both the <big><tt>parameters</tt></big> and <big><tt>functions</tt></big> blocks and is useful for calculating the mean and variance of the steady-state number of C molecules in the simple kinetic scheme A + B <-> C. See [https://en.wikipedia.org/wiki/Confluent_hypergeometric_function] for further details.
 
 === Minor Changes ===
+* Changed the name of HAS (heterogeneous adaptive scaling) to PSA (partial scaling algorithm) and 'scalelevel' option is now changed to 'poplevel'
 
 === Bug Fixes ===
 * Fixed a bug in run_network.cpp so that the code now quits if an unrecognized command line argument is encountered.
+* Fixed a bug where 'writeMfile' function did not automatically handle rateLaw parameters and functions.
 
 == BioNetGen-2.4.0 ==
+'''''2018 October 17'''''
 
 ==== New Features ====
 * Heterogeneous adaptive scaling method is implemented
@@ -26,9 +35,20 @@ https://github.com/RuleWorld/bionetgen/
 * Small change to <big><tt>Expression::getName()</tt></big> to not create a new local function if the rate law already starts with the <big><tt>_rateLaw</tt></big> prefix. This prevents BNG from continually making new functions every time a model is read back in.
 * Fixed a bug with reactants or the products that are just "0" not being correctly written in the reactions block of output .net files.
 
+== BioNetGen-2.3.2 ==
+'''''2018 October 17'''''
+
+==== Minor changes ===
+* Update Atomizer version
+
 == BioNetGen-2.3.1 ==
+'''''2017 August 3'''''
+
+==== Minor changes ===
+* Improve documentation
 
 == BioNetGen-2.3.0 ==
+'''''2017 April 28'''''
 
 ==== New Features ====
 * Show graph automorphisms and statistical factor calculations for rules and reactions: BNG2.pl model.bngl --write_autos (or) BNG2.pl model.bngl --autos

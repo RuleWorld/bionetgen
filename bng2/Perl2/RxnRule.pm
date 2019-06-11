@@ -3238,9 +3238,7 @@ sub build_reaction
 		    $err = $p->assignCompartment($infer_comp);
 		    if ($err)
 		    {
-			    print "ERROR: $err\n"
-			        . "RxnRule>", $rr->toString(), "\n";
-			    return undef;
+			    exit_error("$err\n" . "RxnRule>" . $rr->toString() . "\n");
 		    }
 
             # (3) Check topology of bonds wwith 
@@ -3266,9 +3264,7 @@ sub build_reaction
         # Put product graph in canonical order (quasi-canonical for the time being)
 		if ( my $err = $p->sortLabel() )
 		{   # mysterious problem
-			print "ERROR: $err\n"
-			    . "RxnRule>", $rr->toString(), "\n";
-			return undef;
+			exit_error("$err\n" . "RxnRule>" . $rr->toString() . "\n");
 		}
 
 		# Does product match excluded pattern?
