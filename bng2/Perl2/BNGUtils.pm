@@ -8,6 +8,11 @@ use File::Spec;
 use Cwd;
 use List::Util ("sum");
 
+# ASinan
+# Testing download feature
+#use LWP::Simple qw( $ua getstore );
+use HTTP::Tiny;
+
 use constant VERSION_FILENAME => "VERSION";
 use constant DEFAULT_VERSION  => "UNKNOWN";
 use constant DEFAULT_CODENAME => "";
@@ -162,7 +167,6 @@ our @EXPORT = qw( BNGversion BNGcodename compareVersions isReal booleanToInt BNG
         return ( @version1 ? 1 : (@version2 ? -1 : 0) );
     }
 }
-
 
 # Determine if a string corresponds to a float or a double
 sub isReal{
@@ -594,5 +598,95 @@ sub MIN{
 }
 
 sub bynum {$a<=>$b;}
+
+# ASinan
+sub getFileFromSource{
+   my $URLToGet=shift;
+   my $target=shift;
+   my $myProxy=shift;
+   my $getter;
+   if (defined $myProxy) {
+       printf "Setting proxy to $myProxy\n";
+       $getter = HTTP::Tiny->new(proxy=>$myProxy);
+       #$ENV{all_proxy} = $myProxy;
+   } else {
+       $getter = HTTP::Tiny->new();
+   }
+   # First check if it's from RuleHub
+   if (substr($URLToGet, 0, 8) eq "RuleHub:") {
+       # Assumption is that the file is specified fully
+       # e.g. RuleHub:Published:Faeder2003:fceri_ji.bngl
+       printf "Trying to use RuleHub syntax\n";
+       my @spltURL = split(":", $URLToGet);
+       $URLToGet = join("/", "https://raw.githubusercontent.com", "RuleWorld", $spltURL[0], "master",
+                        $spltURL[1], $spltURL[2], $spltURL[3]);
+       my $filename = defined $target ? $target : $spltURL[3];
+       printf "Downloading $URLToGet to $filename \n";
+       #my $response = HTTP::Tiny->new->get($URLToGet);
+       my $response = $getter->get($URLToGet);
+       if ($response->{success}){
+           open my $fh, '>', "$filename" or die "Cannot open $filename: $!";
+           # TODO: Do we need parsing on the response?
+           # for rawgithub links we don't seem to need it
+           print $fh join ("\n", $response->{content});
+           close $fh; # Not necessary, but nice to do
+       } else {
+           # TODO: We need better error reporting, probably return
+           # an error text here and parse correctly later
+           print "failed to download the file!\n";
+           return 1;
+       }
+       return 0;
+   }
+   # We should additionally check if it's directly under github
+   if (substr($URLToGet, 0, 18) eq "https://github.com") { 
+       # If it is, we want to get the RAW file instead of the original
+       # the location is a bit different, parsing to remove "/blob" in the 
+       # original link
+       # TODO: Check if this is consistent with every repo
+       my $restURL = substr($URLToGet, 19, length($URLToGet));
+       my @spltURL = split("/", $restURL);
+       $URLToGet = join("/", "https://raw.githubusercontent.com", $spltURL[0], $spltURL[1], 
+                        $spltURL[3], $spltURL[4], $spltURL[5], $spltURL[6]);
+   }
+   # Get the file name, we'll assume it's the last field 
+   my @splt = split("/", $URLToGet);
+   my $lsplt = @splt;
+   my $filename = defined $target ? $target : $splt[$lsplt-1];
+   printf "Downloading $URLToGet to $filename \n";
+   my $response = $getter->get($URLToGet);
+   if ($response->{success}){
+       open my $fh, '>', "$filename" or die "Cannot open $filename: $!";
+       print $fh join ("\n", $response->{content});
+       close $fh; # Not necessary, but nice to do
+   } else {
+       # TODO: We need better error reporting, probably return
+       # an error text here and parse correctly later
+       print "failed to download the file!\n";
+       return 1;
+   }
+
+   return 0;
+}
+
+sub checkIfURL {
+    my $varToTest = shift;
+
+    if (!-e $varToTest) {
+      printf "Source doesn't exist in the file system\n";
+      printf "Checking if source is a URL \n";
+      if (substr($varToTest, 0, 7) eq "http://" || 
+          substr($varToTest, 0, 8) eq "https://") {
+          return 1;
+      }
+      printf "Checking if source is a RuleHub repo \n";
+      if (substr($varToTest, 0, 8) eq "RuleHub:") {
+          return 1;
+      }
+    }
+    
+
+    return 0;
+}
 
 1;

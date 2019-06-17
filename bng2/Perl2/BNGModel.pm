@@ -210,6 +210,50 @@ sub readSBML
     return 0, $outfile
 }
 
+# ASinan
+# adding download file option
+sub downloadFile 
+{
+    my $model       = shift @_;
+    my $params = @_ ? shift @_ : {};
+
+    # Copied from readFile
+    # a place for error messages
+    my $err;
+
+    # get the downloading source 
+    my $source = exists $params->{source} ? $params->{source} : undef;
+    unless ( defined $source )
+    {   # source argument is mandatory
+        $err = errgen( "'source' parameter is required for action downloadFile()" );
+        goto EXIT;
+    }
+    
+    # Making sure this is a valid source
+    if (BNGUtils::checkIfURL($source)) {
+        my $myProxy = exists $params->{proxy} ? $params->{proxy} : undef;
+        my $target = exists $params->{target} ? $params->{target} : undef;
+        my $overwrite = exists $params->{overwrite} ? $params->{overwrite} : 0;
+        if (defined $target) {
+            if (-e $target) {
+                if ($overwrite == 1) {
+                  printf "Overwriting file\n";
+                } else {
+                  $err = errgen( "Target file already exists" );
+                  goto EXIT;
+                }
+            }
+        }
+        my $dls = BNGUtils::getFileFromSource($source, $target, $myProxy);
+    } else {
+        $err = errgen( "Not a valid source" );
+        goto EXIT;
+    }
+    EXIT: 
+        # TODO: Do we need to do anything that depends on
+        # level for this method?
+        return $err;
+}
 
 # Read bionetgen data in blocks enclosed by begin param end param
 # lines.  Prevents overwriting of variables possible with eval.
@@ -230,6 +274,7 @@ sub readSBML
     my %bngdata;
     my $t_start;
     my $stdout_handle;
+
 
     sub readFile
     {
@@ -278,7 +323,7 @@ sub readSBML
             $err = errgen( "'file' parameter is required for action readFile()" );
             goto EXIT;
         }
-        
+
         # if file path is relative, change Unix path to Windows path, and vice versa,
         # based on OS (improves cross-platform portability --LAH)
         if ( not File::Spec::Win32->file_name_is_absolute( $filename ) ){
