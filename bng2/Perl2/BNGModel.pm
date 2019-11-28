@@ -1389,7 +1389,7 @@ sub writeFile
         if ( @{$model->RxnList->Array} == 0 )
         {
             return "writeFile() was asked to write the network, but no reactions were found.\n"
-                  ."Did you remember to call generate_network() before writing network output?\n";
+                  ."Did you remember to call generate_network() or to define seed species before writing network output?\n";
         }
     }
 
