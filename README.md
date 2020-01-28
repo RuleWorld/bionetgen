@@ -20,10 +20,15 @@ parser is currently being developed in ANTLR.
 
 ## Installation of Distribution 
 
-Most users should simply download BioNetGen from the [releases page](https://github.com/RuleWorld/bionetgen/releases) and get the
-appropriate distribution for their OS. To install BioNetGen, unzip the
-BioNetGen distribution file, e.g.  BioNetGen-2.3-MacOSX.tar.gz, in the
-directory where you would like BioNetGen installed. 
+Please note that this is the command line interface to BioNetGen and if you are 
+new to using BioNetGen you are probably looking for the graphical user interface, 
+[RuleBender](https://github.com/RuleWorld/rulebender), for more information please 
+visit [here](https://github.com/RuleWorld/bionetgen.git). 
+
+Most users should simply download BioNetGen from the [releases page](https://github.com/RuleWorld/bionetgen/releases) 
+and get the appropriate distribution for their OS. To install BioNetGen, unzip the
+BioNetGen distribution file, e.g.  BioNetGen-2.3-MacOSX.tar.gz, in the directory 
+where you would like BioNetGen installed. 
 
 ## Download Latest Test Builds
 
