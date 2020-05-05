@@ -532,18 +532,21 @@ sub toXML
     {
 		my $value;
 		my $type;
+    my $expr;
 		my $do_print = 0;
 		if ( $param->Type =~ /^Constant/ )
 		{
 			$value = ($evaluate_expressions) ? sprintf "%.8g", $param->evaluate([], $plist) : $param->toString($plist);
 			$value =~ s/(e[+-])0+(\d+)/$1$2/; # strip any leading zeros in exponent (improves cross-platform portability)
 			$type  = ($evaluate_expressions) ? "Constant" : $param->Type;
+      $expr = $param->toString($plist);
 			$do_print = 1;
 		}
 		next unless $do_print;
 		$xml .= sprintf( "$indent2<Parameter id=\"%s\"", $param->Name );
 		$xml .= " type=\"$type\"";
 		$xml .= " value=\"$value\"";
+		$xml .= " expr=\"$expr\"";
 		$xml .= "/>\n";
 	}
 	$xml .= $indent . "</ListOfParameters>\n";
