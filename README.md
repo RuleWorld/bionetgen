@@ -37,7 +37,7 @@ stable. Use at your own risk.
 
 * [Linux](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-linux.tgz)
 * [OSX](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-mac.tgz)
-* [Windows](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-win.tgz) (If you are looking for the Windows 64 distribution, please check back again soon as we are currently updating the files.)
+* [Windows](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-win.tgz)
 
 ## Compilation from Source
 
