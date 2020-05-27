@@ -35,9 +35,9 @@ where you would like BioNetGen installed.
 These builds are the from the head of master and are not guaranteed to be
 stable. Use at your own risk.
 
-* [Linux](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0%2Bwin-shared-libs/BioNetGen-2.5.0+win-shared-libs-Linux.tgz)
-* [OSX](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0%2Bwin-shared-libs/BioNetGen-2.5.0+win-shared-libs-OSX.tgz)
-* [Windows x64](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0%2Bwin-shared-libs/BioNetGen-2.5.0+win-shared-libs-Win.zip)
+* [Linux](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-linux.tgz)
+* [OSX](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-mac.tgz)
+* [Windows](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-win.tgz) (If you are looking for the Windows 64 distribution, please check back again soon as we are currently updating the files.)
 
 ## Compilation from Source
 
