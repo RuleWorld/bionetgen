@@ -5,6 +5,9 @@ https://github.com/RuleWorld/bionetgen/
 == BioNetGen-2.5.1==
 '''''TDB'''''
 
+=== Minor Changes === 
+* NFSim XML parameters now contain the string of the original expression
+
 === Bug Fixes ===
 * Fixed a bug in 'RxnRule::build_reaction' so that BNG now quits if an explicit Species Compartment in a rule is not compatible with the inferred Species Compartment.
 
