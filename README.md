@@ -25,19 +25,20 @@ new to using BioNetGen you are probably looking for the graphical user interface
 [RuleBender](https://github.com/RuleWorld/rulebender). For more information please 
 visit [bionetgen.org](https://bionetgen.org). 
 
-Most users should simply download BioNetGen from the [releases page](https://github.com/RuleWorld/bionetgen/releases) 
+Most users should simply download the [latest BioNetGen release](https://github.com/RuleWorld/bionetgen/releases/latest) 
 and get the appropriate distribution for their OS. To install BioNetGen, unzip the
 BioNetGen distribution file, e.g.  BioNetGen-2.3-MacOSX.tar.gz, in the directory 
-where you would like BioNetGen installed. 
+where you would like BioNetGen installed. BioNetGen requires Perl, in MacOS and most Linux flavors Perl should be 
+installed by default, Windows users will have to install Perl (a good one is [Strawberry Perl](http://strawberryperl.com/)).
 
 ## Download Latest Test Builds
 
 These builds are the from the head of master and are not guaranteed to be
 stable. Use at your own risk.
 
-* [Linux](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-linux.tgz)
-* [OSX](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-mac.tgz)
-* [Windows](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.0/BioNetGen-2.5.0-win.tgz)
+* [Linux](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.1/BioNetGen-2.5.1-linux.tgz)
+* [OSX](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.1/BioNetGen-2.5.1-mac.tgz)
+* [Windows](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.1/BioNetGen-2.5.1-win.tgz)
 
 ## Compilation from Source
 
