@@ -1,0 +1,145 @@
+begin model
+setOption("NumberPerQuantityUnit",6.0221e23)
+begin parameters
+    # fundamental constants
+    RT  2.5774863        
+    NA  6.0221418e23     
+    PI  3.1415927        
+    # simulation geometry
+    rad   1e-4                      # dm 
+    frac   0.70                     # water fraction in cytoplasm, no units 
+    celldens  1e9                   # density of cell suspension, cells/L [Kholodenko]
+    vol_EC     1/celldens          # volume of extracellular space, L (1e-10 L)
+    area_PM    4*PI*rad^2           # surface area of cell, dm^2 (1.2566e-7 dm^2, vol_EC/area_PM = 7.9577e-4 dm)
+    vol_CP     frac*(4/3)*PI*rad^3 	# water volume of cytoplasm, L
+    width_PM   1e-7                	# "effective" width of plasma membrance, dm [Sekar & Faeder, Primer]
+    vol_PM     area_PM*width_PM  	# "effective" volume of plasma membrane, L
+    
+	
+    #  initial species concentrations
+	logConcLig	-15
+    conc_L_0    10^logConcLig     # L log-concentration, extracellular, M;  [~0.01-10 nM, Kholodenko]
+    count_R_0  300000    # R log-counts, per cell; 24,000-447,000/cell [Macdonald-Pike, PNAS 2008]
+    
+	
+    #  Params from MacDonald & Pike 2008
+    K11	4.6e9 	#/M ligand-binding
+    K21 5.3e9	#/M ligand-binding
+    #K22 	3.4e8	#/M ligand-binding
+    L20	5.3e11	#/D dimerization
+    #alpha	K21/K11 = 1.152
+    #beta 	(K22/K21) = 0.06
+    
+    K_LR	K11 # /M
+    K_RR	L20*width_PM # /M
+    alpha	10 #10	#1.152
+    beta	0.01	#0.06
+    Gf_LR	-ln(K_LR)
+    Gf_RR	-ln(K_RR)
+    Gf_LRR	-ln(alpha)
+    Gf_LRRL	-ln(beta)
+    
+    phi       0.5
+    # activation energy terms, kJ/mol (no effect on equillibrium)
+    Eact0_LR  -17.8/RT
+    Eact0_RR  -11.9/RT
+end parameters
+####
+begin compartments
+    EC  3  vol_EC        # extracellular space
+    PM  2  vol_PM  EC    # plasma membrane
+    CP  3  vol_CP  PM    # cytoplasm
+end compartments
+####
+begin molecule types
+    L(r)
+    R(l,d)
+end molecule types
+####
+begin seed species
+    L(r)@EC     conc_L_0*NA*vol_EC
+    R(l,d)@PM  count_R_0
+end seed species
+####
+begin energy patterns
+    R(l!0).L(r!0)                        Gf_LR
+    R(d!0).R(d!0)                        Gf_RR
+    L(r!0).R(l!0,d!1).R(d!1)             Gf_LRR
+    L(r!0).R(l!0,d!1).R(l!2,d!1).L(r!2)  Gf_LRRL
+end energy patterns
+####
+begin observables
+    Molecules  RecDimer  R(d!+)
+    Molecules  RecMonomer  R(d)
+end observables
+begin functions
+	dimfrac() = RecDimer/(RecDimer+RecMonomer)
+end functions
+begin reaction rules
+    # Ligand-receptor binding and receptor aggregation
+    R0: L(r)  + R(l)  <->  L(r!0).R(l!0)   Arrhenius(phi,Eact0_LR/RT)
+    # Receptor-aggregation
+    R1: R(d) + R(d)  <->  R(d!0).R(d!0)  Arrhenius(phi,Eact0_RR/RT)
+end reaction rules
+end model
+generate_network({overwrite=>1})
+
+# alpha  0 = 0.1, 1 = 1, 2 = 10
+# beta	0 = 0.01, 1=1, 2 = 100
+
+
+# 00
+setParameter("alpha",0.1)
+setParameter("beta",0.01)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"00"})
+resetConcentrations()
+
+# 01
+setParameter("alpha",0.1)
+setParameter("beta",1)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"01"})
+resetConcentrations()
+
+# 02
+setParameter("alpha",0.1)
+setParameter("beta",100)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"02"})
+resetConcentrations()
+
+
+# 10
+setParameter("alpha",1)
+setParameter("beta",0.01)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"10"})
+resetConcentrations()
+
+# 11
+setParameter("alpha",1)
+setParameter("beta",1)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"11"})
+resetConcentrations()
+
+# 12
+setParameter("alpha",1)
+setParameter("beta",100)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"12"})
+resetConcentrations()
+
+
+# 20
+setParameter("alpha",10)
+setParameter("beta",0.01)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"20"})
+resetConcentrations()
+
+# 21
+setParameter("alpha",10)
+setParameter("beta",1)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"21"})
+resetConcentrations()
+
+# 22
+setParameter("alpha",10)
+setParameter("beta",100)
+parameter_scan({method=>"ode",t_end=>100,n_steps=>10,print_functions=>1,par_min=>-10,par_max=>-6,n_scan_pts=>20,reset_conc=>1,parameter=>"logConcLig",suffix=>"22"})
+resetConcentrations()

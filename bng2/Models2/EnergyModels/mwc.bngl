@@ -1,0 +1,120 @@
+begin model
+setOption("NumberPerQuantityUnit",6.0221e23)
+begin parameters
+    # fundamental constants
+    RT  2.5774863        # product of Universal gas constant and Temperature, kJ/mol
+    NA  6.0221418e23     # Avogadro's Number, /mol
+    PI  3.1415927        # Pi, no units
+	
+	reacvol		1e-3 		# L
+	log_P_ox	0
+	P_ox	10^log_P_ox		#torr
+	conv	7.5*1e3*RT		#torr-L/J * J/kJ * kJ/mol = torr/M
+	
+	C_ox	P_ox/conv		# mol/L, M
+	C_B		2e-3			# M
+	C_H		60e-6			# M
+	
+	L0		1.4e3	# no unit, T0/R0
+	K_RT	1.4e3
+	
+	
+	# values in /torr
+	#K_50	0.68
+	#K_R	5.7
+	#K_T	0.14
+	
+	K_Ox	0.68*conv # (/torr*torr/M)
+	alpha_R	8.4 # 8.38235	= K_R/K_50
+	alpha_T	0.2	# 0.20588	= K_T/K_50
+	
+	#K_B_R	1/4.75e-3	# /M
+	#K_B_T	1/1.03e-4	# /M
+	
+	K_B	1/1.03e-4
+	beta_R 0.022
+	beta_T 1
+	
+	phi		0.5
+	EA		-10
+	
+	coopRT	0
+	coopB	0
+	
+end parameters
+####
+begin compartments
+    V  3  reacvol        
+end compartments
+####
+begin molecule types
+    H(m~R~T,g,g,g,g,b)
+    Ox(h)
+	B(h)
+end molecule types
+####
+begin seed species
+    Ox(h)@V	C_ox*NA*reacvol
+	H(m~T,b,g,g,g,g)@V	C_H*NA*reacvol
+	B(h)@V	C_B*NA*reacvol
+end seed species
+####
+begin energy patterns
+    H(m~T)				-ln(K_RT)
+	H(g!1).Ox(h!1)		-ln(K_Ox)
+	H(m~T,g!1).Ox(h!1)	-ln((1-coopRT)*1+coopRT*alpha_T)
+	H(m~R,g!1).Ox(h!1)	-ln((1-coopRT)*1+coopRT*alpha_R)
+	H(b!1).B(h!1)		-ln(K_B)
+	H(m~T,b!1).B(h!1)	-ln((1-coopB)*1+coopB*beta_T)
+	H(m~R,b!1).B(h!1)	-ln((1-coopB)*1+coopB*beta_R)
+end energy patterns
+####
+begin observables
+	#Molecules H_T	H(m~T)	
+	#Molecules H_R	H(m~R)
+	Molecules H_ox	H(g!1).Ox(h!1)
+	Molecules H_free	H(g)
+	#Molecules Ox_free	Ox(h)
+	
+	#Molecules	H_free_R	H(g,m~R)
+	#Molecules	H_ox_R	H(g!1,m~R).Ox(h!1)
+	#Molecules	H_free_T	H(g,m~T)
+	#Molecules	H_ox_T	H(g!1,m~T).Ox(h!1)
+	
+end observables
+
+begin functions
+	#check_RT() = H_T/H_R
+	#check_Ox() = (H_ox/H_free)*(NA*reacvol/Ox_free)*(1/conv)
+	#check_OxR() = (H_ox_R/H_free_R)*(NA*reacvol/Ox_free)*(1/conv)
+	#check_OxT() = (H_ox_T/H_free_T)*(NA*reacvol/Ox_free)*(1/conv)
+	boundfrac() = H_ox/(H_ox + H_free)
+end functions
+
+begin reaction rules
+    R_RT:	H(m~R) <-> H(m~T)				Arrhenius(phi,EA)
+	R_Ox:	H(g) + Ox(h) <-> H(g!1).Ox(h!1)	Arrhenius(phi,EA)
+	R_B: 	H(b) + B(h) <-> H(b!1).B(h!1)	Arrhenius(phi,EA)
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})
+#writeFile({format=>"net",suffix=>"eval",evaluate_expressions=>1})
+#simulate({method=>"ode",t_end=>10,n_steps=>10,print_functions=>1})
+
+
+setParameter("coopRT",0)
+setParameter("coopB",0)
+parameter_scan({method=>"ode",t_end=>10,n_steps=>10,print_functions=>1,par_min=>0,par_max=>1,n_scan_pts=>20,reset_conc=>1,parameter=>"log_P_ox",suffix=>"00"})
+resetConcentrations()
+
+setParameter("coopRT",1)
+setParameter("coopB",0)
+parameter_scan({method=>"ode",t_end=>10,n_steps=>10,print_functions=>1,par_min=>0,par_max=>1,n_scan_pts=>20,reset_conc=>1,parameter=>"log_P_ox",suffix=>"10"})
+resetConcentrations()
+
+setParameter("coopRT",1)
+setParameter("coopB",1)
+parameter_scan({method=>"ode",t_end=>10,n_steps=>10,print_functions=>1,par_min=>0,par_max=>1,n_scan_pts=>20,reset_conc=>1,parameter=>"log_P_ox",suffix=>"11"})
+resetConcentrations()
