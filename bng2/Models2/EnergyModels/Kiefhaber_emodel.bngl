@@ -1,0 +1,123 @@
+
+# Allow molar units to be used for bimolecular rate constants
+setOption("NumberPerQuantityUnit",6.02214e23)
+
+begin model
+
+# A model for coupled folding and binding of a peptide to a ligand based on 
+# Kiefhaber et al. (2012) formulated using the energy-based extension of the 
+# BioNetGen language (eBNGL) developed by Hogg (2013).
+#
+# Note that eBNGL is best used in combination with the compartmental extension 
+# of BNGL (cBNGL), which requires that intensive units be used for 
+# bimolecular rate constants, i.e., 1/conc 1/time.
+# Here we have expressed biomolecular rate constants
+# in 1/M 1/s and specified compartment volumes in liters. 
+# The option NumberPerQuantityUnit at the top of the file requires us to 
+# specify the seed species concentrations in number of molecules
+# rather than moles. cBNGL always requires extensive units for species
+# concentrations. 
+
+# References:
+# 1. Kiefhaber T, Bachmann A, Steen Jensen K (2012)
+#    Curr Opin Struct Biol 22: 21-29.
+# 2. Hogg, JS (2013) "Modeling Energy: A Pattern-Based Approach", Chapter 2,
+#    PhD Thesis, University of Pittsburgh. http://d-scholarship.pitt.edu/19621/
+
+begin molecule types
+
+# The ligand, L, is a folded protein that has a peptide binding site "p".
+L(p)
+
+# The peptide, P, has a component c that indicates whether is it unfolded,
+# U, or folded, F. P also has a binding site for S.
+P(c~U~F,s)
+
+end molecule types
+
+begin parameters
+
+# volume of cytoplasmic (CP) compartment
+volCP 1e-12 # [=] L
+  
+# global linear free energy partitioning parameter (see Hogg (2013))
+phi 0.5 # [=] dimensionless, 0<=phi<=1
+
+# rate constants for folding and unfolding
+kf 1 # [=] /s
+ku 50 # [=] /s
+
+# rate constants for binding and unbinding
+kon 5e6 # [=] /M/s
+koff 0.01 # [=] /s 
+  
+# Activation energy for folding set to match specified rate constants.
+E0_fold=-(1-phi)*ln(kf)-phi*ln(ku)
+  
+# Activation energy for binding set to match specified rate constants.
+E0_bind=-(1-phi)*ln(kon)-phi*ln(koff)
+  
+# Cooperativity between folding and binding, i.e. the factor
+# by which the binding affinity is increased upon folding of the peptide
+coop 1000 # [=] dimensionless factor
+  
+end parameters
+
+begin compartments
+
+# define the 3D compartment CP to represent 
+# the cytoplasm and specify its volume using the volCP parameter
+CP 3 volCP 
+
+end compartments
+
+begin observables
+
+# outputs
+Molecules US A(c~U,s!1).S(a!1)
+Molecules FS A(c~F,s!1).S(a!1)
+
+end observables
+
+begin seed species
+
+S(a)@CP 100 # [=] molecules
+A(c~U,s)@CP 10000 # [=] molecules
+
+end seed species
+
+begin energy patterns
+
+# Free energy of the folded state relative to unfolded
+A(c~F) ln(ku/kf)
+
+# Free energy of binding compared with unbound
+A(s!1).S(a!1) ln(koff/kon)
+
+# Free energy for cooperative interaction
+A(c~F,s!1).S(a!1) -ln(coop)
+
+end energy patterns
+
+begin reaction rules
+
+# folding
+A(c~U)<->A(c~F) Arrhenius(phi,E0_fold) # see Hogg (2013)
+
+# binding
+S(a)+A(s)<->S(a!1).A(s!1) Arrhenius(phi,E0_bind) # see Hogg (2013)
+
+end reaction rules
+
+end model
+
+begin actions
+
+generate_network({overwrite=>1})
+
+# Used for checking the numerical values of parameters - can be removed.
+writeNetwork({suffix=>"num",evaluate_expressions=>1})
+
+simulate_ode({t_end=>200,n_steps=>200})
+
+end actions
