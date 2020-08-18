@@ -13,9 +13,9 @@ tinymce.init({
   plugins : [
     "advlist autolink link image lists charmap print preview hr anchor pagebreak",
     "searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime",
-    "save table directionality emoticons template paste media nonbreaking"
+    "table directionality emoticons template paste media nonbreaking importcss"
   ],
 
   /* toolbar setup */
-  toolbar: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bulllist numlist outdent indent | link image | print preview media fullpage | forecolor backcolor emoticons",
+  toolbar: "importcss | undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bulllist numlist outdent indent | link image | print preview media fullpage | forecolor backcolor emoticons",
 })
