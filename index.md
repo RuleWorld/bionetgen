@@ -87,8 +87,5 @@ GM085273, AI35997, CA109552), NSF grant 0829788, the Arizona Biomedical
 Research Commission, and the Department of Computational Biology at the
 University of Pittsburgh School of Medicine.
 
-Faeder Lab [Department of Computational and Systems
-Biology](http://www.csb.pitt.edu) [University of
-Pittsburgh](http://www.pitt.edu) | [School of
-Medicine](http://www.medschool.pitt.edu) 3501 Fifth Avenue, Pittsburgh,
-PA 15260
+BioNetGen and this web site are maintained by the [Lab of James Faeder](http://www.csb.pitt.edu/Faculty/Faeder/) in the [Department of Computational and Systems
+Biology](http://www.csb.pitt.edu) and the University of Pittsburgh School of Medicine.
