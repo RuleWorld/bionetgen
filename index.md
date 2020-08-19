@@ -16,7 +16,7 @@ modeling](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bio
 *Bioinformatics* **32,** 3366–3368 (2016).
 
 In addition, please send us an
-[email](mailto:bionetgen.help@gmail.com)or send a tweet to
+[email](mailto:bionetgen.help@gmail.com) or send a tweet to
 [@bionetgen](http://twitter.com/bionetgen). We’d love to hear about it!
 
 Download
@@ -25,7 +25,7 @@ Download
 -   [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest)
     – the graphical interface for BioNetGen that includes BioNetGen and
     NFsim source code and executables for Mac, Windows, and Linux.
-    [**Current version is 2.3.2**]{style="color: #000000;"}
+    [**Current version is 2.3.2**]
     -   Step-by-step installation guide can be found
         [here](https://github.com/RuleWorld/rulebender/blob/master/docs/RuleBender-installation-guide.pdf).
 -   [BioNetGen](https://github.com/RuleWorld/bionetgen/releases/latest)
@@ -37,8 +37,7 @@ Documentation and Tutorials
 ---------------------------
 
 -   [Introduction to rule-based modeling with BioNetGen and RuleBender-
-    slides](https://www.dropbox.com/s/w5hlpip8d9di0rp/q-bio-tutorial-rule-based-modeling-25July2017.pdf?dl=0 "https://www.dropbox.com/s/brn96usq91o58pc/q-bio-2016-RBM-intro.pptx?dl=0"){.external
-    .text}
+    slides](https://www.dropbox.com/s/w5hlpip8d9di0rp/q-bio-tutorial-rule-based-modeling-25July2017.pdf?dl=0 "https://www.dropbox.com/s/brn96usq91o58pc/q-bio-2016-RBM-intro.pptx?dl=0")
 -   Getting started with RuleBender
     ([video](https://www.youtube.com/watch?v=MWoY5iaC8W0))
 -   [BioNetGen Tutorial on
@@ -82,7 +81,7 @@ Acknowledgements
 Current development of BioNetGen is supported in part by the
 NIGMS-funded (P41GM103712) National Center for Multiscale Modeling of
 Biological Systems
-([MMBioS](http://mmbios.org/ "http://mmbios.org"){.external .text}).
+([MMBioS](http://mmbios.org/ "http://mmbios.org")).
 Past support has been provided by NIH grants (GM076570, GM103712,
 GM085273, AI35997, CA109552), NSF grant 0829788, the Arizona Biomedical
 Research Commission, and the Department of Computational Biology at the
@@ -92,4 +91,4 @@ Faeder Lab [Department of Computational and Systems
 Biology](http://www.csb.pitt.edu) [University of
 Pittsburgh](http://www.pitt.edu) | [School of
 Medicine](http://www.medschool.pitt.edu) 3501 Fifth Avenue, Pittsburgh,
-PA 15260\
+PA 15260
