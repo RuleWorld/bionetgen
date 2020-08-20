@@ -3,6 +3,8 @@ title: home
 layout: default
 ---
 
+![Flagman](assets/flagman.png)
+
 BioNetGen 
 =========
 
@@ -71,7 +73,7 @@ Papers
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
 -   [Published BioNetGen
-    models](/published)
+    models](/published_models)
 
 Contact
 -------
@@ -92,5 +94,4 @@ GM085273, AI35997, CA109552), NSF grant 0829788, the Arizona Biomedical
 Research Commission, and the Department of Computational Biology at the
 University of Pittsburgh School of Medicine.
 
-BioNetGen and this web site are maintained by the [Lab of James Faeder](http://www.csb.pitt.edu/Faculty/Faeder/) in the [Department of Computational and Systems
-Biology](http://www.csb.pitt.edu) and the University of Pittsburgh School of Medicine.
+BioNetGen and this web site are maintained by the [Lab of James Faeder](http://www.csb.pitt.edu/Faculty/Faeder/) in the [Department of Computational and Systems Biology](http://www.csb.pitt.edu) and the University of Pittsburgh School of Medicine.

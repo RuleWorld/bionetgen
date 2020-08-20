@@ -1,7 +1,7 @@
 ---
 title: Published
 layout: default
-permalink: /published_models.md
+permalink: /published
 ---
 
 # Published BioNetGen Models
