@@ -3,7 +3,7 @@ title: home
 layout: default
 ---
 
-<img src="assets/flagman.png" width="50" height="48"/>{: style="float: right"}
+<img src="assets/flagman.png" width="50" height="48"/>{: style="float: left"}
 
 BioNetGen 
 =========
