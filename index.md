@@ -3,7 +3,8 @@ title: home
 layout: default
 ---
 
-![Flagman](assets/flagman.png =75x72){: style="float: right"}
+![Flagman](assets/flagman.png){: style="float: right"}
+<img src="assets/flagman.png" width="75" height="72"/>{: style="float: right"}
 
 BioNetGen 
 =========
