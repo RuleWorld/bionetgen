@@ -125,7 +125,7 @@ An extended tutorial on visualization is available in the Supporting information
 ## SBML importer
 
 [`translateSBML.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/SBML/translateSBML.bngl)
-: Input file that can be used to translate an SBML file (with .xml extension) into a BNGL model. The `atomize` parameter determines whether the translated will be structured (`atomize=>1`) or unstructured (`atomize=>0`). "Structured" here means that the translator will attempt to determine the underlying molecules, components, bonds, and states. Some example SBML input models are [here](SBML/). A repository of SBML models is available at [biomodels.net](http://biomodels.net). Be sure to download models with annotation (usually SBML Level 2).
+: Input file that can be used to translate an SBML file (with .xml extension) into a BNGL model. The `atomize` parameter determines whether the translated will be structured (`atomize=>1`) or unstructured (`atomize=>0`). "Structured" here means that the translator will attempt to determine the underlying molecules, components, bonds, and states. Some example SBML input models are [here](https://github.com/RuleWorld/BNGTutorial/blob/master/SBML/). A repository of SBML models is available at [biomodels.net](http://biomodels.net). Be sure to download models with annotation (usually SBML Level 2).
 
 ## Larger models
 
