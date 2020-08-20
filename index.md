@@ -1,3 +1,8 @@
+---
+title: home
+layout: default
+---
+
 BioNetGen 
 =========
 
@@ -66,7 +71,7 @@ Papers
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
 -   [Published BioNetGen
-    models](https://github.com/RuleWorld/bionetgen/blob/master/docs/Published_BioNetGen_Models.md)
+    models](/published)
 
 Contact
 -------
