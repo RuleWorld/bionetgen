@@ -42,12 +42,12 @@ Download
 Documentation and Tutorials
 ---------------------------
 
+-   [FAQ](/faq)
 -   [Introduction to rule-based modeling with BioNetGen and RuleBender-
     slides](https://www.dropbox.com/s/w5hlpip8d9di0rp/q-bio-tutorial-rule-based-modeling-25July2017.pdf?dl=0 "https://www.dropbox.com/s/brn96usq91o58pc/q-bio-2016-RBM-intro.pptx?dl=0")
 -   Getting started with RuleBender
     ([video](https://www.youtube.com/watch?v=MWoY5iaC8W0))
--   [BioNetGen Tutorial on
-    GitHub](https://github.com/RuleWorld/BNGTutorial/blob/master/README.md)
+-   [BioNetGen Tutorial](/tutorial)
 
 Reference
 ---------
