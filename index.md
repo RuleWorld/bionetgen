@@ -7,9 +7,6 @@ layout: default
   <img src="assets/flagman.png" width="75" height="72"/>
 </p>
 
-BioNetGen 
-=========
-
 This web site serves the BioNetGen user community by providing
 information about BioNetGen and tools for the development, annotation,
 and discussion of BioNetGen models.
