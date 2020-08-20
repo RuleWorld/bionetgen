@@ -73,7 +73,7 @@ Papers
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
 -   [Published BioNetGen
-    models](/published_models)
+    models](/published)
 
 Contact
 -------
