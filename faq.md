@@ -4,4 +4,4 @@ layout: default
 permalink: /faq
 ---
 
-# Bionetgen FAQ
+# FAQ
