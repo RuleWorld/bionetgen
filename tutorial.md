@@ -148,4 +148,6 @@ An extended tutorial on visualization is available in the Supporting information
 [`Suderman_2013.bngl`](LargerModels/Suderman_2013.bngl)
 : Visualize a large library of yeast pheromone signaling using the `visualize` command. A manuscript describing this model can be found [here](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1003278).
 
-<img align="center" src="assets/flagman.png" width="150" height="125">
+<p align="center">
+  <img src="assets/flagman.png" width="150" height="125">
+</p>
