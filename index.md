@@ -3,9 +3,7 @@ title: home
 layout: default
 ---
 
-![Flagman](assets/flagman.png)
-
-BioNetGen 
+BioNetGen ![Flagman](assets/flagman.png =75x72)
 =========
 
 This web site serves the BioNetGen user community by providing
