@@ -1282,6 +1282,8 @@ sub toMathMLString
     my $rindices   = shift;
     my $pindices   = shift;
     my $statFactor = (@_) ? shift : 1;
+    # SBML changes
+    my $comp_name = (@_) ? shift : undef;
     my $string     = '';
 
     my @k    = @{ $rl->Constants };
@@ -1301,11 +1303,22 @@ sub toMathMLString
             $string .= "    <cn> $statFactor </cn>\n";
         }
         $string .= sprintf "    <ci> %s </ci>\n", $k[0];
+        # we need to get the order of rxn
         for my $i (@$rindices)
         {
             $string .= sprintf "    <ci> S%d </ci>\n", $i;
         }
+        # add volume correction
+        if ( defined $comp_name )
+        {
+            $string .= "    <ci> $comp_name </ci>\n";
+        }
+
         $string .= "  </apply>\n";
+        # done adding volume correction
+        
+        # debugging
+        # print $string;
     }
     elsif ( $type eq 'Sat' )
     {

@@ -956,6 +956,15 @@ sub writeSBML
 #      <compartment id="cell" size="1"/>
 #    </listOfCompartments>
 #EOF
+  # Default units
+  print $SBML "    <listOfUnitDefinitions>\n";
+  print $SBML "      <unitDefinition id=\"substance\" name=\"substance\">\n";
+  print $SBML "        <listOfUnits>\n";
+  print $SBML "          <unit kind=\"item\" exponent=\"1\" multiplier=\"1\"/>\n";
+  print $SBML "        </listOfUnits>\n";
+  print $SBML "      </unitDefinition>\n";
+  print $SBML "    </listOfUnitDefinitions>\n";
+
 	
 	if ($model->CompartmentList->Used) { # @a is not empty...
         print $SBML "    <listOfCompartments>\n";
@@ -1001,7 +1010,8 @@ sub writeSBML
         else{
         		$compartmentString = "cell";
         }
-		printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
+    printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialAmount=\"%.8g\"",
+    # printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
 		                                                                $spec->Index, $compartmentString, $conc;
 
 		if ( $spec->SpeciesGraph->Fixed )
@@ -1152,7 +1162,14 @@ sub writeSBML
 		}
 		
 		print $SBML "        <kineticLaw>\n";
-		my ( $rstring, $err ) = $rxn->RateLaw->toMathMLString( \@rindices, \@pindices, $rxn->StatFactor );
+
+    # pulling the compartment name
+    my $comp_name = undef;
+    my $err = undef;
+    my $rstring = undef;
+    ($comp_name, $err) = $rxn->get_comp_name($BNGModel::GLOBAL_MODEL);
+
+		( $rstring, $err ) = $rxn->RateLaw->toMathMLString( \@rindices, \@pindices, $rxn->StatFactor, $comp_name );
 		if ($err) { return $err; }
 
 		foreach my $line ( split "\n", $rstring )

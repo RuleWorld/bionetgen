@@ -191,6 +191,135 @@ sub get_intensive_to_extensive_units_conversion
 ###
 
 
+sub get_comp_name
+# ($comp_name, $err) = $rxn->get_comp_name($model)
+{
+    my ($rxn, $model)  = @_;
+
+    my $err;
+    my $comp_name = undef;
+
+    # get all the defined compartments
+    my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
+    my @product_compartments  = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Products});
+   
+    # return undefined volume expr if there are no compartments
+    if ( @reactant_compartments )
+    {   # order >=1 reactions
+        # divide into surfaces and volumes
+        my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
+        my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
+        
+        if ( @volumes ) 
+        {   # we have at least one volume 
+            # check if products are in the same compartment
+            my $consistent = 1;
+            my $comp1 = $volumes[0];
+            foreach my $comp2 ( @volumes[1..$#reactant_compartments] )
+            {
+                unless ($comp1 == $comp2)
+                {
+                    $consistent = 0;
+                    last;
+                }
+            }
+            if ($consistent)
+            {   # everything in same volume
+                # return volume name
+                $comp_name = $comp1->Name;
+            }
+            else
+            {   # TODO: return error?
+                $comp_name = $comp1->Name;
+            }
+        } 
+        else 
+        { # this is a surface only reaction
+            # check if products are in the same compartment
+            my $consistent = 1;
+            my $comp1 = $surfaces[0];
+            foreach my $comp2 ( @surfaces[1..$#reactant_compartments] )
+            {
+                unless ($comp1 == $comp2)
+                {
+                    $consistent = 0;
+                    last;
+                }
+            }
+            if ($consistent)
+            {   # everything in same volume
+                # return volume name
+                $comp_name = $comp1->Name;
+            }
+            else
+            {   # TODO: return error?
+                $comp_name = $comp1->Name;
+            }
+        }
+
+    }
+    elsif ( @product_compartments>0 )
+    {   # zero-order reactions
+        my @surfaces = ( grep {$_->SpatialDimensions==2} @product_compartments );
+        my @volumes  = ( grep {$_->SpatialDimensions==3} @product_compartments );
+        
+        if ( @volumes ) 
+        {   # we have at least one volume 
+            # check if products are in the same compartment
+            my $consistent = 1;
+            my $comp1 = $volumes[0];
+            foreach my $comp2 ( @volumes[1..$#product_compartments] )
+            {
+                unless ($comp1 == $comp2)
+                {
+                    $consistent = 0;
+                    last;
+                }
+            }
+            if ($consistent)
+            {   # everything in same volume
+                # return volume name
+                $comp_name = $comp1->Name;
+            }
+            else
+            {   # TODO: return error?
+                $comp_name = $comp1->Name;
+            }
+        } 
+        else 
+        { # this is a surface only reaction
+            # check if products are in the same compartment
+            my $consistent = 1;
+            my $comp1 = $surfaces[0];
+            foreach my $comp2 ( @surfaces[1..$#product_compartments] )
+            {
+                unless ($comp1 == $comp2)
+                {
+                    $consistent = 0;
+                    last;
+                }
+            }
+            if ($consistent)
+            {   # everything in same volume
+                # return volume name
+                $comp_name = $comp1->Name;
+            }
+            else
+            {   # TODO: return error?
+                $comp_name = $comp1->Name;
+            }
+        }
+    }
+    # return the expression (possibly undefined) and the error msg (if any).
+    return $comp_name, $err;
+}
+
+
+###
+###
+###
+
+
 sub getCVodeName
 {
     my $rxn = shift;
