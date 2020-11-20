@@ -1282,7 +1282,6 @@ sub toMathMLString
     my $rindices   = shift;
     my $pindices   = shift;
     my $statFactor = (@_) ? shift : 1;
-    # SBML changes
     my $comp_name = (@_) ? shift : undef;
     my $string     = '';
 
@@ -1303,12 +1302,11 @@ sub toMathMLString
             $string .= "    <cn> $statFactor </cn>\n";
         }
         $string .= sprintf "    <ci> %s </ci>\n", $k[0];
-        # we need to get the order of rxn
         for my $i (@$rindices)
         {
             $string .= sprintf "    <ci> S%d </ci>\n", $i;
         }
-        # add volume correction
+        # add volume correction if given
         if ( defined $comp_name )
         {
             $string .= "    <ci> $comp_name </ci>\n";

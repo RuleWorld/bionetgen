@@ -956,6 +956,7 @@ sub writeSBML
 #      <compartment id="cell" size="1"/>
 #    </listOfCompartments>
 #EOF
+  
   # Default units
   print $SBML "    <listOfUnitDefinitions>\n";
   print $SBML "      <unitDefinition id=\"substance\" name=\"substance\">\n";

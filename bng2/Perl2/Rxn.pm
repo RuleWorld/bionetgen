@@ -203,7 +203,6 @@ sub get_comp_name
     my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
     my @product_compartments  = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Products});
    
-    # return undefined volume expr if there are no compartments
     if ( @reactant_compartments )
     {   # order >=1 reactions
         # divide into surfaces and volumes
@@ -230,11 +229,12 @@ sub get_comp_name
             }
             else
             {   # TODO: return error?
+                # we still need a comparment name
                 $comp_name = $comp1->Name;
             }
         } 
         else 
-        { # this is a surface only reaction
+        {   # this is a surface only reaction
             # check if products are in the same compartment
             my $consistent = 1;
             my $comp1 = $surfaces[0];
