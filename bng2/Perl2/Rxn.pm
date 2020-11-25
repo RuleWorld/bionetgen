@@ -136,19 +136,14 @@ sub get_intensive_to_extensive_units_conversion
         my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
         my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
       
-        # compartment determination
-        if ( @volumes ) 
-        {   # volumes take precedence over surfaces
-            # TODO: potential error checks here?
-            # assuming everything is in the same comp
-            $comp_name = $volumes[0]->Name;
-        } 
-        else 
-        {   # this is a surface only reaction
-            # assuming everything is in the same comp
-            $comp_name = $surfaces[0]->Name;
+        if (@surfaces) 
+        {   # TODO: check for consistency for both
+            $comp_name = @surfaces[0]->Name;
         }
-
+        elsif (@volumes)
+        {
+            $comp_name = @volumes[0]->Name;
+        }
         # Pick and toss an anchor reactant.  If there's a surface reactant, toss it.
         # Otherwise toss a volume.
         (@surfaces) ? shift @surfaces : shift @volumes;

@@ -1282,7 +1282,7 @@ sub toMathMLString
     my $rindices   = shift;
     my $pindices   = shift;
     my $statFactor = (@_) ? shift : 1;
-    my $comp_name = (@_) ? shift : undef;
+    my $comp_name  = (@_) ? shift : undef;
     my $string     = '';
 
     my @k    = @{ $rl->Constants };
@@ -1291,6 +1291,7 @@ sub toMathMLString
     $string .= "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
 
     $statFactor *= $rl->Factor;
+
 
 #	if ( $type eq "Ele" )
     if ( $type eq "Ele" | $type eq "Function" )
@@ -1311,12 +1312,8 @@ sub toMathMLString
         {
             $string .= "    <ci> $comp_name </ci>\n";
         }
-
-        $string .= "  </apply>\n";
         # done adding volume correction
-        
-        # debugging
-        # print $string;
+        $string .= "  </apply>\n";
     }
     elsif ( $type eq 'Sat' )
     {
