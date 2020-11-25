@@ -1166,9 +1166,10 @@ sub writeSBML
 
     # pulling the compartment name
     my $comp_name = undef;
+    my $vol_expr = undef;
     my $err = undef;
     my $rstring = undef;
-    ($comp_name, $err) = $rxn->get_comp_name($BNGModel::GLOBAL_MODEL);
+    ($vol_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);
 
 		( $rstring, $err ) = $rxn->RateLaw->toMathMLString( \@rindices, \@pindices, $rxn->StatFactor, $comp_name );
 		if ($err) { return $err; }

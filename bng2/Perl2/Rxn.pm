@@ -61,8 +61,9 @@ sub toString
 
     # get the expression for converting intensive units to extensive units (if any)
     my $conv_expr = undef;
+    my $comp_name = undef;
     if ($convert_units)
-    {  ($conv_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
+    {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
     # Write the Ratelaw...
     if (defined $rxn->RateLaw)
@@ -97,7 +98,7 @@ sub toString
 
 
 sub get_intensive_to_extensive_units_conversion
-# ($vol_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($model)
+# ($vol_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($model)
 # Get expression that converts intrinsic rate constants to extrinsic units.
 #  Returns undefined if the conversion expression is '1'.
 #
@@ -122,6 +123,7 @@ sub get_intensive_to_extensive_units_conversion
 
     my $err;
     my $conv_expr = undef;
+    my $comp_name = undef;
 
     # get all the defined compartments
     my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
@@ -133,6 +135,19 @@ sub get_intensive_to_extensive_units_conversion
         # divide into surfaces and volumes
         my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
         my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
+      
+        # compartment determination
+        if ( @volumes ) 
+        {   # volumes take precedence over surfaces
+            # TODO: potential error checks here?
+            # assuming everything is in the same comp
+            $comp_name = $volumes[0]->Name;
+        } 
+        else 
+        {   # this is a surface only reaction
+            # assuming everything is in the same comp
+            $comp_name = $surfaces[0]->Name;
+        }
 
         # Pick and toss an anchor reactant.  If there's a surface reactant, toss it.
         # Otherwise toss a volume.
@@ -172,6 +187,7 @@ sub get_intensive_to_extensive_units_conversion
         if ($consistent)
         {   # construct the volume expression
             $conv_expr = $comp1->Size;
+            $comp_name = $comp1->Name;
         }
         else
         {   send_warning("BioNetGen doesn't know how to handle zero-order synthesis of products in multiple compartments.");  }
@@ -182,137 +198,9 @@ sub get_intensive_to_extensive_units_conversion
     }
     
     # return the expression (possibly undefined) and the error msg (if any).
-    return $conv_expr, $err;
+    return $conv_expr, $comp_name, $err;
 }
 
-
-###
-###
-###
-
-
-sub get_comp_name
-# ($comp_name, $err) = $rxn->get_comp_name($model)
-{
-    my ($rxn, $model)  = @_;
-
-    my $err;
-    my $comp_name = undef;
-
-    # get all the defined compartments
-    my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
-    my @product_compartments  = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Products});
-   
-    if ( @reactant_compartments )
-    {   # order >=1 reactions
-        # divide into surfaces and volumes
-        my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
-        my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
-        
-        if ( @volumes ) 
-        {   # we have at least one volume 
-            # check if products are in the same compartment
-            my $consistent = 1;
-            my $comp1 = $volumes[0];
-            foreach my $comp2 ( @volumes[1..$#reactant_compartments] )
-            {
-                unless ($comp1 == $comp2)
-                {
-                    $consistent = 0;
-                    last;
-                }
-            }
-            if ($consistent)
-            {   # everything in same volume
-                # return volume name
-                $comp_name = $comp1->Name;
-            }
-            else
-            {   # TODO: return error?
-                # we still need a comparment name
-                $comp_name = $comp1->Name;
-            }
-        } 
-        else 
-        {   # this is a surface only reaction
-            # check if products are in the same compartment
-            my $consistent = 1;
-            my $comp1 = $surfaces[0];
-            foreach my $comp2 ( @surfaces[1..$#reactant_compartments] )
-            {
-                unless ($comp1 == $comp2)
-                {
-                    $consistent = 0;
-                    last;
-                }
-            }
-            if ($consistent)
-            {   # everything in same volume
-                # return volume name
-                $comp_name = $comp1->Name;
-            }
-            else
-            {   # TODO: return error?
-                $comp_name = $comp1->Name;
-            }
-        }
-
-    }
-    elsif ( @product_compartments>0 )
-    {   # zero-order reactions
-        my @surfaces = ( grep {$_->SpatialDimensions==2} @product_compartments );
-        my @volumes  = ( grep {$_->SpatialDimensions==3} @product_compartments );
-        
-        if ( @volumes ) 
-        {   # we have at least one volume 
-            # check if products are in the same compartment
-            my $consistent = 1;
-            my $comp1 = $volumes[0];
-            foreach my $comp2 ( @volumes[1..$#product_compartments] )
-            {
-                unless ($comp1 == $comp2)
-                {
-                    $consistent = 0;
-                    last;
-                }
-            }
-            if ($consistent)
-            {   # everything in same volume
-                # return volume name
-                $comp_name = $comp1->Name;
-            }
-            else
-            {   # TODO: return error?
-                $comp_name = $comp1->Name;
-            }
-        } 
-        else 
-        { # this is a surface only reaction
-            # check if products are in the same compartment
-            my $consistent = 1;
-            my $comp1 = $surfaces[0];
-            foreach my $comp2 ( @surfaces[1..$#product_compartments] )
-            {
-                unless ($comp1 == $comp2)
-                {
-                    $consistent = 0;
-                    last;
-                }
-            }
-            if ($consistent)
-            {   # everything in same volume
-                # return volume name
-                $comp_name = $comp1->Name;
-            }
-            else
-            {   # TODO: return error?
-                $comp_name = $comp1->Name;
-            }
-        }
-    }
-    # return the expression (possibly undefined) and the error msg (if any).
-    return $comp_name, $err;
-}
 
 
 ###
@@ -353,8 +241,9 @@ sub getCVodeRate
 
     # get the expression for converting intensive units to extensive units (if any)
     my $conv_expr = undef;
+    my $comp_name = undef;
     if ($convert_units)
-    {  ($conv_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
+    {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
     # get reference to RxnRule RRef hash (TODO: may be obsolete)
     my $rrefs = undef;
@@ -378,8 +267,9 @@ sub getMatlabRate
 
     # get the expression for converting intensive units to extensive units (if any)
     my $conv_expr = undef;
+    my $comp_name = undef;
     if ($convert_units)
-    {  ($conv_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
+    {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
     # get reference to RxnRule RRef hash
     my $rrefs = undef;
