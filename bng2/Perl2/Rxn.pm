@@ -61,8 +61,9 @@ sub toString
 
     # get the expression for converting intensive units to extensive units (if any)
     my $conv_expr = undef;
+    my $comp_name = undef;
     if ($convert_units)
-    {  ($conv_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
+    {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
     # Write the Ratelaw...
     if (defined $rxn->RateLaw)
@@ -97,7 +98,7 @@ sub toString
 
 
 sub get_intensive_to_extensive_units_conversion
-# ($vol_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($model)
+# ($vol_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($model)
 # Get expression that converts intrinsic rate constants to extrinsic units.
 #  Returns undefined if the conversion expression is '1'.
 #
@@ -122,6 +123,7 @@ sub get_intensive_to_extensive_units_conversion
 
     my $err;
     my $conv_expr = undef;
+    my $comp_name = undef;
 
     # get all the defined compartments
     my @reactant_compartments = grep {defined $_} (map {$_->SpeciesGraph->Compartment} @{$rxn->Reactants});
@@ -133,7 +135,15 @@ sub get_intensive_to_extensive_units_conversion
         # divide into surfaces and volumes
         my @surfaces = ( grep {$_->SpatialDimensions==2} @reactant_compartments );
         my @volumes  = ( grep {$_->SpatialDimensions==3} @reactant_compartments );
-
+      
+        if (@surfaces) 
+        {   # TODO: check for consistency for both
+            $comp_name = @surfaces[0]->Name;
+        }
+        elsif (@volumes)
+        {
+            $comp_name = @volumes[0]->Name;
+        }
         # Pick and toss an anchor reactant.  If there's a surface reactant, toss it.
         # Otherwise toss a volume.
         (@surfaces) ? shift @surfaces : shift @volumes;
@@ -172,6 +182,7 @@ sub get_intensive_to_extensive_units_conversion
         if ($consistent)
         {   # construct the volume expression
             $conv_expr = $comp1->Size;
+            $comp_name = $comp1->Name;
         }
         else
         {   send_warning("BioNetGen doesn't know how to handle zero-order synthesis of products in multiple compartments.");  }
@@ -182,8 +193,9 @@ sub get_intensive_to_extensive_units_conversion
     }
     
     # return the expression (possibly undefined) and the error msg (if any).
-    return $conv_expr, $err;
+    return $conv_expr, $comp_name, $err;
 }
+
 
 
 ###
@@ -224,8 +236,9 @@ sub getCVodeRate
 
     # get the expression for converting intensive units to extensive units (if any)
     my $conv_expr = undef;
+    my $comp_name = undef;
     if ($convert_units)
-    {  ($conv_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
+    {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
     # get reference to RxnRule RRef hash (TODO: may be obsolete)
     my $rrefs = undef;
@@ -249,8 +262,9 @@ sub getMatlabRate
 
     # get the expression for converting intensive units to extensive units (if any)
     my $conv_expr = undef;
+    my $comp_name = undef;
     if ($convert_units)
-    {  ($conv_expr, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
+    {  ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);  }
 
     # get reference to RxnRule RRef hash
     my $rrefs = undef;
