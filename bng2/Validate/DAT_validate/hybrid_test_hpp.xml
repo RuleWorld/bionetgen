@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.6  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="hybrid_test_hpp">
     <ListOfParameters>
-      <Parameter id="Lig_tot" type="Constant" value="50000"/>
-      <Parameter id="Rec_tot" type="Constant" value="3000"/>
-      <Parameter id="cTot" type="Constant" value="2.7"/>
-      <Parameter id="beta" type="Constant" value="16.8"/>
-      <Parameter id="koff" type="Constant" value="0.01"/>
-      <Parameter id="kp1" type="Constant" value="1.8e-7"/>
-      <Parameter id="kp2" type="Constant" value="5.6e-5"/>
-      <Parameter id="k_gather" type="Constant" value="100000"/>
-      <Parameter id="kp1_1" type="Constant" value="5.4e-7"/>
-      <Parameter id="kp1_2" type="Constant" value="1.08e-6"/>
-      <Parameter id="kp2_1" type="Constant" value="0.000112"/>
-      <Parameter id="kp2_2" type="Constant" value="0.000112"/>
+      <Parameter id="Lig_tot" type="Constant" value="50000" expr="50000"/>
+      <Parameter id="Rec_tot" type="Constant" value="3000" expr="3000"/>
+      <Parameter id="cTot" type="Constant" value="2.7" expr="2.7"/>
+      <Parameter id="beta" type="Constant" value="16.8" expr="16.8"/>
+      <Parameter id="koff" type="Constant" value="0.01" expr="0.01"/>
+      <Parameter id="kp1" type="Constant" value="1.8e-7" expr="(cTot*koff)/(3.0*Lig_tot)"/>
+      <Parameter id="kp2" type="Constant" value="5.6e-5" expr="(beta*koff)/Rec_tot"/>
+      <Parameter id="k_gather" type="Constant" value="100000" expr="100000"/>
+      <Parameter id="kp1_1" type="Constant" value="5.4e-7" expr="3*((cTot*koff)/(3.0*Lig_tot))"/>
+      <Parameter id="kp1_2" type="Constant" value="1.08e-6" expr="6*((cTot*koff)/(3.0*Lig_tot))"/>
+      <Parameter id="kp2_1" type="Constant" value="0.000112" expr="2*((beta*koff)/Rec_tot)"/>
+      <Parameter id="kp2_2" type="Constant" value="0.000112" expr="2*((beta*koff)/Rec_tot)"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
       <MoleculeType id="L">

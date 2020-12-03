@@ -1,89 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.5  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="Motivating_example">
+    <listOfUnitDefinitions>
+      <unitDefinition id="substance" name="substance">
+        <listOfUnits>
+          <unit kind="item" exponent="1" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
     <listOfCompartments>
       <compartment id="cell" size="1"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="S1" compartment="cell" initialConcentration="310.58546" name="L(d,loc~EC,r)"/>
-      <species id="S2" compartment="cell" initialConcentration="0.49180364" name="R(l,loc~PM,tf~Y)"/>
-      <species id="S3" compartment="cell" initialConcentration="13.434166" name="TF(d~Y,dna,im,loc~CP,r)"/>
-      <species id="S4" compartment="cell" initialConcentration="1.2502025" name="DNA(p1,p2)"/>
-      <species id="S5" compartment="cell" initialConcentration="13.491541" name="Im(cargo,fg,loc~CP)"/>
-      <species id="S6" compartment="cell" initialConcentration="1.6213032" name="NP(fg)"/>
-      <species id="S7" compartment="cell" initialConcentration="0" boundaryCondition="true" name="Sink()"/>
-      <species id="S8" compartment="cell" initialConcentration="241.07022" name="L(d!1,loc~EC,r).L(d!1,loc~EC,r)"/>
-      <species id="S9" compartment="cell" initialConcentration="0.77527286" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~Y)"/>
-      <species id="S10" compartment="cell" initialConcentration="0.77593343" name="Im(cargo,fg!1,loc~CP).NP(fg!1)"/>
-      <species id="S11" compartment="cell" initialConcentration="1.2291434" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~Y)"/>
-      <species id="S12" compartment="cell" initialConcentration="0.048553887" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~Y)"/>
-      <species id="S13" compartment="cell" initialConcentration="1.0769233" name="Im(cargo,fg!1,loc~NU).NP(fg!1)"/>
-      <species id="S14" compartment="cell" initialConcentration="0.21327631" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~Y)"/>
-      <species id="S15" compartment="cell" initialConcentration="0.43932613" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~pY)"/>
-      <species id="S16" compartment="cell" initialConcentration="6.6312316" name="Im(cargo,fg,loc~NU)"/>
-      <species id="S17" compartment="cell" initialConcentration="2.899674" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~pY)"/>
-      <species id="S18" compartment="cell" initialConcentration="0.48794006" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~Y)"/>
-      <species id="S19" compartment="cell" initialConcentration="4.3761154" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~pY)"/>
-      <species id="S20" compartment="cell" initialConcentration="1.9220406" name="R(l,loc~PM,tf~pY)"/>
-      <species id="S21" compartment="cell" initialConcentration="0.33874071" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~Y)"/>
-      <species id="S22" compartment="cell" initialConcentration="0.70576423" name="R(l,loc~EM,tf~Y)"/>
-      <species id="S23" compartment="cell" initialConcentration="3.2364987" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~pY)"/>
-      <species id="S24" compartment="cell" initialConcentration="1.0992458" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY).R(l!3,loc~PM,tf~pY)"/>
-      <species id="S25" compartment="cell" initialConcentration="0.67152937" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~pY!4).TF(d~Y,dna,im,loc~CP,r!4)"/>
-      <species id="S26" compartment="cell" initialConcentration="3.4381638" name="L(d,loc~EN,r)"/>
-      <species id="S27" compartment="cell" initialConcentration="4.3224247" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~pY!2).TF(d~Y,dna,im,loc~CP,r!2)"/>
-      <species id="S28" compartment="cell" initialConcentration="3.713574" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~pY)"/>
-      <species id="S29" compartment="cell" initialConcentration="1.2042226" name="L(d!1,loc~EN,r).L(d!1,loc~EN,r)"/>
-      <species id="S30" compartment="cell" initialConcentration="6.7422699" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~pY!3).TF(d~Y,dna,im,loc~CP,r!3)"/>
-      <species id="S31" compartment="cell" initialConcentration="2.782692" name="R(l,loc~PM,tf~pY!1).TF(d~Y,dna,im,loc~CP,r!1)"/>
-      <species id="S32" compartment="cell" initialConcentration="2.6207445" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~pY)"/>
-      <species id="S33" compartment="cell" initialConcentration="5.2532412" name="R(l,loc~EM,tf~pY)"/>
-      <species id="S34" compartment="cell" initialConcentration="12.694846" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY).R(l!3,loc~EM,tf~pY)"/>
-      <species id="S35" compartment="cell" initialConcentration="3.7712747" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~pY!4).TF(d~Y,dna,im,loc~CP,r!4)"/>
-      <species id="S36" compartment="cell" initialConcentration="3.5675992" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!3,loc~PM,tf~pY!4).R(l!2,loc~PM,tf~pY).TF(d~Y,dna,im,loc~CP,r!4)"/>
-      <species id="S37" compartment="cell" initialConcentration="1.554601" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY!4).R(l!3,loc~PM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~Y,dna,im,loc~CP,r!5)"/>
-      <species id="S38" compartment="cell" initialConcentration="3.6743561" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~pY!2).TF(d~Y,dna,im,loc~CP,r!2)"/>
-      <species id="S39" compartment="cell" initialConcentration="2.5701885" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~pY!3).TF(d~Y,dna,im,loc~CP,r!3)"/>
-      <species id="S40" compartment="cell" initialConcentration="5.2618201" name="R(l,loc~EM,tf~pY!1).TF(d~Y,dna,im,loc~CP,r!1)"/>
-      <species id="S41" compartment="cell" initialConcentration="31.335051" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!3,loc~EM,tf~pY!4).R(l!2,loc~EM,tf~pY).TF(d~Y,dna,im,loc~CP,r!4)"/>
-      <species id="S42" compartment="cell" initialConcentration="10.477692" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY!4).R(l!3,loc~EM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~Y,dna,im,loc~CP,r!5)"/>
-      <species id="S43" compartment="cell" initialConcentration="0.36100488" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY!4).R(l!3,loc~PM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
-      <species id="S44" compartment="cell" initialConcentration="0.15718592" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~pY!2).TF(d~pY,dna,im,loc~CP,r!2)"/>
-      <species id="S45" compartment="cell" initialConcentration="0.23074489" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~pY!3).TF(d~pY,dna,im,loc~CP,r!3)"/>
-      <species id="S46" compartment="cell" initialConcentration="0.10764401" name="R(l,loc~PM,tf~pY!1).TF(d~pY,dna,im,loc~CP,r!1)"/>
-      <species id="S47" compartment="cell" initialConcentration="2.8660935" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY!4).R(l!3,loc~EM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
-      <species id="S48" compartment="cell" initialConcentration="0.1265848" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!3,loc~PM,tf~pY!4).R(l!2,loc~PM,tf~pY).TF(d~pY,dna,im,loc~CP,r!4)"/>
-      <species id="S49" compartment="cell" initialConcentration="20.473447" name="TF(d~pY,dna,im,loc~CP,r)"/>
-      <species id="S50" compartment="cell" initialConcentration="0.017321442" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY!4).R(l!3,loc~PM,tf~pY!5).TF(d~pY,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
-      <species id="S51" compartment="cell" initialConcentration="0.021642091" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~pY!4).TF(d~pY,dna,im,loc~CP,r!4)"/>
-      <species id="S52" compartment="cell" initialConcentration="0.24510365" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~pY!2).TF(d~pY,dna,im,loc~CP,r!2)"/>
-      <species id="S53" compartment="cell" initialConcentration="0.17885971" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~pY!3).TF(d~pY,dna,im,loc~CP,r!3)"/>
-      <species id="S54" compartment="cell" initialConcentration="0.33431695" name="R(l,loc~EM,tf~pY!1).TF(d~pY,dna,im,loc~CP,r!1)"/>
-      <species id="S55" compartment="cell" initialConcentration="1.4666424" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!3,loc~EM,tf~pY!4).R(l!2,loc~EM,tf~pY).TF(d~pY,dna,im,loc~CP,r!4)"/>
-      <species id="S56" compartment="cell" initialConcentration="0.15196821" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY!4).R(l!3,loc~EM,tf~pY!5).TF(d~pY,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
-      <species id="S57" compartment="cell" initialConcentration="0.16841844" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~pY!4).TF(d~pY,dna,im,loc~CP,r!4)"/>
-      <species id="S58" compartment="cell" initialConcentration="5.0820461" name="TF(d~pY!1,dna,im,loc~CP,r).TF(d~pY!1,dna,im,loc~CP,r)"/>
-      <species id="S59" compartment="cell" initialConcentration="15.753816" name="Im(cargo!1!2,fg,loc~CP).TF(d~pY!3,dna,im!1,loc~CP,r).TF(d~pY!3,dna,im!2,loc~CP,r)"/>
-      <species id="S60" compartment="cell" initialConcentration="0.39530619" name="Im(cargo!1!2,fg!3,loc~CP).NP(fg!3).TF(d~pY!4,dna,im!1,loc~CP,r).TF(d~pY!4,dna,im!2,loc~CP,r)"/>
-      <species id="S61" compartment="cell" initialConcentration="0.091120647" name="Im(cargo!1!2,fg!3,loc~NU).NP(fg!3).TF(d~pY!4,dna,im!1,loc~NU,r).TF(d~pY!4,dna,im!2,loc~NU,r)"/>
-      <species id="S62" compartment="cell" initialConcentration="5.9066912" name="TF(d~pY!1,dna,im,loc~NU,r).TF(d~pY!1,dna,im,loc~NU,r)"/>
-      <species id="S63" compartment="cell" initialConcentration="0.39308537" name="Im(cargo!1!2,fg,loc~NU).TF(d~pY!3,dna,im!1,loc~NU,r).TF(d~pY!3,dna,im!2,loc~NU,r)"/>
-      <species id="S64" compartment="cell" initialConcentration="10.788251" name="TF(d~pY,dna,im,loc~NU,r)"/>
-      <species id="S65" compartment="cell" initialConcentration="0.72351243" name="DNA(p1!1!2,p2).TF(d~pY!3,dna!1,im,loc~NU,r).TF(d~pY!3,dna!2,im,loc~NU,r)"/>
-      <species id="S66" compartment="cell" initialConcentration="0.36273086" name="mRNA1(loc~NU)"/>
-      <species id="S67" compartment="cell" initialConcentration="0.35480601" name="mRNA1(loc~CP)"/>
-      <species id="S68" compartment="cell" initialConcentration="1.0119495" name="P1(dna,im,loc~CP)"/>
-      <species id="S69" compartment="cell" initialConcentration="1.34129" name="Im(cargo!1,fg,loc~CP).P1(dna,im!1,loc~CP)"/>
-      <species id="S70" compartment="cell" initialConcentration="0.035023048" name="Im(cargo!1,fg!2,loc~CP).NP(fg!2).P1(dna,im!1,loc~CP)"/>
-      <species id="S71" compartment="cell" initialConcentration="0.0043901849" name="Im(cargo!1,fg!2,loc~NU).NP(fg!2).P1(dna,im!1,loc~NU)"/>
-      <species id="S72" compartment="cell" initialConcentration="0.15431286" name="P1(dna,im,loc~NU)"/>
-      <species id="S73" compartment="cell" initialConcentration="0.010339688" name="Im(cargo!1,fg,loc~NU).P1(dna,im!1,loc~NU)"/>
-      <species id="S74" compartment="cell" initialConcentration="0.01664965" name="DNA(p1,p2!1).P1(dna!1,im,loc~NU)"/>
-      <species id="S75" compartment="cell" initialConcentration="0.0096354224" name="DNA(p1!1!2,p2!3).P1(dna!3,im,loc~NU).TF(d~pY!4,dna!1,im,loc~NU,r).TF(d~pY!4,dna!2,im,loc~NU,r)"/>
-      <species id="S76" compartment="cell" initialConcentration="0.01275759" name="mRNA2(loc~NU)"/>
-      <species id="S77" compartment="cell" initialConcentration="0.011993377" name="mRNA2(loc~CP)"/>
-      <species id="S78" compartment="cell" initialConcentration="0.063846962" name="P2()"/>
+      <species id="S1" compartment="cell" initialAmount="310.58546" name="L(d,loc~EC,r)"/>
+      <species id="S2" compartment="cell" initialAmount="0.49180364" name="R(l,loc~PM,tf~Y)"/>
+      <species id="S3" compartment="cell" initialAmount="13.434166" name="TF(d~Y,dna,im,loc~CP,r)"/>
+      <species id="S4" compartment="cell" initialAmount="1.2502025" name="DNA(p1,p2)"/>
+      <species id="S5" compartment="cell" initialAmount="13.491541" name="Im(cargo,fg,loc~CP)"/>
+      <species id="S6" compartment="cell" initialAmount="1.6213032" name="NP(fg)"/>
+      <species id="S7" compartment="cell" initialAmount="0" boundaryCondition="true" name="Sink()"/>
+      <species id="S8" compartment="cell" initialAmount="241.07022" name="L(d!1,loc~EC,r).L(d!1,loc~EC,r)"/>
+      <species id="S9" compartment="cell" initialAmount="0.77527286" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~Y)"/>
+      <species id="S10" compartment="cell" initialAmount="0.77593343" name="Im(cargo,fg!1,loc~CP).NP(fg!1)"/>
+      <species id="S11" compartment="cell" initialAmount="1.2291434" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~Y)"/>
+      <species id="S12" compartment="cell" initialAmount="0.048553887" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~Y)"/>
+      <species id="S13" compartment="cell" initialAmount="1.0769233" name="Im(cargo,fg!1,loc~NU).NP(fg!1)"/>
+      <species id="S14" compartment="cell" initialAmount="0.21327631" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~Y)"/>
+      <species id="S15" compartment="cell" initialAmount="0.43932613" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~pY)"/>
+      <species id="S16" compartment="cell" initialAmount="6.6312316" name="Im(cargo,fg,loc~NU)"/>
+      <species id="S17" compartment="cell" initialAmount="2.899674" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~pY)"/>
+      <species id="S18" compartment="cell" initialAmount="0.48794006" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~Y)"/>
+      <species id="S19" compartment="cell" initialAmount="4.3761154" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~pY)"/>
+      <species id="S20" compartment="cell" initialAmount="1.9220406" name="R(l,loc~PM,tf~pY)"/>
+      <species id="S21" compartment="cell" initialAmount="0.33874071" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~Y)"/>
+      <species id="S22" compartment="cell" initialAmount="0.70576423" name="R(l,loc~EM,tf~Y)"/>
+      <species id="S23" compartment="cell" initialAmount="3.2364987" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~pY)"/>
+      <species id="S24" compartment="cell" initialAmount="1.0992458" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY).R(l!3,loc~PM,tf~pY)"/>
+      <species id="S25" compartment="cell" initialAmount="0.67152937" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~pY!4).TF(d~Y,dna,im,loc~CP,r!4)"/>
+      <species id="S26" compartment="cell" initialAmount="3.4381638" name="L(d,loc~EN,r)"/>
+      <species id="S27" compartment="cell" initialAmount="4.3224247" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~pY!2).TF(d~Y,dna,im,loc~CP,r!2)"/>
+      <species id="S28" compartment="cell" initialAmount="3.713574" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~pY)"/>
+      <species id="S29" compartment="cell" initialAmount="1.2042226" name="L(d!1,loc~EN,r).L(d!1,loc~EN,r)"/>
+      <species id="S30" compartment="cell" initialAmount="6.7422699" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~pY!3).TF(d~Y,dna,im,loc~CP,r!3)"/>
+      <species id="S31" compartment="cell" initialAmount="2.782692" name="R(l,loc~PM,tf~pY!1).TF(d~Y,dna,im,loc~CP,r!1)"/>
+      <species id="S32" compartment="cell" initialAmount="2.6207445" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~pY)"/>
+      <species id="S33" compartment="cell" initialAmount="5.2532412" name="R(l,loc~EM,tf~pY)"/>
+      <species id="S34" compartment="cell" initialAmount="12.694846" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY).R(l!3,loc~EM,tf~pY)"/>
+      <species id="S35" compartment="cell" initialAmount="3.7712747" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~pY!4).TF(d~Y,dna,im,loc~CP,r!4)"/>
+      <species id="S36" compartment="cell" initialAmount="3.5675992" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!3,loc~PM,tf~pY!4).R(l!2,loc~PM,tf~pY).TF(d~Y,dna,im,loc~CP,r!4)"/>
+      <species id="S37" compartment="cell" initialAmount="1.554601" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY!4).R(l!3,loc~PM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~Y,dna,im,loc~CP,r!5)"/>
+      <species id="S38" compartment="cell" initialAmount="3.6743561" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~pY!2).TF(d~Y,dna,im,loc~CP,r!2)"/>
+      <species id="S39" compartment="cell" initialAmount="2.5701885" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~pY!3).TF(d~Y,dna,im,loc~CP,r!3)"/>
+      <species id="S40" compartment="cell" initialAmount="5.2618201" name="R(l,loc~EM,tf~pY!1).TF(d~Y,dna,im,loc~CP,r!1)"/>
+      <species id="S41" compartment="cell" initialAmount="31.335051" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!3,loc~EM,tf~pY!4).R(l!2,loc~EM,tf~pY).TF(d~Y,dna,im,loc~CP,r!4)"/>
+      <species id="S42" compartment="cell" initialAmount="10.477692" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY!4).R(l!3,loc~EM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~Y,dna,im,loc~CP,r!5)"/>
+      <species id="S43" compartment="cell" initialAmount="0.36100488" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY!4).R(l!3,loc~PM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
+      <species id="S44" compartment="cell" initialAmount="0.15718592" name="L(d,loc~EC,r!1).R(l!1,loc~PM,tf~pY!2).TF(d~pY,dna,im,loc~CP,r!2)"/>
+      <species id="S45" compartment="cell" initialAmount="0.23074489" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r).R(l!2,loc~PM,tf~pY!3).TF(d~pY,dna,im,loc~CP,r!3)"/>
+      <species id="S46" compartment="cell" initialAmount="0.10764401" name="R(l,loc~PM,tf~pY!1).TF(d~pY,dna,im,loc~CP,r!1)"/>
+      <species id="S47" compartment="cell" initialAmount="2.8660935" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY!4).R(l!3,loc~EM,tf~pY!5).TF(d~Y,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
+      <species id="S48" compartment="cell" initialAmount="0.1265848" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!3,loc~PM,tf~pY!4).R(l!2,loc~PM,tf~pY).TF(d~pY,dna,im,loc~CP,r!4)"/>
+      <species id="S49" compartment="cell" initialAmount="20.473447" name="TF(d~pY,dna,im,loc~CP,r)"/>
+      <species id="S50" compartment="cell" initialAmount="0.017321442" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~pY!4).R(l!3,loc~PM,tf~pY!5).TF(d~pY,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
+      <species id="S51" compartment="cell" initialAmount="0.021642091" name="L(d!1,loc~EC,r!2).L(d!1,loc~EC,r!3).R(l!2,loc~PM,tf~Y).R(l!3,loc~PM,tf~pY!4).TF(d~pY,dna,im,loc~CP,r!4)"/>
+      <species id="S52" compartment="cell" initialAmount="0.24510365" name="L(d,loc~EN,r!1).R(l!1,loc~EM,tf~pY!2).TF(d~pY,dna,im,loc~CP,r!2)"/>
+      <species id="S53" compartment="cell" initialAmount="0.17885971" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r).R(l!2,loc~EM,tf~pY!3).TF(d~pY,dna,im,loc~CP,r!3)"/>
+      <species id="S54" compartment="cell" initialAmount="0.33431695" name="R(l,loc~EM,tf~pY!1).TF(d~pY,dna,im,loc~CP,r!1)"/>
+      <species id="S55" compartment="cell" initialAmount="1.4666424" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!3,loc~EM,tf~pY!4).R(l!2,loc~EM,tf~pY).TF(d~pY,dna,im,loc~CP,r!4)"/>
+      <species id="S56" compartment="cell" initialAmount="0.15196821" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~pY!4).R(l!3,loc~EM,tf~pY!5).TF(d~pY,dna,im,loc~CP,r!4).TF(d~pY,dna,im,loc~CP,r!5)"/>
+      <species id="S57" compartment="cell" initialAmount="0.16841844" name="L(d!1,loc~EN,r!2).L(d!1,loc~EN,r!3).R(l!2,loc~EM,tf~Y).R(l!3,loc~EM,tf~pY!4).TF(d~pY,dna,im,loc~CP,r!4)"/>
+      <species id="S58" compartment="cell" initialAmount="5.0820461" name="TF(d~pY!1,dna,im,loc~CP,r).TF(d~pY!1,dna,im,loc~CP,r)"/>
+      <species id="S59" compartment="cell" initialAmount="15.753816" name="Im(cargo!1!2,fg,loc~CP).TF(d~pY!3,dna,im!1,loc~CP,r).TF(d~pY!3,dna,im!2,loc~CP,r)"/>
+      <species id="S60" compartment="cell" initialAmount="0.39530619" name="Im(cargo!1!2,fg!3,loc~CP).NP(fg!3).TF(d~pY!4,dna,im!1,loc~CP,r).TF(d~pY!4,dna,im!2,loc~CP,r)"/>
+      <species id="S61" compartment="cell" initialAmount="0.091120647" name="Im(cargo!1!2,fg!3,loc~NU).NP(fg!3).TF(d~pY!4,dna,im!1,loc~NU,r).TF(d~pY!4,dna,im!2,loc~NU,r)"/>
+      <species id="S62" compartment="cell" initialAmount="5.9066912" name="TF(d~pY!1,dna,im,loc~NU,r).TF(d~pY!1,dna,im,loc~NU,r)"/>
+      <species id="S63" compartment="cell" initialAmount="0.39308537" name="Im(cargo!1!2,fg,loc~NU).TF(d~pY!3,dna,im!1,loc~NU,r).TF(d~pY!3,dna,im!2,loc~NU,r)"/>
+      <species id="S64" compartment="cell" initialAmount="10.788251" name="TF(d~pY,dna,im,loc~NU,r)"/>
+      <species id="S65" compartment="cell" initialAmount="0.72351243" name="DNA(p1!1!2,p2).TF(d~pY!3,dna!1,im,loc~NU,r).TF(d~pY!3,dna!2,im,loc~NU,r)"/>
+      <species id="S66" compartment="cell" initialAmount="0.36273086" name="mRNA1(loc~NU)"/>
+      <species id="S67" compartment="cell" initialAmount="0.35480601" name="mRNA1(loc~CP)"/>
+      <species id="S68" compartment="cell" initialAmount="1.0119495" name="P1(dna,im,loc~CP)"/>
+      <species id="S69" compartment="cell" initialAmount="1.34129" name="Im(cargo!1,fg,loc~CP).P1(dna,im!1,loc~CP)"/>
+      <species id="S70" compartment="cell" initialAmount="0.035023048" name="Im(cargo!1,fg!2,loc~CP).NP(fg!2).P1(dna,im!1,loc~CP)"/>
+      <species id="S71" compartment="cell" initialAmount="0.0043901849" name="Im(cargo!1,fg!2,loc~NU).NP(fg!2).P1(dna,im!1,loc~NU)"/>
+      <species id="S72" compartment="cell" initialAmount="0.15431286" name="P1(dna,im,loc~NU)"/>
+      <species id="S73" compartment="cell" initialAmount="0.010339688" name="Im(cargo!1,fg,loc~NU).P1(dna,im!1,loc~NU)"/>
+      <species id="S74" compartment="cell" initialAmount="0.01664965" name="DNA(p1,p2!1).P1(dna!1,im,loc~NU)"/>
+      <species id="S75" compartment="cell" initialAmount="0.0096354224" name="DNA(p1!1!2,p2!3).P1(dna!3,im,loc~NU).TF(d~pY!4,dna!1,im,loc~NU,r).TF(d~pY!4,dna!2,im,loc~NU,r)"/>
+      <species id="S76" compartment="cell" initialAmount="0.01275759" name="mRNA2(loc~NU)"/>
+      <species id="S77" compartment="cell" initialAmount="0.011993377" name="mRNA2(loc~CP)"/>
+      <species id="S78" compartment="cell" initialAmount="0.063846962" name="P2()"/>
     </listOfSpecies>
     <listOfParameters>
       <!-- Independent variables -->

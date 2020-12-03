@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.6  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="ANx">
     <ListOfParameters>
-      <Parameter id="Vol" type="Constant" value="1.41e-15"/>
-      <Parameter id="Na" type="Constant" value="6.02e+23"/>
-      <Parameter id="konR" type="Constant" value="0.003298697"/>
-      <Parameter id="konB" type="Constant" value="0.003298697"/>
-      <Parameter id="koffR" type="Constant" value="0.1"/>
-      <Parameter id="koffB" type="Constant" value="0.1"/>
-      <Parameter id="kr" type="Constant" value="0.1"/>
-      <Parameter id="kb" type="Constant" value="0.2"/>
-      <Parameter id="e0" type="Constant" value="1"/>
-      <Parameter id="e1" type="Constant" value="0.5"/>
-      <Parameter id="e2" type="Constant" value="0"/>
-      <Parameter id="e3" type="Constant" value="-0.3"/>
-      <Parameter id="e4" type="Constant" value="-0.6"/>
-      <Parameter id="e5" type="Constant" value="-0.85"/>
-      <Parameter id="e6" type="Constant" value="-1.1"/>
-      <Parameter id="e7" type="Constant" value="-2"/>
-      <Parameter id="e8" type="Constant" value="-3"/>
-      <Parameter id="Asp_Koff_TAR" type="Constant" value="0.02"/>
-      <Parameter id="Asp_Kon_TAR" type="Constant" value="0.5"/>
-      <Parameter id="Asp_Koff_TSR" type="Constant" value="100"/>
-      <Parameter id="Asp_Kon_TSR" type="Constant" value="1000000"/>
-      <Parameter id="TAR_COUNT" type="Constant" value="6"/>
-      <Parameter id="TSR_COUNT" type="Constant" value="12"/>
-      <Parameter id="AspConc" type="Constant" value="0"/>
-      <Parameter id="ClusterCount" type="Constant" value="370"/>
-      <Parameter id="CheRCount" type="Constant" value="500"/>
-      <Parameter id="CheBCount" type="Constant" value="500"/>
-      <Parameter id="_rateLaw1" type="Constant" value="1000"/>
-      <Parameter id="_rateLaw2" type="Constant" value="1000"/>
+      <Parameter id="Vol" type="Constant" value="1.41e-15" expr="1.41e-15"/>
+      <Parameter id="Na" type="Constant" value="6.02e+23" expr="6.02e23"/>
+      <Parameter id="konR" type="Constant" value="0.003298697" expr="2.8e6/(Na*Vol)"/>
+      <Parameter id="konB" type="Constant" value="0.003298697" expr="2.8e6/(Na*Vol)"/>
+      <Parameter id="koffR" type="Constant" value="0.1" expr="0.1"/>
+      <Parameter id="koffB" type="Constant" value="0.1" expr="0.1"/>
+      <Parameter id="kr" type="Constant" value="0.1" expr="0.1"/>
+      <Parameter id="kb" type="Constant" value="0.2" expr="0.2"/>
+      <Parameter id="e0" type="Constant" value="1" expr="1.0"/>
+      <Parameter id="e1" type="Constant" value="0.5" expr="0.5"/>
+      <Parameter id="e2" type="Constant" value="0" expr="0.0"/>
+      <Parameter id="e3" type="Constant" value="-0.3" expr="-0.3"/>
+      <Parameter id="e4" type="Constant" value="-0.6" expr="-0.6"/>
+      <Parameter id="e5" type="Constant" value="-0.85" expr="-0.85"/>
+      <Parameter id="e6" type="Constant" value="-1.1" expr="-1.1"/>
+      <Parameter id="e7" type="Constant" value="-2" expr="-2.0"/>
+      <Parameter id="e8" type="Constant" value="-3" expr="-3.0"/>
+      <Parameter id="Asp_Koff_TAR" type="Constant" value="0.02" expr="0.02"/>
+      <Parameter id="Asp_Kon_TAR" type="Constant" value="0.5" expr="0.5"/>
+      <Parameter id="Asp_Koff_TSR" type="Constant" value="100" expr="100"/>
+      <Parameter id="Asp_Kon_TSR" type="Constant" value="1000000" expr="10^6"/>
+      <Parameter id="TAR_COUNT" type="Constant" value="6" expr="6"/>
+      <Parameter id="TSR_COUNT" type="Constant" value="12" expr="12"/>
+      <Parameter id="AspConc" type="Constant" value="0" expr="0"/>
+      <Parameter id="ClusterCount" type="Constant" value="370" expr="370"/>
+      <Parameter id="CheRCount" type="Constant" value="500" expr="500"/>
+      <Parameter id="CheBCount" type="Constant" value="500" expr="500"/>
+      <Parameter id="_rateLaw1" type="Constant" value="1000" expr="1000"/>
+      <Parameter id="_rateLaw2" type="Constant" value="1000" expr="1000"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
       <MoleculeType id="CheB">

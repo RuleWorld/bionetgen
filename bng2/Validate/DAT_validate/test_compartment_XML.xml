@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.6  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="test_compartment_XML">
     <ListOfParameters>
-      <Parameter id="kf" type="Constant" value="1"/>
-      <Parameter id="kr" type="Constant" value="1"/>
-      <Parameter id="VOL" type="Constant" value="1"/>
+      <Parameter id="kf" type="Constant" value="1" expr="1"/>
+      <Parameter id="kr" type="Constant" value="1" expr="1"/>
+      <Parameter id="VOL" type="Constant" value="1" expr="1"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
       <MoleculeType id="A">

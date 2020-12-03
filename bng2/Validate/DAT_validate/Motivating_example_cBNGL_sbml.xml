@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.5  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="Motivating_example_cBNGL">
+    <listOfUnitDefinitions>
+      <unitDefinition id="substance" name="substance">
+        <listOfUnits>
+          <unit kind="item" exponent="1" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
     <listOfCompartments>
       <compartment id="EC" spatialDimensions="3" size="20.0"/>
       <compartment id="PM" spatialDimensions="2" size="0.4" outside="EC"/>
@@ -12,84 +19,84 @@
       <compartment id="EN" spatialDimensions="3" size="0.5" outside="EM"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="S1" compartment="EC" initialConcentration="310.58546" name="@EC::L(d,r)"/>
-      <species id="S2" compartment="PM" initialConcentration="0.49180364" name="@PM::R(l,tf~Y)"/>
-      <species id="S3" compartment="CP" initialConcentration="13.434166" name="@CP::TF(d~Y,dna,im,r)"/>
-      <species id="S4" compartment="NU" initialConcentration="1.2502025" name="@NU::DNA(p1,p2)"/>
-      <species id="S5" compartment="CP" initialConcentration="13.491541" name="@CP::Im(cargo,fg)"/>
-      <species id="S6" compartment="NM" initialConcentration="1.6213032" name="@NM::NP(fg)"/>
-      <species id="S7" compartment="CP" initialConcentration="0" boundaryCondition="true" name="@CP::Sink()"/>
-      <species id="S8" compartment="PM" initialConcentration="0.77527286" name="@PM::L(d,r!1)@EC.R(l!1,tf~Y)"/>
-      <species id="S9" compartment="EC" initialConcentration="241.07022" name="@EC::L(d!1,r).L(d!1,r)"/>
-      <species id="S10" compartment="NM" initialConcentration="0.77593343" name="@NM::Im(cargo,fg!1)@CP.NP(fg!1)"/>
-      <species id="S11" compartment="PM" initialConcentration="1.2291434" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~Y)"/>
-      <species id="S12" compartment="PM" initialConcentration="0.048553887" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~Y)"/>
-      <species id="S13" compartment="NM" initialConcentration="1.0769233" name="@NM::Im(cargo,fg!1)@NU.NP(fg!1)"/>
-      <species id="S14" compartment="EM" initialConcentration="0.21327631" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~Y)"/>
-      <species id="S15" compartment="PM" initialConcentration="0.43932613" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~pY)"/>
-      <species id="S16" compartment="NU" initialConcentration="6.6312316" name="@NU::Im(cargo,fg)"/>
-      <species id="S17" compartment="EM" initialConcentration="0.33874071" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~Y)"/>
-      <species id="S18" compartment="EM" initialConcentration="0.70576423" name="@EM::R(l,tf~Y)"/>
-      <species id="S19" compartment="PM" initialConcentration="4.3761154" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~pY)"/>
-      <species id="S20" compartment="PM" initialConcentration="1.9220406" name="@PM::R(l,tf~pY)"/>
-      <species id="S21" compartment="EM" initialConcentration="0.48794006" name="@EM::L(d,r!1)@EN.R(l!1,tf~Y)"/>
-      <species id="S22" compartment="PM" initialConcentration="2.899674" name="@PM::L(d,r!1)@EC.R(l!1,tf~pY)"/>
-      <species id="S23" compartment="EM" initialConcentration="3.2364987" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~pY)"/>
-      <species id="S24" compartment="PM" initialConcentration="1.0992458" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY).R(l!3,tf~pY)"/>
-      <species id="S25" compartment="PM" initialConcentration="0.67152937" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~Y,dna,im,r!4)@CP"/>
-      <species id="S26" compartment="EN" initialConcentration="1.2042226" name="@EN::L(d!1,r).L(d!1,r)"/>
-      <species id="S27" compartment="EN" initialConcentration="3.4381638" name="@EN::L(d,r)"/>
-      <species id="S28" compartment="EM" initialConcentration="2.6207445" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~pY)"/>
-      <species id="S29" compartment="EM" initialConcentration="5.2532412" name="@EM::R(l,tf~pY)"/>
-      <species id="S30" compartment="PM" initialConcentration="6.7422699" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~pY!3).TF(d~Y,dna,im,r!3)@CP"/>
-      <species id="S31" compartment="PM" initialConcentration="2.782692" name="@PM::R(l,tf~pY!1).TF(d~Y,dna,im,r!1)@CP"/>
-      <species id="S32" compartment="EM" initialConcentration="3.713574" name="@EM::L(d,r!1)@EN.R(l!1,tf~pY)"/>
-      <species id="S33" compartment="PM" initialConcentration="4.3224247" name="@PM::L(d,r!1)@EC.R(l!1,tf~pY!2).TF(d~Y,dna,im,r!2)@CP"/>
-      <species id="S34" compartment="EM" initialConcentration="12.694846" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY).R(l!3,tf~pY)"/>
-      <species id="S35" compartment="EM" initialConcentration="3.7712747" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~Y,dna,im,r!4)@CP"/>
-      <species id="S36" compartment="PM" initialConcentration="3.5675992" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~Y,dna,im,r!4)@CP"/>
-      <species id="S37" compartment="PM" initialConcentration="1.554601" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~Y,dna,im,r!5)@CP"/>
-      <species id="S38" compartment="EM" initialConcentration="2.5701885" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~pY!3).TF(d~Y,dna,im,r!3)@CP"/>
-      <species id="S39" compartment="EM" initialConcentration="5.2618201" name="@EM::R(l,tf~pY!1).TF(d~Y,dna,im,r!1)@CP"/>
-      <species id="S40" compartment="EM" initialConcentration="3.6743561" name="@EM::L(d,r!1)@EN.R(l!1,tf~pY!2).TF(d~Y,dna,im,r!2)@CP"/>
-      <species id="S41" compartment="EM" initialConcentration="31.335051" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~Y,dna,im,r!4)@CP"/>
-      <species id="S42" compartment="EM" initialConcentration="10.477692" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~Y,dna,im,r!5)@CP"/>
-      <species id="S43" compartment="PM" initialConcentration="0.36100488" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
-      <species id="S44" compartment="PM" initialConcentration="0.23074489" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~pY!3).TF(d~pY,dna,im,r!3)@CP"/>
-      <species id="S45" compartment="PM" initialConcentration="0.10764401" name="@PM::R(l,tf~pY!1).TF(d~pY,dna,im,r!1)@CP"/>
-      <species id="S46" compartment="PM" initialConcentration="0.15718592" name="@PM::L(d,r!1)@EC.R(l!1,tf~pY!2).TF(d~pY,dna,im,r!2)@CP"/>
-      <species id="S47" compartment="EM" initialConcentration="2.8660935" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
-      <species id="S48" compartment="PM" initialConcentration="0.1265848" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~pY,dna,im,r!4)@CP"/>
-      <species id="S49" compartment="CP" initialConcentration="20.473447" name="@CP::TF(d~pY,dna,im,r)"/>
-      <species id="S50" compartment="PM" initialConcentration="0.017321442" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~pY,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
-      <species id="S51" compartment="PM" initialConcentration="0.021642091" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~pY,dna,im,r!4)@CP"/>
-      <species id="S52" compartment="EM" initialConcentration="0.17885971" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~pY!3).TF(d~pY,dna,im,r!3)@CP"/>
-      <species id="S53" compartment="EM" initialConcentration="0.33431695" name="@EM::R(l,tf~pY!1).TF(d~pY,dna,im,r!1)@CP"/>
-      <species id="S54" compartment="EM" initialConcentration="0.24510365" name="@EM::L(d,r!1)@EN.R(l!1,tf~pY!2).TF(d~pY,dna,im,r!2)@CP"/>
-      <species id="S55" compartment="EM" initialConcentration="1.4666424" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~pY,dna,im,r!4)@CP"/>
-      <species id="S56" compartment="EM" initialConcentration="0.15196821" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~pY,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
-      <species id="S57" compartment="EM" initialConcentration="0.16841844" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~pY,dna,im,r!4)@CP"/>
-      <species id="S58" compartment="CP" initialConcentration="5.0820461" name="@CP::TF(d~pY!1,dna,im,r).TF(d~pY!1,dna,im,r)"/>
-      <species id="S59" compartment="CP" initialConcentration="15.753816" name="@CP::Im(cargo!1!2,fg).TF(d~pY!3,dna,im!1,r).TF(d~pY!3,dna,im!2,r)"/>
-      <species id="S60" compartment="NM" initialConcentration="0.39530619" name="@NM::Im(cargo!1!2,fg!3)@CP.NP(fg!3).TF(d~pY!4,dna,im!1,r)@CP.TF(d~pY!4,dna,im!2,r)@CP"/>
-      <species id="S61" compartment="NM" initialConcentration="0.091120647" name="@NM::Im(cargo!1!2,fg!3)@NU.NP(fg!3).TF(d~pY!4,dna,im!1,r)@NU.TF(d~pY!4,dna,im!2,r)@NU"/>
-      <species id="S62" compartment="NU" initialConcentration="5.9066912" name="@NU::TF(d~pY!1,dna,im,r).TF(d~pY!1,dna,im,r)"/>
-      <species id="S63" compartment="NU" initialConcentration="0.39308537" name="@NU::Im(cargo!1!2,fg).TF(d~pY!3,dna,im!1,r).TF(d~pY!3,dna,im!2,r)"/>
-      <species id="S64" compartment="NU" initialConcentration="10.788251" name="@NU::TF(d~pY,dna,im,r)"/>
-      <species id="S65" compartment="NU" initialConcentration="0.72351243" name="@NU::DNA(p1!1!2,p2).TF(d~pY!3,dna!1,im,r).TF(d~pY!3,dna!2,im,r)"/>
-      <species id="S66" compartment="NU" initialConcentration="0.36273086" name="@NU::mRNA1()"/>
-      <species id="S67" compartment="CP" initialConcentration="0.35480601" name="@CP::mRNA1()"/>
-      <species id="S68" compartment="CP" initialConcentration="1.0119495" name="@CP::P1(dna,im)"/>
-      <species id="S69" compartment="CP" initialConcentration="1.34129" name="@CP::Im(cargo!1,fg).P1(dna,im!1)"/>
-      <species id="S70" compartment="NM" initialConcentration="0.035023048" name="@NM::Im(cargo!1,fg!2)@CP.NP(fg!2).P1(dna,im!1)@CP"/>
-      <species id="S71" compartment="NM" initialConcentration="0.0043901849" name="@NM::Im(cargo!1,fg!2)@NU.NP(fg!2).P1(dna,im!1)@NU"/>
-      <species id="S72" compartment="NU" initialConcentration="0.15431286" name="@NU::P1(dna,im)"/>
-      <species id="S73" compartment="NU" initialConcentration="0.010339688" name="@NU::Im(cargo!1,fg).P1(dna,im!1)"/>
-      <species id="S74" compartment="NU" initialConcentration="0.01664965" name="@NU::DNA(p1,p2!1).P1(dna!1,im)"/>
-      <species id="S75" compartment="NU" initialConcentration="0.0096354224" name="@NU::DNA(p1!1!2,p2!3).P1(dna!3,im).TF(d~pY!4,dna!1,im,r).TF(d~pY!4,dna!2,im,r)"/>
-      <species id="S76" compartment="NU" initialConcentration="0.01275759" name="@NU::mRNA2()"/>
-      <species id="S77" compartment="CP" initialConcentration="0.011993377" name="@CP::mRNA2()"/>
-      <species id="S78" compartment="CP" initialConcentration="0.063846962" name="@CP::P2()"/>
+      <species id="S1" compartment="EC" initialAmount="310.58546" name="@EC::L(d,r)"/>
+      <species id="S2" compartment="PM" initialAmount="0.49180364" name="@PM::R(l,tf~Y)"/>
+      <species id="S3" compartment="CP" initialAmount="13.434166" name="@CP::TF(d~Y,dna,im,r)"/>
+      <species id="S4" compartment="NU" initialAmount="1.2502025" name="@NU::DNA(p1,p2)"/>
+      <species id="S5" compartment="CP" initialAmount="13.491541" name="@CP::Im(cargo,fg)"/>
+      <species id="S6" compartment="NM" initialAmount="1.6213032" name="@NM::NP(fg)"/>
+      <species id="S7" compartment="CP" initialAmount="0" boundaryCondition="true" name="@CP::Sink()"/>
+      <species id="S8" compartment="PM" initialAmount="0.77527286" name="@PM::L(d,r!1)@EC.R(l!1,tf~Y)"/>
+      <species id="S9" compartment="EC" initialAmount="241.07022" name="@EC::L(d!1,r).L(d!1,r)"/>
+      <species id="S10" compartment="NM" initialAmount="0.77593343" name="@NM::Im(cargo,fg!1)@CP.NP(fg!1)"/>
+      <species id="S11" compartment="PM" initialAmount="1.2291434" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~Y)"/>
+      <species id="S12" compartment="PM" initialAmount="0.048553887" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~Y)"/>
+      <species id="S13" compartment="NM" initialAmount="1.0769233" name="@NM::Im(cargo,fg!1)@NU.NP(fg!1)"/>
+      <species id="S14" compartment="EM" initialAmount="0.21327631" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~Y)"/>
+      <species id="S15" compartment="PM" initialAmount="0.43932613" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~pY)"/>
+      <species id="S16" compartment="NU" initialAmount="6.6312316" name="@NU::Im(cargo,fg)"/>
+      <species id="S17" compartment="EM" initialAmount="0.33874071" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~Y)"/>
+      <species id="S18" compartment="EM" initialAmount="0.70576423" name="@EM::R(l,tf~Y)"/>
+      <species id="S19" compartment="PM" initialAmount="4.3761154" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~pY)"/>
+      <species id="S20" compartment="PM" initialAmount="1.9220406" name="@PM::R(l,tf~pY)"/>
+      <species id="S21" compartment="EM" initialAmount="0.48794006" name="@EM::L(d,r!1)@EN.R(l!1,tf~Y)"/>
+      <species id="S22" compartment="PM" initialAmount="2.899674" name="@PM::L(d,r!1)@EC.R(l!1,tf~pY)"/>
+      <species id="S23" compartment="EM" initialAmount="3.2364987" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~pY)"/>
+      <species id="S24" compartment="PM" initialAmount="1.0992458" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY).R(l!3,tf~pY)"/>
+      <species id="S25" compartment="PM" initialAmount="0.67152937" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~Y,dna,im,r!4)@CP"/>
+      <species id="S26" compartment="EN" initialAmount="1.2042226" name="@EN::L(d!1,r).L(d!1,r)"/>
+      <species id="S27" compartment="EN" initialAmount="3.4381638" name="@EN::L(d,r)"/>
+      <species id="S28" compartment="EM" initialAmount="2.6207445" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~pY)"/>
+      <species id="S29" compartment="EM" initialAmount="5.2532412" name="@EM::R(l,tf~pY)"/>
+      <species id="S30" compartment="PM" initialAmount="6.7422699" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~pY!3).TF(d~Y,dna,im,r!3)@CP"/>
+      <species id="S31" compartment="PM" initialAmount="2.782692" name="@PM::R(l,tf~pY!1).TF(d~Y,dna,im,r!1)@CP"/>
+      <species id="S32" compartment="EM" initialAmount="3.713574" name="@EM::L(d,r!1)@EN.R(l!1,tf~pY)"/>
+      <species id="S33" compartment="PM" initialAmount="4.3224247" name="@PM::L(d,r!1)@EC.R(l!1,tf~pY!2).TF(d~Y,dna,im,r!2)@CP"/>
+      <species id="S34" compartment="EM" initialAmount="12.694846" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY).R(l!3,tf~pY)"/>
+      <species id="S35" compartment="EM" initialAmount="3.7712747" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~Y,dna,im,r!4)@CP"/>
+      <species id="S36" compartment="PM" initialAmount="3.5675992" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~Y,dna,im,r!4)@CP"/>
+      <species id="S37" compartment="PM" initialAmount="1.554601" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~Y,dna,im,r!5)@CP"/>
+      <species id="S38" compartment="EM" initialAmount="2.5701885" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~pY!3).TF(d~Y,dna,im,r!3)@CP"/>
+      <species id="S39" compartment="EM" initialAmount="5.2618201" name="@EM::R(l,tf~pY!1).TF(d~Y,dna,im,r!1)@CP"/>
+      <species id="S40" compartment="EM" initialAmount="3.6743561" name="@EM::L(d,r!1)@EN.R(l!1,tf~pY!2).TF(d~Y,dna,im,r!2)@CP"/>
+      <species id="S41" compartment="EM" initialAmount="31.335051" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~Y,dna,im,r!4)@CP"/>
+      <species id="S42" compartment="EM" initialAmount="10.477692" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~Y,dna,im,r!5)@CP"/>
+      <species id="S43" compartment="PM" initialAmount="0.36100488" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
+      <species id="S44" compartment="PM" initialAmount="0.23074489" name="@PM::L(d!1,r!2)@EC.L(d!1,r)@EC.R(l!2,tf~pY!3).TF(d~pY,dna,im,r!3)@CP"/>
+      <species id="S45" compartment="PM" initialAmount="0.10764401" name="@PM::R(l,tf~pY!1).TF(d~pY,dna,im,r!1)@CP"/>
+      <species id="S46" compartment="PM" initialAmount="0.15718592" name="@PM::L(d,r!1)@EC.R(l!1,tf~pY!2).TF(d~pY,dna,im,r!2)@CP"/>
+      <species id="S47" compartment="EM" initialAmount="2.8660935" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~Y,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
+      <species id="S48" compartment="PM" initialAmount="0.1265848" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~pY,dna,im,r!4)@CP"/>
+      <species id="S49" compartment="CP" initialAmount="20.473447" name="@CP::TF(d~pY,dna,im,r)"/>
+      <species id="S50" compartment="PM" initialAmount="0.017321442" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~pY,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
+      <species id="S51" compartment="PM" initialAmount="0.021642091" name="@PM::L(d!1,r!2)@EC.L(d!1,r!3)@EC.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~pY,dna,im,r!4)@CP"/>
+      <species id="S52" compartment="EM" initialAmount="0.17885971" name="@EM::L(d!1,r!2)@EN.L(d!1,r)@EN.R(l!2,tf~pY!3).TF(d~pY,dna,im,r!3)@CP"/>
+      <species id="S53" compartment="EM" initialAmount="0.33431695" name="@EM::R(l,tf~pY!1).TF(d~pY,dna,im,r!1)@CP"/>
+      <species id="S54" compartment="EM" initialAmount="0.24510365" name="@EM::L(d,r!1)@EN.R(l!1,tf~pY!2).TF(d~pY,dna,im,r!2)@CP"/>
+      <species id="S55" compartment="EM" initialAmount="1.4666424" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!3,tf~pY!4).R(l!2,tf~pY).TF(d~pY,dna,im,r!4)@CP"/>
+      <species id="S56" compartment="EM" initialAmount="0.15196821" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~pY!4).R(l!3,tf~pY!5).TF(d~pY,dna,im,r!4)@CP.TF(d~pY,dna,im,r!5)@CP"/>
+      <species id="S57" compartment="EM" initialAmount="0.16841844" name="@EM::L(d!1,r!2)@EN.L(d!1,r!3)@EN.R(l!2,tf~Y).R(l!3,tf~pY!4).TF(d~pY,dna,im,r!4)@CP"/>
+      <species id="S58" compartment="CP" initialAmount="5.0820461" name="@CP::TF(d~pY!1,dna,im,r).TF(d~pY!1,dna,im,r)"/>
+      <species id="S59" compartment="CP" initialAmount="15.753816" name="@CP::Im(cargo!1!2,fg).TF(d~pY!3,dna,im!1,r).TF(d~pY!3,dna,im!2,r)"/>
+      <species id="S60" compartment="NM" initialAmount="0.39530619" name="@NM::Im(cargo!1!2,fg!3)@CP.NP(fg!3).TF(d~pY!4,dna,im!1,r)@CP.TF(d~pY!4,dna,im!2,r)@CP"/>
+      <species id="S61" compartment="NM" initialAmount="0.091120647" name="@NM::Im(cargo!1!2,fg!3)@NU.NP(fg!3).TF(d~pY!4,dna,im!1,r)@NU.TF(d~pY!4,dna,im!2,r)@NU"/>
+      <species id="S62" compartment="NU" initialAmount="5.9066912" name="@NU::TF(d~pY!1,dna,im,r).TF(d~pY!1,dna,im,r)"/>
+      <species id="S63" compartment="NU" initialAmount="0.39308537" name="@NU::Im(cargo!1!2,fg).TF(d~pY!3,dna,im!1,r).TF(d~pY!3,dna,im!2,r)"/>
+      <species id="S64" compartment="NU" initialAmount="10.788251" name="@NU::TF(d~pY,dna,im,r)"/>
+      <species id="S65" compartment="NU" initialAmount="0.72351243" name="@NU::DNA(p1!1!2,p2).TF(d~pY!3,dna!1,im,r).TF(d~pY!3,dna!2,im,r)"/>
+      <species id="S66" compartment="NU" initialAmount="0.36273086" name="@NU::mRNA1()"/>
+      <species id="S67" compartment="CP" initialAmount="0.35480601" name="@CP::mRNA1()"/>
+      <species id="S68" compartment="CP" initialAmount="1.0119495" name="@CP::P1(dna,im)"/>
+      <species id="S69" compartment="CP" initialAmount="1.34129" name="@CP::Im(cargo!1,fg).P1(dna,im!1)"/>
+      <species id="S70" compartment="NM" initialAmount="0.035023048" name="@NM::Im(cargo!1,fg!2)@CP.NP(fg!2).P1(dna,im!1)@CP"/>
+      <species id="S71" compartment="NM" initialAmount="0.0043901849" name="@NM::Im(cargo!1,fg!2)@NU.NP(fg!2).P1(dna,im!1)@NU"/>
+      <species id="S72" compartment="NU" initialAmount="0.15431286" name="@NU::P1(dna,im)"/>
+      <species id="S73" compartment="NU" initialAmount="0.010339688" name="@NU::Im(cargo!1,fg).P1(dna,im!1)"/>
+      <species id="S74" compartment="NU" initialAmount="0.01664965" name="@NU::DNA(p1,p2!1).P1(dna!1,im)"/>
+      <species id="S75" compartment="NU" initialAmount="0.0096354224" name="@NU::DNA(p1!1!2,p2!3).P1(dna!3,im).TF(d~pY!4,dna!1,im,r).TF(d~pY!4,dna!2,im,r)"/>
+      <species id="S76" compartment="NU" initialAmount="0.01275759" name="@NU::mRNA2()"/>
+      <species id="S77" compartment="CP" initialAmount="0.011993377" name="@CP::mRNA2()"/>
+      <species id="S78" compartment="CP" initialAmount="0.063846962" name="@CP::P2()"/>
     </listOfSpecies>
     <listOfParameters>
       <!-- Independent variables -->
@@ -1301,6 +1308,7 @@
               <ci> kp_LR </ci>
               <ci> S1 </ci>
               <ci> S2 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1321,6 +1329,7 @@
               <ci> kp_LL </ci>
               <ci> S1 </ci>
               <ci> S1 </ci>
+              <ci> EC </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1340,6 +1349,7 @@
               <ci> k_Im_enters_NP </ci>
               <ci> S5 </ci>
               <ci> S6 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1360,6 +1370,7 @@
               <ci> kp_LR </ci>
               <ci> S2 </ci>
               <ci> S9 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1378,6 +1389,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S8 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1397,6 +1409,7 @@
               <ci> kp_LL </ci>
               <ci> S1 </ci>
               <ci> S8 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1417,6 +1430,7 @@
               <ci> kp_LL </ci>
               <ci> S8 </ci>
               <ci> S8 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1435,6 +1449,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S9 </ci>
+              <ci> EC </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1453,6 +1468,7 @@
               <times/>
               <ci> k_Im_exits_NP </ci>
               <ci> S10 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1470,6 +1486,7 @@
               <times/>
               <ci> k_Im_cross_NP </ci>
               <ci> S10 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1489,6 +1506,7 @@
               <ci> kp_LR </ci>
               <ci> S2 </ci>
               <ci> S11 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1507,6 +1525,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S11 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1526,6 +1545,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S12 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1544,6 +1564,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S11 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1562,6 +1583,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S12 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1579,6 +1601,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S12 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1597,6 +1620,7 @@
               <cn> 2 </cn>
               <ci> k_R_transphos </ci>
               <ci> S12 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1615,6 +1639,7 @@
               <times/>
               <ci> k_Im_exits_NP </ci>
               <ci> S13 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1632,6 +1657,7 @@
               <times/>
               <ci> k_Im_cross_NP </ci>
               <ci> S13 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1651,6 +1677,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S14 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1669,6 +1696,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S15 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1687,6 +1715,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S15 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1705,6 +1734,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S14 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1723,6 +1753,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S15 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1740,6 +1771,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S15 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1757,6 +1789,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S14 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1775,6 +1808,7 @@
               <cn> 2 </cn>
               <ci> k_R_transphos </ci>
               <ci> S14 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1792,6 +1826,7 @@
               <times/>
               <ci> k_R_transphos </ci>
               <ci> S15 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1809,6 +1844,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S15 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1828,6 +1864,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S15 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1847,6 +1884,7 @@
               <ci> k_Im_enters_NP </ci>
               <ci> S6 </ci>
               <ci> S16 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1866,6 +1904,7 @@
               <ci> kp_LR </ci>
               <ci> S1 </ci>
               <ci> S20 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1886,6 +1925,7 @@
               <ci> kp_LR </ci>
               <ci> S9 </ci>
               <ci> S20 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1905,6 +1945,7 @@
               <ci> kp_LR </ci>
               <ci> S11 </ci>
               <ci> S20 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1924,6 +1965,7 @@
               <ci> kp_LR </ci>
               <ci> S17 </ci>
               <ci> S18 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1943,6 +1985,7 @@
               <ci> kp_LR </ci>
               <ci> S2 </ci>
               <ci> S19 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1962,6 +2005,7 @@
               <ci> kp_LR </ci>
               <ci> S19 </ci>
               <ci> S20 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1980,6 +2024,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S17 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -1998,6 +2043,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S19 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2016,6 +2062,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S21 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2034,6 +2081,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S22 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2052,6 +2100,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S23 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2070,6 +2119,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S23 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2089,6 +2139,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S24 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2107,6 +2158,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S25 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2125,6 +2177,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S25 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2144,6 +2197,7 @@
               <ci> kp_LL </ci>
               <ci> S1 </ci>
               <ci> S22 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2163,6 +2217,7 @@
               <ci> kp_LL </ci>
               <ci> S8 </ci>
               <ci> S22 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2183,6 +2238,7 @@
               <ci> kp_LL </ci>
               <ci> S21 </ci>
               <ci> S21 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2203,6 +2259,7 @@
               <ci> kp_LL </ci>
               <ci> S22 </ci>
               <ci> S22 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2221,6 +2278,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S17 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2239,6 +2297,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S19 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2257,6 +2316,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S23 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2275,6 +2335,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S24 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2293,6 +2354,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S25 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2310,6 +2372,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S24 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2327,6 +2390,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S25 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2344,6 +2408,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S17 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2361,6 +2426,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S18 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2378,6 +2444,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S21 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2395,6 +2462,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S23 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2412,6 +2480,7 @@
               <times/>
               <ci> k_R_transphos </ci>
               <ci> S23 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2429,6 +2498,7 @@
               <times/>
               <ci> k_R_transphos </ci>
               <ci> S25 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2446,6 +2516,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S19 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2463,6 +2534,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S20 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2480,6 +2552,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S22 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2497,6 +2570,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S23 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2515,6 +2589,7 @@
               <cn> 2 </cn>
               <ci> k_R_dephos </ci>
               <ci> S24 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2534,6 +2609,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S19 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2553,6 +2629,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S20 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2572,6 +2649,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S22 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2591,6 +2669,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S23 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2611,6 +2690,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S24 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2629,6 +2709,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S25 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2648,6 +2729,7 @@
               <ci> kp_LR </ci>
               <ci> S1 </ci>
               <ci> S31 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2668,6 +2750,7 @@
               <ci> kp_LR </ci>
               <ci> S9 </ci>
               <ci> S31 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2687,6 +2770,7 @@
               <ci> kp_LR </ci>
               <ci> S11 </ci>
               <ci> S31 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2706,6 +2790,7 @@
               <ci> kp_LR </ci>
               <ci> S17 </ci>
               <ci> S29 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2725,6 +2810,7 @@
               <ci> kp_LR </ci>
               <ci> S19 </ci>
               <ci> S31 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2745,6 +2831,7 @@
               <ci> kp_LR </ci>
               <ci> S18 </ci>
               <ci> S26 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2765,6 +2852,7 @@
               <ci> kp_LR </ci>
               <ci> S26 </ci>
               <ci> S29 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2784,6 +2872,7 @@
               <ci> kp_LR </ci>
               <ci> S18 </ci>
               <ci> S27 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2803,6 +2892,7 @@
               <ci> kp_LR </ci>
               <ci> S27 </ci>
               <ci> S29 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2822,6 +2912,7 @@
               <ci> kp_LR </ci>
               <ci> S18 </ci>
               <ci> S28 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2841,6 +2932,7 @@
               <ci> kp_LR </ci>
               <ci> S28 </ci>
               <ci> S29 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2860,6 +2952,7 @@
               <ci> kp_LR </ci>
               <ci> S2 </ci>
               <ci> S30 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2879,6 +2972,7 @@
               <ci> kp_LR </ci>
               <ci> S20 </ci>
               <ci> S30 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2898,6 +2992,7 @@
               <ci> kp_LR </ci>
               <ci> S30 </ci>
               <ci> S31 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2916,6 +3011,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S28 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2934,6 +3030,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S30 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2952,6 +3049,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S32 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2970,6 +3068,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S33 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -2989,6 +3088,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S34 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3007,6 +3107,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S35 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3025,6 +3126,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S35 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3043,6 +3145,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S36 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3061,6 +3164,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S36 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3080,6 +3184,7 @@
               <ci> kp_LL </ci>
               <ci> S1 </ci>
               <ci> S33 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3099,6 +3204,7 @@
               <ci> kp_LL </ci>
               <ci> S8 </ci>
               <ci> S33 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3118,6 +3224,7 @@
               <ci> kp_LL </ci>
               <ci> S21 </ci>
               <ci> S27 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3137,6 +3244,7 @@
               <ci> kp_LL </ci>
               <ci> S21 </ci>
               <ci> S32 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3156,6 +3264,7 @@
               <ci> kp_LL </ci>
               <ci> S22 </ci>
               <ci> S33 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3176,6 +3285,7 @@
               <ci> kp_LL </ci>
               <ci> S27 </ci>
               <ci> S27 </ci>
+              <ci> EN </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3195,6 +3305,7 @@
               <ci> kp_LL </ci>
               <ci> S27 </ci>
               <ci> S32 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3215,6 +3326,7 @@
               <ci> kp_LL </ci>
               <ci> S32 </ci>
               <ci> S32 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3235,6 +3347,7 @@
               <ci> kp_LL </ci>
               <ci> S33 </ci>
               <ci> S33 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3253,6 +3366,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S26 </ci>
+              <ci> EN </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3271,6 +3385,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S28 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3289,6 +3404,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S30 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3307,6 +3423,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S34 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3325,6 +3442,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S35 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3343,6 +3461,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S36 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3360,6 +3479,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S36 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3377,6 +3497,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S28 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3394,6 +3515,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S29 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3411,6 +3533,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S32 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3428,6 +3551,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S34 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3445,6 +3569,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S35 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3462,6 +3587,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S26 </ci>
+              <ci> EN </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3479,6 +3605,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S27 </ci>
+              <ci> EN </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3496,6 +3623,7 @@
               <times/>
               <ci> k_R_transphos </ci>
               <ci> S35 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3513,6 +3641,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S28 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3530,6 +3659,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S29 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3547,6 +3677,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S32 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3565,6 +3696,7 @@
               <cn> 2 </cn>
               <ci> k_R_dephos </ci>
               <ci> S34 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3582,6 +3714,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S36 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3601,6 +3734,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S28 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3620,6 +3754,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S29 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3639,6 +3774,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S32 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3659,6 +3795,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S34 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3678,6 +3815,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S36 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3696,6 +3834,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S30 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3714,6 +3853,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S31 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3732,6 +3872,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S33 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3750,6 +3891,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S35 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3768,6 +3910,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S36 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3787,6 +3930,7 @@
               <ci> kp_LR </ci>
               <ci> S17 </ci>
               <ci> S39 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3807,6 +3951,7 @@
               <ci> kp_LR </ci>
               <ci> S26 </ci>
               <ci> S39 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3826,6 +3971,7 @@
               <ci> kp_LR </ci>
               <ci> S27 </ci>
               <ci> S39 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3845,6 +3991,7 @@
               <ci> kp_LR </ci>
               <ci> S28 </ci>
               <ci> S39 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3864,6 +4011,7 @@
               <ci> kp_LR </ci>
               <ci> S18 </ci>
               <ci> S38 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3883,6 +4031,7 @@
               <ci> kp_LR </ci>
               <ci> S29 </ci>
               <ci> S38 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3902,6 +4051,7 @@
               <ci> kp_LR </ci>
               <ci> S38 </ci>
               <ci> S39 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3921,6 +4071,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S37 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3939,6 +4090,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S38 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3957,6 +4109,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S40 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3975,6 +4128,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S41 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -3993,6 +4147,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S41 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4012,6 +4167,7 @@
               <ci> kp_LL </ci>
               <ci> S21 </ci>
               <ci> S40 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4031,6 +4187,7 @@
               <ci> kp_LL </ci>
               <ci> S27 </ci>
               <ci> S40 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4050,6 +4207,7 @@
               <ci> kp_LL </ci>
               <ci> S32 </ci>
               <ci> S40 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4070,6 +4228,7 @@
               <ci> kp_LL </ci>
               <ci> S40 </ci>
               <ci> S40 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4088,6 +4247,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S37 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4106,6 +4266,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S38 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4124,6 +4285,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S41 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4141,6 +4303,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S37 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4158,6 +4321,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S38 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4175,6 +4339,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S39 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4192,6 +4357,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S40 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4209,6 +4375,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S41 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4226,6 +4393,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S41 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4245,6 +4413,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S41 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4264,6 +4433,7 @@
               <cn> 2 </cn>
               <ci> km_R_TF </ci>
               <ci> S37 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4282,6 +4452,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S38 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4300,6 +4471,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S39 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4318,6 +4490,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S40 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4336,6 +4509,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S41 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4354,6 +4528,7 @@
               <cn> 2 </cn>
               <ci> k_TF_transphos </ci>
               <ci> S37 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4373,6 +4548,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S42 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4391,6 +4567,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4409,6 +4586,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4427,6 +4605,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S42 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4445,6 +4624,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4462,6 +4642,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4479,6 +4660,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S42 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4498,6 +4680,7 @@
               <cn> 2 </cn>
               <ci> km_R_TF </ci>
               <ci> S42 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4516,6 +4699,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4534,6 +4718,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4552,6 +4737,7 @@
               <cn> 2 </cn>
               <ci> k_TF_transphos </ci>
               <ci> S42 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4569,6 +4755,7 @@
               <times/>
               <ci> k_TF_transphos </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4586,6 +4773,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S43 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4605,6 +4793,7 @@
               <ci> kp_LR </ci>
               <ci> S1 </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4625,6 +4814,7 @@
               <ci> kp_LR </ci>
               <ci> S9 </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4644,6 +4834,7 @@
               <ci> kp_LR </ci>
               <ci> S11 </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4663,6 +4854,7 @@
               <ci> kp_LR </ci>
               <ci> S19 </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4682,6 +4874,7 @@
               <ci> kp_LR </ci>
               <ci> S30 </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4701,6 +4894,7 @@
               <ci> kp_LR </ci>
               <ci> S2 </ci>
               <ci> S44 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4720,6 +4914,7 @@
               <ci> kp_LR </ci>
               <ci> S20 </ci>
               <ci> S44 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4739,6 +4934,7 @@
               <ci> kp_LR </ci>
               <ci> S31 </ci>
               <ci> S44 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4758,6 +4954,7 @@
               <ci> kp_LR </ci>
               <ci> S44 </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4776,6 +4973,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S44 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4794,6 +4992,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4812,6 +5011,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4830,6 +5030,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4848,6 +5049,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4866,6 +5068,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4885,6 +5088,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S50 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4904,6 +5108,7 @@
               <ci> kp_LL </ci>
               <ci> S1 </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4923,6 +5128,7 @@
               <ci> kp_LL </ci>
               <ci> S8 </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4942,6 +5148,7 @@
               <ci> kp_LL </ci>
               <ci> S22 </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4961,6 +5168,7 @@
               <ci> kp_LL </ci>
               <ci> S33 </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4981,6 +5189,7 @@
               <ci> kp_LL </ci>
               <ci> S46 </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -4999,6 +5208,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S44 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5017,6 +5227,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5035,6 +5246,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5053,6 +5265,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S50 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5070,6 +5283,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5087,6 +5301,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S50 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5104,6 +5319,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5121,6 +5337,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5140,6 +5357,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5158,6 +5376,7 @@
               <times/>
               <ci> km_R_TF </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5177,6 +5396,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S15 </ci>
               <ci> S49 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5196,6 +5416,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S19 </ci>
               <ci> S49 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5215,6 +5436,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S20 </ci>
               <ci> S49 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5234,6 +5456,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S22 </ci>
               <ci> S49 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5253,6 +5476,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S23 </ci>
               <ci> S49 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5273,6 +5497,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S24 </ci>
               <ci> S49 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5292,6 +5517,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S28 </ci>
               <ci> S49 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5311,6 +5537,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S29 </ci>
               <ci> S49 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5330,6 +5557,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S32 </ci>
               <ci> S49 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5350,6 +5578,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S34 </ci>
               <ci> S49 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5369,6 +5598,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S36 </ci>
               <ci> S49 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5388,6 +5618,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S41 </ci>
               <ci> S49 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5407,6 +5638,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S48 </ci>
               <ci> S49 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5425,6 +5657,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S44 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5443,6 +5676,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5461,6 +5695,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5479,6 +5714,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5497,6 +5733,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5516,6 +5753,7 @@
               <cn> 2 </cn>
               <ci> km_R_TFp </ci>
               <ci> S50 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5533,6 +5771,7 @@
               <times/>
               <ci> k_TF_transphos </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5550,6 +5789,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S44 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5567,6 +5807,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S45 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5584,6 +5825,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S46 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5601,6 +5843,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S47 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5618,6 +5861,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S48 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5635,6 +5879,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S49 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5653,6 +5898,7 @@
               <cn> 2 </cn>
               <ci> k_TF_dephos </ci>
               <ci> S50 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5673,6 +5919,7 @@
               <ci> kp_TF_TF </ci>
               <ci> S49 </ci>
               <ci> S49 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5692,6 +5939,7 @@
               <ci> kp_LR </ci>
               <ci> S17 </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5712,6 +5960,7 @@
               <ci> kp_LR </ci>
               <ci> S26 </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5731,6 +5980,7 @@
               <ci> kp_LR </ci>
               <ci> S27 </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5750,6 +6000,7 @@
               <ci> kp_LR </ci>
               <ci> S28 </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5769,6 +6020,7 @@
               <ci> kp_LR </ci>
               <ci> S38 </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5788,6 +6040,7 @@
               <ci> kp_LR </ci>
               <ci> S18 </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5807,6 +6060,7 @@
               <ci> kp_LR </ci>
               <ci> S29 </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5826,6 +6080,7 @@
               <ci> kp_LR </ci>
               <ci> S39 </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5845,6 +6100,7 @@
               <ci> kp_LR </ci>
               <ci> S52 </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5863,6 +6119,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S51 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5881,6 +6138,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S51 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5899,6 +6157,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5917,6 +6176,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5935,6 +6195,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5953,6 +6214,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5972,6 +6234,7 @@
               <cn> 2 </cn>
               <ci> km_LR </ci>
               <ci> S56 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -5990,6 +6253,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S57 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6008,6 +6272,7 @@
               <times/>
               <ci> km_LR </ci>
               <ci> S57 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6027,6 +6292,7 @@
               <ci> kp_LL </ci>
               <ci> S21 </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6046,6 +6312,7 @@
               <ci> kp_LL </ci>
               <ci> S27 </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6065,6 +6332,7 @@
               <ci> kp_LL </ci>
               <ci> S32 </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6084,6 +6352,7 @@
               <ci> kp_LL </ci>
               <ci> S40 </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6104,6 +6373,7 @@
               <ci> kp_LL </ci>
               <ci> S54 </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6122,6 +6392,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S51 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6140,6 +6411,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6158,6 +6430,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6176,6 +6449,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S56 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6194,6 +6468,7 @@
               <times/>
               <ci> km_LL </ci>
               <ci> S57 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6211,6 +6486,7 @@
               <times/>
               <ci> k_R_endo </ci>
               <ci> S51 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6228,6 +6504,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6245,6 +6522,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6262,6 +6540,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6279,6 +6558,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6296,6 +6576,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S56 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6313,6 +6594,7 @@
               <times/>
               <ci> k_recycle </ci>
               <ci> S57 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6330,6 +6612,7 @@
               <times/>
               <ci> k_R_transphos </ci>
               <ci> S51 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6347,6 +6630,7 @@
               <times/>
               <ci> k_R_transphos </ci>
               <ci> S57 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6364,6 +6648,7 @@
               <times/>
               <ci> k_R_dephos </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6383,6 +6668,7 @@
               <ci> kp_R_TF </ci>
               <ci> S3 </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6402,6 +6688,7 @@
               <ci> kp_R_TFp </ci>
               <ci> S49 </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6420,6 +6707,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S51 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6438,6 +6726,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6456,6 +6745,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6474,6 +6764,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6492,6 +6783,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6511,6 +6803,7 @@
               <cn> 2 </cn>
               <ci> km_R_TFp </ci>
               <ci> S56 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6529,6 +6822,7 @@
               <times/>
               <ci> km_R_TFp </ci>
               <ci> S57 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6546,6 +6840,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S51 </ci>
+              <ci> PM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6563,6 +6858,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S52 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6580,6 +6876,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S53 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6597,6 +6894,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S54 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6614,6 +6912,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S55 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6632,6 +6931,7 @@
               <cn> 2 </cn>
               <ci> k_TF_dephos </ci>
               <ci> S56 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6649,6 +6949,7 @@
               <times/>
               <ci> k_TF_dephos </ci>
               <ci> S57 </ci>
+              <ci> EM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6667,6 +6968,7 @@
               <times/>
               <ci> km_TF_TF </ci>
               <ci> S58 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6686,6 +6988,7 @@
               <ci> k_Im_bind_CP </ci>
               <ci> S5 </ci>
               <ci> S58 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6705,6 +7008,7 @@
               <ci> k_Im_bind_CP </ci>
               <ci> S10 </ci>
               <ci> S58 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6723,6 +7027,7 @@
               <times/>
               <ci> k_Im_unbind_CP </ci>
               <ci> S59 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6741,6 +7046,7 @@
               <times/>
               <ci> k_Im_unbind_CP </ci>
               <ci> S60 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6760,6 +7066,7 @@
               <ci> k_Im_enters_NP </ci>
               <ci> S6 </ci>
               <ci> S59 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6778,6 +7085,7 @@
               <times/>
               <ci> k_Im_exits_NP </ci>
               <ci> S60 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6795,6 +7103,7 @@
               <times/>
               <ci> k_Im_cross_NP </ci>
               <ci> S60 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6813,6 +7122,7 @@
               <times/>
               <ci> k_Im_unbind_NU </ci>
               <ci> S61 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6831,6 +7141,7 @@
               <times/>
               <ci> k_Im_exits_NP </ci>
               <ci> S61 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6848,6 +7159,7 @@
               <times/>
               <ci> k_Im_cross_NP </ci>
               <ci> S61 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6866,6 +7178,7 @@
               <times/>
               <ci> km_TF_TF </ci>
               <ci> S62 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6885,6 +7198,7 @@
               <ci> kp_TF_p1 </ci>
               <ci> S4 </ci>
               <ci> S62 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6904,6 +7218,7 @@
               <ci> k_Im_bind_NU </ci>
               <ci> S13 </ci>
               <ci> S62 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6923,6 +7238,7 @@
               <ci> k_Im_bind_NU </ci>
               <ci> S16 </ci>
               <ci> S62 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6941,6 +7257,7 @@
               <times/>
               <ci> k_Im_unbind_NU </ci>
               <ci> S63 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6960,6 +7277,7 @@
               <ci> k_Im_enters_NP </ci>
               <ci> S6 </ci>
               <ci> S63 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6980,6 +7298,7 @@
               <ci> kp_TF_TF </ci>
               <ci> S64 </ci>
               <ci> S64 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -6998,6 +7317,7 @@
               <times/>
               <ci> km_TF_p1 </ci>
               <ci> S65 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7016,6 +7336,7 @@
               <times/>
               <ci> k_transcribe </ci>
               <ci> S65 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7033,6 +7354,7 @@
               <times/>
               <ci> k_mRNA_to_CP </ci>
               <ci> S66 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7050,6 +7372,7 @@
               <times/>
               <ci> k_mRNA_deg </ci>
               <ci> S66 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7068,6 +7391,7 @@
               <times/>
               <ci> k_translate </ci>
               <ci> S67 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7085,6 +7409,7 @@
               <times/>
               <ci> k_mRNA_deg </ci>
               <ci> S67 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7102,6 +7427,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S68 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7121,6 +7447,7 @@
               <ci> k_Im_bind_CP </ci>
               <ci> S5 </ci>
               <ci> S68 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7140,6 +7467,7 @@
               <ci> k_Im_bind_CP </ci>
               <ci> S10 </ci>
               <ci> S68 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7158,6 +7486,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S69 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7176,6 +7505,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S70 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7194,6 +7524,7 @@
               <times/>
               <ci> k_Im_unbind_CP </ci>
               <ci> S69 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7212,6 +7543,7 @@
               <times/>
               <ci> k_Im_unbind_CP </ci>
               <ci> S70 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7231,6 +7563,7 @@
               <ci> k_Im_enters_NP </ci>
               <ci> S6 </ci>
               <ci> S69 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7249,6 +7582,7 @@
               <times/>
               <ci> k_Im_exits_NP </ci>
               <ci> S70 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7266,6 +7600,7 @@
               <times/>
               <ci> k_Im_cross_NP </ci>
               <ci> S70 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7284,6 +7619,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S71 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7302,6 +7638,7 @@
               <times/>
               <ci> k_Im_unbind_NU </ci>
               <ci> S71 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7320,6 +7657,7 @@
               <times/>
               <ci> k_Im_exits_NP </ci>
               <ci> S71 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7337,6 +7675,7 @@
               <times/>
               <ci> k_Im_cross_NP </ci>
               <ci> S71 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7354,6 +7693,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S72 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7372,6 +7712,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S73 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7391,6 +7732,7 @@
               <ci> k_Im_bind_NU </ci>
               <ci> S13 </ci>
               <ci> S72 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7410,6 +7752,7 @@
               <ci> k_Im_bind_NU </ci>
               <ci> S16 </ci>
               <ci> S72 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7428,6 +7771,7 @@
               <times/>
               <ci> k_Im_unbind_NU </ci>
               <ci> S73 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7447,6 +7791,7 @@
               <ci> k_Im_enters_NP </ci>
               <ci> S6 </ci>
               <ci> S73 </ci>
+              <ci> NM </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7466,6 +7811,7 @@
               <ci> kp_P1_p2 </ci>
               <ci> S4 </ci>
               <ci> S72 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7485,6 +7831,7 @@
               <ci> kp_P1_p2 </ci>
               <ci> S65 </ci>
               <ci> S72 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7504,6 +7851,7 @@
               <ci> kp_TF_p1 </ci>
               <ci> S62 </ci>
               <ci> S74 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7522,6 +7870,7 @@
               <times/>
               <ci> km_TF_p1 </ci>
               <ci> S75 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7540,6 +7889,7 @@
               <times/>
               <ci> k_transcribe </ci>
               <ci> S75 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7558,6 +7908,7 @@
               <times/>
               <ci> k_transcribe </ci>
               <ci> S74 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7576,6 +7927,7 @@
               <times/>
               <ci> k_transcribe </ci>
               <ci> S75 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7594,6 +7946,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S74 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7612,6 +7965,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S75 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7630,6 +7984,7 @@
               <times/>
               <ci> km_P1_p2 </ci>
               <ci> S74 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7648,6 +8003,7 @@
               <times/>
               <ci> km_P1_p2 </ci>
               <ci> S75 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7665,6 +8021,7 @@
               <times/>
               <ci> k_mRNA_to_CP </ci>
               <ci> S76 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7682,6 +8039,7 @@
               <times/>
               <ci> k_mRNA_deg </ci>
               <ci> S76 </ci>
+              <ci> NU </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7700,6 +8058,7 @@
               <times/>
               <ci> k_translate </ci>
               <ci> S77 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7717,6 +8076,7 @@
               <times/>
               <ci> k_mRNA_deg </ci>
               <ci> S77 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>
@@ -7734,6 +8094,7 @@
               <times/>
               <ci> k_P_deg </ci>
               <ci> S78 </ci>
+              <ci> CP </ci>
             </apply>
           </math>
         </kineticLaw>

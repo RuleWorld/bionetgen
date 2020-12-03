@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.6  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="test_setconc">
     <ListOfParameters>
-      <Parameter id="NA" type="Constant" value="6.0221e+23"/>
-      <Parameter id="V" type="Constant" value="1e-9"/>
-      <Parameter id="L0" type="Constant" value="1e-9"/>
-      <Parameter id="R0" type="Constant" value="1e-9"/>
-      <Parameter id="kp" type="Constant" value="1.6605503e-9"/>
-      <Parameter id="km" type="Constant" value="0.1"/>
-      <Parameter id="_InitialConc1" type="Constant" value="602210"/>
-      <Parameter id="_InitialConc2" type="Constant" value="602210"/>
-      <Parameter id="NewConc1" type="Constant" value="1204420"/>
+      <Parameter id="NA" type="Constant" value="6.0221e+23" expr="6.0221e23"/>
+      <Parameter id="V" type="Constant" value="1e-9" expr="1e-9"/>
+      <Parameter id="L0" type="Constant" value="1e-9" expr="1e-9"/>
+      <Parameter id="R0" type="Constant" value="1e-9" expr="1e-9"/>
+      <Parameter id="kp" type="Constant" value="1.6605503e-9" expr="(1e6/NA)/V"/>
+      <Parameter id="km" type="Constant" value="0.1" expr="0.1"/>
+      <Parameter id="_InitialConc1" type="Constant" value="602210" expr="(L0*NA)*V"/>
+      <Parameter id="_InitialConc2" type="Constant" value="602210" expr="(R0*NA)*V"/>
+      <Parameter id="NewConc1" type="Constant" value="1204420" expr="(2e-9*NA)*V"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
       <MoleculeType id="L">

@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.5  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="gene_expr">
+    <listOfUnitDefinitions>
+      <unitDefinition id="substance" name="substance">
+        <listOfUnits>
+          <unit kind="item" exponent="1" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
     <listOfCompartments>
       <compartment id="cell" size="1"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="S1" compartment="cell" initialConcentration="1" name="DNA(promoter~0)"/>
-      <species id="S2" compartment="cell" initialConcentration="0" name="mRNA()"/>
-      <species id="S3" compartment="cell" initialConcentration="0" name="Protein()"/>
-      <species id="S4" compartment="cell" initialConcentration="0" boundaryCondition="true" name="Null()"/>
-      <species id="S5" compartment="cell" initialConcentration="0" name="DNA(promoter~1)"/>
+      <species id="S1" compartment="cell" initialAmount="1" name="DNA(promoter~0)"/>
+      <species id="S2" compartment="cell" initialAmount="0" name="mRNA()"/>
+      <species id="S3" compartment="cell" initialAmount="0" name="Protein()"/>
+      <species id="S4" compartment="cell" initialAmount="0" boundaryCondition="true" name="Null()"/>
+      <species id="S5" compartment="cell" initialAmount="0" name="DNA(promoter~1)"/>
     </listOfSpecies>
     <listOfParameters>
       <!-- Independent variables -->

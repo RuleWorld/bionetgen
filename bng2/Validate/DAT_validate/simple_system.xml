@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.2.6  -->
+<!-- Created by BioNetGen 2.5.2  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="simple_system">
     <ListOfParameters>
-      <Parameter id="kon" type="Constant" value="10"/>
-      <Parameter id="koff" type="Constant" value="5"/>
-      <Parameter id="kcat" type="Constant" value="0.7"/>
-      <Parameter id="dephos" type="Constant" value="0.5"/>
+      <Parameter id="kon" type="Constant" value="10" expr="10"/>
+      <Parameter id="koff" type="Constant" value="5" expr="5"/>
+      <Parameter id="kcat" type="Constant" value="0.7" expr="0.7"/>
+      <Parameter id="dephos" type="Constant" value="0.5" expr="0.5"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
       <MoleculeType id="X">
