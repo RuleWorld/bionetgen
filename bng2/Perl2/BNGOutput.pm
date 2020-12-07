@@ -1169,8 +1169,25 @@ sub writeSBML
     my $conv_expr = undef;
     my $err = undef;
     my $rstring = undef;
+    # We need to know where the reaction takes place if this is 
+    # a compartmental model and pass it to toMathMLString to add
+    # the correct volume correction
     ($conv_expr, $comp_name, $err) = $rxn->get_intensive_to_extensive_units_conversion($BNGModel::GLOBAL_MODEL);
 
+    
+    # toMathMLString adds a volume correction to the rate law for
+    # SBML output if this is a compartmental model. For non-compartmental
+    # models, SBML has a single compartment of volume 1 so it doesn't 
+    # change anything. 
+    #
+    # Kinetic laws in SBML are always in units of items/time
+    # so a volume is needed to convert concentration to items.
+    # See section 4.13.6 in SBML level 2, version 5:
+    # http://sbml.org/Special/specifications/sbml-level-2/version-5/release-1/sbml-level-2-version-5-rel-1.pdf
+    # The default behavior of SBML tools seems to assume concentrations
+    # for the species and the volume that's used here is expected for 
+    # kinetic laws. Without this correction, the dynamics of BNG and 
+    # SBML tools (e.g. COPASI, libroadrunner) does not match. 
 		( $rstring, $err ) = $rxn->RateLaw->toMathMLString( \@rindices, \@pindices, $rxn->StatFactor, $comp_name );
 		if ($err) { return $err; }
 
