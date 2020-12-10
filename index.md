@@ -31,13 +31,11 @@ Download
 -   [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest)
     – the graphical interface for BioNetGen that includes BioNetGen and
     NFsim source code and executables for Mac, Windows, and Linux.
-    [**Current version is 2.3.2**]
     -   Step-by-step installation guide can be found
         [here](https://github.com/RuleWorld/rulebender/blob/master/docs/RuleBender-installation-guide.pdf).
 -   [BioNetGen](https://github.com/RuleWorld/bionetgen/releases/latest)
     – command-line only version that includes BioNetGen and NFsim source
-    code plus executables for Mac, Windows, and Linux. **Current version
-    is 2.5.1**
+    code plus executables for Mac, Windows, and Linux.
 
 Documentation and Tutorials
 ---------------------------
