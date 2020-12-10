@@ -33,13 +33,7 @@ installed by default, Windows users will have to install Perl (a good one is [St
 
 ## Download Latest Test Builds
 
-These builds are the from the head of master and are not guaranteed to be
-stable. Use at your own risk.
-
-* [Linux](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.1/BioNetGen-2.5.1-linux.tgz)
-* [OSX](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.1/BioNetGen-2.5.1-mac.tgz)
-* [Windows](https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.5.1/BioNetGen-2.5.1-win.tgz)
-
+The latest builds for Windows, Mac, and Linux are available [here](https://github.com/RuleWorld/bionetgen/releases/latest).
 ## Compilation from Source
 
 Please see [compilation instructions here](https://github.com/RuleWorld/bionetgen/blob/master/compilation_instructions.md)
