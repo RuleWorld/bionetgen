@@ -550,6 +550,8 @@ sub operate
                 # print "\tstring was: $1\n";
                 $expr->tfunFile($1);
             }
+            $$sptr =~ s/TFUN\(//;
+            $$sptr =~ s/\)//;
             # print "\tnew TFUN: $$sptr\n";
             # print "####\n";
         }
@@ -1458,11 +1460,6 @@ sub toXML
     }
     elsif ( $type eq 'FunctionCall' )
     {
-        # AS-2021
-        print "\ttesting tfun stuff\n";
-        print "\t"+$expr->tfunFile+"\n";
-        # AS-2021
-
         if ( $expand )
         {
             # TODO
