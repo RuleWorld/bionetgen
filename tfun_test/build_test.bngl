@@ -1,0 +1,42 @@
+begin model
+
+begin parameters
+  k_t 1
+  k2 10
+  k3 100
+end parameters
+
+begin molecule types
+  A(p~0~1,b)
+  B(a)
+  ctr()
+end molecule types
+
+begin species
+  A(p~0,b) 100
+  B(a) 100
+  ctr() 0
+end species
+
+begin observables
+  Molecules Ap A(p~1)
+  Molecules AB A(p~1,b!1).B(a!1)
+  Molecules tctr ctr()
+end observables
+
+begin functions
+  k1 = TFUN(tctr,"test.dat") # will use a file
+  # k2 = tctr # will use a file
+  # k3 = tctr # will use a file
+end functions
+
+begin reaction rules
+  time_ctr: 0 -> ctr() k_t
+  Aphos: A(p~0) <-> A(p~1) k1,k2
+  Abind: A(p~1,b) + B(a) <-> A(p~1,b!1).B(a!1) k1,k_t
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"nf",t_end=>100,n_steps=>100})

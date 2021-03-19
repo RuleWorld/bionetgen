@@ -37,6 +37,9 @@ struct Expression =>
                        # '>','<','>=','<=','==','!=','~=','&&','||','!','~'
     Arglist => '@',
     Err     => '$',
+    # AS-2021
+    tfunFile => '$',
+    # AS-2021
 };
 
 
@@ -83,7 +86,29 @@ my %functions =
   "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) }, # <sum/>
   "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) }, # <mean/>
   "mratio" => { FPTR => sub { Mratio($_[0],$_[1],$_[2]) }, NARGS => 3 },
+  "TFUN" => { FPTR => sub { TFUN($_[0], $_[1]) }, NARGS => 2 }, # AS-2021, function to load from file
 );
+
+# AS-2021 TFUN stuff
+sub TFUN
+{
+    # this function is supposed to indicate NFsim that it needs to 
+    # load the file in the second argument. Then use the observable 
+    # given by the first argument to compare to the first column given 
+    # in the file and pull values from the second column.
+    my $obs = shift @_;
+    my $file = shift @_;
+    # for now, just return the obs value to keep the rest of the mechanism
+    # working.
+    print "You are trying to evaluate a TFUN function ಠ_ಠ TFUNs only make sense
+           within NFsim. Try using NFsim, I'm going to dissapear into the 
+           ether now, good bye cruel world ◉︵◉ \n";
+    # exit 1;
+    # TODO: Figure out a behavior for this function for simulators outside
+    # of NFsim
+    return $obs
+}
+# AS-2021
 
 sub Mratio
 {
@@ -513,6 +538,23 @@ sub operate
             %$variables  = ();
         }
 
+        # AS-2021
+        # Pre-parse expression for TFUNC to remove string argument
+        if ($$sptr =~ /TFUN\(.*\)/) 
+        {
+            # print "####\n";
+            # print "\tWe found TFUN\n";
+            # print "\t$$sptr\n";
+            # print "\tremoving string\n";
+            if ($$sptr =~ s/,\s*(\".*\")\s*//) {
+                # print "\tstring was: $1\n";
+                $expr->tfunFile($1);
+            }
+            # print "\tnew TFUN: $$sptr\n";
+            # print "####\n";
+        }
+        # AS-2021
+
         # parse string into form expr op expr op ...
         # a+b*(c+d)
         # -5.0e+3/4
@@ -787,7 +829,7 @@ sub operate
 
         # Transform list into expression preserving operator precedence
         if (@list) { $expr->copy(arrayToExpression(@list)); }
-        
+
         return $err;
     }
 }
@@ -1416,6 +1458,11 @@ sub toXML
     }
     elsif ( $type eq 'FunctionCall' )
     {
+        # AS-2021
+        print "\ttesting tfun stuff\n";
+        print "\t"+$expr->tfunFile+"\n";
+        # AS-2021
+
         if ( $expand )
         {
             # TODO
