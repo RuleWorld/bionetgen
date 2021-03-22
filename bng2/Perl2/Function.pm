@@ -493,23 +493,22 @@ sub toXML
     my $indent3 = '  ' . $indent2;
     my $string  = $indent . "<Function";
 
-    #AS-2021
-    if($fun->Expr->tfunFile) 
-    {
-        print "####\n";
-        print "\t tfunfile in func.pm: ".$fun->Expr->tfunFile."\n";
-        print "####\n";
-        $string .= " id=\"".$fun->Name."\"";
-        $string .= " type=\"TFUN\"";
-        $string .= " file=".$fun->Expr->tfunFile;
-    } else {
-        $string .= " id=\"".$fun->Name."\""
-    }
-    #AS-2021
-
     # Attributes
     # id
-    ;
+    $string .= " id=\"".$fun->Name."\"";
+
+    # AS-2021
+    # if we have a TFUN type function, we need to add 
+    # some attributes to the function XML
+    if($fun->Expr->tfunFile) 
+    {
+        # we need type and file attributes
+        $string .= " type=\"TFUN\"";
+        $string .= " file=".$fun->Expr->tfunFile;
+    }
+    # AS-2021
+
+    # close up this level
     $string .= ">\n";
 
     # Arguments

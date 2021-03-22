@@ -25,7 +25,7 @@ begin observables
 end observables
 
 begin functions
-  k1 = TFUN(tctr,"test.dat") # will use a file
+  k1 = TFUN(tctr,'test.dat') # will use a file
   # k2 = tctr # will use a file
   # k3 = tctr # will use a file
 end functions
@@ -39,4 +39,5 @@ end reaction rules
 end model
 
 generate_network({overwrite=>1})
+# simulate({method=>"ode",t_end=>100,n_steps=>100})
 simulate({method=>"nf",t_end=>100,n_steps=>100})

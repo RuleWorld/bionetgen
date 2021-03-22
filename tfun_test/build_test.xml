@@ -356,7 +356,7 @@
       </Observable>
     </ListOfObservables>
     <ListOfFunctions>
-      <Function id="k1" type="TFUN" file="test.dat">
+      <Function id="k1" type="TFUN" file='test.dat'>
         <ListOfReferences>
           <Reference name="tctr" type="Observable"/>
         </ListOfReferences>

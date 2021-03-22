@@ -103,10 +103,10 @@ sub TFUN
     print "You are trying to evaluate a TFUN function ಠ_ಠ TFUNs only make sense
            within NFsim. Try using NFsim, I'm going to dissapear into the 
            ether now, good bye cruel world ◉︵◉ \n";
-    # exit 1;
+    exit 1;
     # TODO: Figure out a behavior for this function for simulators outside
     # of NFsim
-    return $obs
+    # return $obs
 }
 # AS-2021
 
@@ -542,18 +542,17 @@ sub operate
         # Pre-parse expression for TFUNC to remove string argument
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
-            # print "####\n";
-            # print "\tWe found TFUN\n";
-            # print "\t$$sptr\n";
-            # print "\tremoving string\n";
+            # gotta parse file in double quotes
             if ($$sptr =~ s/,\s*(\".*\")\s*//) {
-                # print "\tstring was: $1\n";
                 $expr->tfunFile($1);
+            # single quotes
+            } elsif ($$sptr =~ s/,\s*(\'.*\')\s*//) {
+                $expr->tfunFile($1);
+            # error out if we can't parse it
+            } else {
+                print "I can't parse file given to TFUN function\n";
+                exit 1
             }
-            $$sptr =~ s/TFUN\(//;
-            $$sptr =~ s/\)//;
-            # print "\tnew TFUN: $$sptr\n";
-            # print "####\n";
         }
         # AS-2021
 
@@ -1537,6 +1536,15 @@ sub toXML
     $string =~ s/\|\|/or/;
     #print "after XML replacement: $string\n";
     #END edit, msneddon
+
+    # AS-2021
+    # the expression shouldn't have TFUN call
+    # mu parser doesn't know what TFUN is
+    if ($string =~ /TFUN\(.*\)/) {
+        $string =~ s/TFUN\(//;
+        $string =~ s/\)//;
+    }
+    # AS-2021
 
     return ($string);
 }
