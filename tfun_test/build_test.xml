@@ -53,52 +53,6 @@
           <Molecule id="S3_M1" name="ctr"/>
         </ListOfMolecules>
       </Species>
-      <Species id="S4"  concentration="0" name="A(b,p~1)">
-        <ListOfMolecules>
-          <Molecule id="S4_M1" name="A">
-            <ListOfComponents>
-              <Component id="S4_M1_C1" name="b" numberOfBonds="0"/>
-              <Component id="S4_M1_C2" name="p" state="1" numberOfBonds="0"/>
-            </ListOfComponents>
-          </Molecule>
-        </ListOfMolecules>
-      </Species>
-      <Species id="S5"  concentration="0" name="A(b!1,p~1).B(a!1)">
-        <ListOfMolecules>
-          <Molecule id="S5_M1" name="A">
-            <ListOfComponents>
-              <Component id="S5_M1_C1" name="b" numberOfBonds="1"/>
-              <Component id="S5_M1_C2" name="p" state="1" numberOfBonds="0"/>
-            </ListOfComponents>
-          </Molecule>
-          <Molecule id="S5_M2" name="B">
-            <ListOfComponents>
-              <Component id="S5_M2_C1" name="a" numberOfBonds="1"/>
-            </ListOfComponents>
-          </Molecule>
-        </ListOfMolecules>
-        <ListOfBonds>
-          <Bond id="S5_B1" site1="S5_M1_C1" site2="S5_M2_C1"/>
-        </ListOfBonds>
-      </Species>
-      <Species id="S6"  concentration="0" name="A(b!1,p~0).B(a!1)">
-        <ListOfMolecules>
-          <Molecule id="S6_M1" name="A">
-            <ListOfComponents>
-              <Component id="S6_M1_C1" name="b" numberOfBonds="1"/>
-              <Component id="S6_M1_C2" name="p" state="0" numberOfBonds="0"/>
-            </ListOfComponents>
-          </Molecule>
-          <Molecule id="S6_M2" name="B">
-            <ListOfComponents>
-              <Component id="S6_M2_C1" name="a" numberOfBonds="1"/>
-            </ListOfComponents>
-          </Molecule>
-        </ListOfMolecules>
-        <ListOfBonds>
-          <Bond id="S6_B1" site1="S6_M1_C1" site2="S6_M2_C1"/>
-        </ListOfBonds>
-      </Species>
     </ListOfSpecies>
     <ListOfReactionRules>
       <ReactionRule id="RR1" name="time_ctr" symmetry_factor="1">

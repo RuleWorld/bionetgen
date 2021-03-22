@@ -1311,6 +1311,10 @@ sub toString
     if ( $level > $MAX_LEVEL ) { die "Max recursion depth $MAX_LEVEL exceeded."; }
     if ( $expand  and  !$plist ) { die "Can't expand expression past parameters without a parameter list."; }
 
+    # AS-2021
+    if ( $expr->tfunFile ) { die "TFUN functions are not supported for non-NFsim simulators."; }
+    # AS-2021
+
     # local variables
     my $err;
     my $string;
