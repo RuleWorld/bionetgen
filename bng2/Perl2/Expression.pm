@@ -539,18 +539,38 @@ sub operate
         }
 
         # AS-2021
+        my $fstr;
         # Pre-parse expression for TFUNC to remove string argument
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
-            # gotta parse file in double quotes
-            if ($$sptr =~ s/,\s*(\".*\")\s*//) {
-                $expr->tfunFile($1);
-            # single quotes
-            } elsif ($$sptr =~ s/,\s*(\'.*\')\s*//) {
-                $expr->tfunFile($1);
-            # error out if we can't parse it
+            # check to see if we have one or two arguments
+            if ($$sptr =~ s/TFUN\(\s*(.*)\s*,\s*(.*)\s*\)//) {
+                # two arguments, first one is observable,
+                # second is file
+                $$sptr = $1;
+                $fstr = $2;
+                if ($fstr =~ s/(\".*\")//) {
+                    $expr->tfunFile($1);
+                } elsif ($fstr =~ s/(\'.*\')//) {
+                    $expr->tfunFile($1);
+                } else {
+                    print "I can't parse the file given to TFUN function: ".$fstr."\n";
+                    exit 1
+                }
+            } elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)//) {
+                # we have a single file argument
+                $$sptr = "0";
+                $fstr = $1;
+                if ($fstr =~ s/(\".*\")//) {
+                    $expr->tfunFile($1);
+                } elsif ($fstr =~ s/(\'.*\')//) {
+                    $expr->tfunFile($1);
+                } else {
+                    print "I can't parse the file given to TFUN function: ".$fstr."\n";
+                    exit 1
+                }
             } else {
-                print "I can't parse file given to TFUN function\n";
+                print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
                 exit 1
             }
         }

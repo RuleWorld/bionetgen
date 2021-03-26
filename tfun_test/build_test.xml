@@ -4,7 +4,6 @@
   <model id="build_test">
     <ListOfParameters>
       <Parameter id="k_t" type="Constant" value="1" expr="1"/>
-      <Parameter id="k2" type="Constant" value="10" expr="10"/>
       <Parameter id="k3" type="Constant" value="100" expr="100"/>
     </ListOfParameters>
     <ListOfMoleculeTypes>
@@ -136,7 +135,7 @@
         </ListOfProductPatterns>
         <RateLaw id="RR3_RateLaw" type="Ele" totalrate="0">
           <ListOfRateConstants>
-            <RateConstant value="k2"/>
+            <RateConstant value="k3"/>
           </ListOfRateConstants>
         </RateLaw>
         <Map>
@@ -189,7 +188,7 @@
             </ListOfBonds>
           </ProductPattern>
         </ListOfProductPatterns>
-        <RateLaw id="RR4_RateLaw" type="Function" name="k1" totalrate="0">
+        <RateLaw id="RR4_RateLaw" type="Function" name="k2" totalrate="0">
           <ListOfArguments>
           </ListOfArguments>
         </RateLaw>
@@ -315,6 +314,11 @@
           <Reference name="tctr" type="Observable"/>
         </ListOfReferences>
         <Expression> tctr </Expression>
+      </Function>
+      <Function id="k2" type="TFUN" file="test2.dat">
+        <ListOfReferences>
+        </ListOfReferences>
+        <Expression> 0 </Expression>
       </Function>
     </ListOfFunctions>
   </model>
