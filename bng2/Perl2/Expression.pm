@@ -1562,16 +1562,6 @@ sub toXML
     #print "after XML replacement: $string\n";
     #END edit, msneddon
 
-    # AS-2021
-    # check to see if we are a tfun function and replace
-    # the counter for the XML 
-    if ( $expr->tfunFile ) { 
-        my $find = $expr->ctrName;
-        my $replace = "__COUNTER__";
-        $string =~ s/$find/$replace/;
-    }
-    # AS-2021
-
     return ($string);
 }
 

@@ -345,7 +345,7 @@
         <ListOfReferences>
           <Reference name="tctr" type="Observable"/>
         </ListOfReferences>
-        <Expression> __COUNTER__ </Expression>
+        <Expression> tctr </Expression>
       </Function>
       <Function id="mctr">
         <ListOfReferences>
@@ -357,7 +357,7 @@
         <ListOfReferences>
           <Reference name="tctr" type="Observable"/>
         </ListOfReferences>
-        <Expression> __COUNTER__/1e2 </Expression>
+        <Expression> tctr/1e2 </Expression>
       </Function>
     </ListOfFunctions>
   </model>
