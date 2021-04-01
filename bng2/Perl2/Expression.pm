@@ -39,6 +39,7 @@ struct Expression =>
     Err     => '$',
     # AS-2021
     tfunFile => '$',
+    ctrName => '$',
     # AS-2021
 };
 
@@ -544,10 +545,10 @@ sub operate
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
             # check to see if we have one or two arguments
-            if ($$sptr =~ s/TFUN\(\s*(.*)\s*,\s*(.*)\s*\)//) {
+            if ($$sptr =~ s/TFUN\(\s*(.*)\s*,\s*([^\)]*)\s*\)/$1/) {
                 # two arguments, first one is observable,
                 # second is file
-                $$sptr = $1;
+                $expr->ctrName($1);
                 $fstr = $2;
                 if ($fstr =~ s/(\".*\")//) {
                     $expr->tfunFile($1);
@@ -557,9 +558,9 @@ sub operate
                     print "I can't parse the file given to TFUN function: ".$fstr."\n";
                     exit 1
                 }
-            } elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)//) {
+            } elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)/$1/) {
                 # we have a single file argument
-                $$sptr = "0";
+                $expr->ctrName($1);
                 $fstr = $1;
                 if ($fstr =~ s/(\".*\")//) {
                     $expr->tfunFile($1);
@@ -1562,11 +1563,12 @@ sub toXML
     #END edit, msneddon
 
     # AS-2021
-    # the expression shouldn't have TFUN call
-    # mu parser doesn't know what TFUN is
-    if ($string =~ /TFUN\(.*\)/) {
-        $string =~ s/TFUN\(//;
-        $string =~ s/\)//;
+    # check to see if we are a tfun function and replace
+    # the counter for the XML 
+    if ( $expr->tfunFile ) { 
+        my $find = $expr->ctrName;
+        my $replace = "__COUNTER__";
+        $string =~ s/$find/$replace/;
     }
     # AS-2021
 
