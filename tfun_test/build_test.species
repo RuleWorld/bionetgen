@@ -1,8 +1,3 @@
 # nfsim generated species list for system: 'build_test'
 # warning! this feature is not yet fully tested! 
-A(p~0,b!1).B(a!1)  94
-A(p~0,b)  1
-A(p~1,b!1).B(a!1)  5
-B(a)  1
-ctr()  104
-dummy()  100059
+dummy()  199745

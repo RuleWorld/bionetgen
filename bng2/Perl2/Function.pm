@@ -505,6 +505,7 @@ sub toXML
         # we need type and file attributes
         $string .= " type=\"TFUN\"";
         $string .= " file=".$fun->Expr->tfunFile;
+        $string .= " ctrName=".$fun->Expr->ctrName;
     }
     # AS-2021
 
