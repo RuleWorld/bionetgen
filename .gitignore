@@ -31,4 +31,5 @@ bng2/BioNetGen-*/
 bng2/BioNetGen-*.tgz
 
 # temporary
-tfun_test
+tests
+.vscode
