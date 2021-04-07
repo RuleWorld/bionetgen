@@ -40,37 +40,31 @@ Download
 Documentation and Tutorials
 ---------------------------
 
--   [FAQ](/faq)
--   [Introduction to rule-based modeling with BioNetGen and RuleBender-
-    slides](https://www.dropbox.com/s/w5hlpip8d9di0rp/q-bio-tutorial-rule-based-modeling-25July2017.pdf?dl=0 "https://www.dropbox.com/s/brn96usq91o58pc/q-bio-2016-RBM-intro.pptx?dl=0")
 -   Getting started with RuleBender
     ([video](https://www.youtube.com/watch?v=MWoY5iaC8W0))
--   [BioNetGen Tutorial](/tutorial)
+-   [Slide-based introduction to rule-based modeling with BioNetGen and RuleBender](https://www.dropbox.com/s/w5hlpip8d9di0rp/q-bio-tutorial-rule-based-modeling-25July2017.pdf?dl=0 "https://www.dropbox.com/s/brn96usq91o58pc/q-bio-2016-RBM-intro.pptx?dl=0")
+-   [BioNetGen tutorial on GitHub](/tutorial) Detailed examples that demonstrate a wide range of language and modeling features.
+-   [FAQ](/faq) (Under construction)
 
 Reference
 ---------
 
--   [Quick Reference
-    Guide](https://drive.google.com/file/d/0B2lPm2_GUE01X3ZaamZxUl80NTA/edit)
+-   [Quick Reference Guide](https://drive.google.com/file/d/0B2lPm2_GUE01X3ZaamZxUl80NTA/edit)
 -   [Actions and Arguments
     Guide](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
 
 Papers
 ------
 
--   [Application
-    Note](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469) (open
+-   [Application Note](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469) (open
     access)
--   [BioNetGen
-    Primer](https://link.springer.com/protocol/10.1007%2F978-1-61779-833-7_9) ([pdf
+-   [BioNetGen Primer](https://link.springer.com/protocol/10.1007%2F978-1-61779-833-7_9) ([pdf
     –
     free](https://www.dropbox.com/s/rm0535pgom2zr6i/Sekar-RuleBasedPrimer-2012.pdf?dl=0))
--   [BioNetGen
-    Bible ](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5)([pdf
+-   [BioNetGen Bible ](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5)([pdf
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
--   [Published BioNetGen
-    models](/published)
+-   [Published BioNetGen models](/published)
 
 Contact
 -------
