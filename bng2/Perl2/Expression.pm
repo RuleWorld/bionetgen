@@ -558,22 +558,23 @@ sub operate
                     print "I can't parse the file given to TFUN function: ".$fstr."\n";
                     exit 1
                 }
-            } elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)/$1/) {
-                # we have a single file argument
-                $expr->ctrName($1);
-                $fstr = $1;
-                if ($fstr =~ s/(\".*\")//) {
-                    $expr->tfunFile($1);
-                } elsif ($fstr =~ s/(\'.*\')//) {
-                    $expr->tfunFile($1);
-                } else {
-                    print "I can't parse the file given to TFUN function: ".$fstr."\n";
-                    exit 1
-                }
             } else {
                 print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
                 exit 1
             }
+            # this is for single argument TFUN parsing, unhooking this for now
+            # elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)/$1/) {
+            #     # we have a single file argument
+            #     $expr->ctrName($1);
+            #     $fstr = $1;
+            #     if ($fstr =~ s/(\".*\")//) {
+            #         $expr->tfunFile($1);
+            #     } elsif ($fstr =~ s/(\'.*\')//) {
+            #         $expr->tfunFile($1);
+            #     } else {
+            #         print "I can't parse the file given to TFUN function: ".$fstr."\n";
+            #         exit 1
+            #     }
         }
         # AS-2021
 
@@ -851,6 +852,7 @@ sub operate
 
         # Transform list into expression preserving operator precedence
         if (@list) { $expr->copy(arrayToExpression(@list)); }
+
         return $err;
     }
 }
