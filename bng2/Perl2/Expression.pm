@@ -851,7 +851,6 @@ sub operate
 
         # Transform list into expression preserving operator precedence
         if (@list) { $expr->copy(arrayToExpression(@list)); }
-
         return $err;
     }
 }
