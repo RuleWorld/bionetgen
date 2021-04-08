@@ -496,6 +496,20 @@ sub toXML
     # Attributes
     # id
     $string .= " id=\"".$fun->Name."\"";
+
+    # AS-2021
+    # if we have a TFUN type function, we need to add 
+    # some attributes to the function XML
+    if($fun->Expr->tfunFile) 
+    {
+        # we need type and file attributes
+        $string .= " type=\"TFUN\"";
+        $string .= " file=\"".$fun->Expr->tfunFile."\"";
+        $string .= " ctrName=\"".$fun->Expr->ctrName."\"";
+    }
+    # AS-2021
+
+    # close up this level
     $string .= ">\n";
 
     # Arguments
@@ -513,6 +527,15 @@ sub toXML
 
     # References
     $string.= $indent2."<ListOfReferences>\n";
+    # AS-2021
+    # if we have a TFUN type function, we need to add 
+    # a default reference
+    if($fun->Expr->tfunFile) 
+    {
+        # we need type and file attributes
+        $string .= $indent3 . "<Reference name=\"__TFUN__VAL__\" type=\"Constant\"/>\n"
+    }
+    # AS-2021
     my $vhash= $fun->Expr->getVariables($plist);
   
     foreach my $type (sort keys %{$vhash})

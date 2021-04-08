@@ -37,6 +37,10 @@ struct Expression =>
                        # '>','<','>=','<=','==','!=','~=','&&','||','!','~'
     Arglist => '@',
     Err     => '$',
+    # AS-2021
+    tfunFile => '$',
+    ctrName => '$',
+    # AS-2021
 };
 
 
@@ -83,7 +87,29 @@ my %functions =
   "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) }, # <sum/>
   "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) }, # <mean/>
   "mratio" => { FPTR => sub { Mratio($_[0],$_[1],$_[2]) }, NARGS => 3 },
+  "TFUN" => { FPTR => sub { TFUN($_[0], $_[1]) }, NARGS => 2 }, # AS-2021, function to load from file
 );
+
+# AS-2021 TFUN stuff
+sub TFUN
+{
+    # this function is supposed to indicate NFsim that it needs to 
+    # load the file in the second argument. Then use the observable 
+    # given by the first argument to compare to the first column given 
+    # in the file and pull values from the second column.
+    my $obs = shift @_;
+    my $file = shift @_;
+    # for now, just return the obs value to keep the rest of the mechanism
+    # working.
+    print "You are trying to evaluate a TFUN function ಠ_ಠ TFUNs only make sense
+           within NFsim. Try using NFsim, I'm going to dissapear into the 
+           ether now, good bye cruel world ◉︵◉ \n";
+    exit 1;
+    # TODO: Figure out a behavior for this function for simulators outside
+    # of NFsim
+    # return $obs
+}
+# AS-2021
 
 sub Mratio
 {
@@ -513,6 +539,42 @@ sub operate
             %$variables  = ();
         }
 
+        # AS-2021
+        # my $fstr;
+        my $ctrName;
+        # Pre-parse expression for TFUNC to remove string argument
+        if ($$sptr =~ /TFUN\(.*\)/) 
+        {
+            # check to see if we have one or two arguments
+            if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN__VAL__/) {
+                # two arguments, first one is observable,
+                # second is file
+                $ctrName = $1; 
+                $expr->tfunFile($2);
+                # $fstr = $2;
+                $expr->ctrName($ctrName);
+                $$sptr =~ s/__TFUN__VAL__/TFUN\($ctrName\)/;
+            } 
+            # else {
+            #     print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
+            #     exit 1
+            # }
+            # this is for single argument TFUN parsing, unhooking this for now
+            # elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)/$1/) {
+            #     # we have a single file argument
+            #     $expr->ctrName($1);
+            #     $fstr = $1;
+            #     if ($fstr =~ s/(\".*\")//) {
+            #         $expr->tfunFile($1);
+            #     } elsif ($fstr =~ s/(\'.*\')//) {
+            #         $expr->tfunFile($1);
+            #     } else {
+            #         print "I can't parse the file given to TFUN function: ".$fstr."\n";
+            #         exit 1
+            #     }
+        }
+        # AS-2021
+
         # parse string into form expr op expr op ...
         # a+b*(c+d)
         # -5.0e+3/4
@@ -787,7 +849,7 @@ sub operate
 
         # Transform list into expression preserving operator precedence
         if (@list) { $expr->copy(arrayToExpression(@list)); }
-        
+
         return $err;
     }
 }
@@ -1268,6 +1330,10 @@ sub toString
     if ( $level > $MAX_LEVEL ) { die "Max recursion depth $MAX_LEVEL exceeded."; }
     if ( $expand  and  !$plist ) { die "Can't expand expression past parameters without a parameter list."; }
 
+    # AS-2021
+    if ( $expr->tfunFile ) { die "TFUN functions are not supported for non-NFsim simulators."; }
+    # AS-2021
+
     # local variables
     my $err;
     my $string;
@@ -1493,6 +1559,14 @@ sub toXML
     $string =~ s/\|\|/or/;
     #print "after XML replacement: $string\n";
     #END edit, msneddon
+
+    # AS-2021
+    if ($expr->tfunFile) {
+        # need to replace TFUN call from expr
+        my $cname = $expr->ctrName;
+        $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN__VAL__/
+    }
+    # AS-2021
 
     return ($string);
 }
