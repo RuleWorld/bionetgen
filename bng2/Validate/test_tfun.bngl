@@ -8,6 +8,7 @@ begin molecule types
   A()
   B()
   C()
+  D()
   dummy()
 end molecule types
 
@@ -15,12 +16,14 @@ begin species
   A() 1000
   B() 1000
   C() 1000
+  D() 1000
 end species
 
 begin observables
   Molecules A A()
   Molecules B B()
   Molecules C C()
+  Molecules D D()
   Molecules dum dummy()
 end observables
 
@@ -30,6 +33,7 @@ begin functions
   k1 = TFUN(mctr,'DAT_validate/test.dat')
   k2 = (TFUN(mctr, "DAT_validate/test.dat")/1e1)
   k3 = (TFUN(mctr, "DAT_validate/test.dat")/k_t)
+  k4 = (TFUN(mctr, "DAT_validate/test.dat")/mctr)
 end functions
 
 begin reaction rules
@@ -37,6 +41,7 @@ begin reaction rules
   Ad: A() -> 0 k1
   Bd: B() -> 0 k2
   Cd: C() -> 0 k3
+  Dd: D() -> 0 k4
 end reaction rules
 
 end model

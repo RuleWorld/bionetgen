@@ -540,31 +540,25 @@ sub operate
         }
 
         # AS-2021
-        my $fstr;
+        # my $fstr;
         my $ctrName;
         # Pre-parse expression for TFUNC to remove string argument
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
             # check to see if we have one or two arguments
-            if ($$sptr =~ s/TFUN\(\s*(.*)\s*,\s*([^\)]*)\s*\)/__TFUN__VAL__/) {
+            if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN__VAL__/) {
                 # two arguments, first one is observable,
                 # second is file
-                $ctrName = $1;  
-                $fstr = $2;
+                $ctrName = $1; 
+                $expr->tfunFile($2);
+                # $fstr = $2;
                 $expr->ctrName($ctrName);
                 $$sptr =~ s/__TFUN__VAL__/TFUN\($ctrName\)/;
-                if ($fstr =~ s/(\".*\")//) {
-                    $expr->tfunFile($1);
-                } elsif ($fstr =~ s/(\'.*\')//) {
-                    $expr->tfunFile($1);
-                } else {
-                    print "I can't parse the file given to TFUN function: ".$fstr."\n";
-                    exit 1
-                }
-            } else {
-                print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
-                exit 1
-            }
+            } 
+            # else {
+            #     print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
+            #     exit 1
+            # }
             # this is for single argument TFUN parsing, unhooking this for now
             # elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)/$1/) {
             #     # we have a single file argument
