@@ -1569,7 +1569,8 @@ sub toXML
     # AS-2021
     if ($expr->tfunFile) {
         # need to replace TFUN call from expr
-        $string =~ s/TFUN\(\s*(.*)\s*\)/__TFUN__VAL__/
+        my $cname = $expr->ctrName;
+        $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN__VAL__/
     }
     # AS-2021
 
