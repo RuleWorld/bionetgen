@@ -527,6 +527,15 @@ sub toXML
 
     # References
     $string.= $indent2."<ListOfReferences>\n";
+    # AS-2021
+    # if we have a TFUN type function, we need to add 
+    # a default reference
+    if($fun->Expr->tfunFile) 
+    {
+        # we need type and file attributes
+        $string .= $indent3 . "<Reference name=\"__TFUN__VAL__\" type=\"Constant\"/>"
+    }
+    # AS-2021
     my $vhash= $fun->Expr->getVariables($plist);
   
     foreach my $type (sort keys %{$vhash})

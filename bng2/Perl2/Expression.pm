@@ -541,15 +541,18 @@ sub operate
 
         # AS-2021
         my $fstr;
+        my $ctrName;
         # Pre-parse expression for TFUNC to remove string argument
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
             # check to see if we have one or two arguments
-            if ($$sptr =~ s/TFUN\(\s*(.*)\s*,\s*([^\)]*)\s*\)/$1/) {
+            if ($$sptr =~ s/TFUN\(\s*(.*)\s*,\s*([^\)]*)\s*\)/__TFUN__VAL__/) {
                 # two arguments, first one is observable,
                 # second is file
-                $expr->ctrName($1);
+                $ctrName = $1;  
                 $fstr = $2;
+                $expr->ctrName($ctrName);
+                $$sptr =~ s/__TFUN__VAL__/TFUN\($ctrName\)/;
                 if ($fstr =~ s/(\".*\")//) {
                     $expr->tfunFile($1);
                 } elsif ($fstr =~ s/(\'.*\')//) {
@@ -1562,6 +1565,13 @@ sub toXML
     $string =~ s/\|\|/or/;
     #print "after XML replacement: $string\n";
     #END edit, msneddon
+
+    # AS-2021
+    if ($expr->tfunFile) {
+        # need to replace TFUN call from expr
+        $string =~ s/TFUN\(\s*(.*)\s*\)/__TFUN__VAL__/
+    }
+    # AS-2021
 
     return ($string);
 }
