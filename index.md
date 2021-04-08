@@ -7,6 +7,22 @@ layout: default
   <img src="assets/flagman.png" width="75" height="72"/>
 </p>
 
+Announcements
+--------
+
+- New [VS Code](https://code.visualstudio.com/) [extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GH link](https://github.com/RuleWorld/BNG_vscode_extension))
+- New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GH link](https://github.com/RuleWorld/PyBioNetGen)) 
+
+Upcoming Features
+--------
+
+- New BioNetGen release is coming out with [time dependent parameter](https://github.com/RuleWorld/bionetgen/pull/227) support soon.
+- Network visualization support to VS Code extension is being worked on.
+- A python package to simplify BioNetGen (SSA only)/[WESTPA](https://github.com/westpa/westpa) simulations is in progress. 
+
+BioNetGen Modelling Language
+--------
+
 This web site serves the BioNetGen user community by providing
 information about BioNetGen and tools for the development, annotation,
 and discussion of BioNetGen models.
