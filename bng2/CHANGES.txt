@@ -2,8 +2,23 @@ CHANGES to BioNetGen
 updated 11 June 2019
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.6.0==
+'''''2021 April 16'''''
+
+=== New Features ===
+* Added a new built-in function, TFUN. TFUN allows for two arguments, TFUN(ctr, "file.dat") 
+where ctr is either another function or an observable. "file.dat" needs to be a white space 
+sparated two column data file where the first column is the value of ctr to match to and the 
+second column is the value you want TFUN to return. 
+
 == BioNetGen-2.5.1==
-'''''TDB'''''
+'''''2020 Dec 4'''''
+
+=== Bug Fixes ===
+* Fixed a bug in the SBML export of compartmental models where the compartment of the reaction was not exported to the kinetic law of the reaction, resulting in incorrect dynamics.
+
+== BioNetGen-2.5.1==
+'''''2020 Jun 4'''''
 
 === Minor Changes === 
 * NFSim XML parameters now contain the string of the original expression
