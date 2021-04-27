@@ -1,1 +1,1 @@
-We are rebuilding the lost BioNetWiki one page at a time.
+Web pages for the the BioNetGen web site.
