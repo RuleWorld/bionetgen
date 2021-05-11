@@ -10,7 +10,7 @@ layout: default
 Announcements
 --------
 
-- New [VS Code](https://code.visualstudio.com/) [extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension))
+- New [VS Code](https://code.visualstudio.com/) [extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension), [documentation](https://bng-vscode-extension.readthedocs.io/en/latest/#))
 - New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GitHub link](https://github.com/RuleWorld/PyBioNetGen), [documentation](https://pybionetgen.readthedocs.io/en/latest/)) 
 - Alpha version of a command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/). 
 - Upcoming hands-on workshop on computational biophysics, workshop Dates: June 28 – July 1, 2021, application deadline: June 11, 2021. For more details, or to apply visit [here](https://mmbios.pitt.edu/workshops/2021-workshops?id=245).
