@@ -10,8 +10,11 @@ layout: default
 Announcements
 --------
 
-- New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GH link](https://github.com/RuleWorld/BNG_vscode_extension)). See [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) for installation instructions. This extension will eventually replace RuleBender.
-- New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GH link](https://github.com/RuleWorld/PyBioNetGen)) 
+- New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension), [documentation](https://bng-vscode-extension.readthedocs.io/en/latest/#)). See [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) for a starter guide.
+- New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GitHub link](https://github.com/RuleWorld/PyBioNetGen), [documentation](https://pybionetgen.readthedocs.io/en/latest/)) 
+- Alpha version of a command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/). 
+- Upcoming hands-on workshop on computational biophysics, workshop Dates: June 28 – July 1, 2021, application deadline: June 11, 2021. For more details, or to apply visit [here](https://mmbios.pitt.edu/workshops/2021-workshops?id=245).
+- Upcoming cell modeling workshop, workshop dates: July 12 - July 16, 2021, application deadline: June 25, 2021. For more details, or to apply visit [here](https://mmbios.pitt.edu/workshops/2021-workshops?id=247).
 
 Upcoming Features
 --------
@@ -58,6 +61,7 @@ Documentation and Tutorials
     ([video](https://www.youtube.com/watch?v=MWoY5iaC8W0))
 -   [Slide-based introduction to rule-based modeling with BioNetGen and RuleBender](https://www.dropbox.com/s/w5hlpip8d9di0rp/q-bio-tutorial-rule-based-modeling-25July2017.pdf?dl=0 "https://www.dropbox.com/s/brn96usq91o58pc/q-bio-2016-RBM-intro.pptx?dl=0")
 -   [BioNetGen tutorial on GitHub](/tutorial) Detailed examples that demonstrate a wide range of language and modeling features.
+-   [MMBioS - Cell Modeling Virtual Workshop 2020](https://www.youtube.com/playlist?list=PLHmIPhi01uH9EkKhOuB5fjDjrlZu_TDG6) A YouTube playlist of all Cell Modelling workshop lectures including BioNetGen and RuleBender lessons. 
 -   [FAQ](/faq) (Under construction)
 
 Reference
