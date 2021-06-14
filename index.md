@@ -10,15 +10,13 @@ layout: default
 Announcements
 --------
 
-- New [VS Code](https://code.visualstudio.com/) [extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GH link](https://github.com/RuleWorld/BNG_vscode_extension))
+- New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GH link](https://github.com/RuleWorld/BNG_vscode_extension)). See [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) for installation instructions. This extension will eventually replace RuleBender.
 - New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GH link](https://github.com/RuleWorld/PyBioNetGen)) 
 
 Upcoming Features
 --------
 
-- New BioNetGen release is coming out with [time dependent parameter](https://github.com/RuleWorld/bionetgen/pull/227) support soon.
 - Network visualization support to VS Code extension is being worked on.
-- A python package to simplify BioNetGen (SSA only)/[WESTPA](https://github.com/westpa/westpa) simulations is in progress. 
 
 BioNetGen Modelling Language
 --------
