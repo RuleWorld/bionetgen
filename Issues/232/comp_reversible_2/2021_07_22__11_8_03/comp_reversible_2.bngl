@@ -1,0 +1,31 @@
+begin model
+begin parameters
+  k1                 2
+  k2                 3
+end parameters
+
+begin compartments
+  C1  3  1
+  C2  2  1  C1
+  C3  3  1  C2
+end compartments
+
+begin molecule types
+  A()
+  C()
+  B()
+end molecule types
+
+begin species
+  A()@C1             1
+  B()@C2             1
+  C()@C3             1
+end species
+
+begin reaction rules
+  R1: A()@C1 + B()@C2 <-> C()@C3   k1,k2
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
