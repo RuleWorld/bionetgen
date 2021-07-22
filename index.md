@@ -12,14 +12,14 @@ Announcements
 
 - New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension), [documentation](https://bng-vscode-extension.readthedocs.io/en/latest/#)). See [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) for a starter guide.
 - New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GitHub link](https://github.com/RuleWorld/PyBioNetGen), [documentation](https://pybionetgen.readthedocs.io/en/latest/)) 
-- Alpha version of a command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/). 
-- Upcoming hands-on workshop on computational biophysics, workshop Dates: June 28 – July 1, 2021, application deadline: June 11, 2021. For more details, or to apply visit [here](https://mmbios.pitt.edu/workshops/2021-workshops?id=245).
-- Upcoming cell modeling workshop, workshop dates: July 12 - July 16, 2021, application deadline: June 25, 2021. For more details, or to apply visit [here](https://mmbios.pitt.edu/workshops/2021-workshops?id=247).
+- Alpha version of a command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/).
+- If you encounter any problems with BioNetGen or have suggestions, please post an issue on [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
 
 Upcoming Features
 --------
 
 - Network visualization support to VS Code extension is being worked on.
+- A C++ based BNGL parser is currently in development
 
 BioNetGen Modelling Language
 --------
@@ -90,6 +90,8 @@ Contact
 -   Email: <bionetgen.help@gmail.com>
 -   [GitHub repositories](https://github.com/RuleWorld).
 -   Twitter: [@bionetgen](https://twitter.com/bionetgen)
+
+If you encounter any problems with BioNetGen or have suggestions, please post an issue on [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
 
 Acknowledgements
 ----------------
