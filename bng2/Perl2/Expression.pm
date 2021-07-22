@@ -39,6 +39,7 @@ struct Expression =>
     Err     => '$',
     # AS-2021
     tfunFile => '$',
+    ctrName => '$',
     # AS-2021
 };
 
@@ -539,20 +540,38 @@ sub operate
         }
 
         # AS-2021
+        # my $fstr;
+        my $ctrName;
         # Pre-parse expression for TFUNC to remove string argument
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
-            # gotta parse file in double quotes
-            if ($$sptr =~ s/,\s*(\".*\")\s*//) {
-                $expr->tfunFile($1);
-            # single quotes
-            } elsif ($$sptr =~ s/,\s*(\'.*\')\s*//) {
-                $expr->tfunFile($1);
-            # error out if we can't parse it
-            } else {
-                print "I can't parse file given to TFUN function\n";
-                exit 1
-            }
+            # check to see if we have one or two arguments
+            if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN__VAL__/) {
+                # two arguments, first one is observable,
+                # second is file
+                $ctrName = $1; 
+                $expr->tfunFile($2);
+                # $fstr = $2;
+                $expr->ctrName($ctrName);
+                $$sptr =~ s/__TFUN__VAL__/TFUN\($ctrName\)/;
+            } 
+            # else {
+            #     print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
+            #     exit 1
+            # }
+            # this is for single argument TFUN parsing, unhooking this for now
+            # elsif ($$sptr =~ s/TFUN\(\s*(.*)\s*\)/$1/) {
+            #     # we have a single file argument
+            #     $expr->ctrName($1);
+            #     $fstr = $1;
+            #     if ($fstr =~ s/(\".*\")//) {
+            #         $expr->tfunFile($1);
+            #     } elsif ($fstr =~ s/(\'.*\')//) {
+            #         $expr->tfunFile($1);
+            #     } else {
+            #         print "I can't parse the file given to TFUN function: ".$fstr."\n";
+            #         exit 1
+            #     }
         }
         # AS-2021
 
@@ -1542,11 +1561,10 @@ sub toXML
     #END edit, msneddon
 
     # AS-2021
-    # the expression shouldn't have TFUN call
-    # mu parser doesn't know what TFUN is
-    if ($string =~ /TFUN\(.*\)/) {
-        $string =~ s/TFUN\(//;
-        $string =~ s/\)//;
+    if ($expr->tfunFile) {
+        # need to replace TFUN call from expr
+        my $cname = $expr->ctrName;
+        $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN__VAL__/
     }
     # AS-2021
 
