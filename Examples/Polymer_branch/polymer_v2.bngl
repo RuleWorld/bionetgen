@@ -33,7 +33,7 @@ begin reaction rules
   # Simplified rules - A-X can occur regardless of whether A is bound at top and bottom sites.
   #                  - cleavage occurs rapidly upon binding with equal rate at either top or bottom site. 
   #                  - only once cleavage event per X binding
-  xbind: X(a) + A(x) -> X(a!1).A(x!1) k
+  xbind: X(a) + A(x) <-> X(a!1).A(x!1) k, 0.1*k
   xcleave_top: X(a!1).A(x!1,top!2).A(bottom!2) -> X(a) + A(x,top) + A(bottom) 1000*k
   xcleave_bot: X(a!1).A(x!1,bottom!2).A(top!2) -> X(a) + A(x,bottom) + A(top) 1000*k
 end reaction rules
@@ -41,5 +41,9 @@ end reaction rules
 end model
 
 # Shows how to invoke NFsim and change a default parameter (maximum number of molecules)
+# NOTE: It's a good idea to set UTL to a high value here to avoid any issues 
+#       updating reactions when polymers are long. utl defaults to the length of the longest
+#       pattern encountered in a rule, but this is not always sufficient to guarantee an 
+#       error-free simulation.
 simulate({method=>"nf",t_end=>10,n_steps=>1000,param=>"-utl 1000"})
 #simulate({method=>"nf",t_end=>10,n_steps=>1000,param=>"-gml 300000 -utl 1000"})
