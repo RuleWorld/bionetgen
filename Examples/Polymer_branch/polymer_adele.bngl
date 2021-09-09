@@ -1,0 +1,33 @@
+begin model
+
+# Model of polymer splitting upon binding of X to a subunit A in a chain.
+begin parameters
+  k 1
+end parameters
+
+begin molecule types
+    X(a)
+    A(x,top,bottom)
+end molecule types
+
+# Model is initialized with a large number of trimers 
+# (shortest polymer that contains an A to which X can bind and split)
+begin species
+    X(a)    100000
+    A(x,top,bottom!1).A(x,top!1,bottom!2)A(x,top!2,bottom) 100000
+end species
+
+begin observables
+    Molecules Xbot X(a!1).A(x!1,top,bottom!+)
+    Molecules Xtop X(a!1).A(x!1,top!+,bottom)
+end observables
+
+begin reaction rules
+  xbind_top: X(a) + A(x,top!1,bottom!2).A(bottom!1).A(top!2) -> X(a!3).A(x!3,top,bottom!2).A(top!2) + A(bottom) k
+  xbind_bot: X(a) + A(x,top!1,bottom!2).A(bottom!1).A(top!2) -> X(a!3).A(x!3,top!1,bottom).A(bottom!1) + A(top) k 
+end reaction rules
+
+end model
+
+# Shows how to invoke NFsim and change a default parameter (maximum number of molecules)
+simulate({method=>"nf",t_end=>1e-3,n_steps=>1000,param=>"-gml 300000"})
