@@ -34,3 +34,5 @@ bng2/BioNetGen-*.tgz
 tests
 testing
 .vscode
+Issues/test.py
+Examples/Polymer_branch/polymer_adele
