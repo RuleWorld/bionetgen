@@ -10,6 +10,7 @@ layout: default
 Announcements
 --------
 
+- Warning MacOS users! New versions of OS X (11.5 or newer) might force you to switch your default shell to be zsh, see [here](https://support.apple.com/en-us/HT208050). This will break the extension if you are using anaconda python since anaconda python won't be your default python in zsh. Try renaming your `.bash_profile` to `.zprofile`. 
 - New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension), [documentation](https://bng-vscode-extension.readthedocs.io/en/latest/#)). See [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) for a starter guide.
 - New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GitHub link](https://github.com/RuleWorld/PyBioNetGen), [documentation](https://pybionetgen.readthedocs.io/en/latest/)) 
 - Alpha version of a command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/).
