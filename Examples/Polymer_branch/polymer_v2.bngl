@@ -1,0 +1,45 @@
+begin model
+
+# Model of polymer splitting upon binding of X to a subunit A in a chain.
+begin parameters
+  k 1
+end parameters
+
+begin molecule types
+    X(a)
+    A(x,top,bottom)
+end molecule types
+
+# Model is initialized with a large number of trimers 
+# (shortest polymer that contains an A to which X can bind and split)
+begin species
+    X(a)    10
+    A(x,top,bottom!1).A(x,top!1,bottom!2)A(x,top!2,bottom) 1000
+end species
+
+begin observables
+#    Molecules Xbot X(a!1).A(x!1,top,bottom!+)
+#    Molecules Xtop X(a!1).A(x!1,top!+,bottom)
+    Species Amon A==1
+    Species Adim A==2
+    Species Atri A==3
+    Species Xfree X(a)
+end observables
+
+begin reaction rules
+  # rules of the original model
+  #xbind_top: X(a) + A(x,top!1,bottom!2).A(bottom!1).A(top!2) -> X(a!3).A(x!3,top,bottom!2).A(top!2) + A(bottom) k
+  #xbind_bot: X(a) + A(x,top!1,bottom!2).A(bottom!1).A(top!2) -> X(a!3).A(x!3,top!1,bottom).A(bottom!1) + A(top) k 
+  # Simplified rules - A-X can occur regardless of whether A is bound at top and bottom sites.
+  #                  - cleavage occurs rapidly upon binding with equal rate at either top or bottom site. 
+  #                  - only once cleavage event per X binding
+  xbind: X(a) + A(x) -> X(a!1).A(x!1) k
+  xcleave_top: X(a!1).A(x!1,top!2).A(bottom!2) -> X(a) + A(x,top) + A(bottom) 1000*k
+  xcleave_bot: X(a!1).A(x!1,bottom!2).A(top!2) -> X(a) + A(x,bottom) + A(top) 1000*k
+end reaction rules
+
+end model
+
+# Shows how to invoke NFsim and change a default parameter (maximum number of molecules)
+simulate({method=>"nf",t_end=>10,n_steps=>1000,param=>"-utl 1000"})
+#simulate({method=>"nf",t_end=>10,n_steps=>1000,param=>"-gml 300000 -utl 1000"})
