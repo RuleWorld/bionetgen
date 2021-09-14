@@ -587,30 +587,39 @@ sub printGraphML
 	$allstring .= '<graphml xmlns="http://graphml.graphdrawing.org/xmlns" ';
 	$allstring .= 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ';
 	$allstring .= 'xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns ';
-	$allstring .= 'http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">'."\n";
+	$allstring .= 'http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd" ';
+	$allstring .= 'xmlns:y="http://www.yworks.com/xml/graphml">'."\n";
+	$allstring .= '<key id="d0" for="node" yfiles.type="nodegraphics"/>'."\n"; 
+  	$allstring .= '<key id="d1" for="edge" yfiles.type="edgegraphics"/>'."\n";
+
 	$allstring .= '  <graph edgedefault="directed" id="G">'."\n";
 
 	foreach my $node(@nodes)
 	{
-		$allstring .= "###\n";
-
 		# start node
-		$allstring .= '    <node id="'.$node->{'ID'}.'" >'."\n";
+		$allstring .= '    <node id="n'.$node->{'ID'}.'" >'."\n";
 
 		# Need to add these to node block
-
+ 		
 		# # write node
-		# $allstring .= "ID: ".$node->{'ID'}."\n";
-		# $allstring .= "label: ".$node->{'label'}."\n";
+		# $allstring .= "label: ".."\n";
 		# $allstring .= "isGroup: ".$node->{'isGroup'}."\n";
 		# $allstring .= "gid: ".$node->{'gid'}."\n";
 		
-		# my $graphics = $node->{'graphics'};
+		my $graphics = $node->{'graphics'};
+		$allstring .= '      <data key="d0">'."\n";
+        $allstring .= '        <y:ShapeNode>'."\n"; 
+        # $allstring .= '        <y:Geometry x="170.5" y="-15.0" width="59.0" height="30.0"/>'."\n"; 
+        $allstring .= '        <y:Fill color="'.$graphics->{'fill'}.'" transparent="false"/>'."\n";
+        # if ($graphics->{'hasOutline'}) {
+		# 	$allstring .= '        <y:BorderStyle type="'.$graphics->{'outlineStyle'}.'" width="'.$graphics->{'outlineWidth'}.'" color="#000000"/>'."\n";
+		# }
+        # $allstring .= '        <y:NodeLabel>"'.$node->{'label'}.'"</y:NodeLabel>'."\n";
+        # $allstring .= '        <y:Shape type="rectangle"/>'."\n";
+        $allstring .= '        </y:ShapeNode>'."\n";
+        $allstring .= '      </data>'."\n";
+		
 		# $allstring .= "gfx type: ".$graphics->{'type'}."\n";
-		# $allstring .= "gfx fill: ".$graphics->{'fill'}."\n";
-		# $allstring .= "gfx hasout: ".$graphics->{'hasOutline'}."\n";
-		# $allstring .= "gfx outwidth: ".$graphics->{'outlineWidth'}."\n";
-		# $allstring .= "gfx outstyle: ".$graphics->{'outlineStyle'}."\n";
 		# $allstring .= "gfx outline: ".$graphics->{'outline'}."\n";
 		
 		# my $labelgraphics = $node->{'LabelGraphics'};
@@ -622,8 +631,6 @@ sub printGraphML
 				
 		# end node
 		$allstring .= '    </node>'."\n";
-
-		$allstring .= "###\n";
 	}
 	my $edgectr = 0;
 	foreach my $edge(@edges)
@@ -631,8 +638,8 @@ sub printGraphML
 		$allstring .= "###\n";
 	
 		$allstring .= '    <edge id="'."e$edgectr".'" ';
-		$allstring .= 'source="'.$edge->{'source'}.'" ';
-		$allstring .= 'target="'.$edge->{'target'}.'">'."\n";
+		$allstring .= 'source="n'.$edge->{'source'}.'" ';
+		$allstring .= 'target="n'.$edge->{'target'}.'">'."\n";
 		$allstring .= '    </edge>'."\n";
 		$edgectr += 1;
 
