@@ -32,6 +32,7 @@ GetOptions(	\%args,
 			'bngl=s',
 			'db=s',
 			'type=s',
+			'outType=s'
 			'opts=s@',
 			'background!',
 			'collapse!',

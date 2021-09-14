@@ -574,6 +574,108 @@ sub initializeGMLEdge
 	return $gmledge;
 }
 
+sub printGraphML
+{
+	my $gmlgraph = shift @_;
+	my @nodes = @{$gmlgraph->{'Nodes'}};
+	my @edges = @{$gmlgraph->{'Edges'}};
+	my @nodestrings = ();
+	my @edgestrings = ();
+
+	# start with header and graph
+	my $allstring = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'."\n";
+	$allstring .= '<graphml xmlns="http://graphml.graphdrawing.org/xmlns" ';
+	$allstring .= 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ';
+	$allstring .= 'xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns ';
+	$allstring .= 'http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">'."\n";
+	$allstring .= '  <graph edgedefault="directed" id="G">'."\n";
+
+	foreach my $node(@nodes)
+	{
+		$allstring .= "###\n";
+
+		# start node
+		$allstring .= '    <node id="'.$node->{'ID'}.'" >'."\n";
+
+		# Need to add these to node block
+
+		# # write node
+		# $allstring .= "ID: ".$node->{'ID'}."\n";
+		# $allstring .= "label: ".$node->{'label'}."\n";
+		# $allstring .= "isGroup: ".$node->{'isGroup'}."\n";
+		# $allstring .= "gid: ".$node->{'gid'}."\n";
+		
+		# my $graphics = $node->{'graphics'};
+		# $allstring .= "gfx type: ".$graphics->{'type'}."\n";
+		# $allstring .= "gfx fill: ".$graphics->{'fill'}."\n";
+		# $allstring .= "gfx hasout: ".$graphics->{'hasOutline'}."\n";
+		# $allstring .= "gfx outwidth: ".$graphics->{'outlineWidth'}."\n";
+		# $allstring .= "gfx outstyle: ".$graphics->{'outlineStyle'}."\n";
+		# $allstring .= "gfx outline: ".$graphics->{'outline'}."\n";
+		
+		# my $labelgraphics = $node->{'LabelGraphics'};
+		# $allstring .= "label gfx text: ".$labelgraphics->{'text'}."\n";
+		# $allstring .= "label gfx fontsize: ".$labelgraphics->{'fontSize'}."\n";
+		# $allstring .= "label gfx fontname: ".$labelgraphics->{'fontName'}."\n";
+		# $allstring .= "label gfx fontstyle: ".$labelgraphics->{'fontStyle'}."\n";
+		# $allstring .= "label gfx anchor: ".$labelgraphics->{'anchor'}."\n";
+				
+		# end node
+		$allstring .= '    </node>'."\n";
+
+		$allstring .= "###\n";
+	}
+	my $edgectr = 0;
+	foreach my $edge(@edges)
+	{
+		$allstring .= "###\n";
+	
+		$allstring .= '    <edge id="'."e$edgectr".'" ';
+		$allstring .= 'source="'.$edge->{'source'}.'" ';
+		$allstring .= 'target="'.$edge->{'target'}.'">'."\n";
+		$allstring .= '    </edge>'."\n";
+		$edgectr += 1;
+
+		$allstring .= "###\n";
+
+		# Need to add these in the edge block
+
+		# my $graphics = $edge->{'graphics'};
+		# push @strs,"width".$q0.$graphics->{'width'}.$q0;
+		# push @strs,"style".$q1.$graphics->{'style'}.$q2;
+		# push @strs,"fill".$q1.$graphics->{'fill'}.$q2;
+		# push @strs,"sourceArrow".$q1.$graphics->{'sourceArrow'}.$q2;
+		# push @strs,"targetArrow".$q1.$graphics->{'targetArrow'}.$q2;
+		# push @edgestrs, "graphics".$q3.join(" ",@strs).$q4;
+		# my $str = "edge [\n".join(" ",@edgestrs)."\n ]";
+			
+		# $allstring .= printedge($edge);
+		# print $edge=>{"type"};
+		# print $edge=>{"fill"};
+	}
+	# close up the graph
+	$allstring .= '  </graph>'."\n";
+	$allstring .= '</graphml>'."\n";
+	
+
+	return $allstring;
+}
+
+# sub printGraphML2
+# {
+# 	my $gmlgraph = shift @_;
+# 	my @nodes = @{$gmlgraph->{'Nodes'}};
+# 	my @edges = @{$gmlgraph->{'Edges'}};
+# 	my @nodestrings = map { printnode($_) } @nodes;
+# 	my @edgestrings = map { printedge($_) } @edges;
+	
+# 	my $string = "graph\n[\n directed 1\n";
+# 	$string .= join("\n",@nodestrings)."\n";
+# 	$string .= join("\n",@edgestrings)."\n";
+# 	$string .= "]\n";	
+# 	return $string;
+# }
+
 sub printGML
 {
 	my $gmlgraph = shift @_;
@@ -709,6 +811,8 @@ sub printGML
 sub toGML_rule_operation
 {
 	my $sg = shift @_; #imports a combined rule structure graph
+	# AS2021 - adding output types
+	my $outType = @_ ? shift @_: "graphml"; # the output type
 
 	#this is a structure graph.
 	# could be pattern or a rule or combination of rules
@@ -1023,12 +1127,19 @@ sub toGML_rule_operation
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
-	return printGML2($gmlgraph);
+	
+	if ($outType eq "gml") {
+		return printGML2($gmlgraph);
+	} else {
+		return printGraphML($gmlgraph);
+	}	
 }
 
 sub toGML_pattern
 {
 	my $sg = shift @_; #imports a rule pattern graph
+	# AS2021 - adding output types
+	my $outType = @_ ? shift @_: "graphml"; # the output type
 	my @nodelist = @{$sg->{'NodeList'}};
 	#remap all ids to integers
 	my @idlist = map{$_->{'ID'}} @nodelist;
@@ -1131,9 +1242,13 @@ sub toGML_pattern
 	return printGML($gmlgraph);
 
 }
+
 sub toGML_rule_pattern
 {
 	my $sg = shift @_; #imports a rule pattern graph
+	# AS2021 - adding output types
+	my $outType = @_ ? shift @_: "graphml"; # the output type
+
 	my @nodelist = @{$sg->{'NodeList'}};
 	#remap all ids to integers
 	my @idlist = map{$_->{'ID'}} @nodelist;
@@ -1387,6 +1502,8 @@ sub toGML_rule_network
 	my $grouped = defined $bpg->{'NodeClass'} ? 1 : 0;
 	my $embed = @_ ? shift @_ : 0;
 	my $ruleNames = @_ ? shift @_: 0;
+	# AS2021 - adding output types
+	my $outType = @_ ? shift @_: "graphml"; # the output type
 	
 	#my @groups = ();
 	#my @groups = @_ ? @{shift @_} : ();
@@ -1509,6 +1626,8 @@ sub toGML_rule_network
 sub toGML_rinf
 {
 	my $rinf = shift @_;
+	# AS2021 - adding output types
+	my $outType = @_ ? shift @_: "graphml"; # the output type
 	my @nodelist = @{$rinf->{'Nodes'}};
 	my @edgelist = @{$rinf->{'Edges'}};
 	my @gmlnodes2 = ();
@@ -1563,6 +1682,8 @@ sub printGML2
 sub toGML_process
 {
 	my $pg = shift @_;
+	# AS2021 - adding output types
+	my $outType = @_ ? shift @_: "graphml"; # the output type
 	my $embed = (defined $pg->{'Embed'});
 	
 	my %indhash = indexHash( $pg->{'Processes'} );
@@ -1603,6 +1724,8 @@ sub toGML_process
 sub toGML_process2
 {
 	my $pg = shift @_;
+	# AS2021 - adding output types
+	my $outType = @_ ? shift @_: "graphml"; # the output type
 	my $embed = (defined $pg->{'Embed'});
 	
 	#my %indhash = indexHash( $pg->{'Processes'} );
