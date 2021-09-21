@@ -574,114 +574,324 @@ sub initializeGMLEdge
 	return $gmledge;
 }
 
+#### GraphML 1 START #####
 sub printGraphML
 {
 	my $gmlgraph = shift @_;
 	my @nodes = @{$gmlgraph->{'Nodes'}};
 	my @edges = @{$gmlgraph->{'Edges'}};
-	my @nodestrings = ();
-	my @edgestrings = ();
-
+	
 	# start with header and graph
 	my $allstring = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'."\n";
 	$allstring .= '<graphml xmlns="http://graphml.graphdrawing.org/xmlns" ';
+	$allstring .= 'xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" ';
+	$allstring .= 'xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" ';
+	$allstring .= 'xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" ';
 	$allstring .= 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ';
+	$allstring .= 'xmlns:y="http://www.yworks.com/xml/graphml" ';
+	$allstring .= 'xmlns:yed="http://www.yworks.com/xml/yed/3" ';
 	$allstring .= 'xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns ';
-	$allstring .= 'http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd" ';
-	$allstring .= 'xmlns:y="http://www.yworks.com/xml/graphml">'."\n";
-	$allstring .= '<key id="d0" for="node" yfiles.type="nodegraphics"/>'."\n"; 
-  	$allstring .= '<key id="d1" for="edge" yfiles.type="edgegraphics"/>'."\n";
+	$allstring .= 'http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">'."\n";
 
+	# all attributes we want to store
+	$allstring .= '<key id="d0" for="node" yfiles.type="nodegraphics"/>'."\n";
+	$allstring .= '<key id="d1" for="edge" yfiles.type="edgegraphics"/>'."\n";
 	$allstring .= '  <graph edgedefault="directed" id="G">'."\n";
 
-	foreach my $node(@nodes)
+	my $wc = 4;
+	my @pnodes = grep { $_->{'gid'} eq '' } @nodes;
+	my $nctr = 0;
+	foreach my $pnode(@pnodes)
 	{
-		# start node
-		$allstring .= '    <node id="n'.$node->{'ID'}.'" >'."\n";
-
-		# Need to add these to node block
- 		
-		# # write node
-		# $allstring .= "label: ".."\n";
-		# $allstring .= "isGroup: ".$node->{'isGroup'}."\n";
-		# $allstring .= "gid: ".$node->{'gid'}."\n";
-		
-		my $graphics = $node->{'graphics'};
-		$allstring .= '      <data key="d0">'."\n";
-        $allstring .= '        <y:ShapeNode>'."\n"; 
-        # $allstring .= '        <y:Geometry x="170.5" y="-15.0" width="59.0" height="30.0"/>'."\n"; 
-        $allstring .= '        <y:Fill color="'.$graphics->{'fill'}.'" transparent="false"/>'."\n";
-        # if ($graphics->{'hasOutline'}) {
-		# 	$allstring .= '        <y:BorderStyle type="'.$graphics->{'outlineStyle'}.'" width="'.$graphics->{'outlineWidth'}.'" color="#000000"/>'."\n";
-		# }
-        # $allstring .= '        <y:NodeLabel>"'.$node->{'label'}.'"</y:NodeLabel>'."\n";
-        # $allstring .= '        <y:Shape type="rectangle"/>'."\n";
-        $allstring .= '        </y:ShapeNode>'."\n";
-        $allstring .= '      </data>'."\n";
-		
-		# $allstring .= "gfx type: ".$graphics->{'type'}."\n";
-		# $allstring .= "gfx outline: ".$graphics->{'outline'}."\n";
-		
-		# my $labelgraphics = $node->{'LabelGraphics'};
-		# $allstring .= "label gfx text: ".$labelgraphics->{'text'}."\n";
-		# $allstring .= "label gfx fontsize: ".$labelgraphics->{'fontSize'}."\n";
-		# $allstring .= "label gfx fontname: ".$labelgraphics->{'fontName'}."\n";
-		# $allstring .= "label gfx fontstyle: ".$labelgraphics->{'fontStyle'}."\n";
-		# $allstring .= "label gfx anchor: ".$labelgraphics->{'anchor'}."\n";
-				
-		# end node
-		$allstring .= '    </node>'."\n";
+		$pnode->{'hierID'} = "n$nctr";
+		$nctr += 1;
+		$allstring .= printGraphMLNode($wc, $pnode, $gmlgraph);
 	}
-	my $edgectr = 0;
+
+	# # Now each edge...
+	my %edge_id_map = ();
+	my $edgeid = '';
+	my $resolved_source = '';
+	my $resolved_target = '';
+	my @source = ();
+	my @target = ();
 	foreach my $edge(@edges)
 	{
-		$allstring .= "###\n";
-	
-		$allstring .= '    <edge id="'."e$edgectr".'" ';
-		$allstring .= 'source="n'.$edge->{'source'}.'" ';
-		$allstring .= 'target="n'.$edge->{'target'}.'">'."\n";
-		$allstring .= '    </edge>'."\n";
-		$edgectr += 1;
+		@source = grep { $_->{'ID'} eq $edge->{'source'} } @nodes;
+		@target = grep { $_->{'ID'} eq $edge->{'target'} } @nodes;
+		$resolved_source = $source[0]->{'hierID'};
+		$resolved_target = $target[0]->{'hierID'};
 
-		$allstring .= "###\n";
+		if (not (defined $edge_id_map{$source[0]->{'ID'}}) ) { $edge_id_map{$source[0]->{'ID'}} = 0};
 
-		# Need to add these in the edge block
-
-		# my $graphics = $edge->{'graphics'};
-		# push @strs,"width".$q0.$graphics->{'width'}.$q0;
-		# push @strs,"style".$q1.$graphics->{'style'}.$q2;
-		# push @strs,"fill".$q1.$graphics->{'fill'}.$q2;
-		# push @strs,"sourceArrow".$q1.$graphics->{'sourceArrow'}.$q2;
-		# push @strs,"targetArrow".$q1.$graphics->{'targetArrow'}.$q2;
-		# push @edgestrs, "graphics".$q3.join(" ",@strs).$q4;
-		# my $str = "edge [\n".join(" ",@edgestrs)."\n ]";
-			
-		# $allstring .= printedge($edge);
-		# print $edge=>{"type"};
-		# print $edge=>{"fill"};
+		$allstring .= " "x$wc.'<edge id="'.$resolved_source.'::e'.$edge_id_map{$source[0]->{'ID'}}.'" ';
+		@edge_id_map{$source[0]->{'ID'}} += 1;
+		$allstring .= 'source="'.$resolved_source.'" ';
+		$allstring .= 'target="'.$resolved_target.'">'."\n";
+		# add data
+		if (!defined $edge->{'fill'}) { $edge->{'fill'} = "#000000" };
+		if (!defined $edge->{'style'}) { $edge->{'style'} = "line" };
+		if (!defined $edge->{'width'}) { $edge->{'width'} = "1" };
+		if (!defined $edge->{'sourceArrow'}) { $edge->{'sourceArrow'} = "none" };
+		if (!defined $edge->{'targetArrow'}) { $edge->{'targetArrow'} = "none" };
+		
+		$allstring .= " "x$wc.'<data key="d1">'."\n"; #
+		$allstring .= " "x($wc+2).'<y:PolyLineEdge>'."\n"; #
+		$allstring .= " "x($wc+4).'<y:LineStyle color="'.$edge->{'fill'}.'" type="'.$edge->{'style'}.'" width="'.$edge->{'width'}.'"/>'."\n"; #
+		$allstring .= " "x($wc+4).'<y:Arrows source="'.$edge->{'sourceArrow'}.'" target="'.$edge->{'targetArrow'}.'"/>'."\n"; #
+		$allstring .= " "x($wc+4).'<y:BendStyle smoothed="false"/>'."\n"; #
+		$allstring .= " "x($wc+2).'</y:PolyLineEdge>'."\n"; #
+		$allstring .= " "x$wc.'</data>'."\n"; 
+		$allstring .= " "x$wc.'</edge>'."\n";
 	}
+
 	# close up the graph
 	$allstring .= '  </graph>'."\n";
 	$allstring .= '</graphml>'."\n";
-	
+
+	# TODO: HANDLE 
+	# defined $node->{'embed'}
+	# see line 942
 
 	return $allstring;
 }
 
-# sub printGraphML2
-# {
-# 	my $gmlgraph = shift @_;
-# 	my @nodes = @{$gmlgraph->{'Nodes'}};
-# 	my @edges = @{$gmlgraph->{'Edges'}};
-# 	my @nodestrings = map { printnode($_) } @nodes;
-# 	my @edgestrings = map { printedge($_) } @edges;
+sub printGraphMLNode
+{
+	my $wc = $_[0];
+	my $pnode = $_[1];
+	my $gmlgraph = $_[2];
+	my @nodes = @{$gmlgraph->{'Nodes'}};
+	my @edges = @{$gmlgraph->{'Edges'}};
 	
-# 	my $string = "graph\n[\n directed 1\n";
-# 	$string .= join("\n",@nodestrings)."\n";
-# 	$string .= join("\n",@edgestrings)."\n";
-# 	$string .= "]\n";	
-# 	return $string;
-# }
+	# we need to determine if this is a group node
+	my @cnodes = grep { $_->{'gid'} eq $pnode->{"ID"} } @nodes;
+	# Add node info
+	# # set defaults
+	if (!defined $pnode->{'fill'}) { $pnode->{'fill'} = "#CCCCFF" };
+	if (!defined $pnode->{'outline'}) { $pnode->{'outline'} = "#000000" };
+	if (!defined $pnode->{'hasOutline'}) { $pnode->{'hasOutline'} = "0" };
+	if (!defined $pnode->{'outlineStyle'}) { $pnode->{'outlineStyle'} = "line" };
+	if (!defined $pnode->{'outlineWidth'}) { $pnode->{'outlineWidth'} = "1" };
+	if (!defined $pnode->{'type'}) { $pnode->{'type'} = "roundrectangle" };
+	if (!defined $pnode->{'anchor'}) { $pnode->{'anchor'} = "c" };
+	if (!defined $pnode->{'fontName'}) { $pnode->{'fontName'} = "Dialog" };
+	if (!defined $pnode->{'fontSize'}) { $pnode->{'fontSize'} = "12" };
+	if (!defined $pnode->{'fontStyle'}) { $pnode->{'fontStyle'} = "plain" };
+	if (!defined $pnode->{'text'}) { $pnode->{'text'} = $pnode->{"label"} };
+	
+	my $nodestr = " "x$wc.'<node id="'.$pnode->{"hierID"};
+	my $wcn = $wc+2;
+	# need to write differently if we are a group node or not
+	if (scalar @cnodes > 0) { 
+		# we are a group node
+		# Start node
+		$nodestr .= '" yfiles.foldertype="group">'."\n";
+		$nodestr .= " "x$wcn.'<data key="d0">'."\n"; #
+		$nodestr .= " "x($wcn+2).'<y:ProxyAutoBoundsNode>'."\n"; # 
+		$nodestr .= " "x($wcn+4).'<y:Realizers active="0">'."\n"; # 
+		$nodestr .= " "x($wcn+6).'<y:GroupNode>'."\n"; # 
+		$nodestr .= " "x($wcn+8).'<y:Fill color="'.$pnode->{'fill'}.'"/>'."\n"; # 
+		if ($pnode->{'hasOutline'}) {
+			$nodestr .= " "x($wcn+8).'<y:BorderStyle color="'.$pnode->{'outline'}.'" type="'.$pnode->{'outlineStyle'}.'" width="'.$pnode->{'outlineWidth'}.'"/>'."\n"; #
+		}
+		$nodestr .= " "x($wcn+8).'<y:Shape type="'.$pnode->{'type'}.'"/>'."\n"; #
+		$nodestr .= " "x($wcn+8).'<y:NodeLabel alignment="'.$pnode->{'anchor'}.'" autoSizePolicy="content" ';
+		$nodestr .= 'fontFamily="'.$pnode->{'fontName'}.'" fontSize="'.$pnode->{'fontSize'}.'" ';
+		$nodestr .= 'fontStyle="'.$pnode->{'fontStyle'}.'" hasBackgroundColor="false" ';
+		$nodestr .= 'hasLineColor="false" horizontalTextPosition="center" iconTextGap="4" ';
+		$nodestr .= 'modelName="internal" modelPosition="t" textColor="#000000" ';
+		$nodestr .= 'verticalTextPosition="bottom" visible="true">'.$pnode->{'text'}.'</y:NodeLabel>'."\n";
+		$nodestr .= " "x($wcn+6).'</y:GroupNode>'."\n"; #
+		$nodestr .= " "x($wcn+4).'</y:Realizers>'."\n"; #
+		$nodestr .= " "x($wcn+2).'</y:ProxyAutoBoundsNode>'."\n"; # 
+		$nodestr .= " "x$wcn.'</data>'."\n"; # 
+	} else {
+		# we are a shape node
+		$nodestr .= '">'."\n";
+		$nodestr .= " "x$wcn.'<data key="d0">'."\n"; #
+		$nodestr .= " "x($wcn+2).'<y:ShapeNode>'."\n"; # 
+		$nodestr .= " "x($wcn+4).'<y:Fill color="'.$pnode->{'fill'}.'"/>'."\n"; # 
+		if ($pnode->{'hasOutline'}) {
+			$nodestr .= " "x($wcn+4).'<y:BorderStyle color="'.$pnode->{'outline'}.'" type="'.$pnode->{'outlineStyle'}.'" width="'.$pnode->{'outlineWidth'}.'"/>'."\n"; #
+		}
+		$nodestr .= " "x($wcn+4).'<y:Shape type="'.$pnode->{'type'}.'"/>'."\n"; #
+		$nodestr .= " "x($wcn+4).'<y:NodeLabel alignment="'.$pnode->{'anchor'}.'" autoSizePolicy="content" ';
+		$nodestr .= 'fontFamily="'.$pnode->{'fontName'}.'" fontSize="'.$pnode->{'fontSize'}.'" ';
+		$nodestr .= 'fontStyle="'.$pnode->{'fontStyle'}.'" hasBackgroundColor="false" ';
+		$nodestr .= 'hasLineColor="false" horizontalTextPosition="center" iconTextGap="4" ';
+		$nodestr .= 'modelName="internal" modelPosition="t" textColor="#000000" ';
+		$nodestr .= 'verticalTextPosition="bottom" visible="true">'.$pnode->{'text'}.'</y:NodeLabel>'."\n";
+		$nodestr .= " "x($wcn+2).'</y:ShapeNode>'."\n"; #
+		$nodestr .= " "x$wcn.'</data>'."\n"; # 
+	}
+	
+	# if we have children, write those now
+	my $nctr = 0;
+	if (scalar @cnodes > 0) {
+		$nodestr .= " "x$wcn.'<graph id="'.$pnode->{'hierID'}.':" edgedefault="directed">'."\n";
+		foreach my $cnode(@cnodes) 
+		{
+			$cnode->{'hierID'} = $pnode->{"hierID"}."::n$nctr";
+			$nctr += 1;
+			$nodestr .= printGraphMLNode($wcn+2, $cnode, $gmlgraph);
+		}
+		$nodestr .= " "x$wcn.'</graph>'."\n";
+	}
+	# done with parent node
+	$nodestr .= " "x$wc.'</node>'."\n";
+	return $nodestr;
+}
+#### GraphML 1 END #####
+
+#### GraphML 2 START #####
+sub printGraphML2
+{
+	my $gmlgraph = shift @_;
+	my @nodes = @{$gmlgraph->{'Nodes'}};
+	my @edges = @{$gmlgraph->{'Edges'}};
+
+	# start with header and graph
+	my $allstring = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'."\n";
+	$allstring .= '<graphml xmlns="http://graphml.graphdrawing.org/xmlns" ';
+	$allstring .= 'xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" ';
+	$allstring .= 'xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" ';
+	$allstring .= 'xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" ';
+	$allstring .= 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ';
+	$allstring .= 'xmlns:y="http://www.yworks.com/xml/graphml" ';
+	$allstring .= 'xmlns:yed="http://www.yworks.com/xml/yed/3" ';
+	$allstring .= 'xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns ';
+	$allstring .= 'http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">'."\n";
+
+	# all attributes we want to store
+	$allstring .= '<key id="d0" for="node" yfiles.type="nodegraphics"/>'."\n";
+	$allstring .= '<key id="d1" for="edge" yfiles.type="edgegraphics"/>'."\n";
+	$allstring .= '  <graph edgedefault="directed" id="G">'."\n";
+
+	my $wc = 4;
+	my @pnodes = grep { $_->{'gid'} eq '' } @nodes;
+	my $nctr = 0;
+	foreach my $pnode(@pnodes)
+	{
+		$pnode->{'hierID'} = "n$nctr";
+		$nctr += 1;
+		$allstring .= printGraphMLNode2($wc, $pnode, $gmlgraph);
+	}
+
+	# # Now each edge...
+	my %edge_id_map = ();
+	my $edgeid = '';
+	my $resolved_source = '';
+	my $resolved_target = '';
+	my @source = ();
+	my @target = ();
+	foreach my $edge(@edges)
+	{
+		@source = grep { $_->{'ID'} eq $edge->{'source'} } @nodes;
+		@target = grep { $_->{'ID'} eq $edge->{'target'} } @nodes;
+		$resolved_source = $source[0]->{'hierID'};
+		$resolved_target = $target[0]->{'hierID'};
+
+		if (not (defined $edge_id_map{$source[0]->{'ID'}}) ) { $edge_id_map{$source[0]->{'ID'}} = 0};
+
+		$allstring .= " "x$wc.'<edge id="'.$resolved_source.'::e'.$edge_id_map{$source[0]->{'ID'}}.'" ';
+		@edge_id_map{$source[0]->{'ID'}} += 1;
+		$allstring .= 'source="'.$resolved_source.'" ';
+		$allstring .= 'target="'.$resolved_target.'">'."\n";
+		# add data
+		my $graphics = $edge->{'graphics'};
+		$allstring .= " "x$wc.'<data key="d1">'."\n"; #
+		$allstring .= " "x($wc+2).'<y:PolyLineEdge>'."\n"; #
+		$allstring .= " "x($wc+4).'<y:LineStyle color="'.$graphics->{'fill'}.'" type="'.$graphics->{'style'}.'" width="'.$graphics->{'width'}.'"/>'."\n"; #
+		$allstring .= " "x($wc+4).'<y:Arrows source="'.$graphics->{'sourceArrow'}.'" target="'.$graphics->{'targetArrow'}.'"/>'."\n"; #
+		$allstring .= " "x($wc+4).'<y:BendStyle smoothed="false"/>'."\n"; #
+		$allstring .= " "x($wc+2).'</y:PolyLineEdge>'."\n"; #
+		$allstring .= " "x$wc.'</data>'."\n"; #
+		$allstring .= " "x$wc.'</edge>'."\n";
+	}
+
+	# close up the graph
+	$allstring .= '  </graph>'."\n";
+	$allstring .= '</graphml>'."\n";
+	return $allstring;
+}
+
+sub printGraphMLNode2
+{
+	my $wc = $_[0];
+	my $pnode = $_[1];
+	my $gmlgraph = $_[2];
+	my @nodes = @{$gmlgraph->{'Nodes'}};
+	my @edges = @{$gmlgraph->{'Edges'}};
+	
+	# we need to determine if this is a group node
+	my @cnodes = grep { $_->{'gid'} eq $pnode->{"ID"} } @nodes;
+	# Add node info
+	my $graphics = $pnode->{'graphics'};
+	my $labelgraphics = $pnode->{'LabelGraphics'};
+	my $nodestr = " "x$wc.'<node id="'.$pnode->{"hierID"};
+	my $wcn = $wc+2;
+	# need to write differently if we are a group node or not
+	if (scalar @cnodes > 0) { 
+		# we are a group node
+		# Start node
+		$nodestr .= '" yfiles.foldertype="group">'."\n";
+		$nodestr .= " "x$wcn.'<data key="d0">'."\n"; #
+		$nodestr .= " "x($wcn+2).'<y:ProxyAutoBoundsNode>'."\n"; # 
+		$nodestr .= " "x($wcn+4).'<y:Realizers active="0">'."\n"; # 
+		$nodestr .= " "x($wcn+6).'<y:GroupNode>'."\n"; # 
+		$nodestr .= " "x($wcn+8).'<y:Fill color="'.$graphics->{'fill'}.'"/>'."\n"; # 
+		if ($graphics->{'hasOutline'}) {
+			$nodestr .= " "x($wcn+8).'<y:BorderStyle color="'.$graphics->{'outline'}.'" type="'.$graphics->{'outlineStyle'}.'" width="'.$graphics->{'outlineWidth'}.'"/>'."\n"; #
+		}
+		$nodestr .= " "x($wcn+8).'<y:Shape type="'.$graphics->{'type'}.'"/>'."\n"; #
+		$nodestr .= " "x($wcn+8).'<y:NodeLabel alignment="'.$labelgraphics->{'anchor'}.'" autoSizePolicy="content" ';
+		$nodestr .= 'fontFamily="'.$labelgraphics->{'fontName'}.'" fontSize="'.$labelgraphics->{'fontSize'}.'" ';
+		$nodestr .= 'fontStyle="'.$labelgraphics->{'fontStyle'}.'" hasBackgroundColor="false" ';
+		$nodestr .= 'hasLineColor="false" horizontalTextPosition="center" iconTextGap="4" ';
+		$nodestr .= 'modelName="internal" modelPosition="t" textColor="#000000" ';
+		$nodestr .= 'verticalTextPosition="bottom" visible="true">'.$labelgraphics->{'text'}.'</y:NodeLabel>'."\n";
+		$nodestr .= " "x($wcn+6).'</y:GroupNode>'."\n"; #
+		$nodestr .= " "x($wcn+4).'</y:Realizers>'."\n"; #
+		$nodestr .= " "x($wcn+2).'</y:ProxyAutoBoundsNode>'."\n"; # 
+		$nodestr .= " "x$wcn.'</data>'."\n"; # 
+	} else {
+		# we are a shape node
+		$nodestr .= '">'."\n";
+		$nodestr .= " "x$wcn.'<data key="d0">'."\n"; #
+		$nodestr .= " "x($wcn+2).'<y:ShapeNode>'."\n"; # 
+		$nodestr .= " "x($wcn+4).'<y:Fill color="'.$graphics->{'fill'}.'"/>'."\n"; # 
+		if ($graphics->{'hasOutline'}) {
+			$nodestr .= " "x($wcn+4).'<y:BorderStyle color="'.$graphics->{'outline'}.'" type="'.$graphics->{'outlineStyle'}.'" width="'.$graphics->{'outlineWidth'}.'"/>'."\n"; #
+		}
+		$nodestr .= " "x($wcn+4).'<y:Shape type="'.$graphics->{'type'}.'"/>'."\n"; #
+		$nodestr .= " "x($wcn+4).'<y:NodeLabel alignment="'.$labelgraphics->{'anchor'}.'" autoSizePolicy="content" ';
+		$nodestr .= 'fontFamily="'.$labelgraphics->{'fontName'}.'" fontSize="'.$labelgraphics->{'fontSize'}.'" ';
+		$nodestr .= 'fontStyle="'.$labelgraphics->{'fontStyle'}.'" hasBackgroundColor="false" ';
+		$nodestr .= 'hasLineColor="false" horizontalTextPosition="center" iconTextGap="4" ';
+		$nodestr .= 'modelName="internal" modelPosition="t" textColor="#000000" ';
+		$nodestr .= 'verticalTextPosition="bottom" visible="true">'.$labelgraphics->{'text'}.'</y:NodeLabel>'."\n";
+		$nodestr .= " "x($wcn+2).'</y:ShapeNode>'."\n"; #
+		$nodestr .= " "x$wcn.'</data>'."\n"; # 
+	}
+	
+	# if we have children, write those now
+	my $nctr = 0;
+	if (scalar @cnodes > 0) {
+		$nodestr .= " "x$wcn.'<graph id="'.$pnode->{'hierID'}.':" edgedefault="directed">'."\n";
+		foreach my $cnode(@cnodes) 
+		{
+			$cnode->{'hierID'} = $pnode->{"hierID"}."::n$nctr";
+			$nctr += 1;
+			$nodestr .= printGraphMLNode2($wcn+2, $cnode, $gmlgraph);
+		}
+		$nodestr .= " "x$wcn.'</graph>'."\n";
+	}
+	# done with parent node
+	$nodestr .= " "x$wc.'</node>'."\n";
+	return $nodestr;
+}
+#### GraphML 2 END #####
 
 sub printGML
 {
@@ -1138,7 +1348,7 @@ sub toGML_rule_operation
 	if ($outType eq "gml") {
 		return printGML2($gmlgraph);
 	} else {
-		return printGraphML($gmlgraph);
+		return printGraphML2($gmlgraph);
 	}	
 }
 
@@ -1246,8 +1456,11 @@ sub toGML_pattern
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
-	return printGML($gmlgraph);
-
+	if ($outType eq "gml") {
+		return printGML($gmlgraph);
+	} else {
+		return printGraphML($gmlgraph);
+	}
 }
 
 sub toGML_rule_pattern
@@ -1497,8 +1710,11 @@ sub toGML_rule_pattern
 	my $gmlgraph = GMLGraph->new();
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
-	return printGML2($gmlgraph);
-	
+	if ($outType eq "gml") {
+		return printGML2($gmlgraph);
+	} else {
+		return printGraphML2($gmlgraph);
+	}
 }
 
 
@@ -1626,8 +1842,11 @@ sub toGML_rule_network
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
 	#return printGML($gmlgraph);
-	return printGML2($gmlgraph);
-	
+	if ($outType eq "gml") {
+		return printGML2($gmlgraph);
+	} else {
+		return printGraphML2($gmlgraph);
+	}
 }
 
 sub toGML_rinf
@@ -1666,8 +1885,11 @@ sub toGML_rinf
 	$gmlgraph->{'Nodes'} = \@gmlnodes;
 	$gmlgraph->{'Edges'} =\@gmledges;
 	#return printGML($gmlgraph);
-	return printGML2($gmlgraph);
-
+	if ($outType eq "gml") {
+		return printGML2($gmlgraph);
+	} else {
+		return printGraphML2($gmlgraph);
+	}
 	return '';
 }
 
