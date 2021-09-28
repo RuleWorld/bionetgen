@@ -1,6 +1,14 @@
 CHANGES to BioNetGen
-updated 11 June 2019
+updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
+
+== BioNetGen-2.7.0==
+'''''2021 April 16'''''
+
+=== New Features ===
+* Added graphml export support to `visualize` command. Added a new argument to `visualize` 
+called `outType`. `outType` accepts either `gml` or `graphml` as input. The default output
+type is now changed to `graphml`. 
 
 == BioNetGen-2.6.0==
 '''''2021 April 16'''''
