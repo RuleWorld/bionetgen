@@ -142,6 +142,14 @@ sub getExecParams
 		
 	}
 	
+	# AS2021 - adding output types
+	if(defined $args{'outType'}) {
+		$exec_params{'outType'} = $args{'outType'}; 
+	} else {
+		# default to graphml
+		$exec_params{'outType'} = 'graphml';
+	}
+
 	$exec_params{'type'} = $args{'type'};
 	$exec_params{'background'}->{'toggle'} = $args{'background'};
 	$exec_params{'filter'}->{'toggle'} = $args{'filter'};
@@ -239,6 +247,8 @@ sub execute_params
 	if( $args{'type'} eq 'conventional') { $type = 'ruleviz_pattern';}
 	if( $args{'type'} eq 'compact') { $type = 'ruleviz_operation';}
 
+	# AS2021 - adding output types
+	my $outType = $args{'outType'};
 	
 	my $output = $args{'output'};
 	my $each = $args{'each'};
@@ -320,8 +330,8 @@ sub execute_params
 		getRuleNetwork($model);
 		my $bpg = $gr->{'RuleNetwork'};
 		my $rinf = makeRINF($bpg,$model);
-		$str = toGML_rinf($rinf);
-	
+		# AS2021 - adding output types
+		$str = toGML_rinf($rinf,$outType);
 	}
 	if ($type eq 'ruleviz_operation')
 	{
@@ -331,14 +341,16 @@ sub execute_params
 			my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
 			my $rsg = combine2(\@rsgs);
 			#print printStructureGraph($rsg);
-			$str = toGML_rule_operation($rsg);
+			# AS2021 - adding output types
+			$str = toGML_rule_operation($rsg,$outType);
 		}
 		if($output==1 and $each==1 and $groups==0)
 		{	
 			my @rsgs = map {@$_;} flat($gr->{'RuleStructureGraphs'});
 			foreach my $rsg(@rsgs)
 			{
-				$str = toGML_rule_operation($rsg);
+				# AS2021 - adding output types
+				$str = toGML_rule_operation($rsg,$outType);
 				push @strs,$str;
 			}
 		}
@@ -353,14 +365,16 @@ sub execute_params
 			my @rsgs = map {@$_;} flat($gr->{'RulePatternGraphs'});
 			my $rsg = combine2(\@rsgs);
 			#print printStructureGraph($rsg);
-			$str = toGML_rule_pattern($rsg);
+			# AS2021 - adding output types
+			$str = toGML_rule_pattern($rsg,$outType);
 		}
 		if($output==1 and $each==1 and $groups==0)
 		{	
 			my @rsgs = map {@$_;} flat($gr->{'RulePatternGraphs'});
 			foreach my $rsg(@rsgs)
 			{
-				$str = toGML_rule_pattern($rsg);
+				# AS2021 - adding output types
+				$str = toGML_rule_pattern($rsg,$outType);
 				push @strs,$str;
 			}
 		}
@@ -371,9 +385,10 @@ sub execute_params
 		getContactMap($model);
 		if($output==1)
 		{
-			my $str = toGML_pattern($gr->{'ContactMap'});
+			# AS2021 - adding output types
+			my $str = toGML_pattern($gr->{'ContactMap'},$outType);
 			my $suffix = $args{'suffix'};
-			my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type);
+			my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'outType'=>$outType);
 			writeGML(\%params);
 			return;
 		
@@ -467,7 +482,8 @@ sub execute_params
 				}
 				else
 				{
-					$str = toGML_rule_network($bpg,$embed,$args{'ruleNames'});
+					# AS2021 - adding output types
+					$str = toGML_rule_network($bpg,$embed,$args{'ruleNames'},$outType);
 				}
 			}
 		}
@@ -496,8 +512,9 @@ sub execute_params
 				my @grp = grep { $classes{$_} eq $grpname } keys %classes;
 				my $grptype = $nodetype{$grp[0]};
 				my $bpg2 = filterNetworkGraphByList($bpg,\@grp,1);
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'});
-				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grpname : $grpname),'type'=>$type);
+				# AS2021 - adding output types
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'},$outType);
+				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grpname : $grpname),'type'=>$type,'outType'=>$outType);
 				if($output==1)
 				{
 					if($textonly==1) { writeText(\%params); }
@@ -515,8 +532,8 @@ sub execute_params
 				# right now this is not efficient
 				# better way is to regenerate the network graph, but then u'll have to apply background n
 				# filter n other things again... boring!
-				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'});
-				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grp[0] : $grp[0]),'type'=>$type);
+				my $str = ($textonly==1) ? printNetworkGraph($bpg2) : toGML_rule_network($bpg2,$embed,$args{'ruleNames'},$outType);
+				my %params = ('model'=>$model,'str'=>$str,'suffix'=>($suffix ? $suffix.'_'.$grp[0] : $grp[0]),'type'=>$type,'outType'=>$outType);
 				if($output==1)
 				{
 					if($textonly==1) { writeText(\%params); }
@@ -573,7 +590,8 @@ sub execute_params
 		if($output==1)
 			{
 			if($textonly==1) {$str = printProcessGraph($pg); }
-			else { $str = toGML_process2($pg); }
+			# AS2021 - adding output types
+			else { $str = toGML_process2($pg,$outType); }
 			}
 	}
 		
@@ -592,7 +610,8 @@ sub execute_params
 		my @bpgs = map {makeRxnNetworkGraph($_)} @{$model->RxnList->Array};
 		my $bpg = mergeNetworkGraphs(flat(\@bpgs));
 		$bpg->{'Merged'} = 1;
-		$str = toGML_rule_network($bpg,$args{'ruleNames'});
+		# AS2021 - adding output types
+		$str = toGML_rule_network($bpg,$args{'ruleNames'},$outType);
 	}
 		
 	
@@ -606,7 +625,7 @@ sub execute_params
 	if ($output==1 and $each==0)
 	{
 		my $suffix = $args{'suffix'};
-		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'groups'=>$groups,'argstype'=>$args{'type'});
+		my %params = ('model'=>$model,'str'=>$str,'suffix'=>$suffix,'type'=>$type,'groups'=>$groups,'argstype'=>$args{'type'},'outType'=>$outType);
 		writeGML(\%params);
 	}
 
@@ -614,7 +633,7 @@ sub execute_params
 	{
 		my @names = map {@$_;} flat($gr->{'RuleNames'});
 		map { 
-			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>($suffix ? $suffix.'_'.$names[$_] : $names[$_]),'type'=>$type,'argstype'=>$args{'type'});
+			my %params = ('model'=>$model,'str'=>$strs[$_],'suffix'=>($suffix ? $suffix.'_'.$names[$_] : $names[$_]),'type'=>$type,'argstype'=>$args{'type'},'outType'=>$outType);
 			writeGML(\%params);
 			}	(0..@names-1);
 	}
@@ -668,6 +687,7 @@ sub writeGML
 	my $type = $params{'type'};
 	my $argstype = (defined $params{'argstype'}) ? $params{'argstype'} : $type;
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
+	my $outType = (defined $params{'outType'}) ? $params{'outType'} : 'graphml';
 	
 	my %outputstr = (	'ruleviz_operation' => 'rule(s) with graph operations',
 						'ruleviz_pattern' => 'rule(s) with patterns',
@@ -685,7 +705,12 @@ sub writeGML
 	#$file .= "_".$type;
 	$file .= "_".$argstype;
 	$file .= "_".$suffix if (length $suffix > 0);
-	$file .= ".gml";
+	if ($outType eq 'gml') {
+		$file .= ".gml";
+	} else {
+		$file .= ".graphml";
+	}
+	
 		
 	# write the string to file
     my $FH;
@@ -694,7 +719,7 @@ sub writeGML
     close $FH;
 
     # all done
-    print sprintf( "Wrote %s in GML format to %s.\n", $outputmsg, $file);
+    print sprintf( "Wrote %s in %s format to %s.\n", $outputmsg, $outType, $file);
     return undef;
 }
 
@@ -705,6 +730,7 @@ sub writeGML2
 	my $prefix = $params{'prefix'};
 	my $type = $params{'type'};
 	my $suffix = (defined $params{'suffix'}) ? $params{'suffix'} : '';
+	my $outType = (defined $params{'outType'}) ? $params{'outType'} : 'graphml';
 	
 	my %outputstr = (	'ruleviz_operation' => 'rule(s) with graph operations',
 						'ruleviz_pattern' => 'rule(s) with patterns',
@@ -718,7 +744,11 @@ sub writeGML2
 	$file .= $prefix;
 	$file .= "_".$type;
 	$file .= "_".$suffix if (length $suffix > 0);
-	$file .= ".gml";
+	if ($outType eq 'gml') {
+		$file .= ".gml";
+	} else {
+		$file .= ".graphml";
+	}
 		
 	# write the string to file
     my $FH;
@@ -727,7 +757,7 @@ sub writeGML2
     close $FH;
 
     # all done
-    print sprintf( "Wrote %s in GML format to %s.\n", $outputmsg, $file);
+    print sprintf( "Wrote %s in %s format to %s.\n", $outputmsg, $outType, $file);
     return undef;
 }
 
