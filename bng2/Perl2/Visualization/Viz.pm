@@ -146,6 +146,7 @@ sub getExecParams
 	if(defined $args{'outType'}) {
 		$exec_params{'outType'} = $args{'outType'}; 
 	} else {
+		# default to graphml
 		$exec_params{'outType'} = 'graphml';
 	}
 
