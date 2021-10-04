@@ -7,56 +7,38 @@ layout: default
   <img src="assets/flagman.png" width="75" height="72"/>
 </p>
 
-Announcements
---------
-
-- Warning MacOS users! New versions of OS X (11.5 or newer) might force you to switch your default shell to be zsh, see [here](https://support.apple.com/en-us/HT208050). This will break the extension if you are using anaconda python since anaconda python won't be your default python in zsh. Try renaming your `.bash_profile` to `.zprofile`. 
-- New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out! ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension), [documentation](https://bng-vscode-extension.readthedocs.io/en/latest/#)). See [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) for a starter guide.
-- New Python [BioNetGen package](https://pypi.org/project/bionetgen/) is out! ([GitHub link](https://github.com/RuleWorld/PyBioNetGen), [documentation](https://pybionetgen.readthedocs.io/en/latest/)) 
-- Alpha version of a command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/).
-- If you encounter any problems with BioNetGen or have suggestions, please post an issue on [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
-
-Upcoming Features
---------
-
-- Network visualization support to VS Code extension is being worked on.
-- A C++ based BNGL parser is currently in development
-
-BioNetGen Modelling Language
---------
-
-This web site serves the BioNetGen user community by providing
+Welcome! This web site serves the BioNetGen user community by providing
 information about BioNetGen and tools for the development, annotation,
 and discussion of BioNetGen models.
 
-Please send questions, comments, and account requests
-to <bionetgen.help@gmail.com>. We will treat all help requests,
-including models or model snippets, as *confidential*.
+# News
 
-If you use BioNetGen in a work submitted for publication, please cite:
+- **Warning MacOS users!** New versions of OS X (11.5 or newer) might force you to switch your default shell to be zsh, see [here](https://support.apple.com/en-us/HT208050). This will break the extension if you are using anaconda python since anaconda python won't be your default python in zsh. Try renaming your `.bash_profile` to `.zprofile`. 
+- **New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out!** ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension), [documentation](https://bng-vscode-extension.readthedocs.io/en/latest/#)). Click [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) to get started. This extension uses [PyBioNetGen](https://pypi.org/project/bionetgen/), which provides a Python interface for BioNetGen models. ([GitHub link](https://github.com/RuleWorld/PyBioNetGen), [documentation](https://pybionetgen.readthedocs.io/en/latest/)) 
+- command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/).
 
-Harris, L. A. *et al.* [BioNetGen 2.2: advances in rule-based
+# Getting Help and Reporting Problems
+- The preferred way to get help, report a bug, or request a feature is to post an issue on the [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
+- You may also send email to <bionetgen.help@gmail.com>. We will treat all help email requests, including models or model snippets, as *confidential*.
+
+# Citing BioNetGen
+
+If you use BioNetGen for a project please cite 
+- Harris, L. A. *et al.* [BioNetGen 2.2: advances in rule-based
 modeling](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469).
 *Bioinformatics* **32,** 3366–3368 (2016).
-
-In addition, please send us an
-[email](mailto:bionetgen.help@gmail.com) or send a tweet to
+In addition, consider sending us an 
+[email](mailto:bionetgen.help@gmail.com) or tweet 
 [@bionetgen](http://twitter.com/bionetgen). We’d love to hear about it!
 
-Download
---------
+# Downloads
 
--   [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest)
-    – the graphical interface for BioNetGen that includes BioNetGen and
-    NFsim source code and executables for Mac, Windows, and Linux.
-    -   Step-by-step installation guide can be found
-        [here](https://github.com/RuleWorld/rulebender/blob/master/docs/RuleBender-installation-guide.pdf).
--   [BioNetGen](https://github.com/RuleWorld/bionetgen/releases/latest)
-    – command-line only version that includes BioNetGen and NFsim source
-    code plus executables for Mac, Windows, and Linux.
+- [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl). We encourage both new and current BioNetGen users to use this interace for developing BioNetGend models. Installation instructions are [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This extension uses [PyBioNetGen](https://pypi.org/project/bionetgen/), which provides a Python and command-line interfaces for BioNetGen models.
+- Older interfaces for BioNetGen include:
+    - [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest) provides an Eclispe-based interface for BioNetGen that includes interactive model visualization capabilities. Installation instructions are [here](https://github.com/RuleWorld/rulebender/blob/master/docs/RuleBender-installation-guide.pdf).
+    - [BioNetGen command line](https://github.com/RuleWorld/bionetgen/releases/latest). The core BioNetGen code includes a command-line interface that may be useful to developers and advanced users. The BioNetGen code is bundled with both the PyBioNetGen and RuleBender.
 
-Documentation and Tutorials
----------------------------
+# Documentation and Tutorials
 
 -   Getting started with RuleBender
     ([video](https://www.youtube.com/watch?v=MWoY5iaC8W0))
@@ -65,15 +47,13 @@ Documentation and Tutorials
 -   [MMBioS - Cell Modeling Virtual Workshop 2020](https://www.youtube.com/playlist?list=PLHmIPhi01uH9EkKhOuB5fjDjrlZu_TDG6) A YouTube playlist of all Cell Modelling workshop lectures including BioNetGen and RuleBender lessons. 
 -   [FAQ](/faq) (Under construction)
 
-Reference
----------
+# Reference
 
 -   [Quick Reference Guide](https://drive.google.com/file/d/0B2lPm2_GUE01X3ZaamZxUl80NTA/edit)
 -   [Actions and Arguments
     Guide](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
 
-Papers
-------
+# Papers
 
 -   [Application Note](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469) (open
     access)
@@ -85,17 +65,12 @@ Papers
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
 -   [Published BioNetGen models](/published)
 
-Contact
--------
+# Upcoming Features
 
--   Email: <bionetgen.help@gmail.com>
--   [GitHub repositories](https://github.com/RuleWorld).
--   Twitter: [@bionetgen](https://twitter.com/bionetgen)
+- Network visualization support to VS Code extension
+- A C++ based BNGL parser 
 
-If you encounter any problems with BioNetGen or have suggestions, please post an issue on [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
-
-Acknowledgements
-----------------
+# Acknowledgements
 
 Current development of BioNetGen is supported in part by the
 NIGMS-funded (P41GM103712) National Center for Multiscale Modeling of
