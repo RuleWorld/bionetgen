@@ -63,10 +63,10 @@ the University of Pittsburgh School of Medicine.
 ## Distributions
 
 The latest BioNetGen distributions, release notes, installation guides, 
-tutorials, etc. are available at http://bionetgen.org.
+tutorials, etc. are available at [bionetgen.org](https://bionetgen.org).
 
 RuleBender, a Java-based graphical front end for BioNetGen, is also available at
-http://bionetgen.org. RuleBender is supported on Linux, Mac OS/X, and Windows
+[bionetgen.org](https://bionetgen.org). RuleBender is supported on Linux, Mac OS/X, and Windows
 platforms. A compatible version of BioNetGen is included in the RuleBender
 distribution. If you are not sure if your version of BNG is compatible with
 RuleBender, please use the version distributed with RuleBender.
