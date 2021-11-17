@@ -18,12 +18,16 @@ is currently implemented in Perl, the network simulator is C++, and a new
 SBML-to-BNGL translator is implemented in Python. In addition, a new language
 parser is currently being developed in ANTLR.
 
-## Installation of Distribution 
-
 Please note that this is the command line interface to BioNetGen and if you are 
-new to using BioNetGen you are probably looking for the graphical user interface, 
-[RuleBender](https://github.com/RuleWorld/rulebender). For more information please 
-visit [bionetgen.org](https://bionetgen.org). 
+new to using BioNetGen we recommend that you try our new 
+[VScode extension for BioNetGen](https://bng-vscode-extension.readthedocs.io/en/latest/#), 
+which provides a full-featured interface for developing, simulating, and analyzing rule-based models.
+The new VScode interface replicates most of the features of our previous development environment, 
+[RuleBender](https://github.com/RuleWorld/rulebender), which is still available but no longer being actively developed. 
+
+For more information please visit [bionetgen.org](https://bionetgen.org). 
+
+## Installation of Distribution 
 
 Most users should simply download the [latest BioNetGen release](https://github.com/RuleWorld/bionetgen/releases/latest) 
 and get the appropriate distribution for their OS. To install BioNetGen, unzip the
@@ -64,12 +68,6 @@ the University of Pittsburgh School of Medicine.
 
 The latest BioNetGen distributions, release notes, installation guides, 
 tutorials, etc. are available at [bionetgen.org](https://bionetgen.org).
-
-RuleBender, a Java-based graphical front end for BioNetGen, is also available at
-[bionetgen.org](https://bionetgen.org). RuleBender is supported on Linux, Mac OS/X, and Windows
-platforms. A compatible version of BioNetGen is included in the RuleBender
-distribution. If you are not sure if your version of BNG is compatible with
-RuleBender, please use the version distributed with RuleBender.
 
 ## Contact Us
 
