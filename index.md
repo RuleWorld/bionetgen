@@ -46,7 +46,7 @@ In addition, consider sending us an
      -   [BioNetGen tutorial on GitHub](/tutorial) Provides detailed examples that demonstrate a wide range of language and modeling features.
      -   [FAQ](/faq) (Under construction)
 - Reference
-    -   [Quick Reference Guide](https://drive.google.com/file/d/0B2lPm2_GUE01X3ZaamZxUl80NTA/edit)
+    -   [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf)
     -   [Actions and Arguments](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
 - Papers
     -   [Application Note](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469) (open
