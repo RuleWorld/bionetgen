@@ -137,15 +137,27 @@ sub toMexString
 
 sub toXML
 {
-    my $epatt  = shift;
-    my $indent = shift;
-    my $index  = shift;
-    
-    my $string = '';
-    
-    # TODO
-    
-    return $string, '';
+    # TODO: add comments
+
+    my $epatt      = shift;
+    my $plist      = (@_) ? shift : '';
+    my $indent     = (@_) ? shift : '';
+    my $index      = shift;
+    my $indent2    = "   " . $indent;
+    my $id         = "EP" . $index;
+    my $pid = $id . "_P1";
+
+    my $string = $indent . '<EnergyPattern';
+    $string .=  " id=\"" . $id . "\""; # id
+    $string .=  ' pattern="';
+    $string .=  $epatt->Pattern->toString() . '" '; # pattern 
+    $string .=  'expression="';
+    $string .=  $epatt->Gf->toString($plist) . '">' . "\n"; # expression
+    $string .=  $epatt->Pattern->toXML($indent2,"Pattern",$pid,"");
+
+    $string .= $indent . "</EnergyPattern>\n";
+
+    return $string;
 }
 
 
