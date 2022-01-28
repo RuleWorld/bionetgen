@@ -6,7 +6,7 @@ layout: default
 # Welcome to BioNetGen! <img src="assets/flagman.png" width="75" height="72" valign="bottom"/>
 
 
-BioNetGen is software designed for modular, structure-based modeling of biochemical reaction networks. It can be applied to many other types of modeling as well. It provides a simple, graph-based syntax that lets users construct, simulate, and analyze systems composed of that combine and interact in complex ways.
+BioNetGen is software designed for modular, structure-based modeling of biochemical reaction networks. It can be applied to many other types of modeling as well. It provides a simple, graph-based syntax that lets users build reaction models out of structured objects that can bind and undergo modification.
 
 ### Download
 
@@ -35,9 +35,8 @@ BioNetGen is software designed for modular, structure-based modeling of biochemi
 
 ### News
 
+- Command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/).
 - **Warning MacOS users!** New versions of OS X (11.5 or newer) might force you to switch your default shell to be zsh, see [here](https://support.apple.com/en-us/HT208050). This will break the extension if you are using anaconda python since anaconda python won't be your default python in zsh. Try renaming your `.bash_profile` to `.zprofile`. 
-- **New [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl) is out!** ([GitHub link](https://github.com/RuleWorld/BNG_vscode_extension), [documentation](https://bng-vscode-extension.readthedocs.io/en/latest/#)). Click [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) to get started. This extension uses [PyBioNetGen](https://pypi.org/project/bionetgen/), which provides a Python interface for BioNetGen models. ([GitHub link](https://github.com/RuleWorld/PyBioNetGen), [documentation](https://pybionetgen.readthedocs.io/en/latest/)) 
-- command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/).
 
 ### Getting Help and Reporting Problems
 - The best way to get help, report a bug, or request a feature is to post an issue on the [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
@@ -54,9 +53,9 @@ In addition, consider sending us an
 [@bionetgen](http://twitter.com/bionetgen). We’d love to hear about it!
 
 ### Other tools
-- Other interfaces for BioNetGen include:
-    - [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest) provides an Eclispe-based interface for BioNetGen that includes interactive model visualization capabilities. Installation instructions are [here](https://github.com/RuleWorld/rulebender/blob/master/docs/RuleBender-installation-guide.pdf).
-    - [BioNetGen command line](https://github.com/RuleWorld/bionetgen/releases/latest). The core BioNetGen code includes a command-line interface that may be useful to developers and advanced users. The BioNetGen code is bundled with both the PyBioNetGen and RuleBender.
+
+- [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest) provides an Eclispe-based interface for BioNetGen that includes interactive model visualization capabilities. Installation instructions are [here](https://github.com/RuleWorld/rulebender/blob/master/docs/RuleBender-installation-guide.pdf).
+- [BioNetGen command line](https://github.com/RuleWorld/bionetgen/releases/latest). The core BioNetGen code includes a command-line interface that may be useful to developers and advanced users. The BioNetGen code is bundled with both the PyBioNetGen and RuleBender.
 
 ### Acknowledgements
 
