@@ -3,16 +3,14 @@ title: home
 layout: default
 ---
 
+# Welcome to BioNetGen! <img src="assets/flagman.png" width="75" height="72" valign="bottom"/>
 
 
-<img src="assets/flagman.png" width="75" height="72"/>
-Welcome! This web site serves the BioNetGen user community by providing
-information about BioNetGen and tools for the development, annotation,
-and discussion of BioNetGen models.
+BioNetGen is software designed for modular, structure-based modeling of biochemical reaction networks. It can be applied to many other types of modeling as well. It provides a simple, graph-based syntax that lets users construct, simulate, and analyze systems composed of that combine and interact in complex ways.
 
 ### Download
 
-- [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl). We encourage both new and current BioNetGen users to use this interace for developing BioNetGen models. Installation instructions are [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This extension uses [PyBioNetGen](https://pypi.org/project/bionetgen/), which provides a Python and command-line interfaces for BioNetGen models.
+- [VS Code extension for BioNetGen](https://marketplace.visualstudio.com/items?itemName=als251.bngl). We encourage both new and current BioNetGen users to use this interface for developing BioNetGen models. Installation instructions are [here](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This extension uses [PyBioNetGen](https://pypi.org/project/bionetgen/), which provides Python and command-line interfaces for BioNetGen models.
 
 ### Documentation
 
@@ -42,7 +40,7 @@ and discussion of BioNetGen models.
 - command line tool for weighted ensemble sampling of BNGL models is released, [GitHub link](https://github.com/ASinanSaglam/webng), [documentation](https://webng.readthedocs.io/en/latest/).
 
 ### Getting Help and Reporting Problems
-- The preferred way to get help, report a bug, or request a feature is to post an issue on the [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
+- The best way to get help, report a bug, or request a feature is to post an issue on the [BioNetGen GitHub issues page](https://github.com/RuleWorld/bionetgen/issues).
 - You may also send email to <bionetgen.help@gmail.com>. We will treat all help email requests, including models or model snippets, as *confidential*.
 
 ### Citing BioNetGen
