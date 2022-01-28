@@ -48,6 +48,7 @@ In addition, consider sending us an
 - Reference
     -   [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf)
     -   [Actions and Arguments](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
+    -   [FAQ](/faq)
 - Papers
     -   [Application Note](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469) (open
     access)
