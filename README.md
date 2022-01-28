@@ -1,17 +1,10 @@
 # BioNetGen
 
-Rule-based modeling framework
-[![Build Status](https://travis-ci.org/RuleWorld/bionetgen.svg?branch=master)](https://travis-ci.org/RuleWorld/bionetgen)
-[![Build status](https://ci.appveyor.com/api/projects/status/f7klreiao20ylwon?svg=true)](https://ci.appveyor.com/project/jczech/bionetgen)
-
 ## Overview
 
 BioNetGen is software for the specification and simulation of rule-based models
 of biochemical systems, including signal transduction, metabolic, and genetic
-regulatory networks. The BioNetGen language has recently been extended to
-include explicit representation of compartments. A recent review of methods for
-rule-based modeling is available in L. A. Chylek et al. (2013) Wiley
-Interdiscip. Rev. Syst. Biol. Med., 6, 13–36.
+regulatory networks.
 
 BioNetGen is presently a mixture of Perl, C++, and Python. Network generation
 is currently implemented in Perl, the network simulator is C++, and a new
