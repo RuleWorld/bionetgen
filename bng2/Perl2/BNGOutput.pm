@@ -601,6 +601,23 @@ sub toXML
 	}
 	$xml .= $indent . "</ListOfFunctions>\n";
 
+    # Energy Patterns
+	$xml .= $indent . "<ListOfEnergyPatterns>\n";
+	$indent2 = "  " . $indent;
+    my $epindex  = 1;
+	foreach my $eps ( @{$model->EnergyPatterns} )
+    {
+		$xml .= $eps->toXML( $plist, $indent2, $epindex );
+        ++$epindex;
+	}
+	$xml .= $indent . "</ListOfEnergyPatterns>\n";
+
+    # # Population Maps
+    # $xml .= $indent . "<ListOfPopulationMaps>\n";
+    # $indent2 = "  " . $indent;
+    # # pm stuff goes here
+    # $xml .= $indent . "</ListOfPopulationMaps>\n"
+
 	# FOOTER
 	$xml .=  "  </model>\n"
             ."</sbml>\n";

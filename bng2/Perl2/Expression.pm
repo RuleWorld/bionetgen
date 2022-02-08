@@ -45,7 +45,7 @@ struct Expression =>
 
 
 # NOTE: it's weird that some built-in functions with names (like exp, cos, etc) are handled
-#  differently thant built-ins with operator symbols (like +, -, etc).  We could really simplify this.
+#  differently than built-ins with operator symbols (like +, -, etc).  We could really simplify this.
 #  --Justin
 # Supported most muParser built-in functions. --LAH 
 # See http://muparser.sourceforge.net/mup_features.html#idDef2 for the complete list.
