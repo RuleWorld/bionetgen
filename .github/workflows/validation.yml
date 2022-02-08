@@ -28,26 +28,26 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-          - {
-            name: "linux",
-            os: ubuntu-latest,
-            artifact: "ubuntu_gcc.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-          - {
-            name: "mac",
-            os: macos-latest,
-            artifact: "macos_clang.7z",
-            build_type: "Release",
-            cc: "clang",
-            cxx: "clang++",
-            archiver: "7za a",
-            generators: "Ninja"
-          }
+          # - {
+          #   name: "linux",
+          #   os: ubuntu-latest,
+          #   artifact: "ubuntu_gcc.7z",
+          #   build_type: "Release",
+          #   cc: "gcc",
+          #   cxx: "g++",
+          #   archiver: "7z a",
+          #   generators: "Ninja"
+          # }
+          # - {
+          #   name: "mac",
+          #   os: macos-latest,
+          #   artifact: "macos_clang.7z",
+          #   build_type: "Release",
+          #   cc: "clang",
+          #   cxx: "clang++",
+          #   archiver: "7za a",
+          #   generators: "Ninja"
+          # }
     steps:
       - name: Checkout repo and submodules
         uses: actions/checkout@v2
@@ -82,18 +82,6 @@ jobs:
         working-directory: ./bng2
         run: |
           make
-      - name: Make-nfsim-windows
-        if: startsWith(matrix.config.name, 'windows') 
-        working-directory: ./bng2
-        shell: bash
-        run: |
-          mkdir bin
-          cd nfsim_src
-          mkdir build
-          cd build
-          cmake -G "Ninja" ..
-          ninja
-          mv NFsim ../../bin/.
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
@@ -102,14 +90,27 @@ jobs:
         # environment variable for the BNGPATH
         run: |
           cd Network3
-          autoreconf --no-recursive --install
-          ./configure --disable-shared --prefix=$PWD/../ 
-      - name: validate
-        shell: bash
-        working-directory: ./bng2/Validate
-        run: |
-          perl validate_examples.pl
-
+          cp Makefile.cmake Makefile
+          cmake .
+          make
+      # - name: Make-nfsim-windows
+      #   if: startsWith(matrix.config.name, 'windows') 
+      #   working-directory: ./bng2
+      #   shell: bash
+      #   run: | 
+      #     cd nfsim_src
+      #     mkdir build
+      #     cd build
+      #     cmake -G "Ninja" ..
+      #     ninja
+      #     mv NFsim ../../bin/.
+      # - name: validate
+      #   shell: bash
+      #   working-directory: ./bng2/Validate
+      #   run: |
+      #     perl validate_examples.pl
+      
+      # EXTRAS FOR LATER
       # - name: Pack
       #   shell: bash
       #   working-directory: instdir
