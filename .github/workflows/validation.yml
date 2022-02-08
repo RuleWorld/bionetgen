@@ -18,16 +18,16 @@ jobs:
       fail-fast: false
       matrix:
         config: 
-        # - {
-        #     name: "windows",
-        #     os: windows-latest,
-        #     artifact: "windows_mingw.7z",
-        #     build_type: "Release",
-        #     cc: "gcc",
-        #     cxx: "g++",
-        #     archiver: "7z a",
-        #     generators: "Ninja"
-        #   }
+        - {
+            name: "windows",
+            os: windows-latest,
+            artifact: "windows_mingw.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
           - {
             name: "linux",
             os: ubuntu-latest,
@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake
+          choco install ninja cmake strawberryperl
           ninja --version
           cmake --version
       - name: Install dependencies on ubuntu
@@ -82,26 +82,34 @@ jobs:
         working-directory: ./bng2
         run: |
           make
-      # - name: Make-nfsim-windows
-      #   if: startsWith(matrix.config.name, 'windows') 
-      #   working-directory: ./bng2
-      #   shell: bash
-      #   run: |
-      #     mkdir bin
-      #     cd nfsim_src
-      #     mkdir build
-      #     cd build
-      #     cmake -G "Ninja" ..
-      #     ninja
-      #     mv NFsim ../../bin/.
-      # - name: Make-network-windows
-      #   if: startsWith(matrix.config.name, 'windows') 
-      #   working-directory: ./bng2
-      #   shell: bash
-      #   run: |
-      #     cd Network3
-      #     autoreconf --no-recursive --install
-      #     ./configure --disable-shared --prefix=
+      - name: Make-nfsim-windows
+        if: startsWith(matrix.config.name, 'windows') 
+        working-directory: ./bng2
+        shell: bash
+        run: |
+          mkdir bin
+          cd nfsim_src
+          mkdir build
+          cd build
+          cmake -G "Ninja" ..
+          ninja
+          mv NFsim ../../bin/.
+      - name: Make-network-windows
+        if: startsWith(matrix.config.name, 'windows') 
+        working-directory: ./bng2
+        shell: bash
+        # FIXME: the configure command is obviously wrong, make an 
+        # environment variable for the BNGPATH
+        run: |
+          cd Network3
+          autoreconf --no-recursive --install
+          ./configure --disable-shared --prefix=$PWD/../ 
+      - name: validate
+        shell: bash
+        working-directory: ./bng2/Validate
+        run: |
+          perl validate_examples.pl
+
       # - name: Pack
       #   shell: bash
       #   working-directory: instdir
@@ -113,7 +121,6 @@ jobs:
       #   with:
       #     path: ./${{ matrix.config.artifact }}
       #     name: ${{ matrix.config.artifact }}
-
       # - name: Upload release asset
       #   if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
       #   uses: actions/upload-release-asset@v1
