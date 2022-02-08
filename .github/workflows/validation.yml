@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake strawberryperl
+          choco install ninja cmake strawberryperl cygwin
           ninja --version
           cmake --version
       - name: Install dependencies on ubuntu
