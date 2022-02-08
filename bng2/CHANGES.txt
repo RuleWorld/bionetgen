@@ -2,6 +2,19 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.7.2==
+'''''2022 February 8'''''
+
+=== Minor changes ===
+* NFSim XML can now export energy patterns for other software to read. 
+
+== BioNetGen-2.7.1==
+'''''2022 January 18'''''
+
+=== Minor changes ===
+Updated underlying NFsim version. Please see [this NFsim release](https://github.com/RuleWorld/nfsim/releases/tag/v1.2.0) 
+for more information. 
+
 == BioNetGen-2.7.0==
 '''''2021 April 16'''''
 
