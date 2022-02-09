@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake strawberryperl
+          choco install ninja cmake strawberryperl mingw
           ninja --version
           cmake --version
       - name: Install dependencies on ubuntu
@@ -89,11 +89,12 @@ jobs:
         # FIXME: the configure command is obviously wrong, make an 
         # environment variable for the BNGPATH
         run: |
+          export _BNGPATH=$PWD
           cd Network3
-          export CC=gcc
-          cp Makefile.cmake Makefile
-          cmake .
+          autoreconf --no-recursive --install
+          ./configure --disable-shared --prefix=${_BNGPATH}
           make
+          
       # - name: Make-nfsim-windows
       #   if: startsWith(matrix.config.name, 'windows') 
       #   working-directory: ./bng2
