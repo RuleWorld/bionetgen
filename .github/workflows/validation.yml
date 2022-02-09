@@ -89,9 +89,10 @@ jobs:
         # FIXME: the configure command is obviously wrong, make an 
         # environment variable for the BNGPATH
         run: |
+          ls C:\tools\msys64\
           export _BNGPATH=$PWD
           cd Network3
-          autoreconf --no-recursive --install
+          C:\tools\msys64\bin\autoreconf --no-recursive --install
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
           
