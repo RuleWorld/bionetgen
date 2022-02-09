@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake strawberryperl cygwin
+          choco install ninja cmake strawberryperl
           ninja --version
           cmake --version
       - name: Install dependencies on ubuntu
@@ -90,6 +90,7 @@ jobs:
         # environment variable for the BNGPATH
         run: |
           cd Network3
+          export CC=gcc
           cp Makefile.cmake Makefile
           cmake .
           make
@@ -109,7 +110,7 @@ jobs:
       #   working-directory: ./bng2/Validate
       #   run: |
       #     perl validate_examples.pl
-      
+
       # EXTRAS FOR LATER
       # - name: Pack
       #   shell: bash
