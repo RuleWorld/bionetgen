@@ -6,8 +6,8 @@ name: validation
 on: 
   push:
     branches:
-      # - main
-      - gh_actions_ci
+      - main
+      # - gh_actions_ci
 
 jobs:
   build_and_validate:
@@ -99,8 +99,6 @@ jobs:
       #   if: startsWith(matrix.config.name, 'windows') 
       #   working-directory: ./bng2
       #   shell: msys2 {0}
-      #   # FIXME: the configure command is obviously wrong, make an 
-      #   # environment variable for the BNGPATH
       #   run: |
       #     mkdir m4
       #     export _BNGPATH=$PWD
