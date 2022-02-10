@@ -95,6 +95,7 @@ jobs:
         # FIXME: the configure command is obviously wrong, make an 
         # environment variable for the BNGPATH
         run: |
+          mkdir m4
           export _BNGPATH=$PWD
           cd Network3
           autoreconf --no-recursive --install
