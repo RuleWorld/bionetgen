@@ -53,6 +53,12 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc autoconf automake
       - name: Print env
         run: |
           echo github.event.action: ${{ github.event.action }}
@@ -60,7 +66,7 @@ jobs:
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake mingw
+          choco install ninja cmake
           ninja --version
           cmake --version
       - name: Install dependencies on ubuntu
@@ -85,18 +91,15 @@ jobs:
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
-        shell: bash
+        shell: msys2 {0}
         # FIXME: the configure command is obviously wrong, make an 
         # environment variable for the BNGPATH
         run: |
-          ls $(which make|sed 's/make//')
-          ls C:\\ProgramData\\chocolatey\\lib\\ninja\\tools
           export _BNGPATH=$PWD
           cd Network3
           autoreconf --no-recursive --install
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
-          
       # - name: Make-nfsim-windows
       #   if: startsWith(matrix.config.name, 'windows') 
       #   working-directory: ./bng2
