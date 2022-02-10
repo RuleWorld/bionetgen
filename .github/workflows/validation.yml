@@ -6,7 +6,7 @@ name: validation
 on: 
   push:
     branches:
-      - main
+      - master
       # - gh_actions_ci
 
 jobs:
