@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake msys2
+          choco install ninja cmake mingw
           ninja --version
           cmake --version
       - name: Install dependencies on ubuntu
@@ -89,10 +89,11 @@ jobs:
         # FIXME: the configure command is obviously wrong, make an 
         # environment variable for the BNGPATH
         run: |
-          ls C:\\tools\\msys64\\
+          ls $(which make|sed 's/make//')
+          ls C:\\ProgramData\\chocolatey\\lib\\ninja\\tools
           export _BNGPATH=$PWD
           cd Network3
-          C:\\tools\\msys64\\bin\\autoreconf --no-recursive --install
+          autoreconf --no-recursive --install
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
           
