@@ -1,0 +1,142 @@
+# This workflows will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+name: validation
+
+on: 
+  push:
+    branches:
+      - main
+      # - gh_actions_ci
+
+jobs:
+  build_and_validate:
+    # The type of runner that the job will run on
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: 
+          # - {
+          #   name: "windows",
+          #   os: windows-latest,
+          #   artifact: "windows_mingw.7z",
+          #   build_type: "Release",
+          #   cc: "gcc",
+          #   cxx: "g++",
+          #   archiver: "7z a",
+          #   generators: "Ninja"
+          # }
+          - {
+            name: "linux",
+            os: ubuntu-latest,
+            artifact: "ubuntu_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+          - {
+            name: "mac",
+            os: macos-latest,
+            artifact: "macos_clang.7z",
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
+    steps:
+      - name: Checkout repo and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      # - name: Setup MSYS2
+      #   uses: msys2/setup-msys2@v2
+      #   with:
+      #     msystem: MINGW64
+      #     update: true
+      #     install: mingw-w64-x86_64-gcc autoconf automake
+      - name: Print env
+        run: |
+          echo github.event.action: ${{ github.event.action }}
+          echo github.event_name: ${{ github.event_name }}
+      # - name: Install dependencies on windows
+      #   if: startsWith(matrix.config.os, 'windows')
+      #   run: |
+      #     choco install ninja cmake
+      #     ninja --version
+      #     cmake --version
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.config.name, 'linux')
+        run: |
+          sudo apt-get update
+          sudo apt-get install cmake
+          cmake --version
+          gcc --version
+      - name: Install dependencies on macos
+        if: startsWith(matrix.config.os, 'mac')
+        # also install p7zip if we are achiving
+        run: |
+          brew install cmake 
+          cmake --version
+      - name: Make-unix
+        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+        shell: bash
+        working-directory: ./bng2
+        run: |
+          make
+      - name: validate
+        shell: bash
+        working-directory: ./bng2/Validate
+        run: |
+          perl validate_examples.pl
+        
+      # For windows
+      # - name: Make-network-windows
+      #   if: startsWith(matrix.config.name, 'windows') 
+      #   working-directory: ./bng2
+      #   shell: msys2 {0}
+      #   run: |
+      #     mkdir m4
+      #     export _BNGPATH=$PWD
+      #     cd Network3
+      #     autoreconf --no-recursive --install
+      #     ./configure --disable-shared --prefix=${_BNGPATH}
+      #     make
+      # - name: Make-nfsim-windows
+      #   if: startsWith(matrix.config.name, 'windows') 
+      #   working-directory: ./bng2
+      #   shell: bash
+      #   run: | 
+      #     cd nfsim_src
+      #     mkdir build
+      #     cd build
+      #     cmake -G "Ninja" ..
+      #     ninja
+      #     mv NFsim ../../bin/.
+
+      # EXTRAS FOR LATER
+      # - name: Pack
+      #   shell: bash
+      #   working-directory: instdir
+      #   run: |
+      #     ls -laR
+      #     ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+      # - name: Upload
+      #   uses: actions/upload-artifact@v1
+      #   with:
+      #     path: ./${{ matrix.config.artifact }}
+      #     name: ${{ matrix.config.artifact }}
+      # - name: Upload release asset
+      #   if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ github.event.release.upload_url }}
+      #     asset_path: ./${{ matrix.config.artifact }}
+      #     asset_name: ${{ matrix.config.artifact }}.zip
+      #     asset_content_type: application/zip

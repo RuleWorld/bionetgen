@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.5.2  -->
+<!-- Created by BioNetGen 2.7.1  -->
 <sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
   <model id="hybrid_test_hpp">
     <ListOfParameters>
@@ -680,5 +680,7 @@
     </ListOfObservables>
     <ListOfFunctions>
     </ListOfFunctions>
+    <ListOfEnergyPatterns>
+    </ListOfEnergyPatterns>
   </model>
 </sbml>
