@@ -137,15 +137,13 @@ sub toMexString
 
 sub toXML
 {
-    # TODO: add comments
-
     my $epatt      = shift;
     my $plist      = (@_) ? shift : '';
     my $indent     = (@_) ? shift : '';
     my $index      = shift;
-    my $indent2    = "   " . $indent;
+    my $indent2    = "  " . $indent;
     my $id         = "EP" . $index;
-    my $pid = $id . "_P1";
+    my $pid        = $id . "_P1";
 
     my $string = $indent . '<EnergyPattern';
     $string .=  " id=\"" . $id . "\""; # id
