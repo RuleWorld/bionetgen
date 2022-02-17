@@ -89,4 +89,32 @@ sub getNumPopulations
     return scalar @{$pop_list->List};
 }
 
+
+
+sub toXML
+{
+    my $pl      = shift;
+    my $model   = shift;
+    my $plist   = (@_) ? shift : '';
+    my $indent  = (@_) ? shift : '';
+    my $indent2 = "  " . $indent;
+    my $pmindex = 1;
+    my $pmid    = "";
+
+	my $mapstring .= $indent . "<ListOfPopulationMaps>\n";
+	foreach my $popmap ( @{$model->PopulationList->List} )
+    {
+        $pmid = "PM" . $pmindex;
+        $mapstring .= $indent2 . "<PopulationMap id=\"" . $pmid . "\">\n";
+        $mapstring .= $popmap->toXML( $plist, $indent2, $pmindex, $pmid );
+        ++$pmindex;
+        $mapstring .= $indent2 . "</PopulationMap>\n";
+	}
+    $mapstring .= $indent . "</ListOfPopulationMaps>\n";
+
+    return $mapstring;
+}
+
+
+
 1;

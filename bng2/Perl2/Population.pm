@@ -64,5 +64,35 @@ sub newPopulation
 };
 
 
+sub toXML
+{
+    my $pop     = shift;
+    my $plist   = shift;
+    my $indent  = (@_) ? shift : '';
+    my $indent2 = "  " . $indent;
+    my $indent3 = "  " . $indent2;
+    my $pmindex = shift;
+    my $pmid    = shift;
+    my $sid     = $pmid . "_SS1";
+    my $pid     = $pmid . "_PS1";
+    my $rid     = $pmid . "_RL1";
+
+    # get species (structured species)
+    my $popstring .= $indent2 . "<StructuredSpecies>\n";
+    $popstring .= $pop->SpeciesGraph->toXML( $indent3, "Species", $sid, "" );
+    $popstring .= $indent2 . "</StructuredSpecies>\n";
+
+    # get population count (population species)
+    $popstring .= $indent2 . "<PopulationSpecies>\n";
+    $popstring .= $pop->Population->toXML( $indent3, "Species", $pid, "" );
+    $popstring .= $indent2 . "</PopulationSpecies>\n";
+    
+    # get rate law
+    $popstring .= $pop->MappingRule->RateLaw->toXML( $indent2, $rid, $plist );
+
+    return $popstring;
+}
+
+
 
 1;
