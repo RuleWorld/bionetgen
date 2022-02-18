@@ -936,12 +936,6 @@ sub toXML
         return $rl->toXMLFunctionProduct($indent, $rr_id, $plist, $rrefs);
     }
 
-    if ( $rl->Type eq "Arrhenius" )
-    {   # not implemented since NFsim doesn't know how to use Arrhenius RateLaw!
-        send_warning("RateLaw::toXML does not yet support Arrhenius RateLaw!");
-        return "";
-    }   
-
     # handle other ratelaw types  
     # define ratelaw id
     my $id;
