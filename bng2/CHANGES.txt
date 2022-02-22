@@ -2,6 +2,14 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.8.0==
+'''''2022 February 22'''''
+
+=== New Features ===
+* BNG-XML now exports the entire BNGL model and not just NFsim related features. 
+This is to allow other software to be able to read the XML instead of the BNGL
+model text. 
+
 == BioNetGen-2.7.2==
 '''''2022 February 17'''''
 
