@@ -615,9 +615,12 @@ sub toXML
     }
 
     # Population Maps
-    if ( @{$model->PopulationList->List} ) {
-        $xml .= $model->PopulationList->toXML( $model, $plist, $indent );
+    if ( defined $model->PopulationList ) {
+        if ( @{$model->PopulationList->List} ) {
+            $xml .= $model->PopulationList->toXML( $model, $plist, $indent );
+        }
     }
+    
 
 	# FOOTER
 	$xml .=  "  </model>\n"
