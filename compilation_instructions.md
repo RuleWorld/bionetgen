@@ -19,17 +19,10 @@ At a terminal, type the following to build NFsim and atomizer:
 	
 ### Windows
 
-#### NFsim and atomizer
+#### NFsim
 
-Make sure you have Ninja, CMake, and Anaconda installed and that Python is in
-your path. For more detailed information, please see the NFsim and atomizer
-repos. From a PowerShell prompt, type the following:
+Make sure you have Ninja and CMake. For more detailed information, please see the NFsim repo. From a PowerShell prompt, type the following:
 
-    cd <bngpath>/atomizer/SBMLparser
-    python.exe -m pip install --user -r ./requirements_win.txt
-    python.exe -m pip install --target=. python-libsbml
-    python.exe -m PyInstaller ./sbmlTranslator.spec
-    mv ./dist/sbmlTranslator.exe ../../bin
     cd ../../nfsim_src
     mkdir build
     cd build
