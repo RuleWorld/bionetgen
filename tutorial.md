@@ -74,7 +74,7 @@ The files presented here are meant to provide a moderately paced but comprehensi
 ## Ligand-receptor binding models
 
 These models address issues of unit definition, how to construct models with distinct spatial compartments, and using network-free simulation for models that have a large or potentially infinite number of possible species and reactions.
-See the [Quick Reference Guide](https://drive.google.com/file/d/0B2lPm2_GUE01X3ZaamZxUl80NTA/edit) for a brief introduction to the Compartment specification and syntax.
+See the [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf) for a brief introduction to the Compartment specification and syntax.
 
 [`LR.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/CBNGL/LR.bngl)
 : Non-compartmental model of simple ligand-receptor binding.
