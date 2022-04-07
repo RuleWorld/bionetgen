@@ -1,4 +1,4 @@
-[Home](./index.md)  |  [VS Code Extension](./vsc_ext.md)  |  [Atomizer](./atomizer.md)  |  Others TBA
+[Home](https://cjarmstrong97.github.io/bionetgen/index)  |  [VS Code Extension](https://cjarmstrong97.github.io/bionetgen/vsc_ext)  |  [Atomizer](https://cjarmstrong97.github.io/bionetgen/atomizer)  |  Others TBA
 
 ## Welcome to PyBioNetGen
 Check out the project on [PyPI](https://pypi.org/project/bionetgen/) or the [GitHub repo](https://github.com/RuleWorld/PyBioNetGen).
