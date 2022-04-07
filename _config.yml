@@ -1,1 +1,17 @@
 theme: github-pages-minimal
+
+sidebar:
+  - title: "Home"
+  url: /index.md
+  - title: "PyBioNetGen"
+  url: /pybng.md
+  - title: "VS Code Extension"
+  url: /vsc_ext.md
+  - title: "Atomizer"
+  url: /atomizer.md
+  - title: "Tutorial"
+  url: /tutorial.md
+  - title: "Published"
+  url: /published.md
+  - title: "FAQ"
+  url: /faq.md
