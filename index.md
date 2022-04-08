@@ -17,7 +17,7 @@ Use [PyBioNetGen](https://pybionetgen.readthedocs.io/en/latest/quickstart.html) 
 The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.help@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
 
 ### News
- - A command line tool for weighted ensemble sampling of BNGL models, WEBNG, has been released. See the [GitHub repository](https://github.com/ASinanSaglam/webng) and the [documentation](https://webng.readthedocs.io/en/latest/).
+ - A command line tool for weighted ensemble sampling of BNGL models, **WEBNG**, has been released. See the [GitHub repository](https://github.com/ASinanSaglam/webng) and the [documentation](https://webng.readthedocs.io/en/latest/).
  - **WARNING for MacOS users**: New versions of OS X (11.5 or newer) might force you to switch your default shell to zsh (see [here](https://support.apple.com/en-us/HT208050)). This will break the extension if you are using Anaconda Python, since it will no longer be your default Python in zsh. Try renaming your `.bash-profile` to `.zprofile`.
 
 ### Resources

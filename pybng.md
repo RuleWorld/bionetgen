@@ -13,7 +13,7 @@ Check out the project on [PyPI](https://pypi.org/project/bionetgen/) or the [Git
 
 
 ### Getting Started
-See the [Quickstart](https://pybionetgen.readthedocs.io/en/latest/quickstart.html) of the documentation to get started with PyBioNetGen.
+See the [Quickstart](https://pybionetgen.readthedocs.io/en/latest/quickstart.html) section of the documentation to get started with PyBioNetGen.
 
 
 
