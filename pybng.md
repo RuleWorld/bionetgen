@@ -1,4 +1,9 @@
-[Home](https://cjarmstrong97.github.io/bionetgen/index)  |  [VS Code Extension](https://cjarmstrong97.github.io/bionetgen/vsc_ext)  |  [Atomizer](https://cjarmstrong97.github.io/bionetgen/atomizer)  |  Others TBA
+---
+title: PyBioNetGen
+layout: default
+permalink: /pybng
+nav_order: 2
+---
 
 ## Welcome to PyBioNetGen
 Check out the project on [PyPI](https://pypi.org/project/bionetgen/) or the [GitHub repo](https://github.com/RuleWorld/PyBioNetGen).

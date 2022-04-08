@@ -1,6 +1,7 @@
 ---
 title: home
 layout: default
+nav_order: 1
 ---
 
 # Welcome to BioNetGen! <img src="assets/flagman.png" width="75" height="72" valign="bottom"/>

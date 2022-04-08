@@ -1,4 +1,9 @@
-[Home](https://cjarmstrong97.github.io/bionetgen/index)  |  [PyBioNetGen](https://cjarmstrong97.github.io/bionetgen/pybng)  |  [VS Code Extension](https://cjarmstrong97.github.io/bionetgen/vsc_ext)  |  Others TBA
+---
+title: Atomizer
+layout: default
+permalink: /atomizer
+nav_order: 4
+---
 
 ## Welcome to Atomizer
 Atomizer can read SBML models and translate them into BNGL format.

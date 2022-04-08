@@ -2,6 +2,7 @@
 title: Tutorial
 layout: default
 permalink: /tutorial
+nav_oder: 5
 ---
 
 # BioNetGen Tutorial

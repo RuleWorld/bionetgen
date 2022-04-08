@@ -2,6 +2,7 @@
 title: Published
 layout: default
 permalink: /published
+nav_order: 7
 ---
 
 # Published BioNetGen Models

@@ -1,4 +1,9 @@
-[Home](https://cjarmstrong97.github.io/bionetgen/index)  |  [PyBioNetGen](https://cjarmstrong97.github.io/bionetgen/pybng)  |  [Atomizer](https://cjarmstrong97.github.io/bionetgen/atomizer)  |  Others TBA
+---
+title: VS Code Extension
+layout: default
+permalink: /vsc_ext
+nav_order: 3
+---
 
 ## BioNetGen VS Code Extension
 Check out the extension on the [Marketplace](https://marketplace.visualstudio.com/items?itemName=als251.bngl).
