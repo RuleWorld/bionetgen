@@ -1,11 +1,1 @@
----
-  defaults:
-    - scope:
-        path: ""
-        type: main
-      values:
-        sidebar:
-          nav: "nav_bar"
----
-
-theme: github-pages-minimal
+remote_theme: just-the-docs/just-the-docs
