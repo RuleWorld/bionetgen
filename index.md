@@ -12,7 +12,7 @@ BioNetGen is software designed for modular, structure-based modeling of biochemi
 **Windows users must have Perl installed to run BioNetGen at all.** We recommend [Strawberry Perl](https://strawberryperl.com/).
 
 
-Use [PyBioNetGen](https://pybionetgen.readthedocs.io/en/latest/quickstart.html) and the [VS Code Extension](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) for best results.
+Use [PyBioNetGen](https://pybionetgen.readthedocs.io/en/latest/quickstart.html) and the [VS Code Extension](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) together for best results.
 
 The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.help@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
 
@@ -54,6 +54,7 @@ If you use BioNetGen for a project please cite
 - Harris, L. A. *et al.* [BioNetGen 2.2: advances in rule-based
 modeling](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469).
 *Bioinformatics* **32,** 3366–3368 (2016).
+
 In addition, consider sending us an 
 [email](mailto:bionetgen.help@gmail.com) or tweet 
 [@bionetgen](http://twitter.com/bionetgen). We’d love to hear about it!
