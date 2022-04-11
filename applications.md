@@ -2,7 +2,8 @@
 title: Applications
 layout: default
 permalink: /applications
-nav_order: 8
+parent: Uses of BioNetGen
+nav_order: 1
 ---
 
 # Applications that Use BioNetGen

@@ -2,7 +2,8 @@
 title: Atomizer
 layout: default
 permalink: /atomizer
-nav_order: 4
+parent: Projects
+nav_order: 3
 ---
 
 ## Welcome to Atomizer

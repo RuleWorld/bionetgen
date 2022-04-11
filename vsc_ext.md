@@ -2,7 +2,8 @@
 title: VS Code Extension
 layout: default
 permalink: /vsc_ext
-nav_order: 3
+parent: Projects
+nav_order: 2
 ---
 
 ## BioNetGen VS Code Extension

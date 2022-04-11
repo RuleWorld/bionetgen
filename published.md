@@ -1,8 +1,9 @@
 ---
-title: Published
+title: Published Models
 layout: default
 permalink: /published
-nav_order: 7
+parent: Uses of BioNetGen
+nav_order: 2
 ---
 
 # Published BioNetGen Models

@@ -2,7 +2,8 @@
 title: PyBioNetGen
 layout: default
 permalink: /pybng
-nav_order: 2
+parent: Projects
+nav_order: 1
 ---
 
 ## Welcome to PyBioNetGen
