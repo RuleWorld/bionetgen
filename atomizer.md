@@ -21,5 +21,5 @@ See the [documentation](https://pybionetgen.readthedocs.io/en/latest/atomizer.ht
 
 
 ### Resources
- * [Documentation](https://pybionetgen.readthedocs.io/en/latest/atomizer.html) - probably doesn't need to be listed twice
+ * [Documentation](https://pybionetgen.readthedocs.io/en/latest/atomizer.html)
  * Any other reference materials (tutorials, guides, etc.) will someday be linked here
