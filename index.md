@@ -8,7 +8,7 @@ nav_order: 1
 
 BioNetGen is software designed for modular, structure-based modeling of biochemical reaction networks. It can be applied to many other types of modeling as well. It provides a simple, graph-based syntax that lets users build reaction models out of structured objects that can bind and undergo modification.
 
-### Download & Getting Started
+### Download
 **Windows users must have Perl installed to run BioNetGen at all.** We recommend [Strawberry Perl](https://strawberryperl.com/).
 
 To begin using BioNetGen, see the [installation instructions](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) in the documentation. This will guide new users through installing VS Code, the BNG extension, and PyBioNetGen. Again, Windows users must ensure they have some version of Perl installed to run BioNetGen.

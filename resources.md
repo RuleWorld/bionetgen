@@ -21,6 +21,7 @@ These sections include links to documentation, tutorials, and literature relatin
      -   [Modeling Reaction Networks with BioNetGen](https://github.com/mcellteam/Workshop_2021/blob/master/bionetgen/slides/CMW2021-IntroToRxnNetModelingBNG.pptx?raw=true). Introduces basic BioNetGen block syntax, actions, and workflows for simulating models, plotting results, and parameter scanning.
      -   [Rule-Based Modeling with BioNetGen](https://github.com/mcellteam/Workshop_2021/blob/master/bionetgen/slides/CMW2021-IntroRBM.pptx?raw=true). Introduces the concepts and syntax for modeling biochemical networks using structured molecules and rules in BioNetGen.
      -   [BioNetGen tutorial on GitHub](/tutorial) Provides detailed examples that demonstrate a wide range of language and modeling features.
+     -   [MMBioS Cell Modeling Workship 2021 videos](https://www.youtube.com/playlist?list=PLHmIPhi01uH9P0bk17Ul-WCcSk86wiW_6). See videos 1-4 and 13-15 for basic walkthroughs and more advanced topics using BioNetGen.
 - Papers
     -   [Application Note](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btw469) (open
     access)
