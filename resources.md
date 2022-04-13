@@ -16,7 +16,6 @@ These sections include links to documentation, tutorials, and literature relatin
 - Reference
     -   [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf)
     -   [Actions and Arguments](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
-    -   [FAQ](/faq)
 - Getting Started
      -   [Modeling Reaction Networks with BioNetGen](https://github.com/mcellteam/Workshop_2021/blob/master/bionetgen/slides/CMW2021-IntroToRxnNetModelingBNG.pptx?raw=true). Introduces basic BioNetGen block syntax, actions, and workflows for simulating models, plotting results, and parameter scanning.
      -   [Rule-Based Modeling with BioNetGen](https://github.com/mcellteam/Workshop_2021/blob/master/bionetgen/slides/CMW2021-IntroRBM.pptx?raw=true). Introduces the concepts and syntax for modeling biochemical networks using structured molecules and rules in BioNetGen.

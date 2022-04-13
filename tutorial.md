@@ -10,7 +10,7 @@ nav_order: 2
 
 The files presented here are meant to provide a moderately paced but comprehensive introduction to the syntax and features of the BioNetGen language (BNGL) and modeling software. These examples can be run either using `BNG2.pl` from the command line or using the VS Code extension/PyBioNetGen.  
 
-**Click on the link to see the BNGL code, which can be copy/pasted into a .bngl file in an editor, such as VS Code.**
+**Click on the link to see the BNGL code, which can be copy/pasted into a .bngl file in an editor such as VS Code.**
 
 ## Basic structure and syntax
 [`ABC.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/ABC/ABC.bngl)
