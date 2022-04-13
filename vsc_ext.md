@@ -2,7 +2,7 @@
 title: VS Code Extension
 layout: default
 permalink: /vsc_ext
-parent: Projects
+parent: Tools
 nav_order: 2
 ---
 

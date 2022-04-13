@@ -1,7 +1,7 @@
 ---
-title: Projects
+title: Tools
 layout: default
-permalink: /projects
+permalink: /tools
 nav_order: 2
 has_children: true
 ---

@@ -2,7 +2,7 @@
 title: Atomizer
 layout: default
 permalink: /atomizer
-parent: Projects
+parent: Tools
 nav_order: 3
 ---
 
