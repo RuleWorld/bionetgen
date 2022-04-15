@@ -1,22 +1,25 @@
 ---
-title: Applications
+title: Software
 layout: default
-permalink: /applications
+permalink: /software
 parent: Uses of BioNetGen
-nav_order: 1
+nav_order: 2
+# TODO: Sort software into those that use BNG & those that support BNGL models
 ---
 
-# Applications that Use BioNetGen
+# Software that Use BioNetGen
 
-This page links to applications that use BioNetGen code or BNGL-formatted models. *Note: This list is a work in progress and may not be complete.*
+This page links to other software that use BioNetGen code or BNGL-formatted models. *Note: This list is a work in progress and may not be complete.*
 
-## Notes for Myself
-* Better name for page?
-* Include blurb about relation to BNG/how BNG is used?
+## Software
+[AMICI](https://amici.readthedocs.io/en/latest/index.html)
 
-## Applications (*Programs?)
+
 [BioNetFit](https://bionetfit.nau.edu/)
 - Also see PyBioNetFit
+
+
+[BioSimulators](https://biosimulators.org/)
 
 
 [BioUML](https://www.biouml.org/)

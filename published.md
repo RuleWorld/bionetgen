@@ -1,9 +1,9 @@
 ---
-title: Published Models
+title: Applications
 layout: default
-permalink: /published
+permalink: /applications
 parent: Uses of BioNetGen
-nav_order: 2
+nav_order: 1
 ---
 
 # Published BioNetGen Models
