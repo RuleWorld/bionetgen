@@ -1020,7 +1020,7 @@ sub readNFspecies
         or return "Couldn't read from file $fname: $!";
 
     my $n_spec_read = 0;
-    my $n_spec_new = 0;
+    my $n_spec_unique = 0;
     my $line_num = 0;
     while ( my $string = <$FH> )
     {
@@ -1047,6 +1047,10 @@ sub readNFspecies
         my $existing_sg = $model->SpeciesList->lookup( $sg );
         if ($existing_sg)
         { 
+            # check if the original concentration is zero and if so, add to unique count
+            if ( $conc_vec->[$existing_sg->Index - 1] == 0 ) {
+                ++$n_spec_unique;
+            }
             # Add concentration to concentration of existing species
             $conc_vec->[$existing_sg->Index - 1] += $conc;
         }
@@ -1055,14 +1059,14 @@ sub readNFspecies
             # Create new Species entry in SpeciesList with zero default concentration
             my $newspec = $model->SpeciesList->add( $sg, 0 );
             $conc_vec->[ $newspec->Index - 1 ] = $conc;
-            ++$n_spec_new;
+            ++$n_spec_unique;
         }
         ++$n_spec_read;
     }
     close $FH;
 
     $model->Concentrations( $conc_vec );
-    printf "Read %d unique species of %d total.\n", $n_spec_new, $n_spec_read;
+    printf "Read %d unique species of %d total.\n", $n_spec_unique, $n_spec_read;
 
     # return SpeciesLable method to original setting
     SpeciesGraph::setSpeciesLabel( SpeciesGraph::getSpeciesLabelMethod(), $save_maxMols );
