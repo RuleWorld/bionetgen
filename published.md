@@ -10,12 +10,34 @@ nav_order: 1
 
 This page links to publications that have applied a BioNetGen rule-based model to a specific biological system. *Note: This list is a work in progress and may not be complete.*
 
+## 2021
+* [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
+* [A systems biology model of junctional localization and downstream signaling of the Ang-Tie signaling pathway](https://pubmed.ncbi.nlm.nih.gov/34417472/) *NPJ Syst. Biol. Appl.*
+* [Inhibition of RPS6K reveals context-dependent Akt activity in luminal breast cancer cells](https://pubmed.ncbi.nlm.nih.gov/34191793/) *PLoS Comput. Biol.*
+
+## 2020
+* [Periodic propagating waves coordinate RhoGTPase network dynamics at the leading and trailing edges during cell migration](https://pubmed.ncbi.nlm.nih.gov/32705984/) *Elife*
+* [Interactions between calmodulin and neurogranin govern the dynamics of CaMKII as a leaky integrator](https://pubmed.ncbi.nlm.nih.gov/32678848/) *PLoS Comput. Biol.*
+* [Co-regulation of the transcription controlling ATF2 phosphoswitch by JNK and p38](https://pubmed.ncbi.nlm.nih.gov/33188182/) *Nat. Commun.*
+* [Engineering AvidCARs for combinatorial antigen recognition and reversible control of CAR function](https://pubmed.ncbi.nlm.nih.gov/32820173/) *Nat. Commun.*
+* [Mathematical Model Predicts Effective Strategies to Inhibit VEGF-eNOS Signaling](https://pubmed.ncbi.nlm.nih.gov/32357492/) *J. Clin. Med.*
+* [Redox lipid reprogramming commands susceptibility of macrophages and microglia to ferroptotic death](https://pubmed.ncbi.nlm.nih.gov/32080625/) *Nat. Chem. Biol.*
+* [Molecular flexibility of DNA as a key determinant of RAD51 recruitment](https://pubmed.ncbi.nlm.nih.gov/31943278/) *EMBO J.*
+
+## 2019
+* [Modeling cell line-specific recruitment of signaling proteins to the insulin-like growth factor 1 receptor](https://pubmed.ncbi.nlm.nih.gov/30653502/) *PLoS Comput. Biol.*
+* [Systems NMR: single-sample quantification of RNA, proteins and metabolites for biomolecular network analysis](https://pubmed.ncbi.nlm.nih.gov/31363225/) *Nat. Methods*
+* [Scaling methods for accelerating kinetic Monte Carlo simulations of chemical reaction networks](https://pubmed.ncbi.nlm.nih.gov/31255063/) *J. Chem. Phys.*
+
 ## 2018 
 * [NF-κB-Chromatin Interactions Drive Diverse Phenotypes by Modulating Transcriptional Noise.](http://www.ncbi.nlm.nih.gov/pubmed/29346759) *Cell Reports*
 * [Computational modeling of synergistic interaction between αVβ3 integrin and VEGFR2 in endothelial cells: Implications for the mechanism of action of angiogenesis-modulating integrin-binding peptides.](https://www.ncbi.nlm.nih.gov/pubmed/30036530) *J. Theor. Biol.*
+* [Rare-event sampling of epigenetic landscapes and phenotype transitions](https://pubmed.ncbi.nlm.nih.gov/30074987/) *PLoS Comput. Biol.*
+* [Shift from stochastic to spatially-ordered expression of serine-glycine synthesis enzymes in 3D microtumors](https://pubmed.ncbi.nlm.nih.gov/29925909/) *Sci. Rep.*
 
 ## 2017
-* Needs updated
+* [Timescale Separation of Positive and Negative Signaling Creates History-Dependent Responses to IgE Receptor Stimulation](https://pubmed.ncbi.nlm.nih.gov/29138425/) *Sci. Rep.*
+* [Minimum-noise production of translation factor eIF4G maps to a mechanistically determined optimal rate control window for protein synthesis](https://pubmed.ncbi.nlm.nih.gov/27928055/) *Nucleic Acids Res.*
 
 ## 2016
 * [Modelling intracellular competition for calcium: kinetic and thermodynamic control of different molecular modes of signal decoding.](http://www.ncbi.nlm.nih.gov/pubmed/27033299) *Sci. Rep.*
@@ -78,6 +100,7 @@ This page links to publications that have applied a BioNetGen rule-based model t
 
 ## 2007
 * [Carbon-fate maps for metabolic reactions.](http://www.ncbi.nlm.nih.gov/pubmed/17933853) *Bioinformatics*
+* [Structure-based kinetic models of modular signaling protein function: focus on Shp2](https://pubmed.ncbi.nlm.nih.gov/17208977/) *Biophys. J.*
 
 ## 2006
 * [A network model of early events in epidermal growth factor receptor signaling that accounts for combinatorial complexity.](http://www.ncbi.nlm.nih.gov/pubmed/16233948) *Biosystems*
