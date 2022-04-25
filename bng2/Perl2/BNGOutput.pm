@@ -3651,11 +3651,11 @@ RESULT *simulate( int num_tpts, double *timepoints, int num_species_init, double
 
     /* make sure species_init has correct dimensions */
     if ( num_species_init != __N_SPECIES__ )
-    {  printf("SPECIES_INIT must be a row vector with 4 elements.");  } 
+    {  printf("SPECIES_INIT must be a row vector with $n_species elements.");  } 
 
     /* make sure params has correct dimensions */
     if ( num_parameters != __N_PARAMETERS__ )
-    {  printf("PARAMS must be a column vector with 4 elements.");  }
+    {  printf("PARAMS must be a column vector with $n_parameters elements.");  }
 
     // set output result object
     RESULT res_obj;
