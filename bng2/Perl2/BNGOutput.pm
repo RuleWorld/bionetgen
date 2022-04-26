@@ -3059,11 +3059,11 @@ Result simulate( vector<double> timepoints, vector<double> species_init, vector<
 
     /* make sure species_init has correct dimensions */
     if ( (species_init.size() != __N_SPECIES__) )
-    {  cout << "SPECIES_INIT must be a vector with 4 elements." << endl;  } 
+    {  cout << "SPECIES_INIT must be a vector with $n_species elements." << endl;  } 
 
     /* make sure params has correct dimensions */
     if ( (parameters.size() != __N_PARAMETERS__) )
-    {  cout << "PARAMS must be a column vector with 4 elements." << endl;  }
+    {  cout << "PARAMS must be a column vector with $n_parameters elements." << endl;  }
 
     /* get number of timepoints */
     n_timepoints = timepoints.size();
