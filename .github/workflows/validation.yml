@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - master
-      # - gh_actions_ci
 
 jobs:
   build_and_validate:
