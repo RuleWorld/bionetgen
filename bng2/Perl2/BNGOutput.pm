@@ -2669,7 +2669,7 @@ EOF
 ###
 
 
-sub writeCppfile
+sub writeCPPfile
 {
 	my $model = shift;
 	my $params = (@_) ? shift : {};
