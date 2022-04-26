@@ -2,6 +2,21 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.8.1==
+'''''2022 April 22'''''
+
+=== New Features ===
+* New action `writeCPPfile` writes a C++ header file that requires CVODE and encodes the model ODEs. 
+This allows for ODE simulations of the model directly from other C++ software
+* New action `writeCPYfile` writes a C file that requires CVODE and encodes the model ODEs. 
+This allows for ODE simulations of the model directly from other C software. Additionally, this 
+file is written with the Python `ctypes` module in mind, making it easier to make direct calls to 
+a shared C library from Python. 
+
+== Minor changes ==
+* Updated underlying NFsim version to [1.2.2](https://github.com/RuleWorld/nfsim/releases/tag/v1.2.2)
+* Minor bugfix where the reported unique species didn't account for certain species resulting in an incorrect count. 
+
 == BioNetGen-2.8.0==
 '''''2022 February 22'''''
 
