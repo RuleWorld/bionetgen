@@ -2,13 +2,15 @@
 title: Tutorial
 layout: default
 permalink: /tutorial
+parent: Resources
+nav_order: 2
 ---
 
 # BioNetGen Tutorial
 
-The files presented here are meant to provide a moderately paced but comprehensive introduction to the syntax and features of the BioNetGen language (BNGL) and modeling software. These examples can be run either using `BNG2.pl` from the command line or using the RuleBender interface. We have made a [short video](https://www.youtube.com/watch?v=MWoY5iaC8W0&t=1s) showing how to get started using RuleBender. 
+The files presented here are meant to provide a moderately paced but comprehensive introduction to the syntax and features of the BioNetGen language (BNGL) and modeling software. These examples can be run either using `BNG2.pl` from the command line or using the VS Code extension/PyBioNetGen.  
 
-**Click on the link to see the BNGL code, which can be copy/pasted into a .bngl file in an editor or RuleBender.**
+**Click on the link to see the BNGL code, which can be copy/pasted into a .bngl file in an editor such as VS Code.**
 
 ## Basic structure and syntax
 [`ABC.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/ABC/ABC.bngl)
@@ -28,9 +30,7 @@ The files presented here are meant to provide a moderately paced but comprehensi
 
 ## Using structured molecules and rules: Binding
 [`AB.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/AB/AB.bngl)
-: Simple binding model re-factored to used structured molecules with binding sites and a binding rule that adds or deletes a bond. Things to notice:
-* Contact Map panel in RuleBender shows Molecule and Component interactions.
-* Clicking tabs associated with Obervables shows Patterns and corresponding mathces. 
+: Simple binding model re-factored to used structured molecules with binding sites and a binding rule that adds or deletes a bond.
 
 [`BAB.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/BAB/BAB.bngl)
 : Simple binding model with a bivalent A molecule that has two identical sites for binding of B. Binding at each site is not affected by the status of the other site (noncooperative binding). Things to notice:
@@ -40,7 +40,6 @@ The files presented here are meant to provide a moderately paced but comprehensi
 : Varying the amount of A reveals nonmonotonic behavior of complexation. This example demonstrates use of the `log_scale` option to `parameter_scan`. Things to notice:
 * To observe the behavior of the BAB complex, you will have to turn off display of the other, more abundant observables.
 * You will also need to change the X Axis scale from `linear` to `log`.
-* You can replicate the behavior of the `parameter_scan` function by switching the `Run File` option to `Parameter Scan` in the Simulation tab in RuleBender and then completing the entries in the form that appears below the selection.
 
 ## Using structured molecules and rules: Component state change
 

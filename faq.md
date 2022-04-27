@@ -2,6 +2,8 @@
 title: FAQ
 layout: default
 permalink: /faq
+parent: Resources
+nav_order: 1
 ---
 
 # FAQ
