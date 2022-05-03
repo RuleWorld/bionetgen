@@ -4,11 +4,10 @@ layout: default
 permalink: /software
 parent: Uses of BioNetGen
 nav_order: 2
-# TODO: Sort software into those that use BNG & those that support BNGL models
+# TODO: Sort software into those that use BNG & those that support BNGL models; add blurbs about usage/compatibility
 ---
 
 # Software that Use BioNetGen
-
 This page links to other software that use BioNetGen code or BNGL-formatted models. *Note: This list is a work in progress and may not be complete.*
 
 ## Software

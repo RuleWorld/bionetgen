@@ -1,2 +1,3 @@
 remote_theme: just-the-docs/just-the-docs
-color_scheme: dark
+color_scheme: dark # options: 'light' or 'dark'
+twitter_username: bionetgen

@@ -6,7 +6,7 @@ nav_order: 3
 has_children: true
 ---
 
-## Further Resources
+# Further Resources
 These sections include links to documentation, tutorials, and literature relating to BioNetGen and its related projects, as well as frequently asked questions.
 
 ### Resources
@@ -27,7 +27,7 @@ These sections include links to documentation, tutorials, and literature relatin
     -   [BioNetGen Primer](https://link.springer.com/protocol/10.1007%2F978-1-61779-833-7_9) ([pdf
     –
     free](https://www.dropbox.com/s/rm0535pgom2zr6i/Sekar-RuleBasedPrimer-2012.pdf?dl=0))
-    -   [BioNetGen Bible ](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5)([pdf
+    -   [BioNetGen Bible](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5)([pdf
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
     -   [Published BioNetGen models](/published)
