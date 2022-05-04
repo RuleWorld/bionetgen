@@ -3380,7 +3380,7 @@ sub writeCPYfile
     my $species_string = "";
     foreach my $spec ( @{$model->SpeciesList->Array} ) 
     {
-        $species_string .= $spec->SpeciesGraph->toString() . ":";
+        $species_string .= $spec->SpeciesGraph->toString() . "/";
     }
      
 	# retrieve a string of observable definitions
@@ -3393,7 +3393,7 @@ sub writeCPYfile
     my $observables_string = "";
     foreach my $obs ( @{$model->Observables} ) 
     {
-        $observables_string .= $obs->Name . ":";
+        $observables_string .= $obs->Name . "/";
     }
         
     # Construct user-defined functions
