@@ -2,6 +2,12 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.8.2==
+'''''2022 May 22'''''
+
+== Minor changes ==
+* Changed observable and species name separators in `writeCPYfile` action
+
 == BioNetGen-2.8.1==
 '''''2022 April 22'''''
 
