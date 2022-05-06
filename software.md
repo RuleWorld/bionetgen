@@ -12,13 +12,11 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 
 ## Software
 [AMICI](https://amici.readthedocs.io/en/latest/index.html)
-
-
-[BioNetFit](https://bionetfit.nau.edu/)
-- Also see PyBioNetFit
+* Provides an interface to the CVODES and IDAS solvers for models specified in SBML or [PySB](https://pysb.org/), both of which are capable of representing BNGL models
 
 
 [BioSimulators](https://biosimulators.org/)
+* Provides a registry of biosimulation tools supporting many different model formats, including BNGL
 
 
 [BioUML](https://www.biouml.org/)
@@ -28,7 +26,8 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 
 
 [MCell](https://mcell.org/)
-
+* Uses 3D cellular models and Monte Carlo algorithms for simulating the movements and reactions of molecules within and between cells
+* The latest version of MCell, MCell4, uses BNGL
 
 [ML-Rules]()
 
@@ -37,13 +36,20 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 
 
 [NFsim](http://michaelsneddon.net/nfsim/)
+* Biochemical reaction simulator designed to handle large numbers of possible molecular interactions or states
+* Uses BNGL for model specification
 
 
 [Parts&Pools]()
 
 
+[PyBioNetFit](https://bionetfit.nau.edu/)
+* Provides a suite of algorithms for parameterizing models specified in BNGL or SBML
+
+
 [PySB](https://pysb.org/)
-* Also see INDRA (?)
+* Allows for building models of biochemical systems as Python programs
+* Internally translates Python code into BNGL or Kappa rules
 
 
 [SBML_Multi]()
