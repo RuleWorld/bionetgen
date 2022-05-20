@@ -1,2 +1,10 @@
 remote_theme: just-the-docs/just-the-docs
-color_scheme: dark
+color_scheme: dark # options: 'light' or 'dark'
+
+search_enabled: true
+
+aux_links:
+  "Visit RuleWorld on GitHub!":
+    - "https://github.com/RuleWorld"
+
+twitter_username: bionetgen
