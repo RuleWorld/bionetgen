@@ -14,13 +14,7 @@ BioNetGen is software designed for modular, structure-based modeling of biochemi
 
 {% include home_slideshow.html %}
 
-1) Easily construct models with snippets and completion
-
-
-2) Run simulations and plot the results with a single click
-
-
-3) Browse multiple diagrams of model and rule structure with the powerful yEd graph editor (installed separately)
+*Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
 ## Download
 To begin using BioNetGen, see the [installation instructions](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This will guide new users through installing VS Code and the BNG extension.
