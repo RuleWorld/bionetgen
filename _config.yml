@@ -1,10 +1,18 @@
+title: BioNetGen
+Description: Web pages for the BioNetGen website.
+url: "https://bionetgen.org"
+
+# overall theme options
 remote_theme: just-the-docs/just-the-docs
 color_scheme: dark # options: 'light' or 'dark'
 
+# search options
 search_enabled: true
 
+# auxiliary links options (top right corner of each page)
 aux_links:
   "Visit RuleWorld on GitHub!":
     - "https://github.com/RuleWorld"
+aux_links_new_tab: true
 
 twitter_username: bionetgen
