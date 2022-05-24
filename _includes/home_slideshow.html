@@ -24,9 +24,29 @@ img {vertical-align: middle;}
   text-align: center;
 }
 
-/* Number text (1/3 etc) */
+/* Caption text - dark */
+.sswtext_dark {
+  color: #000;
+  font-size: 15px;
+  padding: 8px 12px;
+  position: absolute;
+  bottom: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Number text */
 .sswnumbertext {
   color: #f2f2f2;
+  font-size: 12px;
+  padding: 8px 12px;
+  position: absolute;
+  top: 0;
+}
+
+/* Number text - dark */
+.sswnumbertext_dark {
+  color: #000;
   font-size: 12px;
   padding: 8px 12px;
   position: absolute;
@@ -80,9 +100,9 @@ img {vertical-align: middle;}
 </div>
 
 <div class="mySlides sswfade">
-  <div class="sswnumbertext">3 / 3</div>
+  <div class="sswnumbertext_dark">3 / 3</div>
   <img src="assets/contact_map.PNG" style="width:100%" alt="Network visualization">
-  <div class="sswtext">Browse multiple diagrams of a model and rule structure with the yEd graph editor</div>
+  <div class="sswtext_dark">Browse multiple diagrams of a model and rule structure with the yEd graph editor</div>
 </div>
 
 </div>
@@ -112,6 +132,6 @@ function showSlides() {
   }
   slides[slideIndex-1].style.display = "block";  
   dots[slideIndex-1].className += " sswactive";
-  setTimeout(showSlides, 9000);
+  setTimeout(showSlides, 8000);
 }
 </script>
