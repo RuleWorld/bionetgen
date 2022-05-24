@@ -1,15 +1,23 @@
+title: BioNetGen
+Description: Web pages for the BioNetGen website.
+url: "https://bionetgen.org"
+
+# overall theme options
 remote_theme: just-the-docs/just-the-docs
 color_scheme: dark # options: 'light' or 'dark'
 
+# search options
 search_enabled: true
 
+# auxiliary links options (top right corner of each page)
 aux_links:
   "Visit RuleWorld on GitHub!":
     - "https://github.com/RuleWorld"
+aux_links_new_tab: true
 
 twitter_username: bionetgen
 
 # Google Analytics Tracking (optional)
 # e.g, UA-1234567-89
-ga_tracking: UA-229745903-1
-ga_tracking_anonymize_ip: true # Use GDPR compliant Google Analytics settings (true/nil by default)
+# ga_tracking: UA-229745903-1
+# ga_tracking_anonymize_ip: true # Use GDPR compliant Google Analytics settings (true/nil by default)

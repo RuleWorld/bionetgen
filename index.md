@@ -4,11 +4,17 @@ layout: default
 nav_order: 1
 ---
 
-# Welcome to BioNetGen! <img src="assets/flagman.png" width="75" height="72" valign="bottom"/>
+{% include googlebody.html %}
+
+# Welcome to BioNetGen! <img src="assets/flagman.png" width="75" height="72" valign="bottom" alt="Flagman"/>
 
 BioNetGen is software designed for modular, structure-based modeling of biochemical reaction networks. It can be applied to many other types of modeling as well. It provides a simple, graph-based syntax that lets users build reaction models out of structured objects that can bind and undergo modification.
 
-<img src="assets/editor_screenshot.PNG" valign="bottom"/>
+## Three Reasons to Use BioNetGen with the VS Code Extension
+
+{% include home_slideshow.html %}
+
+*Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
 ## Download
 To begin using BioNetGen, see the [installation instructions](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This will guide new users through installing VS Code and the BNG extension.
