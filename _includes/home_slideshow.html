@@ -34,7 +34,7 @@ img {vertical-align: middle;}
 } */
 
 /* The dots/bullets/indicators */
-.dot {
+.sswdot {
   height: 15px;
   width: 15px;
   margin: 0 2px;
@@ -44,25 +44,25 @@ img {vertical-align: middle;}
   transition: background-color 0.6s ease;
 }
 
-.active {
+.sswactive {
   background-color: #717171;
 }
 
 /* Fading animation */
-.fade {
+.sswfade {
   animation-name: fade;
   animation-duration: 1.5s;
 }
 
-@keyframes fade {
+@keyframes sswfade {
   from {opacity: .4} 
   to {opacity: 1}
 }
 
 /* On smaller screens, decrease text size */
-@media only screen and (max-width: 300px) {
+/* @media only screen and (max-width: 300px) {
   .text {font-size: 11px}
-}
+} */
 </style>
 
 <div class="slideshow-container">
@@ -89,9 +89,9 @@ img {vertical-align: middle;}
 <br>
 
 <div style="text-align:center">
-  <span class="dot"></span> 
-  <span class="dot"></span> 
-  <span class="dot"></span> 
+  <span class="sswdot"></span> 
+  <span class="sswdot"></span> 
+  <span class="sswdot"></span> 
 </div>
 
 <script>
@@ -101,17 +101,17 @@ showSlides();
 function showSlides() {
   let i;
   let slides = document.getElementsByClassName("mySlides");
-  let dots = document.getElementsByClassName("dot");
+  let dots = document.getElementsByClassName("sswdot");
   for (i = 0; i < slides.length; i++) {
     slides[i].style.display = "none";  
   }
   slideIndex++;
   if (slideIndex > slides.length) {slideIndex = 1}    
   for (i = 0; i < dots.length; i++) {
-    dots[i].className = dots[i].className.replace(" active", "");
+    dots[i].className = dots[i].className.replace(" sswactive", "");
   }
   slides[slideIndex-1].style.display = "block";  
-  dots[slideIndex-1].className += " active";
+  dots[slideIndex-1].className += " sswactive";
   setTimeout(showSlides, 2000); // Change image every 2 seconds
 }
 </script>
