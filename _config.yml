@@ -1,6 +1,6 @@
 title: BioNetGen
 Description: Web pages for the BioNetGen website.
-url: "https://bionetgen.org"
+# url: "https://bionetgen.org"
 
 # overall theme options
 remote_theme: just-the-docs/just-the-docs
