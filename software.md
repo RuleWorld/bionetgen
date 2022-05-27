@@ -12,6 +12,7 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 
 ## Software
 | Software | Description |
+
 |------|------|
 | [AMICI](https://amici.readthedocs.io/en/latest/index.html) | Provides an interface to the CVODES and IDAS solvers for models specified in SBML or [PySB](https://pysb.org/), both of which are capable of representing BNGL models |
 | [BioSimulators](https://biosimulators.org/)| Provides a registry of biosimulation tools supporting many different model formats, including BNGL |
