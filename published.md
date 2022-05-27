@@ -10,6 +10,8 @@ nav_order: 1
 
 This page links to publications that have applied a BioNetGen rule-based model to a specific biological system. *Note: This list is a work in progress and may not be complete.*
 
+Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
+
 ## 2021
 * McMillan D et al. [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF.](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
 * Zhang Y et al. [A systems biology model of junctional localization and downstream signaling of the Ang-Tie signaling pathway.](https://pubmed.ncbi.nlm.nih.gov/34417472/) *NPJ Syst. Biol. Appl.*
