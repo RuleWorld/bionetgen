@@ -25,6 +25,7 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Wu Q, Finley SD. [Mathematical Model Predicts Effective Strategies to Inhibit VEGF-eNOS Signaling.](https://pubmed.ncbi.nlm.nih.gov/32357492/) *J. Clin. Med.*
 * Kapralov AA et al. [Redox lipid reprogramming commands susceptibility of macrophages and microglia to ferroptotic death.](https://pubmed.ncbi.nlm.nih.gov/32080625/) *Nat. Chem. Biol.*
 * Paoletti F et al. [Molecular flexibility of DNA as a key determinant of RAD51 recruitment.](https://pubmed.ncbi.nlm.nih.gov/31943278/) *EMBO J.*
+* Salazar-Cavazos E et al. [Multisite EGFR phosphorylation is regulated by adaptor protein abundances and dimer lifetimes.](https://pubmed.ncbi.nlm.nih.gov/31913761/) *Mol. Biol. Cell*
 
 ## 2019
 * Erickson KE et al. [Modeling cell line-specific recruitment of signaling proteins to the insulin-like growth factor 1 receptor.](https://pubmed.ncbi.nlm.nih.gov/30653502/) *PLOS Comput. Biol.*
@@ -36,14 +37,22 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Bazzazi J et al.[Computational modeling of synergistic interaction between αVβ3 integrin and VEGFR2 in endothelial cells: Implications for the mechanism of action of angiogenesis-modulating integrin-binding peptides.](https://www.ncbi.nlm.nih.gov/pubmed/30036530) *J. Theor. Biol.*
 * Tse MJ et al. [Rare-event sampling of epigenetic landscapes and phenotype transitions.](https://pubmed.ncbi.nlm.nih.gov/30074987/) *PLOS Comput. Biol.*
 * Singh M et al. [Shift from stochastic to spatially-ordered expression of serine-glycine synthesis enzymes in 3D microtumors.](https://pubmed.ncbi.nlm.nih.gov/29925909/) *Sci. Rep.*
+* Rohrs JA et al. [Computational Model of Chimeric Antigen Receptors Explains Site-Specific Phosphorylation Kinetics.](https://pubmed.ncbi.nlm.nih.gov/30197180/) *Biophys. J.*
+* James JR. [Tuning ITAM multiplicity on T cell receptors can control potency and selectivity to ligand density.](https://pubmed.ncbi.nlm.nih.gov/29789296/) *Sci. Signal*
+* Czerkies M et al. [Cell fate in antiviral response arises in the crosstalk of IRF, NF-κB and JAK/STAT pathways.](https://pubmed.ncbi.nlm.nih.gov/29402958/) *Nat. Commun.*
 
 ## 2017
 * Harmon B et al. [Timescale Separation of Positive and Negative Signaling Creates History-Dependent Responses to IgE Receptor Stimulation.](https://pubmed.ncbi.nlm.nih.gov/29138425/) *Sci. Rep.*
 * Meng X et al. [Minimum-noise production of translation factor eIF4G maps to a mechanistically determined optimal rate control window for protein synthesis.](https://pubmed.ncbi.nlm.nih.gov/27928055/) *Nucleic Acids Res.*
+* Bazzazi J, Isenberg JS, Popel AS. [Inhibition of VEGFR2 Activation and Its Downstream Signaling to ERK1/2 and Calcium by Thrombospondin-1 (TSP1): *In silico* Investigation.](https://pubmed.ncbi.nlm.nih.gov/28220078/) *Front Physiol.*
+* Bazzazi J, Popel AS. [Computational investigation of sphingosine kinase 1 (SphK1) and calcium dependent ERK1/2 activation downstream of VEGFR2 in endothelial cells.](https://pubmed.ncbi.nlm.nih.gov/28220078/) *PLoS Comput. Biol.*
 
 ## 2016
 * Antunes G, Roque AC, Simoes de Souza FM. [Modelling intracellular competition for calcium: kinetic and thermodynamic control of different molecular modes of signal decoding.](http://www.ncbi.nlm.nih.gov/pubmed/27033299) *Sci. Rep.*
 * Hat B et al. [Feedbacks, Bifurcations, and Cell Fate Decision-Making in the p53 System.](http://www.ncbi.nlm.nih.gov/pubmed/26928575) *PLOS Comput. Biol.*
+* Rohrs JA, Sulistio CD, Finley SD. [Predictive model of thrombospondin-1 and vascular endothelial growth factor in breast tumor tissue.](https://pubmed.ncbi.nlm.nih.gov/28713587/) *NPJ Syst. Biol. Appl.*
+* Korwek Z et al. [Importins promote high-frequency NF-κB oscillations increasing information channel capacity.](https://pubmed.ncbi.nlm.nih.gov/27835978/) *Biol. Direct*
+* Camillo BD et al. [A rule-based model of insulin signalling pathway.](https://pubmed.ncbi.nlm.nih.gov/27245161/) *BMC Syst. Biol.*
 
 ## 2015
 * Dolan DWP et al. [Integrated Stochastic Model of DNA Damage Repair by Non-homologous End Joining and p53/p21- Mediated Early Senescence Signalling.](http://www.ncbi.nlm.nih.gov/pubmed/26020242) *PLOS Comput. Biol.*

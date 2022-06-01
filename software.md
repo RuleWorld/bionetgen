@@ -18,7 +18,7 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 | [BioSimulators](https://biosimulators.org/)| Provides a registry of biosimulation tools supporting many different model formats, including BNGL |
 | [BioUML](https://www.biouml.org/) |  |
 | [Kappa](https://kappalanguage.org/) | Another prominent rule-based modeling language |
-| [MCell](https://mcell.org/) | Uses 3D cellular models and Monte Carlo algorithms for simulating the movements and reactions of molecules within and between cells; the latest version of MCell, MCell4, uses BNGL |
+| [MCell](https://mcell.org/) | Uses 3D cellular models and Monte Carlo algorithms for simulating the movements and reactions of molecules within and between cells; the latest version, MCell4, uses BNGL |
 | [ML-Rules](https://git.informatik.uni-rostock.de/mosi/mlrules2) |  |
 | [ModelingToolkit.jl](https://mtk.sciml.ai/stable/) |  |
 | [NFsim](http://michaelsneddon.net/nfsim/) |  |
