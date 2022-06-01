@@ -9,7 +9,7 @@ has_children: true
 # Further Resources
 These sections include links to documentation, tutorials, and literature relating to BioNetGen and its related projects, as well as frequently asked questions.
 
-### Resources
+## Resources
 - Documentation
      - [PyBioNetGen](https://pybionetgen.readthedocs.io/en/latest/)
      - [VS Code Extension](https://bng-vscode-extension.readthedocs.io/en/latest/)

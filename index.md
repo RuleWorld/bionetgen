@@ -26,10 +26,6 @@ The best way to get help, report a bug, or request a feature is to post an issue
  - A command line tool for weighted ensemble sampling of BNGL models, **WEBNG**, has been released. See the [GitHub repository](https://github.com/ASinanSaglam/webng) and the [documentation](https://webng.readthedocs.io/en/latest/).
  - **WARNING for MacOS users**: New versions of OS X (11.5 or newer) might force you to switch your default shell to zsh (see [here](https://support.apple.com/en-us/HT208050)). This will break the extension if you are using Anaconda Python, since it will no longer be your default Python in zsh. Try renaming your `.bash-profile` to `.zprofile`.
 
-## Other Tools
-- [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest) provides an Eclispe-based interface for BioNetGen that includes interactive model visualization capabilities. **NOTICE**: RuleBender is no longer being developed or supported. Please use PyBioNetGen and the VS Code extension instead.
-- [BioNetGen command line](https://github.com/RuleWorld/bionetgen/releases/latest). The core BioNetGen code includes a command-line interface that may be useful to developers and advanced users. The BioNetGen code is bundled with both PyBioNetGen and RuleBender.
-
 ## Citing BioNetGen
 If you use BioNetGen for a project please cite 
 - Harris, L. A. *et al.* [BioNetGen 2.2: advances in rule-based
