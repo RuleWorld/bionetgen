@@ -30,4 +30,4 @@ These sections include links to documentation, tutorials, and literature relatin
     -   [BioNetGen Bible](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5)([pdf
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
-    -   [Published BioNetGen models](/published)
+    -   [Published BioNetGen models](/applications)
