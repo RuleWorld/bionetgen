@@ -1625,6 +1625,9 @@ sub parameter_scan
     # check for required parameters
     unless ( defined $params->{parameter} )
     {   return "Error in parameter_scan: 'parameter' is not defined.";   }
+    # check that parameter is defined
+    (my $param, my $err)= $model->ParamList->lookup($params->{parameter});
+    if ($err) { return ($err);}
 
 	unless ( defined $params->{par_scan_vals} ){
 		
