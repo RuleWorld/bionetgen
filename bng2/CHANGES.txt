@@ -2,6 +2,12 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.8.3==
+'''''2022 June 22'''''
+
+== Minor changes ==
+* Minor bugfix where the parameter scan action didn't check if the parameter getting scanned was defined.
+
 == BioNetGen-2.8.2==
 '''''2022 May 22'''''
 
