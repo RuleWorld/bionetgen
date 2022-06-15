@@ -12,7 +12,7 @@ BioNetGen is software designed for modular, structure-based modeling of biochemi
 
 ## Three Reasons to Use BioNetGen with the VS Code Extension
 
-{% include home_slideshow.html %}
+{% include interactive_slideshow.html %}
 
 *Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
