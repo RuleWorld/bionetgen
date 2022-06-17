@@ -21,3 +21,7 @@ twitter_username: bionetgen
 # e.g, UA-1234567-89
 # ga_tracking: UA-229745903-1
 # ga_tracking_anonymize_ip: true # Use GDPR compliant Google Analytics settings (true/nil by default)
+
+# footer content
+back_to_top: true
+back_to_top_text: "Back to top"

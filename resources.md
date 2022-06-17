@@ -13,6 +13,7 @@ These sections include links to documentation, tutorials, and literature relatin
 - Documentation
      - [PyBioNetGen](https://pybionetgen.readthedocs.io/en/latest/)
      - [VS Code Extension](https://bng-vscode-extension.readthedocs.io/en/latest/)
+     - [Atomizer](https://pybionetgen.readthedocs.io/en/latest/atomizer.html)
 - Reference
     -   [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf)
     -   [Actions and Arguments](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
