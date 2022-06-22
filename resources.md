@@ -6,6 +6,8 @@ nav_order: 3
 has_children: true
 ---
 
+{% include youtube_player.html id="ZnP-yLpAJIE" %}
+
 # Further Resources
 These sections include links to documentation, tutorials, and literature relating to BioNetGen and its related projects, as well as frequently asked questions.
 

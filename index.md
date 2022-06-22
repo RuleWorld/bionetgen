@@ -19,6 +19,8 @@ BioNetGen is software designed for modular, structure-based modeling of biochemi
 ## Download
 To begin using BioNetGen, see the [installation instructions](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This will guide new users through installing VS Code and the BNG extension.
 
+Are you a new user? Find information for BioNetGen beginners [here](/new_users).
+
 The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.help@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
 
 ## News
