@@ -10,9 +10,9 @@ nav_order: 1
 
 BioNetGen is software designed for modular, structure-based modeling of biochemical reaction networks. It can be applied to many other types of modeling as well. It provides a simple, graph-based syntax that lets users build reaction models out of structured objects that can bind and undergo modification.
 
-## Three Reasons to Use BioNetGen with the VS Code Extension
+## Using BioNetGen with the VS Code Extension
 
-{% include interactive_slideshow.html %}
+{% include home_slideshow.html %}
 
 *Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
