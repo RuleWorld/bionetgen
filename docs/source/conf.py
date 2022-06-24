@@ -23,11 +23,11 @@ author = 'Ali Sinan Saglam'
 
 # The full version, including alpha/beta/rc tags
 # let's pull from the package file
-import json, os
-json_path = os.path.join(*["..","..","package.json"])
-with open(json_path, "r") as f:
-    pdict = json.load(f)
-release = pdict["version"]
+# import json, os
+# json_path = os.path.join(*["..","..","package.json"])
+# with open(json_path, "r") as f:
+#     pdict = json.load(f)
+# release = pdict["version"]
 
 
 # -- General configuration ---------------------------------------------------
