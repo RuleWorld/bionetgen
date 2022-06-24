@@ -218,7 +218,7 @@ rerunning atomizer should return no errors and you should now have a fully atomi
 `Visualizing the model <https://bng-vscode-extension.readthedocs.io/en/latest/usage.html#visualization>`_ 
 and using yEd to look at the contact map gives us the following 
 
-.. image:: assets/bmd48.jpg
+.. image:: ../assets/bmd48.jpg
 
 `Biomodels database model 19 <https://www.ebi.ac.uk/biomodels/BIOMD0000000019>`_
 ---------------------------------------------------------------------------------
@@ -283,7 +283,7 @@ rerunning atomization using this user input gives a fully atomized BNGL file.
 `Visualizing the model <https://bng-vscode-extension.readthedocs.io/en/latest/usage.html#visualization>`_ 
 and using yEd to look at the contact map gives us the following 
 
-.. image:: assets/bmd19.jpg
+.. image:: ../assets/bmd19.jpg
 
 `Biomodels database model 151 <https://www.ebi.ac.uk/biomodels/BIOMD0000000151>`_
 ---------------------------------------------------------------------------------

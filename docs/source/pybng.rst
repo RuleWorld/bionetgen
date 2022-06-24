@@ -12,8 +12,8 @@ Please see :ref:`Quickstart` to learn how to install and use PyBioNetGen.
    :maxdepth: 1
    :caption: Contents:
 
-   quickstart
-   tutorials
-   cli
-   library
-   atomizer
+   pybng_quickstart
+   pybng_tutorials
+   pybng_cli
+   pybng_library
+   pybng_atomizer
