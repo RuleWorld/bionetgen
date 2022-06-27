@@ -13,7 +13,7 @@ This page links to publications that have applied a BioNetGen rule-based model t
 Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
 
 ## Preprints
-* Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response](https://www.biorxiv.org/content/10.1101/2022.01.30.478391v1.full) *bioRxiv*
+* Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.biorxiv.org/content/10.1101/2022.01.30.478391v1.full) *bioRxiv*
 
 ## 2021
 * McMillan D et al. [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF.](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
