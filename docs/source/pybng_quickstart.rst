@@ -7,24 +7,7 @@ Quickstart
 Installation
 ============
 
-You will need both `Python <https://www.python.org/>`_ (3.7 and above) and `Perl <http://strawberryperl.com/>`_ (for Windows users) installed.
-
-Once both are available, you can use the following :code:`pip` command to install PyBioNetGen:
-
-.. code-block:: shell
-
-    pip install bionetgen
-
-This comes with the latest version of `BioNetGen <https://bionetgen.org>`_. Please note that,
-at the moment, PyBioNetGen does not support Atomizer but eventually will.
-
-After installation is complete, you can test to see if PyBioNetGen is properly installed with
-
-.. code-block:: shell
-
-   bionetgen -h
-
-If this command prints out help, the command line tool is installed.
+See :ref:`install` to learn how to get PyBioNetGen.
 
 Basic Usage
 ===========

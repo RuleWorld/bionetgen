@@ -19,7 +19,7 @@
 
 project = 'BioNetGen'
 copyright = '2022, Caleb Armstrong'
-author = 'Caleb Armstrong'
+author = 'Ali Sinan Saglam & Caleb Armstrong'
 
 # The short X.Y version
 # version = "0"
