@@ -24,6 +24,7 @@ Installation instructions for both can be found at the link below.
     vsc_ext
     pybng
 
+.. image:: ../assets/featured.gif
 
 Indices and tables
 ==================
@@ -31,3 +32,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. image:: ../assets/flagman.png
