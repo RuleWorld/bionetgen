@@ -1,5 +1,5 @@
 ---
-title: Download & Install
+title: Install
 layout: default
 permalink: /install
 nav_order: 2
