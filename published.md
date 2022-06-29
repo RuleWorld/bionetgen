@@ -12,6 +12,9 @@ This page links to publications that have applied a BioNetGen rule-based model t
 
 Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
 
+## Preprints
+* Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.biorxiv.org/content/10.1101/2022.01.30.478391v1.full) *bioRxiv*
+
 ## 2021
 * McMillan D et al. [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF.](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
 * Zhang Y et al. [A systems biology model of junctional localization and downstream signaling of the Ang-Tie signaling pathway.](https://pubmed.ncbi.nlm.nih.gov/34417472/) *NPJ Syst. Biol. Appl.*
@@ -40,6 +43,7 @@ Help keep this page current by sending your publications to our [email](mailto:b
 * Rohrs JA et al. [Computational Model of Chimeric Antigen Receptors Explains Site-Specific Phosphorylation Kinetics.](https://pubmed.ncbi.nlm.nih.gov/30197180/) *Biophys. J.*
 * James JR. [Tuning ITAM multiplicity on T cell receptors can control potency and selectivity to ligand density.](https://pubmed.ncbi.nlm.nih.gov/29789296/) *Sci. Signal*
 * Czerkies M et al. [Cell fate in antiviral response arises in the crosstalk of IRF, NF-κB and JAK/STAT pathways.](https://pubmed.ncbi.nlm.nih.gov/29402958/) *Nat. Commun.*
+* Rukhlenko OS et al. [Dissecting RAF Inhibitor Resistance by Structure-based Modeling Reveals Ways to Overcome Oncogenic RAS Signaling](https://pubmed.ncbi.nlm.nih.gov/30007540/) *Cell Syst.*
 
 ## 2017
 * Harmon B et al. [Timescale Separation of Positive and Negative Signaling Creates History-Dependent Responses to IgE Receptor Stimulation.](https://pubmed.ncbi.nlm.nih.gov/29138425/) *Sci. Rep.*
