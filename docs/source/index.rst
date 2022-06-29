@@ -12,7 +12,7 @@ It can be applied to many other types of modeling as well.
 It provides a simple, graph-based syntax that lets users build reaction models out of structured objects that can bind and undergo modification.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Contents:
 
     install
