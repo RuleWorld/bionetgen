@@ -91,6 +91,6 @@ These files are designed to be used in conjunction with `yEd <https://www.yworks
 If you have yEd installed, you can associate yEd with GraphML files in your OS 
 (`example for windows 10 <https://support.microsoft.com/en-us/windows/change-default-programs-in-windows-10-e5d82cad-17d1-c53b-3505-f10a32e1894d>`_). 
 If you also install the `open in external app extension for VS Code <https://marketplace.visualstudio.com/items?itemName=YuTengjing.open-in-external-app>`_
-you can right click the GraphML files and click on `Open in externall App` to open the graph in yEd.
+you can right click the GraphML files and click on `Open in external App` to open the graph in yEd.
 
 .. image:: ../assets/visualize.gif
