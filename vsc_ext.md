@@ -14,9 +14,10 @@ Check out the extension on the [Marketplace](https://marketplace.visualstudio.co
 
 
 ### Getting Started
-See the [installation instructions](https://bng-vscode-extension.readthedocs.io/en/latest/install.html) in the documentation.
+See the [installation instructions](/install) in the documentation.
 
 <!-- TODO: Add ### News section back in when there's actually news to post -->
+<!-- ### News -->
 
 ### Resources
  * [Documentation](https://bng-vscode-extension.readthedocs.io/en/latest/)

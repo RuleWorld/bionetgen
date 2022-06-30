@@ -13,7 +13,7 @@ nav_exclude: true
 
 ## Downloading
 
-If you've never used BioNetGen before (or if you previously used RuleBender), you'll need to [download BioNetGen](https://bng-vscode-extension.readthedocs.io/en/latest/install.html).
+If you've never used BioNetGen before (or if you previously used RuleBender), you'll need to [download BioNetGen](/install).
 
 ## Getting Started
 

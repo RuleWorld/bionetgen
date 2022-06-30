@@ -12,11 +12,10 @@ Check out the project on [PyPI](https://pypi.org/project/bionetgen/).
 If you have any issues using PyBNG, don't hesitate to post an [issue](https://github.com/RuleWorld/PyBioNetGen/issues) on GitHub!
 
 ### Getting Started
-See the [Quickstart](https://pybionetgen.readthedocs.io/en/latest/quickstart.html) section of the documentation to get started with PyBioNetGen.
+See the [Quickstart](https://pybionetgen.readthedocs.io/en/latest/quickstart.html) section of the documentation to get started with PyBioNetGen, as well as the [installation instructions](/install).
 
 <!-- TODO: Add ### News section back in when there's actually news to post -->
-### News
- * This page is under construction! Wear a hard hat, please.
+<!-- ### News -->
 
 ### Resources
  * [Documentation](https://pybionetgen.readthedocs.io/en/latest/) - includes tutorials and guides
