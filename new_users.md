@@ -4,6 +4,7 @@ layout: default
 permalink: /new_users
 parent: Resources
 nav_order: 3
+nav_exclude: true
 ---
 
 # New Users Guide
