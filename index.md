@@ -10,25 +10,25 @@ nav_order: 1
 
 BioNetGen is software designed for modular, structure-based modeling of biochemical reaction networks. It can be applied to many other types of modeling as well. It provides a simple, graph-based syntax that lets users build reaction models out of structured objects that can bind and undergo modification.
 
-## Three Reasons to Use BioNetGen with the VS Code Extension
+## Using BioNetGen with the VS Code Extension
 
 {% include home_slideshow.html %}
 
 *Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
-## Download
-To begin using BioNetGen, see the [installation instructions](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This will guide new users through installing VS Code and the BNG extension.
-
 The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.help@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
+
+<!-- Are you a new user? Find information for BioNetGen beginners [here](/new_users). -->
+
+## Download
+To begin using BioNetGen, see the [installation instructions](/install). This will guide new users through installing VS Code and the BNG extension.
+
+<!-- Are you a new user? Find information for BioNetGen beginners [here](/new_users). -->
 
 ## News
  - If you've spent some time browsing this site, please consider filling out this [feedback form](https://forms.gle/T4vuoMT23u6F8Vj7A) to help improve it!
  - A command line tool for weighted ensemble sampling of BNGL models, **WEBNG**, has been released. See the [GitHub repository](https://github.com/ASinanSaglam/webng) and the [documentation](https://webng.readthedocs.io/en/latest/).
  - **WARNING for MacOS users**: New versions of OS X (11.5 or newer) might force you to switch your default shell to zsh (see [here](https://support.apple.com/en-us/HT208050)). This will break the extension if you are using Anaconda Python, since it will no longer be your default Python in zsh. Try renaming your `.bash-profile` to `.zprofile`.
-
-## Other Tools
-- [RuleBender](https://github.com/RuleWorld/rulebender/releases/latest) provides an Eclispe-based interface for BioNetGen that includes interactive model visualization capabilities. **NOTICE**: RuleBender is no longer being developed or supported. Please use PyBioNetGen and the VS Code extension instead.
-- [BioNetGen command line](https://github.com/RuleWorld/bionetgen/releases/latest). The core BioNetGen code includes a command-line interface that may be useful to developers and advanced users. The BioNetGen code is bundled with both PyBioNetGen and RuleBender.
 
 ## Citing BioNetGen
 If you use BioNetGen for a project please cite 

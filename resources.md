@@ -2,20 +2,24 @@
 title: Resources
 layout: default
 permalink: /resources
-nav_order: 3
+nav_order: 4
 has_children: true
 ---
+
+<!-- {% include youtube_player.html id="ZnP-yLpAJIE" %} -->
 
 # Further Resources
 These sections include links to documentation, tutorials, and literature relating to BioNetGen and its related projects, as well as frequently asked questions.
 
-### Resources
+## Resources
 - Documentation
      - [PyBioNetGen](https://pybionetgen.readthedocs.io/en/latest/)
      - [VS Code Extension](https://bng-vscode-extension.readthedocs.io/en/latest/)
+     - [Atomizer](https://pybionetgen.readthedocs.io/en/latest/atomizer.html)
 - Reference
-    -   [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf)
-    -   [Actions and Arguments](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
+     - [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf)
+     - [Actions and Arguments](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
+     - [BNGL Grammar](https://github.com/RuleWorld/BNG_vscode_extension/blob/main/bngl-grammar-ebnf.pdf)
 - Getting Started
      -   [Modeling Reaction Networks with BioNetGen](https://github.com/mcellteam/Workshop_2021/blob/master/bionetgen/slides/CMW2021-IntroToRxnNetModelingBNG.pptx?raw=true). Introduces basic BioNetGen block syntax, actions, and workflows for simulating models, plotting results, and parameter scanning.
      -   [Rule-Based Modeling with BioNetGen](https://github.com/mcellteam/Workshop_2021/blob/master/bionetgen/slides/CMW2021-IntroRBM.pptx?raw=true). Introduces the concepts and syntax for modeling biochemical networks using structured molecules and rules in BioNetGen.
@@ -30,4 +34,4 @@ These sections include links to documentation, tutorials, and literature relatin
     -   [BioNetGen Bible](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5)([pdf
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
-    -   [Published BioNetGen models](/published)
+    -   [Published BioNetGen models](/applications)
