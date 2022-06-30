@@ -16,12 +16,14 @@ BioNetGen is software designed for modular, structure-based modeling of biochemi
 
 *Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
-## Download
-To begin using BioNetGen, see the [installation instructions](https://bng-vscode-extension.readthedocs.io/en/latest/install.html). This will guide new users through installing VS Code and the BNG extension.
+The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.help@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
 
 <!-- Are you a new user? Find information for BioNetGen beginners [here](/new_users). -->
 
-The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.help@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
+## Download
+To begin using BioNetGen, see the [installation instructions](/install). This will guide new users through installing VS Code and the BNG extension.
+
+<!-- Are you a new user? Find information for BioNetGen beginners [here](/new_users). -->
 
 ## News
  - If you've spent some time browsing this site, please consider filling out this [feedback form](https://forms.gle/T4vuoMT23u6F8Vj7A) to help improve it!
