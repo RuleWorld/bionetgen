@@ -54,7 +54,7 @@ You can see all the available options by running :code:`bionetgen plot -h`
 
 Resulting plots should look similar to this:
 
-.. image:: ./assets/SIR.png
+.. image:: ../assets/SIR.png
 
 Visualize
 =========
