@@ -13,11 +13,12 @@ These sections include links to documentation, tutorials, and literature relatin
 
 ## Resources
 - Documentation
+     - [BioNetGen](https://bionetgen.readthedocs.io/en/latest/index.html)
      - [PyBioNetGen](https://pybionetgen.readthedocs.io/en/latest/)
      - [VS Code Extension](https://bng-vscode-extension.readthedocs.io/en/latest/)
      - [Atomizer](https://pybionetgen.readthedocs.io/en/latest/atomizer.html)
 - Reference
-     - [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/QRG-30Mar2016.pdf)
+     - [Quick Reference Guide](https://github.com/RuleWorld/bionetgen/blob/master/docs/unused/QRG-30Mar2016.pdf)
      - [Actions and Arguments](https://docs.google.com/spreadsheets/d/1Co0bPgMmOyAFxbYnGCmwKzoEsY2aUCMtJXQNpQCEUag/edit?usp=sharing)
      - [BNGL Grammar](https://github.com/RuleWorld/BNG_vscode_extension/blob/main/bngl-grammar-ebnf.pdf)
 - Getting Started
@@ -31,7 +32,7 @@ These sections include links to documentation, tutorials, and literature relatin
     -   [BioNetGen Primer](https://link.springer.com/protocol/10.1007%2F978-1-61779-833-7_9) ([pdf
     –
     free](https://www.dropbox.com/s/rm0535pgom2zr6i/Sekar-RuleBasedPrimer-2012.pdf?dl=0))
-    -   [BioNetGen Bible](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5)([pdf
+    -   [BioNetGen Bible](https://link.springer.com/protocol/10.1007%2F978-1-59745-525-1_5) ([pdf
     –
     free](https://www.csb.pitt.edu/Faculty/Faeder/Publications/Reprints/Faeder_2009.pdf))
     -   [Published BioNetGen models](/applications)
