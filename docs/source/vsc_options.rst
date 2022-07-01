@@ -33,10 +33,10 @@ Can be enabled/disabled here.
 
 ``Plotting: Menus``
 ===================
-The ``Built-in plotting`` plotting method provides a menu with various options.
+The ``Built-in plotting`` method provides a menu with various options.
 Can be enabled/disabled here.
 
 ``Plotting: Max_series_count``
 ==============================
-Set the maximum number of time series to plot using either(?) plotting method.
+Set the maximum number of time series to plot using the ``Built-in plotting`` method.
 Default 100; can be set here.
