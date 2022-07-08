@@ -12,7 +12,7 @@ You will need to do the following to install the extension:
 1. Download and install `VS Code <https://code.visualstudio.com/>`_
 2. Install BioNetGen extension for VS Code
 3. Download and install `Anaconda python <https://www.anaconda.com/products/individual>`_
-4. (Windows users only) Install `Perl <https://www.perl.org/>`_, for Windows users
+4. (Windows users only) Install `Perl <https://www.perl.org/>`_
 5. Open a ``.bngl`` file in VS Code
 
 First, `download and install VS Code <https://code.visualstudio.com>`_. The suggested way to install this VS Code extension is
