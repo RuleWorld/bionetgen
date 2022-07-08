@@ -40,10 +40,6 @@ version in the future.
 Running a model
 ===============
 
-Important note: for the extension to know where to write the results, you MUST open a folder 
-with VS Code. The extension will use the folder selected as the place to put the results. 
-This will change in future releases (current version: 0.5.9)
-
 Once you finished writing the model, you can try running it. For the run button to work, the 
 default terminal window VS Code opens should have access to `Perl <https://www.perl.org/>`_, 
 `Python3 <https://www.python.org/>`_ (preferably 

@@ -14,4 +14,5 @@ This is a `VS Code <https://code.visualstudio.com/>`_ extension for
    :caption: Contents:
 
    vsc_usage
+   vsc_options
    vsc_devs

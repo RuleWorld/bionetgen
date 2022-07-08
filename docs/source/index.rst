@@ -11,6 +11,8 @@ BioNetGen
 It can be applied to many other types of modeling as well.
 It provides a simple, graph-based syntax that lets users build reaction models out of structured objects that can bind and undergo modification.
 
+Visit `<https://bionetgen.org/>`_ for more information.
+
 Under the **Contents** directory below, you will find more information about the current software for rule-based modeling in BioNetGen.
 The **VS Code BNGL extension** includes many helpful features, including a GUI, to aid in using BioNetGen in the VS Code editor.
 **PyBioNetGen** provides a lightweight CLI and Python library for programmatic manipulation of BioNetGen models.
