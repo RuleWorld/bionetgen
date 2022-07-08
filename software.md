@@ -26,6 +26,7 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 | [Parts&Pools]() |  |
 | [PyBioNetFit](https://bionetfit.nau.edu/) | Provides a suite of algorithms for parameterizing models specified in BNGL or SBML |
 | [PySB](https://pysb.org/) | Allows for building models of biochemical systems as Python programs; internally translates Python code into BNGL or Kappa rules |
+| [RuleDSD](https://aaltodoc.aalto.fi/handle/123456789/43847) | Converts a DNA Strand Displacement (DSD) model into BNGL, then uses [PySB](https://pysb.org/) to perform simulation and analysis |
 | [SBML_Multi]() |  |
 | [Smoldyn](https://www.smoldyn.org/) | Performs cell-scale biochemical simulations; can perform rule-based modeling using either its native wildcards or by running BioNetGen on BNGL files |
 | [SPATKIN](https://pmbm.ippt.pan.pl/web/Spatkin) |  |
