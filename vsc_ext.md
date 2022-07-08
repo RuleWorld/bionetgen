@@ -3,7 +3,7 @@ title: VS Code Extension
 layout: default
 permalink: /vsc_ext
 parent: Tools
-nav_order: 2
+nav_order: 1
 ---
 
 # BioNetGen VS Code Extension
@@ -15,6 +15,8 @@ Check out the extension on the [Marketplace](https://marketplace.visualstudio.co
 
 ### Getting Started
 See the [installation instructions](/install) in the documentation.
+
+If you have any issues using the extension, don't hesitate to post an [issue](https://github.com/RuleWorld/BNG_vscode_extension/issues) on GitHub!
 
 <!-- TODO: Add ### News section back in when there's actually news to post -->
 <!-- ### News -->
