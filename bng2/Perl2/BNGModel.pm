@@ -492,6 +492,18 @@ sub readSBML
                             $err = errgen( $err, $lno );
                             goto EXIT;
                         }
+                        
+                        # AS-2022
+                        # warn user if the value is negative
+                        foreach my $param ( @{$model->ParamList->Array} )
+                        {
+                            if ( $param->Expr->evaluate($model->ParamList) < 0 ) {
+                                printf "Warning: Parameter %s is set to a negative value: %s\n", 
+                                    ( $param->Name, $param->Expr->evaluate($model->ParamList));
+                            }
+                        }
+                        # AS
+
                         # update user
                         printf "Read %d $name.\n", $model->ParamList->getNumParams() - $plast;
                     }
