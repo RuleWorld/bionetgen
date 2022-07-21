@@ -4,7 +4,7 @@ Description: Web pages for the BioNetGen website.
 
 # overall theme options
 remote_theme: just-the-docs/just-the-docs
-color_scheme: dark # options: 'light' or 'dark'
+color_scheme: search_text # options: 'light' or 'dark'
 
 # search options
 search_enabled: true
