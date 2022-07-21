@@ -275,6 +275,9 @@ sub readString
 		}
 		elsif ( $string_left =~ s/^(=|==|<|<=|>|>=)(\d+)// )
 		{   # Quantifier
+			if ( $string_left =~ s/(=|==|<|<=|>|>=)(\d+)// ) {
+				return "Can't have multiple quantifiers in pattern."; 
+			}
 			my $op = $1;
 			if ( $op eq '=' ) {  $op = '=='  }
 			$sg->Quantifier( $op . $2 );
