@@ -962,10 +962,10 @@ sub readSBML
 	                elsif ( $name eq 'protocol' )
 	                {
 	                	struct protocol =>
-                      {
-                        action  => '$',
-                        options => '$',
-                      };
+                        {
+                            action  => '$',
+                            options => '$',
+                        };
 	                    if ($model->Params->{'skip_actions'})
 	                    {
 	                        unless ($model->Params->{'action_skip_warn'})

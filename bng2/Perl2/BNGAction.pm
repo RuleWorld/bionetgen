@@ -485,8 +485,9 @@ sub simulate
         
         if ( ($t_end - $t_start) <= 0.0 )
         {
-        	send_warning("t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
-                  	 "Simulation won't run.");
+            send_warning("t_end (" . $t_end . ") is not greater than t_start (" . $t_start . "). " .
+                    "Simulation won't run." . 
+                    "\nPlease check the BNGL file to make sure you didn't use a parameter as an argument value in the simulate action.");
         }
         
         if (defined $params->{n_steps}){
