@@ -2290,31 +2290,10 @@ sub findMap
 	            #printf "Component %s changed state from %s to %s\n", $pR, $stateR, $stateP;
 				push @{$rr->CompStateChange}, [ ($pR, $stateR, $stateP) ];
 			}
-		}
-	}
-	
-	## AS-2022
-	# Disallow wildcard breaking
-	foreach my $imR ( 0 .. $#{$rg->Molecules} )
-	{
-		my $imP = $map->MapF->{$imR};
-		next unless ( $imP >= 0 );
-		
-		# grab components
-		my $componentsR = $rg->Molecules->[$imR]->Components;
-		my $componentsP = $pg->Molecules->[$imP]->Components;
-		
-		my $wildcard_cntR = 0;
-		my $wildcard_cntP = 0;
-		# loop over components
-		foreach my $icR ( 0 .. $#{$componentsR} )
-		{   
-		    # get product component index
-			my ( $imP, $icP ) = split (/\./, $map->MapF->{"$imR.$icR"});
 
-            # Get reactant and product edge
-			# as above, we assume that the wildcard is the only
-			# possible edge for a component
+			# AS-2022
+			# Get reactant and product edge as stated above, we assume that the wildcard is the only
+			# possible edge for a component. This should be enforced somewhere else. 
             my $edgeR = $componentsR->[$icR]->Edges->[0];
 			my $edgeP = $componentsP->[$icP]->Edges->[0];
 
@@ -2329,10 +2308,9 @@ sub findMap
 				          );
 				}
 			}
-			
+			# AS-2022
 		}
 	}
-	## AS-2022
 	
     # Compartment changes:
     #
