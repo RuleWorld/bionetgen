@@ -4,7 +4,7 @@ description: Web pages for the BioNetGen website.
 # url: "https://bionetgen.org"
 
 # overall theme options
-theme: just-the-docs
+theme: "just-the-docs"
   # - jekyll-feed
 # remote_theme: just-the-docs/just-the-docs
 color_scheme: dark # options: 'light','dark', or custom scheme in '_sass/custom_themes/'
