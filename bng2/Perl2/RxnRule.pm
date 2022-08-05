@@ -2292,8 +2292,48 @@ sub findMap
 			}
 		}
 	}
+	
+	## AS-2022
+	# Disallow wildcard breaking
+	foreach my $imR ( 0 .. $#{$rg->Molecules} )
+	{
+		my $imP = $map->MapF->{$imR};
+		next unless ( $imP >= 0 );
+		
+		# grab components
+		my $componentsR = $rg->Molecules->[$imR]->Components;
+		my $componentsP = $pg->Molecules->[$imP]->Components;
+		
+		my $wildcard_cntR = 0;
+		my $wildcard_cntP = 0;
+		# loop over components
+		foreach my $icR ( 0 .. $#{$componentsR} )
+		{   
+		    # get product component index
+			my ( $imP, $icP ) = split (/\./, $map->MapF->{"$imR.$icR"});
 
+            # Get reactant and product edge
+			# as above, we assume that the wildcard is the only
+			# possible edge for a component
+            my $edgeR = $componentsR->[$icR]->Edges->[0];
+			my $edgeP = $componentsP->[$icP]->Edges->[0];
 
+			if ( defined $edgeR && $edgeR eq "+" ) {
+				if ( ! defined $edgeP || $edgeR ne $edgeP ) {
+					# one component is wildcard and the corresponding
+					# one isn't, breaking of wildcard bonds is not allowed
+					print "\n";
+					exit_error( "Found illegal wildcard bond breaking in a rule.\n"
+					        ."A wildcard bond in reactants doesn't have a corresponding wildcard bond in products",
+					        $rr->toString()
+				          );
+				}
+			}
+			
+		}
+	}
+	## AS-2022
+	
     # Compartment changes:
     #
     # There are two types of compartment changes.
