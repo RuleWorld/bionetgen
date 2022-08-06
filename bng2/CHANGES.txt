@@ -2,6 +2,18 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+
+== BioNetGen-2.8.4==
+'''''2022 June 22'''''
+
+== Minor changes ==
+* Bugfix to issue #174 where observables of the form `A==N.B==M` were accepted but incorrectly parsed. 
+These observables are no longer accepted and will produce an error. 
+* Bugfix to issue #180 where wildcard bonds in products could be broken, e.g. `A(b!+) -> A(b) + B(a)`. 
+This will now be detected, cause an error and quit. 
+* Bugfix to issue #189 where negative rate constants were accepted without warning. Rate constants 
+will be evaluated and if they are negative, they will produce a warning but won't quit. 
+
 == BioNetGen-2.8.3==
 '''''2022 June 22'''''
 
