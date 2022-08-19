@@ -16,7 +16,7 @@ search_enabled: true
 aux_links:
   "Visit RuleWorld on GitHub!":
     - "https://github.com/RuleWorld"
-aux_links_new_tab: true
+aux_links_new_tab: true # opens auxiliary link in new tab
 
 # username options
 twitter_username: bionetgen
