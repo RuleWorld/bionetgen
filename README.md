@@ -1,1 +1,1 @@
-Web pages for the the BioNetGen web site.
+Web pages for the the [BioNetGen web site](bionetgen.org).

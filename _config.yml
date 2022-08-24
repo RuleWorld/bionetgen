@@ -1,21 +1,28 @@
+# website options
 title: BioNetGen
-Description: Web pages for the BioNetGen website.
+description: Web pages for the BioNetGen website.
 # url: "https://bionetgen.org"
 
-# overall theme options
-remote_theme: just-the-docs/just-the-docs
-color_scheme: dark # options: 'light' or 'dark'
+# overall theme options - use either theme or remote_theme, but not both
+# theme: "just-the-docs"
+  # - jekyll-feed
+remote_theme: just-the-docs/just-the-docs@v0.4.0.rc1
+color_scheme: dark # options: 'light','dark', or custom scheme in '_sass/custom_themes/'
 
 # search options
 search_enabled: true
+search:
+  rel_url: false # "false" removes relative URLs from search results
 
 # auxiliary links options (top right corner of each page)
 aux_links:
   "Visit RuleWorld on GitHub!":
     - "https://github.com/RuleWorld"
-aux_links_new_tab: true
+aux_links_new_tab: true # opens auxiliary link in new tab
 
+# username options
 twitter_username: bionetgen
+# github_username: "RuleWorld?"
 
 # Google Analytics Tracking (optional)
 # e.g, UA-1234567-89
@@ -25,3 +32,23 @@ twitter_username: bionetgen
 # footer content
 back_to_top: true
 back_to_top_text: "Back to top"
+
+# Exclude from processing.
+# The following items will not be processed, by default.
+# Any item listed under the `exclude:` key here will be automatically added to
+# the internal "default list".
+#
+# Excluded items can be processed by explicitly listing the directories or
+# their entries' file path in the `include:` list.
+#
+# exclude:
+#   - .sass-cache/
+#   - .jekyll-cache/
+#   - gemfiles/
+#   - Gemfile
+#   - Gemfile.lock
+#   - node_modules/
+#   - vendor/bundle/
+#   - vendor/cache/
+#   - vendor/gems/
+#   - vendor/ruby/
