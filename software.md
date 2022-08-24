@@ -11,6 +11,7 @@ nav_order: 2
 This page links to other software that use BioNetGen code or BNGL-formatted models. *Note: This list is a work in progress and may not be complete.*
 
 ## Software
+<!-- DON'T ADD ANOTHER PIPE (" | ") AT THE END; adds anextra column for some reason -->
 
 | Software | Description 
 | -------- | ----------- 
@@ -22,6 +23,7 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 | [ML-Rules](https://git.informatik.uni-rostock.de/mosi/mlrules2) | Multi-level rule-based modeling formalism for modeling biochemical reaction networks
 | [NFsim](http://michaelsneddon.net/nfsim/) | Biochemical reaction simulator designed to handle large numbers of possible molecular interactions or states; uses BNGL for model specification
 | Parts & Pools | Employs BioNetGen to help design synthetic gene circuits <!-- Can't find a suitable link or download site -->
+| [Pleione](https://pleione.readthedocs.io/en/latest/) | Provides methods for parameterizing models written in BNGL or *kappa*
 | [PyBioNetFit](https://bionetfit.nau.edu/) | Provides a suite of algorithms for parameterizing models specified in BNGL or SBML
 | [PySB](https://pysb.org/) | Allows for building models of biochemical systems as Python programs; internally translates Python code into BNGL or Kappa rules
 | [RuleDSD](https://aaltodoc.aalto.fi/handle/123456789/43847) | Converts a DNA Strand Displacement (DSD) model into BNGL, then uses [PySB](https://pysb.org/) to perform simulation and analysis
