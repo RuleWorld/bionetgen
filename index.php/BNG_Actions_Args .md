@@ -3,6 +3,7 @@ title: Actions and Arguments
 layout: default
 permalink: index.php/BNG_Actions_Args
 nav_exclude: true
+search_exclude: true
 ---
 
 # Actions and Arguments

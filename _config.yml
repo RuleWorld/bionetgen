@@ -11,6 +11,7 @@ color_scheme: dark # options: 'light','dark', or custom scheme in '_sass/custom_
 
 # search options
 search_enabled: true
+search.rel_url: false # keeps relative URLs out of search results
 
 # auxiliary links options (top right corner of each page)
 aux_links:
