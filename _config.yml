@@ -3,10 +3,10 @@ title: BioNetGen
 description: Web pages for the BioNetGen website.
 # url: "https://bionetgen.org"
 
-# overall theme options
-theme: just-the-docs
+# overall theme options - use either theme or remote_theme, but not both
+# theme: "just-the-docs"
   # - jekyll-feed
-# remote_theme: just-the-docs/just-the-docs
+remote_theme: just-the-docs/just-the-docs@v0.4.0.rc1
 color_scheme: dark # options: 'light','dark', or custom scheme in '_sass/custom_themes/'
 
 # search options
