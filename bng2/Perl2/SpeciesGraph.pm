@@ -275,12 +275,18 @@ sub readString
 		}
 		elsif ( $string_left =~ s/^(=|==|<|<=|>|>=)(\d+)// )
 		{   # Quantifier
-			if ( $string_left =~ s/(=|==|<|<=|>|>=)(\d+)// ) {
-				return "Can't have multiple quantifiers in pattern."; 
-			}
 			my $op = $1;
 			if ( $op eq '=' ) {  $op = '=='  }
 			$sg->Quantifier( $op . $2 );
+			# AS2023 - we need to check if we have multiple quantifiers in the pattern
+			if (not $string_left =~ /^(\s|,)/ ) {
+				# AS2023 - this means what we have left doesn't start with a space
+				# or a "," meaning that this is not a properly separated pattern
+				if ( $string_left =~ s/(=|==|<|<=|>|>=)(\d+)// ) {
+					return "Can't have multiple quantifiers in pattern."; 
+				}
+			}
+			
 			if ($is_species) {  return "Quantifier not allowed in species";  }
 		}
 		elsif ( $string_left =~ s/^[{]// )
