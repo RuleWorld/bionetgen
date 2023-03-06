@@ -2,6 +2,13 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.8.5==
+'''''2023 March '''''
+
+== Minor changes ==
+* Bugfix: fix to issue #174 was causing multiple patterns with quantifiers to fail incorrectly. Multiple
+patterns with quantifiers are now correctly parsed with spaces or commas in between but multiple quantifiers
+within the same pattern is correctly caught and errors out. 
 
 == BioNetGen-2.8.4==
 '''''2022 June 22'''''
