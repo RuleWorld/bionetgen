@@ -6,6 +6,7 @@ https://github.com/RuleWorld/bionetgen/
 '''''2023 March '''''
 
 == Minor changes ==
+* Updated underlying NFsim version to 1.14.0, see [here](https://github.com/RuleWorld/nfsim/releases/tag/v1.14) for a change list.
 * Bugfix: fix to issue #174 was causing multiple patterns with quantifiers to fail incorrectly. Multiple
 patterns with quantifiers are now correctly parsed with spaces or commas in between but multiple quantifiers
 within the same pattern is correctly caught and errors out. 
