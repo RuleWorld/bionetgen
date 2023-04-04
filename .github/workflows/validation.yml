@@ -97,6 +97,8 @@ jobs:
         run: |
           export _BNGPATH=$PWD
           cd Network3
+          tar xvfz ../libsource/cvode-2.6.0.tar.gz
+          tar xvfz ../libsource/muparser_v2_2_4.tar.gz
           autoreconf --no-recursive --install
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
