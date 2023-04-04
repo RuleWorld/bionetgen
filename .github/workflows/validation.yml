@@ -53,21 +53,25 @@ jobs:
         with:
           submodules: recursive
       # Windows setup
-      - name: Setup MSYS2
-        if: startsWith(matrix.config.os, 'windows')
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: mingw-w64-x86_64-gcc autoconf automake dos2unix libtool
+      # - name: Setup MSYS2
+      #   if: startsWith(matrix.config.os, 'windows')
+      #   uses: msys2/setup-msys2@v2
+      #   with:
+      #     msystem: MINGW64
+      #     update: true
+      #     install: mingw-w64-x86_64-gcc autoconf automake dos2unix libtool
       - name: Setup ninja on windows
         if: startsWith(matrix.config.os, 'windows') 
         uses: seanmiddleditch/gha-setup-ninja@v3
-      - name: Untar libs
+      - name: Setup windows and untar libs
         if: startsWith(matrix.config.os, 'windows')
         working-directory: ./bng2
+        shell: bash
         run: |
+          pacman -S autotools
           cd Network3
+          mkdir m4
+          dos2unix configure.ac Makefile.am Makefile.cmake
           tar xvfz ../libsource/cvode-2.6.0.tar.gz
           tar xvfz ../libsource/muparser_v2_2_4.tar.gz
       # Unix setup
@@ -109,8 +113,6 @@ jobs:
         run: |
           export _BNGPATH=$PWD
           cd Network3
-          mkdir m4
-          dos2unix configure.ac Makefile.am Makefile.cmake
           autoreconf --no-recursive --install
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
