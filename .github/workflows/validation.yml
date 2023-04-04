@@ -97,19 +97,22 @@ jobs:
         run: |
           make
       # Windows compilation
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          sudo: false
-      # - name: Make-network-windows
-      #   if: startsWith(matrix.config.name, 'windows') 
-      #   working-directory: ./bng2
-      #   run: |
-      #     export _BNGPATH=$PWD
-      #     cd Network3
-      #     autoreconf --no-recursive --install
-      #     ./configure --disable-shared --prefix=${_BNGPATH}
-      #     make
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     sudo: false
+      - name: Make-network-windows
+        if: startsWith(matrix.config.name, 'windows') 
+        working-directory: ./bng2
+          shell: msys2 {0}
+        run: |
+          export _BNGPATH=$PWD
+          cd Network3
+          mkdir m4
+          dos2unix configure.ac
+          autoreconf --no-recursive --install
+          ./configure --disable-shared --prefix=${_BNGPATH}
+          make
       - name: Make-nfsim-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
