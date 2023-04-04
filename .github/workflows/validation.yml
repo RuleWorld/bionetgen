@@ -17,57 +17,55 @@ jobs:
       fail-fast: false
       matrix:
         config: 
-          # - {
-          #   name: "windows",
-          #   os: windows-latest,
-          #   artifact: "windows_mingw.7z",
-          #   build_type: "Release",
-          #   cc: "gcc",
-          #   cxx: "g++",
-          #   archiver: "7z a",
-          #   generators: "Ninja"
-          # }
           - {
-            name: "linux",
-            os: ubuntu-latest,
-            artifact: "ubuntu_gcc.7z",
+            name: "windows",
+            os: windows-latest,
+            artifact: "bng_windows_mingw.7z",
             build_type: "Release",
             cc: "gcc",
             cxx: "g++",
             archiver: "7z a",
             generators: "Ninja"
           }
-          - {
-            name: "mac",
-            os: macos-latest,
-            artifact: "macos_clang.7z",
-            build_type: "Release",
-            cc: "clang",
-            cxx: "clang++",
-            archiver: "7za a",
-            generators: "Ninja"
-          }
+          # - {
+          #   name: "linux",
+          #   os: ubuntu-latest,
+          #   artifact: "bng_ubuntu_gcc.7z",
+          #   build_type: "Release",
+          #   cc: "gcc",
+          #   cxx: "g++",
+          #   archiver: "7z a",
+          #   generators: "Ninja"
+          # }
+          # - {
+          #   name: "mac",
+          #   os: macos-latest,
+          #   artifact: "bng_macos_clang.7z",
+          #   build_type: "Release",
+          #   cc: "clang",
+          #   cxx: "clang++",
+          #   archiver: "7za a",
+          #   generators: "Ninja"
+          # }
     steps:
       - name: Checkout repo and submodules
         uses: actions/checkout@v2
         with:
           submodules: recursive
-      # - name: Setup MSYS2
-      #   uses: msys2/setup-msys2@v2
-      #   with:
-      #     msystem: MINGW64
-      #     update: true
-      #     install: mingw-w64-x86_64-gcc autoconf automake
+      - name: Setup MSYS2
+        if: startsWith(matrix.config.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc autoconf automake
+      - name: Setup ninja on windows
+        if: startsWith(matrix.config.os, 'windows') 
+        uses: seanmiddleditch/gha-setup-ninja@v3
       - name: Print env
         run: |
           echo github.event.action: ${{ github.event.action }}
           echo github.event_name: ${{ github.event_name }}
-      # - name: Install dependencies on windows
-      #   if: startsWith(matrix.config.os, 'windows')
-      #   run: |
-      #     choco install ninja cmake
-      #     ninja --version
-      #     cmake --version
       - name: Install dependencies on ubuntu
         if: startsWith(matrix.config.name, 'linux')
         run: |
@@ -92,30 +90,29 @@ jobs:
         working-directory: ./bng2/Validate
         run: |
           perl validate_examples.pl
-        
       # For windows
-      # - name: Make-network-windows
-      #   if: startsWith(matrix.config.name, 'windows') 
-      #   working-directory: ./bng2
-      #   shell: msys2 {0}
-      #   run: |
-      #     mkdir m4
-      #     export _BNGPATH=$PWD
-      #     cd Network3
-      #     autoreconf --no-recursive --install
-      #     ./configure --disable-shared --prefix=${_BNGPATH}
-      #     make
-      # - name: Make-nfsim-windows
-      #   if: startsWith(matrix.config.name, 'windows') 
-      #   working-directory: ./bng2
-      #   shell: bash
-      #   run: | 
-      #     cd nfsim_src
-      #     mkdir build
-      #     cd build
-      #     cmake -G "Ninja" ..
-      #     ninja
-      #     mv NFsim ../../bin/.
+      - name: Make-network-windows
+        if: startsWith(matrix.config.name, 'windows') 
+        working-directory: ./bng2
+        shell: msys2 {0}
+        run: |
+          mkdir m4
+          export _BNGPATH=$PWD
+          cd Network3
+          autoreconf --no-recursive --install
+          ./configure --disable-shared --prefix=${_BNGPATH}
+          make
+      - name: Make-nfsim-windows
+        if: startsWith(matrix.config.name, 'windows') 
+        working-directory: ./bng2
+        shell: bash
+        run: | 
+          cd nfsim_src
+          mkdir build
+          cd build
+          cmake -G "Ninja" ..
+          ninja
+          mv NFsim ../../bin/.
 
       # EXTRAS FOR LATER
       # - name: Pack
