@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/bionetgen/badge/?version=latest)](https://bionetgen.readthedocs.io/en/latest/?badge=latest)
+
 # BioNetGen
 
 ## Overview
