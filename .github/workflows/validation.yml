@@ -53,13 +53,13 @@ jobs:
         with:
           submodules: recursive
       # Windows setup
-      # - name: Setup MSYS2
-      #   if: startsWith(matrix.config.os, 'windows')
-      #   uses: msys2/setup-msys2@v2
-      #   with:
-      #     msystem: MINGW64
-      #     update: true
-      #     install: mingw-w64-x86_64-gcc autoconf automake dos2unix libtool
+      - name: Setup MSYS2
+        if: startsWith(matrix.config.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc autoconf automake dos2unix libtool
       - name: Setup ninja on windows
         if: startsWith(matrix.config.os, 'windows') 
         uses: seanmiddleditch/gha-setup-ninja@v3
