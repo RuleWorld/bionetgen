@@ -52,6 +52,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
+      # Windows setup
       - name: Setup MSYS2
         if: startsWith(matrix.config.os, 'windows')
         uses: msys2/setup-msys2@v2
@@ -62,10 +63,7 @@ jobs:
       - name: Setup ninja on windows
         if: startsWith(matrix.config.os, 'windows') 
         uses: seanmiddleditch/gha-setup-ninja@v3
-      - name: Print env
-        run: |
-          echo github.event.action: ${{ github.event.action }}
-          echo github.event_name: ${{ github.event_name }}
+      # Unix setup
       - name: Install dependencies on ubuntu
         if: startsWith(matrix.config.name, 'linux')
         run: |
@@ -79,18 +77,19 @@ jobs:
         run: |
           brew install cmake 
           cmake --version
+      # look at environment variables for debugging
+      - name: Print env
+        run: |
+          echo github.event.action: ${{ github.event.action }}
+          echo github.event_name: ${{ github.event_name }}
+      # Unix compilation
       - name: Make-unix
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
         shell: bash
         working-directory: ./bng2
         run: |
           make
-      - name: validate
-        shell: bash
-        working-directory: ./bng2/Validate
-        run: |
-          perl validate_examples.pl
-      # For windows
+      # Windows compilation
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
@@ -113,8 +112,13 @@ jobs:
           cmake -G "Ninja" ..
           ninja
           mv NFsim ../../bin/.
-
-      # EXTRAS FOR LATER
+      # now everything is compiled, we validate
+      - name: validate
+        shell: bash
+        working-directory: ./bng2/Validate
+        run: |
+          perl validate_examples.pl
+      # Now we prepare the bundles and upload the artifacts
       # - name: Pack
       #   shell: bash
       #   working-directory: instdir
