@@ -95,7 +95,6 @@ jobs:
         working-directory: ./bng2
         shell: msys2 {0}
         run: |
-          mkdir m4
           export _BNGPATH=$PWD
           cd Network3
           autoreconf --no-recursive --install
