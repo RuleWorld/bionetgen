@@ -53,14 +53,20 @@ jobs:
         with:
           submodules: recursive
       # Windows setup
+      - name: Setup MSYS2
+        if: startsWith(matrix.config.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc autoconf automake
       - name: Setup ninja on windows
         if: startsWith(matrix.config.os, 'windows') 
         uses: seanmiddleditch/gha-setup-ninja@v3
-      - name: Setup autotools on windows and untar libs
+      - name: Untar libs
         if: startsWith(matrix.config.os, 'windows')
         working-directory: ./bng2
         run: |
-          pacman -S autotools
           tar xvfz ../libsource/cvode-2.6.0.tar.gz
           tar xvfz ../libsource/muparser_v2_2_4.tar.gz
       # Unix setup
@@ -91,6 +97,7 @@ jobs:
           make
       # Windows compilation
       - name: Setup tmate session
+        shell: msys2 {0}
         uses: mxschmitt/action-tmate@v3
         with:
           sudo: false
