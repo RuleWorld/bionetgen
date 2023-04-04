@@ -97,7 +97,6 @@ jobs:
           make
       # Windows compilation
       - name: Setup tmate session
-        shell: msys2 {0}
         uses: mxschmitt/action-tmate@v3
         with:
           sudo: false
