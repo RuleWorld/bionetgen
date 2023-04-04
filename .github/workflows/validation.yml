@@ -53,13 +53,16 @@ jobs:
         with:
           submodules: recursive
       # Windows setup
-      - name: Install Cygwin
-        uses: egor-tensin/setup-cygwin@v4.0.1
-        with:
-          packages: cmake gcc-g++
       - name: Setup ninja on windows
         if: startsWith(matrix.config.os, 'windows') 
         uses: seanmiddleditch/gha-setup-ninja@v3
+      - name: Setup autotools on windows and untar libs
+        if: startsWith(matrix.config.os, 'windows')
+        working-directory: ./bng2
+        run: |
+          pacman -S autotools
+          tar xvfz ../libsource/cvode-2.6.0.tar.gz
+          tar xvfz ../libsource/muparser_v2_2_4.tar.gz
       # Unix setup
       - name: Install dependencies on ubuntu
         if: startsWith(matrix.config.name, 'linux')
@@ -94,12 +97,9 @@ jobs:
       # - name: Make-network-windows
       #   if: startsWith(matrix.config.name, 'windows') 
       #   working-directory: ./bng2
-      #   shell: msys2 {0}
       #   run: |
       #     export _BNGPATH=$PWD
       #     cd Network3
-      #     tar xvfz ../libsource/cvode-2.6.0.tar.gz
-      #     tar xvfz ../libsource/muparser_v2_2_4.tar.gz
       #     autoreconf --no-recursive --install
       #     ./configure --disable-shared --prefix=${_BNGPATH}
       #     make
