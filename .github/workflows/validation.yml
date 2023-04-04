@@ -53,13 +53,10 @@ jobs:
         with:
           submodules: recursive
       # Windows setup
-      - name: Setup MSYS2
-        if: startsWith(matrix.config.os, 'windows')
-        uses: msys2/setup-msys2@v2
+      - name: Install Cygwin
+        uses: egor-tensin/setup-cygwin@v4.0.1
         with:
-          msystem: MINGW64
-          update: true
-          install: mingw-w64-x86_64-gcc autoconf automake
+          packages: cmake gcc-g++
       - name: Setup ninja on windows
         if: startsWith(matrix.config.os, 'windows') 
         uses: seanmiddleditch/gha-setup-ninja@v3
