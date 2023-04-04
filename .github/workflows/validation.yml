@@ -97,14 +97,14 @@ jobs:
         run: |
           make
       # Windows compilation
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          sudo: false
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     sudo: false
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
-        shell: msys2 {0}
+        # shell: msys2 {0}
         run: |
           export _BNGPATH=$PWD
           cd Network3
