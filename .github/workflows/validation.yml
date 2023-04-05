@@ -114,9 +114,9 @@ jobs:
       - name: Make-nfsim-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
-        shell: bash
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
         run: | 
-          cd nfsim_src
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src
           mkdir build
           cd build
           cmake -G "Ninja" ..
