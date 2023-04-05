@@ -60,6 +60,10 @@ jobs:
       # - name: Setup ninja on windows
       #   if: startsWith(matrix.config.os, 'windows') 
       #   uses: seanmiddleditch/gha-setup-ninja@v3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          sudo: false
       - name: Setup windows and untar libs
         if: startsWith(matrix.config.os, 'windows')
         working-directory: ./bng2
@@ -103,9 +107,9 @@ jobs:
       #     sudo: false
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
-        working-directory: ./bng2
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
         run: |
+          cd 
           export _BNGPATH=$PWD
           cd Network3
           autoreconf --no-recursive --install
