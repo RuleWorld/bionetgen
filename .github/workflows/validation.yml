@@ -53,13 +53,10 @@ jobs:
         with:
           submodules: recursive
       # Windows setup
-      - name: Setup MSYS2
-        if: startsWith(matrix.config.os, 'windows')
-        uses: msys2/setup-msys2@v2
+      - name: Set up Cygwin
+        uses: egor-tensin/setup-cygwin@v4
         with:
-          msystem: MINGW64
-          update: true
-          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-make make pkg-config autoconf automake dos2unix libtool
+          packages: cmake gcc-g++ autoconf automake libtool dos2unix pkg-config make
       # - name: Setup ninja on windows
       #   if: startsWith(matrix.config.os, 'windows') 
       #   uses: seanmiddleditch/gha-setup-ninja@v3
@@ -107,7 +104,6 @@ jobs:
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
-        shell: msys2 {0}
         # shell: bash
         run: |
           export _BNGPATH=$PWD
