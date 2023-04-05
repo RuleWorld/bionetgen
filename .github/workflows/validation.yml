@@ -60,10 +60,6 @@ jobs:
       # - name: Setup ninja on windows
       #   if: startsWith(matrix.config.os, 'windows') 
       #   uses: seanmiddleditch/gha-setup-ninja@v3
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          sudo: false
       - name: Setup windows and untar libs
         if: startsWith(matrix.config.os, 'windows')
         working-directory: ./bng2
