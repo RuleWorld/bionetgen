@@ -8,6 +8,10 @@ on:
     branches:
       - master
 
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
 jobs:
   build_and_validate:
     # The type of runner that the job will run on
@@ -110,15 +114,21 @@ jobs:
       - name: Make-nfsim-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
         run: | 
-          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src
+          echo $PWD
           mkdir build
           cd build
           cmake -G "Ninja" ..
           ls
           ninja
           cp NFsim ../../bin/.
+      - name: Make-nfsim-unix
+        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }} 
+        working-directory: ./bng2
+        run: | 
+          echo $PWD
+          cd nfsim_src
+          cmake --build ${{github.workspace}}/bng2/nfsim_src/build --config ${{env.BUILD_TYPE}}
       # now everything is compiled, we validate
       - name: validate
         shell: bash
