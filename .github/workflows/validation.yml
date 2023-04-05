@@ -59,10 +59,10 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: mingw-w64-x86_64-gcc autoconf automake dos2unix libtool
-      - name: Setup ninja on windows
-        if: startsWith(matrix.config.os, 'windows') 
-        uses: seanmiddleditch/gha-setup-ninja@v3
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-make autoconf automake dos2unix libtool
+      # - name: Setup ninja on windows
+      #   if: startsWith(matrix.config.os, 'windows') 
+      #   uses: seanmiddleditch/gha-setup-ninja@v3
       - name: Setup windows and untar libs
         if: startsWith(matrix.config.os, 'windows')
         working-directory: ./bng2
@@ -100,10 +100,10 @@ jobs:
         run: |
           make
       # Windows compilation
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          sudo: false
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     sudo: false
       - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
         working-directory: ./bng2
