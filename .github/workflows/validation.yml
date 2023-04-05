@@ -57,9 +57,9 @@ jobs:
         uses: egor-tensin/setup-cygwin@v4
         with:
           packages: cmake gcc-g++ autoconf automake libtool dos2unix pkg-config make
-      # - name: Setup ninja on windows
-      #   if: startsWith(matrix.config.os, 'windows') 
-      #   uses: seanmiddleditch/gha-setup-ninja@v3
+      - name: Setup ninja on windows
+        if: startsWith(matrix.config.os, 'windows') 
+        uses: seanmiddleditch/gha-setup-ninja@v3
       - name: Setup windows and untar libs
         if: startsWith(matrix.config.os, 'windows')
         working-directory: ./bng2
