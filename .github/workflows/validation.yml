@@ -63,10 +63,9 @@ jobs:
       - name: Setup windows and untar libs
         if: startsWith(matrix.config.os, 'windows')
         working-directory: ./bng2
-        shell: bash
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
         run: |
-          echo $PWD
-          ls
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Network3
           mkdir m4
           dos2unix configure.ac Makefile.am Makefile.cmake
           tar xvfz ../libsource/cvode-2.6.0.tar.gz
@@ -106,7 +105,7 @@ jobs:
         if: startsWith(matrix.config.name, 'windows') 
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
         run: |
-          cd /d/a/bionetgen/bionetgen/bng2
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2
           export _BNGPATH=$PWD
           cd Network3
           autoreconf --no-recursive --install
