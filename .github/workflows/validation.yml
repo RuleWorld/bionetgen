@@ -113,7 +113,9 @@ jobs:
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
           ls ../
-          ls ../bin
+          ls ../Network3
+          ls ../Network3/bin
+          ls ../Network3/build
           cp run_network.exe ../bin/.
 
       # - name: Make-nfsim-windows
