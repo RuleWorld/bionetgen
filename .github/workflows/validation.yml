@@ -112,7 +112,8 @@ jobs:
           autoreconf --no-recursive --install
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
-          ls
+          ls ../
+          ls ../bin
           cp run_network.exe ../bin/.
 
       # - name: Make-nfsim-windows
