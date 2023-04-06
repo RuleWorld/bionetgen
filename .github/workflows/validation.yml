@@ -179,7 +179,6 @@ jobs:
 
       - name: Archive windows bundle
         if: startsWith(matrix.config.name, 'windows')
-        working-directory: ./bng2
         uses: actions/upload-artifact@v3
         with:
           name: bng_bundle_${{ matrix.os }}
