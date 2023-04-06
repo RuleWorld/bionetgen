@@ -127,8 +127,8 @@ jobs:
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }} 
         working-directory: ./bng2
         run: | 
-          echo $PWD
-          cd nfsim_src
+          mkdir nfsim_src/build
+          cd nfsim_src/build
           cmake --build ${{github.workspace}}/bng2/nfsim_src/build --config ${{env.BUILD_TYPE}}
       # now everything is compiled, we validate
       # windows validation
@@ -145,25 +145,22 @@ jobs:
         working-directory: ./bng2/Validate
         run: |
           perl validate_examples.pl
-      # Now we prepare the bundles and upload the artifacts
-      # - name: Pack
-      #   shell: bash
-      #   working-directory: instdir
+            
+      # - name: Prepare unix bundle
+      #   if: matrix.os != 'windows-latest'
       #   run: |
-      #     ls -laR
-      #     ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
-      # - name: Upload
-      #   uses: actions/upload-artifact@v1
+      #     cd 
+      #     mkdir ${{github.workspace}}/bundle_${{ matrix.os }}
+      #     cp ${{github.workspace}}/build/NFsim ${{github.workspace}}/bundle_${{ matrix.os }}/.
+      # - name: Prepare windows bundle
+      #   if: matrix.os == 'windows-latest'
+      #   run: |
+      #     cd 
+      #     mkdir ${{github.workspace}}/bundle_${{ matrix.os }}
+      #     cp ${{github.workspace}}/build/NFsim.exe ${{github.workspace}}/bundle_${{ matrix.os }}/.        
+      #     cp ${{github.workspace}}/build/*.dll ${{github.workspace}}/bundle_${{ matrix.os }}/.
+      # - name: Archive compiled NFsim
+      #   uses: actions/upload-artifact@v3
       #   with:
-      #     path: ./${{ matrix.config.artifact }}
-      #     name: ${{ matrix.config.artifact }}
-      # - name: Upload release asset
-      #   if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ github.event.release.upload_url }}
-      #     asset_path: ./${{ matrix.config.artifact }}
-      #     asset_name: ${{ matrix.config.artifact }}.zip
-      #     asset_content_type: application/zip
+      #     name: NFsim_bin_${{ matrix.os }}
+      #     path: ${{github.workspace}}/bundle_${{ matrix.os }}

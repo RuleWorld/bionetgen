@@ -1110,6 +1110,7 @@ sub run_command
     # monitor output of child process
     while (my $line = <$child_out> )
     {   # relay to parent
+        print $line;
         print $parent_out $line;
     }
 
