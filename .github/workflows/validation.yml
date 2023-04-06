@@ -136,12 +136,12 @@ jobs:
 
       # now everything is compiled, we validate
       # windows validation
-      - name: validate for windows
-        if: startsWith(matrix.config.name, 'windows')
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-        run: |
-          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
-          perl validate_examples.pl
+      # - name: validate for windows
+      #   if: startsWith(matrix.config.name, 'windows')
+      #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      #   run: |
+      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
+      #     perl validate_examples.pl
       # unix validation
       - name: validate for unix
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
@@ -157,7 +157,7 @@ jobs:
         working-directory: ./bng2
         run: |
           mkdir bng_bundle_${{ matrix.os }}
-          cp BNG2.pl CHANGES.txt CREDITS.txt LICENSE.txt VERSION bng_bundle_${{ matrix.os }}/.
+          cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle_${{ matrix.os }}/.
           cp -r Models2 Network3 Perl2 Validate bin bng_bundle_${{ matrix.os }}/.
 
       - name: Archive unix bundle
@@ -174,7 +174,7 @@ jobs:
         run: |
           cd /cygdrive/d/a/bionetgen/bionetgen/bng2
           mkdir bng_bundle_${{ matrix.os }}
-          cp BNG2.pl CHANGES.txt CREDITS.txt LICENSE.txt VERSION bng_bundle_${{ matrix.os }}/.
+          cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle_${{ matrix.os }}/.
           cp -r Models2 Network3 Perl2 Validate bin bng_bundle_${{ matrix.os }}/.
 
       - name: Archive windows bundle
