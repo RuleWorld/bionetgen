@@ -112,10 +112,8 @@ jobs:
           autoreconf --no-recursive --install
           ./configure --disable-shared --prefix=${_BNGPATH}
           make
-          ls ../
-          ls ../Network3
-          ls ../Network3/bin
-          ls ../Network3/build
+          cd /cygdrive/d/a/bionetgen/
+          find . -name "run_network*"
           cp run_network.exe ../bin/.
 
       # - name: Make-nfsim-windows
