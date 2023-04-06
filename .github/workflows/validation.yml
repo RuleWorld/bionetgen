@@ -24,7 +24,7 @@ jobs:
           - {
             name: "windows",
             os: windows-latest,
-            artifact: "bng_windows_mingw.7z",
+            artifact: "bng_windows_cygwin.7z",
             build_type: "Release",
             cc: "gcc",
             cxx: "g++",
@@ -101,27 +101,27 @@ jobs:
         run: |
           make
       # Windows compilation
-      # - name: Make-network-windows
-      #   if: startsWith(matrix.config.name, 'windows') 
-      #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-      #   run: |
-      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2
-      #     export _BNGPATH=$PWD
-      #     cd Network3
-      #     autoreconf --no-recursive --install
-      #     ./configure --disable-shared --prefix=${_BNGPATH}
-      #     make
-      - name: Make-nfsim-windows
+      - name: Make-network-windows
         if: startsWith(matrix.config.name, 'windows') 
-        working-directory: ./bng2
-        run: | 
-          echo $PWD
-          mkdir build
-          cd build
-          cmake -G "Ninja" ..
-          ls
-          ninja
-          cp NFsim ../../bin/.
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+        run: |
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2
+          export _BNGPATH=$PWD
+          cd Network3
+          autoreconf --no-recursive --install
+          ./configure --disable-shared --prefix=${_BNGPATH}
+          make
+      # - name: Make-nfsim-windows
+      #   if: startsWith(matrix.config.name, 'windows') 
+      #   working-directory: ./bng2
+      #   run: | 
+      #     echo $PWD
+      #     mkdir build
+      #     cd build
+      #     cmake -G "Ninja" ..
+      #     ls
+      #     ninja
+      #     cp NFsim ../../bin/.
       - name: Make-nfsim-unix
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }} 
         working-directory: ./bng2
