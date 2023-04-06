@@ -31,26 +31,26 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-          # - {
-          #   name: "linux",
-          #   os: ubuntu-latest,
-          #   artifact: "bng_ubuntu_gcc.7z",
-          #   build_type: "Release",
-          #   cc: "gcc",
-          #   cxx: "g++",
-          #   archiver: "7z a",
-          #   generators: "Ninja"
-          # }
-          # - {
-          #   name: "mac",
-          #   os: macos-latest,
-          #   artifact: "bng_macos_clang.7z",
-          #   build_type: "Release",
-          #   cc: "clang",
-          #   cxx: "clang++",
-          #   archiver: "7za a",
-          #   generators: "Ninja"
-          # }
+          - {
+            name: "linux",
+            os: ubuntu-latest,
+            artifact: "bng_ubuntu_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+          - {
+            name: "mac",
+            os: macos-latest,
+            artifact: "bng_macos_clang.7z",
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
     steps:
       - name: Checkout repo and submodules
         uses: actions/checkout@v2
@@ -149,14 +149,47 @@ jobs:
         working-directory: ./bng2/Validate
         run: |
           perl validate_examples.pl
-            
-      # - name: Prepare unix bundle
-      #   if: matrix.os != 'windows-latest'
-      #   run: |
-      #     cd 
-      #     mkdir ${{github.workspace}}/bundle_${{ matrix.os }}
-      #     cp ${{github.workspace}}/build/NFsim ${{github.workspace}}/bundle_${{ matrix.os }}/.
+
+      # bundling everything
+      # unix first
+      - name: Prepare unix bundle
+        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+        working-directory: ./bng2
+        run: |
+          mkdir bng_bundle_${{ matrix.os }}
+          cp BNG2.pl CHANGES.txt CREDITS.txt LICENSE.txt VERSION bng_bundle_${{ matrix.os }}/.
+          cp -r Models2 Network3 Perl2 Validate bin bng_bundle_${{ matrix.os }}/.
+
+      - name: Archive unix bundle
+        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+        working-directory: ./bng2
+        uses: actions/upload-artifact@v3
+        with:
+          name: bng_bundle_${{ matrix.os }}
+          path: ${{github.workspace}}/bng_bundle_${{ matrix.os }}
+      
+      # windows next
+      - name: Prepare windows bundle
+        if: startsWith(matrix.config.name, 'windows')
+        working-directory: ./bng2
+        run: |
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2
+          mkdir bng_bundle_${{ matrix.os }}
+          cp BNG2.pl CHANGES.txt CREDITS.txt LICENSE.txt VERSION bng_bundle_${{ matrix.os }}/.
+          cp -r Models2 Network3 Perl2 Validate bin bng_bundle_${{ matrix.os }}/.
+
+      - name: Archive windows bundle
+        if: startsWith(matrix.config.name, 'windows')
+        working-directory: ./bng2
+        uses: actions/upload-artifact@v3
+        with:
+          name: bng_bundle_${{ matrix.os }}
+          path: /cygdrive/d/a/bionetgen/bionetgen/bng2/bng_bundle_${{ matrix.os }}
       # - name: Prepare windows bundle
+          # cp /cygdrive/c/cygwin64/bin/cygwin*dll  $vbase/bin
+          # cp /cygdrive/c/cygwin64/bin/cygstdc*dll $vbase/bin
+          # cp /cygdrive/c/cygwin64/bin/cygz*dll    $vbase/bin
+          # cp /cygdrive/c/cygwin64/bin/cyggcc*dll  $vbase/bin
       #   if: matrix.os == 'windows-latest'
       #   run: |
       #     cd 
