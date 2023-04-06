@@ -162,7 +162,6 @@ jobs:
 
       - name: Archive unix bundle
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
-        working-directory: ./bng2
         uses: actions/upload-artifact@v3
         with:
           name: bng_bundle_${{ matrix.os }}
