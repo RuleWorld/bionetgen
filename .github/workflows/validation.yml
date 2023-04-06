@@ -31,26 +31,26 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-          # - {
-          #   name: "linux",
-          #   os: ubuntu-latest,
-          #   artifact: "bng_ubuntu_gcc.7z",
-          #   build_type: "Release",
-          #   cc: "gcc",
-          #   cxx: "g++",
-          #   archiver: "7z a",
-          #   generators: "Ninja"
-          # }
-          # - {
-          #   name: "mac",
-          #   os: macos-latest,
-          #   artifact: "bng_macos_clang.7z",
-          #   build_type: "Release",
-          #   cc: "clang",
-          #   cxx: "clang++",
-          #   archiver: "7za a",
-          #   generators: "Ninja"
-          # }
+          - {
+            name: "linux",
+            os: ubuntu-latest,
+            artifact: "bng_ubuntu_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+          - {
+            name: "mac",
+            os: macos-latest,
+            artifact: "bng_macos_clang.7z",
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
     steps:
       - name: Checkout repo and submodules
         uses: actions/checkout@v2
@@ -116,8 +116,8 @@ jobs:
       #   working-directory: ./bng2
       #   run: | 
       #     echo $PWD
-      #     mkdir build
-      #     cd build
+      #     mkdir nfsim_src/build
+      #     cd nfsim_src/build
       #     cmake -G "Ninja" ..
       #     ls
       #     ninja
@@ -130,7 +130,15 @@ jobs:
           cd nfsim_src
           cmake --build ${{github.workspace}}/bng2/nfsim_src/build --config ${{env.BUILD_TYPE}}
       # now everything is compiled, we validate
+      # windows validation
       - name: validate
+        if: startsWith(matrix.config.name, 'windows')
+        run: |
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
+          perl validate_examples.pl
+      # unix validation
+      - name: validate
+        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
         shell: bash
         working-directory: ./bng2/Validate
         run: |
