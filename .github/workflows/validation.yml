@@ -31,26 +31,26 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-          - {
-            name: "linux",
-            os: ubuntu-latest,
-            artifact: "bng_ubuntu_gcc.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-          - {
-            name: "mac",
-            os: macos-latest,
-            artifact: "bng_macos_clang.7z",
-            build_type: "Release",
-            cc: "clang",
-            cxx: "clang++",
-            archiver: "7za a",
-            generators: "Ninja"
-          }
+          # - {
+          #   name: "linux",
+          #   os: ubuntu-latest,
+          #   artifact: "bng_ubuntu_gcc.7z",
+          #   build_type: "Release",
+          #   cc: "gcc",
+          #   cxx: "g++",
+          #   archiver: "7z a",
+          #   generators: "Ninja"
+          # }
+          # - {
+          #   name: "mac",
+          #   os: macos-latest,
+          #   artifact: "bng_macos_clang.7z",
+          #   build_type: "Release",
+          #   cc: "clang",
+          #   cxx: "clang++",
+          #   archiver: "7za a",
+          #   generators: "Ninja"
+          # }
     steps:
       - name: Checkout repo and submodules
         uses: actions/checkout@v2
@@ -115,17 +115,18 @@ jobs:
           mkdir /cygdrive/d/a/bionetgen/bionetgen/bng2/bin
           cp src/run_network.exe /cygdrive/d/a/bionetgen/bionetgen/bng2/bin/run_network.exe
 
-      # - name: Make-nfsim-windows
-      #   if: startsWith(matrix.config.name, 'windows') 
-      #   working-directory: ./bng2
-      #   run: | 
-      #     echo $PWD
-      #     mkdir nfsim_src/build
-      #     cd nfsim_src/build
-      #     cmake -G "Ninja" ..
-      #     ls
-      #     ninja
-      #     cp NFsim ../../bin/.
+      - name: Make-nfsim-windows
+        if: startsWith(matrix.config.name, 'windows') 
+        working-directory: ./bng2
+        run: | 
+          echo $PWD
+          mkdir nfsim_src/build
+          cd nfsim_src/build
+          cmake -G "Ninja" ..
+          ls
+          ninja
+          cp NFsim.exe ../../bin/.
+      
       # - name: Make-nfsim-unix
       #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }} 
       #   working-directory: ./bng2
@@ -142,6 +143,7 @@ jobs:
       #   run: |
       #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
       #     perl validate_examples.pl
+      
       # unix validation
       - name: validate for unix
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
@@ -164,7 +166,7 @@ jobs:
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
         uses: actions/upload-artifact@v3
         with:
-          name: bng_bundle_${{ matrix.os }}
+          name: bng_bundle_${{ matrix.config.name }}
           path: ${{github.workspace}}/bng2/bng_bundle
       
       # windows next
@@ -177,26 +179,14 @@ jobs:
           mkdir bng_bundle
           cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle/.
           cp -r Models2 Network3 Perl2 Validate bin bng_bundle/.
+          cp /cygdrive/c/cygwin64/bin/cygwin*dll  bng_bundle/bin/.
+          cp /cygdrive/c/cygwin64/bin/cygstdc*dll bng_bundle/bin/.
+          cp /cygdrive/c/cygwin64/bin/cygz*dll    bng_bundle/bin/.
+          cp /cygdrive/c/cygwin64/bin/cyggcc*dll  bng_bundle/bin/.
 
       - name: Archive windows bundle
         if: startsWith(matrix.config.name, 'windows')
         uses: actions/upload-artifact@v3
         with:
-          name: bng_bundle_${{ matrix.os }}
+          name: bng_bundle_${{ matrix.config.name }}
           path: /cygdrive/d/a/bionetgen/bionetgen/bng2/bng_bundle
-      # - name: Prepare windows bundle
-          # cp /cygdrive/c/cygwin64/bin/cygwin*dll  $vbase/bin
-          # cp /cygdrive/c/cygwin64/bin/cygstdc*dll $vbase/bin
-          # cp /cygdrive/c/cygwin64/bin/cygz*dll    $vbase/bin
-          # cp /cygdrive/c/cygwin64/bin/cyggcc*dll  $vbase/bin
-      #   if: matrix.os == 'windows-latest'
-      #   run: |
-      #     cd 
-      #     mkdir ${{github.workspace}}/bundle_${{ matrix.os }}
-      #     cp ${{github.workspace}}/build/NFsim.exe ${{github.workspace}}/bundle_${{ matrix.os }}/.        
-      #     cp ${{github.workspace}}/build/*.dll ${{github.workspace}}/bundle_${{ matrix.os }}/.
-      # - name: Archive compiled NFsim
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: NFsim_bin_${{ matrix.os }}
-      #     path: ${{github.workspace}}/bundle_${{ matrix.os }}
