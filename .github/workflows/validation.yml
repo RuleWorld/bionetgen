@@ -124,9 +124,7 @@ jobs:
           echo $PWD
           mkdir build
           cd build
-          ls
-          cmake --version
-          which cmake
+          find /cygdrive/. -name cmake*
           cmake -G "Ninja" ..
           ninja
           cp NFsim.exe ../../bin/.
