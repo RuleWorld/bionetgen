@@ -124,8 +124,10 @@ jobs:
           echo $PWD
           mkdir build
           cd build
-          cmake -G "Ninja" ..
           ls
+          cmake --version
+          which cmake
+          cmake -G "Ninja" ..
           ninja
           cp NFsim.exe ../../bin/.
       
