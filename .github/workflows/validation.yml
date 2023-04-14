@@ -121,11 +121,9 @@ jobs:
         working-directory: ./bng2
         run: |
           cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src 
-          echo $PWD
           mkdir build
           cd build
-          find /cygdrive/. -name cmake*
-          cmake -G "Ninja" ..
+          /cygdrive/c/tools/cygwin/bin/cmake.exe -G "Ninja" ..
           ninja
           cp NFsim.exe ../../bin/.
       
