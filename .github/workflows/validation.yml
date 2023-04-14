@@ -116,12 +116,14 @@ jobs:
           cp src/run_network.exe /cygdrive/d/a/bionetgen/bionetgen/bng2/bin/run_network.exe
 
       - name: Make-nfsim-windows
-        if: startsWith(matrix.config.name, 'windows') 
+        if: startsWith(matrix.config.name, 'windows')
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
         working-directory: ./bng2
-        run: | 
+        run: |
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src 
           echo $PWD
-          mkdir nfsim_src/build
-          cd nfsim_src/build
+          mkdir build
+          cd build
           cmake -G "Ninja" ..
           ls
           ninja
