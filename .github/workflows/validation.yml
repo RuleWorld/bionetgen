@@ -115,17 +115,17 @@ jobs:
           mkdir /cygdrive/d/a/bionetgen/bionetgen/bng2/bin
           cp src/run_network.exe /cygdrive/d/a/bionetgen/bionetgen/bng2/bin/run_network.exe
 
-      - name: Make-nfsim-windows
-        if: startsWith(matrix.config.name, 'windows')
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-        working-directory: ./bng2
-        run: |
-          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src 
-          mkdir build
-          cd build
-          /cygdrive/c/Program\ Files/CMake/bin/cmake.exe -G "Ninja" ..
-          ninja
-          cp NFsim.exe ../../bin/.
+      # - name: Make-nfsim-windows
+      #   if: startsWith(matrix.config.name, 'windows')
+      #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      #   working-directory: ./bng2
+      #   run: |
+      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src 
+      #     mkdir build
+      #     cd build
+      #     /cygdrive/c/Program\ Files/CMake/bin/cmake.exe -G "Ninja" ..
+      #     ninja
+      #     cp NFsim.exe ../../bin/.
       
       # - name: Make-nfsim-unix
       #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }} 
@@ -137,12 +137,12 @@ jobs:
 
       # now everything is compiled, we validate
       # windows validation
-      # - name: validate for windows
-      #   if: startsWith(matrix.config.name, 'windows')
-      #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-      #   run: |
-      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
-      #     perl validate_examples.pl
+      - name: validate for windows
+        if: startsWith(matrix.config.name, 'windows')
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+        run: |
+          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
+          perl validate_examples.pl
       
       # unix validation
       - name: validate for unix
