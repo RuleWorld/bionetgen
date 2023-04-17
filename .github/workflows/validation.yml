@@ -123,7 +123,7 @@ jobs:
           cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src 
           mkdir build
           cd build
-          /cygdrive/c/Program Files/CMake/bin/cmake.exe -G "Ninja" ..
+          /cygdrive/c/Program\ Files/CMake/bin/cmake.exe -G "Ninja" ..
           ninja
           cp NFsim.exe ../../bin/.
       
