@@ -176,9 +176,9 @@ jobs:
       # windows next
       - name: Prepare windows bundle
         if: startsWith(matrix.config.name, 'windows')
-        shell: bash
         run: |
-          cd /d/a/bionetgen/bionetgen/bng2
+          ls D:/
+          cd D:/a/bionetgen/bionetgen/bng2
           mkdir bng_bundle
           ls
           cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle/.
