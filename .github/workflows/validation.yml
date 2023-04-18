@@ -31,26 +31,26 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-          # - {
-          #   name: "linux",
-          #   os: ubuntu-latest,
-          #   artifact: "bng_ubuntu_gcc.7z",
-          #   build_type: "Release",
-          #   cc: "gcc",
-          #   cxx: "g++",
-          #   archiver: "7z a",
-          #   generators: "Ninja"
-          # }
-          # - {
-          #   name: "mac",
-          #   os: macos-latest,
-          #   artifact: "bng_macos_clang.7z",
-          #   build_type: "Release",
-          #   cc: "clang",
-          #   cxx: "clang++",
-          #   archiver: "7za a",
-          #   generators: "Ninja"
-          # }
+          - {
+            name: "linux",
+            os: ubuntu-latest,
+            artifact: "bng_ubuntu_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+          - {
+            name: "mac",
+            os: macos-latest,
+            artifact: "bng_macos_clang.7z",
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
     steps:
       - name: Checkout repo and submodules
         uses: actions/checkout@v2
@@ -161,13 +161,14 @@ jobs:
           mkdir bng_bundle
           cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle/.
           cp -r Models2 Network3 Perl2 Validate bin bng_bundle/.
+          tar cvf bng_bundle.tar bng_bundle
 
       - name: Archive unix bundle
         if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
         uses: actions/upload-artifact@v3
         with:
           name: bng_bundle_${{ matrix.config.name }}
-          path: ${{github.workspace}}/bng2/bng_bundle
+          path: ${{github.workspace}}/bng2/bng_bundle.tar
 
       # windows next
       - name: Prepare windows bundle
@@ -186,16 +187,12 @@ jobs:
           cp -r Perl2 bng_bundle/.
           cp -r Validate bng_bundle/.
           cp -r bin bng_bundle/.
-          tar cvfz bng_bundle.tar bng_bundle
+          tar cvf bng_bundle.tar bng_bundle
       # chmod -R a+r bng_bundle
       # cp /cygdrive/c/cygwin64/bin/cygwin*dll  bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cygstdc*dll bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cygz*dll    bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cyggcc*dll  bng_bundle/bin/.
-
-      # # debug via tmate
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
 
       - name: Archive windows bundle
         if: startsWith(matrix.config.name, 'windows')
@@ -203,3 +200,8 @@ jobs:
         with:
           name: bng_bundle_${{ matrix.config.name }}
           path: D:/a/bionetgen/bionetgen/bng2/bng_bundle.tar
+    
+      
+      # # debug via tmate
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
