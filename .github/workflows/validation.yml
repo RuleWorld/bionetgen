@@ -186,8 +186,7 @@ jobs:
           cp -r Perl2 bng_bundle/.
           cp -r Validate bng_bundle/.
           cp -r bin bng_bundle/.
-          chmod -R a+r bng_bundle
-          ls bng_bundle/
+      # chmod -R a+r bng_bundle
       # cp /cygdrive/c/cygwin64/bin/cygwin*dll  bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cygstdc*dll bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cygz*dll    bng_bundle/bin/.
