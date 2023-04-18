@@ -169,10 +169,13 @@ jobs:
           name: bng_bundle_${{ matrix.config.name }}
           path: ${{github.workspace}}/bng2/bng_bundle
       
+      # debug via tmate
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       # windows next
       - name: Prepare windows bundle
         if: startsWith(matrix.config.name, 'windows')
-        shell: bash
         run: |
           cd /cygdrive/d/a/bionetgen/bionetgen/bng2
           mkdir bng_bundle
