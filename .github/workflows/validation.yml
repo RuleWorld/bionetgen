@@ -169,10 +169,6 @@ jobs:
           name: bng_bundle_${{ matrix.config.name }}
           path: ${{github.workspace}}/bng2/bng_bundle
       
-      # # debug via tmate
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
-
       # windows next
       - name: Prepare windows bundle
         if: startsWith(matrix.config.name, 'windows')
@@ -188,6 +184,10 @@ jobs:
 # cp /cygdrive/c/cygwin64/bin/cygstdc*dll bng_bundle/bin/.
 # cp /cygdrive/c/cygwin64/bin/cygz*dll    bng_bundle/bin/.
 # cp /cygdrive/c/cygwin64/bin/cyggcc*dll  bng_bundle/bin/.
+
+      # debug via tmate
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Archive windows bundle
         if: startsWith(matrix.config.name, 'windows')
