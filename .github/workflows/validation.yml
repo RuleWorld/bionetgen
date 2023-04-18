@@ -186,19 +186,20 @@ jobs:
           cp -r Perl2 bng_bundle/.
           cp -r Validate bng_bundle/.
           cp -r bin bng_bundle/.
+          tar cvfz bng_bundle.tar bng_bundle
       # chmod -R a+r bng_bundle
       # cp /cygdrive/c/cygwin64/bin/cygwin*dll  bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cygstdc*dll bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cygz*dll    bng_bundle/bin/.
       # cp /cygdrive/c/cygwin64/bin/cyggcc*dll  bng_bundle/bin/.
 
-      # debug via tmate
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      # # debug via tmate
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: Archive windows bundle
         if: startsWith(matrix.config.name, 'windows')
         uses: actions/upload-artifact@v3
         with:
           name: bng_bundle_${{ matrix.config.name }}
-          path: D:/a/bionetgen/bionetgen/bng2/bng_bundle
+          path: D:/a/bionetgen/bionetgen/bng2/bng_bundle.tar
