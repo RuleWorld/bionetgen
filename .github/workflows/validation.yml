@@ -177,7 +177,7 @@ jobs:
       - name: Prepare windows bundle
         if: startsWith(matrix.config.name, 'windows')
         run: |
-          cd /cygdrive/d/a/bionetgen/bionetgen/bng2
+          cd /d/a/bionetgen/bionetgen/bng2
           mkdir bng_bundle
           ls
           cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle/.
@@ -194,4 +194,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: bng_bundle_${{ matrix.config.name }}
-          path: /cygdrive/d/a/bionetgen/bionetgen/bng2/bng_bundle
+          path: /d/a/bionetgen/bionetgen
