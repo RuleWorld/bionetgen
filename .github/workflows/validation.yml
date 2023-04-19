@@ -31,26 +31,26 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-          # - {
-          #   name: "linux",
-          #   os: ubuntu-latest,
-          #   artifact: "bng_ubuntu_gcc.7z",
-          #   build_type: "Release",
-          #   cc: "gcc",
-          #   cxx: "g++",
-          #   archiver: "7z a",
-          #   generators: "Ninja"
-          # }
-          # - {
-          #   name: "mac",
-          #   os: macos-latest,
-          #   artifact: "bng_macos_clang.7z",
-          #   build_type: "Release",
-          #   cc: "clang",
-          #   cxx: "clang++",
-          #   archiver: "7za a",
-          #   generators: "Ninja"
-          # }
+          - {
+            name: "linux",
+            os: ubuntu-latest,
+            artifact: "bng_ubuntu_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+          - {
+            name: "mac",
+            os: macos-latest,
+            artifact: "bng_macos_clang.7z",
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
     steps:
       - name: Checkout repo and submodules
         uses: actions/checkout@v2
