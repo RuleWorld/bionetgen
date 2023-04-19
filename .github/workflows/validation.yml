@@ -62,153 +62,147 @@ jobs:
         uses: egor-tensin/setup-cygwin@v4
         with:
           packages: cmake gcc-g++ autoconf automake libtool dos2unix pkg-config make
-      
-      # # find cygwin dlls
-      # - name: find cygwin
-      #   if: startsWith(matrix.config.name, 'windows')
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
+      # - name: Setup ninja on windows
+      #   if: startsWith(matrix.config.os, 'windows') 
+      #   uses: seanmiddleditch/gha-setup-ninja@v3
+      # - name: Setup windows and untar libs
+      #   if: startsWith(matrix.config.os, 'windows')
+      #   working-directory: ./bng2
+      #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       #   run: |
-      #     find / -name "cygwin*dll"
-      #     find / -name "cygstdc*dll"
-      #     find / -name "cygz*dll"
-      #     find / -name "cyggcc*dll"
+      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Network3
+      #     mkdir m4
+      #     dos2unix configure.ac Makefile.am Makefile.cmake
+      #     tar xvfz ../libsource/cvode-2.6.0.tar.gz
+      #     tar xvfz ../libsource/muparser_v2_2_4.tar.gz
+      # # Unix setup
+      # - name: Install dependencies on ubuntu
+      #   if: startsWith(matrix.config.name, 'linux')
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install cmake
+      #     cmake --version
+      #     gcc --version
+      # - name: Install dependencies on macos
+      #   if: startsWith(matrix.config.os, 'mac')
+      #   # also install p7zip if we are achiving
+      #   run: |
+      #     brew install cmake 
+      #     cmake --version
+      # # look at environment variables for debugging
+      # - name: Print env
+      #   run: |
+      #     echo github.event.action: ${{ github.event.action }}
+      #     echo github.event_name: ${{ github.event_name }}
+      # # Unix compilation
+      # - name: Make-unix
+      #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+      #   shell: bash
+      #   working-directory: ./bng2
+      #   run: |
+      #     make
+      # # Windows compilation
+      # - name: Make-network-windows
+      #   if: startsWith(matrix.config.name, 'windows') 
+      #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      #   run: |
+      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2
+      #     export _BNGPATH=$PWD
+      #     cd Network3
+      #     autoreconf --no-recursive --install
+      #     ./configure --disable-shared --prefix=${_BNGPATH}
+      #     make
+      #     mkdir /cygdrive/d/a/bionetgen/bionetgen/bng2/bin
+      #     cp src/run_network.exe /cygdrive/d/a/bionetgen/bionetgen/bng2/bin/run_network.exe
 
-      - name: Setup ninja on windows
-        if: startsWith(matrix.config.os, 'windows') 
-        uses: seanmiddleditch/gha-setup-ninja@v3
-      - name: Setup windows and untar libs
-        if: startsWith(matrix.config.os, 'windows')
-        working-directory: ./bng2
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-        run: |
-          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Network3
-          mkdir m4
-          dos2unix configure.ac Makefile.am Makefile.cmake
-          tar xvfz ../libsource/cvode-2.6.0.tar.gz
-          tar xvfz ../libsource/muparser_v2_2_4.tar.gz
-      # Unix setup
-      - name: Install dependencies on ubuntu
-        if: startsWith(matrix.config.name, 'linux')
-        run: |
-          sudo apt-get update
-          sudo apt-get install cmake
-          cmake --version
-          gcc --version
-      - name: Install dependencies on macos
-        if: startsWith(matrix.config.os, 'mac')
-        # also install p7zip if we are achiving
-        run: |
-          brew install cmake 
-          cmake --version
-      # look at environment variables for debugging
-      - name: Print env
-        run: |
-          echo github.event.action: ${{ github.event.action }}
-          echo github.event_name: ${{ github.event_name }}
-      # Unix compilation
-      - name: Make-unix
-        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
-        shell: bash
-        working-directory: ./bng2
-        run: |
-          make
-      # Windows compilation
-      - name: Make-network-windows
-        if: startsWith(matrix.config.name, 'windows') 
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-        run: |
-          cd /cygdrive/d/a/bionetgen/bionetgen/bng2
-          export _BNGPATH=$PWD
-          cd Network3
-          autoreconf --no-recursive --install
-          ./configure --disable-shared --prefix=${_BNGPATH}
-          make
-          mkdir /cygdrive/d/a/bionetgen/bionetgen/bng2/bin
-          cp src/run_network.exe /cygdrive/d/a/bionetgen/bionetgen/bng2/bin/run_network.exe
+      # # - name: Make-nfsim-windows
+      # #   if: startsWith(matrix.config.name, 'windows')
+      # #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      # #   working-directory: ./bng2
+      # #   run: |
+      # #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src 
+      # #     mkdir build
+      # #     cd build
+      # #     /cygdrive/c/Program\ Files/CMake/bin/cmake.exe -G "Ninja" ..
+      # #     ninja
+      # #     cp NFsim.exe ../../bin/.
+      
+      # # - name: Make-nfsim-unix
+      # #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }} 
+      # #   working-directory: ./bng2
+      # #   run: | 
+      # #     mkdir nfsim_src/build
+      # #     cd nfsim_src/build
+      # #     cmake --build ${{github.workspace}}/bng2/nfsim_src/build --config ${{env.BUILD_TYPE}}
 
-      # - name: Make-nfsim-windows
+      # # now everything is compiled, we validate
+      # # windows validation
+      # - name: validate for windows
       #   if: startsWith(matrix.config.name, 'windows')
       #   shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      #   run: |
+      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
+      #     perl validate_examples.pl
+      
+      # # unix validation
+      # - name: validate for unix
+      #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+      #   shell: bash
+      #   working-directory: ./bng2/Validate
+      #   run: |
+      #     perl validate_examples.pl
+
+      # # bundling everything
+      # # unix first
+      # - name: Prepare unix bundle
+      #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
       #   working-directory: ./bng2
       #   run: |
-      #     cd /cygdrive/d/a/bionetgen/bionetgen/bng2/nfsim_src 
-      #     mkdir build
-      #     cd build
-      #     /cygdrive/c/Program\ Files/CMake/bin/cmake.exe -G "Ninja" ..
-      #     ninja
-      #     cp NFsim.exe ../../bin/.
+      #     mkdir bng_bundle
+      #     cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle/.
+      #     cp -r Models2 Network3 Perl2 Validate bin bng_bundle/.
+      #     tar cvf bng_bundle.tar bng_bundle
+
+      # - name: Archive unix bundle
+      #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: bng_bundle_${{ matrix.config.name }}
+      #     path: ${{github.workspace}}/bng2/bng_bundle.tar
+
+      # # windows next
+      # - name: Prepare windows bundle
+      #   if: startsWith(matrix.config.name, 'windows')
+      #   run: |
+      #     cd D:/a/bionetgen/bionetgen/bng2
+      #     mkdir bng_bundle
+      #     cp BNG2.pl bng_bundle/.
+      #     cp CHANGES.txt bng_bundle/.
+      #     cp CREDITS.txt bng_bundle/.
+      #     cp ../LICENSE bng_bundle/.
+      #     cp VERSION bng_bundle/.
+      #     cp VERSION bng_bundle/.
+      #     cp -r Models2 bng_bundle/.
+      #     cp -r Network3 bng_bundle/.
+      #     cp -r Perl2 bng_bundle/.
+      #     cp -r Validate bng_bundle/.
+      #     cp -r bin bng_bundle/.
+      #     cp /usr/bin/cygwin*dll  bng_bundle/bin/. 
+      #     cp /usr/bin/cygstdc*dll bng_bundle/bin/. 
+      #     cp /usr/bin/cygz*dll    bng_bundle/bin/. 
+      #     cp /usr/bin/cyggcc*dll  bng_bundle/bin/. 
+      #     tar cvf bng_bundle.tar bng_bundle
       
-      # - name: Make-nfsim-unix
-      #   if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }} 
-      #   working-directory: ./bng2
-      #   run: | 
-      #     mkdir nfsim_src/build
-      #     cd nfsim_src/build
-      #     cmake --build ${{github.workspace}}/bng2/nfsim_src/build --config ${{env.BUILD_TYPE}}
+      # # needed files: cygwin1.dll,cygstdc++-6.dll,cygz.dll,cyggcc_s-seh-1.dll
+      # # potentially we also need 1) libgcc_s_dw2-1.dll, 2) libstdc++-6.dll 
 
-      # now everything is compiled, we validate
-      # windows validation
-      - name: validate for windows
-        if: startsWith(matrix.config.name, 'windows')
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-        run: |
-          cd /cygdrive/d/a/bionetgen/bionetgen/bng2/Validate
-          perl validate_examples.pl
-      
-      # unix validation
-      - name: validate for unix
-        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
-        shell: bash
-        working-directory: ./bng2/Validate
-        run: |
-          perl validate_examples.pl
-
-      # bundling everything
-      # unix first
-      - name: Prepare unix bundle
-        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
-        working-directory: ./bng2
-        run: |
-          mkdir bng_bundle
-          cp BNG2.pl CHANGES.txt CREDITS.txt ../LICENSE VERSION bng_bundle/.
-          cp -r Models2 Network3 Perl2 Validate bin bng_bundle/.
-          tar cvf bng_bundle.tar bng_bundle
-
-      - name: Archive unix bundle
-        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: bng_bundle_${{ matrix.config.name }}
-          path: ${{github.workspace}}/bng2/bng_bundle.tar
-
-      # windows next
-      - name: Prepare windows bundle
-        if: startsWith(matrix.config.name, 'windows')
-        run: |
-          cd D:/a/bionetgen/bionetgen/bng2
-          mkdir bng_bundle
-          cp BNG2.pl bng_bundle/.
-          cp CHANGES.txt bng_bundle/.
-          cp CREDITS.txt bng_bundle/.
-          cp ../LICENSE bng_bundle/.
-          cp VERSION bng_bundle/.
-          cp VERSION bng_bundle/.
-          cp -r Models2 bng_bundle/.
-          cp -r Network3 bng_bundle/.
-          cp -r Perl2 bng_bundle/.
-          cp -r Validate bng_bundle/.
-          cp -r bin bng_bundle/.
-          cp /usr/bin/cygwin*dll  bng_bundle/bin/. 
-          cp /usr/bin/cygstdc*dll bng_bundle/bin/. 
-          cp /usr/bin/cygz*dll    bng_bundle/bin/. 
-          cp /usr/bin/cyggcc*dll  bng_bundle/bin/. 
-          tar cvf bng_bundle.tar bng_bundle
-      
-      # needed files: cygwin1.dll,cygstdc++-6.dll,cygz.dll,cyggcc_s-seh-1.dll
-      # potentially we also need 1) libgcc_s_dw2-1.dll, 2) libstdc++-6.dll 
-
-      - name: Archive windows bundle
-        if: startsWith(matrix.config.name, 'windows')
-        uses: actions/upload-artifact@v3
-        with:
-          name: bng_bundle_${{ matrix.config.name }}
-          path: D:/a/bionetgen/bionetgen/bng2/bng_bundle.tar
+      # - name: Archive windows bundle
+      #   if: startsWith(matrix.config.name, 'windows')
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: bng_bundle_${{ matrix.config.name }}
+      #     path: D:/a/bionetgen/bionetgen/bng2/bng_bundle.tar
