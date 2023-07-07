@@ -12,10 +12,8 @@ This page links to publications that have applied a BioNetGen rule-based model t
 
 Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
 
-## Preprints
-* Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.biorxiv.org/content/10.1101/2022.01.30.478391v1.full) *bioRxiv*
-
 ## 2022
+* Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.biorxiv.org/content/10.1101/2022.01.30.478391) *bioRxiv*
 * Nosbisch, JL et al. [A kinetic model of phospholipase C-γ1 linking structure-based insights to dynamics of enzyme autoinhibition and activation.](https://www.sciencedirect.com/science/article/pii/S002192582200326X) *J. Biol. Chem.*
 
 ## 2021
