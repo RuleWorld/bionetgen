@@ -15,6 +15,9 @@ Help keep this page current by sending your publications to our [email](mailto:b
 ## Preprints
 * Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.biorxiv.org/content/10.1101/2022.01.30.478391v1.full) *bioRxiv*
 
+## 2022
+* Nosbisch, JL et al. [A kinetic model of phospholipase C-γ1 linking structure-based insights to dynamics of enzyme autoinhibition and activation.](https://www.sciencedirect.com/science/article/pii/S002192582200326X) *J. Biol. Chem.*
+
 ## 2021
 * McMillan D et al. [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF.](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
 * Zhang Y et al. [A systems biology model of junctional localization and downstream signaling of the Ang-Tie signaling pathway.](https://pubmed.ncbi.nlm.nih.gov/34417472/) *NPJ Syst. Biol. Appl.*
