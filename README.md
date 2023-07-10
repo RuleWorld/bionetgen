@@ -15,7 +15,7 @@ parser is currently being developed in ANTLR.
 
 Please note that this is the command line interface to BioNetGen and if you are 
 new to using BioNetGen we recommend that you try our new 
-[VScode extension for BioNetGen](https://bng-vscode-extension.readthedocs.io/en/latest/#), 
+[VScode extension for BioNetGen](https://bng-vs-code-extension.readthedocs.io/en/latest/#), 
 which provides a full-featured interface for developing, simulating, and analyzing rule-based models.
 The new VScode interface replicates most of the features of our previous development environment, 
 [RuleBender](https://github.com/RuleWorld/rulebender), which is still available but no longer being actively developed. 
