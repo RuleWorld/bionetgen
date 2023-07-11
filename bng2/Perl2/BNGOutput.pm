@@ -1032,10 +1032,10 @@ sub writeSBML
         else{
         		$compartmentString = "cell";
         }
-    printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialAmount=\"%.8g\"",
-    # printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialConcentration=\"%.8g\"",
-		                                                                $spec->Index, $compartmentString, $conc;
-
+        
+        printf $SBML "      <species id=\"S%d\" compartment=\"%s\" initialAmount=\"%.8g\"", 
+                                    $spec->Index, $compartmentString, $conc;
+        
 		if ( $spec->SpeciesGraph->Fixed )
         {   printf $SBML " boundaryCondition=\"true\"";   }
 
@@ -1090,24 +1090,40 @@ sub writeSBML
 	
 
 	# 3.5. Initial assignments (for dependent variables)
-	if ($plist->countType('ConstantExpression')){
-	    print $SBML "    <listOfInitialAssignments>\n";
+    print $SBML "    <listOfInitialAssignments>\n";
+    print $SBML "      <!-- All initial values -->\n";
+    foreach my $spec ( @{$model->SpeciesList->Array} )
+	{
+		# we want this for all species
+        printf $SBML "      <initialAssignment symbol=\"S%i\">\n", $spec->Index;
+        if (BNGUtils::isReal($spec->Concentration)) {
+            print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+            printf $SBML "          <ci> \"%.8g\" </ci>\n", $spec->Concentration;
+            print $SBML "        </math>\n";
+        } else {
+            print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+            printf $SBML "          <ci> %s </ci>\n", $spec->Concentration;
+            print $SBML "        </math>\n";
+            # printf $SBML $spec->Concentration->toMathMLString( $plist, "        " );
+        }
+        # printf $SBML $spec->$conc->toMathMLString( $plist, "        " );
+        print $SBML "      </initialAssignment>\n";
+    }
+    # we need to not do this IF we are replicating work
+    # that's already done above. We'll test later
+    if ($plist->countType('ConstantExpression')){
 		print $SBML "      <!-- Dependent variables -->\n";
 		foreach my $param ( @{$plist->Array} )
 	    {
-	#		next if ( $param->Expr->Type eq 'NUM' );
 			next unless ( $param->Type eq 'ConstantExpression');
 			printf $SBML "      <initialAssignment symbol=\"%s\">\n", $param->Name;
-	        #print  $SBML "        <notes>\n";
-	        #print  $SBML "          <xhtml:p>\n";
-	        #printf $SBML "            %s=%s\n", $param->Name,$param->toString($plist);
-	        #print  $SBML "          </xhtml:p>\n";
-	        #print  $SBML "        </notes>\n";
 			printf $SBML $param->toMathMLString( $plist, "        " );
 			print $SBML "      </initialAssignment>\n";
 		}
-		print $SBML "    </listOfInitialAssignments>\n";
 	}
+    print $SBML "    </listOfInitialAssignments>\n";
+
+	
 	
 	# 4. Assignment rules (for observables and functions)
 	if ( @{$model->Observables} or $plist->countType('Function') ){
