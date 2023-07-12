@@ -1101,10 +1101,14 @@ sub writeSBML
             printf $SBML "          <ci> \"%.8g\" </ci>\n", $spec->Concentration;
             print $SBML "        </math>\n";
         } else {
-            print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
-            printf $SBML "          <ci> %s </ci>\n", $spec->Concentration;
-            print $SBML "        </math>\n";
-            # printf $SBML $spec->Concentration->toMathMLString( $plist, "        " );
+            (my $param_lookup, my $err) = $plist->lookup($spec->Concentration);
+            if ( defined $param_lookup ) {
+                print $SBML $param_lookup->Expr->toMathMLString( $plist, "        " );
+            } else {
+                print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+                printf $SBML "          <ci> %s </ci>\n", $spec->Concentration;
+                print $SBML "        </math>\n";
+            }
         }
         # printf $SBML $spec->$conc->toMathMLString( $plist, "        " );
         print $SBML "      </initialAssignment>\n";
