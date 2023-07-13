@@ -1061,6 +1061,7 @@ sub writeSBML
 		foreach my $param ( @{$plist->Array} )
 		{
 		    next unless ( $param->Type eq 'ConstantExpression' );	
+            next if ( $param->Name =~ /^_/ );
 			printf $SBML "      <parameter id=\"%s\" constant=\"true\"/>\n", $param->Name;
 		}
 	}
@@ -1098,19 +1099,24 @@ sub writeSBML
         printf $SBML "      <initialAssignment symbol=\"S%i\">\n", $spec->Index;
         if (BNGUtils::isReal($spec->Concentration)) {
             print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
-            printf $SBML "          <ci> \"%.8g\" </ci>\n", $spec->Concentration;
+            printf $SBML "          <ci> %.8g </ci>\n", $spec->Concentration;
             print $SBML "        </math>\n";
         } else {
-            (my $param_lookup, my $err) = $plist->lookup($spec->Concentration);
-            if ( defined $param_lookup ) {
-                print $SBML $param_lookup->Expr->toMathMLString( $plist, "        " );
+            if ($spec->Concentration =~ /^_/) {
+                (my $param_lookup, my $err) = $plist->lookup($spec->Concentration);
+                if ( defined $param_lookup ) {
+                    print $SBML $param_lookup->Expr->toMathMLString( $plist, "        " );
+                } else { 
+                    print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+                    printf $SBML "          <ci> %s </ci>\n", $spec->Concentration;
+                    print $SBML "        </math>\n";
+                }
             } else {
                 print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
                 printf $SBML "          <ci> %s </ci>\n", $spec->Concentration;
                 print $SBML "        </math>\n";
             }
         }
-        # printf $SBML $spec->$conc->toMathMLString( $plist, "        " );
         print $SBML "      </initialAssignment>\n";
     }
     # we need to not do this IF we are replicating work
@@ -1119,6 +1125,7 @@ sub writeSBML
 		print $SBML "      <!-- Dependent variables -->\n";
 		foreach my $param ( @{$plist->Array} )
 	    {
+            next if ( $param->Name =~ /^_/ );
 			next unless ( $param->Type eq 'ConstantExpression');
 			printf $SBML "      <initialAssignment symbol=\"%s\">\n", $param->Name;
 			printf $SBML $param->toMathMLString( $plist, "        " );
