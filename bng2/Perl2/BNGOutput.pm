@@ -1099,7 +1099,7 @@ sub writeSBML
         printf $SBML "      <initialAssignment symbol=\"S%i\">\n", $spec->Index;
         if (BNGUtils::isReal($spec->Concentration)) {
             print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
-            printf $SBML "          <ci> %.8g </ci>\n", $spec->Concentration;
+            printf $SBML "          <cn> %.8g </cn>\n", $spec->Concentration;
             print $SBML "        </math>\n";
         } else {
             if ($spec->Concentration =~ /^_/) {
