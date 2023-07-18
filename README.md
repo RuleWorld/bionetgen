@@ -1,3 +1,4 @@
+[![Validation status](https://github.com/RuleWorld/bionetgen/workflows/validation/badge.svg)](https://github.com/RuleWorld/bionetgen/actions)
 [![Documentation Status](https://readthedocs.org/projects/bionetgen/badge/?version=latest)](https://bionetgen.readthedocs.io/en/latest/?badge=latest)
 
 # BioNetGen
