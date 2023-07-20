@@ -240,6 +240,20 @@ sub readString
         # Read expression
         my $expr = Expression->new();
         if ( my $err = $expr->readString(\$string, $plist) ) {  return ('', $err);  }
+        # AS2023 - we need to check to ensure species does not refer
+        # to observables or functions block since they aren't evaluated
+        # during initialization and will cause `run_network`` to fail.
+        my $dependencies = $expr->getVariables($plist);
+        if ( exists $dependencies->{'Observable'}
+            or exists $dependencies->{'Function'}   )
+        {
+            my $spec_str = $sg->toString();
+            my $err = "Error while parsing species block, in species: $spec_str. ";
+            $err .= "Found species expressions that refer to observables or functions. ";
+            $err .= "This is not allowed, quitting!";
+            return ('', $err);
+        } 
+        # done checking dependencies
         if ( $expr->Type eq 'NUM' )
         {
             $conc = $expr->evaluate();
