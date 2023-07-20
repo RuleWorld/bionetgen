@@ -1096,13 +1096,10 @@ sub writeSBML
     foreach my $spec ( @{$model->SpeciesList->Array} )
 	{
 		# we want this for all species
-        printf $SBML "      <initialAssignment symbol=\"S%i\">\n", $spec->Index;
-        if (BNGUtils::isReal($spec->Concentration)) {
-            print $SBML "        <math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
-            printf $SBML "          <cn> %.8g </cn>\n", $spec->Concentration;
-            print $SBML "        </math>\n";
-        } else {
-            if ($spec->Concentration =~ /^_/) {
+        
+        if (not BNGUtils::isReal($spec->Concentration)) {
+            printf $SBML "      <initialAssignment symbol=\"S%i\">\n", $spec->Index;
+            if ($spec->Concentration =~ /^_InitialConc/) {
                 (my $param_lookup, my $err) = $plist->lookup($spec->Concentration);
                 if ( defined $param_lookup ) {
                     print $SBML $param_lookup->Expr->toMathMLString( $plist, "        " );
@@ -1116,8 +1113,8 @@ sub writeSBML
                 printf $SBML "          <ci> %s </ci>\n", $spec->Concentration;
                 print $SBML "        </math>\n";
             }
+            print $SBML "      </initialAssignment>\n";
         }
-        print $SBML "      </initialAssignment>\n";
     }
     # we need to not do this IF we are replicating work
     # that's already done above. We'll test later
@@ -1125,7 +1122,7 @@ sub writeSBML
 		print $SBML "      <!-- Dependent variables -->\n";
 		foreach my $param ( @{$plist->Array} )
 	    {
-            next if ( $param->Name =~ /^_/ );
+            next if ( $param->Name =~ /^_InitialConc/ );
 			next unless ( $param->Type eq 'ConstantExpression');
 			printf $SBML "      <initialAssignment symbol=\"%s\">\n", $param->Name;
 			printf $SBML $param->toMathMLString( $plist, "        " );
