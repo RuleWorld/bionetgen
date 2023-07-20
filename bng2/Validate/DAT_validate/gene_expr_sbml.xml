@@ -41,31 +41,6 @@
     </listOfParameters>
     <listOfInitialAssignments>
       <!-- All initial values -->
-      <initialAssignment symbol="S1">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 1 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S2">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S3">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S4">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S5">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
       <!-- Dependent variables -->
       <initialAssignment symbol="d0">
         <math xmlns="http://www.w3.org/1998/Math/MathML">

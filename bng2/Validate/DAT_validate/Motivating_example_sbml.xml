@@ -212,366 +212,6 @@
           <ci> NP0 </ci>
         </math>
       </initialAssignment>
-      <initialAssignment symbol="S7">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S8">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S9">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S10">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S11">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S12">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S13">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S14">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S15">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S16">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S17">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S18">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S19">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S20">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S21">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S22">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S23">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S24">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S25">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S26">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S27">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S28">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S29">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S30">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S31">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S32">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S33">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S34">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S35">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S36">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S37">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S38">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S39">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S40">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S41">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S42">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S43">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S44">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S45">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S46">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S47">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S48">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S49">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S50">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S51">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S52">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S53">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S54">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S55">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S56">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S57">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S58">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S59">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S60">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S61">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S62">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S63">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S64">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S65">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S66">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S67">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S68">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S69">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S70">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S71">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S72">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S73">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S74">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S75">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S76">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S77">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
-      <initialAssignment symbol="S78">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <cn> 0 </cn>
-        </math>
-      </initialAssignment>
       <!-- Dependent variables -->
       <initialAssignment symbol="vol_EN">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -615,6 +255,204 @@
             <times/>
             <ci> sa_EM </ci>
             <ci> eff_width </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LL </ci>
+            <ci> vol_EC </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LL </ci>
+            <ci> vol_EN </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LL </ci>
+            <ci> vol_EC </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw4">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LL </ci>
+            <ci> vol_EN </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw5">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LL </ci>
+            <ci> eVol_PM </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw6">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LL </ci>
+            <ci> eVol_EM </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw7">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LR </ci>
+            <ci> vol_EC </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw8">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LR </ci>
+            <ci> vol_EN </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw9">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LR </ci>
+            <ci> eVol_PM </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw10">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_LR </ci>
+            <ci> eVol_EM </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw11">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_R_TF </ci>
+            <ci> vol_CP </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw12">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_R_TFp </ci>
+            <ci> vol_CP </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw13">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_TF_TF </ci>
+            <ci> vol_CP </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw14">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_TF_TF </ci>
+            <ci> vol_NU </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw15">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_TF_p1 </ci>
+            <ci> vol_NU </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw16">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> k_Im_bind_CP </ci>
+            <ci> vol_CP </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw17">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> k_Im_bind_NU </ci>
+            <ci> vol_NU </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw18">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> k_Im_bind_CP </ci>
+            <ci> vol_CP </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw19">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> k_Im_bind_NU </ci>
+            <ci> vol_NU </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw20">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> k_Im_enters_NP </ci>
+            <ci> vol_CP </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw21">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> k_Im_enters_NP </ci>
+            <ci> vol_NU </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="_rateLaw22">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <ci> kp_P1_p2 </ci>
+            <ci> vol_NU </ci>
           </apply>
         </math>
       </initialAssignment>
