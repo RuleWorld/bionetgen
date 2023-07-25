@@ -2,6 +2,15 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.9.0==
+'''''2023 July '''''
+
+=== New Features ===
+* Species are exported to a SBML initial assignments block. Constant expressions are also exported in initial assignments block as long as they weren't a part of the original species block. This will improve the functionality of the exported SBML output for downstream tools.
+
+== Minor changes ==
+* Referring to observables or functions within species will result in an error as it could lead to circular dependency.
+
 == BioNetGen-2.8.5==
 '''''2023 March '''''
 
