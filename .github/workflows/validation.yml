@@ -33,7 +33,7 @@ jobs:
           }
           - {
             name: "linux",
-            os: ubuntu-latest,
+            os: ubuntu-20.04,
             artifact: "bng_ubuntu_gcc.7z",
             build_type: "Release",
             cc: "gcc",
