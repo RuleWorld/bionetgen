@@ -13,7 +13,7 @@ This page links to publications that have applied a BioNetGen rule-based model t
 Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
 
 ## 2023
-* Zhang Y et al. [Combining Multikinase Tyrosine Kinase Inhibitors Targeting the Vascular Endothelial Growth Factor andCluster ofDifferentiation 47 Signaling Pathways IsPredicted toIncrease theEfficacy of Antiangiogenic Combination Therapies](https://doi.org/10.1021/acsptsci.3c00008) *ACSPharmacol. Transl. Sci.*
+* Zhang Y et al. [Combining Multikinase Tyrosine Kinase Inhibitors Targeting the Vascular Endothelial Growth Factor andCluster ofDifferentiation 47 Signaling Pathways IsPredicted toIncrease theEfficacy of Antiangiogenic Combination Therapies](https://doi.org/10.1021/acsptsci.3c00008) *ACS Pharmacol. Transl. Sci.*
 
 ## 2022
 * Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.biorxiv.org/content/10.1101/2022.01.30.478391) *bioRxiv*
