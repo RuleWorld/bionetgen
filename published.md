@@ -12,9 +12,12 @@ This page links to publications that have applied a BioNetGen rule-based model t
 
 Help keep this page current by sending your publications to our [email](mailto:bionetgen.help@gmail.com) or [Twitter](http://twitter.com/bionetgen).
 
+## 2023
+* Zhang Y et al. [Combining Multikinase Tyrosine Kinase Inhibitors Targeting the Vascular Endothelial Growth Factor andCluster ofDifferentiation 47 Signaling Pathways IsPredicted toIncrease theEfficacy of Antiangiogenic Combination Therapies](https://doi.org/10.1021/acsptsci.3c00008) *ACSPharmacol. Transl. Sci.*
+
 ## 2022
 * Korwek Z et al. [Non-self RNA rewires IFNβ signaling: A mathematical model of the innate immune response.](https://www.biorxiv.org/content/10.1101/2022.01.30.478391) *bioRxiv*
-* Nosbisch, JL et al. [A kinetic model of phospholipase C-γ1 linking structure-based insights to dynamics of enzyme autoinhibition and activation.](https://www.sciencedirect.com/science/article/pii/S002192582200326X) *J. Biol. Chem.*
+* Nosbisch JL et al. [A kinetic model of phospholipase C-γ1 linking structure-based insights to dynamics of enzyme autoinhibition and activation.](https://www.sciencedirect.com/science/article/pii/S002192582200326X) *J. Biol. Chem.*
 
 ## 2021
 * McMillan D et al. [Structural insights into the disruption of TNF-TNFR1 signalling by small molecules stabilising a distorted TNF.](https://pubmed.ncbi.nlm.nih.gov/33495441/) *Nat. Commun.*
