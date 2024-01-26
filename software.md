@@ -21,6 +21,7 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 | [Kappa](https://kappalanguage.org/) | Another prominent rule-based modeling language
 | [MCell](https://mcell.org/) | Uses 3D cellular models and Monte Carlo algorithms for simulating the movements and reactions of molecules within and between cells; the latest version, MCell4, uses BNGL syntax for rule-based modeling
 | [ML-Rules](https://git.informatik.uni-rostock.de/mosi/mlrules2) | Multi-level rule-based modeling formalism for modeling biochemical reaction networks
+| [MolClustPy](https://molclustpy.github.io/) | A Python package to characterize multivalent biomolecular clusters [Chattaraj et al.](https://academic.oup.com/bioinformatics/article/39/6/btad385/7199581)
 | [NFsim](http://michaelsneddon.net/nfsim/) | Biochemical reaction simulator designed to handle large numbers of possible molecular interactions or states; uses BNGL for model specification
 | Parts & Pools | Employs BioNetGen to help design synthetic gene circuits <!-- Can't find a suitable link or download site -->
 | [PEtab](https://petab.readthedocs.io/en/latest/) | Data format for specifying systems biology parameter estimation problems using SBML
