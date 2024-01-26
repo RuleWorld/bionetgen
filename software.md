@@ -18,7 +18,7 @@ This page links to other software that use BioNetGen code or BNGL-formatted mode
 | [AMICI](https://amici.readthedocs.io/en/latest/index.html) | Provides an interface to the CVODES and IDAS solvers for models specified in SBML or [PySB](https://pysb.org/), both of which are capable of representing BNGL models
 | [BioSimulators](https://biosimulators.org/)| Provides a registry of biosimulation tools supporting many different model formats, including BNGL
 | [BioUML](https://www.biouml.org/) | Java platform for -omics data analysis; a BNG plugin allows users to edit rule-based models as either BioUML diagrams or as BNGL text files
-| [Kappa](https://kappalanguage.org/) | Another prominent rule-based modeling language. The syntax used to be very similiar to BNGL, but that is less true now.
+| [Kappa](https://kappalanguage.org/) | Another prominent rule-based modeling language. The syntax used to be very similiar to BNGL, but that is less true now. | [Boutillier et al.](https://doi.org/10.1093/bioinformatics/bty272)
 | [MCell](https://mcell.org/) | Uses 3D cellular models and Monte Carlo algorithms for simulating the movements and reactions of molecules within and between cells; the latest version, MCell4, uses BNGL syntax for rule-based modeling
 | [ML-Rules](https://git.informatik.uni-rostock.de/mosi/mlrules2) | Multi-level rule-based modeling formalism for modeling biochemical reaction networks
 | [MolClustPy](https://molclustpy.github.io/) | A Python package to characterize multivalent biomolecular clusters | [Chattaraj et al.](https://academic.oup.com/bioinformatics/article/39/6/btad385/7199581)
