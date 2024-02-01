@@ -20,12 +20,12 @@ end species
 
 begin observables
   Molecules XY X(y!1).Y(x!1)
-  Species boundZ Z(x!+,y!+)
+  Molecules boundZ Z(x!+,y!+)
 end observables
 
 begin functions
-#  f(xy) if(boundZ(xy)>0,1,0)
-  f(xy)  boundZ(xy)
+#  f(xy) if(boundZ(xy)==0,1,0)
+  f(xy)  1-boundZ(xy)
 end functions
 
 begin reaction rules
@@ -38,16 +38,16 @@ begin reaction rules
 # is passed to the local function f, which in turn passes it to the observable
 # function boundZ. This observable counts the number of doubly bound Z molecules
 # in the complex. Two versions of the function are provided. The first uses an
-# if statement to set the rate to 1 if boundZ is present and 0 otherwise. The
-# second sets the rate to be the number returned by boundZ. Note that the two
+# if statement to set the rate to 1 if boundZ is 0 and 0 otherwise. The
+# second sets the rate to be 1 - number returned by boundZ. Note that the two
 # functions would be equivalent if the boundZ observable were converted to a
-# Species type instead of a Molecules type.
-  nonrestrictive: %xy::X(y!1).Y(x!1) -> %xy::X(y,z) + Y(x,z) f(xy)
+# Species type instead of a Molecules type (except that this seems to break NFsim).
+  nonrestrictive: %xy::X(y!1).Y(x!1) -> %xy::X(y) + Y(x) f(xy)
 
 end reaction rules
 
 end model
 
-generate_network({overwrite=>1})
-writeSBML()
-#simulate({method=>"nf",t_end=>10,n_steps=>10})
+#generate_network({overwrite=>1})
+#writeSBML()
+simulate({method=>"nf",t_end=>10,n_steps=>10})

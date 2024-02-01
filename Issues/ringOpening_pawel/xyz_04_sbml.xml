@@ -21,7 +21,6 @@
     <listOfParameters>
       <!-- Independent variables -->
       <parameter id="_nonrestrictive_local1" value="1"/>
-      <parameter id="_nonrestrictive_local2" value="0"/>
       <!-- Observables -->
       <parameter id="XY" constant="false"/>
       <parameter id="boundZ" constant="false"/>
@@ -55,24 +54,6 @@
     <listOfReactions>
       <reaction id="R1" reversible="false">
         <listOfReactants>
-          <speciesReference species="S1"/>
-        </listOfReactants>
-        <listOfProducts>
-          <speciesReference species="S3"/>
-          <speciesReference species="S4"/>
-        </listOfProducts>
-        <kineticLaw>
-          <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply>
-              <times/>
-              <ci> _nonrestrictive_local1 </ci>
-              <ci> S1 </ci>
-            </apply>
-          </math>
-        </kineticLaw>
-      </reaction>
-      <reaction id="R2" reversible="false">
-        <listOfReactants>
           <speciesReference species="S2"/>
         </listOfReactants>
         <listOfProducts>
@@ -83,7 +64,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
-              <ci> _nonrestrictive_local2 </ci>
+              <ci> _nonrestrictive_local1 </ci>
               <ci> S2 </ci>
             </apply>
           </math>

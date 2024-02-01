@@ -1,0 +1,39 @@
+###########################################################
+## Model to demonstrate how bond breaking can be restricted
+## in various ways. 
+## In this scenario the breaking of the bond between X and Y 
+## should only be applied if both molecules are not also 
+## bound to Z.
+
+begin model
+
+begin molecule types
+  X(y,z)
+  Y(x,z)
+  Z1(x,y)
+  Z2(x,y)
+end molecule types
+
+begin species
+   X(y!1,z!2).Y(x!1,z!3).Z1(x!2,y!3) 1
+   X(y!1,z!2).Y(x!1,z!3).Z2(x!2,y!3) 1
+   X(y!1,z).Y(x!1,z)                1
+end species
+
+begin observables
+  Molecules XY X(y!1).Y(x!1)
+end observables
+
+begin reaction rules
+  # Here is the old exclude_reactants syntax. It still seems to work.
+  exZ1: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z1)
+  exZ2: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z2)
+  exZ12: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z1,Z2)
+
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+#writeSBML()
+#simulate({method=>"nf",t_end=>10,n_steps=>10})
