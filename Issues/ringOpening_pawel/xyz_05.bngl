@@ -25,9 +25,10 @@ begin observables
 end observables
 
 begin reaction rules
-  # Here is the old exclude_reactants syntax. It still seems to work.
-  exZ1: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z1)
-  exZ2: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z2)
+  # Here is the old exclude_reactants syntax. It still seems to work in BNG but 
+  # NFsim is not respecting it, even though the syntax is in the .xml file.
+#  exZ1: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z1)
+#  exZ2: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z2)
   exZ12: X(y!1).Y(x!1) -> X(y,z) + Y(x,z) 1 exclude_reactants(1,Z1,Z2)
 
 end reaction rules
@@ -35,5 +36,6 @@ end reaction rules
 end model
 
 generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>10,n_steps=>10})
 #writeSBML()
 #simulate({method=>"nf",t_end=>10,n_steps=>10})
