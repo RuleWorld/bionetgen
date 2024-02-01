@@ -1061,7 +1061,7 @@ sub writeSBML
 		foreach my $param ( @{$plist->Array} )
 		{
 		    next unless ( $param->Type eq 'ConstantExpression' );	
-            next if ( $param->Name =~ /^_/ );
+            next if ( $param->Name =~ /^_InitialConc/ );
 			printf $SBML "      <parameter id=\"%s\" constant=\"true\"/>\n", $param->Name;
 		}
 	}
