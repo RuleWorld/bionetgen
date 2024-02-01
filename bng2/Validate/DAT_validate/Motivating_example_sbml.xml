@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created by BioNetGen 2.8.5  -->
+<!-- Created by BioNetGen 2.9.0  -->
 <sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
   <model id="Motivating_example">
     <listOfUnitDefinitions>
@@ -145,6 +145,28 @@
       <parameter id="eVol_PM" constant="true"/>
       <parameter id="eVol_NM" constant="true"/>
       <parameter id="eVol_EM" constant="true"/>
+      <parameter id="_rateLaw1" constant="true"/>
+      <parameter id="_rateLaw2" constant="true"/>
+      <parameter id="_rateLaw3" constant="true"/>
+      <parameter id="_rateLaw4" constant="true"/>
+      <parameter id="_rateLaw5" constant="true"/>
+      <parameter id="_rateLaw6" constant="true"/>
+      <parameter id="_rateLaw7" constant="true"/>
+      <parameter id="_rateLaw8" constant="true"/>
+      <parameter id="_rateLaw9" constant="true"/>
+      <parameter id="_rateLaw10" constant="true"/>
+      <parameter id="_rateLaw11" constant="true"/>
+      <parameter id="_rateLaw12" constant="true"/>
+      <parameter id="_rateLaw13" constant="true"/>
+      <parameter id="_rateLaw14" constant="true"/>
+      <parameter id="_rateLaw15" constant="true"/>
+      <parameter id="_rateLaw16" constant="true"/>
+      <parameter id="_rateLaw17" constant="true"/>
+      <parameter id="_rateLaw18" constant="true"/>
+      <parameter id="_rateLaw19" constant="true"/>
+      <parameter id="_rateLaw20" constant="true"/>
+      <parameter id="_rateLaw21" constant="true"/>
+      <parameter id="_rateLaw22" constant="true"/>
       <!-- Observables -->
       <parameter id="Tot_L" constant="false"/>
       <parameter id="Tot_R" constant="false"/>
