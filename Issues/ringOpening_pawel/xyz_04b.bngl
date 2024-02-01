@@ -1,0 +1,53 @@
+###########################################################
+## Model to demonstrate how bond breaking can be restricted
+## in various ways. 
+## In this scenario the breaking of the bond between X and Y 
+## should only be applied if both molecules are not also 
+## bound to Z.
+
+begin model
+
+begin molecule types
+  X(y,z)
+  Y(x,z)
+  Z(x,y)
+end molecule types
+
+begin species
+   X(y!1,z!2).Y(x!1,z!3).Z(x!2,y!3) 1
+   X(y!1,z).Y(x!1,z)                1
+end species
+
+begin observables
+  Molecules XY X(y!1).Y(x!1)
+  Species boundZ Z(x!+,y!+)
+end observables
+
+begin functions
+#  f(xy) if(boundZ(xy)>0,1,0)
+  f(xy)  boundZ(xy)
+end functions
+
+begin reaction rules
+# We saw previously that NFsim by default does not enforce stoichiometry on the
+# product side, so a nonrestrictive rule will break XY bonds in both XY and XYZ.
+# Local functions, such as the one used below, can be used to restrict the
+# application of rules based on the properties of the reactants. Local rules
+# work by applying pattern matching only to the species undergoing reaction.
+# Here, the label xy is used to provide a pointer to the reactant complex that
+# is passed to the local function f, which in turn passes it to the observable
+# function boundZ. This observable counts the number of doubly bound Z molecules
+# in the complex. Two versions of the function are provided. The first uses an
+# if statement to set the rate to 1 if boundZ is present and 0 otherwise. The
+# second sets the rate to be the number returned by boundZ. Note that the two
+# functions would be equivalent if the boundZ observable were converted to a
+# Species type instead of a Molecules type.
+  nonrestrictive: %xy::X(y!1).Y(x!1) -> %xy::X(y,z) + Y(x,z) f(xy)
+
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+writeSBML()
+#simulate({method=>"nf",t_end=>10,n_steps=>10})

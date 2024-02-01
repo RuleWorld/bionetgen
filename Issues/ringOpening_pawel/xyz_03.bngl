@@ -1,0 +1,42 @@
+###########################################################
+## Model to demonstrate how bond breaking can be restricted
+## in various ways. 
+## In this scenario the breaking of the bond between X and Y 
+## should only be applied if both molecules are not also 
+## bound to Z.
+
+begin model
+
+begin molecule types
+  X(y,z)
+  Y(x,z)
+  Z(x,y)
+end molecule types
+
+begin species
+   X(y!1,z!2).Y(x!1,z!3).Z(x!2,y!3) 1
+   X(y!1,z).Y(x!1,z)                1
+end species
+
+begin observables
+  Molecules XY X(y!1).Y(x!1)
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+# We saw previously that NFsim by default does not enforce stoichiometry on the
+# product side, so a nonrestrictive rule will break XY bonds in both XY and XYZ.
+# XYZ will remain a complex but with no XY bonds. A restrictive rule, such as
+# the one shown below, will only cause XY bonds to break if both molecules are
+# not bound to Z. You can track the output either by looking at the number of
+# bonds in the .gdat file or looking at the final set of species in the .species
+# file.
+   restrictive: X(y!1,z).Y(x!1,z) -> X(y,z) + Y(x,z) 1
+end reaction rules
+
+end model
+
+#generate_network({overwrite=>1})
+simulate({method=>"nf",t_end=>10,n_steps=>10})

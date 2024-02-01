@@ -1,0 +1,5 @@
+# nfsim generated species list for system: 'xyz_02'
+# warning! this feature is not yet fully tested! 
+X(y,z!1).Z(x!1,y!2).Y(x,z!2)  1
+X(y,z)  1
+Y(x,z)  1

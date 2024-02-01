@@ -1,0 +1,43 @@
+###########################################################
+## Model to demonstrate how bond breaking can be restricted
+## in various ways. 
+## In this scenario the breaking of the bond between X and Y 
+## should only be applied if both molecules are not also 
+## bound to Z.
+
+begin model
+
+begin molecule types
+  X(y,z)
+  Y(x,z)
+  Z(x,y)
+end molecule types
+
+begin species
+   X(y!1,z!2).Y(x!1,z!3).Z(x!2,y!3) 1
+   X(y!1,z).Y(x!1,z)                1
+end species
+
+begin observables
+  Molecules XY X(y!1).Y(x!1)
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+   # Even though this rule would seem to be generic, it does not generate a ring opening 
+   # reaction because the stoichiometry of the products of the ring opening doesn't match the specified
+   # pattern. Previously, we saw that the resulting netfile file for this model has two identical 
+   # reactions for dissociation of species 2 into X and Y. The XYZ ring does not undergo bond-breaking.
+   # However, NFsim by default does not enforce stoichiometry on the product side, so when this model
+   # is simulated with NFsim, both XY and XYZ will undergo bond-breaking. XYZ will remain a complex but 
+   # with no XY bonds. You can track the output either by looking at the number of bonds in the .gdat file
+   # or looking at the final set of species in the .species file.
+   nonrestrictive: X(y!1).Y(x!1) -> X(y) + Y(x) 1
+end reaction rules
+
+end model
+
+#generate_network({overwrite=>1})
+simulate({method=>"nf",t_end=>10,n_steps=>10})
