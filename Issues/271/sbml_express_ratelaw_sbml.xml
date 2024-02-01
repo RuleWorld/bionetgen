@@ -21,6 +21,7 @@
       <parameter id="k1" value="1"/>
       <parameter id="k2" value="0.30103"/>
       <!-- Dependent variables -->
+      <parameter id="_rateLaw1" constant="true"/>
       <!-- Observables -->
       <parameter id="A" constant="false"/>
     </listOfParameters>

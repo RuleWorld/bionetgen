@@ -25,4 +25,4 @@ end model
 
 generate_network({overwrite=>1})
 writeSBML()
-simulate({method=>"ode",t_end=>10,n_steps=>200})
+#simulate({method=>"ode",t_end=>10,n_steps=>200})
