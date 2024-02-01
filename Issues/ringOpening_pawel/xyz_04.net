@@ -1,0 +1,17 @@
+# Created by BioNetGen 2.9.0
+begin parameters
+    1 _nonrestrictive_local1  if((0==0),1,0)  # Constant
+end parameters
+begin species
+    1 X(y!1,z!2).Y(x!1,z!3).Z(x!2,y!3) 1
+    2 X(y!1,z).Y(x!1,z) 1
+    3 X(y,z) 0
+    4 Y(x,z) 0
+end species
+begin reactions
+    1 2 3,4 _nonrestrictive_local1 #nonrestrictive
+end reactions
+begin groups
+    1 XY                   1,2
+    2 boundZ               1
+end groups

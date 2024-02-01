@@ -1,0 +1,23 @@
+# Created by BioNetGen 2.9.0
+begin parameters
+    1 _rateLaw1  1  # Constant
+    2 _rateLaw2  1  # Constant
+    3 _rateLaw3  1  # Constant
+end parameters
+begin species
+    1 X(y!1,z!2).Y(x!1,z!3).Z1(x!2,y!3) 1
+    2 X(y!1,z!2).Y(x!1,z!3).Z2(x!2,y!3) 1
+    3 X(y!1,z).Y(x!1,z) 1
+    4 X(y,z) 0
+    5 Y(x,z) 0
+end species
+begin reactions
+    1 2 4,5 _rateLaw1 #exZ1
+    2 3 4,5 _rateLaw1 #exZ1
+    3 1 4,5 _rateLaw2 #exZ2
+    4 3 4,5 _rateLaw2 #exZ2
+    5 3 4,5 _rateLaw3 #exZ12
+end reactions
+begin groups
+    1 XY                   1,2,3
+end groups
