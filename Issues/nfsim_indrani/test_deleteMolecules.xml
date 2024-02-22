@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.9.0  -->
+<sbml xmlns="http://www.sbml.org/sbml/level3" level="3" version="1">
+  <model id="test_deleteMolecules">
+    <ListOfParameters>
+      <Parameter id="kdl" type="Constant" value="0.03" expr="0.03"/>
+    </ListOfParameters>
+    <ListOfMoleculeTypes>
+      <MoleculeType id="A">
+        <ListOfComponentTypes>
+          <ComponentType id="State">
+            <ListOfAllowedStates>
+              <AllowedState id="UZAP"/>
+              <AllowedState id="PZAP"/>
+              <AllowedState id="SHP"/>
+              <AllowedState id="uSYK"/>
+              <AllowedState id="pSYK"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+          <ComponentType id="CBL"/>
+        </ListOfComponentTypes>
+      </MoleculeType>
+      <MoleculeType id="CBL">
+        <ListOfComponentTypes>
+          <ComponentType id="site"/>
+        </ListOfComponentTypes>
+      </MoleculeType>
+      <MoleculeType id="Zeta">
+        <ListOfComponentTypes>
+          <ComponentType id="receptor"/>
+          <ComponentType id="ITAM1">
+            <ListOfAllowedStates>
+              <AllowedState id="U"/>
+              <AllowedState id="PP"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+          <ComponentType id="ITAM2">
+            <ListOfAllowedStates>
+              <AllowedState id="U"/>
+              <AllowedState id="PP"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+          <ComponentType id="ITAM3">
+            <ListOfAllowedStates>
+              <AllowedState id="U"/>
+              <AllowedState id="PP"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+          <ComponentType id="ITAM4">
+            <ListOfAllowedStates>
+              <AllowedState id="U"/>
+              <AllowedState id="PP"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+          <ComponentType id="ITAM5">
+            <ListOfAllowedStates>
+              <AllowedState id="U"/>
+              <AllowedState id="PP"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+          <ComponentType id="ITAM6">
+            <ListOfAllowedStates>
+              <AllowedState id="U"/>
+              <AllowedState id="PP"/>
+            </ListOfAllowedStates>
+          </ComponentType>
+        </ListOfComponentTypes>
+      </MoleculeType>
+      <MoleculeType id="dead"/>
+    </ListOfMoleculeTypes>
+    <ListOfCompartments>
+    </ListOfCompartments>
+    <ListOfSpecies>
+      <Species id="S1"  concentration="1" name="A(CBL,State~UZAP)">
+        <ListOfMolecules>
+          <Molecule id="S1_M1" name="A">
+            <ListOfComponents>
+              <Component id="S1_M1_C1" name="CBL" numberOfBonds="0"/>
+              <Component id="S1_M1_C2" name="State" state="UZAP" numberOfBonds="0"/>
+            </ListOfComponents>
+          </Molecule>
+        </ListOfMolecules>
+      </Species>
+      <Species id="S2"  concentration="1" name="Zeta(ITAM1~U,ITAM2~U,ITAM3~U,ITAM4~U,ITAM5~U,ITAM6~U,receptor)">
+        <ListOfMolecules>
+          <Molecule id="S2_M1" name="Zeta">
+            <ListOfComponents>
+              <Component id="S2_M1_C1" name="ITAM1" state="U" numberOfBonds="0"/>
+              <Component id="S2_M1_C2" name="ITAM2" state="U" numberOfBonds="0"/>
+              <Component id="S2_M1_C3" name="ITAM3" state="U" numberOfBonds="0"/>
+              <Component id="S2_M1_C4" name="ITAM4" state="U" numberOfBonds="0"/>
+              <Component id="S2_M1_C5" name="ITAM5" state="U" numberOfBonds="0"/>
+              <Component id="S2_M1_C6" name="ITAM6" state="U" numberOfBonds="0"/>
+              <Component id="S2_M1_C7" name="receptor" numberOfBonds="0"/>
+            </ListOfComponents>
+          </Molecule>
+        </ListOfMolecules>
+      </Species>
+      <Species id="S3"  concentration="1" name="CBL(site)">
+        <ListOfMolecules>
+          <Molecule id="S3_M1" name="CBL">
+            <ListOfComponents>
+              <Component id="S3_M1_C1" name="site" numberOfBonds="0"/>
+            </ListOfComponents>
+          </Molecule>
+        </ListOfMolecules>
+      </Species>
+    </ListOfSpecies>
+    <ListOfReactionRules>
+      <ReactionRule id="RR1" name="CBL_degrade_ITAM1" symmetry_factor="1">
+        <ListOfReactantPatterns>
+          <ReactantPattern id="RR1_RP1">
+            <ListOfMolecules>
+              <Molecule id="RR1_RP1_M1" name="Zeta">
+                <ListOfComponents>
+                  <Component id="RR1_RP1_M1_C1" name="ITAM1" numberOfBonds="1"/>
+                </ListOfComponents>
+              </Molecule>
+              <Molecule id="RR1_RP1_M2" name="A">
+                <ListOfComponents>
+                  <Component id="RR1_RP1_M2_C1" name="State" numberOfBonds="1"/>
+                  <Component id="RR1_RP1_M2_C2" name="CBL" numberOfBonds="1"/>
+                </ListOfComponents>
+              </Molecule>
+              <Molecule id="RR1_RP1_M3" name="CBL">
+                <ListOfComponents>
+                  <Component id="RR1_RP1_M3_C1" name="site" numberOfBonds="1"/>
+                </ListOfComponents>
+              </Molecule>
+            </ListOfMolecules>
+            <ListOfBonds>
+              <Bond id="RR1_RP1_B1" site1="RR1_RP1_M1_C1" site2="RR1_RP1_M2_C1"/>
+              <Bond id="RR1_RP1_B2" site1="RR1_RP1_M2_C2" site2="RR1_RP1_M3_C1"/>
+            </ListOfBonds>
+          </ReactantPattern>
+        </ListOfReactantPatterns>
+        <ListOfProductPatterns>
+          <ProductPattern id="RR1_PP1">
+            <ListOfMolecules>
+              <Molecule id="RR1_PP1_M1" name="dead"/>
+            </ListOfMolecules>
+          </ProductPattern>
+        </ListOfProductPatterns>
+        <RateLaw id="RR1_RateLaw" type="Ele" totalrate="0">
+          <ListOfRateConstants>
+            <RateConstant value="kdl"/>
+          </ListOfRateConstants>
+        </RateLaw>
+        <Map>
+          <MapItem sourceID="RR1_RP1_M1"/>
+          <MapItem sourceID="RR1_RP1_M1_C1"/>
+          <MapItem sourceID="RR1_RP1_M2"/>
+          <MapItem sourceID="RR1_RP1_M2_C1"/>
+          <MapItem sourceID="RR1_RP1_M2_C2"/>
+          <MapItem sourceID="RR1_RP1_M3"/>
+          <MapItem sourceID="RR1_RP1_M3_C1"/>
+        </Map>
+        <ListOfOperations>
+          <Add id="RR1_PP1_M1"/>
+          <Delete id="RR1_RP1_M1" DeleteMolecules="1"/>
+          <Delete id="RR1_RP1_M2" DeleteMolecules="1"/>
+          <Delete id="RR1_RP1_M3" DeleteMolecules="1"/>
+        </ListOfOperations>
+      </ReactionRule>
+    </ListOfReactionRules>
+    <ListOfObservables>
+    </ListOfObservables>
+    <ListOfFunctions>
+    </ListOfFunctions>
+  </model>
+</sbml>

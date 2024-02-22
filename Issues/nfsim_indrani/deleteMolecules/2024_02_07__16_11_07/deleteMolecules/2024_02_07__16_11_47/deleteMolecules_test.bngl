@@ -1,0 +1,20 @@
+# Created by BioNetGen 2.9.0
+
+begin model
+begin parameters
+  d              1
+  kdeg_Ste2_PO4  1
+  _rateLaw1      100
+end parameters
+begin molecule types
+  CELL()                                                              
+  Pheromone(Ste2_site)                                                
+  Ste2(Pheromone_site,Gpa1_site,Sst2_site,Yck_site,S338_S339~none~PO4)
+end molecule types
+begin species
+  Pheromone(Ste2_site!1).Ste2(Gpa1_site,Pheromone_site!1,S338_S339~PO4,Sst2_site,Yck_site) 1
+end species
+begin reaction rules
+  _R1:  Ste2(S338_S339~PO4) -> CELL()  _rateLaw1 DeleteMolecules
+end reaction rules
+end model

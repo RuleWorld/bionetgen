@@ -1,0 +1,22 @@
+begin model
+
+begin parameters
+  k1 10
+  k2 1
+end parameters
+
+begin species
+  A() 0
+end species
+
+begin observables
+  Molecules A A()
+end observables
+
+begin reaction rules
+  0 <-> A() k1, k2
+end reaction rules
+
+end model
+
+simulate({method=>"ode",t_end=>5,n_steps=>200})

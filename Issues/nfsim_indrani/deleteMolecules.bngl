@@ -1,0 +1,22 @@
+begin parameters
+    d 1
+    kdeg_Ste2_PO4 1
+end parameters
+
+begin molecule types
+    CELL()
+    Ste2(Pheromone_site,Gpa1_site,Sst2_site,Yck_site,S338_S339~none~PO4)
+    Pheromone(Ste2_site)
+end molecule types
+
+begin seed species
+    Pheromone(Ste2_site!1).Ste2(Pheromone_site!1,Gpa1_site,Sst2_site,Yck_site,S338_S339~PO4) 1
+end seed species
+
+begin reaction rules
+#    Ste2(S338_S339~PO4) -> CELL() kdeg_Ste2_PO4 DeleteMolecules
+    Ste2(S338_S339~PO4) -> CELL() 100 DeleteMolecules
+end reaction rules
+
+#writeModel({suffix=>"test",evaluate_expressions=>1})
+generate_network({overwrite=>1})

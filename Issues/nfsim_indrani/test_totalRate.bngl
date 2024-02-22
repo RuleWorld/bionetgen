@@ -1,0 +1,31 @@
+begin model
+
+
+
+begin parameters
+  kdl 0.03 #CBL degrades ZAP/SYK
+end parameters
+
+begin molecule types
+  A(State~UZAP~PZAP~SHP~uSYK~pSYK,CBL)
+  Zeta(receptor,ITAM1~U~PP,ITAM2~U~PP,ITAM3~U~PP,ITAM4~U~PP,ITAM5~U~PP,ITAM6~U~PP)
+  CBL(site)
+  dead()
+end molecule types
+
+begin seed species
+  A(State~UZAP,CBL) 1
+  Zeta(receptor,ITAM1~U,ITAM2~U,ITAM3~U,ITAM4~U,ITAM5~U,ITAM6~U) 1
+  CBL(site) 1
+end seed species
+
+begin reaction rules
+  CBL_degrade_ITAM1:	Zeta(ITAM1!1).A(State!1,CBL!3).CBL(site!3) -> dead()	kdl TotalRate
+end reaction rules
+
+end model
+
+writeModel({suffix=>"changed",evaluate_expressions=>1,overwrite=>1})
+writeXML()
+#simulate_nf({t_end=>270,n_steps=>1000})
+

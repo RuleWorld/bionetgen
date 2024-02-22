@@ -1,0 +1,21 @@
+# Created by BioNetGen 2.9.0
+
+begin model
+begin parameters
+  kdl  0.03
+end parameters
+begin molecule types
+  A(State~UZAP~PZAP~SHP~uSYK~pSYK,CBL)                                            
+  CBL(site)                                                                       
+  Zeta(receptor,ITAM1~U~PP,ITAM2~U~PP,ITAM3~U~PP,ITAM4~U~PP,ITAM5~U~PP,ITAM6~U~PP)
+  dead()                                                                          
+end molecule types
+begin species
+  A(CBL,State~UZAP) 1
+  Zeta(ITAM1~U,ITAM2~U,ITAM3~U,ITAM4~U,ITAM5~U,ITAM6~U,receptor) 1
+  CBL(site) 1
+end species
+begin reaction rules
+  CBL_degrade_ITAM1:  Zeta(ITAM1!1).A(State!1,CBL!2).CBL(site!2) -> dead()  kdl DeleteMolecules
+end reaction rules
+end model
