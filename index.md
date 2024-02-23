@@ -18,7 +18,7 @@ For more information, visit BioNetGen's [documentation](https://bionetgen.readth
 
 *Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
-The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.help@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
+The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.main@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
 
 <!-- Are you a new user? Find information for BioNetGen beginners [here](/new_users). -->
 
@@ -37,15 +37,15 @@ modeling](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bio
 *Bioinformatics* **32,** 3366–3368 (2016).
 
 In addition, consider sending us an 
-[email](mailto:bionetgen.help@gmail.com) or tweet 
-[@bionetgen](http://twitter.com/bionetgen). We’d love to hear about it!
+[email](mailto:bionetgen.main@gmail.com) or post at us on X (formerly known as tweeting) 
+[@bionetgen](http://x.com/bionetgen). We’d love to hear about it!
 
 ## Acknowledgements
-Current development of BioNetGen is supported in part by the
-NIGMS-funded (P41GM103712) National Center for Multiscale Modeling of
+BioNetGen development and maintenance has been supported in part by the
+NIGMS-funded National Center for Multiscale Modeling of
 Biological Systems
 ([MMBioS](http://mmbios.org/ "http://mmbios.org")).
-Past support has been provided by NIH grants (GM076570, GM103712,
+Past support has been provided by NIH grants (P41GM103712, GM076570, GM103712,
 GM085273, AI35997, CA109552), NSF grant 0829788, the Arizona Biomedical
 Research Commission, and the Department of Computational Biology at the
 University of Pittsburgh School of Medicine.
