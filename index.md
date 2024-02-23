@@ -18,7 +18,7 @@ For more information, visit BioNetGen's [documentation](https://bionetgen.readth
 
 *Note*: yEd graph editor must be [installed separately](https://www.yworks.com/products/yed).
 
-The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, you may send an email to <bionetgen.main@gmail.com>. All help requests, including models or model snippets, will be treated *confidentially*.
+The best way to get help, report a bug, or request a feature is to post an issue on the appropriate project's GitHub issues page. Otherwise, [email us](mailto:bionetgen.main@gmail.com). All help requests, including models or model snippets, will be treated *confidentially*.
 
 <!-- Are you a new user? Find information for BioNetGen beginners [here](/new_users). -->
 
@@ -50,4 +50,4 @@ GM085273, AI35997, CA109552), NSF grant 0829788, the Arizona Biomedical
 Research Commission, and the Department of Computational Biology at the
 University of Pittsburgh School of Medicine.
 
-BioNetGen and this website are maintained by the [Lab of James Faeder](http://www.csb.pitt.edu/Faculty/Faeder/) in the [Department of Computational and Systems Biology](http://www.csb.pitt.edu) and the University of Pittsburgh School of Medicine.
+BioNetGen and this website are maintained by the [Faeder Lab](http://www.csb.pitt.edu/Faculty/Faeder/) in the [Department of Computational and Systems Biology](http://www.csb.pitt.edu) at the University of Pittsburgh.
