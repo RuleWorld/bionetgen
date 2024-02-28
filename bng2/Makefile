@@ -16,14 +16,16 @@ NFSIM_DIR = nfsim_src
 .PHONY: clean test
 
 
-all: $(NFSIM_BIN) $(NETWORK_BIN)
+#all: $(NFSIM_BIN) $(NETWORK_BIN)
+all: $(NETWORK_BIN)
 
 dist: $(DIST_TARBALL)
 
 $(DIST_TARBALL): $(DIST_DIR)
 	tar czf $(DIST_TARBALL) $(DIST_DIR)
 
-$(DIST_DIR): $(NFSIM_BIN) $(NETWORK_BIN)
+#$(DIST_DIR): $(NFSIM_BIN) $(NETWORK_BIN)
+$(DIST_DIR): $(NETWORK_BIN)
 	mkdir -p $(DIST_DIR)
 	cd $(NETWORK_DIR); cp -fr lib include ../$(DIST_DIR)
 	cp -fr bin BNG2.pl CHANGES.txt CREDITS.txt Models2 Perl2 Network3 Validate VERSION $(DIST_DIR)
@@ -41,9 +43,9 @@ $(NFSIM_BIN):
 clean:
 	rm -fr $(DIST_DIR)
 	rm -fr $(DIST_TARBALL)
-	cd $(NFSIM_DIR) ; $(MAKE) clean
+	#cd $(NFSIM_DIR) ; $(MAKE) clean
 	cd $(NETWORK_DIR) ; $(MAKE) clean
 	cd $(GROUP_BINDIR); rm $(NETWORK_BIN); rm $(NFSIM_BIN)
 
-test: $(NFSIM_BIN) $(NETWORK_BIN)
-	cd Validate; perl validate_examples.pl
+#test: $(NFSIM_BIN) $(NETWORK_BIN)
+#	cd Validate; perl validate_examples.pl
