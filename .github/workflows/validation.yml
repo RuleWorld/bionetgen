@@ -54,8 +54,8 @@ jobs:
     steps:
       - name: Checkout repo # and submodules
         uses: actions/checkout@v2
-        #with:
-        #  submodules: recursive
+        with:
+          submodules: recursive
       # Windows setup
       - name: Set up Cygwin
         if: startsWith(matrix.config.os, 'windows') 
