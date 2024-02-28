@@ -17,7 +17,7 @@
     </listOfSpecies>
     <listOfParameters>
       <!-- Independent variables -->
-      <parameter id="k1" value="10"/>
+      <parameter id="k1" value="100"/>
       <parameter id="k2" value="1"/>
       <!-- Observables -->
       <parameter id="A" constant="false"/>
