@@ -11,6 +11,22 @@ use warnings;
 ###
 ###
 
+# Process a value that is either a number or an expression defined in terms of parameters
+# in the plist. Used to allow argument strings to be either numbers or expressions.
+sub process_val_express{
+    my $val_string= shift;
+    my $plist = shift;
+
+    # Read expression
+    my $expr    = Expression->new();
+    my $estring = $val_string;
+    if ( my $err = $expr->readString( \$estring, $plist ) )
+    {
+        return ( '', $err );
+    }
+    return($expr->evaluate($plist));
+}
+
 sub simulate_protocol
 {
     my $model = shift @_;
@@ -108,7 +124,7 @@ sub simulate_psa
 ###
 
 
-# all purpose simulation method (supports NFsim by calling 'simulate_nf' if method = "nf")
+# all purpose simulation method (supports 'NFsim by calling 'simulate_nf' if method = "nf")
 sub simulate
 {
     use IPC::Open3;
@@ -271,6 +287,16 @@ sub simulate
 		}
 	}
 
+    # Process shared parameters t_start and t_end in case they are input as expressions
+    if (defined $params->{t_start}){
+        $params->{t_start}= process_val_express($params->{t_start}, $model->ParamList ); 
+        print("TSTART:", $params->{t_start},"\n");
+    }
+    if (defined $params->{t_end}){
+        $params->{t_end}= process_val_express($params->{t_end}, $model->ParamList );
+        print("TEND:", $params->{t_end},"\n");
+    }
+
     # Find binary
     my $binary = $METHODS->{$method}->{binary}; 
     printf "%s simulation using %s\n", $METHODS->{$method}->{type}, $method;
@@ -431,7 +457,7 @@ sub simulate
     my $tol=1e-15;
     if ( defined $params->{t_start} )
     {
-        $t_start = $params->{t_start};        
+        $t_start= $params->{t_start};
         # if this is a continuation, check that model time equals t_start
         if ($continue)
         {
@@ -477,7 +503,7 @@ sub simulate
         }
 
         if ( defined $params->{t_end} ){
-            $t_end = $params->{t_end};
+            $t_end= $params->{t_end};
         }
         else{
             return "Parameter t_end must be defined.";
@@ -509,17 +535,8 @@ sub simulate
         { @sample_times = @{$params->{sample_times}}; }
         @sample_times = sort {$a <=> $b} @sample_times; # numeric sort
         if ( @sample_times > 2 ){
-        	# remove all sample times <= t_start --Do this in run_network (LAH)
-#        	while ($sample_times[0] <= $t_start){ 
-#        		shift @sample_times;
-#            }
             if ( defined $params->{t_end} ){
                 $t_end = $params->{t_end};
-                # remove all sample times >= t_end --Do this in run_network (LAH)
-#                while ($sample_times[ $#sample_times ] >= $t_end){ 
-#                    pop @sample_times;
-#                }
-                # push t_end as final sample time
                 push @sample_times, $t_end; 
             }
             else{

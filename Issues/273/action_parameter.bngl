@@ -1,0 +1,24 @@
+begin model
+
+begin parameters
+  t0 10
+  t1 20
+end parameters
+
+begin species
+  A() 0
+end species
+
+begin observables
+  Molecules Atot A()
+end observables
+
+
+begin reaction rules
+  0 <-> A() 10, 1
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ssa",t_start=>"t0",t_end=>"t1",n_steps=>200})
