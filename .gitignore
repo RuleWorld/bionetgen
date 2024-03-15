@@ -35,7 +35,10 @@ tests
 testing
 .vscode
 Issues/test.py
+Issues/Caroline
+Issues/273/action_parameter/
 Examples/Polymer_branch/polymer_adele
 Examples/Polymer_branch/polymer_v2
 release
-
+Issues/.DS_Store
+.DS_Store
