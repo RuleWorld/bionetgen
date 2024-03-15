@@ -52,7 +52,7 @@ jobs:
             generators: "Ninja"
           }
     steps:
-      - name: Checkout repo and submodules
+      - name: Checkout repo # and submodules
         uses: actions/checkout@v2
         with:
           submodules: recursive
