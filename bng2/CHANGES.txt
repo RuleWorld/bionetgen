@@ -2,6 +2,20 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.9.2==
+'''''2024 May 24'''''
+
+== Minor changes ==
+* Updated underlying NFsim version to 1.14.2, see [here](https://github.com/RuleWorld/nfsim/releases/tag/v1.14.2) for a change list.
+
+== BioNetGen-2.9.1==
+'''''2024 February 26'''''
+
+== Minor changes ==
+* Fixes a bug that led to invalid SBML files being produced when there were internal variables in a BNGL models. These are produced when anything other than a simple parameter name is used in a RateLaw associated with a rule.
+NOTE: These bundles do not include binaries for sbmlTranslator or library files for compiling and linking to the CVODE library. These files are included in previous release bundles if you need them. For import and atomization of SBML models we strongly suggest you use the Atomizer library and tools included in the latest release of PyBioNetGen. Its functionality and reliability is much greater than that of the old sbmlTranslator code.
+NOTE2: The linux and mac bundles also contain older versions of the NFsim executable (v.1.12.1). If you need newer versions of NFsim, they can be retrieved from the bin directory of the previous release.
+
 == BioNetGen-2.9.0==
 '''''2023 July '''''
 
