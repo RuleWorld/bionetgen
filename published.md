@@ -57,6 +57,7 @@ Help keep this page current by sending your publications to our [email](mailto:b
 
 ## 2016
 * Antunes G, Roque AC, Simoes de Souza FM. [Modelling intracellular competition for calcium: kinetic and thermodynamic control of different molecular modes of signal decoding.](http://www.ncbi.nlm.nih.gov/pubmed/27033299) *Sci. Rep.*
+* Antunes G, Roque AC, Simoes de Souza FM. [Stochastic Induction of Long-Term Potentiation and Long-Term Depression](https://pubmed.ncbi.nlm.nih.gov/27485552) *Sci. Rep.*
 * Hat B et al. [Feedbacks, Bifurcations, and Cell Fate Decision-Making in the p53 System.](http://www.ncbi.nlm.nih.gov/pubmed/26928575) *PLOS Comput. Biol.*
 * Rohrs JA, Sulistio CD, Finley SD. [Predictive model of thrombospondin-1 and vascular endothelial growth factor in breast tumor tissue.](https://pubmed.ncbi.nlm.nih.gov/28713587/) *NPJ Syst. Biol. Appl.*
 * Korwek Z et al. [Importins promote high-frequency NF-κB oscillations increasing information channel capacity.](https://pubmed.ncbi.nlm.nih.gov/27835978/) *Biol. Direct*
