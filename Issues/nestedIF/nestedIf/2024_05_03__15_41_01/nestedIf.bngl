@@ -1,0 +1,18 @@
+begin model
+
+begin species
+  A() 0 
+end species
+
+# begin observables
+#   Molecules Atot A()
+# end observables
+
+begin reaction rules
+   0 -> A() 1 # Data_DailyCases()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ssa",t_end=>150,n_steps=>151})

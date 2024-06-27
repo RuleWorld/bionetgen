@@ -15,6 +15,7 @@ package Expression;
 use strict;
 use warnings;
 no warnings 'redefine';
+no warnings 'recursion';
 
 # Perl Modules
 use Class::Struct;
