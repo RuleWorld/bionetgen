@@ -30,6 +30,9 @@ guides you can find online.
 Windows users should also install Perl at this point if not already installed. You can use ``conda install -c conda-forge perl`` to do this.
 If you do not wish to use Anaconda, or if you do not wish to install Perl through Anaconda, we suggest `Strawberry Perl <https://strawberryperl.com/>`_.
 
+Windows users may come across the error ``spawn bionetgen ENOENT process exited with code -4058``. If this happens you should go into the VS Code Extension settings 
+and enable ``General: Enable_terminal_runner`` as per `these instructions <https://bionetgen.readthedocs.io/en/latest/vsc_options.html>`
+
 Finally, open a ``.bngl`` file in VS Code; this should check if PyBioNetGen is installed, and will automatically install it if not. Once complete, make sure it's installed correctly by
 running ``bionetgen -h``. If this doesn't work, you can open the command palette (``CTRL/CMD + SHIFT + P``) and run the ``BNG setup`` command.
 Alternatively, you can open a terminal and run the install command (``pip install bionetgen``) yourself.
