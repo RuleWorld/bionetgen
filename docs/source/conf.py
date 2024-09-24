@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'BioNetGen'
-copyright = '2022, Caleb Armstrong'
-author = 'Ali Sinan Saglam & Caleb Armstrong'
+copyright = '2024, James R. Faeder'
+author = 'Caleb Armstrong, Ali Sinan Saglam, and James R. Faeder'
 
 # The short X.Y version
 # version = "0"
