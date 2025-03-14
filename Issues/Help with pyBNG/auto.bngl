@@ -1,0 +1,45 @@
+## title: auto.bngl
+## description: Autophosphorylating kinase model due to Lisman.
+## reference: Lisman, J E. “A Mechanism for Memory Storage Insensitive to Molecular 
+#             Turnover: A Bistable Autophosphorylating Kinase.” Proceedings of the 
+#             PNAS 82, no. 9 (May 1985): 3055–57.
+## author: Jim Faeder
+## date: 27Feb2018
+## note: For a 20s pulse the threshold for permanent activation is between 0.013 and 0.015.
+begin model 
+begin parameters
+  S 0.01
+end parameters
+
+begin molecule types
+  K1(Y~0~P)
+  P(b)
+end molecule types
+
+begin seed species
+  K1(Y~0) 100
+  P(b)     10
+end seed species
+
+begin observables
+  Molecules K1p K1(Y~P)
+end observables
+begin functions
+  Input() S*1e4
+end functions
+begin reaction rules
+R1:  K1(Y~0) -> K1(Y~P) S
+R2:  K1(Y~0) + K1(Y~P) -> K1(Y~P) + K1(Y~P) 0.01
+R3:  K1(Y~P) + P(b) <-> K1(Y~P!1).P(b!1) 0.4, 1 
+R4:  K1(Y~P!1).P(b!1) -> K1(Y~0) + P(b) 1
+end reaction rules
+end model 
+
+visualize({type=>"regulatory",background=>1})
+
+setParameter("S",0)
+simulate({method=>"nf", suffix=>'s1', t_end=>50, n_steps=>200, print_functions=>1})
+setParameter("S",0.015)
+simulate({method=>"nf", suffix=>'s2', t_end=>20, n_steps=>200, print_functions=>1})
+setParameter("S",0)
+simulate({method=>"nf", suffix=>'s3', t_end=>130, n_steps=>200, print_functions=>1})

@@ -1,0 +1,52 @@
+ERROR:BNGCLI:from: C:\Users\chatt\anaconda3\Lib\site-packages\bionetgen\core\tools\cli.py : BNGCLI.run() : Command failed to run
+
+BioNetGen version 2.9.2
+
+Reading from file C:\Users\chatt\Desktop\FTC_A4_B4_20uM\FTC_A4_B4_20uM.bngl (level 0)
+Read 3 parameters.
+Read 2 molecule types.
+Read 2 species.
+Read 4 observable(s).
+Read 0 functions.
+Read 16 reaction rule(s).
+ACTION: simulate_nf( )
+
+WARNING: writeFile(): Overwriting existing file FTC_A4_B4_20uM.xml.
+
+Wrote model in xml format to FTC_A4_B4_20uM.xml.
+
+Running NFsim on xps001ac
+
+full command: C:\Users\chatt\anaconda3\Lib\site-packages\bionetgen\bng-win\bin\NFsim.exe -xml FTC_A4_B4_20uM.xml -o FTC_A4_B4_20uM.gdat -sim 0.01 -oSteps 20 -ss FTC_A4_B4_20uM.species -seed 1807253
+[simulation PID is: 36660]
+
+SpeciesLabel max molecule threshold set to 20.
+
+WARNING: Species with more than 20 molecules will be labeled with the Quasi method.
+
+readNFspecies::Reading from file FTC_A4_B4_20uM.species
+
+Couldn't run the simulation, see error
+Traceback (most recent call last):
+
+  File ~\anaconda3\Lib\site-packages\spyder_kernels\py3compat.py:356 in compat_exec
+    exec(code, globals, locals)
+
+  File c:\users\chatt\desktop\ftc_a4_b4_20um\runbngpy.py:8
+    result = bionetgen.run(file, out=output)
+
+  File ~\anaconda3\Lib\site-packages\bionetgen\modelapi\runner.py:50 in run
+    raise e
+
+  File ~\anaconda3\Lib\site-packages\bionetgen\modelapi\runner.py:44 in run
+    cli.run()
+
+  File ~\anaconda3\Lib\site-packages\bionetgen\core\tools\cli.py:175 in run
+    raise BNGRunError(command, stdout=stdout_str, stderr=stderr_str)
+
+BNGRunError: Tried to run command: ['perl', 'C:\\Users\\chatt\\anaconda3\\Lib\\site-packages\\bionetgen\\bng-win\\BNG2.pl', 'C:\\Users\\chatt\\Desktop\\FTC_A4_B4_20uM\\FTC_A4_B4_20uM.bngl']
+There was an issue with running BNG2.pl. There might be an issue with your model.
+
+
+ABORT: Couldn't read from file FTC_A4_B4_20uM.species: No such file or directory
+  at line 52
