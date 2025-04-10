@@ -1,0 +1,40 @@
+# This model demonstrates how to use a time-dependent function in a BNG model.
+begin model
+
+begin parameters
+    TICKS_PER_SECOND 1000
+end parameters
+
+begin molecule types
+    A(a1)
+    B(b1)
+    tick()
+end molecule types
+
+begin species
+    A(a1) 100
+    tick() 0
+end species
+
+begin observables
+    Molecules AB A(a1!1).B(b1!1)
+    Molecules ticks tick()
+end observables
+
+begin functions
+    t ticks/TICKS_PER_SECOND
+    Btot if(t()>10 && t()<20, 100,0)
+end functions
+
+begin reaction rules
+   # The tick is used to track time. In bionetgen there is a built-in time
+   # function, but it is not implemented in NFsim. The 
+   clock: 0 -> tick() TICKS_PER_SECOND
+   # Binding to B only occurs when Btot is non-zero and B is deleted from the
+   # system when it unbinds.
+   ABbind1: A(a1) <-> A(a1!1).B(b1!1) Btot,1 DeleteMolecules
+end reaction rules
+
+end model
+
+simulate({method=>"nf",t_end=>40,n_steps=>200})

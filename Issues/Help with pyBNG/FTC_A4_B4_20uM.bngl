@@ -1,0 +1,52 @@
+begin model
+
+begin parameters
+kd	3500
+kon	1.000000
+koff	3500
+end parameters
+
+begin molecule types
+poly_A(a1,a2,a3,a4)
+poly_B(b1,b2,b3,b4)
+end molecule types
+
+begin seed species
+1 poly_A(a1,a2,a3,a4) 200
+2 poly_B(b1,b2,b3,b4) 200
+end seed species
+
+begin observables
+Molecules tot_poly_A poly_A()
+Molecules free_poly_A poly_A(a1,a2,a3,a4)
+Molecules tot_poly_B poly_B()
+Molecules free_poly_B poly_B(b1,b2,b3,b4)
+end observables
+
+begin functions
+end functions
+
+begin reaction rules
+Rule_65:  poly_A(a1) + poly_B(b1) <-> poly_A(a1!1).poly_B(b1!1)  kon, koff
+Rule_66:  poly_A(a1) + poly_B(b2) <-> poly_A(a1!1).poly_B(b2!1)  kon, koff
+Rule_67:  poly_A(a1) + poly_B(b3) <-> poly_A(a1!1).poly_B(b3!1)  kon, koff
+Rule_68:  poly_A(a1) + poly_B(b4) <-> poly_A(a1!1).poly_B(b4!1)  kon, koff
+Rule_69:  poly_A(a2) + poly_B(b1) <-> poly_A(a2!1).poly_B(b1!1)  kon, koff
+Rule_70:  poly_A(a2) + poly_B(b2) <-> poly_A(a2!1).poly_B(b2!1)  kon, koff
+Rule_71:  poly_A(a2) + poly_B(b3) <-> poly_A(a2!1).poly_B(b3!1)  kon, koff
+Rule_72:  poly_A(a2) + poly_B(b4) <-> poly_A(a2!1).poly_B(b4!1)  kon, koff
+Rule_73:  poly_A(a3) + poly_B(b1) <-> poly_A(a3!1).poly_B(b1!1)  kon, koff
+Rule_74:  poly_A(a3) + poly_B(b2) <-> poly_A(a3!1).poly_B(b2!1)  kon, koff
+Rule_75:  poly_A(a3) + poly_B(b3) <-> poly_A(a3!1).poly_B(b3!1)  kon, koff
+Rule_76:  poly_A(a3) + poly_B(b4) <-> poly_A(a3!1).poly_B(b4!1)  kon, koff
+Rule_77:  poly_A(a4) + poly_B(b1) <-> poly_A(a4!1).poly_B(b1!1)  kon, koff
+Rule_78:  poly_A(a4) + poly_B(b2) <-> poly_A(a4!1).poly_B(b2!1)  kon, koff
+Rule_79:  poly_A(a4) + poly_B(b3) <-> poly_A(a4!1).poly_B(b3!1)  kon, koff
+Rule_80:  poly_A(a4) + poly_B(b4) <-> poly_A(a4!1).poly_B(b4!1)  kon, koff
+end reaction rules
+
+end model
+
+#writeXML()
+
+simulate_nf({t_end=>0.01,n_steps=>20, seed=>1807253, complex=>0})
