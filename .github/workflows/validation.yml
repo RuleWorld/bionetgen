@@ -115,6 +115,7 @@ jobs:
       - name: Make-Mac
         if: ${{ startsWith(matrix.config.name, 'mac') }}
         shell: bash
+        working-directory: ./bng2
         run: |
           if [[ "${{ matrix.config.arch }}" == "x86_64" ]]; then
             echo "CFLAGS=-arch x86_64" >> $GITHUB_ENV
@@ -123,7 +124,6 @@ jobs:
             echo "CFLAGS=-arch arm64" >> $GITHUB_ENV
             echo "CXXFLAGS=-arch arm64" >> $GITHUB_ENV
           fi
-        working-directory: ./bng2
           make
       # Linux compilation
       - name: Make-Linux
