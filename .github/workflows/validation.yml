@@ -124,7 +124,6 @@ jobs:
             echo "CXXFLAGS=-arch arm64" >> $GITHUB_ENV
           fi
         working-directory: ./bng2
-        run: |
           make
       # Linux compilation
       - name: Make-Linux
