@@ -43,7 +43,19 @@ jobs:
             generators: "Ninja"
           }
           - {
-            name: "mac",
+            name: "mac_x86_64",
+            arch: "x86_64",
+            os: macos-latest,
+            artifact: "bng_macos_clang.7z",
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
+          - {
+            name: "mac_arm64",
+            arch: "arm64",
             os: macos-latest,
             artifact: "bng_macos_clang.7z",
             build_type: "Release",
@@ -99,9 +111,24 @@ jobs:
         run: |
           echo github.event.action: ${{ github.event.action }}
           echo github.event_name: ${{ github.event_name }}
-      # Unix compilation
-      - name: Make-unix
-        if: ${{ startsWith(matrix.config.name, 'mac') || startsWith(matrix.config.name, 'linux') }}
+      # Mac compilation
+      - name: Make-Mac
+        if: ${{ startsWith(matrix.config.name, 'mac') }}
+        shell: bash
+        run: |
+          if [[ "${{ matrix.config.arch }}" == "x86_64" ]]; then
+            echo "CFLAGS=-arch x86_64" >> $GITHUB_ENV
+            echo "CXXFLAGS=-arch x86_64" >> $GITHUB_ENV
+          elif [[ "${{ matrix.config.arch }}" == "arm64" ]]; then
+            echo "CFLAGS=-arch arm64" >> $GITHUB_ENV
+            echo "CXXFLAGS=-arch arm64" >> $GITHUB_ENV
+          fi
+        working-directory: ./bng2
+        run: |
+          make
+      # Linux compilation
+      - name: Make-Linux
+        if: ${{ startsWith(matrix.config.name, 'linux') }}
         shell: bash
         working-directory: ./bng2
         run: |
