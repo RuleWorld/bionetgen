@@ -230,7 +230,7 @@ jobs:
 
       - name: Archive windows bundle
         if: startsWith(matrix.config.name, 'windows')
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: bng_bundle_${{ matrix.config.name }}
           path: D:/a/bionetgen/bionetgen/bng2/bng_bundle.tar
