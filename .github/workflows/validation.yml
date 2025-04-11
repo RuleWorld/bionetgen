@@ -118,6 +118,7 @@ jobs:
         working-directory: ./bng2
         run: |
           if [[ "${{ matrix.config.arch }}" == "x86_64" ]]; then
+            uname -m
             export "CFLAGS=-arch x86_64"
             export "CXXFLAGS=-arch x86_64"
             export "LDFLAGS=-arch x86_64"
