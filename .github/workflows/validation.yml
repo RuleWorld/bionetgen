@@ -118,11 +118,11 @@ jobs:
         working-directory: ./bng2
         run: |
           if [[ "${{ matrix.config.arch }}" == "x86_64" ]]; then
-            echo "CFLAGS=-arch x86_64" >> $GITHUB_ENV
-            echo "CXXFLAGS=-arch x86_64" >> $GITHUB_ENV
+            export "CFLAGS=-arch x86_64"
+            export "CXXFLAGS=-arch x86_64"
           elif [[ "${{ matrix.config.arch }}" == "arm64" ]]; then
-            echo "CFLAGS=-arch arm64" >> $GITHUB_ENV
-            echo "CXXFLAGS=-arch arm64" >> $GITHUB_ENV
+            export "CFLAGS=-arch arm64"
+            export "CXXFLAGS=-arch arm64"
           fi
           make
       # Linux compilation
