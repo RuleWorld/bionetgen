@@ -2,6 +2,12 @@ CHANGES to BioNetGen
 updated 28 September 2021
 https://github.com/RuleWorld/bionetgen/
 
+== BioNetGen-2.9.3==
+'''''2025 April 17'''''
+
+== Minor changes ==
+* Changed compilation to create universal Mac binary to run on arm64 and legacy intel mac processors.
+
 == BioNetGen-2.9.2==
 '''''2024 May 24'''''
 
