@@ -33,6 +33,7 @@ $(DIST_DIR): $(NETWORK_BIN)
 $(NETWORK_BIN):
 	cd $(NETWORK_DIR); cp Makefile.cmake Makefile; $(MAKE)
 
+# NOTE: nfsim compilation is currently disabled here. Current binaries are copied from the nfsim repository.
 $(NFSIM_BIN):
 	git submodule init; git submodule update
 	mkdir -p $(NFSIM_DIR)/lib; cd $(NFSIM_DIR)/lib; cmake ..; make

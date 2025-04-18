@@ -60,7 +60,7 @@ $(MUPARSER_LIB):
 
 $(MATHUTILS_LIB):
 	mkdir -p $(LIBDIR) $(INCDIR)
-	cd $(MATHUTILS); make; \
+	cd $(MATHUTILS); make CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS); \
 	mv libmathutils.a $(CMAKELISTS_DIR)/$(LIBDIR); \
 	cp mathutils.h $(CMAKELISTS_DIR)/$(INCDIR)
 
