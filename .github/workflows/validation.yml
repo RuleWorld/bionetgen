@@ -108,9 +108,10 @@ jobs:
           # Set flags to make universal binaries
           export "CC=clang"
           export "CXX=clang++"
-          export "CFLAGS=-arch arm64"
-          export "CXXFLAGS=-arch arm64"
-          export "LDFLAGS=-arch arm64"
+          export "CFLAGS=-arch arm64 -arch x86_64"
+          export "CXXFLAGS=-arch arm64 -arch x86_64" 
+          export "LDFLAGS=-arch arm64 -arch x86_64"
+          export "CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
           make
       # Linux compilation
       - name: Make-Linux
