@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Set the BioNetGen version variable
+VERSION="2.9.3" # Replace with the desired version
+
+# Loop through all zip files in the current directory
+for zipfile in *.zip; do
+    # Extract the base name of the zip file (without extension)
+    BASENAME=$(basename "$zipfile" .zip)
+
+    # Determine the OS based on the zip file name
+    if [[ "$BASENAME" == *win* ]]; then
+        OS="win"
+    elif [[ "$BASENAME" == *mac* ]]; then
+        OS="mac"
+    elif [[ "$BASENAME" == *linux* ]]; then
+        OS="linux"
+    else
+        echo "Unknown OS for file: $zipfile"
+        continue
+    fi
+    # Truncate basename to remove the OS part
+    BASENAME="${BASENAME%_*}"
+
+    # Unzip and untar the base file
+    unzip -q "$zipfile"
+    tar xf "${BASENAME}.tar"
+    # Remove the .tar file
+    rm "${BASENAME}.tar"
+
+    # Name of the top-level directory for the distribution
+    DNAME="BioNetGen-${VERSION}"
+    mv "$BASENAME" "$DNAME"
+
+    # Fetch the latest NFsim release URL for the specific OS (fancy)
+    NFsim_URL=$(curl -s https://api.github.com/repos/RuleWorld/nfsim/releases/latest | jq -r ".assets[] | select(.name | contains(\"${OS}\")) | .browser_download_url")
+    if [[ -z "$NFsim_URL" ]]; then
+        echo "Failed to fetch NFsim URL for OS: $OS"
+        continue
+    fi
+    wget -q "$NFsim_URL"
+    NFsim_ZIP=$(basename "$NFsim_URL")
+    
+    # Extract the NFsim binary from the .tgz file and copy it into the bin directory of the temporary directory
+    tar xzf "$NFsim_ZIP" -C "$DNAME/bin"
+
+    # Create the new tar.gz archive
+    tar czf "${DNAME}-${OS}.tar.gz" --exclude "Validate/" --exclude "Network3/" "$DNAME"
+    #tar czf "${DNAME}-${OS}.tar.gz" --exclude "Validate/" "$DNAME"
+
+    # Clean up the temporary directory
+    rm -rf "$DNAME" "$NFsim_ZIP"
+
+    echo "Processed $zipfile -> ${DNAME}.tar.gz"
+done
+
+echo "All files processed."
