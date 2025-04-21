@@ -180,7 +180,6 @@ jobs:
           cp CREDITS.txt bng_bundle/.
           cp ../LICENSE bng_bundle/.
           cp VERSION bng_bundle/.
-          cp VERSION bng_bundle/.
           cp -r Models2 bng_bundle/.
           cp -r Network3 bng_bundle/.
           cp -r Perl2 bng_bundle/.
