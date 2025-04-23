@@ -3,6 +3,14 @@
 # Set the BioNetGen version variable
 VERSION="2.9.3" # Replace with the desired version
 
+# List of additional files to extract from the BioNetGen distribution (Windows only)
+FILES_TO_EXTRACT=(
+    "bin/libgcc_s_seh-1.dll"
+    "bin/libstdc++-6.dll"
+    "bin/libwinpthread-1.dll"
+    "bin/sundials-config"
+)
+
 # Loop through all zip files in the current directory
 for zipfile in *.zip; do
     # Extract the base name of the zip file (without extension)
@@ -32,7 +40,7 @@ for zipfile in *.zip; do
     DNAME="BioNetGen-${VERSION}"
     mv "$BASENAME" "$DNAME"
 
-    # Fetch the latest NFsim release URL for the specific OS (fancy)
+    # Fetch the latest NFsim release URL for the specific OS
     NFsim_URL=$(curl -s https://api.github.com/repos/RuleWorld/nfsim/releases/latest | jq -r ".assets[] | select(.name | contains(\"${OS}\")) | .browser_download_url")
     if [[ -z "$NFsim_URL" ]]; then
         echo "Failed to fetch NFsim URL for OS: $OS"
@@ -44,14 +52,43 @@ for zipfile in *.zip; do
     # Extract the NFsim binary from the .tgz file and copy it into the bin directory of the temporary directory
     tar xzf "$NFsim_ZIP" -C "$DNAME/bin"
 
+    # Additional extraction for Windows
+    if [[ "$OS" == "win" ]]; then
+        # Fetch the latest BioNetGen release URL
+        BNG_URL=$(curl -s https://api.github.com/repos/RuleWorld/bionetgen/releases/latest | jq -r ".assets[] | select(.name | contains(\"${OS}\")) | .browser_download_url")
+        if [[ -z "$BNG_URL" ]]; then
+            echo "Failed to fetch BioNetGen URL for OS: $OS"
+            continue
+        fi
+        wget -q "$BNG_URL"
+        BNG_ZIP=$(basename "$BNG_URL")
+        echo "retrieved " $BNG_ZIP
+        PREFIX=${BNG_ZIP%-*}
+        #echo "prefix " $PREFIX
+
+        # Construct the tar arguments for extracting specific files
+        TAR_ARGS=()
+        for file in "${FILES_TO_EXTRACT[@]}"; do
+            TAR_ARGS+=("${PREFIX}/${file}")
+        done
+
+        # Extract the specified files from the BioNetGen distribution
+        #tar xzf "$BNG_ZIP" -C "$DNAME" "${TAR_ARGS[@]}"
+        tar xzf "$BNG_ZIP" "${TAR_ARGS[@]}"
+        # Move the extracted files to the bin directory and remove the original directory
+        mv "${TAR_ARGS[@]}" "$DNAME/bin/"
+        rm -r "${PREFIX}"
+        # Remove the BioNetGen zip file
+        rm "$BNG_ZIP"
+    fi
+
     # Create the new tar.gz archive
     tar czf "${DNAME}-${OS}.tar.gz" --exclude "Validate/" --exclude "Network3/" "$DNAME"
-    #tar czf "${DNAME}-${OS}.tar.gz" --exclude "Validate/" "$DNAME"
 
     # Clean up the temporary directory
     rm -rf "$DNAME" "$NFsim_ZIP"
 
-    echo "Processed $zipfile -> ${DNAME}.tar.gz"
+    echo "Processed $zipfile -> ${DNAME}-${OS}.tar.gz"
 done
 
 echo "All files processed."
