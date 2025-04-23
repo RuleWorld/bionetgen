@@ -5,9 +5,9 @@ VERSION="2.9.3" # Replace with the desired version
 
 # List of additional files to extract from the BioNetGen distribution (Windows only)
 FILES_TO_EXTRACT=(
-    "bin/libgcc_s_seh-1.dll"
-    "bin/libstdc++-6.dll"
-    "bin/libwinpthread-1.dll"
+#    "bin/libgcc_s_seh-1.dll"
+#    "bin/libstdc++-6.dll"
+#    "bin/libwinpthread-1.dll"
     "bin/sundials-config"
 )
 
