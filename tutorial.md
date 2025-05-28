@@ -55,7 +55,7 @@ The files presented here are meant to provide a moderately paced but comprehensi
 
 ## Modeling synthesis and degradation 
 
-[`birth-death.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/SynDeg/birtgh-death.bngl)
+[`birth-death.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/SynDeg/birth-death.bngl)
 : Simple model illustrating synthesis and degradation of molecules. Also, demonstrates use of `saveConcentrations()` and `resetConcentrations()` to save and restore initial conditions and to compare model simulated with two different methods. Introduces `generate_network()` command.
 
 [`toggle.bngl`](https://github.com/RuleWorld/BNGTutorial/blob/master/SynDeg/toggle.bngl)
