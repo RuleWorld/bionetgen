@@ -179,6 +179,7 @@ struct NETWORK{
 	vector<vector<int> > 	func_observ_depend;
 	vector<vector<int> > 	func_param_depend;
 	bool has_functions; // true iff at least 1 rxn with (user defined) functional rate law
+	double* time_pointer; // pointer to time variable for updating during ODE integration
 };
 
 extern struct NETWORK network;
