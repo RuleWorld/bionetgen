@@ -1,0 +1,35 @@
+# Test simple inline tfun with ODE integration
+# Tfun implements f(t) = t, which should produce X(t) = 0.5*t^2
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Linear function: f(t) = t
+    # Points: (0,0), (1,1), (2,2), (3,3), (4,4)
+    f_linear() = tfun([0,1,2,3,4], [0,1,2,3,4], time)
+end functions
+
+begin reaction rules
+    # Rate = f(t) = t, so dX/dt = t
+    # Solution: X(t) = 0.5*t^2
+    0 -> X() f_linear()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode", t_end=>4, n_steps=>40})

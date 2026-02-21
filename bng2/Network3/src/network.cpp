@@ -402,6 +402,116 @@ void process_function_names(string& a) {
 	}
 }
 
+/**
+ * Helper to parse tfun syntax from NET file
+ * Returns true if function_string is a tfun, false otherwise
+ *
+ * Tfun syntax: tfun([x1,x2,...],[y1,y2,...],index,method=>"...")
+ * Currently supports inline mode only (file-based mode not yet implemented)
+ */
+bool parse_tfun_from_net(const string& func_name, const string& function_string,
+                         map<string,double*>& param_map,
+                         map<string,int>& observ_index_map) {
+    // Check if function starts with "tfun("
+    if (function_string.substr(0, 5) != "tfun(") {
+        return false;  // Not a tfun
+    }
+
+    // Extract tfun arguments
+    size_t start = 5;  // After "tfun("
+    size_t end = function_string.find_last_of(')');
+    string args = function_string.substr(start, end - start);
+
+    // Parse mode: check if starts with '[' (inline) or quote (file)
+    bool is_inline = (args[0] == '[');
+
+    vector<double> x_vals, y_vals;
+    string index_name;
+    BNG::TfunMethod method = BNG::LINEAR;  // Default
+
+    if (is_inline) {
+        // Parse inline mode: tfun([x1,x2,...],[y1,y2,...],index,method=>"...")
+
+        // Extract x array
+        size_t x_start = args.find('[');
+        size_t x_end = args.find(']');
+        string x_str = args.substr(x_start + 1, x_end - x_start - 1);
+
+        // Parse x values
+        istringstream x_stream(x_str);
+        string val;
+        while (getline(x_stream, val, ',')) {
+            x_vals.push_back(atof(val.c_str()));
+        }
+
+        // Extract y array
+        size_t y_start = args.find('[', x_end);
+        size_t y_end = args.find(']', y_start);
+        string y_str = args.substr(y_start + 1, y_end - y_start - 1);
+
+        // Parse y values
+        istringstream y_stream(y_str);
+        while (getline(y_stream, val, ',')) {
+            y_vals.push_back(atof(val.c_str()));
+        }
+
+        // Extract index name (after second ']')
+        size_t idx_start = y_end + 2;  // Skip ],
+        size_t idx_end = args.find(',', idx_start);
+        if (idx_end == string::npos) {
+            idx_end = args.length();
+        }
+        index_name = args.substr(idx_start, idx_end - idx_start);
+
+        // Check for method parameter
+        size_t method_pos = args.find("method=>");
+        if (method_pos != string::npos) {
+            size_t method_start = args.find('\"', method_pos) + 1;
+            size_t method_end = args.find('\"', method_start);
+            string method_str = args.substr(method_start, method_end - method_start);
+            if (method_str == "step") {
+                method = BNG::STEP;
+            }
+        }
+    }
+    else {
+        // File-based mode: tfun('file.tfun',index,method=>\"...\")
+        // For now, error out - file reading not yet implemented
+        cerr << "ERROR: File-based tfun not yet supported in Network3\n";
+        cerr << "       Function: " << func_name << "\n";
+        cerr << "       Use inline syntax: tfun([x],[y],index)\n";
+        exit(1);
+    }
+
+    // Trim whitespace from index_name
+    index_name.erase(remove_if(index_name.begin(), index_name.end(), ::isspace), index_name.end());
+
+    // Create Tfun object
+    try {
+        BNG::Tfun* tfun = new BNG::Tfun(x_vals, y_vals, method);
+        network.tfuns.push_back(tfun);
+        network.tfun_name_map[func_name] = network.tfuns.size() - 1;
+        network.tfun_index_names.push_back(index_name);
+
+        // Create value pointer for muParser
+        double* val_ptr = new double;
+        *val_ptr = 0.0;  // Initial value
+        network.tfun_value_ptrs.push_back(val_ptr);
+
+        network.has_tfuns = true;
+
+        cout << "Created tfun '" << func_name << "' with " << x_vals.size()
+             << " points, index='" << index_name << "', method="
+             << (method == BNG::LINEAR ? "linear" : "step") << endl;
+
+        return true;
+    }
+    catch (const std::exception& e) {
+        cerr << "ERROR creating tfun '" << func_name << "': " << e.what() << endl;
+        exit(1);
+    }
+}
+
 /** Ilya Korsunsky 6/2/10
  *
  * Reads functions block in order and for each function, creates a parser.
@@ -491,6 +601,72 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 				// create parser for that function
 				readLine >> func_name >> function_string;
+
+				// Check if this is a tfun (before argument validation)
+				bool is_tfun = parse_tfun_from_net(func_name, function_string,
+				                                     param_map, observ_index_map);
+
+				if (is_tfun) {
+					// Erase '()' from function name
+					func_name.erase(func_name.length()-2, func_name.length());
+
+					// Create a dummy parser that returns the tfun value
+					mu::Parser tfun_parser;
+					int tfun_idx = network.tfun_name_map[func_name];
+					tfun_parser.DefineVar(func_name, network.tfun_value_ptrs[tfun_idx]);
+					tfun_parser.SetExpr(func_name);
+
+					// Add parser to functions vector
+					network.functions.push_back(tfun_parser);
+					network.func_observ_depend.push_back(vector<int>());  // Empty for now
+					network.func_param_depend.push_back(vector<int>());
+
+					// Create a new parameter Elt with the function name
+					Elt* new_elt;
+					if (rates) new_elt = new_Elt((char*)func_name.c_str(), 0.0, rates->n_elt+1);
+					else new_elt = new_Elt((char*)func_name.c_str(), 0.0, 1);
+					new_elt->next = NULL;
+					network.is_func_map[func_name] = true;
+
+					// Push index of new parameter into var_parameters vector
+					if (rates) network.var_parameters.push_back(rates->n_elt+1);
+					else network.var_parameters.push_back(1);
+					if (network.functions.size() != network.var_parameters.size()){
+						cout << "ERROR: Function and variable parameter indices do not match." << endl;
+						exit(1);
+					}
+
+					// Add to rates array
+					if (rates){
+						// allocate space in elt_array **elt (double the space), if necessary
+						if (num_free_spaces == 0) {
+							Elt** elt_temp = new Elt*[2*rates->n_elt];
+							for (int q = 0; q < rates->n_elt; q++){
+								elt_temp[q] = rates->elt[q];
+							}
+							delete[] rates->elt;
+							rates->elt = elt_temp;
+							num_free_spaces = rates->n_elt;
+						}
+
+						// push and link parameter into elt_array
+						rates->elt[rates->n_elt++] = new_elt;
+						Elt* curr = rates->list;
+						Elt* prev = curr;
+						for (; curr != NULL; prev = curr, curr = curr->next);
+						prev->next = new_elt;
+						num_free_spaces--;
+					}
+					else{
+						rates = new_Elt_array(new_elt);
+					}
+
+					// Add param_map entry for muParser
+					param_map[func_name] = &(new_elt->val);
+
+					// Continue to next function
+					continue;
+				}
 
 				// Check for function arguments -- exit if they exist
 				if (func_name[func_name.length()-2] != '(') {
@@ -2796,6 +2972,31 @@ void derivs_network(double t, double* conc, double* derivs) {
 	/* Initialize derivatives to zero */
 	INIT_VECTOR(derivs, 0.0, n_species);
 
+	// Update tfun values if any exist
+	if (network.has_tfuns) {
+		for (size_t i = 0; i < network.tfuns.size(); i++) {
+			string& index_name = network.tfun_index_names[i];
+			double index_val;
+
+			// Get index value (time, parameter, or observable)
+			if (index_name == "time" || index_name == "t") {
+				index_val = t;
+			}
+			else {
+				// Look up in param_map (which includes both parameters and observables)
+				// For now, we need to access the global param_map
+				// This will be handled through the NETWORK struct
+				cerr << "ERROR: Non-time tfun indices not yet fully supported in derivs_network\n";
+				cerr << "       Index: " << index_name << "\n";
+				exit(1);
+			}
+
+			// Evaluate tfun and update value pointer
+			double tfun_val = network.tfuns[i]->evaluate(index_val);
+			*(network.tfun_value_ptrs[i]) = tfun_val;
+		}
+	}
+
 	// Update reaction rates that depend on functions
 	// update groups (only those that inform variables parameters)
 	for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
@@ -4832,9 +5033,36 @@ int create_update_lists() {
 	return (err);
 }
 
+/**
+ * Validate that tfuns are compatible with SSA simulation
+ *
+ * The standard Gillespie SSA algorithm assumes that propensities only change
+ * due to reaction events. Time-indexed tfuns violate this assumption and
+ * would require a time-dependent SSA algorithm.
+ */
+void validate_tfuns_for_ssa() {
+	if (!network.has_tfuns) return;
+
+	for (size_t i = 0; i < network.tfuns.size(); i++) {
+		string& index_name = network.tfun_index_names[i];
+
+		// Check if time-indexed
+		if (index_name == "time" || index_name == "t") {
+			cerr << "ERROR: Time-indexed tfun not supported for SSA simulation\n";
+			cerr << "       Function index: " << index_name << "\n";
+			cerr << "       Standard Gillespie algorithm is invalid for time-dependent rates\n";
+			cerr << "       Use ODE method (method=>\"ode\") or index tfun by observable/parameter\n";
+			exit(1);
+		}
+	}
+}
+
 int init_gillespie_direct_network(int update_interval, int seed) {
 	int i;
 	Rxn** rarray;
+
+	// Validate tfuns are compatible with SSA
+	validate_tfuns_for_ssa();
 
 	// Initialize random number generator
 	if (seed >= 0) {
