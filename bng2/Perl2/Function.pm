@@ -498,14 +498,31 @@ sub toXML
     $string .= " id=\"".$fun->Name."\"";
 
     # AS-2021
-    # if we have a TFUN type function, we need to add 
+    # if we have a TFUN type function (old uppercase syntax), we need to add
     # some attributes to the function XML
-    if($fun->Expr->tfunFile) 
+    if($fun->Expr->tfunFile)
     {
-        # we need type and file attributes
+        # we need type and file attributes (old TFUN format)
         $string .= " type=\"TFUN\"";
         $string .= " file=\"".$fun->Expr->tfunFile."\"";
         $string .= " ctrName=\"".$fun->Expr->ctrName."\"";
+    }
+    # New lowercase tfun support
+    elsif ($fun->Expr->tfunData) {
+        my $data = $fun->Expr->tfunData;
+        # For file-based tfun, emit TFUN XML for NFsim compatibility
+        if ($data->{mode} eq 'file') {
+            $string .= " type=\"TFUN\"";
+            $string .= " file=\"".$data->{file}."\"";
+            $string .= " ctrName=\"".$data->{index}."\"";
+            $string .= " method=\"".$data->{method}."\"" if $data->{method};
+        }
+        # For inline tfun, we'll handle it differently (TBD)
+        # For now, just mark it as type="TFUN"
+        else {
+            $string .= " type=\"TFUN\"";
+            $string .= " mode=\"inline\"";
+        }
     }
     # AS-2021
 
