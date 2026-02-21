@@ -1,0 +1,37 @@
+# Test tfun() syntax parsing
+# This is a minimal test to verify the parser recognizes tfun syntax
+
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Test inline tfun - simple linear ramp
+    f_inline() = tfun([0, 1, 2, 3], [0, 10, 20, 30], time)
+
+    # Test file-based tfun (file doesn't exist yet, just testing parse)
+    # f_file() = tfun('test_data.tfun', time)
+end functions
+
+begin reaction rules
+    # Simple production driven by tfun
+    0 -> X() 1.0
+end reaction rules
+
+end model
+
+# Just generate network to test parsing - don't simulate yet
+generate_network({overwrite=>1})
