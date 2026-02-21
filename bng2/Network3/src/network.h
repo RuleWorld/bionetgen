@@ -36,6 +36,7 @@ using namespace std;
 #include "muParser.h"
 #include "muParserInt.h"
 #include "util/util.hh"
+#include "model/tfun.h"
 
 // Reaction types
 enum {ELEMENTARY, SATURATION, MICHAELIS_MENTEN, HILL, FUNCTIONAL};
@@ -179,6 +180,13 @@ struct NETWORK{
 	vector<vector<int> > 	func_observ_depend;
 	vector<vector<int> > 	func_param_depend;
 	bool has_functions; // true iff at least 1 rxn with (user defined) functional rate law
+
+	// Table function (tfun) support
+	vector<BNG::Tfun*>      tfuns;                   // Tfun objects for each tfun function
+	map<string, int>        tfun_name_map;           // function_name -> tfun index
+	vector<string>          tfun_index_names;        // index variable name for each tfun
+	vector<double*>         tfun_value_ptrs;         // Pointers to values that muParser sees
+	bool has_tfuns;                                  // true if any tfun functions exist
 };
 
 extern struct NETWORK network;
