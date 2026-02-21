@@ -1,0 +1,34 @@
+# Test that time-indexed tfun produces error with SSA method
+# This test should FAIL with a clear error message about SSA incompatibility
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 100
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Time-indexed tfun - not allowed with SSA
+    f_time() = tfun([0,1,2], [1,2,3], time)
+end functions
+
+begin reaction rules
+    # This should trigger SSA validation error
+    X() -> 0 f_time()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+# This should fail with error message about time-indexed tfun
+simulate({method=>"ssa", t_end=>2, n_steps=>20})

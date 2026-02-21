@@ -1,0 +1,36 @@
+# Test tfun with step interpolation method
+# Tfun implements step function to verify method=>"step" works correctly
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Step function: f(t) = {1 for 0<=t<1, 2 for 1<=t<2, 3 for 2<=t<3, 4 for 3<=t<=4}
+    # Points: (0,1), (1,2), (2,3), (3,4)
+    # Left-continuous: value changes at exact breakpoints
+    f_step() = tfun([0,1,2,3], [1,2,3,4], time, method=>"step")
+end functions
+
+begin reaction rules
+    # Rate changes in steps: 1, 2, 3, 4
+    # X should increase linearly within each interval
+    0 -> X() f_step()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode", t_end=>4, n_steps=>80})
