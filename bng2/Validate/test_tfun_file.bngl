@@ -1,0 +1,33 @@
+# Test file-based tfun
+# Uses external .tfun file with exponentially growing rate
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # File-based tfun with exponential growth: f(t) = 2^t
+    f_time() = tfun('test_data.tfun', time)
+end functions
+
+begin reaction rules
+    # Rate grows exponentially with time
+    0 -> X() f_time()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode", t_end=>4, n_steps=>40})

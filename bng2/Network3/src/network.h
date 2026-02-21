@@ -185,6 +185,7 @@ struct NETWORK{
 	vector<BNG::Tfun*>      tfuns;                   // Tfun objects for each tfun function
 	map<string, int>        tfun_name_map;           // function_name -> tfun index
 	vector<string>          tfun_index_names;        // index variable name for each tfun
+	vector<double*>         tfun_index_ptrs;         // Pointers to index values (time/param/observable)
 	vector<double*>         tfun_value_ptrs;         // Pointers to values that muParser sees
 	bool has_tfuns;                                  // true if any tfun functions exist
 };

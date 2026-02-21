@@ -403,11 +403,75 @@ void process_function_names(string& a) {
 }
 
 /**
+ * Helper to read .tfun file
+ * Returns true on success, false on error
+ */
+bool read_tfun_file(const string& filename, vector<double>& x_vals, vector<double>& y_vals,
+                    string& error_msg) {
+    ifstream file(filename.c_str());
+    if (!file.is_open()) {
+        error_msg = "Cannot open tfun file '" + filename + "'";
+        return false;
+    }
+
+    string line;
+    int line_num = 0;
+
+    // Read header line (first non-empty line starting with #)
+    bool found_header = false;
+    while (getline(file, line)) {
+        line_num++;
+        // Skip empty lines
+        if (line.find_first_not_of(" \t\r\n") == string::npos) continue;
+        // Check if header line
+        if (line[0] == '#') {
+            found_header = true;
+            break;
+        }
+    }
+
+    if (!found_header) {
+        error_msg = "No header line found in '" + filename + "' (should start with #)";
+        return false;
+    }
+
+    // Read data lines
+    while (getline(file, line)) {
+        line_num++;
+
+        // Skip comments and blank lines
+        if (line.find_first_not_of(" \t\r\n") == string::npos) continue;
+        if (line[0] == '#') continue;
+
+        // Parse two values
+        istringstream iss(line);
+        double x, y;
+        if (!(iss >> x >> y)) {
+            error_msg = "Invalid data at line " + to_string(line_num) + " in '" + filename + "'";
+            return false;
+        }
+
+        x_vals.push_back(x);
+        y_vals.push_back(y);
+    }
+
+    file.close();
+
+    if (x_vals.empty()) {
+        error_msg = "No data found in '" + filename + "'";
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Helper to parse tfun syntax from NET file
  * Returns true if function_string is a tfun, false otherwise
  *
- * Tfun syntax: tfun([x1,x2,...],[y1,y2,...],index,method=>"...")
- * Currently supports inline mode only (file-based mode not yet implemented)
+ * Tfun syntax:
+ *   Inline: tfun([x1,x2,...],[y1,y2,...],index,method=>"...")
+ *   File:   tfun('file.tfun',index,method=>"...")
  */
 bool parse_tfun_from_net(const string& func_name, const string& function_string,
                          map<string,double*>& param_map,
@@ -475,16 +539,79 @@ bool parse_tfun_from_net(const string& func_name, const string& function_string,
         }
     }
     else {
-        // File-based mode: tfun('file.tfun',index,method=>\"...\")
-        // For now, error out - file reading not yet implemented
-        cerr << "ERROR: File-based tfun not yet supported in Network3\n";
-        cerr << "       Function: " << func_name << "\n";
-        cerr << "       Use inline syntax: tfun([x],[y],index)\n";
-        exit(1);
+        // File-based mode: tfun('file.tfun',index,method=>"...")
+
+        // Extract filename (between quotes)
+        size_t quote1 = args.find('\'');
+        if (quote1 == string::npos) quote1 = args.find('\"');
+        if (quote1 == string::npos) {
+            cerr << "ERROR: tfun file mode requires quoted filename\n";
+            cerr << "       Function: " << func_name << "\n";
+            exit(1);
+        }
+        size_t quote2 = args.find('\'', quote1 + 1);
+        if (quote2 == string::npos) quote2 = args.find('\"', quote1 + 1);
+        if (quote2 == string::npos) {
+            cerr << "ERROR: Unterminated quote in tfun filename\n";
+            cerr << "       Function: " << func_name << "\n";
+            exit(1);
+        }
+        string filename = args.substr(quote1 + 1, quote2 - quote1 - 1);
+
+        // Extract index name (after filename)
+        size_t idx_start = quote2 + 1;
+        while (idx_start < args.length() && (args[idx_start] == ',' || isspace(args[idx_start]))) {
+            idx_start++;
+        }
+        size_t idx_end = args.find(',', idx_start);
+        if (idx_end == string::npos) {
+            idx_end = args.length();
+        }
+        index_name = args.substr(idx_start, idx_end - idx_start);
+
+        // Check for method parameter
+        size_t method_pos = args.find("method=>");
+        if (method_pos != string::npos) {
+            size_t method_start = args.find('\"', method_pos);
+            if (method_start == string::npos) method_start = args.find('\'', method_pos);
+            if (method_start != string::npos) {
+                method_start++;
+                size_t method_end = args.find('\"', method_start);
+                if (method_end == string::npos) method_end = args.find('\'', method_start);
+                if (method_end != string::npos) {
+                    string method_str = args.substr(method_start, method_end - method_start);
+                    if (method_str == "step") {
+                        method = BNG::STEP;
+                    }
+                }
+            }
+        }
+
+        // Read data from file
+        string error_msg;
+        if (!read_tfun_file(filename, x_vals, y_vals, error_msg)) {
+            cerr << "ERROR reading tfun file for function '" << func_name << "': " << error_msg << "\n";
+            exit(1);
+        }
     }
 
     // Trim whitespace from index_name
     index_name.erase(remove_if(index_name.begin(), index_name.end(), ::isspace), index_name.end());
+
+    // Resolve index pointer (for parameters and observables, not time)
+    double* index_ptr = NULL;
+    if (index_name != "time" && index_name != "t") {
+        // Look up in param_map (includes both parameters and observables)
+        if (param_map.find(index_name) != param_map.end()) {
+            index_ptr = param_map[index_name];
+        }
+        else {
+            cerr << "ERROR: tfun index variable '" << index_name << "' not found\n";
+            cerr << "       Function: " << func_name << "\n";
+            cerr << "       Index must be 'time', a parameter name, or an observable name\n";
+            exit(1);
+        }
+    }
 
     // Create Tfun object
     try {
@@ -492,6 +619,7 @@ bool parse_tfun_from_net(const string& func_name, const string& function_string,
         network.tfuns.push_back(tfun);
         network.tfun_name_map[func_name] = network.tfuns.size() - 1;
         network.tfun_index_names.push_back(index_name);
+        network.tfun_index_ptrs.push_back(index_ptr);  // NULL for time, pointer otherwise
 
         // Create value pointer for muParser
         double* val_ptr = new double;
@@ -2974,21 +3102,25 @@ void derivs_network(double t, double* conc, double* derivs) {
 
 	// Update tfun values if any exist
 	if (network.has_tfuns) {
+		// First update observables (groups) so they're current for tfun evaluation
+		for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
+			curr->total_val = 0;
+			for (int i = 0; i < curr->n_elt; i++)
+				curr->total_val += curr->elt_factor[i] * conc[curr->elt_index[i]-1];
+		}
+
+		// Now evaluate tfuns
 		for (size_t i = 0; i < network.tfuns.size(); i++) {
-			string& index_name = network.tfun_index_names[i];
 			double index_val;
 
-			// Get index value (time, parameter, or observable)
-			if (index_name == "time" || index_name == "t") {
+			// Get index value
+			if (network.tfun_index_ptrs[i] == NULL) {
+				// Time index (pointer is NULL)
 				index_val = t;
 			}
 			else {
-				// Look up in param_map (which includes both parameters and observables)
-				// For now, we need to access the global param_map
-				// This will be handled through the NETWORK struct
-				cerr << "ERROR: Non-time tfun indices not yet fully supported in derivs_network\n";
-				cerr << "       Index: " << index_name << "\n";
-				exit(1);
+				// Parameter or observable index (use stored pointer)
+				index_val = *(network.tfun_index_ptrs[i]);
 			}
 
 			// Evaluate tfun and update value pointer
