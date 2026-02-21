@@ -307,13 +307,25 @@ sub toString
     my $include_equal = (@_) ? shift : 0;
     # used for aligning columns nicely
     my $max_length    = (@_) ? shift : 0;
-    
+
     my $name = defined $fun->Name ? $fun->Name : "anon";
     my $string = $name . '(' . join(',', @{$fun->Args}) . ')';
     if ( $fun->Expr )
     {
         $string .= ($include_equal) ? ' = ' : ' ';
-        $string .= $fun->Expr->toString($plist);
+
+        # Check if this is a tfun - if so, write tfun syntax instead of expression
+        if ($fun->Expr->tfunData) {
+            my $data = $fun->Expr->tfunData;
+            $string .= format_tfun_string($data);
+        }
+        # Check for old TFUN format
+        elsif ($fun->Expr->tfunFile) {
+            $string .= "TFUN(" . $fun->Expr->ctrName . ",'" . $fun->Expr->tfunFile . "')";
+        }
+        else {
+            $string .= $fun->Expr->toString($plist);
+        }
     }
 
     if ($include_equal and $max_length)
@@ -328,6 +340,34 @@ sub toString
     }
 
     return $string;
+}
+
+# Helper function to format tfun data as string
+sub format_tfun_string
+{
+    my $data = shift;
+    my $str = 'tfun(';
+
+    if ($data->{mode} eq 'file') {
+        # File-based: tfun('file.tfun', index, method=>"...")
+        $str .= "'" . $data->{file} . "'";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+    elsif ($data->{mode} eq 'inline') {
+        # Inline: tfun([x...], [y...], index, method=>"...")
+        $str .= "[" . join(",", @{$data->{x_vals}}) . "]";
+        $str .= ",[" . join(",", @{$data->{y_vals}}) . "]";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+
+    $str .= ')';
+    return $str;
 }
 
 

@@ -1,0 +1,39 @@
+# Test complete NET file emission for tfun
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Inline with default linear
+    f1() = tfun([0,1,2], [10,20,30], time)
+
+    # Inline with step method
+    f2() = tfun([0,5,10], [1,2,3], time, method=>"step")
+
+    # File-based (default linear) - note: file doesn't exist, just testing syntax
+    # f3() = tfun('data.tfun', time)
+
+    # File-based with parameter index
+    # f4() = tfun('dose_response.tfun', drug_conc, method=>"linear")
+end functions
+
+begin reaction rules
+    0 -> X() 1.0
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
