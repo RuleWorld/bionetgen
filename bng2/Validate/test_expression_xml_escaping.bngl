@@ -1,0 +1,81 @@
+# Test case for issue #281: Expression.pm::toXML global substitution bug
+# This model tests that multiple occurrences of <, >, &&, and || operators
+# are properly escaped/replaced when serializing to XML.
+#
+# The bug: Expression.pm::toXML only replaces the FIRST occurrence of each
+# operator because the regex substitutions lack the /g (global) flag.
+#
+# Test expressions include:
+# - Multiple < comparisons: if((A<B)&&(B<C)&&(C<D), 1, 0)
+# - Multiple > comparisons: if((x>0)&&(y>0), 1, 0)
+# - Multiple && operators: combined with above
+# - Multiple || operators: if((x>0)||(y>0)||(z>0), 1, 0)
+# - Mixed operators: if((A<B)||(C>D), 1, 0)
+
+begin model
+
+begin parameters
+    k1   1.0
+    k2   2.0
+    A    1.0
+    B    2.0
+    C    3.0
+    D    4.0
+end parameters
+
+begin molecule types
+    X(s~0~1~2)
+    Y()
+end molecule types
+
+begin seed species
+    X(s~0)  100
+    Y()     50
+end seed species
+
+begin observables
+    Molecules X0 X(s~0)
+    Molecules X1 X(s~1)
+    Molecules X2 X(s~2)
+    Molecules Y_total Y()
+end observables
+
+begin functions
+    # Test multiple < operators with && operators
+    # After XML conversion, all < should become &lt; and all && should become 'and'
+    multi_less_than() = if((X0<X1)&&(X1<X2)&&(X2<Y_total), k1, 0)
+
+    # Test multiple > operators with && operators
+    # After XML conversion, all > should become &gt; and all && should become 'and'
+    multi_greater_than() = if((Y_total>X2)&&(X2>X1)&&(X1>X0), k2, 0)
+
+    # Test multiple || operators with > operators
+    # After XML conversion, all > should become &gt; and all || should become 'or'
+    multi_or() = if((X0>50)||(X1>50)||(X2>50), k1*2, 0)
+
+    # Test mixed < and > with ||
+    # All operators should be properly replaced
+    mixed_ops() = if((A<B)||(C>D), k2*2, 0)
+
+    # Test nested expressions with multiple operators
+    # This is a comprehensive test
+    nested_multi() = if((A<B)&&(B<C)&&((C<D)||(D>C)), k1+k2, k1)
+end functions
+
+begin reaction rules
+    # Use functions in reaction rules to ensure they get serialized to XML
+    X(s~0) -> X(s~1)  multi_less_than()
+    X(s~1) -> X(s~2)  multi_greater_than()
+    X(s~2) -> X(s~0)  multi_or()
+    Y() -> Y() + Y()  mixed_ops()
+end reaction rules
+
+end model
+
+## actions ##
+# Generate network and write XML to test Expression.pm::toXML
+generate_network({overwrite=>1})
+writeXML()
+
+# Run a short simulation to ensure the functions work correctly
+simulate({method=>"ode", t_end=>10, n_steps=>10})
