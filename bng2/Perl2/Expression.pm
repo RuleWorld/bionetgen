@@ -1554,10 +1554,10 @@ sub toXML
     # the XML parser to work.<" with "&lt;", ">" with "&gt;", and
     #"&" with "&amp
     #print "before XML replacement: $string\n";
-    $string =~ s/</&lt\;/;
-    $string =~ s/>/&gt\;/;
-    $string =~ s/&&/and/;
-    $string =~ s/\|\|/or/;
+    $string =~ s/</&lt\;/g;
+    $string =~ s/>/&gt\;/g;
+    $string =~ s/&&/and/g;
+    $string =~ s/\|\|/or/g;
     #print "after XML replacement: $string\n";
     #END edit, msneddon
 
