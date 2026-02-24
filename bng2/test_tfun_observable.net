@@ -1,0 +1,18 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 k_deg      0.1  # Constant
+end parameters
+begin functions
+    1 k_prod() tfun([0,25,50,75,100],[5,4,3,2,1],Xtot)
+    2 _rateLaw1() k_deg*Xtot
+end functions
+begin species
+    1 X() 50
+end species
+begin reactions
+    1 0 1 k_prod #_R1
+    2 1 0 _rateLaw1 #_R2
+end reactions
+begin groups
+    1 Xtot                 1
+end groups

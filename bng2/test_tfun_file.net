@@ -1,0 +1,15 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+end parameters
+begin functions
+    1 f_time() tfun('test_data.tfun',time)
+end functions
+begin species
+    1 X() 0
+end species
+begin reactions
+    1 0 1 f_time #_R1
+end reactions
+begin groups
+    1 Xtot                 1
+end groups

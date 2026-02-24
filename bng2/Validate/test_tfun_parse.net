@@ -1,0 +1,16 @@
+# Created by BioNetGen 2.9.3
+begin parameters
+    1 _rateLaw1  1.0  # Constant
+end parameters
+begin functions
+    1 f_inline() tfun([0,1,2,3],[0,10,20,30],time)
+end functions
+begin species
+    1 X() 0
+end species
+begin reactions
+    1 0 1 _rateLaw1 #_R1
+end reactions
+begin groups
+    1 Xtot                 1
+end groups

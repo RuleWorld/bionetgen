@@ -12,6 +12,18 @@ BioNetGen is software designed for modular, structure-based modeling of biochemi
 
 For more information, visit BioNetGen's [documentation](https://bionetgen.readthedocs.io/en/latest/index.html).
 
+## New Project Announcement: BioNetGen Playground
+
+### Come play with us at our new playground, the BioNetGen Playground!
+
+We are excited to share the [BioNetGen Playground](https://ruleworld.github.io/bngplayground/), a new interactive project for exploring rule-based modeling concepts in a hands-on way.
+
+Features include:
+- Interactive examples for learning BioNetGen concepts
+- Browser-based access with no local setup required
+- A streamlined environment for experimenting with models and rules
+- Open-source development on [GitHub](https://github.com/RuleWorld/bngplayground)
+
 ## Using BioNetGen with the VS Code Extension
 
 {% include home_slideshow.html %}

@@ -1,0 +1,11 @@
+prefix=/Users/faeder/Library/CloudStorage/OneDrive-UniversityofPittsburgh/Code/bionetgen/bng2/Network3
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: muparser
+Description: Mathematical expressions parser library
+Version: 2.2.4
+Requires:
+Libs: -L${libdir} -lmuparser
+Cflags: -I${includedir}
