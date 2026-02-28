@@ -557,11 +557,20 @@ sub toXML
             $string .= " ctrName=\"".$data->{index}."\"";
             $string .= " method=\"".$data->{method}."\"" if $data->{method};
         }
-        # For inline tfun, we'll handle it differently (TBD)
-        # For now, just mark it as type="TFUN"
+        # For inline tfun, include all necessary data in XML attributes
         else {
             $string .= " type=\"TFUN\"";
             $string .= " mode=\"inline\"";
+            $string .= " ctrName=\"".$data->{index}."\"";
+
+            # Encode x and y arrays as comma-separated strings
+            my $x_str = join(',', @{$data->{x_vals}});
+            my $y_str = join(',', @{$data->{y_vals}});
+            $string .= " xData=\"".$x_str."\"";
+            $string .= " yData=\"".$y_str."\"";
+
+            # Include method if specified
+            $string .= " method=\"".$data->{method}."\"" if $data->{method};
         }
     }
     # AS-2021

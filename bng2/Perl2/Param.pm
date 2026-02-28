@@ -13,6 +13,7 @@ use Class::Struct;
 # BNG Modules
 use ParamList;
 use Expression;
+use TfunReader;
 
 
 
@@ -387,9 +388,204 @@ sub toMathMLString
 
     if ($param->Expr)
     {
+        # Check if this is a tfun function - if so, convert to piecewise
+        if ($param->Expr->tfunData) {
+            return tfun_to_mathml_piecewise($param->Expr->tfunData, $indent);
+        }
+        # Check for old TFUN format
+        elsif ($param->Expr->tfunFile) {
+            my $tfun_data = {
+                mode => 'file',
+                file => $param->Expr->tfunFile,
+                index => $param->Expr->ctrName,
+                method => 'linear'
+            };
+            return tfun_to_mathml_piecewise($tfun_data, $indent);
+        }
         return($param->Expr->toMathMLString($plist,$indent));
     }
     return ('');
+}
+
+# Convert tfun data to MathML piecewise function for SBML export
+sub tfun_to_mathml_piecewise
+{
+    my $data = shift;
+    my $indent = shift || '';
+
+    my @x_vals;
+    my @y_vals;
+
+    # Load data based on mode
+    if ($data->{mode} eq 'file') {
+        # Read tfun file
+        # For SBML export, we use lenient reading (no func/index name validation)
+        my ($x_ref, $y_ref, $err) = read_tfun_file_simple($data->{file});
+        if ($err) {
+            warn "WARNING: Cannot convert tfun file '$data->{file}' to SBML: $err\n";
+            warn "         Using constant value 0.0 instead.\n";
+            return $indent . "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n" .
+                   $indent . "  <cn> 0.0 </cn>\n" .
+                   $indent . "</math>\n";
+        }
+        @x_vals = @$x_ref;
+        @y_vals = @$y_ref;
+    }
+    elsif ($data->{mode} eq 'inline') {
+        @x_vals = @{$data->{x_vals}};
+        @y_vals = @{$data->{y_vals}};
+    }
+    else {
+        warn "WARNING: Unknown tfun mode: $data->{mode}\n";
+        return $indent . "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n" .
+               $indent . "  <cn> 0.0 </cn>\n" .
+               $indent . "</math>\n";
+    }
+
+    # Warn if table is very large
+    my $n_points = scalar(@x_vals);
+    if ($n_points > 50) {
+        warn "WARNING: tfun table has $n_points points - SBML export may produce large file\n";
+        warn "         Consider using NFsim for better performance with large tables\n";
+    }
+
+    my $index_var = $data->{index};
+    my $string = $indent . "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+    my $indent2 = $indent . "  ";
+    my $indent3 = $indent . "    ";
+    my $indent4 = $indent . "      ";
+
+    # Build piecewise function
+    $string .= $indent2 . "<piecewise>\n";
+
+    # Handle below range (extrapolation to first value)
+    $string .= $indent3 . "<piece>\n";
+    $string .= $indent4 . sprintf("<cn> %s </cn>\n", $y_vals[0]);
+    $string .= $indent4 . "<apply>\n";
+    $string .= $indent4 . "  <lt/>\n";
+    $string .= $indent4 . "  <ci> $index_var </ci>\n";
+    $string .= $indent4 . sprintf("  <cn> %s </cn>\n", $x_vals[0]);
+    $string .= $indent4 . "</apply>\n";
+    $string .= $indent3 . "</piece>\n";
+
+    # Build linear interpolation for each interval
+    for (my $i = 0; $i < $n_points - 1; $i++) {
+        my $x0 = $x_vals[$i];
+        my $x1 = $x_vals[$i+1];
+        my $y0 = $y_vals[$i];
+        my $y1 = $y_vals[$i+1];
+
+        # Calculate slope: m = (y1 - y0) / (x1 - x0)
+        my $dx = $x1 - $x0;
+        my $dy = $y1 - $y0;
+        my $slope = ($dx != 0) ? $dy / $dx : 0;
+
+        # Interpolation formula: y0 + slope * (x - x0)
+        $string .= $indent3 . "<piece>\n";
+        $string .= $indent4 . "<apply>\n";
+        $string .= $indent4 . "  <plus/>\n";
+        $string .= $indent4 . sprintf("  <cn> %s </cn>\n", $y0);
+        $string .= $indent4 . "  <apply>\n";
+        $string .= $indent4 . "    <times/>\n";
+        $string .= $indent4 . sprintf("    <cn> %s </cn>\n", $slope);
+        $string .= $indent4 . "    <apply>\n";
+        $string .= $indent4 . "      <minus/>\n";
+        $string .= $indent4 . "      <ci> $index_var </ci>\n";
+        $string .= $indent4 . sprintf("      <cn> %s </cn>\n", $x0);
+        $string .= $indent4 . "    </apply>\n";
+        $string .= $indent4 . "  </apply>\n";
+        $string .= $indent4 . "</apply>\n";
+
+        # Condition: x >= x0 AND x < x1 (except for last interval where we use <=)
+        $string .= $indent4 . "<apply>\n";
+        $string .= $indent4 . "  <and/>\n";
+        $string .= $indent4 . "  <apply>\n";
+        $string .= $indent4 . "    <geq/>\n";
+        $string .= $indent4 . "    <ci> $index_var </ci>\n";
+        $string .= $indent4 . sprintf("    <cn> %s </cn>\n", $x0);
+        $string .= $indent4 . "  </apply>\n";
+        $string .= $indent4 . "  <apply>\n";
+        if ($i == $n_points - 2) {
+            # Last interval: use <= to include endpoint
+            $string .= $indent4 . "    <leq/>\n";
+        } else {
+            $string .= $indent4 . "    <lt/>\n";
+        }
+        $string .= $indent4 . "    <ci> $index_var </ci>\n";
+        $string .= $indent4 . sprintf("    <cn> %s </cn>\n", $x1);
+        $string .= $indent4 . "  </apply>\n";
+        $string .= $indent4 . "</apply>\n";
+        $string .= $indent3 . "</piece>\n";
+    }
+
+    # Otherwise (above range): extrapolate to last value
+    $string .= $indent3 . "<otherwise>\n";
+    $string .= $indent4 . sprintf("<cn> %s </cn>\n", $y_vals[-1]);
+    $string .= $indent3 . "</otherwise>\n";
+
+    $string .= $indent2 . "</piecewise>\n";
+    $string .= $indent . "</math>\n";
+
+    return $string;
+}
+
+# Simple tfun file reader for SBML export (no validation)
+# Returns (\@x_vals, \@y_vals, $error)
+sub read_tfun_file_simple
+{
+    my $filename = shift;
+
+    my @x_vals;
+    my @y_vals;
+
+    # Try to open file
+    my $fh;
+    unless (open($fh, '<', $filename)) {
+        return (undef, undef, "Cannot open file: $!");
+    }
+
+    # Skip header line if present
+    my $first_line = <$fh>;
+    unless (defined($first_line)) {
+        close($fh);
+        return (undef, undef, "File is empty");
+    }
+
+    # If first line is not a header (doesn't start with #), process it as data
+    $first_line =~ s/\r?\n$//;  # Remove line ending (handles both Unix and Windows)
+    $first_line =~ s/^\s+//;  # Remove leading whitespace
+    unless ($first_line =~ /^#/) {
+        my @vals = split(/\s+/, $first_line);
+        if (scalar(@vals) >= 2 && $vals[0] =~ /^[+-]?\d/ && $vals[1] =~ /^[+-]?\d/) {
+            push @x_vals, $vals[0];
+            push @y_vals, $vals[1];
+        }
+    }
+
+    # Read data lines
+    while (my $line = <$fh>) {
+        $line =~ s/\r?\n$//;  # Remove line ending (handles both Unix and Windows)
+        $line =~ s/^\s+//;  # Remove leading whitespace
+        # Skip comments and empty lines
+        next if ($line =~ /^#/ || $line =~ /^$/);
+
+        my @vals = split(/\s+/, $line);
+        next unless (scalar(@vals) >= 2 && $vals[0] =~ /^[+-]?\d/ && $vals[1] =~ /^[+-]?\d/);
+
+        push @x_vals, $vals[0];
+        push @y_vals, $vals[1];
+    }
+
+    close($fh);
+
+    # Validate we have at least 2 points
+    if (scalar(@x_vals) < 2) {
+        my $msg = "Need at least 2 data points, found " . scalar(@x_vals);
+        $msg .= " (possible file format issue - check for proper line endings and numeric data)";
+        return (undef, undef, $msg);
+    }
+
+    return (\@x_vals, \@y_vals, undef);
 }
 
 1;

@@ -52,7 +52,7 @@
       </Observable>
     </ListOfObservables>
     <ListOfFunctions>
-      <Function id="f_inline" type="TFUN" mode="inline">
+      <Function id="f_inline" type="TFUN" mode="inline" ctrName="time" xData="0,1,2" yData="0,10,20" method="linear">
         <ListOfReferences>
         </ListOfReferences>
         <Expression> 0.0 </Expression>
