@@ -450,6 +450,14 @@ sub tfun_to_mathml_piecewise
     }
 
     my $index_var = $data->{index};
+    my $method = $data->{method} || 'linear';
+
+    # Build piecewise function based on interpolation method
+    if ($method eq 'step') {
+        return tfun_to_mathml_step(\@x_vals, \@y_vals, $index_var, $indent);
+    }
+
+    # Default: linear interpolation
     my $string = $indent . "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
     my $indent2 = $indent . "  ";
     my $indent3 = $indent . "    ";
@@ -586,6 +594,72 @@ sub read_tfun_file_simple
     }
 
     return (\@x_vals, \@y_vals, undef);
+}
+
+# Convert tfun with step interpolation to MathML piecewise
+# Step function is left-continuous: f(x) = y[i] for x in [x[i], x[i+1])
+sub tfun_to_mathml_step
+{
+    my ($x_vals_ref, $y_vals_ref, $index_var, $indent) = @_;
+
+    my @x_vals = @$x_vals_ref;
+    my @y_vals = @$y_vals_ref;
+    my $n_points = scalar(@x_vals);
+
+    my $string = $indent . "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\n";
+    my $indent2 = $indent . "  ";
+    my $indent3 = $indent . "    ";
+    my $indent4 = $indent . "      ";
+
+    $string .= $indent2 . "<piecewise>\n";
+
+    # Handle below range (extrapolation to first value)
+    $string .= $indent3 . "<piece>\n";
+    $string .= $indent4 . sprintf("<cn> %s </cn>\n", $y_vals[0]);
+    $string .= $indent4 . "<apply>\n";
+    $string .= $indent4 . "  <lt/>\n";
+    $string .= $indent4 . "  <ci> $index_var </ci>\n";
+    $string .= $indent4 . sprintf("  <cn> %s </cn>\n", $x_vals[0]);
+    $string .= $indent4 . "</apply>\n";
+    $string .= $indent3 . "</piece>\n";
+
+    # Build step function for each interval
+    # Step is left-continuous: value = y[i] for x in [x[i], x[i+1])
+    for (my $i = 0; $i < $n_points - 1; $i++) {
+        my $x0 = $x_vals[$i];
+        my $x1 = $x_vals[$i+1];
+        my $y0 = $y_vals[$i];
+
+        $string .= $indent3 . "<piece>\n";
+        $string .= $indent4 . sprintf("<cn> %s </cn>\n", $y0);
+
+        # Condition: x >= x[i] AND x < x[i+1]
+        $string .= $indent4 . "<apply>\n";
+        $string .= $indent4 . "  <and/>\n";
+        $string .= $indent4 . "  <apply>\n";
+        $string .= $indent4 . "    <geq/>\n";
+        $string .= $indent4 . "    <ci> $index_var </ci>\n";
+        $string .= $indent4 . sprintf("    <cn> %s </cn>\n", $x0);
+        $string .= $indent4 . "  </apply>\n";
+        $string .= $indent4 . "  <apply>\n";
+        $string .= $indent4 . "    <lt/>\n";
+        $string .= $indent4 . "    <ci> $index_var </ci>\n";
+        $string .= $indent4 . sprintf("    <cn> %s </cn>\n", $x1);
+        $string .= $indent4 . "  </apply>\n";
+        $string .= $indent4 . "</apply>\n";
+        $string .= $indent3 . "</piece>\n";
+    }
+
+    # Handle the last point and above range
+    # For x >= x[n-1], return y[n-1]
+    $string .= $indent3 . "<otherwise>\n";
+    $string .= $indent4 . sprintf("<cn> %s </cn>\n", $y_vals[-1]);
+    $string .= $indent3 . "</otherwise>\n";
+
+    $string .= $indent2 . "</piecewise>\n";
+    $string .= $indent . "</math>\n";
+
+    return $string;
 }
 
 1;
