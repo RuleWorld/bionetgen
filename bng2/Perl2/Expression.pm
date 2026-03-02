@@ -230,8 +230,9 @@ sub parse_tfun_syntax
         # Default method if not specified
         $tfun_data{method} = 'linear' unless exists $tfun_data{method};
 
-        # Replace tfun(...) with placeholder in the expression string
-        # For now, just use a constant to prevent evaluation errors
+        # Replace tfun(...) with 0.0 placeholder to allow expression parsing
+        # The actual tfun call will be reconstructed during export (NET/XML)
+        # using the stored tfunData
         $$sptr =~ s/tfun\s*\([^)]+\)/0.0/;
 
         return \%tfun_data;
@@ -1454,6 +1455,34 @@ sub equivalent
 }
 
 
+# Reconstruct tfun() call from tfunData
+# This is used to replace the 0.0 placeholder in expressions
+sub reconstruct_tfun_call
+{
+    my $data = shift;
+    my $str = 'tfun(';
+
+    if ($data->{mode} eq 'file') {
+        # File-based: tfun('file.tfun', index, method=>"...")
+        $str .= "'" . $data->{file} . "'";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+    elsif ($data->{mode} eq 'inline') {
+        # Inline: tfun([x...], [y...], index, method=>"...")
+        $str .= "[" . join(",", @{$data->{x_vals}}) . "]";
+        $str .= ",[" . join(",", @{$data->{y_vals}}) . "]";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+
+    $str .= ')';
+    return $str;
+}
 
 
 # write this expression as a string.
@@ -1574,6 +1603,12 @@ sub toString
             }
             #printf "%s=$string\n", $expr->Type;
         }
+    }
+
+    # If this expression has tfunData, replace the 0.0 placeholder with the actual tfun() call
+    if ($expr->tfunData) {
+        my $tfun_str = reconstruct_tfun_call($expr->tfunData);
+        $string =~ s/\b0\.0\b/$tfun_str/;
     }
 
     return $string;
@@ -1701,9 +1736,13 @@ sub toXML
 
     # AS-2021
     if ($expr->tfunFile) {
-        # need to replace TFUN call from expr
+        # Old TFUN format: replace TFUN(cname) with __TFUN__VAL__
         my $cname = $expr->ctrName;
         $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN__VAL__/
+    }
+    # New tfun format: replace 0.0 placeholder with __TFUN__VAL__
+    elsif ($expr->tfunData) {
+        $string =~ s/\b0\.0\b/__TFUN__VAL__/;
     }
     # AS-2021
 

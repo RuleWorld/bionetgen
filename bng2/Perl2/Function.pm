@@ -314,15 +314,12 @@ sub toString
     {
         $string .= ($include_equal) ? ' = ' : ' ';
 
-        # Check if this is a tfun - if so, write tfun syntax instead of expression
-        if ($fun->Expr->tfunData) {
-            my $data = $fun->Expr->tfunData;
-            $string .= format_tfun_string($data);
-        }
-        # Check for old TFUN format
-        elsif ($fun->Expr->tfunFile) {
+        # Check for old TFUN format (uppercase)
+        if ($fun->Expr->tfunFile) {
             $string .= "TFUN(" . $fun->Expr->ctrName . ",'" . $fun->Expr->tfunFile . "')";
         }
+        # For new tfun and all other expressions, use Expression's toString
+        # Expression->toString will automatically reconstruct tfun() calls from tfunData
         else {
             $string .= $fun->Expr->toString($plist);
         }
