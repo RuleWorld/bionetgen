@@ -1,0 +1,49 @@
+# Test case for issue #222: time() function gives inaccurate results in ODE simulations
+# The builtin time() function should give accurate results when used in rate expressions
+# during ODE integration, not just at output steps.
+
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules t X()
+    Molecules x_exact X()
+    Molecules x_builtin X()
+end observables
+
+begin functions
+    # This uses the integrated time observable as a workaround (should be accurate)
+    f_correct() = t
+
+    # This uses the builtin time() function (currently inaccurate for ODE)
+    f_builtin() = time()
+
+    # Function to test difference between methods
+    f_diff() = f_correct() - f_builtin()
+end functions
+
+begin reaction rules
+    # Integrate time by producing molecules at rate 1
+    0 -> X() 1
+
+    # Two additional observables that should track time identically
+    # if time() is working correctly
+    0 -> X() f_correct()
+    0 -> X() f_builtin()
+end reaction rules
+
+end model
+
+# Use strict tolerances to ensure integration accuracy
+generate_network({overwrite=>1})
+simulate({method=>"ode",t_end=>10,n_steps=>100,atol=>1e-12,rtol=>1e-12})

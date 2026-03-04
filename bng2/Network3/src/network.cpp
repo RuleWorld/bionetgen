@@ -656,8 +656,8 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 
 	// find beginning of block
 	// go to next line
-	// if next line is end, return 
-	// if not 
+	// if next line is end, return
+	// if not
 	// create parser for that function
 	// link it to pars and obs
 	// evaluate it and store value
@@ -666,6 +666,9 @@ void read_functions_array(const char* netfile, Elt_array*& rates, map<string,dou
 	// push index of new parameter into var_parameters vector
 	// check that parameter index (in var_parameters) matches function index
 	// push and link parameter into elt_array
+
+	// Store time pointer in network struct for use during ODE integration
+	network.time_pointer = t;
 
 	string line;
 	ifstream infile(netfile);

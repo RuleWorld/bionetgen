@@ -22,6 +22,7 @@ Installation instructions for both can be found at the link below.
     :maxdepth: 1
     :caption: Contents:
 
+    bng_quickstart
     install
     vsc_ext
     pybng
