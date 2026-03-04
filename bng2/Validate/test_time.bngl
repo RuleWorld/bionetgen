@@ -8,24 +8,28 @@ begin parameters
 end parameters
 
 begin molecule types
-    X()
+    T()  # For tracking time via integration
+    A()  # For tracking with f_correct()
+    B()  # For tracking with f_builtin()
 end molecule types
 
 begin seed species
-    X() 0
+    T() 0
+    A() 0
+    B() 0
 end seed species
 
 begin observables
-    Molecules t X()
-    Molecules x_exact X()
-    Molecules x_builtin X()
+    Molecules t T()
+    Molecules x_exact A()
+    Molecules x_builtin B()
 end observables
 
 begin functions
     # This uses the integrated time observable as a workaround (should be accurate)
     f_correct() = t
 
-    # This uses the builtin time() function (currently inaccurate for ODE)
+    # This uses the builtin time() function
     f_builtin() = time()
 
     # Function to test difference between methods
@@ -33,17 +37,18 @@ begin functions
 end functions
 
 begin reaction rules
-    # Integrate time by producing molecules at rate 1
-    0 -> X() 1
+    # Integrate time by producing T molecules at rate 1
+    0 -> T() 1
 
-    # Two additional observables that should track time identically
-    # if time() is working correctly
-    0 -> X() f_correct()
-    0 -> X() f_builtin()
+    # Produce A at rate f_correct() - should equal time
+    0 -> A() f_correct()
+
+    # Produce B at rate f_builtin() - should also equal time
+    0 -> B() f_builtin()
 end reaction rules
 
 end model
 
 # Use strict tolerances to ensure integration accuracy
 generate_network({overwrite=>1})
-simulate({method=>"ode",t_end=>10,n_steps=>100,atol=>1e-12,rtol=>1e-12})
+simulate({method=>"ode",t_end=>10,n_steps=>100,print_functions=>1,atol=>1e-12,rtol=>1e-12})
