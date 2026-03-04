@@ -16,10 +16,10 @@ This document summarizes the work completed to finalize the table function (tfun
 ```xml
 <Function id="f" type="TFUN" file="data.tfun" ctrName="time" method="linear">
   <ListOfReferences>
-    <Reference name="__TFUN__VAL__" type="Constant"/>
+    <Reference name="__TFUN_VAL__" type="Constant"/>
     <Reference name="time" type="Observable"/>
   </ListOfReferences>
-  <Expression> __TFUN__VAL__ </Expression>
+  <Expression> __TFUN_VAL__ </Expression>
 </Function>
 ```
 
@@ -126,7 +126,7 @@ This document summarizes the work completed to finalize the table function (tfun
 **Phase 1 (Essential):**
 - File-based tfun with time indexing
 - Linear interpolation with constant extrapolation
-- Basic `__TFUN__VAL__` replacement in expressions
+- Basic `__TFUN_VAL__` replacement in expressions
 
 **Phase 2 (Important):**
 - Observable and parameter indexing

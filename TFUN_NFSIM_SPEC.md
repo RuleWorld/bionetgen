@@ -13,10 +13,10 @@ For file-based tfun definitions like `f() = tfun('data.tfun', time)`, BNG export
 ```xml
 <Function id="f" type="TFUN" file="data.tfun" ctrName="time" method="linear">
   <ListOfReferences>
-    <Reference name="__TFUN__VAL__" type="Constant"/>
+    <Reference name="__TFUN_VAL__" type="Constant"/>
     <Reference name="time" type="Observable"/>
   </ListOfReferences>
-  <Expression> __TFUN__VAL__ </Expression>
+  <Expression> __TFUN_VAL__ </Expression>
 </Function>
 ```
 
@@ -27,7 +27,7 @@ For file-based tfun definitions like `f() = tfun('data.tfun', time)`, BNG export
 - `method="..."` - Interpolation method (currently only "linear" is supported)
 
 **Special Reference:**
-- `__TFUN__VAL__` - Placeholder constant that represents the interpolated value from the table
+- `__TFUN_VAL__` - Placeholder constant that represents the interpolated value from the table
 
 ### Inline TFUN
 
@@ -118,12 +118,12 @@ When evaluating a rate law or expression containing a TFUN function:
 
 1. Get the current value of the index variable (specified by `ctrName`)
 2. Perform table lookup with interpolation
-3. The interpolated value replaces `__TFUN__VAL__` in the expression
+3. The interpolated value replaces `__TFUN_VAL__` in the expression
 4. Evaluate any additional operations in the `<Expression>` element
 
 **Example:**
 ```xml
-<Expression> __TFUN__VAL__ * 2.0 </Expression>
+<Expression> __TFUN_VAL__ * 2.0 </Expression>
 ```
 This means: look up the table value, then multiply by 2.0.
 
@@ -134,15 +134,15 @@ TFUN functions can appear in complex expressions:
 ```xml
 <Function id="k_total" type="TFUN" file="base_rate.tfun" ctrName="time">
   <ListOfReferences>
-    <Reference name="__TFUN__VAL__" type="Constant"/>
+    <Reference name="__TFUN_VAL__" type="Constant"/>
     <Reference name="scaling_factor" type="Constant"/>
   </ListOfReferences>
-  <Expression> __TFUN__VAL__ * scaling_factor </Expression>
+  <Expression> __TFUN_VAL__ * scaling_factor </Expression>
 </Function>
 ```
 
 NFsim must:
-1. Perform the table lookup to get `__TFUN__VAL__`
+1. Perform the table lookup to get `__TFUN_VAL__`
 2. Resolve other variables in the expression (`scaling_factor`)
 3. Evaluate the complete expression
 
@@ -229,10 +229,10 @@ The old TFUN syntax (uppercase) is still supported:
 ```xml
 <Function id="k1" type="TFUN" file="data.dat" ctrName="obs">
   <ListOfReferences>
-    <Reference name="__TFUN__VAL__" type="Constant"/>
+    <Reference name="__TFUN_VAL__" type="Constant"/>
     <Reference name="obs" type="Observable"/>
   </ListOfReferences>
-  <Expression> __TFUN__VAL__ </Expression>
+  <Expression> __TFUN_VAL__ </Expression>
 </Function>
 ```
 
@@ -240,7 +240,7 @@ This has the same semantics as the new file-based tfun format (without `mode` at
 
 ## Questions for NFsim Developers
 
-1. **Expression evaluation**: Does NFsim's expression evaluator already support substituting the `__TFUN__VAL__` constant with a computed value?
+1. **Expression evaluation**: Does NFsim's expression evaluator already support substituting the `__TFUN_VAL__` constant with a computed value?
 
 2. **Observable lookup**: Can NFsim evaluate observables at any point during rate calculation, or only at specific update points?
 
@@ -256,7 +256,7 @@ This has the same semantics as the new file-based tfun format (without `mode` at
 - File-based tfun with time indexing
 - Linear interpolation
 - Constant extrapolation
-- Basic expression support (`__TFUN__VAL__` replacement)
+- Basic expression support (`__TFUN_VAL__` replacement)
 
 **Phase 2 (Important):**
 - Observable indexing

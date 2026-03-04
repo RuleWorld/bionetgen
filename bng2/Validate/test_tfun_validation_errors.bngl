@@ -1,0 +1,47 @@
+# Test cases for tfun validation errors (wshlavacek's requirements from issue #278)
+# Each test case below should produce an ERROR
+
+# Uncomment ONE test at a time to verify error messages
+
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    A()
+end molecule types
+
+begin seed species
+    A() 100
+end seed species
+
+begin observables
+    Molecules Atot A()
+end observables
+
+begin functions
+    # ERROR TEST 1: Unequal length arrays (3 x values, 2 y values)
+    # Expected error: "xData and yData must have equal lengths"
+    #f_unequal() = tfun([0, 1, 2], [10, 20], time)
+
+    # ERROR TEST 2: Non-increasing xData (2 comes before 3, but then 2.5)
+    # Expected error: "xData must be strictly increasing"
+    f_nonincreasing() = tfun([0, 1, 3, 2.5], [10, 20, 30, 25], time)
+
+    # ERROR TEST 3: Non-numeric value in xData
+    # Expected error: "data values must be numeric"
+    #f_nonnumeric() = tfun([0, abc, 2], [10, 20, 30], time)
+
+    # ERROR TEST 4: Equal consecutive x values (not strictly increasing)
+    # Expected error: "xData must be strictly increasing"
+    #f_equal() = tfun([0, 1, 1, 2], [10, 20, 30, 40], time)
+end functions
+
+begin reaction rules
+    A() -> 0 1.0
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})

@@ -1,0 +1,31 @@
+# Test tfun in complex expression - simpler test
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Test tfun in complex expression
+    f_divided() = tfun([0,1,2], [10,20,40], time) / 10
+end functions
+
+begin reaction rules
+    0 -> X() f_divided()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode", t_end=>2, n_steps=>20})

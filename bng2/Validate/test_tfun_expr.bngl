@@ -1,0 +1,35 @@
+# Test tfun in complex expression
+begin model
+
+begin parameters
+    k_scale 10.0
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Test tfun in complex expressions
+    f_simple() = tfun([0,1,2], [1,2,4], time)
+    f_divided() = tfun([0,1,2], [1,2,4], time) / 10
+    f_scaled() = tfun([0,1,2], [1,2,4], time) * k_scale
+    f_complex() = (tfun([0,1,2], [1,2,4], time) + 5) / k_scale
+end functions
+
+begin reaction rules
+    0 -> X() f_simple()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+writeXML({overwrite=>1})

@@ -206,6 +206,32 @@ sub parse_tfun_syntax
                 my @y_vals = split(/,/, $y_str);
                 @y_vals = map { s/^\s+|\s+$//gr } @y_vals;
                 $tfun_data{y_vals} = \@y_vals;
+
+                # Validate inline tfun data (per wshlavacek's requirements in issue #278)
+                # a) Whitespace already trimmed above
+                # b) Validate numeric values including scientific notation
+                for my $val (@x_vals, @y_vals) {
+                    unless ($val =~ /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/) {
+                        print "ERROR: tfun() data values must be numeric (including scientific notation), got: '$val'\n";
+                        return undef;
+                    }
+                }
+
+                # c) Enforce equal lengths for xData and yData
+                if (scalar(@x_vals) != scalar(@y_vals)) {
+                    print "ERROR: tfun() xData and yData must have equal lengths (got ".
+                          scalar(@x_vals)." and ".scalar(@y_vals)." values)\n";
+                    return undef;
+                }
+
+                # d) Enforce strictly increasing xData
+                for my $i (1..$#x_vals) {
+                    if ($x_vals[$i] <= $x_vals[$i-1]) {
+                        print "ERROR: tfun() xData must be strictly increasing, but ".
+                              "x[$i]=$x_vals[$i] <= x[".($i-1)."]=$x_vals[$i-1]\n";
+                        return undef;
+                    }
+                }
             } else {
                 print "ERROR: tfun() inline mode requires both x and y arrays\n";
                 return undef;
@@ -677,14 +703,14 @@ sub operate
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
             # check to see if we have one or two arguments
-            if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN__VAL__/) {
+            if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN_VAL__/) {
                 # two arguments, first one is observable,
                 # second is file
-                $ctrName = $1; 
+                $ctrName = $1;
                 $expr->tfunFile($2);
                 # $fstr = $2;
                 $expr->ctrName($ctrName);
-                $$sptr =~ s/__TFUN__VAL__/TFUN\($ctrName\)/;
+                $$sptr =~ s/__TFUN_VAL__/TFUN\($ctrName\)/;
             } 
             # else {
             #     print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
@@ -1736,13 +1762,13 @@ sub toXML
 
     # AS-2021
     if ($expr->tfunFile) {
-        # Old TFUN format: replace TFUN(cname) with __TFUN__VAL__
+        # Old TFUN format: replace TFUN(cname) with __TFUN_VAL__
         my $cname = $expr->ctrName;
-        $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN__VAL__/
+        $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN_VAL__/
     }
-    # New tfun format: replace 0.0 placeholder with __TFUN__VAL__
+    # New tfun format: replace 0.0 placeholder with __TFUN_VAL__
     elsif ($expr->tfunData) {
-        $string =~ s/\b0\.0\b/__TFUN__VAL__/;
+        $string =~ s/\b0\.0\b/__TFUN_VAL__/;
     }
     # AS-2021
 
