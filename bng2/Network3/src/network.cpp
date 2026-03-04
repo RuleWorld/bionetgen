@@ -3107,6 +3107,11 @@ void derivs_network(double t, double* conc, double* derivs) {
 	/* Initialize derivatives to zero */
 	INIT_VECTOR(derivs, 0.0, n_species);
 
+	// Update time pointer for time() function evaluation during ODE integration
+	if (network.time_pointer) {
+		*network.time_pointer = t;
+	}
+
 	// Update tfun values if any exist
 	if (network.has_tfuns) {
 		// First update observables (groups) so they're current for tfun evaluation
