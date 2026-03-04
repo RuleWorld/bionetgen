@@ -188,6 +188,7 @@ struct NETWORK{
 	vector<double*>         tfun_index_ptrs;         // Pointers to index values (time/param/observable)
 	vector<double*>         tfun_value_ptrs;         // Pointers to values that muParser sees
 	bool has_tfuns;                                  // true if any tfun functions exist
+	double* time_pointer;                            // pointer to time variable for updating during ODE integration
 };
 
 extern struct NETWORK network;
