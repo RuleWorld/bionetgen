@@ -139,22 +139,48 @@ sub parse_tfun_syntax
     # Make a working copy
     my $str = $$sptr;
 
-    # Try to match tfun(...) and extract arguments
-    if ($str =~ /tfun\s*\((.*)\)/) {
-        my $args = $1;
+    # Find tfun( and extract arguments with balanced parentheses
+    if ($str =~ /tfun\s*\(/) {
+        # Find the position after "tfun("
+        my $start = $+[0];  # Position after the match
+
+        # Extract balanced parentheses content
+        my $depth = 1;
+        my $pos = $start;
+        my $args = '';
+
+        while ($pos < length($str) && $depth > 0) {
+            my $char = substr($str, $pos, 1);
+            if ($char eq '(') {
+                $depth++;
+                $args .= $char if $depth > 1;  # Don't include the final closing paren
+            } elsif ($char eq ')') {
+                $depth--;
+                $args .= $char if $depth > 0;  # Don't include the final closing paren
+            } else {
+                $args .= $char;
+            }
+            $pos++;
+        }
+
+        # If we didn't find balanced parentheses, return error
+        if ($depth != 0) {
+            print "ERROR: Unbalanced parentheses in tfun() call\n";
+            return undef;
+        }
         my @parts;
-        my $depth = 0;
+        my $bracket_depth = 0;
         my $current = '';
 
         # Parse arguments handling nested brackets
         for my $char (split //, $args) {
             if ($char eq '[') {
-                $depth++;
+                $bracket_depth++;
                 $current .= $char;
             } elsif ($char eq ']') {
-                $depth--;
+                $bracket_depth--;
                 $current .= $char;
-            } elsif ($char eq ',' && $depth == 0) {
+            } elsif ($char eq ',' && $bracket_depth == 0) {
                 push @parts, $current;
                 $current = '';
             } else {
@@ -259,7 +285,24 @@ sub parse_tfun_syntax
         # Replace tfun(...) with 0.0 placeholder to allow expression parsing
         # The actual tfun call will be reconstructed during export (NET/XML)
         # using the stored tfunData
-        $$sptr =~ s/tfun\s*\([^)]+\)/0.0/;
+        # Use the same balanced parenthesis approach for replacement
+        if ($$sptr =~ /tfun\s*\(/) {
+            my $start_pos = $-[0];  # Position of 'tfun'
+            my $depth = 1;
+            my $pos = $+[0];  # Position after 'tfun('
+
+            while ($pos < length($$sptr) && $depth > 0) {
+                my $char = substr($$sptr, $pos, 1);
+                $depth++ if $char eq '(';
+                $depth-- if $char eq ')';
+                $pos++;
+            }
+
+            # Replace the entire tfun(...) call with 0.0
+            my $before = substr($$sptr, 0, $start_pos);
+            my $after = substr($$sptr, $pos);
+            $$sptr = $before . '0.0' . $after;
+        }
 
         return \%tfun_data;
     }

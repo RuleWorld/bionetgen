@@ -67,7 +67,7 @@
         </ListOfReferences>
         <Expression> __TFUN_VAL__*k_scale </Expression>
       </Function>
-      <Function id="f_complex" type="TFUN" mode="inline" ctrName="time) + 5" xData="0,1,2" yData="1,2,4" method="linear">
+      <Function id="f_complex" type="TFUN" mode="inline" ctrName="time" xData="0,1,2" yData="1,2,4" method="linear">
         <ListOfReferences>
           <Reference name="k_scale" type="Constant"/>
         </ListOfReferences>
