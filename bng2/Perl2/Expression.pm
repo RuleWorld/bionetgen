@@ -38,9 +38,11 @@ struct Expression =>
                        # '>','<','>=','<=','==','!=','~=','&&','||','!','~'
     Arglist => '@',
     Err     => '$',
-    # AS-2021
+    # AS-2021 - old TFUN attributes (kept for backward compatibility)
     tfunFile => '$',
     ctrName => '$',
+    # New tfun attributes (lowercase syntax)
+    tfunData => '$',    # Hash ref with tfun configuration
     # AS-2021
 };
 
@@ -88,7 +90,8 @@ my %functions =
   "sum"   => { FPTR => sub { sum(@_) },              NARGS => scalar(@_) }, # <sum/>
   "avg"   => { FPTR => sub { sum(@_)/scalar(@_) },   NARGS => scalar(@_) }, # <mean/>
   "mratio" => { FPTR => sub { Mratio($_[0],$_[1],$_[2]) }, NARGS => 3 },
-  "TFUN" => { FPTR => sub { TFUN($_[0], $_[1]) }, NARGS => 2 }, # AS-2021, function to load from file
+  "TFUN" => { FPTR => sub { TFUN($_[0], $_[1]) }, NARGS => 2 }, # AS-2021, old uppercase TFUN (backward compat)
+  "tfun" => { FPTR => sub { tfun_placeholder(@_) }, NARGS => -1 }, # New lowercase tfun with variable args
 );
 
 # AS-2021 TFUN stuff
@@ -109,6 +112,159 @@ sub TFUN
     # TODO: Figure out a behavior for this function for simulators outside
     # of NFsim
     # return $obs
+}
+
+# New tfun placeholder - actual evaluation happens in simulators
+sub tfun_placeholder
+{
+    # This is a placeholder that should never be called during evaluation
+    # The tfun will be handled specially by the parser and simulators
+    print "ERROR: tfun_placeholder should not be directly evaluated.\n";
+    print "       tfun() functions are handled specially by the parser.\n";
+    exit 1;
+}
+
+# Parse tfun() syntax - supports both file-based and inline data
+# Patterns:
+#   tfun('file.tfun')                    - file-based, time-indexed (default)
+#   tfun('file.tfun', time)               - file-based, explicit time index
+#   tfun('file.tfun', x)                  - file-based, parameter/observable indexed
+#   tfun([x], [y], index)                 - inline data
+#   tfun(..., method=>"linear")           - with method option
+sub parse_tfun_syntax
+{
+    my $sptr = shift;  # Reference to expression string
+    my %tfun_data;
+
+    # Make a working copy
+    my $str = $$sptr;
+
+    # Try to match tfun(...) and extract arguments
+    if ($str =~ /tfun\s*\((.*)\)/) {
+        my $args = $1;
+        my @parts;
+        my $depth = 0;
+        my $current = '';
+
+        # Parse arguments handling nested brackets
+        for my $char (split //, $args) {
+            if ($char eq '[') {
+                $depth++;
+                $current .= $char;
+            } elsif ($char eq ']') {
+                $depth--;
+                $current .= $char;
+            } elsif ($char eq ',' && $depth == 0) {
+                push @parts, $current;
+                $current = '';
+            } else {
+                $current .= $char;
+            }
+        }
+        push @parts, $current if $current;
+
+        # Clean up whitespace
+        @parts = map { s/^\s+|\s+$//gr } @parts;
+
+        # Determine mode: file-based or inline
+        if ($parts[0] =~ /^['"]/) {
+            # File-based mode
+            $tfun_data{mode} = 'file';
+            my $file = $parts[0];
+            $file =~ s/^['"]|['"]$//g;  # Remove quotes
+            $tfun_data{file} = $file;
+
+            # Index (default to 'time' if not specified)
+            if (scalar(@parts) >= 2 && $parts[1] !~ /method\s*=>/) {
+                $tfun_data{index} = $parts[1];
+                # Check for method in third argument
+                if (scalar(@parts) >= 3 && $parts[2] =~ /method\s*=>\s*["'](\w+)["']/) {
+                    $tfun_data{method} = $1;
+                }
+            } else {
+                $tfun_data{index} = 'time';  # Default
+                # Check for method in second argument
+                if (scalar(@parts) >= 2 && $parts[1] =~ /method\s*=>\s*["'](\w+)["']/) {
+                    $tfun_data{method} = $1;
+                }
+            }
+        } elsif ($parts[0] =~ /^\[/) {
+            # Inline mode
+            $tfun_data{mode} = 'inline';
+
+            # Parse x array
+            my $x_str = $parts[0];
+            $x_str =~ s/^\[|\]$//g;
+            my @x_vals = split(/,/, $x_str);
+            @x_vals = map { s/^\s+|\s+$//gr } @x_vals;
+            $tfun_data{x_vals} = \@x_vals;
+
+            # Parse y array
+            if (scalar(@parts) >= 2) {
+                my $y_str = $parts[1];
+                $y_str =~ s/^\[|\]$//g;
+                my @y_vals = split(/,/, $y_str);
+                @y_vals = map { s/^\s+|\s+$//gr } @y_vals;
+                $tfun_data{y_vals} = \@y_vals;
+
+                # Validate inline tfun data (per wshlavacek's requirements in issue #278)
+                # a) Whitespace already trimmed above
+                # b) Validate numeric values including scientific notation
+                for my $val (@x_vals, @y_vals) {
+                    unless ($val =~ /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/) {
+                        print "ERROR: tfun() data values must be numeric (including scientific notation), got: '$val'\n";
+                        return undef;
+                    }
+                }
+
+                # c) Enforce equal lengths for xData and yData
+                if (scalar(@x_vals) != scalar(@y_vals)) {
+                    print "ERROR: tfun() xData and yData must have equal lengths (got ".
+                          scalar(@x_vals)." and ".scalar(@y_vals)." values)\n";
+                    return undef;
+                }
+
+                # d) Enforce strictly increasing xData
+                for my $i (1..$#x_vals) {
+                    if ($x_vals[$i] <= $x_vals[$i-1]) {
+                        print "ERROR: tfun() xData must be strictly increasing, but ".
+                              "x[$i]=$x_vals[$i] <= x[".($i-1)."]=$x_vals[$i-1]\n";
+                        return undef;
+                    }
+                }
+            } else {
+                print "ERROR: tfun() inline mode requires both x and y arrays\n";
+                return undef;
+            }
+
+            # Index (required for inline)
+            if (scalar(@parts) >= 3 && $parts[2] !~ /method\s*=>/) {
+                $tfun_data{index} = $parts[2];
+                # Check for method in fourth argument
+                if (scalar(@parts) >= 4 && $parts[3] =~ /method\s*=>\s*["'](\w+)["']/) {
+                    $tfun_data{method} = $1;
+                }
+            } else {
+                print "ERROR: tfun() inline mode requires index argument\n";
+                return undef;
+            }
+        } else {
+            print "ERROR: Unable to parse tfun() syntax\n";
+            return undef;
+        }
+
+        # Default method if not specified
+        $tfun_data{method} = 'linear' unless exists $tfun_data{method};
+
+        # Replace tfun(...) with 0.0 placeholder to allow expression parsing
+        # The actual tfun call will be reconstructed during export (NET/XML)
+        # using the stored tfunData
+        $$sptr =~ s/tfun\s*\([^)]+\)/0.0/;
+
+        return \%tfun_data;
+    }
+
+    return undef;
 }
 # AS-2021
 
@@ -547,14 +703,14 @@ sub operate
         if ($$sptr =~ /TFUN\(.*\)/) 
         {
             # check to see if we have one or two arguments
-            if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN__VAL__/) {
+            if ($$sptr =~ s/TFUN\(\s*([^\)\,]*)\s*,\s*[\'\"]\s*([^\)]*)\s*[\'\"]\s*\)/__TFUN_VAL__/) {
                 # two arguments, first one is observable,
                 # second is file
-                $ctrName = $1; 
+                $ctrName = $1;
                 $expr->tfunFile($2);
                 # $fstr = $2;
                 $expr->ctrName($ctrName);
-                $$sptr =~ s/__TFUN__VAL__/TFUN\($ctrName\)/;
+                $$sptr =~ s/__TFUN_VAL__/TFUN\($ctrName\)/;
             } 
             # else {
             #     print "I can't parse the arguments given to TFUN function: ".$$sptr."\n";
@@ -575,6 +731,15 @@ sub operate
             #     }
         }
         # AS-2021
+
+        # New lowercase tfun() parsing
+        if ($$sptr =~ /tfun\s*\(/) {
+            my $tfun_data = parse_tfun_syntax($sptr);
+            if ($tfun_data) {
+                $expr->tfunData($tfun_data);
+            }
+        }
+        # End tfun parsing
 
         # parse string into form expr op expr op ...
         # a+b*(c+d)
@@ -1316,6 +1481,34 @@ sub equivalent
 }
 
 
+# Reconstruct tfun() call from tfunData
+# This is used to replace the 0.0 placeholder in expressions
+sub reconstruct_tfun_call
+{
+    my $data = shift;
+    my $str = 'tfun(';
+
+    if ($data->{mode} eq 'file') {
+        # File-based: tfun('file.tfun', index, method=>"...")
+        $str .= "'" . $data->{file} . "'";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+    elsif ($data->{mode} eq 'inline') {
+        # Inline: tfun([x...], [y...], index, method=>"...")
+        $str .= "[" . join(",", @{$data->{x_vals}}) . "]";
+        $str .= ",[" . join(",", @{$data->{y_vals}}) . "]";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+
+    $str .= ')';
+    return $str;
+}
 
 
 # write this expression as a string.
@@ -1436,6 +1629,12 @@ sub toString
             }
             #printf "%s=$string\n", $expr->Type;
         }
+    }
+
+    # If this expression has tfunData, replace the 0.0 placeholder with the actual tfun() call
+    if ($expr->tfunData) {
+        my $tfun_str = reconstruct_tfun_call($expr->tfunData);
+        $string =~ s/\b0\.0\b/$tfun_str/;
     }
 
     return $string;
@@ -1563,9 +1762,13 @@ sub toXML
 
     # AS-2021
     if ($expr->tfunFile) {
-        # need to replace TFUN call from expr
+        # Old TFUN format: replace TFUN(cname) with __TFUN_VAL__
         my $cname = $expr->ctrName;
-        $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN__VAL__/
+        $string =~ s/TFUN\(\s*$cname\s*\)/__TFUN_VAL__/
+    }
+    # New tfun format: replace 0.0 placeholder with __TFUN_VAL__
+    elsif ($expr->tfunData) {
+        $string =~ s/\b0\.0\b/__TFUN_VAL__/;
     }
     # AS-2021
 

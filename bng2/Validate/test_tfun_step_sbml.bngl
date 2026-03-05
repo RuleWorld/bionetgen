@@ -1,0 +1,31 @@
+# Test tfun SBML export with step interpolation
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 0
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Test step interpolation
+    f_step() = tfun([0, 1, 2, 3], [1, 2, 3, 4], time, method=>"step")
+end functions
+
+begin reaction rules
+    0 -> X() f_step()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+writeSBML({})

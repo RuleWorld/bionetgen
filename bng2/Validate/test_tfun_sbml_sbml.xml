@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by BioNetGen 2.9.3  -->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <model id="test_tfun_sbml">
+    <listOfUnitDefinitions>
+      <unitDefinition id="substance" name="substance">
+        <listOfUnits>
+          <unit kind="item" exponent="1" multiplier="1"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="S1" compartment="cell" initialAmount="0" name="X()"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <!-- Observables -->
+      <parameter id="Xtot" constant="false"/>
+      <!-- Global functions -->
+      <parameter id="f_file" constant="false"/>
+      <parameter id="f_inline" constant="false"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <!-- All initial values -->
+    </listOfInitialAssignments>
+    <listOfRules>
+      <!-- Observables -->
+      <assignmentRule variable="Xtot">
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+              <cn> 0 </cn>
+              <ci> S1 </ci>
+            </apply>
+          </math>
+      </assignmentRule>
+      <!-- Global functions -->
+      <assignmentRule variable="f_file">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <piecewise>
+            <piece>
+              <cn> 1.0 </cn>
+              <apply>
+                <lt/>
+                <ci> time </ci>
+                <cn> 0.0 </cn>
+              </apply>
+            </piece>
+            <piece>
+              <apply>
+                <plus/>
+                <cn> 1.0 </cn>
+                <apply>
+                  <times/>
+                  <cn> 1 </cn>
+                  <apply>
+                    <minus/>
+                    <ci> time </ci>
+                    <cn> 0.0 </cn>
+                  </apply>
+                </apply>
+              </apply>
+              <apply>
+                <and/>
+                <apply>
+                  <geq/>
+                  <ci> time </ci>
+                  <cn> 0.0 </cn>
+                </apply>
+                <apply>
+                  <lt/>
+                  <ci> time </ci>
+                  <cn> 1.0 </cn>
+                </apply>
+              </apply>
+            </piece>
+            <piece>
+              <apply>
+                <plus/>
+                <cn> 2.0 </cn>
+                <apply>
+                  <times/>
+                  <cn> 2 </cn>
+                  <apply>
+                    <minus/>
+                    <ci> time </ci>
+                    <cn> 1.0 </cn>
+                  </apply>
+                </apply>
+              </apply>
+              <apply>
+                <and/>
+                <apply>
+                  <geq/>
+                  <ci> time </ci>
+                  <cn> 1.0 </cn>
+                </apply>
+                <apply>
+                  <lt/>
+                  <ci> time </ci>
+                  <cn> 2.0 </cn>
+                </apply>
+              </apply>
+            </piece>
+            <piece>
+              <apply>
+                <plus/>
+                <cn> 4.0 </cn>
+                <apply>
+                  <times/>
+                  <cn> 4 </cn>
+                  <apply>
+                    <minus/>
+                    <ci> time </ci>
+                    <cn> 2.0 </cn>
+                  </apply>
+                </apply>
+              </apply>
+              <apply>
+                <and/>
+                <apply>
+                  <geq/>
+                  <ci> time </ci>
+                  <cn> 2.0 </cn>
+                </apply>
+                <apply>
+                  <lt/>
+                  <ci> time </ci>
+                  <cn> 3.0 </cn>
+                </apply>
+              </apply>
+            </piece>
+            <piece>
+              <apply>
+                <plus/>
+                <cn> 8.0 </cn>
+                <apply>
+                  <times/>
+                  <cn> 8 </cn>
+                  <apply>
+                    <minus/>
+                    <ci> time </ci>
+                    <cn> 3.0 </cn>
+                  </apply>
+                </apply>
+              </apply>
+              <apply>
+                <and/>
+                <apply>
+                  <geq/>
+                  <ci> time </ci>
+                  <cn> 3.0 </cn>
+                </apply>
+                <apply>
+                  <leq/>
+                  <ci> time </ci>
+                  <cn> 4.0 </cn>
+                </apply>
+              </apply>
+            </piece>
+            <otherwise>
+              <cn> 16.0 </cn>
+            </otherwise>
+          </piecewise>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="f_inline">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <piecewise>
+            <piece>
+              <cn> 0 </cn>
+              <apply>
+                <lt/>
+                <ci> time </ci>
+                <cn> 0 </cn>
+              </apply>
+            </piece>
+            <piece>
+              <apply>
+                <plus/>
+                <cn> 0 </cn>
+                <apply>
+                  <times/>
+                  <cn> 10 </cn>
+                  <apply>
+                    <minus/>
+                    <ci> time </ci>
+                    <cn> 0 </cn>
+                  </apply>
+                </apply>
+              </apply>
+              <apply>
+                <and/>
+                <apply>
+                  <geq/>
+                  <ci> time </ci>
+                  <cn> 0 </cn>
+                </apply>
+                <apply>
+                  <lt/>
+                  <ci> time </ci>
+                  <cn> 1 </cn>
+                </apply>
+              </apply>
+            </piece>
+            <piece>
+              <apply>
+                <plus/>
+                <cn> 10 </cn>
+                <apply>
+                  <times/>
+                  <cn> 10 </cn>
+                  <apply>
+                    <minus/>
+                    <ci> time </ci>
+                    <cn> 1 </cn>
+                  </apply>
+                </apply>
+              </apply>
+              <apply>
+                <and/>
+                <apply>
+                  <geq/>
+                  <ci> time </ci>
+                  <cn> 1 </cn>
+                </apply>
+                <apply>
+                  <leq/>
+                  <ci> time </ci>
+                  <cn> 2 </cn>
+                </apply>
+              </apply>
+            </piece>
+            <otherwise>
+              <cn> 20 </cn>
+            </otherwise>
+          </piecewise>
+        </math>
+      </assignmentRule>
+    </listOfRules>
+    <listOfReactions>
+      <reaction id="R1" reversible="false">
+        <listOfProducts>
+          <speciesReference species="S1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> f_file </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>

@@ -1,0 +1,42 @@
+# Test cases for tfun validation (wshlavacek's requirements from issue #278)
+# This file tests VALID cases
+
+begin model
+
+begin parameters
+end parameters
+
+begin molecule types
+    A()
+end molecule types
+
+begin seed species
+    A() 100
+end seed species
+
+begin observables
+    Molecules Atot A()
+end observables
+
+begin functions
+    # Test 1: Scientific notation in xData and yData (should work)
+    f_sci() = tfun([1e-3, 2e-2, 3e-1], [1.5e+2, 2.5e+2, 3.5e+2], time)
+
+    # Test 2: Whitespace in arrays (should be trimmed and work)
+    f_space() = tfun([ 0 , 1 , 2 ], [ 10 , 20 , 30 ], time)
+
+    # Test 3: Negative values (should work)
+    f_neg() = tfun([-2, -1, 0, 1, 2], [5, 10, 15, 20, 25], time)
+
+    # Test 4: Decimal values (should work)
+    f_dec() = tfun([0.5, 1.5, 2.5], [100.25, 200.75, 300.125], time)
+end functions
+
+begin reaction rules
+    A() -> 0 f_sci()
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+writeXML({overwrite=>1})

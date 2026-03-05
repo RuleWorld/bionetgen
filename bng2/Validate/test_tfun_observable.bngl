@@ -1,0 +1,38 @@
+# Test tfun with observable indexing
+# Tfun rate depends on current population of X
+begin model
+
+begin parameters
+    k_deg 0.1  # Degradation rate constant
+end parameters
+
+begin molecule types
+    X()
+end molecule types
+
+begin seed species
+    X() 50  # Start with 50 molecules
+end seed species
+
+begin observables
+    Molecules Xtot X()
+end observables
+
+begin functions
+    # Production rate increases with population
+    # When X < 25: rate = 1, when X >= 75: rate = 5
+    # This creates negative feedback: production increases as X decreases
+    k_prod() = tfun([0,25,50,75,100], [5,4,3,2,1], Xtot)
+end functions
+
+begin reaction rules
+    # Production with tfun rate
+    0 -> X() k_prod()
+    # Degradation
+    X() -> 0 k_deg*Xtot
+end reaction rules
+
+end model
+
+generate_network({overwrite=>1})
+simulate({method=>"ode", t_end=>50, n_steps=>500})

@@ -307,13 +307,22 @@ sub toString
     my $include_equal = (@_) ? shift : 0;
     # used for aligning columns nicely
     my $max_length    = (@_) ? shift : 0;
-    
+
     my $name = defined $fun->Name ? $fun->Name : "anon";
     my $string = $name . '(' . join(',', @{$fun->Args}) . ')';
     if ( $fun->Expr )
     {
         $string .= ($include_equal) ? ' = ' : ' ';
-        $string .= $fun->Expr->toString($plist);
+
+        # Check for old TFUN format (uppercase)
+        if ($fun->Expr->tfunFile) {
+            $string .= "TFUN(" . $fun->Expr->ctrName . ",'" . $fun->Expr->tfunFile . "')";
+        }
+        # For new tfun and all other expressions, use Expression's toString
+        # Expression->toString will automatically reconstruct tfun() calls from tfunData
+        else {
+            $string .= $fun->Expr->toString($plist);
+        }
     }
 
     if ($include_equal and $max_length)
@@ -328,6 +337,34 @@ sub toString
     }
 
     return $string;
+}
+
+# Helper function to format tfun data as string
+sub format_tfun_string
+{
+    my $data = shift;
+    my $str = 'tfun(';
+
+    if ($data->{mode} eq 'file') {
+        # File-based: tfun('file.tfun', index, method=>"...")
+        $str .= "'" . $data->{file} . "'";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+    elsif ($data->{mode} eq 'inline') {
+        # Inline: tfun([x...], [y...], index, method=>"...")
+        $str .= "[" . join(",", @{$data->{x_vals}}) . "]";
+        $str .= ",[" . join(",", @{$data->{y_vals}}) . "]";
+        $str .= "," . $data->{index};
+        if ($data->{method} && $data->{method} ne 'linear') {
+            $str .= ',method=>"' . $data->{method} . '"';
+        }
+    }
+
+    $str .= ')';
+    return $str;
 }
 
 
@@ -498,14 +535,40 @@ sub toXML
     $string .= " id=\"".$fun->Name."\"";
 
     # AS-2021
-    # if we have a TFUN type function, we need to add 
+    # if we have a TFUN type function (old uppercase syntax), we need to add
     # some attributes to the function XML
-    if($fun->Expr->tfunFile) 
+    if($fun->Expr->tfunFile)
     {
-        # we need type and file attributes
+        # we need type and file attributes (old TFUN format)
         $string .= " type=\"TFUN\"";
         $string .= " file=\"".$fun->Expr->tfunFile."\"";
         $string .= " ctrName=\"".$fun->Expr->ctrName."\"";
+    }
+    # New lowercase tfun support
+    elsif ($fun->Expr->tfunData) {
+        my $data = $fun->Expr->tfunData;
+        # For file-based tfun, emit TFUN XML for NFsim compatibility
+        if ($data->{mode} eq 'file') {
+            $string .= " type=\"TFUN\"";
+            $string .= " file=\"".$data->{file}."\"";
+            $string .= " ctrName=\"".$data->{index}."\"";
+            $string .= " method=\"".$data->{method}."\"" if $data->{method};
+        }
+        # For inline tfun, include all necessary data in XML attributes
+        else {
+            $string .= " type=\"TFUN\"";
+            $string .= " mode=\"inline\"";
+            $string .= " ctrName=\"".$data->{index}."\"";
+
+            # Encode x and y arrays as comma-separated strings
+            my $x_str = join(',', @{$data->{x_vals}});
+            my $y_str = join(',', @{$data->{y_vals}});
+            $string .= " xData=\"".$x_str."\"";
+            $string .= " yData=\"".$y_str."\"";
+
+            # Include method if specified
+            $string .= " method=\"".$data->{method}."\"" if $data->{method};
+        }
     }
     # AS-2021
 
@@ -530,10 +593,10 @@ sub toXML
     # AS-2021
     # if we have a TFUN type function, we need to add 
     # a default reference
-    if($fun->Expr->tfunFile) 
+    if($fun->Expr->tfunFile)
     {
         # we need type and file attributes
-        $string .= $indent3 . "<Reference name=\"__TFUN__VAL__\" type=\"Constant\"/>\n"
+        $string .= $indent3 . "<Reference name=\"__TFUN_VAL__\" type=\"Constant\"/>\n"
     }
     # AS-2021
     my $vhash= $fun->Expr->getVariables($plist);

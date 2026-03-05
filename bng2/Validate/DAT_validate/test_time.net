@@ -8,15 +8,17 @@ begin functions
     3 f_diff() f_correct()-f_builtin()
 end functions
 begin species
-    1 X() 0
+    1 T() 0
+    2 A() 0
+    3 B() 0
 end species
 begin reactions
     1 0 1 _rateLaw1 #_R1
-    2 0 1 f_correct #_R2
-    3 0 1 f_builtin #_R3
+    2 0 2 f_correct #_R2
+    3 0 3 f_builtin #_R3
 end reactions
 begin groups
     1 t                    1
-    2 x_exact              1
-    3 x_builtin            1
+    2 x_exact              2
+    3 x_builtin            3
 end groups
