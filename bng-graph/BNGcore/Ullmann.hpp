@@ -37,6 +37,7 @@ namespace BNGcore
             std::vector< ullmann_M_t >   M_vec;
             // tracking structures (F=targets, H=maps are defined in Ullmann 1976)
             node_container_t  targets;
+            std::vector<bool> targets_mask;
             Map               map;
     };         
 

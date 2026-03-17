@@ -21,19 +21,27 @@ using namespace BNGcore;
 /////////////////
 
 // base constructor
-UllmannBase::UllmannBase ( const PatternGraph & _Ga, const PatternGraph & _Gb )
- : Ga( _Ga ),
-   Gb( _Gb ),
-   pa( Ga.size() ),
-   pb( Gb.size() ),
-   M_vec( pa, ullmann_M_t() )
-{
-    // cast constant pointer to graphs as non-constant pointer
-    //  otherwise we won't be able to use the pointers later
-    //  BUT, Ullmann itself shouldn't modify graphs.    
-    map.set_source_graph( (PatternGraph *)&Ga );
-    map.set_target_graph( (PatternGraph *)&Gb );
-}
+ UllmannBase::UllmannBase ( const PatternGraph & _Ga, const PatternGraph & _Gb )
+  : Ga( _Ga ),
+    Gb( _Gb ),
+    pa( Ga.size() ),
+    pb( Gb.size() ),
+    M_vec( pa, ullmann_M_t() ),
+    targets_mask( pb, false )
+ {
+     // cast constant pointer to graphs as non-constant pointer
+     //  otherwise we won't be able to use the pointers later
+     //  BUT, Ullmann itself shouldn't modify graphs.    
+     map.set_source_graph( (PatternGraph *)&Ga );
+     map.set_target_graph( (PatternGraph *)&Gb );
+ 
+     // Assign temporary indices to Gb nodes for fast bitset access
+     node_const_iter_t it;
+     int i = 0;
+     for (it = Gb.begin(); it != Gb.end(); ++it, ++i) {
+         (*it)->set_index(i);
+     }
+ }
 
 
 
@@ -54,8 +62,8 @@ UllmannBase::~UllmannBase ( )
         // loop over maps
         for ( row_iter = M_vec_iter->begin();  row_iter != M_vec_iter->end();  ++row_iter )
             delete row_iter->second;
-        M_vec_iter->clear();
-    }  
+    }
+    M_vec.clear();
 }
 
 
@@ -231,8 +239,8 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
             // extend subgraph isomorphism map
             map.insert( node_a, node_b );
             // flag col_node as mapped
-            //targets.insert(  node_b  );
             targets.push_back( node_b );
+            targets_mask[node_b->get_index()] = true;
         
             if ( d+1 < pa )
             {   // goto next row_node      
@@ -241,7 +249,6 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
             }
             else
             {   // we have a subgraph isomorphism!!
-                //std::cout << "subgraph isomorphism!" << std::endl;
                 maps.push_back( map );
                 ++num_sg_iso;
             }   
@@ -249,8 +256,8 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
             // remove map of row_node
             map.erase( node_a );
             // free up col_node
-            //targets.erase( node_b ); 
             targets.pop_back();
+            targets_mask[node_b->get_index()] = false;
         }
 
         // advance column iterator        
@@ -281,19 +288,15 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
 bool
 UllmannSGIso::find_next_match ( col_iter_t & col_iter, const col_iter_t & col_end )
 {    
-    //std::cout << "find_next_match:" << std::endl;
-    // NOTE: col_iter should be pointing to the next possible match
     while (  col_iter != col_end  )
     {
         // see if match node is already occupied
-        //if ( targets.find( *col_iter ) == targets.end() )
-        if ( std::find(targets.begin(), targets.end(), *col_iter) == targets.end() )
+        if ( !targets_mask[(*col_iter)->get_index()] )
             return true;
         
         // if occupied, look for next possible match
         ++col_iter;
     }
-    //std::cout << "false" << std::endl;
     return false;
 }
 
@@ -320,20 +323,27 @@ UllmannSGIso::build_M0 ( )
         in_deg_a  = node_a->in_degree();
         out_deg_a = node_a->out_degree();
         
-        node_container_t * possible_match_nodes = new node_container_t;
-        M.insert ( std::pair <Node*, node_container_t*> (node_a, possible_match_nodes) );
+        // Reuse or allocate container for row node_a
+        node_container_t * possible_match_nodes;
+        row_iter_t row_finder = M.find(node_a);
+        if (row_finder == M.end()) {
+            possible_match_nodes = new node_container_t;
+            M.insert ( std::pair <Node*, node_container_t*> (node_a, possible_match_nodes) );
+        } else {
+            possible_match_nodes = row_finder->second;
+            possible_match_nodes->clear();
+        }
            
         // loop over nodes in G_beta
-        col_iter = possible_match_nodes->begin();
         for ( node_iter_b = Gb.begin(); node_iter_b != Gb.end(); ++node_iter_b )
         {
             node_b = *node_iter_b;      
-            // check degree TODO: switch to node comparator (instead of equality!)
+            // check degree 
             if (  (in_deg_a <= node_b->in_degree())  &&  (out_deg_a <= node_b->out_degree())  &&  (*node_a == *node_b)  )
                 // add node_b as a possible match to node_a 
-                col_iter = possible_match_nodes->insert ( col_iter, node_b );
+                possible_match_nodes->push_back(node_b);
         }
-    }    
+    }
     return true;
 }
 
