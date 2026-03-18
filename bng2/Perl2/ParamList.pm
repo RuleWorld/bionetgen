@@ -139,17 +139,25 @@ sub getName
     my $plist    = shift;
     my $basename = (@_) ? shift : "k";
   
-    my $name;
     # Find unused name
-    my $index = 1;
-    while (1)
+    # Optimization: start from the number of parameters to likely find a free spot faster
+    # if many parameters with the same basename exist.
+    my $index = scalar(keys %{$plist->Hash}) + 1;
+    while ( exists $plist->Hash->{"${basename}_${index}"} )
     {
-        my ( $param, $err ) = $plist->lookup( "${basename}_${index}" );
-        last unless $param;
         ++$index;
     }
-    $name = "${basename}_${index}";
-    return $name;
+    
+    # Fallback if we jumped too far
+    if ($index > 1) {
+        my $low = 1;
+        while ($low < $index and exists $plist->Hash->{"${basename}_${low}"}) {
+            $low++;
+        }
+        $index = $low if $low < $index;
+    }
+
+    return "${basename}_${index}";
 }
 
 
@@ -755,31 +763,14 @@ sub deleteParam
     my ($param,$err) = $plist->lookup($pname);
     if ($err) {  return($err);  }
     
-    # remove param from lookup hash
+    # remove param from hash
     delete $plist->Hash->{$pname};
     
-    # remove param from array (expensive)
-    my $index = @{$plist->Array};
-    while ($index > 1)
-    {
-        --$index;
-        if ( $param == $plist->Array->[$index] )
-        {
-            splice( @{$plist->Array}, $index, 1);
-            last;
-        }
-    }
-  
-    # remove param from unchecked (expensive)
-    $index = @{$plist->Unchecked};
-    while ($index > 1)
-    {
-        --$index;
-        if ( $param == $plist->Unchecked->[$index] )
-        {
-            splice( @{$plist->Unchecked}, $index, 1);
-        }
-    }
+    # remove param from array more efficiently (filter instead of splice in loop)
+    @{$plist->Array} = grep { $_ != $param } @{$plist->Array};
+
+    # remove param from unchecked more efficiently
+    @{$plist->Unchecked} = grep { $_ != $param } @{$plist->Unchecked};
 
     # undefine parameter object
     undef %{$param};

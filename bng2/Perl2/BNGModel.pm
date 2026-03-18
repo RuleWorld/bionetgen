@@ -2512,6 +2512,35 @@ sub generate_network
     ###
 
 
+    # Get current process memory usage in MB (real and virtual)
+    # Supports Linux/Unix (via ps) and Windows (via tasklist)
+    sub get_memory_usage
+    {
+        my $rmem = 0;
+        my $vmem = 0;
+        if ($^O eq 'MSWin32') {
+            # Windows: use tasklist
+            my $output = `tasklist /FI "PID eq $$" /NH /FO CSV`;
+            if ($output =~ /"([^"]+)"\s*$/) {
+                my $mem_str = $1;
+                $mem_str =~ s/[^\d]//g;
+                $rmem = $mem_str / 1024; # tasklist reports KB
+                $vmem = $rmem; # tasklist doesn't easily show virtual memory in this format
+            }
+        }
+        else {
+            # Linux/Unix: use ps
+            my $ps_out = `ps -o rss,vsz -p $$`;
+            my @lines = split /\n/, $ps_out;
+            if (@lines > 1) {
+                my @cols = split ' ', $lines[1];
+                $rmem = $cols[0] / 1024;
+                $vmem = $cols[1] / 1024;
+            }
+        }
+        return ($rmem, $vmem);
+    }
+
     sub report_iter
     {
         my $niter = shift @_;
@@ -2522,14 +2551,13 @@ sub generate_network
         printf "Iteration %3d: %5d species %6d rxns", $niter, $nspec, $nrxn;
         my $t_cpu = defined $t_start_iter ? cpu_time(0) - $t_start_iter : 0;
         printf "  %.2e CPU s", $t_cpu;
-        if ($HAVE_PS) {
-            my ( $rhead, $vhead, $rmem, $vmem ) = split ' ', `ps -o rss,vsz -p $$`;
-            printf " %.2e (%.2e) Mb real (virtual) memory.",
-                    $t_cpu, $rmem / 1000, $vmem / 1000;
+
+        my ($rmem, $vmem) = get_memory_usage();
+        if ($rmem > 0) {
+            printf "  %.2e (%.2e) Mb real (virtual) memory.", $rmem, $vmem;
         }
         printf "\n";
     }
-
 }
 
 
