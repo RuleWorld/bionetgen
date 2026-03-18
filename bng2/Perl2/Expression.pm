@@ -16,6 +16,7 @@ use strict;
 use warnings;
 no warnings 'redefine';
 no warnings 'recursion';
+use Storable qw(dclone);
 
 # Perl Modules
 use Class::Struct;
@@ -501,40 +502,7 @@ sub isBuiltIn
 #   Returns a reference to the clone and any error messages.
 sub clone
 {
-    my $expr = shift;
-    my $plist = (@_) ? shift : undef;
-    my $level = (@_) ? shift : 0;
-    
-    if ( $level > $MAX_LEVEL ) {  die "Max recursion depth $MAX_LEVEL exceeded.";  }
-    
-    my $err = '';
-
-    # create a new array for cloned argument    
-    my $clone_args = [];
-    # create clone
-    my $clone = Expression->new();
-    $clone->Type( $expr->Type );
-    $clone->Arglist( $clone_args );
-    $clone->Err( '' );
-
-    # clone argument expressions
-    foreach my $arg (  @{$expr->Arglist} )
-    {
-        my $clone_arg;
-        if ( ref $arg eq 'Expression' )
-        {
-            # recursively expand expressions
-            my $clone_arg;
-            ($clone_arg, $err) = $arg->clone($plist,$level+1);
-            push @$clone_args, $clone_arg;   
-        }
-        else
-        {
-            push @$clone_args, $arg;
-        }      
-    }      
- 
-    return ($clone, $err);
+    return (dclone(shift), '');
 }
 
 

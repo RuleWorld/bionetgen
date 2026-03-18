@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 # Perl Modules
+use Storable qw(dclone);
 use Class::Struct;
 use FindBin;
 use lib $FindBin::Bin;
@@ -33,19 +34,7 @@ struct Function =>
 # 
 sub clone
 {
-    my $fcn   = shift @_;
-    my $plist = @_ ? shift @_ : undef;
-    my $level = @_ ? shift @_ : 0;
-    my $named = @_ ? shift @_ : 0;
-
-    # if the clone doesn't have a name, it will be anonymous
-    my $clone_name = $named ? $fcn->Name : undef;
-
-    my $err = '';
-    (my $clone_expr, $err) = $fcn->Expr->clone( $plist, $level+1 );
-    
-    my $clone = Function->new( Name=>$clone_name, Expr=>$clone_expr, Args=>[@{$fcn->Args}] );
-    return $clone, $err;
+    return (dclone(shift), '');
 }
 
 

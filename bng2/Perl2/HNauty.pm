@@ -8,9 +8,9 @@ our @EXPORT = qw(HNauty deepCopy adj_permute get_adj_str);
 
 #our @EXPORT_OK= qw(deepCopy);
 our $VERSION = 1.00;
+use Storable qw(dclone);
 
-# NOTE: Many undeclared global symbols
-#use strict;
+use Class::Struct;
 ########### HNauty program
 
 # list of subroutines:
@@ -990,21 +990,208 @@ sub HNauty {
   # maybe do some post processing here?
   # print "number terminal nodes: $ntn\n";
   # print "number autos: ", scalar @$generators, "\n";
+  push @$current_node,
+    refinement( $adj_in, $adj_out, $ordered_partition, $ordered_partition );
+  $node_indicator = [ [] ];
+
+  if ( is_discrete( @$current_node[0] ) ) {
+    $new_adj = get_adj_str( $adj_out, @$current_node[$counter] );
+    @$best_node =
+      ( @$current_node[$counter], @$node_indicator[$counter], $new_adj );
+    $complete = 1;
+  }
+  while ( not $complete ) {
+
+    #main loop
+    if ( is_discrete( @$current_node[$counter] ) ) {
+#      if ( $first_terminal_node == ( @$current_node[$counter], @$node_indicator[$counter], $new_adj ) ){
+   	  if ( $first_terminal_node == [ @$current_node[$counter], @$node_indicator[$counter], $new_adj ] ){
+        @$best_node = @$first_terminal_node;
+      }
+      $counter += -1;
+      if ( $counter < 0 ) {
+        $complete = 1;
+      }
+    }
+    elsif ( not $jump_back ) {
+
+      # find first nontrivial cell of smallest size
+      $size = scalar keys %$adj_in;
+      $t    = 0;
+      for $n ( 0 .. $#{ @$current_node[$counter] } ) {
+        if ( 1 < scalar @{ @{ @$current_node[$counter] }[$n] }
+          && scalar @{ @{ @$current_node[$counter] }[$n] } < $size )
+        {
+          $t    = $n;
+          $size = scalar @{ @{ @$current_node[$counter] }[$n] };
+        }
+      }
+      @$cells[$counter] = [];
+      push @{ @$cells[$counter] }, @{ @{ @$current_node[$counter] }[$t] };
+      @$tplacement[$counter]  = $t;
+      @$prune_autos[$counter] = undef;
+      @$current_node          = @$current_node[ 0 .. $counter ];
+    }
+    else {
+      @$current_node = @$current_node[ 0 .. $counter ];
+    }
+    $search_vertex = 1;
+    $i             = 0;
+    while ( ( not $complete ) && $search_vertex ) {
+      while ( scalar @{ @$cells[$counter] } == 0 && not $complete ) {
+        $counter += -1;
+        if ( $counter < 0 ) {
+          $complete = 1;
+        }
+      }
+      if ( ( not defined( @$prune_autos[$counter] ) ) or $complete ) {
+        @$prune_autos[$counter] = 0;
+      }
+      else {
+        if ( @$prune_autos[$counter] < scalar @$automorphisms ) {
+          @$cells[$counter] = update_cell(
+            @$current_node[$counter],
+            @$cells[$counter],
+            [
+              @$automorphisms[ @$prune_autos[$counter] .. $#{$automorphisms} ]
+            ]
+          );
+          @$prune_autos[$counter] = scalar $#{$automorphisms};
+        }
+      }
+      if ( not scalar @{ @$cells[$counter] } == 0 ) {
+        @{ @$cells[$counter] } = sort @{ @$cells[$counter] };
+        $vertex        = @{ @$cells[$counter] }[0];
+        $search_vertex = 0;
+      }
+    }
+    if ( not $complete ) {
+      shift @{ @$cells[$counter] };
+      $this_partition = deepCopy( @$current_node[$counter] );
+      $t              = @$tplacement[$counter];
+      $newset         = deepCopy( @$this_partition[$t] );
+      $some_hash      = +{ map { $_ => 1 } @$newset };
+      delete( $some_hash->{$vertex} );
+      @$newset         = ( keys %$some_hash );
+      @$this_partition = (
+        @$this_partition[ 0 .. $t - 1 ],
+        [$vertex], $newset, @$this_partition[ $t + 1 .. $#{$this_partition} ]
+      );
+      $new_node =
+        refinement( $adj_in, $adj_out, $this_partition, [ [$vertex] ] );
+      @$node_indicator[ $counter + 1 ] = partition_value($new_node);
+      @$node_indicator = @$node_indicator[ 0 .. $counter + 1 ];
+
+      # number of nodes += 1
+      $jump_back = 0;
+      if ( not scalar @$best_node == 0 ) {
+        $i = lex_ordered( @$node_indicator[$counter], @$best_node[1] );
+        if ( @$i[0] eq 'gt' ) {
+#      	  $counter   = $i[1] - 1;
+          $counter   = @$i[1] - 1;
+          $jump_back = 1;
+        }
+      }
+      if ( not $jump_back ) {
+        @$current_node[ $counter + 1 ] = deepCopy($new_node);
+        $counter += 1;
+        if ( is_discrete($new_node) ) {
+          $ntn++;
+          $new_adj = get_adj_str( $adj_out, $new_node );
+          if ( scalar @$first_terminal_node == 0 ) {
+            @$first_terminal_node[0] = deepCopy( @$current_node[$counter] );
+            @$first_terminal_node[1] = deepCopy( @$node_indicator[$counter] );
+            @$first_terminal_node[2] = deepCopy($new_adj);
+            $best_node               = deepCopy($first_terminal_node);
+          }
+          else {
+            $i = lex_ordered( [ @$best_node[ 1 .. 2 ] ],
+              [ @$node_indicator[$counter], $new_adj ] );
+            if ( @$i[0] eq 'lt' ) {
+              $best_node = deepCopy(
+                [
+                  @$current_node[$counter], @$node_indicator[$counter],
+                  $new_adj
+                ]
+              );
+            }
+            else {
+              $i = lex_ordered( @$best_node[2], $new_adj );
+              if ( @$i[0] eq 'eq' ) {
+
+                # we have found an automorphism!
+                $new_auto = {};
+                for $i ( 0 .. $#{ @$best_node[0] } ) {
+                  $new_auto->{ @{ @{ @$best_node[0] }[$i] }[0] } =
+                    @{ @{ @$current_node[$counter] }[$i] }[0];
+                }
+                push @$generators, $new_auto;
+                ( $fix, $orbit_reps, $automorphisms ) =
+                  update_automorphisms( $automorphisms, $new_auto );
+                $some_array = [];
+                for $i ( 0 .. $#{$current_node} ) {
+                  if ( $i < $counter and pfixp( @$current_node[$i], $fix ) ) {
+                    push @$some_array, $i;
+                  }
+                }
+                @$some_array = sort @$some_array;
+                $a           = @$some_array[ $#{$some_array} ];
+                $jump_back   = 1;
+              }
+            }
+            $i = lex_ordered( @$first_terminal_node[2], $new_adj );
+            if ( @$i[0] eq 'eq' ) {
+
+              # we have found an automorphism with first term node!
+              $new_auto = {};
+              for $i ( 0 .. $#{ @$first_terminal_node[0] } ) {
+                $new_auto->{ @{ @{ @$first_terminal_node[0] }[$i] }[0] } =
+                  @{ @{ @$current_node[$counter] }[$i] }[0];
+              }
+              push @$generators, $new_auto;
+              ( $fix, $orbit_reps, $automorphisms ) =
+                update_automorphisms( $automorphisms, $new_auto );
+              $some_array = [];
+              for $i ( 0 .. $#{$current_node} ) {
+                if ( $i < $counter and pfixp( @$current_node[$i], $fix ) ) {
+                  push @$some_array, $i;
+                }
+              }
+              @$some_array = sort @$some_array;
+              $b           = @$some_array[ $#{$some_array} ];
+              if ($jump_back) {
+                @$some_array = ( $a, $b );
+                @$some_array = sort @$some_array;
+                $counter     = @$some_array[0];
+              }
+              else {
+                $counter   = $b;
+                $jump_back = 1;
+              }
+            }
+            elsif ($jump_back) {
+              $counter = $a;
+            }
+          }
+        }
+      }
+    }
+  }
+  $perm = {};
+  for $i ( 0 .. $#{ @$best_node[0] } ) {
+    $perm->{ @{ @{ @$best_node[0] }[$i] }[0] } = $i;
+  }
+
+  # maybe do some post processing here?
+  # print "number terminal nodes: $ntn\n";
+  # print "number autos: ", scalar @$generators, "\n";
   return ( $perm, $generators );
 }
 
+# Perform a recursive deep-copy of a data structure
+# Updated to use Storable::dclone for performance (C-implementation)
 sub deepCopy {
-  my $this = shift;
-  if ( not ref $this ) {
-    $this;
-  }
-  elsif ( ref $this eq "ARRAY" ) {
-    [ map deepCopy($_), @$this ];
-  }
-  elsif ( ref $this eq "HASH" ) {
-    +{ map { $_ => deepCopy( $this->{$_} ) } keys %$this };
-  }
-  else { die "what type is $_?" }
+  return dclone(shift);
 }
 
 1;
