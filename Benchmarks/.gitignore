@@ -1,0 +1,6 @@
+# Benchmark results (can be large)
+results/*.txt
+results/*.csv
+
+# Keep the directory structure
+!results/.gitkeep
