@@ -31,10 +31,16 @@ extern "C" {
 #include <string.h>
 #include <signal.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <io.h>
+#define F_OK 0
+#define access _access
+#else
 #include <unistd.h>
+#include <sys/times.h>
+#endif
 #include <errno.h>
 #include <time.h>
-#include <sys/times.h>
 #include <limits.h>
 #include "mathutils.h"
 }
@@ -61,7 +67,6 @@ struct program_times t_elapsed(){
 	static int initflag = 1;
 	double t_new;
 	struct program_times t_elapsed;
-	struct tms times_buffer;
 
 	if (initflag) {
 		real_start_time = (double)time(NULL);
@@ -71,8 +76,13 @@ struct program_times t_elapsed(){
 	t_elapsed.total_real = (double)time(NULL) - real_start_time;
 
 	/* cpu time--- user + system */
+#ifdef _WIN32
+	t_elapsed.total_cpu = t_new = (double)clock() / CLOCKS_PER_SEC;
+#else
+	struct tms times_buffer;
 	times(&times_buffer);
 	t_elapsed.total_cpu = t_new = (times_buffer.tms_utime + times_buffer.tms_stime) / (double)sysconf(_SC_CLK_TCK);
+#endif
 	t_elapsed.cpu = t_new - t_last;
 	t_last = t_new;
 

@@ -12,8 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/stat.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <cstdlib> 
 #include <cstring>
@@ -29,6 +32,7 @@
 #include <fstream>
 #include <vector>
 #include <queue>
+#include <unordered_map>
 
 using namespace std;
 
@@ -61,6 +65,8 @@ typedef struct{
     Elt*			list;
     int 			n_fixed_elts;
     int*			fixed_elts;
+    std::unordered_map<string, int> name_to_index;
+    std::vector<Elt*> elt_vec;
 } Elt_array;
 
 /* Structure that contains a listing of elt indices that defines a group of elts */
@@ -97,6 +103,7 @@ typedef struct{
 	int 			offset;
     Rxn**			rxn;
     Rxn*			list;
+    std::vector<Rxn*> rxn_vec;
 } Rxn_array;
 
 /* I/O parsing routines */

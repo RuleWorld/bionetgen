@@ -30,6 +30,7 @@ namespace network3{
 		vector<Reaction*> rxn;		// Reactions
 		vector<double> k; 	 		// Rxn firings
 		vector<int> classif; 		// Classifications
+		vector<bool> already_ES;	// Per-step ES status cache
 
 //		PLA();
 		PLA(TauCalculator& tc, RxnClassifier& rc, FiringGenerator& fg, PostleapChecker& pl,

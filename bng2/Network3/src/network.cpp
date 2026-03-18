@@ -31,8 +31,11 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/stat.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <assert.h>
 #include "mathutils.h"
@@ -154,6 +157,9 @@ void free_Elt(Elt* elt) {
 }
 
 Elt* lookup_Elt(char* name, Elt* list) {
+	// Note: In the future, we should pass the Elt_array* to this function 
+	// to make full use of the name_to_index map. 
+	// For now, we search the list as before or optimize if the list is centrally managed.
 	Elt* elt;
 	for (elt = list; elt != NULL; elt = elt->next) {
 		if (strcmp(name, elt->name) == 0)
@@ -205,15 +211,20 @@ void append_Elt_array(Elt_array* earray1, Elt_array* earray2) {
 	for (elt = earray2->list; elt != NULL; elt = elt->next) {
 		*array = elt;
 		elt->index = index;
+		
+		// Update modern structures
+		earray1->name_to_index[elt->name] = elt->index;
+		earray1->elt_vec.push_back(elt);
+		
 		++array;
 		++index;
 	}
 
 	/* Free unused space for earray2 */
 	free(earray2->elt);
+	// We don't free earray2's modern structures explicitly here, they are members.
 	free(earray2);
 
-//	exit:
 	return;
 }
 
@@ -223,10 +234,10 @@ Elt_array* new_Elt_array(Elt* list) {
 	int imin, imax, index;
 
 	if (!list)
-//		goto exit;
 		return (earray);
 
-	earray = (Elt_array*) calloc(1, sizeof(Elt_array));
+	// Use 'new' for structures with C++ members like std::unordered_map
+	earray = new Elt_array();
 
 	/* find maximum and minimum index values and count n_elt */
 	imin = imax = list->index;
@@ -240,14 +251,17 @@ Elt_array* new_Elt_array(Elt* list) {
 	earray->offset = imin;
 	earray->elt = (Elt**) calloc(earray->n_elt, sizeof(Elt*));
 	array = earray->elt - earray->offset;
+	
+	earray->elt_vec.reserve(earray->n_elt);
 	for (elt = list; elt != NULL; elt = elt->next) {
 		array[elt->index] = elt;
-		/* 		printf(" %d", elt->index); */
+		
+		// Update modern structures
+		earray->name_to_index[elt->name] = elt->index;
+		earray->elt_vec.push_back(elt);
 	}
-	/*  printf("\n"); fflush(stdout); */
 	earray->list = list;
 
-//	exit:
 	return (earray);
 }
 
@@ -1529,7 +1543,9 @@ Rxn_array* new_Rxn_array(Rxn* list) {
 
 	if (!list)
 		return (0x0);
-	rarray = (Rxn_array*) calloc(1, sizeof(Rxn_array));
+	
+	// Use 'new' for structures with C++ members like std::vector
+	rarray = new Rxn_array();
 
 	/* find maximum and minimum index values and count n_elt */
 	imin = imax = list->index;
@@ -1549,6 +1565,8 @@ Rxn_array* new_Rxn_array(Rxn* list) {
 	IINIT_VECTOR(index_used, 0, rarray->n_rxn);
 	used = index_used - rarray->offset;
 	array = rarray->rxn - rarray->offset;
+	
+	rarray->rxn_vec.reserve(rarray->n_rxn);
 	for (rxn = list; rxn != NULL; rxn = rxn->next) {
 		if (used[rxn->index]) {
 			fprintf(stderr, "Each reaction must be assigned a unique index.\n");
@@ -1556,6 +1574,7 @@ Rxn_array* new_Rxn_array(Rxn* list) {
 			return (0x0);
 		}
 		array[rxn->index] = rxn;
+		rarray->rxn_vec.push_back(rxn);
 	}
 	rarray->list = list;
 	free(index_used);
@@ -1585,15 +1604,15 @@ void append_Rxn_array(Rxn_array* rarray1, Rxn_array* rarray2) {
 	for (rxn = rarray2->list; rxn != NULL; rxn = rxn->next) {
 		*array = rxn;
 		rxn->index = index;
+		rarray1->rxn_vec.push_back(rxn);
 		++array;
 		++index;
 	}
 
 	/* Free unused space for rarray2 */
 	free(rarray2->rxn);
-	free(rarray2);
+	delete rarray2;
 
-//	exit:
 	return;
 }
 
@@ -1607,7 +1626,7 @@ void free_Rxn_array(Rxn_array* rarray) {
 			new_elt = rxn->next;
 			free_Rxn(rxn);
 		}
-		free(rarray);
+		delete rarray;
 	}
 	return;
 }
@@ -3112,15 +3131,15 @@ void derivs_network(double t, double* conc, double* derivs) {
 		*network.time_pointer = t;
 	}
 
+	// Update observables (groups) so they're current for tfun evaluation and variable rate parameters
+	for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
+		curr->total_val = 0;
+		for (int i = 0; i < curr->n_elt; i++)
+			curr->total_val += curr->elt_factor[i] * conc[curr->elt_index[i]-1];
+	}
+
 	// Update tfun values if any exist
 	if (network.has_tfuns) {
-		// First update observables (groups) so they're current for tfun evaluation
-		for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
-			curr->total_val = 0;
-			for (int i = 0; i < curr->n_elt; i++)
-				curr->total_val += curr->elt_factor[i] * conc[curr->elt_index[i]-1];
-		}
-
 		// Now evaluate tfuns
 		for (size_t i = 0; i < network.tfuns.size(); i++) {
 			double index_val;
@@ -3142,12 +3161,6 @@ void derivs_network(double t, double* conc, double* derivs) {
 	}
 
 	// Update reaction rates that depend on functions
-	// update groups (only those that inform variables parameters)
-	for (Group* curr = network.spec_groups; curr != NULL; curr = curr->next) {
-		curr->total_val = 0;
-		for (int i = 0; i < curr->n_elt; i++)
-			curr->total_val += curr->elt_factor[i] * conc[curr->elt_index[i]-1];
-	}
 	// update variable rate parameters
 	for (unsigned int j=0;j < network.var_parameters.size();j++) {
 		network.rates->elt[network.var_parameters[j]-1]->val = network.functions[j].Eval();
@@ -4080,8 +4093,7 @@ int print_concentrations_network(FILE* out, double t) {
 		if (fabs(conc) < 10*DBL_MIN) conc = 0; // To avoid underflow problems
 		fprintf(out, " %19.12e", conc);
 	}
-	fprintf(out,"\n");
-	fflush(out);
+ 	fprintf(out,"\n");
 
 //	exit:
 	return (error);
@@ -4174,8 +4186,7 @@ int print_group_concentrations_network(FILE* out, double t, bool no_newline) {
 		fprintf(out, " ");
 		fprintf(out, fmt, conc);
 	}
-	if (!no_newline) fprintf(out, "\n");
-	fflush(out);
+ 	if (!no_newline) fprintf(out, "\n");
 
 //	exit:
 	if (X) FREE_VECTOR(X);
@@ -4240,8 +4251,7 @@ int print_function_values_network(FILE* out, double t){
 	for (unsigned int i = 1; i < network.functions.size(); i++) { // Don't print 'time' function (i=0)
 		fprintf(out, " %19.12e", network.rates->elt[network.var_parameters[i]-network.rates->offset]->val);
 	}
-	fprintf(out, "\n");
-	fflush(out);
+ 	fprintf(out, "\n");
 
 	return error;
 }
@@ -4337,8 +4347,7 @@ int print_species_stats(FILE* out, double t) {
 	fprintf(out, "%19d", n_species_active());
 	fprintf(out, "%19d", n_species_ever_populated());
 	fprintf(out, "%19d", n_species_network());
-	fprintf(out, "\n");
-	fflush(out);
+ 	fprintf(out, "\n");
 
 //	exit:
 	return (error);
@@ -4396,8 +4405,7 @@ int print_flux_network(FILE* out, double t, int discrete) {
 		fprintf(out, " ");
 		fprintf(out, fmt, rates_rxn[i]);
 	}
-	fprintf(out, "\n");
-	fflush(out);
+ 	fprintf(out, "\n");
 
 //	exit:
 	if (rates_rxn) FREE_VECTOR(rates_rxn);

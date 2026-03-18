@@ -19,9 +19,10 @@ PLA::PLA(TauCalculator& tc, RxnClassifier& rc, FiringGenerator& fg, PostleapChec
 		output_interval(INFINITY){
 	if (debug)
 		cout << "PLA constructor called." << endl;
-	this->k.resize(this->rxn.size(),NAN);
-	this->classif.resize(this->rxn.size(),-1);
-}
+ 	this->k.resize(this->rxn.size(),NAN);
+ 	this->classif.resize(this->rxn.size(),-1);
+ 	this->already_ES.resize(this->rxn.size(),false);
+ }
 
 PLA::~PLA(){
 	if (debug)
@@ -234,7 +235,7 @@ void PLA::nextStep(double maxTau){
 	else{
 */
 		// Step 3: Iterate until a consistent tau and set of classifications are found
-		vector<bool> already_ES(this->rxn.size(),false); // Tracks whether a rxn has already been flagged as ES
+		fill(this->already_ES.begin(), this->already_ES.end(), false); // Tracks whether a rxn has already been flagged as ES
 		bool done = false;
 		bool allES = false;
 		//
@@ -245,8 +246,8 @@ void PLA::nextStep(double maxTau){
 				// Consider ES rxns
 				if (this->classif[v] == RxnClassifier::EXACT_STOCHASTIC){
 					// Is it newly ES?
-					if (!already_ES[v]){ // Yes
-						already_ES[v] = true;
+					if (!this->already_ES[v]){ // Yes
+						this->already_ES[v] = true;
 						double tau_ESv = this->get_tau_ES(v);
 						if (tau_ESv < tau_ES){ // Remember that tau_ES = INFINITY initially
 							this->ES_rxn = this->rxn[v];
