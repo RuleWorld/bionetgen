@@ -78,7 +78,30 @@ results/
   benchmark_YYYYMMDD_HHMMSS.csv
 ```
 
-CSV format is suitable for importing into spreadsheets or plotting tools.
+### Phase Breakdown
+
+The benchmark automatically parses BNG2.pl log output to provide timing breakdowns:
+
+- **Overall**: Total wall-clock time
+- **generate_network()**: Perl network generation time
+- **simulate()**: C++ simulation time
+
+This allows you to see exactly where performance improvements (or regressions) occur.
+
+Example output:
+```
+Overall Performance:
+Model        Baseline (s)  Comparison (s)  Speedup  Improvement
+--------------------------------------------------------------
+egfr_net     5.39 (±0.14)  5.30 (±0.11)    1.02x    2.0%
+
+Phase Breakdown - generate_network():
+Model        Baseline (s)  Comparison (s)  Speedup  Improvement
+--------------------------------------------------------------
+egfr_net     4.47 (±0.04)  3.12 (±0.03)    1.43x    30.2%
+```
+
+CSV format includes a `Phase` column for easy filtering and analysis.
 
 ## Adding New Benchmark Models
 

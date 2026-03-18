@@ -44,9 +44,9 @@ Result: **2 rebuilds total**, regardless of number of models.
 - 5 models: ~4min saved
 - 10 models: ~9min saved
 
-### Future Optimization Ideas
+### Future Enhancement Ideas
 
-#### Binary Caching
+#### 1. Binary Caching
 Cache compiled binaries by git commit hash to avoid rebuilding the same version:
 
 ```bash
@@ -72,11 +72,64 @@ This would be especially useful when:
 **Additional Savings**:
 If you benchmark 5 different feature branches against the same baseline (e.g., `master`), you'd save 5 rebuilds of master (assuming binary caching is implemented).
 
+#### 2. Stochastic Simulation Benchmarks
+
+Add dedicated benchmark categories for stochastic simulation methods, which have different performance characteristics than ODE solvers:
+
+**SSA (Gillespie) Benchmarks:**
+- Key metrics: Wall-clock time, CPU time, trajectories/second
+- Challenges:
+  - Stochastic variance requires more runs for statistical significance
+  - Performance often depends on reaction network topology
+  - Memory usage can spike with large state spaces
+
+**NFsim (Network-Free Simulation) Benchmarks:**
+- Key metrics: Wall-clock time, CPU time, peak memory usage
+- Challenges:
+  - Performance highly dependent on model complexity (patterns, rules)
+  - Memory usage critical for large agent-based models
+  - Need to track both simulation time AND initialization time
+
+**Potential Implementation**:
+```bash
+# Example usage
+./benchmark.sh master develop --method ssa --trajectories 100
+./benchmark.sh master develop --method nfsim --models large_agent_based
+```
+
+**Metrics to Track**:
+- **Wall-clock time**: Total runtime
+- **CPU time**: Actual compute time (important for parallel vs serial comparison)
+- **Memory usage**: Peak RSS (especially critical for NFsim)
+- **Trajectories/second**: Throughput metric for SSA
+- **Events/second**: Throughput metric for NFsim
+
+**Special Considerations**:
+- **Statistical confidence**: SSA/NFsim need 50-100+ runs vs 3-5 for ODE
+- **Warmup runs**: First trajectory often slower due to JIT/caching
+- **Memory profiling**: Track peak memory, not just average
+- **CPU affinity**: Pin to cores for consistent timing
+- **Variance reporting**: Report median + IQR in addition to mean ± stddev
+
+**Model Categories**:
+- `benchmarks/ssa/`: Pure SSA models (small state space, high event rate)
+- `benchmarks/nfsim/`: Rule-based models (large pattern space)
+- `benchmarks/hybrid/`: Models using both methods
+
+This would allow tracking performance of the most computationally expensive simulation methods used in practice.
+
 ## Version History
+
+### v1.2 (2026-03-18)
+- **Phase breakdown reporting**: Parse BNG2.pl log output to separate generate_network() and simulate() timings
+- Enhanced CSV output with phase-level data
+- Added git commit verification and binary timestamp tracking
+- Show sample of changed files for transparency
 
 ### v1.1 (2026-03-18)
 - Optimized rebuild strategy (loop inversion)
 - Reduced builds from 2N to 2
+- Eliminated redundant compilations
 
 ### v1.0 (2026-03-18)
 - Initial benchmark framework
