@@ -2369,9 +2369,8 @@ int init_network(Rxn_array* reactions, Elt_array* rates, Elt_array* species, Gro
 	/* Initialize function call counters */
 	network.n_deriv_calls = network.n_rate_calls = 0;
 
-	/* Initialize time pointer and tfun flag */
+	/* Initialize time pointer (tfun flag is set during read_functions_array) */
 	network.time_pointer = NULL;
-	network.has_tfuns = false;
 
 	return (0);
 }
