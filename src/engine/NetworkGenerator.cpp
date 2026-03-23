@@ -1,0 +1,162 @@
+#include "engine/NetworkGenerator.hpp"
+
+#include <algorithm>
+#include <cctype>
+#include <map>
+#include <optional>
+#include <string>
+
+#include "io/NetWriter.hpp"
+
+namespace bng::engine {
+
+namespace {
+
+std::optional<std::size_t> parseMaxIter(const ast::Model& model) {
+    for (const auto& action : model.getActions()) {
+        if (action.name != "generate_network") {
+            continue;
+        }
+        const auto found = action.arguments.find("max_iter");
+        if (found == action.arguments.end()) {
+            continue;
+        }
+        return static_cast<std::size_t>(std::stoul(found->second));
+    }
+    return std::nullopt;
+}
+
+std::map<std::string, std::size_t> parseMaxStoich(const ast::Model& model) {
+    for (const auto& action : model.getActions()) {
+        if (action.name != "generate_network") {
+            continue;
+        }
+        const auto found = action.arguments.find("max_stoich");
+        if (found == action.arguments.end()) {
+            continue;
+        }
+
+        std::map<std::string, std::size_t> limits;
+        std::string text = found->second;
+        text.erase(std::remove_if(text.begin(), text.end(), [](unsigned char c) {
+            return std::isspace(c) != 0;
+        }), text.end());
+        if (text.size() >= 2 && text.front() == '{' && text.back() == '}') {
+            text = text.substr(1, text.size() - 2);
+        }
+
+        std::size_t start = 0;
+        while (start < text.size()) {
+            const auto comma = text.find(',', start);
+            const auto entry = text.substr(start, comma == std::string::npos ? std::string::npos : comma - start);
+            const auto arrow = entry.find("=>");
+            if (arrow != std::string::npos) {
+                limits.emplace(entry.substr(0, arrow), static_cast<std::size_t>(std::stoull(entry.substr(arrow + 2))));
+            }
+            if (comma == std::string::npos) {
+                break;
+            }
+            start = comma + 1;
+        }
+        return limits;
+    }
+    return {};
+}
+
+bool isBondNode(const BNGcore::Node& node) {
+    return node.get_type().get_type_name() == BNGcore::BOND_NODE_TYPE.get_type_name();
+}
+
+bool isComponentNode(const BNGcore::Node& node) {
+    if (isBondNode(node)) {
+        return false;
+    }
+    for (auto edge = node.edges_in_begin(); edge != node.edges_in_end(); ++edge) {
+        if (!isBondNode(**edge)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool isMoleculeNode(const BNGcore::Node& node) {
+    return !isBondNode(node) && !isComponentNode(node);
+}
+
+std::map<std::string, std::size_t> countMolecules(const ast::SpeciesGraph& graph) {
+    std::map<std::string, std::size_t> counts;
+    for (auto nodeIter = graph.getGraph().begin(); nodeIter != graph.getGraph().end(); ++nodeIter) {
+        if (isMoleculeNode(**nodeIter)) {
+            ++counts[(*nodeIter)->get_type().get_type_name()];
+        }
+    }
+    return counts;
+}
+
+bool withinStoichLimits(const ast::SpeciesGraph& graph, const std::map<std::string, std::size_t>& limits) {
+    if (limits.empty()) {
+        return true;
+    }
+    const auto counts = countMolecules(graph);
+    for (const auto& [name, count] : counts) {
+        const auto found = limits.find(name);
+        if (found != limits.end() && count > found->second) {
+            return false;
+        }
+    }
+    return true;
+}
+
+double evaluateAmount(const ast::Expression& expr, ast::Model& model) {
+    return expr.evaluate([&](const std::string& dependency) {
+        return model.getParameters().evaluate(dependency);
+    });
+}
+
+} // namespace
+
+NetworkGenerator::NetworkGenerator(ast::Model& model)
+    : model_(model) {}
+
+GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
+    model_.getParameters().evaluateAll();
+    const auto maxStoich = parseMaxStoich(model_);
+
+    GeneratedNetwork network;
+    for (const auto& seed : model_.getSeedSpecies()) {
+        network.species.add(ast::Species(
+            ast::SpeciesGraph(seed.getGraph()),
+            evaluateAmount(seed.getAmount(), model_),
+            seed.isConstant(),
+            seed.getCompartment()));
+    }
+
+    for (std::size_t iter = 0; iter < maxIter; ++iter) {
+        const std::size_t previousSpecies = network.species.size();
+        const std::size_t previousReactions = network.reactions.size();
+        const std::size_t processedSpecies = network.species.size();
+        for (const auto& rule : model_.getReactionRules()) {
+            rule.expandRule(network.species, network.reactions, [&](const ast::SpeciesGraph& graph) {
+                return withinStoichLimits(graph, maxStoich);
+            });
+        }
+        for (std::size_t i = 0; i < processedSpecies; ++i) {
+            network.species.get(i).setRulesApplied(true);
+        }
+        if (network.species.size() == previousSpecies && network.reactions.size() == previousReactions) {
+            break;
+        }
+    }
+
+    return network;
+}
+
+GeneratedNetwork NetworkGenerator::generate(const std::filesystem::path& sourcePath) {
+    (void)sourcePath;
+    auto network = generateNative(parseMaxIter(model_).value_or(32));
+    const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".net");
+    io::NetWriter::write(outputPath, model_, network);
+    return network;
+}
+
+} // namespace bng::engine

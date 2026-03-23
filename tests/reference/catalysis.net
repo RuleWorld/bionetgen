@@ -1,0 +1,69 @@
+# Created by BioNetGen 2.9.3
+version("2.2.4")
+setOption("NumberPerQuantityUnit","6.0221e+23")
+begin parameters
+    1 RT                    2.577  # Constant
+    2 NA                    6.022e23  # Constant
+    3 volC                  1e-12  # Constant
+    4 conc_S_0              1e-6  # Constant
+    5 conc_kinase_0         10e-9  # Constant
+    6 conc_pptase_0         10e-9  # Constant
+    7 conc_ATP_0            1.0e-3  # Constant
+    8 conc_ADP_0            0.1e-3  # Constant
+    9 Gf_Sp                 51.1  # Constant
+   10 Gf_S_kinase           -41.5  # Constant
+   11 Gf_S_pptase           -41.5  # Constant
+   12 Gf_ATP                51.1  # Constant
+   13 Ea0_S_kinase          -7.7  # Constant
+   14 Ea0_S_pptase          -7.7  # Constant
+   15 Ea0_cat_kinase        -11.9  # Constant
+   16 Ea0_cat_pptase        11.9  # Constant
+   17 phi                   0.5  # Constant
+   18 _InitialConc1         (conc_S_0*NA)*volC  # ConstantExpression
+   19 _InitialConc2         (conc_kinase_0*NA)*volC  # ConstantExpression
+   20 _InitialConc3         (conc_pptase_0*NA)*volC  # ConstantExpression
+   21 _InitialConc4         (conc_ATP_0*NA)*volC  # ConstantExpression
+   22 _InitialConc5         (conc_ADP_0*NA)*volC  # ConstantExpression
+   23 __R1_local1           exp((-(Ea0_S_kinase+(phi*(Gf_S_kinase/RT)))))  # ConstantExpression
+   24 __R2_local1           exp((-(Ea0_S_pptase+(phi*(Gf_S_pptase/RT)))))  # ConstantExpression
+   25 __reverse__R1_local1  exp((-(Ea0_S_kinase+((1-phi)*(-(Gf_S_kinase/RT))))))  # ConstantExpression
+   26 __reverse__R2_local1  exp((-(Ea0_S_pptase+((1-phi)*(-(Gf_S_pptase/RT))))))  # ConstantExpression
+   27 __R3_local1           exp((-(Ea0_cat_kinase+(phi*((Gf_Sp/RT)+(-(Gf_ATP/RT)))))))  # ConstantExpression
+   28 __reverse__R4_local1  exp((-(Ea0_cat_pptase+((1-phi)*(Gf_Sp/RT)))))  # ConstantExpression
+   29 __reverse__R3_local1  exp((-(Ea0_cat_kinase+((1-phi)*((-(Gf_Sp/RT))+(Gf_ATP/RT))))))  # ConstantExpression
+   30 __R4_local1           exp((-(Ea0_cat_pptase+(phi*(-(Gf_Sp/RT))))))  # ConstantExpression
+end parameters
+begin species
+    1 @C::S(e,y~0) _InitialConc1
+    2 @C::kinase(s) _InitialConc2
+    3 @C::pptase(s) _InitialConc3
+    4 @C::$ATP() _InitialConc4
+    5 @C::$ADP() _InitialConc5
+    6 @C::S(e!1,y~0).kinase(s!1) 0
+    7 @C::S(e!1,y~0).pptase(s!1) 0
+    8 @C::S(e!1,y~P).kinase(s!1) 0
+    9 @C::S(e!1,y~P).pptase(s!1) 0
+   10 @C::S(e,y~P) 0
+end species
+begin reactions
+    1 1,2 6 1.6605503e-12*__R1_local1 #_R1 unit_conversion=1/(6.0221e+23*volC)
+    2 1,3 7 1.6605503e-12*__R2_local1 #_R2 unit_conversion=1/(6.0221e+23*volC)
+    3 6 1,2 __reverse__R1_local1 #_reverse__R1
+    4 7 1,3 __reverse__R2_local1 #_reverse__R2
+    5 4,6 5,8 1.6605503e-12*__R3_local1 #_R3 unit_conversion=1/(6.0221e+23*volC)
+    6 7 9 __reverse__R4_local1 #_reverse__R4
+    7 8 2,10 __reverse__R1_local1 #_reverse__R1
+    8 9 3,10 __reverse__R2_local1 #_reverse__R2
+    9 5,8 4,6 1.6605503e-12*__reverse__R3_local1 #_reverse__R3 unit_conversion=1/(6.0221e+23*volC)
+   10 9 7 __R4_local1 #_R4
+   11 2,10 8 1.6605503e-12*__R1_local1 #_R1 unit_conversion=1/(6.0221e+23*volC)
+   12 3,10 9 1.6605503e-12*__R2_local1 #_R2 unit_conversion=1/(6.0221e+23*volC)
+end reactions
+begin groups
+    1 Sp                   8,9,10
+    2 S_kinase             6,8
+    3 S_pptase             7,9
+    4 Stot                 1,6,7,8,9,10
+    5 kinaseTot            2,6,8
+    6 pptaseTot            3,7,9
+end groups

@@ -1,0 +1,83 @@
+# Created by bng_cpp
+begin parameters
+    1 egf_tot 1.2e+06
+    2 egfr_tot 180000
+    3 Grb2_tot 100000
+    4 Shc_tot 270000
+    5 Sos_tot 13000
+    6 Grb2_Sos_tot 49000
+    7 kp1 1.667e-06
+    8 km1 0.06
+    9 kp2 5.556e-06
+    10 km2 0.1
+    11 kp3 0.5
+    12 km3 4.505
+    13 kp14 3
+    14 km14 0.03
+    15 km16 0.005
+    16 kp9 8.333e-07
+    17 km9 0.05
+    18 kp10 5.556e-06
+    19 km10 0.06
+    20 kp11 1.25e-06
+    21 km11 0.03
+    22 kp13 2.5e-05
+    23 km13 0.6
+    24 kp15 2.5e-07
+    25 km15 0.3
+    26 kp17 1.667e-06
+    27 km17 0.1
+    28 kp18 2.5e-07
+    29 km18 0.3
+    30 kp19 5.556e-06
+    31 km19 0.0214
+    32 kp20 6.667e-08
+    33 km20 0.12
+    34 kp24 5e-06
+    35 km24 0.0429
+    36 kp21 1.667e-06
+    37 km21 0.01
+    38 kp23 1.167e-05
+    39 km23 0.1
+    40 kp12 5.556e-08
+    41 km12 0.0015
+    42 kp22 1.667e-05
+    43 km22 0.064
+    44 loop1 0.99996
+    45 loop2 0.1
+    46 loop3 1.49507
+    47 loop4 0.0995521
+    48 loop5 1.498
+end parameters
+begin species
+    1 egf(r) 1.2e+06
+    2 Grb2(SH2,SH3) 100000
+    3 Shc(PTB,Y317~Y) 270000
+    4 Sos(dom) 13000
+    5 egfr(Y1068~Y,Y1148~Y,l,r) 180000
+    6 Grb2(SH2,SH3!0).Sos(dom!0) 49000
+    7 egf(r!0).egfr(Y1068~Y,Y1148~Y,l!0,r) 0
+end species
+begin reactions
+    1 1,5 7 kp1
+    2 6 2,4 km12
+    3 2,4 6 kp12
+    4 7 1,5 km1
+end reactions
+begin groups
+    1 Dimers 
+    2 Sos_act 
+    3 RP 
+    4 Shc_Grb 
+    5 Shc_Grb_Sos 
+    6 R_Grb2 
+    7 R_Shc 
+    8 R_ShcP 
+    9 ShcP 
+    10 R_G_S 
+    11 R_S_G_S 
+    12 Efgr_total 5,7
+    13 Shc_total 3
+    14 Sos_total 4,6
+    15 Grb2_total 2,6
+end groups
