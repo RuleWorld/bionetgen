@@ -363,7 +363,7 @@ std::any BNGAstVisitor::visitSeed_species_def(BNGParser::Seed_species_defContext
         ctx->expression() != nullptr ? buildExpression(ctx->expression()) : ast::Expression::number(0.0),
         ctx->DOLLAR() != nullptr,
         std::move(compartment),
-        buildPatternGraph(ctx->species_def(), *currentModel_)));
+        buildPatternGraph(ctx->species_def(), *currentModel_, false)));
     return {};
 }
 
@@ -376,7 +376,7 @@ std::any BNGAstVisitor::visitEnergy_pattern_def(BNGParser::Energy_pattern_defCon
         ctx->STRING() != nullptr ? ctx->STRING()->getText() : std::string(),
         ctx->species_def()->getText(),
         buildExpression(ctx->expression()),
-        ast::SpeciesGraph(buildPatternGraph(ctx->species_def(), *currentModel_))));
+        ast::SpeciesGraph(buildPatternGraph(ctx->species_def(), *currentModel_, true))));
     return {};
 }
 
@@ -427,7 +427,7 @@ std::any BNGAstVisitor::visitReaction_rule_def(BNGParser::Reaction_rule_defConte
             std::vector<ast::SpeciesGraph> patterns;
             patterns.reserve(ctx->reactant_patterns()->species_def().size());
             for (auto* species : ctx->reactant_patterns()->species_def()) {
-                patterns.emplace_back(buildPatternGraph(species, *currentModel_));
+                patterns.emplace_back(buildPatternGraph(species, *currentModel_, true));
             }
             return patterns;
         }(),
@@ -435,7 +435,7 @@ std::any BNGAstVisitor::visitReaction_rule_def(BNGParser::Reaction_rule_defConte
             std::vector<ast::SpeciesGraph> patterns;
             patterns.reserve(ctx->product_patterns()->species_def().size());
             for (auto* species : ctx->product_patterns()->species_def()) {
-                patterns.emplace_back(buildPatternGraph(species, *currentModel_));
+                patterns.emplace_back(buildPatternGraph(species, *currentModel_, true));
             }
             return patterns;
         }()));

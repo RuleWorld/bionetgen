@@ -55,13 +55,14 @@ ParseResult parseFile(const std::string& path) {
 }
 
 void printUsage() {
-    std::cerr << "Usage: bng_cpp [--check] <model1.bngl> [model2.bngl ...]\n";
+    std::cerr << "Usage: bng_cpp [--check] [--verbose] [--version] <model1.bngl> [model2.bngl ...]\n";
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
     bool checkOnly = false;
+    bool verbose = false;
     std::vector<std::string> inputs;
 
     for (int i = 1; i < argc; ++i) {
@@ -69,6 +70,14 @@ int main(int argc, char** argv) {
         if (arg == "--check") {
             checkOnly = true;
             continue;
+        }
+        if (arg == "--verbose") {
+            verbose = true;
+            continue;
+        }
+        if (arg == "--version") {
+            std::cout << "bng_cpp version 4.0\n";
+            return 0;
         }
         inputs.push_back(arg);
     }
@@ -114,7 +123,10 @@ int main(int argc, char** argv) {
         for (const auto& input : inputs) {
             const auto result = parseFile(input);
             if (result.opened && result.syntaxErrors == 0 && result.error.empty()) {
-                bng::actions::ActionDispatch::execute(*result.model, input);
+                if (verbose) {
+                    std::cerr << "[bng_cpp] executing actions for " << input << '\n';
+                }
+                bng::actions::ActionDispatch::execute(*result.model, input, verbose);
             }
         }
     }

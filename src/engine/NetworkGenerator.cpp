@@ -1,7 +1,9 @@
-#include "engine/NetworkGenerator.hpp"
+﻿#include "engine/NetworkGenerator.hpp"
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
+#include <iostream>
 #include <map>
 #include <optional>
 #include <string>
@@ -63,6 +65,55 @@ std::map<std::string, std::size_t> parseMaxStoich(const ast::Model& model) {
     return {};
 }
 
+bool parseBooleanLike(std::string text) {
+    text.erase(std::remove_if(text.begin(), text.end(), [](unsigned char c) {
+        return std::isspace(c) != 0;
+    }), text.end());
+    if (text.size() >= 2 && ((text.front() == '"' && text.back() == '"') || (text.front() == '\'' && text.back() == '\''))) {
+        text = text.substr(1, text.size() - 2);
+    }
+    std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    return text == "1" || text == "true" || text == "yes" || text == "on";
+}
+
+bool parsePrintIter(const ast::Model& model) {
+    const char* envFlag = std::getenv("BNG_CPP_PROGRESS");
+    if (envFlag != nullptr && *envFlag != '\0') {
+        return parseBooleanLike(envFlag);
+    }
+
+    for (const auto& action : model.getActions()) {
+        if (action.name != "generate_network") {
+            continue;
+        }
+        const auto found = action.arguments.find("print_iter");
+        if (found != action.arguments.end()) {
+            return parseBooleanLike(found->second);
+        }
+    }
+    return false;
+}
+
+bool parsePrintRules(const ast::Model& model) {
+    const char* envFlag = std::getenv("BNG_CPP_PROGRESS_RULES");
+    if (envFlag != nullptr && *envFlag != '\0') {
+        return parseBooleanLike(envFlag);
+    }
+
+    for (const auto& action : model.getActions()) {
+        if (action.name != "generate_network") {
+            continue;
+        }
+        const auto found = action.arguments.find("print_rule_progress");
+        if (found != action.arguments.end()) {
+            return parseBooleanLike(found->second);
+        }
+    }
+    return false;
+}
+
 bool isBondNode(const BNGcore::Node& node) {
     return node.get_type().get_type_name() == BNGcore::BOND_NODE_TYPE.get_type_name();
 }
@@ -121,6 +172,8 @@ NetworkGenerator::NetworkGenerator(ast::Model& model)
 GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     model_.getParameters().evaluateAll();
     const auto maxStoich = parseMaxStoich(model_);
+    const bool logProgress = parsePrintIter(model_);
+    const bool logRules = parsePrintRules(model_);
 
     GeneratedNetwork network;
     for (const auto& seed : model_.getSeedSpecies()) {
@@ -131,19 +184,48 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
             seed.getCompartment()));
     }
 
+    if (logProgress) {
+        std::cerr << "[generate_network] start species=" << network.species.size()
+                  << " reactions=" << network.reactions.size()
+                  << " max_iter=" << maxIter << '\n';
+    }
+
     for (std::size_t iter = 0; iter < maxIter; ++iter) {
         const std::size_t previousSpecies = network.species.size();
         const std::size_t previousReactions = network.reactions.size();
         const std::size_t processedSpecies = network.species.size();
+
         for (const auto& rule : model_.getReactionRules()) {
-            rule.expandRule(network.species, network.reactions, [&](const ast::SpeciesGraph& graph) {
+            const std::size_t beforeSpecies = network.species.size();
+            const std::size_t beforeReactions = network.reactions.size();
+            const auto created = rule.expandRule(network.species, network.reactions, [&](const ast::SpeciesGraph& graph) {
                 return withinStoichLimits(graph, maxStoich);
             });
+            if (logRules && (created > 0 || network.species.size() != beforeSpecies || network.reactions.size() != beforeReactions)) {
+                std::cerr << "[generate_network] iter=" << (iter + 1)
+                          << " rule=" << rule.getRuleName()
+                          << " created=" << created
+                          << " d_species=" << (network.species.size() - beforeSpecies)
+                          << " d_rxns=" << (network.reactions.size() - beforeReactions) << '\n';
+            }
         }
+
         for (std::size_t i = 0; i < processedSpecies; ++i) {
             network.species.get(i).setRulesApplied(true);
         }
+
+        if (logProgress) {
+            std::cerr << "[generate_network] iter=" << (iter + 1)
+                      << " species=" << network.species.size()
+                      << " reactions=" << network.reactions.size()
+                      << " d_species=" << (network.species.size() - previousSpecies)
+                      << " d_rxns=" << (network.reactions.size() - previousReactions) << '\n';
+        }
+
         if (network.species.size() == previousSpecies && network.reactions.size() == previousReactions) {
+            if (logProgress) {
+                std::cerr << "[generate_network] converged at iter=" << (iter + 1) << '\n';
+            }
             break;
         }
     }
@@ -153,7 +235,7 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
 
 GeneratedNetwork NetworkGenerator::generate(const std::filesystem::path& sourcePath) {
     (void)sourcePath;
-    auto network = generateNative(parseMaxIter(model_).value_or(32));
+    auto network = generateNative(parseMaxIter(model_).value_or(1024));
     const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".net");
     io::NetWriter::write(outputPath, model_, network);
     return network;

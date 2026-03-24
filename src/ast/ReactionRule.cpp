@@ -1,7 +1,8 @@
-#include "ReactionRule.hpp"
+﻿#include "ReactionRule.hpp"
 
 #include <algorithm>
 #include <cstdint>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <optional>
@@ -441,6 +442,22 @@ bool patternHasAnyBoundSite(const PatternInfo& info) {
     }
     return false;
 }
+
+bool hasModifier(const std::vector<std::string>& modifiers, const std::string& name) {
+    std::string needle = name;
+    std::transform(needle.begin(), needle.end(), needle.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    for (auto modifier : modifiers) {
+        std::transform(modifier.begin(), modifier.end(), modifier.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+        if (modifier == needle) {
+            return true;
+        }
+    }
+    return false;
+}
 std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGcore::Map& map) {
     std::vector<std::string> parts;
     for (auto nodeIter = pattern.begin(); nodeIter != pattern.end(); ++nodeIter) {
@@ -573,6 +590,8 @@ const std::vector<ReactionRule::TransformOp>& ReactionRule::getOperations() cons
 void ReactionRule::initialize() {
     operations_.clear();
     reactionCenter_.assign(reactantPatterns_.size(), {});
+    patternMatches_.assign(reactantPatterns_.size(), {});
+    matchesInitialized_ = true;
     if (reactantPatterns_.empty() || productPatterns_.empty()) {
         return;
     }
@@ -731,11 +750,25 @@ void ReactionRule::initialize() {
 std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddings(
     std::size_t patternIndex,
     const SpeciesList& speciesList) const {
+    std::unordered_set<std::size_t> allSpecies;
+    for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
+        allSpecies.insert(speciesIndex);
+    }
+    return findEmbeddingsForSpecies(patternIndex, speciesList, allSpecies);
+}
+
+std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecies(
+    std::size_t patternIndex,
+    const SpeciesList& speciesList,
+    const std::unordered_set<std::size_t>& candidateSpecies) const {
     std::vector<EmbeddingResult> results;
     const auto& pattern = reactantPatterns_.at(patternIndex).getGraph();
     const auto reactantInfo = describePatterns(reactantPatterns_);
     std::unordered_set<std::string> seen;
     for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
+        if (candidateSpecies.find(speciesIndex) == candidateSpecies.end()) {
+            continue;
+        }
         BNGcore::UllmannSGIso matcher(pattern, speciesList.get(speciesIndex).getSpeciesGraph().getGraph());
         BNGcore::List<BNGcore::Map> maps;
         matcher.find_maps(maps);
@@ -753,6 +786,7 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddings(
             results.push_back(EmbeddingResult {speciesIndex, *mapIter});
         }
     }
+
     return results;
 }
 
@@ -779,52 +813,71 @@ std::size_t ReactionRule::expandRule(
         return 0;
     }
 
-    std::vector<std::vector<EmbeddingResult>> allMatches;
-    allMatches.reserve(reactantPatterns_.size());
-    for (std::size_t i = 0; i < reactantPatterns_.size(); ++i) {
-        allMatches.push_back(findEmbeddings(i, speciesList));
-        if (allMatches.back().empty()) {
-            return 0;
+    if (!matchesInitialized_ || patternMatches_.size() != reactantPatterns_.size()) {
+        patternMatches_.assign(reactantPatterns_.size(), {});
+        matchesInitialized_ = true;
+    }
+
+    std::unordered_set<std::size_t> newSpecies;
+    for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
+        if (!speciesList.get(speciesIndex).rulesApplied()) {
+            newSpecies.insert(speciesIndex);
         }
+    }
+
+    if (newSpecies.empty()) {
+        return 0;
     }
 
     std::size_t created = 0;
-    std::vector<std::size_t> indices(allMatches.size(), 0);
-    while (true) {
-        std::vector<EmbeddingResult> matchSet;
-        std::set<std::size_t> usedSpecies;
-        bool validMatchSet = true;
-        bool hasNewSpecies = reactantPatterns_.empty();
-        for (std::size_t i = 0; i < indices.size(); ++i) {
-            const auto& match = allMatches[i][indices[i]];
-            if (!usedSpecies.insert(match.speciesIndex).second) {
-                validMatchSet = false;
-                break;
-            }
-            if (!speciesList.get(match.speciesIndex).rulesApplied()) {
-                hasNewSpecies = true;
-            }
-            matchSet.push_back(match);
-        }
-        if (validMatchSet && hasNewSpecies) {
-            const bool added = buildReaction(matchSet, speciesList, rxnList, productFilter);
-            if (added) {
-                ++created;
-            }
+
+    const std::size_t nPatterns = reactantPatterns_.size();
+    for (std::size_t patternIndex = nPatterns; patternIndex-- > 0;) {
+        auto newMatches = findEmbeddingsForSpecies(patternIndex, speciesList, newSpecies);
+        if (newMatches.empty()) {
+            continue;
         }
 
-        std::size_t dim = 0;
-        for (; dim < indices.size(); ++dim) {
-            ++indices[dim];
-            if (indices[dim] < allMatches[dim].size()) {
+        const std::size_t firstNew = patternMatches_[patternIndex].size();
+        patternMatches_[patternIndex].insert(
+            patternMatches_[patternIndex].end(),
+            std::make_move_iterator(newMatches.begin()),
+            std::make_move_iterator(newMatches.end()));
+
+        bool allNonEmpty = true;
+        for (const auto& matches : patternMatches_) {
+            if (matches.empty()) {
+                allNonEmpty = false;
                 break;
             }
-            indices[dim] = 0;
         }
-        if (dim == indices.size()) {
-            break;
+        if (!allNonEmpty) {
+            continue;
         }
+
+        std::vector<EmbeddingResult> matchSet(nPatterns);
+        std::function<void(std::size_t)> enumerate = [&](std::size_t idx) {
+            if (idx == nPatterns) {
+                if (buildReaction(matchSet, speciesList, rxnList, productFilter)) {
+                    ++created;
+                }
+                return;
+            }
+
+            std::size_t begin = 0;
+            if (idx == patternIndex) {
+                begin = firstNew;
+            }
+
+            for (std::size_t i = begin; i < patternMatches_[idx].size(); ++i) {
+                matchSet[idx] = patternMatches_[idx][i];
+                enumerate(idx + 1);
+            }
+        };
+
+        enumerate(0);
     }
+
     return created;
 }
 
@@ -960,9 +1013,15 @@ bool ReactionRule::buildReaction(
         }
     }
 
+    auto productGraphs = splitIntoSpeciesGraphs(aggregateGraph);
+    const bool deleteMolecules = hasModifier(modifiers_, "deletemolecules");
+    if (!deleteMolecules && productGraphs.size() != productPatterns_.size()) {
+        return false;
+    }
+
     std::vector<std::size_t> productIndices;
     std::vector<std::string> productLabels;
-    for (auto& productGraph : splitIntoSpeciesGraphs(aggregateGraph)) {
+    for (auto& productGraph : productGraphs) {
         if (productFilter && !productFilter(productGraph)) {
             return false;
         }
@@ -990,3 +1049,8 @@ bool ReactionRule::buildReaction(
 }
 
 } // namespace bng::ast
+
+
+
+
+

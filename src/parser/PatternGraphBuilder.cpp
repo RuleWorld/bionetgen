@@ -1,4 +1,4 @@
-#include "PatternGraphBuilder.hpp"
+﻿#include "PatternGraphBuilder.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -69,7 +69,10 @@ const bng::ast::MoleculeType& ensureInferredMoleculeType(BNGParser::Molecule_pat
 
 } // namespace
 
-BNGcore::PatternGraph buildPatternGraph(BNGParser::Species_defContext* ctx, ast::Model& model) {
+BNGcore::PatternGraph buildPatternGraph(
+    BNGParser::Species_defContext* ctx,
+    ast::Model& model,
+    bool treatUnspecifiedBondAsWildcard) {
     BNGcore::PatternGraph graph;
     std::unordered_map<std::string, BNGcore::Node*> bondNodesById;
 
@@ -117,9 +120,17 @@ BNGcore::PatternGraph buildPatternGraph(BNGParser::Species_defContext* ctx, ast:
                         bondNode->set_state(BNGcore::BOUND_STATE);
                         graph.add_edge(componentNode, bondNode);
                         handledBond = true;
-                    } else if (bondSpec->QMARK() != nullptr || bondSpec->DOT() != nullptr) {
+                    } else if (bondSpec->QMARK() != nullptr) {
                         BNGcore::Node bondNodeValue(BNGcore::BOND_NODE_TYPE);
                         auto* bondNode = graph.add_node(bondNodeValue);
+                        BNGcore::BondState wildcardState(BNGcore::BOND_STATE_TYPE, BNGcore::WILDCARD_STRING);
+                        bondNode->set_state(wildcardState);
+                        graph.add_edge(componentNode, bondNode);
+                        handledBond = true;
+                    } else if (bondSpec->DOT() != nullptr) {
+                        BNGcore::Node bondNodeValue(BNGcore::BOND_NODE_TYPE);
+                        auto* bondNode = graph.add_node(bondNodeValue);
+                        bondNode->set_state(BNGcore::UNBOUND_STATE);
                         graph.add_edge(componentNode, bondNode);
                         handledBond = true;
                     }
@@ -128,7 +139,12 @@ BNGcore::PatternGraph buildPatternGraph(BNGParser::Species_defContext* ctx, ast:
                 if (!handledBond) {
                     BNGcore::Node bondNodeValue(BNGcore::BOND_NODE_TYPE);
                     auto* bondNode = graph.add_node(bondNodeValue);
-                    bondNode->set_state(BNGcore::UNBOUND_STATE);
+                    if (treatUnspecifiedBondAsWildcard) {
+                        BNGcore::BondState wildcardState(BNGcore::BOND_STATE_TYPE, BNGcore::WILDCARD_STRING);
+                        bondNode->set_state(wildcardState);
+                    } else {
+                        bondNode->set_state(BNGcore::UNBOUND_STATE);
+                    }
                     graph.add_edge(componentNode, bondNode);
                 }
             }
@@ -139,3 +155,4 @@ BNGcore::PatternGraph buildPatternGraph(BNGParser::Species_defContext* ctx, ast:
 }
 
 } // namespace bng::parser
+

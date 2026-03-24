@@ -270,7 +270,7 @@ PatternGraph::get_BNG2_string ( ) const
     std::sort ( node_order.begin(), node_order.end(), Node::less );
 
     // set up bond index map.
-    ii = 0;
+    ii = 1;
     for ( node_iter = node_order.begin();  node_iter != node_order.end();  ++node_iter )
     {
         node = *node_iter;

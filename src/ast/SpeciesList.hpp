@@ -20,7 +20,8 @@ public:
 
 private:
     std::vector<Species> species_;
-    std::unordered_map<std::string, std::size_t> indexByLabel_;
+    std::unordered_map<std::string, std::vector<std::size_t>> indicesByLabel_;
+    std::unordered_map<std::string, std::vector<std::size_t>> indicesByExactString_;
 };
 
 } // namespace bng::ast

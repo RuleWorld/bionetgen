@@ -288,6 +288,7 @@ Node::get_BNG2_string ( const link_index_t & link_index ) const
         std::stringstream  t;
         
         bool  found_entity_child;
+        bool  has_entity_parent;
         Node  *child_node;
     
         std::vector<Node*>            node_order;
@@ -304,6 +305,15 @@ Node::get_BNG2_string ( const link_index_t & link_index ) const
   
         // iterate over child entities
         found_entity_child = false;
+        has_entity_parent = false;
+        for ( node_const_iter_t parent_iter = edges_in_begin();  parent_iter != edges_in_end();  ++parent_iter )
+        {
+            if ( (*parent_iter)->get_type() < ENTITY_NODE_TYPE )
+            {
+                has_entity_parent = true;
+                break;
+            }
+        }
         for ( node_iter = node_order.begin();  node_iter != node_order.end();  ++node_iter )
         {
             child_node = *node_iter;
@@ -320,6 +330,8 @@ Node::get_BNG2_string ( const link_index_t & link_index ) const
         // if there are any children, include in string 
         if ( found_entity_child )
             s << "(" << t.str() << ")";
+        else if ( !has_entity_parent )
+            s << "()";
     }
     // return string
     return s.str();

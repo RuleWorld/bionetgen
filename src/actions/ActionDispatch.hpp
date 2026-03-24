@@ -8,7 +8,7 @@ namespace bng::actions {
 
 class ActionDispatch {
 public:
-    static void execute(ast::Model& model, const std::filesystem::path& sourcePath);
+    static void execute(ast::Model& model, const std::filesystem::path& sourcePath, bool verbose = false);
 };
 
 } // namespace bng::actions

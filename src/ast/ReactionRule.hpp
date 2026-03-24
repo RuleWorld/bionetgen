@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <functional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "SpeciesGraph.hpp"
@@ -82,6 +83,11 @@ public:
         const std::function<bool(const SpeciesGraph&)>& productFilter = {}) const;
 
 private:
+    std::vector<EmbeddingResult> findEmbeddingsForSpecies(
+        std::size_t patternIndex,
+        const SpeciesList& speciesList,
+        const std::unordered_set<std::size_t>& candidateSpecies) const;
+
     bool buildReaction(
         const std::vector<EmbeddingResult>& matchSet,
         SpeciesList& speciesList,
@@ -99,6 +105,8 @@ private:
     std::vector<SpeciesGraph> productPatterns_;
     std::vector<TransformOp> operations_;
     std::vector<std::vector<ReactionCenterRef>> reactionCenter_;
+    mutable std::vector<std::vector<EmbeddingResult>> patternMatches_;
+    mutable bool matchesInitialized_ = false;
 };
 
 } // namespace bng::ast
