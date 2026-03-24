@@ -76,6 +76,7 @@ public:
     const std::vector<TransformOp>& getOperations() const;
 
     void initialize();
+    void clearPatternMatchCache() const;
     std::vector<EmbeddingResult> findEmbeddings(std::size_t patternIndex, const SpeciesList& speciesList) const;
     std::size_t expandRule(
         SpeciesList& speciesList,
@@ -107,6 +108,7 @@ private:
     std::vector<std::vector<ReactionCenterRef>> reactionCenter_;
     mutable std::vector<std::vector<EmbeddingResult>> patternMatches_;
     mutable bool matchesInitialized_ = false;
+    mutable std::size_t lastSpeciesListCapacity_ = 0;
 };
 
 } // namespace bng::ast

@@ -10,13 +10,15 @@ Rxn::Rxn(
     std::vector<std::size_t> products,
     std::string rateLaw,
     double factor,
-    std::string originRuleName)
+    std::string originRuleName,
+    std::optional<Expression> rateExpression)
     : label_(std::move(label)),
       reactants_(std::move(reactants)),
       products_(std::move(products)),
       rateLaw_(std::move(rateLaw)),
       factor_(factor),
-      originRuleName_(std::move(originRuleName)) {}
+      originRuleName_(std::move(originRuleName)),
+      rateExpression_(std::move(rateExpression)) {}
 
 const std::string& Rxn::getLabel() const {
     return label_;
@@ -44,6 +46,10 @@ double Rxn::getFactor() const {
 
 void Rxn::addFactor(double factor) {
     factor_ += factor;
+}
+
+const std::optional<Expression>& Rxn::getRateExpression() const {
+    return rateExpression_;
 }
 
 } // namespace bng::ast

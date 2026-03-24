@@ -14,6 +14,7 @@
 
 #include "ast/Parameter.hpp"
 #include "engine/NetworkGenerator.hpp"
+#include "engine/OdeIntegrator.hpp"
 #include "io/NetWriter.hpp"
 
 namespace bng::actions {
@@ -76,45 +77,6 @@ std::string readArgument(const ast::Action& action, const std::string& key, cons
         return fallback;
     }
     return found->second;
-}
-
-std::filesystem::path findRunNetworkBinary(const std::filesystem::path& sourcePath) {
-    for (auto cursor = sourcePath.parent_path(); !cursor.empty(); cursor = cursor.parent_path()) {
-        const auto binPath = cursor / "bng2" / "bin";
-        if (!std::filesystem::exists(binPath) || !std::filesystem::is_directory(binPath)) {
-            if (cursor == cursor.root_path()) {
-                break;
-            }
-            continue;
-        }
-
-        std::filesystem::path fallback;
-        for (const auto& entry : std::filesystem::directory_iterator(binPath)) {
-            if (!entry.is_regular_file()) {
-                continue;
-            }
-            const auto name = lowercase(entry.path().filename().string());
-            if (name == "run_network" || name == "run_network.exe") {
-                return entry.path();
-            }
-            if (name.rfind("run_network", 0) == 0) {
-                fallback = entry.path();
-            }
-        }
-        if (!fallback.empty()) {
-            return fallback;
-        }
-    }
-
-    throw std::runtime_error("Could not find run_network binary under bng2/bin");
-}
-
-std::string quoted(const std::filesystem::path& path) {
-    return "\"" + path.string() + "\"";
-}
-
-std::string quoted(const std::string& text) {
-    return "\"" + text + "\"";
 }
 
 std::string resolveSimulationMethod(const ast::Action& action) {
@@ -185,7 +147,7 @@ void runSimulation(
     ast::Model& model,
     const ast::Action& action,
     const std::filesystem::path& sourcePath,
-    const std::filesystem::path& netPath,
+    const engine::GeneratedNetwork& network,
     bool verbose) {
     const auto method = resolveSimulationMethod(action);
     const auto tEnd = stripQuotes(readArgument(action, "t_end", ""));
@@ -194,28 +156,63 @@ void runSimulation(
         throw std::runtime_error("simulate requires t_end and n_steps (or n_output_steps)");
     }
 
-    const auto binary = findRunNetworkBinary(sourcePath);
-    const auto prefix = simulationPrefix(action, sourcePath);
-    const auto outputPrefixPath = sourcePath.parent_path() / prefix;
+    // Parse simulation options
+    engine::OdeOptions opts;
+    opts.tEnd = parseScalarValue(tEnd, model);
+    opts.nSteps = static_cast<std::size_t>(parseScalarValue(nSteps, model));
 
-    std::ostringstream command;
-    command << quoted(binary)
-            << " -o " << quoted(outputPrefixPath)
-            << " -p " << method
-            << " " << tEnd
-            << " " << nSteps
-            << " < " << quoted(netPath);
+    // Parse method (match BNG2 defaults)
+    if (method == "cvode" || method == "ode") {
+        opts.method = "cvode";
+    } else if (method == "ssa") {
+        opts.method = "ssa";
+    } else if (method == "euler") {
+        opts.method = "euler";
+    } else if (method == "rk4") {
+        opts.method = "rk4";
+    } else {
+        opts.method = "cvode";  // Default to CVODE (matches BNG2)
+    }
+
+    // Parse seed for SSA
+    if (opts.method == "ssa") {
+        const auto seedText = readArgument(action, "seed", "");
+        if (!seedText.empty()) {
+            opts.seed = static_cast<unsigned int>(parseScalarValue(seedText, model));
+        }
+    }
+
+    // Parse tolerances if provided
+    const auto atolText = readArgument(action, "atol", "");
+    if (!atolText.empty()) {
+        opts.atol = parseScalarValue(atolText, model);
+    }
+    const auto rtolText = readArgument(action, "rtol", "");
+    if (!rtolText.empty()) {
+        opts.rtol = parseScalarValue(rtolText, model);
+    }
 
     if (verbose) {
-        std::cerr << "[bng_cpp] running: " << command.str() << '\n';
+        std::cerr << "[bng_cpp] Simulating with method=" << opts.method
+                  << " t_end=" << opts.tEnd
+                  << " n_steps=" << opts.nSteps
+                  << " atol=" << opts.atol
+                  << " rtol=" << opts.rtol << "\n";
     }
 
-    const int code = std::system(command.str().c_str());
-    if (code != 0) {
-        throw std::runtime_error("run_network failed with exit code " + std::to_string(code));
-    }
+    // Run native ODE integration
+    engine::OdeIntegrator integrator(model, network);
+    auto result = integrator.integrate(opts);
 
-    (void)model;
+    // Write output files
+    const auto prefix = simulationPrefix(action, sourcePath);
+    const auto outputPrefix = sourcePath.parent_path() / prefix;
+    integrator.writeOutputFiles(outputPrefix.string(), result);
+
+    if (verbose) {
+        std::cerr << "[bng_cpp] Wrote " << outputPrefix.string() << ".cdat and "
+                  << outputPrefix.string() << ".gdat\n";
+    }
 }
 
 } // namespace
@@ -240,6 +237,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
     for (const auto& action : model.getActions()) {
         if (action.name == "generate_network") {
             network = generator.generate(sourcePath);
+            writeCurrentNetwork();
             continue;
         }
 
@@ -295,8 +293,9 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
         if (action.name == "simulate" || action.name == "simulate_ode" || action.name == "simulate_ssa") {
             ensureNetwork();
-            const auto netPath = writeCurrentNetwork();
-            runSimulation(model, action, sourcePath, netPath, verbose);
+            // Don't re-write .net file - already written by generate_network
+            // Re-writing would cause duplicate parameters and corrupt stat factors
+            runSimulation(model, action, sourcePath, *network, verbose);
             continue;
         }
 
@@ -331,10 +330,10 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 model.getParameters().add(ast::Parameter(parameterName, ast::Expression::number(value)));
                 model.getParameters().evaluateAll();
                 network = generator.generate(sourcePath);
-                const auto netPath = writeCurrentNetwork();
+                writeCurrentNetwork();  // Still write .net file for compatibility
 
                 simulateAction.arguments["prefix"] = simulationPrefix(action, sourcePath, i);
-                runSimulation(model, simulateAction, sourcePath, netPath, verbose);
+                runSimulation(model, simulateAction, sourcePath, *network, verbose);
             }
             continue;
         }

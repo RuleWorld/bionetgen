@@ -18,12 +18,12 @@ public:
     std::size_t size() const;
 
     void evaluateAll(double t = 0.0);
-    double evaluate(const std::string& name, double t = 0.0);
+    double evaluate(const std::string& name, double t = 0.0) const;
 
 private:
-    double evaluateIndex(std::size_t index, std::unordered_map<std::string, bool>& visiting, double t);
+    double evaluateIndex(std::size_t index, std::unordered_map<std::string, bool>& visiting, double t) const;
 
-    std::vector<Parameter> parameters_;
+    mutable std::vector<Parameter> parameters_;
     std::unordered_map<std::string, std::size_t> indexByName_;
 };
 

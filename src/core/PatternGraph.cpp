@@ -269,13 +269,13 @@ PatternGraph::get_BNG2_string ( ) const
     node_order = std::vector<Node*> ( nodes.begin(), nodes.end() );
     std::sort ( node_order.begin(), node_order.end(), Node::less );
 
-    // set up bond index map.
-    ii = 1;
+    // set up bond index map (0-based to match Perl BNG2)
+    ii = 0;
     for ( node_iter = node_order.begin();  node_iter != node_order.end();  ++node_iter )
     {
         node = *node_iter;
         if ( node->get_type() < LINK_NODE_TYPE )
-        {    
+        {
             bond_index.insert ( std::pair<const Node*,int>( node, ii ) );
             ++ii;
         }

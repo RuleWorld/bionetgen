@@ -30,11 +30,15 @@ bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis
 bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis_simple_dummy_00001.net
 bng2/BioNetGen-*/
 bng2/BioNetGen-*.tgz
+
 build
 build-codex
 lib
 build-cpp
 out-codex-check
+comparison_results
+
+.claude
 
 # temporary
 testing

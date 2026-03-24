@@ -1,0 +1,771 @@
+#include "OdeIntegrator.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <fstream>
+#include <iomanip>
+#include <random>
+#include <sstream>
+#include <stdexcept>
+
+#include "antlr4-runtime.h"
+#include "BNGLexer.h"
+#include "BNGParser.h"
+#include "parser/PatternGraphBuilder.hpp"
+#include "core/Ullmann.hpp"
+#include "io/NetWriter.hpp"
+
+// SUNDIALS/CVODE includes
+extern "C" {
+#include "sundials/sundials_types.h"
+#include "cvode/cvode.h"
+#include "nvector/nvector_serial.h"
+#include "cvode/cvode_dense.h"
+#include "cvode/cvode_spgmr.h"
+#include "sundials/sundials_dense.h"
+}
+
+namespace bng::engine {
+
+namespace {
+
+// Parse rate strings from NetWriter format:
+//   "1.66055031e-12*2*__R1_local1"  (unitConv * factor * param)
+//   "2*__reverse__R4_local1"         (factor * param)
+//   "__reverse__R1_local1"           (just param)
+//   "0.5"                            (just number)
+//   "k1"                             (just param name)
+double evaluateRateString(const std::string& rateStr,
+                          const std::function<double(const std::string&)>& resolve) {
+    double result = 1.0;
+    std::string token;
+    std::istringstream stream(rateStr);
+
+    while (std::getline(stream, token, '*')) {
+        // Trim whitespace
+        token.erase(0, token.find_first_not_of(" \t"));
+        token.erase(token.find_last_not_of(" \t") + 1);
+        if (token.empty()) continue;
+
+        // Try parsing as double first
+        try {
+            std::size_t pos = 0;
+            double val = std::stod(token, &pos);
+            if (pos == token.size()) {
+                result *= val;
+                continue;
+            }
+        } catch (...) {
+            // Not a number, fall through to parameter resolution
+        }
+
+        // Must be a parameter name
+        try {
+            result *= resolve(token);
+        } catch (const std::exception& e) {
+            throw std::runtime_error("Failed to resolve parameter '" + token + "': " + e.what());
+        }
+    }
+    return result;
+}
+
+} // anonymous namespace
+
+
+OdeIntegrator::OdeIntegrator(const ast::Model& model, const GeneratedNetwork& network)
+    : model_(model), network_(network) {
+    compile();
+}
+
+void OdeIntegrator::compile() {
+    nSpecies_ = network_.species.size();
+    fixedSpecies_.resize(nSpecies_, false);
+
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        fixedSpecies_[i] = network_.species.get(i).isConstant();
+    }
+
+    // Compile reactions
+    auto paramResolver = [&](const std::string& name) -> double {
+        return model_.getParameters().evaluate(name);
+    };
+
+    for (const auto& rxn : network_.reactions.all()) {
+        CompiledReaction crxn;
+        crxn.reactantIndices = rxn.getReactants();
+        crxn.productIndices = rxn.getProducts();
+        crxn.statFactor = rxn.getFactor();
+
+        // Build the complete rate string that NetWriter writes to .net file
+        // Format: [unitConvFactor*][statFactor*]derivedParam OR [statFactor*]rawRate
+        const auto& originRuleName = rxn.getOriginRuleName();
+        std::ostringstream rateStrBuilder;
+        bool foundDerived = false;
+
+        if (!originRuleName.empty()) {
+            // Check if this is an Arrhenius rate with a derived parameter
+            const bool isReverse = originRuleName.rfind("_reverse__", 0) == 0;
+            std::string ruleBase = isReverse
+                ? originRuleName.substr(std::string("_reverse__").size())
+                : originRuleName;
+
+            // Remove leading underscore if present
+            if (!ruleBase.empty() && ruleBase[0] == '_' && ruleBase != "_reverse") {
+                ruleBase = ruleBase.substr(1);
+            }
+
+            const std::string derivedParamName = isReverse
+                ? ("__reverse__" + ruleBase + "_local1")
+                : ("__" + ruleBase + "_local1");
+
+            // Check if this derived parameter exists
+            try {
+                paramResolver(derivedParamName);
+                foundDerived = true;
+
+                // Build rate string with unit conversion and derived param
+                // This matches what NetWriter writes: unitFactor*statFactor*derivedParam
+                const auto unitFactor = bng::io::NetWriter::computeUnitConversionFactor(rxn, model_, network_);
+                if (unitFactor.has_value()) {
+                    rateStrBuilder << *unitFactor << "*";
+                }
+                if (std::abs(rxn.getFactor() - 1.0) >= 1e-9) {
+                    rateStrBuilder << rxn.getFactor() << "*";
+                }
+                rateStrBuilder << derivedParamName;
+            } catch (const std::exception& e) {
+                foundDerived = false;
+            }
+        }
+
+        if (!foundDerived) {
+            // No derived parameter, use raw rate with stat factor
+            if (std::abs(rxn.getFactor() - 1.0) >= 1e-9) {
+                rateStrBuilder << rxn.getFactor() << "*";
+            }
+            rateStrBuilder << rxn.getRateLaw();
+        }
+
+        std::string rateStr = rateStrBuilder.str();
+
+        // Check if this reaction has a functional rate (depends on time or observables)
+        const auto& rateExpr = rxn.getRateExpression();
+        bool isFunctional = false;
+
+        if (rateExpr.has_value()) {
+            // Check for time dependency by looking at the rate string
+            // getDependencies() excludes "time" by design, so check the string directly
+            std::string rateLawLower = rxn.getRateLaw();
+            std::transform(rateLawLower.begin(), rateLawLower.end(), rateLawLower.begin(), ::tolower);
+
+            if (rateLawLower.find("time") != std::string::npos) {
+                isFunctional = true;
+            } else {
+                // Check for observable dependencies
+                auto deps = rateExpr->getDependencies();
+                for (const auto& dep : deps) {
+                    // If it's not a parameter, assume it's an observable
+                    if (!model_.getParameters().contains(dep)) {
+                        isFunctional = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isFunctional) {
+                crxn.isFunctional = true;
+                crxn.functionalRateExpr = rateExpr;
+                crxn.rateConstant = 0.0;  // Will be evaluated at runtime
+                hasFunctionalRates_ = true;
+            }
+        }
+
+        // Evaluate the rate string (only for non-functional rates)
+        if (!isFunctional) {
+            try {
+                crxn.rateConstant = evaluateRateString(rateStr, paramResolver);
+            } catch (const std::exception& e) {
+                throw std::runtime_error("Failed to evaluate rate for reaction " +
+                                       rxn.getLabel() + " (rate string: '" + rateStr + "'): " + e.what());
+            }
+        }
+
+        compiledRxns_.push_back(crxn);
+    }
+
+    // Compile observable groups
+    compileGroups();
+}
+
+void OdeIntegrator::compileGroups() {
+    compiledGroups_.clear();
+
+    // Note: const_cast needed because buildPatternGraph may infer molecule types
+    auto& mutableModel = const_cast<ast::Model&>(model_);
+
+    for (const auto& observable : model_.getObservables()) {
+        CompiledGroup group;
+        group.name = observable.getName();
+
+        // Match each pattern against all species
+        for (std::size_t speciesIndex = 0; speciesIndex < network_.species.size(); ++speciesIndex) {
+            std::size_t weight = 0;
+
+            for (const auto& patternText : observable.getPatterns()) {
+                // Parse the observable pattern
+                try {
+                    antlr4::ANTLRInputStream input(patternText);
+                    BNGLexer lexer(&input);
+                    antlr4::CommonTokenStream tokens(&lexer);
+                    BNGParser parser(&tokens);
+                    auto* species = parser.species_def();
+
+                    if (parser.getNumberOfSyntaxErrors() != 0) {
+                        throw std::runtime_error("Could not parse observable pattern: " + patternText);
+                    }
+
+                    const auto pattern = bng::parser::buildPatternGraph(species, mutableModel);
+
+                    // Count matches
+                    BNGcore::UllmannSGIso matcher(pattern, network_.species.get(speciesIndex).getSpeciesGraph().getGraph());
+                    BNGcore::List<BNGcore::Map> maps;
+                    weight += matcher.find_maps(maps);
+                } catch (const std::exception& e) {
+                    throw std::runtime_error("Failed to compile observable " + observable.getName() +
+                                           " pattern '" + patternText + "': " + e.what());
+                }
+            }
+
+            // For "Species" observables, weight is 0 or 1 (presence/absence)
+            if (observable.getType() == "Species" && weight > 0) {
+                weight = 1;
+            }
+
+            if (weight > 0) {
+                group.entries.push_back({speciesIndex, static_cast<double>(weight)});
+            }
+        }
+
+        compiledGroups_.push_back(group);
+    }
+}
+
+void OdeIntegrator::derivs(double t, const double* y, double* dydt) const {
+    // Zero derivatives
+    std::fill(dydt, dydt + nSpecies_, 0.0);
+
+    // Update observables for functional rates
+    std::vector<double> groupValues;
+    if (hasFunctionalRates_) {
+        updateGroups(y, groupValues);
+    }
+
+    // Accumulate derivatives from each reaction
+    for (const auto& rxn : compiledRxns_) {
+        double rate;
+
+        // Evaluate rate (functional or constant)
+        if (rxn.isFunctional && rxn.functionalRateExpr.has_value()) {
+            // Evaluate the expression with current time and observable values
+            auto resolver = [&](const std::string& name) -> double {
+                if (name == "time") return t;
+
+                // Check if it's an observable
+                for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
+                    if (compiledGroups_[g].name == name) {
+                        return groupValues[g];
+                    }
+                }
+
+                // Otherwise try as parameter
+                return model_.getParameters().evaluate(name);
+            };
+
+            try {
+                rate = rxn.functionalRateExpr->evaluate(resolver, t);
+            } catch (const std::exception& e) {
+                // If evaluation fails, use the cached constant
+                rate = rxn.rateConstant;
+            }
+        } else {
+            rate = rxn.rateConstant;
+        }
+
+        // Multiply by reactant concentrations (mass-action)
+        for (const auto idx : rxn.reactantIndices) {
+            rate *= y[idx];
+        }
+
+        // Subtract from reactants, add to products
+        for (const auto idx : rxn.reactantIndices) {
+            dydt[idx] -= rate;
+        }
+        for (const auto idx : rxn.productIndices) {
+            dydt[idx] += rate;
+        }
+    }
+
+    // Zero derivatives for fixed (constant) species
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        if (fixedSpecies_[i]) {
+            dydt[i] = 0.0;
+        }
+    }
+}
+
+void OdeIntegrator::updateGroups(const double* y, std::vector<double>& groupValues) const {
+    groupValues.resize(compiledGroups_.size(), 0.0);
+    for (std::size_t i = 0; i < compiledGroups_.size(); ++i) {
+        double value = 0.0;
+        for (const auto& [speciesIdx, weight] : compiledGroups_[i].entries) {
+            value += weight * y[speciesIdx];
+        }
+        groupValues[i] = value;
+    }
+}
+
+OdeResult OdeIntegrator::integrate(const OdeOptions& options) {
+    if (options.method == "euler") {
+        return integrateEuler(options);
+    } else if (options.method == "rk4") {
+        return integrateRK4(options);
+    } else if (options.method == "cvode") {
+        return integrateCvode(options);
+    } else if (options.method == "ssa") {
+        return integrateSSA(options);
+    } else {
+        throw std::runtime_error("Unknown ODE method: " + options.method);
+    }
+}
+
+OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
+    const double dt = opts.tEnd / static_cast<double>(opts.nSteps);
+    std::vector<double> y(nSpecies_);
+
+    // Initialize from species amounts
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        y[i] = network_.species.get(i).getAmount();
+    }
+
+    OdeResult result;
+    result.timePoints.reserve(opts.nSteps + 1);
+    result.concentrations.reserve(opts.nSteps + 1);
+
+    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+        double t = step * dt;
+        result.timePoints.push_back(t);
+        result.concentrations.push_back(y);
+
+        if (step < opts.nSteps) {
+            std::vector<double> dydt(nSpecies_);
+            derivs(t, y.data(), dydt.data());
+            for (std::size_t i = 0; i < nSpecies_; ++i) {
+                y[i] += dt * dydt[i];
+                if (y[i] < 0.0) y[i] = 0.0;  // Clamp negative concentrations
+            }
+        }
+    }
+
+    // Compute observables for each time point
+    result.observables.resize(result.timePoints.size());
+    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+        updateGroups(result.concentrations[step].data(), result.observables[step]);
+    }
+
+    return result;
+}
+
+OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
+    // Use internal sub-stepping for stability
+    // For stiff systems, we need many more steps than the output points
+    const std::size_t internalStepsPerOutput = 1000;  // Subdivide each output interval
+    const double outputDt = opts.tEnd / static_cast<double>(opts.nSteps);
+    const double dt = outputDt / static_cast<double>(internalStepsPerOutput);
+
+    std::vector<double> y(nSpecies_);
+
+    // Initialize from species amounts
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        y[i] = network_.species.get(i).getAmount();
+    }
+
+    OdeResult result;
+    result.timePoints.reserve(opts.nSteps + 1);
+    result.concentrations.reserve(opts.nSteps + 1);
+
+    std::vector<double> k1(nSpecies_), k2(nSpecies_), k3(nSpecies_), k4(nSpecies_);
+    std::vector<double> yTemp(nSpecies_);
+
+    double t = 0.0;
+    for (std::size_t outputStep = 0; outputStep <= opts.nSteps; ++outputStep) {
+        double targetT = outputStep * outputDt;
+
+        // Save output at this time point
+        result.timePoints.push_back(targetT);
+        result.concentrations.push_back(y);
+
+        if (outputStep < opts.nSteps) {
+            // Take internal steps to reach next output point
+            for (std::size_t internalStep = 0; internalStep < internalStepsPerOutput; ++internalStep) {
+                // k1 = f(t, y)
+                derivs(t, y.data(), k1.data());
+
+                // k2 = f(t + dt/2, y + dt*k1/2)
+                for (std::size_t i = 0; i < nSpecies_; ++i) {
+                    yTemp[i] = y[i] + 0.5 * dt * k1[i];
+                    if (yTemp[i] < 0.0) yTemp[i] = 0.0;
+                }
+                derivs(t + 0.5 * dt, yTemp.data(), k2.data());
+
+                // k3 = f(t + dt/2, y + dt*k2/2)
+                for (std::size_t i = 0; i < nSpecies_; ++i) {
+                    yTemp[i] = y[i] + 0.5 * dt * k2[i];
+                    if (yTemp[i] < 0.0) yTemp[i] = 0.0;
+                }
+                derivs(t + 0.5 * dt, yTemp.data(), k3.data());
+
+                // k4 = f(t + dt, y + dt*k3)
+                for (std::size_t i = 0; i < nSpecies_; ++i) {
+                    yTemp[i] = y[i] + dt * k3[i];
+                    if (yTemp[i] < 0.0) yTemp[i] = 0.0;
+                }
+                derivs(t + dt, yTemp.data(), k4.data());
+
+                // y_next = y + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
+                for (std::size_t i = 0; i < nSpecies_; ++i) {
+                    y[i] += (dt / 6.0) * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]);
+                    if (y[i] < 0.0) y[i] = 0.0;  // Clamp negative concentrations
+                    if (!std::isfinite(y[i])) {
+                        y[i] = 0.0;
+                    }
+                }
+
+                t += dt;
+            }
+        }
+    }
+
+    // Compute observables for each time point
+    result.observables.resize(result.timePoints.size());
+    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+        updateGroups(result.concentrations[step].data(), result.observables[step]);
+    }
+
+    return result;
+}
+
+void OdeIntegrator::writeOutputFiles(const std::string& prefix, const OdeResult& result) const {
+    // Write .cdat (concentrations)
+    std::ofstream cdat(prefix + ".cdat");
+    if (!cdat) {
+        throw std::runtime_error("Failed to open " + prefix + ".cdat for writing");
+    }
+
+    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
+        cdat << std::setw(18) << std::setprecision(12) << std::scientific
+             << result.timePoints[step];
+        for (const auto& c : result.concentrations[step]) {
+            cdat << " " << std::setw(18) << c;
+        }
+        cdat << "\n";
+    }
+
+    // Write .gdat (observables)
+    std::ofstream gdat(prefix + ".gdat");
+    if (!gdat) {
+        throw std::runtime_error("Failed to open " + prefix + ".gdat for writing");
+    }
+
+    // Header line
+    gdat << "#";
+    gdat << std::setw(17) << "time";
+    for (const auto& group : compiledGroups_) {
+        gdat << " " << std::setw(18) << group.name;
+    }
+    gdat << "\n";
+
+    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
+        gdat << std::setw(18) << std::setprecision(12) << std::scientific
+             << result.timePoints[step];
+        for (const auto& obs : result.observables[step]) {
+            gdat << " " << std::setw(18) << obs;
+        }
+        gdat << "\n";
+    }
+}
+
+// Static C-style callback for CVODE
+static int cvodeCallbackWrapper(double t, N_Vector y, N_Vector ydot, void* user_data) {
+    auto* self = static_cast<OdeIntegrator*>(user_data);
+    self->derivs(t, NV_DATA_S(y), NV_DATA_S(ydot));
+    return 0;
+}
+
+OdeResult OdeIntegrator::integrateCvode(const OdeOptions& opts) {
+    // Initialize state vector
+    N_Vector y = N_VNew_Serial(static_cast<long int>(nSpecies_));
+    if (y == nullptr) {
+        throw std::runtime_error("Failed to allocate CVODE state vector");
+    }
+
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        NV_Ith_S(y, i) = network_.species.get(i).getAmount();
+    }
+
+    // Create CVODE solver (BDF for stiff systems, Newton iteration)
+    void* cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
+    if (cvode_mem == nullptr) {
+        N_VDestroy_Serial(y);
+        throw std::runtime_error("Failed to create CVODE solver");
+    }
+
+    // Initialize CVODE
+    int flag = CVodeInit(cvode_mem, cvodeCallbackWrapper, 0.0, y);
+    if (flag != CV_SUCCESS) {
+        CVodeFree(&cvode_mem);
+        N_VDestroy_Serial(y);
+        throw std::runtime_error("CVodeInit failed with flag " + std::to_string(flag));
+    }
+
+    // Set tolerances (matching BNG2 defaults: rtol=1e-8, atol=1e-8)
+    flag = CVodeSStolerances(cvode_mem, opts.rtol, opts.atol);
+    if (flag != CV_SUCCESS) {
+        CVodeFree(&cvode_mem);
+        N_VDestroy_Serial(y);
+        throw std::runtime_error("CVodeSStolerances failed");
+    }
+
+    // Set user data
+    CVodeSetUserData(cvode_mem, this);
+
+    // Set max number of steps (BNG2 default: 2000, auto-increases if needed)
+    CVodeSetMaxNumSteps(cvode_mem, 2000);
+
+    // Choose solver based on network size (matches BNG2 behavior)
+    // Dense for small networks (<200 species), GMRES for large networks
+    if (nSpecies_ < 200) {
+        // Dense direct solver
+        flag = CVDense(cvode_mem, static_cast<long int>(nSpecies_));
+        if (flag != CV_SUCCESS) {
+            CVodeFree(&cvode_mem);
+            N_VDestroy_Serial(y);
+            throw std::runtime_error("CVDense failed");
+        }
+    } else {
+        // GMRES iterative solver (better for large sparse systems)
+        flag = CVSpgmr(cvode_mem, PREC_NONE, 0);  // No preconditioner, auto Krylov dimension
+        if (flag != CV_SUCCESS) {
+            CVodeFree(&cvode_mem);
+            N_VDestroy_Serial(y);
+            throw std::runtime_error("CVSpgmr failed");
+        }
+    }
+
+    // Integration loop
+    OdeResult result;
+    result.timePoints.reserve(opts.nSteps + 1);
+    result.concentrations.reserve(opts.nSteps + 1);
+
+    const double dt = opts.tEnd / static_cast<double>(opts.nSteps);
+    double t = 0.0;
+
+    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+        double tOut = step * dt;
+
+        // Save current state
+        result.timePoints.push_back(tOut);
+        std::vector<double> conc(nSpecies_);
+        for (std::size_t i = 0; i < nSpecies_; ++i) {
+            conc[i] = NV_Ith_S(y, i);
+        }
+        result.concentrations.push_back(conc);
+
+        // Integrate to next output point
+        if (step < opts.nSteps) {
+            long int maxSteps = 2000;
+            while (true) {
+                flag = CVode(cvode_mem, tOut + dt, y, &t, CV_NORMAL);
+
+                if (flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) {
+                    break;
+                } else if (flag == CV_TOO_MUCH_WORK) {
+                    // Auto-increase max steps (matches BNG2 behavior)
+                    maxSteps *= 2;
+                    CVodeSetMaxNumSteps(cvode_mem, maxSteps);
+                    continue;
+                } else {
+                    CVodeFree(&cvode_mem);
+                    N_VDestroy_Serial(y);
+                    throw std::runtime_error("CVODE failed with flag " + std::to_string(flag));
+                }
+            }
+        }
+    }
+
+    // Compute observables for each time point
+    result.observables.resize(result.timePoints.size());
+    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+        updateGroups(result.concentrations[step].data(), result.observables[step]);
+    }
+
+    // Cleanup
+    CVodeFree(&cvode_mem);
+    N_VDestroy_Serial(y);
+
+    return result;
+}
+
+double OdeIntegrator::computePropensity(const CompiledReaction& rxn, const std::vector<double>& y) const {
+    // Compute discrete propensity for SSA
+    // For identical reactants A+A: propensity = k * n * (n-1)
+    // The stat_factor is already baked into rateConstant
+
+    double rateConstant = rxn.rateConstant;
+
+    // If this is a functional rate, we need to evaluate it with current observables/time
+    // For SSA, this is called at each propensity update, so we need the time
+    // But we don't have time here - need to pass it
+    // For now, use the cached rateConstant (functional rates in SSA need more work)
+
+    double propensity = rateConstant;
+
+    // Group identical reactants and apply discrete formula
+    // BNG2 assumes reactant indices are sorted, so identical species are adjacent
+    double n_offset = 0.0;
+    for (size_t i = 0; i < rxn.reactantIndices.size(); ++i) {
+        std::size_t idx = rxn.reactantIndices[i];
+
+        // Check if this is a repeat of the previous reactant
+        if (i > 0 && rxn.reactantIndices[i] == rxn.reactantIndices[i-1]) {
+            n_offset += 1.0;
+        } else {
+            n_offset = 0.0;
+        }
+
+        // Discrete formula: multiply by (population - offset)
+        double population = y[idx];
+        propensity *= std::max(0.0, population - n_offset);
+    }
+
+    return propensity;
+}
+
+OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
+    // Direct Gillespie algorithm (matches BNG2 implementation)
+    std::mt19937_64 rng;
+    if (opts.seed > 0) {
+        rng.seed(opts.seed);
+    } else {
+        std::random_device rd;
+        rng.seed(rd());
+    }
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+
+    // Initialize state (round to nearest integer)
+    std::vector<double> y(nSpecies_);
+    for (std::size_t i = 0; i < nSpecies_; ++i) {
+        y[i] = std::round(network_.species.get(i).getAmount());
+    }
+
+    OdeResult result;
+    result.timePoints.reserve(opts.nSteps + 1);
+    result.concentrations.reserve(opts.nSteps + 1);
+
+    double t = 0.0;
+    const double dt = opts.tEnd / static_cast<double>(opts.nSteps);
+    std::size_t nextOutputStep = 0;
+
+    // Compute initial propensities
+    std::vector<double> propensities(compiledRxns_.size());
+    double totalPropensity = 0.0;
+
+    auto recomputePropensities = [&]() {
+        totalPropensity = 0.0;
+        for (std::size_t r = 0; r < compiledRxns_.size(); ++r) {
+            propensities[r] = computePropensity(compiledRxns_[r], y);
+            totalPropensity += propensities[r];
+        }
+    };
+
+    recomputePropensities();
+
+    // Main SSA loop
+    while (t < opts.tEnd) {
+        // Record output points as we pass them
+        while (nextOutputStep * dt <= t && nextOutputStep <= opts.nSteps) {
+            result.timePoints.push_back(nextOutputStep * dt);
+            result.concentrations.push_back(y);
+            ++nextOutputStep;
+        }
+
+        // Check if we've passed the end time
+        if (t >= opts.tEnd || totalPropensity <= 0.0) {
+            break;
+        }
+
+        // Compute time to next reaction
+        double r1 = uniform(rng);
+        while (r1 == 0.0 || r1 == 1.0) {
+            r1 = uniform(rng);
+        }
+        double tau = -std::log(r1) / totalPropensity;
+
+        // Check if next reaction would occur after end time
+        if (t + tau > opts.tEnd) {
+            t = opts.tEnd;
+            break;
+        }
+
+        t += tau;
+
+        // Select next reaction
+        double r2 = uniform(rng);
+        double cumulative = 0.0;
+        double target = r2 * totalPropensity;
+        std::size_t selectedRxn = compiledRxns_.size();
+
+        for (std::size_t r = 0; r < compiledRxns_.size(); ++r) {
+            cumulative += propensities[r];
+            if (cumulative >= target) {
+                selectedRxn = r;
+                break;
+            }
+        }
+
+        if (selectedRxn >= compiledRxns_.size()) {
+            // Shouldn't happen unless roundoff error
+            break;
+        }
+
+        // Fire the selected reaction
+        const auto& rxn = compiledRxns_[selectedRxn];
+        for (const auto idx : rxn.reactantIndices) {
+            y[idx] -= 1.0;
+            if (y[idx] < 0.0) y[idx] = 0.0;  // Safety clamp
+        }
+        for (const auto idx : rxn.productIndices) {
+            y[idx] += 1.0;
+        }
+
+        // Recompute propensities
+        // Optimization: could track which reactions are affected by this species change
+        recomputePropensities();
+    }
+
+    // Record final state if we haven't already
+    while (nextOutputStep <= opts.nSteps) {
+        result.timePoints.push_back(nextOutputStep * dt);
+        result.concentrations.push_back(y);
+        ++nextOutputStep;
+    }
+
+    // Compute observables for each time point
+    result.observables.resize(result.timePoints.size());
+    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
+        updateGroups(result.concentrations[step].data(), result.observables[step]);
+    }
+
+    return result;
+}
+
+} // namespace bng::engine

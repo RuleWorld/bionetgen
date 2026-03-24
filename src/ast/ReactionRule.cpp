@@ -790,10 +790,18 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
     return results;
 }
 
+void ReactionRule::clearPatternMatchCache() const {
+    patternMatches_.assign(reactantPatterns_.size(), {});
+    matchesInitialized_ = false;
+    lastSpeciesListCapacity_ = 0;
+}
+
 std::size_t ReactionRule::expandRule(
     SpeciesList& speciesList,
     RxnList& rxnList,
     const std::function<bool(const SpeciesGraph&)>& productFilter) const {
+
+    // --- Reverse rule delegation (unchanged) ---
     if (bidirectional_ && !rates_.empty()) {
         ReactionRule reverseRule(
             std::string("_reverse__") + ruleName_,
@@ -805,45 +813,95 @@ std::size_t ReactionRule::expandRule(
             false,
             productPatterns_,
             reactantPatterns_);
-        const auto reverseCreated = reverseRule.expandRule(speciesList, rxnList, productFilter);
-        (void)reverseCreated;
+        reverseRule.expandRule(speciesList, rxnList, productFilter);
     }
 
     if (reactantPatterns_.empty()) {
         return 0;
     }
 
+    // --- Cache invalidation on vector reallocation ---
+    if (speciesList.capacity() != lastSpeciesListCapacity_) {
+        patternMatches_.assign(reactantPatterns_.size(), {});
+        matchesInitialized_ = false;
+        lastSpeciesListCapacity_ = speciesList.capacity();
+    }
+
     if (!matchesInitialized_ || patternMatches_.size() != reactantPatterns_.size()) {
         patternMatches_.assign(reactantPatterns_.size(), {});
-        matchesInitialized_ = true;
+        matchesInitialized_ = false;
     }
 
+    // --- Collect new (unprocessed) species ---
     std::unordered_set<std::size_t> newSpecies;
-    for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
-        if (!speciesList.get(speciesIndex).rulesApplied()) {
-            newSpecies.insert(speciesIndex);
+    for (std::size_t i = 0; i < speciesList.size(); ++i) {
+        if (!speciesList.get(i).rulesApplied()) {
+            newSpecies.insert(i);
         }
     }
-
     if (newSpecies.empty()) {
         return 0;
     }
 
+    const bool cacheNeedsRebuild = !matchesInitialized_;
+    const std::size_t nPatterns = reactantPatterns_.size();
     std::size_t created = 0;
 
-    const std::size_t nPatterns = reactantPatterns_.size();
+    // =============================================
+    // Sequential Update Per Pattern (matches Perl)
+    // =============================================
+    // Process patterns in reverse order (like Perl's expand_rule)
+    // For each pattern:
+    //   1. Find new embeddings for this pattern only
+    //   2. Add to cache, tracking where new items start
+    //   3. Enumerate with this pattern as trigger
+    //   4. Move to next pattern
+    // This avoids double-counting (new, new) combinations.
+
     for (std::size_t patternIndex = nPatterns; patternIndex-- > 0;) {
-        auto newMatches = findEmbeddingsForSpecies(patternIndex, speciesList, newSpecies);
+        // Determine search set for this pattern
+        std::unordered_set<std::size_t> searchSet;
+        if (cacheNeedsRebuild) {
+            // Cache was cleared — must search ALL species to rebuild
+            for (std::size_t i = 0; i < speciesList.size(); ++i) {
+                searchSet.insert(i);
+            }
+        } else {
+            searchSet = newSpecies;
+        }
+
+        auto newMatches = findEmbeddingsForSpecies(patternIndex, speciesList, searchSet);
+
         if (newMatches.empty()) {
             continue;
         }
 
-        const std::size_t firstNew = patternMatches_[patternIndex].size();
+        // Track where new matches start in this pattern's cache
+        std::size_t firstNew = patternMatches_[patternIndex].size();
+
+        if (cacheNeedsRebuild) {
+            // Stable-partition: old-species matches first, new-species matches last
+            std::stable_partition(newMatches.begin(), newMatches.end(),
+                [&newSpecies](const EmbeddingResult& m) {
+                    return newSpecies.count(m.speciesIndex) == 0;
+                });
+
+            std::size_t oldCount = 0;
+            for (const auto& m : newMatches) {
+                if (newSpecies.count(m.speciesIndex) == 0) {
+                    ++oldCount;
+                }
+            }
+            firstNew = patternMatches_[patternIndex].size() + oldCount;
+        }
+
+        // Add new matches to this pattern's cache
         patternMatches_[patternIndex].insert(
             patternMatches_[patternIndex].end(),
             std::make_move_iterator(newMatches.begin()),
             std::make_move_iterator(newMatches.end()));
 
+        // Check if all patterns have at least one match
         bool allNonEmpty = true;
         for (const auto& matches : patternMatches_) {
             if (matches.empty()) {
@@ -855,6 +913,7 @@ std::size_t ReactionRule::expandRule(
             continue;
         }
 
+        // Enumerate with this pattern as trigger
         std::vector<EmbeddingResult> matchSet(nPatterns);
         std::function<void(std::size_t)> enumerate = [&](std::size_t idx) {
             if (idx == nPatterns) {
@@ -864,10 +923,8 @@ std::size_t ReactionRule::expandRule(
                 return;
             }
 
-            std::size_t begin = 0;
-            if (idx == patternIndex) {
-                begin = firstNew;
-            }
+            // Trigger pattern: start at firstNew. Others: start at 0.
+            const std::size_t begin = (idx == patternIndex) ? firstNew : 0;
 
             for (std::size_t i = begin; i < patternMatches_[idx].size(); ++i) {
                 matchSet[idx] = patternMatches_[idx][i];
@@ -877,6 +934,9 @@ std::size_t ReactionRule::expandRule(
 
         enumerate(0);
     }
+
+    matchesInitialized_ = true;
+    lastSpeciesListCapacity_ = speciesList.capacity();
 
     return created;
 }
@@ -1037,6 +1097,7 @@ bool ReactionRule::buildReaction(
 
     std::sort(reactantIndices.begin(), reactantIndices.end());
     std::sort(productIndices.begin(), productIndices.end());
+
     const std::string label = reactionLabel(*this, reactantIndices, productLabels);
     const bool added = rxnList.add(Rxn(
         label,
@@ -1044,7 +1105,8 @@ bool ReactionRule::buildReaction(
         productIndices,
         rates_.empty() ? "0" : rates_.front().toString(),
         1.0,
-        ruleName_));
+        ruleName_,
+        rates_.empty() ? std::nullopt : std::optional<Expression>(rates_.front())));
     return added;
 }
 

@@ -51,7 +51,7 @@ void ParameterList::evaluateAll(double t) {
     }
 }
 
-double ParameterList::evaluate(const std::string& name, double t) {
+double ParameterList::evaluate(const std::string& name, double t) const {
     const auto iter = indexByName_.find(name);
     if (iter == indexByName_.end()) {
         throw std::runtime_error("Unknown parameter '" + name + "'");
@@ -65,7 +65,7 @@ double ParameterList::evaluate(const std::string& name, double t) {
     return evaluateIndex(iter->second, visiting, t);
 }
 
-double ParameterList::evaluateIndex(std::size_t index, std::unordered_map<std::string, bool>& visiting, double t) {
+double ParameterList::evaluateIndex(std::size_t index, std::unordered_map<std::string, bool>& visiting, double t) const {
     auto& parameter = parameters_[index];
     if (parameter.hasValue()) {
         return parameter.getValue();

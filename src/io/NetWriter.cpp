@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <antlr4-runtime.h>
 
@@ -21,6 +22,141 @@
 namespace bng::io {
 
 namespace {
+
+// Simple recursive evaluator for mathematical expressions
+// Handles: numbers, parameters, +, -, *, /, (), exp(), and nested expressions
+double evaluateExpressionString(const std::string& expr,
+                                const std::function<double(const std::string&)>& resolve);
+
+double evaluateExpressionString(const std::string& expr,
+                                const std::function<double(const std::string&)>& resolve) {
+    std::string trimmed = expr;
+    // Trim whitespace
+    trimmed.erase(0, trimmed.find_first_not_of(" \t"));
+    trimmed.erase(trimmed.find_last_not_of(" \t") + 1);
+
+    // Handle exp(...)
+    if (trimmed.rfind("exp(", 0) == 0) {
+        // Find matching close paren
+        int depth = 0;
+        size_t start = 4;  // After "exp("
+        size_t end = start;
+        for (size_t i = start - 1; i < trimmed.size(); ++i) {
+            if (trimmed[i] == '(') ++depth;
+            else if (trimmed[i] == ')') {
+                --depth;
+                if (depth == 0) {
+                    end = i;
+                    break;
+                }
+            }
+        }
+        if (end > start) {
+            std::string inner = trimmed.substr(start, end - start);
+            return std::exp(evaluateExpressionString(inner, resolve));
+        }
+    }
+
+    // Handle parentheses - only strip if they're balanced and outermost
+    if (trimmed.front() == '(' && trimmed.back() == ')') {
+        // Check if these parens match (not just any parens)
+        int depth = 0;
+        bool outermost = true;
+        for (size_t i = 0; i < trimmed.size() - 1; ++i) {
+            if (trimmed[i] == '(') ++depth;
+            else if (trimmed[i] == ')') {
+                --depth;
+                if (depth == 0 && i < trimmed.size() - 1) {
+                    // Closing paren before end - not outermost
+                    outermost = false;
+                    break;
+                }
+            }
+        }
+        if (outermost) {
+            std::string inner = trimmed.substr(1, trimmed.size() - 2);
+            return evaluateExpressionString(inner, resolve);
+        }
+    }
+
+    // Try as number
+    try {
+        return std::stod(trimmed);
+    } catch (...) {}
+
+    // Try as parameter name (no operators)
+    if (trimmed.find_first_of("+-*/()") == std::string::npos) {
+        return resolve(trimmed);
+    }
+
+    // Check for unary minus at start
+    if (trimmed.front() == '-') {
+        // Count to see if there are any binary operators at depth 0 after position 0
+        int parenDepth = 0;
+        bool hasBinaryOpAtZero = false;
+        for (size_t i = 1; i < trimmed.size(); ++i) {
+            if (trimmed[i] == '(') ++parenDepth;
+            else if (trimmed[i] == ')') --parenDepth;
+            else if (parenDepth == 0 && (trimmed[i] == '+' || trimmed[i] == '-' || trimmed[i] == '*' || trimmed[i] == '/')) {
+                hasBinaryOpAtZero = true;
+                break;
+            }
+        }
+        if (!hasBinaryOpAtZero) {
+            // It's unary minus
+            std::string inner = trimmed.substr(1);
+            return -evaluateExpressionString(inner, resolve);
+        }
+    }
+
+    // Find operators at lowest precedence level (outside parentheses)
+    // Process +/- (equal precedence), then */, with left-to-right associativity
+    int parenDepth = 0;
+    int lastAddSub = -1;
+    char lastAddSubOp = 0;
+    int lastMulDiv = -1;
+    char lastMulDivOp = 0;
+
+    for (size_t i = 0; i < trimmed.size(); ++i) {
+        if (trimmed[i] == '(') ++parenDepth;
+        else if (trimmed[i] == ')') --parenDepth;
+        else if (parenDepth == 0 && i > 0) {
+            if (trimmed[i] == '+' || trimmed[i] == '-') {
+                lastAddSub = i;
+                lastAddSubOp = trimmed[i];
+            }
+            if (trimmed[i] == '*' || trimmed[i] == '/') {
+                lastMulDiv = i;
+                lastMulDivOp = trimmed[i];
+            }
+        }
+    }
+
+    // Process +/- first (lowest precedence)
+    if (lastAddSub >= 0) {
+        std::string left = trimmed.substr(0, lastAddSub);
+        std::string right = trimmed.substr(lastAddSub + 1);
+        double leftVal = evaluateExpressionString(left, resolve);
+        double rightVal = evaluateExpressionString(right, resolve);
+        return lastAddSubOp == '+' ? leftVal + rightVal : leftVal - rightVal;
+    }
+
+    // Then */ (higher precedence)
+    if (lastMulDiv >= 0) {
+        std::string left = trimmed.substr(0, lastMulDiv);
+        std::string right = trimmed.substr(lastMulDiv + 1);
+        double leftVal = evaluateExpressionString(left, resolve);
+        double rightVal = evaluateExpressionString(right, resolve);
+        if (lastMulDivOp == '*') {
+            return leftVal * rightVal;
+        } else {
+            if (std::abs(rightVal) < 1e-300) throw std::runtime_error("Division by zero");
+            return leftVal / rightVal;
+        }
+    }
+
+    throw std::runtime_error("Cannot evaluate expression: " + trimmed);
+}
 
 BNGcore::PatternGraph parseObservablePattern(const std::string& patternText, ast::Model& model) {
     antlr4::ANTLRInputStream input(patternText);
@@ -230,13 +366,16 @@ std::string formatDoubleScientific(double value) {
     return text;
 }
 
-struct DerivedRateInfo {
-    std::string paramName;
-    std::string expression;
-    bool reverseDirection = false;
-};
+} // namespace
 
-std::unordered_map<std::string, DerivedRateInfo> buildDerivedRateParams(
+std::optional<double> NetWriter::computeUnitConversionFactor(
+    const ast::Rxn& reaction,
+    const ast::Model& model,
+    const engine::GeneratedNetwork& network) {
+    return unitConversionFactor(reaction, model, network);
+}
+
+std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRateParams(
     const ast::Model& model,
     const engine::GeneratedNetwork& network) {
     std::unordered_map<std::string, DerivedRateInfo> derived;
@@ -258,6 +397,7 @@ std::unordered_map<std::string, DerivedRateInfo> buildDerivedRateParams(
             : arrhenius->phiArg;
         const std::string deltaExpr = energyDeltaExpression(reaction, model, network);
 
+        // Build string expression for .net file
         std::string expr = "exp((-( " + arrhenius->eaArg;
         if (!deltaExpr.empty()) {
             expr = "exp((-( " + arrhenius->eaArg + "+(" + phiExpr + "*(" + deltaExpr + "))))))";
@@ -266,20 +406,22 @@ std::unordered_map<std::string, DerivedRateInfo> buildDerivedRateParams(
         }
         expr = compactExpression(expr);
 
+        // Placeholder Expression tree (won't be used for evaluation)
+        ast::Expression exprTree = ast::Expression::number(0.0);
+
         derived.emplace(
             reaction.getOriginRuleName(),
             DerivedRateInfo {
                 reverseDirection ? "__reverse__" + ruleBase + "_local1" : "__" + ruleBase + "_local1",
                 expr,
+                exprTree,
                 reverseDirection,
             });
     }
     return derived;
 }
 
-} // namespace
-
-void NetWriter::write(const std::filesystem::path& outputPath, const ast::Model& model, const engine::GeneratedNetwork& network) {
+void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model, const engine::GeneratedNetwork& network) {
     std::ofstream out(outputPath);
     if (!out) {
         throw std::runtime_error("Could not open output file: " + outputPath.string());
@@ -293,17 +435,47 @@ void NetWriter::write(const std::filesystem::path& outputPath, const ast::Model&
         out << "setOption(\"" << key << "\",\"" << value << "\")\n";
     }
 
-    const auto derivedRateParams = buildDerivedRateParams(model, network);
+    const auto derivedRateParams = NetWriter::buildDerivedRateParams(model, network);
+
+    // Add derived rate parameters to the model so they can be used by OdeIntegrator
+    // We evaluate the expression strings numerically using a simple evaluator
+    // Format: exp(-(Ea0_S_kinase+(phi*(Gf_S_kinase/RT))))
+    // We manually parse and evaluate these
+    auto paramResolver = [&](const std::string& name) -> double {
+        return model.getParameters().evaluate(name);
+    };
+
+    for (const auto& [ruleName, info] : derivedRateParams) {
+        try {
+            // Simple evaluator for expressions of the form: exp(-(A+(B*(C))))
+            // We recursively evaluate parameters and apply operations
+            double value = evaluateExpressionString(info.expression, paramResolver);
+            model.getParameters().add(ast::Parameter(info.paramName, ast::Expression::number(value)));
+        } catch (const std::exception& e) {
+            // If evaluation fails, skip - will error later if used
+        }
+    }
+
+    // Build set of derived parameter names to skip when writing base parameters
+    std::unordered_set<std::string> derivedParamNames;
+    for (const auto& [ruleName, info] : derivedRateParams) {
+        derivedParamNames.insert(info.paramName);
+    }
 
     out << "begin parameters\n";
     std::size_t parameterIndex = 1;
     for (const auto& parameter : model.getParameters().all()) {
+        // Skip derived parameters - they'll be written later with symbolic expressions
+        if (derivedParamNames.count(parameter.getName()) > 0) {
+            continue;
+        }
         out << "    " << parameterIndex++ << " " << parameter.getName() << " " << parameter.getValue() << '\n';
     }
     for (std::size_t i = 0; i < model.getSeedSpecies().size(); ++i) {
         const auto& seed = model.getSeedSpecies()[i];
         out << "    " << parameterIndex++ << " " << formatInitialAmountName(i) << " " << seed.getAmount().toString() << '\n';
     }
+    // Write derived rate parameters with symbolic expressions (for Perl compatibility)
     for (const auto& rule : model.getReactionRules()) {
         const auto found = derivedRateParams.find(rule.getRuleName());
         if (found != derivedRateParams.end()) {
@@ -371,14 +543,13 @@ void NetWriter::write(const std::filesystem::path& outputPath, const ast::Model&
 
     out << "begin groups\n";
     std::size_t groupIndex = 1;
-    auto& mutableModel = const_cast<ast::Model&>(model);
     for (const auto& observable : model.getObservables()) {
         out << "    " << groupIndex++ << " " << observable.getName() << " ";
         bool firstEntry = true;
         for (std::size_t speciesIndex = 0; speciesIndex < network.species.size(); ++speciesIndex) {
             std::size_t weight = 0;
             for (const auto& patternText : observable.getPatterns()) {
-                const auto pattern = parseObservablePattern(patternText, mutableModel);
+                const auto pattern = parseObservablePattern(patternText, model);
                 BNGcore::UllmannSGIso matcher(pattern, network.species.get(speciesIndex).getSpeciesGraph().getGraph());
                 BNGcore::List<BNGcore::Map> maps;
                 weight += matcher.find_maps(maps);

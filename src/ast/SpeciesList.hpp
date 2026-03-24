@@ -16,6 +16,7 @@ public:
     bool containsLabel(const std::string& canonicalLabel) const;
     std::size_t indexOfLabel(const std::string& canonicalLabel) const;
     std::size_t size() const;
+    std::size_t capacity() const;
     const std::vector<Species>& all() const;
 
 private:

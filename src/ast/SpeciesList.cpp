@@ -110,6 +110,10 @@ std::size_t SpeciesList::size() const {
     return species_.size();
 }
 
+std::size_t SpeciesList::capacity() const {
+    return species_.capacity();
+}
+
 const std::vector<Species>& SpeciesList::all() const {
     return species_;
 }
