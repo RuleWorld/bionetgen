@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -16,6 +17,12 @@
 #include "engine/NetworkGenerator.hpp"
 #include "engine/OdeIntegrator.hpp"
 #include "io/NetWriter.hpp"
+#include "io/XmlWriter.hpp"
+#include "io/BnglWriter.hpp"
+#include "io/NetReader.hpp"
+#include "io/SbmlWriter.hpp"
+#include "io/MatlabWriter.hpp"
+#include "io/ContactMapWriter.hpp"
 
 namespace bng::actions {
 
@@ -147,8 +154,9 @@ void runSimulation(
     ast::Model& model,
     const ast::Action& action,
     const std::filesystem::path& sourcePath,
-    const engine::GeneratedNetwork& network,
-    bool verbose) {
+    engine::GeneratedNetwork& network,
+    bool verbose,
+    std::vector<double>& lastSimulationState) {
     const auto method = resolveSimulationMethod(action);
     const auto tEnd = stripQuotes(readArgument(action, "t_end", ""));
     const auto nSteps = stripQuotes(readArgument(action, "n_steps", stripQuotes(readArgument(action, "n_output_steps", ""))));
@@ -192,17 +200,58 @@ void runSimulation(
         opts.rtol = parseScalarValue(rtolText, model);
     }
 
+    // Parse steady_state option (BNG2 parity)
+    const auto steadyStateText = lowercase(stripQuotes(readArgument(action, "steady_state", "0")));
+    opts.steadyState = (steadyStateText == "1" || steadyStateText == "true");
+    if (opts.steadyState) {
+        opts.steadyStateTol = opts.atol;  // Use atol for steady-state check
+    }
+
+    // Parse stop_if expression (BNG2 parity)
+    opts.stopIf = stripQuotes(readArgument(action, "stop_if", ""));
+
+    // Parse continue flag (BNG2 parity)
+    const auto continueText = lowercase(stripQuotes(readArgument(action, "continue", "0")));
+    bool continueSimulation = (continueText == "1" || continueText == "true");
+
     if (verbose) {
         std::cerr << "[bng_cpp] Simulating with method=" << opts.method
                   << " t_end=" << opts.tEnd
                   << " n_steps=" << opts.nSteps
                   << " atol=" << opts.atol
-                  << " rtol=" << opts.rtol << "\n";
+                  << " rtol=" << opts.rtol;
+        if (opts.steadyState) {
+            std::cerr << " steady_state=1";
+        }
+        if (!opts.stopIf.empty()) {
+            std::cerr << " stop_if=\"" << opts.stopIf << "\"";
+        }
+        if (continueSimulation) {
+            std::cerr << " continue=1";
+        }
+        std::cerr << "\n";
+    }
+
+    // If continuing from previous simulation, restore state
+    if (continueSimulation && !lastSimulationState.empty()) {
+        if (lastSimulationState.size() == network.species.size()) {
+            for (std::size_t i = 0; i < network.species.size(); ++i) {
+                network.species.get(i).setAmount(lastSimulationState[i]);
+            }
+            if (verbose) {
+                std::cerr << "[bng_cpp] Continuing from previous simulation state\n";
+            }
+        }
     }
 
     // Run native ODE integration
     engine::OdeIntegrator integrator(model, network);
     auto result = integrator.integrate(opts);
+
+    // Save final state for potential continue
+    if (!result.concentrations.empty()) {
+        lastSimulationState = result.concentrations.back();
+    }
 
     // Write output files
     const auto prefix = simulationPrefix(action, sourcePath);
@@ -221,6 +270,10 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
     engine::NetworkGenerator generator(model);
     std::optional<engine::GeneratedNetwork> network;
     std::unordered_map<std::string, std::vector<double>> savedConcentrations;
+    std::unordered_map<std::string, std::unordered_map<std::string, double>> savedParameters;
+
+    // For continue simulation: track last simulation state
+    std::vector<double> lastSimulationState;
 
     const auto ensureNetwork = [&]() {
         if (!network.has_value()) {
@@ -235,6 +288,51 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
     };
 
     for (const auto& action : model.getActions()) {
+        if (action.name == "readfile") {
+            const auto filepath = stripQuotes(readArgument(action, "file", ""));
+            if (filepath.empty()) {
+                throw std::runtime_error("readFile requires 'file' argument");
+            }
+
+            // Determine file type
+            std::filesystem::path path(filepath);
+            if (!path.is_absolute()) {
+                path = sourcePath.parent_path() / filepath;
+            }
+
+            if (path.extension() == ".net") {
+                // Parse .net file
+                auto parseResult = io::NetReader::parse(path);
+                if (!parseResult.success) {
+                    throw std::runtime_error("Failed to read .net file: " + parseResult.error);
+                }
+
+                // Merge parsed data into current model
+                for (const auto& [name, value] : parseResult.parameters) {
+                    model.getParameters().add(ast::Parameter(name, ast::Expression::number(value)));
+                }
+                model.getParameters().evaluateAll();
+
+                if (verbose) {
+                    std::cerr << "[bng_cpp] Read .net file: " << path << "\n";
+                    std::cerr << "[bng_cpp]   Parameters: " << parseResult.parameters.size() << "\n";
+                    std::cerr << "[bng_cpp]   Species: " << parseResult.species.size() << "\n";
+                    std::cerr << "[bng_cpp]   Reactions: " << parseResult.reactions.size() << "\n";
+                }
+
+                // NOTE: Full integration of species and reactions from .net into the Model
+                // would require reconstructing the network. For now, readFile primarily
+                // updates parameters, which is the main use case.
+            } else if (path.extension() == ".bngl") {
+                // Parse .bngl file - would need to use the parser
+                throw std::runtime_error("readFile for .bngl not yet implemented - parse separately");
+            } else {
+                throw std::runtime_error("readFile: unsupported file type: " + path.extension().string());
+            }
+
+            continue;
+        }
+
         if (action.name == "generate_network") {
             network = generator.generate(sourcePath);
             writeCurrentNetwork();
@@ -254,6 +352,38 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
             if (network.has_value()) {
                 network = generator.generate(sourcePath);
+            }
+            continue;
+        }
+
+        if (action.name == "saveparameters") {
+            const auto label = stripQuotes(readArgument(action, "value", "default"));
+            std::unordered_map<std::string, double> snapshot;
+            for (const auto& param : model.getParameters().all()) {
+                snapshot[param.getName()] = param.getValue();
+            }
+            savedParameters[label] = snapshot;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Saved parameters with label '" << label << "'\n";
+            }
+            continue;
+        }
+
+        if (action.name == "resetparameters") {
+            const auto label = stripQuotes(readArgument(action, "value", "default"));
+            const auto found = savedParameters.find(label);
+            if (found == savedParameters.end()) {
+                throw std::runtime_error("resetParameters label not found: " + label);
+            }
+            for (const auto& [name, value] : found->second) {
+                model.getParameters().add(ast::Parameter(name, ast::Expression::number(value)));
+            }
+            model.getParameters().evaluateAll();
+            if (network.has_value()) {
+                network = generator.generate(sourcePath);
+            }
+            if (verbose) {
+                std::cerr << "[bng_cpp] Reset parameters from label '" << label << "'\n";
             }
             continue;
         }
@@ -291,11 +421,25 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
+        if (action.name == "addconcentration") {
+            ensureNetwork();
+            const auto target = readArgument(action, "target", "");
+            const auto valueText = readArgument(action, "value", "");
+            const double value = parseScalarValue(valueText, model);
+            const auto found = findSpeciesIndex(*network, target);
+            if (!found.has_value()) {
+                throw std::runtime_error("addConcentration target species not found: " + stripQuotes(target));
+            }
+            network->species.get(*found).setAmount(network->species.get(*found).getAmount() + value);
+            writeCurrentNetwork();
+            continue;
+        }
+
         if (action.name == "simulate" || action.name == "simulate_ode" || action.name == "simulate_ssa") {
             ensureNetwork();
             // Don't re-write .net file - already written by generate_network
             // Re-writing would cause duplicate parameters and corrupt stat factors
-            runSimulation(model, action, sourcePath, *network, verbose);
+            runSimulation(model, action, sourcePath, *network, verbose, lastSimulationState);
             continue;
         }
 
@@ -333,7 +477,151 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                 writeCurrentNetwork();  // Still write .net file for compatibility
 
                 simulateAction.arguments["prefix"] = simulationPrefix(action, sourcePath, i);
-                runSimulation(model, simulateAction, sourcePath, *network, verbose);
+                runSimulation(model, simulateAction, sourcePath, *network, verbose, lastSimulationState);
+            }
+            continue;
+        }
+
+        if (action.name == "bifurcate") {
+            ensureNetwork();
+            const auto parameterName = stripQuotes(readArgument(action, "parameter", ""));
+            if (parameterName.empty()) {
+                throw std::runtime_error("bifurcate requires parameter argument");
+            }
+
+            const auto minValue = parseScalarValue(readArgument(action, "par_min", ""), model);
+            const auto maxValue = parseScalarValue(readArgument(action, "par_max", ""), model);
+            const auto points = static_cast<std::size_t>(std::max(1.0, parseScalarValue(readArgument(action, "n_scan_pts", "1"), model)));
+            const auto logScale = lowercase(stripQuotes(readArgument(action, "log_scale", "0"))) == "1";
+
+            // Save initial concentrations
+            const auto initialConc = snapshotConcentrations(*network);
+
+            // Forward scan
+            ast::Action forwardScan = action;
+            forwardScan.name = "parameter_scan";
+            forwardScan.arguments["reset_conc"] = "0";  // Don't reset between points
+            forwardScan.arguments["suffix"] = readArgument(action, "suffix", "") + "_forward";
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Bifurcate: forward scan\n";
+            }
+            // Execute forward parameter_scan (handled above)
+            // For now, just document - full implementation needs scan result collection
+
+            // Backward scan
+            restoreConcentrations(*network, initialConc);
+            forwardScan.arguments["suffix"] = readArgument(action, "suffix", "") + "_backward";
+            forwardScan.arguments["par_min"] = readArgument(action, "par_max", "");
+            forwardScan.arguments["par_max"] = readArgument(action, "par_min", "");
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Bifurcate: backward scan\n";
+                std::cerr << "[bng_cpp] Note: bifurcate full implementation pending (result file merging)\n";
+            }
+
+            continue;
+        }
+
+        if (action.name == "writexml") {
+            ensureNetwork();
+            const auto xmlContent = io::XmlWriter::write(model, &(*network));
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".xml");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << xmlContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote XML to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (action.name == "writebngl" || action.name == "writemodel") {
+            ensureNetwork();
+            io::BnglWriter::Options opts;
+            opts.includeComments = true;
+            opts.includeActions = false;
+            const auto bnglContent = io::BnglWriter::write(model, &(*network), opts);
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + "_out.bngl");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << bnglContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote BNGL to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (action.name == "writesbml") {
+            ensureNetwork();
+            io::SbmlWriter::Options sbmlOpts;
+            sbmlOpts.level = 2;
+            sbmlOpts.version = 4;
+            sbmlOpts.networksExport = true;
+
+            const auto sbmlContent = io::SbmlWriter::write(model, &(*network), sbmlOpts);
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".xml");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << sbmlContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote SBML to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (action.name == "writemfile") {
+            ensureNetwork();
+            const auto mContent = io::MatlabWriter::write(model, *network);
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".m");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << mContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote MATLAB to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (action.name == "visualize") {
+            // Generate contact map
+            auto contactMap = io::ContactMapWriter::buildContactMap(model);
+
+            // Default to GML format
+            const auto format = lowercase(stripQuotes(readArgument(action, "type", "contactmap")));
+            const auto outputFormat = lowercase(stripQuotes(readArgument(action, "format", "gml")));
+
+            std::string content;
+            std::string extension;
+
+            if (outputFormat == "gml") {
+                content = io::ContactMapWriter::toGML(contactMap);
+                extension = ".gml";
+            } else if (outputFormat == "dot") {
+                content = io::ContactMapWriter::toDOT(contactMap);
+                extension = ".dot";
+            } else {
+                content = io::ContactMapWriter::toGML(contactMap);
+                extension = ".gml";
+            }
+
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + "_contact" + extension);
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << content;
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote contact map to " << outputPath << "\n";
             }
             continue;
         }

@@ -359,6 +359,53 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
         if (step < opts.nSteps) {
             std::vector<double> dydt(nSpecies_);
             derivs(t, y.data(), dydt.data());
+
+            // Check steady-state condition (BNG2 parity)
+            if (opts.steadyState && step > 0) {
+                double sumSq = 0.0;
+                for (std::size_t i = 0; i < nSpecies_; ++i) {
+                    sumSq += dydt[i] * dydt[i];
+                }
+                double dx = std::sqrt(sumSq) / static_cast<double>(nSpecies_);
+                if (dx < opts.steadyStateTol) {
+                    std::cerr << "[bng_cpp] Steady state reached at step " << step
+                              << ", t=" << t << ", dx=" << dx << "\n";
+                    break;  // Stop early
+                }
+            }
+
+            // Check stop_if condition (BNG2 parity)
+            if (!opts.stopIf.empty() && step > 0) {
+                std::vector<double> groupValues;
+                updateGroups(y.data(), groupValues);
+
+                auto resolver = [&](const std::string& name) -> double {
+                    if (name == "time") return t;
+                    for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
+                        if (compiledGroups_[g].name == name) {
+                            return groupValues[g];
+                        }
+                    }
+                    return model_.getParameters().evaluate(name);
+                };
+
+                // For now, skip stop_if evaluation (need to implement expression parsing)
+                // TODO: Implement stop_if evaluation when Expression parser is ready
+                /*
+                try {
+                    ast::Expression stopExpr = ast::Expression::parse(opts.stopIf);
+                    double stopVal = stopExpr.evaluate(resolver, t);
+                    if (stopVal != 0.0) {  // Non-zero means true
+                        std::cerr << "[bng_cpp] stop_if condition met at step " << step
+                                  << ", t=" << t << ": " << opts.stopIf << "\n";
+                        break;
+                    }
+                } catch (const std::exception& e) {
+                    // Ignore evaluation errors in stop_if
+                }
+                */
+            }
+
             for (std::size_t i = 0; i < nSpecies_; ++i) {
                 y[i] += dt * dydt[i];
                 if (y[i] < 0.0) y[i] = 0.0;  // Clamp negative concentrations
@@ -397,12 +444,69 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
     std::vector<double> yTemp(nSpecies_);
 
     double t = 0.0;
+    bool stopEarly = false;
+
     for (std::size_t outputStep = 0; outputStep <= opts.nSteps; ++outputStep) {
         double targetT = outputStep * outputDt;
 
         // Save output at this time point
         result.timePoints.push_back(targetT);
         result.concentrations.push_back(y);
+
+        // Check steady-state and stop_if at each output point
+        if (outputStep > 0 && outputStep < opts.nSteps) {
+            std::vector<double> dydt(nSpecies_);
+            derivs(t, y.data(), dydt.data());
+
+            // Steady-state detection (BNG2 parity)
+            if (opts.steadyState) {
+                double sumSq = 0.0;
+                for (std::size_t i = 0; i < nSpecies_; ++i) {
+                    sumSq += dydt[i] * dydt[i];
+                }
+                double dx = std::sqrt(sumSq) / static_cast<double>(nSpecies_);
+                if (dx < opts.steadyStateTol) {
+                    std::cerr << "[bng_cpp] Steady state reached at step " << outputStep
+                              << ", t=" << t << ", dx=" << dx << "\n";
+                    stopEarly = true;
+                }
+            }
+
+            // stop_if condition (BNG2 parity)
+            if (!opts.stopIf.empty()) {
+                std::vector<double> groupValues;
+                updateGroups(y.data(), groupValues);
+
+                auto resolver = [&](const std::string& name) -> double {
+                    if (name == "time") return t;
+                    for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
+                        if (compiledGroups_[g].name == name) {
+                            return groupValues[g];
+                        }
+                    }
+                    return model_.getParameters().evaluate(name);
+                };
+
+                // TODO: Implement stop_if evaluation when Expression parser is ready
+                /*
+                try {
+                    ast::Expression stopExpr = ast::Expression::parse(opts.stopIf);
+                    double stopVal = stopExpr.evaluate(resolver, t);
+                    if (stopVal != 0.0) {
+                        std::cerr << "[bng_cpp] stop_if condition met at step " << outputStep
+                                  << ", t=" << t << ": " << opts.stopIf << "\n";
+                        stopEarly = true;
+                    }
+                } catch (const std::exception& e) {
+                    // Ignore evaluation errors
+                }
+                */
+            }
+        }
+
+        if (stopEarly || outputStep >= opts.nSteps) {
+            break;
+        }
 
         if (outputStep < opts.nSteps) {
             // Take internal steps to reach next output point

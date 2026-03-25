@@ -18,6 +18,9 @@ struct OdeOptions {
     double maxStep = 0.0;          // 0 = no limit
     std::string stopCondition;     // muParser expression (empty = none)
     unsigned int seed = 0;         // for SSA (0 = random)
+    bool steadyState = false;      // Enable steady-state detection
+    double steadyStateTol = 1e-8;  // Tolerance for steady-state (|dydt| < tol)
+    std::string stopIf;            // Boolean expression to evaluate at each step
 };
 
 struct OdeResult {

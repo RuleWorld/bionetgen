@@ -61,6 +61,12 @@ add_library(bng_engine STATIC
     engine/NetworkGenerator.cpp
     engine/OdeIntegrator.cpp
     io/NetWriter.cpp
+    io/NetReader.cpp
+    io/XmlWriter.cpp
+    io/BnglWriter.cpp
+    io/SbmlWriter.cpp
+    io/MatlabWriter.cpp
+    io/ContactMapWriter.cpp
     actions/ActionDispatch.cpp
 )
 

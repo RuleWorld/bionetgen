@@ -48,36 +48,3920 @@ begin parameters
     46 loop3 1.49507
     47 loop4 0.0995521
     48 loop5 1.498
+    49 _InitialConc1 egf_tot
+    50 _InitialConc2 Grb2_tot
+    51 _InitialConc3 Shc_tot
+    52 _InitialConc4 Sos_tot
+    53 _InitialConc5 egfr_tot
+    54 _InitialConc6 Grb2_Sos_tot
 end parameters
 begin species
-    1 egf(r) 1.2e+06
-    2 Grb2(SH2,SH3) 100000
-    3 Shc(PTB,Y317~Y) 270000
-    4 Sos(dom) 13000
-    5 egfr(Y1068~Y,Y1148~Y,l,r) 180000
-    6 Grb2(SH2,SH3!0).Sos(dom!0) 49000
+    1 egf(r) _InitialConc1
+    2 Grb2(SH2,SH3) _InitialConc2
+    3 Shc(PTB,Y317~Y) _InitialConc3
+    4 Sos(dom) _InitialConc4
+    5 egfr(Y1068~Y,Y1148~Y,l,r) _InitialConc5
+    6 Grb2(SH2,SH3!0).Sos(dom!0) _InitialConc6
     7 egf(r!0).egfr(Y1068~Y,Y1148~Y,l!0,r) 0
+    8 egf(r!1).egf(r!2).egfr(Y1068~Y,Y1148~Y,l!2,r!0).egfr(Y1068~Y,Y1148~Y,l!1,r!0) 0
+    9 egf(r!1).egf(r!2).egfr(Y1068~pY,Y1148~Y,l!2,r!0).egfr(Y1068~Y,Y1148~Y,l!1,r!0) 0
+    10 egf(r!1).egf(r!2).egfr(Y1068~Y,Y1148~pY,l!2,r!0).egfr(Y1068~Y,Y1148~Y,l!1,r!0) 0
+    11 egf(r!1).egf(r!2).egfr(Y1068~pY,Y1148~pY,l!2,r!0).egfr(Y1068~Y,Y1148~Y,l!1,r!0) 0
+    12 egf(r!1).egf(r!2).egfr(Y1068~pY,Y1148~Y,l!2,r!0).egfr(Y1068~Y,Y1148~pY,l!1,r!0) 0
+    13 Grb2(SH2!0,SH3).egf(r!2).egf(r!3).egfr(Y1068~pY!0,Y1148~Y,l!3,r!1).egfr(Y1068~Y,Y1148~Y,l!2,r!1) 0
+    14 Grb2(SH2!0,SH3).egf(r!2).egf(r!3).egfr(Y1068~pY!0,Y1148~pY,l!3,r!1).egfr(Y1068~Y,Y1148~Y,l!2,r!1) 0
+    15 Grb2(SH2!0,SH3).egf(r!2).egf(r!3).egfr(Y1068~pY!0,Y1148~Y,l!3,r!1).egfr(Y1068~Y,Y1148~pY,l!2,r!1) 0
+    16 Grb2(SH2!0,SH3!1).Sos(dom!1).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~Y,l!4,r!2).egfr(Y1068~Y,Y1148~Y,l!3,r!2) 0
+    17 Grb2(SH2!0,SH3!1).Sos(dom!1).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~pY,l!4,r!2).egfr(Y1068~Y,Y1148~Y,l!3,r!2) 0
+    18 Grb2(SH2!0,SH3!1).Sos(dom!1).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~Y,l!4,r!2).egfr(Y1068~Y,Y1148~pY,l!3,r!2) 0
+    19 Shc(PTB!0,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~Y,Y1148~pY!0,l!3,r!1).egfr(Y1068~Y,Y1148~Y,l!2,r!1) 0
+    20 Shc(PTB!0,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~Y,Y1148~Y,l!2,r!1) 0
+    21 Shc(PTB!1,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~Y,l!3,r!0).egfr(Y1068~Y,Y1148~pY!1,l!2,r!0) 0
+    22 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~Y,Y1148~Y,l!3,r!2) 0
+    23 Grb2(SH2!0,SH3).Shc(PTB!2,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~Y,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    24 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~Y,l!4,r!3) 0
+    25 Grb2(SH2!0,SH3!1).Shc(PTB!3,Y317~Y).Sos(dom!1).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~Y,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    26 egf(r!0).egfr(Y1068~pY,Y1148~Y,l!0,r) 0
+    27 egf(r!0).egfr(Y1068~Y,Y1148~pY,l!0,r) 0
+    28 egf(r!0).egfr(Y1068~pY,Y1148~pY,l!0,r) 0
+    29 Grb2(SH2!0,SH3).egf(r!1).egfr(Y1068~pY!0,Y1148~Y,l!1,r) 0
+    30 Grb2(SH2!0,SH3).egf(r!1).egfr(Y1068~pY!0,Y1148~pY,l!1,r) 0
+    31 Grb2(SH2!0,SH3!1).Sos(dom!1).egf(r!2).egfr(Y1068~pY!0,Y1148~Y,l!2,r) 0
+    32 Grb2(SH2!0,SH3!1).Sos(dom!1).egf(r!2).egfr(Y1068~pY!0,Y1148~pY,l!2,r) 0
+    33 Shc(PTB!0,Y317~Y).egf(r!1).egfr(Y1068~Y,Y1148~pY!0,l!1,r) 0
+    34 egf(r!1).egf(r!2).egfr(Y1068~pY,Y1148~Y,l!2,r!0).egfr(Y1068~pY,Y1148~Y,l!1,r!0) 0
+    35 egf(r!1).egf(r!2).egfr(Y1068~pY,Y1148~Y,l!2,r!0).egfr(Y1068~pY,Y1148~pY,l!1,r!0) 0
+    36 Grb2(SH2!1,SH3).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~Y,l!3,r!0).egfr(Y1068~pY!1,Y1148~Y,l!2,r!0) 0
+    37 Grb2(SH2!1,SH3).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~Y,l!3,r!0).egfr(Y1068~pY!1,Y1148~pY,l!2,r!0) 0
+    38 Grb2(SH2!1,SH3!2).Sos(dom!2).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~Y,l!4,r!0).egfr(Y1068~pY!1,Y1148~Y,l!3,r!0) 0
+    39 Grb2(SH2!1,SH3!2).Sos(dom!2).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~Y,l!4,r!0).egfr(Y1068~pY!1,Y1148~pY,l!3,r!0) 0
+    40 egf(r!1).egf(r!2).egfr(Y1068~Y,Y1148~pY,l!2,r!0).egfr(Y1068~Y,Y1148~pY,l!1,r!0) 0
+    41 egf(r!1).egf(r!2).egfr(Y1068~Y,Y1148~pY,l!2,r!0).egfr(Y1068~pY,Y1148~pY,l!1,r!0) 0
+    42 Grb2(SH2!1,SH3).egf(r!2).egf(r!3).egfr(Y1068~Y,Y1148~pY,l!3,r!0).egfr(Y1068~pY!1,Y1148~pY,l!2,r!0) 0
+    43 Grb2(SH2!1,SH3!2).Sos(dom!2).egf(r!3).egf(r!4).egfr(Y1068~Y,Y1148~pY,l!4,r!0).egfr(Y1068~pY!1,Y1148~pY,l!3,r!0) 0
+    44 Shc(PTB!1,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~Y,Y1148~pY,l!3,r!0).egfr(Y1068~Y,Y1148~pY!1,l!2,r!0) 0
+    45 egf(r!1).egf(r!2).egfr(Y1068~pY,Y1148~pY,l!2,r!0).egfr(Y1068~pY,Y1148~pY,l!1,r!0) 0
+    46 Grb2(SH2!1,SH3).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY,l!3,r!0).egfr(Y1068~pY!1,Y1148~Y,l!2,r!0) 0
+    47 Grb2(SH2!1,SH3).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY,l!3,r!0).egfr(Y1068~pY!1,Y1148~pY,l!2,r!0) 0
+    48 Grb2(SH2!1,SH3!2).Sos(dom!2).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY,l!4,r!0).egfr(Y1068~pY!1,Y1148~Y,l!3,r!0) 0
+    49 Grb2(SH2!1,SH3!2).Sos(dom!2).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY,l!4,r!0).egfr(Y1068~pY!1,Y1148~pY,l!3,r!0) 0
+    50 Shc(PTB!1,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY,l!3,r!0).egfr(Y1068~Y,Y1148~pY!1,l!2,r!0) 0
+    51 Grb2(SH2!0,SH3).Grb2(SH2!2,SH3).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~Y,l!4,r!1).egfr(Y1068~pY!2,Y1148~Y,l!3,r!1) 0
+    52 Grb2(SH2!0,SH3).Grb2(SH2!2,SH3).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~Y,l!4,r!1).egfr(Y1068~pY!2,Y1148~pY,l!3,r!1) 0
+    53 Grb2(SH2!0,SH3).Grb2(SH2!2,SH3!3).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~Y,l!5,r!1).egfr(Y1068~pY!2,Y1148~Y,l!4,r!1) 0
+    54 Grb2(SH2!0,SH3).Grb2(SH2!2,SH3!3).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~Y,l!5,r!1).egfr(Y1068~pY!2,Y1148~pY,l!4,r!1) 0
+    55 Grb2(SH2!0,SH3).Grb2(SH2!2,SH3).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~pY,l!4,r!1).egfr(Y1068~pY!2,Y1148~pY,l!3,r!1) 0
+    56 Grb2(SH2!0,SH3).Grb2(SH2!2,SH3!3).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~pY,l!5,r!1).egfr(Y1068~pY!2,Y1148~Y,l!4,r!1) 0
+    57 Grb2(SH2!0,SH3).Grb2(SH2!2,SH3!3).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~pY,l!5,r!1).egfr(Y1068~pY!2,Y1148~pY,l!4,r!1) 0
+    58 Grb2(SH2!0,SH3).Shc(PTB!2,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~pY,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    59 Grb2(SH2!0,SH3!1).Grb2(SH2!3,SH3!4).Sos(dom!1).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!0,Y1148~Y,l!6,r!2).egfr(Y1068~pY!3,Y1148~Y,l!5,r!2) 0
+    60 Grb2(SH2!0,SH3!1).Grb2(SH2!3,SH3!4).Sos(dom!1).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!0,Y1148~Y,l!6,r!2).egfr(Y1068~pY!3,Y1148~pY,l!5,r!2) 0
+    61 Grb2(SH2!0,SH3!1).Grb2(SH2!3,SH3!4).Sos(dom!1).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!0,Y1148~pY,l!6,r!2).egfr(Y1068~pY!3,Y1148~pY,l!5,r!2) 0
+    62 Grb2(SH2!0,SH3!1).Shc(PTB!3,Y317~Y).Sos(dom!1).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~pY,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    63 Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~Y,Y1148~pY!0,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    64 Shc(PTB!0,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~pY,Y1148~Y,l!2,r!1) 0
+    65 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~pY,Y1148~Y,l!3,r!2) 0
+    66 Shc(PTB!0,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~Y,Y1148~pY,l!2,r!1) 0
+    67 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~Y,Y1148~pY,l!3,r!2) 0
+    68 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~pY,l!4,r!3) 0
+    69 Shc(PTB!0,Y317~Y).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~pY,Y1148~pY,l!2,r!1) 0
+    70 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~pY,Y1148~pY,l!3,r!2) 0
+    71 Shc(PTB!0,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~Y,Y1148~pY!0,l!3,r!1).egfr(Y1068~Y,Y1148~Y,l!2,r!1) 0
+    72 Shc(PTB!0,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~Y,Y1148~Y,l!2,r!1) 0
+    73 Shc(PTB!1,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~Y,l!3,r!0).egfr(Y1068~Y,Y1148~pY!1,l!2,r!0) 0
+    74 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~Y,Y1148~Y,l!3,r!2) 0
+    75 Grb2(SH2!0,SH3).Shc(PTB!2,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~Y,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    76 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~Y,l!4,r!3) 0
+    77 Grb2(SH2!0,SH3!1).Shc(PTB!3,Y317~pY).Sos(dom!1).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~Y,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    78 Shc(PTB!1,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~Y,Y1148~pY,l!3,r!0).egfr(Y1068~Y,Y1148~pY!1,l!2,r!0) 0
+    79 Shc(PTB!1,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY,l!3,r!0).egfr(Y1068~Y,Y1148~pY!1,l!2,r!0) 0
+    80 Grb2(SH2!0,SH3).Shc(PTB!2,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY!0,Y1148~pY,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    81 Grb2(SH2!0,SH3!1).Shc(PTB!3,Y317~pY).Sos(dom!1).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~pY,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    82 Shc(PTB!0,Y317~pY).Shc(PTB!2,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~Y,Y1148~pY!0,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    83 Shc(PTB!0,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~pY,Y1148~Y,l!2,r!1) 0
+    84 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~pY,Y1148~Y,l!3,r!2) 0
+    85 Shc(PTB!0,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~Y,Y1148~pY,l!2,r!1) 0
+    86 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~Y,Y1148~pY,l!3,r!2) 0
+    87 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~pY,l!4,r!3) 0
+    88 Shc(PTB!0,Y317~pY).egf(r!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r!1).egfr(Y1068~pY,Y1148~pY,l!2,r!1) 0
+    89 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY!1,Y1148~pY!0,l!4,r!2).egfr(Y1068~pY,Y1148~pY,l!3,r!2) 0
+    90 Grb2(SH2!2,SH3).Shc(PTB!0,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~pY!2,Y1148~Y,l!3,r!1) 0
+    91 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~Y).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY!3,Y1148~Y,l!4,r!2) 0
+    92 Grb2(SH2!2,SH3).Shc(PTB!0,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~pY!2,Y1148~pY,l!3,r!1) 0
+    93 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~Y).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY!3,Y1148~pY,l!4,r!2) 0
+    94 Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~pY!2,Y1148~Y,l!3,r!1) 0
+    95 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY!3,Y1148~Y,l!4,r!2) 0
+    96 Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~pY!2,Y1148~pY,l!3,r!1) 0
+    97 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY!3,Y1148~pY,l!4,r!2) 0
+    98 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~Y,l!4,r!3) 0
+    99 Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~Y).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~pY!2,Y1148~Y,l!4,r!1) 0
+    100 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~Y).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!3,Y1148~Y,l!5,r!2) 0
+    101 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~pY,l!4,r!3) 0
+    102 Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~Y).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~pY!2,Y1148~pY,l!4,r!1) 0
+    103 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~Y).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!3,Y1148~pY,l!5,r!2) 0
+    104 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~Y,l!4,r!3) 0
+    105 Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~pY!2,Y1148~Y,l!4,r!1) 0
+    106 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!3,Y1148~Y,l!5,r!2) 0
+    107 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~pY,l!4,r!3) 0
+    108 Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~pY!2,Y1148~pY,l!4,r!1) 0
+    109 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!3,Y1148~pY,l!5,r!2) 0
+    110 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~Y).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~Y,l!5,r!3) 0
+    111 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~Y).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~pY,l!5,r!3) 0
+    112 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~Y,l!5,r!3) 0
+    113 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~pY,l!5,r!3) 0
+    114 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~Y).Sos(dom!2).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~Y,l!6,r!3) 0
+    115 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~Y).Sos(dom!2).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~pY,l!6,r!3) 0
+    116 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY).Sos(dom!2).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~Y,l!6,r!3) 0
+    117 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY).Sos(dom!2).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~pY,l!6,r!3) 0
+    118 Shc(PTB!0,Y317~Y).egf(r!1).egfr(Y1068~pY,Y1148~pY!0,l!1,r) 0
+    119 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).egf(r!2).egfr(Y1068~pY!1,Y1148~pY!0,l!2,r) 0
+    120 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Sos(dom!2).egf(r!3).egfr(Y1068~pY!1,Y1148~pY!0,l!3,r) 0
+    121 Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    122 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~Y).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    123 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~Y).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    124 Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~pY,Y1148~pY!2,l!3,r!1) 0
+    125 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~Y).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY,Y1148~pY!3,l!4,r!2) 0
+    126 Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    127 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    128 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    129 Shc(PTB!0,Y317~pY).Shc(PTB!2,Y317~Y).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    130 Shc(PTB,Y317~pY) 0
+    131 Shc(PTB!0,Y317~pY).egf(r!1).egfr(Y1068~Y,Y1148~pY!0,l!1,r) 0
+    132 Shc(PTB!0,Y317~pY).egf(r!1).egfr(Y1068~pY,Y1148~pY!0,l!1,r) 0
+    133 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).egf(r!2).egfr(Y1068~pY!1,Y1148~pY!0,l!2,r) 0
+    134 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Sos(dom!2).egf(r!3).egfr(Y1068~pY!1,Y1148~pY!0,l!3,r) 0
+    135 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~Y).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    136 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~Y).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    137 Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~pY,Y1148~pY!2,l!3,r!1) 0
+    138 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY,Y1148~pY!3,l!4,r!2) 0
+    139 Shc(PTB!0,Y317~pY).Shc(PTB!2,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~Y,Y1148~pY!0,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    140 Shc(PTB!0,Y317~pY).Shc(PTB!2,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~Y,Y1148~pY!2,l!3,r!1) 0
+    141 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    142 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    143 Shc(PTB!0,Y317~pY).Shc(PTB!2,Y317~pY).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!1).egfr(Y1068~pY,Y1148~pY!2,l!3,r!1) 0
+    144 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY!1,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY,Y1148~pY!3,l!4,r!2) 0
+    145 Grb2(SH2!3,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~pY!3,Y1148~pY!2,l!4,r!1) 0
+    146 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!4,Y1148~pY!3,l!5,r!2) 0
+    147 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!4,Y1148~pY!3,l!5,r!2) 0
+    148 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY,Y1148~pY!4,l!5,r!3) 0
+    149 Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!1).egfr(Y1068~pY!3,Y1148~pY!2,l!5,r!1) 0
+    150 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY!4,Y1148~pY!3,l!6,r!2) 0
+    151 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY,Y1148~pY!4,l!5,r!3) 0
+    152 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY!4,Y1148~pY!3,l!6,r!2) 0
+    153 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!5,Y1148~pY!4,l!6,r!3) 0
+    154 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY!5,Y1148~pY!4,l!7,r!3) 0
+    155 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~pY).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY!5,Y1148~pY!4,l!7,r!3) 0
+    156 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egf(r!3).egf(r!4).egfr(Y1068~Y,Y1148~pY!0,l!4,r!2).egfr(Y1068~Y,Y1148~Y,l!3,r!2) 0
+    157 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!2).egfr(Y1068~Y,Y1148~Y,l!3,r!2) 0
+    158 Grb2(SH2!2,SH3).Shc(PTB!1,Y317~pY!2).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~Y,l!4,r!0).egfr(Y1068~Y,Y1148~pY!1,l!3,r!0) 0
+    159 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).egf(r!4).egf(r!5).egfr(Y1068~pY!2,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~Y,l!4,r!3) 0
+    160 Grb2(SH2!0,SH3).Grb2(SH2!3,SH3).Shc(PTB!2,Y317~pY!3).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~Y,l!5,r!1).egfr(Y1068~Y,Y1148~pY!2,l!4,r!1) 0
+    161 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!4).egfr(Y1068~Y,Y1148~Y,l!5,r!4) 0
+    162 Grb2(SH2!0,SH3!1).Grb2(SH2!4,SH3).Shc(PTB!3,Y317~pY!4).Sos(dom!1).egf(r!5).egf(r!6).egfr(Y1068~pY!0,Y1148~Y,l!6,r!2).egfr(Y1068~Y,Y1148~pY!3,l!5,r!2) 0
+    163 Grb2(SH2!2,SH3).Shc(PTB!1,Y317~pY!2).egf(r!3).egf(r!4).egfr(Y1068~Y,Y1148~pY,l!4,r!0).egfr(Y1068~Y,Y1148~pY!1,l!3,r!0) 0
+    164 Grb2(SH2!2,SH3).Shc(PTB!1,Y317~pY!2).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY,l!4,r!0).egfr(Y1068~Y,Y1148~pY!1,l!3,r!0) 0
+    165 Grb2(SH2!0,SH3).Grb2(SH2!3,SH3).Shc(PTB!2,Y317~pY!3).egf(r!4).egf(r!5).egfr(Y1068~pY!0,Y1148~pY,l!5,r!1).egfr(Y1068~Y,Y1148~pY!2,l!4,r!1) 0
+    166 Grb2(SH2!0,SH3!1).Grb2(SH2!4,SH3).Shc(PTB!3,Y317~pY!4).Sos(dom!1).egf(r!5).egf(r!6).egfr(Y1068~pY!0,Y1148~pY,l!6,r!2).egfr(Y1068~Y,Y1148~pY!3,l!5,r!2) 0
+    167 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~Y).egf(r!4).egf(r!5).egfr(Y1068~Y,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    168 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!2).egfr(Y1068~pY,Y1148~Y,l!3,r!2) 0
+    169 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).egf(r!4).egf(r!5).egfr(Y1068~pY!2,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~Y,l!4,r!3) 0
+    170 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!2).egfr(Y1068~Y,Y1148~pY,l!3,r!2) 0
+    171 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).egf(r!4).egf(r!5).egfr(Y1068~pY!2,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~pY,l!4,r!3) 0
+    172 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!4).egfr(Y1068~Y,Y1148~pY,l!5,r!4) 0
+    173 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egf(r!3).egf(r!4).egfr(Y1068~pY,Y1148~pY!0,l!4,r!2).egfr(Y1068~pY,Y1148~pY,l!3,r!2) 0
+    174 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).egf(r!4).egf(r!5).egfr(Y1068~pY!2,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~pY,l!4,r!3) 0
+    175 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY!3,Y1148~Y,l!4,r!2) 0
+    176 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY!1).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~Y,l!5,r!3) 0
+    177 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY!3,Y1148~pY,l!4,r!2) 0
+    178 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY!1).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~pY,l!5,r!3) 0
+    179 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!4).egfr(Y1068~pY,Y1148~Y,l!5,r!4) 0
+    180 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!3,Y1148~Y,l!5,r!2) 0
+    181 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~Y,l!6,r!3) 0
+    182 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!4).egfr(Y1068~pY,Y1148~pY,l!5,r!4) 0
+    183 Grb2(SH2!1,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!3,Y1148~pY,l!5,r!2) 0
+    184 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~pY,l!6,r!3) 0
+    185 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!4).egfr(Y1068~pY!5,Y1148~Y,l!6,r!4) 0
+    186 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!4).egfr(Y1068~pY!5,Y1148~pY,l!6,r!4) 0
+    187 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Sos(dom!3).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!2,Y1148~pY!0,l!8,r!4).egfr(Y1068~pY!5,Y1148~Y,l!7,r!4) 0
+    188 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Sos(dom!3).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!2,Y1148~pY!0,l!8,r!4).egfr(Y1068~pY!5,Y1148~pY,l!7,r!4) 0
+    189 Grb2(SH2!3,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~Y,Y1148~pY!2,l!4,r!1) 0
+    190 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~Y,Y1148~pY!3,l!5,r!2) 0
+    191 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~Y,Y1148~pY!4,l!6,r!3) 0
+    192 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~Y).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    193 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egf(r!2).egfr(Y1068~Y,Y1148~pY!0,l!2,r) 0
+    194 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egf(r!2).egfr(Y1068~pY,Y1148~pY!0,l!2,r) 0
+    195 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).egf(r!3).egfr(Y1068~pY!2,Y1148~pY!0,l!3,r) 0
+    196 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egf(r!4).egfr(Y1068~pY!2,Y1148~pY!0,l!4,r) 0
+    197 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~Y).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    198 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~Y).Sos(dom!3).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!4).egfr(Y1068~Y,Y1148~pY!5,l!6,r!4) 0
+    199 Grb2(SH2!3,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~pY,Y1148~pY!2,l!4,r!1) 0
+    200 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY,Y1148~pY!3,l!5,r!2) 0
+    201 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~Y,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    202 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!2).egfr(Y1068~Y,Y1148~pY!3,l!4,r!2) 0
+    203 Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!2,Y317~pY!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!1).egfr(Y1068~Y,Y1148~pY!2,l!4,r!1) 0
+    204 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    205 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~Y,Y1148~pY!3,l!5,r!2) 0
+    206 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY).Sos(dom!3).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!4).egfr(Y1068~Y,Y1148~pY!5,l!6,r!4) 0
+    207 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~pY!5).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~Y,Y1148~pY!4,l!6,r!3) 0
+    208 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!2).egfr(Y1068~pY,Y1148~pY!3,l!4,r!2) 0
+    209 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY).egf(r!5).egf(r!6).egfr(Y1068~pY!2,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY,Y1148~pY!4,l!5,r!3) 0
+    210 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY!4).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY,Y1148~pY!3,l!5,r!2) 0
+    211 Grb2(SH2!3,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!1).egfr(Y1068~pY!4,Y1148~pY!2,l!5,r!1) 0
+    212 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY!5,Y1148~pY!3,l!6,r!2) 0
+    213 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!5,Y1148~pY!4,l!6,r!3) 0
+    214 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY,Y1148~pY!4,l!6,r!3) 0
+    215 Grb2(SH2!3,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY,Y1148~pY!0,l!7,r!1).egfr(Y1068~pY!4,Y1148~pY!2,l!6,r!1) 0
+    216 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!2).egfr(Y1068~pY!5,Y1148~pY!3,l!7,r!2) 0
+    217 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY).Sos(dom!3).egf(r!6).egf(r!7).egfr(Y1068~pY!2,Y1148~pY!0,l!7,r!4).egfr(Y1068~pY,Y1148~pY!5,l!6,r!4) 0
+    218 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~pY!5).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY,Y1148~pY!4,l!6,r!3) 0
+    219 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!2,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY!5,Y1148~pY!4,l!7,r!3) 0
+    220 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY!4).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!2).egfr(Y1068~pY!5,Y1148~pY!3,l!7,r!2) 0
+    221 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY!6,Y1148~pY!4,l!7,r!3) 0
+    222 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!1,Y1148~pY!0,l!9,r!3).egfr(Y1068~pY!6,Y1148~pY!4,l!8,r!3) 0
+    223 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY).Sos(dom!3).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!2,Y1148~pY!0,l!9,r!4).egfr(Y1068~pY!6,Y1148~pY!5,l!8,r!4) 0
+    224 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~Y,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~Y,l!4,r!3) 0
+    225 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~Y,l!4,r!3) 0
+    226 Grb2(SH2!2,SH3!3).Shc(PTB!1,Y317~pY!2).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~Y,l!5,r!0).egfr(Y1068~Y,Y1148~pY!1,l!4,r!0) 0
+    227 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!3,Y1148~pY!0,l!6,r!4).egfr(Y1068~Y,Y1148~Y,l!5,r!4) 0
+    228 Grb2(SH2!0,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!2,Y317~pY!3).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!0,Y1148~Y,l!6,r!1).egfr(Y1068~Y,Y1148~pY!2,l!5,r!1) 0
+    229 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!5).egfr(Y1068~Y,Y1148~Y,l!6,r!5) 0
+    230 Grb2(SH2!0,SH3!1).Grb2(SH2!4,SH3!5).Shc(PTB!3,Y317~pY!4).Sos(dom!1).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!0,Y1148~Y,l!7,r!2).egfr(Y1068~Y,Y1148~pY!3,l!6,r!2) 0
+    231 Grb2(SH2!2,SH3!3).Shc(PTB!1,Y317~pY!2).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~Y,Y1148~pY,l!5,r!0).egfr(Y1068~Y,Y1148~pY!1,l!4,r!0) 0
+    232 Grb2(SH2!2,SH3!3).Shc(PTB!1,Y317~pY!2).Sos(dom!3).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY,l!5,r!0).egfr(Y1068~Y,Y1148~pY!1,l!4,r!0) 0
+    233 Grb2(SH2!0,SH3).Grb2(SH2!3,SH3!4).Shc(PTB!2,Y317~pY!3).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY!0,Y1148~pY,l!6,r!1).egfr(Y1068~Y,Y1148~pY!2,l!5,r!1) 0
+    234 Grb2(SH2!0,SH3!1).Grb2(SH2!4,SH3!5).Shc(PTB!3,Y317~pY!4).Sos(dom!1).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!0,Y1148~pY,l!7,r!2).egfr(Y1068~Y,Y1148~pY!3,l!6,r!2) 0
+    235 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~Y).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~Y,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    236 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~Y,l!4,r!3) 0
+    237 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!3,Y1148~pY!0,l!6,r!4).egfr(Y1068~pY,Y1148~Y,l!5,r!4) 0
+    238 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!3).egfr(Y1068~Y,Y1148~pY,l!4,r!3) 0
+    239 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!3,Y1148~pY!0,l!6,r!4).egfr(Y1068~Y,Y1148~pY,l!5,r!4) 0
+    240 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!5).egfr(Y1068~Y,Y1148~pY,l!6,r!5) 0
+    241 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!4).egf(r!5).egfr(Y1068~pY,Y1148~pY!0,l!5,r!3).egfr(Y1068~pY,Y1148~pY,l!4,r!3) 0
+    242 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY!3,Y1148~pY!0,l!6,r!4).egfr(Y1068~pY,Y1148~pY,l!5,r!4) 0
+    243 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~Y,l!5,r!3) 0
+    244 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!4).egfr(Y1068~pY!5,Y1148~Y,l!6,r!4) 0
+    245 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY!4,Y1148~pY,l!5,r!3) 0
+    246 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!4).egfr(Y1068~pY!5,Y1148~pY,l!6,r!4) 0
+    247 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!5).egfr(Y1068~pY,Y1148~Y,l!6,r!5) 0
+    248 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~Y,l!6,r!3) 0
+    249 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!4).egfr(Y1068~pY!5,Y1148~Y,l!7,r!4) 0
+    250 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!5).egfr(Y1068~pY,Y1148~pY,l!6,r!5) 0
+    251 Grb2(SH2!1,SH3!2).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY,Y1148~pY!0,l!7,r!3).egfr(Y1068~pY!4,Y1148~pY,l!6,r!3) 0
+    252 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!4).egfr(Y1068~pY!5,Y1148~pY,l!7,r!4) 0
+    253 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!5).egfr(Y1068~pY!6,Y1148~Y,l!7,r!5) 0
+    254 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!5).egfr(Y1068~pY!6,Y1148~pY,l!7,r!5) 0
+    255 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!3,Y1148~pY!0,l!9,r!5).egfr(Y1068~pY!6,Y1148~Y,l!8,r!5) 0
+    256 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!3,Y1148~pY!0,l!9,r!5).egfr(Y1068~pY!6,Y1148~pY,l!8,r!5) 0
+    257 Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!1).egfr(Y1068~Y,Y1148~pY!2,l!5,r!1) 0
+    258 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~Y,Y1148~pY!3,l!6,r!2) 0
+    259 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~Y,Y1148~pY!4,l!7,r!3) 0
+    260 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~Y).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    261 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!3).egfr(Y1068~Y,Y1148~pY!0,l!3,r) 0
+    262 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!3).egfr(Y1068~pY,Y1148~pY!0,l!3,r) 0
+    263 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egf(r!4).egfr(Y1068~pY!3,Y1148~pY!0,l!4,r) 0
+    264 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egf(r!5).egfr(Y1068~pY!3,Y1148~pY!0,l!5,r) 0
+    265 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~Y).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!4).egfr(Y1068~Y,Y1148~pY!5,l!6,r!4) 0
+    266 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Shc(PTB!6,Y317~Y).Sos(dom!2).Sos(dom!4).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!5).egfr(Y1068~Y,Y1148~pY!6,l!7,r!5) 0
+    267 Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!1).egfr(Y1068~pY,Y1148~pY!2,l!5,r!1) 0
+    268 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY,Y1148~pY!3,l!6,r!2) 0
+    269 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~Y,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    270 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!3).egfr(Y1068~Y,Y1148~pY!4,l!5,r!3) 0
+    271 Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY).Shc(PTB!2,Y317~pY!3).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!1).egfr(Y1068~Y,Y1148~pY!2,l!5,r!1) 0
+    272 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!4).egfr(Y1068~Y,Y1148~pY!5,l!6,r!4) 0
+    273 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~Y,Y1148~pY!3,l!6,r!2) 0
+    274 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Shc(PTB!6,Y317~pY).Sos(dom!2).Sos(dom!4).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!5).egfr(Y1068~Y,Y1148~pY!6,l!7,r!5) 0
+    275 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~Y,Y1148~pY!4,l!7,r!3) 0
+    276 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY).Sos(dom!2).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!3).egfr(Y1068~pY,Y1148~pY!4,l!5,r!3) 0
+    277 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY).Sos(dom!2).egf(r!6).egf(r!7).egfr(Y1068~pY!3,Y1148~pY!0,l!7,r!4).egfr(Y1068~pY,Y1148~pY!5,l!6,r!4) 0
+    278 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY,Y1148~pY!3,l!6,r!2) 0
+    279 Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).Sos(dom!4).egf(r!6).egf(r!7).egfr(Y1068~pY,Y1148~pY!0,l!7,r!1).egfr(Y1068~pY!5,Y1148~pY!2,l!6,r!1) 0
+    280 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY).Sos(dom!2).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!4).egfr(Y1068~pY!6,Y1148~pY!5,l!7,r!4) 0
+    281 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY,Y1148~pY!4,l!7,r!3) 0
+    282 Grb2(SH2!3,SH3!4).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~pY!3).Sos(dom!4).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY,Y1148~pY!0,l!8,r!1).egfr(Y1068~pY!5,Y1148~pY!2,l!7,r!1) 0
+    283 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Shc(PTB!6,Y317~pY).Sos(dom!2).Sos(dom!4).egf(r!7).egf(r!8).egfr(Y1068~pY!3,Y1148~pY!0,l!8,r!5).egfr(Y1068~pY,Y1148~pY!6,l!7,r!5) 0
+    284 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY,Y1148~pY!4,l!7,r!3) 0
+    285 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY).Sos(dom!2).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!3,Y1148~pY!0,l!9,r!4).egfr(Y1068~pY!6,Y1148~pY!5,l!8,r!4) 0
+    286 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!7,SH3!8).Shc(PTB!0,Y317~pY!1).Shc(PTB!6,Y317~pY).Sos(dom!2).Sos(dom!4).Sos(dom!8).egf(r!9).egf(r!10).egfr(Y1068~pY!3,Y1148~pY!0,l!10,r!5).egfr(Y1068~pY!7,Y1148~pY!6,l!9,r!5) 0
+    287 Grb2(SH2!0,SH3).Shc(PTB,Y317~pY!0) 0
+    288 Grb2(SH2!0,SH3!1).Shc(PTB,Y317~pY!0).Sos(dom!1) 0
+    289 egfr(Y1068~pY,Y1148~Y,l,r) 0
+    290 egfr(Y1068~Y,Y1148~pY,l,r) 0
+    291 egfr(Y1068~pY,Y1148~pY,l,r) 0
+    292 Grb2(SH2!0,SH3).egfr(Y1068~pY!0,Y1148~Y,l,r) 0
+    293 Grb2(SH2!0,SH3).egfr(Y1068~pY!0,Y1148~pY,l,r) 0
+    294 Grb2(SH2!0,SH3!1).Sos(dom!1).egfr(Y1068~pY!0,Y1148~Y,l,r) 0
+    295 Grb2(SH2!0,SH3!1).Sos(dom!1).egfr(Y1068~pY!0,Y1148~pY,l,r) 0
+    296 Shc(PTB!0,Y317~Y).egfr(Y1068~Y,Y1148~pY!0,l,r) 0
+    297 Shc(PTB!0,Y317~Y).egfr(Y1068~pY,Y1148~pY!0,l,r) 0
+    298 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~Y).egfr(Y1068~pY!1,Y1148~pY!0,l,r) 0
+    299 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~Y).Sos(dom!2).egfr(Y1068~pY!1,Y1148~pY!0,l,r) 0
+    300 Shc(PTB!0,Y317~pY).egfr(Y1068~Y,Y1148~pY!0,l,r) 0
+    301 Shc(PTB!0,Y317~pY).egfr(Y1068~pY,Y1148~pY!0,l,r) 0
+    302 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY).egfr(Y1068~pY!1,Y1148~pY!0,l,r) 0
+    303 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY).Sos(dom!2).egfr(Y1068~pY!1,Y1148~pY!0,l,r) 0
+    304 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egfr(Y1068~Y,Y1148~pY!0,l,r) 0
+    305 Grb2(SH2!1,SH3).Shc(PTB!0,Y317~pY!1).egfr(Y1068~pY,Y1148~pY!0,l,r) 0
+    306 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Shc(PTB!0,Y317~pY!1).egfr(Y1068~pY!2,Y1148~pY!0,l,r) 0
+    307 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Shc(PTB!0,Y317~pY!1).Sos(dom!3).egfr(Y1068~pY!2,Y1148~pY!0,l,r) 0
+    308 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egfr(Y1068~Y,Y1148~pY!0,l,r) 0
+    309 Grb2(SH2!1,SH3!2).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egfr(Y1068~pY,Y1148~pY!0,l,r) 0
+    310 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Shc(PTB!0,Y317~pY!1).Sos(dom!2).egfr(Y1068~pY!3,Y1148~pY!0,l,r) 0
+    311 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~pY!1).Sos(dom!2).Sos(dom!4).egfr(Y1068~pY!3,Y1148~pY!0,l,r) 0
+    312 Grb2(SH2!3,SH3!4).Shc(PTB!0,Y317~Y).Shc(PTB!2,Y317~Y).Sos(dom!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!1).egfr(Y1068~pY!3,Y1148~pY!2,l!5,r!1) 0
+    313 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~Y).egf(r!5).egf(r!6).egfr(Y1068~pY!1,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY!4,Y1148~pY!3,l!5,r!2) 0
+    314 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~Y).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY!1,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY!4,Y1148~pY!3,l!6,r!2) 0
+    315 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!2).egfr(Y1068~pY!6,Y1148~pY!3,l!7,r!2) 0
+    316 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~Y).Shc(PTB!3,Y317~pY!4).Sos(dom!5).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!1,Y1148~pY!0,l!9,r!2).egfr(Y1068~pY!6,Y1148~pY!3,l!8,r!2) 0
+    317 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~Y).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!1,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY!5,Y1148~pY!4,l!7,r!3) 0
+    318 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!8).egf(r!9).egfr(Y1068~pY!1,Y1148~pY!0,l!9,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!8,r!3) 0
+    319 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3!8).Shc(PTB!0,Y317~Y).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).Sos(dom!8).egf(r!9).egf(r!10).egfr(Y1068~pY!1,Y1148~pY!0,l!10,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!9,r!3) 0
+    320 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY).Shc(PTB!3,Y317~pY!4).Sos(dom!5).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!1,Y1148~pY!0,l!9,r!2).egfr(Y1068~pY!6,Y1148~pY!3,l!8,r!2) 0
+    321 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).egf(r!5).egf(r!6).egfr(Y1068~Y,Y1148~pY!0,l!6,r!2).egfr(Y1068~Y,Y1148~pY!3,l!5,r!2) 0
+    322 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).egf(r!5).egf(r!6).egfr(Y1068~Y,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY,Y1148~pY!3,l!5,r!2) 0
+    323 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).egf(r!6).egf(r!7).egfr(Y1068~Y,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY!5,Y1148~pY!3,l!6,r!2) 0
+    324 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~Y,Y1148~pY!0,l!8,r!2).egfr(Y1068~pY!5,Y1148~pY!3,l!7,r!2) 0
+    325 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~Y,Y1148~pY!0,l!7,r!2).egfr(Y1068~Y,Y1148~pY!3,l!6,r!2) 0
+    326 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~Y,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY,Y1148~pY!3,l!6,r!2) 0
+    327 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!7).egf(r!8).egfr(Y1068~Y,Y1148~pY!0,l!8,r!2).egfr(Y1068~pY!6,Y1148~pY!3,l!7,r!2) 0
+    328 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~Y,Y1148~pY!0,l!9,r!2).egfr(Y1068~pY!6,Y1148~pY!3,l!8,r!2) 0
+    329 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).egf(r!5).egf(r!6).egfr(Y1068~pY,Y1148~pY!0,l!6,r!2).egfr(Y1068~pY,Y1148~pY!3,l!5,r!2) 0
+    330 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Grb2(SH2!5,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).egf(r!6).egf(r!7).egfr(Y1068~pY,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY!5,Y1148~pY!3,l!6,r!2) 0
+    331 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY,Y1148~pY!0,l!8,r!2).egfr(Y1068~pY!5,Y1148~pY!3,l!7,r!2) 0
+    332 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY,Y1148~pY!0,l!7,r!2).egfr(Y1068~Y,Y1148~pY!3,l!6,r!2) 0
+    333 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!6).egf(r!7).egfr(Y1068~pY,Y1148~pY!0,l!7,r!2).egfr(Y1068~pY,Y1148~pY!3,l!6,r!2) 0
+    334 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).egf(r!7).egf(r!8).egfr(Y1068~pY,Y1148~pY!0,l!8,r!2).egfr(Y1068~pY!6,Y1148~pY!3,l!7,r!2) 0
+    335 Grb2(SH2!1,SH3).Grb2(SH2!4,SH3!5).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Shc(PTB!3,Y317~pY!4).Sos(dom!5).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY,Y1148~pY!0,l!9,r!2).egfr(Y1068~pY!6,Y1148~pY!3,l!8,r!2) 0
+    336 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3).Grb2(SH2!6,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).egf(r!7).egf(r!8).egfr(Y1068~pY!2,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY!6,Y1148~pY!4,l!7,r!3) 0
+    337 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!2,Y1148~pY!0,l!9,r!3).egfr(Y1068~pY!6,Y1148~pY!4,l!8,r!3) 0
+    338 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!2,Y1148~pY!0,l!8,r!3).egfr(Y1068~Y,Y1148~pY!4,l!7,r!3) 0
+    339 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY!2,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY,Y1148~pY!4,l!7,r!3) 0
+    340 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!6).egf(r!8).egf(r!9).egfr(Y1068~pY!2,Y1148~pY!0,l!9,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!8,r!3) 0
+    341 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3!8).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!6).Sos(dom!8).egf(r!9).egf(r!10).egfr(Y1068~pY!2,Y1148~pY!0,l!10,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!9,r!3) 0
+    342 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!6,SH3).Grb2(SH2!7,SH3!8).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY!6).Sos(dom!3).Sos(dom!8).egf(r!9).egf(r!10).egfr(Y1068~pY!2,Y1148~pY!0,l!10,r!4).egfr(Y1068~pY!7,Y1148~pY!5,l!9,r!4) 0
+    343 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY!6).Sos(dom!3).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!2,Y1148~pY!0,l!9,r!4).egfr(Y1068~Y,Y1148~pY!5,l!8,r!4) 0
+    344 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!6,SH3!7).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY!6).Sos(dom!3).Sos(dom!7).egf(r!8).egf(r!9).egfr(Y1068~pY!2,Y1148~pY!0,l!9,r!4).egfr(Y1068~pY,Y1148~pY!5,l!8,r!4) 0
+    345 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!6,SH3!7).Grb2(SH2!8,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY!6).Sos(dom!3).Sos(dom!7).egf(r!9).egf(r!10).egfr(Y1068~pY!2,Y1148~pY!0,l!10,r!4).egfr(Y1068~pY!8,Y1148~pY!5,l!9,r!4) 0
+    346 Grb2(SH2!1,SH3).Grb2(SH2!2,SH3!3).Grb2(SH2!6,SH3!7).Grb2(SH2!8,SH3!9).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY!6).Sos(dom!3).Sos(dom!7).Sos(dom!9).egf(r!10).egf(r!11).egfr(Y1068~pY!2,Y1148~pY!0,l!11,r!4).egfr(Y1068~pY!8,Y1148~pY!5,l!10,r!4) 0
+    347 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~Y,Y1148~pY!0,l!8,r!3).egfr(Y1068~Y,Y1148~pY!4,l!7,r!3) 0
+    348 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~Y,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY,Y1148~pY!4,l!7,r!3) 0
+    349 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!8).egf(r!9).egfr(Y1068~Y,Y1148~pY!0,l!9,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!8,r!3) 0
+    350 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3!8).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).Sos(dom!8).egf(r!9).egf(r!10).egfr(Y1068~Y,Y1148~pY!0,l!10,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!9,r!3) 0
+    351 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!7).egf(r!8).egfr(Y1068~pY,Y1148~pY!0,l!8,r!3).egfr(Y1068~pY,Y1148~pY!4,l!7,r!3) 0
+    352 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).egf(r!8).egf(r!9).egfr(Y1068~pY,Y1148~pY!0,l!9,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!8,r!3) 0
+    353 Grb2(SH2!1,SH3!2).Grb2(SH2!5,SH3!6).Grb2(SH2!7,SH3!8).Shc(PTB!0,Y317~pY!1).Shc(PTB!4,Y317~pY!5).Sos(dom!2).Sos(dom!6).Sos(dom!8).egf(r!9).egf(r!10).egfr(Y1068~pY,Y1148~pY!0,l!10,r!3).egfr(Y1068~pY!7,Y1148~pY!4,l!9,r!3) 0
+    354 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!6,SH3!7).Grb2(SH2!8,SH3).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY!6).Sos(dom!2).Sos(dom!7).egf(r!9).egf(r!10).egfr(Y1068~pY!3,Y1148~pY!0,l!10,r!4).egfr(Y1068~pY!8,Y1148~pY!5,l!9,r!4) 0
+    355 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3).Grb2(SH2!6,SH3!7).Grb2(SH2!8,SH3!9).Shc(PTB!0,Y317~pY!1).Shc(PTB!5,Y317~pY!6).Sos(dom!2).Sos(dom!7).Sos(dom!9).egf(r!10).egf(r!11).egfr(Y1068~pY!3,Y1148~pY!0,l!11,r!4).egfr(Y1068~pY!8,Y1148~pY!5,l!10,r!4) 0
+    356 Grb2(SH2!1,SH3!2).Grb2(SH2!3,SH3!4).Grb2(SH2!7,SH3!8).Grb2(SH2!9,SH3!10).Shc(PTB!0,Y317~pY!1).Shc(PTB!6,Y317~pY!7).Sos(dom!2).Sos(dom!4).Sos(dom!8).Sos(dom!10).egf(r!11).egf(r!12).egfr(Y1068~pY!3,Y1148~pY!0,l!12,r!5).egfr(Y1068~pY!9,Y1148~pY!6,l!11,r!5) 0
 end species
 begin reactions
     1 1,5 7 kp1
-    2 6 2,4 km12
-    3 2,4 6 kp12
-    4 7 1,5 km1
+    2 7,7 8 2*kp2
+    3 8 9 3*kp3
+    4 8 10 4*kp3
+    5 9 11 2*kp3
+    6 9 12 2*kp3
+    7 9 8 2*km3
+    8 11 10 2*km3
+    9 12 10 2*km3
+    10 10 8 2*km3
+    11 11 9 2*km3
+    12 12 9 2*km3
+    13 2,9 13 2*kp9
+    14 2,11 14 2*kp9
+    15 2,12 15 2*kp9
+    16 6,9 16 2*kp11
+    17 6,11 17 2*kp11
+    18 16 4,13 2*km10
+    19 17 4,14 2*km10
+    20 4,13 16 2*kp10
+    21 4,14 17 2*kp10
+    22 4,15 18 2*kp10
+    23 3,10 19 2*kp13
+    24 3,11 20 2*kp13
+    25 3,12 21 2*kp13
+    26 3,14 22 2*kp13
+    27 3,15 23 2*kp13
+    28 3,17 24 2*kp13
+    29 3,18 25 2*kp13
+    30 6 2,4 km12
+    31 2,4 6 kp12
+    32 7 1,5 km1
+    33 8 7,7 2*km2
+    34 9 7,26 2*km2
+    35 10 7,27 2*km2
+    36 11 7,28 2*km2
+    37 12 26,27 2*km2
+    38 13 7,29 2*km2
+    39 14 7,30 2*km2
+    40 15 27,29 2*km2
+    41 16 7,31 2*km2
+    42 17 7,32 2*km2
+    43 18 27,31 2*km2
+    44 19 7,33 km2
+    45 7,26 9 3*kp2
+    46 7,27 10 3*kp2
+    47 7,28 11 3*kp2
+    48 7,29 13 3*kp2
+    49 7,30 14 3*kp2
+    50 7,31 16 3*kp2
+    51 7,32 17 3*kp2
+    52 7,33 19 3*kp2
+    53 26,26 34 2*kp2
+    54 26,27 12 4*kp2
+    55 26,28 35 4*kp2
+    56 26,29 36 4*kp2
+    57 26,30 37 4*kp2
+    58 26,31 38 4*kp2
+    59 26,32 39 4*kp2
+    60 26,33 21 4*kp2
+    61 27,27 40 2*kp2
+    62 27,28 41 4*kp2
+    63 27,29 15 4*kp2
+    64 27,30 42 4*kp2
+    65 27,31 18 4*kp2
+    66 27,32 43 4*kp2
+    67 27,33 44 4*kp2
+    68 28,28 45 2*kp2
+    69 28,29 46 4*kp2
+    70 28,30 47 4*kp2
+    71 28,31 48 4*kp2
+    72 28,32 49 4*kp2
+    73 28,33 50 4*kp2
+    74 29,29 51 2*kp2
+    75 29,30 52 4*kp2
+    76 29,31 53 4*kp2
+    77 29,32 54 4*kp2
+    78 29,33 23 4*kp2
+    79 30,30 55 2*kp2
+    80 30,31 56 4*kp2
+    81 30,32 57 4*kp2
+    82 30,33 58 4*kp2
+    83 31,31 59 2*kp2
+    84 31,32 60 4*kp2
+    85 31,33 25 4*kp2
+    86 32,32 61 2*kp2
+    87 32,33 62 4*kp2
+    88 33,33 63 2*kp2
+    89 9 34 kp3
+    90 10 11 kp3
+    91 10 12 kp3
+    92 11 35 kp3
+    93 12 35 kp3
+    94 13 36 kp3
+    95 14 37 kp3
+    96 15 46 kp3
+    97 16 38 kp3
+    98 17 39 kp3
+    99 18 48 kp3
+    100 19 20 kp3
+    101 19 21 kp3
+    102 20 64 kp3
+    103 21 64 kp3
+    104 22 65 kp3
+    105 10 40 kp3
+    106 11 41 kp3
+    107 12 41 kp3
+    108 13 14 kp3
+    109 13 15 kp3
+    110 14 42 kp3
+    111 15 42 kp3
+    112 16 17 kp3
+    113 16 18 kp3
+    114 17 43 kp3
+    115 18 43 kp3
+    116 19 44 kp3
+    117 20 66 kp3
+    118 21 50 kp3
+    119 22 67 kp3
+    120 23 58 kp3
+    121 24 68 kp3
+    122 25 62 kp3
+    123 34 35 4*kp3
+    124 35 45 2*kp3
+    125 36 46 2*kp3
+    126 36 37 2*kp3
+    127 37 47 2*kp3
+    128 38 48 2*kp3
+    129 38 39 2*kp3
+    130 39 49 2*kp3
+    131 46 47 2*kp3
+    132 48 49 2*kp3
+    133 51 52 4*kp3
+    134 52 55 2*kp3
+    135 53 56 2*kp3
+    136 53 54 2*kp3
+    137 54 57 2*kp3
+    138 56 57 2*kp3
+    139 59 60 4*kp3
+    140 60 61 2*kp3
+    141 64 69 2*kp3
+    142 65 70 2*kp3
+    143 20 19 km3
+    144 21 19 km3
+    145 26 7 2*km3
+    146 28 27 2*km3
+    147 34 9 4*km3
+    148 35 11 2*km3
+    149 35 12 2*km3
+    150 36 13 2*km3
+    151 37 14 2*km3
+    152 38 16 2*km3
+    153 39 17 2*km3
+    154 41 40 2*km3
+    155 45 41 4*km3
+    156 46 15 2*km3
+    157 47 42 2*km3
+    158 48 18 2*km3
+    159 49 43 2*km3
+    160 50 44 2*km3
+    161 64 21 2*km3
+    162 64 20 2*km3
+    163 65 22 2*km3
+    164 66 44 2*km3
+    165 69 50 2*km3
+    166 69 66 2*km3
+    167 70 67 2*km3
+    168 14 13 km3
+    169 15 13 km3
+    170 17 16 km3
+    171 18 16 km3
+    172 27 7 2*km3
+    173 28 26 2*km3
+    174 30 29 2*km3
+    175 32 31 2*km3
+    176 35 34 2*km3
+    177 37 36 2*km3
+    178 39 38 2*km3
+    179 40 10 4*km3
+    180 41 11 2*km3
+    181 41 12 2*km3
+    182 42 14 2*km3
+    183 42 15 2*km3
+    184 43 17 2*km3
+    185 43 18 2*km3
+    186 44 19 2*km3
+    187 45 35 4*km3
+    188 46 36 2*km3
+    189 47 37 2*km3
+    190 47 46 2*km3
+    191 48 38 2*km3
+    192 49 39 2*km3
+    193 49 48 2*km3
+    194 50 21 2*km3
+    195 52 51 2*km3
+    196 54 53 2*km3
+    197 55 52 4*km3
+    198 56 53 2*km3
+    199 57 54 2*km3
+    200 57 56 2*km3
+    201 58 23 2*km3
+    202 60 59 2*km3
+    203 61 60 4*km3
+    204 62 25 2*km3
+    205 66 20 2*km3
+    206 67 22 2*km3
+    207 68 24 2*km3
+    208 69 64 2*km3
+    209 70 65 2*km3
+    210 19 71 kp14
+    211 20 72 kp14
+    212 21 73 kp14
+    213 22 74 kp14
+    214 23 75 kp14
+    215 24 76 kp14
+    216 25 77 kp14
+    217 44 78 2*kp14
+    218 50 79 2*kp14
+    219 58 80 2*kp14
+    220 62 81 2*kp14
+    221 63 82 4*kp14
+    222 64 83 2*kp14
+    223 65 84 2*kp14
+    224 66 85 2*kp14
+    225 67 86 2*kp14
+    226 68 87 2*kp14
+    227 69 88 2*kp14
+    228 70 89 2*kp14
+    229 71 19 2*km14
+    230 72 20 2*km14
+    231 73 21 2*km14
+    232 74 22 2*km14
+    233 75 23 2*km14
+    234 76 24 2*km14
+    235 77 25 2*km14
+    236 78 44 2*km14
+    237 79 50 2*km14
+    238 80 58 2*km14
+    239 81 62 2*km14
+    240 82 63 2*km14
+    241 83 64 2*km14
+    242 84 65 2*km14
+    243 85 66 2*km14
+    244 86 67 2*km14
+    245 87 68 2*km14
+    246 88 69 2*km14
+    247 89 70 2*km14
+    248 13 2,9 km9
+    249 14 2,11 km9
+    250 15 2,12 km9
+    251 22 2,20 km9
+    252 23 2,21 km9
+    253 29 2,26 2*km9
+    254 30 2,28 2*km9
+    255 36 2,34 2*km9
+    256 37 2,35 2*km9
+    257 42 2,41 2*km9
+    258 46 2,35 2*km9
+    259 47 2,45 2*km9
+    260 51 2,36 4*km9
+    261 52 2,37 2*km9
+    262 52 2,46 2*km9
+    263 53 2,38 2*km9
+    264 54 2,39 2*km9
+    265 55 2,47 4*km9
+    266 56 2,48 2*km9
+    267 57 2,49 2*km9
+    268 58 2,50 2*km9
+    269 65 2,64 2*km9
+    270 67 2,66 2*km9
+    271 70 2,69 2*km9
+    272 74 2,72 2*km9
+    273 75 2,73 2*km9
+    274 80 2,79 2*km9
+    275 84 2,83 2*km9
+    276 86 2,85 2*km9
+    277 89 2,88 2*km9
+    278 2,20 22 kp9
+    279 2,21 23 kp9
+    280 2,26 29 2*kp9
+    281 2,28 30 2*kp9
+    282 2,34 36 4*kp9
+    283 2,35 46 2*kp9
+    284 2,35 37 2*kp9
+    285 2,36 51 2*kp9
+    286 2,37 52 2*kp9
+    287 2,38 53 2*kp9
+    288 2,39 54 2*kp9
+    289 2,41 42 2*kp9
+    290 2,45 47 4*kp9
+    291 2,46 52 2*kp9
+    292 2,47 55 2*kp9
+    293 2,48 56 2*kp9
+    294 2,49 57 2*kp9
+    295 2,50 58 2*kp9
+    296 2,64 65 2*kp9
+    297 2,64 90 2*kp9
+    298 2,65 91 2*kp9
+    299 2,66 67 2*kp9
+    300 2,69 70 2*kp9
+    301 2,69 92 2*kp9
+    302 2,70 93 2*kp9
+    303 2,72 74 2*kp9
+    304 2,73 75 2*kp9
+    305 2,79 80 2*kp9
+    306 2,83 84 2*kp9
+    307 2,83 94 2*kp9
+    308 2,84 95 2*kp9
+    309 2,85 86 2*kp9
+    310 2,88 89 2*kp9
+    311 2,88 96 2*kp9
+    312 2,89 97 2*kp9
+    313 16 6,9 km11
+    314 17 6,11 km11
+    315 18 6,12 km11
+    316 24 6,20 km11
+    317 25 6,21 km11
+    318 31 6,26 2*km11
+    319 32 6,28 2*km11
+    320 38 6,34 2*km11
+    321 39 6,35 2*km11
+    322 43 6,41 2*km11
+    323 48 6,35 2*km11
+    324 49 6,45 2*km11
+    325 53 6,36 2*km11
+    326 54 6,46 2*km11
+    327 56 6,37 2*km11
+    328 57 6,47 2*km11
+    329 59 6,38 4*km11
+    330 60 6,39 2*km11
+    331 60 6,48 2*km11
+    332 61 6,49 4*km11
+    333 62 6,50 2*km11
+    334 68 6,66 2*km11
+    335 76 6,72 2*km11
+    336 77 6,73 2*km11
+    337 81 6,79 2*km11
+    338 87 6,85 2*km11
+    339 6,12 18 kp11
+    340 6,20 24 kp11
+    341 6,21 25 kp11
+    342 6,26 31 2*kp11
+    343 6,28 32 2*kp11
+    344 6,34 38 4*kp11
+    345 6,35 48 2*kp11
+    346 6,35 39 2*kp11
+    347 6,36 53 2*kp11
+    348 6,37 56 2*kp11
+    349 6,38 59 2*kp11
+    350 6,39 60 2*kp11
+    351 6,41 43 2*kp11
+    352 6,45 49 4*kp11
+    353 6,46 54 2*kp11
+    354 6,47 57 2*kp11
+    355 6,48 60 2*kp11
+    356 6,49 61 2*kp11
+    357 6,50 62 2*kp11
+    358 6,64 98 2*kp11
+    359 6,64 99 2*kp11
+    360 6,65 100 2*kp11
+    361 6,66 68 2*kp11
+    362 6,69 101 2*kp11
+    363 6,69 102 2*kp11
+    364 6,70 103 2*kp11
+    365 6,72 76 2*kp11
+    366 6,73 77 2*kp11
+    367 6,79 81 2*kp11
+    368 6,83 104 2*kp11
+    369 6,83 105 2*kp11
+    370 6,84 106 2*kp11
+    371 6,85 87 2*kp11
+    372 6,88 107 2*kp11
+    373 6,88 108 2*kp11
+    374 6,89 109 2*kp11
+    375 6,90 110 2*kp11
+    376 6,92 111 2*kp11
+    377 6,94 112 2*kp11
+    378 6,96 113 2*kp11
+    379 18 4,15 km10
+    380 24 4,22 km10
+    381 25 4,23 km10
+    382 31 4,29 2*km10
+    383 32 4,30 2*km10
+    384 38 4,36 2*km10
+    385 39 4,37 2*km10
+    386 43 4,42 2*km10
+    387 48 4,46 2*km10
+    388 49 4,47 2*km10
+    389 53 4,51 2*km10
+    390 54 4,52 2*km10
+    391 56 4,52 2*km10
+    392 57 4,55 2*km10
+    393 59 4,53 4*km10
+    394 60 4,54 2*km10
+    395 60 4,56 2*km10
+    396 61 4,57 4*km10
+    397 62 4,58 2*km10
+    398 68 4,67 2*km10
+    399 76 4,74 2*km10
+    400 77 4,75 2*km10
+    401 81 4,80 2*km10
+    402 87 4,86 2*km10
+    403 98 4,65 2*km10
+    404 99 4,90 2*km10
+    405 100 4,91 2*km10
+    406 101 4,70 2*km10
+    407 102 4,92 2*km10
+    408 103 4,93 2*km10
+    409 104 4,84 2*km10
+    410 105 4,94 2*km10
+    411 106 4,95 2*km10
+    412 107 4,89 2*km10
+    413 108 4,96 2*km10
+    414 109 4,97 2*km10
+    415 110 4,91 2*km10
+    416 111 4,93 2*km10
+    417 112 4,95 2*km10
+    418 113 4,97 2*km10
+    419 4,22 24 kp10
+    420 4,23 25 kp10
+    421 4,29 31 2*kp10
+    422 4,30 32 2*kp10
+    423 4,36 38 2*kp10
+    424 4,37 39 2*kp10
+    425 4,42 43 2*kp10
+    426 4,46 48 2*kp10
+    427 4,47 49 2*kp10
+    428 4,51 53 4*kp10
+    429 4,52 56 2*kp10
+    430 4,52 54 2*kp10
+    431 4,53 59 2*kp10
+    432 4,54 60 2*kp10
+    433 4,55 57 4*kp10
+    434 4,56 60 2*kp10
+    435 4,57 61 2*kp10
+    436 4,58 62 2*kp10
+    437 4,65 98 2*kp10
+    438 4,67 68 2*kp10
+    439 4,70 101 2*kp10
+    440 4,74 76 2*kp10
+    441 4,75 77 2*kp10
+    442 4,80 81 2*kp10
+    443 4,84 104 2*kp10
+    444 4,86 87 2*kp10
+    445 4,89 107 2*kp10
+    446 4,90 99 2*kp10
+    447 4,91 110 2*kp10
+    448 4,91 100 2*kp10
+    449 4,92 102 2*kp10
+    450 4,93 111 2*kp10
+    451 4,93 103 2*kp10
+    452 4,94 105 2*kp10
+    453 4,95 112 2*kp10
+    454 4,95 106 2*kp10
+    455 4,96 108 2*kp10
+    456 4,97 113 2*kp10
+    457 4,97 109 2*kp10
+    458 4,100 114 2*kp10
+    459 4,103 115 2*kp10
+    460 4,106 116 2*kp10
+    461 4,109 117 2*kp10
+    462 4,110 114 2*kp10
+    463 4,111 115 2*kp10
+    464 4,112 116 2*kp10
+    465 4,113 117 2*kp10
+    466 19 3,10 km13
+    467 20 3,11 km13
+    468 21 3,12 km13
+    469 22 3,14 km13
+    470 23 3,15 km13
+    471 24 3,17 km13
+    472 25 3,18 km13
+    473 33 3,27 2*km13
+    474 44 3,40 2*km13
+    475 50 3,41 2*km13
+    476 58 3,42 2*km13
+    477 62 3,43 2*km13
+    478 63 3,44 4*km13
+    479 64 3,35 2*km13
+    480 65 3,37 2*km13
+    481 66 3,41 2*km13
+    482 67 3,42 2*km13
+    483 68 3,43 2*km13
+    484 69 3,45 2*km13
+    485 70 3,47 2*km13
+    486 82 3,78 2*km13
+    487 90 3,46 2*km13
+    488 91 3,52 2*km13
+    489 92 3,47 2*km13
+    490 93 3,55 2*km13
+    491 98 3,39 2*km13
+    492 99 3,48 2*km13
+    493 100 3,56 2*km13
+    494 101 3,49 2*km13
+    495 102 3,49 2*km13
+    496 103 3,57 2*km13
+    497 110 3,54 2*km13
+    498 111 3,57 2*km13
+    499 114 3,60 2*km13
+    500 115 3,61 2*km13
+    501 3,27 33 2*kp13
+    502 3,28 118 2*kp13
+    503 3,30 119 2*kp13
+    504 3,32 120 2*kp13
+    505 3,35 64 2*kp13
+    506 3,37 65 2*kp13
+    507 3,39 98 2*kp13
+    508 3,40 44 4*kp13
+    509 3,41 50 2*kp13
+    510 3,41 66 2*kp13
+    511 3,42 58 2*kp13
+    512 3,42 67 2*kp13
+    513 3,43 62 2*kp13
+    514 3,43 68 2*kp13
+    515 3,44 63 2*kp13
+    516 3,45 69 4*kp13
+    517 3,46 90 2*kp13
+    518 3,47 92 2*kp13
+    519 3,47 70 2*kp13
+    520 3,48 99 2*kp13
+    521 3,49 102 2*kp13
+    522 3,49 101 2*kp13
+    523 3,50 121 2*kp13
+    524 3,52 91 2*kp13
+    525 3,54 110 2*kp13
+    526 3,55 93 4*kp13
+    527 3,56 100 2*kp13
+    528 3,57 103 2*kp13
+    529 3,57 111 2*kp13
+    530 3,58 122 2*kp13
+    531 3,60 114 2*kp13
+    532 3,61 115 4*kp13
+    533 3,62 123 2*kp13
+    534 3,66 121 2*kp13
+    535 3,67 122 2*kp13
+    536 3,68 123 2*kp13
+    537 3,69 124 2*kp13
+    538 3,70 125 2*kp13
+    539 3,78 82 2*kp13
+    540 3,79 126 2*kp13
+    541 3,80 127 2*kp13
+    542 3,81 128 2*kp13
+    543 3,85 129 2*kp13
+    544 71 10,130 2*km15
+    545 72 11,130 2*km15
+    546 73 12,130 2*km15
+    547 74 14,130 2*km15
+    548 75 15,130 2*km15
+    549 76 17,130 2*km15
+    550 77 18,130 2*km15
+    551 78 40,130 2*km15
+    552 79 41,130 2*km15
+    553 80 42,130 2*km15
+    554 81 43,130 2*km15
+    555 82 44,130 2*km15
+    556 83 35,130 2*km15
+    557 84 37,130 2*km15
+    558 85 41,130 2*km15
+    559 86 42,130 2*km15
+    560 87 43,130 2*km15
+    561 88 45,130 2*km15
+    562 89 47,130 2*km15
+    563 94 46,130 2*km15
+    564 95 52,130 2*km15
+    565 96 47,130 2*km15
+    566 97 55,130 2*km15
+    567 104 39,130 2*km15
+    568 105 48,130 2*km15
+    569 106 56,130 2*km15
+    570 107 49,130 2*km15
+    571 108 49,130 2*km15
+    572 109 57,130 2*km15
+    573 112 54,130 2*km15
+    574 113 57,130 2*km15
+    575 116 60,130 2*km15
+    576 117 61,130 2*km15
+    577 126 66,130 2*km15
+    578 127 67,130 2*km15
+    579 128 68,130 2*km15
+    580 129 50,130 2*km15
+    581 10,130 71 kp15
+    582 11,130 72 kp15
+    583 12,130 73 kp15
+    584 14,130 74 kp15
+    585 15,130 75 kp15
+    586 17,130 76 kp15
+    587 18,130 77 kp15
+    588 27,130 131 2*kp15
+    589 28,130 132 2*kp15
+    590 30,130 133 2*kp15
+    591 32,130 134 2*kp15
+    592 35,130 83 2*kp15
+    593 37,130 84 2*kp15
+    594 39,130 104 2*kp15
+    595 40,130 78 4*kp15
+    596 41,130 79 2*kp15
+    597 41,130 85 2*kp15
+    598 42,130 80 2*kp15
+    599 42,130 86 2*kp15
+    600 43,130 81 2*kp15
+    601 43,130 87 2*kp15
+    602 44,130 82 2*kp15
+    603 45,130 88 4*kp15
+    604 46,130 94 2*kp15
+    605 47,130 96 2*kp15
+    606 47,130 89 2*kp15
+    607 48,130 105 2*kp15
+    608 49,130 108 2*kp15
+    609 49,130 107 2*kp15
+    610 50,130 129 2*kp15
+    611 52,130 95 2*kp15
+    612 54,130 112 2*kp15
+    613 55,130 97 4*kp15
+    614 56,130 106 2*kp15
+    615 57,130 109 2*kp15
+    616 57,130 113 2*kp15
+    617 58,130 135 2*kp15
+    618 60,130 116 2*kp15
+    619 61,130 117 4*kp15
+    620 62,130 136 2*kp15
+    621 66,130 126 2*kp15
+    622 67,130 127 2*kp15
+    623 68,130 128 2*kp15
+    624 69,130 137 2*kp15
+    625 70,130 138 2*kp15
+    626 78,130 139 2*kp15
+    627 79,130 140 2*kp15
+    628 80,130 141 2*kp15
+    629 81,130 142 2*kp15
+    630 85,130 140 2*kp15
+    631 86,130 141 2*kp15
+    632 87,130 142 2*kp15
+    633 88,130 143 2*kp15
+    634 89,130 144 2*kp15
+    635 92,130 145 2*kp15
+    636 93,130 146 2*kp15
+    637 96,130 144 2*kp15
+    638 97,130 147 2*kp15
+    639 101,130 148 2*kp15
+    640 102,130 149 2*kp15
+    641 103,130 150 2*kp15
+    642 107,130 151 2*kp15
+    643 108,130 151 2*kp15
+    644 109,130 152 2*kp15
+    645 111,130 153 2*kp15
+    646 113,130 152 2*kp15
+    647 115,130 154 2*kp15
+    648 117,130 155 2*kp15
+    649 2,71 156 2*kp17
+    650 2,72 157 2*kp17
+    651 2,73 158 2*kp17
+    652 2,74 159 2*kp17
+    653 2,75 160 2*kp17
+    654 2,76 161 2*kp17
+    655 2,77 162 2*kp17
+    656 2,78 163 2*kp17
+    657 2,79 164 2*kp17
+    658 2,80 165 2*kp17
+    659 2,81 166 2*kp17
+    660 2,82 167 2*kp17
+    661 2,83 168 2*kp17
+    662 2,84 169 2*kp17
+    663 2,85 170 2*kp17
+    664 2,86 171 2*kp17
+    665 2,87 172 2*kp17
+    666 2,88 173 2*kp17
+    667 2,89 174 2*kp17
+    668 2,94 175 2*kp17
+    669 2,95 176 2*kp17
+    670 2,96 177 2*kp17
+    671 2,97 178 2*kp17
+    672 2,104 179 2*kp17
+    673 2,105 180 2*kp17
+    674 2,106 181 2*kp17
+    675 2,107 182 2*kp17
+    676 2,108 183 2*kp17
+    677 2,109 184 2*kp17
+    678 2,112 185 2*kp17
+    679 2,113 186 2*kp17
+    680 2,116 187 2*kp17
+    681 2,117 188 2*kp17
+    682 2,126 189 2*kp17
+    683 2,127 190 2*kp17
+    684 2,128 191 2*kp17
+    685 2,129 192 2*kp17
+    686 2,131 193 2*kp17
+    687 2,132 194 2*kp17
+    688 2,133 195 2*kp17
+    689 2,134 196 2*kp17
+    690 2,135 197 2*kp17
+    691 2,136 198 2*kp17
+    692 2,137 199 2*kp17
+    693 2,138 200 2*kp17
+    694 2,139 201 4*kp17
+    695 2,140 202 2*kp17
+    696 2,140 203 2*kp17
+    697 2,141 204 2*kp17
+    698 2,141 205 2*kp17
+    699 2,142 206 2*kp17
+    700 2,142 207 2*kp17
+    701 2,143 208 4*kp17
+    702 2,144 209 2*kp17
+    703 2,144 210 2*kp17
+    704 2,145 211 2*kp17
+    705 2,146 212 2*kp17
+    706 2,147 213 4*kp17
+    707 2,148 214 2*kp17
+    708 2,149 215 2*kp17
+    709 2,150 216 2*kp17
+    710 2,151 217 2*kp17
+    711 2,151 218 2*kp17
+    712 2,152 219 2*kp17
+    713 2,152 220 2*kp17
+    714 2,153 221 2*kp17
+    715 2,154 222 2*kp17
+    716 2,155 223 4*kp17
+    717 6,71 224 kp24
+    718 6,72 225 kp24
+    719 6,73 226 kp24
+    720 6,74 227 kp24
+    721 6,75 228 kp24
+    722 6,76 229 kp24
+    723 6,77 230 kp24
+    724 6,78 231 kp24
+    725 6,79 232 kp24
+    726 6,80 233 kp24
+    727 6,81 234 kp24
+    728 6,82 235 kp24
+    729 6,83 236 kp24
+    730 6,84 237 kp24
+    731 6,85 238 kp24
+    732 6,86 239 kp24
+    733 6,87 240 kp24
+    734 6,88 241 kp24
+    735 6,89 242 kp24
+    736 6,94 243 kp24
+    737 6,95 244 kp24
+    738 6,96 245 kp24
+    739 6,97 246 kp24
+    740 6,104 247 kp24
+    741 6,105 248 kp24
+    742 6,106 249 kp24
+    743 6,107 250 kp24
+    744 6,108 251 kp24
+    745 6,109 252 kp24
+    746 6,112 253 kp24
+    747 6,113 254 kp24
+    748 6,116 255 kp24
+    749 6,117 256 kp24
+    750 6,126 257 kp24
+    751 224 4,156 2*km19
+    752 225 4,157 2*km19
+    753 226 4,158 2*km19
+    754 227 4,159 2*km19
+    755 228 4,160 2*km19
+    756 229 4,161 2*km19
+    757 230 4,162 2*km19
+    758 231 4,163 2*km19
+    759 232 4,164 2*km19
+    760 233 4,165 2*km19
+    761 234 4,166 2*km19
+    762 235 4,167 2*km19
+    763 236 4,168 2*km19
+    764 237 4,169 2*km19
+    765 238 4,170 2*km19
+    766 239 4,171 2*km19
+    767 240 4,172 2*km19
+    768 241 4,173 2*km19
+    769 242 4,174 2*km19
+    770 243 4,175 2*km19
+    771 244 4,176 2*km19
+    772 245 4,177 2*km19
+    773 246 4,178 2*km19
+    774 247 4,179 2*km19
+    775 248 4,180 2*km19
+    776 249 4,181 2*km19
+    777 250 4,182 2*km19
+    778 251 4,183 2*km19
+    779 252 4,184 2*km19
+    780 253 4,185 2*km19
+    781 254 4,186 2*km19
+    782 255 4,187 2*km19
+    783 256 4,188 2*km19
+    784 257 4,189 2*km19
+    785 4,156 224 2*kp19
+    786 4,157 225 2*kp19
+    787 4,158 226 2*kp19
+    788 4,159 227 2*kp19
+    789 4,160 228 2*kp19
+    790 4,161 229 2*kp19
+    791 4,162 230 2*kp19
+    792 4,163 231 2*kp19
+    793 4,164 232 2*kp19
+    794 4,165 233 2*kp19
+    795 4,166 234 2*kp19
+    796 4,167 235 2*kp19
+    797 4,168 236 2*kp19
+    798 4,169 237 2*kp19
+    799 4,170 238 2*kp19
+    800 4,171 239 2*kp19
+    801 4,172 240 2*kp19
+    802 4,173 241 2*kp19
+    803 4,174 242 2*kp19
+    804 4,175 243 2*kp19
+    805 4,176 244 2*kp19
+    806 4,177 245 2*kp19
+    807 4,178 246 2*kp19
+    808 4,179 247 2*kp19
+    809 4,180 248 2*kp19
+    810 4,181 249 2*kp19
+    811 4,182 250 2*kp19
+    812 4,183 251 2*kp19
+    813 4,184 252 2*kp19
+    814 4,185 253 2*kp19
+    815 4,186 254 2*kp19
+    816 4,187 255 2*kp19
+    817 4,188 256 2*kp19
+    818 4,189 257 2*kp19
+    819 4,190 258 2*kp19
+    820 4,191 259 2*kp19
+    821 4,192 260 2*kp19
+    822 4,193 261 2*kp19
+    823 4,194 262 2*kp19
+    824 4,195 263 2*kp19
+    825 4,196 264 2*kp19
+    826 4,197 265 2*kp19
+    827 4,198 266 2*kp19
+    828 4,199 267 2*kp19
+    829 4,200 268 2*kp19
+    830 4,201 269 2*kp19
+    831 4,202 270 2*kp19
+    832 4,203 271 2*kp19
+    833 4,204 272 2*kp19
+    834 4,205 273 2*kp19
+    835 4,206 274 2*kp19
+    836 4,207 275 2*kp19
+    837 4,208 276 2*kp19
+    838 4,209 277 2*kp19
+    839 4,210 278 2*kp19
+    840 4,211 279 2*kp19
+    841 4,213 280 2*kp19
+    842 4,214 281 2*kp19
+    843 4,215 282 2*kp19
+    844 4,217 283 2*kp19
+    845 4,218 284 2*kp19
+    846 4,219 285 2*kp19
+    847 4,223 286 2*kp19
+    848 2,130 287 2*kp21
+    849 6,130 288 2*kp23
+    850 130 3 2*km16
+    851 288 4,287 2*km22
+    852 4,287 288 2*kp22
+    853 26 1,289 km1
+    854 27 1,290 km1
+    855 28 1,291 km1
+    856 29 1,292 km1
+    857 30 1,293 km1
+    858 31 1,294 km1
+    859 32 1,295 km1
+    860 33 1,296 km1
+    861 118 1,297 km1
+    862 119 1,298 km1
+    863 120 1,299 km1
+    864 131 1,300 km1
+    865 132 1,301 km1
+    866 133 1,302 km1
+    867 134 1,303 km1
+    868 193 1,304 km1
+    869 194 1,305 km1
+    870 195 1,306 km1
+    871 196 1,307 km1
+    872 261 1,308 km1
+    873 262 1,309 km1
+    874 263 1,310 km1
+    875 264 1,311 km1
+    876 1,289 26 2*kp1
+    877 1,290 27 2*kp1
+    878 1,291 28 2*kp1
+    879 1,292 29 2*kp1
+    880 1,293 30 2*kp1
+    881 1,294 31 2*kp1
+    882 1,295 32 2*kp1
+    883 1,296 33 2*kp1
+    884 1,297 118 2*kp1
+    885 1,298 119 2*kp1
+    886 1,299 120 2*kp1
+    887 1,300 131 2*kp1
+    888 1,301 132 2*kp1
+    889 1,302 133 2*kp1
+    890 1,303 134 2*kp1
+    891 1,304 193 2*kp1
+    892 1,305 194 2*kp1
+    893 1,306 195 2*kp1
+    894 1,307 196 2*kp1
+    895 1,308 261 2*kp1
+    896 1,309 262 2*kp1
+    897 1,310 263 2*kp1
+    898 1,311 264 2*kp1
+    899 34 26,26 2*km2
+    900 35 26,28 2*km2
+    901 36 26,29 2*km2
+    902 37 26,30 2*km2
+    903 38 26,31 2*km2
+    904 39 26,32 2*km2
+    905 40 27,27 2*km2
+    906 41 27,28 2*km2
+    907 42 27,30 2*km2
+    908 43 27,32 2*km2
+    909 44 27,33 2*km2
+    910 45 28,28 2*km2
+    911 46 28,29 2*km2
+    912 47 28,30 2*km2
+    913 48 28,31 2*km2
+    914 49 28,32 2*km2
+    915 50 28,33 2*km2
+    916 51 29,29 2*km2
+    917 52 29,30 2*km2
+    918 53 29,31 2*km2
+    919 54 29,32 2*km2
+    920 55 30,30 2*km2
+    921 56 30,31 2*km2
+    922 57 30,32 2*km2
+    923 58 30,33 2*km2
+    924 59 31,31 2*km2
+    925 60 31,32 2*km2
+    926 61 32,32 2*km2
+    927 62 32,33 2*km2
+    928 63 33,33 2*km2
+    929 64 26,118 2*km2
+    930 65 26,119 2*km2
+    931 66 27,118 2*km2
+    932 67 27,119 2*km2
+    933 68 27,120 2*km2
+    934 69 28,118 2*km2
+    935 70 28,119 2*km2
+    936 71 7,131 2*km2
+    937 72 7,132 2*km2
+    938 73 26,131 2*km2
+    939 74 7,133 2*km2
+    940 75 29,131 2*km2
+    941 76 7,134 2*km2
+    942 77 31,131 2*km2
+    943 78 27,131 2*km2
+    944 79 28,131 2*km2
+    945 80 30,131 2*km2
+    946 81 32,131 2*km2
+    947 82 33,131 2*km2
+    948 83 26,132 2*km2
+    949 84 26,133 2*km2
+    950 85 27,132 2*km2
+    951 86 27,133 2*km2
+    952 87 27,134 2*km2
+    953 88 28,132 2*km2
+    954 89 28,133 2*km2
+    955 90 29,118 2*km2
+    956 91 29,119 2*km2
+    957 92 30,118 2*km2
+    958 93 30,119 2*km2
+    959 94 29,132 2*km2
+    960 95 29,133 2*km2
+    961 96 30,132 2*km2
+    962 97 30,133 2*km2
+    963 98 26,120 2*km2
+    964 99 31,118 2*km2
+    965 100 31,119 2*km2
+    966 101 28,120 2*km2
+    967 102 32,118 2*km2
+    968 103 32,119 2*km2
+    969 104 26,134 2*km2
+    970 105 31,132 2*km2
+    971 106 31,133 2*km2
+    972 107 28,134 2*km2
+    973 108 32,132 2*km2
+    974 109 32,133 2*km2
+    975 110 29,120 2*km2
+    976 111 30,120 2*km2
+    977 112 29,134 2*km2
+    978 113 30,134 2*km2
+    979 114 31,120 2*km2
+    980 115 32,120 2*km2
+    981 116 31,134 2*km2
+    982 117 32,134 2*km2
+    983 121 33,118 2*km2
+    984 122 33,119 2*km2
+    985 123 33,120 2*km2
+    986 124 118,118 2*km2
+    987 125 118,119 2*km2
+    988 126 118,131 2*km2
+    989 127 119,131 2*km2
+    990 128 120,131 2*km2
+    991 129 33,132 2*km2
+    992 135 33,133 2*km2
+    993 136 33,134 2*km2
+    994 137 118,132 2*km2
+    995 138 119,132 2*km2
+    996 139 131,131 2*km2
+    997 140 131,132 2*km2
+    998 141 131,133 2*km2
+    999 142 131,134 2*km2
+    1000 143 132,132 2*km2
+    1001 144 132,133 2*km2
+    1002 145 118,133 2*km2
+    1003 146 119,133 2*km2
+    1004 147 133,133 2*km2
+    1005 148 120,132 2*km2
+    1006 149 118,134 2*km2
+    1007 150 119,134 2*km2
+    1008 151 132,134 2*km2
+    1009 152 133,134 2*km2
+    1010 153 120,133 2*km2
+    1011 154 120,134 2*km2
+    1012 155 134,134 2*km2
+    1013 156 7,193 2*km2
+    1014 157 7,194 2*km2
+    1015 158 26,193 2*km2
+    1016 159 7,195 2*km2
+    1017 160 29,193 2*km2
+    1018 161 7,196 2*km2
+    1019 162 31,193 2*km2
+    1020 163 27,193 2*km2
+    1021 164 28,193 2*km2
+    1022 165 30,193 2*km2
+    1023 166 32,193 2*km2
+    1024 167 33,193 2*km2
+    1025 168 26,194 2*km2
+    1026 169 26,195 2*km2
+    1027 170 27,194 2*km2
+    1028 171 27,195 2*km2
+    1029 172 27,196 2*km2
+    1030 173 28,194 2*km2
+    1031 174 28,195 2*km2
+    1032 175 29,194 2*km2
+    1033 176 29,195 2*km2
+    1034 177 30,194 2*km2
+    1035 178 30,195 2*km2
+    1036 179 26,196 2*km2
+    1037 180 31,194 2*km2
+    1038 181 31,195 2*km2
+    1039 182 28,196 2*km2
+    1040 183 32,194 2*km2
+    1041 184 32,195 2*km2
+    1042 185 29,196 2*km2
+    1043 186 30,196 2*km2
+    1044 187 31,196 2*km2
+    1045 188 32,196 2*km2
+    1046 189 118,193 2*km2
+    1047 190 119,193 2*km2
+    1048 191 120,193 2*km2
+    1049 192 33,194 2*km2
+    1050 197 33,195 2*km2
+    1051 198 33,196 2*km2
+    1052 199 118,194 2*km2
+    1053 200 119,194 2*km2
+    1054 201 131,193 2*km2
+    1055 202 131,194 2*km2
+    1056 203 132,193 2*km2
+    1057 204 131,195 2*km2
+    1058 205 133,193 2*km2
+    1059 206 131,196 2*km2
+    1060 207 134,193 2*km2
+    1061 208 132,194 2*km2
+    1062 209 132,195 2*km2
+    1063 210 133,194 2*km2
+    1064 211 118,195 2*km2
+    1065 212 119,195 2*km2
+    1066 213 133,195 2*km2
+    1067 214 120,194 2*km2
+    1068 215 118,196 2*km2
+    1069 216 119,196 2*km2
+    1070 217 132,196 2*km2
+    1071 218 134,194 2*km2
+    1072 219 134,195 2*km2
+    1073 220 133,196 2*km2
+    1074 221 120,195 2*km2
+    1075 222 120,196 2*km2
+    1076 223 134,196 2*km2
+    1077 224 7,261 2*km2
+    1078 225 7,262 2*km2
+    1079 226 26,261 2*km2
+    1080 227 7,263 2*km2
+    1081 228 29,261 2*km2
+    1082 229 7,264 2*km2
+    1083 230 31,261 2*km2
+    1084 231 27,261 2*km2
+    1085 232 28,261 2*km2
+    1086 233 30,261 2*km2
+    1087 234 32,261 2*km2
+    1088 235 33,261 2*km2
+    1089 236 26,262 2*km2
+    1090 237 26,263 2*km2
+    1091 238 27,262 2*km2
+    1092 239 27,263 2*km2
+    1093 240 27,264 2*km2
+    1094 241 28,262 2*km2
+    1095 242 28,263 2*km2
+    1096 243 29,262 2*km2
+    1097 244 29,263 2*km2
+    1098 245 30,262 2*km2
+    1099 246 30,263 2*km2
+    1100 247 26,264 2*km2
+    1101 248 31,262 2*km2
+    1102 249 31,263 2*km2
+    1103 250 28,264 2*km2
+    1104 251 32,262 2*km2
+    1105 252 32,263 2*km2
+    1106 253 29,264 2*km2
+    1107 254 30,264 2*km2
+    1108 255 31,264 2*km2
+    1109 256 32,264 2*km2
+    1110 257 118,261 2*km2
+    1111 258 119,261 2*km2
+    1112 259 120,261 2*km2
+    1113 260 33,262 2*km2
+    1114 265 33,263 2*km2
+    1115 266 33,264 2*km2
+    1116 267 118,262 2*km2
+    1117 268 119,262 2*km2
+    1118 269 131,261 2*km2
+    1119 270 131,262 2*km2
+    1120 271 132,261 2*km2
+    1121 272 131,263 2*km2
+    1122 273 133,261 2*km2
+    1123 274 131,264 2*km2
+    1124 275 134,261 2*km2
+    1125 276 132,262 2*km2
+    1126 277 132,263 2*km2
+    1127 278 133,262 2*km2
+    1128 279 118,263 2*km2
+    1129 280 133,263 2*km2
+    1130 281 120,262 2*km2
+    1131 282 118,264 2*km2
+    1132 283 132,264 2*km2
+    1133 284 134,262 2*km2
+    1134 285 134,263 2*km2
+    1135 286 134,264 2*km2
+    1136 26,118 64 2*kp2
+    1137 26,119 65 2*kp2
+    1138 26,120 98 2*kp2
+    1139 26,131 73 2*kp2
+    1140 26,132 83 2*kp2
+    1141 26,133 84 2*kp2
+    1142 26,134 104 2*kp2
+    1143 26,193 158 2*kp2
+    1144 26,194 168 2*kp2
+    1145 26,195 169 2*kp2
+    1146 26,196 179 2*kp2
+    1147 26,261 226 2*kp2
+    1148 26,262 236 2*kp2
+    1149 26,263 237 2*kp2
+    1150 26,264 247 2*kp2
+    1151 27,118 66 2*kp2
+    1152 27,119 67 2*kp2
+    1153 27,120 68 2*kp2
+    1154 27,131 78 2*kp2
+    1155 27,132 85 2*kp2
+    1156 27,133 86 2*kp2
+    1157 27,134 87 2*kp2
+    1158 27,193 163 2*kp2
+    1159 27,194 170 2*kp2
+    1160 27,195 171 2*kp2
+    1161 27,196 172 2*kp2
+    1162 27,261 231 2*kp2
+    1163 27,262 238 2*kp2
+    1164 27,263 239 2*kp2
+    1165 27,264 240 2*kp2
+    1166 28,118 69 2*kp2
+    1167 28,119 70 2*kp2
+    1168 28,120 101 2*kp2
+    1169 28,131 79 2*kp2
+    1170 28,132 88 2*kp2
+    1171 28,133 89 2*kp2
+    1172 28,134 107 2*kp2
+    1173 28,193 164 2*kp2
+    1174 28,194 173 2*kp2
+    1175 28,195 174 2*kp2
+    1176 28,196 182 2*kp2
+    1177 28,261 232 2*kp2
+    1178 28,262 241 2*kp2
+    1179 28,263 242 2*kp2
+    1180 28,264 250 2*kp2
+    1181 29,118 90 2*kp2
+    1182 29,119 91 2*kp2
+    1183 29,120 110 2*kp2
+    1184 29,131 75 2*kp2
+    1185 29,132 94 2*kp2
+    1186 29,133 95 2*kp2
+    1187 29,134 112 2*kp2
+    1188 29,193 160 2*kp2
+    1189 29,194 175 2*kp2
+    1190 29,195 176 2*kp2
+    1191 29,196 185 2*kp2
+    1192 29,261 228 2*kp2
+    1193 29,262 243 2*kp2
+    1194 29,263 244 2*kp2
+    1195 29,264 253 2*kp2
+    1196 30,118 92 2*kp2
+    1197 30,119 93 2*kp2
+    1198 30,120 111 2*kp2
+    1199 30,131 80 2*kp2
+    1200 30,132 96 2*kp2
+    1201 30,133 97 2*kp2
+    1202 30,134 113 2*kp2
+    1203 30,193 165 2*kp2
+    1204 30,194 177 2*kp2
+    1205 30,195 178 2*kp2
+    1206 30,196 186 2*kp2
+    1207 30,261 233 2*kp2
+    1208 30,262 245 2*kp2
+    1209 30,263 246 2*kp2
+    1210 30,264 254 2*kp2
+    1211 31,118 99 2*kp2
+    1212 31,119 100 2*kp2
+    1213 31,120 114 2*kp2
+    1214 31,131 77 2*kp2
+    1215 31,132 105 2*kp2
+    1216 31,133 106 2*kp2
+    1217 31,134 116 2*kp2
+    1218 31,193 162 2*kp2
+    1219 31,194 180 2*kp2
+    1220 31,195 181 2*kp2
+    1221 31,196 187 2*kp2
+    1222 31,261 230 2*kp2
+    1223 31,262 248 2*kp2
+    1224 31,263 249 2*kp2
+    1225 31,264 255 2*kp2
+    1226 32,118 102 2*kp2
+    1227 32,119 103 2*kp2
+    1228 32,120 115 2*kp2
+    1229 32,131 81 2*kp2
+    1230 32,132 108 2*kp2
+    1231 32,133 109 2*kp2
+    1232 32,134 117 2*kp2
+    1233 32,193 166 2*kp2
+    1234 32,194 183 2*kp2
+    1235 32,195 184 2*kp2
+    1236 32,196 188 2*kp2
+    1237 32,261 234 2*kp2
+    1238 32,262 251 2*kp2
+    1239 32,263 252 2*kp2
+    1240 32,264 256 2*kp2
+    1241 33,118 121 2*kp2
+    1242 33,119 122 2*kp2
+    1243 33,120 123 2*kp2
+    1244 33,131 82 2*kp2
+    1245 33,132 129 2*kp2
+    1246 33,133 135 2*kp2
+    1247 33,134 136 2*kp2
+    1248 33,193 167 2*kp2
+    1249 33,194 192 2*kp2
+    1250 33,195 197 2*kp2
+    1251 33,196 198 2*kp2
+    1252 33,261 235 2*kp2
+    1253 33,262 260 2*kp2
+    1254 33,263 265 2*kp2
+    1255 33,264 266 2*kp2
+    1256 7,118 20 kp2
+    1257 118,118 124 kp2
+    1258 118,119 125 2*kp2
+    1259 118,120 312 2*kp2
+    1260 118,131 126 2*kp2
+    1261 118,132 137 2*kp2
+    1262 118,133 145 2*kp2
+    1263 118,134 149 2*kp2
+    1264 118,193 189 2*kp2
+    1265 118,194 199 2*kp2
+    1266 118,195 211 2*kp2
+    1267 118,196 215 2*kp2
+    1268 118,261 257 2*kp2
+    1269 118,262 267 2*kp2
+    1270 118,263 279 2*kp2
+    1271 118,264 282 2*kp2
+    1272 7,119 22 kp2
+    1273 119,119 313 kp2
+    1274 119,120 314 2*kp2
+    1275 119,131 127 2*kp2
+    1276 119,132 138 2*kp2
+    1277 119,133 146 2*kp2
+    1278 119,134 150 2*kp2
+    1279 119,193 190 2*kp2
+    1280 119,194 200 2*kp2
+    1281 119,195 212 2*kp2
+    1282 119,196 216 2*kp2
+    1283 119,261 258 2*kp2
+    1284 119,262 268 2*kp2
+    1285 119,263 315 2*kp2
+    1286 119,264 316 2*kp2
+    1287 7,120 24 kp2
+    1288 120,120 317 kp2
+    1289 120,131 128 2*kp2
+    1290 120,132 148 2*kp2
+    1291 120,133 153 2*kp2
+    1292 120,134 154 2*kp2
+    1293 120,193 191 2*kp2
+    1294 120,194 214 2*kp2
+    1295 120,195 221 2*kp2
+    1296 120,196 222 2*kp2
+    1297 120,261 259 2*kp2
+    1298 120,262 281 2*kp2
+    1299 120,263 318 2*kp2
+    1300 120,264 319 2*kp2
+    1301 7,131 71 kp2
+    1302 131,131 139 kp2
+    1303 131,132 140 2*kp2
+    1304 131,133 141 2*kp2
+    1305 131,134 142 2*kp2
+    1306 131,193 201 2*kp2
+    1307 131,194 202 2*kp2
+    1308 131,195 204 2*kp2
+    1309 131,196 206 2*kp2
+    1310 131,261 269 2*kp2
+    1311 131,262 270 2*kp2
+    1312 131,263 272 2*kp2
+    1313 131,264 274 2*kp2
+    1314 7,132 72 kp2
+    1315 132,132 143 kp2
+    1316 132,133 144 2*kp2
+    1317 132,134 151 2*kp2
+    1318 132,193 203 2*kp2
+    1319 132,194 208 2*kp2
+    1320 132,195 209 2*kp2
+    1321 132,196 217 2*kp2
+    1322 132,261 271 2*kp2
+    1323 132,262 276 2*kp2
+    1324 132,263 277 2*kp2
+    1325 132,264 283 2*kp2
+    1326 7,133 74 kp2
+    1327 133,133 147 kp2
+    1328 133,134 152 2*kp2
+    1329 133,193 205 2*kp2
+    1330 133,194 210 2*kp2
+    1331 133,195 213 2*kp2
+    1332 133,196 220 2*kp2
+    1333 133,261 273 2*kp2
+    1334 133,262 278 2*kp2
+    1335 133,263 280 2*kp2
+    1336 133,264 320 2*kp2
+    1337 7,134 76 kp2
+    1338 134,134 155 kp2
+    1339 134,193 207 2*kp2
+    1340 134,194 218 2*kp2
+    1341 134,195 219 2*kp2
+    1342 134,196 223 2*kp2
+    1343 134,261 275 2*kp2
+    1344 134,262 284 2*kp2
+    1345 134,263 285 2*kp2
+    1346 134,264 286 2*kp2
+    1347 7,193 156 kp2
+    1348 193,193 321 kp2
+    1349 193,194 322 2*kp2
+    1350 193,195 323 2*kp2
+    1351 193,196 324 2*kp2
+    1352 193,261 325 2*kp2
+    1353 193,262 326 2*kp2
+    1354 193,263 327 2*kp2
+    1355 193,264 328 2*kp2
+    1356 7,194 157 kp2
+    1357 194,194 329 kp2
+    1358 194,195 330 2*kp2
+    1359 194,196 331 2*kp2
+    1360 194,261 332 2*kp2
+    1361 194,262 333 2*kp2
+    1362 194,263 334 2*kp2
+    1363 194,264 335 2*kp2
+    1364 7,195 159 kp2
+    1365 195,195 336 kp2
+    1366 195,196 337 2*kp2
+    1367 195,261 338 2*kp2
+    1368 195,262 339 2*kp2
+    1369 195,263 340 2*kp2
+    1370 195,264 341 2*kp2
+    1371 7,196 161 kp2
+    1372 196,196 342 kp2
+    1373 196,261 343 2*kp2
+    1374 196,262 344 2*kp2
+    1375 196,263 345 2*kp2
+    1376 196,264 346 2*kp2
+    1377 7,261 224 kp2
+    1378 261,261 347 kp2
+    1379 261,262 348 2*kp2
+    1380 261,263 349 2*kp2
+    1381 261,264 350 2*kp2
+    1382 7,262 225 kp2
+    1383 262,262 351 kp2
+    1384 262,263 352 2*kp2
+    1385 262,264 353 2*kp2
+    1386 7,263 227 kp2
+    1387 263,263 354 kp2
+    1388 263,264 355 2*kp2
+    1389 7,264 229 kp2
+    1390 264,264 356 kp2
+    1391 40 41 2*kp3
+    1392 41 45 kp3
+    1393 42 47 kp3
+    1394 43 49 kp3
+    1395 44 50 kp3
+    1396 44 66 kp3
+    1397 50 69 kp3
+    1398 58 92 kp3
+    1399 62 102 kp3
+    1400 63 121 2*kp3
+    1401 66 69 kp3
+    1402 67 70 kp3
+    1403 68 101 kp3
+    1404 71 72 kp3
+    1405 71 73 kp3
+    1406 72 83 kp3
+    1407 73 83 kp3
+    1408 74 84 kp3
+    1409 75 94 kp3
+    1410 76 104 kp3
+    1411 77 105 kp3
+    1412 78 79 kp3
+    1413 78 85 kp3
+    1414 79 88 kp3
+    1415 80 96 kp3
+    1416 81 108 kp3
+    1417 82 129 kp3
+    1418 82 126 kp3
+    1419 85 88 kp3
+    1420 86 89 kp3
+    1421 87 107 kp3
+    1422 121 124 kp3
+    1423 122 125 kp3
+    1424 123 312 kp3
+    1425 126 137 kp3
+    1426 127 138 kp3
+    1427 128 148 kp3
+    1428 129 137 kp3
+    1429 135 145 kp3
+    1430 136 149 kp3
+    1431 139 140 2*kp3
+    1432 140 143 kp3
+    1433 141 144 kp3
+    1434 142 151 kp3
+    1435 156 157 kp3
+    1436 156 158 kp3
+    1437 157 168 kp3
+    1438 158 168 kp3
+    1439 159 169 kp3
+    1440 160 175 kp3
+    1441 161 179 kp3
+    1442 162 180 kp3
+    1443 163 164 kp3
+    1444 163 170 kp3
+    1445 164 173 kp3
+    1446 165 177 kp3
+    1447 166 183 kp3
+    1448 167 192 kp3
+    1449 167 189 kp3
+    1450 170 173 kp3
+    1451 171 174 kp3
+    1452 172 182 kp3
+    1453 189 199 kp3
+    1454 190 200 kp3
+    1455 191 214 kp3
+    1456 192 199 kp3
+    1457 197 211 kp3
+    1458 198 215 kp3
+    1459 201 202 kp3
+    1460 201 203 kp3
+    1461 202 208 kp3
+    1462 203 208 kp3
+    1463 204 209 kp3
+    1464 205 210 kp3
+    1465 206 217 kp3
+    1466 207 218 kp3
+    1467 224 225 kp3
+    1468 224 226 kp3
+    1469 225 236 kp3
+    1470 226 236 kp3
+    1471 227 237 kp3
+    1472 228 243 kp3
+    1473 229 247 kp3
+    1474 230 248 kp3
+    1475 231 232 kp3
+    1476 231 238 kp3
+    1477 232 241 kp3
+    1478 233 245 kp3
+    1479 234 251 kp3
+    1480 235 260 kp3
+    1481 235 257 kp3
+    1482 238 241 kp3
+    1483 239 242 kp3
+    1484 240 250 kp3
+    1485 257 267 kp3
+    1486 258 268 kp3
+    1487 259 281 kp3
+    1488 260 267 kp3
+    1489 265 279 kp3
+    1490 266 282 kp3
+    1491 269 270 kp3
+    1492 269 271 kp3
+    1493 270 276 kp3
+    1494 271 276 kp3
+    1495 272 277 kp3
+    1496 273 278 kp3
+    1497 274 283 kp3
+    1498 275 284 kp3
+    1499 321 322 4*kp3
+    1500 322 329 2*kp3
+    1501 323 330 2*kp3
+    1502 324 331 2*kp3
+    1503 325 332 2*kp3
+    1504 325 326 2*kp3
+    1505 326 333 2*kp3
+    1506 327 334 2*kp3
+    1507 328 335 2*kp3
+    1508 332 333 2*kp3
+    1509 338 339 2*kp3
+    1510 343 344 2*kp3
+    1511 347 348 4*kp3
+    1512 348 351 2*kp3
+    1513 349 352 2*kp3
+    1514 350 353 2*kp3
+    1515 71 78 kp3
+    1516 72 85 kp3
+    1517 73 79 kp3
+    1518 74 86 kp3
+    1519 75 80 kp3
+    1520 76 87 kp3
+    1521 77 81 kp3
+    1522 83 88 kp3
+    1523 84 89 kp3
+    1524 90 92 kp3
+    1525 91 93 kp3
+    1526 94 96 kp3
+    1527 95 97 kp3
+    1528 98 101 kp3
+    1529 99 102 kp3
+    1530 100 103 kp3
+    1531 104 107 kp3
+    1532 105 108 kp3
+    1533 106 109 kp3
+    1534 110 111 kp3
+    1535 112 113 kp3
+    1536 114 115 kp3
+    1537 116 117 kp3
+    1538 156 163 kp3
+    1539 157 170 kp3
+    1540 158 164 kp3
+    1541 159 171 kp3
+    1542 160 165 kp3
+    1543 161 172 kp3
+    1544 162 166 kp3
+    1545 168 173 kp3
+    1546 169 174 kp3
+    1547 175 177 kp3
+    1548 176 178 kp3
+    1549 179 182 kp3
+    1550 180 183 kp3
+    1551 181 184 kp3
+    1552 185 186 kp3
+    1553 187 188 kp3
+    1554 224 231 kp3
+    1555 225 238 kp3
+    1556 226 232 kp3
+    1557 227 239 kp3
+    1558 228 233 kp3
+    1559 229 240 kp3
+    1560 230 234 kp3
+    1561 236 241 kp3
+    1562 237 242 kp3
+    1563 243 245 kp3
+    1564 244 246 kp3
+    1565 247 250 kp3
+    1566 248 251 kp3
+    1567 249 252 kp3
+    1568 253 254 kp3
+    1569 255 256 kp3
+    1570 72 71 km3
+    1571 73 71 km3
+    1572 79 78 km3
+    1573 83 73 km3
+    1574 83 72 km3
+    1575 84 74 km3
+    1576 85 78 km3
+    1577 88 79 km3
+    1578 88 85 km3
+    1579 89 86 km3
+    1580 90 23 km3
+    1581 92 58 km3
+    1582 94 75 km3
+    1583 96 80 km3
+    1584 98 24 km3
+    1585 99 25 km3
+    1586 101 68 km3
+    1587 102 62 km3
+    1588 104 76 km3
+    1589 105 77 km3
+    1590 107 87 km3
+    1591 108 81 km3
+    1592 118 33 km3
+    1593 121 63 km3
+    1594 124 121 2*km3
+    1595 125 122 km3
+    1596 126 82 km3
+    1597 129 82 km3
+    1598 132 131 km3
+    1599 137 129 km3
+    1600 137 126 km3
+    1601 138 127 km3
+    1602 140 139 km3
+    1603 143 140 2*km3
+    1604 144 141 km3
+    1605 145 135 km3
+    1606 148 128 km3
+    1607 149 136 km3
+    1608 151 142 km3
+    1609 157 156 km3
+    1610 158 156 km3
+    1611 164 163 km3
+    1612 168 158 km3
+    1613 168 157 km3
+    1614 169 159 km3
+    1615 170 163 km3
+    1616 173 164 km3
+    1617 173 170 km3
+    1618 174 171 km3
+    1619 175 160 km3
+    1620 177 165 km3
+    1621 179 161 km3
+    1622 180 162 km3
+    1623 182 172 km3
+    1624 183 166 km3
+    1625 189 167 km3
+    1626 192 167 km3
+    1627 194 193 km3
+    1628 199 192 km3
+    1629 199 189 km3
+    1630 200 190 km3
+    1631 202 201 km3
+    1632 203 201 km3
+    1633 208 203 km3
+    1634 208 202 km3
+    1635 209 204 km3
+    1636 210 205 km3
+    1637 211 197 km3
+    1638 214 191 km3
+    1639 215 198 km3
+    1640 217 206 km3
+    1641 218 207 km3
+    1642 225 224 km3
+    1643 226 224 km3
+    1644 232 231 km3
+    1645 236 226 km3
+    1646 236 225 km3
+    1647 237 227 km3
+    1648 238 231 km3
+    1649 241 232 km3
+    1650 241 238 km3
+    1651 242 239 km3
+    1652 243 228 km3
+    1653 245 233 km3
+    1654 247 229 km3
+    1655 248 230 km3
+    1656 250 240 km3
+    1657 251 234 km3
+    1658 257 235 km3
+    1659 260 235 km3
+    1660 262 261 km3
+    1661 267 260 km3
+    1662 267 257 km3
+    1663 268 258 km3
+    1664 270 269 km3
+    1665 271 269 km3
+    1666 276 271 km3
+    1667 276 270 km3
+    1668 277 272 km3
+    1669 278 273 km3
+    1670 279 265 km3
+    1671 281 259 km3
+    1672 282 266 km3
+    1673 283 274 km3
+    1674 284 275 km3
+    1675 289 5 2*km3
+    1676 291 290 2*km3
+    1677 297 296 2*km3
+    1678 301 300 2*km3
+    1679 305 304 2*km3
+    1680 309 308 2*km3
+    1681 312 123 2*km3
+    1682 322 321 2*km3
+    1683 326 325 2*km3
+    1684 329 322 4*km3
+    1685 330 323 2*km3
+    1686 331 324 2*km3
+    1687 332 325 2*km3
+    1688 333 326 2*km3
+    1689 333 332 2*km3
+    1690 334 327 2*km3
+    1691 335 328 2*km3
+    1692 339 338 2*km3
+    1693 344 343 2*km3
+    1694 348 347 2*km3
+    1695 351 348 4*km3
+    1696 352 349 2*km3
+    1697 353 350 2*km3
+    1698 78 71 km3
+    1699 79 73 km3
+    1700 80 75 km3
+    1701 81 77 km3
+    1702 85 72 km3
+    1703 86 74 km3
+    1704 87 76 km3
+    1705 88 83 km3
+    1706 89 84 km3
+    1707 92 90 km3
+    1708 93 91 km3
+    1709 96 94 km3
+    1710 97 95 km3
+    1711 101 98 km3
+    1712 102 99 km3
+    1713 103 100 km3
+    1714 107 104 km3
+    1715 108 105 km3
+    1716 109 106 km3
+    1717 111 110 km3
+    1718 113 112 km3
+    1719 115 114 km3
+    1720 117 116 km3
+    1721 163 156 km3
+    1722 164 158 km3
+    1723 165 160 km3
+    1724 166 162 km3
+    1725 170 157 km3
+    1726 171 159 km3
+    1727 172 161 km3
+    1728 173 168 km3
+    1729 174 169 km3
+    1730 177 175 km3
+    1731 178 176 km3
+    1732 182 179 km3
+    1733 183 180 km3
+    1734 184 181 km3
+    1735 186 185 km3
+    1736 188 187 km3
+    1737 231 224 km3
+    1738 232 226 km3
+    1739 233 228 km3
+    1740 234 230 km3
+    1741 238 225 km3
+    1742 239 227 km3
+    1743 240 229 km3
+    1744 241 236 km3
+    1745 242 237 km3
+    1746 245 243 km3
+    1747 246 244 km3
+    1748 250 247 km3
+    1749 251 248 km3
+    1750 252 249 km3
+    1751 254 253 km3
+    1752 256 255 km3
+    1753 290 5 2*km3
+    1754 291 289 2*km3
+    1755 293 292 2*km3
+    1756 295 294 2*km3
+    1757 82 139 kp14
+    1758 90 94 kp14
+    1759 91 95 kp14
+    1760 92 96 kp14
+    1761 93 97 kp14
+    1762 98 104 kp14
+    1763 99 105 kp14
+    1764 100 106 kp14
+    1765 101 107 kp14
+    1766 102 108 kp14
+    1767 103 109 kp14
+    1768 110 112 kp14
+    1769 111 113 kp14
+    1770 114 116 kp14
+    1771 115 117 kp14
+    1772 121 129 kp14
+    1773 121 126 kp14
+    1774 122 135 kp14
+    1775 122 127 kp14
+    1776 123 136 kp14
+    1777 123 128 kp14
+    1778 124 137 2*kp14
+    1779 125 145 kp14
+    1780 125 138 kp14
+    1781 126 140 kp14
+    1782 127 141 kp14
+    1783 128 142 kp14
+    1784 129 140 kp14
+    1785 135 141 kp14
+    1786 136 142 kp14
+    1787 137 143 kp14
+    1788 138 144 kp14
+    1789 145 144 kp14
+    1790 146 147 kp14
+    1791 148 151 kp14
+    1792 149 151 kp14
+    1793 150 152 kp14
+    1794 153 152 kp14
+    1795 154 155 kp14
+    1796 167 201 kp14
+    1797 189 203 kp14
+    1798 190 205 kp14
+    1799 191 207 kp14
+    1800 192 202 kp14
+    1801 197 204 kp14
+    1802 198 206 kp14
+    1803 199 208 kp14
+    1804 200 210 kp14
+    1805 211 209 kp14
+    1806 212 213 kp14
+    1807 214 218 kp14
+    1808 215 217 kp14
+    1809 216 220 kp14
+    1810 221 219 kp14
+    1811 222 223 kp14
+    1812 235 269 kp14
+    1813 257 271 kp14
+    1814 258 273 kp14
+    1815 259 275 kp14
+    1816 260 270 kp14
+    1817 265 272 kp14
+    1818 266 274 kp14
+    1819 267 276 kp14
+    1820 268 278 kp14
+    1821 279 277 kp14
+    1822 281 284 kp14
+    1823 282 283 kp14
+    1824 312 148 2*kp14
+    1825 312 149 2*kp14
+    1826 313 146 4*kp14
+    1827 314 153 2*kp14
+    1828 314 150 2*kp14
+    1829 315 280 2*kp14
+    1830 316 320 2*kp14
+    1831 317 154 4*kp14
+    1832 318 285 2*kp14
+    1833 319 286 2*kp14
+    1834 94 90 km14
+    1835 95 91 km14
+    1836 96 92 km14
+    1837 97 93 km14
+    1838 104 98 km14
+    1839 105 99 km14
+    1840 106 100 km14
+    1841 107 101 km14
+    1842 108 102 km14
+    1843 109 103 km14
+    1844 112 110 km14
+    1845 113 111 km14
+    1846 116 114 km14
+    1847 117 115 km14
+    1848 126 121 km14
+    1849 127 122 km14
+    1850 128 123 km14
+    1851 129 121 km14
+    1852 131 33 km14
+    1853 132 118 km14
+    1854 133 119 km14
+    1855 134 120 km14
+    1856 135 122 km14
+    1857 136 123 km14
+    1858 137 124 km14
+    1859 138 125 km14
+    1860 139 82 2*km14
+    1861 140 126 km14
+    1862 140 129 km14
+    1863 141 127 km14
+    1864 141 135 km14
+    1865 142 128 km14
+    1866 142 136 km14
+    1867 143 137 2*km14
+    1868 144 138 km14
+    1869 144 145 km14
+    1870 145 125 km14
+    1871 146 313 km14
+    1872 147 146 2*km14
+    1873 148 312 km14
+    1874 149 312 km14
+    1875 150 314 km14
+    1876 151 148 km14
+    1877 151 149 km14
+    1878 152 150 km14
+    1879 152 153 km14
+    1880 153 314 km14
+    1881 154 317 km14
+    1882 155 154 2*km14
+    1883 201 167 km14
+    1884 202 192 km14
+    1885 203 189 km14
+    1886 204 197 km14
+    1887 205 190 km14
+    1888 206 198 km14
+    1889 207 191 km14
+    1890 208 199 km14
+    1891 209 211 km14
+    1892 210 200 km14
+    1893 213 212 km14
+    1894 217 215 km14
+    1895 218 214 km14
+    1896 219 221 km14
+    1897 220 216 km14
+    1898 223 222 km14
+    1899 269 235 km14
+    1900 270 260 km14
+    1901 271 257 km14
+    1902 272 265 km14
+    1903 273 258 km14
+    1904 274 266 km14
+    1905 275 259 km14
+    1906 276 267 km14
+    1907 277 279 km14
+    1908 278 268 km14
+    1909 280 315 km14
+    1910 283 282 km14
+    1911 284 281 km14
+    1912 285 318 km14
+    1913 286 319 km14
+    1914 300 296 2*km14
+    1915 301 297 2*km14
+    1916 302 298 2*km14
+    1917 303 299 2*km14
+    1918 320 316 2*km14
+    1919 90 2,64 km9
+    1920 91 2,90 km9
+    1921 91 2,65 km9
+    1922 92 2,69 km9
+    1923 93 2,92 km9
+    1924 93 2,70 km9
+    1925 94 2,83 km9
+    1926 95 2,94 km9
+    1927 95 2,84 km9
+    1928 96 2,88 km9
+    1929 97 2,96 km9
+    1930 97 2,89 km9
+    1931 100 2,99 km9
+    1932 103 2,102 km9
+    1933 106 2,105 km9
+    1934 109 2,108 km9
+    1935 110 2,98 km9
+    1936 111 2,101 km9
+    1937 112 2,104 km9
+    1938 113 2,107 km9
+    1939 119 2,118 km9
+    1940 122 2,121 km9
+    1941 125 2,124 km9
+    1942 127 2,126 km9
+    1943 133 2,132 km9
+    1944 135 2,129 km9
+    1945 138 2,137 km9
+    1946 141 2,140 km9
+    1947 144 2,143 km9
+    1948 145 2,137 km9
+    1949 146 2,145 km9
+    1950 146 2,138 km9
+    1951 147 2,144 2*km9
+    1952 150 2,149 km9
+    1953 152 2,151 km9
+    1954 153 2,148 km9
+    1955 159 2,157 km9
+    1956 160 2,158 km9
+    1957 165 2,164 km9
+    1958 169 2,168 km9
+    1959 171 2,170 km9
+    1960 174 2,173 km9
+    1961 175 2,168 km9
+    1962 176 2,169 km9
+    1963 177 2,173 km9
+    1964 178 2,174 km9
+    1965 185 2,179 km9
+    1966 186 2,182 km9
+    1967 190 2,189 km9
+    1968 195 2,194 km9
+    1969 197 2,192 km9
+    1970 200 2,199 km9
+    1971 204 2,202 km9
+    1972 205 2,203 km9
+    1973 209 2,208 km9
+    1974 210 2,208 km9
+    1975 211 2,199 km9
+    1976 212 2,211 km9
+    1977 212 2,200 km9
+    1978 213 2,209 km9
+    1979 216 2,215 km9
+    1980 220 2,217 km9
+    1981 221 2,214 km9
+    1982 227 2,225 km9
+    1983 228 2,226 km9
+    1984 233 2,232 km9
+    1985 237 2,236 km9
+    1986 239 2,238 km9
+    1987 242 2,241 km9
+    1988 243 2,236 km9
+    1989 244 2,237 km9
+    1990 245 2,241 km9
+    1991 246 2,242 km9
+    1992 253 2,247 km9
+    1993 254 2,250 km9
+    1994 258 2,257 km9
+    1995 263 2,262 km9
+    1996 265 2,260 km9
+    1997 268 2,267 km9
+    1998 272 2,270 km9
+    1999 273 2,271 km9
+    2000 277 2,276 km9
+    2001 278 2,276 km9
+    2002 279 2,267 km9
+    2003 280 2,277 km9
+    2004 292 2,289 2*km9
+    2005 293 2,291 2*km9
+    2006 298 2,297 2*km9
+    2007 302 2,301 2*km9
+    2008 306 2,305 2*km9
+    2009 310 2,309 2*km9
+    2010 313 2,125 4*km9
+    2011 314 2,312 2*km9
+    2012 315 2,279 2*km9
+    2013 315 2,268 2*km9
+    2014 316 2,282 2*km9
+    2015 318 2,281 2*km9
+    2016 320 2,283 2*km9
+    2017 323 2,322 2*km9
+    2018 327 2,326 2*km9
+    2019 330 2,329 2*km9
+    2020 334 2,333 2*km9
+    2021 336 2,330 2*km9
+    2022 340 2,339 2*km9
+    2023 345 2,344 2*km9
+    2024 349 2,348 2*km9
+    2025 352 2,351 2*km9
+    2026 354 2,352 2*km9
+    2027 2,90 91 kp9
+    2028 2,92 93 kp9
+    2029 2,94 95 kp9
+    2030 2,96 97 kp9
+    2031 2,98 110 kp9
+    2032 2,99 100 kp9
+    2033 2,101 111 kp9
+    2034 2,102 103 kp9
+    2035 2,104 112 kp9
+    2036 2,105 106 kp9
+    2037 2,107 113 kp9
+    2038 2,108 109 kp9
+    2039 2,118 119 kp9
+    2040 2,121 122 kp9
+    2041 2,124 125 2*kp9
+    2042 2,125 313 kp9
+    2043 2,126 127 kp9
+    2044 2,129 135 kp9
+    2045 2,132 133 kp9
+    2046 2,137 138 kp9
+    2047 2,137 145 kp9
+    2048 2,138 146 kp9
+    2049 2,140 141 kp9
+    2050 2,143 144 2*kp9
+    2051 2,144 147 kp9
+    2052 2,145 146 kp9
+    2053 2,148 153 kp9
+    2054 2,149 150 kp9
+    2055 2,151 152 kp9
+    2056 2,157 159 kp9
+    2057 2,158 160 kp9
+    2058 2,164 165 kp9
+    2059 2,168 169 kp9
+    2060 2,168 175 kp9
+    2061 2,169 176 kp9
+    2062 2,170 171 kp9
+    2063 2,173 174 kp9
+    2064 2,173 177 kp9
+    2065 2,174 178 kp9
+    2066 2,175 176 kp9
+    2067 2,177 178 kp9
+    2068 2,179 185 kp9
+    2069 2,180 181 kp9
+    2070 2,182 186 kp9
+    2071 2,183 184 kp9
+    2072 2,189 190 kp9
+    2073 2,192 197 kp9
+    2074 2,194 195 kp9
+    2075 2,199 200 kp9
+    2076 2,199 211 kp9
+    2077 2,200 212 kp9
+    2078 2,202 204 kp9
+    2079 2,203 205 kp9
+    2080 2,208 209 kp9
+    2081 2,208 210 kp9
+    2082 2,209 213 kp9
+    2083 2,210 213 kp9
+    2084 2,211 212 kp9
+    2085 2,214 221 kp9
+    2086 2,215 216 kp9
+    2087 2,217 220 kp9
+    2088 2,218 219 kp9
+    2089 2,225 227 kp9
+    2090 2,226 228 kp9
+    2091 2,232 233 kp9
+    2092 2,236 237 kp9
+    2093 2,236 243 kp9
+    2094 2,237 244 kp9
+    2095 2,238 239 kp9
+    2096 2,241 242 kp9
+    2097 2,241 245 kp9
+    2098 2,242 246 kp9
+    2099 2,243 244 kp9
+    2100 2,245 246 kp9
+    2101 2,247 253 kp9
+    2102 2,248 249 kp9
+    2103 2,250 254 kp9
+    2104 2,251 252 kp9
+    2105 2,257 258 kp9
+    2106 2,260 265 kp9
+    2107 2,262 263 kp9
+    2108 2,267 268 kp9
+    2109 2,267 279 kp9
+    2110 2,268 315 kp9
+    2111 2,270 272 kp9
+    2112 2,271 273 kp9
+    2113 2,276 277 kp9
+    2114 2,276 278 kp9
+    2115 2,277 280 kp9
+    2116 2,278 280 kp9
+    2117 2,279 315 kp9
+    2118 2,281 318 kp9
+    2119 2,282 316 kp9
+    2120 2,283 320 kp9
+    2121 2,284 285 kp9
+    2122 2,289 292 2*kp9
+    2123 2,291 293 2*kp9
+    2124 2,297 298 2*kp9
+    2125 2,301 302 2*kp9
+    2126 2,305 306 2*kp9
+    2127 2,309 310 2*kp9
+    2128 2,312 314 2*kp9
+    2129 2,322 323 2*kp9
+    2130 2,326 327 2*kp9
+    2131 2,329 330 4*kp9
+    2132 2,330 336 2*kp9
+    2133 2,331 337 2*kp9
+    2134 2,332 338 2*kp9
+    2135 2,333 339 2*kp9
+    2136 2,333 334 2*kp9
+    2137 2,334 340 2*kp9
+    2138 2,335 341 2*kp9
+    2139 2,339 340 2*kp9
+    2140 2,344 345 2*kp9
+    2141 2,348 349 2*kp9
+    2142 2,351 352 4*kp9
+    2143 2,352 354 2*kp9
+    2144 2,353 355 2*kp9
+    2145 98 6,64 km11
+    2146 99 6,64 km11
+    2147 100 6,65 km11
+    2148 101 6,69 km11
+    2149 102 6,69 km11
+    2150 103 6,70 km11
+    2151 104 6,83 km11
+    2152 105 6,83 km11
+    2153 106 6,84 km11
+    2154 107 6,88 km11
+    2155 108 6,88 km11
+    2156 109 6,89 km11
+    2157 110 6,90 km11
+    2158 111 6,92 km11
+    2159 112 6,94 km11
+    2160 113 6,96 km11
+    2161 114 6,99 km11
+    2162 114 6,98 km11
+    2163 115 6,102 km11
+    2164 115 6,101 km11
+    2165 116 6,105 km11
+    2166 116 6,104 km11
+    2167 117 6,108 km11
+    2168 117 6,107 km11
+    2169 120 6,118 km11
+    2170 123 6,121 km11
+    2171 128 6,126 km11
+    2172 134 6,132 km11
+    2173 136 6,129 km11
+    2174 142 6,140 km11
+    2175 148 6,137 km11
+    2176 149 6,137 km11
+    2177 150 6,138 km11
+    2178 151 6,143 km11
+    2179 152 6,144 km11
+    2180 153 6,145 km11
+    2181 154 6,149 km11
+    2182 154 6,148 km11
+    2183 155 6,151 2*km11
+    2184 161 6,157 km11
+    2185 162 6,158 km11
+    2186 166 6,164 km11
+    2187 172 6,170 km11
+    2188 179 6,168 km11
+    2189 180 6,168 km11
+    2190 181 6,169 km11
+    2191 182 6,173 km11
+    2192 183 6,173 km11
+    2193 184 6,174 km11
+    2194 187 6,179 km11
+    2195 188 6,182 km11
+    2196 191 6,189 km11
+    2197 196 6,194 km11
+    2198 198 6,192 km11
+    2199 206 6,202 km11
+    2200 207 6,203 km11
+    2201 214 6,199 km11
+    2202 215 6,199 km11
+    2203 216 6,200 km11
+    2204 217 6,208 km11
+    2205 218 6,208 km11
+    2206 219 6,209 km11
+    2207 220 6,210 km11
+    2208 221 6,211 km11
+    2209 222 6,215 km11
+    2210 222 6,214 km11
+    2211 223 6,217 km11
+    2212 229 6,225 km11
+    2213 230 6,226 km11
+    2214 234 6,232 km11
+    2215 240 6,238 km11
+    2216 247 6,236 km11
+    2217 248 6,236 km11
+    2218 249 6,237 km11
+    2219 250 6,241 km11
+    2220 251 6,241 km11
+    2221 252 6,242 km11
+    2222 255 6,247 km11
+    2223 256 6,250 km11
+    2224 259 6,257 km11
+    2225 264 6,262 km11
+    2226 266 6,260 km11
+    2227 274 6,270 km11
+    2228 275 6,271 km11
+    2229 281 6,267 km11
+    2230 282 6,267 km11
+    2231 283 6,276 km11
+    2232 284 6,276 km11
+    2233 285 6,277 km11
+    2234 286 6,283 km11
+    2235 294 6,289 2*km11
+    2236 295 6,291 2*km11
+    2237 299 6,297 2*km11
+    2238 303 6,301 2*km11
+    2239 307 6,305 2*km11
+    2240 311 6,309 2*km11
+    2241 312 6,124 2*km11
+    2242 314 6,125 2*km11
+    2243 316 6,268 2*km11
+    2244 317 6,312 4*km11
+    2245 318 6,279 2*km11
+    2246 319 6,282 2*km11
+    2247 319 6,281 2*km11
+    2248 320 6,278 2*km11
+    2249 324 6,322 2*km11
+    2250 328 6,326 2*km11
+    2251 331 6,329 2*km11
+    2252 335 6,333 2*km11
+    2253 337 6,330 2*km11
+    2254 341 6,339 2*km11
+    2255 342 6,331 2*km11
+    2256 346 6,344 2*km11
+    2257 350 6,348 2*km11
+    2258 353 6,351 2*km11
+    2259 355 6,352 2*km11
+    2260 356 6,353 2*km11
+    2261 6,98 114 kp11
+    2262 6,99 114 kp11
+    2263 6,101 115 kp11
+    2264 6,102 115 kp11
+    2265 6,104 116 kp11
+    2266 6,105 116 kp11
+    2267 6,107 117 kp11
+    2268 6,108 117 kp11
+    2269 6,118 120 kp11
+    2270 6,121 123 kp11
+    2271 6,124 312 2*kp11
+    2272 6,125 314 kp11
+    2273 6,126 128 kp11
+    2274 6,129 136 kp11
+    2275 6,132 134 kp11
+    2276 6,137 148 kp11
+    2277 6,137 149 kp11
+    2278 6,138 150 kp11
+    2279 6,140 142 kp11
+    2280 6,143 151 2*kp11
+    2281 6,144 152 kp11
+    2282 6,145 153 kp11
+    2283 6,148 154 kp11
+    2284 6,149 154 kp11
+    2285 6,151 155 kp11
+    2286 6,157 161 kp11
+    2287 6,158 162 kp11
+    2288 6,164 166 kp11
+    2289 6,168 179 kp11
+    2290 6,168 180 kp11
+    2291 6,169 181 kp11
+    2292 6,170 172 kp11
+    2293 6,173 182 kp11
+    2294 6,173 183 kp11
+    2295 6,174 184 kp11
+    2296 6,175 185 kp11
+    2297 6,177 186 kp11
+    2298 6,179 187 kp11
+    2299 6,180 187 kp11
+    2300 6,182 188 kp11
+    2301 6,183 188 kp11
+    2302 6,189 191 kp11
+    2303 6,192 198 kp11
+    2304 6,194 196 kp11
+    2305 6,199 214 kp11
+    2306 6,199 215 kp11
+    2307 6,200 216 kp11
+    2308 6,202 206 kp11
+    2309 6,203 207 kp11
+    2310 6,208 217 kp11
+    2311 6,208 218 kp11
+    2312 6,209 219 kp11
+    2313 6,210 220 kp11
+    2314 6,211 221 kp11
+    2315 6,214 222 kp11
+    2316 6,215 222 kp11
+    2317 6,217 223 kp11
+    2318 6,218 223 kp11
+    2319 6,225 229 kp11
+    2320 6,226 230 kp11
+    2321 6,232 234 kp11
+    2322 6,236 247 kp11
+    2323 6,236 248 kp11
+    2324 6,237 249 kp11
+    2325 6,238 240 kp11
+    2326 6,241 250 kp11
+    2327 6,241 251 kp11
+    2328 6,242 252 kp11
+    2329 6,243 253 kp11
+    2330 6,245 254 kp11
+    2331 6,247 255 kp11
+    2332 6,248 255 kp11
+    2333 6,250 256 kp11
+    2334 6,251 256 kp11
+    2335 6,257 259 kp11
+    2336 6,260 266 kp11
+    2337 6,262 264 kp11
+    2338 6,267 281 kp11
+    2339 6,267 282 kp11
+    2340 6,268 316 kp11
+    2341 6,270 274 kp11
+    2342 6,271 275 kp11
+    2343 6,276 283 kp11
+    2344 6,276 284 kp11
+    2345 6,277 285 kp11
+    2346 6,278 320 kp11
+    2347 6,279 318 kp11
+    2348 6,281 319 kp11
+    2349 6,282 319 kp11
+    2350 6,283 286 kp11
+    2351 6,284 286 kp11
+    2352 6,289 294 2*kp11
+    2353 6,291 295 2*kp11
+    2354 6,297 299 2*kp11
+    2355 6,301 303 2*kp11
+    2356 6,305 307 2*kp11
+    2357 6,309 311 2*kp11
+    2358 6,312 317 2*kp11
+    2359 6,322 324 2*kp11
+    2360 6,326 328 2*kp11
+    2361 6,329 331 4*kp11
+    2362 6,330 337 2*kp11
+    2363 6,331 342 2*kp11
+    2364 6,332 343 2*kp11
+    2365 6,333 344 2*kp11
+    2366 6,333 335 2*kp11
+    2367 6,334 345 2*kp11
+    2368 6,335 346 2*kp11
+    2369 6,339 341 2*kp11
+    2370 6,344 346 2*kp11
+    2371 6,348 350 2*kp11
+    2372 6,351 353 4*kp11
+    2373 6,352 355 2*kp11
+    2374 6,353 356 2*kp11
+    2375 114 4,100 km10
+    2376 114 4,110 km10
+    2377 115 4,103 km10
+    2378 115 4,111 km10
+    2379 116 4,106 km10
+    2380 116 4,112 km10
+    2381 117 4,109 km10
+    2382 117 4,113 km10
+    2383 120 4,119 km10
+    2384 123 4,122 km10
+    2385 128 4,127 km10
+    2386 134 4,133 km10
+    2387 136 4,135 km10
+    2388 142 4,141 km10
+    2389 148 4,138 km10
+    2390 149 4,145 km10
+    2391 150 4,146 km10
+    2392 151 4,144 km10
+    2393 152 4,147 km10
+    2394 153 4,146 km10
+    2395 154 4,150 km10
+    2396 154 4,153 km10
+    2397 155 4,152 2*km10
+    2398 161 4,159 km10
+    2399 162 4,160 km10
+    2400 166 4,165 km10
+    2401 172 4,171 km10
+    2402 179 4,169 km10
+    2403 180 4,175 km10
+    2404 181 4,176 km10
+    2405 182 4,174 km10
+    2406 183 4,177 km10
+    2407 184 4,178 km10
+    2408 187 4,185 km10
+    2409 188 4,186 km10
+    2410 191 4,190 km10
+    2411 196 4,195 km10
+    2412 198 4,197 km10
+    2413 206 4,204 km10
+    2414 207 4,205 km10
+    2415 214 4,200 km10
+    2416 215 4,211 km10
+    2417 216 4,212 km10
+    2418 217 4,209 km10
+    2419 218 4,210 km10
+    2420 219 4,213 km10
+    2421 220 4,213 km10
+    2422 221 4,212 km10
+    2423 222 4,216 km10
+    2424 222 4,221 km10
+    2425 223 4,220 km10
+    2426 229 4,227 km10
+    2427 230 4,228 km10
+    2428 234 4,233 km10
+    2429 240 4,239 km10
+    2430 247 4,237 km10
+    2431 248 4,243 km10
+    2432 249 4,244 km10
+    2433 250 4,242 km10
+    2434 251 4,245 km10
+    2435 252 4,246 km10
+    2436 255 4,253 km10
+    2437 256 4,254 km10
+    2438 259 4,258 km10
+    2439 264 4,263 km10
+    2440 266 4,265 km10
+    2441 274 4,272 km10
+    2442 275 4,273 km10
+    2443 281 4,268 km10
+    2444 282 4,279 km10
+    2445 283 4,277 km10
+    2446 284 4,278 km10
+    2447 285 4,280 km10
+    2448 286 4,320 km10
+    2449 294 4,292 2*km10
+    2450 295 4,293 2*km10
+    2451 299 4,298 2*km10
+    2452 303 4,302 2*km10
+    2453 307 4,306 2*km10
+    2454 311 4,310 2*km10
+    2455 312 4,125 2*km10
+    2456 314 4,313 2*km10
+    2457 316 4,315 2*km10
+    2458 317 4,314 4*km10
+    2459 318 4,315 2*km10
+    2460 319 4,316 2*km10
+    2461 319 4,318 2*km10
+    2462 320 4,280 2*km10
+    2463 324 4,323 2*km10
+    2464 328 4,327 2*km10
+    2465 331 4,330 2*km10
+    2466 335 4,334 2*km10
+    2467 337 4,336 2*km10
+    2468 341 4,340 2*km10
+    2469 342 4,337 3*km10
+    2470 346 4,345 2*km10
+    2471 350 4,349 2*km10
+    2472 353 4,352 2*km10
+    2473 355 4,354 2*km10
+    2474 356 4,355 2*km10
+    2475 4,119 120 kp10
+    2476 4,122 123 kp10
+    2477 4,125 312 kp10
+    2478 4,127 128 kp10
+    2479 4,133 134 kp10
+    2480 4,135 136 kp10
+    2481 4,138 148 kp10
+    2482 4,141 142 kp10
+    2483 4,144 151 kp10
+    2484 4,145 149 kp10
+    2485 4,146 153 kp10
+    2486 4,146 150 kp10
+    2487 4,147 152 2*kp10
+    2488 4,150 154 kp10
+    2489 4,152 155 kp10
+    2490 4,153 154 kp10
+    2491 4,159 161 kp10
+    2492 4,160 162 kp10
+    2493 4,165 166 kp10
+    2494 4,169 179 kp10
+    2495 4,171 172 kp10
+    2496 4,174 182 kp10
+    2497 4,175 180 kp10
+    2498 4,176 181 kp10
+    2499 4,177 183 kp10
+    2500 4,178 184 kp10
+    2501 4,185 187 kp10
+    2502 4,186 188 kp10
+    2503 4,190 191 kp10
+    2504 4,195 196 kp10
+    2505 4,197 198 kp10
+    2506 4,200 214 kp10
+    2507 4,204 206 kp10
+    2508 4,205 207 kp10
+    2509 4,209 217 kp10
+    2510 4,210 218 kp10
+    2511 4,211 215 kp10
+    2512 4,212 221 kp10
+    2513 4,212 216 kp10
+    2514 4,213 219 kp10
+    2515 4,216 222 kp10
+    2516 4,220 223 kp10
+    2517 4,221 222 kp10
+    2518 4,227 229 kp10
+    2519 4,228 230 kp10
+    2520 4,233 234 kp10
+    2521 4,237 247 kp10
+    2522 4,239 240 kp10
+    2523 4,242 250 kp10
+    2524 4,243 248 kp10
+    2525 4,244 249 kp10
+    2526 4,245 251 kp10
+    2527 4,246 252 kp10
+    2528 4,253 255 kp10
+    2529 4,254 256 kp10
+    2530 4,258 259 kp10
+    2531 4,263 264 kp10
+    2532 4,265 266 kp10
+    2533 4,268 281 kp10
+    2534 4,272 274 kp10
+    2535 4,273 275 kp10
+    2536 4,277 283 kp10
+    2537 4,278 284 kp10
+    2538 4,279 282 kp10
+    2539 4,280 285 kp10
+    2540 4,292 294 2*kp10
+    2541 4,293 295 2*kp10
+    2542 4,298 299 2*kp10
+    2543 4,302 303 2*kp10
+    2544 4,306 307 2*kp10
+    2545 4,310 311 2*kp10
+    2546 4,313 314 4*kp10
+    2547 4,314 317 2*kp10
+    2548 4,315 318 2*kp10
+    2549 4,315 316 2*kp10
+    2550 4,316 319 2*kp10
+    2551 4,318 319 2*kp10
+    2552 4,320 286 2*kp10
+    2553 4,323 324 2*kp10
+    2554 4,327 328 2*kp10
+    2555 4,330 331 2*kp10
+    2556 4,334 335 2*kp10
+    2557 4,336 337 2*kp10
+    2558 4,340 341 2*kp10
+    2559 4,345 346 2*kp10
+    2560 4,349 350 2*kp10
+    2561 4,352 353 2*kp10
+    2562 4,354 355 2*kp10
+    2563 118 3,28 km13
+    2564 119 3,30 km13
+    2565 120 3,32 km13
+    2566 121 3,50 km13
+    2567 121 3,66 km13
+    2568 122 3,58 km13
+    2569 122 3,67 km13
+    2570 123 3,62 km13
+    2571 123 3,68 km13
+    2572 124 3,69 2*km13
+    2573 125 3,92 km13
+    2574 125 3,70 km13
+    2575 126 3,79 km13
+    2576 127 3,80 km13
+    2577 128 3,81 km13
+    2578 129 3,85 km13
+    2579 135 3,86 km13
+    2580 136 3,87 km13
+    2581 137 3,88 km13
+    2582 138 3,96 km13
+    2583 145 3,89 km13
+    2584 146 3,97 km13
+    2585 148 3,108 km13
+    2586 149 3,107 km13
+    2587 150 3,113 km13
+    2588 153 3,109 km13
+    2589 154 3,117 km13
+    2590 167 3,163 km13
+    2591 189 3,164 km13
+    2592 190 3,165 km13
+    2593 191 3,166 km13
+    2594 192 3,170 km13
+    2595 197 3,171 km13
+    2596 198 3,172 km13
+    2597 199 3,173 km13
+    2598 200 3,177 km13
+    2599 211 3,174 km13
+    2600 212 3,178 km13
+    2601 214 3,183 km13
+    2602 215 3,182 km13
+    2603 216 3,186 km13
+    2604 221 3,184 km13
+    2605 222 3,188 km13
+    2606 235 3,231 km13
+    2607 257 3,232 km13
+    2608 258 3,233 km13
+    2609 259 3,234 km13
+    2610 260 3,238 km13
+    2611 265 3,239 km13
+    2612 266 3,240 km13
+    2613 267 3,241 km13
+    2614 268 3,245 km13
+    2615 279 3,242 km13
+    2616 281 3,251 km13
+    2617 282 3,250 km13
+    2618 296 3,290 2*km13
+    2619 297 3,291 2*km13
+    2620 298 3,293 2*km13
+    2621 299 3,295 2*km13
+    2622 312 3,101 2*km13
+    2623 312 3,102 2*km13
+    2624 313 3,93 4*km13
+    2625 314 3,111 2*km13
+    2626 314 3,103 2*km13
+    2627 315 3,246 2*km13
+    2628 316 3,254 2*km13
+    2629 317 3,115 4*km13
+    2630 318 3,252 2*km13
+    2631 319 3,256 2*km13
+    2632 3,86 135 kp13
+    2633 3,87 136 kp13
+    2634 3,88 137 kp13
+    2635 3,89 145 kp13
+    2636 3,92 125 kp13
+    2637 3,93 313 kp13
+    2638 3,96 138 kp13
+    2639 3,97 146 kp13
+    2640 3,101 312 kp13
+    2641 3,102 312 kp13
+    2642 3,103 314 kp13
+    2643 3,107 149 kp13
+    2644 3,108 148 kp13
+    2645 3,109 153 kp13
+    2646 3,111 314 kp13
+    2647 3,113 150 kp13
+    2648 3,115 317 kp13
+    2649 3,117 154 kp13
+    2650 3,163 167 kp13
+    2651 3,164 189 kp13
+    2652 3,165 190 kp13
+    2653 3,166 191 kp13
+    2654 3,170 192 kp13
+    2655 3,171 197 kp13
+    2656 3,172 198 kp13
+    2657 3,173 199 kp13
+    2658 3,174 211 kp13
+    2659 3,177 200 kp13
+    2660 3,178 212 kp13
+    2661 3,182 215 kp13
+    2662 3,183 214 kp13
+    2663 3,184 221 kp13
+    2664 3,186 216 kp13
+    2665 3,188 222 kp13
+    2666 3,231 235 kp13
+    2667 3,232 257 kp13
+    2668 3,233 258 kp13
+    2669 3,234 259 kp13
+    2670 3,238 260 kp13
+    2671 3,239 265 kp13
+    2672 3,240 266 kp13
+    2673 3,241 267 kp13
+    2674 3,242 279 kp13
+    2675 3,245 268 kp13
+    2676 3,246 315 kp13
+    2677 3,250 282 kp13
+    2678 3,251 281 kp13
+    2679 3,252 318 kp13
+    2680 3,254 316 kp13
+    2681 3,256 319 kp13
+    2682 3,290 296 2*kp13
+    2683 3,291 297 2*kp13
+    2684 3,293 298 2*kp13
+    2685 3,295 299 2*kp13
+    2686 131 27,130 km15
+    2687 132 28,130 km15
+    2688 133 30,130 km15
+    2689 134 32,130 km15
+    2690 135 58,130 km15
+    2691 136 62,130 km15
+    2692 137 69,130 km15
+    2693 138 70,130 km15
+    2694 139 78,130 2*km15
+    2695 140 79,130 km15
+    2696 140 85,130 km15
+    2697 141 80,130 km15
+    2698 141 86,130 km15
+    2699 142 81,130 km15
+    2700 142 87,130 km15
+    2701 143 88,130 2*km15
+    2702 144 96,130 km15
+    2703 144 89,130 km15
+    2704 145 92,130 km15
+    2705 146 93,130 km15
+    2706 147 97,130 2*km15
+    2707 148 101,130 km15
+    2708 149 102,130 km15
+    2709 150 103,130 km15
+    2710 151 108,130 km15
+    2711 151 107,130 km15
+    2712 152 113,130 km15
+    2713 152 109,130 km15
+    2714 153 111,130 km15
+    2715 154 115,130 km15
+    2716 155 117,130 2*km15
+    2717 201 130,163 km15
+    2718 202 130,170 km15
+    2719 203 130,164 km15
+    2720 204 130,171 km15
+    2721 205 130,165 km15
+    2722 206 130,172 km15
+    2723 207 130,166 km15
+    2724 208 130,173 km15
+    2725 209 130,174 km15
+    2726 210 130,177 km15
+    2727 213 130,178 km15
+    2728 217 130,182 km15
+    2729 218 130,183 km15
+    2730 219 130,184 km15
+    2731 220 130,186 km15
+    2732 223 130,188 km15
+    2733 269 130,231 km15
+    2734 270 130,238 km15
+    2735 271 130,232 km15
+    2736 272 130,239 km15
+    2737 273 130,233 km15
+    2738 274 130,240 km15
+    2739 275 130,234 km15
+    2740 276 130,241 km15
+    2741 277 130,242 km15
+    2742 278 130,245 km15
+    2743 280 130,246 km15
+    2744 283 130,250 km15
+    2745 284 130,251 km15
+    2746 285 130,252 km15
+    2747 286 130,256 km15
+    2748 300 130,290 2*km15
+    2749 301 130,291 2*km15
+    2750 302 130,293 2*km15
+    2751 303 130,295 2*km15
+    2752 320 130,254 2*km15
+    2753 130,163 201 kp15
+    2754 130,164 203 kp15
+    2755 130,165 205 kp15
+    2756 130,166 207 kp15
+    2757 130,170 202 kp15
+    2758 130,171 204 kp15
+    2759 130,172 206 kp15
+    2760 130,173 208 kp15
+    2761 130,174 209 kp15
+    2762 130,177 210 kp15
+    2763 130,178 213 kp15
+    2764 130,182 217 kp15
+    2765 130,183 218 kp15
+    2766 130,184 219 kp15
+    2767 130,186 220 kp15
+    2768 130,188 223 kp15
+    2769 130,231 269 kp15
+    2770 130,232 271 kp15
+    2771 130,233 273 kp15
+    2772 130,234 275 kp15
+    2773 130,238 270 kp15
+    2774 130,239 272 kp15
+    2775 130,240 274 kp15
+    2776 130,241 276 kp15
+    2777 130,242 277 kp15
+    2778 130,245 278 kp15
+    2779 130,246 280 kp15
+    2780 130,250 283 kp15
+    2781 130,251 284 kp15
+    2782 130,252 285 kp15
+    2783 130,254 320 kp15
+    2784 130,256 286 kp15
+    2785 130,290 300 2*kp15
+    2786 130,291 301 2*kp15
+    2787 130,293 302 2*kp15
+    2788 130,295 303 2*kp15
+    2789 156 10,287 km18
+    2790 157 11,287 km18
+    2791 158 12,287 km18
+    2792 159 14,287 km18
+    2793 160 15,287 km18
+    2794 161 17,287 km18
+    2795 162 18,287 km18
+    2796 163 40,287 km18
+    2797 164 41,287 km18
+    2798 165 42,287 km18
+    2799 166 43,287 km18
+    2800 167 44,287 km18
+    2801 168 35,287 km18
+    2802 169 37,287 km18
+    2803 170 41,287 km18
+    2804 171 42,287 km18
+    2805 172 43,287 km18
+    2806 173 45,287 km18
+    2807 174 47,287 km18
+    2808 175 46,287 km18
+    2809 176 52,287 km18
+    2810 177 47,287 km18
+    2811 178 55,287 km18
+    2812 179 39,287 km18
+    2813 180 48,287 km18
+    2814 181 56,287 km18
+    2815 182 49,287 km18
+    2816 183 49,287 km18
+    2817 184 57,287 km18
+    2818 185 54,287 km18
+    2819 186 57,287 km18
+    2820 187 60,287 km18
+    2821 188 61,287 km18
+    2822 189 66,287 km18
+    2823 190 67,287 km18
+    2824 191 68,287 km18
+    2825 192 50,287 km18
+    2826 193 27,287 km18
+    2827 194 28,287 km18
+    2828 195 30,287 km18
+    2829 196 32,287 km18
+    2830 197 58,287 km18
+    2831 198 62,287 km18
+    2832 199 69,287 km18
+    2833 200 70,287 km18
+    2834 201 78,287 km18
+    2835 202 79,287 km18
+    2836 203 85,287 km18
+    2837 204 80,287 km18
+    2838 205 86,287 km18
+    2839 206 81,287 km18
+    2840 207 87,287 km18
+    2841 208 88,287 km18
+    2842 209 96,287 km18
+    2843 210 89,287 km18
+    2844 211 92,287 km18
+    2845 213 97,287 km18
+    2846 214 101,287 km18
+    2847 215 102,287 km18
+    2848 217 108,287 km18
+    2849 218 107,287 km18
+    2850 219 113,287 km18
+    2851 223 117,287 km18
+    2852 304 287,290 2*km18
+    2853 305 287,291 2*km18
+    2854 306 287,293 2*km18
+    2855 307 287,295 2*km18
+    2856 321 163,287 4*km18
+    2857 322 170,287 2*km18
+    2858 322 164,287 2*km18
+    2859 323 171,287 2*km18
+    2860 324 172,287 2*km18
+    2861 325 231,287 2*km18
+    2862 326 238,287 2*km18
+    2863 327 239,287 2*km18
+    2864 328 240,287 2*km18
+    2865 329 173,287 4*km18
+    2866 330 174,287 2*km18
+    2867 331 182,287 2*km18
+    2868 332 232,287 2*km18
+    2869 333 241,287 2*km18
+    2870 334 242,287 2*km18
+    2871 335 250,287 2*km18
+    2872 336 178,287 2*km18
+    2873 337 186,287 2*km18
+    2874 338 233,287 2*km18
+    2875 339 245,287 2*km18
+    2876 340 246,287 2*km18
+    2877 341 254,287 2*km18
+    2878 342 188,287 2*km18
+    2879 343 234,287 2*km18
+    2880 344 251,287 2*km18
+    2881 345 252,287 2*km18
+    2882 346 256,287 2*km18
+    2883 27,287 193 kp18
+    2884 28,287 194 kp18
+    2885 30,287 195 kp18
+    2886 32,287 196 kp18
+    2887 35,287 168 kp18
+    2888 37,287 169 kp18
+    2889 39,287 179 kp18
+    2890 40,287 163 2*kp18
+    2891 41,287 164 kp18
+    2892 41,287 170 kp18
+    2893 42,287 165 kp18
+    2894 42,287 171 kp18
+    2895 43,287 166 kp18
+    2896 43,287 172 kp18
+    2897 44,287 167 kp18
+    2898 45,287 173 2*kp18
+    2899 46,287 175 kp18
+    2900 47,287 177 kp18
+    2901 47,287 174 kp18
+    2902 48,287 180 kp18
+    2903 49,287 183 kp18
+    2904 49,287 182 kp18
+    2905 50,287 192 kp18
+    2906 52,287 176 kp18
+    2907 54,287 185 kp18
+    2908 55,287 178 2*kp18
+    2909 56,287 181 kp18
+    2910 57,287 184 kp18
+    2911 57,287 186 kp18
+    2912 58,287 197 kp18
+    2913 60,287 187 kp18
+    2914 61,287 188 2*kp18
+    2915 62,287 198 kp18
+    2916 66,287 189 kp18
+    2917 67,287 190 kp18
+    2918 68,287 191 kp18
+    2919 69,287 199 kp18
+    2920 70,287 200 kp18
+    2921 78,287 201 kp18
+    2922 79,287 202 kp18
+    2923 80,287 204 kp18
+    2924 81,287 206 kp18
+    2925 85,287 203 kp18
+    2926 86,287 205 kp18
+    2927 87,287 207 kp18
+    2928 88,287 208 kp18
+    2929 89,287 210 kp18
+    2930 92,287 211 kp18
+    2931 93,287 212 kp18
+    2932 96,287 209 kp18
+    2933 97,287 213 kp18
+    2934 101,287 214 kp18
+    2935 102,287 215 kp18
+    2936 103,287 216 kp18
+    2937 107,287 218 kp18
+    2938 108,287 217 kp18
+    2939 109,287 220 kp18
+    2940 111,287 221 kp18
+    2941 113,287 219 kp18
+    2942 115,287 222 kp18
+    2943 117,287 223 kp18
+    2944 163,287 321 kp18
+    2945 164,287 322 kp18
+    2946 165,287 323 kp18
+    2947 166,287 324 kp18
+    2948 170,287 322 kp18
+    2949 171,287 323 kp18
+    2950 172,287 324 kp18
+    2951 173,287 329 kp18
+    2952 174,287 330 kp18
+    2953 177,287 330 kp18
+    2954 178,287 336 kp18
+    2955 182,287 331 kp18
+    2956 183,287 331 kp18
+    2957 184,287 337 kp18
+    2958 186,287 337 kp18
+    2959 188,287 342 kp18
+    2960 231,287 325 kp18
+    2961 232,287 332 kp18
+    2962 233,287 338 kp18
+    2963 234,287 343 kp18
+    2964 238,287 326 kp18
+    2965 239,287 327 kp18
+    2966 240,287 328 kp18
+    2967 241,287 333 kp18
+    2968 242,287 334 kp18
+    2969 245,287 339 kp18
+    2970 246,287 340 kp18
+    2971 250,287 335 kp18
+    2972 251,287 344 kp18
+    2973 252,287 345 kp18
+    2974 254,287 341 kp18
+    2975 256,287 346 kp18
+    2976 287,290 304 2*kp18
+    2977 287,291 305 2*kp18
+    2978 287,293 306 2*kp18
+    2979 287,295 307 2*kp18
+    2980 224 10,288 km20
+    2981 225 11,288 km20
+    2982 226 12,288 km20
+    2983 227 14,288 km20
+    2984 228 15,288 km20
+    2985 229 17,288 km20
+    2986 230 18,288 km20
+    2987 231 40,288 km20
+    2988 232 41,288 km20
+    2989 233 42,288 km20
+    2990 234 43,288 km20
+    2991 235 44,288 km20
+    2992 236 35,288 km20
+    2993 237 37,288 km20
+    2994 238 41,288 km20
+    2995 239 42,288 km20
+    2996 240 43,288 km20
+    2997 241 45,288 km20
+    2998 242 47,288 km20
+    2999 243 46,288 km20
+    3000 244 52,288 km20
+    3001 245 47,288 km20
+    3002 246 55,288 km20
+    3003 247 39,288 km20
+    3004 248 48,288 km20
+    3005 249 56,288 km20
+    3006 250 49,288 km20
+    3007 251 49,288 km20
+    3008 252 57,288 km20
+    3009 253 54,288 km20
+    3010 254 57,288 km20
+    3011 255 60,288 km20
+    3012 256 61,288 km20
+    3013 257 66,288 km20
+    3014 258 67,288 km20
+    3015 259 68,288 km20
+    3016 260 50,288 km20
+    3017 261 27,288 km20
+    3018 262 28,288 km20
+    3019 263 30,288 km20
+    3020 264 32,288 km20
+    3021 265 58,288 km20
+    3022 266 62,288 km20
+    3023 267 69,288 km20
+    3024 268 70,288 km20
+    3025 269 78,288 km20
+    3026 270 79,288 km20
+    3027 271 85,288 km20
+    3028 272 80,288 km20
+    3029 273 86,288 km20
+    3030 274 81,288 km20
+    3031 275 87,288 km20
+    3032 276 88,288 km20
+    3033 277 96,288 km20
+    3034 278 89,288 km20
+    3035 279 92,288 km20
+    3036 280 97,288 km20
+    3037 281 101,288 km20
+    3038 282 102,288 km20
+    3039 283 108,288 km20
+    3040 284 107,288 km20
+    3041 285 113,288 km20
+    3042 286 117,288 km20
+    3043 308 288,290 2*km20
+    3044 309 288,291 2*km20
+    3045 310 288,293 2*km20
+    3046 311 288,295 2*km20
+    3047 325 163,288 2*km20
+    3048 326 164,288 2*km20
+    3049 332 170,288 2*km20
+    3050 333 173,288 2*km20
+    3051 338 171,288 2*km20
+    3052 339 174,288 2*km20
+    3053 343 172,288 2*km20
+    3054 344 182,288 2*km20
+    3055 347 231,288 4*km20
+    3056 348 238,288 2*km20
+    3057 348 232,288 2*km20
+    3058 349 239,288 2*km20
+    3059 350 240,288 2*km20
+    3060 351 241,288 4*km20
+    3061 352 242,288 2*km20
+    3062 353 250,288 2*km20
+    3063 354 246,288 2*km20
+    3064 355 254,288 2*km20
+    3065 356 256,288 2*km20
+    3066 27,288 261 kp20
+    3067 28,288 262 kp20
+    3068 30,288 263 kp20
+    3069 32,288 264 kp20
+    3070 35,288 236 kp20
+    3071 37,288 237 kp20
+    3072 39,288 247 kp20
+    3073 40,288 231 2*kp20
+    3074 41,288 232 kp20
+    3075 41,288 238 kp20
+    3076 42,288 233 kp20
+    3077 42,288 239 kp20
+    3078 43,288 234 kp20
+    3079 43,288 240 kp20
+    3080 44,288 235 kp20
+    3081 45,288 241 2*kp20
+    3082 46,288 243 kp20
+    3083 47,288 245 kp20
+    3084 47,288 242 kp20
+    3085 48,288 248 kp20
+    3086 49,288 251 kp20
+    3087 49,288 250 kp20
+    3088 50,288 260 kp20
+    3089 52,288 244 kp20
+    3090 54,288 253 kp20
+    3091 55,288 246 2*kp20
+    3092 56,288 249 kp20
+    3093 57,288 252 kp20
+    3094 57,288 254 kp20
+    3095 58,288 265 kp20
+    3096 60,288 255 kp20
+    3097 61,288 256 2*kp20
+    3098 62,288 266 kp20
+    3099 66,288 257 kp20
+    3100 67,288 258 kp20
+    3101 68,288 259 kp20
+    3102 69,288 267 kp20
+    3103 70,288 268 kp20
+    3104 78,288 269 kp20
+    3105 79,288 270 kp20
+    3106 80,288 272 kp20
+    3107 81,288 274 kp20
+    3108 85,288 271 kp20
+    3109 86,288 273 kp20
+    3110 87,288 275 kp20
+    3111 88,288 276 kp20
+    3112 89,288 278 kp20
+    3113 92,288 279 kp20
+    3114 93,288 315 kp20
+    3115 96,288 277 kp20
+    3116 97,288 280 kp20
+    3117 101,288 281 kp20
+    3118 102,288 282 kp20
+    3119 103,288 316 kp20
+    3120 107,288 284 kp20
+    3121 108,288 283 kp20
+    3122 109,288 320 kp20
+    3123 111,288 318 kp20
+    3124 113,288 285 kp20
+    3125 115,288 319 kp20
+    3126 117,288 286 kp20
+    3127 163,288 325 kp20
+    3128 164,288 326 kp20
+    3129 165,288 327 kp20
+    3130 166,288 328 kp20
+    3131 170,288 332 kp20
+    3132 171,288 338 kp20
+    3133 172,288 343 kp20
+    3134 173,288 333 kp20
+    3135 174,288 339 kp20
+    3136 177,288 334 kp20
+    3137 178,288 340 kp20
+    3138 182,288 344 kp20
+    3139 183,288 335 kp20
+    3140 184,288 341 kp20
+    3141 186,288 345 kp20
+    3142 188,288 346 kp20
+    3143 231,288 347 kp20
+    3144 232,288 348 kp20
+    3145 233,288 349 kp20
+    3146 234,288 350 kp20
+    3147 238,288 348 kp20
+    3148 239,288 349 kp20
+    3149 240,288 350 kp20
+    3150 241,288 351 kp20
+    3151 242,288 352 kp20
+    3152 245,288 352 kp20
+    3153 246,288 354 kp20
+    3154 250,288 353 kp20
+    3155 251,288 353 kp20
+    3156 252,288 355 kp20
+    3157 254,288 355 kp20
+    3158 256,288 356 kp20
+    3159 288,290 308 2*kp20
+    3160 288,291 309 2*kp20
+    3161 288,293 310 2*kp20
+    3162 288,295 311 2*kp20
+    3163 156 2,71 km17
+    3164 157 2,72 km17
+    3165 158 2,73 km17
+    3166 159 2,74 km17
+    3167 160 2,75 km17
+    3168 161 2,76 km17
+    3169 162 2,77 km17
+    3170 163 2,78 km17
+    3171 164 2,79 km17
+    3172 165 2,80 km17
+    3173 166 2,81 km17
+    3174 167 2,82 km17
+    3175 168 2,83 km17
+    3176 169 2,84 km17
+    3177 170 2,85 km17
+    3178 171 2,86 km17
+    3179 172 2,87 km17
+    3180 173 2,88 km17
+    3181 174 2,89 km17
+    3182 175 2,94 km17
+    3183 176 2,95 km17
+    3184 177 2,96 km17
+    3185 178 2,97 km17
+    3186 179 2,104 km17
+    3187 180 2,105 km17
+    3188 181 2,106 km17
+    3189 182 2,107 km17
+    3190 183 2,108 km17
+    3191 184 2,109 km17
+    3192 185 2,112 km17
+    3193 186 2,113 km17
+    3194 187 2,116 km17
+    3195 188 2,117 km17
+    3196 189 2,126 km17
+    3197 190 2,127 km17
+    3198 191 2,128 km17
+    3199 192 2,129 km17
+    3200 193 2,131 km17
+    3201 194 2,132 km17
+    3202 195 2,133 km17
+    3203 196 2,134 km17
+    3204 197 2,135 km17
+    3205 198 2,136 km17
+    3206 199 2,137 km17
+    3207 200 2,138 km17
+    3208 201 2,139 km17
+    3209 202 2,140 km17
+    3210 203 2,140 km17
+    3211 204 2,141 km17
+    3212 205 2,141 km17
+    3213 206 2,142 km17
+    3214 207 2,142 km17
+    3215 208 2,143 km17
+    3216 209 2,144 km17
+    3217 210 2,144 km17
+    3218 211 2,145 km17
+    3219 213 2,147 km17
+    3220 214 2,148 km17
+    3221 215 2,149 km17
+    3222 217 2,151 km17
+    3223 218 2,151 km17
+    3224 219 2,152 km17
+    3225 223 2,155 km17
+    3226 304 2,300 2*km17
+    3227 305 2,301 2*km17
+    3228 306 2,302 2*km17
+    3229 307 2,303 2*km17
+    3230 321 2,201 4*km17
+    3231 322 2,202 2*km17
+    3232 322 2,203 2*km17
+    3233 323 2,204 2*km17
+    3234 324 2,206 2*km17
+    3235 325 2,269 2*km17
+    3236 326 2,270 2*km17
+    3237 327 2,272 2*km17
+    3238 328 2,274 2*km17
+    3239 329 2,208 4*km17
+    3240 330 2,209 2*km17
+    3241 331 2,217 2*km17
+    3242 332 2,271 2*km17
+    3243 333 2,276 2*km17
+    3244 334 2,277 2*km17
+    3245 335 2,283 2*km17
+    3246 336 2,213 2*km17
+    3247 337 2,220 2*km17
+    3248 338 2,273 2*km17
+    3249 339 2,278 2*km17
+    3250 340 2,280 2*km17
+    3251 341 2,320 2*km17
+    3252 342 2,223 2*km17
+    3253 343 2,275 2*km17
+    3254 344 2,284 2*km17
+    3255 345 2,285 2*km17
+    3256 346 2,286 2*km17
+    3257 2,201 321 kp17
+    3258 2,202 322 kp17
+    3259 2,203 322 kp17
+    3260 2,204 323 kp17
+    3261 2,205 323 kp17
+    3262 2,206 324 kp17
+    3263 2,207 324 kp17
+    3264 2,208 329 kp17
+    3265 2,209 330 kp17
+    3266 2,210 330 kp17
+    3267 2,213 336 kp17
+    3268 2,217 331 kp17
+    3269 2,218 331 kp17
+    3270 2,219 337 kp17
+    3271 2,220 337 kp17
+    3272 2,223 342 kp17
+    3273 2,269 325 kp17
+    3274 2,270 326 kp17
+    3275 2,271 332 kp17
+    3276 2,272 327 kp17
+    3277 2,273 338 kp17
+    3278 2,274 328 kp17
+    3279 2,275 343 kp17
+    3280 2,276 333 kp17
+    3281 2,277 334 kp17
+    3282 2,278 339 kp17
+    3283 2,280 340 kp17
+    3284 2,283 335 kp17
+    3285 2,284 344 kp17
+    3286 2,285 345 kp17
+    3287 2,286 346 kp17
+    3288 2,300 304 2*kp17
+    3289 2,301 305 2*kp17
+    3290 2,302 306 2*kp17
+    3291 2,303 307 2*kp17
+    3292 2,320 341 2*kp17
+    3293 224 6,71 km24
+    3294 225 6,72 km24
+    3295 226 6,73 km24
+    3296 227 6,74 km24
+    3297 228 6,75 km24
+    3298 229 6,76 km24
+    3299 230 6,77 km24
+    3300 231 6,78 km24
+    3301 232 6,79 km24
+    3302 233 6,80 km24
+    3303 234 6,81 km24
+    3304 235 6,82 km24
+    3305 236 6,83 km24
+    3306 237 6,84 km24
+    3307 238 6,85 km24
+    3308 239 6,86 km24
+    3309 240 6,87 km24
+    3310 241 6,88 km24
+    3311 242 6,89 km24
+    3312 243 6,94 km24
+    3313 244 6,95 km24
+    3314 245 6,96 km24
+    3315 246 6,97 km24
+    3316 247 6,104 km24
+    3317 248 6,105 km24
+    3318 249 6,106 km24
+    3319 250 6,107 km24
+    3320 251 6,108 km24
+    3321 252 6,109 km24
+    3322 253 6,112 km24
+    3323 254 6,113 km24
+    3324 255 6,116 km24
+    3325 256 6,117 km24
+    3326 257 6,126 km24
+    3327 258 6,127 km24
+    3328 259 6,128 km24
+    3329 260 6,129 km24
+    3330 261 6,131 km24
+    3331 262 6,132 km24
+    3332 263 6,133 km24
+    3333 264 6,134 km24
+    3334 265 6,135 km24
+    3335 266 6,136 km24
+    3336 267 6,137 km24
+    3337 268 6,138 km24
+    3338 269 6,139 km24
+    3339 270 6,140 km24
+    3340 271 6,140 km24
+    3341 272 6,141 km24
+    3342 273 6,141 km24
+    3343 274 6,142 km24
+    3344 275 6,142 km24
+    3345 276 6,143 km24
+    3346 277 6,144 km24
+    3347 278 6,144 km24
+    3348 279 6,145 km24
+    3349 280 6,147 km24
+    3350 281 6,148 km24
+    3351 282 6,149 km24
+    3352 283 6,151 km24
+    3353 284 6,151 km24
+    3354 285 6,152 km24
+    3355 286 6,155 km24
+    3356 308 6,300 2*km24
+    3357 309 6,301 2*km24
+    3358 310 6,302 2*km24
+    3359 311 6,303 2*km24
+    3360 316 6,150 km24
+    3361 318 6,153 km24
+    3362 320 6,152 km24
+    3363 325 6,201 2*km24
+    3364 326 6,203 2*km24
+    3365 328 6,207 km24
+    3366 332 6,202 2*km24
+    3367 333 6,208 2*km24
+    3368 335 6,218 km24
+    3369 338 6,204 2*km24
+    3370 339 6,209 2*km24
+    3371 341 6,219 km24
+    3372 343 6,206 2*km24
+    3373 344 6,217 2*km24
+    3374 347 6,269 4*km24
+    3375 348 6,270 2*km24
+    3376 348 6,271 2*km24
+    3377 349 6,272 2*km24
+    3378 349 6,273 km24
+    3379 350 6,274 2*km24
+    3380 351 6,276 4*km24
+    3381 352 6,277 2*km24
+    3382 352 6,278 km24
+    3383 353 6,283 2*km24
+    3384 354 6,280 2*km24
+    3385 355 6,320 2*km24
+    3386 356 6,286 2*km24
+    3387 258 4,190 km19
+    3388 259 4,191 km19
+    3389 260 4,192 km19
+    3390 261 4,193 km19
+    3391 262 4,194 km19
+    3392 263 4,195 km19
+    3393 264 4,196 km19
+    3394 265 4,197 km19
+    3395 266 4,198 km19
+    3396 267 4,199 km19
+    3397 268 4,200 km19
+    3398 269 4,201 km19
+    3399 270 4,202 km19
+    3400 271 4,203 km19
+    3401 272 4,204 km19
+    3402 273 4,205 km19
+    3403 274 4,206 km19
+    3404 275 4,207 km19
+    3405 276 4,208 km19
+    3406 277 4,209 km19
+    3407 278 4,210 km19
+    3408 279 4,211 km19
+    3409 280 4,213 km19
+    3410 281 4,214 km19
+    3411 282 4,215 km19
+    3412 283 4,217 km19
+    3413 284 4,218 km19
+    3414 285 4,219 km19
+    3415 286 4,223 km19
+    3416 308 4,304 2*km19
+    3417 309 4,305 2*km19
+    3418 310 4,306 2*km19
+    3419 311 4,307 2*km19
+    3420 325 4,321 2*km19
+    3421 326 4,322 2*km19
+    3422 332 4,322 2*km19
+    3423 333 4,329 2*km19
+    3424 338 4,323 2*km19
+    3425 339 4,330 2*km19
+    3426 343 4,324 2*km19
+    3427 344 4,331 2*km19
+    3428 347 4,325 4*km19
+    3429 348 4,326 2*km19
+    3430 348 4,332 2*km19
+    3431 349 4,327 2*km19
+    3432 350 4,328 2*km19
+    3433 351 4,333 4*km19
+    3434 352 4,334 2*km19
+    3435 353 4,335 2*km19
+    3436 354 4,340 2*km19
+    3437 355 4,341 2*km19
+    3438 356 4,346 2*km19
+    3439 4,304 308 2*kp19
+    3440 4,305 309 2*kp19
+    3441 4,306 310 2*kp19
+    3442 4,307 311 2*kp19
+    3443 4,321 325 4*kp19
+    3444 4,322 332 2*kp19
+    3445 4,322 326 2*kp19
+    3446 4,323 338 2*kp19
+    3447 4,324 343 2*kp19
+    3448 4,325 347 2*kp19
+    3449 4,326 348 2*kp19
+    3450 4,327 349 2*kp19
+    3451 4,328 350 2*kp19
+    3452 4,329 333 4*kp19
+    3453 4,330 339 2*kp19
+    3454 4,331 344 2*kp19
+    3455 4,332 348 2*kp19
+    3456 4,333 351 2*kp19
+    3457 4,334 352 2*kp19
+    3458 4,335 353 2*kp19
+    3459 4,336 340 2*kp19
+    3460 4,337 345 2*kp19
+    3461 4,338 349 2*kp19
+    3462 4,339 352 2*kp19
+    3463 4,340 354 2*kp19
+    3464 4,341 355 2*kp19
+    3465 4,342 346 2*kp19
+    3466 4,343 350 2*kp19
+    3467 4,344 353 2*kp19
+    3468 4,345 355 2*kp19
+    3469 4,346 356 2*kp19
+    3470 287 2,130 km21
+    3471 288 6,130 km23
+    3472 312 118,120 2*km2
+    3473 313 119,119 2*km2
+    3474 314 119,120 2*km2
+    3475 315 119,263 2*km2
+    3476 316 119,264 2*km2
+    3477 317 120,120 2*km2
+    3478 318 120,263 2*km2
+    3479 319 120,264 2*km2
+    3480 320 133,264 2*km2
+    3481 321 193,193 2*km2
+    3482 322 193,194 2*km2
+    3483 323 193,195 2*km2
+    3484 324 193,196 2*km2
+    3485 325 193,261 2*km2
+    3486 326 193,262 2*km2
+    3487 327 193,263 2*km2
+    3488 328 193,264 2*km2
+    3489 329 194,194 2*km2
+    3490 330 194,195 2*km2
+    3491 331 194,196 2*km2
+    3492 332 194,261 2*km2
+    3493 333 194,262 2*km2
+    3494 334 194,263 2*km2
+    3495 335 194,264 2*km2
+    3496 336 195,195 2*km2
+    3497 337 195,196 2*km2
+    3498 338 195,261 2*km2
+    3499 339 195,262 2*km2
+    3500 340 195,263 2*km2
+    3501 341 195,264 2*km2
+    3502 342 196,196 2*km2
+    3503 343 196,261 2*km2
+    3504 344 196,262 2*km2
+    3505 345 196,263 2*km2
+    3506 346 196,264 2*km2
+    3507 347 261,261 2*km2
+    3508 348 261,262 2*km2
+    3509 349 261,263 2*km2
+    3510 350 261,264 2*km2
+    3511 351 262,262 2*km2
+    3512 352 262,263 2*km2
+    3513 353 262,264 2*km2
+    3514 354 263,263 2*km2
+    3515 355 263,264 2*km2
+    3516 356 264,264 2*km2
+    3517 343 4,338 km10
+    3518 344 4,339 km10
+    3519 346 4,341 km10
+    3520 324 166,287 km18
+    3521 331 183,287 km18
+    3522 337 184,287 km18
+    3523 324 2,207 km17
+    3524 331 2,218 km17
+    3525 337 2,219 km17
+    3526 316 4,216 km19
+    3527 318 4,221 km19
+    3528 320 4,220 km19
+    3529 328 4,324 km19
+    3530 335 4,331 km19
+    3531 341 4,337 km19
+    3532 349 4,338 km19
+    3533 352 4,339 km19
 end reactions
 begin groups
-    1 Dimers 
-    2 Sos_act 
-    3 RP 
-    4 Shc_Grb 
-    5 Shc_Grb_Sos 
-    6 R_Grb2 
-    7 R_Shc 
-    8 R_ShcP 
-    9 ShcP 
-    10 R_G_S 
-    11 R_S_G_S 
-    12 Efgr_total 5,7
-    13 Shc_total 3
-    14 Sos_total 4,6
-    15 Grb2_total 2,6
+    1 Dimers 2*8,2*9,2*10,2*11,2*12,2*13,2*14,2*15,2*16,2*17,2*18,2*19,2*20,2*21,2*22,2*23,2*24,2*25,2*34,2*35,2*36,2*37,2*38,2*39,2*40,2*41,2*42,2*43,2*44,2*45,2*46,2*47,2*48,2*49,2*50,2*51,2*52,2*53,2*54,2*55,2*56,2*57,2*58,2*59,2*60,2*61,2*62,2*63,2*64,2*65,2*66,2*67,2*68,2*69,2*70,2*71,2*72,2*73,2*74,2*75,2*76,2*77,2*78,2*79,2*80,2*81,2*82,2*83,2*84,2*85,2*86,2*87,2*88,2*89,2*90,2*91,2*92,2*93,2*94,2*95,2*96,2*97,2*98,2*99,2*100,2*101,2*102,2*103,2*104,2*105,2*106,2*107,2*108,2*109,2*110,2*111,2*112,2*113,2*114,2*115,2*116,2*117,2*121,2*122,2*123,2*124,2*125,2*126,2*127,2*128,2*129,2*135,2*136,2*137,2*138,2*139,2*140,2*141,2*142,2*143,2*144,2*145,2*146,2*147,2*148,2*149,2*150,2*151,2*152,2*153,2*154,2*155,2*156,2*157,2*158,2*159,2*160,2*161,2*162,2*163,2*164,2*165,2*166,2*167,2*168,2*169,2*170,2*171,2*172,2*173,2*174,2*175,2*176,2*177,2*178,2*179,2*180,2*181,2*182,2*183,2*184,2*185,2*186,2*187,2*188,2*189,2*190,2*191,2*192,2*197,2*198,2*199,2*200,2*201,2*202,2*203,2*204,2*205,2*206,2*207,2*208,2*209,2*210,2*211,2*212,2*213,2*214,2*215,2*216,2*217,2*218,2*219,2*220,2*221,2*222,2*223,2*224,2*225,2*226,2*227,2*228,2*229,2*230,2*231,2*232,2*233,2*234,2*235,2*236,2*237,2*238,2*239,2*240,2*241,2*242,2*243,2*244,2*245,2*246,2*247,2*248,2*249,2*250,2*251,2*252,2*253,2*254,2*255,2*256,2*257,2*258,2*259,2*260,2*265,2*266,2*267,2*268,2*269,2*270,2*271,2*272,2*273,2*274,2*275,2*276,2*277,2*278,2*279,2*280,2*281,2*282,2*283,2*284,2*285,2*286,2*312,2*313,2*314,2*315,2*316,2*317,2*318,2*319,2*320,2*321,2*322,2*323,2*324,2*325,2*326,2*327,2*328,2*329,2*330,2*331,2*332,2*333,2*334,2*335,2*336,2*337,2*338,2*339,2*340,2*341,2*342,2*343,2*344,2*345,2*346,2*347,2*348,2*349,2*350,2*351,2*352,2*353,2*354,2*355,2*356
+    2 Sos_act 16,17,18,24,25,31,32,38,39,43,48,49,53,54,56,57,2*59,2*60,2*61,62,68,76,77,81,87,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,2*114,2*115,2*116,2*117,120,123,128,134,136,142,148,149,150,151,152,153,2*154,2*155,161,162,166,172,179,180,181,182,183,184,187,2*188,191,196,198,206,207,214,215,216,217,218,219,220,221,2*222,223,224,225,226,227,228,2*229,2*230,231,232,233,2*234,235,236,237,238,239,2*240,241,242,243,244,245,246,2*247,2*248,2*249,2*250,2*251,2*252,253,254,2*255,2*256,257,258,2*259,260,261,262,263,2*264,265,2*266,267,268,269,270,271,272,273,2*274,2*275,276,277,278,279,280,2*281,2*282,2*283,2*284,2*285,2*286,294,295,299,303,307,308,309,310,2*311,312,314,316,2*317,318,2*319,320,324,325,326,2*328,331,332,333,335,337,338,339,341,2*342,2*343,2*344,346,2*347,2*348,349,2*350,2*351,2*352,2*353,354,2*355,2*356
+    3 RP 9,10,2*11,2*12,13,2*14,2*15,16,2*17,2*18,19,2*20,2*21,2*22,2*23,2*24,2*25,26,27,2*28,29,2*30,31,2*32,33,2*34,3*35,2*36,3*37,2*38,3*39,2*40,3*41,3*42,3*43,2*44,4*45,3*46,4*47,3*48,4*49,3*50,2*51,3*52,2*53,3*54,4*55,3*56,4*57,3*58,2*59,3*60,4*61,3*62,2*63,3*64,3*65,3*66,3*67,3*68,4*69,4*70,71,2*72,2*73,2*74,2*75,2*76,2*77,2*78,3*79,3*80,3*81,2*82,3*83,3*84,3*85,3*86,3*87,4*88,4*89,3*90,3*91,4*92,4*93,3*94,3*95,4*96,4*97,3*98,3*99,3*100,4*101,4*102,4*103,3*104,3*105,3*106,4*107,4*108,4*109,3*110,4*111,3*112,4*113,3*114,4*115,3*116,4*117,2*118,2*119,2*120,3*121,3*122,3*123,4*124,4*125,3*126,3*127,3*128,3*129,131,2*132,2*133,2*134,3*135,3*136,4*137,4*138,2*139,3*140,3*141,3*142,4*143,4*144,4*145,4*146,4*147,4*148,4*149,4*150,4*151,4*152,4*153,4*154,4*155,156,2*157,2*158,2*159,2*160,2*161,2*162,2*163,3*164,3*165,3*166,2*167,3*168,3*169,3*170,3*171,3*172,4*173,4*174,3*175,3*176,4*177,4*178,3*179,3*180,3*181,4*182,4*183,4*184,3*185,4*186,3*187,4*188,3*189,3*190,3*191,3*192,193,2*194,2*195,2*196,3*197,3*198,4*199,4*200,2*201,3*202,3*203,3*204,3*205,3*206,3*207,4*208,4*209,4*210,4*211,4*212,4*213,4*214,4*215,4*216,4*217,4*218,4*219,4*220,4*221,4*222,4*223,224,2*225,2*226,2*227,2*228,2*229,2*230,2*231,3*232,3*233,3*234,2*235,3*236,3*237,3*238,3*239,3*240,4*241,4*242,3*243,3*244,4*245,4*246,3*247,3*248,3*249,4*250,4*251,4*252,3*253,4*254,3*255,4*256,3*257,3*258,3*259,3*260,261,2*262,2*263,2*264,3*265,3*266,4*267,4*268,2*269,3*270,3*271,3*272,3*273,3*274,3*275,4*276,4*277,4*278,4*279,4*280,4*281,4*282,4*283,4*284,4*285,4*286,289,290,2*291,292,2*293,294,2*295,296,2*297,2*298,2*299,300,2*301,2*302,2*303,304,2*305,2*306,2*307,308,2*309,2*310,2*311,4*312,4*313,4*314,4*315,4*316,4*317,4*318,4*319,4*320,2*321,3*322,3*323,3*324,2*325,3*326,3*327,3*328,4*329,4*330,4*331,3*332,4*333,4*334,4*335,4*336,4*337,3*338,4*339,4*340,4*341,4*342,3*343,4*344,4*345,4*346,2*347,3*348,3*349,3*350,4*351,4*352,4*353,4*354,4*355,4*356
+    4 Shc_Grb 156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,213,214,215,217,218,219,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,304,305,306,307,308,309,310,311,318,2*321,2*322,323,324,2*325,2*326,327,328,2*329,2*330,331,2*332,2*333,2*334,335,336,337,2*338,2*339,340,341,2*342,2*343,2*344,345,346,2*347,2*348,2*349,350,2*351,352,353,2*354,2*355,356
+    5 Shc_Grb_Sos 224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,288,308,309,310,311,316,325,326,328,332,333,338,339,343,344,2*347,2*348,349,350,2*351,352,353,354,355,356
+    6 R_Grb2 13,14,15,16,17,18,22,23,24,25,29,30,31,32,36,37,38,39,42,43,46,47,48,49,2*51,2*52,2*53,2*54,2*55,2*56,2*57,58,2*59,2*60,2*61,62,65,67,68,70,74,75,76,77,80,81,84,86,87,89,90,2*91,92,2*93,94,2*95,96,2*97,98,99,2*100,101,102,2*103,104,105,2*106,107,108,2*109,2*110,2*111,2*112,2*113,2*114,2*115,2*116,2*117,119,120,122,123,125,127,128,133,134,135,136,138,141,142,144,145,2*146,2*147,148,149,2*150,151,2*152,2*153,2*154,2*155,159,160,161,162,165,166,169,171,172,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,190,191,195,196,197,198,200,204,205,206,207,209,210,211,2*212,213,214,215,2*216,217,218,219,2*220,2*221,2*222,223,227,228,229,230,233,234,237,239,240,242,243,244,245,246,247,248,249,250,251,252,253,2*254,2*255,256,258,259,263,264,265,266,268,272,273,274,275,277,278,279,280,281,282,283,284,285,286,292,293,294,295,298,299,302,303,306,307,310,311,312,2*313,2*314,2*315,2*316,2*317,2*318,2*319,2*320,323,324,327,328,330,331,334,335,336,337,338,340,341,342,345,2*346,349,350,352,353,354,355,356
+    7 R_Shc 19,20,21,22,23,24,25,33,44,50,58,62,2*63,64,65,66,67,68,69,70,82,90,91,92,93,98,99,100,101,102,103,110,111,114,115,118,119,120,2*121,2*122,2*123,2*124,2*125,126,127,128,129,135,136,137,138,145,146,148,149,150,153,154,167,189,190,191,192,197,198,199,200,211,212,214,215,216,221,222,235,257,258,259,260,265,266,267,268,279,281,282,296,297,298,299,2*312,2*313,2*314,315,316,2*317,318,319
+    8 R_ShcP 71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,94,95,96,97,104,105,106,107,108,109,112,113,116,117,126,127,128,129,131,132,133,134,135,136,137,138,2*139,2*140,2*141,2*142,2*143,2*144,145,146,2*147,148,149,150,2*151,2*152,153,154,2*155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,2*201,2*202,2*203,2*204,2*205,2*206,2*207,2*208,2*209,2*210,211,212,2*213,214,215,216,2*217,2*218,2*219,2*220,221,222,2*223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,2*269,2*270,2*271,2*272,2*273,2*274,2*275,2*276,2*277,2*278,279,2*280,281,282,2*283,2*284,2*285,2*286,300,301,302,303,304,305,306,307,308,309,310,311,315,316,318,319,2*320,2*321,2*322,2*323,2*324,2*325,2*326,2*327,2*328,2*329,2*330,2*331,2*332,2*333,2*334,2*335,2*336,2*337,2*338,2*339,2*340,2*341,2*342,2*343,2*344,2*345,2*346,2*347,2*348,2*349,2*350,2*351,2*352,2*353,2*354,2*355,2*356
+    9 ShcP 71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,94,95,96,97,104,105,106,107,108,109,112,113,116,117,126,127,128,129,130,131,132,133,134,135,136,137,138,2*139,2*140,2*141,2*142,2*143,2*144,145,146,2*147,148,149,150,2*151,2*152,153,154,2*155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,2*201,2*202,2*203,2*204,2*205,2*206,2*207,2*208,2*209,2*210,211,212,2*213,214,215,216,2*217,2*218,2*219,2*220,221,222,2*223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,2*269,2*270,2*271,2*272,2*273,2*274,2*275,2*276,2*277,2*278,279,2*280,281,282,2*283,2*284,2*285,2*286,287,288,300,301,302,303,304,305,306,307,308,309,310,311,315,316,318,319,2*320,2*321,2*322,2*323,2*324,2*325,2*326,2*327,2*328,2*329,2*330,2*331,2*332,2*333,2*334,2*335,2*336,2*337,2*338,2*339,2*340,2*341,2*342,2*343,2*344,2*345,2*346,2*347,2*348,2*349,2*350,2*351,2*352,2*353,2*354,2*355,2*356
+    10 R_G_S 16,17,18,24,25,31,32,38,39,43,48,49,53,54,56,57,2*59,2*60,2*61,62,68,76,77,81,87,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,2*114,2*115,2*116,2*117,120,123,128,134,136,142,148,149,150,151,152,153,2*154,2*155,161,162,166,172,179,180,181,182,183,184,2*187,188,191,196,198,206,207,214,215,216,217,218,219,220,221,2*222,2*223,229,230,234,240,247,248,249,250,251,252,255,256,259,264,266,274,275,281,282,283,284,285,2*286,294,295,299,303,307,311,312,314,316,2*317,318,2*319,320,324,328,331,335,337,341,2*342,344,346,350,353,355,356
+    11 R_S_G_S 224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,308,309,310,311,325,326,332,333,338,339,343,344,2*347,2*348,2*349,350,2*351,352,353,354,355,356
+    12 Efgr_total 5,7,2*8,2*9,2*10,2*11,2*12,2*13,2*14,2*15,2*16,2*17,2*18,2*19,2*20,2*21,2*22,2*23,2*24,2*25,26,27,28,29,30,31,32,33,2*34,2*35,2*36,2*37,2*38,2*39,2*40,2*41,2*42,2*43,2*44,2*45,2*46,2*47,2*48,2*49,2*50,2*51,2*52,2*53,2*54,2*55,2*56,2*57,2*58,2*59,2*60,2*61,2*62,2*63,2*64,2*65,2*66,2*67,2*68,2*69,2*70,2*71,2*72,2*73,2*74,2*75,2*76,2*77,2*78,2*79,2*80,2*81,2*82,2*83,2*84,2*85,2*86,2*87,2*88,2*89,2*90,2*91,2*92,2*93,2*94,2*95,2*96,2*97,2*98,2*99,2*100,2*101,2*102,2*103,2*104,2*105,2*106,2*107,2*108,2*109,2*110,2*111,2*112,2*113,2*114,2*115,2*116,2*117,118,119,120,2*121,2*122,2*123,2*124,2*125,2*126,2*127,2*128,2*129,131,132,133,134,2*135,2*136,2*137,2*138,2*139,2*140,2*141,2*142,2*143,2*144,2*145,2*146,2*147,2*148,2*149,2*150,2*151,2*152,2*153,2*154,2*155,2*156,2*157,2*158,2*159,2*160,2*161,2*162,2*163,2*164,2*165,2*166,2*167,2*168,2*169,2*170,2*171,2*172,2*173,2*174,2*175,2*176,2*177,2*178,2*179,2*180,2*181,2*182,2*183,2*184,2*185,2*186,2*187,2*188,2*189,2*190,2*191,2*192,193,194,195,196,2*197,2*198,2*199,2*200,2*201,2*202,2*203,2*204,2*205,2*206,2*207,2*208,2*209,2*210,2*211,2*212,2*213,2*214,2*215,2*216,2*217,2*218,2*219,2*220,2*221,2*222,2*223,2*224,2*225,2*226,2*227,2*228,2*229,2*230,2*231,2*232,2*233,2*234,2*235,2*236,2*237,2*238,2*239,2*240,2*241,2*242,2*243,2*244,2*245,2*246,2*247,2*248,2*249,2*250,2*251,2*252,2*253,2*254,2*255,2*256,2*257,2*258,2*259,2*260,261,262,263,264,2*265,2*266,2*267,2*268,2*269,2*270,2*271,2*272,2*273,2*274,2*275,2*276,2*277,2*278,2*279,2*280,2*281,2*282,2*283,2*284,2*285,2*286,289,290,291,292,293,294,295,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,2*312,2*313,2*314,2*315,2*316,2*317,2*318,2*319,2*320,2*321,2*322,2*323,2*324,2*325,2*326,2*327,2*328,2*329,2*330,2*331,2*332,2*333,2*334,2*335,2*336,2*337,2*338,2*339,2*340,2*341,2*342,2*343,2*344,2*345,2*346,2*347,2*348,2*349,2*350,2*351,2*352,2*353,2*354,2*355,2*356
+    13 Shc_total 3,19,20,21,22,23,24,25,33,44,50,58,62,2*63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,2*82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,2*121,2*122,2*123,2*124,2*125,2*126,2*127,2*128,2*129,130,131,132,133,134,2*135,2*136,2*137,2*138,2*139,2*140,2*141,2*142,2*143,2*144,2*145,2*146,2*147,2*148,2*149,2*150,2*151,2*152,2*153,2*154,2*155,156,157,158,159,160,161,162,163,164,165,166,2*167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,2*189,2*190,2*191,2*192,193,194,195,196,2*197,2*198,2*199,2*200,2*201,2*202,2*203,2*204,2*205,2*206,2*207,2*208,2*209,2*210,2*211,2*212,2*213,2*214,2*215,2*216,2*217,2*218,2*219,2*220,2*221,2*222,2*223,224,225,226,227,228,229,230,231,232,233,234,2*235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,2*257,2*258,2*259,2*260,261,262,263,264,2*265,2*266,2*267,2*268,2*269,2*270,2*271,2*272,2*273,2*274,2*275,2*276,2*277,2*278,2*279,2*280,2*281,2*282,2*283,2*284,2*285,2*286,287,288,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,2*312,2*313,2*314,2*315,2*316,2*317,2*318,2*319,2*320,2*321,2*322,2*323,2*324,2*325,2*326,2*327,2*328,2*329,2*330,2*331,2*332,2*333,2*334,2*335,2*336,2*337,2*338,2*339,2*340,2*341,2*342,2*343,2*344,2*345,2*346,2*347,2*348,2*349,2*350,2*351,2*352,2*353,2*354,2*355,2*356
+    14 Sos_total 4,6,16,17,18,24,25,31,32,38,39,43,48,49,53,54,56,57,2*59,2*60,2*61,62,68,76,77,81,87,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,2*114,2*115,2*116,2*117,120,123,128,134,136,142,148,149,150,151,152,153,2*154,2*155,161,162,166,172,179,180,181,182,183,184,185,186,2*187,2*188,191,196,198,206,207,214,215,216,217,218,219,220,221,2*222,2*223,224,225,226,227,228,2*229,2*230,231,232,233,2*234,235,236,237,238,239,2*240,241,242,243,244,245,246,2*247,2*248,2*249,2*250,2*251,2*252,2*253,2*254,3*255,3*256,257,258,2*259,260,261,262,263,2*264,265,2*266,267,268,269,270,271,272,273,2*274,2*275,276,277,278,279,280,2*281,2*282,2*283,2*284,2*285,3*286,288,294,295,299,303,307,308,309,310,2*311,312,314,315,2*316,2*317,2*318,3*319,2*320,324,325,326,327,2*328,331,332,333,334,2*335,337,338,339,340,2*341,2*342,2*343,2*344,2*345,3*346,2*347,2*348,2*349,3*350,2*351,2*352,3*353,2*354,3*355,4*356
+    15 Grb2_total 2,6,13,14,15,16,17,18,22,23,24,25,29,30,31,32,36,37,38,39,42,43,46,47,48,49,2*51,2*52,2*53,2*54,2*55,2*56,2*57,58,2*59,2*60,2*61,62,65,67,68,70,74,75,76,77,80,81,84,86,87,89,90,2*91,92,2*93,94,2*95,96,2*97,98,99,2*100,101,102,2*103,104,105,2*106,107,108,2*109,2*110,2*111,2*112,2*113,2*114,2*115,2*116,2*117,119,120,122,123,125,127,128,133,134,135,136,138,141,142,144,145,2*146,2*147,148,149,2*150,151,2*152,2*153,2*154,2*155,156,157,158,2*159,2*160,2*161,2*162,163,164,2*165,2*166,167,168,2*169,170,2*171,2*172,173,2*174,2*175,3*176,2*177,3*178,2*179,2*180,3*181,2*182,2*183,3*184,3*185,3*186,3*187,3*188,189,2*190,2*191,192,193,194,2*195,2*196,2*197,2*198,199,2*200,201,202,203,2*204,2*205,2*206,2*207,208,2*209,2*210,2*211,3*212,3*213,2*214,2*215,3*216,2*217,2*218,3*219,3*220,3*221,3*222,3*223,224,225,226,2*227,2*228,2*229,2*230,231,232,2*233,2*234,235,236,2*237,238,2*239,2*240,241,2*242,2*243,3*244,2*245,3*246,2*247,2*248,3*249,2*250,2*251,3*252,3*253,3*254,3*255,3*256,257,2*258,2*259,260,261,262,2*263,2*264,2*265,2*266,267,2*268,269,270,271,2*272,2*273,2*274,2*275,276,2*277,2*278,2*279,3*280,2*281,2*282,2*283,2*284,3*285,3*286,287,288,292,293,294,295,298,299,302,303,304,305,2*306,2*307,308,309,2*310,2*311,312,2*313,2*314,3*315,3*316,2*317,3*318,3*319,3*320,2*321,2*322,3*323,3*324,2*325,2*326,3*327,3*328,2*329,3*330,3*331,2*332,2*333,3*334,3*335,4*336,4*337,3*338,3*339,4*340,4*341,4*342,3*343,3*344,4*345,4*346,2*347,2*348,3*349,3*350,2*351,3*352,3*353,4*354,4*355,4*356
 end groups
