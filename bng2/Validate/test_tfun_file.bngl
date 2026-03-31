@@ -19,7 +19,7 @@ end observables
 
 begin functions
     # File-based tfun with exponential growth: f(t) = 2^t
-    f_time() = tfun('test_data.tfun', time)
+    f_time() = tfun('bng2/Validate/test_data.tfun', time)
 end functions
 
 begin reaction rules

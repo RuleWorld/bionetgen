@@ -395,6 +395,13 @@ sub readSBML
         {
             # Read BNG model data        
             print "Reading from file $filename (level $level)\n";
+            # First try the output directory if this is a relative path
+            if ( !File::Spec->file_name_is_absolute($filename) ) {
+                my $outdir_filename = File::Spec->catfile( $model->getOutputDir(), $filename );
+                if ( -e $outdir_filename ) {
+                    $filename = $outdir_filename;
+                }
+            }
             unless( open FILE, '<', $filename )
             {   
                     unless (File::Spec->file_name_is_absolute( $filename )){

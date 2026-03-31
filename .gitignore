@@ -51,3 +51,9 @@ Issues/Help with pyBNG/timeDepFunction
 Issues/Help with pyBNG/Run01
 Isuses/Help with pyBNG/*.species
 Isuses/Help with pyBNG/*.xml
+bng2/Network3/CMakeFiles/
+bng2/Network3/CMakeCache.txt
+bng2/Network3/cmake_install.cmake
+.jules/
+statfactor_*.txt
+bng2/Network3/run_network
