@@ -494,6 +494,8 @@ namespace BNGcore
 		    // structors
 			PatternGraph ( );
 			PatternGraph ( const PatternGraph & source );
+			PatternGraph ( PatternGraph && source ) noexcept;
+			PatternGraph & operator= ( PatternGraph && source ) noexcept;
             PatternGraph * clone ( ) const { return new PatternGraph(*this); };
 			~PatternGraph ( );
             

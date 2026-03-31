@@ -848,21 +848,19 @@ std::size_t ReactionRule::expandRule(
     std::size_t created = 0;
 
     // =============================================
-    // Sequential Update Per Pattern (matches Perl)
+    // Two-phase: update all caches, then enumerate
     // =============================================
-    // Process patterns in reverse order (like Perl's expand_rule)
-    // For each pattern:
-    //   1. Find new embeddings for this pattern only
-    //   2. Add to cache, tracking where new items start
-    //   3. Enumerate with this pattern as trigger
-    //   4. Move to next pattern
-    // This avoids double-counting (new, new) combinations.
+    // Phase 1: Find new embeddings for ALL patterns and update caches.
+    // Phase 2: For each pattern with new matches, enumerate combinations
+    //          with that pattern as trigger.
 
+    std::vector<std::size_t> firstNewPerPattern(nPatterns, 0);
+    bool anyNewMatches = false;
+
+    // Phase 1: Update all pattern caches
     for (std::size_t patternIndex = nPatterns; patternIndex-- > 0;) {
-        // Determine search set for this pattern
         std::unordered_set<std::size_t> searchSet;
         if (cacheNeedsRebuild) {
-            // Cache was cleared — must search ALL species to rebuild
             for (std::size_t i = 0; i < speciesList.size(); ++i) {
                 searchSet.insert(i);
             }
@@ -872,15 +870,9 @@ std::size_t ReactionRule::expandRule(
 
         auto newMatches = findEmbeddingsForSpecies(patternIndex, speciesList, searchSet);
 
-        if (newMatches.empty()) {
-            continue;
-        }
+        firstNewPerPattern[patternIndex] = patternMatches_[patternIndex].size();
 
-        // Track where new matches start in this pattern's cache
-        std::size_t firstNew = patternMatches_[patternIndex].size();
-
-        if (cacheNeedsRebuild) {
-            // Stable-partition: old-species matches first, new-species matches last
+        if (cacheNeedsRebuild && !newMatches.empty()) {
             std::stable_partition(newMatches.begin(), newMatches.end(),
                 [&newSpecies](const EmbeddingResult& m) {
                     return newSpecies.count(m.speciesIndex) == 0;
@@ -892,28 +884,53 @@ std::size_t ReactionRule::expandRule(
                     ++oldCount;
                 }
             }
-            firstNew = patternMatches_[patternIndex].size() + oldCount;
+            firstNewPerPattern[patternIndex] = patternMatches_[patternIndex].size() + oldCount;
         }
 
-        // Add new matches to this pattern's cache
-        patternMatches_[patternIndex].insert(
-            patternMatches_[patternIndex].end(),
-            std::make_move_iterator(newMatches.begin()),
-            std::make_move_iterator(newMatches.end()));
-
-        // Check if all patterns have at least one match
-        bool allNonEmpty = true;
-        for (const auto& matches : patternMatches_) {
-            if (matches.empty()) {
-                allNonEmpty = false;
-                break;
-            }
+        if (!newMatches.empty()) {
+            anyNewMatches = true;
+            patternMatches_[patternIndex].insert(
+                patternMatches_[patternIndex].end(),
+                std::make_move_iterator(newMatches.begin()),
+                std::make_move_iterator(newMatches.end()));
         }
-        if (!allNonEmpty) {
-            continue;
+    }
+
+    if (!anyNewMatches) {
+        matchesInitialized_ = true;
+        lastSpeciesListCapacity_ = speciesList.capacity();
+        return 0;
+    }
+
+    // Check if all patterns have at least one match
+    bool allNonEmpty = true;
+    for (const auto& matches : patternMatches_) {
+        if (matches.empty()) {
+            allNonEmpty = false;
+            break;
+        }
+    }
+    if (!allNonEmpty) {
+        matchesInitialized_ = true;
+        lastSpeciesListCapacity_ = speciesList.capacity();
+        return 0;
+    }
+
+    // Phase 2: Enumerate for each pattern that has new matches.
+    // Iterate triggers in reverse order (matching Perl's expand_rule).
+    // To avoid double-counting (new×new) combinations:
+    //   - The trigger pattern iterates from firstNew to end (new matches only).
+    //   - Non-trigger patterns that were ALREADY processed as triggers
+    //     iterate from 0 to firstNew (old matches only, since new×new was
+    //     already counted when that pattern was the trigger).
+    //   - Non-trigger patterns NOT YET processed iterate from 0 to end (all).
+    std::unordered_set<std::size_t> alreadyTriggered;
+    for (std::size_t patternIndex = nPatterns; patternIndex-- > 0;) {
+        const std::size_t firstNew = firstNewPerPattern[patternIndex];
+        if (firstNew >= patternMatches_[patternIndex].size()) {
+            continue;  // No new matches for this pattern
         }
 
-        // Enumerate with this pattern as trigger
         std::vector<EmbeddingResult> matchSet(nPatterns);
         std::function<void(std::size_t)> enumerate = [&](std::size_t idx) {
             if (idx == nPatterns) {
@@ -923,16 +940,25 @@ std::size_t ReactionRule::expandRule(
                 return;
             }
 
-            // Trigger pattern: start at firstNew. Others: start at 0.
-            const std::size_t begin = (idx == patternIndex) ? firstNew : 0;
+            std::size_t begin = 0;
+            std::size_t end = patternMatches_[idx].size();
 
-            for (std::size_t i = begin; i < patternMatches_[idx].size(); ++i) {
+            if (idx == patternIndex) {
+                // Trigger: new matches only
+                begin = firstNew;
+            } else if (alreadyTriggered.count(idx)) {
+                // Already triggered: use old matches only (new×new already counted)
+                end = firstNewPerPattern[idx];
+            }
+
+            for (std::size_t i = begin; i < end; ++i) {
                 matchSet[idx] = patternMatches_[idx][i];
                 enumerate(idx + 1);
             }
         };
 
         enumerate(0);
+        alreadyTriggered.insert(patternIndex);
     }
 
     matchesInitialized_ = true;

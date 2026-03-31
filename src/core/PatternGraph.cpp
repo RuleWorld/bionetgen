@@ -33,6 +33,31 @@ PatternGraph::PatternGraph ( const PatternGraph & source )
 }
    
 
+// Move constructor
+PatternGraph::PatternGraph ( PatternGraph && source ) noexcept
+  : nodes( std::move(source.nodes) ),
+    label( std::move(source.label) ),
+    canonical_flag( source.canonical_flag )
+{
+    source.canonical_flag = false;
+}
+
+// Move assignment
+PatternGraph & PatternGraph::operator= ( PatternGraph && source ) noexcept
+{
+    if ( this != &source )
+    {
+        // delete existing nodes
+        for ( auto * node : nodes )
+            delete node;
+        nodes = std::move(source.nodes);
+        label = std::move(source.label);
+        canonical_flag = source.canonical_flag;
+        source.canonical_flag = false;
+    }
+    return *this;
+}
+
 // Destructor
 PatternGraph::~PatternGraph ( )
 {
@@ -269,8 +294,8 @@ PatternGraph::get_BNG2_string ( ) const
     node_order = std::vector<Node*> ( nodes.begin(), nodes.end() );
     std::sort ( node_order.begin(), node_order.end(), Node::less );
 
-    // set up bond index map (0-based to match Perl BNG2)
-    ii = 0;
+    // set up bond index map (1-based to match Perl BNG2)
+    ii = 1;
     for ( node_iter = node_order.begin();  node_iter != node_order.end();  ++node_iter )
     {
         node = *node_iter;

@@ -15,6 +15,7 @@
 #include "actions/ActionDispatch.hpp"
 #include "engine/NetworkGenerator.hpp"
 #include "parser/BNGAstVisitor.hpp"
+#include "core/Ullmann.hpp"
 #include "TestUtils.hpp"
 
 namespace {
@@ -294,7 +295,7 @@ TEST_CASE("Compatibility network generator reads generated .net output", "[netwo
     REQUIRE(network.species.size() == 3);
     REQUIRE(network.reactions.size() == 2);
     REQUIRE(network.species.get(0).getSpeciesGraph().toString() == "A(b)");
-    REQUIRE(network.species.get(2).getSpeciesGraph().toString() == "A(b!0).B(a!0)");
+    REQUIRE(network.species.get(2).getSpeciesGraph().toString() == "A(b!1).B(a!1)");
 }
 
 TEST_CASE("Action dispatch executes model actions through compatibility backend", "[actions]") {
@@ -330,9 +331,67 @@ generate_network({overwrite=>1,max_iter=>5})
     bng::engine::NetworkGenerator generator(*model);
     const auto network = generator.generateNative(5);
 
-    REQUIRE(network.reactions.size() >= 2);
+    // Perl generates: 4 species, 2 reactions
+    // Rxn 1: R(r,r) + L(l,l) -> L(l!1,l).R(r,r!1) factor=4 (2 r-sites * 2 l-sites)
+    // Rxn 2: L(l,l) + L(l!1,l).R(r,r!1) -> L(l!1,l).L(l!2,l).R(r!1,r!2) factor=2 (1 r-site * 2 l-sites)
+    REQUIRE(network.species.size() == 4);
+    REQUIRE(network.reactions.size() == 2);
     REQUIRE(network.reactions.all()[0].getRateLaw() == "kf");
+    REQUIRE(std::abs(network.reactions.all()[0].getFactor() - 4.0) < 1e-9);
     REQUIRE(std::abs(network.reactions.all()[1].getFactor() - 2.0) < 1e-9);
+}
+
+TEST_CASE("Embedding count for symmetric sites", "[network][debug]") {
+    auto model = bng::parser::parseModel(R"(begin model
+begin parameters
+  kf 1
+end parameters
+begin molecule types
+  R(r,r)
+  L(l,l)
+end molecule types
+begin seed species
+  R(r,r) 1
+  L(l,l) 1
+end seed species
+begin reaction rules
+  R(r) + L(l,l) -> R(r!1).L(l!1,l) kf
+end reaction rules
+end model
+
+generate_network({overwrite=>1,max_iter=>1})
+)");
+
+    const auto& rules = model->getReactionRules();
+    REQUIRE(rules.size() == 1);
+
+    bng::ast::SpeciesList speciesList;
+    for (const auto& seed : model->getSeedSpecies()) {
+        speciesList.add(bng::ast::Species(
+            bng::ast::SpeciesGraph(seed.getGraph()),
+            1.0, false, ""));
+    }
+    REQUIRE(speciesList.size() == 2);
+
+    // Pattern 0: R(r) should find 2 embeddings into R(r,r)
+    auto embeddings0 = rules[0].findEmbeddings(0, speciesList);
+    std::cerr << "[debug] Pattern 0 R(r) embeddings: " << embeddings0.size() << std::endl;
+    for (const auto& e : embeddings0) {
+        std::cerr << "[debug]   species=" << e.speciesIndex << std::endl;
+    }
+
+    // Pattern 1: L(l,l) should find 2 embeddings into L(l,l) (swapping l sites)
+    auto embeddings1 = rules[0].findEmbeddings(1, speciesList);
+    std::cerr << "[debug] Pattern 1 L(l,l) embeddings: " << embeddings1.size() << std::endl;
+    for (const auto& e : embeddings1) {
+        std::cerr << "[debug]   species=" << e.speciesIndex << std::endl;
+    }
+
+    // R(r) should have 2 embeddings into R(r,r)
+    REQUIRE(embeddings0.size() == 2);
+    // L(l,l) should have 1 embedding into L(l,l) after reaction center filtering
+    // (both permutations map the same reaction center components)
+    REQUIRE(embeddings1.size() >= 1);
 }
 
   TEST_CASE("Reference parity for catalysis", "[network][parity][.]") {

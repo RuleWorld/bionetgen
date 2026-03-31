@@ -234,8 +234,12 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
 }
 
 GeneratedNetwork NetworkGenerator::generate(const std::filesystem::path& sourcePath) {
-    (void)sourcePath;
-    return generateNative(parseMaxIter(model_).value_or(1024));
+    auto network = generateNative(parseMaxIter(model_).value_or(1024));
+    if (!sourcePath.empty()) {
+        const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".net");
+        io::NetWriter::write(outputPath, model_, network);
+    }
+    return network;
 }
 
 } // namespace bng::engine

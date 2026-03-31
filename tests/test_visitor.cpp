@@ -103,7 +103,7 @@ end model
     auto model = bng::parser::parseModel(source);
 
     REQUIRE(model->getSeedSpecies().size() == 1);
-    REQUIRE(model->getSeedSpecies()[0].getGraph().get_BNG2_string() == "A(x!0).B(y!0)");
+    REQUIRE(model->getSeedSpecies()[0].getGraph().get_BNG2_string() == "A(x!1).B(y!1)");
 }
 
 TEST_CASE("Seed species preserves trailing compartment names", "[visitor][graphs]") {

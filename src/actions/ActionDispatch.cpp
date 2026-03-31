@@ -335,7 +335,6 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
         if (action.name == "generate_network") {
             network = generator.generate(sourcePath);
-            writeCurrentNetwork();
             continue;
         }
 

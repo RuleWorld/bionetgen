@@ -374,23 +374,19 @@ UllmannSGIso::refine_M ( )
             // loop over possible matches in Gb
             node_container_t * possible_matches = row_iter->second;
             col_iter = possible_matches->begin();
-            col_end = possible_matches->end();
-            while ( col_iter != col_end )
-            {     
+            while ( col_iter != possible_matches->end() )
+            {
                 // refine M for each possible match
                 if ( !refine_M( row_iter, col_iter ) )
                 {
-                    // this match is no good . . .
-                    //  get iterator to the next element in the set now
-                    (col_next = col_iter)++;
-                    possible_matches->erase( col_iter );
-                    
-                    //  check if this search branch is futile            
+                    // this match is no good — erase returns valid iterator to next element
+                    col_iter = possible_matches->erase( col_iter );
+
+                    //  check if this search branch is futile
                     if (  possible_matches->size() == 0  )
                         return false;
-                        
+
                     converged = false;
-                    col_iter = col_next;                    
                 }
                 else
                     ++col_iter;
