@@ -29,44 +29,70 @@ namespace bng::engine {
 
 namespace {
 
-// Parse rate strings from NetWriter format:
-//   "1.66055031e-12*2*__R1_local1"  (unitConv * factor * param)
-//   "2*__reverse__R4_local1"         (factor * param)
-//   "__reverse__R1_local1"           (just param)
-//   "0.5"                            (just number)
-//   "k1"                             (just param name)
+// Recursive expression evaluator for rate strings.
+// Handles: numbers, parameters, +, -, *, /, (), and nested expressions.
 double evaluateRateString(const std::string& rateStr,
                           const std::function<double(const std::string&)>& resolve) {
-    double result = 1.0;
-    std::string token;
-    std::istringstream stream(rateStr);
+    std::string s = rateStr;
+    // Trim whitespace
+    s.erase(0, s.find_first_not_of(" \t"));
+    if (s.empty()) return 0.0;
+    s.erase(s.find_last_not_of(" \t") + 1);
 
-    while (std::getline(stream, token, '*')) {
-        // Trim whitespace
-        token.erase(0, token.find_first_not_of(" \t"));
-        token.erase(token.find_last_not_of(" \t") + 1);
-        if (token.empty()) continue;
-
-        // Try parsing as double first
-        try {
-            std::size_t pos = 0;
-            double val = std::stod(token, &pos);
-            if (pos == token.size()) {
-                result *= val;
-                continue;
-            }
-        } catch (...) {
-            // Not a number, fall through to parameter resolution
+    // Strip outermost balanced parentheses
+    if (s.size() >= 2 && s.front() == '(' && s.back() == ')') {
+        int depth = 0;
+        bool outermost = true;
+        for (std::size_t i = 0; i < s.size() - 1; ++i) {
+            if (s[i] == '(') ++depth;
+            else if (s[i] == ')') { --depth; if (depth == 0) { outermost = false; break; } }
         }
+        if (outermost) return evaluateRateString(s.substr(1, s.size() - 2), resolve);
+    }
 
-        // Must be a parameter name
-        try {
-            result *= resolve(token);
-        } catch (const std::exception& e) {
-            throw std::runtime_error("Failed to resolve parameter '" + token + "': " + e.what());
+    // Find lowest-precedence operator at depth 0 (right-to-left for left-assoc)
+    int depth = 0;
+    int lastAddSub = -1;
+    char lastAddSubOp = 0;
+    int lastMulDiv = -1;
+    char lastMulDivOp = 0;
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '(') ++depth;
+        else if (s[i] == ')') --depth;
+        else if (depth == 0 && i > 0) {
+            if (s[i] == '+' || s[i] == '-') { lastAddSub = static_cast<int>(i); lastAddSubOp = s[i]; }
+            if (s[i] == '*' || s[i] == '/') { lastMulDiv = static_cast<int>(i); lastMulDivOp = s[i]; }
         }
     }
-    return result;
+
+    if (lastAddSub >= 0) {
+        double l = evaluateRateString(s.substr(0, lastAddSub), resolve);
+        double r = evaluateRateString(s.substr(lastAddSub + 1), resolve);
+        return lastAddSubOp == '+' ? l + r : l - r;
+    }
+    if (lastMulDiv >= 0) {
+        double l = evaluateRateString(s.substr(0, lastMulDiv), resolve);
+        double r = evaluateRateString(s.substr(lastMulDiv + 1), resolve);
+        return lastMulDivOp == '*' ? l * r : l / r;
+    }
+
+    // Handle unary minus
+    if (s.front() == '-') return -evaluateRateString(s.substr(1), resolve);
+
+    // Handle exp(...)
+    if (s.rfind("exp(", 0) == 0 && s.back() == ')') {
+        return std::exp(evaluateRateString(s.substr(4, s.size() - 5), resolve));
+    }
+
+    // Try as number
+    try {
+        std::size_t pos = 0;
+        double val = std::stod(s, &pos);
+        if (pos == s.size()) return val;
+    } catch (...) {}
+
+    // Must be a parameter name
+    return resolve(s);
 }
 
 } // anonymous namespace
@@ -184,9 +210,11 @@ void OdeIntegrator::compile() {
         if (!isFunctional) {
             try {
                 crxn.rateConstant = evaluateRateString(rateStr, paramResolver);
-            } catch (const std::exception& e) {
-                throw std::runtime_error("Failed to evaluate rate for reaction " +
-                                       rxn.getLabel() + " (rate string: '" + rateStr + "'): " + e.what());
+            } catch (const std::exception&) {
+                // Rate couldn't be evaluated — treat as functional/deferred
+                crxn.isFunctional = true;
+                crxn.rateConstant = 0.0;
+                hasFunctionalRates_ = true;
             }
         }
 

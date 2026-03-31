@@ -458,6 +458,28 @@ bool hasModifier(const std::vector<std::string>& modifiers, const std::string& n
     }
     return false;
 }
+
+std::string canonicalNodeId(const BNGcore::Node* node) {
+    // Create a canonical identifier based on node type, state, and adjacency
+    // This avoids using memory addresses which differ for symmetric nodes
+    std::ostringstream out;
+    out << node->get_type().get_type_name() << "|" << node->get_state().get_BNG2_string();
+
+    // Add sorted adjacency info for uniqueness
+    std::vector<std::string> neighbors;
+    for (auto edge = node->edges_in_begin(); edge != node->edges_in_end(); ++edge) {
+        neighbors.push_back((*edge)->get_type().get_type_name() + ":" + (*edge)->get_state().get_BNG2_string());
+    }
+    for (auto edge = node->edges_out_begin(); edge != node->edges_out_end(); ++edge) {
+        neighbors.push_back((*edge)->get_type().get_type_name() + ":" + (*edge)->get_state().get_BNG2_string());
+    }
+    std::sort(neighbors.begin(), neighbors.end());
+    for (const auto& n : neighbors) {
+        out << "~" << n;
+    }
+    return out.str();
+}
+
 std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGcore::Map& map) {
     std::vector<std::string> parts;
     for (auto nodeIter = pattern.begin(); nodeIter != pattern.end(); ++nodeIter) {
@@ -468,7 +490,7 @@ std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGco
         std::ostringstream out;
         out << (*nodeIter)->get_type().get_type_name()
             << "|" << (*nodeIter)->get_state().get_BNG2_string()
-            << "->" << reinterpret_cast<std::uintptr_t>(target);
+            << "->" << canonicalNodeId(target);
         parts.push_back(out.str());
     }
     std::sort(parts.begin(), parts.end());
@@ -502,7 +524,7 @@ std::string reactionCenterSignature(
         out << (ref.isComponent ? "c" : "m")
             << "|" << ref.moleculeIndex
             << "|" << (ref.isComponent ? std::to_string(ref.componentIndex) : std::string("-"))
-            << "->" << reinterpret_cast<std::uintptr_t>(target);
+            << "->" << canonicalNodeId(target);
         parts.push_back(out.str());
     }
     std::sort(parts.begin(), parts.end());
@@ -765,6 +787,8 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
     const auto& pattern = reactantPatterns_.at(patternIndex).getGraph();
     const auto reactantInfo = describePatterns(reactantPatterns_);
     std::unordered_set<std::string> seen;
+    const bool debug = std::getenv("BNG_DEBUG_EMBEDDINGS") != nullptr;
+
     for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
         if (candidateSpecies.find(speciesIndex) == candidateSpecies.end()) {
             continue;
@@ -772,6 +796,11 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         BNGcore::UllmannSGIso matcher(pattern, speciesList.get(speciesIndex).getSpeciesGraph().getGraph());
         BNGcore::List<BNGcore::Map> maps;
         matcher.find_maps(maps);
+        std::size_t mapsBeforeDedup = 0;
+        for (auto mapIter = maps.begin(); mapIter != maps.end(); ++mapIter) {
+            ++mapsBeforeDedup;
+        }
+
         for (auto mapIter = maps.begin(); mapIter != maps.end(); ++mapIter) {
             if (!embeddingRespectsNodeStates(pattern, *mapIter)) {
                 continue;
@@ -781,9 +810,18 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
                     ? embeddingSignature(pattern, *mapIter)
                     : reactionCenterSignature(reactantInfo, reactionCenter_.at(patternIndex), *mapIter));
             if (!seen.insert(signature).second) {
+                if (debug) {
+                    std::cerr << "[DEBUG] Rule " << ruleName_ << " pattern " << patternIndex
+                              << " species " << speciesIndex << ": DUPLICATE signature " << signature << "\n";
+                }
                 continue;
             }
             results.push_back(EmbeddingResult {speciesIndex, *mapIter});
+        }
+        if (debug && mapsBeforeDedup > 0) {
+            std::cerr << "[DEBUG] Rule " << ruleName_ << " pattern " << patternIndex
+                      << " species " << speciesIndex << ": " << mapsBeforeDedup << " Ullmann maps → "
+                      << results.size() << " unique embeddings\n";
         }
     }
 
@@ -794,6 +832,7 @@ void ReactionRule::clearPatternMatchCache() const {
     patternMatches_.assign(reactantPatterns_.size(), {});
     matchesInitialized_ = false;
     lastSpeciesListCapacity_ = 0;
+    processedSpeciesIndices_.clear();
 }
 
 std::size_t ReactionRule::expandRule(
@@ -801,22 +840,59 @@ std::size_t ReactionRule::expandRule(
     RxnList& rxnList,
     const std::function<bool(const SpeciesGraph&)>& productFilter) const {
 
-    // --- Reverse rule delegation (unchanged) ---
+    // --- Reverse rule delegation ---
     if (bidirectional_ && !rates_.empty()) {
-        ReactionRule reverseRule(
-            std::string("_reverse__") + ruleName_,
-            label_.empty() ? std::string("_reverse") : std::string("_reverse__") + label_,
-            products_,
-            reactants_,
-            {rates_.size() > 1 ? rates_[1] : rates_.front()},
-            modifiers_,
-            false,
-            productPatterns_,
-            reactantPatterns_);
-        reverseRule.expandRule(speciesList, rxnList, productFilter);
+        if (!reverseRule_) {
+            reverseRule_ = std::make_unique<ReactionRule>(
+                std::string("_reverse__") + ruleName_,
+                label_.empty() ? std::string("_reverse") : std::string("_reverse__") + label_,
+                products_,
+                reactants_,
+                std::vector<Expression>{rates_.size() > 1 ? rates_[1] : rates_.front()},
+                modifiers_,
+                false,
+                productPatterns_,
+                reactantPatterns_);
+        }
+        reverseRule_->expandRule(speciesList, rxnList, productFilter);
     }
 
     if (reactantPatterns_.empty()) {
+        // Synthesis rule (0th order): no reactants, just create products.
+        // Fire once to add product species and the synthesis reaction.
+        if (!synthesisApplied_) {
+            synthesisApplied_ = true;
+            // Build product species from product patterns
+            std::vector<std::size_t> productIndices;
+            std::vector<std::string> productLabels;
+            for (const auto& productPattern : productPatterns_) {
+                BNGcore::PatternGraph productGraph;
+                auto clones = cloneGraphIntoTarget(productPattern.getGraph(), productGraph);
+                SpeciesGraph sg(productGraph);
+                if (productFilter && !productFilter(sg)) {
+                    return 0;
+                }
+                productLabels.push_back(sg.canonicalLabel());
+                const auto [index, isNew] = speciesList.add(Species(sg, 0.0, false, std::string()));
+                productIndices.push_back(index);
+            }
+            std::sort(productLabels.begin(), productLabels.end());
+            std::sort(productIndices.begin(), productIndices.end());
+            const std::string label = ruleName_ + "|synth->" + [&]{
+                std::string s;
+                for (const auto& l : productLabels) s += l + ";";
+                return s;
+            }();
+            rxnList.add(Rxn(
+                label,
+                {},  // empty reactants
+                productIndices,
+                rates_.empty() ? "0" : rates_.front().toString(),
+                1.0,
+                ruleName_,
+                rates_.empty() ? std::nullopt : std::optional<Expression>(rates_.front())));
+            return 1;
+        }
         return 0;
     }
 
@@ -825,6 +901,7 @@ std::size_t ReactionRule::expandRule(
         patternMatches_.assign(reactantPatterns_.size(), {});
         matchesInitialized_ = false;
         lastSpeciesListCapacity_ = speciesList.capacity();
+        processedSpeciesIndices_.clear();
     }
 
     if (!matchesInitialized_ || patternMatches_.size() != reactantPatterns_.size()) {
@@ -832,12 +909,18 @@ std::size_t ReactionRule::expandRule(
         matchesInitialized_ = false;
     }
 
-    // --- Collect new (unprocessed) species ---
+    // --- Collect new (unprocessed by THIS RULE) species ---
+    const bool debug = std::getenv("BNG_DEBUG_RULES") != nullptr;
     std::unordered_set<std::size_t> newSpecies;
     for (std::size_t i = 0; i < speciesList.size(); ++i) {
-        if (!speciesList.get(i).rulesApplied()) {
+        if (!speciesList.get(i).rulesApplied() && processedSpeciesIndices_.find(i) == processedSpeciesIndices_.end()) {
             newSpecies.insert(i);
         }
+    }
+    if (debug) {
+        std::cerr << "[DEBUG] Rule " << ruleName_ << ": newSpecies={";
+        for (auto idx : newSpecies) std::cerr << idx << ",";
+        std::cerr << "} processedCount=" << processedSpeciesIndices_.size() << "\n";
     }
     if (newSpecies.empty()) {
         return 0;
@@ -846,6 +929,11 @@ std::size_t ReactionRule::expandRule(
     const bool cacheNeedsRebuild = !matchesInitialized_;
     const std::size_t nPatterns = reactantPatterns_.size();
     std::size_t created = 0;
+
+    if (debug) {
+        std::cerr << "[DEBUG] Rule " << ruleName_ << ": nPatterns=" << nPatterns
+                  << " cacheNeedsRebuild=" << cacheNeedsRebuild << "\n";
+    }
 
     // =============================================
     // Two-phase: update all caches, then enumerate
@@ -896,9 +984,21 @@ std::size_t ReactionRule::expandRule(
         }
     }
 
+    if (debug) {
+        std::cerr << "[DEBUG] Rule " << ruleName_ << " after Phase 1: anyNewMatches=" << anyNewMatches << "\n";
+        for (std::size_t i = 0; i < nPatterns; ++i) {
+            std::cerr << "[DEBUG]   pattern[" << i << "]: " << patternMatches_[i].size() << " total matches\n";
+        }
+    }
+
     if (!anyNewMatches) {
+        if (debug) std::cerr << "[DEBUG] Rule " << ruleName_ << ": no new matches, returning 0\n";
         matchesInitialized_ = true;
         lastSpeciesListCapacity_ = speciesList.capacity();
+        // Mark processed even if no matches
+        for (std::size_t idx : newSpecies) {
+            processedSpeciesIndices_.insert(idx);
+        }
         return 0;
     }
 
@@ -911,8 +1011,13 @@ std::size_t ReactionRule::expandRule(
         }
     }
     if (!allNonEmpty) {
+        if (debug) std::cerr << "[DEBUG] Rule " << ruleName_ << ": not all patterns have matches, returning 0\n";
         matchesInitialized_ = true;
         lastSpeciesListCapacity_ = speciesList.capacity();
+        // Mark processed even if not all patterns match
+        for (std::size_t idx : newSpecies) {
+            processedSpeciesIndices_.insert(idx);
+        }
         return 0;
     }
 
@@ -928,14 +1033,20 @@ std::size_t ReactionRule::expandRule(
     for (std::size_t patternIndex = nPatterns; patternIndex-- > 0;) {
         const std::size_t firstNew = firstNewPerPattern[patternIndex];
         if (firstNew >= patternMatches_[patternIndex].size()) {
+            if (debug) std::cerr << "[DEBUG] Rule " << ruleName_ << ": pattern " << patternIndex << " has no new matches, skipping\n";
             continue;  // No new matches for this pattern
         }
 
+        if (debug) std::cerr << "[DEBUG] Rule " << ruleName_ << ": enumerating with pattern " << patternIndex << " as trigger\n";
+
         std::vector<EmbeddingResult> matchSet(nPatterns);
+        std::size_t enumerateCalls = 0;
         std::function<void(std::size_t)> enumerate = [&](std::size_t idx) {
             if (idx == nPatterns) {
+                ++enumerateCalls;
                 if (buildReaction(matchSet, speciesList, rxnList, productFilter)) {
                     ++created;
+                    if (debug) std::cerr << "[DEBUG] Rule " << ruleName_ << ": created reaction #" << created << "\n";
                 }
                 return;
             }
@@ -958,11 +1069,17 @@ std::size_t ReactionRule::expandRule(
         };
 
         enumerate(0);
+        if (debug) std::cerr << "[DEBUG] Rule " << ruleName_ << ": enumerate called " << enumerateCalls << " times\n";
         alreadyTriggered.insert(patternIndex);
     }
 
     matchesInitialized_ = true;
     lastSpeciesListCapacity_ = speciesList.capacity();
+
+    // Mark these species as processed by this rule to avoid reprocessing in next iteration
+    for (std::size_t idx : newSpecies) {
+        processedSpeciesIndices_.insert(idx);
+    }
 
     return created;
 }

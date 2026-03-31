@@ -471,12 +471,16 @@ std::any BNGAstVisitor::visitSet_cmd(BNGParser::Set_cmdContext* ctx) {
 }
 
 std::any BNGAstVisitor::visitOther_action_cmd(BNGParser::Other_action_cmdContext* ctx) {
-    ast::Action action;
-    action.name = toLower(ctx->children.front()->getText());
-    if (ctx->action_arg_value() != nullptr) {
-        action.arguments["value"] = ctx->action_arg_value()->getText();
+    if (ctx->action_args() != nullptr) {
+        addAction(toLower(ctx->children.front()->getText()), ctx->action_args());
+    } else {
+        ast::Action action;
+        action.name = toLower(ctx->children.front()->getText());
+        if (ctx->action_arg_value() != nullptr) {
+            action.arguments["value"] = ctx->action_arg_value()->getText();
+        }
+        currentModel_->addAction(std::move(action));
     }
-    currentModel_->addAction(std::move(action));
     return {};
 }
 

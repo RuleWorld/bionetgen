@@ -499,11 +499,15 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
     std::size_t reactionIndex = 1;
     for (const auto& reaction : network.reactions.all()) {
         out << "    " << reactionIndex++ << " ";
-        for (std::size_t i = 0; i < reaction.getReactants().size(); ++i) {
-            if (i != 0) {
-                out << ",";
+        if (reaction.getReactants().empty()) {
+            out << "0";  // Null reactant (synthesis rule)
+        } else {
+            for (std::size_t i = 0; i < reaction.getReactants().size(); ++i) {
+                if (i != 0) {
+                    out << ",";
+                }
+                out << (reaction.getReactants()[i] + 1);
             }
-            out << (reaction.getReactants()[i] + 1);
         }
         out << " ";
         for (std::size_t i = 0; i < reaction.getProducts().size(); ++i) {

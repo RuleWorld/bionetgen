@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -207,6 +207,8 @@ public:
     antlr4::tree::TerminalNode* LB(size_t i);
     std::vector<Header_blockContext *> header_block();
     Header_blockContext* header_block(size_t i);
+    std::vector<Action_commandContext *> action_command();
+    Action_commandContext* action_command(size_t i);
     Wrapped_actions_blockContext *wrapped_actions_block();
     Actions_blockContext *actions_block();
     antlr4::tree::TerminalNode *BEGIN();
@@ -1445,6 +1447,7 @@ public:
     antlr4::tree::TerminalNode *VISUALIZE();
     antlr4::tree::TerminalNode *GENERATEHYBRIDMODEL();
     antlr4::tree::TerminalNode *READFILE();
+    Action_argsContext *action_args();
     Action_arg_valueContext *action_arg_value();
     antlr4::tree::TerminalNode *SEMI();
     std::vector<antlr4::tree::TerminalNode *> LB();
@@ -1590,6 +1593,7 @@ public:
     antlr4::tree::TerminalNode *ASSIGNS();
     Action_arg_valueContext *action_arg_value();
     antlr4::tree::TerminalNode *STRING();
+    Quoted_stringContext *quoted_string();
     Arg_nameContext *arg_name();
 
 

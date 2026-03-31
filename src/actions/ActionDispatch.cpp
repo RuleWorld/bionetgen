@@ -75,6 +75,31 @@ double parseScalarValue(const std::string& text, ast::Model& model) {
         return model.getParameters().evaluate(value);
     }
 
+    // Try evaluating as expression with parameter resolution
+    try {
+        // Simple recursive evaluator for expressions like "2e-9*NA*V"
+        double result = 1.0;
+        std::string token;
+        std::istringstream stream(value);
+        bool allResolved = true;
+        while (std::getline(stream, token, '*')) {
+            std::string t = trim(token);
+            if (t.empty()) continue;
+            std::size_t pos = 0;
+            try {
+                double val = std::stod(t, &pos);
+                if (pos == t.size()) { result *= val; continue; }
+            } catch (...) {}
+            if (model.getParameters().contains(t)) {
+                result *= model.getParameters().evaluate(t);
+            } else {
+                allResolved = false;
+                break;
+            }
+        }
+        if (allResolved) return result;
+    } catch (...) {}
+
     throw std::runtime_error("Unsupported scalar action value: '" + text + "'");
 }
 
@@ -87,10 +112,11 @@ std::string readArgument(const ast::Action& action, const std::string& key, cons
 }
 
 std::string resolveSimulationMethod(const ast::Action& action) {
-    if (action.name == "simulate_ode") {
+    std::string name = lowercase(action.name);
+    if (name == "simulate_ode") {
         return "cvode";
     }
-    if (action.name == "simulate_ssa") {
+    if (name == "simulate_ssa") {
         return "ssa";
     }
 
@@ -288,7 +314,10 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
     };
 
     for (const auto& action : model.getActions()) {
-        if (action.name == "readfile") {
+        // Normalize action name to lowercase for case-insensitive matching
+        std::string actionName = lowercase(action.name);
+
+        if (actionName == "readfile") {
             const auto filepath = stripQuotes(readArgument(action, "file", ""));
             if (filepath.empty()) {
                 throw std::runtime_error("readFile requires 'file' argument");
@@ -333,12 +362,12 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "generate_network") {
+        if (actionName == "generate_network") {
             network = generator.generate(sourcePath);
             continue;
         }
 
-        if (action.name == "setparameter") {
+        if (actionName == "setparameter") {
             const auto target = stripQuotes(readArgument(action, "target", ""));
             const auto valueText = readArgument(action, "value", "");
             if (target.empty()) {
@@ -355,7 +384,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "saveparameters") {
+        if (actionName == "saveparameters") {
             const auto label = stripQuotes(readArgument(action, "value", "default"));
             std::unordered_map<std::string, double> snapshot;
             for (const auto& param : model.getParameters().all()) {
@@ -368,7 +397,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "resetparameters") {
+        if (actionName == "resetparameters") {
             const auto label = stripQuotes(readArgument(action, "value", "default"));
             const auto found = savedParameters.find(label);
             if (found == savedParameters.end()) {
@@ -387,7 +416,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "setconcentration") {
+        if (actionName == "setconcentration") {
             ensureNetwork();
             const auto target = readArgument(action, "target", "");
             const auto valueText = readArgument(action, "value", "");
@@ -401,14 +430,14 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "saveconcentrations") {
+        if (actionName == "saveconcentrations") {
             ensureNetwork();
             const auto label = stripQuotes(readArgument(action, "value", "default"));
             savedConcentrations[label] = snapshotConcentrations(*network);
             continue;
         }
 
-        if (action.name == "resetconcentrations") {
+        if (actionName == "resetconcentrations") {
             ensureNetwork();
             const auto label = stripQuotes(readArgument(action, "value", "default"));
             const auto found = savedConcentrations.find(label);
@@ -420,7 +449,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "addconcentration") {
+        if (actionName == "addconcentration") {
             ensureNetwork();
             const auto target = readArgument(action, "target", "");
             const auto valueText = readArgument(action, "value", "");
@@ -434,7 +463,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "simulate" || action.name == "simulate_ode" || action.name == "simulate_ssa") {
+        if (actionName == "simulate" || action.name == "simulate_ode" || action.name == "simulate_ssa") {
             ensureNetwork();
             // Don't re-write .net file - already written by generate_network
             // Re-writing would cause duplicate parameters and corrupt stat factors
@@ -442,7 +471,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "parameter_scan") {
+        if (actionName == "parameter_scan") {
             const auto parameterName = stripQuotes(readArgument(action, "parameter", ""));
             if (parameterName.empty()) {
                 throw std::runtime_error("parameter_scan requires parameter argument");
@@ -481,7 +510,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "bifurcate") {
+        if (actionName == "bifurcate") {
             ensureNetwork();
             const auto parameterName = stripQuotes(readArgument(action, "parameter", ""));
             if (parameterName.empty()) {
@@ -522,7 +551,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "writexml") {
+        if (actionName == "writexml") {
             ensureNetwork();
             const auto xmlContent = io::XmlWriter::write(model, &(*network));
             const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".xml");
@@ -537,7 +566,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "writebngl" || action.name == "writemodel") {
+        if (actionName == "writebngl" || action.name == "writemodel") {
             ensureNetwork();
             io::BnglWriter::Options opts;
             opts.includeComments = true;
@@ -555,7 +584,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "writesbml") {
+        if (actionName == "writesbml") {
             ensureNetwork();
             io::SbmlWriter::Options sbmlOpts;
             sbmlOpts.level = 2;
@@ -575,7 +604,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "writemfile") {
+        if (actionName == "writemfile") {
             ensureNetwork();
             const auto mContent = io::MatlabWriter::write(model, *network);
             const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".m");
@@ -590,7 +619,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name == "visualize") {
+        if (actionName == "visualize") {
             // Generate contact map
             auto contactMap = io::ContactMapWriter::buildContactMap(model);
 
@@ -625,7 +654,7 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
-        if (action.name.rfind("write", 0) == 0) {
+        if (actionName.rfind("write", 0) == 0) {
             ensureNetwork();
             writeCurrentNetwork();
         }

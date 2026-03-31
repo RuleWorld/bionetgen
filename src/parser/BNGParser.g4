@@ -11,7 +11,7 @@ options {
 
 // Entry point - support both "begin actions...end actions" and loose action commands after model
 prog
-    : LB* header_block* ((BEGIN MODEL LB+ program_block* END MODEL LB*) | program_block*) (wrapped_actions_block | actions_block)? EOF
+    : LB* (header_block | action_command)* ((BEGIN MODEL LB+ program_block* END MODEL LB*) | program_block*) (wrapped_actions_block | actions_block)? EOF
     ;
 
 header_block
@@ -363,7 +363,7 @@ set_cmd
 other_action_cmd
     : (SAVECONCENTRATIONS | RESETCONCENTRATIONS | SAVEPARAMETERS | RESETPARAMETERS | QUIT
        | PARAMETER_SCAN | BIFURCATE | VISUALIZE | GENERATEHYBRIDMODEL | READFILE)
-      LPAREN action_arg_value? RPAREN SEMI? LB*
+      LPAREN (action_args | action_arg_value)? RPAREN SEMI? LB*
     ;
 
 // Action arguments can be: {key=>val,...} or simple quoted string
@@ -406,7 +406,7 @@ nested_hash_list
     ;
 
 nested_hash_item
-    : (STRING | arg_name) ASSIGNS action_arg_value
+    : (STRING | quoted_string | arg_name) ASSIGNS action_arg_value
     ;
 
 // Allow keywords to be used as argument names in action calls

@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGLexer.g4 by ANTLR 4.13.1
+// Generated from src/parser/BNGLexer.g4 by ANTLR 4.13.2
 
 #pragma once
 

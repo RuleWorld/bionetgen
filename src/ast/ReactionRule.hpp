@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -108,7 +109,10 @@ private:
     std::vector<std::vector<ReactionCenterRef>> reactionCenter_;
     mutable std::vector<std::vector<EmbeddingResult>> patternMatches_;
     mutable bool matchesInitialized_ = false;
+    mutable bool synthesisApplied_ = false;
     mutable std::size_t lastSpeciesListCapacity_ = 0;
+    mutable std::unique_ptr<ReactionRule> reverseRule_;
+    mutable std::unordered_set<std::size_t> processedSpeciesIndices_;
 };
 
 } // namespace bng::ast

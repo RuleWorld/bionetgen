@@ -53,7 +53,13 @@ std::map<std::string, std::size_t> parseMaxStoich(const ast::Model& model) {
             const auto entry = text.substr(start, comma == std::string::npos ? std::string::npos : comma - start);
             const auto arrow = entry.find("=>");
             if (arrow != std::string::npos) {
-                limits.emplace(entry.substr(0, arrow), static_cast<std::size_t>(std::stoull(entry.substr(arrow + 2))));
+                std::string key = entry.substr(0, arrow);
+                // Strip surrounding quotes from key (e.g., 'R' -> R, "R" -> R)
+                if (key.size() >= 2 && ((key.front() == '\'' && key.back() == '\'') ||
+                                         (key.front() == '"' && key.back() == '"'))) {
+                    key = key.substr(1, key.size() - 2);
+                }
+                limits.emplace(key, static_cast<std::size_t>(std::stoull(entry.substr(arrow + 2))));
             }
             if (comma == std::string::npos) {
                 break;
@@ -175,6 +181,11 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     const bool logProgress = parsePrintIter(model_);
     const bool logRules = parsePrintRules(model_);
 
+    // Clear per-rule state from previous generate_network calls
+    for (auto& rule : model_.getReactionRules()) {
+        rule.clearPatternMatchCache();
+    }
+
     GeneratedNetwork network;
     for (const auto& seed : model_.getSeedSpecies()) {
         network.species.add(ast::Species(
@@ -201,7 +212,16 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
             const auto created = rule.expandRule(network.species, network.reactions, [&](const ast::SpeciesGraph& graph) {
                 return withinStoichLimits(graph, maxStoich);
             });
-            if (logRules && (created > 0 || network.species.size() != beforeSpecies || network.reactions.size() != beforeReactions)) {
+            const bool debugRules = std::getenv("BNG_DEBUG_RULES") != nullptr;
+            if (debugRules) {
+                std::cerr << "[generate_network] iter=" << (iter + 1)
+                          << " rule=" << rule.getRuleName()
+                          << " created=" << created
+                          << " species=" << network.species.size()
+                          << " reactions=" << network.reactions.size()
+                          << " d_species=" << (network.species.size() - beforeSpecies)
+                          << " d_rxns=" << (network.reactions.size() - beforeReactions) << '\n';
+            } else if (logRules && (created > 0 || network.species.size() != beforeSpecies || network.reactions.size() != beforeReactions)) {
                 std::cerr << "[generate_network] iter=" << (iter + 1)
                           << " rule=" << rule.getRuleName()
                           << " created=" << created

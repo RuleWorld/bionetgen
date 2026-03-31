@@ -174,6 +174,9 @@ double Expression::evaluate(const std::function<double(const std::string&)>& res
             requireArity(text_, children_, 3);
             return evalArg(0) != 0.0 ? evalArg(1) : evalArg(2);
         }
+        // Constants
+        if (text_ == "_pi") { requireArity(text_, children_, 0); return M_PI; }
+        if (text_ == "_e") { requireArity(text_, children_, 0); return M_E; }
         throw std::runtime_error("Unsupported function '" + text_ + "'");
     }
     case ExpressionKind::ObservableRef:
