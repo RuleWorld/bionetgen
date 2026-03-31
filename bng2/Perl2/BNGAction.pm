@@ -562,7 +562,9 @@ sub simulate
 
 
     ### RUN SIMULATION ###
-    print  "Running run_network on ", `hostname`;
+    require Sys::Hostname;
+    my $hostname = Sys::Hostname::hostname();
+    print  "Running run_network on ", $hostname, "\n";
     printf "full command: %s\n", join(" ", @command);
 
     # disable dospath warnings for Windows OS.
@@ -942,7 +944,9 @@ sub simulate_nf
 
 
     # Run NFsim
-    print "Running NFsim on ", `hostname`;
+    require Sys::Hostname;
+    my $hostname = Sys::Hostname::hostname();
+    print "Running NFsim on ", $hostname, "\n";
     printf "full command: %s\n", join(" ", @command);
 
     # Compute timecourses using nfsim
