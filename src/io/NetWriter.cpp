@@ -1,5 +1,6 @@
 #include "io/NetWriter.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -22,6 +23,21 @@
 namespace bng::io {
 
 namespace {
+
+// BNG built-in rate law functions — written directly in reactions, not as _rateLaw params
+const std::unordered_set<std::string> builtinRateLawFunctions = {
+    "Sat", "sat", "MM", "mm", "Hill", "hill", "Arrhenius", "arrhenius",
+    "Hybrid", "hybrid"
+};
+
+// Canonical (Perl-compatible) casing for built-in rate law functions
+const std::unordered_map<std::string, std::string> builtinCanonicalName = {
+    {"sat", "Sat"}, {"Sat", "Sat"},
+    {"mm", "MM"}, {"MM", "MM"},
+    {"hill", "Hill"}, {"Hill", "Hill"},
+    {"arrhenius", "Arrhenius"}, {"Arrhenius", "Arrhenius"},
+    {"hybrid", "Hybrid"}, {"Hybrid", "Hybrid"},
+};
 
 // Simple recursive evaluator for mathematical expressions
 // Handles: numbers, parameters, +, -, *, /, (), exp(), and nested expressions
@@ -192,9 +208,30 @@ std::string formatFactor(double factor) {
 }
 
 std::string compactExpression(std::string text) {
+    // Remove all whitespace
     text.erase(std::remove_if(text.begin(), text.end(), [](unsigned char c) {
         return std::isspace(c) != 0;
     }), text.end());
+    // Strip redundant outer parentheses: "(expr)" → "expr" if the parens are matched
+    while (text.size() >= 2 && text.front() == '(' && text.back() == ')') {
+        int depth = 0;
+        bool outermost = true;
+        for (std::size_t i = 0; i < text.size() - 1; ++i) {
+            if (text[i] == '(') ++depth;
+            else if (text[i] == ')') {
+                --depth;
+                if (depth == 0 && i < text.size() - 1) {
+                    outermost = false;
+                    break;
+                }
+            }
+        }
+        if (outermost) {
+            text = text.substr(1, text.size() - 2);
+        } else {
+            break;
+        }
+    }
     return text;
 }
 
@@ -207,7 +244,8 @@ std::string formatSpeciesAmount(const ast::Species& species, const ast::Model& m
     for (std::size_t i = 0; i < model.getSeedSpecies().size(); ++i) {
         const auto& seed = model.getSeedSpecies()[i];
         if (seed.getCanonicalLabel() == speciesLabel && std::abs(species.getAmount()) > 1e-12) {
-            return formatInitialAmountName(i);
+            // Use the original seed species amount expression (parameter name or value)
+            return seed.getAmount().toString();
         }
     }
 
@@ -379,6 +417,127 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
     const ast::Model& model,
     const engine::GeneratedNetwork& network) {
     std::unordered_map<std::string, DerivedRateInfo> derived;
+    int rateLawCounter = 1;
+
+    // Helper: Check if expression is simple (just a parameter/constant name)
+    auto isSimpleExpression = [&](const std::string& expr) -> bool {
+        std::string trimmed = expr;
+        trimmed.erase(0, trimmed.find_first_not_of(" \t"));
+        trimmed.erase(trimmed.find_last_not_of(" \t") + 1);
+
+        // Simple if it's just alphanumeric + underscore (no operators or parens)
+        return std::all_of(trimmed.begin(), trimmed.end(),
+            [](char c) { return std::isalnum(c) || c == '_' || c == '.'; });
+    };
+
+    // Helper: Check if expression references observables
+    auto referencesObservables = [&](const std::string& expr) -> bool {
+        for (const auto& obs : model.getObservables()) {
+            if (expr.find(obs.getName()) != std::string::npos) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // Process rules in BNGL order to match Perl output
+    for (const auto& rule : model.getReactionRules()) {
+        const std::string ruleName = rule.getRuleName();
+
+        // Skip if already processed
+        if (derived.find(ruleName) != derived.end()) {
+            continue;
+        }
+
+        // Get forward rate expression
+        if (rule.getRates().empty()) {
+            continue;
+        }
+
+        const auto& rateExprObj = rule.getRates()[0];
+        const std::string rateExpr = rateExprObj.toString();
+
+        // Skip built-in BNG rate law functions (Sat, MM, Hill, etc.)
+        // These are written directly in the reaction rate field
+        if (rateExprObj.kind() == ast::ExpressionKind::Function &&
+            builtinRateLawFunctions.count(rateExprObj.name()) > 0) {
+            continue;
+        }
+
+        // Skip model-defined functions (kPlus, kMinus, etc.)
+        // These are written directly as function name in the reaction rate field
+        // Parser may store them as Function or ObservableRef kind
+        if (rateExprObj.kind() == ast::ExpressionKind::Function ||
+            rateExprObj.kind() == ast::ExpressionKind::ObservableRef) {
+            bool isModelFunction = false;
+            const auto& exprName = rateExprObj.name();
+            for (const auto& func : model.getFunctions()) {
+                if (func.getName() == exprName) {
+                    isModelFunction = true;
+                    break;
+                }
+            }
+            if (isModelFunction) {
+                continue;
+            }
+        }
+
+        // Skip if rate expression is simple (just a parameter name)
+        if (isSimpleExpression(rateExpr)) {
+            // Check if it's a known parameter or function
+            bool isKnownParam = false;
+            for (const auto& param : model.getParameters().all()) {
+                if (param.getName() == rateExpr) {
+                    isKnownParam = true;
+                    break;
+                }
+            }
+            if (isKnownParam) {
+                continue;  // Use parameter directly
+            }
+            // TODO: Check if it's a function name
+            // For now, assume simple names are parameters
+            continue;
+        }
+
+        // Complex expression - create rateLaw entry
+        // Perl convention: _rateLaw for functions (references observables), rateLaw for parameters
+        bool asFunction = referencesObservables(rateExpr);
+        std::string paramName = (asFunction ? "_rateLaw" : "rateLaw") + std::to_string(rateLawCounter++);
+
+        derived.emplace(
+            ruleName,
+            DerivedRateInfo {
+                paramName,
+                rateExpr,
+                ast::Expression::number(0.0),  // Placeholder
+                false,  // reverseDirection
+                asFunction
+            });
+
+        // Handle bidirectional rules (reverse rate)
+        if (rule.isBidirectional() && rule.getRates().size() > 1) {
+            const std::string reverseRuleName = "_reverse__" + ruleName;
+            const std::string reverseRateExpr = rule.getRates()[1].toString();
+
+            if (!isSimpleExpression(reverseRateExpr)) {
+                bool reverseAsFunction = referencesObservables(reverseRateExpr);
+                std::string reverseParamName = (reverseAsFunction ? "_rateLaw" : "rateLaw") + std::to_string(rateLawCounter++);
+
+                derived.emplace(
+                    reverseRuleName,
+                    DerivedRateInfo {
+                        reverseParamName,
+                        reverseRateExpr,
+                        ast::Expression::number(0.0),
+                        true,  // reverseDirection
+                        reverseAsFunction
+                    });
+            }
+        }
+    }
+
+    // Also handle Arrhenius expressions (keep existing logic for compatibility)
     for (const auto& reaction : network.reactions.all()) {
         if (reaction.getOriginRuleName().empty() || derived.find(reaction.getOriginRuleName()) != derived.end()) {
             continue;
@@ -397,7 +556,6 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
             : arrhenius->phiArg;
         const std::string deltaExpr = energyDeltaExpression(reaction, model, network);
 
-        // Build string expression for .net file
         std::string expr = "exp((-( " + arrhenius->eaArg;
         if (!deltaExpr.empty()) {
             expr = "exp((-( " + arrhenius->eaArg + "+(" + phiExpr + "*(" + deltaExpr + "))))))";
@@ -406,18 +564,17 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
         }
         expr = compactExpression(expr);
 
-        // Placeholder Expression tree (won't be used for evaluation)
-        ast::Expression exprTree = ast::Expression::number(0.0);
-
         derived.emplace(
             reaction.getOriginRuleName(),
             DerivedRateInfo {
                 reverseDirection ? "__reverse__" + ruleBase + "_local1" : "__" + ruleBase + "_local1",
                 expr,
-                exprTree,
+                ast::Expression::number(0.0),
                 reverseDirection,
+                false  // Arrhenius are parameters, not functions
             });
     }
+
     return derived;
 }
 
@@ -469,24 +626,68 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
         if (derivedParamNames.count(parameter.getName()) > 0) {
             continue;
         }
-        out << "    " << parameterIndex++ << " " << parameter.getName() << " " << parameter.getValue() << '\n';
+        // Write parameter value with enough precision for %.8g comparison (Perl compatibility)
+        {
+            std::ostringstream valStr;
+            valStr << std::setprecision(15) << parameter.getValue();
+            out << "    " << parameterIndex++ << " " << parameter.getName() << " " << valStr.str() << '\n';
+        }
     }
-    for (std::size_t i = 0; i < model.getSeedSpecies().size(); ++i) {
-        const auto& seed = model.getSeedSpecies()[i];
-        out << "    " << parameterIndex++ << " " << formatInitialAmountName(i) << " " << seed.getAmount().toString() << '\n';
-    }
-    // Write derived rate parameters with symbolic expressions (for Perl compatibility)
+    // Seed species initial amounts are written directly in species section
+    // using parameter names (e.g., Ga_0) - no _InitialConc parameters needed
+    // Write derived rate parameters (only non-function ones) with evaluated numeric values
     for (const auto& rule : model.getReactionRules()) {
         const auto found = derivedRateParams.find(rule.getRuleName());
-        if (found != derivedRateParams.end()) {
-            out << "    " << parameterIndex++ << " " << found->second.paramName << " " << found->second.expression << '\n';
+        if (found != derivedRateParams.end() && !found->second.asFunction) {
+            // Try to use evaluated value; fall back to expression if not available
+            std::string valueStr;
+            if (model.getParameters().contains(found->second.paramName)) {
+                std::ostringstream voss;
+                voss << std::setprecision(15) << model.getParameters().get(found->second.paramName).getValue();
+                valueStr = voss.str();
+            } else {
+                valueStr = compactExpression(found->second.expression);
+            }
+            out << "    " << parameterIndex++ << " " << found->second.paramName << " " << valueStr << '\n';
         }
         const auto reverseFound = derivedRateParams.find("_reverse__" + rule.getRuleName());
-        if (reverseFound != derivedRateParams.end()) {
-            out << "    " << parameterIndex++ << " " << reverseFound->second.paramName << " " << reverseFound->second.expression << '\n';
+        if (reverseFound != derivedRateParams.end() && !reverseFound->second.asFunction) {
+            std::string valueStr;
+            if (model.getParameters().contains(reverseFound->second.paramName)) {
+                std::ostringstream voss;
+                voss << std::setprecision(15) << model.getParameters().get(reverseFound->second.paramName).getValue();
+                valueStr = voss.str();
+            } else {
+                valueStr = compactExpression(reverseFound->second.expression);
+            }
+            out << "    " << parameterIndex++ << " " << reverseFound->second.paramName << " " << valueStr << '\n';
         }
     }
     out << "end parameters\n";
+
+    // Write functions section for derived rate laws that reference observables
+    bool hasFunctions = false;
+    for (const auto& [ruleName, info] : derivedRateParams) {
+        if (info.asFunction) {
+            hasFunctions = true;
+            break;
+        }
+    }
+    if (hasFunctions) {
+        out << "begin functions\n";
+        std::size_t functionIndex = 1;
+        for (const auto& rule : model.getReactionRules()) {
+            const auto found = derivedRateParams.find(rule.getRuleName());
+            if (found != derivedRateParams.end() && found->second.asFunction) {
+                out << "    " << functionIndex++ << " " << found->second.paramName << "() " << compactExpression(found->second.expression) << '\n';
+            }
+            const auto reverseFound = derivedRateParams.find("_reverse__" + rule.getRuleName());
+            if (reverseFound != derivedRateParams.end() && reverseFound->second.asFunction) {
+                out << "    " << functionIndex++ << " " << reverseFound->second.paramName << "() " << compactExpression(reverseFound->second.expression) << '\n';
+            }
+        }
+        out << "end functions\n";
+    }
 
     out << "begin species\n";
     for (const auto& species : network.species.all()) {
@@ -510,11 +711,15 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
             }
         }
         out << " ";
-        for (std::size_t i = 0; i < reaction.getProducts().size(); ++i) {
-            if (i != 0) {
-                out << ",";
+        if (reaction.getProducts().empty()) {
+            out << "0";
+        } else {
+            for (std::size_t i = 0; i < reaction.getProducts().size(); ++i) {
+                if (i != 0) {
+                    out << ",";
+                }
+                out << (reaction.getProducts()[i] + 1);
             }
-            out << (reaction.getProducts()[i] + 1);
         }
         out << " ";
         const auto derivedFound = derivedRateParams.find(reaction.getOriginRuleName());
@@ -539,7 +744,40 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
             if (std::abs(reaction.getFactor() - 1.0) >= 1e-9) {
                 out << formatFactor(reaction.getFactor()) << "*";
             }
-            out << reaction.getRateLaw();
+            // Check if the rate is a built-in BNG function call (Sat, MM, Hill, etc.)
+            // If so, write as "FunctionName arg1 arg2" (space-separated, Perl format)
+            const auto& rateExpr = reaction.getRateExpression();
+            if (rateExpr.has_value() &&
+                rateExpr->kind() == ast::ExpressionKind::Function &&
+                builtinRateLawFunctions.count(rateExpr->name()) > 0) {
+                const auto canonIt = builtinCanonicalName.find(rateExpr->name());
+                out << (canonIt != builtinCanonicalName.end() ? canonIt->second : rateExpr->name());
+                for (const auto& arg : rateExpr->args()) {
+                    out << " " << arg.toString();
+                }
+            } else if (rateExpr.has_value() &&
+                       (rateExpr->kind() == ast::ExpressionKind::Function ||
+                        rateExpr->kind() == ast::ExpressionKind::ObservableRef)) {
+                // Model-defined or built-in function — write with original casing
+                const auto& exprName = rateExpr->name();
+                std::string canonName = exprName;
+                // Check model functions first
+                for (const auto& func : model.getFunctions()) {
+                    if (func.getName() == exprName) {
+                        canonName = func.getName();
+                        break;
+                    }
+                }
+                out << canonName;
+                // Write arguments if any (not empty-arg functions like kPlus())
+                if (!rateExpr->args().empty()) {
+                    for (const auto& arg : rateExpr->args()) {
+                        out << " " << arg.toString();
+                    }
+                }
+            } else {
+                out << reaction.getRateLaw();
+            }
         }
         out << '\n';
     }

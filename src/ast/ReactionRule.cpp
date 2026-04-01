@@ -217,13 +217,16 @@ std::string reactionLabel(
     const ReactionRule& rule,
     const std::vector<std::size_t>& reactants,
     const std::vector<std::string>& products) {
+    // Sort reactants for label/dedup (actual Rxn preserves BNGL pattern order)
+    auto sortedReactants = reactants;
+    std::sort(sortedReactants.begin(), sortedReactants.end());
     std::ostringstream out;
     out << rule.getLabel() << "|";
-    for (std::size_t i = 0; i < reactants.size(); ++i) {
+    for (std::size_t i = 0; i < sortedReactants.size(); ++i) {
         if (i != 0) {
             out << ",";
         }
-        out << reactants[i];
+        out << sortedReactants[i];
     }
     out << "->";
     for (std::size_t i = 0; i < products.size(); ++i) {
@@ -566,6 +569,7 @@ ReactionRule::ReactionRule(
       bidirectional_(bidirectional),
       reactantPatterns_(std::move(reactantPatterns)),
       productPatterns_(std::move(productPatterns)) {
+    parseReactantFilters();
     initialize();
 }
 
@@ -789,8 +793,24 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
     std::unordered_set<std::string> seen;
     const bool debug = std::getenv("BNG_DEBUG_EMBEDDINGS") != nullptr;
 
+    // Build set of species already in cache to avoid re-searching them
+    std::unordered_set<std::size_t> alreadySearchedSpecies;
+    if (patternIndex < patternMatches_.size()) {
+        for (const auto& existing : patternMatches_[patternIndex]) {
+            alreadySearchedSpecies.insert(existing.speciesIndex);
+        }
+    }
+
     for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
         if (candidateSpecies.find(speciesIndex) == candidateSpecies.end()) {
+            continue;
+        }
+        // Skip species that have already been searched in previous iterations
+        if (alreadySearchedSpecies.count(speciesIndex) > 0) {
+            continue;
+        }
+        // Apply include/exclude reactant filters
+        if (!passesReactantFilters(patternIndex, speciesList.get(speciesIndex).getSpeciesGraph())) {
             continue;
         }
         BNGcore::UllmannSGIso matcher(pattern, speciesList.get(speciesIndex).getSpeciesGraph().getGraph());
@@ -832,12 +852,13 @@ void ReactionRule::clearPatternMatchCache() const {
     patternMatches_.assign(reactantPatterns_.size(), {});
     matchesInitialized_ = false;
     lastSpeciesListCapacity_ = 0;
-    processedSpeciesIndices_.clear();
+    lastProcessedInIteration_.clear();
 }
 
 std::size_t ReactionRule::expandRule(
     SpeciesList& speciesList,
     RxnList& rxnList,
+    std::size_t currentIteration,
     const std::function<bool(const SpeciesGraph&)>& productFilter) const {
 
     // --- Reverse rule delegation ---
@@ -854,7 +875,7 @@ std::size_t ReactionRule::expandRule(
                 productPatterns_,
                 reactantPatterns_);
         }
-        reverseRule_->expandRule(speciesList, rxnList, productFilter);
+        reverseRule_->expandRule(speciesList, rxnList, currentIteration, productFilter);
     }
 
     if (reactantPatterns_.empty()) {
@@ -901,7 +922,7 @@ std::size_t ReactionRule::expandRule(
         patternMatches_.assign(reactantPatterns_.size(), {});
         matchesInitialized_ = false;
         lastSpeciesListCapacity_ = speciesList.capacity();
-        processedSpeciesIndices_.clear();
+        lastProcessedInIteration_.clear();
     }
 
     if (!matchesInitialized_ || patternMatches_.size() != reactantPatterns_.size()) {
@@ -909,18 +930,40 @@ std::size_t ReactionRule::expandRule(
         matchesInitialized_ = false;
     }
 
-    // --- Collect new (unprocessed by THIS RULE) species ---
+    // --- Collect new species (not processed by THIS RULE in current iteration) ---
     const bool debug = std::getenv("BNG_DEBUG_RULES") != nullptr;
+    const bool isBimolecular = reactantPatterns_.size() >= 2;
+
+    // First pass: identify truly new species (never processed by ANY rule yet)
+    bool hasTrulyNewSpecies = false;
+    for (std::size_t i = 0; i < speciesList.size(); ++i) {
+        if (!speciesList.get(i).rulesApplied()) {
+            hasTrulyNewSpecies = true;
+            break;
+        }
+    }
+
     std::unordered_set<std::size_t> newSpecies;
     for (std::size_t i = 0; i < speciesList.size(); ++i) {
-        if (!speciesList.get(i).rulesApplied() && processedSpeciesIndices_.find(i) == processedSpeciesIndices_.end()) {
+        const auto iter = lastProcessedInIteration_.find(i);
+        const bool notYetProcessed = !speciesList.get(i).rulesApplied();
+        const bool notProcessedByThisRuleInCurrentIteration =
+            (iter == lastProcessedInIteration_.end() || iter->second < currentIteration);
+
+        // Unimolecular: only process new species (!rulesApplied) not yet processed by this rule
+        // Bimolecular: process new species OR (if truly new species exist) old species for cross-matching
+        if (notYetProcessed && notProcessedByThisRuleInCurrentIteration) {
+            newSpecies.insert(i);
+        } else if (isBimolecular && hasTrulyNewSpecies && speciesList.get(i).rulesApplied() &&
+                   notProcessedByThisRuleInCurrentIteration) {
             newSpecies.insert(i);
         }
     }
     if (debug) {
-        std::cerr << "[DEBUG] Rule " << ruleName_ << ": newSpecies={";
+        std::cerr << "[DEBUG] Rule " << ruleName_ << " iter=" << currentIteration
+                  << ": newSpecies={";
         for (auto idx : newSpecies) std::cerr << idx << ",";
-        std::cerr << "} processedCount=" << processedSpeciesIndices_.size() << "\n";
+        std::cerr << "} trackedCount=" << lastProcessedInIteration_.size() << "\n";
     }
     if (newSpecies.empty()) {
         return 0;
@@ -997,7 +1040,7 @@ std::size_t ReactionRule::expandRule(
         lastSpeciesListCapacity_ = speciesList.capacity();
         // Mark processed even if no matches
         for (std::size_t idx : newSpecies) {
-            processedSpeciesIndices_.insert(idx);
+            lastProcessedInIteration_[idx] = currentIteration;
         }
         return 0;
     }
@@ -1016,7 +1059,7 @@ std::size_t ReactionRule::expandRule(
         lastSpeciesListCapacity_ = speciesList.capacity();
         // Mark processed even if not all patterns match
         for (std::size_t idx : newSpecies) {
-            processedSpeciesIndices_.insert(idx);
+            lastProcessedInIteration_[idx] = currentIteration;
         }
         return 0;
     }
@@ -1076,9 +1119,9 @@ std::size_t ReactionRule::expandRule(
     matchesInitialized_ = true;
     lastSpeciesListCapacity_ = speciesList.capacity();
 
-    // Mark these species as processed by this rule to avoid reprocessing in next iteration
+    // Mark these species as processed by this rule in this iteration
     for (std::size_t idx : newSpecies) {
-        processedSpeciesIndices_.insert(idx);
+        lastProcessedInIteration_[idx] = currentIteration;
     }
 
     return created;
@@ -1216,30 +1259,46 @@ bool ReactionRule::buildReaction(
         }
     }
 
-    auto productGraphs = splitIntoSpeciesGraphs(aggregateGraph);
-    const bool deleteMolecules = hasModifier(modifiers_, "deletemolecules");
-    if (!deleteMolecules && productGraphs.size() != productPatterns_.size()) {
-        return false;
-    }
-
     std::vector<std::size_t> productIndices;
     std::vector<std::string> productLabels;
-    for (auto& productGraph : productGraphs) {
-        if (productFilter && !productFilter(productGraph)) {
+
+    if (productPatterns_.empty() && !reactantPatterns_.empty()) {
+        // Degradation rule (e.g., A() -> 0): no products
+        // productIndices and productLabels remain empty
+    } else {
+        auto productGraphs = splitIntoSpeciesGraphs(aggregateGraph);
+        const bool deleteMolecules = hasModifier(modifiers_, "deletemolecules");
+        if (!deleteMolecules && productGraphs.size() != productPatterns_.size()) {
             return false;
         }
-        productLabels.push_back(productGraph.canonicalLabel());
-        const auto [index, _] = speciesList.add(Species(
-            productGraph,
-            0.0,
-            false,
-            sameCompartment ? inferredCompartment : std::string()));
-        productIndices.push_back(index);
+
+        for (auto& productGraph : productGraphs) {
+            if (productFilter && !productFilter(productGraph)) {
+                return false;
+            }
+            productLabels.push_back(productGraph.canonicalLabel());
+            const auto [index, _] = speciesList.add(Species(
+                productGraph,
+                0.0,
+                false,
+                sameCompartment ? inferredCompartment : std::string()));
+            productIndices.push_back(index);
+        }
     }
     std::sort(productLabels.begin(), productLabels.end());
 
-    std::sort(reactantIndices.begin(), reactantIndices.end());
-    std::sort(productIndices.begin(), productIndices.end());
+    // Do NOT sort reactantIndices or productIndices — preserve BNGL pattern order (Perl compatibility)
+
+    // Compute statistical factor for symmetric bimolecular rules (A+A -> ...)
+    // When two identical reactant patterns match the same species, apply 0.5 factor
+    double factor = 1.0;
+    if (reactantPatterns_.size() == 2 && reactantIndices.size() == 2 &&
+        reactantIndices[0] == reactantIndices[1]) {
+        // Check if both reactant patterns are identical (same canonical label)
+        if (reactantPatterns_[0].canonicalLabel() == reactantPatterns_[1].canonicalLabel()) {
+            factor = 0.5;
+        }
+    }
 
     const std::string label = reactionLabel(*this, reactantIndices, productLabels);
     const bool added = rxnList.add(Rxn(
@@ -1247,15 +1306,76 @@ bool ReactionRule::buildReaction(
         reactantIndices,
         productIndices,
         rates_.empty() ? "0" : rates_.front().toString(),
-        1.0,
+        factor,
         ruleName_,
         rates_.empty() ? std::nullopt : std::optional<Expression>(rates_.front())));
     return added;
 }
 
+void ReactionRule::parseReactantFilters() {
+    reactantFilters_.clear();
+    for (const auto& mod : modifiers_) {
+        ReactantFilter::Type type;
+        std::string prefix;
+        if (mod.find("include_reactants(") == 0 || mod.find("include_reactants (") == 0) {
+            type = ReactantFilter::Type::Include;
+            prefix = "include_reactants";
+        } else if (mod.find("exclude_reactants(") == 0 || mod.find("exclude_reactants (") == 0) {
+            type = ReactantFilter::Type::Exclude;
+            prefix = "exclude_reactants";
+        } else {
+            continue;
+        }
+        // Parse: prefix(INT,PATTERN)
+        const auto lparen = mod.find('(');
+        const auto rparen = mod.rfind(')');
+        if (lparen == std::string::npos || rparen == std::string::npos) continue;
+        const auto inner = mod.substr(lparen + 1, rparen - lparen - 1);
+        const auto comma = inner.find(',');
+        if (comma == std::string::npos) continue;
+        const auto indexStr = inner.substr(0, comma);
+        auto molName = inner.substr(comma + 1);
+        // Trim whitespace
+        molName.erase(0, molName.find_first_not_of(" \t"));
+        molName.erase(molName.find_last_not_of(" \t") + 1);
+        // Remove any trailing component list like "()" for simple molecule name matching
+        const auto parenPos = molName.find('(');
+        if (parenPos != std::string::npos) {
+            molName = molName.substr(0, parenPos);
+        }
+        try {
+            const std::size_t idx = std::stoul(indexStr) - 1; // Convert 1-based to 0-based
+            reactantFilters_.push_back(ReactantFilter{type, idx, molName});
+        } catch (...) {}
+    }
+}
+
+bool ReactionRule::passesReactantFilters(std::size_t patternIndex, const SpeciesGraph& species) const {
+    for (const auto& filter : reactantFilters_) {
+        if (filter.patternIndex != patternIndex) continue;
+
+        // Check if species contains a molecule with the given name
+        bool containsMolecule = false;
+        const auto& graph = species.getGraph();
+        for (auto nodeIter = graph.begin(); nodeIter != graph.end(); ++nodeIter) {
+            if (isMoleculeNode(**nodeIter) &&
+                (*nodeIter)->get_type().get_type_name() == filter.moleculeName) {
+                containsMolecule = true;
+                break;
+            }
+        }
+
+        if (filter.type == ReactantFilter::Type::Include && !containsMolecule) {
+            return false; // Must contain molecule but doesn't
+        }
+        if (filter.type == ReactantFilter::Type::Exclude && containsMolecule) {
+            return false; // Must not contain molecule but does
+        }
+    }
+    return true;
+}
+
 } // namespace bng::ast
-
-
 
 
 

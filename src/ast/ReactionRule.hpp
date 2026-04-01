@@ -82,6 +82,7 @@ public:
     std::size_t expandRule(
         SpeciesList& speciesList,
         RxnList& rxnList,
+        std::size_t currentIteration,
         const std::function<bool(const SpeciesGraph&)>& productFilter = {}) const;
 
 private:
@@ -112,7 +113,18 @@ private:
     mutable bool synthesisApplied_ = false;
     mutable std::size_t lastSpeciesListCapacity_ = 0;
     mutable std::unique_ptr<ReactionRule> reverseRule_;
-    mutable std::unordered_set<std::size_t> processedSpeciesIndices_;
+    mutable std::map<std::size_t, std::size_t> lastProcessedInIteration_;
+
+    // Parsed include/exclude reactant filters
+    struct ReactantFilter {
+        enum class Type { Include, Exclude };
+        Type type;
+        std::size_t patternIndex; // 0-based
+        std::string moleculeName;
+    };
+    std::vector<ReactantFilter> reactantFilters_;
+    void parseReactantFilters();
+    bool passesReactantFilters(std::size_t patternIndex, const SpeciesGraph& species) const;
 };
 
 } // namespace bng::ast

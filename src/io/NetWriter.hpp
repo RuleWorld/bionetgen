@@ -15,6 +15,7 @@ struct DerivedRateInfo {
     std::string expression;
     ast::Expression exprTree;
     bool reverseDirection = false;
+    bool asFunction = false;  // true if should be written as function (references observables)
 };
 
 class NetWriter {

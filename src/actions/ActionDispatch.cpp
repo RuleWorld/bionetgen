@@ -441,10 +441,25 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             ensureNetwork();
             const auto label = stripQuotes(readArgument(action, "value", "default"));
             const auto found = savedConcentrations.find(label);
-            if (found == savedConcentrations.end()) {
-                throw std::runtime_error("resetConcentrations label not found: " + label);
+            if (found != savedConcentrations.end()) {
+                restoreConcentrations(*network, found->second);
+            } else {
+                // Perl BNG2 behavior: reset to initial seed species concentrations
+                const auto& seeds = model.getSeedSpecies();
+                for (std::size_t i = 0; i < network->species.size(); ++i) {
+                    if (i < seeds.size()) {
+                        try {
+                            const double amount = seeds[i].getAmount().evaluate(
+                                [&](const std::string& name) { return model.getParameters().evaluate(name); });
+                            network->species.get(i).setAmount(amount);
+                        } catch (...) {
+                            network->species.get(i).setAmount(0.0);
+                        }
+                    } else {
+                        network->species.get(i).setAmount(0.0);
+                    }
+                }
             }
-            restoreConcentrations(*network, found->second);
             writeCurrentNetwork();
             continue;
         }
@@ -552,8 +567,8 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
         }
 
         if (actionName == "writexml") {
-            ensureNetwork();
-            const auto xmlContent = io::XmlWriter::write(model, &(*network));
+            // Write XML without network (NFsim XML format doesn't require generated network)
+            const auto xmlContent = io::XmlWriter::write(model, network.has_value() ? &(*network) : nullptr);
             const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".xml");
             std::ofstream outFile(outputPath);
             if (!outFile) {

@@ -204,12 +204,12 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     for (std::size_t iter = 0; iter < maxIter; ++iter) {
         const std::size_t previousSpecies = network.species.size();
         const std::size_t previousReactions = network.reactions.size();
-        const std::size_t processedSpecies = network.species.size();
+        const std::size_t speciesAtIterStart = network.species.size();
 
         for (const auto& rule : model_.getReactionRules()) {
             const std::size_t beforeSpecies = network.species.size();
             const std::size_t beforeReactions = network.reactions.size();
-            const auto created = rule.expandRule(network.species, network.reactions, [&](const ast::SpeciesGraph& graph) {
+            const auto created = rule.expandRule(network.species, network.reactions, iter, [&](const ast::SpeciesGraph& graph) {
                 return withinStoichLimits(graph, maxStoich);
             });
             const bool debugRules = std::getenv("BNG_DEBUG_RULES") != nullptr;
@@ -230,7 +230,9 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
             }
         }
 
-        for (std::size_t i = 0; i < processedSpecies; ++i) {
+        // Mark only species that existed at the START of this iteration as processed
+        // Species created during this iteration remain with rulesApplied=false for next iteration
+        for (std::size_t i = 0; i < speciesAtIterStart; ++i) {
             network.species.get(i).setRulesApplied(true);
         }
 

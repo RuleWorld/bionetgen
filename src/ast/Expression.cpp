@@ -174,6 +174,25 @@ double Expression::evaluate(const std::function<double(const std::string&)>& res
             requireArity(text_, children_, 3);
             return evalArg(0) != 0.0 ? evalArg(1) : evalArg(2);
         }
+        if (text_ == "mratio") {
+            requireArity(text_, children_, 3);
+            const double a = evalArg(0);
+            const double b = evalArg(1);
+            const double z = evalArg(2);
+            // Kummer's confluent hypergeometric function 1F1(a,b,z) via series expansion
+            auto hypergeom1F1 = [](double aa, double bb, double zz) -> double {
+                double sum = 1.0, term = 1.0;
+                for (int k = 1; k <= 1000; ++k) {
+                    term *= (aa + k - 1) * zz / ((bb + k - 1) * k);
+                    sum += term;
+                    if (std::abs(term) < 1e-15 * std::abs(sum)) break;
+                }
+                return sum;
+            };
+            const double M_ab = hypergeom1F1(a, b, z);
+            const double M_a1b1 = hypergeom1F1(a + 1, b + 1, z);
+            return (std::abs(M_ab) < 1e-300) ? 0.0 : M_a1b1 / M_ab;
+        }
         // Constants
         if (text_ == "_pi") { requireArity(text_, children_, 0); return M_PI; }
         if (text_ == "_e") { requireArity(text_, children_, 0); return M_E; }

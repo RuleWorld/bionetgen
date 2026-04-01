@@ -1,5 +1,6 @@
 #include "RxnList.hpp"
 
+#include <algorithm>
 #include <sstream>
 #include <utility>
 
@@ -9,11 +10,14 @@ namespace {
 
 std::string reactionSignature(const Rxn& reaction) {
     std::ostringstream out;
-    for (std::size_t i = 0; i < reaction.getReactants().size(); ++i) {
+    // Sort reactants for deduplication (order in Rxn is preserved for output)
+    auto sortedReactants = reaction.getReactants();
+    std::sort(sortedReactants.begin(), sortedReactants.end());
+    for (std::size_t i = 0; i < sortedReactants.size(); ++i) {
         if (i != 0) {
             out << ",";
         }
-        out << reaction.getReactants()[i];
+        out << sortedReactants[i];
     }
     out << "->";
     for (std::size_t i = 0; i < reaction.getProducts().size(); ++i) {

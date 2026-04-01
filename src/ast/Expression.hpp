@@ -31,6 +31,10 @@ public:
     std::set<std::string> getDependencies() const;
     std::string toString() const;
 
+    ExpressionKind kind() const { return kind_; }
+    const std::string& name() const { return text_; }
+    const std::vector<Expression>& args() const { return children_; }
+
 private:
     ExpressionKind kind_;
     double numberValue_;
