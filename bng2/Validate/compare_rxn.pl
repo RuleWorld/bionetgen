@@ -187,12 +187,12 @@ sub rxn2text
 {
     my ($rxn, $params, $species) = @_;
 
-    # Use species strings for comparison when available (handles ordering differences)
+    # Use species fingerprints for comparison (invariant to canonical form differences)
     my $reactants;
     my $products;
     if (defined $species and %$species) {
-        $reactants = join(" + ", sort map { $species->{$_} || "S$_" } split(",", $rxn->[1]) );
-        $products  = join(" + ", sort map { $species->{$_} || "S$_" } split(",", $rxn->[2]) );
+        $reactants = join(" + ", sort map { species_fingerprint($species->{$_} || "S$_") } split(",", $rxn->[1]) );
+        $products  = join(" + ", sort map { species_fingerprint($species->{$_} || "S$_") } split(",", $rxn->[2]) );
     } else {
         $reactants = join(" + ", map {"S$_"} split(",", $rxn->[1]) );
         $products  = join(" + ", map {"S$_"} split(",", $rxn->[2]) );
@@ -238,6 +238,73 @@ sub rxn2text
     }
 
     # generate rxn string
-    return "$reactants -> $products at $rate";   
+    return "$reactants -> $products at $rate";
+}
+
+
+# Compute a graph-structure fingerprint for a BNG species string.
+# Invariant to molecule/component ordering and bond numbering.
+sub species_fingerprint {
+    my $spec = shift;
+
+    my @mol_strings;
+    my $depth = 0;
+    my $cur = '';
+    for my $ch (split //, $spec) {
+        if ($ch eq '(') { $depth++; $cur .= $ch; }
+        elsif ($ch eq ')') { $depth--; $cur .= $ch; }
+        elsif ($ch eq '.' && $depth == 0) {
+            push @mol_strings, $cur; $cur = '';
+        }
+        else { $cur .= $ch; }
+    }
+    push @mol_strings, $cur if $cur ne '';
+
+    my %bond_endpoints;
+    my @mol_infos;
+    for my $mi (0 .. $#mol_strings) {
+        my $ms = $mol_strings[$mi];
+        my ($mol_name, $comp_str);
+        if ($ms =~ /^([^(]+)\(([^)]*)\)(.*)$/) {
+            $mol_name = $1 . ($3 // '');
+            $comp_str = $2;
+        } elsif ($ms =~ /^([^(]+)\(\)(.*)$/) {
+            $mol_name = $1 . ($2 // '');
+            $comp_str = '';
+        } else {
+            push @mol_infos, { name => $ms, comps => [] };
+            next;
+        }
+        my @comps;
+        for my $cs (split /,/, $comp_str) {
+            my $key = $cs;
+            my @bonds;
+            while ($key =~ s/!(\d+)//) { push @bonds, $1; }
+            push @comps, { key => $key, bonds => \@bonds };
+            for my $b (@bonds) {
+                push @{$bond_endpoints{$b}}, [$mi, $key];
+            }
+        }
+        push @mol_infos, { name => $mol_name, comps => \@comps };
+    }
+
+    my @fp_parts;
+    for my $mol (@mol_infos) {
+        my @comp_keys = sort map {
+            my $bc = scalar @{$_->{bonds}};
+            $_->{key} . ($bc > 0 ? "!$bc" : "")
+        } @{$mol->{comps}};
+        push @fp_parts, "M:" . $mol->{name} . "(" . join(",", @comp_keys) . ")";
+    }
+    for my $bnum (sort { $a <=> $b } keys %bond_endpoints) {
+        my @eps = @{$bond_endpoints{$bnum}};
+        next unless @eps == 2;
+        my @edge = sort map {
+            $mol_infos[$_->[0]]{name} . ":" . $_->[1]
+        } @eps;
+        push @fp_parts, "B:" . join("--", @edge);
+    }
+
+    return join("|", sort @fp_parts);
 }
 

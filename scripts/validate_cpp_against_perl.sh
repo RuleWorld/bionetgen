@@ -78,6 +78,11 @@ for model in "${MODELS[@]}"; do
         cp -r "$VALIDATE_DIR/INPUT_FILES" "$WORKDIR/" 2>/dev/null || true
     fi
 
+    # Copy companion .net files (for models that use readFile)
+    if [ -f "$VALIDATE_DIR/$model.net" ]; then
+        cp "$VALIDATE_DIR/$model.net" "$WORKDIR/" 2>/dev/null || true
+    fi
+
     # Run C++ network generation (30s timeout)
     CPP_NET="$WORKDIR/$model.net"
     if ! timeout 30 "$CPP_BNG" "$WORKDIR/$model.bngl" > "$WORKDIR/cpp.log" 2>&1; then

@@ -58,24 +58,26 @@ if ($ordered)
 }
 else
 {
-    my %spec1_names = ();
+    my %spec1_fp = ();
     foreach my $spec (@$species1)
     {
-        $spec1_names{$spec} = 1;
-    }  
-    my %spec2_names=();
+        $spec1_fp{species_fingerprint($spec)} = 1;
+    }
+    my %spec2_fp = ();
     foreach my $spec (@$species2)
     {
-        $spec2_names{$spec} = 1;
-    }  
+        $spec2_fp{species_fingerprint($spec)} = 1;
+    }
     foreach my $i (0..$#$species1)
     {
-        unless ( exists $spec2_names{$species1->[$i]} )
+        my $fp1 = species_fingerprint($species1->[$i]);
+        unless ( exists $spec2_fp{$fp1} )
         {
             printf "No match for species %d of $sim_file: %s\n", $i+1, $species1->[$i];
             $err = 1;
         }
-        unless ( exists $spec1_names{$species2->[$i]} )
+        my $fp2 = species_fingerprint($species2->[$i]);
+        unless ( exists $spec1_fp{$fp2} )
         {
             printf "No match for species %d of $ref_file: %s\n", $i+1, $species2->[$i];
             $err = 1;
@@ -96,6 +98,85 @@ print "$msg\n\n";
 exit($err);
 
 
+
+
+# Compute a graph-structure fingerprint for a BNG species string.
+# The fingerprint is invariant to molecule ordering, component ordering,
+# and bond numbering. Two isomorphic species produce the same fingerprint.
+sub species_fingerprint {
+    my $spec = shift;
+
+    # Parse into molecules: split on '.' outside parentheses
+    my @mol_strings;
+    my $depth = 0;
+    my $cur = '';
+    for my $ch (split //, $spec) {
+        if ($ch eq '(') { $depth++; $cur .= $ch; }
+        elsif ($ch eq ')') { $depth--; $cur .= $ch; }
+        elsif ($ch eq '.' && $depth == 0) {
+            push @mol_strings, $cur; $cur = '';
+        }
+        else { $cur .= $ch; }
+    }
+    push @mol_strings, $cur if $cur ne '';
+
+    # Parse each molecule into components with bond info
+    # bond_endpoints{bond_num} = [ [mol_idx, comp_name_state], ... ]
+    my %bond_endpoints;
+    my @mol_infos;  # [{name, comps: [{key, bonds}]}]
+    for my $mi (0 .. $#mol_strings) {
+        my $ms = $mol_strings[$mi];
+        my ($mol_name, $comp_str, $suffix);
+        if ($ms =~ /^([^(]+)\(([^)]*)\)(.*)$/) {
+            $mol_name = $1 . ($3 // '');
+            $comp_str = $2;
+        } elsif ($ms =~ /^([^(]+)\(\)(.*)$/) {
+            $mol_name = $1 . ($2 // '');
+            $comp_str = '';
+        } else {
+            push @mol_infos, { name => $ms, comps => [] };
+            next;
+        }
+        my @comps;
+        for my $cs (split /,/, $comp_str) {
+            my $key = $cs;
+            my @bonds;
+            while ($key =~ s/!(\d+)//) { push @bonds, $1; }
+            push @comps, { key => $key, bonds => \@bonds };
+            for my $b (@bonds) {
+                push @{$bond_endpoints{$b}}, [$mi, $key];
+            }
+        }
+        push @mol_infos, { name => $mol_name, comps => \@comps };
+    }
+
+    # Build fingerprint as a sorted multiset of:
+    # 1. Unbound components: "UNCOMP:mol_name:comp_key"
+    # 2. Bond edges: sorted pair "BOND:mol1_name:comp1_key--mol2_name:comp2_key"
+    # 3. Molecule signatures: "MOL:name:sorted_comp_keys"
+    my @fp_parts;
+
+    # Molecule signatures (captures unbound structure)
+    for my $mol (@mol_infos) {
+        my @comp_keys = sort map {
+            my $bcount = scalar @{$_->{bonds}};
+            $_->{key} . ($bcount > 0 ? "!$bcount" : "")
+        } @{$mol->{comps}};
+        push @fp_parts, "M:" . $mol->{name} . "(" . join(",", @comp_keys) . ")";
+    }
+
+    # Bond edges (captures connectivity)
+    for my $bnum (sort { $a <=> $b } keys %bond_endpoints) {
+        my @eps = @{$bond_endpoints{$bnum}};
+        next unless @eps == 2;
+        my @edge = sort map {
+            $mol_infos[$_->[0]]{name} . ":" . $_->[1]
+        } @eps;
+        push @fp_parts, "B:" . join("--", @edge);
+    }
+
+    return join("|", sort @fp_parts);
+}
 
 
 # read species from NET file
