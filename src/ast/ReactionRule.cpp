@@ -889,13 +889,32 @@ std::size_t ReactionRule::expandRule(
     // --- Reverse rule delegation ---
     if (bidirectional_ && !rates_.empty()) {
         if (!reverseRule_) {
+            // Transform modifiers for reverse rule (Perl convention):
+            // Forward's exclude_reactants → Reverse's exclude_products
+            // Forward's include_reactants → Reverse's include_products
+            // Forward's exclude_products → Reverse's exclude_reactants
+            // Forward's include_products → Reverse's include_reactants
+            std::vector<std::string> reverseModifiers;
+            for (const auto& mod : modifiers_) {
+                std::string transformed = mod;
+                if (mod.find("exclude_reactants") == 0) {
+                    transformed.replace(0, 17, "exclude_products");
+                } else if (mod.find("include_reactants") == 0) {
+                    transformed.replace(0, 17, "include_products");
+                } else if (mod.find("exclude_products") == 0) {
+                    transformed.replace(0, 16, "exclude_reactants");
+                } else if (mod.find("include_products") == 0) {
+                    transformed.replace(0, 16, "include_reactants");
+                }
+                reverseModifiers.push_back(std::move(transformed));
+            }
             reverseRule_ = std::make_unique<ReactionRule>(
                 std::string("_reverse__") + ruleName_,
                 label_.empty() ? std::string("_reverse") : std::string("_reverse__") + label_,
                 products_,
                 reactants_,
                 std::vector<Expression>{rates_.size() > 1 ? rates_[1] : rates_.front()},
-                modifiers_,
+                std::move(reverseModifiers),
                 false,
                 productPatterns_,
                 reactantPatterns_);
@@ -1316,7 +1335,22 @@ bool ReactionRule::buildReaction(
         // Track which product pattern each product graph corresponds to
         std::vector<std::size_t> productPatternIndices;
 
-        if (productGraphs.size() > productPatterns_.size() && !deleteMolecules) {
+        // Check if the rule only has bond-related operations (DeleteBond, no DeleteMolecule/AddMolecule).
+        // For pure bond-breaking rules (e.g., reverse of intramolecular rules), if breaking
+        // the bond disconnects the complex into more fragments than product patterns, the
+        // reaction is invalid (bridge bond in non-cyclic complex — not a ring opening).
+        // Rules with DeleteMolecule operations (degradation) may legitimately produce orphan
+        // fragments that should be discarded.
+        bool isPureBondRule = true;
+        for (const auto& op : operations_) {
+            if (op.type == TransformOp::Type::DeleteMolecule ||
+                op.type == TransformOp::Type::AddMolecule) {
+                isPureBondRule = false;
+                break;
+            }
+        }
+
+        if (productGraphs.size() > productPatterns_.size() && !deleteMolecules && !isPureBondRule) {
             // More product components than product patterns: this happens when a rule
             // transforms part of a complex (e.g., D() -> Trash() matching in a dimer).
             // In BNG2, orphaned components (not corresponding to any product pattern) are
@@ -1352,6 +1386,11 @@ bool ReactionRule::buildReaction(
             for (std::size_t i = 0; i < productPatterns_.size(); ++i) {
                 productPatternIndices.push_back(i);
             }
+        }
+
+        // Apply product-side filters (from reverse rule modifier transformation)
+        if (!productFilters_.empty() && !passesProductFilters(productGraphs)) {
+            return false;
         }
 
         for (std::size_t i = 0; i < productGraphs.size(); ++i) {
@@ -1414,15 +1453,22 @@ bool ReactionRule::buildReaction(
 
 void ReactionRule::parseReactantFilters() {
     reactantFilters_.clear();
+    productFilters_.clear();
     for (const auto& mod : modifiers_) {
         ReactantFilter::Type type;
-        std::string prefix;
+        ReactantFilter::Side side;
         if (mod.find("include_reactants(") == 0 || mod.find("include_reactants (") == 0) {
             type = ReactantFilter::Type::Include;
-            prefix = "include_reactants";
+            side = ReactantFilter::Side::Reactant;
         } else if (mod.find("exclude_reactants(") == 0 || mod.find("exclude_reactants (") == 0) {
             type = ReactantFilter::Type::Exclude;
-            prefix = "exclude_reactants";
+            side = ReactantFilter::Side::Reactant;
+        } else if (mod.find("include_products(") == 0 || mod.find("include_products (") == 0) {
+            type = ReactantFilter::Type::Include;
+            side = ReactantFilter::Side::Product;
+        } else if (mod.find("exclude_products(") == 0 || mod.find("exclude_products (") == 0) {
+            type = ReactantFilter::Type::Exclude;
+            side = ReactantFilter::Side::Product;
         } else {
             continue;
         }
@@ -1445,7 +1491,12 @@ void ReactionRule::parseReactantFilters() {
         }
         try {
             const std::size_t idx = std::stoul(indexStr) - 1; // Convert 1-based to 0-based
-            reactantFilters_.push_back(ReactantFilter{type, idx, molName});
+            ReactantFilter filter{type, side, idx, molName};
+            if (side == ReactantFilter::Side::Reactant) {
+                reactantFilters_.push_back(std::move(filter));
+            } else {
+                productFilters_.push_back(std::move(filter));
+            }
         } catch (...) {}
     }
 }
@@ -1470,6 +1521,32 @@ bool ReactionRule::passesReactantFilters(std::size_t patternIndex, const Species
         }
         if (filter.type == ReactantFilter::Type::Exclude && containsMolecule) {
             return false; // Must not contain molecule but does
+        }
+    }
+    return true;
+}
+
+bool ReactionRule::passesProductFilters(const std::vector<SpeciesGraph>& products) const {
+    for (const auto& filter : productFilters_) {
+        if (filter.patternIndex >= products.size()) continue;
+        const auto& product = products[filter.patternIndex];
+
+        // Check if product contains a molecule with the given name
+        bool containsMolecule = false;
+        const auto& graph = product.getGraph();
+        for (auto nodeIter = graph.begin(); nodeIter != graph.end(); ++nodeIter) {
+            if (isMoleculeNode(**nodeIter) &&
+                (*nodeIter)->get_type().get_type_name() == filter.moleculeName) {
+                containsMolecule = true;
+                break;
+            }
+        }
+
+        if (filter.type == ReactantFilter::Type::Include && !containsMolecule) {
+            return false; // Product must contain molecule but doesn't
+        }
+        if (filter.type == ReactantFilter::Type::Exclude && containsMolecule) {
+            return false; // Product must not contain molecule but does
         }
     }
     return true;

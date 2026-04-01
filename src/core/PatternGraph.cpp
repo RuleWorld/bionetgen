@@ -390,6 +390,95 @@ PatternGraph::get_BNG2_string ( ) const
 
 
 
+// Overload that also returns per-molecule compartments in string order
+std::string
+PatternGraph::get_BNG2_string ( std::vector<std::string>& moleculeCompartments ) const
+{
+    // Generate the string using the same logic as get_BNG2_string()
+    // but also collect compartments from root molecule nodes in output order
+    moleculeCompartments.clear();
+
+    if ( nodes.size() == 0 )
+        return "";
+
+    int   ii;
+    Node  *node;
+    bool  first_node, has_parents;
+    std::stringstream             s;
+    node_container_t              node_order;
+    node_const_iter_t             node_iter;
+    node_const_iter_t             edge_iter;
+    std::map <const Node*,int>    bond_index;
+
+    node_container_t root_molecules;
+    node_order = std::vector<Node*> ( nodes.begin(), nodes.end() );
+    std::sort ( node_order.begin(), node_order.end(), Node::less );
+
+    for ( node_iter = node_order.begin();  node_iter != node_order.end();  ++node_iter )
+    {
+        node = *node_iter;
+        if ( node->get_type() < ENTITY_NODE_TYPE )
+        {
+            has_parents = false;
+            for ( edge_iter = node->edges_in_begin();  edge_iter != node->edges_in_end();  ++edge_iter )
+            {
+                if ( (*edge_iter)->get_type() < ENTITY_NODE_TYPE )
+                {   has_parents = true;  break;   }
+            }
+            if ( !has_parents )
+                root_molecules.push_back( node );
+        }
+    }
+
+    // Sort root molecules using the same comparator as the no-arg version
+    // (Reuse the Perl BNG2 convention sorting from the base method)
+    auto countBonds = []( const Node* comp ) -> int {
+        int bonds = 0;
+        for ( auto it = comp->edges_out_begin(); it != comp->edges_out_end(); ++it )
+            if ( (*it)->get_type() < LINK_NODE_TYPE && (*it)->get_state() == BOUND_STATE )
+                ++bonds;
+        return bonds;
+    };
+
+    std::sort( root_molecules.begin(), root_molecules.end(),
+        [&countBonds, &bond_index]( const Node* a, const Node* b ) -> bool {
+            const auto& nameA = a->get_type().get_type_name();
+            const auto& nameB = b->get_type().get_type_name();
+            if (nameA != nameB) return nameA < nameB;
+            auto compsA = std::vector<Node*>(a->edges_out_begin(), a->edges_out_end());
+            auto compsB = std::vector<Node*>(b->edges_out_begin(), b->edges_out_end());
+            compsA.erase(std::remove_if(compsA.begin(), compsA.end(),
+                [](const Node* n) { return !(n->get_type() < ENTITY_NODE_TYPE); }), compsA.end());
+            compsB.erase(std::remove_if(compsB.begin(), compsB.end(),
+                [](const Node* n) { return !(n->get_type() < ENTITY_NODE_TYPE); }), compsB.end());
+            if (compsA.size() != compsB.size()) return compsA.size() < compsB.size();
+            const auto minSize = std::min(compsA.size(), compsB.size());
+            for (std::size_t i = 0; i < minSize; ++i) {
+                const auto& tA = compsA[i]->get_type().get_type_name();
+                const auto& tB = compsB[i]->get_type().get_type_name();
+                if (tA != tB) return tA < tB;
+                const auto sA = compsA[i]->get_state().get_BNG2_string();
+                const auto sB = compsB[i]->get_state().get_BNG2_string();
+                if (sA != sB) return sA < sB;
+                int bA = countBonds(compsA[i]), bB = countBonds(compsB[i]);
+                if (bA != bB) return bA > bB;
+            }
+            return a->get_index() < b->get_index();
+        } );
+
+    ii = 1;
+    first_node = true;
+    for ( node_iter = root_molecules.begin();  node_iter != root_molecules.end();  ++node_iter )
+    {
+        if ( !first_node )  s << ".";
+        s << (*node_iter)->get_BNG2_string( bond_index, ii );
+        moleculeCompartments.push_back( (*node_iter)->get_compartment() );
+        first_node = false;
+    }
+
+    return s.str();
+}
+
 // Generate a canonical string for graph (requires that canonical ordering has been determined.
 std::string
 PatternGraph::get_label ( ) const

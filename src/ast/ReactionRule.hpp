@@ -116,16 +116,20 @@ private:
     mutable std::unique_ptr<ReactionRule> reverseRule_;
     mutable std::map<std::size_t, std::size_t> lastProcessedInIteration_;
 
-    // Parsed include/exclude reactant filters
+    // Parsed include/exclude reactant and product filters
     struct ReactantFilter {
         enum class Type { Include, Exclude };
+        enum class Side { Reactant, Product };
         Type type;
+        Side side = Side::Reactant;
         std::size_t patternIndex; // 0-based
         std::string moleculeName;
     };
     std::vector<ReactantFilter> reactantFilters_;
+    std::vector<ReactantFilter> productFilters_;
     void parseReactantFilters();
     bool passesReactantFilters(std::size_t patternIndex, const SpeciesGraph& species) const;
+    bool passesProductFilters(const std::vector<SpeciesGraph>& products) const;
 };
 
 } // namespace bng::ast

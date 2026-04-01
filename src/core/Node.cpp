@@ -33,6 +33,7 @@ Node::Node ( const Node & orig )
 {
     state = orig.state->clone();
     index = orig.index;
+    compartment_ = orig.compartment_;
 }
 
 
@@ -388,11 +389,15 @@ Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
                 s << child_node->get_BNG2_string( link_index, next_bond );
         }
     
-        // if there are any children, include in string 
+        // if there are any children, include in string
         if ( found_entity_child )
             s << "(" << t.str() << ")";
         else if ( !has_entity_parent )
             s << "()";
+
+        // Per-molecule compartment suffix (@CYT) is NOT added here to avoid
+        // affecting species deduplication via string matching. Instead, compartment
+        // annotations are applied at the NetWriter level during .net output.
     }
     // return string
     return s.str();

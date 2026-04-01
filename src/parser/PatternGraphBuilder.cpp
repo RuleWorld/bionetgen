@@ -76,10 +76,32 @@ BNGcore::PatternGraph buildPatternGraph(
     BNGcore::PatternGraph graph;
     std::unordered_map<std::string, BNGcore::Node*> bondNodesById;
 
-    for (auto* moleculePattern : ctx->molecule_pattern()) {
+    // Collect per-molecule compartments from the species_def level
+    // Grammar: (AT STRING COLON)? mol mol_comp? (DOT mol mol_comp?)* (AT STRING)?
+    // molecule_compartment children of species_def are the suffix compartments between molecules
+    const auto& speciesMolComps = ctx->molecule_compartment();
+    const auto& moleculePatterns = ctx->molecule_pattern();
+
+    for (std::size_t mi = 0; mi < moleculePatterns.size(); ++mi) {
+        auto* moleculePattern = moleculePatterns[mi];
         const auto& moleculeType = ensureInferredMoleculeType(moleculePattern, model);
         BNGcore::Node moleculeNodeValue(model.getGraphTypeRegistry().ensureMoleculeType(moleculeType));
         auto* moleculeNode = graph.add_node(moleculeNodeValue);
+
+        // Extract per-molecule compartment from two sources:
+        // 1. Inside molecule_pattern: A@CYT(x) — compartment before parentheses
+        // 2. After molecule_pattern at species_def level: A(x)@CYT — suffix compartment
+        std::string molComp;
+        if (moleculePattern->molecule_compartment() != nullptr) {
+            // Compartment inside molecule_pattern (e.g., A@CYT(...))
+            molComp = moleculePattern->molecule_compartment()->STRING()->getText();
+        } else if (mi < speciesMolComps.size() && speciesMolComps[mi] != nullptr) {
+            // Compartment at species_def level after this molecule (e.g., A(...)@CYT)
+            molComp = speciesMolComps[mi]->STRING()->getText();
+        }
+        if (!molComp.empty()) {
+            moleculeNode->set_compartment(molComp);
+        }
 
         if (auto* componentList = moleculePattern->component_pattern_list()) {
             for (auto* componentPattern : componentList->component_pattern()) {

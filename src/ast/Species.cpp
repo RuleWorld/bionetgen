@@ -8,7 +8,12 @@ Species::Species(SpeciesGraph graph, double amount, bool constant, std::string c
     : graph_(std::move(graph)),
       amount_(amount),
       constant_(constant),
-      compartment_(std::move(compartment)) {}
+      compartment_(std::move(compartment)) {
+    // Propagate species-level compartment to the SpeciesGraph for string generation
+    if (!compartment_.empty() && graph_.getCompartment().empty()) {
+        graph_.setCompartment(compartment_);
+    }
+}
 
 const SpeciesGraph& Species::getSpeciesGraph() const {
     return graph_;

@@ -188,13 +188,57 @@ BNGcore::PatternGraph parseObservablePattern(const std::string& patternText, ast
 
 std::string formatSpecies(const ast::Species& species) {
     std::string result;
-    if (!species.getCompartment().empty()) {
-        result += "@" + species.getCompartment() + "::";
+    const auto& speciesCompartment = species.getCompartment();
+    if (!speciesCompartment.empty()) {
+        result += "@" + speciesCompartment + "::";
     }
     if (species.isConstant()) {
         result += "$";
     }
-    result += species.getSpeciesGraph().toString();
+
+    // Get species string and per-molecule compartments in output order
+    std::vector<std::string> molCompartments;
+    std::string speciesStr = species.getSpeciesGraph().getGraph().get_BNG2_string(molCompartments);
+
+    // Add per-molecule compartment suffixes for molecules whose compartment
+    // differs from the species-level compartment (Perl convention:
+    // @COMP suffix only when molecule compartment != species compartment)
+    if (!speciesCompartment.empty() && !molCompartments.empty()) {
+        std::string annotated;
+        std::size_t molIdx = 0;
+        std::size_t pos = 0;
+        while (pos < speciesStr.size()) {
+            // Find the end of this molecule (next '.' at top level, outside parens)
+            int parenDepth = 0;
+            std::size_t molEnd = pos;
+            while (molEnd < speciesStr.size()) {
+                if (speciesStr[molEnd] == '(') parenDepth++;
+                else if (speciesStr[molEnd] == ')') parenDepth--;
+                else if (speciesStr[molEnd] == '.' && parenDepth == 0) break;
+                molEnd++;
+            }
+
+            annotated += speciesStr.substr(pos, molEnd - pos);
+
+            // Add compartment suffix if molecule is in a different compartment
+            if (molIdx < molCompartments.size() &&
+                !molCompartments[molIdx].empty() &&
+                molCompartments[molIdx] != speciesCompartment) {
+                annotated += "@" + molCompartments[molIdx];
+            }
+
+            if (molEnd < speciesStr.size() && speciesStr[molEnd] == '.') {
+                annotated += '.';
+                molEnd++;
+            }
+
+            pos = molEnd;
+            molIdx++;
+        }
+        speciesStr = annotated;
+    }
+
+    result += speciesStr;
     return result;
 }
 

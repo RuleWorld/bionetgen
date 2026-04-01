@@ -152,8 +152,11 @@ void NetReader::parseReactionLine(const std::string& line, std::vector<std::stri
 }
 
 void NetReader::parseGroupLine(const std::string& line, ParseResult& result) {
-    // Format: <index> <name> <type> <patterns...>
-    // Example: "1 Dimers Molecules EGFR(CR1!+)"
+    // Two formats are supported:
+    // Format A (from BNGL): <index> <name> <type> <patterns...>
+    //   Example: "1 Dimers Molecules EGFR(CR1!+)"
+    // Format B (from .net):  <index> <name> <weights>
+    //   Example: "1 Sa0  1,4"  (weight-based species references)
 
     auto tokens = split(line, ' ');
     std::vector<std::string> filtered;
@@ -161,20 +164,27 @@ void NetReader::parseGroupLine(const std::string& line, ParseResult& result) {
         if (!trim(t).empty()) filtered.push_back(trim(t));
     }
 
-    if (filtered.size() < 4) {
+    if (filtered.size() < 3) {
         throw std::runtime_error("Invalid observable format: " + line);
     }
 
     std::string name = filtered[1];
-    std::string type = filtered[2];
 
-    // Patterns are everything after type
-    std::vector<std::string> patterns;
-    for (std::size_t i = 3; i < filtered.size(); ++i) {
-        patterns.push_back(filtered[i]);
+    if (filtered.size() >= 4) {
+        // Format A: <index> <name> <type> <patterns...>
+        std::vector<std::string> patterns;
+        for (std::size_t i = 3; i < filtered.size(); ++i) {
+            patterns.push_back(filtered[i]);
+        }
+        result.observables.emplace_back(name, patterns);
+    } else {
+        // Format B: <index> <name> <weights>
+        // Third token is comma-separated species indices (possibly with weight multipliers)
+        // e.g., "1,4" or "2*1,3*2"
+        std::vector<std::string> weights;
+        weights.push_back(filtered[2]);
+        result.observables.emplace_back(name, weights);
     }
-
-    result.observables.emplace_back(name, patterns);
 }
 
 } // namespace bng::io
