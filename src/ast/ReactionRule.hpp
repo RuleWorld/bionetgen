@@ -52,6 +52,7 @@ public:
     struct EmbeddingResult {
         std::size_t speciesIndex = 0;
         BNGcore::Map map;
+        std::size_t multiplicity = 1;  // Number of Ullmann maps that collapse to this embedding
     };
 
     ReactionRule(

@@ -71,25 +71,25 @@ public:
     RuleSeed_species_block = 20, RuleSeed_species_def = 21, RuleSpecies_def = 22, 
     RuleMolecule_compartment = 23, RuleMolecule_pattern = 24, RulePattern_bond_wildcard = 25, 
     RuleMolecule_tag = 26, RuleComponent_pattern_list = 27, RuleComponent_pattern = 28, 
-    RuleState_value = 29, RuleBond_spec = 30, RuleBond_id = 31, RuleObservables_block = 32, 
-    RuleObservable_def = 33, RuleObservable_type = 34, RuleObservable_pattern_list = 35, 
-    RuleObservable_pattern = 36, RuleReaction_rules_block = 37, RuleReaction_rule_def = 38, 
-    RuleLabel_def = 39, RuleReactant_patterns = 40, RuleProduct_patterns = 41, 
-    RuleReaction_sign = 42, RuleRate_law = 43, RuleRule_modifiers = 44, 
-    RulePattern_list = 45, RuleFunctions_block = 46, RuleFunction_def = 47, 
-    RuleParam_list = 48, RuleCompartments_block = 49, RuleCompartment_def = 50, 
-    RuleEnergy_patterns_block = 51, RuleEnergy_pattern_def = 52, RulePopulation_maps_block = 53, 
-    RulePopulation_map_def = 54, RuleActions_block = 55, RuleWrapped_actions_block = 56, 
-    RuleBegin_actions_block = 57, RuleAction_command = 58, RuleGenerate_network_cmd = 59, 
-    RuleSimulate_cmd = 60, RuleWrite_cmd = 61, RuleSet_cmd = 62, RuleOther_action_cmd = 63, 
-    RuleAction_args = 64, RuleAction_arg_list = 65, RuleAction_arg = 66, 
-    RuleAction_arg_value = 67, RuleQuoted_string = 68, RuleKeyword_as_value = 69, 
-    RuleNested_hash_list = 70, RuleNested_hash_item = 71, RuleArg_name = 72, 
-    RuleExpression_list = 73, RuleExpression = 74, RuleConditional_expr = 75, 
-    RuleOr_expr = 76, RuleAnd_expr = 77, RuleEquality_expr = 78, RuleRelational_expr = 79, 
-    RuleAdditive_expr = 80, RuleMultiplicative_expr = 81, RulePower_expr = 82, 
-    RuleUnary_expr = 83, RulePrimary_expr = 84, RuleFunction_call = 85, 
-    RuleObservable_ref = 86, RuleLiteral = 87
+    RuleState_value = 29, RuleBond_spec = 30, RuleComponent_label = 31, 
+    RuleBond_id = 32, RuleObservables_block = 33, RuleObservable_def = 34, 
+    RuleObservable_type = 35, RuleObservable_pattern_list = 36, RuleObservable_pattern = 37, 
+    RuleReaction_rules_block = 38, RuleReaction_rule_def = 39, RuleLabel_def = 40, 
+    RuleReactant_patterns = 41, RuleProduct_patterns = 42, RuleReaction_sign = 43, 
+    RuleRate_law = 44, RuleRule_modifiers = 45, RulePattern_list = 46, RuleFunctions_block = 47, 
+    RuleFunction_def = 48, RuleParam_list = 49, RuleCompartments_block = 50, 
+    RuleCompartment_def = 51, RuleEnergy_patterns_block = 52, RuleEnergy_pattern_def = 53, 
+    RulePopulation_maps_block = 54, RulePopulation_map_def = 55, RuleActions_block = 56, 
+    RuleWrapped_actions_block = 57, RuleBegin_actions_block = 58, RuleAction_command = 59, 
+    RuleGenerate_network_cmd = 60, RuleSimulate_cmd = 61, RuleWrite_cmd = 62, 
+    RuleSet_cmd = 63, RuleOther_action_cmd = 64, RuleAction_args = 65, RuleAction_arg_list = 66, 
+    RuleAction_arg = 67, RuleAction_arg_value = 68, RuleQuoted_string = 69, 
+    RuleKeyword_as_value = 70, RuleNested_hash_list = 71, RuleNested_hash_item = 72, 
+    RuleArg_name = 73, RuleExpression_list = 74, RuleExpression = 75, RuleConditional_expr = 76, 
+    RuleOr_expr = 77, RuleAnd_expr = 78, RuleEquality_expr = 79, RuleRelational_expr = 80, 
+    RuleAdditive_expr = 81, RuleMultiplicative_expr = 82, RulePower_expr = 83, 
+    RuleUnary_expr = 84, RulePrimary_expr = 85, RuleFunction_call = 86, 
+    RuleObservable_ref = 87, RuleLiteral = 88
   };
 
   explicit BNGParser(antlr4::TokenStream *input);
@@ -140,6 +140,7 @@ public:
   class Component_patternContext;
   class State_valueContext;
   class Bond_specContext;
+  class Component_labelContext;
   class Bond_idContext;
   class Observables_blockContext;
   class Observable_defContext;
@@ -337,6 +338,7 @@ public:
     Population_maps_blockContext *population_maps_block();
     Wrapped_actions_blockContext *wrapped_actions_block();
     Begin_actions_blockContext *begin_actions_block();
+    Set_optionContext *set_option();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -698,10 +700,12 @@ public:
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *STRING();
     Keyword_as_mol_nameContext *keyword_as_mol_name();
+    Molecule_compartmentContext *molecule_compartment();
+    std::vector<Molecule_tagContext *> molecule_tag();
+    Molecule_tagContext* molecule_tag(size_t i);
     antlr4::tree::TerminalNode *LPAREN();
     antlr4::tree::TerminalNode *RPAREN();
     Pattern_bond_wildcardContext *pattern_bond_wildcard();
-    Molecule_tagContext *molecule_tag();
     Molecule_attributesContext *molecule_attributes();
     Component_pattern_listContext *component_pattern_list();
 
@@ -767,6 +771,8 @@ public:
     Keyword_as_component_nameContext *keyword_as_component_name();
     std::vector<Bond_specContext *> bond_spec();
     Bond_specContext* bond_spec(size_t i);
+    std::vector<Component_labelContext *> component_label();
+    Component_labelContext* component_label(size_t i);
     std::vector<antlr4::tree::TerminalNode *> DOT();
     antlr4::tree::TerminalNode* DOT(size_t i);
     std::vector<antlr4::tree::TerminalNode *> TILDE();
@@ -812,6 +818,21 @@ public:
   };
 
   Bond_specContext* bond_spec();
+
+  class  Component_labelContext : public antlr4::ParserRuleContext {
+  public:
+    Component_labelContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *MOD();
+    antlr4::tree::TerminalNode *INT();
+    antlr4::tree::TerminalNode *STRING();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Component_labelContext* component_label();
 
   class  Bond_idContext : public antlr4::ParserRuleContext {
   public:

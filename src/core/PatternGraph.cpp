@@ -290,43 +290,99 @@ PatternGraph::get_BNG2_string ( ) const
     node_const_iter_t             edge_iter;
     std::map <const Node*,int>    bond_index;            
 
-    // sort nodes
+    // Collect root molecule nodes (entity nodes without entity parents)
+    node_container_t root_molecules;
     node_order = std::vector<Node*> ( nodes.begin(), nodes.end() );
     std::sort ( node_order.begin(), node_order.end(), Node::less );
 
-    // set up bond index map (1-based to match Perl BNG2)
-    ii = 1;
-    for ( node_iter = node_order.begin();  node_iter != node_order.end();  ++node_iter )
-    {
-        node = *node_iter;
-        if ( node->get_type() < LINK_NODE_TYPE )
-        {
-            bond_index.insert ( std::pair<const Node*,int>( node, ii ) );
-            ++ii;
-        }
-    }
-    
-    // iterate over nodes and print Entities (and their descendants)
-    first_node = true;
     for ( node_iter = node_order.begin();  node_iter != node_order.end();  ++node_iter )
     {
         node = *node_iter;
         if ( node->get_type() < ENTITY_NODE_TYPE )
         {
-            // skip node if it has parents (this will be found by the depth search from each parent node)
             has_parents = false;
             for ( edge_iter = node->edges_in_begin();  edge_iter != node->edges_in_end();  ++edge_iter )
             {
                 if ( (*edge_iter)->get_type() < ENTITY_NODE_TYPE )
                 {   has_parents = true;  break;   }
             }
-            if ( has_parents ) continue;
-
-            // this node has no parents, so begin recursive string fetch
-            if ( !first_node )  s << ".";
-            s << node->get_BNG2_string( bond_index );
-            first_node = false;
+            if ( !has_parents )
+                root_molecules.push_back( node );
         }
+    }
+
+    // Sort root molecules using Perl BNG2 convention (cmp_molecule):
+    // 1. Molecule name (lexical)
+    // 2. Number of components (ascending)
+    // 3. Component-by-component comparison (name, state, bond count desc)
+    // Helper: count bound link children of a component node
+    auto countBonds = []( const Node* comp ) -> int {
+        int bonds = 0;
+        for ( auto it = comp->edges_out_begin(); it != comp->edges_out_end(); ++it )
+            if ( (*it)->get_type() < LINK_NODE_TYPE && (*it)->get_state() == BOUND_STATE )
+                ++bonds;
+        return bonds;
+    };
+
+    // Helper: get sorted component children of a molecule node
+    auto getSortedComponents = [&countBonds]( const Node* mol ) -> std::vector<const Node*> {
+        std::vector<const Node*> comps;
+        for ( auto it = mol->edges_out_begin(); it != mol->edges_out_end(); ++it )
+            if ( (*it)->get_type() < ENTITY_NODE_TYPE )
+                comps.push_back( *it );
+        // Sort by: name, state, bond count (desc), index
+        std::sort( comps.begin(), comps.end(),
+            [&countBonds]( const Node* a, const Node* b ) -> bool {
+                if ( !(a->get_type() == b->get_type()) )
+                    return a->get_type().less( b->get_type() );
+                if ( !(a->get_state() == b->get_state()) )
+                    return a->get_state().less( b->get_state() );
+                int ab = countBonds(a), bb = countBonds(b);
+                if ( ab != bb ) return ab > bb;
+                return a->get_index() < b->get_index();
+            } );
+        return comps;
+    };
+
+    std::sort( root_molecules.begin(), root_molecules.end(),
+        [&getSortedComponents, &countBonds]( const Node* a, const Node* b ) -> bool {
+            // 1. Molecule name (lexical)
+            if ( !(a->get_type() == b->get_type()) )
+                return a->get_type().less( b->get_type() );
+            // 2. Number of component children
+            auto ac = getSortedComponents(a);
+            auto bc = getSortedComponents(b);
+            if ( ac.size() != bc.size() )
+                return ac.size() < bc.size();
+            // 3. Component-by-component comparison
+            for ( std::size_t i = 0; i < ac.size(); ++i )
+            {
+                // Name
+                if ( !(ac[i]->get_type() == bc[i]->get_type()) )
+                    return ac[i]->get_type().less( bc[i]->get_type() );
+                // State
+                if ( !(ac[i]->get_state() == bc[i]->get_state()) )
+                    return ac[i]->get_state().less( bc[i]->get_state() );
+                // Bond count (descending — more bonds first)
+                int ab = countBonds(ac[i]), bb = countBonds(bc[i]);
+                if ( ab != bb ) return ab > bb;
+            }
+            // Fallback to canonical index
+            return a->get_index() < b->get_index();
+        } );
+
+    // Bond index map populated on-the-fly during string serialization
+    // (Perl BNG2 convention: bonds numbered in order first encountered
+    //  during left-to-right string generation)
+    ii = 1;
+
+    // Generate string from sorted molecules
+    first_node = true;
+    for ( node_iter = root_molecules.begin();  node_iter != root_molecules.end();  ++node_iter )
+    {
+        if ( !first_node )  s << ".";
+        s << (*node_iter)->get_BNG2_string( bond_index, ii );
+        first_node = false;
     }
     
     return s.str(); 

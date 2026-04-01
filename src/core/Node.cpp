@@ -271,14 +271,28 @@ Node::validate_typing ( bool instance ) const
 
 // write Node to BNG2 string
 std::string
-Node::get_BNG2_string ( const link_index_t & link_index ) const
+Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
 {
     std::stringstream  s;
 
     if ( get_type() < LINK_NODE_TYPE )
     {   // handle a link node
         if ( get_state() == BOUND_STATE )
-            s << "!" << link_index.find(this)->second;
+        {
+            // Assign bond number on first encounter (Perl convention:
+            // bonds numbered in order they appear during string serialization)
+            auto it = link_index.find(this);
+            if ( it == link_index.end() )
+            {
+                link_index.insert( std::pair<const Node*,int>( this, next_bond ) );
+                s << "!" << next_bond;
+                ++next_bond;
+            }
+            else
+            {
+                s << "!" << it->second;
+            }
+        }
         //else
         //    std::cout << "not bound" << std::endl;
     }
@@ -299,9 +313,56 @@ Node::get_BNG2_string ( const link_index_t & link_index ) const
         // add state
         s << get_state().get_BNG2_string( );  
         
-        // sort out_edges
+        // sort out_edges using Perl BNG2 convention for components:
+        // 1. By type name (lexical)
+        // 2. By state label (lexical)
+        // 3. By number of bound edges (descending — more bonds first)
+        // 4. By already-assigned bond number (ascending — lower bond first)
+        // 5. By canonical index (ascending)
         node_order = std::vector<Node*>( edges_out_begin(), edges_out_end() );
-        std::sort ( node_order.begin(), node_order.end(), Node::less );
+        std::sort ( node_order.begin(), node_order.end(),
+            [&link_index]( const Node* a, const Node* b ) -> bool {
+                // Compare type
+                if ( !(a->get_type() == b->get_type()) )
+                    return a->get_type().less( b->get_type() );
+                // Compare state
+                if ( !(a->get_state() == b->get_state()) )
+                    return a->get_state().less( b->get_state() );
+                // For entity-type children (components): sort by bond count descending
+                if ( a->get_type() < ENTITY_NODE_TYPE )
+                {
+                    // Count bound link children and find min assigned bond number
+                    int a_bonds = 0, b_bonds = 0;
+                    int a_min_bond = INT_MAX, b_min_bond = INT_MAX;
+                    for ( auto it = a->edges_out_begin(); it != a->edges_out_end(); ++it )
+                    {
+                        if ( (*it)->get_type() < LINK_NODE_TYPE && (*it)->get_state() == BOUND_STATE )
+                        {
+                            ++a_bonds;
+                            auto bi = link_index.find(*it);
+                            if ( bi != link_index.end() && bi->second < a_min_bond )
+                                a_min_bond = bi->second;
+                        }
+                    }
+                    for ( auto it = b->edges_out_begin(); it != b->edges_out_end(); ++it )
+                    {
+                        if ( (*it)->get_type() < LINK_NODE_TYPE && (*it)->get_state() == BOUND_STATE )
+                        {
+                            ++b_bonds;
+                            auto bi = link_index.find(*it);
+                            if ( bi != link_index.end() && bi->second < b_min_bond )
+                                b_min_bond = bi->second;
+                        }
+                    }
+                    if ( a_bonds != b_bonds )
+                        return a_bonds > b_bonds;  // More bonds first (Perl convention)
+                    // Tiebreaker: lower assigned bond number first
+                    if ( a_min_bond != b_min_bond )
+                        return a_min_bond < b_min_bond;
+                }
+                // Fallback to canonical index
+                return a->index < b->index;
+            } );
   
         // iterate over child entities
         found_entity_child = false;
@@ -320,11 +381,11 @@ Node::get_BNG2_string ( const link_index_t & link_index ) const
             if ( child_node->get_type() < ENTITY_NODE_TYPE )
             {
                 if ( found_entity_child )  t << ",";
-                t << child_node->get_BNG2_string( link_index );
+                t << child_node->get_BNG2_string( link_index, next_bond );
                 found_entity_child = true;
             }
             else if ( child_node->get_type() < LINK_NODE_TYPE )
-                s << child_node->get_BNG2_string( link_index );
+                s << child_node->get_BNG2_string( link_index, next_bond );
         }
     
         // if there are any children, include in string 

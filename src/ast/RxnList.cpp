@@ -1,6 +1,8 @@
 #include "RxnList.hpp"
 
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
 #include <sstream>
 #include <utility>
 
@@ -20,11 +22,14 @@ std::string reactionSignature(const Rxn& reaction) {
         out << sortedReactants[i];
     }
     out << "->";
-    for (std::size_t i = 0; i < reaction.getProducts().size(); ++i) {
+    // Sort products for deduplication (same as reactants)
+    auto sortedProducts = reaction.getProducts();
+    std::sort(sortedProducts.begin(), sortedProducts.end());
+    for (std::size_t i = 0; i < sortedProducts.size(); ++i) {
         if (i != 0) {
             out << ",";
         }
-        out << reaction.getProducts()[i];
+        out << sortedProducts[i];
     }
     out << "@" << reaction.getRateLaw();
     return out.str();
@@ -36,6 +41,12 @@ bool RxnList::add(Rxn reaction) {
     const auto signature = reactionSignature(reaction);
     const auto existing = indexBySignature_.find(signature);
     if (existing != indexBySignature_.end()) {
+        if (std::getenv("BNG_DEBUG_FACTORS")) {
+            std::cerr << "[FACTOR] Merging dup: sig=" << signature
+                      << " existing_factor=" << reactions_[existing->second].getFactor()
+                      << " + incoming=" << reaction.getFactor()
+                      << " rule=" << reaction.getOriginRuleName() << "\n";
+        }
         reactions_[existing->second].addFactor(reaction.getFactor());
         return false;
     }

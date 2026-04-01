@@ -81,6 +81,8 @@ public:
 
     virtual std::any visitBond_spec(BNGParser::Bond_specContext *context) = 0;
 
+    virtual std::any visitComponent_label(BNGParser::Component_labelContext *context) = 0;
+
     virtual std::any visitBond_id(BNGParser::Bond_idContext *context) = 0;
 
     virtual std::any visitObservables_block(BNGParser::Observables_blockContext *context) = 0;

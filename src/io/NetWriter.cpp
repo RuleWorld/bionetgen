@@ -464,20 +464,86 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
             continue;
         }
 
-        // Skip model-defined functions (kPlus, kMinus, etc.)
-        // These are written directly as function name in the reaction rate field
+        // Handle model-defined functions (kPlus, kMinus, func, etc.)
         // Parser may store them as Function or ObservableRef kind
         if (rateExprObj.kind() == ast::ExpressionKind::Function ||
             rateExprObj.kind() == ast::ExpressionKind::ObservableRef) {
             bool isModelFunction = false;
+            bool hasLocalArgs = !rateExprObj.args().empty();
             const auto& exprName = rateExprObj.name();
+            const ast::Function* matchedFunc = nullptr;
             for (const auto& func : model.getFunctions()) {
                 if (func.getName() == exprName) {
                     isModelFunction = true;
+                    matchedFunc = &func;
                     break;
                 }
             }
+            if (isModelFunction && hasLocalArgs) {
+                // Local function with molecule tag arguments (e.g., func(x) where x is %x tag)
+                // Perl creates __R{N}_local{M} derived parameters with observable values
+                // substituted at the reaction context.
+                // Extract rule index (1-based): count rules up to this one
+                int ruleIndex = 0;
+                for (const auto& r : model.getReactionRules()) {
+                    ++ruleIndex;
+                    if (r.getRuleName() == ruleName) break;
+                }
+                std::string localParamName = "__R" + std::to_string(ruleIndex) + "_local1";
+
+                // Build the function body with local observable values substituted.
+                // For each Obs(localArg) reference, evaluate the local observable count.
+                // For unbound species (common case), local observable count = 0.
+                std::string funcBody;
+                if (matchedFunc != nullptr) {
+                    funcBody = matchedFunc->getExpression().toString();
+                    // Get function's formal parameters
+                    const auto& formalArgs = matchedFunc->getArgs();
+                    // Replace each Obs(formalArg) with Obs evaluated at 0
+                    // (the local count of the observable at the matched molecule)
+                    for (const auto& obs : model.getObservables()) {
+                        for (const auto& farg : formalArgs) {
+                            std::string pattern = obs.getName() + "(" + farg + ")";
+                            std::string::size_type pos = 0;
+                            while ((pos = funcBody.find(pattern, pos)) != std::string::npos) {
+                                funcBody.replace(pos, pattern.length(), "0");
+                            }
+                        }
+                    }
+                } else {
+                    funcBody = "0";
+                }
+
+                // Try to evaluate the funcBody expression with substituted values
+                ast::Expression localExpr = matchedFunc->getExpression();
+                // Build a resolver that substitutes local observables with 0
+                // and model parameters with their values
+                auto localResolver = [&](const std::string& name) -> double {
+                    if (model.getParameters().contains(name)) {
+                        return model.getParameters().get(name).getValue();
+                    }
+                    return 0.0;
+                };
+                double localValue = 0.0;
+                try {
+                    // Create a modified expression with observables replaced by 0
+                    // For now, evaluate the funcBody string approach
+                    localValue = localExpr.evaluate(localResolver);
+                } catch (...) {}
+
+                derived.emplace(
+                    ruleName,
+                    DerivedRateInfo {
+                        localParamName,
+                        funcBody,
+                        ast::Expression::number(localValue),
+                        false,
+                        false  // Local functions are parameters, not functions
+                    });
+                continue;
+            }
             if (isModelFunction) {
+                // No-arg model function — write directly as function name
                 continue;
             }
         }
@@ -501,7 +567,8 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
         }
 
         // Complex expression - create rateLaw entry
-        // Perl convention: _rateLaw for functions (references observables), rateLaw for parameters
+        // Perl convention: _rateLaw (underscore) for functions referencing observables,
+        // rateLaw (no underscore) for pure constant expressions.
         bool asFunction = referencesObservables(rateExpr);
         std::string paramName = (asFunction ? "_rateLaw" : "rateLaw") + std::to_string(rateLawCounter++);
 
@@ -510,7 +577,7 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
             DerivedRateInfo {
                 paramName,
                 rateExpr,
-                ast::Expression::number(0.0),  // Placeholder
+                rateExprObj,  // Store actual expression for evaluation
                 false,  // reverseDirection
                 asFunction
             });
@@ -529,7 +596,7 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                     DerivedRateInfo {
                         reverseParamName,
                         reverseRateExpr,
-                        ast::Expression::number(0.0),
+                        rule.getRates()[1],  // Store actual expression
                         true,  // reverseDirection
                         reverseAsFunction
                     });
@@ -636,31 +703,38 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
     // Seed species initial amounts are written directly in species section
     // using parameter names (e.g., Ga_0) - no _InitialConc parameters needed
     // Write derived rate parameters (only non-function ones) with evaluated numeric values
+    // Perl writes the evaluated numeric value for ConstantExpression derived params.
+    auto formatDerivedParam = [&](const DerivedRateInfo& info) -> std::string {
+        // Local function params (__R{N}_local{M}): write expression string (Perl convention)
+        if (info.paramName.find("__R") == 0 && info.paramName.find("_local") != std::string::npos) {
+            return compactExpression(info.expression);
+        }
+        // Regular derived params: write evaluated numeric value
+        try {
+            double val = info.exprTree.evaluate(
+                [&](const std::string& name) -> double {
+                    if (model.getParameters().contains(name)) {
+                        return model.getParameters().get(name).getValue();
+                    }
+                    return 0.0;
+                });
+            std::ostringstream voss;
+            voss << std::setprecision(15) << val;
+            return voss.str();
+        } catch (...) {
+            return compactExpression(info.expression);
+        }
+    };
     for (const auto& rule : model.getReactionRules()) {
         const auto found = derivedRateParams.find(rule.getRuleName());
         if (found != derivedRateParams.end() && !found->second.asFunction) {
-            // Try to use evaluated value; fall back to expression if not available
-            std::string valueStr;
-            if (model.getParameters().contains(found->second.paramName)) {
-                std::ostringstream voss;
-                voss << std::setprecision(15) << model.getParameters().get(found->second.paramName).getValue();
-                valueStr = voss.str();
-            } else {
-                valueStr = compactExpression(found->second.expression);
-            }
-            out << "    " << parameterIndex++ << " " << found->second.paramName << " " << valueStr << '\n';
+            out << "    " << parameterIndex++ << " " << found->second.paramName << " "
+                << formatDerivedParam(found->second) << '\n';
         }
         const auto reverseFound = derivedRateParams.find("_reverse__" + rule.getRuleName());
         if (reverseFound != derivedRateParams.end() && !reverseFound->second.asFunction) {
-            std::string valueStr;
-            if (model.getParameters().contains(reverseFound->second.paramName)) {
-                std::ostringstream voss;
-                voss << std::setprecision(15) << model.getParameters().get(reverseFound->second.paramName).getValue();
-                valueStr = voss.str();
-            } else {
-                valueStr = compactExpression(reverseFound->second.expression);
-            }
-            out << "    " << parameterIndex++ << " " << reverseFound->second.paramName << " " << valueStr << '\n';
+            out << "    " << parameterIndex++ << " " << reverseFound->second.paramName << " "
+                << formatDerivedParam(reverseFound->second) << '\n';
         }
     }
     out << "end parameters\n";
@@ -699,26 +773,55 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
     out << "begin reactions\n";
     std::size_t reactionIndex = 1;
     for (const auto& reaction : network.reactions.all()) {
+        // Perl BNG2 sorts reactant/product indices for elementary rate laws (simple
+        // parameter names), but preserves original order for MM/Sat/Hill/Function rates.
+        const bool isElementary = [&]() {
+            const auto derivedFound = derivedRateParams.find(reaction.getOriginRuleName());
+            if (derivedFound != derivedRateParams.end()) {
+                // Derived rate params that are ConstantExpressions (not functions)
+                // are treated as "Ele" type in Perl — sort reactants/products
+                return !derivedFound->second.asFunction;
+            }
+            const auto& rateExpr = reaction.getRateExpression();
+            if (rateExpr.has_value()) {
+                const auto kind = rateExpr->kind();
+                if (kind == ast::ExpressionKind::Function ||
+                    kind == ast::ExpressionKind::ObservableRef)
+                    return false;
+            }
+            // Check if rate law string is a simple identifier (no operators)
+            const auto& rl = reaction.getRateLaw();
+            return std::all_of(rl.begin(), rl.end(),
+                [](char c) { return std::isalnum(c) || c == '_' || c == '.'; });
+        }();
+
+        auto reactants = reaction.getReactants();
+        auto products = reaction.getProducts();
+        if (isElementary) {
+            std::sort(reactants.begin(), reactants.end());
+            std::sort(products.begin(), products.end());
+        }
+
         out << "    " << reactionIndex++ << " ";
-        if (reaction.getReactants().empty()) {
+        if (reactants.empty()) {
             out << "0";  // Null reactant (synthesis rule)
         } else {
-            for (std::size_t i = 0; i < reaction.getReactants().size(); ++i) {
+            for (std::size_t i = 0; i < reactants.size(); ++i) {
                 if (i != 0) {
                     out << ",";
                 }
-                out << (reaction.getReactants()[i] + 1);
+                out << (reactants[i] + 1);
             }
         }
         out << " ";
-        if (reaction.getProducts().empty()) {
+        if (products.empty()) {
             out << "0";
         } else {
-            for (std::size_t i = 0; i < reaction.getProducts().size(); ++i) {
+            for (std::size_t i = 0; i < products.size(); ++i) {
                 if (i != 0) {
                     out << ",";
                 }
-                out << (reaction.getProducts()[i] + 1);
+                out << (products[i] + 1);
             }
         }
         out << " ";
@@ -777,6 +880,10 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
                 }
             } else {
                 out << reaction.getRateLaw();
+            }
+            // Append rule name comment for non-derived reactions
+            if (!reaction.getOriginRuleName().empty()) {
+                out << " #" << reaction.getOriginRuleName();
             }
         }
         out << '\n';

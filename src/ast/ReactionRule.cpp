@@ -463,8 +463,8 @@ bool hasModifier(const std::vector<std::string>& modifiers, const std::string& n
 }
 
 std::string canonicalNodeId(const BNGcore::Node* node) {
-    // Create a canonical identifier based on node type, state, and adjacency
-    // This avoids using memory addresses which differ for symmetric nodes
+    // Create a canonical identifier based on node type, state, and adjacency.
+    // This collapses symmetric nodes (same type/state/neighbors).
     std::ostringstream out;
     out << node->get_type().get_type_name() << "|" << node->get_state().get_BNG2_string();
 
@@ -483,7 +483,11 @@ std::string canonicalNodeId(const BNGcore::Node* node) {
     return out.str();
 }
 
-std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGcore::Map& map) {
+std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGcore::Map& map,
+                               const BNGcore::PatternGraph& /*targetGraph*/) {
+    // Use canonical node IDs for target nodes to collapse automorphic embeddings.
+    // This deduplicates mappings that differ only in how pattern nodes are assigned
+    // to equivalent target nodes (e.g., swapping two identical x components).
     std::vector<std::string> parts;
     for (auto nodeIter = pattern.begin(); nodeIter != pattern.end(); ++nodeIter) {
         auto* target = map.mapf(*nodeIter);
@@ -513,21 +517,31 @@ void sortAndUnique(std::vector<T>& values) {
 std::string reactionCenterSignature(
     const std::vector<PatternInfo>& infos,
     const std::vector<ReactionRule::ReactionCenterRef>& reactionCenter,
-    const BNGcore::Map& map) {
+    const BNGcore::Map& map,
+    const BNGcore::PatternGraph& /*targetGraph*/) {
+    // Perl BNG2 convention (filter_identical_by_rxn_center):
+    // - Molecule-level reaction center refs (e.g., MolDel) use only the pattern
+    //   index as identity — all embeddings of a molecule-level delete look identical,
+    //   so only one embedding survives per rule application to a species.
+    // - Component-level reaction center refs (e.g., AddBond, DeleteBond) use the
+    //   target node pointer to distinguish different physical bonds/sites.
+    // Sort the parts so automorphic embeddings (swapping equivalent target
+    // molecules/components) collapse to the same signature.
     std::vector<std::string> parts;
     for (const auto& ref : reactionCenter) {
-        BNGcore::Node* sourceNode = ref.isComponent
-            ? infos.at(ref.patternIndex).molecules.at(ref.moleculeIndex).components.at(ref.componentIndex).node
-            : infos.at(ref.patternIndex).molecules.at(ref.moleculeIndex).node;
-        auto* target = map.mapf(sourceNode);
-        if (target == nullptr) {
-            continue;
-        }
         std::ostringstream out;
-        out << (ref.isComponent ? "c" : "m")
-            << "|" << ref.moleculeIndex
-            << "|" << (ref.isComponent ? std::to_string(ref.componentIndex) : std::string("-"))
-            << "->" << canonicalNodeId(target);
+        if (ref.isComponent) {
+            // Component-level: use target pointer to distinguish different bonds
+            BNGcore::Node* sourceNode =
+                infos.at(ref.patternIndex).molecules.at(ref.moleculeIndex).components.at(ref.componentIndex).node;
+            auto* target = map.mapf(sourceNode);
+            if (target == nullptr) continue;
+            out << reinterpret_cast<std::uintptr_t>(target);
+        } else {
+            // Molecule-level: use pattern index only (Perl convention —
+            // all embeddings of molecule-level operations look the same)
+            out << "P" << ref.patternIndex;
+        }
         parts.push_back(out.str());
     }
     std::sort(parts.begin(), parts.end());
@@ -821,22 +835,31 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
             ++mapsBeforeDedup;
         }
 
+        // Track signature → index in results for multiplicity counting
+        std::unordered_map<std::string, std::size_t> signatureToResultIndex;
         for (auto mapIter = maps.begin(); mapIter != maps.end(); ++mapIter) {
             if (!embeddingRespectsNodeStates(pattern, *mapIter)) {
                 continue;
             }
+            const auto& targetGraph = speciesList.get(speciesIndex).getSpeciesGraph().getGraph();
             const auto signature = std::to_string(speciesIndex) + "|" +
                 (reactionCenter_.at(patternIndex).empty()
-                    ? embeddingSignature(pattern, *mapIter)
-                    : reactionCenterSignature(reactantInfo, reactionCenter_.at(patternIndex), *mapIter));
+                    ? embeddingSignature(pattern, *mapIter, targetGraph)
+                    : reactionCenterSignature(reactantInfo, reactionCenter_.at(patternIndex), *mapIter, targetGraph));
             if (!seen.insert(signature).second) {
+                // Duplicate signature — increment multiplicity of the existing embedding
+                auto it = signatureToResultIndex.find(signature);
+                if (it != signatureToResultIndex.end() && it->second < results.size()) {
+                    results[it->second].multiplicity++;
+                }
                 if (debug) {
                     std::cerr << "[DEBUG] Rule " << ruleName_ << " pattern " << patternIndex
                               << " species " << speciesIndex << ": DUPLICATE signature " << signature << "\n";
                 }
                 continue;
             }
-            results.push_back(EmbeddingResult {speciesIndex, *mapIter});
+            signatureToResultIndex[signature] = results.size();
+            results.push_back(EmbeddingResult {speciesIndex, *mapIter, 1});
         }
         if (debug && mapsBeforeDedup > 0) {
             std::cerr << "[DEBUG] Rule " << ruleName_ << " pattern " << patternIndex
@@ -852,6 +875,8 @@ void ReactionRule::clearPatternMatchCache() const {
     patternMatches_.assign(reactantPatterns_.size(), {});
     matchesInitialized_ = false;
     lastSpeciesListCapacity_ = 0;
+    // Clear iteration tracking only on full cache reset (between generate_network calls),
+    // not on vector reallocation within a single generation.
     lastProcessedInIteration_.clear();
 }
 
@@ -889,12 +914,12 @@ std::size_t ReactionRule::expandRule(
             for (const auto& productPattern : productPatterns_) {
                 BNGcore::PatternGraph productGraph;
                 auto clones = cloneGraphIntoTarget(productPattern.getGraph(), productGraph);
-                SpeciesGraph sg(productGraph);
+                SpeciesGraph sg(productGraph, productPattern.getCompartment());
                 if (productFilter && !productFilter(sg)) {
                     return 0;
                 }
                 productLabels.push_back(sg.canonicalLabel());
-                const auto [index, isNew] = speciesList.add(Species(sg, 0.0, false, std::string()));
+                const auto [index, isNew] = speciesList.add(Species(sg, 0.0, false, productPattern.getCompartment()));
                 productIndices.push_back(index);
             }
             std::sort(productLabels.begin(), productLabels.end());
@@ -922,7 +947,9 @@ std::size_t ReactionRule::expandRule(
         patternMatches_.assign(reactantPatterns_.size(), {});
         matchesInitialized_ = false;
         lastSpeciesListCapacity_ = speciesList.capacity();
-        lastProcessedInIteration_.clear();
+        // NOTE: Do NOT clear lastProcessedInIteration_ here.
+        // Pattern match cache uses pointers (invalidated by reallocation),
+        // but iteration tracking uses species indices (still valid).
     }
 
     if (!matchesInitialized_ || patternMatches_.size() != reactantPatterns_.size()) {
@@ -949,14 +976,27 @@ std::size_t ReactionRule::expandRule(
         const bool notYetProcessed = !speciesList.get(i).rulesApplied();
         const bool notProcessedByThisRuleInCurrentIteration =
             (iter == lastProcessedInIteration_.end() || iter->second < currentIteration);
+        const bool neverProcessedByThisRule = (iter == lastProcessedInIteration_.end());
 
-        // Unimolecular: only process new species (!rulesApplied) not yet processed by this rule
-        // Bimolecular: process new species OR (if truly new species exist) old species for cross-matching
-        if (notYetProcessed && notProcessedByThisRuleInCurrentIteration) {
-            newSpecies.insert(i);
-        } else if (isBimolecular && hasTrulyNewSpecies && speciesList.get(i).rulesApplied() &&
-                   notProcessedByThisRuleInCurrentIteration) {
-            newSpecies.insert(i);
+        // Unimolecular: only process species never seen by this rule before.
+        // Using neverProcessedByThisRule (not just notProcessedInCurrentIteration)
+        // prevents re-processing species across iterations, which would cause
+        // duplicate reactions and doubled stat factors.
+        // Bimolecular: process new species OR (if truly new species exist) old
+        // species for cross-matching (old × new combinations).
+        if (!isBimolecular) {
+            // Unimolecular: process only never-before-seen species
+            if (neverProcessedByThisRule && notYetProcessed) {
+                newSpecies.insert(i);
+            }
+        } else {
+            // Bimolecular: process new species or old species for cross-matching
+            if (notYetProcessed && notProcessedByThisRuleInCurrentIteration) {
+                newSpecies.insert(i);
+            } else if (hasTrulyNewSpecies && speciesList.get(i).rulesApplied() &&
+                       notProcessedByThisRuleInCurrentIteration) {
+                newSpecies.insert(i);
+            }
         }
     }
     if (debug) {
@@ -1004,14 +1044,18 @@ std::size_t ReactionRule::expandRule(
         firstNewPerPattern[patternIndex] = patternMatches_[patternIndex].size();
 
         if (cacheNeedsRebuild && !newMatches.empty()) {
+            // Partition: "old" species (processed by this rule in a previous iteration)
+            // go first; "new" species (never processed by this rule) go after.
+            // This ensures the enumeration's trigger/non-trigger split correctly
+            // avoids re-enumerating already-counted combinations.
             std::stable_partition(newMatches.begin(), newMatches.end(),
-                [&newSpecies](const EmbeddingResult& m) {
-                    return newSpecies.count(m.speciesIndex) == 0;
+                [this](const EmbeddingResult& m) {
+                    return lastProcessedInIteration_.count(m.speciesIndex) > 0;
                 });
 
             std::size_t oldCount = 0;
             for (const auto& m : newMatches) {
-                if (newSpecies.count(m.speciesIndex) == 0) {
+                if (lastProcessedInIteration_.count(m.speciesIndex) > 0) {
                     ++oldCount;
                 }
             }
@@ -1268,20 +1312,66 @@ bool ReactionRule::buildReaction(
     } else {
         auto productGraphs = splitIntoSpeciesGraphs(aggregateGraph);
         const bool deleteMolecules = hasModifier(modifiers_, "deletemolecules");
-        if (!deleteMolecules && productGraphs.size() != productPatterns_.size()) {
+
+        // Track which product pattern each product graph corresponds to
+        std::vector<std::size_t> productPatternIndices;
+
+        if (productGraphs.size() > productPatterns_.size() && !deleteMolecules) {
+            // More product components than product patterns: this happens when a rule
+            // transforms part of a complex (e.g., D() -> Trash() matching in a dimer).
+            // In BNG2, orphaned components (not corresponding to any product pattern) are
+            // destroyed. Match product patterns to product graphs and keep only matched ones.
+            std::vector<SpeciesGraph> matchedProducts;
+            std::vector<bool> used(productGraphs.size(), false);
+            for (std::size_t pi = 0; pi < productPatterns_.size(); ++pi) {
+                const auto& prodPat = productPatterns_[pi];
+                bool found = false;
+                // Try to match each product pattern to a product graph by subgraph isomorphism
+                for (std::size_t gi = 0; gi < productGraphs.size(); ++gi) {
+                    if (used[gi]) continue;
+                    BNGcore::UllmannSGIso matcher(prodPat.getGraph(), productGraphs[gi].getGraph());
+                    BNGcore::List<BNGcore::Map> maps;
+                    matcher.find_maps(maps);
+                    if (maps.begin() != maps.end()) {
+                        matchedProducts.push_back(std::move(productGraphs[gi]));
+                        productPatternIndices.push_back(pi);
+                        used[gi] = true;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    return false;  // Product pattern has no matching graph
+                }
+            }
+            productGraphs = std::move(matchedProducts);
+        } else if (productGraphs.size() != productPatterns_.size() && !deleteMolecules) {
             return false;
+        } else {
+            // All product patterns correspond to product graphs in order
+            for (std::size_t i = 0; i < productPatterns_.size(); ++i) {
+                productPatternIndices.push_back(i);
+            }
         }
 
-        for (auto& productGraph : productGraphs) {
+        for (std::size_t i = 0; i < productGraphs.size(); ++i) {
+            auto& productGraph = productGraphs[i];
             if (productFilter && !productFilter(productGraph)) {
                 return false;
             }
             productLabels.push_back(productGraph.canonicalLabel());
+            // Use product pattern's compartment if available, otherwise use inferred compartment
+            const auto& patternCompartment = productPatternIndices[i] < productPatterns_.size()
+                ? productPatterns_[productPatternIndices[i]].getCompartment()
+                : std::string();
+            const auto& compartmentToUse = !patternCompartment.empty()
+                ? patternCompartment
+                : (sameCompartment ? inferredCompartment : std::string());
             const auto [index, _] = speciesList.add(Species(
                 productGraph,
                 0.0,
                 false,
-                sameCompartment ? inferredCompartment : std::string()));
+                compartmentToUse));
             productIndices.push_back(index);
         }
     }
@@ -1289,14 +1379,24 @@ bool ReactionRule::buildReaction(
 
     // Do NOT sort reactantIndices or productIndices — preserve BNGL pattern order (Perl compatibility)
 
-    // Compute statistical factor for symmetric bimolecular rules (A+A -> ...)
-    // When two identical reactant patterns match the same species, apply 0.5 factor
+    // Compute statistical factor:
+    // For bimolecular rules: multiply by per-pattern multiplicities (number of
+    // equivalent Ullmann maps collapsed by canonical-ID dedup). This accounts for
+    // symmetric sites (e.g., D(x,x) pattern matching D(x,x) species has
+    // multiplicity 2 since both x-component assignments are collapsed).
+    // For unimolecular rules: multiplicity represents automorphisms that are
+    // correctly filtered by reaction center dedup — do NOT multiply.
     double factor = 1.0;
+    if (reactantPatterns_.size() > 1) {
+        for (const auto& match : matchSet) {
+            factor *= static_cast<double>(match.multiplicity);
+        }
+    }
     if (reactantPatterns_.size() == 2 && reactantIndices.size() == 2 &&
         reactantIndices[0] == reactantIndices[1]) {
         // Check if both reactant patterns are identical (same canonical label)
         if (reactantPatterns_[0].canonicalLabel() == reactantPatterns_[1].canonicalLabel()) {
-            factor = 0.5;
+            factor *= 0.5;
         }
     }
 

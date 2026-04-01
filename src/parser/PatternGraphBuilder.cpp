@@ -93,11 +93,16 @@ BNGcore::PatternGraph buildPatternGraph(
                 auto* componentNode = graph.add_node(componentNodeValue);
                 graph.add_edge(moleculeNode, componentNode);
 
-                if (!componentPattern->state_value().empty()) {
-                    const auto& runtimeStateType = componentNode->get_type().get_state_type();
-                    if (const auto* labelStateType = dynamic_cast<const BNGcore::LabelStateType*>(&runtimeStateType)) {
+                const auto& runtimeStateType = componentNode->get_type().get_state_type();
+                if (const auto* labelStateType = dynamic_cast<const BNGcore::LabelStateType*>(&runtimeStateType)) {
+                    if (!componentPattern->state_value().empty()) {
                         BNGcore::LabelState state(*labelStateType, componentPattern->state_value().front()->getText());
                         componentNode->set_state(state);
+                    } else {
+                        // No state specified in pattern → wildcard (matches any state)
+                        // Use "?" which LabelState::operator== treats as wildcard
+                        BNGcore::LabelState wildcardState(*labelStateType, "?");
+                        componentNode->set_state(wildcardState);
                     }
                 }
 
@@ -152,6 +157,58 @@ BNGcore::PatternGraph buildPatternGraph(
     }
 
     return graph;
+}
+
+std::string extractSpeciesCompartment(BNGParser::Species_defContext* ctx) {
+    if (ctx == nullptr) {
+        return {};
+    }
+
+    // First, check for explicit species-level prefix compartment: @COMP:
+    if (ctx->COLON() != nullptr && !ctx->AT().empty()) {
+        // There's a prefix compartment annotation (@COMP:)
+        const auto& strings = ctx->STRING();
+        if (!strings.empty()) {
+            return strings[0]->getText();
+        }
+    }
+
+    // Next, check for explicit species-level suffix compartment: @COMP at the end
+    auto text = ctx->getText();
+    const auto atPos = text.rfind('@');
+    if (atPos != std::string::npos && atPos > 0) {
+        // Make sure it's after all the parentheses and molecule patterns
+        const auto lastCloseParen = text.rfind(')');
+        if (lastCloseParen != std::string::npos && atPos > lastCloseParen) {
+            // This is a suffix compartment
+            return text.substr(atPos + 1);
+        }
+    }
+
+    // Finally, try to infer from molecule-level compartments
+    // If all molecules have the same compartment, use that
+    std::string inferredCompartment;
+    bool allSame = true;
+    for (auto* molPattern : ctx->molecule_pattern()) {
+        if (molPattern == nullptr) continue;
+
+        std::string molCompartment;
+        if (molPattern->molecule_compartment() != nullptr) {
+            auto* molComp = molPattern->molecule_compartment();
+            if (molComp->STRING() != nullptr) {
+                molCompartment = molComp->STRING()->getText();
+            }
+        }
+
+        if (inferredCompartment.empty() && !molCompartment.empty()) {
+            inferredCompartment = molCompartment;
+        } else if (!molCompartment.empty() && molCompartment != inferredCompartment) {
+            allSame = false;
+            break;
+        }
+    }
+
+    return allSame ? inferredCompartment : std::string();
 }
 
 } // namespace bng::parser

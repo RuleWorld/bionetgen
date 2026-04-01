@@ -120,9 +120,10 @@ void NetReader::parseCompartmentLine(const std::string& line, ParseResult& resul
     result.compartments.push_back(line);
 }
 
-void NetReader::parseSpeciesLine(const std::string& line, std::vector<std::pair<std::string, double>>& species) {
+void NetReader::parseSpeciesLine(const std::string& line, std::vector<std::pair<std::string, std::string>>& species) {
     // Format: <index> <pattern> <concentration>
-    // Example: "1 EGFR(L,CR1,Y1068~U) 1.8e5"
+    // Example: "1 EGFR(L,CR1,Y1068~U) 1.8e5" or "1 S(a~0,c~R) S0"
+    // Note: concentration can be a numeric literal or a parameter reference
 
     // Find first space (after index)
     auto firstSpace = line.find(' ');
@@ -137,7 +138,7 @@ void NetReader::parseSpeciesLine(const std::string& line, std::vector<std::pair<
     }
 
     std::string pattern = trim(line.substr(firstSpace + 1, lastSpace - firstSpace - 1));
-    double concentration = std::stod(line.substr(lastSpace + 1));
+    std::string concentration = trim(line.substr(lastSpace + 1));
 
     species.emplace_back(pattern, concentration);
 }

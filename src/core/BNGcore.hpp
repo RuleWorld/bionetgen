@@ -460,7 +460,7 @@ namespace BNGcore
             // get node label (for canonical labeling)
             std::string  get_label ( ) const;
             // write node as a BNG2 string
-            std::string  get_BNG2_string ( const link_index_t & link_index ) const;
+            std::string  get_BNG2_string ( link_index_t & link_index, int & next_bond ) const;
 
             // get iterators to look at edges
             node_const_iter_t  edges_in_begin  ( ) const { return edges_in.begin();  };

@@ -139,6 +139,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitComponent_label(BNGParser::Component_labelContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitBond_id(BNGParser::Bond_idContext *ctx) override {
     return visitChildren(ctx);
   }

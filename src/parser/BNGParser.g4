@@ -51,6 +51,7 @@ program_block
     | population_maps_block
     | wrapped_actions_block
     | begin_actions_block  // NEW: Support "begin actions ... end actions"
+    | set_option           // setOption() can appear inside model block
     ;
 
 // Parameters block
@@ -152,7 +153,7 @@ molecule_compartment
 // Molecule tagging: pattern%1, pattern%2 for identifying molecules in reactions
 // Bond wildcards can appear after entire patterns: e.g., Smad1(loc~cyt)!+
 molecule_pattern
-    : (STRING | keyword_as_mol_name) (LPAREN component_pattern_list? RPAREN)? pattern_bond_wildcard? molecule_tag? molecule_attributes?
+    : (STRING | keyword_as_mol_name) molecule_compartment? molecule_tag? (LPAREN component_pattern_list? RPAREN)? pattern_bond_wildcard? molecule_tag? molecule_attributes?
     ;
 
 // Bond wildcards that apply to entire molecule patterns
@@ -170,11 +171,11 @@ molecule_tag
 component_pattern_list
     : component_pattern? (COMMA component_pattern?)*
     ;
-// Component patterns can have state, multiple bonds (e.g., !0!1), or bond wildcards
-// Support mixed/interleaved state and bond attributes (e.g. site!?~?)
+// Component patterns can have state, multiple bonds (e.g., !0!1), labels (e.g. %1), or bond wildcards
+// Support mixed/interleaved state, bond, and label attributes (e.g. c1%1, site!?~?)
 // Support unbound notation with DOT (e.g., sin., ric.)
 component_pattern
-    : (STRING | INT | keyword_as_component_name) ((TILDE state_value) | bond_spec | DOT)*
+    : (STRING | INT | keyword_as_component_name) ((TILDE state_value) | bond_spec | component_label | DOT)*
     ;
 
 state_value
@@ -186,6 +187,10 @@ bond_spec
     | EMARK bond_id
     | EMARK PLUS
     | EMARK QMARK
+    ;
+
+component_label
+    : MOD (INT | STRING)     // Component label (e.g., %1, %reaction_1)
     ;
 
 bond_id

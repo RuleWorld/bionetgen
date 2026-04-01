@@ -29,7 +29,7 @@ public:
         bool success = false;
         std::string error;
         // Parsed network data (if successful)
-        std::vector<std::pair<std::string, double>> species;  // pattern, concentration
+        std::vector<std::pair<std::string, std::string>> species;  // pattern, concentration (as string - can be number or parameter ref)
         std::vector<std::string> reactions;
         std::unordered_map<std::string, double> parameters;
         std::vector<std::string> compartments;
@@ -46,7 +46,7 @@ public:
 private:
     static void parseParameterLine(const std::string& line, ParseResult& result);
     static void parseCompartmentLine(const std::string& line, ParseResult& result);
-    static void parseSpeciesLine(const std::string& line, std::vector<std::pair<std::string, double>>& species);
+    static void parseSpeciesLine(const std::string& line, std::vector<std::pair<std::string, std::string>>& species);
     static void parseReactionLine(const std::string& line, std::vector<std::string>& reactions);
     static void parseGroupLine(const std::string& line, ParseResult& result);
 };

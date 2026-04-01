@@ -10,4 +10,6 @@ BNGcore::PatternGraph buildPatternGraph(
 	ast::Model& model,
 	bool treatUnspecifiedBondAsWildcard = false);
 
+std::string extractSpeciesCompartment(BNGParser::Species_defContext* ctx);
+
 } // namespace bng::parser
