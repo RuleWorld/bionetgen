@@ -55,6 +55,9 @@ std::pair<std::size_t, bool> SpeciesList::add(Species species) {
     if (existing != indicesByLabel_.end()) {
         for (const auto index : existing->second) {
             auto& existingSpecies = species_[index];
+            if (existingSpecies.getCompartment() != species.getCompartment()) {
+                continue;
+            }
             if (!isIsomorphic(existingSpecies.getSpeciesGraph(), species.getSpeciesGraph())) {
                 continue;
             }
@@ -67,6 +70,9 @@ std::pair<std::size_t, bool> SpeciesList::add(Species species) {
 
     for (std::size_t index = 0; index < species_.size(); ++index) {
         auto& existingSpecies = species_[index];
+        if (existingSpecies.getCompartment() != species.getCompartment()) {
+            continue;
+        }
         if (!isIsomorphic(existingSpecies.getSpeciesGraph(), species.getSpeciesGraph())) {
             continue;
         }

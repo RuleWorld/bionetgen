@@ -888,6 +888,38 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
                 out << " unit_conversion=" << *unitExpr;
             }
         } else {
+            // Zero-order synthesis in compartmental models: multiply rate by compartment volume
+            // (Perl BNG2 convention: rate_molecules = k * volume for 0th order reactions)
+            if (reactants.empty() && !products.empty() && !model.getCompartments().empty()) {
+                std::string productCompartment;
+                for (const auto prodIdx : products) {
+                    const auto& comp = network.species.get(prodIdx).getCompartment();
+                    if (!comp.empty()) {
+                        productCompartment = comp;
+                        break;
+                    }
+                }
+                if (!productCompartment.empty()) {
+                    for (const auto& compartment : model.getCompartments()) {
+                        if (compartment.getName() == productCompartment) {
+                            // Find parameter name for compartment volume
+                            std::string volName;
+                            for (const auto& parameter : model.getParameters().all()) {
+                                if (std::abs(parameter.getValue() - compartment.getVolume()) < 1e-18) {
+                                    volName = parameter.getName();
+                                    break;
+                                }
+                            }
+                            if (!volName.empty()) {
+                                out << volName << "*";
+                            } else {
+                                out << compartment.getVolume() << "*";
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
             if (std::abs(reaction.getFactor() - 1.0) >= 1e-9) {
                 out << formatFactor(reaction.getFactor()) << "*";
             }

@@ -878,6 +878,8 @@ void ReactionRule::clearPatternMatchCache() const {
     // Clear iteration tracking only on full cache reset (between generate_network calls),
     // not on vector reallocation within a single generation.
     lastProcessedInIteration_.clear();
+    // Reset synthesis flag so zero-order rules fire again on re-generation
+    synthesisApplied_ = false;
 }
 
 std::size_t ReactionRule::expandRule(
@@ -1195,6 +1197,7 @@ bool ReactionRule::buildReaction(
     SpeciesList& speciesList,
     RxnList& rxnList,
     const std::function<bool(const SpeciesGraph&)>& productFilter) const {
+    const bool debug = std::getenv("BNG_DEBUG_BUILD_RXN") != nullptr;
     const auto reactantInfo = describePatterns(reactantPatterns_);
     const auto productInfo = describePatterns(productPatterns_);
     std::vector<std::size_t> reactantIndices;
@@ -1325,11 +1328,77 @@ bool ReactionRule::buildReaction(
     std::vector<std::size_t> productIndices;
     std::vector<std::string> productLabels;
 
+    if (debug) {
+        std::cerr << "[BUILD_RXN] rule=" << ruleName_ << " operations=" << operations_.size() << "\n";
+        for (std::size_t i = 0; i < operations_.size(); ++i) {
+            const auto& op = operations_[i];
+            std::string opType = "Unknown";
+            if (op.type == TransformOp::Type::AddBond) opType = "AddBond";
+            else if (op.type == TransformOp::Type::DeleteBond) opType = "DeleteBond";
+            else if (op.type == TransformOp::Type::ChangeState) opType = "ChangeState";
+            else if (op.type == TransformOp::Type::AddMolecule) opType = "AddMolecule";
+            else if (op.type == TransformOp::Type::DeleteMolecule) opType = "DeleteMolecule";
+            std::cerr << "[BUILD_RXN]   op[" << i << "]=" << opType << "\n";
+        }
+    }
+
+    // Check if rule has AddMolecule operations (synthesis-like: Source() -> NewComplex())
+    bool hasAddMolecule = false;
+    for (const auto& op : operations_) {
+        if (op.type == TransformOp::Type::AddMolecule) {
+            hasAddMolecule = true;
+            break;
+        }
+    }
+
     if (productPatterns_.empty() && !reactantPatterns_.empty()) {
         // Degradation rule (e.g., A() -> 0): no products
         // productIndices and productLabels remain empty
     } else {
         auto productGraphs = splitIntoSpeciesGraphs(aggregateGraph);
+
+        // If the operation-based product construction produced the wrong number of
+        // graphs AND the rule has AddMolecule operations, try building the "new" product
+        // patterns directly (like synthesis). This handles rules like
+        // Source() -> B(t!1).Receptor(Y!1) where bonds between new molecules are lost.
+        // Only do this when the product graphs can't be matched to patterns via the
+        // normal orphan handling (which handles DeleteMolecule cases correctly).
+        if (hasAddMolecule && productGraphs.size() != productPatterns_.size()) {
+            // First, try normal orphan handling (match patterns to graphs)
+            bool orphanHandlingWorked = true;
+            for (std::size_t pi = 0; pi < productPatterns_.size(); ++pi) {
+                const auto& prodPat = productPatterns_[pi];
+                bool found = false;
+                for (std::size_t gi = 0; gi < productGraphs.size(); ++gi) {
+                    BNGcore::UllmannSGIso matcher(prodPat.getGraph(), productGraphs[gi].getGraph());
+                    BNGcore::List<BNGcore::Map> maps;
+                    matcher.find_maps(maps);
+                    if (maps.begin() != maps.end()) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    orphanHandlingWorked = false;
+                    break;
+                }
+            }
+            if (!orphanHandlingWorked) {
+                // Orphan handling can't match all product patterns to graphs.
+                // This means bonds between newly-added molecules were lost.
+                // Rebuild products directly from product patterns.
+                productGraphs.clear();
+                for (const auto& productPattern : productPatterns_) {
+                    BNGcore::PatternGraph productGraph;
+                    cloneGraphIntoTarget(productPattern.getGraph(), productGraph);
+                    productGraphs.emplace_back(productGraph);
+                }
+            }
+        }
+
+        if (debug) {
+            std::cerr << "[BUILD_RXN] after splitIntoSpeciesGraphs: " << productGraphs.size() << " graphs\n";
+        }
         const bool deleteMolecules = hasModifier(modifiers_, "deletemolecules");
 
         // Track which product pattern each product graph corresponds to
@@ -1380,6 +1449,10 @@ bool ReactionRule::buildReaction(
             }
             productGraphs = std::move(matchedProducts);
         } else if (productGraphs.size() != productPatterns_.size() && !deleteMolecules) {
+            if (debug) {
+                std::cerr << "[BUILD_RXN] FAIL: productGraphs.size()=" << productGraphs.size()
+                          << " != productPatterns_.size()=" << productPatterns_.size() << "\n";
+            }
             return false;
         } else {
             // All product patterns correspond to product graphs in order
@@ -1418,24 +1491,35 @@ bool ReactionRule::buildReaction(
 
     // Do NOT sort reactantIndices or productIndices — preserve BNGL pattern order (Perl compatibility)
 
-    // Compute statistical factor:
-    // For bimolecular rules: multiply by per-pattern multiplicities (number of
-    // equivalent Ullmann maps collapsed by canonical-ID dedup). This accounts for
-    // symmetric sites (e.g., D(x,x) pattern matching D(x,x) species has
-    // multiplicity 2 since both x-component assignments are collapsed).
-    // For unimolecular rules: multiplicity represents automorphisms that are
-    // correctly filtered by reaction center dedup — do NOT multiply.
+    // Compute statistical factor using Perl-compatible MultScale convention:
+    // For each group of n identical reactant patterns (same canonical label),
+    // multiply the stat factor by 1/n!.  This accounts for:
+    //  - Identical reactive patterns (e.g., A(b)+A(b): 1/2!)
+    //  - Identical context patterns (e.g., B()+B(): 1/2!)
+    //  - Multiple groups (e.g., A(b)+A(b)+B()+B(): 1/2! * 1/2! = 0.25)
+    // Duplicate reaction instances from permuted pattern-to-species assignments
+    // are merged by rxnList dedup (stat factors sum), which combined with the
+    // 1/n! correction produces the correct combinatorial rate.
+    //
+    // Note: we do NOT multiply by per-pattern multiplicity (automorphic Ullmann
+    // map count).  Embeddings that represent distinct reaction pathways already
+    // have distinct reaction-center signatures and are kept as separate
+    // embeddings.  Collapsed automorphisms (multiplicity > 1) are redundant
+    // mappings that should not inflate the rate.
     double factor = 1.0;
     if (reactantPatterns_.size() > 1) {
-        for (const auto& match : matchSet) {
-            factor *= static_cast<double>(match.multiplicity);
+        // Group reactant patterns by canonical label, compute 1/n! per group
+        std::unordered_map<std::string, int> patternGroupCounts;
+        for (const auto& rp : reactantPatterns_) {
+            patternGroupCounts[rp.canonicalLabel()]++;
         }
-    }
-    if (reactantPatterns_.size() == 2 && reactantIndices.size() == 2 &&
-        reactantIndices[0] == reactantIndices[1]) {
-        // Check if both reactant patterns are identical (same canonical label)
-        if (reactantPatterns_[0].canonicalLabel() == reactantPatterns_[1].canonicalLabel()) {
-            factor *= 0.5;
+        for (const auto& [label, count] : patternGroupCounts) {
+            if (count > 1) {
+                // 1/n! for this group
+                int factorial = 1;
+                for (int i = 2; i <= count; ++i) factorial *= i;
+                factor /= static_cast<double>(factorial);
+            }
         }
     }
 
