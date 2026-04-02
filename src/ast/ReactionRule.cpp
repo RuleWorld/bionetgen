@@ -1,8 +1,10 @@
 ﻿#include "ReactionRule.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -19,6 +21,77 @@
 
 namespace bng::ast {
 
+// Global compartment dimension map for cross-compartment species assignment.
+// Populated by NetworkGenerator before rule expansion.
+static std::unordered_map<std::string, int> g_compartmentDimensions;
+// Global compartment parent map: child → parent (e.g., PM→EC, CP→PM)
+static std::unordered_map<std::string, std::string> g_compartmentParents;
+
+void setCompartmentDimensions(const std::unordered_map<std::string, int>& dims) {
+    g_compartmentDimensions = dims;
+}
+
+void setCompartmentParents(const std::unordered_map<std::string, std::string>& parents) {
+    g_compartmentParents = parents;
+}
+
+// Get the "Outside" compartment for a given compartment.
+// For 2D surfaces, Outside is the parent (e.g., PM.Outside = EC).
+// For 3D volumes, Outside is the parent (e.g., CP.Outside = PM).
+static std::string getOutside(const std::string& comp) {
+    auto it = g_compartmentParents.find(comp);
+    return it != g_compartmentParents.end() ? it->second : std::string();
+}
+
+// Get the "Inside" compartment: the child volume/surface that has this compartment as parent.
+// For 2D surfaces, Inside is a 3D volume (e.g., PM.Inside = CP).
+// Returns the first such child found.
+static std::string getInside(const std::string& comp) {
+    for (const auto& [child, parent] : g_compartmentParents) {
+        if (parent == comp) return child;
+    }
+    return {};
+}
+
+// Determine transport type between two surface compartments.
+// Returns: 1 = endocytosis (flip Outside/Inside), -1 = exocytosis (preserve), 0 = not connected.
+// Perl: Compartment::separated_by_volume()
+static int separatedByVolume(const std::string& comp1, const std::string& comp2) {
+    auto dim1 = g_compartmentDimensions.find(comp1);
+    auto dim2 = g_compartmentDimensions.find(comp2);
+    if (dim1 == g_compartmentDimensions.end() || dim2 == g_compartmentDimensions.end()) return 0;
+    if (dim1->second != 2 || dim2->second != 2) return 0;
+
+    std::string out1 = getOutside(comp1);
+    std::string out2 = getOutside(comp2);
+
+    // Exocytosis: both surfaces share the same Outside (adjacent surfaces)
+    if (!out1.empty() && !out2.empty() && out1 == out2 &&
+        !getInside(comp1).empty() && !getInside(comp2).empty()) {
+        return -1;
+    }
+
+    // Endocytosis: comp2.Outside.Outside == comp1 (nested)
+    if (!out2.empty()) {
+        std::string out2_out = getOutside(out2);
+        if (!out2_out.empty() && out2_out == comp1 &&
+            !getInside(comp2).empty() && !out1.empty()) {
+            return 1;
+        }
+    }
+
+    // Endocytosis reversed: comp1.Outside.Outside == comp2
+    if (!out1.empty()) {
+        std::string out1_out = getOutside(out1);
+        if (!out1_out.empty() && out1_out == comp2 &&
+            !getInside(comp1).empty() && !out2.empty()) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 namespace {
 
 struct ComponentInfo {
@@ -27,6 +100,7 @@ struct ComponentInfo {
     std::string name;
     std::string state;
     std::optional<ReactionRule::ComponentRef> partner;
+    std::string label;  // component tag label (e.g., "1", "2" from %1, %2)
 };
 
 struct MoleculeInfo {
@@ -101,6 +175,7 @@ PatternInfo describePattern(const SpeciesGraph& patternGraph, std::size_t patter
             component.node = *edge;
             component.name = component.node->get_type().get_type_name();
             component.state = stateToken(*component.node);
+            component.label = component.node->get_label_tag();
             for (auto bondEdge = component.node->edges_out_begin(); bondEdge != component.node->edges_out_end(); ++bondEdge) {
                 if (isBondNode(**bondEdge)) {
                     component.bondNode = *bondEdge;
@@ -484,10 +559,13 @@ std::string canonicalNodeId(const BNGcore::Node* node) {
 }
 
 std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGcore::Map& map,
-                               const BNGcore::PatternGraph& /*targetGraph*/) {
-    // Use canonical node IDs for target nodes to collapse automorphic embeddings.
-    // This deduplicates mappings that differ only in how pattern nodes are assigned
-    // to equivalent target nodes (e.g., swapping two identical x components).
+                               const BNGcore::PatternGraph& targetGraph) {
+    // Build a signature that identifies distinct embeddings.
+    // For molecule nodes in the pattern, use the target molecule's canonical index
+    // (not canonicalNodeId) to preserve distinct reactions at symmetric positions.
+    // For component/bond nodes, use canonicalNodeId to collapse equivalent components.
+    // This matches Perl's behavior: each distinct reactant molecule generates a separate
+    // reaction, even if the molecules are automorphic in the species graph.
     std::vector<std::string> parts;
     for (auto nodeIter = pattern.begin(); nodeIter != pattern.end(); ++nodeIter) {
         auto* target = map.mapf(*nodeIter);
@@ -497,7 +575,8 @@ std::string embeddingSignature(const BNGcore::PatternGraph& pattern, const BNGco
         std::ostringstream out;
         out << (*nodeIter)->get_type().get_type_name()
             << "|" << (*nodeIter)->get_state().get_BNG2_string()
-            << "->" << canonicalNodeId(target);
+            << "->";
+        out << canonicalNodeId(target);
         parts.push_back(out.str());
     }
     std::sort(parts.begin(), parts.end());
@@ -659,6 +738,34 @@ void ReactionRule::initialize() {
         }
     }
 
+    // Build global tag-to-reactant-component mapping across ALL reactant patterns
+    std::unordered_map<std::string, ComponentRef> globalReactantComponentsByTag;
+    for (std::size_t pi = 0; pi < reactantInfo.size(); ++pi) {
+        for (std::size_t mi = 0; mi < reactantInfo[pi].molecules.size(); ++mi) {
+            for (std::size_t ci = 0; ci < reactantInfo[pi].molecules[mi].components.size(); ++ci) {
+                const auto& comp = reactantInfo[pi].molecules[mi].components[ci];
+                if (!comp.label.empty()) {
+                    globalReactantComponentsByTag[comp.label] = ComponentRef{pi, mi, ci};
+                }
+            }
+        }
+    }
+
+    // Build tag mapping for ALL product components (including in new molecules)
+    for (std::size_t pi = 0; pi < productInfo.size(); ++pi) {
+        for (std::size_t mi = 0; mi < productInfo[pi].molecules.size(); ++mi) {
+            for (std::size_t ci = 0; ci < productInfo[pi].molecules[mi].components.size(); ++ci) {
+                const auto& comp = productInfo[pi].molecules[mi].components[ci];
+                if (!comp.label.empty()) {
+                    auto tagIt = globalReactantComponentsByTag.find(comp.label);
+                    if (tagIt != globalReactantComponentsByTag.end()) {
+                        tagComponentMap_[ComponentRef{pi, mi, ci}] = tagIt->second;
+                    }
+                }
+            }
+        }
+    }
+
     std::map<ComponentRef, ComponentRef> productToReactantComponent;
     for (std::size_t productFlatIndex = 0; productFlatIndex < productMolecules.size(); ++productFlatIndex) {
         if (!productToReactant[productFlatIndex].has_value()) {
@@ -676,18 +783,43 @@ void ReactionRule::initialize() {
         }
 
         for (std::size_t i = 0; i < productMol.components.size(); ++i) {
-            auto& bucket = reactantComponentsByName[productMol.components[i].name];
-            if (bucket.empty()) {
-                continue;
-            }
-            const std::size_t reactantComponentIndex = bucket.front();
-            bucket.erase(bucket.begin());
+            const auto& productComponent = productMol.components[i];
             ComponentRef productRef {productMolRef.base.patternIndex, productMolRef.base.moleculeIndex, i};
-            ComponentRef reactantRef {reactantMolRef.base.patternIndex, reactantMolRef.base.moleculeIndex, reactantComponentIndex};
+
+            // Check if product component has a tag label
+            bool matchedByTag = false;
+            ComponentRef reactantRef;
+            if (!productComponent.label.empty()) {
+                auto tagIt = globalReactantComponentsByTag.find(productComponent.label);
+                if (tagIt != globalReactantComponentsByTag.end()) {
+                    reactantRef = tagIt->second;
+                    matchedByTag = true;
+                    // Remove from name bucket to avoid double-matching
+                    auto& bucket = reactantComponentsByName[productComponent.name];
+                    // Find and remove the matched component from bucket if in same molecule
+                    if (reactantRef.patternIndex == reactantMolRef.base.patternIndex &&
+                        reactantRef.moleculeIndex == reactantMolRef.base.moleculeIndex) {
+                        auto it = std::find(bucket.begin(), bucket.end(), reactantRef.componentIndex);
+                        if (it != bucket.end()) bucket.erase(it);
+                    }
+                }
+            }
+
+            if (!matchedByTag) {
+                auto& bucket = reactantComponentsByName[productComponent.name];
+                if (bucket.empty()) {
+                    continue;
+                }
+                const std::size_t reactantComponentIndex = bucket.front();
+                bucket.erase(bucket.begin());
+                reactantRef = ComponentRef{reactantMolRef.base.patternIndex, reactantMolRef.base.moleculeIndex, reactantComponentIndex};
+            }
+
             productToReactantComponent[productRef] = reactantRef;
 
-            const auto& productComponent = productMol.components[i];
-            const auto& reactantComponent = reactantMol.components[reactantComponentIndex];
+            // Determine reactant component state
+            const auto& reactantComponent = reactantInfo[reactantRef.patternIndex].molecules[reactantRef.moleculeIndex].components[reactantRef.componentIndex];
+
             if (!productComponent.state.empty() && !reactantComponent.state.empty() &&
                 productComponent.state != reactantComponent.state) {
                 operations_.push_back(TransformOp {
@@ -815,6 +947,14 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         }
     }
 
+    // Pre-compute pattern molecule type requirements for fast pre-filtering
+    std::unordered_map<std::string, std::size_t> patternMoleculeTypes;
+    for (auto nodeIter = pattern.begin(); nodeIter != pattern.end(); ++nodeIter) {
+        if (isMoleculeNode(**nodeIter)) {
+            patternMoleculeTypes[(*nodeIter)->get_type().get_type_name()]++;
+        }
+    }
+
     for (std::size_t speciesIndex = 0; speciesIndex < speciesList.size(); ++speciesIndex) {
         if (candidateSpecies.find(speciesIndex) == candidateSpecies.end()) {
             continue;
@@ -827,7 +967,29 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         if (!passesReactantFilters(patternIndex, speciesList.get(speciesIndex).getSpeciesGraph())) {
             continue;
         }
-        BNGcore::UllmannSGIso matcher(pattern, speciesList.get(speciesIndex).getSpeciesGraph().getGraph());
+
+        // Quick molecule composition pre-filter: skip species that don't contain
+        // enough molecules of the required types (avoids expensive Ullmann call)
+        const auto& targetGraph = speciesList.get(speciesIndex).getSpeciesGraph().getGraph();
+        if (!patternMoleculeTypes.empty() && !targetGraph.empty()) {
+            std::unordered_map<std::string, std::size_t> targetMolTypes;
+            for (auto tIter = targetGraph.begin(); tIter != targetGraph.end(); ++tIter) {
+                if (isMoleculeNode(**tIter)) {
+                    targetMolTypes[(*tIter)->get_type().get_type_name()]++;
+                }
+            }
+            bool compatible = true;
+            for (const auto& [molType, needed] : patternMoleculeTypes) {
+                auto it = targetMolTypes.find(molType);
+                if (it == targetMolTypes.end() || it->second < needed) {
+                    compatible = false;
+                    break;
+                }
+            }
+            if (!compatible) continue;
+        }
+
+        BNGcore::UllmannSGIso matcher(pattern, targetGraph);
         BNGcore::List<BNGcore::Map> maps;
         matcher.find_maps(maps);
         std::size_t mapsBeforeDedup = 0;
@@ -841,7 +1003,6 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
             if (!embeddingRespectsNodeStates(pattern, *mapIter)) {
                 continue;
             }
-            const auto& targetGraph = speciesList.get(speciesIndex).getSpeciesGraph().getGraph();
             const auto signature = std::to_string(speciesIndex) + "|" +
                 (reactionCenter_.at(patternIndex).empty()
                     ? embeddingSignature(pattern, *mapIter, targetGraph)
@@ -886,7 +1047,8 @@ std::size_t ReactionRule::expandRule(
     SpeciesList& speciesList,
     RxnList& rxnList,
     std::size_t currentIteration,
-    const std::function<bool(const SpeciesGraph&)>& productFilter) const {
+    const std::function<bool(const SpeciesGraph&)>& productFilter,
+    std::size_t speciesBoundary) const {
 
     // --- Reverse rule delegation ---
     if (bidirectional_ && !rates_.empty()) {
@@ -921,7 +1083,7 @@ std::size_t ReactionRule::expandRule(
                 productPatterns_,
                 reactantPatterns_);
         }
-        reverseRule_->expandRule(speciesList, rxnList, currentIteration, productFilter);
+        reverseRule_->expandRule(speciesList, rxnList, currentIteration, productFilter, speciesBoundary);
     }
 
     if (reactantPatterns_.empty()) {
@@ -983,8 +1145,10 @@ std::size_t ReactionRule::expandRule(
     const bool isBimolecular = reactantPatterns_.size() >= 2;
 
     // First pass: identify truly new species (never processed by ANY rule yet)
+    // Only consider species that existed at the start of this iteration (index < speciesBoundary).
+    // Species created by earlier rules in the same iteration are deferred to the next iteration.
     bool hasTrulyNewSpecies = false;
-    for (std::size_t i = 0; i < speciesList.size(); ++i) {
+    for (std::size_t i = 0; i < std::min(speciesList.size(), speciesBoundary); ++i) {
         if (!speciesList.get(i).rulesApplied()) {
             hasTrulyNewSpecies = true;
             break;
@@ -992,7 +1156,7 @@ std::size_t ReactionRule::expandRule(
     }
 
     std::unordered_set<std::size_t> newSpecies;
-    for (std::size_t i = 0; i < speciesList.size(); ++i) {
+    for (std::size_t i = 0; i < std::min(speciesList.size(), speciesBoundary); ++i) {
         const auto iter = lastProcessedInIteration_.find(i);
         const bool notYetProcessed = !speciesList.get(i).rulesApplied();
         const bool notProcessedByThisRuleInCurrentIteration =
@@ -1053,7 +1217,7 @@ std::size_t ReactionRule::expandRule(
     for (std::size_t patternIndex = nPatterns; patternIndex-- > 0;) {
         std::unordered_set<std::size_t> searchSet;
         if (cacheNeedsRebuild) {
-            for (std::size_t i = 0; i < speciesList.size(); ++i) {
+            for (std::size_t i = 0; i < std::min(speciesList.size(), speciesBoundary); ++i) {
                 searchSet.insert(i);
             }
         } else {
@@ -1234,6 +1398,21 @@ bool ReactionRule::buildReaction(
         return cloneFound == cloneMaps[ref.patternIndex].end() ? nullptr : cloneFound->second;
     };
 
+    // Capture reactant component states BEFORE operations modify/delete them
+    // (needed for tag-based state propagation after operations)
+    std::map<ComponentRef, std::string> capturedReactantStates;
+    if (!tagComponentMap_.empty()) {
+        for (const auto& [productRef, reactantRef] : tagComponentMap_) {
+            const auto& compInfo = getComponentInfo(reactantInfo, reactantRef);
+            auto* node = mapMatchedNodeToAggregate(reactantRef, compInfo.node);
+            if (node != nullptr) {
+                std::string st = node->get_state().get_BNG2_string();
+                if (!st.empty() && st[0] == '~') st = st.substr(1);
+                capturedReactantStates[reactantRef] = st;
+            }
+        }
+    }
+
     for (const auto& operation : operations_) {
         switch (operation.type) {
         case TransformOp::Type::AddBond: {
@@ -1325,6 +1504,40 @@ bool ReactionRule::buildReaction(
         }
     }
 
+    // Apply tag-based state propagation for newly added product molecules
+    if (!tagComponentMap_.empty() && !capturedReactantStates.empty()) {
+        for (const auto& [productRef, reactantRef] : tagComponentMap_) {
+            auto stateIt = capturedReactantStates.find(reactantRef);
+            if (stateIt == capturedReactantStates.end()) continue;
+            const std::string& reactantState = stateIt->second;
+            if (reactantState.empty() || reactantState == "?") continue;
+
+            // Find the product molecule in the aggregate graph by type
+            const auto& productMolInfo = productInfo[productRef.patternIndex].molecules[productRef.moleculeIndex];
+            for (auto nodeIter = graph->begin(); nodeIter != graph->end(); ++nodeIter) {
+                if (!isMoleculeNode(**nodeIter)) continue;
+                if ((*nodeIter)->get_type().get_type_name() != productMolInfo.name) continue;
+
+                std::size_t compIdx = 0;
+                for (auto edge = (*nodeIter)->edges_out_begin(); edge != (*nodeIter)->edges_out_end(); ++edge) {
+                    if (!isComponentNode(**edge)) continue;
+                    if (compIdx == productRef.componentIndex) {
+                        const auto& stateType = (*edge)->get_type().get_state_type();
+                        if (const auto* labelType = dynamic_cast<const BNGcore::LabelStateType*>(&stateType)) {
+                            std::string currentState = (*edge)->get_state().get_BNG2_string();
+                            if (currentState == "~?" || currentState == "?") {
+                                BNGcore::LabelState state(*labelType, reactantState);
+                                graph->set_node_state(*edge, state);
+                            }
+                        }
+                        break;
+                    }
+                    ++compIdx;
+                }
+            }
+        }
+    }
+
     std::vector<std::size_t> productIndices;
     std::vector<std::string> productLabels;
 
@@ -1348,6 +1561,62 @@ bool ReactionRule::buildReaction(
         if (op.type == TransformOp::Type::AddMolecule) {
             hasAddMolecule = true;
             break;
+        }
+    }
+
+    // --- Compartment transport: update per-molecule compartments ---
+    // When reactant and product patterns have different species-level compartments
+    // (e.g., @PM:R.R -> @EM:R.R), update per-molecule compartments in the aggregate
+    // graph before splitting. Uses Perl's separated_by_volume logic for surface transport.
+    if (!g_compartmentParents.empty()) {
+        for (std::size_t pi = 0; pi < reactantPatterns_.size() && pi < productPatterns_.size(); ++pi) {
+            const auto& compR = reactantPatterns_[pi].getCompartment();
+            const auto& compP = (pi < productPatterns_.size()) ? productPatterns_[pi].getCompartment() : std::string();
+            if (compR.empty() || compP.empty() || compR == compP) continue;
+
+            auto dimRIt = g_compartmentDimensions.find(compR);
+            auto dimPIt = g_compartmentDimensions.find(compP);
+            if (dimRIt == g_compartmentDimensions.end() || dimPIt == g_compartmentDimensions.end()) continue;
+            if (dimRIt->second != dimPIt->second) continue; // must be same dimension
+
+            // Build compartment mapping based on transport type
+            std::unordered_map<std::string, std::string> compMap;
+            compMap[compR] = compP;
+
+            if (dimRIt->second == 2) {
+                // Surface-to-surface: determine endocytosis vs exocytosis
+                int cytosis = separatedByVolume(compR, compP);
+                std::string outsideR = getOutside(compR);
+                std::string insideR = getInside(compR);
+                std::string outsideP = getOutside(compP);
+                std::string insideP = getInside(compP);
+                if (cytosis == 1) {
+                    // Endocytosis: flip outside/inside
+                    std::swap(insideP, outsideP);
+                }
+                if (!outsideR.empty() && !outsideP.empty()) compMap[outsideR] = outsideP;
+                if (!insideR.empty() && !insideP.empty()) compMap[insideR] = insideP;
+            } else {
+                // Volume-to-volume: simple mapping (all molecules → new compartment)
+                // Already handled by compMap[compR] = compP above
+            }
+
+            // Apply compartment mapping to all molecule nodes in the aggregate graph
+            // that came from reactant pattern pi
+            if (pi < cloneMaps.size()) {
+                const auto& speciesGraph = speciesList.get(matchSet[pi].speciesIndex).getSpeciesGraph().getGraph();
+                for (auto nodeIter = speciesGraph.begin(); nodeIter != speciesGraph.end(); ++nodeIter) {
+                    if (!isMoleculeNode(**nodeIter)) continue;
+                    auto cloneIt = cloneMaps[pi].find(*nodeIter);
+                    if (cloneIt == cloneMaps[pi].end()) continue;
+                    auto* clonedMol = cloneIt->second;
+                    const auto& molComp = clonedMol->get_compartment();
+                    auto mapIt = compMap.find(molComp);
+                    if (mapIt != compMap.end()) {
+                        clonedMol->set_compartment(mapIt->second);
+                    }
+                }
+            }
         }
     }
 
@@ -1472,13 +1741,51 @@ bool ReactionRule::buildReaction(
                 return false;
             }
             productLabels.push_back(productGraph.canonicalLabel());
-            // Use product pattern's compartment if available, otherwise use inferred compartment
+            // Deterministic species compartment inference (Perl convention):
+            // 1. If any molecule is on a 2D surface, use that surface.
+            // 2. If the product pattern specifies a 2D surface, use it.
+            // 3. Otherwise use the unique 3D volume from molecules.
+            // 4. Fall back to pattern/inferred compartment.
+            std::string compartmentToUse;
             const auto& patternCompartment = productPatternIndices[i] < productPatterns_.size()
                 ? productPatterns_[productPatternIndices[i]].getCompartment()
                 : std::string();
-            const auto& compartmentToUse = !patternCompartment.empty()
-                ? patternCompartment
-                : (sameCompartment ? inferredCompartment : std::string());
+            if (!g_compartmentDimensions.empty()) {
+                std::string best2D, firstComp;
+                for (auto nodeIter = productGraph.getGraph().begin(); nodeIter != productGraph.getGraph().end(); ++nodeIter) {
+                    if (!isMoleculeNode(**nodeIter)) continue;
+                    const auto& mc = (*nodeIter)->get_compartment();
+                    if (mc.empty()) continue;
+                    if (firstComp.empty()) firstComp = mc;
+                    if (best2D.empty()) {
+                        auto dimIt = g_compartmentDimensions.find(mc);
+                        if (dimIt != g_compartmentDimensions.end() && dimIt->second == 2) {
+                            best2D = mc;
+                        }
+                    }
+                }
+                if (!best2D.empty()) {
+                    compartmentToUse = best2D;
+                } else if (!patternCompartment.empty()) {
+                    // No 2D surface from molecules, but pattern specifies compartment
+                    auto patDimIt = g_compartmentDimensions.find(patternCompartment);
+                    if (patDimIt != g_compartmentDimensions.end() && patDimIt->second == 2) {
+                        compartmentToUse = patternCompartment; // prefer 2D pattern compartment
+                    } else {
+                        compartmentToUse = !firstComp.empty() ? firstComp : patternCompartment;
+                    }
+                } else {
+                    compartmentToUse = firstComp;
+                }
+            }
+            // Fallback: use product pattern compartment or inferred reactant compartment
+            if (compartmentToUse.empty()) {
+                if (!patternCompartment.empty()) {
+                    compartmentToUse = patternCompartment;
+                } else if (sameCompartment) {
+                    compartmentToUse = inferredCompartment;
+                }
+            }
             const auto [index, _] = speciesList.add(Species(
                 productGraph,
                 0.0,

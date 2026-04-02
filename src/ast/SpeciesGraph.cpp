@@ -19,6 +19,10 @@ std::string SpeciesGraph::canonicalLabel() const {
     return graph_.get_label();
 }
 
+std::string SpeciesGraph::fingerprint() const {
+    return graph_.computeFingerprint();
+}
+
 std::string SpeciesGraph::toString() const {
     return graph_.get_BNG2_string();
 }

@@ -53,6 +53,7 @@ public:
     const std::vector<MoleculeType>& getMoleculeTypes() const;
     const std::vector<SeedSpecies>& getSeedSpecies() const;
     const std::vector<ReactionRule>& getReactionRules() const;
+    std::vector<ReactionRule>& getReactionRules();
     const std::string& getVersion() const;
     const std::string& getSubstanceUnits() const;
     const std::string& getModelName() const;

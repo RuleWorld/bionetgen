@@ -81,6 +81,26 @@ NetReader::ParseResult NetReader::parse(const std::filesystem::path& filepath) {
                 parseReactionLine(line, result.reactions);
             } else if (currentSection == "groups") {
                 parseGroupLine(line, result);
+                result.rawGroupLines.push_back(line);
+            } else if (currentSection == "functions") {
+                // Parse function: <index> <name>(<args>) <expression>
+                // e.g. "1 michment() kcat/(Km+Sa0)"
+                result.rawFunctionLines.push_back(line);
+                auto firstSpace = line.find(' ');
+                if (firstSpace != std::string::npos) {
+                    auto rest = trim(line.substr(firstSpace + 1));
+                    auto secondSpace = rest.find(' ');
+                    if (secondSpace != std::string::npos) {
+                        auto name = rest.substr(0, secondSpace);
+                        auto expr = trim(rest.substr(secondSpace + 1));
+                        result.functions.emplace_back(name, expr);
+                    }
+                }
+            } else if (currentSection == "molecule") {
+                result.rawMoleculeTypeLines.push_back(line);
+            } else if (currentSection == "reaction") {
+                // "reaction rules" section - store raw lines for passthrough
+                result.rawReactionRuleLines.push_back(line);
             }
         }
 

@@ -16,6 +16,14 @@ struct DerivedRateInfo {
     ast::Expression exprTree;
     bool reverseDirection = false;
     bool asFunction = false;  // true if should be written as function (references observables)
+    bool isLocalFunction = false;  // true if this is a per-species local function rate
+    bool isPerReactionArrhenius = false;  // true for energy-pattern per-reaction rates
+    // Per-species rate parameters for local function rules:
+    // maps reactant species index -> (param name, numeric value)
+    std::unordered_map<std::size_t, std::pair<std::string, double>> perSpeciesRates;
+    // Per-reaction rate parameters for Arrhenius energy-pattern rules:
+    // maps reaction index -> (parameter name, numeric value)
+    std::unordered_map<std::size_t, std::pair<std::string, double>> perReactionRates;
 };
 
 class NetWriter {

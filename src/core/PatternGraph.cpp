@@ -27,9 +27,10 @@ PatternGraph::PatternGraph ( )
 // Copy constructor
 PatternGraph::PatternGraph ( const PatternGraph & source )
 {
-    // copy source graph to this 
+    // copy source graph to this
     Map * copy_map = copy_from_source ( source );
     delete copy_map;
+    rawString_ = source.rawString_;
 }
    
 
@@ -37,7 +38,8 @@ PatternGraph::PatternGraph ( const PatternGraph & source )
 PatternGraph::PatternGraph ( PatternGraph && source ) noexcept
   : nodes( std::move(source.nodes) ),
     label( std::move(source.label) ),
-    canonical_flag( source.canonical_flag )
+    canonical_flag( source.canonical_flag ),
+    rawString_( std::move(source.rawString_) )
 {
     source.canonical_flag = false;
 }
@@ -53,6 +55,7 @@ PatternGraph & PatternGraph::operator= ( PatternGraph && source ) noexcept
         nodes = std::move(source.nodes);
         label = std::move(source.label);
         canonical_flag = source.canonical_flag;
+        rawString_ = std::move(source.rawString_);
         source.canonical_flag = false;
     }
     return *this;
@@ -275,6 +278,10 @@ PatternGraph::gather_connected ( Node * curr_node, node_container_t & visited )
 std::string
 PatternGraph::get_BNG2_string ( ) const
 {    
+    // Return raw string if set (for species loaded from .net files)
+    if ( !rawString_.empty() )
+        return rawString_;
+
     // nothing to do if there are zero nodes
     if ( nodes.size() == 0 )
         return "";
@@ -398,6 +405,10 @@ PatternGraph::get_BNG2_string ( std::vector<std::string>& moleculeCompartments )
     // but also collect compartments from root molecule nodes in output order
     moleculeCompartments.clear();
 
+    // Return raw string if set (for species loaded from .net files)
+    if ( !rawString_.empty() )
+        return rawString_;
+
     if ( nodes.size() == 0 )
         return "";
 
@@ -491,7 +502,10 @@ PatternGraph::get_label ( ) const
 //  Generates canonical ordering if not already done.
 std::string
 PatternGraph::get_label ( bool preserve_prior_order ) const
-{   
+{
+    // Return raw string if set (for species loaded from .net files)
+    if ( !rawString_.empty() ) return rawString_;
+
     // return canonical label if it's available
     if ( canonical_flag ) return label;
     
@@ -801,6 +815,106 @@ PatternGraph::print ( ) const
         std::cout << std::endl;
     }
     std::cout << std::endl;
+}
+
+
+// Compute a structural fingerprint that is invariant to node ordering.
+// Used for fast species deduplication: isomorphic species always produce the same fingerprint.
+// The fingerprint encodes molecule types, component types+states, and bond connectivity.
+std::string
+PatternGraph::computeFingerprint ( ) const
+{
+    if ( !rawString_.empty() ) return rawString_;
+
+    // Collect molecule-level signatures
+    std::vector<std::string> moleculeSigs;
+
+    for ( node_const_iter_t molIter = nodes.begin(); molIter != nodes.end(); ++molIter )
+    {
+        Node* mol = *molIter;
+        // Molecule nodes have in_degree == 0 (top-level nodes in species graphs)
+        if ( mol->in_degree() != 0 ) continue;
+
+        std::string molType = mol->get_type().get_type_name();
+        std::vector<std::string> compSigs;
+
+        // Iterate over component children (out-edges of molecule)
+        for ( node_const_iter_t compIter = mol->edges_out_begin();
+              compIter != mol->edges_out_end(); ++compIter )
+        {
+            Node* comp = *compIter;
+            std::string sig = comp->get_type().get_type_name();
+
+            // Add component state if it's not a null/wildcard state
+            const State& st = comp->get_state();
+            std::string stLabel = st.get_label();
+            if ( !stLabel.empty() && stLabel.find("Null") == std::string::npos )
+                sig += stLabel;
+
+            // Describe bond connectivity
+            for ( node_const_iter_t bondIter = comp->edges_out_begin();
+                  bondIter != comp->edges_out_end(); ++bondIter )
+            {
+                Node* bond = *bondIter;
+                if ( bond->get_state() == BOUND_STATE )
+                {
+                    // Find partner component (other in-edge of bond node)
+                    for ( node_const_iter_t partnerIter = bond->edges_in_begin();
+                          partnerIter != bond->edges_in_end(); ++partnerIter )
+                    {
+                        Node* partner = *partnerIter;
+                        if ( partner == comp ) continue;
+                        // Get partner's parent molecule (in-edge of partner component)
+                        for ( node_const_iter_t pmIter = partner->edges_in_begin();
+                              pmIter != partner->edges_in_end(); ++pmIter )
+                        {
+                            sig += "!" + (*pmIter)->get_type().get_type_name()
+                                 + "." + partner->get_type().get_type_name();
+                            break;
+                        }
+                    }
+                }
+                else if ( bond->get_state() == UNBOUND_STATE )
+                {
+                    // Explicitly unbound — no suffix needed (default)
+                }
+                // Wildcard bonds in patterns: mark them
+                else
+                {
+                    sig += "!?";
+                }
+            }
+
+            compSigs.push_back( sig );
+        }
+
+        std::sort( compSigs.begin(), compSigs.end() );
+
+        std::string molSig = molType + "(";
+        for ( size_t i = 0; i < compSigs.size(); ++i )
+        {
+            if ( i > 0 ) molSig += ",";
+            molSig += compSigs[i];
+        }
+        molSig += ")";
+
+        // Include molecule-level compartment if set
+        const std::string& molComp = mol->get_compartment();
+        if ( !molComp.empty() )
+            molSig += "@" + molComp;
+
+        moleculeSigs.push_back( molSig );
+    }
+
+    std::sort( moleculeSigs.begin(), moleculeSigs.end() );
+
+    std::string fingerprint;
+    for ( size_t i = 0; i < moleculeSigs.size(); ++i )
+    {
+        if ( i > 0 ) fingerprint += ".";
+        fingerprint += moleculeSigs[i];
+    }
+    return fingerprint;
 }
 
 

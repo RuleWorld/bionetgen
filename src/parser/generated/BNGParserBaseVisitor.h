@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.2
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
 
 #pragma once
 
@@ -112,6 +112,10 @@ public:
   }
 
   virtual std::any visitMolecule_pattern(BNGParser::Molecule_patternContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitScope_prefix(BNGParser::Scope_prefixContext *ctx) override {
     return visitChildren(ctx);
   }
 

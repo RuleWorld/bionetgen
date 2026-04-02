@@ -415,7 +415,7 @@ UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
     // ends up false if a cannot match b
     bool  a_match_b;    
     
-    // loop over node that are adjacent to node_a
+    // loop over nodes adjacent to node_a via OUT-edges
     adj_a_end = node_a->edges_out_end();
     for ( adj_a_iter = node_a->edges_out_begin();  adj_a_iter != adj_a_end;  ++adj_a_iter )
     {
@@ -427,18 +427,42 @@ UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
         matches_end = possible_adj_a_matches->end();
         for ( matches_iter = possible_adj_a_matches->begin();
                 matches_iter != matches_end;  ++matches_iter  )
-        {            
+        {
             // see if there is an edge from  node_b to match
-            // TODO:  need to check that match isn't mapped already?
             if (  node_b->find_out_edge( *matches_iter )  !=  node_b->edges_out_end()  )
             {
                 a_match_b = true;
                 break;
             }
         }
-         
+
         if ( !a_match_b )
-            // a cannot match b, return false now
+            return false;
+    }
+
+    // Also check IN-edges: for each in-neighbor of node_a, there must be a
+    // corresponding in-neighbor of node_b among the possible matches.
+    // This is essential for nodes with zero out-degree (e.g., bond nodes)
+    // and for full graph isomorphism of undirected graphs stored as directed edges.
+    adj_a_end = node_a->edges_in_end();
+    for ( adj_a_iter = node_a->edges_in_begin();  adj_a_iter != adj_a_end;  ++adj_a_iter )
+    {
+        row_iter_t adj_row = M.find( *adj_a_iter );
+        if ( adj_row == M.end() )
+            continue;  // in-neighbor not in pattern (subgraph matching) — skip
+        possible_adj_a_matches = adj_row->second;
+        a_match_b = false;
+        matches_end = possible_adj_a_matches->end();
+        for ( matches_iter = possible_adj_a_matches->begin();
+                matches_iter != matches_end;  ++matches_iter  )
+        {
+            if (  node_b->find_in_edge( *matches_iter )  !=  node_b->edges_in_end()  )
+            {
+                a_match_b = true;
+                break;
+            }
+        }
+        if ( !a_match_b )
             return false;
     }
     return true;

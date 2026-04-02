@@ -23,6 +23,7 @@ private:
     std::vector<Species> species_;
     std::unordered_map<std::string, std::vector<std::size_t>> indicesByLabel_;
     std::unordered_map<std::string, std::vector<std::size_t>> indicesByExactString_;
+    std::unordered_map<std::string, std::vector<std::size_t>> indicesByFingerprint_;
 };
 
 } // namespace bng::ast

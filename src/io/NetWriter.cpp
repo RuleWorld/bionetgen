@@ -95,13 +95,15 @@ double evaluateExpressionString(const std::string& expr,
         }
     }
 
-    // Try as number
+    // Try as number (must consume entire string)
     try {
-        return std::stod(trimmed);
+        std::size_t pos = 0;
+        double val = std::stod(trimmed, &pos);
+        if (pos == trimmed.size()) return val;
     } catch (...) {}
 
     // Try as parameter name (no operators)
-    if (trimmed.find_first_of("+-*/()") == std::string::npos) {
+    if (trimmed.find_first_of("+-*/()^") == std::string::npos) {
         return resolve(trimmed);
     }
 
@@ -113,7 +115,7 @@ double evaluateExpressionString(const std::string& expr,
         for (size_t i = 1; i < trimmed.size(); ++i) {
             if (trimmed[i] == '(') ++parenDepth;
             else if (trimmed[i] == ')') --parenDepth;
-            else if (parenDepth == 0 && (trimmed[i] == '+' || trimmed[i] == '-' || trimmed[i] == '*' || trimmed[i] == '/')) {
+            else if (parenDepth == 0 && (trimmed[i] == '+' || trimmed[i] == '-' || trimmed[i] == '*' || trimmed[i] == '/' || trimmed[i] == '^')) {
                 hasBinaryOpAtZero = true;
                 break;
             }
@@ -126,12 +128,13 @@ double evaluateExpressionString(const std::string& expr,
     }
 
     // Find operators at lowest precedence level (outside parentheses)
-    // Process +/- (equal precedence), then */, with left-to-right associativity
+    // Process +/- (lowest), then */, then ^ (highest), with left-to-right associativity
     int parenDepth = 0;
     int lastAddSub = -1;
     char lastAddSubOp = 0;
     int lastMulDiv = -1;
     char lastMulDivOp = 0;
+    int lastPower = -1;
 
     for (size_t i = 0; i < trimmed.size(); ++i) {
         if (trimmed[i] == '(') ++parenDepth;
@@ -144,6 +147,9 @@ double evaluateExpressionString(const std::string& expr,
             if (trimmed[i] == '*' || trimmed[i] == '/') {
                 lastMulDiv = i;
                 lastMulDivOp = trimmed[i];
+            }
+            if (trimmed[i] == '^') {
+                lastPower = i;
             }
         }
     }
@@ -169,6 +175,15 @@ double evaluateExpressionString(const std::string& expr,
             if (std::abs(rightVal) < 1e-300) throw std::runtime_error("Division by zero");
             return leftVal / rightVal;
         }
+    }
+
+    // Then ^ (power, highest binary precedence)
+    if (lastPower >= 0) {
+        std::string left = trimmed.substr(0, lastPower);
+        std::string right = trimmed.substr(lastPower + 1);
+        double leftVal = evaluateExpressionString(left, resolve);
+        double rightVal = evaluateExpressionString(right, resolve);
+        return std::pow(leftVal, rightVal);
     }
 
     throw std::runtime_error("Cannot evaluate expression: " + trimmed);
@@ -523,67 +538,206 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                     break;
                 }
             }
+            if (isModelFunction && hasLocalArgs && (rule.hasScopePrefix() || !model.getEnergyPatterns().empty())) {
+                // Per-species numeric evaluation for:
+                // 1. Scope prefix (%x::) models like localfunc
+                // 2. Models with energy patterns (like isingspin_localfcn) where
+                //    local functions reference per-species observables
+                // Perl creates per-species derived parameters: rateLaw{N}_{M} or Rule1_local{M}
+
+                // Extract rule index (1-based)
+                int ruleIndex = 0;
+                for (const auto& r : model.getReactionRules()) {
+                    ++ruleIndex;
+                    if (r.getRuleName() == ruleName) break;
+                }
+                std::string baseParamName = rule.hasScopePrefix()
+                    ? "rateLaw" + std::to_string(ruleIndex)
+                    : ruleName + "_local";
+
+                // Get function body and formal args
+                const auto& formalArgs = matchedFunc->getArgs();
+                const auto& funcExpr = matchedFunc->getExpression();
+
+                // Find ALL observables referenced in function body
+                std::vector<std::string> localObsNames;
+                for (const auto& obs : model.getObservables()) {
+                    if (funcExpr.toString().find(obs.getName()) != std::string::npos) {
+                        localObsNames.push_back(obs.getName());
+                    }
+                }
+
+                // Compute per-species observable values and create rate params
+                DerivedRateInfo info;
+                info.paramName = baseParamName;
+                info.isLocalFunction = true;
+
+                int seqNum = 1;
+                // Collect reactions from this rule and their reactant species
+                for (const auto& rxn : network.reactions.all()) {
+                    if (rxn.getOriginRuleName() != ruleName) continue;
+
+                    // Get the first reactant species (the scoped species)
+                    if (rxn.getReactants().empty()) continue;
+                    std::size_t speciesIdx = rxn.getReactants()[0];
+
+                    // Skip if already computed for this species
+                    if (info.perSpeciesRates.find(speciesIdx) != info.perSpeciesRates.end()) continue;
+
+                    // Build expression with ALL observable values substituted
+                    std::string funcBody = funcExpr.toString();
+                    for (const auto& localObsName : localObsNames) {
+                        // Compute observable count for this specific species
+                        std::size_t obsCount = 0;
+                        for (const auto& obs : model.getObservables()) {
+                            if (obs.getName() != localObsName) continue;
+                            for (const auto& patternText : obs.getPatterns()) {
+                                const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
+                                if (speciesGraph.empty()) continue;
+                                auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
+                                BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
+                                BNGcore::List<BNGcore::Map> maps;
+                                obsCount += matcher.find_maps(maps);
+                            }
+                            break;
+                        }
+                        // Substitute this observable's value in the function body
+                        for (const auto& farg : formalArgs) {
+                            std::string pat = localObsName + "(" + farg + ")";
+                            std::string::size_type pos = 0;
+                            while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
+                                funcBody.replace(pos, pat.length(), std::to_string(obsCount));
+                                pos += std::to_string(obsCount).length();
+                            }
+                        }
+                    }
+
+                    // Evaluate the expression
+                    double rateValue = 0.0;
+                    try {
+                        rateValue = evaluateExpressionString(funcBody,
+                            [&](const std::string& name) -> double {
+                                if (model.getParameters().contains(name))
+                                    return model.getParameters().get(name).getValue();
+                                return 0.0;
+                            });
+                    } catch (...) {}
+
+                    std::string paramName = baseParamName + std::to_string(seqNum);
+                    info.perSpeciesRates[speciesIdx] = {paramName, rateValue};
+                    ++seqNum;
+                }
+
+                // Use the first rate as the default expression
+                info.expression = "0";
+                info.exprTree = ast::Expression::number(0);
+
+                derived.emplace(ruleName, std::move(info));
+                continue;
+            }
+            // Also process reverse rule if bidirectional with local function rates
+            if (rule.getRates().size() > 1) {
+                const std::string reverseRuleName = "_reverse__" + ruleName;
+                if (derived.find(reverseRuleName) == derived.end()) {
+                    const auto& reverseRateExprObj = rule.getRates()[1];
+                    const std::string reverseRateExpr = reverseRateExprObj.toString();
+                    const ast::Function* reverseMatchedFunc = nullptr;
+                    for (const auto& func : model.getFunctions()) {
+                        if (reverseRateExpr.find(func.getName()) != std::string::npos) {
+                            reverseMatchedFunc = &func;
+                            break;
+                        }
+                    }
+                    if (reverseMatchedFunc != nullptr) {
+                        const auto& revFormalArgs = reverseMatchedFunc->getArgs();
+                        const auto& revFuncExpr = reverseMatchedFunc->getExpression();
+                        std::vector<std::string> revObsNames;
+                        for (const auto& obs : model.getObservables()) {
+                            if (revFuncExpr.toString().find(obs.getName()) != std::string::npos) {
+                                revObsNames.push_back(obs.getName());
+                            }
+                        }
+                        DerivedRateInfo revInfo;
+                        std::string revBaseParam = reverseRuleName.substr(std::string("_reverse__").size()) + "r_local";
+                        revInfo.paramName = revBaseParam;
+                        revInfo.isLocalFunction = true;
+                        int revSeqNum = 1;
+                        for (const auto& rxn : network.reactions.all()) {
+                            if (rxn.getOriginRuleName() != reverseRuleName) continue;
+                            if (rxn.getReactants().empty()) continue;
+                            std::size_t speciesIdx = rxn.getReactants()[0];
+                            if (revInfo.perSpeciesRates.find(speciesIdx) != revInfo.perSpeciesRates.end()) continue;
+                            std::string funcBody = revFuncExpr.toString();
+                            for (const auto& obsName : revObsNames) {
+                                std::size_t obsCount = 0;
+                                for (const auto& obs : model.getObservables()) {
+                                    if (obs.getName() != obsName) continue;
+                                    for (const auto& patternText : obs.getPatterns()) {
+                                        const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
+                                        if (speciesGraph.empty()) continue;
+                                        auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
+                                        BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
+                                        BNGcore::List<BNGcore::Map> maps;
+                                        obsCount += matcher.find_maps(maps);
+                                    }
+                                    break;
+                                }
+                                for (const auto& farg : revFormalArgs) {
+                                    std::string pat = obsName + "(" + farg + ")";
+                                    std::string::size_type pos = 0;
+                                    while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
+                                        funcBody.replace(pos, pat.length(), std::to_string(obsCount));
+                                        pos += std::to_string(obsCount).length();
+                                    }
+                                }
+                            }
+                            double rateValue = 0.0;
+                            try {
+                                rateValue = evaluateExpressionString(funcBody,
+                                    [&](const std::string& name) -> double {
+                                        if (model.getParameters().contains(name))
+                                            return model.getParameters().get(name).getValue();
+                                        return 0.0;
+                                    });
+                            } catch (...) {}
+                            std::string paramName = revBaseParam + std::to_string(revSeqNum);
+                            revInfo.perSpeciesRates[speciesIdx] = {paramName, rateValue};
+                            ++revSeqNum;
+                        }
+                        revInfo.expression = "0";
+                        revInfo.exprTree = ast::Expression::number(0);
+                        derived.emplace(reverseRuleName, std::move(revInfo));
+                    }
+                }
+            }
+            // Local function with %x molecule tag but no scope prefix/energy patterns:
+            // write symbolic expression (Perl convention __R{N}_local{M})
             if (isModelFunction && hasLocalArgs) {
-                // Local function with molecule tag arguments (e.g., func(x) where x is %x tag)
-                // Perl creates __R{N}_local{M} derived parameters with observable values
-                // substituted at the reaction context.
-                // Extract rule index (1-based): count rules up to this one
                 int ruleIndex = 0;
                 for (const auto& r : model.getReactionRules()) {
                     ++ruleIndex;
                     if (r.getRuleName() == ruleName) break;
                 }
                 std::string localParamName = "__R" + std::to_string(ruleIndex) + "_local1";
-
-                // Build the function body with local observable values substituted.
-                // For each Obs(localArg) reference, evaluate the local observable count.
-                // For unbound species (common case), local observable count = 0.
                 std::string funcBody;
                 if (matchedFunc != nullptr) {
                     funcBody = matchedFunc->getExpression().toString();
-                    // Get function's formal parameters
-                    const auto& formalArgs = matchedFunc->getArgs();
-                    // Replace each Obs(formalArg) with Obs evaluated at 0
-                    // (the local count of the observable at the matched molecule)
+                    const auto& fArgs = matchedFunc->getArgs();
                     for (const auto& obs : model.getObservables()) {
-                        for (const auto& farg : formalArgs) {
-                            std::string pattern = obs.getName() + "(" + farg + ")";
+                        for (const auto& farg : fArgs) {
+                            std::string pat = obs.getName() + "(" + farg + ")";
                             std::string::size_type pos = 0;
-                            while ((pos = funcBody.find(pattern, pos)) != std::string::npos) {
-                                funcBody.replace(pos, pattern.length(), "0");
+                            while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
+                                funcBody.replace(pos, pat.length(), "0");
                             }
                         }
                     }
                 } else {
                     funcBody = "0";
                 }
-
-                // Try to evaluate the funcBody expression with substituted values
-                ast::Expression localExpr = matchedFunc->getExpression();
-                // Build a resolver that substitutes local observables with 0
-                // and model parameters with their values
-                auto localResolver = [&](const std::string& name) -> double {
-                    if (model.getParameters().contains(name)) {
-                        return model.getParameters().get(name).getValue();
-                    }
-                    return 0.0;
-                };
-                double localValue = 0.0;
-                try {
-                    // Create a modified expression with observables replaced by 0
-                    // For now, evaluate the funcBody string approach
-                    localValue = localExpr.evaluate(localResolver);
-                } catch (...) {}
-
-                derived.emplace(
-                    ruleName,
-                    DerivedRateInfo {
-                        localParamName,
-                        funcBody,
-                        ast::Expression::number(localValue),
-                        false,
-                        false  // Local functions are parameters, not functions
-                    });
+                derived.emplace(ruleName, DerivedRateInfo {
+                    localParamName, funcBody, ast::Expression::number(0), false, false
+                });
                 continue;
             }
             if (isModelFunction) {
@@ -648,42 +802,101 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
         }
     }
 
-    // Also handle Arrhenius expressions (keep existing logic for compatibility)
-    for (const auto& reaction : network.reactions.all()) {
-        if (reaction.getOriginRuleName().empty() || derived.find(reaction.getOriginRuleName()) != derived.end()) {
-            continue;
-        }
-        const auto arrhenius = parseArrhenius(reaction.getRateLaw());
-        if (!arrhenius.has_value()) {
-            continue;
+    // Handle Arrhenius expressions with per-reaction energy-dependent rates.
+    // Each reaction gets a unique rate parameter based on its specific energy delta
+    // (determined by counting energy pattern matches in reactant vs product species).
+    {
+        // Group rules that use Arrhenius rate laws
+        std::unordered_set<std::string> arrheniusRules;
+        for (const auto& reaction : network.reactions.all()) {
+            if (reaction.getOriginRuleName().empty()) continue;
+            if (derived.find(reaction.getOriginRuleName()) != derived.end()) continue;
+            if (parseArrhenius(reaction.getRateLaw()).has_value()) {
+                arrheniusRules.insert(reaction.getOriginRuleName());
+            }
         }
 
-        const bool reverseDirection = reaction.getOriginRuleName().rfind("_reverse__", 0) == 0;
-        const std::string ruleBase = reverseDirection
-            ? reaction.getOriginRuleName().substr(std::string("_reverse__").size())
-            : reaction.getOriginRuleName();
-        const std::string phiExpr = reverseDirection
-            ? parenthesize("1-" + arrhenius->phiArg)
-            : arrhenius->phiArg;
-        const std::string deltaExpr = energyDeltaExpression(reaction, model, network);
+        auto paramResolver = [&](const std::string& name) -> double {
+            return model.getParameters().evaluate(name);
+        };
 
-        std::string expr = "exp((-( " + arrhenius->eaArg;
-        if (!deltaExpr.empty()) {
-            expr = "exp((-( " + arrhenius->eaArg + "+(" + phiExpr + "*(" + deltaExpr + "))))))";
-        } else {
-            expr = "exp((-( " + arrhenius->eaArg + ")))";
+        for (const auto& ruleName : arrheniusRules) {
+            const bool reverseDirection = ruleName.rfind("_reverse__", 0) == 0;
+            const std::string ruleBase = reverseDirection
+                ? ruleName.substr(std::string("_reverse__").size())
+                : ruleName;
+            // Perl naming: Rule1Rate_N for forward, Rule1rRate_N for reverse
+            // Our rule names are like R1 or _reverse__R1
+            const std::string paramPrefix = reverseDirection
+                ? ruleBase + "rRate_"
+                : ruleBase + "Rate_";
+
+            // Compute per-reaction rates, caching by energy delta fingerprint
+            std::unordered_map<std::string, std::pair<std::string, double>> fingerprintToParam;
+            std::size_t nextParamIndex = 1;
+
+            DerivedRateInfo info;
+            info.paramName = "__" + ruleName + "_local1"; // fallback name (unused with per-reaction)
+            info.expression = {};
+            info.exprTree = ast::Expression::number(0.0);
+            info.reverseDirection = reverseDirection;
+            info.isPerReactionArrhenius = true;
+
+            for (std::size_t rxnIdx = 0; rxnIdx < network.reactions.all().size(); ++rxnIdx) {
+                const auto& reaction = network.reactions.all()[rxnIdx];
+                if (reaction.getOriginRuleName() != ruleName) continue;
+
+                const auto arrhenius = parseArrhenius(reaction.getRateLaw());
+                if (!arrhenius.has_value()) continue;
+
+                // Compute energy delta fingerprint for this specific reaction
+                std::string deltaFingerprint;
+                double deltaG = 0.0;
+                for (const auto& energyPattern : model.getEnergyPatterns()) {
+                    long long delta = 0;
+                    for (const auto reactantIndex : reaction.getReactants()) {
+                        delta -= static_cast<long long>(countPatternMatches(energyPattern.getGraph(), network.species.get(reactantIndex)));
+                    }
+                    for (const auto productIndex : reaction.getProducts()) {
+                        delta += static_cast<long long>(countPatternMatches(energyPattern.getGraph(), network.species.get(productIndex)));
+                    }
+                    deltaFingerprint += std::to_string(delta) + ",";
+                    if (delta != 0) {
+                        double gf = 0.0;
+                        try {
+                            gf = evaluateExpressionString(energyPattern.getExpression().toString(), paramResolver);
+                        } catch (...) {}
+                        deltaG += delta * gf;
+                    }
+                }
+
+                // Check if this fingerprint already has a parameter
+                auto fpIt = fingerprintToParam.find(deltaFingerprint);
+                if (fpIt != fingerprintToParam.end()) {
+                    // Reuse existing parameter for same energy fingerprint
+                    info.perReactionRates[rxnIdx] = fpIt->second;
+                } else {
+                    // Compute the numeric rate value
+                    double phi = 0.0;
+                    double eact0 = 0.0;
+                    try {
+                        const std::string phiExpr = reverseDirection
+                            ? ("1-" + arrhenius->phiArg)
+                            : arrhenius->phiArg;
+                        phi = evaluateExpressionString(phiExpr, paramResolver);
+                        eact0 = evaluateExpressionString(arrhenius->eaArg, paramResolver);
+                    } catch (...) {}
+                    double rate = std::exp(-(eact0 + phi * deltaG));
+
+                    std::string paramName = paramPrefix + std::to_string(nextParamIndex++);
+                    auto paramPair = std::make_pair(paramName, rate);
+                    fingerprintToParam[deltaFingerprint] = paramPair;
+                    info.perReactionRates[rxnIdx] = paramPair;
+                }
+            }
+
+            derived.emplace(ruleName, std::move(info));
         }
-        expr = compactExpression(expr);
-
-        derived.emplace(
-            reaction.getOriginRuleName(),
-            DerivedRateInfo {
-                reverseDirection ? "__reverse__" + ruleBase + "_local1" : "__" + ruleBase + "_local1",
-                expr,
-                ast::Expression::number(0.0),
-                reverseDirection,
-                false  // Arrhenius are parameters, not functions
-            });
     }
 
     return derived;
@@ -714,20 +927,39 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
     };
 
     for (const auto& [ruleName, info] : derivedRateParams) {
-        try {
-            // Simple evaluator for expressions of the form: exp(-(A+(B*(C))))
-            // We recursively evaluate parameters and apply operations
-            double value = evaluateExpressionString(info.expression, paramResolver);
-            model.getParameters().add(ast::Parameter(info.paramName, ast::Expression::number(value)));
-        } catch (const std::exception& e) {
-            // If evaluation fails, skip - will error later if used
+        if (info.isLocalFunction) {
+            // Register per-species rate params
+            for (const auto& [specIdx, paramPair] : info.perSpeciesRates) {
+                model.getParameters().add(ast::Parameter(paramPair.first, ast::Expression::number(paramPair.second)));
+            }
+        } else if (info.isPerReactionArrhenius) {
+            for (const auto& [rxnIdx, paramPair] : info.perReactionRates) {
+                model.getParameters().add(ast::Parameter(paramPair.first, ast::Expression::number(paramPair.second)));
+            }
+        } else {
+            try {
+                double value = evaluateExpressionString(info.expression, paramResolver);
+                model.getParameters().add(ast::Parameter(info.paramName, ast::Expression::number(value)));
+            } catch (const std::exception& e) {
+                // If evaluation fails, skip - will error later if used
+            }
         }
     }
 
     // Build set of derived parameter names to skip when writing base parameters
     std::unordered_set<std::string> derivedParamNames;
     for (const auto& [ruleName, info] : derivedRateParams) {
-        derivedParamNames.insert(info.paramName);
+        if (info.isLocalFunction) {
+            for (const auto& [specIdx, paramPair] : info.perSpeciesRates) {
+                derivedParamNames.insert(paramPair.first);
+            }
+        } else if (info.isPerReactionArrhenius) {
+            for (const auto& [rxnIdx, paramPair] : info.perReactionRates) {
+                derivedParamNames.insert(paramPair.first);
+            }
+        } else {
+            derivedParamNames.insert(info.paramName);
+        }
     }
 
     out << "begin parameters\n";
@@ -770,15 +1002,64 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
         }
     };
     for (const auto& rule : model.getReactionRules()) {
+        // Write forward rule derived params
         const auto found = derivedRateParams.find(rule.getRuleName());
         if (found != derivedRateParams.end() && !found->second.asFunction) {
-            out << "    " << parameterIndex++ << " " << found->second.paramName << " "
-                << formatDerivedParam(found->second) << '\n';
+            if (found->second.isPerReactionArrhenius) {
+                // Write per-reaction Arrhenius params interleaved: forward param, then
+                // matching reverse param (Perl writes them in order of first encounter)
+            } else if (found->second.isLocalFunction) {
+                std::vector<std::pair<std::size_t, std::pair<std::string, double>>> sorted;
+                for (const auto& [specIdx, paramPair] : found->second.perSpeciesRates) {
+                    sorted.emplace_back(specIdx, paramPair);
+                }
+                std::sort(sorted.begin(), sorted.end());
+                for (const auto& [specIdx, paramPair] : sorted) {
+                    std::ostringstream voss;
+                    voss << std::setprecision(15) << paramPair.second;
+                    out << "    " << parameterIndex++ << " " << paramPair.first << " "
+                        << voss.str() << '\n';
+                }
+            } else {
+                out << "    " << parameterIndex++ << " " << found->second.paramName << " "
+                    << formatDerivedParam(found->second) << '\n';
+            }
         }
+        // Write reverse rule derived params
         const auto reverseFound = derivedRateParams.find("_reverse__" + rule.getRuleName());
         if (reverseFound != derivedRateParams.end() && !reverseFound->second.asFunction) {
-            out << "    " << parameterIndex++ << " " << reverseFound->second.paramName << " "
-                << formatDerivedParam(reverseFound->second) << '\n';
+            if (reverseFound->second.isPerReactionArrhenius) {
+                // Handled below with forward params
+            } else {
+                out << "    " << parameterIndex++ << " " << reverseFound->second.paramName << " "
+                    << formatDerivedParam(reverseFound->second) << '\n';
+            }
+        }
+        // Write per-reaction Arrhenius params (forward + reverse interleaved by reaction order)
+        if ((found != derivedRateParams.end() && found->second.isPerReactionArrhenius) ||
+            (reverseFound != derivedRateParams.end() && reverseFound->second.isPerReactionArrhenius)) {
+            // Collect all unique params from both forward and reverse, ordered by reaction index
+            std::set<std::string> writtenParams;
+            std::vector<std::pair<std::size_t, std::pair<std::string, double>>> allParams;
+            if (found != derivedRateParams.end()) {
+                for (const auto& [rxnIdx, pp] : found->second.perReactionRates) {
+                    allParams.emplace_back(rxnIdx, pp);
+                }
+            }
+            if (reverseFound != derivedRateParams.end()) {
+                for (const auto& [rxnIdx, pp] : reverseFound->second.perReactionRates) {
+                    allParams.emplace_back(rxnIdx, pp);
+                }
+            }
+            std::sort(allParams.begin(), allParams.end());
+            for (const auto& [rxnIdx, pp] : allParams) {
+                if (writtenParams.insert(pp.first).second) {
+                    std::ostringstream voss;
+                    voss << std::setprecision(15) << pp.second;
+                    out << "    " << parameterIndex++ << " " << pp.first << " "
+                        << voss.str() << "  # ConstantExpression\n";
+                }
+            }
         }
     }
     out << "end parameters\n";
@@ -869,8 +1150,39 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
             }
         }
         out << " ";
+        const std::size_t rxnIdx = reactionIndex - 2; // reactionIndex was incremented above
         const auto derivedFound = derivedRateParams.find(reaction.getOriginRuleName());
-        if (derivedFound != derivedRateParams.end()) {
+        if (derivedFound != derivedRateParams.end() && derivedFound->second.isPerReactionArrhenius) {
+            // Per-reaction energy-pattern Arrhenius rate
+            const auto rxnIt = derivedFound->second.perReactionRates.find(rxnIdx);
+            std::string rateParamName = rxnIt != derivedFound->second.perReactionRates.end()
+                ? rxnIt->second.first : derivedFound->second.paramName;
+            if (std::abs(reaction.getFactor() - 1.0) >= 1e-9) {
+                out << formatFactor(reaction.getFactor()) << "*";
+            }
+            out << rateParamName;
+            // Perl uses #Rule1 / #Rule1r for forward/reverse
+            const bool isReverse = reaction.getOriginRuleName().rfind("_reverse__", 0) == 0;
+            std::string ruleComment = isReverse
+                ? reaction.getOriginRuleName().substr(std::string("_reverse__").size()) + "r"
+                : reaction.getOriginRuleName();
+            out << " #" << ruleComment;
+        } else if (derivedFound != derivedRateParams.end() && derivedFound->second.isLocalFunction) {
+            // Per-species local function rate: look up by reactant species
+            std::string rateParamName = derivedFound->second.paramName + "_1"; // fallback
+            if (!reactants.empty()) {
+                const auto specIt = derivedFound->second.perSpeciesRates.find(reactants[0]);
+                if (specIt != derivedFound->second.perSpeciesRates.end()) {
+                    rateParamName = specIt->second.first;
+                }
+            }
+            if (std::abs(reaction.getFactor() - 1.0) >= 1e-9) {
+                out << formatFactor(reaction.getFactor()) << "*";
+            }
+            out << rateParamName;
+            // Perl writes rule name comment like #Rule1
+            out << " #" << reaction.getOriginRuleName();
+        } else if (derivedFound != derivedRateParams.end()) {
             const auto unitFactor = unitConversionFactor(reaction, model, network);
             const auto unitExpr = unitConversionExpression(reaction, model, network);
             bool wrotePrefix = false;

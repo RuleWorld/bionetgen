@@ -174,6 +174,17 @@ BNGcore::PatternGraph buildPatternGraph(
                     }
                     graph.add_edge(componentNode, bondNode);
                 }
+
+                // Extract component label/tag (e.g., %1, %2)
+                if (!componentPattern->component_label().empty()) {
+                    auto* labelCtx = componentPattern->component_label().front();
+                    std::string tag = labelCtx->getText();
+                    // Strip leading % sign
+                    if (!tag.empty() && tag[0] == '%') {
+                        tag = tag.substr(1);
+                    }
+                    componentNode->set_label_tag(tag);
+                }
             }
         }
     }

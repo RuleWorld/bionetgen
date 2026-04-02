@@ -435,10 +435,12 @@ namespace BNGcore
             const State &     get_state ( ) const {  return *state;  };
             int               get_index ( ) const {  return index;   };
             const std::string & get_compartment ( ) const { return compartment_; };
+            const std::string & get_label_tag ( ) const { return labelTag_; };
             // set methods
             bool  set_state ( const State & new_state );
             void  set_index ( int _index );
             void  set_compartment ( const std::string & comp ) { compartment_ = comp; };
+            void  set_label_tag ( const std::string & tag ) { labelTag_ = tag; };
             // query in and out degree of node
             size_t  in_degree   ( ) const { return edges_in.size();  };
             size_t  out_degree  ( ) const { return edges_out.size(); };
@@ -481,6 +483,7 @@ namespace BNGcore
             node_container_t    edges_out;
 		    mutable int         index;
             std::string         compartment_;
+            std::string         labelTag_;  // component tag label (e.g., "1" from %1)
 		    // static iterators
 		    static node_iter_t  node_iter;
 		    static node_iter_t  nodes_end;
@@ -527,10 +530,15 @@ namespace BNGcore
             std::string  get_BNG2_string ( ) const;
             // write graph to a string and return per-molecule compartments in string order
             std::string  get_BNG2_string ( std::vector<std::string>& moleculeCompartments ) const;
-            std::string  get_label ( ) const ;                
-            std::string  get_label ( bool preserve_prior_order ) const;    
+            std::string  get_label ( ) const ;
+            std::string  get_label ( bool preserve_prior_order ) const;
+            // set a raw string representation (used for species loaded from .net files)
+            void  set_raw_string ( const std::string & raw ) { rawString_ = raw; };
+            const std::string& get_raw_string ( ) const { return rawString_; };    
             // print detailed graph information
             void   print ( ) const;
+            // compute a structural fingerprint invariant to node ordering
+            std::string computeFingerprint ( ) const;
             
             // direct access to nodes (careful!!)
             node_iter_t        begin ( ) {  return nodes.begin();  };
@@ -574,7 +582,8 @@ namespace BNGcore
 		    // members
             node_container_t     nodes;
             mutable std::string  label;
-            mutable bool         canonical_flag;  
+            mutable bool         canonical_flag;
+            std::string          rawString_;  // raw string for species loaded from .net files
 
 		private:
 		    // members

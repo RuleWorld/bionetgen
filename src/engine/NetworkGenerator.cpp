@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 
+#include "ast/ReactionRule.hpp"
 #include "io/NetWriter.hpp"
 
 namespace bng::engine {
@@ -181,6 +182,21 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     const bool logProgress = parsePrintIter(model_);
     const bool logRules = parsePrintRules(model_);
 
+    // Set compartment dimension and parent maps for cross-compartment species assignment
+    // and compartment transport (endocytosis/exocytosis)
+    {
+        std::unordered_map<std::string, int> compDims;
+        std::unordered_map<std::string, std::string> compParents;
+        for (const auto& comp : model_.getCompartments()) {
+            compDims[comp.getName()] = comp.getDimension();
+            if (!comp.getParent().empty()) {
+                compParents[comp.getName()] = comp.getParent();
+            }
+        }
+        ast::setCompartmentDimensions(compDims);
+        ast::setCompartmentParents(compParents);
+    }
+
     // Clear per-rule state from previous generate_network calls
     for (auto& rule : model_.getReactionRules()) {
         rule.clearPatternMatchCache();
@@ -211,7 +227,7 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
             const std::size_t beforeReactions = network.reactions.size();
             const auto created = rule.expandRule(network.species, network.reactions, iter, [&](const ast::SpeciesGraph& graph) {
                 return withinStoichLimits(graph, maxStoich);
-            });
+            }, speciesAtIterStart);
             const bool debugRules = std::getenv("BNG_DEBUG_RULES") != nullptr;
             if (debugRules) {
                 std::cerr << "[generate_network] iter=" << (iter + 1)
@@ -230,8 +246,8 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
             }
         }
 
-        // Mark only species that existed at the START of this iteration as processed
-        // Species created during this iteration remain with rulesApplied=false for next iteration
+        // Mark only species that existed at the START of this iteration as processed.
+        // Species created during this iteration remain with rulesApplied=false for next iteration.
         for (std::size_t i = 0; i < speciesAtIterStart; ++i) {
             network.species.get(i).setRulesApplied(true);
         }
@@ -256,7 +272,7 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
 }
 
 GeneratedNetwork NetworkGenerator::generate(const std::filesystem::path& sourcePath) {
-    auto network = generateNative(parseMaxIter(model_).value_or(1024));
+    auto network = generateNative(parseMaxIter(model_).value_or(100));
     if (!sourcePath.empty()) {
         const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".net");
         io::NetWriter::write(outputPath, model_, network);

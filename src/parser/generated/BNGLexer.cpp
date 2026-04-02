@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGLexer.g4 by ANTLR 4.13.2
+// Generated from src/parser/BNGLexer.g4 by ANTLR 4.13.1
 
 
 #include "BNGLexer.h"
@@ -45,7 +45,7 @@ struct BNGLexerStaticData final {
 #if ANTLR4_USE_THREAD_LOCAL_CACHE
 static thread_local
 #endif
-std::unique_ptr<BNGLexerStaticData> bnglexerLexerStaticData = nullptr;
+BNGLexerStaticData *bnglexerLexerStaticData = nullptr;
 
 void bnglexerLexerInitialize() {
 #if ANTLR4_USE_THREAD_LOCAL_CACHE
@@ -1034,7 +1034,7 @@ void bnglexerLexerInitialize() {
   for (size_t i = 0; i < count; i++) { 
     staticData->decisionToDFA.emplace_back(staticData->atn->getDecisionState(i), i);
   }
-  bnglexerLexerStaticData = std::move(staticData);
+  bnglexerLexerStaticData = staticData.release();
 }
 
 }

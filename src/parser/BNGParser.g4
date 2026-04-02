@@ -152,8 +152,13 @@ molecule_compartment
 // Molecule patterns can have optional parentheses (e.g., ".CK1a" is valid in reactions)
 // Molecule tagging: pattern%1, pattern%2 for identifying molecules in reactions
 // Bond wildcards can appear after entire patterns: e.g., Smad1(loc~cyt)!+
+// Scope prefix: %x:: for local function parameterization (e.g., %x::A())
 molecule_pattern
-    : (STRING | keyword_as_mol_name) molecule_compartment? molecule_tag? (LPAREN component_pattern_list? RPAREN)? pattern_bond_wildcard? molecule_tag? molecule_attributes?
+    : scope_prefix? (STRING | keyword_as_mol_name) molecule_compartment? molecule_tag? (LPAREN component_pattern_list? RPAREN)? pattern_bond_wildcard? molecule_tag? molecule_attributes?
+    ;
+
+scope_prefix
+    : MOD STRING COLON COLON
     ;
 
 // Bond wildcards that apply to entire molecule patterns

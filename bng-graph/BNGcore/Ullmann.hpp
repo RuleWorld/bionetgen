@@ -50,21 +50,24 @@ namespace BNGcore
     
     // Subgraph Isomorphism using Ullmann's 1976 method (basically)
     class UllmannSGIso : public UllmannBase
-    {   
+    {
         public:
             // structors
             UllmannSGIso  ( const PatternGraph & Ga, const PatternGraph & Gb  ) : UllmannBase ( Ga, Gb ) {};
             virtual ~UllmannSGIso ( ) {};
-          
+
             // find subgraph isomorphisms
             virtual size_t  find_maps ( List <Map> & maps );
+            // Set maximum number of maps to find (0 = unlimited). Stops early once limit reached.
+            void set_max_maps ( size_t max ) { max_maps_ = max; };
 
         protected:
             size_t   next_node ( size_t d, row_iter_t & row_iter, List <Map> & sg_iso_maps );
-            bool     find_next_match ( col_iter_t & col_iter, const col_iter_t & col_end );    
+            bool     find_next_match ( col_iter_t & col_iter, const col_iter_t & col_end );
             bool     build_M0  ( );
             bool     refine_M  ( );
             bool     refine_M ( row_iter_t & row_iter, col_iter_t & col_iter );
+            size_t   max_maps_ = 0;  // 0 = unlimited
     };   
    
 

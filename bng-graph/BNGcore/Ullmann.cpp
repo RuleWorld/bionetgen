@@ -220,30 +220,31 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
     //if ( d == 4 ) print_M();
     
     while (  find_next_match( col_iter, possible_matches->end() )  )
-    {           
+    {
+        // Check early termination
+        if ( max_maps_ > 0 && maps.size() >= max_maps_ )
+            break;
+
         // get match node_b first (before we screw with possible_matches set)
         Node *node_b = *col_iter;
-    
+
         // delete possible matches, except for col_node
         //  NOTE: this will be restored later when we call copy_M
         possible_matches->clear();
         //possible_matches->insert( node_b );
         possible_matches->push_back( node_b );
-        
+
         // refine M and continue, if possible
         if ( refine_M() )
         {
-            // debug
-            //if ( d==4 ) print_M(); 
-         
             // extend subgraph isomorphism map
             map.insert( node_a, node_b );
             // flag col_node as mapped
             targets.push_back( node_b );
             targets_mask[node_b->get_index()] = true;
-        
+
             if ( d+1 < pa )
-            {   // goto next row_node      
+            {   // goto next row_node
                 num_sg_iso += next_node( d+1, ++row_iter, maps );
                 --row_iter;
             }
@@ -251,8 +252,8 @@ UllmannSGIso::next_node ( size_t d, row_iter_t & row_iter, List <Map> & maps )
             {   // we have a subgraph isomorphism!!
                 maps.push_back( map );
                 ++num_sg_iso;
-            }   
-      
+            }
+
             // remove map of row_node
             map.erase( node_a );
             // free up col_node
@@ -419,7 +420,7 @@ UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
     // ends up false if a cannot match b
     bool  a_match_b;    
     
-    // loop over node that are adjacent to node_a
+    // loop over nodes adjacent to node_a via OUT-edges
     adj_a_end = node_a->edges_out_end();
     for ( adj_a_iter = node_a->edges_out_begin();  adj_a_iter != adj_a_end;  ++adj_a_iter )
     {
@@ -431,18 +432,42 @@ UllmannSGIso::refine_M ( row_iter_t & row_iter, col_iter_t & col_iter )
         matches_end = possible_adj_a_matches->end();
         for ( matches_iter = possible_adj_a_matches->begin();
                 matches_iter != matches_end;  ++matches_iter  )
-        {            
+        {
             // see if there is an edge from  node_b to match
-            // TODO:  need to check that match isn't mapped already?
             if (  node_b->find_out_edge( *matches_iter )  !=  node_b->edges_out_end()  )
             {
                 a_match_b = true;
                 break;
             }
         }
-         
+
         if ( !a_match_b )
-            // a cannot match b, return false now
+            return false;
+    }
+
+    // Also check IN-edges: for each in-neighbor of node_a, there must be a
+    // corresponding in-neighbor of node_b among the possible matches.
+    // This is essential for nodes with zero out-degree (e.g., bond nodes)
+    // and for full graph isomorphism of undirected graphs stored as directed edges.
+    adj_a_end = node_a->edges_in_end();
+    for ( adj_a_iter = node_a->edges_in_begin();  adj_a_iter != adj_a_end;  ++adj_a_iter )
+    {
+        row_iter_t adj_row = M.find( *adj_a_iter );
+        if ( adj_row == M.end() )
+            continue;  // in-neighbor not in pattern (subgraph matching) — skip
+        possible_adj_a_matches = adj_row->second;
+        a_match_b = false;
+        matches_end = possible_adj_a_matches->end();
+        for ( matches_iter = possible_adj_a_matches->begin();
+                matches_iter != matches_end;  ++matches_iter  )
+        {
+            if (  node_b->find_in_edge( *matches_iter )  !=  node_b->edges_in_end()  )
+            {
+                a_match_b = true;
+                break;
+            }
+        }
+        if ( !a_match_b )
             return false;
     }
     return true;

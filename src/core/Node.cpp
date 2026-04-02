@@ -34,6 +34,7 @@ Node::Node ( const Node & orig )
     state = orig.state->clone();
     index = orig.index;
     compartment_ = orig.compartment_;
+    labelTag_ = orig.labelTag_;
 }
 
 

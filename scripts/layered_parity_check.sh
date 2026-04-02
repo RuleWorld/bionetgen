@@ -76,6 +76,10 @@ for model in "${MODELS[@]}"; do
     mkdir -p "$WORKDIR"
     cp "$BNGL" "$WORKDIR/"
     [ -d "$VALIDATE_DIR/INPUT_FILES" ] && cp -r "$VALIDATE_DIR/INPUT_FILES" "$WORKDIR/" 2>/dev/null || true
+    # Copy companion .net files (for models that use readFile)
+    for netfile in "$VALIDATE_DIR"/*.net; do
+        [ -f "$netfile" ] && cp "$netfile" "$WORKDIR/" 2>/dev/null || true
+    done
 
     CPP_NET="$WORKDIR/$model.net"
     parse_ok="-"

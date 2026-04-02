@@ -415,6 +415,29 @@ std::any BNGAstVisitor::visitReaction_rule_def(BNGParser::Reaction_rule_defConte
         modifiers.push_back(modifier->getText());
     }
 
+    // Check if any molecule in reactant/product patterns has a scope prefix (%x::)
+    bool hasScopePrefix = false;
+    for (auto* speciesDef : ctx->reactant_patterns()->species_def()) {
+        for (auto* molPat : speciesDef->molecule_pattern()) {
+            if (molPat->scope_prefix() != nullptr) {
+                hasScopePrefix = true;
+                break;
+            }
+        }
+        if (hasScopePrefix) break;
+    }
+    if (!hasScopePrefix) {
+        for (auto* speciesDef : ctx->product_patterns()->species_def()) {
+            for (auto* molPat : speciesDef->molecule_pattern()) {
+                if (molPat->scope_prefix() != nullptr) {
+                    hasScopePrefix = true;
+                    break;
+                }
+            }
+            if (hasScopePrefix) break;
+        }
+    }
+
     currentModel_->addReactionRule(ast::ReactionRule(
         "R" + std::to_string(currentModel_->getReactionRules().size() + 1),
         ctx->label_def() != nullptr ? ctx->label_def()->getText() : std::string(),
@@ -443,6 +466,12 @@ std::any BNGAstVisitor::visitReaction_rule_def(BNGParser::Reaction_rule_defConte
             }
             return patterns;
         }()));
+    if (hasScopePrefix) {
+        auto& rules = currentModel_->getReactionRules();
+        if (!rules.empty()) {
+            rules.back().setHasScopePrefix(true);
+        }
+    }
     return {};
 }
 

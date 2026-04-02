@@ -112,6 +112,10 @@ const std::vector<ReactionRule>& Model::getReactionRules() const {
     return reactionRules_;
 }
 
+std::vector<ReactionRule>& Model::getReactionRules() {
+    return reactionRules_;
+}
+
 const std::string& Model::getVersion() const {
     return version_;
 }

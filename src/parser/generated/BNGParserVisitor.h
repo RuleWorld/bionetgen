@@ -1,5 +1,5 @@
 
-// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.2
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
 
 #pragma once
 
@@ -68,6 +68,8 @@ public:
     virtual std::any visitMolecule_compartment(BNGParser::Molecule_compartmentContext *context) = 0;
 
     virtual std::any visitMolecule_pattern(BNGParser::Molecule_patternContext *context) = 0;
+
+    virtual std::any visitScope_prefix(BNGParser::Scope_prefixContext *context) = 0;
 
     virtual std::any visitPattern_bond_wildcard(BNGParser::Pattern_bond_wildcardContext *context) = 0;
 

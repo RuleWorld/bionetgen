@@ -34,6 +34,12 @@ public:
         std::unordered_map<std::string, double> parameters;
         std::vector<std::string> compartments;
         std::vector<std::pair<std::string, std::vector<std::string>>> observables; // name, patterns
+        std::vector<std::pair<std::string, std::string>> functions;  // name, expression
+        // Raw sections for passthrough writing
+        std::vector<std::string> rawFunctionLines;
+        std::vector<std::string> rawReactionRuleLines;
+        std::vector<std::string> rawMoleculeTypeLines;
+        std::vector<std::string> rawGroupLines;
     };
 
     /**

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -301,6 +302,9 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
     // For continue simulation: track last simulation state
     std::vector<double> lastSimulationState;
 
+    // Store loaded .net data for passthrough writing (readFile)
+    std::optional<io::NetReader::ParseResult> loadedNetData;
+
     const auto ensureNetwork = [&]() {
         if (!network.has_value()) {
             network = generator.generate(sourcePath);
@@ -309,6 +313,57 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
     const auto writeCurrentNetwork = [&]() {
         const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".net");
+        if (loadedNetData.has_value()) {
+            // Write loaded .net data with updated species concentrations
+            std::ofstream out(outputPath);
+            if (!out) throw std::runtime_error("Could not open output file: " + outputPath.string());
+            out << "# Created by bng_cpp\n";
+            // Parameters
+            out << "begin parameters\n";
+            std::size_t pidx = 1;
+            for (const auto& param : model.getParameters().all()) {
+                std::ostringstream valStr;
+                valStr << std::setprecision(15) << param.getValue();
+                out << "    " << pidx++ << " " << param.getName() << " " << valStr.str() << '\n';
+            }
+            out << "end parameters\n";
+            // Functions (passthrough from loaded .net)
+            if (!loadedNetData->rawFunctionLines.empty()) {
+                out << "begin functions\n";
+                for (const auto& line : loadedNetData->rawFunctionLines) {
+                    out << "    " << line << '\n';
+                }
+                out << "end functions\n";
+            }
+            // Species (with updated concentrations from network)
+            out << "begin species\n";
+            for (std::size_t i = 0; i < network->species.size(); ++i) {
+                const auto& sp = network->species.get(i);
+                std::string prefix;
+                if (sp.isConstant()) prefix = "$";
+                out << "    " << (i + 1) << " " << prefix << sp.getSpeciesGraph().toString() << " ";
+                // Write concentration - use scientific notation for consistency
+                std::ostringstream concStr;
+                concStr << std::setprecision(15) << sp.getAmount();
+                out << concStr.str() << '\n';
+            }
+            out << "end species\n";
+            // Reactions (passthrough from loaded .net)
+            out << "begin reactions\n";
+            for (const auto& line : loadedNetData->reactions) {
+                out << "    " << line << '\n';
+            }
+            out << "end reactions\n";
+            // Groups (passthrough from loaded .net)
+            if (!loadedNetData->rawGroupLines.empty()) {
+                out << "begin groups\n";
+                for (const auto& line : loadedNetData->rawGroupLines) {
+                    out << "    " << line << '\n';
+                }
+                out << "end groups\n";
+            }
+            return outputPath;
+        }
         io::NetWriter::write(outputPath, model, *network);
         return outputPath;
     };
@@ -336,22 +391,91 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
                     throw std::runtime_error("Failed to read .net file: " + parseResult.error);
                 }
 
-                // Merge parsed data into current model
+                // Merge parsed parameters into current model
                 for (const auto& [name, value] : parseResult.parameters) {
                     model.getParameters().add(ast::Parameter(name, ast::Expression::number(value)));
                 }
                 model.getParameters().evaluateAll();
 
-                if (verbose) {
-                    std::cerr << "[bng_cpp] Read .net file: " << path << "\n";
-                    std::cerr << "[bng_cpp]   Parameters: " << parseResult.parameters.size() << "\n";
-                    std::cerr << "[bng_cpp]   Species: " << parseResult.species.size() << "\n";
-                    std::cerr << "[bng_cpp]   Reactions: " << parseResult.reactions.size() << "\n";
+                // Reconstruct network from parsed species and reactions
+                engine::GeneratedNetwork loadedNetwork;
+                for (const auto& [pattern, concStr] : parseResult.species) {
+                    // Check for constant species ($ prefix)
+                    bool isConstant = false;
+                    std::string cleanPattern = pattern;
+                    if (!cleanPattern.empty() && cleanPattern[0] == '$') {
+                        isConstant = true;
+                        cleanPattern = cleanPattern.substr(1);
+                    }
+                    // Create a PatternGraph with raw string (no full graph construction needed)
+                    BNGcore::PatternGraph pg;
+                    pg.set_raw_string(cleanPattern);
+                    ast::SpeciesGraph sg(std::move(pg));
+                    // Resolve concentration: can be a number or a parameter name
+                    double concentration = 0.0;
+                    try {
+                        concentration = std::stod(concStr);
+                    } catch (...) {
+                        // Try resolving as parameter name
+                        try {
+                            concentration = model.getParameters().evaluate(concStr);
+                        } catch (...) {
+                            concentration = 0.0;
+                        }
+                    }
+                    ast::Species sp(std::move(sg), concentration, isConstant);
+                    loadedNetwork.species.add(std::move(sp));
                 }
 
-                // NOTE: Full integration of species and reactions from .net into the Model
-                // would require reconstructing the network. For now, readFile primarily
-                // updates parameters, which is the main use case.
+                // Store reactions as-is (raw lines for passthrough writing)
+                // Also create Rxn objects for ODE integration
+                for (const auto& rxnLine : parseResult.reactions) {
+                    // Parse reaction line: <index> <reactants> <products> <rate>
+                    std::istringstream iss(rxnLine);
+                    std::string idxStr, reactantsStr, productsStr, rateStr;
+                    iss >> idxStr >> reactantsStr >> productsStr;
+                    std::getline(iss, rateStr);
+                    // Trim leading whitespace from rate
+                    auto rateStart = rateStr.find_first_not_of(" \t");
+                    if (rateStart != std::string::npos) rateStr = rateStr.substr(rateStart);
+                    // Strip #comment from rate
+                    auto commentPos = rateStr.find('#');
+                    if (commentPos != std::string::npos) rateStr = rateStr.substr(0, commentPos);
+                    // Trim trailing whitespace
+                    while (!rateStr.empty() && std::isspace(rateStr.back())) rateStr.pop_back();
+
+                    // Parse reactant indices (comma-separated, 1-based)
+                    std::vector<std::size_t> reactants;
+                    if (reactantsStr != "0") {
+                        std::istringstream rss(reactantsStr);
+                        std::string tok;
+                        while (std::getline(rss, tok, ',')) {
+                            reactants.push_back(std::stoul(tok) - 1);
+                        }
+                    }
+                    // Parse product indices
+                    std::vector<std::size_t> products;
+                    if (productsStr != "0") {
+                        std::istringstream pss(productsStr);
+                        std::string tok;
+                        while (std::getline(pss, tok, ',')) {
+                            products.push_back(std::stoul(tok) - 1);
+                        }
+                    }
+
+                    loadedNetwork.reactions.add(ast::Rxn(
+                        idxStr, reactants, products, rateStr));
+                }
+
+                network = std::move(loadedNetwork);
+                loadedNetData = std::move(parseResult);
+
+                if (verbose) {
+                    std::cerr << "[bng_cpp] Read .net file: " << path << "\n";
+                    std::cerr << "[bng_cpp]   Parameters: " << loadedNetData->parameters.size() << "\n";
+                    std::cerr << "[bng_cpp]   Species: " << network->species.size() << "\n";
+                    std::cerr << "[bng_cpp]   Reactions: " << network->reactions.size() << "\n";
+                }
             } else if (path.extension() == ".bngl") {
                 // Parse .bngl file - would need to use the parser
                 throw std::runtime_error("readFile for .bngl not yet implemented - parse separately");

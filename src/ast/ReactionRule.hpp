@@ -2,12 +2,14 @@
 
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
 #include "SpeciesGraph.hpp"
+#include <unordered_map>
 #include "SpeciesList.hpp"
 #include "RxnList.hpp"
 #include "Expression.hpp"
@@ -84,7 +86,8 @@ public:
         SpeciesList& speciesList,
         RxnList& rxnList,
         std::size_t currentIteration,
-        const std::function<bool(const SpeciesGraph&)>& productFilter = {}) const;
+        const std::function<bool(const SpeciesGraph&)>& productFilter = {},
+        std::size_t speciesBoundary = std::numeric_limits<std::size_t>::max()) const;
 
 private:
     std::vector<EmbeddingResult> findEmbeddingsForSpecies(
@@ -115,6 +118,17 @@ private:
     mutable std::size_t lastSpeciesListCapacity_ = 0;
     mutable std::unique_ptr<ReactionRule> reverseRule_;
     mutable std::map<std::size_t, std::size_t> lastProcessedInIteration_;
+    bool hasScopePrefix_ = false;  // true if rule uses %x:: scope prefix syntax
+
+    // Tag-based component mapping: product ComponentRef → reactant ComponentRef
+    // Used when %tag labels map components across reactant/product boundaries
+    std::map<ComponentRef, ComponentRef> tagComponentMap_;
+
+public:
+    void setHasScopePrefix(bool v) { hasScopePrefix_ = v; }
+    bool hasScopePrefix() const { return hasScopePrefix_; }
+    const std::map<ComponentRef, ComponentRef>& getTagComponentMap() const { return tagComponentMap_; }
+private:
 
     // Parsed include/exclude reactant and product filters
     struct ReactantFilter {
@@ -131,5 +145,10 @@ private:
     bool passesReactantFilters(std::size_t patternIndex, const SpeciesGraph& species) const;
     bool passesProductFilters(const std::vector<SpeciesGraph>& products) const;
 };
+
+// Set compartment dimension map for cross-compartment species assignment
+void setCompartmentDimensions(const std::unordered_map<std::string, int>& dims);
+// Set compartment parent map for transport (endocytosis/exocytosis)
+void setCompartmentParents(const std::unordered_map<std::string, std::string>& parents);
 
 } // namespace bng::ast
