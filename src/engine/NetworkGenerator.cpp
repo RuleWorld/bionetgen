@@ -227,7 +227,7 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
             const std::size_t beforeReactions = network.reactions.size();
             const auto created = rule.expandRule(network.species, network.reactions, iter, [&](const ast::SpeciesGraph& graph) {
                 return withinStoichLimits(graph, maxStoich);
-            }, speciesAtIterStart);
+            }, speciesAtIterStart, &model_);
             const bool debugRules = std::getenv("BNG_DEBUG_RULES") != nullptr;
             if (debugRules) {
                 std::cerr << "[generate_network] iter=" << (iter + 1)

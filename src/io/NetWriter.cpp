@@ -7,6 +7,7 @@
 #include <map>
 #include <optional>
 #include <regex>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -567,47 +568,106 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                     }
                 }
 
-                // Compute per-species observable values and create rate params
+                // Compute per-reaction observable values and create rate params.
+                // For scope-prefix rules, the rate law may contain "|local:obs=count;..."
+                // encoding per-molecule observable counts from constrained matching.
+                // Check if any reaction from this rule has |local: suffix
+                bool hasLocalSuffix = false;
+                for (const auto& rxn : network.reactions.all()) {
+                    if (rxn.getOriginRuleName() == ruleName &&
+                        rxn.getRateLaw().find("|local:") != std::string::npos) {
+                        hasLocalSuffix = true;
+                        break;
+                    }
+                }
                 DerivedRateInfo info;
                 info.paramName = baseParamName;
                 info.isLocalFunction = true;
+                info.isPerReactionArrhenius = hasLocalSuffix; // per-reaction indexing when local contexts differ
 
                 int seqNum = 1;
-                // Collect reactions from this rule and their reactant species
+                std::size_t rxnIdx = 0;
+                // Track (speciesIdx, localSuffix) → paramName to merge reactions with same context
+                std::map<std::pair<std::size_t, std::string>, std::pair<std::string, double>> contextToRate;
                 for (const auto& rxn : network.reactions.all()) {
-                    if (rxn.getOriginRuleName() != ruleName) continue;
-
-                    // Get the first reactant species (the scoped species)
-                    if (rxn.getReactants().empty()) continue;
+                    if (rxn.getOriginRuleName() != ruleName) { ++rxnIdx; continue; }
+                    if (rxn.getReactants().empty()) { ++rxnIdx; continue; }
                     std::size_t speciesIdx = rxn.getReactants()[0];
 
-                    // Skip if already computed for this species
-                    if (info.perSpeciesRates.find(speciesIdx) != info.perSpeciesRates.end()) continue;
+                    // Extract |local: suffix from rate law if present
+                    const auto& rl = rxn.getRateLaw();
+                    std::string localSuffix;
+                    auto localPos = rl.find("|local:");
+                    if (localPos != std::string::npos) {
+                        localSuffix = rl.substr(localPos + 7); // after "|local:"
+                    }
 
-                    // Build expression with ALL observable values substituted
-                    std::string funcBody = funcExpr.toString();
-                    for (const auto& localObsName : localObsNames) {
-                        // Compute observable count for this specific species
-                        std::size_t obsCount = 0;
-                        for (const auto& obs : model.getObservables()) {
-                            if (obs.getName() != localObsName) continue;
-                            for (const auto& patternText : obs.getPatterns()) {
-                                const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
-                                if (speciesGraph.empty()) continue;
-                                auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
-                                BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
-                                BNGcore::List<BNGcore::Map> maps;
-                                obsCount += matcher.find_maps(maps);
-                            }
-                            break;
+                    // Check if we already computed for this (species, localContext)
+                    auto contextKey = std::make_pair(speciesIdx, localSuffix);
+                    auto ctxIt = contextToRate.find(contextKey);
+                    if (ctxIt != contextToRate.end()) {
+                        // Reuse existing rate param for this context
+                        if (hasLocalSuffix) {
+                            info.perReactionRates[rxnIdx] = ctxIt->second;
                         }
-                        // Substitute this observable's value in the function body
-                        for (const auto& farg : formalArgs) {
-                            std::string pat = localObsName + "(" + farg + ")";
-                            std::string::size_type pos = 0;
-                            while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
-                                funcBody.replace(pos, pat.length(), std::to_string(obsCount));
-                                pos += std::to_string(obsCount).length();
+                        ++rxnIdx;
+                        continue;
+                    }
+
+                    // For non-local-suffix rules (energy patterns), skip species already done
+                    if (!hasLocalSuffix) {
+                        if (info.perSpeciesRates.find(speciesIdx) != info.perSpeciesRates.end()) {
+                            ++rxnIdx;
+                            continue;
+                        }
+                    }
+
+                    // Build expression with observable values substituted
+                    std::string funcBody = funcExpr.toString();
+                    if (!localSuffix.empty()) {
+                        // Parse observable counts from the |local: suffix
+                        // Format: "obsName1=count1;obsName2=count2;..."
+                        std::istringstream ss(localSuffix);
+                        std::string token;
+                        while (std::getline(ss, token, ';')) {
+                            if (token.empty()) continue;
+                            auto eqPos = token.find('=');
+                            if (eqPos == std::string::npos) continue;
+                            std::string obsName = token.substr(0, eqPos);
+                            std::string countStr = token.substr(eqPos + 1);
+                            // Substitute this observable in the function body
+                            for (const auto& farg : formalArgs) {
+                                std::string pat = obsName + "(" + farg + ")";
+                                std::string::size_type pos = 0;
+                                while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
+                                    funcBody.replace(pos, pat.length(), countStr);
+                                    pos += countStr.length();
+                                }
+                            }
+                        }
+                    } else {
+                        // No local suffix — use total species-level observable counts
+                        for (const auto& localObsName : localObsNames) {
+                            std::size_t obsCount = 0;
+                            for (const auto& obs : model.getObservables()) {
+                                if (obs.getName() != localObsName) continue;
+                                for (const auto& patternText : obs.getPatterns()) {
+                                    const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
+                                    if (speciesGraph.empty()) continue;
+                                    auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
+                                    BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
+                                    BNGcore::List<BNGcore::Map> maps;
+                                    obsCount += matcher.find_maps(maps);
+                                }
+                                break;
+                            }
+                            for (const auto& farg : formalArgs) {
+                                std::string pat = localObsName + "(" + farg + ")";
+                                std::string::size_type pos = 0;
+                                while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
+                                    funcBody.replace(pos, pat.length(), std::to_string(obsCount));
+                                    pos += std::to_string(obsCount).length();
+                                }
                             }
                         }
                     }
@@ -624,19 +684,21 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                     } catch (...) {}
 
                     std::string paramName = baseParamName + std::to_string(seqNum);
+                    if (hasLocalSuffix) {
+                        info.perReactionRates[rxnIdx] = {paramName, rateValue};
+                    }
                     info.perSpeciesRates[speciesIdx] = {paramName, rateValue};
+                    contextToRate[contextKey] = {paramName, rateValue};
                     ++seqNum;
+                    ++rxnIdx;
                 }
 
                 // Use the first rate as the default expression
                 info.expression = "0";
                 info.exprTree = ast::Expression::number(0);
 
-                derived.emplace(ruleName, std::move(info));
-                continue;
-            }
-            // Also process reverse rule if bidirectional with local function rates
-            if (rule.getRates().size() > 1) {
+                // Also process reverse rule if bidirectional with local function rates
+                if (rule.getRates().size() > 1) {
                 const std::string reverseRuleName = "_reverse__" + ruleName;
                 if (derived.find(reverseRuleName) == derived.end()) {
                     const auto& reverseRateExprObj = rule.getRates()[1];
@@ -661,33 +723,88 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                         std::string revBaseParam = reverseRuleName.substr(std::string("_reverse__").size()) + "r_local";
                         revInfo.paramName = revBaseParam;
                         revInfo.isLocalFunction = true;
-                        int revSeqNum = 1;
+                        bool revHasLocalSuffix = false;
                         for (const auto& rxn : network.reactions.all()) {
-                            if (rxn.getOriginRuleName() != reverseRuleName) continue;
-                            if (rxn.getReactants().empty()) continue;
+                            if (rxn.getOriginRuleName() == reverseRuleName &&
+                                rxn.getRateLaw().find("|local:") != std::string::npos) {
+                                revHasLocalSuffix = true;
+                                break;
+                            }
+                        }
+                        revInfo.isPerReactionArrhenius = revHasLocalSuffix;
+                        int revSeqNum = 1;
+                        std::size_t revRxnIdx = 0;
+                        std::map<std::pair<std::size_t, std::string>, std::pair<std::string, double>> revContextToRate;
+                        for (const auto& rxn : network.reactions.all()) {
+                            if (rxn.getOriginRuleName() != reverseRuleName) { ++revRxnIdx; continue; }
+                            if (rxn.getReactants().empty()) { ++revRxnIdx; continue; }
                             std::size_t speciesIdx = rxn.getReactants()[0];
-                            if (revInfo.perSpeciesRates.find(speciesIdx) != revInfo.perSpeciesRates.end()) continue;
-                            std::string funcBody = revFuncExpr.toString();
-                            for (const auto& obsName : revObsNames) {
-                                std::size_t obsCount = 0;
-                                for (const auto& obs : model.getObservables()) {
-                                    if (obs.getName() != obsName) continue;
-                                    for (const auto& patternText : obs.getPatterns()) {
-                                        const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
-                                        if (speciesGraph.empty()) continue;
-                                        auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
-                                        BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
-                                        BNGcore::List<BNGcore::Map> maps;
-                                        obsCount += matcher.find_maps(maps);
-                                    }
-                                    break;
+
+                            const auto& rl = rxn.getRateLaw();
+                            std::string localSuffix;
+                            auto localPos = rl.find("|local:");
+                            if (localPos != std::string::npos) {
+                                localSuffix = rl.substr(localPos + 7);
+                            }
+
+                            auto contextKey = std::make_pair(speciesIdx, localSuffix);
+                            auto ctxIt = revContextToRate.find(contextKey);
+                            if (ctxIt != revContextToRate.end()) {
+                                if (revHasLocalSuffix) {
+                                    revInfo.perReactionRates[revRxnIdx] = ctxIt->second;
                                 }
-                                for (const auto& farg : revFormalArgs) {
-                                    std::string pat = obsName + "(" + farg + ")";
-                                    std::string::size_type pos = 0;
-                                    while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
-                                        funcBody.replace(pos, pat.length(), std::to_string(obsCount));
-                                        pos += std::to_string(obsCount).length();
+                                ++revRxnIdx;
+                                continue;
+                            }
+
+                            if (!revHasLocalSuffix) {
+                                if (revInfo.perSpeciesRates.find(speciesIdx) != revInfo.perSpeciesRates.end()) {
+                                    ++revRxnIdx;
+                                    continue;
+                                }
+                            }
+
+                            std::string funcBody = revFuncExpr.toString();
+                            if (!localSuffix.empty()) {
+                                std::istringstream ss(localSuffix);
+                                std::string token;
+                                while (std::getline(ss, token, ';')) {
+                                    if (token.empty()) continue;
+                                    auto eqPos = token.find('=');
+                                    if (eqPos == std::string::npos) continue;
+                                    std::string obsName = token.substr(0, eqPos);
+                                    std::string countStr = token.substr(eqPos + 1);
+                                    for (const auto& farg : revFormalArgs) {
+                                        std::string pat = obsName + "(" + farg + ")";
+                                        std::string::size_type pos = 0;
+                                        while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
+                                            funcBody.replace(pos, pat.length(), countStr);
+                                            pos += countStr.length();
+                                        }
+                                    }
+                                }
+                            } else {
+                                for (const auto& obsName : revObsNames) {
+                                    std::size_t obsCount = 0;
+                                    for (const auto& obs : model.getObservables()) {
+                                        if (obs.getName() != obsName) continue;
+                                        for (const auto& patternText : obs.getPatterns()) {
+                                            const auto& speciesGraph = network.species.get(speciesIdx).getSpeciesGraph().getGraph();
+                                            if (speciesGraph.empty()) continue;
+                                            auto pattern = parseObservablePattern(patternText, const_cast<ast::Model&>(model));
+                                            BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
+                                            BNGcore::List<BNGcore::Map> maps;
+                                            obsCount += matcher.find_maps(maps);
+                                        }
+                                        break;
+                                    }
+                                    for (const auto& farg : revFormalArgs) {
+                                        std::string pat = obsName + "(" + farg + ")";
+                                        std::string::size_type pos = 0;
+                                        while ((pos = funcBody.find(pat, pos)) != std::string::npos) {
+                                            funcBody.replace(pos, pat.length(), std::to_string(obsCount));
+                                            pos += std::to_string(obsCount).length();
+                                        }
                                     }
                                 }
                             }
@@ -701,14 +818,23 @@ std::unordered_map<std::string, DerivedRateInfo> NetWriter::buildDerivedRatePara
                                     });
                             } catch (...) {}
                             std::string paramName = revBaseParam + std::to_string(revSeqNum);
+                            if (revHasLocalSuffix) {
+                                revInfo.perReactionRates[revRxnIdx] = {paramName, rateValue};
+                            }
                             revInfo.perSpeciesRates[speciesIdx] = {paramName, rateValue};
+                            revContextToRate[contextKey] = {paramName, rateValue};
                             ++revSeqNum;
+                            ++revRxnIdx;
                         }
                         revInfo.expression = "0";
                         revInfo.exprTree = ast::Expression::number(0);
                         derived.emplace(reverseRuleName, std::move(revInfo));
                     }
                 }
+                }
+
+                derived.emplace(ruleName, std::move(info));
+                continue;
             }
             // Local function with %x molecule tag but no scope prefix/energy patterns:
             // write symbolic expression (Perl convention __R{N}_local{M})

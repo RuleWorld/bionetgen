@@ -18,6 +18,12 @@
 
 #include "core/BNGcore.hpp"
 #include "core/Ullmann.hpp"
+#include "Model.hpp"
+
+#include <antlr4-runtime.h>
+#include "BNGLexer.h"
+#include "BNGParser.h"
+#include "PatternGraphBuilder.hpp"
 
 namespace bng::ast {
 
@@ -537,6 +543,87 @@ bool hasModifier(const std::vector<std::string>& modifiers, const std::string& n
     return false;
 }
 
+BNGcore::PatternGraph parseObsPattern(const std::string& patternText, Model& model) {
+    antlr4::ANTLRInputStream input(patternText);
+    BNGLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    BNGParser parser(&tokens);
+    auto* species = parser.species_def();
+    if (parser.getNumberOfSyntaxErrors() != 0) {
+        return BNGcore::PatternGraph();
+    }
+    return bng::parser::buildPatternGraph(species, model);
+}
+
+// Compute per-observable constrained match counts for a specific scoped molecule.
+// Returns sorted "obsName=count;..." fingerprint that uniquely identifies the
+// local function evaluation context. Two molecules with the same fingerprint
+// produce the same local function rate value.
+std::string computeLocalObsFingerprint(
+    const BNGcore::Node* scopedMolecule,
+    const BNGcore::PatternGraph& speciesGraph,
+    const Model& model,
+    const std::string& rateExpr) {
+    // Extract function name from rate expression like "rateFlipUp(x)"
+    std::string funcName = rateExpr;
+    auto parenPos = funcName.find('(');
+    if (parenPos != std::string::npos) {
+        funcName = funcName.substr(0, parenPos);
+    }
+    // Find the function definition
+    const Function* func = nullptr;
+    for (const auto& f : model.getFunctions()) {
+        if (f.getName() == funcName) { func = &f; break; }
+    }
+    if (!func || func->getArgs().empty()) return {};
+
+    // Find observable names referenced in the function body
+    std::vector<std::string> obsNames;
+    const std::string funcBody = func->getExpression().toString();
+    for (const auto& obs : model.getObservables()) {
+        if (funcBody.find(obs.getName()) != std::string::npos) {
+            obsNames.push_back(obs.getName());
+        }
+    }
+    if (obsNames.empty()) return {};
+    std::sort(obsNames.begin(), obsNames.end());
+
+    // For each observable, compute constrained match count:
+    // count Ullmann maps where the first molecule node maps to scopedMolecule
+    std::ostringstream fp;
+    for (const auto& obsName : obsNames) {
+        std::size_t count = 0;
+        for (const auto& obs : model.getObservables()) {
+            if (obs.getName() != obsName) continue;
+            for (const auto& patternText : obs.getPatterns()) {
+                auto pattern = parseObsPattern(patternText, const_cast<Model&>(model));
+                if (pattern.empty()) continue;
+                // Find the first molecule node in the observable pattern
+                BNGcore::Node* firstPatternMol = nullptr;
+                for (auto it = pattern.begin(); it != pattern.end(); ++it) {
+                    if (isMoleculeNode(**it)) {
+                        firstPatternMol = *it;
+                        break;
+                    }
+                }
+                if (!firstPatternMol) continue;
+
+                BNGcore::UllmannSGIso matcher(pattern, speciesGraph);
+                BNGcore::List<BNGcore::Map> maps;
+                matcher.find_maps(maps);
+                for (auto mapIt = maps.begin(); mapIt != maps.end(); ++mapIt) {
+                    if (mapIt->mapf(firstPatternMol) == scopedMolecule) {
+                        ++count;
+                    }
+                }
+            }
+            break;
+        }
+        fp << obsName << "=" << count << ";";
+    }
+    return fp.str();
+}
+
 std::string canonicalNodeId(const BNGcore::Node* node) {
     // Create a canonical identifier based on node type, state, and adjacency.
     // This collapses symmetric nodes (same type/state/neighbors).
@@ -932,7 +1019,8 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddings(
 std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecies(
     std::size_t patternIndex,
     const SpeciesList& speciesList,
-    const std::unordered_set<std::size_t>& candidateSpecies) const {
+    const std::unordered_set<std::size_t>& candidateSpecies,
+    const Model* model) const {
     std::vector<EmbeddingResult> results;
     const auto& pattern = reactantPatterns_.at(patternIndex).getGraph();
     const auto reactantInfo = describePatterns(reactantPatterns_);
@@ -1003,10 +1091,32 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
             if (!embeddingRespectsNodeStates(pattern, *mapIter)) {
                 continue;
             }
-            const auto signature = std::to_string(speciesIndex) + "|" +
+            auto sigBase = std::to_string(speciesIndex) + "|" +
                 (reactionCenter_.at(patternIndex).empty()
                     ? embeddingSignature(pattern, *mapIter, targetGraph)
                     : reactionCenterSignature(reactantInfo, reactionCenter_.at(patternIndex), *mapIter, targetGraph));
+            // For rules with local function rates (scope-prefix %x:: or tag-label %x
+            // with energy patterns), distinguish embeddings by observable counts for
+            // the scoped molecule. Different observable counts → different rate values.
+            const bool hasLocalFuncRate = model != nullptr && !rates_.empty() &&
+                rates_.front().toString().find('(') != std::string::npos;
+            if (hasLocalFuncRate) {
+                const std::string rateName = rates_.front().toString();
+                for (auto pn = pattern.begin(); pn != pattern.end(); ++pn) {
+                    if (isMoleculeNode(**pn)) {
+                        auto* target = mapIter->mapf(*pn);
+                        if (target) {
+                            std::string fp = computeLocalObsFingerprint(
+                                target, targetGraph, *model, rateName);
+                            if (!fp.empty()) {
+                                sigBase += "|obs:" + fp;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            const auto signature = sigBase;
             if (!seen.insert(signature).second) {
                 // Duplicate signature — increment multiplicity of the existing embedding
                 auto it = signatureToResultIndex.find(signature);
@@ -1048,7 +1158,8 @@ std::size_t ReactionRule::expandRule(
     RxnList& rxnList,
     std::size_t currentIteration,
     const std::function<bool(const SpeciesGraph&)>& productFilter,
-    std::size_t speciesBoundary) const {
+    std::size_t speciesBoundary,
+    const Model* model) const {
 
     // --- Reverse rule delegation ---
     if (bidirectional_ && !rates_.empty()) {
@@ -1082,8 +1193,9 @@ std::size_t ReactionRule::expandRule(
                 false,
                 productPatterns_,
                 reactantPatterns_);
+            reverseRule_->setHasScopePrefix(hasScopePrefix_);
         }
-        reverseRule_->expandRule(speciesList, rxnList, currentIteration, productFilter, speciesBoundary);
+        reverseRule_->expandRule(speciesList, rxnList, currentIteration, productFilter, speciesBoundary, model);
     }
 
     if (reactantPatterns_.empty()) {
@@ -1224,7 +1336,7 @@ std::size_t ReactionRule::expandRule(
             searchSet = newSpecies;
         }
 
-        auto newMatches = findEmbeddingsForSpecies(patternIndex, speciesList, searchSet);
+        auto newMatches = findEmbeddingsForSpecies(patternIndex, speciesList, searchSet, model);
 
         firstNewPerPattern[patternIndex] = patternMatches_[patternIndex].size();
 
@@ -1316,7 +1428,7 @@ std::size_t ReactionRule::expandRule(
         std::function<void(std::size_t)> enumerate = [&](std::size_t idx) {
             if (idx == nPatterns) {
                 ++enumerateCalls;
-                if (buildReaction(matchSet, speciesList, rxnList, productFilter)) {
+                if (buildReaction(matchSet, speciesList, rxnList, productFilter, model)) {
                     ++created;
                     if (debug) std::cerr << "[DEBUG] Rule " << ruleName_ << ": created reaction #" << created << "\n";
                 }
@@ -1360,7 +1472,8 @@ bool ReactionRule::buildReaction(
     const std::vector<EmbeddingResult>& matchSet,
     SpeciesList& speciesList,
     RxnList& rxnList,
-    const std::function<bool(const SpeciesGraph&)>& productFilter) const {
+    const std::function<bool(const SpeciesGraph&)>& productFilter,
+    const Model* model) const {
     const bool debug = std::getenv("BNG_DEBUG_BUILD_RXN") != nullptr;
     const auto reactantInfo = describePatterns(reactantPatterns_);
     const auto productInfo = describePatterns(productPatterns_);
@@ -1786,6 +1899,16 @@ bool ReactionRule::buildReaction(
                     compartmentToUse = inferredCompartment;
                 }
             }
+            // Assign inferred compartment to molecules with empty compartments
+            // (mirrors Perl's assignCompartment in SpeciesGraph.pm:775-783)
+            if (!compartmentToUse.empty()) {
+                for (auto nodeIter = productGraph.getGraph().begin();
+                     nodeIter != productGraph.getGraph().end(); ++nodeIter) {
+                    if (isMoleculeNode(**nodeIter) && (*nodeIter)->get_compartment().empty()) {
+                        (*nodeIter)->set_compartment(compartmentToUse);
+                    }
+                }
+            }
             const auto [index, _] = speciesList.add(Species(
                 productGraph,
                 0.0,
@@ -1830,12 +1953,37 @@ bool ReactionRule::buildReaction(
         }
     }
 
+    // For scope-prefix rules, compute observable-count fingerprint for the scoped molecule
+    // and include it in the rate law string. This prevents RxnList from merging
+    // reactions with different local function contexts.
+    std::string rateLawStr = rates_.empty() ? "0" : rates_.front().toString();
+    const bool hasLocalFuncRate = model != nullptr && !rates_.empty() &&
+        rates_.front().toString().find('(') != std::string::npos;
+    if (hasLocalFuncRate && !matchSet.empty()) {
+        const std::string rateName = rates_.front().toString();
+        const auto& speciesGraph = speciesList.get(matchSet[0].speciesIndex).getSpeciesGraph().getGraph();
+        for (auto pn = reactantPatterns_[0].getGraph().begin();
+             pn != reactantPatterns_[0].getGraph().end(); ++pn) {
+            if (isMoleculeNode(**pn)) {
+                auto* target = matchSet[0].map.mapf(*pn);
+                if (target) {
+                    std::string fp = computeLocalObsFingerprint(
+                        target, speciesGraph, *model, rateName);
+                    if (!fp.empty()) {
+                        rateLawStr += "|local:" + fp;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
     const std::string label = reactionLabel(*this, reactantIndices, productLabels);
     const bool added = rxnList.add(Rxn(
         label,
         reactantIndices,
         productIndices,
-        rates_.empty() ? "0" : rates_.front().toString(),
+        rateLawStr,
         factor,
         ruleName_,
         rates_.empty() ? std::nullopt : std::optional<Expression>(rates_.front())));

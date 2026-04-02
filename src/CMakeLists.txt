@@ -35,8 +35,13 @@ add_library(bng_ast
     ast/Rxn.cpp
     ast/RxnList.cpp
 )
-target_include_directories(bng_ast PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(bng_ast PUBLIC bng_core)
+target_include_directories(bng_ast PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/parser/generated
+    ${CMAKE_CURRENT_SOURCE_DIR}/parser
+    ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+)
+target_link_libraries(bng_ast PUBLIC bng_core antlr4_static)
 
 # --- ANTLR4 Parser Generation ---
 # The generated files are assumed to be in ${CMAKE_CURRENT_SOURCE_DIR}/parser/generated

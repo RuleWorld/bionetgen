@@ -16,6 +16,8 @@
 
 namespace bng::ast {
 
+class Model;  // forward declaration
+
 class ReactionRule {
 public:
     struct ComponentRef {
@@ -87,19 +89,22 @@ public:
         RxnList& rxnList,
         std::size_t currentIteration,
         const std::function<bool(const SpeciesGraph&)>& productFilter = {},
-        std::size_t speciesBoundary = std::numeric_limits<std::size_t>::max()) const;
+        std::size_t speciesBoundary = std::numeric_limits<std::size_t>::max(),
+        const Model* model = nullptr) const;
 
 private:
     std::vector<EmbeddingResult> findEmbeddingsForSpecies(
         std::size_t patternIndex,
         const SpeciesList& speciesList,
-        const std::unordered_set<std::size_t>& candidateSpecies) const;
+        const std::unordered_set<std::size_t>& candidateSpecies,
+        const Model* model = nullptr) const;
 
     bool buildReaction(
         const std::vector<EmbeddingResult>& matchSet,
         SpeciesList& speciesList,
         RxnList& rxnList,
-        const std::function<bool(const SpeciesGraph&)>& productFilter) const;
+        const std::function<bool(const SpeciesGraph&)>& productFilter,
+        const Model* model = nullptr) const;
 
     std::string ruleName_;
     std::string label_;
