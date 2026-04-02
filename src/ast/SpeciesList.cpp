@@ -43,7 +43,9 @@ bool isIsomorphic(const SpeciesGraph& lhs, const SpeciesGraph& rhs) {
 
 std::pair<std::size_t, bool> SpeciesList::add(Species species) {
     const std::string label = species.getSpeciesGraph().canonicalLabel();
-    const std::string exact = species.getSpeciesGraph().toString();
+    // Use compartment-aware string for dedup to distinguish species that differ
+    // only by per-molecule compartments (e.g., Im@CP.NP vs Im@NU.NP).
+    const std::string exact = species.getSpeciesGraph().toStringForDedup();
 
     // Fast path 1: exact string match (O(1))
     const auto exactBucket = indicesByExactString_.find(exact);

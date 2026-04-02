@@ -27,6 +27,10 @@ std::string SpeciesGraph::toString() const {
     return graph_.get_BNG2_string();
 }
 
+std::string SpeciesGraph::toStringForDedup() const {
+    return graph_.get_BNG2_string_with_compartments();
+}
+
 const std::string& SpeciesGraph::getCompartment() const {
     return compartment_;
 }

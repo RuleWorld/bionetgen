@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -102,11 +103,15 @@ namespace {
 
 struct ComponentInfo {
     BNGcore::Node* node = nullptr;
-    BNGcore::Node* bondNode = nullptr;
+    std::vector<BNGcore::Node*> bondNodes;  // supports polyvalent (multi-bond) components
     std::string name;
     std::string state;
-    std::optional<ReactionRule::ComponentRef> partner;
+    std::vector<ReactionRule::ComponentRef> partners;  // one per bond partner
     std::string label;  // component tag label (e.g., "1", "2" from %1, %2)
+    // Convenience accessors for single-bond backward compatibility
+    BNGcore::Node* bondNode() const { return bondNodes.empty() ? nullptr : bondNodes.front(); }
+    bool hasBond() const { return !bondNodes.empty(); }
+    bool hasPartner() const { return !partners.empty(); }
 };
 
 struct MoleculeInfo {
@@ -184,8 +189,7 @@ PatternInfo describePattern(const SpeciesGraph& patternGraph, std::size_t patter
             component.label = component.node->get_label_tag();
             for (auto bondEdge = component.node->edges_out_begin(); bondEdge != component.node->edges_out_end(); ++bondEdge) {
                 if (isBondNode(**bondEdge)) {
-                    component.bondNode = *bondEdge;
-                    break;
+                    component.bondNodes.push_back(*bondEdge);
                 }
             }
             molecule.components.push_back(component);
@@ -199,17 +203,19 @@ PatternInfo describePattern(const SpeciesGraph& patternGraph, std::size_t patter
         auto& molecule = info.molecules[moleculeIndex];
         for (std::size_t componentIndex = 0; componentIndex < molecule.components.size(); ++componentIndex) {
             auto& component = molecule.components[componentIndex];
-            if (component.bondNode == nullptr || component.bondNode->get_state().get_BNG2_string() != "!+") {
-                continue;
-            }
-            for (auto inEdge = component.bondNode->edges_in_begin(); inEdge != component.bondNode->edges_in_end(); ++inEdge) {
-                if (*inEdge == component.node) {
+            for (auto* bn : component.bondNodes) {
+                if (bn->get_state().get_BNG2_string() != "!+") {
                     continue;
                 }
-                const auto found = componentRefs.find(*inEdge);
-                if (found != componentRefs.end()) {
-                    component.partner = found->second;
-                    break;
+                for (auto inEdge = bn->edges_in_begin(); inEdge != bn->edges_in_end(); ++inEdge) {
+                    if (*inEdge == component.node) {
+                        continue;
+                    }
+                    const auto found = componentRefs.find(*inEdge);
+                    if (found != componentRefs.end()) {
+                        component.partners.push_back(found->second);
+                        break;
+                    }
                 }
             }
         }
@@ -268,12 +274,14 @@ std::set<BondPair> collectBonds(const std::vector<PatternInfo>& infos) {
             const auto& molecule = infos[patternIndex].molecules[moleculeIndex];
             for (std::size_t componentIndex = 0; componentIndex < molecule.components.size(); ++componentIndex) {
                 const auto& component = molecule.components[componentIndex];
-                if (!component.partner.has_value()) {
+                if (component.partners.empty()) {
                     continue;
                 }
-                bonds.insert(canonicalBondPair(
-                    ReactionRule::ComponentRef {patternIndex, moleculeIndex, componentIndex},
-                    *component.partner));
+                for (const auto& ptnr : component.partners) {
+                    bonds.insert(canonicalBondPair(
+                        ReactionRule::ComponentRef {patternIndex, moleculeIndex, componentIndex},
+                        ptnr));
+                }
             }
         }
     }
@@ -317,6 +325,18 @@ std::string reactionLabel(
         out << products[i];
     }
     return out.str();
+}
+
+// Find an unbound ("!-") marker bond node attached to a component.
+// For polyvalent components, this finds the free site marker without touching real bonds.
+BNGcore::Node* findAttachedUnboundBondNode(BNGcore::Node* componentNode) {
+    if (componentNode == nullptr) return nullptr;
+    for (auto edge = componentNode->edges_out_begin(); edge != componentNode->edges_out_end(); ++edge) {
+        if (isBondNode(**edge) && (*edge)->get_state().get_BNG2_string() == "!-") {
+            return *edge;
+        }
+    }
+    return nullptr;
 }
 
 BNGcore::Node* findAttachedBondNode(BNGcore::Node* componentNode) {
@@ -365,20 +385,18 @@ void cloneProductMolecule(
         target.add_edge(moleculeClone, componentClone);
         clones[component.node] = componentClone;
 
-        if (component.bondNode == nullptr) {
-            continue;
+        for (auto* bn : component.bondNodes) {
+            auto bondFound = clones.find(bn);
+            BNGcore::Node* bondClone = nullptr;
+            if (bondFound == clones.end()) {
+                bondClone = bn->clone();
+                target.add_node(bondClone);
+                clones[bn] = bondClone;
+            } else {
+                bondClone = bondFound->second;
+            }
+            target.add_edge(componentClone, bondClone);
         }
-
-        auto bondFound = clones.find(component.bondNode);
-        BNGcore::Node* bondClone = nullptr;
-        if (bondFound == clones.end()) {
-            bondClone = component.bondNode->clone();
-            target.add_node(bondClone);
-            clones[component.bondNode] = bondClone;
-        } else {
-            bondClone = bondFound->second;
-        }
-        target.add_edge(componentClone, bondClone);
     }
 }
 
@@ -511,6 +529,18 @@ bool embeddingRespectsNodeStates(const BNGcore::PatternGraph& pattern, const BNG
         if (!nodeCompatible(**nodeIter, *target)) {
             return false;
         }
+        // Per-molecule compartment constraint: if the pattern molecule specifies a
+        // compartment (e.g., TF(dna)@NU), the target molecule must be in that
+        // compartment. Prevents cross-compartment reactions.
+        if (isMoleculeNode(**nodeIter)) {
+            const auto& patternComp = (*nodeIter)->get_compartment();
+            if (!patternComp.empty()) {
+                const auto& targetComp = target->get_compartment();
+                if (!targetComp.empty() && patternComp != targetComp) {
+                    return false;
+                }
+            }
+        }
     }
     return true;
 }
@@ -518,8 +548,8 @@ bool embeddingRespectsNodeStates(const BNGcore::PatternGraph& pattern, const BNG
 bool patternHasAnyBoundSite(const PatternInfo& info) {
     for (const auto& molecule : info.molecules) {
         for (const auto& component : molecule.components) {
-            if (component.bondNode != nullptr &&
-                component.bondNode->get_state().get_BNG2_string() == "!+") {
+            if (component.hasBond() &&
+                component.bondNode()->get_state().get_BNG2_string() == "!+") {
                 return true;
             }
         }
@@ -1531,18 +1561,19 @@ bool ReactionRule::buildReaction(
         case TransformOp::Type::AddBond: {
             const auto& lhsInfo = getComponentInfo(reactantInfo, operation.source);
             const auto& rhsInfo = getComponentInfo(reactantInfo, operation.partner);
-            if (lhsInfo.bondNode == nullptr || rhsInfo.bondNode == nullptr) {
+            if (!lhsInfo.hasBond() || !rhsInfo.hasBond()) {
                 break;
             }
             auto* lhsComponent = mapMatchedNodeToAggregate(operation.source, lhsInfo.node);
             auto* rhsComponent = mapMatchedNodeToAggregate(operation.partner, rhsInfo.node);
-            auto* lhsBond = findAttachedBondNode(lhsComponent);
-            auto* rhsBond = findAttachedBondNode(rhsComponent);
-            if (lhsComponent == nullptr || rhsComponent == nullptr || lhsBond == nullptr || rhsBond == nullptr) {
+            auto* lhsBond = findAttachedUnboundBondNode(lhsComponent);
+            auto* rhsBond = findAttachedUnboundBondNode(rhsComponent);
+            if (lhsComponent == nullptr || rhsComponent == nullptr) {
                 return false;
             }
-            safeDeleteNode(*graph, lhsBond);
-            safeDeleteNode(*graph, rhsBond);
+            // Remove unbound marker bonds if present (for components gaining a new bond)
+            if (lhsBond) safeDeleteNode(*graph, lhsBond);
+            if (rhsBond) safeDeleteNode(*graph, rhsBond);
             auto* bondNode = new BNGcore::Node(BNGcore::BOND_NODE_TYPE);
             bondNode->set_state(BNGcore::BOUND_STATE);
             graph->add_node(bondNode);
@@ -1553,7 +1584,7 @@ bool ReactionRule::buildReaction(
         case TransformOp::Type::DeleteBond: {
             const auto& lhsInfo = getComponentInfo(reactantInfo, operation.source);
             const auto& rhsInfo = getComponentInfo(reactantInfo, operation.partner);
-            if (lhsInfo.bondNode == nullptr) {
+            if (!lhsInfo.hasBond()) {
                 break;
             }
             auto* lhsComponent = mapMatchedNodeToAggregate(operation.source, lhsInfo.node);
@@ -1727,6 +1758,97 @@ bool ReactionRule::buildReaction(
                     auto mapIt = compMap.find(molComp);
                     if (mapIt != compMap.end()) {
                         clonedMol->set_compartment(mapIt->second);
+                    }
+                }
+            }
+        }
+
+        // --- Per-molecule compartment transport ---
+        // Detect when individual molecules change compartment between reactant and product
+        // patterns (e.g., Im(fg!1)@CP → Im(fg!1)@NU). Apply the change to the aggregate graph.
+        std::unordered_map<BNGcore::Node*, std::string> moleculeTransported; // clone → new compartment
+        for (std::size_t pi = 0; pi < reactantPatterns_.size() && pi < productPatterns_.size(); ++pi) {
+            const auto& rInfo = reactantInfo[pi];
+            const auto& pInfo = productInfo[pi];
+            for (std::size_t mi = 0; mi < rInfo.molecules.size() && mi < pInfo.molecules.size(); ++mi) {
+                const auto& rMol = rInfo.molecules[mi];
+                const auto& pMol = pInfo.molecules[mi];
+                const std::string rComp = rMol.node->get_compartment();
+                const std::string pComp = pMol.node->get_compartment();
+                if (rComp.empty() || pComp.empty() || rComp == pComp) continue;
+                // This molecule changes compartment: rComp → pComp
+                // Find the clone of the matched target molecule in the aggregate graph
+                if (pi < cloneMaps.size()) {
+                    // The matched target molecule for pattern molecule mi
+                    auto* patternMolNode = rMol.node;
+                    auto* targetMolNode = matchSet[pi].map.mapf(patternMolNode);
+                    if (targetMolNode) {
+                        auto cloneIt = cloneMaps[pi].find(targetMolNode);
+                        if (cloneIt != cloneMaps[pi].end()) {
+                            cloneIt->second->set_compartment(pComp);
+                            moleculeTransported[cloneIt->second] = pComp;
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- MoveConnected: transport connected cargo molecules ---
+        // Perl's MoveConnected: when a molecule changes compartment, all molecules
+        // connected to it through bonds in the SAME original compartment also move,
+        // UNLESS they are explicitly named in the reactant pattern.
+        if (hasModifier(modifiers_, "MoveConnected")) {
+            // Build set of PATTERN molecule clones (to exclude from BFS).
+            // Only include molecules explicitly in the reactant PATTERN, not all
+            // molecules in the matched species.
+            std::unordered_set<BNGcore::Node*> patternMols;
+            for (std::size_t pi = 0; pi < reactantInfo.size() && pi < cloneMaps.size(); ++pi) {
+                for (const auto& molInfo : reactantInfo[pi].molecules) {
+                    // Map pattern molecule → target molecule → aggregate clone
+                    auto* targetMol = matchSet[pi].map.mapf(molInfo.node);
+                    if (targetMol) {
+                        auto cloneIt = cloneMaps[pi].find(targetMol);
+                        if (cloneIt != cloneMaps[pi].end()) {
+                            patternMols.insert(cloneIt->second);
+                        }
+                    }
+                }
+            }
+
+            // For each molecule that was ACTUALLY transported, BFS to connected cargo
+            for (auto& [seed, targetComp] : moleculeTransported) {
+
+                // BFS through bonds in the aggregate graph
+                std::queue<BNGcore::Node*> q;
+                std::unordered_set<BNGcore::Node*> visited;
+                q.push(seed);
+                visited.insert(seed);
+
+                while (!q.empty()) {
+                    auto* mol = q.front();
+                    q.pop();
+                    // mol → out_edges → components → out_edges → bonds → in_edges → partner components → in_edges → partner molecules
+                    for (auto ce = mol->edges_out_begin(); ce != mol->edges_out_end(); ++ce) {
+                        if (!isComponentNode(**ce)) continue;
+                        for (auto be = (*ce)->edges_out_begin(); be != (*ce)->edges_out_end(); ++be) {
+                            if (!isBondNode(**be)) continue;
+                            // Only follow real bonds (bound state "+"), not unbound markers
+                            const auto& bs = (*be)->get_state().get_BNG2_string();
+                            if (bs != "!+" && bs != "+") continue;
+                            for (auto pce = (*be)->edges_in_begin(); pce != (*be)->edges_in_end(); ++pce) {
+                                if (*pce == *ce) continue;
+                                for (auto pme = (*pce)->edges_in_begin(); pme != (*pce)->edges_in_end(); ++pme) {
+                                    if (!isMoleculeNode(**pme)) continue;
+                                    if (visited.count(*pme)) continue;
+                                    visited.insert(*pme);
+                                    // Skip pattern molecules (they have their own compartment handling)
+                                    if (patternMols.count(*pme)) continue;
+                                    // Transport this cargo molecule
+                                    (*pme)->set_compartment(targetComp);
+                                    q.push(*pme);
+                                }
+                            }
+                        }
                     }
                 }
             }

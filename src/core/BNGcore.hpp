@@ -530,6 +530,8 @@ namespace BNGcore
             std::string  get_BNG2_string ( ) const;
             // write graph to a string and return per-molecule compartments in string order
             std::string  get_BNG2_string ( std::vector<std::string>& moleculeCompartments ) const;
+            // write graph to a string with per-molecule compartment suffixes embedded (for dedup)
+            std::string  get_BNG2_string_with_compartments ( ) const;
             std::string  get_label ( ) const ;
             std::string  get_label ( bool preserve_prior_order ) const;
             // set a raw string representation (used for species loaded from .net files)

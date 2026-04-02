@@ -16,6 +16,7 @@ public:
     std::string canonicalLabel() const;
     std::string fingerprint() const;
     std::string toString() const;
+    std::string toStringForDedup() const;
     const std::string& getCompartment() const;
     void setCompartment(std::string compartment);
 

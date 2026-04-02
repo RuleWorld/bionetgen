@@ -151,11 +151,11 @@ bool
 Node::less ( const Node * node1, const Node * node2 )
 {
     if ( node1->get_type() == node2->get_type() )
-    {   
+    {
         if ( node1->get_state() == node2->get_state() )
             // different state and type
             return ( node1->index < node2->index );
-        
+
         else // different state, same type
             return ( node1->get_state().less(node2->get_state()) );
     }
@@ -396,9 +396,10 @@ Node::get_BNG2_string ( link_index_t & link_index, int & next_bond ) const
         else if ( !has_entity_parent )
             s << "()";
 
-        // Per-molecule compartment suffix (@CYT) is NOT added here to avoid
-        // affecting species deduplication via string matching. Instead, compartment
-        // annotations are applied at the NetWriter level during .net output.
+        // Per-molecule compartment suffix (@CYT) is NOT added here because it
+        // changes the .net output format and breaks comparison with Perl.
+        // Instead, compartment-aware dedup is handled via fingerprinting
+        // in SpeciesList::add().
     }
     // return string
     return s.str();

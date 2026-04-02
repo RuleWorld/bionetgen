@@ -490,6 +490,29 @@ PatternGraph::get_BNG2_string ( std::vector<std::string>& moleculeCompartments )
     return s.str();
 }
 
+// Get BNG2 string with per-molecule compartments appended as suffixes.
+// Used for species deduplication only (not for .net output).
+std::string
+PatternGraph::get_BNG2_string_with_compartments ( ) const
+{
+    std::vector<std::string> molComps;
+    std::string base = get_BNG2_string(molComps);
+    // Append sorted compartment info to distinguish species with different
+    // per-molecule compartment assignments.
+    bool hasAnyComp = false;
+    for (const auto& c : molComps) {
+        if (!c.empty()) { hasAnyComp = true; break; }
+    }
+    if (hasAnyComp) {
+        base += "||";
+        for (size_t i = 0; i < molComps.size(); ++i) {
+            if (i > 0) base += ",";
+            base += molComps[i];
+        }
+    }
+    return base;
+}
+
 // Generate a canonical string for graph (requires that canonical ordering has been determined.
 std::string
 PatternGraph::get_label ( ) const
