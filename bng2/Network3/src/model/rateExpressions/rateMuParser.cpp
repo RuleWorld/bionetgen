@@ -69,7 +69,8 @@ double RateMuParser::getRate(vector<double> X){
 //			exit(1);
 //		}
 		// Loop over stoichiometric factor
-		for (int j=0;j < fabs(this->rStoich[i]);j++){
+		int stoich = std::abs(this->rStoich[i]);
+		for (int j=0;j < stoich;j++){
 			rate *= (X[i]-(double)j)/((double)j+1.0);
 		}
 	}

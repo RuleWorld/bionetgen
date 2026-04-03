@@ -89,7 +89,8 @@ double RateSaturation::getRate(vector<double> X){
 //		}
 		// Loop over stoichiometry
 		double X_mult = 1.0;
-		for (int j=0;j < fabs(this->rStoich[i]);j++){
+		int stoich = std::abs(this->rStoich[i]);
+		for (int j=0;j < stoich;j++){
 			X_mult *= (X[i]-(double)j)/((double)j+1.0);
 		}
 		rate *= X_mult;
@@ -120,7 +121,8 @@ double RateSaturation::get_dRate_dX(unsigned int which, vector<double> X){
 //		}
 		// Calculate X_mult = X * (X-1)/2 * (X-2)/3 *...
 		double X_mult = 1.0;
-		for (int j=0;j < fabs(this->rStoich[i]);j++){
+		int stoich = std::abs(this->rStoich[i]);
+		for (int j=0;j < stoich;j++){
 			X_mult *= (X[i]-(double)j)/((double)j+1.0);
 		}
 		// Non-derivative terms
@@ -136,9 +138,9 @@ double RateSaturation::get_dRate_dX(unsigned int which, vector<double> X){
 		else{
 			// Common term
 			double dX_which = 0.0;
-			for (int k=0;k < fabs(this->rStoich[i]);k++){ // # of terms in summation
+			for (int k=0;k < stoich;k++){ // # of terms in summation
 				double prod = 1.0;
-				for (int j=0;j < fabs(this->rStoich[i]);j++){ // # of terms in each product of the summation
+				for (int j=0;j < stoich;j++){ // # of terms in each product of the summation
 					if (j == k){
 						prod *= 1.0/((double)j+1.0);
 					}

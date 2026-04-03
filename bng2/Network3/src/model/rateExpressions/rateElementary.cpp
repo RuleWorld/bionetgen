@@ -76,7 +76,8 @@ double RateElementary::getRate(vector<double> X){
 //			exit(1);
 //		}
 		// Loop over stoichiometric factor
-		for (int j=0;j < fabs(this->rStoich[i]);j++){
+		int stoich = std::abs(this->rStoich[i]);
+		for (int j=0;j < stoich;j++){
 			rate *= (X[i]-(double)j)/((double)j+1.0);
 		}
 	}
@@ -102,16 +103,17 @@ double RateElementary::get_dRate_dX(unsigned int which, vector<double> X){
 //			exit(1);
 //		}
 		//
+		int stoich = std::abs(this->rStoich[i]);
 		if (i != which){
-			for (int j=0;j < fabs(this->rStoich[i]);j++){
+			for (int j=0;j < stoich;j++){
 				dRate *= (X[i]-(double)j)/((double)j+1.0);
 			}
 		}
 		else{
 			double dX_which = 0.0;
-			for (int k=0;k < fabs(this->rStoich[i]);k++){ // # of terms in summation
+			for (int k=0;k < stoich;k++){ // # of terms in summation
 				double prod = 1.0;
-				for (int j=0;j < fabs(this->rStoich[i]);j++){ // # of terms in each product of the summation
+				for (int j=0;j < stoich;j++){ // # of terms in each product of the summation
 					if (j == k){
 						prod *= 1.0/((double)j+1.0);
 					}

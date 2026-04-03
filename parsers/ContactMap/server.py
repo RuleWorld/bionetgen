@@ -5,12 +5,9 @@ Created on Fri May 31 16:56:13 2013
 @author: proto
 """
 
-import os
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 import threading
-import time
-import datetime
 import subprocess
 import createGraph
 import pexpect

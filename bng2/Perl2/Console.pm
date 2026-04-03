@@ -106,7 +106,7 @@ sub BNGconsole
 						$key = $1;
 						$val = [ split( '\s*,\s*', $2 ) ];
 						foreach my $v (@$val){
-							$v = eval $v; # need to evaluate each entry to a string
+							$v =~ s/^\s*["'](.*)["']\s*$/$1/; # Safely strip quotes instead of eval
 						}
 					}
 					else{
