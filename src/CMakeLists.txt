@@ -81,6 +81,8 @@ target_include_directories(bng_engine PUBLIC
     ${ANTLR_GEN_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/parser
     ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
+    ${sundials_SOURCE_DIR}/include
+    ${sundials_BINARY_DIR}/include
 )
 target_link_libraries(bng_engine PUBLIC
     bng_parser
