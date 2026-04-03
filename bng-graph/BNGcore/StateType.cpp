@@ -98,7 +98,7 @@ LabelStateType::get_state_object ( ) const
 bool
 LabelStateType::check_state ( const std::string & state ) const
 {
-    return ( states.find( state ) == states.end() );
+    return ( states.find( state ) != states.end() );
 }    
 
 

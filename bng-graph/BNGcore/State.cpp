@@ -89,6 +89,11 @@ NullState::NullState ( const NullState & x )
 LabelState::LabelState ( const LabelStateType & state_type, const std::string & _state )
    : State( state_type )
 {
+    // validate state
+    if ( !state_type.check_state( _state ) )
+    {
+        std::cerr << "LabelState::LabelState:  Invalid state string passed: " << _state << std::endl;
+    }
     state = _state;
 }
 
@@ -179,7 +184,7 @@ LabelState::is_wildcard ( ) const
 BondState::BondState ( const BondStateType & state_type, const std::string & state )
    : LabelState( state_type, state )
 {
-    // TODO: validate state!
+    // validation is handled by LabelState constructor
 }
 
 
@@ -222,6 +227,11 @@ BondState::get_BNG2_string ( ) const
 CounterState::CounterState ( const CounterStateType & _state_type, int _state )
    : State( _state_type )
 {
+    // validate state
+    if ( !_state_type.check_state( _state ) )
+    {
+        std::cerr << "CounterState::CounterState:  Invalid state value passed: " << _state << std::endl;
+    }
     state = _state;
 }
 
