@@ -5,10 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
-# Enable testing
-enable_testing()
-include(CTest)
-
 if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ -static")
 endif()
@@ -60,7 +56,7 @@ FetchContent_Declare(
   GIT_TAG        v2.7.0   # Compatible with CVODE 2.6.0 API
 )
 
-# Configure SUNDIALS build options
+# Configure SUNDIALS build options - only build CVODE, no tests/examples
 set(BUILD_CVODE ON CACHE INTERNAL "Build CVODE solver")
 set(BUILD_CVODES OFF CACHE INTERNAL "")
 set(BUILD_IDA OFF CACHE INTERNAL "")
@@ -70,10 +66,16 @@ set(BUILD_ARKODE OFF CACHE INTERNAL "")
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build static libraries")
 set(BUILD_STATIC_LIBS ON CACHE INTERNAL "Build static libraries")
 set(BUILD_TESTING OFF CACHE INTERNAL "Disable SUNDIALS tests")
+set(EXAMPLES_ENABLE OFF CACHE INTERNAL "Disable all SUNDIALS examples")
 set(EXAMPLES_ENABLE_C OFF CACHE INTERNAL "Disable C examples")
 set(EXAMPLES_INSTALL OFF CACHE INTERNAL "Don't install examples")
 
 FetchContent_MakeAvailable(sundials)
+
+# Enable testing AFTER FetchContent blocks so third-party tests
+# (e.g. SUNDIALS's Python-2-era test runner) don't get registered
+enable_testing()
+include(CTest)
 
 # Source directory
 add_subdirectory(src)
