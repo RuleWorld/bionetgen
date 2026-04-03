@@ -55,9 +55,14 @@ def solveWildcards(atomicArray):
     can potentially resolve to
     '''
     standinArray = {}
-    for wildcard in [x for x in atomicArray if '+' in x]:
-        for atomic in [x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1]:
-            if atomicArray[wildcard].molecules[0].name in [x.name for x in atomicArray[atomic].molecules]:
+    # Pre-filter atomics and pre-calculate their molecule names for faster lookup
+    atomics = [x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1]
+    atomic_mol_names = {atomic: set(m.name for m in atomicArray[atomic].molecules) for atomic in atomics}
+
+    for wildcard in (x for x in atomicArray if '+' in x):
+        wildcard_mol_name = atomicArray[wildcard].molecules[0].name
+        for atomic in atomics:
+            if wildcard_mol_name in atomic_mol_names[atomic]:
                 if wildcard not in standinArray:
                     standinArray[wildcard] = []
                 standinArray[wildcard].append(atomicArray[atomic])
