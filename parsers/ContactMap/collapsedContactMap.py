@@ -46,7 +46,8 @@ def solveWildcards(atomicArray):
     standinArray = {}
     for wildcard in [x for x in atomicArray if '+' in x]:
         for atomic in [x for x in atomicArray if '+' not in x and len(atomicArray[x].molecules) > 1]:
-            if atomicArray[wildcard].molecules[0].name in [x.name for x in atomicArray[atomic].molecules]:
+            atomic_molecule_names = set(x.name for x in atomicArray[atomic].molecules)
+            if atomicArray[wildcard].molecules[0].name in atomic_molecule_names:
                 if wildcard not in standinArray:
                     standinArray[wildcard] = []
                 standinArray[wildcard].append(atomicArray[atomic])

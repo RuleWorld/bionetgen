@@ -194,25 +194,31 @@ class Species:
     def extend(self,species,update=True):
         if(len(self.molecules) == len(species.molecules)):
             for (selement,oelement) in zip(self.molecules,species.molecules):
+                selement_component_names = set(x.name for x in selement.components)
                 for component in oelement.components:
-                    if component.name not in [x.name for x in selement.components]:
+                    if component.name not in selement_component_names:
                         selement.components.append(component)
+                        selement_component_names.add(component.name)
                     else:
                         for element in selement.components:
                             if element.name == component.name:
                                 element.addStates(component.states,update)
+                                break
                                 
         else:
+            self_molecule_names = set(x.name for x in self.molecules)
             for element in species.molecules:
-                if element.name not in [x.name for x in self.molecules]:
-                    
+                if element.name not in self_molecule_names:
                     self.addMolecule(deepcopy(element),update)
+                    self_molecule_names.add(element.name)
                 else:
                     for molecule in self.molecules:
                         if molecule.name == element.name:
+                            molecule_component_names = set(x.name for x in molecule.components)
                             for component in element.components:
-                                if component.name not in [x.name for x in molecule.components]:
+                                if component.name not in molecule_component_names:
                                     molecule.addComponent(deepcopy(component),update)
+                                    molecule_component_names.add(component.name)
                                 else:
                                     comp = molecule.getComponent(component.name)
                                     for state in component.states:
@@ -412,7 +418,7 @@ class Molecule:
         if not overlap:
             self.components.append(component)
         else:
-            if not component.name in [x.name for x in self.components]:
+            if not component.name in set(x.name for x in self.components):
                 self.components.append(component)
             else:
                 compo = self.getComponent(component.name)
@@ -459,7 +465,10 @@ class Molecule:
         return [x for x in self.components if x.bonds != []]
         
     def contains(self,componentName):
-        return componentName in [x.name for x in self.components]
+        for component in self.components:
+            if componentName == component.name:
+                return True
+        return False
         
     def __str__(self):
         self.components = sorted(self.components,key = lambda st:st.name)
@@ -496,9 +505,11 @@ class Molecule:
             element.reset()
             
     def update(self,molecule):
+        self_component_names = set(x.name for x in self.components)
         for comp in molecule.components:
-            if comp.name not in [x.name for x in self.components]:
+            if comp.name not in self_component_names:
                 self.components.append(deepcopy(comp))
+                self_component_names.add(comp.name)
                 
     def graphVizGraph(self,graph,identifier,components=None,flag=False):
         moleculeDictionary = {}
