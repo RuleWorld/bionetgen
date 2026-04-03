@@ -12,6 +12,7 @@
 #include "BNGLexer.h"
 #include "BNGParser.h"
 #include "parser/PatternGraphBuilder.hpp"
+#include "parser/BNGAstVisitor.hpp"
 #include "core/Ullmann.hpp"
 #include "io/NetWriter.hpp"
 
@@ -370,6 +371,16 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
     const double dt = opts.tEnd / static_cast<double>(opts.nSteps);
     std::vector<double> y(nSpecies_);
 
+    // Parse stop_if expression at compile time
+    std::optional<ast::Expression> stopIfExpr;
+    if (!opts.stopIf.empty()) {
+        try {
+            stopIfExpr = parser::parseExpression(opts.stopIf);
+        } catch (const std::exception& e) {
+            std::cerr << "[bng_cpp] Warning: failed to parse stop_if expression: " << e.what() << "\n";
+        }
+    }
+
     // Initialize from species amounts
     for (std::size_t i = 0; i < nSpecies_; ++i) {
         y[i] = network_.species.get(i).getAmount();
@@ -403,7 +414,7 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
             }
 
             // Check stop_if condition (BNG2 parity)
-            if (!opts.stopIf.empty() && step > 0) {
+            if (stopIfExpr.has_value() && step > 0) {
                 std::vector<double> groupValues;
                 updateGroups(y.data(), groupValues);
 
@@ -417,13 +428,9 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
                     return model_.getParameters().evaluate(name);
                 };
 
-                // For now, skip stop_if evaluation (need to implement expression parsing)
-                // TODO: Implement stop_if evaluation when Expression parser is ready
-                /*
                 try {
-                    ast::Expression stopExpr = ast::Expression::parse(opts.stopIf);
-                    double stopVal = stopExpr.evaluate(resolver, t);
-                    if (stopVal != 0.0) {  // Non-zero means true
+                    double stopVal = stopIfExpr->evaluate(resolver, t);
+                    if (stopVal != 0.0) {
                         std::cerr << "[bng_cpp] stop_if condition met at step " << step
                                   << ", t=" << t << ": " << opts.stopIf << "\n";
                         break;
@@ -431,7 +438,6 @@ OdeResult OdeIntegrator::integrateEuler(const OdeOptions& opts) {
                 } catch (const std::exception& e) {
                     // Ignore evaluation errors in stop_if
                 }
-                */
             }
 
             for (std::size_t i = 0; i < nSpecies_; ++i) {
@@ -458,6 +464,16 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
     const double dt = outputDt / static_cast<double>(internalStepsPerOutput);
 
     std::vector<double> y(nSpecies_);
+
+    // Parse stop_if expression at compile time
+    std::optional<ast::Expression> stopIfExpr;
+    if (!opts.stopIf.empty()) {
+        try {
+            stopIfExpr = parser::parseExpression(opts.stopIf);
+        } catch (const std::exception& e) {
+            std::cerr << "[bng_cpp] Warning: failed to parse stop_if expression: " << e.what() << "\n";
+        }
+    }
 
     // Initialize from species amounts
     for (std::size_t i = 0; i < nSpecies_; ++i) {
@@ -501,7 +517,7 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
             }
 
             // stop_if condition (BNG2 parity)
-            if (!opts.stopIf.empty()) {
+            if (stopIfExpr.has_value()) {
                 std::vector<double> groupValues;
                 updateGroups(y.data(), groupValues);
 
@@ -515,11 +531,8 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
                     return model_.getParameters().evaluate(name);
                 };
 
-                // TODO: Implement stop_if evaluation when Expression parser is ready
-                /*
                 try {
-                    ast::Expression stopExpr = ast::Expression::parse(opts.stopIf);
-                    double stopVal = stopExpr.evaluate(resolver, t);
+                    double stopVal = stopIfExpr->evaluate(resolver, t);
                     if (stopVal != 0.0) {
                         std::cerr << "[bng_cpp] stop_if condition met at step " << outputStep
                                   << ", t=" << t << ": " << opts.stopIf << "\n";
@@ -528,7 +541,6 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
                 } catch (const std::exception& e) {
                     // Ignore evaluation errors
                 }
-                */
             }
         }
 
@@ -586,20 +598,22 @@ OdeResult OdeIntegrator::integrateRK4(const OdeOptions& opts) {
     return result;
 }
 
-void OdeIntegrator::writeOutputFiles(const std::string& prefix, const OdeResult& result) const {
-    // Write .cdat (concentrations)
-    std::ofstream cdat(prefix + ".cdat");
-    if (!cdat) {
-        throw std::runtime_error("Failed to open " + prefix + ".cdat for writing");
-    }
-
-    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
-        cdat << std::setw(18) << std::setprecision(12) << std::scientific
-             << result.timePoints[step];
-        for (const auto& c : result.concentrations[step]) {
-            cdat << " " << std::setw(18) << c;
+void OdeIntegrator::writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT) const {
+    // Write .cdat (concentrations) - only if printCDAT is true
+    if (printCDAT) {
+        std::ofstream cdat(prefix + ".cdat");
+        if (!cdat) {
+            throw std::runtime_error("Failed to open " + prefix + ".cdat for writing");
         }
-        cdat << "\n";
+
+        for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
+            cdat << std::setw(18) << std::setprecision(12) << std::scientific
+                 << result.timePoints[step];
+            for (const auto& c : result.concentrations[step]) {
+                cdat << " " << std::setw(18) << c;
+            }
+            cdat << "\n";
+        }
     }
 
     // Write .gdat (observables)
@@ -634,6 +648,16 @@ static int cvodeCallbackWrapper(double t, N_Vector y, N_Vector ydot, void* user_
 }
 
 OdeResult OdeIntegrator::integrateCvode(const OdeOptions& opts) {
+    // Parse stop_if expression at compile time
+    std::optional<ast::Expression> stopIfExpr;
+    if (!opts.stopIf.empty()) {
+        try {
+            stopIfExpr = parser::parseExpression(opts.stopIf);
+        } catch (const std::exception& e) {
+            std::cerr << "[bng_cpp] Warning: failed to parse stop_if expression: " << e.what() << "\n";
+        }
+    }
+
     // Initialize state vector
     N_Vector y = N_VNew_Serial(static_cast<long int>(nSpecies_));
     if (y == nullptr) {
@@ -712,6 +736,33 @@ OdeResult OdeIntegrator::integrateCvode(const OdeOptions& opts) {
         }
         result.concentrations.push_back(conc);
 
+        // Check stop_if condition after each output point (BNG2 parity)
+        if (stopIfExpr.has_value() && step > 0 && step < opts.nSteps) {
+            std::vector<double> groupValues;
+            updateGroups(conc.data(), groupValues);
+
+            auto resolver = [&](const std::string& name) -> double {
+                if (name == "time") return tOut;
+                for (std::size_t g = 0; g < compiledGroups_.size(); ++g) {
+                    if (compiledGroups_[g].name == name) {
+                        return groupValues[g];
+                    }
+                }
+                return model_.getParameters().evaluate(name);
+            };
+
+            try {
+                double stopVal = stopIfExpr->evaluate(resolver, tOut);
+                if (stopVal != 0.0) {
+                    std::cerr << "[bng_cpp] stop_if condition met at step " << step
+                              << ", t=" << tOut << ": " << opts.stopIf << "\n";
+                    break;
+                }
+            } catch (const std::exception& e) {
+                // Ignore evaluation errors
+            }
+        }
+
         // Integrate to next output point
         if (step < opts.nSteps) {
             long int maxSteps = 2000;
@@ -736,7 +787,7 @@ OdeResult OdeIntegrator::integrateCvode(const OdeOptions& opts) {
 
     // Compute observables for each time point
     result.observables.resize(result.timePoints.size());
-    for (std::size_t step = 0; step <= opts.nSteps; ++step) {
+    for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
         updateGroups(result.concentrations[step].data(), result.observables[step]);
     }
 

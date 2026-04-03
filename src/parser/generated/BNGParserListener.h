@@ -1,5 +1,5 @@
 
-// Generated from BNGParser.g4 by ANTLR 4.13.1
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
 
 #pragma once
 
@@ -89,6 +89,9 @@ public:
   virtual void enterMolecule_pattern(BNGParser::Molecule_patternContext *ctx) = 0;
   virtual void exitMolecule_pattern(BNGParser::Molecule_patternContext *ctx) = 0;
 
+  virtual void enterScope_prefix(BNGParser::Scope_prefixContext *ctx) = 0;
+  virtual void exitScope_prefix(BNGParser::Scope_prefixContext *ctx) = 0;
+
   virtual void enterPattern_bond_wildcard(BNGParser::Pattern_bond_wildcardContext *ctx) = 0;
   virtual void exitPattern_bond_wildcard(BNGParser::Pattern_bond_wildcardContext *ctx) = 0;
 
@@ -106,6 +109,9 @@ public:
 
   virtual void enterBond_spec(BNGParser::Bond_specContext *ctx) = 0;
   virtual void exitBond_spec(BNGParser::Bond_specContext *ctx) = 0;
+
+  virtual void enterComponent_label(BNGParser::Component_labelContext *ctx) = 0;
+  virtual void exitComponent_label(BNGParser::Component_labelContext *ctx) = 0;
 
   virtual void enterBond_id(BNGParser::Bond_idContext *ctx) = 0;
   virtual void exitBond_id(BNGParser::Bond_idContext *ctx) = 0;
@@ -217,6 +223,9 @@ public:
 
   virtual void enterAction_arg_value(BNGParser::Action_arg_valueContext *ctx) = 0;
   virtual void exitAction_arg_value(BNGParser::Action_arg_valueContext *ctx) = 0;
+
+  virtual void enterQuoted_string(BNGParser::Quoted_stringContext *ctx) = 0;
+  virtual void exitQuoted_string(BNGParser::Quoted_stringContext *ctx) = 0;
 
   virtual void enterKeyword_as_value(BNGParser::Keyword_as_valueContext *ctx) = 0;
   virtual void exitKeyword_as_value(BNGParser::Keyword_as_valueContext *ctx) = 0;

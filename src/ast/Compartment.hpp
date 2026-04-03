@@ -10,6 +10,7 @@ public:
     
     std::string getName() const;
     double getVolume() const;
+    void setVolume(double volume);
     int getDimension() const;
     const std::string& getParent() const;
 

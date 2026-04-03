@@ -42,6 +42,7 @@ public:
     void setOption(std::string key, std::string value);
     
     const std::vector<Compartment>& getCompartments() const;
+    std::vector<Compartment>& getCompartments();
     const std::vector<Molecule>& getMolecules() const;
     const ParameterList& getParameters() const;
     ParameterList& getParameters();

@@ -1,5 +1,5 @@
 
-// Generated from BNGParser.g4 by ANTLR 4.13.1
+// Generated from src/parser/BNGParser.g4 by ANTLR 4.13.1
 
 #pragma once
 
@@ -91,6 +91,9 @@ public:
   virtual void enterMolecule_pattern(BNGParser::Molecule_patternContext * /*ctx*/) override { }
   virtual void exitMolecule_pattern(BNGParser::Molecule_patternContext * /*ctx*/) override { }
 
+  virtual void enterScope_prefix(BNGParser::Scope_prefixContext * /*ctx*/) override { }
+  virtual void exitScope_prefix(BNGParser::Scope_prefixContext * /*ctx*/) override { }
+
   virtual void enterPattern_bond_wildcard(BNGParser::Pattern_bond_wildcardContext * /*ctx*/) override { }
   virtual void exitPattern_bond_wildcard(BNGParser::Pattern_bond_wildcardContext * /*ctx*/) override { }
 
@@ -108,6 +111,9 @@ public:
 
   virtual void enterBond_spec(BNGParser::Bond_specContext * /*ctx*/) override { }
   virtual void exitBond_spec(BNGParser::Bond_specContext * /*ctx*/) override { }
+
+  virtual void enterComponent_label(BNGParser::Component_labelContext * /*ctx*/) override { }
+  virtual void exitComponent_label(BNGParser::Component_labelContext * /*ctx*/) override { }
 
   virtual void enterBond_id(BNGParser::Bond_idContext * /*ctx*/) override { }
   virtual void exitBond_id(BNGParser::Bond_idContext * /*ctx*/) override { }
@@ -219,6 +225,9 @@ public:
 
   virtual void enterAction_arg_value(BNGParser::Action_arg_valueContext * /*ctx*/) override { }
   virtual void exitAction_arg_value(BNGParser::Action_arg_valueContext * /*ctx*/) override { }
+
+  virtual void enterQuoted_string(BNGParser::Quoted_stringContext * /*ctx*/) override { }
+  virtual void exitQuoted_string(BNGParser::Quoted_stringContext * /*ctx*/) override { }
 
   virtual void enterKeyword_as_value(BNGParser::Keyword_as_valueContext * /*ctx*/) override { }
   virtual void exitKeyword_as_value(BNGParser::Keyword_as_valueContext * /*ctx*/) override { }

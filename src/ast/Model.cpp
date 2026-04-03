@@ -68,6 +68,10 @@ const std::vector<Compartment>& Model::getCompartments() const {
     return compartments;
 }
 
+std::vector<Compartment>& Model::getCompartments() {
+    return compartments;
+}
+
 const std::vector<Molecule>& Model::getMolecules() const {
     return molecules;
 }

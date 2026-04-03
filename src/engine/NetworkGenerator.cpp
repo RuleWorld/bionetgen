@@ -85,6 +85,20 @@ bool parseBooleanLike(std::string text) {
     return text == "1" || text == "true" || text == "yes" || text == "on";
 }
 
+std::optional<std::size_t> parseMaxAgg(const ast::Model& model) {
+    for (const auto& action : model.getActions()) {
+        if (action.name != "generate_network") {
+            continue;
+        }
+        const auto found = action.arguments.find("max_agg");
+        if (found == action.arguments.end()) {
+            continue;
+        }
+        return static_cast<std::size_t>(std::stoul(found->second));
+    }
+    return std::nullopt;
+}
+
 bool parsePrintIter(const ast::Model& model) {
     const char* envFlag = std::getenv("BNG_CPP_PROGRESS");
     if (envFlag != nullptr && *envFlag != '\0') {
@@ -165,6 +179,17 @@ bool withinStoichLimits(const ast::SpeciesGraph& graph, const std::map<std::stri
     return true;
 }
 
+bool withinAggLimit(const ast::SpeciesGraph& graph, std::size_t maxAgg) {
+    // Count total number of molecules in the species (regardless of type)
+    std::size_t totalMolecules = 0;
+    for (auto nodeIter = graph.getGraph().begin(); nodeIter != graph.getGraph().end(); ++nodeIter) {
+        if (isMoleculeNode(**nodeIter)) {
+            ++totalMolecules;
+        }
+    }
+    return totalMolecules <= maxAgg;
+}
+
 double evaluateAmount(const ast::Expression& expr, ast::Model& model) {
     return expr.evaluate([&](const std::string& dependency) {
         return model.getParameters().evaluate(dependency);
@@ -179,6 +204,7 @@ NetworkGenerator::NetworkGenerator(ast::Model& model)
 GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
     model_.getParameters().evaluateAll();
     const auto maxStoich = parseMaxStoich(model_);
+    const auto maxAgg = parseMaxAgg(model_);
     const bool logProgress = parsePrintIter(model_);
     const bool logRules = parsePrintRules(model_);
 
@@ -226,7 +252,9 @@ GeneratedNetwork NetworkGenerator::generateNative(std::size_t maxIter) {
             const std::size_t beforeSpecies = network.species.size();
             const std::size_t beforeReactions = network.reactions.size();
             const auto created = rule.expandRule(network.species, network.reactions, iter, [&](const ast::SpeciesGraph& graph) {
-                return withinStoichLimits(graph, maxStoich);
+                if (!withinStoichLimits(graph, maxStoich)) return false;
+                if (maxAgg.has_value() && !withinAggLimit(graph, *maxAgg)) return false;
+                return true;
             }, speciesAtIterStart, &model_);
             const bool debugRules = std::getenv("BNG_DEBUG_RULES") != nullptr;
             if (debugRules) {

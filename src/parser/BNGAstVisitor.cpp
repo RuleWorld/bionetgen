@@ -243,6 +243,20 @@ ast::Action buildActionFromArgs(const std::string& name, BNGParser::Action_argsC
     return action;
 }
 
+ast::Expression parseExpressionImpl(const std::string& exprText) {
+    antlr4::ANTLRInputStream input(exprText);
+    BNGLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    BNGParser parser(&tokens);
+
+    auto* exprCtx = parser.expression();
+    if (parser.getNumberOfSyntaxErrors() != 0) {
+        throw std::runtime_error("Failed to parse expression: " + exprText);
+    }
+
+    return buildExpression(exprCtx);
+}
+
 } // namespace
 
 BNGAstVisitor::BNGAstVisitor()
@@ -532,6 +546,10 @@ std::unique_ptr<ast::Model> parseModel(const std::string& sourceText) {
     BNGAstVisitor visitor;
     visitor.visit(tree);
     return visitor.takeModel();
+}
+
+ast::Expression parseExpression(const std::string& exprText) {
+    return parseExpressionImpl(exprText);
 }
 
 } // namespace bng::parser

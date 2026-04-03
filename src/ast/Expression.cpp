@@ -193,6 +193,54 @@ double Expression::evaluate(const std::function<double(const std::string&)>& res
             const double M_a1b1 = hypergeom1F1(a + 1, b + 1, z);
             return (std::abs(M_ab) < 1e-300) ? 0.0 : M_a1b1 / M_ab;
         }
+        // Rate law functions: Sat/MM/Hill/Arrhenius/FunctionProduct
+        // Sat(Vmax, Km, S) -> Vmax * S / (Km + S)
+        if (text_ == "Sat") {
+            requireArity(text_, children_, 3);
+            const double Vmax = evalArg(0);
+            const double Km = evalArg(1);
+            const double S = evalArg(2);
+            return Vmax * S / (Km + S);
+        }
+        // MM(Vmax, Km, S) -> Vmax * S / (Km + S)  (identical to Sat)
+        if (text_ == "MM") {
+            requireArity(text_, children_, 3);
+            const double Vmax = evalArg(0);
+            const double Km = evalArg(1);
+            const double S = evalArg(2);
+            return Vmax * S / (Km + S);
+        }
+        // Hill(Vmax, Kh, n, S) -> Vmax * S^n / (Kh^n + S^n)
+        if (text_ == "Hill") {
+            requireArity(text_, children_, 4);
+            const double Vmax = evalArg(0);
+            const double Kh = evalArg(1);
+            const double n = evalArg(2);
+            const double S = evalArg(3);
+            const double Sn = std::pow(S, n);
+            return Vmax * Sn / (std::pow(Kh, n) + Sn);
+        }
+        // Arrhenius(A, Ea) -> A * exp(-Ea / (kB * T))
+        // kB = 1.3806488e-23 J/K, T = 298.15 K  =>  kB*T = 4.11577e-21 J
+        // Perl BNG2 uses kB*T ~ 2478.956 J/mol (i.e. R*T with R=8.31446 J/(mol*K))
+        // but at single-molecule level: kB*T = 1.3806488e-23 * 298.15 = 4.11577e-21
+        if (text_ == "Arrhenius") {
+            requireArity(text_, children_, 2);
+            const double A = evalArg(0);
+            const double Ea = evalArg(1);
+            constexpr double kBT = 1.3806488e-23 * 298.15; // kB * T at 298.15 K
+            return A * std::exp(-Ea / kBT);
+        }
+        // FunctionProduct(v1, v2) -> v1 * v2
+        if (text_ == "FunctionProduct") {
+            requireArity(text_, children_, 2);
+            return evalArg(0) * evalArg(1);
+        }
+        // TFUN(obsValue, ...) -> returns first argument (stub for ODE mode)
+        if (text_ == "TFUN" || text_ == "tfun") {
+            if (children_.empty()) throw std::runtime_error("Function 'TFUN' expects at least 1 argument");
+            return evalArg(0);
+        }
         // Constants
         if (text_ == "_pi") { requireArity(text_, children_, 0); return M_PI; }
         if (text_ == "_e") { requireArity(text_, children_, 0); return M_E; }

@@ -15,6 +15,10 @@ double Compartment::getVolume() const {
     return volume_;
 }
 
+void Compartment::setVolume(double volume) {
+    volume_ = volume;
+}
+
 int Compartment::getDimension() const {
     return dimension_;
 }

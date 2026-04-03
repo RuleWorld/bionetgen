@@ -21,6 +21,7 @@ struct OdeOptions {
     bool steadyState = false;      // Enable steady-state detection
     double steadyStateTol = 1e-8;  // Tolerance for steady-state (|dydt| < tol)
     std::string stopIf;            // Boolean expression to evaluate at each step
+    bool printCDAT = true;         // Whether to write .cdat output file
 };
 
 struct OdeResult {
@@ -34,7 +35,7 @@ public:
     OdeIntegrator(const ast::Model& model, const GeneratedNetwork& network);
 
     OdeResult integrate(const OdeOptions& options);
-    void writeOutputFiles(const std::string& prefix, const OdeResult& result) const;
+    void writeOutputFiles(const std::string& prefix, const OdeResult& result, bool printCDAT = true) const;
     void derivs(double t, const double* y, double* dydt) const;
 
 private:

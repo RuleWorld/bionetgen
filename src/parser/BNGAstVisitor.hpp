@@ -40,4 +40,8 @@ private:
 
 std::unique_ptr<ast::Model> parseModel(const std::string& sourceText);
 
+/// Parse a standalone expression string (e.g., for stop_if conditions).
+/// Uses the ANTLR grammar's expression rule.
+ast::Expression parseExpression(const std::string& exprText);
+
 } // namespace bng::parser
