@@ -31,8 +31,17 @@ bng2/Validate/test_ANG_parscan_synthesis_simple_dummy/test_ANG_parscan_synthesis
 bng2/BioNetGen-*/
 bng2/BioNetGen-*.tgz
 
+build
+build-codex
+lib
+build-cpp
+out-codex-check
+comparison_results
+
+.claude
+artifacts/
+
 # temporary
-tests
 testing
 .vscode
 Issues/test.py
@@ -51,6 +60,10 @@ Issues/Help with pyBNG/timeDepFunction
 Issues/Help with pyBNG/Run01
 Isuses/Help with pyBNG/*.species
 Isuses/Help with pyBNG/*.xml
+
+!tests/
+!tests/**
+!tests/reference/*.net
 bng2/Network3/CMakeFiles/
 bng2/Network3/CMakeCache.txt
 bng2/Network3/cmake_install.cmake
