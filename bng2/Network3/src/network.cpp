@@ -1432,7 +1432,7 @@ void print_Groups(FILE* out, Group* list, Elt_array* earray) {
 Rxn* new_Rxn(int index, int n_reactants, int n_products, int* r_index,
 		int* p_index, int rateLaw_type, int n_rateLaw_params,
 		int* rateLaw_indices, double stat_factor, Elt_array* rates) {
-	register int i;
+	int i;
 	Rxn* rxn;
 	Elt** karray;
 	rxn = (Rxn*) calloc(1, sizeof(Rxn));
@@ -1848,7 +1848,7 @@ void connectivity_Rxn_array(Rxn_array* reactions, Elt_array* species,
 
 static int* read_indices_Rxn(char* string, int* n_indices, Elt_array* species,
 		int line_number) {
-	register int i;
+	int i;
 	int *index_list, index;
 	int n_tokens, error = 0;
 	char *line, **tokens;
@@ -1914,7 +1914,7 @@ static int* read_indices_Rxn(char* string, int* n_indices, Elt_array* species,
 
 /*
 static int *read_indices_Rxn( char *string, int *n_indices, Elt_array *species, int line_number){
-	register int i;
+	int i;
 	int *index_list, index;
 	int n_tokens, error=0;
 	char *line, **tokens;
@@ -2230,7 +2230,7 @@ Rxn_array* read_Rxn_array(FILE* datfile, int* line_number, int* n_read, Elt_arra
 }
 
 void print_Rxn_array(FILE* out, Rxn_array* reactions, Elt_array* species, Elt_array* rates) {
-	register int i;
+	int i;
 	Rxn* rxn;
 	Elt **sarr, **rarr;
 	sarr = species->elt - species->offset;
@@ -2376,7 +2376,7 @@ int n_species_network() {
 }
 
 int n_species_active() {
-	register int i;
+	int i;
 	int n_act = 0, n_species;
 	Elt** nconc;
 
@@ -2396,7 +2396,7 @@ int n_groups_network() { return (network.n_groups); }
 
 /* Returns concentrations in network.species to conc array */
 int get_conc_network(double* conc) {
-	register int i;
+	int i;
 	int error = 0, n_species;
 	Elt** nconc;
 
@@ -2418,7 +2418,7 @@ int get_conc_network(double* conc) {
 
 /* Sets concentrations in network.species to those in conc array */
 int set_conc_network(double* conc) {
-	register int i, n_species;
+	int i, n_species;
 	int error = 0;
 	Elt** nconc;
 
@@ -3037,7 +3037,7 @@ static double rxn_rate_scaled(Rxn* rxn, double* X, int discrete, double & iScali
 /* Returns the rate of each reaction in the network in #/unit time. */
 int rxn_rates_network(double* rxn_rates, int discrete) {
 
-	register int i;
+	int i;
 	int error = 0, n_reactions, n_species;
 	Rxn** rarray;
 	double *X;
@@ -3293,7 +3293,7 @@ void derivs_network(double t, double* conc, double* derivs) {
 }
 
 int print_derivs_network(FILE* out) {
-	register int i/*,j*/;
+	int i/*,j*/;
 	int error = 0, n_species;
 //	double *X = NULL, *dX = NULL;
 
@@ -3326,7 +3326,7 @@ int print_derivs_network(FILE* out) {
 }
 
 int print_derivs_species_network(FILE* out) {
-	register int i/*,j*/;
+	int i/*,j*/;
 	int error = 0, n_species;
 	double *X = NULL, *dX = NULL;
 
@@ -3355,7 +3355,7 @@ int print_derivs_species_network(FILE* out) {
 
 int print_rates_network(FILE* out, int discrete) {
 
-	register int i;
+	int i;
 	int error = 0, /*n_species,*/n_reactions;
 	double* rates_rxn = NULL;
 	Rxn** rxns;
@@ -3534,7 +3534,7 @@ void init_sparse_matlab_file(FILE* outfile) {
  * Outputs a sparse matlab matrix in an m file.
  */
 void sparse_jac_matlab(FILE* outfile) {
-	register int i, j, r, n;
+	int i, j, r, n;
 	int n_reactions;
 	Rxn **rarray, *rxn;
 	int *irxn, *ipxn, *index;
@@ -3608,7 +3608,7 @@ void sparse_jac_matlab(FILE* outfile) {
 //static void CVjac_network(long int N, DenseMat J, realtype t,
 static void CVjac_network(long int N, DlsMat J, realtype t, N_Vector y, N_Vector fy, void* jac_data, N_Vector tmp1, N_Vector tmp2,
 		N_Vector tmp3) {
-	register int i, j, r, n;
+	int i, j, r, n;
 	int n_reactions;
 	Rxn **rarray, *rxn;
 	int *irxn, *ipxn, *index;
@@ -3669,7 +3669,7 @@ static void CVjac_network(long int N, DlsMat J, realtype t, N_Vector y, N_Vector
  * Jacobian vector multiply for the CVODE GMRES solver
  */
 static int CVjtimes(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector fy, void* jac_data, N_Vector tmp) {
-	register int i, j, r, n;
+	int i, j, r, n;
 	int n_reactions;
 	Rxn **rarray, *rxn;
 	int *irxn, *ipxn, *index;
@@ -4369,7 +4369,7 @@ FILE* init_print_flux_network(char* prefix) {
 
 int print_flux_network(FILE* out, double t, int discrete) {
 
-	register int i;
+	int i;
 	int error = 0, n_reactions;
 	double* rates_rxn = NULL;
 	const char* fmt = "%15.8e";
