@@ -452,6 +452,7 @@ std::any BNGAstVisitor::visitReaction_rule_def(BNGParser::Reaction_rule_defConte
             for (auto* species : ctx->reactant_patterns()->species_def()) {
                 auto sg = ast::SpeciesGraph(buildPatternGraph(species, *currentModel_, false));
                 sg.setCompartment(extractSpeciesCompartment(species));
+                sg.setCompartmentIsPrefix(isSpeciesCompartmentPrefix(species));
                 patterns.emplace_back(sg);
             }
             return patterns;
@@ -462,6 +463,7 @@ std::any BNGAstVisitor::visitReaction_rule_def(BNGParser::Reaction_rule_defConte
             for (auto* species : ctx->product_patterns()->species_def()) {
                 auto sg = ast::SpeciesGraph(buildPatternGraph(species, *currentModel_, false));
                 sg.setCompartment(extractSpeciesCompartment(species));
+                sg.setCompartmentIsPrefix(isSpeciesCompartmentPrefix(species));
                 patterns.emplace_back(sg);
             }
             return patterns;

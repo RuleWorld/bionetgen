@@ -99,6 +99,25 @@ static int separatedByVolume(const std::string& comp1, const std::string& comp2)
     return 0;
 }
 
+// Check if a volume compartment is adjacent to a surface compartment.
+// Adjacent means the volume is the immediate Inside or Outside of the surface.
+// Perl: Compartment::adjacent()
+static bool isAdjacentToSurface(const std::string& volume, const std::string& surface) {
+    if (volume.empty() || surface.empty()) return false;
+    auto dimV = g_compartmentDimensions.find(volume);
+    auto dimS = g_compartmentDimensions.find(surface);
+    if (dimV == g_compartmentDimensions.end() || dimS == g_compartmentDimensions.end()) return false;
+    if (dimV->second != 3 || dimS->second != 2) return false;
+    // Volume is Outside of surface (parent of surface == volume's parent? No, simpler:
+    // surface.Outside == volume means volume is the outer compartment)
+    std::string outside = getOutside(surface);
+    if (outside == volume) return true;
+    // Volume is Inside of surface
+    std::string inside = getInside(surface);
+    if (inside == volume) return true;
+    return false;
+}
+
 namespace {
 
 struct ComponentInfo {
@@ -748,6 +767,46 @@ std::string reactionCenterSignature(
     return joined.str();
 }
 
+// Check if two compartments are compatible for a bond between them.
+// Same compartment, or one is a surface adjacent to the other's volume.
+bool bondCompatibleCompartments(const std::string& comp1, const std::string& comp2) {
+    if (comp1 == comp2) return true;
+    if (comp1.empty() || comp2.empty()) return true;
+    auto dim1 = g_compartmentDimensions.find(comp1);
+    auto dim2 = g_compartmentDimensions.find(comp2);
+    if (dim1 == g_compartmentDimensions.end() || dim2 == g_compartmentDimensions.end()) return true;
+    if (dim1->second == 2 && dim2->second == 3) return isAdjacentToSurface(comp2, comp1);
+    if (dim1->second == 3 && dim2->second == 2) return isAdjacentToSurface(comp1, comp2);
+    return false; // same dimension but different compartment
+}
+
+// Verify bond topology of a product graph (Perl's verifyTopology).
+bool verifyBondTopology(const BNGcore::PatternGraph& graph) {
+    if (g_compartmentDimensions.empty()) return true;
+    for (auto nodeIter = graph.begin(); nodeIter != graph.end(); ++nodeIter) {
+        if (!isMoleculeNode(**nodeIter)) continue;
+        const auto& comp1 = (*nodeIter)->get_compartment();
+        if (comp1.empty()) continue;
+        for (auto ce = (*nodeIter)->edges_out_begin(); ce != (*nodeIter)->edges_out_end(); ++ce) {
+            if (!isComponentNode(**ce)) continue;
+            for (auto be = (*ce)->edges_out_begin(); be != (*ce)->edges_out_end(); ++be) {
+                if (!isBondNode(**be)) continue;
+                if (!((*be)->get_state() == BNGcore::BOUND_STATE)) continue;
+                for (auto pce = (*be)->edges_in_begin(); pce != (*be)->edges_in_end(); ++pce) {
+                    if (*pce == *ce) continue;
+                    for (auto pme = (*pce)->edges_in_begin(); pme != (*pce)->edges_in_end(); ++pme) {
+                        if (!isMoleculeNode(**pme)) continue;
+                        const auto& comp2 = (*pme)->get_compartment();
+                        if (comp2.empty()) continue;
+                        if (!bondCompatibleCompartments(comp1, comp2)) return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 bool ReactionRule::ComponentRef::operator==(const ComponentRef& other) const {
@@ -1085,6 +1144,17 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
         if (!passesReactantFilters(patternIndex, speciesList.get(speciesIndex).getSpeciesGraph())) {
             continue;
         }
+        // Species-level compartment check: if reactant pattern has a species-level
+        // PREFIX compartment (e.g., @PM:R.R or @EM:R with colon syntax), only match
+        // species with the same species-level compartment. Suffix annotations like
+        // TF(d~pY)@CP are per-molecule and handled by embeddingRespectsNodeStates.
+        if (reactantPatterns_.at(patternIndex).isCompartmentPrefix()) {
+            const auto& patternComp = reactantPatterns_.at(patternIndex).getCompartment();
+            if (!patternComp.empty() &&
+                speciesList.get(speciesIndex).getCompartment() != patternComp) {
+                continue;
+            }
+        }
 
         // Quick molecule composition pre-filter: skip species that don't contain
         // enough molecules of the required types (avoids expensive Ullmann call)
@@ -1115,9 +1185,16 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
             ++mapsBeforeDedup;
         }
 
+        // For species-level transport rules (prefix compartment like @EM:R → @PM:R),
+        // Perl treats the rule as applying to the entire species, not individual molecules.
+        // Only keep one embedding per species (first valid one).
+        const bool speciesLevelTransport = reactantPatterns_.at(patternIndex).isCompartmentPrefix();
+        bool foundEmbeddingForSpecies = false;
+
         // Track signature → index in results for multiplicity counting
         std::unordered_map<std::string, std::size_t> signatureToResultIndex;
         for (auto mapIter = maps.begin(); mapIter != maps.end(); ++mapIter) {
+            if (speciesLevelTransport && foundEmbeddingForSpecies) break;
             if (!embeddingRespectsNodeStates(pattern, *mapIter)) {
                 continue;
             }
@@ -1161,6 +1238,7 @@ std::vector<ReactionRule::EmbeddingResult> ReactionRule::findEmbeddingsForSpecie
             }
             signatureToResultIndex[signature] = results.size();
             results.push_back(EmbeddingResult {speciesIndex, *mapIter, 1});
+            if (speciesLevelTransport) foundEmbeddingForSpecies = true;
         }
         if (debug && mapsBeforeDedup > 0) {
             std::cerr << "[DEBUG] Rule " << ruleName_ << " pattern " << patternIndex
@@ -1527,6 +1605,37 @@ bool ReactionRule::buildReaction(
             sameCompartment = false;
         }
     }
+
+    // Perl's interactingSet check (SpeciesGraph.pm:955-1009):
+    // Reactant species must be compartment-compatible:
+    // - All surfaces must be the same, all volumes must be the same
+    // - If surface + volume, they must be adjacent
+    // - No mix of compartment/no-compartment species
+    if (matchSet.size() > 1 && !g_compartmentDimensions.empty()) {
+        std::string uniqSurface, uniqVolume;
+        int hasMissing = 0, hasComp = 0;
+        bool valid = true;
+        for (const auto& match : matchSet) {
+            const auto& comp = speciesList.get(match.speciesIndex).getCompartment();
+            if (comp.empty()) { hasMissing++; continue; }
+            hasComp++;
+            auto dimIt = g_compartmentDimensions.find(comp);
+            if (dimIt == g_compartmentDimensions.end()) continue;
+            if (dimIt->second == 2) {
+                if (uniqSurface.empty()) uniqSurface = comp;
+                else if (uniqSurface != comp) { valid = false; break; }
+            } else if (dimIt->second == 3) {
+                if (uniqVolume.empty()) uniqVolume = comp;
+                else if (uniqVolume != comp) { valid = false; break; }
+            }
+        }
+        if (valid && hasMissing > 0 && hasComp > 0) valid = false;
+        if (valid && !uniqSurface.empty() && !uniqVolume.empty()) {
+            valid = isAdjacentToSurface(uniqVolume, uniqSurface);
+        }
+        if (!valid) return false;
+    }
+
     auto* graph = &aggregateGraph;
 
     const auto mapMatchedNodeToAggregate = [&](const ComponentRef& ref, BNGcore::Node* patternNode) -> BNGcore::Node* {
@@ -1817,7 +1926,6 @@ bool ReactionRule::buildReaction(
 
             // For each molecule that was ACTUALLY transported, BFS to connected cargo
             for (auto& [seed, targetComp] : moleculeTransported) {
-
                 // BFS through bonds in the aggregate graph
                 std::queue<BNGcore::Node*> q;
                 std::unordered_set<BNGcore::Node*> visited;
@@ -1976,41 +2084,58 @@ bool ReactionRule::buildReaction(
                 return false;
             }
             productLabels.push_back(productGraph.canonicalLabel());
-            // Deterministic species compartment inference (Perl convention):
-            // 1. If any molecule is on a 2D surface, use that surface.
-            // 2. If the product pattern specifies a 2D surface, use it.
-            // 3. Otherwise use the unique 3D volume from molecules.
-            // 4. Fall back to pattern/inferred compartment.
+            // Perl-faithful inferSpeciesCompartment (SpeciesGraph.pm:795-893):
+            // Collect unique 2D surfaces and 3D volumes from molecule compartments.
+            // 0 surfaces: 1 volume → that volume; 0 volumes → undefined; >1 → first alphabetically
+            // 1 surface → that surface
+            // >1 surfaces → first alphabetically (Perl errors, we tolerate)
             std::string compartmentToUse;
             const auto& patternCompartment = productPatternIndices[i] < productPatterns_.size()
                 ? productPatterns_[productPatternIndices[i]].getCompartment()
                 : std::string();
             if (!g_compartmentDimensions.empty()) {
-                std::string best2D, firstComp;
+                // Perl's inferSpeciesCompartment transfers the species-level compartment
+                // to molecules without explicit compartment BEFORE gathering. This is
+                // necessary for synthesis rules like `Source -> @PM:Mol1@CP.Mol2` where
+                // Mol2 inherits @PM from the species-level prefix.
+                std::set<std::string> surfaces, volumes;
                 for (auto nodeIter = productGraph.getGraph().begin(); nodeIter != productGraph.getGraph().end(); ++nodeIter) {
                     if (!isMoleculeNode(**nodeIter)) continue;
-                    const auto& mc = (*nodeIter)->get_compartment();
+                    auto mc = (*nodeIter)->get_compartment();
+                    if (mc.empty() && !patternCompartment.empty()) {
+                        mc = patternCompartment;
+                    }
                     if (mc.empty()) continue;
-                    if (firstComp.empty()) firstComp = mc;
-                    if (best2D.empty()) {
-                        auto dimIt = g_compartmentDimensions.find(mc);
-                        if (dimIt != g_compartmentDimensions.end() && dimIt->second == 2) {
-                            best2D = mc;
-                        }
+                    auto dimIt = g_compartmentDimensions.find(mc);
+                    if (dimIt != g_compartmentDimensions.end()) {
+                        if (dimIt->second == 2) surfaces.insert(mc);
+                        else if (dimIt->second == 3) volumes.insert(mc);
                     }
                 }
-                if (!best2D.empty()) {
-                    compartmentToUse = best2D;
-                } else if (!patternCompartment.empty()) {
-                    // No 2D surface from molecules, but pattern specifies compartment
-                    auto patDimIt = g_compartmentDimensions.find(patternCompartment);
-                    if (patDimIt != g_compartmentDimensions.end() && patDimIt->second == 2) {
-                        compartmentToUse = patternCompartment; // prefer 2D pattern compartment
-                    } else {
-                        compartmentToUse = !firstComp.empty() ? firstComp : patternCompartment;
+                if (surfaces.empty()) {
+                    if (volumes.size() == 1) {
+                        compartmentToUse = *volumes.begin();
+                    } else if (volumes.size() > 1) {
+                        return false;
                     }
+                    // volumes.empty() → no inference from molecules
+                } else if (surfaces.size() == 1) {
+                    const auto& surface = *surfaces.begin();
+                    // Perl checks all volumes are adjacent to the surface.
+                    // Reject if any volume is not adjacent (invalid compartment topology).
+                    bool valid = true;
+                    for (const auto& vol : volumes) {
+                        if (!isAdjacentToSurface(vol, surface)) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if (!valid) {
+                        return false; // Invalid species — reject like Perl
+                    }
+                    compartmentToUse = surface;
                 } else {
-                    compartmentToUse = firstComp;
+                    return false;
                 }
             }
             // Fallback: use product pattern compartment or inferred reactant compartment
@@ -2031,11 +2156,12 @@ bool ReactionRule::buildReaction(
                     }
                 }
             }
-            const auto [index, _] = speciesList.add(Species(
-                productGraph,
-                0.0,
-                false,
-                compartmentToUse));
+            // Perl's verifyTopology: reject products with cross-compartment bonds
+            if (!verifyBondTopology(productGraph.getGraph())) {
+                return false;
+            }
+            auto prodSp = Species(productGraph, 0.0, false, compartmentToUse);
+            const auto [index, wasNew] = speciesList.add(std::move(prodSp));
             productIndices.push_back(index);
         }
     }

@@ -425,33 +425,64 @@ std::optional<std::string> unitConversionExpression(const ast::Rxn& reaction, co
     return std::nullopt;
 }
 
+// Perl-faithful unit conversion factor (Rxn.pm:100-197).
+// For bimolecular+ reactions: divide by remaining compartment sizes after anchor.
+// For zero-order synthesis: multiply by product compartment size.
 std::optional<double> unitConversionFactor(const ast::Rxn& reaction, const ast::Model& model, const engine::GeneratedNetwork& network) {
-    if (reaction.getReactants().size() <= 1) {
-        return std::nullopt;
+    if (model.getCompartments().empty()) return std::nullopt;
+
+    // Build compartment dimension and size lookups
+    std::unordered_map<std::string, int> compDim;
+    std::unordered_map<std::string, double> compSize;
+    for (const auto& c : model.getCompartments()) {
+        compDim[c.getName()] = c.getDimension();
+        compSize[c.getName()] = c.getVolume();
     }
 
-    const auto npqFound = model.getOptions().find("NumberPerQuantityUnit");
-    if (npqFound == model.getOptions().end()) {
-        return std::nullopt;
-    }
+    std::optional<double> npq;
+    const auto npqIt = model.getOptions().find("NumberPerQuantityUnit");
+    if (npqIt != model.getOptions().end()) npq = std::stod(npqIt->second);
 
-    const double npq = std::stod(npqFound->second);
-    std::string compartmentName;
-    for (const auto reactantIndex : reaction.getReactants()) {
-        const auto& compartment = network.species.get(reactantIndex).getCompartment();
-        if (!compartment.empty()) {
-            compartmentName = compartment;
-            break;
+    if (!reaction.getReactants().empty()) {
+        // Order >= 1: collect reactant compartments
+        std::vector<std::string> surfaces, volumes;
+        for (const auto idx : reaction.getReactants()) {
+            const auto& comp = network.species.get(idx).getCompartment();
+            if (comp.empty()) continue;
+            auto dimIt = compDim.find(comp);
+            if (dimIt == compDim.end()) continue;
+            if (dimIt->second == 2) surfaces.push_back(comp);
+            else if (dimIt->second == 3) volumes.push_back(comp);
         }
-    }
-    if (compartmentName.empty()) {
-        return std::nullopt;
-    }
+        // Pick and toss anchor: surface first, else volume
+        if (!surfaces.empty()) surfaces.erase(surfaces.begin());
+        else if (!volumes.empty()) volumes.erase(volumes.begin());
 
-    for (const auto& compartment : model.getCompartments()) {
-        if (compartment.getName() == compartmentName) {
-            return 1.0 / (npq * compartment.getVolume());
+        // Remaining compartments contribute to denominator
+        if (surfaces.empty() && volumes.empty()) return std::nullopt;
+        double denom = 1.0;
+        for (const auto& s : surfaces) {
+            double sz = compSize[s];
+            if (npq) sz *= *npq;
+            denom *= sz;
         }
+        for (const auto& v : volumes) {
+            double sz = compSize[v];
+            if (npq) sz *= *npq;
+            denom *= sz;
+        }
+        return 1.0 / denom;
+    } else if (!reaction.getProducts().empty()) {
+        // Zero-order synthesis: multiply by product compartment size
+        std::string prodComp;
+        for (const auto idx : reaction.getProducts()) {
+            const auto& comp = network.species.get(idx).getCompartment();
+            if (!comp.empty()) { prodComp = comp; break; }
+        }
+        if (prodComp.empty()) return std::nullopt;
+        auto sizeIt = compSize.find(prodComp);
+        if (sizeIt == compSize.end()) return std::nullopt;
+        return sizeIt->second;
     }
     return std::nullopt;
 }
@@ -1326,9 +1357,18 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
                 out << " unit_conversion=" << *unitExpr;
             }
         } else {
-            // Zero-order synthesis in compartmental models: multiply rate by compartment volume
-            // (Perl BNG2 convention: rate_molecules = k * volume for 0th order reactions)
-            if (reactants.empty() && !products.empty() && !model.getCompartments().empty()) {
+            // Compartment volume conversion factor (Perl convention):
+            // Bimolecular+: divide by remaining compartment sizes
+            // Zero-order synthesis: multiply by product compartment size
+            // Pre-multiply with stat factor for cleaner output (Perl convention)
+            const auto convFactor = unitConversionFactor(reaction, model, network);
+            double combinedFactor = reaction.getFactor();
+            if (convFactor.has_value()) combinedFactor *= *convFactor;
+            if (std::abs(combinedFactor - 1.0) >= 1e-9) {
+                out << formatFactor(combinedFactor) << "*";
+            }
+            // Skip the legacy zero-order code and the separate stat factor write
+            if (false && reactants.empty() && !products.empty() && !model.getCompartments().empty()) {
                 std::string productCompartment;
                 for (const auto prodIdx : products) {
                     const auto& comp = network.species.get(prodIdx).getCompartment();
@@ -1358,9 +1398,7 @@ void NetWriter::write(const std::filesystem::path& outputPath, ast::Model& model
                     }
                 }
             }
-            if (std::abs(reaction.getFactor() - 1.0) >= 1e-9) {
-                out << formatFactor(reaction.getFactor()) << "*";
-            }
+            // Stat factor already included in combinedFactor above — don't write separately
             // Check if the rate is a built-in BNG function call (Sat, MM, Hill, etc.)
             // If so, write as "FunctionName arg1 arg2" (space-separated, Perl format)
             const auto& rateExpr = reaction.getRateExpression();

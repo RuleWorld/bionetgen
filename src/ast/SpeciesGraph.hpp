@@ -19,10 +19,13 @@ public:
     std::string toStringForDedup() const;
     const std::string& getCompartment() const;
     void setCompartment(std::string compartment);
+    bool isCompartmentPrefix() const { return compartmentIsPrefix_; }
+    void setCompartmentIsPrefix(bool v) { compartmentIsPrefix_ = v; }
 
 private:
     BNGcore::PatternGraph graph_;
     std::string compartment_;
+    bool compartmentIsPrefix_ = false;
 };
 
 } // namespace bng::ast

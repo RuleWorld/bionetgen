@@ -39,6 +39,7 @@ out-codex-check
 comparison_results
 
 .claude
+artifacts/
 
 # temporary
 testing

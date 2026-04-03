@@ -244,5 +244,10 @@ std::string extractSpeciesCompartment(BNGParser::Species_defContext* ctx) {
     return allSame ? inferredCompartment : std::string();
 }
 
+bool isSpeciesCompartmentPrefix(BNGParser::Species_defContext* ctx) {
+    if (ctx == nullptr) return false;
+    return (ctx->COLON() != nullptr && !ctx->AT().empty());
+}
+
 } // namespace bng::parser
 

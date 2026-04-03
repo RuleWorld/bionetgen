@@ -11,5 +11,6 @@ BNGcore::PatternGraph buildPatternGraph(
 	bool treatUnspecifiedBondAsWildcard = false);
 
 std::string extractSpeciesCompartment(BNGParser::Species_defContext* ctx);
+bool isSpeciesCompartmentPrefix(BNGParser::Species_defContext* ctx);
 
 } // namespace bng::parser

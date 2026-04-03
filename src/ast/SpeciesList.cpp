@@ -63,11 +63,22 @@ std::pair<std::size_t, bool> SpeciesList::add(Species species) {
     }
 
     // Fast path 2: canonical label match (O(1))
+    // Note: canonical label is compartment-blind. Species with same graph structure
+    // and same species-level compartment but different per-molecule compartments
+    // (e.g., Im@CP.NP vs Im@NU.NP, both at species @NM) must NOT be merged.
+    // Check dedup string to distinguish them.
     const auto existing = indicesByLabel_.find(label);
     if (existing != indicesByLabel_.end()) {
         for (const auto index : existing->second) {
             auto& existingSpecies = species_[index];
             if (existingSpecies.getCompartment() != species.getCompartment()) {
+                continue;
+            }
+            // Per-molecule compartment check: when species have compartments,
+            // dedup strings must match to avoid merging species that differ
+            // only in per-molecule compartments (e.g., Im@CP.NP vs Im@NU.NP)
+            if (!species.getCompartment().empty() &&
+                existingSpecies.getSpeciesGraph().toStringForDedup() != exact) {
                 continue;
             }
             if (existingSpecies.getCompartment().empty() && !species.getCompartment().empty()) {
@@ -91,6 +102,10 @@ std::pair<std::size_t, bool> SpeciesList::add(Species species) {
                 continue;
             }
             if (!isIsomorphic(existingSpecies.getSpeciesGraph(), species.getSpeciesGraph())) {
+                continue;
+            }
+            if (!species.getCompartment().empty() &&
+                existingSpecies.getSpeciesGraph().toStringForDedup() != exact) {
                 continue;
             }
             if (existingSpecies.getCompartment().empty() && !species.getCompartment().empty()) {
