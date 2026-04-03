@@ -71,7 +71,8 @@ double RateHill::getRate(vector<double> X){
 //		}
 		// Loop over stoichiometry
 		double X_mult = 1.0;
-		for (int j=0;j < fabs(this->rStoich[i]);j++){
+		int stoich_i = std::abs(this->rStoich[i]);
+		for (int j=0;j < stoich_i;j++){
 			X_mult *= (X[i]-(double)j)/((double)j+1.0);
 		}
 		// First species
@@ -105,7 +106,8 @@ double RateHill::get_dRate_dX(unsigned int which, vector<double> X){
 	double dRate = this->Vmax;
 	//
 	double X0_mult = 1.0;
-	for (int j=0;j < fabs(this->rStoich[0]);j++){
+	int stoich_0 = std::abs(this->rStoich[0]);
+	for (int j=0;j < stoich_0;j++){
 		X0_mult *= (X[0]-(double)j)/((double)j+1.0);
 	}
 	// First species
@@ -118,7 +120,8 @@ double RateHill::get_dRate_dX(unsigned int which, vector<double> X){
 				exit(1);
 			}
 			//
-			for (int j=0;j < fabs(this->rStoich[i]);j++){
+			int stoich_i = std::abs(this->rStoich[i]);
+			for (int j=0;j < stoich_i;j++){
 				dRate *= (X[i]-(double)j)/((double)j+1.0);
 			}
 		}
@@ -128,9 +131,9 @@ double RateHill::get_dRate_dX(unsigned int which, vector<double> X){
 		dRate *= (1.0 - pow(X0_mult,this->h)/denom);
 		// derivative
 		double dX_0 = 0.0;
-		for (unsigned int j=0;j < fabs(this->rStoich[0]);j++){
+		for (unsigned int j=0;j < stoich_0;j++){
 			double prod = 1.0/((double)j+1.0);
-			for (unsigned int k=0;k < fabs(this->rStoich[0]);k++){
+			for (unsigned int k=0;k < stoich_0;k++){
 				if (k != j){
 					prod *= (X[0]-(double)k)/((double)k+1.0);
 				}
@@ -150,11 +153,12 @@ double RateHill::get_dRate_dX(unsigned int which, vector<double> X){
 //				exit(1);
 //			}
 			//
+			int stoich_i = std::abs(this->rStoich[i]);
 			if (i == which){
 				double dX_i = 0.0;
-				for (unsigned int j=0;j < fabs(this->rStoich[i]);j++){
+				for (unsigned int j=0;j < stoich_i;j++){
 					double prod = 1.0/((double)j+1.0);
-					for (unsigned int k=0;k < fabs(this->rStoich[i]);k++){
+					for (unsigned int k=0;k < stoich_i;k++){
 						if (k != j){
 							prod *= (X[i]-(double)k)/((double)k+1.0);
 						}
@@ -164,7 +168,7 @@ double RateHill::get_dRate_dX(unsigned int which, vector<double> X){
 				dRate *= dX_i;
 			}
 			else{
-				for (int j=0;j < fabs(this->rStoich[i]);j++){
+				for (int j=0;j < stoich_i;j++){
 					dRate *= (X[i]-(double)j)/((double)j+1.0);
 				}
 			}
