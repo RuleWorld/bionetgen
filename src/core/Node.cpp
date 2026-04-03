@@ -6,6 +6,7 @@
  */
 
 #include "BNGcore.hpp"
+#include <climits>
 using namespace BNGcore;
 
 
