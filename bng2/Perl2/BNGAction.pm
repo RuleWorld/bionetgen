@@ -809,8 +809,6 @@ sub simulate_nf
     unless ($suffix eq "")
     {  $prefix .= "_${suffix}";  }
 
-    # TODO: detect unrecognized parameters
-
     # map BNG options to NFsim flags
     my %nfparams =
     (   # option name        type              defaults              simulator flags (one or more)
@@ -826,6 +824,16 @@ sub simulate_nf
         utl             => { type => 'param',  default_arg => undef, flags => ["-utl"]                    },
         verbose         => { type => 'switch', default_arg => 0,     flags => ["-v"]                      }
     );
+
+    # detect unrecognized parameters
+    my %allowed_params = map { $_ => 1 } qw( prefix suffix param method t_start t_end n_steps sample_times continue );
+    foreach my $p (keys %$params)
+    {
+        unless ( exists $nfparams{$p} or exists $allowed_params{$p} )
+        {
+            send_warning("simulate_nf: unrecognized parameter '$p'");
+        }
+    }
 
     # get nfsim arguments
     my @args = ();
