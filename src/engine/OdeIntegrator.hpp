@@ -25,6 +25,9 @@ struct OdeOptions {
     bool printFunctions = false;   // Whether to write .fdat output file
     std::vector<double> sampleTimes; // Non-uniform output time points (overrides nSteps)
     std::size_t maxSimSteps = 0;   // Max internal simulation steps (0 = unlimited)
+    bool saveProgress = false;     // Write .net checkpoint at each output step
+    bool printNet = false;         // Write .net file after simulation with final concentrations
+    std::size_t outputStepInterval = 0; // Output every N internal steps (0 = disabled, use n_steps timing)
 };
 
 struct OdeResult {

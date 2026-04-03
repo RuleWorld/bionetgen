@@ -938,6 +938,7 @@ OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
     double t = 0.0;
     const double dt = opts.tEnd / static_cast<double>(opts.nSteps);
     std::size_t nextOutputStep = 0;
+    std::size_t ssaStepCount = 0;  // track internal SSA steps for output_step_interval
 
     // Compute initial propensities
     std::vector<double> propensities(compiledRxns_.size());
@@ -953,13 +954,21 @@ OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
 
     recomputePropensities();
 
+    // Record initial state
+    if (opts.outputStepInterval > 0) {
+        result.timePoints.push_back(t);
+        result.concentrations.push_back(y);
+    }
+
     // Main SSA loop
     while (t < opts.tEnd) {
-        // Record output points as we pass them
-        while (nextOutputStep * dt <= t && nextOutputStep <= opts.nSteps) {
-            result.timePoints.push_back(nextOutputStep * dt);
-            result.concentrations.push_back(y);
-            ++nextOutputStep;
+        // Record output points as we pass them (only when not using output_step_interval)
+        if (opts.outputStepInterval == 0) {
+            while (nextOutputStep * dt <= t && nextOutputStep <= opts.nSteps) {
+                result.timePoints.push_back(nextOutputStep * dt);
+                result.concentrations.push_back(y);
+                ++nextOutputStep;
+            }
         }
 
         // Check if we've passed the end time
@@ -1014,13 +1023,26 @@ OdeResult OdeIntegrator::integrateSSA(const OdeOptions& opts) {
         // Recompute propensities
         // Optimization: could track which reactions are affected by this species change
         recomputePropensities();
+
+        // output_step_interval: record output every N internal SSA steps
+        ++ssaStepCount;
+        if (opts.outputStepInterval > 0 && (ssaStepCount % opts.outputStepInterval) == 0) {
+            result.timePoints.push_back(t);
+            result.concentrations.push_back(y);
+        }
     }
 
-    // Record final state if we haven't already
-    while (nextOutputStep <= opts.nSteps) {
-        result.timePoints.push_back(nextOutputStep * dt);
+    if (opts.outputStepInterval > 0) {
+        // Record final state at end time
+        result.timePoints.push_back(t);
         result.concentrations.push_back(y);
-        ++nextOutputStep;
+    } else {
+        // Record final state if we haven't already (uniform time-interval mode)
+        while (nextOutputStep <= opts.nSteps) {
+            result.timePoints.push_back(nextOutputStep * dt);
+            result.concentrations.push_back(y);
+            ++nextOutputStep;
+        }
     }
 
     // Compute observables for each time point

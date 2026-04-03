@@ -162,6 +162,8 @@ TEXTSPECIES: 'TextSpecies';
 
 WRITEMFILE: 'writeMfile';
 WRITEMEXFILE: 'writeMexfile';
+WRITECPPFILE: 'writeCPPfile';
+WRITECPYFILE: 'writeCPYfile';
 BDF: 'bdf';
 MAX_STEP: 'max_step';
 MAXORDER: 'maxOrder';

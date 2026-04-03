@@ -24,6 +24,8 @@
 #include "io/NetReader.hpp"
 #include "io/SbmlWriter.hpp"
 #include "io/MatlabWriter.hpp"
+#include "io/CppExportWriter.hpp"
+#include "io/PythonExportWriter.hpp"
 #include "io/ContactMapWriter.hpp"
 
 namespace bng::actions {
@@ -186,11 +188,52 @@ std::string simulationPrefix(const ast::Action& action, const std::filesystem::p
 
 void runSimulation(
     ast::Model& model,
-    const ast::Action& action,
+    const ast::Action& actionOrig,
     const std::filesystem::path& sourcePath,
     engine::GeneratedNetwork& network,
     bool verbose,
     std::vector<double>& lastSimulationState) {
+
+    // Handle argfile: read arguments from file (file args have lower priority than inline args)
+    ast::Action action = actionOrig;
+    {
+        const auto argfileText = stripQuotes(readArgument(action, "argfile", ""));
+        if (!argfileText.empty()) {
+            std::filesystem::path argfilePath(argfileText);
+            if (!argfilePath.is_absolute()) {
+                argfilePath = sourcePath.parent_path() / argfileText;
+            }
+            std::ifstream argfile(argfilePath);
+            if (!argfile) {
+                throw std::runtime_error("Could not open argfile: " + argfilePath.string());
+            }
+            std::string line;
+            while (std::getline(argfile, line)) {
+                line = trim(line);
+                if (line.empty() || line[0] == '#') continue; // skip comments/blanks
+                // Parse "key value" or "key=value"
+                std::string key, value;
+                auto eqPos = line.find('=');
+                if (eqPos != std::string::npos) {
+                    key = trim(line.substr(0, eqPos));
+                    value = trim(line.substr(eqPos + 1));
+                } else {
+                    std::istringstream iss(line);
+                    iss >> key;
+                    std::getline(iss, value);
+                    value = trim(value);
+                }
+                // File args have lower priority: only insert if not already present
+                if (!key.empty() && action.arguments.find(key) == action.arguments.end()) {
+                    action.arguments[key] = value;
+                }
+            }
+            if (verbose) {
+                std::cerr << "[bng_cpp] Loaded arguments from argfile: " << argfilePath.string() << "\n";
+            }
+        }
+    }
+
     const auto method = resolveSimulationMethod(action);
     const auto tEnd = stripQuotes(readArgument(action, "t_end", ""));
     const auto nSteps = stripQuotes(readArgument(action, "n_steps", stripQuotes(readArgument(action, "n_output_steps", ""))));
@@ -254,6 +297,20 @@ void runSimulation(
     const auto continueText = lowercase(stripQuotes(readArgument(action, "continue", "0")));
     bool continueSimulation = (continueText == "1" || continueText == "true");
 
+    // Parse save_progress flag (BNG2 parity: write .net checkpoint at each output step)
+    const auto saveProgressText = lowercase(stripQuotes(readArgument(action, "save_progress", "0")));
+    opts.saveProgress = (saveProgressText == "1" || saveProgressText == "true");
+
+    // Parse print_net flag (BNG2 parity: write .net file after simulation with final concentrations)
+    const auto printNetText = lowercase(stripQuotes(readArgument(action, "print_net", "0")));
+    opts.printNet = (printNetText == "1" || printNetText == "true");
+
+    // Parse output_step_interval (BNG2 parity: output every N internal steps, mainly for SSA/PLA)
+    const auto outputStepIntervalText = readArgument(action, "output_step_interval", "");
+    if (!outputStepIntervalText.empty()) {
+        opts.outputStepInterval = static_cast<std::size_t>(parseScalarValue(outputStepIntervalText, model));
+    }
+
     if (verbose) {
         std::cerr << "[bng_cpp] Simulating with method=" << opts.method
                   << " t_end=" << opts.tEnd
@@ -268,6 +325,15 @@ void runSimulation(
         }
         if (continueSimulation) {
             std::cerr << " continue=1";
+        }
+        if (opts.saveProgress) {
+            std::cerr << " save_progress=1";
+        }
+        if (opts.printNet) {
+            std::cerr << " print_net=1";
+        }
+        if (opts.outputStepInterval > 0) {
+            std::cerr << " output_step_interval=" << opts.outputStepInterval;
         }
         std::cerr << "\n";
     }
@@ -315,6 +381,42 @@ void runSimulation(
                       << outputPrefix.string() << ".gdat\n";
         } else {
             std::cerr << "[bng_cpp] Wrote " << outputPrefix.string() << ".gdat (print_CDAT=0)\n";
+        }
+    }
+
+    // save_progress: write .net checkpoint files at each output step with species concentrations
+    if (opts.saveProgress && !result.concentrations.empty()) {
+        for (std::size_t step = 0; step < result.timePoints.size(); ++step) {
+            // Update network species with concentrations at this time step
+            for (std::size_t i = 0; i < network.species.size() && i < result.concentrations[step].size(); ++i) {
+                network.species.get(i).setAmount(result.concentrations[step][i]);
+            }
+            // Write checkpoint .net file: prefix_t{time}.net
+            std::ostringstream timeTag;
+            timeTag << std::setprecision(15) << result.timePoints[step];
+            const auto checkpointPath = sourcePath.parent_path() / (prefix + "_t" + timeTag.str() + ".net");
+            io::NetWriter::write(checkpointPath, model, network);
+            if (verbose) {
+                std::cerr << "[bng_cpp] save_progress: wrote " << checkpointPath.string() << "\n";
+            }
+        }
+        // Restore final state concentrations
+        if (!result.concentrations.empty()) {
+            for (std::size_t i = 0; i < network.species.size() && i < result.concentrations.back().size(); ++i) {
+                network.species.get(i).setAmount(result.concentrations.back()[i]);
+            }
+        }
+    }
+
+    // print_net: write .net file after simulation with final concentrations
+    if (opts.printNet && !result.concentrations.empty()) {
+        for (std::size_t i = 0; i < network.species.size() && i < result.concentrations.back().size(); ++i) {
+            network.species.get(i).setAmount(result.concentrations.back()[i]);
+        }
+        const auto netPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".net");
+        io::NetWriter::write(netPath, model, network);
+        if (verbose) {
+            std::cerr << "[bng_cpp] print_net: wrote " << netPath.string() << "\n";
         }
     }
 }
@@ -1108,6 +1210,80 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             outFile << mContent;
             if (verbose) {
                 std::cerr << "[bng_cpp] Wrote MATLAB to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "writecppfile") {
+            ensureNetwork();
+            io::CppExportWriter::Options cppOpts;
+            const auto tStartText = readArgument(action, "t_start", "");
+            if (!tStartText.empty()) cppOpts.tStart = parseScalarValue(tStartText, model);
+            const auto tEndText = readArgument(action, "t_end", "");
+            if (!tEndText.empty()) cppOpts.tEnd = parseScalarValue(tEndText, model);
+            const auto nStepsText = readArgument(action, "n_steps", "");
+            if (!nStepsText.empty()) cppOpts.nSteps = static_cast<std::size_t>(parseScalarValue(nStepsText, model));
+            const auto atolText3 = readArgument(action, "atol", "");
+            if (!atolText3.empty()) cppOpts.atol = parseScalarValue(atolText3, model);
+            const auto rtolText3 = readArgument(action, "rtol", "");
+            if (!rtolText3.empty()) cppOpts.rtol = parseScalarValue(rtolText3, model);
+            const auto maxNumStepsText = readArgument(action, "max_num_steps", "");
+            if (!maxNumStepsText.empty()) cppOpts.maxNumSteps = static_cast<int>(parseScalarValue(maxNumStepsText, model));
+            const auto maxErrText = readArgument(action, "max_err_test_fails", "");
+            if (!maxErrText.empty()) cppOpts.maxErrTestFails = static_cast<int>(parseScalarValue(maxErrText, model));
+            const auto maxConvText = readArgument(action, "max_conv_fails", "");
+            if (!maxConvText.empty()) cppOpts.maxConvFails = static_cast<int>(parseScalarValue(maxConvText, model));
+            const auto maxStepText3 = readArgument(action, "max_step", "");
+            if (!maxStepText3.empty()) cppOpts.maxStep = parseScalarValue(maxStepText3, model);
+            const auto stiffText = lowercase(stripQuotes(readArgument(action, "stiff", "1")));
+            cppOpts.stiff = (stiffText != "0" && stiffText != "false" && stiffText != "off");
+            const auto sparseText = lowercase(stripQuotes(readArgument(action, "sparse", "0")));
+            cppOpts.sparse = (sparseText == "1" || sparseText == "on" || sparseText == "true");
+
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto cppContent = io::CppExportWriter::write(model, *network, cppOpts);
+            std::string outName = sourcePath.stem().string();
+            if (!suffix.empty()) outName += "_" + suffix;
+            outName += "_cvode";
+            const auto outputPath = sourcePath.parent_path() / (outName + ".h");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << cppContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote C++ CVODE header to " << outputPath << "\n";
+            }
+            continue;
+        }
+
+        if (actionName == "writecpyfile") {
+            ensureNetwork();
+            io::PythonExportWriter::Options pyOpts;
+            const auto tStartText = readArgument(action, "t_start", "");
+            if (!tStartText.empty()) pyOpts.tStart = parseScalarValue(tStartText, model);
+            const auto tEndText = readArgument(action, "t_end", "");
+            if (!tEndText.empty()) pyOpts.tEnd = parseScalarValue(tEndText, model);
+            const auto nStepsText = readArgument(action, "n_steps", "");
+            if (!nStepsText.empty()) pyOpts.nSteps = static_cast<std::size_t>(parseScalarValue(nStepsText, model));
+            const auto atolText4 = readArgument(action, "atol", "");
+            if (!atolText4.empty()) pyOpts.atol = parseScalarValue(atolText4, model);
+            const auto rtolText4 = readArgument(action, "rtol", "");
+            if (!rtolText4.empty()) pyOpts.rtol = parseScalarValue(rtolText4, model);
+
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto pyContent = io::PythonExportWriter::write(model, *network, pyOpts);
+            std::string outName = sourcePath.stem().string();
+            if (!suffix.empty()) outName += "_" + suffix;
+            outName += "_pyode";
+            const auto outputPath = sourcePath.parent_path() / (outName + ".py");
+            std::ofstream outFile(outputPath);
+            if (!outFile) {
+                throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
+            }
+            outFile << pyContent;
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote Python ODE to " << outputPath << "\n";
             }
             continue;
         }
