@@ -27,9 +27,9 @@ def readXML(fileName):
 
 if __name__ == "__main__":      
     #molecules,reaction,parameters =   readXML('BIOMD0000000019.xml.bngl')
-    #print molecules
+    #print(molecules)
     contactMap = openGML('BIOMD0000000019.xml.bngl','contactmap')
-    print '--',contactMap
+    print('--', contactMap)
     libsbgn.createSBNG_ER_gml(contactMap)
     #regulatory = openGML('BIOMD0000000019.xml.bngl','regulatory')
-    #print model
+    #print(model)
