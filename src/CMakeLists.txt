@@ -75,23 +75,20 @@ add_library(bng_engine STATIC
     actions/ActionDispatch.cpp
 )
 
-# Link SUNDIALS/CVODE from bng2/Network3
-set(CVODE_ROOT "${CMAKE_SOURCE_DIR}/bng2/Network3")
+# Link SUNDIALS/CVODE from FetchContent
 target_include_directories(bng_engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${ANTLR_GEN_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/parser
     ${antlr4_runtime_SOURCE_DIR}/runtime/Cpp/runtime/src
-    ${CVODE_ROOT}/include
-    ${CVODE_ROOT}/cvode-2.6.0/include
 )
 target_link_libraries(bng_engine PUBLIC
     bng_parser
     bng_ast
     bng_core
     antlr4_static
-    ${CMAKE_SOURCE_DIR}/bng2/Network3/lib/libsundials_cvode.a
-    ${CMAKE_SOURCE_DIR}/bng2/Network3/lib/libsundials_nvecserial.a
+    sundials_cvode_static
+    sundials_nvecserial_static
 )
 target_compile_definitions(bng_engine PUBLIC BNG_CPP_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 

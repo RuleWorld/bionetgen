@@ -49,6 +49,32 @@ set(ANTLR4_SHARED OFF CACHE INTERNAL "")
 
 FetchContent_MakeAvailable(antlr4_runtime)
 
+# Fetch SUNDIALS (CVODE solver)
+if(EXISTS "${CMAKE_SOURCE_DIR}/build/_deps/sundials-src/CMakeLists.txt")
+    set(FETCHCONTENT_SOURCE_DIR_SUNDIALS "${CMAKE_SOURCE_DIR}/build/_deps/sundials-src")
+endif()
+
+FetchContent_Declare(
+  sundials
+  GIT_REPOSITORY https://github.com/LLNL/sundials.git
+  GIT_TAG        v2.7.0   # Compatible with CVODE 2.6.0 API
+)
+
+# Configure SUNDIALS build options
+set(BUILD_CVODE ON CACHE INTERNAL "Build CVODE solver")
+set(BUILD_CVODES OFF CACHE INTERNAL "")
+set(BUILD_IDA OFF CACHE INTERNAL "")
+set(BUILD_IDAS OFF CACHE INTERNAL "")
+set(BUILD_KINSOL OFF CACHE INTERNAL "")
+set(BUILD_ARKODE OFF CACHE INTERNAL "")
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build static libraries")
+set(BUILD_STATIC_LIBS ON CACHE INTERNAL "Build static libraries")
+set(BUILD_TESTING OFF CACHE INTERNAL "Disable SUNDIALS tests")
+set(EXAMPLES_ENABLE_C OFF CACHE INTERNAL "Disable C examples")
+set(EXAMPLES_INSTALL OFF CACHE INTERNAL "Don't install examples")
+
+FetchContent_MakeAvailable(sundials)
+
 # Source directory
 add_subdirectory(src)
 
