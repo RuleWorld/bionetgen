@@ -17,6 +17,7 @@
 #include "ast/Parameter.hpp"
 #include "engine/NetworkGenerator.hpp"
 #include "engine/OdeIntegrator.hpp"
+#include "engine/PlaSimulator.hpp"
 #include "io/NetWriter.hpp"
 #include "io/XmlWriter.hpp"
 #include "io/BnglWriter.hpp"
@@ -125,6 +126,12 @@ std::string resolveSimulationMethod(const ast::Action& action) {
     if (method == "ode") {
         return "cvode";
     }
+    if (method == "pla") {
+        return "pla";
+    }
+    if (method == "nf") {
+        return "nf";
+    }
     return method;
 }
 
@@ -205,12 +212,14 @@ void runSimulation(
         opts.method = "euler";
     } else if (method == "rk4") {
         opts.method = "rk4";
+    } else if (method == "pla") {
+        opts.method = "pla";
     } else {
         opts.method = "cvode";  // Default to CVODE (matches BNG2)
     }
 
-    // Parse seed for SSA
-    if (opts.method == "ssa") {
+    // Parse seed for SSA/PLA
+    if (opts.method == "ssa" || opts.method == "pla") {
         const auto seedText = readArgument(action, "seed", "");
         if (!seedText.empty()) {
             opts.seed = static_cast<unsigned int>(parseScalarValue(seedText, model));
@@ -271,9 +280,19 @@ void runSimulation(
         }
     }
 
-    // Run native ODE integration
-    engine::OdeIntegrator integrator(model, network);
-    auto result = integrator.integrate(opts);
+    // Run simulation
+    engine::OdeResult result;
+    if (opts.method == "pla") {
+        // PLA simulation
+        const auto plaConfigStr = stripQuotes(readArgument(action, "pla_config", "fEuler|pre-neg:sb|eps=0.03"));
+        auto plaConfig = engine::PlaConfig::parse(plaConfigStr);
+        engine::PlaSimulator simulator(model, network);
+        result = simulator.simulate(opts, plaConfig);
+    } else {
+        // ODE/SSA integration
+        engine::OdeIntegrator integrator(model, network);
+        result = integrator.integrate(opts);
+    }
 
     // Save final state for potential continue
     if (!result.concentrations.empty()) {
@@ -283,6 +302,7 @@ void runSimulation(
     // Write output files
     const auto prefix = simulationPrefix(action, sourcePath);
     const auto outputPrefix = sourcePath.parent_path() / prefix;
+    engine::OdeIntegrator integrator(model, network);
     integrator.writeOutputFiles(outputPrefix.string(), result);
 
     if (verbose) {
@@ -602,6 +622,142 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             continue;
         }
 
+        if (actionName == "simulate_pla") {
+            ensureNetwork();
+            const auto tEnd = stripQuotes(readArgument(action, "t_end", ""));
+            const auto nSteps = stripQuotes(readArgument(action, "n_steps", stripQuotes(readArgument(action, "n_output_steps", ""))));
+            if (tEnd.empty() || nSteps.empty()) {
+                throw std::runtime_error("simulate_pla requires t_end and n_steps");
+            }
+
+            engine::OdeOptions opts;
+            opts.tEnd = parseScalarValue(tEnd, model);
+            opts.nSteps = static_cast<std::size_t>(parseScalarValue(nSteps, model));
+            opts.method = "pla";
+
+            const auto seedText = readArgument(action, "seed", "");
+            if (!seedText.empty()) {
+                opts.seed = static_cast<unsigned int>(parseScalarValue(seedText, model));
+            }
+
+            // Parse PLA config
+            const auto plaConfigStr = stripQuotes(readArgument(action, "pla_config", "fEuler|pre-neg:sb|eps=0.03"));
+            auto plaConfig = engine::PlaConfig::parse(plaConfigStr);
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Simulating PLA with config: " << plaConfigStr
+                          << " t_end=" << opts.tEnd << " n_steps=" << opts.nSteps << "\n";
+            }
+
+            // Run PLA simulation
+            engine::PlaSimulator simulator(model, *network);
+            auto result = simulator.simulate(opts, plaConfig);
+
+            // Write output files using OdeIntegrator's writer
+            const auto prefix = simulationPrefix(action, sourcePath);
+            const auto outputPrefix = sourcePath.parent_path() / prefix;
+            engine::OdeIntegrator integrator(model, *network);
+            integrator.writeOutputFiles(outputPrefix.string(), result);
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Wrote PLA output: " << outputPrefix.string() << ".cdat, .gdat\n";
+            }
+            continue;
+        }
+
+        if (actionName == "simulate_nf") {
+            // NFSim simulation: write XML, invoke NFsim binary, read results
+            // Write XML model
+            const auto xmlContent = io::XmlWriter::write(model, network.has_value() ? &(*network) : nullptr);
+            const auto prefix = simulationPrefix(action, sourcePath);
+            const auto xmlPath = sourcePath.parent_path() / (prefix + ".xml");
+            {
+                std::ofstream xmlOut(xmlPath);
+                if (!xmlOut) throw std::runtime_error("Failed to write XML for NFSim: " + xmlPath.string());
+                xmlOut << xmlContent;
+            }
+
+            // Find NFSim executable
+            std::string nfsimExec = stripQuotes(readArgument(action, "nfsim_exec", ""));
+            if (nfsimExec.empty()) {
+                // Search standard locations
+                std::vector<std::filesystem::path> searchPaths;
+                // Check BNG_PATH environment variable
+                const char* bngPath = std::getenv("BNG_PATH");
+                if (bngPath) {
+                    searchPaths.push_back(std::filesystem::path(bngPath) / "bin");
+                }
+                // Check relative to source
+                searchPaths.push_back(sourcePath.parent_path() / "bin");
+                // Check BNG_CPP_SOURCE_DIR macro
+#ifdef BNG_CPP_SOURCE_DIR
+                searchPaths.push_back(std::filesystem::path(BNG_CPP_SOURCE_DIR) / "bng2" / "bin");
+#endif
+
+                std::vector<std::string> nfsimNames = {"NFsim", "NFsim.exe"};
+                for (const auto& dir : searchPaths) {
+                    for (const auto& name : nfsimNames) {
+                        auto candidate = dir / name;
+                        if (std::filesystem::exists(candidate)) {
+                            nfsimExec = candidate.string();
+                            break;
+                        }
+                    }
+                    if (!nfsimExec.empty()) break;
+                }
+
+                if (nfsimExec.empty()) {
+                    throw std::runtime_error(
+                        "NFsim executable not found. Set nfsim_exec parameter or BNG_PATH environment variable.");
+                }
+            }
+
+            // Build NFSim command
+            const auto tEnd = stripQuotes(readArgument(action, "t_end", "10"));
+            const auto nSteps = stripQuotes(readArgument(action, "n_steps", "20"));
+            const auto gdatPath = sourcePath.parent_path() / (prefix + ".gdat");
+
+            std::string cmd = "\"" + nfsimExec + "\""
+                + " -xml \"" + xmlPath.string() + "\""
+                + " -o \"" + gdatPath.string() + "\""
+                + " -sim " + tEnd
+                + " -oSteps " + nSteps;
+
+            // Map BNG parameters to NFSim flags
+            const auto seedText = readArgument(action, "seed", "");
+            if (!seedText.empty()) cmd += " -seed " + stripQuotes(seedText);
+
+            const auto utlText = readArgument(action, "utl", "");
+            if (!utlText.empty()) cmd += " -utl " + stripQuotes(utlText);
+
+            const auto verboseFlag = lowercase(stripQuotes(readArgument(action, "verbose", "0")));
+            if (verboseFlag == "1" || verboseFlag == "true") cmd += " -v";
+
+            const auto complexFlag = lowercase(stripQuotes(readArgument(action, "complex", "1")));
+            if (complexFlag == "1" || complexFlag == "true") cmd += " -cb";
+
+            const auto getFinalState = lowercase(stripQuotes(readArgument(action, "get_final_state", "1")));
+            if (getFinalState == "1" || getFinalState == "true") {
+                const auto speciesPath = sourcePath.parent_path() / (prefix + ".species");
+                cmd += " -ss \"" + speciesPath.string() + "\"";
+            }
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] Running NFSim: " << cmd << "\n";
+            }
+
+            // Execute NFSim
+            int exitCode = std::system(cmd.c_str());
+            if (exitCode != 0) {
+                std::cerr << "[bng_cpp] Warning: NFSim returned exit code " << exitCode << "\n";
+            }
+
+            if (verbose) {
+                std::cerr << "[bng_cpp] NFSim completed. Output: " << gdatPath << "\n";
+            }
+            continue;
+        }
+
         if (actionName == "simulate" || action.name == "simulate_ode" || action.name == "simulate_ssa") {
             ensureNetwork();
             // Don't re-write .net file - already written by generate_network
@@ -727,11 +883,12 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
             ensureNetwork();
             io::SbmlWriter::Options sbmlOpts;
             sbmlOpts.level = 2;
-            sbmlOpts.version = 4;
+            sbmlOpts.version = 3;  // Perl default: L2V3
             sbmlOpts.networksExport = true;
 
+            const auto suffix = stripQuotes(readArgument(action, "suffix", "sbml"));
             const auto sbmlContent = io::SbmlWriter::write(model, &(*network), sbmlOpts);
-            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".xml");
+            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + "_" + suffix + ".xml");
             std::ofstream outFile(outputPath);
             if (!outFile) {
                 throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");
@@ -745,8 +902,32 @@ void ActionDispatch::execute(ast::Model& model, const std::filesystem::path& sou
 
         if (actionName == "writemfile") {
             ensureNetwork();
-            const auto mContent = io::MatlabWriter::write(model, *network);
-            const auto outputPath = sourcePath.parent_path() / (sourcePath.stem().string() + ".m");
+            io::MatlabWriter::Options mOpts;
+            // Parse action arguments for writeMfile options
+            const auto tStartText = readArgument(action, "t_start", "");
+            if (!tStartText.empty()) mOpts.tStart = parseScalarValue(tStartText, model);
+            const auto tEndText = readArgument(action, "t_end", "");
+            if (!tEndText.empty()) mOpts.tEnd = parseScalarValue(tEndText, model);
+            const auto nStepsText = readArgument(action, "n_steps", "");
+            if (!nStepsText.empty()) mOpts.nSteps = static_cast<std::size_t>(parseScalarValue(nStepsText, model));
+            const auto atolText2 = readArgument(action, "atol", "");
+            if (!atolText2.empty()) mOpts.atol = parseScalarValue(atolText2, model);
+            const auto rtolText2 = readArgument(action, "rtol", "");
+            if (!rtolText2.empty()) mOpts.rtol = parseScalarValue(rtolText2, model);
+            const auto maxOrderText = readArgument(action, "max_order", readArgument(action, "maxOrder", ""));
+            if (!maxOrderText.empty()) mOpts.maxOrder = static_cast<int>(parseScalarValue(maxOrderText, model));
+            const auto statsText = lowercase(stripQuotes(readArgument(action, "stats", "0")));
+            mOpts.stats = (statsText == "1" || statsText == "on" || statsText == "true");
+            const auto bdfText = lowercase(stripQuotes(readArgument(action, "bdf", "0")));
+            mOpts.bdf = (bdfText == "1" || bdfText == "on" || bdfText == "true");
+            const auto maxStepText = readArgument(action, "max_step", "");
+            if (!maxStepText.empty()) mOpts.maxStep = parseScalarValue(maxStepText, model);
+
+            const auto suffix = stripQuotes(readArgument(action, "suffix", ""));
+            const auto mContent = io::MatlabWriter::write(model, *network, mOpts);
+            std::string outName = sourcePath.stem().string();
+            if (!suffix.empty()) outName += "_" + suffix;
+            const auto outputPath = sourcePath.parent_path() / (outName + ".m");
             std::ofstream outFile(outputPath);
             if (!outFile) {
                 throw std::runtime_error("Failed to open " + outputPath.string() + " for writing");

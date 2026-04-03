@@ -65,6 +65,7 @@ target_link_libraries(bng_parser PUBLIC antlr4_static bng_ast)
 add_library(bng_engine STATIC
     engine/NetworkGenerator.cpp
     engine/OdeIntegrator.cpp
+    engine/PlaSimulator.cpp
     io/NetWriter.cpp
     io/NetReader.cpp
     io/XmlWriter.cpp
