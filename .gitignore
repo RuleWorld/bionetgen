@@ -64,3 +64,9 @@ Isuses/Help with pyBNG/*.xml
 !tests/
 !tests/**
 !tests/reference/*.net
+bng2/Network3/CMakeFiles/
+bng2/Network3/CMakeCache.txt
+bng2/Network3/cmake_install.cmake
+.jules/
+statfactor_*.txt
+bng2/Network3/run_network

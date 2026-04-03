@@ -8,6 +8,7 @@ use POSIX qw/floor/;
 use Math::Trig qw(tan asin acos atan sinh cosh tanh asinh acosh atanh pi); 
 use List::Util qw(min max sum);
 use Scalar::Util ("looks_like_number");
+use Safe;
 
 print "Testing Reaction Network..\n";
 print join ' ', ('command: ', $0, @ARGV, "\n");
@@ -228,8 +229,12 @@ sub rxn2text
         $rate = sprintf "%.8g", $rate;
     }
     else
-    {   # try to evaluate
-        my $eval_rate = eval "$rate";
+    {   # try to evaluate safely
+        my $cpt = Safe->new;
+        $cpt->permit(qw(atan2 sin cos exp log sqrt pow entereval));
+        $cpt->share('tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh', 'pi');
+        my $eval_rate = $cpt->reval($rate);
+
         if (defined $eval_rate)
         {   $rate = $eval_rate;   }
    

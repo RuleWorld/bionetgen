@@ -766,11 +766,21 @@ sub deleteParam
     # remove param from hash
     delete $plist->Hash->{$pname};
     
-    # remove param from array more efficiently (filter instead of splice in loop)
-    @{$plist->Array} = grep { $_ != $param } @{$plist->Array};
+    # remove param from array more efficiently (splice in loop avoids full array copy)
+    for (my $i = 0; $i < @{$plist->Array}; $i++) {
+        if ($plist->Array->[$i] == $param) {
+            splice(@{$plist->Array}, $i, 1);
+            last;
+        }
+    }
 
     # remove param from unchecked more efficiently
-    @{$plist->Unchecked} = grep { $_ != $param } @{$plist->Unchecked};
+    for (my $i = 0; $i < @{$plist->Unchecked}; $i++) {
+        if ($plist->Unchecked->[$i] == $param) {
+            splice(@{$plist->Unchecked}, $i, 1);
+            last;
+        }
+    }
 
     # undefine parameter object
     undef %{$param};

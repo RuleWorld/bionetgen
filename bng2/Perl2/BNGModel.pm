@@ -195,16 +195,14 @@ sub readSBML
     my $bindir = File::Spec->catpath($vol, $dir);
 
     # Begin writing command: start with 'program'
-    my $cmd = $program;
-    $cmd .= ' -i "' . $filepath .'"';
-    $cmd .= ' -o "' . $outfile . '"';
+    my @cmd = ($program, '-i', $filepath, '-o', $outfile);
     if ($args{"atomize"}){
-        $cmd .= ' -a';
+        push @cmd, '-a';
     }
     
     # Run the translator
-    printf "SBML translation: $cmd\n";
-    system($cmd);
+    printf "SBML translation: %s\n", join(" ", @cmd);
+    system(@cmd);
     
     # Return full path to generated BNGL file
     return 0, $outfile
@@ -397,6 +395,13 @@ sub readSBML
         {
             # Read BNG model data        
             print "Reading from file $filename (level $level)\n";
+            # First try the output directory if this is a relative path
+            if ( !File::Spec->file_name_is_absolute($filename) ) {
+                my $outdir_filename = File::Spec->catfile( $model->getOutputDir(), $filename );
+                if ( -e $outdir_filename ) {
+                    $filename = $outdir_filename;
+                }
+            }
             unless( open FILE, '<', $filename )
             {   
                     unless (File::Spec->file_name_is_absolute( $filename )){

@@ -1194,46 +1194,71 @@ sub evaluate
     }
     else
     {
-        my $eval_string;
         my $operator = $expr->Type;
 
         # replace non-perl operators with the perl equivalents
         if    ( $operator eq '~=' ) {  $operator = '!=';  }
         elsif ( $operator eq '^'  ) {  $operator = '**';  }
         elsif ( $operator eq '~'  ) {  $operator = '!';   } 
-        
+
         if ( @{$expr->Arglist} == 1 )
         {   # handle unary operators
-            if ( $operator eq "/" )
-            {
-                $eval_string = "1.0/(\$expr->Arglist->[0]->evaluate(\$plist,\$level+1))";
+            my $v = $expr->Arglist->[0]->evaluate($plist, $level+1);
+            if    ( $operator eq '/' ) { $val = 1.0 / $v; }
+            elsif ( $operator eq '-' ) { $val = -$v; }
+            elsif ( $operator eq '+' ) { $val = +$v; }
+            elsif ( $operator eq '!' ) { $val = !$v ? 1 : 0; }
+            else {
+                # fallback for math functions if they somehow end up here
+                my $eval_string = "$operator(\$v)";
+                local $SIG{__WARN__} = sub {};
+                $val = eval "$eval_string";
+                if ($@) { die $@; }
             }
-            else
-            {
-                $eval_string = "$operator(\$expr->Arglist->[0]->evaluate(\$plist,\$level+1))";
-            }
-        
         }
         else
-        {
-            my $last = @{$expr->Arglist} - 1;
-            $eval_string = join "$operator", map {"(\$expr->Arglist->[$_]->evaluate(\$plist,\$level+1))"} (0..$last);
-        }
-        
-        # check if this is boolean type
-        if ( $operator =~ /[<>|&!=]/ )
-        {
-            # evaluate the expression
-            local $SIG{__WARN__} = sub {};
-            $val = eval "$eval_string" ? 1 : 0;
-            if ($@) {  die $@;  }
-        }
-        else
-        {
-            # evaluate the expression
-            local $SIG{__WARN__} = sub {};
-            $val = eval "$eval_string";
-            if ($@) {  die $@;  }
+        {   # handle binary/n-ary operators
+            # Note: && and || should implement short-circuiting!
+            if ($operator eq '&&') {
+                $val = 1;
+                foreach my $arg (@{$expr->Arglist}) {
+                    $val = $arg->evaluate($plist, $level+1);
+                    if (!$val) { $val = 0; last; }
+                }
+            } elsif ($operator eq '||') {
+                $val = 0;
+                foreach my $arg (@{$expr->Arglist}) {
+                    $val = $arg->evaluate($plist, $level+1);
+                    if ($val) { $val = 1; last; }
+                }
+            } elsif ($operator eq '**') {
+                # exponentiation is right-associative in Perl
+                my $len = @{$expr->Arglist};
+                $val = $expr->Arglist->[$len-1]->evaluate($plist, $level+1);
+                for (my $i = $len - 2; $i >= 0; --$i) {
+                    $val = $expr->Arglist->[$i]->evaluate($plist, $level+1) ** $val;
+                }
+            } else {
+                $val = $expr->Arglist->[0]->evaluate($plist, $level+1);
+                my $len = @{$expr->Arglist};
+                for (my $i = 1; $i < $len; ++$i)
+                {
+                    my $next_val = $expr->Arglist->[$i]->evaluate($plist, $level+1);
+                    if    ( $operator eq '+' )  { $val += $next_val; }
+                    elsif ( $operator eq '-' )  { $val -= $next_val; }
+                    elsif ( $operator eq '*' )  { $val *= $next_val; }
+                    elsif ( $operator eq '/' )  { $val /= $next_val; }
+                    elsif ( $operator eq '>' )  { $val = ($val >  $next_val) ? 1 : 0; }
+                    elsif ( $operator eq '<' )  { $val = ($val <  $next_val) ? 1 : 0; }
+                    elsif ( $operator eq '>=' ) { $val = ($val >= $next_val) ? 1 : 0; }
+                    elsif ( $operator eq '<=' ) { $val = ($val <= $next_val) ? 1 : 0; }
+                    elsif ( $operator eq '==' ) { $val = ($val == $next_val) ? 1 : 0; }
+                    elsif ( $operator eq '!=' ) { $val = ($val != $next_val) ? 1 : 0; }
+                    elsif ( $operator eq '&' )  { $val = ($val && $next_val) ? 1 : 0; }
+                    elsif ( $operator eq '|' )  { $val = ($val || $next_val) ? 1 : 0; }
+                    else { die "Expression->evaluate: Unrecognized operator $operator"; }
+                }
+            }
         }
     }
 
